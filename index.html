@@ -66,19 +66,6 @@
       border-color: #dc2626;
     }
 
-    /* 모바일 전용 접기/펼치기 버튼 */
-    .btn-toggle-list {
-      display: none;
-      background: #0f766e;
-      border: 1px solid #14b8a6;
-      color: #ffffff;
-      padding: 4px 10px;
-      border-radius: 14px;
-      font-size: 0.76rem;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
     .search-container { position: relative; display: flex; align-items: center; width: 340px; }
     .search-input {
       width: 100%;
@@ -198,8 +185,8 @@
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       z-index: 500;
+      transition: all 0.28s ease;
     }
     .sidebar-header {
       padding: 12px 16px;
@@ -566,6 +553,30 @@
       line-height: 1.35;
     }
 
+    /* 하단 항상 떠 있는 플로팅 접기/열기 버튼 (모바일 전용) */
+    .mobile-bottom-toggle {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f766e;
+      color: #ffffff;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      border: 2px solid #ffffff;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+      z-index: 4000;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+    .mobile-bottom-toggle:active {
+      transform: translateX(-50%) scale(0.96);
+    }
+
     .custom-modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -663,7 +674,7 @@
     .modal-btn-save { background: #0f766e; color: #ffffff; }
     .modal-btn-save:hover { background: #115e59; }
 
-    /* 모바일 반응형 및 접기/펼치기 레이아웃 */
+    /* 모바일 반응형 */
     @media (max-width: 768px) {
       .header {
         height: auto;
@@ -692,9 +703,9 @@
         padding: 5px 6px;
         font-size: 0.72rem;
       }
-      
-      .btn-toggle-list {
-        display: inline-block;
+
+      .mobile-bottom-toggle {
+        display: block;
       }
 
       .container {
@@ -703,16 +714,15 @@
         height: calc(100% - 98px);
       }
       
-      /* 모바일에서 목록창 높이 축소 및 전환 효과 */
       .sidebar {
         width: 100%;
-        height: 42%;
+        height: 40%;
         border-right: none;
         border-bottom: 2px solid #cbd5e1;
         overflow: hidden;
       }
       
-      /* 목록을 접었을 때 (지도가 100% 화면 차지) */
+      /* 접었을 때 */
       .sidebar.collapsed {
         height: 0 !important;
         min-height: 0 !important;
@@ -756,10 +766,9 @@
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <div style="display:flex; align-items:center; gap:6px;">
-          <span>📍 박지 목록</span>
+          <span>📍 백패킹 박지 목록</span>
           <span id="spotCount" style="color: #0f766e; font-size: 0.8rem; font-weight: bold;">0개</span>
         </div>
-        <button type="button" class="btn-toggle-list" id="toggleListBtn" onclick="toggleMobileSidebar()">▲ 목록 접기</button>
       </div>
       
       <div class="region-filter-bar" id="regionFilterBar">
@@ -776,6 +785,11 @@
     </aside>
     <main id="map"></main>
   </div>
+
+  <!-- 모바일 하단 항상 고정 플로팅 버튼 -->
+  <button type="button" class="mobile-bottom-toggle" id="bottomToggleBtn" onclick="toggleMobileSidebar()">
+    ▼ 박지 목록 닫기
+  </button>
 
   <div class="custom-modal-overlay" id="customModalOverlay">
     <div class="custom-modal">
@@ -944,12 +958,12 @@
         "region": "경기",
         "cityName": "경기 여주시",
         "desc": "평지 걸어서 30분 \n풍경멋진 강에서 하룻밤",
-        "youtubeUrl": "https://youtu.be/3tKt8CXDQ2E?si=KweD9UP0Z20ZT3zA",
+        "youtubeUrl": "https://youtu.be/3tKt8CXDQ2E",
         "droneStatus": "warn",
         "searchCount": 7,
         "difficulty": "2",
         "terrain": ["노지"],
-        "youtubeUrls": ["https://youtu.be/3tKt8CXDQ2E?si=KweD9UP0Z20ZT3zA"],
+        "youtubeUrls": ["https://youtu.be/3tKt8CXDQ2E"],
         "blogUrl": "",
         "instaId": "oklionnature",
         "distance": "1.5"
@@ -1001,14 +1015,14 @@
         "region": "경기",
         "cityName": "경기 이천시",
         "desc": "최단코스는 영상 후반부에 자세한 설명 꼭 확인",
-        "youtubeUrl": "https://youtu.be/095pnxMc2Sc?t=1207",
+        "youtubeUrl": "https://youtu.be/095pnxMc2Sc",
         "droneStatus": "warn",
         "searchCount": 9,
         "difficulty": "2",
         "terrain": ["데크"],
         "instaId": "oklionnature",
         "distance": "1",
-        "youtubeUrls": ["https://youtu.be/095pnxMc2Sc?t=1207"],
+        "youtubeUrls": ["https://youtu.be/095pnxMc2Sc"],
         "blogUrl": ""
       },
       {
@@ -1072,7 +1086,7 @@
         "lng": 128.859892,
         "region": "강원",
         "desc": "높은 오지산이지만 난이도 보통 2.5KM",
-        "youtubeUrl": "https://youtu.be/xNHtTSL3WEU?si=kUnnTESAOzyB3PZF",
+        "youtubeUrl": "https://youtu.be/xNHtTSL3WEU",
         "droneStatus": "ok",
         "searchCount": 1,
         "cityName": "강원 강릉시",
@@ -1087,7 +1101,7 @@
         "lat": 37.4553127,
         "lng": 127.5736,
         "desc": "정상데크 / 운해가능성 높음 / 1.7KM",
-        "youtubeUrl": "https://youtu.be/bKEP9S_antw?si=Jq7VF7mL7DiQZnPa",
+        "youtubeUrl": "https://youtu.be/bKEP9S_antw",
         "droneStatus": "warn",
         "region": "경기",
         "searchCount": 7,
@@ -1104,7 +1118,7 @@
         "lng": 127.4502881,
         "desc": "3층데크, 비오는날 가기 좋은 곳",
         "droneStatus": "ok",
-        "youtubeUrl": "https://youtu.be/yd_PJiGHfQg?si=UvxSiboPlat0ZdNR",
+        "youtubeUrl": "https://youtu.be/yd_PJiGHfQg",
         "region": "경기",
         "searchCount": 1,
         "cityName": "경기 이천시",
@@ -1148,14 +1162,14 @@
         "lat": 37.1865,
         "lng": 125.9735,
         "desc": "국내 3대 성지 / 개머리 언덕 외 박지다수",
-        "youtubeUrl": "https://youtu.be/vPqmN5rX2Xc?si=h1jnVQEsUdge2A33",
+        "youtubeUrl": "https://youtu.be/vPqmN5rX2Xc",
         "region": "서울/인천",
         "searchCount": 1,
         "cityName": "인천 옹진군",
         "entryPoint": "들머리 정보 미입력",
         "difficulty": "2",
         "terrain": ["노지"],
-        "youtubeUrls": ["https://youtu.be/vPqmN5rX2Xc?si=h1jnVQEsUdge2A33"],
+        "youtubeUrls": ["https://youtu.be/vPqmN5rX2Xc"],
         "blogUrl": "",
         "instaId": "oklionnature",
         "distance": ""
@@ -1209,23 +1223,36 @@
     let currentMarkers = [];
     let tempSearchMarker = null;
 
+    // 모바일 하단 플로팅 토글 동작
     function toggleMobileSidebar() {
       const sidebar = document.getElementById('sidebar');
-      const btn = document.getElementById('toggleListBtn');
+      const btn = document.getElementById('bottomToggleBtn');
       isSidebarCollapsed = !isSidebarCollapsed;
 
       if (isSidebarCollapsed) {
         sidebar.classList.add('collapsed');
-        btn.innerText = '▼ 목록 열기';
+        btn.innerText = '▲ 박지 목록 열기';
       } else {
         sidebar.classList.remove('collapsed');
-        btn.innerText = '▲ 목록 접기';
+        btn.innerText = '▼ 박지 목록 닫기';
       }
 
-      // 지도 레이아웃 재계산
       setTimeout(() => {
         naver.maps.Event.trigger(map, 'resize');
-      }, 310);
+      }, 300);
+    }
+
+    // 유튜브 URL 정제 함수 (모바일 앱 호환성 해결)
+    function cleanYouTubeUrl(url) {
+      if (!url) return '';
+      let videoId = '';
+      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const match = url.match(regExp);
+      if (match && match[2].length === 11) {
+        videoId = match[2];
+        return `https://www.youtube.com/watch?v=${videoId}`;
+      }
+      return url;
     }
 
     function resetMapView() {
@@ -1404,12 +1431,13 @@
       const ytList = Array.isArray(spot.youtubeUrls) ? spot.youtubeUrls : (spot.youtubeUrl ? [spot.youtubeUrl] : []);
       ytList.slice(0, 3).forEach((url, i) => {
         if (url && url.trim()) {
-          html += `<a href="${url.trim()}" target="_blank" class="link-btn btn-yt" onclick="event.stopPropagation();">▶ 영상 ${ytList.length > 1 ? i+1 : ''}</a>`;
+          const safeUrl = cleanYouTubeUrl(url.trim());
+          html += `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="link-btn btn-yt" onclick="event.stopPropagation();">▶ 영상 ${ytList.length > 1 ? i+1 : ''}</a>`;
         }
       });
 
       if (spot.blogUrl && spot.blogUrl.trim()) {
-        html += `<a href="${spot.blogUrl.trim()}" target="_blank" class="link-btn btn-blog" onclick="event.stopPropagation();">📝 블로그</a>`;
+        html += `<a href="${spot.blogUrl.trim()}" target="_blank" rel="noopener noreferrer" class="link-btn btn-blog" onclick="event.stopPropagation();">📝 블로그</a>`;
       }
 
       const instaUser = spot.instaId && spot.instaId.trim() ? spot.instaId.trim() : "oklionnature";
@@ -1419,7 +1447,7 @@
       
       html += `
         <div class="insta-btn-container" data-tooltip="${tooltipText}">
-          <a href="${instaLink}" target="_blank" class="link-btn btn-insta" onclick="event.stopPropagation();">
+          <a href="${instaLink}" target="_blank" rel="noopener noreferrer" class="link-btn btn-insta" onclick="event.stopPropagation();">
             <svg class="insta-icon-svg" viewBox="0 0 24 24">
               <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
             </svg>
