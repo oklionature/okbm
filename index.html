@@ -66,6 +66,19 @@
       border-color: #dc2626;
     }
 
+    /* 모바일 전용 접기/펼치기 버튼 */
+    .btn-toggle-list {
+      display: none;
+      background: #0f766e;
+      border: 1px solid #14b8a6;
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 14px;
+      font-size: 0.76rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
     .search-container { position: relative; display: flex; align-items: center; width: 340px; }
     .search-input {
       width: 100%;
@@ -175,6 +188,7 @@
       width: 100%;
       height: calc(100% - 56px);
       margin-top: 56px;
+      position: relative;
     }
     .sidebar {
       width: 370px;
@@ -184,11 +198,13 @@
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 500;
     }
     .sidebar-header {
-      padding: 14px 16px;
+      padding: 12px 16px;
       font-weight: 600;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       background-color: #f8fafc;
       border-bottom: 1px solid #e2e8f0;
       display: flex;
@@ -647,21 +663,25 @@
     .modal-btn-save { background: #0f766e; color: #ffffff; }
     .modal-btn-save:hover { background: #115e59; }
 
+    /* 모바일 반응형 및 접기/펼치기 레이아웃 */
     @media (max-width: 768px) {
       .header {
         height: auto;
         flex-direction: column;
         align-items: stretch;
-        padding: 10px 12px;
-        gap: 8px;
+        padding: 8px 10px;
+        gap: 6px;
       }
       .header-left {
         justify-content: space-between;
       }
+      .header h1 {
+        font-size: 0.95rem;
+      }
       .header-right {
         flex-wrap: wrap;
         width: 100%;
-        gap: 6px;
+        gap: 5px;
       }
       .search-container {
         width: 100%;
@@ -669,25 +689,42 @@
       .header-btn {
         flex: 1;
         text-align: center;
-        padding: 6px 8px;
-        font-size: 0.76rem;
+        padding: 5px 6px;
+        font-size: 0.72rem;
       }
+      
+      .btn-toggle-list {
+        display: inline-block;
+      }
+
       .container {
         flex-direction: column;
-        margin-top: 108px;
-        height: calc(100% - 108px);
+        margin-top: 98px;
+        height: calc(100% - 98px);
       }
-      #map {
-        height: 45%;
-        width: 100%;
-        flex: none;
-      }
+      
+      /* 모바일에서 목록창 높이 축소 및 전환 효과 */
       .sidebar {
-        height: 55%;
         width: 100%;
+        height: 42%;
         border-right: none;
-        border-top: 2px solid #cbd5e1;
+        border-bottom: 2px solid #cbd5e1;
+        overflow: hidden;
       }
+      
+      /* 목록을 접었을 때 (지도가 100% 화면 차지) */
+      .sidebar.collapsed {
+        height: 0 !important;
+        min-height: 0 !important;
+        border-bottom: none !important;
+      }
+
+      #map {
+        flex: 1;
+        height: 100%;
+        width: 100%;
+      }
+      
       .custom-modal {
         width: 92%;
         padding: 16px;
@@ -716,10 +753,13 @@
   </header>
 
   <div class="container">
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <span>📍 백패킹 박지 목록</span>
-        <span id="spotCount" style="color: #0f766e; font-size: 0.8rem; font-weight: bold;">0개</span>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span>📍 박지 목록</span>
+          <span id="spotCount" style="color: #0f766e; font-size: 0.8rem; font-weight: bold;">0개</span>
+        </div>
+        <button type="button" class="btn-toggle-list" id="toggleListBtn" onclick="toggleMobileSidebar()">▲ 목록 접기</button>
       </div>
       
       <div class="region-filter-bar" id="regionFilterBar">
@@ -875,7 +915,6 @@
       { name: "한라산국립공원", lat: 33.3600, lng: 126.5350, radius: 11000 }
     ];
 
-    // [전체 15개 등록 박지 완벽 내장]
     const defaultSpots = [
       {
         "id": 1787140773652,
@@ -1142,7 +1181,6 @@
 
     let spots = JSON.parse(localStorage.getItem('okbm_spots')) || defaultSpots;
 
-    // 만약 이전 로컬 저장소 데이터가 3개 이하의 구버전이라면 내장된 최신 15개 데이터로 자동 동기화
     if (!spots || spots.length < defaultSpots.length) {
       spots = defaultSpots;
       localStorage.setItem('okbm_spots', JSON.stringify(spots));
@@ -1152,6 +1190,7 @@
     let isDroneOverlayOn = false;
     let droneOverlays = [];
     let currentRegionFilter = 'ALL';
+    let isSidebarCollapsed = false;
 
     let modalMode = 'ADD';
     let modalEditIndex = -1;
@@ -1169,6 +1208,25 @@
     const infoWindow = new naver.maps.InfoWindow({ borderWidth: 1, borderColor: '#cbd5e1' });
     let currentMarkers = [];
     let tempSearchMarker = null;
+
+    function toggleMobileSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('toggleListBtn');
+      isSidebarCollapsed = !isSidebarCollapsed;
+
+      if (isSidebarCollapsed) {
+        sidebar.classList.add('collapsed');
+        btn.innerText = '▼ 목록 열기';
+      } else {
+        sidebar.classList.remove('collapsed');
+        btn.innerText = '▲ 목록 접기';
+      }
+
+      // 지도 레이아웃 재계산
+      setTimeout(() => {
+        naver.maps.Event.trigger(map, 'resize');
+      }, 310);
+    }
 
     function resetMapView() {
       map.setCenter(DEFAULT_MAP_CENTER);
@@ -1280,7 +1338,7 @@
 
       if (isDroneOverlayOn) {
         btn.classList.add('active');
-        btn.innerText = '🛸 제한구역 오버레이 끄기';
+        btn.innerText = '🛸 제한구역 끄기';
 
         restrictedZones.forEach(z => {
           const isNuke = z.type === 'nuke';
