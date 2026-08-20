@@ -220,7 +220,6 @@
       align-items: center;
     }
 
-    /* 관리자 모드에서만 노출되는 구글시트 편집 링크 */
     .sheet-edit-link {
       display: none;
       align-items: center;
@@ -312,13 +311,13 @@
     .region-group-title:hover { background-color: #f1f5f9; border-left-color: #0f766e; }
 
     .spot-item {
-      padding: 14px 16px;
+      padding: 12px 14px;
       border-bottom: 1px solid #f1f5f9;
       cursor: pointer;
       position: relative;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
       background: #ffffff;
     }
     .spot-item:hover { background-color: #f8fafc; }
@@ -326,10 +325,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-right: 70px;
+      padding-right: 65px;
     }
     .spot-name {
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       font-weight: 700;
       color: #0f766e;
       word-break: keep-all;
@@ -338,17 +337,17 @@
     .spot-meta-badges {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
+      gap: 4px;
       align-items: center;
     }
     .meta-tag {
-      font-size: 0.73rem;
-      padding: 2px 7px;
+      font-size: 0.7rem;
+      padding: 2px 6px;
       border-radius: 4px;
       font-weight: 700;
       display: inline-flex;
       align-items: center;
-      gap: 3px;
+      gap: 2px;
     }
     .tag-terrain-rock { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
     .tag-terrain-deck { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
@@ -358,66 +357,66 @@
       background: #1e293b; 
       color: #facc15; 
       border: 1px solid #0f172a; 
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
     }
     .tag-dist {
       background: #ecfdf5;
       color: #047857;
       border: 1px solid #a7f3d0;
     }
-    .tag-elev {
-      background: #f0fdf4;
-      color: #15803d;
-      border: 1px solid #bbf7d0;
-      font-weight: 800;
-    }
 
     .spot-entry {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: #0284c7;
       background: #f0f9ff;
-      padding: 4px 7px;
+      padding: 3px 6px;
       border-radius: 4px;
       border: 1px solid #e0f2fe;
       display: inline-block;
       width: fit-content;
       font-weight: 500;
       white-space: pre-line;
-      line-height: 1.4;
+      line-height: 1.35;
     }
     .spot-desc {
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       color: #475569;
-      line-height: 1.45;
+      line-height: 1.4;
       word-break: keep-all;
       white-space: pre-line;
+    }
+
+    .spot-coords-text {
+      font-size: 0.7rem;
+      color: #64748b;
+      background: #f8fafc;
+      padding: 2px 5px;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+      width: fit-content;
     }
     
     .media-links-group {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 3px;
+      gap: 5px;
+      margin-top: 2px;
       align-items: center;
     }
     .link-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
+      gap: 3px;
       text-decoration: none;
-      padding: 4px 9px;
-      border-radius: 6px;
-      font-size: 0.74rem;
+      padding: 3px 7px;
+      border-radius: 5px;
+      font-size: 0.7rem;
       font-weight: 700;
       color: #ffffff !important;
       box-shadow: 0 1px 2px rgba(0,0,0,0.1);
       transition: all 0.15s ease;
       cursor: pointer;
-    }
-    .link-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 3px 5px rgba(0,0,0,0.15);
     }
     .btn-yt { background: #ef4444; }
     .btn-yt:hover { background: #dc2626; }
@@ -431,59 +430,14 @@
     }
     .btn-insta { 
       background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); 
-      padding: 4px 8px;
+      padding: 3px 6px;
     }
-    .btn-insta:hover { opacity: 0.92; }
     .insta-icon-svg {
-      width: 13px;
-      height: 13px;
+      width: 11px;
+      height: 11px;
       fill: currentColor;
       display: inline-block;
       vertical-align: middle;
-    }
-
-    .insta-btn-container::after {
-      content: attr(data-tooltip);
-      position: absolute;
-      bottom: calc(100% + 6px);
-      left: 50%;
-      transform: translateX(-50%) translateY(4px);
-      background-color: #090d16;
-      color: #facc15;
-      font-size: 0.74rem;
-      font-weight: 800;
-      padding: 4px 8px;
-      border-radius: 5px;
-      white-space: nowrap;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
-      border: 1px solid #1e293b;
-      pointer-events: none;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.05s ease, transform 0.05s ease;
-      z-index: 4000;
-      letter-spacing: 0.3px;
-    }
-    .insta-btn-container::before {
-      content: '';
-      position: absolute;
-      bottom: calc(100% + 1px);
-      left: 50%;
-      transform: translateX(-50%);
-      border-width: 5px 5px 0 5px;
-      border-style: solid;
-      border-color: #090d16 transparent transparent transparent;
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: opacity 0.05s ease;
-      z-index: 4000;
-    }
-    .insta-btn-container:hover::after,
-    .insta-btn-container:hover::before {
-      opacity: 1;
-      visibility: visible;
-      transform: translateX(-50%) translateY(0);
     }
 
     .drone-badge-container {
@@ -501,12 +455,12 @@
     .drone-badge {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      font-size: 0.72rem;
-      padding: 2px 7px;
+      gap: 3px;
+      font-size: 0.68rem;
+      padding: 2px 6px;
       border-radius: 4px;
       font-weight: 600;
-      line-height: 1.3;
+      line-height: 1.2;
       cursor: pointer;
       user-select: none;
       width: fit-content;
@@ -515,153 +469,123 @@
     .drone-warn { background: #fef9c3; color: #a16207; border: 1px solid #fde047; }
     .drone-no { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
 
-    .instant-tooltip-box::after {
-      content: attr(data-tooltip);
-      position: absolute;
-      bottom: calc(100% + 6px);
-      left: 0;
-      background-color: #0f172a;
-      color: #ffffff;
-      font-size: 0.72rem;
-      font-weight: 500;
-      padding: 5px 8px;
-      border-radius: 4px;
-      white-space: nowrap;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-      pointer-events: none;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(4px);
-      transition: opacity 0.05s ease, transform 0.05s ease;
-      z-index: 3000;
-    }
-    .instant-tooltip-box::before {
-      content: '';
-      position: absolute;
-      bottom: calc(100% + 1px);
-      left: 14px;
-      border-width: 5px 5px 0 5px;
-      border-style: solid;
-      border-color: #0f172a transparent transparent transparent;
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: opacity 0.05s ease;
-      z-index: 3000;
-    }
-    .instant-tooltip-box:hover::after,
-    .instant-tooltip-box:hover::before {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
-
     .spot-action-btns {
       position: absolute;
-      top: 12px;
-      right: 12px;
+      top: 10px;
+      right: 10px;
       display: flex;
-      gap: 4px;
+      gap: 3px;
     }
     .btn-edit {
       background: #0284c7;
       color: #fff;
       border: none;
       border-radius: 4px;
-      padding: 3px 6px;
-      font-size: 0.7rem;
+      padding: 2px 5px;
+      font-size: 0.68rem;
       cursor: pointer;
       display: none;
       font-weight: 600;
     }
-    .btn-edit:hover { background: #0369a1; }
     .btn-del {
       background: #ef4444;
       color: #fff;
       border: none;
       border-radius: 4px;
-      padding: 3px 6px;
-      font-size: 0.7rem;
+      padding: 2px 5px;
+      font-size: 0.68rem;
       cursor: pointer;
       display: none;
       font-weight: 600;
     }
-    .btn-del:hover { background: #dc2626; }
 
     #map { flex: 1; height: 100%; position: relative; }
     
+    /* 🎯 팝업창 2/3 수준 컴팩트 축소 */
     .compact-info-window {
-      padding: 12px 14px;
-      min-width: 230px;
-      max-width: 310px;
-      max-height: 380px;
+      padding: 8px 10px;
+      min-width: 180px;
+      max-width: 240px;
+      max-height: 300px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      line-height: 1.35;
+      gap: 4px;
+      line-height: 1.25;
     }
-    .compact-title { font-size: 0.95rem; font-weight: 700; color: #0f766e; }
+    .compact-title { font-size: 0.84rem; font-weight: 700; color: #0f766e; }
     .compact-entry {
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       color: #0284c7;
       background: #f0f9ff;
-      padding: 3px 6px;
+      padding: 2px 5px;
       border-radius: 4px;
       width: fit-content;
       word-break: break-all;
       white-space: pre-line;
-      line-height: 1.35;
+      line-height: 1.25;
     }
     .compact-desc {
-      font-size: 0.82rem;
+      font-size: 0.74rem;
       color: #334155;
       word-break: keep-all;
       white-space: pre-line;
-      line-height: 1.35;
+      line-height: 1.25;
+    }
+
+    .btn-save-location {
+      background: #0f766e;
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 0.74rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 4px;
+      text-align: center;
     }
 
     .comments-section {
-      margin-top: 8px;
+      margin-top: 5px;
       border-top: 1px dashed #cbd5e1;
-      padding-top: 8px;
+      padding-top: 5px;
     }
     .comments-title {
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       font-weight: 700;
       color: #334155;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
     .comments-list {
       list-style: none;
-      max-height: 90px;
+      max-height: 70px;
       overflow-y: auto;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
     }
     .comment-item {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
       border-radius: 4px;
-      padding: 4px 6px;
-      font-size: 0.73rem;
+      padding: 3px 5px;
+      font-size: 0.68rem;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
     }
-    .comment-author { font-weight: 700; color: #0f766e; margin-right: 4px; }
+    .comment-author { font-weight: 700; color: #0f766e; margin-right: 3px; }
     .comment-text { color: #334155; word-break: break-all; flex: 1; }
-    .comment-del-btn { color: #94a3b8; border: none; background: none; cursor: pointer; font-size: 0.7rem; margin-left: 4px; }
-    .comment-del-btn:hover { color: #ef4444; }
-    .comment-form { display: flex; gap: 4px; }
-    .comment-input-author { width: 55px; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.72rem; outline: none; }
-    .comment-input-text { flex: 1; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.72rem; outline: none; }
-    .comment-btn-submit { background: #0f766e; color: #ffffff; border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.72rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .comment-del-btn { color: #94a3b8; border: none; background: none; cursor: pointer; font-size: 0.65rem; margin-left: 3px; }
+    .comment-form { display: flex; gap: 3px; }
+    .comment-input-author { width: 45px; padding: 3px 4px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 0.68rem; outline: none; }
+    .comment-input-text { flex: 1; padding: 3px 4px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 0.68rem; outline: none; }
+    .comment-btn-submit { background: #0f766e; color: #ffffff; border: none; border-radius: 3px; padding: 3px 6px; font-size: 0.68rem; font-weight: 700; cursor: pointer; }
 
     .custom-modal-overlay {
       position: fixed;
@@ -707,9 +631,7 @@
     .modal-btn-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
     .modal-btn { padding: 8px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; border: none; }
     .modal-btn-cancel { background: #e2e8f0; color: #475569; }
-    .modal-btn-cancel:hover { background: #cbd5e1; }
     .modal-btn-save { background: #0f766e; color: #ffffff; }
-    .modal-btn-save:hover { background: #115e59; }
 
     .mobile-bottom-toggle {
       display: none;
@@ -719,9 +641,9 @@
       transform: translateX(-50%);
       background: #0f766e;
       color: #ffffff;
-      padding: 10px 20px;
+      padding: 9px 18px;
       border-radius: 30px;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 700;
       border: 2px solid #ffffff;
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
@@ -729,6 +651,7 @@
       cursor: pointer;
     }
 
+    /* 📱 모바일 환경 최적화 (지도의 2/3 수준으로 목록 대폭 확장) */
     @media (max-width: 768px) {
       .header { height: auto; flex-direction: column; align-items: stretch; padding: 8px 10px; gap: 6px; }
       .header-left { justify-content: space-between; }
@@ -738,7 +661,15 @@
       .header-btn { flex: 1; text-align: center; padding: 5px 6px; font-size: 0.72rem; }
       .mobile-bottom-toggle { display: block; }
       .container { flex-direction: column; margin-top: 98px; height: calc(100% - 98px); }
-      .sidebar { width: 100%; height: 40%; border-right: none; border-bottom: 2px solid #cbd5e1; }
+      
+      /* 🎯 모바일에서 지도를 약 2/3 가릴 정도로 목록 높이를 68%로 길게 설정 */
+      .sidebar { 
+        width: 100%; 
+        height: 68% !important; 
+        border-right: none; 
+        border-bottom: 2px solid #cbd5e1; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
       .sidebar.collapsed { height: 0 !important; min-height: 0 !important; border-bottom: none !important; }
       #map { flex: 1; height: 100%; width: 100%; }
     }
@@ -754,7 +685,6 @@
     </div>
     
     <div class="header-right">
-      <!-- 관리자 모드에서만 나타나는 동기화 버튼 -->
       <button type="button" class="header-btn admin-only-btn" id="btnSyncSheet" onclick="fetchSpotsFromGoogleSheet()">🔄 시트 동기화</button>
       <button type="button" class="header-btn" id="resetMapBtn" onclick="resetMapView()">🔄 지도 초기화</button>
       <button type="button" class="header-btn" id="droneLayerBtn" onclick="handleDroneBtnClick()">🛸 드론촬영가능여부</button>
@@ -774,11 +704,10 @@
           <span>📍 백패킹 박지 목록</span>
           <span id="spotCount" style="color: #0f766e; font-size: 0.8rem; font-weight: bold;">0개</span>
         </div>
-        <!-- 관리자 모드에서만 나타나는 구글 시트 편집 링크 -->
         <a id="sheetEditLink" href="#" target="_blank" class="sheet-edit-link">📊 구글 시트 편집</a>
       </div>
 
-      <!-- 관리자 모드 툴바 (Shift + M 활성화) -->
+      <!-- 관리자 모드 툴바 -->
       <div class="admin-data-tools" id="adminDataTools">
         <button type="button" class="admin-tool-btn btn-ai-highlight" onclick="openBulkImportModal()">⚡ AI 요약 일괄 등록</button>
         <button type="button" class="admin-tool-btn" onclick="exportDataBackup()">💾 백업</button>
@@ -806,16 +735,16 @@
     ▼ 박지 목록 닫기
   </button>
 
-  <!-- 1. [AI 요약 원클릭 일괄 등록 모달] -->
+  <!-- 1. [AI 요약/JSON 파일 일괄 등록 모달] -->
   <div class="custom-modal-overlay" id="bulkImportModalOverlay">
     <div class="custom-modal" style="width: 500px;">
-      <h3 style="display:flex; align-items:center; gap:6px;">⚡ AI 요약 내용으로 일괄 등록</h3>
+      <h3 style="display:flex; align-items:center; gap:6px;">⚡ AI 요약 / JSON 내용으로 일괄 등록</h3>
       <p style="font-size:0.76rem; color:#64748b; line-height:1.4;">
-        ChatGPT / Gemini가 요약해 준 JSON이나 텍스트를 그대로 붙여넣으세요. 산 이름과 주소로 <strong>위도/경도를 자동 검색</strong>하여 지도에 등록합니다.
+        ChatGPT / Gemini 요약 텍스트 또는 <strong>JSON 객체·배열</strong>을 붙여넣으세요. 산 이름과 주소로 <strong>위도/경도를 자동 검색</strong>하여 지도와 구글 시트에 즉시 등록합니다.
       </p>
 
       <div class="modal-field">
-        <label>요약 텍스트 붙여넣기 (JSON 또는 자유 텍스트)</label>
+        <label>요약 텍스트 또는 JSON 붙여넣기</label>
         <textarea id="bulkImportTextarea" class="modal-input modal-textarea" style="min-height: 180px; font-family: monospace; font-size: 0.8rem;" placeholder='{\n  "name": "백봉산",\n  "entryPoint": "마치고개 갓길 주차",\n  "elevation": "587m",\n  "desc": "3m 높이의 대형 용 모양 전망 데크",\n  "terrain": ["데크"],\n  "difficulty": "2",\n  "distance": "2.2",\n  "youtubeUrl": "https://youtu.be/Z7Ln3jutQgU"\n}'></textarea>
       </div>
 
@@ -823,7 +752,7 @@
 
       <div class="modal-btn-row">
         <button type="button" class="modal-btn modal-btn-cancel" onclick="closeBulkImportModal()">닫기</button>
-        <button type="button" class="modal-btn modal-btn-save" id="btnRunBulkImport" onclick="processBulkImport()">📍 자동 분석 & 지도에 등록</button>
+        <button type="button" class="modal-btn modal-btn-save" id="btnRunBulkImport" onclick="processBulkImport()">📍 자동 분석 & 지도·시트에 등록</button>
       </div>
     </div>
   </div>
@@ -908,18 +837,16 @@
 
   <script>
     // =========================================================================
-    // ⚙️ [구글 스프레드시트 설정]
+    // ⚙️ [구글 스프레드시트 및 Apps Script 연동 설정]
     // =========================================================================
-    const GOOGLE_SHEET_ID = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms';
+    const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
     const GOOGLE_SHEET_GID = '0';
-
-    const REQUIRE_SHIFT = true;
-    const SHORTCUT_KEY  = 'M';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzfMri14C54nWcm-3iNNQBOFkaL0QyIHsL7x_VR4_HlRL0d3yPPSjqJA-29TYKU9Gpt/exec';
 
     const DEFAULT_MAP_CENTER = new naver.maps.LatLng(36.5, 127.8);
     const DEFAULT_MAP_ZOOM   = 8;
 
-    // 1. [기존 비행제한구역 38개소 100% 보존]
+    // 1. [비행제한구역 38개소]
     const restrictedZones = [
       { name: "서울 중심부 (P-73)", lat: 37.5326, lng: 126.9810, radius: 8334, type: "mil" },
       { name: "육군 항공작전사령부 (원적산/이천 북부 관제권)", lat: 37.3050, lng: 127.4650, radius: 9300, type: "mil" },
@@ -961,7 +888,7 @@
       { name: "포스코 광양제철소 국가보안시설", lat: 34.9350, lng: 127.7320, radius: 4000, type: "nuke" }
     ];
 
-    // 2. [기존 국립공원 18개소 100% 보존]
+    // 2. [국립공원 18개소]
     const nationalParks = [
       { name: "설악산국립공원", lat: 38.1190, lng: 128.4650, radius: 14000 },
       { name: "오대산국립공원", lat: 37.7950, lng: 128.6180, radius: 12000 },
@@ -983,418 +910,7 @@
       { name: "한라산국립공원", lat: 33.3600, lng: 126.5350, radius: 11000 }
     ];
 
-    // 3. [기존 등록 박지 21개 100% 완전 보존]
-    const defaultSpots = [
-      {
-        "id": 1787140000007,
-        "name": "백봉산",
-        "elevation": "587m",
-        "entryPoint": "마치고개 갓길 주차 (남양주시 화도읍 묵현리 산 16-1 일원)",
-        "lat": 37.643300,
-        "lng": 127.242700,
-        "region": "경기",
-        "cityName": "경기 남양주시",
-        "desc": "3m 높이의 대형 용 모양 전망 데크 / 360도 파노라마 야경 및 일출·일몰 명소 / 데크 만석 시 하단 헬기장 이용 가능 / 2.2KM",
-        "youtubeUrl": "https://youtu.be/Z7Ln3jutQgU",
-        "droneStatus": "warn",
-        "searchCount": 0,
-        "difficulty": "2",
-        "terrain": ["데크", "노지"],
-        "distance": "2.2",
-        "youtubeUrls": ["https://youtu.be/Z7Ln3jutQgU"],
-        "blogUrl": "",
-        "instaId": "oklionnature"
-      },
-      {
-        "id": 1787140000006,
-        "name": "충주 호봉 (고봉)",
-        "elevation": "350m",
-        "entryPoint": "충청북도 충주시 살미면 신매리 산 일원 (시그널 따라 약 30분 산행)",
-        "lat": 36.942100,
-        "lng": 127.981500,
-        "region": "충청",
-        "cityName": "충북 충주시",
-        "desc": "충주호 350도 파노라마 뷰 / 최대 2동 피칭 가능 / 정상석 뒤 평지 및 바위 슬랩 지형 / 일출·운해·별 보기 좋은 박지",
-        "youtubeUrl": "https://youtu.be/eizHQ4xmrBQ",
-        "droneStatus": "ok",
-        "searchCount": 0,
-        "difficulty": "2",
-        "terrain": ["바위", "노지"],
-        "distance": "1.0",
-        "youtubeUrls": ["https://youtu.be/eizHQ4xmrBQ"],
-        "blogUrl": "",
-        "instaId": "oklionnature"
-      }, 
-      {
-        "id": 1787140773652,
-        "name": "둔덕산 복주머니 바위",
-        "elevation": "969m",
-        "entryPoint": "문경시 가은읍 완장리 471 / 벌바위 가든 주차장 협소\n문경시 가은읍 완장리 466-1 대형 주차장",
-        "lat": 36.6511213,
-        "lng": 127.951926,
-        "region": "경상",
-        "cityName": "경북 문경시",
-        "desc": "풍경 좋은 돌박지 / 대야산 용추계곡을 지나감 / 여름 최고의산행지",
-        "youtubeUrl": "https://youtu.be/Y1hFVTrSxvg",
-        "droneStatus": "ok",
-        "searchCount": 2,
-        "difficulty": "3",
-        "terrain": ["바위"],
-        "distance": "",
-        "youtubeUrls": ["https://youtu.be/Y1hFVTrSxvg"],
-        "blogUrl": "",
-        "instaId": "oklionnature"
-      },
-      {
-        "id": 1787140000005,
-        "name": "장산 (고산지대)",
-        "elevation": "1408m",
-        "entryPoint": "강원도 고산지대 들머리 (풍력발전기 및 세 번째 풍력발전기 인근 갈림길 진입)",
-        "lat": 37.126296,
-        "lng": 128.859892,
-        "region": "강원",
-        "cityName": "강원 영월군",
-        "desc": "해발 1400m 고지에 위치한 오지 백패킹 명소. 데크 박지가 조성되어 있으며 주변 산군 조망이 훌륭함.",
-        "youtubeUrl": "https://youtu.be/xNHtTSL3WEU",
-        "droneStatus": "ok",
-        "searchCount": 0,
-        "difficulty": "2",
-        "terrain": ["데크", "노지"],
-        "distance": "2.8",
-        "youtubeUrls": ["https://youtu.be/xNHtTSL3WEU"],
-        "blogUrl": "",
-        "instaId": "oklionnature"
-      },
-      {
-        "id": 1787140000004,
-        "name": "합천 대암산",
-        "elevation": "591m",
-        "entryPoint": "대암산 활공장 (활공장 직전 차량 2대 주차 가능, 4륜/오프로드 차량 정상까지 진입 가능)",
-        "lat": 35.5392,
-        "lng": 128.1645,
-        "region": "경상",
-        "cityName": "경남 합천군",
-        "desc": "차를 타고 정상까지 갈 수 있는 소박한 가을 백패킹 명소. 활공장이라 바닥에 녹색 매트가 깔려 있으며, 팩다운 없이 사용 가능.",
-        "youtubeUrl": "https://youtu.be/tcTQoFn3eOw",
-        "droneStatus": "ok",
-        "searchCount": 0,
-        "difficulty": "1",
-        "terrain": ["활공장", "노지"],
-        "distance": "0",
-        "youtubeUrls": ["https://youtu.be/tcTQoFn3eOw"],
-        "blogUrl": "",
-        "instaId": "oklionnature"
-      },
-      {
-        "id": 1787140000003,
-        "name": "연어봉",
-        "elevation": "610m",
-        "entryPoint": "충북 괴산군 연풍면 새재로 1948 (연풍레포츠공원)",
-        "lat": 36.7521,
-        "lng": 127.9312,
-        "region": "충청",
-        "cityName": "충북 괴산군",
-        "desc": "가을에 가기 좋은 절벽 돌침대 박지. 360도 막힘없는 괴산 산군 조망. 돌박지 특성상 팩을 박을 수 없어 돌로 고정 필요.",
-        "youtubeUrl": "https://youtu.be/rNvc_QJbxUU",
-        "droneStatus": "ok",
-        "searchCount": 0,
-        "difficulty": "2",
-        "terrain": ["노지", "돌박지"],
-        "distance": "2.5",
-        "youtubeUrls": ["https://youtu.be/rNvc_QJbxUU"],
-        "blogUrl": "",
-        "instaId": "oklionnature"
-      },
-      {
-        "id": 1787140000002,
-        "name": "비금도 투구봉",
-        "elevation": "226m",
-        "entryPoint": "들머리 1.7km, 약 1시간 소요",
-        "lat": 34.7865,
-        "lng": 125.8942,
-        "region": "전라",
-        "cityName": "전남 신안군",
-        "desc": "신안 비금도 그림산 투구봉. 해발 226m로 조망이 환상적임. 비금도는 차를 가지고 들어가는 것을 추천.",
-        "youtubeUrl": "https://youtu.be/3KwAUq5ZqHk",
-        "droneStatus": "ok",
-        "searchCount": 0,
-        "difficulty": "2",
-        "terrain": ["노지", "데크"],
-        "distance": "1.7",
-        "youtubeUrls": ["https://youtu.be/3KwAUq5ZqHk"],
-        "blogUrl": "",
-        "instaId": "oklionnature"
-      },
-      {
-        "id": 1787140000001,
-        "name": "망덕산",
-        "elevation": "675m",
-        "entryPoint": "망실봉 패러글라이딩 활공장 (마을회관 주차 시 1.5km)",
-        "lat": 35.6592,
-        "lng": 127.8845,
-        "region": "경상",
-        "cityName": "경남 거창군",
-        "desc": "걸어서 3분 거리의 초간편 박지. 시내 야경이 매우 훌륭함.",
-        "youtubeUrl": "https://youtu.be/S5MzIF_yeMw",
-        "droneStatus": "ok",
-        "searchCount": 0,
-        "difficulty": "1",
-        "terrain": ["노지"],
-        "distance": "1.5",
-        "youtubeUrls": ["https://youtu.be/S5MzIF_yeMw"],
-        "blogUrl": "",
-        "instaId": "oklionnature"
-      },
-      {
-        "id": 1787140275146,
-        "name": "자산 합수머리",
-        "elevation": "70m",
-        "entryPoint": "여주시 강천면 강천리 산5-3",
-        "lat": 37.2290598,
-        "lng": 127.7448068,
-        "region": "경기",
-        "cityName": "경기 여주시",
-        "desc": "평지 걸어서 30분 \n풍경멋진 강에서 하룻밤",
-        "youtubeUrl": "https://youtu.be/3tKt8CXDQ2E",
-        "droneStatus": "warn",
-        "searchCount": 7,
-        "difficulty": "2",
-        "terrain": ["노지"],
-        "youtubeUrls": ["https://youtu.be/3tKt8CXDQ2E"],
-        "blogUrl": "",
-        "instaId": "oklionnature",
-        "distance": "1.5"
-      },
-      {
-        "id": 1787140005713,
-        "name": "예빈산",
-        "elevation": "590m",
-        "entryPoint": "천주교 소화묘원 / 남양주시 조안면 능내리 산 10",
-        "lat": 37.5455307,
-        "lng": 127.2714702,
-        "region": "경기",
-        "cityName": "경기 남양주시",
-        "desc": "넓은 데크 / 두물머리및 남양주 야경 좋은곳",
-        "youtubeUrl": "https://youtu.be/M3BGt64t9qE",
-        "droneStatus": "warn",
-        "searchCount": 1,
-        "difficulty": "3",
-        "terrain": ["데크"],
-        "distance": "",
-        "youtubeUrls": ["https://youtu.be/M3BGt64t9qE"],
-        "blogUrl": "",
-        "instaId": "oklionnature"
-      },
-      {
-        "id": 1787139595247,
-        "name": "태화산",
-        "elevation": "664m",
-        "entryPoint": "광주시 도척면 유정리 산 16 / 은곡사",
-        "lat": 37.292152,
-        "lng": 127.293686,
-        "region": "경기",
-        "cityName": "경기 광주시",
-        "desc": "정상 가기전 데크 / 서울근교",
-        "youtubeUrl": "https://youtu.be/htBx_5dAuR0",
-        "droneStatus": "warn",
-        "searchCount": 1,
-        "difficulty": "3",
-        "terrain": ["데크"],
-        "distance": "",
-        "youtubeUrls": ["https://youtu.be/htBx_5dAuR0"],
-        "blogUrl": "",
-        "instaId": "oklionnature"
-      },
-      {
-        "id": 1787139163980,
-        "name": "백족산 중턱 데크",
-        "elevation": "402m",
-        "entryPoint": "무량사/ 장호원읍 진암리 산 112-1 \n최단코스는 청미천 파크 골프장에서 다리밑까지 직진",
-        "lat": 37.097399,
-        "lng": 127.604674,
-        "region": "경기",
-        "cityName": "경기 이천시",
-        "desc": "최단코스는 영상 후반부에 자세한 설명 꼭 확인",
-        "youtubeUrl": "https://youtu.be/095pnxMc2Sc?t=1207",
-        "droneStatus": "warn",
-        "searchCount": 9,
-        "difficulty": "2",
-        "terrain": ["데크"],
-        "instaId": "oklionnature",
-        "distance": "1",
-        "youtubeUrls": ["https://youtu.be/095pnxMc2Sc?t=1207"],
-        "blogUrl": ""
-      },
-      {
-        "id": 1787138718978,
-        "name": "시궁산",
-        "elevation": "515m",
-        "entryPoint": "용인시 처인구 이동읍 이원로 561 / 옛 묵리마트",
-        "lat": 37.153908,
-        "lng": 127.245757,
-        "region": "경기",
-        "cityName": "경기 용인시",
-        "desc": "한적하고 풍경좋은 정상데크 / 2.2KM",
-        "youtubeUrl": "https://youtu.be/ppoYmK3Xbqo",
-        "droneStatus": "warn",
-        "searchCount": 1,
-        "difficulty": "3",
-        "terrain": ["데크"],
-        "instaId": "oklionnature"
-      },
-      {
-        "id": 1787138483494,
-        "name": "향수산 중턱 전망대",
-        "elevation": "457m",
-        "entryPoint": "백련사 / 용인시 처인구 포곡읍 가실리 산 14-2",
-        "lat": 37.311314,
-        "lng": 127.18573,
-        "region": "경기",
-        "cityName": "경기 용인시",
-        "desc": "밤에 불꽃놀이를 볼수있는 낮은 산 중턱 전망대",
-        "youtubeUrl": "https://youtu.be/ZV58zuRlWMM",
-        "droneStatus": "warn",
-        "searchCount": 2,
-        "difficulty": "2",
-        "terrain": ["데크"],
-        "instaId": "oklionnature",
-        "distance": "",
-        "youtubeUrls": ["https://youtu.be/ZV58zuRlWMM"],
-        "blogUrl": ""
-      },
-      {
-        "id": 1787137276945,
-        "name": "개군산",
-        "elevation": "214m",
-        "lat": 37.448728,
-        "lng": 127.524974,
-        "region": "경기",
-        "cityName": "경기 양평군",
-        "desc": "남한강이 한눈에 보이는 동네 뒷산",
-        "youtubeUrl": "https://youtu.be/JoiWtzB0F3Q",
-        "droneStatus": "no",
-        "searchCount": 8,
-        "entryPoint": "양평군 개군면 구미리 산5",
-        "difficulty": "2",
-        "terrain": ["데크"],
-        "instaId": "oklionnature",
-        "distance": "",
-        "youtubeUrls": ["https://youtu.be/JoiWtzB0F3Q"],
-        "blogUrl": ""
-      },
-      {
-        "id": 1787135941805,
-        "name": "추읍산",
-        "elevation": "583m",
-        "lat": 37.4553127,
-        "lng": 127.5736,
-        "desc": "정상데크 / 운해가능성 높음 / 1.7KM",
-        "youtubeUrl": "https://youtu.be/bKEP9S_antw",
-        "droneStatus": "warn",
-        "region": "경기",
-        "searchCount": 7,
-        "cityName": "경기 양평군",
-        "entryPoint": "양평군 산수유길 131- 29",
-        "difficulty": "3",
-        "terrain": ["데크"],
-        "instaId": "oklionnature"
-      },
-      {
-        "id": 1787134210031,
-        "name": "마국산",
-        "elevation": "445m",
-        "lat": 37.1475593,
-        "lng": 127.4502881,
-        "desc": "3층데크, 비오는날 가기 좋은 곳",
-        "droneStatus": "ok",
-        "youtubeUrl": "https://youtu.be/yd_PJiGHfQg",
-        "region": "경기",
-        "searchCount": 1,
-        "cityName": "경기 이천시",
-        "entryPoint": "이천시 모가면 서경리 산74 용광사",
-        "difficulty": "3",
-        "terrain": ["데크"],
-        "instaId": "oklionnature"
-      },
-      {
-        "id": 1787133044837,
-        "name": "원적산",
-        "elevation": "634m",
-        "lat": 37.352209,
-        "lng": 127.448789,
-        "desc": "경기도 알프스 / 넓은 주차장 깨끗한 화장실",
-        "region": "경기",
-        "searchCount": 2,
-        "cityName": "경기 이천시",
-        "entryPoint": "영원사 / 이천시 백사면 송말리 436",
-        "youtubeUrl": "",
-        "difficulty": "3",
-        "terrain": ["데크"],
-        "instaId": "oklionnature"
-      },
-      {
-        "id": 1,
-        "name": "간월재 데크 (영남알프스)",
-        "elevation": "900m",
-        "lat": 35.545812,
-        "lng": 129.034515,
-        "desc": "억새 군락지 뷰 / 바람 강함 / 화기 엄격 금지",
-        "region": "경상",
-        "searchCount": 0,
-        "cityName": "울산 울주군",
-        "entryPoint": "들머리 정보 미입력",
-        "difficulty": "3",
-        "terrain": ["데크"],
-        "instaId": "oklionnature"
-      },
-      {
-        "id": 2,
-        "name": "굴업도",
-        "elevation": "120m",
-        "lat": 37.1865,
-        "lng": 125.9735,
-        "desc": "국내 3대 성지 / 개머리 언덕 외 박지다수",
-        "youtubeUrl": "https://youtu.be/vPqmN5rX2Xc",
-        "region": "서울/인천",
-        "searchCount": 1,
-        "cityName": "인천 옹진군",
-        "entryPoint": "들머리 정보 미입력",
-        "difficulty": "2",
-        "terrain": ["노지"],
-        "youtubeUrls": ["https://youtu.be/vPqmN5rX2Xc"],
-        "blogUrl": "",
-        "instaId": "oklionnature",
-        "distance": ""
-      },
-      {
-        "id": 3,
-        "name": "평창 선자령",
-        "elevation": "1157m",
-        "lat": 37.702235,
-        "lng": 128.74912,
-        "desc": "대관령 풍력단지 능선 / 겨울 설산 백패킹 명소",
-        "region": "강원",
-        "searchCount": 0,
-        "cityName": "강원 평창군",
-        "entryPoint": "들머리 정보 미입력",
-        "difficulty": "3",
-        "terrain": ["노지"],
-        "distance": "",
-        "youtubeUrls": [],
-        "blogUrl": "",
-        "instaId": "oklionnature"
-      }
-    ];
-
     let spots = [];
-    if (localStorage.getItem('okbm_initialized_v3')) {
-      spots = JSON.parse(localStorage.getItem('okbm_spots')) || [];
-    } else {
-      spots = defaultSpots;
-      localStorage.setItem('okbm_spots', JSON.stringify(spots));
-      localStorage.setItem('okbm_initialized_v3', 'true');
-    }
-
     let spotComments = JSON.parse(localStorage.getItem('okbm_comments')) || {};
 
     let isAdminMode = false;
@@ -1427,7 +943,168 @@
     document.getElementById('sheetEditLink').href = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/edit`;
 
     // =========================================================================
-    // ⚡ [AI 요약 일괄 등록] 텍스트 분석 및 위도/경도 자동 검색
+    // 🌐 [거리 및 행정구역 계산, 드론 판별 유틸리티 함수]
+    // =========================================================================
+    function getDistanceMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+    }
+
+    function autoDetectDroneStatus(lat, lng) {
+      if (!lat || !lng) return { status: 'ok', reason: '촬영 및 비행 가능 구역' };
+      for (const park of nationalParks) {
+        if (getDistanceMeters(lat, lng, park.lat, park.lng) <= park.radius) {
+          return { status: 'no', reason: `국립공원 비행/촬영 금지 (${park.name})` };
+        }
+      }
+      for (const zone of restrictedZones) {
+        if (getDistanceMeters(lat, lng, zone.lat, zone.lng) <= zone.radius) {
+          if (zone.type === 'nuke' || zone.name.includes('P-73')) {
+            return { status: 'no', reason: `국가 중요 비행금지구역 (${zone.name})` };
+          }
+          return { status: 'warn', reason: `군사/공항 관제공역 - 사전승인 필수 (${zone.name})` };
+        }
+      }
+      return { status: 'ok', reason: '자유 비행 및 촬영 가능 구역 (150m 고도제한 준수)' };
+    }
+
+    function getDroneBadgeHtml(status, reasonText) {
+      let r = reasonText;
+      if (!r) {
+        r = (status === 'no') ? '비행 및 촬영 금지구역' : (status === 'warn') ? '관제공역 (원스톱 승인 필요)' : '비행/촬영 가능';
+      }
+      if (status === 'no') {
+        return `<div class="instant-tooltip-box" data-tooltip="${r}"><span class="drone-badge drone-no">🚫 드론촬영금지</span></div>`;
+      } else if (status === 'warn') {
+        return `<div class="instant-tooltip-box" data-tooltip="${r}"><span class="drone-badge drone-warn">⚠️ 드론승인필요</span></div>`;
+      } else {
+        return `<div class="instant-tooltip-box" data-tooltip="${r}"><span class="drone-badge drone-ok">🛸 드론촬영가능</span></div>`;
+      }
+    }
+
+    function detectRegionAndCity(lat, lng, name = '', entryPoint = '') {
+      const fullText = (name + ' ' + entryPoint).toLowerCase();
+      
+      if (fullText.includes('서울') || fullText.includes('인천') || fullText.includes('옹진') || fullText.includes('강화')) {
+        return { region: '서울/인천', cityName: fullText.includes('서울') ? '서울' : '인천' };
+      }
+      if (fullText.includes('경기') || fullText.includes('남양주') || fullText.includes('양평') || fullText.includes('이천') || fullText.includes('장호원') || fullText.includes('용인') || fullText.includes('광주') || fullText.includes('여주') || fullText.includes('가평') || fullText.includes('포천') || fullText.includes('안성') || fullText.includes('평택')) {
+        let city = '경기';
+        ['남양주시','양평군','이천시','용인시','광주시','여주시','가평군','포천시','안성시','평택시'].forEach(c => { 
+          if(fullText.includes(c.slice(0,2))) city = '경기 ' + c; 
+        });
+        return { region: '경기', cityName: city };
+      }
+      if (fullText.includes('강원') || fullText.includes('정선') || fullText.includes('평창') || fullText.includes('영월') || fullText.includes('원주') || fullText.includes('춘천') || fullText.includes('홍천') || fullText.includes('강릉') || fullText.includes('인제')) {
+        return { region: '강원', cityName: fullText.includes('정선') ? '강원 정선군' : '강원' };
+      }
+      if (fullText.includes('충북') || fullText.includes('충남') || fullText.includes('충청') || fullText.includes('충주') || fullText.includes('괴산') || fullText.includes('단양') || fullText.includes('천안') || fullText.includes('청주') || fullText.includes('음성') || fullText.includes('진천')) {
+        return { region: '충청', cityName: '충청' };
+      }
+      if (fullText.includes('경북') || fullText.includes('경남') || fullText.includes('경상') || fullText.includes('문경') || fullText.includes('합천') || fullText.includes('거창') || fullText.includes('울산') || fullText.includes('부산') || fullText.includes('대구')) {
+        return { region: '경상', cityName: '경상' };
+      }
+      if (fullText.includes('전북') || fullText.includes('전남') || fullText.includes('전라') || fullText.includes('신안') || fullText.includes('여수') || fullText.includes('순천') || fullText.includes('해남') || fullText.includes('완도')) {
+        return { region: '전라', cityName: '전라' };
+      }
+      if (fullText.includes('제주') || fullText.includes('서귀포')) {
+        return { region: '제주', cityName: '제주' };
+      }
+
+      if (lat >= 36.95 && lat <= 38.3 && lng >= 126.5 && lng <= 127.8) return { region: '경기', cityName: '경기' };
+      if (lat >= 37.0 && lng > 127.8) return { region: '강원', cityName: '강원' };
+      if (lat >= 35.8 && lat < 37.0 && lng <= 127.9) return { region: '충청', cityName: '충청' };
+      if (lat < 36.0 && lng > 127.8) return { region: '경상', cityName: '경상' };
+      if (lat < 35.8 && lng <= 127.8) return { region: '전라', cityName: '전라' };
+      if (lat < 34.0) return { region: '제주', cityName: '제주' };
+      return { region: '경기', cityName: '경기' };
+    }
+
+    async function getElevation(lat, lng) {
+      if (!lat || !lng) return '450m';
+      try {
+        const res = await fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`);
+        const data = await res.json();
+        if (data && data.results && data.results.length > 0) {
+          return `${Math.round(data.results[0].elevation)}m`;
+        }
+      } catch (e) {}
+      return '450m';
+    }
+
+    async function fetchElevationForModal() {
+      const lat = (modalMode === 'EDIT') ? spots[modalEditIndex].lat : modalPendingData.lat;
+      const lng = (modalMode === 'EDIT') ? spots[modalEditIndex].lng : modalPendingData.lng;
+      if (!lat || !lng) return alert('측정할 수 있는 위치 좌표가 없습니다.');
+      const elev = await getElevation(lat, lng);
+      document.getElementById('modalInputElevation').value = elev;
+    }
+
+    // =========================================================================
+    // ⚡ [위치 저장 함수]
+    // =========================================================================
+    async function saveUpdatedLocation(spotId, newLat, newLng) {
+      const targetSpot = spots.find(s => String(s.id) === String(spotId));
+      if (!targetSpot) {
+        alert('해당 박지 정보를 찾을 수 없습니다.');
+        return;
+      }
+
+      targetSpot.lat = parseFloat(newLat);
+      targetSpot.lng = parseFloat(newLng);
+
+      const check = autoDetectDroneStatus(targetSpot.lat, targetSpot.lng);
+      targetSpot.droneStatus = check.status;
+      const res = detectRegionAndCity(targetSpot.lat, targetSpot.lng, targetSpot.name, targetSpot.entryPoint);
+      targetSpot.region = res.region;
+      targetSpot.cityName = res.cityName;
+
+      naver.maps.Service.reverseGeocode({
+        coords: new naver.maps.LatLng(targetSpot.lat, targetSpot.lng),
+        orders: [naver.maps.Service.OrderType.ADDR, naver.maps.Service.OrderType.ROAD_ADDR].join(',')
+      }, async function(status, response) {
+        if (status === naver.maps.Service.Status.OK && response.v2 && response.v2.address) {
+          const autoAddr = response.v2.address.jibunAddress || response.v2.address.roadAddress;
+          if (autoAddr) targetSpot.entryPoint = autoAddr;
+        }
+
+        infoWindow.close();
+        renderSpots(targetSpot.region);
+
+        const payload = JSON.stringify({
+          action: 'UPDATE_LOCATION',
+          id: targetSpot.id,
+          name: targetSpot.name,
+          lat: targetSpot.lat,
+          lng: targetSpot.lng,
+          region: targetSpot.region,
+          cityName: targetSpot.cityName,
+          droneStatus: targetSpot.droneStatus,
+          entryPoint: targetSpot.entryPoint
+        });
+
+        try {
+          await fetch(GAS_API_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: payload
+          });
+          alert(`✅ '${targetSpot.name}' 위치가 구글 시트와 웹에 저장되었습니다!\n(위도: ${newLat}, 경도: ${newLng})`);
+        } catch (err) {
+          console.error('시트 저장 에러:', err);
+          alert('구글 시트 전송 중 오류가 발생했습니다: ' + err);
+        }
+      });
+    }
+
+    // =========================================================================
+    // ⚡ [AI 요약 / JSON 일괄 등록]
     // =========================================================================
     function openBulkImportModal() {
       if (!isAdminMode) return;
@@ -1442,6 +1119,7 @@
     }
 
     async function searchCoordsByQuery(query) {
+      if (!query || !query.trim()) return null;
       return new Promise((resolve) => {
         naver.maps.Service.geocode({ query: query }, function(status, response) {
           if (status === naver.maps.Service.Status.OK && response.v2.addresses.length > 0) {
@@ -1468,28 +1146,27 @@
       const statusEl = document.getElementById('bulkStatusMsg');
       const btn = document.getElementById('btnRunBulkImport');
 
-      if (!rawText) {
-        alert('요약 텍스트를 입력해주세요.');
-        return;
-      }
+      if (!rawText) return alert('요약 텍스트 또는 JSON을 입력해주세요.');
 
       btn.disabled = true;
-      statusEl.innerText = '⏳ 텍스트 분석 중...';
+      statusEl.innerText = '⏳ 데이터 분석 중...';
 
-      let parsedData = {};
+      let itemsToProcess = [];
 
       try {
+        const parsed = JSON.parse(rawText);
+        if (Array.isArray(parsed)) itemsToProcess = parsed;
+        else if (typeof parsed === 'object') itemsToProcess = [parsed];
+      } catch (err) {
         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
-          parsedData = JSON.parse(jsonMatch[0]);
+          try { itemsToProcess = [JSON.parse(jsonMatch[0])]; } catch (e) {}
         }
-      } catch (err) {
-        console.warn('JSON 파싱 실패, 텍스트 라인 파싱 시도');
       }
 
-      if (!parsedData.name) {
-        const lines = rawText.split('\n');
-        lines.forEach(line => {
+      if (itemsToProcess.length === 0) {
+        const parsedData = {};
+        rawText.split('\n').forEach(line => {
           const [key, ...vals] = line.split(/[:=]/);
           if (!key || vals.length === 0) return;
           const k = key.trim();
@@ -1503,78 +1180,100 @@
           if (k.includes('유튜브') || k.includes('링크') || k.toLowerCase().includes('youtube')) parsedData.youtubeUrl = v;
           if (k.includes('지형') || k.toLowerCase() === 'terrain') parsedData.terrain = [v];
         });
+        if (parsedData.name) itemsToProcess.push(parsedData);
       }
 
-      const name = parsedData.name || '새 박지';
-      const entryPoint = parsedData.entryPoint || name;
-      
-      statusEl.innerText = `🔍 '${name}' 위치 좌표 검색 중...`;
-
-      let coords = await searchCoordsByQuery(entryPoint);
-      if (!coords) coords = await searchCoordsByQuery(name);
-
-      if (!coords) {
-        coords = { lat: map.getCenter().lat(), lng: map.getCenter().lng() };
-        alert(`'${name}'의 정확한 주소를 찾지 못해 현재 지도 중심에 배치했습니다. 마커를 드래그해 이동해주세요.`);
+      if (itemsToProcess.length === 0) {
+        btn.disabled = false;
+        statusEl.innerText = '';
+        return alert('유효한 박지 정보를 찾을 수 없습니다. 이름과 주소를 확인해주세요.');
       }
 
-      statusEl.innerText = `⛰️ 고도 및 드론 비행 가능 여부 분석 중...`;
+      let successCount = 0;
 
-      let elevation = parsedData.elevation || '';
-      if (!elevation || elevation === '') {
-        elevation = await getElevation(coords.lat, coords.lng);
+      for (let i = 0; i < itemsToProcess.length; i++) {
+        const item = itemsToProcess[i];
+        const name = item.name || `박지_${Date.now()}`;
+        const entryPoint = item.entryPoint || item.address || name;
+        
+        statusEl.innerText = `🔍 (${i+1}/${itemsToProcess.length}) '${name}' 위치 좌표 검색 중...`;
+
+        let coords = null;
+        if (item.lat && item.lng) {
+          coords = { lat: parseFloat(item.lat), lng: parseFloat(item.lng) };
+        } else {
+          coords = await searchCoordsByQuery(entryPoint);
+          if (!coords) coords = await searchCoordsByQuery(name);
+        }
+        if (!coords) coords = { lat: map.getCenter().lat(), lng: map.getCenter().lng() };
+
+        let elevation = item.elevation || await getElevation(coords.lat, coords.lng);
+        const check = autoDetectDroneStatus(coords.lat, coords.lng);
+        const res = detectRegionAndCity(coords.lat, coords.lng, name, entryPoint);
+
+        const ytList = item.youtubeUrls || (item.youtubeUrl ? [item.youtubeUrl] : []);
+
+        const newSpot = {
+          id: item.id ? String(item.id).trim() : String(Date.now() + i),
+          name: name,
+          elevation: elevation,
+          entryPoint: entryPoint,
+          lat: coords.lat,
+          lng: coords.lng,
+          region: item.region || res.region,
+          cityName: item.cityName || res.cityName,
+          desc: item.desc || '추천 백패킹 박지',
+          distance: String(item.distance || '').replace(/km/i, '').trim(),
+          youtubeUrls: Array.isArray(ytList) ? ytList : [ytList],
+          blogUrl: item.blogUrl || '',
+          instaId: item.instaId || 'oklionnature',
+          terrain: Array.isArray(item.terrain) ? item.terrain : (item.terrain ? [item.terrain] : ['데크']),
+          difficulty: String(item.difficulty || '3'),
+          droneStatus: item.droneStatus || check.status,
+          searchCount: 1
+        };
+
+        spots.unshift(newSpot);
+        successCount++;
+
+        statusEl.innerText = `☁️ (${i+1}/${itemsToProcess.length}) '${name}' 구글 시트 저장 중...`;
+        try {
+          await fetch(GAS_API_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'ADD', spot: newSpot })
+          });
+        } catch (err) {
+          console.warn('시트 전송 실패:', err);
+        }
       }
 
-      const check = autoDetectDroneStatus(coords.lat, coords.lng);
-      const res = detectRegionAndCity(coords.lat, coords.lng, name, entryPoint);
-
-      let terrain = Array.isArray(parsedData.terrain) ? parsedData.terrain : (parsedData.terrain ? [parsedData.terrain] : ['데크']);
-      let ytUrls = parsedData.youtubeUrls || (parsedData.youtubeUrl ? [parsedData.youtubeUrl] : []);
-
-      const newSpot = {
-        id: Date.now(),
-        name: name,
-        elevation: elevation,
-        entryPoint: entryPoint,
-        lat: coords.lat,
-        lng: coords.lng,
-        region: parsedData.region || res.region,
-        cityName: parsedData.cityName || res.cityName,
-        desc: parsedData.desc || '추천 백패킹 박지',
-        distance: String(parsedData.distance || '').replace(/km/i, '').trim(),
-        youtubeUrls: ytUrls,
-        blogUrl: parsedData.blogUrl || '',
-        instaId: parsedData.instaId || 'oklionnature',
-        terrain: terrain,
-        difficulty: String(parsedData.difficulty || '3'),
-        droneStatus: check.status,
-        searchCount: 1
-      };
-
-      spots.unshift(newSpot);
-      localStorage.setItem('okbm_spots', JSON.stringify(spots));
       renderSpots();
 
-      const pos = new naver.maps.LatLng(newSpot.lat, newSpot.lng);
-      map.setZoom(15);
-      map.panTo(pos);
+      if (spots.length > 0) {
+        map.setZoom(15);
+        map.panTo(new naver.maps.LatLng(spots[0].lat, spots[0].lng));
+      }
 
       btn.disabled = false;
       closeBulkImportModal();
-      alert(`🎉 '${name}' 박지가 성공적으로 등록되었습니다!`);
+      alert(`🎉 총 ${successCount}개의 박지가 지도 및 구글 시트에 성공적으로 등록되었습니다!`);
     }
 
     // =========================================================================
-    // 🚀 구글 스프레드시트 실시간 동기화 (완료 후 뱃지 자동 숨김 처리)
+    // 🚀 구글 스프레드시트 실시간 동기화
     // =========================================================================
     async function fetchSpotsFromGoogleSheet() {
       const badge = document.getElementById('syncStatusBadge');
-      badge.style.display = 'inline-block';
-      badge.style.opacity = '1';
-      badge.style.background = '#0284c7';
-      badge.innerText = '⚡ 시트 동기화 중...';
+      if (badge) {
+        badge.style.display = 'inline-block';
+        badge.style.opacity = '1';
+        badge.style.background = '#0284c7';
+        badge.innerText = '⚡ 시트 동기화 중...';
+      }
 
-      const csvUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_GID}`;
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_GID}&_t=${Date.now()}`;
 
       try {
         const response = await fetch(csvUrl, { cache: 'no-store' });
@@ -1586,29 +1285,25 @@
           skipEmptyLines: true,
           complete: function(results) {
             const rows = results.data;
-            if (rows && rows.length > 0 && rows[0].name) {
-              spots = rows.map((row, idx) => {
+            if (rows && rows.length > 0) {
+              spots = rows.filter(r => r.name && r.lat && r.lng).map((row, idx) => {
                 const lat = parseFloat(row.lat) || 0;
                 const lng = parseFloat(row.lng) || 0;
-                
-                let ytList = [];
                 const rawYt = row.youtubeUrls || row.youtubeUrl || '';
-                if (rawYt) ytList = rawYt.split(/[\n,]+/).map(u => u.trim()).filter(u => u);
-
-                let terrainList = ['데크'];
-                if (row.terrain) terrainList = row.terrain.split(/[\n,]+/).map(t => t.trim()).filter(t => t);
-
+                const ytList = rawYt ? rawYt.split(/[\n,]+/).map(u => u.trim()).filter(u => u) : [];
+                const terrainList = row.terrain ? row.terrain.split(/[\n,]+/).map(t => t.trim()).filter(t => t) : ['데크'];
                 const res = detectRegionAndCity(lat, lng, row.name, row.entryPoint);
 
                 return {
-                  id: row.id ? (isNaN(row.id) ? row.id : Number(row.id)) : (Date.now() + idx),
+                  id: row.id ? String(row.id).trim() : String(Date.now() + idx),
                   name: row.name || '무명 박지',
                   elevation: row.elevation || '',
                   entryPoint: row.entryPoint || '들머리 정보 미입력',
                   lat: lat,
                   lng: lng,
-                  region: row.region || res.region,
-                  cityName: row.cityName || res.cityName,
+                  // 시트에 값이 잘못 적혀있어도 좌표/주소로 정확히 자동 보정
+                  region: res.region,
+                  cityName: res.cityName,
                   desc: row.desc || '',
                   youtubeUrls: ytList,
                   blogUrl: row.blogUrl || '',
@@ -1621,27 +1316,26 @@
                 };
               });
 
-              localStorage.setItem('okbm_spots', JSON.stringify(spots));
-              badge.style.background = '#15803d';
-              badge.innerText = `✅ 시트 연동 완료 (${spots.length}개)`;
+              if (badge) {
+                badge.style.background = '#15803d';
+                badge.innerText = `✅ 시트 연동 완료 (${spots.length}개)`;
+              }
             }
             renderSpots();
-            
-            // 2.5초 후 뱃지 자동 숨김
             setTimeout(() => {
-              badge.style.opacity = '0';
-              setTimeout(() => badge.style.display = 'none', 400);
+              if (badge) {
+                badge.style.opacity = '0';
+                setTimeout(() => badge.style.display = 'none', 400);
+              }
             }, 2500);
           }
         });
       } catch (error) {
-        badge.style.background = '#0f766e';
-        badge.innerText = `💾 로컬 데이터 모드 (${spots.length}개)`;
-        renderSpots();
-        setTimeout(() => {
-          badge.style.opacity = '0';
-          setTimeout(() => badge.style.display = 'none', 400);
-        }, 2500);
+        console.error('시트 동기화 실패:', error);
+        if (badge) {
+          badge.style.background = '#ef4444';
+          badge.innerText = `❌ 시트 로드 실패`;
+        }
       }
     }
 
@@ -1651,7 +1345,7 @@
       droneBtnClickCount++;
       clearTimeout(droneBtnTimer);
       droneBtnTimer = setTimeout(() => {
-        if (droneBtnClickCount >= 7) {
+        if (droneBtnClickCount >= 5) {
           toggleAdminMode();
         } else {
           toggleDroneOverlay();
@@ -1660,28 +1354,30 @@
       }, 400);
     }
 
+    window.addEventListener('keydown', (e) => {
+      if (e.shiftKey && (e.key === 'M' || e.key === 'm')) {
+        toggleAdminMode();
+      }
+    });
+
     function toggleAdminMode() {
       isAdminMode = !isAdminMode;
       document.getElementById('adminBadge').style.display = isAdminMode ? 'inline-block' : 'none';
       updateAdminUI();
-      
       currentMarkers.forEach(marker => marker.setDraggable(isAdminMode));
-
       if (isAdminMode) {
-        alert('관리자 모드가 활성화되었습니다. (시트 동기화/편집/AI등록 기능 활성화)');
+        alert('🔑 관리자 모드가 활성화되었습니다.\n- 마커를 드래그하여 바로 이동 및 저장할 수 있습니다.\n- 박지 수정 및 삭제 시 구글 시트에 즉각 동기화됩니다.');
       } else {
         alert('관리자 모드가 비활성화되었습니다.');
       }
     }
 
-    // 🔒 관리자 권한 UI 제어
     function updateAdminUI() {
       document.querySelectorAll('.btn-del').forEach(btn => btn.style.display = isAdminMode ? 'block' : 'none');
       document.querySelectorAll('.btn-edit').forEach(btn => btn.style.display = isAdminMode ? 'block' : 'none');
       document.querySelectorAll('.btn-quick-add').forEach(btn => btn.style.display = isAdminMode ? 'inline-block' : 'none');
       document.getElementById('adminDataTools').style.display = isAdminMode ? 'flex' : 'none';
       
-      // 구글시트 편집 링크 및 시트 동기화 버튼 관리자 모드에서만 노출
       const sheetLink = document.getElementById('sheetEditLink');
       if (sheetLink) sheetLink.style.display = isAdminMode ? 'inline-flex' : 'none';
 
@@ -1689,226 +1385,12 @@
       if (syncBtn) syncBtn.style.display = isAdminMode ? 'inline-block' : 'none';
     }
 
-    function toggleMobileSidebar() {
-      const sidebar = document.getElementById('sidebar');
-      const btn = document.getElementById('bottomToggleBtn');
-      isSidebarCollapsed = !isSidebarCollapsed;
-
-      if (isSidebarCollapsed) {
-        sidebar.classList.add('collapsed');
-        btn.innerText = '▲ 박지 목록 열기';
-      } else {
-        sidebar.classList.remove('collapsed');
-        btn.innerText = '▼ 박지 목록 닫기';
-      }
-
-      setTimeout(() => naver.maps.Event.trigger(map, 'resize'), 300);
-    }
-
     function cleanYouTubeUrl(url) {
       if (!url) return '';
-      let videoId = '';
-      const regExp = /^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-      const match = url.match(regExp);
-      
-      if (match && match[1].length === 11) {
-        videoId = match[1];
-        const timeMatch = url.match(/[?&#](?:t|start)=([^&#]*)/);
-        let seconds = 0;
-        
-        if (timeMatch && timeMatch[1]) {
-          const rawTime = timeMatch[1].trim();
-          if (/^\d+$/.test(rawTime)) {
-            seconds = parseInt(rawTime, 10);
-          } else if (rawTime.includes('h') || rawTime.includes('m') || rawTime.includes('s')) {
-            const h = (rawTime.match(/(\d+)h/) || [])[1] || 0;
-            const m = (rawTime.match(/(\d+)m/) || [])[1] || 0;
-            const s = (rawTime.match(/(\d+)s/) || [])[1] || 0;
-            seconds = parseInt(h) * 3600 + parseInt(m) * 60 + parseInt(s);
-          } else if (rawTime.includes(':')) {
-            const parts = rawTime.split(':').map(Number);
-            if (parts.length === 2) seconds = parts[0] * 60 + parts[1];
-            if (parts.length === 3) seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
-          }
-        }
-        
-        let safeUrl = `https://www.youtube.com/watch?v=${videoId}`;
-        if (seconds > 0) safeUrl += `&t=${seconds}s`;
-        return safeUrl;
-      }
+      const match = url.match(/^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
+      if (match && match[1].length === 11) return `https://www.youtube.com/watch?v=${match[1]}`;
       return url;
     }
-
-    function exportDataBackup() {
-      const dataToSave = { spots, comments: spotComments };
-      const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `okbm_backup_${new Date().toISOString().slice(0,10)}.json`;
-      a.click();
-    }
-
-    function importDataBackup(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const imported = JSON.parse(e.target.result);
-          if (Array.isArray(imported)) spots = imported;
-          else if (imported.spots) {
-            spots = imported.spots;
-            if (imported.comments) spotComments = imported.comments;
-          }
-          localStorage.setItem('okbm_spots', JSON.stringify(spots));
-          localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
-          renderSpots();
-          alert('데이터가 성공적으로 복원되었습니다.');
-        } catch (err) {
-          alert('올바른 백업 JSON 파일이 아닙니다.');
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    function resetMapView() {
-      map.setCenter(DEFAULT_MAP_CENTER);
-      map.setZoom(DEFAULT_MAP_ZOOM);
-      infoWindow.close();
-      if (tempSearchMarker) {
-        tempSearchMarker.setMap(null);
-        tempSearchMarker = null;
-      }
-      document.getElementById('topSearchInput').value = '';
-      document.getElementById('searchDropdown').style.display = 'none';
-    }
-
-    function detectRegionAndCity(lat, lng, name, address) {
-      const fullText = `${name || ''} ${address || ''}`;
-
-      if (fullText.includes('서울')) return { region: "서울/인천", cityName: "서울" };
-      if (fullText.includes('인천') || fullText.includes('굴업도') || fullText.includes('강화') || fullText.includes('옹진')) return { region: "서울/인천", cityName: "인천 옹진군" };
-      if (fullText.includes('제주') || fullText.includes('서귀포') || fullText.includes('한라산')) return { region: "제주", cityName: lat > 33.38 ? "제주 제주시" : "제주 서귀포시" };
-
-      if (fullText.includes('이천') || fullText.includes('마국산') || fullText.includes('원적산') || fullText.includes('설봉산') || fullText.includes('백족산')) return { region: "경기", cityName: "경기 이천시" };
-      if (fullText.includes('양평') || fullText.includes('추읍산') || fullText.includes('개군산') || fullText.includes('용문산')) return { region: "경기", cityName: "경기 양평군" };
-      if (fullText.includes('여주') || fullText.includes('자산') || fullText.includes('강천')) return { region: "경기", cityName: "경기 여주시" };
-      if (fullText.includes('남양주') || fullText.includes('예빈산') || fullText.includes('백봉산') || fullText.includes('운길산')) return { region: "경기", cityName: "경기 남양주시" };
-      if (fullText.includes('용인') || fullText.includes('시궁산') || fullText.includes('향수산')) return { region: "경기", cityName: "경기 용인시" };
-      if (fullText.includes('광주') && !fullText.includes('전남') && !fullText.includes('광주광역시')) return { region: "경기", cityName: "경기 광주시" };
-
-      if (fullText.includes('충주') || fullText.includes('호봉') || fullText.includes('고봉') || fullText.includes('계명산')) return { region: "충청", cityName: "충북 충주시" };
-      if (fullText.includes('괴산') || fullText.includes('연어봉')) return { region: "충청", cityName: "충북 괴산군" };
-      if (fullText.includes('문경') || fullText.includes('둔덕산')) return { region: "경상", cityName: "경북 문경시" };
-      if (fullText.includes('거창') || fullText.includes('망덕산')) return { region: "경상", cityName: "경남 거창군" };
-      if (fullText.includes('합천') || fullText.includes('대암산')) return { region: "경상", cityName: "경남 합천군" };
-      if (fullText.includes('간월재') || fullText.includes('신불산') || fullText.includes('영남알프스') || fullText.includes('울주')) return { region: "경상", cityName: "울산 울주군" };
-      if (fullText.includes('신안') || fullText.includes('비금도')) return { region: "전라", cityName: "전남 신안군" };
-      if (fullText.includes('선자령') || fullText.includes('대관령') || fullText.includes('평창')) return { region: "강원", cityName: "강원 평창군" };
-      if (fullText.includes('장산') || fullText.includes('영월')) return { region: "강원", cityName: "강원 영월군" };
-
-      if (lat < 33.6) return { region: "제주", cityName: lat > 33.38 ? "제주 제주시" : "제주 서귀포시" };
-      if ((lat >= 37.43 && lat <= 37.70 && lng >= 126.76 && lng <= 127.18) || (lng <= 126.65 && lat >= 37.0)) {
-        return { region: "서울/인천", cityName: lng <= 126.65 ? "인천 옹진군" : "서울" };
-      }
-      if (lat >= 37.05 && lng <= 127.80) return { region: "경기", cityName: "경기" };
-      if (lat >= 37.00 && lng > 127.80) return { region: "강원", cityName: "강원" };
-      if (lat >= 36.00 && lat < 37.05 && lng <= 127.90) return { region: "충청", cityName: "충청" };
-      if (lng > 127.90 && lat >= 35.00) return { region: "경상", cityName: "경상" };
-      if (lat < 36.00 && lng <= 127.90) return { region: "전라", cityName: "전라" };
-
-      return { region: "경기", cityName: "경기" };
-    }
-
-    async function getElevation(lat, lng) {
-      try {
-        const response = await fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`);
-        const data = await response.json();
-        if (data && data.results && data.results.length > 0) {
-          return `${Math.round(data.results[0].elevation)}m`;
-        }
-      } catch (err) {}
-      return '';
-    }
-
-    async function fetchElevationForModal() {
-      const inputEl = document.getElementById('modalInputElevation');
-      const lat = modalPendingData.lat;
-      const lng = modalPendingData.lng;
-      if (!lat || !lng || lat === 0) {
-        alert('지도에서 정확한 위치를 먼저 선택해주세요.');
-        return;
-      }
-      inputEl.value = '⛰️ 정밀 고도 측정 중...';
-      const elev = await getElevation(lat, lng);
-      inputEl.value = elev || '직접 입력 권장';
-    }
-
-    function getDroneBadgeHtml(status, reason) {
-      if (status === 'no') {
-        return `<div class="instant-tooltip-box" data-tooltip="사유: ${reason || '비행제한구역/국립공원'}"><span class="drone-badge drone-no">🔴 법정 비행금지</span></div>`;
-      } else if (status === 'warn') {
-        return `<div class="instant-tooltip-box" data-tooltip="비행은 자유로우나 영상 촬영 시 드론원스톱 승인 필요"><span class="drone-badge drone-warn">🟡 비행가능·촬영신청</span></div>`;
-      }
-      return `<div class="instant-tooltip-box" data-tooltip="지표면 150m 이하 비행 및 영상 촬영 자유"><span class="drone-badge drone-ok">🟢 비행·촬영 자유</span></div>`;
-    }
-
-    function getDistance(lat1, lng1, lat2, lng2) {
-      const R = 6371000;
-      const dLat = (lat2 - lat1) * Math.PI / 180;
-      const dLng = (lng2 - lng1) * Math.PI / 180;
-      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                Math.sin(dLng/2) * Math.sin(dLng/2);
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    }
-
-    function autoDetectDroneStatus(lat, lng) {
-      if (lat >= 37.88) return { status: 'no', reason: '휴전선 비행금지구역 (P-518)' };
-      for (const zone of restrictedZones) {
-        if (getDistance(lat, lng, zone.lat, zone.lng) <= zone.radius) return { status: 'no', reason: zone.name };
-      }
-      for (const park of nationalParks) {
-        if (getDistance(lat, lng, park.lat, park.lng) <= park.radius) return { status: 'no', reason: `${park.name} (자연공원법)` };
-      }
-      return { status: 'ok', reason: '자유 구역' };
-    }
-
-    function toggleDroneOverlay() {
-      isDroneOverlayOn = !isDroneOverlayOn;
-      const btn = document.getElementById('droneLayerBtn');
-      if (isDroneOverlayOn) {
-        btn.classList.add('active');
-        btn.innerText = '🛸 제한구역 끄기';
-        restrictedZones.forEach(z => {
-          droneOverlays.push(new naver.maps.Circle({ map, center: new naver.maps.LatLng(z.lat, z.lng), radius: z.radius, fillColor: '#dc2626', fillOpacity: 0.20, strokeColor: '#b91c1c', strokeWeight: 1.5 }));
-        });
-        nationalParks.forEach(p => {
-          droneOverlays.push(new naver.maps.Circle({ map, center: new naver.maps.LatLng(p.lat, p.lng), radius: p.radius, fillColor: '#f97316', fillOpacity: 0.22, strokeColor: '#ea580c', strokeWeight: 1.5 }));
-        });
-      } else {
-        btn.classList.remove('active');
-        btn.innerText = '🛸 드론촬영가능여부';
-        droneOverlays.forEach(overlay => overlay.setMap(null));
-        droneOverlays = [];
-      }
-    }
-
-    function filterByRegion(region) {
-      currentRegionFilter = region;
-      document.querySelectorAll('.region-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.innerText === (region === 'ALL' ? '전체' : region));
-      });
-      renderSpots();
-    }
-
-    window.addEventListener('keydown', function(e) {
-      if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
-      if (e.key.toUpperCase() === SHORTCUT_KEY && (!REQUIRE_SHIFT || e.shiftKey)) {
-        e.preventDefault();
-        toggleAdminMode();
-      }
-    });
 
     function getMediaLinksHtml(spot) {
       let html = '<div class="media-links-group">';
@@ -1957,7 +1439,7 @@
       const cList = spotComments[spotId] || [];
       let listHtml = '';
       if (cList.length === 0) {
-        listHtml = '<li style="color:#94a3b8; font-size:0.72rem;">첫 후기를 남겨보세요!</li>';
+        listHtml = '<li style="color:#94a3b8; font-size:0.68rem;">첫 후기를 남겨보세요!</li>';
       } else {
         cList.forEach((c, idx) => {
           listHtml += `
@@ -1972,12 +1454,12 @@
       return `
         <div class="comments-section" onclick="event.stopPropagation();">
           <div class="comments-title">
-            <span>💬 방문 후기 / 한줄평 (${cList.length})</span>
+            <span>💬 방문 후기 (${cList.length})</span>
           </div>
           <ul class="comments-list" id="commentList_${spotId}">${listHtml}</ul>
           <div class="comment-form">
             <input type="text" class="comment-input-author" id="cAuthor_${spotId}" placeholder="닉네임" />
-            <input type="text" class="comment-input-text" id="cText_${spotId}" placeholder="후기 작성..." onkeyup="if(event.keyCode===13) addComment('${spotId}')" />
+            <input type="text" class="comment-input-text" id="cText_${spotId}" placeholder="후기..." onkeyup="if(event.keyCode===13) addComment('${spotId}')" />
             <button type="button" class="comment-btn-submit" onclick="addComment('${spotId}')">등록</button>
           </div>
         </div>
@@ -1990,10 +1472,7 @@
       const author = authorEl.value.trim() || '익명';
       const text = textEl.value.trim();
 
-      if (!text) {
-        alert('후기 내용을 입력해주세요.');
-        return;
-      }
+      if (!text) return alert('후기 내용을 입력해주세요.');
 
       if (!spotComments[spotId]) spotComments[spotId] = [];
       spotComments[spotId].push({
@@ -2054,10 +1533,11 @@
           map.panTo(pos);
           const targetMarker = currentMarkers[spots.findIndex(s => String(s.id) === String(item.id))];
           infoWindow.setContent(`
-            <div class="compact-info-window" style="position: relative; padding-right: 20px;">
-              <div class="compact-title">${item.name} ${item.elevation ? `<span style="font-size:0.8rem; color:#15803d;">(${item.elevation})</span>` : ''}</div>
-              <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 8px; right: 8px; background: #e2e8f0; border: none; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; cursor: pointer; font-weight: bold; color: #334155;">✕</button>
+            <div class="compact-info-window" style="position: relative; padding-right: 18px;">
+              <div class="compact-title">${item.name} ${item.elevation ? '<span style="font-size:0.75rem; color:#15803d;">(' + item.elevation + ')</span>' : ''}</div>
+              <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 6px; right: 6px; background: #e2e8f0; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #334155;">✕</button>
               ${getMetaBadgesHtml(item)}
+              <div class="spot-coords-text">📍 ${item.lat}, ${item.lng}</div>
               <div class="compact-entry">🚗 들머리:\n${item.entryPoint}</div>
               <div class="compact-desc">📝 특징:\n${item.desc}</div>
               ${getMediaLinksHtml(item)}
@@ -2077,7 +1557,10 @@
       else if (!e.target.value.trim()) showTopRankings();
     }
 
-    function renderSpots() {
+    // =========================================================================
+    // 📋 [박지 목록 렌더링: ㄱㄴㄷ 정렬 + 폴더 열림 유지]
+    // =========================================================================
+    function renderSpots(forceOpenRegion = null) {
       const openedRegions = new Set();
       document.querySelectorAll('.region-group').forEach(group => {
         const titleEl = group.querySelector('.region-group-title span:first-child');
@@ -2086,6 +1569,9 @@
           openedRegions.add(titleEl.innerText.replace('📌', '').trim());
         }
       });
+      if (forceOpenRegion) {
+        openedRegions.add(forceOpenRegion);
+      }
 
       currentMarkers.forEach(m => m.setMap(null));
       currentMarkers = [];
@@ -2098,7 +1584,11 @@
       const grouped = {};
       targetOrder.forEach(r => grouped[r] = []);
 
-      spots.forEach((spot, index) => {
+      // 1. 박지 가나다(ㄱㄴㄷ) 순차 정렬
+      spots.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+
+      // 2. 지역별 데이터 분류
+      spots.forEach((spot) => {
         if (!spot.region || !spot.cityName) {
           const res = detectRegionAndCity(spot.lat, spot.lng, spot.name, spot.entryPoint);
           if (!spot.region) spot.region = res.region;
@@ -2107,47 +1597,10 @@
 
         const r = spot.region || '경기';
         if (!grouped[r]) grouped[r] = [];
-        grouped[r].push({ spot, index });
-
-        const position = new naver.maps.LatLng(spot.lat, spot.lng);
-        const marker = new naver.maps.Marker({ position, map, title: spot.name, draggable: isAdminMode });
-        currentMarkers.push(marker);
-
-        naver.maps.Event.addListener(marker, 'dragend', function() {
-          if (!isAdminMode) return;
-          const movedLatLng = marker.getPosition();
-          spot.lat = movedLatLng.lat();
-          spot.lng = movedLatLng.lng();
-          localStorage.setItem('okbm_spots', JSON.stringify(spots));
-        });
-
-        const check = autoDetectDroneStatus(spot.lat, spot.lng);
-        const droneTag = getDroneBadgeHtml(check.status, check.reason);
-        const metaBadgesHtml = getMetaBadgesHtml(spot);
-        const mediaLinksHtml = getMediaLinksHtml(spot);
-        const commentsHtml = getCommentsHtml(spot.id);
-
-        const contentString = `
-          <div class="compact-info-window" style="position: relative; padding-right: 20px;">
-            <div class="compact-title">${spot.name} ${spot.elevation ? `<span style="font-size:0.8rem; color:#15803d;">(${spot.elevation})</span>` : ''}</div>
-            <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 8px; right: 8px; background: #e2e8f0; border: none; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; cursor: pointer; font-weight: bold; color: #334155; display: flex; align-items: center; justify-content: center;">✕</button>
-            ${metaBadgesHtml}
-            <div class="compact-entry">🚗 들머리:\n${spot.entryPoint}</div>
-            <div class="compact-desc">📝 특징:\n${spot.desc}</div>
-            ${mediaLinksHtml}
-            <div style="margin-top:2px;">${droneTag}</div>
-            ${commentsHtml}
-          </div>
-        `;
-
-        naver.maps.Event.addListener(marker, 'click', () => {
-          incrementSpotCount(spot.id, spot.name);
-          infoWindow.setContent(contentString);
-          infoWindow.open(map, marker);
-          map.panTo(position);
-        });
+        grouped[r].push(spot);
       });
 
+      // 3. 지역 그룹 및 박지 카드/마커 렌더링
       targetOrder.forEach(regionKey => {
         const items = grouped[regionKey];
         if (!items || items.length === 0) return;
@@ -2174,24 +1627,69 @@
           groupTitle.style.borderLeftColor = isClosed ? '#0f766e' : 'transparent';
         });
 
-        items.forEach(({ spot, index }) => {
+        items.forEach((spot) => {
+          const position = new naver.maps.LatLng(spot.lat, spot.lng);
+          const marker = new naver.maps.Marker({ position, map, title: spot.name, draggable: isAdminMode });
+          currentMarkers.push(marker);
+
+          naver.maps.Event.addListener(marker, 'dragend', function() {
+            if (!isAdminMode) return;
+            const movedLatLng = marker.getPosition();
+            const newLat = parseFloat(movedLatLng.lat().toFixed(6));
+            const newLng = parseFloat(movedLatLng.lng().toFixed(6));
+
+            const dragConfirmHtml = `
+              <div class="compact-info-window" style="position: relative; padding-right: 10px;">
+                <div class="compact-title" style="color:#0f766e;">📍 '${spot.name}' 위치 이동</div>
+                <div style="font-size:0.72rem; color:#ef4444; font-weight:bold;">새 좌표로 위치를 변경하시겠습니까?</div>
+                <div class="spot-coords-text">위도: ${newLat}<br>경도: ${newLng}</div>
+                <button type="button" class="btn-save-location" onclick="saveUpdatedLocation('${spot.id}', ${newLat}, ${newLng})">💾 이 위치로 즉시 저장</button>
+              </div>
+            `;
+            infoWindow.setContent(dragConfirmHtml);
+            infoWindow.open(map, marker);
+          });
+
           const check = autoDetectDroneStatus(spot.lat, spot.lng);
           const droneTag = getDroneBadgeHtml(check.status, check.reason);
           const metaBadgesHtml = getMetaBadgesHtml(spot);
           const mediaLinksHtml = getMediaLinksHtml(spot);
+          const commentsHtml = getCommentsHtml(spot.id);
+
+          const contentString = `
+            <div class="compact-info-window" style="position: relative; padding-right: 18px;">
+              <div class="compact-title">${spot.name} ${spot.elevation ? '<span style="font-size:0.75rem; color:#15803d;">(' + spot.elevation + ')</span>' : ''}</div>
+              <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 6px; right: 6px; background: #e2e8f0; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #334155;">✕</button>
+              ${metaBadgesHtml}
+              <div class="spot-coords-text">📍 위도: ${spot.lat}, 경도: ${spot.lng}</div>
+              <div class="compact-entry">🚗 들머리:\n${spot.entryPoint}</div>
+              <div class="compact-desc">📝 특징:\n${spot.desc}</div>
+              ${mediaLinksHtml}
+              <div style="margin-top:2px;">${droneTag}</div>
+              ${commentsHtml}
+            </div>
+          `;
+
+          naver.maps.Event.addListener(marker, 'click', () => {
+            incrementSpotCount(spot.id, spot.name);
+            infoWindow.setContent(contentString);
+            infoWindow.open(map, marker);
+            map.panTo(position);
+          });
 
           const li = document.createElement('div');
           li.className = 'spot-item';
           li.innerHTML = `
-            <div class="spot-header-row"><span class="spot-name">${spot.name} ${spot.elevation ? `<span style="font-size:0.76rem; color:#15803d; font-weight:normal;">(${spot.elevation})</span>` : ''}</span></div>
+            <div class="spot-header-row"><span class="spot-name">${spot.name} ${spot.elevation ? `<span style="font-size:0.74rem; color:#15803d; font-weight:normal;">(${spot.elevation})</span>` : ''}</span></div>
             ${metaBadgesHtml}
+            <div class="spot-coords-text">📍 ${spot.lat}, ${spot.lng}</div>
             <div class="spot-entry">🚗 들머리:\n${spot.entryPoint}</div>
             <div class="spot-desc">📝 특징:\n${spot.desc}</div>
             ${mediaLinksHtml}
             <div class="drone-badge-container">${droneTag}</div>
             <div class="spot-action-btns">
-              <button class="btn-edit" onclick="editSpot(event, ${index})">수정</button>
-              <button class="btn-del" onclick="deleteSpot(event, ${index})">삭제</button>
+              <button class="btn-edit" onclick="editSpotById(event, '${spot.id}')">수정</button>
+              <button class="btn-del" onclick="deleteSpotById(event, '${spot.id}')">삭제</button>
             </div>
           `;
 
@@ -2200,19 +1698,8 @@
             const pos = new naver.maps.LatLng(spot.lat, spot.lng);
             map.setZoom(15);
             map.panTo(pos);
-            infoWindow.setContent(`
-              <div class="compact-info-window" style="position: relative; padding-right: 20px;">
-                <div class="compact-title">${spot.name} ${spot.elevation ? `<span style="font-size:0.8rem; color:#15803d;">(${spot.elevation})</span>` : ''}</div>
-                <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 8px; right: 8px; background: #e2e8f0; border: none; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; cursor: pointer; font-weight: bold; color: #334155;">✕</button>
-                ${metaBadgesHtml}
-                <div class="compact-entry">🚗 들머리:\n${spot.entryPoint}</div>
-                <div class="compact-desc">📝 특징:\n${spot.desc}</div>
-                ${mediaLinksHtml}
-                <div style="margin-top:2px;">${droneTag}</div>
-                ${getCommentsHtml(spot.id)}
-              </div>
-            `);
-            infoWindow.open(map, currentMarkers[index]);
+            infoWindow.setContent(contentString);
+            infoWindow.open(map, marker);
           });
 
           groupItemsContainer.appendChild(li);
@@ -2224,6 +1711,18 @@
       });
 
       updateAdminUI();
+    }
+
+    function editSpotById(event, spotId) {
+      event.stopPropagation();
+      const idx = spots.findIndex(s => String(s.id) === String(spotId));
+      if (idx !== -1) openEditModal(idx);
+    }
+
+    function deleteSpotById(event, spotId) {
+      event.stopPropagation();
+      const idx = spots.findIndex(s => String(s.id) === String(spotId));
+      if (idx !== -1) deleteSpot(event, idx);
     }
 
     function executeSearch() {
@@ -2339,7 +1838,10 @@
       document.getElementById('customModalOverlay').style.display = 'none';
     }
 
-    function saveCustomModal() {
+    // =========================================================================
+    // 💾 수동 모달 등록 / 수정 저장
+    // =========================================================================
+    async function saveCustomModal() {
       const name = document.getElementById('modalInputName').value.trim();
       const elevation = document.getElementById('modalInputElevation').value.trim();
       const entryPoint = document.getElementById('modalInputEntry').value.trim() || '들머리 정보 미입력';
@@ -2361,7 +1863,7 @@
       if (modalMode === 'ADD') {
         const res = detectRegionAndCity(modalPendingData.lat, modalPendingData.lng, name, entryPoint);
         const newSpot = {
-          id: Date.now(),
+          id: String(Date.now()),
           name, elevation, entryPoint,
           lat: modalPendingData.lat, lng: modalPendingData.lng,
           region: res.region, cityName: res.cityName,
@@ -2371,11 +1873,24 @@
           searchCount: 1
         };
         spots.unshift(newSpot);
-        localStorage.setItem('okbm_spots', JSON.stringify(spots));
         renderSpots();
+        
         const pos = new naver.maps.LatLng(newSpot.lat, newSpot.lng);
         map.setZoom(15);
         map.panTo(pos);
+
+        try {
+          await fetch(GAS_API_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'ADD', spot: newSpot })
+          });
+          alert(`✅ '${newSpot.name}' 박지가 구글 시트에 등록되었습니다.`);
+        } catch (err) {
+          console.warn('구글 시트 저장 통신 실패:', err);
+        }
+
       } else if (modalMode === 'EDIT') {
         const target = spots[modalEditIndex];
         const res = detectRegionAndCity(target.lat, target.lng, name, entryPoint);
@@ -2391,8 +1906,25 @@
         target.difficulty = difficulty;
         target.region = res.region;
         target.cityName = res.cityName;
-        localStorage.setItem('okbm_spots', JSON.stringify(spots));
+
         renderSpots();
+
+        try {
+          await fetch(GAS_API_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ 
+              action: 'UPDATE', 
+              id: target.id, 
+              spot: target 
+            })
+          });
+          alert(`✅ '${target.name}'의 수정사항이 구글 시트에 완벽히 반영되었습니다.`);
+        } catch (err) {
+          console.warn('구글 시트 수정 전송 실패:', err);
+          alert('구글 시트 업데이트 전송 실패');
+        }
       }
       closeCustomModal();
     }
@@ -2419,42 +1951,142 @@
       openEditModal(index);
     }
 
-    // 구글 Apps Script 웹 앱 연동 URL
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxnaOTXg9vYVdZHJFxlo7bbtnZzKInBmqBN84-RtoFBkrGJZl3b4h3BF4V0vhdvFrK2/exec';
-
-// 웹에서 삭제 시 구글 시트에서도 실시간 영구 삭제되는 함수
-async function deleteSpot(event, index) {
-  event.stopPropagation();
-  const targetSpot = spots[index];
-  
-  if (!confirm(`'${targetSpot.name}' 박지를 정말 삭제하시겠습니까?\n(구글 시트에서도 영구 삭제됩니다)`)) {
-    return;
-  }
-
-  const deletedId = targetSpot.id;
-  
-  // 1. 화면에서 즉시 제거
-  spots.splice(index, 1);
-  delete spotComments[deletedId];
-  localStorage.setItem('okbm_spots', JSON.stringify(spots));
-  localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
-  infoWindow.close();
-  renderSpots();
-
-  // 2. 구글 시트로 삭제 명령 전송
-  try {
-    await fetch(GAS_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'DELETE', id: deletedId })
-    });
-    alert(`'${targetSpot.name}' 박지가 구글 시트에서 영구 삭제되었습니다.`);
-  } catch (err) {
-    console.warn('구글 시트 삭제 통신 실패:', err);
-  }
-}
+    async function deleteSpot(event, index) {
+      event.stopPropagation();
+      const targetSpot = spots[index];
       
-    
+      if (!confirm(`'${targetSpot.name}' 박지를 정말 삭제하시겠습니까?\n(구글 시트에서도 영구 삭제됩니다)`)) {
+        return;
+      }
+
+      const deletedId = targetSpot.id;
+      const deletedName = targetSpot.name;
+      
+      spots.splice(index, 1);
+      delete spotComments[deletedId];
+      localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
+      infoWindow.close();
+      renderSpots();
+
+      try {
+        await fetch(GAS_API_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'DELETE', id: deletedId, name: deletedName })
+        });
+        alert(`'${deletedName}' 박지가 구글 시트에서 삭제되었습니다.`);
+      } catch (err) {
+        console.warn('구글 시트 삭제 통신 실패:', err);
+      }
+    }
+
+    // =========================================================================
+    // 🗺️ 지도 뷰 초기화 및 필터, 드론 오버레이 기능 (국립공원 빨간색 금지구역 적용)
+    // =========================================================================
+    function resetMapView() {
+      map.setCenter(DEFAULT_MAP_CENTER);
+      map.setZoom(DEFAULT_MAP_ZOOM);
+      infoWindow.close();
+      if (tempSearchMarker) {
+        tempSearchMarker.setMap(null);
+        tempSearchMarker = null;
+      }
+      filterByRegion('ALL');
+    }
+
+    function filterByRegion(region) {
+      currentRegionFilter = region;
+      document.querySelectorAll('.region-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.innerText.trim() === (region === 'ALL' ? '전체' : region));
+      });
+      renderSpots();
+    }
+
+    function toggleDroneOverlay() {
+      isDroneOverlayOn = !isDroneOverlayOn;
+      const btn = document.getElementById('droneLayerBtn');
+      btn.classList.toggle('active', isDroneOverlayOn);
+
+      if (!isDroneOverlayOn) {
+        droneOverlays.forEach(o => o.setMap(null));
+        droneOverlays = [];
+        return;
+      }
+
+      // 비행제한구역 및 군사/원전 구역
+      restrictedZones.forEach(zone => {
+        const circle = new naver.maps.Circle({
+          map: map,
+          center: new naver.maps.LatLng(zone.lat, zone.lng),
+          radius: zone.radius,
+          fillColor: zone.type === 'nuke' || zone.name.includes('P-73') ? '#ef4444' : '#f59e0b',
+          fillOpacity: 0.18,
+          strokeColor: zone.type === 'nuke' || zone.name.includes('P-73') ? '#dc2626' : '#d97706',
+          strokeWeight: 1.5
+        });
+        droneOverlays.push(circle);
+      });
+
+      // 🔴 국립공원: 비행/촬영 금지구역 (빨간색 오버레이로 수정)
+      nationalParks.forEach(park => {
+        const circle = new naver.maps.Circle({
+          map: map,
+          center: new naver.maps.LatLng(park.lat, park.lng),
+          radius: park.radius,
+          fillColor: '#ef4444',
+          fillOpacity: 0.2,
+          strokeColor: '#dc2626',
+          strokeWeight: 1.5
+        });
+        droneOverlays.push(circle);
+      });
+    }
+
+    function toggleMobileSidebar() {
+      isSidebarCollapsed = !isSidebarCollapsed;
+      const sidebar = document.getElementById('sidebar');
+      const btn = document.getElementById('bottomToggleBtn');
+      if (isSidebarCollapsed) {
+        sidebar.classList.add('collapsed');
+        btn.innerText = '▲ 박지 목록 열기';
+      } else {
+        sidebar.classList.remove('collapsed');
+        btn.innerText = '▼ 박지 목록 닫기';
+      }
+    }
+
+    // 백업/복원
+    function exportDataBackup() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(spots, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `okbm_spots_backup_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importDataBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            spots = imported;
+            renderSpots();
+            alert('데이터가 성공적으로 복원되었습니다.');
+          } else {
+            alert('유효하지 않은 백업 파일입니다.');
+          }
+        } catch (err) {
+          alert('JSON 파일 파싱 실패');
+        }
+      };
+      reader.readAsText(file);
+    }
 
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.search-container') && !e.target.closest('.custom-modal-overlay')) {
@@ -2462,7 +2094,7 @@ async function deleteSpot(event, index) {
       }
     });
 
-    // 시작 시 구글 시트 동기화 시도 및 로컬 렌더링
+    // 시작 시 구글 시트에서만 실시간 로드
     fetchSpotsFromGoogleSheet();
   </script>
 </body>
