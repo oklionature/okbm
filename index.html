@@ -311,14 +311,15 @@
     }
     .region-group-title:hover { background-color: #f1f5f9; border-left-color: #0f766e; }
 
+    /* 목록 카드 스타일 (간소화 및 1줄 특징 요약) */
     .spot-item {
-      padding: 12px 14px;
+      padding: 10px 14px;
       border-bottom: 1px solid #f1f5f9;
       cursor: pointer;
       position: relative;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 4px;
       background: #ffffff;
     }
     .spot-item:hover { background-color: #f8fafc; }
@@ -372,25 +373,15 @@
       font-weight: 800;
     }
 
-    .spot-entry {
-      font-size: 0.78rem;
-      color: #0284c7;
-      background: #f0f9ff;
-      padding: 3px 6px;
-      border-radius: 4px;
-      border: 1px solid #e0f2fe;
-      display: inline-block;
-      width: fit-content;
-      font-weight: 500;
-      white-space: pre-line;
-      line-height: 1.35;
-    }
-    .spot-desc {
-      font-size: 0.78rem;
+    /* 📝 특징 1줄 말줄임표 처리 */
+    .spot-desc-single {
+      font-size: 0.76rem;
       color: #475569;
-      line-height: 1.4;
-      word-break: keep-all;
-      white-space: pre-line;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+      line-height: 1.3;
     }
 
     .spot-coords-text {
@@ -522,8 +513,8 @@
 
     .spot-action-btns {
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: 8px;
+      right: 8px;
       display: flex;
       gap: 3px;
     }
@@ -596,6 +587,7 @@
       text-align: center;
     }
 
+    /* 댓글 영역 스타일 */
     .comments-section {
       margin-top: 5px;
       border-top: 1px dashed #cbd5e1;
@@ -612,7 +604,7 @@
     }
     .comments-list {
       list-style: none;
-      max-height: 80px;
+      max-height: 85px;
       overflow-y: auto;
       margin-bottom: 5px;
       display: flex;
@@ -633,8 +625,6 @@
     .comment-author { font-weight: 700; color: #0f766e; white-space: nowrap; }
     .comment-rating-stars { color: #f59e0b; font-size: 0.65rem; white-space: nowrap; }
     .comment-text { color: #334155; word-break: break-all; flex: 1; }
-    .comment-del-btn { color: #94a3b8; border: none; background: none; cursor: pointer; font-size: 0.65rem; margin-left: 2px; }
-    .comment-del-btn:hover { color: #ef4444; }
     
     .comment-form { display: flex; flex-direction: column; gap: 3px; }
     .comment-form-row { display: flex; gap: 3px; }
@@ -717,7 +707,6 @@
       cursor: pointer;
     }
 
-    /* 📱 모바일 환경 최적화: 지도는 100% 고정, 목록만 슬라이딩 바텀시트로 동작 */
     @media (max-width: 768px) {
       .header { height: auto; flex-direction: column; align-items: stretch; padding: 8px 10px; gap: 6px; }
       .header-left { justify-content: space-between; }
@@ -734,7 +723,6 @@
         overflow: hidden;
       }
       
-      /* 🎯 지도는 화면 전체에 고정 (목록이 열려도 흔들리지 않음) */
       #map { 
         position: absolute !important;
         top: 0; left: 0; right: 0; bottom: 0;
@@ -743,7 +731,6 @@
         z-index: 100;
       }
 
-      /* 🎯 사이드바(목록)는 지도 위에서 2/3 높이로 스르륵 오르내림 */
       .sidebar { 
         position: absolute;
         top: 0; left: 0; right: 0;
@@ -756,7 +743,6 @@
         transform: translateY(0);
       }
       
-      /* 🎯 접었을 때는 지도를 전혀 가리지 않고 깔끔하게 숨김 */
       .sidebar.collapsed { 
         transform: translateY(-120%) !important;
       }
@@ -795,7 +781,7 @@
         <a id="sheetEditLink" href="#" target="_blank" class="sheet-edit-link">📊 구글 시트 편집</a>
       </div>
 
-      <!-- 관리자 모드 툴바 -->
+      <!-- 관리자 툴바 -->
       <div class="admin-data-tools" id="adminDataTools">
         <button type="button" class="admin-tool-btn btn-ai-highlight" onclick="openBulkImportModal()">⚡ AI 요약 일괄 등록</button>
         <button type="button" class="admin-tool-btn" onclick="exportDataBackup()">💾 백업</button>
@@ -823,7 +809,7 @@
     ▼ 박지 목록 닫기
   </button>
 
-  <!-- 1. [AI 요약/JSON 파일 일괄 등록 모달] -->
+  <!-- AI 등록 모달 -->
   <div class="custom-modal-overlay" id="bulkImportModalOverlay">
     <div class="custom-modal" style="width: 500px;">
       <h3 style="display:flex; align-items:center; gap:6px;">⚡ AI 요약 / JSON 내용으로 일괄 등록</h3>
@@ -845,7 +831,7 @@
     </div>
   </div>
 
-  <!-- 2. 개별 수동 등록/수정 모달 -->
+  <!-- 개별 수동 등록 모달 -->
   <div class="custom-modal-overlay" id="customModalOverlay">
     <div class="custom-modal">
       <h3 id="modalTitle">박지 등록</h3>
@@ -929,12 +915,12 @@
     // =========================================================================
     const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
     const GOOGLE_SHEET_GID = '0';
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzfMri14C54nWcm-3iNNQBOFkaL0QyIHsL7x_VR4_HlRL0d3yPPSjqJA-29TYKU9Gpt/exec';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyrGW_Jn7lDIrZJWbCb84Wg5QMCGNvOBQSR5rtzKaqFrViubTdpfsvegZU8lbVcQDTT/exec';
 
     const DEFAULT_MAP_CENTER = new naver.maps.LatLng(36.5, 127.8);
     const DEFAULT_MAP_ZOOM   = 8;
 
-    // 1. [비행제한구역 48개소 (접경선/전방 군부대 팩트체크)]
+    // 1. [비행제한구역 48개소]
     const restrictedZones = [
       { name: "P-518 북방 비행금지구역 (철원/화천 전방 접경선)", lat: 38.2500, lng: 127.5000, radius: 25000, type: "border" },
       { name: "P-518 북방 비행금지구역 (양구/인제 전방 접경선)", lat: 38.2800, lng: 128.0500, radius: 25000, type: "border" },
@@ -986,7 +972,7 @@
       { name: "제주국제공항 관제권", lat: 33.5113, lng: 126.4930, radius: 9300, type: "air" }
     ];
 
-    // 2. [국립공원 18개소 - 비행금지구역]
+    // 2. [국립공원 22개소]
     const nationalParks = [
       { name: "설악산국립공원", lat: 38.1190, lng: 128.4650, radius: 14000 },
       { name: "오대산국립공원", lat: 37.7950, lng: 128.6180, radius: 12000 },
@@ -1005,7 +991,11 @@
       { name: "무등산국립공원", lat: 35.1400, lng: 127.0000, radius: 6500 },
       { name: "월출산국립공원", lat: 34.7600, lng: 126.7000, radius: 5500 },
       { name: "변산반도국립공원", lat: 35.6800, lng: 126.5650, radius: 8000 },
-      { name: "한라산국립공원", lat: 33.3600, lng: 126.5350, radius: 11000 }
+      { name: "한라산국립공원", lat: 33.3600, lng: 126.5350, radius: 11000 },
+      { name: "경주국립공원", lat: 35.7925, lng: 129.2310, radius: 8000 },
+      { name: "태안해안국립공원", lat: 36.7580, lng: 126.1320, radius: 15000 },
+      { name: "다도해해상국립공원", lat: 34.6180, lng: 126.0250, radius: 25000 },
+      { name: "한려해상국립공원", lat: 34.8020, lng: 128.4230, radius: 22000 }
     ];
 
     let spots = [];
@@ -1040,9 +1030,6 @@
 
     document.getElementById('sheetEditLink').href = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/edit`;
 
-    // =========================================================================
-    // 🌐 [거리 계산 및 드론 규제 구역 자동 정밀 판별 함수]
-    // =========================================================================
     function getDistanceMeters(lat1, lon1, lat2, lon2) {
       const R = 6371000;
       const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -1054,7 +1041,7 @@
     }
 
     function autoDetectDroneStatus(lat, lng) {
-      if (!lat || !lng) return { status: 'ok', reason: '자유 비행 구역 (150m 고도제한 준수 / 항공촬영 시 사전허가 권장)' };
+      if (!lat || !lng) return { status: 'ok', reason: '자유 비행 구역 (150m 고도제한 준수 / 촬영 시 원스톱 허가 권장)' };
 
       for (const park of nationalParks) {
         if (getDistanceMeters(lat, lng, park.lat, park.lng) <= park.radius) {
@@ -1152,15 +1139,11 @@
       document.getElementById('modalInputElevation').value = elev;
     }
 
-    // =========================================================================
-    // 🎯 [팝업창 정중앙 자동 이동 헬퍼]
-    // =========================================================================
     function centerMapOnSpot(lat, lng) {
       const isMobile = window.innerWidth <= 768;
       const zoomLevel = 15;
       map.setZoom(zoomLevel);
       
-      // 모바일에서는 팝업창 높이와 하단 여백을 고려하여 살짝 북쪽으로 중심을 오프셋
       if (isMobile) {
         const centerLat = lat + 0.0035; 
         map.panTo(new naver.maps.LatLng(centerLat, lng));
@@ -1169,9 +1152,6 @@
       }
     }
 
-    // =========================================================================
-    // ⚡ [위치 저장 함수]
-    // =========================================================================
     async function saveUpdatedLocation(spotId, newLat, newLng) {
       const targetSpot = spots.find(s => String(s.id) === String(spotId));
       if (!targetSpot) {
@@ -1227,9 +1207,6 @@
       });
     }
 
-    // =========================================================================
-    // ⚡ [AI 요약 / JSON 일괄 등록]
-    // =========================================================================
     function openBulkImportModal() {
       if (!isAdminMode) return;
       document.getElementById('bulkImportTextarea').value = '';
@@ -1280,7 +1257,10 @@
       try {
         const parsed = JSON.parse(rawText);
         if (Array.isArray(parsed)) itemsToProcess = parsed;
-        else if (typeof parsed === 'object') itemsToProcess = [parsed];
+        else if (typeof parsed === 'object') {
+          if (Array.isArray(parsed.spots)) itemsToProcess = parsed.spots;
+          else itemsToProcess = [parsed];
+        }
       } catch (err) {
         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
@@ -1385,7 +1365,24 @@
     }
 
     // =========================================================================
-    // 🚀 구글 스프레드시트 실시간 동기화
+    // 💬 [구글 시트 전체 댓글 실시간 동기화 함수]
+    // =========================================================================
+    async function fetchCommentsFromSheet() {
+      try {
+        const res = await fetch(`${GAS_API_URL}?action=GET_COMMENTS&_t=${Date.now()}`);
+        if (res.ok) {
+          const serverComments = await res.json();
+          spotComments = serverComments;
+          localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
+          renderSpots();
+        }
+      } catch (err) {
+        console.warn('댓글 동기화 실패:', err);
+      }
+    }
+
+    // =========================================================================
+    // 🚀 구글 스프레드시트 박지 데이터 로드
     // =========================================================================
     async function fetchSpotsFromGoogleSheet() {
       const badge = document.getElementById('syncStatusBadge');
@@ -1570,7 +1567,7 @@
     }
 
     // =========================================================================
-    // 💬 [5점 만점 평점 + 실시간/중복방지 댓글 시스템]
+    // 💬 [댓글 시스템]
     // =========================================================================
     function getCommentsHtml(spotId) {
       const cList = spotComments[spotId] || [];
@@ -1587,7 +1584,6 @@
                 <span class="comment-rating-stars">${stars}</span>: 
                 <span class="comment-text">${c.text}</span>
               </div>
-              <button type="button" class="comment-del-btn" onclick="deleteComment(event, '${spotId}', ${idx})">✕</button>
             </li>
           `;
         });
@@ -1621,7 +1617,7 @@
 
     let isCommentSubmitting = false;
 
-    function addComment(spotId) {
+    async function addComment(spotId) {
       if (isCommentSubmitting) return;
 
       const authorEl = document.getElementById(`cAuthor_${spotId}`);
@@ -1633,20 +1629,21 @@
       const text = textEl.value.trim();
       if (!text) return alert('후기 내용을 입력해주세요.');
 
-      const author = (authorEl && authorEl.value.trim()) ? authorEl.value.trim() : '익명';
+      const author = (authorEl && authorEl.value.trim()) ? authorEl.value.trim() : '백패커';
       const rating = ratingEl ? parseInt(ratingEl.value) : 5;
 
       isCommentSubmitting = true;
       if (submitBtn) submitBtn.disabled = true;
 
-      if (!spotComments[spotId]) spotComments[spotId] = [];
-      spotComments[spotId].push({
+      const newComment = {
         author: author,
         text: text,
         rating: rating,
         date: new Date().toLocaleDateString()
-      });
+      };
 
+      if (!spotComments[spotId]) spotComments[spotId] = [];
+      spotComments[spotId].push(newComment);
       localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
 
       const targetSpot = spots.find(s => String(s.id) === String(spotId));
@@ -1658,29 +1655,27 @@
       }
       renderSpots();
 
+      // 구글 시트에 서버 영구 저장 (모든 사람에게 공유)
+      try {
+        await fetch(GAS_API_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'ADD_COMMENT',
+            spotId: spotId,
+            comment: newComment
+          })
+        });
+      } catch (err) {
+        console.warn('댓글 서버 전송 실패:', err);
+      }
+
       setTimeout(() => {
         isCommentSubmitting = false;
         const newBtn = document.getElementById(`cBtnSubmit_${spotId}`);
         if (newBtn) newBtn.disabled = false;
       }, 300);
-    }
-
-    function deleteComment(event, spotId, cIndex) {
-      event.stopPropagation();
-      if (!confirm('이 후기를 삭제하시겠습니까?')) return;
-      if (spotComments[spotId]) {
-        spotComments[spotId].splice(cIndex, 1);
-        localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
-        
-        const targetSpot = spots.find(s => String(s.id) === String(spotId));
-        if (targetSpot) {
-          const markerIdx = spots.findIndex(s => String(s.id) === String(spotId));
-          const marker = currentMarkers[markerIdx];
-          infoWindow.setContent(generateInfoWindowHtml(targetSpot));
-          if (marker) infoWindow.open(map, marker);
-        }
-        renderSpots();
-      }
     }
 
     function generateInfoWindowHtml(spot) {
@@ -1798,19 +1793,19 @@
         if (!items || items.length === 0) return;
         if (currentRegionFilter !== 'ALL' && currentRegionFilter !== regionKey) return;
 
-        const isPreviouslyOpened = openedRegions.has(regionKey);
+        const shouldBeOpen = (currentRegionFilter === regionKey) || openedRegions.has(regionKey);
 
         const groupDiv = document.createElement('div');
         groupDiv.className = 'region-group';
 
         const groupTitle = document.createElement('div');
         groupTitle.className = 'region-group-title';
-        groupTitle.innerHTML = `<span>📌 ${regionKey}</span><span style="color:#64748b; font-size:0.75rem;">${items.length}개 ${isPreviouslyOpened ? '<b style="color:#0f766e;">▼</b>' : '▶'}</span>`;
-        if (isPreviouslyOpened) groupTitle.style.borderLeftColor = '#0f766e';
+        groupTitle.innerHTML = `<span>📌 ${regionKey}</span><span style="color:#64748b; font-size:0.75rem;">${items.length}개 ${shouldBeOpen ? '<b style="color:#0f766e;">▼</b>' : '▶'}</span>`;
+        if (shouldBeOpen) groupTitle.style.borderLeftColor = '#0f766e';
 
         const groupItemsContainer = document.createElement('div');
         groupItemsContainer.className = 'region-items-container';
-        groupItemsContainer.style.display = isPreviouslyOpened ? 'block' : 'none';
+        groupItemsContainer.style.display = shouldBeOpen ? 'block' : 'none';
 
         groupTitle.addEventListener('click', () => {
           const isClosed = groupItemsContainer.style.display === 'none';
@@ -1854,14 +1849,16 @@
             infoWindow.open(map, marker);
           });
 
+          const firstLineDesc = (spot.desc || '').split('\n')[0].trim();
+
           const li = document.createElement('div');
           li.className = 'spot-item';
           li.innerHTML = `
-            <div class="spot-header-row"><span class="spot-name">${spot.name} ${spot.elevation ? `<span style="font-size:0.74rem; color:#15803d; font-weight:normal;">(${spot.elevation})</span>` : ''}</span></div>
+            <div class="spot-header-row">
+              <span class="spot-name">${spot.name} ${spot.elevation ? `<span style="font-size:0.74rem; color:#15803d; font-weight:normal;">(${spot.elevation})</span>` : ''}</span>
+            </div>
             ${metaBadgesHtml}
-            <div class="spot-coords-text">📍 ${spot.lat}, ${spot.lng}</div>
-            <div class="spot-entry">🚗 들머리:\n${spot.entryPoint}</div>
-            <div class="spot-desc">📝 특징:\n${spot.desc}</div>
+            ${firstLineDesc ? `<div class="spot-desc-single" title="${spot.desc}">📝 ${firstLineDesc}</div>` : ''}
             ${mediaLinksHtml}
             <div class="drone-badge-container">${droneTag}</div>
             <div class="spot-action-btns">
@@ -1873,7 +1870,6 @@
           li.addEventListener('click', () => {
             incrementSpotCount(spot.id, spot.name);
             
-            // 모바일에서 목록 클릭 시 목록을 자동으로 아래로 접어 지도를 바로 보여줌
             if (window.innerWidth <= 768) {
               const sidebar = document.getElementById('sidebar');
               const btn = document.getElementById('bottomToggleBtn');
@@ -2021,9 +2017,6 @@
       document.getElementById('customModalOverlay').style.display = 'none';
     }
 
-    // =========================================================================
-    // 💾 수동 모달 등록 / 수정 저장
-    // =========================================================================
     async function saveCustomModal() {
       const name = document.getElementById('modalInputName').value.trim();
       const elevation = document.getElementById('modalInputElevation').value.trim();
@@ -2056,7 +2049,7 @@
           searchCount: 1
         };
         spots.unshift(newSpot);
-        renderSpots();
+        renderSpots(newSpot.region);
         centerMapOnSpot(newSpot.lat, newSpot.lng);
 
         try {
@@ -2087,7 +2080,7 @@
         target.region = res.region;
         target.cityName = res.cityName;
 
-        renderSpots();
+        renderSpots(target.region);
 
         try {
           await fetch(GAS_API_URL, {
@@ -2103,7 +2096,6 @@
           alert(`✅ '${target.name}'의 수정사항이 구글 시트에 완벽히 반영되었습니다.`);
         } catch (err) {
           console.warn('구글 시트 수정 전송 실패:', err);
-          alert('구글 시트 업데이트 전송 실패');
         }
       }
       closeCustomModal();
@@ -2180,7 +2172,7 @@
       document.querySelectorAll('.region-btn').forEach(btn => {
         btn.classList.toggle('active', btn.innerText.trim() === (region === 'ALL' ? '전체' : region));
       });
-      renderSpots();
+      renderSpots(region !== 'ALL' ? region : null);
     }
 
     function toggleDroneOverlay() {
@@ -2235,7 +2227,6 @@
       }
     }
 
-    // 백업/복원
     function exportDataBackup() {
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(spots, null, 2));
       const downloadAnchor = document.createElement('a');
@@ -2257,6 +2248,14 @@
             spots = imported;
             renderSpots();
             alert('데이터가 성공적으로 복원되었습니다.');
+          } else if (imported && Array.isArray(imported.spots)) {
+            spots = imported.spots;
+            if (imported.comments) {
+              spotComments = imported.comments;
+              localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
+            }
+            renderSpots();
+            alert('데이터가 성공적으로 복원되었습니다.');
           } else {
             alert('유효하지 않은 백업 파일입니다.');
           }
@@ -2273,8 +2272,9 @@
       }
     });
 
-    // 시작 시 구글 시트에서만 실시간 로드
+    // 시작 시 시트에서 박지 및 댓글 실시간 로드
     fetchSpotsFromGoogleSheet();
+    fetchCommentsFromSheet();
   </script>
 </body>
 </html>
