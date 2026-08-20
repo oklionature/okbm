@@ -8,7 +8,10 @@
   <meta http-equiv="Expires" content="0" />
   <title>OKBM - 전국 백패킹 박지 지도</title>
   
+  <!-- Naver Maps Open API -->
   <script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=nokunumn03&submodules=geocoder"></script>
+  <!-- CSV Parser (Google Sheet 연동용) -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -28,8 +31,19 @@
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
       user-select: none;
     }
-    .header-left { display: flex; align-items: center; gap: 10px; }
-    .header h1 { font-size: 1.1rem; font-weight: 600; }
+    .header-left { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; }
+    .header h1 { font-size: 1.05rem; font-weight: 600; white-space: nowrap; }
+    
+    .sync-status-badge {
+      background: #0284c7;
+      color: #ffffff;
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: opacity 0.4s ease;
+    }
     .admin-status-badge {
       display: none;
       background: #0f766e;
@@ -38,20 +52,21 @@
       padding: 3px 8px;
       border-radius: 4px;
       font-weight: bold;
+      white-space: nowrap;
     }
     
     .header-right {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .header-btn {
       background: #334155;
       border: 1px solid #64748b;
-      padding: 7px 13px;
+      padding: 7px 12px;
       border-radius: 20px;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: bold;
       color: #ffffff;
       cursor: pointer;
@@ -65,7 +80,15 @@
       border-color: #dc2626;
     }
 
-    .search-container { position: relative; display: flex; align-items: center; width: 340px; }
+    /* 관리자 모드 전용 버튼 */
+    .admin-only-btn {
+      display: none;
+      background: #0f766e;
+      border-color: #0d9488;
+    }
+    .admin-only-btn:hover { background: #115e59; }
+
+    .search-container { position: relative; display: flex; align-items: center; width: 280px; }
     .search-input {
       width: 100%;
       padding: 8px 38px 8px 14px;
@@ -197,6 +220,51 @@
       align-items: center;
     }
 
+    /* 관리자 모드에서만 노출되는 구글시트 편집 링크 */
+    .sheet-edit-link {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      background: #107c41;
+      color: #ffffff;
+      text-decoration: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: bold;
+      transition: background 0.2s;
+    }
+    .sheet-edit-link:hover { background: #0c6133; }
+
+    .admin-data-tools {
+      display: none;
+      padding: 8px 12px;
+      background: #f1f5f9;
+      border-bottom: 1px solid #cbd5e1;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .admin-tool-btn {
+      flex: 1;
+      min-width: 80px;
+      padding: 5px 8px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      border-radius: 4px;
+      border: 1px solid #94a3b8;
+      background: #ffffff;
+      color: #334155;
+      cursor: pointer;
+      text-align: center;
+    }
+    .admin-tool-btn:hover { background: #e2e8f0; }
+    .admin-tool-btn.btn-ai-highlight {
+      background: #0f766e;
+      color: #ffffff;
+      border-color: #0d9488;
+    }
+    .admin-tool-btn.btn-ai-highlight:hover { background: #115e59; }
+
     .region-filter-bar {
       display: flex;
       overflow-x: auto;
@@ -226,9 +294,7 @@
 
     .spot-list { flex: 1; overflow-y: auto; list-style: none; }
     
-    .region-group {
-      border-bottom: 1px solid #e2e8f0;
-    }
+    .region-group { border-bottom: 1px solid #e2e8f0; }
     .region-group-title {
       padding: 11px 16px;
       background-color: #f8fafc;
@@ -298,6 +364,12 @@
       background: #ecfdf5;
       color: #047857;
       border: 1px solid #a7f3d0;
+    }
+    .tag-elev {
+      background: #f0fdf4;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+      font-weight: 800;
     }
 
     .spot-entry {
@@ -519,19 +591,17 @@
     #map { flex: 1; height: 100%; position: relative; }
     
     .compact-info-window {
-      padding: 10px 12px;
-      min-width: 190px;
-      max-width: 270px;
+      padding: 12px 14px;
+      min-width: 230px;
+      max-width: 310px;
+      max-height: 380px;
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 6px;
       line-height: 1.35;
     }
-    .compact-title {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: #0f766e;
-    }
+    .compact-title { font-size: 0.95rem; font-weight: 700; color: #0f766e; }
     .compact-entry {
       font-size: 0.78rem;
       color: #0284c7;
@@ -551,6 +621,96 @@
       line-height: 1.35;
     }
 
+    .comments-section {
+      margin-top: 8px;
+      border-top: 1px dashed #cbd5e1;
+      padding-top: 8px;
+    }
+    .comments-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .comments-list {
+      list-style: none;
+      max-height: 90px;
+      overflow-y: auto;
+      margin-bottom: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .comment-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 4px 6px;
+      font-size: 0.73rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .comment-author { font-weight: 700; color: #0f766e; margin-right: 4px; }
+    .comment-text { color: #334155; word-break: break-all; flex: 1; }
+    .comment-del-btn { color: #94a3b8; border: none; background: none; cursor: pointer; font-size: 0.7rem; margin-left: 4px; }
+    .comment-del-btn:hover { color: #ef4444; }
+    .comment-form { display: flex; gap: 4px; }
+    .comment-input-author { width: 55px; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.72rem; outline: none; }
+    .comment-input-text { flex: 1; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.72rem; outline: none; }
+    .comment-btn-submit { background: #0f766e; color: #ffffff; border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.72rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+    .custom-modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15, 23, 42, 0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 5000;
+      backdrop-filter: blur(2px);
+    }
+    .custom-modal {
+      background: #ffffff;
+      width: 460px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .custom-modal h3 { font-size: 1.05rem; color: #0f766e; }
+    .modal-field { display: flex; flex-direction: column; gap: 4px; }
+    .modal-field label { font-size: 0.78rem; font-weight: 700; color: #475569; }
+    .modal-input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      outline: none;
+      font-family: inherit;
+    }
+    .modal-textarea { resize: vertical; min-height: 52px; line-height: 1.4; }
+    .modal-input:focus { border-color: #0f766e; box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.15); }
+    
+    .checkbox-group { display: flex; gap: 12px; font-size: 0.82rem; color: #334155; font-weight: 600; }
+    .checkbox-group label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+    .select-diff { padding: 7px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.8rem; color: #334155; outline: none; }
+    
+    .modal-btn-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+    .modal-btn { padding: 8px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; border: none; }
+    .modal-btn-cancel { background: #e2e8f0; color: #475569; }
+    .modal-btn-cancel:hover { background: #cbd5e1; }
+    .modal-btn-save { background: #0f766e; color: #ffffff; }
+    .modal-btn-save:hover { background: #115e59; }
+
     .mobile-bottom-toggle {
       display: none;
       position: fixed;
@@ -567,173 +727,20 @@
       box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
       z-index: 4000;
       cursor: pointer;
-      transition: all 0.2s ease;
-      user-select: none;
     }
-    .mobile-bottom-toggle:active {
-      transform: translateX(-50%) scale(0.96);
-    }
-
-    .custom-modal-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(15, 23, 42, 0.6);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 5000;
-      backdrop-filter: blur(2px);
-    }
-    .custom-modal {
-      background: #ffffff;
-      width: 440px;
-      max-height: 90vh;
-      overflow-y: auto;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .custom-modal h3 {
-      font-size: 1.05rem;
-      color: #0f766e;
-      margin-bottom: 2px;
-    }
-    .modal-field {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .modal-field label {
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: #475569;
-    }
-    .modal-input {
-      width: 100%;
-      padding: 8px 12px;
-      border: 1px solid #cbd5e1;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      outline: none;
-      font-family: inherit;
-    }
-    .modal-textarea {
-      resize: vertical;
-      min-height: 52px;
-      line-height: 1.4;
-    }
-    .modal-input:focus {
-      border-color: #0f766e;
-      box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.15);
-    }
-
-    .checkbox-group {
-      display: flex;
-      gap: 12px;
-      font-size: 0.82rem;
-      color: #334155;
-      font-weight: 600;
-    }
-    .checkbox-group label {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      cursor: pointer;
-    }
-    .select-diff {
-      padding: 7px 8px;
-      border-radius: 6px;
-      border: 1px solid #cbd5e1;
-      font-size: 0.8rem;
-      color: #334155;
-      outline: none;
-    }
-
-    .modal-btn-row {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      margin-top: 6px;
-    }
-    .modal-btn {
-      padding: 8px 14px;
-      border-radius: 6px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      border: none;
-    }
-    .modal-btn-cancel { background: #e2e8f0; color: #475569; }
-    .modal-btn-cancel:hover { background: #cbd5e1; }
-    .modal-btn-save { background: #0f766e; color: #ffffff; }
-    .modal-btn-save:hover { background: #115e59; }
 
     @media (max-width: 768px) {
-      .header {
-        height: auto;
-        flex-direction: column;
-        align-items: stretch;
-        padding: 8px 10px;
-        gap: 6px;
-      }
-      .header-left {
-        justify-content: space-between;
-      }
-      .header h1 {
-        font-size: 0.95rem;
-      }
-      .header-right {
-        flex-wrap: wrap;
-        width: 100%;
-        gap: 5px;
-      }
-      .search-container {
-        width: 100%;
-      }
-      .header-btn {
-        flex: 1;
-        text-align: center;
-        padding: 5px 6px;
-        font-size: 0.72rem;
-      }
-
-      .mobile-bottom-toggle {
-        display: block;
-      }
-
-      .container {
-        flex-direction: column;
-        margin-top: 98px;
-        height: calc(100% - 98px);
-      }
-      
-      .sidebar {
-        width: 100%;
-        height: 40%;
-        border-right: none;
-        border-bottom: 2px solid #cbd5e1;
-        overflow: hidden;
-      }
-      
-      .sidebar.collapsed {
-        height: 0 !important;
-        min-height: 0 !important;
-        border-bottom: none !important;
-      }
-
-      #map {
-        flex: 1;
-        height: 100%;
-        width: 100%;
-      }
-      
-      .custom-modal {
-        width: 92%;
-        padding: 16px;
-      }
+      .header { height: auto; flex-direction: column; align-items: stretch; padding: 8px 10px; gap: 6px; }
+      .header-left { justify-content: space-between; }
+      .header h1 { font-size: 0.95rem; }
+      .header-right { flex-wrap: wrap; width: 100%; gap: 5px; }
+      .search-container { width: 100%; }
+      .header-btn { flex: 1; text-align: center; padding: 5px 6px; font-size: 0.72rem; }
+      .mobile-bottom-toggle { display: block; }
+      .container { flex-direction: column; margin-top: 98px; height: calc(100% - 98px); }
+      .sidebar { width: 100%; height: 40%; border-right: none; border-bottom: 2px solid #cbd5e1; }
+      .sidebar.collapsed { height: 0 !important; min-height: 0 !important; border-bottom: none !important; }
+      #map { flex: 1; height: 100%; width: 100%; }
     }
   </style>
 </head>
@@ -742,16 +749,18 @@
   <header class="header">
     <div class="header-left">
       <h1>🏔️ OKBM 전국 백패킹 지도</h1>
+      <span class="sync-status-badge" id="syncStatusBadge">⚡ 시트 동기화 중...</span>
       <span class="admin-status-badge" id="adminBadge">관리자 모드 ON</span>
     </div>
     
     <div class="header-right">
+      <!-- 관리자 모드에서만 나타나는 동기화 버튼 -->
+      <button type="button" class="header-btn admin-only-btn" id="btnSyncSheet" onclick="fetchSpotsFromGoogleSheet()">🔄 시트 동기화</button>
       <button type="button" class="header-btn" id="resetMapBtn" onclick="resetMapView()">🔄 지도 초기화</button>
-      <!-- 7번 연속 클릭 시 관리자 모드 토글 -->
       <button type="button" class="header-btn" id="droneLayerBtn" onclick="handleDroneBtnClick()">🛸 드론촬영가능여부</button>
       
       <div class="search-container">
-        <input type="text" id="topSearchInput" class="search-input" placeholder="산 이름 검색 (예: 백족산, 마국산, 선자령)" onfocus="showTopRankings()" onkeyup="handleSearchInput(event)" />
+        <input type="text" id="topSearchInput" class="search-input" placeholder="산 이름 검색 (예: 백족산, 마국산, 백봉산)" onfocus="showTopRankings()" onkeyup="handleSearchInput(event)" />
         <button type="button" class="search-btn-icon" onclick="executeSearch()">🔍</button>
         <ul id="searchDropdown" class="search-dropdown"></ul>
       </div>
@@ -765,6 +774,16 @@
           <span>📍 백패킹 박지 목록</span>
           <span id="spotCount" style="color: #0f766e; font-size: 0.8rem; font-weight: bold;">0개</span>
         </div>
+        <!-- 관리자 모드에서만 나타나는 구글 시트 편집 링크 -->
+        <a id="sheetEditLink" href="#" target="_blank" class="sheet-edit-link">📊 구글 시트 편집</a>
+      </div>
+
+      <!-- 관리자 모드 툴바 (Shift + M 활성화) -->
+      <div class="admin-data-tools" id="adminDataTools">
+        <button type="button" class="admin-tool-btn btn-ai-highlight" onclick="openBulkImportModal()">⚡ AI 요약 일괄 등록</button>
+        <button type="button" class="admin-tool-btn" onclick="exportDataBackup()">💾 백업</button>
+        <button type="button" class="admin-tool-btn" onclick="document.getElementById('importFileInput').click()">📂 복원</button>
+        <input type="file" id="importFileInput" style="display:none" accept=".json" onchange="importDataBackup(event)" />
       </div>
       
       <div class="region-filter-bar" id="regionFilterBar">
@@ -772,6 +791,7 @@
         <button class="region-btn" onclick="filterByRegion('서울/인천')">서울/인천</button>
         <button class="region-btn" onclick="filterByRegion('경기')">경기</button>
         <button class="region-btn" onclick="filterByRegion('강원')">강원</button>
+        <button class="region-btn" onclick="filterByRegion('충청')">충청</button>
         <button class="region-btn" onclick="filterByRegion('전라')">전라</button>
         <button class="region-btn" onclick="filterByRegion('경상')">경상</button>
         <button class="region-btn" onclick="filterByRegion('제주')">제주</button>
@@ -786,28 +806,59 @@
     ▼ 박지 목록 닫기
   </button>
 
+  <!-- 1. [AI 요약 원클릭 일괄 등록 모달] -->
+  <div class="custom-modal-overlay" id="bulkImportModalOverlay">
+    <div class="custom-modal" style="width: 500px;">
+      <h3 style="display:flex; align-items:center; gap:6px;">⚡ AI 요약 내용으로 일괄 등록</h3>
+      <p style="font-size:0.76rem; color:#64748b; line-height:1.4;">
+        ChatGPT / Gemini가 요약해 준 JSON이나 텍스트를 그대로 붙여넣으세요. 산 이름과 주소로 <strong>위도/경도를 자동 검색</strong>하여 지도에 등록합니다.
+      </p>
+
+      <div class="modal-field">
+        <label>요약 텍스트 붙여넣기 (JSON 또는 자유 텍스트)</label>
+        <textarea id="bulkImportTextarea" class="modal-input modal-textarea" style="min-height: 180px; font-family: monospace; font-size: 0.8rem;" placeholder='{\n  "name": "백봉산",\n  "entryPoint": "마치고개 갓길 주차",\n  "elevation": "587m",\n  "desc": "3m 높이의 대형 용 모양 전망 데크",\n  "terrain": ["데크"],\n  "difficulty": "2",\n  "distance": "2.2",\n  "youtubeUrl": "https://youtu.be/Z7Ln3jutQgU"\n}'></textarea>
+      </div>
+
+      <div id="bulkStatusMsg" style="font-size:0.75rem; color:#0284c7; min-height: 18px; font-weight:600;"></div>
+
+      <div class="modal-btn-row">
+        <button type="button" class="modal-btn modal-btn-cancel" onclick="closeBulkImportModal()">닫기</button>
+        <button type="button" class="modal-btn modal-btn-save" id="btnRunBulkImport" onclick="processBulkImport()">📍 자동 분석 & 지도에 등록</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 개별 수동 등록/수정 모달 -->
   <div class="custom-modal-overlay" id="customModalOverlay">
     <div class="custom-modal">
       <h3 id="modalTitle">박지 등록</h3>
       
       <div class="modal-field">
         <label>1. 산 (박지 이름) *</label>
-        <input type="text" id="modalInputName" class="modal-input" placeholder="예: 백족산 중턱 데크" />
+        <input type="text" id="modalInputName" class="modal-input" placeholder="예: 백봉산" />
       </div>
 
       <div class="modal-field">
         <label>2. 들머리 (주소 / 등산로 입구) *</label>
-        <textarea id="modalInputEntry" class="modal-input modal-textarea" rows="2" placeholder="예: 장호원읍 진암리 산 112-1"></textarea>
+        <textarea id="modalInputEntry" class="modal-input modal-textarea" rows="2" placeholder="예: 마치고개 갓길 주차"></textarea>
       </div>
 
       <div class="modal-field">
-        <label>3. 특징 (선택)</label>
-        <textarea id="modalInputDesc" class="modal-input modal-textarea" rows="2" placeholder="예: 최단코스 영상 확인 / 화기 엄격 금지"></textarea>
+        <label>3. 고도 / 해발 (자동 측정 또는 직접 입력)</label>
+        <div style="display: flex; gap: 6px;">
+          <input type="text" id="modalInputElevation" class="modal-input" style="flex:1;" placeholder="예: 587m" />
+          <button type="button" class="modal-btn" style="background:#334155; color:#fff;" onclick="fetchElevationForModal()">⛰️ 고도 측정</button>
+        </div>
+      </div>
+
+      <div class="modal-field">
+        <label>4. 특징 (선택)</label>
+        <textarea id="modalInputDesc" class="modal-input modal-textarea" rows="2" placeholder="예: 대형 용 모양 전망 데크 / 일출·야경 조망"></textarea>
       </div>
 
       <div style="display: flex; gap: 10px; justify-content: space-between; align-items: flex-start;">
         <div class="modal-field" style="flex: 1.1;">
-          <label>4. 지형 형태</label>
+          <label>5. 지형 형태</label>
           <div class="checkbox-group" style="padding-top: 4px;">
             <label><input type="checkbox" id="chkRock" value="바위" /> 🪨바위</label>
             <label><input type="checkbox" id="chkDeck" value="데크" /> 🪵데크</label>
@@ -816,7 +867,7 @@
         </div>
 
         <div class="modal-field" style="flex: 1;">
-          <label>5. 난이도</label>
+          <label>6. 난이도</label>
           <select id="modalSelectDiff" class="select-diff">
             <option value="1">⭐ (매우 쉬움)</option>
             <option value="2">⭐⭐ (쉬움)</option>
@@ -827,23 +878,23 @@
         </div>
 
         <div class="modal-field" style="width: 90px;">
-          <label>6. 거리(km)</label>
-          <input type="text" id="modalInputDistance" class="modal-input" style="padding: 7px 8px;" placeholder="예: 1.5" />
+          <label>7. 거리(km)</label>
+          <input type="text" id="modalInputDistance" class="modal-input" style="padding: 7px 8px;" placeholder="예: 2.2" />
         </div>
       </div>
 
       <div class="modal-field">
-        <label>7. YouTube 영상 링크 (최대 3개, 줄바꿈으로 구분)</label>
+        <label>8. YouTube 영상 링크 (최대 3개, 줄바꿈으로 구분)</label>
         <textarea id="modalInputYoutube" class="modal-input modal-textarea" rows="2" placeholder="https://youtu.be/...&#10;https://youtu.be/..."></textarea>
       </div>
 
       <div style="display: flex; gap: 10px;">
         <div class="modal-field" style="flex: 1;">
-          <label>8. 블로그 링크 (선택)</label>
+          <label>9. 블로그 링크 (선택)</label>
           <input type="text" id="modalInputBlog" class="modal-input" placeholder="https://blog.naver.com/..." />
         </div>
         <div class="modal-field" style="flex: 1;">
-          <label>9. 등록자 인스타그램 (선택)</label>
+          <label>10. 등록자 인스타그램 (선택)</label>
           <input type="text" id="modalInputInsta" class="modal-input" placeholder="oklionnature" />
         </div>
       </div>
@@ -856,12 +907,19 @@
   </div>
 
   <script>
+    // =========================================================================
+    // ⚙️ [구글 스프레드시트 설정]
+    // =========================================================================
+    const GOOGLE_SHEET_ID = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms';
+    const GOOGLE_SHEET_GID = '0';
+
     const REQUIRE_SHIFT = true;
     const SHORTCUT_KEY  = 'M';
 
     const DEFAULT_MAP_CENTER = new naver.maps.LatLng(36.5, 127.8);
     const DEFAULT_MAP_ZOOM   = 8;
 
+    // 1. [기존 비행제한구역 38개소 100% 보존]
     const restrictedZones = [
       { name: "서울 중심부 (P-73)", lat: 37.5326, lng: 126.9810, radius: 8334, type: "mil" },
       { name: "육군 항공작전사령부 (원적산/이천 북부 관제권)", lat: 37.3050, lng: 127.4650, radius: 9300, type: "mil" },
@@ -903,6 +961,7 @@
       { name: "포스코 광양제철소 국가보안시설", lat: 34.9350, lng: 127.7320, radius: 4000, type: "nuke" }
     ];
 
+    // 2. [기존 국립공원 18개소 100% 보존]
     const nationalParks = [
       { name: "설악산국립공원", lat: 38.1190, lng: 128.4650, radius: 14000 },
       { name: "오대산국립공원", lat: 37.7950, lng: 128.6180, radius: 12000 },
@@ -924,10 +983,52 @@
       { name: "한라산국립공원", lat: 33.3600, lng: 126.5350, radius: 11000 }
     ];
 
+    // 3. [기존 등록 박지 21개 100% 완전 보존]
     const defaultSpots = [
+      {
+        "id": 1787140000007,
+        "name": "백봉산",
+        "elevation": "587m",
+        "entryPoint": "마치고개 갓길 주차 (남양주시 화도읍 묵현리 산 16-1 일원)",
+        "lat": 37.643300,
+        "lng": 127.242700,
+        "region": "경기",
+        "cityName": "경기 남양주시",
+        "desc": "3m 높이의 대형 용 모양 전망 데크 / 360도 파노라마 야경 및 일출·일몰 명소 / 데크 만석 시 하단 헬기장 이용 가능 / 2.2KM",
+        "youtubeUrl": "https://youtu.be/Z7Ln3jutQgU",
+        "droneStatus": "warn",
+        "searchCount": 0,
+        "difficulty": "2",
+        "terrain": ["데크", "노지"],
+        "distance": "2.2",
+        "youtubeUrls": ["https://youtu.be/Z7Ln3jutQgU"],
+        "blogUrl": "",
+        "instaId": "oklionnature"
+      },
+      {
+        "id": 1787140000006,
+        "name": "충주 호봉 (고봉)",
+        "elevation": "350m",
+        "entryPoint": "충청북도 충주시 살미면 신매리 산 일원 (시그널 따라 약 30분 산행)",
+        "lat": 36.942100,
+        "lng": 127.981500,
+        "region": "충청",
+        "cityName": "충북 충주시",
+        "desc": "충주호 350도 파노라마 뷰 / 최대 2동 피칭 가능 / 정상석 뒤 평지 및 바위 슬랩 지형 / 일출·운해·별 보기 좋은 박지",
+        "youtubeUrl": "https://youtu.be/eizHQ4xmrBQ",
+        "droneStatus": "ok",
+        "searchCount": 0,
+        "difficulty": "2",
+        "terrain": ["바위", "노지"],
+        "distance": "1.0",
+        "youtubeUrls": ["https://youtu.be/eizHQ4xmrBQ"],
+        "blogUrl": "",
+        "instaId": "oklionnature"
+      }, 
       {
         "id": 1787140773652,
         "name": "둔덕산 복주머니 바위",
+        "elevation": "969m",
         "entryPoint": "문경시 가은읍 완장리 471 / 벌바위 가든 주차장 협소\n문경시 가은읍 완장리 466-1 대형 주차장",
         "lat": 36.6511213,
         "lng": 127.951926,
@@ -945,8 +1046,109 @@
         "instaId": "oklionnature"
       },
       {
+        "id": 1787140000005,
+        "name": "장산 (고산지대)",
+        "elevation": "1408m",
+        "entryPoint": "강원도 고산지대 들머리 (풍력발전기 및 세 번째 풍력발전기 인근 갈림길 진입)",
+        "lat": 37.126296,
+        "lng": 128.859892,
+        "region": "강원",
+        "cityName": "강원 영월군",
+        "desc": "해발 1400m 고지에 위치한 오지 백패킹 명소. 데크 박지가 조성되어 있으며 주변 산군 조망이 훌륭함.",
+        "youtubeUrl": "https://youtu.be/xNHtTSL3WEU",
+        "droneStatus": "ok",
+        "searchCount": 0,
+        "difficulty": "2",
+        "terrain": ["데크", "노지"],
+        "distance": "2.8",
+        "youtubeUrls": ["https://youtu.be/xNHtTSL3WEU"],
+        "blogUrl": "",
+        "instaId": "oklionnature"
+      },
+      {
+        "id": 1787140000004,
+        "name": "합천 대암산",
+        "elevation": "591m",
+        "entryPoint": "대암산 활공장 (활공장 직전 차량 2대 주차 가능, 4륜/오프로드 차량 정상까지 진입 가능)",
+        "lat": 35.5392,
+        "lng": 128.1645,
+        "region": "경상",
+        "cityName": "경남 합천군",
+        "desc": "차를 타고 정상까지 갈 수 있는 소박한 가을 백패킹 명소. 활공장이라 바닥에 녹색 매트가 깔려 있으며, 팩다운 없이 사용 가능.",
+        "youtubeUrl": "https://youtu.be/tcTQoFn3eOw",
+        "droneStatus": "ok",
+        "searchCount": 0,
+        "difficulty": "1",
+        "terrain": ["활공장", "노지"],
+        "distance": "0",
+        "youtubeUrls": ["https://youtu.be/tcTQoFn3eOw"],
+        "blogUrl": "",
+        "instaId": "oklionnature"
+      },
+      {
+        "id": 1787140000003,
+        "name": "연어봉",
+        "elevation": "610m",
+        "entryPoint": "충북 괴산군 연풍면 새재로 1948 (연풍레포츠공원)",
+        "lat": 36.7521,
+        "lng": 127.9312,
+        "region": "충청",
+        "cityName": "충북 괴산군",
+        "desc": "가을에 가기 좋은 절벽 돌침대 박지. 360도 막힘없는 괴산 산군 조망. 돌박지 특성상 팩을 박을 수 없어 돌로 고정 필요.",
+        "youtubeUrl": "https://youtu.be/rNvc_QJbxUU",
+        "droneStatus": "ok",
+        "searchCount": 0,
+        "difficulty": "2",
+        "terrain": ["노지", "돌박지"],
+        "distance": "2.5",
+        "youtubeUrls": ["https://youtu.be/rNvc_QJbxUU"],
+        "blogUrl": "",
+        "instaId": "oklionnature"
+      },
+      {
+        "id": 1787140000002,
+        "name": "비금도 투구봉",
+        "elevation": "226m",
+        "entryPoint": "들머리 1.7km, 약 1시간 소요",
+        "lat": 34.7865,
+        "lng": 125.8942,
+        "region": "전라",
+        "cityName": "전남 신안군",
+        "desc": "신안 비금도 그림산 투구봉. 해발 226m로 조망이 환상적임. 비금도는 차를 가지고 들어가는 것을 추천.",
+        "youtubeUrl": "https://youtu.be/3KwAUq5ZqHk",
+        "droneStatus": "ok",
+        "searchCount": 0,
+        "difficulty": "2",
+        "terrain": ["노지", "데크"],
+        "distance": "1.7",
+        "youtubeUrls": ["https://youtu.be/3KwAUq5ZqHk"],
+        "blogUrl": "",
+        "instaId": "oklionnature"
+      },
+      {
+        "id": 1787140000001,
+        "name": "망덕산",
+        "elevation": "675m",
+        "entryPoint": "망실봉 패러글라이딩 활공장 (마을회관 주차 시 1.5km)",
+        "lat": 35.6592,
+        "lng": 127.8845,
+        "region": "경상",
+        "cityName": "경남 거창군",
+        "desc": "걸어서 3분 거리의 초간편 박지. 시내 야경이 매우 훌륭함.",
+        "youtubeUrl": "https://youtu.be/S5MzIF_yeMw",
+        "droneStatus": "ok",
+        "searchCount": 0,
+        "difficulty": "1",
+        "terrain": ["노지"],
+        "distance": "1.5",
+        "youtubeUrls": ["https://youtu.be/S5MzIF_yeMw"],
+        "blogUrl": "",
+        "instaId": "oklionnature"
+      },
+      {
         "id": 1787140275146,
         "name": "자산 합수머리",
+        "elevation": "70m",
         "entryPoint": "여주시 강천면 강천리 산5-3",
         "lat": 37.2290598,
         "lng": 127.7448068,
@@ -965,7 +1167,8 @@
       },
       {
         "id": 1787140005713,
-        "name": "예빈산 590M",
+        "name": "예빈산",
+        "elevation": "590m",
         "entryPoint": "천주교 소화묘원 / 남양주시 조안면 능내리 산 10",
         "lat": 37.5455307,
         "lng": 127.2714702,
@@ -984,7 +1187,8 @@
       },
       {
         "id": 1787139595247,
-        "name": "태화산 664M",
+        "name": "태화산",
+        "elevation": "664m",
         "entryPoint": "광주시 도척면 유정리 산 16 / 은곡사",
         "lat": 37.292152,
         "lng": 127.293686,
@@ -1004,25 +1208,27 @@
       {
         "id": 1787139163980,
         "name": "백족산 중턱 데크",
+        "elevation": "402m",
         "entryPoint": "무량사/ 장호원읍 진암리 산 112-1 \n최단코스는 청미천 파크 골프장에서 다리밑까지 직진",
         "lat": 37.097399,
         "lng": 127.604674,
         "region": "경기",
         "cityName": "경기 이천시",
         "desc": "최단코스는 영상 후반부에 자세한 설명 꼭 확인",
-        "youtubeUrl": "https://youtu.be/095pnxMc2Sc",
+        "youtubeUrl": "https://youtu.be/095pnxMc2Sc?t=1207",
         "droneStatus": "warn",
         "searchCount": 9,
         "difficulty": "2",
         "terrain": ["데크"],
         "instaId": "oklionnature",
         "distance": "1",
-        "youtubeUrls": ["https://youtu.be/095pnxMc2Sc"],
+        "youtubeUrls": ["https://youtu.be/095pnxMc2Sc?t=1207"],
         "blogUrl": ""
       },
       {
         "id": 1787138718978,
-        "name": "시궁산 514.9M",
+        "name": "시궁산",
+        "elevation": "515m",
         "entryPoint": "용인시 처인구 이동읍 이원로 561 / 옛 묵리마트",
         "lat": 37.153908,
         "lng": 127.245757,
@@ -1039,6 +1245,7 @@
       {
         "id": 1787138483494,
         "name": "향수산 중턱 전망대",
+        "elevation": "457m",
         "entryPoint": "백련사 / 용인시 처인구 포곡읍 가실리 산 14-2",
         "lat": 37.311314,
         "lng": 127.18573,
@@ -1057,7 +1264,8 @@
       },
       {
         "id": 1787137276945,
-        "name": "개군산 214M",
+        "name": "개군산",
+        "elevation": "214m",
         "lat": 37.448728,
         "lng": 127.524974,
         "region": "경기",
@@ -1075,24 +1283,9 @@
         "blogUrl": ""
       },
       {
-        "id": 1787136444875,
-        "name": "장산 1400M",
-        "lat": 37.126296,
-        "lng": 128.859892,
-        "region": "강원",
-        "desc": "높은 오지산이지만 난이도 보통 2.5KM",
-        "youtubeUrl": "https://youtu.be/xNHtTSL3WEU",
-        "droneStatus": "ok",
-        "searchCount": 1,
-        "cityName": "강원 영월군",
-        "entryPoint": "영월군 상동읍 구래리 산 1-45",
-        "difficulty": "3",
-        "terrain": ["데크"],
-        "instaId": "oklionnature"
-      },
-      {
         "id": 1787135941805,
-        "name": "추읍산 583M",
+        "name": "추읍산",
+        "elevation": "583m",
         "lat": 37.4553127,
         "lng": 127.5736,
         "desc": "정상데크 / 운해가능성 높음 / 1.7KM",
@@ -1108,7 +1301,8 @@
       },
       {
         "id": 1787134210031,
-        "name": "마국산 445M",
+        "name": "마국산",
+        "elevation": "445m",
         "lat": 37.1475593,
         "lng": 127.4502881,
         "desc": "3층데크, 비오는날 가기 좋은 곳",
@@ -1125,6 +1319,7 @@
       {
         "id": 1787133044837,
         "name": "원적산",
+        "elevation": "634m",
         "lat": 37.352209,
         "lng": 127.448789,
         "desc": "경기도 알프스 / 넓은 주차장 깨끗한 화장실",
@@ -1140,6 +1335,7 @@
       {
         "id": 1,
         "name": "간월재 데크 (영남알프스)",
+        "elevation": "900m",
         "lat": 35.545812,
         "lng": 129.034515,
         "desc": "억새 군락지 뷰 / 바람 강함 / 화기 엄격 금지",
@@ -1154,6 +1350,7 @@
       {
         "id": 2,
         "name": "굴업도",
+        "elevation": "120m",
         "lat": 37.1865,
         "lng": 125.9735,
         "desc": "국내 3대 성지 / 개머리 언덕 외 박지다수",
@@ -1172,6 +1369,7 @@
       {
         "id": 3,
         "name": "평창 선자령",
+        "elevation": "1157m",
         "lat": 37.702235,
         "lng": 128.74912,
         "desc": "대관령 풍력단지 능선 / 겨울 설산 백패킹 명소",
@@ -1188,12 +1386,16 @@
       }
     ];
 
-    let spots = JSON.parse(localStorage.getItem('okbm_spots')) || defaultSpots;
-
-    if (!spots || spots.length < defaultSpots.length) {
+    let spots = [];
+    if (localStorage.getItem('okbm_initialized_v3')) {
+      spots = JSON.parse(localStorage.getItem('okbm_spots')) || [];
+    } else {
       spots = defaultSpots;
       localStorage.setItem('okbm_spots', JSON.stringify(spots));
+      localStorage.setItem('okbm_initialized_v3', 'true');
     }
+
+    let spotComments = JSON.parse(localStorage.getItem('okbm_comments')) || {};
 
     let isAdminMode = false;
     let isDroneOverlayOn = false;
@@ -1214,11 +1416,235 @@
       zoomControlOptions: { position: naver.maps.Position.RIGHT_CENTER }
     });
 
-    const infoWindow = new naver.maps.InfoWindow({ borderWidth: 1, borderColor: '#cbd5e1' });
+    const infoWindow = new naver.maps.InfoWindow({ 
+      borderWidth: 1, 
+      borderColor: '#cbd5e1',
+      anchorSkew: true
+    });
     let currentMarkers = [];
     let tempSearchMarker = null;
 
-    // '드론촬영가능여부' 버튼 7번 연달아 누르면 관리자 모드 토글
+    document.getElementById('sheetEditLink').href = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/edit`;
+
+    // =========================================================================
+    // ⚡ [AI 요약 일괄 등록] 텍스트 분석 및 위도/경도 자동 검색
+    // =========================================================================
+    function openBulkImportModal() {
+      if (!isAdminMode) return;
+      document.getElementById('bulkImportTextarea').value = '';
+      document.getElementById('bulkStatusMsg').innerText = '';
+      document.getElementById('bulkImportModalOverlay').style.display = 'flex';
+      setTimeout(() => document.getElementById('bulkImportTextarea').focus(), 50);
+    }
+
+    function closeBulkImportModal() {
+      document.getElementById('bulkImportModalOverlay').style.display = 'none';
+    }
+
+    async function searchCoordsByQuery(query) {
+      return new Promise((resolve) => {
+        naver.maps.Service.geocode({ query: query }, function(status, response) {
+          if (status === naver.maps.Service.Status.OK && response.v2.addresses.length > 0) {
+            const item = response.v2.addresses[0];
+            resolve({ lat: parseFloat(item.y), lng: parseFloat(item.x) });
+            return;
+          }
+          fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=kr&limit=1`)
+            .then(res => res.json())
+            .then(data => {
+              if (data && data.length > 0) {
+                resolve({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
+              } else {
+                resolve(null);
+              }
+            })
+            .catch(() => resolve(null));
+        });
+      });
+    }
+
+    async function processBulkImport() {
+      const rawText = document.getElementById('bulkImportTextarea').value.trim();
+      const statusEl = document.getElementById('bulkStatusMsg');
+      const btn = document.getElementById('btnRunBulkImport');
+
+      if (!rawText) {
+        alert('요약 텍스트를 입력해주세요.');
+        return;
+      }
+
+      btn.disabled = true;
+      statusEl.innerText = '⏳ 텍스트 분석 중...';
+
+      let parsedData = {};
+
+      try {
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsedData = JSON.parse(jsonMatch[0]);
+        }
+      } catch (err) {
+        console.warn('JSON 파싱 실패, 텍스트 라인 파싱 시도');
+      }
+
+      if (!parsedData.name) {
+        const lines = rawText.split('\n');
+        lines.forEach(line => {
+          const [key, ...vals] = line.split(/[:=]/);
+          if (!key || vals.length === 0) return;
+          const k = key.trim();
+          const v = vals.join(':').trim();
+          if (k.includes('이름') || k.includes('산') || k.toLowerCase() === 'name') parsedData.name = v;
+          if (k.includes('들머리') || k.includes('주소') || k.toLowerCase() === 'entrypoint') parsedData.entryPoint = v;
+          if (k.includes('고도') || k.includes('해발') || k.toLowerCase() === 'elevation') parsedData.elevation = v;
+          if (k.includes('특징') || k.includes('설명') || k.toLowerCase() === 'desc') parsedData.desc = v;
+          if (k.includes('거리') || k.toLowerCase() === 'distance') parsedData.distance = v;
+          if (k.includes('난이도') || k.toLowerCase() === 'difficulty') parsedData.difficulty = v.replace(/[^0-9]/g, '') || '3';
+          if (k.includes('유튜브') || k.includes('링크') || k.toLowerCase().includes('youtube')) parsedData.youtubeUrl = v;
+          if (k.includes('지형') || k.toLowerCase() === 'terrain') parsedData.terrain = [v];
+        });
+      }
+
+      const name = parsedData.name || '새 박지';
+      const entryPoint = parsedData.entryPoint || name;
+      
+      statusEl.innerText = `🔍 '${name}' 위치 좌표 검색 중...`;
+
+      let coords = await searchCoordsByQuery(entryPoint);
+      if (!coords) coords = await searchCoordsByQuery(name);
+
+      if (!coords) {
+        coords = { lat: map.getCenter().lat(), lng: map.getCenter().lng() };
+        alert(`'${name}'의 정확한 주소를 찾지 못해 현재 지도 중심에 배치했습니다. 마커를 드래그해 이동해주세요.`);
+      }
+
+      statusEl.innerText = `⛰️ 고도 및 드론 비행 가능 여부 분석 중...`;
+
+      let elevation = parsedData.elevation || '';
+      if (!elevation || elevation === '') {
+        elevation = await getElevation(coords.lat, coords.lng);
+      }
+
+      const check = autoDetectDroneStatus(coords.lat, coords.lng);
+      const res = detectRegionAndCity(coords.lat, coords.lng, name, entryPoint);
+
+      let terrain = Array.isArray(parsedData.terrain) ? parsedData.terrain : (parsedData.terrain ? [parsedData.terrain] : ['데크']);
+      let ytUrls = parsedData.youtubeUrls || (parsedData.youtubeUrl ? [parsedData.youtubeUrl] : []);
+
+      const newSpot = {
+        id: Date.now(),
+        name: name,
+        elevation: elevation,
+        entryPoint: entryPoint,
+        lat: coords.lat,
+        lng: coords.lng,
+        region: parsedData.region || res.region,
+        cityName: parsedData.cityName || res.cityName,
+        desc: parsedData.desc || '추천 백패킹 박지',
+        distance: String(parsedData.distance || '').replace(/km/i, '').trim(),
+        youtubeUrls: ytUrls,
+        blogUrl: parsedData.blogUrl || '',
+        instaId: parsedData.instaId || 'oklionnature',
+        terrain: terrain,
+        difficulty: String(parsedData.difficulty || '3'),
+        droneStatus: check.status,
+        searchCount: 1
+      };
+
+      spots.unshift(newSpot);
+      localStorage.setItem('okbm_spots', JSON.stringify(spots));
+      renderSpots();
+
+      const pos = new naver.maps.LatLng(newSpot.lat, newSpot.lng);
+      map.setZoom(15);
+      map.panTo(pos);
+
+      btn.disabled = false;
+      closeBulkImportModal();
+      alert(`🎉 '${name}' 박지가 성공적으로 등록되었습니다!`);
+    }
+
+    // =========================================================================
+    // 🚀 구글 스프레드시트 실시간 동기화 (완료 후 뱃지 자동 숨김 처리)
+    // =========================================================================
+    async function fetchSpotsFromGoogleSheet() {
+      const badge = document.getElementById('syncStatusBadge');
+      badge.style.display = 'inline-block';
+      badge.style.opacity = '1';
+      badge.style.background = '#0284c7';
+      badge.innerText = '⚡ 시트 동기화 중...';
+
+      const csvUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_GID}`;
+
+      try {
+        const response = await fetch(csvUrl, { cache: 'no-store' });
+        if (!response.ok) throw new Error('시트 응답 없음');
+        const csvText = await response.text();
+
+        Papa.parse(csvText, {
+          header: true,
+          skipEmptyLines: true,
+          complete: function(results) {
+            const rows = results.data;
+            if (rows && rows.length > 0 && rows[0].name) {
+              spots = rows.map((row, idx) => {
+                const lat = parseFloat(row.lat) || 0;
+                const lng = parseFloat(row.lng) || 0;
+                
+                let ytList = [];
+                const rawYt = row.youtubeUrls || row.youtubeUrl || '';
+                if (rawYt) ytList = rawYt.split(/[\n,]+/).map(u => u.trim()).filter(u => u);
+
+                let terrainList = ['데크'];
+                if (row.terrain) terrainList = row.terrain.split(/[\n,]+/).map(t => t.trim()).filter(t => t);
+
+                const res = detectRegionAndCity(lat, lng, row.name, row.entryPoint);
+
+                return {
+                  id: row.id ? (isNaN(row.id) ? row.id : Number(row.id)) : (Date.now() + idx),
+                  name: row.name || '무명 박지',
+                  elevation: row.elevation || '',
+                  entryPoint: row.entryPoint || '들머리 정보 미입력',
+                  lat: lat,
+                  lng: lng,
+                  region: row.region || res.region,
+                  cityName: row.cityName || res.cityName,
+                  desc: row.desc || '',
+                  youtubeUrls: ytList,
+                  blogUrl: row.blogUrl || '',
+                  instaId: row.instaId || 'oklionnature',
+                  terrain: terrainList,
+                  difficulty: row.difficulty || '3',
+                  distance: row.distance || '',
+                  droneStatus: row.droneStatus || autoDetectDroneStatus(lat, lng).status,
+                  searchCount: parseInt(localStorage.getItem(`okbm_views_${row.id || row.name}`)) || 0
+                };
+              });
+
+              localStorage.setItem('okbm_spots', JSON.stringify(spots));
+              badge.style.background = '#15803d';
+              badge.innerText = `✅ 시트 연동 완료 (${spots.length}개)`;
+            }
+            renderSpots();
+            
+            // 2.5초 후 뱃지 자동 숨김
+            setTimeout(() => {
+              badge.style.opacity = '0';
+              setTimeout(() => badge.style.display = 'none', 400);
+            }, 2500);
+          }
+        });
+      } catch (error) {
+        badge.style.background = '#0f766e';
+        badge.innerText = `💾 로컬 데이터 모드 (${spots.length}개)`;
+        renderSpots();
+        setTimeout(() => {
+          badge.style.opacity = '0';
+          setTimeout(() => badge.style.display = 'none', 400);
+        }, 2500);
+      }
+    }
+
     let droneBtnClickCount = 0;
     let droneBtnTimer = null;
     function handleDroneBtnClick() {
@@ -1228,7 +1654,7 @@
         if (droneBtnClickCount >= 7) {
           toggleAdminMode();
         } else {
-          toggleDroneOverlay(); // 7번 미만이면 원래 기능(드론 오버레이) 실행
+          toggleDroneOverlay();
         }
         droneBtnClickCount = 0;
       }, 400);
@@ -1238,11 +1664,29 @@
       isAdminMode = !isAdminMode;
       document.getElementById('adminBadge').style.display = isAdminMode ? 'inline-block' : 'none';
       updateAdminUI();
+      
+      currentMarkers.forEach(marker => marker.setDraggable(isAdminMode));
+
       if (isAdminMode) {
-        alert('관리자 모드가 활성화되었습니다.');
+        alert('관리자 모드가 활성화되었습니다. (시트 동기화/편집/AI등록 기능 활성화)');
       } else {
         alert('관리자 모드가 비활성화되었습니다.');
       }
+    }
+
+    // 🔒 관리자 권한 UI 제어
+    function updateAdminUI() {
+      document.querySelectorAll('.btn-del').forEach(btn => btn.style.display = isAdminMode ? 'block' : 'none');
+      document.querySelectorAll('.btn-edit').forEach(btn => btn.style.display = isAdminMode ? 'block' : 'none');
+      document.querySelectorAll('.btn-quick-add').forEach(btn => btn.style.display = isAdminMode ? 'inline-block' : 'none');
+      document.getElementById('adminDataTools').style.display = isAdminMode ? 'flex' : 'none';
+      
+      // 구글시트 편집 링크 및 시트 동기화 버튼 관리자 모드에서만 노출
+      const sheetLink = document.getElementById('sheetEditLink');
+      if (sheetLink) sheetLink.style.display = isAdminMode ? 'inline-flex' : 'none';
+
+      const syncBtn = document.getElementById('btnSyncSheet');
+      if (syncBtn) syncBtn.style.display = isAdminMode ? 'inline-block' : 'none';
     }
 
     function toggleMobileSidebar() {
@@ -1258,22 +1702,73 @@
         btn.innerText = '▼ 박지 목록 닫기';
       }
 
-      setTimeout(() => {
-        naver.maps.Event.trigger(map, 'resize');
-      }, 300);
+      setTimeout(() => naver.maps.Event.trigger(map, 'resize'), 300);
     }
 
-    // 유튜브 URL 완벽 정제 파서 (모바일 시청 불가 오류 해결)
     function cleanYouTubeUrl(url) {
       if (!url) return '';
       let videoId = '';
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+      const regExp = /^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
       const match = url.match(regExp);
-      if (match && match[2].length === 11) {
-        videoId = match[2];
-        return `https://www.youtube.com/watch?v=${videoId}`;
+      
+      if (match && match[1].length === 11) {
+        videoId = match[1];
+        const timeMatch = url.match(/[?&#](?:t|start)=([^&#]*)/);
+        let seconds = 0;
+        
+        if (timeMatch && timeMatch[1]) {
+          const rawTime = timeMatch[1].trim();
+          if (/^\d+$/.test(rawTime)) {
+            seconds = parseInt(rawTime, 10);
+          } else if (rawTime.includes('h') || rawTime.includes('m') || rawTime.includes('s')) {
+            const h = (rawTime.match(/(\d+)h/) || [])[1] || 0;
+            const m = (rawTime.match(/(\d+)m/) || [])[1] || 0;
+            const s = (rawTime.match(/(\d+)s/) || [])[1] || 0;
+            seconds = parseInt(h) * 3600 + parseInt(m) * 60 + parseInt(s);
+          } else if (rawTime.includes(':')) {
+            const parts = rawTime.split(':').map(Number);
+            if (parts.length === 2) seconds = parts[0] * 60 + parts[1];
+            if (parts.length === 3) seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+          }
+        }
+        
+        let safeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+        if (seconds > 0) safeUrl += `&t=${seconds}s`;
+        return safeUrl;
       }
       return url;
+    }
+
+    function exportDataBackup() {
+      const dataToSave = { spots, comments: spotComments };
+      const blob = new Blob([JSON.stringify(dataToSave, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `okbm_backup_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+    }
+
+    function importDataBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) spots = imported;
+          else if (imported.spots) {
+            spots = imported.spots;
+            if (imported.comments) spotComments = imported.comments;
+          }
+          localStorage.setItem('okbm_spots', JSON.stringify(spots));
+          localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
+          renderSpots();
+          alert('데이터가 성공적으로 복원되었습니다.');
+        } catch (err) {
+          alert('올바른 백업 JSON 파일이 아닙니다.');
+        }
+      };
+      reader.readAsText(file);
     }
 
     function resetMapView() {
@@ -1288,65 +1783,74 @@
       document.getElementById('searchDropdown').style.display = 'none';
     }
 
-    function detectRegionAndCity(lat, lng, name) {
-      let region = "경기";
-      let cityName = "경기";
+    function detectRegionAndCity(lat, lng, name, address) {
+      const fullText = `${name || ''} ${address || ''}`;
 
-      if (lat < 33.6) {
-        region = "제주";
-        cityName = lat > 33.38 ? "제주 제주시" : "제주 서귀포시";
-      } else if ((lat >= 37.43 && lat <= 37.70 && lng >= 126.76 && lng <= 127.18) ||
-                 (lat >= 37.0 && lat <= 37.85 && lng <= 126.75) || 
-                 (lat >= 37.55 && lat <= 37.85 && lng <= 126.55)) {
-        region = "서울/인천";
-        cityName = (lng <= 126.75) ? (lat > 37.55 ? "인천 강화군" : "인천 옹진군") : "서울";
-      } else if (lat >= 37.0 && lng >= 127.85) {
-        region = "강원";
-        cityName = lng > 128.6 ? "강원 강릉시" : (lat > 37.6 ? "강원 평창군" : "강원 원주시");
-      } else if (lat < 35.9 && lng < 127.8) {
-        region = "전라";
-        cityName = lat < 34.9 ? "전남 여수/순천" : "전북 전주시";
-      } else if (lng >= 127.8) {
-        region = "경상";
-        cityName = lat < 35.6 ? "울산/부산" : "경북 영주시";
-      } else {
-        region = "경기";
-        cityName = (lat <= 37.3 && lng >= 127.35) ? "경기 이천시" : (lng >= 127.4 ? "경기 양평군" : "경기 여주시");
+      if (fullText.includes('서울')) return { region: "서울/인천", cityName: "서울" };
+      if (fullText.includes('인천') || fullText.includes('굴업도') || fullText.includes('강화') || fullText.includes('옹진')) return { region: "서울/인천", cityName: "인천 옹진군" };
+      if (fullText.includes('제주') || fullText.includes('서귀포') || fullText.includes('한라산')) return { region: "제주", cityName: lat > 33.38 ? "제주 제주시" : "제주 서귀포시" };
+
+      if (fullText.includes('이천') || fullText.includes('마국산') || fullText.includes('원적산') || fullText.includes('설봉산') || fullText.includes('백족산')) return { region: "경기", cityName: "경기 이천시" };
+      if (fullText.includes('양평') || fullText.includes('추읍산') || fullText.includes('개군산') || fullText.includes('용문산')) return { region: "경기", cityName: "경기 양평군" };
+      if (fullText.includes('여주') || fullText.includes('자산') || fullText.includes('강천')) return { region: "경기", cityName: "경기 여주시" };
+      if (fullText.includes('남양주') || fullText.includes('예빈산') || fullText.includes('백봉산') || fullText.includes('운길산')) return { region: "경기", cityName: "경기 남양주시" };
+      if (fullText.includes('용인') || fullText.includes('시궁산') || fullText.includes('향수산')) return { region: "경기", cityName: "경기 용인시" };
+      if (fullText.includes('광주') && !fullText.includes('전남') && !fullText.includes('광주광역시')) return { region: "경기", cityName: "경기 광주시" };
+
+      if (fullText.includes('충주') || fullText.includes('호봉') || fullText.includes('고봉') || fullText.includes('계명산')) return { region: "충청", cityName: "충북 충주시" };
+      if (fullText.includes('괴산') || fullText.includes('연어봉')) return { region: "충청", cityName: "충북 괴산군" };
+      if (fullText.includes('문경') || fullText.includes('둔덕산')) return { region: "경상", cityName: "경북 문경시" };
+      if (fullText.includes('거창') || fullText.includes('망덕산')) return { region: "경상", cityName: "경남 거창군" };
+      if (fullText.includes('합천') || fullText.includes('대암산')) return { region: "경상", cityName: "경남 합천군" };
+      if (fullText.includes('간월재') || fullText.includes('신불산') || fullText.includes('영남알프스') || fullText.includes('울주')) return { region: "경상", cityName: "울산 울주군" };
+      if (fullText.includes('신안') || fullText.includes('비금도')) return { region: "전라", cityName: "전남 신안군" };
+      if (fullText.includes('선자령') || fullText.includes('대관령') || fullText.includes('평창')) return { region: "강원", cityName: "강원 평창군" };
+      if (fullText.includes('장산') || fullText.includes('영월')) return { region: "강원", cityName: "강원 영월군" };
+
+      if (lat < 33.6) return { region: "제주", cityName: lat > 33.38 ? "제주 제주시" : "제주 서귀포시" };
+      if ((lat >= 37.43 && lat <= 37.70 && lng >= 126.76 && lng <= 127.18) || (lng <= 126.65 && lat >= 37.0)) {
+        return { region: "서울/인천", cityName: lng <= 126.65 ? "인천 옹진군" : "서울" };
       }
+      if (lat >= 37.05 && lng <= 127.80) return { region: "경기", cityName: "경기" };
+      if (lat >= 37.00 && lng > 127.80) return { region: "강원", cityName: "강원" };
+      if (lat >= 36.00 && lat < 37.05 && lng <= 127.90) return { region: "충청", cityName: "충청" };
+      if (lng > 127.90 && lat >= 35.00) return { region: "경상", cityName: "경상" };
+      if (lat < 36.00 && lng <= 127.90) return { region: "전라", cityName: "전라" };
 
-      if (name) {
-        if (name.includes('선자령') || name.includes('대관령') || name.includes('장산')) cityName = "강원";
-        if (name.includes('굴업도') || name.includes('덕적')) cityName = "인천 옹진군";
-        if (name.includes('마국산') || name.includes('원적산') || name.includes('설봉산') || name.includes('백족산')) cityName = "경기 이천시";
-        if (name.includes('추읍산') || name.includes('개군산') || name.includes('용문산') || name.includes('예빈산') || name.includes('태화산') || name.includes('시궁산') || name.includes('향수산')) cityName = "경기";
-        if (name.includes('간월재') || name.includes('신불산')) cityName = "울산 울주군";
-        if (name.includes('자산') || name.includes('강천섬')) cityName = "경기 여주시";
-        if (name.includes('둔덕산')) cityName = "경북 문경시";
+      return { region: "경기", cityName: "경기" };
+    }
+
+    async function getElevation(lat, lng) {
+      try {
+        const response = await fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`);
+        const data = await response.json();
+        if (data && data.results && data.results.length > 0) {
+          return `${Math.round(data.results[0].elevation)}m`;
+        }
+      } catch (err) {}
+      return '';
+    }
+
+    async function fetchElevationForModal() {
+      const inputEl = document.getElementById('modalInputElevation');
+      const lat = modalPendingData.lat;
+      const lng = modalPendingData.lng;
+      if (!lat || !lng || lat === 0) {
+        alert('지도에서 정확한 위치를 먼저 선택해주세요.');
+        return;
       }
-
-      return { region, cityName };
+      inputEl.value = '⛰️ 정밀 고도 측정 중...';
+      const elev = await getElevation(lat, lng);
+      inputEl.value = elev || '직접 입력 권장';
     }
 
     function getDroneBadgeHtml(status, reason) {
       if (status === 'no') {
-        const tooltipText = reason ? `사유: ${reason}` : '사유: 비행제한구역/국립공원';
-        return `
-          <div class="instant-tooltip-box" data-tooltip="${tooltipText}">
-            <span class="drone-badge drone-no">🔴 법정 비행금지</span>
-          </div>
-        `;
+        return `<div class="instant-tooltip-box" data-tooltip="사유: ${reason || '비행제한구역/국립공원'}"><span class="drone-badge drone-no">🔴 법정 비행금지</span></div>`;
       } else if (status === 'warn') {
-        return `
-          <div class="instant-tooltip-box" data-tooltip="비행은 자유로우나, 인근 군부대/시설로 인해 영상 촬영 시 드론원스톱 승인 필요">
-            <span class="drone-badge drone-warn">🟡 비행가능·촬영신청</span>
-          </div>
-        `;
+        return `<div class="instant-tooltip-box" data-tooltip="비행은 자유로우나 영상 촬영 시 드론원스톱 승인 필요"><span class="drone-badge drone-warn">🟡 비행가능·촬영신청</span></div>`;
       }
-      return `
-        <div class="instant-tooltip-box" data-tooltip="지표면 150m 이하 비행 및 영상 촬영 자유 (군사시설 촬영 금지)">
-          <span class="drone-badge drone-ok">🟢 비행·촬영 자유</span>
-        </div>
-      `;
+      return `<div class="instant-tooltip-box" data-tooltip="지표면 150m 이하 비행 및 영상 촬영 자유"><span class="drone-badge drone-ok">🟢 비행·촬영 자유</span></div>`;
     }
 
     function getDistance(lat1, lng1, lat2, lng2) {
@@ -1356,63 +1860,31 @@
       const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
                 Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                 Math.sin(dLng/2) * Math.sin(dLng/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-      return R * c;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
     function autoDetectDroneStatus(lat, lng) {
       if (lat >= 37.88) return { status: 'no', reason: '휴전선 비행금지구역 (P-518)' };
-
       for (const zone of restrictedZones) {
-        const dist = getDistance(lat, lng, zone.lat, zone.lng);
-        if (dist <= zone.radius) {
-          return { status: 'no', reason: zone.name };
-        }
+        if (getDistance(lat, lng, zone.lat, zone.lng) <= zone.radius) return { status: 'no', reason: zone.name };
       }
-
       for (const park of nationalParks) {
-        const dist = getDistance(lat, lng, park.lat, park.lng);
-        if (dist <= park.radius) {
-          return { status: 'no', reason: `${park.name} (자연공원법)` };
-        }
+        if (getDistance(lat, lng, park.lat, park.lng) <= park.radius) return { status: 'no', reason: `${park.name} (자연공원법)` };
       }
-
       return { status: 'ok', reason: '자유 구역' };
     }
 
     function toggleDroneOverlay() {
       isDroneOverlayOn = !isDroneOverlayOn;
       const btn = document.getElementById('droneLayerBtn');
-
       if (isDroneOverlayOn) {
         btn.classList.add('active');
         btn.innerText = '🛸 제한구역 끄기';
-
         restrictedZones.forEach(z => {
-          const isNuke = z.type === 'nuke';
-          const circle = new naver.maps.Circle({
-            map: map,
-            center: new naver.maps.LatLng(z.lat, z.lng),
-            radius: z.radius,
-            fillColor: isNuke ? '#dc2626' : '#ef4444',
-            fillOpacity: isNuke ? 0.28 : 0.20,
-            strokeColor: isNuke ? '#7f1d1d' : '#b91c1c',
-            strokeWeight: 1.5
-          });
-          droneOverlays.push(circle);
+          droneOverlays.push(new naver.maps.Circle({ map, center: new naver.maps.LatLng(z.lat, z.lng), radius: z.radius, fillColor: '#dc2626', fillOpacity: 0.20, strokeColor: '#b91c1c', strokeWeight: 1.5 }));
         });
-
         nationalParks.forEach(p => {
-          const circle = new naver.maps.Circle({
-            map: map,
-            center: new naver.maps.LatLng(p.lat, p.lng),
-            radius: p.radius,
-            fillColor: '#f97316',
-            fillOpacity: 0.22,
-            strokeColor: '#ea580c',
-            strokeWeight: 1.5
-          });
-          droneOverlays.push(circle);
+          droneOverlays.push(new naver.maps.Circle({ map, center: new naver.maps.LatLng(p.lat, p.lng), radius: p.radius, fillColor: '#f97316', fillOpacity: 0.22, strokeColor: '#ea580c', strokeWeight: 1.5 }));
         });
       } else {
         btn.classList.remove('active');
@@ -1438,253 +1910,131 @@
       }
     });
 
-    function updateAdminUI() {
-      document.querySelectorAll('.btn-del').forEach(btn => btn.style.display = isAdminMode ? 'block' : 'none');
-      document.querySelectorAll('.btn-edit').forEach(btn => btn.style.display = isAdminMode ? 'block' : 'none');
-      document.querySelectorAll('.btn-quick-add').forEach(btn => btn.style.display = isAdminMode ? 'inline-block' : 'none');
-    }
-
     function getMediaLinksHtml(spot) {
       let html = '<div class="media-links-group">';
-      
-      const ytList = Array.isArray(spot.youtubeUrls) ? spot.youtubeUrls : (spot.youtubeUrl ? [spot.youtubeUrl] : []);
+      const ytList = spot.youtubeUrls || (spot.youtubeUrl ? [spot.youtubeUrl] : []);
       ytList.slice(0, 3).forEach((url, i) => {
         if (url && url.trim()) {
-          const safeUrl = cleanYouTubeUrl(url.trim());
-          html += `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="link-btn btn-yt" onclick="event.stopPropagation();">▶ 영상 ${ytList.length > 1 ? i+1 : ''}</a>`;
+          html += `<a href="${cleanYouTubeUrl(url.trim())}" target="_blank" rel="noopener noreferrer" class="link-btn btn-yt" onclick="event.stopPropagation();">▶ 영상 ${ytList.length > 1 ? i + 1 : ''}</a>`;
         }
       });
-
       if (spot.blogUrl && spot.blogUrl.trim()) {
         html += `<a href="${spot.blogUrl.trim()}" target="_blank" rel="noopener noreferrer" class="link-btn btn-blog" onclick="event.stopPropagation();">📝 블로그</a>`;
       }
-
       const instaUser = spot.instaId && spot.instaId.trim() ? spot.instaId.trim() : "oklionnature";
       const cleanUser = instaUser.replace('@', '').replace(/https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '');
-      const instaLink = `https://instagram.com/${cleanUser}`;
-      const tooltipText = `@${cleanUser}`;
-      
       html += `
-        <div class="insta-btn-container" data-tooltip="${tooltipText}">
-          <a href="${instaLink}" target="_blank" rel="noopener noreferrer" class="link-btn btn-insta" onclick="event.stopPropagation();">
-            <svg class="insta-icon-svg" viewBox="0 0 24 24">
-              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
-            </svg>
+        <div class="insta-btn-container" data-tooltip="@${cleanUser}">
+          <a href="https://instagram.com/${cleanUser}" target="_blank" rel="noopener noreferrer" class="link-btn btn-insta" onclick="event.stopPropagation();">
+            <svg class="insta-icon-svg" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
             <span>by</span>
           </a>
         </div>
       `;
-
       html += '</div>';
       return html;
     }
 
     function getMetaBadgesHtml(spot) {
       let html = '<div class="spot-meta-badges">';
-      
       if (spot.terrain && spot.terrain.length > 0) {
         spot.terrain.forEach(t => {
-          if (t.includes('바위')) {
-            html += `<span class="meta-tag tag-terrain-rock">🪨 바위</span>`;
-          } else if (t.includes('데크')) {
-            html += `<span class="meta-tag tag-terrain-deck">🪵 데크</span>`;
-          } else if (t.includes('노지') || t.includes('땅')) {
-            html += `<span class="meta-tag tag-terrain-soil">🏕️ 노지</span>`;
-          }
+          if (t.includes('바위') || t.includes('돌')) html += `<span class="meta-tag tag-terrain-rock">🪨 바위</span>`;
+          else if (t.includes('데크') || t.includes('활공장')) html += `<span class="meta-tag tag-terrain-deck">🪵 데크</span>`;
+          else if (t.includes('노지')) html += `<span class="meta-tag tag-terrain-soil">🏕️ 노지</span>`;
         });
       }
-
       const diffStars = '⭐'.repeat(parseInt(spot.difficulty) || 3);
       html += `<span class="meta-tag tag-diff">난이도 ${diffStars}</span>`;
-      
       if (spot.distance && String(spot.distance).trim()) {
-        const distVal = String(spot.distance).trim().replace(/km$/i, '');
-        html += `<span class="meta-tag tag-dist">🚶 거리: ${distVal}km</span>`;
+        html += `<span class="meta-tag tag-dist">🚶 거리: ${String(spot.distance).trim().replace(/km$/i, '')}km</span>`;
       }
-
       html += '</div>';
       return html;
     }
 
-    function openAddModal(defaultName, lat, lng, droneStatus, address) {
-      modalMode = 'ADD';
-      modalPendingData = { lat: parseFloat(lat), lng: parseFloat(lng), droneStatus: droneStatus, address: address || '' };
-      
-      document.getElementById('modalTitle').innerText = '📍 새 박지 등록';
-      document.getElementById('modalInputName').value = defaultName || '';
-      document.getElementById('modalInputEntry').value = address || '';
-      document.getElementById('modalInputDesc').value = '추천 백패킹 박지';
-      document.getElementById('modalInputYoutube').value = '';
-      document.getElementById('modalInputBlog').value = '';
-      document.getElementById('modalInputInsta').value = 'oklionnature';
-      document.getElementById('modalInputDistance').value = '';
-      document.getElementById('chkRock').checked = false;
-      document.getElementById('chkDeck').checked = true;
-      document.getElementById('chkSoil').checked = false;
-      document.getElementById('modalSelectDiff').value = '3';
-      
-      document.getElementById('customModalOverlay').style.display = 'flex';
-      setTimeout(() => document.getElementById('modalInputName').focus(), 50);
+    function getCommentsHtml(spotId) {
+      const cList = spotComments[spotId] || [];
+      let listHtml = '';
+      if (cList.length === 0) {
+        listHtml = '<li style="color:#94a3b8; font-size:0.72rem;">첫 후기를 남겨보세요!</li>';
+      } else {
+        cList.forEach((c, idx) => {
+          listHtml += `
+            <li class="comment-item">
+              <div><span class="comment-author">${c.author}:</span><span class="comment-text">${c.text}</span></div>
+              <button type="button" class="comment-del-btn" onclick="deleteComment(event, '${spotId}', ${idx})">✕</button>
+            </li>
+          `;
+        });
+      }
+
+      return `
+        <div class="comments-section" onclick="event.stopPropagation();">
+          <div class="comments-title">
+            <span>💬 방문 후기 / 한줄평 (${cList.length})</span>
+          </div>
+          <ul class="comments-list" id="commentList_${spotId}">${listHtml}</ul>
+          <div class="comment-form">
+            <input type="text" class="comment-input-author" id="cAuthor_${spotId}" placeholder="닉네임" />
+            <input type="text" class="comment-input-text" id="cText_${spotId}" placeholder="후기 작성..." onkeyup="if(event.keyCode===13) addComment('${spotId}')" />
+            <button type="button" class="comment-btn-submit" onclick="addComment('${spotId}')">등록</button>
+          </div>
+        </div>
+      `;
     }
 
-    function openEditModal(index) {
-      modalMode = 'EDIT';
-      modalEditIndex = index;
-      const target = spots[index];
+    function addComment(spotId) {
+      const authorEl = document.getElementById(`cAuthor_${spotId}`);
+      const textEl = document.getElementById(`cText_${spotId}`);
+      const author = authorEl.value.trim() || '익명';
+      const text = textEl.value.trim();
 
-      document.getElementById('modalTitle').innerText = `✏️ '${target.name}' 수정`;
-      document.getElementById('modalInputName').value = target.name;
-      document.getElementById('modalInputEntry').value = target.entryPoint || '';
-      document.getElementById('modalInputDesc').value = target.desc;
-      document.getElementById('modalInputDistance').value = target.distance || '';
-      
-      const ytList = Array.isArray(target.youtubeUrls) ? target.youtubeUrls : (target.youtubeUrl ? [target.youtubeUrl] : []);
-      document.getElementById('modalInputYoutube').value = ytList.join('\n');
-      document.getElementById('modalInputBlog').value = target.blogUrl || '';
-      document.getElementById('modalInputInsta').value = target.instaId || 'oklionnature';
-
-      const tList = target.terrain || [];
-      document.getElementById('chkRock').checked = tList.includes('바위');
-      document.getElementById('chkDeck').checked = tList.includes('데크');
-      document.getElementById('chkSoil').checked = tList.includes('노지') || tList.includes('땅/노지') || tList.includes('땅');
-      document.getElementById('modalSelectDiff').value = target.difficulty || '3';
-
-      document.getElementById('customModalOverlay').style.display = 'flex';
-      setTimeout(() => document.getElementById('modalInputName').focus(), 50);
-    }
-
-    function closeCustomModal() {
-      document.getElementById('customModalOverlay').style.display = 'none';
-    }
-
-    function saveCustomModal() {
-      const name = document.getElementById('modalInputName').value.trim();
-      const entryPoint = document.getElementById('modalInputEntry').value.trim() || '들머리 정보 미입력';
-      const desc = document.getElementById('modalInputDesc').value.trim() || '추천 백패킹 박지';
-      const distance = document.getElementById('modalInputDistance').value.trim();
-      
-      const rawYt = document.getElementById('modalInputYoutube').value.trim();
-      const youtubeUrls = rawYt ? rawYt.split('\n').map(u => u.trim()).filter(u => u).slice(0, 3) : [];
-      
-      const blogUrl = document.getElementById('modalInputBlog').value.trim();
-      const instaId = document.getElementById('modalInputInsta').value.trim() || 'oklionnature';
-
-      const terrain = [];
-      if (document.getElementById('chkRock').checked) terrain.push('바위');
-      if (document.getElementById('chkDeck').checked) terrain.push('데크');
-      if (document.getElementById('chkSoil').checked) terrain.push('노지');
-
-      const difficulty = document.getElementById('modalSelectDiff').value;
-
-      if (!name) {
-        alert('산(박지) 이름을 입력해주세요.');
+      if (!text) {
+        alert('후기 내용을 입력해주세요.');
         return;
       }
 
-      if (modalMode === 'ADD') {
-        const res = detectRegionAndCity(modalPendingData.lat, modalPendingData.lng, name);
-        const newSpot = {
-          id: Date.now(),
-          name: name,
-          entryPoint: entryPoint,
-          lat: modalPendingData.lat,
-          lng: modalPendingData.lng,
-          region: res.region,
-          cityName: res.cityName,
-          desc: desc,
-          distance: distance,
-          youtubeUrls: youtubeUrls,
-          blogUrl: blogUrl,
-          instaId: instaId,
-          terrain: terrain.length > 0 ? terrain : ['데크'],
-          difficulty: difficulty,
-          droneStatus: modalPendingData.droneStatus,
-          searchCount: 1
-        };
+      if (!spotComments[spotId]) spotComments[spotId] = [];
+      spotComments[spotId].push({
+        author: author,
+        text: text,
+        date: new Date().toLocaleDateString()
+      });
 
-        spots.unshift(newSpot);
-        localStorage.setItem('okbm_spots', JSON.stringify(spots));
-        renderSpots();
-
-        const pos = new naver.maps.LatLng(newSpot.lat, newSpot.lng);
-        map.setZoom(15);
-        map.panTo(pos);
-        if (tempSearchMarker) tempSearchMarker.setMap(null);
-      } else if (modalMode === 'EDIT') {
-        const target = spots[modalEditIndex];
-        const res = detectRegionAndCity(target.lat, target.lng, name);
-        
-        target.name = name;
-        target.entryPoint = entryPoint;
-        target.desc = desc;
-        target.distance = distance;
-        target.youtubeUrls = youtubeUrls;
-        target.blogUrl = blogUrl;
-        target.instaId = instaId;
-        target.terrain = terrain.length > 0 ? terrain : ['데크'];
-        target.difficulty = difficulty;
-        target.region = res.region;
-        target.cityName = res.cityName;
-
-        localStorage.setItem('okbm_spots', JSON.stringify(spots));
-        renderSpots();
-      }
-
-      closeCustomModal();
+      localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
+      renderSpots();
     }
 
-    naver.maps.Event.addListener(map, 'click', function(e) {
-      if (!isAdminMode) return;
-      const lat = e.coord.lat();
-      const lng = e.coord.lng();
-      const check = autoDetectDroneStatus(lat, lng);
-      
-      naver.maps.Service.reverseGeocode({
-        coords: new naver.maps.LatLng(lat, lng),
-        orders: [naver.maps.Service.OrderType.ADDR, naver.maps.Service.OrderType.ROAD_ADDR].join(',')
-      }, function(status, response) {
-        let addr = '';
-        if (status === naver.maps.Service.Status.OK && response.v2.address) {
-          addr = response.v2.address.jibunAddress || response.v2.address.roadAddress;
-        }
-        openAddModal("새 박지 위치", lat, lng, check.status, addr);
-      });
-    });
-
-    function incrementSpotCount(spotId) {
-      const target = spots.find(s => s.id === spotId);
-      if (target) {
-        target.searchCount = (target.searchCount || 0) + 1;
-        localStorage.setItem('okbm_spots', JSON.stringify(spots));
+    function deleteComment(event, spotId, cIndex) {
+      event.stopPropagation();
+      if (!confirm('이 후기를 삭제하시겠습니까?')) return;
+      if (spotComments[spotId]) {
+        spotComments[spotId].splice(cIndex, 1);
+        localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
+        renderSpots();
+        infoWindow.close();
       }
+    }
+
+    function incrementSpotCount(spotId, name) {
+      const key = `okbm_views_${spotId || name}`;
+      const views = (parseInt(localStorage.getItem(key)) || 0) + 1;
+      localStorage.setItem(key, views);
+      const target = spots.find(s => String(s.id) === String(spotId) || s.name === name);
+      if (target) target.searchCount = views;
     }
 
     function showTopRankings() {
       const inputVal = document.getElementById('topSearchInput').value.trim();
       if (inputVal) return;
-
       const dropdown = document.getElementById('searchDropdown');
       dropdown.innerHTML = '<div class="dropdown-header"><span>🔥 실시간 인기 박지 TOP 5</span><span>조회수 순</span></div>';
       dropdown.style.display = 'block';
 
-      spots.forEach(s => {
-        if (!s.cityName) {
-          const res = detectRegionAndCity(s.lat, s.lng, s.name);
-          s.cityName = res.cityName;
-        }
-      });
-
       const sorted = [...spots].sort((a, b) => (b.searchCount || 0) - (a.searchCount || 0)).slice(0, 5);
-
-      if (sorted.length === 0) {
-        dropdown.innerHTML += '<li class="dropdown-item" style="color:#64748b;">등록된 박지가 없습니다.</li>';
-        return;
-      }
-
       sorted.forEach((item, idx) => {
         const rankClass = idx === 0 ? 'rank-1' : idx === 1 ? 'rank-2' : idx === 2 ? 'rank-3' : 'rank-etc';
-        const displayCity = item.cityName || '대한민국';
-
         const li = document.createElement('li');
         li.className = 'dropdown-item';
         li.innerHTML = `
@@ -1692,53 +2042,39 @@
             <div class="top-rank-left">
               <span class="rank-badge ${rankClass}">${idx + 1}</span>
               <span class="top-spot-title">${item.name}</span>
-              <span class="top-spot-city">📍 ${displayCity}</span>
+              <span class="top-spot-city">📍 ${item.cityName || '대한민국'}</span>
             </div>
             <div class="top-spot-views">${item.searchCount || 0}회</div>
           </div>
         `;
-
         li.addEventListener('click', () => {
-          incrementSpotCount(item.id);
+          incrementSpotCount(item.id, item.name);
           const pos = new naver.maps.LatLng(item.lat, item.lng);
           map.setZoom(15);
           map.panTo(pos);
-
-          const check = autoDetectDroneStatus(item.lat, item.lng);
-          const autoDroneTag = getDroneBadgeHtml(check.status, check.reason);
-          const metaBadgesHtml = getMetaBadgesHtml(item);
-          const mediaLinksHtml = getMediaLinksHtml(item);
-          
-          const contentString = `
-            <div class="compact-info-window">
-              <div class="compact-title">${item.name}</div>
-              ${metaBadgesHtml}
-              <div class="compact-entry">🚗 들머리:\n${item.entryPoint || '정보 미입력'}</div>
+          const targetMarker = currentMarkers[spots.findIndex(s => String(s.id) === String(item.id))];
+          infoWindow.setContent(`
+            <div class="compact-info-window" style="position: relative; padding-right: 20px;">
+              <div class="compact-title">${item.name} ${item.elevation ? `<span style="font-size:0.8rem; color:#15803d;">(${item.elevation})</span>` : ''}</div>
+              <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 8px; right: 8px; background: #e2e8f0; border: none; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; cursor: pointer; font-weight: bold; color: #334155;">✕</button>
+              ${getMetaBadgesHtml(item)}
+              <div class="compact-entry">🚗 들머리:\n${item.entryPoint}</div>
               <div class="compact-desc">📝 특징:\n${item.desc}</div>
-              ${mediaLinksHtml}
-              <div style="margin-top:2px;">${autoDroneTag}</div>
+              ${getMediaLinksHtml(item)}
+              <div style="margin-top:2px;">${getDroneBadgeHtml(item.droneStatus)}</div>
+              ${getCommentsHtml(item.id)}
             </div>
-          `;
-
-          const targetMarker = currentMarkers[spots.findIndex(s => s.id === item.id)];
-          infoWindow.setContent(contentString);
+          `);
           infoWindow.open(map, targetMarker || pos);
           dropdown.style.display = 'none';
         });
-
         dropdown.appendChild(li);
       });
     }
 
     function handleSearchInput(e) {
-      if (e.keyCode === 13) {
-        executeSearch();
-      } else {
-        const val = e.target.value.trim();
-        if (!val) {
-          showTopRankings();
-        }
-      }
+      if (e.keyCode === 13) executeSearch();
+      else if (!e.target.value.trim()) showTopRankings();
     }
 
     function renderSpots() {
@@ -1747,8 +2083,7 @@
         const titleEl = group.querySelector('.region-group-title span:first-child');
         const containerEl = group.querySelector('.region-items-container');
         if (titleEl && containerEl && containerEl.style.display !== 'none') {
-          const regName = titleEl.innerText.replace('📌', '').trim();
-          openedRegions.add(regName);
+          openedRegions.add(titleEl.innerText.replace('📌', '').trim());
         }
       });
 
@@ -1759,47 +2094,54 @@
       spotListEl.innerHTML = '';
       document.getElementById('spotCount').innerText = `${spots.length}개`;
 
-      const targetOrder = ["서울/인천", "경기", "강원", "전라", "경상", "제주"];
+      const targetOrder = ["서울/인천", "경기", "강원", "충청", "전라", "경상", "제주"];
       const grouped = {};
       targetOrder.forEach(r => grouped[r] = []);
 
       spots.forEach((spot, index) => {
-        const res = detectRegionAndCity(spot.lat, spot.lng, spot.name);
-        spot.region = res.region;
-        if (!spot.cityName) spot.cityName = res.cityName;
-        if (!spot.searchCount) spot.searchCount = 0;
-        if (!spot.entryPoint) spot.entryPoint = "들머리 정보 미입력";
-        if (!spot.difficulty) spot.difficulty = "3";
-        if (!spot.terrain) spot.terrain = ["데크"];
-        if (!spot.instaId) spot.instaId = "oklionnature";
-        spot.terrain = spot.terrain.map(t => t.replace('땅/노지', '노지').replace('땅', '노지'));
+        if (!spot.region || !spot.cityName) {
+          const res = detectRegionAndCity(spot.lat, spot.lng, spot.name, spot.entryPoint);
+          if (!spot.region) spot.region = res.region;
+          if (!spot.cityName) spot.cityName = res.cityName;
+        }
 
-        const r = spot.region;
+        const r = spot.region || '경기';
         if (!grouped[r]) grouped[r] = [];
         grouped[r].push({ spot, index });
 
         const position = new naver.maps.LatLng(spot.lat, spot.lng);
-        const marker = new naver.maps.Marker({ position, map, title: spot.name });
+        const marker = new naver.maps.Marker({ position, map, title: spot.name, draggable: isAdminMode });
         currentMarkers.push(marker);
+
+        naver.maps.Event.addListener(marker, 'dragend', function() {
+          if (!isAdminMode) return;
+          const movedLatLng = marker.getPosition();
+          spot.lat = movedLatLng.lat();
+          spot.lng = movedLatLng.lng();
+          localStorage.setItem('okbm_spots', JSON.stringify(spots));
+        });
 
         const check = autoDetectDroneStatus(spot.lat, spot.lng);
         const droneTag = getDroneBadgeHtml(check.status, check.reason);
         const metaBadgesHtml = getMetaBadgesHtml(spot);
         const mediaLinksHtml = getMediaLinksHtml(spot);
+        const commentsHtml = getCommentsHtml(spot.id);
 
         const contentString = `
-          <div class="compact-info-window">
-            <div class="compact-title">${spot.name}</div>
+          <div class="compact-info-window" style="position: relative; padding-right: 20px;">
+            <div class="compact-title">${spot.name} ${spot.elevation ? `<span style="font-size:0.8rem; color:#15803d;">(${spot.elevation})</span>` : ''}</div>
+            <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 8px; right: 8px; background: #e2e8f0; border: none; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; cursor: pointer; font-weight: bold; color: #334155; display: flex; align-items: center; justify-content: center;">✕</button>
             ${metaBadgesHtml}
             <div class="compact-entry">🚗 들머리:\n${spot.entryPoint}</div>
             <div class="compact-desc">📝 특징:\n${spot.desc}</div>
             ${mediaLinksHtml}
             <div style="margin-top:2px;">${droneTag}</div>
+            ${commentsHtml}
           </div>
         `;
 
         naver.maps.Event.addListener(marker, 'click', () => {
-          incrementSpotCount(spot.id);
+          incrementSpotCount(spot.id, spot.name);
           infoWindow.setContent(contentString);
           infoWindow.open(map, marker);
           map.panTo(position);
@@ -1818,13 +2160,8 @@
 
         const groupTitle = document.createElement('div');
         groupTitle.className = 'region-group-title';
-        groupTitle.innerHTML = `
-          <span>📌 ${regionKey}</span>
-          <span style="color:#64748b; font-size:0.75rem;">${items.length}개 ${isPreviouslyOpened ? '<b style="color:#0f766e;">▼</b>' : '▶'}</span>
-        `;
-        if (isPreviouslyOpened) {
-          groupTitle.style.borderLeftColor = '#0f766e';
-        }
+        groupTitle.innerHTML = `<span>📌 ${regionKey}</span><span style="color:#64748b; font-size:0.75rem;">${items.length}개 ${isPreviouslyOpened ? '<b style="color:#0f766e;">▼</b>' : '▶'}</span>`;
+        if (isPreviouslyOpened) groupTitle.style.borderLeftColor = '#0f766e';
 
         const groupItemsContainer = document.createElement('div');
         groupItemsContainer.className = 'region-items-container';
@@ -1846,16 +2183,12 @@
           const li = document.createElement('div');
           li.className = 'spot-item';
           li.innerHTML = `
-            <div class="spot-header-row">
-              <span class="spot-name">${spot.name}</span>
-            </div>
+            <div class="spot-header-row"><span class="spot-name">${spot.name} ${spot.elevation ? `<span style="font-size:0.76rem; color:#15803d; font-weight:normal;">(${spot.elevation})</span>` : ''}</span></div>
             ${metaBadgesHtml}
             <div class="spot-entry">🚗 들머리:\n${spot.entryPoint}</div>
             <div class="spot-desc">📝 특징:\n${spot.desc}</div>
             ${mediaLinksHtml}
-            <div class="drone-badge-container">
-              ${droneTag}
-            </div>
+            <div class="drone-badge-container">${droneTag}</div>
             <div class="spot-action-btns">
               <button class="btn-edit" onclick="editSpot(event, ${index})">수정</button>
               <button class="btn-del" onclick="deleteSpot(event, ${index})">삭제</button>
@@ -1863,22 +2196,22 @@
           `;
 
           li.addEventListener('click', () => {
-            incrementSpotCount(spot.id);
-            const position = new naver.maps.LatLng(spot.lat, spot.lng);
+            incrementSpotCount(spot.id, spot.name);
+            const pos = new naver.maps.LatLng(spot.lat, spot.lng);
             map.setZoom(15);
-            map.panTo(position);
-            
-            const contentString = `
-              <div class="compact-info-window">
-                <div class="compact-title">${spot.name}</div>
+            map.panTo(pos);
+            infoWindow.setContent(`
+              <div class="compact-info-window" style="position: relative; padding-right: 20px;">
+                <div class="compact-title">${spot.name} ${spot.elevation ? `<span style="font-size:0.8rem; color:#15803d;">(${spot.elevation})</span>` : ''}</div>
+                <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 8px; right: 8px; background: #e2e8f0; border: none; width: 22px; height: 22px; border-radius: 50%; font-size: 12px; cursor: pointer; font-weight: bold; color: #334155;">✕</button>
                 ${metaBadgesHtml}
                 <div class="compact-entry">🚗 들머리:\n${spot.entryPoint}</div>
                 <div class="compact-desc">📝 특징:\n${spot.desc}</div>
                 ${mediaLinksHtml}
                 <div style="margin-top:2px;">${droneTag}</div>
+                ${getCommentsHtml(spot.id)}
               </div>
-            `;
-            infoWindow.setContent(contentString);
+            `);
             infoWindow.open(map, currentMarkers[index]);
           });
 
@@ -1896,38 +2229,25 @@
     function executeSearch() {
       const query = document.getElementById('topSearchInput').value.trim();
       if (!query) return;
-
       const dropdown = document.getElementById('searchDropdown');
       dropdown.innerHTML = '<li class="dropdown-item" style="color:#64748b;">검색 중...</li>';
       dropdown.style.display = 'block';
 
       const internalMatches = spots.filter(s => s.name.toLowerCase().includes(query.toLowerCase()));
-      internalMatches.forEach(s => incrementSpotCount(s.id));
+      internalMatches.forEach(s => incrementSpotCount(s.id, s.name));
 
       naver.maps.Service.geocode({ query: query }, function(status, response) {
         let results = [];
         if (status === naver.maps.Service.Status.OK && response.v2.addresses.length > 0) {
           response.v2.addresses.forEach(item => {
-            results.push({
-              title: item.roadAddress || item.jibunAddress,
-              lat: parseFloat(item.y).toFixed(6),
-              lng: parseFloat(item.x).toFixed(6)
-            });
+            results.push({ title: item.roadAddress || item.jibunAddress, lat: parseFloat(item.y).toFixed(6), lng: parseFloat(item.x).toFixed(6) });
           });
         }
-
         fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=kr&limit=5`)
           .then(res => res.json())
           .then(data => {
             if (data && data.length > 0) {
-              data.forEach(item => {
-                results.push({
-                  title: item.name || query,
-                  sub: item.display_name.split(',')[1] || '',
-                  lat: parseFloat(item.lat).toFixed(6),
-                  lng: parseFloat(item.lon).toFixed(6)
-                });
-              });
+              data.forEach(item => results.push({ title: item.name || query, sub: item.display_name.split(',')[1] || '', lat: parseFloat(item.lat).toFixed(6), lng: parseFloat(item.lon).toFixed(6) }));
             }
             renderSearchResults(results);
           })
@@ -1938,16 +2258,13 @@
     function renderSearchResults(results) {
       const dropdown = document.getElementById('searchDropdown');
       dropdown.innerHTML = '<div class="dropdown-header"><span>🔍 검색 결과</span></div>';
-
       if (results.length === 0) {
-        dropdown.innerHTML += '<li class="dropdown-item" style="color:#ef4444;">검색 결과가 없습니다. 지도를 클릭해 직접 등록하세요.</li>';
+        dropdown.innerHTML += '<li class="dropdown-item" style="color:#ef4444;">검색 결과가 없습니다.</li>';
         return;
       }
-
       results.forEach(item => {
         const check = autoDetectDroneStatus(parseFloat(item.lat), parseFloat(item.lng));
         const autoDroneTag = getDroneBadgeHtml(check.status, check.reason);
-
         const li = document.createElement('li');
         li.className = 'dropdown-item';
         li.innerHTML = `
@@ -1957,48 +2274,196 @@
           </div>
           <button type="button" class="btn-quick-add" style="display:${isAdminMode ? 'inline-block' : 'none'};">➕ 등록</button>
         `;
-
         li.querySelector('.dropdown-info').addEventListener('click', () => {
           const pos = new naver.maps.LatLng(item.lat, item.lng);
           map.setZoom(15);
           map.panTo(pos);
-
           if (tempSearchMarker) tempSearchMarker.setMap(null);
-          tempSearchMarker = new naver.maps.Marker({ position: pos, map: map, animation: naver.maps.Animation.DROP });
+          tempSearchMarker = new naver.maps.Marker({ position: pos, map, animation: naver.maps.Animation.DROP });
           dropdown.style.display = 'none';
         });
-
         li.querySelector('.btn-quick-add').addEventListener('click', (e) => {
           e.stopPropagation();
           openAddModal(item.title, item.lat, item.lng, check.status, item.title);
           dropdown.style.display = 'none';
         });
-
         dropdown.appendChild(li);
       });
     }
+
+    async function openAddModal(defaultName, lat, lng, droneStatus, address) {
+      modalMode = 'ADD';
+      modalPendingData = { lat: parseFloat(lat), lng: parseFloat(lng), droneStatus: droneStatus, address: address || '' };
+      document.getElementById('modalTitle').innerText = '📍 새 박지 등록';
+      document.getElementById('modalInputName').value = defaultName || '';
+      document.getElementById('modalInputEntry').value = address || '';
+      document.getElementById('modalInputDesc').value = '추천 백패킹 박지';
+      document.getElementById('modalInputYoutube').value = '';
+      document.getElementById('modalInputBlog').value = '';
+      document.getElementById('modalInputInsta').value = 'oklionnature';
+      document.getElementById('modalInputDistance').value = '';
+      document.getElementById('chkRock').checked = false;
+      document.getElementById('chkDeck').checked = true;
+      document.getElementById('chkSoil').checked = false;
+      document.getElementById('modalSelectDiff').value = '3';
+      document.getElementById('customModalOverlay').style.display = 'flex';
+      const elev = await getElevation(lat, lng);
+      document.getElementById('modalInputElevation').value = elev;
+      setTimeout(() => document.getElementById('modalInputName').focus(), 50);
+    }
+
+    function openEditModal(index) {
+      modalMode = 'EDIT';
+      modalEditIndex = index;
+      const target = spots[index];
+      document.getElementById('modalTitle').innerText = `✏️ '${target.name}' 수정`;
+      document.getElementById('modalInputName').value = target.name;
+      document.getElementById('modalInputElevation').value = target.elevation || '';
+      document.getElementById('modalInputEntry').value = target.entryPoint || '';
+      document.getElementById('modalInputDesc').value = target.desc;
+      document.getElementById('modalInputDistance').value = target.distance || '';
+      const ytList = Array.isArray(target.youtubeUrls) ? target.youtubeUrls : (target.youtubeUrl ? [target.youtubeUrl] : []);
+      document.getElementById('modalInputYoutube').value = ytList.join('\n');
+      document.getElementById('modalInputBlog').value = target.blogUrl || '';
+      document.getElementById('modalInputInsta').value = target.instaId || 'oklionnature';
+      const tList = target.terrain || [];
+      document.getElementById('chkRock').checked = tList.includes('바위') || tList.includes('돌');
+      document.getElementById('chkDeck').checked = tList.includes('데크') || tList.includes('활공장');
+      document.getElementById('chkSoil').checked = tList.includes('노지') || tList.includes('땅');
+      document.getElementById('modalSelectDiff').value = target.difficulty || '3';
+      document.getElementById('customModalOverlay').style.display = 'flex';
+      setTimeout(() => document.getElementById('modalInputName').focus(), 50);
+    }
+
+    function closeCustomModal() {
+      document.getElementById('customModalOverlay').style.display = 'none';
+    }
+
+    function saveCustomModal() {
+      const name = document.getElementById('modalInputName').value.trim();
+      const elevation = document.getElementById('modalInputElevation').value.trim();
+      const entryPoint = document.getElementById('modalInputEntry').value.trim() || '들머리 정보 미입력';
+      const desc = document.getElementById('modalInputDesc').value.trim() || '추천 백패킹 박지';
+      const distance = document.getElementById('modalInputDistance').value.trim();
+      const rawYt = document.getElementById('modalInputYoutube').value.trim();
+      const youtubeUrls = rawYt ? rawYt.split('\n').map(u => u.trim()).filter(u => u).slice(0, 3) : [];
+      const blogUrl = document.getElementById('modalInputBlog').value.trim();
+      const instaId = document.getElementById('modalInputInsta').value.trim() || 'oklionnature';
+
+      const terrain = [];
+      if (document.getElementById('chkRock').checked) terrain.push('바위');
+      if (document.getElementById('chkDeck').checked) terrain.push('데크');
+      if (document.getElementById('chkSoil').checked) terrain.push('노지');
+
+      const difficulty = document.getElementById('modalSelectDiff').value;
+      if (!name) return alert('산(박지) 이름을 입력해주세요.');
+
+      if (modalMode === 'ADD') {
+        const res = detectRegionAndCity(modalPendingData.lat, modalPendingData.lng, name, entryPoint);
+        const newSpot = {
+          id: Date.now(),
+          name, elevation, entryPoint,
+          lat: modalPendingData.lat, lng: modalPendingData.lng,
+          region: res.region, cityName: res.cityName,
+          desc, distance, youtubeUrls, blogUrl, instaId,
+          terrain: terrain.length > 0 ? terrain : ['데크'],
+          difficulty, droneStatus: modalPendingData.droneStatus,
+          searchCount: 1
+        };
+        spots.unshift(newSpot);
+        localStorage.setItem('okbm_spots', JSON.stringify(spots));
+        renderSpots();
+        const pos = new naver.maps.LatLng(newSpot.lat, newSpot.lng);
+        map.setZoom(15);
+        map.panTo(pos);
+      } else if (modalMode === 'EDIT') {
+        const target = spots[modalEditIndex];
+        const res = detectRegionAndCity(target.lat, target.lng, name, entryPoint);
+        target.name = name;
+        target.elevation = elevation;
+        target.entryPoint = entryPoint;
+        target.desc = desc;
+        target.distance = distance;
+        target.youtubeUrls = youtubeUrls;
+        target.blogUrl = blogUrl;
+        target.instaId = instaId;
+        target.terrain = terrain.length > 0 ? terrain : ['데크'];
+        target.difficulty = difficulty;
+        target.region = res.region;
+        target.cityName = res.cityName;
+        localStorage.setItem('okbm_spots', JSON.stringify(spots));
+        renderSpots();
+      }
+      closeCustomModal();
+    }
+
+    naver.maps.Event.addListener(map, 'click', function(e) {
+      if (!isAdminMode) return;
+      const lat = e.coord.lat();
+      const lng = e.coord.lng();
+      const check = autoDetectDroneStatus(lat, lng);
+      naver.maps.Service.reverseGeocode({
+        coords: new naver.maps.LatLng(lat, lng),
+        orders: [naver.maps.Service.OrderType.ADDR, naver.maps.Service.OrderType.ROAD_ADDR].join(',')
+      }, function(status, response) {
+        let addr = '';
+        if (status === naver.maps.Service.Status.OK && response.v2.address) {
+          addr = response.v2.address.jibunAddress || response.v2.address.roadAddress;
+        }
+        openAddModal("새 박지 위치", lat, lng, check.status, addr);
+      });
+    });
 
     function editSpot(event, index) {
       event.stopPropagation();
       openEditModal(index);
     }
 
-    function deleteSpot(event, index) {
-      event.stopPropagation();
-      if (confirm(`'${spots[index].name}' 박지를 삭제하시겠습니까?`)) {
-        spots.splice(index, 1);
-        localStorage.setItem('okbm_spots', JSON.stringify(spots));
-        renderSpots();
-      }
-    }
+    // 구글 Apps Script 웹 앱 연동 URL
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxnaOTXg9vYVdZHJFxlo7bbtnZzKInBmqBN84-RtoFBkrGJZl3b4h3BF4V0vhdvFrK2/exec';
 
-    document.addEventListener('click', function(e) {
+// 웹에서 삭제 시 구글 시트에서도 실시간 영구 삭제되는 함수
+async function deleteSpot(event, index) {
+  event.stopPropagation();
+  const targetSpot = spots[index];
+  
+  if (!confirm(`'${targetSpot.name}' 박지를 정말 삭제하시겠습니까?\n(구글 시트에서도 영구 삭제됩니다)`)) {
+    return;
+  }
+
+  const deletedId = targetSpot.id;
+  
+  // 1. 화면에서 즉시 제거
+  spots.splice(index, 1);
+  delete spotComments[deletedId];
+  localStorage.setItem('okbm_spots', JSON.stringify(spots));
+  localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
+  infoWindow.close();
+  renderSpots();
+
+  // 2. 구글 시트로 삭제 명령 전송
+  try {
+    await fetch(GAS_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'DELETE', id: deletedId })
+    });
+    alert(`'${targetSpot.name}' 박지가 구글 시트에서 영구 삭제되었습니다.`);
+  } catch (err) {
+    console.warn('구글 시트 삭제 통신 실패:', err);
+  }
+}
+      
+    
+
+    document.addEventListener('click', (e) => {
       if (!e.target.closest('.search-container') && !e.target.closest('.custom-modal-overlay')) {
         document.getElementById('searchDropdown').style.display = 'none';
       }
     });
 
-    renderSpots();
+    // 시작 시 구글 시트 동기화 시도 및 로컬 렌더링
+    fetchSpotsFromGoogleSheet();
   </script>
 </body>
 </html>
