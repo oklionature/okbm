@@ -1,11 +1,9 @@
-
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>대한민국 낭만 백패킹 로드</title>
+  <title>대한민국 낭만 백패킹 로드 (3.8ver)</title>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,10 +37,10 @@
       font-family: 'Noto Sans KR', -apple-system, sans-serif;
       overflow-x: hidden;
       line-height: 1.5;
-      padding-bottom: 74px;
+      padding-bottom: 70px;
     }
 
-    /* GNB 상단바 */
+    /* GNB 상단 네비게이션 */
     .portal-nav {
       position: sticky;
       top: 0;
@@ -57,22 +55,31 @@
       max-width: 1200px;
       margin: 0 auto;
     }
-    .portal-logo {
+    .portal-logo-wrap {
       display: flex;
       align-items: center;
       gap: 6px;
+      text-decoration: none;
+      min-width: 0;
+    }
+    .portal-logo {
       font-family: 'Gowun Dodum', sans-serif;
       font-size: 1.15rem;
       font-weight: 800;
-      text-decoration: none;
       color: #fff;
       background: linear-gradient(135deg, #ffffff 20%, #bae6fd 60%, #38bdf8 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       white-space: nowrap;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    }
+    .ver-badge {
+      font-size: 0.64rem;
+      color: var(--accent-teal);
+      background: rgba(45, 212, 191, 0.12);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-weight: 700;
+      border: 1px solid rgba(45, 212, 191, 0.25);
     }
     .portal-menu { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
     .portal-menu a.nav-link {
@@ -245,42 +252,12 @@
       margin: 16px auto 30px auto;
       padding: 0 16px;
       display: grid;
-      grid-template-columns: 1fr 320px;
+      grid-template-columns: 1fr 330px;
       gap: 20px;
     }
-    .main-column { display: flex; flex-direction: column; gap: 18px; }
+    .main-column { display: flex; flex-direction: column; gap: 20px; }
 
-    /* 안내 배너 규격화 */
-    .notice-banner-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    }
-    .notice-badge {
-      background: rgba(245, 158, 11, 0.15);
-      color: var(--accent-amber);
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      font-size: 0.68rem;
-      font-weight: 800;
-      padding: 2px 6px;
-      border-radius: 5px;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .notice-text {
-      font-size: 0.78rem;
-      color: var(--text-primary);
-      flex: 1;
-      line-height: 1.35;
-      word-break: keep-all;
-    }
-
-    /* 테마별 추천 카드 그리드 */
+    /* 섹션 타이틀 공통 규격 */
     .section-header {
       display: flex;
       justify-content: space-between;
@@ -293,6 +270,7 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      letter-spacing: -0.3px;
     }
     .more-link {
       font-size: 0.76rem;
@@ -301,6 +279,111 @@
       font-weight: 600;
     }
 
+    /* [신규 1] YouTube 낭만 영상 플레이어 배너 규격 */
+    .youtube-embed-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .video-container {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%; /* 16:9 비율 */
+      height: 0;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #000;
+    }
+    .video-container iframe {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      border: 0;
+    }
+    .video-caption-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      padding: 2px 4px;
+    }
+
+    /* [신규 2] Instagram 릴스 & 백패킹 트렌드 피드 규격 */
+    .insta-feed-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .insta-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      text-decoration: none;
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .insta-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent-rose);
+      box-shadow: 0 8px 20px rgba(225, 29, 72, 0.2);
+    }
+    .insta-thumb-box {
+      width: 100%;
+      height: 120px;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      background: var(--bg-card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .insta-thumb-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .insta-reels-badge {
+      position: absolute;
+      top: 6px; right: 6px;
+      background: rgba(0,0,0,0.65);
+      border-radius: 4px;
+      padding: 2px 4px;
+      font-size: 0.6rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .insta-card-user {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--accent-rose);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .insta-card-desc {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+    }
+
+    /* 테마별 추천 박지 카드 그리드 규격 */
     .curated-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -347,7 +430,35 @@
       padding-top: 6px;
     }
 
-    /* 캠페인 박스 */
+    /* 안내 & LNT 배너 규격화 */
+    .notice-banner-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .notice-badge {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--accent-amber);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .notice-text {
+      font-size: 0.78rem;
+      color: var(--text-primary);
+      flex: 1;
+      line-height: 1.35;
+      word-break: keep-all;
+    }
+
     .lnt-campaign-box {
       background: linear-gradient(135deg, #111827 0%, #0f2f38 100%);
       border: 1px solid var(--border);
@@ -361,7 +472,7 @@
     .lnt-title { font-size: 0.88rem; font-weight: 800; color: #fff; margin-bottom: 2px; }
     .lnt-sub { font-size: 0.74rem; color: var(--text-secondary); line-height: 1.3; }
 
-    /* 사이드 컬럼 */
+    /* 우측 사이드바 */
     .side-column { display: flex; flex-direction: column; gap: 16px; }
     .banner-cta-map {
       background: linear-gradient(135deg, #0f766e 0%, #0284c7 100%);
@@ -444,16 +555,14 @@
     .dock-item.active { color: var(--accent-blue); }
     .dock-item svg { width: 18px; height: 18px; fill: currentColor; }
 
-    /* 모바일 전용 반응형 튜닝 */
+    /* 모바일 반응형 튜닝 */
     @media (max-width: 768px) {
       body { padding-bottom: 74px; }
-      
-      /* 헤더 겹침 방지: 로고 크기 축소 + 아이콘 지도 버튼으로 대체 */
       .portal-nav { padding: 8px 12px; }
-      .portal-logo { font-size: 1.02rem; }
-      .btn-nav-map-text { display: none; }
+      .portal-logo { font-size: 1.0rem; }
+      .portal-menu a.nav-link { display: none; }
       .btn-nav-map { padding: 4px 10px; font-size: 0.72rem; }
-      
+
       .portal-container { grid-template-columns: 1fr; gap: 16px; padding: 0 12px; margin-top: 10px; }
       .hero-wrapper { padding: 20px 12px 14px 12px; }
       .hero-title { font-size: 1.35rem; margin-bottom: 6px; }
@@ -462,12 +571,11 @@
       .portal-search-input { font-size: 0.86rem; padding: 11px 44px 11px 16px; }
       .portal-search-btn { width: 32px; height: 32px; font-size: 0.85rem; }
       
-      /* 추천 태그 모바일 3x2 정렬 */
       .keyword-chips-grid { grid-template-columns: repeat(3, 1fr); gap: 5px; }
       .keyword-chip-btn { font-size: 0.72rem; padding: 6px 2px; }
 
-      /* 추천 카드 모바일 가로 스크롤 피드 */
-      .curated-grid {
+      /* 모바일 가로 스크롤 카드 피드 */
+      .curated-grid, .insta-feed-grid {
         display: flex;
         overflow-x: auto;
         scroll-snap-type: x mandatory;
@@ -475,10 +583,17 @@
         gap: 10px;
         padding-bottom: 4px;
       }
-      .curated-grid::-webkit-scrollbar { display: none; }
+      .curated-grid::-webkit-scrollbar, .insta-feed-grid::-webkit-scrollbar { display: none; }
+      
       .curated-card {
         min-width: 220px;
         max-width: 220px;
+        scroll-snap-align: start;
+        flex-shrink: 0;
+      }
+      .insta-card {
+        min-width: 170px;
+        max-width: 170px;
         scroll-snap-align: start;
         flex-shrink: 0;
       }
@@ -489,17 +604,16 @@
 </head>
 <body>
 
-  <!-- GNB 네비게이션 -->
+  <!-- GNB 상단 네비게이션 바 -->
   <nav class="portal-nav">
-    <a href="index.html" class="portal-logo">
-      <span>🎒</span> 대한민국 낭만 백패킹 로드
+    <a href="index.html" class="portal-logo-wrap">
+      <span>🎒</span>
+      <span class="portal-logo">대한민국 낭만 백패킹 로드</span>
+      <span class="ver-badge">3.8ver</span>
     </a>
     <div class="portal-menu">
       <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="nav-link">협업·문의</a>
-      <a href="map.html" class="btn-nav-map">
-        <span class="btn-nav-map-text">🗺️ 전국 박지 지도 열기</span>
-        <span style="display:none;" class="btn-nav-map-icon">🗺️ 지도</span>
-      </a>
+      <a href="map.html" class="btn-nav-map">🗺️ 전국 지도 열기</a>
     </div>
   </nav>
 
@@ -516,7 +630,7 @@
       <ul id="searchAutoDropdown" class="search-auto-dropdown"></ul>
     </div>
 
-    <!-- 낭만 추천 6대 키워드 (깔끔한 2줄 규격 정렬) -->
+    <!-- 낭만 추천 6대 키워드 (규격화된 3x2 칩) -->
     <div class="keyword-chips-grid">
       <div class="keyword-chip-btn" onclick="smartRouteToSpot('굴업도')">🏝️ 굴업도 개머리</div>
       <div class="keyword-chip-btn" onclick="smartRouteToSpot('선자령')">🪵 대관령 선자령</div>
@@ -527,7 +641,7 @@
     </div>
   </section>
 
-  <!-- 메인 피드 컨테이너 -->
+  <!-- 포털 본문 레이아웃 -->
   <div class="portal-container">
     
     <main class="main-column">
@@ -539,6 +653,61 @@
           자연공원법 및 산림보호법 준수 · 안전한 화기 사용과 머문 자리 클린 캠핑(LNT)을 실천해주세요.
         </div>
       </div>
+
+      <!-- [신규 1] YouTube 낭만 백패킹 영상 플레이어 영역 -->
+      <section>
+        <div class="section-header">
+          <div class="section-title">🎬 이 주의 낭만 백패킹 영상</div>
+          <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" class="more-link">유튜브 바로가기 ➔</a>
+        </div>
+        <div class="youtube-embed-card">
+          <div class="video-container">
+            <!-- 유튜브 영상 ID를 언제든 원하는 영상으로 교체하실 수 있습니다 -->
+            <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0&mute=1&controls=1&rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+          <div class="video-caption-bar">
+            <span>🎥 드론으로 담아낸 서해 섬 백패킹의 일몰과 은하수</span>
+            <span style="color:var(--accent-blue);">로그인 없이 시청 가능</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- [신규 2] Instagram 요즘 뜨는 백패킹 피드 영역 -->
+      <section>
+        <div class="section-header">
+          <div class="section-title">📸 요즘 뜨는 백패킹 인스타 & 릴스</div>
+          <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="more-link">@oklionnature ➔</a>
+        </div>
+
+        <div class="insta-feed-grid">
+          <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="insta-card">
+            <div class="insta-thumb-box">
+              <img src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=500&auto=format&fit=crop&q=60" alt="인스타 백패킹 릴스" class="insta-thumb-img" />
+              <span class="insta-reels-badge">▶ 릴스</span>
+            </div>
+            <div class="insta-card-user">@oklionnature</div>
+            <div class="insta-card-desc">밤하늘 은하수가 쏟아지는 선자령 텐트 풍경 ✨</div>
+          </a>
+
+          <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="insta-card">
+            <div class="insta-thumb-box">
+              <img src="https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=500&auto=format&fit=crop&q=60" alt="인스타 백패킹 피드" class="insta-thumb-img" />
+              <span class="insta-reels-badge">📷 피드</span>
+            </div>
+            <div class="insta-card-user">@romantic_packer</div>
+            <div class="insta-card-desc">서해 굴업도 개머리언덕 수평선 일몰 🌅</div>
+          </a>
+
+          <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="insta-card">
+            <div class="insta-thumb-box">
+              <img src="https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=500&auto=format&fit=crop&q=60" alt="인스타 백패킹 릴스" class="insta-thumb-img" />
+              <span class="insta-reels-badge">▶ 릴스</span>
+            </div>
+            <div class="insta-card-user">@wild_camping</div>
+            <div class="insta-card-desc">영남알프스 억새평원 아침 운해 모닝커피 ☕</div>
+          </a>
+        </div>
+      </section>
 
       <!-- 테마별 낭만 박지 추천 카드 피드 -->
       <section>
@@ -717,7 +886,7 @@
       return (str || '').replace(/'/g, "\\'");
     }
 
-    // [3] 스마트 검색 분기
+    // [3] 스마트 검색 분기 (등록 박지 ➔ 팝업 열기 / 미등록 지명 ➔ 검색창)
     function executePortalSmartSearch() {
       const q = document.getElementById('mainSearchInput').value.trim();
       if (!q) {
@@ -752,30 +921,3 @@
   </script>
 </body>
 </html>
-
-2️⃣ map.html 연동 스크립트 점검
-
-index.html에서 넘어온 ?spot=박지이름 파라미터를 받아 팝업창을 즉시 열어주는 로직이 map.html에 완벽히 들어있는지 확인합니다.
-
-현재 map.html의 맨 아래 fetchSpotsFromGoogleSheet() 함수 내부 complete 콜백 및
-DOMContentLoaded 영역에 아래 코드가 탑재되어 즉시 팝업이 작동합니다.
-
-// URL 파라미터 자동 라우팅 처리
-const urlParams = new URLSearchParams(window.location.search);
-const spotName = urlParams.get('spot'); // 등록 박지 직행
-const generalQuery = urlParams.get('q');  // 일반 지명 검색
-
-if (spotName) {
-  // 등록된 박지 즉시 포커스 & 팝업 열기
-  const target = spots.find(s => s.name.toLowerCase().includes(spotName.toLowerCase()));
-  if (target) {
-    setTimeout(() => focusSpotOnMap(target, false), 400);
-  }
-} else if (generalQuery) {
-  // 일반 검색어 Geocoder 검색 실행
-  setTimeout(() => {
-    const input = document.getElementById('topSearchInput');
-    if (input) input.value = generalQuery;
-    executeSearch();
-  }, 600);
-}
