@@ -20,91 +20,84 @@
 
   <style>
     :root {
-      --bg-header: #090e1a;
-      --bg-sidebar: #0f172a;
-      --bg-card: #162032;
-      --bg-card-hover: #1e293b;
-      --border-color: #27354a;
-      --border-subtle: #1e293b;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent-teal: #0ea5e9;
+      --bg-main: #0b1120;
+      --bg-header: #0f172a;
+      --bg-sidebar: #111827;
+      --bg-card: #1f2937;
+      --bg-card-hover: #283548;
+      --border-color: #374151;
+      --border-subtle: #1f2937;
+      --text-main: #f3f4f6;
+      --text-sub: #cbd5e1;
+      --text-muted: #9ca3af;
+      --accent-blue: #38bdf8;
+      --accent-teal: #14b8a6;
       --accent-gold: #f59e0b;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { 
       width: 100%; 
+      max-width: 100vw;
       height: 100%; 
-      overflow: hidden; 
+      overflow: hidden;
+      overflow-x: hidden !important;
       font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-      background-color: var(--bg-header); 
+      background-color: var(--bg-main); 
       color: var(--text-main);
     }
     
     .header {
       position: absolute;
       top: 0; left: 0; right: 0;
-      height: 68px;
+      width: 100%;
+      max-width: 100%;
+      height: 66px;
       background-color: var(--bg-header);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 20px;
+      padding: 0 18px;
       z-index: 1000;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-      border-bottom: 1px solid var(--border-subtle);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+      border-bottom: 1px solid var(--border-color);
       user-select: none;
+      overflow: hidden;
     }
-    .header-left { display: flex; align-items: center; gap: 14px; flex-wrap: nowrap; }
+    .header-left { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; }
     
     .header-title-box {
       display: flex;
       flex-direction: row;
       align-items: baseline;
-      gap: 10px;
+      gap: 8px;
       white-space: nowrap;
     }
     .main-title {
-      font-size: 1.65rem;
+      font-size: 1.55rem;
       font-weight: 900;
-      letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #ffffff 40%, #e2e8f0 70%, #cbd5e1 100%);
+      letter-spacing: -0.4px;
+      background: linear-gradient(135deg, #ffffff 40%, #e2e8f0 75%, #cbd5e1 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       text-shadow: 0 2px 10px rgba(0,0,0,0.5);
     }
     .main-title .flag-icon, .main-title .mountain-icon {
       -webkit-text-fill-color: initial;
-      font-size: 1.45rem;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+      font-size: 1.35rem;
     }
     .sub-en-title {
       font-family: 'Alex Brush', cursive;
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       font-weight: 700;
       background: linear-gradient(135deg, #38bdf8 20%, #818cf8 90%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       letter-spacing: 1px;
       white-space: nowrap;
-    }
-    
-    .version-tag {
-      font-size: 0.65rem;
-      font-weight: 800;
-      color: #38bdf8;
-      background: rgba(56, 189, 248, 0.12);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 2px 6px;
-      border-radius: 6px;
-      white-space: nowrap;
-      letter-spacing: 0.4px;
-      user-select: none;
-      align-self: center;
     }
 
     .sync-status-badge {
@@ -131,22 +124,22 @@
     .header-right { display: flex; align-items: center; gap: 8px; }
 
     .header-btn {
-      background: #1e293b;
+      background: #1f2937;
       border: 1px solid var(--border-color);
-      padding: 7px 13px;
-      border-radius: 20px;
-      font-size: 0.8rem;
+      padding: 6px 12px;
+      border-radius: 18px;
+      font-size: 0.78rem;
       font-weight: 700;
       color: #e2e8f0;
       cursor: pointer;
       transition: all 0.2s;
       white-space: nowrap;
     }
-    .header-btn:hover { background: #27354a; color: #ffffff; }
+    .header-btn:hover { background: #374151; color: #ffffff; }
     .header-btn.active {
-      background: #ef4444 !important;
+      background: #dc2626 !important;
       color: #ffffff !important;
-      border-color: #dc2626 !important;
+      border-color: #b91c1c !important;
     }
 
     .admin-only-btn {
@@ -156,66 +149,66 @@
     }
     .admin-only-btn:hover { background: #115e59; }
 
-    .search-container { position: relative; display: flex; align-items: center; width: 280px; }
+    .search-container { position: relative; display: flex; align-items: center; width: 260px; }
     .search-input {
       width: 100%;
-      padding: 8px 36px 8px 14px;
+      padding: 7px 34px 7px 13px;
       border-radius: 20px;
       border: 1px solid var(--border-color);
-      background: #141d2e;
+      background: #111827;
       color: #fff;
-      font-size: 0.84rem;
+      font-size: 0.82rem;
       outline: none;
       transition: all 0.2s;
     }
-    .search-input::placeholder { color: #64748b; }
-    .search-input:focus { border-color: #0284c7; background: #0f172a; box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.25); }
+    .search-input::placeholder { color: #6b7280; }
+    .search-input:focus { border-color: var(--accent-blue); background: #0f172a; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
     .search-btn-icon {
       position: absolute;
-      right: 12px;
+      right: 11px;
       background: none;
       border: none;
-      color: #64748b;
+      color: #9ca3af;
       cursor: pointer;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
     }
 
     .search-dropdown {
       position: absolute;
-      top: 44px;
+      top: 42px;
       left: 0; right: 0;
-      background: #141d2e;
+      background: #111827;
       color: #f8fafc;
-      border-radius: 12px;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
       list-style: none;
-      max-height: 340px;
+      max-height: 320px;
       overflow-y: auto;
       display: none;
       z-index: 2000;
       border: 1px solid var(--border-color);
     }
     .dropdown-header {
-      padding: 9px 12px;
+      padding: 8px 12px;
       background-color: #0b1120;
-      font-size: 0.76rem;
+      font-size: 0.74rem;
       font-weight: bold;
-      color: #38bdf8;
-      border-bottom: 1px solid var(--border-subtle);
+      color: var(--accent-blue);
+      border-bottom: 1px solid var(--border-color);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .dropdown-item {
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border-subtle);
+      padding: 9px 12px;
+      border-bottom: 1px solid #1f2937;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.84rem;
+      font-size: 0.82rem;
       cursor: pointer;
     }
-    .dropdown-item:hover { background: #1e293b; }
+    .dropdown-item:hover { background: #1f2937; }
     .dropdown-info { flex: 1; padding-right: 8px; }
     
     .top-rank-row {
@@ -227,29 +220,29 @@
     .top-rank-left { display: flex; align-items: center; gap: 6px; }
     .rank-badge {
       display: inline-block;
-      width: 20px;
-      height: 20px;
-      line-height: 20px;
+      width: 18px;
+      height: 18px;
+      line-height: 18px;
       text-align: center;
       border-radius: 50%;
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       font-weight: 800;
     }
     .rank-1 { background: #fef08a; color: #854d0e; }
     .rank-2 { background: #e2e8f0; color: #334155; }
     .rank-3 { background: #fed7aa; color: #9a3412; }
-    .rank-etc { background: #1e293b; color: #94a3b8; }
-    .top-spot-title { font-weight: 700; color: #38bdf8; font-size: 0.86rem; }
-    .top-spot-city { font-size: 0.72rem; color: #7dd3fc; background: rgba(56, 189, 248, 0.12); padding: 2px 6px; border-radius: 4px; }
-    .top-spot-views { font-size: 0.72rem; color: #64748b; font-weight: 500; }
+    .rank-etc { background: #1f2937; color: #9ca3af; }
+    .top-spot-title { font-weight: 700; color: var(--accent-blue); font-size: 0.84rem; }
+    .top-spot-city { font-size: 0.7rem; color: #7dd3fc; background: rgba(56, 189, 248, 0.1); padding: 2px 5px; border-radius: 4px; }
+    .top-spot-views { font-size: 0.7rem; color: #6b7280; font-weight: 500; }
 
     .btn-quick-add {
       background: #0f766e;
       color: #ffffff;
       border: none;
       border-radius: 4px;
-      padding: 4px 8px;
-      font-size: 0.75rem;
+      padding: 3px 6px;
+      font-size: 0.72rem;
       font-weight: 600;
       cursor: pointer;
       display: none;
@@ -259,34 +252,57 @@
     .container {
       display: flex;
       width: 100%;
-      height: calc(100% - 68px);
-      margin-top: 68px;
+      max-width: 100%;
+      height: calc(100% - 66px);
+      margin-top: 66px;
       position: relative;
+      overflow-x: hidden !important;
     }
     
+    /* 사이드바 */
     .sidebar {
-      width: 390px;
+      width: 380px;
+      max-width: 100%;
       height: 100%;
       background-color: var(--bg-sidebar);
-      border-right: 1px solid var(--border-subtle);
+      border-right: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
       z-index: 500;
       color: var(--text-main);
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow-x: hidden !important;
     }
+
+    /* ⭐ 슬림 & 여백 최적화된 사이드바 헤더 */
     .sidebar-header {
-      padding: 12px 16px;
+      padding: 8px 14px;
       font-weight: 700;
-      font-size: 0.9rem;
+      font-size: 0.84rem;
       background-color: #0b1120;
-      border-bottom: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-color);
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-shrink: 0;
     }
+
+    /* ⭐ 버전 표시 (7회 연타로 관리자 모드 진입) */
+    .version-tag {
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: var(--accent-blue);
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 1px 6px;
+      border-radius: 5px;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s, background 0.2s;
+    }
+    .version-tag:active { transform: scale(0.92); background: rgba(56, 189, 248, 0.3); }
 
     .sheet-edit-link {
       display: none;
@@ -295,18 +311,16 @@
       background: #059669;
       color: #ffffff;
       text-decoration: none;
-      padding: 4px 8px;
+      padding: 3px 6px;
       border-radius: 4px;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: bold;
-      transition: background 0.2s;
     }
-    .sheet-edit-link:hover { background: #047857; }
 
     .admin-data-tools {
       display: none;
-      padding: 8px 12px;
-      background: #141d2e;
+      padding: 6px 12px;
+      background: #1f2937;
       border-bottom: 1px solid var(--border-color);
       gap: 6px;
       flex-wrap: wrap;
@@ -314,94 +328,95 @@
     }
     .admin-tool-btn {
       flex: 1;
-      min-width: 80px;
-      padding: 5px 8px;
-      font-size: 0.76rem;
+      min-width: 75px;
+      padding: 4px 6px;
+      font-size: 0.72rem;
       font-weight: 700;
-      border-radius: 6px;
+      border-radius: 4px;
       border: 1px solid var(--border-color);
-      background: #0f172a;
+      background: #111827;
       color: #cbd5e1;
       cursor: pointer;
       text-align: center;
     }
-    .admin-tool-btn:hover { background: #1e293b; color: #ffffff; }
+    .admin-tool-btn:hover { background: #374151; color: #ffffff; }
     .admin-tool-btn.btn-ai-highlight { background: #0f766e; color: #ffffff; border-color: #0d9488; }
 
+    /* 다크 2단 필터바 */
     .filter-wrapper {
       background: #0b1120;
-      border-bottom: 1px solid var(--border-subtle);
+      border-bottom: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
-      gap: 7px;
-      padding: 10px 14px 11px 14px;
+      gap: 6px;
+      padding: 8px 12px;
       flex-shrink: 0;
       z-index: 100;
     }
     .region-filter-bar, .terrain-filter-bar {
       display: flex;
       overflow-x: auto;
-      gap: 6px;
+      gap: 5px;
       align-items: center;
-      padding-bottom: 4px;
+      padding-bottom: 2px;
       -webkit-overflow-scrolling: touch;
     }
-    .region-filter-bar::-webkit-scrollbar, .terrain-filter-bar::-webkit-scrollbar { height: 4px; }
-    .region-filter-bar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-    .terrain-filter-bar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    .region-filter-bar::-webkit-scrollbar, .terrain-filter-bar::-webkit-scrollbar { height: 3px; }
+    .region-filter-bar::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+    .terrain-filter-bar::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
     
     .filter-label {
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 800;
-      color: #64748b;
+      color: #9ca3af;
       white-space: nowrap;
       margin-right: 2px;
-      background: #141d2e;
-      padding: 3px 6px;
+      background: #1f2937;
+      padding: 2px 5px;
       border-radius: 4px;
     }
     .filter-btn {
-      padding: 4px 11px;
-      border-radius: 14px;
+      padding: 3px 9px;
+      border-radius: 12px;
       border: 1px solid var(--border-color);
-      background: #141d2e;
-      color: #94a3b8;
-      font-size: 0.74rem;
+      background: #1f2937;
+      color: #9ca3af;
+      font-size: 0.72rem;
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
       flex-shrink: 0;
       transition: all 0.15s ease;
     }
-    .filter-btn:hover { background: #1e293b; color: #f1f5f9; }
+    .filter-btn:hover { background: #374151; color: #f3f4f6; }
     .filter-btn.active {
       background: #0284c7;
       color: #ffffff;
       border-color: #0284c7;
-      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
     }
     .terrain-filter-btn.active {
       background: #0f766e;
       color: #ffffff;
       border-color: #0f766e;
-      box-shadow: 0 2px 8px rgba(15, 118, 110, 0.35);
     }
 
+    /* 목록 영역 */
     .spot-list { 
       flex: 1; 
       overflow-y: auto; 
       list-style: none; 
       position: relative;
       background: var(--bg-sidebar);
+      overflow-x: hidden !important;
     }
-    .spot-list::-webkit-scrollbar { width: 5px; }
-    .spot-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    .spot-list::-webkit-scrollbar { width: 4px; }
+    .spot-list::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
     
     .region-group { border-bottom: 1px solid var(--border-subtle); }
     .region-group-title {
-      padding: 10px 16px;
-      background-color: #111a2e;
-      font-size: 0.82rem;
+      padding: 8px 14px;
+      background-color: #0f172a;
+      font-size: 0.8rem;
       font-weight: 700;
       color: #cbd5e1;
       cursor: pointer;
@@ -412,16 +427,17 @@
       border-left: 3px solid transparent;
       transition: all 0.15s;
     }
-    .region-group-title:hover { background-color: #17233d; border-left-color: #38bdf8; color: #ffffff; }
+    .region-group-title:hover { background-color: #1f2937; border-left-color: var(--accent-blue); color: #ffffff; }
 
+    /* 카드 스타일 */
     .spot-item {
-      padding: 11px 14px;
-      border-bottom: 1px solid #1a2538;
+      padding: 10px 14px;
+      border-bottom: 1px solid #1a2232;
       cursor: pointer;
       position: relative;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 4px;
       background: var(--bg-sidebar);
       transition: background 0.15s;
     }
@@ -430,38 +446,32 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-right: 65px;
+      padding-right: 60px;
     }
     .spot-name-wrapper { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-    .spot-name { font-size: 0.92rem; font-weight: 700; color: #38bdf8; word-break: keep-all; }
+    .spot-name { font-size: 0.9rem; font-weight: 700; color: var(--accent-blue); word-break: keep-all; }
     
     .badge-status {
-      font-size: 0.65rem;
+      font-size: 0.62rem;
       font-weight: 900;
-      padding: 1px 5px;
-      border-radius: 4px;
-      letter-spacing: 0.4px;
+      padding: 1px 4px;
+      border-radius: 3px;
       display: inline-flex;
       align-items: center;
-      line-height: 1.2;
     }
     .badge-new {
       background: linear-gradient(135deg, #10b981, #059669);
       color: #ffffff;
-      box-shadow: 0 1px 3px rgba(16, 185, 129, 0.4);
-      animation: pulseNew 1.8s infinite;
     }
     .badge-hot {
       background: linear-gradient(135deg, #ef4444, #f97316);
       color: #ffffff;
-      box-shadow: 0 1px 3px rgba(239, 68, 68, 0.4);
     }
-    @keyframes pulseNew { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 
     .spot-meta-badges { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
     .meta-tag {
-      font-size: 0.68rem;
-      padding: 2px 5px;
+      font-size: 0.66rem;
+      padding: 1.5px 5px;
       border-radius: 4px;
       font-weight: 700;
       display: inline-flex;
@@ -475,13 +485,13 @@
     .tag-terrain-valley { background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); }
     .tag-terrain-cave { background: rgba(217, 70, 239, 0.12); color: #e879f9; border: 1px solid rgba(217, 70, 239, 0.25); }
     .tag-terrain-etc { background: rgba(168, 85, 247, 0.12); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.25); }
-    .tag-diff { background: rgba(2, 132, 199, 0.2); color: #fde047; border: 1px solid rgba(2, 132, 199, 0.4); letter-spacing: 0.3px; }
+    .tag-diff { background: rgba(2, 132, 199, 0.2); color: #fde047; border: 1px solid rgba(2, 132, 199, 0.4); }
     .tag-dist { background: rgba(16, 185, 129, 0.12); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.25); }
     .tag-rating { background: rgba(245, 158, 11, 0.12); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.25); font-weight: 800; }
 
     .spot-desc-single {
-      font-size: 0.74rem;
-      color: #94a3b8;
+      font-size: 0.72rem;
+      color: #9ca3af;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -490,10 +500,10 @@
     }
 
     .spot-coords-text {
-      font-size: 0.68rem;
-      color: #64748b;
-      background: #141d2e;
-      padding: 1px 5px;
+      font-size: 0.66rem;
+      color: #6b7280;
+      background: #0f172a;
+      padding: 1px 4px;
       border-radius: 4px;
       border: 1px solid var(--border-color);
       width: fit-content;
@@ -514,11 +524,9 @@
       text-decoration: none;
       padding: 2px 6px;
       border-radius: 4px;
-      font-size: 0.68rem;
+      font-size: 0.66rem;
       font-weight: 700;
       color: #ffffff !important;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-      transition: all 0.15s ease;
       cursor: pointer;
       line-height: 1.3;
       white-space: nowrap;
@@ -532,23 +540,21 @@
       background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
       border: none;
       color: #ffffff !important;
-      font-size: 0.64rem;
-      padding: 1.5px 6px;
+      font-size: 0.62rem;
+      padding: 1.5px 5px;
       border-radius: 4px;
-      gap: 3px;
+      gap: 2px;
       font-weight: 700;
-      box-shadow: 0 1px 4px rgba(220, 39, 67, 0.4);
     }
-    .btn-insta:hover { filter: brightness(1.1); transform: translateY(-1px); }
-    .btn-insta svg { width: 10px; height: 10px; flex-shrink: 0; fill: #ffffff; }
+    .btn-insta svg { width: 9px; height: 9px; flex-shrink: 0; fill: #ffffff; }
     
     .instant-tooltip-box { position: relative; display: inline-flex; align-items: center; }
     .drone-badge {
       display: inline-flex;
       align-items: center;
       gap: 2px;
-      font-size: 0.66rem;
-      padding: 2px 6px;
+      font-size: 0.65rem;
+      padding: 2px 5px;
       border-radius: 4px;
       font-weight: 700;
       line-height: 1.3;
@@ -567,9 +573,9 @@
       left: 0;
       background-color: #0b1120;
       color: #f8fafc;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 600;
-      padding: 6px 10px;
+      padding: 5px 9px;
       border-radius: 6px;
       white-space: nowrap;
       box-shadow: 0 4px 16px rgba(0,0,0,0.6);
@@ -614,7 +620,7 @@
       border: none;
       border-radius: 4px;
       padding: 2px 5px;
-      font-size: 0.68rem;
+      font-size: 0.66rem;
       cursor: pointer;
       display: none;
       font-weight: 600;
@@ -625,22 +631,22 @@
 
     #map { flex: 1; height: 100%; position: relative; overflow: hidden !important; background: #090e1a; }
     
-    /* ⭐ 모바일 지도 상단 마커 범례(Legend) 뱃지 */
+    /* 지도 상단 마커 범례 */
     .map-legend-bar {
       display: none;
       position: absolute;
-      top: 10px;
+      top: 8px;
       left: 50%;
       transform: translateX(-50%);
       background: rgba(15, 23, 42, 0.85);
       backdrop-filter: blur(4px);
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 20px;
-      padding: 4px 10px;
+      padding: 3px 9px;
       z-index: 200;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.4);
       user-select: none;
       pointer-events: none;
@@ -648,31 +654,27 @@
     .legend-item {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
       font-size: 0.65rem;
       font-weight: 700;
       color: #e2e8f0;
     }
-    .legend-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
-    .dot-green { background: #16a34a; box-shadow: 0 0 5px #16a34a; }
-    .dot-yellow { background: #eab308; box-shadow: 0 0 5px #eab308; }
-    .dot-red { background: #ef4444; box-shadow: 0 0 5px #ef4444; }
+    .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .dot-green { background: #16a34a; }
+    .dot-yellow { background: #eab308; }
+    .dot-red { background: #ef4444; }
 
     /* 다크 팝업창 */
     .compact-info-window {
-      padding: 12px 14px;
-      width: 265px !important;
-      max-width: 275px !important;
-      max-height: 350px;
+      padding: 11px 13px;
+      width: 260px !important;
+      max-width: calc(100vw - 36px) !important;
+      max-height: 330px;
       overflow-y: auto;
       overflow-x: hidden !important;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
       line-height: 1.3;
       background: #0f172a;
       color: #f8fafc;
@@ -683,14 +685,14 @@
     .compact-info-window::-webkit-scrollbar { width: 4px; }
     .compact-info-window::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
 
-    .compact-title { font-size: 0.9rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .compact-title { font-size: 0.88rem; font-weight: 700; color: var(--accent-blue); display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
     
     .compact-entry-link {
       font-size: 0.72rem;
       color: #7dd3fc;
       background: rgba(2, 132, 199, 0.15);
       border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 4px 7px;
+      padding: 3px 6px;
       border-radius: 6px;
       width: fit-content;
       word-break: break-all;
@@ -704,8 +706,6 @@
     .compact-entry-link:hover {
       background: #0284c7;
       color: #ffffff !important;
-      border-color: #0284c7;
-      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
     }
 
     .compact-desc {
@@ -721,23 +721,24 @@
       color: #ffffff;
       border: none;
       border-radius: 6px;
-      padding: 6px 10px;
-      font-size: 0.74rem;
+      padding: 5px 9px;
+      font-size: 0.72rem;
       font-weight: bold;
       cursor: pointer;
-      margin-top: 4px;
+      margin-top: 3px;
       text-align: center;
     }
 
+    /* 댓글 영역 */
     .comments-section {
-      margin-top: 5px;
+      margin-top: 4px;
       border-top: 1px dashed var(--border-color);
-      padding-top: 5px;
+      padding-top: 4px;
     }
     .comments-title {
-      font-size: 0.74rem;
+      font-size: 0.72rem;
       font-weight: 700;
-      color: #94a3b8;
+      color: #9ca3af;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -745,9 +746,9 @@
     }
     .comments-list {
       list-style: none;
-      max-height: 80px;
+      max-height: 75px;
       overflow-y: auto;
-      margin-bottom: 5px;
+      margin-bottom: 4px;
       display: flex;
       flex-direction: column;
       gap: 3px;
@@ -756,36 +757,35 @@
     .comments-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
 
     .comment-item {
-      background: #162032;
+      background: #1e293b;
       border: 1px solid var(--border-color);
-      border-radius: 6px;
-      padding: 4px 6px;
-      font-size: 0.68rem;
+      border-radius: 5px;
+      padding: 3px 5px;
+      font-size: 0.66rem;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       gap: 4px;
     }
-    .comment-author { font-weight: 700; color: #38bdf8; white-space: nowrap; }
-    .comment-rating-stars { color: #f59e0b; font-size: 0.65rem; white-space: nowrap; }
+    .comment-author { font-weight: 700; color: var(--accent-blue); white-space: nowrap; }
+    .comment-rating-stars { color: #f59e0b; font-size: 0.62rem; white-space: nowrap; }
     .comment-text { color: #cbd5e1; word-break: break-all; flex: 1; }
     
     .comment-form { display: flex; flex-direction: column; gap: 3px; }
     .comment-form-row { display: flex; gap: 3px; }
     .comment-select-rating {
-      padding: 2px 4px;
+      padding: 2px 3px;
       border: 1px solid var(--border-color);
       border-radius: 4px;
-      font-size: 0.68rem;
-      background: #141d2e;
+      font-size: 0.66rem;
+      background: #111827;
       color: #fcd34d;
       font-weight: bold;
       outline: none;
     }
-    .comment-input-author { width: 48px; padding: 4px 5px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.68rem; outline: none; background: #141d2e; color: #fff; }
-    .comment-input-text { flex: 1; padding: 4px 6px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.68rem; outline: none; background: #141d2e; color: #fff; }
-    .comment-btn-submit { background: #0f766e; color: #ffffff; border: none; border-radius: 4px; padding: 3px 6px; font-size: 0.68rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
-    .comment-btn-submit:disabled { background: #475569; cursor: not-allowed; }
+    .comment-input-author { width: 44px; padding: 3px 4px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.66rem; outline: none; background: #111827; color: #fff; }
+    .comment-input-text { flex: 1; padding: 3px 5px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.66rem; outline: none; background: #111827; color: #fff; }
+    .comment-btn-submit { background: #0f766e; color: #ffffff; border: none; border-radius: 4px; padding: 3px 6px; font-size: 0.66rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
 
     .custom-modal-overlay {
       position: fixed;
@@ -800,47 +800,48 @@
     .custom-modal {
       background: #0f172a;
       color: #f8fafc;
-      width: 490px;
+      width: 480px;
+      max-width: calc(100vw - 28px);
       max-height: 90vh;
       overflow-y: auto;
       border-radius: 14px;
       box-shadow: 0 20px 40px rgba(0,0,0,0.7);
-      padding: 20px;
+      padding: 18px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       border: 1px solid var(--border-color);
     }
-    .custom-modal h3 { font-size: 1.05rem; color: #38bdf8; }
-    .modal-field { display: flex; flex-direction: column; gap: 4px; }
-    .modal-field label { font-size: 0.78rem; font-weight: 700; color: #94a3b8; }
+    .custom-modal h3 { font-size: 1rem; color: var(--accent-blue); }
+    .modal-field { display: flex; flex-direction: column; gap: 3px; }
+    .modal-field label { font-size: 0.74rem; font-weight: 700; color: #9ca3af; }
     .modal-input {
       width: 100%;
-      padding: 8px 12px;
+      padding: 7px 10px;
       border: 1px solid var(--border-color);
       border-radius: 6px;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       outline: none;
-      font-family: inherit;
-      background: #141d2e;
+      background: #111827;
       color: #ffffff;
     }
-    .modal-textarea { resize: vertical; min-height: 52px; line-height: 1.4; }
-    .modal-input:focus { border-color: #0284c7; box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.25); }
+    .modal-textarea { resize: vertical; min-height: 48px; line-height: 1.35; }
+    .modal-input:focus { border-color: #0284c7; }
     
-    .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 0.82rem; color: #e2e8f0; font-weight: 600; }
-    .checkbox-group label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
-    .select-diff { padding: 7px 8px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.8rem; color: #e2e8f0; outline: none; background: #141d2e; }
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 0.78rem; color: #e2e8f0; font-weight: 600; }
+    .checkbox-group label { display: flex; align-items: center; gap: 3px; cursor: pointer; }
+    .select-diff { padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.78rem; color: #e2e8f0; outline: none; background: #111827; }
     
-    .modal-btn-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
-    .modal-btn { padding: 8px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; border: none; }
-    .modal-btn-cancel { background: #1e293b; color: #cbd5e1; }
+    .modal-btn-row { display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px; }
+    .modal-btn { padding: 7px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border: none; }
+    .modal-btn-cancel { background: #1f2937; color: #cbd5e1; }
     .modal-btn-save { background: #0f766e; color: #ffffff; }
 
+    /* 모바일 하단 플로팅 컨트롤 바 */
     .mobile-floating-controls {
       display: none;
       position: fixed;
-      bottom: 18px;
+      bottom: 16px;
       left: 50%;
       transform: translateX(-50%);
       align-items: center;
@@ -850,28 +851,28 @@
       max-width: 380px;
     }
     .mobile-float-btn {
-      padding: 9px 12px;
-      border-radius: 30px;
-      font-size: 0.78rem;
+      padding: 8px 11px;
+      border-radius: 25px;
+      font-size: 0.76rem;
       font-weight: 700;
       border: 1px solid rgba(255,255,255,0.15);
-      box-shadow: 0 5px 16px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
       cursor: pointer;
       white-space: nowrap;
       text-align: center;
-      transition: all 0.2s;
+      transition: all 0.15s;
     }
-    .mobile-float-drone { background: #141d2e; color: #ffffff; flex: 1; }
-    .mobile-float-toggle { background: #0284c7; color: #ffffff; flex: 1.4; font-size: 0.82rem; border-color: rgba(255,255,255,0.3); }
-    .mobile-float-reset { background: #141d2e; color: #ffffff; flex: 1; }
+    .mobile-float-drone { background: #1f2937; color: #ffffff; flex: 1; }
+    .mobile-float-toggle { background: #0284c7; color: #ffffff; flex: 1.35; font-size: 0.8rem; border-color: rgba(255,255,255,0.3); }
+    .mobile-float-reset { background: #1f2937; color: #ffffff; flex: 1; }
 
-    /* ⭐ 모바일 전용 50% 여백 축소 & 슬림 헤더 */
+    /* ⭐ 모바일 전용 반응형 레이아웃 & 폰트 15% 복원 */
     @media (max-width: 768px) {
       .header { 
         height: auto; 
         flex-direction: column; 
         align-items: center; 
-        padding: 5px 10px 6px 10px !important; /* 상하 여백 50% 이상 감소 */
+        padding: 5px 10px 6px 10px !important; 
         gap: 4px !important; 
       }
       .header-left { 
@@ -891,27 +892,19 @@
       .main-title { 
         font-size: 1.15rem !important; 
         justify-content: center;
-        letter-spacing: -0.3px;
       }
       .main-title .flag-icon, .main-title .mountain-icon { font-size: 1.05rem !important; }
       .sub-en-title { 
-        font-size: 1.1rem !important; 
+        font-size: 1.05rem !important; 
         margin-left: 0;
         margin-top: -3px;
-      }
-      .version-tag {
-        position: absolute;
-        left: 0;
-        top: 0;
-        font-size: 0.6rem;
-        padding: 1px 4px;
       }
       .sync-status-badge, .admin-status-badge {
         position: absolute;
         right: 0;
         top: 0;
-        font-size: 0.65rem;
-        padding: 2px 6px;
+        font-size: 0.62rem;
+        padding: 2px 5px;
       }
 
       .header-right { 
@@ -922,8 +915,8 @@
       .header-desktop-only { display: none !important; }
       .search-container { width: 100%; }
       .search-input { 
-        padding: 6px 32px 6px 12px !important; 
-        font-size: 0.8rem !important; 
+        padding: 6px 30px 6px 12px !important; 
+        font-size: 0.78rem !important; 
         border-radius: 16px;
       }
       
@@ -931,8 +924,8 @@
       .mobile-floating-controls { display: flex; }
       
       .container { 
-        margin-top: 86px !important; /* 헤더가 슬림해져 컨테이너 상단 여백 축소 */
-        height: calc(100% - 86px) !important; 
+        margin-top: 84px !important; 
+        height: calc(100% - 84px) !important; 
         position: relative;
         overflow: hidden;
       }
@@ -949,29 +942,30 @@
         position: absolute;
         top: 0; left: 0; right: 0;
         width: 100%; 
-        height: calc(100% - 75px) !important; 
+        height: calc(100% - 72px) !important; 
         z-index: 300;
         border-right: none; 
         border-bottom: 1px solid var(--border-color); 
         box-shadow: 0 10px 30px rgba(0,0,0,0.7);
         transform: translateY(0);
-        border-radius: 0 0 16px 16px;
+        border-radius: 0 0 14px 14px;
       }
       
       .sidebar.collapsed { 
         transform: translateY(-130%) !important;
       }
 
-      .spot-item { padding: 8px 10px; gap: 3px; }
-      .spot-name { font-size: 0.74rem !important; }
-      .spot-desc-single { font-size: 0.58rem !important; }
-      .meta-tag { font-size: 0.54rem !important; padding: 1.5px 4px !important; }
-      .link-btn { font-size: 0.54rem !important; padding: 1.5px 5px !important; }
-      .drone-badge { font-size: 0.52rem !important; padding: 1.5px 4px !important; }
-      .badge-status { font-size: 0.52rem !important; padding: 1px 4px !important; }
-      .filter-btn { font-size: 0.65rem !important; padding: 4px 9px !important; }
-      .filter-label { font-size: 0.65rem !important; }
-      .region-group-title { font-size: 0.74rem !important; padding: 8px 12px !important; }
+      /* ⭐ 모바일 박지 항목 폰트 15% 키워서 편안한 가독성 확보 */
+      .spot-item { padding: 9px 11px; gap: 4px; }
+      .spot-name { font-size: 0.85rem !important; }
+      .spot-desc-single { font-size: 0.67rem !important; }
+      .meta-tag { font-size: 0.62rem !important; padding: 1.5px 5px !important; }
+      .link-btn { font-size: 0.62rem !important; padding: 2px 6px !important; }
+      .drone-badge { font-size: 0.6rem !important; padding: 2px 5px !important; }
+      .badge-status { font-size: 0.6rem !important; padding: 1px 4px !important; }
+      .filter-btn { font-size: 0.72rem !important; padding: 4px 10px !important; }
+      .filter-label { font-size: 0.72rem !important; }
+      .region-group-title { font-size: 0.82rem !important; padding: 8px 12px !important; }
     }
   </style>
 </head>
@@ -986,7 +980,6 @@
           <span class="mountain-icon">🏔️</span>
         </span>
         <span class="sub-en-title">Korea Romantic Backpacking Road</span>
-        <span class="version-tag">2.3ver</span>
       </div>
       <span class="sync-status-badge" id="syncStatusBadge">⚡ 시트 동기화 중...</span>
       <span class="admin-status-badge" id="adminBadge">관리자 모드 ON</span>
@@ -1007,10 +1000,12 @@
 
   <div class="container">
     <aside class="sidebar" id="sidebar">
+      <!-- ⭐ 슬림 헤더 & 버전 뱃지 (7회 연속 터치 시 관리자 모드 On/Off) -->
       <div class="sidebar-header">
         <div style="display:flex; align-items:center; gap:6px;">
           <span>📍 백패킹 박지 목록</span>
-          <span id="spotCount" style="color: #38bdf8; font-size: 0.8rem; font-weight: bold;">0개</span>
+          <span id="spotCount" style="color: var(--accent-blue); font-size: 0.8rem; font-weight: bold;">0개</span>
+          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()" title="7회 연속 터치 시 관리자 모드">2.3ver</span>
         </div>
         <a id="sheetEditLink" href="#" target="_blank" class="sheet-edit-link">📊 구글 시트 편집</a>
       </div>
@@ -1051,7 +1046,6 @@
     </aside>
     
     <main id="map">
-      <!-- ⭐ 모바일 지도 상단 마커 난이도 범례 표시 -->
       <div class="map-legend-bar">
         <div class="legend-item"><span class="legend-dot dot-green"></span> 쉬움</div>
         <div class="legend-item"><span class="legend-dot dot-yellow"></span> 보통</div>
@@ -1077,16 +1071,16 @@
   <div class="custom-modal-overlay" id="bulkImportModalOverlay">
     <div class="custom-modal" style="width: 500px;">
       <h3 style="display:flex; align-items:center; gap:6px;">⚡ AI 요약 / JSON 내용으로 일괄 등록</h3>
-      <p style="font-size:0.76rem; color:#94a3b8; line-height:1.4;">
+      <p style="font-size:0.74rem; color:#9ca3af; line-height:1.4;">
         ChatGPT / Gemini 요약 텍스트 또는 <strong>JSON 객체·배열</strong>을 붙여넣으세요. 산 이름과 주소로 <strong>위도/경도를 자동 검색</strong>하여 지도와 구글 시트에 즉시 등록합니다.
       </p>
 
       <div class="modal-field">
         <label>요약 텍스트 또는 JSON 붙여넣기</label>
-        <textarea id="bulkImportTextarea" class="modal-input modal-textarea" style="min-height: 180px; font-family: monospace; font-size: 0.8rem;" placeholder='{\n  "name": "홍천 용소계곡",\n  "entryPoint": "강원 홍천군 두촌면 괘석리 산1",\n  "elevation": "350m",\n  "desc": "기암괴석과 맑은 물이 어우러진 원시림 계곡 트레킹 박지",\n  "terrain": ["계곡","노지"],\n  "difficulty": "2",\n  "distance": "3.5",\n  "youtubeUrl": "https://youtu.be/..."\n}'></textarea>
+        <textarea id="bulkImportTextarea" class="modal-input modal-textarea" style="min-height: 170px; font-family: monospace; font-size: 0.78rem;" placeholder='{\n  "name": "홍천 용소계곡",\n  "entryPoint": "강원 홍천군 두촌면 괘석리 산1",\n  "elevation": "350m",\n  "desc": "기암괴석과 맑은 물이 어우러진 원시림 계곡 트레킹 박지",\n  "terrain": ["계곡","노지"],\n  "difficulty": "2",\n  "distance": "3.5",\n  "youtubeUrl": "https://youtu.be/..."\n}'></textarea>
       </div>
 
-      <div id="bulkStatusMsg" style="font-size:0.75rem; color:#38bdf8; min-height: 18px; font-weight:600;"></div>
+      <div id="bulkStatusMsg" style="font-size:0.74rem; color:var(--accent-blue); min-height: 18px; font-weight:600;"></div>
 
       <div class="modal-btn-row">
         <button type="button" class="modal-btn modal-btn-cancel" onclick="closeBulkImportModal()">닫기</button>
@@ -1114,7 +1108,7 @@
         <label>3. 고도 / 해발 (자동 측정 또는 직접 입력)</label>
         <div style="display: flex; gap: 6px;">
           <input type="text" id="modalInputElevation" class="modal-input" style="flex:1;" placeholder="예: 350m" />
-          <button type="button" class="modal-btn" style="background:#1e293b; color:#fff;" onclick="fetchElevationForModal()">⛰️ 고도 측정</button>
+          <button type="button" class="modal-btn" style="background:#1f2937; color:#fff;" onclick="fetchElevationForModal()">⛰️ 고도 측정</button>
         </div>
       </div>
 
@@ -1148,9 +1142,9 @@
           </select>
         </div>
 
-        <div class="modal-field" style="width: 120px;">
+        <div class="modal-field" style="width: 110px;">
           <label>7. 거리(km)</label>
-          <input type="text" id="modalInputDistance" class="modal-input" style="padding: 7px 8px;" placeholder="예: 2.5" />
+          <input type="text" id="modalInputDistance" class="modal-input" style="padding: 6px 8px;" placeholder="예: 2.5" />
         </div>
       </div>
 
@@ -1272,6 +1266,10 @@
     let currentTerrainFilter = 'ALL';
     let isSidebarCollapsed = false;
 
+    // ⭐ 활성화된 박지 및 팝업 상태 추적 (드래그 시 닫혔다가 끝나면 다시 띄우기용)
+    let currentActiveSpot = null;
+    let currentActiveMarker = null;
+
     let modalMode = 'ADD';
     let modalEditIndex = -1;
     let modalPendingData = { lat: 0, lng: 0, droneStatus: 'ok', address: '' };
@@ -1285,7 +1283,6 @@
       zoomControlOptions: { position: naver.maps.Position.RIGHT_CENTER }
     });
 
-    // ⭐ 다크 테마 인포윈도우
     const infoWindow = new naver.maps.InfoWindow({ 
       borderWidth: 0,
       disableAnchor: true,
@@ -1311,7 +1308,7 @@
       pixelOffset: new naver.maps.Point(0, -8)
     });
 
-    // ⭐ 지도를 드래그/이동하거나 줌을 변경할 때 팝업창을 자동으로 닫아 지도 탐색 편의성 극대화
+    // ⭐ 지도를 움직이거나 터치 드래그할 때 팝업창을 잠시 숨겼다가 조작이 멈추면 다시 자연스럽게 복구
     naver.maps.Event.addListener(map, 'dragstart', () => {
       infoWindow.close();
       markerHoverInfoWindow.close();
@@ -1325,17 +1322,39 @@
       markerHoverInfoWindow.close();
     });
 
+    // 지도 조작(드래그, 줌 등)이 멈추면 이전에 보던 팝업을 다시 표시
+    naver.maps.Event.addListener(map, 'idle', () => {
+      if (currentActiveSpot && currentActiveMarker) {
+        infoWindow.setContent(generateInfoWindowHtml(currentActiveSpot));
+        infoWindow.open(map, currentActiveMarker);
+      }
+    });
+
     let currentMarkers = [];
     let tempSearchMarker = null;
 
     document.getElementById('sheetEditLink').href = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/edit`;
 
+    // ⭐ 버전 표시(2.3ver) 7회 연속 클릭 시 관리자 모드 On/Off 토글
+    let versionClickCount = 0;
+    let versionClickTimer = null;
+    function handleVersionTagClick() {
+      versionClickCount++;
+      clearTimeout(versionClickTimer);
+      versionClickTimer = setTimeout(() => {
+        if (versionClickCount >= 7) {
+          toggleAdminMode();
+        }
+        versionClickCount = 0;
+      }, 500);
+    }
+
     function createCustomMarkerIcon(difficulty) {
       const isMobile = window.innerWidth <= 768;
       const d = parseInt(difficulty, 10) || 3;
       const color = d <= 2 ? '#16a34a' : (d >= 4 ? '#ef4444' : '#eab308');
-      const width = isMobile ? 17 : 24;
-      const height = isMobile ? 24 : 34;
+      const width = isMobile ? 18 : 24;
+      const height = isMobile ? 25 : 34;
 
       return {
         content: `
@@ -1773,22 +1792,6 @@
       }
     }
 
-    let droneBtnClickCount = 0;
-    let droneBtnTimer = null;
-    function handleDroneBtnClick() {
-      droneBtnClickCount++;
-      clearTimeout(droneBtnTimer);
-      droneBtnTimer = setTimeout(() => {
-        if (droneBtnClickCount >= 5) toggleAdminMode();
-        else toggleDroneOverlay();
-        droneBtnClickCount = 0;
-      }, 400);
-    }
-
-    window.addEventListener('keydown', (e) => {
-      if (e.shiftKey && (e.key === 'M' || e.key === 'm')) toggleAdminMode();
-    });
-
     function toggleAdminMode() {
       isAdminMode = !isAdminMode;
       document.getElementById('adminBadge').style.display = isAdminMode ? 'inline-block' : 'none';
@@ -1870,7 +1873,7 @@
     function getCommentsHtml(spotId) {
       const cList = spotComments[spotId] || [];
       let listHtml = cList.length === 0 
-        ? '<li style="color:#64748b; font-size:0.68rem;">첫 평점과 후기를 남겨보세요!</li>'
+        ? '<li style="color:#6b7280; font-size:0.65rem;">첫 평점과 후기를 남겨보세요!</li>'
         : cList.map(c => `
             <li class="comment-item">
               <div style="flex:1;">
@@ -1953,6 +1956,12 @@
       }, 300);
     }
 
+    function closeInfoWindowCompletely() {
+      currentActiveSpot = null;
+      currentActiveMarker = null;
+      infoWindow.close();
+    }
+
     function generateInfoWindowHtml(spot) {
       const cleanAddress = (spot.entryPoint || spot.name).replace(/\n/g, ' ').trim();
       return `
@@ -1962,7 +1971,7 @@
             ${spot.elevation ? '<span style="font-size:0.75rem; color:#86efac;">(' + spot.elevation + ')</span>' : ''}
             ${getSpotStatusBadges(spot)}
           </div>
-          <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 8px; right: 8px; background: #1e293b; border: 1px solid var(--border-color); width: 20px; height: 20px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
+          <button type="button" onclick="closeInfoWindowCompletely()" style="position: absolute; top: 8px; right: 8px; background: #1e293b; border: 1px solid var(--border-color); width: 20px; height: 20px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
           ${getMetaBadgesHtml(spot)}
           <div class="spot-coords-text">📍 ${spot.lat}, ${spot.lng}</div>
           <a href="https://map.naver.com/v5/search/${encodeURIComponent(cleanAddress)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link" title="클릭 시 네이버 지도로 이동">🚗 들머리: ${spot.entryPoint} ↗</a>
@@ -2008,8 +2017,10 @@
           incrementSpotCount(item.id);
           centerMapOnSpot(item.lat, item.lng);
           const targetMarker = currentMarkers[spots.findIndex(s => String(s.id) === String(item.id))];
+          currentActiveSpot = item;
+          currentActiveMarker = targetMarker || new naver.maps.LatLng(item.lat, item.lng);
           infoWindow.setContent(generateInfoWindowHtml(item));
-          infoWindow.open(map, targetMarker || new naver.maps.LatLng(item.lat, item.lng));
+          infoWindow.open(map, currentActiveMarker);
           dropdown.style.display = 'none';
         });
         dropdown.appendChild(li);
@@ -2084,7 +2095,7 @@
 
         const groupTitle = document.createElement('div');
         groupTitle.className = 'region-group-title';
-        groupTitle.innerHTML = `<span>📌 ${regionKey}</span><span style="color:#94a3b8; font-size:0.75rem;">${items.length}개 ${shouldBeOpen ? '<b style="color:#38bdf8;">▼</b>' : '▶'}</span>`;
+        groupTitle.innerHTML = `<span>📌 ${regionKey}</span><span style="color:#9ca3af; font-size:0.74rem;">${items.length}개 ${shouldBeOpen ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}</span>`;
         if (shouldBeOpen) groupTitle.style.borderLeftColor = '#0f766e';
 
         const groupItemsContainer = document.createElement('div');
@@ -2094,7 +2105,7 @@
         groupTitle.addEventListener('click', () => {
           const isClosed = groupItemsContainer.style.display === 'none';
           groupItemsContainer.style.display = isClosed ? 'block' : 'none';
-          groupTitle.querySelector('span:last-child').innerHTML = `${items.length}개 ${isClosed ? '<b style="color:#38bdf8;">▼</b>' : '▶'}`;
+          groupTitle.querySelector('span:last-child').innerHTML = `${items.length}개 ${isClosed ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}`;
           groupTitle.style.borderLeftColor = isClosed ? '#0f766e' : 'transparent';
         });
 
@@ -2108,13 +2119,12 @@
           });
           currentMarkers.push(marker);
 
-          // ⭐ 마커 호버 및 터치 롱프레스 시 박지 이름 툴팁 표시
           const showMarkerTooltip = () => {
             markerHoverInfoWindow.setContent(`
-              <div style="padding: 5px 9px; color: #f8fafc; font-size: 0.74rem; line-height: 1.25; white-space: nowrap; pointer-events: none; text-align: center;">
-                <strong style="color: #38bdf8; font-size: 0.8rem;">📍 ${spot.name}</strong>
-                ${spot.elevation ? `<span style="color: #86efac; font-size: 0.7rem;">(${spot.elevation})</span>` : ''}<br>
-                <span style="color: #cbd5e1; font-size: 0.68rem;">난이도 ${'⭐'.repeat(parseInt(spot.difficulty, 10) || 3)}</span>
+              <div style="padding: 4px 8px; color: #f8fafc; font-size: 0.72rem; line-height: 1.25; white-space: nowrap; pointer-events: none; text-align: center;">
+                <strong style="color: var(--accent-blue); font-size: 0.78rem;">📍 ${spot.name}</strong>
+                ${spot.elevation ? `<span style="color: #86efac; font-size: 0.68rem;">(${spot.elevation})</span>` : ''}<br>
+                <span style="color: #cbd5e1; font-size: 0.65rem;">난이도 ${'⭐'.repeat(parseInt(spot.difficulty, 10) || 3)}</span>
               </div>
             `);
             markerHoverInfoWindow.open(map, marker);
@@ -2131,7 +2141,7 @@
 
             infoWindow.setContent(`
               <div class="compact-info-window" style="position: relative;">
-                <div class="compact-title" style="color:#38bdf8;">📍 '${spot.name}' 위치 이동</div>
+                <div class="compact-title" style="color:var(--accent-blue);">📍 '${spot.name}' 위치 이동</div>
                 <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 8px; right: 8px; background: #1e293b; border: 1px solid var(--border-color); width: 20px; height: 20px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
                 <div style="font-size:0.72rem; color:#ef4444; font-weight:bold;">새 좌표로 위치를 변경하시겠습니까?</div>
                 <div class="spot-coords-text">위도: ${newLat}<br>경도: ${newLng}</div>
@@ -2145,6 +2155,8 @@
             markerHoverInfoWindow.close();
             incrementSpotCount(spot.id);
             centerMapOnSpot(spot.lat, spot.lng);
+            currentActiveSpot = spot;
+            currentActiveMarker = marker;
             infoWindow.setContent(generateInfoWindowHtml(spot));
             infoWindow.open(map, marker);
           });
@@ -2156,7 +2168,7 @@
             <div class="spot-header-row">
               <div class="spot-name-wrapper">
                 <span class="spot-name">${spot.name}</span>
-                ${spot.elevation ? `<span style="font-size:0.74rem; color:#86efac; font-weight:normal;">(${spot.elevation})</span>` : ''}
+                ${spot.elevation ? `<span style="font-size:0.72rem; color:#86efac; font-weight:normal;">(${spot.elevation})</span>` : ''}
                 ${getSpotStatusBadges(spot)}
               </div>
             </div>
@@ -2177,6 +2189,8 @@
               document.getElementById('bottomToggleBtn').innerText = '▲ 박지 목록 열기';
             }
             centerMapOnSpot(spot.lat, spot.lng);
+            currentActiveSpot = spot;
+            currentActiveMarker = marker;
             infoWindow.setContent(generateInfoWindowHtml(spot));
             infoWindow.open(map, marker);
           });
@@ -2208,7 +2222,7 @@
       const query = document.getElementById('topSearchInput').value.trim();
       if (!query) return;
       const dropdown = document.getElementById('searchDropdown');
-      dropdown.innerHTML = '<li class="dropdown-item" style="color:#94a3b8;">🔍 산/계곡/관광지 검색 중...</li>';
+      dropdown.innerHTML = '<li class="dropdown-item" style="color:#9ca3af;">🔍 산/계곡/관광지 검색 중...</li>';
       dropdown.style.display = 'block';
 
       const results = [];
@@ -2296,8 +2310,8 @@
         li.className = 'dropdown-item';
         li.innerHTML = `
           <div class="dropdown-info">
-            <div><strong style="color:${item.isInternal ? '#38bdf8' : '#f8fafc'};">${item.title}</strong> ${item.sub ? `<span style="font-size:0.75rem; color:#94a3b8;">(${item.sub})</span>` : ''}</div>
-            <div style="margin-top:4px;">${getDroneBadgeHtml(check.status, check.reason)}</div>
+            <div><strong style="color:${item.isInternal ? 'var(--accent-blue)' : '#f8fafc'};">${item.title}</strong> ${item.sub ? `<span style="font-size:0.72rem; color:#9ca3af;">(${item.sub})</span>` : ''}</div>
+            <div style="margin-top:3px;">${getDroneBadgeHtml(check.status, check.reason)}</div>
           </div>
           <button type="button" class="btn-quick-add" style="display:${isAdminMode && !item.isInternal ? 'inline-block' : 'none'};">➕ 등록</button>
         `;
@@ -2308,8 +2322,10 @@
           if (item.isInternal && item.spotObj) {
             incrementSpotCount(item.spotObj.id);
             const markerIdx = spots.findIndex(s => String(s.id) === String(item.spotObj.id));
+            currentActiveSpot = item.spotObj;
+            currentActiveMarker = currentMarkers[markerIdx];
             infoWindow.setContent(generateInfoWindowHtml(item.spotObj));
-            infoWindow.open(map, currentMarkers[markerIdx]);
+            infoWindow.open(map, currentActiveMarker);
           } else {
             tempSearchMarker = new naver.maps.Marker({ 
               position: new naver.maps.LatLng(item.lat, item.lng), 
@@ -2489,7 +2505,7 @@
       localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
       localStorage.setItem('okbm_new_spot_meta', JSON.stringify(newlyAddedSpotMeta));
 
-      infoWindow.close();
+      closeInfoWindowCompletely();
       renderSpots();
 
       try {
@@ -2506,7 +2522,7 @@
     function resetMapView() {
       map.setCenter(DEFAULT_MAP_CENTER);
       map.setZoom(DEFAULT_MAP_ZOOM);
-      infoWindow.close();
+      closeInfoWindowCompletely();
       markerHoverInfoWindow.close();
       droneHoverInfoWindow.close();
       if (tempSearchMarker) {
@@ -2545,7 +2561,7 @@
           center: new naver.maps.LatLng(zone.lat, zone.lng),
           radius: zone.radius,
           fillColor: zone.isStrict ? '#ef4444' : '#f59e0b',
-          fillOpacity: zone.isStrict ? 0.22 : 0.16,
+          fillOpacity: zone.isStrict ? 0.2 : 0.14,
           strokeColor: zone.isStrict ? '#dc2626' : '#d97706',
           strokeWeight: 1.5,
           clickable: true
@@ -2553,8 +2569,8 @@
 
         naver.maps.Event.addListener(circle, 'mouseover', (e) => {
           droneHoverInfoWindow.setContent(`
-            <div style="padding: 5px 8px; color: #f8fafc; line-height: 1.25; white-space: nowrap; pointer-events: none;">
-              <strong style="color: ${zone.isStrict ? '#f87171' : '#fde047'}; font-size: 0.78rem;">[${zone.isPark ? '🚫 국립공원 비행금지' : (zone.isStrict ? '🚫 비행금지구역' : '⚠️ 관제/훈련공역')}] ${zone.name}</strong><br>
+            <div style="padding: 4px 8px; color: #f8fafc; line-height: 1.25; white-space: nowrap; pointer-events: none;">
+              <strong style="color: ${zone.isStrict ? '#f87171' : '#fde047'}; font-size: 0.76rem;">[${zone.isPark ? '🚫 국립공원 비행금지' : (zone.isStrict ? '🚫 비행금지구역' : '⚠️ 관제/훈련공역')}] ${zone.name}</strong><br>
               <span style="color: #cbd5e1; font-size: 0.55rem; opacity: 0.9;">🚨 이유: ${zone.desc || '드론 비행 및 촬영 승인 필수 구역'}</span>
             </div>
           `);
