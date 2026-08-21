@@ -43,26 +43,28 @@
       height: 100%; 
       height: 100dvh;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
       font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
       background-color: var(--google-bg-deep); 
       color: var(--google-text-primary);
     }
     
+    /* 헤더: Flexbox 아이템으로 분리하여 절대 겹침 방지 */
     .header {
-      position: absolute;
-      top: 0; left: 0; right: 0;
       width: 100%;
-      height: 70px;
+      min-height: 70px;
       background-color: rgba(15, 19, 29, 0.98);
       backdrop-filter: blur(10px);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 20px;
+      padding: 10px 20px;
       z-index: 1000;
       box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
       border-bottom: 1px solid var(--google-border);
       user-select: none;
+      flex-shrink: 0;
     }
     .header-left { display: flex; align-items: center; gap: 14px; flex-wrap: nowrap; }
     
@@ -75,7 +77,7 @@
     }
     .main-title {
       font-family: 'Gowun Dodum', sans-serif;
-      font-size: clamp(1.4rem, 2.2vw, 1.95rem);
+      font-size: clamp(1.3rem, 2.2vw, 1.95rem);
       font-weight: 800;
       letter-spacing: -0.5px;
       background: linear-gradient(135deg, #ffffff 10%, #bae6fd 60%, #38bdf8 100%);
@@ -255,9 +257,10 @@
     .container {
       display: flex;
       width: 100%;
-      height: calc(100% - 70px);
-      margin-top: 70px;
+      flex: 1;
+      height: 100%;
       position: relative;
+      overflow: hidden;
     }
     
     /* 사이드바 */
@@ -276,10 +279,10 @@
     }
 
     .sidebar-header {
-      padding: 8px 14px !important;
-      min-height: 38px !important;
+      padding: 10px 14px !important;
+      min-height: 42px !important;
       font-weight: 700;
-      font-size: 0.84rem;
+      font-size: 0.86rem;
       background-color: var(--google-bg-deep);
       border-bottom: 1px solid var(--google-border);
       display: flex;
@@ -614,7 +617,7 @@
 
     #map { flex: 1; height: 100%; position: relative; background: var(--google-bg-deep); }
     
-    /* 지도 상단 범례 (모바일에서 z-index 안정화) */
+    /* 지도 상단 범례 */
     .map-legend-bar {
       position: absolute;
       top: 10px;
@@ -646,7 +649,7 @@
     .dot-yellow { background: #f59e0b; }
     .dot-red { background: #ef4444; }
 
-    /* 커스텀 지도 마커 */
+    /* 커스텀 지도 마커 및 완벽한 최상단 라벨 스타일 */
     .custom-spot-marker-wrap {
       position: relative;
       display: flex;
@@ -656,26 +659,27 @@
       transform: translate(-50%, -100%);
       pointer-events: auto;
       user-select: none;
-      z-index: 200;
+      z-index: 100;
     }
 
     .marker-label-chip {
       display: none;
-      background: rgba(15, 19, 29, 0.94);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(15, 19, 29, 0.96) !important;
+      backdrop-filter: blur(10px);
+      border: 1.5px solid rgba(56, 189, 248, 0.5);
       color: #ffffff;
-      padding: 2px 7px;
+      padding: 3px 8px;
       border-radius: 12px;
-      font-size: 0.68rem;
-      font-weight: 700;
+      font-size: 0.72rem;
+      font-weight: 800;
       white-space: nowrap;
-      margin-bottom: 2px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      margin-bottom: 4px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.85);
       align-items: center;
-      gap: 3px;
-      transition: transform 0.15s ease;
-      z-index: 250;
+      gap: 4px;
+      transition: all 0.15s ease;
+      z-index: 10000;
+      pointer-events: none;
     }
 
     #map.show-marker-labels .marker-label-chip {
@@ -688,33 +692,29 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .custom-spot-marker-wrap:hover {
-      z-index: 9999 !important;
-    }
-
     .custom-spot-marker-wrap:hover .marker-label-chip {
       display: flex !important;
-      transform: scale(1.05);
+      transform: scale(1.08);
       border-color: var(--google-accent-blue);
       color: var(--google-accent-blue);
-      z-index: 9999 !important;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.95);
     }
     
     .marker-label-elev {
       color: #86efac;
-      font-size: 0.62rem;
-      font-weight: 600;
+      font-size: 0.64rem;
+      font-weight: 700;
     }
     .marker-svg-icon {
-      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.65));
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.7));
       display: block;
     }
 
-    /* 반응형 글래스모피즘 인포윈도우 (z-index 및 중앙 정렬 강화) */
+    /* 반응형 글래스모피즘 인포윈도우 */
     .compact-info-window {
       padding: 12px 14px;
       width: min(290px, calc(100vw - 36px)) !important;
-      max-height: min(360px, 60dvh);
+      max-height: min(360px, 58dvh);
       overflow-y: auto;
       overflow-x: hidden !important;
       display: flex;
@@ -728,7 +728,7 @@
       border: 1px solid var(--google-border-glow) !important;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 24px rgba(56, 189, 248, 0.2) !important;
       word-break: break-word;
-      z-index: 8000 !important;
+      z-index: 9000 !important;
     }
     .compact-info-window::-webkit-scrollbar { width: 3px; }
     .compact-info-window::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
@@ -926,14 +926,17 @@
     .mobile-float-toggle { background: #0284c7; color: #ffffff; flex: 1.35; font-size: 0.8rem; border-color: rgba(255,255,255,0.3); }
     .mobile-float-reset { background: rgba(31, 37, 54, 0.95); color: #ffffff; flex: 1; }
 
-    /* 모바일 전용 반응형 수정 */
+    /* 모바일 전용 반응형 수정 (Flex 자동 높이 계산 적용) */
     @media (max-width: 768px) {
       .header { 
-        height: auto; 
+        height: auto !important;
+        min-height: unset !important;
         flex-direction: column; 
         align-items: center; 
-        padding: 8px 12px 9px 12px !important; 
+        padding: 8px 12px 10px 12px !important; 
         gap: 6px !important; 
+        flex-shrink: 0;
+        position: relative !important;
       }
       .header-left { 
         width: 100%; 
@@ -988,10 +991,12 @@
       }
       .mobile-floating-controls { display: flex; }
       
+      /* 마진 겹침을 없애고 Flex로 자동 높이 분할 */
       .container { 
-        margin-top: 86px !important; 
-        height: calc(100% - 86px) !important; 
-        position: relative;
+        margin-top: 0 !important; 
+        flex: 1 !important;
+        height: 100% !important; 
+        position: relative !important;
       }
       
       #map { 
@@ -1067,7 +1072,7 @@
         <div style="display:flex; align-items:center; gap:6px;">
           <span>📍 백패킹 박지 목록</span>
           <span id="spotCount" style="color: var(--google-accent-blue); font-size: 0.78rem; font-weight: bold;">0개</span>
-          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()">2.7ver</span>
+          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()">2.8ver</span>
         </div>
         <a id="sheetEditLink" href="#" target="_blank" rel="noopener noreferrer" class="sheet-edit-link">📊 구글 시트 편집</a>
       </div>
@@ -1237,10 +1242,9 @@
     /* =========================================================================
        버전 자동 연동 관리 상수 (수정 시 여기만 변경하면 전체 UI에 즉시 반영)
        ========================================================================= */
-    const BASE_VERSION_NUM = 2.7;
+    const BASE_VERSION_NUM = 2.8;
     const CURRENT_VERSION = `${BASE_VERSION_NUM.toFixed(1)}ver`;
 
-    // 화면 버전 태그 자동 업데이트
     document.addEventListener('DOMContentLoaded', () => {
       const vTag = document.getElementById('versionTagBtn');
       if (vTag) vTag.innerText = CURRENT_VERSION;
@@ -1450,7 +1454,7 @@
 
       return {
         content: `
-          <div class="custom-spot-marker-wrap" style="z-index:200;">
+          <div class="custom-spot-marker-wrap">
             <div class="marker-label-chip">
               <span>${escapeHtml(spot.name)}</span>
               ${elevText}
@@ -1595,7 +1599,7 @@
       document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
     }
 
-    /* 팝업창 스마트 화면 중앙 자동 정렬 (픽셀 투영 기준 완벽 계산) */
+    /* 팝업창 스마트 화면 중앙 자동 정렬 (픽셀 투영 기준) */
     function centerMapOnSpot(lat, lng, keepCurrentZoom = true) {
       const targetZoom = (!keepCurrentZoom && map.getZoom() < 12) ? 13 : map.getZoom();
       if (map.getZoom() !== targetZoom) {
@@ -1607,10 +1611,8 @@
       
       map.setCenter(targetLatLng);
 
-      // 모바일 환경: 헤더와 하단 바 사이의 중앙에 팝업창 본문이 오도록 Y축 픽셀 정밀 이동
       if (isMobile) {
         setTimeout(() => {
-          // 인포윈도우 높이의 절반가량을 상쇄하여 팝업이 화면 정중앙에 위치하도록 팬
           map.panBy(new naver.maps.Point(0, -110));
         }, 30);
       } else {
@@ -1623,11 +1625,10 @@
     function focusSpotOnMap(spot, keepZoom = false) {
       incrementSpotCount(spot.id);
       
-      // 기존 활성 마커 zIndex 원복 및 새 마커 zIndex 최상위화
-      spotMarkerMap.forEach(m => m.setZIndex(200));
+      spotMarkerMap.forEach(m => m.setZIndex(100));
       const marker = spotMarkerMap.get(String(spot.id));
       if (marker) {
-        marker.setZIndex(9999);
+        marker.setZIndex(999999);
       }
 
       currentActiveSpot = spot;
@@ -2132,7 +2133,7 @@
       currentActiveSpot = null;
       currentActiveMarker = null;
       infoWindow.close();
-      spotMarkerMap.forEach(m => m.setZIndex(200));
+      spotMarkerMap.forEach(m => m.setZIndex(100));
     }
 
     function generateInfoWindowHtml(spot) {
@@ -2283,11 +2284,21 @@
             title: spot.name,
             icon: createCustomMarkerIcon(spot),
             draggable: isAdminMode,
-            zIndex: 200
+            zIndex: 100
           });
 
           marker.spotData = spot;
           spotMarkerMap.set(String(spot.id), marker);
+
+          // 마우스 오버 시 네이버 지도 오버레이 계층 자체를 최상위(999999)로 끌어올림
+          naver.maps.Event.addListener(marker, 'mouseover', () => {
+            marker.setZIndex(999999);
+          });
+          naver.maps.Event.addListener(marker, 'mouseout', () => {
+            if (currentActiveSpot?.id !== spot.id) {
+              marker.setZIndex(100);
+            }
+          });
 
           naver.maps.Event.addListener(marker, 'dragend', () => {
             if (!isAdminMode) return;
