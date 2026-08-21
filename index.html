@@ -20,7 +20,7 @@
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #0b1120; }
     
     .header {
       position: absolute;
@@ -34,6 +34,7 @@
       padding: 0 18px;
       z-index: 1000;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.45);
+      border-bottom: 1px solid #1e293b;
       user-select: none;
     }
     .header-left { display: flex; align-items: center; gap: 12px; flex-wrap: nowrap; }
@@ -101,8 +102,8 @@
     .header-right { display: flex; align-items: center; gap: 8px; }
 
     .header-btn {
-      background: #334155;
-      border: 1px solid #64748b;
+      background: #1e293b;
+      border: 1px solid #475569;
       padding: 7px 12px;
       border-radius: 20px;
       font-size: 0.8rem;
@@ -112,7 +113,7 @@
       transition: all 0.2s;
       white-space: nowrap;
     }
-    .header-btn:hover { background: #475569; }
+    .header-btn:hover { background: #334155; }
     .header-btn.active {
       background: #ef4444 !important;
       color: #ffffff !important;
@@ -126,66 +127,85 @@
     }
     .admin-only-btn:hover { background: #115e59; }
 
-    .search-container { position: relative; display: flex; align-items: center; width: 270px; }
+    /* ⭐ 검색창 및 v2.3 버전 뱃지 스타일 */
+    .search-wrapper-outer {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .version-tag {
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 2px 6px;
+      border-radius: 6px;
+      white-space: nowrap;
+      letter-spacing: 0.5px;
+      user-select: none;
+    }
+
+    .search-container { position: relative; display: flex; align-items: center; width: 230px; }
     .search-input {
       width: 100%;
-      padding: 8px 36px 8px 14px;
+      padding: 7px 34px 7px 13px;
       border-radius: 20px;
       border: 1px solid #475569;
-      background: #334155;
+      background: #1e293b;
       color: #fff;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       outline: none;
       transition: all 0.2s;
     }
     .search-input::placeholder { color: #94a3b8; }
-    .search-input:focus { border-color: #0f766e; background: #1e293b; }
+    .search-input:focus { border-color: #0f766e; background: #0f172a; box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.3); }
     .search-btn-icon {
       position: absolute;
-      right: 12px;
+      right: 10px;
       background: none;
       border: none;
       color: #94a3b8;
       cursor: pointer;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
     }
 
     .search-dropdown {
       position: absolute;
-      top: 44px;
+      top: 42px;
       left: 0; right: 0;
-      background: #ffffff;
-      color: #0f172a;
-      border-radius: 8px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      background: #1e293b;
+      color: #f8fafc;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
       list-style: none;
       max-height: 340px;
       overflow-y: auto;
       display: none;
       z-index: 2000;
-      border: 1px solid #cbd5e1;
+      border: 1px solid #334155;
     }
     .dropdown-header {
       padding: 9px 12px;
-      background-color: #f8fafc;
+      background-color: #0f172a;
       font-size: 0.76rem;
       font-weight: bold;
-      color: #0f766e;
-      border-bottom: 1px solid #e2e8f0;
+      color: #38bdf8;
+      border-bottom: 1px solid #334155;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .dropdown-item {
       padding: 10px 12px;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid #334155;
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 0.84rem;
       cursor: pointer;
     }
-    .dropdown-item:hover { background: #f8fafc; }
+    .dropdown-item:hover { background: #334155; }
     .dropdown-info { flex: 1; padding-right: 8px; }
     
     .top-rank-row {
@@ -208,9 +228,9 @@
     .rank-1 { background: #fef08a; color: #854d0e; border: 1px solid #fde047; }
     .rank-2 { background: #e2e8f0; color: #334155; }
     .rank-3 { background: #fed7aa; color: #9a3412; }
-    .rank-etc { background: #f1f5f9; color: #64748b; }
-    .top-spot-title { font-weight: 700; color: #0f766e; font-size: 0.86rem; }
-    .top-spot-city { font-size: 0.74rem; color: #0284c7; font-weight: 600; background: #e0f2fe; padding: 2px 6px; border-radius: 4px; }
+    .rank-etc { background: #334155; color: #cbd5e1; }
+    .top-spot-title { font-weight: 700; color: #38bdf8; font-size: 0.86rem; }
+    .top-spot-city { font-size: 0.74rem; color: #38bdf8; font-weight: 600; background: rgba(56, 189, 248, 0.15); padding: 2px 6px; border-radius: 4px; }
     .top-spot-views { font-size: 0.72rem; color: #94a3b8; font-weight: 500; }
 
     .btn-quick-add {
@@ -234,23 +254,25 @@
       position: relative;
     }
     
+    /* ⭐ 사이드바 다크 테마 적용 */
     .sidebar {
       width: 390px;
       height: 100%;
-      background-color: #ffffff;
-      border-right: 1px solid #e2e8f0;
+      background-color: #0f172a;
+      border-right: 1px solid #1e293b;
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
       z-index: 500;
+      color: #f8fafc;
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .sidebar-header {
       padding: 12px 16px;
       font-weight: 600;
       font-size: 0.92rem;
-      background-color: #f8fafc;
-      border-bottom: 1px solid #e2e8f0;
+      background-color: #0b1120;
+      border-bottom: 1px solid #1e293b;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -275,8 +297,8 @@
     .admin-data-tools {
       display: none;
       padding: 8px 12px;
-      background: #f1f5f9;
-      border-bottom: 1px solid #cbd5e1;
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
       gap: 6px;
       flex-wrap: wrap;
       flex-shrink: 0;
@@ -288,27 +310,27 @@
       font-size: 0.76rem;
       font-weight: 700;
       border-radius: 4px;
-      border: 1px solid #94a3b8;
-      background: #ffffff;
-      color: #334155;
+      border: 1px solid #475569;
+      background: #0f172a;
+      color: #e2e8f0;
       cursor: pointer;
       text-align: center;
     }
-    .admin-tool-btn:hover { background: #e2e8f0; }
+    .admin-tool-btn:hover { background: #334155; }
     .admin-tool-btn.btn-ai-highlight { background: #0f766e; color: #ffffff; border-color: #0d9488; }
     .admin-tool-btn.btn-ai-highlight:hover { background: #115e59; }
 
-    /* 2단 필터바 */
+    /* 다크 2단 필터바 */
     .filter-wrapper {
-      background: #f8fafc;
-      border-bottom: 1.5px solid #cbd5e1;
+      background: #0f172a;
+      border-bottom: 1.5px solid #1e293b;
       display: flex;
       flex-direction: column;
       gap: 8px;
       padding: 10px 14px 12px 14px;
       flex-shrink: 0;
       z-index: 100;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+      box-shadow: 0 3px 6px rgba(0,0,0,0.25);
     }
     .region-filter-bar, .terrain-filter-bar {
       display: flex;
@@ -325,39 +347,39 @@
     .filter-label {
       font-size: 0.74rem;
       font-weight: 800;
-      color: #475569;
+      color: #94a3b8;
       white-space: nowrap;
       margin-right: 4px;
-      background: #e2e8f0;
+      background: #1e293b;
       padding: 3px 6px;
       border-radius: 4px;
     }
     .filter-btn {
       padding: 5px 12px;
       border-radius: 16px;
-      border: 1px solid #cbd5e1;
-      background: #ffffff;
-      color: #334155;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #e2e8f0;
       font-size: 0.76rem;
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
       flex-shrink: 0;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
       transition: all 0.15s ease;
     }
-    .filter-btn:hover { background: #f1f5f9; border-color: #94a3b8; }
+    .filter-btn:hover { background: #334155; border-color: #64748b; }
     .filter-btn.active {
       background: #0f766e;
       color: #ffffff;
       border-color: #0f766e;
-      box-shadow: 0 2px 4px rgba(15, 118, 110, 0.3);
+      box-shadow: 0 2px 5px rgba(15, 118, 110, 0.4);
     }
     .terrain-filter-btn.active {
       background: #0284c7;
       color: #ffffff;
       border-color: #0284c7;
-      box-shadow: 0 2px 4px rgba(2, 132, 199, 0.3);
+      box-shadow: 0 2px 5px rgba(2, 132, 199, 0.4);
     }
 
     /* 목록 영역 */
@@ -366,15 +388,18 @@
       overflow-y: auto; 
       list-style: none; 
       position: relative;
+      background: #0f172a;
     }
+    .spot-list::-webkit-scrollbar { width: 5px; }
+    .spot-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     
-    .region-group { border-bottom: 1px solid #e2e8f0; }
+    .region-group { border-bottom: 1px solid #1e293b; }
     .region-group-title {
       padding: 11px 16px;
-      background-color: #f8fafc;
+      background-color: #1e293b;
       font-size: 0.84rem;
       font-weight: bold;
-      color: #334155;
+      color: #f1f5f9;
       cursor: pointer;
       display: flex;
       justify-content: space-between;
@@ -383,20 +408,21 @@
       border-left: 3px solid transparent;
       transition: all 0.15s;
     }
-    .region-group-title:hover { background-color: #f1f5f9; border-left-color: #0f766e; }
+    .region-group-title:hover { background-color: #334155; border-left-color: #0f766e; }
 
-    /* 카드 스타일 */
+    /* 다크 카드 스타일 */
     .spot-item {
       padding: 10px 14px;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid #1e293b;
       cursor: pointer;
       position: relative;
       display: flex;
       flex-direction: column;
       gap: 4px;
-      background: #ffffff;
+      background: #0f172a;
+      transition: background 0.15s;
     }
-    .spot-item:hover { background-color: #f8fafc; }
+    .spot-item:hover { background-color: #1e293b; }
     .spot-header-row {
       display: flex;
       justify-content: space-between;
@@ -404,7 +430,7 @@
       padding-right: 65px;
     }
     .spot-name-wrapper { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-    .spot-name { font-size: 0.92rem; font-weight: 700; color: #0f766e; word-break: keep-all; }
+    .spot-name { font-size: 0.92rem; font-weight: 700; color: #38bdf8; word-break: keep-all; }
     
     .badge-status {
       font-size: 0.65rem;
@@ -439,20 +465,20 @@
       align-items: center;
       gap: 2px;
     }
-    .tag-terrain-deck { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-    .tag-terrain-rock { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
-    .tag-terrain-soil { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
-    .tag-terrain-island { background: #ccfbf1; color: #0f766e; border: 1px solid #99f6e4; }
-    .tag-terrain-valley { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
-    .tag-terrain-cave { background: #f5d0fe; color: #86198f; border: 1px solid #f0abfc; }
-    .tag-terrain-etc { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
-    .tag-diff { background: #1e293b; color: #facc15; border: 1px solid #0f172a; letter-spacing: 0.3px; }
-    .tag-dist { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
-    .tag-rating { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-weight: 800; }
+    .tag-terrain-deck { background: rgba(254, 243, 199, 0.15); color: #fde68a; border: 1px solid rgba(253, 230, 138, 0.3); }
+    .tag-terrain-rock { background: rgba(241, 245, 249, 0.12); color: #e2e8f0; border: 1px solid rgba(203, 213, 225, 0.25); }
+    .tag-terrain-soil { background: rgba(220, 252, 231, 0.15); color: #86efac; border: 1px solid rgba(187, 247, 208, 0.3); }
+    .tag-terrain-island { background: rgba(204, 251, 241, 0.15); color: #5eead4; border: 1px solid rgba(153, 246, 228, 0.3); }
+    .tag-terrain-valley { background: rgba(224, 242, 254, 0.15); color: #7dd3fc; border: 1px solid rgba(186, 230, 253, 0.3); }
+    .tag-terrain-cave { background: rgba(245, 208, 254, 0.15); color: #f0abfc; border: 1px solid rgba(240, 171, 252, 0.3); }
+    .tag-terrain-etc { background: rgba(243, 232, 255, 0.15); color: #d8b4fe; border: 1px solid rgba(233, 213, 255, 0.3); }
+    .tag-diff { background: #0284c7; color: #fef08a; border: 1px solid #0369a1; letter-spacing: 0.3px; }
+    .tag-dist { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(110, 231, 183, 0.3); }
+    .tag-rating { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(252, 211, 77, 0.3); font-weight: 800; }
 
     .spot-desc-single {
       font-size: 0.74rem;
-      color: #475569;
+      color: #94a3b8;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -462,11 +488,11 @@
 
     .spot-coords-text {
       font-size: 0.68rem;
-      color: #64748b;
-      background: #f8fafc;
+      color: #94a3b8;
+      background: #1e293b;
       padding: 1px 4px;
       border-radius: 4px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid #334155;
       width: fit-content;
     }
     
@@ -488,7 +514,7 @@
       font-size: 0.68rem;
       font-weight: 700;
       color: #ffffff !important;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
       transition: all 0.15s ease;
       cursor: pointer;
       line-height: 1.3;
@@ -508,7 +534,7 @@
       border-radius: 4px;
       gap: 3px;
       font-weight: 700;
-      box-shadow: 0 1px 3px rgba(220, 39, 67, 0.35);
+      box-shadow: 0 1px 3px rgba(220, 39, 67, 0.4);
     }
     .btn-insta:hover { filter: brightness(1.1); transform: translateY(-1px); }
     .btn-insta svg { width: 10px; height: 10px; flex-shrink: 0; fill: #ffffff; }
@@ -527,23 +553,23 @@
       user-select: none;
       white-space: nowrap;
     }
-    .drone-ok { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
-    .drone-warn { background: #fef9c3; color: #a16207; border: 1px solid #fde047; }
-    .drone-no { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+    .drone-ok { background: rgba(34, 197, 94, 0.2); color: #86efac; border: 1px solid rgba(74, 222, 128, 0.4); }
+    .drone-warn { background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid rgba(250, 204, 21, 0.4); }
+    .drone-no { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(248, 113, 113, 0.4); }
 
     .instant-tooltip-box::after {
       content: attr(data-tooltip);
       position: absolute;
       bottom: calc(100% + 6px);
       left: 0;
-      background-color: #0f172a;
+      background-color: #0b1120;
       color: #f8fafc;
       font-size: 0.72rem;
       font-weight: 600;
       padding: 6px 10px;
-      border-radius: 5px;
+      border-radius: 6px;
       white-space: nowrap;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
       border: 1px solid #334155;
       pointer-events: none;
       opacity: 0;
@@ -560,7 +586,7 @@
       left: 14px;
       border-width: 5px 5px 0 5px;
       border-style: solid;
-      border-color: #0f172a transparent transparent transparent;
+      border-color: #0b1120 transparent transparent transparent;
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
@@ -594,35 +620,38 @@
     .btn-edit { background: #0284c7; }
     .btn-del { background: #ef4444; }
 
-    #map { flex: 1; height: 100%; position: relative; overflow: hidden !important; }
+    #map { flex: 1; height: 100%; position: relative; overflow: hidden !important; background: #0b1120; }
     
-    /* 팝업창 */
+    /* ⭐ 다크 블랙 & 직각 라운드 팝업창 (네이버 지도 인포윈도우) */
     .compact-info-window {
-      padding: 8px 10px;
-      width: 255px !important;
-      max-width: 265px !important;
-      max-height: 330px;
+      padding: 10px 12px;
+      width: 260px !important;
+      max-width: 270px !important;
+      max-height: 340px;
       overflow-y: auto;
       overflow-x: hidden !important;
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      line-height: 1.25;
-      background: #ffffff;
-      border-radius: 6px;
+      gap: 5px;
+      line-height: 1.3;
+      background: #0f172a;
+      color: #f8fafc;
+      border-radius: 12px !important;
+      border: 1px solid #334155;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
     }
     .compact-info-window::-webkit-scrollbar { width: 4px; }
-    .compact-info-window::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .compact-info-window::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
 
-    .compact-title { font-size: 0.86rem; font-weight: 700; color: #0f766e; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .compact-title { font-size: 0.88rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
     
     .compact-entry-link {
       font-size: 0.72rem;
-      color: #0284c7;
-      background: #f0f9ff;
-      border: 1px solid #bae6fd;
+      color: #7dd3fc;
+      background: rgba(2, 132, 199, 0.18);
+      border: 1px solid rgba(56, 189, 248, 0.35);
       padding: 3px 6px;
-      border-radius: 4px;
+      border-radius: 6px;
       width: fit-content;
       word-break: break-all;
       white-space: pre-line;
@@ -636,22 +665,22 @@
       background: #0284c7;
       color: #ffffff !important;
       border-color: #0284c7;
-      box-shadow: 0 1px 4px rgba(2, 132, 199, 0.3);
+      box-shadow: 0 1px 6px rgba(2, 132, 199, 0.4);
     }
 
     .compact-desc {
       font-size: 0.74rem;
-      color: #334155;
+      color: #cbd5e1;
       word-break: keep-all;
       white-space: pre-line;
-      line-height: 1.25;
+      line-height: 1.3;
     }
 
     .btn-save-location {
       background: #0f766e;
       color: #ffffff;
       border: none;
-      border-radius: 4px;
+      border-radius: 6px;
       padding: 6px 10px;
       font-size: 0.74rem;
       font-weight: bold;
@@ -660,16 +689,16 @@
       text-align: center;
     }
 
-    /* 댓글 영역 스타일 */
+    /* 다크 댓글 영역 */
     .comments-section {
       margin-top: 5px;
-      border-top: 1px dashed #cbd5e1;
+      border-top: 1px dashed #334155;
       padding-top: 5px;
     }
     .comments-title {
       font-size: 0.74rem;
       font-weight: 700;
-      color: #334155;
+      color: #94a3b8;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -685,12 +714,12 @@
       gap: 3px;
     }
     .comments-list::-webkit-scrollbar { width: 3px; }
-    .comments-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .comments-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
 
     .comment-item {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 4px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
       padding: 3px 5px;
       font-size: 0.68rem;
       display: flex;
@@ -698,74 +727,78 @@
       align-items: flex-start;
       gap: 4px;
     }
-    .comment-author { font-weight: 700; color: #0f766e; white-space: nowrap; }
+    .comment-author { font-weight: 700; color: #38bdf8; white-space: nowrap; }
     .comment-rating-stars { color: #f59e0b; font-size: 0.65rem; white-space: nowrap; }
-    .comment-text { color: #334155; word-break: break-all; flex: 1; }
+    .comment-text { color: #cbd5e1; word-break: break-all; flex: 1; }
     
     .comment-form { display: flex; flex-direction: column; gap: 3px; }
     .comment-form-row { display: flex; gap: 3px; }
     .comment-select-rating {
       padding: 2px 4px;
-      border: 1px solid #cbd5e1;
-      border-radius: 3px;
+      border: 1px solid #334155;
+      border-radius: 4px;
       font-size: 0.68rem;
-      background: #fff;
-      color: #b45309;
+      background: #1e293b;
+      color: #fcd34d;
       font-weight: bold;
       outline: none;
     }
-    .comment-input-author { width: 48px; padding: 3px 4px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 0.68rem; outline: none; }
-    .comment-input-text { flex: 1; padding: 3px 4px; border: 1px solid #cbd5e1; border-radius: 3px; font-size: 0.68rem; outline: none; }
-    .comment-btn-submit { background: #0f766e; color: #ffffff; border: none; border-radius: 3px; padding: 3px 6px; font-size: 0.68rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
-    .comment-btn-submit:disabled { background: #94a3b8; cursor: not-allowed; }
+    .comment-input-author { width: 48px; padding: 3px 4px; border: 1px solid #334155; border-radius: 4px; font-size: 0.68rem; outline: none; background: #1e293b; color: #fff; }
+    .comment-input-text { flex: 1; padding: 3px 4px; border: 1px solid #334155; border-radius: 4px; font-size: 0.68rem; outline: none; background: #1e293b; color: #fff; }
+    .comment-btn-submit { background: #0f766e; color: #ffffff; border: none; border-radius: 4px; padding: 3px 6px; font-size: 0.68rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .comment-btn-submit:disabled { background: #475569; cursor: not-allowed; }
 
     .custom-modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(15, 23, 42, 0.6);
+      background: rgba(11, 17, 32, 0.75);
       display: none;
       justify-content: center;
       align-items: center;
       z-index: 5000;
-      backdrop-filter: blur(2px);
+      backdrop-filter: blur(4px);
     }
     .custom-modal {
-      background: #ffffff;
+      background: #0f172a;
+      color: #f8fafc;
       width: 490px;
       max-height: 90vh;
       overflow-y: auto;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      border-radius: 14px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.6);
       padding: 20px;
       display: flex;
       flex-direction: column;
       gap: 12px;
+      border: 1px solid #334155;
     }
-    .custom-modal h3 { font-size: 1.05rem; color: #0f766e; }
+    .custom-modal h3 { font-size: 1.05rem; color: #38bdf8; }
     .modal-field { display: flex; flex-direction: column; gap: 4px; }
-    .modal-field label { font-size: 0.78rem; font-weight: 700; color: #475569; }
+    .modal-field label { font-size: 0.78rem; font-weight: 700; color: #94a3b8; }
     .modal-input {
       width: 100%;
       padding: 8px 12px;
-      border: 1px solid #cbd5e1;
+      border: 1px solid #334155;
       border-radius: 6px;
       font-size: 0.85rem;
       outline: none;
       font-family: inherit;
+      background: #1e293b;
+      color: #ffffff;
     }
     .modal-textarea { resize: vertical; min-height: 52px; line-height: 1.4; }
-    .modal-input:focus { border-color: #0f766e; box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.15); }
+    .modal-input:focus { border-color: #0f766e; box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.3); }
     
-    .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 0.82rem; color: #334155; font-weight: 600; }
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 0.82rem; color: #e2e8f0; font-weight: 600; }
     .checkbox-group label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
-    .select-diff { padding: 7px 8px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.8rem; color: #334155; outline: none; }
+    .select-diff { padding: 7px 8px; border-radius: 6px; border: 1px solid #334155; font-size: 0.8rem; color: #e2e8f0; outline: none; background: #1e293b; }
     
     .modal-btn-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
     .modal-btn { padding: 8px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; border: none; }
-    .modal-btn-cancel { background: #e2e8f0; color: #475569; }
+    .modal-btn-cancel { background: #334155; color: #cbd5e1; }
     .modal-btn-save { background: #0f766e; color: #ffffff; }
 
-    /* ⭐ 모바일 하단 3버튼 플로팅 컨트롤 바 */
+    /* 모바일 하단 플로팅 컨트롤 바 */
     .mobile-floating-controls {
       display: none;
       position: fixed;
@@ -783,31 +816,18 @@
       border-radius: 30px;
       font-size: 0.78rem;
       font-weight: 700;
-      border: 1.5px solid rgba(255,255,255,0.7);
-      box-shadow: 0 5px 16px rgba(0, 0, 0, 0.35);
+      border: 1.5px solid rgba(255,255,255,0.25);
+      box-shadow: 0 5px 16px rgba(0, 0, 0, 0.45);
       cursor: pointer;
       white-space: nowrap;
       text-align: center;
       transition: all 0.2s;
     }
-    .mobile-float-drone {
-      background: #334155;
-      color: #ffffff;
-      flex: 1;
-    }
-    .mobile-float-toggle {
-      background: #0f766e;
-      color: #ffffff;
-      flex: 1.4;
-      font-size: 0.82rem;
-    }
-    .mobile-float-reset {
-      background: #334155;
-      color: #ffffff;
-      flex: 1;
-    }
+    .mobile-float-drone { background: #1e293b; color: #ffffff; flex: 1; }
+    .mobile-float-toggle { background: #0f766e; color: #ffffff; flex: 1.4; font-size: 0.82rem; border-color: rgba(255,255,255,0.5); }
+    .mobile-float-reset { background: #1e293b; color: #ffffff; flex: 1; }
 
-    /* ⭐ 완벽한 모바일 전용 UI/UX */
+    /* ⭐ 모바일 전용 반응형 & 30% 폰트 축소 적용 */
     @media (max-width: 768px) {
       .header { 
         height: auto; 
@@ -821,7 +841,6 @@
         justify-content: center; 
         position: relative;
       }
-      /* 모바일에서 타이틀 정중앙 배치 */
       .header-title-box { 
         width: 100%;
         display: flex;
@@ -847,15 +866,15 @@
         top: 0;
       }
 
-      /* 모바일 상단에서는 지도초기화, 드론버튼 숨기고 검색창만 표시 */
       .header-right { 
         width: 100%; 
         display: flex;
         justify-content: center;
       }
       .header-desktop-only { display: none !important; }
-      .search-container { width: 100%; }
-      .search-input { padding: 9px 38px 9px 16px; font-size: 0.88rem; }
+      .search-wrapper-outer { width: 100%; justify-content: center; }
+      .search-container { flex: 1; width: auto; max-width: 100%; }
+      .search-input { padding: 8px 36px 8px 14px; font-size: 0.84rem; }
       
       .mobile-floating-controls { display: flex; }
       
@@ -874,7 +893,7 @@
         z-index: 100;
       }
 
-      /* ⭐ 모바일 박지 목록: 하단 컨트롤 버튼 바로 위까지 꽉 차도록 확장 */
+      /* 모바일 박지 목록 및 폰트 30% 축소 */
       .sidebar { 
         position: absolute;
         top: 0; left: 0; right: 0;
@@ -882,8 +901,8 @@
         height: calc(100% - 75px) !important; 
         z-index: 300;
         border-right: none; 
-        border-bottom: 2px solid #cbd5e1; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        border-bottom: 2px solid #334155; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
         transform: translateY(0);
         border-radius: 0 0 16px 16px;
       }
@@ -891,6 +910,18 @@
       .sidebar.collapsed { 
         transform: translateY(-130%) !important;
       }
+
+      /* ⭐ 모바일 메인메뉴 박지 항목 폰트 약 30% 축소로 가독성 및 압축력 극대화 */
+      .spot-item { padding: 7px 10px; gap: 3px; }
+      .spot-name { font-size: 0.74rem !important; }
+      .spot-desc-single { font-size: 0.58rem !important; }
+      .meta-tag { font-size: 0.54rem !important; padding: 1.5px 4px !important; }
+      .link-btn { font-size: 0.54rem !important; padding: 1.5px 5px !important; }
+      .drone-badge { font-size: 0.52rem !important; padding: 1.5px 4px !important; }
+      .badge-status { font-size: 0.52rem !important; padding: 1px 4px !important; }
+      .filter-btn { font-size: 0.65rem !important; padding: 4px 9px !important; }
+      .filter-label { font-size: 0.65rem !important; }
+      .region-group-title { font-size: 0.74rem !important; padding: 8px 12px !important; }
     }
   </style>
 </head>
@@ -898,7 +929,6 @@
 
   <header class="header">
     <div class="header-left">
-      <!-- ⭐ 모바일에서 완벽한 정중앙 배치 타이틀 -->
       <div class="header-title-box">
         <span class="main-title">
           <span class="flag-icon">🇰🇷</span>
@@ -913,15 +943,17 @@
     
     <div class="header-right">
       <button type="button" class="header-btn admin-only-btn" id="btnSyncSheet" onclick="fetchSpotsFromGoogleSheet()">🔄 시트 동기화</button>
-      <!-- PC 전용 상단 버튼 (모바일에서는 숨김) -->
       <button type="button" class="header-btn header-desktop-only" id="resetMapBtn" onclick="resetMapView()">🔄 지도 초기화</button>
       <button type="button" class="header-btn header-desktop-only" id="droneLayerBtn" onclick="handleDroneBtnClick()">🛸 드론규제공역 레이어</button>
       
-      <!-- 상단 깔끔 검색창 -->
-      <div class="search-container">
-        <input type="text" id="topSearchInput" class="search-input" placeholder="산/계곡/섬/동굴/명소 검색" onfocus="showTopRankings()" onkeyup="handleSearchInput(event)" />
-        <button type="button" class="search-btn-icon" onclick="executeSearch()">🔍</button>
-        <ul id="searchDropdown" class="search-dropdown"></ul>
+      <!-- ⭐ 버전 표기(2.3ver) 및 검색창 -->
+      <div class="search-wrapper-outer">
+        <span class="version-tag">2.3ver</span>
+        <div class="search-container">
+          <input type="text" id="topSearchInput" class="search-input" placeholder="산/계곡/섬/명소 검색" onfocus="showTopRankings()" onkeyup="handleSearchInput(event)" />
+          <button type="button" class="search-btn-icon" onclick="executeSearch()">🔍</button>
+          <ul id="searchDropdown" class="search-dropdown"></ul>
+        </div>
       </div>
     </div>
   </header>
@@ -931,7 +963,7 @@
       <div class="sidebar-header">
         <div style="display:flex; align-items:center; gap:6px;">
           <span>📍 백패킹 박지 목록</span>
-          <span id="spotCount" style="color: #0f766e; font-size: 0.8rem; font-weight: bold;">0개</span>
+          <span id="spotCount" style="color: #38bdf8; font-size: 0.8rem; font-weight: bold;">0개</span>
         </div>
         <a id="sheetEditLink" href="#" target="_blank" class="sheet-edit-link">📊 구글 시트 편집</a>
       </div>
@@ -973,7 +1005,7 @@
     <main id="map"></main>
   </div>
 
-  <!-- ⭐ 모바일 전용 3버튼 하단 플로팅 컨트롤 바 (드론규제 | 박지목록토글 | 지도초기화) -->
+  <!-- 모바일 3버튼 플로팅 바 -->
   <div class="mobile-floating-controls">
     <button type="button" class="mobile-float-btn mobile-float-drone" id="mobileDroneBtn" onclick="handleDroneBtnClick()">
       🛸 드론규제
@@ -990,7 +1022,7 @@
   <div class="custom-modal-overlay" id="bulkImportModalOverlay">
     <div class="custom-modal" style="width: 500px;">
       <h3 style="display:flex; align-items:center; gap:6px;">⚡ AI 요약 / JSON 내용으로 일괄 등록</h3>
-      <p style="font-size:0.76rem; color:#64748b; line-height:1.4;">
+      <p style="font-size:0.76rem; color:#94a3b8; line-height:1.4;">
         ChatGPT / Gemini 요약 텍스트 또는 <strong>JSON 객체·배열</strong>을 붙여넣으세요. 산 이름과 주소로 <strong>위도/경도를 자동 검색</strong>하여 지도와 구글 시트에 즉시 등록합니다.
       </p>
 
@@ -999,7 +1031,7 @@
         <textarea id="bulkImportTextarea" class="modal-input modal-textarea" style="min-height: 180px; font-family: monospace; font-size: 0.8rem;" placeholder='{\n  "name": "홍천 용소계곡",\n  "entryPoint": "강원 홍천군 두촌면 괘석리 산1",\n  "elevation": "350m",\n  "desc": "기암괴석과 맑은 물이 어우러진 원시림 계곡 트레킹 박지",\n  "terrain": ["계곡","노지"],\n  "difficulty": "2",\n  "distance": "3.5",\n  "youtubeUrl": "https://youtu.be/..."\n}'></textarea>
       </div>
 
-      <div id="bulkStatusMsg" style="font-size:0.75rem; color:#0284c7; min-height: 18px; font-weight:600;"></div>
+      <div id="bulkStatusMsg" style="font-size:0.75rem; color:#38bdf8; min-height: 18px; font-weight:600;"></div>
 
       <div class="modal-btn-row">
         <button type="button" class="modal-btn modal-btn-cancel" onclick="closeBulkImportModal()">닫기</button>
@@ -1198,13 +1230,12 @@
       zoomControlOptions: { position: naver.maps.Position.RIGHT_CENTER }
     });
 
+    // ⭐ 다크 테마 인포윈도우 설정
     const infoWindow = new naver.maps.InfoWindow({ 
-      borderWidth: 1, 
-      borderColor: '#cbd5e1', 
-      anchorSkew: true,
+      borderWidth: 0,
+      disableAnchor: true,
       autoPan: false,
-      anchorSize: new naver.maps.Size(0, 0),
-      backgroundColor: '#ffffff'
+      backgroundColor: 'transparent'
     });
     
     const markerHoverInfoWindow = new naver.maps.InfoWindow({
@@ -1239,7 +1270,7 @@
 
       return {
         content: `
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 34" width="${width}" height="${height}" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.35)); cursor: pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 34" width="${width}" height="${height}" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.45)); cursor: pointer;">
             <path fill="${color}" stroke="#ffffff" stroke-width="1.5" d="M12 0C5.373 0 0 5.373 0 12c0 9 12 22 12 22s12-13 12-22c0-6.627-5.373-12-12-12z"/>
             <circle fill="#ffffff" cx="12" cy="11" r="4.5"/>
             <polygon fill="${color}" points="12,13.5 9,8.5 15,8.5"/>
@@ -1770,7 +1801,7 @@
     function getCommentsHtml(spotId) {
       const cList = spotComments[spotId] || [];
       let listHtml = cList.length === 0 
-        ? '<li style="color:#94a3b8; font-size:0.68rem;">첫 평점과 후기를 남겨보세요!</li>'
+        ? '<li style="color:#64748b; font-size:0.68rem;">첫 평점과 후기를 남겨보세요!</li>'
         : cList.map(c => `
             <li class="comment-item">
               <div style="flex:1;">
@@ -1853,16 +1884,17 @@
       }, 300);
     }
 
+    // ⭐ 세련된 다크 테마 & 직각 라운드 팝업창 HTML 생성
     function generateInfoWindowHtml(spot) {
       const cleanAddress = (spot.entryPoint || spot.name).replace(/\n/g, ' ').trim();
       return `
-        <div class="compact-info-window" style="position: relative; padding-right: 18px;">
+        <div class="compact-info-window" style="position: relative;">
           <div class="compact-title">
             <span>${spot.name}</span>
-            ${spot.elevation ? '<span style="font-size:0.75rem; color:#15803d;">(' + spot.elevation + ')</span>' : ''}
+            ${spot.elevation ? '<span style="font-size:0.75rem; color:#86efac;">(' + spot.elevation + ')</span>' : ''}
             ${getSpotStatusBadges(spot)}
           </div>
-          <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 6px; right: 6px; background: #e2e8f0; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #334155;">✕</button>
+          <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 6px; right: 6px; background: #334155; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
           ${getMetaBadgesHtml(spot)}
           <div class="spot-coords-text">📍 ${spot.lat}, ${spot.lng}</div>
           <a href="https://map.naver.com/v5/search/${encodeURIComponent(cleanAddress)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link" title="클릭 시 네이버 지도로 이동">🚗 들머리: ${spot.entryPoint} ↗</a>
@@ -1984,7 +2016,7 @@
 
         const groupTitle = document.createElement('div');
         groupTitle.className = 'region-group-title';
-        groupTitle.innerHTML = `<span>📌 ${regionKey}</span><span style="color:#64748b; font-size:0.75rem;">${items.length}개 ${shouldBeOpen ? '<b style="color:#0f766e;">▼</b>' : '▶'}</span>`;
+        groupTitle.innerHTML = `<span>📌 ${regionKey}</span><span style="color:#94a3b8; font-size:0.75rem;">${items.length}개 ${shouldBeOpen ? '<b style="color:#38bdf8;">▼</b>' : '▶'}</span>`;
         if (shouldBeOpen) groupTitle.style.borderLeftColor = '#0f766e';
 
         const groupItemsContainer = document.createElement('div');
@@ -1994,7 +2026,7 @@
         groupTitle.addEventListener('click', () => {
           const isClosed = groupItemsContainer.style.display === 'none';
           groupItemsContainer.style.display = isClosed ? 'block' : 'none';
-          groupTitle.querySelector('span:last-child').innerHTML = `${items.length}개 ${isClosed ? '<b style="color:#0f766e;">▼</b>' : '▶'}`;
+          groupTitle.querySelector('span:last-child').innerHTML = `${items.length}개 ${isClosed ? '<b style="color:#38bdf8;">▼</b>' : '▶'}`;
           groupTitle.style.borderLeftColor = isClosed ? '#0f766e' : 'transparent';
         });
 
@@ -2028,9 +2060,9 @@
             const newLng = parseFloat(movedLatLng.lng().toFixed(6));
 
             infoWindow.setContent(`
-              <div class="compact-info-window" style="position: relative; padding-right: 18px;">
-                <div class="compact-title" style="color:#0f766e;">📍 '${spot.name}' 위치 이동</div>
-                <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 6px; right: 6px; background: #e2e8f0; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #334155;">✕</button>
+              <div class="compact-info-window" style="position: relative;">
+                <div class="compact-title" style="color:#38bdf8;">📍 '${spot.name}' 위치 이동</div>
+                <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 6px; right: 6px; background: #334155; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
                 <div style="font-size:0.72rem; color:#ef4444; font-weight:bold;">새 좌표로 위치를 변경하시겠습니까?</div>
                 <div class="spot-coords-text">위도: ${newLat}<br>경도: ${newLng}</div>
                 <button type="button" class="btn-save-location" onclick="saveUpdatedLocation('${spot.id}', ${newLat}, ${newLng})">💾 이 위치로 즉시 저장</button>
@@ -2054,7 +2086,7 @@
             <div class="spot-header-row">
               <div class="spot-name-wrapper">
                 <span class="spot-name">${spot.name}</span>
-                ${spot.elevation ? `<span style="font-size:0.74rem; color:#15803d; font-weight:normal;">(${spot.elevation})</span>` : ''}
+                ${spot.elevation ? `<span style="font-size:0.74rem; color:#86efac; font-weight:normal;">(${spot.elevation})</span>` : ''}
                 ${getSpotStatusBadges(spot)}
               </div>
             </div>
@@ -2106,7 +2138,7 @@
       const query = document.getElementById('topSearchInput').value.trim();
       if (!query) return;
       const dropdown = document.getElementById('searchDropdown');
-      dropdown.innerHTML = '<li class="dropdown-item" style="color:#64748b;">🔍 산/계곡/관광지 검색 중...</li>';
+      dropdown.innerHTML = '<li class="dropdown-item" style="color:#94a3b8;">🔍 산/계곡/관광지 검색 중...</li>';
       dropdown.style.display = 'block';
 
       const results = [];
@@ -2194,7 +2226,7 @@
         li.className = 'dropdown-item';
         li.innerHTML = `
           <div class="dropdown-info">
-            <div><strong style="color:${item.isInternal ? '#0f766e' : '#1e293b'};">${item.title}</strong> ${item.sub ? `<span style="font-size:0.75rem; color:#64748b;">(${item.sub})</span>` : ''}</div>
+            <div><strong style="color:${item.isInternal ? '#38bdf8' : '#f8fafc'};">${item.title}</strong> ${item.sub ? `<span style="font-size:0.75rem; color:#94a3b8;">(${item.sub})</span>` : ''}</div>
             <div style="margin-top:4px;">${getDroneBadgeHtml(check.status, check.reason)}</div>
           </div>
           <button type="button" class="btn-quick-add" style="display:${isAdminMode && !item.isInternal ? 'inline-block' : 'none'};">➕ 등록</button>
