@@ -16,70 +16,99 @@
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&family=Alex+Brush&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
 
   <style>
+    :root {
+      --bg-header: #090e1a;
+      --bg-sidebar: #0f172a;
+      --bg-card: #162032;
+      --bg-card-hover: #1e293b;
+      --border-color: #27354a;
+      --border-subtle: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-teal: #0ea5e9;
+      --accent-gold: #f59e0b;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #0b1120; }
+    html, body { 
+      width: 100%; 
+      height: 100%; 
+      overflow: hidden; 
+      font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      background-color: var(--bg-header); 
+      color: var(--text-main);
+    }
     
     .header {
       position: absolute;
       top: 0; left: 0; right: 0;
       height: 68px;
-      background-color: #0f172a;
-      color: #ffffff;
+      background-color: var(--bg-header);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 18px;
+      padding: 0 20px;
       z-index: 1000;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.45);
-      border-bottom: 1px solid #1e293b;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      border-bottom: 1px solid var(--border-subtle);
       user-select: none;
     }
-    .header-left { display: flex; align-items: center; gap: 12px; flex-wrap: nowrap; }
+    .header-left { display: flex; align-items: center; gap: 14px; flex-wrap: nowrap; }
     
     .header-title-box {
       display: flex;
       flex-direction: row;
-      align-items: center;
+      align-items: baseline;
       gap: 10px;
       white-space: nowrap;
     }
     .main-title {
-      font-family: 'Gowun Batang', serif;
-      font-size: 1.8rem;
-      font-weight: 700;
-      background: linear-gradient(135deg, #ffffff 25%, #fef08a 65%, #fbbf24 100%);
+      font-size: 1.65rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #ffffff 40%, #e2e8f0 70%, #cbd5e1 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      letter-spacing: 0.8px;
-      white-space: nowrap;
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.7));
+      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
     }
     .main-title .flag-icon, .main-title .mountain-icon {
       -webkit-text-fill-color: initial;
-      font-size: 1.5rem;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+      font-size: 1.45rem;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
     }
     .sub-en-title {
       font-family: 'Alex Brush', cursive;
-      font-size: 1.65rem;
+      font-size: 1.6rem;
       font-weight: 700;
-      background: linear-gradient(135deg, #34d399 10%, #38bdf8 90%);
+      background: linear-gradient(135deg, #38bdf8 20%, #818cf8 90%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      letter-spacing: 1.2px;
+      letter-spacing: 1px;
       white-space: nowrap;
-      margin-left: 2px;
-      filter: drop-shadow(0 1px 3px rgba(56, 189, 248, 0.3));
     }
     
+    .version-tag {
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 2px 6px;
+      border-radius: 6px;
+      white-space: nowrap;
+      letter-spacing: 0.4px;
+      user-select: none;
+      align-self: center;
+    }
+
     .sync-status-badge {
-      background: #0284c7;
+      background: #0369a1;
       color: #ffffff;
       font-size: 0.72rem;
       padding: 3px 8px;
@@ -103,17 +132,17 @@
 
     .header-btn {
       background: #1e293b;
-      border: 1px solid #475569;
-      padding: 7px 12px;
+      border: 1px solid var(--border-color);
+      padding: 7px 13px;
       border-radius: 20px;
       font-size: 0.8rem;
-      font-weight: bold;
-      color: #ffffff;
+      font-weight: 700;
+      color: #e2e8f0;
       cursor: pointer;
       transition: all 0.2s;
       white-space: nowrap;
     }
-    .header-btn:hover { background: #334155; }
+    .header-btn:hover { background: #27354a; color: #ffffff; }
     .header-btn.active {
       background: #ef4444 !important;
       color: #ffffff !important;
@@ -127,85 +156,66 @@
     }
     .admin-only-btn:hover { background: #115e59; }
 
-    /* ⭐ 검색창 및 v2.3 버전 뱃지 스타일 */
-    .search-wrapper-outer {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .version-tag {
-      font-size: 0.65rem;
-      font-weight: 800;
-      color: #38bdf8;
-      background: rgba(56, 189, 248, 0.15);
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      padding: 2px 6px;
-      border-radius: 6px;
-      white-space: nowrap;
-      letter-spacing: 0.5px;
-      user-select: none;
-    }
-
-    .search-container { position: relative; display: flex; align-items: center; width: 230px; }
+    .search-container { position: relative; display: flex; align-items: center; width: 280px; }
     .search-input {
       width: 100%;
-      padding: 7px 34px 7px 13px;
+      padding: 8px 36px 8px 14px;
       border-radius: 20px;
-      border: 1px solid #475569;
-      background: #1e293b;
+      border: 1px solid var(--border-color);
+      background: #141d2e;
       color: #fff;
-      font-size: 0.82rem;
+      font-size: 0.84rem;
       outline: none;
       transition: all 0.2s;
     }
-    .search-input::placeholder { color: #94a3b8; }
-    .search-input:focus { border-color: #0f766e; background: #0f172a; box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.3); }
+    .search-input::placeholder { color: #64748b; }
+    .search-input:focus { border-color: #0284c7; background: #0f172a; box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.25); }
     .search-btn-icon {
       position: absolute;
-      right: 10px;
+      right: 12px;
       background: none;
       border: none;
-      color: #94a3b8;
+      color: #64748b;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.92rem;
     }
 
     .search-dropdown {
       position: absolute;
-      top: 42px;
+      top: 44px;
       left: 0; right: 0;
-      background: #1e293b;
+      background: #141d2e;
       color: #f8fafc;
-      border-radius: 10px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
       list-style: none;
       max-height: 340px;
       overflow-y: auto;
       display: none;
       z-index: 2000;
-      border: 1px solid #334155;
+      border: 1px solid var(--border-color);
     }
     .dropdown-header {
       padding: 9px 12px;
-      background-color: #0f172a;
+      background-color: #0b1120;
       font-size: 0.76rem;
       font-weight: bold;
       color: #38bdf8;
-      border-bottom: 1px solid #334155;
+      border-bottom: 1px solid var(--border-subtle);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .dropdown-item {
       padding: 10px 12px;
-      border-bottom: 1px solid #334155;
+      border-bottom: 1px solid var(--border-subtle);
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-size: 0.84rem;
       cursor: pointer;
     }
-    .dropdown-item:hover { background: #334155; }
+    .dropdown-item:hover { background: #1e293b; }
     .dropdown-info { flex: 1; padding-right: 8px; }
     
     .top-rank-row {
@@ -225,13 +235,13 @@
       font-size: 0.72rem;
       font-weight: 800;
     }
-    .rank-1 { background: #fef08a; color: #854d0e; border: 1px solid #fde047; }
+    .rank-1 { background: #fef08a; color: #854d0e; }
     .rank-2 { background: #e2e8f0; color: #334155; }
     .rank-3 { background: #fed7aa; color: #9a3412; }
-    .rank-etc { background: #334155; color: #cbd5e1; }
+    .rank-etc { background: #1e293b; color: #94a3b8; }
     .top-spot-title { font-weight: 700; color: #38bdf8; font-size: 0.86rem; }
-    .top-spot-city { font-size: 0.74rem; color: #38bdf8; font-weight: 600; background: rgba(56, 189, 248, 0.15); padding: 2px 6px; border-radius: 4px; }
-    .top-spot-views { font-size: 0.72rem; color: #94a3b8; font-weight: 500; }
+    .top-spot-city { font-size: 0.72rem; color: #7dd3fc; background: rgba(56, 189, 248, 0.12); padding: 2px 6px; border-radius: 4px; }
+    .top-spot-views { font-size: 0.72rem; color: #64748b; font-weight: 500; }
 
     .btn-quick-add {
       background: #0f766e;
@@ -254,25 +264,24 @@
       position: relative;
     }
     
-    /* ⭐ 사이드바 다크 테마 적용 */
     .sidebar {
       width: 390px;
       height: 100%;
-      background-color: #0f172a;
-      border-right: 1px solid #1e293b;
+      background-color: var(--bg-sidebar);
+      border-right: 1px solid var(--border-subtle);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
       z-index: 500;
-      color: #f8fafc;
+      color: var(--text-main);
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .sidebar-header {
       padding: 12px 16px;
-      font-weight: 600;
-      font-size: 0.92rem;
+      font-weight: 700;
+      font-size: 0.9rem;
       background-color: #0b1120;
-      border-bottom: 1px solid #1e293b;
+      border-bottom: 1px solid var(--border-subtle);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -283,7 +292,7 @@
       display: none;
       align-items: center;
       gap: 4px;
-      background: #107c41;
+      background: #059669;
       color: #ffffff;
       text-decoration: none;
       padding: 4px 8px;
@@ -292,13 +301,13 @@
       font-weight: bold;
       transition: background 0.2s;
     }
-    .sheet-edit-link:hover { background: #0c6133; }
+    .sheet-edit-link:hover { background: #047857; }
 
     .admin-data-tools {
       display: none;
       padding: 8px 12px;
-      background: #1e293b;
-      border-bottom: 1px solid #334155;
+      background: #141d2e;
+      border-bottom: 1px solid var(--border-color);
       gap: 6px;
       flex-wrap: wrap;
       flex-shrink: 0;
@@ -309,28 +318,25 @@
       padding: 5px 8px;
       font-size: 0.76rem;
       font-weight: 700;
-      border-radius: 4px;
-      border: 1px solid #475569;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
       background: #0f172a;
-      color: #e2e8f0;
+      color: #cbd5e1;
       cursor: pointer;
       text-align: center;
     }
-    .admin-tool-btn:hover { background: #334155; }
+    .admin-tool-btn:hover { background: #1e293b; color: #ffffff; }
     .admin-tool-btn.btn-ai-highlight { background: #0f766e; color: #ffffff; border-color: #0d9488; }
-    .admin-tool-btn.btn-ai-highlight:hover { background: #115e59; }
 
-    /* 다크 2단 필터바 */
     .filter-wrapper {
-      background: #0f172a;
-      border-bottom: 1.5px solid #1e293b;
+      background: #0b1120;
+      border-bottom: 1px solid var(--border-subtle);
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      padding: 10px 14px 12px 14px;
+      gap: 7px;
+      padding: 10px 14px 11px 14px;
       flex-shrink: 0;
       z-index: 100;
-      box-shadow: 0 3px 6px rgba(0,0,0,0.25);
     }
     .region-filter-bar, .terrain-filter-bar {
       display: flex;
@@ -340,66 +346,64 @@
       padding-bottom: 4px;
       -webkit-overflow-scrolling: touch;
     }
-    .region-filter-bar::-webkit-scrollbar, .terrain-filter-bar::-webkit-scrollbar { height: 5px; }
-    .region-filter-bar::-webkit-scrollbar-thumb { background: #0f766e; border-radius: 4px; }
-    .terrain-filter-bar::-webkit-scrollbar-thumb { background: #0284c7; border-radius: 4px; }
+    .region-filter-bar::-webkit-scrollbar, .terrain-filter-bar::-webkit-scrollbar { height: 4px; }
+    .region-filter-bar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    .terrain-filter-bar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     
     .filter-label {
-      font-size: 0.74rem;
+      font-size: 0.72rem;
       font-weight: 800;
-      color: #94a3b8;
+      color: #64748b;
       white-space: nowrap;
-      margin-right: 4px;
-      background: #1e293b;
+      margin-right: 2px;
+      background: #141d2e;
       padding: 3px 6px;
       border-radius: 4px;
     }
     .filter-btn {
-      padding: 5px 12px;
-      border-radius: 16px;
-      border: 1px solid #334155;
-      background: #1e293b;
-      color: #e2e8f0;
-      font-size: 0.76rem;
+      padding: 4px 11px;
+      border-radius: 14px;
+      border: 1px solid var(--border-color);
+      background: #141d2e;
+      color: #94a3b8;
+      font-size: 0.74rem;
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
       flex-shrink: 0;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
       transition: all 0.15s ease;
     }
-    .filter-btn:hover { background: #334155; border-color: #64748b; }
+    .filter-btn:hover { background: #1e293b; color: #f1f5f9; }
     .filter-btn.active {
-      background: #0f766e;
-      color: #ffffff;
-      border-color: #0f766e;
-      box-shadow: 0 2px 5px rgba(15, 118, 110, 0.4);
-    }
-    .terrain-filter-btn.active {
       background: #0284c7;
       color: #ffffff;
       border-color: #0284c7;
-      box-shadow: 0 2px 5px rgba(2, 132, 199, 0.4);
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+    }
+    .terrain-filter-btn.active {
+      background: #0f766e;
+      color: #ffffff;
+      border-color: #0f766e;
+      box-shadow: 0 2px 8px rgba(15, 118, 110, 0.35);
     }
 
-    /* 목록 영역 */
     .spot-list { 
       flex: 1; 
       overflow-y: auto; 
       list-style: none; 
       position: relative;
-      background: #0f172a;
+      background: var(--bg-sidebar);
     }
     .spot-list::-webkit-scrollbar { width: 5px; }
     .spot-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     
-    .region-group { border-bottom: 1px solid #1e293b; }
+    .region-group { border-bottom: 1px solid var(--border-subtle); }
     .region-group-title {
-      padding: 11px 16px;
-      background-color: #1e293b;
-      font-size: 0.84rem;
-      font-weight: bold;
-      color: #f1f5f9;
+      padding: 10px 16px;
+      background-color: #111a2e;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #cbd5e1;
       cursor: pointer;
       display: flex;
       justify-content: space-between;
@@ -408,21 +412,20 @@
       border-left: 3px solid transparent;
       transition: all 0.15s;
     }
-    .region-group-title:hover { background-color: #334155; border-left-color: #0f766e; }
+    .region-group-title:hover { background-color: #17233d; border-left-color: #38bdf8; color: #ffffff; }
 
-    /* 다크 카드 스타일 */
     .spot-item {
-      padding: 10px 14px;
-      border-bottom: 1px solid #1e293b;
+      padding: 11px 14px;
+      border-bottom: 1px solid #1a2538;
       cursor: pointer;
       position: relative;
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      background: #0f172a;
+      gap: 5px;
+      background: var(--bg-sidebar);
       transition: background 0.15s;
     }
-    .spot-item:hover { background-color: #1e293b; }
+    .spot-item:hover { background-color: var(--bg-card); }
     .spot-header-row {
       display: flex;
       justify-content: space-between;
@@ -465,16 +468,16 @@
       align-items: center;
       gap: 2px;
     }
-    .tag-terrain-deck { background: rgba(254, 243, 199, 0.15); color: #fde68a; border: 1px solid rgba(253, 230, 138, 0.3); }
-    .tag-terrain-rock { background: rgba(241, 245, 249, 0.12); color: #e2e8f0; border: 1px solid rgba(203, 213, 225, 0.25); }
-    .tag-terrain-soil { background: rgba(220, 252, 231, 0.15); color: #86efac; border: 1px solid rgba(187, 247, 208, 0.3); }
-    .tag-terrain-island { background: rgba(204, 251, 241, 0.15); color: #5eead4; border: 1px solid rgba(153, 246, 228, 0.3); }
-    .tag-terrain-valley { background: rgba(224, 242, 254, 0.15); color: #7dd3fc; border: 1px solid rgba(186, 230, 253, 0.3); }
-    .tag-terrain-cave { background: rgba(245, 208, 254, 0.15); color: #f0abfc; border: 1px solid rgba(240, 171, 252, 0.3); }
-    .tag-terrain-etc { background: rgba(243, 232, 255, 0.15); color: #d8b4fe; border: 1px solid rgba(233, 213, 255, 0.3); }
-    .tag-diff { background: #0284c7; color: #fef08a; border: 1px solid #0369a1; letter-spacing: 0.3px; }
-    .tag-dist { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(110, 231, 183, 0.3); }
-    .tag-rating { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(252, 211, 77, 0.3); font-weight: 800; }
+    .tag-terrain-deck { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25); }
+    .tag-terrain-rock { background: rgba(148, 163, 184, 0.12); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.25); }
+    .tag-terrain-soil { background: rgba(34, 197, 94, 0.12); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.25); }
+    .tag-terrain-island { background: rgba(20, 184, 166, 0.12); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.25); }
+    .tag-terrain-valley { background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); }
+    .tag-terrain-cave { background: rgba(217, 70, 239, 0.12); color: #e879f9; border: 1px solid rgba(217, 70, 239, 0.25); }
+    .tag-terrain-etc { background: rgba(168, 85, 247, 0.12); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.25); }
+    .tag-diff { background: rgba(2, 132, 199, 0.2); color: #fde047; border: 1px solid rgba(2, 132, 199, 0.4); letter-spacing: 0.3px; }
+    .tag-dist { background: rgba(16, 185, 129, 0.12); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.25); }
+    .tag-rating { background: rgba(245, 158, 11, 0.12); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.25); font-weight: 800; }
 
     .spot-desc-single {
       font-size: 0.74rem;
@@ -488,11 +491,11 @@
 
     .spot-coords-text {
       font-size: 0.68rem;
-      color: #94a3b8;
-      background: #1e293b;
-      padding: 1px 4px;
+      color: #64748b;
+      background: #141d2e;
+      padding: 1px 5px;
       border-radius: 4px;
-      border: 1px solid #334155;
+      border: 1px solid var(--border-color);
       width: fit-content;
     }
     
@@ -514,16 +517,16 @@
       font-size: 0.68rem;
       font-weight: 700;
       color: #ffffff !important;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
       transition: all 0.15s ease;
       cursor: pointer;
       line-height: 1.3;
       white-space: nowrap;
     }
-    .btn-yt { background: #ef4444; }
-    .btn-yt:hover { background: #dc2626; }
-    .btn-blog { background: #03c75a; }
-    .btn-blog:hover { background: #02b14f; }
+    .btn-yt { background: #dc2626; }
+    .btn-yt:hover { background: #b91c1c; }
+    .btn-blog { background: #059669; }
+    .btn-blog:hover { background: #047857; }
     
     .btn-insta { 
       background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
@@ -534,7 +537,7 @@
       border-radius: 4px;
       gap: 3px;
       font-weight: 700;
-      box-shadow: 0 1px 3px rgba(220, 39, 67, 0.4);
+      box-shadow: 0 1px 4px rgba(220, 39, 67, 0.4);
     }
     .btn-insta:hover { filter: brightness(1.1); transform: translateY(-1px); }
     .btn-insta svg { width: 10px; height: 10px; flex-shrink: 0; fill: #ffffff; }
@@ -553,9 +556,9 @@
       user-select: none;
       white-space: nowrap;
     }
-    .drone-ok { background: rgba(34, 197, 94, 0.2); color: #86efac; border: 1px solid rgba(74, 222, 128, 0.4); }
-    .drone-warn { background: rgba(234, 179, 8, 0.2); color: #fde047; border: 1px solid rgba(250, 204, 21, 0.4); }
-    .drone-no { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(248, 113, 113, 0.4); }
+    .drone-ok { background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid rgba(74, 222, 128, 0.3); }
+    .drone-warn { background: rgba(234, 179, 8, 0.15); color: #fde047; border: 1px solid rgba(250, 204, 21, 0.3); }
+    .drone-no { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(248, 113, 113, 0.3); }
 
     .instant-tooltip-box::after {
       content: attr(data-tooltip);
@@ -569,8 +572,8 @@
       padding: 6px 10px;
       border-radius: 6px;
       white-space: nowrap;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
-      border: 1px solid #334155;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+      border: 1px solid var(--border-color);
       pointer-events: none;
       opacity: 0;
       visibility: hidden;
@@ -620,37 +623,74 @@
     .btn-edit { background: #0284c7; }
     .btn-del { background: #ef4444; }
 
-    #map { flex: 1; height: 100%; position: relative; overflow: hidden !important; background: #0b1120; }
+    #map { flex: 1; height: 100%; position: relative; overflow: hidden !important; background: #090e1a; }
     
-    /* ⭐ 다크 블랙 & 직각 라운드 팝업창 (네이버 지도 인포윈도우) */
+    /* ⭐ 모바일 지도 상단 마커 범례(Legend) 뱃지 */
+    .map-legend-bar {
+      display: none;
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 4px 10px;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      user-select: none;
+      pointer-events: none;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .dot-green { background: #16a34a; box-shadow: 0 0 5px #16a34a; }
+    .dot-yellow { background: #eab308; box-shadow: 0 0 5px #eab308; }
+    .dot-red { background: #ef4444; box-shadow: 0 0 5px #ef4444; }
+
+    /* 다크 팝업창 */
     .compact-info-window {
-      padding: 10px 12px;
-      width: 260px !important;
-      max-width: 270px !important;
-      max-height: 340px;
+      padding: 12px 14px;
+      width: 265px !important;
+      max-width: 275px !important;
+      max-height: 350px;
       overflow-y: auto;
       overflow-x: hidden !important;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 6px;
       line-height: 1.3;
       background: #0f172a;
       color: #f8fafc;
       border-radius: 12px !important;
       border: 1px solid #334155;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
     }
     .compact-info-window::-webkit-scrollbar { width: 4px; }
     .compact-info-window::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
 
-    .compact-title { font-size: 0.88rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .compact-title { font-size: 0.9rem; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
     
     .compact-entry-link {
       font-size: 0.72rem;
       color: #7dd3fc;
-      background: rgba(2, 132, 199, 0.18);
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      padding: 3px 6px;
+      background: rgba(2, 132, 199, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 4px 7px;
       border-radius: 6px;
       width: fit-content;
       word-break: break-all;
@@ -665,7 +705,7 @@
       background: #0284c7;
       color: #ffffff !important;
       border-color: #0284c7;
-      box-shadow: 0 1px 6px rgba(2, 132, 199, 0.4);
+      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
     }
 
     .compact-desc {
@@ -673,7 +713,7 @@
       color: #cbd5e1;
       word-break: keep-all;
       white-space: pre-line;
-      line-height: 1.3;
+      line-height: 1.35;
     }
 
     .btn-save-location {
@@ -689,10 +729,9 @@
       text-align: center;
     }
 
-    /* 다크 댓글 영역 */
     .comments-section {
       margin-top: 5px;
-      border-top: 1px dashed #334155;
+      border-top: 1px dashed var(--border-color);
       padding-top: 5px;
     }
     .comments-title {
@@ -717,10 +756,10 @@
     .comments-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
 
     .comment-item {
-      background: #1e293b;
-      border: 1px solid #334155;
+      background: #162032;
+      border: 1px solid var(--border-color);
       border-radius: 6px;
-      padding: 3px 5px;
+      padding: 4px 6px;
       font-size: 0.68rem;
       display: flex;
       justify-content: space-between;
@@ -735,23 +774,23 @@
     .comment-form-row { display: flex; gap: 3px; }
     .comment-select-rating {
       padding: 2px 4px;
-      border: 1px solid #334155;
+      border: 1px solid var(--border-color);
       border-radius: 4px;
       font-size: 0.68rem;
-      background: #1e293b;
+      background: #141d2e;
       color: #fcd34d;
       font-weight: bold;
       outline: none;
     }
-    .comment-input-author { width: 48px; padding: 3px 4px; border: 1px solid #334155; border-radius: 4px; font-size: 0.68rem; outline: none; background: #1e293b; color: #fff; }
-    .comment-input-text { flex: 1; padding: 3px 4px; border: 1px solid #334155; border-radius: 4px; font-size: 0.68rem; outline: none; background: #1e293b; color: #fff; }
+    .comment-input-author { width: 48px; padding: 4px 5px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.68rem; outline: none; background: #141d2e; color: #fff; }
+    .comment-input-text { flex: 1; padding: 4px 6px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.68rem; outline: none; background: #141d2e; color: #fff; }
     .comment-btn-submit { background: #0f766e; color: #ffffff; border: none; border-radius: 4px; padding: 3px 6px; font-size: 0.68rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
     .comment-btn-submit:disabled { background: #475569; cursor: not-allowed; }
 
     .custom-modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(11, 17, 32, 0.75);
+      background: rgba(9, 14, 26, 0.8);
       display: none;
       justify-content: center;
       align-items: center;
@@ -765,12 +804,12 @@
       max-height: 90vh;
       overflow-y: auto;
       border-radius: 14px;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.7);
       padding: 20px;
       display: flex;
       flex-direction: column;
       gap: 12px;
-      border: 1px solid #334155;
+      border: 1px solid var(--border-color);
     }
     .custom-modal h3 { font-size: 1.05rem; color: #38bdf8; }
     .modal-field { display: flex; flex-direction: column; gap: 4px; }
@@ -778,27 +817,26 @@
     .modal-input {
       width: 100%;
       padding: 8px 12px;
-      border: 1px solid #334155;
+      border: 1px solid var(--border-color);
       border-radius: 6px;
       font-size: 0.85rem;
       outline: none;
       font-family: inherit;
-      background: #1e293b;
+      background: #141d2e;
       color: #ffffff;
     }
     .modal-textarea { resize: vertical; min-height: 52px; line-height: 1.4; }
-    .modal-input:focus { border-color: #0f766e; box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.3); }
+    .modal-input:focus { border-color: #0284c7; box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.25); }
     
     .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px 14px; font-size: 0.82rem; color: #e2e8f0; font-weight: 600; }
     .checkbox-group label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
-    .select-diff { padding: 7px 8px; border-radius: 6px; border: 1px solid #334155; font-size: 0.8rem; color: #e2e8f0; outline: none; background: #1e293b; }
+    .select-diff { padding: 7px 8px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.8rem; color: #e2e8f0; outline: none; background: #141d2e; }
     
     .modal-btn-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
     .modal-btn { padding: 8px 14px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; border: none; }
-    .modal-btn-cancel { background: #334155; color: #cbd5e1; }
+    .modal-btn-cancel { background: #1e293b; color: #cbd5e1; }
     .modal-btn-save { background: #0f766e; color: #ffffff; }
 
-    /* 모바일 하단 플로팅 컨트롤 바 */
     .mobile-floating-controls {
       display: none;
       position: fixed;
@@ -816,25 +854,25 @@
       border-radius: 30px;
       font-size: 0.78rem;
       font-weight: 700;
-      border: 1.5px solid rgba(255,255,255,0.25);
-      box-shadow: 0 5px 16px rgba(0, 0, 0, 0.45);
+      border: 1px solid rgba(255,255,255,0.15);
+      box-shadow: 0 5px 16px rgba(0, 0, 0, 0.5);
       cursor: pointer;
       white-space: nowrap;
       text-align: center;
       transition: all 0.2s;
     }
-    .mobile-float-drone { background: #1e293b; color: #ffffff; flex: 1; }
-    .mobile-float-toggle { background: #0f766e; color: #ffffff; flex: 1.4; font-size: 0.82rem; border-color: rgba(255,255,255,0.5); }
-    .mobile-float-reset { background: #1e293b; color: #ffffff; flex: 1; }
+    .mobile-float-drone { background: #141d2e; color: #ffffff; flex: 1; }
+    .mobile-float-toggle { background: #0284c7; color: #ffffff; flex: 1.4; font-size: 0.82rem; border-color: rgba(255,255,255,0.3); }
+    .mobile-float-reset { background: #141d2e; color: #ffffff; flex: 1; }
 
-    /* ⭐ 모바일 전용 반응형 & 30% 폰트 축소 적용 */
+    /* ⭐ 모바일 전용 50% 여백 축소 & 슬림 헤더 */
     @media (max-width: 768px) {
       .header { 
         height: auto; 
         flex-direction: column; 
         align-items: center; 
-        padding: 10px 14px; 
-        gap: 8px; 
+        padding: 5px 10px 6px 10px !important; /* 상하 여백 50% 이상 감소 */
+        gap: 4px !important; 
       }
       .header-left { 
         width: 100%; 
@@ -848,22 +886,32 @@
         align-items: center;
         justify-content: center;
         text-align: center;
-        gap: 1px;
+        gap: 0px !important;
       }
       .main-title { 
-        font-size: 1.35rem; 
+        font-size: 1.15rem !important; 
         justify-content: center;
+        letter-spacing: -0.3px;
       }
-      .main-title .flag-icon, .main-title .mountain-icon { font-size: 1.2rem; }
+      .main-title .flag-icon, .main-title .mountain-icon { font-size: 1.05rem !important; }
       .sub-en-title { 
-        font-size: 1.3rem; 
+        font-size: 1.1rem !important; 
         margin-left: 0;
         margin-top: -3px;
+      }
+      .version-tag {
+        position: absolute;
+        left: 0;
+        top: 0;
+        font-size: 0.6rem;
+        padding: 1px 4px;
       }
       .sync-status-badge, .admin-status-badge {
         position: absolute;
         right: 0;
         top: 0;
+        font-size: 0.65rem;
+        padding: 2px 6px;
       }
 
       .header-right { 
@@ -872,15 +920,19 @@
         justify-content: center;
       }
       .header-desktop-only { display: none !important; }
-      .search-wrapper-outer { width: 100%; justify-content: center; }
-      .search-container { flex: 1; width: auto; max-width: 100%; }
-      .search-input { padding: 8px 36px 8px 14px; font-size: 0.84rem; }
+      .search-container { width: 100%; }
+      .search-input { 
+        padding: 6px 32px 6px 12px !important; 
+        font-size: 0.8rem !important; 
+        border-radius: 16px;
+      }
       
+      .map-legend-bar { display: flex !important; }
       .mobile-floating-controls { display: flex; }
       
       .container { 
-        margin-top: 114px; 
-        height: calc(100% - 114px); 
+        margin-top: 86px !important; /* 헤더가 슬림해져 컨테이너 상단 여백 축소 */
+        height: calc(100% - 86px) !important; 
         position: relative;
         overflow: hidden;
       }
@@ -893,7 +945,6 @@
         z-index: 100;
       }
 
-      /* 모바일 박지 목록 및 폰트 30% 축소 */
       .sidebar { 
         position: absolute;
         top: 0; left: 0; right: 0;
@@ -901,8 +952,8 @@
         height: calc(100% - 75px) !important; 
         z-index: 300;
         border-right: none; 
-        border-bottom: 2px solid #334155; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        border-bottom: 1px solid var(--border-color); 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.7);
         transform: translateY(0);
         border-radius: 0 0 16px 16px;
       }
@@ -911,8 +962,7 @@
         transform: translateY(-130%) !important;
       }
 
-      /* ⭐ 모바일 메인메뉴 박지 항목 폰트 약 30% 축소로 가독성 및 압축력 극대화 */
-      .spot-item { padding: 7px 10px; gap: 3px; }
+      .spot-item { padding: 8px 10px; gap: 3px; }
       .spot-name { font-size: 0.74rem !important; }
       .spot-desc-single { font-size: 0.58rem !important; }
       .meta-tag { font-size: 0.54rem !important; padding: 1.5px 4px !important; }
@@ -936,6 +986,7 @@
           <span class="mountain-icon">🏔️</span>
         </span>
         <span class="sub-en-title">Korea Romantic Backpacking Road</span>
+        <span class="version-tag">2.3ver</span>
       </div>
       <span class="sync-status-badge" id="syncStatusBadge">⚡ 시트 동기화 중...</span>
       <span class="admin-status-badge" id="adminBadge">관리자 모드 ON</span>
@@ -946,14 +997,10 @@
       <button type="button" class="header-btn header-desktop-only" id="resetMapBtn" onclick="resetMapView()">🔄 지도 초기화</button>
       <button type="button" class="header-btn header-desktop-only" id="droneLayerBtn" onclick="handleDroneBtnClick()">🛸 드론규제공역 레이어</button>
       
-      <!-- ⭐ 버전 표기(2.3ver) 및 검색창 -->
-      <div class="search-wrapper-outer">
-        <span class="version-tag">2.3ver</span>
-        <div class="search-container">
-          <input type="text" id="topSearchInput" class="search-input" placeholder="산/계곡/섬/명소 검색" onfocus="showTopRankings()" onkeyup="handleSearchInput(event)" />
-          <button type="button" class="search-btn-icon" onclick="executeSearch()">🔍</button>
-          <ul id="searchDropdown" class="search-dropdown"></ul>
-        </div>
+      <div class="search-container">
+        <input type="text" id="topSearchInput" class="search-input" placeholder="산/계곡/섬/동굴/명소 검색" onfocus="showTopRankings()" onkeyup="handleSearchInput(event)" />
+        <button type="button" class="search-btn-icon" onclick="executeSearch()">🔍</button>
+        <ul id="searchDropdown" class="search-dropdown"></ul>
       </div>
     </div>
   </header>
@@ -1002,10 +1049,18 @@
 
       <div class="spot-list" id="spotList"></div>
     </aside>
-    <main id="map"></main>
+    
+    <main id="map">
+      <!-- ⭐ 모바일 지도 상단 마커 난이도 범례 표시 -->
+      <div class="map-legend-bar">
+        <div class="legend-item"><span class="legend-dot dot-green"></span> 쉬움</div>
+        <div class="legend-item"><span class="legend-dot dot-yellow"></span> 보통</div>
+        <div class="legend-item"><span class="legend-dot dot-red"></span> 어려움</div>
+      </div>
+    </main>
   </div>
 
-  <!-- 모바일 3버튼 플로팅 바 -->
+  <!-- 모바일 하단 3버튼 컨트롤 바 -->
   <div class="mobile-floating-controls">
     <button type="button" class="mobile-float-btn mobile-float-drone" id="mobileDroneBtn" onclick="handleDroneBtnClick()">
       🛸 드론규제
@@ -1059,7 +1114,7 @@
         <label>3. 고도 / 해발 (자동 측정 또는 직접 입력)</label>
         <div style="display: flex; gap: 6px;">
           <input type="text" id="modalInputElevation" class="modal-input" style="flex:1;" placeholder="예: 350m" />
-          <button type="button" class="modal-btn" style="background:#334155; color:#fff;" onclick="fetchElevationForModal()">⛰️ 고도 측정</button>
+          <button type="button" class="modal-btn" style="background:#1e293b; color:#fff;" onclick="fetchElevationForModal()">⛰️ 고도 측정</button>
         </div>
       </div>
 
@@ -1230,7 +1285,7 @@
       zoomControlOptions: { position: naver.maps.Position.RIGHT_CENTER }
     });
 
-    // ⭐ 다크 테마 인포윈도우 설정
+    // ⭐ 다크 테마 인포윈도우
     const infoWindow = new naver.maps.InfoWindow({ 
       borderWidth: 0,
       disableAnchor: true,
@@ -1241,7 +1296,7 @@
     const markerHoverInfoWindow = new naver.maps.InfoWindow({
       borderWidth: 1,
       borderColor: '#0f766e',
-      backgroundColor: '#0f172a',
+      backgroundColor: '#0b1120',
       anchorSkew: false,
       autoPan: false,
       pixelOffset: new naver.maps.Point(0, -6)
@@ -1250,10 +1305,24 @@
     const droneHoverInfoWindow = new naver.maps.InfoWindow({
       borderWidth: 1,
       borderColor: '#dc2626',
-      backgroundColor: '#0f172a',
+      backgroundColor: '#0b1120',
       anchorSkew: false,
       autoPan: false,
       pixelOffset: new naver.maps.Point(0, -8)
+    });
+
+    // ⭐ 지도를 드래그/이동하거나 줌을 변경할 때 팝업창을 자동으로 닫아 지도 탐색 편의성 극대화
+    naver.maps.Event.addListener(map, 'dragstart', () => {
+      infoWindow.close();
+      markerHoverInfoWindow.close();
+    });
+    naver.maps.Event.addListener(map, 'pinchstart', () => {
+      infoWindow.close();
+      markerHoverInfoWindow.close();
+    });
+    naver.maps.Event.addListener(map, 'zoom_start', () => {
+      infoWindow.close();
+      markerHoverInfoWindow.close();
     });
 
     let currentMarkers = [];
@@ -1270,7 +1339,7 @@
 
       return {
         content: `
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 34" width="${width}" height="${height}" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.45)); cursor: pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 34" width="${width}" height="${height}" style="filter: drop-shadow(0 2px 5px rgba(0,0,0,0.6)); cursor: pointer;">
             <path fill="${color}" stroke="#ffffff" stroke-width="1.5" d="M12 0C5.373 0 0 5.373 0 12c0 9 12 22 12 22s12-13 12-22c0-6.627-5.373-12-12-12z"/>
             <circle fill="#ffffff" cx="12" cy="11" r="4.5"/>
             <polygon fill="${color}" points="12,13.5 9,8.5 15,8.5"/>
@@ -1683,7 +1752,7 @@
               });
 
               if (badge) {
-                badge.style.background = '#15803d';
+                badge.style.background = '#059669';
                 badge.innerText = `✅ 시트 연동 완료 (${spots.length}개)`;
               }
             }
@@ -1884,7 +1953,6 @@
       }, 300);
     }
 
-    // ⭐ 세련된 다크 테마 & 직각 라운드 팝업창 HTML 생성
     function generateInfoWindowHtml(spot) {
       const cleanAddress = (spot.entryPoint || spot.name).replace(/\n/g, ' ').trim();
       return `
@@ -1894,7 +1962,7 @@
             ${spot.elevation ? '<span style="font-size:0.75rem; color:#86efac;">(' + spot.elevation + ')</span>' : ''}
             ${getSpotStatusBadges(spot)}
           </div>
-          <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 6px; right: 6px; background: #334155; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
+          <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 8px; right: 8px; background: #1e293b; border: 1px solid var(--border-color); width: 20px; height: 20px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
           ${getMetaBadgesHtml(spot)}
           <div class="spot-coords-text">📍 ${spot.lat}, ${spot.lng}</div>
           <a href="https://map.naver.com/v5/search/${encodeURIComponent(cleanAddress)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link" title="클릭 시 네이버 지도로 이동">🚗 들머리: ${spot.entryPoint} ↗</a>
@@ -2040,7 +2108,8 @@
           });
           currentMarkers.push(marker);
 
-          naver.maps.Event.addListener(marker, 'mouseover', () => {
+          // ⭐ 마커 호버 및 터치 롱프레스 시 박지 이름 툴팁 표시
+          const showMarkerTooltip = () => {
             markerHoverInfoWindow.setContent(`
               <div style="padding: 5px 9px; color: #f8fafc; font-size: 0.74rem; line-height: 1.25; white-space: nowrap; pointer-events: none; text-align: center;">
                 <strong style="color: #38bdf8; font-size: 0.8rem;">📍 ${spot.name}</strong>
@@ -2049,8 +2118,9 @@
               </div>
             `);
             markerHoverInfoWindow.open(map, marker);
-          });
+          };
 
+          naver.maps.Event.addListener(marker, 'mouseover', showMarkerTooltip);
           naver.maps.Event.addListener(marker, 'mouseout', () => markerHoverInfoWindow.close());
 
           naver.maps.Event.addListener(marker, 'dragend', () => {
@@ -2062,7 +2132,7 @@
             infoWindow.setContent(`
               <div class="compact-info-window" style="position: relative;">
                 <div class="compact-title" style="color:#38bdf8;">📍 '${spot.name}' 위치 이동</div>
-                <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 6px; right: 6px; background: #334155; border: none; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
+                <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 8px; right: 8px; background: #1e293b; border: 1px solid var(--border-color); width: 20px; height: 20px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
                 <div style="font-size:0.72rem; color:#ef4444; font-weight:bold;">새 좌표로 위치를 변경하시겠습니까?</div>
                 <div class="spot-coords-text">위도: ${newLat}<br>경도: ${newLng}</div>
                 <button type="button" class="btn-save-location" onclick="saveUpdatedLocation('${spot.id}', ${newLat}, ${newLng})">💾 이 위치로 즉시 저장</button>
