@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -74,8 +73,8 @@
     .header-title-box {
       display: flex;
       flex-direction: row;
-      align-items: baseline;
-      gap: 10px;
+      align-items: center;
+      gap: 12px;
       white-space: nowrap;
     }
     .main-title {
@@ -105,6 +104,35 @@
       -webkit-text-fill-color: transparent;
       letter-spacing: 1px;
       white-space: nowrap;
+    }
+
+    /* 세련된 인스타그램 스타일 협업 및 문의 배너 */
+    .header-insta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+      padding: 4px 11px;
+      border-radius: 20px;
+      color: #ffffff !important;
+      text-decoration: none;
+      font-size: 0.72rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 3px 12px rgba(220, 39, 67, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .header-insta-badge:hover {
+      transform: translateY(-1.5px) scale(1.03);
+      box-shadow: 0 5px 18px rgba(220, 39, 67, 0.6);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+    .header-insta-badge svg {
+      width: 12px;
+      height: 12px;
+      fill: #ffffff;
+      flex-shrink: 0;
     }
 
     .sync-status-badge {
@@ -149,6 +177,26 @@
       border-color: #b91c1c !important;
     }
 
+    /* 일반 사용자용 제보 등록 버튼 */
+    .btn-user-submit-spot {
+      background: linear-gradient(135deg, #0f766e, #0d9488);
+      border: 1px solid #14b8a6;
+      color: #ffffff !important;
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 10px rgba(15, 118, 110, 0.35);
+      white-space: nowrap;
+    }
+    .btn-user-submit-spot:hover {
+      background: linear-gradient(135deg, #115e59, #0f766e);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(15, 118, 110, 0.55);
+    }
+
     .admin-only-btn {
       display: none;
       background: #0f766e;
@@ -156,7 +204,7 @@
     }
     .admin-only-btn:hover { background: #115e59; }
 
-    .search-container { position: relative; display: flex; align-items: center; width: 280px; }
+    .search-container { position: relative; display: flex; align-items: center; width: 260px; }
     .search-input {
       width: 100%;
       padding: 8px 36px 8px 14px;
@@ -669,6 +717,41 @@
     .dot-yellow { background: #f59e0b; }
     .dot-red { background: #ef4444; }
 
+    /* 지도 상단 핀 선택 안내 바 */
+    .pin-picker-banner {
+      display: none;
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #0f766e, #0284c7);
+      color: #ffffff;
+      padding: 9px 18px;
+      border-radius: 30px;
+      font-size: 0.82rem;
+      font-weight: 800;
+      z-index: 6000;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.75);
+      border: 1.5px solid rgba(255,255,255,0.4);
+      align-items: center;
+      gap: 10px;
+      white-space: nowrap;
+      animation: pulseBanner 1.8s infinite;
+    }
+    @keyframes pulseBanner {
+      0%, 100% { transform: translateX(-50%) scale(1); }
+      50% { transform: translateX(-50%) scale(1.03); }
+    }
+    .btn-cancel-pin-pick {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: #ffffff;
+      border-radius: 14px;
+      padding: 3px 8px;
+      font-size: 0.72rem;
+      cursor: pointer;
+    }
+
     /* 커스텀 지도 마커 및 최상단 라벨 */
     .custom-spot-marker-wrap {
       position: relative;
@@ -981,7 +1064,7 @@
         align-items: center;
         justify-content: center;
         text-align: center;
-        gap: 0px !important;
+        gap: 2px !important;
       }
       .main-title { 
         font-size: 1.22rem !important; 
@@ -992,6 +1075,11 @@
       .sub-en-title { 
         font-size: 1.15rem !important; 
         margin-top: -3px;
+      }
+      .header-insta-badge {
+        font-size: 0.65rem !important;
+        padding: 3px 8px !important;
+        margin-top: 2px;
       }
       .sync-status-badge, .admin-status-badge {
         position: absolute;
@@ -1005,8 +1093,13 @@
         width: 100%; 
         display: flex;
         justify-content: center;
+        gap: 6px;
       }
       .header-desktop-only { display: none !important; }
+      .btn-user-submit-spot {
+        padding: 6px 12px !important;
+        font-size: 0.74rem !important;
+      }
       .search-container { width: 100%; }
       .search-input { 
         padding: 7px 32px 7px 14px !important; 
@@ -1081,12 +1174,21 @@
           <span class="backpack-icon">🎒</span>
         </span>
         <span class="sub-en-title">Korea Romantic Backpacking Road</span>
+        
+        <!-- 세련된 인스타그램 스타일 협업/문의 배너 (아이디 없이 링크 연동) -->
+        <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="header-insta-badge" title="협업 및 문의 (인스타그램으로 이동)">
+          <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+          <span>협업 및 문의</span>
+        </a>
       </div>
       <span class="sync-status-badge" id="syncStatusBadge">⚡ 시트 동기화 중...</span>
       <span class="admin-status-badge" id="adminBadge">관리자 모드 ON</span>
     </div>
     
     <div class="header-right">
+      <!-- 일반 사용자용 박지 추천/제보 버튼 -->
+      <button type="button" class="btn-user-submit-spot" onclick="openUserProposalModal()">➕ 박지 제보·등록</button>
+
       <button type="button" class="header-btn admin-only-btn" id="btnSyncSheet" onclick="fetchSpotsFromGoogleSheet()">🔄 시트 동기화</button>
       <button type="button" class="header-btn header-desktop-only" id="resetMapBtn" onclick="resetMapView()">🔄 지도 초기화</button>
       <button type="button" class="header-btn header-desktop-only" id="droneLayerBtn" onclick="toggleDroneOverlay()">🛸 드론규제공역 레이어</button>
@@ -1105,7 +1207,7 @@
         <div style="display:flex; align-items:center; gap:6px;">
           <span>📍 백패킹 박지 목록</span>
           <span id="spotCount" style="color: var(--google-accent-blue); font-size: 0.78rem; font-weight: bold;">0개</span>
-          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()">3.0ver</span>
+          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()">3.2ver</span>
         </div>
         <a id="sheetEditLink" href="#" target="_blank" rel="noopener noreferrer" class="sheet-edit-link">📊 구글 시트 편집</a>
       </div>
@@ -1151,6 +1253,12 @@
         <div class="legend-item"><span class="legend-dot dot-yellow"></span> 보통</div>
         <div class="legend-item"><span class="legend-dot dot-red"></span> 어려움</div>
       </div>
+
+      <!-- 지도에서 직접 콕 찍기 모드 알림 바 -->
+      <div id="pinPickerBanner" class="pin-picker-banner">
+        <span>📍 지도를 클릭하여 박지 텐트 위치를 콕 찍어주세요!</span>
+        <button type="button" class="btn-cancel-pin-pick" onclick="cancelPinPicking()">취소</button>
+      </div>
     </main>
   </div>
 
@@ -1167,7 +1275,7 @@
     </button>
   </div>
 
-  <!-- AI 일괄 등록 모달 -->
+  <!-- AI 일괄 등록 모달 (관리자용) -->
   <div class="custom-modal-overlay" id="bulkImportModalOverlay">
     <div class="custom-modal" style="width: 500px;">
       <h3 style="display:flex; align-items:center; gap:6px;">⚡ AI 요약 / JSON 내용으로 일괄 등록</h3>
@@ -1189,10 +1297,13 @@
     </div>
   </div>
 
-  <!-- 개별 박지 모달 -->
+  <!-- 박지 등록/제보 모달 (지도 직접 찍기 지원) -->
   <div class="custom-modal-overlay" id="customModalOverlay">
     <div class="custom-modal">
-      <h3 id="modalTitle">박지 등록</h3>
+      <h3 id="modalTitle">📍 박지 제보 / 추천 등록</h3>
+      <p id="modalNotice" style="font-size:0.72rem; color:#fde047; line-height:1.35;">
+        🎒 멋진 백패킹 박지를 제보해주세요! 작성해주신 정보는 <strong>관리자 확인 및 승인 후 정식 등록</strong>됩니다.
+      </p>
       
       <div class="modal-field">
         <label>1. 산 (박지 이름) *</label>
@@ -1200,25 +1311,33 @@
       </div>
 
       <div class="modal-field">
-        <label>2. 들머리 (네비 주소, 쉼표(,) 후 부가설명 가능) *</label>
-        <textarea id="modalInputEntry" class="modal-input modal-textarea" rows="2" placeholder="예: 경북 상주시 사벌국면면 묵상리 45, 입력후 임도따라 전진"></textarea>
+        <label>2. 박지 핀 위치 (지도에서 직접 콕 찍기)</label>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <input type="text" id="modalInputCoordsDisplay" class="modal-input" style="flex:1;" placeholder="위치 미지정 (아래 버튼으로 선택)" readonly />
+          <button type="button" class="modal-btn" style="background: #0284c7; color:#fff; font-weight:700; white-space:nowrap;" onclick="startPinPicking()">📍 지도에서 콕 찍기</button>
+        </div>
       </div>
 
       <div class="modal-field">
-        <label>3. 고도 / 해발 (자동 측정 또는 직접 입력)</label>
+        <label>3. 들머리 (네비 검색 주소, 쉼표(,) 후 부가설명 팁 작성 가능) *</label>
+        <textarea id="modalInputEntry" class="modal-input modal-textarea" rows="2" placeholder="예: 경북 상주시 사벌국면면 묵상리 45, 입력후 임도따라 1km 전진"></textarea>
+      </div>
+
+      <div class="modal-field">
+        <label>4. 고도 / 해발 (자동 측정 또는 직접 입력)</label>
         <div style="display: flex; gap: 6px;">
-          <input type="text" id="modalInputElevation" class="modal-input" style="flex:1;" placeholder="예: 196m" />
+          <input type="text" id="modalInputElevation" class="modal-input" style="flex:1;" placeholder="예: 385m" />
           <button type="button" class="modal-btn" style="background:var(--google-bg-card); color:#fff;" onclick="fetchElevationForModal()">⛰️ 고도 측정</button>
         </div>
       </div>
 
       <div class="modal-field">
-        <label>4. 특징 (선택)</label>
-        <textarea id="modalInputDesc" class="modal-input modal-textarea" rows="2" placeholder="예: 맑은 바다와 해안 절벽 뷰 / 은하수 조망"></textarea>
+        <label>5. 특징 및 꿀팁 (선택)</label>
+        <textarea id="modalInputDesc" class="modal-input modal-textarea" rows="2" placeholder="예: 탁 트인 일출/일몰 뷰, 간이 화장실 있음, 화기 사용 주의"></textarea>
       </div>
 
       <div class="modal-field">
-        <label>5. 지형 형태 (다중 선택 가능)</label>
+        <label>6. 지형 형태 (다중 선택 가능)</label>
         <div class="checkbox-group" style="padding-top: 4px;">
           <label><input type="checkbox" id="chkDeck" value="데크" /> 🪵 데크</label>
           <label><input type="checkbox" id="chkRock" value="돌박지" /> 🪨 돌박지</label>
@@ -1232,7 +1351,7 @@
 
       <div style="display: flex; gap: 10px; justify-content: space-between; align-items: flex-start;">
         <div class="modal-field" style="flex: 1;">
-          <label>6. 난이도</label>
+          <label>7. 난이도</label>
           <select id="modalSelectDiff" class="select-diff">
             <option value="1">⭐ (매우 쉬움 - 초록)</option>
             <option value="2">⭐⭐ (쉬움 - 초록)</option>
@@ -1243,39 +1362,39 @@
         </div>
 
         <div class="modal-field" style="width: 110px;">
-          <label>7. 거리(km)</label>
+          <label>8. 편도 거리(km)</label>
           <input type="text" id="modalInputDistance" class="modal-input" style="padding: 6px 8px;" placeholder="예: 2.5" />
         </div>
       </div>
 
       <div class="modal-field">
-        <label>8. YouTube 영상 링크 (최대 3개, 줄바꿈으로 구분)</label>
+        <label>9. YouTube 영상 링크 (최대 3개, 줄바꿈으로 구분)</label>
         <textarea id="modalInputYoutube" class="modal-input modal-textarea" rows="2" placeholder="https://youtu.be/...&#10;https://youtu.be/..."></textarea>
       </div>
 
       <div style="display: flex; gap: 10px;">
         <div class="modal-field" style="flex: 1;">
-          <label>9. 블로그 링크 (선택)</label>
+          <label>10. 블로그 링크 (선택)</label>
           <input type="text" id="modalInputBlog" class="modal-input" placeholder="https://blog.naver.com/..." />
         </div>
         <div class="modal-field" style="flex: 1;">
-          <label>10. 등록자 인스타그램 (선택)</label>
+          <label>11. 제보자/등록자 인스타그램 (선택)</label>
           <input type="text" id="modalInputInsta" class="modal-input" placeholder="oklionnature" />
         </div>
       </div>
 
       <div class="modal-btn-row">
         <button type="button" class="modal-btn modal-btn-cancel" onclick="closeCustomModal()">취소</button>
-        <button type="button" class="modal-btn modal-btn-save" onclick="saveCustomModal()">저장하기</button>
+        <button type="button" class="modal-btn modal-btn-save" id="modalSubmitBtn" onclick="saveCustomModal()">제보 접수하기</button>
       </div>
     </div>
   </div>
 
   <script>
     /* =========================================================================
-       버전 관리 상수 (3.0ver)
+       버전 관리 상수 (3.2ver)
        ========================================================================= */
-    const BASE_VERSION_NUM = 3.0;
+    const BASE_VERSION_NUM = 3.2;
     const CURRENT_VERSION = `${BASE_VERSION_NUM.toFixed(1)}ver`;
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -1285,7 +1404,7 @@
 
     const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
     const GOOGLE_SHEET_GID = '0';
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyrGW_Jn7lDIrZJWbCb84Wg5QMCGNvOBQSR5rtzKaqFrViubTdpfsvegZU8lbVcQDTT/exec';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzW0vRtj-S_BEW0OzFTm7PV7zVyNLWJEas9-S7F9CnOTn817-pO8WODR9l5FEEE3bYu/exec';
 
     const DEFAULT_MAP_CENTER = new naver.maps.LatLng(36.5, 127.8);
     const DEFAULT_MAP_ZOOM = 8;
@@ -1301,7 +1420,7 @@
         .replace(/'/g, '&#039;');
     }
 
-    /* 들머리 쉼표(,) 분리 파서: 쉼표 앞은 순수 네비 검색 주소, 쉼표 뒤는 길안내 팁 */
+    /* 들머리 쉼표(,) 분리 파서 */
     function parseEntryPoint(rawEntry) {
       if (!rawEntry) return { navAddress: '', guide: '' };
       const str = String(rawEntry).trim();
@@ -1311,7 +1430,7 @@
       return { navAddress, guide };
     }
 
-    /* 네이버 지도 최신 표준 검색 URL 생성기 */
+    /* 네이버 지도 최신 표준 검색 URL */
     function getNaverMapSearchUrl(query) {
       if (!query) return 'https://map.naver.com';
       const cleanQ = String(query).replace(/\s+/g, ' ').trim();
@@ -1410,10 +1529,12 @@
 
     const spotMarkerMap = new Map();
     let tempSearchMarker = null;
+    let tempPickedMarker = null;
 
-    let modalMode = 'ADD';
+    let modalMode = 'PROPOSAL'; // 'PROPOSAL', 'ADD', 'EDIT'
     let modalEditIndex = -1;
     let modalPendingData = { lat: 0, lng: 0, droneStatus: 'ok', address: '' };
+    let isPickingLocationMode = false;
 
     const map = new naver.maps.Map('map', {
       center: DEFAULT_MAP_CENTER,
@@ -1453,7 +1574,6 @@
 
     naver.maps.Event.addListener(map, 'dragstart', () => closeInfoWindowCompletely());
     naver.maps.Event.addListener(map, 'pinchstart', () => closeInfoWindowCompletely());
-    naver.maps.Event.addListener(map, 'click', () => closeInfoWindowCompletely());
 
     let versionClickCount = 0;
     let versionClickTimer = null;
@@ -1643,9 +1763,28 @@
     }
 
     async function fetchElevationForModal() {
-      const lat = (modalMode === 'EDIT') ? spots[modalEditIndex].lat : modalPendingData.lat;
-      const lng = (modalMode === 'EDIT') ? spots[modalEditIndex].lng : modalPendingData.lng;
-      if (!lat || !lng) return alert('측정할 수 있는 위치 좌표가 없습니다.');
+      let lat = modalPendingData.lat;
+      let lng = modalPendingData.lng;
+      if (modalMode === 'EDIT') {
+        lat = spots[modalEditIndex].lat;
+        lng = spots[modalEditIndex].lng;
+      }
+      if (!lat || !lng) {
+        const name = document.getElementById('modalInputName').value.trim();
+        const entry = document.getElementById('modalInputEntry').value.trim();
+        const { navAddress } = parseEntryPoint(entry);
+        const searchTarget = navAddress || name;
+        if (searchTarget) {
+          const coords = await searchCoordsByQuery(searchTarget);
+          if (coords) {
+            modalPendingData.lat = coords.lat;
+            modalPendingData.lng = coords.lng;
+            lat = coords.lat;
+            lng = coords.lng;
+          }
+        }
+      }
+      if (!lat || !lng) return alert('측정할 수 있는 위치 좌표가 없습니다. [📍 지도에서 콕 찍기] 버튼으로 위치를 먼저 지정해주세요.');
       document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
     }
 
@@ -2188,7 +2327,7 @@
       spotMarkerMap.forEach(m => m.setZIndex(100));
     }
 
-    /* 인포윈도우 HTML: 네이버 최신 공식 링크 적용 */
+    /* 인포윈도우 HTML */
     function generateInfoWindowHtml(spot) {
       const { navAddress, guide } = parseEntryPoint(spot.entryPoint || spot.name);
       const searchTarget = navAddress || spot.name;
@@ -2424,6 +2563,107 @@
       updateAdminUI();
     }
 
+    /* 일반 사용자용 제보 모달 열기 */
+    function openUserProposalModal() {
+      modalMode = 'PROPOSAL';
+      modalPendingData = { lat: 0, lng: 0, droneStatus: 'ok', address: '' };
+      
+      document.getElementById('modalTitle').innerText = '📍 박지 제보 / 추천 등록';
+      document.getElementById('modalNotice').style.display = 'block';
+      document.getElementById('modalNotice').innerHTML = '🎒 멋진 백패킹 박지를 제보해주세요! 작성해주신 정보는 <strong>관리자 확인 및 승인 후 정식 등록</strong>됩니다.';
+      document.getElementById('modalSubmitBtn').innerText = '제보 접수하기';
+
+      document.getElementById('modalInputName').value = '';
+      document.getElementById('modalInputCoordsDisplay').value = '';
+      document.getElementById('modalInputEntry').value = '';
+      document.getElementById('modalInputElevation').value = '';
+      document.getElementById('modalInputDesc').value = '';
+      document.getElementById('modalInputYoutube').value = '';
+      document.getElementById('modalInputBlog').value = '';
+      document.getElementById('modalInputInsta').value = '';
+      document.getElementById('modalInputDistance').value = '';
+      
+      document.getElementById('chkDeck').checked = true;
+      ['chkRock', 'chkSoil', 'chkIsland', 'chkValley', 'chkCave', 'chkEtc'].forEach(id => document.getElementById(id).checked = false);
+
+      document.getElementById('modalSelectDiff').value = '3';
+      document.getElementById('customModalOverlay').style.display = 'flex';
+      setTimeout(() => document.getElementById('modalInputName').focus(), 50);
+    }
+
+    /* 지도에서 직접 위치 콕 찍기 모드 시작 */
+    function startPinPicking() {
+      isPickingLocationMode = true;
+      document.getElementById('customModalOverlay').style.display = 'none';
+      document.getElementById('pinPickerBanner').style.display = 'flex';
+    }
+
+    function cancelPinPicking() {
+      isPickingLocationMode = false;
+      document.getElementById('pinPickerBanner').style.display = 'none';
+      document.getElementById('customModalOverlay').style.display = 'flex';
+    }
+
+    /* 지도 클릭 이벤트 (직접 찍기 및 관리자 빠른등록 통합) */
+    naver.maps.Event.addListener(map, 'click', function(e) {
+      const lat = parseFloat(e.coord.lat().toFixed(6));
+      const lng = parseFloat(e.coord.lng().toFixed(6));
+
+      // 1) 지도에서 콕 찍기 모드인 경우
+      if (isPickingLocationMode) {
+        isPickingLocationMode = false;
+        document.getElementById('pinPickerBanner').style.display = 'none';
+
+        modalPendingData.lat = lat;
+        modalPendingData.lng = lng;
+        modalPendingData.droneStatus = autoDetectDroneStatus(lat, lng).status;
+
+        if (tempPickedMarker) tempPickedMarker.setMap(null);
+        tempPickedMarker = new naver.maps.Marker({
+          position: new naver.maps.LatLng(lat, lng),
+          map: map,
+          animation: naver.maps.Animation.BOUNCE,
+          zIndex: 8000
+        });
+        setTimeout(() => { if (tempPickedMarker) tempPickedMarker.setAnimation(null); }, 1500);
+
+        document.getElementById('modalInputCoordsDisplay').value = `📍 위도: ${lat}, 경도: ${lng}`;
+
+        // 주소 자동 역추적 및 고도 측정
+        naver.maps.Service.reverseGeocode({
+          coords: new naver.maps.LatLng(lat, lng),
+          orders: [naver.maps.Service.OrderType.ADDR, naver.maps.Service.OrderType.ROAD_ADDR].join(',')
+        }, async function(status, response) {
+          if (status === naver.maps.Service.Status.OK && response.v2?.address) {
+            const addr = response.v2.address.jibunAddress || response.v2.address.roadAddress || '';
+            const curEntry = document.getElementById('modalInputEntry').value.trim();
+            if (!curEntry && addr) {
+              document.getElementById('modalInputEntry').value = addr;
+            }
+          }
+          document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
+          document.getElementById('customModalOverlay').style.display = 'flex';
+        });
+        return;
+      }
+
+      // 2) 관리자 모드에서 클릭 시 빠른 등록
+      if (isAdminMode) {
+        const check = autoDetectDroneStatus(lat, lng);
+        naver.maps.Service.reverseGeocode({
+          coords: new naver.maps.LatLng(lat, lng),
+          orders: [naver.maps.Service.OrderType.ADDR, naver.maps.Service.OrderType.ROAD_ADDR].join(',')
+        }, function(status, response) {
+          const addr = (status === naver.maps.Service.Status.OK && response.v2?.address) 
+            ? (response.v2.address.jibunAddress || response.v2.address.roadAddress) : '';
+          openAddModal("새 박지 위치", lat, lng, check.status, addr);
+        });
+        return;
+      }
+
+      closeInfoWindowCompletely();
+    });
+
     function editSpotById(event, spotId) {
       event.stopPropagation();
       const idx = spots.findIndex(s => String(s.id) === String(spotId));
@@ -2547,8 +2787,12 @@
     async function openAddModal(defaultName, lat, lng, droneStatus, address) {
       modalMode = 'ADD';
       modalPendingData = { lat: parseFloat(lat), lng: parseFloat(lng), droneStatus, address: address || '' };
-      document.getElementById('modalTitle').innerText = '📍 새 박지 등록';
+      document.getElementById('modalTitle').innerText = '📍 관리자 직속 박지 등록';
+      document.getElementById('modalNotice').style.display = 'none';
+      document.getElementById('modalSubmitBtn').innerText = '즉시 지도 및 시트 등록';
+
       document.getElementById('modalInputName').value = defaultName || '';
+      document.getElementById('modalInputCoordsDisplay').value = `📍 위도: ${lat}, 경도: ${lng}`;
       document.getElementById('modalInputEntry').value = address || '';
       document.getElementById('modalInputDesc').value = '추천 백패킹 박지';
       document.getElementById('modalInputYoutube').value = '';
@@ -2569,8 +2813,14 @@
       modalMode = 'EDIT';
       modalEditIndex = index;
       const target = spots[index];
-      document.getElementById('modalTitle').innerText = `✏️ '${target.name}' 수정`;
+      modalPendingData = { lat: target.lat, lng: target.lng, droneStatus: target.droneStatus, address: target.entryPoint };
+
+      document.getElementById('modalTitle').innerText = `✏️ '${target.name}' 정보 수정`;
+      document.getElementById('modalNotice').style.display = 'none';
+      document.getElementById('modalSubmitBtn').innerText = '수정사항 저장';
+
       document.getElementById('modalInputName').value = target.name;
+      document.getElementById('modalInputCoordsDisplay').value = `📍 위도: ${target.lat}, 경도: ${target.lng}`;
       document.getElementById('modalInputElevation').value = target.elevation || '';
       document.getElementById('modalInputEntry').value = target.entryPoint || '';
       document.getElementById('modalInputDesc').value = target.desc;
@@ -2620,8 +2870,51 @@
       const difficulty = document.getElementById('modalSelectDiff').value;
       if (!name) return alert('산(박지) 이름을 입력해주세요.');
 
+      // 좌표 미지정 시 이름/들머리로 자동 역추적 시도
+      let finalLat = modalPendingData.lat;
+      let finalLng = modalPendingData.lng;
+      if (!finalLat || !finalLng) {
+        const { navAddress } = parseEntryPoint(entryPoint);
+        const searchTarget = navAddress || name;
+        const coords = await searchCoordsByQuery(searchTarget) || { lat: map.getCenter().lat(), lng: map.getCenter().lng() };
+        finalLat = coords.lat;
+        finalLng = coords.lng;
+      }
+
+      /* [일반 사용자 제보 모드] */
+      if (modalMode === 'PROPOSAL') {
+        const check = autoDetectDroneStatus(finalLat, finalLng);
+        const res = detectRegionAndCity(finalLat, finalLng, name, entryPoint);
+
+        const proposalData = {
+          name, elevation: elevation || '측정대기', entryPoint,
+          lat: finalLat, lng: finalLng,
+          region: res.region, cityName: res.cityName,
+          desc, distance, youtubeUrls, blogUrl, instaId,
+          terrain: terrain.length > 0 ? terrain : ['데크'],
+          difficulty, droneStatus: check.status,
+          status: 'pending',
+          submittedAt: new Date().toLocaleString()
+        };
+
+        try {
+          await fetch(GAS_API_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'PROPOSE_SPOT', proposal: proposalData })
+          });
+          alert(`🎉 '${name}' 박지 제보가 정상 접수되었습니다!\n\n관리자 확인 및 승인 후 지도에 등록됩니다. 소중한 제보 감사합니다! 🎒`);
+        } catch (err) {
+          alert('제보 전송 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+        }
+        closeCustomModal();
+        return;
+      }
+
+      /* [관리자 직접 추가 모드] */
       if (modalMode === 'ADD') {
-        const res = detectRegionAndCity(modalPendingData.lat, modalPendingData.lng, name, entryPoint);
+        const res = detectRegionAndCity(finalLat, finalLng, name, entryPoint);
         const newSpotId = String(Date.now());
         const nowTimestamp = Date.now();
 
@@ -2631,11 +2924,11 @@
         const newSpot = {
           id: newSpotId,
           name, elevation, entryPoint,
-          lat: modalPendingData.lat, lng: modalPendingData.lng,
+          lat: finalLat, lng: finalLng,
           region: res.region, cityName: res.cityName,
           desc, distance, youtubeUrls, blogUrl, instaId,
           terrain: terrain.length > 0 ? terrain : ['데크'],
-          difficulty, droneStatus: modalPendingData.droneStatus,
+          difficulty, droneStatus: modalPendingData.droneStatus || autoDetectDroneStatus(finalLat, finalLng).status,
           searchCount: 1,
           createdAt: nowTimestamp
         };
@@ -2650,13 +2943,14 @@
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: 'ADD', spot: newSpot })
           });
-          alert(`✅ '${newSpot.name}' 박지가 구글 시트에 등록되었습니다!`);
+          alert(`✅ '${newSpot.name}' 박지가 구글 시트에 즉시 등록되었습니다!`);
         } catch (err) {}
 
+      /* [관리자 수정 모드] */
       } else if (modalMode === 'EDIT') {
         const target = spots[modalEditIndex];
-        const res = detectRegionAndCity(target.lat, target.lng, name, entryPoint);
-        Object.assign(target, { name, elevation, entryPoint, desc, distance, youtubeUrls, blogUrl, instaId, terrain: terrain.length > 0 ? terrain : ['데크'], difficulty, region: res.region, cityName: res.cityName });
+        const res = detectRegionAndCity(finalLat, finalLng, name, entryPoint);
+        Object.assign(target, { name, elevation, entryPoint, lat: finalLat, lng: finalLng, desc, distance, youtubeUrls, blogUrl, instaId, terrain: terrain.length > 0 ? terrain : ['데크'], difficulty, region: res.region, cityName: res.cityName });
 
         renderSpots(target.region);
 
@@ -2672,21 +2966,6 @@
       }
       closeCustomModal();
     }
-
-    naver.maps.Event.addListener(map, 'click', function(e) {
-      if (!isAdminMode) return;
-      const lat = e.coord.lat();
-      const lng = e.coord.lng();
-      const check = autoDetectDroneStatus(lat, lng);
-      naver.maps.Service.reverseGeocode({
-        coords: new naver.maps.LatLng(lat, lng),
-        orders: [naver.maps.Service.OrderType.ADDR, naver.maps.Service.OrderType.ROAD_ADDR].join(',')
-      }, function(status, response) {
-        const addr = (status === naver.maps.Service.Status.OK && response.v2?.address) 
-          ? (response.v2.address.jibunAddress || response.v2.address.roadAddress) : '';
-        openAddModal("새 박지 위치", lat, lng, check.status, addr);
-      });
-    });
 
     async function deleteSpot(event, index) {
       event.stopPropagation();
@@ -2724,6 +3003,10 @@
       if (tempSearchMarker) {
         tempSearchMarker.setMap(null);
         tempSearchMarker = null;
+      }
+      if (tempPickedMarker) {
+        tempPickedMarker.setMap(null);
+        tempPickedMarker = null;
       }
       currentTerrainFilter = 'ALL';
       document.querySelectorAll('.terrain-filter-btn').forEach(b => b.classList.toggle('active', b.innerText.includes('전체')));
@@ -2848,7 +3131,7 @@
     });
 
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('.search-container') && !e.target.closest('.custom-modal-overlay')) {
+      if (!e.target.closest('.search-container') && !e.target.closest('.custom-modal-overlay') && !e.target.closest('#pinPickerBanner')) {
         document.getElementById('searchDropdown').style.display = 'none';
       }
     });
