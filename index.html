@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -19,7 +21,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <style>
-    /* 구글 스튜디오 & 테크 다크 테마 팔레트 */
     :root {
       --google-bg-deep: #0f131d;
       --google-bg-surface: #171b26;
@@ -52,95 +53,65 @@
       color: var(--google-text-primary);
     }
     
-    /* 헤더 */
     .header {
       width: 100%;
-      min-height: 70px;
+      min-height: 48px;
       background-color: rgba(15, 19, 29, 0.98);
       backdrop-filter: blur(10px);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 20px;
+      padding: 5px 14px;
       z-index: 1000;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 2px 14px rgba(0, 0, 0, 0.5);
       border-bottom: 1px solid var(--google-border);
       user-select: none;
       flex-shrink: 0;
     }
-    .header-left { display: flex; align-items: center; gap: 14px; flex-wrap: nowrap; }
+    .header-left { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; }
     
     .header-title-box {
       display: flex;
       flex-direction: row;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
       white-space: nowrap;
     }
     .main-title {
       font-family: 'Gowun Dodum', sans-serif;
-      font-size: clamp(1.3rem, 2.2vw, 1.95rem);
+      font-size: clamp(1.05rem, 1.8vw, 1.45rem);
       font-weight: 800;
-      letter-spacing: -0.5px;
+      letter-spacing: -0.4px;
       background: linear-gradient(135deg, #ffffff 10%, #bae6fd 60%, #38bdf8 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      filter: drop-shadow(0 2px 8px rgba(56, 189, 248, 0.35));
+      gap: 4px;
+      filter: drop-shadow(0 1px 6px rgba(56, 189, 248, 0.3));
     }
     .main-title .flag-icon, .main-title .backpack-icon {
       -webkit-text-fill-color: initial;
-      font-size: 1.45rem;
+      font-size: 1.15rem;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
     }
     .sub-en-title {
       font-family: 'Alex Brush', cursive;
-      font-size: 1.6rem;
+      font-size: 1.25rem;
       font-weight: 700;
       background: linear-gradient(135deg, #2dd4bf 20%, #38bdf8 80%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
       white-space: nowrap;
-    }
-
-    /* 세련된 인스타그램 스타일 협업 및 문의 배너 */
-    .header-insta-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-      padding: 4px 11px;
-      border-radius: 20px;
-      color: #ffffff !important;
-      text-decoration: none;
-      font-size: 0.72rem;
-      font-weight: 800;
-      cursor: pointer;
-      box-shadow: 0 3px 12px rgba(220, 39, 67, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .header-insta-badge:hover {
-      transform: translateY(-1.5px) scale(1.03);
-      box-shadow: 0 5px 18px rgba(220, 39, 67, 0.6);
-      border-color: rgba(255, 255, 255, 0.5);
-    }
-    .header-insta-badge svg {
-      width: 12px;
-      height: 12px;
-      fill: #ffffff;
-      flex-shrink: 0;
     }
 
     .sync-status-badge {
       background: #0284c7;
       color: #ffffff;
-      font-size: 0.72rem;
-      padding: 3px 8px;
-      border-radius: 6px;
+      font-size: 0.66rem;
+      padding: 2px 6px;
+      border-radius: 4px;
       font-weight: 600;
       white-space: nowrap;
       transition: opacity 0.4s ease;
@@ -149,21 +120,21 @@
       display: none;
       background: #0f766e;
       color: #ffffff;
-      font-size: 0.75rem;
-      padding: 3px 8px;
-      border-radius: 6px;
+      font-size: 0.68rem;
+      padding: 2px 6px;
+      border-radius: 4px;
       font-weight: bold;
       white-space: nowrap;
     }
     
-    .header-right { display: flex; align-items: center; gap: 8px; }
+    .header-right { display: flex; align-items: center; gap: 6px; }
 
     .header-btn {
       background: var(--google-bg-card);
       border: 1px solid var(--google-border);
-      padding: 7px 14px;
-      border-radius: 20px;
-      font-size: 0.8rem;
+      padding: 5px 10px;
+      border-radius: 16px;
+      font-size: 0.74rem;
       font-weight: 700;
       color: var(--google-text-primary);
       cursor: pointer;
@@ -177,26 +148,6 @@
       border-color: #b91c1c !important;
     }
 
-    /* 일반 사용자용 제보 등록 버튼 */
-    .btn-user-submit-spot {
-      background: linear-gradient(135deg, #0f766e, #0d9488);
-      border: 1px solid #14b8a6;
-      color: #ffffff !important;
-      padding: 7px 14px;
-      border-radius: 20px;
-      font-size: 0.8rem;
-      font-weight: 800;
-      cursor: pointer;
-      transition: all 0.2s;
-      box-shadow: 0 2px 10px rgba(15, 118, 110, 0.35);
-      white-space: nowrap;
-    }
-    .btn-user-submit-spot:hover {
-      background: linear-gradient(135deg, #115e59, #0f766e);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 14px rgba(15, 118, 110, 0.55);
-    }
-
     .admin-only-btn {
       display: none;
       background: #0f766e;
@@ -204,15 +155,15 @@
     }
     .admin-only-btn:hover { background: #115e59; }
 
-    .search-container { position: relative; display: flex; align-items: center; width: 260px; }
+    .search-container { position: relative; display: flex; align-items: center; width: 230px; }
     .search-input {
       width: 100%;
-      padding: 8px 36px 8px 14px;
-      border-radius: 20px;
+      padding: 6px 30px 6px 12px;
+      border-radius: 16px;
       border: 1px solid var(--google-border);
       background: var(--google-bg-surface);
       color: #fff;
-      font-size: 0.84rem;
+      font-size: 0.78rem;
       outline: none;
       transition: all 0.2s;
     }
@@ -220,34 +171,34 @@
     .search-input:focus { border-color: var(--google-accent-blue); background: var(--google-bg-deep); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
     .search-btn-icon {
       position: absolute;
-      right: 12px;
+      right: 9px;
       background: none;
       border: none;
       color: var(--google-text-secondary);
       cursor: pointer;
-      font-size: 0.92rem;
+      font-size: 0.85rem;
     }
 
     .search-dropdown {
       position: absolute;
-      top: 44px;
+      top: 36px;
       left: 0; right: 0;
       background: rgba(23, 27, 38, 0.98);
       backdrop-filter: blur(12px);
       color: var(--google-text-primary);
-      border-radius: 14px;
-      box-shadow: 0 16px 36px rgba(0,0,0,0.7);
+      border-radius: 12px;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.7);
       list-style: none;
-      max-height: 340px;
+      max-height: 300px;
       overflow-y: auto;
       display: none;
       z-index: 2000;
       border: 1px solid var(--google-border);
     }
     .dropdown-header {
-      padding: 9px 12px;
+      padding: 7px 10px;
       background-color: var(--google-bg-deep);
-      font-size: 0.76rem;
+      font-size: 0.72rem;
       font-weight: bold;
       color: var(--google-accent-blue);
       border-bottom: 1px solid var(--google-border-subtle);
@@ -256,16 +207,16 @@
       align-items: center;
     }
     .dropdown-item {
-      padding: 10px 12px;
+      padding: 8px 10px;
       border-bottom: 1px solid var(--google-border-subtle);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.84rem;
+      font-size: 0.78rem;
       cursor: pointer;
     }
     .dropdown-item:hover { background: var(--google-bg-card); }
-    .dropdown-info { flex: 1; padding-right: 8px; }
+    .dropdown-info { flex: 1; padding-right: 6px; }
     
     .top-rank-row {
       display: flex;
@@ -273,32 +224,32 @@
       justify-content: space-between;
       width: 100%;
     }
-    .top-rank-left { display: flex; align-items: center; gap: 6px; }
+    .top-rank-left { display: flex; align-items: center; gap: 5px; }
     .rank-badge {
       display: inline-block;
-      width: 20px;
-      height: 20px;
-      line-height: 20px;
+      width: 18px;
+      height: 18px;
+      line-height: 18px;
       text-align: center;
       border-radius: 50%;
-      font-size: 0.72rem;
+      font-size: 0.66rem;
       font-weight: 800;
     }
     .rank-1 { background: #fef08a; color: #854d0e; }
     .rank-2 { background: #e2e8f0; color: #334155; }
     .rank-3 { background: #fed7aa; color: #9a3412; }
     .rank-etc { background: var(--google-bg-card); color: var(--google-text-secondary); }
-    .top-spot-title { font-weight: 700; color: var(--google-accent-blue); font-size: 0.86rem; }
-    .top-spot-city { font-size: 0.72rem; color: #7dd3fc; background: rgba(56, 189, 248, 0.12); padding: 2px 6px; border-radius: 4px; }
-    .top-spot-views { font-size: 0.72rem; color: var(--google-text-tertiary); font-weight: 500; }
+    .top-spot-title { font-weight: 700; color: var(--google-accent-blue); font-size: 0.8rem; }
+    .top-spot-city { font-size: 0.68rem; color: #7dd3fc; background: rgba(56, 189, 248, 0.12); padding: 1px 4px; border-radius: 4px; }
+    .top-spot-views { font-size: 0.68rem; color: var(--google-text-tertiary); font-weight: 500; }
 
     .btn-quick-add {
       background: #0f766e;
       color: #ffffff;
       border: none;
-      border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 0.75rem;
+      border-radius: 4px;
+      padding: 3px 6px;
+      font-size: 0.68rem;
       font-weight: 600;
       cursor: pointer;
       display: none;
@@ -314,7 +265,6 @@
       overflow: hidden;
     }
     
-    /* 사이드바 */
     .sidebar {
       width: 390px;
       max-width: 100%;
@@ -324,17 +274,17 @@
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
-      z-index: 500;
+      z-index: 1000;
       color: var(--google-text-primary);
       overflow-x: hidden;
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .sidebar-header {
-      padding: 10px 14px !important;
-      min-height: 42px !important;
+      padding: 6px 10px !important;
+      min-height: 38px !important;
       font-weight: 700;
-      font-size: 0.86rem;
+      font-size: 0.8rem;
       background-color: var(--google-bg-deep);
       border-bottom: 1px solid var(--google-border);
       display: flex;
@@ -342,15 +292,75 @@
       align-items: center;
       flex-shrink: 0;
       width: 100%;
+      gap: 6px;
+    }
+    .sidebar-header-left {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .sidebar-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: nowrap;
+    }
+
+    .btn-sidebar-submit {
+      background: linear-gradient(135deg, #0f766e, #0d9488);
+      border: 1px solid #14b8a6;
+      color: #ffffff !important;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 0 2px 6px rgba(15, 118, 110, 0.3);
+      transition: all 0.15s;
+    }
+    .btn-sidebar-submit:hover {
+      background: linear-gradient(135deg, #115e59, #0f766e);
+      transform: translateY(-1px);
+    }
+
+    .header-insta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+      padding: 3px 8px;
+      border-radius: 12px;
+      color: #ffffff !important;
+      text-decoration: none;
+      font-size: 0.68rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(220, 39, 67, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .header-insta-badge:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 3px 10px rgba(220, 39, 67, 0.5);
+    }
+    .header-insta-badge svg {
+      width: 10px;
+      height: 10px;
+      fill: #ffffff;
+      flex-shrink: 0;
     }
 
     .version-tag {
-      font-size: 0.68rem;
+      font-size: 0.66rem;
       font-weight: 700;
       color: var(--google-text-tertiary);
       background: transparent;
       border: none;
-      padding: 0 4px;
+      padding: 0 2px;
       user-select: none;
       outline: none;
       cursor: pointer;
@@ -359,33 +369,32 @@
     .sheet-edit-link {
       display: none;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
       background: #059669;
       color: #ffffff;
       text-decoration: none;
-      padding: 3px 8px;
+      padding: 3px 6px;
       border-radius: 6px;
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       font-weight: bold;
     }
 
     .admin-data-tools {
       display: none;
-      padding: 6px 12px;
+      padding: 4px 8px;
       background: var(--google-bg-card);
       border-bottom: 1px solid var(--google-border);
-      gap: 6px;
+      gap: 5px;
       flex-wrap: wrap;
       flex-shrink: 0;
       width: 100%;
     }
     .admin-tool-btn {
       flex: 1;
-      min-width: 75px;
-      padding: 5px 8px;
-      font-size: 0.72rem;
+      padding: 4px 6px;
+      font-size: 0.68rem;
       font-weight: 700;
-      border-radius: 6px;
+      border-radius: 4px;
       border: 1px solid var(--google-border);
       background: var(--google-bg-surface);
       color: var(--google-text-secondary);
@@ -393,16 +402,14 @@
       text-align: center;
     }
     .admin-tool-btn:hover { background: var(--google-bg-card-hover); color: #ffffff; }
-    .admin-tool-btn.btn-ai-highlight { background: #0f766e; color: #ffffff; border-color: #0d9488; }
 
-    /* 다크 2단 필터바 */
     .filter-wrapper {
       background: var(--google-bg-deep);
       border-bottom: 1px solid var(--google-border);
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      padding: 8px 12px;
+      gap: 4px;
+      padding: 5px 8px;
       flex-shrink: 0;
       z-index: 100;
       width: 100%;
@@ -411,33 +418,33 @@
     .region-filter-bar, .terrain-filter-bar {
       display: flex;
       overflow-x: auto;
-      gap: 5px;
+      gap: 4px;
       align-items: center;
-      padding-bottom: 2px;
+      padding-bottom: 1px;
       -webkit-overflow-scrolling: touch;
       width: 100%;
     }
-    .region-filter-bar::-webkit-scrollbar, .terrain-filter-bar::-webkit-scrollbar { height: 3px; }
-    .region-filter-bar::-webkit-scrollbar-thumb, .terrain-filter-bar::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+    .region-filter-bar::-webkit-scrollbar, .terrain-filter-bar::-webkit-scrollbar { height: 2px; }
+    .region-filter-bar::-webkit-scrollbar-thumb, .terrain-filter-bar::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
     
     .filter-label {
-      font-size: 0.7rem;
+      font-size: 0.66rem;
       font-weight: 800;
       color: var(--google-text-tertiary);
       white-space: nowrap;
-      margin-right: 2px;
+      margin-right: 1px;
       background: var(--google-bg-surface);
-      padding: 3px 6px;
-      border-radius: 6px;
+      padding: 2px 5px;
+      border-radius: 4px;
       flex-shrink: 0;
     }
     .filter-btn {
-      padding: 4px 10px;
-      border-radius: 14px;
+      padding: 2px 8px;
+      border-radius: 12px;
       border: 1px solid var(--google-border);
       background: var(--google-bg-card);
       color: var(--google-text-secondary);
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
@@ -449,16 +456,15 @@
       background: #0284c7;
       color: #ffffff;
       border-color: #0284c7;
-      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+      box-shadow: 0 1px 6px rgba(2, 132, 199, 0.4);
     }
     .terrain-filter-btn.active {
       background: #0f766e;
       color: #ffffff;
       border-color: #0f766e;
-      box-shadow: 0 2px 8px rgba(15, 118, 110, 0.4);
+      box-shadow: 0 1px 6px rgba(15, 118, 110, 0.4);
     }
 
-    /* 목록 영역 */
     .spot-list { 
       flex: 1; 
       overflow-y: auto; 
@@ -468,8 +474,8 @@
       background: var(--google-bg-surface);
       width: 100%;
     }
-    .spot-list::-webkit-scrollbar { width: 4px; }
-    .spot-list::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+    .spot-list::-webkit-scrollbar { width: 3px; }
+    .spot-list::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
     
     .region-group { 
       border-bottom: 1px solid var(--google-border-subtle); 
@@ -477,9 +483,9 @@
       overflow-x: hidden;
     }
     .region-group-title {
-      padding: 9px 14px;
+      padding: 6px 10px;
       background-color: var(--google-bg-deep);
-      font-size: 0.82rem;
+      font-size: 0.76rem;
       font-weight: 700;
       color: var(--google-text-secondary);
       cursor: pointer;
@@ -487,42 +493,44 @@
       justify-content: space-between;
       align-items: center;
       user-select: none;
-      border-left: 3px solid transparent;
+      border-left: 2px solid transparent;
       transition: all 0.15s;
       width: 100%;
       box-sizing: border-box;
     }
     .region-group-title:hover { background-color: var(--google-bg-card); border-left-color: var(--google-accent-blue); color: #ffffff; }
 
-    /* 리스트 카드 */
     .spot-item {
-      padding: 11px 14px;
+      padding: 8px 10px;
       border-bottom: 1px solid var(--google-border-subtle);
       cursor: pointer;
       position: relative;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 3px;
       background: var(--google-bg-surface);
       transition: background 0.15s;
       width: 100%;
       box-sizing: border-box;
     }
-    .spot-item:hover { background-color: var(--google-bg-card); }
+    .spot-item:hover { 
+      background-color: var(--google-bg-card); 
+      z-index: 50;
+    }
     .spot-header-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-right: 60px;
+      padding-right: 50px;
     }
-    .spot-name-wrapper { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-    .spot-name { font-size: 0.9rem; font-weight: 700; color: var(--google-accent-blue); word-break: keep-all; }
+    .spot-name-wrapper { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .spot-name { font-size: 0.84rem; font-weight: 700; color: var(--google-accent-blue); word-break: keep-all; }
     
     .badge-status {
-      font-size: 0.62rem;
+      font-size: 0.58rem;
       font-weight: 900;
-      padding: 1px 5px;
-      border-radius: 4px;
+      padding: 1px 4px;
+      border-radius: 3px;
       display: inline-flex;
       align-items: center;
     }
@@ -535,11 +543,11 @@
       color: #ffffff;
     }
 
-    .spot-meta-badges { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+    .spot-meta-badges { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
     .meta-tag {
-      font-size: 0.66rem;
-      padding: 2px 6px;
-      border-radius: 6px;
+      font-size: 0.62rem;
+      padding: 1px 5px;
+      border-radius: 4px;
       font-weight: 700;
       display: inline-flex;
       align-items: center;
@@ -558,7 +566,7 @@
     .tag-rating { background: rgba(245, 158, 11, 0.12); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.25); font-weight: 800; }
 
     .spot-desc-single {
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       color: var(--google-text-secondary);
       white-space: nowrap;
       overflow: hidden;
@@ -568,11 +576,11 @@
     }
 
     .spot-coords-text {
-      font-size: 0.66rem;
+      font-size: 0.62rem;
       color: var(--google-text-tertiary);
       background: var(--google-bg-deep);
-      padding: 2px 6px;
-      border-radius: 6px;
+      padding: 1px 5px;
+      border-radius: 4px;
       border: 1px solid var(--google-border);
       width: fit-content;
     }
@@ -581,18 +589,18 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 4px;
-      margin-top: 2px;
+      gap: 3px;
+      margin-top: 1px;
     }
     .link-btn {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 3px;
+      gap: 2px;
       text-decoration: none;
-      padding: 3px 7px;
-      border-radius: 6px;
-      font-size: 0.66rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.62rem;
       font-weight: 700;
       color: #ffffff !important;
       cursor: pointer;
@@ -608,22 +616,26 @@
       background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
       border: none;
       color: #ffffff !important;
-      font-size: 0.62rem;
-      padding: 2px 6px;
-      border-radius: 6px;
-      gap: 3px;
+      font-size: 0.6rem;
+      padding: 2px 5px;
+      border-radius: 4px;
+      gap: 2px;
       font-weight: 700;
     }
-    .btn-insta svg { width: 9px; height: 9px; flex-shrink: 0; fill: #ffffff; }
+    .btn-insta svg { width: 8px; height: 8px; flex-shrink: 0; fill: #ffffff; }
     
-    .instant-tooltip-box { position: relative; display: inline-flex; align-items: center; }
+    .instant-tooltip-box { 
+      position: relative; 
+      display: inline-flex; 
+      align-items: center; 
+    }
     .drone-badge {
       display: inline-flex;
       align-items: center;
       gap: 2px;
-      font-size: 0.65rem;
-      padding: 2px 6px;
-      border-radius: 6px;
+      font-size: 0.62rem;
+      padding: 1px 5px;
+      border-radius: 4px;
       font-weight: 700;
       line-height: 1.3;
       cursor: pointer;
@@ -634,28 +646,32 @@
     .drone-warn { background: rgba(234, 179, 8, 0.15); color: #fde047; border: 1px solid rgba(250, 204, 21, 0.3); }
     .drone-no { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(248, 113, 113, 0.3); }
 
+    /* 말풍선 툴팁: 메뉴창 폭에 맞춰 줄바꿈 & 지도 밑 파묻힘 완전 해결 */
     .instant-tooltip-box::after {
       content: attr(data-tooltip);
       position: absolute;
       bottom: calc(100% + 6px);
       left: 0;
+      max-width: 270px;
+      width: max-content;
+      white-space: normal;
+      word-break: keep-all;
       background-color: rgba(15, 19, 29, 0.98);
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(12px);
       color: var(--google-text-primary);
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       font-weight: 600;
-      padding: 7px 11px;
-      border-radius: 10px;
-      white-space: nowrap;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.65);
+      padding: 6px 10px;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.85);
       border: 1px solid var(--google-border-glow);
       pointer-events: none;
       opacity: 0;
       visibility: hidden;
-      transform: translateY(4px);
-      transition: opacity 0.1s ease, transform 0.1s ease;
-      z-index: 6000;
-      line-height: 1.3;
+      transform: translateY(3px);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      z-index: 9999;
+      line-height: 1.35;
     }
     .instant-tooltip-box:hover::after {
       opacity: 1;
@@ -665,16 +681,16 @@
 
     .spot-action-btns {
       position: absolute;
-      top: 8px;
-      right: 8px;
+      top: 6px;
+      right: 6px;
       display: flex;
-      gap: 4px;
+      gap: 3px;
     }
     .btn-edit, .btn-del {
       border: none;
-      border-radius: 6px;
-      padding: 3px 6px;
-      font-size: 0.66rem;
+      border-radius: 4px;
+      padding: 2px 5px;
+      font-size: 0.62rem;
       cursor: pointer;
       display: none;
       font-weight: 600;
@@ -685,56 +701,54 @@
 
     #map { flex: 1; height: 100%; position: relative; background: var(--google-bg-deep); }
     
-    /* 지도 상단 범례 */
     .map-legend-bar {
       position: absolute;
-      top: 10px;
-      left: 10px;
+      top: 8px;
+      left: 8px;
       background: rgba(15, 19, 29, 0.9);
       backdrop-filter: blur(8px);
       border: 1px solid var(--google-border);
-      border-radius: 10px;
-      padding: 5px 8px;
+      border-radius: 8px;
+      padding: 4px 6px;
       z-index: 120;
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+      gap: 3px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
       user-select: none;
       pointer-events: none;
     }
     .legend-item {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      font-size: 0.68rem;
+      gap: 4px;
+      font-size: 0.64rem;
       font-weight: 700;
       color: #e2e8f0;
       line-height: 1;
     }
-    .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .legend-dot { width: 6px; height: 6px; border-radius: 50%; }
     .dot-green { background: #10b981; }
     .dot-yellow { background: #f59e0b; }
     .dot-red { background: #ef4444; }
 
-    /* 지도 상단 핀 선택 안내 바 */
     .pin-picker-banner {
       display: none;
       position: absolute;
-      top: 12px;
+      top: 10px;
       left: 50%;
       transform: translateX(-50%);
       background: linear-gradient(135deg, #0f766e, #0284c7);
       color: #ffffff;
-      padding: 9px 18px;
-      border-radius: 30px;
-      font-size: 0.82rem;
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 0.78rem;
       font-weight: 800;
       z-index: 6000;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.75);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.75);
       border: 1.5px solid rgba(255,255,255,0.4);
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       white-space: nowrap;
       animation: pulseBanner 1.8s infinite;
     }
@@ -746,13 +760,12 @@
       background: rgba(0,0,0,0.3);
       border: 1px solid rgba(255,255,255,0.3);
       color: #ffffff;
-      border-radius: 14px;
-      padding: 3px 8px;
-      font-size: 0.72rem;
+      border-radius: 12px;
+      padding: 2px 7px;
+      font-size: 0.68rem;
       cursor: pointer;
     }
 
-    /* 커스텀 지도 마커 및 최상단 라벨 */
     .custom-spot-marker-wrap {
       position: relative;
       display: flex;
@@ -765,71 +778,60 @@
       z-index: 100;
     }
 
+    /* 마커 라벨 칩: 오직 마우스 호버 시에만 표시 */
     .marker-label-chip {
       display: none;
       background: rgba(15, 19, 29, 0.96) !important;
       backdrop-filter: blur(10px);
       border: 1.5px solid rgba(56, 189, 248, 0.5);
       color: #ffffff;
-      padding: 3px 8px;
-      border-radius: 12px;
-      font-size: 0.72rem;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 0.68rem;
       font-weight: 800;
       white-space: nowrap;
-      margin-bottom: 4px;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.85);
+      margin-bottom: 3px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.85);
       align-items: center;
-      gap: 4px;
+      gap: 3px;
       transition: all 0.15s ease;
       z-index: 10000;
       pointer-events: none;
     }
 
-    #map.show-marker-labels .marker-label-chip {
-      display: flex !important;
-      animation: labelFadeIn 0.2s ease forwards;
-    }
-
-    @keyframes labelFadeIn {
-      from { opacity: 0; transform: translateY(3px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
     .custom-spot-marker-wrap:hover .marker-label-chip {
       display: flex !important;
-      transform: scale(1.08);
+      transform: scale(1.06);
       border-color: var(--google-accent-blue);
       color: var(--google-accent-blue);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.95);
     }
     
     .marker-label-elev {
       color: #86efac;
-      font-size: 0.64rem;
+      font-size: 0.62rem;
       font-weight: 700;
     }
     .marker-svg-icon {
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.7));
+      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7));
       display: block;
     }
 
-    /* 반응형 글래스모피즘 인포윈도우 */
     .compact-info-window {
-      padding: 12px 14px;
-      width: min(290px, calc(100vw - 36px)) !important;
-      max-height: min(360px, 58dvh);
+      padding: 10px 12px;
+      width: min(280px, calc(100vw - 30px)) !important;
+      max-height: min(340px, 55dvh);
       overflow-y: auto;
       overflow-x: hidden !important;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 5px;
       line-height: 1.35;
       background: rgba(23, 27, 38, 0.98) !important;
       backdrop-filter: blur(14px) !important;
       color: var(--google-text-primary);
-      border-radius: 16px !important;
+      border-radius: 14px !important;
       border: 1px solid var(--google-border-glow) !important;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 24px rgba(56, 189, 248, 0.2) !important;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8) !important;
       word-break: break-word;
       z-index: 9000 !important;
     }
@@ -837,23 +839,23 @@
     .compact-info-window::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
 
     .compact-title { 
-      font-size: 0.92rem; 
+      font-size: 0.88rem; 
       font-weight: 800; 
       color: var(--google-accent-blue); 
       display: flex; 
       align-items: center; 
-      gap: 5px; 
+      gap: 4px; 
       flex-wrap: wrap; 
-      padding-right: 20px;
+      padding-right: 18px;
     }
     
     .compact-entry-link {
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       color: #7dd3fc;
       background: rgba(2, 132, 199, 0.15);
       border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 5px 8px;
-      border-radius: 8px;
+      padding: 4px 7px;
+      border-radius: 6px;
       width: 100%;
       word-break: break-all;
       line-height: 1.3;
@@ -869,98 +871,96 @@
     }
 
     .entry-guide-chip {
-      font-size: 0.7rem;
+      font-size: 0.66rem;
       color: #fde047;
       background: rgba(245, 158, 11, 0.12);
       border: 1px solid rgba(245, 158, 11, 0.25);
-      padding: 4px 8px;
-      border-radius: 8px;
-      line-height: 1.35;
+      padding: 3px 6px;
+      border-radius: 6px;
+      line-height: 1.3;
       word-break: keep-all;
     }
 
     .compact-desc {
-      font-size: 0.74rem;
+      font-size: 0.7rem;
       color: var(--google-text-secondary);
       word-break: keep-all;
       white-space: pre-line;
-      line-height: 1.4;
+      line-height: 1.35;
     }
 
     .btn-save-location {
       background: #0f766e;
       color: #ffffff;
       border: none;
-      border-radius: 8px;
-      padding: 6px 10px;
-      font-size: 0.74rem;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 0.7rem;
       font-weight: bold;
       cursor: pointer;
-      margin-top: 4px;
+      margin-top: 3px;
       text-align: center;
     }
 
-    /* 댓글 영역 */
     .comments-section {
-      margin-top: 4px;
+      margin-top: 3px;
       border-top: 1px dashed var(--google-border);
-      padding-top: 6px;
+      padding-top: 5px;
       width: 100%;
     }
     .comments-title {
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       font-weight: 700;
       color: var(--google-text-secondary);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 5px;
+      margin-bottom: 4px;
     }
     .comments-list {
       list-style: none;
-      max-height: 75px;
+      max-height: 65px;
       overflow-y: auto;
-      margin-bottom: 5px;
+      margin-bottom: 4px;
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 2px;
     }
-    .comments-list::-webkit-scrollbar { width: 3px; }
-    .comments-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    .comments-list::-webkit-scrollbar { width: 2px; }
+    .comments-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
 
     .comment-item {
       background: var(--google-bg-card);
       border: 1px solid var(--google-border);
-      border-radius: 6px;
-      padding: 4px 6px;
-      font-size: 0.66rem;
+      border-radius: 4px;
+      padding: 3px 5px;
+      font-size: 0.62rem;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      gap: 4px;
+      gap: 3px;
     }
     .comment-author { font-weight: 700; color: var(--google-accent-blue); white-space: nowrap; }
-    .comment-rating-stars { color: #f59e0b; font-size: 0.62rem; white-space: nowrap; }
+    .comment-rating-stars { color: #f59e0b; font-size: 0.58rem; white-space: nowrap; }
     .comment-text { color: var(--google-text-secondary); word-break: break-all; flex: 1; }
     
-    .comment-form { display: flex; flex-direction: column; gap: 4px; width: 100%; }
-    .comment-form-row { display: flex; gap: 4px; width: 100%; }
+    .comment-form { display: flex; flex-direction: column; gap: 3px; width: 100%; }
+    .comment-form-row { display: flex; gap: 3px; width: 100%; }
     .comment-select-rating {
       flex: 1.2;
-      padding: 4px 4px;
+      padding: 3px 3px;
       border: 1px solid var(--google-border);
-      border-radius: 6px;
-      font-size: 0.66rem;
+      border-radius: 4px;
+      font-size: 0.62rem;
       background: var(--google-bg-deep);
       color: #fcd34d;
       font-weight: bold;
       outline: none;
     }
-    .comment-input-author { flex: 1; min-width: 50px; padding: 4px 6px; border: 1px solid var(--google-border); border-radius: 6px; font-size: 0.66rem; outline: none; background: var(--google-bg-deep); color: #fff; }
-    .comment-input-text { flex: 1; padding: 4px 6px; border: 1px solid var(--google-border); border-radius: 6px; font-size: 0.66rem; outline: none; background: var(--google-bg-deep); color: #fff; }
-    .comment-btn-submit { background: #0f766e; color: #ffffff; border: none; border-radius: 6px; padding: 4px 10px; font-size: 0.66rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .comment-input-author { flex: 1; min-width: 45px; padding: 3px 5px; border: 1px solid var(--google-border); border-radius: 4px; font-size: 0.62rem; outline: none; background: var(--google-bg-deep); color: #fff; }
+    .comment-input-text { flex: 1; padding: 3px 5px; border: 1px solid var(--google-border); border-radius: 4px; font-size: 0.62rem; outline: none; background: var(--google-bg-deep); color: #fff; }
+    .comment-btn-submit { background: #0f766e; color: #ffffff; border: none; border-radius: 4px; padding: 3px 8px; font-size: 0.62rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
 
-    /* 모달 */
     .custom-modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -974,144 +974,123 @@
     .custom-modal {
       background: var(--google-bg-surface);
       color: var(--google-text-primary);
-      width: 480px;
-      max-width: calc(100vw - 28px);
-      max-height: 90vh;
+      width: 440px;
+      max-width: calc(100vw - 24px);
+      max-height: 88vh;
       overflow-y: auto;
-      border-radius: 16px;
-      box-shadow: 0 24px 48px rgba(0,0,0,0.75);
-      padding: 20px;
+      border-radius: 14px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.75);
+      padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       border: 1px solid var(--google-border-glow);
     }
-    .custom-modal h3 { font-size: 1.05rem; color: var(--google-accent-blue); }
-    .modal-field { display: flex; flex-direction: column; gap: 4px; }
-    .modal-field label { font-size: 0.74rem; font-weight: 700; color: var(--google-text-secondary); }
+    .custom-modal h3 { font-size: 0.95rem; color: var(--google-accent-blue); }
+    .modal-field { display: flex; flex-direction: column; gap: 3px; }
+    .modal-field label { font-size: 0.7rem; font-weight: 700; color: var(--google-text-secondary); }
     .modal-input {
       width: 100%;
-      padding: 8px 12px;
+      padding: 6px 10px;
       border: 1px solid var(--google-border);
-      border-radius: 8px;
-      font-size: 0.82rem;
+      border-radius: 6px;
+      font-size: 0.78rem;
       outline: none;
       background: var(--google-bg-deep);
       color: #ffffff;
     }
-    .modal-textarea { resize: vertical; min-height: 50px; line-height: 1.35; }
+    .modal-textarea { resize: vertical; min-height: 44px; line-height: 1.3; }
     .modal-input:focus { border-color: var(--google-accent-blue); }
     
-    .checkbox-group { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 0.78rem; color: var(--google-text-secondary); font-weight: 600; }
-    .checkbox-group label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
-    .select-diff { padding: 6px 8px; border-radius: 8px; border: 1px solid var(--google-border); font-size: 0.78rem; color: var(--google-text-primary); outline: none; background: var(--google-bg-deep); }
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.74rem; color: var(--google-text-secondary); font-weight: 600; }
+    .checkbox-group label { display: flex; align-items: center; gap: 3px; cursor: pointer; }
+    .select-diff { padding: 5px 7px; border-radius: 6px; border: 1px solid var(--google-border); font-size: 0.74rem; color: var(--google-text-primary); outline: none; background: var(--google-bg-deep); }
     
-    .modal-btn-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
-    .modal-btn { padding: 8px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border: none; }
+    .modal-btn-row { display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px; }
+    .modal-btn { padding: 6px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 600; cursor: pointer; border: none; }
     .modal-btn-cancel { background: var(--google-bg-card); color: var(--google-text-secondary); }
     .modal-btn-save { background: #0f766e; color: #ffffff; }
 
-    /* 모바일 하단 플로팅 컨트롤 바 */
     .mobile-floating-controls {
       display: none;
       position: fixed;
-      bottom: 16px;
+      bottom: 12px;
       left: 50%;
       transform: translateX(-50%);
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       z-index: 4000;
-      width: calc(100% - 24px);
-      max-width: 380px;
+      width: calc(100% - 20px);
+      max-width: 360px;
     }
     .mobile-float-btn {
-      padding: 9px 12px;
-      border-radius: 25px;
-      font-size: 0.76rem;
+      padding: 7px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
       font-weight: 700;
       border: 1px solid rgba(255,255,255,0.15);
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
       cursor: pointer;
       white-space: nowrap;
       text-align: center;
       transition: all 0.15s;
     }
     .mobile-float-drone { background: rgba(31, 37, 54, 0.95); color: #ffffff; flex: 1; }
-    .mobile-float-toggle { background: #0284c7; color: #ffffff; flex: 1.35; font-size: 0.8rem; border-color: rgba(255,255,255,0.3); }
+    .mobile-float-toggle { background: #0284c7; color: #ffffff; flex: 1.35; font-size: 0.75rem; border-color: rgba(255,255,255,0.3); }
     .mobile-float-reset { background: rgba(31, 37, 54, 0.95); color: #ffffff; flex: 1; }
 
-    /* 모바일 전용 반응형 */
     @media (max-width: 768px) {
       .header { 
-        height: auto !important;
-        min-height: unset !important;
-        flex-direction: column; 
+        min-height: 42px !important;
+        padding: 4px 8px !important;
+        flex-direction: row; 
         align-items: center; 
-        padding: 8px 12px 10px 12px !important; 
-        gap: 6px !important; 
+        justify-content: space-between;
+        gap: 4px !important; 
         flex-shrink: 0;
-        position: relative !important;
       }
       .header-left { 
-        width: 100%; 
-        justify-content: center; 
-        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 6px;
       }
       .header-title-box { 
-        width: 100%;
         display: flex;
-        flex-direction: column;
         align-items: center;
-        justify-content: center;
-        text-align: center;
-        gap: 2px !important;
+        gap: 4px !important;
       }
       .main-title { 
-        font-size: 1.22rem !important; 
-        justify-content: center;
+        font-size: 1.05rem !important; 
         letter-spacing: -0.3px;
       }
-      .main-title .flag-icon, .main-title .backpack-icon { font-size: 1.1rem !important; }
-      .sub-en-title { 
-        font-size: 1.15rem !important; 
-        margin-top: -3px;
-      }
-      .header-insta-badge {
-        font-size: 0.65rem !important;
-        padding: 3px 8px !important;
-        margin-top: 2px;
-      }
+      .main-title .flag-icon, .main-title .backpack-icon { font-size: 1.0rem !important; }
+      .sub-en-title { display: none; }
+      
       .sync-status-badge, .admin-status-badge {
-        position: absolute;
-        right: 0;
-        top: 0;
-        font-size: 0.62rem;
-        padding: 2px 6px;
+        font-size: 0.58rem;
+        padding: 1px 4px;
       }
 
       .header-right { 
-        width: 100%; 
         display: flex;
-        justify-content: center;
-        gap: 6px;
+        align-items: center;
+        gap: 4px;
       }
       .header-desktop-only { display: none !important; }
-      .btn-user-submit-spot {
-        padding: 6px 12px !important;
-        font-size: 0.74rem !important;
-      }
-      .search-container { width: 100%; }
+      
+      .search-container { width: 140px; }
       .search-input { 
-        padding: 7px 32px 7px 14px !important; 
-        font-size: 0.8rem !important; 
-        border-radius: 18px;
+        padding: 4px 24px 4px 10px !important; 
+        font-size: 0.74rem !important; 
+        border-radius: 14px;
       }
+      .search-btn-icon { right: 7px; font-size: 0.75rem; }
       
       .map-legend-bar { 
         display: flex !important;
-        top: 8px !important;
-        left: 8px !important;
-        padding: 4px 7px !important;
+        top: 6px !important;
+        left: 6px !important;
+        padding: 3px 5px !important;
       }
       .mobile-floating-controls { display: flex; }
       
@@ -1136,13 +1115,13 @@
         top: 0; left: 0; right: 0;
         width: 100% !important; 
         max-width: 100vw !important;
-        height: calc(100% - 65px) !important; 
+        height: calc(100% - 55px) !important; 
         z-index: 300;
         border-right: none; 
         border-bottom: 1px solid var(--google-border); 
-        box-shadow: 0 12px 36px rgba(0,0,0,0.85);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.85);
         transform: translateY(0);
-        border-radius: 0 0 16px 16px;
+        border-radius: 0 0 12px 12px;
         overflow-x: hidden !important;
       }
       
@@ -1150,16 +1129,25 @@
         transform: translateY(-130%) !important;
       }
 
-      .spot-item { padding: 10px 12px; gap: 4px; }
-      .spot-name { font-size: 0.86rem !important; }
-      .spot-desc-single { font-size: 0.68rem !important; }
-      .meta-tag { font-size: 0.62rem !important; padding: 2px 5px !important; }
-      .link-btn { font-size: 0.62rem !important; padding: 2px 6px !important; }
-      .drone-badge { font-size: 0.6rem !important; padding: 2px 5px !important; }
-      .badge-status { font-size: 0.6rem !important; padding: 1px 4px !important; }
-      .filter-btn { font-size: 0.72rem !important; padding: 4px 10px !important; }
-      .filter-label { font-size: 0.72rem !important; }
-      .region-group-title { font-size: 0.82rem !important; padding: 9px 12px !important; }
+      .sidebar-header {
+        padding: 5px 8px !important;
+        min-height: 34px !important;
+      }
+      .btn-sidebar-submit, .header-insta-badge {
+        font-size: 0.62rem !important;
+        padding: 2px 6px !important;
+      }
+
+      .spot-item { padding: 7px 9px; gap: 3px; }
+      .spot-name { font-size: 0.8rem !important; }
+      .spot-desc-single { font-size: 0.64rem !important; }
+      .meta-tag { font-size: 0.58rem !important; padding: 1px 4px !important; }
+      .link-btn { font-size: 0.58rem !important; padding: 1px 5px !important; }
+      .drone-badge { font-size: 0.58rem !important; padding: 1px 4px !important; }
+      .badge-status { font-size: 0.56rem !important; padding: 1px 3px !important; }
+      .filter-btn { font-size: 0.66rem !important; padding: 2px 7px !important; }
+      .filter-label { font-size: 0.66rem !important; }
+      .region-group-title { font-size: 0.74rem !important; padding: 6px 9px !important; }
     }
   </style>
 </head>
@@ -1174,27 +1162,18 @@
           <span class="backpack-icon">🎒</span>
         </span>
         <span class="sub-en-title">Korea Romantic Backpacking Road</span>
-        
-        <!-- 세련된 인스타그램 스타일 협업/문의 배너 (아이디 없이 링크 연동) -->
-        <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="header-insta-badge" title="협업 및 문의 (인스타그램으로 이동)">
-          <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-          <span>협업 및 문의</span>
-        </a>
       </div>
       <span class="sync-status-badge" id="syncStatusBadge">⚡ 시트 동기화 중...</span>
       <span class="admin-status-badge" id="adminBadge">관리자 모드 ON</span>
     </div>
     
     <div class="header-right">
-      <!-- 일반 사용자용 박지 추천/제보 버튼 -->
-      <button type="button" class="btn-user-submit-spot" onclick="openUserProposalModal()">➕ 박지 제보·등록</button>
-
       <button type="button" class="header-btn admin-only-btn" id="btnSyncSheet" onclick="fetchSpotsFromGoogleSheet()">🔄 시트 동기화</button>
       <button type="button" class="header-btn header-desktop-only" id="resetMapBtn" onclick="resetMapView()">🔄 지도 초기화</button>
       <button type="button" class="header-btn header-desktop-only" id="droneLayerBtn" onclick="toggleDroneOverlay()">🛸 드론규제공역 레이어</button>
       
       <div class="search-container">
-        <input type="text" id="topSearchInput" class="search-input" placeholder="산/계곡/섬/동굴/명소 검색" onfocus="showTopRankings()" onkeyup="handleSearchInput(event)" />
+        <input type="text" id="topSearchInput" class="search-input" placeholder="산/계곡/섬/봉우리 검색" onfocus="showTopRankings()" onkeyup="handleSearchInput(event)" />
         <button type="button" class="search-btn-icon" onclick="executeSearch()">🔍</button>
         <ul id="searchDropdown" class="search-dropdown"></ul>
       </div>
@@ -1204,16 +1183,23 @@
   <div class="container">
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span>📍 백패킹 박지 목록</span>
-          <span id="spotCount" style="color: var(--google-accent-blue); font-size: 0.78rem; font-weight: bold;">0개</span>
-          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()">3.2ver</span>
+        <div class="sidebar-header-left">
+          <span>📍 박지 목록</span>
+          <span id="spotCount" style="color: var(--google-accent-blue); font-size: 0.74rem; font-weight: bold;">0개</span>
+          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()">3.5ver</span>
         </div>
-        <a id="sheetEditLink" href="#" target="_blank" rel="noopener noreferrer" class="sheet-edit-link">📊 구글 시트 편집</a>
+
+        <div class="sidebar-header-actions">
+          <button type="button" class="btn-sidebar-submit" onclick="openUserProposalModal()">➕ 박지 제보</button>
+          <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="header-insta-badge" title="협업 및 문의 (인스타그램으로 이동)">
+            <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+            <span>협업·문의</span>
+          </a>
+          <a id="sheetEditLink" href="#" target="_blank" rel="noopener noreferrer" class="sheet-edit-link">📊 시트</a>
+        </div>
       </div>
 
       <div class="admin-data-tools" id="adminDataTools">
-        <button type="button" class="admin-tool-btn btn-ai-highlight" onclick="openBulkImportModal()">⚡ AI 요약 일괄 등록</button>
         <button type="button" class="admin-tool-btn" onclick="exportDataBackup()">💾 백업</button>
         <button type="button" class="admin-tool-btn" onclick="document.getElementById('importFileInput').click()">📂 복원</button>
         <input type="file" id="importFileInput" style="display:none" accept=".json" onchange="importDataBackup(event)" />
@@ -1254,7 +1240,6 @@
         <div class="legend-item"><span class="legend-dot dot-red"></span> 어려움</div>
       </div>
 
-      <!-- 지도에서 직접 콕 찍기 모드 알림 바 -->
       <div id="pinPickerBanner" class="pin-picker-banner">
         <span>📍 지도를 클릭하여 박지 텐트 위치를 콕 찍어주세요!</span>
         <button type="button" class="btn-cancel-pin-pick" onclick="cancelPinPicking()">취소</button>
@@ -1262,7 +1247,6 @@
     </main>
   </div>
 
-  <!-- 모바일 하단 플로팅 바 -->
   <div class="mobile-floating-controls">
     <button type="button" class="mobile-float-btn mobile-float-drone" id="mobileDroneBtn" onclick="toggleDroneOverlay()">
       🛸 드론규제
@@ -1275,33 +1259,10 @@
     </button>
   </div>
 
-  <!-- AI 일괄 등록 모달 (관리자용) -->
-  <div class="custom-modal-overlay" id="bulkImportModalOverlay">
-    <div class="custom-modal" style="width: 500px;">
-      <h3 style="display:flex; align-items:center; gap:6px;">⚡ AI 요약 / JSON 내용으로 일괄 등록</h3>
-      <p style="font-size:0.74rem; color:var(--google-text-secondary); line-height:1.4;">
-        ChatGPT / Gemini 요약 텍스트 또는 <strong>JSON 객체·배열</strong>을 붙여넣으세요. 산 이름과 주소로 <strong>위도/경도를 자동 검색</strong>하여 지도와 구글 시트에 즉시 등록합니다.
-      </p>
-
-      <div class="modal-field">
-        <label>요약 텍스트 또는 JSON 붙여넣기</label>
-        <textarea id="bulkImportTextarea" class="modal-input modal-textarea" style="min-height: 170px; font-family: monospace; font-size: 0.78rem;" placeholder='{\n  "name": "상주 매악산 국사봉",\n  "entryPoint": "경북 상주시 사벌국면면 묵상리 45, 임도따라 계속 전진",\n  "elevation": "385m",\n  "desc": "360도 파노라마 뷰 및 낙동강 운해 명소",\n  "terrain": ["노지","데크"],\n  "difficulty": "1",\n  "distance": "0.1",\n  "youtubeUrl": "https://youtu.be/..."\n}'></textarea>
-      </div>
-
-      <div id="bulkStatusMsg" style="font-size:0.74rem; color:var(--google-accent-blue); min-height: 18px; font-weight:600;"></div>
-
-      <div class="modal-btn-row">
-        <button type="button" class="modal-btn modal-btn-cancel" onclick="closeBulkImportModal()">닫기</button>
-        <button type="button" class="modal-btn modal-btn-save" id="btnRunBulkImport" onclick="processBulkImport()">📍 자동 분석 & 지도·시트에 등록</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 박지 등록/제보 모달 (지도 직접 찍기 지원) -->
   <div class="custom-modal-overlay" id="customModalOverlay">
     <div class="custom-modal">
       <h3 id="modalTitle">📍 박지 제보 / 추천 등록</h3>
-      <p id="modalNotice" style="font-size:0.72rem; color:#fde047; line-height:1.35;">
+      <p id="modalNotice" style="font-size:0.7rem; color:#fde047; line-height:1.35;">
         🎒 멋진 백패킹 박지를 제보해주세요! 작성해주신 정보는 <strong>관리자 확인 및 승인 후 정식 등록</strong>됩니다.
       </p>
       
@@ -1312,33 +1273,33 @@
 
       <div class="modal-field">
         <label>2. 박지 핀 위치 (지도에서 직접 콕 찍기)</label>
-        <div style="display: flex; gap: 6px; align-items: center;">
+        <div style="display: flex; gap: 5px; align-items: center;">
           <input type="text" id="modalInputCoordsDisplay" class="modal-input" style="flex:1;" placeholder="위치 미지정 (아래 버튼으로 선택)" readonly />
-          <button type="button" class="modal-btn" style="background: #0284c7; color:#fff; font-weight:700; white-space:nowrap;" onclick="startPinPicking()">📍 지도에서 콕 찍기</button>
+          <button type="button" class="modal-btn" style="background: #0284c7; color:#fff; font-weight:700; white-space:nowrap; padding:5px 8px;" onclick="startPinPicking()">📍 콕 찍기</button>
         </div>
       </div>
 
       <div class="modal-field">
-        <label>3. 들머리 (네비 검색 주소, 쉼표(,) 후 부가설명 팁 작성 가능) *</label>
-        <textarea id="modalInputEntry" class="modal-input modal-textarea" rows="2" placeholder="예: 경북 상주시 사벌국면면 묵상리 45, 입력후 임도따라 1km 전진"></textarea>
+        <label>3. 들머리 (네비 주소, 쉼표 후 길안내 팁) *</label>
+        <textarea id="modalInputEntry" class="modal-input modal-textarea" rows="2" placeholder="예: 경북 상주시 사벌국면면 묵상리 45, 임도따라 1km 전진"></textarea>
       </div>
 
       <div class="modal-field">
         <label>4. 고도 / 해발 (자동 측정 또는 직접 입력)</label>
-        <div style="display: flex; gap: 6px;">
+        <div style="display: flex; gap: 5px;">
           <input type="text" id="modalInputElevation" class="modal-input" style="flex:1;" placeholder="예: 385m" />
-          <button type="button" class="modal-btn" style="background:var(--google-bg-card); color:#fff;" onclick="fetchElevationForModal()">⛰️ 고도 측정</button>
+          <button type="button" class="modal-btn" style="background:var(--google-bg-card); color:#fff; padding:5px 8px;" onclick="fetchElevationForModal()">⛰️ 측정</button>
         </div>
       </div>
 
       <div class="modal-field">
         <label>5. 특징 및 꿀팁 (선택)</label>
-        <textarea id="modalInputDesc" class="modal-input modal-textarea" rows="2" placeholder="예: 탁 트인 일출/일몰 뷰, 간이 화장실 있음, 화기 사용 주의"></textarea>
+        <textarea id="modalInputDesc" class="modal-input modal-textarea" rows="2" placeholder="예: 탁 트인 일출/일몰 뷰, 간이 화장실 있음"></textarea>
       </div>
 
       <div class="modal-field">
         <label>6. 지형 형태 (다중 선택 가능)</label>
-        <div class="checkbox-group" style="padding-top: 4px;">
+        <div class="checkbox-group" style="padding-top: 2px;">
           <label><input type="checkbox" id="chkDeck" value="데크" /> 🪵 데크</label>
           <label><input type="checkbox" id="chkRock" value="돌박지" /> 🪨 돌박지</label>
           <label><input type="checkbox" id="chkSoil" value="노지" /> 🏕️ 노지</label>
@@ -1349,7 +1310,7 @@
         </div>
       </div>
 
-      <div style="display: flex; gap: 10px; justify-content: space-between; align-items: flex-start;">
+      <div style="display: flex; gap: 8px; justify-content: space-between; align-items: flex-start;">
         <div class="modal-field" style="flex: 1;">
           <label>7. 난이도</label>
           <select id="modalSelectDiff" class="select-diff">
@@ -1361,24 +1322,24 @@
           </select>
         </div>
 
-        <div class="modal-field" style="width: 110px;">
+        <div class="modal-field" style="width: 100px;">
           <label>8. 편도 거리(km)</label>
-          <input type="text" id="modalInputDistance" class="modal-input" style="padding: 6px 8px;" placeholder="예: 2.5" />
+          <input type="text" id="modalInputDistance" class="modal-input" placeholder="예: 2.5" />
         </div>
       </div>
 
       <div class="modal-field">
-        <label>9. YouTube 영상 링크 (최대 3개, 줄바꿈으로 구분)</label>
+        <label>9. YouTube 영상 링크 (최대 3개, 줄바꿈 구분)</label>
         <textarea id="modalInputYoutube" class="modal-input modal-textarea" rows="2" placeholder="https://youtu.be/...&#10;https://youtu.be/..."></textarea>
       </div>
 
-      <div style="display: flex; gap: 10px;">
+      <div style="display: flex; gap: 8px;">
         <div class="modal-field" style="flex: 1;">
           <label>10. 블로그 링크 (선택)</label>
           <input type="text" id="modalInputBlog" class="modal-input" placeholder="https://blog.naver.com/..." />
         </div>
         <div class="modal-field" style="flex: 1;">
-          <label>11. 제보자/등록자 인스타그램 (선택)</label>
+          <label>11. 제보자 인스타그램 (선택)</label>
           <input type="text" id="modalInputInsta" class="modal-input" placeholder="oklionnature" />
         </div>
       </div>
@@ -1392,9 +1353,9 @@
 
   <script>
     /* =========================================================================
-       버전 관리 상수 (3.2ver)
+       버전 관리 상수 (3.5ver)
        ========================================================================= */
-    const BASE_VERSION_NUM = 3.2;
+    const BASE_VERSION_NUM = 3.5;
     const CURRENT_VERSION = `${BASE_VERSION_NUM.toFixed(1)}ver`;
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -1408,7 +1369,6 @@
 
     const DEFAULT_MAP_CENTER = new naver.maps.LatLng(36.5, 127.8);
     const DEFAULT_MAP_ZOOM = 8;
-    const LABEL_SHOW_ZOOM_LEVEL = 12;
 
     function escapeHtml(text) {
       if (text === null || text === undefined) return '';
@@ -1420,7 +1380,6 @@
         .replace(/'/g, '&#039;');
     }
 
-    /* 들머리 쉼표(,) 분리 파서 */
     function parseEntryPoint(rawEntry) {
       if (!rawEntry) return { navAddress: '', guide: '' };
       const str = String(rawEntry).trim();
@@ -1430,7 +1389,6 @@
       return { navAddress, guide };
     }
 
-    /* 네이버 지도 최신 표준 검색 URL */
     function getNaverMapSearchUrl(query) {
       if (!query) return 'https://map.naver.com';
       const cleanQ = String(query).replace(/\s+/g, ' ').trim();
@@ -1531,7 +1489,7 @@
     let tempSearchMarker = null;
     let tempPickedMarker = null;
 
-    let modalMode = 'PROPOSAL'; // 'PROPOSAL', 'ADD', 'EDIT'
+    let modalMode = 'PROPOSAL';
     let modalEditIndex = -1;
     let modalPendingData = { lat: 0, lng: 0, droneStatus: 'ok', address: '' };
     let isPickingLocationMode = false;
@@ -1545,17 +1503,7 @@
       zoomControlOptions: { position: naver.maps.Position.RIGHT_CENTER }
     });
 
-    function updateMarkerLabelsVisibility() {
-      const mapEl = document.getElementById('map');
-      if (map.getZoom() >= LABEL_SHOW_ZOOM_LEVEL) {
-        mapEl.classList.add('show-marker-labels');
-      } else {
-        mapEl.classList.remove('show-marker-labels');
-      }
-    }
-    naver.maps.Event.addListener(map, 'zoom_changed', updateMarkerLabelsVisibility);
-    updateMarkerLabelsVisibility();
-
+    // 팝업창 인스턴스 (초기화)
     const infoWindow = new naver.maps.InfoWindow({ 
       borderWidth: 0,
       disableAnchor: true,
@@ -1647,12 +1595,12 @@
     function getSpotStatusBadges(spot) {
       let html = '';
       if (getSpotViews(spot) >= 5) {
-        html += `<span class="badge-status badge-hot">🔥 HOT!!</span>`;
+        html += `<span class="badge-status badge-hot">🔥 HOT!</span>`;
       }
       
-      const THREE_DAYS_MS = 259200000;
+      const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
       const createdTime = spot.createdAt ? parseInt(spot.createdAt, 10) : (newlyAddedSpotMeta[String(spot.id)] || 0);
-      if (createdTime > 0 && (Date.now() - createdTime) <= THREE_DAYS_MS) {
+      if (createdTime > 0 && (Date.now() - createdTime) <= SEVEN_DAYS_MS) {
         html += `<span class="badge-status badge-new">✨ NEW!</span>`;
       }
       return html;
@@ -1762,6 +1710,41 @@
       return '450m';
     }
 
+    async function searchCoordsByQuery(query) {
+      if (!query?.trim()) return null;
+      const cleanQ = query.trim();
+
+      try {
+        const res = await fetch(`${GAS_API_URL}?action=SEARCH_KAKAO&q=${encodeURIComponent(cleanQ)}&_t=${Date.now()}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.documents && data.documents.length > 0) {
+            const doc = data.documents[0];
+            return {
+              lat: parseFloat(doc.y),
+              lng: parseFloat(doc.x),
+              title: doc.place_name,
+              address: doc.address_name || doc.road_address_name
+            };
+          }
+        }
+      } catch (e) {}
+
+      const naverResult = await new Promise((resolve) => {
+        naver.maps.Service.geocode({ query: cleanQ }, (status, response) => {
+          if (status === naver.maps.Service.Status.OK && response.v2?.addresses?.length > 0) {
+            const item = response.v2.addresses[0];
+            resolve({ lat: parseFloat(item.y), lng: parseFloat(item.x), title: item.roadAddress || item.jibunAddress });
+          } else {
+            resolve(null);
+          }
+        });
+      });
+      if (naverResult) return naverResult;
+
+      return null;
+    }
+
     async function fetchElevationForModal() {
       let lat = modalPendingData.lat;
       let lng = modalPendingData.lng;
@@ -1784,30 +1767,48 @@
           }
         }
       }
-      if (!lat || !lng) return alert('측정할 수 있는 위치 좌표가 없습니다. [📍 지도에서 콕 찍기] 버튼으로 위치를 먼저 지정해주세요.');
+      if (!lat || !lng) return alert('측정할 수 있는 위치 좌표가 없습니다. [📍 콕 찍기] 버튼으로 위치를 먼저 지정해주세요.');
       document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
     }
 
-    /* 팝업창 스마트 화면 중앙 자동 정렬 */
-    function centerMapOnSpot(lat, lng, keepCurrentZoom = true) {
-      const targetZoom = (!keepCurrentZoom && map.getZoom() < 12) ? 13 : map.getZoom();
-      if (map.getZoom() !== targetZoom) {
-        map.setZoom(targetZoom);
-      }
-      
+    /* 마커를 '지도 중앙-왼쪽'에 위치시키고 부드러운 플라이 모션(panTo/morph) 적용 */
+    function smoothCenterMapOnSpot(lat, lng, keepCurrentZoom = true) {
       const isMobile = window.innerWidth <= 768;
       const targetLatLng = new naver.maps.LatLng(lat, lng);
       
-      map.setCenter(targetLatLng);
+      const currentZoom = map.getZoom();
+      const targetZoom = (!keepCurrentZoom && currentZoom < 11) ? 12 : currentZoom;
+      
+      // 카메라 오프셋 계산 (데스크톱: 우측으로 카메라를 옮겨 마커가 화면 좌측 1/3 지점에 오게 설정)
+      const proj = map.getProjection();
+      if (!proj) {
+        map.setCenter(targetLatLng);
+        return;
+      }
 
-      if (isMobile) {
-        setTimeout(() => {
-          map.panBy(new naver.maps.Point(0, -110));
-        }, 30);
+      const targetPoint = proj.fromCoordToOffset(targetLatLng);
+      const offsetX = isMobile ? 0 : 145; // 데스크톱 기준 145px 오른쪽으로 이동 ➔ 마커는 좌측으로 이동
+      const offsetY = isMobile ? -75 : 0;
+
+      const cameraPoint = new naver.maps.Point(targetPoint.x + offsetX, targetPoint.y + offsetY);
+      const cameraLatLng = proj.fromOffsetToCoord(cameraPoint);
+
+      if (map.getZoom() !== targetZoom) {
+        map.morph(cameraLatLng, targetZoom, { duration: 380, easing: 'easeOutCubic' });
       } else {
-        setTimeout(() => {
-          map.panBy(new naver.maps.Point(0, -60));
-        }, 30);
+        map.panTo(cameraLatLng, { duration: 320, easing: 'easeOutCubic' });
+      }
+    }
+
+    /* 팝업창의 수직 중심이 마커 높이와 정확하게 일치하도록 오프셋 설정 */
+    function getResponsiveInfoWindowOffset() {
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile) {
+        // 모바일: 마커 핀 위쪽으로 배치
+        return new naver.maps.Point(0, -145);
+      } else {
+        // 데스크톱: 마커 오른쪽(+180px) & 팝업 세로 중심 수평 일치(+145px)
+        return new naver.maps.Point(180, 145);
       }
     }
 
@@ -1816,16 +1817,18 @@
       
       spotMarkerMap.forEach(m => m.setZIndex(100));
       const marker = spotMarkerMap.get(String(spot.id));
-      if (marker) {
-        marker.setZIndex(999999);
-      }
+      if (marker) marker.setZIndex(999999);
 
       currentActiveSpot = spot;
       currentActiveMarker = marker || new naver.maps.LatLng(spot.lat, spot.lng);
+      
+      infoWindow.setOptions({
+        pixelOffset: getResponsiveInfoWindowOffset()
+      });
       infoWindow.setContent(generateInfoWindowHtml(spot));
       infoWindow.open(map, currentActiveMarker);
 
-      centerMapOnSpot(spot.lat, spot.lng, keepZoom);
+      smoothCenterMapOnSpot(spot.lat, spot.lng, keepZoom);
     }
 
     async function saveUpdatedLocation(spotId, newLat, newLng) {
@@ -1877,156 +1880,6 @@
       });
     }
 
-    function openBulkImportModal() {
-      if (!isAdminMode) return;
-      document.getElementById('bulkImportTextarea').value = '';
-      document.getElementById('bulkStatusMsg').innerText = '';
-      document.getElementById('bulkImportModalOverlay').style.display = 'flex';
-      setTimeout(() => document.getElementById('bulkImportTextarea').focus(), 50);
-    }
-
-    function closeBulkImportModal() {
-      document.getElementById('bulkImportModalOverlay').style.display = 'none';
-    }
-
-    async function searchCoordsByQuery(query) {
-      if (!query?.trim()) return null;
-      const cleanQ = query.trim();
-
-      const naverResult = await new Promise((resolve) => {
-        naver.maps.Service.geocode({ query: cleanQ }, (status, response) => {
-          if (status === naver.maps.Service.Status.OK && response.v2?.addresses?.length > 0) {
-            const item = response.v2.addresses[0];
-            resolve({ lat: parseFloat(item.y), lng: parseFloat(item.x), title: item.roadAddress || item.jibunAddress });
-          } else {
-            resolve(null);
-          }
-        });
-      });
-      if (naverResult) return naverResult;
-
-      try {
-        const pRes = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(cleanQ)}&limit=3&lang=default`);
-        const pData = await pRes.json();
-        if (pData?.features?.length > 0) {
-          const coords = pData.features[0].geometry.coordinates;
-          return { lat: coords[1], lng: coords[0], title: pData.features[0].properties.name || cleanQ };
-        }
-      } catch (e) {}
-
-      return null;
-    }
-
-    async function processBulkImport() {
-      const rawText = document.getElementById('bulkImportTextarea').value.trim();
-      const statusEl = document.getElementById('bulkStatusMsg');
-      const btn = document.getElementById('btnRunBulkImport');
-
-      if (!rawText) return alert('요약 텍스트 또는 JSON을 입력해주세요.');
-
-      btn.disabled = true;
-      statusEl.innerText = '⏳ 데이터 분석 중...';
-
-      let itemsToProcess = [];
-      try {
-        const parsed = JSON.parse(rawText);
-        itemsToProcess = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.spots) ? parsed.spots : [parsed]);
-      } catch (err) {
-        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          try { itemsToProcess = [JSON.parse(jsonMatch[0])]; } catch (e) {}
-        }
-      }
-
-      if (itemsToProcess.length === 0) {
-        const parsedData = {};
-        rawText.split('\n').forEach(line => {
-          const [key, ...vals] = line.split(/[:=]/);
-          if (!key || vals.length === 0) return;
-          const k = key.trim().toLowerCase();
-          const v = vals.join(':').trim();
-          if (k.includes('이름') || k.includes('산') || k === 'name') parsedData.name = v;
-          if (k.includes('들머리') || k.includes('주소') || k === 'entrypoint') parsedData.entryPoint = v;
-          if (k.includes('고도') || k.includes('해발') || k === 'elevation') parsedData.elevation = v;
-          if (k.includes('특징') || k.includes('설명') || k === 'desc') parsedData.desc = v;
-          if (k.includes('거리') || k === 'distance') parsedData.distance = v;
-          if (k.includes('난이도') || k === 'difficulty') parsedData.difficulty = v.replace(/[^0-9]/g, '') || '3';
-          if (k.includes('유튜브') || k.includes('링크') || k.includes('youtube')) parsedData.youtubeUrl = v;
-          if (k.includes('지형') || k === 'terrain') parsedData.terrain = v.split(/[\s,]+/);
-        });
-        if (parsedData.name) itemsToProcess.push(parsedData);
-      }
-
-      if (itemsToProcess.length === 0) {
-        btn.disabled = false;
-        statusEl.innerText = '';
-        return alert('유효한 박지 정보를 찾을 수 없습니다. 이름과 주소를 확인해주세요.');
-      }
-
-      let successCount = 0;
-      const nowTimestamp = Date.now();
-
-      for (let i = 0; i < itemsToProcess.length; i++) {
-        const item = itemsToProcess[i];
-        const name = item.name || `박지_${Date.now()}`;
-        const rawEntry = item.entryPoint || item.address || name;
-        const { navAddress } = parseEntryPoint(rawEntry);
-        
-        statusEl.innerText = `🔍 (${i+1}/${itemsToProcess.length}) '${name}' 위치 좌표 검색 중...`;
-
-        let coords = (item.lat && item.lng) 
-          ? { lat: parseFloat(item.lat), lng: parseFloat(item.lng) }
-          : (await searchCoordsByQuery(navAddress) || await searchCoordsByQuery(name) || { lat: map.getCenter().lat(), lng: map.getCenter().lng() });
-
-        const elevation = item.elevation || await getElevation(coords.lat, coords.lng);
-        const check = autoDetectDroneStatus(coords.lat, coords.lng);
-        const res = detectRegionAndCity(coords.lat, coords.lng, name, rawEntry);
-        const ytList = item.youtubeUrls || (item.youtubeUrl ? [item.youtubeUrl] : []);
-        const newSpotId = item.id ? String(item.id).trim() : String(nowTimestamp + i);
-
-        newlyAddedSpotMeta[newSpotId] = nowTimestamp;
-        localStorage.setItem('okbm_new_spot_meta', JSON.stringify(newlyAddedSpotMeta));
-
-        const newSpot = {
-          id: newSpotId,
-          name, elevation, 
-          entryPoint: rawEntry,
-          lat: coords.lat, lng: coords.lng,
-          region: item.region || res.region,
-          cityName: item.cityName || res.cityName,
-          desc: item.desc || '추천 백패킹 박지',
-          distance: String(item.distance || '').replace(/km/i, '').trim(),
-          youtubeUrls: Array.isArray(ytList) ? ytList : [ytList],
-          blogUrl: item.blogUrl || '',
-          instaId: item.instaId || 'oklionnature',
-          terrain: Array.isArray(item.terrain) ? item.terrain : (item.terrain ? [item.terrain] : ['데크']),
-          difficulty: String(item.difficulty || '3'),
-          droneStatus: item.droneStatus || check.status,
-          searchCount: 1,
-          createdAt: nowTimestamp
-        };
-
-        spots.unshift(newSpot);
-        successCount++;
-
-        try {
-          await fetch(GAS_API_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'ADD', spot: newSpot })
-          });
-        } catch (err) {}
-      }
-
-      renderSpots();
-      if (spots.length > 0) centerMapOnSpot(spots[0].lat, spots[0].lng, false);
-
-      btn.disabled = false;
-      closeBulkImportModal();
-      alert(`🎉 총 ${successCount}개의 박지가 등록되었습니다!`);
-    }
-
     async function fetchCommentsFromSheet() {
       try {
         const res = await fetch(`${GAS_API_URL}?action=GET_COMMENTS&_t=${Date.now()}`);
@@ -2044,7 +1897,7 @@
         badge.style.display = 'inline-block';
         badge.style.opacity = '1';
         badge.style.background = '#0284c7';
-        badge.innerText = '⚡ 시트 동기화 중...';
+        badge.innerText = '⚡ 동기화 중...';
       }
 
       const endpoints = [
@@ -2066,7 +1919,7 @@
       if (!csvText) {
         if (badge) {
           badge.style.background = '#ef4444';
-          badge.innerText = `❌ 시트 로드 실패`;
+          badge.innerText = `❌ 시트 실패`;
         }
         return;
       }
@@ -2158,7 +2011,7 @@
               spots = mapped;
               if (badge) {
                 badge.style.background = '#059669';
-                badge.innerText = `✅ 시트 연동 완료 (${spots.length}개)`;
+                badge.innerText = `✅ 동기화 완료 (${spots.length}개)`;
               }
             }
           }
@@ -2168,7 +2021,7 @@
               badge.style.opacity = '0';
               setTimeout(() => badge.style.display = 'none', 400);
             }
-          }, 2500);
+          }, 2000);
         }
       });
     }
@@ -2209,7 +2062,13 @@
     function getSpotRatingMeta(spotId) {
       const cList = spotComments[spotId] || [];
       if (cList.length === 0) return null;
-      const avg = (cList.reduce((acc, cur) => acc + (parseInt(cur.rating, 10) || 5), 0) / cList.length).toFixed(1);
+      const validRatings = cList.map(c => {
+        let r = Number(c.rating) || 5;
+        if (r > 5) r = 5;
+        if (r < 1) r = 1;
+        return r;
+      });
+      const avg = (validRatings.reduce((acc, cur) => acc + cur, 0) / validRatings.length).toFixed(1);
       return { avg, count: cList.length };
     }
 
@@ -2224,7 +2083,7 @@
         else if (t.includes('동굴')) html += `<span class="meta-tag tag-terrain-cave">🦇 동굴</span>`;
         else html += `<span class="meta-tag tag-terrain-etc">✨ 기타</span>`;
       });
-      html += `<span class="meta-tag tag-diff">난이도 ${'⭐'.repeat(parseInt(spot.difficulty, 10) || 3)}</span>`;
+      html += `<span class="meta-tag tag-diff">난이도 ${'⭐'.repeat(Math.min(5, Math.max(1, parseInt(spot.difficulty, 10) || 3)))}</span>`;
       if (spot.distance?.trim()) {
         html += `<span class="meta-tag tag-dist">🚶 ${escapeHtml(spot.distance.trim().replace(/km$/i, ''))}km</span>`;
       }
@@ -2237,16 +2096,21 @@
     function getCommentsHtml(spotId) {
       const cList = spotComments[spotId] || [];
       let listHtml = cList.length === 0 
-        ? '<li style="color:var(--google-text-tertiary); font-size:0.65rem;">첫 평점과 후기를 남겨보세요!</li>'
-        : cList.map(c => `
-            <li class="comment-item">
-              <div style="flex:1;">
-                <span class="comment-author">${escapeHtml(c.author)}</span>
-                <span class="comment-rating-stars">${'★'.repeat(parseInt(c.rating, 10) || 5)}</span>: 
-                <span class="comment-text">${escapeHtml(c.text)}</span>
-              </div>
-            </li>
-          `).join('');
+        ? '<li style="color:var(--google-text-tertiary); font-size:0.62rem;">첫 평점과 후기를 남겨보세요!</li>'
+        : cList.map(c => {
+            let safeRating = Number(c.rating) || 5;
+            if (safeRating > 5) safeRating = 5;
+            if (safeRating < 1) safeRating = 1;
+            return `
+              <li class="comment-item">
+                <div style="flex:1;">
+                  <span class="comment-author">${escapeHtml(c.author)}</span>
+                  <span class="comment-rating-stars">${'★'.repeat(safeRating)}</span>: 
+                  <span class="comment-text">${escapeHtml(c.text)}</span>
+                </div>
+              </li>
+            `;
+          }).join('');
 
       return `
         <div class="comments-section" onclick="event.stopPropagation();">
@@ -2257,11 +2121,11 @@
           <div class="comment-form">
             <div class="comment-form-row">
               <select class="comment-select-rating" id="cRating_${spotId}">
-                <option value="5" selected>⭐ 5점 (최고)</option>
-                <option value="4">⭐ 4점 (좋음)</option>
-                <option value="3">⭐ 3점 (보통)</option>
-                <option value="2">⭐ 2점 (아쉬움)</option>
-                <option value="1">⭐ 1점 (비추)</option>
+                <option value="5" selected>⭐ 5점</option>
+                <option value="4">⭐ 4점</option>
+                <option value="3">⭐ 3점</option>
+                <option value="2">⭐ 2점</option>
+                <option value="1">⭐ 1점</option>
               </select>
               <input type="text" class="comment-input-author" id="cAuthor_${spotId}" placeholder="닉네임" />
             </div>
@@ -2288,7 +2152,9 @@
       if (!text) return alert('후기 내용을 입력해주세요.');
 
       const author = authorEl?.value.trim() || '백패커';
-      const rating = ratingEl ? parseInt(ratingEl.value, 10) : 5;
+      let rating = ratingEl ? parseInt(ratingEl.value, 10) : 5;
+      if (rating > 5) rating = 5;
+      if (rating < 1) rating = 1;
 
       isCommentSubmitting = true;
       if (submitBtn) submitBtn.disabled = true;
@@ -2327,7 +2193,6 @@
       spotMarkerMap.forEach(m => m.setZIndex(100));
     }
 
-    /* 인포윈도우 HTML */
     function generateInfoWindowHtml(spot) {
       const { navAddress, guide } = parseEntryPoint(spot.entryPoint || spot.name);
       const searchTarget = navAddress || spot.name;
@@ -2337,10 +2202,10 @@
         <div class="compact-info-window" style="position: relative;">
           <div class="compact-title">
             <span>${escapeHtml(spot.name)}</span>
-            ${spot.elevation ? '<span style="font-size:0.75rem; color:#86efac;">(' + escapeHtml(spot.elevation) + ')</span>' : ''}
+            ${spot.elevation ? '<span style="font-size:0.72rem; color:#86efac;">(' + escapeHtml(spot.elevation) + ')</span>' : ''}
             ${getSpotStatusBadges(spot)}
           </div>
-          <button type="button" onclick="closeInfoWindowCompletely()" style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.08); border: 1px solid var(--google-border); width: 22px; height: 22px; border-radius: 50%; font-size: 11px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
+          <button type="button" onclick="closeInfoWindowCompletely()" style="position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--google-border); width: 20px; height: 20px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
           ${getMetaBadgesHtml(spot)}
           <div class="spot-coords-text">📍 ${spot.lat}, ${spot.lng}</div>
           
@@ -2462,7 +2327,7 @@
 
         const groupTitle = document.createElement('div');
         groupTitle.className = 'region-group-title';
-        groupTitle.innerHTML = `<span>📌 ${regionKey}</span><span style="color:var(--google-text-tertiary); font-size:0.74rem;">${items.length}개 ${shouldBeOpen ? '<b style="color:var(--google-accent-blue);">▼</b>' : '▶'}</span>`;
+        groupTitle.innerHTML = `<span>📌 ${regionKey}</span><span style="color:var(--google-text-tertiary); font-size:0.72rem;">${items.length}개 ${shouldBeOpen ? '<b style="color:var(--google-accent-blue);">▼</b>' : '▶'}</span>`;
         if (shouldBeOpen) groupTitle.style.borderLeftColor = '#0f766e';
 
         const groupItemsContainer = document.createElement('div');
@@ -2489,13 +2354,9 @@
           marker.spotData = spot;
           spotMarkerMap.set(String(spot.id), marker);
 
-          naver.maps.Event.addListener(marker, 'mouseover', () => {
-            marker.setZIndex(999999);
-          });
+          naver.maps.Event.addListener(marker, 'mouseover', () => marker.setZIndex(999999));
           naver.maps.Event.addListener(marker, 'mouseout', () => {
-            if (currentActiveSpot?.id !== spot.id) {
-              marker.setZIndex(100);
-            }
+            if (currentActiveSpot?.id !== spot.id) marker.setZIndex(100);
           });
 
           naver.maps.Event.addListener(marker, 'dragend', () => {
@@ -2504,11 +2365,12 @@
             const newLat = parseFloat(movedLatLng.lat().toFixed(6));
             const newLng = parseFloat(movedLatLng.lng().toFixed(6));
 
+            infoWindow.setOptions({ pixelOffset: getResponsiveInfoWindowOffset() });
             infoWindow.setContent(`
               <div class="compact-info-window" style="position: relative;">
                 <div class="compact-title" style="color:var(--google-accent-blue);">📍 '${escapeHtml(spot.name)}' 위치 이동</div>
-                <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.08); border: 1px solid var(--google-border); width: 22px; height: 22px; border-radius: 50%; font-size: 11px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
-                <div style="font-size:0.72rem; color:#ef4444; font-weight:bold;">새 좌표로 위치를 변경하시겠습니까?</div>
+                <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--google-border); width: 20px; height: 20px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
+                <div style="font-size:0.68rem; color:#ef4444; font-weight:bold;">새 좌표로 위치를 변경하시겠습니까?</div>
                 <div class="spot-coords-text">위도: ${newLat}<br>경도: ${newLng}</div>
                 <button type="button" class="btn-save-location" onclick="saveUpdatedLocation('${spot.id}', ${newLat}, ${newLng})">💾 이 위치로 즉시 저장</button>
               </div>
@@ -2529,12 +2391,12 @@
             <div class="spot-header-row">
               <div class="spot-name-wrapper">
                 <span class="spot-name">${escapeHtml(spot.name)}</span>
-                ${spot.elevation ? `<span style="font-size:0.72rem; color:#86efac; font-weight:normal;">(${escapeHtml(spot.elevation)})</span>` : ''}
+                ${spot.elevation ? `<span style="font-size:0.68rem; color:#86efac; font-weight:normal;">(${escapeHtml(spot.elevation)})</span>` : ''}
                 ${getSpotStatusBadges(spot)}
               </div>
             </div>
             ${getMetaBadgesHtml(spot)}
-            <div style="font-size:0.68rem; color:#7dd3fc; margin-top:1px;">🚗 ${escapeHtml(navAddress || spot.entryPoint)}</div>
+            <div style="font-size:0.66rem; color:#7dd3fc; margin-top:1px;">🚗 ${escapeHtml(navAddress || spot.entryPoint)}</div>
             ${firstLineDesc ? `<div class="spot-desc-single" title="${escapeHtml(spot.desc)}">📝 ${escapeHtml(firstLineDesc)}</div>` : ''}
             ${getMediaLinksHtml(spot)}
             <div class="spot-action-btns">
@@ -2563,7 +2425,6 @@
       updateAdminUI();
     }
 
-    /* 일반 사용자용 제보 모달 열기 */
     function openUserProposalModal() {
       modalMode = 'PROPOSAL';
       modalPendingData = { lat: 0, lng: 0, droneStatus: 'ok', address: '' };
@@ -2591,7 +2452,6 @@
       setTimeout(() => document.getElementById('modalInputName').focus(), 50);
     }
 
-    /* 지도에서 직접 위치 콕 찍기 모드 시작 */
     function startPinPicking() {
       isPickingLocationMode = true;
       document.getElementById('customModalOverlay').style.display = 'none';
@@ -2604,12 +2464,10 @@
       document.getElementById('customModalOverlay').style.display = 'flex';
     }
 
-    /* 지도 클릭 이벤트 (직접 찍기 및 관리자 빠른등록 통합) */
     naver.maps.Event.addListener(map, 'click', function(e) {
       const lat = parseFloat(e.coord.lat().toFixed(6));
       const lng = parseFloat(e.coord.lng().toFixed(6));
 
-      // 1) 지도에서 콕 찍기 모드인 경우
       if (isPickingLocationMode) {
         isPickingLocationMode = false;
         document.getElementById('pinPickerBanner').style.display = 'none';
@@ -2629,7 +2487,6 @@
 
         document.getElementById('modalInputCoordsDisplay').value = `📍 위도: ${lat}, 경도: ${lng}`;
 
-        // 주소 자동 역추적 및 고도 측정
         naver.maps.Service.reverseGeocode({
           coords: new naver.maps.LatLng(lat, lng),
           orders: [naver.maps.Service.OrderType.ADDR, naver.maps.Service.OrderType.ROAD_ADDR].join(',')
@@ -2647,7 +2504,6 @@
         return;
       }
 
-      // 2) 관리자 모드에서 클릭 시 빠른 등록
       if (isAdminMode) {
         const check = autoDetectDroneStatus(lat, lng);
         naver.maps.Service.reverseGeocode({
@@ -2676,28 +2532,67 @@
       if (idx !== -1) deleteSpot(event, idx);
     }
 
+    /* 초정밀 스마트 통합 검색 */
     async function executeSearch() {
-      const query = document.getElementById('topSearchInput').value.trim();
-      if (!query) return;
+      const rawQuery = document.getElementById('topSearchInput').value.trim();
+      if (!rawQuery) return;
+      
       const dropdown = document.getElementById('searchDropdown');
-      dropdown.innerHTML = '<li class="dropdown-item" style="color:var(--google-text-secondary);">🔍 산/계곡/관광지 검색 중...</li>';
+      dropdown.innerHTML = '<li class="dropdown-item" style="color:var(--google-text-secondary);">🔍 전국 봉우리/산/명소 검색 중...</li>';
       dropdown.style.display = 'block';
 
       const results = [];
       const seenCoords = new Set();
 
-      spots.filter(s => s.name.toLowerCase().includes(query.toLowerCase()) || s.desc?.toLowerCase().includes(query.toLowerCase()) || s.entryPoint?.toLowerCase().includes(query.toLowerCase()))
+      // [1] 이미 등록된 내 백패킹 박지 목록에서 검색
+      spots.filter(s => s.name.toLowerCase().includes(rawQuery.toLowerCase()) || 
+                        s.desc?.toLowerCase().includes(rawQuery.toLowerCase()) || 
+                        s.entryPoint?.toLowerCase().includes(rawQuery.toLowerCase()))
         .forEach(spot => {
           seenCoords.add(`${spot.lat.toFixed(4)},${spot.lng.toFixed(4)}`);
-          results.push({ title: `[등록박지] ${spot.name}`, sub: spot.entryPoint, lat: spot.lat, lng: spot.lng, isInternal: true, spotObj: spot });
+          results.push({ 
+            title: `[등록박지] ${spot.name}`, 
+            sub: spot.entryPoint, 
+            lat: spot.lat, 
+            lng: spot.lng, 
+            isInternal: true, 
+            spotObj: spot 
+          });
         });
 
-      const naverPromise = new Promise((resolve) => {
-        naver.maps.Service.geocode({ query }, (status, response) => {
+      // [2] 구글 시트 백엔드 경유 카카오 장소/봉우리 검색
+      try {
+        const kRes = await fetch(`${GAS_API_URL}?action=SEARCH_KAKAO&q=${encodeURIComponent(rawQuery)}&_t=${Date.now()}`);
+        if (kRes.ok) {
+          const kData = await kRes.json();
+          (kData.documents || []).forEach(doc => {
+            const lat = parseFloat(doc.y);
+            const lng = parseFloat(doc.x);
+            const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+            if (!seenCoords.has(key)) {
+              seenCoords.add(key);
+              results.push({
+                title: doc.place_name,
+                sub: `${doc.category_name ? `[${doc.category_name.split('>').pop().trim()}] ` : ''}${doc.address_name || doc.road_address_name}`,
+                lat,
+                lng
+              });
+            }
+          });
+        }
+      } catch (err) {}
+
+      // [3] 네이버 주소 Geocoder 보조 검색
+      const cleanAddressQuery = rawQuery.replace(/(마을회관|노인정|쉼터|주차장|캠핑장|입구|등산로|관리사무소|회관|봉|산)/g, '').trim();
+      const queryList = [rawQuery];
+      if (cleanAddressQuery && cleanAddressQuery !== rawQuery) queryList.push(cleanAddressQuery);
+
+      const naverPromises = queryList.map(q => new Promise((resolve) => {
+        naver.maps.Service.geocode({ query: q }, (status, response) => {
           if (status === naver.maps.Service.Status.OK && response.v2?.addresses?.length > 0) {
             resolve(response.v2.addresses.map(item => ({
               title: item.roadAddress || item.jibunAddress,
-              sub: '도로명/지번 주소',
+              sub: item.jibunAddress ? `(지번) ${item.jibunAddress}` : '도로명 주소',
               lat: parseFloat(item.y),
               lng: parseFloat(item.x)
             })));
@@ -2705,14 +2600,10 @@
             resolve([]);
           }
         });
-      });
+      }));
 
-      const photonPromise = fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=4&lang=default`)
-        .then(res => res.json()).catch(() => ({ features: [] }));
-
-      const [naverList, photonData] = await Promise.all([naverPromise, photonPromise]);
-
-      naverList.forEach(item => {
+      const naverResLists = await Promise.all(naverPromises);
+      naverResLists.flat().forEach(item => {
         const key = `${item.lat.toFixed(4)},${item.lng.toFixed(4)}`;
         if (!seenCoords.has(key)) {
           seenCoords.add(key);
@@ -2720,28 +2611,15 @@
         }
       });
 
-      (photonData?.features || []).forEach(f => {
-        const [lng, lat] = f.geometry.coordinates;
-        const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
-        if (!seenCoords.has(key)) {
-          seenCoords.add(key);
-          const rawSub = [f.properties.state, f.properties.city, f.properties.district].filter(Boolean).join(' ');
-          results.push({
-            title: f.properties.name || query,
-            sub: formatKoreanSubAddress(rawSub, lat, lng) || '자연지형/명소',
-            lat, lng
-          });
-        }
-      });
-
-      renderSearchResults(results);
+      renderSearchResults(results, rawQuery);
     }
 
-    function renderSearchResults(results) {
+    function renderSearchResults(results, query) {
       const dropdown = document.getElementById('searchDropdown');
       dropdown.innerHTML = `<div class="dropdown-header"><span>🔍 검색 결과</span><span>${results.length}건</span></div>`;
+
       if (results.length === 0) {
-        dropdown.innerHTML += '<li class="dropdown-item" style="color:#ef4444;">검색 결과가 없습니다. 산/계곡/관광지 이름을 더 자세히 입력해보세요.</li>';
+        dropdown.innerHTML += '<li class="dropdown-item" style="color:#ef4444;">검색 결과가 없습니다. 이름을 다시 확인해보세요.</li>';
         return;
       }
 
@@ -2751,13 +2629,13 @@
         li.className = 'dropdown-item';
         li.innerHTML = `
           <div class="dropdown-info">
-            <div><strong style="color:${item.isInternal ? 'var(--google-accent-blue)' : '#f8fafc'};">${escapeHtml(item.title)}</strong> ${item.sub ? `<span style="font-size:0.72rem; color:var(--google-text-tertiary);">(${escapeHtml(item.sub)})</span>` : ''}</div>
-            <div style="margin-top:3px;">${getDroneBadgeHtml(check.status, check.reason)}</div>
+            <div><strong style="color:${item.isInternal ? 'var(--google-accent-blue)' : '#f8fafc'};">${escapeHtml(item.title)}</strong> ${item.sub ? `<span style="font-size:0.68rem; color:var(--google-text-tertiary);">(${escapeHtml(item.sub)})</span>` : ''}</div>
+            <div style="margin-top:2px;">${getDroneBadgeHtml(check.status, check.reason)}</div>
           </div>
           <button type="button" class="btn-quick-add" style="display:${isAdminMode && !item.isInternal ? 'inline-block' : 'none'};">➕ 등록</button>
         `;
         li.querySelector('.dropdown-info').addEventListener('click', () => {
-          centerMapOnSpot(parseFloat(item.lat), parseFloat(item.lng), false);
+          smoothCenterMapOnSpot(parseFloat(item.lat), parseFloat(item.lng), false);
           if (tempSearchMarker) tempSearchMarker.setMap(null);
 
           if (item.isInternal && item.spotObj) {
@@ -2870,7 +2748,6 @@
       const difficulty = document.getElementById('modalSelectDiff').value;
       if (!name) return alert('산(박지) 이름을 입력해주세요.');
 
-      // 좌표 미지정 시 이름/들머리로 자동 역추적 시도
       let finalLat = modalPendingData.lat;
       let finalLng = modalPendingData.lng;
       if (!finalLat || !finalLng) {
@@ -2912,7 +2789,7 @@
         return;
       }
 
-      /* [관리자 직접 추가 모드] */
+      /* [관리자 직접 추가 모드 - 왼쪽 목록 & 오른쪽 지도 즉시 동시 노출] */
       if (modalMode === 'ADD') {
         const res = detectRegionAndCity(finalLat, finalLng, name, entryPoint);
         const newSpotId = String(Date.now());
@@ -2932,9 +2809,16 @@
           searchCount: 1,
           createdAt: nowTimestamp
         };
+        
         spots.unshift(newSpot);
         renderSpots(newSpot.region);
-        centerMapOnSpot(newSpot.lat, newSpot.lng, false);
+        
+        const sidebarList = document.getElementById('spotList');
+        if (sidebarList) sidebarList.scrollTop = 0;
+
+        setTimeout(() => {
+          focusSpotOnMap(newSpot, false);
+        }, 100);
 
         try {
           await fetch(GAS_API_URL, {
@@ -2943,7 +2827,7 @@
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: 'ADD', spot: newSpot })
           });
-          alert(`✅ '${newSpot.name}' 박지가 구글 시트에 즉시 등록되었습니다!`);
+          alert(`✅ '${newSpot.name}' 박지가 구글 시트와 지도에 즉시 등록되었습니다!`);
         } catch (err) {}
 
       /* [관리자 수정 모드] */
@@ -2953,6 +2837,7 @@
         Object.assign(target, { name, elevation, entryPoint, lat: finalLat, lng: finalLng, desc, distance, youtubeUrls, blogUrl, instaId, terrain: terrain.length > 0 ? terrain : ['데크'], difficulty, region: res.region, cityName: res.cityName });
 
         renderSpots(target.region);
+        setTimeout(() => focusSpotOnMap(target, true), 100);
 
         try {
           await fetch(GAS_API_URL, {
@@ -2996,8 +2881,7 @@
     }
 
     function resetMapView() {
-      map.setCenter(DEFAULT_MAP_CENTER);
-      map.setZoom(DEFAULT_MAP_ZOOM);
+      map.morph(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, { duration: 400, easing: 'easeOutCubic' });
       closeInfoWindowCompletely();
       droneHoverInfoWindow.close();
       if (tempSearchMarker) {
@@ -3048,9 +2932,9 @@
 
         naver.maps.Event.addListener(circle, 'mouseover', (e) => {
           droneHoverInfoWindow.setContent(`
-            <div style="padding: 6px 10px; color: #f8fafc; line-height: 1.35; white-space: nowrap; pointer-events: none; border-radius: 8px;">
-              <strong style="color: ${zone.isStrict ? '#f87171' : '#fde047'}; font-size: 0.76rem;">[${zone.isPark ? '🚫 국립공원 비행금지' : (zone.isStrict ? '🚫 비행금지구역' : '⚠️ 관제/훈련공역')}] ${escapeHtml(zone.name)}</strong><br>
-              <span style="color: #cbd5e1; font-size: 0.65rem; opacity: 0.9;">🚨 이유: ${escapeHtml(zone.desc || '드론 비행 및 촬영 승인 필수 구역')}</span>
+            <div style="padding: 5px 8px; color: #f8fafc; line-height: 1.3; white-space: nowrap; pointer-events: none; border-radius: 6px;">
+              <strong style="color: ${zone.isStrict ? '#f87171' : '#fde047'}; font-size: 0.72rem;">[${zone.isPark ? '🚫 국립공원 금지' : (zone.isStrict ? '🚫 비행금지' : '⚠️ 관제공역')}] ${escapeHtml(zone.name)}</strong><br>
+              <span style="color: #cbd5e1; font-size: 0.62rem; opacity: 0.9;">🚨 ${escapeHtml(zone.desc || '비행/촬영 승인 필수')}</span>
             </div>
           `);
           droneHoverInfoWindow.open(map, e.coord);
