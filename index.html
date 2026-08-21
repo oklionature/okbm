@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -34,6 +35,7 @@
       --google-accent-blue: #38bdf8;
       --google-accent-teal: #2dd4bf;
       --google-accent-emerald: #10b981;
+      --google-accent-amber: #f59e0b;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -42,7 +44,8 @@
       max-width: 100vw;
       height: 100%; 
       height: 100dvh;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: hidden;
       display: flex;
       flex-direction: column;
       font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
@@ -50,7 +53,7 @@
       color: var(--google-text-primary);
     }
     
-    /* 헤더: Flexbox 아이템으로 분리하여 절대 겹침 방지 */
+    /* 헤더 */
     .header {
       width: 100%;
       min-height: 70px;
@@ -275,6 +278,7 @@
       flex-shrink: 0;
       z-index: 500;
       color: var(--google-text-primary);
+      overflow-x: hidden;
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -289,6 +293,7 @@
       justify-content: space-between;
       align-items: center;
       flex-shrink: 0;
+      width: 100%;
     }
 
     .version-tag {
@@ -324,6 +329,7 @@
       gap: 6px;
       flex-wrap: wrap;
       flex-shrink: 0;
+      width: 100%;
     }
     .admin-tool-btn {
       flex: 1;
@@ -351,6 +357,8 @@
       padding: 8px 12px;
       flex-shrink: 0;
       z-index: 100;
+      width: 100%;
+      overflow-x: hidden;
     }
     .region-filter-bar, .terrain-filter-bar {
       display: flex;
@@ -359,6 +367,7 @@
       align-items: center;
       padding-bottom: 2px;
       -webkit-overflow-scrolling: touch;
+      width: 100%;
     }
     .region-filter-bar::-webkit-scrollbar, .terrain-filter-bar::-webkit-scrollbar { height: 3px; }
     .region-filter-bar::-webkit-scrollbar-thumb, .terrain-filter-bar::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
@@ -372,6 +381,7 @@
       background: var(--google-bg-surface);
       padding: 3px 6px;
       border-radius: 6px;
+      flex-shrink: 0;
     }
     .filter-btn {
       padding: 4px 10px;
@@ -404,18 +414,24 @@
     .spot-list { 
       flex: 1; 
       overflow-y: auto; 
+      overflow-x: hidden !important;
       list-style: none; 
       position: relative;
       background: var(--google-bg-surface);
+      width: 100%;
     }
     .spot-list::-webkit-scrollbar { width: 4px; }
     .spot-list::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
     
-    .region-group { border-bottom: 1px solid var(--google-border-subtle); }
+    .region-group { 
+      border-bottom: 1px solid var(--google-border-subtle); 
+      width: 100%;
+      overflow-x: hidden;
+    }
     .region-group-title {
       padding: 9px 14px;
       background-color: var(--google-bg-deep);
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       font-weight: 700;
       color: var(--google-text-secondary);
       cursor: pointer;
@@ -425,6 +441,8 @@
       user-select: none;
       border-left: 3px solid transparent;
       transition: all 0.15s;
+      width: 100%;
+      box-sizing: border-box;
     }
     .region-group-title:hover { background-color: var(--google-bg-card); border-left-color: var(--google-accent-blue); color: #ffffff; }
 
@@ -439,6 +457,8 @@
       gap: 5px;
       background: var(--google-bg-surface);
       transition: background 0.15s;
+      width: 100%;
+      box-sizing: border-box;
     }
     .spot-item:hover { background-color: var(--google-bg-card); }
     .spot-header-row {
@@ -649,7 +669,7 @@
     .dot-yellow { background: #f59e0b; }
     .dot-red { background: #ef4444; }
 
-    /* 커스텀 지도 마커 및 완벽한 최상단 라벨 스타일 */
+    /* 커스텀 지도 마커 및 최상단 라벨 */
     .custom-spot-marker-wrap {
       position: relative;
       display: flex;
@@ -749,20 +769,31 @@
       color: #7dd3fc;
       background: rgba(2, 132, 199, 0.15);
       border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 4px 8px;
+      padding: 5px 8px;
       border-radius: 8px;
       width: 100%;
       word-break: break-all;
-      white-space: pre-line;
       line-height: 1.3;
       text-decoration: none;
       display: block;
       cursor: pointer;
       transition: all 0.15s ease;
+      font-weight: 700;
     }
     .compact-entry-link:hover {
       background: #0284c7;
       color: #ffffff !important;
+    }
+
+    .entry-guide-chip {
+      font-size: 0.7rem;
+      color: #fde047;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      padding: 4px 8px;
+      border-radius: 8px;
+      line-height: 1.35;
+      word-break: keep-all;
     }
 
     .compact-desc {
@@ -926,7 +957,7 @@
     .mobile-float-toggle { background: #0284c7; color: #ffffff; flex: 1.35; font-size: 0.8rem; border-color: rgba(255,255,255,0.3); }
     .mobile-float-reset { background: rgba(31, 37, 54, 0.95); color: #ffffff; flex: 1; }
 
-    /* 모바일 전용 반응형 수정 (Flex 자동 높이 계산 적용) */
+    /* 모바일 전용 반응형 */
     @media (max-width: 768px) {
       .header { 
         height: auto !important;
@@ -991,12 +1022,12 @@
       }
       .mobile-floating-controls { display: flex; }
       
-      /* 마진 겹침을 없애고 Flex로 자동 높이 분할 */
       .container { 
         margin-top: 0 !important; 
         flex: 1 !important;
         height: 100% !important; 
         position: relative !important;
+        overflow: hidden !important;
       }
       
       #map { 
@@ -1010,7 +1041,8 @@
       .sidebar { 
         position: absolute;
         top: 0; left: 0; right: 0;
-        width: 100%; 
+        width: 100% !important; 
+        max-width: 100vw !important;
         height: calc(100% - 65px) !important; 
         z-index: 300;
         border-right: none; 
@@ -1018,6 +1050,7 @@
         box-shadow: 0 12px 36px rgba(0,0,0,0.85);
         transform: translateY(0);
         border-radius: 0 0 16px 16px;
+        overflow-x: hidden !important;
       }
       
       .sidebar.collapsed { 
@@ -1033,7 +1066,7 @@
       .badge-status { font-size: 0.6rem !important; padding: 1px 4px !important; }
       .filter-btn { font-size: 0.72rem !important; padding: 4px 10px !important; }
       .filter-label { font-size: 0.72rem !important; }
-      .region-group-title { font-size: 0.82rem !important; padding: 8px 12px !important; }
+      .region-group-title { font-size: 0.82rem !important; padding: 9px 12px !important; }
     }
   </style>
 </head>
@@ -1072,7 +1105,7 @@
         <div style="display:flex; align-items:center; gap:6px;">
           <span>📍 백패킹 박지 목록</span>
           <span id="spotCount" style="color: var(--google-accent-blue); font-size: 0.78rem; font-weight: bold;">0개</span>
-          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()">2.8ver</span>
+          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()">3.0ver</span>
         </div>
         <a id="sheetEditLink" href="#" target="_blank" rel="noopener noreferrer" class="sheet-edit-link">📊 구글 시트 편집</a>
       </div>
@@ -1144,7 +1177,7 @@
 
       <div class="modal-field">
         <label>요약 텍스트 또는 JSON 붙여넣기</label>
-        <textarea id="bulkImportTextarea" class="modal-input modal-textarea" style="min-height: 170px; font-family: monospace; font-size: 0.78rem;" placeholder='{\n  "name": "통영 수우도",\n  "entryPoint": "경남 통영시 사량면 돈지리",\n  "elevation": "196m",\n  "desc": "환상적인 바다 전망과 고래바위가 있는 섬 백패킹 박지",\n  "terrain": ["섬","노지"],\n  "difficulty": "2",\n  "distance": "3.2",\n  "youtubeUrl": "https://youtu.be/..."\n}'></textarea>
+        <textarea id="bulkImportTextarea" class="modal-input modal-textarea" style="min-height: 170px; font-family: monospace; font-size: 0.78rem;" placeholder='{\n  "name": "상주 매악산 국사봉",\n  "entryPoint": "경북 상주시 사벌국면면 묵상리 45, 임도따라 계속 전진",\n  "elevation": "385m",\n  "desc": "360도 파노라마 뷰 및 낙동강 운해 명소",\n  "terrain": ["노지","데크"],\n  "difficulty": "1",\n  "distance": "0.1",\n  "youtubeUrl": "https://youtu.be/..."\n}'></textarea>
       </div>
 
       <div id="bulkStatusMsg" style="font-size:0.74rem; color:var(--google-accent-blue); min-height: 18px; font-weight:600;"></div>
@@ -1167,8 +1200,8 @@
       </div>
 
       <div class="modal-field">
-        <label>2. 들머리 (주소 / 등산로 입구) *</label>
-        <textarea id="modalInputEntry" class="modal-input modal-textarea" rows="2" placeholder="예: 경남 통영시 사량면"></textarea>
+        <label>2. 들머리 (네비 주소, 쉼표(,) 후 부가설명 가능) *</label>
+        <textarea id="modalInputEntry" class="modal-input modal-textarea" rows="2" placeholder="예: 경북 상주시 사벌국면면 묵상리 45, 입력후 임도따라 전진"></textarea>
       </div>
 
       <div class="modal-field">
@@ -1240,9 +1273,9 @@
 
   <script>
     /* =========================================================================
-       버전 자동 연동 관리 상수 (수정 시 여기만 변경하면 전체 UI에 즉시 반영)
+       버전 관리 상수 (3.0ver)
        ========================================================================= */
-    const BASE_VERSION_NUM = 2.8;
+    const BASE_VERSION_NUM = 3.0;
     const CURRENT_VERSION = `${BASE_VERSION_NUM.toFixed(1)}ver`;
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -1266,6 +1299,23 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+    }
+
+    /* 들머리 쉼표(,) 분리 파서: 쉼표 앞은 순수 네비 검색 주소, 쉼표 뒤는 길안내 팁 */
+    function parseEntryPoint(rawEntry) {
+      if (!rawEntry) return { navAddress: '', guide: '' };
+      const str = String(rawEntry).trim();
+      const parts = str.split(/[,]+/);
+      const navAddress = parts[0].trim();
+      const guide = parts.slice(1).map(p => p.trim()).filter(Boolean).join(', ');
+      return { navAddress, guide };
+    }
+
+    /* 네이버 지도 최신 표준 검색 URL 생성기 */
+    function getNaverMapSearchUrl(query) {
+      if (!query) return 'https://map.naver.com';
+      const cleanQ = String(query).replace(/\s+/g, ' ').trim();
+      return `https://map.naver.com/p/search/${encodeURIComponent(cleanQ)}`;
     }
 
     const restrictedZones = [
@@ -1599,7 +1649,7 @@
       document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
     }
 
-    /* 팝업창 스마트 화면 중앙 자동 정렬 (픽셀 투영 기준) */
+    /* 팝업창 스마트 화면 중앙 자동 정렬 */
     function centerMapOnSpot(lat, lng, keepCurrentZoom = true) {
       const targetZoom = (!keepCurrentZoom && map.getZoom() < 12) ? 13 : map.getZoom();
       if (map.getZoom() !== targetZoom) {
@@ -1780,17 +1830,18 @@
       for (let i = 0; i < itemsToProcess.length; i++) {
         const item = itemsToProcess[i];
         const name = item.name || `박지_${Date.now()}`;
-        const entryPoint = item.entryPoint || item.address || name;
+        const rawEntry = item.entryPoint || item.address || name;
+        const { navAddress } = parseEntryPoint(rawEntry);
         
         statusEl.innerText = `🔍 (${i+1}/${itemsToProcess.length}) '${name}' 위치 좌표 검색 중...`;
 
         let coords = (item.lat && item.lng) 
           ? { lat: parseFloat(item.lat), lng: parseFloat(item.lng) }
-          : (await searchCoordsByQuery(entryPoint) || await searchCoordsByQuery(name) || { lat: map.getCenter().lat(), lng: map.getCenter().lng() });
+          : (await searchCoordsByQuery(navAddress) || await searchCoordsByQuery(name) || { lat: map.getCenter().lat(), lng: map.getCenter().lng() });
 
         const elevation = item.elevation || await getElevation(coords.lat, coords.lng);
         const check = autoDetectDroneStatus(coords.lat, coords.lng);
-        const res = detectRegionAndCity(coords.lat, coords.lng, name, entryPoint);
+        const res = detectRegionAndCity(coords.lat, coords.lng, name, rawEntry);
         const ytList = item.youtubeUrls || (item.youtubeUrl ? [item.youtubeUrl] : []);
         const newSpotId = item.id ? String(item.id).trim() : String(nowTimestamp + i);
 
@@ -1799,7 +1850,8 @@
 
         const newSpot = {
           id: newSpotId,
-          name, elevation, entryPoint,
+          name, elevation, 
+          entryPoint: rawEntry,
           lat: coords.lat, lng: coords.lng,
           region: item.region || res.region,
           cityName: item.cityName || res.cityName,
@@ -2136,8 +2188,12 @@
       spotMarkerMap.forEach(m => m.setZIndex(100));
     }
 
+    /* 인포윈도우 HTML: 네이버 최신 공식 링크 적용 */
     function generateInfoWindowHtml(spot) {
-      const cleanAddress = (spot.entryPoint || spot.name).replace(/\n/g, ' ').trim();
+      const { navAddress, guide } = parseEntryPoint(spot.entryPoint || spot.name);
+      const searchTarget = navAddress || spot.name;
+      const naverSearchUrl = getNaverMapSearchUrl(searchTarget);
+
       return `
         <div class="compact-info-window" style="position: relative;">
           <div class="compact-title">
@@ -2148,7 +2204,11 @@
           <button type="button" onclick="closeInfoWindowCompletely()" style="position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.08); border: 1px solid var(--google-border); width: 22px; height: 22px; border-radius: 50%; font-size: 11px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
           ${getMetaBadgesHtml(spot)}
           <div class="spot-coords-text">📍 ${spot.lat}, ${spot.lng}</div>
-          <a href="https://map.naver.com/v5/search/${encodeURIComponent(cleanAddress)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link" title="클릭 시 네이버 지도로 이동">🚗 들머리: ${escapeHtml(spot.entryPoint)} ↗</a>
+          
+          <a href="${escapeHtml(naverSearchUrl)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link" title="클릭 시 네이버 지도 검색으로 이동">🚗 들머리 네비: ${escapeHtml(navAddress || '들머리 정보 미입력')} ↗</a>
+          
+          ${guide ? `<div class="entry-guide-chip">💡 길 안내: ${escapeHtml(guide)}</div>` : ''}
+
           <div class="compact-desc">📝 특징:\n${escapeHtml(spot.desc)}</div>
           ${getMediaLinksHtml(spot)}
           ${getCommentsHtml(spot.id)}
@@ -2290,7 +2350,6 @@
           marker.spotData = spot;
           spotMarkerMap.set(String(spot.id), marker);
 
-          // 마우스 오버 시 네이버 지도 오버레이 계층 자체를 최상위(999999)로 끌어올림
           naver.maps.Event.addListener(marker, 'mouseover', () => {
             marker.setZIndex(999999);
           });
@@ -2323,6 +2382,8 @@
           });
 
           const firstLineDesc = (spot.desc || '').split('\n')[0].trim();
+          const { navAddress } = parseEntryPoint(spot.entryPoint);
+
           const li = document.createElement('div');
           li.className = 'spot-item';
           li.innerHTML = `
@@ -2334,6 +2395,7 @@
               </div>
             </div>
             ${getMetaBadgesHtml(spot)}
+            <div style="font-size:0.68rem; color:#7dd3fc; margin-top:1px;">🚗 ${escapeHtml(navAddress || spot.entryPoint)}</div>
             ${firstLineDesc ? `<div class="spot-desc-single" title="${escapeHtml(spot.desc)}">📝 ${escapeHtml(firstLineDesc)}</div>` : ''}
             ${getMediaLinksHtml(spot)}
             <div class="spot-action-btns">
