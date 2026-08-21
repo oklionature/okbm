@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -7,7 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>대한민국 낭만 백패킹 로드 | 지도</title>
+  <title>대한민국 낭만 백패킹 로드 | 지도 (4.1ver)</title>
   
   <!-- Naver Maps Open API -->
   <script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=nokunumn03&submodules=geocoder"></script>
@@ -160,7 +161,7 @@
     }
     .admin-only-btn:hover { background: #115e59; }
 
-    /* PC 검색창 */
+    /* PC 검색창 대폭 확대 */
     .search-container { position: relative; display: flex; align-items: center; width: 330px; }
     .search-input {
       width: 100%;
@@ -1053,7 +1054,7 @@
     .modal-input:focus { border-color: var(--google-accent-blue); }
     
     .checkbox-group { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.74rem; color: var(--google-text-secondary); font-weight: 600; }
-    .checkbox-group label { display: flex; align-items: center; gap: 3px; cursor: pointer; }
+    .checkbox-group label { display: align-items: center; gap: 3px; cursor: pointer; }
     .select-diff { padding: 5px 7px; border-radius: 6px; border: 1px solid var(--google-border); font-size: 0.74rem; color: var(--google-text-primary); outline: none; background: var(--google-bg-deep); }
     
     .modal-btn-row { display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px; }
@@ -1219,7 +1220,7 @@
         <div class="sidebar-header-left">
           <span>📍 박지 목록</span>
           <span id="spotCount" style="color: var(--google-accent-blue); font-size: 0.74rem; font-weight: bold;">0개</span>
-          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()">3.7ver</span>
+          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()">4.1ver</span>
         </div>
 
         <div class="sidebar-header-actions">
@@ -1391,27 +1392,14 @@
 
   <script>
     /* =========================================================================
-       버전 관리 상수 (3.7ver)
+       버전 관리 상수 (4.1ver)
        ========================================================================= */
-    const BASE_VERSION_NUM = 3.7;
+    const BASE_VERSION_NUM = 4.1;
     const CURRENT_VERSION = `${BASE_VERSION_NUM.toFixed(1)}ver`;
 
     document.addEventListener('DOMContentLoaded', () => {
       const vTag = document.getElementById('versionTagBtn');
       if (vTag) vTag.innerText = CURRENT_VERSION;
-
-      // [메인 포털 연동] URL 파라미터(?q=검색어)가 있을 경우 시트 로딩 후 자동 검색
-      const urlParams = new URLSearchParams(window.location.search);
-      const initialQuery = urlParams.get('q');
-      if (initialQuery) {
-        setTimeout(() => {
-          const input = document.getElementById('topSearchInput');
-          if (input) {
-            input.value = initialQuery;
-            executeSearch();
-          }
-        }, 1200);
-      }
     });
 
     const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
@@ -1611,7 +1599,7 @@
 
     document.getElementById('sheetEditLink').href = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/edit`;
 
-    /* PC 사이드바 접기/열기 */
+    /* PC 사이드바 토글 함수 */
     function togglePcSidebar() {
       isPcSidebarCollapsed = !isPcSidebarCollapsed;
       const sidebar = document.getElementById('sidebar');
@@ -1653,7 +1641,7 @@
     }
 
     function getSpotViews(spot) {
-      return spot.searchCount || parseInt(localStorage.getItem(`okbm_views_${spot.id}`), 10) || 0;
+      return spot.searchCount || parseInt(localStorage.getItem(`okbm_views_${spot.id}`), 10) || parseInt(localStorage.getItem(`okbm_views_${spot.name}`), 10) || 0;
     }
 
     function getSpotStatusBadges(spot) {
@@ -1746,6 +1734,14 @@
       if (lat < 36.0 && lng > 127.8) return { region: '경상', cityName: '경상' };
       if (lat < 35.8 && lng <= 127.8) return { region: '전라', cityName: '전라' };
       return { region: '경기', cityName: '경기' };
+    }
+
+    function formatKoreanSubAddress(rawSub, lat, lng) {
+      if (!rawSub || (/[a-zA-Z]/.test(rawSub) && !/[가-힣]/.test(rawSub))) {
+        const auto = detectRegionAndCity(lat, lng);
+        return auto.cityName || auto.region;
+      }
+      return rawSub;
     }
 
     async function getElevation(lat, lng) {
@@ -1867,10 +1863,12 @@
     function focusSpotOnMap(spot, keepZoom = false) {
       incrementSpotCount(spot.id);
       
+      // 1) 마커 하이라이트
       spotMarkerMap.forEach(m => m.setZIndex(100));
       const marker = spotMarkerMap.get(String(spot.id));
       if (marker) marker.setZIndex(999999);
 
+      // 2) 왼쪽 사이드바 카드 네온 글로우 & 자동 스크롤
       document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active-spot'));
       const activeCard = document.getElementById(`spotItem_${spot.id}`);
       if (activeCard) {
@@ -2045,7 +2043,7 @@
 
               const res = detectRegionAndCity(lat, lng, name, entryPoint);
               const spotId = getVal('id') ? String(getVal('id')).trim() : String(Date.now() + idx);
-              const savedViews = parseInt(localStorage.getItem(`okbm_views_${spotId}`), 10) || 0;
+              const savedViews = parseInt(localStorage.getItem(`okbm_views_${spotId}`), 10) || parseInt(localStorage.getItem(`okbm_views_${name}`), 10) || 0;
               const rawCreatedAt = getVal('createdAt', '생성일');
               const createdAt = rawCreatedAt ? parseInt(rawCreatedAt, 10) : 0;
 
@@ -2079,6 +2077,35 @@
             }
           }
           renderSpots();
+
+          // 🔥 [먹통 해결 & 완벽 팝업 연동] 시트 다운로드가 끝난 직후 즉시 포커스 실행!
+          const urlParams = new URLSearchParams(window.location.search);
+          const spotParam = urlParams.get('spot');
+          const qParam = urlParams.get('q');
+          const targetName = spotParam || qParam;
+
+          if (targetName) {
+            const cleanTarget = decodeURIComponent(targetName).trim().toLowerCase();
+            const foundSpot = spots.find(s => 
+              s.name.toLowerCase().includes(cleanTarget) || 
+              cleanTarget.includes(s.name.toLowerCase())
+            );
+
+            if (foundSpot) {
+              setTimeout(() => {
+                focusSpotOnMap(foundSpot, false);
+              }, 250);
+            } else {
+              setTimeout(() => {
+                const searchInput = document.getElementById('topSearchInput');
+                if (searchInput) {
+                  searchInput.value = targetName;
+                  executeSearch();
+                }
+              }, 250);
+            }
+          }
+
           setTimeout(() => {
             if (badge) {
               badge.style.opacity = '0';
@@ -2597,13 +2624,13 @@
       if (idx !== -1) deleteSpot(event, idx);
     }
 
-    /* 초정밀 스마트 통합 검색 */
+    /* 초고속 스마트 통합 검색 */
     async function executeSearch() {
       const rawQuery = document.getElementById('topSearchInput').value.trim();
       if (!rawQuery) return;
       
       const dropdown = document.getElementById('searchDropdown');
-      dropdown.innerHTML = '<li class="dropdown-item" style="color:var(--google-text-secondary);">🔍 전국 봉우리/산/명소 검색 중...</li>';
+      dropdown.innerHTML = '<li class="dropdown-item" style="color:var(--google-text-secondary);">🔍 전국 산/봉우리/명소 실시간 검색 중...</li>';
       dropdown.style.display = 'block';
 
       const results = [];
@@ -2625,7 +2652,7 @@
           });
         });
 
-      // [2] 구글 시트 백엔드 경유 카카오 장소/봉우리 검색
+      // [2] 구글 시트 백엔드 경유 카카오 장소/봉우리 초고속 검색
       try {
         const kRes = await fetch(`${GAS_API_URL}?action=SEARCH_KAKAO&q=${encodeURIComponent(rawQuery)}&_t=${Date.now()}`);
         if (kRes.ok) {
@@ -2684,7 +2711,7 @@
       dropdown.innerHTML = `<div class="dropdown-header"><span>🔍 검색 결과</span><span>${results.length}건</span></div>`;
 
       if (results.length === 0) {
-        dropdown.innerHTML += '<li class="dropdown-item" style="color:#ef4444;">검색 결과가 없습니다. 이름을 다시 확인해보세요.</li>';
+        dropdown.innerHTML += '<li class="dropdown-item" style="color:#f43f5e;">검색 결과가 없습니다. 단어를 다시 확인해보세요.</li>';
         return;
       }
 
