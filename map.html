@@ -138,28 +138,32 @@
     
     .header-right { display: flex; align-items: center; gap: 8px; }
 
-    /* 세련된 미니멀 포털 홈 버튼 */
+    /* 큼직하고 눈에 확 띄는 홈으로 가기 버튼 배너 */
     .header-home-btn {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      background: rgba(28, 34, 51, 0.85);
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      padding: 5px 12px;
+      gap: 6px;
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      border: 1.5px solid #38bdf8;
+      padding: 6px 14px;
       border-radius: 20px;
-      font-size: 0.74rem;
-      font-weight: 700;
-      color: #e2e8f0;
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #ffffff !important;
       text-decoration: none;
       transition: all 0.2s ease;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 3px 12px rgba(2, 132, 199, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.4);
       white-space: nowrap;
+      letter-spacing: -0.2px;
     }
-    .header-home-btn svg { width: 12px; height: 12px; fill: var(--accent-blue); }
+    .header-home-btn svg { width: 14px; height: 14px; fill: #ffffff; flex-shrink: 0; }
     .header-home-btn:hover {
-      background: rgba(56, 189, 248, 0.15);
-      border-color: var(--accent-blue);
-      color: #ffffff;
+      background: linear-gradient(135deg, #0369a1 0%, #0284c7 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.6);
+    }
+    .header-home-btn:active {
+      transform: translateY(0);
     }
 
     .header-btn {
@@ -860,9 +864,9 @@
 
     /* 팝업창 컴팩트 & 미려한 규격 */
     .compact-info-window {
-      padding: 9px 11px;
-      width: min(275px, calc(100vw - 28px)) !important;
-      max-height: min(320px, 46dvh);
+      padding: 10px 12px;
+      width: min(285px, calc(100vw - 28px)) !important;
+      max-height: min(340px, 48dvh);
       overflow-y: auto;
       overflow-x: hidden !important;
       display: flex;
@@ -872,7 +876,7 @@
       background: rgba(20, 24, 36, 0.98) !important;
       backdrop-filter: blur(14px) !important;
       color: var(--google-text-primary);
-      border-radius: 13px !important;
+      border-radius: 14px !important;
       border: 1px solid var(--google-border-glow) !important;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.85), 0 0 20px rgba(56, 189, 248, 0.15) !important;
       word-break: break-word;
@@ -882,7 +886,7 @@
     .compact-info-window::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
 
     .compact-title { 
-      font-size: 0.86rem; 
+      font-size: 0.88rem; 
       font-weight: 800; 
       color: var(--google-accent-blue); 
       display: flex; 
@@ -893,11 +897,11 @@
     }
     
     .compact-entry-link {
-      font-size: 0.66rem;
+      font-size: 0.68rem;
       color: #7dd3fc;
       background: rgba(2, 132, 199, 0.15);
       border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 3px 6px;
+      padding: 4px 7px;
       border-radius: 6px;
       width: 100%;
       word-break: break-all;
@@ -1085,7 +1089,7 @@
     /* 📱 모바일 전용 2열 헤더 & 뷰포트 분리 */
     @media (max-width: 768px) {
       .header { 
-        padding: 6px 10px 4px 10px !important;
+        padding: 6px 10px 6px 10px !important;
         flex-direction: column !important;
         align-items: stretch !important;
         gap: 6px !important;
@@ -1104,10 +1108,13 @@
       .sync-status-badge, .admin-status-badge { font-size: 0.58rem; padding: 1px 4px; }
       .header-right { gap: 4px; }
 
+      /* 모바일 홈으로 가기 버튼 직관적이고 또렷한 크기 유지 */
       .header-home-btn {
-        padding: 3px 9px !important;
-        font-size: 0.68rem !important;
+        padding: 4px 11px !important;
+        font-size: 0.76rem !important;
+        border-radius: 16px;
       }
+      .header-home-btn svg { width: 12px; height: 12px; }
 
       /* 2열 전폭 검색창 */
       .header-row-2 {
@@ -1118,8 +1125,8 @@
         width: 100% !important;
       }
       .search-input { 
-        padding: 5px 30px 5px 12px !important; 
-        font-size: 0.76rem !important; 
+        padding: 6px 32px 6px 12px !important; 
+        font-size: 0.78rem !important; 
         border-radius: 12px;
       }
       .search-btn-icon { right: 8px; font-size: 0.8rem; }
@@ -1192,7 +1199,7 @@
 <body>
 
   <header class="header" id="header">
-    <!-- 1열: 로고 + 뱃지 + 모던 포털 홈 버튼 -->
+    <!-- 1열: 로고 + 뱃지 + 큼직한 '홈으로 가기' 배너 버튼 -->
     <div class="header-row-1">
       <div class="header-left">
         <a href="index.html" class="header-title-box" title="메인 포털 첫 페이지로 이동">
@@ -1208,9 +1215,10 @@
       </div>
       
       <div class="header-right">
+        <!-- 🔥 더 크고 직관적인 [🏠 홈으로 가기] 배너 버튼 -->
         <a href="index.html" class="header-home-btn" title="포털 메인 첫 페이지로 이동">
           <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-          <span>포털</span>
+          <span>홈으로 가기</span>
         </a>
         <button type="button" class="header-btn admin-only-btn" id="btnSyncSheet" onclick="fetchSpotsFromGoogleSheet()">🔄 시트 동기화</button>
         <button type="button" class="header-btn header-desktop-only" id="resetMapBtn" onclick="resetMapView()">🔄 지도 초기화</button>
@@ -1750,14 +1758,6 @@
       return { region: '경기', cityName: '경기' };
     }
 
-    function formatKoreanSubAddress(rawSub, lat, lng) {
-      if (!rawSub || (/[a-zA-Z]/.test(rawSub) && !/[가-힣]/.test(rawSub))) {
-        const auto = detectRegionAndCity(lat, lng);
-        return auto.cityName || auto.region;
-      }
-      return rawSub;
-    }
-
     async function getElevation(lat, lng) {
       if (!lat || !lng) return '450m';
       const controller = new AbortController();
@@ -1837,7 +1837,7 @@
       document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
     }
 
-    /* 📱 [모바일 정밀 카메라 오프셋]: 마커는 화면 상단 35% 지점으로 올리고, 팝업창은 마커 아래로 위치 */
+    /* 📱 [모바일 정밀 카메라 오프셋]: 마커를 화면 정중앙에서 위로 20% 위치에 정밀 이동 */
     function smoothCenterMapOnSpot(lat, lng, keepCurrentZoom = true) {
       const isMobile = window.innerWidth <= 768;
       const targetLatLng = new naver.maps.LatLng(lat, lng);
@@ -1857,9 +1857,9 @@
 
       const targetPoint = proj.fromCoordToOffset(targetLatLng);
       
-      // 모바일: 카메라를 아래로 내려 마커가 화면 상단 35% 지점으로 오게 설정 (정보창이 마커 아래에 잘 보이도록)
+      // 모바일: 마커를 화면 정중앙 기준 위로 약 20% 올라오게 하려면 카메라 중심을 마커보다 아래로 이동
+      const offsetY = isMobile ? Math.round(window.innerHeight * 0.20) : 0;
       const offsetX = isMobile ? 0 : 145;
-      const offsetY = isMobile ? 95 : 0;
 
       const cameraPoint = new naver.maps.Point(targetPoint.x + offsetX, targetPoint.y + offsetY);
       const cameraLatLng = proj.fromOffsetToCoord(cameraPoint);
@@ -1867,11 +1867,11 @@
       map.panTo(cameraLatLng, { duration: 320, easing: 'easeOutCubic' });
     }
 
-    /* 📱 [정보창 팝업 오프셋]: 모바일에서는 마커 아래쪽(+35px)에 출력 */
+    /* 📱 [정보창 팝업 오프셋]: 모바일에서는 마커 핀 아래로 약 2cm (80px) 간격을 두고 시원하게 출력 */
     function getResponsiveInfoWindowOffset() {
       const isMobile = window.innerWidth <= 768;
       if (isMobile) {
-        return new naver.maps.Point(0, 35); // 마커 핀 아래로 내려서 오픈!
+        return new naver.maps.Point(0, 80); // 마커 핀 아래로 약 2cm 간격 확보!
       } else {
         return new naver.maps.Point(180, 145); // 데스크톱: 우측 중앙
       }
@@ -2105,7 +2105,7 @@
           }
           renderSpots();
 
-          // 🔥 [인덱스 연동 0.2초 즉시 팝업 트리거]
+          // 🔥 [인덱스 연동 즉시 팝업 트리거]
           const urlParams = new URLSearchParams(window.location.search);
           const spotParam = urlParams.get('spot');
           const qParam = urlParams.get('q');
