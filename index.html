@@ -3,620 +3,885 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-  <title>대한민국 낭만 백패킹 로드 | 지도 (4.0ver)</title>
-  
-  <!-- Naver Maps Open API -->
-  <script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=nokunumn03&submodules=geocoder"></script>
-  <!-- CSV Parser -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <title>대한민국 낭만 백패킹 로드 (4.0ver)</title>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- CSV Parser -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
     :root {
-      --google-bg-deep: #0b0e14;
-      --google-bg-surface: #141824;
-      --google-bg-card: #1c2233;
-      --google-bg-card-hover: #262e44;
-      --google-border: rgba(255, 255, 255, 0.08);
-      --google-border-glow: rgba(56, 189, 248, 0.35);
-      --google-border-subtle: #1e2638;
-      --google-text-primary: #f8fafc;
-      --google-text-secondary: #94a3b8;
-      --google-text-tertiary: #64748b;
-      --google-accent-blue: #38bdf8;
-      --google-accent-teal: #2dd4bf;
-      --google-accent-emerald: #10b981;
-      --google-accent-rose: #f43f5e;
-      --google-accent-amber: #f59e0b;
+      --bg-deep: #07090e;
+      --bg-surface: #0f131c;
+      --bg-card: #151b27;
+      --bg-card-hover: #1e2637;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(56, 189, 248, 0.35);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-blue: #38bdf8;
+      --accent-teal: #2dd4bf;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { 
-      width: 100%; 
-      max-width: 100vw;
-      height: 100%; 
-      height: 100dvh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      font-family: 'Noto Sans KR', -apple-system, sans-serif; 
-      background-color: var(--google-bg-deep); 
-      color: var(--google-text-primary);
-    }
-    
-    .header {
+    html, body {
       width: 100%;
-      min-height: 48px;
-      background-color: rgba(11, 14, 20, 0.98);
-      backdrop-filter: blur(12px);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 5px 14px;
+      max-width: 100vw;
+      overflow-x: hidden;
+      background-color: var(--bg-deep);
+      color: var(--text-primary);
+      font-family: 'Noto Sans KR', -apple-system, sans-serif;
+      line-height: 1.5;
+    }
+    body { padding-bottom: 74px; }
+
+    /* GNB 네비게이션 */
+    .portal-nav {
+      position: sticky;
+      top: 0;
       z-index: 1000;
-      box-shadow: 0 2px 14px rgba(0, 0, 0, 0.6);
-      border-bottom: 1px solid var(--google-border);
-      user-select: none;
-      flex-shrink: 0;
-    }
-    .header-left { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; }
-    
-    .header-title-box {
+      background: rgba(7, 9, 14, 0.95);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
       display: flex;
-      flex-direction: row;
+      justify-content: space-between;
       align-items: center;
-      gap: 8px;
-      white-space: nowrap;
-      text-decoration: none;
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
     }
-    .main-title {
+    .portal-logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      min-width: 0;
+    }
+    .portal-logo {
       font-family: 'Gowun Dodum', sans-serif;
-      font-size: clamp(1.05rem, 1.8vw, 1.45rem);
+      font-size: 1.12rem;
       font-weight: 800;
-      letter-spacing: -0.4px;
-      background: linear-gradient(135deg, #ffffff 10%, #bae6fd 60%, #38bdf8 100%);
+      color: #fff;
+      background: linear-gradient(135deg, #ffffff 20%, #bae6fd 60%, #38bdf8 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      white-space: nowrap;
+    }
+    .ver-badge {
+      font-size: 0.64rem;
+      color: var(--accent-teal);
+      background: rgba(45, 212, 191, 0.12);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-weight: 700;
+      border: 1px solid rgba(45, 212, 191, 0.25);
+    }
+    .portal-menu { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .portal-menu a.nav-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    .btn-nav-map {
+      background: linear-gradient(135deg, #0284c7, #0f766e);
+      color: #fff !important;
+      padding: 6px 14px;
+      border-radius: 18px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+      border: 1px solid rgba(255,255,255,0.2);
+      white-space: nowrap;
+    }
+
+    /* 히어로 섹션 */
+    .hero-wrapper {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 16px 16px 16px;
+      text-align: center;
+    }
+    .hero-badge-romance {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-    }
-    .main-title .flag-icon, .main-title .backpack-icon {
-      -webkit-text-fill-color: initial;
-      font-size: 1.15rem;
-    }
-    .sub-en-title {
-      font-family: 'Alex Brush', cursive;
-      font-size: 1.25rem;
+      gap: 5px;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      color: var(--accent-blue);
+      font-size: 0.74rem;
       font-weight: 700;
-      background: linear-gradient(135deg, #2dd4bf 20%, #38bdf8 80%);
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+    .hero-title {
+      font-family: 'Gowun Dodum', sans-serif;
+      font-size: clamp(1.35rem, 4vw, 2.1rem);
+      font-weight: 800;
+      margin-bottom: 8px;
+      line-height: 1.35;
+      word-break: keep-all;
+    }
+    .hero-title .highlight {
+      background: linear-gradient(135deg, #38bdf8 0%, #2dd4bf 50%, #facc15 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      white-space: nowrap;
     }
-
-    .sync-status-badge {
-      background: rgba(2, 132, 199, 0.85);
-      color: #ffffff;
-      font-size: 0.66rem;
-      padding: 2px 7px;
-      border-radius: 4px;
-      font-weight: 600;
-      white-space: nowrap;
-      border: 1px solid rgba(56, 189, 248, 0.3);
+    .hero-subtitle {
+      font-size: 0.84rem;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      word-break: keep-all;
     }
-    
-    .header-right { display: flex; align-items: center; gap: 8px; }
-
-    .header-btn {
-      background: var(--google-bg-card);
-      border: 1px solid var(--google-border);
-      padding: 5px 10px;
-      border-radius: 16px;
-      font-size: 0.74rem;
-      font-weight: 700;
-      color: var(--google-text-primary);
-      cursor: pointer;
-      white-space: nowrap;
-      text-decoration: none;
-    }
-    .header-btn:hover { background: var(--google-bg-card-hover); color: #ffffff; }
 
     /* 검색창 */
-    .search-container { position: relative; display: flex; align-items: center; width: 320px; }
-    .search-input {
+    .portal-search-box {
+      position: relative;
       width: 100%;
-      padding: 7px 34px 7px 14px;
-      border-radius: 18px;
-      border: 1px solid var(--google-border);
-      background: var(--google-bg-surface);
+      max-width: 580px;
+      margin: 0 auto 12px auto;
+    }
+    .portal-search-input {
+      width: 100%;
+      padding: 13px 48px 13px 18px;
+      font-size: 0.92rem;
+      border-radius: 26px;
+      border: 1.5px solid var(--accent-blue);
+      background: var(--bg-surface);
       color: #fff;
-      font-size: 0.82rem;
       outline: none;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(56, 189, 248, 0.18);
+      transition: all 0.2s;
     }
-    .search-input:focus { border-color: var(--google-accent-blue); background: var(--google-bg-deep); }
-    .search-btn-icon {
+    .portal-search-input:focus {
+      background: #090d15;
+      border-color: #7dd3fc;
+    }
+    .portal-search-btn {
       position: absolute;
-      right: 11px;
-      background: none;
-      border: none;
-      color: var(--google-text-secondary);
-      cursor: pointer;
-      font-size: 0.9rem;
-    }
-
-    .search-dropdown {
-      position: absolute;
-      top: 38px;
-      left: 0; right: 0;
-      background: rgba(20, 24, 36, 0.98);
-      backdrop-filter: blur(14px);
-      color: var(--google-text-primary);
-      border-radius: 14px;
-      box-shadow: 0 16px 36px rgba(0,0,0,0.85);
-      list-style: none;
-      max-height: 320px;
-      overflow-y: auto;
-      display: none;
-      z-index: 3000;
-      border: 1px solid var(--google-border-glow);
-    }
-    .dropdown-header {
-      padding: 8px 12px;
-      background-color: var(--google-bg-deep);
-      font-size: 0.74rem;
-      font-weight: bold;
-      color: var(--google-accent-blue);
-      border-bottom: 1px solid var(--google-border-subtle);
-      display: flex;
-      justify-content: space-between;
-    }
-    .dropdown-item {
-      padding: 9px 12px;
-      border-bottom: 1px solid var(--google-border-subtle);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-    .dropdown-item:hover { background: var(--google-bg-card-hover); }
-
-    .container {
-      display: flex;
-      width: 100%;
-      flex: 1;
-      height: 100%;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    /* 사이드바 */
-    .sidebar {
-      width: 380px;
-      max-width: 100%;
-      height: 100%;
-      background-color: var(--google-bg-surface);
-      border-right: 1px solid var(--google-border);
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
-      z-index: 1000;
-      overflow-x: hidden;
-      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-    }
-    .sidebar.pc-collapsed { margin-left: -380px !important; }
-
-    .pc-sidebar-toggle-btn {
-      position: absolute;
+      right: 7px;
       top: 50%;
-      left: 380px;
       transform: translateY(-50%);
-      width: 22px;
-      height: 48px;
-      background: rgba(20, 24, 36, 0.95);
-      border: 1px solid var(--google-border-glow);
-      border-left: none;
-      border-radius: 0 8px 8px 0;
-      color: var(--google-accent-blue);
+      background: linear-gradient(135deg, #0284c7, #0ea5e9);
+      border: none;
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      font-size: 0.95rem;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
-      z-index: 1100;
-      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      color: #fff;
     }
-    .sidebar.pc-collapsed ~ .pc-sidebar-toggle-btn { left: 0 !important; }
 
-    .sidebar-header {
-      padding: 6px 10px;
-      min-height: 38px;
-      font-weight: 700;
-      font-size: 0.8rem;
-      background-color: var(--google-bg-deep);
-      border-bottom: 1px solid var(--google-border);
+    .search-auto-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0; right: 0;
+      background: rgba(15, 19, 28, 0.98);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border-glow);
+      border-radius: 12px;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.85);
+      list-style: none;
+      max-height: 240px;
+      overflow-y: auto;
+      display: none;
+      z-index: 2000;
+      text-align: left;
+    }
+    .auto-item {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-shrink: 0;
+      cursor: pointer;
+      font-size: 0.82rem;
+    }
+    .auto-item:hover { background: var(--bg-card-hover); }
+    .auto-item-name { font-weight: 700; color: var(--accent-blue); }
+    .auto-item-tag { font-size: 0.68rem; color: #7dd3fc; background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px; }
+
+    /* 추천 키워드 칩 */
+    .keyword-chips-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      width: 100%;
+      max-width: 580px;
+      margin: 0 auto;
+    }
+    .keyword-chip-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 8px 4px;
+      border-radius: 10px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .keyword-chip-btn:hover {
+      background: var(--bg-card-hover);
+      color: var(--accent-blue);
+      border-color: var(--accent-blue);
     }
 
-    .filter-wrapper {
-      background: var(--google-bg-deep);
-      border-bottom: 1px solid var(--google-border);
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      padding: 5px 8px;
-      flex-shrink: 0;
+    /* 포털 메인 컨테이너 */
+    .portal-container {
+      width: 100%;
+      max-width: 1100px;
+      margin: 12px auto 30px auto;
+      padding: 0 16px;
+      display: grid;
+      grid-template-columns: 1fr 310px;
+      gap: 20px;
     }
-    .region-filter-bar {
-      display: flex;
-      overflow-x: auto;
-      gap: 4px;
-      align-items: center;
-    }
-    .filter-btn {
-      padding: 2px 8px;
+    .main-column { display: flex; flex-direction: column; gap: 18px; width: 100%; min-width: 0; }
+
+    /* 안내 배너 */
+    .notice-banner-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
       border-radius: 12px;
-      border: 1px solid var(--google-border);
-      background: var(--google-bg-card);
-      color: var(--google-text-secondary);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+    .notice-badge {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--accent-amber);
+      border: 1px solid rgba(245, 158, 11, 0.3);
       font-size: 0.68rem;
-      font-weight: 700;
-      cursor: pointer;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 5px;
       white-space: nowrap;
       flex-shrink: 0;
     }
-    .filter-btn.active {
-      background: #0284c7;
-      color: #ffffff;
-      border-color: #0284c7;
+    .notice-text {
+      font-size: 0.76rem;
+      color: var(--text-primary);
+      flex: 1;
+      line-height: 1.35;
+      word-break: keep-all;
     }
 
-    .spot-list { flex: 1; overflow-y: auto; list-style: none; background: var(--google-bg-surface); }
-    .region-group { border-bottom: 1px solid var(--google-border-subtle); }
-    .region-group-title {
-      padding: 6px 10px;
-      background-color: var(--google-bg-deep);
-      font-size: 0.76rem;
-      font-weight: 700;
-      color: var(--google-text-secondary);
-      cursor: pointer;
+    /* 섹션 공통 타이틀 */
+    .section-header {
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .section-title {
+      font-size: 0.98rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .more-link {
+      font-size: 0.75rem;
+      color: var(--accent-blue);
+      text-decoration: none;
+      font-weight: 600;
     }
 
-    .spot-item {
-      padding: 8px 10px;
-      border-bottom: 1px solid var(--google-border-subtle);
-      border-left: 2px solid transparent;
+    /* YouTube 100% 반응형 플레이어 */
+    .youtube-embed-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+    .video-box {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #000;
+      position: relative;
+    }
+    .video-box iframe {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      border: 0;
+    }
+    .video-caption-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.74rem;
+      color: var(--text-secondary);
+      padding: 2px 4px;
+    }
+
+    /* Instagram 그리드 (PC 3열 / 모바일 2열) */
+    .insta-feed-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 100%;
+    }
+    .insta-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px;
+      text-decoration: none;
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+      min-width: 0;
+    }
+    .insta-thumb-box {
+      width: 100%;
+      height: 110px;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      background: var(--bg-card);
+    }
+    .insta-thumb-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .insta-reels-badge {
+      position: absolute;
+      top: 5px; right: 5px;
+      background: rgba(0,0,0,0.7);
+      border-radius: 4px;
+      padding: 2px 4px;
+      font-size: 0.58rem;
+      color: #fff;
+    }
+    .insta-card-user {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--accent-rose);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .insta-card-desc {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 테마별 추천 박지 카드 (PC 3열 / 모바일 1열 풀와이드) */
+    .curated-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      width: 100%;
+    }
+    .curated-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
-      gap: 3px;
-      background: var(--google-bg-surface);
+      justify-content: space-between;
+      min-height: 130px;
+      width: 100%;
+      transition: all 0.2s;
     }
-    .spot-item:hover { background-color: var(--google-bg-card); }
-    .spot-item.active-spot {
-      background-color: var(--google-bg-card-hover) !important;
-      border-left: 2px solid var(--google-accent-blue) !important;
+    .curated-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-glow);
     }
-    .spot-name { font-size: 0.84rem; font-weight: 700; color: var(--google-accent-blue); }
+    .card-tag {
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      width: fit-content;
+      margin-bottom: 6px;
+    }
+    .tag-island { background: rgba(45, 212, 191, 0.15); color: var(--accent-teal); }
+    .tag-star { background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); }
+    .tag-easy { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); }
 
-    #map { flex: 1; height: 100%; position: relative; background: var(--google-bg-deep); }
-    
-    .compact-info-window {
-      padding: 10px 12px;
-      width: min(280px, calc(100vw - 30px)) !important;
-      max-height: min(340px, 55dvh);
-      overflow-y: auto;
+    .card-title { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 3px; }
+    .card-location { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; }
+    .card-desc { font-size: 0.75rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 10px; word-break: keep-all; }
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.7rem;
+      border-top: 1px dashed var(--border);
+      padding-top: 6px;
+    }
+
+    /* LNT 배너 */
+    .lnt-campaign-box {
+      background: linear-gradient(135deg, #111827 0%, #0f2f38 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+    .lnt-title { font-size: 0.88rem; font-weight: 800; color: #fff; margin-bottom: 2px; }
+    .lnt-sub { font-size: 0.74rem; color: var(--text-secondary); line-height: 1.3; }
+    .btn-lnt {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid var(--border);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 8px;
+      text-decoration: none;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* 사이드바 */
+    .side-column { display: flex; flex-direction: column; gap: 16px; width: 100%; min-width: 0; }
+    .banner-cta-map {
+      background: linear-gradient(135deg, #0f766e 0%, #0284c7 100%);
+      border-radius: 12px;
+      padding: 18px 14px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(2, 132, 199, 0.28);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .cta-map-title { font-size: 1.02rem; font-weight: 800; color: #fff; margin-bottom: 3px; }
+    .cta-map-sub { font-size: 0.74rem; color: #e0f2fe; margin-bottom: 12px; }
+    .btn-cta-white {
+      background: #ffffff;
+      color: #0369a1;
+      font-weight: 800;
+      font-size: 0.78rem;
+      padding: 6px 14px;
+      border-radius: 18px;
+      display: inline-block;
+    }
+
+    .widget-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .widget-title {
+      font-size: 0.88rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .rank-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .rank-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      cursor: pointer;
+      padding: 5px 6px;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+    .rank-item:hover { background: var(--bg-card); }
+    .rank-left { display: flex; align-items: center; gap: 6px; min-width: 0; }
+    .rank-num { font-weight: 900; font-size: 0.82rem; width: 14px; color: var(--accent-blue); flex-shrink: 0; }
+    .rank-1 { color: #facc15; }
+    .rank-name { font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rank-city { font-size: 0.66rem; color: var(--text-muted); flex-shrink: 0; }
+
+    /* 모바일 하단 독 */
+    .mobile-bottom-dock {
+      display: none;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(7, 9, 14, 0.96);
+      backdrop-filter: blur(14px);
+      border-top: 1px solid var(--border);
+      height: 56px;
+      z-index: 9000;
+      justify-content: space-around;
+      align-items: center;
+      padding: 0 10px;
+    }
+    .dock-item {
       display: flex;
       flex-direction: column;
-      gap: 5px;
-      background: rgba(20, 24, 36, 0.98) !important;
-      backdrop-filter: blur(14px) !important;
-      color: var(--google-text-primary);
-      border-radius: 14px !important;
-      border: 1px solid var(--google-border-glow) !important;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.85) !important;
-    }
-    .compact-title { font-size: 0.88rem; font-weight: 800; color: var(--google-accent-blue); }
-    .compact-entry-link {
-      font-size: 0.68rem;
-      color: #7dd3fc;
-      background: rgba(2, 132, 199, 0.15);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 4px 7px;
-      border-radius: 6px;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
       text-decoration: none;
-      display: block;
-      font-weight: 700;
+      font-size: 0.65rem;
+      font-weight: 600;
+      gap: 3px;
     }
+    .dock-item.active { color: var(--accent-blue); }
+    .dock-item svg { width: 18px; height: 18px; fill: currentColor; }
 
+    /* 📱 모바일 3대 CSS 절대 규칙 */
     @media (max-width: 768px) {
-      .sub-en-title, .header-desktop-only, .pc-sidebar-toggle-btn { display: none !important; }
-      .search-container { width: 140px; }
-      .sidebar {
-        position: absolute;
-        top: 0; left: 0; right: 0;
-        width: 100% !important;
-        height: calc(100% - 50px) !important;
-        z-index: 300;
-        transform: translateY(0);
-        transition: transform 0.3s;
+      body { padding-bottom: 74px; }
+      .portal-nav { padding: 8px 12px; }
+      .portal-logo { font-size: 0.96rem; }
+      .portal-menu a.nav-link { display: none; }
+      .btn-nav-map { padding: 4px 10px; font-size: 0.72rem; }
+
+      .portal-container { grid-template-columns: 1fr; gap: 16px; padding: 0 12px; margin-top: 6px; }
+      .hero-wrapper { padding: 18px 12px 14px 12px; }
+      .hero-title { font-size: 1.32rem; margin-bottom: 6px; }
+      .hero-subtitle { font-size: 0.76rem; margin-bottom: 14px; }
+      
+      .portal-search-input { font-size: 0.84rem; padding: 11px 42px 11px 16px; }
+      .portal-search-btn { width: 32px; height: 32px; font-size: 0.85rem; }
+      
+      /* 모바일 키워드: 3열 2행 정렬 */
+      .keyword-chips-grid { grid-template-columns: repeat(3, 1fr); gap: 5px; }
+      .keyword-chip-btn { font-size: 0.72rem; padding: 6px 2px; }
+
+      /* [규칙 1] 테마별 박지 카드: 모바일 1열 풀와이드 세로 쌓기 (잘림 0%) */
+      .curated-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px;
       }
-      .sidebar.collapsed { transform: translateY(-130%) !important; }
+      .curated-card { min-height: auto; padding: 12px; }
+
+      /* [규칙 1] 인스타 피드: 모바일 2열 정렬 */
+      .insta-feed-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px;
+      }
+      .insta-thumb-box { height: 95px; }
+
+      .lnt-campaign-box {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .btn-lnt { width: 100%; text-align: center; }
+
+      .mobile-bottom-dock { display: flex; }
     }
   </style>
 </head>
 <body>
 
-  <header class="header">
-    <div class="header-left">
-      <a href="index.html" class="header-title-box" title="메인 포털로 이동">
-        <span class="main-title">
-          <span class="flag-icon">🇰🇷</span>
-          대한민국 낭만 백패킹 로드
-          <span class="backpack-icon">🎒</span>
-        </span>
-        <span class="sub-en-title">Korea Romantic Backpacking Road</span>
-      </a>
-      <span class="sync-status-badge" id="syncStatusBadge">⚡ 동기화 완료</span>
+  <nav class="portal-nav">
+    <a href="index.html" class="portal-logo-wrap">
+      <span>🎒</span>
+      <span class="portal-logo">대한민국 낭만 백패킹 로드</span>
+      <span class="ver-badge">4.0ver</span>
+    </a>
+    <div class="portal-menu">
+      <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="nav-link">협업·문의</a>
+      <a href="map.html" class="btn-nav-map">🗺️ 전국 지도 열기</a>
     </div>
-    
-    <div class="header-right">
-      <a href="index.html" class="header-btn">🏠 홈으로</a>
-      <button type="button" class="header-btn header-desktop-only" onclick="resetMapView()">🔄 초기화</button>
-      
-      <div class="search-container">
-        <input type="text" id="topSearchInput" class="search-input" placeholder="산/계곡/섬/봉우리 검색" onkeyup="if(event.key==='Enter') executeSearch()" />
-        <button type="button" class="search-btn-icon" onclick="executeSearch()">🔍</button>
-        <ul id="searchDropdown" class="search-dropdown"></ul>
-      </div>
-    </div>
-  </header>
+  </nav>
 
-  <div class="container">
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <span>📍 박지 목록 <strong id="spotCount" style="color:var(--google-accent-blue);">0개</strong></span>
-        <span style="font-size:0.66rem; color:var(--google-text-tertiary);">4.0ver</span>
-      </div>
+  <section class="hero-wrapper">
+    <div class="hero-badge-romance">✨ Korea Romantic Backpacking Road</div>
+    <h1 class="hero-title">길 끝에서 마주하는 하룻밤,<br><span class="highlight">당신의 낭만을 응원합니다.</span></h1>
+    <p class="hero-subtitle">검증된 전국 박지 위치와 들머리 네비 주소, 드론 규제 정보까지</p>
+
+    <div class="portal-search-box">
+      <input type="text" id="mainSearchInput" class="portal-search-input" placeholder="산, 섬, 계곡 또는 가고 싶은 곳을 검색해보세요..." autocomplete="off" oninput="handleAutoSearch(this.value)" onkeyup="if(event.key==='Enter') executePortalSmartSearch()" />
+      <button type="button" class="portal-search-btn" onclick="executePortalSmartSearch()">🔍</button>
+      <ul id="searchAutoDropdown" class="search-auto-dropdown"></ul>
+    </div>
+
+    <div class="keyword-chips-grid">
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('굴업도')">🏝️ 굴업도 개머리</div>
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('선자령')">🪵 대관령 선자령</div>
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('간월재')">🌾 영남 간월재</div>
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('수우도')">🌊 통영 수우도</div>
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('비양도')">🏝️ 우도 비양도</div>
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('화악산')">⛰️ 화악산 쌈지</div>
+    </div>
+  </section>
+
+  <div class="portal-container">
+    
+    <main class="main-column">
       
-      <div class="filter-wrapper">
-        <div class="region-filter-bar">
-          <button class="filter-btn active" onclick="filterByRegion('ALL')">전체</button>
-          <button class="filter-btn" onclick="filterByRegion('서울/인천')">서울/인천</button>
-          <button class="filter-btn" onclick="filterByRegion('경기')">경기</button>
-          <button class="filter-btn" onclick="filterByRegion('강원')">강원</button>
-          <button class="filter-btn" onclick="filterByRegion('충청')">충청</button>
-          <button class="filter-btn" onclick="filterByRegion('전라')">전라</button>
-          <button class="filter-btn" onclick="filterByRegion('경상')">경상</button>
-          <button class="filter-btn" onclick="filterByRegion('제주')">제주</button>
+      <div class="notice-banner-card">
+        <span class="notice-badge">📢 안내</span>
+        <div class="notice-text">
+          자연공원법 및 산림보호법 준수 · 안전한 화기 사용과 머문 자리 클린 캠핑(LNT)을 실천해주세요.
         </div>
       </div>
 
-      <div class="spot-list" id="spotList"></div>
-    </aside>
+      <!-- YouTube 영상 (100% 완벽 16:9 반응형) -->
+      <section>
+        <div class="section-header">
+          <div class="section-title">🎬 이 주의 낭만 백패킹 영상</div>
+          <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" class="more-link">유튜브 ➔</a>
+        </div>
+        <div class="youtube-embed-card">
+          <div class="video-box">
+            <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0&mute=1&controls=1&rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+          <div class="video-caption-bar">
+            <span>🎥 드론으로 담아낸 서해 섬 백패킹의 일몰과 은하수</span>
+            <span style="color:var(--accent-blue); font-weight:700;">로그인 없이 시청</span>
+          </div>
+        </div>
+      </section>
 
-    <div class="pc-sidebar-toggle-btn" id="pcSidebarToggleBtn" onclick="togglePcSidebar()" title="사이드바 접기/열기">
-      ◀
-    </div>
-    
-    <main id="map"></main>
+      <!-- Instagram 피드 -->
+      <section>
+        <div class="section-header">
+          <div class="section-title">📸 요즘 뜨는 백패킹 인스타 & 릴스</div>
+          <a href="https://www.instagram.com/explore/tags/백패킹/" target="_blank" rel="noopener noreferrer" class="more-link">#백패킹 더보기 ➔</a>
+        </div>
+
+        <div class="insta-feed-grid">
+          <a href="https://www.instagram.com/explore/tags/선자령백패킹/" target="_blank" rel="noopener noreferrer" class="insta-card">
+            <div class="insta-thumb-box">
+              <img src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=500&auto=format&fit=crop&q=60" alt="선자령 백패킹" class="insta-thumb-img" />
+              <span class="insta-reels-badge">▶ 릴스</span>
+            </div>
+            <div class="insta-card-user">#선자령백패킹</div>
+            <div class="insta-card-desc">밤하늘 은하수가 쏟아지는 대관령 풍경 ✨</div>
+          </a>
+
+          <a href="https://www.instagram.com/explore/tags/굴업도백패킹/" target="_blank" rel="noopener noreferrer" class="insta-card">
+            <div class="insta-thumb-box">
+              <img src="https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=500&auto=format&fit=crop&q=60" alt="굴업도 백패킹" class="insta-thumb-img" />
+              <span class="insta-reels-badge">📷 인기</span>
+            </div>
+            <div class="insta-card-user">#굴업도개머리</div>
+            <div class="insta-card-desc">서해 굴업도 개머리언덕 수평선 일몰 🌅</div>
+          </a>
+        </div>
+      </section>
+
+      <!-- 테마별 추천 박지 (모바일 1열 풀와이드 카드) -->
+      <section>
+        <div class="section-header">
+          <div class="section-title">✨ 테마별 추천 낭만 박지</div>
+          <a href="map.html" class="more-link">전체 지도 보기 ➔</a>
+        </div>
+
+        <div class="curated-grid">
+          <div class="curated-card" onclick="smartRouteToSpot('굴업도')">
+            <div>
+              <span class="card-tag tag-island">🏝️ 서해의 알프스</span>
+              <div class="card-title">굴업도 개머리언덕</div>
+              <div class="card-location">인천 옹진군 덕적면</div>
+              <div class="card-desc">사슴들이 노니는 초원과 드넓은 서해 바다 위로 펼쳐지는 황홀한 일몰 명소.</div>
+            </div>
+            <div class="card-footer">
+              <span style="color:var(--accent-amber);">난이도 ⭐⭐</span>
+              <span style="color:var(--accent-teal);">배편 예약 필수 🚢</span>
+            </div>
+          </div>
+
+          <div class="curated-card" onclick="smartRouteToSpot('선자령')">
+            <div>
+              <span class="card-tag tag-star">🌌 쏟아지는 은하수</span>
+              <div class="card-title">대관령 선자령</div>
+              <div class="card-location">강원 평창군 대관령면</div>
+              <div class="card-desc">풍력발전기 능선을 따라 걷는 시원한 트레킹과 밤하늘 은하수 명소.</div>
+            </div>
+            <div class="card-footer">
+              <span style="color:var(--accent-amber);">난이도 ⭐⭐⭐</span>
+              <span style="color:var(--accent-blue);">방풍 의류 필수 💨</span>
+            </div>
+          </div>
+
+          <div class="curated-card" onclick="smartRouteToSpot('간월재')">
+            <div>
+              <span class="card-tag tag-easy">🌾 황금빛 억새평원</span>
+              <div class="card-title">영남알프스 간월재</div>
+              <div class="card-location">울산 울주군 상북면</div>
+              <div class="card-desc">탁 트인 억새 물결과 잘 정비된 임도 트레킹으로 즐기는 편안한 하룻밤.</div>
+            </div>
+            <div class="card-footer">
+              <span style="color:var(--accent-amber);">난이도 ⭐⭐</span>
+              <span style="color:var(--accent-emerald);">임도 트레킹 🚶</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lnt-campaign-box">
+        <div>
+          <div class="lnt-title">🌿 흔적을 남기지 않는 Leave No Trace</div>
+          <div class="lnt-sub">자연에 머문 자리는 처음보다 더 깨끗하게 되돌려 놓습니다.</div>
+        </div>
+        <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="btn-lnt">캠페인 참여</a>
+      </section>
+
+    </main>
+
+    <aside class="side-column">
+      <div class="banner-cta-map" onclick="location.href='map.html'">
+        <div class="cta-map-title">🗺️ 전국 박지 지도 열기</div>
+        <div class="cta-map-sub">내 주변 박지 & 드론 비행 가능 구역 실시간 확인</div>
+        <span class="btn-cta-white">지도 바로가기 ➔</span>
+      </div>
+
+      <div class="widget-box">
+        <div class="widget-title">
+          <span>🔥 실시간 인기 박지 TOP 5</span>
+          <span style="font-size:0.68rem; color:var(--text-muted);">조회순</span>
+        </div>
+        <ul class="rank-list" id="popularRankList">
+          <li class="rank-item" onclick="smartRouteToSpot('굴업도')">
+            <div class="rank-left"><span class="rank-num rank-1">1</span><span class="rank-name">굴업도 개머리언덕</span></div>
+            <span class="rank-city">인천 옹진</span>
+          </li>
+          <li class="rank-item" onclick="smartRouteToSpot('선자령')">
+            <div class="rank-left"><span class="rank-num">2</span><span class="rank-name">대관령 선자령</span></div>
+            <span class="rank-city">강원 평창</span>
+          </li>
+          <li class="rank-item" onclick="smartRouteToSpot('간월재')">
+            <div class="rank-left"><span class="rank-num">3</span><span class="rank-name">영남알프스 간월재</span></div>
+            <span class="rank-city">울산 울주</span>
+          </li>
+          <li class="rank-item" onclick="smartRouteToSpot('수우도')">
+            <div class="rank-left"><span class="rank-num">4</span><span class="rank-name">통영 수우도 은박산</span></div>
+            <span class="rank-city">경남 통영</span>
+          </li>
+          <li class="rank-item" onclick="smartRouteToSpot('비양도')">
+            <div class="rank-left"><span class="rank-num">5</span><span class="rank-name">우도 비양도 연평리</span></div>
+            <span class="rank-city">제주 우도</span>
+          </li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <div class="mobile-bottom-dock">
+    <a href="index.html" class="dock-item active">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>홈</span>
+    </a>
+    <a href="map.html" class="dock-item">
+      <svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+      <span>전국지도</span>
+    </a>
+    <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="dock-item">
+      <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+      <span>협업문의</span>
+    </a>
   </div>
 
   <script>
     const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
     const GOOGLE_SHEET_GID = '0';
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzW0vRtj-S_BEW0OzFTm7PV7zVyNLWJEas9-S7F9CnOTn817-pO8WODR9l5FEEE3bYu/exec';
+    let registeredSpots = [];
 
-    const DEFAULT_MAP_CENTER = new naver.maps.LatLng(36.5, 127.8);
-    const DEFAULT_MAP_ZOOM = 8;
-
-    let spots = [];
-    let spotMarkerMap = new Map();
-    let currentRegionFilter = 'ALL';
-    let isPcSidebarCollapsed = false;
-
-    const map = new naver.maps.Map('map', {
-      center: DEFAULT_MAP_CENTER,
-      zoom: DEFAULT_MAP_ZOOM,
-      zoomControl: true,
-      zoomControlOptions: { position: naver.maps.Position.RIGHT_CENTER }
-    });
-
-    const infoWindow = new naver.maps.InfoWindow({ borderWidth: 0, disableAnchor: true, backgroundColor: 'transparent' });
-
-    function togglePcSidebar() {
-      isPcSidebarCollapsed = !isPcSidebarCollapsed;
-      document.getElementById('sidebar').classList.toggle('pc-collapsed', isPcSidebarCollapsed);
-      document.getElementById('pcSidebarToggleBtn').innerText = isPcSidebarCollapsed ? '▶' : '◀';
-      setTimeout(() => naver.maps.Event.trigger(map, 'resize'), 300);
-    }
-
-    function createCustomMarkerIcon(spot) {
-      const d = parseInt(spot.difficulty, 10) || 3;
-      const color = d <= 2 ? '#10b981' : (d >= 4 ? '#f43f5e' : '#f59e0b');
-      return {
-        content: `
-          <div style="cursor:pointer; transform:translate(-50%, -100%);">
-            <svg viewBox="0 0 24 34" width="22" height="29">
-              <path fill="${color}" stroke="#ffffff" stroke-width="1.8" d="M12 0C5.373 0 0 5.373 0 12c0 9 12 22 12 22s12-13 12-22c0-6.627-5.373-12-12-12z"/>
-              <circle fill="#ffffff" cx="12" cy="11" r="4"/>
-            </svg>
-          </div>
-        `,
-        anchor: new naver.maps.Point(0, 0)
-      };
-    }
-
-    function focusSpotOnMap(spot) {
-      if (!spot) return;
-
-      // 마커 하이라이트
-      spotMarkerMap.forEach(m => m.setZIndex(100));
-      const marker = spotMarkerMap.get(String(spot.id));
-      if (marker) marker.setZIndex(999999);
-
-      // 사이드바 포커스
-      document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active-spot'));
-      const activeCard = document.getElementById(`spotItem_${spot.id}`);
-      if (activeCard) {
-        activeCard.classList.add('active-spot');
-        const container = activeCard.closest('.region-items-container');
-        if (container) container.style.display = 'block';
-        activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-
-      // 모바일인 경우 사이드바 접고 지도로 바로 보기
-      if (window.innerWidth <= 768) {
-        document.getElementById('sidebar').classList.add('collapsed');
-      }
-
-      // 팝업 열기
-      infoWindow.setContent(`
-        <div class="compact-info-window">
-          <div class="compact-title">${spot.name}</div>
-          <a href="https://map.naver.com/p/search/${encodeURIComponent(spot.entryPoint || spot.name)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link">🚗 들머리 네비 안내 ↗</a>
-          <div style="font-size:0.7rem; color:#94a3b8; white-space:pre-line;">📝 ${spot.desc || '추천 박지'}</div>
-        </div>
-      `);
-      infoWindow.open(map, marker || new naver.maps.LatLng(spot.lat, spot.lng));
-
-      // 부드러운 카메라 이동
-      map.morph(new naver.maps.LatLng(spot.lat, spot.lng), 13, { duration: 350 });
-    }
-
-    /* 시트 로딩 및 URL 파라미터 즉시 실행 */
-    async function fetchSpotsFromGoogleSheet() {
+    async function loadPortalSpotData() {
       const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_GID}&_t=${Date.now()}`;
       try {
         const res = await fetch(url);
-        const csv = await res.text();
-        Papa.parse(csv, {
-          header: true,
-          skipEmptyLines: true,
-          complete: function(results) {
-            spots = results.data.map((row, idx) => ({
-              id: row.id || String(idx),
-              name: row.name || row.산 || row.박지명 || '무명 박지',
-              lat: parseFloat(row.lat || row.위도) || 37.5,
-              lng: parseFloat(row.lng || row.경도) || 127.0,
-              region: row.region || '경기',
-              entryPoint: row.entryPoint || row.들머리 || '',
-              desc: row.desc || row.특징 || '',
-              difficulty: row.difficulty || '3'
-            })).filter(s => s.lat !== 0 && s.lng !== 0);
-
-            renderSpots();
-
-            // 🔥 [먹통 해결 핵심] 시트가 로드되자마자 즉시 파라미터 체크 & 팝업 오픈!
-            const urlParams = new URLSearchParams(window.location.search);
-            const targetSpotName = urlParams.get('spot') || urlParams.get('q');
-            
-            if (targetSpotName) {
-              const cleanTarget = decodeURIComponent(targetSpotName).trim().toLowerCase();
-              const found = spots.find(s => 
-                s.name.toLowerCase().includes(cleanTarget) || 
-                cleanTarget.includes(s.name.toLowerCase())
-              );
-              
-              if (found) {
-                // 0.2초 대기 후 정확하게 팝업 오픈
-                setTimeout(() => focusSpotOnMap(found), 200);
-              } else {
-                const input = document.getElementById('topSearchInput');
-                if (input) input.value = targetSpotName;
-                executeSearch();
+        if (res.ok) {
+          const csvText = await res.text();
+          Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+              if (results.data && results.data.length > 0) {
+                registeredSpots = results.data.map((row, idx) => ({
+                  id: row.id || String(idx),
+                  name: row.name || row.산 || row.박지명 || '',
+                  region: row.region || '전국',
+                  entryPoint: row.entryPoint || row.들머리 || ''
+                })).filter(s => s.name.trim() !== '');
               }
             }
-          }
-        });
-      } catch (e) {
-        console.error(e);
-      }
-    }
-
-    function renderSpots() {
-      spotMarkerMap.forEach(m => m.setMap(null));
-      spotMarkerMap.clear();
-
-      const spotListEl = document.getElementById('spotList');
-      spotListEl.innerHTML = '';
-      document.getElementById('spotCount').innerText = `${spots.length}개`;
-
-      const regions = ["서울/인천", "경기", "강원", "충청", "전라", "경상", "제주"];
-      regions.forEach(reg => {
-        const list = spots.filter(s => currentRegionFilter === 'ALL' || s.region.includes(reg));
-        if (list.length === 0) return;
-
-        const groupDiv = document.createElement('div');
-        groupDiv.className = 'region-group';
-        groupDiv.innerHTML = `
-          <div class="region-group-title" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='none'?'block':'none'">
-            <span>📌 ${reg}</span>
-            <span>${list.length}개 ▼</span>
-          </div>
-          <div class="region-items-container"></div>
-        `;
-
-        const container = groupDiv.querySelector('.region-items-container');
-        list.forEach(spot => {
-          const marker = new naver.maps.Marker({
-            position: new naver.maps.LatLng(spot.lat, spot.lng),
-            map: map,
-            icon: createCustomMarkerIcon(spot)
           });
-          spotMarkerMap.set(String(spot.id), marker);
-          naver.maps.Event.addListener(marker, 'click', () => focusSpotOnMap(spot));
-
-          const item = document.createElement('div');
-          item.className = 'spot-item';
-          item.id = `spotItem_${spot.id}`;
-          item.innerHTML = `
-            <div class="spot-name">${spot.name}</div>
-            <div style="font-size:0.66rem; color:#7dd3fc;">🚗 ${spot.entryPoint || '들머리 정보 미입력'}</div>
-          `;
-          item.addEventListener('click', () => focusSpotOnMap(spot));
-          container.appendChild(item);
-        });
-
-        spotListEl.appendChild(groupDiv);
-      });
+        }
+      } catch (e) {}
     }
+    loadPortalSpotData();
 
-    function executeSearch() {
-      const q = document.getElementById('topSearchInput').value.trim().toLowerCase();
-      if (!q) return;
-      const target = spots.find(s => s.name.toLowerCase().includes(q) || (s.desc && s.desc.toLowerCase().includes(q)));
-      if (target) {
-        focusSpotOnMap(target);
+    function handleAutoSearch(keyword) {
+      const dropdown = document.getElementById('searchAutoDropdown');
+      const cleanK = keyword.trim().toLowerCase();
+      if (!cleanK || registeredSpots.length === 0) {
+        dropdown.style.display = 'none';
+        return;
+      }
+      const matches = registeredSpots.filter(s => s.name.toLowerCase().includes(cleanK)).slice(0, 5);
+      if (matches.length > 0) {
+        dropdown.innerHTML = matches.map(s => `
+          <li class="auto-item" onclick="smartRouteToSpot('${escapeJsString(s.name)}')">
+            <span class="auto-item-name">📍 ${s.name}</span>
+            <span class="auto-item-tag">등록 박지</span>
+          </li>
+        `).join('');
+        dropdown.style.display = 'block';
+      } else {
+        dropdown.style.display = 'none';
       }
     }
 
-    function filterByRegion(reg) {
-      currentRegionFilter = reg;
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.innerText.includes(reg==='ALL'?'전체':reg)));
-      renderSpots();
+    function escapeJsString(str) {
+      return (str || '').replace(/'/g, "\\'");
     }
 
-    function resetMapView() {
-      map.morph(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, { duration: 300 });
-      infoWindow.close();
-      document.getElementById('sidebar').classList.remove('collapsed');
+    function executePortalSmartSearch() {
+      const q = document.getElementById('mainSearchInput').value.trim();
+      if (!q) {
+        location.href = 'map.html';
+        return;
+      }
+      smartRouteToSpot(q);
     }
 
-    fetchSpotsFromGoogleSheet();
+    function smartRouteToSpot(queryName) {
+      const clean = queryName.trim();
+      if (!clean) return;
+      location.href = `map.html?spot=${encodeURIComponent(clean)}`;
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.portal-search-box')) {
+        const dd = document.getElementById('searchAutoDropdown');
+        if (dd) dd.style.display = 'none';
+      }
+    });
   </script>
 </body>
 </html>
