@@ -13,12 +13,13 @@
   <!-- CSV Parser -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-  <!-- Google Fonts -->
+  <!-- Google Fonts: 고운도둠 & 감성 필기체 & Noto Sans KR -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;600;800;900&display=swap" rel="stylesheet">
 
   <style>
+    /* 구글 스튜디오 공식 다크 테마 팔레트 */
     :root {
       --google-bg-deep: #131722;
       --google-bg-surface: #181c28;
@@ -276,7 +277,6 @@
       overflow-x: hidden !important;
     }
 
-    /* ⭐ 여백 50% 삭제하여 매우 타이트하게 조정한 사이드바 헤더 */
     .sidebar-header {
       padding: 5px 12px !important;
       min-height: 32px !important;
@@ -290,7 +290,7 @@
       flex-shrink: 0;
     }
 
-    /* ⭐ 버전 뱃지: 눌림 효과 없이 7회 연속 클릭 시 관리자 모드 진입 */
+    /* ⭐ 버전 라벨 (7회 연속 클릭 시 관리자 모드 On/Off) */
     .version-tag {
       font-size: 0.68rem;
       font-weight: 700;
@@ -630,7 +630,7 @@
 
     #map { flex: 1; height: 100%; position: relative; overflow: hidden !important; background: var(--google-bg-deep); }
     
-    /* ⭐ 지도 상단 왼쪽(Left) 세로(Vertical) 난이도 범례 표시 */
+    /* 지도 상단 왼쪽 세로 정렬 범례 */
     .map-legend-bar {
       position: absolute;
       top: 12px;
@@ -642,7 +642,7 @@
       padding: 6px 8px;
       z-index: 200;
       display: flex;
-      flex-direction: column; /* 세로 정렬 */
+      flex-direction: column;
       gap: 5px;
       box-shadow: 0 4px 14px rgba(0,0,0,0.5);
       user-select: none;
@@ -919,6 +919,7 @@
         border-radius: 16px;
       }
       
+      .map-legend-bar { display: flex !important; }
       .mobile-floating-controls { display: flex; }
       
       .container { 
@@ -997,12 +998,12 @@
 
   <div class="container">
     <aside class="sidebar" id="sidebar">
-      <!-- ⭐ 여백 50% 삭제된 컴팩트 헤더 & 7회 연타 버전 라벨 -->
       <div class="sidebar-header">
         <div style="display:flex; align-items:center; gap:5px;">
           <span>📍 백패킹 박지 목록</span>
           <span id="spotCount" style="color: var(--google-accent-blue); font-size: 0.78rem; font-weight: bold;">0개</span>
-          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()">2.4ver</span>
+          <!-- ⭐ 7회 연속 클릭 시 관리자 모드 진입 -->
+          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()">2.6ver</span>
         </div>
         <a id="sheetEditLink" href="#" target="_blank" class="sheet-edit-link">📊 구글 시트 편집</a>
       </div>
@@ -1043,7 +1044,6 @@
     </aside>
     
     <main id="map">
-      <!-- ⭐ 지도 상단 왼쪽(Left) 세로(Vertical) 정렬 범례 -->
       <div class="map-legend-bar">
         <div class="legend-item"><span class="legend-dot dot-green"></span> 쉬움</div>
         <div class="legend-item"><span class="legend-dot dot-yellow"></span> 보통</div>
@@ -1065,7 +1065,7 @@
     </button>
   </div>
 
-  <!-- AI 모달 -->
+  <!-- AI 일괄 등록 모달 -->
   <div class="custom-modal-overlay" id="bulkImportModalOverlay">
     <div class="custom-modal" style="width: 500px;">
       <h3 style="display:flex; align-items:center; gap:6px;">⚡ AI 요약 / JSON 내용으로 일괄 등록</h3>
@@ -1170,7 +1170,7 @@
   </div>
 
   <script>
-    const APP_VERSION = '2.4ver';
+    const APP_VERSION = '2.6ver';
     const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
     const GOOGLE_SHEET_GID = '0';
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyrGW_Jn7lDIrZJWbCb84Wg5QMCGNvOBQSR5rtzKaqFrViubTdpfsvegZU8lbVcQDTT/exec';
@@ -1290,7 +1290,7 @@
     
     const markerHoverInfoWindow = new naver.maps.InfoWindow({
       borderWidth: 1,
-      borderColor: '#0f766e',
+      borderColor: '#334155',
       backgroundColor: '#131722',
       anchorSkew: false,
       autoPan: false,
@@ -1306,39 +1306,55 @@
       pixelOffset: new naver.maps.Point(0, -8)
     });
 
-    // ⭐ 지도 드래그 및 손가락 이동 시 마커가 사라지지 않고 근처 마커의 박지 이름이 실시간으로 표시
-    function updateHoverMarkerOnCoord(coord) {
-      if (!coord || spots.length === 0) return;
-      let closestSpot = null;
-      let minDistance = 2500; // 반경 2.5km 이내 마커 감지
+    // 지도 조작 시 팝업 임시 숨김 및 조작 완료 시 복구
+    naver.maps.Event.addListener(map, 'dragstart', () => infoWindow.close());
+    naver.maps.Event.addListener(map, 'pinchstart', () => infoWindow.close());
+    naver.maps.Event.addListener(map, 'zoom_start', () => infoWindow.close());
 
-      spots.forEach((spot) => {
-        const d = getDistanceMeters(coord.lat(), coord.lng(), spot.lat, spot.lng);
-        if (d < minDistance) {
-          minDistance = d;
-          closestSpot = spot;
-        }
-      });
-
-      if (closestSpot) {
-        const markerIdx = spots.findIndex(s => String(s.id) === String(closestSpot.id));
-        const marker = currentMarkers[markerIdx];
-        if (marker) {
-          markerHoverInfoWindow.setContent(`
-            <div style="padding: 4px 8px; color: #f8fafc; font-size: 0.72rem; line-height: 1.25; white-space: nowrap; pointer-events: none; text-align: center;">
-              <strong style="color: var(--google-accent-blue); font-size: 0.78rem;">📍 ${closestSpot.name}</strong>
-              ${closestSpot.elevation ? `<span style="color: #86efac; font-size: 0.68rem;">(${closestSpot.elevation})</span>` : ''}<br>
-              <span style="color: #cbd5e1; font-size: 0.65rem;">난이도 ${'⭐'.repeat(parseInt(closestSpot.difficulty, 10) || 3)}</span>
-            </div>
-          `);
-          markerHoverInfoWindow.open(map, marker);
-        }
+    naver.maps.Event.addListener(map, 'idle', () => {
+      if (currentActiveSpot && currentActiveMarker) {
+        infoWindow.setContent(generateInfoWindowHtml(currentActiveSpot));
+        infoWindow.open(map, currentActiveMarker);
       }
+    });
+
+    // ⭐ 관리자 모드 진입 경로 1: 버전 표시 7회 연속 클릭
+    let versionClickCount = 0;
+    let versionClickTimer = null;
+    function handleVersionTagClick() {
+      versionClickCount++;
+      clearTimeout(versionClickTimer);
+      versionClickTimer = setTimeout(() => {
+        if (versionClickCount >= 7) {
+          toggleAdminMode();
+        }
+        versionClickCount = 0;
+      }, 500);
     }
 
-    naver.maps.Event.addListener(map, 'mousemove', (e) => {
-      updateHoverMarkerOnCoord(e.coord);
+    // ⭐ 관리자 모드 진입 경로 2: 키보드 단축키 Shift + M
+    window.addEventListener('keydown', (e) => {
+      if (e.shiftKey && (e.key === 'M' || e.key === 'm')) {
+        toggleAdminMode();
+      }
     });
+
+    function toggleAdminMode() {
+      isAdminMode = !isAdminMode;
+      document.getElementById('adminBadge').style.display = isAdminMode ? 'inline-block' : 'none';
+      updateAdminUI();
+      currentMarkers.forEach(marker => marker.setDraggable(isAdminMode));
+      alert(isAdminMode ? '🔑 관리자 모드가 활성화되었습니다.' : '관리자 모드가 비활성화되었습니다.');
+    }
+
+    function updateAdminUI() {
+      document.querySelectorAll('.btn-del, .btn-edit').forEach(btn => btn.style.display = isAdminMode ? 'block' : 'none');
+      document.querySelectorAll('.btn-quick-add').forEach(btn => btn.style.display = isAdminMode ? 'inline-block' : 'none');
+      document.getElementById('adminDataTools').style.display = isAdminMode ? 'flex' : 'none';
+      document.getElementById('sheetEditLink').style.display = isAdminMode ? 'inline-flex' : 'none';
+      const syncBtn = document.getElementById('btnSyncSheet');
+      if (syncBtn) syncBtn.style.display = isAdminMode ? 'inline-block' : 'none';
+    }
 
     let currentMarkers = [];
     let tempSearchMarker = null;
@@ -1697,6 +1713,7 @@
       } catch (err) {}
     }
 
+    // ⭐ 구글 스프레드시트 2단계 로드 및 헤더 정규화 파서
     async function fetchSpotsFromGoogleSheet() {
       const badge = document.getElementById('syncStatusBadge');
       if (badge) {
@@ -1706,103 +1723,130 @@
         badge.innerText = '⚡ 시트 동기화 중...';
       }
 
-      const csvUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_GID}&_t=${Date.now()}`;
+      const endpoints = [
+        `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_GID}&_t=${Date.now()}`,
+        `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv&gid=${GOOGLE_SHEET_GID}&_t=${Date.now()}`
+      ];
 
-      try {
-        const response = await fetch(csvUrl, { cache: 'no-store' });
-        if (!response.ok) throw new Error('시트 응답 없음');
-        const csvText = await response.text();
+      let csvText = null;
+      for (const url of endpoints) {
+        try {
+          const response = await fetch(url, { cache: 'no-store' });
+          if (response.ok) {
+            csvText = await response.text();
+            if (csvText && csvText.trim().length > 10) break;
+          }
+        } catch (e) {}
+      }
 
-        Papa.parse(csvText, {
-          header: true,
-          skipEmptyLines: true,
-          complete: function(results) {
-            const rows = results.data;
-            if (rows?.length > 0) {
-              spots = rows.filter(r => r.name && r.lat && r.lng).map((row, idx) => {
-                const lat = parseFloat(row.lat) || 0;
-                const lng = parseFloat(row.lng) || 0;
-                const rawYt = row.youtubeUrls || row.youtubeUrl || '';
-                const ytList = rawYt ? rawYt.split(/[\n,]+/).map(u => u.trim()).filter(Boolean) : [];
-                
-                let terrainList = ['데크'];
-                if (row.terrain && String(row.terrain).trim()) {
-                  terrainList = String(row.terrain).split(/[\n,]+/).map(t => t.trim() === '바위' ? '돌박지' : t.trim()).filter(Boolean);
-                } else {
-                  const combined = (row.name + ' ' + (row.desc || '')).toLowerCase();
-                  const autoT = [];
-                  if (combined.includes('계곡')) autoT.push('계곡');
-                  if (combined.includes('동굴') || combined.includes('굴')) autoT.push('동굴');
-                  if (combined.includes('섬') || combined.includes('해변')) autoT.push('섬');
-                  if (combined.includes('돌박지') || combined.includes('바위')) autoT.push('돌박지');
-                  if (combined.includes('노지')) autoT.push('노지');
-                  if (combined.includes('데크') || combined.includes('활공장')) autoT.push('데크');
-                  if (autoT.length > 0) terrainList = autoT;
+      if (!csvText) {
+        if (badge) {
+          badge.style.background = '#ef4444';
+          badge.innerText = `❌ 시트 로드 실패`;
+        }
+        return;
+      }
+
+      Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: function(h) {
+          return h.replace(/^\uFEFF/, '').trim();
+        },
+        complete: function(results) {
+          const rows = results.data;
+          if (rows && rows.length > 0) {
+            const mapped = [];
+            rows.forEach((row, idx) => {
+              const getVal = (...keys) => {
+                for (const k of keys) {
+                  for (const rk of Object.keys(row)) {
+                    if (rk.toLowerCase().replace(/\s+/g, '') === k.toLowerCase().replace(/\s+/g, '')) {
+                      return row[rk];
+                    }
+                  }
                 }
+                return '';
+              };
 
-                const res = detectRegionAndCity(lat, lng, row.name, row.entryPoint);
-                const spotId = row.id ? String(row.id).trim() : String(Date.now() + idx);
-                const savedViews = parseInt(localStorage.getItem(`okbm_views_${spotId}`), 10) || parseInt(localStorage.getItem(`okbm_views_${row.name}`), 10) || 0;
-                const createdAt = row.createdAt ? parseInt(row.createdAt, 10) : (newlyAddedSpotMeta[spotId] || 0);
+              const name = getVal('name', '산', '산이름', '박지명', '박지이름', '명칭');
+              const latStr = getVal('lat', '위도', 'latitude', 'y');
+              const lngStr = getVal('lng', '경도', 'longitude', 'x');
 
-                return {
-                  id: spotId,
-                  name: row.name || '무명 박지',
-                  elevation: row.elevation || '',
-                  entryPoint: row.entryPoint || '들머리 정보 미입력',
-                  lat, lng,
-                  region: res.region,
-                  cityName: res.cityName,
-                  desc: row.desc || '',
-                  youtubeUrls: ytList,
-                  blogUrl: row.blogUrl || '',
-                  instaId: row.instaId || 'oklionnature',
-                  terrain: terrainList,
-                  difficulty: row.difficulty || '3',
-                  distance: row.distance || '',
-                  droneStatus: row.droneStatus || autoDetectDroneStatus(lat, lng).status,
-                  searchCount: savedViews,
-                  createdAt
-                };
+              const lat = parseFloat(latStr) || 0;
+              const lng = parseFloat(lngStr) || 0;
+              if (!name || lat === 0 || lng === 0) return;
+
+              const elevation = getVal('elevation', '고도', '해발');
+              const entryPoint = getVal('entryPoint', '들머리', '주소', '입구', 'address') || '들머리 정보 미입력';
+              const desc = getVal('desc', '특징', '설명', '비고') || '';
+              const distance = getVal('distance', '거리');
+              const difficulty = getVal('difficulty', '난이도') || '3';
+              const rawYt = getVal('youtubeUrls', 'youtubeUrl', '유튜브', '영상');
+              const ytList = rawYt ? String(rawYt).split(/[\n,]+/).map(u => u.trim()).filter(Boolean) : [];
+              const blogUrl = getVal('blogUrl', '블로그');
+              const instaId = getVal('instaId', '인스타', '인스타그램', '등록자') || 'oklionnature';
+              const rawTerrain = getVal('terrain', '지형', '지형형태');
+
+              let terrainList = ['데크'];
+              if (rawTerrain && String(rawTerrain).trim()) {
+                terrainList = String(rawTerrain).split(/[\n,]+/).map(t => t.trim() === '바위' ? '돌박지' : t.trim()).filter(Boolean);
+              } else {
+                const combined = (name + ' ' + desc).toLowerCase();
+                const autoT = [];
+                if (combined.includes('계곡')) autoT.push('계곡');
+                if (combined.includes('동굴') || combined.includes('굴')) autoT.push('동굴');
+                if (combined.includes('섬') || combined.includes('해변')) autoT.push('섬');
+                if (combined.includes('돌박지') || combined.includes('바위')) autoT.push('돌박지');
+                if (combined.includes('노지')) autoT.push('노지');
+                if (combined.includes('데크') || combined.includes('활공장')) autoT.push('데크');
+                if (autoT.length > 0) terrainList = autoT;
+              }
+
+              const res = detectRegionAndCity(lat, lng, name, entryPoint);
+              const spotId = getVal('id') ? String(getVal('id')).trim() : String(Date.now() + idx);
+              const savedViews = parseInt(localStorage.getItem(`okbm_views_${spotId}`), 10) || parseInt(localStorage.getItem(`okbm_views_${name}`), 10) || 0;
+              const rawCreatedAt = getVal('createdAt', '생성일');
+              const createdAt = rawCreatedAt ? parseInt(rawCreatedAt, 10) : (newlyAddedSpotMeta[spotId] || 0);
+
+              mapped.push({
+                id: spotId,
+                name: name || '무명 박지',
+                elevation,
+                entryPoint,
+                lat, lng,
+                region: res.region,
+                cityName: res.cityName,
+                desc,
+                youtubeUrls: ytList,
+                blogUrl,
+                instaId,
+                terrain: terrainList,
+                difficulty,
+                distance,
+                droneStatus: getVal('droneStatus') || autoDetectDroneStatus(lat, lng).status,
+                searchCount: savedViews,
+                createdAt
               });
+            });
 
+            if (mapped.length > 0) {
+              spots = mapped;
               if (badge) {
                 badge.style.background = '#059669';
                 badge.innerText = `✅ 시트 연동 완료 (${spots.length}개)`;
               }
             }
-            renderSpots();
-            setTimeout(() => {
-              if (badge) {
-                badge.style.opacity = '0';
-                setTimeout(() => badge.style.display = 'none', 400);
-              }
-            }, 2500);
           }
-        });
-      } catch (error) {
-        if (badge) {
-          badge.style.background = '#ef4444';
-          badge.innerText = `❌ 시트 로드 실패`;
+          renderSpots();
+          setTimeout(() => {
+            if (badge) {
+              badge.style.opacity = '0';
+              setTimeout(() => badge.style.display = 'none', 400);
+            }
+          }, 2500);
         }
-      }
-    }
-
-    function toggleAdminMode() {
-      isAdminMode = !isAdminMode;
-      document.getElementById('adminBadge').style.display = isAdminMode ? 'inline-block' : 'none';
-      updateAdminUI();
-      currentMarkers.forEach(marker => marker.setDraggable(isAdminMode));
-      alert(isAdminMode ? '🔑 관리자 모드가 활성화되었습니다.' : '관리자 모드가 비활성화되었습니다.');
-    }
-
-    function updateAdminUI() {
-      document.querySelectorAll('.btn-del, .btn-edit').forEach(btn => btn.style.display = isAdminMode ? 'block' : 'none');
-      document.querySelectorAll('.btn-quick-add').forEach(btn => btn.style.display = isAdminMode ? 'inline-block' : 'none');
-      document.getElementById('adminDataTools').style.display = isAdminMode ? 'flex' : 'none';
-      document.getElementById('sheetEditLink').style.display = isAdminMode ? 'inline-flex' : 'none';
-      const syncBtn = document.getElementById('btnSyncSheet');
-      if (syncBtn) syncBtn.style.display = isAdminMode ? 'inline-block' : 'none';
+      });
     }
 
     function cleanYouTubeUrl(url) {
@@ -2117,10 +2161,9 @@
 
           const showMarkerTooltip = () => {
             markerHoverInfoWindow.setContent(`
-              <div style="padding: 4px 8px; color: #f8fafc; font-size: 0.72rem; line-height: 1.25; white-space: nowrap; pointer-events: none; text-align: center;">
-                <strong style="color: var(--google-accent-blue); font-size: 0.78rem;">📍 ${spot.name}</strong>
-                ${spot.elevation ? `<span style="color: #86efac; font-size: 0.68rem;">(${spot.elevation})</span>` : ''}<br>
-                <span style="color: #cbd5e1; font-size: 0.65rem;">난이도 ${'⭐'.repeat(parseInt(spot.difficulty, 10) || 3)}</span>
+              <div style="padding: 4px 8px; color: #f8fafc; font-size: 0.74rem; line-height: 1.25; white-space: nowrap; pointer-events: none; text-align: center; border-radius: 6px;">
+                <strong style="color: var(--google-accent-blue); font-size: 0.8rem;">📍 ${spot.name}</strong>
+                ${spot.elevation ? `<span style="color: #86efac; font-size: 0.7rem; margin-left: 2px;">(${spot.elevation})</span>` : ''}
               </div>
             `);
             markerHoverInfoWindow.open(map, marker);
@@ -2580,7 +2623,6 @@
       });
     }
 
-    // ⭐ 드론규제 레이어 즉시 작동 함수
     function toggleDroneOverlay() {
       isDroneOverlayOn = !isDroneOverlayOn;
       const pcBtn = document.getElementById('droneLayerBtn');
