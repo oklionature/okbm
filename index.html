@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>대한민국 낭만 백패킹 로드 | 포털</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-deep: #0b0e14;
+      --bg-surface: #141824;
+      --bg-card: #1c2233;
+      --bg-card-hover: #262e44;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(56, 189, 248, 0.35);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-blue: #38bdf8;
+      --accent-teal: #2dd4bf;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-deep);
+      color: var(--text-primary);
+      font-family: 'Noto Sans KR', sans-serif;
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    /* 포털 네비게이션 바 */
+    .portal-nav {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(11, 14, 20, 0.95);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .portal-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Gowun Dodum', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      text-decoration: none;
+      color: #fff;
+      background: linear-gradient(135deg, #ffffff 10%, #bae6fd 60%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .portal-menu { display: flex; align-items: center; gap: 14px; }
+    .portal-menu a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: color 0.2s;
+    }
+    .portal-menu a:hover { color: var(--accent-blue); }
+    .btn-go-map-top {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #fff !important;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+      transition: transform 0.15s;
+    }
+    .btn-go-map-top:hover { transform: translateY(-1px); }
+
+    /* 메인 히어로 & 검색 섹션 (네이버 스타일 메인) */
+    .hero-section {
+      max-width: 860px;
+      margin: 40px auto 30px auto;
+      padding: 0 20px;
+      text-align: center;
+    }
+    .hero-title {
+      font-family: 'Gowun Dodum', sans-serif;
+      font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+      font-weight: 800;
+      margin-bottom: 10px;
+      line-height: 1.3;
+    }
+    .hero-title span {
+      background: linear-gradient(135deg, #38bdf8, #2dd4bf);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-subtitle {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      margin-bottom: 28px;
+    }
+
+    /* 대형 통합 검색창 */
+    .portal-search-box {
+      position: relative;
+      width: 100%;
+      max-width: 680px;
+      margin: 0 auto 16px auto;
+    }
+    .portal-search-input {
+      width: 100%;
+      padding: 16px 56px 16px 24px;
+      font-size: 1.05rem;
+      border-radius: 32px;
+      border: 2px solid var(--accent-blue);
+      background: var(--bg-surface);
+      color: #fff;
+      outline: none;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 15px rgba(56, 189, 248, 0.2);
+      transition: all 0.25s;
+    }
+    .portal-search-input:focus {
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8), 0 0 22px rgba(56, 189, 248, 0.4);
+    }
+    .portal-search-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--accent-blue);
+      border: none;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    .portal-search-btn:hover { background: #7dd3fc; }
+
+    /* 실시간 인기 검색어 칩 */
+    .keyword-chips {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.82rem;
+    }
+    .chip-label { color: var(--accent-amber); font-weight: 700; display: flex; align-items: center; }
+    .keyword-chip {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 4px 12px;
+      border-radius: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+    .keyword-chip:hover {
+      background: var(--bg-card-hover);
+      color: var(--accent-blue);
+      border-color: var(--accent-blue);
+    }
+
+    /* 포털 메인 2열 그리드 컨텐츠 */
+    .portal-container {
+      max-width: 1200px;
+      margin: 0 auto 60px auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 24px;
+    }
+
+    .main-column { display: flex; flex-direction: column; gap: 24px; }
+    
+    /* 실시간 속보 위젯 */
+    .news-ticker-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .ticker-badge {
+      background: rgba(244, 63, 94, 0.15);
+      color: var(--accent-rose);
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .ticker-content {
+      font-size: 0.85rem;
+      color: var(--text-primary);
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ticker-date { font-size: 0.75rem; color: var(--text-muted); }
+
+    /* 추천 섹션 */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .more-link {
+      font-size: 0.8rem;
+      color: var(--accent-blue);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .curated-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+    .curated-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .curated-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-glow);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+    }
+    .card-tag {
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 4px;
+      width: fit-content;
+      margin-bottom: 8px;
+    }
+    .tag-star { background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); }
+    .tag-island { background: rgba(45, 212, 191, 0.15); color: var(--accent-teal); }
+    .tag-easy { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); }
+
+    .card-title { font-size: 1.02rem; font-weight: 700; margin-bottom: 4px; color: #fff; }
+    .card-location { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 10px; }
+    .card-desc { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 12px; }
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      border-top: 1px dashed var(--border);
+      padding-top: 8px;
+    }
+
+    .side-column { display: flex; flex-direction: column; gap: 20px; }
+    
+    .widget-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+    }
+    .widget-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .rank-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .rank-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.84rem;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+    .rank-item:hover { background: var(--bg-card); }
+    .rank-left { display: flex; align-items: center; gap: 8px; }
+    .rank-num {
+      font-weight: 900;
+      font-size: 0.85rem;
+      width: 18px;
+      color: var(--accent-blue);
+    }
+    .rank-1 { color: #facc15; }
+    .rank-name { font-weight: 600; }
+    .rank-badge { font-size: 0.7rem; color: var(--text-muted); }
+
+    .banner-cta-map {
+      background: linear-gradient(135deg, #0f766e 0%, #0284c7 100%);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(2, 132, 199, 0.3);
+      transition: transform 0.2s;
+    }
+    .banner-cta-map:hover { transform: translateY(-2px); }
+    .cta-map-title { font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
+    .cta-map-sub { font-size: 0.8rem; color: #e0f2fe; margin-bottom: 14px; }
+    .btn-cta-white {
+      background: #ffffff;
+      color: #0369a1;
+      font-weight: 800;
+      font-size: 0.85rem;
+      padding: 8px 18px;
+      border-radius: 20px;
+      display: inline-block;
+      text-decoration: none;
+    }
+
+    @media (max-width: 860px) {
+      .portal-container { grid-template-columns: 1fr; }
+      .portal-menu a:not(.btn-go-map-top) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="portal-nav">
+    <a href="index.html" class="portal-logo">
+      <span>🎒</span> 대한민국 낭만 백패킹 로드
+    </a>
+    <div class="portal-menu">
+      <a href="map.html">전국 지도</a>
+      <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer">협업·문의</a>
+      <a href="map.html" class="btn-go-map-top">🗺️ 인터랙티브 지도 열기</a>
+    </div>
+  </nav>
+
+  <section class="hero-section">
+    <h1 class="hero-title">오늘 밤, 당신의 텐트를 칠 <span>낭만의 자리</span></h1>
+    <p class="hero-subtitle">전국 100여 개 검증된 백패킹 박지, 들머리 네비 주소, 드론 규제 정보까지 한 번에</p>
+
+    <div class="portal-search-box">
+      <input type="text" id="mainSearchInput" class="portal-search-input" placeholder="가고 싶은 산, 섬, 계곡, 지역명을 검색해보세요..." onkeyup="if(event.key==='Enter') goToMapSearch()" />
+      <button type="button" class="portal-search-btn" onclick="goToMapSearch()">🔍</button>
+    </div>
+
+    <div class="keyword-chips">
+      <span class="chip-label">🔥 추천 키워드:</span>
+      <a href="map.html?q=굴업도" class="keyword-chip">🏝️ 굴업도 개머리언덕</a>
+      <a href="map.html?q=선자령" class="keyword-chip">🪵 대관령 선자령</a>
+      <a href="map.html?q=간월재" class="keyword-chip">🌾 영남알프스 간월재</a>
+      <a href="map.html?q=수우도" class="keyword-chip">🌊 통영 수우도</a>
+      <a href="map.html?q=국사봉" class="keyword-chip">⛰️ 국사봉</a>
+    </div>
+  </section>
+
+  <div class="portal-container">
+    <main class="main-column">
+      <div class="news-ticker-card">
+        <span class="ticker-badge">🚨 백패킹 속보</span>
+        <div class="ticker-content">
+          봄철/가을철 산불조심기간 국립공원 및 주요 국유림 야영·취사 집중 단속 안내
+        </div>
+        <span class="ticker-date">실시간</span>
+      </div>
+
+      <section>
+        <div class="section-header">
+          <div class="section-title">✨ 테마별 추천 낭만 박지</div>
+          <a href="map.html" class="more-link">전체 지도 보기 ➔</a>
+        </div>
+        <div class="curated-grid">
+          <div class="curated-card" onclick="location.href='map.html?q=굴업도'">
+            <div>
+              <span class="card-tag tag-island">🏝️ 서해의 알프스</span>
+              <div class="card-title">굴업도 개머리언덕</div>
+              <div class="card-location">인천 옹진군 덕적면</div>
+              <div class="card-desc">사슴들이 노니는 광활한 초원과 황홀한 서해 일몰을 감상할 수 있는 3대 성지.</div>
+            </div>
+            <div class="card-footer">
+              <span style="color:var(--accent-amber);">난이도 ⭐⭐</span>
+              <span style="color:var(--accent-teal);">배편 필수 🚢</span>
+            </div>
+          </div>
+
+          <div class="curated-card" onclick="location.href='map.html?q=선자령'">
+            <div>
+              <span class="card-tag tag-star">🌌 은하수 명소</span>
+              <div class="card-title">대관령 선자령</div>
+              <div class="card-location">강원 평창군 대관령면</div>
+              <div class="card-desc">거대한 풍력발전기 아래 펼쳐지는 밤하늘 은하수와 시원한 능선 백패킹.</div>
+            </div>
+            <div class="card-footer">
+              <span style="color:var(--accent-amber);">난이도 ⭐⭐⭐</span>
+              <span style="color:var(--accent-blue);">바람막이 필수 💨</span>
+            </div>
+          </div>
+
+          <div class="curated-card" onclick="location.href='map.html?q=간월재'">
+            <div>
+              <span class="card-tag tag-easy">🪵 억새 군락지</span>
+              <div class="card-title">간월재 억새평원</div>
+              <div class="card-location">울산 울주군 상북면</div>
+              <div class="card-desc">황금빛 억새가 물결치는 영남알프스의 심장부. 잘 정비된 데크로드.</div>
+            </div>
+            <div class="card-footer">
+              <span style="color:var(--accent-amber);">난이도 ⭐⭐</span>
+              <span style="color:var(--accent-emerald);">임도 트레킹 🚶</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section style="background:var(--bg-surface); border:1px solid var(--border); border-radius:14px; padding:20px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <h3 style="font-size:1.05rem; font-weight:800; margin-bottom:4px;">🎒 흔적을 남기지 않는 LNT(Leave No Trace) 수칙</h3>
+          <p style="font-size:0.8rem; color:var(--text-secondary);">머문 자리는 처음보다 더 깨끗하게! 가져온 쓰레기는 100% 되가져가기</p>
+        </div>
+        <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="background:var(--bg-card); border:1px solid var(--border); color:#fff; font-size:0.78rem; font-weight:700; padding:6px 12px; border-radius:8px; text-decoration:none; white-space:nowrap;">캠페인 보기</a>
+      </section>
+    </main>
+
+    <aside class="side-column">
+      <div class="banner-cta-map" onclick="location.href='map.html'">
+        <div class="cta-map-title">🗺️ 전국 박지 지도 보기</div>
+        <div class="cta-map-sub">내 주변 위치 기반 박지 & 드론 비행 가능 구역 실시간 확인</div>
+        <span class="btn-cta-white">지금 지도 열기 ➔</span>
+      </div>
+
+      <div class="widget-box">
+        <div class="widget-title">
+          <span>🔥 실시간 인기 박지 TOP 5</span>
+          <span style="font-size:0.7rem; color:var(--text-muted);">조회순</span>
+        </div>
+        <ul class="rank-list">
+          <li class="rank-item" onclick="location.href='map.html?q=굴업도'">
+            <div class="rank-left">
+              <span class="rank-num rank-1">1</span>
+              <span class="rank-name">굴업도 개머리언덕</span>
+            </div>
+            <span class="rank-badge">인천 옹진</span>
+          </li>
+          <li class="rank-item" onclick="location.href='map.html?q=선자령'">
+            <div class="rank-left">
+              <span class="rank-num">2</span>
+              <span class="rank-name">대관령 선자령</span>
+            </div>
+            <span class="rank-badge">강원 평창</span>
+          </li>
+          <li class="rank-item" onclick="location.href='map.html?q=간월재'">
+            <div class="rank-left">
+              <span class="rank-num">3</span>
+              <span class="rank-name">영남알프스 간월재</span>
+            </div>
+            <span class="rank-badge">울산 울주</span>
+          </li>
+          <li class="rank-item" onclick="location.href='map.html?q=비양도'">
+            <div class="rank-left">
+              <span class="rank-num">4</span>
+              <span class="rank-name">우도 비양도 연평리</span>
+            </div>
+            <span class="rank-badge">제주 우도</span>
+          </li>
+          <li class="rank-item" onclick="location.href='map.html?q=화악산'">
+            <div class="rank-left">
+              <span class="rank-num">5</span>
+              <span class="rank-name">화악산 쌈지공원</span>
+            </div>
+            <span class="rank-badge">경기 가평</span>
+          </li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    function goToMapSearch() {
+      const q = document.getElementById('mainSearchInput').value.trim();
+      if (!q) {
+        location.href = 'map.html';
+        return;
+      }
+      location.href = `map.html?q=${encodeURIComponent(q)}`;
+    }
+  </script>
+</body>
+</html>
