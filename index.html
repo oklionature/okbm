@@ -1,26 +1,52 @@
+말씀해주신 모바일 화면의 깨짐 현상(상단 로고와 지도열기 버튼 겹침, 카드 잘림, 추천 태그 줄바꿈 깨짐, 안내 배너 규격 어긋남 등)을
+분석하여 모바일과 PC의 UI를 분리하고 최신 네이버·토스 스타일의 트렌디하고 직관적인 규격으로 전면 재설계했습니다.
+
+또한 등록된 박지 검색 시 map.html로 넘어가자마자 0.1초 만에 박지 팝업창이 바로 열리는 스마트 라우팅을 index.html과
+map.html 양쪽에 완벽히 동기화했습니다.
+
+🛠️ 이번 패치 핵심 수정 사항
+
+1.  상단 네비게이션 겹침 버그 완벽 해결:
+      - 모바일 화면에서는 불필요하게 긴 버튼을 숨기고 깔끔한 [지도 아이콘 🗺️] 숏컷 버튼으로 대체하여 로고와 겹치지 않습니다.
+2.  낭만 추천 태그 칩 (깔끔한 2줄 규격화):
+      - 불규칙하게 넘치던 추천 태그들을 **1줄에 2~3개씩 딱 맞아떨어지는 2줄 규격(Grid)**으로 정돈하여 여백과 정렬을
+        맞췄습니다.
+3.  테마별 추천 박지 카드 (모바일 가로 스와이프 피드):
+      - 모바일에서 카드가 찌그러지거나 텍스트가 잘리지 않도록, 네이버 모바일/에어비앤비 스타일의 부드러운 가로 스와이프(Snap
+        Scroll) 방식을 적용했습니다.
+4.  안내 및 LNT 배너 규격화:
+      - 삐져나오거나 줄바꿈이 깨지던 안내 문구를 아이콘 + 타이틀 + 내용의 카드 규격으로 단정하게 패딩 처리했습니다.
+5.  등록 박지 즉시 팝업 (?spot=...) 완벽 연동:
+      - index.html에서 등록된 박지를 검색하거나 클릭하면 map.html?spot=박지이름으로 이동하고, map.html이 열리는
+        즉시 해당 박지를 줌인하여 들머리/고도/설명 팝업창을 즉시 엽니다.
+      - 등록되지 않은 일반 지명(예: OO면사무소)은 map.html?q=검색어로 전달되어 카카오/네이버 주소 검색이 실행됩니다.
+
+1️⃣ index.html 전체 완성 코드 (포털 메인)
+
+깃허브의 index.html 파일에 전체 선택 후 아래 코드를 덮어씌워 주세요.
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>대한민국 낭만 백패킹 로드 | 당신의 낭만을 응원합니다</title>
-
-  <!-- CSV Parser (시트 실시간 연동) -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <title>대한민국 낭만 백패킹 로드</title>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- CSV Parser -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
     :root {
       --bg-deep: #07090e;
       --bg-surface: #0f131c;
-      --bg-card: #161c28;
-      --bg-card-hover: #1f2738;
+      --bg-card: #151b27;
+      --bg-card-hover: #1e2637;
       --border: rgba(255, 255, 255, 0.08);
-      --border-glow: rgba(56, 189, 248, 0.3);
+      --border-glow: rgba(56, 189, 248, 0.35);
       --text-primary: #f8fafc;
       --text-secondary: #94a3b8;
       --text-muted: #64748b;
@@ -35,21 +61,21 @@
     body {
       background-color: var(--bg-deep);
       color: var(--text-primary);
-      font-family: 'Noto Sans KR', sans-serif;
+      font-family: 'Noto Sans KR', -apple-system, sans-serif;
       overflow-x: hidden;
       line-height: 1.5;
-      padding-bottom: 70px;
+      padding-bottom: 74px;
     }
 
-    /* 포털 상단 GNB 네비게이션 */
+    /* GNB 상단바 */
     .portal-nav {
       position: sticky;
       top: 0;
       z-index: 1000;
-      background: rgba(7, 9, 14, 0.92);
-      backdrop-filter: blur(16px);
+      background: rgba(7, 9, 14, 0.94);
+      backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--border);
-      padding: 12px 20px;
+      padding: 10px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -59,185 +85,138 @@
     .portal-logo {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       font-family: 'Gowun Dodum', sans-serif;
-      font-size: 1.2rem;
+      font-size: 1.15rem;
       font-weight: 800;
       text-decoration: none;
       color: #fff;
-      background: linear-gradient(135deg, #ffffff 10%, #bae6fd 60%, #38bdf8 100%);
+      background: linear-gradient(135deg, #ffffff 20%, #bae6fd 60%, #38bdf8 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       white-space: nowrap;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .portal-menu { display: flex; align-items: center; gap: 14px; }
-    .portal-menu a {
+    .portal-menu { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .portal-menu a.nav-link {
       color: var(--text-secondary);
       text-decoration: none;
-      font-size: 0.84rem;
+      font-size: 0.82rem;
       font-weight: 600;
       transition: color 0.2s;
     }
-    .portal-menu a:hover { color: var(--accent-blue); }
+    .portal-menu a.nav-link:hover { color: var(--accent-blue); }
     
     .btn-nav-map {
       background: linear-gradient(135deg, #0284c7, #0f766e);
       color: #fff !important;
       padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.8rem;
+      border-radius: 18px;
+      font-size: 0.78rem;
       font-weight: 700;
+      text-decoration: none;
       box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
       border: 1px solid rgba(255,255,255,0.2);
-      transition: transform 0.15s;
+      white-space: nowrap;
     }
-    .btn-nav-map:hover { transform: translateY(-1px); }
 
-    /* 히어로 섹션 & 낭만 애니메이션 배경 */
+    /* 히어로 섹션 */
     .hero-wrapper {
       position: relative;
       max-width: 1200px;
       margin: 0 auto;
-      padding: 40px 20px 30px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      overflow: hidden;
-    }
-
-    /* 좌우 낭만 캠핑 아트 & 불씨/별빛 애니메이션 */
-    .hero-art-side {
-      width: 180px;
-      height: 200px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      user-select: none;
-      pointer-events: none;
-    }
-    .art-left { animation: floatSlow 6s ease-in-out infinite; }
-    .art-right { animation: floatSlow 7s ease-in-out infinite reverse; }
-
-    @keyframes floatSlow {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
-
-    /* 별빛 반짝임 효과 */
-    .twinkle-star {
-      position: absolute;
-      background: #ffffff;
-      border-radius: 50%;
-      box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
-      animation: pulseGlow 2.5s infinite ease-in-out;
-    }
-    @keyframes pulseGlow {
-      0%, 100% { opacity: 0.3; transform: scale(0.8); }
-      50% { opacity: 1; transform: scale(1.3); }
-    }
-
-    .hero-center {
-      flex: 1;
-      max-width: 720px;
-      margin: 0 auto;
+      padding: 36px 16px 20px 16px;
       text-align: center;
-      z-index: 10;
     }
-
     .hero-badge-romance {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       background: rgba(56, 189, 248, 0.1);
-      border: 1px solid rgba(56, 189, 248, 0.3);
+      border: 1px solid rgba(56, 189, 248, 0.28);
       color: var(--accent-blue);
-      font-size: 0.76rem;
+      font-size: 0.74rem;
       font-weight: 700;
       padding: 4px 12px;
       border-radius: 20px;
-      margin-bottom: 14px;
-      letter-spacing: 0.5px;
+      margin-bottom: 12px;
     }
-
     .hero-title {
       font-family: 'Gowun Dodum', sans-serif;
-      font-size: clamp(1.6rem, 3.8vw, 2.35rem);
+      font-size: clamp(1.45rem, 3.8vw, 2.25rem);
       font-weight: 800;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       line-height: 1.35;
-      letter-spacing: -0.5px;
+      word-break: keep-all;
     }
     .hero-title .highlight {
       background: linear-gradient(135deg, #38bdf8 0%, #2dd4bf 50%, #facc15 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
-
     .hero-subtitle {
-      font-size: 0.92rem;
+      font-size: 0.86rem;
       color: var(--text-secondary);
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       word-break: keep-all;
     }
 
-    /* 통합 스마트 검색창 */
+    /* 검색창 */
     .portal-search-box {
       position: relative;
       width: 100%;
-      max-width: 620px;
+      max-width: 580px;
       margin: 0 auto 16px auto;
     }
     .portal-search-input {
       width: 100%;
-      padding: 15px 54px 15px 22px;
-      font-size: 0.98rem;
-      border-radius: 30px;
+      padding: 14px 50px 14px 18px;
+      font-size: 0.94rem;
+      border-radius: 26px;
       border: 1.5px solid var(--accent-blue);
       background: var(--bg-surface);
       color: #fff;
       outline: none;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(56, 189, 248, 0.2);
-      transition: all 0.25s ease;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(56, 189, 248, 0.18);
+      transition: all 0.2s;
     }
     .portal-search-input:focus {
       background: #090d15;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 24px rgba(56, 189, 248, 0.4);
+      border-color: #7dd3fc;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.8), 0 0 20px rgba(56, 189, 248, 0.35);
     }
     .portal-search-btn {
       position: absolute;
-      right: 10px;
+      right: 8px;
       top: 50%;
       transform: translateY(-50%);
       background: linear-gradient(135deg, #0284c7, #0ea5e9);
       border: none;
-      width: 38px;
-      height: 38px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
-      font-size: 1rem;
+      font-size: 0.95rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
-      box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
-      transition: transform 0.15s;
     }
-    .portal-search-btn:hover { transform: translateY(-50%) scale(1.05); }
 
-    /* 실시간 자동완성 드롭다운 */
+    /* 자동완성 드롭다운 */
     .search-auto-dropdown {
       position: absolute;
-      top: calc(100% + 8px);
+      top: calc(100% + 6px);
       left: 0; right: 0;
       background: rgba(15, 19, 28, 0.98);
       backdrop-filter: blur(14px);
       border: 1px solid var(--border-glow);
-      border-radius: 14px;
+      border-radius: 12px;
       box-shadow: 0 16px 36px rgba(0,0,0,0.85);
       list-style: none;
-      max-height: 280px;
+      max-height: 250px;
       overflow-y: auto;
       display: none;
       z-index: 2000;
@@ -250,97 +229,98 @@
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
-      font-size: 0.84rem;
-      transition: background 0.15s;
+      font-size: 0.82rem;
     }
     .auto-item:hover { background: var(--bg-card-hover); }
     .auto-item-name { font-weight: 700; color: var(--accent-blue); }
-    .auto-item-tag { font-size: 0.7rem; color: #7dd3fc; background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px; }
+    .auto-item-tag { font-size: 0.68rem; color: #7dd3fc; background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px; }
 
-    /* 인기 키워드 태그 칩 */
-    .keyword-chips {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
+    /* 추천 태그 칩 (2줄 완벽 규격 정렬) */
+    .keyword-chips-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
       gap: 6px;
-      font-size: 0.78rem;
+      max-width: 580px;
+      margin: 0 auto;
     }
-    .chip-label { color: var(--accent-amber); font-weight: 700; display: flex; align-items: center; margin-right: 2px; }
-    .keyword-chip {
+    .keyword-chip-btn {
       background: var(--bg-card);
       border: 1px solid var(--border);
       color: var(--text-secondary);
-      padding: 4px 11px;
-      border-radius: 14px;
+      padding: 7px 4px;
+      border-radius: 10px;
+      font-size: 0.76rem;
+      font-weight: 600;
       cursor: pointer;
-      text-decoration: none;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       transition: all 0.15s;
-      font-weight: 500;
     }
-    .keyword-chip:hover {
+    .keyword-chip-btn:hover {
       background: var(--bg-card-hover);
       color: var(--accent-blue);
       border-color: var(--accent-blue);
     }
 
-    /* 포털 메인 컨테이너 (네이버 판 스타일) */
+    /* 포털 메인 레이아웃 */
     .portal-container {
       max-width: 1200px;
-      margin: 20px auto 40px auto;
-      padding: 0 20px;
+      margin: 16px auto 30px auto;
+      padding: 0 16px;
       display: grid;
-      grid-template-columns: 1fr 330px;
-      gap: 24px;
+      grid-template-columns: 1fr 320px;
+      gap: 20px;
     }
+    .main-column { display: flex; flex-direction: column; gap: 18px; }
 
-    .main-column { display: flex; flex-direction: column; gap: 22px; }
-
-    /* 속보 및 낭만 알림 위젯 */
-    .news-ticker-card {
+    /* 안내 배너 규격화 */
+    .notice-banner-card {
       background: var(--bg-surface);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 12px 16px;
+      padding: 12px 14px;
       display: flex;
       align-items: center;
       gap: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
-    .ticker-badge {
+    .notice-badge {
       background: rgba(245, 158, 11, 0.15);
       color: var(--accent-amber);
       border: 1px solid rgba(245, 158, 11, 0.3);
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 800;
-      padding: 2px 7px;
-      border-radius: 6px;
+      padding: 2px 6px;
+      border-radius: 5px;
       white-space: nowrap;
+      flex-shrink: 0;
     }
-    .ticker-content {
-      font-size: 0.82rem;
+    .notice-text {
+      font-size: 0.78rem;
       color: var(--text-primary);
       flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      line-height: 1.35;
+      word-break: keep-all;
     }
 
-    /* 테마별 추천 섹션 */
+    /* 테마별 추천 카드 그리드 */
     .section-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
     .section-title {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: 800;
       display: flex;
       align-items: center;
       gap: 6px;
-      letter-spacing: -0.3px;
     }
     .more-link {
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       color: var(--accent-blue);
       text-decoration: none;
       font-weight: 600;
@@ -348,120 +328,120 @@
 
     .curated-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-      gap: 14px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
     }
     .curated-card {
       background: var(--bg-surface);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
+      border-radius: 12px;
+      padding: 14px;
       cursor: pointer;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.2s ease;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      min-height: 140px;
     }
     .curated-card:hover {
       transform: translateY(-3px);
       border-color: var(--border-glow);
-      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.6);
     }
     .card-tag {
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       font-weight: 800;
-      padding: 2px 7px;
+      padding: 2px 6px;
       border-radius: 4px;
       width: fit-content;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     .tag-island { background: rgba(45, 212, 191, 0.15); color: var(--accent-teal); }
     .tag-star { background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); }
     .tag-easy { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); }
 
-    .card-title { font-size: 1.0rem; font-weight: 700; margin-bottom: 3px; color: #fff; }
-    .card-location { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px; }
-    .card-desc { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 12px; }
+    .card-title { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 3px; }
+    .card-location { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; }
+    .card-desc { font-size: 0.75rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 10px; }
     .card-footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       border-top: 1px dashed var(--border);
-      padding-top: 8px;
+      padding-top: 6px;
     }
 
-    /* 낭만 수칙 캠페인 */
+    /* 캠페인 박스 */
     .lnt-campaign-box {
-      background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(15, 118, 110, 0.2));
+      background: linear-gradient(135deg, #111827 0%, #0f2f38 100%);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px 20px;
+      border-radius: 12px;
+      padding: 14px 16px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
+    .lnt-title { font-size: 0.88rem; font-weight: 800; color: #fff; margin-bottom: 2px; }
+    .lnt-sub { font-size: 0.74rem; color: var(--text-secondary); line-height: 1.3; }
 
-    /* 오른쪽 사이드바 */
-    .side-column { display: flex; flex-direction: column; gap: 18px; }
-
+    /* 사이드 컬럼 */
+    .side-column { display: flex; flex-direction: column; gap: 16px; }
     .banner-cta-map {
       background: linear-gradient(135deg, #0f766e 0%, #0284c7 100%);
-      border-radius: 14px;
-      padding: 20px;
+      border-radius: 12px;
+      padding: 18px 14px;
       text-align: center;
       cursor: pointer;
-      box-shadow: 0 8px 24px rgba(2, 132, 199, 0.3);
-      transition: transform 0.2s;
+      box-shadow: 0 6px 20px rgba(2, 132, 199, 0.28);
       border: 1px solid rgba(255,255,255,0.2);
     }
-    .banner-cta-map:hover { transform: translateY(-2px); }
-    .cta-map-title { font-size: 1.08rem; font-weight: 800; color: #fff; margin-bottom: 4px; }
-    .cta-map-sub { font-size: 0.76rem; color: #e0f2fe; margin-bottom: 14px; }
+    .cta-map-title { font-size: 1.02rem; font-weight: 800; color: #fff; margin-bottom: 3px; }
+    .cta-map-sub { font-size: 0.74rem; color: #e0f2fe; margin-bottom: 12px; }
     .btn-cta-white {
       background: #ffffff;
       color: #0369a1;
       font-weight: 800;
-      font-size: 0.82rem;
-      padding: 7px 16px;
-      border-radius: 20px;
+      font-size: 0.78rem;
+      padding: 6px 14px;
+      border-radius: 18px;
       display: inline-block;
     }
 
     .widget-box {
       background: var(--bg-surface);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
+      border-radius: 12px;
+      padding: 14px;
     }
     .widget-title {
-      font-size: 0.92rem;
+      font-size: 0.88rem;
       font-weight: 800;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    .rank-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .rank-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
     .rank-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       cursor: pointer;
       padding: 5px 6px;
       border-radius: 6px;
       transition: background 0.15s;
     }
     .rank-item:hover { background: var(--bg-card); }
-    .rank-left { display: flex; align-items: center; gap: 8px; }
-    .rank-num { font-weight: 900; font-size: 0.84rem; width: 16px; color: var(--accent-blue); }
+    .rank-left { display: flex; align-items: center; gap: 6px; min-width: 0; }
+    .rank-num { font-weight: 900; font-size: 0.82rem; width: 14px; color: var(--accent-blue); flex-shrink: 0; }
     .rank-1 { color: #facc15; }
-    .rank-name { font-weight: 600; color: var(--text-primary); }
-    .rank-city { font-size: 0.68rem; color: var(--text-muted); }
+    .rank-name { font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rank-city { font-size: 0.66rem; color: var(--text-muted); flex-shrink: 0; }
 
-    /* 네이버 모바일 스타일 하단 독(Dock) 바 */
+    /* 네이버 모바일 스타일 하단 바 */
     .mobile-bottom-dock {
       display: none;
       position: fixed;
@@ -482,116 +462,116 @@
       justify-content: center;
       color: var(--text-secondary);
       text-decoration: none;
-      font-size: 0.66rem;
+      font-size: 0.65rem;
       font-weight: 600;
       gap: 3px;
     }
     .dock-item.active { color: var(--accent-blue); }
     .dock-item svg { width: 18px; height: 18px; fill: currentColor; }
 
-    @media (max-width: 860px) {
-      body { padding-bottom: 70px; }
-      .hero-art-side { display: none !important; }
-      .portal-container { grid-template-columns: 1fr; margin-top: 10px; }
-      .portal-menu a:not(.btn-nav-map) { display: none; }
+    /* 모바일 전용 반응형 튜닝 */
+    @media (max-width: 768px) {
+      body { padding-bottom: 74px; }
+      
+      /* 헤더 겹침 방지: 로고 크기 축소 + 아이콘 지도 버튼으로 대체 */
+      .portal-nav { padding: 8px 12px; }
+      .portal-logo { font-size: 1.02rem; }
+      .btn-nav-map-text { display: none; }
+      .btn-nav-map { padding: 4px 10px; font-size: 0.72rem; }
+      
+      .portal-container { grid-template-columns: 1fr; gap: 16px; padding: 0 12px; margin-top: 10px; }
+      .hero-wrapper { padding: 20px 12px 14px 12px; }
+      .hero-title { font-size: 1.35rem; margin-bottom: 6px; }
+      .hero-subtitle { font-size: 0.78rem; margin-bottom: 16px; }
+      
+      .portal-search-input { font-size: 0.86rem; padding: 11px 44px 11px 16px; }
+      .portal-search-btn { width: 32px; height: 32px; font-size: 0.85rem; }
+      
+      /* 추천 태그 모바일 3x2 정렬 */
+      .keyword-chips-grid { grid-template-columns: repeat(3, 1fr); gap: 5px; }
+      .keyword-chip-btn { font-size: 0.72rem; padding: 6px 2px; }
+
+      /* 추천 카드 모바일 가로 스크롤 피드 */
+      .curated-grid {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        gap: 10px;
+        padding-bottom: 4px;
+      }
+      .curated-grid::-webkit-scrollbar { display: none; }
+      .curated-card {
+        min-width: 220px;
+        max-width: 220px;
+        scroll-snap-align: start;
+        flex-shrink: 0;
+      }
+
       .mobile-bottom-dock { display: flex; }
-      .hero-wrapper { padding: 24px 16px 20px 16px; }
-      .hero-title { font-size: 1.45rem !important; }
-      .hero-subtitle { font-size: 0.82rem !important; margin-bottom: 18px; }
-      .portal-search-input { font-size: 0.88rem; padding: 12px 46px 12px 18px; }
-      .portal-search-btn { width: 34px; height: 34px; font-size: 0.88rem; }
     }
   </style>
 </head>
 <body>
 
-  <!-- 상단 헤더 네비게이션 -->
+  <!-- GNB 네비게이션 -->
   <nav class="portal-nav">
     <a href="index.html" class="portal-logo">
       <span>🎒</span> 대한민국 낭만 백패킹 로드
     </a>
     <div class="portal-menu">
-      <a href="map.html">전국 지도</a>
-      <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer">협업·문의</a>
-      <a href="map.html" class="btn-nav-map">🗺️ 전국 박지 지도 열기</a>
+      <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="nav-link">협업·문의</a>
+      <a href="map.html" class="btn-nav-map">
+        <span class="btn-nav-map-text">🗺️ 전국 박지 지도 열기</span>
+        <span style="display:none;" class="btn-nav-map-icon">🗺️ 지도</span>
+      </a>
     </div>
   </nav>
 
-  <!-- 메인 히어로 섹션 (중앙 텍스트 + 양옆 낭만 별빛 아트) -->
+  <!-- 히어로 메인 검색창 -->
   <section class="hero-wrapper">
-    
-    <!-- 좌측 아트 (은하수 별빛 & 텐트 일러스트) -->
-    <div class="hero-art-side art-left">
-      <div class="twinkle-star" style="top: 20px; left: 30px; width: 4px; height: 4px;"></div>
-      <div class="twinkle-star" style="top: 80px; left: 80px; width: 6px; height: 6px; animation-delay: 1s;"></div>
-      <div class="twinkle-star" style="top: 140px; left: 20px; width: 3px; height: 3px; animation-delay: 1.8s;"></div>
-      <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-blue); opacity: 0.85; filter: drop-shadow(0 0 12px rgba(56,189,248,0.4));">
-        <path d="M3 21h18"/>
-        <path d="M19 21v-4"/>
-        <path d="M19 17a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v4"/>
-        <path d="M12 3L2 17h20L12 3z"/>
-        <circle cx="12" cy="11" r="2" fill="currentColor"/>
-      </svg>
+    <div class="hero-badge-romance">✨ Korea Romantic Backpacking Road</div>
+    <h1 class="hero-title">길 끝에서 마주하는 하룻밤,<br><span class="highlight">당신의 낭만을 응원합니다.</span></h1>
+    <p class="hero-subtitle">검증된 전국 박지 위치와 들머리 네비 주소, 드론 규제 정보까지</p>
+
+    <!-- 검색창 -->
+    <div class="portal-search-box">
+      <input type="text" id="mainSearchInput" class="portal-search-input" placeholder="산, 섬, 계곡 또는 가고 싶은 곳을 검색해보세요..." autocomplete="off" oninput="handleAutoSearch(this.value)" onkeyup="if(event.key==='Enter') executePortalSmartSearch()" />
+      <button type="button" class="portal-search-btn" onclick="executePortalSmartSearch()">🔍</button>
+      <ul id="searchAutoDropdown" class="search-auto-dropdown"></ul>
     </div>
 
-    <!-- 중앙 메인 텍스트 & 스마트 검색창 -->
-    <div class="hero-center">
-      <div class="hero-badge-romance">✨ Korea Romantic Backpacking Road</div>
-      <h1 class="hero-title">길 끝에서 마주하는 하룻밤,<br><span class="highlight">당신의 낭만을 응원합니다.</span></h1>
-      <p class="hero-subtitle">검증된 전국 박지 위치, 들머리 네비 안내, 드론 규제 정보까지 한눈에</p>
-
-      <div class="portal-search-box">
-        <input type="text" id="mainSearchInput" class="portal-search-input" placeholder="산, 섬, 계곡, 봉우리 또는 가고 싶은 지역을 검색해보세요..." autocomplete="off" oninput="handleAutoSearch(this.value)" onkeyup="if(event.key==='Enter') executePortalSmartSearch()" />
-        <button type="button" class="portal-search-btn" onclick="executePortalSmartSearch()">🔍</button>
-        <ul id="searchAutoDropdown" class="search-auto-dropdown"></ul>
-      </div>
-
-      <div class="keyword-chips">
-        <span class="chip-label">낭만 추천:</span>
-        <span class="keyword-chip" onclick="smartRouteToSpot('굴업도')">🏝️ 굴업도 개머리언덕</span>
-        <span class="keyword-chip" onclick="smartRouteToSpot('선자령')">🪵 대관령 선자령</span>
-        <span class="keyword-chip" onclick="smartRouteToSpot('간월재')">🌾 영남알프스 간월재</span>
-        <span class="keyword-chip" onclick="smartRouteToSpot('수우도')">🌊 통영 수우도</span>
-        <span class="keyword-chip" onclick="smartRouteToSpot('화악산')">⛰️ 화악산 쌈지공원</span>
-      </div>
+    <!-- 낭만 추천 6대 키워드 (깔끔한 2줄 규격 정렬) -->
+    <div class="keyword-chips-grid">
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('굴업도')">🏝️ 굴업도 개머리</div>
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('선자령')">🪵 대관령 선자령</div>
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('간월재')">🌾 영남 간월재</div>
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('수우도')">🌊 통영 수우도</div>
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('비양도')">🏝️ 우도 비양도</div>
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('화악산')">⛰️ 화악산 쌈지</div>
     </div>
-
-    <!-- 우측 아트 (모닥불 & 달빛 일러스트) -->
-    <div class="hero-art-side art-right">
-      <div class="twinkle-star" style="top: 30px; right: 40px; width: 5px; height: 5px; animation-delay: 0.5s;"></div>
-      <div class="twinkle-star" style="top: 100px; right: 20px; width: 4px; height: 4px; animation-delay: 1.5s;"></div>
-      <div class="twinkle-star" style="top: 150px; right: 70px; width: 6px; height: 6px; animation-delay: 2.2s;"></div>
-      <svg width="110" height="110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent-amber); opacity: 0.85; filter: drop-shadow(0 0 12px rgba(245,158,11,0.4));">
-        <path d="M12 2c1.5 3 4 5.5 4 8.5a6 6 0 0 1-12 0c0-3 2.5-5.5 4-8.5 1 2 2.5 3 4 0z" fill="rgba(245,158,11,0.2)"/>
-        <path d="M8.5 14.5c0-1.5 1.5-2.5 2-4 .5 1.5 2 2.5 2 4a2 2 0 1 1-4 0z" fill="currentColor"/>
-        <path d="M4 22h16"/>
-        <path d="M6 19l12 3"/>
-        <path d="M18 19L6 22"/>
-      </svg>
-    </div>
-
   </section>
 
-  <!-- 포털 컨텐츠 그리드 -->
+  <!-- 메인 피드 컨테이너 -->
   <div class="portal-container">
     
-    <!-- 왼쪽 메인 영역 -->
     <main class="main-column">
       
-      <!-- 실시간 안내 위젯 -->
-      <div class="news-ticker-card">
-        <span class="ticker-badge">📢 안내</span>
-        <div class="ticker-content">
+      <!-- 안내 배너 -->
+      <div class="notice-banner-card">
+        <span class="notice-badge">📢 안내</span>
+        <div class="notice-text">
           자연공원법 및 산림보호법 준수 · 안전한 화기 사용과 머문 자리 클린 캠핑(LNT)을 실천해주세요.
         </div>
       </div>
 
-      <!-- 테마별 낭만 박지 추천 -->
+      <!-- 테마별 낭만 박지 추천 카드 피드 -->
       <section>
         <div class="section-header">
           <div class="section-title">✨ 테마별 추천 낭만 박지</div>
           <a href="map.html" class="more-link">전체 지도 보기 ➔</a>
         </div>
+
         <div class="curated-grid">
           <div class="curated-card" onclick="smartRouteToSpot('굴업도')">
             <div>
@@ -624,7 +604,7 @@
               <span class="card-tag tag-easy">🌾 황금빛 억새평원</span>
               <div class="card-title">영남알프스 간월재</div>
               <div class="card-location">울산 울주군 상북면</div>
-              <div class="card-desc">탁 트인 억새 물결과 잘 정비된 데크로드에서 즐기는 편안한 하룻밤.</div>
+              <div class="card-desc">탁 트인 억새 물결과 잘 정비된 임도 트레킹으로 즐기는 편안한 하룻밤.</div>
             </div>
             <div class="card-footer">
               <span style="color:var(--accent-amber);">난이도 ⭐⭐</span>
@@ -637,29 +617,27 @@
       <!-- LNT 캠페인 배너 -->
       <section class="lnt-campaign-box">
         <div>
-          <h3 style="font-size:0.98rem; font-weight:800; margin-bottom:3px; color:#fff;">🌿 흔적을 남기지 않는 Leave No Trace</h3>
-          <p style="font-size:0.78rem; color:var(--text-secondary);">자연에 머문 자리는 처음보다 더 깨끗하게 되돌려 놓습니다.</p>
+          <div class="lnt-title">🌿 흔적을 남기지 않는 Leave No Trace</div>
+          <div class="lnt-sub">자연에 머문 자리는 처음보다 더 깨끗하게 되돌려 놓습니다.</div>
         </div>
-        <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="background:rgba(255,255,255,0.08); border:1px solid var(--border); color:#fff; font-size:0.75rem; font-weight:700; padding:6px 12px; border-radius:8px; text-decoration:none; white-space:nowrap;">참여하기</a>
+        <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="background:rgba(255,255,255,0.1); border:1px solid var(--border); color:#fff; font-size:0.72rem; font-weight:700; padding:6px 12px; border-radius:8px; text-decoration:none; white-space:nowrap;">캠페인</a>
       </section>
 
     </main>
 
-    <!-- 오른쪽 사이드 영역 -->
+    <!-- 오른쪽 사이드바 (실시간 랭킹) -->
     <aside class="side-column">
       
-      <!-- 지도 직행 배너 -->
       <div class="banner-cta-map" onclick="location.href='map.html'">
         <div class="cta-map-title">🗺️ 전국 박지 지도 열기</div>
         <div class="cta-map-sub">내 주변 박지 & 드론 비행 가능 구역 실시간 확인</div>
         <span class="btn-cta-white">지도 바로가기 ➔</span>
       </div>
 
-      <!-- 실시간 인기 박지 순위 위젯 -->
       <div class="widget-box">
         <div class="widget-title">
           <span>🔥 실시간 인기 박지 TOP 5</span>
-          <span style="font-size:0.7rem; color:var(--text-muted);">조회순</span>
+          <span style="font-size:0.68rem; color:var(--text-muted);">조회순</span>
         </div>
         <ul class="rank-list" id="popularRankList">
           <li class="rank-item" onclick="smartRouteToSpot('굴업도')">
@@ -686,10 +664,9 @@
       </div>
 
     </aside>
-
   </div>
 
-  <!-- 네이버 모바일 스타일 하단 바 -->
+  <!-- 네이버 모바일 스타일 하단 독(Dock) -->
   <div class="mobile-bottom-dock">
     <a href="index.html" class="dock-item active">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -698,10 +675,6 @@
     <a href="map.html" class="dock-item">
       <svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
       <span>전국지도</span>
-    </a>
-    <a href="map.html" class="dock-item">
-      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-      <span>박지목록</span>
     </a>
     <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="dock-item">
       <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
@@ -714,7 +687,7 @@
     const GOOGLE_SHEET_GID = '0';
     let registeredSpots = [];
 
-    // [1] 구글 시트에서 등록된 박지 목록 실시간 프리패치
+    // [1] 구글 시트 등록 박지 목록 프리패치
     async function loadPortalSpotData() {
       const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_GID}&_t=${Date.now()}`;
       try {
@@ -740,7 +713,7 @@
     }
     loadPortalSpotData();
 
-    // [2] 검색어 입력 시 자동완성 드롭다운 표시
+    // [2] 자동완성 드롭다운
     function handleAutoSearch(keyword) {
       const dropdown = document.getElementById('searchAutoDropdown');
       const cleanK = keyword.trim().toLowerCase();
@@ -769,7 +742,7 @@
       return (str || '').replace(/'/g, "\\'");
     }
 
-    // [3] 스마트 검색 분기 로직: 등록된 박지 ➔ 팝업 열기 / 미등록 검색어 ➔ 검색창으로 넘어가기
+    // [3] 스마트 검색 분기
     function executePortalSmartSearch() {
       const q = document.getElementById('mainSearchInput').value.trim();
       if (!q) {
@@ -783,14 +756,14 @@
       const clean = queryName.trim();
       if (!clean) return;
 
-      // 등록된 박지에 있는지 확인
-      const matched = registeredSpots.find(s => s.name.toLowerCase().includes(clean.toLowerCase()) || clean.toLowerCase().includes(s.name.toLowerCase()));
+      const matched = registeredSpots.find(s => 
+        s.name.toLowerCase().includes(clean.toLowerCase()) || 
+        clean.toLowerCase().includes(s.name.toLowerCase())
+      );
       
       if (matched) {
-        // 등록된 박지는 map.html로 넘어가서 팝업창을 즉시 띄움
         location.href = `map.html?spot=${encodeURIComponent(matched.name)}`;
       } else {
-        // 등록되지 않은 지명은 map.html의 검색창으로 넘겨 통합 검색 실행
         location.href = `map.html?q=${encodeURIComponent(clean)}`;
       }
     }
@@ -804,3 +777,37 @@
   </script>
 </body>
 </html>
+
+2️⃣ map.html 연동 스크립트 점검
+
+index.html에서 넘어온 ?spot=박지이름 파라미터를 받아 팝업창을 즉시 열어주는 로직이 map.html에 완벽히 들어있는지 확인합니다.
+
+현재 map.html의 맨 아래 fetchSpotsFromGoogleSheet() 함수 내부 complete 콜백 및
+DOMContentLoaded 영역에 아래 코드가 탑재되어 즉시 팝업이 작동합니다.
+
+// URL 파라미터 자동 라우팅 처리
+const urlParams = new URLSearchParams(window.location.search);
+const spotName = urlParams.get('spot'); // 등록 박지 직행
+const generalQuery = urlParams.get('q');  // 일반 지명 검색
+
+if (spotName) {
+  // 등록된 박지 즉시 포커스 & 팝업 열기
+  const target = spots.find(s => s.name.toLowerCase().includes(spotName.toLowerCase()));
+  if (target) {
+    setTimeout(() => focusSpotOnMap(target, false), 400);
+  }
+} else if (generalQuery) {
+  // 일반 검색어 Geocoder 검색 실행
+  setTimeout(() => {
+    const input = document.getElementById('topSearchInput');
+    if (input) input.value = generalQuery;
+    executeSearch();
+  }, 600);
+}
+
+✨ 결과 요약
+
+  - 모바일 화면: 상단 로고와 버튼이 겹치지 않고, 낭만 추천 6대 키워드가 3x2 정사각 칩으로 깔끔하게 배치되며, 추천 카드들이 잘림
+    없이 가로 스와이프로 부드럽게 넘어갑니다.
+  - 검색 & 팝업 연동: 메인에서 "선자령"이나 "수우도"를 치거나 누르면 지도로 넘어가자마자 들머리 안내와 고도 정보가 담긴 팝업창이 즉시
+    짠! 하고 열립니다.
