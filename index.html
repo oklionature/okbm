@@ -114,9 +114,9 @@
     }
     .header-btn:hover { background: #475569; }
     .header-btn.active {
-      background: #ef4444;
-      color: #ffffff;
-      border-color: #dc2626;
+      background: #ef4444 !important;
+      color: #ffffff !important;
+      border-color: #dc2626 !important;
     }
 
     .admin-only-btn {
@@ -596,7 +596,7 @@
 
     #map { flex: 1; height: 100%; position: relative; overflow: hidden !important; }
     
-    /* ⭐ 팝업창 안정화 (스크롤바 깨짐 방지 및 가로 밀림 원천 차단) */
+    /* 팝업창 */
     .compact-info-window {
       padding: 8px 10px;
       width: 255px !important;
@@ -765,39 +765,103 @@
     .modal-btn-cancel { background: #e2e8f0; color: #475569; }
     .modal-btn-save { background: #0f766e; color: #ffffff; }
 
-    .mobile-bottom-toggle {
+    /* ⭐ 모바일 하단 3버튼 플로팅 컨트롤 바 */
+    .mobile-floating-controls {
       display: none;
       position: fixed;
-      bottom: 20px;
+      bottom: 18px;
       left: 50%;
       transform: translateX(-50%);
+      align-items: center;
+      gap: 6px;
+      z-index: 4000;
+      width: calc(100% - 24px);
+      max-width: 380px;
+    }
+    .mobile-float-btn {
+      padding: 9px 12px;
+      border-radius: 30px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border: 1.5px solid rgba(255,255,255,0.7);
+      box-shadow: 0 5px 16px rgba(0, 0, 0, 0.35);
+      cursor: pointer;
+      white-space: nowrap;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .mobile-float-drone {
+      background: #334155;
+      color: #ffffff;
+      flex: 1;
+    }
+    .mobile-float-toggle {
       background: #0f766e;
       color: #ffffff;
-      padding: 9px 18px;
-      border-radius: 30px;
+      flex: 1.4;
       font-size: 0.82rem;
-      font-weight: 700;
-      border: 2px solid #ffffff;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-      z-index: 4000;
-      cursor: pointer;
+    }
+    .mobile-float-reset {
+      background: #334155;
+      color: #ffffff;
+      flex: 1;
     }
 
+    /* ⭐ 완벽한 모바일 전용 UI/UX */
     @media (max-width: 768px) {
-      .header { height: auto; flex-direction: column; align-items: stretch; padding: 8px 10px; gap: 6px; }
-      .header-left { justify-content: space-between; }
-      .header-title-box { gap: 6px; flex-wrap: wrap; }
-      .main-title { font-size: 1.25rem; }
-      .main-title .flag-icon, .main-title .mountain-icon { font-size: 1.15rem; }
-      .sub-en-title { font-size: 1.2rem; }
-      .header-right { flex-wrap: wrap; width: 100%; gap: 5px; }
+      .header { 
+        height: auto; 
+        flex-direction: column; 
+        align-items: center; 
+        padding: 10px 14px; 
+        gap: 8px; 
+      }
+      .header-left { 
+        width: 100%; 
+        justify-content: center; 
+        position: relative;
+      }
+      /* 모바일에서 타이틀 정중앙 배치 */
+      .header-title-box { 
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        gap: 1px;
+      }
+      .main-title { 
+        font-size: 1.35rem; 
+        justify-content: center;
+      }
+      .main-title .flag-icon, .main-title .mountain-icon { font-size: 1.2rem; }
+      .sub-en-title { 
+        font-size: 1.3rem; 
+        margin-left: 0;
+        margin-top: -3px;
+      }
+      .sync-status-badge, .admin-status-badge {
+        position: absolute;
+        right: 0;
+        top: 0;
+      }
+
+      /* 모바일 상단에서는 지도초기화, 드론버튼 숨기고 검색창만 표시 */
+      .header-right { 
+        width: 100%; 
+        display: flex;
+        justify-content: center;
+      }
+      .header-desktop-only { display: none !important; }
       .search-container { width: 100%; }
-      .header-btn { flex: 1; text-align: center; padding: 5px 6px; font-size: 0.72rem; }
-      .mobile-bottom-toggle { display: block; }
+      .search-input { padding: 9px 38px 9px 16px; font-size: 0.88rem; }
+      
+      .mobile-floating-controls { display: flex; }
       
       .container { 
-        margin-top: 110px; 
-        height: calc(100% - 110px); 
+        margin-top: 114px; 
+        height: calc(100% - 114px); 
         position: relative;
         overflow: hidden;
       }
@@ -810,20 +874,22 @@
         z-index: 100;
       }
 
+      /* ⭐ 모바일 박지 목록: 하단 컨트롤 버튼 바로 위까지 꽉 차도록 확장 */
       .sidebar { 
         position: absolute;
         top: 0; left: 0; right: 0;
         width: 100%; 
-        height: 65% !important; 
+        height: calc(100% - 75px) !important; 
         z-index: 300;
         border-right: none; 
         border-bottom: 2px solid #cbd5e1; 
-        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
         transform: translateY(0);
+        border-radius: 0 0 16px 16px;
       }
       
       .sidebar.collapsed { 
-        transform: translateY(-120%) !important;
+        transform: translateY(-130%) !important;
       }
     }
   </style>
@@ -832,6 +898,7 @@
 
   <header class="header">
     <div class="header-left">
+      <!-- ⭐ 모바일에서 완벽한 정중앙 배치 타이틀 -->
       <div class="header-title-box">
         <span class="main-title">
           <span class="flag-icon">🇰🇷</span>
@@ -846,9 +913,11 @@
     
     <div class="header-right">
       <button type="button" class="header-btn admin-only-btn" id="btnSyncSheet" onclick="fetchSpotsFromGoogleSheet()">🔄 시트 동기화</button>
-      <button type="button" class="header-btn" id="resetMapBtn" onclick="resetMapView()">🔄 지도 초기화</button>
-      <button type="button" class="header-btn" id="droneLayerBtn" onclick="handleDroneBtnClick()">🛸 드론규제공역 레이어</button>
+      <!-- PC 전용 상단 버튼 (모바일에서는 숨김) -->
+      <button type="button" class="header-btn header-desktop-only" id="resetMapBtn" onclick="resetMapView()">🔄 지도 초기화</button>
+      <button type="button" class="header-btn header-desktop-only" id="droneLayerBtn" onclick="handleDroneBtnClick()">🛸 드론규제공역 레이어</button>
       
+      <!-- 상단 깔끔 검색창 -->
       <div class="search-container">
         <input type="text" id="topSearchInput" class="search-input" placeholder="산/계곡/섬/동굴/명소 검색" onfocus="showTopRankings()" onkeyup="handleSearchInput(event)" />
         <button type="button" class="search-btn-icon" onclick="executeSearch()">🔍</button>
@@ -904,9 +973,18 @@
     <main id="map"></main>
   </div>
 
-  <button type="button" class="mobile-bottom-toggle" id="bottomToggleBtn" onclick="toggleMobileSidebar()">
-    ▼ 박지 목록 닫기
-  </button>
+  <!-- ⭐ 모바일 전용 3버튼 하단 플로팅 컨트롤 바 (드론규제 | 박지목록토글 | 지도초기화) -->
+  <div class="mobile-floating-controls">
+    <button type="button" class="mobile-float-btn mobile-float-drone" id="mobileDroneBtn" onclick="handleDroneBtnClick()">
+      🛸 드론규제
+    </button>
+    <button type="button" class="mobile-float-btn mobile-float-toggle" id="bottomToggleBtn" onclick="toggleMobileSidebar()">
+      ▼ 박지 목록 닫기
+    </button>
+    <button type="button" class="mobile-float-btn mobile-float-reset" id="mobileResetBtn" onclick="resetMapView()">
+      🔄 지도초기화
+    </button>
+  </div>
 
   <!-- AI 모달 -->
   <div class="custom-modal-overlay" id="bulkImportModalOverlay">
@@ -1120,7 +1198,6 @@
       zoomControlOptions: { position: naver.maps.Position.RIGHT_CENTER }
     });
 
-    // ⭐ 팝업창 안정화 설정 (autoPan: false로 지도가 강제로 밀려 스크롤바가 생기는 현상 방지)
     const infoWindow = new naver.maps.InfoWindow({ 
       borderWidth: 1, 
       borderColor: '#cbd5e1', 
@@ -1331,7 +1408,7 @@
               entryPoint: targetSpot.entryPoint
             })
           });
-          alert(`✅ '${targetSpot.name}' 위치가 구글 시트와 웹에 저장되었습니다!\n(위도: ${newLat}, 경도: ${newLng})`);
+          alert(`✅ '${targetSpot.name}' 위치가 저장되었습니다!\n(위도: ${newLat}, 경도: ${newLng})`);
         } catch (err) {
           console.error('시트 저장 에러:', err);
         }
@@ -1732,7 +1809,6 @@
 
     let isCommentSubmitting = false;
 
-    // ⭐ 댓글 등록 시 마커 재생성(renderSpots)으로 인한 화면 튐 및 위치 이동 버그 완벽 수정
     async function addComment(spotId) {
       if (isCommentSubmitting) return;
 
@@ -1758,7 +1834,6 @@
 
       const targetSpot = spots.find(s => String(s.id) === String(spotId));
       if (targetSpot) {
-        // 기존 열려 있는 팝업창의 내용만 안전하게 갱신 (지도를 다시 렌더링하지 않아 위치가 절대 튀지 않음)
         infoWindow.setContent(generateInfoWindowHtml(targetSpot));
       }
 
@@ -2393,7 +2468,10 @@
 
     function toggleDroneOverlay() {
       isDroneOverlayOn = !isDroneOverlayOn;
-      document.getElementById('droneLayerBtn').classList.toggle('active', isDroneOverlayOn);
+      const pcBtn = document.getElementById('droneLayerBtn');
+      const mobileBtn = document.getElementById('mobileDroneBtn');
+      if (pcBtn) pcBtn.classList.toggle('active', isDroneOverlayOn);
+      if (mobileBtn) mobileBtn.classList.toggle('active', isDroneOverlayOn);
 
       if (droneOverlays.length === 0) initDroneOverlays();
       droneOverlays.forEach(circle => circle.setMap(isDroneOverlayOn ? map : null));
