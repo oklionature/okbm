@@ -13,26 +13,26 @@
   <!-- CSV Parser -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-  <!-- Google Fonts -->
+  <!-- Google Fonts: 고운도둠 & 감성 필기체 & Noto Sans KR -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;600;800;900&display=swap" rel="stylesheet">
 
   <style>
+    /* ⭐ 구글 스튜디오(Google AI Studio / Cloud Dark) 공식 컬러 팔레트 */
     :root {
-      --bg-main: #0b1120;
-      --bg-header: #0f172a;
-      --bg-sidebar: #111827;
-      --bg-card: #1f2937;
-      --bg-card-hover: #283548;
-      --border-color: #374151;
-      --border-subtle: #1f2937;
-      --text-main: #f3f4f6;
-      --text-sub: #cbd5e1;
-      --text-muted: #9ca3af;
-      --accent-blue: #38bdf8;
-      --accent-teal: #14b8a6;
-      --accent-gold: #f59e0b;
+      --google-bg-deep: #131722;
+      --google-bg-surface: #181c28;
+      --google-bg-card: #1f2433;
+      --google-bg-card-hover: #262c3e;
+      --google-border: #2c3244;
+      --google-border-subtle: #202636;
+      --google-text-primary: #f0f4f8;
+      --google-text-secondary: #a6b2c2;
+      --google-text-tertiary: #6b7a90;
+      --google-accent-blue: #38bdf8;
+      --google-accent-teal: #2dd4bf;
+      --google-accent-emerald: #10b981;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -43,8 +43,8 @@
       overflow: hidden;
       overflow-x: hidden !important;
       font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-      background-color: var(--bg-main); 
-      color: var(--text-main);
+      background-color: var(--google-bg-deep); 
+      color: var(--google-text-primary);
     }
     
     .header {
@@ -52,48 +52,51 @@
       top: 0; left: 0; right: 0;
       width: 100%;
       max-width: 100%;
-      height: 66px;
-      background-color: var(--bg-header);
+      height: 70px;
+      background-color: var(--google-bg-deep);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 18px;
+      padding: 0 20px;
       z-index: 1000;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
-      border-bottom: 1px solid var(--border-color);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+      border-bottom: 1px solid var(--google-border);
       user-select: none;
       overflow: hidden;
     }
-    .header-left { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; }
+    .header-left { display: flex; align-items: center; gap: 14px; flex-wrap: nowrap; }
     
+    /* ⭐ 대형화 + 밝고 선명한 낭만 골드/스카이 그라데이션 + Gowun Dodum 폰트 + 배낭 이모티콘 🎒 */
     .header-title-box {
       display: flex;
       flex-direction: row;
       align-items: baseline;
-      gap: 8px;
+      gap: 10px;
       white-space: nowrap;
     }
     .main-title {
-      font-size: 1.55rem;
-      font-weight: 900;
-      letter-spacing: -0.4px;
-      background: linear-gradient(135deg, #ffffff 40%, #e2e8f0 75%, #cbd5e1 100%);
+      font-family: 'Gowun Dodum', sans-serif;
+      font-size: clamp(1.4rem, 2.2vw, 1.95rem);
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #ffffff 10%, #bae6fd 60%, #38bdf8 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      gap: 6px;
+      filter: drop-shadow(0 2px 8px rgba(56, 189, 248, 0.35));
     }
-    .main-title .flag-icon, .main-title .mountain-icon {
+    .main-title .flag-icon, .main-title .backpack-icon {
       -webkit-text-fill-color: initial;
-      font-size: 1.35rem;
+      font-size: 1.45rem;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
     }
     .sub-en-title {
       font-family: 'Alex Brush', cursive;
-      font-size: 1.5rem;
+      font-size: 1.6rem;
       font-weight: 700;
-      background: linear-gradient(135deg, #38bdf8 20%, #818cf8 90%);
+      background: linear-gradient(135deg, #2dd4bf 20%, #38bdf8 80%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       letter-spacing: 1px;
@@ -101,7 +104,7 @@
     }
 
     .sync-status-badge {
-      background: #0369a1;
+      background: #0284c7;
       color: #ffffff;
       font-size: 0.72rem;
       padding: 3px 8px;
@@ -124,18 +127,18 @@
     .header-right { display: flex; align-items: center; gap: 8px; }
 
     .header-btn {
-      background: #1f2937;
-      border: 1px solid var(--border-color);
-      padding: 6px 12px;
-      border-radius: 18px;
-      font-size: 0.78rem;
+      background: var(--google-bg-card);
+      border: 1px solid var(--google-border);
+      padding: 7px 13px;
+      border-radius: 20px;
+      font-size: 0.8rem;
       font-weight: 700;
-      color: #e2e8f0;
+      color: var(--google-text-primary);
       cursor: pointer;
       transition: all 0.2s;
       white-space: nowrap;
     }
-    .header-btn:hover { background: #374151; color: #ffffff; }
+    .header-btn:hover { background: var(--google-bg-card-hover); color: #ffffff; }
     .header-btn.active {
       background: #dc2626 !important;
       color: #ffffff !important;
@@ -149,66 +152,66 @@
     }
     .admin-only-btn:hover { background: #115e59; }
 
-    .search-container { position: relative; display: flex; align-items: center; width: 260px; }
+    .search-container { position: relative; display: flex; align-items: center; width: 280px; }
     .search-input {
       width: 100%;
-      padding: 7px 34px 7px 13px;
+      padding: 8px 36px 8px 14px;
       border-radius: 20px;
-      border: 1px solid var(--border-color);
-      background: #111827;
+      border: 1px solid var(--google-border);
+      background: var(--google-bg-surface);
       color: #fff;
-      font-size: 0.82rem;
+      font-size: 0.84rem;
       outline: none;
       transition: all 0.2s;
     }
-    .search-input::placeholder { color: #6b7280; }
-    .search-input:focus { border-color: var(--accent-blue); background: #0f172a; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
+    .search-input::placeholder { color: var(--google-text-tertiary); }
+    .search-input:focus { border-color: var(--google-accent-blue); background: var(--google-bg-deep); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
     .search-btn-icon {
       position: absolute;
-      right: 11px;
+      right: 12px;
       background: none;
       border: none;
-      color: #9ca3af;
+      color: var(--google-text-secondary);
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.92rem;
     }
 
     .search-dropdown {
       position: absolute;
-      top: 42px;
+      top: 44px;
       left: 0; right: 0;
-      background: #111827;
-      color: #f8fafc;
-      border-radius: 10px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+      background: var(--google-bg-surface);
+      color: var(--google-text-primary);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.6);
       list-style: none;
-      max-height: 320px;
+      max-height: 340px;
       overflow-y: auto;
       display: none;
       z-index: 2000;
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--google-border);
     }
     .dropdown-header {
-      padding: 8px 12px;
-      background-color: #0b1120;
-      font-size: 0.74rem;
+      padding: 9px 12px;
+      background-color: var(--google-bg-deep);
+      font-size: 0.76rem;
       font-weight: bold;
-      color: var(--accent-blue);
-      border-bottom: 1px solid var(--border-color);
+      color: var(--google-accent-blue);
+      border-bottom: 1px solid var(--google-border-subtle);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .dropdown-item {
-      padding: 9px 12px;
-      border-bottom: 1px solid #1f2937;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--google-border-subtle);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.82rem;
+      font-size: 0.84rem;
       cursor: pointer;
     }
-    .dropdown-item:hover { background: #1f2937; }
+    .dropdown-item:hover { background: var(--google-bg-card); }
     .dropdown-info { flex: 1; padding-right: 8px; }
     
     .top-rank-row {
@@ -220,29 +223,29 @@
     .top-rank-left { display: flex; align-items: center; gap: 6px; }
     .rank-badge {
       display: inline-block;
-      width: 18px;
-      height: 18px;
-      line-height: 18px;
+      width: 20px;
+      height: 20px;
+      line-height: 20px;
       text-align: center;
       border-radius: 50%;
-      font-size: 0.68rem;
+      font-size: 0.72rem;
       font-weight: 800;
     }
     .rank-1 { background: #fef08a; color: #854d0e; }
     .rank-2 { background: #e2e8f0; color: #334155; }
     .rank-3 { background: #fed7aa; color: #9a3412; }
-    .rank-etc { background: #1f2937; color: #9ca3af; }
-    .top-spot-title { font-weight: 700; color: var(--accent-blue); font-size: 0.84rem; }
-    .top-spot-city { font-size: 0.7rem; color: #7dd3fc; background: rgba(56, 189, 248, 0.1); padding: 2px 5px; border-radius: 4px; }
-    .top-spot-views { font-size: 0.7rem; color: #6b7280; font-weight: 500; }
+    .rank-etc { background: var(--google-bg-card); color: var(--google-text-secondary); }
+    .top-spot-title { font-weight: 700; color: var(--google-accent-blue); font-size: 0.86rem; }
+    .top-spot-city { font-size: 0.72rem; color: #7dd3fc; background: rgba(56, 189, 248, 0.12); padding: 2px 6px; border-radius: 4px; }
+    .top-spot-views { font-size: 0.72rem; color: var(--google-text-tertiary); font-weight: 500; }
 
     .btn-quick-add {
       background: #0f766e;
       color: #ffffff;
       border: none;
       border-radius: 4px;
-      padding: 3px 6px;
-      font-size: 0.72rem;
+      padding: 4px 8px;
+      font-size: 0.75rem;
       font-weight: 600;
       cursor: pointer;
       display: none;
@@ -253,56 +256,52 @@
       display: flex;
       width: 100%;
       max-width: 100%;
-      height: calc(100% - 66px);
-      margin-top: 66px;
+      height: calc(100% - 70px);
+      margin-top: 70px;
       position: relative;
       overflow-x: hidden !important;
     }
     
     /* 사이드바 */
     .sidebar {
-      width: 380px;
+      width: 390px;
       max-width: 100%;
       height: 100%;
-      background-color: var(--bg-sidebar);
-      border-right: 1px solid var(--border-color);
+      background-color: var(--google-bg-surface);
+      border-right: 1px solid var(--google-border);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
       z-index: 500;
-      color: var(--text-main);
+      color: var(--google-text-primary);
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       overflow-x: hidden !important;
     }
 
-    /* ⭐ 슬림 & 여백 최적화된 사이드바 헤더 */
     .sidebar-header {
-      padding: 8px 14px;
+      padding: 10px 16px;
       font-weight: 700;
-      font-size: 0.84rem;
-      background-color: #0b1120;
-      border-bottom: 1px solid var(--border-color);
+      font-size: 0.88rem;
+      background-color: var(--google-bg-deep);
+      border-bottom: 1px solid var(--google-border);
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-shrink: 0;
     }
 
-    /* ⭐ 버전 표시 (7회 연타로 관리자 모드 진입) */
+    /* ⭐ 버전 뱃지: 눌림(스케일/애니메이션/포커스) 효과 완전 제거하여 일반 라벨처럼 위장 */
     .version-tag {
-      font-size: 0.65rem;
-      font-weight: 800;
-      color: var(--accent-blue);
-      background: rgba(56, 189, 248, 0.12);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 1px 6px;
-      border-radius: 5px;
-      white-space: nowrap;
-      cursor: pointer;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--google-text-tertiary);
+      background: transparent;
+      border: none;
+      padding: 0 4px;
       user-select: none;
-      transition: transform 0.1s, background 0.2s;
+      outline: none;
+      cursor: default; /* 버튼처럼 안 보이게 일반 텍스트 커서로 처리 */
     }
-    .version-tag:active { transform: scale(0.92); background: rgba(56, 189, 248, 0.3); }
 
     .sheet-edit-link {
       display: none;
@@ -320,8 +319,8 @@
     .admin-data-tools {
       display: none;
       padding: 6px 12px;
-      background: #1f2937;
-      border-bottom: 1px solid var(--border-color);
+      background: var(--google-bg-card);
+      border-bottom: 1px solid var(--google-border);
       gap: 6px;
       flex-wrap: wrap;
       flex-shrink: 0;
@@ -329,23 +328,23 @@
     .admin-tool-btn {
       flex: 1;
       min-width: 75px;
-      padding: 4px 6px;
+      padding: 5px 6px;
       font-size: 0.72rem;
       font-weight: 700;
       border-radius: 4px;
-      border: 1px solid var(--border-color);
-      background: #111827;
-      color: #cbd5e1;
+      border: 1px solid var(--google-border);
+      background: var(--google-bg-surface);
+      color: var(--google-text-secondary);
       cursor: pointer;
       text-align: center;
     }
-    .admin-tool-btn:hover { background: #374151; color: #ffffff; }
+    .admin-tool-btn:hover { background: var(--google-bg-card-hover); color: #ffffff; }
     .admin-tool-btn.btn-ai-highlight { background: #0f766e; color: #ffffff; border-color: #0d9488; }
 
     /* 다크 2단 필터바 */
     .filter-wrapper {
-      background: #0b1120;
-      border-bottom: 1px solid var(--border-color);
+      background: var(--google-bg-deep);
+      border-bottom: 1px solid var(--google-border);
       display: flex;
       flex-direction: column;
       gap: 6px;
@@ -366,29 +365,29 @@
     .terrain-filter-bar::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
     
     .filter-label {
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       font-weight: 800;
-      color: #9ca3af;
+      color: var(--google-text-tertiary);
       white-space: nowrap;
       margin-right: 2px;
-      background: #1f2937;
-      padding: 2px 5px;
+      background: var(--google-bg-surface);
+      padding: 2px 6px;
       border-radius: 4px;
     }
     .filter-btn {
-      padding: 3px 9px;
-      border-radius: 12px;
-      border: 1px solid var(--border-color);
-      background: #1f2937;
-      color: #9ca3af;
-      font-size: 0.72rem;
+      padding: 4px 11px;
+      border-radius: 14px;
+      border: 1px solid var(--google-border);
+      background: var(--google-bg-card);
+      color: var(--google-text-secondary);
+      font-size: 0.74rem;
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
       flex-shrink: 0;
       transition: all 0.15s ease;
     }
-    .filter-btn:hover { background: #374151; color: #f3f4f6; }
+    .filter-btn:hover { background: var(--google-bg-card-hover); color: var(--google-text-primary); }
     .filter-btn.active {
       background: #0284c7;
       color: #ffffff;
@@ -406,19 +405,19 @@
       overflow-y: auto; 
       list-style: none; 
       position: relative;
-      background: var(--bg-sidebar);
+      background: var(--google-bg-surface);
       overflow-x: hidden !important;
     }
     .spot-list::-webkit-scrollbar { width: 4px; }
     .spot-list::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
     
-    .region-group { border-bottom: 1px solid var(--border-subtle); }
+    .region-group { border-bottom: 1px solid var(--google-border-subtle); }
     .region-group-title {
-      padding: 8px 14px;
-      background-color: #0f172a;
-      font-size: 0.8rem;
+      padding: 9px 15px;
+      background-color: var(--google-bg-deep);
+      font-size: 0.82rem;
       font-weight: 700;
-      color: #cbd5e1;
+      color: var(--google-text-secondary);
       cursor: pointer;
       display: flex;
       justify-content: space-between;
@@ -427,21 +426,21 @@
       border-left: 3px solid transparent;
       transition: all 0.15s;
     }
-    .region-group-title:hover { background-color: #1f2937; border-left-color: var(--accent-blue); color: #ffffff; }
+    .region-group-title:hover { background-color: var(--google-bg-card); border-left-color: var(--google-accent-blue); color: #ffffff; }
 
-    /* 카드 스타일 */
+    /* 구글 스튜디오 스타일 카드 */
     .spot-item {
-      padding: 10px 14px;
-      border-bottom: 1px solid #1a2232;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--google-border-subtle);
       cursor: pointer;
       position: relative;
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      background: var(--bg-sidebar);
+      gap: 5px;
+      background: var(--google-bg-surface);
       transition: background 0.15s;
     }
-    .spot-item:hover { background-color: var(--bg-card); }
+    .spot-item:hover { background-color: var(--google-bg-card); }
     .spot-header-row {
       display: flex;
       justify-content: space-between;
@@ -449,13 +448,13 @@
       padding-right: 60px;
     }
     .spot-name-wrapper { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-    .spot-name { font-size: 0.9rem; font-weight: 700; color: var(--accent-blue); word-break: keep-all; }
+    .spot-name { font-size: 0.92rem; font-weight: 700; color: var(--google-accent-blue); word-break: keep-all; }
     
     .badge-status {
-      font-size: 0.62rem;
+      font-size: 0.64rem;
       font-weight: 900;
-      padding: 1px 4px;
-      border-radius: 3px;
+      padding: 1px 5px;
+      border-radius: 4px;
       display: inline-flex;
       align-items: center;
     }
@@ -470,8 +469,8 @@
 
     .spot-meta-badges { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
     .meta-tag {
-      font-size: 0.66rem;
-      padding: 1.5px 5px;
+      font-size: 0.68rem;
+      padding: 2px 5px;
       border-radius: 4px;
       font-weight: 700;
       display: inline-flex;
@@ -490,8 +489,8 @@
     .tag-rating { background: rgba(245, 158, 11, 0.12); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.25); font-weight: 800; }
 
     .spot-desc-single {
-      font-size: 0.72rem;
-      color: #9ca3af;
+      font-size: 0.74rem;
+      color: var(--google-text-secondary);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -500,12 +499,12 @@
     }
 
     .spot-coords-text {
-      font-size: 0.66rem;
-      color: #6b7280;
-      background: #0f172a;
-      padding: 1px 4px;
+      font-size: 0.68rem;
+      color: var(--google-text-tertiary);
+      background: var(--google-bg-deep);
+      padding: 1px 5px;
       border-radius: 4px;
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--google-border);
       width: fit-content;
     }
     
@@ -524,7 +523,7 @@
       text-decoration: none;
       padding: 2px 6px;
       border-radius: 4px;
-      font-size: 0.66rem;
+      font-size: 0.68rem;
       font-weight: 700;
       color: #ffffff !important;
       cursor: pointer;
@@ -540,21 +539,21 @@
       background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
       border: none;
       color: #ffffff !important;
-      font-size: 0.62rem;
-      padding: 1.5px 5px;
+      font-size: 0.64rem;
+      padding: 1.5px 6px;
       border-radius: 4px;
-      gap: 2px;
+      gap: 3px;
       font-weight: 700;
     }
-    .btn-insta svg { width: 9px; height: 9px; flex-shrink: 0; fill: #ffffff; }
+    .btn-insta svg { width: 10px; height: 10px; flex-shrink: 0; fill: #ffffff; }
     
     .instant-tooltip-box { position: relative; display: inline-flex; align-items: center; }
     .drone-badge {
       display: inline-flex;
       align-items: center;
       gap: 2px;
-      font-size: 0.65rem;
-      padding: 2px 5px;
+      font-size: 0.66rem;
+      padding: 2px 6px;
       border-radius: 4px;
       font-weight: 700;
       line-height: 1.3;
@@ -571,15 +570,15 @@
       position: absolute;
       bottom: calc(100% + 6px);
       left: 0;
-      background-color: #0b1120;
-      color: #f8fafc;
-      font-size: 0.7rem;
+      background-color: var(--google-bg-deep);
+      color: var(--google-text-primary);
+      font-size: 0.72rem;
       font-weight: 600;
-      padding: 5px 9px;
+      padding: 6px 10px;
       border-radius: 6px;
       white-space: nowrap;
       box-shadow: 0 4px 16px rgba(0,0,0,0.6);
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--google-border);
       pointer-events: none;
       opacity: 0;
       visibility: hidden;
@@ -595,7 +594,7 @@
       left: 14px;
       border-width: 5px 5px 0 5px;
       border-style: solid;
-      border-color: #0b1120 transparent transparent transparent;
+      border-color: var(--google-bg-deep) transparent transparent transparent;
       opacity: 0;
       visibility: hidden;
       pointer-events: none;
@@ -620,7 +619,7 @@
       border: none;
       border-radius: 4px;
       padding: 2px 5px;
-      font-size: 0.66rem;
+      font-size: 0.68rem;
       cursor: pointer;
       display: none;
       font-weight: 600;
@@ -629,7 +628,7 @@
     .btn-edit { background: #0284c7; }
     .btn-del { background: #ef4444; }
 
-    #map { flex: 1; height: 100%; position: relative; overflow: hidden !important; background: #090e1a; }
+    #map { flex: 1; height: 100%; position: relative; overflow: hidden !important; background: var(--google-bg-deep); }
     
     /* 지도 상단 마커 범례 */
     .map-legend-bar {
@@ -638,15 +637,15 @@
       top: 8px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(4px);
+      background: rgba(19, 23, 34, 0.9);
+      backdrop-filter: blur(6px);
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 20px;
-      padding: 3px 9px;
+      padding: 3px 10px;
       z-index: 200;
       display: flex;
       align-items: center;
-      gap: 7px;
+      gap: 8px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.4);
       user-select: none;
       pointer-events: none;
@@ -664,35 +663,35 @@
     .dot-yellow { background: #eab308; }
     .dot-red { background: #ef4444; }
 
-    /* 다크 팝업창 */
+    /* 다크 인포윈도우 팝업창 */
     .compact-info-window {
-      padding: 11px 13px;
-      width: 260px !important;
+      padding: 12px 14px;
+      width: 265px !important;
       max-width: calc(100vw - 36px) !important;
-      max-height: 330px;
+      max-height: 340px;
       overflow-y: auto;
       overflow-x: hidden !important;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 6px;
       line-height: 1.3;
-      background: #0f172a;
-      color: #f8fafc;
+      background: var(--google-bg-surface);
+      color: var(--google-text-primary);
       border-radius: 12px !important;
-      border: 1px solid #334155;
+      border: 1px solid var(--google-border);
       box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
     }
     .compact-info-window::-webkit-scrollbar { width: 4px; }
     .compact-info-window::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
 
-    .compact-title { font-size: 0.88rem; font-weight: 700; color: var(--accent-blue); display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .compact-title { font-size: 0.9rem; font-weight: 700; color: var(--google-accent-blue); display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
     
     .compact-entry-link {
       font-size: 0.72rem;
       color: #7dd3fc;
       background: rgba(2, 132, 199, 0.15);
       border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 3px 6px;
+      padding: 4px 7px;
       border-radius: 6px;
       width: fit-content;
       word-break: break-all;
@@ -710,7 +709,7 @@
 
     .compact-desc {
       font-size: 0.74rem;
-      color: #cbd5e1;
+      color: var(--google-text-secondary);
       word-break: keep-all;
       white-space: pre-line;
       line-height: 1.35;
@@ -732,13 +731,13 @@
     /* 댓글 영역 */
     .comments-section {
       margin-top: 4px;
-      border-top: 1px dashed var(--border-color);
+      border-top: 1px dashed var(--google-border);
       padding-top: 4px;
     }
     .comments-title {
       font-size: 0.72rem;
       font-weight: 700;
-      color: #9ca3af;
+      color: var(--google-text-secondary);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -757,8 +756,8 @@
     .comments-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
 
     .comment-item {
-      background: #1e293b;
-      border: 1px solid var(--border-color);
+      background: var(--google-bg-card);
+      border: 1px solid var(--google-border);
       border-radius: 5px;
       padding: 3px 5px;
       font-size: 0.66rem;
@@ -767,30 +766,30 @@
       align-items: flex-start;
       gap: 4px;
     }
-    .comment-author { font-weight: 700; color: var(--accent-blue); white-space: nowrap; }
+    .comment-author { font-weight: 700; color: var(--google-accent-blue); white-space: nowrap; }
     .comment-rating-stars { color: #f59e0b; font-size: 0.62rem; white-space: nowrap; }
-    .comment-text { color: #cbd5e1; word-break: break-all; flex: 1; }
+    .comment-text { color: var(--google-text-secondary); word-break: break-all; flex: 1; }
     
     .comment-form { display: flex; flex-direction: column; gap: 3px; }
     .comment-form-row { display: flex; gap: 3px; }
     .comment-select-rating {
       padding: 2px 3px;
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--google-border);
       border-radius: 4px;
       font-size: 0.66rem;
-      background: #111827;
+      background: var(--google-bg-deep);
       color: #fcd34d;
       font-weight: bold;
       outline: none;
     }
-    .comment-input-author { width: 44px; padding: 3px 4px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.66rem; outline: none; background: #111827; color: #fff; }
-    .comment-input-text { flex: 1; padding: 3px 5px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.66rem; outline: none; background: #111827; color: #fff; }
+    .comment-input-author { width: 44px; padding: 3px 4px; border: 1px solid var(--google-border); border-radius: 4px; font-size: 0.66rem; outline: none; background: var(--google-bg-deep); color: #fff; }
+    .comment-input-text { flex: 1; padding: 3px 5px; border: 1px solid var(--google-border); border-radius: 4px; font-size: 0.66rem; outline: none; background: var(--google-bg-deep); color: #fff; }
     .comment-btn-submit { background: #0f766e; color: #ffffff; border: none; border-radius: 4px; padding: 3px 6px; font-size: 0.66rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
 
     .custom-modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(9, 14, 26, 0.8);
+      background: rgba(19, 23, 34, 0.85);
       display: none;
       justify-content: center;
       align-items: center;
@@ -798,8 +797,8 @@
       backdrop-filter: blur(4px);
     }
     .custom-modal {
-      background: #0f172a;
-      color: #f8fafc;
+      background: var(--google-bg-surface);
+      color: var(--google-text-primary);
       width: 480px;
       max-width: calc(100vw - 28px);
       max-height: 90vh;
@@ -810,31 +809,31 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--google-border);
     }
-    .custom-modal h3 { font-size: 1rem; color: var(--accent-blue); }
+    .custom-modal h3 { font-size: 1rem; color: var(--google-accent-blue); }
     .modal-field { display: flex; flex-direction: column; gap: 3px; }
-    .modal-field label { font-size: 0.74rem; font-weight: 700; color: #9ca3af; }
+    .modal-field label { font-size: 0.74rem; font-weight: 700; color: var(--google-text-secondary); }
     .modal-input {
       width: 100%;
       padding: 7px 10px;
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--google-border);
       border-radius: 6px;
       font-size: 0.82rem;
       outline: none;
-      background: #111827;
+      background: var(--google-bg-deep);
       color: #ffffff;
     }
     .modal-textarea { resize: vertical; min-height: 48px; line-height: 1.35; }
-    .modal-input:focus { border-color: #0284c7; }
+    .modal-input:focus { border-color: var(--google-accent-blue); }
     
-    .checkbox-group { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 0.78rem; color: #e2e8f0; font-weight: 600; }
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 0.78rem; color: var(--google-text-secondary); font-weight: 600; }
     .checkbox-group label { display: flex; align-items: center; gap: 3px; cursor: pointer; }
-    .select-diff { padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 0.78rem; color: #e2e8f0; outline: none; background: #111827; }
+    .select-diff { padding: 6px 8px; border-radius: 6px; border: 1px solid var(--google-border); font-size: 0.78rem; color: var(--google-text-primary); outline: none; background: var(--google-bg-deep); }
     
     .modal-btn-row { display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px; }
     .modal-btn { padding: 7px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border: none; }
-    .modal-btn-cancel { background: #1f2937; color: #cbd5e1; }
+    .modal-btn-cancel { background: var(--google-bg-card); color: var(--google-text-secondary); }
     .modal-btn-save { background: #0f766e; color: #ffffff; }
 
     /* 모바일 하단 플로팅 컨트롤 바 */
@@ -862,11 +861,11 @@
       text-align: center;
       transition: all 0.15s;
     }
-    .mobile-float-drone { background: #1f2937; color: #ffffff; flex: 1; }
+    .mobile-float-drone { background: var(--google-bg-card); color: #ffffff; flex: 1; }
     .mobile-float-toggle { background: #0284c7; color: #ffffff; flex: 1.35; font-size: 0.8rem; border-color: rgba(255,255,255,0.3); }
-    .mobile-float-reset { background: #1f2937; color: #ffffff; flex: 1; }
+    .mobile-float-reset { background: var(--google-bg-card); color: #ffffff; flex: 1; }
 
-    /* ⭐ 모바일 전용 반응형 레이아웃 & 폰트 15% 복원 */
+    /* 모바일 전용 반응형 */
     @media (max-width: 768px) {
       .header { 
         height: auto; 
@@ -890,12 +889,13 @@
         gap: 0px !important;
       }
       .main-title { 
-        font-size: 1.15rem !important; 
+        font-size: 1.25rem !important; 
         justify-content: center;
+        letter-spacing: -0.3px;
       }
-      .main-title .flag-icon, .main-title .mountain-icon { font-size: 1.05rem !important; }
+      .main-title .flag-icon, .main-title .backpack-icon { font-size: 1.1rem !important; }
       .sub-en-title { 
-        font-size: 1.05rem !important; 
+        font-size: 1.15rem !important; 
         margin-left: 0;
         margin-top: -3px;
       }
@@ -924,8 +924,8 @@
       .mobile-floating-controls { display: flex; }
       
       .container { 
-        margin-top: 84px !important; 
-        height: calc(100% - 84px) !important; 
+        margin-top: 86px !important; 
+        height: calc(100% - 86px) !important; 
         position: relative;
         overflow: hidden;
       }
@@ -945,7 +945,7 @@
         height: calc(100% - 72px) !important; 
         z-index: 300;
         border-right: none; 
-        border-bottom: 1px solid var(--border-color); 
+        border-bottom: 1px solid var(--google-border); 
         box-shadow: 0 10px 30px rgba(0,0,0,0.7);
         transform: translateY(0);
         border-radius: 0 0 14px 14px;
@@ -955,7 +955,6 @@
         transform: translateY(-130%) !important;
       }
 
-      /* ⭐ 모바일 박지 항목 폰트 15% 키워서 편안한 가독성 확보 */
       .spot-item { padding: 9px 11px; gap: 4px; }
       .spot-name { font-size: 0.85rem !important; }
       .spot-desc-single { font-size: 0.67rem !important; }
@@ -973,11 +972,12 @@
 
   <header class="header">
     <div class="header-left">
+      <!-- ⭐ 낭만적인 대형 타이틀 + 고운도둠 폰트 + 배낭 이모티콘 🎒 -->
       <div class="header-title-box">
         <span class="main-title">
           <span class="flag-icon">🇰🇷</span>
           대한민국 낭만 백패킹 로드
-          <span class="mountain-icon">🏔️</span>
+          <span class="backpack-icon">🎒</span>
         </span>
         <span class="sub-en-title">Korea Romantic Backpacking Road</span>
       </div>
@@ -1000,12 +1000,12 @@
 
   <div class="container">
     <aside class="sidebar" id="sidebar">
-      <!-- ⭐ 슬림 헤더 & 버전 뱃지 (7회 연속 터치 시 관리자 모드 On/Off) -->
+      <!-- ⭐ 슬림 헤더 & 버전 뱃지 (일반 라벨처럼 보이지만 7회 연속 클릭 시 관리자 모드 진입) -->
       <div class="sidebar-header">
         <div style="display:flex; align-items:center; gap:6px;">
           <span>📍 백패킹 박지 목록</span>
-          <span id="spotCount" style="color: var(--accent-blue); font-size: 0.8rem; font-weight: bold;">0개</span>
-          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()" title="7회 연속 터치 시 관리자 모드">2.3ver</span>
+          <span id="spotCount" style="color: var(--google-accent-blue); font-size: 0.8rem; font-weight: bold;">0개</span>
+          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()">2.4ver</span>
         </div>
         <a id="sheetEditLink" href="#" target="_blank" class="sheet-edit-link">📊 구글 시트 편집</a>
       </div>
@@ -1071,7 +1071,7 @@
   <div class="custom-modal-overlay" id="bulkImportModalOverlay">
     <div class="custom-modal" style="width: 500px;">
       <h3 style="display:flex; align-items:center; gap:6px;">⚡ AI 요약 / JSON 내용으로 일괄 등록</h3>
-      <p style="font-size:0.74rem; color:#9ca3af; line-height:1.4;">
+      <p style="font-size:0.74rem; color:var(--google-text-secondary); line-height:1.4;">
         ChatGPT / Gemini 요약 텍스트 또는 <strong>JSON 객체·배열</strong>을 붙여넣으세요. 산 이름과 주소로 <strong>위도/경도를 자동 검색</strong>하여 지도와 구글 시트에 즉시 등록합니다.
       </p>
 
@@ -1080,7 +1080,7 @@
         <textarea id="bulkImportTextarea" class="modal-input modal-textarea" style="min-height: 170px; font-family: monospace; font-size: 0.78rem;" placeholder='{\n  "name": "홍천 용소계곡",\n  "entryPoint": "강원 홍천군 두촌면 괘석리 산1",\n  "elevation": "350m",\n  "desc": "기암괴석과 맑은 물이 어우러진 원시림 계곡 트레킹 박지",\n  "terrain": ["계곡","노지"],\n  "difficulty": "2",\n  "distance": "3.5",\n  "youtubeUrl": "https://youtu.be/..."\n}'></textarea>
       </div>
 
-      <div id="bulkStatusMsg" style="font-size:0.74rem; color:var(--accent-blue); min-height: 18px; font-weight:600;"></div>
+      <div id="bulkStatusMsg" style="font-size:0.74rem; color:var(--google-accent-blue); min-height: 18px; font-weight:600;"></div>
 
       <div class="modal-btn-row">
         <button type="button" class="modal-btn modal-btn-cancel" onclick="closeBulkImportModal()">닫기</button>
@@ -1089,7 +1089,7 @@
     </div>
   </div>
 
-  <!-- 개별 모달 -->
+  <!-- 개별 등록/수정 모달 -->
   <div class="custom-modal-overlay" id="customModalOverlay">
     <div class="custom-modal">
       <h3 id="modalTitle">박지 등록</h3>
@@ -1108,7 +1108,7 @@
         <label>3. 고도 / 해발 (자동 측정 또는 직접 입력)</label>
         <div style="display: flex; gap: 6px;">
           <input type="text" id="modalInputElevation" class="modal-input" style="flex:1;" placeholder="예: 350m" />
-          <button type="button" class="modal-btn" style="background:#1f2937; color:#fff;" onclick="fetchElevationForModal()">⛰️ 고도 측정</button>
+          <button type="button" class="modal-btn" style="background:var(--google-bg-card); color:#fff;" onclick="fetchElevationForModal()">⛰️ 고도 측정</button>
         </div>
       </div>
 
@@ -1172,6 +1172,7 @@
   </div>
 
   <script>
+    const APP_VERSION = '2.4ver';
     const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
     const GOOGLE_SHEET_GID = '0';
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyrGW_Jn7lDIrZJWbCb84Wg5QMCGNvOBQSR5rtzKaqFrViubTdpfsvegZU8lbVcQDTT/exec';
@@ -1266,7 +1267,6 @@
     let currentTerrainFilter = 'ALL';
     let isSidebarCollapsed = false;
 
-    // ⭐ 활성화된 박지 및 팝업 상태 추적 (드래그 시 닫혔다가 끝나면 다시 띄우기용)
     let currentActiveSpot = null;
     let currentActiveMarker = null;
 
@@ -1293,7 +1293,7 @@
     const markerHoverInfoWindow = new naver.maps.InfoWindow({
       borderWidth: 1,
       borderColor: '#0f766e',
-      backgroundColor: '#0b1120',
+      backgroundColor: '#131722',
       anchorSkew: false,
       autoPan: false,
       pixelOffset: new naver.maps.Point(0, -6)
@@ -1302,13 +1302,13 @@
     const droneHoverInfoWindow = new naver.maps.InfoWindow({
       borderWidth: 1,
       borderColor: '#dc2626',
-      backgroundColor: '#0b1120',
+      backgroundColor: '#131722',
       anchorSkew: false,
       autoPan: false,
       pixelOffset: new naver.maps.Point(0, -8)
     });
 
-    // ⭐ 지도를 움직이거나 터치 드래그할 때 팝업창을 잠시 숨겼다가 조작이 멈추면 다시 자연스럽게 복구
+    // ⭐ 드래그 및 지도 이동 시작 시 팝업 잠시 숨김
     naver.maps.Event.addListener(map, 'dragstart', () => {
       infoWindow.close();
       markerHoverInfoWindow.close();
@@ -1322,7 +1322,7 @@
       markerHoverInfoWindow.close();
     });
 
-    // 지도 조작(드래그, 줌 등)이 멈추면 이전에 보던 팝업을 다시 표시
+    // ⭐ 지도 조작이 멈추면 이전에 보고 있던 팝업을 다시 표시
     naver.maps.Event.addListener(map, 'idle', () => {
       if (currentActiveSpot && currentActiveMarker) {
         infoWindow.setContent(generateInfoWindowHtml(currentActiveSpot));
@@ -1335,7 +1335,7 @@
 
     document.getElementById('sheetEditLink').href = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/edit`;
 
-    // ⭐ 버전 표시(2.3ver) 7회 연속 클릭 시 관리자 모드 On/Off 토글
+    // ⭐ 버전 표시 7회 연타 시 관리자 모드 On/Off (눌림 애니메이션 없이 조용히 동작)
     let versionClickCount = 0;
     let versionClickTimer = null;
     function handleVersionTagClick() {
@@ -1873,7 +1873,7 @@
     function getCommentsHtml(spotId) {
       const cList = spotComments[spotId] || [];
       let listHtml = cList.length === 0 
-        ? '<li style="color:#6b7280; font-size:0.65rem;">첫 평점과 후기를 남겨보세요!</li>'
+        ? '<li style="color:var(--google-text-tertiary); font-size:0.65rem;">첫 평점과 후기를 남겨보세요!</li>'
         : cList.map(c => `
             <li class="comment-item">
               <div style="flex:1;">
@@ -1971,7 +1971,7 @@
             ${spot.elevation ? '<span style="font-size:0.75rem; color:#86efac;">(' + spot.elevation + ')</span>' : ''}
             ${getSpotStatusBadges(spot)}
           </div>
-          <button type="button" onclick="closeInfoWindowCompletely()" style="position: absolute; top: 8px; right: 8px; background: #1e293b; border: 1px solid var(--border-color); width: 20px; height: 20px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
+          <button type="button" onclick="closeInfoWindowCompletely()" style="position: absolute; top: 8px; right: 8px; background: var(--google-bg-card); border: 1px solid var(--google-border); width: 20px; height: 20px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
           ${getMetaBadgesHtml(spot)}
           <div class="spot-coords-text">📍 ${spot.lat}, ${spot.lng}</div>
           <a href="https://map.naver.com/v5/search/${encodeURIComponent(cleanAddress)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link" title="클릭 시 네이버 지도로 이동">🚗 들머리: ${spot.entryPoint} ↗</a>
@@ -2095,7 +2095,7 @@
 
         const groupTitle = document.createElement('div');
         groupTitle.className = 'region-group-title';
-        groupTitle.innerHTML = `<span>📌 ${regionKey}</span><span style="color:#9ca3af; font-size:0.74rem;">${items.length}개 ${shouldBeOpen ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}</span>`;
+        groupTitle.innerHTML = `<span>📌 ${regionKey}</span><span style="color:var(--google-text-tertiary); font-size:0.74rem;">${items.length}개 ${shouldBeOpen ? '<b style="color:var(--google-accent-blue);">▼</b>' : '▶'}</span>`;
         if (shouldBeOpen) groupTitle.style.borderLeftColor = '#0f766e';
 
         const groupItemsContainer = document.createElement('div');
@@ -2105,7 +2105,7 @@
         groupTitle.addEventListener('click', () => {
           const isClosed = groupItemsContainer.style.display === 'none';
           groupItemsContainer.style.display = isClosed ? 'block' : 'none';
-          groupTitle.querySelector('span:last-child').innerHTML = `${items.length}개 ${isClosed ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}`;
+          groupTitle.querySelector('span:last-child').innerHTML = `${items.length}개 ${isClosed ? '<b style="color:var(--google-accent-blue);">▼</b>' : '▶'}`;
           groupTitle.style.borderLeftColor = isClosed ? '#0f766e' : 'transparent';
         });
 
@@ -2119,10 +2119,11 @@
           });
           currentMarkers.push(marker);
 
+          // ⭐ 마커 호버 및 화면 터치/누르고 있을 때 박지 이름 상시 툴팁 표시
           const showMarkerTooltip = () => {
             markerHoverInfoWindow.setContent(`
               <div style="padding: 4px 8px; color: #f8fafc; font-size: 0.72rem; line-height: 1.25; white-space: nowrap; pointer-events: none; text-align: center;">
-                <strong style="color: var(--accent-blue); font-size: 0.78rem;">📍 ${spot.name}</strong>
+                <strong style="color: var(--google-accent-blue); font-size: 0.78rem;">📍 ${spot.name}</strong>
                 ${spot.elevation ? `<span style="color: #86efac; font-size: 0.68rem;">(${spot.elevation})</span>` : ''}<br>
                 <span style="color: #cbd5e1; font-size: 0.65rem;">난이도 ${'⭐'.repeat(parseInt(spot.difficulty, 10) || 3)}</span>
               </div>
@@ -2141,8 +2142,8 @@
 
             infoWindow.setContent(`
               <div class="compact-info-window" style="position: relative;">
-                <div class="compact-title" style="color:var(--accent-blue);">📍 '${spot.name}' 위치 이동</div>
-                <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 8px; right: 8px; background: #1e293b; border: 1px solid var(--border-color); width: 20px; height: 20px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
+                <div class="compact-title" style="color:var(--google-accent-blue);">📍 '${spot.name}' 위치 이동</div>
+                <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 8px; right: 8px; background: var(--google-bg-card); border: 1px solid var(--google-border); width: 20px; height: 20px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
                 <div style="font-size:0.72rem; color:#ef4444; font-weight:bold;">새 좌표로 위치를 변경하시겠습니까?</div>
                 <div class="spot-coords-text">위도: ${newLat}<br>경도: ${newLng}</div>
                 <button type="button" class="btn-save-location" onclick="saveUpdatedLocation('${spot.id}', ${newLat}, ${newLng})">💾 이 위치로 즉시 저장</button>
@@ -2222,7 +2223,7 @@
       const query = document.getElementById('topSearchInput').value.trim();
       if (!query) return;
       const dropdown = document.getElementById('searchDropdown');
-      dropdown.innerHTML = '<li class="dropdown-item" style="color:#9ca3af;">🔍 산/계곡/관광지 검색 중...</li>';
+      dropdown.innerHTML = '<li class="dropdown-item" style="color:var(--google-text-secondary);">🔍 산/계곡/관광지 검색 중...</li>';
       dropdown.style.display = 'block';
 
       const results = [];
@@ -2310,7 +2311,7 @@
         li.className = 'dropdown-item';
         li.innerHTML = `
           <div class="dropdown-info">
-            <div><strong style="color:${item.isInternal ? 'var(--accent-blue)' : '#f8fafc'};">${item.title}</strong> ${item.sub ? `<span style="font-size:0.72rem; color:#9ca3af;">(${item.sub})</span>` : ''}</div>
+            <div><strong style="color:${item.isInternal ? 'var(--google-accent-blue)' : '#f8fafc'};">${item.title}</strong> ${item.sub ? `<span style="font-size:0.72rem; color:var(--google-text-tertiary);">(${item.sub})</span>` : ''}</div>
             <div style="margin-top:3px;">${getDroneBadgeHtml(check.status, check.reason)}</div>
           </div>
           <button type="button" class="btn-quick-add" style="display:${isAdminMode && !item.isInternal ? 'inline-block' : 'none'};">➕ 등록</button>
