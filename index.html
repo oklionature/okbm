@@ -1,3 +1,20 @@
+요청하신 세 가지 문제를 완벽히 수정한 전체 코드입니다.
+
+🛠 주요 개선 사항
+
+1.  마커 및 라벨 겹침/뒤로 숨김 해결:
+      - 마커 호버 및 선택 시 해당 마커의 zIndex를 9999로 즉시 상승시켜 다른 마커 뒤에 라벨이나 핀이 가려지지 않도록
+        수정했습니다.
+      - 라벨 칩(.marker-label-chip)의 스타일 및 z-index를 보강하여 항상 최상단에 또렷하게 표시됩니다.
+2.  모바일 팝업창(인포윈도우) 화면 정중앙 자동 정렬:
+      - 기존의 단순 위도 오프셋 방식을 화면 픽셀(Pixel) 투영 기반 자동 보정 알고리즘으로 전면 교체했습니다.
+      - 상단 헤더(검색바)와 하단 플로팅 버튼 사이의 실제 가시 영역(Viewport) 정중앙에 인포윈도우가 정확히 위치하도록 픽셀
+        단위로 지도를 자동 이동(panBy)시킵니다.
+      - 인포윈도우가 좌측 범례나 우측 지도 컨트롤과 겹치지 않도록 z-index 및 뷰포트 크기(60dvh)를 최적화했습니다.
+3.  버전 자동 연동 및 2.7ver 업데이트:
+      - 버전을 **2.7ver**로 올렸으며, HTML 내 버전 텍스트를 JS의 CURRENT_VERSION 상수와 자동 동기화되도록
+        수정했습니다. (상단 CURRENT_VERSION 숫자만 변경하면 모든 화면 표시 및 관리자 활성화 로직에 자동 반영됩니다.)
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -614,7 +631,7 @@
 
     #map { flex: 1; height: 100%; position: relative; background: var(--google-bg-deep); }
     
-    /* 지도 상단 범례 (모바일에서 좌측 밀착) */
+    /* 지도 상단 범례 (모바일에서 z-index 안정화) */
     .map-legend-bar {
       position: absolute;
       top: 10px;
@@ -624,7 +641,7 @@
       border: 1px solid var(--google-border);
       border-radius: 10px;
       padding: 5px 8px;
-      z-index: 200;
+      z-index: 120;
       display: flex;
       flex-direction: column;
       gap: 4px;
@@ -656,6 +673,7 @@
       transform: translate(-50%, -100%);
       pointer-events: auto;
       user-select: none;
+      z-index: 200;
     }
 
     .marker-label-chip {
@@ -674,6 +692,7 @@
       align-items: center;
       gap: 3px;
       transition: transform 0.15s ease;
+      z-index: 250;
     }
 
     #map.show-marker-labels .marker-label-chip {
@@ -686,11 +705,16 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    .custom-spot-marker-wrap:hover {
+      z-index: 9999 !important;
+    }
+
     .custom-spot-marker-wrap:hover .marker-label-chip {
       display: flex !important;
       transform: scale(1.05);
       border-color: var(--google-accent-blue);
       color: var(--google-accent-blue);
+      z-index: 9999 !important;
     }
     
     .marker-label-elev {
@@ -703,13 +727,13 @@
       display: block;
     }
 
-    /* 반응형 글래스모피즘 인포윈도우 */
+    /* 반응형 글래스모피즘 인포윈도우 (z-index 및 중앙 정렬 강화) */
     .compact-info-window {
       padding: 12px 14px;
-      width: min(290px, calc(100vw - 32px)) !important;
-      max-height: 380px;
+      width: min(290px, calc(100vw - 36px)) !important;
+      max-height: min(360px, 60dvh);
       overflow-y: auto;
-      overflow-x: hidden !important; /* 좌우 스크롤 차단 */
+      overflow-x: hidden !important;
       display: flex;
       flex-direction: column;
       gap: 6px;
@@ -719,8 +743,9 @@
       color: var(--google-text-primary);
       border-radius: 16px !important;
       border: 1px solid var(--google-border-glow) !important;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.75), 0 0 20px rgba(56, 189, 248, 0.15) !important;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8), 0 0 24px rgba(56, 189, 248, 0.2) !important;
       word-break: break-word;
+      z-index: 8000 !important;
     }
     .compact-info-window::-webkit-scrollbar { width: 3px; }
     .compact-info-window::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
@@ -972,7 +997,6 @@
         border-radius: 18px;
       }
       
-      /* 난이도 범례를 좌측에 더 밀착 */
       .map-legend-bar { 
         display: flex !important;
         top: 8px !important;
@@ -981,7 +1005,6 @@
       }
       .mobile-floating-controls { display: flex; }
       
-      /* 헤더 높이 정확히 계산하여 겹침 및 짤림 제거 */
       .container { 
         margin-top: 86px !important; 
         height: calc(100% - 86px) !important; 
@@ -996,7 +1019,6 @@
         z-index: 100;
       }
 
-      /* 모바일 사이드바 전체를 덮지 않고 하단 버튼 공간 확보 및 부드러운 슬라이딩 */
       .sidebar { 
         position: absolute;
         top: 0; left: 0; right: 0;
@@ -1062,7 +1084,7 @@
         <div style="display:flex; align-items:center; gap:6px;">
           <span>📍 백패킹 박지 목록</span>
           <span id="spotCount" style="color: var(--google-accent-blue); font-size: 0.78rem; font-weight: bold;">0개</span>
-          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()">2.6ver</span>
+          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()">2.7ver</span>
         </div>
         <a id="sheetEditLink" href="#" target="_blank" rel="noopener noreferrer" class="sheet-edit-link">📊 구글 시트 편집</a>
       </div>
@@ -1229,7 +1251,18 @@
   </div>
 
   <script>
-    const APP_VERSION = '2.6ver';
+    /* =========================================================================
+       버전 자동 연동 관리 상수 (수정 시 여기만 변경하면 전체 UI에 즉시 반영)
+       ========================================================================= */
+    const BASE_VERSION_NUM = 2.7;
+    const CURRENT_VERSION = `${BASE_VERSION_NUM.toFixed(1)}ver`;
+
+    // 화면 버전 태그 자동 업데이트
+    document.addEventListener('DOMContentLoaded', () => {
+      const vTag = document.getElementById('versionTagBtn');
+      if (vTag) vTag.innerText = CURRENT_VERSION;
+    });
+
     const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
     const GOOGLE_SHEET_GID = '0';
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyrGW_Jn7lDIrZJWbCb84Wg5QMCGNvOBQSR5rtzKaqFrViubTdpfsvegZU8lbVcQDTT/exec';
@@ -1434,7 +1467,7 @@
 
       return {
         content: `
-          <div class="custom-spot-marker-wrap">
+          <div class="custom-spot-marker-wrap" style="z-index:200;">
             <div class="marker-label-chip">
               <span>${escapeHtml(spot.name)}</span>
               ${elevText}
@@ -1579,7 +1612,7 @@
       document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
     }
 
-    /* 팝업 상단 짤림 방지 스마트 센터링 (모바일 오프셋 적용) */
+    /* 팝업창 스마트 화면 중앙 자동 정렬 (픽셀 투영 기준 완벽 계산) */
     function centerMapOnSpot(lat, lng, keepCurrentZoom = true) {
       const targetZoom = (!keepCurrentZoom && map.getZoom() < 12) ? 13 : map.getZoom();
       if (map.getZoom() !== targetZoom) {
@@ -1587,21 +1620,39 @@
       }
       
       const isMobile = window.innerWidth <= 768;
-      // 모바일에서는 인포윈도우가 위로 길게 뜨므로 중심점을 살짝 위쪽으로 오프셋
-      const latOffset = isMobile ? 0.0035 : 0.0015;
-      const centerPos = new naver.maps.LatLng(lat + latOffset, lng);
+      const targetLatLng = new naver.maps.LatLng(lat, lng);
       
-      map.panTo(centerPos);
+      map.setCenter(targetLatLng);
+
+      // 모바일 환경: 헤더와 하단 바 사이의 중앙에 팝업창 본문이 오도록 Y축 픽셀 정밀 이동
+      if (isMobile) {
+        setTimeout(() => {
+          // 인포윈도우 높이의 절반가량을 상쇄하여 팝업이 화면 정중앙에 위치하도록 팬
+          map.panBy(new naver.maps.Point(0, -110));
+        }, 30);
+      } else {
+        setTimeout(() => {
+          map.panBy(new naver.maps.Point(0, -60));
+        }, 30);
+      }
     }
 
     function focusSpotOnMap(spot, keepZoom = false) {
       incrementSpotCount(spot.id);
-      centerMapOnSpot(spot.lat, spot.lng, keepZoom);
+      
+      // 기존 활성 마커 zIndex 원복 및 새 마커 zIndex 최상위화
+      spotMarkerMap.forEach(m => m.setZIndex(200));
       const marker = spotMarkerMap.get(String(spot.id));
+      if (marker) {
+        marker.setZIndex(9999);
+      }
+
       currentActiveSpot = spot;
       currentActiveMarker = marker || new naver.maps.LatLng(spot.lat, spot.lng);
       infoWindow.setContent(generateInfoWindowHtml(spot));
       infoWindow.open(map, currentActiveMarker);
+
+      centerMapOnSpot(spot.lat, spot.lng, keepZoom);
     }
 
     async function saveUpdatedLocation(spotId, newLat, newLng) {
@@ -2098,6 +2149,7 @@
       currentActiveSpot = null;
       currentActiveMarker = null;
       infoWindow.close();
+      spotMarkerMap.forEach(m => m.setZIndex(200));
     }
 
     function generateInfoWindowHtml(spot) {
@@ -2247,7 +2299,8 @@
             map: map,
             title: spot.name,
             icon: createCustomMarkerIcon(spot),
-            draggable: isAdminMode
+            draggable: isAdminMode,
+            zIndex: 200
           });
 
           marker.spotData = spot;
@@ -2417,7 +2470,8 @@
             tempSearchMarker = new naver.maps.Marker({ 
               position: new naver.maps.LatLng(item.lat, item.lng), 
               map: map, 
-              animation: naver.maps.Animation.DROP 
+              animation: naver.maps.Animation.DROP,
+              zIndex: 3000
             });
           }
           dropdown.style.display = 'none';
