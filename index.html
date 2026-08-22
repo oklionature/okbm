@@ -95,17 +95,11 @@
       font-size: 0.82rem;
       font-weight: 600;
     }
-    .btn-nav-map {
-      background: linear-gradient(135deg, #0284c7, #0f766e);
-      color: #fff !important;
-      padding: 6px 14px;
-      border-radius: 18px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      text-decoration: none;
-      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
-      border: 1px solid rgba(255,255,255,0.2);
-      white-space: nowrap;
+    
+    /* 상단 우측 빈 슬롯 */
+    .portal-nav-slot {
+      display: inline-flex;
+      align-items: center;
     }
 
     /* 히어로 섹션 */
@@ -311,7 +305,7 @@
       font-weight: 600;
     }
 
-    /* YouTube 100% 반응형 플레이어 */
+    /* 🎬 [스타일 A] 유튜브 메인 플레이어 + 스와이프 썸네일 레일 */
     .youtube-embed-card {
       background: var(--bg-surface);
       border: 1px solid var(--border);
@@ -345,14 +339,69 @@
       padding: 2px 4px;
     }
 
-    /* Instagram 피드 */
-    .insta-feed-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
+    /* 가로 스와이프 공통 레일 트랙 */
+    .horizontal-swipe-rail {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
       gap: 10px;
+      padding: 4px 2px 8px 2px;
       width: 100%;
     }
-    .insta-card {
+    .horizontal-swipe-rail::-webkit-scrollbar { height: 4px; }
+    .horizontal-swipe-rail::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+
+    /* 유튜브 썸네일 카드 (스와이프) */
+    .yt-thumb-card {
+      flex: 0 0 145px;
+      scroll-snap-align: start;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+    .yt-thumb-card:hover, .yt-thumb-card.active {
+      border-color: var(--accent-blue);
+      background: var(--bg-card-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25);
+    }
+    .yt-thumb-img-box {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #000;
+      position: relative;
+    }
+    .yt-thumb-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .yt-thumb-title {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Instagram 가로 스와이프 카드 */
+    .insta-card-swipe {
+      flex: 0 0 160px;
+      scroll-snap-align: start;
       background: var(--bg-surface);
       border: 1px solid var(--border);
       border-radius: 12px;
@@ -362,9 +411,9 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-      width: 100%;
-      min-width: 0;
+      transition: all 0.2s;
     }
+    .insta-card-swipe:hover { transform: translateY(-2px); border-color: var(--border-glow); }
     .insta-thumb-box {
       width: 100%;
       height: 110px;
@@ -373,12 +422,7 @@
       position: relative;
       background: var(--bg-card);
     }
-    .insta-thumb-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
+    .insta-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .insta-reels-badge {
       position: absolute;
       top: 5px; right: 5px;
@@ -404,14 +448,10 @@
       text-overflow: ellipsis;
     }
 
-    /* 테마별 추천 박지 카드 */
-    .curated-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      width: 100%;
-    }
-    .curated-card {
+    /* 🌊 테마별 추천 박지 가로 스와이프 카드 */
+    .curated-card-swipe {
+      flex: 0 0 250px;
+      scroll-snap-align: start;
       background: var(--bg-surface);
       border: 1px solid var(--border);
       border-radius: 12px;
@@ -420,13 +460,13 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      min-height: 130px;
-      width: 100%;
+      min-height: 145px;
       transition: all 0.2s;
     }
-    .curated-card:hover {
+    .curated-card-swipe:hover {
       transform: translateY(-2px);
       border-color: var(--border-glow);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.5);
     }
     .card-tag {
       font-size: 0.65rem;
@@ -439,10 +479,11 @@
     .tag-island { background: rgba(45, 212, 191, 0.15); color: var(--accent-teal); }
     .tag-star { background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); }
     .tag-easy { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); }
+    .tag-cave { background: rgba(217, 70, 239, 0.15); color: #e879f9; }
 
     .card-title { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 3px; }
     .card-location { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; }
-    .card-desc { font-size: 0.75rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 10px; word-break: keep-all; }
+    .card-desc { font-size: 0.74rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 10px; word-break: keep-all; }
     .card-footer {
       display: flex;
       justify-content: space-between;
@@ -481,25 +522,10 @@
 
     /* 사이드바 */
     .side-column { display: flex; flex-direction: column; gap: 16px; width: 100%; min-width: 0; }
-    .banner-cta-map {
-      background: linear-gradient(135deg, #0f766e 0%, #0284c7 100%);
-      border-radius: 12px;
-      padding: 18px 14px;
-      text-align: center;
-      cursor: pointer;
-      box-shadow: 0 6px 20px rgba(2, 132, 199, 0.28);
-      border: 1px solid rgba(255,255,255,0.2);
-    }
-    .cta-map-title { font-size: 1.02rem; font-weight: 800; color: #fff; margin-bottom: 3px; }
-    .cta-map-sub { font-size: 0.74rem; color: #e0f2fe; margin-bottom: 12px; }
-    .btn-cta-white {
-      background: #ffffff;
-      color: #0369a1;
-      font-weight: 800;
-      font-size: 0.78rem;
-      padding: 6px 14px;
-      border-radius: 18px;
-      display: inline-block;
+    
+    /* 사이드바 상단 여분 슬롯 */
+    .sidebar-custom-slot {
+      display: none; /* 나중에 배너나 콘텐츠를 넣으실 때 채워집니다 */
     }
 
     .widget-box {
@@ -562,13 +588,12 @@
     .dock-item.active { color: var(--accent-blue); }
     .dock-item svg { width: 18px; height: 18px; fill: currentColor; }
 
-    /* 모바일 미디어 쿼리 */
+    /* 모바일 반응형 미디어 쿼리 */
     @media (max-width: 768px) {
       body { padding-bottom: 74px; }
       .portal-nav { padding: 8px 12px; }
       .portal-logo { font-size: 0.96rem; }
       .portal-menu a.nav-link { display: none; }
-      .btn-nav-map { padding: 4px 10px; font-size: 0.72rem; }
 
       .portal-container { grid-template-columns: 1fr; gap: 16px; padding: 0 12px; margin-top: 6px; }
       .hero-wrapper { padding: 18px 12px 14px 12px; }
@@ -581,11 +606,10 @@
       .keyword-chips-grid { grid-template-columns: repeat(3, 1fr); gap: 5px; }
       .keyword-chip-btn { font-size: 0.72rem; padding: 6px 2px; }
 
-      .curated-grid { grid-template-columns: 1fr !important; gap: 10px; }
-      .curated-card { min-height: auto; padding: 12px; }
-
-      .insta-feed-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
-      .insta-thumb-box { height: 95px; }
+      /* 모바일 가로 스와이프 폭 최적화 */
+      .yt-thumb-card { flex: 0 0 135px; }
+      .insta-card-swipe { flex: 0 0 145px; }
+      .curated-card-swipe { flex: 0 0 230px; }
 
       .lnt-campaign-box { flex-direction: column; align-items: flex-start; gap: 8px; }
       .btn-lnt { width: 100%; text-align: center; }
@@ -604,13 +628,15 @@
     </a>
     <div class="portal-menu">
       <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="nav-link">협업·문의</a>
-      <a href="map.html" class="btn-nav-map">🗺️ 전국 지도 열기</a>
+      <!-- 🛠️ 상단 우측 여분 슬롯 (필요 시 자유롭게 채워 사용) -->
+      <div class="portal-nav-slot" id="portalNavSlot"></div>
     </div>
   </nav>
 
   <section class="hero-wrapper">
     <div class="hero-badge-romance">✨ Korea Romantic Backpacking Road</div>
-    <h1 class="hero-title">길 끝에서 마주하는 하룻밤,<br><span class="highlight">당신의 낭만을 응원합니다.</span></h1>
+    <!-- ✏️ 요청하신 낭만 메인 카피 문구 -->
+    <h1 class="hero-title">땀흘린 끝에 마주하는 하룻밤,<br><span class="highlight">당신의 낭만을 응원합니다.</span></h1>
     <p class="hero-subtitle">검증된 전국 박지 위치와 들머리 네비 주소, 드론 규제 정보까지</p>
 
     <div class="portal-search-box">
@@ -640,12 +666,13 @@
         </div>
       </div>
 
-      <!-- 🎬 1번+2번 하이브리드 YouTube 플레이어 (구글 시트 '설정' 탭 연동) -->
+      <!-- 🎬 [스타일 A] 유튜브 메인 플레이어 + 하단 가로 스와이프 썸네일 레일 -->
       <section>
         <div class="section-header">
           <div class="section-title" id="videoSectionTitle">🎬 이 주의 낭만 백패킹 추천 영상</div>
           <a id="videoChannelLink" href="https://youtube.com" target="_blank" rel="noopener noreferrer" class="more-link">유튜브 ➔</a>
         </div>
+        
         <div class="youtube-embed-card">
           <div class="video-box">
             <iframe id="mainFeaturedIframe" src="https://www.youtube.com/embed/videoseries?list=PLrEnWoR732-DZJ51uSQU6VqHjC2gZ9N-H" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
@@ -655,17 +682,22 @@
             <span id="videoModeBadge" style="color:var(--accent-blue); font-weight:700;">📺 추천 플레이리스트</span>
           </div>
         </div>
+
+        <!-- 유튜브 영상 스와이프 썸네일 목록 (구글 시트 '설정' 탭 연동) -->
+        <div class="horizontal-swipe-rail" id="ytRailTrack" style="margin-top: 8px;">
+          <!-- JS로 자동 생성됨 -->
+        </div>
       </section>
 
-      <!-- Instagram 피드 -->
+      <!-- 📸 Instagram 가로 스와이프 피드 -->
       <section>
         <div class="section-header">
           <div class="section-title">📸 요즘 뜨는 백패킹 인스타 & 릴스</div>
           <a href="https://www.instagram.com/explore/tags/백패킹/" target="_blank" rel="noopener noreferrer" class="more-link">#백패킹 더보기 ➔</a>
         </div>
 
-        <div class="insta-feed-grid">
-          <a href="https://www.instagram.com/explore/tags/선자령백패킹/" target="_blank" rel="noopener noreferrer" class="insta-card">
+        <div class="horizontal-swipe-rail">
+          <a href="https://www.instagram.com/explore/tags/선자령백패킹/" target="_blank" rel="noopener noreferrer" class="insta-card-swipe">
             <div class="insta-thumb-box">
               <img src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=500&auto=format&fit=crop&q=60" alt="선자령 백패킹" class="insta-thumb-img" />
               <span class="insta-reels-badge">▶ 릴스</span>
@@ -674,7 +706,7 @@
             <div class="insta-card-desc">밤하늘 은하수가 쏟아지는 대관령 풍경 ✨</div>
           </a>
 
-          <a href="https://www.instagram.com/explore/tags/굴업도백패킹/" target="_blank" rel="noopener noreferrer" class="insta-card">
+          <a href="https://www.instagram.com/explore/tags/굴업도백패킹/" target="_blank" rel="noopener noreferrer" class="insta-card-swipe">
             <div class="insta-thumb-box">
               <img src="https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=500&auto=format&fit=crop&q=60" alt="굴업도 백패킹" class="insta-thumb-img" />
               <span class="insta-reels-badge">📷 인기</span>
@@ -682,18 +714,36 @@
             <div class="insta-card-user">#굴업도개머리</div>
             <div class="insta-card-desc">서해 굴업도 개머리언덕 수평선 일몰 🌅</div>
           </a>
+
+          <a href="https://www.instagram.com/explore/tags/간월재백패킹/" target="_blank" rel="noopener noreferrer" class="insta-card-swipe">
+            <div class="insta-thumb-box">
+              <img src="https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=500&auto=format&fit=crop&q=60" alt="간월재 백패킹" class="insta-thumb-img" />
+              <span class="insta-reels-badge">▶ 릴스</span>
+            </div>
+            <div class="insta-card-user">#간월재억새</div>
+            <div class="insta-card-desc">황금빛 억새 물결 사이로 지는 노을 🌾</div>
+          </a>
+
+          <a href="https://www.instagram.com/explore/tags/수우도백패킹/" target="_blank" rel="noopener noreferrer" class="insta-card-swipe">
+            <div class="insta-thumb-box">
+              <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&auto=format&fit=crop&q=60" alt="수우도 백패킹" class="insta-thumb-img" />
+              <span class="insta-reels-badge">📷 힐링</span>
+            </div>
+            <div class="insta-card-user">#통영수우도</div>
+            <div class="insta-card-desc">에메랄드빛 남해 바다 절벽 뷰 🌊</div>
+          </a>
         </div>
       </section>
 
-      <!-- 테마별 추천 박지 -->
+      <!-- 🌊 테마별 추천 낭만 박지 (가로 스와이프 카드 레일) -->
       <section>
         <div class="section-header">
           <div class="section-title">✨ 테마별 추천 낭만 박지</div>
           <a href="map.html" class="more-link">전체 지도 보기 ➔</a>
         </div>
 
-        <div class="curated-grid">
-          <div class="curated-card" onclick="smartRouteToSpot('굴업도')">
+        <div class="horizontal-swipe-rail">
+          <div class="curated-card-swipe" onclick="smartRouteToSpot('굴업도')">
             <div>
               <span class="card-tag tag-island">🏝️ 서해의 알프스</span>
               <div class="card-title">굴업도 개머리언덕</div>
@@ -706,7 +756,7 @@
             </div>
           </div>
 
-          <div class="curated-card" onclick="smartRouteToSpot('선자령')">
+          <div class="curated-card-swipe" onclick="smartRouteToSpot('선자령')">
             <div>
               <span class="card-tag tag-star">🌌 쏟아지는 은하수</span>
               <div class="card-title">대관령 선자령</div>
@@ -719,7 +769,7 @@
             </div>
           </div>
 
-          <div class="curated-card" onclick="smartRouteToSpot('간월재')">
+          <div class="curated-card-swipe" onclick="smartRouteToSpot('간월재')">
             <div>
               <span class="card-tag tag-easy">🌾 황금빛 억새평원</span>
               <div class="card-title">영남알프스 간월재</div>
@@ -729,6 +779,19 @@
             <div class="card-footer">
               <span style="color:var(--accent-amber);">난이도 ⭐⭐</span>
               <span style="color:var(--accent-emerald);">임도 트레킹 🚶</span>
+            </div>
+          </div>
+
+          <div class="curated-card-swipe" onclick="smartRouteToSpot('수우도')">
+            <div>
+              <span class="card-tag tag-island">🌊 남해안 바다 조망</span>
+              <div class="card-title">통영 수우도 은박산</div>
+              <div class="card-location">경남 통영시 사량면</div>
+              <div class="card-desc">기암괴석 해안 절벽과 탁 트인 남해 바다를 품은 프라이빗 섬 박지.</div>
+            </div>
+            <div class="card-footer">
+              <span style="color:var(--accent-amber);">난이도 ⭐⭐⭐</span>
+              <span style="color:var(--accent-teal);">삼천포항 배편 🚢</span>
             </div>
           </div>
         </div>
@@ -745,11 +808,8 @@
     </main>
 
     <aside class="side-column">
-      <div class="banner-cta-map" onclick="location.href='map.html'">
-        <div class="cta-map-title">🗺️ 전국 박지 지도 열기</div>
-        <div class="cta-map-sub">내 주변 박지 & 드론 비행 가능 구역 실시간 확인</div>
-        <span class="btn-cta-white">지도 바로가기 ➔</span>
-      </div>
+      <!-- 🛠️ 사이드바 상단 여분 슬롯 (나중에 사용할 빈 자리) -->
+      <div class="sidebar-custom-slot" id="sidebarCustomSlot"></div>
 
       <div class="widget-box">
         <div class="widget-title">
@@ -802,39 +862,53 @@
     const GOOGLE_SHEET_GID = '0';
     let registeredSpots = [];
 
-    /* 🎬 [하이브리드 스마트 파서] 단일 영상 vs 재생목록 자동 감지 */
+    // 기본 추천 유튜브 영상 리스트 (구글 시트 로드 전 또는 빈칸일 때 활용)
+    let featuredVideosList = [
+      {
+        url: 'https://www.youtube.com/playlist?list=PLrEnWoR732-DZJ51uSQU6VqHjC2gZ9N-H',
+        caption: '🎥 드론으로 담아낸 서해 섬 백패킹의 일몰과 은하수',
+        thumb: 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=400&auto=format&fit=crop&q=60'
+      }
+    ];
+
+    /* 🎬 [스마트 파서] 단일 영상 ID 또는 재생목록 ID 추출 및 썸네일 생성 */
     function parseYouTubeSmartUrl(url) {
       if (!url) return null;
       const str = String(url).trim();
 
-      // 1. 재생목록(Playlist) 감지 (list=PL... 형태)
+      // 1. 재생목록(Playlist) 감지
       const listMatch = str.match(/[?&]list=([^#&?]+)/);
       if (listMatch && listMatch[1]) {
         return {
           type: 'playlist',
+          id: listMatch[1],
           embedUrl: `https://www.youtube.com/embed/videoseries?list=${listMatch[1]}&rel=0`,
           linkUrl: `https://www.youtube.com/playlist?list=${listMatch[1]}`,
-          badge: '📺 추천 플레이리스트'
+          badge: '📺 추천 플레이리스트',
+          thumbUrl: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=400&auto=format&fit=crop&q=60'
         };
       }
 
-      // 2. 단일 영상(Video) 감지 (youtu.be 또는 watch?v=)
+      // 2. 단일 영상(Video) 감지
       const videoMatch = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
       if (videoMatch && videoMatch[1]) {
+        const vid = videoMatch[1];
         return {
           type: 'video',
-          embedUrl: `https://www.youtube.com/embed/${videoMatch[1]}?autoplay=0&mute=1&controls=1&rel=0`,
-          linkUrl: `https://www.youtube.com/watch?v=${videoMatch[1]}`,
-          badge: '🎥 추천 스포트라이트'
+          id: vid,
+          embedUrl: `https://www.youtube.com/embed/${vid}?autoplay=1&mute=1&controls=1&rel=0`,
+          linkUrl: `https://www.youtube.com/watch?v=${vid}`,
+          badge: '🎥 추천 스포트라이트',
+          thumbUrl: `https://img.youtube.com/vi/${vid}/mqdefault.jpg`
         };
       }
 
       return null;
     }
 
-    /* 🎬 유튜브 플레이어 DOM 업데이트 */
-    function applyFeaturedYouTube(videoRawUrl, captionText) {
-      const parsed = parseYouTubeSmartUrl(videoRawUrl);
+    /* 🎬 상단 메인 플레이어 영상 교체 */
+    function switchMainVideo(item, index) {
+      const parsed = parseYouTubeSmartUrl(item.url);
       if (!parsed) return;
 
       const iframe = document.getElementById('mainFeaturedIframe');
@@ -843,14 +917,45 @@
       const channelLink = document.getElementById('videoChannelLink');
 
       if (iframe) iframe.src = parsed.embedUrl;
-      if (caption && captionText) caption.innerText = captionText;
+      if (caption) caption.innerText = item.caption || '🎥 낭만 백패킹 추천 영상';
       if (badge) badge.innerText = parsed.badge;
       if (channelLink) channelLink.href = parsed.linkUrl;
+
+      // 썸네일 활성화 상태 하이라이트
+      document.querySelectorAll('.yt-thumb-card').forEach((card, idx) => {
+        card.classList.toggle('active', idx === index);
+      });
     }
 
-    /* 🎬 [핵심] '설정' 탭에서 유튜브 영상 링크 가져오기 */
+    /* 🎬 유튜브 썸네일 스와이프 레일 렌더링 */
+    function renderYouTubeRail() {
+      const track = document.getElementById('ytRailTrack');
+      if (!track) return;
+
+      track.innerHTML = featuredVideosList.map((item, idx) => {
+        const parsed = parseYouTubeSmartUrl(item.url);
+        const thumb = item.thumb || (parsed ? parsed.thumbUrl : 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=400&auto=format&fit=crop&q=60');
+        const title = item.caption || `추천 영상 ${idx + 1}`;
+        const activeClass = idx === 0 ? 'active' : '';
+
+        return `
+          <div class="yt-thumb-card ${activeClass}" onclick="switchMainVideo(featuredVideosList[${idx}], ${idx})">
+            <div class="yt-thumb-img-box">
+              <img src="${thumb}" alt="${escapeHtml(title)}" class="yt-thumb-img" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=400&auto=format&fit=crop&q=60'" />
+            </div>
+            <div class="yt-thumb-title">${escapeHtml(title)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /* 🎬 [설정 탭 다중 영상 로드] */
     async function loadFeaturedVideoFromConfigSheet() {
-      // '설정' 탭을 콕 집어서 가져옵니다.
       const configUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('설정')}&_t=${Date.now()}`;
       try {
         const res = await fetch(configUrl);
@@ -861,22 +966,35 @@
             skipEmptyLines: true,
             complete: function(results) {
               if (results.data && results.data.length > 0) {
-                const row = results.data[0];
-                const videoUrl = row.featuredVideo || row.유튜브 || row.유튜브링크 || row.youtubeUrl || row.link;
-                const caption = row.featuredCaption || row.영상설명 || row.설명 || row.caption;
-                if (videoUrl && videoUrl.trim()) {
-                  applyFeaturedYouTube(videoUrl.trim(), caption ? caption.trim() : null);
+                const list = [];
+                results.data.forEach((row) => {
+                  const videoUrl = row.featuredVideo || row.유튜브 || row.유튜브링크 || row.youtubeUrl || row.link;
+                  const caption = row.featuredCaption || row.영상설명 || row.설명 || row.caption;
+                  const thumb = row.thumbUrl || row.썸네일;
+                  if (videoUrl && videoUrl.trim()) {
+                    list.push({
+                      url: videoUrl.trim(),
+                      caption: caption ? caption.trim() : '🎥 추천 낭만 백패킹 영상',
+                      thumb: thumb ? thumb.trim() : null
+                    });
+                  }
+                });
+
+                if (list.length > 0) {
+                  featuredVideosList = list;
+                  renderYouTubeRail();
+                  switchMainVideo(featuredVideosList[0], 0);
                 }
               }
             }
           });
         }
       } catch (e) {
-        console.warn('설정 시트 로드 대기 중 (기본 플레이어 유지)', e);
+        console.warn('설정 시트 로드 대기 중 (기본 영상 렌더링)', e);
       }
     }
 
-    /* 📍 기존 박지 데이터 로드 (기존 1번째 탭 gid=0 유지) */
+    /* 📍 박지 데이터 로드 */
     async function loadPortalSpotData() {
       const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_GID}&_t=${Date.now()}`;
       try {
@@ -901,7 +1019,8 @@
       } catch (e) {}
     }
 
-    // 두 데이터 동시 로드 시작
+    // 초기 렌더링 및 데이터 로드
+    renderYouTubeRail();
     loadPortalSpotData();
     loadFeaturedVideoFromConfigSheet();
 
