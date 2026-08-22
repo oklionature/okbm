@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -6,11 +7,11 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>대한민국 낭만 백패킹 로드</title>
+  <title>대한민국 낭만 백패킹 로드 | 포털</title>
 
-  <!-- 웹폰트: Pretendard(본문 UI) + Gmarket Sans(헤더 볼드) -->
+  <!-- 웹폰트: Pretendard(본문 UI) + Gmarket Sans(타이틀 볼드) + Caveat(영문 감성 필기체) -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Gmarket+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Gmarket+Sans:wght@500;700;800&display=swap" rel="stylesheet">
   
   <!-- CSV Parser -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -33,6 +34,7 @@
       --accent-amber: #f59e0b;
       --accent-rose: #f43f5e;
       --font-display: 'Gmarket Sans', -apple-system, sans-serif;
+      --font-script: 'Caveat', cursive;
       --font-body: 'Pretendard', -apple-system, sans-serif;
     }
 
@@ -54,50 +56,64 @@
       padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
     }
 
-    /* 🧭 1. 상단 GNB (초미니멀 바) */
+    /* 🧭 1. 상단 GNB (통일된 브랜드 로고 바) */
     .portal-nav {
       position: sticky;
       top: 0;
       z-index: 1000;
-      background: rgba(3, 5, 8, 0.88);
+      background: rgba(3, 5, 8, 0.94);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
-      padding: 12px 18px;
+      padding: 10px 16px;
       display: flex;
       justify-content: center;
       align-items: center;
       width: 100%;
+      min-height: 52px;
     }
     .portal-nav-inner {
       width: 100%;
       max-width: 1140px;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
     }
-    .nav-brand-logo {
-      display: flex;
+
+    /* 💖 공통 브랜드 타이틀 + 영문 필기체 */
+    .brand-title-link {
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       text-decoration: none;
-      font-size: 1.25rem;
+      white-space: nowrap;
+      user-select: none;
     }
-    .nav-right-slot a.nav-link {
-      color: var(--text-secondary);
-      text-decoration: none;
-      font-size: 0.78rem;
-      font-weight: 600;
-      padding: 5px 12px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid var(--border);
-      transition: all 0.2s;
+    .main-title-text {
+      font-family: var(--font-display);
+      font-size: clamp(1.05rem, 3.8vw, 1.42rem);
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.03em;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
     }
-    .nav-right-slot a.nav-link:hover {
-      color: #fff;
-      border-color: var(--accent-blue);
-      background: rgba(56, 189, 248, 0.12);
+    .main-title-text .highlight-pink {
+      background: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #f472b6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 10px rgba(244, 63, 94, 0.5));
+      font-weight: 800;
+    }
+    .brand-sub-script {
+      font-family: var(--font-script);
+      font-size: clamp(1.05rem, 3.2vw, 1.35rem);
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 0.02em;
+      opacity: 0.9;
+      transform: translateY(1px);
     }
 
     /* 🏔️ 2. 히어로 섹션 */
@@ -223,7 +239,7 @@
     .auto-item-name { font-weight: 700; color: var(--accent-blue); }
     .auto-item-tag { font-size: 0.68rem; color: #7dd3fc; background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px; }
 
-    /* 🌿 LNT 캠페인 배너 (검색창 바로 밑 전진 배치) */
+    /* 🌿 LNT 캠페인 배너 */
     .lnt-top-banner {
       max-width: 580px;
       margin: 0 auto 16px auto;
@@ -257,7 +273,7 @@
       white-space: nowrap;
     }
 
-    /* 🏷️ 검색창 밑 테마 정보: 한 줄에 2개씩 큼직하게 배치 */
+    /* 🏷️ 검색창 밑 테마 정보 2열 그리드 */
     .vibe-grid-2col {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -479,7 +495,7 @@
     .insta-card-user { font-size: 0.78rem; font-weight: 700; color: var(--accent-rose); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .insta-card-desc { font-size: 0.74rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* 🎬 [3. 유튜브 추천 영상 - 최하단 이동] */
+    /* 🎬 [3. 유튜브 추천 영상] */
     .yt-full-card {
       flex: 0 0 100%;
       width: 100%;
@@ -645,7 +661,7 @@
     .dock-item.active { color: var(--accent-blue); }
     .dock-item svg { width: 18px; height: 18px; fill: currentColor; }
 
-    /* 💻 태블릿/노트북 중간 해상도 (769px ~ 1199px): 2열 분할 */
+    /* 💻 태블릿/노트북 중간 해상도 (769px ~ 1199px) */
     @media (min-width: 769px) and (max-width: 1199px) {
       .insta-uniform-card {
         flex: 0 0 calc((100% - 12px) / 2) !important;
@@ -656,7 +672,7 @@
 
     /* 📱 모바일 미디어 쿼리 (~768px) */
     @media (max-width: 768px) {
-      .portal-nav { padding: 8px 14px; }
+      .portal-nav { padding: 8px 12px; }
       .kbd-hint { display: none; }
       .portal-search-input { padding-right: 46px; }
 
@@ -671,13 +687,11 @@
       .vibe-card-title { font-size: 0.82rem; }
       .vibe-card-desc { font-size: 0.68rem; }
 
-      /* 🔥 모바일 1:1 풀 카드 스냅 */
       .yt-full-card { flex: 0 0 100% !important; min-width: 100% !important; max-width: 100% !important; padding: 8px; }
       .insta-uniform-card { flex: 0 0 100% !important; min-width: 100% !important; max-width: 100% !important; padding: 10px; }
       .insta-thumb-box { aspect-ratio: 4 / 3 !important; }
       .curated-uniform-card { flex: 0 0 100% !important; min-width: 100% !important; max-width: 100% !important; min-height: 145px; }
 
-      /* 📱 모바일 전용 iOS 바텀시트 전환 */
       .insta-modal-overlay { align-items: flex-end !important; padding: 0 !important; }
       .insta-modal-card { max-width: 100% !important; border-radius: 20px 20px 0 0 !important; animation: sheetSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important; max-height: 84vh !important; }
       @keyframes sheetSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -688,15 +702,13 @@
 </head>
 <body>
 
-  <!-- 🧭 1. 상단 GNB (초미니멀 바) -->
+  <!-- 🧭 1. 상단 GNB (일관된 브랜드 로고 & 필기체 서브타이틀) -->
   <nav class="portal-nav">
     <div class="portal-nav-inner">
-      <a href="index.html" class="nav-brand-logo">
-        <span>🇰🇷</span>
+      <a href="index.html" class="brand-title-link" title="메인 홈">
+        <span class="main-title-text">대한민국 <span class="highlight-pink">낭만 백패킹</span> 로드</span>
+        <span class="brand-sub-script">Romantic Backpacking Road</span>
       </a>
-      <div class="nav-right-slot">
-        <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="nav-link">협업·문의</a>
-      </div>
     </div>
   </nav>
 
@@ -715,7 +727,7 @@
       <ul id="searchAutoDropdown" class="search-auto-dropdown"></ul>
     </div>
 
-    <!-- 🌿 LNT 캠페인 배너 (검색창 바로 밑 전진 배치) -->
+    <!-- 🌿 LNT 캠페인 배너 -->
     <div class="lnt-top-banner">
       <div class="lnt-top-left">
         <span class="lnt-top-badge">🌿 LNT 수칙</span>
@@ -724,7 +736,7 @@
       <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="lnt-top-link">동참 ➔</a>
     </div>
 
-    <!-- 🏷️ 검색창 밑 테마 정보: 한 줄에 2개씩 큼직하게 배치 -->
+    <!-- 🏷️ 검색창 밑 테마 정보 2열 그리드 -->
     <div class="vibe-grid-2col">
       <div class="vibe-card-btn" onclick="smartRouteToSpot('굴업도')">
         <div class="vibe-card-title">🌅 붉은 일몰 성지</div>
@@ -836,13 +848,11 @@
           </div>
         </div>
 
-        <div class="one-card-swipe-rail" id="instaOneCardRail">
-          <!-- JS 동적 생성 -->
-        </div>
+        <div class="one-card-swipe-rail" id="instaOneCardRail"></div>
         <div class="carousel-dots-wrap" id="instaDotsWrap"></div>
       </section>
 
-      <!-- 🎬 3. 유튜브 추천 영상 슬라이더 (하단 독 바로 위 최하단 배치) -->
+      <!-- 🎬 3. 유튜브 추천 영상 슬라이더 -->
       <section class="swipe-section-wrap">
         <div class="section-header">
           <div class="section-title">🎬 이 주의 낭만 백패킹 영상</div>
@@ -852,9 +862,7 @@
           </div>
         </div>
         
-        <div class="one-card-swipe-rail" id="ytOneCardRail">
-          <!-- JS 동적 생성 -->
-        </div>
+        <div class="one-card-swipe-rail" id="ytOneCardRail"></div>
         <div class="carousel-dots-wrap" id="ytDotsWrap"></div>
       </section>
 
@@ -895,7 +903,7 @@
     </aside>
   </div>
 
-  <!-- 💬 인스타그램 인앱 미리보기 모달 (모바일 바텀시트 / 갤럭시 뒤로가기 연동) -->
+  <!-- 💬 인스타그램 인앱 미리보기 모달 -->
   <div class="insta-modal-overlay" id="instaModalOverlay" onclick="closeInstaModal(event)">
     <div class="insta-modal-card" onclick="event.stopPropagation()">
       <button type="button" class="modal-close-btn" onclick="closeInstaModalDirect()">✕</button>
@@ -938,7 +946,6 @@
     const GOOGLE_SHEET_GID = '0';
     let registeredSpots = [];
 
-    // 기본 추천 영상
     let featuredVideosList = [
       {
         url: 'https://www.youtube.com/playlist?list=PLrEnWoR732-DZJ51uSQU6VqHjC2gZ9N-H',
@@ -946,7 +953,6 @@
       }
     ];
 
-    // 인스타그램 큐레이션 데이터
     const instaFeedList = [
       {
         user: '#선자령백패킹',
@@ -982,7 +988,6 @@
       }
     ];
 
-    /* 🎬 유튜브 스마트 파서 */
     function parseYouTubeSmartUrl(url) {
       if (!url) return null;
       const str = String(url).trim();
@@ -1016,7 +1021,6 @@
       return null;
     }
 
-    /* 🎬 유튜브 레일 렌더링 */
     function renderYouTubeRail() {
       const track = document.getElementById('ytOneCardRail');
       const dotsWrap = document.getElementById('ytDotsWrap');
@@ -1045,7 +1049,6 @@
       setupCarouselDots(track, dotsWrap, featuredVideosList.length);
     }
 
-    /* 📸 인스타그램 레일 렌더링 */
     function renderInstaRail() {
       const track = document.getElementById('instaOneCardRail');
       const dotsWrap = document.getElementById('instaDotsWrap');
@@ -1065,7 +1068,6 @@
       setupCarouselDots(track, dotsWrap, instaFeedList.length);
     }
 
-    /* 🌊 테마별 추천 박지 점(Dots) 연동 */
     function setupCuratedRailDots() {
       const track = document.getElementById('curatedOneCardRail');
       const dotsWrap = document.getElementById('curatedDotsWrap');
@@ -1074,7 +1076,6 @@
       }
     }
 
-    /* ⚪ 공통: 스마트 캐러셀 Dot 인디케이터 바인딩 */
     function setupCarouselDots(railElem, dotsWrapElem, totalCount) {
       if (!railElem || !dotsWrapElem) return;
       
@@ -1099,7 +1100,6 @@
       }, { passive: true });
     }
 
-    /* 💻 PC 화살표 슬라이더 제어 */
     function slideRail(railId, direction) {
       const rail = document.getElementById(railId);
       if (!rail) return;
@@ -1116,7 +1116,6 @@
       }
     }
 
-    /* 💬 인스타그램 모달 / 바텀시트 제어 (🪐 갤럭시 물리 뒤로가기 완벽 지원) */
     function openInstaModal(idx) {
       const data = instaFeedList[idx];
       if (!data) return;
@@ -1131,7 +1130,6 @@
       document.getElementById('instaModalOverlay').style.display = 'flex';
       document.body.style.overflow = 'hidden';
 
-      // 🪐 갤럭시 뒤로가기 대응 가상 히스토리 푸시
       window.history.pushState({ modalOpen: true }, '');
     }
 
@@ -1152,7 +1150,6 @@
       }
     }
 
-    // 🪐 갤럭시 및 안드로이드 시스템 뒤로가기 버튼 감지
     window.addEventListener('popstate', (e) => {
       const overlay = document.getElementById('instaModalOverlay');
       if (overlay && overlay.style.display === 'flex') {
@@ -1160,7 +1157,6 @@
       }
     });
 
-    // ⌨️ 키보드 단축키 지원 (/ 검색창 포커스, ESC 모달 닫기)
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closeInstaModalDirect();
@@ -1177,7 +1173,6 @@
       }
     });
 
-    /* ⚙️ 구글 시트 '설정' 탭 연동 */
     async function loadFeaturedVideoFromConfigSheet() {
       const configUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('설정')}&_t=${Date.now()}`;
       try {
@@ -1222,12 +1217,9 @@
             }
           });
         }
-      } catch (e) {
-        console.warn('설정 시트 로드 대기 중', e);
-      }
+      } catch (e) {}
     }
 
-    /* 📍 박지 데이터 로드 */
     async function loadPortalSpotData() {
       const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_GID}&_t=${Date.now()}`;
       try {
@@ -1304,7 +1296,6 @@
       }
     });
 
-    // 🚀 초기 로드
     window.addEventListener('DOMContentLoaded', () => {
       renderYouTubeRail();
       renderInstaRail();
@@ -1315,3 +1306,6 @@
   </script>
 </body>
 </html>
+
+
+
