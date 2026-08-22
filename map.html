@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -597,6 +596,7 @@
     .tag-terrain-deck { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25); }
     .tag-terrain-rock { background: rgba(148, 163, 184, 0.12); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.25); }
     .tag-terrain-soil { background: rgba(34, 197, 94, 0.12); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.25); }
+    .tag-terrain-beach { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
     .tag-terrain-island { background: rgba(45, 212, 191, 0.15); color: var(--accent-teal); border: 1px solid rgba(45, 212, 191, 0.3); }
     .tag-terrain-valley { background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); }
     .tag-terrain-cave { background: rgba(217, 70, 239, 0.12); color: #e879f9; border: 1px solid rgba(217, 70, 239, 0.25); }
@@ -673,9 +673,7 @@
     .dot-yellow { background: #f59e0b; }
     .dot-red { background: #f43f5e; }
 
-    /* =========================================================================
-       📱 모바일 전용 플로팅 HUD (검색창 & X 버튼)
-       ========================================================================= */
+    /* 모바일 플로팅 HUD */
     .mobile-floating-search {
       display: none;
       position: absolute;
@@ -737,7 +735,7 @@
       right: 0 !important;
     }
 
-    /* 🗺️ 모바일 우측 일반/위성 세로형 전환 바 */
+    /* 🗺️ 모바일 우측 세로형 전환 바 */
     .hud-map-type-vertical {
       display: none;
       position: absolute;
@@ -778,7 +776,6 @@
       box-shadow: 0 1px 6px rgba(2, 132, 199, 0.5);
     }
 
-    /* 🟢🟡🔴 모바일 하단 좌측 범례 */
     .hud-bottom-left-legend {
       display: none;
       position: absolute;
@@ -799,7 +796,6 @@
       white-space: nowrap;
     }
 
-    /* 🛸 모바일 하단 우측 드론 버튼 */
     .hud-bottom-right-drone {
       display: none;
       position: absolute;
@@ -871,7 +867,7 @@
       cursor: pointer;
     }
 
-    /* 📍 스타일 C 커스텀 마커 래퍼 및 호버 라벨칩 */
+    /* 📍 커스텀 마커 래퍼 */
     .custom-spot-marker-wrap {
       position: relative;
       display: flex;
@@ -915,7 +911,7 @@
     .marker-label-elev { color: #86efac; font-size: 0.66rem; font-weight: 700; }
     .marker-svg-icon { filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7)); display: block; }
 
-    /* 🖥️ PC 팝업창 규격 */
+    /* 🖥️ PC 팝업창 */
     .compact-info-window {
       padding: 14px 16px;
       width: min(340px, calc(100vw - 32px)) !important;
@@ -938,7 +934,6 @@
     .compact-info-window::-webkit-scrollbar { width: 4px; }
     .compact-info-window::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
 
-    /* 🌟 상세 정보창 공통 컴포넌트 */
     .sheet-title-row {
       display: flex;
       align-items: center;
@@ -973,21 +968,20 @@
       justify-content: center;
     }
 
-    /* 🔒 들머리 잠금 & 7초 프로그레스 게이지 오버레이 */
-   .locked-entry-wrap {
-  position: relative;
-  margin-top: 4px;
-  border-radius: 8px;
-  overflow: hidden;
-  min-height: 54px; /* 👈 이 줄 추가 (최소 높이 표준화) */
-}
-.locked-entry-inner {
-  display: flex;
-  gap: 6px;
-  align-items: stretch;
-  transition: filter 0.3s ease;
-  min-height: 54px; /* 👈 이 줄 추가 (최소 높이 표준화) */
-}
+    /* 🔒 들머리 잠금 */
+    .locked-entry-wrap {
+      position: relative;
+      margin-top: 4px;
+      border-radius: 8px;
+      overflow: hidden;
+      min-height: 54px;
+    }
+    .locked-entry-inner {
+      display: flex;
+      gap: 6px;
+      align-items: stretch;
+      transition: filter 0.3s ease;
+      min-height: 54px;
     }
     .locked-entry-inner.is-locked {
       filter: blur(5px);
@@ -1036,7 +1030,6 @@
       transition: width 1s linear;
     }
 
-    /* 🚗 들머리 & 주소복사 바 */
     .compact-entry-link {
       font-size: 0.82rem;
       color: #7dd3fc;
@@ -1081,7 +1074,6 @@
       margin-top: 3px;
     }
 
-    /* 📝 특징 내용 */
     .sheet-desc-box {
       font-size: 0.84rem;
       font-weight: 500;
@@ -1096,7 +1088,6 @@
       margin-top: 4px;
     }
 
-    /* 🔗 미디어 액션 라인 */
     .spot-action-line {
       display: flex;
       flex-wrap: wrap;
@@ -1194,7 +1185,6 @@
       text-align: center;
     }
 
-    /* 법적 면책 고지 문구 스타일 */
     .app-disclaimer-box {
       font-size: 0.68rem;
       color: var(--text-muted);
@@ -1304,7 +1294,7 @@
       -webkit-overflow-scrolling: touch;
     }
 
-    /* 📱 모바일 하단 네비 독 */
+    /* 📱 모바일 하단 독 */
     .mobile-bottom-dock {
       display: none;
       position: fixed;
@@ -1452,7 +1442,6 @@
       .mobile-only { display: flex !important; }
       .mobile-floating-search { display: block !important; }
 
-      /* 📱 모바일 사이드바 */
       .sidebar { 
         position: absolute;
         top: 0; left: 0; right: 0;
@@ -1494,7 +1483,7 @@
       <!-- 💻 PC 전용 우측 툴바 -->
       <div class="header-right pc-only">
         <div class="pc-search-container">
-          <input type="text" id="pcSearchInput" class="search-input" placeholder="산/계곡/섬/봉우리 검색..." autocomplete="off" onfocus="showTopRankings('pc')" oninput="handleSearchInputChange('pc')" onkeyup="handleSearchInput(event, 'pc')" />
+          <input type="text" id="pcSearchInput" class="search-input" placeholder="산/계곡/섬/해변/봉우리 검색..." autocomplete="off" onfocus="showTopRankings('pc')" oninput="handleSearchInputChange('pc')" onkeyup="handleSearchInput(event, 'pc')" />
           <button type="button" id="pcSearchClearBtn" class="search-clear-btn" onclick="clearSearchInput('pc', true)" title="검색어 지우기">✕</button>
           <button type="button" class="search-btn-icon" onclick="executeSearch('pc')">🔍</button>
           <ul id="pcSearchDropdown" class="search-dropdown"></ul>
@@ -1552,6 +1541,7 @@
           <button class="filter-btn terrain-filter-btn" onclick="filterByTerrain('데크')">🪵 데크</button>
           <button class="filter-btn terrain-filter-btn" onclick="filterByTerrain('돌박지')">🪨 돌박지</button>
           <button class="filter-btn terrain-filter-btn" onclick="filterByTerrain('노지')">🏕️ 노지</button>
+          <button class="filter-btn terrain-filter-btn" onclick="filterByTerrain('해변')">🏖️ 해변</button>
           <button class="filter-btn terrain-filter-btn" onclick="filterByTerrain('섬')">🏝️ 섬</button>
           <button class="filter-btn terrain-filter-btn" onclick="filterByTerrain('계곡')">🌊 계곡</button>
           <button class="filter-btn terrain-filter-btn" onclick="filterByTerrain('동굴')">🦇 동굴</button>
@@ -1578,7 +1568,7 @@
       <!-- 📱 모바일 전용 플로팅 검색창 -->
       <div class="mobile-floating-search mobile-only">
         <div class="mobile-search-inner">
-          <input type="text" id="mobileSearchInput" class="mobile-search-input" placeholder="산, 섬, 계곡, 박지 검색..." autocomplete="off" onfocus="showTopRankings('mobile')" oninput="handleSearchInputChange('mobile')" onkeyup="handleSearchInput(event, 'mobile')" />
+          <input type="text" id="mobileSearchInput" class="mobile-search-input" placeholder="산, 섬, 해변, 계곡, 박지 검색..." autocomplete="off" onfocus="showTopRankings('mobile')" oninput="handleSearchInputChange('mobile')" onkeyup="handleSearchInput(event, 'mobile')" />
           <button type="button" id="mobileSearchClearBtn" class="search-clear-btn mobile-search-clear-btn" onclick="clearSearchInput('mobile', true)" title="검색어 지우기">✕</button>
           <button type="button" class="mobile-search-btn" onclick="executeSearch('mobile')">🔍</button>
         </div>
@@ -1643,8 +1633,8 @@
       </p>
       
       <div class="modal-field">
-        <label>1. 산 (박지 이름) *</label>
-        <input type="text" id="modalInputName" class="modal-input" placeholder="예: 굴업도 개머리언덕 / 통영 수우도" />
+        <label>1. 산/박지 이름 *</label>
+        <input type="text" id="modalInputName" class="modal-input" placeholder="예: 굴업도 개머리언덕 / 태안 신두리해변" />
       </div>
 
       <div class="modal-field">
@@ -1657,20 +1647,20 @@
 
       <div class="modal-field">
         <label>3. 들머리 (네비 주소, 쉼표 후 길안내 팁) *</label>
-        <textarea id="modalInputEntry" class="modal-input modal-textarea" rows="2" placeholder="예: 경북 상주시 사벌국면 묵상리 45, 임도따라 1km 전진"></textarea>
+        <textarea id="modalInputEntry" class="modal-input modal-textarea" rows="2" placeholder="예: 충남 태안군 원북면 신두리 123, 해변 진입로 100m 앞 주차"></textarea>
       </div>
 
       <div class="modal-field">
         <label>4. 고도 / 해발 (자동 측정 또는 직접 입력)</label>
         <div style="display: flex; gap: 6px;">
-          <input type="text" id="modalInputElevation" class="modal-input" style="flex:1;" placeholder="예: 385m" />
+          <input type="text" id="modalInputElevation" class="modal-input" style="flex:1;" placeholder="예: 385m (해변은 5m 등)" />
           <button type="button" class="modal-btn" style="background:var(--bg-card); color:#fff; padding:6px 10px;" onclick="fetchElevationForModal()">⛰️ 측정</button>
         </div>
       </div>
 
       <div class="modal-field">
         <label>5. 특징 및 꿀팁 (선택)</label>
-        <textarea id="modalInputDesc" class="modal-input modal-textarea" rows="2" placeholder="예: 탁 트인 일출/일몰 뷰, 간이 화장실 있음"></textarea>
+        <textarea id="modalInputDesc" class="modal-input modal-textarea" rows="2" placeholder="예: 탁 트인 일몰 뷰, 화장실 및 개수대 도보 3분"></textarea>
       </div>
 
       <div class="modal-field">
@@ -1679,6 +1669,7 @@
           <label><input type="checkbox" id="chkDeck" value="데크" /> 🪵 데크</label>
           <label><input type="checkbox" id="chkRock" value="돌박지" /> 🪨 돌박지</label>
           <label><input type="checkbox" id="chkSoil" value="노지" /> 🏕️ 노지</label>
+          <label><input type="checkbox" id="chkBeach" value="해변" /> 🏖️ 해변</label>
           <label><input type="checkbox" id="chkIsland" value="섬" /> 🏝️ 섬</label>
           <label><input type="checkbox" id="chkValley" value="계곡" /> 🌊 계곡</label>
           <label><input type="checkbox" id="chkCave" value="동굴" /> 🦇 동굴</label>
@@ -1980,12 +1971,10 @@
 
     document.getElementById('sheetEditLink').href = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/edit`;
 
-    /* 🔄 스마트 초기화 / 모두 닫기 버튼 상태 동기화 */
     function updateSmartResetButtons() {
       const isMobile = window.innerWidth <= 768;
       const isListOpen = isMobile ? !isSidebarCollapsed : !isPcSidebarCollapsed;
 
-      // 모바일 하단 독 버튼 업데이트
       const dockResetText = document.getElementById('dockResetMapText');
       const dockResetIcon = document.getElementById('dockResetMapIcon');
       if (dockResetText) {
@@ -1999,14 +1988,12 @@
         }
       }
 
-      // PC 상단 초기화 버튼 업데이트
       const pcResetBtn = document.getElementById('resetMapBtn');
       if (pcResetBtn) {
         pcResetBtn.innerText = isListOpen ? '📁 모두 닫기' : '🔄 지도 초기화';
       }
     }
 
-    /* 📁 박지 목록 내부 아코디언 전체 일괄 접기 (열려있는 것만 닫음) */
     function collapseAllRegionAccordions() {
       let closedCount = 0;
       document.querySelectorAll('.region-group').forEach(group => {
@@ -2026,13 +2013,11 @@
       return closedCount;
     }
 
-    /* 🔄 스마트 초기화 / 모두 닫기 클릭 핸들러 (창은 닫지 않고 내부 목록만 접기) */
     function handleSmartResetClick() {
       const isMobile = window.innerWidth <= 768;
       const isListOpen = isMobile ? !isSidebarCollapsed : !isPcSidebarCollapsed;
 
       if (isListOpen) {
-        // [모두 닫기 동작: 창은 그대로 열어둔 채 열린 아코디언만 일괄 접고 맨 위로 스크롤]
         const closedCount = collapseAllRegionAccordions();
         closeAllPopups();
 
@@ -2044,7 +2029,6 @@
         if (closedCount > 0) {
           showToast('📁 모든 지역 목록을 접었습니다');
         } else {
-          // 이미 다 접혀 있는 상태에서 한 번 더 누르면 모바일 사이드바 닫기
           if (isMobile) {
             isSidebarCollapsed = true;
             document.getElementById('sidebar').classList.add('collapsed');
@@ -2056,7 +2040,6 @@
         }
         updateSmartResetButtons();
       } else {
-        // [지도 초기화 동작]
         resetMapView();
       }
     }
@@ -2105,7 +2088,6 @@
       }
     }
 
-    /* 📍 [스타일 C 적용] 원형 뱃지 핀 + 감성 텐트 심볼 생성 함수 */
     function createCustomMarkerIcon(spot) {
       const isMobile = window.innerWidth <= 768;
       const d = parseInt(spot.difficulty, 10) || 3;
@@ -2137,6 +2119,21 @@
       return spot.searchCount || parseInt(localStorage.getItem(`okbm_views_${spot.id}`), 10) || 0;
     }
 
+    /* ⏱️ 날짜 문자열/타임스탬프를 밀리초 숫자로 정확하게 파싱하는 스마트 유틸 */
+    function parseTimestamp(rawDate) {
+      if (!rawDate) return 0;
+      if (typeof rawDate === 'number') return rawDate;
+      const str = String(rawDate).trim();
+      if (!str) return 0;
+      if (/^\d{10,13}$/.test(str)) {
+        const num = parseInt(str, 10);
+        return str.length === 10 ? num * 1000 : num;
+      }
+      const cleanStr = str.replace(/[.]/g, '-').replace(/\s+/g, ' ');
+      const parsed = Date.parse(cleanStr);
+      return isNaN(parsed) ? 0 : parsed;
+    }
+
     function getSpotStatusBadges(spot) {
       let html = '';
       if (getSpotViews(spot) >= 5) {
@@ -2144,7 +2141,7 @@
       }
       
       const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-      const createdTime = spot.createdAt ? parseInt(spot.createdAt, 10) : 0;
+      const createdTime = parseTimestamp(spot.createdAt);
       if (createdTime > 0 && (Date.now() - createdTime) <= SEVEN_DAYS_MS) {
         html += `<span class="badge-status badge-new">✨ NEW!</span>`;
       }
@@ -2429,7 +2426,6 @@
       smoothCenterMapOnSpot(spot.lat, spot.lng, keepZoom);
     }
 
-    /* 🔒 들머리 7초 잠금 해제 타이머 & 세션 캐시 관리 */
     const spotUnlockTimers = {};
 
     function isSpotUnlocked(spotId) {
@@ -2442,7 +2438,7 @@
       }
 
       if (isSpotUnlocked(spotId)) return;
-      if (spotUnlockTimers[spotId]) return; // 이미 7초 카운트다운 진행 중
+      if (spotUnlockTimers[spotId]) return;
 
       let countdown = 7;
       const overlayEl = document.getElementById(`entryLockOverlay_${spotId}`);
@@ -2514,7 +2510,6 @@
           <div style="margin: 4px 0 2px 0;">${getMetaBadgesHtml(spot)}</div>
           <div class="spot-coords-text">📍 ${spot.lat}, ${spot.lng}</div>
           
-          <!-- 🔒 7초 잠금 적용된 들머리 영역 (감사 인사 멘트 반영) -->
           <div class="locked-entry-wrap" id="lockedEntryWrap_${spot.id}">
             <div class="locked-entry-inner ${isUnlocked ? '' : 'is-locked'}" id="lockedEntryInner_${spot.id}">
               <a href="${escapeHtml(naverSearchUrl)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link" title="네이버 지도 길안내로 이동">
@@ -2687,13 +2682,19 @@
 
               let terrainList = ['데크'];
               if (rawTerrain && String(rawTerrain).trim()) {
-                terrainList = String(rawTerrain).split(/[\n,]+/).map(t => t.trim() === '바위' ? '돌박지' : t.trim()).filter(Boolean);
+                terrainList = String(rawTerrain).split(/[\n,]+/).map(t => {
+                  const tr = t.trim();
+                  if (tr === '바위') return '돌박지';
+                  if (tr.includes('해변') || tr.includes('해수욕장')) return '해변';
+                  return tr;
+                }).filter(Boolean);
               } else {
                 const combined = (name + ' ' + desc).toLowerCase();
                 const autoT = [];
+                if (combined.includes('해변') || combined.includes('해수욕장') || combined.includes('바닷가') || combined.includes('백사장') || combined.includes('몽돌')) autoT.push('해변');
                 if (combined.includes('계곡')) autoT.push('계곡');
                 if (combined.includes('동굴') || combined.includes('굴')) autoT.push('동굴');
-                if (combined.includes('섬') || combined.includes('해변')) autoT.push('섬');
+                if (combined.includes('섬')) autoT.push('섬');
                 if (combined.includes('돌박지') || combined.includes('바위')) autoT.push('돌박지');
                 if (combined.includes('노지')) autoT.push('노지');
                 if (combined.includes('데크') || combined.includes('활공장')) autoT.push('데크');
@@ -2703,8 +2704,10 @@
               const res = detectRegionAndCity(lat, lng, name, entryPoint);
               const spotId = getVal('id') ? String(getVal('id')).trim() : String(Date.now() + idx);
               const savedViews = parseInt(localStorage.getItem(`okbm_views_${spotId}`), 10) || 0;
-              const rawCreatedAt = getVal('createdAt', '생성일');
-              const createdAt = rawCreatedAt ? parseInt(rawCreatedAt, 10) : 0;
+              
+              /* ⏱️ 날짜 파싱 개선 */
+              const rawCreatedAt = getVal('createdAt', '생성일', '등록일', '날짜', 'date');
+              const createdAt = parseTimestamp(rawCreatedAt);
 
               mapped.push({
                 id: spotId,
@@ -2789,6 +2792,7 @@
         if (t.includes('데크')) html += `<span class="meta-tag tag-terrain-deck">🪵 데크</span>`;
         else if (t.includes('돌')) html += `<span class="meta-tag tag-terrain-rock">🪨 돌박지</span>`;
         else if (t.includes('노지')) html += `<span class="meta-tag tag-terrain-soil">🏕️ 노지</span>`;
+        else if (t.includes('해변') || t.includes('해수욕장')) html += `<span class="meta-tag tag-terrain-beach">🏖️ 해변</span>`;
         else if (t.includes('섬')) html += `<span class="meta-tag tag-terrain-island">🏝️ 섬</span>`;
         else if (t.includes('계곡')) html += `<span class="meta-tag tag-terrain-valley">🌊 계곡</span>`;
         else if (t.includes('동굴')) html += `<span class="meta-tag tag-terrain-cave">🦇 동굴</span>`;
@@ -2914,7 +2918,6 @@
       target.searchCount = views;
     }
 
-    /* 🔍 검색어 입력 실시간 감지 (X 버튼 표시/숨김) */
     function handleSearchInputChange(mode = 'pc') {
       const inputEl = document.getElementById(mode === 'mobile' ? 'mobileSearchInput' : 'pcSearchInput');
       const clearBtn = document.getElementById(mode === 'mobile' ? 'mobileSearchClearBtn' : 'pcSearchClearBtn');
@@ -2927,7 +2930,6 @@
       }
     }
 
-    /* ❌ 검색창 텍스트 지우기 함수 (키보드 팝업 방지용 shouldFocus 옵션 지원) */
     function clearSearchInput(mode = 'pc', shouldFocus = false) {
       const inputEl = document.getElementById(mode === 'mobile' ? 'mobileSearchInput' : 'pcSearchInput');
       const clearBtn = document.getElementById(mode === 'mobile' ? 'mobileSearchClearBtn' : 'pcSearchClearBtn');
@@ -3022,6 +3024,7 @@
             if (currentTerrainFilter === '데크') return t.includes('데크');
             if (currentTerrainFilter === '돌박지') return t.includes('돌박지') || t.includes('바위');
             if (currentTerrainFilter === '노지') return t.includes('노지');
+            if (currentTerrainFilter === '해변') return t.includes('해변') || t.includes('해수욕장');
             if (currentTerrainFilter === '섬') return t.includes('섬');
             if (currentTerrainFilter === '계곡') return t.includes('계곡');
             if (currentTerrainFilter === '동굴') return t.includes('동굴');
@@ -3167,7 +3170,10 @@
       document.getElementById('modalInputDistance').value = '';
       
       document.getElementById('chkDeck').checked = true;
-      ['chkRock', 'chkSoil', 'chkIsland', 'chkValley', 'chkCave', 'chkEtc'].forEach(id => document.getElementById(id).checked = false);
+      ['chkRock', 'chkSoil', 'chkBeach', 'chkIsland', 'chkValley', 'chkCave', 'chkEtc'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.checked = false;
+      });
 
       document.getElementById('modalSelectDiff').value = '3';
       document.getElementById('customModalOverlay').style.display = 'flex';
@@ -3302,7 +3308,7 @@
         }
       } catch (err) {}
 
-      const cleanAddressQuery = rawQuery.replace(/(마을회관|노인정|쉼터|주차장|캠핑장|입구|등산로|관리사무소|회관|봉|산)/g, '').trim();
+      const cleanAddressQuery = rawQuery.replace(/(마을회관|노인정|쉼터|주차장|캠핑장|입구|등산로|관리사무소|회관|봉|산|해수욕장|해변)/g, '').trim();
       const queryList = [rawQuery];
       if (cleanAddressQuery && cleanAddressQuery !== rawQuery) queryList.push(cleanAddressQuery);
 
@@ -3398,7 +3404,10 @@
       document.getElementById('modalInputDistance').value = '';
       
       document.getElementById('chkDeck').checked = true;
-      ['chkRock', 'chkSoil', 'chkIsland', 'chkValley', 'chkCave', 'chkEtc'].forEach(id => document.getElementById(id).checked = false);
+      ['chkRock', 'chkSoil', 'chkBeach', 'chkIsland', 'chkValley', 'chkCave', 'chkEtc'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.checked = false;
+      });
 
       document.getElementById('modalSelectDiff').value = '3';
       document.getElementById('customModalOverlay').style.display = 'flex';
@@ -3430,6 +3439,7 @@
       document.getElementById('chkDeck').checked = tList.includes('데크');
       document.getElementById('chkRock').checked = tList.includes('돌박지');
       document.getElementById('chkSoil').checked = tList.includes('노지');
+      document.getElementById('chkBeach').checked = tList.includes('해변') || tList.includes('해수욕장');
       document.getElementById('chkIsland').checked = tList.includes('섬');
       document.getElementById('chkValley').checked = tList.includes('계곡');
       document.getElementById('chkCave').checked = tList.includes('동굴');
@@ -3459,6 +3469,7 @@
       if (document.getElementById('chkDeck').checked) terrain.push('데크');
       if (document.getElementById('chkRock').checked) terrain.push('돌박지');
       if (document.getElementById('chkSoil').checked) terrain.push('노지');
+      if (document.getElementById('chkBeach').checked) terrain.push('해변');
       if (document.getElementById('chkIsland').checked) terrain.push('섬');
       if (document.getElementById('chkValley').checked) terrain.push('계곡');
       if (document.getElementById('chkCave').checked) terrain.push('동굴');
@@ -3489,7 +3500,8 @@
           terrain: terrain.length > 0 ? terrain : ['데크'],
           difficulty, droneStatus: check.status,
           status: 'pending',
-          submittedAt: new Date().toLocaleString()
+          submittedAt: Date.now(),
+          createdAt: Date.now()
         };
 
         try {
@@ -3591,7 +3603,6 @@
       } catch (err) {}
     }
 
-    /* 🔄 순수 지도 초기화 함수 (키보드 팝업 방지 적용) */
     function resetMapView() {
       if (document.activeElement && typeof document.activeElement.blur === 'function') {
         document.activeElement.blur();
