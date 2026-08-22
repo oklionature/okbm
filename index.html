@@ -17,11 +17,11 @@
 
   <style>
     :root {
-      --bg-deep: #080a0f;
-      --bg-surface: #10141e;
-      --bg-card: #161b26;
-      --bg-card-hover: #1f2737;
-      --border: rgba(255, 255, 255, 0.08);
+      --bg-deep: #06080c;
+      --bg-surface: #0e121a;
+      --bg-card: #141923;
+      --bg-card-hover: #1c2331;
+      --border: rgba(255, 255, 255, 0.07);
       --border-glow: rgba(56, 189, 248, 0.35);
       --text-primary: #f8fafc;
       --text-secondary: #94a3b8;
@@ -47,27 +47,30 @@
       -webkit-font-smoothing: antialiased;
       letter-spacing: -0.015em;
     }
-    body { padding-bottom: 74px; }
+    body {
+      background: radial-gradient(circle at 50% 0%, #111a2e 0%, var(--bg-deep) 65%);
+      min-height: 100vh;
+      padding-bottom: 74px;
+    }
 
-    /* 🧭 상단 GNB (정중앙 세련된 레이아웃) */
+    /* 🧭 상단 GNB (정중앙 밸런스 & 글래스모피즘) */
     .portal-nav {
       position: sticky;
       top: 0;
       z-index: 1000;
-      background: rgba(8, 10, 15, 0.88);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      background: rgba(6, 8, 12, 0.82);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
       border-bottom: 1px solid var(--border);
-      padding: 12px 16px;
+      padding: 12px 20px;
       display: flex;
       justify-content: center;
       align-items: center;
-      position: relative;
       width: 100%;
     }
     .portal-nav-inner {
       width: 100%;
-      max-width: 1100px;
+      max-width: 1140px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -83,10 +86,10 @@
       transition: transform 0.2s;
     }
     .portal-logo-wrap:hover { transform: scale(1.01); }
-    .portal-logo-icon { font-size: 1.2rem; }
+    .portal-logo-icon { font-size: 1.25rem; }
     .portal-logo {
       font-family: var(--font-display);
-      font-size: 1.08rem;
+      font-size: 1.12rem;
       font-weight: 700;
       letter-spacing: -0.03em;
       background: linear-gradient(135deg, #ffffff 30%, #bae6fd 70%, #38bdf8 100%);
@@ -99,7 +102,7 @@
       font-size: 0.65rem;
       color: var(--accent-teal);
       background: rgba(45, 212, 191, 0.12);
-      padding: 2px 6px;
+      padding: 2px 7px;
       border-radius: 6px;
       font-weight: 700;
       border: 1px solid rgba(45, 212, 191, 0.3);
@@ -119,7 +122,7 @@
       text-decoration: none;
       font-size: 0.8rem;
       font-weight: 600;
-      padding: 4px 10px;
+      padding: 5px 12px;
       border-radius: 8px;
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid var(--border);
@@ -128,15 +131,15 @@
     .nav-right-slot a.nav-link:hover {
       color: #fff;
       border-color: var(--accent-blue);
-      background: rgba(56, 189, 248, 0.1);
+      background: rgba(56, 189, 248, 0.12);
     }
 
     /* 🏔️ 히어로 섹션 */
     .hero-wrapper {
       width: 100%;
-      max-width: 1100px;
+      max-width: 1140px;
       margin: 0 auto;
-      padding: 36px 16px 20px 16px;
+      padding: 38px 20px 20px 20px;
       text-align: center;
     }
     .hero-badge-romance {
@@ -150,12 +153,12 @@
       font-weight: 700;
       padding: 5px 14px;
       border-radius: 30px;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
       letter-spacing: 0.02em;
     }
     .hero-title {
       font-family: var(--font-display);
-      font-size: clamp(1.45rem, 4.5vw, 2.3rem);
+      font-size: clamp(1.45rem, 4.2vw, 2.35rem);
       font-weight: 700;
       margin-bottom: 10px;
       line-height: 1.38;
@@ -163,7 +166,7 @@
       word-break: keep-all;
     }
     .hero-title .highlight {
-      background: linear-gradient(135deg, #38bdf8 0%, #2dd4bf 55%, #facc15 100%);
+      background: linear-gradient(135deg, #38bdf8 0%, #2dd4bf 50%, #facc15 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -175,42 +178,43 @@
       font-weight: 400;
     }
 
-    /* 🔍 검색창 */
+    /* 🔍 검색창 (글래스모피즘) */
     .portal-search-box {
       position: relative;
       width: 100%;
-      max-width: 580px;
-      margin: 0 auto 14px auto;
+      max-width: 600px;
+      margin: 0 auto 16px auto;
     }
     .portal-search-input {
       width: 100%;
-      padding: 14px 50px 14px 20px;
+      padding: 15px 54px 15px 22px;
       font-size: 0.94rem;
       font-family: var(--font-body);
-      border-radius: 28px;
-      border: 1.5px solid rgba(56, 189, 248, 0.4);
-      background: var(--bg-surface);
+      border-radius: 30px;
+      border: 1.5px solid rgba(56, 189, 248, 0.35);
+      background: rgba(14, 18, 26, 0.85);
+      backdrop-filter: blur(10px);
       color: #fff;
       outline: none;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.12);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.1);
       transition: all 0.25s ease;
     }
     .portal-search-input:focus {
-      background: #0b0f17;
+      background: #080c14;
       border-color: #38bdf8;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 24px rgba(56, 189, 248, 0.28);
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7), 0 0 25px rgba(56, 189, 248, 0.28);
     }
     .portal-search-btn {
       position: absolute;
-      right: 7px;
+      right: 8px;
       top: 50%;
       transform: translateY(-50%);
       background: linear-gradient(135deg, #0284c7, #0ea5e9);
       border: none;
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
-      font-size: 1rem;
+      font-size: 1.05rem;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -224,20 +228,20 @@
       position: absolute;
       top: calc(100% + 8px);
       left: 0; right: 0;
-      background: rgba(16, 20, 30, 0.98);
-      backdrop-filter: blur(16px);
+      background: rgba(14, 18, 26, 0.98);
+      backdrop-filter: blur(18px);
       border: 1px solid var(--border-glow);
-      border-radius: 14px;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.85);
+      border-radius: 16px;
+      box-shadow: 0 20px 45px rgba(0,0,0,0.9);
       list-style: none;
-      max-height: 240px;
+      max-height: 250px;
       overflow-y: auto;
       display: none;
       z-index: 2000;
       text-align: left;
     }
     .auto-item {
-      padding: 12px 16px;
+      padding: 12px 18px;
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
@@ -256,16 +260,16 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
       width: 100%;
-      max-width: 580px;
+      max-width: 600px;
       margin: 0 auto;
     }
     .keyword-chip-btn {
-      background: var(--bg-card);
+      background: rgba(20, 25, 35, 0.7);
       border: 1px solid var(--border);
       color: var(--text-secondary);
-      padding: 9px 6px;
-      border-radius: 10px;
-      font-size: 0.78rem;
+      padding: 9px 8px;
+      border-radius: 12px;
+      font-size: 0.8rem;
       font-weight: 600;
       cursor: pointer;
       text-align: center;
@@ -278,27 +282,27 @@
       background: var(--bg-card-hover);
       color: #fff;
       border-color: var(--accent-blue);
-      transform: translateY(-1px);
+      transform: translateY(-2px);
     }
 
     /* 포털 메인 레이아웃 */
     .portal-container {
       width: 100%;
-      max-width: 1100px;
-      margin: 16px auto 30px auto;
-      padding: 0 16px;
+      max-width: 1140px;
+      margin: 18px auto 30px auto;
+      padding: 0 20px;
       display: grid;
       grid-template-columns: 1fr 310px;
-      gap: 24px;
+      gap: 26px;
     }
-    .main-column { display: flex; flex-direction: column; gap: 24px; width: 100%; min-width: 0; }
+    .main-column { display: flex; flex-direction: column; gap: 26px; width: 100%; min-width: 0; }
 
     /* 공지 배너 */
     .notice-banner-card {
-      background: linear-gradient(90deg, rgba(245, 158, 11, 0.08) 0%, rgba(16, 20, 30, 0.6) 100%);
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.08) 0%, rgba(14, 18, 26, 0.6) 100%);
       border: 1px solid rgba(245, 158, 11, 0.25);
       border-radius: 14px;
-      padding: 12px 16px;
+      padding: 14px 18px;
       display: flex;
       align-items: center;
       gap: 12px;
@@ -308,7 +312,7 @@
       background: rgba(245, 158, 11, 0.18);
       color: var(--accent-amber);
       border: 1px solid rgba(245, 158, 11, 0.35);
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       font-weight: 800;
       padding: 3px 8px;
       border-radius: 6px;
@@ -316,14 +320,14 @@
       flex-shrink: 0;
     }
     .notice-text {
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       color: var(--text-primary);
       flex: 1;
       line-height: 1.4;
       word-break: keep-all;
     }
 
-    /* 섹션 헤더 */
+    /* 섹션 헤더 & PC 컨트롤러 버튼 */
     .section-header {
       display: flex;
       justify-content: space-between;
@@ -332,12 +336,36 @@
     }
     .section-title {
       font-family: var(--font-display);
-      font-size: 1.05rem;
+      font-size: 1.06rem;
       font-weight: 700;
       display: flex;
       align-items: center;
       gap: 8px;
       letter-spacing: -0.02em;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-arrow-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .nav-arrow-btn:hover {
+      background: var(--bg-card-hover);
+      color: #fff;
+      border-color: var(--accent-blue);
     }
     .more-link {
       color: var(--accent-blue);
@@ -348,12 +376,13 @@
     }
     .more-link:hover { opacity: 0.8; }
 
-    /* 📱 [1:1 풀 스냅 캐러셀 레일] */
+    /* 💻 PC/노트북 & 📱 모바일 적응형 슬라이더 래퍼 */
     .swipe-section-wrap {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
       width: 100%;
+      position: relative;
     }
     .one-card-swipe-rail {
       display: flex;
@@ -363,11 +392,11 @@
       gap: 14px;
       padding: 4px 0 6px 0;
       width: 100%;
-      scrollbar-width: none; /* Firefox */
+      scrollbar-width: none;
     }
-    .one-card-swipe-rail::-webkit-scrollbar { display: none; } /* Chrome/Safari */
+    .one-card-swipe-rail::-webkit-scrollbar { display: none; }
 
-    /* ⚪ 하단 페이지네이션 Dot 인디케이터 */
+    /* ⚪ 하단 점(Dot) 인디케이터 */
     .carousel-dots-wrap {
       display: flex;
       justify-content: center;
@@ -389,7 +418,7 @@
       box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
     }
 
-    /* 🎬 유튜브 풀 카드 */
+    /* 🎬 [유튜브 카드] */
     .yt-full-card {
       flex: 0 0 100%;
       scroll-snap-align: center;
@@ -443,14 +472,15 @@
       border-radius: 6px;
     }
 
-    /* 📸 인스타그램 프리뷰 카드 */
+    /* 📸 [인스타그램 카드 - 컴팩트 매거진 뷰 규격화] */
     .insta-uniform-card {
-      flex: 0 0 calc(50% - 7px);
+      /* PC: 1줄에 3~4개씩 보이도록 슬림하게 분할 */
+      flex: 0 0 calc(33.333% - 10px);
       scroll-snap-align: start;
       background: var(--bg-surface);
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 12px;
+      padding: 10px;
       cursor: pointer;
       color: var(--text-primary);
       display: flex;
@@ -461,11 +491,12 @@
     .insta-uniform-card:hover {
       transform: translateY(-3px);
       border-color: var(--border-glow);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 26px rgba(0,0,0,0.6);
     }
     .insta-thumb-box {
       width: 100%;
-      aspect-ratio: 1 / 1;
+      /* 릴스/피드가 화면을 과도하게 차지하지 않도록 4:3 컴팩트 비율로 규격화 */
+      aspect-ratio: 4 / 3;
       border-radius: 10px;
       overflow: hidden;
       position: relative;
@@ -477,15 +508,15 @@
       display: block;
       transition: transform 0.3s;
     }
-    .insta-uniform-card:hover .insta-thumb-img { transform: scale(1.04); }
+    .insta-uniform-card:hover .insta-thumb-img { transform: scale(1.05); }
     .insta-reels-badge {
       position: absolute;
-      top: 8px; right: 8px;
+      top: 6px; right: 6px;
       background: rgba(0,0,0,0.75);
       backdrop-filter: blur(4px);
       border-radius: 6px;
       padding: 3px 7px;
-      font-size: 0.65rem;
+      font-size: 0.64rem;
       color: #fff;
       font-weight: 700;
     }
@@ -498,15 +529,16 @@
       text-overflow: ellipsis;
     }
     .insta-card-desc {
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       color: var(--text-secondary);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    /* 🌊 테마별 추천 박지 카드 */
+    /* 🌊 [테마별 추천 박지 카드] */
     .curated-uniform-card {
+      /* PC: 1줄에 2개씩 넉넉하게 배치 */
       flex: 0 0 calc(50% - 7px);
       scroll-snap-align: start;
       background: var(--bg-surface);
@@ -517,13 +549,13 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      min-height: 165px;
+      min-height: 160px;
       transition: all 0.25s;
     }
     .curated-uniform-card:hover {
       transform: translateY(-3px);
       border-color: var(--border-glow);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      box-shadow: 0 10px 26px rgba(0,0,0,0.6);
     }
     .card-tag {
       font-size: 0.7rem;
@@ -545,8 +577,8 @@
       margin-bottom: 4px;
       letter-spacing: -0.02em;
     }
-    .card-location { font-size: 0.76rem; color: var(--text-muted); margin-bottom: 8px; }
-    .card-desc { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 12px; word-break: keep-all; }
+    .card-location { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px; }
+    .card-desc { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 12px; word-break: keep-all; }
     .card-footer {
       display: flex;
       justify-content: space-between;
@@ -558,7 +590,7 @@
 
     /* 🌿 LNT 캠페인 */
     .lnt-campaign-box {
-      background: linear-gradient(135deg, #111827 0%, #0d2830 100%);
+      background: linear-gradient(135deg, #0d121c 0%, #082229 100%);
       border: 1px solid rgba(45, 212, 191, 0.25);
       border-radius: 14px;
       padding: 16px 18px;
@@ -571,7 +603,7 @@
     .lnt-title { font-family: var(--font-display); font-size: 0.94rem; font-weight: 700; color: #fff; margin-bottom: 3px; }
     .lnt-sub { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; }
     .btn-lnt {
-      background: rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.08);
       border: 1px solid var(--border);
       color: #fff;
       font-size: 0.76rem;
@@ -583,10 +615,17 @@
       flex-shrink: 0;
       transition: all 0.2s;
     }
-    .btn-lnt:hover { background: rgba(255,255,255,0.2); border-color: var(--accent-teal); }
+    .btn-lnt:hover { background: rgba(255,255,255,0.18); border-color: var(--accent-teal); }
 
-    /* 사이드바 */
+    /* 💻 사이드바 (PC Sticky 적용) */
     .side-column { display: flex; flex-direction: column; gap: 18px; width: 100%; min-width: 0; }
+    .sticky-sidebar-wrap {
+      position: sticky;
+      top: 76px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
     .widget-box {
       background: var(--bg-surface);
       border: 1px solid var(--border);
@@ -609,7 +648,7 @@
       justify-content: space-between;
       font-size: 0.82rem;
       cursor: pointer;
-      padding: 7px 8px;
+      padding: 8px 10px;
       border-radius: 8px;
       transition: background 0.15s;
     }
@@ -625,8 +664,8 @@
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       display: none;
       justify-content: center;
       align-items: center;
@@ -641,7 +680,7 @@
       max-width: 440px;
       max-height: 90vh;
       overflow-y: auto;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.9);
       animation: modalFadeIn 0.25s ease-out;
       display: flex;
       flex-direction: column;
@@ -654,7 +693,7 @@
     .modal-close-btn {
       position: absolute;
       top: 12px; right: 12px;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.65);
       border: 1px solid var(--border);
       color: #fff;
       width: 32px; height: 32px;
@@ -688,7 +727,7 @@
     }
     .modal-user { font-weight: 800; font-size: 0.95rem; color: var(--accent-rose); }
     .modal-badge { font-size: 0.7rem; background: rgba(244, 63, 94, 0.15); color: #fb7185; padding: 2px 8px; border-radius: 6px; font-weight: 700; }
-    .modal-desc { font-size: 0.85rem; color: var(--text-primary); line-height: 1.5; word-break: keep-all; }
+    .modal-desc { font-size: 0.84rem; color: var(--text-primary); line-height: 1.5; word-break: keep-all; }
     .modal-tags { font-size: 0.78rem; color: var(--accent-blue); word-break: break-all; line-height: 1.4; }
     .modal-insta-btn {
       background: linear-gradient(135deg, #e1306c, #fd1d1d, #f56040);
@@ -713,8 +752,8 @@
       display: none;
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      background: rgba(8, 10, 15, 0.94);
-      backdrop-filter: blur(16px);
+      background: rgba(6, 8, 12, 0.94);
+      backdrop-filter: blur(18px);
       border-top: 1px solid var(--border);
       height: 58px;
       z-index: 9000;
@@ -736,12 +775,13 @@
     .dock-item.active { color: var(--accent-blue); }
     .dock-item svg { width: 19px; height: 19px; fill: currentColor; }
 
-    /* 📱 모바일 미디어 쿼리 (100% 꽉 차는 풀 카드 스냅 최적화) */
+    /* 📱 모바일 미디어 쿼리 (화면 꽉 차는 100% 스냅 & 컴팩트 높이 적용) */
     @media (max-width: 768px) {
       body { padding-bottom: 74px; }
       .portal-nav { padding: 10px 14px; }
       .portal-logo { font-size: 0.98rem; }
       .nav-right-slot a.nav-link { display: none; }
+      .header-actions .nav-arrow-btn { display: none; /* 모바일은 스와이프 터치 사용 */ }
 
       .portal-container { grid-template-columns: 1fr; gap: 20px; padding: 0 14px; margin-top: 6px; }
       .hero-wrapper { padding: 22px 14px 16px 14px; }
@@ -749,12 +789,12 @@
       .hero-subtitle { font-size: 0.8rem; margin-bottom: 16px; }
       
       .portal-search-input { font-size: 0.88rem; padding: 12px 46px 12px 18px; }
-      .portal-search-btn { width: 34px; height: 34px; font-size: 0.9rem; }
+      .portal-search-btn { width: 36px; height: 36px; font-size: 0.92rem; }
       
       .keyword-chips-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
       .keyword-chip-btn { font-size: 0.74rem; padding: 7px 4px; }
 
-      /* 🔥 100% 풀 카드 스와이프 */
+      /* 🔥 모바일 1:1 풀 카드 스냅 (세로로 넘치지 않도록 깔끔하게 100% 꽉 참) */
       .yt-full-card { flex: 0 0 100% !important; padding: 10px; }
       .insta-uniform-card { flex: 0 0 100% !important; padding: 12px; }
       .curated-uniform-card { flex: 0 0 100% !important; min-height: 155px; }
@@ -804,7 +844,7 @@
     </div>
   </section>
 
-  <!-- 📦 포털 메인 컨테이너 -->
+  <!-- 📦 포털 메인 레이아웃 -->
   <div class="portal-container">
     
     <main class="main-column">
@@ -816,37 +856,48 @@
         </div>
       </div>
 
-      <!-- 🎬 1. 유튜브 추천 영상 풀 스냅 캐러셀 -->
+      <!-- 🎬 1. 유튜브 추천 영상 슬라이더 -->
       <section class="swipe-section-wrap">
         <div class="section-header">
           <div class="section-title">🎬 이 주의 낭만 백패킹 영상</div>
-          <span style="font-size:0.75rem; color:var(--text-muted);">좌우 스와이프</span>
+          <div class="header-actions">
+            <button type="button" class="nav-arrow-btn" onclick="slideRail('ytOneCardRail', -1)" title="이전 영상">❮</button>
+            <button type="button" class="nav-arrow-btn" onclick="slideRail('ytOneCardRail', 1)" title="다음 영상">❯</button>
+          </div>
         </div>
         
         <div class="one-card-swipe-rail" id="ytOneCardRail">
-          <!-- JS 렌더링 -->
+          <!-- JS 동적 생성 -->
         </div>
         <div class="carousel-dots-wrap" id="ytDotsWrap"></div>
       </section>
 
-      <!-- 📸 2. 인스타그램 & 릴스 미리보기 캐러셀 -->
+      <!-- 📸 2. 인스타그램 & 릴스 미리보기 슬라이더 -->
       <section class="swipe-section-wrap">
         <div class="section-header">
           <div class="section-title">📸 요즘 뜨는 백패킹 피드 & 릴스</div>
-          <a href="https://www.instagram.com/explore/tags/백패킹/" target="_blank" rel="noopener noreferrer" class="more-link">인스타 태그 더보기 ➔</a>
+          <div class="header-actions">
+            <button type="button" class="nav-arrow-btn" onclick="slideRail('instaOneCardRail', -1)" title="이전 피드">❮</button>
+            <button type="button" class="nav-arrow-btn" onclick="slideRail('instaOneCardRail', 1)" title="다음 피드">❯</button>
+            <a href="https://www.instagram.com/explore/tags/백패킹/" target="_blank" rel="noopener noreferrer" class="more-link">#백패킹 ➔</a>
+          </div>
         </div>
 
         <div class="one-card-swipe-rail" id="instaOneCardRail">
-          <!-- JS 렌더링 -->
+          <!-- JS 동적 생성 -->
         </div>
         <div class="carousel-dots-wrap" id="instaDotsWrap"></div>
       </section>
 
-      <!-- 🌊 3. 테마별 추천 박지 캐러셀 -->
+      <!-- 🌊 3. 테마별 추천 박지 슬라이더 -->
       <section class="swipe-section-wrap">
         <div class="section-header">
           <div class="section-title">✨ 테마별 추천 낭만 박지</div>
-          <a href="map.html" class="more-link">전체 지도 보기 ➔</a>
+          <div class="header-actions">
+            <button type="button" class="nav-arrow-btn" onclick="slideRail('curatedOneCardRail', -1)" title="이전 박지">❮</button>
+            <button type="button" class="nav-arrow-btn" onclick="slideRail('curatedOneCardRail', 1)" title="다음 박지">❯</button>
+            <a href="map.html" class="more-link">전체 지도 ➔</a>
+          </div>
         </div>
 
         <div class="one-card-swipe-rail" id="curatedOneCardRail">
@@ -916,35 +967,37 @@
 
     </main>
 
-    <!-- 📊 사이드바 -->
+    <!-- 📊 사이드바 (PC Sticky) -->
     <aside class="side-column">
-      <div class="widget-box">
-        <div class="widget-title">
-          <span>🔥 실시간 인기 박지 TOP 5</span>
-          <span style="font-size:0.7rem; color:var(--text-muted);">조회순</span>
+      <div class="sticky-sidebar-wrap">
+        <div class="widget-box">
+          <div class="widget-title">
+            <span>🔥 실시간 인기 박지 TOP 5</span>
+            <span style="font-size:0.7rem; color:var(--text-muted);">조회순</span>
+          </div>
+          <ul class="rank-list" id="popularRankList">
+            <li class="rank-item" onclick="smartRouteToSpot('굴업도')">
+              <div class="rank-left"><span class="rank-num rank-1">1</span><span class="rank-name">굴업도 개머리언덕</span></div>
+              <span class="rank-city">인천 옹진</span>
+            </li>
+            <li class="rank-item" onclick="smartRouteToSpot('선자령')">
+              <div class="rank-left"><span class="rank-num">2</span><span class="rank-name">대관령 선자령</span></div>
+              <span class="rank-city">강원 평창</span>
+            </li>
+            <li class="rank-item" onclick="smartRouteToSpot('간월재')">
+              <div class="rank-left"><span class="rank-num">3</span><span class="rank-name">영남알프스 간월재</span></div>
+              <span class="rank-city">울산 울주</span>
+            </li>
+            <li class="rank-item" onclick="smartRouteToSpot('수우도')">
+              <div class="rank-left"><span class="rank-num">4</span><span class="rank-name">통영 수우도 은박산</span></div>
+              <span class="rank-city">경남 통영</span>
+            </li>
+            <li class="rank-item" onclick="smartRouteToSpot('비양도')">
+              <div class="rank-left"><span class="rank-num">5</span><span class="rank-name">우도 비양도 연평리</span></div>
+              <span class="rank-city">제주 우도</span>
+            </li>
+          </ul>
         </div>
-        <ul class="rank-list" id="popularRankList">
-          <li class="rank-item" onclick="smartRouteToSpot('굴업도')">
-            <div class="rank-left"><span class="rank-num rank-1">1</span><span class="rank-name">굴업도 개머리언덕</span></div>
-            <span class="rank-city">인천 옹진</span>
-          </li>
-          <li class="rank-item" onclick="smartRouteToSpot('선자령')">
-            <div class="rank-left"><span class="rank-num">2</span><span class="rank-name">대관령 선자령</span></div>
-            <span class="rank-city">강원 평창</span>
-          </li>
-          <li class="rank-item" onclick="smartRouteToSpot('간월재')">
-            <div class="rank-left"><span class="rank-num">3</span><span class="rank-name">영남알프스 간월재</span></div>
-            <span class="rank-city">울산 울주</span>
-          </li>
-          <li class="rank-item" onclick="smartRouteToSpot('수우도')">
-            <div class="rank-left"><span class="rank-num">4</span><span class="rank-name">통영 수우도 은박산</span></div>
-            <span class="rank-city">경남 통영</span>
-          </li>
-          <li class="rank-item" onclick="smartRouteToSpot('비양도')">
-            <div class="rank-left"><span class="rank-num">5</span><span class="rank-name">우도 비양도 연평리</span></div>
-            <span class="rank-city">제주 우도</span>
-          </li>
-        </ul>
       </div>
     </aside>
   </div>
@@ -992,7 +1045,7 @@
     const GOOGLE_SHEET_GID = '0';
     let registeredSpots = [];
 
-    // 기본 영상 데이터
+    // 기본 추천 영상 데이터
     let featuredVideosList = [
       {
         url: 'https://www.youtube.com/playlist?list=PLrEnWoR732-DZJ51uSQU6VqHjC2gZ9N-H',
@@ -1004,33 +1057,33 @@
     const instaFeedList = [
       {
         user: '#선자령백패킹',
-        badge: '▶ 릴스 영상',
+        badge: '▶ 릴스',
         img: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&auto=format&fit=crop&q=80',
-        desc: '풍력발전기 능선 위로 쏟아지는 대관령의 밤하늘 은하수 트레킹. 매서운 바람 속에서도 잊지 못할 하룻밤을 선사합니다.',
+        desc: '풍력발전기 능선 위로 쏟아지는 대관령의 밤하늘 은하수 트레킹. 매서운 바람 속에서도 잊지 못할 하룻밤!',
         tags: '#대관령 #선자령 #은하수백패킹 #백패킹스타그램',
         url: 'https://www.instagram.com/explore/tags/선자령백패킹/'
       },
       {
         user: '#굴업도개머리',
-        badge: '📷 인기 피드',
+        badge: '📷 인기',
         img: 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=800&auto=format&fit=crop&q=80',
-        desc: '한국의 갈라파고스라 불리는 굴업도 개머리언덕! 사슴들과 함께 감상하는 서해 바다의 황홀한 붉은 일몰.',
+        desc: '한국의 갈라파고스 굴업도 개머리언덕! 야생 사슴들과 마주하며 감상하는 서해 바다의 붉은 일몰.',
         tags: '#굴업도 #개머리언덕 #섬백패킹 #낭만백패킹',
         url: 'https://www.instagram.com/explore/tags/굴업도백패킹/'
       },
       {
         user: '#간월재억새',
-        badge: '▶ 릴스 영상',
+        badge: '▶ 릴스',
         img: 'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=800&auto=format&fit=crop&q=80',
-        desc: '영남알프스의 황금빛 억새평원 사이로 지는 따스한 노을. 걷기 편한 임도 코스로 초보 백패커에게도 추천!',
+        desc: '영남알프스의 황금빛 억새평원 사이로 지는 따스한 노을. 잘 정비된 임도길로 초보 백패커에게도 추천.',
         tags: '#간월재 #영남알프스 #억새평원 #가을백패킹',
         url: 'https://www.instagram.com/explore/tags/간월재백패킹/'
       },
       {
         user: '#통영수우도',
-        badge: '📷 힐링 피드',
+        badge: '📷 힐링',
         img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80',
-        desc: '에메랄드빛 남해 바다 절벽 위에서 마주하는 아침 햇살. 기암괴석과 바다 풍경이 어우러진 프라이빗 섬 박지.',
+        desc: '에메랄드빛 남해 바다 절벽 위에서 마주하는 아침 햇살. 기암괴석과 바다 풍경이 어우러진 섬 박지.',
         tags: '#수우도 #은박산 #남해백패킹 #섬트레킹',
         url: 'https://www.instagram.com/explore/tags/수우도백패킹/'
       }
@@ -1070,7 +1123,7 @@
       return null;
     }
 
-    /* 🎬 유튜브 레일 렌더링 & 점(Dots) 동기화 */
+    /* 🎬 유튜브 레일 렌더링 */
     function renderYouTubeRail() {
       const track = document.getElementById('ytOneCardRail');
       const dotsWrap = document.getElementById('ytDotsWrap');
@@ -1128,7 +1181,7 @@
       }
     }
 
-    /* ⚪ 공통: 스마트 캐러셀 Dot 인디케이터 바인딩 함수 */
+    /* ⚪ 공통: 스마트 캐러셀 Dot 인디케이터 바인딩 */
     function setupCarouselDots(railElem, dotsWrapElem, totalCount) {
       if (!railElem || !dotsWrapElem) return;
       
@@ -1141,7 +1194,6 @@
         <div class="carousel-dot ${i === 0 ? 'active' : ''}" onclick="scrollRailToIndex('${railElem.id}', ${i})"></div>
       `).join('');
 
-      // 스크롤 감지하여 점 활성화
       railElem.addEventListener('scroll', () => {
         const itemWidth = railElem.firstElementChild ? railElem.firstElementChild.offsetWidth : railElem.offsetWidth;
         const scrollLeft = railElem.scrollLeft;
@@ -1154,16 +1206,24 @@
       }, { passive: true });
     }
 
+    /* 💻 PC 화살표 버튼 슬라이드 제어 */
+    function slideRail(railId, direction) {
+      const rail = document.getElementById(railId);
+      if (!rail) return;
+      const scrollAmount = rail.firstElementChild ? (rail.firstElementChild.offsetWidth + 14) : 320;
+      rail.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+    }
+
     function scrollRailToIndex(railId, index) {
       const rail = document.getElementById(railId);
       if (!rail) return;
       const items = rail.children;
       if (items[index]) {
-        items[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        items[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
       }
     }
 
-    /* 💬 인스타그램 모달 제어 */
+    /* 💬 인스타그램 모달 팝업 제어 */
     function openInstaModal(idx) {
       const data = instaFeedList[idx];
       if (!data) return;
@@ -1321,7 +1381,7 @@
       }
     });
 
-    // 🚀 초기 실행
+    // 🚀 초기 로드
     window.addEventListener('DOMContentLoaded', () => {
       renderYouTubeRail();
       renderInstaRail();
