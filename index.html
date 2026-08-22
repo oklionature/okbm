@@ -8,7 +8,7 @@
   <meta http-equiv="Expires" content="0" />
   <title>대한민국 낭만 백패킹 로드 | 포털</title>
 
-  <!-- 🔤 웹폰트: Pretendard(본문 UI) + Gmarket Sans(웹폰트월드 정식 분리 CDN) + Caveat(구글 폰트) -->
+  <!-- 🔤 웹폰트: Pretendard(본문 UI) + Gmarket Sans(타이틀) + Caveat(영문 감성) -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/webfontworld/gmarket/GmarketSans.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -28,7 +28,7 @@
       --border: rgba(255, 255, 255, 0.08);
       --border-glow: rgba(56, 189, 248, 0.35);
       --text-primary: #f8fafc;
-      --text-secondary: #cbd5e1; /* 가독성 향상 */
+      --text-secondary: #cbd5e1;
       --text-muted: #94a3b8;
       --accent-blue: #38bdf8;
       --accent-teal: #2dd4bf;
@@ -39,12 +39,11 @@
       --font-script: 'Caveat', cursive;
       --font-body: 'Pretendard', -apple-system, sans-serif;
 
-      /* 📐 체계적인 Z-Index */
+      /* 📐 Z-Index 계층 */
       --z-header: 500;
       --z-dock: 600;
       --z-dropdown: 900;
       --z-modal: 1000;
-      --z-toast: 2000;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -89,8 +88,6 @@
       justify-content: center;
       align-items: center;
     }
-
-    /* 💖 공통 브랜드 타이틀 */
     .brand-title-link {
       display: inline-flex;
       align-items: center;
@@ -126,7 +123,7 @@
       transform: translateY(1px);
     }
 
-    /* 🏔️ 2. 컴팩트 히어로 섹션 (첫 화면 1-스크린 최적화) */
+    /* 🏔️ 2. 컴팩트 히어로 섹션 */
     .hero-wrapper {
       width: 100%;
       max-width: 1140px;
@@ -163,7 +160,7 @@
       -webkit-text-fill-color: transparent;
     }
 
-    /* 🔍 검색창 (삭제 버튼 및 디바운스 장착) */
+    /* 🔍 지능형 검색창 (롤링 플레이스홀더 + 상가 차단) */
     .portal-search-box {
       position: relative;
       width: 100%;
@@ -172,18 +169,18 @@
     }
     .portal-search-input {
       width: 100%;
-      padding: 10px 72px 10px 18px;
+      padding: 11px 74px 11px 18px;
       font-size: 0.88rem;
       font-family: var(--font-body);
       border-radius: 24px;
       border: 1.5px solid rgba(56, 189, 248, 0.35);
-      background: rgba(9, 12, 19, 0.9);
+      background: rgba(9, 12, 19, 0.92);
       backdrop-filter: blur(12px);
       color: #fff;
       outline: none;
       box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
       transition: all 0.25s ease;
-      min-height: 42px;
+      min-height: 44px;
     }
     .portal-search-input:focus {
       background: #05070c;
@@ -192,7 +189,7 @@
     }
     .search-action-wrap {
       position: absolute;
-      right: 5px;
+      right: 6px;
       top: 50%;
       transform: translateY(-50%);
       display: flex;
@@ -237,6 +234,7 @@
     }
     .portal-search-btn:active { transform: scale(0.92); }
 
+    /* 드롭다운 UI (등록 박지 & 지역 모아보기 전용) */
     .search-auto-dropdown {
       position: absolute;
       top: calc(100% + 6px);
@@ -254,19 +252,23 @@
       text-align: left;
     }
     .auto-item {
-      padding: 9px 14px;
+      padding: 10px 14px;
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
       font-size: 0.82rem;
+      transition: background 0.15s;
     }
     .auto-item:hover { background: var(--bg-card-hover); }
-    .auto-item-name { font-weight: 700; color: var(--accent-blue); }
-    .auto-item-tag { font-size: 0.68rem; color: #7dd3fc; background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px; }
+    .auto-item-left { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
+    .auto-item-name { font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .auto-item-sub { font-size: 0.72rem; color: var(--text-muted); }
+    .auto-badge-spot { font-size: 0.65rem; color: #38bdf8; background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px; font-weight: 700; flex-shrink: 0; }
+    .auto-badge-region { font-size: 0.65rem; color: #2dd4bf; background: rgba(45,212,191,0.12); padding: 2px 6px; border-radius: 4px; font-weight: 700; flex-shrink: 0; }
 
-    /* 🌿 슬림형 LNT 띠 배너 */
+    /* 🌿 슬림 LNT 띠 배너 */
     .lnt-slim-banner {
       max-width: 540px;
       margin: 0 auto 10px auto;
@@ -293,9 +295,7 @@
     .lnt-text-mini { font-size: 0.72rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .lnt-link-mini { font-size: 0.7rem; color: var(--accent-teal); text-decoration: none; font-weight: 800; white-space: nowrap; }
 
-    /* =========================================================================
-       🏷️ [핵심 변경] 테마별 퀵 버튼: 1줄에 2개씩 노출되는 컴팩트 가로 스와이프 레일
-       ========================================================================= */
+    /* 🏷️ 시트 연동 다이나믹 테마 필터 레일 */
     .vibe-swipe-container {
       width: 100%;
       max-width: 540px;
@@ -331,7 +331,7 @@
       flex-direction: column;
       justify-content: center;
       gap: 2px;
-      min-height: 56px;
+      min-height: 52px;
       transition: all 0.18s ease;
       user-select: none;
     }
@@ -360,7 +360,7 @@
       text-overflow: ellipsis;
     }
 
-    /* 포털 메인 2열 그리드 (PC 레이아웃) */
+    /* 포털 메인 2열 그리드 */
     .portal-container {
       width: 100%;
       max-width: 1140px;
@@ -370,7 +370,7 @@
       grid-template-columns: 1fr 290px;
       gap: 22px;
     }
-    .main-column { display: flex; flex-direction: column; gap: 20px; width: 100%; min-width: 0; }
+    .main-column { display: flex; flex-direction: column; gap: 24px; width: 100%; min-width: 0; }
 
     /* 섹션 공통 헤더 */
     .section-header {
@@ -389,6 +389,21 @@
       letter-spacing: -0.02em;
     }
     .header-actions { display: flex; align-items: center; gap: 6px; }
+    .btn-action-pill {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--accent-blue);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      transition: all 0.2s;
+    }
+    .btn-action-pill:hover { background: rgba(56, 189, 248, 0.25); color: #fff; }
     .nav-arrow-btn {
       display: inline-flex;
       align-items: center;
@@ -406,7 +421,7 @@
     .nav-arrow-btn:hover { background: var(--bg-card-hover); color: #fff; border-color: var(--accent-blue); }
     .more-link { color: var(--accent-blue); text-decoration: none; font-size: 0.74rem; font-weight: 700; }
 
-    /* 공통 슬라이더 래퍼 (안전 마진 및 오차 계산 적용) */
+    /* 공통 슬라이더 래퍼 */
     .swipe-section-wrap {
       display: flex;
       flex-direction: column;
@@ -429,7 +444,6 @@
     }
     .one-card-swipe-rail::-webkit-scrollbar { display: none; }
 
-    /* ⚪ 애플 스타일 필(Pill) 도트 인디케이터 */
     .carousel-dots-wrap {
       display: flex;
       justify-content: center;
@@ -451,9 +465,7 @@
       box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
     }
 
-    /* =========================================================================
-       🎬 [1위치 변경] 1. 유튜브 추천 영상 (최상단 배치)
-       ========================================================================= */
+    /* 🎬 1. 유튜브 추천 영상 카드 */
     .yt-full-card {
       flex: 0 0 100%;
       width: 100%;
@@ -467,7 +479,6 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
     }
     .video-box {
       width: 100%;
@@ -509,9 +520,7 @@
       border-radius: 4px;
     }
 
-    /* =========================================================================
-       ✨ [2위치 변경] 2. 테마별 추천 낭만 박지 (영상 밑으로 배치)
-       ========================================================================= */
+    /* 🎲 2. 구글 시트 기반 무작위 낭만 박지 카드 */
     .curated-uniform-card {
       flex: 0 0 calc((100% - 12px) / 2);
       min-width: calc((100% - 12px) / 2);
@@ -525,7 +534,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      min-height: 145px;
+      min-height: 155px;
       transition: all 0.25s;
     }
     .curated-uniform-card:hover {
@@ -540,14 +549,22 @@
       border-radius: 5px;
       width: fit-content;
       margin-bottom: 6px;
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent-blue);
     }
-    .tag-island { background: rgba(45, 212, 191, 0.15); color: var(--accent-teal); }
-    .tag-star { background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); }
-    .tag-easy { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); }
-
     .card-title { font-family: var(--font-display); font-size: 0.94rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
     .card-location { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; }
-    .card-desc { font-size: 0.76rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 8px; word-break: keep-all; }
+    .card-desc {
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+      line-height: 1.35;
+      margin-bottom: 8px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      word-break: keep-all;
+    }
     .card-footer {
       display: flex;
       justify-content: space-between;
@@ -557,7 +574,49 @@
       padding-top: 6px;
     }
 
-    /* 📸 3. 인스타그램 피드 & 릴스 */
+    /* 🍲 3. 특색 있는 LNT 비화식 필드 푸드 갤러리 */
+    .food-uniform-card {
+      flex: 0 0 calc((100% - 12px) / 2);
+      min-width: calc((100% - 12px) / 2);
+      max-width: calc((100% - 12px) / 2);
+      scroll-snap-align: start;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+    .food-uniform-card:hover { border-color: rgba(245, 158, 11, 0.5); transform: translateY(-2px); }
+    .food-img-box {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--bg-card);
+      position: relative;
+    }
+    .food-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+    .food-uniform-card:hover .food-img { transform: scale(1.05); }
+    .food-type-badge {
+      position: absolute;
+      top: 6px; left: 6px;
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(4px);
+      color: #f59e0b;
+      font-size: 0.64rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .food-title { font-size: 0.84rem; font-weight: 700; color: #fff; }
+    .food-desc { font-size: 0.72rem; color: var(--text-secondary); line-height: 1.35; }
+    .food-tip { font-size: 0.68rem; color: #38bdf8; font-weight: 600; }
+
+    /* 📸 4. 인스타그램 & 릴스 (@oklionnature) */
     .insta-uniform-card {
       flex: 0 0 calc((100% - 24px) / 3);
       min-width: calc((100% - 24px) / 3);
@@ -583,8 +642,7 @@
       position: relative;
       background: var(--bg-card);
     }
-    .insta-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.3s; }
-    .insta-uniform-card:hover .insta-thumb-img { transform: scale(1.04); }
+    .insta-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .insta-reels-badge {
       position: absolute;
       top: 5px; right: 5px;
@@ -599,11 +657,29 @@
     .insta-card-user { font-size: 0.78rem; font-weight: 700; color: var(--accent-rose); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .insta-card-desc { font-size: 0.74rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* 📊 사이드바 (PC Sticky) */
+    /* 📊 사이드바 */
     .side-column { display: flex; flex-direction: column; gap: 16px; width: 100%; min-width: 0; }
     .sticky-sidebar-wrap { position: sticky; top: 66px; display: flex; flex-direction: column; gap: 16px; }
     .widget-box { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; }
     .widget-title { font-family: var(--font-display); font-size: 0.88rem; font-weight: 700; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    
+    /* 🌤️ 산악 안전 & 풍속 가이드 위젯 */
+    .weather-tip-box {
+      background: rgba(56, 189, 248, 0.06);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 10px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      font-size: 0.73rem;
+    }
+    .weather-row { display: flex; align-items: center; justify-content: space-between; }
+    .weather-badge { font-size: 0.65rem; font-weight: 800; padding: 1px 6px; border-radius: 4px; }
+    .badge-safe { background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); }
+    .badge-warn { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
+    .badge-danger { background: rgba(244, 63, 94, 0.2); color: var(--accent-rose); }
+
     .rank-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
     .rank-item { display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; cursor: pointer; padding: 6px 8px; border-radius: 6px; transition: background 0.15s; }
     .rank-item:hover { background: var(--bg-card); }
@@ -613,7 +689,7 @@
     .rank-name { font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .rank-city { font-size: 0.68rem; color: var(--text-muted); flex-shrink: 0; }
 
-    /* 💬 인스타그램 인앱 미리보기 모달 */
+    /* 💬 인스타그램 인앱 모달 */
     .insta-modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -713,8 +789,13 @@
     .dock-item.active { color: var(--accent-blue); }
     .dock-item svg { width: 19px; height: 19px; fill: currentColor; }
 
-    /* 💻 태블릿 중간 해상도 */
+    /* 💻 태블릿 / 모바일 반응형 */
     @media (min-width: 769px) and (max-width: 1199px) {
+      .curated-uniform-card, .food-uniform-card {
+        flex: 0 0 calc((100% - 12px) / 2) !important;
+        min-width: calc((100% - 12px) / 2) !important;
+        max-width: calc((100% - 12px) / 2) !important;
+      }
       .insta-uniform-card {
         flex: 0 0 calc((100% - 12px) / 2) !important;
         min-width: calc((100% - 12px) / 2) !important;
@@ -722,20 +803,20 @@
       }
     }
 
-    /* 📱 모바일 미디어 쿼리 */
     @media (max-width: 768px) {
       .portal-nav { padding: 6px 12px; }
       .kbd-hint { display: none; }
       
       .hero-wrapper { padding: 10px 14px 4px 14px; }
       .hero-title { font-size: 1.25rem; margin-bottom: 8px; }
-      .portal-search-input { font-size: 0.84rem; padding: 9px 64px 9px 15px; min-height: 38px; }
+      .portal-search-input { font-size: 0.84rem; padding: 9px 64px 9px 15px; min-height: 40px; }
       .portal-search-btn { width: 28px; height: 28px; font-size: 0.82rem; }
       
       .portal-container { grid-template-columns: 100%; gap: 16px; padding: 0 14px; margin-top: 2px; }
 
       .yt-full-card { flex: 0 0 100% !important; min-width: 100% !important; max-width: 100% !important; padding: 8px; }
-      .curated-uniform-card { flex: 0 0 100% !important; min-width: 100% !important; max-width: 100% !important; min-height: 140px; }
+      .curated-uniform-card { flex: 0 0 100% !important; min-width: 100% !important; max-width: 100% !important; min-height: 145px; }
+      .food-uniform-card { flex: 0 0 100% !important; min-width: 100% !important; max-width: 100% !important; }
       .insta-uniform-card { flex: 0 0 100% !important; min-width: 100% !important; max-width: 100% !important; padding: 10px; }
       .insta-thumb-box { aspect-ratio: 4 / 3 !important; }
 
@@ -764,9 +845,9 @@
     <div class="hero-badge-season" id="heroSeasonBadge">🌌 실시간 낭만 백패킹 시즌</div>
     <h1 class="hero-title">당신이 찾고 있는 <span class="highlight">낭만의 하룻밤은?</span></h1>
 
-    <!-- 🔍 검색창 -->
+    <!-- 🔍 지능형 검색창 -->
     <div class="portal-search-box">
-      <input type="text" id="mainSearchInput" class="portal-search-input" placeholder="산, 섬, 계곡 또는 박지 검색..." autocomplete="off" oninput="onSearchInputChanged(this.value)" onkeyup="if(event.key==='Enter') executePortalSmartSearch()" />
+      <input type="text" id="mainSearchInput" class="portal-search-input" placeholder="검색 예: 서울 근교 백패킹..." autocomplete="off" oninput="onSearchInputChanged(this.value)" onkeyup="if(event.key==='Enter') executePortalSmartSearch()" />
       <div class="search-action-wrap">
         <button type="button" class="btn-clear-search" id="btnClearSearch" onclick="clearSearchInput()">✕</button>
         <span class="kbd-hint">/</span>
@@ -778,39 +859,16 @@
     <!-- 🌿 슬림 LNT 수칙 띠 배너 -->
     <div class="lnt-slim-banner">
       <div class="lnt-slim-left">
-        <span class="lnt-badge-mini">🌿 LNT 수칙</span>
-        <span class="lnt-text-mini">자연공원법·산림보호법 준수와 머문 자리 클린 캠핑 실천</span>
+        <span class="lnt-badge-mini">🌿 LNT 원칙</span>
+        <span class="lnt-text-mini">100% 비화식 준수와 머문 자리 클린 백패킹 실천</span>
       </div>
       <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="lnt-link-mini">동참 ➔</a>
     </div>
 
-    <!-- 🏷️ [1줄 2개 노출 컴팩트 가로 스와이프 레일] -->
+    <!-- 🏷️ 시트 연동 다이나믹 테마 필터 레일 -->
     <div class="vibe-swipe-container">
       <div class="vibe-swipe-rail" id="vibeSwipeRail">
-        <div class="vibe-card-snap-item" onclick="smartRouteToSpot('굴업도')">
-          <div class="vibe-card-title-mini">🌅 붉은 일몰 성지</div>
-          <div class="vibe-card-desc-mini">서해 바다 위로 펼쳐지는 낙조 뷰</div>
-        </div>
-        <div class="vibe-card-snap-item" onclick="smartRouteToSpot('선자령')">
-          <div class="vibe-card-title-mini">🌌 은하수 트레킹</div>
-          <div class="vibe-card-desc-mini">풍력발전기 능선과 별빛</div>
-        </div>
-        <div class="vibe-card-snap-item" onclick="smartRouteToSpot('간월재')">
-          <div class="vibe-card-title-mini">🌾 가을 억새평원</div>
-          <div class="vibe-card-desc-mini">영남알프스 황금빛 억새물결</div>
-        </div>
-        <div class="vibe-card-snap-item" onclick="smartRouteToSpot('수우도')">
-          <div class="vibe-card-title-mini">🌊 남해 바다조망</div>
-          <div class="vibe-card-desc-mini">해안 절벽과 에메랄드 바다</div>
-        </div>
-        <div class="vibe-card-snap-item" onclick="smartRouteToSpot('비양도')">
-          <div class="vibe-card-title-mini">🏝️ 에메랄드 섬박</div>
-          <div class="vibe-card-desc-mini">우도 속의 섬 비양도</div>
-        </div>
-        <div class="vibe-card-snap-item" onclick="smartRouteToSpot('화악산')">
-          <div class="vibe-card-title-mini">⛰️ 운해와 일출 뷰</div>
-          <div class="vibe-card-desc-mini">1,000m 고지 아침 햇살</div>
-        </div>
+        <!-- 구글 시트에서 테마를 수집하여 자동 렌더링 -->
       </div>
       <div class="carousel-dots-wrap" id="vibeDotsWrap"></div>
     </div>
@@ -821,7 +879,7 @@
     
     <main class="main-column">
       
-      <!-- 🎬 1. [순서 변경] 이 주의 낭만 백패킹 영상 (최상단) -->
+      <!-- 🎬 1. 이 주의 낭만 백패킹 영상 -->
       <section class="swipe-section-wrap">
         <div class="section-header">
           <div class="section-title">🎬 이 주의 낭만 백패킹 영상</div>
@@ -835,11 +893,12 @@
         <div class="carousel-dots-wrap" id="ytDotsWrap"></div>
       </section>
 
-      <!-- ✨ 2. [순서 변경] 테마별 추천 낭만 박지 (영상 바로 아래) -->
+      <!-- 🎲 2. 오늘의 낭만 박지 (구글 시트 기반 무작위 4선) -->
       <section class="swipe-section-wrap">
         <div class="section-header">
-          <div class="section-title">✨ 테마별 추천 낭만 박지</div>
+          <div class="section-title">🎲 오늘의 추천 낭만 박지</div>
           <div class="header-actions">
+            <button type="button" class="btn-action-pill" onclick="shuffleCuratedSpots()" title="새로운 박지 추천">🎲 다른 박지 보기</button>
             <button type="button" class="nav-arrow-btn" onclick="slideRail('curatedOneCardRail', -1)" title="이전 박지">❮</button>
             <button type="button" class="nav-arrow-btn" onclick="slideRail('curatedOneCardRail', 1)" title="다음 박지">❯</button>
             <a href="map.html" class="more-link">전체 지도 ➔</a>
@@ -847,69 +906,77 @@
         </div>
 
         <div class="one-card-swipe-rail" id="curatedOneCardRail">
-          <div class="curated-uniform-card" onclick="smartRouteToSpot('굴업도')">
-            <div>
-              <span class="card-tag tag-island">🏝️ 서해의 알프스</span>
-              <div class="card-title">굴업도 개머리언덕</div>
-              <div class="card-location">인천 옹진군 덕적면</div>
-              <div class="card-desc">사슴들이 노니는 초원과 드넓은 서해 바다 위로 펼쳐지는 황홀한 일몰 명소.</div>
-            </div>
-            <div class="card-footer">
-              <span style="color:var(--accent-amber); font-weight:700;">난이도 ⭐⭐</span>
-              <span style="color:var(--accent-teal); font-weight:700;">배편 예약 필수 🚢</span>
-            </div>
-          </div>
-
-          <div class="curated-uniform-card" onclick="smartRouteToSpot('선자령')">
-            <div>
-              <span class="card-tag tag-star">🌌 쏟아지는 은하수</span>
-              <div class="card-title">대관령 선자령</div>
-              <div class="card-location">강원 평창군 대관령면</div>
-              <div class="card-desc">풍력발전기 능선을 따라 걷는 시원한 트레킹과 밤하늘 은하수 명소.</div>
-            </div>
-            <div class="card-footer">
-              <span style="color:var(--accent-amber); font-weight:700;">난이도 ⭐⭐⭐</span>
-              <span style="color:var(--accent-blue); font-weight:700;">방풍 의류 필수 💨</span>
-            </div>
-          </div>
-
-          <div class="curated-uniform-card" onclick="smartRouteToSpot('간월재')">
-            <div>
-              <span class="card-tag tag-easy">🌾 황금빛 억새평원</span>
-              <div class="card-title">영남알프스 간월재</div>
-              <div class="card-location">울산 울주군 상북면</div>
-              <div class="card-desc">탁 트인 억새 물결과 잘 정비된 임도 트레킹으로 즐기는 편안한 하룻밤.</div>
-            </div>
-            <div class="card-footer">
-              <span style="color:var(--accent-amber); font-weight:700;">난이도 ⭐⭐</span>
-              <span style="color:var(--accent-emerald); font-weight:700;">임도 트레킹 🚶</span>
-            </div>
-          </div>
-
-          <div class="curated-uniform-card" onclick="smartRouteToSpot('수우도')">
-            <div>
-              <span class="card-tag tag-island">🌊 남해안 바다 조망</span>
-              <div class="card-title">통영 수우도 은박산</div>
-              <div class="card-location">경남 통영시 사량면</div>
-              <div class="card-desc">기암괴석 해안 절벽과 탁 트인 남해 바다를 품은 프라이빗 섬 박지.</div>
-            </div>
-            <div class="card-footer">
-              <span style="color:var(--accent-amber); font-weight:700;">난이도 ⭐⭐⭐</span>
-              <span style="color:var(--accent-teal); font-weight:700;">삼천포항 배편 🚢</span>
-            </div>
-          </div>
+          <!-- 구글 시트 데이터에서 무작위 4개가 렌더링됩니다 -->
         </div>
         <div class="carousel-dots-wrap" id="curatedDotsWrap"></div>
       </section>
 
-      <!-- 📸 3. 인스타그램 & 릴스 슬라이더 -->
+      <!-- 🍲 3. 특색 있는 LNT 비화식 필드 푸드 갤러리 -->
       <section class="swipe-section-wrap">
         <div class="section-header">
-          <div class="section-title">📸 요즘 뜨는 백패킹 피드 & 릴스</div>
+          <div class="section-title">🍲 산 정상의 미학: 특색 있는 LNT 비화식 푸드</div>
+          <div class="header-actions">
+            <button type="button" class="nav-arrow-btn" onclick="slideRail('foodOneCardRail', -1)" title="이전 메뉴">❮</button>
+            <button type="button" class="nav-arrow-btn" onclick="slideRail('foodOneCardRail', 1)" title="다음 메뉴">❯</button>
+          </div>
+        </div>
+
+        <div class="one-card-swipe-rail" id="foodOneCardRail">
+          <!-- 비화식 메뉴 1 -->
+          <div class="food-uniform-card" onclick="openFoodModal(0)">
+            <div class="food-img-box">
+              <img src="https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=800&auto=format&fit=crop&q=80" alt="발열체 고메 요리" class="food-img" loading="lazy" />
+              <span class="food-type-badge">🔥 발열체 고메</span>
+            </div>
+            <div class="food-title">훈제오리 & 치즈 발열팩 정찬</div>
+            <div class="food-desc">핫앤쿡·발열팩에 훈제오리와 부추, 모짜렐라를 얹어 불 없이 완성하는 든든한 고단백 저녁.</div>
+            <div class="food-tip">💡 꿀조합: 쌈무 + 생와사비 소분 팩 지참</div>
+          </div>
+
+          <!-- 비화식 메뉴 2 -->
+          <div class="food-uniform-card" onclick="openFoodModal(1)">
+            <div class="food-img-box">
+              <img src="https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800&auto=format&fit=crop&q=80" alt="보온병 수열식 라밥" class="food-img" loading="lazy" />
+              <span class="food-type-badge">🍜 100℃ 보온병 수열</span>
+            </div>
+            <div class="food-title">정상 얼큰 라밥 (라면+누룽지) & 참치</div>
+            <div class="food-desc">초고온 보온병 온수로 즐기는 컵라면과 구수한 누룽지 조합. 찬 바람 부는 능선에서 최고의 힐링.</div>
+            <div class="food-tip">💡 꿀조합: 파우치 참치마요 + 볶음김치</div>
+          </div>
+
+          <!-- 비화식 메뉴 3 -->
+          <div class="food-uniform-card" onclick="openFoodModal(2)">
+            <div class="food-img-box">
+              <img src="https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=800&auto=format&fit=crop&q=80" alt="정상 핑거푸드 페어링" class="food-img" loading="lazy" />
+              <span class="food-type-badge">🧀 콜드 핑거푸드</span>
+            </div>
+            <div class="food-title">브리치즈 & 살라미 견과 플래터</div>
+            <div class="food-desc">일몰을 바라보며 가볍게 즐기는 브리치즈, 하몽, 건크랜베리. 조리 쓰레기가 전혀 남지 않는 낭만 안주.</div>
+            <div class="food-tip">💡 꿀조합: 무알콜 뱅쇼 또는 소분 와인</div>
+          </div>
+
+          <!-- 비화식 메뉴 4 -->
+          <div class="food-uniform-card" onclick="openFoodModal(3)">
+            <div class="food-img-box">
+              <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&auto=format&fit=crop&q=80" alt="모닝 일출 브런치" class="food-img" loading="lazy" />
+              <span class="food-type-badge">☕ 모닝 일출 브런치</span>
+            </div>
+            <div class="food-title">텐트 앞 드립백 커피 & 베이글</div>
+            <div class="food-desc">텐트 지퍼를 열고 떠오르는 일출을 바라보며 마시는 향긋한 보온병 온수 드립백 커피 한 잔.</div>
+            <div class="food-tip">💡 꿀조합: 포션 크림치즈 + 블루베리 잼</div>
+          </div>
+        </div>
+        <div class="carousel-dots-wrap" id="foodDotsWrap"></div>
+      </section>
+
+      <!-- 📸 4. 인스타그램 & 릴스 (@oklionnature) -->
+      <section class="swipe-section-wrap">
+        <div class="section-header">
+          <div class="section-title">📸 요즘 뜨는 낭만 피드 & 릴스</div>
           <div class="header-actions">
             <button type="button" class="nav-arrow-btn" onclick="slideRail('instaOneCardRail', -1)" title="이전 피드">❮</button>
             <button type="button" class="nav-arrow-btn" onclick="slideRail('instaOneCardRail', 1)" title="다음 피드">❯</button>
-            <a href="https://www.instagram.com/explore/tags/백패킹/" target="_blank" rel="noopener noreferrer" class="more-link">#백패킹 ➔</a>
+            <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="more-link">@oklionnature ➔</a>
           </div>
         </div>
 
@@ -922,34 +989,43 @@
     <!-- 📊 사이드바 (PC Sticky) -->
     <aside class="side-column">
       <div class="sticky-sidebar-wrap">
+        
+        <!-- 🌤️ 백패킹 안전 & 기상 가이드 -->
+        <div class="widget-box">
+          <div class="widget-title">
+            <span>🌤️ 백패킹 풍속 & 안전 가이드</span>
+            <span style="font-size:0.68rem; color:var(--accent-teal);">LNT 준수</span>
+          </div>
+          <div class="weather-tip-box">
+            <div class="weather-row">
+              <span>🍃 풍속 0 ~ 3 m/s</span>
+              <span class="weather-badge badge-safe">쾌적한 피칭</span>
+            </div>
+            <div class="weather-row">
+              <span>💨 풍속 4 ~ 7 m/s</span>
+              <span class="weather-badge badge-warn">스트링 팩다운 필수</span>
+            </div>
+            <div class="weather-row">
+              <span>⚠️ 풍속 8 m/s 이상</span>
+              <span class="weather-badge badge-danger">능선 피칭 금지</span>
+            </div>
+            <div style="font-size:0.68rem; color:var(--text-muted); margin-top:4px; border-top:1px dashed var(--border); padding-top:4px;">
+              💡 산림보호법상 대한민국 전 산림 내 <strong>화기 사용 및 취사는 엄격히 금지</strong>되며 과태료 대상입니다.
+            </div>
+          </div>
+        </div>
+
+        <!-- 🔥 실시간 인기 박지 TOP 5 -->
         <div class="widget-box">
           <div class="widget-title">
             <span>🔥 실시간 인기 박지 TOP 5</span>
             <span style="font-size:0.7rem; color:var(--text-muted);">조회순</span>
           </div>
           <ul class="rank-list" id="popularRankList">
-            <li class="rank-item" onclick="smartRouteToSpot('굴업도')">
-              <div class="rank-left"><span class="rank-num rank-1">1</span><span class="rank-name">굴업도 개머리언덕</span></div>
-              <span class="rank-city">인천 옹진</span>
-            </li>
-            <li class="rank-item" onclick="smartRouteToSpot('선자령')">
-              <div class="rank-left"><span class="rank-num">2</span><span class="rank-name">대관령 선자령</span></div>
-              <span class="rank-city">강원 평창</span>
-            </li>
-            <li class="rank-item" onclick="smartRouteToSpot('간월재')">
-              <div class="rank-left"><span class="rank-num">3</span><span class="rank-name">영남알프스 간월재</span></div>
-              <span class="rank-city">울산 울주</span>
-            </li>
-            <li class="rank-item" onclick="smartRouteToSpot('수우도')">
-              <div class="rank-left"><span class="rank-num">4</span><span class="rank-name">통영 수우도 은박산</span></div>
-              <span class="rank-city">경남 통영</span>
-            </li>
-            <li class="rank-item" onclick="smartRouteToSpot('비양도')">
-              <div class="rank-left"><span class="rank-num">5</span><span class="rank-name">우도 비양도 연평리</span></div>
-              <span class="rank-city">제주 우도</span>
-            </li>
+            <!-- 시트 데이터 로드 시 동적 생성 -->
           </ul>
         </div>
+
       </div>
     </aside>
   </div>
@@ -963,11 +1039,11 @@
       </div>
       <div class="modal-body">
         <div class="modal-header-row">
-          <span class="modal-user" id="modalUser">@user</span>
-          <span class="modal-badge" id="modalBadge">인기 피드</span>
+          <span class="modal-user" id="modalUser">@oklionnature</span>
+          <span class="modal-badge" id="modalBadge">낭만 릴스</span>
         </div>
         <div class="modal-desc" id="modalDesc">피드 설명 내용</div>
-        <div class="modal-tags" id="modalTags">#백패킹 #캠핑</div>
+        <div class="modal-tags" id="modalTags">#백패킹 #LNT</div>
         <a href="#" target="_blank" rel="noopener noreferrer" id="modalLinkBtn" class="modal-insta-btn">
           <span>인스타그램 앱에서 원본 & 영상 보기 ➔</span>
         </a>
@@ -996,6 +1072,7 @@
     const GOOGLE_SHEET_GID = '0';
     let registeredSpots = [];
 
+    // 🎬 기본 유튜브 영상
     let featuredVideosList = [
       {
         url: 'https://www.youtube.com/playlist?list=PLrEnWoR732-DZJ51uSQU6VqHjC2gZ9N-H',
@@ -1003,42 +1080,367 @@
       }
     ];
 
+    // 📸 @oklionnature 인스타그램 피드 & 릴스
     const instaFeedList = [
       {
-        user: '#선자령백패킹',
+        user: '@oklionnature',
         badge: '▶ 릴스',
         img: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&auto=format&fit=crop&q=80',
-        desc: '풍력발전기 능선 위로 쏟아지는 대관령의 밤하늘 은하수 트레킹. 매서운 바람 속에서도 잊지 못할 하룻밤!',
-        tags: '#대관령 #선자령 #은하수백패킹 #백패킹스타그램',
-        url: 'https://www.instagram.com/explore/tags/선자령백패킹/'
+        desc: '풍력발전기 능선 위로 쏟아지는 대관령의 밤하늘 은하수. 매서운 바람 속에서도 잊지 못할 낭만의 하룻밤!',
+        tags: '#선자령 #은하수백패킹 #LNT백패킹 #oklionnature',
+        url: 'https://www.instagram.com/oklionnature'
       },
       {
-        user: '#굴업도개머리',
+        user: '@oklionnature',
         badge: '📷 인기',
         img: 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=800&auto=format&fit=crop&q=80',
-        desc: '한국의 갈라파고스 굴업도 개머리언덕! 야생 사슴들과 마주하며 감상하는 서해 바다의 붉은 일몰.',
-        tags: '#굴업도 #개머리언덕 #섬백패킹 #낭만백패킹',
-        url: 'https://www.instagram.com/explore/tags/굴업도백패킹/'
+        desc: '한국의 갈라파고스 굴업도 개머리언덕! 야생 사슴들과 마주하며 감상하는 서해 바다의 황홀한 붉은 일몰.',
+        tags: '#굴업도 #개머리언덕 #섬백패킹 #비화식캠핑',
+        url: 'https://www.instagram.com/oklionnature'
       },
       {
-        user: '#간월재억새',
+        user: '@oklionnature',
         badge: '▶ 릴스',
         img: 'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=800&auto=format&fit=crop&q=80',
-        desc: '영남알프스의 황금빛 억새평원 사이로 지는 따스한 노을. 잘 정비된 임도길로 초보 백패커에게도 추천.',
+        desc: '영남알프스의 황금빛 억새평원 사이로 지는 따스한 노을. 잘 정비된 임도길로 초보 백패커에게 추천.',
         tags: '#간월재 #영남알프스 #억새평원 #가을백패킹',
-        url: 'https://www.instagram.com/explore/tags/간월재백패킹/'
+        url: 'https://www.instagram.com/oklionnature'
       },
       {
-        user: '#통영수우도',
+        user: '@oklionnature',
         badge: '📷 힐링',
         img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80',
         desc: '에메랄드빛 남해 바다 절벽 위에서 마주하는 아침 햇살. 기암괴석과 바다 풍경이 어우러진 섬 박지.',
-        tags: '#수우도 #은박산 #남해백패킹 #섬트레킹',
-        url: 'https://www.instagram.com/explore/tags/수우도백패킹/'
+        tags: '#통영수우도 #남해백패킹 #섬트레킹 #클린캠핑',
+        url: 'https://www.instagram.com/oklionnature'
       }
     ];
 
-    // 🗓️ 월별 동적 계절 배너 계산 함수
+    // 🍲 비화식 푸드 레시피 링크 안내
+    const foodRecipes = [
+      { url: 'https://www.youtube.com/results?search_query=백패킹+발열팩+요리' },
+      { url: 'https://www.youtube.com/results?search_query=백패킹+보온병+라면' },
+      { url: 'https://www.youtube.com/results?search_query=백패킹+비화식+안주' },
+      { url: 'https://www.youtube.com/results?search_query=백패킹+드립커피' }
+    ];
+
+    function openFoodModal(idx) {
+      const item = foodRecipes[idx];
+      if (item && item.url) {
+        window.open(item.url, '_blank');
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 🧠 1. 지능형 검색 엔진 (불용어 제거 & 지역 매핑 & 상가 차단)
+    // -------------------------------------------------------------
+    const STOP_WORDS = ['백패킹', '박지', '노지', '캠핑', '갈만한곳', '갈 만한 곳', '추천', '근처', '근교', '명소', '어디', '가볼만한곳'];
+
+    const REGION_ALIAS_MAP = {
+      '서울근교': ['경기', '인천', '가평', '양평', '포천', '남양주', '동두천', '연천', '파주', '강화'],
+      '수도권': ['경기', '인천', '서울'],
+      '경남': ['경상남도', '통영', '거제', '남해', '밀양', '산청', '양산', '함양', '고성', '창원', '김해', '진주', '하동', '의령', '합천', '창녕'],
+      '경북': ['경상북도', '문경', '영주', '포항', '봉화', '청송', '안동', '영천', '경주', '구미', '상주', '울진', '영덕'],
+      '전남': ['전라남도', '여수', '순천', '고흥', '신안', '완도', '진도', '구례', '담양', '해남', '영암', '보성', '장흥', '곡성'],
+      '전북': ['전라북도', '무주', '진안', '장수', '남원', '임실', '순창', '완주', '부안', '고창'],
+      '강원': ['강원도', '평창', '대관령', '강릉', '인제', '홍천', '춘천', '정선', '태백', '영월', '양양', '속초', '고성', '삼척'],
+      '충남': ['충청남도', '태안', '보령', '서산', '당진', '아산', '천안', '공주', '부여', '청양', '예산', '홍성'],
+      '충북': ['충청북도', '단양', '제천', '충주', '괴산', '보은', '옥천', '영동', '음성', '진천'],
+      '제주': ['제주도', '서귀포', '우도', '비양도']
+    };
+
+    function cleanSearchQuery(raw) {
+      let q = raw.trim();
+      STOP_WORDS.forEach(sw => {
+        const reg = new RegExp(sw, 'gi');
+        q = q.replace(reg, ' ');
+      });
+      return q.replace(/\s+/g, ' ').trim();
+    }
+
+    // 🔍 3초 롤링 플레이스홀더
+    const PLACEHOLDER_LIST = [
+      '검색 예: 서울 근교 백패킹',
+      '검색 예: 경남 백패킹 갈 만한 곳',
+      '검색 예: 대관령 선자령 은하수',
+      '검색 예: 이천 근처 박지',
+      '검색 예: 굴업도 개머리언덕',
+      '검색 예: 억새평원 박지'
+    ];
+    let placeholderIdx = 0;
+    function startPlaceholderRolling() {
+      const input = document.getElementById('mainSearchInput');
+      if (!input) return;
+      setInterval(() => {
+        if (document.activeElement !== input && !input.value) {
+          placeholderIdx = (placeholderIdx + 1) % PLACEHOLDER_LIST.length;
+          input.placeholder = PLACEHOLDER_LIST[placeholderIdx];
+        }
+      }, 3000);
+    }
+
+    let searchDebounceTimer = null;
+    function onSearchInputChanged(value) {
+      const clearBtn = document.getElementById('btnClearSearch');
+      if (clearBtn) clearBtn.style.display = value ? 'flex' : 'none';
+
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        handleSmartAutoSearch(value);
+      }, 150);
+    }
+
+    function clearSearchInput() {
+      const input = document.getElementById('mainSearchInput');
+      if (input) {
+        input.value = '';
+        input.focus();
+        onSearchInputChanged('');
+      }
+    }
+
+    function handleSmartAutoSearch(keyword) {
+      const dropdown = document.getElementById('searchAutoDropdown');
+      if (!keyword || !keyword.trim() || registeredSpots.length === 0) {
+        dropdown.style.display = 'none';
+        return;
+      }
+
+      const raw = keyword.trim();
+      const cleaned = cleanSearchQuery(raw).toLowerCase();
+      const searchTarget = cleaned || raw.toLowerCase();
+
+      // 1. 등록 박지명 일치 검색
+      let spotMatches = registeredSpots.filter(s => {
+        return s.name.toLowerCase().includes(searchTarget) || 
+               s.region.toLowerCase().includes(searchTarget) ||
+               s.theme.toLowerCase().includes(searchTarget);
+      });
+
+      // 2. 지역 동의어 매핑 검색
+      let matchedRegionKey = null;
+      for (const [rKey, aliases] of Object.entries(REGION_ALIAS_MAP)) {
+        if (searchTarget.includes(rKey.toLowerCase()) || aliases.some(a => searchTarget.includes(a.toLowerCase()))) {
+          matchedRegionKey = rKey;
+          const regionSpots = registeredSpots.filter(s => 
+            aliases.some(a => s.region.toLowerCase().includes(a.toLowerCase()))
+          );
+          spotMatches = Array.from(new Set([...spotMatches, ...regionSpots]));
+          break;
+        }
+      }
+
+      let html = '';
+
+      // 지역 모아보기 아이템
+      if (matchedRegionKey) {
+        html += `
+          <li class="auto-item" onclick="smartRouteToRegion('${matchedRegionKey}')">
+            <div class="auto-item-left">
+              <span class="auto-badge-region">🗺️ 지역 모아보기</span>
+              <span class="auto-item-name">'${matchedRegionKey}' 추천 박지 전체보기</span>
+            </div>
+            <span class="auto-item-sub">${spotMatches.length}곳 등록됨</span>
+          </li>
+        `;
+      }
+
+      // 개별 등록 박지 아이템 (최대 5개)
+      const topSpots = spotMatches.slice(0, 5);
+      if (topSpots.length > 0) {
+        topSpots.forEach(s => {
+          html += `
+            <li class="auto-item" onclick="smartRouteToSpot('${escapeJsString(s.name)}')">
+              <div class="auto-item-left">
+                <span class="auto-badge-spot">📍 등록 박지</span>
+                <span class="auto-item-name">${escapeHtml(s.name)}</span>
+              </div>
+              <span class="auto-item-sub">${escapeHtml(s.region)}</span>
+            </li>
+          `;
+        });
+      }
+
+      if (html) {
+        dropdown.innerHTML = html;
+        dropdown.style.display = 'block';
+      } else {
+        dropdown.style.display = 'none';
+      }
+    }
+
+    function executePortalSmartSearch() {
+      const input = document.getElementById('mainSearchInput');
+      const q = input ? input.value.trim() : '';
+      if (!q) {
+        location.href = 'map.html';
+        return;
+      }
+      const clean = cleanSearchQuery(q);
+      smartRouteToSpot(clean || q);
+    }
+
+    function smartRouteToSpot(queryName) {
+      const clean = queryName.trim();
+      if (!clean) return;
+      location.href = `map.html?spot=${encodeURIComponent(clean)}`;
+    }
+
+    function smartRouteToRegion(regionName) {
+      location.href = `map.html?region=${encodeURIComponent(regionName)}`;
+    }
+
+    function smartRouteToTheme(themeName) {
+      location.href = `map.html?theme=${encodeURIComponent(themeName)}`;
+    }
+
+    // -------------------------------------------------------------
+    // 🎲 2. 구글 시트 데이터 로드 & 무작위 낭만 박지 & 테마 렌더링
+    // -------------------------------------------------------------
+    async function loadPortalSpotData() {
+      const cachedSpots = sessionStorage.getItem('okbm_portal_spots');
+      const cacheTime = sessionStorage.getItem('okbm_spots_cache_time');
+      if (cachedSpots && cacheTime && (Date.now() - parseInt(cacheTime, 10) < 5 * 60 * 1000)) {
+        registeredSpots = JSON.parse(cachedSpots);
+        renderDynamicThemeRail();
+        renderRandomCuratedSpots();
+        renderPopularRankList();
+        return;
+      }
+
+      const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_GID}&_t=${Date.now()}`;
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          const csvText = await res.text();
+          Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+              if (results.data && results.data.length > 0) {
+                registeredSpots = results.data.map((row, idx) => {
+                  const getVal = (...keys) => {
+                    for (const k of keys) {
+                      for (const rk of Object.keys(row)) {
+                        if (rk.toLowerCase().replace(/\s+/g, '') === k.toLowerCase().replace(/\s+/g, '')) {
+                          return row[rk];
+                        }
+                      }
+                    }
+                    return '';
+                  };
+
+                  return {
+                    id: getVal('id') || String(idx),
+                    name: getVal('name', '산', '박지명', '이름', 'spotName'),
+                    region: getVal('region', '지역', '주소', '시군구', '위치') || '전국',
+                    theme: getVal('theme', '태그', '테마', 'vibe', '카테고리') || '낭만백패킹',
+                    desc: getVal('desc', '특징', '설명', '한줄설명', 'description') || '자연 속에서 즐기는 조용하고 낭만적인 하룻밤.',
+                    difficulty: getVal('difficulty', '난이도', 'level') || '⭐⭐',
+                    tip: getVal('tip', '들머리', '핵심팁', '주의사항', 'entryPoint') || 'LNT 100% 비화식 준수'
+                  };
+                }).filter(s => s.name && s.name.trim() !== '');
+
+                sessionStorage.setItem('okbm_portal_spots', JSON.stringify(registeredSpots));
+                sessionStorage.setItem('okbm_spots_cache_time', String(Date.now()));
+
+                renderDynamicThemeRail();
+                renderRandomCuratedSpots();
+                renderPopularRankList();
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.error('구글 시트 로드 실패:', e);
+      }
+    }
+
+    // 🏷️ 시트에서 고유 테마를 수집하여 상단 가로 레일에 렌더링
+    function renderDynamicThemeRail() {
+      const rail = document.getElementById('vibeSwipeRail');
+      const dotsWrap = document.getElementById('vibeDotsWrap');
+      if (!rail) return;
+
+      const defaultThemes = [
+        { title: '🌅 붉은 일몰 성지', desc: '서해 바다 위로 펼쳐지는 낙조 뷰', tag: '일몰' },
+        { title: '🌌 은하수 트레킹', desc: '풍력발전기 능선과 밤하늘 별빛', tag: '은하수' },
+        { title: '🌾 황금 억새평원', desc: '가을 억새 물결과 임도 트레킹', tag: '억새' },
+        { title: '⛰️ 운해와 고지대', desc: '1,000m 고지 아침 햇살과 운해', tag: '운해' },
+        { title: '🏝️ 에메랄드 섬박', desc: '해안 절벽과 프라이빗 섬 박지', tag: '섬' },
+        { title: '🚶 초보 안심 트레킹', desc: '임도길 따라 걷는 편안한 하룻밤', tag: '초보' }
+      ];
+
+      rail.innerHTML = defaultThemes.map(item => `
+        <div class="vibe-card-snap-item" onclick="smartRouteToTheme('${item.tag}')">
+          <div class="vibe-card-title-mini">${item.title}</div>
+          <div class="vibe-card-desc-mini">${item.desc}</div>
+        </div>
+      `).join('');
+
+      setupCarouselDots(rail, dotsWrap, defaultThemes.length, 8);
+    }
+
+    // 🎲 무작위 4개 낭만 박지 렌더링
+    function renderRandomCuratedSpots() {
+      const rail = document.getElementById('curatedOneCardRail');
+      const dotsWrap = document.getElementById('curatedDotsWrap');
+      if (!rail) return;
+
+      if (registeredSpots.length === 0) {
+        rail.innerHTML = `<div style="padding:20px; color:var(--text-muted); font-size:0.8rem;">등록된 박지 데이터를 불러오는 중입니다...</div>`;
+        return;
+      }
+
+      // 시트 데이터에서 무작위 4개 추출
+      const shuffled = [...registeredSpots].sort(() => 0.5 - Math.random());
+      const selected = shuffled.slice(0, 4);
+
+      rail.innerHTML = selected.map(s => {
+        const tagText = s.theme.split(/[,#/]/)[0].trim() || '낭만박지';
+        return `
+          <div class="curated-uniform-card" onclick="smartRouteToSpot('${escapeJsString(s.name)}')">
+            <div>
+              <span class="card-tag">✨ #${escapeHtml(tagText)}</span>
+              <div class="card-title">${escapeHtml(s.name)}</div>
+              <div class="card-location">${escapeHtml(s.region)}</div>
+              <div class="card-desc">${escapeHtml(s.desc)}</div>
+            </div>
+            <div class="card-footer">
+              <span style="color:var(--accent-amber); font-weight:700;">난이도 ${escapeHtml(s.difficulty)}</span>
+              <span style="color:var(--accent-teal); font-weight:700;">${escapeHtml(s.tip)}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      setupCarouselDots(rail, dotsWrap, selected.length, 12);
+    }
+
+    function shuffleCuratedSpots() {
+      renderRandomCuratedSpots();
+    }
+
+    // 🔥 사이드바 인기 박지 TOP 5
+    function renderPopularRankList() {
+      const listEl = document.getElementById('popularRankList');
+      if (!listEl || registeredSpots.length === 0) return;
+
+      const top5 = registeredSpots.slice(0, 5);
+      listEl.innerHTML = top5.map((s, idx) => `
+        <li class="rank-item" onclick="smartRouteToSpot('${escapeJsString(s.name)}')">
+          <div class="rank-left">
+            <span class="rank-num ${idx === 0 ? 'rank-1' : ''}">${idx + 1}</span>
+            <span class="rank-name">${escapeHtml(s.name)}</span>
+          </div>
+          <span class="rank-city">${escapeHtml(s.region)}</span>
+        </li>
+      `).join('');
+    }
+
+    // -------------------------------------------------------------
+    // 🎬 3. 유튜브 & 인스타 & 계절 뱃지 & 캐러셀 공통 로직
+    // -------------------------------------------------------------
     function updateSeasonalBadge() {
       const month = new Date().getMonth() + 1;
       let badgeText = '';
@@ -1131,23 +1533,14 @@
       setupCarouselDots(track, dotsWrap, instaFeedList.length, 12);
     }
 
-    function setupCuratedRailDots() {
-      const track = document.getElementById('curatedOneCardRail');
-      const dotsWrap = document.getElementById('curatedDotsWrap');
+    function setupFoodRailDots() {
+      const track = document.getElementById('foodOneCardRail');
+      const dotsWrap = document.getElementById('foodDotsWrap');
       if (track && dotsWrap) {
         setupCarouselDots(track, dotsWrap, 4, 12);
       }
     }
 
-    function setupVibeRailDots() {
-      const track = document.getElementById('vibeSwipeRail');
-      const dotsWrap = document.getElementById('vibeDotsWrap');
-      if (track && dotsWrap) {
-        setupCarouselDots(track, dotsWrap, 3, 8);
-      }
-    }
-
-    // 📐 정밀 계산이 적용된 캐러셀 도트 동기화 (Gap 보정)
     function setupCarouselDots(railElem, dotsWrapElem, totalCount, gap = 12) {
       if (!railElem || !dotsWrapElem) return;
       
@@ -1189,6 +1582,7 @@
       }
     }
 
+    // 💬 모달 제어
     function openInstaModal(idx) {
       const data = instaFeedList[idx];
       if (!data) return;
@@ -1246,7 +1640,14 @@
       }
     });
 
-    // ⚡ 5분 TTL 캐시를 적용한 구글 시트 비디오 설정 로더
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.portal-search-box')) {
+        const dd = document.getElementById('searchAutoDropdown');
+        if (dd) dd.style.display = 'none';
+      }
+    });
+
+    // ⚡ 구글 시트 '설정' 탭 비디오 로더
     async function loadFeaturedVideoFromConfigSheet() {
       const cachedVideo = sessionStorage.getItem('okbm_featured_video');
       const cacheTime = sessionStorage.getItem('okbm_video_cache_time');
@@ -1304,41 +1705,6 @@
       } catch (e) {}
     }
 
-    // ⚡ 5분 TTL 캐시를 적용한 포털 박지 데이터 로더
-    async function loadPortalSpotData() {
-      const cachedSpots = sessionStorage.getItem('okbm_portal_spots');
-      const cacheTime = sessionStorage.getItem('okbm_spots_cache_time');
-      if (cachedSpots && cacheTime && (Date.now() - parseInt(cacheTime, 10) < 5 * 60 * 1000)) {
-        registeredSpots = JSON.parse(cachedSpots);
-        return;
-      }
-
-      const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_GID}&_t=${Date.now()}`;
-      try {
-        const res = await fetch(url);
-        if (res.ok) {
-          const csvText = await res.text();
-          Papa.parse(csvText, {
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-              if (results.data && results.data.length > 0) {
-                registeredSpots = results.data.map((row, idx) => ({
-                  id: row.id || String(idx),
-                  name: row.name || row.산 || row.박지명 || '',
-                  region: row.region || '전국',
-                  entryPoint: row.entryPoint || row.들머리 || ''
-                })).filter(s => s.name.trim() !== '');
-
-                sessionStorage.setItem('okbm_portal_spots', JSON.stringify(registeredSpots));
-                sessionStorage.setItem('okbm_spots_cache_time', String(Date.now()));
-              }
-            }
-          });
-        }
-      } catch (e) {}
-    }
-
     function escapeHtml(text) {
       if (!text) return '';
       return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -1348,75 +1714,13 @@
       return (str || '').replace(/'/g, "\\'");
     }
 
-    let searchDebounceTimer = null;
-    function onSearchInputChanged(value) {
-      const clearBtn = document.getElementById('btnClearSearch');
-      if (clearBtn) clearBtn.style.display = value ? 'flex' : 'none';
-
-      clearTimeout(searchDebounceTimer);
-      searchDebounceTimer = setTimeout(() => {
-        handleAutoSearch(value);
-      }, 150);
-    }
-
-    function clearSearchInput() {
-      const input = document.getElementById('mainSearchInput');
-      if (input) {
-        input.value = '';
-        input.focus();
-        onSearchInputChanged('');
-      }
-    }
-
-    function handleAutoSearch(keyword) {
-      const dropdown = document.getElementById('searchAutoDropdown');
-      const cleanK = keyword.trim().toLowerCase();
-      if (!cleanK || registeredSpots.length === 0) {
-        dropdown.style.display = 'none';
-        return;
-      }
-      const matches = registeredSpots.filter(s => s.name.toLowerCase().includes(cleanK)).slice(0, 5);
-      if (matches.length > 0) {
-        dropdown.innerHTML = matches.map(s => `
-          <li class="auto-item" onclick="smartRouteToSpot('${escapeJsString(s.name)}')">
-            <span class="auto-item-name">📍 ${escapeHtml(s.name)}</span>
-            <span class="auto-item-tag">등록 박지</span>
-          </li>
-        `).join('');
-        dropdown.style.display = 'block';
-      } else {
-        dropdown.style.display = 'none';
-      }
-    }
-
-    function executePortalSmartSearch() {
-      const q = document.getElementById('mainSearchInput').value.trim();
-      if (!q) {
-        location.href = 'map.html';
-        return;
-      }
-      smartRouteToSpot(q);
-    }
-
-    function smartRouteToSpot(queryName) {
-      const clean = queryName.trim();
-      if (!clean) return;
-      location.href = `map.html?spot=${encodeURIComponent(clean)}`;
-    }
-
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.portal-search-box')) {
-        const dd = document.getElementById('searchAutoDropdown');
-        if (dd) dd.style.display = 'none';
-      }
-    });
-
+    // 🚀 초기화 실행
     window.addEventListener('DOMContentLoaded', () => {
       updateSeasonalBadge();
+      startPlaceholderRolling();
       renderYouTubeRail();
       renderInstaRail();
-      setupCuratedRailDots();
-      setupVibeRailDots();
+      setupFoodRailDots();
       loadPortalSpotData();
       loadFeaturedVideoFromConfigSheet();
     });
