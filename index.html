@@ -125,7 +125,7 @@
       width: 100%;
       max-width: 1180px;
       margin: 0 auto;
-      padding: 8px 16px 4px 16px;
+      padding: 6px 16px 2px 16px;
       text-align: center;
     }
     .hero-badge-season {
@@ -139,13 +139,13 @@
       font-weight: 800;
       padding: 1px 8px;
       border-radius: 10px;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
     .hero-title {
       font-family: var(--font-display);
-      font-size: clamp(1.05rem, 2.8vw, 1.45rem);
+      font-size: clamp(1.05rem, 2.8vw, 1.4rem);
       font-weight: 700;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
       line-height: 1.2;
       letter-spacing: -0.03em;
     }
@@ -163,7 +163,7 @@
     }
     .portal-search-input {
       width: 100%;
-      padding: 7px 68px 7px 14px;
+      padding: 6px 68px 6px 14px;
       font-size: 0.82rem;
       font-family: var(--font-body);
       border-radius: 20px;
@@ -174,7 +174,7 @@
       outline: none;
       box-shadow: 0 3px 12px rgba(0, 0, 0, 0.35);
       transition: all 0.2s ease;
-      min-height: 36px;
+      min-height: 34px;
     }
     .portal-search-input:focus {
       background: #05070c;
@@ -215,10 +215,10 @@
     .portal-search-btn {
       background: linear-gradient(135deg, #0284c7, #0ea5e9);
       border: none;
-      width: 26px;
-      height: 26px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
-      font-size: 0.76rem;
+      font-size: 0.74rem;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -262,11 +262,11 @@
     /* 🌿 초슬림 마이크로 LNT 띠 */
     .lnt-slim-banner {
       max-width: 520px;
-      margin: 0 auto 6px auto;
+      margin: 0 auto 5px auto;
       background: rgba(45, 212, 191, 0.06);
       border: 1px solid rgba(45, 212, 191, 0.2);
       border-radius: 6px;
-      padding: 3px 8px;
+      padding: 2px 8px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -282,11 +282,11 @@
     }
     .lnt-text-mini { font-size: 0.68rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* 🎲 3. 오늘의 추천 낭만 박지 (모바일: 1카드 최적화 슬림 / PC: 3열 카드덱 그리드) */
+    /* 🎲 3. [상단] 오늘의 추천 낭만 박지 (3단 리치 카드) */
     .top-curated-container {
       width: 100%;
       max-width: 1180px;
-      margin: 0 auto 8px auto;
+      margin: 0 auto 6px auto;
       padding: 0 16px;
     }
     .curated-box-wrap {
@@ -312,7 +312,7 @@
       gap: 4px;
     }
 
-    /* PC에서는 3열 그리드로 깔끔하게 정렬 */
+    /* PC 3열 그리드 */
     .curated-card-track {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -320,18 +320,19 @@
       width: 100%;
     }
 
+    /* 🌟 3단 풍성한 박지 카드 */
     .curated-rich-card {
       background: var(--bg-surface);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 8px 10px;
+      padding: 9px 12px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      gap: 4px;
+      gap: 6px;
       transition: all 0.22s ease;
-      min-height: 76px;
+      min-height: 120px;
     }
     .curated-rich-card:hover {
       background: var(--bg-card-hover);
@@ -348,14 +349,14 @@
     .card-top-left {
       display: flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
       min-width: 0;
       overflow: hidden;
     }
     .card-theme-badge {
-      font-size: 0.62rem;
+      font-size: 0.64rem;
       font-weight: 800;
-      padding: 1px 5px;
+      padding: 1px 6px;
       border-radius: 4px;
       background: rgba(56, 189, 248, 0.15);
       color: var(--accent-blue);
@@ -363,7 +364,7 @@
     }
     .card-spot-name {
       font-family: var(--font-display);
-      font-size: 0.88rem;
+      font-size: 0.95rem;
       font-weight: 700;
       color: #fff;
       white-space: nowrap;
@@ -371,26 +372,39 @@
       text-overflow: ellipsis;
     }
     .card-spot-region {
-      font-size: 0.68rem;
+      font-size: 0.72rem;
       color: var(--text-muted);
       font-weight: 600;
       flex-shrink: 0;
     }
     .card-spot-diff {
-      font-size: 0.68rem;
+      font-size: 0.72rem;
       color: var(--accent-amber);
       font-weight: 700;
       flex-shrink: 0;
     }
-    .card-desc-2line {
-      font-size: 0.72rem;
+    .card-desc-rich {
+      font-size: 0.76rem;
       color: var(--text-secondary);
-      line-height: 1.35;
+      line-height: 1.45;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
       word-break: keep-all;
+    }
+    .card-tip-badge-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.08);
+      padding-top: 5px;
+      font-size: 0.7rem;
+      color: var(--accent-teal);
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .btn-action-shuffle {
@@ -507,7 +521,7 @@
       border-radius: 4px;
     }
 
-    /* 🍲 비화식 푸드 (PC: 2열 그리드 / 모바일: 1화면 1카드) */
+    /* 🍲 비화식 푸드 */
     .responsive-grid-container {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -551,7 +565,7 @@
     .food-desc { font-size: 0.72rem; color: var(--text-secondary); line-height: 1.35; }
     .food-tip { font-size: 0.68rem; color: #38bdf8; font-weight: 600; }
 
-    /* 📸 인스타 릴스 (PC: 3열 와이드 그리드 / 모바일: 1화면 1카드) */
+    /* 📸 인스타 릴스 */
     .responsive-insta-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -615,7 +629,7 @@
       box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
     }
 
-    /* 📊 사이드바 & 진짜 실시간 날씨 (PC 탭 전환) */
+    /* 📊 사이드바 & 날씨 탭 */
     .side-column { display: flex; flex-direction: column; gap: 14px; width: 100%; min-width: 0; }
     .sticky-sidebar-wrap { position: sticky; top: 60px; display: flex; flex-direction: column; gap: 14px; }
     .widget-box { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
@@ -805,9 +819,9 @@
       .lnt-slim-banner { padding: 2px 6px; margin-bottom: 4px; }
 
       .top-curated-container { padding: 0 10px; margin-bottom: 6px; }
-      .curated-box-wrap { padding: 5px 8px 6px 8px; border-radius: 10px; }
+      .curated-box-wrap { padding: 6px 8px 8px 8px; border-radius: 10px; }
       
-      /* 모바일 1화면 1카드 완결 슬라이더 */
+      /* 모바일 1화면 1카드 완결 슬라이더 (높이 135px 확보) */
       .curated-card-track {
         display: flex !important;
         overflow-x: auto !important;
@@ -825,11 +839,11 @@
         min-width: 100% !important;
         max-width: 100% !important;
         scroll-snap-align: center !important;
-        padding: 6px 8px !important;
-        min-height: 64px !important;
+        padding: 8px 10px !important;
+        min-height: 125px !important;
       }
-      .card-spot-name { font-size: 0.84rem !important; }
-      .card-desc-2line { font-size: 0.68rem !important; -webkit-line-clamp: 2 !important; }
+      .card-spot-name { font-size: 0.92rem !important; }
+      .card-desc-rich { font-size: 0.74rem !important; -webkit-line-clamp: 2 !important; line-height: 1.4 !important; }
 
       /* 비화식 & 릴스 1화면 1카드 스냅 슬라이더 */
       .responsive-grid-container, .responsive-insta-grid {
@@ -903,7 +917,7 @@
     </div>
   </section>
 
-  <!-- 🎲 3. [상단] 오늘의 추천 낭만 박지 -->
+  <!-- 🎲 3. [상단] 오늘의 추천 낭만 박지 (3단 리치 카드) -->
   <section class="top-curated-container">
     <div class="curated-box-wrap">
       <div class="curated-header-bar">
@@ -918,7 +932,7 @@
       </div>
 
       <div class="curated-card-track" id="curatedCardTrack">
-        <!-- 모바일: 1카드 완결 / PC: 3열 카드덱 그리드 -->
+        <!-- 구글 시트 기반 3단 리치 카드 자동 렌더링 -->
       </div>
       <div class="carousel-dots-wrap" id="curatedDotsWrap"></div>
     </div>
@@ -929,18 +943,18 @@
     
     <main class="main-column">
       
-      <!-- 🎬 1. 이 주의 낭만 백패킹 영상 (모바일 첫 화면 완벽 노출) -->
+      <!-- 🎬 1. 이 주의 낭만 백패킹 영상 (모바일 첫 화면에 100% 꽉 차게 노출) -->
       <section class="swipe-section-wrap" id="ytSectionWrap">
         <div class="section-header">
           <div class="section-title">🎬 이 주의 낭만 백패킹 영상</div>
         </div>
         <div class="yt-full-card">
           <div class="video-box">
-            <iframe id="ytIframe" src="https://www.youtube.com/embed/videoseries?list=PLrEnWoR732-DZJ51uSQU6VqHjC2gZ9N-H&rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
+            <iframe id="ytIframe" src="https://www.youtube.com/embed/4JQHNcThibg?rel=0&enablejsapi=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe>
           </div>
           <div class="video-caption-bar">
-            <span class="video-caption-title" id="ytCaptionTitle">🎥 드론으로 담아낸 서해 섬 백패킹의 일몰과 은하수</span>
-            <span class="video-badge" id="ytBadge">📺 추천 영상</span>
+            <span class="video-caption-title" id="ytCaptionTitle">비가 내리는 날 산속 바위틈에서 하루를 보낸다면 오지브로님 영상 처럼 정말 낭만적일까?</span>
+            <span class="video-badge" id="ytBadge">🎥 스포트라이트</span>
           </div>
         </div>
       </section>
@@ -1121,7 +1135,9 @@
 
   <script>
     const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
-    const GOOGLE_SHEET_GID = '0';
+    const GOOGLE_SHEET_MAIN_GID = '0';
+    const GOOGLE_SHEET_CONFIG_GID = '1983931878'; // 캡처 화면 상 '설정' 탭의 실제 GID
+
     let registeredSpots = [];
 
     // 기본 피드
@@ -1317,10 +1333,10 @@
     }
 
     // -------------------------------------------------------------
-    // 🎲 2. 구글 시트 로드 & 추천 박지 렌더링
+    // 🎲 2. 구글 시트 로드 & 3단 리치 카드 렌더링
     // -------------------------------------------------------------
     async function loadPortalSpotData() {
-      const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_GID}&_t=${Date.now()}`;
+      const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_MAIN_GID}&_t=${Date.now()}`;
       try {
         const res = await fetch(url);
         if (res.ok) {
@@ -1370,7 +1386,7 @@
       if (!track) return;
 
       if (registeredSpots.length === 0) {
-        track.innerHTML = `<div style="padding:6px 10px; color:var(--text-muted); font-size:0.74rem;">등록된 박지 데이터를 불러오는 중입니다...</div>`;
+        track.innerHTML = `<div style="padding:10px; color:var(--text-muted); font-size:0.76rem;">등록된 박지 데이터를 불러오는 중입니다...</div>`;
         return;
       }
 
@@ -1389,7 +1405,10 @@
               </div>
               <span class="card-spot-diff">난이도 ${escapeHtml(s.difficulty)}</span>
             </div>
-            <div class="card-desc-2line">${escapeHtml(s.desc)}</div>
+            <div class="card-desc-rich">${escapeHtml(s.desc)}</div>
+            <div class="card-tip-badge-row">
+              <span>💡 ${escapeHtml(s.tip)}</span>
+            </div>
           </div>
         `;
       }).join('');
@@ -1418,32 +1437,32 @@
     }
 
     // -------------------------------------------------------------
-    // 🎬 3. 만능 유튜브 URL 파서 & 시트 연동 (100% 로드 보장)
+    // 🎬 3. 구글 시트 '설정' 탭(gid: 1983931878) 완벽 연동 파서
     // -------------------------------------------------------------
     function parseYouTubeUniversalUrl(url) {
       if (!url) return null;
       const str = String(url).trim();
 
+      // 재생목록 파싱
       const listMatch = str.match(/[?&]list=([^#&?]+)/);
       const listId = listMatch ? listMatch[1] : null;
 
+      // 비디오 ID 파싱 (shorts, youtu.be, watch 등)
       const videoMatch = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/|watch\?.+&v=))([\w-]{11})/);
       const vid = videoMatch ? videoMatch[1] : null;
 
-      if (listId && vid) {
-        return { embedUrl: `https://www.youtube.com/embed/${vid}?list=${listId}&rel=0`, badge: '📺 추천 재생목록' };
-      }
       if (listId && !vid) {
-        return { embedUrl: `https://www.youtube.com/embed/videoseries?list=${listId}&rel=0`, badge: '📺 추천 재생목록' };
+        return { embedUrl: `https://www.youtube-nocookie.com/embed/videoseries?list=${listId}&rel=0`, badge: '📺 추천 재생목록' };
       }
       if (vid) {
-        return { embedUrl: `https://www.youtube.com/embed/${vid}?autoplay=0&mute=1&controls=1&rel=0`, badge: '🎥 스포트라이트' };
+        const listParam = listId ? `&list=${listId}` : '';
+        return { embedUrl: `https://www.youtube-nocookie.com/embed/${vid}?rel=0&enablejsapi=1${listParam}`, badge: '🎥 스포트라이트' };
       }
       return null;
     }
 
     async function loadFeaturedVideoFromConfigSheet() {
-      const configUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('설정')}&_t=${Date.now()}`;
+      const configUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_CONFIG_GID}&_t=${Date.now()}`;
       try {
         const res = await fetch(configUrl);
         if (res.ok) {
@@ -1488,7 +1507,7 @@
           });
         }
       } catch (e) {
-        console.log('설정 탭 로드 에러 (기본 영상 유지):', e);
+        console.log('설정 탭 연동 실패 (기본 영상 재생):', e);
       }
     }
 
