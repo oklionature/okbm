@@ -129,18 +129,18 @@
       text-align: center;
     }
     .hero-badge-season {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      background: rgba(56, 189, 248, 0.1);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      color: var(--accent-blue);
-      font-size: 0.68rem;
-      font-weight: 800;
-      padding: 1px 8px;
-      border-radius: 10px;
-      margin-bottom: 3px;
-    }
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1.5px solid rgba(56, 189, 248, 0.35);
+  color: var(--accent-blue);
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem); /* ◀ 제목 수준으로 크기 확대 */
+  font-weight: 800;
+  padding: 4px 14px;                       /* ◀ 글씨에 맞춰 뱃지 여백도 확대 */
+  border-radius: 16px;
+  margin-bottom: 8px;
+}
     .hero-title {
       font-family: var(--font-display);
       font-size: clamp(1.2rem, 3.2vw, 1.75rem);
@@ -852,7 +852,12 @@
       .kbd-hint { display: none; }
       
       .hero-wrapper { padding: 4px 10px 2px 10px; }
-      .hero-badge-season { font-size: 0.62rem; padding: 1px 6px; margin-bottom: 2px; }
+       .hero-badge-season { 
+    font-size: 1.15rem !important;      /* ◀ 모바일 제목 크기 수준으로 확대 */
+    padding: 3px 12px !important;
+    margin-bottom: 6px !important;
+  }
+}
       .hero-title { font-size: 1.25rem; margin-bottom: 8px; }
       .portal-search-input { font-size: 0.78rem; padding: 6px 58px 6px 12px; min-height: 32px; }
       .portal-search-btn { width: 22px; height: 22px; font-size: 0.7rem; }
