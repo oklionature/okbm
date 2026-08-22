@@ -20,13 +20,14 @@
 
   <style>
     :root {
-      /* 🖤 딥 옵시디언 트루 블랙 & 네온 오로라 테마 (index.html 100% 일치) */
+      /* 🖤 딥 옵시디언 트루 블랙 & 네온 오로라 테마 */
       --bg-deep: #030508;
       --bg-surface: #090c13;
       --bg-card: #0e131d;
       --bg-card-hover: #151c2a;
       --border: rgba(255, 255, 255, 0.08);
       --border-glow: rgba(56, 189, 248, 0.35);
+      --border-rose-glow: rgba(244, 63, 94, 0.45);
       --border-subtle: #1a2233;
       --text-primary: #f8fafc;
       --text-secondary: #94a3b8;
@@ -57,16 +58,16 @@
       letter-spacing: -0.015em;
     }
     
-    /* 🧭 1. 상단 헤더 */
+    /* 🧭 1. 상단 헤더 (여백 슬림화 & 한 줄 유지) */
     .header {
       width: 100%;
-      background: rgba(3, 5, 8, 0.92);
+      background: rgba(3, 5, 8, 0.94);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 16px;
+      padding: 6px 14px;
       z-index: 1000;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
       border-bottom: 1px solid var(--border);
@@ -78,8 +79,9 @@
       align-items: center;
       justify-content: space-between;
       width: 100%;
+      gap: 8px;
     }
-    .header-left { display: flex; align-items: center; gap: 10px; flex-wrap: nowrap; }
+    .header-left { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; min-width: 0; }
     
     .header-title-box {
       display: flex;
@@ -87,56 +89,62 @@
       gap: 6px;
       white-space: nowrap;
       text-decoration: none;
+      min-width: 0;
     }
+    .flag-icon { font-size: 1.15rem; flex-shrink: 0; }
+    
     .main-title {
       font-family: var(--font-display);
-      font-size: clamp(1.02rem, 1.8vw, 1.35rem);
+      font-size: clamp(1.05rem, 3.6vw, 1.42rem);
       font-weight: 800;
-      background: linear-gradient(135deg, #ffffff 0%, #bae6fd 60%, #38bdf8 100%);
+      color: #ffffff;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+    }
+    /* 💖 낭만 백패킹 로즈 핑크 네온 그라데이션 */
+    .main-title .highlight-pink {
+      background: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #f472b6 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      letter-spacing: -0.03em;
-    }
-    .main-title .flag-icon, .main-title .backpack-icon {
-      -webkit-text-fill-color: initial;
-      font-size: 1.15rem;
+      filter: drop-shadow(0 0 10px rgba(244, 63, 94, 0.5));
+      font-weight: 800;
     }
 
     .sync-status-badge {
-      background: rgba(2, 132, 199, 0.25);
+      background: rgba(2, 132, 199, 0.2);
       color: var(--accent-blue);
-      font-size: 0.68rem;
-      padding: 2px 8px;
+      font-size: 0.66rem;
+      padding: 2px 7px;
       border-radius: 20px;
       font-weight: 700;
       white-space: nowrap;
       border: 1px solid rgba(56, 189, 248, 0.35);
       transition: opacity 0.4s ease;
+      flex-shrink: 0;
     }
     .admin-status-badge {
       display: none;
       background: rgba(16, 185, 129, 0.2);
       color: var(--accent-emerald);
       border: 1px solid rgba(16, 185, 129, 0.4);
-      font-size: 0.68rem;
-      padding: 2px 7px;
+      font-size: 0.66rem;
+      padding: 2px 6px;
       border-radius: 6px;
       font-weight: 800;
       white-space: nowrap;
+      flex-shrink: 0;
     }
     
-    .header-right { display: flex; align-items: center; gap: 8px; }
+    .header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
-    /* 🛸 상단 드론 규제 확인 버튼 (기존 홈 버튼 위치 교체) */
+    /* 🛸 상단 드론 규제 확인 버튼 */
     .header-drone-toggle-btn {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      justify-content: center;
+      gap: 4px;
       background: rgba(244, 63, 94, 0.12);
-      border: 1.5px solid rgba(244, 63, 94, 0.4);
+      border: 1.5px solid rgba(244, 63, 94, 0.45);
       padding: 5px 12px;
       border-radius: 20px;
       font-size: 0.78rem;
@@ -151,13 +159,13 @@
       background: rgba(244, 63, 94, 0.25);
       border-color: var(--accent-rose);
       color: #ffffff !important;
-      box-shadow: 0 0 14px rgba(244, 63, 94, 0.4);
+      box-shadow: 0 0 14px rgba(244, 63, 94, 0.45);
     }
     .header-drone-toggle-btn.active {
       background: linear-gradient(135deg, #e11d48, #be123c) !important;
       color: #ffffff !important;
       border-color: #fda4af !important;
-      box-shadow: 0 0 16px rgba(225, 29, 72, 0.6);
+      box-shadow: 0 0 18px rgba(225, 29, 72, 0.65);
       animation: pulseDroneBtn 1.6s infinite;
     }
     @keyframes pulseDroneBtn {
@@ -604,81 +612,6 @@
       width: fit-content;
     }
     
-    .spot-action-line { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; margin-top: 2px; }
-    .link-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 2px;
-      text-decoration: none;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 0.62rem;
-      font-weight: 700;
-      color: #ffffff !important;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .btn-yt { background: linear-gradient(135deg, #e11d48, #be123c); }
-    .btn-blog { background: linear-gradient(135deg, #059669, #047857); }
-    .btn-insta { 
-      background: linear-gradient(45deg, #ea580c 0%, #e11d48 50%, #c026d3 100%);
-      border: none;
-      color: #ffffff !important;
-      font-size: 0.6rem;
-      padding: 2px 5px;
-      border-radius: 4px;
-      gap: 2px;
-      font-weight: 700;
-    }
-    .btn-insta svg { width: 8px; height: 8px; flex-shrink: 0; fill: #ffffff; }
-    
-    .instant-tooltip-box { position: relative; display: inline-flex; align-items: center; }
-    .drone-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 2px;
-      font-size: 0.62rem;
-      padding: 1px 5px;
-      border-radius: 4px;
-      font-weight: 700;
-      line-height: 1.3;
-      cursor: pointer;
-      user-select: none;
-      white-space: nowrap;
-    }
-    .drone-ok { background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid rgba(74, 222, 128, 0.3); }
-    .drone-warn { background: rgba(234, 179, 8, 0.15); color: #fde047; border: 1px solid rgba(250, 204, 21, 0.3); }
-    .drone-no { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(248, 113, 113, 0.3); }
-
-    .instant-tooltip-box::after {
-      content: attr(data-tooltip);
-      position: absolute;
-      bottom: calc(100% + 6px);
-      left: 0;
-      max-width: 270px;
-      width: max-content;
-      white-space: normal;
-      word-break: keep-all;
-      background-color: rgba(9, 12, 19, 0.98);
-      backdrop-filter: blur(14px);
-      color: var(--text-primary);
-      font-size: 0.68rem;
-      font-weight: 600;
-      padding: 6px 10px;
-      border-radius: 8px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.85);
-      border: 1px solid var(--border-glow);
-      pointer-events: none;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(3px);
-      transition: opacity 0.15s ease, transform 0.15s ease;
-      z-index: 9999;
-      line-height: 1.35;
-    }
-    .instant-tooltip-box:hover::after { opacity: 1; visibility: visible; transform: translateY(0); }
-
     .spot-action-btns { position: absolute; top: 6px; right: 6px; display: flex; gap: 3px; }
     .btn-edit, .btn-del {
       border: none;
@@ -804,18 +737,18 @@
     /* 🖥️ PC 팝업창 규격 */
     .compact-info-window {
       padding: 12px 14px;
-      width: min(290px, calc(100vw - 32px)) !important;
-      max-height: min(340px, 48dvh);
+      width: min(320px, calc(100vw - 32px)) !important;
+      max-height: min(380px, 50dvh);
       overflow-y: auto;
       overflow-x: hidden;
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      line-height: 1.35;
+      gap: 6px;
+      line-height: 1.4;
       background: rgba(9, 12, 19, 0.98) !important;
       backdrop-filter: blur(16px) !important;
       color: var(--text-primary);
-      border-radius: 14px !important;
+      border-radius: 16px !important;
       border: 1px solid var(--border-glow) !important;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.85), 0 0 20px rgba(56, 189, 248, 0.15) !important;
       word-break: break-word;
@@ -824,53 +757,183 @@
     .compact-info-window::-webkit-scrollbar { width: 3px; }
     .compact-info-window::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
 
+    /* 🌟 상세 정보창 공통 컴포넌트 */
+    .sheet-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding-right: 22px;
+      position: relative;
+    }
     .compact-title { 
       font-family: var(--font-display);
-      font-size: 0.9rem; 
+      font-size: 0.96rem; 
       font-weight: 800; 
       color: var(--accent-blue); 
       display: flex; 
       align-items: center; 
-      gap: 4px; 
+      gap: 5px; 
       flex-wrap: wrap; 
-      padding-right: 18px;
     }
-    
+    .sheet-close-btn {
+      position: absolute;
+      top: -2px; right: -2px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid var(--border);
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 🚗 들머리 & 주소복사 바 */
+    .sheet-nav-action-bar {
+      display: flex;
+      gap: 5px;
+      margin-top: 4px;
+      align-items: stretch;
+    }
     .compact-entry-link {
-      font-size: 0.68rem;
+      font-size: 0.74rem;
       color: #7dd3fc;
       background: rgba(2, 132, 199, 0.15);
       border: 1px solid rgba(56, 189, 248, 0.3);
-      padding: 4px 7px;
-      border-radius: 6px;
-      width: 100%;
+      padding: 6px 10px;
+      border-radius: 8px;
+      flex: 1;
       word-break: break-all;
-      line-height: 1.3;
+      line-height: 1.35;
       text-decoration: none;
-      display: block;
+      display: flex;
+      align-items: center;
       cursor: pointer;
       transition: all 0.15s ease;
       font-weight: 700;
     }
     .compact-entry-link:hover { background: #0284c7; color: #ffffff !important; }
+    .btn-copy-address {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      border-radius: 8px;
+      padding: 0 10px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .btn-copy-address:hover { background: var(--bg-card-hover); color: #fff; border-color: var(--accent-blue); }
 
     .entry-guide-chip {
-      font-size: 0.64rem;
+      font-size: 0.68rem;
       color: #fde047;
       background: rgba(245, 158, 11, 0.12);
       border: 1px solid rgba(245, 158, 11, 0.25);
-      padding: 3px 6px;
+      padding: 4px 8px;
       border-radius: 6px;
-      line-height: 1.3;
+      line-height: 1.35;
       word-break: keep-all;
+      margin-top: 3px;
     }
 
-    .compact-desc {
-      font-size: 0.68rem;
-      color: var(--text-secondary);
+    /* 📝 특징 폰트 크기 확대 (들머리 수준 0.82rem) */
+    .sheet-desc-box {
+      font-size: 0.82rem;
+      color: #f1f5f9;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      border-radius: 8px;
       word-break: keep-all;
       white-space: pre-line;
-      line-height: 1.35;
+      line-height: 1.55;
+      margin-top: 4px;
+    }
+
+    /* 🌿 LNT 클린 캠핑 알림 칩 */
+    .sheet-lnt-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: var(--accent-teal);
+      background: rgba(45, 212, 191, 0.12);
+      border: 1px solid rgba(45, 212, 191, 0.3);
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-top: 4px;
+      width: fit-content;
+    }
+
+    /* 🎬 와이드 네온 미디어 액션 버튼 그리드 (2배 확장) */
+    .wide-media-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+      width: 100%;
+    }
+    .wide-neon-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      min-height: 38px;
+    }
+    /* 유튜브 와이드 네온 레드 */
+    .wide-neon-btn.yt-btn {
+      background: linear-gradient(135deg, rgba(225, 29, 72, 0.18) 0%, rgba(190, 18, 60, 0.28) 100%);
+      border: 1.5px solid rgba(244, 63, 94, 0.5);
+      color: #fda4af !important;
+      box-shadow: 0 0 12px rgba(225, 29, 72, 0.25);
+    }
+    .wide-neon-btn.yt-btn:hover {
+      background: linear-gradient(135deg, #e11d48, #be123c);
+      color: #ffffff !important;
+      box-shadow: 0 0 18px rgba(225, 29, 72, 0.55);
+      transform: translateY(-1px);
+    }
+    /* 블로그/인스타 보조 버튼 그리드 */
+    .sub-media-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 5px;
+    }
+    .wide-neon-btn.blog-btn {
+      background: rgba(5, 150, 105, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #6ee7b7 !important;
+    }
+    .wide-neon-btn.blog-btn:hover {
+      background: #059669;
+      color: #ffffff !important;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.4);
+    }
+    .wide-neon-btn.insta-btn {
+      background: linear-gradient(45deg, rgba(234, 88, 12, 0.15), rgba(225, 29, 72, 0.15), rgba(192, 38, 211, 0.15));
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      color: #fecdd3 !important;
+    }
+    .wide-neon-btn.insta-btn:hover {
+      background: linear-gradient(45deg, #ea580c 0%, #e11d48 50%, #c026d3 100%);
+      color: #ffffff !important;
+      box-shadow: 0 0 16px rgba(225, 29, 72, 0.5);
     }
 
     .btn-save-location {
@@ -878,22 +941,22 @@
       color: #ffffff;
       border: none;
       border-radius: 6px;
-      padding: 5px 8px;
-      font-size: 0.7rem;
+      padding: 6px 10px;
+      font-size: 0.72rem;
       font-weight: bold;
       cursor: pointer;
-      margin-top: 3px;
+      margin-top: 4px;
       text-align: center;
     }
 
     .comments-section {
-      margin-top: 3px;
+      margin-top: 4px;
       border-top: 1px dashed var(--border);
-      padding-top: 5px;
+      padding-top: 6px;
       width: 100%;
     }
     .comments-title {
-      font-size: 0.68rem;
+      font-size: 0.72rem;
       font-weight: 700;
       color: var(--text-secondary);
       display: flex;
@@ -914,8 +977,8 @@
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 4px;
-      padding: 3px 5px;
-      font-size: 0.62rem;
+      padding: 4px 6px;
+      font-size: 0.65rem;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
@@ -929,18 +992,18 @@
     .comment-form-row { display: flex; gap: 3px; width: 100%; }
     .comment-select-rating {
       flex: 1.2;
-      padding: 3px;
+      padding: 4px;
       border: 1px solid var(--border);
       border-radius: 4px;
-      font-size: 0.62rem;
+      font-size: 0.64rem;
       background: var(--bg-deep);
       color: #fcd34d;
       font-weight: bold;
       outline: none;
     }
-    .comment-input-author { flex: 1; min-width: 45px; padding: 3px 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.62rem; outline: none; background: var(--bg-deep); color: #fff; }
-    .comment-input-text { flex: 1; padding: 3px 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.62rem; outline: none; background: var(--bg-deep); color: #fff; }
-    .comment-btn-submit { background: #0f766e; color: #ffffff; border: none; border-radius: 4px; padding: 3px 8px; font-size: 0.62rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .comment-input-author { flex: 1; min-width: 45px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.64rem; outline: none; background: var(--bg-deep); color: #fff; }
+    .comment-input-text { flex: 1; padding: 4px 6px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.64rem; outline: none; background: var(--bg-deep); color: #fff; }
+    .comment-btn-submit { background: #0f766e; color: #ffffff; border: none; border-radius: 4px; padding: 4px 10px; font-size: 0.64rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
 
     /* 📱 모바일 바텀시트 (하단 독 위에 완벽 안착) */
     .mobile-bottom-sheet {
@@ -949,7 +1012,7 @@
       left: 0;
       right: 0;
       bottom: calc(54px + env(safe-area-inset-bottom, 0px));
-      max-height: 48dvh;
+      max-height: 52dvh;
       background: rgba(9, 12, 19, 0.98);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
@@ -976,7 +1039,7 @@
     }
     .sheet-content {
       overflow-y: auto;
-      padding: 6px 14px 14px 14px;
+      padding: 6px 14px 16px 14px;
       display: flex;
       flex-direction: column;
       gap: 5px;
@@ -1015,6 +1078,31 @@
     }
     .dock-item.active { color: var(--accent-blue); }
     .dock-item svg { width: 19px; height: 19px; fill: currentColor; }
+
+    /* 🍞 토스트 알림 컴포넌트 */
+    .app-toast {
+      position: fixed;
+      top: 64px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(14, 19, 29, 0.96);
+      border: 1px solid var(--border-glow);
+      color: #ffffff;
+      padding: 7px 16px;
+      border-radius: 20px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      z-index: 99999;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.85);
+      pointer-events: none;
+      opacity: 0;
+      transition: all 0.25s ease;
+      white-space: nowrap;
+    }
+    .app-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
 
     /* 제보 및 등록 모달 */
     .custom-modal-overlay {
@@ -1071,33 +1159,32 @@
     /* 📱 모바일 미디어 쿼리 (~768px) */
     @media (max-width: 768px) {
       .header { 
-        padding: 6px 12px !important;
+        padding: 5px 10px !important;
         flex-direction: column !important;
         align-items: stretch !important;
-        gap: 6px !important;
+        gap: 5px !important;
       }
-      .header-row-1 { display: flex; align-items: center; justify-content: space-between; width: 100%; }
-      .header-left { gap: 6px; }
+      .header-row-1 { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 4px; }
+      .header-left { gap: 5px; }
       .main-title { font-size: 0.98rem !important; }
-      .main-title .flag-icon, .main-title .backpack-icon { font-size: 0.92rem !important; }
       .header-desktop-only, .pc-sidebar-toggle-btn { display: none !important; }
       
-      .sync-status-badge, .admin-status-badge { font-size: 0.58rem; padding: 1px 5px; }
-      .header-drone-toggle-btn { padding: 4px 10px !important; font-size: 0.72rem !important; border-radius: 16px; }
+      .sync-status-badge, .admin-status-badge { font-size: 0.56rem; padding: 1px 4px; }
+      .header-drone-toggle-btn { padding: 4px 9px !important; font-size: 0.7rem !important; border-radius: 16px; }
 
       .header-row-2 { display: block !important; width: 100%; }
       .search-container { width: 100% !important; }
       .search-input { padding: 6px 32px 6px 12px !important; font-size: 0.78rem !important; }
       
       .map-legend-bar { 
-        top: 66px !important;
+        top: 64px !important;
         left: 8px !important;
         padding: 3px 6px !important;
       }
       
       .container { 
         flex: 1 !important;
-        height: calc(100% - 134px - env(safe-area-inset-bottom, 0px)) !important; 
+        height: calc(100% - 130px - env(safe-area-inset-bottom, 0px)) !important; 
         position: relative !important;
       }
       
@@ -1131,25 +1218,25 @@
 </head>
 <body>
 
+  <!-- 🍞 토스트 알림 -->
+  <div id="appToast" class="app-toast"></div>
+
   <!-- 🧭 1. 상단 헤더 -->
   <header class="header" id="header">
     <div class="header-row-1">
       <div class="header-left">
-        <a href="index.html" class="header-title-box" title="포털 메인 첫 페이지로 이동">
-          <span class="main-title">
-            <span class="flag-icon">🇰🇷</span>
-            대한민국 낭만 백패킹 로드
-            <span class="backpack-icon">🎒</span>
-          </span>
+        <a href="index.html" class="header-title-box" title="포털 메인 홈으로 이동">
+          <span class="flag-icon">🇰🇷</span>
+          <span class="main-title">대한민국 <span class="highlight-pink">낭만 백패킹</span> 로드</span>
         </a>
         <span class="sync-status-badge" id="syncStatusBadge">⚡ 동기화 완료</span>
         <span class="admin-status-badge" id="adminBadge">관리자 ON</span>
       </div>
       
       <div class="header-right">
-        <!-- 🛸 드론 규제 확인 버튼 (기존 홈으로 가기 버튼 교체) -->
+        <!-- 🛸 드론 규제 확인 버튼 -->
         <button type="button" class="header-drone-toggle-btn" id="headerDroneBtn" onclick="toggleDroneOverlay()" title="전국 드론 비행금지 및 군사/공항 관제공역 레이어 토글">
-          <span>🛸 드론 규제</span>
+          <span>🛸 드론 규제 확인</span>
         </button>
 
         <button type="button" class="header-btn admin-only-btn" id="btnSyncSheet" onclick="fetchSpotsFromGoogleSheet()">🔄 시트 동기화</button>
@@ -1370,9 +1457,38 @@
     const GOOGLE_SHEET_GID = '0';
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzW0vRtj-S_BEW0OzFTm7PV7zVyNLWJEas9-S7F9CnOTn817-pO8WODR9l5FEEE3bYu/exec';
 
-    // ⚡ [대한민국 전도 최적화] 축척 레벨 7 및 중심 좌표
     const DEFAULT_MAP_CENTER = new naver.maps.LatLng(36.2, 127.8);
     const DEFAULT_MAP_ZOOM = 7;
+
+    function showToast(msg, duration = 2200) {
+      const t = document.getElementById('appToast');
+      if (!t) return;
+      t.innerText = msg;
+      t.classList.add('show');
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => {
+        t.classList.remove('show');
+      }, duration);
+    }
+
+    function copyTextToClipboard(text, alertMsg = '주소가 클립보드에 복사되었습니다 📋') {
+      if (!text) return;
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => showToast(alertMsg)).catch(() => fallbackCopy(text, alertMsg));
+      } else {
+        fallbackCopy(text, alertMsg);
+      }
+    }
+
+    function fallbackCopy(text, alertMsg) {
+      const temp = document.createElement('textarea');
+      temp.value = text;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand('copy');
+      document.body.removeChild(temp);
+      showToast(alertMsg);
+    }
 
     function escapeHtml(text) {
       if (text === null || text === undefined) return '';
@@ -1399,7 +1515,7 @@
       return `https://map.naver.com/p/search/${encodeURIComponent(cleanQ)}`;
     }
 
-    // 48개 군사·원전·공항 드론 규제 구역 데이터 100% 보존
+    // 48개 군사·원전·공항 드론 규제 구역 데이터
     const restrictedZones = [
       { name: "P-518 북방 비행금지구역 (철원/화천 전방)", lat: 38.2500, lng: 127.5000, radius: 25000, type: "border", desc: "군사작전 접경선 (민간 드론 절대 비행 불가)" },
       { name: "P-518 북방 비행금지구역 (양구/인제 전방)", lat: 38.2800, lng: 128.0500, radius: 25000, type: "border", desc: "군사작전 접경선 (민간 드론 절대 비행 불가)" },
@@ -1451,7 +1567,7 @@
       { name: "제주국제공항 관제권", lat: 33.5113, lng: 126.4930, radius: 9300, type: "air", desc: "국제공항 관제권 (반경 9.3km)" }
     ];
 
-    // 22개 국립공원 공역 데이터 100% 보존
+    // 22개 국립공원 공역 데이터
     const nationalParks = [
       { name: "설악산국립공원", lat: 38.1190, lng: 128.4650, radius: 14000, desc: "자연공원법에 의해 드론 비행 및 촬영 전면 금지" },
       { name: "오대산국립공원", lat: 37.7950, lng: 128.6180, radius: 12000, desc: "자연공원법에 의해 드론 비행 및 촬영 전면 금지" },
@@ -1640,7 +1756,7 @@
     }
 
     function getSpotViews(spot) {
-      return spot.searchCount || parseInt(localStorage.getItem(`okbm_views_${spot.id}`), 10) || parseInt(localStorage.getItem(`okbm_views_${spot.name}`), 10) || 0;
+      return spot.searchCount || parseInt(localStorage.getItem(`okbm_views_${spot.id}`), 10) || 0;
     }
 
     function getSpotStatusBadges(spot) {
@@ -1665,16 +1781,19 @@
       return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
     }
 
+    /* 🚀 Bounding Box 사전 필터링으로 70개 공역 판별 렉 제거 */
     function autoDetectDroneStatus(lat, lng) {
       if (!lat || !lng) return { status: 'ok', reason: '자유 비행 구역 (150m 고도제한 준수 / 촬영 시 원스톱 허가 권장)' };
 
       for (const park of nationalParks) {
+        if (Math.abs(lat - park.lat) > 0.35 || Math.abs(lng - park.lng) > 0.35) continue;
         if (getDistanceMeters(lat, lng, park.lat, park.lng) <= park.radius) {
           return { status: 'no', reason: `[국립공원 비행금지] ${park.name} (자연공원법에 의해 비행·촬영 엄격 금지)` };
         }
       }
 
       for (const zone of restrictedZones) {
+        if (Math.abs(lat - zone.lat) > 0.45 || Math.abs(lng - zone.lng) > 0.45) continue;
         if (getDistanceMeters(lat, lng, zone.lat, zone.lng) <= zone.radius) {
           if (zone.type === 'border') return { status: 'no', reason: `[휴전선 접경 비행금지] ${zone.name} (군사작전상 민간드론 비행 불가)` };
           if (zone.type === 'p73') return { status: 'no', reason: `[수도권 비행금지공역 P-73] 서울 핵심부 드론 비행 절대 금지` };
@@ -1833,8 +1952,6 @@
       }
 
       const targetPoint = proj.fromCoordToOffset(targetLatLng);
-      
-      // 모바일에서는 하단 독 + 바텀시트를 고려해 마커를 상단 35% 지점에 배치
       const offsetY = isMobile ? Math.round(window.innerHeight * 0.20) : 0;
       const offsetX = isMobile ? 0 : 145;
 
@@ -1844,6 +1961,7 @@
       map.panTo(cameraLatLng, { duration: 320, easing: 'easeOutCubic' });
     }
 
+    /* 📱 모바일 바텀시트 열기 (뒤로가기 가상 히스토리 연동) */
     function openMobileBottomSheet(spot) {
       const sheet = document.getElementById('mobileBottomSheet');
       const content = document.getElementById('mobileSheetContent');
@@ -1851,15 +1969,29 @@
       
       content.innerHTML = generateDetailContentHtml(spot, true);
       sheet.classList.add('open');
+      window.history.pushState({ bottomSheetOpen: true }, '');
     }
 
-    function closeMobileBottomSheet() {
+    function closeMobileBottomSheet(fromHistory = false) {
       const sheet = document.getElementById('mobileBottomSheet');
-      if (sheet) sheet.classList.remove('open');
-      currentActiveSpot = null;
-      document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active-spot'));
-      spotMarkerMap.forEach(m => m.setZIndex(100));
+      if (sheet && sheet.classList.contains('open')) {
+        sheet.classList.remove('open');
+        currentActiveSpot = null;
+        document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active-spot'));
+        spotMarkerMap.forEach(m => m.setZIndex(100));
+        if (!fromHistory && window.history.state && window.history.state.bottomSheetOpen) {
+          window.history.back();
+        }
+      }
     }
+
+    // 🪐 안드로이드 및 모바일 브라우저 뒤로가기 제스처 감지
+    window.addEventListener('popstate', (e) => {
+      const sheet = document.getElementById('mobileBottomSheet');
+      if (sheet && sheet.classList.contains('open')) {
+        closeMobileBottomSheet(true);
+      }
+    });
 
     function closeAllPopups() {
       closeMobileBottomSheet();
@@ -1917,35 +2049,92 @@
       smoothCenterMapOnSpot(spot.lat, spot.lng, keepZoom);
     }
 
+    /* 🎬 상세 정보창 HTML 렌더러 (와이드 네온 버튼 & 0.82rem 특징 적용) */
     function generateDetailContentHtml(spot, isMobileSheet = false) {
       const { navAddress, guide } = parseEntryPoint(spot.entryPoint || spot.name);
       const searchTarget = navAddress || spot.name;
       const naverSearchUrl = getNaverMapSearchUrl(searchTarget);
+      const cleanAddress = escapeHtml(navAddress || spot.name);
 
       const closeBtn = isMobileSheet
-        ? `<button type="button" onclick="closeMobileBottomSheet()" style="position: absolute; top: 2px; right: 2px; background: rgba(255,255,255,0.08); border: 1px solid var(--border); width: 22px; height: 22px; border-radius: 50%; font-size: 11px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>`
-        : `<button type="button" onclick="closeAllPopups()" style="position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--border); width: 20px; height: 20px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>`;
+        ? `<button type="button" class="sheet-close-btn" onclick="closeMobileBottomSheet()">✕</button>`
+        : `<button type="button" class="sheet-close-btn" onclick="closeAllPopups()">✕</button>`;
 
       return `
         <div style="position: relative; width: 100%;">
-          <div class="compact-title">
-            <span>${escapeHtml(spot.name)}</span>
-            ${spot.elevation ? '<span style="font-size:0.72rem; color:#86efac;">(' + escapeHtml(spot.elevation) + ')</span>' : ''}
-            ${getSpotStatusBadges(spot)}
+          <div class="sheet-title-row">
+            <div class="compact-title">
+              <span>${escapeHtml(spot.name)}</span>
+              ${spot.elevation ? '<span style="font-size:0.74rem; color:#86efac;">(' + escapeHtml(spot.elevation) + ')</span>' : ''}
+              ${getSpotStatusBadges(spot)}
+            </div>
+            ${closeBtn}
           </div>
-          ${closeBtn}
+
           <div style="margin: 4px 0 2px 0;">${getMetaBadgesHtml(spot)}</div>
           <div class="spot-coords-text">📍 ${spot.lat}, ${spot.lng}</div>
           
-          <a href="${escapeHtml(naverSearchUrl)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link" style="margin-top:4px;" title="클릭 시 네이버 지도 길안내로 이동">🚗 들머리 네비: ${escapeHtml(navAddress || '들머리 정보 미입력')} ↗</a>
+          <!-- 🚗 들머리 네비 & 복사 액션 바 -->
+          <div class="sheet-nav-action-bar">
+            <a href="${escapeHtml(naverSearchUrl)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link" title="네이버 지도 길안내로 이동">
+              🚗 들머리: ${cleanAddress} ↗
+            </a>
+            <button type="button" class="btn-copy-address" onclick="copyTextToClipboard('${cleanAddress.replace(/'/g, "\\'")}')" title="주소 복사">
+              📋 복사
+            </button>
+          </div>
           
-          ${guide ? `<div class="entry-guide-chip" style="margin-top:3px;">💡 길 안내: ${escapeHtml(guide)}</div>` : ''}
+          ${guide ? `<div class="entry-guide-chip">💡 길 안내: ${escapeHtml(guide)}</div>` : ''}
 
-          <div class="compact-desc" style="margin-top:4px;">📝 특징:\n${escapeHtml(spot.desc)}</div>
-          ${getMediaLinksHtml(spot)}
+          <!-- 📝 특징 폰트 크기 확대 (들머리 수준 0.82rem) -->
+          <div class="sheet-desc-box">
+            <strong style="color:var(--accent-blue);">📝 특징 및 안내:</strong><br>${escapeHtml(spot.desc || '등록된 박지 안내 내용이 없습니다.')}
+          </div>
+
+          <div class="sheet-lnt-badge">🌿 LNT 클린 화식금지 및 산림보호 준수</div>
+
+          <!-- 🎬 2배 확장된 와이드 네온 미디어 버튼 그리드 -->
+          ${getWideMediaButtonsHtml(spot)}
+          
           ${getCommentsHtml(spot.id)}
         </div>
       `;
+    }
+
+    /* 🎬 와이드 네온 미디어 버튼 생성기 */
+    function getWideMediaButtonsHtml(spot) {
+      let html = '<div class="wide-media-grid">';
+      const ytList = spot.youtubeUrls || (spot.youtubeUrl ? [spot.youtubeUrl] : []);
+      
+      // 유튜브 와이드 네온 버튼
+      ytList.slice(0, 2).forEach((url, i) => {
+        if (url?.trim()) {
+          html += `
+            <a href="${escapeHtml(cleanYouTubeUrl(url.trim()))}" target="_blank" rel="noopener noreferrer" class="wide-neon-btn yt-btn" onclick="event.stopPropagation();">
+              <span style="font-size:0.95rem;">▶</span>
+              <span>YouTube 낭만 백패킹 영상${ytList.length > 1 ? ` (${i + 1})` : ''} 시청하기</span>
+            </a>
+          `;
+        }
+      });
+
+      // 블로그 & 인스타 2열 보조 버튼
+      html += '<div class="sub-media-row">';
+      if (spot.blogUrl?.trim()) {
+        html += `<a href="${escapeHtml(spot.blogUrl.trim())}" target="_blank" rel="noopener noreferrer" class="wide-neon-btn blog-btn" onclick="event.stopPropagation();">📝 네이버 블로그 후기</a>`;
+      }
+      const cleanUser = (spot.instaId?.trim() || "oklionnature").replace('@', '').replace(/https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '');
+      html += `
+        <a href="https://instagram.com/${encodeURIComponent(cleanUser)}" target="_blank" rel="noopener noreferrer" class="wide-neon-btn insta-btn" onclick="event.stopPropagation();" title="등록자 인스타그램">
+          <span>📷 @${escapeHtml(cleanUser)}</span>
+        </a>
+      `;
+      html += '</div>';
+
+      const check = autoDetectDroneStatus(spot.lat, spot.lng);
+      html += `<div style="margin-top:2px;">${getDroneBadgeHtml(check.status, check.reason)}</div>`;
+      html += '</div>';
+      return html;
     }
 
     async function saveUpdatedLocation(spotId, newLat, newLng) {
@@ -2097,7 +2286,7 @@
 
               const res = detectRegionAndCity(lat, lng, name, entryPoint);
               const spotId = getVal('id') ? String(getVal('id')).trim() : String(Date.now() + idx);
-              const savedViews = parseInt(localStorage.getItem(`okbm_views_${spotId}`), 10) || parseInt(localStorage.getItem(`okbm_views_${name}`), 10) || 0;
+              const savedViews = parseInt(localStorage.getItem(`okbm_views_${spotId}`), 10) || 0;
               const rawCreatedAt = getVal('createdAt', '생성일');
               const createdAt = rawCreatedAt ? parseInt(rawCreatedAt, 10) : 0;
 
@@ -2174,33 +2363,6 @@
       if (!url) return '';
       const match = url.match(/^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
       return (match && match[1].length === 11) ? `https://www.youtube.com/watch?v=${match[1]}` : url;
-    }
-
-    function getMediaLinksHtml(spot) {
-      let html = '<div class="spot-action-line" style="margin-top: 5px;">';
-      const ytList = spot.youtubeUrls || (spot.youtubeUrl ? [spot.youtubeUrl] : []);
-      ytList.slice(0, 2).forEach((url, i) => {
-        if (url?.trim()) {
-          html += `<a href="${escapeHtml(cleanYouTubeUrl(url.trim()))}" target="_blank" rel="noopener noreferrer" class="link-btn btn-yt" onclick="event.stopPropagation();">▶ 영상${ytList.length > 1 ? i + 1 : ''}</a>`;
-        }
-      });
-      
-      if (spot.blogUrl?.trim()) {
-        html += `<a href="${escapeHtml(spot.blogUrl.trim())}" target="_blank" rel="noopener noreferrer" class="link-btn btn-blog" onclick="event.stopPropagation();">📝 블로그</a>`;
-      }
-      
-      const cleanUser = (spot.instaId?.trim() || "oklionnature").replace('@', '').replace(/https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '');
-      html += `
-        <a href="https://instagram.com/${encodeURIComponent(cleanUser)}" target="_blank" rel="noopener noreferrer" class="link-btn btn-insta" onclick="event.stopPropagation();" title="등록자 인스타그램 (@${escapeHtml(cleanUser)})">
-          <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-          등록자
-        </a>
-      `;
-
-      const check = autoDetectDroneStatus(spot.lat, spot.lng);
-      html += getDroneBadgeHtml(check.status, check.reason);
-      html += '</div>';
-      return html;
     }
 
     function getSpotRatingMeta(spotId) {
@@ -2487,7 +2649,7 @@
             infoWindow.setContent(`
               <div class="compact-info-window" style="position: relative;">
                 <div class="compact-title" style="color:var(--accent-blue);">📍 '${escapeHtml(spot.name)}' 위치 이동</div>
-                <button type="button" onclick="infoWindow.close()" style="position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--border); width: 20px; height: 20px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
+                <button type="button" onclick="infoWindow.close()" class="sheet-close-btn">✕</button>
                 <div style="font-size:0.68rem; color:#ef4444; font-weight:bold;">새 좌표로 위치를 변경하시겠습니까?</div>
                 <div class="spot-coords-text">위도: ${newLat}<br>경도: ${newLng}</div>
                 <button type="button" class="btn-save-location" onclick="saveUpdatedLocation('${spot.id}', ${newLat}, ${newLng})">💾 이 위치로 즉시 저장</button>
@@ -2517,7 +2679,6 @@
             ${getMetaBadgesHtml(spot)}
             <div style="font-size:0.66rem; color:#7dd3fc; margin-top:1px;">🚗 ${escapeHtml(navAddress || spot.entryPoint)}</div>
             ${firstLineDesc ? `<div class="spot-desc-single" title="${escapeHtml(spot.desc)}">📝 ${escapeHtml(firstLineDesc)}</div>` : ''}
-            ${getMediaLinksHtml(spot)}
             <div class="spot-action-btns">
               <button class="btn-edit" onclick="editSpotById(event, '${spot.id}')">수정</button>
               <button class="btn-del" onclick="deleteSpotById(event, '${spot.id}')">삭제</button>
@@ -3003,6 +3164,7 @@
       currentTerrainFilter = 'ALL';
       document.querySelectorAll('.terrain-filter-btn').forEach(b => b.classList.toggle('active', b.innerText.includes('전체')));
       filterByRegion('ALL');
+      showToast('🔄 전국 지도 뷰가 초기화되었습니다');
     }
 
     function filterByRegion(region) {
@@ -3063,6 +3225,12 @@
       if (droneOverlays.length === 0) initDroneOverlays();
       droneOverlays.forEach(circle => circle.setMap(isDroneOverlayOn ? map : null));
       if (!isDroneOverlayOn) droneHoverInfoWindow.close();
+
+      if (isDroneOverlayOn) {
+        showToast('🚨 전국 70개 비행금지 및 군·공항 관제공역 표시 중');
+      } else {
+        showToast('🛸 드론 규제 레이어가 해제되었습니다');
+      }
     }
 
     function exportDataBackup() {
