@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -33,8 +32,8 @@
       --border-glow: rgba(56, 189, 248, 0.35);
       --border-subtle: #1a2233;
       --text-primary: #f8fafc;
-      --text-secondary: #cbd5e1; /* 텍스트 시인성 향상 (명도 상향) */
-      --text-muted: #94a3b8;      /* 저대비 가독성 개선 */
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
       --accent-blue: #38bdf8;
       --accent-teal: #2dd4bf;
       --accent-emerald: #10b981;
@@ -44,13 +43,13 @@
       --font-script: 'Caveat', cursive;
       --font-body: 'Pretendard', -apple-system, sans-serif;
 
-      /* 📐 체계적인 Z-Index 스택 계층 */
+      /* 📐 Z-Index 스택 계층 (독이 사이드바보다 위에 위치) */
       --z-map: 1;
       --z-hud: 100;
       --z-header: 500;
       --z-sidebar-btn: 600;
-      --z-dock: 700;
-      --z-sidebar: 800;
+      --z-sidebar: 700;
+      --z-dock: 800;
       --z-bottomsheet: 850;
       --z-dropdown: 900;
       --z-modal: 1000;
@@ -497,11 +496,12 @@
     .spot-list { 
       flex: 1; 
       overflow-y: auto; 
-      overflow-x: hidden;
+      overflow-x: hidden; 
       list-style: none; 
       position: relative;
       background: var(--bg-surface);
       width: 100%;
+      padding-bottom: 20px;
     }
     .spot-list::-webkit-scrollbar { width: 4px; }
     .spot-list::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
@@ -1354,12 +1354,14 @@
       .mobile-only { display: flex !important; }
       .mobile-floating-search { display: block !important; }
 
+      /* 📱 모바일 사이드바: 하단 독 높이를 제외하고 열려 독이 항상 보이도록 설정 */
       .sidebar { 
         position: absolute;
         top: 0; left: 0; right: 0;
         width: 100% !important; 
         max-width: 100vw !important;
-        height: 100% !important; 
+        height: calc(100% - 56px - env(safe-area-inset-bottom, 0px)) !important;
+        max-height: calc(100% - 56px - env(safe-area-inset-bottom, 0px)) !important;
         z-index: var(--z-sidebar) !important;
         border-right: none; 
         border-bottom: 1px solid var(--border); 
@@ -1933,7 +1935,7 @@
               <span>${escapeHtml(spot.name)}</span>
               ${elevText}
             </div>
-            <svg class="marker-svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 34" width="${pinWidth}" height="${pinHeight}">
+            <svg class="marker-svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 34" width="${pinWidth}" height="${pinHeight}">
               <path fill="${color}" stroke="#ffffff" stroke-width="1.8" d="M12 0C5.373 0 0 5.373 0 12c0 9 12 22 12 22s12-13 12-22c0-6.627-5.373-12-12-12z"/>
               <circle fill="#ffffff" cx="12" cy="11" r="4"/>
               <polygon fill="${color}" points="12,13 9.5,9 14.5,9"/>
@@ -2240,7 +2242,6 @@
       smoothCenterMapOnSpot(spot.lat, spot.lng, keepZoom);
     }
 
-    // 🔒 안전한 상세 내용 HTML 렌더러 (인라인 문자열 치환 대신 안전한 ID 바인딩 사용)
     function generateDetailContentHtml(spot, isMobileSheet = false) {
       const { navAddress, guide } = parseEntryPoint(spot.entryPoint || spot.name);
       const searchTarget = navAddress || spot.name;
@@ -2301,7 +2302,6 @@
       `;
     }
 
-    // 📋 안전한 주소 복사 헬퍼
     function copySpotAddressById(spotId) {
       const target = spots.find(s => String(s.id) === String(spotId));
       if (!target) return;
