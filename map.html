@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -972,7 +973,7 @@
       justify-content: center;
     }
 
-    /* 🔒 들머리 잠금 / 5초 카운트다운 오버레이 */
+    /* 🔒 들머리 잠금 & 7초 프로그레스 게이지 오버레이 */
     .locked-entry-wrap {
       position: relative;
       margin-top: 4px;
@@ -986,33 +987,50 @@
       transition: filter 0.3s ease;
     }
     .locked-entry-inner.is-locked {
-      filter: blur(4.5px);
+      filter: blur(5px);
       pointer-events: none;
       user-select: none;
     }
     .entry-lock-overlay {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(9, 12, 19, 0.88);
-      backdrop-filter: blur(4px);
+      background: rgba(9, 12, 19, 0.92);
+      backdrop-filter: blur(5px);
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 6px 10px;
+      padding: 6px 12px;
       border-radius: 8px;
       border: 1px dashed rgba(244, 63, 94, 0.55);
       z-index: 10;
       font-size: 0.72rem;
-      font-weight: 800;
+      font-weight: 700;
       color: #fecdd3;
       line-height: 1.35;
-      cursor: default;
+      cursor: pointer;
     }
     .entry-lock-overlay.counting {
       border-color: #f59e0b;
       color: #fde047;
-      background: rgba(9, 12, 19, 0.94);
+      background: rgba(9, 12, 19, 0.96);
+      cursor: default;
+    }
+    .unlock-progress-track {
+      width: 85%;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 2px;
+      margin-top: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .unlock-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #f59e0b, #10b981);
+      border-radius: 2px;
+      transition: width 1s linear;
     }
 
     /* 🚗 들머리 & 주소복사 바 */
@@ -1972,10 +1990,8 @@
       }
       if (dockResetIcon) {
         if (isListOpen) {
-          // 닫기/폴더 아이콘
           dockResetIcon.innerHTML = `<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>`;
         } else {
-          // 새로고침(초기화) 아이콘
           dockResetIcon.innerHTML = `<path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>`;
         }
       }
@@ -1987,38 +2003,55 @@
       }
     }
 
-    /* 📁 박지 목록 내부 아코디언 전체 일괄 접기 */
+    /* 📁 박지 목록 내부 아코디언 전체 일괄 접기 (열려있는 것만 닫음) */
     function collapseAllRegionAccordions() {
+      let closedCount = 0;
       document.querySelectorAll('.region-group').forEach(group => {
         const container = group.querySelector('.region-items-container');
         const titleSpan = group.querySelector('.region-group-title span:last-child');
         const title = group.querySelector('.region-group-title');
-        if (container) container.style.display = 'none';
+        if (container && container.style.display !== 'none') {
+          container.style.display = 'none';
+          closedCount++;
+        }
         if (titleSpan) {
           const countText = titleSpan.innerText.replace(/[▼▶]/g, '').trim();
           titleSpan.innerHTML = `${countText} ▶`;
         }
         if (title) title.style.borderLeftColor = 'transparent';
       });
+      return closedCount;
     }
 
-    /* 🔄 스마트 초기화 / 모두 닫기 클릭 핸들러 */
+    /* 🔄 스마트 초기화 / 모두 닫기 클릭 핸들러 (창은 닫지 않고 내부 목록만 접기) */
     function handleSmartResetClick() {
       const isMobile = window.innerWidth <= 768;
       const isListOpen = isMobile ? !isSidebarCollapsed : !isPcSidebarCollapsed;
 
       if (isListOpen) {
-        // [모두 닫기 동작]
-        if (isMobile) {
-          isSidebarCollapsed = true;
-          const sidebar = document.getElementById('sidebar');
-          if (sidebar) sidebar.classList.add('collapsed');
-          updateDockSidebarText(false);
-        }
-        collapseAllRegionAccordions();
+        // [모두 닫기 동작: 창은 그대로 열어둔 채 열린 아코디언만 일괄 접고 맨 위로 스크롤]
+        const closedCount = collapseAllRegionAccordions();
         closeAllPopups();
+
+        const spotListEl = document.getElementById('spotList');
+        if (spotListEl) {
+          spotListEl.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        if (closedCount > 0) {
+          showToast('📁 모든 지역 목록을 접었습니다');
+        } else {
+          // 이미 다 접혀 있는 상태에서 한 번 더 누르면 모바일 사이드바 닫기
+          if (isMobile) {
+            isSidebarCollapsed = true;
+            document.getElementById('sidebar').classList.add('collapsed');
+            updateDockSidebarText(false);
+            showToast('📁 박지 목록을 닫았습니다');
+          } else {
+            showToast('📁 모든 목록이 이미 접혀 있습니다');
+          }
+        }
         updateSmartResetButtons();
-        showToast('📁 모든 목록과 창이 정리되었습니다');
       } else {
         // [지도 초기화 동작]
         resetMapView();
@@ -2393,7 +2426,7 @@
       smoothCenterMapOnSpot(spot.lat, spot.lng, keepZoom);
     }
 
-    /* 🔒 들머리 잠금 해제 타이머 & 세션 캐시 관리 */
+    /* 🔒 들머리 7초 잠금 해제 타이머 & 세션 캐시 관리 */
     const spotUnlockTimers = {};
 
     function isSpotUnlocked(spotId) {
@@ -2406,22 +2439,32 @@
       }
 
       if (isSpotUnlocked(spotId)) return;
-      if (spotUnlockTimers[spotId]) return; // 이미 카운트다운 중
+      if (spotUnlockTimers[spotId]) return; // 이미 7초 카운트다운 진행 중
 
-      let countdown = 5;
+      let countdown = 7;
       const overlayEl = document.getElementById(`entryLockOverlay_${spotId}`);
-      if (overlayEl) {
-        overlayEl.classList.add('counting');
-        overlayEl.innerHTML = `<span>⏳ 안전·경로 확인 중... <strong>${countdown}초</strong> 뒤 주소가 열립니다</span>`;
-      }
+      
+      const updateCountdownUI = (cnt) => {
+        const curEl = document.getElementById(`entryLockOverlay_${spotId}`);
+        if (!curEl) return;
+        curEl.classList.add('counting');
+        const progressPct = ((7 - cnt) / 7) * 100;
+        curEl.innerHTML = `
+          <div style="display:flex; flex-direction:column; align-items:center; width:100%; gap:4px;">
+            <span>⏳ 감사 인사 확인 중... <strong>${cnt}초</strong> 뒤 주소가 공개됩니다</span>
+            <div class="unlock-progress-track">
+              <div class="unlock-progress-fill" style="width: ${progressPct}%;"></div>
+            </div>
+          </div>
+        `;
+      };
+
+      updateCountdownUI(countdown);
 
       spotUnlockTimers[spotId] = setInterval(() => {
         countdown--;
-        const currentOverlay = document.getElementById(`entryLockOverlay_${spotId}`);
         if (countdown > 0) {
-          if (currentOverlay) {
-            currentOverlay.innerHTML = `<span>⏳ 안전·경로 확인 중... <strong>${countdown}초</strong> 뒤 주소가 열립니다</span>`;
-          }
+          updateCountdownUI(countdown);
         } else {
           clearInterval(spotUnlockTimers[spotId]);
           delete spotUnlockTimers[spotId];
@@ -2432,7 +2475,7 @@
           if (finalOverlay) finalOverlay.style.display = 'none';
           if (innerContent) innerContent.classList.remove('is-locked');
 
-          showToast('🔓 들머리 주소 및 길안내가 활성화되었습니다!');
+          showToast('🔓 들머리 주소와 길안내가 활성화되었습니다!');
         }
       }, 1000);
     }
@@ -2468,7 +2511,7 @@
           <div style="margin: 4px 0 2px 0;">${getMetaBadgesHtml(spot)}</div>
           <div class="spot-coords-text">📍 ${spot.lat}, ${spot.lng}</div>
           
-          <!-- 🔒 5초 잠금 적용된 들머리 영역 -->
+          <!-- 🔒 7초 잠금 적용된 들머리 영역 (감사 인사 멘트 반영) -->
           <div class="locked-entry-wrap" id="lockedEntryWrap_${spot.id}">
             <div class="locked-entry-inner ${isUnlocked ? '' : 'is-locked'}" id="lockedEntryInner_${spot.id}">
               <a href="${escapeHtml(naverSearchUrl)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link" title="네이버 지도 길안내로 이동">
@@ -2480,7 +2523,7 @@
             </div>
             ${!isUnlocked ? `
               <div class="entry-lock-overlay" id="entryLockOverlay_${spot.id}" onclick="triggerSpotUnlock('${spot.id}', '${ytList[0] ? escapeHtml(cleanYouTubeUrl(ytList[0].trim())) : instaLink}')">
-                <span>🔒 현장안전 확인을 위해 [유튜브] 또는 [등록자] 링크를 확인해 주세요</span>
+                <span>🔒 등록자 분께 감사 인사를 전해 보세요. YouTube 영상이나 등록자 링크를 누르면 열립니다</span>
               </div>
             ` : ''}
           </div>
@@ -2512,7 +2555,7 @@
 
     function copySpotAddressById(spotId) {
       if (!isSpotUnlocked(spotId)) {
-        showToast('🔒 영상 또는 등록자 링크를 먼저 확인해 주세요');
+        showToast('🔒 등록자 분께 감사 인사를 전하고 잠금을 해제해 주세요');
         return;
       }
       const target = spots.find(s => String(s.id) === String(spotId));
