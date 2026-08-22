@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -8,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>대한민국 낭만 백패킹 로드 | 지도 (4.3ver)</title>
+  <title>대한민국 낭만 백패킹 로드 | 지도 (4.4ver)</title>
   
   <!-- Naver Maps Open API -->
   <script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=nokunumn03&submodules=geocoder"></script>
@@ -210,7 +209,7 @@
       font-size: 0.9rem;
     }
 
-    /* 검색 드롭다운 */
+    /* 드롭다운 */
     .search-dropdown {
       position: absolute;
       top: 38px;
@@ -806,11 +805,11 @@
     .marker-label-elev { color: #86efac; font-size: 0.62rem; font-weight: 700; }
     .marker-svg-icon { filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7)); display: block; }
 
-    /* 팝업창 컴팩트 & 미려한 규격 */
+    /* 🖥️ PC 팝업창 규격 */
     .compact-info-window {
       padding: 10px 12px;
       width: min(290px, calc(100vw - 32px)) !important;
-      max-height: min(310px, 42dvh);
+      max-height: min(340px, 48dvh);
       overflow-y: auto;
       overflow-x: hidden !important;
       display: flex;
@@ -949,6 +948,49 @@
     .comment-input-text { flex: 1; padding: 3px 5px; border: 1px solid var(--google-border); border-radius: 4px; font-size: 0.62rem; outline: none; background: var(--google-bg-deep); color: #fff; }
     .comment-btn-submit { background: #0f766e; color: #ffffff; border: none; border-radius: 4px; padding: 3px 8px; font-size: 0.62rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
 
+    /* 📱 [방안 A] 모바일 전용 프리미엄 바텀 시트 (Bottom Sheet) */
+    .mobile-bottom-sheet {
+      display: none;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-height: 54dvh;
+      background: rgba(17, 21, 32, 0.98);
+      backdrop-filter: blur(18px);
+      border-top: 1.5px solid var(--google-border-glow);
+      border-radius: 20px 20px 0 0;
+      z-index: 4500;
+      box-shadow: 0 -10px 36px rgba(0, 0, 0, 0.85);
+      transform: translateY(105%);
+      transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .mobile-bottom-sheet.open {
+      display: flex;
+      transform: translateY(0);
+    }
+    .sheet-handle-bar {
+      width: 44px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 2px;
+      margin: 8px auto 4px auto;
+      cursor: pointer;
+    }
+    .sheet-content {
+      overflow-y: auto;
+      padding: 6px 14px 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .sheet-content::-webkit-scrollbar { width: 3px; }
+    .sheet-content::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+    /* 제보 및 등록 모달 */
     .custom-modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -1010,6 +1052,7 @@
       z-index: 4000;
       width: calc(100% - 20px);
       max-width: 360px;
+      transition: transform 0.25s ease, opacity 0.25s ease;
     }
     .mobile-float-btn {
       padding: 8px 10px;
@@ -1027,7 +1070,7 @@
     .mobile-float-toggle { background: #0284c7; color: #ffffff; flex: 1.35; font-size: 0.75rem; border-color: rgba(255,255,255,0.3); }
     .mobile-float-reset { background: rgba(28, 34, 51, 0.95); color: #ffffff; flex: 1; }
 
-    /* 📱 모바일 전용 반응형 레이아웃 */
+    /* 📱 모바일 전용 뷰포트 레이아웃 */
     @media (max-width: 768px) {
       .header { 
         padding: 6px 10px 6px 10px !important;
@@ -1163,7 +1206,7 @@
         <div class="sidebar-header-left">
           <span>📍 박지 목록</span>
           <span id="spotCount" style="color: var(--google-accent-blue); font-size: 0.74rem; font-weight: bold;">0개</span>
-          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()">4.3ver</span>
+          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagClick()">4.4ver</span>
         </div>
 
         <div class="sidebar-header-actions">
@@ -1229,7 +1272,13 @@
     </main>
   </div>
 
-  <div class="mobile-floating-controls">
+  <!-- 📱 [방안 A] 모바일 전용 바텀 시트 (Bottom Sheet) 레이어 -->
+  <div class="mobile-bottom-sheet" id="mobileBottomSheet">
+    <div class="sheet-handle-bar" onclick="closeMobileBottomSheet()"></div>
+    <div class="sheet-content" id="mobileSheetContent"></div>
+  </div>
+
+  <div class="mobile-floating-controls" id="mobileFloatingControls">
     <button type="button" class="mobile-float-btn mobile-float-drone" id="mobileDroneBtn" onclick="toggleDroneOverlay()">
       🛸 드론규제
     </button>
@@ -1336,7 +1385,7 @@
 
   <script>
     /* =========================================================================
-       버전 관리 및 초기 상수 설정
+       버전 관리 상수 (4.4ver)
        ========================================================================= */
     const BASE_VERSION_NUM = 4.4;
     const CURRENT_VERSION = `${BASE_VERSION_NUM.toFixed(1)}ver`;
@@ -1345,7 +1394,7 @@
       const vTag = document.getElementById('versionTagBtn');
       if (vTag) vTag.innerText = CURRENT_VERSION;
 
-      // 모바일 초기화: 사이드바 기본 닫힘 보장
+      // 모바일 초기화: 사이드바 기본 닫힘
       if (window.innerWidth <= 768) {
         isSidebarCollapsed = true;
         const sidebar = document.getElementById('sidebar');
@@ -1359,9 +1408,9 @@
     const GOOGLE_SHEET_GID = '0';
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzW0vRtj-S_BEW0OzFTm7PV7zVyNLWJEas9-S7F9CnOTn817-pO8WODR9l5FEEE3bYu/exec';
 
-    // ⚡ 축척 1단계 확대: 기존 8에서 9로 변경
-    const DEFAULT_MAP_CENTER = new naver.maps.LatLng(36.5, 127.8);
-    const DEFAULT_MAP_ZOOM = 9;
+    // ⚡ [대한민국 전도 최적화] 축척 레벨 7 및 중심 좌표 설정
+    const DEFAULT_MAP_CENTER = new naver.maps.LatLng(36.2, 127.8);
+    const DEFAULT_MAP_ZOOM = 7;
 
     function escapeHtml(text) {
       if (text === null || text === undefined) return '';
@@ -1473,7 +1522,7 @@
     let droneOverlays = [];
     let currentRegionFilter = 'ALL';
     let currentTerrainFilter = 'ALL';
-    let isSidebarCollapsed = (window.innerWidth <= 768); // 초기 모바일 기본 닫힘
+    let isSidebarCollapsed = (window.innerWidth <= 768);
 
     let currentActiveSpot = null;
     let currentActiveMarker = null;
@@ -1512,8 +1561,8 @@
       pixelOffset: new naver.maps.Point(0, -8)
     });
 
-    naver.maps.Event.addListener(map, 'dragstart', () => closeInfoWindowCompletely());
-    naver.maps.Event.addListener(map, 'pinchstart', () => closeInfoWindowCompletely());
+    naver.maps.Event.addListener(map, 'dragstart', () => closeAllPopups());
+    naver.maps.Event.addListener(map, 'pinchstart', () => closeAllPopups());
 
     let versionClickCount = 0;
     let versionClickTimer = null;
@@ -1768,13 +1817,13 @@
       document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
     }
 
-    /* 📱 [모바일 정밀 마커 & 정보창 정중앙 정렬 로직] */
+    /* 📱 [방안 A] 모바일: 바텀 시트 위로 마커가 쾌적하게 보이도록 카메라 상단 배치 */
     function smoothCenterMapOnSpot(lat, lng, keepCurrentZoom = true) {
       const isMobile = window.innerWidth <= 768;
       const targetLatLng = new naver.maps.LatLng(lat, lng);
       
       const currentZoom = map.getZoom();
-      const targetZoom = (!keepCurrentZoom && currentZoom < 12) ? 13 : currentZoom;
+      const targetZoom = (!keepCurrentZoom && currentZoom < 11) ? 12 : currentZoom;
 
       if (currentZoom !== targetZoom) {
         map.setZoom(targetZoom, false);
@@ -1788,8 +1837,8 @@
 
       const targetPoint = proj.fromCoordToOffset(targetLatLng);
       
-      // 모바일: [마커]와 [마커 아래 정보창] 전체 세트가 화면 중앙에 오도록 카메라를 마커 아래 약 125px로 이동
-      const offsetY = isMobile ? 125 : 0;
+      // 모바일에서는 바텀 시트(하단 50%)를 고려해 카메라 중심을 마커보다 아래로 내려서 마커를 상단 35%에 안착
+      const offsetY = isMobile ? Math.round(window.innerHeight * 0.22) : 0;
       const offsetX = isMobile ? 0 : 145;
 
       const cameraPoint = new naver.maps.Point(targetPoint.x + offsetX, targetPoint.y + offsetY);
@@ -1798,14 +1847,35 @@
       map.panTo(cameraLatLng, { duration: 320, easing: 'easeOutCubic' });
     }
 
-    /* 📱 [정보창 팝업 오프셋]: 마커 핀 아래로 깔끔하게 배치 */
-    function getResponsiveInfoWindowOffset() {
-      const isMobile = window.innerWidth <= 768;
-      if (isMobile) {
-        return new naver.maps.Point(0, 12); // 마커 핀 끝점 바로 아래에 나란히 배치
-      } else {
-        return new naver.maps.Point(180, 145); // 데스크톱: 우측 뷰
-      }
+    function openMobileBottomSheet(spot) {
+      const sheet = document.getElementById('mobileBottomSheet');
+      const content = document.getElementById('mobileSheetContent');
+      const floatingBtns = document.getElementById('mobileFloatingControls');
+      
+      if (!sheet || !content) return;
+      
+      content.innerHTML = generateDetailContentHtml(spot, true);
+      sheet.classList.add('open');
+      if (floatingBtns) floatingBtns.style.opacity = '0';
+    }
+
+    function closeMobileBottomSheet() {
+      const sheet = document.getElementById('mobileBottomSheet');
+      const floatingBtns = document.getElementById('mobileFloatingControls');
+      if (sheet) sheet.classList.remove('open');
+      if (floatingBtns) floatingBtns.style.opacity = '1';
+      currentActiveSpot = null;
+      document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active-spot'));
+      spotMarkerMap.forEach(m => m.setZIndex(100));
+    }
+
+    function closeAllPopups() {
+      closeMobileBottomSheet();
+      infoWindow.close();
+      currentActiveSpot = null;
+      currentActiveMarker = null;
+      document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active-spot'));
+      spotMarkerMap.forEach(m => m.setZIndex(100));
     }
 
     function focusSpotOnMap(spot, keepZoom = false) {
@@ -1829,22 +1899,64 @@
         activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
 
-      // 모바일이면 사이드바 자동 닫기
-      if (window.innerWidth <= 768) {
-        document.getElementById('sidebar').classList.add('collapsed');
-        document.getElementById('bottomToggleBtn').innerText = '▲ 박지 목록 열기';
-      }
-
       currentActiveSpot = spot;
       currentActiveMarker = marker || new naver.maps.LatLng(spot.lat, spot.lng);
-      
-      infoWindow.setOptions({
-        pixelOffset: getResponsiveInfoWindowOffset()
-      });
-      infoWindow.setContent(generateInfoWindowHtml(spot));
-      infoWindow.open(map, currentActiveMarker);
+
+      const isMobile = window.innerWidth <= 768;
+
+      if (isMobile) {
+        // 모바일 사이드바 닫기
+        document.getElementById('sidebar').classList.add('collapsed');
+        document.getElementById('bottomToggleBtn').innerText = '▲ 박지 목록 열기';
+        
+        infoWindow.close();
+        openMobileBottomSheet(spot);
+      } else {
+        // PC 인포윈도우 팝업
+        closeMobileBottomSheet();
+        infoWindow.setOptions({
+          pixelOffset: new naver.maps.Point(180, 145)
+        });
+        infoWindow.setContent(`
+          <div class="compact-info-window" style="position: relative;">
+            ${generateDetailContentHtml(spot, false)}
+          </div>
+        `);
+        infoWindow.open(map, currentActiveMarker);
+      }
 
       smoothCenterMapOnSpot(spot.lat, spot.lng, keepZoom);
+    }
+
+    function generateDetailContentHtml(spot, isMobileSheet = false) {
+      const { navAddress, guide } = parseEntryPoint(spot.entryPoint || spot.name);
+      const searchTarget = navAddress || spot.name;
+      const naverSearchUrl = getNaverMapSearchUrl(searchTarget);
+
+      const closeBtn = isMobileSheet
+        ? `<button type="button" onclick="closeMobileBottomSheet()" style="position: absolute; top: 2px; right: 2px; background: rgba(255,255,255,0.08); border: 1px solid var(--google-border); width: 22px; height: 22px; border-radius: 50%; font-size: 11px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>`
+        : `<button type="button" onclick="closeAllPopups()" style="position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--google-border); width: 20px; height: 20px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>`;
+
+      return `
+        <div style="position: relative; width: 100%;">
+          <div class="compact-title">
+            <span>${escapeHtml(spot.name)}</span>
+            ${spot.elevation ? '<span style="font-size:0.72rem; color:#86efac;">(' + escapeHtml(spot.elevation) + ')</span>' : ''}
+            ${getSpotStatusBadges(spot)}
+          </div>
+          ${closeBtn}
+          <div style="margin: 4px 0 2px 0;">${getMetaBadgesHtml(spot)}</div>
+          <div class="spot-coords-text">📍 ${spot.lat}, ${spot.lng}</div>
+          
+          <a href="${escapeHtml(naverSearchUrl)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link" style="margin-top:4px;" title="클릭 시 네이버 지도 검색으로 이동">🚗 들머리 네비: ${escapeHtml(navAddress || '들머리 정보 미입력')} ↗</a>
+          
+          ${guide ? `<div class="entry-guide-chip" style="margin-top:3px;">💡 길 안내: ${escapeHtml(guide)}</div>` : ''}
+
+          <div class="compact-desc" style="margin-top:4px;">📝 특징:\n${escapeHtml(spot.desc)}</div>
+          ${getMediaLinksHtml(spot)}
+          ${getCommentsHtml(spot.id)}
+        </div>
+      `;
     }
 
     async function saveUpdatedLocation(spotId, newLat, newLng) {
@@ -2077,7 +2189,7 @@
     }
 
     function getMediaLinksHtml(spot) {
-      let html = '<div class="spot-action-line">';
+      let html = '<div class="spot-action-line" style="margin-top: 5px;">';
       const ytList = spot.youtubeUrls || (spot.youtubeUrl ? [spot.youtubeUrl] : []);
       ytList.slice(0, 2).forEach((url, i) => {
         if (url?.trim()) {
@@ -2211,7 +2323,15 @@
 
       const targetSpot = spots.find(s => String(s.id) === String(spotId));
       if (targetSpot) {
-        infoWindow.setContent(generateInfoWindowHtml(targetSpot));
+        if (window.innerWidth <= 768) {
+          openMobileBottomSheet(targetSpot);
+        } else {
+          infoWindow.setContent(`
+            <div class="compact-info-window" style="position: relative;">
+              ${generateDetailContentHtml(targetSpot, false)}
+            </div>
+          `);
+        }
       }
 
       try {
@@ -2228,41 +2348,6 @@
         const newBtn = document.getElementById(`cBtnSubmit_${spotId}`);
         if (newBtn) newBtn.disabled = false;
       }, 300);
-    }
-
-    function closeInfoWindowCompletely() {
-      currentActiveSpot = null;
-      currentActiveMarker = null;
-      infoWindow.close();
-      document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active-spot'));
-      spotMarkerMap.forEach(m => m.setZIndex(100));
-    }
-
-    function generateInfoWindowHtml(spot) {
-      const { navAddress, guide } = parseEntryPoint(spot.entryPoint || spot.name);
-      const searchTarget = navAddress || spot.name;
-      const naverSearchUrl = getNaverMapSearchUrl(searchTarget);
-
-      return `
-        <div class="compact-info-window" style="position: relative;">
-          <div class="compact-title">
-            <span>${escapeHtml(spot.name)}</span>
-            ${spot.elevation ? '<span style="font-size:0.72rem; color:#86efac;">(' + escapeHtml(spot.elevation) + ')</span>' : ''}
-            ${getSpotStatusBadges(spot)}
-          </div>
-          <button type="button" onclick="closeInfoWindowCompletely()" style="position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.08); border: 1px solid var(--google-border); width: 20px; height: 20px; border-radius: 50%; font-size: 10px; cursor: pointer; font-weight: bold; color: #cbd5e1;">✕</button>
-          ${getMetaBadgesHtml(spot)}
-          <div class="spot-coords-text">📍 ${spot.lat}, ${spot.lng}</div>
-          
-          <a href="${escapeHtml(naverSearchUrl)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link" title="클릭 시 네이버 지도 검색으로 이동">🚗 들머리 네비: ${escapeHtml(navAddress || '들머리 정보 미입력')} ↗</a>
-          
-          ${guide ? `<div class="entry-guide-chip">💡 길 안내: ${escapeHtml(guide)}</div>` : ''}
-
-          <div class="compact-desc">📝 특징:\n${escapeHtml(spot.desc)}</div>
-          ${getMediaLinksHtml(spot)}
-          ${getCommentsHtml(spot.id)}
-        </div>
-      `;
     }
 
     function incrementSpotCount(spotId) {
@@ -2410,7 +2495,7 @@
             const newLat = parseFloat(movedLatLng.lat().toFixed(6));
             const newLng = parseFloat(movedLatLng.lng().toFixed(6));
 
-            infoWindow.setOptions({ pixelOffset: getResponsiveInfoWindowOffset() });
+            infoWindow.setOptions({ pixelOffset: new naver.maps.Point(180, 145) });
             infoWindow.setContent(`
               <div class="compact-info-window" style="position: relative;">
                 <div class="compact-title" style="color:var(--google-accent-blue);">📍 '${escapeHtml(spot.name)}' 위치 이동</div>
@@ -2563,7 +2648,7 @@
         return;
       }
 
-      closeInfoWindowCompletely();
+      closeAllPopups();
     });
 
     function editSpotById(event, spotId) {
@@ -2900,7 +2985,7 @@
       delete spotComments[deletedId];
       localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
 
-      closeInfoWindowCompletely();
+      closeAllPopups();
       renderSpots();
 
       try {
@@ -2916,7 +3001,7 @@
 
     function resetMapView() {
       map.morph(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, { duration: 400, easing: 'easeOutCubic' });
-      closeInfoWindowCompletely();
+      closeAllPopups();
       droneHoverInfoWindow.close();
       if (tempSearchMarker) {
         tempSearchMarker.setMap(null);
@@ -2999,6 +3084,9 @@
       const btn = document.getElementById('bottomToggleBtn');
       sidebar.classList.toggle('collapsed', isSidebarCollapsed);
       btn.innerText = isSidebarCollapsed ? '▲ 박지 목록 열기' : '▼ 박지 목록 닫기';
+      if (!isSidebarCollapsed) {
+        closeMobileBottomSheet();
+      }
     }
 
     function exportDataBackup() {
