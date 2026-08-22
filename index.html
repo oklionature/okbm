@@ -6,21 +6,21 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>대한민국 낭만 백패킹 로드 (4.5ver)</title>
+  <title>대한민국 낭만 백패킹 로드 (5.0ver)</title>
 
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- 웹폰트: Pretendard + Gmarket Sans -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Gmarket+Sans:wght@500;700&display=swap" rel="stylesheet">
+  
   <!-- CSV Parser -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
     :root {
-      --bg-deep: #07090e;
-      --bg-surface: #0f131c;
-      --bg-card: #151b27;
-      --bg-card-hover: #1e2637;
+      --bg-deep: #080a0f;
+      --bg-surface: #10141e;
+      --bg-card: #161b26;
+      --bg-card-hover: #1f2737;
       --border: rgba(255, 255, 255, 0.08);
       --border-glow: rgba(56, 189, 248, 0.35);
       --text-primary: #f8fafc;
@@ -31,6 +31,8 @@
       --accent-emerald: #10b981;
       --accent-amber: #f59e0b;
       --accent-rose: #f43f5e;
+      --font-display: 'Gmarket Sans', -apple-system, sans-serif;
+      --font-body: 'Pretendard', -apple-system, sans-serif;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -40,125 +42,163 @@
       overflow-x: hidden;
       background-color: var(--bg-deep);
       color: var(--text-primary);
-      font-family: 'Noto Sans KR', -apple-system, sans-serif;
+      font-family: var(--font-body);
       line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      letter-spacing: -0.015em;
     }
     body { padding-bottom: 74px; }
 
-    /* GNB 네비게이션 */
+    /* 🧭 상단 GNB (정중앙 세련된 레이아웃) */
     .portal-nav {
       position: sticky;
       top: 0;
       z-index: 1000;
-      background: rgba(7, 9, 14, 0.95);
-      backdrop-filter: blur(14px);
+      background: rgba(8, 10, 15, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border);
-      padding: 10px 16px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      width: 100%;
+    }
+    .portal-nav-inner {
+      width: 100%;
+      max-width: 1100px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      width: 100%;
-      max-width: 1100px;
-      margin: 0 auto;
+      position: relative;
     }
     .portal-logo-wrap {
       display: flex;
       align-items: center;
-      gap: 6px;
+      justify-content: center;
+      gap: 8px;
       text-decoration: none;
-      min-width: 0;
+      margin: 0 auto;
+      transition: transform 0.2s;
     }
+    .portal-logo-wrap:hover { transform: scale(1.01); }
+    .portal-logo-icon { font-size: 1.2rem; }
     .portal-logo {
-      font-family: 'Gowun Dodum', sans-serif;
-      font-size: 1.12rem;
-      font-weight: 800;
-      color: #fff;
-      background: linear-gradient(135deg, #ffffff 20%, #bae6fd 60%, #38bdf8 100%);
+      font-family: var(--font-display);
+      font-size: 1.08rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #ffffff 30%, #bae6fd 70%, #38bdf8 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       white-space: nowrap;
     }
     .ver-badge {
-      font-size: 0.64rem;
+      font-family: var(--font-body);
+      font-size: 0.65rem;
       color: var(--accent-teal);
       background: rgba(45, 212, 191, 0.12);
-      padding: 1px 5px;
-      border-radius: 4px;
+      padding: 2px 6px;
+      border-radius: 6px;
       font-weight: 700;
-      border: 1px solid rgba(45, 212, 191, 0.25);
+      border: 1px solid rgba(45, 212, 191, 0.3);
+      letter-spacing: 0.02em;
     }
-    .portal-menu { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-    .portal-menu a.nav-link {
+    .nav-right-slot {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .nav-right-slot a.nav-link {
       color: var(--text-secondary);
       text-decoration: none;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      transition: all 0.2s;
     }
-    .portal-nav-slot { display: inline-flex; align-items: center; }
+    .nav-right-slot a.nav-link:hover {
+      color: #fff;
+      border-color: var(--accent-blue);
+      background: rgba(56, 189, 248, 0.1);
+    }
 
-    /* 히어로 섹션 */
+    /* 🏔️ 히어로 섹션 */
     .hero-wrapper {
       width: 100%;
       max-width: 1100px;
       margin: 0 auto;
-      padding: 28px 16px 16px 16px;
+      padding: 36px 16px 20px 16px;
       text-align: center;
     }
     .hero-badge-romance {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      background: rgba(56, 189, 248, 0.1);
-      border: 1px solid rgba(56, 189, 248, 0.28);
+      gap: 6px;
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.24);
       color: var(--accent-blue);
-      font-size: 0.74rem;
+      font-size: 0.75rem;
       font-weight: 700;
-      padding: 4px 12px;
-      border-radius: 20px;
-      margin-bottom: 10px;
+      padding: 5px 14px;
+      border-radius: 30px;
+      margin-bottom: 12px;
+      letter-spacing: 0.02em;
     }
     .hero-title {
-      font-family: 'Gowun Dodum', sans-serif;
-      font-size: clamp(1.35rem, 4vw, 2.1rem);
-      font-weight: 800;
-      margin-bottom: 8px;
-      line-height: 1.35;
+      font-family: var(--font-display);
+      font-size: clamp(1.45rem, 4.5vw, 2.3rem);
+      font-weight: 700;
+      margin-bottom: 10px;
+      line-height: 1.38;
+      letter-spacing: -0.03em;
       word-break: keep-all;
     }
     .hero-title .highlight {
-      background: linear-gradient(135deg, #38bdf8 0%, #2dd4bf 50%, #facc15 100%);
+      background: linear-gradient(135deg, #38bdf8 0%, #2dd4bf 55%, #facc15 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
     .hero-subtitle {
-      font-size: 0.84rem;
+      font-size: 0.88rem;
       color: var(--text-secondary);
-      margin-bottom: 16px;
+      margin-bottom: 22px;
       word-break: keep-all;
+      font-weight: 400;
     }
 
-    /* 검색창 */
+    /* 🔍 검색창 */
     .portal-search-box {
       position: relative;
       width: 100%;
       max-width: 580px;
-      margin: 0 auto 12px auto;
+      margin: 0 auto 14px auto;
     }
     .portal-search-input {
       width: 100%;
-      padding: 13px 48px 13px 18px;
-      font-size: 0.92rem;
-      border-radius: 26px;
-      border: 1.5px solid var(--accent-blue);
+      padding: 14px 50px 14px 20px;
+      font-size: 0.94rem;
+      font-family: var(--font-body);
+      border-radius: 28px;
+      border: 1.5px solid rgba(56, 189, 248, 0.4);
       background: var(--bg-surface);
       color: #fff;
       outline: none;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 16px rgba(56, 189, 248, 0.18);
-      transition: all 0.2s;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.12);
+      transition: all 0.25s ease;
     }
     .portal-search-input:focus {
-      background: #090d15;
-      border-color: #7dd3fc;
+      background: #0b0f17;
+      border-color: #38bdf8;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 24px rgba(56, 189, 248, 0.28);
     }
     .portal-search-btn {
       position: absolute;
@@ -167,26 +207,28 @@
       transform: translateY(-50%);
       background: linear-gradient(135deg, #0284c7, #0ea5e9);
       border: none;
-      width: 35px;
-      height: 35px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
-      font-size: 0.95rem;
+      font-size: 1rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
+      transition: transform 0.2s;
     }
+    .portal-search-btn:active { transform: translateY(-50%) scale(0.92); }
 
     .search-auto-dropdown {
       position: absolute;
-      top: calc(100% + 6px);
+      top: calc(100% + 8px);
       left: 0; right: 0;
-      background: rgba(15, 19, 28, 0.98);
-      backdrop-filter: blur(14px);
+      background: rgba(16, 20, 30, 0.98);
+      backdrop-filter: blur(16px);
       border: 1px solid var(--border-glow);
-      border-radius: 12px;
-      box-shadow: 0 16px 36px rgba(0,0,0,0.85);
+      border-radius: 14px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.85);
       list-style: none;
       max-height: 240px;
       overflow-y: auto;
@@ -195,23 +237,24 @@
       text-align: left;
     }
     .auto-item {
-      padding: 10px 14px;
+      padding: 12px 16px;
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
-      font-size: 0.82rem;
+      font-size: 0.85rem;
+      transition: background 0.15s;
     }
     .auto-item:hover { background: var(--bg-card-hover); }
     .auto-item-name { font-weight: 700; color: var(--accent-blue); }
-    .auto-item-tag { font-size: 0.68rem; color: #7dd3fc; background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px; }
+    .auto-item-tag { font-size: 0.7rem; color: #7dd3fc; background: rgba(56,189,248,0.12); padding: 2px 8px; border-radius: 6px; }
 
     /* 추천 키워드 칩 */
     .keyword-chips-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
+      gap: 8px;
       width: 100%;
       max-width: 580px;
       margin: 0 auto;
@@ -220,119 +263,150 @@
       background: var(--bg-card);
       border: 1px solid var(--border);
       color: var(--text-secondary);
-      padding: 8px 4px;
+      padding: 9px 6px;
       border-radius: 10px;
-      font-size: 0.76rem;
+      font-size: 0.78rem;
       font-weight: 600;
       cursor: pointer;
       text-align: center;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      transition: all 0.2s;
     }
     .keyword-chip-btn:hover {
       background: var(--bg-card-hover);
-      color: var(--accent-blue);
+      color: #fff;
       border-color: var(--accent-blue);
+      transform: translateY(-1px);
     }
 
     /* 포털 메인 레이아웃 */
     .portal-container {
       width: 100%;
       max-width: 1100px;
-      margin: 12px auto 30px auto;
+      margin: 16px auto 30px auto;
       padding: 0 16px;
       display: grid;
       grid-template-columns: 1fr 310px;
-      gap: 20px;
+      gap: 24px;
     }
-    .main-column { display: flex; flex-direction: column; gap: 18px; width: 100%; min-width: 0; }
+    .main-column { display: flex; flex-direction: column; gap: 24px; width: 100%; min-width: 0; }
 
-    /* 안내 배너 */
+    /* 공지 배너 */
     .notice-banner-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.08) 0%, rgba(16, 20, 30, 0.6) 100%);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      border-radius: 14px;
+      padding: 12px 16px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       width: 100%;
     }
     .notice-badge {
-      background: rgba(245, 158, 11, 0.15);
+      background: rgba(245, 158, 11, 0.18);
       color: var(--accent-amber);
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      font-size: 0.68rem;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      font-size: 0.7rem;
       font-weight: 800;
-      padding: 2px 6px;
-      border-radius: 5px;
+      padding: 3px 8px;
+      border-radius: 6px;
       white-space: nowrap;
       flex-shrink: 0;
     }
     .notice-text {
-      font-size: 0.76rem;
+      font-size: 0.8rem;
       color: var(--text-primary);
       flex: 1;
-      line-height: 1.35;
+      line-height: 1.4;
       word-break: keep-all;
     }
 
-    /* 섹션 공통 헤더 */
+    /* 섹션 헤더 */
     .section-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
     .section-title {
-      font-size: 0.98rem;
-      font-weight: 800;
+      font-family: var(--font-display);
+      font-size: 1.05rem;
+      font-weight: 700;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+      letter-spacing: -0.02em;
     }
-    .swipe-indicator-tag {
-      font-size: 0.68rem;
+    .more-link {
       color: var(--accent-blue);
-      background: rgba(56, 189, 248, 0.12);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      padding: 2px 7px;
-      border-radius: 12px;
-      font-weight: 700;
+      text-decoration: none;
+      font-size: 0.78rem;
+      font-weight: 600;
+      transition: opacity 0.2s;
     }
+    .more-link:hover { opacity: 0.8; }
 
-    /* 📱 [1:1 풀 스와이프 레일] 공통 스냅 컨테이너 */
+    /* 📱 [1:1 풀 스냅 캐러셀 레일] */
+    .swipe-section-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
     .one-card-swipe-rail {
       display: flex;
       overflow-x: auto;
       scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
-      gap: 12px;
-      padding: 2px 0 8px 0;
+      gap: 14px;
+      padding: 4px 0 6px 0;
       width: 100%;
+      scrollbar-width: none; /* Firefox */
     }
-    .one-card-swipe-rail::-webkit-scrollbar { height: 4px; }
-    .one-card-swipe-rail::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    .one-card-swipe-rail::-webkit-scrollbar { display: none; } /* Chrome/Safari */
 
-    /* 🎬 [유튜브 1:1 풀 스와이프 카드] */
+    /* ⚪ 하단 페이지네이션 Dot 인디케이터 */
+    .carousel-dots-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 0;
+    }
+    .carousel-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      transition: all 0.25s ease;
+      cursor: pointer;
+    }
+    .carousel-dot.active {
+      width: 18px;
+      background: var(--accent-blue);
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+    }
+
+    /* 🎬 유튜브 풀 카드 */
     .yt-full-card {
       flex: 0 0 100%;
       scroll-snap-align: center;
       background: var(--bg-surface);
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: 16px;
       padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       width: 100%;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
     }
     .video-box {
       width: 100%;
       aspect-ratio: 16 / 9;
-      border-radius: 10px;
+      border-radius: 12px;
       overflow: hidden;
       background: #000;
       position: relative;
@@ -347,12 +421,11 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.76rem;
-      color: var(--text-secondary);
       padding: 2px 4px;
-      gap: 6px;
+      gap: 10px;
     }
     .video-caption-title {
+      font-size: 0.85rem;
       font-weight: 700;
       color: var(--text-primary);
       white-space: nowrap;
@@ -363,50 +436,61 @@
     .video-badge {
       color: var(--accent-blue);
       font-weight: 700;
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       white-space: nowrap;
       background: rgba(56, 189, 248, 0.12);
-      padding: 2px 6px;
-      border-radius: 4px;
+      padding: 3px 8px;
+      border-radius: 6px;
     }
 
-    /* 📸 [인스타그램 1:1 통일 규격 스와이프 카드] */
+    /* 📸 인스타그램 프리뷰 카드 */
     .insta-uniform-card {
-      flex: 0 0 calc(50% - 6px);
+      flex: 0 0 calc(50% - 7px);
       scroll-snap-align: start;
       background: var(--bg-surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px;
-      text-decoration: none;
+      border-radius: 14px;
+      padding: 12px;
+      cursor: pointer;
       color: var(--text-primary);
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      transition: all 0.2s;
+      gap: 8px;
+      transition: all 0.25s;
     }
-    .insta-uniform-card:hover { transform: translateY(-2px); border-color: var(--border-glow); }
+    .insta-uniform-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-glow);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
     .insta-thumb-box {
       width: 100%;
-      aspect-ratio: 16 / 11;
-      border-radius: 8px;
+      aspect-ratio: 1 / 1;
+      border-radius: 10px;
       overflow: hidden;
       position: relative;
       background: var(--bg-card);
     }
-    .insta-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .insta-thumb-img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.3s;
+    }
+    .insta-uniform-card:hover .insta-thumb-img { transform: scale(1.04); }
     .insta-reels-badge {
       position: absolute;
-      top: 5px; right: 5px;
+      top: 8px; right: 8px;
       background: rgba(0,0,0,0.75);
-      border-radius: 4px;
-      padding: 2px 5px;
-      font-size: 0.6rem;
+      backdrop-filter: blur(4px);
+      border-radius: 6px;
+      padding: 3px 7px;
+      font-size: 0.65rem;
       color: #fff;
       font-weight: 700;
     }
     .insta-card-user {
-      font-size: 0.74rem;
+      font-size: 0.8rem;
       font-weight: 700;
       color: var(--accent-rose);
       white-space: nowrap;
@@ -414,129 +498,225 @@
       text-overflow: ellipsis;
     }
     .insta-card-desc {
-      font-size: 0.72rem;
+      font-size: 0.78rem;
       color: var(--text-secondary);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    /* 🌊 [테마별 추천 박지 1:1 통일 규격 스와이프 카드] */
+    /* 🌊 테마별 추천 박지 카드 */
     .curated-uniform-card {
-      flex: 0 0 calc(50% - 6px);
+      flex: 0 0 calc(50% - 7px);
       scroll-snap-align: start;
       background: var(--bg-surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px;
+      border-radius: 14px;
+      padding: 16px;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      min-height: 145px;
-      transition: all 0.2s;
+      min-height: 165px;
+      transition: all 0.25s;
     }
     .curated-uniform-card:hover {
-      transform: translateY(-2px);
+      transform: translateY(-3px);
       border-color: var(--border-glow);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
     }
     .card-tag {
-      font-size: 0.65rem;
+      font-size: 0.7rem;
       font-weight: 800;
-      padding: 2px 6px;
-      border-radius: 4px;
+      padding: 3px 8px;
+      border-radius: 6px;
       width: fit-content;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
     .tag-island { background: rgba(45, 212, 191, 0.15); color: var(--accent-teal); }
     .tag-star { background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); }
     .tag-easy { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); }
 
-    .card-title { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 3px; }
-    .card-location { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 6px; }
-    .card-desc { font-size: 0.74rem; color: var(--text-secondary); line-height: 1.35; margin-bottom: 10px; word-break: keep-all; }
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 1.02rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+      letter-spacing: -0.02em;
+    }
+    .card-location { font-size: 0.76rem; color: var(--text-muted); margin-bottom: 8px; }
+    .card-desc { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 12px; word-break: keep-all; }
     .card-footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.7rem;
+      font-size: 0.74rem;
       border-top: 1px dashed var(--border);
-      padding-top: 6px;
+      padding-top: 8px;
     }
 
-    /* LNT 배너 */
+    /* 🌿 LNT 캠페인 */
     .lnt-campaign-box {
-      background: linear-gradient(135deg, #111827 0%, #0f2f38 100%);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 16px;
+      background: linear-gradient(135deg, #111827 0%, #0d2830 100%);
+      border: 1px solid rgba(45, 212, 191, 0.25);
+      border-radius: 14px;
+      padding: 16px 18px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       width: 100%;
     }
-    .lnt-title { font-size: 0.88rem; font-weight: 800; color: #fff; margin-bottom: 2px; }
-    .lnt-sub { font-size: 0.74rem; color: var(--text-secondary); line-height: 1.3; }
+    .lnt-title { font-family: var(--font-display); font-size: 0.94rem; font-weight: 700; color: #fff; margin-bottom: 3px; }
+    .lnt-sub { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.35; }
     .btn-lnt {
       background: rgba(255,255,255,0.1);
       border: 1px solid var(--border);
       color: #fff;
-      font-size: 0.72rem;
+      font-size: 0.76rem;
       font-weight: 700;
-      padding: 6px 12px;
+      padding: 8px 14px;
       border-radius: 8px;
       text-decoration: none;
       white-space: nowrap;
       flex-shrink: 0;
+      transition: all 0.2s;
     }
+    .btn-lnt:hover { background: rgba(255,255,255,0.2); border-color: var(--accent-teal); }
 
     /* 사이드바 */
-    .side-column { display: flex; flex-direction: column; gap: 16px; width: 100%; min-width: 0; }
-    .sidebar-custom-slot { display: none; }
-
+    .side-column { display: flex; flex-direction: column; gap: 18px; width: 100%; min-width: 0; }
     .widget-box {
       background: var(--bg-surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px;
+      border-radius: 14px;
+      padding: 16px;
     }
     .widget-title {
-      font-size: 0.88rem;
-      font-weight: 800;
-      margin-bottom: 10px;
+      font-family: var(--font-display);
+      font-size: 0.94rem;
+      font-weight: 700;
+      margin-bottom: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    .rank-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .rank-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
     .rank-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 0.78rem;
+      font-size: 0.82rem;
       cursor: pointer;
-      padding: 5px 6px;
-      border-radius: 6px;
+      padding: 7px 8px;
+      border-radius: 8px;
       transition: background 0.15s;
     }
     .rank-item:hover { background: var(--bg-card); }
-    .rank-left { display: flex; align-items: center; gap: 6px; min-width: 0; }
-    .rank-num { font-weight: 900; font-size: 0.82rem; width: 14px; color: var(--accent-blue); flex-shrink: 0; }
+    .rank-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .rank-num { font-weight: 900; font-size: 0.88rem; width: 16px; color: var(--accent-blue); flex-shrink: 0; }
     .rank-1 { color: #facc15; }
     .rank-name { font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .rank-city { font-size: 0.66rem; color: var(--text-muted); flex-shrink: 0; }
+    .rank-city { font-size: 0.7rem; color: var(--text-muted); flex-shrink: 0; }
+
+    /* 💬 [인스타그램 인앱 미리보기 모달] */
+    .insta-modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      padding: 16px;
+    }
+    .insta-modal-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-glow);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 440px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+      animation: modalFadeIn 0.25s ease-out;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal-close-btn {
+      position: absolute;
+      top: 12px; right: 12px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid var(--border);
+      color: #fff;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      cursor: pointer;
+      z-index: 10;
+      transition: background 0.2s;
+    }
+    .modal-close-btn:hover { background: rgba(244, 63, 94, 0.8); }
+    .modal-img-box {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #000;
+      position: relative;
+    }
+    .modal-img { width: 100%; height: 100%; object-fit: cover; }
+    .modal-body {
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .modal-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-user { font-weight: 800; font-size: 0.95rem; color: var(--accent-rose); }
+    .modal-badge { font-size: 0.7rem; background: rgba(244, 63, 94, 0.15); color: #fb7185; padding: 2px 8px; border-radius: 6px; font-weight: 700; }
+    .modal-desc { font-size: 0.85rem; color: var(--text-primary); line-height: 1.5; word-break: keep-all; }
+    .modal-tags { font-size: 0.78rem; color: var(--accent-blue); word-break: break-all; line-height: 1.4; }
+    .modal-insta-btn {
+      background: linear-gradient(135deg, #e1306c, #fd1d1d, #f56040);
+      color: #fff;
+      text-decoration: none;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 4px;
+      transition: opacity 0.2s;
+    }
+    .modal-insta-btn:hover { opacity: 0.92; }
 
     /* 모바일 하단 독 */
     .mobile-bottom-dock {
       display: none;
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      background: rgba(7, 9, 14, 0.96);
-      backdrop-filter: blur(14px);
+      background: rgba(8, 10, 15, 0.94);
+      backdrop-filter: blur(16px);
       border-top: 1px solid var(--border);
-      height: 56px;
+      height: 58px;
       z-index: 9000;
       justify-content: space-around;
       align-items: center;
@@ -549,37 +729,37 @@
       justify-content: center;
       color: var(--text-secondary);
       text-decoration: none;
-      font-size: 0.65rem;
+      font-size: 0.68rem;
       font-weight: 600;
-      gap: 3px;
+      gap: 4px;
     }
     .dock-item.active { color: var(--accent-blue); }
-    .dock-item svg { width: 18px; height: 18px; fill: currentColor; }
+    .dock-item svg { width: 19px; height: 19px; fill: currentColor; }
 
-    /* 모바일 미디어 쿼리 (1:1 풀 카드 스와이프 최적화) */
+    /* 📱 모바일 미디어 쿼리 (100% 꽉 차는 풀 카드 스냅 최적화) */
     @media (max-width: 768px) {
       body { padding-bottom: 74px; }
-      .portal-nav { padding: 8px 12px; }
-      .portal-logo { font-size: 0.96rem; }
-      .portal-menu a.nav-link { display: none; }
+      .portal-nav { padding: 10px 14px; }
+      .portal-logo { font-size: 0.98rem; }
+      .nav-right-slot a.nav-link { display: none; }
 
-      .portal-container { grid-template-columns: 1fr; gap: 16px; padding: 0 12px; margin-top: 6px; }
-      .hero-wrapper { padding: 18px 12px 14px 12px; }
-      .hero-title { font-size: 1.32rem; margin-bottom: 6px; }
-      .hero-subtitle { font-size: 0.76rem; margin-bottom: 14px; }
+      .portal-container { grid-template-columns: 1fr; gap: 20px; padding: 0 14px; margin-top: 6px; }
+      .hero-wrapper { padding: 22px 14px 16px 14px; }
+      .hero-title { font-size: 1.38rem; margin-bottom: 6px; }
+      .hero-subtitle { font-size: 0.8rem; margin-bottom: 16px; }
       
-      .portal-search-input { font-size: 0.84rem; padding: 11px 42px 11px 16px; }
-      .portal-search-btn { width: 32px; height: 32px; font-size: 0.85rem; }
+      .portal-search-input { font-size: 0.88rem; padding: 12px 46px 12px 18px; }
+      .portal-search-btn { width: 34px; height: 34px; font-size: 0.9rem; }
       
-      .keyword-chips-grid { grid-template-columns: repeat(3, 1fr); gap: 5px; }
-      .keyword-chip-btn { font-size: 0.72rem; padding: 6px 2px; }
+      .keyword-chips-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      .keyword-chip-btn { font-size: 0.74rem; padding: 7px 4px; }
 
-      /* 📱 모바일: 1번 넘길 때 1개씩 큼직하게 100% 카드 스냅 */
+      /* 🔥 100% 풀 카드 스와이프 */
       .yt-full-card { flex: 0 0 100% !important; padding: 10px; }
-      .insta-uniform-card { flex: 0 0 78% !important; }
-      .curated-uniform-card { flex: 0 0 85% !important; min-height: 140px; }
+      .insta-uniform-card { flex: 0 0 100% !important; padding: 12px; }
+      .curated-uniform-card { flex: 0 0 100% !important; min-height: 155px; }
 
-      .lnt-campaign-box { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .lnt-campaign-box { flex-direction: column; align-items: flex-start; gap: 10px; }
       .btn-lnt { width: 100%; text-align: center; }
 
       .mobile-bottom-dock { display: flex; }
@@ -588,18 +768,21 @@
 </head>
 <body>
 
+  <!-- 🧭 네비게이션 헤더 (정중앙 밸런스) -->
   <nav class="portal-nav">
-    <a href="index.html" class="portal-logo-wrap">
-      <span>🎒</span>
-      <span class="portal-logo">대한민국 낭만 백패킹 로드</span>
-      <span class="ver-badge">4.5ver</span>
-    </a>
-    <div class="portal-menu">
-      <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="nav-link">협업·문의</a>
-      <div class="portal-nav-slot" id="portalNavSlot"></div>
+    <div class="portal-nav-inner">
+      <a href="index.html" class="portal-logo-wrap">
+        <span class="portal-logo-icon">🎒</span>
+        <span class="portal-logo">대한민국 낭만 백패킹 로드</span>
+        <span class="ver-badge">5.0ver</span>
+      </a>
+      <div class="nav-right-slot">
+        <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="nav-link">협업·문의</a>
+      </div>
     </div>
   </nav>
 
+  <!-- 🏔️ 히어로 섹션 -->
   <section class="hero-wrapper">
     <div class="hero-badge-romance">✨ Korea Romantic Backpacking Road</div>
     <h1 class="hero-title">땀흘린 끝에 마주하는 하룻밤,<br><span class="highlight">당신의 낭만을 응원합니다.</span></h1>
@@ -621,84 +804,52 @@
     </div>
   </section>
 
+  <!-- 📦 포털 메인 컨테이너 -->
   <div class="portal-container">
     
     <main class="main-column">
       
       <div class="notice-banner-card">
-        <span class="notice-badge">📢 안내</span>
+        <span class="notice-badge">📢 LNT 수칙</span>
         <div class="notice-text">
-          자연공원법 및 산림보호법 준수 · 안전한 화기 사용과 머문 자리 클린 캠핑(LNT)을 실천해주세요.
+          자연공원법 및 산림보호법 준수 · 안전한 화기 사용과 머문 자리 클린 캠핑을 실천해주세요.
         </div>
       </div>
 
-      <!-- 🎬 1:1 풀 스와이프 유튜브 섹션 (구글 시트 '설정' 탭 연동) -->
-      <section>
+      <!-- 🎬 1. 유튜브 추천 영상 풀 스냅 캐러셀 -->
+      <section class="swipe-section-wrap">
         <div class="section-header">
-          <div class="section-title">🎬 이 주의 낭만 백패킹 추천 영상</div>
-          <span class="swipe-indicator-tag" id="ytSwipeIndicator">👉 좌우 스와이프</span>
+          <div class="section-title">🎬 이 주의 낭만 백패킹 영상</div>
+          <span style="font-size:0.75rem; color:var(--text-muted);">좌우 스와이프</span>
         </div>
         
-        <!-- 영상마다 1개씩 착착 넘어가는 풀 와이드 레일 -->
         <div class="one-card-swipe-rail" id="ytOneCardRail">
-          <!-- JS로 자동 생성 -->
+          <!-- JS 렌더링 -->
         </div>
+        <div class="carousel-dots-wrap" id="ytDotsWrap"></div>
       </section>
 
-      <!-- 📸 1:1 풀 스와이프 인스타그램 피드 -->
-      <section>
+      <!-- 📸 2. 인스타그램 & 릴스 미리보기 캐러셀 -->
+      <section class="swipe-section-wrap">
         <div class="section-header">
-          <div class="section-title">📸 요즘 뜨는 백패킹 인스타 & 릴스</div>
-          <a href="https://www.instagram.com/explore/tags/백패킹/" target="_blank" rel="noopener noreferrer" class="more-link">#백패킹 더보기 ➔</a>
+          <div class="section-title">📸 요즘 뜨는 백패킹 피드 & 릴스</div>
+          <a href="https://www.instagram.com/explore/tags/백패킹/" target="_blank" rel="noopener noreferrer" class="more-link">인스타 태그 더보기 ➔</a>
         </div>
 
-        <div class="one-card-swipe-rail">
-          <a href="https://www.instagram.com/explore/tags/선자령백패킹/" target="_blank" rel="noopener noreferrer" class="insta-uniform-card">
-            <div class="insta-thumb-box">
-              <img src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=500&auto=format&fit=crop&q=60" alt="선자령 백패킹" class="insta-thumb-img" />
-              <span class="insta-reels-badge">▶ 릴스</span>
-            </div>
-            <div class="insta-card-user">#선자령백패킹</div>
-            <div class="insta-card-desc">밤하늘 은하수가 쏟아지는 대관령 풍경 ✨</div>
-          </a>
-
-          <a href="https://www.instagram.com/explore/tags/굴업도백패킹/" target="_blank" rel="noopener noreferrer" class="insta-uniform-card">
-            <div class="insta-thumb-box">
-              <img src="https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=500&auto=format&fit=crop&q=60" alt="굴업도 백패킹" class="insta-thumb-img" />
-              <span class="insta-reels-badge">📷 인기</span>
-            </div>
-            <div class="insta-card-user">#굴업도개머리</div>
-            <div class="insta-card-desc">서해 굴업도 개머리언덕 수평선 일몰 🌅</div>
-          </a>
-
-          <a href="https://www.instagram.com/explore/tags/간월재백패킹/" target="_blank" rel="noopener noreferrer" class="insta-uniform-card">
-            <div class="insta-thumb-box">
-              <img src="https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=500&auto=format&fit=crop&q=60" alt="간월재 백패킹" class="insta-thumb-img" />
-              <span class="insta-reels-badge">▶ 릴스</span>
-            </div>
-            <div class="insta-card-user">#간월재억새</div>
-            <div class="insta-card-desc">황금빛 억새 물결 사이로 지는 노을 🌾</div>
-          </a>
-
-          <a href="https://www.instagram.com/explore/tags/수우도백패킹/" target="_blank" rel="noopener noreferrer" class="insta-uniform-card">
-            <div class="insta-thumb-box">
-              <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=500&auto=format&fit=crop&q=60" alt="수우도 백패킹" class="insta-thumb-img" />
-              <span class="insta-reels-badge">📷 힐링</span>
-            </div>
-            <div class="insta-card-user">#통영수우도</div>
-            <div class="insta-card-desc">에메랄드빛 남해 바다 절벽 뷰 🌊</div>
-          </a>
+        <div class="one-card-swipe-rail" id="instaOneCardRail">
+          <!-- JS 렌더링 -->
         </div>
+        <div class="carousel-dots-wrap" id="instaDotsWrap"></div>
       </section>
 
-      <!-- 🌊 1:1 풀 스와이프 테마별 추천 낭만 박지 -->
-      <section>
+      <!-- 🌊 3. 테마별 추천 박지 캐러셀 -->
+      <section class="swipe-section-wrap">
         <div class="section-header">
           <div class="section-title">✨ 테마별 추천 낭만 박지</div>
           <a href="map.html" class="more-link">전체 지도 보기 ➔</a>
         </div>
 
-        <div class="one-card-swipe-rail">
+        <div class="one-card-swipe-rail" id="curatedOneCardRail">
           <div class="curated-uniform-card" onclick="smartRouteToSpot('굴업도')">
             <div>
               <span class="card-tag tag-island">🏝️ 서해의 알프스</span>
@@ -751,8 +902,10 @@
             </div>
           </div>
         </div>
+        <div class="carousel-dots-wrap" id="curatedDotsWrap"></div>
       </section>
 
+      <!-- 🌿 캠페인 배너 -->
       <section class="lnt-campaign-box">
         <div>
           <div class="lnt-title">🌿 흔적을 남기지 않는 Leave No Trace</div>
@@ -763,13 +916,12 @@
 
     </main>
 
+    <!-- 📊 사이드바 -->
     <aside class="side-column">
-      <div class="sidebar-custom-slot" id="sidebarCustomSlot"></div>
-
       <div class="widget-box">
         <div class="widget-title">
           <span>🔥 실시간 인기 박지 TOP 5</span>
-          <span style="font-size:0.68rem; color:var(--text-muted);">조회순</span>
+          <span style="font-size:0.7rem; color:var(--text-muted);">조회순</span>
         </div>
         <ul class="rank-list" id="popularRankList">
           <li class="rank-item" onclick="smartRouteToSpot('굴업도')">
@@ -797,6 +949,29 @@
     </aside>
   </div>
 
+  <!-- 💬 인스타그램 인앱 미리보기 팝업 모달 -->
+  <div class="insta-modal-overlay" id="instaModalOverlay" onclick="closeInstaModal(event)">
+    <div class="insta-modal-card" onclick="event.stopPropagation()">
+      <button type="button" class="modal-close-btn" onclick="closeInstaModalDirect()">✕</button>
+      <div class="modal-img-box">
+        <img src="" id="modalImg" alt="인스타 미리보기" class="modal-img" />
+      </div>
+      <div class="modal-body">
+        <div class="modal-header-row">
+          <span class="modal-user" id="modalUser">@user</span>
+          <span class="modal-badge" id="modalBadge">인기 피드</span>
+        </div>
+        <div class="modal-desc" id="modalDesc">피드 설명 내용</div>
+        <div class="modal-tags" id="modalTags">#백패킹 #캠핑</div>
+        <a href="#" target="_blank" rel="noopener noreferrer" id="modalLinkBtn" class="modal-insta-btn">
+          <span>인스타그램 앱에서 원본 & 영상 보기</span>
+          <span>➔</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📱 모바일 하단 네비 독 -->
   <div class="mobile-bottom-dock">
     <a href="index.html" class="dock-item active">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -817,7 +992,7 @@
     const GOOGLE_SHEET_GID = '0';
     let registeredSpots = [];
 
-    // 기본 영상 목록 (구글 시트 로드 전 또는 빈칸일 때)
+    // 기본 영상 데이터
     let featuredVideosList = [
       {
         url: 'https://www.youtube.com/playlist?list=PLrEnWoR732-DZJ51uSQU6VqHjC2gZ9N-H',
@@ -825,65 +1000,85 @@
       }
     ];
 
-    /* 🎬 [업그레이드된 스마트 파서] 재생목록 및 단일 영상 100% 자동 분별 */
+    // 인스타그램 큐레이션 데이터
+    const instaFeedList = [
+      {
+        user: '#선자령백패킹',
+        badge: '▶ 릴스 영상',
+        img: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&auto=format&fit=crop&q=80',
+        desc: '풍력발전기 능선 위로 쏟아지는 대관령의 밤하늘 은하수 트레킹. 매서운 바람 속에서도 잊지 못할 하룻밤을 선사합니다.',
+        tags: '#대관령 #선자령 #은하수백패킹 #백패킹스타그램',
+        url: 'https://www.instagram.com/explore/tags/선자령백패킹/'
+      },
+      {
+        user: '#굴업도개머리',
+        badge: '📷 인기 피드',
+        img: 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=800&auto=format&fit=crop&q=80',
+        desc: '한국의 갈라파고스라 불리는 굴업도 개머리언덕! 사슴들과 함께 감상하는 서해 바다의 황홀한 붉은 일몰.',
+        tags: '#굴업도 #개머리언덕 #섬백패킹 #낭만백패킹',
+        url: 'https://www.instagram.com/explore/tags/굴업도백패킹/'
+      },
+      {
+        user: '#간월재억새',
+        badge: '▶ 릴스 영상',
+        img: 'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=800&auto=format&fit=crop&q=80',
+        desc: '영남알프스의 황금빛 억새평원 사이로 지는 따스한 노을. 걷기 편한 임도 코스로 초보 백패커에게도 추천!',
+        tags: '#간월재 #영남알프스 #억새평원 #가을백패킹',
+        url: 'https://www.instagram.com/explore/tags/간월재백패킹/'
+      },
+      {
+        user: '#통영수우도',
+        badge: '📷 힐링 피드',
+        img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80',
+        desc: '에메랄드빛 남해 바다 절벽 위에서 마주하는 아침 햇살. 기암괴석과 바다 풍경이 어우러진 프라이빗 섬 박지.',
+        tags: '#수우도 #은박산 #남해백패킹 #섬트레킹',
+        url: 'https://www.instagram.com/explore/tags/수우도백패킹/'
+      }
+    ];
+
+    /* 🎬 유튜브 스마트 파서 */
     function parseYouTubeSmartUrl(url) {
       if (!url) return null;
       const str = String(url).trim();
-
       const videoMatch = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
       const listMatch = str.match(/[?&]list=([^#&?]+)/);
 
       const vid = videoMatch ? videoMatch[1] : null;
       const listId = listMatch ? listMatch[1] : null;
 
-      // 1. 영상ID가 포함된 재생목록
       if (listId && vid) {
         return {
           type: 'playlist',
           embedUrl: `https://www.youtube.com/embed/${vid}?list=${listId}&rel=0`,
-          linkUrl: `https://www.youtube.com/watch?v=${vid}&list=${listId}`,
           badge: '📺 추천 재생목록'
         };
       }
-
-      // 2. 순수 재생목록 링크 (list=PL...)
       if (listId && !vid) {
         return {
           type: 'playlist',
           embedUrl: `https://www.youtube.com/embed/videoseries?list=${listId}&rel=0`,
-          linkUrl: `https://www.youtube.com/playlist?list=${listId}`,
           badge: '📺 추천 재생목록'
         };
       }
-
-      // 3. 단일 영상 링크 (youtu.be/...)
       if (vid) {
         return {
           type: 'video',
           embedUrl: `https://www.youtube.com/embed/${vid}?autoplay=0&mute=1&controls=1&rel=0`,
-          linkUrl: `https://www.youtube.com/watch?v=${vid}`,
           badge: '🎥 스포트라이트 영상'
         };
       }
-
       return null;
     }
 
-    /* 🎬 [1:1 풀 스와이프 렌더링] 1개 영상당 1개 카드씩 완벽한 규격으로 생성 */
-    function renderYouTubeOneCardRail() {
+    /* 🎬 유튜브 레일 렌더링 & 점(Dots) 동기화 */
+    function renderYouTubeRail() {
       const track = document.getElementById('ytOneCardRail');
-      const indicator = document.getElementById('ytSwipeIndicator');
+      const dotsWrap = document.getElementById('ytDotsWrap');
       if (!track) return;
-
-      // 영상이 1개면 스와이프 안내 문구 숨김, 2개 이상이면 표시
-      if (indicator) {
-        indicator.style.display = featuredVideosList.length > 1 ? 'inline-block' : 'none';
-      }
 
       track.innerHTML = featuredVideosList.map((item, idx) => {
         const parsed = parseYouTubeSmartUrl(item.url) || {
           embedUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
-          linkUrl: 'https://youtube.com',
           badge: '🎬 추천 영상'
         };
         const title = item.caption || `추천 영상 ${idx + 1}`;
@@ -900,14 +1095,106 @@
           </div>
         `;
       }).join('');
+
+      setupCarouselDots(track, dotsWrap, featuredVideosList.length);
     }
 
-    function escapeHtml(text) {
-      if (!text) return '';
-      return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    /* 📸 인스타그램 레일 렌더링 */
+    function renderInstaRail() {
+      const track = document.getElementById('instaOneCardRail');
+      const dotsWrap = document.getElementById('instaDotsWrap');
+      if (!track) return;
+
+      track.innerHTML = instaFeedList.map((feed, idx) => `
+        <div class="insta-uniform-card" onclick="openInstaModal(${idx})">
+          <div class="insta-thumb-box">
+            <img src="${feed.img}" alt="${feed.user}" class="insta-thumb-img" loading="lazy" />
+            <span class="insta-reels-badge">${feed.badge}</span>
+          </div>
+          <div class="insta-card-user">${feed.user}</div>
+          <div class="insta-card-desc">${feed.desc}</div>
+        </div>
+      `).join('');
+
+      setupCarouselDots(track, dotsWrap, instaFeedList.length);
     }
 
-    /* 🎬 [설정 탭 다중 영상 로드] */
+    /* 🌊 테마별 추천 박지 점(Dots) 연동 */
+    function setupCuratedRailDots() {
+      const track = document.getElementById('curatedOneCardRail');
+      const dotsWrap = document.getElementById('curatedDotsWrap');
+      if (track && dotsWrap) {
+        setupCarouselDots(track, dotsWrap, 4);
+      }
+    }
+
+    /* ⚪ 공통: 스마트 캐러셀 Dot 인디케이터 바인딩 함수 */
+    function setupCarouselDots(railElem, dotsWrapElem, totalCount) {
+      if (!railElem || !dotsWrapElem) return;
+      
+      if (totalCount <= 1) {
+        dotsWrapElem.innerHTML = '';
+        return;
+      }
+
+      dotsWrapElem.innerHTML = Array.from({ length: totalCount }).map((_, i) => `
+        <div class="carousel-dot ${i === 0 ? 'active' : ''}" onclick="scrollRailToIndex('${railElem.id}', ${i})"></div>
+      `).join('');
+
+      // 스크롤 감지하여 점 활성화
+      railElem.addEventListener('scroll', () => {
+        const itemWidth = railElem.firstElementChild ? railElem.firstElementChild.offsetWidth : railElem.offsetWidth;
+        const scrollLeft = railElem.scrollLeft;
+        const activeIdx = Math.round(scrollLeft / itemWidth);
+
+        const dots = dotsWrapElem.querySelectorAll('.carousel-dot');
+        dots.forEach((dot, idx) => {
+          dot.classList.toggle('active', idx === activeIdx);
+        });
+      }, { passive: true });
+    }
+
+    function scrollRailToIndex(railId, index) {
+      const rail = document.getElementById(railId);
+      if (!rail) return;
+      const items = rail.children;
+      if (items[index]) {
+        items[index].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+
+    /* 💬 인스타그램 모달 제어 */
+    function openInstaModal(idx) {
+      const data = instaFeedList[idx];
+      if (!data) return;
+
+      document.getElementById('modalImg').src = data.img;
+      document.getElementById('modalUser').textContent = data.user;
+      document.getElementById('modalBadge').textContent = data.badge;
+      document.getElementById('modalDesc').textContent = data.desc;
+      document.getElementById('modalTags').textContent = data.tags;
+      document.getElementById('modalLinkBtn').href = data.url;
+
+      document.getElementById('instaModalOverlay').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeInstaModalDirect() {
+      document.getElementById('instaModalOverlay').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    function closeInstaModal(e) {
+      if (e.target.id === 'instaModalOverlay') {
+        closeInstaModalDirect();
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeInstaModalDirect();
+    });
+
+    /* ⚙️ 구글 시트 '설정' 탭 연동 */
     async function loadFeaturedVideoFromConfigSheet() {
       const configUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('설정')}&_t=${Date.now()}`;
       try {
@@ -946,14 +1233,14 @@
 
                 if (list.length > 0) {
                   featuredVideosList = list;
-                  renderYouTubeOneCardRail();
+                  renderYouTubeRail();
                 }
               }
             }
           });
         }
       } catch (e) {
-        console.warn('설정 시트 로드 대기 중 (기본 영상 렌더링)', e);
+        console.warn('설정 시트 로드 대기 중', e);
       }
     }
 
@@ -982,10 +1269,14 @@
       } catch (e) {}
     }
 
-    // 초기 실행
-    renderYouTubeOneCardRail();
-    loadPortalSpotData();
-    loadFeaturedVideoFromConfigSheet();
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function escapeJsString(str) {
+      return (str || '').replace(/'/g, "\\'");
+    }
 
     function handleAutoSearch(keyword) {
       const dropdown = document.getElementById('searchAutoDropdown');
@@ -1008,10 +1299,6 @@
       }
     }
 
-    function escapeJsString(str) {
-      return (str || '').replace(/'/g, "\\'");
-    }
-
     function executePortalSmartSearch() {
       const q = document.getElementById('mainSearchInput').value.trim();
       if (!q) {
@@ -1032,6 +1319,15 @@
         const dd = document.getElementById('searchAutoDropdown');
         if (dd) dd.style.display = 'none';
       }
+    });
+
+    // 🚀 초기 실행
+    window.addEventListener('DOMContentLoaded', () => {
+      renderYouTubeRail();
+      renderInstaRail();
+      setupCuratedRailDots();
+      loadPortalSpotData();
+      loadFeaturedVideoFromConfigSheet();
     });
   </script>
 </body>
