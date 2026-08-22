@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -9,9 +8,9 @@
   <meta http-equiv="Expires" content="0" />
   <title>대한민국 낭만 백패킹 로드 | 전국 지도 (4.5ver)</title>
 
-  <!-- 웹폰트: Pretendard(본문 UI) + Gmarket Sans(헤더 볼드) -->
+  <!-- 웹폰트: Pretendard(본문 UI) + Gmarket Sans(헤더 볼드) + Caveat(영문 감성 필기체) -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Gmarket+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Gmarket+Sans:wght@500;700;800&display=swap" rel="stylesheet">
   
   <!-- Naver Maps Open API -->
   <script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=nokunumn03&submodules=geocoder"></script>
@@ -37,6 +36,7 @@
       --accent-amber: #f59e0b;
       --accent-rose: #f43f5e;
       --font-display: 'Gmarket Sans', -apple-system, sans-serif;
+      --font-script: 'Caveat', cursive;
       --font-body: 'Pretendard', -apple-system, sans-serif;
     }
 
@@ -57,7 +57,7 @@
       letter-spacing: -0.015em;
     }
     
-    /* 🧭 1. 상단 헤더 (위아래 여백 슬림화 & 정가운데 정렬) */
+    /* 🧭 1. 상단 헤더 */
     .header {
       width: 100%;
       background: rgba(3, 5, 8, 0.94);
@@ -66,12 +66,13 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 5px 14px;
+      padding: 6px 14px;
       z-index: 1000;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
       border-bottom: 1px solid var(--border);
       user-select: none;
       flex-shrink: 0;
+      min-height: 52px;
     }
     .header-row-1 {
       display: flex;
@@ -83,18 +84,17 @@
     .header-left { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; min-width: 0; }
     
     .header-title-box {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       white-space: nowrap;
       text-decoration: none;
       min-width: 0;
     }
-    .flag-icon { font-size: 1.18rem; flex-shrink: 0; }
     
     .main-title {
       font-family: var(--font-display);
-      font-size: clamp(1.08rem, 3.8vw, 1.45rem);
+      font-size: clamp(1.02rem, 3.6vw, 1.38rem);
       font-weight: 800;
       color: #ffffff;
       letter-spacing: -0.03em;
@@ -111,6 +111,15 @@
       filter: drop-shadow(0 0 10px rgba(244, 63, 94, 0.5));
       font-weight: 800;
     }
+    .brand-sub-script {
+      font-family: var(--font-script);
+      font-size: clamp(1.02rem, 3.0vw, 1.32rem);
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 0.02em;
+      opacity: 0.9;
+      transform: translateY(1px);
+    }
 
     .admin-status-badge {
       display: none;
@@ -126,42 +135,6 @@
     }
     
     .header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-
-    /* 🛸 상단 드론 규제 확인 버튼 */
-    .header-drone-toggle-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      background: rgba(244, 63, 94, 0.12);
-      border: 1.5px solid rgba(244, 63, 94, 0.45);
-      padding: 5px 12px;
-      border-radius: 20px;
-      font-size: 0.78rem;
-      font-weight: 800;
-      color: #fecdd3 !important;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      white-space: nowrap;
-      user-select: none;
-    }
-    .header-drone-toggle-btn:hover {
-      background: rgba(244, 63, 94, 0.25);
-      border-color: var(--accent-rose);
-      color: #ffffff !important;
-      box-shadow: 0 0 14px rgba(244, 63, 94, 0.45);
-    }
-    .header-drone-toggle-btn.active {
-      background: linear-gradient(135deg, #e11d48, #be123c) !important;
-      color: #ffffff !important;
-      border-color: #fda4af !important;
-      box-shadow: 0 0 18px rgba(225, 29, 72, 0.65);
-      animation: pulseDroneBtn 1.6s infinite;
-    }
-    @keyframes pulseDroneBtn {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.03); }
-    }
 
     .header-btn {
       background: var(--bg-card);
@@ -180,7 +153,7 @@
     .admin-only-btn { display: none; background: rgba(13, 148, 136, 0.2); color: var(--accent-teal); border-color: rgba(45, 212, 191, 0.4); }
     .admin-only-btn:hover { background: rgba(13, 148, 136, 0.4); color: #fff; }
 
-    /* 🔍 검색창 (높이 확장 & 터치감 개선) */
+    /* 🔍 검색창 */
     .search-container { position: relative; display: flex; align-items: center; width: 330px; }
     .search-input {
       width: 100%;
@@ -285,7 +258,7 @@
       display: flex;
       width: 100%;
       flex: 1;
-      height: calc(100% - 55px);
+      height: calc(100% - 52px);
       position: relative;
       overflow: hidden;
     }
@@ -619,40 +592,86 @@
 
     #map { flex: 1; height: 100%; position: relative; background: var(--bg-deep); }
     
+    /* 🟢🟡🔴 1줄 가로형 미니 범례 칩 (좌측 상단 밀착) */
     .map-legend-bar {
       position: absolute;
-      top: 10px;
-      left: 10px;
+      top: 12px;
+      left: 12px;
       background: rgba(9, 12, 19, 0.92);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 4px 8px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-glow);
+      border-radius: 20px;
+      padding: 4px 10px;
       z-index: 120;
       display: flex;
-      flex-direction: column;
-      gap: 3px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.7);
       user-select: none;
       pointer-events: none;
     }
     .legend-item {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      font-size: 0.64rem;
-      font-weight: 700;
+      gap: 4px;
+      font-size: 0.66rem;
+      font-weight: 800;
       color: var(--text-secondary);
     }
-    .legend-dot { width: 6px; height: 6px; border-radius: 50%; }
-    .dot-green { background: #10b981; }
-    .dot-yellow { background: #f59e0b; }
-    .dot-red { background: #ef4444; }
+    .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .dot-green { background: #10b981; box-shadow: 0 0 6px rgba(16,185,129,0.7); }
+    .dot-yellow { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.7); }
+    .dot-red { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.7); }
+
+    /* 🛸 지도 상단 정중앙 플로팅 드론 토글 버튼 */
+    .map-floating-drone-btn {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5000;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      background: rgba(9, 12, 19, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1.5px solid rgba(244, 63, 94, 0.55);
+      padding: 6px 14px;
+      border-radius: 22px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #fecdd3 !important;
+      cursor: pointer;
+      transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+      user-select: none;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.75);
+    }
+    .map-floating-drone-btn:hover {
+      background: rgba(244, 63, 94, 0.25);
+      border-color: var(--accent-rose);
+      color: #ffffff !important;
+      box-shadow: 0 0 16px rgba(244, 63, 94, 0.55);
+    }
+    .map-floating-drone-btn.active {
+      background: linear-gradient(135deg, #e11d48, #be123c) !important;
+      color: #ffffff !important;
+      border-color: #fda4af !important;
+      box-shadow: 0 0 20px rgba(225, 29, 72, 0.75);
+      animation: pulseDroneBtn 1.6s infinite;
+    }
+    @keyframes pulseDroneBtn {
+      0%, 100% { transform: translateX(-50%) scale(1); }
+      50% { transform: translateX(-50%) scale(1.04); }
+    }
 
     .pin-picker-banner {
       display: none;
       position: absolute;
-      top: 10px;
+      top: 56px;
       left: 50%;
       transform: translateX(-50%);
       background: linear-gradient(135deg, #0f766e, #0284c7);
@@ -834,7 +853,7 @@
       margin-top: 2px;
     }
 
-    /* 📝 특징 내용 (라벨 없이 들머리와 1:1 일치 0.82rem) */
+    /* 📝 특징 내용 */
     .sheet-desc-box {
       font-size: 0.82rem;
       font-weight: 500;
@@ -872,7 +891,6 @@
       white-space: nowrap;
       line-height: 1.3;
     }
-    /* 🎬 YouTube 가로 2배 확장 버튼 */
     .btn-yt-wide {
       background: linear-gradient(135deg, #e11d48, #be123c);
       padding: 4px 14px !important;
@@ -1004,7 +1022,7 @@
     .comment-input-text { flex: 1; padding: 3px 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.64rem; outline: none; background: var(--bg-deep); color: #fff; }
     .comment-btn-submit { background: #0f766e; color: #ffffff; border: none; border-radius: 4px; padding: 3px 9px; font-size: 0.64rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
 
-    /* 📱 모바일 바텀시트 (5:5 화면 분할 42dvh) */
+    /* 📱 모바일 바텀시트 */
     .mobile-bottom-sheet {
       display: none;
       position: fixed;
@@ -1130,7 +1148,7 @@
       border: 1px solid var(--border-glow);
     }
     .custom-modal h3 { font-family: var(--font-display); font-size: 0.95rem; color: var(--accent-blue); }
-    .modal-field { display: flex; flex-direction: column; gap: 3px; }
+    .modal-field { display: flex; display: flex; flex-direction: column; gap: 3px; }
     .modal-field label { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); }
     .modal-input {
       width: 100%;
@@ -1165,20 +1183,30 @@
       }
       .header-row-1 { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 4px; }
       .header-left { gap: 5px; }
-      .main-title { font-size: 1.05rem !important; }
+      .main-title { font-size: 1.02rem !important; }
       .header-desktop-only, .pc-sidebar-toggle-btn { display: none !important; }
       
       .admin-status-badge { font-size: 0.56rem; padding: 1px 4px; }
-      .header-drone-toggle-btn { padding: 4px 9px !important; font-size: 0.72rem !important; border-radius: 16px; }
-
+      
       .header-row-2 { display: block !important; width: 100%; }
       .search-container { width: 100% !important; }
       .search-input { padding: 7px 34px 7px 14px !important; font-size: 0.82rem !important; min-height: 36px !important; }
       
       .map-legend-bar { 
-        top: 64px !important;
+        top: 10px !important;
         left: 8px !important;
-        padding: 3px 6px !important;
+        padding: 3px 7px !important;
+        font-size: 0.62rem !important;
+      }
+      
+      .map-floating-drone-btn {
+        top: 10px !important;
+        padding: 4px 10px !important;
+        font-size: 0.72rem !important;
+      }
+      
+      .pin-picker-banner {
+        top: 50px !important;
       }
       
       .container { 
@@ -1225,18 +1253,13 @@
     <div class="header-row-1">
       <div class="header-left">
         <a href="index.html" class="header-title-box" title="포털 메인 홈으로 이동">
-          <span class="flag-icon">🇰🇷</span>
           <span class="main-title">대한민국 <span class="highlight-pink">낭만 백패킹</span> 로드</span>
+          <span class="brand-sub-script">Romantic Backpacking Road</span>
         </a>
         <span class="admin-status-badge" id="adminBadge">관리자 ON</span>
       </div>
       
       <div class="header-right">
-        <!-- 🛸 드론 규제 확인 버튼 -->
-        <button type="button" class="header-drone-toggle-btn" id="headerDroneBtn" onclick="toggleDroneOverlay()" title="전국 드론 비행금지 및 군사/공항 관제공역 레이어 토글">
-          <span>🛸 드론 규제 확인</span>
-        </button>
-
         <button type="button" class="header-btn admin-only-btn" id="btnSyncSheet" onclick="fetchSpotsFromGoogleSheet()">🔄 시트 동기화</button>
         <button type="button" class="header-btn header-desktop-only" id="resetMapBtn" onclick="resetMapView()">🔄 지도 초기화</button>
       </div>
@@ -1311,11 +1334,17 @@
     </div>
     
     <main id="map">
+      <!-- 🟢🟡🔴 상단 좌측 바짝 밀착 가로형 미니 범례 칩 -->
       <div class="map-legend-bar">
         <div class="legend-item"><span class="legend-dot dot-green"></span> 쉬움</div>
         <div class="legend-item"><span class="legend-dot dot-yellow"></span> 보통</div>
         <div class="legend-item"><span class="legend-dot dot-red"></span> 어려움</div>
       </div>
+
+      <!-- 🛸 지도 상단 정중앙 플로팅 드론 규제 확인 캡슐 버튼 -->
+      <button type="button" class="map-floating-drone-btn" id="headerDroneBtn" onclick="toggleDroneOverlay()" title="전국 드론 비행금지 및 군사/공항 관제공역 레이어 토글">
+        <span>🛸 드론 규제 확인</span>
+      </button>
 
       <div id="pinPickerBanner" class="pin-picker-banner">
         <span>📍 지도를 클릭하여 박지 텐트 위치를 콕 찍어주세요!</span>
@@ -1332,19 +1361,16 @@
 
   <!-- 📱 3. 모바일 하단 네비 독 -->
   <div class="mobile-bottom-dock">
-    <!-- 메뉴 1: 홈으로 가기 -->
     <a href="index.html" class="dock-item" title="포털 메인 홈으로 이동">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
       <span>홈</span>
     </a>
 
-    <!-- 메뉴 2: 박지 목록 열기/닫기 -->
     <button type="button" class="dock-item active" id="dockSpotListBtn" onclick="toggleMobileSidebar()">
       <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
       <span id="dockSpotListText">박지목록</span>
     </button>
 
-    <!-- 메뉴 3: 지도 초기화 -->
     <button type="button" class="dock-item" id="dockResetMapBtn" onclick="resetMapView()">
       <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
       <span>지도초기화</span>
@@ -1445,9 +1471,6 @@
   </div>
 
   <script>
-    /* =========================================================================
-       버전 관리 및 상수 (4.5ver 판올림)
-       ========================================================================= */
     const BASE_VERSION_NUM = 4.5;
     const CURRENT_VERSION = `${BASE_VERSION_NUM.toFixed(1)}ver`;
 
@@ -1513,7 +1536,6 @@
       return `https://map.naver.com/p/search/${encodeURIComponent(cleanQ)}`;
     }
 
-    // 48개 군사·원전·공항 드론 규제 구역 데이터
     const restrictedZones = [
       { name: "P-518 북방 비행금지구역 (철원/화천 전방)", lat: 38.2500, lng: 127.5000, radius: 25000, type: "border", desc: "군사작전 접경선 (민간 드론 절대 비행 불가)" },
       { name: "P-518 북방 비행금지구역 (양구/인제 전방)", lat: 38.2800, lng: 128.0500, radius: 25000, type: "border", desc: "군사작전 접경선 (민간 드론 절대 비행 불가)" },
@@ -1565,7 +1587,6 @@
       { name: "제주국제공항 관제권", lat: 33.5113, lng: 126.4930, radius: 9300, type: "air", desc: "국제공항 관제권 (반경 9.3km)" }
     ];
 
-    // 22개 국립공원 공역 데이터
     const nationalParks = [
       { name: "설악산국립공원", lat: 38.1190, lng: 128.4650, radius: 14000, desc: "자연공원법에 의해 드론 비행 및 촬영 전면 금지" },
       { name: "오대산국립공원", lat: 37.7950, lng: 128.6180, radius: 12000, desc: "자연공원법에 의해 드론 비행 및 촬영 전면 금지" },
@@ -1614,7 +1635,6 @@
     let modalPendingData = { lat: 0, lng: 0, droneStatus: 'ok', address: '' };
     let isPickingLocationMode = false;
 
-    // 네이버 지도 인스턴스 초기화
     const map = new naver.maps.Map('map', {
       center: DEFAULT_MAP_CENTER,
       zoom: DEFAULT_MAP_ZOOM,
@@ -1643,12 +1663,10 @@
     naver.maps.Event.addListener(map, 'dragstart', () => closeAllPopups());
     naver.maps.Event.addListener(map, 'pinchstart', () => closeAllPopups());
 
-    // 초기 로드 시 셋업
     document.addEventListener('DOMContentLoaded', () => {
       const vTag = document.getElementById('versionTagBtn');
       if (vTag) vTag.innerText = CURRENT_VERSION;
 
-      // 모바일 초기화: 사이드바 기본 닫힘
       if (window.innerWidth <= 768) {
         isSidebarCollapsed = true;
         const sidebar = document.getElementById('sidebar');
@@ -1708,7 +1726,6 @@
       }, 300);
     }
 
-    /* 📱 모바일 하단 독 전용 사이드바 토글 함수 */
     function toggleMobileSidebar() {
       isSidebarCollapsed = !isSidebarCollapsed;
       const sidebar = document.getElementById('sidebar');
@@ -1779,7 +1796,6 @@
       return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
     }
 
-    /* 🚀 Bounding Box 사전 필터링으로 70개 공역 판별 렉 제거 */
     function autoDetectDroneStatus(lat, lng) {
       if (!lat || !lng) return { status: 'ok', reason: '자유 비행 구역 (150m 고도제한 준수 / 촬영 시 원스톱 허가 권장)' };
 
@@ -1931,7 +1947,6 @@
       document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
     }
 
-    /* 📱 모바일: 하단 독과 바텀시트를 고려한 스마트 카메라 포커스 */
     function smoothCenterMapOnSpot(lat, lng, keepCurrentZoom = true) {
       const isMobile = window.innerWidth <= 768;
       const targetLatLng = new naver.maps.LatLng(lat, lng);
@@ -1959,14 +1974,13 @@
       map.panTo(cameraLatLng, { duration: 320, easing: 'easeOutCubic' });
     }
 
-    /* 📱 모바일 바텀시트 열기 (산 이름부터 최상단 스크롤 리셋 보장) */
     function openMobileBottomSheet(spot) {
       const sheet = document.getElementById('mobileBottomSheet');
       const content = document.getElementById('mobileSheetContent');
       if (!sheet || !content) return;
       
       content.innerHTML = generateDetailContentHtml(spot, true);
-      content.scrollTop = 0; // 🔝 산 이름 최상단부터 출력
+      content.scrollTop = 0;
       sheet.classList.add('open');
       window.history.pushState({ bottomSheetOpen: true }, '');
     }
@@ -2045,14 +2059,13 @@
         
         setTimeout(() => {
           const pcCard = document.getElementById('pcInfoWindowCard');
-          if (pcCard) pcCard.scrollTop = 0; // 🔝 산 이름 최상단부터 출력
+          if (pcCard) pcCard.scrollTop = 0;
         }, 10);
       }
 
       smoothCenterMapOnSpot(spot.lat, spot.lng, keepZoom);
     }
 
-    /* 🎬 상세 정보창 HTML 렌더러 (특징 라벨 제거, 0.82rem 일치, YouTube 가로 2배 확장) */
     function generateDetailContentHtml(spot, isMobileSheet = false) {
       const { navAddress, guide } = parseEntryPoint(spot.entryPoint || spot.name);
       const searchTarget = navAddress || spot.name;
@@ -2081,7 +2094,6 @@
           <div style="margin: 3px 0 1px 0;">${getMetaBadgesHtml(spot)}</div>
           <div class="spot-coords-text">📍 ${spot.lat}, ${spot.lng}</div>
           
-          <!-- 🚗 들머리 네비 & 복사 액션 바 -->
           <div class="sheet-nav-action-bar">
             <a href="${escapeHtml(naverSearchUrl)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link" title="네이버 지도 길안내로 이동">
               🚗 들머리: ${cleanAddress} ↗
@@ -2093,10 +2105,8 @@
           
           ${guide ? `<div class="entry-guide-chip">💡 길 안내: ${escapeHtml(guide)}</div>` : ''}
 
-          <!-- 📝 특징 내용 (라벨 없이 타이트하게 출력, 폰트 크기 0.82rem 일치) -->
           ${spot.desc?.trim() ? `<div class="sheet-desc-box">${escapeHtml(spot.desc.trim())}</div>` : ''}
 
-          <!-- 🔗 가로 인라인 미디어 라인 (YouTube 가로 2배 확장) -->
           <div class="spot-action-line">
             ${ytList.slice(0, 2).map((url, i) => url?.trim() ? `<a href="${escapeHtml(cleanYouTubeUrl(url.trim()))}" target="_blank" rel="noopener noreferrer" class="link-btn btn-yt btn-yt-wide" onclick="event.stopPropagation();">▶ YouTube 영상${ytList.length > 1 ? ` (${i + 1})` : ''}</a>` : '').join('')}
             ${spot.blogUrl?.trim() ? `<a href="${escapeHtml(spot.blogUrl.trim())}" target="_blank" rel="noopener noreferrer" class="link-btn btn-blog" onclick="event.stopPropagation();">📝 블로그</a>` : ''}
@@ -2278,7 +2288,6 @@
           }
           renderSpots();
 
-          // URL 파라미터 연동 (?spot=굴업도 등)
           const urlParams = new URLSearchParams(window.location.search);
           const spotParam = urlParams.get('spot');
           const qParam = urlParams.get('q');
@@ -3098,7 +3107,6 @@
       } catch (err) {}
     }
 
-    /* 🔄 지도 전도 뷰 초기화 (하단 독 & 헤더 연동) */
     function resetMapView() {
       map.morph(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, { duration: 400, easing: 'easeOutCubic' });
       closeAllPopups();
@@ -3132,8 +3140,7 @@
       });
       renderSpots();
     }
-
-    function initDroneOverlays() {
+function initDroneOverlays() {
       const allZones = [
         ...restrictedZones.map(z => ({ ...z, isStrict: z.type === 'border' || z.type === 'nuke' || z.type === 'p73' || z.type === 'mil_ban', isPark: false })),
         ...nationalParks.map(p => ({ ...p, isStrict: true, isPark: true }))
