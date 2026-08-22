@@ -974,17 +974,20 @@
     }
 
     /* 🔒 들머리 잠금 & 7초 프로그레스 게이지 오버레이 */
-    .locked-entry-wrap {
-      position: relative;
-      margin-top: 4px;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    .locked-entry-inner {
-      display: flex;
-      gap: 6px;
-      align-items: stretch;
-      transition: filter 0.3s ease;
+   .locked-entry-wrap {
+  position: relative;
+  margin-top: 4px;
+  border-radius: 8px;
+  overflow: hidden;
+  min-height: 54px; /* 👈 이 줄 추가 (최소 높이 표준화) */
+}
+.locked-entry-inner {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+  transition: filter 0.3s ease;
+  min-height: 54px; /* 👈 이 줄 추가 (최소 높이 표준화) */
+}
     }
     .locked-entry-inner.is-locked {
       filter: blur(5px);
@@ -2523,7 +2526,7 @@
             </div>
             ${!isUnlocked ? `
               <div class="entry-lock-overlay" id="entryLockOverlay_${spot.id}" onclick="triggerSpotUnlock('${spot.id}', '${ytList[0] ? escapeHtml(cleanYouTubeUrl(ytList[0].trim())) : instaLink}')">
-                <span>🔒 등록자 분께 감사 인사를 전해 보세요. YouTube 영상이나 등록자 링크를 누르면 열립니다</span>
+                <span>🔒 등록자 분께 감사 인사를 전해 보세요.<br> YouTube나 등록자 링크를 누르면 열립니다</span>
               </div>
             ` : ''}
           </div>
