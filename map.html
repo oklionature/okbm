@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -19,7 +21,7 @@
 
   <style>
     :root {
-      /* 🖤 딥 옵시디언 트루 블랙 & 네온 오로라 테마 */
+      /* 🖤 딥 옵시디언 트루 블랙 & 네온 오로라 테마 (index와 100% 일치) */
       --bg-deep: #030508;
       --bg-surface: #090c13;
       --bg-card: #0e131d;
@@ -66,7 +68,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 6px 14px;
+      padding: 6px 16px;
       z-index: 1000;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
       border-bottom: 1px solid var(--border);
@@ -79,7 +81,7 @@
       align-items: center;
       justify-content: space-between;
       width: 100%;
-      gap: 8px;
+      gap: 12px;
     }
     .header-left { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; min-width: 0; }
     
@@ -94,7 +96,7 @@
     
     .main-title {
       font-family: var(--font-display);
-      font-size: clamp(1.02rem, 3.6vw, 1.38rem);
+      font-size: clamp(1.05rem, 3.8vw, 1.42rem);
       font-weight: 800;
       color: #ffffff;
       letter-spacing: -0.03em;
@@ -103,7 +105,6 @@
       align-items: center;
       gap: 4px;
     }
-    /* 💖 낭만 백패킹 로즈 핑크 네온 그라데이션 */
     .main-title .highlight-pink {
       background: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #f472b6 100%);
       -webkit-background-clip: text;
@@ -113,7 +114,7 @@
     }
     .brand-sub-script {
       font-family: var(--font-script);
-      font-size: clamp(1.02rem, 3.0vw, 1.32rem);
+      font-size: clamp(1.05rem, 3.2vw, 1.35rem);
       font-weight: 700;
       color: #38bdf8;
       letter-spacing: 0.02em;
@@ -263,7 +264,7 @@
       overflow: hidden;
     }
     
-    /* 사이드바 */
+    /* 사이드바 (모바일 z-index: 2500으로 지도 컨트롤 완전 덮음) */
     .sidebar {
       width: 390px;
       max-width: 100%;
@@ -273,7 +274,7 @@
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
-      z-index: 1000;
+      z-index: 2500;
       color: var(--text-primary);
       overflow-x: hidden;
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -297,7 +298,7 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      z-index: 1100;
+      z-index: 2600;
       box-shadow: 4px 0 14px rgba(0,0,0,0.6);
       transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.15s;
       font-size: 0.75rem;
@@ -592,86 +593,129 @@
 
     #map { flex: 1; height: 100%; position: relative; background: var(--bg-deep); }
     
-    /* 🟢🟡🔴 1줄 가로형 미니 범례 칩 (좌측 상단 밀착) */
-    .map-legend-bar {
+    /* 🌟 [가로 1줄 통합 지도 상단 툴바] 난이도 + 드론규제 + 일반/위성/지형도 */
+    .map-top-unified-bar {
       position: absolute;
-      top: 12px;
-      left: 12px;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 120;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      max-width: calc(100vw - 20px);
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      padding: 2px;
+    }
+    .map-top-unified-bar::-webkit-scrollbar { display: none; }
+
+    /* 🟢🟡🔴 난이도 칩 */
+    .unified-legend-chip {
+      height: 32px;
+      padding: 0 10px;
       background: rgba(9, 12, 19, 0.92);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       border: 1px solid var(--border-glow);
-      border-radius: 20px;
-      padding: 4px 10px;
-      z-index: 120;
-      display: flex;
+      border-radius: 18px;
+      display: inline-flex;
       align-items: center;
-      gap: 8px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.7);
+      gap: 6px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
       user-select: none;
-      pointer-events: none;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     .legend-item {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      font-size: 0.66rem;
+      gap: 3px;
+      font-size: 0.68rem;
       font-weight: 800;
       color: var(--text-secondary);
     }
-    .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .legend-dot { width: 6px; height: 6px; border-radius: 50%; }
     .dot-green { background: #10b981; box-shadow: 0 0 6px rgba(16,185,129,0.7); }
     .dot-yellow { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.7); }
     .dot-red { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.7); }
 
-    /* 🛸 지도 상단 정중앙 플로팅 드론 토글 버튼 */
-    .map-floating-drone-btn {
-      position: absolute;
-      top: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 5000;
+    /* 🛸 드론 규제 토글 버튼 */
+    .unified-drone-btn {
+      height: 32px;
+      padding: 0 12px;
+      background: rgba(9, 12, 19, 0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(244, 63, 94, 0.55);
+      border-radius: 18px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 5px;
-      background: rgba(9, 12, 19, 0.92);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1.5px solid rgba(244, 63, 94, 0.55);
-      padding: 6px 14px;
-      border-radius: 22px;
-      font-size: 0.78rem;
+      gap: 4px;
+      font-size: 0.72rem;
       font-weight: 800;
       color: #fecdd3 !important;
       cursor: pointer;
-      transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       white-space: nowrap;
       user-select: none;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.75);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+      flex-shrink: 0;
     }
-    .map-floating-drone-btn:hover {
+    .unified-drone-btn:hover {
       background: rgba(244, 63, 94, 0.25);
       border-color: var(--accent-rose);
       color: #ffffff !important;
-      box-shadow: 0 0 16px rgba(244, 63, 94, 0.55);
     }
-    .map-floating-drone-btn.active {
+    .unified-drone-btn.active {
       background: linear-gradient(135deg, #e11d48, #be123c) !important;
       color: #ffffff !important;
       border-color: #fda4af !important;
-      box-shadow: 0 0 20px rgba(225, 29, 72, 0.75);
-      animation: pulseDroneBtn 1.6s infinite;
+      box-shadow: 0 0 18px rgba(225, 29, 72, 0.75);
     }
-    @keyframes pulseDroneBtn {
-      0%, 100% { transform: translateX(-50%) scale(1); }
-      50% { transform: translateX(-50%) scale(1.04); }
+
+    /* 🗺️ 일반 / 위성 / 지형도 다크 네온 스위처 */
+    .unified-map-type-group {
+      height: 32px;
+      padding: 2px;
+      background: rgba(9, 12, 19, 0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-glow);
+      border-radius: 18px;
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .map-type-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.18s;
+      outline: none;
+    }
+    .map-type-btn:hover { color: #fff; }
+    .map-type-btn.active {
+      background: #0284c7;
+      color: #ffffff;
+      font-weight: 800;
+      box-shadow: 0 1px 6px rgba(2, 132, 199, 0.4);
     }
 
     .pin-picker-banner {
       display: none;
       position: absolute;
-      top: 56px;
+      top: 52px;
       left: 50%;
       transform: translateX(-50%);
       background: linear-gradient(135deg, #0f766e, #0284c7);
@@ -680,7 +724,7 @@
       border-radius: 20px;
       font-size: 0.78rem;
       font-weight: 800;
-      z-index: 6000;
+      z-index: 1500;
       box-shadow: 0 6px 24px rgba(0,0,0,0.85);
       border: 1.5px solid rgba(255,255,255,0.4);
       align-items: center;
@@ -1148,7 +1192,7 @@
       border: 1px solid var(--border-glow);
     }
     .custom-modal h3 { font-family: var(--font-display); font-size: 0.95rem; color: var(--accent-blue); }
-    .modal-field { display: flex; display: flex; flex-direction: column; gap: 3px; }
+    .modal-field { display: flex; flex-direction: column; gap: 3px; }
     .modal-field label { font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); }
     .modal-input {
       width: 100%;
@@ -1176,14 +1220,14 @@
     /* 📱 모바일 미디어 쿼리 (~768px) */
     @media (max-width: 768px) {
       .header { 
-        padding: 5px 10px !important;
+        padding: 6px 10px !important;
         flex-direction: column !important;
         align-items: stretch !important;
-        gap: 5px !important;
+        gap: 6px !important;
       }
       .header-row-1 { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 4px; }
       .header-left { gap: 5px; }
-      .main-title { font-size: 1.02rem !important; }
+      .main-title { font-size: 1.05rem !important; }
       .header-desktop-only, .pc-sidebar-toggle-btn { display: none !important; }
       
       .admin-status-badge { font-size: 0.56rem; padding: 1px 4px; }
@@ -1192,21 +1236,21 @@
       .search-container { width: 100% !important; }
       .search-input { padding: 7px 34px 7px 14px !important; font-size: 0.82rem !important; min-height: 36px !important; }
       
-      .map-legend-bar { 
-        top: 10px !important;
-        left: 8px !important;
-        padding: 3px 7px !important;
-        font-size: 0.62rem !important;
+      .map-top-unified-bar {
+        top: 8px !important;
+        gap: 4px !important;
+        max-width: calc(100vw - 16px) !important;
+        justify-content: flex-start !important;
       }
-      
-      .map-floating-drone-btn {
-        top: 10px !important;
-        padding: 4px 10px !important;
-        font-size: 0.72rem !important;
+      .unified-legend-chip, .unified-drone-btn, .unified-map-type-group {
+        height: 29px !important;
+        padding: 0 8px !important;
+        font-size: 0.65rem !important;
       }
+      .map-type-btn { padding: 3px 6px !important; font-size: 0.64rem !important; }
       
       .pin-picker-banner {
-        top: 50px !important;
+        top: 46px !important;
       }
       
       .container { 
@@ -1228,7 +1272,7 @@
         width: 100% !important; 
         max-width: 100vw !important;
         height: 100% !important; 
-        z-index: 300;
+        z-index: 2500 !important;
         border-right: none; 
         border-bottom: 1px solid var(--border); 
         box-shadow: 0 8px 24px rgba(0,0,0,0.85);
@@ -1248,7 +1292,7 @@
   <!-- 🍞 토스트 알림 -->
   <div id="appToast" class="app-toast"></div>
 
-  <!-- 🧭 1. 상단 헤더 -->
+  <!-- 🧭 1. 상단 헤더 (인덱스와 100% 동일한 폰트 & 타이포그래피) -->
   <header class="header" id="header">
     <div class="header-row-1">
       <div class="header-left">
@@ -1334,17 +1378,27 @@
     </div>
     
     <main id="map">
-      <!-- 🟢🟡🔴 상단 좌측 바짝 밀착 가로형 미니 범례 칩 -->
-      <div class="map-legend-bar">
-        <div class="legend-item"><span class="legend-dot dot-green"></span> 쉬움</div>
-        <div class="legend-item"><span class="legend-dot dot-yellow"></span> 보통</div>
-        <div class="legend-item"><span class="legend-dot dot-red"></span> 어려움</div>
-      </div>
+      <!-- 🌟 [가로 1줄 통합 지도 상단 툴바] 난이도 + 드론규제 + 일반/위성/지형도 -->
+      <div class="map-top-unified-bar">
+        <!-- 🟢🟡🔴 1. 난이도 범례 칩 -->
+        <div class="unified-legend-chip">
+          <div class="legend-item"><span class="legend-dot dot-green"></span> 쉬움</div>
+          <div class="legend-item"><span class="legend-dot dot-yellow"></span> 보통</div>
+          <div class="legend-item"><span class="legend-dot dot-red"></span> 어려움</div>
+        </div>
 
-      <!-- 🛸 지도 상단 정중앙 플로팅 드론 규제 확인 캡슐 버튼 -->
-      <button type="button" class="map-floating-drone-btn" id="headerDroneBtn" onclick="toggleDroneOverlay()" title="전국 드론 비행금지 및 군사/공항 관제공역 레이어 토글">
-        <span>🛸 드론 규제 확인</span>
-      </button>
+        <!-- 🛸 2. 드론 규제 확인 버튼 -->
+        <button type="button" class="unified-drone-btn" id="headerDroneBtn" onclick="toggleDroneOverlay()" title="전국 드론 비행금지 및 군사/공항 관제공역 레이어 토글">
+          <span>🛸 드론 규제 확인</span>
+        </button>
+
+        <!-- 🗺️ 3. 일반 / 위성 / 지형도 다크 네온 스위처 -->
+        <div class="unified-map-type-group">
+          <button type="button" class="map-type-btn active" id="btnMapNormal" onclick="setMapType('NORMAL')">🗺️ 일반</button>
+          <button type="button" class="map-type-btn" id="btnMapHybrid" onclick="setMapType('HYBRID')">🛰️ 위성</button>
+          <button type="button" class="map-type-btn" id="btnMapTerrain" onclick="setMapType('TERRAIN')">⛰️ 지형</button>
+        </div>
+      </div>
 
       <div id="pinPickerBanner" class="pin-picker-banner">
         <span>📍 지도를 클릭하여 박지 텐트 위치를 콕 찍어주세요!</span>
@@ -1635,11 +1689,11 @@
     let modalPendingData = { lat: 0, lng: 0, droneStatus: 'ok', address: '' };
     let isPickingLocationMode = false;
 
+    // 네이버 지도 인스턴스 (기본 흰색 버튼 mapTypeControl: false 처리)
     const map = new naver.maps.Map('map', {
       center: DEFAULT_MAP_CENTER,
       zoom: DEFAULT_MAP_ZOOM,
-      mapTypeControl: true,
-      mapTypeControlOptions: { position: naver.maps.Position.TOP_RIGHT, style: naver.maps.MapTypeControlStyle.BUTTON },
+      mapTypeControl: false,
       zoomControl: true,
       zoomControlOptions: { position: naver.maps.Position.RIGHT_CENTER }
     });
@@ -1741,6 +1795,21 @@
       const btn = document.getElementById('dockSpotListBtn');
       if (textEl) textEl.innerText = isOpen ? '목록닫기' : '박지목록';
       if (btn) btn.classList.toggle('active', isOpen);
+    }
+
+    /* 🗺️ 일반 / 위성 / 지형도 지도 유형 전환 함수 */
+    function setMapType(type) {
+      document.querySelectorAll('.map-type-btn').forEach(btn => btn.classList.remove('active'));
+      if (type === 'NORMAL') {
+        map.setMapTypeId(naver.maps.MapTypeId.NORMAL);
+        document.getElementById('btnMapNormal').classList.add('active');
+      } else if (type === 'HYBRID') {
+        map.setMapTypeId(naver.maps.MapTypeId.HYBRID);
+        document.getElementById('btnMapHybrid').classList.add('active');
+      } else if (type === 'TERRAIN') {
+        map.setMapTypeId(naver.maps.MapTypeId.TERRAIN);
+        document.getElementById('btnMapTerrain').classList.add('active');
+      }
     }
 
     function createCustomMarkerIcon(spot) {
@@ -3107,6 +3176,7 @@
       } catch (err) {}
     }
 
+    /* 🔄 지도 전도 뷰 초기화 */
     function resetMapView() {
       map.morph(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, { duration: 400, easing: 'easeOutCubic' });
       closeAllPopups();
@@ -3122,6 +3192,7 @@
       currentTerrainFilter = 'ALL';
       document.querySelectorAll('.terrain-filter-btn').forEach(b => b.classList.toggle('active', b.innerText.includes('전체')));
       filterByRegion('ALL');
+      setMapType('NORMAL');
       showToast('🔄 전국 지도 뷰가 초기화되었습니다');
     }
 
@@ -3140,7 +3211,8 @@
       });
       renderSpots();
     }
-function initDroneOverlays() {
+
+    function initDroneOverlays() {
       const allZones = [
         ...restrictedZones.map(z => ({ ...z, isStrict: z.type === 'border' || z.type === 'nuke' || z.type === 'p73' || z.type === 'mil_ban', isPark: false })),
         ...nationalParks.map(p => ({ ...p, isStrict: true, isPark: true }))
