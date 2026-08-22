@@ -648,7 +648,7 @@
     .mobile-floating-search {
       display: none;
       position: absolute;
-      top: 6px; /* 🔥 최상단 헤더 바로 밑으로 바짝 밀착 */
+      top: 6px; /* 최상단 헤더 바로 밑으로 바짝 밀착 */
       left: 50%;
       transform: translateX(-50%);
       width: calc(100% - 20px);
@@ -2038,7 +2038,7 @@
         return { region: '강원', cityName: city };
       }
       if (t.includes('충북') || t.includes('충남') || t.includes('충청') || t.includes('충주') || t.includes('단양')) return { region: '충청', cityName: '충청' };
-      if (t.includes('경북') || t.includes('경남') || t.includes('경상') || t.includes('울릉도') || t.includes('부산') || t.독구')) return { region: '경상', cityName: '경상' };
+      if (t.includes('경북') || t.includes('경남') || t.includes('경상') || t.includes('울릉도') || t.includes('부산') || t.includes('대구')) return { region: '경상', cityName: '경상' };
       if (t.includes('전북') || t.includes('전남') || t.includes('전라') || t.includes('신안') || t.includes('여수')) return { region: '전라', cityName: '전라' };
 
       if (lat < 34.0) return { region: '제주', cityName: '제주' };
