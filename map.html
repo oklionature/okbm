@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -200,11 +201,11 @@
     .admin-only-btn { display: none; background: rgba(13, 148, 136, 0.2); color: var(--accent-teal); border-color: rgba(45, 212, 191, 0.4); }
     .admin-only-btn:hover { background: rgba(13, 148, 136, 0.4); color: #fff; }
 
-    /* 🔍 💻 PC 검색창 */
+    /* 🔍 💻 PC 검색창 & 지우기(X) 버튼 */
     .pc-search-container { position: relative; display: flex; align-items: center; width: 320px; }
     .search-input {
       width: 100%;
-      padding: 8px 36px 8px 14px;
+      padding: 8px 58px 8px 14px; /* X버튼과 돋보기 공간 확보 */
       min-height: 36px;
       border-radius: 20px;
       border: 1.5px solid rgba(56, 189, 248, 0.25);
@@ -217,6 +218,35 @@
     }
     .search-input::placeholder { color: var(--text-muted); font-size: 0.78rem; }
     .search-input:focus { border-color: var(--accent-blue); background: #05070c; box-shadow: 0 0 12px rgba(56, 189, 248, 0.25); }
+    
+    .search-clear-btn {
+      position: absolute;
+      right: 34px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: var(--text-secondary);
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      font-size: 0.65rem;
+      font-weight: 900;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      line-height: 1;
+      padding: 0;
+      z-index: 5;
+    }
+    .search-clear-btn:hover {
+      background: var(--accent-rose);
+      color: #ffffff;
+      transform: translateY(-50%) scale(1.1);
+    }
+
     .search-btn-icon {
       position: absolute;
       right: 12px;
@@ -225,6 +255,7 @@
       color: var(--text-secondary);
       cursor: pointer;
       font-size: 0.9rem;
+      z-index: 5;
     }
 
     /* 드롭다운 공통 */
@@ -643,12 +674,12 @@
     .dot-red { background: #f43f5e; }
 
     /* =========================================================================
-       📱 모바일 전용 플로팅 HUD (최상단 헤더에 바짝 밀착 조정)
+       📱 모바일 전용 플로팅 HUD (검색창 & X 버튼)
        ========================================================================= */
     .mobile-floating-search {
       display: none;
       position: absolute;
-      top: 2px; /* 최상단 헤더 바로 밑으로 바짝 밀착 */
+      top: 2px;
       left: 50%;
       transform: translateX(-50%);
       width: calc(100% - 20px);
@@ -664,7 +695,7 @@
     .mobile-search-input {
       width: 100%;
       height: 38px;
-      padding: 6px 42px 6px 16px;
+      padding: 6px 64px 6px 16px; /* X버튼 및 돋보기 여백 확보 */
       border-radius: 20px;
       border: 1px solid rgba(56, 189, 248, 0.4);
       background: rgba(9, 12, 19, 0.78);
@@ -683,6 +714,12 @@
       border-color: var(--accent-blue);
       box-shadow: 0 6px 22px rgba(0, 0, 0, 0.75), 0 0 12px rgba(56, 189, 248, 0.35);
     }
+    .mobile-search-clear-btn {
+      right: 36px !important;
+      width: 20px !important;
+      height: 20px !important;
+      font-size: 0.72rem !important;
+    }
     .mobile-search-btn {
       position: absolute;
       right: 12px;
@@ -692,6 +729,7 @@
       font-size: 1rem;
       cursor: pointer;
       padding: 4px;
+      z-index: 5;
     }
     .mobile-search-dropdown {
       top: 44px !important;
@@ -1399,7 +1437,8 @@
       <!-- 💻 PC 전용 우측 툴바 -->
       <div class="header-right pc-only">
         <div class="pc-search-container">
-          <input type="text" id="pcSearchInput" class="search-input" placeholder="산/계곡/섬/봉우리 검색..." autocomplete="off" onfocus="showTopRankings('pc')" onkeyup="handleSearchInput(event, 'pc')" />
+          <input type="text" id="pcSearchInput" class="search-input" placeholder="산/계곡/섬/봉우리 검색..." autocomplete="off" onfocus="showTopRankings('pc')" oninput="handleSearchInputChange('pc')" onkeyup="handleSearchInput(event, 'pc')" />
+          <button type="button" id="pcSearchClearBtn" class="search-clear-btn" onclick="clearSearchInput('pc')" title="검색어 지우기">✕</button>
           <button type="button" class="search-btn-icon" onclick="executeSearch('pc')">🔍</button>
           <ul id="pcSearchDropdown" class="search-dropdown"></ul>
         </div>
@@ -1479,10 +1518,11 @@
         <div class="legend-item"><span class="legend-dot dot-red"></span> 어려움</div>
       </div>
 
-      <!-- 📱 모바일 전용 플로팅 검색창 (헤더 바짝 밀착) -->
+      <!-- 📱 모바일 전용 플로팅 검색창 (헤더 바짝 밀착 & X버튼) -->
       <div class="mobile-floating-search mobile-only">
         <div class="mobile-search-inner">
-          <input type="text" id="mobileSearchInput" class="mobile-search-input" placeholder="산, 섬, 계곡, 박지 검색..." autocomplete="off" onfocus="showTopRankings('mobile')" onkeyup="handleSearchInput(event, 'mobile')" />
+          <input type="text" id="mobileSearchInput" class="mobile-search-input" placeholder="산, 섬, 계곡, 박지 검색..." autocomplete="off" onfocus="showTopRankings('mobile')" oninput="handleSearchInputChange('mobile')" onkeyup="handleSearchInput(event, 'mobile')" />
+          <button type="button" id="mobileSearchClearBtn" class="search-clear-btn mobile-search-clear-btn" onclick="clearSearchInput('mobile')" title="검색어 지우기">✕</button>
           <button type="button" class="mobile-search-btn" onclick="executeSearch('mobile')">🔍</button>
         </div>
         <ul id="mobileSearchDropdown" class="search-dropdown mobile-search-dropdown"></ul>
@@ -2504,6 +2544,7 @@
                 const targetInput = window.innerWidth <= 768 ? document.getElementById('mobileSearchInput') : document.getElementById('pcSearchInput');
                 if (targetInput) {
                   targetInput.value = targetName;
+                  handleSearchInputChange(window.innerWidth <= 768 ? 'mobile' : 'pc');
                   executeSearch(window.innerWidth <= 768 ? 'mobile' : 'pc');
                 }
               }, 250);
@@ -2663,9 +2704,37 @@
       target.searchCount = views;
     }
 
+    /* 🔍 검색어 입력 실시간 감지 (X 버튼 표시/숨김) */
+    function handleSearchInputChange(mode = 'pc') {
+      const inputEl = document.getElementById(mode === 'mobile' ? 'mobileSearchInput' : 'pcSearchInput');
+      const clearBtn = document.getElementById(mode === 'mobile' ? 'mobileSearchClearBtn' : 'pcSearchClearBtn');
+      if (!inputEl || !clearBtn) return;
+      
+      if (inputEl.value.trim().length > 0) {
+        clearBtn.style.display = 'flex';
+      } else {
+        clearBtn.style.display = 'none';
+      }
+    }
+
+    /* ❌ 검색창 텍스트 지우기 함수 */
+    function clearSearchInput(mode = 'pc') {
+      const inputEl = document.getElementById(mode === 'mobile' ? 'mobileSearchInput' : 'pcSearchInput');
+      const clearBtn = document.getElementById(mode === 'mobile' ? 'mobileSearchClearBtn' : 'pcSearchClearBtn');
+      if (inputEl) {
+        inputEl.value = '';
+        inputEl.focus();
+      }
+      if (clearBtn) {
+        clearBtn.style.display = 'none';
+      }
+      showTopRankings(mode);
+    }
+
     function showTopRankings(mode = 'pc') {
       const inputEl = document.getElementById(mode === 'mobile' ? 'mobileSearchInput' : 'pcSearchInput');
       const dropdown = document.getElementById(mode === 'mobile' ? 'mobileSearchDropdown' : 'pcSearchDropdown');
+      handleSearchInputChange(mode);
       if (inputEl.value.trim()) return;
 
       dropdown.innerHTML = '<div class="dropdown-header"><span>🔥 실시간 인기 박지 TOP 5</span><span>조회수 순</span></div>';
@@ -2696,6 +2765,7 @@
     }
 
     function handleSearchInput(e, mode = 'pc') {
+      handleSearchInputChange(mode);
       if (e.keyCode === 13) executeSearch(mode);
       else if (!e.target.value.trim()) showTopRankings(mode);
     }
@@ -3317,6 +3387,8 @@
         tempPickedMarker.setMap(null);
         tempPickedMarker = null;
       }
+      clearSearchInput('pc');
+      clearSearchInput('mobile');
       currentTerrainFilter = 'ALL';
       document.querySelectorAll('.terrain-filter-btn').forEach(b => b.classList.toggle('active', b.innerText.includes('전체')));
       filterByRegion('ALL');
