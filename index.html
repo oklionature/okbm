@@ -1591,6 +1591,7 @@
       const track = document.getElementById('instaGridRail');
       const dotsWrap = document.getElementById('instaDotsWrap');
       if (!track) return;
+       const displayList = instaFeedList.slice(0, 6);
 
       track.innerHTML = instaFeedList.map((feed, idx) => `
         <div class="insta-uniform-card" onclick="openInstaModal(${idx})">
