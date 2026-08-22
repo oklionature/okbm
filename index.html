@@ -1813,9 +1813,9 @@
     function updateSeasonalBadge() {
       const month = new Date().getMonth() + 1;
       let badgeText = '';
-      if (month >= 3 && month <= 5) badgeText = `🌸 ${month}월 봄꽃 & 포근한 산행 시즌`;
-      else if (month >= 6 && month <= 8) badgeText = `🌌 ${month}월 은하수 & 계곡 피서 시즌`;
-      else if (month >= 9 && month <= 11) badgeText = `🌾 ${month}월 황금 억새 & 단풍 트레킹 시즌`;
+      if (month >= 3 && month <= 5) badgeText = `🌸 ${month}월은 봄꽃 & 포근한 산행 시즌`;
+      else if (month >= 6 && month <= 8) badgeText = `🌌 ${month}월은 은하수 & 계곡 피서 시즌`;
+      else if (month >= 9 && month <= 11) badgeText = `🌾 ${month}월은 황금 억새 & 단풍 트레킹 시즌`;
       else badgeText = `❄️ ${month}월 설산 눈꽃 & 겨울 낭만 시즌`;
       
       const el = document.getElementById('heroSeasonBadge');
