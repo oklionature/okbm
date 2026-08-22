@@ -8,7 +8,7 @@
   <meta http-equiv="Expires" content="0" />
   <title>대한민국 낭만 백패킹 로드</title>
 
-  <!-- 웹폰트: Pretendard(본문) + Gmarket Sans(볼드) + Dancing Script(영문 감성 필기체) -->
+  <!-- 웹폰트: Pretendard(본문) + Gmarket Sans(볼드 헤더) + Dancing Script(영문 필기체) -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Gmarket+Sans:wght@500;700;800&display=swap" rel="stylesheet">
   
@@ -17,7 +17,7 @@
 
   <style>
     :root {
-      /* 🖤 하이엔드 딥 블랙 & 앰비언트 네온 톤앤매너 */
+      /* 🖤 딥 옵시디언 블랙 & 네온 오로라 톤앤매너 */
       --bg-deep: #030508;
       --bg-surface: #090c13;
       --bg-card: #0e131d;
@@ -124,7 +124,6 @@
       border: 1px solid rgba(45, 212, 191, 0.35);
       letter-spacing: 0.02em;
     }
-    /* ✨ 감성적인 영문 필기체 서브타이틀 */
     .portal-sub-script {
       font-family: var(--font-script);
       font-size: 1.05rem;
@@ -205,7 +204,7 @@
       font-weight: 400;
     }
 
-    /* 🔍 검색창 */
+    /* 🔍 검색창 & 스마트 단축키 힌트 */
     .portal-search-box {
       position: relative;
       width: 100%;
@@ -214,7 +213,7 @@
     }
     .portal-search-input {
       width: 100%;
-      padding: 15px 54px 15px 22px;
+      padding: 15px 85px 15px 22px;
       font-size: 0.94rem;
       font-family: var(--font-body);
       border-radius: 30px;
@@ -231,17 +230,32 @@
       border-color: #38bdf8;
       box-shadow: 0 14px 40px rgba(0, 0, 0, 0.8), 0 0 28px rgba(56, 189, 248, 0.3);
     }
-    .portal-search-btn {
+    .search-action-wrap {
       position: absolute;
       right: 8px;
       top: 50%;
       transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .kbd-shortcut-hint {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 5px;
+      font-weight: 700;
+      display: inline-block;
+    }
+    .portal-search-btn {
       background: linear-gradient(135deg, #0284c7, #0ea5e9);
       border: none;
-      width: 40px;
-      height: 40px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
-      font-size: 1.05rem;
+      font-size: 1rem;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -249,7 +263,7 @@
       color: #fff;
       transition: transform 0.2s;
     }
-    .portal-search-btn:active { transform: translateY(-50%) scale(0.92); }
+    .portal-search-btn:active { transform: scale(0.92); }
 
     .search-auto-dropdown {
       position: absolute;
@@ -281,7 +295,7 @@
     .auto-item-name { font-weight: 700; color: var(--accent-blue); }
     .auto-item-tag { font-size: 0.7rem; color: #7dd3fc; background: rgba(56,189,248,0.12); padding: 2px 8px; border-radius: 6px; }
 
-    /* 추천 키워드 칩 */
+    /* 🏷️ 무드 & 상황별 스마트 필터 칩 */
     .keyword-chips-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -322,7 +336,7 @@
       grid-template-columns: 1fr 310px;
       gap: 26px;
     }
-    .main-column { display: flex; flex-direction: column; gap: 26px; width: 100%; min-width: 0; }
+    .main-column { display: flex; flex-direction: column; gap: 28px; width: 100%; min-width: 0; }
 
     /* 공지 배너 */
     .notice-banner-card {
@@ -354,16 +368,16 @@
       word-break: keep-all;
     }
 
-    /* 섹션 헤더 & PC 네비게이션 컨트롤러 */
+    /* 섹션 헤더 & PC 컨트롤러 */
     .section-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
     .section-title {
       font-family: var(--font-display);
-      font-size: 1.06rem;
+      font-size: 1.08rem;
       font-weight: 700;
       display: flex;
       align-items: center;
@@ -407,7 +421,7 @@
     .swipe-section-wrap {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       width: 100%;
       max-width: 100%;
       overflow: hidden;
@@ -417,6 +431,7 @@
       overflow-x: auto;
       scroll-snap-type: x mandatory;
       -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
       gap: 14px;
       padding: 4px 0 6px 0;
       width: 100%;
@@ -425,7 +440,7 @@
     }
     .one-card-swipe-rail::-webkit-scrollbar { display: none; }
 
-    /* ⚪ 하단 점(Dot) 인디케이터 */
+    /* ⚪ 애플 스타일 필(Pill) 도트 인디케이터 */
     .carousel-dots-wrap {
       display: flex;
       justify-content: center;
@@ -447,7 +462,7 @@
       box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
     }
 
-    /* 🎬 [유튜브 풀 카드] */
+    /* 🎬 [유튜브 카드] */
     .yt-full-card {
       flex: 0 0 100%;
       width: 100%;
@@ -652,7 +667,7 @@
     }
     .btn-lnt:hover { background: rgba(255,255,255,0.18); border-color: var(--accent-teal); }
 
-    /* 💻 사이드바 (Sticky) */
+    /* 💻 사이드바 (PC Sticky) */
     .side-column { display: flex; flex-direction: column; gap: 18px; width: 100%; min-width: 0; }
     .sticky-sidebar-wrap {
       position: sticky;
@@ -694,7 +709,7 @@
     .rank-name { font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .rank-city { font-size: 0.7rem; color: var(--text-muted); flex-shrink: 0; }
 
-    /* 💬 [인스타그램 인앱 미리보기 모달] */
+    /* 💬 [인스타그램 모달 / 모바일 바텀시트] */
     .insta-modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -782,7 +797,7 @@
     }
     .modal-insta-btn:hover { opacity: 0.92; }
 
-    /* 모바일 하단 독 */
+    /* 📱 모바일 하단 독 (엄지손가락 인체공학) */
     .mobile-bottom-dock {
       display: none;
       position: fixed;
@@ -819,7 +834,7 @@
       }
     }
 
-    /* 📱 모바일 미디어 쿼리 (~768px: 가로 넘침 0% 완벽 1:1 스냅) */
+    /* 📱 모바일 미디어 쿼리 (~768px: 가로 넘침 0% 완벽 1:1 스냅 & 바텀시트) */
     @media (max-width: 768px) {
       body { padding-bottom: 74px; background: #030508; }
       .portal-nav { padding: 10px 14px; }
@@ -829,6 +844,8 @@
       .portal-sub-script { font-size: 0.95rem; }
       .nav-right-slot a.nav-link { display: none; }
       .header-actions .nav-arrow-btn { display: none; }
+      .kbd-shortcut-hint { display: none; }
+      .portal-search-input { padding-right: 50px; }
 
       .portal-container { grid-template-columns: 100%; gap: 20px; padding: 0 14px; margin-top: 6px; }
       .hero-wrapper { padding: 22px 14px 16px 14px; }
@@ -855,13 +872,29 @@
         padding: 12px;
       }
       .insta-thumb-box {
-        aspect-ratio: 4 / 3 !important; /* 모바일 세로 과도함 방지 */
+        aspect-ratio: 4 / 3 !important; /* 모바일 세로 과밀 방지 */
       }
       .curated-uniform-card {
         flex: 0 0 100% !important;
         min-width: 100% !important;
         max-width: 100% !important;
         min-height: 155px;
+      }
+
+      /* 📱 모바일 전용 iOS 바텀시트 전환 */
+      .insta-modal-overlay {
+        align-items: flex-end !important;
+        padding: 0 !important;
+      }
+      .insta-modal-card {
+        max-width: 100% !important;
+        border-radius: 24px 24px 0 0 !important;
+        animation: sheetSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        max-height: 85vh !important;
+      }
+      @keyframes sheetSlideUp {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
       }
 
       .lnt-campaign-box { flex-direction: column; align-items: flex-start; gap: 10px; }
@@ -896,19 +929,24 @@
     <h1 class="hero-title">땀흘린 끝에 마주하는 하룻밤,<br><span class="highlight">당신의 낭만을 응원합니다.</span></h1>
     <p class="hero-subtitle">검증된 전국 박지 위치와 들머리 네비 주소, 드론 규제 정보까지</p>
 
+    <!-- 🔍 검색창 -->
     <div class="portal-search-box">
       <input type="text" id="mainSearchInput" class="portal-search-input" placeholder="산, 섬, 계곡 또는 가고 싶은 곳을 검색해보세요..." autocomplete="off" oninput="handleAutoSearch(this.value)" onkeyup="if(event.key==='Enter') executePortalSmartSearch()" />
-      <button type="button" class="portal-search-btn" onclick="executePortalSmartSearch()">🔍</button>
+      <div class="search-action-wrap">
+        <span class="kbd-shortcut-hint">/</span>
+        <button type="button" class="portal-search-btn" onclick="executePortalSmartSearch()" title="검색">🔍</button>
+      </div>
       <ul id="searchAutoDropdown" class="search-auto-dropdown"></ul>
     </div>
 
+    <!-- 🏷️ 스마트 무드 & 테마 필터 칩 -->
     <div class="keyword-chips-grid">
-      <div class="keyword-chip-btn" onclick="smartRouteToSpot('굴업도')">🏝️ 굴업도 개머리</div>
-      <div class="keyword-chip-btn" onclick="smartRouteToSpot('선자령')">🪵 대관령 선자령</div>
-      <div class="keyword-chip-btn" onclick="smartRouteToSpot('간월재')">🌾 영남 간월재</div>
-      <div class="keyword-chip-btn" onclick="smartRouteToSpot('수우도')">🌊 통영 수우도</div>
-      <div class="keyword-chip-btn" onclick="smartRouteToSpot('비양도')">🏝️ 우도 비양도</div>
-      <div class="keyword-chip-btn" onclick="smartRouteToSpot('화악산')">⛰️ 화악산 쌈지</div>
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('굴업도')">🌅 붉은 일몰 성지</div>
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('선자령')">🌌 은하수 트레킹</div>
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('간월재')">🌾 가을 억새평원</div>
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('수우도')">🌊 남해안 바다 조망</div>
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('비양도')">🏝️ 에메랄드 섬박</div>
+      <div class="keyword-chip-btn" onclick="smartRouteToSpot('화악산')">⛰️ 운해와 일출 뷰</div>
     </div>
   </section>
 
@@ -917,8 +955,9 @@
     
     <main class="main-column">
       
+      <!-- 공지 배너 -->
       <div class="notice-banner-card">
-        <span class="notice-badge">📢 LNT 수칙</span>
+        <span class="notice-badge">📢 LNT 캠페인</span>
         <div class="notice-text">
           자연공원법 및 산림보호법 준수 · 안전한 화기 사용과 머문 자리 클린 캠핑을 실천해주세요.
         </div>
@@ -1070,7 +1109,7 @@
     </aside>
   </div>
 
-  <!-- 💬 인스타그램 인앱 미리보기 팝업 모달 -->
+  <!-- 💬 인스타그램 인앱 미리보기 모달 (모바일 바텀시트 겸용) -->
   <div class="insta-modal-overlay" id="instaModalOverlay" onclick="closeInstaModal(event)">
     <div class="insta-modal-card" onclick="event.stopPropagation()">
       <button type="button" class="modal-close-btn" onclick="closeInstaModalDirect()">✕</button>
@@ -1113,7 +1152,7 @@
     const GOOGLE_SHEET_GID = '0';
     let registeredSpots = [];
 
-    // 기본 추천 영상
+    // 기본 추천 영상 데이터
     let featuredVideosList = [
       {
         url: 'https://www.youtube.com/playlist?list=PLrEnWoR732-DZJ51uSQU6VqHjC2gZ9N-H',
@@ -1291,7 +1330,7 @@
       }
     }
 
-    /* 💬 인스타그램 모달 팝업 제어 */
+    /* 💬 인스타그램 모달 / 바텀시트 제어 */
     function openInstaModal(idx) {
       const data = instaFeedList[idx];
       if (!data) return;
@@ -1318,8 +1357,21 @@
       }
     }
 
+    // ⌨️ 키보드 단축키 지원 (/ 검색 포커스, ESC 모달 닫기)
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeInstaModalDirect();
+      if (e.key === 'Escape') {
+        closeInstaModalDirect();
+        const dd = document.getElementById('searchAutoDropdown');
+        if (dd) dd.style.display = 'none';
+      }
+      if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+        e.preventDefault();
+        const searchInput = document.getElementById('mainSearchInput');
+        if (searchInput) {
+          searchInput.focus();
+          searchInput.select();
+        }
+      }
     });
 
     /* ⚙️ 구글 시트 '설정' 탭 연동 */
@@ -1449,7 +1501,7 @@
       }
     });
 
-    // 🚀 초기 실행
+    // 🚀 초기 로드
     window.addEventListener('DOMContentLoaded', () => {
       renderYouTubeRail();
       renderInstaRail();
