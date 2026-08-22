@@ -729,35 +729,46 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
-    .mountain-weather-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    /* 🌤️ 실시간 산악 날씨 & 풍속 기준 높이 일치화 */
+    .mountain-weather-grid { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 5px; 
+      min-height: 106px; /* 👈 높이 고정 */
+    }
     .m-weather-item {
-      background: rgba(56, 189, 248, 0.04);
-      border: 1px solid rgba(56, 189, 248, 0.12);
-      border-radius: 8px;
-      padding: 8px 10px;
+      background: rgba(56, 189, 248, 0.05);
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      border-radius: 6px;
+      padding: 6px 7px;
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      justify-content: center;
+      gap: 2px;
     }
-    .m-weather-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; font-weight: 700; }
-    .m-weather-name { color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .m-weather-icon { font-size: 0.95rem; }
+    .m-weather-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.68rem; font-weight: 700; }
+    .m-weather-name { color: #fff; }
+    .m-weather-icon { font-size: 0.8rem; }
     .m-weather-body { display: flex; justify-content: space-between; align-items: baseline; }
-    .m-weather-temp { font-size: 0.95rem; font-weight: 800; color: var(--accent-blue); }
-    .m-weather-wind { font-size: 0.7rem; color: var(--accent-teal); font-weight: 700; }
+    .m-weather-temp { font-size: 0.88rem; font-weight: 800; color: var(--accent-blue); }
+    .m-weather-wind { font-size: 0.65rem; color: var(--accent-teal); font-weight: 700; }
 
+    /* 💨 풍속 가이드 박스 (실시간 날씨와 동일한 106px 높이 + 위아래 균등 분할) */
     .wind-guide-box {
       background: rgba(14, 19, 29, 0.7);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px;
+      border-radius: 6px;
+      padding: 9px 10px; /* 👈 상하좌우 여백 최적화 */
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      font-size: 0.76rem;
+      justify-content: space-between; /* 👈 3줄이 위아래로 예쁘게 균등 배치 */
+      min-height: 106px; /* 👈 날씨 카드와 100% 동일한 높이 */
+      height: 106px;
+      box-sizing: border-box;
+      font-size: 0.72rem;
     }
     .weather-row { display: flex; align-items: center; justify-content: space-between; }
-    .weather-badge { font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+    .weather-badge { font-size: 0.62rem; font-weight: 800; padding: 2px 5px; border-radius: 4px; }
     .badge-safe { background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); }
     .badge-warn { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
     .badge-danger { background: rgba(244, 63, 94, 0.2); color: var(--accent-rose); }
