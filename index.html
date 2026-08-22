@@ -6,23 +6,24 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>대한민국 낭만 백패킹 로드 (5.0ver)</title>
+  <title>대한민국 낭만 백패킹 로드</title>
 
-  <!-- 웹폰트: Pretendard + Gmarket Sans -->
+  <!-- 웹폰트: Pretendard(본문) + Gmarket Sans(볼드) + Dancing Script(영문 감성 필기체) -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Gmarket+Sans:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Gmarket+Sans:wght@500;700;800&display=swap" rel="stylesheet">
   
   <!-- CSV Parser -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
     :root {
-      --bg-deep: #06080c;
-      --bg-surface: #0e121a;
-      --bg-card: #141923;
-      --bg-card-hover: #1c2331;
-      --border: rgba(255, 255, 255, 0.07);
-      --border-glow: rgba(56, 189, 248, 0.35);
+      /* 🖤 하이엔드 딥 블랙 & 앰비언트 네온 톤앤매너 */
+      --bg-deep: #030508;
+      --bg-surface: #090c13;
+      --bg-card: #0e131d;
+      --bg-card-hover: #151c2a;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(56, 189, 248, 0.38);
       --text-primary: #f8fafc;
       --text-secondary: #94a3b8;
       --text-muted: #64748b;
@@ -33,6 +34,7 @@
       --accent-rose: #f43f5e;
       --font-display: 'Gmarket Sans', -apple-system, sans-serif;
       --font-body: 'Pretendard', -apple-system, sans-serif;
+      --font-script: 'Dancing Script', cursive;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -48,21 +50,21 @@
       letter-spacing: -0.015em;
     }
     body {
-      background: radial-gradient(circle at 50% 0%, #111a2e 0%, var(--bg-deep) 65%);
+      background: radial-gradient(circle at 50% -10%, #0d1629 0%, #030508 70%);
       min-height: 100vh;
       padding-bottom: 74px;
     }
 
-    /* 🧭 상단 GNB (정중앙 밸런스 & 글래스모피즘) */
+    /* 🧭 상단 GNB (중앙 태극기 엠블럼 + 대형 타이틀 + 감성 필기체) */
     .portal-nav {
       position: sticky;
       top: 0;
       z-index: 1000;
-      background: rgba(6, 8, 12, 0.82);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
+      background: rgba(3, 5, 8, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
-      padding: 12px 20px;
+      padding: 14px 20px;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -72,41 +74,66 @@
       width: 100%;
       max-width: 1140px;
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
       position: relative;
     }
-    .portal-logo-wrap {
+    .portal-branding-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-decoration: none;
+      gap: 2px;
+      transition: transform 0.2s;
+    }
+    .portal-branding-box:hover { transform: scale(1.01); }
+    
+    .portal-title-row {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      text-decoration: none;
-      margin: 0 auto;
-      transition: transform 0.2s;
+      gap: 10px;
     }
-    .portal-logo-wrap:hover { transform: scale(1.01); }
-    .portal-logo-icon { font-size: 1.25rem; }
+    .korea-flag-badge {
+      font-size: 1.55rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.4));
+      transform: translateY(-1px);
+    }
     .portal-logo {
       font-family: var(--font-display);
-      font-size: 1.12rem;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      background: linear-gradient(135deg, #ffffff 30%, #bae6fd 70%, #38bdf8 100%);
+      font-size: clamp(1.2rem, 3.8vw, 1.45rem);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      background: linear-gradient(135deg, #ffffff 25%, #bae6fd 65%, #38bdf8 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       white-space: nowrap;
     }
     .ver-badge {
       font-family: var(--font-body);
-      font-size: 0.65rem;
+      font-size: 0.68rem;
       color: var(--accent-teal);
       background: rgba(45, 212, 191, 0.12);
       padding: 2px 7px;
       border-radius: 6px;
       font-weight: 700;
-      border: 1px solid rgba(45, 212, 191, 0.3);
+      border: 1px solid rgba(45, 212, 191, 0.35);
       letter-spacing: 0.02em;
+    }
+    /* ✨ 감성적인 영문 필기체 서브타이틀 */
+    .portal-sub-script {
+      font-family: var(--font-script);
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--accent-teal);
+      letter-spacing: 0.05em;
+      text-shadow: 0 0 12px rgba(45, 212, 191, 0.35);
+      line-height: 1.1;
+      margin-top: -2px;
     }
     .nav-right-slot {
       position: absolute;
@@ -120,11 +147,11 @@
     .nav-right-slot a.nav-link {
       color: var(--text-secondary);
       text-decoration: none;
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       font-weight: 600;
-      padding: 5px 12px;
+      padding: 6px 12px;
       border-radius: 8px;
-      background: rgba(255, 255, 255, 0.04);
+      background: rgba(255, 255, 255, 0.03);
       border: 1px solid var(--border);
       transition: all 0.2s;
     }
@@ -139,7 +166,7 @@
       width: 100%;
       max-width: 1140px;
       margin: 0 auto;
-      padding: 38px 20px 20px 20px;
+      padding: 34px 20px 20px 20px;
       text-align: center;
     }
     .hero-badge-romance {
@@ -147,18 +174,18 @@
       align-items: center;
       gap: 6px;
       background: rgba(56, 189, 248, 0.08);
-      border: 1px solid rgba(56, 189, 248, 0.24);
+      border: 1px solid rgba(56, 189, 248, 0.25);
       color: var(--accent-blue);
-      font-size: 0.75rem;
+      font-size: 0.76rem;
       font-weight: 700;
       padding: 5px 14px;
       border-radius: 30px;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       letter-spacing: 0.02em;
     }
     .hero-title {
       font-family: var(--font-display);
-      font-size: clamp(1.45rem, 4.2vw, 2.35rem);
+      font-size: clamp(1.48rem, 4.4vw, 2.35rem);
       font-weight: 700;
       margin-bottom: 10px;
       line-height: 1.38;
@@ -178,7 +205,7 @@
       font-weight: 400;
     }
 
-    /* 🔍 검색창 (글래스모피즘) */
+    /* 🔍 검색창 */
     .portal-search-box {
       position: relative;
       width: 100%;
@@ -192,17 +219,17 @@
       font-family: var(--font-body);
       border-radius: 30px;
       border: 1.5px solid rgba(56, 189, 248, 0.35);
-      background: rgba(14, 18, 26, 0.85);
-      backdrop-filter: blur(10px);
+      background: rgba(9, 12, 19, 0.9);
+      backdrop-filter: blur(12px);
       color: #fff;
       outline: none;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.1);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.1);
       transition: all 0.25s ease;
     }
     .portal-search-input:focus {
-      background: #080c14;
+      background: #05070c;
       border-color: #38bdf8;
-      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7), 0 0 25px rgba(56, 189, 248, 0.28);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.8), 0 0 28px rgba(56, 189, 248, 0.3);
     }
     .portal-search-btn {
       position: absolute;
@@ -228,11 +255,11 @@
       position: absolute;
       top: calc(100% + 8px);
       left: 0; right: 0;
-      background: rgba(14, 18, 26, 0.98);
+      background: rgba(9, 12, 19, 0.98);
       backdrop-filter: blur(18px);
       border: 1px solid var(--border-glow);
       border-radius: 16px;
-      box-shadow: 0 20px 45px rgba(0,0,0,0.9);
+      box-shadow: 0 20px 45px rgba(0,0,0,0.95);
       list-style: none;
       max-height: 250px;
       overflow-y: auto;
@@ -264,7 +291,7 @@
       margin: 0 auto;
     }
     .keyword-chip-btn {
-      background: rgba(20, 25, 35, 0.7);
+      background: rgba(14, 19, 29, 0.75);
       border: 1px solid var(--border);
       color: var(--text-secondary);
       padding: 9px 8px;
@@ -299,7 +326,7 @@
 
     /* 공지 배너 */
     .notice-banner-card {
-      background: linear-gradient(90deg, rgba(245, 158, 11, 0.08) 0%, rgba(14, 18, 26, 0.6) 100%);
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.08) 0%, rgba(9, 12, 19, 0.7) 100%);
       border: 1px solid rgba(245, 158, 11, 0.25);
       border-radius: 14px;
       padding: 14px 18px;
@@ -327,7 +354,7 @@
       word-break: keep-all;
     }
 
-    /* 섹션 헤더 & PC 컨트롤러 버튼 */
+    /* 섹션 헤더 & PC 네비게이션 컨트롤러 */
     .section-header {
       display: flex;
       justify-content: space-between;
@@ -376,13 +403,14 @@
     }
     .more-link:hover { opacity: 0.8; }
 
-    /* 💻 PC/노트북 & 📱 모바일 적응형 슬라이더 래퍼 */
+    /* 📱/💻 [오버플로우 0% 차단] 적응형 슬라이더 래퍼 */
     .swipe-section-wrap {
       display: flex;
       flex-direction: column;
       gap: 8px;
       width: 100%;
-      position: relative;
+      max-width: 100%;
+      overflow: hidden;
     }
     .one-card-swipe-rail {
       display: flex;
@@ -392,6 +420,7 @@
       gap: 14px;
       padding: 4px 0 6px 0;
       width: 100%;
+      max-width: 100%;
       scrollbar-width: none;
     }
     .one-card-swipe-rail::-webkit-scrollbar { display: none; }
@@ -418,9 +447,12 @@
       box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
     }
 
-    /* 🎬 [유튜브 카드] */
+    /* 🎬 [유튜브 풀 카드] */
     .yt-full-card {
       flex: 0 0 100%;
+      width: 100%;
+      min-width: 100%;
+      max-width: 100%;
       scroll-snap-align: center;
       background: var(--bg-surface);
       border: 1px solid var(--border);
@@ -429,7 +461,6 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
-      width: 100%;
       box-shadow: 0 6px 20px rgba(0,0,0,0.4);
     }
     .video-box {
@@ -472,10 +503,12 @@
       border-radius: 6px;
     }
 
-    /* 📸 [인스타그램 카드 - 컴팩트 매거진 뷰 규격화] */
+    /* 📸 [인스타그램 카드: 3단계 반응형 분할] */
     .insta-uniform-card {
-      /* PC: 1줄에 3~4개씩 보이도록 슬림하게 분할 */
-      flex: 0 0 calc(33.333% - 10px);
+      /* 대화면 PC(1200px+): 3개 분할 */
+      flex: 0 0 calc((100% - 28px) / 3);
+      min-width: calc((100% - 28px) / 3);
+      max-width: calc((100% - 28px) / 3);
       scroll-snap-align: start;
       background: var(--bg-surface);
       border: 1px solid var(--border);
@@ -491,12 +524,12 @@
     .insta-uniform-card:hover {
       transform: translateY(-3px);
       border-color: var(--border-glow);
-      box-shadow: 0 10px 26px rgba(0,0,0,0.6);
+      box-shadow: 0 10px 26px rgba(0,0,0,0.7);
     }
     .insta-thumb-box {
       width: 100%;
-      /* 릴스/피드가 화면을 과도하게 차지하지 않도록 4:3 컴팩트 비율로 규격화 */
-      aspect-ratio: 4 / 3;
+      /* 4:5 감성 릴스 세로형 비율 */
+      aspect-ratio: 4 / 5;
       border-radius: 10px;
       overflow: hidden;
       position: relative;
@@ -512,7 +545,7 @@
     .insta-reels-badge {
       position: absolute;
       top: 6px; right: 6px;
-      background: rgba(0,0,0,0.75);
+      background: rgba(0,0,0,0.78);
       backdrop-filter: blur(4px);
       border-radius: 6px;
       padding: 3px 7px;
@@ -521,7 +554,7 @@
       font-weight: 700;
     }
     .insta-card-user {
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       font-weight: 700;
       color: var(--accent-rose);
       white-space: nowrap;
@@ -538,8 +571,10 @@
 
     /* 🌊 [테마별 추천 박지 카드] */
     .curated-uniform-card {
-      /* PC: 1줄에 2개씩 넉넉하게 배치 */
-      flex: 0 0 calc(50% - 7px);
+      /* PC: 2개 분할 */
+      flex: 0 0 calc((100% - 14px) / 2);
+      min-width: calc((100% - 14px) / 2);
+      max-width: calc((100% - 14px) / 2);
       scroll-snap-align: start;
       background: var(--bg-surface);
       border: 1px solid var(--border);
@@ -555,7 +590,7 @@
     .curated-uniform-card:hover {
       transform: translateY(-3px);
       border-color: var(--border-glow);
-      box-shadow: 0 10px 26px rgba(0,0,0,0.6);
+      box-shadow: 0 10px 26px rgba(0,0,0,0.7);
     }
     .card-tag {
       font-size: 0.7rem;
@@ -590,7 +625,7 @@
 
     /* 🌿 LNT 캠페인 */
     .lnt-campaign-box {
-      background: linear-gradient(135deg, #0d121c 0%, #082229 100%);
+      background: linear-gradient(135deg, #070a10 0%, #061c22 100%);
       border: 1px solid rgba(45, 212, 191, 0.25);
       border-radius: 14px;
       padding: 16px 18px;
@@ -617,11 +652,11 @@
     }
     .btn-lnt:hover { background: rgba(255,255,255,0.18); border-color: var(--accent-teal); }
 
-    /* 💻 사이드바 (PC Sticky 적용) */
+    /* 💻 사이드바 (Sticky) */
     .side-column { display: flex; flex-direction: column; gap: 18px; width: 100%; min-width: 0; }
     .sticky-sidebar-wrap {
       position: sticky;
-      top: 76px;
+      top: 80px;
       display: flex;
       flex-direction: column;
       gap: 18px;
@@ -663,9 +698,9 @@
     .insta-modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(0, 0, 0, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       display: none;
       justify-content: center;
       align-items: center;
@@ -677,10 +712,10 @@
       border: 1px solid var(--border-glow);
       border-radius: 20px;
       width: 100%;
-      max-width: 440px;
+      max-width: 420px;
       max-height: 90vh;
       overflow-y: auto;
-      box-shadow: 0 25px 60px rgba(0,0,0,0.9);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.95);
       animation: modalFadeIn 0.25s ease-out;
       display: flex;
       flex-direction: column;
@@ -709,7 +744,7 @@
     .modal-close-btn:hover { background: rgba(244, 63, 94, 0.8); }
     .modal-img-box {
       width: 100%;
-      aspect-ratio: 1 / 1;
+      aspect-ratio: 4 / 5;
       background: #000;
       position: relative;
     }
@@ -752,8 +787,8 @@
       display: none;
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      background: rgba(6, 8, 12, 0.94);
-      backdrop-filter: blur(18px);
+      background: rgba(3, 5, 8, 0.95);
+      backdrop-filter: blur(20px);
       border-top: 1px solid var(--border);
       height: 58px;
       z-index: 9000;
@@ -775,15 +810,27 @@
     .dock-item.active { color: var(--accent-blue); }
     .dock-item svg { width: 19px; height: 19px; fill: currentColor; }
 
-    /* 📱 모바일 미디어 쿼리 (화면 꽉 차는 100% 스냅 & 컴팩트 높이 적용) */
-    @media (max-width: 768px) {
-      body { padding-bottom: 74px; }
-      .portal-nav { padding: 10px 14px; }
-      .portal-logo { font-size: 0.98rem; }
-      .nav-right-slot a.nav-link { display: none; }
-      .header-actions .nav-arrow-btn { display: none; /* 모바일은 스와이프 터치 사용 */ }
+    /* 💻 태블릿/노트북 중간 해상도 (769px ~ 1199px): 2열 분할 */
+    @media (min-width: 769px) and (max-width: 1199px) {
+      .insta-uniform-card {
+        flex: 0 0 calc((100% - 14px) / 2) !important;
+        min-width: calc((100% - 14px) / 2) !important;
+        max-width: calc((100% - 14px) / 2) !important;
+      }
+    }
 
-      .portal-container { grid-template-columns: 1fr; gap: 20px; padding: 0 14px; margin-top: 6px; }
+    /* 📱 모바일 미디어 쿼리 (~768px: 가로 넘침 0% 완벽 1:1 스냅) */
+    @media (max-width: 768px) {
+      body { padding-bottom: 74px; background: #030508; }
+      .portal-nav { padding: 10px 14px; }
+      .portal-title-row { gap: 6px; }
+      .korea-flag-badge { font-size: 1.35rem; }
+      .portal-logo { font-size: 1.05rem; }
+      .portal-sub-script { font-size: 0.95rem; }
+      .nav-right-slot a.nav-link { display: none; }
+      .header-actions .nav-arrow-btn { display: none; }
+
+      .portal-container { grid-template-columns: 100%; gap: 20px; padding: 0 14px; margin-top: 6px; }
       .hero-wrapper { padding: 22px 14px 16px 14px; }
       .hero-title { font-size: 1.38rem; margin-bottom: 6px; }
       .hero-subtitle { font-size: 0.8rem; margin-bottom: 16px; }
@@ -794,10 +841,28 @@
       .keyword-chips-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
       .keyword-chip-btn { font-size: 0.74rem; padding: 7px 4px; }
 
-      /* 🔥 모바일 1:1 풀 카드 스냅 (세로로 넘치지 않도록 깔끔하게 100% 꽉 참) */
-      .yt-full-card { flex: 0 0 100% !important; padding: 10px; }
-      .insta-uniform-card { flex: 0 0 100% !important; padding: 12px; }
-      .curated-uniform-card { flex: 0 0 100% !important; min-height: 155px; }
+      /* 🔥 모바일 1:1 풀 카드 스냅 (오버플로우 원천 봉쇄) */
+      .yt-full-card {
+        flex: 0 0 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        padding: 10px;
+      }
+      .insta-uniform-card {
+        flex: 0 0 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        padding: 12px;
+      }
+      .insta-thumb-box {
+        aspect-ratio: 4 / 3 !important; /* 모바일 세로 과도함 방지 */
+      }
+      .curated-uniform-card {
+        flex: 0 0 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        min-height: 155px;
+      }
 
       .lnt-campaign-box { flex-direction: column; align-items: flex-start; gap: 10px; }
       .btn-lnt { width: 100%; text-align: center; }
@@ -808,13 +873,16 @@
 </head>
 <body>
 
-  <!-- 🧭 네비게이션 헤더 (정중앙 밸런스) -->
+  <!-- 🧭 네비게이션 헤더 (🇰🇷 태극기 엠블럼 + 대형 타이틀 + 감성 필기체) -->
   <nav class="portal-nav">
     <div class="portal-nav-inner">
-      <a href="index.html" class="portal-logo-wrap">
-        <span class="portal-logo-icon">🎒</span>
-        <span class="portal-logo">대한민국 낭만 백패킹 로드</span>
-        <span class="ver-badge">5.0ver</span>
+      <a href="index.html" class="portal-branding-box">
+        <div class="portal-title-row">
+          <span class="korea-flag-badge">🇰🇷</span>
+          <span class="portal-logo">대한민국 낭만 백패킹 로드</span>
+          <span class="ver-badge">5.0ver</span>
+        </div>
+        <div class="portal-sub-script">Korea Romantic Backpacking Road</div>
       </a>
       <div class="nav-right-slot">
         <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="nav-link">협업·문의</a>
@@ -956,7 +1024,7 @@
         <div class="carousel-dots-wrap" id="curatedDotsWrap"></div>
       </section>
 
-      <!-- 🌿 캠페인 배너 -->
+      <!-- 🌿 LNT 캠페인 배너 -->
       <section class="lnt-campaign-box">
         <div>
           <div class="lnt-title">🌿 흔적을 남기지 않는 Leave No Trace</div>
@@ -1045,7 +1113,7 @@
     const GOOGLE_SHEET_GID = '0';
     let registeredSpots = [];
 
-    // 기본 추천 영상 데이터
+    // 기본 추천 영상
     let featuredVideosList = [
       {
         url: 'https://www.youtube.com/playlist?list=PLrEnWoR732-DZJ51uSQU6VqHjC2gZ9N-H',
@@ -1206,7 +1274,7 @@
       }, { passive: true });
     }
 
-    /* 💻 PC 화살표 버튼 슬라이드 제어 */
+    /* 💻 PC 화살표 슬라이더 제어 */
     function slideRail(railId, direction) {
       const rail = document.getElementById(railId);
       if (!rail) return;
@@ -1381,7 +1449,7 @@
       }
     });
 
-    // 🚀 초기 로드
+    // 🚀 초기 실행
     window.addEventListener('DOMContentLoaded', () => {
       renderYouTubeRail();
       renderInstaRail();
