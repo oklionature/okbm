@@ -9,7 +9,7 @@
   <meta http-equiv="Expires" content="0" />
   <title>대한민국 낭만 백패킹 로드 | 전국 지도 (4.5ver)</title>
 
-  <!-- 🔤 웹폰트: Pretendard(본문 UI) + Gmarket Sans(웹폰트월드 CDN 정식 분리) + Caveat(구글 폰트) -->
+  <!-- 🔤 웹폰트: Pretendard(본문 UI) + Gmarket Sans + Caveat(영문 필기체) -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/webfontworld/gmarket/GmarketSans.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -43,7 +43,7 @@
       --font-script: 'Caveat', cursive;
       --font-body: 'Pretendard', -apple-system, sans-serif;
 
-      /* 📐 Z-Index 스택 계층 (독이 사이드바보다 위에 위치) */
+      /* 📐 Z-Index 스택 계층 */
       --z-map: 1;
       --z-hud: 100;
       --z-header: 500;
@@ -640,18 +640,18 @@
     .legend-dot { width: 7px; height: 7px; border-radius: 50%; }
     .dot-green { background: #10b981; }
     .dot-yellow { background: #f59e0b; }
-    .dot-red { background: #ef4444; }
+    .dot-red { background: #f43f5e; }
 
     /* =========================================================================
-       📱 모바일 전용 플로팅 HUD (반투명 & 세로쓰기 & Z-Index 정렬)
+       📱 모바일 전용 플로팅 HUD (최상단 헤더에 바짝 밀착 조정)
        ========================================================================= */
     .mobile-floating-search {
       display: none;
       position: absolute;
-      top: calc(8px + env(safe-area-inset-top, 0px));
+      top: 6px; /* 🔥 최상단 헤더 바로 밑으로 바짝 밀착 */
       left: 50%;
       transform: translateX(-50%);
-      width: calc(100% - 24px);
+      width: calc(100% - 20px);
       max-width: 440px;
       z-index: var(--z-hud);
     }
@@ -663,23 +663,23 @@
     }
     .mobile-search-input {
       width: 100%;
-      height: 40px;
+      height: 38px;
       padding: 6px 42px 6px 16px;
       border-radius: 20px;
       border: 1px solid rgba(56, 189, 248, 0.4);
-      background: rgba(9, 12, 19, 0.65);
+      background: rgba(9, 12, 19, 0.78);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       color: #ffffff;
       font-size: 0.85rem;
       font-family: var(--font-body);
       outline: none;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
       transition: all 0.22s ease;
     }
     .mobile-search-input::placeholder { color: rgba(203, 213, 225, 0.75); }
     .mobile-search-input:focus {
-      background: rgba(3, 5, 8, 0.9);
+      background: rgba(3, 5, 8, 0.95);
       border-color: var(--accent-blue);
       box-shadow: 0 6px 22px rgba(0, 0, 0, 0.75), 0 0 12px rgba(56, 189, 248, 0.35);
     }
@@ -694,7 +694,7 @@
       padding: 4px;
     }
     .mobile-search-dropdown {
-      top: 46px !important;
+      top: 44px !important;
       left: 0 !important;
       right: 0 !important;
     }
@@ -703,7 +703,7 @@
     .hud-map-type-vertical {
       display: none;
       position: absolute;
-      top: 56px;
+      top: 50px;
       right: 10px;
       z-index: var(--z-hud);
       flex-direction: column;
@@ -802,7 +802,7 @@
     .pin-picker-banner {
       display: none;
       position: absolute;
-      top: 56px;
+      top: 52px;
       left: 50%;
       transform: translateX(-50%);
       background: linear-gradient(135deg, #0f766e, #0284c7);
@@ -833,13 +833,13 @@
       cursor: pointer;
     }
 
+    /* 📍 스타일 C 커스텀 마커 래퍼 및 호버 라벨칩 */
     .custom-spot-marker-wrap {
       position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
       cursor: pointer;
-      transform: translate(-50%, -100%);
       pointer-events: auto;
       user-select: none;
       z-index: 100;
@@ -847,6 +847,10 @@
 
     .marker-label-chip {
       display: none;
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 50%;
+      transform: translateX(-50%);
       background: rgba(9, 12, 19, 0.96);
       backdrop-filter: blur(10px);
       border: 1.5px solid rgba(56, 189, 248, 0.5);
@@ -856,7 +860,6 @@
       font-size: 0.72rem;
       font-weight: 800;
       white-space: nowrap;
-      margin-bottom: 4px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.85);
       align-items: center;
       gap: 4px;
@@ -866,7 +869,7 @@
 
     .custom-spot-marker-wrap:hover .marker-label-chip {
       display: flex !important;
-      transform: scale(1.06);
+      transform: translateX(-50%) scale(1.06);
       border-color: var(--accent-blue);
       color: var(--accent-blue);
     }
@@ -1354,7 +1357,7 @@
       .mobile-only { display: flex !important; }
       .mobile-floating-search { display: block !important; }
 
-      /* 📱 모바일 사이드바: 하단 독 높이를 제외하고 열려 독이 항상 보이도록 설정 */
+      /* 📱 모바일 사이드바 */
       .sidebar { 
         position: absolute;
         top: 0; left: 0; right: 0;
@@ -1476,7 +1479,7 @@
         <div class="legend-item"><span class="legend-dot dot-red"></span> 어려움</div>
       </div>
 
-      <!-- 📱 모바일 전용 플로팅 검색창 -->
+      <!-- 📱 모바일 전용 플로팅 검색창 (헤더 바짝 밀착) -->
       <div class="mobile-floating-search mobile-only">
         <div class="mobile-search-inner">
           <input type="text" id="mobileSearchInput" class="mobile-search-input" placeholder="산, 섬, 계곡, 박지 검색..." autocomplete="off" onfocus="showTopRankings('mobile')" onkeyup="handleSearchInput(event, 'mobile')" />
@@ -1919,12 +1922,13 @@
       }
     }
 
+    /* 📍 [스타일 C 적용] 원형 뱃지 핀 + 감성 텐트 심볼 생성 함수 */
     function createCustomMarkerIcon(spot) {
       const isMobile = window.innerWidth <= 768;
       const d = parseInt(spot.difficulty, 10) || 3;
       const color = d <= 2 ? '#10b981' : (d >= 4 ? '#f43f5e' : '#f59e0b');
-      const pinWidth = isMobile ? 22 : 24;
-      const pinHeight = isMobile ? 28 : 31;
+      const pinWidth = isMobile ? 24 : 28;
+      const pinHeight = isMobile ? 30 : 34;
 
       const elevText = spot.elevation ? `<span class="marker-label-elev">(${escapeHtml(spot.elevation)})</span>` : '';
 
@@ -1935,14 +1939,16 @@
               <span>${escapeHtml(spot.name)}</span>
               ${elevText}
             </div>
-            <svg class="marker-svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 24 34" width="${pinWidth}" height="${pinHeight}">
-              <path fill="${color}" stroke="#ffffff" stroke-width="1.8" d="M12 0C5.373 0 0 5.373 0 12c0 9 12 22 12 22s12-13 12-22c0-6.627-5.373-12-12-12z"/>
-              <circle fill="#ffffff" cx="12" cy="11" r="4"/>
-              <polygon fill="${color}" points="12,13 9.5,9 14.5,9"/>
+            <svg class="marker-svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 34" width="${pinWidth}" height="${pinHeight}">
+              <!-- 뱃지 핀 외곽선 -->
+              <path fill="${color}" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round" d="M14 1 C6.82 1 1 6.82 1 14 C1 19.8 4.8 24.7 10 26.3 L14 32.5 L18 26.3 C23.2 24.7 27 19.8 27 14 C27 6.82 21.18 1 14 1 Z"/>
+              <!-- 선명한 미니 텐트 심볼 (A형 텐트) -->
+              <path fill="#ffffff" d="M14 7 L7.5 18 H20.5 Z"/>
+              <polygon fill="${color}" points="14,10.5 10.5,18 17.5,18"/>
             </svg>
           </div>
         `,
-        anchor: new naver.maps.Point(0, 0)
+        anchor: new naver.maps.Point(pinWidth / 2, pinHeight)
       };
     }
 
@@ -2032,7 +2038,7 @@
         return { region: '강원', cityName: city };
       }
       if (t.includes('충북') || t.includes('충남') || t.includes('충청') || t.includes('충주') || t.includes('단양')) return { region: '충청', cityName: '충청' };
-      if (t.includes('경북') || t.includes('경남') || t.includes('경상') || t.includes('울릉도') || t.includes('부산') || t.includes('대구')) return { region: '경상', cityName: '경상' };
+      if (t.includes('경북') || t.includes('경남') || t.includes('경상') || t.includes('울릉도') || t.includes('부산') || t.독구')) return { region: '경상', cityName: '경상' };
       if (t.includes('전북') || t.includes('전남') || t.includes('전라') || t.includes('신안') || t.includes('여수')) return { region: '전라', cityName: '전라' };
 
       if (lat < 34.0) return { region: '제주', cityName: '제주' };
@@ -2507,7 +2513,7 @@
 
     function cleanYouTubeUrl(url) {
       if (!url) return '';
-      const match = url.match(/^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
+      const match = url.match(/^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|shorts\/|\&v=)([^#\&\?]*).*/);
       return (match && match[1].length === 11) ? `https://www.youtube.com/watch?v=${match[1]}` : url;
     }
 
