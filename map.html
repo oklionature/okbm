@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -205,7 +204,7 @@
     .pc-search-container { position: relative; display: flex; align-items: center; width: 320px; }
     .search-input {
       width: 100%;
-      padding: 8px 58px 8px 14px; /* X버튼과 돋보기 공간 확보 */
+      padding: 8px 58px 8px 14px;
       min-height: 36px;
       border-radius: 20px;
       border: 1.5px solid rgba(56, 189, 248, 0.25);
@@ -695,7 +694,7 @@
     .mobile-search-input {
       width: 100%;
       height: 38px;
-      padding: 6px 64px 6px 16px; /* X버튼 및 돋보기 여백 확보 */
+      padding: 6px 64px 6px 16px;
       border-radius: 20px;
       border: 1px solid rgba(56, 189, 248, 0.4);
       background: rgba(9, 12, 19, 0.78);
@@ -973,13 +972,50 @@
       justify-content: center;
     }
 
-    /* 🚗 들머리 & 주소복사 바 */
-    .sheet-nav-action-bar {
+    /* 🔒 들머리 잠금 / 5초 카운트다운 오버레이 */
+    .locked-entry-wrap {
+      position: relative;
+      margin-top: 4px;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .locked-entry-inner {
       display: flex;
       gap: 6px;
-      margin-top: 4px;
       align-items: stretch;
+      transition: filter 0.3s ease;
     }
+    .locked-entry-inner.is-locked {
+      filter: blur(4.5px);
+      pointer-events: none;
+      user-select: none;
+    }
+    .entry-lock-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(9, 12, 19, 0.88);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px dashed rgba(244, 63, 94, 0.55);
+      z-index: 10;
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #fecdd3;
+      line-height: 1.35;
+      cursor: default;
+    }
+    .entry-lock-overlay.counting {
+      border-color: #f59e0b;
+      color: #fde047;
+      background: rgba(9, 12, 19, 0.94);
+    }
+
+    /* 🚗 들머리 & 주소복사 바 */
     .compact-entry-link {
       font-size: 0.82rem;
       color: #7dd3fc;
@@ -1276,7 +1312,7 @@
       border: none;
       cursor: pointer;
       outline: none;
-      min-width: 48px;
+      min-width: 54px;
       min-height: 48px;
     }
     .dock-item.active { color: var(--accent-blue); }
@@ -1438,7 +1474,7 @@
       <div class="header-right pc-only">
         <div class="pc-search-container">
           <input type="text" id="pcSearchInput" class="search-input" placeholder="산/계곡/섬/봉우리 검색..." autocomplete="off" onfocus="showTopRankings('pc')" oninput="handleSearchInputChange('pc')" onkeyup="handleSearchInput(event, 'pc')" />
-          <button type="button" id="pcSearchClearBtn" class="search-clear-btn" onclick="clearSearchInput('pc')" title="검색어 지우기">✕</button>
+          <button type="button" id="pcSearchClearBtn" class="search-clear-btn" onclick="clearSearchInput('pc', true)" title="검색어 지우기">✕</button>
           <button type="button" class="search-btn-icon" onclick="executeSearch('pc')">🔍</button>
           <ul id="pcSearchDropdown" class="search-dropdown"></ul>
         </div>
@@ -1446,7 +1482,7 @@
           <span>🛸 드론 규제 확인</span>
         </button>
         <button type="button" class="header-btn admin-only-btn" id="btnSyncSheet" onclick="fetchSpotsFromGoogleSheet()">🔄 시트 동기화</button>
-        <button type="button" class="header-btn" id="resetMapBtn" onclick="resetMapView()">🔄 지도 초기화</button>
+        <button type="button" class="header-btn" id="resetMapBtn" onclick="handleSmartResetClick()">🔄 지도 초기화</button>
       </div>
     </div>
   </header>
@@ -1518,11 +1554,11 @@
         <div class="legend-item"><span class="legend-dot dot-red"></span> 어려움</div>
       </div>
 
-      <!-- 📱 모바일 전용 플로팅 검색창 (헤더 바짝 밀착 & X버튼) -->
+      <!-- 📱 모바일 전용 플로팅 검색창 -->
       <div class="mobile-floating-search mobile-only">
         <div class="mobile-search-inner">
           <input type="text" id="mobileSearchInput" class="mobile-search-input" placeholder="산, 섬, 계곡, 박지 검색..." autocomplete="off" onfocus="showTopRankings('mobile')" oninput="handleSearchInputChange('mobile')" onkeyup="handleSearchInput(event, 'mobile')" />
-          <button type="button" id="mobileSearchClearBtn" class="search-clear-btn mobile-search-clear-btn" onclick="clearSearchInput('mobile')" title="검색어 지우기">✕</button>
+          <button type="button" id="mobileSearchClearBtn" class="search-clear-btn mobile-search-clear-btn" onclick="clearSearchInput('mobile', true)" title="검색어 지우기">✕</button>
           <button type="button" class="mobile-search-btn" onclick="executeSearch('mobile')">🔍</button>
         </div>
         <ul id="mobileSearchDropdown" class="search-dropdown mobile-search-dropdown"></ul>
@@ -1566,14 +1602,14 @@
       <span>홈</span>
     </a>
 
-    <button type="button" class="dock-item active" id="dockSpotListBtn" onclick="toggleMobileSidebar()">
+    <button type="button" class="dock-item" id="dockSpotListBtn" onclick="toggleMobileSidebar()">
       <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
       <span id="dockSpotListText">박지목록</span>
     </button>
 
-    <button type="button" class="dock-item" id="dockResetMapBtn" onclick="resetMapView()">
-      <svg viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-      <span>지도초기화</span>
+    <button type="button" class="dock-item" id="dockResetMapBtn" onclick="handleSmartResetClick()">
+      <svg id="dockResetMapIcon" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+      <span id="dockResetMapText">지도초기화</span>
     </button>
   </div>
 
@@ -1880,6 +1916,8 @@
         const sidebar = document.getElementById('sidebar');
         if (sidebar) sidebar.classList.add('collapsed');
         updateDockSidebarText(false);
+      } else {
+        updateSmartResetButtons();
       }
     });
 
@@ -1921,6 +1959,72 @@
 
     document.getElementById('sheetEditLink').href = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/edit`;
 
+    /* 🔄 스마트 초기화 / 모두 닫기 버튼 상태 동기화 */
+    function updateSmartResetButtons() {
+      const isMobile = window.innerWidth <= 768;
+      const isListOpen = isMobile ? !isSidebarCollapsed : !isPcSidebarCollapsed;
+
+      // 모바일 하단 독 버튼 업데이트
+      const dockResetText = document.getElementById('dockResetMapText');
+      const dockResetIcon = document.getElementById('dockResetMapIcon');
+      if (dockResetText) {
+        dockResetText.innerText = isListOpen ? '모두닫기' : '지도초기화';
+      }
+      if (dockResetIcon) {
+        if (isListOpen) {
+          // 닫기/폴더 아이콘
+          dockResetIcon.innerHTML = `<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>`;
+        } else {
+          // 새로고침(초기화) 아이콘
+          dockResetIcon.innerHTML = `<path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>`;
+        }
+      }
+
+      // PC 상단 초기화 버튼 업데이트
+      const pcResetBtn = document.getElementById('resetMapBtn');
+      if (pcResetBtn) {
+        pcResetBtn.innerText = isListOpen ? '📁 모두 닫기' : '🔄 지도 초기화';
+      }
+    }
+
+    /* 📁 박지 목록 내부 아코디언 전체 일괄 접기 */
+    function collapseAllRegionAccordions() {
+      document.querySelectorAll('.region-group').forEach(group => {
+        const container = group.querySelector('.region-items-container');
+        const titleSpan = group.querySelector('.region-group-title span:last-child');
+        const title = group.querySelector('.region-group-title');
+        if (container) container.style.display = 'none';
+        if (titleSpan) {
+          const countText = titleSpan.innerText.replace(/[▼▶]/g, '').trim();
+          titleSpan.innerHTML = `${countText} ▶`;
+        }
+        if (title) title.style.borderLeftColor = 'transparent';
+      });
+    }
+
+    /* 🔄 스마트 초기화 / 모두 닫기 클릭 핸들러 */
+    function handleSmartResetClick() {
+      const isMobile = window.innerWidth <= 768;
+      const isListOpen = isMobile ? !isSidebarCollapsed : !isPcSidebarCollapsed;
+
+      if (isListOpen) {
+        // [모두 닫기 동작]
+        if (isMobile) {
+          isSidebarCollapsed = true;
+          const sidebar = document.getElementById('sidebar');
+          if (sidebar) sidebar.classList.add('collapsed');
+          updateDockSidebarText(false);
+        }
+        collapseAllRegionAccordions();
+        closeAllPopups();
+        updateSmartResetButtons();
+        showToast('📁 모든 목록과 창이 정리되었습니다');
+      } else {
+        // [지도 초기화 동작]
+        resetMapView();
+      }
+    }
+
     function togglePcSidebar() {
       isPcSidebarCollapsed = !isPcSidebarCollapsed;
       const sidebar = document.getElementById('sidebar');
@@ -1929,6 +2033,7 @@
       sidebar.classList.toggle('pc-collapsed', isPcSidebarCollapsed);
       toggleBtn.innerText = isPcSidebarCollapsed ? '▶' : '◀';
 
+      updateSmartResetButtons();
       setTimeout(() => {
         naver.maps.Event.trigger(map, 'resize');
       }, 300);
@@ -1939,6 +2044,7 @@
       const sidebar = document.getElementById('sidebar');
       sidebar.classList.toggle('collapsed', isSidebarCollapsed);
       updateDockSidebarText(!isSidebarCollapsed);
+      updateSmartResetButtons();
       if (!isSidebarCollapsed) {
         closeMobileBottomSheet();
       }
@@ -1949,6 +2055,7 @@
       const btn = document.getElementById('dockSpotListBtn');
       if (textEl) textEl.innerText = isOpen ? '목록닫기' : '박지목록';
       if (btn) btn.classList.toggle('active', isOpen);
+      updateSmartResetButtons();
     }
 
     function setMapType(type) {
@@ -1980,9 +2087,7 @@
               ${elevText}
             </div>
             <svg class="marker-svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 34" width="${pinWidth}" height="${pinHeight}">
-              <!-- 뱃지 핀 외곽선 -->
               <path fill="${color}" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round" d="M14 1 C6.82 1 1 6.82 1 14 C1 19.8 4.8 24.7 10 26.3 L14 32.5 L18 26.3 C23.2 24.7 27 19.8 27 14 C27 6.82 21.18 1 14 1 Z"/>
-              <!-- 선명한 미니 텐트 심볼 (A형 텐트) -->
               <path fill="#ffffff" d="M14 7 L7.5 18 H20.5 Z"/>
               <polygon fill="${color}" points="14,10.5 10.5,18 17.5,18"/>
             </svg>
@@ -2288,6 +2393,50 @@
       smoothCenterMapOnSpot(spot.lat, spot.lng, keepZoom);
     }
 
+    /* 🔒 들머리 잠금 해제 타이머 & 세션 캐시 관리 */
+    const spotUnlockTimers = {};
+
+    function isSpotUnlocked(spotId) {
+      return sessionStorage.getItem(`okbm_unlocked_${spotId}`) === 'true';
+    }
+
+    function triggerSpotUnlock(spotId, targetUrl) {
+      if (targetUrl) {
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      }
+
+      if (isSpotUnlocked(spotId)) return;
+      if (spotUnlockTimers[spotId]) return; // 이미 카운트다운 중
+
+      let countdown = 5;
+      const overlayEl = document.getElementById(`entryLockOverlay_${spotId}`);
+      if (overlayEl) {
+        overlayEl.classList.add('counting');
+        overlayEl.innerHTML = `<span>⏳ 안전·경로 확인 중... <strong>${countdown}초</strong> 뒤 주소가 열립니다</span>`;
+      }
+
+      spotUnlockTimers[spotId] = setInterval(() => {
+        countdown--;
+        const currentOverlay = document.getElementById(`entryLockOverlay_${spotId}`);
+        if (countdown > 0) {
+          if (currentOverlay) {
+            currentOverlay.innerHTML = `<span>⏳ 안전·경로 확인 중... <strong>${countdown}초</strong> 뒤 주소가 열립니다</span>`;
+          }
+        } else {
+          clearInterval(spotUnlockTimers[spotId]);
+          delete spotUnlockTimers[spotId];
+          sessionStorage.setItem(`okbm_unlocked_${spotId}`, 'true');
+
+          const finalOverlay = document.getElementById(`entryLockOverlay_${spotId}`);
+          const innerContent = document.getElementById(`lockedEntryInner_${spotId}`);
+          if (finalOverlay) finalOverlay.style.display = 'none';
+          if (innerContent) innerContent.classList.remove('is-locked');
+
+          showToast('🔓 들머리 주소 및 길안내가 활성화되었습니다!');
+        }
+      }, 1000);
+    }
+
     function generateDetailContentHtml(spot, isMobileSheet = false) {
       const { navAddress, guide } = parseEntryPoint(spot.entryPoint || spot.name);
       const searchTarget = navAddress || spot.name;
@@ -2297,6 +2446,9 @@
 
       const ytList = spot.youtubeUrls || (spot.youtubeUrl ? [spot.youtubeUrl] : []);
       const cleanUser = (spot.instaId?.trim() || "oklionnature").replace('@', '').replace(/https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '');
+      const instaLink = `https://instagram.com/${encodeURIComponent(cleanUser)}`;
+
+      const isUnlocked = isSpotUnlocked(spot.id);
 
       const closeBtn = isMobileSheet
         ? `<button type="button" class="sheet-close-btn" onclick="closeMobileBottomSheet()">✕</button>`
@@ -2316,13 +2468,21 @@
           <div style="margin: 4px 0 2px 0;">${getMetaBadgesHtml(spot)}</div>
           <div class="spot-coords-text">📍 ${spot.lat}, ${spot.lng}</div>
           
-          <div class="sheet-nav-action-bar">
-            <a href="${escapeHtml(naverSearchUrl)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link" title="네이버 지도 길안내로 이동">
-              🚗 들머리: ${cleanAddress} ↗
-            </a>
-            <button type="button" class="btn-copy-address" onclick="copySpotAddressById('${spot.id}')" title="주소 복사">
-              📋 복사
-            </button>
+          <!-- 🔒 5초 잠금 적용된 들머리 영역 -->
+          <div class="locked-entry-wrap" id="lockedEntryWrap_${spot.id}">
+            <div class="locked-entry-inner ${isUnlocked ? '' : 'is-locked'}" id="lockedEntryInner_${spot.id}">
+              <a href="${escapeHtml(naverSearchUrl)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link" title="네이버 지도 길안내로 이동">
+                🚗 들머리: ${cleanAddress} ↗
+              </a>
+              <button type="button" class="btn-copy-address" onclick="copySpotAddressById('${spot.id}')" title="주소 복사">
+                📋 복사
+              </button>
+            </div>
+            ${!isUnlocked ? `
+              <div class="entry-lock-overlay" id="entryLockOverlay_${spot.id}" onclick="triggerSpotUnlock('${spot.id}', '${ytList[0] ? escapeHtml(cleanYouTubeUrl(ytList[0].trim())) : instaLink}')">
+                <span>🔒 현장안전 확인을 위해 [유튜브] 또는 [등록자] 링크를 확인해 주세요</span>
+              </div>
+            ` : ''}
           </div>
           
           ${guide ? `<div class="entry-guide-chip">💡 길 안내: ${escapeHtml(guide)}</div>` : ''}
@@ -2330,9 +2490,9 @@
           ${spot.desc?.trim() ? `<div class="sheet-desc-box">${escapeHtml(spot.desc.trim())}</div>` : ''}
 
           <div class="spot-action-line">
-            ${ytList.slice(0, 2).map((url, i) => url?.trim() ? `<a href="${escapeHtml(cleanYouTubeUrl(url.trim()))}" target="_blank" rel="noopener noreferrer" class="link-btn btn-yt btn-yt-wide" onclick="event.stopPropagation();">▶ YouTube 영상${ytList.length > 1 ? ` (${i + 1})` : ''}</a>` : '').join('')}
+            ${ytList.slice(0, 2).map((url, i) => url?.trim() ? `<a href="javascript:void(0)" onclick="triggerSpotUnlock('${spot.id}', '${escapeHtml(cleanYouTubeUrl(url.trim()))}')" class="link-btn btn-yt btn-yt-wide">▶ YouTube 영상${ytList.length > 1 ? ` (${i + 1})` : ''}</a>` : '').join('')}
             ${spot.blogUrl?.trim() ? `<a href="${escapeHtml(spot.blogUrl.trim())}" target="_blank" rel="noopener noreferrer" class="link-btn btn-blog" onclick="event.stopPropagation();">📝 블로그</a>` : ''}
-            <a href="https://instagram.com/${encodeURIComponent(cleanUser)}" target="_blank" rel="noopener noreferrer" class="link-btn btn-insta" onclick="event.stopPropagation();" title="등록자 인스타그램">
+            <a href="javascript:void(0)" onclick="triggerSpotUnlock('${spot.id}', '${instaLink}')" class="link-btn btn-insta" title="등록자 인스타그램">
               <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
               등록자
             </a>
@@ -2340,10 +2500,10 @@
           </div>
 
           <div class="app-disclaimer-box" style="color: #fca5a5; border-color: rgba(244, 63, 94, 0.45); background: rgba(244, 63, 94, 0.08);">
-  ※ 현지 지자체 조례 및 산불조심기간에 따라 야영 통제될 수 있습니다.<br>
-  ※ 들머리와 영상속 박지정보는 틀릴수가있습니다. 확인을 꼭 하고가세요!<br>
-  ※ 쓰레기는 전량 회수하고 양심을 버리지마세요 LNT를 실천해 주세요.
-</div>
+            ※ 현지 지자체 조례 및 산불조심기간에 따라 야영 통제될 수 있습니다.<br>
+            ※ 들머리와 영상속 박지정보는 틀릴수가있습니다. 확인을 꼭 하고가세요!<br>
+            ※ 쓰레기는 전량 회수하고 양심을 버리지마세요 LNT를 실천해 주세요.
+          </div>
           
           ${getCommentsHtml(spot.id)}
         </div>
@@ -2351,6 +2511,10 @@
     }
 
     function copySpotAddressById(spotId) {
+      if (!isSpotUnlocked(spotId)) {
+        showToast('🔒 영상 또는 등록자 링크를 먼저 확인해 주세요');
+        return;
+      }
       const target = spots.find(s => String(s.id) === String(spotId));
       if (!target) return;
       const { navAddress } = parseEntryPoint(target.entryPoint || target.name);
@@ -2717,18 +2881,24 @@
       }
     }
 
-    /* ❌ 검색창 텍스트 지우기 함수 */
-    function clearSearchInput(mode = 'pc') {
+    /* ❌ 검색창 텍스트 지우기 함수 (키보드 팝업 방지용 shouldFocus 옵션 지원) */
+    function clearSearchInput(mode = 'pc', shouldFocus = false) {
       const inputEl = document.getElementById(mode === 'mobile' ? 'mobileSearchInput' : 'pcSearchInput');
       const clearBtn = document.getElementById(mode === 'mobile' ? 'mobileSearchClearBtn' : 'pcSearchClearBtn');
       if (inputEl) {
         inputEl.value = '';
-        inputEl.focus();
+        if (shouldFocus) {
+          inputEl.focus();
+        } else {
+          inputEl.blur();
+        }
       }
       if (clearBtn) {
         clearBtn.style.display = 'none';
       }
-      showTopRankings(mode);
+      if (shouldFocus) {
+        showTopRankings(mode);
+      }
     }
 
     function showTopRankings(mode = 'pc') {
@@ -3375,7 +3545,12 @@
       } catch (err) {}
     }
 
+    /* 🔄 순수 지도 초기화 함수 (키보드 팝업 방지 적용) */
     function resetMapView() {
+      if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+      }
+
       map.morph(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, { duration: 400, easing: 'easeOutCubic' });
       closeAllPopups();
       droneHoverInfoWindow.close();
@@ -3387,12 +3562,16 @@
         tempPickedMarker.setMap(null);
         tempPickedMarker = null;
       }
-      clearSearchInput('pc');
-      clearSearchInput('mobile');
+
+      clearSearchInput('pc', false);
+      clearSearchInput('mobile', false);
+
       currentTerrainFilter = 'ALL';
       document.querySelectorAll('.terrain-filter-btn').forEach(b => b.classList.toggle('active', b.innerText.includes('전체')));
       filterByRegion('ALL');
       setMapType('NORMAL');
+      collapseAllRegionAccordions();
+      updateSmartResetButtons();
       showToast('🔄 전국 지도 뷰가 초기화되었습니다');
     }
 
@@ -3508,6 +3687,7 @@
         spotMarkerMap.forEach((marker) => {
           if (marker.spotData) marker.setIcon(createCustomMarkerIcon(marker.spotData));
         });
+        updateSmartResetButtons();
       }, 150);
     });
 
