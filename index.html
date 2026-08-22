@@ -1638,7 +1638,7 @@
                 }).filter(f => f.img && f.img.startsWith('http'));
 
                 if (list.length > 0) {
-                  instaFeedList = list;
+                  instaFeedList = list.slice(0, 6); 
                   renderInstaGrid();
                 }
               }
