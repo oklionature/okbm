@@ -96,7 +96,7 @@
     }
     .main-title-text {
       font-family: var(--font-display);
-      font-size: clamp(0.98rem, 3.2vw, 1.25rem);
+      font-size: clamp(1.05rem, 3.8vw, 1.42rem);
       font-weight: 700;
       color: #ffffff;
       letter-spacing: -0.03em;
@@ -113,7 +113,7 @@
     }
     .brand-sub-script {
       font-family: var(--font-script);
-      font-size: clamp(0.95rem, 2.8vw, 1.15rem);
+      font-size: clamp(1.05rem, 3.2vw, 1.35rem);
       font-weight: 700;
       color: #38bdf8;
       letter-spacing: 0.02em;
@@ -809,6 +809,8 @@
     /* 📱 모바일 전용 튜닝 (1화면 1카드 완결 + 첫 뷰포트에 유튜브 100% 노출) */
     @media (max-width: 768px) {
       .portal-nav { padding: 4px 10px; min-height: 52px; }
+      .main-title-text { font-size: 1.05rem !important; }
+  .brand-sub-script { font-size: 1.05rem !important; }
       .kbd-hint { display: none; }
       
       .hero-wrapper { padding: 4px 10px 2px 10px; }
