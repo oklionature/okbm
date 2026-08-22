@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -137,7 +138,6 @@
     
     .header-right { display: flex; align-items: center; gap: 8px; }
 
-    /* 큼직하고 눈에 확 띄는 홈으로 가기 버튼 배너 */
     .header-home-btn {
       display: inline-flex;
       align-items: center;
@@ -161,9 +161,6 @@
       transform: translateY(-1px);
       box-shadow: 0 4px 16px rgba(56, 189, 248, 0.6);
     }
-    .header-home-btn:active {
-      transform: translateY(0);
-    }
 
     .header-btn {
       background: var(--google-bg-card);
@@ -185,14 +182,10 @@
       box-shadow: 0 0 10px rgba(225, 29, 72, 0.4);
     }
 
-    .admin-only-btn {
-      display: none;
-      background: #0f766e;
-      border-color: #0d9488;
-    }
+    .admin-only-btn { display: none; background: #0f766e; border-color: #0d9488; }
     .admin-only-btn:hover { background: #115e59; }
 
-    /* PC 검색창 */
+    /* 검색창 */
     .search-container { position: relative; display: flex; align-items: center; width: 330px; }
     .search-input {
       width: 100%;
@@ -217,7 +210,7 @@
       font-size: 0.9rem;
     }
 
-    /* 드롭다운 */
+    /* 검색 드롭다운 */
     .search-dropdown {
       position: absolute;
       top: 38px;
@@ -289,7 +282,6 @@
       cursor: pointer;
       display: none;
     }
-    .btn-quick-add:hover { background: #115e59; }
 
     .container {
       display: flex;
@@ -442,7 +434,6 @@
       cursor: pointer;
       text-align: center;
     }
-    .admin-tool-btn:hover { background: var(--google-bg-card-hover); color: #ffffff; }
 
     .filter-wrapper {
       background: var(--google-bg-deep);
@@ -492,7 +483,6 @@
       flex-shrink: 0;
       transition: all 0.15s ease;
     }
-    .filter-btn:hover { background: var(--google-bg-card-hover); color: var(--google-text-primary); }
     .filter-btn.active {
       background: #0284c7;
       color: #ffffff;
@@ -518,11 +508,7 @@
     .spot-list::-webkit-scrollbar { width: 3px; }
     .spot-list::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
     
-    .region-group { 
-      border-bottom: 1px solid var(--google-border-subtle); 
-      width: 100%;
-      overflow-x: hidden;
-    }
+    .region-group { border-bottom: 1px solid var(--google-border-subtle); width: 100%; overflow-x: hidden; }
     .region-group-title {
       padding: 6px 10px;
       background-color: var(--google-bg-deep);
@@ -537,7 +523,6 @@
       border-left: 2px solid transparent;
       transition: all 0.15s;
       width: 100%;
-      box-sizing: border-box;
     }
     .region-group-title:hover { background-color: var(--google-bg-card); border-left-color: var(--google-accent-blue); color: #ffffff; }
 
@@ -553,12 +538,8 @@
       background: var(--google-bg-surface);
       transition: all 0.18s ease;
       width: 100%;
-      box-sizing: border-box;
     }
-    .spot-item:hover { 
-      background-color: var(--google-bg-card); 
-      z-index: 50;
-    }
+    .spot-item:hover { background-color: var(--google-bg-card); z-index: 50; }
     .spot-item.active-spot {
       background-color: var(--google-bg-card-hover) !important;
       border-left: 2px solid var(--google-accent-blue) !important;
@@ -581,14 +562,8 @@
       display: inline-flex;
       align-items: center;
     }
-    .badge-new {
-      background: linear-gradient(135deg, #10b981, #059669);
-      color: #ffffff;
-    }
-    .badge-hot {
-      background: linear-gradient(135deg, #f43f5e, #f97316);
-      color: #ffffff;
-    }
+    .badge-new { background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; }
+    .badge-hot { background: linear-gradient(135deg, #f43f5e, #f97316); color: #ffffff; }
 
     .spot-meta-badges { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
     .meta-tag {
@@ -632,13 +607,7 @@
       width: fit-content;
     }
     
-    .spot-action-line {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 3px;
-      margin-top: 1px;
-    }
+    .spot-action-line { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; margin-top: 1px; }
     .link-btn {
       display: inline-flex;
       align-items: center;
@@ -653,12 +622,9 @@
       cursor: pointer;
       line-height: 1.3;
       white-space: nowrap;
-      transition: opacity 0.15s;
     }
-    .link-btn:hover { opacity: 0.85; }
     .btn-yt { background: linear-gradient(135deg, #e11d48, #be123c); }
     .btn-blog { background: linear-gradient(135deg, #059669, #047857); }
-    
     .btn-insta { 
       background: linear-gradient(45deg, #ea580c 0%, #e11d48 50%, #c026d3 100%);
       border: none;
@@ -671,11 +637,7 @@
     }
     .btn-insta svg { width: 8px; height: 8px; flex-shrink: 0; fill: #ffffff; }
     
-    .instant-tooltip-box { 
-      position: relative; 
-      display: inline-flex; 
-      align-items: center; 
-    }
+    .instant-tooltip-box { position: relative; display: inline-flex; align-items: center; }
     .drone-badge {
       display: inline-flex;
       align-items: center;
@@ -719,19 +681,9 @@
       z-index: 9999;
       line-height: 1.35;
     }
-    .instant-tooltip-box:hover::after {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
+    .instant-tooltip-box:hover::after { opacity: 1; visibility: visible; transform: translateY(0); }
 
-    .spot-action-btns {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      display: flex;
-      gap: 3px;
-    }
+    .spot-action-btns { position: absolute; top: 6px; right: 6px; display: flex; gap: 3px; }
     .btn-edit, .btn-del {
       border: none;
       border-radius: 4px;
@@ -851,21 +803,14 @@
       color: var(--google-accent-blue);
     }
     
-    .marker-label-elev {
-      color: #86efac;
-      font-size: 0.62rem;
-      font-weight: 700;
-    }
-    .marker-svg-icon {
-      filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7));
-      display: block;
-    }
+    .marker-label-elev { color: #86efac; font-size: 0.62rem; font-weight: 700; }
+    .marker-svg-icon { filter: drop-shadow(0 3px 6px rgba(0,0,0,0.7)); display: block; }
 
     /* 팝업창 컴팩트 & 미려한 규격 */
     .compact-info-window {
       padding: 10px 12px;
-      width: min(285px, calc(100vw - 28px)) !important;
-      max-height: min(340px, 48dvh);
+      width: min(290px, calc(100vw - 32px)) !important;
+      max-height: min(310px, 42dvh);
       overflow-y: auto;
       overflow-x: hidden !important;
       display: flex;
@@ -911,10 +856,7 @@
       transition: all 0.15s ease;
       font-weight: 700;
     }
-    .compact-entry-link:hover {
-      background: #0284c7;
-      color: #ffffff !important;
-    }
+    .compact-entry-link:hover { background: #0284c7; color: #ffffff !important; }
 
     .entry-guide-chip {
       font-size: 0.64rem;
@@ -1060,7 +1002,7 @@
     .mobile-floating-controls {
       display: none;
       position: fixed;
-      bottom: 12px;
+      bottom: 14px;
       left: 50%;
       transform: translateX(-50%);
       align-items: center;
@@ -1070,7 +1012,7 @@
       max-width: 360px;
     }
     .mobile-float-btn {
-      padding: 7px 10px;
+      padding: 8px 10px;
       border-radius: 20px;
       font-size: 0.72rem;
       font-weight: 700;
@@ -1085,7 +1027,7 @@
     .mobile-float-toggle { background: #0284c7; color: #ffffff; flex: 1.35; font-size: 0.75rem; border-color: rgba(255,255,255,0.3); }
     .mobile-float-reset { background: rgba(28, 34, 51, 0.95); color: #ffffff; flex: 1; }
 
-    /* 📱 모바일 전용 2열 헤더 & 뷰포트 분리 */
+    /* 📱 모바일 전용 반응형 레이아웃 */
     @media (max-width: 768px) {
       .header { 
         padding: 6px 10px 6px 10px !important;
@@ -1093,12 +1035,7 @@
         align-items: stretch !important;
         gap: 6px !important;
       }
-      .header-row-1 {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-      }
+      .header-row-1 { display: flex; align-items: center; justify-content: space-between; width: 100%; }
       .header-left { gap: 6px; }
       .main-title { font-size: 0.98rem !important; letter-spacing: -0.3px; }
       .main-title .flag-icon, .main-title .backpack-icon { font-size: 0.92rem !important; }
@@ -1107,7 +1044,6 @@
       .sync-status-badge, .admin-status-badge { font-size: 0.58rem; padding: 1px 4px; }
       .header-right { gap: 4px; }
 
-      /* 모바일 홈으로 가기 버튼 직관적이고 또렷한 크기 유지 */
       .header-home-btn {
         padding: 4px 11px !important;
         font-size: 0.76rem !important;
@@ -1115,14 +1051,8 @@
       }
       .header-home-btn svg { width: 12px; height: 12px; }
 
-      /* 2열 전폭 검색창 */
-      .header-row-2 {
-        display: block !important;
-        width: 100%;
-      }
-      .search-container {
-        width: 100% !important;
-      }
+      .header-row-2 { display: block !important; width: 100%; }
+      .search-container { width: 100% !important; }
       .search-input { 
         padding: 6px 32px 6px 12px !important; 
         font-size: 0.78rem !important; 
@@ -1154,12 +1084,13 @@
         z-index: 100;
       }
 
+      /* 모바일 초기 사이드바 기본 닫힘 */
       .sidebar { 
         position: absolute;
         top: 0; left: 0; right: 0;
         width: 100% !important; 
         max-width: 100vw !important;
-        height: calc(100% - 55px) !important; 
+        height: calc(100% - 60px) !important; 
         z-index: 300;
         border-right: none; 
         border-bottom: 1px solid var(--google-border); 
@@ -1173,14 +1104,8 @@
         transform: translateY(-130%) !important;
       }
 
-      .sidebar-header {
-        padding: 5px 8px !important;
-        min-height: 34px !important;
-      }
-      .btn-sidebar-submit, .header-insta-badge {
-        font-size: 0.62rem !important;
-        padding: 2px 6px !important;
-      }
+      .sidebar-header { padding: 5px 8px !important; min-height: 34px !important; }
+      .btn-sidebar-submit, .header-insta-badge { font-size: 0.62rem !important; padding: 2px 6px !important; }
 
       .spot-item { padding: 7px 9px; gap: 3px; }
       .spot-name { font-size: 0.8rem !important; }
@@ -1198,7 +1123,6 @@
 <body>
 
   <header class="header" id="header">
-    <!-- 1열: 로고 + 뱃지 + 큼직한 '홈으로 가기' 배너 버튼 -->
     <div class="header-row-1">
       <div class="header-left">
         <a href="index.html" class="header-title-box" title="메인 포털 첫 페이지로 이동">
@@ -1214,7 +1138,6 @@
       </div>
       
       <div class="header-right">
-        <!-- 🔥 더 크고 직관적인 [🏠 홈으로 가기] 배너 버튼 -->
         <a href="index.html" class="header-home-btn" title="포털 메인 첫 페이지로 이동">
           <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
           <span>홈으로 가기</span>
@@ -1225,7 +1148,6 @@
       </div>
     </div>
 
-    <!-- 2열: 모바일 전용 전폭 검색창 (PC에서는 자연스럽게 1열 우측 크기로 유지) -->
     <div class="header-row-2">
       <div class="search-container">
         <input type="text" id="topSearchInput" class="search-input" placeholder="산/계곡/섬/봉우리/마을회관 검색" onfocus="showTopRankings()" onkeyup="handleSearchInput(event)" />
@@ -1236,7 +1158,7 @@
   </header>
 
   <div class="container">
-    <aside class="sidebar" id="sidebar">
+    <aside class="sidebar collapsed" id="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-header-left">
           <span>📍 박지 목록</span>
@@ -1312,13 +1234,14 @@
       🛸 드론규제
     </button>
     <button type="button" class="mobile-float-btn mobile-float-toggle" id="bottomToggleBtn" onclick="toggleMobileSidebar()">
-      ▼ 박지 목록 닫기
+      ▲ 박지 목록 열기
     </button>
     <button type="button" class="mobile-float-btn mobile-float-reset" id="mobileResetBtn" onclick="resetMapView()">
       🔄 지도초기화
     </button>
   </div>
 
+  <!-- 제보 및 등록 모달 -->
   <div class="custom-modal-overlay" id="customModalOverlay">
     <div class="custom-modal">
       <h3 id="modalTitle">📍 박지 제보 / 추천 등록</h3>
@@ -1413,22 +1336,32 @@
 
   <script>
     /* =========================================================================
-       버전 관리 상수 (4.3ver)
+       버전 관리 및 초기 상수 설정
        ========================================================================= */
-    const BASE_VERSION_NUM = 4.3;
+    const BASE_VERSION_NUM = 4.4;
     const CURRENT_VERSION = `${BASE_VERSION_NUM.toFixed(1)}ver`;
 
     document.addEventListener('DOMContentLoaded', () => {
       const vTag = document.getElementById('versionTagBtn');
       if (vTag) vTag.innerText = CURRENT_VERSION;
+
+      // 모바일 초기화: 사이드바 기본 닫힘 보장
+      if (window.innerWidth <= 768) {
+        isSidebarCollapsed = true;
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) sidebar.classList.add('collapsed');
+        const btn = document.getElementById('bottomToggleBtn');
+        if (btn) btn.innerText = '▲ 박지 목록 열기';
+      }
     });
 
     const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
     const GOOGLE_SHEET_GID = '0';
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzW0vRtj-S_BEW0OzFTm7PV7zVyNLWJEas9-S7F9CnOTn817-pO8WODR9l5FEEE3bYu/exec';
 
+    // ⚡ 축척 1단계 확대: 기존 8에서 9로 변경
     const DEFAULT_MAP_CENTER = new naver.maps.LatLng(36.5, 127.8);
-    const DEFAULT_MAP_ZOOM = 8;
+    const DEFAULT_MAP_ZOOM = 9;
 
     function escapeHtml(text) {
       if (text === null || text === undefined) return '';
@@ -1540,7 +1473,7 @@
     let droneOverlays = [];
     let currentRegionFilter = 'ALL';
     let currentTerrainFilter = 'ALL';
-    let isSidebarCollapsed = false;
+    let isSidebarCollapsed = (window.innerWidth <= 768); // 초기 모바일 기본 닫힘
 
     let currentActiveSpot = null;
     let currentActiveMarker = null;
@@ -1620,7 +1553,6 @@
 
     document.getElementById('sheetEditLink').href = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/edit`;
 
-    /* PC 사이드바 토글 함수 */
     function togglePcSidebar() {
       isPcSidebarCollapsed = !isPcSidebarCollapsed;
       const sidebar = document.getElementById('sidebar');
@@ -1638,8 +1570,8 @@
       const isMobile = window.innerWidth <= 768;
       const d = parseInt(spot.difficulty, 10) || 3;
       const color = d <= 2 ? '#10b981' : (d >= 4 ? '#f43f5e' : '#f59e0b');
-      const pinWidth = isMobile ? 18 : 22;
-      const pinHeight = isMobile ? 24 : 29;
+      const pinWidth = isMobile ? 20 : 22;
+      const pinHeight = isMobile ? 26 : 29;
 
       const elevText = spot.elevation ? `<span class="marker-label-elev">(${escapeHtml(spot.elevation)})</span>` : '';
 
@@ -1836,7 +1768,7 @@
       document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
     }
 
-    /* 📱 [모바일 정밀 카메라 오프셋]: 마커를 화면 정중앙에서 위로 20% 위치에 정밀 이동 */
+    /* 📱 [모바일 정밀 마커 & 정보창 정중앙 정렬 로직] */
     function smoothCenterMapOnSpot(lat, lng, keepCurrentZoom = true) {
       const isMobile = window.innerWidth <= 768;
       const targetLatLng = new naver.maps.LatLng(lat, lng);
@@ -1856,8 +1788,8 @@
 
       const targetPoint = proj.fromCoordToOffset(targetLatLng);
       
-      // 모바일: 마커를 화면 정중앙 기준 위로 약 20% 올라오게 하려면 카메라 중심을 마커보다 아래로 이동
-      const offsetY = isMobile ? Math.round(window.innerHeight * 0.20) : 0;
+      // 모바일: [마커]와 [마커 아래 정보창] 전체 세트가 화면 중앙에 오도록 카메라를 마커 아래 약 125px로 이동
+      const offsetY = isMobile ? 125 : 0;
       const offsetX = isMobile ? 0 : 145;
 
       const cameraPoint = new naver.maps.Point(targetPoint.x + offsetX, targetPoint.y + offsetY);
@@ -1866,29 +1798,26 @@
       map.panTo(cameraLatLng, { duration: 320, easing: 'easeOutCubic' });
     }
 
-    /* 📱 [정보창 팝업 오프셋]: 모바일에서는 마커 핀 아래로 약 2cm (80px) 간격을 두고 시원하게 출력 */
+    /* 📱 [정보창 팝업 오프셋]: 마커 핀 아래로 깔끔하게 배치 */
     function getResponsiveInfoWindowOffset() {
       const isMobile = window.innerWidth <= 768;
       if (isMobile) {
-        return new naver.maps.Point(0, 80); // 마커 핀 아래로 약 2cm 간격 확보!
+        return new naver.maps.Point(0, 12); // 마커 핀 끝점 바로 아래에 나란히 배치
       } else {
-        return new naver.maps.Point(180, 145); // 데스크톱: 우측 중앙
+        return new naver.maps.Point(180, 145); // 데스크톱: 우측 뷰
       }
     }
 
     function focusSpotOnMap(spot, keepZoom = false) {
       incrementSpotCount(spot.id);
       
-      // 드롭다운 닫기
       const dd = document.getElementById('searchDropdown');
       if (dd) dd.style.display = 'none';
 
-      // 1) 마커 하이라이트
       spotMarkerMap.forEach(m => m.setZIndex(100));
       const marker = spotMarkerMap.get(String(spot.id));
       if (marker) marker.setZIndex(999999);
 
-      // 2) 왼쪽 사이드바 카드 네온 글로우 & 자동 스크롤
       document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active-spot'));
       const activeCard = document.getElementById(`spotItem_${spot.id}`);
       if (activeCard) {
@@ -1900,7 +1829,7 @@
         activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
 
-      // 모바일인 경우 사이드바 닫기
+      // 모바일이면 사이드바 자동 닫기
       if (window.innerWidth <= 768) {
         document.getElementById('sidebar').classList.add('collapsed');
         document.getElementById('bottomToggleBtn').innerText = '▲ 박지 목록 열기';
@@ -2104,7 +2033,6 @@
           }
           renderSpots();
 
-          // 🔥 [인덱스 연동 즉시 팝업 트리거]
           const urlParams = new URLSearchParams(window.location.search);
           const spotParam = urlParams.get('spot');
           const qParam = urlParams.get('q');
@@ -2650,7 +2578,6 @@
       if (idx !== -1) deleteSpot(event, idx);
     }
 
-    /* 초고속 스마트 통합 검색 */
     async function executeSearch() {
       const rawQuery = document.getElementById('topSearchInput').value.trim();
       if (!rawQuery) return;
@@ -2662,7 +2589,6 @@
       const results = [];
       const seenCoords = new Set();
 
-      // [1] 이미 등록된 내 백패킹 박지 목록에서 검색
       spots.filter(s => s.name.toLowerCase().includes(rawQuery.toLowerCase()) || 
                         s.desc?.toLowerCase().includes(rawQuery.toLowerCase()) || 
                         s.entryPoint?.toLowerCase().includes(rawQuery.toLowerCase()))
@@ -2678,7 +2604,6 @@
           });
         });
 
-      // [2] 구글 시트 백엔드 경유 카카오 장소/봉우리 초고속 검색
       try {
         const kRes = await fetch(`${GAS_API_URL}?action=SEARCH_KAKAO&q=${encodeURIComponent(rawQuery)}&_t=${Date.now()}`);
         if (kRes.ok) {
@@ -2700,7 +2625,6 @@
         }
       } catch (err) {}
 
-      // [3] 네이버 주소 Geocoder 보조 검색
       const cleanAddressQuery = rawQuery.replace(/(마을회관|노인정|쉼터|주차장|캠핑장|입구|등산로|관리사무소|회관|봉|산)/g, '').trim();
       const queryList = [rawQuery];
       if (cleanAddressQuery && cleanAddressQuery !== rawQuery) queryList.push(cleanAddressQuery);
@@ -2876,7 +2800,6 @@
         finalLng = coords.lng;
       }
 
-      /* [일반 사용자 제보 모드] */
       if (modalMode === 'PROPOSAL') {
         const check = autoDetectDroneStatus(finalLat, finalLng);
         const res = detectRegionAndCity(finalLat, finalLng, name, entryPoint);
@@ -2907,7 +2830,6 @@
         return;
       }
 
-      /* [관리자 직접 추가 모드] */
       if (modalMode === 'ADD') {
         const res = detectRegionAndCity(finalLat, finalLng, name, entryPoint);
         const newSpotId = String(Date.now());
@@ -2945,7 +2867,6 @@
           alert(`✅ '${newSpot.name}' 박지가 구글 시트와 지도에 즉시 등록되었습니다!`);
         } catch (err) {}
 
-      /* [관리자 수정 모드] */
       } else if (modalMode === 'EDIT') {
         const target = spots[modalEditIndex];
         const res = detectRegionAndCity(finalLat, finalLng, name, entryPoint);
