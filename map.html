@@ -20,7 +20,7 @@
 
   <style>
     :root {
-      /* 🖤 딥 옵시디언 트루 블랙 & 네온 오로라 테마 (index와 100% 일치) */
+      /* 🖤 딥 옵시디언 트루 블랙 & 네온 오로라 테마 */
       --bg-deep: #030508;
       --bg-surface: #090c13;
       --bg-card: #0e131d;
@@ -58,7 +58,7 @@
       letter-spacing: -0.015em;
     }
     
-    /* 🧭 1. 상단 헤더 (index.html과 1:1 완벽 일치: 52px 중앙 정렬 단일 바) */
+    /* 🧭 1. 상단 헤더 */
     .header {
       width: 100%;
       background: rgba(3, 5, 8, 0.94);
@@ -66,16 +66,22 @@
       -webkit-backdrop-filter: blur(20px);
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 0 16px;
+      justify-content: space-between;
+      padding: 6px 16px;
       z-index: 1000;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
       border-bottom: 1px solid var(--border);
       user-select: none;
       flex-shrink: 0;
-      height: 52px;
-      position: relative;
     }
+    .header-row-1 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 12px;
+    }
+    .header-left { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; min-width: 0; }
     
     .header-title-box {
       display: inline-flex;
@@ -83,6 +89,7 @@
       gap: 8px;
       white-space: nowrap;
       text-decoration: none;
+      min-width: 0;
     }
     
     .main-title {
@@ -115,8 +122,6 @@
 
     .admin-status-badge {
       display: none;
-      position: absolute;
-      right: 14px;
       background: rgba(16, 185, 129, 0.2);
       color: var(--accent-emerald);
       border: 1px solid rgba(16, 185, 129, 0.4);
@@ -125,105 +130,91 @@
       border-radius: 6px;
       font-weight: 800;
       white-space: nowrap;
-    }
-
-    /* 포털 맵 메인 컨테이너 */
-    .container {
-      display: flex;
-      width: 100%;
-      flex: 1;
-      height: calc(100% - 52px);
-      position: relative;
-      overflow: hidden;
+      flex-shrink: 0;
     }
     
-    /* 📋 사이드바 (모바일 z-index: 2500으로 모든 지도 위 버튼을 100% 가림) */
-    .sidebar {
-      width: 390px;
-      max-width: 100%;
-      height: 100%;
-      background-color: var(--bg-surface);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
-      z-index: 2500;
-      color: var(--text-primary);
-      overflow-x: hidden;
-      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-    }
-    .sidebar.pc-collapsed { margin-left: -390px !important; }
+    .header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
-    .pc-sidebar-toggle-btn {
-      position: absolute;
-      top: 50%;
-      left: 390px;
-      transform: translateY(-50%);
-      width: 22px;
-      height: 48px;
-      background: rgba(9, 12, 19, 0.95);
-      border: 1px solid var(--border-glow);
-      border-left: none;
-      border-radius: 0 8px 8px 0;
-      color: var(--accent-blue);
-      display: flex;
+    /* 💻 PC 상단 드론 버튼 (변경전 복원) */
+    .header-drone-toggle-btn {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
+      gap: 4px;
+      background: rgba(244, 63, 94, 0.12);
+      border: 1.5px solid rgba(244, 63, 94, 0.45);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #fecdd3 !important;
       cursor: pointer;
-      z-index: 2600;
-      box-shadow: 4px 0 14px rgba(0,0,0,0.6);
-      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.15s;
-      font-size: 0.75rem;
+      transition: all 0.2s ease;
+      white-space: nowrap;
       user-select: none;
     }
-    .pc-sidebar-toggle-btn:hover { background: var(--bg-card-hover); color: #ffffff; }
-    .sidebar.pc-collapsed ~ .pc-sidebar-toggle-btn { left: 0 !important; }
-
-    /* 🔍 사이드바 최상단 검색창 */
-    .sidebar-search-box {
-      padding: 10px 12px;
-      background: var(--bg-deep);
-      border-bottom: 1px solid var(--border);
-      position: relative;
-      flex-shrink: 0;
-      width: 100%;
+    .header-drone-toggle-btn:hover {
+      background: rgba(244, 63, 94, 0.25);
+      border-color: var(--accent-rose);
+      color: #ffffff !important;
+      box-shadow: 0 0 14px rgba(244, 63, 94, 0.45);
     }
-    .sidebar-search-input {
+    .header-drone-toggle-btn.active {
+      background: linear-gradient(135deg, #e11d48, #be123c) !important;
+      color: #ffffff !important;
+      border-color: #fda4af !important;
+      box-shadow: 0 0 18px rgba(225, 29, 72, 0.65);
+    }
+
+    .header-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 5px 10px;
+      border-radius: 16px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .header-btn:hover { background: var(--bg-card-hover); color: #ffffff; border-color: var(--accent-blue); }
+
+    .admin-only-btn { display: none; background: rgba(13, 148, 136, 0.2); color: var(--accent-teal); border-color: rgba(45, 212, 191, 0.4); }
+    .admin-only-btn:hover { background: rgba(13, 148, 136, 0.4); color: #fff; }
+
+    /* 🔍 💻 PC 검색창 (변경전 복원) */
+    .pc-search-container { position: relative; display: flex; align-items: center; width: 320px; }
+    .search-input {
       width: 100%;
-      padding: 9px 36px 9px 14px;
-      min-height: 38px;
+      padding: 8px 36px 8px 14px;
+      min-height: 36px;
       border-radius: 20px;
-      border: 1.5px solid rgba(56, 189, 248, 0.3);
+      border: 1.5px solid rgba(56, 189, 248, 0.25);
       background: var(--bg-surface);
       color: #fff;
       font-size: 0.82rem;
       font-family: var(--font-body);
       outline: none;
-      transition: all 0.2s ease;
+      transition: all 0.25s ease;
     }
-    .sidebar-search-input:focus {
-      border-color: var(--accent-blue);
-      background: #05070c;
-      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
-    }
-    .sidebar-search-btn {
+    .search-input::placeholder { color: var(--text-muted); font-size: 0.76rem; }
+    .search-input:focus { border-color: var(--accent-blue); background: #05070c; box-shadow: 0 0 12px rgba(56, 189, 248, 0.25); }
+    .search-btn-icon {
       position: absolute;
-      right: 22px;
-      top: 50%;
-      transform: translateY(-50%);
+      right: 12px;
       background: none;
       border: none;
       color: var(--text-secondary);
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
     }
 
-    /* 드롭다운 */
+    /* 드롭다운 공통 */
     .search-dropdown {
       position: absolute;
-      top: 52px;
-      left: 12px; right: 12px;
+      top: 42px;
+      left: 0; right: 0;
       background: rgba(9, 12, 19, 0.98);
       backdrop-filter: blur(18px);
       color: var(--text-primary);
@@ -280,13 +271,66 @@
     .top-spot-views { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
     .btn-quick-add { background: #0f766e; color: #ffffff; border: none; border-radius: 4px; padding: 3px 6px; font-size: 0.68rem; font-weight: 700; cursor: pointer; display: none; }
 
+    /* 포털 맵 메인 컨테이너 */
+    .container {
+      display: flex;
+      width: 100%;
+      flex: 1;
+      height: calc(100% - 52px);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* 📋 사이드바 */
+    .sidebar {
+      width: 390px;
+      max-width: 100%;
+      height: 100%;
+      background-color: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      z-index: 2500;
+      color: var(--text-primary);
+      overflow-x: hidden;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    .sidebar.pc-collapsed { margin-left: -390px !important; }
+
+    .pc-sidebar-toggle-btn {
+      position: absolute;
+      top: 50%;
+      left: 390px;
+      transform: translateY(-50%);
+      width: 22px;
+      height: 48px;
+      background: rgba(9, 12, 19, 0.95);
+      border: 1px solid var(--border-glow);
+      border-left: none;
+      border-radius: 0 8px 8px 0;
+      color: var(--accent-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 2600;
+      box-shadow: 4px 0 14px rgba(0,0,0,0.6);
+      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.15s;
+      font-size: 0.75rem;
+      user-select: none;
+    }
+    .pc-sidebar-toggle-btn:hover { background: var(--bg-card-hover); color: #ffffff; }
+    .sidebar.pc-collapsed ~ .pc-sidebar-toggle-btn { left: 0 !important; }
+
     .sidebar-header {
       padding: 6px 12px;
-      min-height: 38px;
+      min-height: 40px;
       font-family: var(--font-display);
       font-weight: 700;
       font-size: 0.82rem;
-      background-color: var(--bg-surface);
+      background-color: var(--bg-deep);
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
@@ -548,15 +592,102 @@
 
     #map { flex: 1; height: 100%; position: relative; background: var(--bg-deep); }
     
-    /* 🗺️ 1. 우측 상단 일반/위성 2단 세로 스택 */
-    .hud-map-type-vertical {
+    /* 💻 PC 전용: 변경전 좌측 상단 범례 바 */
+    .pc-map-legend-bar {
       position: absolute;
-      top: 14px;
-      right: 14px;
+      top: 10px;
+      left: 10px;
+      background: rgba(9, 12, 19, 0.92);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 8px;
       z-index: 120;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+      user-select: none;
+      pointer-events: none;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.64rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+    .legend-dot { width: 6px; height: 6px; border-radius: 50%; }
+    .dot-green { background: #10b981; }
+    .dot-yellow { background: #f59e0b; }
+    .dot-red { background: #ef4444; }
+
+    /* =========================================================================
+       📱 모바일 전용 신규 HUD 컴포넌트들
+       ========================================================================= */
+    /* 🔍 1. 모바일 지도 상단 중앙 글래스모피즘 플로팅 검색창 */
+    .mobile-floating-search {
+      display: none;
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 28px);
+      max-width: 440px;
+      z-index: 120;
+    }
+    .mobile-search-inner {
+      position: relative;
+      width: 100%;
+      display: flex;
+      align-items: center;
+    }
+    .mobile-search-input {
+      width: 100%;
+      height: 40px;
+      padding: 8px 40px 8px 16px;
+      border-radius: 24px;
+      border: 1.5px solid rgba(56, 189, 248, 0.4);
+      background: rgba(9, 12, 19, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      color: #ffffff;
+      font-size: 0.84rem;
+      font-family: var(--font-body);
+      outline: none;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.65);
+      transition: all 0.25s ease;
+    }
+    .mobile-search-input:focus {
+      background: rgba(3, 5, 8, 0.96);
+      border-color: var(--accent-blue);
+      box-shadow: 0 8px 26px rgba(0, 0, 0, 0.85), 0 0 14px rgba(56, 189, 248, 0.3);
+    }
+    .mobile-search-btn {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--accent-blue);
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+    .mobile-search-dropdown {
+      top: 46px !important;
+      left: 0 !important;
+      right: 0 !important;
+    }
+
+    /* 🗺️ 2. 모바일 우측 줌바 위 일반 / 위성 세로 텍스트 스택 */
+    .hud-map-type-vertical {
+      display: none;
+      position: absolute;
+      top: 62px;
+      right: 10px;
+      z-index: 120;
+      flex-direction: column;
+      gap: 3px;
       background: rgba(9, 12, 19, 0.92);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
@@ -571,12 +702,13 @@
       color: var(--text-secondary);
       font-size: 0.72rem;
       font-weight: 700;
-      padding: 5px 9px;
+      padding: 6px 8px;
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.18s;
       outline: none;
       white-space: nowrap;
+      text-align: center;
     }
     .map-type-btn:hover { color: #fff; }
     .map-type-btn.active {
@@ -586,11 +718,12 @@
       box-shadow: 0 1px 6px rgba(2, 132, 199, 0.4);
     }
 
-    /* 🟢🟡🔴 2. 하단 좌측 (홈 버튼 바로 위) 난이도 범례 칩 */
+    /* 🟢🟡🔴 3. 모바일 하단 좌측 (홈 버튼 바로 위) 난이도 범례 칩 */
     .hud-bottom-left-legend {
+      display: none;
       position: absolute;
-      bottom: 14px;
-      left: 14px;
+      bottom: 12px;
+      left: 10px;
       z-index: 120;
       height: 32px;
       padding: 0 10px;
@@ -599,31 +732,19 @@
       -webkit-backdrop-filter: blur(14px);
       border: 1px solid var(--border-glow);
       border-radius: 16px;
-      display: inline-flex;
       align-items: center;
       gap: 6px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.6);
       user-select: none;
       white-space: nowrap;
     }
-    .legend-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      font-size: 0.68rem;
-      font-weight: 800;
-      color: var(--text-secondary);
-    }
-    .legend-dot { width: 6px; height: 6px; border-radius: 50%; }
-    .dot-green { background: #10b981; box-shadow: 0 0 6px rgba(16,185,129,0.7); }
-    .dot-yellow { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.7); }
-    .dot-red { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.7); }
 
-    /* 🛸 3. 하단 우측 (지도초기화 버튼 바로 위) 드론 규제 토글 버튼 */
+    /* 🛸 4. 모바일 하단 우측 (지도초기화 버튼 바로 위) 드론 규제 확인 버튼 */
     .hud-bottom-right-drone {
+      display: none;
       position: absolute;
-      bottom: 14px;
-      right: 14px;
+      bottom: 12px;
+      right: 10px;
       z-index: 120;
       height: 32px;
       padding: 0 12px;
@@ -632,7 +753,6 @@
       -webkit-backdrop-filter: blur(14px);
       border: 1.5px solid rgba(244, 63, 94, 0.55);
       border-radius: 16px;
-      display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 4px;
@@ -660,7 +780,7 @@
     .pin-picker-banner {
       display: none;
       position: absolute;
-      top: 14px;
+      top: 56px;
       left: 50%;
       transform: translateX(-50%);
       background: linear-gradient(135deg, #0f766e, #0284c7);
@@ -1162,16 +1282,30 @@
     .modal-btn-cancel { background: var(--bg-card); color: var(--text-secondary); }
     .modal-btn-save { background: #0f766e; color: #ffffff; }
 
-    /* 📱 모바일 미디어 쿼리 (~768px) */
+    /* =========================================================================
+       반응형 미디어 쿼리 (PC vs 모바일 완벽 분기)
+       ========================================================================= */
+    /* 💻 PC 전용 (> 768px): 변경전 레이아웃 복원 */
+    @media (min-width: 769px) {
+      .mobile-only { display: none !important; }
+      .pc-only { display: flex !important; }
+      .header-desktop-only { display: flex !important; }
+      .pc-map-legend-bar { display: flex !important; }
+    }
+
+    /* 📱 모바일 전용 (~768px): 요청하신 플로팅 UI 최적화 */
     @media (max-width: 768px) {
+      .pc-only, .pc-sidebar-toggle-btn, .pc-map-legend-bar { display: none !important; }
+      
       .header { 
-        padding: 0 10px !important;
+        padding: 0 14px !important;
         height: 52px !important;
+        justify-content: center !important;
       }
+      .header-row-1 { justify-content: center !important; }
       .main-title { font-size: 1.05rem !important; }
       .brand-sub-script { font-size: 1.05rem !important; }
-      .pc-sidebar-toggle-btn { display: none !important; }
-      
+
       .container { 
         flex: 1 !important;
         height: calc(100% - 52px - 54px - env(safe-area-inset-bottom, 0px)) !important; 
@@ -1185,28 +1319,9 @@
         height: 100% !important;
       }
 
-      /* 모바일 HUD 위치 */
-      .hud-map-type-vertical {
-        top: 10px !important;
-        right: 10px !important;
-      }
-      .map-type-btn { padding: 4px 7px !important; font-size: 0.65rem !important; }
-
-      .hud-bottom-left-legend {
-        bottom: 10px !important;
-        left: 10px !important;
-        height: 30px !important;
-        padding: 0 8px !important;
-      }
-      .legend-item { font-size: 0.64rem !important; }
-
-      .hud-bottom-right-drone {
-        bottom: 10px !important;
-        right: 10px !important;
-        height: 30px !important;
-        padding: 0 10px !important;
-        font-size: 0.68rem !important;
-      }
+      /* 📱 모바일 플로팅 UI 노출 */
+      .mobile-only { display: flex !important; }
+      .mobile-floating-search { display: block !important; }
 
       .sidebar { 
         position: absolute;
@@ -1234,26 +1349,36 @@
   <!-- 🍞 토스트 알림 -->
   <div id="appToast" class="app-toast"></div>
 
-  <!-- 🧭 1. 상단 GNB (index와 1:1 완벽 일치하는 중앙 로고 바) -->
+  <!-- 🧭 1. 상단 헤더 -->
   <header class="header" id="header">
-    <a href="index.html" class="header-title-box" title="포털 메인 홈으로 이동">
-      <span class="main-title">대한민국 <span class="highlight-pink">낭만 백패킹</span> 로드</span>
-      <span class="brand-sub-script">Romantic Backpacking Road</span>
-    </a>
-    <span class="admin-status-badge" id="adminBadge">관리자 ON</span>
+    <div class="header-row-1">
+      <div class="header-left">
+        <a href="index.html" class="header-title-box" title="포털 메인 홈으로 이동">
+          <span class="main-title">대한민국 <span class="highlight-pink">낭만 백패킹</span> 로드</span>
+          <span class="brand-sub-script">Romantic Backpacking Road</span>
+        </a>
+        <span class="admin-status-badge" id="adminBadge">관리자 ON</span>
+      </div>
+      
+      <!-- 💻 PC 전용: 변경전 복원된 상단 헤더 우측 툴바 & 검색창 -->
+      <div class="header-right pc-only">
+        <div class="pc-search-container">
+          <input type="text" id="pcSearchInput" class="search-input" placeholder="산/계곡/섬/봉우리 검색..." autocomplete="off" onfocus="showTopRankings('pc')" onkeyup="handleSearchInput(event, 'pc')" />
+          <button type="button" class="search-btn-icon" onclick="executeSearch('pc')">🔍</button>
+          <ul id="pcSearchDropdown" class="search-dropdown"></ul>
+        </div>
+        <button type="button" class="header-drone-toggle-btn" id="pcHeaderDroneBtn" onclick="toggleDroneOverlay()" title="전국 드론 비행금지 및 군사/공항 관제공역 레이어 토글">
+          <span>🛸 드론 규제 확인</span>
+        </button>
+        <button type="button" class="header-btn admin-only-btn" id="btnSyncSheet" onclick="fetchSpotsFromGoogleSheet()">🔄 시트 동기화</button>
+        <button type="button" class="header-btn" id="resetMapBtn" onclick="resetMapView()">🔄 지도 초기화</button>
+      </div>
+    </div>
   </header>
 
   <!-- 🗺️ 2. 맵 & 사이드바 컨테이너 -->
   <div class="container">
     <aside class="sidebar collapsed" id="sidebar">
-      
-      <!-- 🔍 사이드바 최상단 검색창 -->
-      <div class="sidebar-search-box">
-        <input type="text" id="sidebarSearchInput" class="sidebar-search-input" placeholder="산/계곡/섬/봉우리/마을회관 검색..." autocomplete="off" onfocus="showTopRankings()" onkeyup="handleSearchInput(event)" />
-        <button type="button" class="sidebar-search-btn" onclick="executeSearch()">🔍</button>
-        <ul id="searchDropdown" class="search-dropdown"></ul>
-      </div>
-
       <div class="sidebar-header">
         <div class="sidebar-header-left">
           <span>📍 박지 목록</span>
@@ -1274,7 +1399,6 @@
       <div class="admin-data-tools" id="adminDataTools">
         <button type="button" class="admin-tool-btn" onclick="exportDataBackup()">💾 백업</button>
         <button type="button" class="admin-tool-btn" onclick="document.getElementById('importFileInput').click()">📂 복원</button>
-        <button type="button" class="admin-tool-btn" onclick="fetchSpotsFromGoogleSheet()">🔄 동기화</button>
         <input type="file" id="importFileInput" style="display:none" accept=".json" onchange="importDataBackup(event)" />
       </div>
       
@@ -1307,27 +1431,43 @@
     </aside>
 
     <!-- PC 사이드바 열기/닫기 토글 버튼 -->
-    <div class="pc-sidebar-toggle-btn" id="pcSidebarToggleBtn" onclick="togglePcSidebar()" title="사이드바 접기/열기">
+    <div class="pc-sidebar-toggle-btn pc-only" id="pcSidebarToggleBtn" onclick="togglePcSidebar()" title="사이드바 접기/열기">
       ◀
     </div>
     
     <main id="map">
-      <!-- 🗺️ 1. 우측 상단 일반 / 위성 2단 세로 스택 (지형도 제외) -->
-      <div class="hud-map-type-vertical">
-        <button type="button" class="map-type-btn active" id="btnMapNormal" onclick="setMapType('NORMAL')">🗺️ 일반</button>
-        <button type="button" class="map-type-btn" id="btnMapHybrid" onclick="setMapType('HYBRID')">🛰️ 위성</button>
-      </div>
-
-      <!-- 🟢🟡🔴 2. 하단 좌측 (홈 버튼 바로 위) 난이도 범례 칩 -->
-      <div class="hud-bottom-left-legend">
+      <!-- 💻 PC 전용: 변경전 좌측 상단 범례 -->
+      <div class="pc-map-legend-bar pc-only">
         <div class="legend-item"><span class="legend-dot dot-green"></span> 쉬움</div>
         <div class="legend-item"><span class="legend-dot dot-yellow"></span> 보통</div>
         <div class="legend-item"><span class="legend-dot dot-red"></span> 어려움</div>
       </div>
 
-      <!-- 🛸 3. 하단 우측 (지도초기화 버튼 바로 위) 드론 규제 토글 버튼 -->
-      <button type="button" class="hud-bottom-right-drone" id="headerDroneBtn" onclick="toggleDroneOverlay()" title="전국 드론 비행금지 및 군사/공항 관제공역 레이어 토글">
-        <span>🛸 드론 규제</span>
+      <!-- 📱 모바일 전용: 지도 상단 중앙 글래스모피즘 플로팅 검색창 -->
+      <div class="mobile-floating-search mobile-only">
+        <div class="mobile-search-inner">
+          <input type="text" id="mobileSearchInput" class="mobile-search-input" placeholder="🔍 산, 섬, 계곡, 박지 검색..." autocomplete="off" onfocus="showTopRankings('mobile')" onkeyup="handleSearchInput(event, 'mobile')" />
+          <button type="button" class="mobile-search-btn" onclick="executeSearch('mobile')">🔍</button>
+        </div>
+        <ul id="mobileSearchDropdown" class="search-dropdown mobile-search-dropdown"></ul>
+      </div>
+
+      <!-- 📱 모바일 전용: 우측 상단 일반 / 위성 세로 텍스트 스택 (이모티콘 제외, 지형 제외) -->
+      <div class="hud-map-type-vertical mobile-only">
+        <button type="button" class="map-type-btn active" id="btnMapNormal" onclick="setMapType('NORMAL')">일반</button>
+        <button type="button" class="map-type-btn" id="btnMapHybrid" onclick="setMapType('HYBRID')">위성</button>
+      </div>
+
+      <!-- 📱 모바일 전용: 하단 좌측 (홈 버튼 바로 위) 난이도 범례 칩 -->
+      <div class="hud-bottom-left-legend mobile-only">
+        <div class="legend-item"><span class="legend-dot dot-green"></span> 쉬움</div>
+        <div class="legend-item"><span class="legend-dot dot-yellow"></span> 보통</div>
+        <div class="legend-item"><span class="legend-dot dot-red"></span> 어려움</div>
+      </div>
+
+      <!-- 📱 모바일 전용: 하단 우측 (지도초기화 버튼 바로 위) 드론 규제 확인 버튼 -->
+      <button type="button" class="hud-bottom-right-drone mobile-only" id="mobileDroneBtn" onclick="toggleDroneOverlay()" title="전국 드론 비행금지 레이어 토글">
+        <span>🛸 드론규제확인</span>
       </button>
 
       <div id="pinPickerBanner" class="pin-picker-banner">
@@ -1619,11 +1759,12 @@
     let modalPendingData = { lat: 0, lng: 0, droneStatus: 'ok', address: '' };
     let isPickingLocationMode = false;
 
-    // 네이버 지도 인스턴스 (네이버 기본 흰색 버튼 mapTypeControl: false)
+    // 네이버 지도 인스턴스 (PC는 기본 버튼 사용, 모바일은 커스텀 세로 버튼 사용)
     const map = new naver.maps.Map('map', {
       center: DEFAULT_MAP_CENTER,
       zoom: DEFAULT_MAP_ZOOM,
-      mapTypeControl: false,
+      mapTypeControl: window.innerWidth > 768,
+      mapTypeControlOptions: { position: naver.maps.Position.TOP_RIGHT, style: naver.maps.MapTypeControlStyle.BUTTON },
       zoomControl: true,
       zoomControlOptions: { position: naver.maps.Position.RIGHT_CENTER }
     });
@@ -1691,6 +1832,8 @@
       document.querySelectorAll('.btn-quick-add').forEach(btn => btn.style.display = isAdminMode ? 'inline-block' : 'none');
       document.getElementById('adminDataTools').style.display = isAdminMode ? 'flex' : 'none';
       document.getElementById('sheetEditLink').style.display = isAdminMode ? 'inline-flex' : 'none';
+      const syncBtn = document.getElementById('btnSyncSheet');
+      if (syncBtn) syncBtn.style.display = isAdminMode ? 'inline-block' : 'none';
     }
 
     document.getElementById('sheetEditLink').href = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/edit`;
@@ -1725,7 +1868,7 @@
       if (btn) btn.classList.toggle('active', isOpen);
     }
 
-    /* 🗺️ 일반 / 위성 전환 함수 */
+    /* 🗺️ 모바일 일반 / 위성 전환 */
     function setMapType(type) {
       document.querySelectorAll('.map-type-btn').forEach(btn => btn.classList.remove('active'));
       if (type === 'NORMAL') {
@@ -2011,8 +2154,8 @@
     function focusSpotOnMap(spot, keepZoom = false) {
       incrementSpotCount(spot.id);
       
-      const dd = document.getElementById('searchDropdown');
-      if (dd) dd.style.display = 'none';
+      document.getElementById('pcSearchDropdown').style.display = 'none';
+      document.getElementById('mobileSearchDropdown').style.display = 'none';
 
       spotMarkerMap.forEach(m => m.setZIndex(100));
       const marker = spotMarkerMap.get(String(spot.id));
@@ -2300,10 +2443,10 @@
               }, 250);
             } else {
               setTimeout(() => {
-                const searchInput = document.getElementById('sidebarSearchInput');
-                if (searchInput) {
-                  searchInput.value = targetName;
-                  executeSearch();
+                const targetInput = window.innerWidth <= 768 ? document.getElementById('mobileSearchInput') : document.getElementById('pcSearchInput');
+                if (targetInput) {
+                  targetInput.value = targetName;
+                  executeSearch(window.innerWidth <= 768 ? 'mobile' : 'pc');
                 }
               }, 250);
             }
@@ -2462,9 +2605,11 @@
       target.searchCount = views;
     }
 
-    function showTopRankings() {
-      if (document.getElementById('sidebarSearchInput').value.trim()) return;
-      const dropdown = document.getElementById('searchDropdown');
+    function showTopRankings(mode = 'pc') {
+      const inputEl = document.getElementById(mode === 'mobile' ? 'mobileSearchInput' : 'pcSearchInput');
+      const dropdown = document.getElementById(mode === 'mobile' ? 'mobileSearchDropdown' : 'pcSearchDropdown');
+      if (inputEl.value.trim()) return;
+
       dropdown.innerHTML = '<div class="dropdown-header"><span>🔥 실시간 인기 박지 TOP 5</span><span>조회수 순</span></div>';
       dropdown.style.display = 'block';
 
@@ -2492,9 +2637,9 @@
       });
     }
 
-    function handleSearchInput(e) {
-      if (e.keyCode === 13) executeSearch();
-      else if (!e.target.value.trim()) showTopRankings();
+    function handleSearchInput(e, mode = 'pc') {
+      if (e.keyCode === 13) executeSearch(mode);
+      else if (!e.target.value.trim()) showTopRankings(mode);
     }
 
     function renderSpots(forceOpenRegion = null) {
@@ -2765,11 +2910,12 @@
       if (idx !== -1) deleteSpot(event, idx);
     }
 
-    async function executeSearch() {
-      const rawQuery = document.getElementById('sidebarSearchInput').value.trim();
+    async function executeSearch(mode = 'pc') {
+      const inputEl = document.getElementById(mode === 'mobile' ? 'mobileSearchInput' : 'pcSearchInput');
+      const dropdown = document.getElementById(mode === 'mobile' ? 'mobileSearchDropdown' : 'pcSearchDropdown');
+      const rawQuery = inputEl.value.trim();
       if (!rawQuery) return;
       
-      const dropdown = document.getElementById('searchDropdown');
       dropdown.innerHTML = '<li class="dropdown-item" style="color:var(--text-secondary);">🔍 전국 산/봉우리/명소 실시간 검색 중...</li>';
       dropdown.style.display = 'block';
 
@@ -2840,11 +2986,11 @@
         }
       });
 
-      renderSearchResults(results, rawQuery);
+      renderSearchResults(results, rawQuery, mode);
     }
 
-    function renderSearchResults(results, query) {
-      const dropdown = document.getElementById('searchDropdown');
+    function renderSearchResults(results, query, mode = 'pc') {
+      const dropdown = document.getElementById(mode === 'mobile' ? 'mobileSearchDropdown' : 'pcSearchDropdown');
       dropdown.innerHTML = `<div class="dropdown-header"><span>🔍 검색 결과</span><span>${results.length}건</span></div>`;
 
       if (results.length === 0) {
@@ -3101,7 +3247,7 @@
       } catch (err) {}
     }
 
-    /* 🔄 지도 전도 뷰 초기화 (하단 독 탭과 완벽 연동) */
+    /* 🔄 지도 전도 뷰 초기화 */
     function resetMapView() {
       map.morph(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, { duration: 400, easing: 'easeOutCubic' });
       closeAllPopups();
@@ -3173,8 +3319,10 @@
 
     function toggleDroneOverlay() {
       isDroneOverlayOn = !isDroneOverlayOn;
-      const droneBtn = document.getElementById('headerDroneBtn');
-      if (droneBtn) droneBtn.classList.toggle('active', isDroneOverlayOn);
+      const pcDroneBtn = document.getElementById('pcHeaderDroneBtn');
+      const mobileDroneBtn = document.getElementById('mobileDroneBtn');
+      if (pcDroneBtn) pcDroneBtn.classList.toggle('active', isDroneOverlayOn);
+      if (mobileDroneBtn) mobileDroneBtn.classList.toggle('active', isDroneOverlayOn);
 
       if (droneOverlays.length === 0) initDroneOverlays();
       droneOverlays.forEach(circle => circle.setMap(isDroneOverlayOn ? map : null));
@@ -3235,8 +3383,9 @@
     });
 
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('.sidebar-search-box') && !e.target.closest('.custom-modal-overlay') && !e.target.closest('#pinPickerBanner')) {
-        document.getElementById('searchDropdown').style.display = 'none';
+      if (!e.target.closest('.pc-search-container') && !e.target.closest('.mobile-floating-search') && !e.target.closest('.custom-modal-overlay') && !e.target.closest('#pinPickerBanner')) {
+        document.getElementById('pcSearchDropdown').style.display = 'none';
+        document.getElementById('mobileSearchDropdown').style.display = 'none';
       }
     });
 
