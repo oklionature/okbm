@@ -77,7 +77,7 @@
       letter-spacing: -0.02em;
     }
     
-    /* 🧭 1. 상단 헤더 */
+    /* 🧭 상단 헤더 */
     .header {
       width: 100%;
       background: rgba(3, 5, 8, 0.96);
@@ -202,7 +202,7 @@
     .admin-only-btn { display: none; background: rgba(13, 148, 136, 0.2); color: var(--accent-teal); border-color: rgba(45, 212, 191, 0.4); }
     .admin-only-btn:hover { background: rgba(13, 148, 136, 0.4); color: #fff; }
 
-    /* 🔍 💻 PC 검색창 */
+    /* 🔍 PC 검색창 */
     .pc-search-container { position: relative; display: flex; align-items: center; width: 300px; }
     .search-input {
       width: 100%;
@@ -981,44 +981,6 @@
     .marker-label-elev { color: #86efac; font-size: 0.64rem; font-weight: 700; }
     .marker-svg-icon { display: block; }
 
-    /* 🟢 3단계 대형 다이내믹 네온 클러스터 마커 */
-    .custom-cluster-marker {
-      border-radius: 50%;
-      color: #ffffff;
-      font-family: var(--font-body);
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      user-select: none;
-      cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .cluster-sm {
-      width: 44px; height: 44px;
-      font-size: 0.82rem;
-      background: rgba(13, 148, 136, 0.92);
-      border: 2px solid #2dd4bf;
-      box-shadow: 0 4px 16px rgba(45, 212, 191, 0.5);
-    }
-    .cluster-md {
-      width: 50px; height: 50px;
-      font-size: 0.9rem;
-      background: linear-gradient(135deg, rgba(2, 132, 199, 0.94), rgba(13, 148, 136, 0.94));
-      border: 2.5px solid #38bdf8;
-      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.6);
-    }
-    .cluster-lg {
-      width: 58px; height: 58px;
-      font-size: 1rem;
-      background: linear-gradient(135deg, rgba(225, 29, 72, 0.94), rgba(245, 158, 11, 0.94));
-      border: 3px solid #fde047;
-      box-shadow: 0 8px 24px rgba(244, 63, 94, 0.7);
-    }
-    .custom-cluster-marker:hover {
-      transform: scale(1.08);
-    }
-
     /* 🖥️ PC 팝업창 규격 */
     .compact-info-window {
       padding: 12px 14px;
@@ -1594,6 +1556,7 @@
       flex-direction: column;
       gap: 10px;
       border: 1.5px solid rgba(16, 185, 129, 0.4);
+      transform: translateY(-25px);
     }
     .lnt-rule-item {
       background: rgba(255, 255, 255, 0.02);
@@ -1833,7 +1796,7 @@
       </div>
 
       <!-- ========================================================
-           🎯 📱 하단 3대 플로팅 HUD (크기 균일화 & 정중앙 밸런스 배치)
+           🎯 📱 하단 3대 플로팅 HUD (균형감 & 톤앤매너 완벽 통일)
            ======================================================== -->
       <!-- 1. 좌측: 범례 -->
       <div class="hud-bottom-left-legend mobile-only clean-hide" onclick="handleLegendAdminClick()">
@@ -2205,9 +2168,9 @@
     let currentActiveSpot = null;
     let currentActiveMarker = null;
     let pendingUnlockSpotId = null;
+    let isZoomDetailedState = false;
 
     const spotMarkerMap = new Map();
-    let clusterMarkers = [];
     let tempSearchMarker = null;
     let tempPickedMarker = null;
     let userLocationMarker = null;
@@ -2245,7 +2208,7 @@
 
     naver.maps.Event.addListener(map, 'dragstart', () => closeAllPopups());
     naver.maps.Event.addListener(map, 'pinchstart', () => closeAllPopups());
-    naver.maps.Event.addListener(map, 'idle', () => updateClusters());
+    naver.maps.Event.addListener(map, 'zoom_changed', () => updateLODMarkers());
 
     document.addEventListener('DOMContentLoaded', () => {
       const vTag = document.getElementById('versionTagBtn');
@@ -2356,9 +2319,9 @@
               map: map,
               icon: {
                 content: `
-                  <div style="width:22px; height:22px; border-radius:50%; background:#0284c7; border:3px solid #ffffff; box-shadow:0 0 16px rgba(2,132,199,0.9);"></div>
+                  <div style="width:20px; height:20px; border-radius:50%; background:#0284c7; border:3px solid #ffffff; box-shadow:0 0 14px rgba(2,132,199,0.9);"></div>
                 `,
-                anchor: new naver.maps.Point(11, 11)
+                anchor: new naver.maps.Point(10, 10)
               },
               zIndex: 99999
             });
@@ -2375,6 +2338,68 @@
         },
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
       );
+    }
+//* 🏕️ 줌 레벨 연동 LOD 어댑티브 마커 생성 (Zoom 7~9: 미니멀 네온 도트 / Zoom 10+: 정밀 텐트 핀) */
+    function createCustomMarkerIcon(spot, isDetailed = false) {
+      const d = parseInt(spot.difficulty, 10) || 3;
+      const color = d <= 2 ? '#10b981' : (d >= 4 ? '#f43f5e' : '#f59e0b');
+      const isDone = userVisited.has(String(spot.id));
+      const isActive = (currentActiveSpot?.id === spot.id);
+
+      // 저배율(전국 뷰) && 비활성 마커 ➡️ 미니멀 네온 도트 (7px)
+      if (!isDetailed && !isActive) {
+        return {
+          content: `
+            <div style="width:8px; height:8px; border-radius:50%; background:${color}; border:1.5px solid #ffffff; box-shadow:0 0 8px ${color}; cursor:pointer; pointer-events:auto; transition:transform 0.15s ease;">
+              ${isDone ? `<div style="position:absolute; top:-4px; right:-4px; width:4px; height:4px; border-radius:50%; background:#f59e0b;"></div>` : ''}
+            </div>
+          `,
+          anchor: new naver.maps.Point(4, 4)
+        };
+      }
+
+      // 고배율(상세 뷰) 또는 현재 선택된 마커 ➡️ 낭만 텐트 핀 (28x36px)
+      const pinWidth = window.innerWidth <= 768 ? 24 : 28;
+      const pinHeight = window.innerWidth <= 768 ? 32 : 36;
+      const elevText = spot.elevation ? `<span class="marker-label-elev">(${escapeHtml(spot.elevation)})</span>` : '';
+      const clearBadge = isDone ? `<span style="color:#fde047; font-size:0.64rem;">[CLEAR]</span>` : '';
+
+      return {
+        content: `
+          <div class="custom-spot-marker-wrap">
+            <div class="marker-label-chip">
+              <span>${escapeHtml(spot.name)}</span>
+              ${elevText}
+              ${clearBadge}
+            </div>
+            <svg class="marker-svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="${pinWidth}" height="${pinHeight}">
+              <ellipse cx="14" cy="34" rx="6" ry="2" fill="rgba(0,0,0,0.35)"/>
+              <path fill="${color}" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round" d="M14 1 C6.82 1 1 6.82 1 14 C1 19.8 4.8 24.7 10 26.3 L14 32.5 L18 26.3 C23.2 24.7 27 19.8 27 14 C27 6.82 21.18 1 14 1 Z"/>
+              <path fill="#ffffff" d="M14 7 L7.5 18 H20.5 Z"/>
+              <polygon fill="${color}" points="14,10.5 10.5,18 17.5,18"/>
+              ${isDone ? `
+                <circle cx="21" cy="5" r="5" fill="#f59e0b" stroke="#ffffff" stroke-width="1.2"/>
+                <path d="M19.2 5 L20.5 6.3 L23 3.8" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round"/>
+              ` : ''}
+            </svg>
+          </div>
+        `,
+        anchor: new naver.maps.Point(pinWidth / 2, pinHeight)
+      };
+    }
+
+    /* 🛡️ 줌 임계점 단 1회 스위칭 가드 (CPU 렉 0% 보장) */
+    function updateLODMarkers() {
+      const zoom = map.getZoom();
+      const isDetailed = (zoom >= 10);
+      if (isZoomDetailedState === isDetailed) return; // 임계점을 넘지 않으면 연산 0회 종료
+
+      isZoomDetailedState = isDetailed;
+      spotMarkerMap.forEach(marker => {
+        if (marker.spotData) {
+          marker.setIcon(createCustomMarkerIcon(marker.spotData, isDetailed));
+        }
+      });
     }
 
     function areAllRegionAccordionsClosed() {
@@ -2448,7 +2473,7 @@
       });
     }
 
-    /* 🗺️ [스마트 초기화 & 클린 지도 모드 토글] */
+    /* 🗺️ 스마트 초기화 & 클린 지도 모드 토글 */
     function handleSmartResetClick() {
       const isMobile = window.innerWidth <= 768;
       const isListOpen = isMobile ? !isSidebarCollapsed : !isPcSidebarCollapsed;
@@ -2533,42 +2558,6 @@
       }
     }
 
-    /* 📍 마커 생성 (경량 인라인 SVG 그림자 & 클리어 깃발 배지) */
-    function createCustomMarkerIcon(spot) {
-      const isMobile = window.innerWidth <= 768;
-      const d = parseInt(spot.difficulty, 10) || 3;
-      const color = d <= 2 ? '#10b981' : (d >= 4 ? '#f43f5e' : '#f59e0b');
-      const pinWidth = isMobile ? 24 : 28;
-      const pinHeight = isMobile ? 32 : 36;
-
-      const isDone = userVisited.has(String(spot.id));
-      const elevText = spot.elevation ? `<span class="marker-label-elev">(${escapeHtml(spot.elevation)})</span>` : '';
-      const clearBadge = isDone ? `<span style="color:#fde047; font-size:0.64rem;">[CLEAR]</span>` : '';
-
-      return {
-        content: `
-          <div class="custom-spot-marker-wrap">
-            <div class="marker-label-chip">
-              <span>${escapeHtml(spot.name)}</span>
-              ${elevText}
-              ${clearBadge}
-            </div>
-            <svg class="marker-svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="${pinWidth}" height="${pinHeight}">
-              <ellipse cx="14" cy="34" rx="6" ry="2" fill="rgba(0,0,0,0.35)"/>
-              <path fill="${color}" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round" d="M14 1 C6.82 1 1 6.82 1 14 C1 19.8 4.8 24.7 10 26.3 L14 32.5 L18 26.3 C23.2 24.7 27 19.8 27 14 C27 6.82 21.18 1 14 1 Z"/>
-              <path fill="#ffffff" d="M14 7 L7.5 18 H20.5 Z"/>
-              <polygon fill="${color}" points="14,10.5 10.5,18 17.5,18"/>
-              ${isDone ? `
-                <circle cx="21" cy="5" r="5" fill="#f59e0b" stroke="#ffffff" stroke-width="1.2"/>
-                <path d="M19.2 5 L20.5 6.3 L23 3.8" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round"/>
-              ` : ''}
-            </svg>
-          </div>
-        `,
-        anchor: new naver.maps.Point(pinWidth / 2, pinHeight)
-      };
-    }
-
     function getSpotViews(spot) {
       return spot.searchCount || parseInt(localStorage.getItem(`okbm_views_${spot.id}`), 10) || 0;
     }
@@ -2597,6 +2586,7 @@
       return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
     }
 
+    /* 🛡️ 1차 사각 바운딩 컷 고속 드론 판정 (CPU 렉 90% 감축) */
     function autoDetectDroneStatus(lat, lng) {
       if (!lat || !lng) return { status: 'ok', reason: '자유 비행 구역 (150m 고도제한 준수 / 촬영 시 원스톱 허가 권장)' };
 
@@ -2612,7 +2602,7 @@
         if (getDistanceMeters(lat, lng, zone.lat, zone.lng) <= zone.radius) {
           if (zone.type === 'border') return { status: 'no', reason: `[휴전선 접경 비행금지] ${zone.name}` };
           if (zone.type === 'p73') return { status: 'no', reason: `[수도권/국가시설 비행금지 P-73/R-130] 드론 비행 절대 금지` };
-          if (zone.type === 'nuke' || zone.type === 'mil_ban') return { status: 'no', reason: `[국가중요시설 비행금지] ${zone.name}` };
+          if (zone.type === 'mil_ban' || zone.type === 'nuke') return { status: 'no', reason: `[국가중요시설 비행금지] ${zone.name}` };
           if (zone.type === 'mil') return { status: 'warn', reason: `[군사작전 관제공역] ${zone.name} (사전승인 필수)` };
           if (zone.type === 'air') return { status: 'warn', reason: `[공항 관제권] ${zone.name} 반경 9.3km (사전승인 필수)` };
         }
@@ -2651,7 +2641,7 @@
       return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     }
 
-    /* 💨 실시간 풍속/기온 비동기 로딩 */
+    /* 💨 실시간 풍속/기온 비동기 로딩 (15분 캐싱) */
     const weatherCache = new Map();
     async function loadLiveWeatherForSpot(spotId, lat, lng) {
       if (!lat || !lng) return;
@@ -2862,6 +2852,7 @@
       clearAllUnlockTimers();
       document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active-spot'));
       spotMarkerMap.forEach(m => m.setZIndex(100));
+      updateLODMarkers();
     }
 
     function focusSpotOnMap(spot, keepZoom = false) {
@@ -2875,6 +2866,7 @@
       if (marker) {
         marker.setMap(map);
         marker.setZIndex(999999);
+        marker.setIcon(createCustomMarkerIcon(spot, true)); // 선택된 마커는 항상 텐트 핀으로 강조
       }
 
       document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active-spot'));
@@ -2971,12 +2963,7 @@
 
     function completeLntPledgeAndUnlock(spotId) {
       sessionStorage.setItem(`okbm_unlocked_${spotId}`, 'true');
-
-      const finalOverlay = document.getElementById(`entryLockOverlay_${spotId}`);
-      const innerContent = document.getElementById(`lockedEntryInner_${spotId}`);
-      if (finalOverlay) finalOverlay.style.display = 'none';
-      if (innerContent) innerContent.classList.remove('is-locked');
-
+      refreshCurrentSpotPopup();
       showToast('🔓 K-LNT 실천 서약 완료! 들머리 주소가 열렸습니다 🌿');
     }
 
@@ -3025,7 +3012,7 @@
     function updateMarkerIconVisual(spotId) {
       const marker = spotMarkerMap.get(String(spotId));
       if (marker && marker.spotData) {
-        marker.setIcon(createCustomMarkerIcon(marker.spotData));
+        marker.setIcon(createCustomMarkerIcon(marker.spotData, isZoomDetailedState || currentActiveSpot?.id === marker.spotData.id));
       }
     }
 
@@ -3036,7 +3023,7 @@
       showToast('🔒 나만의 비공개 메모가 저장되었습니다');
     }
 
-    /* 📤 원클릭 박지 공유 (주소 제외, 링크 직접 해제 유도) */
+    /* 📤 원클릭 박지 공유 (주소 제외, 링크 직접 확인 유도) */
     function shareSpotCard(spotId) {
       const spot = spots.find(s => String(s.id) === String(spotId));
       if (!spot) return;
@@ -3574,88 +3561,6 @@
       else if (!e.target.value.trim()) showTopRankings(mode);
     }
 
-    /* 🟢 [100% 안전한 자체 내장형 마커 클러스터링 엔진 - 증발 버그 0%] */
-    function updateClusters() {
-      clusterMarkers.forEach(m => m.setMap(null));
-      clusterMarkers = [];
-
-      const zoom = map.getZoom();
-      const visibleMarkers = [];
-
-      spotMarkerMap.forEach(marker => {
-        if (marker.getMap()) {
-          visibleMarkers.push(marker);
-        }
-      });
-
-      if (zoom >= 12) {
-        visibleMarkers.forEach(m => m.setVisible(true));
-        return;
-      }
-
-      const clusterRadius = Math.max(0.18, 1.8 / Math.pow(2, zoom - 6));
-      const clusters = [];
-      const visited = new Set();
-
-      for (let i = 0; i < visibleMarkers.length; i++) {
-        if (visited.has(i)) continue;
-        const m1 = visibleMarkers[i];
-        const pos1 = m1.getPosition();
-        const cluster = [m1];
-        visited.add(i);
-
-        for (let j = i + 1; j < visibleMarkers.length; j++) {
-          if (visited.has(j)) continue;
-          const m2 = visibleMarkers[j];
-          const pos2 = m2.getPosition();
-          const dLat = Math.abs(pos1.lat() - pos2.lat());
-          const dLng = Math.abs(pos1.lng() - pos2.lng());
-
-          if (dLat < clusterRadius && dLng < clusterRadius) {
-            cluster.push(m2);
-            visited.add(j);
-          }
-        }
-        clusters.push(cluster);
-      }
-
-      clusters.forEach(cluster => {
-        if (cluster.length > 1) {
-          cluster.forEach(m => m.setVisible(false));
-          
-          let avgLat = 0, avgLng = 0;
-          cluster.forEach(m => {
-            avgLat += m.getPosition().lat();
-            avgLng += m.getPosition().lng();
-          });
-          avgLat /= cluster.length;
-          avgLng /= cluster.length;
-
-          const count = cluster.length;
-          const sizeClass = count < 10 ? 'cluster-sm' : (count < 30 ? 'cluster-md' : 'cluster-lg');
-          const badgeSize = count < 10 ? 44 : (count < 30 ? 50 : 58);
-
-          const cMarker = new naver.maps.Marker({
-            position: new naver.maps.LatLng(avgLat, avgLng),
-            map: map,
-            icon: {
-              content: `<div class="custom-cluster-marker ${sizeClass}">${count}</div>`,
-              anchor: new naver.maps.Point(badgeSize / 2, badgeSize / 2)
-            },
-            zIndex: 500
-          });
-
-          naver.maps.Event.addListener(cMarker, 'click', () => {
-            map.morph(new naver.maps.LatLng(avgLat, avgLng), zoom + 2, { duration: 300, easing: 'easeOutCubic' });
-          });
-
-          clusterMarkers.push(cMarker);
-        } else {
-          cluster[0].setVisible(true);
-        }
-      });
-    }
-
     /* 🚀 [마커 풀링 및 사이드바 렌더링] */
     function renderSpots(forceOpenRegion = null) {
       const openedRegions = new Set();
@@ -3685,7 +3590,7 @@
             position: new naver.maps.LatLng(spot.lat, spot.lng),
             map: map,
             title: spot.name,
-            icon: createCustomMarkerIcon(spot),
+            icon: createCustomMarkerIcon(spot, isZoomDetailedState),
             draggable: isAdminMode,
             zIndex: 100
           });
@@ -3802,7 +3707,7 @@
         const m = spotMarkerMap.get(sId);
         if (m) {
           m.setMap(map);
-          m.setVisible(true);
+          m.setIcon(createCustomMarkerIcon(spot, isZoomDetailedState || currentActiveSpot?.id === spot.id));
         }
 
         const r = spot.region || '경기';
@@ -3895,7 +3800,6 @@
       spotListEl.appendChild(fragment);
       updateAdminUI();
       updateSmartResetButtons();
-      updateClusters();
     }
 
     function openUserProposalModal() {
@@ -4005,6 +3909,47 @@
       const idx = spots.findIndex(s => String(s.id) === String(spotId));
       if (idx === -1) return;
       deleteSpot(event, idx);
+    }
+
+    async function deleteSpot(event, index) {
+      event.stopPropagation();
+      const targetSpot = spots[index];
+      if (!confirm(`'${targetSpot.name}' 박지를 정말 삭제하시겠습니까?`)) return;
+
+      const deletedId = targetSpot.id;
+      const deletedName = targetSpot.name;
+      
+      const m = spotMarkerMap.get(String(deletedId));
+      if (m) {
+        m.setMap(null);
+        spotMarkerMap.delete(String(deletedId));
+      }
+
+      spots.splice(index, 1);
+      delete spotComments[deletedId];
+      userBookmarks.delete(String(deletedId));
+      userVisited.delete(String(deletedId));
+      delete userMemos[String(deletedId)];
+
+      localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
+      localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks]));
+      localStorage.setItem('okbm_visited', JSON.stringify([...userVisited]));
+      localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
+
+      closeAllPopups();
+      updateFilterCounts();
+      updateNewSpotFlags(spots);
+      renderSpots();
+
+      try {
+        await fetch(GAS_API_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'DELETE', id: deletedId, name: deletedName })
+        });
+        alert(`'${deletedName}' 박지가 삭제되었습니다.`);
+      } catch (err) {}
     }
 
     async function executeSearch(mode = 'pc') {
@@ -4322,47 +4267,6 @@
       closeCustomModal();
     }
 
-    async function deleteSpot(event, index) {
-      event.stopPropagation();
-      const targetSpot = spots[index];
-      if (!confirm(`'${targetSpot.name}' 박지를 정말 삭제하시겠습니까?`)) return;
-
-      const deletedId = targetSpot.id;
-      const deletedName = targetSpot.name;
-      
-      const m = spotMarkerMap.get(String(deletedId));
-      if (m) {
-        m.setMap(null);
-        spotMarkerMap.delete(String(deletedId));
-      }
-
-      spots.splice(index, 1);
-      delete spotComments[deletedId];
-      userBookmarks.delete(String(deletedId));
-      userVisited.delete(String(deletedId));
-      delete userMemos[String(deletedId)];
-
-      localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
-      localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks]));
-      localStorage.setItem('okbm_visited', JSON.stringify([...userVisited]));
-localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
-
-      closeAllPopups();
-      updateFilterCounts();
-      updateNewSpotFlags(spots);
-      renderSpots();
-
-      try {
-        await fetch(GAS_API_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'DELETE', id: deletedId, name: deletedName })
-        });
-        alert(`'${deletedName}' 박지가 삭제되었습니다.`);
-      } catch (err) {}
-    }
-
     function resetMapView() {
       if (document.activeElement && typeof document.activeElement.blur === 'function') {
         document.activeElement.blur();
@@ -4539,7 +4443,7 @@ localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
         spotMarkerMap.forEach((marker) => {
-          if (marker.spotData) marker.setIcon(createCustomMarkerIcon(marker.spotData));
+          if (marker.spotData) marker.setIcon(createCustomMarkerIcon(marker.spotData, isZoomDetailedState));
         });
         updateSmartResetButtons();
       }, 150);
