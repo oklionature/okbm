@@ -3968,86 +3968,116 @@
       } catch (err) {}
     }
 
+  // 🔍 산, 계곡, 봉우리, 지명 완벽 검색 함수
     async function executeSearch(mode = 'pc') {
       const inputEl = document.getElementById(mode === 'mobile' ? 'mobileSearchInput' : 'pcSearchInput');
       const dropdown = document.getElementById(mode === 'mobile' ? 'mobileSearchDropdown' : 'pcSearchDropdown');
-      const rawQuery = inputEl.value.trim();
+      const rawQuery = inputEl ? inputEl.value.trim() : '';
       if (!rawQuery) return;
       
-      dropdown.innerHTML = '<li class="dropdown-item" style="color:var(--text-secondary);">🔍 전국 산/봉우리/명소 실시간 검색 중...</li>';
+      dropdown.innerHTML = '<li class="dropdown-item" style="color:var(--accent-blue);">🔍 전국 산·봉·계곡·박지 실시간 탐색 중...</li>';
       dropdown.style.display = 'block';
 
       const results = [];
       const seenCoords = new Set();
+      const lowerQ = rawQuery.toLowerCase();
 
-      spots.filter(s => s.name.toLowerCase().includes(rawQuery.toLowerCase()) || 
-                        s.desc?.toLowerCase().includes(rawQuery.toLowerCase()) || 
-                        s.entryPoint?.toLowerCase().includes(rawQuery.toLowerCase()))
-        .forEach(spot => {
-          seenCoords.add(`${spot.lat.toFixed(4)},${spot.lng.toFixed(4)}`);
+      // 1. 내가 등록해 둔 박지 목록에서 먼저 찾기
+      spots.forEach(spot => {
+        const matchName = spot.name && spot.name.toLowerCase().includes(lowerQ);
+        const matchDesc = spot.desc && spot.desc.toLowerCase().includes(lowerQ);
+        const matchEntry = spot.entryPoint && spot.entryPoint.toLowerCase().includes(lowerQ);
+
+        if (matchName || matchDesc || matchEntry) {
+          const key = `${spot.lat.toFixed(4)},${spot.lng.toFixed(4)}`;
+          seenCoords.add(key);
           results.push({ 
             title: `[등록박지] ${spot.name}`, 
-            sub: spot.entryPoint, 
+            sub: `${spot.cityName ? `[${spot.cityName}] ` : ''}${spot.entryPoint || '들머리 정보'}`, 
             lat: spot.lat, 
             lng: spot.lng, 
             isInternal: true, 
             spotObj: spot 
           });
-        });
+        }
+      });
 
+      // 2. 카카오 지도에서 전국의 모든 산, 봉우리, 계곡, 섬 검색하기
       try {
-        const kRes = await fetch(`${GAS_API_URL}?action=SEARCH_KAKAO&q=${encodeURIComponent(rawQuery)}&_t=${Date.now()}`);
+        const kakaoFetchUrl = `${GAS_API_URL}?action=SEARCH_KAKAO&q=${encodeURIComponent(rawQuery)}&_t=${Date.now()}`;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+        const kRes = await fetch(kakaoFetchUrl, { signal: controller.signal });
+        clearTimeout(timeoutId);
+
         if (kRes.ok) {
           const kData = await kRes.json();
-          (kData.documents || []).forEach(doc => {
-            const lat = parseFloat(doc.y);
-            const lng = parseFloat(doc.x);
-            if (!isNaN(lat) && !isNaN(lng)) {
+          const docs = kData.documents || kData.items || (Array.isArray(kData) ? kData : []);
+          
+          docs.forEach(doc => {
+            const lat = parseFloat(doc.y || doc.lat);
+            const lng = parseFloat(doc.x || doc.lng);
+            const title = doc.place_name || doc.title || doc.name;
+            const address = doc.road_address_name || doc.address_name || '';
+            const category = doc.category_name ? doc.category_name.split('>').pop().trim() : '자연명소';
+
+            if (!isNaN(lat) && !isNaN(lng) && lat >= 33 && lat <= 39 && lng >= 124 && lng <= 132) {
               const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
               if (!seenCoords.has(key)) {
                 seenCoords.add(key);
                 results.push({
-                  title: doc.place_name,
-                  sub: `${doc.category_name ? `[${doc.category_name.split('>').pop().trim()}] ` : ''}${doc.address_name || doc.road_address_name}`,
-                  lat, lng
+                  title: title,
+                  sub: `[${category}] ${address}`,
+                  lat: lat,
+                  lng: lng,
+                  isInternal: false
                 });
               }
             }
           });
         }
-      } catch (err) {}
+      } catch (err) {
+        console.warn('카카오 검색 지연:', err);
+      }
 
-      const cleanAddressQuery = rawQuery.replace(/(마을회관|노인정|쉼터|주차장|캠핑장|입구|등산로|관리사무소|회관|봉|산|해수욕장|해변)/g, '').trim();
-      const queryList = [rawQuery];
-      if (cleanAddressQuery && cleanAddressQuery !== rawQuery) queryList.push(cleanAddressQuery);
+      // 3. 네이버 지번/도로명 주소로 보조 검색하기
+      if (naver.maps.Service && naver.maps.Service.geocode) {
+        try {
+          const naverItems = await new Promise((resolve) => {
+            naver.maps.Service.geocode({ query: rawQuery }, (status, response) => {
+              if (status === naver.maps.Service.Status.OK && response.v2?.addresses?.length > 0) {
+                resolve(response.v2.addresses.map(item => ({
+                  title: item.roadAddress || item.jibunAddress,
+                  sub: item.jibunAddress ? `(지번) ${item.jibunAddress}` : '주소지',
+                  lat: parseFloat(item.y),
+                  lng: parseFloat(item.x)
+                })));
+              } else {
+                resolve([]);
+              }
+            });
+          });
 
-      const naverPromises = queryList.map(q => new Promise((resolve) => {
-        if (!naver.maps.Service || !naver.maps.Service.geocode) return resolve([]);
-        naver.maps.Service.geocode({ query: q }, (status, response) => {
-          if (status === naver.maps.Service.Status.OK && response.v2?.addresses?.length > 0) {
-            resolve(response.v2.addresses.map(item => ({
-              title: item.roadAddress || item.jibunAddress,
-              sub: item.jibunAddress ? `(지번) ${item.jibunAddress}` : '도로명 주소',
-              lat: parseFloat(item.y),
-              lng: parseFloat(item.x)
-            })));
-          } else {
-            resolve([]);
-          }
-        });
-      }));
+          naverItems.forEach(item => {
+            if (!isNaN(item.lat) && !isNaN(item.lng)) {
+              const key = `${item.lat.toFixed(4)},${item.lng.toFixed(4)}`;
+              if (!seenCoords.has(key)) {
+                seenCoords.add(key);
+                results.push({
+                  title: item.title,
+                  sub: item.sub,
+                  lat: item.lat,
+                  lng: item.lng,
+                  isInternal: false
+                });
+              }
+            }
+          });
+        } catch (e) {}
+      }
 
-      const naverResLists = await Promise.all(naverPromises);
-      naverResLists.flat().forEach(item => {
-        if (!isNaN(item.lat) && !isNaN(item.lng)) {
-          const key = `${item.lat.toFixed(4)},${item.lng.toFixed(4)}`;
-          if (!seenCoords.has(key)) {
-            seenCoords.add(key);
-            results.push(item);
-          }
-        }
-      });
-
+      // 4. 검색창 아래에 결과 보여주기
       renderSearchResults(results, rawQuery, mode);
     }
 
