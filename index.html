@@ -8,7 +8,7 @@
   <meta http-equiv="Expires" content="0" />
   <title>대한민국 낭만 백패킹 로드 | 포털</title>
 
-  <!-- 🔤 웹폰트: Pretendard + Gmarket Sans + Caveat -->
+  <!-- 🔤 웹폰트: map.html과 100% 동일하게 로드 -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/webfontworld/gmarket/GmarketSans.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -69,7 +69,7 @@
       padding-bottom: 30px;
     }
 
-    /* 🧭 1. 상단 헤더 (map.html과 규격/디자인 100% 동일) */
+    /* 🧭 1. 상단 헤더 & 타이틀 폰트 (map.html과 100% 동일) */
     .portal-nav {
       position: sticky;
       top: 0;
@@ -101,7 +101,7 @@
       text-decoration: none;
       min-width: 0;
     }
-    .main-title-text {
+    .main-title {
       font-family: var(--font-display);
       font-size: clamp(1.05rem, 3.8vw, 1.45rem);
       font-weight: 700;
@@ -112,7 +112,7 @@
       align-items: center;
       gap: 4px;
     }
-    .main-title-text .highlight-pink {
+    .main-title .highlight-pink {
       background: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #f472b6 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -610,17 +610,17 @@
 
     @media (max-width: 380px) {
       .brand-sub-script { display: none !important; }
-      .main-title-text { font-size: 1.05rem !important; }
+      .main-title { font-size: 1.05rem !important; }
     }
   </style>
 </head>
 <body>
 
-  <!-- 🧭 1. 상단 헤더 (map.html과 100% 동일 규격) -->
+  <!-- 🧭 1. 상단 GNB (map.html과 폰트/클래스/구조 100% 동일) -->
   <nav class="portal-nav">
     <div class="portal-nav-inner">
       <a href="index.html" class="brand-title-link" title="홈">
-        <span class="main-title-text">대한민국 <span class="highlight-pink">낭만 백패킹</span> 로드</span>
+        <span class="main-title">대한민국 <span class="highlight-pink">낭만 백패킹</span> 로드</span>
         <span class="brand-sub-script">Romantic Backpacking Road</span>
       </a>
       <div></div>
