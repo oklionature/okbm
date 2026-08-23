@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -146,11 +145,16 @@
       color: var(--accent-emerald);
       border: 1px solid rgba(16, 185, 129, 0.4);
       font-size: 0.68rem;
-      padding: 2px 5px;
+      padding: 2px 6px;
       border-radius: 5px;
       font-weight: 800;
       white-space: nowrap;
       flex-shrink: 0;
+      animation: adminPulse 1.5s infinite alternate;
+    }
+    @keyframes adminPulse {
+      0% { box-shadow: 0 0 4px rgba(16,185,129,0.3); }
+      100% { box-shadow: 0 0 10px rgba(16,185,129,0.8); }
     }
     
     .header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
@@ -472,15 +476,15 @@
     .header-insta-badge svg { width: 10px; height: 10px; fill: #ffffff; flex-shrink: 0; }
 
     /* 🔑 숨은 관리자 트리거: 7회 탭 */
-   .version-tag {
+    .version-tag {
       font-size: 0.7rem;
       font-weight: 600;
       color: var(--text-muted);
       user-select: none;
       -webkit-user-select: none;
-      cursor: default !important; /* PC에서 손가락 모양 커서 안 뜸 (일반 화살표) */
-      -webkit-tap-highlight-color: transparent !important; /* 모바일 터치 시 파란/회색 깜빡임 완벽 제거 */
-      -webkit-touch-callout: none; /* 롱프레스 시 돋보기/복사 메뉴 차단 */
+      cursor: default !important;
+      -webkit-tap-highlight-color: transparent !important;
+      -webkit-touch-callout: none;
       outline: none;
       padding: 0;
     }
@@ -948,20 +952,31 @@
     .compact-info-window::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
 
     .compact-reposition-window {
-      padding: 8px 10px !important;
-      width: 200px !important;
-      max-width: 200px !important;
+      padding: 10px 12px !important;
+      width: 220px !important;
+      max-width: 220px !important;
       background: rgba(9, 12, 19, 0.98) !important;
       color: var(--text-primary);
-      border-radius: 10px !important;
-      border: 1.2px solid var(--accent-blue) !important;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.8) !important;
+      border-radius: 12px !important;
+      border: 1.4px solid var(--accent-blue) !important;
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.9) !important;
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      font-size: 0.72rem;
+      gap: 5px;
+      font-size: 0.74rem;
       z-index: var(--z-modal) !important;
     }
+    .btn-save-location {
+      background: linear-gradient(135deg, #0d9488, #0f766e);
+      border: 1px solid #2dd4bf;
+      color: #fff;
+      font-weight: 800;
+      border-radius: 6px;
+      padding: 5px 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-save-location:hover { background: #115e59; }
 
     .sheet-title-row {
       display: flex;
@@ -2024,35 +2039,87 @@
       return { main: str, sub: '' };
     }
 
+    // 🛸 대한민국 전국 비행금지구역 / 군 관제권 / 공항 전수 데이터베이스
     const restrictedZones = [
-      { name: "P-518 북방 비행금지구역 (철원/화천 전방)", lat: 38.2500, lng: 127.5000, radius: 25000, type: "border", desc: "군사작전 접경선 (민간 드론 절대 비행 불가)" },
-      { name: "P-518 북방 비행금지구역 (양구/인제 전방)", lat: 38.2800, lng: 128.0500, radius: 25000, type: "border", desc: "군사작전 접경선 (민간 드론 절대 비행 불가)" },
+      // 1. 접경선 및 수도권 비행금지구역
+      { name: "P-518 북방 비행금지구역 (철원/화천 전방)", lat: 38.2500, lng: 127.5000, radius: 25000, type: "border", desc: "군사작전 접경선 (민간 드론 비행 불가)" },
+      { name: "P-518 북방 비행금지구역 (양구/인제 전방)", lat: 38.2800, lng: 128.0500, radius: 25000, type: "border", desc: "군사작전 접경선 (민간 드론 비행 불가)" },
       { name: "P-518 북방 비행금지구역 (고성 동해안 전방)", lat: 38.4500, lng: 128.4200, radius: 22000, type: "border", desc: "동해 최북단 접경 비행금지구역" },
-      { name: "P-518 서해안 비행금지구역 (연천/파주 전방)", lat: 38.1000, lng: 126.9000, radius: 22000, type: "border", desc: "서부전선 군사경계 비행금지구역" },
+      { name: "P-518 서해안 비행금지구역 (연천/파주/강화 전방)", lat: 38.1000, lng: 126.9000, radius: 22000, type: "border", desc: "서부전선 군사경계 비행금지구역" },
       { name: "서해 5도 군사경계 비행금지공역 (백령/대청/연평)", lat: 37.8500, lng: 125.1000, radius: 35000, type: "border", desc: "서해 NLL 접경 군사작전 통제구역" },
       { name: "서울 도심 비행금지구역 (P-73A/B)", lat: 37.5326, lng: 126.9810, radius: 8334, type: "p73", desc: "수도 서울 도심 핵심 비행금지구역" },
-      { name: "정부세종청사 비행제한구역 (R-130)", lat: 36.5040, lng: 127.2650, radius: 3704, type: "p73", desc: "국가 1급 중요시설 정부청사 비행제한공역" },
-      { name: "고리·새울 원자력발전소 (P-90E)", lat: 35.3197, lng: 129.2941, radius: 18520, type: "nuke", desc: "국가 1급 보안시설 원자력발전소 반경 18.5km 금지" },
-      { name: "월성 원자력발전소 (P-90)", lat: 35.7144, lng: 129.4754, radius: 18520, type: "nuke", desc: "국가 1급 보안시설 원자력발전소 반경 18.5km 금지" },
-      { name: "한울·신한울 원자력발전소 (P-90N)", lat: 37.0945, lng: 129.3837, radius: 18520, type: "nuke", desc: "국가 1급 보안시설 원자력발전소 반경 18.5km 금지" },
-      { name: "한빛 원자력발전소 (P-90W)", lat: 35.4158, lng: 126.4192, radius: 18520, type: "nuke", desc: "국가 1급 보안시설 원자력발전소 반경 18.5km 금지" },
+      
+      // 2. 국가 1급 시설 및 원전 반경 18.5km 전 구역
+      { name: "고리·새울 원자력발전소 (P-90E)", lat: 35.3197, lng: 129.2941, radius: 18520, type: "nuke", desc: "국가 1급 보안시설 원전 반경 18.5km 금지" },
+      { name: "월성 원자력발전소 (P-90)", lat: 35.7144, lng: 129.4754, radius: 18520, type: "nuke", desc: "국가 1급 보안시설 원전 반경 18.5km 금지" },
+      { name: "한울·신한울 원자력발전소 (P-90N)", lat: 37.0945, lng: 129.3837, radius: 18520, type: "nuke", desc: "국가 1급 보안시설 원전 반경 18.5km 금지" },
+      { name: "한빛 원자력발전소 (P-90W)", lat: 35.4158, lng: 126.4192, radius: 18520, type: "nuke", desc: "국가 1급 보안시설 원전 반경 18.5km 금지" },
       { name: "대전 한국원자력연구원 (R-97)", lat: 36.3860, lng: 127.3736, radius: 3704, type: "nuke", desc: "원자력연구시설 상공 비행금지구역" },
+      { name: "정부세종청사 비행제한구역 (R-130)", lat: 36.5040, lng: 127.2650, radius: 3704, type: "p73", desc: "국가 1급 중요시설 정부청사 비행제한공역" },
       { name: "계룡대 삼군본부 비행금지구역 (R-79)", lat: 36.3150, lng: 127.2480, radius: 5556, type: "mil_ban", desc: "군 최고지휘시설 보안 비행금지구역" },
       { name: "국방과학연구소 안흥시험장 해역 (R-84)", lat: 36.6500, lng: 126.1500, radius: 14000, type: "mil_ban", desc: "국가 무기시험장 해역 비행금지구역" },
-      { name: "서울공항(성남 K-16) 군사관제권", lat: 37.4447, lng: 127.1147, radius: 9300, type: "mil", desc: "군사공항 관제권" },
-      { name: "수원 제10전투비행단 관제권", lat: 37.2384, lng: 127.0076, radius: 9300, type: "mil", desc: "공군 전투비행단 관제권" },
-      { name: "오산 미 공군기지 군사관제권", lat: 37.0906, lng: 127.0305, radius: 9300, type: "mil", desc: "한미 군사작전 관제권" },
+
+      // 3. 육군항공/공군/해군/미군 군관제권 및 민간공항 관제권 (반경 9.3km) [이천/평택/오산/수원 등 전수 포함]
+      { name: "이천 육군항공작전사령부(이천비행장 G-225/R-112)", lat: 37.2450, lng: 127.4850, radius: 9300, type: "mil", desc: "이천 육군항공사령부 관제권 (사전비행승인 필수)" },
+      { name: "평택 캠프 험프리스(미육군 K-6 비행장)", lat: 36.9600, lng: 127.0250, radius: 9300, type: "mil", desc: "주한미군 핵심 비행장 관제권" },
+      { name: "오산 미 공군기지(K-55) 군사관제권", lat: 37.0906, lng: 127.0305, radius: 9300, type: "mil", desc: "한미 군사작전 공항 관제권" },
+      { name: "수원 제10전투비행단 군사관제권", lat: 37.2384, lng: 127.0076, radius: 9300, type: "mil", desc: "공군 전투비행단 관제권" },
+      { name: "서울공항(성남 K-16) 군사관제권", lat: 37.4447, lng: 127.1147, radius: 9300, type: "mil", desc: "서울기지 군사공항 관제권" },
       { name: "인천국제공항 관제권", lat: 37.4692, lng: 126.4505, radius: 9300, type: "air", desc: "국제공항 관제권 (반경 9.3km)" },
       { name: "김포국제공항 관제권", lat: 37.5583, lng: 126.7906, radius: 9300, type: "air", desc: "국제공항 관제권 (반경 9.3km)" },
-      { name: "제주국제공항 관제권", lat: 33.5113, lng: 126.4930, radius: 9300, type: "air", desc: "국제공항 관제권 (반경 9.3km)" }
+      { name: "원주 제8전투비행단(원주/횡성공항)", lat: 37.4400, lng: 127.9600, radius: 9300, type: "mil", desc: "공군기지 및 원주공항 관제권" },
+      { name: "강릉 제18전투비행단 관제권", lat: 37.7500, lng: 128.9400, radius: 9300, type: "mil", desc: "공군 전투비행단 관제권" },
+      { name: "속초 군비행장 관제권", lat: 38.1600, lng: 128.6000, radius: 9300, type: "mil", desc: "동해안 군사비행장 관제권" },
+      { name: "양양국제공항 관제권", lat: 38.0600, lng: 128.6700, radius: 9300, type: "air", desc: "국제공항 관제권 (반경 9.3km)" },
+      { name: "충주 제19전투비행단(중원기지)", lat: 37.0800, lng: 127.8800, radius: 9300, type: "mil", desc: "공군 주력기지 군사관제권" },
+      { name: "청주 제17전투비행단(청주국제공항)", lat: 36.7160, lng: 127.4990, radius: 9300, type: "mil", desc: "공군기지 및 청주공항 관제권" },
+      { name: "공군사관학교 성무비행장 관제권", lat: 36.5800, lng: 127.5300, radius: 9300, type: "mil", desc: "공군 훈련비행장 관제권" },
+      { name: "서산 제20전투비행단(해미기지)", lat: 36.7050, lng: 126.4900, radius: 9300, type: "mil", desc: "공군 주력전투비행단 관제권" },
+      { name: "논산 육군항공학교 비행장", lat: 36.1900, lng: 127.1100, radius: 9300, type: "mil", desc: "육군 헬기훈련비행장 관제권" },
+      { name: "군산 미공군·한국공군기지(군산공항)", lat: 35.9250, lng: 126.6150, radius: 9300, type: "mil", desc: "한미 군사공항 관제권" },
+      { name: "전주 육군항공비행장", lat: 35.8800, lng: 127.1200, radius: 9300, type: "mil", desc: "육군 군사비행장 관제권" },
+      { name: "광주 제1전투비행단(광주공항)", lat: 35.1260, lng: 126.8090, radius: 9300, type: "mil", desc: "공군기지 및 광주공항 관제권" },
+      { name: "목포 해군항공기지(영암비행장)", lat: 34.7600, lng: 126.3800, radius: 9300, type: "mil", desc: "해군 항공작전 관제권" },
+      { name: "무안국제공항 관제권", lat: 34.9900, lng: 126.3800, radius: 9300, type: "air", desc: "국제공항 관제권 (반경 9.3km)" },
+      { name: "여수공항 관제권", lat: 34.8400, lng: 127.6150, radius: 9300, type: "air", desc: "여수공항 관제권 (반경 9.3km)" },
+      { name: "사천 제3훈련비행단(사천공항)", lat: 35.0880, lng: 128.0700, radius: 9300, type: "mil", desc: "공군비행단 및 사천공항 관제권" },
+      { name: "진해 해군작전기지(진해비행장 K-10)", lat: 35.1400, lng: 128.6950, radius: 9300, type: "mil", desc: "해군 모항 군사관제권" },
+      { name: "김해 제5공중기동비행단(김해국제공항)", lat: 35.1790, lng: 128.9380, radius: 9300, type: "mil", desc: "공군기지 및 김해공항 관제권" },
+      { name: "대구 제11전투비행단(대구국제공항)", lat: 35.8940, lng: 128.6590, radius: 9300, type: "mil", desc: "공군 주력기지 및 대구공항 관제권" },
+      { name: "포항 해군항공사령부(포항공항)", lat: 35.9880, lng: 129.4200, radius: 9300, type: "mil", desc: "해군 항공사령부 관제권" },
+      { name: "예천 제16전투비행단 관제권", lat: 36.6350, lng: 128.3550, radius: 9300, type: "mil", desc: "공군 전투비행단 관제권" },
+      { name: "울산공항 관제권", lat: 35.5930, lng: 129.3520, radius: 9300, type: "air", desc: "울산공항 관제권 (반경 9.3km)" },
+      { name: "울진공항 비행훈련원 관제권", lat: 36.7800, lng: 129.4100, radius: 9300, type: "air", desc: "비행훈련 비행장 관제권" },
+      { name: "제주국제공항 관제권", lat: 33.5113, lng: 126.4930, radius: 9300, type: "air", desc: "제주공항 관제권 (반경 9.3km)" },
+      { name: "정석비행장(서귀포 표선)", lat: 33.3950, lng: 126.7150, radius: 9300, type: "air", desc: "항공훈련비행장 관제권" }
     ];
 
+    // 🌲 대한민국 전국 23개 국립공원 전수 데이터 (자연공원법에 의해 전면 비행금지 및 과태료 부과)
     const nationalParks = [
-      { name: "설악산국립공원", lat: 38.1190, lng: 128.4650, radius: 14000, desc: "국립공원 비행금지" },
-      { name: "오대산국립공원", lat: 37.7950, lng: 128.6180, radius: 12000, desc: "국립공원 비행금지" },
-      { name: "북한산국립공원", lat: 37.6600, lng: 126.9900, radius: 8500, desc: "국립공원 비행금지" },
-      { name: "지리산국립공원", lat: 35.3350, lng: 127.6250, radius: 19000, desc: "국립공원 비행금지" },
-      { name: "한라산국립공원", lat: 33.3600, lng: 126.5350, radius: 11000, desc: "국립공원 비행금지" }
+      { name: "설악산국립공원", lat: 38.1190, lng: 128.4650, radius: 16000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "지리산국립공원", lat: 35.3350, lng: 127.6250, radius: 22000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "북한산국립공원", lat: 37.6600, lng: 126.9900, radius: 9500, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "한라산국립공원", lat: 33.3600, lng: 126.5350, radius: 13000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "덕유산국립공원", lat: 35.8600, lng: 127.7500, radius: 15000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "오대산국립공원", lat: 37.7950, lng: 128.6180, radius: 14000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "소백산국립공원", lat: 36.9600, lng: 128.4900, radius: 16000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "치악산국립공원", lat: 37.3650, lng: 128.0500, radius: 11000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "월악산국립공원", lat: 36.8500, lng: 128.1800, radius: 14000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "속리산국립공원", lat: 36.5350, lng: 127.8850, radius: 14000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "계룡산국립공원", lat: 36.3550, lng: 127.2050, radius: 8500, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "내장산국립공원", lat: 35.4850, lng: 126.8850, radius: 9500, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "무등산국립공원", lat: 35.1350, lng: 126.9900, radius: 10000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "월출산국립공원", lat: 34.7500, lng: 126.6900, radius: 7500, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "주왕산국립공원", lat: 36.4000, lng: 129.1700, radius: 10500, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "가야산국립공원", lat: 35.7800, lng: 128.1300, radius: 10000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "태백산국립공원", lat: 37.0900, lng: 128.9200, radius: 11000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "팔공산국립공원", lat: 35.9800, lng: 128.7000, radius: 14000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "변산반도국립공원", lat: 35.6500, lng: 126.5500, radius: 12000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "태안해안국립공원", lat: 36.7500, lng: 126.1500, radius: 16000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "다도해해상국립공원(완도/신안/진도)", lat: 34.3500, lng: 126.7000, radius: 26000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "다도해해상국립공원(여수/고흥 권역)", lat: 34.6000, lng: 127.6500, radius: 22000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "한려해상국립공원(통영/거제/남해)", lat: 34.8000, lng: 128.1000, radius: 28000, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" },
+      { name: "경주국립공원(남산/토함산)", lat: 35.8000, lng: 129.2500, radius: 8500, desc: "국립공원 자연공원법에 의해 드론 비행 절대 금지" }
     ];
 
     let spots = [];
@@ -2089,7 +2156,10 @@
     let modalPendingData = { lat: 0, lng: 0, droneStatus: 'ok', address: '' };
     let isPickingLocationMode = false;
 
-    // 🗺️ 네이버 지도 초기화 엔진
+    // 🗺️ 지도 길게 누르기(2.2초 롱프레스) 타이머 엔진
+    let mapLongPressTimer = null;
+    let mapLongPressPos = null;
+
     function initMapEngine() {
       if (map) return;
       map = new naver.maps.Map('map', {
@@ -2117,10 +2187,45 @@
         pixelOffset: new naver.maps.Point(0, -8)
       });
 
-      naver.maps.Event.addListener(map, 'dragstart', () => closeAllPopups());
-      naver.maps.Event.addListener(map, 'pinchstart', () => closeAllPopups());
+      naver.maps.Event.addListener(map, 'dragstart', () => {
+        clearMapLongPressTimer();
+        closeAllPopups();
+      });
+      naver.maps.Event.addListener(map, 'pinchstart', () => {
+        clearMapLongPressTimer();
+        closeAllPopups();
+      });
       naver.maps.Event.addListener(map, 'zoom_changed', () => updateLODMarkers());
       naver.maps.Event.addListener(map, 'click', handleMapClick);
+
+      // ⏱️ 지도 길게 누르기(2.2초) 감지 등록
+      naver.maps.Event.addListener(map, 'mousedown', handleMapMouseDown);
+      naver.maps.Event.addListener(map, 'mouseup', clearMapLongPressTimer);
+
+      const mapDiv = document.getElementById('map');
+      if (mapDiv) {
+        mapDiv.addEventListener('touchstart', (e) => {
+          if (!isAdminMode || isPickingLocationMode) return;
+          if (e.touches && e.touches.length === 1) {
+            clearMapLongPressTimer();
+            const touch = e.touches[0];
+            mapLongPressTimer = setTimeout(() => {
+              if (map) {
+                const proj = map.getProjection();
+                if (proj) {
+                  const rect = mapDiv.getBoundingClientRect();
+                  const offset = new naver.maps.Point(touch.clientX - rect.left, touch.clientY - rect.top);
+                  const coord = proj.fromOffsetToCoord(offset);
+                  if (coord) triggerAdminLongPressAdd(coord.lat(), coord.lng());
+                }
+              }
+            }, 2200);
+          }
+        }, { passive: true });
+
+        mapDiv.addEventListener('touchend', clearMapLongPressTimer, { passive: true });
+        mapDiv.addEventListener('touchmove', clearMapLongPressTimer, { passive: true });
+      }
 
       setTimeout(() => {
         if (map) {
@@ -2128,6 +2233,44 @@
           map.setCenter(DEFAULT_MAP_CENTER);
         }
       }, 200);
+    }
+
+    function handleMapMouseDown(e) {
+      if (!isAdminMode || isPickingLocationMode) return;
+      clearMapLongPressTimer();
+      mapLongPressPos = e.coord;
+      mapLongPressTimer = setTimeout(() => {
+        if (mapLongPressPos) {
+          triggerAdminLongPressAdd(mapLongPressPos.lat(), mapLongPressPos.lng());
+        }
+      }, 2200);
+    }
+
+    function clearMapLongPressTimer() {
+      if (mapLongPressTimer) {
+        clearTimeout(mapLongPressTimer);
+        mapLongPressTimer = null;
+      }
+      mapLongPressPos = null;
+    }
+
+    function triggerAdminLongPressAdd(lat, lng) {
+      clearMapLongPressTimer();
+      if (!isAdminMode) return;
+      if (navigator.vibrate) navigator.vibrate(80);
+
+      const finalLat = parseFloat(lat.toFixed(6));
+      const finalLng = parseFloat(lng.toFixed(6));
+      const check = autoDetectDroneStatus(finalLat, finalLng);
+
+      naver.maps.Service.reverseGeocode({
+        coords: new naver.maps.LatLng(finalLat, finalLng),
+        orders: [naver.maps.Service.OrderType.ADDR, naver.maps.Service.OrderType.ROAD_ADDR].join(',')
+      }, function(status, response) {
+        const addr = (status === naver.maps.Service.Status.OK && response.v2?.address) 
+          ? (response.v2.address.jibunAddress || response.v2.address.roadAddress) : '';
+        openAddModal("새 박지 위치", finalLat, finalLng, check.status, addr);
+      });
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -2220,7 +2363,13 @@
         refreshCurrentSpotPopup();
       }
 
-      alert(isAdminMode ? '🔑 관리자 모드가 활성화되었습니다. (들머리 잠금 자동 해제)' : '관리자 모드가 비활성화되었습니다.');
+      renderSpots();
+
+      if (isAdminMode) {
+        showToast('🔑 관리자 모드 ON: 최신 등록순으로 정렬되었습니다 (지도를 2.2초 꾹 누르면 새 박지 등록)');
+      } else {
+        showToast('관리자 모드가 비활성화되었습니다');
+      }
     }
 
     function updateAdminUI() {
@@ -2553,24 +2702,27 @@
       return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
     }
 
+    // 🛸 드론 비행 가능 / 제한 / 금지 정밀 전수 판별 알고리즘
     function autoDetectDroneStatus(lat, lng) {
       if (!lat || !lng) return { status: 'ok', reason: '자유 비행 구역 (150m 고도제한 준수 / 촬영 시 원스톱 허가 권장)' };
 
+      // 1. 전국 23개 국립공원 전 구역 비행금지 체크
       for (const park of nationalParks) {
-        if (Math.abs(lat - park.lat) > 0.35 || Math.abs(lng - park.lng) > 0.35) continue;
+        if (Math.abs(lat - park.lat) > 0.4 || Math.abs(lng - park.lng) > 0.4) continue;
         if (getDistanceMeters(lat, lng, park.lat, park.lng) <= park.radius) {
-          return { status: 'no', reason: `[국립공원 비행금지] ${park.name} (자연공원법에 의해 비행·촬영 엄격 금지)` };
+          return { status: 'no', reason: `[국립공원 비행금지] ${park.name} (자연공원법에 의해 과태료 부과 및 비행·촬영 엄격 금지)` };
         }
       }
 
+      // 2. 비행금지구역 / 군 관제권 / 공항 관제권 체크 (이천 포함)
       for (const zone of restrictedZones) {
-        if (Math.abs(lat - zone.lat) > 0.45 || Math.abs(lng - zone.lng) > 0.45) continue;
+        if (Math.abs(lat - zone.lat) > 0.5 || Math.abs(lng - zone.lng) > 0.5) continue;
         if (getDistanceMeters(lat, lng, zone.lat, zone.lng) <= zone.radius) {
-          if (zone.type === 'border') return { status: 'no', reason: `[휴전선 접경 비행금지] ${zone.name}` };
+          if (zone.type === 'border') return { status: 'no', reason: `[휴전선 접경 비행금지 P-518] ${zone.name}` };
           if (zone.type === 'p73') return { status: 'no', reason: `[수도권/국가시설 비행금지 P-73/R-130] 드론 비행 절대 금지` };
-          if (zone.type === 'mil_ban' || zone.type === 'nuke') return { status: 'no', reason: `[국가중요시설 비행금지] ${zone.name}` };
-          if (zone.type === 'mil') return { status: 'warn', reason: `[군사작전 관제공역] ${zone.name} (사전승인 필수)` };
-          if (zone.type === 'air') return { status: 'warn', reason: `[공항 관제권] ${zone.name} 반경 9.3km (사전승인 필수)` };
+          if (zone.type === 'mil_ban' || zone.type === 'nuke') return { status: 'no', reason: `[국가1급 보안시설 원전 비행금지] ${zone.name} 반경 18.5km 금지` };
+          if (zone.type === 'mil') return { status: 'warn', reason: `[군사작전 관제공역] ${zone.name} (반경 9.3km 이내 사전승인 필수)` };
+          if (zone.type === 'air') return { status: 'warn', reason: `[공항 관제권] ${zone.name} (반경 9.3km 이내 사전승인 필수)` };
         }
       }
       return { status: 'ok', reason: '자유 비행 구역 (최대고도 150m 이하 비행 가능 / 도립·군립공원은 지자체 조례 확인 권장)' };
@@ -2660,9 +2812,9 @@
       if (t.includes('서울') || t.includes('인천') || t.includes('옹진') || t.includes('강화') || t.includes('굴업도') || t.includes('자월도') || t.includes('덕적도')) {
         return { region: '서울/인천', cityName: t.includes('서울') ? '서울' : '인천 옹진군' };
       }
-      if (t.includes('경기') || t.includes('남양주') || t.includes('양평') || t.includes('이천') || t.includes('가평') || t.includes('포천') || t.includes('용인')) {
+      if (t.includes('경기') || t.includes('이천') || t.includes('남양주') || t.includes('양평') || t.includes('가평') || t.includes('포천') || t.includes('용인')) {
         let city = '경기';
-        ['남양주시','양평군','이천시','용인시','광주시','여주시','가평군','포천시','안성시'].forEach(c => { if(t.includes(c.slice(0,2))) city = '경기 ' + c; });
+        ['이천시','남양주시','양평군','용인시','광주시','여주시','가평군','포천시','안성시'].forEach(c => { if(t.includes(c.slice(0,2))) city = '경기 ' + c; });
         return { region: '경기', cityName: city };
       }
       if (t.includes('강원') || t.includes('정선') || t.includes('평창') || t.includes('영월') || t.includes('원주') || t.includes('춘천') || t.includes('홍천') || t.includes('강릉') || t.includes('인제') || t.includes('고성')) {
@@ -3210,7 +3362,7 @@
         }
 
         if (infoWindow) infoWindow.close();
-        renderSpots(targetSpot.region);
+        renderSpots();
 
         try {
           await fetch(GAS_API_URL, {
@@ -3229,7 +3381,7 @@
               entryPoint: targetSpot.entryPoint
             })
           });
-          alert(`✅ '${targetSpot.name}' 위치가 저장되었습니다!\n(위도: ${newLat}, 경도: ${newLng})`);
+          showToast(`✅ '${targetSpot.name}' 위치가 정상 저장되었습니다!`);
         } catch (err) {}
       });
     }
@@ -3343,7 +3495,7 @@
                 terrain: terrainList,
                 difficulty,
                 distance,
-                droneStatus: getVal('droneStatus') || autoDetectDroneStatus(lat, lng).status,
+                droneStatus: autoDetectDroneStatus(lat, lng).status,
                 searchCount: savedViews,
                 sheetIndex: idx
               });
@@ -3574,6 +3726,7 @@
       else if (!e.target.value.trim()) showTopRankings(mode);
     }
 
+    // 📋 박지 목록 렌더링 (관리자 모드 시 '최신 등록순 일렬 정렬' 자동 전환)
     function renderSpots(forceOpenRegion = null) {
       if (!map) return;
 
@@ -3624,27 +3777,34 @@
               markerDragStartPos = marker.getPosition();
             });
 
+            // 🎯 관리자 모드 마커 드래그 감도 보정: 30m 이상 실제 이동 시에만 이동 팝업 표시
             naver.maps.Event.addListener(marker, 'dragend', () => {
               if (!isAdminMode) return;
               const movedLatLng = marker.getPosition();
               
               if (markerDragStartPos) {
-                const diffLat = Math.abs(movedLatLng.lat() - markerDragStartPos.lat());
-                const diffLng = Math.abs(movedLatLng.lng() - markerDragStartPos.lng());
-                if (diffLat < 0.00008 && diffLng < 0.00008) return;
+                const distM = getDistanceMeters(markerDragStartPos.lat(), markerDragStartPos.lng(), movedLatLng.lat(), movedLatLng.lng());
+                if (distM < 30) {
+                  marker.setPosition(markerDragStartPos);
+                  focusSpotOnMap(spot, true);
+                  return;
+                }
               }
 
               const newLat = parseFloat(movedLatLng.lat().toFixed(6));
               const newLng = parseFloat(movedLatLng.lng().toFixed(6));
 
               if (infoWindow) {
-                infoWindow.setOptions({ pixelOffset: new naver.maps.Point(100, 70) });
+                infoWindow.setOptions({ pixelOffset: new naver.maps.Point(0, -10) });
                 infoWindow.setContent(`
                   <div class="compact-reposition-window">
-                    <div style="font-size:0.76rem; font-weight:800; color:var(--accent-blue);">📍 '${escapeHtml(spot.name)}'</div>
-                    <div style="font-size:0.66rem; color:#f87171; font-weight:bold;">새 좌표로 위치를 이동할까요?</div>
-                    <div class="spot-coords-text" style="font-size:0.64rem; padding:2px 4px;">위도: ${newLat}<br>경도: ${newLng}</div>
-                    <button type="button" class="btn-save-location" style="padding:3px 6px; font-size:0.68rem;" onclick="saveUpdatedLocation('${spot.id}', ${newLat}, ${newLng})">💾 이 위치로 저장</button>
+                    <div style="font-size:0.78rem; font-weight:800; color:var(--accent-blue);">📍 '${escapeHtml(spot.name)}'</div>
+                    <div style="font-size:0.68rem; color:#f87171; font-weight:bold;">새 좌표로 박지 위치를 이동할까요?</div>
+                    <div class="spot-coords-text" style="font-size:0.66rem; padding:3px 5px;">위도: ${newLat}<br>경도: ${newLng}</div>
+                    <div style="display:flex; gap:4px; margin-top:3px;">
+                      <button type="button" class="btn-save-location" style="flex:1;" onclick="saveUpdatedLocation('${spot.id}', ${newLat}, ${newLng})">💾 저장</button>
+                      <button type="button" class="btn-save-location" style="background:#334155; border-color:#64748b; flex:1;" onclick="closeAllPopups(); renderSpots();">취소</button>
+                    </div>
                   </div>
                 `);
                 infoWindow.open(map, marker);
@@ -3657,21 +3817,31 @@
 
             spotMarkerMap.set(sId, marker);
           } catch (err) {}
+        } else {
+          const m = spotMarkerMap.get(sId);
+          if (m) m.setDraggable(isAdminMode);
         }
       });
 
       const spotListEl = document.getElementById('spotList');
       spotListEl.innerHTML = '';
 
+      let displaySpots = [...spots];
+
+      // 🔑 관리자 모드 활성화 시: 최신 등록순 일렬 정렬
+      if (isAdminMode) {
+        displaySpots.sort((a, b) => (b.sheetIndex || 0) - (a.sheetIndex || 0) || Number(b.id) - Number(a.id));
+      } else if (currentStatusFilter === 'NEW') {
+        displaySpots.sort((a, b) => (b.sheetIndex || 0) - (a.sheetIndex || 0) || Number(b.id) - Number(a.id));
+      } else {
+        displaySpots.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+      }
+
       const targetOrder = ["서울/인천", "경기", "강원", "충청", "전라", "경상", "제주"];
       const grouped = Object.fromEntries(targetOrder.map(r => [r, []]));
-if (currentStatusFilter === 'NEW') {
-  spots.sort((a, b) => (b.sheetIndex || 0) - (a.sheetIndex || 0) || Number(b.id) - Number(a.id));
-} else {
-      spots.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-} let visibleCount = 0;
+      let visibleCount = 0;
 
-      spots.forEach((spot) => {
+      displaySpots.forEach((spot) => {
         if (!spot.region || !spot.cityName) {
           const res = detectRegionAndCity(spot.lat, spot.lng, spot.name, spot.entryPoint);
           spot.region = spot.region || res.region;
@@ -3720,7 +3890,7 @@ if (currentStatusFilter === 'NEW') {
           }
         }
 
-        if (currentRegionFilter !== 'ALL' && currentRegionFilter !== spot.region) {
+        if (!isAdminMode && currentRegionFilter !== 'ALL' && currentRegionFilter !== spot.region) {
           const m = spotMarkerMap.get(sId);
           if (m) m.setMap(null);
           return;
@@ -3741,86 +3911,103 @@ if (currentStatusFilter === 'NEW') {
 
       const fragment = document.createDocumentFragment();
 
-      targetOrder.forEach(regionKey => {
-        const items = grouped[regionKey];
-        if (!items || items.length === 0) return;
+      // 🔑 관리자 모드인 경우: 지역 폴더 없이 '최신순 통합 검수 뷰' 렌더링
+      if (isAdminMode) {
+        const adminHeaderDiv = document.createElement('div');
+        adminHeaderDiv.style.cssText = "padding:7px 12px; background:rgba(16,185,129,0.15); border-bottom:1px solid rgba(16,185,129,0.3); font-size:0.75rem; color:#6ee7b7; font-weight:bold;";
+        adminHeaderDiv.innerText = `⚡ [관리자 검수] 최신 등록순 목록 (${visibleCount}개)`;
+        fragment.appendChild(adminHeaderDiv);
 
-        const shouldBeOpen = (currentRegionFilter === regionKey) || (currentTerrainFilter !== 'ALL') || (currentStatusFilter !== 'ALL') || openedRegions.has(regionKey);
-
-        const groupDiv = document.createElement('div');
-        groupDiv.className = 'region-group';
-
-        const groupTitle = document.createElement('div');
-        groupTitle.className = 'region-group-title';
-        groupTitle.innerHTML = `<span>📌 ${regionKey}</span><span style="color:var(--text-muted); font-size:0.72rem;">${items.length}개 ${shouldBeOpen ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}</span>`;
-        if (shouldBeOpen) groupTitle.style.borderLeftColor = '#0f766e';
-
-        const groupItemsContainer = document.createElement('div');
-        groupItemsContainer.className = 'region-items-container';
-        groupItemsContainer.style.display = shouldBeOpen ? 'block' : 'none';
-
-        groupTitle.addEventListener('click', () => {
-          const isClosed = groupItemsContainer.style.display === 'none';
-          groupItemsContainer.style.display = isClosed ? 'block' : 'none';
-          groupTitle.querySelector('span:last-child').innerHTML = `${items.length}개 ${isClosed ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}`;
-          groupTitle.style.borderLeftColor = isClosed ? '#0f766e' : 'transparent';
-          updateSmartResetButtons();
+        displaySpots.forEach(spot => {
+          fragment.appendChild(createSpotCardElement(spot));
         });
+      } else {
+        // 일반 모드: 지역별 아코디언 렌더링
+        targetOrder.forEach(regionKey => {
+          const items = grouped[regionKey];
+          if (!items || items.length === 0) return;
 
-        items.forEach((spot) => {
-          const firstLineDesc = (spot.desc || '').split('\n')[0].trim();
-          const { navAddress } = parseEntryPoint(spot.entryPoint);
-          const isFav = userBookmarks.has(String(spot.id));
-          const isDone = userVisited.has(String(spot.id));
+          const shouldBeOpen = (currentRegionFilter === regionKey) || (currentTerrainFilter !== 'ALL') || (currentStatusFilter !== 'ALL') || openedRegions.has(regionKey);
 
-          const li = document.createElement('div');
-          li.className = 'spot-item';
-          li.id = `spotItem_${spot.id}`;
-          li.innerHTML = `
-            <div class="spot-header-row">
-              <div class="spot-name-wrapper">
-                <span class="spot-name">${escapeHtml(spot.name)}</span>
-                ${spot.elevation ? `<span style="font-size:0.7rem; color:#86efac; font-weight:normal;">(${escapeHtml(spot.elevation)})</span>` : ''}
-                ${getSpotStatusBadges(spot)}
-              </div>
-            </div>
+          const groupDiv = document.createElement('div');
+          groupDiv.className = 'region-group';
 
-            <div class="spot-card-quick-actions">
-              <button type="button" class="btn-card-quick ${isFav ? 'active-fav' : ''}" onclick="toggleUserBookmark('${spot.id}', event)" title="찜하기 토글">
-                ${isFav ? '⭐ 찜' : '☆ 찜'}
-              </button>
-              <button type="button" class="btn-card-quick ${isDone ? 'active-done' : ''}" onclick="toggleUserVisited('${spot.id}', event)" title="클리어 토글">
-                ${isDone ? '🚩 완료' : '⚑ 클리어'}
-              </button>
-              <button class="btn-edit" onclick="editSpotById(event, '${spot.id}')">수정</button>
-              <button class="btn-del" onclick="deleteSpotById(event, '${spot.id}')">삭제</button>
-            </div>
+          const groupTitle = document.createElement('div');
+          groupTitle.className = 'region-group-title';
+          groupTitle.innerHTML = `<span>📌 ${regionKey}</span><span style="color:var(--text-muted); font-size:0.72rem;">${items.length}개 ${shouldBeOpen ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}</span>`;
+          if (shouldBeOpen) groupTitle.style.borderLeftColor = '#0f766e';
 
-            ${getMetaBadgesHtml(spot)}
-            <div style="font-size:0.7rem; color:#7dd3fc; margin-top:2px;">🚗 ${escapeHtml(navAddress || spot.entryPoint)}</div>
-            ${firstLineDesc ? `<div class="spot-desc-single" title="${escapeHtml(spot.desc)}">📝 ${escapeHtml(firstLineDesc)}</div>` : ''}
-          `;
+          const groupItemsContainer = document.createElement('div');
+          groupItemsContainer.className = 'region-items-container';
+          groupItemsContainer.style.display = shouldBeOpen ? 'block' : 'none';
 
-          li.addEventListener('click', () => {
-            if (window.innerWidth <= 768) {
-              isSidebarCollapsed = true;
-              document.getElementById('sidebar').classList.add('collapsed');
-              updateDockSidebarText(false);
-            }
-            focusSpotOnMap(spot, false);
+          groupTitle.addEventListener('click', () => {
+            const isClosed = groupItemsContainer.style.display === 'none';
+            groupItemsContainer.style.display = isClosed ? 'block' : 'none';
+            groupTitle.querySelector('span:last-child').innerHTML = `${items.length}개 ${isClosed ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}`;
+            groupTitle.style.borderLeftColor = isClosed ? '#0f766e' : 'transparent';
+            updateSmartResetButtons();
           });
 
-          groupItemsContainer.appendChild(li);
-        });
+          items.forEach((spot) => {
+            groupItemsContainer.appendChild(createSpotCardElement(spot));
+          });
 
-        groupDiv.appendChild(groupTitle);
-        groupDiv.appendChild(groupItemsContainer);
-        fragment.appendChild(groupDiv);
-      });
+          groupDiv.appendChild(groupTitle);
+          groupDiv.appendChild(groupItemsContainer);
+          fragment.appendChild(groupDiv);
+        });
+      }
 
       spotListEl.appendChild(fragment);
       updateAdminUI();
       updateSmartResetButtons();
+    }
+
+    function createSpotCardElement(spot) {
+      const firstLineDesc = (spot.desc || '').split('\n')[0].trim();
+      const { navAddress } = parseEntryPoint(spot.entryPoint);
+      const isFav = userBookmarks.has(String(spot.id));
+      const isDone = userVisited.has(String(spot.id));
+
+      const li = document.createElement('div');
+      li.className = 'spot-item';
+      li.id = `spotItem_${spot.id}`;
+      li.innerHTML = `
+        <div class="spot-header-row">
+          <div class="spot-name-wrapper">
+            <span class="spot-name">${escapeHtml(spot.name)}</span>
+            ${spot.elevation ? `<span style="font-size:0.7rem; color:#86efac; font-weight:normal;">(${escapeHtml(spot.elevation)})</span>` : ''}
+            ${getSpotStatusBadges(spot)}
+          </div>
+        </div>
+
+        <div class="spot-card-quick-actions">
+          <button type="button" class="btn-card-quick ${isFav ? 'active-fav' : ''}" onclick="toggleUserBookmark('${spot.id}', event)" title="찜하기 토글">
+            ${isFav ? '⭐ 찜' : '☆ 찜'}
+          </button>
+          <button type="button" class="btn-card-quick ${isDone ? 'active-done' : ''}" onclick="toggleUserVisited('${spot.id}', event)" title="클리어 토글">
+            ${isDone ? '🚩 완료' : '⚑ 클리어'}
+          </button>
+          <button class="btn-edit" onclick="editSpotById(event, '${spot.id}')">수정</button>
+          <button class="btn-del" onclick="deleteSpotById(event, '${spot.id}')">삭제</button>
+        </div>
+
+        ${getMetaBadgesHtml(spot)}
+        <div style="font-size:0.7rem; color:#7dd3fc; margin-top:2px;">🚗 ${escapeHtml(navAddress || spot.entryPoint)}</div>
+        ${firstLineDesc ? `<div class="spot-desc-single" title="${escapeHtml(spot.desc)}">📝 ${escapeHtml(firstLineDesc)}</div>` : ''}
+      `;
+
+      li.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          isSidebarCollapsed = true;
+          document.getElementById('sidebar').classList.add('collapsed');
+          updateDockSidebarText(false);
+        }
+        focusSpotOnMap(spot, false);
+      });
+
+      return li;
     }
 
     function openUserProposalModal() {
@@ -3866,6 +4053,7 @@ if (currentStatusFilter === 'NEW') {
     }
 
     function handleMapClick(e) {
+      clearMapLongPressTimer();
       const lat = parseFloat(e.coord.lat().toFixed(6));
       const lng = parseFloat(e.coord.lng().toFixed(6));
 
@@ -3903,19 +4091,7 @@ if (currentStatusFilter === 'NEW') {
         return;
       }
 
-      if (isAdminMode) {
-        const check = autoDetectDroneStatus(lat, lng);
-        naver.maps.Service.reverseGeocode({
-          coords: new naver.maps.LatLng(lat, lng),
-          orders: [naver.maps.Service.OrderType.ADDR, naver.maps.Service.OrderType.ROAD_ADDR].join(',')
-        }, function(status, response) {
-          const addr = (status === naver.maps.Service.Status.OK && response.v2?.address) 
-            ? (response.v2.address.jibunAddress || response.v2.address.roadAddress) : '';
-          openAddModal("새 박지 위치", lat, lng, check.status, addr);
-        });
-        return;
-      }
-
+      // 지도 빈 곳 클릭 시 모든 팝업 및 이동 확인창 깔끔하게 닫기
       closeAllPopups();
     }
 
@@ -3973,7 +4149,7 @@ if (currentStatusFilter === 'NEW') {
       } catch (err) {}
     }
 
-  // 🔍 산, 계곡, 봉우리, 지명 완벽 검색 함수
+    // 🔍 산, 계곡, 봉우리, 지명 완벽 검색 함수
     async function executeSearch(mode = 'pc') {
       const inputEl = document.getElementById(mode === 'mobile' ? 'mobileSearchInput' : 'pcSearchInput');
       const dropdown = document.getElementById(mode === 'mobile' ? 'mobileSearchDropdown' : 'pcSearchDropdown');
@@ -3987,7 +4163,7 @@ if (currentStatusFilter === 'NEW') {
       const seenCoords = new Set();
       const lowerQ = rawQuery.toLowerCase();
 
-      // 1. 내가 등록해 둔 박지 목록에서 먼저 찾기
+      // 1. 등록된 박지 목록에서 먼저 찾기
       spots.forEach(spot => {
         const matchName = spot.name && spot.name.toLowerCase().includes(lowerQ);
         const matchDesc = spot.desc && spot.desc.toLowerCase().includes(lowerQ);
@@ -4007,7 +4183,7 @@ if (currentStatusFilter === 'NEW') {
         }
       });
 
-      // 2. 카카오 지도에서 전국의 모든 산, 봉우리, 계곡, 섬 검색하기
+      // 2. 카카오 지도 API 검색
       try {
         const kakaoFetchUrl = `${GAS_API_URL}?action=SEARCH_KAKAO&q=${encodeURIComponent(rawQuery)}&_t=${Date.now()}`;
         const controller = new AbortController();
@@ -4042,11 +4218,9 @@ if (currentStatusFilter === 'NEW') {
             }
           });
         }
-      } catch (err) {
-        console.warn('카카오 검색 지연:', err);
-      }
+      } catch (err) {}
 
-      // 3. 네이버 지번/도로명 주소로 보조 검색하기
+      // 3. 네이버 도로명/지번 보조 검색
       if (naver.maps.Service && naver.maps.Service.geocode) {
         try {
           const naverItems = await new Promise((resolve) => {
@@ -4060,473 +4234,3 @@ if (currentStatusFilter === 'NEW') {
                 })));
               } else {
                 resolve([]);
-              }
-            });
-          });
-
-          naverItems.forEach(item => {
-            if (!isNaN(item.lat) && !isNaN(item.lng)) {
-              const key = `${item.lat.toFixed(4)},${item.lng.toFixed(4)}`;
-              if (!seenCoords.has(key)) {
-                seenCoords.add(key);
-                results.push({
-                  title: item.title,
-                  sub: item.sub,
-                  lat: item.lat,
-                  lng: item.lng,
-                  isInternal: false
-                });
-              }
-            }
-          });
-        } catch (e) {}
-      }
-
-      // 4. 검색창 아래에 결과 보여주기
-      renderSearchResults(results, rawQuery, mode);
-    }
-
-    function renderSearchResults(results, query, mode = 'pc') {
-      const dropdown = document.getElementById(mode === 'mobile' ? 'mobileSearchDropdown' : 'pcSearchDropdown');
-      dropdown.innerHTML = `<div class="dropdown-header"><span>🔍 검색 결과</span><span>${results.length}건</span></div>`;
-
-      if (results.length === 0) {
-        dropdown.innerHTML += '<li class="dropdown-item" style="color:#f43f5e;">검색 결과가 없습니다. 단어를 다시 확인해보세요.</li>';
-        return;
-      }
-
-      results.forEach(item => {
-        const check = autoDetectDroneStatus(parseFloat(item.lat), parseFloat(item.lng));
-        const li = document.createElement('li');
-        li.className = 'dropdown-item';
-        li.innerHTML = `
-          <div class="dropdown-info">
-            <div><strong style="color:${item.isInternal ? 'var(--accent-blue)' : '#f8fafc'}; font-size:0.82rem;">${escapeHtml(item.title)}</strong> ${item.sub ? `<span style="font-size:0.7rem; color:var(--text-muted);">(${escapeHtml(item.sub)})</span>` : ''}</div>
-            <div style="margin-top:3px;">${getDroneBadgeHtml(check.status, check.reason)}</div>
-          </div>
-          <button type="button" class="btn-quick-add" style="display:${isAdminMode && !item.isInternal ? 'inline-block' : 'none'};">➕ 등록</button>
-        `;
-        li.querySelector('.dropdown-info').addEventListener('click', () => {
-          smoothCenterMapOnSpot(parseFloat(item.lat), parseFloat(item.lng), false);
-          if (tempSearchMarker) tempSearchMarker.setMap(null);
-
-          if (item.isInternal && item.spotObj) {
-            focusSpotOnMap(item.spotObj, false);
-          } else {
-            tempSearchMarker = new naver.maps.Marker({ 
-              position: new naver.maps.LatLng(item.lat, item.lng), 
-              map: map, 
-              animation: naver.maps.Animation.DROP,
-              zIndex: 3000
-            });
-          }
-          dropdown.style.display = 'none';
-        });
-
-        if (isAdminMode && !item.isInternal) {
-          li.querySelector('.btn-quick-add').addEventListener('click', (e) => {
-            e.stopPropagation();
-            openAddModal(item.title, item.lat, item.lng, check.status, item.title);
-            dropdown.style.display = 'none';
-          });
-        }
-        dropdown.appendChild(li);
-      });
-    }
-
-    async function openAddModal(defaultName, lat, lng, droneStatus, address) {
-      modalMode = 'ADD';
-      modalPendingData = { lat: parseFloat(lat), lng: parseFloat(lng), droneStatus, address: address || '' };
-      document.getElementById('modalTitle').innerText = '📍 관리자 직속 박지 등록';
-      document.getElementById('modalNotice').style.display = 'none';
-      document.getElementById('modalSubmitBtn').innerText = '즉시 지도 및 시트 등록';
-
-      document.getElementById('modalInputName').value = defaultName || '';
-      document.getElementById('modalInputCoordsDisplay').value = `📍 위도: ${lat}, 경도: ${lng}`;
-      document.getElementById('modalInputEntry').value = address || '';
-      document.getElementById('modalInputDesc').value = '추천 백패킹 박지';
-      document.getElementById('modalInputYoutube').value = '';
-      document.getElementById('modalInputBlog').value = '';
-      document.getElementById('modalInputInsta').value = 'oklionnature';
-      document.getElementById('modalInputDistance').value = '';
-      
-      document.getElementById('chkDeck').checked = true;
-      ['chkRock', 'chkSoil', 'chkBeach', 'chkIsland', 'chkValley', 'chkCave', 'chkEtc'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.checked = false;
-      });
-
-      document.getElementById('modalSelectDiff').value = '3';
-      document.getElementById('customModalOverlay').style.display = 'flex';
-      document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
-      setTimeout(() => document.getElementById('modalInputName').focus(), 50);
-    }
-
-    function openEditModal(index) {
-      modalMode = 'EDIT';
-      modalEditIndex = index;
-      const target = spots[index];
-      modalPendingData = { lat: target.lat, lng: target.lng, droneStatus: target.droneStatus, address: target.entryPoint };
-
-      document.getElementById('modalTitle').innerText = `✏️ '${target.name}' 정보 수정`;
-      document.getElementById('modalNotice').style.display = 'none';
-      document.getElementById('modalSubmitBtn').innerText = '수정사항 저장';
-
-      document.getElementById('modalInputName').value = target.name;
-      document.getElementById('modalInputCoordsDisplay').value = `📍 위도: ${target.lat}, 경도: ${target.lng}`;
-      document.getElementById('modalInputElevation').value = target.elevation || '';
-      document.getElementById('modalInputEntry').value = target.entryPoint || '';
-      document.getElementById('modalInputDesc').value = target.desc;
-      document.getElementById('modalInputDistance').value = target.distance || '';
-      document.getElementById('modalInputYoutube').value = (target.youtubeUrls || []).join('\n');
-      document.getElementById('modalInputBlog').value = target.blogUrl || '';
-      document.getElementById('modalInputInsta').value = target.instaId || 'oklionnature';
-      
-      const tList = target.terrain || [];
-      document.getElementById('chkDeck').checked = tList.includes('데크');
-      document.getElementById('chkRock').checked = tList.includes('돌박지');
-      document.getElementById('chkSoil').checked = tList.includes('노지');
-      document.getElementById('chkBeach').checked = tList.includes('해변') || tList.includes('해수욕장');
-      document.getElementById('chkIsland').checked = tList.includes('섬');
-      document.getElementById('chkValley').checked = tList.includes('계곡');
-      document.getElementById('chkCave').checked = tList.includes('동굴');
-      document.getElementById('chkEtc').checked = tList.includes('기타');
-
-      document.getElementById('modalSelectDiff').value = target.difficulty || '3';
-      document.getElementById('customModalOverlay').style.display = 'flex';
-      setTimeout(() => document.getElementById('modalInputName').focus(), 50);
-    }
-
-    function closeCustomModal() {
-      document.getElementById('customModalOverlay').style.display = 'none';
-    }
-
-    async function saveCustomModal() {
-      const name = document.getElementById('modalInputName').value.trim();
-      const elevation = document.getElementById('modalInputElevation').value.trim();
-      const entryPoint = document.getElementById('modalInputEntry').value.trim() || '들머리 정보 미입력';
-      const desc = document.getElementById('modalInputDesc').value.trim() || '추천 백패킹 박지';
-      const distance = document.getElementById('modalInputDistance').value.trim();
-      const rawYt = document.getElementById('modalInputYoutube').value.trim();
-      const youtubeUrls = rawYt ? rawYt.split('\n').map(u => u.trim()).filter(Boolean).slice(0, 3) : [];
-      const blogUrl = document.getElementById('modalInputBlog').value.trim();
-      const instaId = document.getElementById('modalInputInsta').value.trim() || 'oklionnature';
-
-      const terrain = [];
-      if (document.getElementById('chkDeck').checked) terrain.push('데크');
-      if (document.getElementById('chkRock').checked) terrain.push('돌박지');
-      if (document.getElementById('chkSoil').checked) terrain.push('노지');
-      if (document.getElementById('chkBeach').checked) terrain.push('해변');
-      if (document.getElementById('chkIsland').checked) terrain.push('섬');
-      if (document.getElementById('chkValley').checked) terrain.push('계곡');
-      if (document.getElementById('chkCave').checked) terrain.push('동굴');
-      if (document.getElementById('chkEtc').checked) terrain.push('기타');
-
-      const difficulty = document.getElementById('modalSelectDiff').value;
-      if (!name) return alert('산(박지) 이름을 입력해주세요.');
-
-      let finalLat = modalPendingData.lat;
-      let finalLng = modalPendingData.lng;
-      if (!finalLat || !finalLng) {
-        const { navAddress } = parseEntryPoint(entryPoint);
-        const searchTarget = navAddress || name;
-        const coords = await searchCoordsByQuery(searchTarget) || { lat: (map ? map.getCenter().lat() : 36.2), lng: (map ? map.getCenter().lng() : 127.8) };
-        finalLat = coords.lat;
-        finalLng = coords.lng;
-      }
-
-      if (modalMode === 'PROPOSAL') {
-        const check = autoDetectDroneStatus(finalLat, finalLng);
-        const res = detectRegionAndCity(finalLat, finalLng, name, entryPoint);
-
-        const proposalData = {
-          name, elevation: elevation || '측정대기', entryPoint,
-          lat: finalLat, lng: finalLng,
-          region: res.region, cityName: res.cityName,
-          desc, distance, youtubeUrls, blogUrl, instaId,
-          terrain: terrain.length > 0 ? terrain : ['데크'],
-          difficulty, droneStatus: check.status,
-          status: 'pending',
-          submittedAt: Date.now()
-        };
-
-        try {
-          await fetch(GAS_API_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'PROPOSE_SPOT', proposal: proposalData })
-          });
-          alert(`🎉 '${name}' 박지 제보가 정상 접수되었습니다!\n\n관리자 확인 및 승인 후 지도에 등록됩니다. 소중한 제보 감사합니다! 🎒`);
-        } catch (err) {
-          alert('제보 전송 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-        }
-        closeCustomModal();
-        return;
-      }
-
-      if (modalMode === 'ADD') {
-        const res = detectRegionAndCity(finalLat, finalLng, name, entryPoint);
-        const numericIds = spots.map(s => parseInt(s.id, 10)).filter(n => !isNaN(n));
-        const maxId = numericIds.length > 0 ? Math.max(...numericIds) : spots.length;
-        const newSpotId = String(maxId + 1);
-
-        const newSpot = {
-          id: newSpotId,
-          name, elevation, entryPoint,
-          lat: finalLat, lng: finalLng,
-          region: res.region, cityName: res.cityName,
-          desc, distance, youtubeUrls, blogUrl, instaId,
-          terrain: terrain.length > 0 ? terrain : ['데크'],
-          difficulty, droneStatus: modalPendingData.droneStatus || autoDetectDroneStatus(finalLat, finalLng).status,
-          searchCount: 1,
-          isNew: true
-        };
-        
-        spots.unshift(newSpot);
-        updateNewSpotFlags(spots);
-        renderSpots(newSpot.region);
-        
-        const sidebarList = document.getElementById('spotList');
-        if (sidebarList) sidebarList.scrollTop = 0;
-
-        setTimeout(() => focusSpotOnMap(newSpot, false), 100);
-
-        try {
-          await fetch(GAS_API_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'ADD', spot: newSpot })
-          });
-          alert(`✅ '${newSpot.name}' 박지(ID: ${newSpotId})가 등록되었습니다!`);
-        } catch (err) {}
-
-      } else if (modalMode === 'EDIT') {
-        const target = spots[modalEditIndex];
-        const res = detectRegionAndCity(finalLat, finalLng, name, entryPoint);
-        Object.assign(target, { name, elevation, entryPoint, lat: finalLat, lng: finalLng, desc, distance, youtubeUrls, blogUrl, instaId, terrain: terrain.length > 0 ? terrain : ['데크'], difficulty, region: res.region, cityName: res.cityName });
-
-        renderSpots(target.region);
-        setTimeout(() => focusSpotOnMap(target, true), 100);
-
-        try {
-          await fetch(GAS_API_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'UPDATE', id: target.id, spot: target })
-          });
-          alert(`✅ '${target.name}' 수정사항이 반영되었습니다.`);
-        } catch (err) {}
-      }
-      closeCustomModal();
-    }
-
-    function resetMapView() {
-      if (document.activeElement && typeof document.activeElement.blur === 'function') {
-        document.activeElement.blur();
-      }
-
-      isCleanMapMode = false;
-      document.body.classList.remove('clean-map-mode');
-
-      if (map) map.morph(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, { duration: 350, easing: 'easeOutCubic' });
-      closeAllPopups();
-      if (droneHoverInfoWindow) droneHoverInfoWindow.close();
-      if (tempSearchMarker) {
-        tempSearchMarker.setMap(null);
-        tempSearchMarker = null;
-      }
-      if (tempPickedMarker) {
-        tempPickedMarker.setMap(null);
-        tempPickedMarker = null;
-      }
-
-      clearSearchInput('pc', false);
-      clearSearchInput('mobile', false);
-
-      currentStatusFilter = 'ALL';
-      document.querySelectorAll('.status-filter-btn').forEach(b => b.classList.toggle('active', b.innerText.includes('전체')));
-
-      currentTerrainFilter = 'ALL';
-      document.querySelectorAll('.terrain-filter-btn').forEach(b => b.classList.toggle('active', b.innerText.includes('전체')));
-      filterByRegion('ALL');
-      
-      currentMapTypeMode = 'NORMAL';
-      if (map) map.setMapTypeId(naver.maps.MapTypeId.NORMAL);
-      const iconEl = document.getElementById('towerMapTypeIcon');
-      const textEl = document.getElementById('towerMapTypeText');
-      const btnEl = document.getElementById('towerBtnMapType');
-      if (iconEl) iconEl.innerText = '🗺️';
-      if (textEl) textEl.innerText = '위성';
-      if (btnEl) btnEl.classList.remove('active');
-
-      collapseAllRegionAccordions();
-      updateSmartResetButtons();
-    }
-
-    function filterByStatus(status) {
-      currentStatusFilter = status;
-      document.querySelectorAll('.status-filter-btn').forEach(btn => {
-        btn.classList.toggle('active', 
-          (status === 'ALL' && btn.innerText.includes('전체')) ||
-          (status === 'NEW' && btn.innerText.includes('NEW')) ||
-          (status === 'HOT' && btn.innerText.includes('HOT')) ||
-          (status === 'BOOKMARK' && btn.innerText.includes('찜')) ||
-          (status === 'VISITED' && btn.innerText.includes('클리어'))
-        );
-      });
-      renderSpots();
-    }
-
-    function filterByRegion(region) {
-      currentRegionFilter = region;
-      document.querySelectorAll('.region-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.innerText.trim() === (region === 'ALL' ? '전체' : region));
-      });
-      renderSpots(region !== 'ALL' ? region : null);
-    }
-
-    function filterByTerrain(terrain) {
-      currentTerrainFilter = terrain;
-      document.querySelectorAll('.terrain-filter-btn').forEach(btn => {
-        btn.classList.toggle('active', terrain === 'ALL' ? btn.innerText.includes('전체') : btn.innerText.includes(terrain));
-      });
-      renderSpots();
-    }
-
-    function initDroneOverlays() {
-      const allZones = [
-        ...restrictedZones.map(z => ({ ...z, isStrict: z.type === 'border' || z.type === 'nuke' || z.type === 'p73' || z.type === 'mil_ban', isPark: false })),
-        ...nationalParks.map(p => ({ ...p, isStrict: true, isPark: true }))
-      ];
-
-      droneOverlays = allZones.map(zone => {
-        const circle = new naver.maps.Circle({
-          center: new naver.maps.LatLng(zone.lat, zone.lng),
-          radius: zone.radius,
-          fillColor: zone.isStrict ? '#f43f5e' : '#f59e0b',
-          fillOpacity: zone.isStrict ? 0.2 : 0.14,
-          strokeColor: zone.isStrict ? '#e11d48' : '#d97706',
-          strokeWeight: 1.2,
-          clickable: true
-        });
-
-        naver.maps.Event.addListener(circle, 'mouseover', (e) => {
-          if (droneHoverInfoWindow && map) {
-            droneHoverInfoWindow.setContent(`
-              <div style="padding: 5px 8px; color: #f8fafc; line-height: 1.3; white-space: nowrap; pointer-events: none; border-radius: 6px;">
-                <strong style="color: ${zone.isStrict ? '#fb7185' : '#fde047'}; font-size: 0.72rem;">[${zone.isPark ? '🚫 국립공원 금지' : (zone.isStrict ? '🚫 비행금지' : '⚠️ 관제공역')}] ${escapeHtml(zone.name)}</strong><br>
-                <span style="color: #cbd5e1; font-size: 0.65rem; opacity: 0.9;">🚨 ${escapeHtml(zone.desc || '비행/촬영 승인 필수')}</span>
-              </div>
-            `);
-            droneHoverInfoWindow.open(map, e.coord);
-          }
-        });
-
-        naver.maps.Event.addListener(circle, 'mousemove', (e) => {
-          if (droneHoverInfoWindow) droneHoverInfoWindow.setPosition(e.coord);
-        });
-        naver.maps.Event.addListener(circle, 'mouseout', () => {
-          if (droneHoverInfoWindow) droneHoverInfoWindow.close();
-        });
-
-        return circle;
-      });
-    }
-
-    function toggleDroneOverlay() {
-      if (!map) return;
-      isDroneOverlayOn = !isDroneOverlayOn;
-      const pcDroneBtn = document.getElementById('pcHeaderDroneBtn');
-      const mobileDroneBtn = document.getElementById('mobileDroneBtn');
-      if (pcDroneBtn) pcDroneBtn.classList.toggle('active', isDroneOverlayOn);
-      if (mobileDroneBtn) mobileDroneBtn.classList.toggle('active', isDroneOverlayOn);
-
-      if (droneOverlays.length === 0) initDroneOverlays();
-      droneOverlays.forEach(circle => circle.setMap(isDroneOverlayOn ? map : null));
-      if (!isDroneOverlayOn && droneHoverInfoWindow) droneHoverInfoWindow.close();
-
-      if (isDroneOverlayOn) {
-        showToast('🚨 전국 70개 비행금지 및 군·공항 관제공역 표시 중');
-      }
-    }
-
-    function exportDataBackup() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
-        spots,
-        comments: spotComments,
-        bookmarks: [...userBookmarks],
-        visited: [...userVisited],
-        memos: userMemos
-      }, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `okbm_spots_backup_${new Date().toISOString().slice(0,10)}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-    }
-
-    function importDataBackup(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const imported = JSON.parse(e.target.result);
-          if (Array.isArray(imported)) {
-            spots = imported;
-          } else if (imported?.spots && Array.isArray(imported.spots)) {
-            spots = imported.spots;
-            if (imported.comments) {
-              spotComments = imported.comments;
-              localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
-            }
-            if (imported.bookmarks) {
-              userBookmarks = new Set(imported.bookmarks);
-              localStorage.setItem('okbm_bookmarks', JSON.stringify(imported.bookmarks));
-            }
-            if (imported.visited) {
-              userVisited = new Set(imported.visited);
-              localStorage.setItem('okbm_visited', JSON.stringify(imported.visited));
-            }
-            if (imported.memos) {
-              userMemos = imported.memos;
-              localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
-            }
-          } else {
-            return alert('유효하지 않은 백업 파일입니다.');
-          }
-          updateNewSpotFlags(spots);
-          updateFilterCounts();
-          renderSpots();
-          alert('데이터가 성공적으로 복원되었습니다.');
-        } catch (err) {
-          alert('JSON 파일 파싱 실패');
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    let resizeTimer;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        spotMarkerMap.forEach((marker) => {
-          if (marker.spotData) marker.setIcon(createCustomMarkerIcon(marker.spotData, isZoomDetailedState || (currentActiveSpot && String(currentActiveSpot.id) === String(marker.spotData.id))));
-        });
-        updateSmartResetButtons();
-      }, 150);
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.pc-search-container') && !e.target.closest('.mobile-top-search-dock') && !e.target.closest('.custom-modal-overlay') && !e.target.closest('#pinPickerBanner')) {
-        document.getElementById('pcSearchDropdown').style.display = 'none';
-        document.getElementById('mobileSearchDropdown').style.display = 'none';
-      }
-    });
-  </script>
-</body>
-</html>
