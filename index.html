@@ -599,6 +599,211 @@
 <body>
 
   <!-- 🧭 1. 상단 GNB -->
+  요청하신 대로 index.html의 최상단(헤더 GNB)과 검색창을 map.html의 세련된 다크 티타늄 스타일과 규격(버튼, 인풋 높이, 폰트
+비율)으로 똑같이 맞춘 부분 코드입니다.
+
+index.html 파일의 CSS(스타일) 와 HTML(상단/검색 영역) 을 아래 코드로 교체하시면 됩니다.
+
+1. index.html 내 <style> 교체 영역
+
+기존 /* 🧭 1. 상단 GNB */부터 /* 🔍 2. 스마트 검색창 */ 관련 스타일을 아래 코드로 덮어씌웁니다.
+
+    /* 🧭 1. 상단 GNB (map.html 규격과 1:1 일치) */
+    .portal-nav {
+      position: sticky;
+      top: 0;
+      z-index: var(--z-header);
+      background: rgba(3, 5, 8, 0.98);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 14px;
+      padding-top: calc(6px + env(safe-area-inset-top, 0px));
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      min-height: 50px;
+    }
+    .portal-nav-inner {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-title-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      white-space: nowrap;
+      user-select: none;
+      min-width: 0;
+    }
+    .main-title-text {
+      font-family: var(--font-display);
+      font-size: clamp(1.05rem, 3.8vw, 1.45rem);
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.03em;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .main-title-text .highlight-pink {
+      background: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #f472b6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 10px rgba(244, 63, 94, 0.5));
+      font-weight: 800;
+    }
+    .brand-sub-script {
+      font-family: var(--font-script);
+      font-size: clamp(0.95rem, 3.2vw, 1.35rem);
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 0.02em;
+      opacity: 0.9;
+      transform: translateY(1px);
+    }
+
+    /* 🔍 2. 스마트 검색창 (map.html 스타일 & 규격 적용) */
+    .hero-search-container {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 6px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .portal-search-box {
+      position: relative;
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      align-items: center;
+    }
+    .portal-search-input {
+      width: 100%;
+      height: 36px;
+      min-height: 36px;
+      padding: 5px 62px 5px 14px;
+      border-radius: 18px;
+      border: 1px solid var(--border-light);
+      background: var(--bg-surface);
+      color: #ffffff;
+      font-size: 0.82rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .portal-search-input::placeholder {
+      color: var(--text-muted);
+      font-size: 0.76rem;
+    }
+    .portal-search-input:focus {
+      background: #000000;
+      border-color: var(--accent-blue);
+    }
+    
+    .btn-clear-search {
+      position: absolute;
+      right: 32px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: var(--text-secondary);
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      font-size: 0.65rem;
+      font-weight: 800;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 5;
+      padding: 0;
+    }
+    .btn-clear-search:hover {
+      background: var(--accent-rose);
+      color: #ffffff;
+    }
+    
+    .portal-search-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--accent-blue);
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 3px;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .search-auto-dropdown {
+      position: absolute;
+      top: 44px;
+      left: 0; right: 0;
+      background: rgba(9, 12, 19, 0.98);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.95);
+      list-style: none;
+      max-height: 280px;
+      overflow-y: auto;
+      display: none;
+      z-index: var(--z-dropdown);
+      text-align: left;
+    }
+    .auto-item {
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-size: 0.82rem;
+    }
+    .auto-item:last-child { border-bottom: none; }
+    .auto-item:hover { background: var(--bg-card-hover); }
+    .auto-item-left { display: flex; align-items: center; gap: 6px; overflow: hidden; }
+    .auto-item-name { font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .auto-badge-spot { font-size: 0.65rem; color: #38bdf8; background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px; font-weight: 700; flex-shrink: 0; }
+
+    .lnt-slim-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(45, 212, 191, 0.06);
+      border: 1px solid rgba(45, 212, 191, 0.2);
+      border-radius: 20px;
+      padding: 3px 10px;
+      margin-top: 6px;
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+    }
+    .lnt-badge-mini {
+      background: rgba(45, 212, 191, 0.2);
+      color: var(--accent-teal);
+      font-size: 0.66rem;
+      font-weight: 800;
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 380px) {
+      .brand-sub-script { display: none !important; }
+      .main-title-text { font-size: 1.05rem !important; }
+    }
   <nav class="portal-nav">
     <div class="portal-nav-inner">
       <a href="index.html" class="brand-title-link" title="홈">
@@ -609,14 +814,12 @@
     </div>
   </nav>
 
-  <!-- 🔍 2. 스마트 검색창 & LNT (여백 50% 축소) -->
+  <!-- 🔍 2. 스마트 검색창 & LNT (map.html과 동일 스타일) -->
   <section class="hero-search-container">
     <div class="portal-search-box">
-      <input type="text" id="mainSearchInput" class="portal-search-input" placeholder="검색 예: 선자령, 굴업도, 강원도..." autocomplete="off" oninput="onSearchInputChanged(this.value)" onkeyup="if(event.key==='Enter') executePortalSmartSearch()" />
-      <div class="search-action-wrap">
-        <button type="button" class="btn-clear-search" id="btnClearSearch" onclick="clearSearchInput()">✕</button>
-        <button type="button" class="portal-search-btn" onclick="executePortalSmartSearch()" title="검색">🔍</button>
-      </div>
+      <input type="text" id="mainSearchInput" class="portal-search-input" placeholder="산, 섬, 해변, 계곡, 박지 검색..." autocomplete="off" oninput="onSearchInputChanged(this.value)" onkeyup="if(event.key==='Enter') executePortalSmartSearch()" />
+      <button type="button" class="btn-clear-search" id="btnClearSearch" onclick="clearSearchInput()" title="검색어 지우기">✕</button>
+      <button type="button" class="portal-search-btn" onclick="executePortalSmartSearch()" title="검색">🔍</button>
       <ul id="searchAutoDropdown" class="search-auto-dropdown"></ul>
     </div>
 
@@ -625,6 +828,7 @@
       <span>100% 비화식 준수와 흔적 없는 클린 백패킹 실천</span>
     </div>
   </section>
+
 
   <!-- 📦 메인 콘텐츠 흐름 -->
   <main class="portal-main-content">
