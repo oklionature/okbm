@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -17,8 +18,6 @@
   
   <!-- Naver Maps Open API -->
   <script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=nokunumn03&submodules=geocoder"></script>
-  <!-- Naver Map Marker Clustering CDN -->
-  <script src="https://navermaps.github.io/maps.js.ncp/docs/js/MarkerClustering.js"></script>
   <!-- CSV Parser -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
@@ -1009,7 +1008,7 @@
       padding: 12px 14px;
       width: min(330px, calc(100vw - 32px)) !important;
       max-width: min(330px, calc(100vw - 32px)) !important;
-      max-height: min(420px, 55dvh);
+      max-height: min(450px, 60dvh);
       overflow-y: auto !important;
       overflow-x: hidden !important;
       display: flex;
@@ -1166,6 +1165,23 @@
       outline: none;
       resize: vertical;
       min-height: 32px;
+    }
+
+    /* 📺 1번 인앱 유튜브 영상 컨테이너 (이탈 0%) */
+    .inapp-video-container {
+      display: none;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 4px;
+      background: #000;
+      border: 1px solid var(--border-glow);
+    }
+    .inapp-video-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
     }
 
     /* 🔒 들머리 잠금 & Peek-Through */
@@ -2135,7 +2151,7 @@
       { name: "제주국제공항 관제권", lat: 33.5113, lng: 126.4930, radius: 9300, type: "air", desc: "국제공항 관제권 (반경 9.3km)" }
     ];
 
-    /* 🏞️ 대한민국 23개 국립공원 전수 등록 (해상 국립공원 거점 분할) */
+    /* 🏞️ 대한민국 23개 국립공원 전수 등록 */
     const nationalParks = [
       { name: "설악산국립공원", lat: 38.1190, lng: 128.4650, radius: 14000, desc: "국립공원 비행금지" },
       { name: "오대산국립공원", lat: 37.7950, lng: 128.6180, radius: 12000, desc: "국립공원 비행금지" },
@@ -2157,8 +2173,6 @@
       { name: "월출산국립공원", lat: 34.7500, lng: 126.6800, radius: 6500, desc: "국립공원 비행금지" },
       { name: "변산반도국립공원", lat: 35.6600, lng: 126.5500, radius: 9500, desc: "국립공원 비행금지" },
       { name: "태안해안국립공원", lat: 36.7580, lng: 126.1320, radius: 15000, desc: "국립공원 비행금지" },
-      
-      /* 다도해·한려해상 거점 분할 (외곽 섬 누락 방지) */
       { name: "다도해해상국립공원 (신안 흑산도/홍도)", lat: 34.6800, lng: 125.4200, radius: 16000, desc: "해상국립공원 비행금지" },
       { name: "다도해해상국립공원 (완도 보길도/청산도)", lat: 34.1600, lng: 126.7500, radius: 18000, desc: "해상국립공원 비행금지" },
       { name: "다도해해상국립공원 (여수 향일암/금오도)", lat: 34.5200, lng: 127.7800, radius: 14000, desc: "해상국립공원 비행금지" },
@@ -2295,7 +2309,7 @@
 
     document.getElementById('sheetEditLink').href = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/edit`;
 
-    /* 🌿 LNT 7원칙 모달 제어 */
+    /* 🌿 LNT 7원칙 모달 */
     function openLntModal() {
       document.getElementById('lntModalOverlay').style.display = 'flex';
     }
@@ -2466,7 +2480,7 @@
       }
     }
 
-    /* 📍 마커 생성 (경량 인라인 SVG 그림자 & 클리어 깃발 배지 반영) */
+    /* 📍 마커 생성 (경량 인라인 SVG 그림자 & 클리어 깃발 배지) */
     function createCustomMarkerIcon(spot) {
       const isMobile = window.innerWidth <= 768;
       const d = parseInt(spot.difficulty, 10) || 3;
@@ -2863,11 +2877,18 @@
       return sessionStorage.getItem(`okbm_unlocked_${spotId}`) === 'true';
     }
 
-    function triggerSpotUnlock(spotId, targetUrl) {
-      if (targetUrl) window.open(targetUrl, '_blank', 'noopener,noreferrer');
-
+    /* 📺 1번 인앱 유튜브 영상 재생 (이탈 0% 잠금 해제 트리거) */
+    function triggerSpotUnlock(spotId, targetUrl, youtubeVideoId = '') {
       if (isAdminMode || isSpotUnlocked(spotId)) return;
       if (spotUnlockTimers[spotId]) return;
+
+      // 1. 유튜브 인앱 플레이어 컨테이너 활성화
+      const videoContainer = document.getElementById(`inappVideoContainer_${spotId}`);
+      const videoIframe = document.getElementById(`inappVideoIframe_${spotId}`);
+      if (videoContainer && videoIframe && youtubeVideoId) {
+        videoIframe.src = `https://www.youtube-nocookie.com/embed/${youtubeVideoId}?autoplay=1`;
+        videoContainer.style.display = 'block';
+      }
 
       let countdown = 7;
       const overlayEl = document.getElementById(`entryLockOverlay_${spotId}`);
@@ -2879,7 +2900,7 @@
         const progressPct = ((7 - cnt) / 7) * 100;
         curEl.innerHTML = `
           <div style="display:flex; flex-direction:column; align-items:center; width:100%; gap:3px;">
-            <span>⏳ 감사 인사 확인 중... <strong>${cnt}초</strong> 뒤 주소가 공개됩니다</span>
+            <span>⏳ 영상 감상 중... <strong>${cnt}초</strong> 뒤 들머리가 열립니다</span>
             <div class="unlock-progress-track">
               <div class="unlock-progress-fill" style="width: ${progressPct}%;"></div>
             </div>
@@ -2964,14 +2985,13 @@
       showToast('🔒 나만의 비공개 메모가 저장되었습니다');
     }
 
-    /* 📤 원클릭 박지 공유 (Web Share API / 카카오톡 연동) */
+    /* 📤 원클릭 박지 공유 (주소 제외, 링크 직접 해제 유도) */
     function shareSpotCard(spotId) {
       const spot = spots.find(s => String(s.id) === String(spotId));
       if (!spot) return;
-      const { navAddress } = parseEntryPoint(spot.entryPoint || spot.name);
       
       const shareTitle = `🏕️ [낭만백패킹] ${spot.name}`;
-      const shareText = `🎒 [대한민국 낭만 백패킹 로드]\n📍 박지: ${spot.name} (${spot.elevation || '고도미상'})\n🚗 들머리: ${navAddress || spot.name}\n⛰️ 지형: ${(spot.terrain || []).join(', ')} (난이도 ⭐${spot.difficulty || 3})\n\n👉 지도에서 위치 보기:`;
+      const shareText = `🎒 [대한민국 낭만 백패킹 로드]\n📍 박지명: ${spot.name} (${spot.elevation || '고도미상'})\n⛰️ 지형: ${(spot.terrain || []).join(', ')} (난이도 ⭐${spot.difficulty || 3})\n\n🔒 상세 들머리 주소와 길안내는 지도에서 직접 확인하세요:\n`;
       const shareUrl = `${window.location.origin}${window.location.pathname}?spot=${encodeURIComponent(spot.name)}`;
 
       if (navigator.share) {
@@ -2981,7 +3001,7 @@
           url: shareUrl
         }).catch(() => {});
       } else {
-        copyTextToClipboard(`${shareText}\n${shareUrl}`, '📋 박지 공유 정보가 복사되었습니다! 카카오톡 등에 붙여넣기 하세요 📤');
+        copyTextToClipboard(`${shareText}\n👉 바로가기: ${shareUrl}`, '📋 박지 공유 링크가 복사되었습니다! 카카오톡 등에 붙여넣기 하세요 📤');
       }
     }
 
@@ -2999,6 +3019,12 @@
       }
     }
 
+    function extractYouTubeId(url) {
+      if (!url) return '';
+      const match = url.match(/^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|shorts\/|\&v=)([^#\&\?]*).*/);
+      return (match && match[1].length === 11) ? match[1] : '';
+    }
+
     function generateDetailContentHtml(spot, isMobileSheet = false) {
       const { navAddress, guide } = parseEntryPoint(spot.entryPoint || spot.name);
       const searchTarget = navAddress || spot.name;
@@ -3008,6 +3034,7 @@
       const sunset = calculateSunsetTime(spot.lat, spot.lng);
 
       const ytList = spot.youtubeUrls || (spot.youtubeUrl ? [spot.youtubeUrl] : []);
+      const firstYtId = ytList[0] ? extractYouTubeId(ytList[0]) : '';
       const cleanUser = (spot.instaId?.trim() || "oklionnature").replace('@', '').replace(/https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '');
       const instaLink = `https://instagram.com/${encodeURIComponent(cleanUser)}`;
 
@@ -3051,6 +3078,11 @@
             </button>
           </div>
           
+          <!-- 📺 1번 인앱 유튜브 영상 플레이어 (이탈 0%) -->
+          <div class="inapp-video-container" id="inappVideoContainer_${spot.id}">
+            <iframe id="inappVideoIframe_${spot.id}" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          </div>
+
           <div class="locked-entry-wrap" id="lockedEntryWrap_${spot.id}">
             <div class="locked-entry-inner ${isUnlocked ? '' : 'is-locked'}" id="lockedEntryInner_${spot.id}">
               <a href="${escapeHtml(naverSearchUrl)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link" title="네이버 지도 길안내로 이동">
@@ -3061,8 +3093,8 @@
               </button>
             </div>
             ${!isUnlocked ? `
-              <div class="entry-lock-overlay" id="entryLockOverlay_${spot.id}" onclick="triggerSpotUnlock('${spot.id}', '${ytList[0] ? escapeHtml(cleanYouTubeUrl(ytList[0].trim())) : instaLink}')">
-                <span>🔒 등록자 분께 감사 인사를 전해 보세요.<br> YouTube나 등록자 링크를 누르면 <strong style="color: #fde047; font-size: 0.8rem; font-weight: 800; text-decoration: underline; text-underline-offset: 3px;">들머리 주소</strong>가 열립니다</span>
+              <div class="entry-lock-overlay" id="entryLockOverlay_${spot.id}" onclick="triggerSpotUnlock('${spot.id}', '${ytList[0] ? escapeHtml(cleanYouTubeUrl(ytList[0].trim())) : instaLink}', '${firstYtId}')">
+                <span>🔒 등록자 영상 보고 감사 전하기<br>여기를 누르면 <strong style="color: #fde047; font-size: 0.8rem; font-weight: 800; text-decoration: underline; text-underline-offset: 3px;">들머리 주소</strong>가 열립니다</span>
               </div>
             ` : ''}
           </div>
@@ -3081,10 +3113,10 @@
           </div>
 
           <div class="spot-action-line">
-            ${ytList.slice(0, 2).map((url, i) => url?.trim() ? `<a href="javascript:void(0)" onclick="triggerSpotUnlock('${spot.id}', '${escapeHtml(cleanYouTubeUrl(url.trim()))}')" class="link-btn btn-yt btn-yt-wide">▶ YouTube 영상${ytList.length > 1 ? ` (${i + 1})` : ''}</a>` : '').join('')}
+            ${ytList.slice(0, 2).map((url, i) => url?.trim() ? `<a href="javascript:void(0)" onclick="triggerSpotUnlock('${spot.id}', '${escapeHtml(cleanYouTubeUrl(url.trim()))}', '${extractYouTubeId(url.trim())}')" class="link-btn btn-yt btn-yt-wide">▶ 영상 보기${ytList.length > 1 ? ` (${i + 1})` : ''}</a>` : '').join('')}
             ${spot.blogUrl?.trim() ? `<a href="${escapeHtml(spot.blogUrl.trim())}" target="_blank" rel="noopener noreferrer" class="link-btn btn-blog" onclick="event.stopPropagation();">📝 블로그</a>` : ''}
             <button type="button" class="link-btn btn-share-spot" onclick="shareSpotCard('${spot.id}')">📤 공유</button>
-            <a href="javascript:void(0)" onclick="triggerSpotUnlock('${spot.id}', '${instaLink}')" class="link-btn btn-insta" title="등록자 인스타그램">
+            <a href="${instaLink}" target="_blank" rel="noopener noreferrer" class="link-btn btn-insta" title="등록자 인스타그램">
               <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
               등록자
             </a>
@@ -3093,7 +3125,6 @@
 
           <div class="app-disclaimer-box" style="color: #fca5a5; border-color: rgba(244, 63, 94, 0.45); background: rgba(244, 63, 94, 0.08);">
             ※ 현지 지자체 조례 및 산불조심기간에 따라 야영 통제될 수 있습니다.<br>
-            ※ 들머리와 영상속 박지정보는 틀릴수가있습니다. 확인을 꼭 하고가세요!<br>
             ※ 산림 내 취사 절대 금지(비화식 준수), 쓰레기는 전량 회수하여 LNT를 실천해 주세요.
           </div>
           
@@ -3657,7 +3688,7 @@
 
       document.getElementById('spotCount').innerText = `${visibleCount}개`;
 
-      // 🟢 3단계 대형 네온 클러스터링 동기화
+      // 🟢 [안전 클러스터링 동기화] (null 참조 오류 원천 방어)
       if (typeof MarkerClustering !== 'undefined') {
         if (markerClustererInstance) {
           markerClustererInstance.setMap(null);
@@ -3676,8 +3707,10 @@
           ],
           indexGenerator: [10, 30],
           stylingFunction: function(clusterMarker, count) {
-            const el = clusterMarker.getElement().querySelector('.custom-cluster-marker');
-            if (el) el.innerText = count;
+            try {
+              const el = clusterMarker?.getElement()?.querySelector('.custom-cluster-marker');
+              if (el) el.innerText = count;
+            } catch (err) {}
           }
         });
       }
@@ -3871,43 +3904,9 @@
 
     function deleteSpotById(event, spotId) {
       event.stopPropagation();
-      const targetSpot = spots[index];
-      if (!confirm(`'${targetSpot.name}' 박지를 정말 삭제하시겠습니까?`)) return;
-
-      const deletedId = targetSpot.id;
-      const deletedName = targetSpot.name;
-      
-      const m = spotMarkerMap.get(String(deletedId));
-      if (m) {
-        m.setMap(null);
-        spotMarkerMap.delete(String(deletedId));
-      }
-
-      spots.splice(index, 1);
-      delete spotComments[deletedId];
-      userBookmarks.delete(String(deletedId));
-      userVisited.delete(String(deletedId));
-      delete userMemos[String(deletedId)];
-
-      localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
-      localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks]));
-      localStorage.setItem('okbm_visited', JSON.stringify([...userVisited]));
-      localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
-
-      closeAllPopups();
-      updateFilterCounts();
-      updateNewSpotFlags(spots);
-      renderSpots();
-
-      try {
-        await fetch(GAS_API_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'DELETE', id: deletedId, name: deletedName })
-        });
-        alert(`'${deletedName}' 박지가 삭제되었습니다.`);
-      } catch (err) {}
+      const idx = spots.findIndex(s => String(s.id) === String(spotId));
+      if (idx === -1) return;
+      deleteSpot(event, idx);
     }
 
     async function executeSearch(mode = 'pc') {
