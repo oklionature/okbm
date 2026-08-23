@@ -157,7 +157,6 @@
     
     .header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 
-    /* 💻 PC 상단 드론 버튼 */
     .header-drone-toggle-btn {
       display: inline-flex;
       align-items: center;
@@ -461,7 +460,7 @@
       text-align: center;
     }
 
-    /* 🏷️ 3단 필터 바 (개인화 찜/완주 추가) */
+    /* 🏷️ 3단 필터 바 */
     .filter-wrapper {
       background: var(--bg-deep);
       border-bottom: 1px solid var(--border);
@@ -877,7 +876,7 @@
       cursor: pointer;
     }
 
-    /* 📍 마커 스타일 (GPU 부하 없는 네이티브 SVG 그림자) */
+    /* 📍 마커 스타일 */
     .custom-spot-marker-wrap {
       position: relative;
       display: flex;
@@ -920,22 +919,42 @@
     .marker-label-elev { color: #86efac; font-size: 0.64rem; font-weight: 700; }
     .marker-svg-icon { display: block; }
 
-    /* 🟢 마커 클러스터링 네온 배지 */
+    /* 🟢 3단계 대형 다이내믹 네온 클러스터 마커 */
     .custom-cluster-marker {
-      width: 36px;
-      height: 36px;
       border-radius: 50%;
-      background: rgba(13, 148, 136, 0.92);
-      border: 2px solid #2dd4bf;
       color: #ffffff;
-      font-size: 0.76rem;
+      font-family: var(--font-body);
       font-weight: 800;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 14px rgba(45, 212, 191, 0.45);
-      cursor: pointer;
       user-select: none;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .cluster-sm {
+      width: 44px; height: 44px;
+      font-size: 0.82rem;
+      background: rgba(13, 148, 136, 0.92);
+      border: 2px solid #2dd4bf;
+      box-shadow: 0 4px 16px rgba(45, 212, 191, 0.5);
+    }
+    .cluster-md {
+      width: 50px; height: 50px;
+      font-size: 0.9rem;
+      background: linear-gradient(135deg, rgba(2, 132, 199, 0.94), rgba(13, 148, 136, 0.94));
+      border: 2.5px solid #38bdf8;
+      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.6);
+    }
+    .cluster-lg {
+      width: 58px; height: 58px;
+      font-size: 1rem;
+      background: linear-gradient(135deg, rgba(225, 29, 72, 0.94), rgba(245, 158, 11, 0.94));
+      border: 3px solid #fde047;
+      box-shadow: 0 8px 24px rgba(244, 63, 94, 0.7);
+    }
+    .custom-cluster-marker:hover {
+      transform: scale(1.08);
     }
 
     /* 🖥️ PC 팝업창 규격 */
@@ -1253,6 +1272,7 @@
       cursor: pointer;
       white-space: nowrap;
       line-height: 1.3;
+      border: none;
     }
     .btn-yt-wide {
       background: linear-gradient(135deg, #e11d48, #be123c);
@@ -1262,6 +1282,7 @@
       min-width: 105px;
     }
     .btn-blog { background: linear-gradient(135deg, #059669, #047857); }
+    .btn-share-spot { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
     .btn-insta { 
       background: linear-gradient(45deg, #ea580c 0%, #e11d48 50%, #c026d3 100%);
       font-size: 0.68rem;
@@ -1626,7 +1647,7 @@
         <div class="sidebar-header-left">
           <span>📍 박지 목록</span>
           <span id="spotCount" style="color: var(--accent-blue); font-size: 0.76rem; font-weight: 800;">0개</span>
-          <span class="version-tag" id="versionTagBtn">4.5ver</span>
+          <span class="version-tag" id="versionTagBtn">4.5ver Pro</span>
         </div>
 
         <div class="sidebar-header-actions">
@@ -1645,7 +1666,7 @@
         <input type="file" id="importFileInput" style="display:none" accept=".json" onchange="importDataBackup(event)" />
       </div>
       
-      <!-- 🏷️ 3단 필터 바 -->
+      <!-- 🏷️ 3단 필터 바 (개인화 찜/완주 추가) -->
       <div class="filter-wrapper">
         <div class="status-filter-bar" id="statusFilterBar">
           <span class="filter-label">분류</span>
@@ -1921,7 +1942,7 @@
       return `https://map.naver.com/p/search/${encodeURIComponent(cleanQ)}`;
     }
 
-    /* 🛡️ 드론 규제 데이터 */
+    /* 🛡️ 드론 규제 데이터 전수 등록 (군/민간 공항 및 국가 1급 시설) */
     const restrictedZones = [
       { name: "P-518 북방 비행금지구역 (철원/화천 전방)", lat: 38.2500, lng: 127.5000, radius: 25000, type: "border", desc: "군사작전 접경선 (민간 드론 절대 비행 불가)" },
       { name: "P-518 북방 비행금지구역 (양구/인제 전방)", lat: 38.2800, lng: 128.0500, radius: 25000, type: "border", desc: "군사작전 접경선 (민간 드론 절대 비행 불가)" },
@@ -1931,26 +1952,43 @@
       { name: "서울 도심 비행금지구역 (P-73A/B)", lat: 37.5326, lng: 126.9810, radius: 8334, type: "p73", desc: "수도 서울 도심 핵심 비행금지구역" },
       { name: "고리·새울 원자력발전소 (P-90E)", lat: 35.3197, lng: 129.2941, radius: 18520, type: "nuke", desc: "국가 1급 보안시설 원자력발전소 반경 18.5km 금지" },
       { name: "월성 원자력발전소 (P-90)", lat: 35.7144, lng: 129.4754, radius: 18520, type: "nuke", desc: "국가 1급 보안시설 원자력발전소 반경 18.5km 금지" },
-      { name: "한울 원자력발전소 (P-90N)", lat: 37.0945, lng: 129.3837, radius: 18520, type: "nuke", desc: "국가 1급 보안시설 원자력발전소 반경 18.5km 금지" },
+      { name: "한울·신한울 원자력발전소 (P-90N)", lat: 37.0945, lng: 129.3837, radius: 18520, type: "nuke", desc: "국가 1급 보안시설 원자력발전소 반경 18.5km 금지" },
       { name: "한빛 원자력발전소 (P-90W)", lat: 35.4158, lng: 126.4192, radius: 18520, type: "nuke", desc: "국가 1급 보안시설 원자력발전소 반경 18.5km 금지" },
       { name: "대전 한국원자력연구원 (R-97)", lat: 36.3860, lng: 127.3736, radius: 3704, type: "nuke", desc: "원자력연구시설 상공 비행금지구역" },
       { name: "계룡대 삼군본부 비행금지구역 (R-79)", lat: 36.3150, lng: 127.2480, radius: 5556, type: "mil_ban", desc: "군 최고지휘시설 보안 비행금지구역" },
+      { name: "국방과학연구소 안흥시험장 해역 (R-84)", lat: 36.6500, lng: 126.1500, radius: 14000, type: "mil_ban", desc: "국가 미사일/무기 시험장 해역 비행금지구역" },
       { name: "포항 포스코 국가중요보안시설", lat: 35.9980, lng: 129.3820, radius: 4000, type: "nuke", desc: "국가중요시설 비행금지구역" },
       { name: "광양 포스코 국가중요보안시설", lat: 34.9350, lng: 127.7320, radius: 4000, type: "nuke", desc: "국가중요시설 비행금지구역" },
-      { name: "춘천 육군항공기지 군비행장 관제권", lat: 37.8920, lng: 127.7300, radius: 9300, type: "mil", desc: "군 관제권 (비행승인 필수)" },
-      { name: "원주 제8전투비행단 군사관제권", lat: 37.4398, lng: 127.9622, radius: 9300, type: "mil", desc: "군 공군기지 관제권 (비행승인 필수)" },
-      { name: "강릉 제18전투비행단 군사관제권", lat: 37.7533, lng: 128.9442, radius: 9300, type: "mil", desc: "군 공군기지 관제권 (비행승인 필수)" },
-      { name: "양양국제공항 관제권", lat: 38.0613, lng: 128.6690, radius: 9300, type: "air", desc: "민간공항 관제권 (반경 9.3km 이내 승인 필수)" },
+      { name: "보령·당진·태안 대형화력발전소 공역", lat: 36.5800, lng: 126.5000, radius: 5000, type: "nuke", desc: "국가 핵심 에너지 시설 비행금지구역" },
+      
+      /* 군사/민간 비행장 관제권 (반경 9.3km) */
       { name: "서울공항(성남 K-16) 군사관제권", lat: 37.4447, lng: 127.1147, radius: 9300, type: "mil", desc: "군사공항 관제권" },
-      { name: "수원 제10전투비행단 관제권", lat: 37.2384, lng: 127.0076, radius: 9300, type: "mil", desc: "공군 비행단 관제권" },
+      { name: "수원 제10전투비행단 관제권", lat: 37.2384, lng: 127.0076, radius: 9300, type: "mil", desc: "공군 전투비행단 관제권" },
       { name: "오산 미 공군기지 군사관제권", lat: 37.0906, lng: 127.0305, radius: 9300, type: "mil", desc: "한미 군사작전 관제권" },
-      { name: "인천국제공항 관제권", lat: 37.4692, lng: 126.4505, radius: 9300, type: "air", desc: "국제공항 관제권 (반경 9.3km 엄격 통제)" },
-      { name: "김포국제공항 관제권", lat: 37.5583, lng: 126.7906, radius: 9300, type: "air", desc: "국제공항 관제권 (반경 9.3km 엄격 통제)" },
-      { name: "대구 제11전투비행단 관제권", lat: 35.8940, lng: 128.6590, radius: 9300, type: "mil", desc: "공군 비행단 관제권" },
-      { name: "김해 제5공중기동비행단 관제권", lat: 35.1795, lng: 128.9382, radius: 9300, type: "mil", desc: "군/민간 복합관제권" },
+      { name: "서산 제20전투비행단 (해미기지)", lat: 36.7000, lng: 126.4900, radius: 9300, type: "mil", desc: "공군 주력 전투비행단 관제권" },
+      { name: "충주 제19전투비행단 (중원기지)", lat: 37.0200, lng: 127.8800, radius: 9300, type: "mil", desc: "공군 주력 전투비행단 관제권" },
+      { name: "청주 제17전투비행단 및 청주국제공항", lat: 36.7166, lng: 127.4990, radius: 9300, type: "mil", desc: "군/민간 복합 국제공항 관제권" },
+      { name: "원주 제8전투비행단 군사관제권", lat: 37.4398, lng: 127.9622, radius: 9300, type: "mil", desc: "공군 전투비행단 관제권" },
+      { name: "강릉 제18전투비행단 군사관제권", lat: 37.7533, lng: 128.9442, radius: 9300, type: "mil", desc: "공군 전투비행단 관제권" },
+      { name: "춘천 육군항공기지 군비행장", lat: 37.8920, lng: 127.7300, radius: 9300, type: "mil", desc: "육군 항공작전 관제권" },
+      { name: "군산 제38전투비행전대 (미공군기지)", lat: 35.9038, lng: 126.6158, radius: 9300, type: "mil", desc: "한미 연합 공군 관제권" },
+      { name: "광주 제1전투비행단 및 광주공항", lat: 35.1264, lng: 126.8088, radius: 9300, type: "mil", desc: "공군 비행단 및 공항 관제권" },
+      { name: "사천 제3훈련비행단 및 사천공항", lat: 35.0886, lng: 128.0703, radius: 9300, type: "mil", desc: "공군 비행단 및 공항 관제권" },
+      { name: "대구 제11전투비행단 및 대구국제공항", lat: 35.8940, lng: 128.6590, radius: 9300, type: "mil", desc: "공군 전투비행단 관제권" },
+      { name: "김해 제5공중기동비행단 및 김해공항", lat: 35.1795, lng: 128.9382, radius: 9300, type: "mil", desc: "군/민간 복합관제권" },
+      { name: "예천 제16전투비행단 군사관제권", lat: 36.6322, lng: 128.3516, radius: 9300, type: "mil", desc: "공군 비행단 관제권" },
+      { name: "포항경주공항 및 해군항공사령부", lat: 35.9877, lng: 129.4206, radius: 9300, type: "mil", desc: "해군/민간 복합 관제권" },
+      { name: "인천국제공항 관제권", lat: 37.4692, lng: 126.4505, radius: 9300, type: "air", desc: "국제공항 관제권 (반경 9.3km)" },
+      { name: "김포국제공항 관제권", lat: 37.5583, lng: 126.7906, radius: 9300, type: "air", desc: "국제공항 관제권 (반경 9.3km)" },
+      { name: "양양국제공항 관제권", lat: 38.0613, lng: 128.6690, radius: 9300, type: "air", desc: "국제공항 관제권 (반경 9.3km)" },
+      { name: "무안국제공항 관제권", lat: 34.9914, lng: 126.3828, radius: 9300, type: "air", desc: "국제공항 관제권 (반경 9.3km)" },
+      { name: "여수공항 관제권", lat: 34.8422, lng: 127.6169, radius: 9300, type: "air", desc: "민간공항 관제권 (반경 9.3km)" },
+      { name: "울산공항 관제권", lat: 35.5933, lng: 129.3519, radius: 9300, type: "air", desc: "민간공항 관제권 (반경 9.3km)" },
+      { name: "울진비행장 관제권", lat: 36.7770, lng: 129.4100, radius: 9300, type: "air", desc: "항공훈련 비행장 관제권" },
       { name: "제주국제공항 관제권", lat: 33.5113, lng: 126.4930, radius: 9300, type: "air", desc: "국제공항 관제권 (반경 9.3km)" }
     ];
 
+    /* 🏞️ 대한민국 23개 국립공원 전수 등록 (자연공원법 비행금지) */
     const nationalParks = [
       { name: "설악산국립공원", lat: 38.1190, lng: 128.4650, radius: 14000, desc: "국립공원 비행금지" },
       { name: "오대산국립공원", lat: 37.7950, lng: 128.6180, radius: 12000, desc: "국립공원 비행금지" },
@@ -1958,9 +1996,22 @@
       { name: "치악산국립공원", lat: 37.3750, lng: 128.0550, radius: 9000, desc: "국립공원 비행금지" },
       { name: "북한산국립공원", lat: 37.6600, lng: 126.9900, radius: 8500, desc: "국립공원 비행금지" },
       { name: "소백산국립공원", lat: 36.9600, lng: 128.5300, radius: 13000, desc: "국립공원 비행금지" },
+      { name: "월악산국립공원", lat: 36.8700, lng: 128.1800, radius: 11000, desc: "국립공원 비행금지" },
+      { name: "속리산국립공원", lat: 36.5300, lng: 127.8500, radius: 12000, desc: "국립공원 비행금지" },
+      { name: "계룡산국립공원", lat: 36.3550, lng: 127.2100, radius: 7000, desc: "국립공원 비행금지" },
+      { name: "덕유산국립공원", lat: 35.8600, lng: 127.7500, radius: 13000, desc: "국립공원 비행금지" },
+      { name: "주왕산국립공원", lat: 36.4000, lng: 129.1800, radius: 8500, desc: "국립공원 비행금지" },
+      { name: "가야산국립공원", lat: 35.8000, lng: 128.1200, radius: 8500, desc: "국립공원 비행금지" },
+      { name: "팔공산국립공원", lat: 35.9850, lng: 128.6950, radius: 11000, desc: "국립공원 비행금지" },
       { name: "지리산국립공원", lat: 35.3350, lng: 127.6250, radius: 19000, desc: "국립공원 비행금지" },
-      { name: "한라산국립공원", lat: 33.3600, lng: 126.5350, radius: 11000, desc: "국립공원 비행금지" },
-      { name: "태안해안국립공원", lat: 36.7580, lng: 126.1320, radius: 15000, desc: "국립공원 비행금지" }
+      { name: "내장산국립공원", lat: 35.4800, lng: 126.8800, radius: 8000, desc: "국립공원 비행금지" },
+      { name: "무등산국립공원", lat: 35.1400, lng: 126.9900, radius: 8500, desc: "국립공원 비행금지" },
+      { name: "월출산국립공원", lat: 34.7500, lng: 126.6800, radius: 6500, desc: "국립공원 비행금지" },
+      { name: "변산반도국립공원", lat: 35.6600, lng: 126.5500, radius: 9500, desc: "국립공원 비행금지" },
+      { name: "태안해안국립공원", lat: 36.7580, lng: 126.1320, radius: 15000, desc: "국립공원 비행금지" },
+      { name: "다도해해상국립공원", lat: 34.4000, lng: 126.7000, radius: 25000, desc: "국립공원 비행금지" },
+      { name: "한려해상국립공원", lat: 34.8000, lng: 128.2500, radius: 22000, desc: "국립공원 비행금지" },
+      { name: "한라산국립공원", lat: 33.3600, lng: 126.5350, radius: 11000, desc: "국립공원 비행금지" }
     ];
 
     let spots = [];
@@ -2246,7 +2297,7 @@
       }
     }
 
-    /* 📍 마커 생성 (무거운 CSS drop-shadow 제거, 경량 인라인 SVG 그림자 적용) */
+    /* 📍 마커 생성 (경량 인라인 SVG 그림자) */
     function createCustomMarkerIcon(spot) {
       const isMobile = window.innerWidth <= 768;
       const d = parseInt(spot.difficulty, 10) || 3;
@@ -2333,7 +2384,7 @@
       return `<div class="instant-tooltip-box" data-tooltip="${r}"><span class="drone-badge ${badgeClass}">${badgeText}</span></div>`;
     }
 
-    /* 🌅 0초 천문학 일몰 시각 계산 함수 */
+    /* 🌅 0초 천문학 일몰 시각 계산 */
     function calculateSunsetTime(lat, lng, date = new Date()) {
       const rad = Math.PI / 180;
       const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
@@ -2357,7 +2408,7 @@
       return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     }
 
-    /* 💨 실시간 풍속/기온 비동기 로딩 (Open-Meteo) */
+    /* 💨 실시간 풍속/기온 비동기 로딩 */
     const weatherCache = new Map();
     async function loadLiveWeatherForSpot(spotId, lat, lng) {
       if (!lat || !lng) return;
@@ -2511,7 +2562,6 @@
       document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
     }
 
-    /* 🧭 안정적인 지도 중심 이동 (단일 통합 morph 호출로 튕김/깨짐 방지) */
     function smoothCenterMapOnSpot(lat, lng, keepCurrentZoom = true) {
       const targetLatLng = new naver.maps.LatLng(lat, lng);
       const currentZoom = map.getZoom();
@@ -2682,7 +2732,7 @@
       }, 1000);
     }
 
-    /* ⭐ 백패커 개인화 저장소 토글 함수 */
+    /* ⭐ 찜/완주 토글 */
     function toggleUserBookmark(spotId) {
       const sId = String(spotId);
       if (userBookmarks.has(sId)) {
@@ -2716,6 +2766,27 @@
       userMemos[sId] = text.trim();
       localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
       showToast('🔒 나만의 비공개 메모가 저장되었습니다');
+    }
+
+    /* 📤 [5번 수용] 원클릭 박지 공유 (Web Share API / 카톡 연동) */
+    function shareSpotCard(spotId) {
+      const spot = spots.find(s => String(s.id) === String(spotId));
+      if (!spot) return;
+      const { navAddress } = parseEntryPoint(spot.entryPoint || spot.name);
+      
+      const shareTitle = `🏕️ [낭만백패킹] ${spot.name}`;
+      const shareText = `🎒 [대한민국 낭만 백패킹 로드]\n📍 박지: ${spot.name} (${spot.elevation || '고도미상'})\n🚗 들머리: ${navAddress || spot.name}\n⛰️ 지형: ${(spot.terrain || []).join(', ')} (난이도 ⭐${spot.difficulty || 3})\n\n👉 지도에서 위치 보기:`;
+      const shareUrl = `${window.location.origin}${window.location.pathname}?spot=${encodeURIComponent(spot.name)}`;
+
+      if (navigator.share) {
+        navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl
+        }).catch(() => {});
+      } else {
+        copyTextToClipboard(`${shareText}\n${shareUrl}`, '📋 박지 공유 정보가 복사되었습니다! 카카오톡 등에 붙여넣기 하세요 📤');
+      }
     }
 
     function refreshCurrentSpotPopup() {
@@ -2816,6 +2887,7 @@
           <div class="spot-action-line">
             ${ytList.slice(0, 2).map((url, i) => url?.trim() ? `<a href="javascript:void(0)" onclick="triggerSpotUnlock('${spot.id}', '${escapeHtml(cleanYouTubeUrl(url.trim()))}')" class="link-btn btn-yt btn-yt-wide">▶ YouTube 영상${ytList.length > 1 ? ` (${i + 1})` : ''}</a>` : '').join('')}
             ${spot.blogUrl?.trim() ? `<a href="${escapeHtml(spot.blogUrl.trim())}" target="_blank" rel="noopener noreferrer" class="link-btn btn-blog" onclick="event.stopPropagation();">📝 블로그</a>` : ''}
+            <button type="button" class="link-btn btn-share-spot" onclick="shareSpotCard('${spot.id}')">📤 공유</button>
             <a href="javascript:void(0)" onclick="triggerSpotUnlock('${spot.id}', '${instaLink}')" class="link-btn btn-insta" title="등록자 인스타그램">
               <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
               등록자
@@ -3232,7 +3304,7 @@
       else if (!e.target.value.trim()) showTopRankings(mode);
     }
 
-    /* 🚀 [마커 풀링 & 마커 클러스터링 동기화 렌더링 엔진] */
+    /* 🚀 [마커 풀링 & 3단계 대형 클러스터링 렌더링 엔진] */
     function renderSpots(forceOpenRegion = null) {
       const openedRegions = new Set();
       document.querySelectorAll('.region-group').forEach(group => {
@@ -3330,7 +3402,6 @@
 
         const sId = String(spot.id);
 
-        // 상태/개인화 필터
         if (currentStatusFilter === 'NEW' && !spot.isNew) {
           const m = spotMarkerMap.get(sId);
           if (m) m.setMap(null);
@@ -3352,7 +3423,6 @@
           return;
         }
 
-        // 지형 필터
         if (currentTerrainFilter !== 'ALL') {
           const tList = spot.terrain || [];
           const matched = tList.some(t => {
@@ -3372,7 +3442,6 @@
           }
         }
 
-        // 지역 필터
         if (currentRegionFilter !== 'ALL' && currentRegionFilter !== spot.region) {
           const m = spotMarkerMap.get(sId);
           if (m) m.setMap(null);
@@ -3392,7 +3461,7 @@
 
       document.getElementById('spotCount').innerText = `${visibleCount}개`;
 
-      // 🟢 마커 클러스터링 동기화
+      // 🟢 3단계 대형 네온 클러스터링 동기화
       if (typeof MarkerClustering !== 'undefined') {
         if (markerClustererInstance) {
           markerClustererInstance.setMap(null);
@@ -3403,14 +3472,16 @@
           map: map,
           markers: activeMarkers,
           disableClickZoom: false,
-          gridSize: 110,
-          icons: [{
-            content: '<div class="custom-cluster-marker"></div>',
-            size: new naver.maps.Size(36, 36),
-            anchor: new naver.maps.Point(18, 18)
-          }],
+          gridSize: 120,
+          icons: [
+            { content: '<div class="custom-cluster-marker cluster-sm"></div>', size: new naver.maps.Size(44, 44), anchor: new naver.maps.Point(22, 22) },
+            { content: '<div class="custom-cluster-marker cluster-md"></div>', size: new naver.maps.Size(50, 50), anchor: new naver.maps.Point(25, 25) },
+            { content: '<div class="custom-cluster-marker cluster-lg"></div>', size: new naver.maps.Size(58, 58), anchor: new naver.maps.Point(29, 29) }
+          ],
+          indexGenerator: [10, 30],
           stylingFunction: function(clusterMarker, count) {
-            clusterMarker.getElement().querySelector('.custom-cluster-marker').innerText = count;
+            const el = clusterMarker.getElement().querySelector('.custom-cluster-marker');
+            if (el) el.innerText = count;
           }
         });
       }
