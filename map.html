@@ -27,7 +27,7 @@
       --bg-card: #0e131d;
       --bg-card-hover: #151c2a;
       --border: rgba(255, 255, 255, 0.08);
-      --border-glow: rgba(56, 189, 248, 0.35);
+      --border-titanium: rgba(255, 255, 255, 0.14);
       --border-subtle: #1a2233;
       --text-primary: #f8fafc;
       --text-secondary: #cbd5e1;
@@ -46,9 +46,9 @@
       --z-header: 500;
       --z-sidebar-btn: 600;
       --z-sidebar: 700;
-      --z-dock: 800;
+      --z-dock: 900;
       --z-bottomsheet: 850;
-      --z-dropdown: 900;
+      --z-dropdown: 950;
       --z-modal: 1000;
       --z-toast: 2000;
     }
@@ -77,21 +77,20 @@
       letter-spacing: -0.02em;
     }
     
-    /* 🧭 1. 상단 헤더 (모바일 소형 화면 텍스트 짤림 방지 완벽 재밸런싱) */
+    /* 🧭 1. 상단 헤더 */
     .header {
       width: 100%;
-      background: rgba(3, 5, 8, 0.96);
+      background: rgba(3, 5, 8, 0.98);
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 6px 14px;
       padding-top: calc(6px + env(safe-area-inset-top, 0px));
       z-index: var(--z-header);
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
       border-bottom: 1px solid var(--border);
       user-select: none;
       flex-shrink: 0;
-      min-height: 52px;
+      min-height: 50px;
     }
     .header-row-1 {
       display: flex;
@@ -175,13 +174,12 @@
       background: rgba(244, 63, 94, 0.25);
       border-color: var(--accent-rose);
       color: #ffffff !important;
-      box-shadow: 0 0 12px rgba(244, 63, 94, 0.4);
     }
     .header-drone-toggle-btn.active {
       background: linear-gradient(135deg, #e11d48, #be123c) !important;
       color: #ffffff !important;
       border-color: #fda4af !important;
-      box-shadow: 0 0 16px rgba(225, 29, 72, 0.6);
+      box-shadow: 0 0 14px rgba(225, 29, 72, 0.6);
     }
 
     .header-btn {
@@ -196,19 +194,19 @@
       transition: all 0.2s;
       white-space: nowrap;
     }
-    .header-btn:hover { background: var(--bg-card-hover); color: #ffffff; border-color: var(--accent-blue); }
+    .header-btn:hover { background: var(--bg-card-hover); color: #ffffff; border-color: var(--border-titanium); }
 
     .admin-only-btn { display: none; background: rgba(13, 148, 136, 0.2); color: var(--accent-teal); border-color: rgba(45, 212, 191, 0.4); }
     .admin-only-btn:hover { background: rgba(13, 148, 136, 0.4); color: #fff; }
 
     /* 🔍 PC 검색창 */
-    .pc-search-container { position: relative; display: flex; align-items: center; width: 300px; }
+    .pc-search-container { position: relative; display: flex; align-items: center; width: 290px; }
     .search-input {
       width: 100%;
       padding: 7px 54px 7px 13px;
       min-height: 35px;
       border-radius: 18px;
-      border: 1.2px solid rgba(56, 189, 248, 0.25);
+      border: 1.2px solid var(--border-titanium);
       background: var(--bg-surface);
       color: #fff;
       font-size: 0.82rem;
@@ -216,7 +214,7 @@
       transition: all 0.2s ease;
     }
     .search-input::placeholder { color: var(--text-muted); font-size: 0.76rem; }
-    .search-input:focus { border-color: var(--accent-blue); background: #05070c; box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
+    .search-input:focus { border-color: var(--accent-blue); background: #05070c; }
     
     .search-clear-btn {
       position: absolute;
@@ -256,7 +254,7 @@
     /* 드롭다운 */
     .search-dropdown {
       position: absolute;
-      top: 42px;
+      top: 40px;
       left: 0; right: 0;
       background: rgba(9, 12, 19, 0.98);
       color: var(--text-primary);
@@ -267,7 +265,7 @@
       overflow-y: auto;
       display: none;
       z-index: var(--z-dropdown);
-      border: 1px solid var(--border-glow);
+      border: 1px solid var(--border-titanium);
     }
     .dropdown-header {
       padding: 8px 12px;
@@ -313,12 +311,68 @@
     .top-spot-views { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
     .btn-quick-add { background: #0f766e; color: #ffffff; border: none; border-radius: 4px; padding: 3px 6px; font-size: 0.68rem; font-weight: 700; cursor: pointer; display: none; }
 
+    /* 📱 모바일 상단 일체형 검색 독 (Header와 마진 0px 일체화) */
+    .mobile-top-search-dock {
+      display: none;
+      width: 100%;
+      background: rgba(3, 5, 8, 0.98);
+      border-bottom: 1px solid var(--border);
+      padding: 6px 10px;
+      z-index: var(--z-header);
+      flex-shrink: 0;
+      position: relative;
+    }
+    .mobile-search-inner {
+      position: relative;
+      width: 100%;
+      display: flex;
+      align-items: center;
+    }
+    .mobile-search-input {
+      width: 100%;
+      height: 36px;
+      padding: 5px 62px 5px 14px;
+      border-radius: 18px;
+      border: 1px solid var(--border-titanium);
+      background: var(--bg-surface);
+      color: #ffffff;
+      font-size: 0.82rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .mobile-search-input::placeholder { color: var(--text-muted); font-size: 0.76rem; }
+    .mobile-search-input:focus {
+      background: #000000;
+      border-color: var(--accent-blue);
+    }
+    .mobile-search-clear-btn {
+      right: 32px !important;
+      width: 18px !important;
+      height: 18px !important;
+      font-size: 0.65rem !important;
+    }
+    .mobile-search-btn {
+      position: absolute;
+      right: 10px;
+      background: none;
+      border: none;
+      color: var(--accent-blue);
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 3px;
+      z-index: 5;
+    }
+    .mobile-search-dropdown {
+      top: 44px !important;
+      left: 10px !important;
+      right: 10px !important;
+    }
+
     /* 메인 컨테이너 */
     .container {
       display: flex;
       width: 100%;
       flex: 1;
-      height: calc(100% - 52px);
       position: relative;
       overflow: hidden;
       overflow-x: hidden !important;
@@ -350,7 +404,7 @@
       width: 22px;
       height: 48px;
       background: rgba(9, 12, 19, 0.95);
-      border: 1px solid var(--border-glow);
+      border: 1px solid var(--border-titanium);
       border-left: none;
       border-radius: 0 6px 6px 0;
       color: var(--accent-blue);
@@ -415,11 +469,15 @@
     }
     .header-insta-badge svg { width: 10px; height: 10px; fill: #ffffff; flex-shrink: 0; }
 
+    /* 🔑 숨은 관리자 트리거: 7회 탭 */
     .version-tag {
       font-size: 0.7rem;
       font-weight: 600;
       color: var(--text-muted);
       user-select: none;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
     }
     .sheet-edit-link {
       display: none;
@@ -687,187 +745,54 @@
 
     #map { flex: 1; height: 100%; position: relative; background: var(--bg-deep); touch-action: pan-x pan-y; }
     
-    /* 💻 PC 전용 초슬림 범례 */
-    .pc-map-legend-bar {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(9, 12, 19, 0.92);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 4px 9px;
-      z-index: var(--z-hud);
-      display: flex;
-      flex-direction: row;
-      gap: 6px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-      user-select: none;
-      cursor: default;
-      pointer-events: auto;
-    }
-    .legend-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 0.64rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-      letter-spacing: -0.02em;
-    }
-    .legend-dot { width: 5px; height: 5px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-    .dot-green { background: #10b981; }
-    .dot-yellow { background: #f59e0b; }
-    .dot-red { background: #f43f5e; }
-
-    /* 📱 모바일 전용 플로팅 검색창 */
-    .mobile-floating-search {
-      display: none;
-      position: absolute;
-      top: 4px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: calc(100% - 16px);
-      max-width: 440px;
-      z-index: var(--z-hud);
-    }
-    .mobile-search-inner {
-      position: relative;
-      width: 100%;
-      display: flex;
-      align-items: center;
-    }
-    .mobile-search-input {
-      width: 100%;
-      height: 38px;
-      padding: 5px 60px 5px 14px;
-      border-radius: 19px;
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      background: rgba(9, 12, 19, 0.88);
-      color: #ffffff;
-      font-size: 0.84rem;
-      outline: none;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
-      transition: all 0.2s ease;
-    }
-    .mobile-search-input::placeholder { color: rgba(203, 213, 225, 0.7); }
-    .mobile-search-input:focus {
-      background: rgba(3, 5, 8, 0.95);
-      border-color: var(--accent-blue);
-    }
-    .mobile-search-clear-btn {
-      right: 34px !important;
-      width: 18px !important;
-      height: 18px !important;
-      font-size: 0.68rem !important;
-    }
-    .mobile-search-btn {
-      position: absolute;
-      right: 10px;
-      background: none;
-      border: none;
-      color: var(--accent-blue);
-      font-size: 0.95rem;
-      cursor: pointer;
-      padding: 3px;
-      z-index: 5;
-    }
-    .mobile-search-dropdown {
-      top: 42px !important;
-      left: 0 !important;
-      right: 0 !important;
-    }
-
-    /* 🗺️ 7. 일반 / 위성 세로 전환 바 (우측 중하단 손이 닿는 최적 위치) */
-    .hud-map-type-vertical {
-      display: none;
-      position: absolute;
-      bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 52px);
-      right: 8px;
-      z-index: var(--z-hud);
-      flex-direction: column;
-      gap: 3px;
-      background: rgba(9, 12, 19, 0.92);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 3px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    }
-    .map-type-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-secondary);
-      font-size: 0.68rem;
-      font-weight: 700;
-      padding: 6px 3px;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: all 0.15s;
-      outline: none;
-      writing-mode: vertical-rl;
-      text-orientation: upright;
-      letter-spacing: 1px;
-      line-height: 1;
-      text-align: center;
-      width: 19px;
-    }
-    .map-type-btn:hover { color: #fff; }
-    .map-type-btn.active {
-      background: #0284c7;
-      color: #ffffff;
-    }
-
     /* ========================================================
-       🎯 6. 하단 3대 플로팅 HUD (1:1:1 완벽 대칭 단일 캡슐 바)
+       🕹️ 4. 우측 엄지 컨트롤 타워 (1:1:1 동일 규격 일체형 세로 바)
        ======================================================== */
-    .hud-bottom-bar {
-      display: none;
+    .hud-control-tower {
       position: absolute;
-      bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 8px);
-      left: 8px;
-      right: 8px;
+      bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 12px);
+      right: 10px;
       z-index: var(--z-hud);
-      height: 34px;
-      background: rgba(9, 12, 19, 0.92);
-      border: 1px solid var(--border-glow);
-      border-radius: 17px;
-      align-items: center;
-      justify-content: space-between;
-      padding: 2px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.75);
-      gap: 4px;
-    }
-    .hud-bar-item {
-      flex: 1;
-      height: 100%;
-      background: transparent;
-      border: 1px solid transparent;
-      border-radius: 14px;
       display: flex;
+      flex-direction: column;
+      background: rgba(9, 12, 19, 0.94);
+      border: 1px solid var(--border-titanium);
+      border-radius: 12px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.75);
+      overflow: hidden;
+      width: 38px;
+    }
+    .tower-btn {
+      width: 38px;
+      height: 38px;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+      font-size: 0.72rem;
+      font-weight: 800;
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: var(--text-secondary);
       cursor: pointer;
-      white-space: nowrap;
-      text-align: center;
-      padding: 0 4px;
       transition: all 0.15s ease;
       user-select: none;
+      padding: 0;
+      gap: 1px;
     }
-    .hud-bar-item:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
-    .hud-drone-item {
-      border-color: rgba(244, 63, 94, 0.35);
-      background: rgba(244, 63, 94, 0.08);
-      color: #fecdd3;
+    .tower-btn:last-child { border-bottom: none; }
+    .tower-btn:hover { background: rgba(255, 255, 255, 0.08); color: #ffffff; }
+    .tower-btn.active {
+      background: rgba(2, 132, 199, 0.3) !important;
+      color: #38bdf8 !important;
     }
-    .hud-drone-item.active {
+    .tower-drone-btn.active {
       background: linear-gradient(135deg, #e11d48, #be123c) !important;
       color: #ffffff !important;
-      border-color: #fda4af !important;
-      box-shadow: 0 0 12px rgba(225, 29, 72, 0.7);
     }
+    .tower-btn-icon { font-size: 0.85rem; line-height: 1; }
+    .tower-btn-text { font-size: 0.58rem; font-weight: 700; line-height: 1; letter-spacing: -0.03em; }
 
     .pin-picker-banner {
       display: none;
@@ -899,7 +824,7 @@
     }
 
     /* ========================================================
-       📍 4. 마커 래퍼 & 긴 이름 2단 물리적 분리 스마트 칩
+       📍 5. 마커 래퍼 & 30% 슬림화 스마트 2단 분할 칩
        ======================================================== */
     .custom-spot-marker-wrap {
       position: relative;
@@ -912,63 +837,87 @@
       z-index: 100;
     }
 
+    /* 펄스 링 애니메이션 */
+    .custom-spot-marker-wrap.active-marker::before {
+      content: '';
+      position: absolute;
+      bottom: 2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(56, 189, 248, 0.35);
+      animation: markerPulseRing 1.8s infinite ease-out;
+      z-index: -1;
+      pointer-events: none;
+    }
+    @keyframes markerPulseRing {
+      0% { transform: translateX(-50%) scale(0.6); opacity: 0.9; }
+      100% { transform: translateX(-50%) scale(1.9); opacity: 0; }
+    }
+
     .marker-label-chip {
       display: none;
       position: absolute;
-      bottom: calc(100% + 5px);
+      bottom: calc(100% + 4px);
       left: 50%;
       transform: translateX(-50%);
       background: rgba(9, 12, 19, 0.96);
-      border: 1px solid rgba(56, 189, 248, 0.5);
+      border: 1px solid var(--border-titanium);
       color: #ffffff;
-      padding: 4px 8px;
-      border-radius: 8px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.85);
-      min-width: 60px;
-      max-width: 140px;
+      padding: 2px 6px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.85);
+      min-width: 48px;
+      max-width: 105px;
       width: max-content;
       text-align: center;
       pointer-events: none;
       z-index: 1000;
       flex-direction: column;
-      gap: 2px;
+      gap: 1px;
       transition: all 0.15s ease;
     }
 
-    /* 호버 또는 박지 선택 시 마커 위 이름 칩 상시 노출 */
+    /* 선택되거나 호버된 마커는 이름 칩 상시 고정 노출 */
     .marker-label-chip.show-chip,
     .custom-spot-marker-wrap.active-marker .marker-label-chip,
     .custom-spot-marker-wrap:hover .marker-label-chip {
       display: flex !important;
-      transform: translateX(-50%) scale(1.04);
+      transform: translateX(-50%) scale(1.02);
       border-color: var(--accent-blue);
     }
     
-    .chip-name-row {
-      font-size: 0.72rem;
+    .chip-name-main {
+      font-size: 0.60rem;
       font-weight: 800;
       color: #f8fafc;
-      line-height: 1.25;
+      line-height: 1.2;
       word-break: break-word;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      text-align: center;
+    }
+    .chip-name-sub {
+      font-size: 0.52rem;
+      color: #94a3b8;
+      line-height: 1.15;
+      word-break: break-word;
       text-align: center;
     }
     .chip-sub-row {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
-      font-size: 0.64rem;
+      gap: 3px;
+      font-size: 0.54rem;
       font-weight: 700;
+      margin-top: 1px;
     }
     .marker-label-elev { color: #86efac; }
-    .chip-clear-badge { color: #fde047; background: rgba(245, 158, 11, 0.2); padding: 1px 4px; border-radius: 3px; }
+    .chip-clear-badge { color: #fde047; background: rgba(245, 158, 11, 0.2); padding: 0.5px 3px; border-radius: 2px; }
     .marker-svg-icon { display: block; }
 
-    /* 🖥️ PC 팝업창 규격 */
+    /* 🖥️ PC 팝업창 규격 (다크 티타늄 톤앤매너) */
     .compact-info-window {
       padding: 12px 14px;
       width: min(330px, calc(100vw - 32px)) !important;
@@ -983,7 +932,7 @@
       background: rgba(9, 12, 19, 0.98) !important;
       color: var(--text-primary);
       border-radius: 14px !important;
-      border: 1px solid var(--border-glow) !important;
+      border: 1px solid var(--border-titanium) !important;
       box-shadow: 0 16px 36px rgba(0, 0, 0, 0.85) !important;
       word-break: break-word;
       z-index: var(--z-modal) !important;
@@ -1060,11 +1009,11 @@
       gap: 3px;
       background: rgba(14, 165, 233, 0.15);
       color: #7dd3fc;
-      border: 1px solid rgba(56, 189, 248, 0.3);
+      border: 1px solid rgba(56, 189, 248, 0.25);
     }
-    .weather-wind-safe { background: rgba(34, 197, 94, 0.15); color: #86efac; border-color: rgba(74, 222, 128, 0.3); }
-    .weather-wind-warn { background: rgba(234, 179, 8, 0.15); color: #fde047; border-color: rgba(250, 204, 21, 0.3); }
-    .weather-wind-danger { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border-color: rgba(248, 113, 113, 0.3); }
+    .weather-wind-safe { background: rgba(34, 197, 94, 0.15); color: #86efac; border-color: rgba(74, 222, 128, 0.25); }
+    .weather-wind-warn { background: rgba(234, 179, 8, 0.15); color: #fde047; border-color: rgba(250, 204, 21, 0.25); }
+    .weather-wind-danger { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border-color: rgba(248, 113, 113, 0.25); }
 
     /* ⭐ 백패커 개인화 툴바 (찜/클리어) */
     .user-personal-action-bar {
@@ -1127,7 +1076,7 @@
     .entry-lock-overlay {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(9, 12, 19, 0.72);
+      background: rgba(9, 12, 19, 0.75);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -1145,7 +1094,7 @@
       transition: all 0.2s;
     }
     .entry-lock-overlay:hover {
-      background: rgba(9, 12, 19, 0.85);
+      background: rgba(9, 12, 19, 0.88);
       border-color: var(--accent-rose);
     }
     .entry-lock-overlay.counting {
@@ -1175,7 +1124,7 @@
       font-size: 0.8rem;
       color: #7dd3fc;
       background: rgba(2, 132, 199, 0.15);
-      border: 1px solid rgba(56, 189, 248, 0.3);
+      border: 1px solid rgba(56, 189, 248, 0.25);
       padding: 6px 9px;
       border-radius: 8px;
       flex: 1;
@@ -1201,7 +1150,7 @@
       white-space: nowrap;
       transition: all 0.15s;
     }
-    .btn-copy-address:hover { background: var(--bg-card-hover); color: #fff; border-color: var(--accent-blue); }
+    .btn-copy-address:hover { background: var(--bg-card-hover); color: #fff; border-color: var(--border-titanium); }
 
     .entry-guide-chip {
       font-size: 0.72rem;
@@ -1278,9 +1227,9 @@
       user-select: none;
       white-space: nowrap;
     }
-    .drone-ok { background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid rgba(74, 222, 128, 0.3); }
-    .drone-warn { background: rgba(234, 179, 8, 0.15); color: #fde047; border: 1px solid rgba(250, 204, 21, 0.3); }
-    .drone-no { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(248, 113, 113, 0.3); }
+    .drone-ok { background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid rgba(74, 222, 128, 0.25); }
+    .drone-warn { background: rgba(234, 179, 8, 0.15); color: #fde047; border: 1px solid rgba(250, 204, 21, 0.25); }
+    .drone-no { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(248, 113, 113, 0.25); }
 
     .instant-tooltip-box::after {
       content: attr(data-tooltip);
@@ -1298,7 +1247,7 @@
       padding: 5px 8px;
       border-radius: 6px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.8);
-      border: 1px solid var(--border-glow);
+      border: 1px solid var(--border-titanium);
       pointer-events: none;
       opacity: 0;
       visibility: hidden;
@@ -1309,7 +1258,7 @@
     }
     .instant-tooltip-box:hover::after { opacity: 1; visibility: visible; transform: translateY(0); }
 
-    /* 🔒 나만의 비공개 메모장 (액션 라인 아래로 재배치) */
+    /* 🔒 나만의 비공개 메모장 */
     .user-private-memo-box {
       margin-top: 4px;
       background: rgba(255, 255, 255, 0.02);
@@ -1421,7 +1370,7 @@
       bottom: calc(56px + env(safe-area-inset-bottom, 0px));
       max-height: 48dvh;
       background: rgba(9, 12, 19, 0.98);
-      border-top: 1.5px solid var(--border-glow);
+      border-top: 1.5px solid var(--border-titanium);
       border-radius: 20px 20px 0 0;
       z-index: var(--z-bottomsheet);
       box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.85);
@@ -1463,18 +1412,20 @@
       box-sizing: border-box !important;
     }
 
-    /* 📱 모바일 하단 네비 독 */
+    /* 📱 모바일 하단 네비 독 (영구 고정) */
     .mobile-bottom-dock {
       display: none;
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      background: rgba(3, 5, 8, 0.96);
+      background: rgba(3, 5, 8, 0.98);
       border-top: 1px solid var(--border);
       height: calc(56px + env(safe-area-inset-bottom, 0px));
       padding-bottom: env(safe-area-inset-bottom, 0px);
       z-index: var(--z-dock);
       justify-content: space-around;
       align-items: center;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
     }
     .dock-item {
       display: flex;
@@ -1503,7 +1454,7 @@
       left: 50%;
       transform: translateX(-50%) translateY(-15px);
       background: rgba(14, 19, 29, 0.96);
-      border: 1px solid var(--border-glow);
+      border: 1px solid var(--border-titanium);
       color: #ffffff;
       padding: 7px 16px;
       border-radius: 18px;
@@ -1586,7 +1537,7 @@
       display: flex;
       flex-direction: column;
       gap: 9px;
-      border: 1px solid var(--border-glow);
+      border: 1px solid var(--border-titanium);
     }
     .custom-modal h3 { font-size: 0.94rem; color: var(--accent-blue); font-weight: 700; }
     .modal-field { display: flex; flex-direction: column; gap: 2px; }
@@ -1613,27 +1564,29 @@
     .modal-btn-cancel { background: var(--bg-card); color: var(--text-secondary); }
     .modal-btn-save { background: #0f766e; color: #ffffff; }
 
-    /* 반응형 */
+    /* 반응형 미디어 쿼리 */
     @media (min-width: 769px) {
       .mobile-only { display: none !important; }
       .pc-only { display: flex !important; }
       .header-desktop-only { display: flex !important; }
-      .pc-map-legend-bar { display: flex !important; }
     }
 
     @media (max-width: 768px) {
-      .pc-only, .pc-sidebar-toggle-btn, .pc-map-legend-bar { display: none !important; }
-      .header { padding: 0 10px !important; height: 52px !important; justify-content: center !important; }
+      .pc-only, .pc-sidebar-toggle-btn { display: none !important; }
+      .header { padding: 0 10px !important; height: 50px !important; justify-content: center !important; }
       .header-row-1 { justify-content: center !important; }
       .main-title { font-size: 1.12rem !important; }
       .brand-sub-script { font-size: 1.05rem !important; }
 
-      .container { flex: 1 !important; height: calc(100% - 52px) !important; position: relative !important; }
+      .container { 
+        flex: 1 !important; 
+        height: calc(100% - 50px - 48px) !important; 
+        position: relative !important; 
+      }
       #map { position: absolute !important; top: 0; left: 0; right: 0; bottom: 0; width: 100% !important; height: 100% !important; }
 
       .mobile-only { display: flex !important; }
-      .mobile-floating-search { display: block !important; }
-      .hud-bottom-bar { display: flex !important; }
+      .mobile-top-search-dock { display: block !important; }
 
       .sidebar { 
         position: absolute; top: 0; left: 0; right: 0;
@@ -1688,6 +1641,16 @@
     </div>
   </header>
 
+  <!-- 📱 모바일 상단 일체형 검색 독 (Header 바로 밑 마진 0px 일체화) -->
+  <div class="mobile-top-search-dock mobile-only clean-hide">
+    <div class="mobile-search-inner">
+      <input type="text" id="mobileSearchInput" class="mobile-search-input" placeholder="산, 섬, 해변, 계곡, 박지 검색..." autocomplete="off" onfocus="showTopRankings('mobile')" oninput="handleSearchInputChange('mobile')" onkeyup="handleSearchInput(event, 'mobile')" />
+      <button type="button" id="mobileSearchClearBtn" class="search-clear-btn mobile-search-clear-btn" onclick="clearSearchInput('mobile', true)">✕</button>
+      <button type="button" class="mobile-search-btn" onclick="executeSearch('mobile')">🔍</button>
+    </div>
+    <ul id="mobileSearchDropdown" class="search-dropdown mobile-search-dropdown"></ul>
+  </div>
+
   <!-- 🗺️ 2. 메인 컨테이너 -->
   <div class="container">
     <aside class="sidebar collapsed clean-hide" id="sidebar">
@@ -1695,7 +1658,8 @@
         <div class="sidebar-header-left">
           <span>📍 박지 목록</span>
           <span id="spotCount" style="color: var(--accent-blue); font-size: 0.76rem; font-weight: 800;">0개</span>
-          <span class="version-tag" id="versionTagBtn">4.5ver Pro</span>
+          <!-- 🔑 숨은 관리자 트리거: 7회 탭 -->
+          <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagAdminClick()">4.5ver Pro</span>
         </div>
 
         <div class="sidebar-header-actions">
@@ -1714,7 +1678,7 @@
         <input type="file" id="importFileInput" style="display:none" accept=".json" onchange="importDataBackup(event)" />
       </div>
       
-      <!-- 🏷️ 8. 3단 필터 바 -->
+      <!-- 🏷️ 3단 필터 바 -->
       <div class="filter-wrapper">
         <div class="status-filter-bar" id="statusFilterBar">
           <span class="filter-label">분류</span>
@@ -1758,43 +1722,26 @@
     </div>
     
     <main id="map">
-      <!-- 💻 ① PC 전용 초슬림 범례 (좌측 상단) -->
-      <div class="pc-map-legend-bar pc-only clean-hide" onclick="handleLegendAdminClick()">
-        <div class="legend-item"><span class="legend-dot dot-green"></span> 쉬움</div>
-        <div class="legend-item"><span class="legend-dot dot-yellow"></span> 보통</div>
-        <div class="legend-item"><span class="legend-dot dot-red"></span> 어려움</div>
-      </div>
-
-      <!-- 📱 모바일 전용 플로팅 검색창 -->
-      <div class="mobile-floating-search mobile-only clean-hide">
-        <div class="mobile-search-inner">
-          <input type="text" id="mobileSearchInput" class="mobile-search-input" placeholder="산, 섬, 해변, 계곡, 박지 검색..." autocomplete="off" onfocus="showTopRankings('mobile')" oninput="handleSearchInputChange('mobile')" onkeyup="handleSearchInput(event, 'mobile')" />
-          <button type="button" id="mobileSearchClearBtn" class="search-clear-btn mobile-search-clear-btn" onclick="clearSearchInput('mobile', true)">✕</button>
-          <button type="button" class="mobile-search-btn" onclick="executeSearch('mobile')">🔍</button>
-        </div>
-        <ul id="mobileSearchDropdown" class="search-dropdown mobile-search-dropdown"></ul>
-      </div>
-
-      <!-- 🗺️ 7. 일반 / 위성 전환 바 (우측 중하단 엄지손가락 위치) -->
-      <div class="hud-map-type-vertical mobile-only clean-hide">
-        <button type="button" class="map-type-btn active" id="btnMapNormal" onclick="setMapType('NORMAL')">일반</button>
-        <button type="button" class="map-type-btn" id="btnMapHybrid" onclick="setMapType('HYBRID')">위성</button>
-      </div>
-
       <!-- ========================================================
-           🎯 6. 하단 3대 플로팅 HUD (1:1:1 완벽 대칭 단일 캡슐 바)
+           🕹️ 4. 우측 엄지 컨트롤 타워 (1:1:1 동일 규격 세로 일체형 바)
            ======================================================== -->
-      <div class="hud-bottom-bar mobile-only clean-hide">
-        <div class="hud-bar-item" onclick="handleLegendAdminClick()" title="난이도 범례">
-          <span class="legend-dot dot-green"></span> 쉬움
-          <span class="legend-dot dot-yellow"></span> 보통
-          <span class="legend-dot dot-red"></span> 어려움
-        </div>
-        <button type="button" class="hud-bar-item" onclick="locateUserPosition()" title="현재 내 위치로 이동">
-          📍 내 위치
+      <div class="hud-control-tower clean-hide">
+        <!-- 1번: 일반 / 위성 원터치 전환 -->
+        <button type="button" class="tower-btn" id="towerBtnMapType" onclick="toggleMapTypeMode()" title="일반/위성 지도 전환">
+          <span class="tower-btn-icon" id="towerMapTypeIcon">🗺️</span>
+          <span class="tower-btn-text" id="towerMapTypeText">위성</span>
         </button>
-        <button type="button" class="hud-bar-item hud-drone-item" id="mobileDroneBtn" onclick="toggleDroneOverlay()" title="드론 비행금지구역 확인">
-          🛸 드론 규제
+
+        <!-- 2번: 드론 비행금지구역 토글 -->
+        <button type="button" class="tower-btn tower-drone-btn" id="mobileDroneBtn" onclick="toggleDroneOverlay()" title="드론 비행금지구역 확인">
+          <span class="tower-btn-icon">🛸</span>
+          <span class="tower-btn-text">드론</span>
+        </button>
+
+        <!-- 3번: 내 위치 GPS 탐색 -->
+        <button type="button" class="tower-btn" onclick="locateUserPosition()" title="현재 내 위치로 이동">
+          <span class="tower-btn-icon">📍</span>
+          <span class="tower-btn-text">내위치</span>
         </button>
       </div>
 
@@ -1813,7 +1760,7 @@
     <div class="sheet-content" id="mobileSheetContent"></div>
   </div>
 
-  <!-- 📱 모바일 하단 네비 독 -->
+  <!-- 📱 모바일 하단 네비 독 (영구 고정) -->
   <div class="mobile-bottom-dock">
     <a href="index.html" class="dock-item" title="포털 메인 홈으로 이동">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -1982,10 +1929,19 @@
       </div>
     </div>
   </div>
-  이어서 완성되는 [2부] 자바스크립트(Script) 전체 코드입니다.
-1부 코드 바로 아래에 이어서 붙여넣어 주시면 완성됩니다.
+  1부 코드 바로 뒤에 이어서 붙여넣으시면 완성되는 [2부] JavaScript 전체 완성 코드입니다.
 
-📦 [2부] JavaScript 전체 로직 및 스와이프·LNT·마커 고정 연동
+🌟 2부 주요 반영 사항
+
+1.  스마트 텍스트 파서 (formatSpotMarkerTitle): (, [, -, ~, / 등의 특수문자나 긴 띄어쓰기를 자동
+    분석하여 1단 [본명칭]과 2단 [부연설명]으로 깔끔하게 줄바꿈 분리.
+2.  우측 엄지 컨트롤 타워 연동 (toggleMapTypeMode): [일반/위성] 원터치 전환, [🛸 드론] 토글, [📍 내위치] GPS
+    탐색이 38px 동일 규격 수직 바에 완벽 연결.
+3.  숨은 관리자 모드: 사이드바 상단 4.5ver Pro 버전 태그 7회 연속 탭 시 관리자 모드 토글.
+4.  네이버 지도 축척 간섭 방지: scaleControl: false 기본 적용.
+5.  모바일 바텀시트 스와이프 다운 닫기 (Drag to Close) 제스처 및 액션 라인 전진 배치.
+
+📦 [2부] JavaScript 전체 로직 코드
 
   <script>
     const BASE_VERSION_NUM = 4.5;
@@ -2053,6 +2009,26 @@
       if (!query) return 'https://map.naver.com';
       const cleanQ = String(query).replace(/\s+/g, ' ').trim();
       return `https://map.naver.com/p/search/${encodeURIComponent(cleanQ)}`;
+    }
+
+    /* 🏷️ 마커 위 산 이름 스마트 2단 분할 파서 */
+    function formatSpotMarkerTitle(name) {
+      if (!name) return { main: '무명 박지', sub: '' };
+      const str = String(name).trim();
+      
+      // 1. 특수문자 (, [, -, ~, /, : 가 감지되면 분할
+      const match = str.match(/^(.*?)([\(\[\-\~\/\:].*)$/);
+      if (match && match[1].trim()) {
+        return { main: match[1].trim(), sub: match[2].trim() };
+      }
+      
+      // 2. 특수문자는 없지만 6자 초과이고 띄어쓰기가 있는 경우 첫 띄어쓰기 기준 분할
+      if (str.length > 6 && str.includes(' ')) {
+        const parts = str.split(' ');
+        return { main: parts[0].trim(), sub: parts.slice(1).join(' ').trim() };
+      }
+      
+      return { main: str, sub: '' };
     }
 
     /* 🛡️ 대한민국 전수 드론 비행금지 및 군사/공항 관제공역 */
@@ -2147,6 +2123,7 @@
     let isDroneOverlayOn = false;
     let isPcSidebarCollapsed = false;
     let droneOverlays = [];
+    let currentMapTypeMode = 'NORMAL';
     
     let currentStatusFilter = 'ALL';
     let currentRegionFilter = 'ALL';
@@ -2168,12 +2145,12 @@
     let modalPendingData = { lat: 0, lng: 0, droneStatus: 'ok', address: '' };
     let isPickingLocationMode = false;
 
-    // 🗺️ 네이버 지도 객체
+    // 🗺️ 네이버 지도 객체 (축척 겹침 방지: scaleControl: false)
     const map = new naver.maps.Map('map', {
       center: DEFAULT_MAP_CENTER,
       zoom: DEFAULT_MAP_ZOOM,
-      mapTypeControl: window.innerWidth > 768,
-      mapTypeControlOptions: { position: naver.maps.Position.TOP_RIGHT, style: naver.maps.MapTypeControlStyle.BUTTON },
+      mapTypeControl: false,
+      scaleControl: false,
       zoomControl: true,
       zoomControlOptions: { position: naver.maps.Position.RIGHT_CENTER }
     });
@@ -2214,7 +2191,7 @@
       initBottomSheetSwipeGesture();
     });
 
-    /* 📱 모바일 바텀시트 스와이프 다운 닫기(Drag to Close) 제스처 */
+    /* 📱 모바일 바텀시트 스와이프 다운 닫기 (Drag to Close) */
     function initBottomSheetSwipeGesture() {
       const sheet = document.getElementById('mobileBottomSheet');
       const handleArea = document.getElementById('sheetHandleArea');
@@ -2255,17 +2232,17 @@
       });
     }
 
-    /* 🔑 [범례 7회 클릭 트리거] 관리자 모드 토글 */
-    let legendAdminClickCount = 0;
-    let legendAdminTimer = null;
-    function handleLegendAdminClick() {
-      legendAdminClickCount++;
-      clearTimeout(legendAdminTimer);
-      legendAdminTimer = setTimeout(() => {
-        if (legendAdminClickCount >= 7) {
+    /* 🔑 [숨은 관리자 트리거: 버전 태그 7회 탭] */
+    let versionAdminClickCount = 0;
+    let versionAdminTimer = null;
+    function handleVersionTagAdminClick() {
+      versionAdminClickCount++;
+      clearTimeout(versionAdminTimer);
+      versionAdminTimer = setTimeout(() => {
+        if (versionAdminClickCount >= 7) {
           toggleAdminMode();
         }
-        legendAdminClickCount = 0;
+        versionAdminClickCount = 0;
       }, 500);
     }
 
@@ -2323,6 +2300,29 @@
       if (visitedBtn) visitedBtn.innerText = `🚩 클리어 (${userVisited.size})`;
     }
 
+    /* 🕹️ 우측 컨트롤 타워: 일반/위성 원터치 전환 */
+    function toggleMapTypeMode() {
+      const iconEl = document.getElementById('towerMapTypeIcon');
+      const textEl = document.getElementById('towerMapTypeText');
+      const btnEl = document.getElementById('towerBtnMapType');
+
+      if (currentMapTypeMode === 'NORMAL') {
+        currentMapTypeMode = 'HYBRID';
+        map.setMapTypeId(naver.maps.MapTypeId.HYBRID);
+        if (iconEl) iconEl.innerText = '🛰️';
+        if (textEl) textEl.innerText = '일반';
+        if (btnEl) btnEl.classList.add('active');
+        showToast('🛰️ 위성 하이브리드 지도로 전환');
+      } else {
+        currentMapTypeMode = 'NORMAL';
+        map.setMapTypeId(naver.maps.MapTypeId.NORMAL);
+        if (iconEl) iconEl.innerText = '🗺️';
+        if (textEl) textEl.innerText = '위성';
+        if (btnEl) btnEl.classList.remove('active');
+        showToast('🗺️ 일반 지도로 전환');
+      }
+    }
+
     /* 📍 GPS 내 위치 탐색 */
     function locateUserPosition() {
       if (!navigator.geolocation) {
@@ -2341,9 +2341,9 @@
               map: map,
               icon: {
                 content: `
-                  <div style="width:22px; height:22px; border-radius:50%; background:#0284c7; border:3px solid #ffffff; box-shadow:0 0 16px rgba(2,132,199,0.9);"></div>
+                  <div style="width:20px; height:20px; border-radius:50%; background:#0284c7; border:3px solid #ffffff; box-shadow:0 0 14px rgba(2,132,199,0.9);"></div>
                 `,
-                anchor: new naver.maps.Point(11, 11)
+                anchor: new naver.maps.Point(10, 10)
               },
               zIndex: 99999
             });
@@ -2362,39 +2362,41 @@
       );
     }
 
-    /* 🏕️ 4. 마커 생성 & 선택 시 상시 고정 2단 이름 칩 */
+    /* 🏕️ 마커 생성: 30% 슬림화 & 스마트 2단 분할 칩 */
     function createCustomMarkerIcon(spot, isDetailed = false) {
       const isMobile = window.innerWidth <= 768;
       const d = parseInt(spot.difficulty, 10) || 3;
       const color = d <= 2 ? '#10b981' : (d >= 4 ? '#f43f5e' : '#f59e0b');
       const isDone = userVisited.has(String(spot.id));
       const isActive = (currentActiveSpot && String(currentActiveSpot.id) === String(spot.id));
+      const { main, sub } = formatSpotMarkerTitle(spot.name);
 
-      // 저배율 && 비활성 마커 ➡️ 12px 네온 닷
+      // 저배율 && 비활성 마커 ➡️ 11px 네온 닷
       if (!isDetailed && !isActive) {
         return {
           content: `
-            <div style="position:relative; width:12px; height:12px; border-radius:50%; background:${color}; border:2px solid #ffffff; box-shadow:0 0 10px ${color}, 0 0 4px rgba(0,0,0,0.8); cursor:pointer; pointer-events:auto; transition:transform 0.15s ease;">
-              ${isDone ? `<div style="position:absolute; top:-3px; right:-3px; width:5px; height:5px; border-radius:50%; background:#fde047; border:1px solid #000;"></div>` : ''}
+            <div style="position:relative; width:11px; height:11px; border-radius:50%; background:${color}; border:2px solid #ffffff; box-shadow:0 0 8px ${color}, 0 0 4px rgba(0,0,0,0.8); cursor:pointer; pointer-events:auto; transition:transform 0.15s ease;">
+              ${isDone ? `<div style="position:absolute; top:-3px; right:-3px; width:4px; height:4px; border-radius:50%; background:#fde047; border:1px solid #000;"></div>` : ''}
             </div>
           `,
-          anchor: new naver.maps.Point(6, 6)
+          anchor: new naver.maps.Point(5.5, 5.5)
         };
       }
 
-      // 고배율 또는 현재 활성화된 마커 ➡️ 텐트 핀 & 상시 고정 2단 스마트 칩
-      const pinWidth = isMobile ? 32 : 36;
-      const pinHeight = isMobile ? 42 : 46;
+      // 고배율 또는 현재 활성화된 마커 ➡️ 텐트 핀 & 스마트 슬림 칩
+      const pinWidth = isMobile ? 30 : 34;
+      const pinHeight = isMobile ? 38 : 42;
 
       return {
         content: `
           <div class="custom-spot-marker-wrap ${isActive ? 'active-marker' : ''}">
             <div class="marker-label-chip ${isActive ? 'show-chip' : ''}">
-              <div class="chip-name-row">${escapeHtml(spot.name)}</div>
+              <div class="chip-name-main">${escapeHtml(main)}</div>
+              ${sub ? `<div class="chip-name-sub">${escapeHtml(sub)}</div>` : ''}
               ${(spot.elevation || isDone) ? `
                 <div class="chip-sub-row">
-                  ${spot.elevation ? `<span class="marker-label-elev">(${escapeHtml(spot.elevation)})</span>` : ''}
-                  ${isDone ? `<span class="chip-clear-badge">🚩 CLEAR</span>` : ''}
+                  ${spot.elevation ? `<span class="marker-label-elev">${escapeHtml(spot.elevation)}</span>` : ''}
+                  ${isDone ? `<span class="chip-clear-badge">🚩CLEAR</span>` : ''}
                 </div>
               ` : ''}
             </div>
@@ -2566,17 +2568,6 @@
       if (textEl) textEl.innerText = isOpen ? '목록닫기' : '박지목록';
       if (btn) btn.classList.toggle('active', isOpen);
       updateSmartResetButtons();
-    }
-
-    function setMapType(type) {
-      document.querySelectorAll('.map-type-btn').forEach(btn => btn.classList.remove('active'));
-      if (type === 'NORMAL') {
-        map.setMapTypeId(naver.maps.MapTypeId.NORMAL);
-        document.getElementById('btnMapNormal').classList.add('active');
-      } else if (type === 'HYBRID') {
-        map.setMapTypeId(naver.maps.MapTypeId.HYBRID);
-        document.getElementById('btnMapHybrid').classList.add('active');
-      }
     }
 
     function getSpotViews(spot) {
@@ -3111,7 +3102,6 @@
       }
     }
 
-    /* 🎬 상세 정보창 HTML 템플릿 (순서 교체: 들머리 ➔ 설명 ➔ 액션 라인 ➔ 메모장 ➔ 경고문 ➔ 댓글) */
     function generateDetailContentHtml(spot, isMobileSheet = false) {
       const { navAddress, guide } = parseEntryPoint(spot.entryPoint || spot.name);
       const searchTarget = navAddress || spot.name;
@@ -3817,7 +3807,7 @@
               </div>
             </div>
 
-            <!-- 사이드바 카드 내 찜/클리어 액션 버튼 -->
+            <!-- 사이드바 카드 내 원클릭 찜/클리어 액션 버튼 -->
             <div class="spot-card-quick-actions">
               <button type="button" class="btn-card-quick ${isFav ? 'active-fav' : ''}" onclick="toggleUserBookmark('${spot.id}', event)" title="찜하기 토글">
                 ${isFav ? '⭐ 찜' : '☆ 찜'}
@@ -4350,7 +4340,16 @@
       currentTerrainFilter = 'ALL';
       document.querySelectorAll('.terrain-filter-btn').forEach(b => b.classList.toggle('active', b.innerText.includes('전체')));
       filterByRegion('ALL');
-      setMapType('NORMAL');
+      
+      currentMapTypeMode = 'NORMAL';
+      map.setMapTypeId(naver.maps.MapTypeId.NORMAL);
+      const iconEl = document.getElementById('towerMapTypeIcon');
+      const textEl = document.getElementById('towerMapTypeText');
+      const btnEl = document.getElementById('towerBtnMapType');
+      if (iconEl) iconEl.innerText = '🗺️';
+      if (textEl) textEl.innerText = '위성';
+      if (btnEl) btnEl.classList.remove('active');
+
       collapseAllRegionAccordions();
       updateSmartResetButtons();
     }
@@ -4504,7 +4503,7 @@
     });
 
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('.pc-search-container') && !e.target.closest('.mobile-floating-search') && !e.target.closest('.custom-modal-overlay') && !e.target.closest('#pinPickerBanner')) {
+      if (!e.target.closest('.pc-search-container') && !e.target.closest('.mobile-top-search-dock') && !e.target.closest('.custom-modal-overlay') && !e.target.closest('#pinPickerBanner')) {
         document.getElementById('pcSearchDropdown').style.display = 'none';
         document.getElementById('mobileSearchDropdown').style.display = 'none';
       }
