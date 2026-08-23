@@ -1653,13 +1653,13 @@
   </div>
 
   <!-- 📱 모바일 전용 바텀 시트 -->
-  <div class="mobile-bottom-sheet clean-hide" id="mobileBottomSheet">
-    <div class="sheet-handle-bar" onclick="closeMobileBottomSheet()"></div>
-    <div class="sheet-content" id="mobileSheetContent"></div>
-  </div>
+  <div class="mobile-bottom-sheet" id="mobileBottomSheet">
+  <div class="sheet-handle-bar" onclick="closeMobileBottomSheet()"></div>
+  <div class="sheet-content" id="mobileSheetContent"></div>
+</div>
 
-  <!-- 📱 3. 모바일 하단 네비 독 -->
-  <div class="mobile-bottom-dock clean-hide">
+<!-- 📱 3. 모바일 하단 네비 독 -->
+<div class="mobile-bottom-dock">
     <a href="index.html" class="dock-item" title="포털 메인 홈으로 이동">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
       <span>홈</span>
@@ -2443,57 +2443,60 @@
       spotMarkerMap.forEach(m => m.setZIndex(100));
     }
 
-    function focusSpotOnMap(spot, keepZoom = false) {
-      incrementSpotCount(spot.id);
-      
-      document.getElementById('pcSearchDropdown').style.display = 'none';
-      document.getElementById('mobileSearchDropdown').style.display = 'none';
+    // ⬇️ [이 함수 전체를 그대로 덮어쓰기]
+function focusSpotOnMap(spot, keepZoom = false) {
+  incrementSpotCount(spot.id);
+  
+  document.getElementById('pcSearchDropdown').style.display = 'none';
+  document.getElementById('mobileSearchDropdown').style.display = 'none';
 
-      spotMarkerMap.forEach(m => m.setZIndex(100));
-      const marker = spotMarkerMap.get(String(spot.id));
-      if (marker) {
-        marker.setMap(map);
-        marker.setZIndex(999999);
-      }
+  spotMarkerMap.forEach(m => m.setZIndex(100));
+  const marker = spotMarkerMap.get(String(spot.id));
+  if (marker) {
+    marker.setMap(map);
+    marker.setZIndex(999999);
+  }
 
-      document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active-spot'));
-      const activeCard = document.getElementById(`spotItem_${spot.id}`);
-      if (activeCard) {
-        activeCard.classList.add('active-spot');
-        const container = activeCard.closest('.region-items-container');
-        if (container && container.style.display === 'none') {
-          container.style.display = 'block';
-        }
-        activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
+  document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active-spot'));
+  const activeCard = document.getElementById(`spotItem_${spot.id}`);
+  if (activeCard) {
+    activeCard.classList.add('active-spot');
+    const container = activeCard.closest('.region-items-container');
+    if (container && container.style.display === 'none') {
+      container.style.display = 'block';
+    }
+    activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 
-      currentActiveSpot = spot;
-      currentActiveMarker = marker || new naver.maps.LatLng(spot.lat, spot.lng);
+  currentActiveSpot = spot;
+  currentActiveMarker = marker || new naver.maps.LatLng(spot.lat, spot.lng);
 
-      const isMobile = window.innerWidth <= 768;
+  const isMobile = window.innerWidth <= 768;
 
-      if (isMobile) {
-        document.getElementById('sidebar').classList.add('collapsed');
-        updateDockSidebarText(false);
-        infoWindow.close();
-        openMobileBottomSheet(spot);
-      } else {
-        closeMobileBottomSheet();
-        infoWindow.setOptions({ pixelOffset: new naver.maps.Point(180, 145) });
-        infoWindow.setContent(`
-          <div class="compact-info-window" id="pcInfoWindowCard" style="position: relative;">
-            ${generateDetailContentHtml(spot, false)}
-          </div>
-        `);
-        infoWindow.open(map, currentActiveMarker);
-        
-        requestAnimationFrame(() => {
-          const pcCard = document.getElementById('pcInfoWindowCard');
-          if (pcCard) pcCard.scrollTop = 0;
-        });
-      }
+  if (isMobile) {
+    document.getElementById('sidebar').classList.add('collapsed');
+    updateDockSidebarText(false);
+    infoWindow.close();
+    openMobileBottomSheet(spot);
+  } else {
+    closeMobileBottomSheet();
+    // 📍 마커 핀 바로 위 정중앙에 정확히 뜨도록 위치 보정 (기존 180, 145 -> 0, -10)
+    infoWindow.setOptions({ pixelOffset: new naver.maps.Point(0, -10) });
+    infoWindow.setContent(`
+      <div class="compact-info-window" id="pcInfoWindowCard" style="position: relative;">
+        ${generateDetailContentHtml(spot, false)}
+      </div>
+    `);
+    infoWindow.open(map, currentActiveMarker);
+    
+    requestAnimationFrame(() => {
+      const pcCard = document.getElementById('pcInfoWindowCard');
+      if (pcCard) pcCard.scrollTop = 0;
+    });
+  }
 
-      smoothCenterMapOnSpot(spot.lat, spot.lng, keepZoom);
+  smoothCenterMapOnSpot(spot.lat, spot.lng, keepZoom);
+}
     }
 
     const spotUnlockTimers = {};
@@ -3696,37 +3699,42 @@
       } catch (err) {}
     }
 
-    function resetMapView() {
-      if (document.activeElement && typeof document.activeElement.blur === 'function') {
-        document.activeElement.blur();
-      }
+   // ⬇️ [이 함수 전체를 그대로 덮어쓰기]
+function resetMapView() {
+  if (document.activeElement && typeof document.activeElement.blur === 'function') {
+    document.activeElement.blur();
+  }
 
-      map.morph(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, { duration: 400, easing: 'easeOutCubic' });
-      closeAllPopups();
-      droneHoverInfoWindow.close();
-      if (tempSearchMarker) {
-        tempSearchMarker.setMap(null);
-        tempSearchMarker = null;
-      }
-      if (tempPickedMarker) {
-        tempPickedMarker.setMap(null);
-        tempPickedMarker = null;
-      }
+  // 클린 모드 해제 및 UI 복원
+  isCleanMapMode = false;
+  document.body.classList.remove('clean-map-mode');
 
-      clearSearchInput('pc', false);
-      clearSearchInput('mobile', false);
+  map.morph(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, { duration: 400, easing: 'easeOutCubic' });
+  closeAllPopups();
+  droneHoverInfoWindow.close();
+  if (tempSearchMarker) {
+    tempSearchMarker.setMap(null);
+    tempSearchMarker = null;
+  }
+  if (tempPickedMarker) {
+    tempPickedMarker.setMap(null);
+    tempPickedMarker = null;
+  }
 
-      currentStatusFilter = 'ALL';
-      document.querySelectorAll('.status-filter-btn').forEach(b => b.classList.toggle('active', b.innerText.includes('전체')));
+  clearSearchInput('pc', false);
+  clearSearchInput('mobile', false);
 
-      currentTerrainFilter = 'ALL';
-      document.querySelectorAll('.terrain-filter-btn').forEach(b => b.classList.toggle('active', b.innerText.includes('전체')));
-      filterByRegion('ALL');
-      setMapType('NORMAL');
-      collapseAllRegionAccordions();
-      updateSmartResetButtons();
-      showToast('🔄 전국 지도 뷰가 초기화되었습니다 (한 번 더 누르면 클린 모드)');
-    }
+  currentStatusFilter = 'ALL';
+  document.querySelectorAll('.status-filter-btn').forEach(b => b.classList.toggle('active', b.innerText.includes('전체')));
+
+  currentTerrainFilter = 'ALL';
+  document.querySelectorAll('.terrain-filter-btn').forEach(b => b.classList.toggle('active', b.innerText.includes('전체')));
+  filterByRegion('ALL');
+  setMapType('NORMAL');
+  collapseAllRegionAccordions();
+  updateSmartResetButtons();
+  showToast('🔄 전국 지도 뷰가 초기화되었습니다');
+}
 
     function filterByStatus(status) {
       currentStatusFilter = status;
