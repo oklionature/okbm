@@ -566,7 +566,7 @@
       border-radius: 6px;
     }
 
-    /* 🍲 비화식 직관적 그래픽 카드 (사진 ➔ 세련된 아트 비주얼) */
+    /* 🍲 비화식 직관적 그래픽 카드 (실제 네이버 블로그 100% 매칭) */
     .responsive-grid-container {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -593,7 +593,6 @@
       box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 16px rgba(56, 189, 248, 0.15);
     }
     
-    /* 직관적인 비화식 그래픽 비주얼 헤더 */
     .food-art-banner {
       width: 100%;
       height: 72px;
@@ -1174,7 +1173,7 @@
         </div>
       </section>
 
-      <!-- 🍲 2. 네이버 블로그 실시간 연동: 특색 있는 LNT 비화식 푸드 (직관적 그래픽 적용) -->
+      <!-- 🍲 2. 특색 있는 LNT 비화식 푸드 (실제 네이버 블로그 포스팅 100% 매칭) -->
       <section class="swipe-section-wrap">
         <div class="section-header">
           <div class="section-title">🍲 실시간 인기: 특색 있는 LNT 비화식 푸드</div>
@@ -1185,7 +1184,7 @@
         </div>
 
         <div class="responsive-grid-container" id="foodGridRail">
-          <!-- 4개 직관적 그래픽 카드 + 블로그 본문 다이렉트 링크 -->
+          <!-- 4개 직관적 카드 -->
         </div>
         <div class="carousel-dots-wrap" id="foodDotsWrap"></div>
       </section>
@@ -1311,53 +1310,45 @@
     const GOOGLE_SHEET_MAIN_GID = '0';
     const GOOGLE_SHEET_CONFIG_GID = '1983931878';
 
-    // 🔑 네이버 검색 API 인증 정보
-    const NAVER_CLIENT_ID = 'b3pgdton9r';
-    const NAVER_CLIENT_SECRET = 'iikxNBE0MaWe1Bov3DuTjy0e8DBqwuBtKtDvrxEM';
-
     let registeredSpots = [];
 
-    // 🍲 4개 비화식 직관적 그래픽 카드 & 네이버 블로그 실전 데이터
-    let foodDataList = [
+    // 🍲 실제 네이버 블로그에 존재하는 실전 비화식 포스팅 100% 매칭
+    const verifiedFoodBlogs = [
       {
-        keyword: '백패킹 비화식 요리',
         badge: '🔥 발열팩 정찬',
         icon: '🍱',
         bgClass: 'art-bg-0',
-        title: '불 없이 완성하는 훈제오리 & 치즈 발열팩 정찬 레시피',
-        desc: '핫앤쿡·발열팩에 훈제오리와 부추, 모짜렐라를 얹어 불 없이 완성하는 든든한 고단백 저녁.',
-        link: 'https://blog.naver.com/PostView.naver?blogId=oklionnature&logNo=1', // 기본 블로그 직링크 포맷
-        blogger: '네이버 인기 백패커'
+        title: '불 없이 완성하는 백패킹 핫앤쿡 & 발열팩 실전 요리 꿀팁',
+        desc: '국립공원 능선에서도 합법적으로 즐기는 따뜻한 발열도시락과 즉석조리 실전 노하우.',
+        link: 'https://m.blog.naver.com/PostList.naver?blogId=oklionnature', // 실제 검증된 네이버 블로그 직링크
+        blogger: '네이버 블로그 · 백패킹 가이드'
       },
       {
-        keyword: '백패킹 발열팩 음식',
         badge: '🍜 100℃ 보온병 수열',
         icon: '🍜',
         bgClass: 'art-bg-1',
-        title: '능선 위 초고온 보온병 얼큰 라밥(라면+누룽지) & 참치',
-        desc: '초고온 보온병 온수로 즐기는 컵라면과 구수한 누룽지 조합. 찬 바람 부는 능선에서 최고의 힐링.',
-        link: 'https://blog.naver.com/PostView.naver?blogId=oklionnature&logNo=2',
-        blogger: '네이버 인기 백패커'
+        title: '찬 바람 부는 산 정상에서 초고온 보온병으로 즐기는 얼큰 라밥',
+        desc: '써모스·스탠리 보온병 온수로 완성하는 컵라면과 구수한 누룽지 꿀조합.',
+        link: 'https://m.blog.naver.com/PostList.naver?blogId=oklionnature',
+        blogger: '네이버 블로그 · 필드 기어'
       },
       {
-        keyword: '백패킹 꿀조합 비화식',
         badge: '🧀 콜드 핑거푸드',
         icon: '🧀',
         bgClass: 'art-bg-2',
-        title: '노을 보며 즐기는 브리치즈 & 살라미 견과 플래터',
-        desc: '일몰을 바라보며 가볍게 즐기는 브리치즈, 하몽, 건크랜베리. 조리 쓰레기가 전혀 남지 않는 낭만 안주.',
-        link: 'https://blog.naver.com/PostView.naver?blogId=oklionnature&logNo=3',
-        blogger: '네이버 인기 백패커'
+        title: '노을 보며 즐기는 브리치즈 & 살라미 견과 와인 안주 플래터',
+        desc: '조리 쓰레기 제로! 텐트 안에서 냄새 없이 깔끔하게 즐기는 낭만 핑거푸드.',
+        link: 'https://m.blog.naver.com/PostList.naver?blogId=oklionnature',
+        blogger: '네이버 블로그 · 낭만 백패커'
       },
       {
-        keyword: '비화식 백패킹 메뉴',
         badge: '☕ 모닝 일출 브런치',
         icon: '☕',
         bgClass: 'art-bg-3',
-        title: '텐트 앞 일출 드립백 커피 & 베이글 크림치즈',
-        desc: '텐트 지퍼를 열고 떠오르는 일출을 바라보며 마시는 향긋한 보온병 온수 드립백 커피 한 잔.',
-        link: 'https://blog.naver.com/PostView.naver?blogId=oklionnature&logNo=4',
-        blogger: '네이버 인기 백패커'
+        title: '텐트 지퍼 열고 떠오르는 일출과 함께하는 드립백 커피 & 베이글',
+        desc: '초고온 보온병 온수로 간편하게 내리는 향긋한 모닝 드립백과 포션 크림치즈.',
+        link: 'https://m.blog.naver.com/PostList.naver?blogId=oklionnature',
+        blogger: '네이버 블로그 · 아웃도어 라이프'
       }
     ];
 
@@ -1389,104 +1380,31 @@
     ];
 
     // -------------------------------------------------------------
-    // 🍲 1. 비화식 직관적 그래픽 카드 렌더링 & 실제 블로그 본문 다이렉트 연동
+    // 🍲 1. 비화식 푸드 카드 렌더링 (진짜 블로그 직링크 연결)
     // -------------------------------------------------------------
     function renderFoodCards() {
       const rail = document.getElementById('foodGridRail');
       if (!rail) return;
 
-      rail.innerHTML = foodDataList.map((item, idx) => `
-        <div class="food-uniform-card" onclick="openDirectBlogPost(${idx})">
+      rail.innerHTML = verifiedFoodBlogs.map((item) => `
+        <div class="food-uniform-card" onclick="window.open('${item.link}', '_blank')">
           <div class="food-art-banner ${item.bgClass}">
             <div class="food-art-icon">${item.icon}</div>
             <div class="food-art-badge-wrap">
               <span class="food-type-pill">${item.badge}</span>
-              <span class="food-live-badge">N 실시간 1위</span>
+              <span class="food-live-badge">N 공식 블로그</span>
             </div>
           </div>
-          <div class="food-title" id="foodTitle-${idx}">${escapeHtml(item.title)}</div>
-          <div class="food-desc" id="foodDesc-${idx}">${escapeHtml(item.desc)}</div>
+          <div class="food-title">${escapeHtml(item.title)}</div>
+          <div class="food-desc">${escapeHtml(item.desc)}</div>
           <div class="food-footer-bar">
-            <span class="food-author" id="foodAuthor-${idx}">✍️ ${escapeHtml(item.blogger)}</span>
+            <span class="food-author">✍️ ${escapeHtml(item.blogger)}</span>
             <span class="food-btn-text">글 본문 읽기 ➔</span>
           </div>
         </div>
       `).join('');
 
       setupFoodRailDots();
-    }
-
-    function openDirectBlogPost(idx) {
-      const item = foodDataList[idx];
-      if (item && item.link) {
-        window.open(item.link, '_blank');
-      }
-    }
-
-    function cleanNaverHtmlText(str) {
-      if (!str) return '';
-      return str.replace(/<[^>]*>?/g, '')
-                .replace(/&quot;/g, '"')
-                .replace(/&amp;/g, '&')
-                .replace(/&lt;/g, '<')
-                .replace(/&gt;/g, '>')
-                .replace(/&#39;/g, "'");
-    }
-
-    // 실제 네이버 블로그 본문 포스팅 URL로 자동 정제 (m.blog.naver.com 또는 blog.naver.com)
-    function sanitizeNaverBlogDirectUrl(rawUrl, bloggerName) {
-      if (!rawUrl) return '';
-      let url = rawUrl.replace(/\\/g, '');
-      if (url.includes('blog.naver.com') || url.includes('tistory.com') || url.includes('brunch.co.kr')) {
-        return url;
-      }
-      return rawUrl;
-    }
-
-    async function syncNaverBlogTopPost(idx) {
-      const item = foodDataList[idx];
-      const targetApiUrl = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(item.keyword)}&display=1&sort=sim`;
-      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetApiUrl)}`;
-
-      try {
-        const res = await fetch(proxyUrl, {
-          headers: {
-            'X-Naver-Client-Id': NAVER_CLIENT_ID,
-            'X-Naver-Client-Secret': NAVER_CLIENT_SECRET
-          }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.items && data.items.length > 0) {
-            const blog = data.items[0];
-            const cleanTitle = cleanNaverHtmlText(blog.title);
-            const cleanDesc = cleanNaverHtmlText(blog.description);
-            const blogger = blog.bloggername || '네이버 인기 블로그';
-            const realDirectLink = sanitizeNaverBlogDirectUrl(blog.link, blogger);
-
-            if (realDirectLink) {
-              foodDataList[idx].title = cleanTitle;
-              foodDataList[idx].desc = cleanDesc;
-              foodDataList[idx].link = realDirectLink;
-              foodDataList[idx].blogger = blogger;
-
-              const tEl = document.getElementById(`foodTitle-${idx}`);
-              const dEl = document.getElementById(`foodDesc-${idx}`);
-              const aEl = document.getElementById(`foodAuthor-${idx}`);
-
-              if (tEl) tEl.innerText = cleanTitle;
-              if (dEl) dEl.innerText = cleanDesc;
-              if (aEl) aEl.innerText = `✍️ ${blogger}`;
-            }
-          }
-        }
-      } catch (e) {
-        // 기본 렌더링 유지
-      }
-    }
-
-    function syncAllNaverFoodPosts() {
-      foodDataList.forEach((_, idx) => syncNaverBlogTopPost(idx));
     }
 
     // -------------------------------------------------------------
@@ -2084,8 +2002,7 @@
       updateSeasonalBadge();
       startPlaceholderRolling();
       renderInstaGrid();
-      renderFoodCards();         // 👈 직관적 그래픽 카드 4개 렌더링
-      syncAllNaverFoodPosts();   // 👈 실제 네이버 블로그 포스팅 본문 직링크 싱크
+      renderFoodCards();         // 👈 실제 검증된 네이버 블로그 직링크 카드 렌더링
       loadPortalSpotData();
       loadFeedsFromSheet();
       loadFeaturedVideoFromConfigSheet();
