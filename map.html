@@ -256,7 +256,7 @@
       z-index: 5;
     }
 
-    /* 드롭다운 공통 */
+    /* 드롭다운 */
     .search-dropdown {
       position: absolute;
       top: 40px;
@@ -382,16 +382,33 @@
       align-items: center;
       flex-shrink: 0;
       width: 100%;
-      gap: 6px;
+      gap: 5px;
     }
-    .sidebar-header-left { display: flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0; }
-    .sidebar-header-actions { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+    .sidebar-header-left { display: flex; align-items: center; gap: 5px; white-space: nowrap; flex-shrink: 0; }
+    .sidebar-header-actions { display: flex; align-items: center; gap: 5px; flex-wrap: nowrap; }
+
+    .btn-lnt-guide {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #6ee7b7 !important;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .btn-lnt-guide:hover {
+      background: #10b981;
+      color: #ffffff !important;
+    }
 
     .btn-sidebar-submit {
       background: linear-gradient(135deg, #0d9488, #0f766e);
       border: 1px solid #14b8a6;
       color: #ffffff !important;
-      padding: 4px 10px;
+      padding: 4px 9px;
       border-radius: 12px;
       font-size: 0.7rem;
       font-weight: 700;
@@ -405,13 +422,13 @@
     .header-insta-badge {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 3px;
       background: linear-gradient(45deg, #ea580c 0%, #e11d48 50%, #c026d3 100%);
-      padding: 4px 9px;
+      padding: 4px 8px;
       border-radius: 12px;
       color: #ffffff !important;
       text-decoration: none;
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 700;
       border: 1px solid rgba(255, 255, 255, 0.25);
       white-space: nowrap;
@@ -600,6 +617,37 @@
     .badge-new { background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; }
     .badge-hot { background: linear-gradient(135deg, #f43f5e, #f97316); color: #ffffff; }
 
+    /* 사이드바 목록 카드 내 원클릭 찜/클리어 액션 바 */
+    .spot-card-quick-actions {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .btn-card-quick {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 4px;
+      padding: 2px 5px;
+      font-size: 0.66rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-card-quick.active-fav {
+      background: rgba(245, 158, 11, 0.25);
+      border-color: #f59e0b;
+      color: #fde047;
+    }
+    .btn-card-quick.active-done {
+      background: rgba(2, 132, 199, 0.25);
+      border-color: #38bdf8;
+      color: #7dd3fc;
+    }
+
     .spot-meta-badges { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
     .meta-tag {
       font-size: 0.65rem;
@@ -644,7 +692,6 @@
       font-family: monospace;
     }
     
-    .spot-action-btns { position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; }
     .btn-edit, .btn-del {
       border: none;
       border-radius: 4px;
@@ -1055,7 +1102,7 @@
     .weather-wind-warn { background: rgba(234, 179, 8, 0.15); color: #fde047; border-color: rgba(250, 204, 21, 0.3); }
     .weather-wind-danger { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border-color: rgba(248, 113, 113, 0.3); }
 
-    /* ⭐ 백패커 개인화 툴바 (찜/완주) */
+    /* ⭐ 백패커 개인화 툴바 (찜/클리어) */
     .user-personal-action-bar {
       display: flex;
       align-items: center;
@@ -1521,6 +1568,47 @@
       display: none !important;
     }
 
+    /* 🌿 LNT 7원칙 전용 모달 */
+    .lnt-modal-card {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      width: 440px;
+      max-width: calc(100vw - 24px);
+      max-height: 85vh;
+      overflow-y: auto;
+      border-radius: 16px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.95);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border: 1.5px solid rgba(16, 185, 129, 0.4);
+    }
+    .lnt-rule-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-left: 3px solid #10b981;
+      padding: 8px 10px;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .lnt-rule-title {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #6ee7b7;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .lnt-rule-desc {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      word-break: keep-all;
+    }
+
     /* 제보 및 등록 모달 */
     .custom-modal-overlay {
       position: fixed;
@@ -1651,10 +1739,11 @@
         </div>
 
         <div class="sidebar-header-actions">
-          <button type="button" class="btn-sidebar-submit" onclick="openUserProposalModal()">➕ 박지 제보</button>
+          <button type="button" class="btn-lnt-guide" onclick="openLntModal()">🌿 K-LNT 7원칙</button>
+          <button type="button" class="btn-sidebar-submit" onclick="openUserProposalModal()">➕ 제보</button>
           <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="header-insta-badge" title="협업 및 문의">
             <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-            <span>협업·문의</span>
+            <span>협업</span>
           </a>
           <a id="sheetEditLink" href="#" target="_blank" rel="noopener noreferrer" class="sheet-edit-link">📊 시트</a>
         </div>
@@ -1666,15 +1755,15 @@
         <input type="file" id="importFileInput" style="display:none" accept=".json" onchange="importDataBackup(event)" />
       </div>
       
-      <!-- 🏷️ 3단 필터 바 (개인화 찜/완주 추가) -->
+      <!-- 🏷️ 3단 필터 바 -->
       <div class="filter-wrapper">
         <div class="status-filter-bar" id="statusFilterBar">
           <span class="filter-label">분류</span>
           <button class="filter-btn status-filter-btn active" onclick="filterByStatus('ALL')">전체</button>
           <button class="filter-btn status-filter-btn btn-status-new" onclick="filterByStatus('NEW')">✨ NEW</button>
           <button class="filter-btn status-filter-btn btn-status-hot" onclick="filterByStatus('HOT')">🔥 HOT</button>
-          <button class="filter-btn status-filter-btn btn-status-fav" onclick="filterByStatus('BOOKMARK')">⭐ 찜</button>
-          <button class="filter-btn status-filter-btn btn-status-done" onclick="filterByStatus('VISITED')">🚩 완주</button>
+          <button class="filter-btn status-filter-btn btn-status-fav" id="btnFilterFav" onclick="filterByStatus('BOOKMARK')">⭐ 찜 (0)</button>
+          <button class="filter-btn status-filter-btn btn-status-done" id="btnFilterVisited" onclick="filterByStatus('VISITED')">🚩 클리어 (0)</button>
         </div>
         <div class="region-filter-bar" id="regionFilterBar">
           <span class="filter-label">지역</span>
@@ -1774,6 +1863,61 @@
       <svg id="dockResetMapIcon" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
       <span id="dockResetMapText">지도초기화</span>
     </button>
+  </div>
+
+  <!-- 🌿 대한민국 백패커 K-LNT 7원칙 모달 -->
+  <div class="custom-modal-overlay" id="lntModalOverlay">
+    <div class="lnt-modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:8px;">
+        <h3 style="color:#6ee7b7; font-size:0.96rem; font-weight:800; display:flex; align-items:center; gap:5px;">
+          🌿 대한민국 백패커 K-LNT 7원칙
+        </h3>
+        <button type="button" class="sheet-close-btn" style="position:static;" onclick="closeLntModal()">✕</button>
+      </div>
+      
+      <p style="font-size:0.72rem; color:#fde047; line-height:1.4; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); padding:6px 8px; border-radius:6px;">
+        ⚠️ <strong>박지 보존을 위한 필수 실천</strong>: 자연을 훼손하지 않는 성숙한 백패킹 문화가 소중한 박지 폐쇄를 막습니다.
+      </p>
+
+      <div class="lnt-rule-item">
+        <div class="lnt-rule-title">1. 사전에 계획하고 준비하기</div>
+        <div class="lnt-rule-desc">지자체별 입산 통제구역, 산불조심기간, 국립/도립공원 및 특정도서 야영 금지 구역을 반드시 사전 확인합니다.</div>
+      </div>
+
+      <div class="lnt-rule-item">
+        <div class="lnt-rule-title">2. 지정된 단단한 바닥 이용하기</div>
+        <div class="lnt-rule-desc">풀밭·야생화 군락지 훼손을 방지하고, 기존 조성된 데크·돌박지·단단한 노지 위주로 피칭합니다.</div>
+      </div>
+
+      <div class="lnt-rule-item">
+        <div class="lnt-rule-title">3. 쓰레기는 100% 전량 회수하기</div>
+        <div class="lnt-rule-desc">음식물 찌꺼기, 과일 껍질, 침출수, 물티슈, 텐트 스트링 조각까지 배낭에 100% 다시 담아 하산합니다.</div>
+      </div>
+
+      <div class="lnt-rule-item">
+        <div class="lnt-rule-title">4. 있는 그대로 보존하기</div>
+        <div class="lnt-rule-desc">자연석 이동 및 훼손 금지, 나뭇가지 꺾지 않기, 텐트 팩으로 나무뿌리를 손상시키지 않습니다.</div>
+      </div>
+
+      <div class="lnt-rule-item" style="border-left-color:#f43f5e; background:rgba(244,63,94,0.05);">
+        <div class="lnt-rule-title" style="color:#fda4af;">5. 🚫 산림 내 화기 사용 및 취사 절대 금지 [비화식 원칙]</div>
+        <div class="lnt-rule-desc" style="color:#fecdd3;"><strong>「산림보호법 제34조」</strong>에 따라 산림 내 버너·가스·모닥불 사용은 전면 불법입니다. <strong>보온병 온수, 비화식 발열팩(핫앤쿡 등)</strong>을 준수합니다.</div>
+      </div>
+
+      <div class="lnt-rule-item">
+        <div class="lnt-rule-title">6. 야생동물 보호하기</div>
+        <div class="lnt-rule-desc">음식물 냄새를 차단 밀봉 보관하고, 야생동물에게 음식물을 먹이로 주지 않습니다.</div>
+      </div>
+
+      <div class="lnt-rule-item">
+        <div class="lnt-rule-title">7. 다른 탐방객과 마을 주민 배려하기</div>
+        <div class="lnt-rule-desc">야간 블루투스 스피커 및 고성방가 금지, 조명 눈부심 매너를 지키고 들머리 마을 주민의 사생활을 존중합니다.</div>
+      </div>
+
+      <button type="button" class="modal-btn" style="background:#0f766e; color:#fff; font-weight:800; width:100%; padding:8px; margin-top:4px;" onclick="closeLntModal()">
+        실천 서약하고 닫기
+      </button>
+    </div>
   </div>
 
   <!-- 제보 및 등록 모달 -->
@@ -1942,7 +2086,7 @@
       return `https://map.naver.com/p/search/${encodeURIComponent(cleanQ)}`;
     }
 
-    /* 🛡️ 드론 규제 데이터 전수 등록 (군/민간 공항 및 국가 1급 시설) */
+    /* 🛡️ 대한민국 전수 드론 비행금지 및 군사/공항 관제공역 */
     const restrictedZones = [
       { name: "P-518 북방 비행금지구역 (철원/화천 전방)", lat: 38.2500, lng: 127.5000, radius: 25000, type: "border", desc: "군사작전 접경선 (민간 드론 절대 비행 불가)" },
       { name: "P-518 북방 비행금지구역 (양구/인제 전방)", lat: 38.2800, lng: 128.0500, radius: 25000, type: "border", desc: "군사작전 접경선 (민간 드론 절대 비행 불가)" },
@@ -1950,13 +2094,14 @@
       { name: "P-518 서해안 비행금지구역 (연천/파주 전방)", lat: 38.1000, lng: 126.9000, radius: 22000, type: "border", desc: "서부전선 군사경계 비행금지구역" },
       { name: "서해 5도 군사경계 비행금지공역 (백령/대청/연평)", lat: 37.8500, lng: 125.1000, radius: 35000, type: "border", desc: "서해 NLL 접경 군사작전 통제구역" },
       { name: "서울 도심 비행금지구역 (P-73A/B)", lat: 37.5326, lng: 126.9810, radius: 8334, type: "p73", desc: "수도 서울 도심 핵심 비행금지구역" },
+      { name: "정부세종청사 비행제한구역 (R-130)", lat: 36.5040, lng: 127.2650, radius: 3704, type: "p73", desc: "국가 1급 중요시설 정부청사 비행제한공역" },
       { name: "고리·새울 원자력발전소 (P-90E)", lat: 35.3197, lng: 129.2941, radius: 18520, type: "nuke", desc: "국가 1급 보안시설 원자력발전소 반경 18.5km 금지" },
       { name: "월성 원자력발전소 (P-90)", lat: 35.7144, lng: 129.4754, radius: 18520, type: "nuke", desc: "국가 1급 보안시설 원자력발전소 반경 18.5km 금지" },
       { name: "한울·신한울 원자력발전소 (P-90N)", lat: 37.0945, lng: 129.3837, radius: 18520, type: "nuke", desc: "국가 1급 보안시설 원자력발전소 반경 18.5km 금지" },
       { name: "한빛 원자력발전소 (P-90W)", lat: 35.4158, lng: 126.4192, radius: 18520, type: "nuke", desc: "국가 1급 보안시설 원자력발전소 반경 18.5km 금지" },
       { name: "대전 한국원자력연구원 (R-97)", lat: 36.3860, lng: 127.3736, radius: 3704, type: "nuke", desc: "원자력연구시설 상공 비행금지구역" },
       { name: "계룡대 삼군본부 비행금지구역 (R-79)", lat: 36.3150, lng: 127.2480, radius: 5556, type: "mil_ban", desc: "군 최고지휘시설 보안 비행금지구역" },
-      { name: "국방과학연구소 안흥시험장 해역 (R-84)", lat: 36.6500, lng: 126.1500, radius: 14000, type: "mil_ban", desc: "국가 미사일/무기 시험장 해역 비행금지구역" },
+      { name: "국방과학연구소 안흥시험장 해역 (R-84)", lat: 36.6500, lng: 126.1500, radius: 14000, type: "mil_ban", desc: "국가 무기시험장 해역 비행금지구역" },
       { name: "포항 포스코 국가중요보안시설", lat: 35.9980, lng: 129.3820, radius: 4000, type: "nuke", desc: "국가중요시설 비행금지구역" },
       { name: "광양 포스코 국가중요보안시설", lat: 34.9350, lng: 127.7320, radius: 4000, type: "nuke", desc: "국가중요시설 비행금지구역" },
       { name: "보령·당진·태안 대형화력발전소 공역", lat: 36.5800, lng: 126.5000, radius: 5000, type: "nuke", desc: "국가 핵심 에너지 시설 비행금지구역" },
@@ -1965,6 +2110,7 @@
       { name: "서울공항(성남 K-16) 군사관제권", lat: 37.4447, lng: 127.1147, radius: 9300, type: "mil", desc: "군사공항 관제권" },
       { name: "수원 제10전투비행단 관제권", lat: 37.2384, lng: 127.0076, radius: 9300, type: "mil", desc: "공군 전투비행단 관제권" },
       { name: "오산 미 공군기지 군사관제권", lat: 37.0906, lng: 127.0305, radius: 9300, type: "mil", desc: "한미 군사작전 관제권" },
+      { name: "평택 캠프 험프리스 (A-301 미군비행장)", lat: 36.9628, lng: 127.0317, radius: 9300, type: "mil", desc: "미 육군 최대 항공기지 관제권" },
       { name: "서산 제20전투비행단 (해미기지)", lat: 36.7000, lng: 126.4900, radius: 9300, type: "mil", desc: "공군 주력 전투비행단 관제권" },
       { name: "충주 제19전투비행단 (중원기지)", lat: 37.0200, lng: 127.8800, radius: 9300, type: "mil", desc: "공군 주력 전투비행단 관제권" },
       { name: "청주 제17전투비행단 및 청주국제공항", lat: 36.7166, lng: 127.4990, radius: 9300, type: "mil", desc: "군/민간 복합 국제공항 관제권" },
@@ -1974,6 +2120,7 @@
       { name: "군산 제38전투비행전대 (미공군기지)", lat: 35.9038, lng: 126.6158, radius: 9300, type: "mil", desc: "한미 연합 공군 관제권" },
       { name: "광주 제1전투비행단 및 광주공항", lat: 35.1264, lng: 126.8088, radius: 9300, type: "mil", desc: "공군 비행단 및 공항 관제권" },
       { name: "사천 제3훈련비행단 및 사천공항", lat: 35.0886, lng: 128.0703, radius: 9300, type: "mil", desc: "공군 비행단 및 공항 관제권" },
+      { name: "진해 해군기지사령부 군항 관제권", lat: 35.1436, lng: 128.6570, radius: 9300, type: "mil", desc: "해군 작전사령부 군항 보안공역" },
       { name: "대구 제11전투비행단 및 대구국제공항", lat: 35.8940, lng: 128.6590, radius: 9300, type: "mil", desc: "공군 전투비행단 관제권" },
       { name: "김해 제5공중기동비행단 및 김해공항", lat: 35.1795, lng: 128.9382, radius: 9300, type: "mil", desc: "군/민간 복합관제권" },
       { name: "예천 제16전투비행단 군사관제권", lat: 36.6322, lng: 128.3516, radius: 9300, type: "mil", desc: "공군 비행단 관제권" },
@@ -1988,7 +2135,7 @@
       { name: "제주국제공항 관제권", lat: 33.5113, lng: 126.4930, radius: 9300, type: "air", desc: "국제공항 관제권 (반경 9.3km)" }
     ];
 
-    /* 🏞️ 대한민국 23개 국립공원 전수 등록 (자연공원법 비행금지) */
+    /* 🏞️ 대한민국 23개 국립공원 전수 등록 (해상 국립공원 거점 분할) */
     const nationalParks = [
       { name: "설악산국립공원", lat: 38.1190, lng: 128.4650, radius: 14000, desc: "국립공원 비행금지" },
       { name: "오대산국립공원", lat: 37.7950, lng: 128.6180, radius: 12000, desc: "국립공원 비행금지" },
@@ -2003,14 +2150,20 @@
       { name: "주왕산국립공원", lat: 36.4000, lng: 129.1800, radius: 8500, desc: "국립공원 비행금지" },
       { name: "가야산국립공원", lat: 35.8000, lng: 128.1200, radius: 8500, desc: "국립공원 비행금지" },
       { name: "팔공산국립공원", lat: 35.9850, lng: 128.6950, radius: 11000, desc: "국립공원 비행금지" },
+      { name: "경주국립공원 (토함산/남산)", lat: 35.8000, lng: 129.2800, radius: 9000, desc: "국립공원 비행금지" },
       { name: "지리산국립공원", lat: 35.3350, lng: 127.6250, radius: 19000, desc: "국립공원 비행금지" },
       { name: "내장산국립공원", lat: 35.4800, lng: 126.8800, radius: 8000, desc: "국립공원 비행금지" },
       { name: "무등산국립공원", lat: 35.1400, lng: 126.9900, radius: 8500, desc: "국립공원 비행금지" },
       { name: "월출산국립공원", lat: 34.7500, lng: 126.6800, radius: 6500, desc: "국립공원 비행금지" },
       { name: "변산반도국립공원", lat: 35.6600, lng: 126.5500, radius: 9500, desc: "국립공원 비행금지" },
       { name: "태안해안국립공원", lat: 36.7580, lng: 126.1320, radius: 15000, desc: "국립공원 비행금지" },
-      { name: "다도해해상국립공원", lat: 34.4000, lng: 126.7000, radius: 25000, desc: "국립공원 비행금지" },
-      { name: "한려해상국립공원", lat: 34.8000, lng: 128.2500, radius: 22000, desc: "국립공원 비행금지" },
+      
+      /* 다도해·한려해상 거점 분할 (외곽 섬 누락 방지) */
+      { name: "다도해해상국립공원 (신안 흑산도/홍도)", lat: 34.6800, lng: 125.4200, radius: 16000, desc: "해상국립공원 비행금지" },
+      { name: "다도해해상국립공원 (완도 보길도/청산도)", lat: 34.1600, lng: 126.7500, radius: 18000, desc: "해상국립공원 비행금지" },
+      { name: "다도해해상국립공원 (여수 향일암/금오도)", lat: 34.5200, lng: 127.7800, radius: 14000, desc: "해상국립공원 비행금지" },
+      { name: "한려해상국립공원 (통영 비진도/매물도)", lat: 34.7200, lng: 128.5200, radius: 15000, desc: "해상국립공원 비행금지" },
+      { name: "한려해상국립공원 (거제 해금강/남해)", lat: 34.8000, lng: 128.0500, radius: 16000, desc: "해상국립공원 비행금지" },
       { name: "한라산국립공원", lat: 33.3600, lng: 126.5350, radius: 11000, desc: "국립공원 비행금지" }
     ];
 
@@ -2087,6 +2240,7 @@
       } else {
         updateSmartResetButtons();
       }
+      updateFilterCounts();
     });
 
     /* 🔑 [범례 7회 클릭 트리거] 관리자 모드 토글 */
@@ -2140,6 +2294,21 @@
     }
 
     document.getElementById('sheetEditLink').href = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/edit`;
+
+    /* 🌿 LNT 7원칙 모달 제어 */
+    function openLntModal() {
+      document.getElementById('lntModalOverlay').style.display = 'flex';
+    }
+    function closeLntModal() {
+      document.getElementById('lntModalOverlay').style.display = 'none';
+    }
+
+    function updateFilterCounts() {
+      const favBtn = document.getElementById('btnFilterFav');
+      const visitedBtn = document.getElementById('btnFilterVisited');
+      if (favBtn) favBtn.innerText = `⭐ 찜 (${userBookmarks.size})`;
+      if (visitedBtn) visitedBtn.innerText = `🚩 클리어 (${userVisited.size})`;
+    }
 
     function areAllRegionAccordionsClosed() {
       const groups = document.querySelectorAll('.region-group');
@@ -2297,7 +2466,7 @@
       }
     }
 
-    /* 📍 마커 생성 (경량 인라인 SVG 그림자) */
+    /* 📍 마커 생성 (경량 인라인 SVG 그림자 & 클리어 깃발 배지 반영) */
     function createCustomMarkerIcon(spot) {
       const isMobile = window.innerWidth <= 768;
       const d = parseInt(spot.difficulty, 10) || 3;
@@ -2305,7 +2474,9 @@
       const pinWidth = isMobile ? 24 : 28;
       const pinHeight = isMobile ? 32 : 36;
 
+      const isDone = userVisited.has(String(spot.id));
       const elevText = spot.elevation ? `<span class="marker-label-elev">(${escapeHtml(spot.elevation)})</span>` : '';
+      const clearBadge = isDone ? `<span style="color:#fde047; font-size:0.64rem;">[CLEAR]</span>` : '';
 
       return {
         content: `
@@ -2313,12 +2484,17 @@
             <div class="marker-label-chip">
               <span>${escapeHtml(spot.name)}</span>
               ${elevText}
+              ${clearBadge}
             </div>
             <svg class="marker-svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="${pinWidth}" height="${pinHeight}">
               <ellipse cx="14" cy="34" rx="6" ry="2" fill="rgba(0,0,0,0.35)"/>
               <path fill="${color}" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round" d="M14 1 C6.82 1 1 6.82 1 14 C1 19.8 4.8 24.7 10 26.3 L14 32.5 L18 26.3 C23.2 24.7 27 19.8 27 14 C27 6.82 21.18 1 14 1 Z"/>
               <path fill="#ffffff" d="M14 7 L7.5 18 H20.5 Z"/>
               <polygon fill="${color}" points="14,10.5 10.5,18 17.5,18"/>
+              ${isDone ? `
+                <circle cx="21" cy="5" r="5" fill="#f59e0b" stroke="#ffffff" stroke-width="1.2"/>
+                <path d="M19.2 5 L20.5 6.3 L23 3.8" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round"/>
+              ` : ''}
             </svg>
           </div>
         `,
@@ -2342,7 +2518,7 @@
       if (getSpotViews(spot) >= 5) html += `<span class="badge-status badge-hot">🔥 HOT!</span>`;
       if (spot.isNew) html += `<span class="badge-status badge-new">✨ NEW!</span>`;
       if (userBookmarks.has(String(spot.id))) html += `<span class="badge-status" style="background:#f59e0b; color:#fff;">⭐ 찜</span>`;
-      if (userVisited.has(String(spot.id))) html += `<span class="badge-status" style="background:#0284c7; color:#fff;">🚩 완주</span>`;
+      if (userVisited.has(String(spot.id))) html += `<span class="badge-status" style="background:#0284c7; color:#fff;">🚩 클리어</span>`;
       return html;
     }
 
@@ -2368,13 +2544,13 @@
         if (Math.abs(lat - zone.lat) > 0.45 || Math.abs(lng - zone.lng) > 0.45) continue;
         if (getDistanceMeters(lat, lng, zone.lat, zone.lng) <= zone.radius) {
           if (zone.type === 'border') return { status: 'no', reason: `[휴전선 접경 비행금지] ${zone.name}` };
-          if (zone.type === 'p73') return { status: 'no', reason: `[수도권 비행금지공역 P-73] 서울 핵심부 드론 비행 절대 금지` };
+          if (zone.type === 'p73') return { status: 'no', reason: `[수도권/국가시설 비행금지 P-73/R-130] 드론 비행 절대 금지` };
           if (zone.type === 'nuke' || zone.type === 'mil_ban') return { status: 'no', reason: `[국가중요시설 비행금지] ${zone.name}` };
           if (zone.type === 'mil') return { status: 'warn', reason: `[군사작전 관제공역] ${zone.name} (사전승인 필수)` };
           if (zone.type === 'air') return { status: 'warn', reason: `[공항 관제권] ${zone.name} 반경 9.3km (사전승인 필수)` };
         }
       }
-      return { status: 'ok', reason: '자유 비행 구역 (최대고도 150m 이하 비행 가능 / 상업·공개 촬영 시 사전허가 권장)' };
+      return { status: 'ok', reason: '자유 비행 구역 (최대고도 150m 이하 비행 가능 / 도립·군립공원은 지자체 조례 확인 권장)' };
     }
 
     function getDroneBadgeHtml(status, reasonText) {
@@ -2732,33 +2908,53 @@
       }, 1000);
     }
 
-    /* ⭐ 찜/완주 토글 */
-    function toggleUserBookmark(spotId) {
+    /* ⭐ 찜하기 / 🚩 클리어 스마트 전환 로직 */
+    function toggleUserBookmark(spotId, e = null) {
+      if (e) e.stopPropagation();
       const sId = String(spotId);
       if (userBookmarks.has(sId)) {
         userBookmarks.delete(sId);
-        showToast('⭐ 찜 목록에서 제외되었습니다');
+        showToast('⭐ 찜 목록에서 해제되었습니다');
       } else {
         userBookmarks.add(sId);
         showToast('⭐ 내 찜 목록에 추가되었습니다!');
       }
       localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks]));
+      updateFilterCounts();
+      updateMarkerIconVisual(sId);
       refreshCurrentSpotPopup();
       renderSpots();
     }
 
-    function toggleUserVisited(spotId) {
+    function toggleUserVisited(spotId, e = null) {
+      if (e) e.stopPropagation();
       const sId = String(spotId);
       if (userVisited.has(sId)) {
         userVisited.delete(sId);
-        showToast('🚩 완주 목록에서 제외되었습니다');
+        showToast('🚩 클리어 목록에서 제외되었습니다');
       } else {
         userVisited.add(sId);
-        showToast('🚩 박지 완주 깃발을 꽂았습니다! 🏕️');
+        // 찜 상태에서 클리어 시 찜 자동 해제 연동
+        if (userBookmarks.has(sId)) {
+          userBookmarks.delete(sId);
+          localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks]));
+          showToast('🚩 박지 클리어 완료! (⭐ 찜 목록에서 자동 이동되었습니다)');
+        } else {
+          showToast('🚩 박지 클리어 깃발을 꽂았습니다! 🏕️');
+        }
       }
       localStorage.setItem('okbm_visited', JSON.stringify([...userVisited]));
+      updateFilterCounts();
+      updateMarkerIconVisual(sId);
       refreshCurrentSpotPopup();
       renderSpots();
+    }
+
+    function updateMarkerIconVisual(spotId) {
+      const marker = spotMarkerMap.get(String(spotId));
+      if (marker && marker.spotData) {
+        marker.setIcon(createCustomMarkerIcon(marker.spotData));
+      }
     }
 
     function saveUserPrivateMemo(spotId, text) {
@@ -2768,7 +2964,7 @@
       showToast('🔒 나만의 비공개 메모가 저장되었습니다');
     }
 
-    /* 📤 [5번 수용] 원클릭 박지 공유 (Web Share API / 카톡 연동) */
+    /* 📤 원클릭 박지 공유 (Web Share API / 카카오톡 연동) */
     function shareSpotCard(spotId) {
       const spot = spots.find(s => String(s.id) === String(spotId));
       if (!spot) return;
@@ -2845,13 +3041,13 @@
           <div style="margin: 2px 0;">${getMetaBadgesHtml(spot)}</div>
           <div class="spot-coords-text">📍 ${spot.lat}, ${spot.lng}</div>
 
-          <!-- ⭐ 찜하기 / 완주 툴바 -->
+          <!-- ⭐ 찜하기 / 🚩 클리어 툴바 -->
           <div class="user-personal-action-bar">
             <button type="button" class="btn-user-action ${isFav ? 'bookmarked' : ''}" onclick="toggleUserBookmark('${spot.id}')">
-              ${isFav ? '⭐ 찜 완료' : '☆ 찜하기'}
+              ${isFav ? '⭐ 찜 해제' : '☆ 찜하기'}
             </button>
             <button type="button" class="btn-user-action ${isDone ? 'visited' : ''}" onclick="toggleUserVisited('${spot.id}')">
-              ${isDone ? '🚩 완주 박지' : '⚑ 다녀왔어요'}
+              ${isDone ? '🚩 클리어 완료' : '⚑ 다녀왔어요'}
             </button>
           </div>
           
@@ -2898,7 +3094,7 @@
           <div class="app-disclaimer-box" style="color: #fca5a5; border-color: rgba(244, 63, 94, 0.45); background: rgba(244, 63, 94, 0.08);">
             ※ 현지 지자체 조례 및 산불조심기간에 따라 야영 통제될 수 있습니다.<br>
             ※ 들머리와 영상속 박지정보는 틀릴수가있습니다. 확인을 꼭 하고가세요!<br>
-            ※ 쓰레기는 전량 회수하고 양심을 버리지마세요 LNT를 실천해 주세요.
+            ※ 산림 내 취사 절대 금지(비화식 준수), 쓰레기는 전량 회수하여 LNT를 실천해 주세요.
           </div>
           
           ${getCommentsHtml(spot.id)}
@@ -3517,6 +3713,8 @@
         items.forEach((spot) => {
           const firstLineDesc = (spot.desc || '').split('\n')[0].trim();
           const { navAddress } = parseEntryPoint(spot.entryPoint);
+          const isFav = userBookmarks.has(String(spot.id));
+          const isDone = userVisited.has(String(spot.id));
 
           const li = document.createElement('div');
           li.className = 'spot-item';
@@ -3529,13 +3727,22 @@
                 ${getSpotStatusBadges(spot)}
               </div>
             </div>
-            ${getMetaBadgesHtml(spot)}
-            <div style="font-size:0.7rem; color:#7dd3fc; margin-top:2px;">🚗 ${escapeHtml(navAddress || spot.entryPoint)}</div>
-            ${firstLineDesc ? `<div class="spot-desc-single" title="${escapeHtml(spot.desc)}">📝 ${escapeHtml(firstLineDesc)}</div>` : ''}
-            <div class="spot-action-btns">
+
+            <!-- 사이드바 카드 내 원클릭 찜/클리어 액션 버튼 -->
+            <div class="spot-card-quick-actions">
+              <button type="button" class="btn-card-quick ${isFav ? 'active-fav' : ''}" onclick="toggleUserBookmark('${spot.id}', event)" title="찜하기 토글">
+                ${isFav ? '⭐ 찜' : '☆ 찜'}
+              </button>
+              <button type="button" class="btn-card-quick ${isDone ? 'active-done' : ''}" onclick="toggleUserVisited('${spot.id}', event)" title="클리어 토글">
+                ${isDone ? '🚩 완료' : '⚑ 클리어'}
+              </button>
               <button class="btn-edit" onclick="editSpotById(event, '${spot.id}')">수정</button>
               <button class="btn-del" onclick="deleteSpotById(event, '${spot.id}')">삭제</button>
             </div>
+
+            ${getMetaBadgesHtml(spot)}
+            <div style="font-size:0.7rem; color:#7dd3fc; margin-top:2px;">🚗 ${escapeHtml(navAddress || spot.entryPoint)}</div>
+            ${firstLineDesc ? `<div class="spot-desc-single" title="${escapeHtml(spot.desc)}">📝 ${escapeHtml(firstLineDesc)}</div>` : ''}
           `;
 
           li.addEventListener('click', () => {
@@ -3664,8 +3871,43 @@
 
     function deleteSpotById(event, spotId) {
       event.stopPropagation();
-      const idx = spots.findIndex(s => String(s.id) === String(spotId));
-      if (idx !== -1) deleteSpot(event, idx);
+      const targetSpot = spots[index];
+      if (!confirm(`'${targetSpot.name}' 박지를 정말 삭제하시겠습니까?`)) return;
+
+      const deletedId = targetSpot.id;
+      const deletedName = targetSpot.name;
+      
+      const m = spotMarkerMap.get(String(deletedId));
+      if (m) {
+        m.setMap(null);
+        spotMarkerMap.delete(String(deletedId));
+      }
+
+      spots.splice(index, 1);
+      delete spotComments[deletedId];
+      userBookmarks.delete(String(deletedId));
+      userVisited.delete(String(deletedId));
+      delete userMemos[String(deletedId)];
+
+      localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
+      localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks]));
+      localStorage.setItem('okbm_visited', JSON.stringify([...userVisited]));
+      localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
+
+      closeAllPopups();
+      updateFilterCounts();
+      updateNewSpotFlags(spots);
+      renderSpots();
+
+      try {
+        await fetch(GAS_API_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'DELETE', id: deletedId, name: deletedName })
+        });
+        alert(`'${deletedName}' 박지가 삭제되었습니다.`);
+      } catch (err) {}
     }
 
     async function executeSearch(mode = 'pc') {
@@ -4009,6 +4251,7 @@
       localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
 
       closeAllPopups();
+      updateFilterCounts();
       updateNewSpotFlags(spots);
       renderSpots();
 
@@ -4065,7 +4308,7 @@
           (status === 'NEW' && btn.innerText.includes('NEW')) ||
           (status === 'HOT' && btn.innerText.includes('HOT')) ||
           (status === 'BOOKMARK' && btn.innerText.includes('찜')) ||
-          (status === 'VISITED' && btn.innerText.includes('완주'))
+          (status === 'VISITED' && btn.innerText.includes('클리어'))
         );
       });
       renderSpots();
@@ -4184,6 +4427,7 @@
             return alert('유효하지 않은 백업 파일입니다.');
           }
           updateNewSpotFlags(spots);
+          updateFilterCounts();
           renderSpots();
           alert('데이터가 성공적으로 복원되었습니다.');
         } catch (err) {
