@@ -472,14 +472,17 @@
     .header-insta-badge svg { width: 10px; height: 10px; fill: #ffffff; flex-shrink: 0; }
 
     /* 🔑 숨은 관리자 트리거: 7회 탭 */
-    .version-tag {
+   .version-tag {
       font-size: 0.7rem;
       font-weight: 600;
       color: var(--text-muted);
       user-select: none;
-      cursor: pointer;
-      padding: 2px 4px;
-      border-radius: 4px;
+      -webkit-user-select: none;
+      cursor: default !important; /* PC에서 손가락 모양 커서 안 뜸 (일반 화살표) */
+      -webkit-tap-highlight-color: transparent !important; /* 모바일 터치 시 파란/회색 깜빡임 완벽 제거 */
+      -webkit-touch-callout: none; /* 롱프레스 시 돋보기/복사 메뉴 차단 */
+      outline: none;
+      padding: 0;
     }
     .sheet-edit-link {
       display: none;
