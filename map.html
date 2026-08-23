@@ -2198,16 +2198,12 @@
     }
 
     function updateNewSpotFlags(spotList) {
-      if (!spotList || spotList.length === 0) return;
-      const sorted = [...spotList].sort((a, b) => {
-        const numA = parseInt(a.id, 10);
-        const numB = parseInt(b.id, 10);
-        if (!isNaN(numA) && !isNaN(numB)) return numB - numA;
-        return (b.sheetIndex || 0) - (a.sheetIndex || 0);
-      });
-      const top7Ids = new Set(sorted.slice(0, 7).map(s => String(s.id)));
-      spotList.forEach(s => s.isNew = top7Ids.has(String(s.id)));
-    }
+  if (!spotList || spotList.length === 0) return;
+  // 시트 맨 아래에 추가된 순서(sheetIndex) 기준 최신 7개만 NEW 부여
+  const sorted = [...spotList].sort((a, b) => (b.sheetIndex || 0) - (a.sheetIndex || 0));
+  const top7Ids = new Set(sorted.slice(0, 7).map(s => String(s.id)));
+  spotList.forEach(s => s.isNew = top7Ids.has(String(s.id)));
+}
 
     function getSpotStatusBadges(spot) {
       let html = '';
