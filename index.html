@@ -151,7 +151,7 @@
       color: #fff;
     }
 
-    /* 🏔️ 2. 컴팩트 히어로 & 스마트 검색창 (PC 비율 개선) */
+    /* 🏔️ 2. 컴팩트 히어로 & 스마트 검색창 */
     .hero-wrapper {
       width: 100%;
       max-width: 1200px;
@@ -327,7 +327,7 @@
       white-space: nowrap; 
     }
 
-    /* 🎲 3. [상단] 오늘의 추천 낭만 박지 (PC 3열 리치 카드) */
+    /* 🎲 3. [상단] 오늘의 추천 낭만 박지 */
     .top-curated-container {
       width: 100%;
       max-width: 1200px;
@@ -567,7 +567,7 @@
       border-radius: 6px;
     }
 
-    /* 🍲 비화식 푸드 */
+    /* 🍲 비화식 푸드 (네이버 블로그 실시간 연동) */
     .responsive-grid-container {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -613,11 +613,47 @@
       border-radius: 4px;
       z-index: 2;
     }
-    .food-title { font-size: 0.9rem; font-weight: 700; color: #fff; }
-    .food-desc { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; word-break: keep-all; }
-    .food-tip { font-size: 0.72rem; color: var(--accent-blue); font-weight: 600; }
+    .food-naver-badge {
+      position: absolute;
+      top: 6px; right: 6px;
+      background: #03c75a;
+      color: #fff;
+      font-size: 0.62rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      z-index: 2;
+    }
+    .food-title { 
+      font-size: 0.88rem; 
+      font-weight: 700; 
+      color: #fff; 
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .food-desc { 
+      font-size: 0.78rem; 
+      color: var(--text-secondary); 
+      line-height: 1.4; 
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      word-break: keep-all; 
+    }
+    .food-tip { 
+      font-size: 0.72rem; 
+      color: var(--accent-blue); 
+      font-weight: 600; 
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-    /* 📸 인스타그램 릴스 (PC 3열 와이드) */
+    /* 📸 인스타그램 릴스 */
     .responsive-insta-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -729,12 +765,12 @@
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
-    /* 🌤️ 실시간 산악 날씨 & 풍속 기준 높이 일치화 */
+    /* 🌤️ 실시간 산악 날씨 & 풍속 기준 */
     .mountain-weather-grid { 
       display: grid; 
       grid-template-columns: 1fr 1fr; 
       gap: 5px; 
-      min-height: 106px; /* 👈 높이 고정 */
+      min-height: 106px;
     }
     .m-weather-item {
       background: rgba(56, 189, 248, 0.05);
@@ -753,16 +789,15 @@
     .m-weather-temp { font-size: 0.88rem; font-weight: 800; color: var(--accent-blue); }
     .m-weather-wind { font-size: 0.65rem; color: var(--accent-teal); font-weight: 700; }
 
-    /* 💨 풍속 가이드 박스 (실시간 날씨와 동일한 106px 높이 + 위아래 균등 분할) */
     .wind-guide-box {
       background: rgba(14, 19, 29, 0.7);
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 9px 10px; /* 👈 상하좌우 여백 최적화 */
+      padding: 9px 10px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between; /* 👈 3줄이 위아래로 예쁘게 균등 배치 */
-      min-height: 106px; /* 👈 날씨 카드와 100% 동일한 높이 */
+      justify-content: space-between;
+      min-height: 106px;
       height: 106px;
       box-sizing: border-box;
       font-size: 0.72rem;
@@ -875,7 +910,7 @@
       margin-top: 4px;
     }
 
-    /* 📱 5. 모바일 하단 네비 독 [홈 / 전국 박지지도 / 문의및협업] (정확한 SVG 아이콘 매핑) */
+    /* 📱 5. 모바일 하단 네비 독 */
     .mobile-bottom-dock {
       display: none;
       position: fixed;
@@ -909,9 +944,7 @@
     .dock-item.active { color: var(--accent-blue); }
     .dock-item svg { width: 20px; height: 20px; fill: currentColor; }
 
-    /* =========================================================
-       📱 모바일 전용 반응형 브레이크포인트
-       ========================================================= */
+    /* 모바일 반응형 */
     @media (max-width: 768px) {
       .pc-nav-links { display: none; }
       body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
@@ -942,7 +975,6 @@
       .top-curated-container { padding: 0 12px; margin-bottom: 12px; }
       .curated-box-wrap { padding: 10px 12px; border-radius: 12px; }
       
-      /* 모바일 1화면 1카드 스냅 슬라이더 */
       .curated-card-track {
         display: flex !important;
         overflow-x: auto !important;
@@ -966,7 +998,6 @@
       .card-spot-name { font-size: 0.94rem !important; }
       .card-desc-rich { font-size: 0.75rem !important; -webkit-line-clamp: 2 !important; line-height: 1.4 !important; }
 
-      /* 비화식 & 릴스 모바일 슬라이더 */
       .responsive-grid-container, .responsive-insta-grid {
         display: flex !important;
         overflow-x: auto !important;
@@ -1035,7 +1066,6 @@
         <span class="brand-sub-script">Romantic Backpacking Road</span>
       </a>
 
-      <!-- PC 전용 상단 빠른 링크 -->
       <div class="pc-nav-links">
         <a href="map.html" class="pc-nav-btn highlight">
           <span>🗺️ 전국 박지지도</span>
@@ -1110,10 +1140,10 @@
         </div>
       </section>
 
-      <!-- 🍲 2. 특색 있는 LNT 비화식 필드 푸드 갤러리 -->
+      <!-- 🍲 2. 네이버 블로그 실시간 연동: 특색 있는 LNT 비화식 푸드 -->
       <section class="swipe-section-wrap">
         <div class="section-header">
-          <div class="section-title">🍲 산 정상의 미학: 특색 있는 LNT 비화식 푸드</div>
+          <div class="section-title">🍲 실시간 인기: 특색 있는 LNT 비화식 푸드</div>
           <div class="header-actions">
             <button type="button" class="nav-arrow-btn" onclick="slideRail('foodGridRail', -1)" title="이전 메뉴">❮</button>
             <button type="button" class="nav-arrow-btn" onclick="slideRail('foodGridRail', 1)" title="다음 메뉴">❯</button>
@@ -1121,45 +1151,7 @@
         </div>
 
         <div class="responsive-grid-container" id="foodGridRail">
-          <div class="food-uniform-card" onclick="openFoodModal(0)">
-            <div class="food-img-box">
-              <img src="https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=800&auto=format&fit=crop&q=80" alt="발열체 고메" class="food-img" loading="lazy" />
-              <span class="food-type-badge">🔥 발열체 고메</span>
-            </div>
-            <div class="food-title">훈제오리 & 치즈 발열팩 정찬</div>
-            <div class="food-desc">핫앤쿡·발열팩에 훈제오리와 부추, 모짜렐라를 얹어 불 없이 완성하는 든든한 고단백 저녁.</div>
-            <div class="food-tip">💡 꿀조합: 쌈무 + 생와사비 소분 팩 지참</div>
-          </div>
-
-          <div class="food-uniform-card" onclick="openFoodModal(1)">
-            <div class="food-img-box">
-              <img src="https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800&auto=format&fit=crop&q=80" alt="보온병 수열 라밥" class="food-img" loading="lazy" />
-              <span class="food-type-badge">🍜 100℃ 보온병 수열</span>
-            </div>
-            <div class="food-title">정상 얼큰 라밥 (라면+누룽지) & 참치</div>
-            <div class="food-desc">초고온 보온병 온수로 즐기는 컵라면과 구수한 누룽지 조합. 찬 바람 부는 능선에서 최고의 힐링.</div>
-            <div class="food-tip">💡 꿀조합: 파우치 참치마요 + 볶음김치</div>
-          </div>
-
-          <div class="food-uniform-card" onclick="openFoodModal(2)">
-            <div class="food-img-box">
-              <img src="https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=800&auto=format&fit=crop&q=80" alt="핑거푸드 플래터" class="food-img" loading="lazy" />
-              <span class="food-type-badge">🧀 콜드 핑거푸드</span>
-            </div>
-            <div class="food-title">브리치즈 & 살라미 견과 플래터</div>
-            <div class="food-desc">일몰을 바라보며 가볍게 즐기는 브리치즈, 하몽, 건크랜베리. 조리 쓰레기가 전혀 남지 않는 낭만 안주.</div>
-            <div class="food-tip">💡 꿀조합: 무알콜 뱅쇼 또는 소분 와인</div>
-          </div>
-
-          <div class="food-uniform-card" onclick="openFoodModal(3)">
-            <div class="food-img-box">
-              <img src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&auto=format&fit=crop&q=80" alt="드립백 브런치" class="food-img" loading="lazy" />
-              <span class="food-type-badge">☕ 모닝 일출 브런치</span>
-            </div>
-            <div class="food-title">텐트 앞 드립백 커피 & 베이글</div>
-            <div class="food-desc">텐트 지퍼를 열고 떠오르는 일출을 바라보며 마시는 향긋한 보온병 온수 드립백 커피 한 잔.</div>
-            <div class="food-tip">💡 꿀조합: 포션 크림치즈 + 블루베리 잼</div>
-          </div>
+          <!-- 네이버 블로그 검색 API 결과 4개 자동 렌더링 -->
         </div>
         <div class="carousel-dots-wrap" id="foodDotsWrap"></div>
       </section>
@@ -1191,7 +1183,6 @@
             <button type="button" class="w-tab-btn" id="tabBtnWind" onclick="switchWeatherTab('wind')">💨 풍속 기준</button>
           </div>
 
-          <!-- 1면: 실제 API 연동 산악 날씨 -->
           <div id="weatherViewReal">
             <div class="mountain-weather-grid">
               <div class="m-weather-item">
@@ -1213,7 +1204,6 @@
             </div>
           </div>
 
-          <!-- 2면: 풍속 안전 가이드 -->
           <div id="weatherViewWind" style="display: none;">
             <div class="wind-guide-box">
               <div class="weather-row">
@@ -1238,9 +1228,7 @@
             <span>🔥 실시간 인기 박지 TOP 5</span>
             <span style="font-size:0.7rem; color:var(--text-muted);">조회순</span>
           </div>
-          <ul class="rank-list" id="popularRankList">
-            <!-- 동적 생성 -->
-          </ul>
+          <ul class="rank-list" id="popularRankList"></ul>
         </div>
 
       </div>
@@ -1268,21 +1256,16 @@
     </div>
   </div>
 
-  <!-- 📱 5. 모바일 하단 네비 독 [홈 / 전국 박지지도 / 문의및협업] -->
+  <!-- 📱 5. 모바일 하단 네비 독 -->
   <nav class="mobile-bottom-dock">
-    <!-- 1. 홈 (이미지 속 솔리드 홈 아이콘 & 활성화) -->
     <a href="index.html" class="dock-item active">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
       <span>홈</span>
     </a>
-
-    <!-- 2. 전국 박지지도 (이미지 속 3단 접힌 입체 지형도 지도 아이콘) -->
     <a href="map.html" class="dock-item">
       <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
       <span>전국 박지지도</span>
     </a>
-
-    <!-- 3. 문의 및 협업 (공식 인스타그램 둥근 사각 카메라 렌즈 벡터 로고) -->
     <a href="https://www.instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="dock-item">
       <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
       <span>문의 및 협업</span>
@@ -1294,7 +1277,47 @@
     const GOOGLE_SHEET_MAIN_GID = '0';
     const GOOGLE_SHEET_CONFIG_GID = '1983931878';
 
+    // 🔑 네이버 클라우드 검색 API 인증키
+    const NAVER_CLIENT_ID = 'b3pgdton9r';
+    const NAVER_CLIENT_SECRET = 'iikxNBE0MaWe1Bov3DuTjy0e8DBqwuBtKtDvrxEM';
+
     let registeredSpots = [];
+
+    // 🍲 네이버 블로그 검색 키워드 4종 & 기본 썸네일
+    const NAVER_FOOD_QUERIES = [
+      {
+        keyword: '백패킹 비화식 요리',
+        badge: '🔥 비화식 요리',
+        img: 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=800&auto=format&fit=crop&q=80',
+        defaultTitle: '백패킹 비화식 요리 꿀팁 & 레시피',
+        defaultDesc: '불 없이 완성하는 든든한 백패킹 고단백 비화식 요리 모음.',
+        defaultBlogger: '네이버 블로그'
+      },
+      {
+        keyword: '백패킹 발열팩 음식',
+        badge: '🍲 발열팩 음식',
+        img: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800&auto=format&fit=crop&q=80',
+        defaultTitle: '발열팩으로 즐기는 산 정상 따끈한 한 끼',
+        defaultDesc: '핫앤쿡과 발열팩을 활용한 초간편 능선 필드 푸드.',
+        defaultBlogger: '네이버 블로그'
+      },
+      {
+        keyword: '백패킹 꿀조합 비화식',
+        badge: '🧀 꿀조합 안주',
+        img: 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=800&auto=format&fit=crop&q=80',
+        defaultTitle: '조리 쓰레기 제로! 핑거푸드 꿀조합',
+        defaultDesc: '일몰을 보며 즐기는 브리치즈, 하몽, 견과 플래터 추천.',
+        defaultBlogger: '네이버 블로그'
+      },
+      {
+        keyword: '비화식 백패킹 메뉴',
+        badge: '⛺ 추천 메뉴',
+        img: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&auto=format&fit=crop&q=80',
+        defaultTitle: '일출과 함께하는 모닝 드립백 & 브런치',
+        defaultDesc: '초고온 보온병 온수로 완성하는 아침 커피와 베이글.',
+        defaultBlogger: '네이버 블로그'
+      }
+    ];
 
     let instaFeedList = [
       {
@@ -1323,20 +1346,87 @@
       }
     ];
 
-    const foodRecipes = [
-      { url: 'https://www.youtube.com/results?search_query=백패킹+발열팩+요리' },
-      { url: 'https://www.youtube.com/results?search_query=백패킹+보온병+라면' },
-      { url: 'https://www.youtube.com/results?search_query=백패킹+비화식+안주' },
-      { url: 'https://www.youtube.com/results?search_query=백패킹+드립커피' }
-    ];
+    // -------------------------------------------------------------
+    // 🍲 1. 네이버 블로그 검색 API (인기순 sim) 실시간 연동
+    // -------------------------------------------------------------
+    function cleanNaverHtmlText(str) {
+      if (!str) return '';
+      return str.replace(/<[^>]*>?/g, '')
+                .replace(/&quot;/g, '"')
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&#39;/g, "'");
+    }
 
-    function openFoodModal(idx) {
-      const item = foodRecipes[idx];
-      if (item && item.url) window.open(item.url, '_blank');
+    async function fetchNaverBlogTopPost(queryObj) {
+      const keyword = queryObj.keyword;
+      // 네이버 오픈 API 블로그 검색 (sim = 정확도/인기순)
+      const targetApiUrl = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(keyword)}&display=1&sort=sim`;
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetApiUrl)}`;
+
+      try {
+        const res = await fetch(proxyUrl, {
+          headers: {
+            'X-Naver-Client-Id': NAVER_CLIENT_ID,
+            'X-Naver-Client-Secret': NAVER_CLIENT_SECRET
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.items && data.items.length > 0) {
+            const item = data.items[0];
+            return {
+              title: cleanNaverHtmlText(item.title) || queryObj.defaultTitle,
+              desc: cleanNaverHtmlText(item.description) || queryObj.defaultDesc,
+              link: item.link || `https://search.naver.com/search.naver?query=${encodeURIComponent(keyword)}`,
+              blogger: item.bloggername || queryObj.defaultBlogger,
+              badge: queryObj.badge,
+              img: queryObj.img
+            };
+          }
+        }
+      } catch (e) {
+        console.log(`네이버 검색 API 통신 (${keyword}) fallback 전환:`, e);
+      }
+
+      // Fallback
+      return {
+        title: queryObj.defaultTitle,
+        desc: queryObj.defaultDesc,
+        link: `https://search.naver.com/search.naver?query=${encodeURIComponent(keyword)}`,
+        blogger: queryObj.defaultBlogger,
+        badge: queryObj.badge,
+        img: queryObj.img
+      };
+    }
+
+    async function loadNaverFoodPosts() {
+      const rail = document.getElementById('foodGridRail');
+      if (!rail) return;
+
+      // 4개 키워드 비동기 동시 호출
+      const promises = NAVER_FOOD_QUERIES.map(q => fetchNaverBlogTopPost(q));
+      const results = await Promise.all(promises);
+
+      rail.innerHTML = results.map(item => `
+        <div class="food-uniform-card" onclick="window.open('${item.link}', '_blank')">
+          <div class="food-img-box">
+            <img src="${item.img}" alt="${escapeHtml(item.title)}" class="food-img" loading="lazy" />
+            <span class="food-type-badge">${item.badge}</span>
+            <span class="food-naver-badge">N 블로그 인기</span>
+          </div>
+          <div class="food-title">${escapeHtml(item.title)}</div>
+          <div class="food-desc">${escapeHtml(item.desc)}</div>
+          <div class="food-tip">✍️ 블로그: ${escapeHtml(item.blogger)} · 클릭 시 이동 ➔</div>
+        </div>
+      `).join('');
+
+      setupFoodRailDots();
     }
 
     // -------------------------------------------------------------
-    // 🧠 1. 검색 엔진
+    // 🧠 2. 검색 엔진
     // -------------------------------------------------------------
     const STOP_WORDS = ['백패킹', '박지', '노지', '캠핑', '갈만한곳', '갈 만한 곳', '추천', '근처', '근교', '명소', '어디', '가볼만한곳'];
 
@@ -1488,7 +1578,7 @@
     }
 
     // -------------------------------------------------------------
-    // 🎲 2. 구글 시트 로드 & 3단 리치 카드 렌더링
+    // 🎲 3. 구글 시트 로드 & 3단 리치 카드 렌더링
     // -------------------------------------------------------------
     async function loadPortalSpotData() {
       const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_MAIN_GID}&_t=${Date.now()}`;
@@ -1592,7 +1682,7 @@
     }
 
     // -------------------------------------------------------------
-    // 🎬 3. 유튜브 설정 탭 연동
+    // 🎬 4. 유튜브 설정 탭 연동
     // -------------------------------------------------------------
     function parseYouTubeUniversalUrl(url) {
       if (!url) return null;
@@ -1665,7 +1755,7 @@
     }
 
     // -------------------------------------------------------------
-    // 🌤️ 4. 실시간 산악 날씨 (Open-Meteo API)
+    // 🌤️ 5. 실시간 산악 날씨 (Open-Meteo API)
     // -------------------------------------------------------------
     const MOUNTAINS_COORDS = [
       { name: '대관령 선자령', lat: 37.697, lon: 128.761 },
@@ -1736,7 +1826,7 @@
     }
 
     // -------------------------------------------------------------
-    // 📸 5. 인스타그램 & 릴스
+    // 📸 6. 인스타그램 & 릴스
     // -------------------------------------------------------------
     function renderInstaGrid() {
       const track = document.getElementById('instaGridRail');
@@ -1930,7 +2020,7 @@
       updateSeasonalBadge();
       startPlaceholderRolling();
       renderInstaGrid();
-      setupFoodRailDots();
+      loadNaverFoodPosts(); // 👈 네이버 블로그 실시간 검색 로드
       loadPortalSpotData();
       loadFeedsFromSheet();
       loadFeaturedVideoFromConfigSheet();
