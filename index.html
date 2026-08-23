@@ -742,6 +742,9 @@
   </nav>
 
   <script>
+    // ⚙️ 구글 웹앱 배포 URL 연동 완료
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycby3UfPoQvdyECFHTSZJmOx_htGRKiysAd8-vNSvnMZrg8rXhVkW-0XMcp4H9kxeAcVJ/exec';
+
     const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
     const GOOGLE_SHEET_MAIN_GID = '0';
     const GOOGLE_SHEET_CONFIG_GID = '1983931878';
@@ -858,7 +861,7 @@
     }
 
     // -------------------------------------------------------------
-    // 📊 3. 커뮤니티 투표 & 💬 출정톡 피드
+    // 📊 3. 커뮤니티 투표 (시트 실시간 연동 & 100% 비율 반영)
     // -------------------------------------------------------------
     const POLL_STORAGE_KEY = 'romantic_poll_user_pick';
     let pollData = [
@@ -868,11 +871,22 @@
       { id: 4, text: '🏠 이번 주는 장비 정비(방콕)', votes: 12 }
     ];
 
+    async function loadPollDataFromSheet() {
+      try {
+        const res = await fetch(`${GAS_API_URL}?action=GET_POLL`);
+        const result = await res.json();
+        if (result.status === 'success' && result.data && result.data.length > 0) {
+          pollData = result.data;
+          renderPoll();
+        }
+      } catch (e) {}
+    }
+
     function renderPoll() {
       const wrap = document.getElementById('pollOptionsList');
       if (!wrap) return;
       const userChoice = localStorage.getItem(POLL_STORAGE_KEY);
-      const totalVotes = pollData.reduce((acc, cur) => acc + cur.votes, 0);
+      const totalVotes = pollData.reduce((acc, cur) => acc + cur.votes, 0) || 1;
       document.getElementById('pollCountText').innerText = `총 ${totalVotes.toLocaleString()}명 참여`;
 
       wrap.innerHTML = pollData.map(opt => {
@@ -890,27 +904,53 @@
       }).join('');
     }
 
-    function votePollOption(id) {
+    async function votePollOption(id) {
       const prev = localStorage.getItem(POLL_STORAGE_KEY);
       if (prev == id) return;
 
       if (prev !== null) {
         const oldOpt = pollData.find(o => o.id == prev);
-        if (oldOpt) oldOpt.votes--;
+        if (oldOpt && oldOpt.votes > 0) oldOpt.votes--;
       }
-
       const target = pollData.find(o => o.id == id);
       if (target) target.votes++;
 
       localStorage.setItem(POLL_STORAGE_KEY, String(id));
       renderPoll();
+
+      try {
+        fetch(GAS_API_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'VOTE_POLL',
+            optionId: id,
+            prevOptionId: prev
+          })
+        });
+      } catch (e) {}
     }
 
+    // -------------------------------------------------------------
+    // 💬 4. 출정톡 (시트 실시간 연동)
+    // -------------------------------------------------------------
     let talkMessages = [
       { user: '산바람', msg: '선자령 피칭 완료! 현재 바람 잔잔하고 은하수 기대됩니다.', time: '방금' },
       { user: '굴업러', msg: '내일 아침 굴업도 배편 정상 운항하네요 ㅎㅎ', time: '12분 전' },
       { user: '캠린이', msg: '비화식 보온병 챙겨서 첫 출정 준비 중입니다 ⛺', time: '35분 전' }
     ];
+
+    async function loadTalksFromSheet() {
+      try {
+        const res = await fetch(`${GAS_API_URL}?action=GET_TALKS`);
+        const result = await res.json();
+        if (result.status === 'success' && result.data && result.data.length > 0) {
+          talkMessages = result.data;
+          renderTalkList();
+        }
+      } catch (e) {}
+    }
 
     function renderTalkList() {
       const list = document.getElementById('talkBubbleList');
@@ -926,7 +966,7 @@
       `).join('');
     }
 
-    function submitTalkBubble() {
+    async function submitTalkBubble() {
       const nickInput = document.getElementById('talkNickInput');
       const msgInput = document.getElementById('talkMsgInput');
       const user = nickInput.value.trim() || '익명';
@@ -938,14 +978,26 @@
       }
 
       talkMessages.unshift({ user, msg, time: '방금' });
-      if (talkMessages.length > 6) talkMessages.pop();
-
+      if (talkMessages.length > 10) talkMessages.pop();
       msgInput.value = '';
       renderTalkList();
+
+      try {
+        await fetch(GAS_API_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'ADD_TALK',
+            user: user,
+            msg: msg
+          })
+        });
+      } catch (e) {}
     }
 
     // -------------------------------------------------------------
-    // 🔍 4. 스마트 검색 & 자동완성 (페이지 이동용)
+    // 🔍 5. 스마트 검색 & 자동완성
     // -------------------------------------------------------------
     let searchDebounceTimer = null;
     function onSearchInputChanged(value) {
@@ -1002,7 +1054,7 @@
     }
 
     // -------------------------------------------------------------
-    // 📦 5. 구글 시트 박지 데이터 로드
+    // 📦 6. 구글 시트 박지 데이터 로드
     // -------------------------------------------------------------
     async function loadPortalSpotData() {
       const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_MAIN_GID}&_t=${Date.now()}`;
@@ -1015,7 +1067,7 @@
             skipEmptyLines: true,
             complete: function(results) {
               if (results.data && results.data.length > 0) {
-                registeredSpots = results.data.map((row, idx) => {
+                registeredSpots = results.data.map((row) => {
                   const getVal = (...keys) => {
                     for (const k of keys) {
                       for (const rk of Object.keys(row)) {
@@ -1056,6 +1108,10 @@
       renderTalkList();
       loadPortalSpotData();
       loadFeaturedVideoFromConfigSheet();
+      
+      // 구글 시트 실시간 데이터 연동
+      loadPollDataFromSheet();
+      loadTalksFromSheet();
     });
   </script>
 </body>
