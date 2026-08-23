@@ -23,7 +23,7 @@
       --bg-deep: #030508;
       --bg-surface: #0a0e17;
       --bg-card: #101726;
-      --bg-card-hover: #172238;
+      --bg-card-hover: #162035;
       --border: rgba(255, 255, 255, 0.08);
       --border-light: rgba(255, 255, 255, 0.14);
       --border-glow: rgba(56, 189, 248, 0.35);
@@ -36,6 +36,7 @@
       --accent-emerald: #10b981;
       --accent-amber: #f59e0b;
       --accent-rose: #f43f5e;
+      --accent-gold: #facc15;
       --font-display: 'GmarketSans', -apple-system, sans-serif;
       --font-script: 'Caveat', cursive;
       --font-body: 'Pretendard', -apple-system, sans-serif;
@@ -43,7 +44,6 @@
       --z-header: 500;
       --z-dock: 600;
       --z-dropdown: 900;
-      --z-modal: 1000;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -64,7 +64,7 @@
       padding-bottom: 30px;
     }
 
-    /* 🧭 1. GNB */
+    /* 🧭 1. 상단 GNB (일체감 유지, 우측 버튼 제거로 초슬림화) */
     .portal-nav {
       position: sticky;
       top: 0;
@@ -73,7 +73,7 @@
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
-      padding: 10px 24px;
+      padding: 10px 20px;
       padding-top: calc(10px + env(safe-area-inset-top, 0px));
       display: flex;
       justify-content: center;
@@ -82,7 +82,7 @@
     }
     .portal-nav-inner {
       width: 100%;
-      max-width: 1200px;
+      max-width: 1100px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -97,7 +97,7 @@
     }
     .main-title-text {
       font-family: var(--font-display);
-      font-size: 1.32rem;
+      font-size: 1.25rem;
       font-weight: 700;
       color: #ffffff;
       letter-spacing: -0.03em;
@@ -109,165 +109,90 @@
       background: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #f472b6 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 0 12px rgba(244, 63, 94, 0.4));
+      filter: drop-shadow(0 0 10px rgba(244, 63, 94, 0.35));
       font-weight: 800;
     }
     .brand-sub-script {
       font-family: var(--font-script);
-      font-size: 1.25rem;
+      font-size: 1.18rem;
       font-weight: 700;
       color: var(--accent-blue);
       letter-spacing: 0.02em;
       opacity: 0.95;
     }
-    .pc-nav-links {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .pc-nav-btn {
-      color: var(--text-secondary);
-      text-decoration: none;
-      font-size: 0.84rem;
-      font-weight: 600;
-      padding: 6px 12px;
-      border-radius: 8px;
-      transition: all 0.2s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .pc-nav-btn:hover {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.06);
-    }
-    .pc-nav-btn.highlight {
-      background: rgba(56, 189, 248, 0.12);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      color: var(--accent-blue);
-    }
-    .pc-nav-btn.highlight:hover {
-      background: rgba(56, 189, 248, 0.22);
-      color: #fff;
-    }
 
-    /* 🏔️ 2. 컴팩트 히어로 & 스마트 검색창 */
-    .hero-wrapper {
+    /* 🔍 2. 컴팩트 검색 & LNT */
+    .hero-search-container {
       width: 100%;
-      max-width: 1200px;
+      max-width: 1100px;
       margin: 0 auto;
-      padding: 22px 20px 12px 20px;
-      text-align: center;
+      padding: 16px 16px 8px 16px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
-    .hero-badge-season {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(56, 189, 248, 0.08);
-      border: 1.2px solid rgba(56, 189, 248, 0.25);
-      color: var(--accent-blue);
-      font-size: 0.88rem;
-      font-weight: 700;
-      padding: 5px 14px;
-      border-radius: 20px;
-      margin-bottom: 12px;
-      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.1);
-    }
-    .hero-title {
-      font-family: var(--font-display);
-      font-size: clamp(1.35rem, 2.8vw, 2.05rem);
-      font-weight: 700;
-      margin-bottom: 14px;
-      line-height: 1.25;
-      letter-spacing: -0.03em;
-      color: #fff;
-    }
-    .hero-title .highlight {
-      background: linear-gradient(135deg, #38bdf8 0%, #2dd4bf 50%, #facc15 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
     .portal-search-box {
       position: relative;
       width: 100%;
-      max-width: 580px;
-      margin: 0 auto 10px auto;
+      max-width: 540px;
     }
     .portal-search-input {
       width: 100%;
-      padding: 11px 90px 11px 20px;
-      font-size: 0.94rem;
+      padding: 10px 80px 10px 18px;
+      font-size: 0.92rem;
       font-family: var(--font-body);
-      border-radius: 28px;
-      border: 1.5px solid rgba(56, 189, 248, 0.3);
+      border-radius: 24px;
+      border: 1.5px solid rgba(56, 189, 248, 0.28);
       background: rgba(10, 14, 23, 0.85);
       backdrop-filter: blur(16px);
       color: #fff;
       outline: none;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
       transition: all 0.25s ease;
-      min-height: 46px;
+      min-height: 44px;
     }
     .portal-search-input:focus {
       background: #060911;
       border-color: var(--accent-blue);
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 16px rgba(56, 189, 248, 0.35);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), 0 0 14px rgba(56, 189, 248, 0.3);
     }
     .search-action-wrap {
       position: absolute;
-      right: 8px;
+      right: 6px;
       top: 50%;
       transform: translateY(-50%);
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
     }
     .btn-clear-search {
       display: none;
       background: rgba(255, 255, 255, 0.12);
       border: none;
       color: #cbd5e1;
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       cursor: pointer;
       align-items: center;
       justify-content: center;
-      transition: background 0.2s;
-    }
-    .btn-clear-search:hover { background: rgba(255, 255, 255, 0.25); color: #fff; }
-    .kbd-hint {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid var(--border);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: 700;
     }
     .portal-search-btn {
       background: linear-gradient(135deg, #0284c7, #0ea5e9);
       border: none;
-      width: 32px;
-      height: 32px;
+      width: 30px;
+      height: 30px;
       border-radius: 50%;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
-      box-shadow: 0 2px 8px rgba(14, 165, 233, 0.4);
-      transition: transform 0.2s ease;
+      box-shadow: 0 2px 6px rgba(14, 165, 233, 0.4);
     }
-    .portal-search-btn:hover { transform: scale(1.06); }
 
-    /* 드롭다운 */
     .search-auto-dropdown {
       position: absolute;
       top: calc(100% + 6px);
@@ -275,247 +200,339 @@
       background: rgba(10, 14, 23, 0.96);
       backdrop-filter: blur(20px);
       border: 1px solid var(--border-glow);
-      border-radius: 14px;
-      box-shadow: 0 18px 45px rgba(0,0,0,0.95);
+      border-radius: 12px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.95);
       list-style: none;
-      max-height: 320px;
+      max-height: 280px;
       overflow-y: auto;
       display: none;
       z-index: var(--z-dropdown);
       text-align: left;
     }
     .auto-item {
-      padding: 10px 16px;
+      padding: 9px 14px;
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
-      font-size: 0.85rem;
-      transition: background 0.15s;
+      font-size: 0.84rem;
     }
     .auto-item:last-child { border-bottom: none; }
     .auto-item:hover { background: var(--bg-card-hover); }
     .auto-item-left { display: flex; align-items: center; gap: 8px; overflow: hidden; }
     .auto-item-name { font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .auto-item-sub { font-size: 0.74rem; color: var(--text-muted); }
     .auto-badge-spot { font-size: 0.65rem; color: #38bdf8; background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px; font-weight: 700; flex-shrink: 0; }
-    .auto-badge-region { font-size: 0.65rem; color: #2dd4bf; background: rgba(45,212,191,0.12); padding: 2px 6px; border-radius: 4px; font-weight: 700; flex-shrink: 0; }
 
-    /* 🌿 LNT 띠 */
     .lnt-slim-banner {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       background: rgba(45, 212, 191, 0.06);
-      border: 1px solid rgba(45, 212, 191, 0.22);
+      border: 1px solid rgba(45, 212, 191, 0.2);
       border-radius: 20px;
-      padding: 5px 16px;
-      margin-top: 4px;
+      padding: 4px 12px;
+      margin-top: 8px;
+      font-size: 0.76rem;
+      color: var(--text-secondary);
     }
     .lnt-badge-mini {
       background: rgba(45, 212, 191, 0.2);
       color: var(--accent-teal);
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 800;
-      padding: 2px 8px;
-      border-radius: 6px;
-    }
-    .lnt-text-mini { 
-      font-size: 0.8rem; 
-      color: var(--text-secondary); 
-      white-space: nowrap; 
-    }
-
-    /* 🎲 3. [상단] 오늘의 추천 낭만 박지 */
-    .top-curated-container {
-      width: 100%;
-      max-width: 1200px;
-      margin: 8px auto 26px auto;
-      padding: 0 20px;
-    }
-    .curated-box-wrap {
-      background: rgba(16, 23, 38, 0.65);
-      border: 1px solid rgba(56, 189, 248, 0.18);
-      border-radius: 16px;
-      padding: 16px 20px;
-      backdrop-filter: blur(14px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    }
-    .curated-header-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 14px;
-    }
-    .curated-title-text {
-      font-family: var(--font-display);
-      font-size: 0.96rem;
-      font-weight: 700;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .curated-card-track {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      width: 100%;
-    }
-
-    .curated-rich-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 16px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 10px;
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      min-height: 132px;
-    }
-    .curated-rich-card:hover {
-      background: var(--bg-card-hover);
-      border-color: rgba(56, 189, 248, 0.4);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 12px rgba(56, 189, 248, 0.15);
-      transform: translateY(-3px);
-    }
-    .card-row-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-    }
-    .card-top-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-width: 0;
-      overflow: hidden;
-    }
-    .card-theme-badge {
-      font-size: 0.68rem;
-      font-weight: 800;
-      padding: 2px 7px;
+      padding: 1px 6px;
       border-radius: 4px;
-      background: rgba(56, 189, 248, 0.15);
-      color: var(--accent-blue);
-      flex-shrink: 0;
-    }
-    .card-spot-name {
-      font-family: var(--font-display);
-      font-size: 1rem;
-      font-weight: 700;
-      color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .card-spot-region {
-      font-size: 0.76rem;
-      color: var(--text-muted);
-      font-weight: 600;
-      flex-shrink: 0;
-    }
-    .card-spot-diff {
-      font-size: 0.74rem;
-      color: var(--accent-amber);
-      font-weight: 700;
-      flex-shrink: 0;
-    }
-    .card-desc-rich {
-      font-size: 0.8rem;
-      color: var(--text-secondary);
-      line-height: 1.45;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      word-break: keep-all;
-    }
-    .card-tip-badge-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      border-top: 1px dashed rgba(255, 255, 255, 0.08);
-      padding-top: 8px;
-      font-size: 0.74rem;
-      color: var(--accent-teal);
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
 
-    .btn-action-shuffle {
-      background: rgba(56, 189, 248, 0.1);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      color: var(--accent-blue);
-      font-size: 0.75rem;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      transition: all 0.2s;
-    }
-    .btn-action-shuffle:hover { background: rgba(56, 189, 248, 0.22); color: #fff; }
-    .dice-icon { display: inline-block; transition: transform 0.35s ease; }
-    .btn-action-shuffle:active .dice-icon { transform: rotate(180deg); }
-
-    /* 📦 4. 포털 메인 2열 레이아웃 */
-    .portal-container {
+    /* 🎰 3. 오늘의 행운 박지 슬롯머신 (모바일 1개 전용, 7회 제한, 운명 잭팟) */
+    .slot-machine-section {
       width: 100%;
-      max-width: 1200px;
-      margin: 0 auto 30px auto;
-      padding: 0 20px;
-      display: grid;
-      grid-template-columns: 1fr 330px;
-      gap: 28px;
+      max-width: 1100px;
+      margin: 10px auto 20px auto;
+      padding: 0 16px;
     }
-    .main-column { display: flex; flex-direction: column; gap: 32px; width: 100%; min-width: 0; }
+    .slot-card-container {
+      background: rgba(16, 23, 38, 0.75);
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      border-radius: 16px;
+      padding: 16px;
+      backdrop-filter: blur(14px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      position: relative;
+      overflow: hidden;
+      transition: border 0.3s ease, box-shadow 0.3s ease;
+    }
+    /* 🌟 연속 당첨 시 운명 골드 잭팟 연출 */
+    .slot-card-container.destiny-jackpot {
+      border: 1.5px solid var(--accent-gold) !important;
+      box-shadow: 0 0 25px rgba(250, 204, 21, 0.45) !important;
+      animation: goldPulse 1.5s infinite alternate;
+    }
+    @keyframes goldPulse {
+      0% { box-shadow: 0 0 15px rgba(250, 204, 21, 0.3); }
+      100% { box-shadow: 0 0 30px rgba(250, 204, 21, 0.6); }
+    }
 
-    .section-header {
+    .destiny-banner-tag {
+      display: none;
+      background: linear-gradient(135deg, #f59e0b, #eab308);
+      color: #000;
+      font-weight: 900;
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-align: center;
+      margin-bottom: 10px;
+      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+    .slot-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 12px;
     }
+    .slot-title {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .slot-chances-badge {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--accent-blue);
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 3px 8px;
+      border-radius: 12px;
+    }
+
+    .slot-body-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      min-height: 115px;
+    }
+    .slot-body-card.rolling {
+      animation: slotBlur 0.35s ease infinite alternate;
+      pointer-events: none;
+      filter: blur(1px);
+    }
+    @keyframes slotBlur {
+      0% { transform: translateY(-2px) scale(0.99); opacity: 0.7; }
+      100% { transform: translateY(2px) scale(1.01); opacity: 1; }
+    }
+
+    .slot-row-top { display: flex; justify-content: space-between; align-items: center; }
+    .slot-spot-left { display: flex; align-items: center; gap: 8px; }
+    .slot-tag { font-size: 0.7rem; font-weight: 800; background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); padding: 2px 6px; border-radius: 4px; }
+    .slot-spot-name { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; color: #fff; }
+    .slot-spot-region { font-size: 0.78rem; color: var(--text-muted); font-weight: 600; }
+    .slot-spot-diff { font-size: 0.75rem; color: var(--accent-amber); font-weight: 700; }
+    .slot-desc { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4; }
+    .slot-tip { font-size: 0.74rem; color: var(--accent-teal); font-weight: 600; padding-top: 6px; border-top: 1px dashed rgba(255, 255, 255, 0.08); }
+
+    .slot-btn-spin {
+      width: 100%;
+      margin-top: 12px;
+      padding: 11px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0284c7, #0ea5e9);
+      border: none;
+      color: #fff;
+      font-size: 0.88rem;
+      font-weight: 800;
+      font-family: var(--font-body);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35);
+      transition: all 0.2s ease;
+    }
+    .slot-btn-spin:active { transform: scale(0.97); }
+    .slot-btn-spin.disabled {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .recharge-link-box {
+      display: none;
+      margin-top: 8px;
+      text-align: center;
+      font-size: 0.78rem;
+    }
+    .recharge-btn {
+      color: var(--accent-teal);
+      text-decoration: underline;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* 📦 4. 포털 메인 2열 레이아웃 */
+    .portal-container {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 16px;
+      display: grid;
+      grid-template-columns: 1fr 310px;
+      gap: 22px;
+    }
+    .main-column { display: flex; flex-direction: column; gap: 28px; width: 100%; min-width: 0; }
+
     .section-title {
       font-family: var(--font-display);
-      font-size: 1.05rem;
+      font-size: 1rem;
       font-weight: 700;
       display: flex;
       align-items: center;
       gap: 6px;
-      letter-spacing: -0.02em;
+      margin-bottom: 12px;
       color: #fff;
     }
-    .header-actions { display: flex; align-items: center; gap: 6px; }
-    .nav-arrow-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      color: var(--text-secondary);
-      font-size: 0.75rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .nav-arrow-btn:hover { background: var(--bg-card-hover); color: #fff; border-color: var(--accent-blue); }
 
-    /* 🎬 유튜브 추천 영상 카드 */
-    .yt-full-card {
+    /* 🔥 1. 커뮤니티 라운지 (위로 이동) */
+    .community-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    /* 📊 투표 위젯 */
+    .poll-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .poll-question {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .poll-voted-count { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
+    .poll-options-list { display: flex; flex-direction: column; gap: 6px; }
+    .poll-option-item {
+      position: relative;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      cursor: pointer;
+      overflow: hidden;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    .poll-option-item:hover { border-color: rgba(56, 189, 248, 0.4); }
+    .poll-option-bar {
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      background: rgba(56, 189, 248, 0.16);
+      width: 0%;
+      transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1;
+    }
+    .poll-option-text { position: relative; z-index: 2; color: #fff; }
+    .poll-option-pct { position: relative; z-index: 2; color: var(--accent-blue); font-weight: 800; display: none; }
+    .poll-option-item.selected {
+      border-color: var(--accent-blue);
+      background: rgba(56, 189, 248, 0.08);
+    }
+    .poll-option-item.selected .poll-option-pct { display: block; }
+    .poll-option-item.voted .poll-option-pct { display: block; }
+
+    /* 💬 실시간 한줄톡 (출정 소통 피드) */
+    .talk-feed-wrap {
+      border-top: 1px dashed rgba(255, 255, 255, 0.08);
+      padding-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .talk-input-row {
+      display: flex;
+      gap: 6px;
+    }
+    .talk-name-input {
+      width: 75px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 0.78rem;
+      color: #fff;
+      outline: none;
+    }
+    .talk-msg-input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      color: #fff;
+      outline: none;
+    }
+    .talk-submit-btn {
+      background: var(--accent-blue);
+      border: none;
+      color: #000;
+      font-weight: 800;
+      font-size: 0.76rem;
+      padding: 0 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .talk-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+    .talk-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 6px;
+      padding: 6px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 0.76rem;
+    }
+    .talk-left { display: flex; align-items: center; gap: 6px; overflow: hidden; }
+    .talk-user { color: var(--accent-teal); font-weight: 800; flex-shrink: 0; }
+    .talk-text { color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .talk-time { font-size: 0.68rem; color: var(--text-muted); flex-shrink: 0; }
+
+    /* 🎬 2. 낭만 미디어 (영상 & 숏츠) */
+    .yt-card-box {
       width: 100%;
       background: var(--bg-surface);
       border: 1px solid var(--border);
@@ -523,8 +540,7 @@
       padding: 10px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      gap: 8px;
     }
     .video-box {
       width: 100%;
@@ -536,19 +552,17 @@
     }
     .video-box iframe {
       position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      border: 0;
+      top: 0; left: 0; width: 100%; height: 100%; border: 0;
     }
     .video-caption-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 2px 6px;
-      gap: 10px;
+      padding: 2px 4px;
+      gap: 8px;
     }
     .video-caption-title {
-      font-size: 0.9rem;
+      font-size: 0.86rem;
       font-weight: 700;
       color: var(--text-primary);
       white-space: nowrap;
@@ -559,391 +573,149 @@
     .video-badge {
       color: var(--accent-blue);
       font-weight: 800;
-      font-size: 0.72rem;
-      white-space: nowrap;
+      font-size: 0.7rem;
       background: rgba(56, 189, 248, 0.12);
-      padding: 3px 8px;
-      border-radius: 6px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
     }
 
-    /* 🍲 비화식 직관적 그래픽 카드 (네이버 실시간 검색 딥링크 완벽 연동) */
-    .responsive-grid-container {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 14px;
-      width: 100%;
-    }
-    .food-uniform-card {
+    /* 📱 세로 숏츠 인앱 플레이어 */
+    .shorts-container {
       background: var(--bg-surface);
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 14px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
       gap: 10px;
-      cursor: pointer;
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      position: relative;
-      overflow: hidden;
     }
-    .food-uniform-card:hover {
-      border-color: rgba(56, 189, 248, 0.5);
-      background: var(--bg-card-hover);
-      transform: translateY(-3px);
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 16px rgba(56, 189, 248, 0.15);
-    }
-    
-    .food-art-banner {
-      width: 100%;
-      height: 72px;
-      border-radius: 10px;
+    .shorts-tabs-bar {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 16px;
-      position: relative;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
     }
-    .art-bg-0 { background: linear-gradient(135deg, rgba(239, 68, 68, 0.22) 0%, rgba(245, 158, 11, 0.12) 100%); }
-    .art-bg-1 { background: linear-gradient(135deg, rgba(14, 165, 233, 0.22) 0%, rgba(56, 189, 248, 0.12) 100%); }
-    .art-bg-2 { background: linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(234, 179, 8, 0.12) 100%); }
-    .art-bg-3 { background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(45, 212, 191, 0.12) 100%); }
-
-    .food-art-icon {
-      font-size: 2.2rem;
-      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
-      transition: transform 0.3s ease;
-    }
-    .food-uniform-card:hover .food-art-icon { transform: scale(1.15) rotate(5deg); }
-
-    .food-art-badge-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 4px;
-    }
-    .food-type-pill {
-      font-size: 0.72rem;
-      font-weight: 800;
-      padding: 3px 8px;
-      border-radius: 6px;
-      background: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      color: #fff;
-    }
-    .food-live-badge {
-      font-size: 0.65rem;
-      font-weight: 800;
-      padding: 2px 7px;
-      border-radius: 4px;
-      background: #03c75a;
-      color: #fff;
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      box-shadow: 0 2px 6px rgba(3, 199, 90, 0.35);
-    }
-    .food-live-badge::before {
-      content: '';
-      width: 5px; height: 5px;
-      border-radius: 50%;
-      background: #fff;
-      display: inline-block;
-      animation: pulseDot 1.4s infinite;
-    }
-    @keyframes pulseDot { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
-
-    .food-title { 
-      font-size: 0.92rem; 
-      font-weight: 700; 
-      color: #fff; 
-      line-height: 1.35;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .food-desc { 
-      font-size: 0.78rem; 
-      color: var(--text-secondary); 
-      line-height: 1.45; 
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      word-break: keep-all; 
-    }
-    .food-footer-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: 6px;
-      border-top: 1px dashed rgba(255, 255, 255, 0.08);
-      font-size: 0.73rem;
-    }
-    .food-author { color: var(--text-muted); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; }
-    .food-btn-text { color: var(--accent-blue); font-weight: 700; display: inline-flex; align-items: center; gap: 3px; }
-
-    /* 📸 인스타그램 릴스 */
-    .responsive-insta-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      width: 100%;
-    }
-    .insta-uniform-card {
-      background: var(--bg-surface);
+    .shorts-tabs-bar::-webkit-scrollbar { display: none; }
+    .shorts-tab-btn {
+      background: rgba(255, 255, 255, 0.05);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px;
-      cursor: pointer;
-      color: var(--text-primary);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      transition: all 0.22s ease;
-      min-width: 0;
-    }
-    .insta-uniform-card:hover {
-      transform: translateY(-3px);
-      border-color: rgba(56, 189, 248, 0.4);
-      background: var(--bg-card-hover);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    }
-    .insta-thumb-box {
-      width: 100%;
-      aspect-ratio: 4 / 3;
-      border-radius: 8px;
-      overflow: hidden;
-      position: relative;
-      background: #000;
-    }
-    .insta-thumb-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      transition: transform 0.3s ease;
-    }
-    .insta-uniform-card:hover .insta-thumb-img { transform: scale(1.05); }
-    .insta-reels-badge {
-      position: absolute;
-      top: 6px; right: 6px;
-      background: rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(6px);
-      border-radius: 4px;
-      padding: 2px 7px;
-      font-size: 0.68rem;
-      color: #fff;
-      font-weight: 800;
-      z-index: 2;
-    }
-    .insta-card-title {
-      font-size: 0.86rem;
-      font-weight: 700;
-      color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .insta-card-desc {
-      font-size: 0.76rem;
       color: var(--text-secondary);
+      font-size: 0.74rem;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
       white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .shorts-tab-btn.active {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+    .shorts-player-box {
+      width: 100%;
+      max-width: 320px;
+      aspect-ratio: 9 / 16;
+      margin: 0 auto;
+      border-radius: 10px;
       overflow: hidden;
-      text-overflow: ellipsis;
+      background: #000;
+      position: relative;
+    }
+    .shorts-player-box iframe {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%; border: 0;
     }
 
-    .carousel-dots-wrap { display: none; }
-
-    /* 📊 사이드바 & 날씨 탭 */
-    .side-column { display: flex; flex-direction: column; gap: 18px; width: 100%; min-width: 0; }
-    .sticky-sidebar-wrap { position: sticky; top: 74px; display: flex; flex-direction: column; gap: 18px; }
+    /* 📊 5. 사이드바 (날씨 & 인기 TOP 5) */
+    .side-column { display: flex; flex-direction: column; gap: 16px; width: 100%; min-width: 0; }
+    .sticky-sidebar-wrap { position: sticky; top: 70px; display: flex; flex-direction: column; gap: 16px; }
     .widget-box {
       background: var(--bg-surface);
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      padding: 14px;
     }
-    
     .weather-tab-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       background: rgba(255, 255, 255, 0.04);
       padding: 3px;
-      border-radius: 8px;
+      border-radius: 6px;
       border: 1px solid var(--border);
     }
     .w-tab-btn {
       flex: 1;
-      padding: 6px 8px;
-      font-size: 0.74rem;
+      padding: 5px;
+      font-size: 0.72rem;
       font-weight: 700;
       border: none;
       background: transparent;
       color: var(--text-muted);
       cursor: pointer;
-      border-radius: 6px;
-      transition: all 0.2s;
+      border-radius: 4px;
       text-align: center;
     }
     .w-tab-btn.active {
       background: var(--bg-card);
       color: var(--accent-blue);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
-
-    /* 🌤️ 실시간 산악 날씨 & 풍속 기준 */
-    .mountain-weather-grid { 
-      display: grid; 
-      grid-template-columns: 1fr 1fr; 
-      gap: 5px; 
-      min-height: 106px;
-    }
+    .mountain-weather-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
     .m-weather-item {
       background: rgba(56, 189, 248, 0.05);
-      border: 1px solid rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.12);
       border-radius: 6px;
-      padding: 6px 7px;
+      padding: 6px;
       display: flex;
       flex-direction: column;
-      justify-content: center;
       gap: 2px;
     }
-    .m-weather-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.68rem; font-weight: 700; }
+    .m-weather-head { display: flex; justify-content: space-between; font-size: 0.68rem; font-weight: 700; }
     .m-weather-name { color: #fff; }
-    .m-weather-icon { font-size: 0.8rem; }
     .m-weather-body { display: flex; justify-content: space-between; align-items: baseline; }
-    .m-weather-temp { font-size: 0.88rem; font-weight: 800; color: var(--accent-blue); }
+    .m-weather-temp { font-size: 0.84rem; font-weight: 800; color: var(--accent-blue); }
     .m-weather-wind { font-size: 0.65rem; color: var(--accent-teal); font-weight: 700; }
 
     .wind-guide-box {
       background: rgba(14, 19, 29, 0.7);
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 9px 10px;
+      padding: 8px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      min-height: 106px;
-      height: 106px;
-      box-sizing: border-box;
+      gap: 6px;
       font-size: 0.72rem;
     }
-    .weather-row { display: flex; align-items: center; justify-content: space-between; }
-    .weather-badge { font-size: 0.62rem; font-weight: 800; padding: 2px 5px; border-radius: 4px; }
-    .badge-safe { background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); }
-    .badge-warn { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); }
-    .badge-danger { background: rgba(244, 63, 94, 0.2); color: var(--accent-rose); }
+    .weather-row { display: flex; justify-content: space-between; align-items: center; }
+    .badge-safe { background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); font-size: 0.62rem; font-weight: 800; padding: 2px 5px; border-radius: 4px; }
+    .badge-warn { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); font-size: 0.62rem; font-weight: 800; padding: 2px 5px; border-radius: 4px; }
+    .badge-danger { background: rgba(244, 63, 94, 0.2); color: var(--accent-rose); font-size: 0.62rem; font-weight: 800; padding: 2px 5px; border-radius: 4px; }
 
-    .widget-title-simple {
-      font-family: var(--font-display);
-      font-size: 0.88rem;
-      font-weight: 700;
-      margin-bottom: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: #fff;
-    }
-    .rank-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .rank-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
     .rank-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       cursor: pointer;
-      padding: 8px 10px;
-      border-radius: 8px;
+      padding: 6px 8px;
+      border-radius: 6px;
       background: rgba(255, 255, 255, 0.02);
-      border: 1px solid transparent;
-      transition: all 0.18s ease;
     }
-    .rank-item:hover {
-      background: var(--bg-card-hover);
-      border-color: rgba(56, 189, 248, 0.2);
-    }
-    .rank-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
-    .rank-num { font-weight: 900; font-size: 0.82rem; width: 16px; color: var(--accent-blue); flex-shrink: 0; text-align: center; }
+    .rank-item:hover { background: var(--bg-card-hover); }
+    .rank-left { display: flex; align-items: center; gap: 6px; overflow: hidden; }
+    .rank-num { font-weight: 900; font-size: 0.8rem; width: 14px; color: var(--accent-blue); text-align: center; }
     .rank-1 { color: #facc15; }
     .rank-2 { color: #cbd5e1; }
     .rank-3 { color: #f97316; }
-    .rank-name { font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .rank-city { font-size: 0.7rem; color: var(--text-muted); flex-shrink: 0; }
+    .rank-name { font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rank-city { font-size: 0.68rem; color: var(--text-muted); }
 
-    /* 💬 모달 */
-    .insta-modal-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.88);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: var(--z-modal);
-      padding: 16px;
-    }
-    .insta-modal-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-glow);
-      border-radius: 18px;
-      width: 100%;
-      max-width: 420px;
-      max-height: 88vh;
-      overflow-y: auto;
-      box-shadow: 0 25px 60px rgba(0,0,0,0.95);
-      animation: modalFadeIn 0.25s ease-out;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-    }
-    @keyframes modalFadeIn { from { opacity: 0; transform: translateY(12px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
-    .modal-close-btn {
-      position: absolute;
-      top: 10px; right: 10px;
-      background: rgba(0, 0, 0, 0.7);
-      border: 1px solid var(--border);
-      color: #fff;
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.95rem;
-      cursor: pointer;
-      z-index: 10;
-    }
-    .modal-img-box { width: 100%; aspect-ratio: 4 / 5; background: #000; position: relative; }
-    .modal-img { width: 100%; height: 100%; object-fit: cover; }
-    .modal-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
-    .modal-header-row { display: flex; justify-content: space-between; align-items: center; }
-    .modal-user { font-weight: 800; font-size: 0.95rem; color: #fff; }
-    .modal-badge { font-size: 0.68rem; background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); padding: 2px 7px; border-radius: 4px; font-weight: 700; }
-    .modal-desc { font-size: 0.82rem; color: var(--text-primary); line-height: 1.45; word-break: keep-all; }
-    .modal-tags { font-size: 0.75rem; color: var(--accent-teal); word-break: break-all; }
-    .modal-insta-btn {
-      background: linear-gradient(135deg, #e1306c, #fd1d1d, #f56040);
-      color: #fff;
-      text-decoration: none;
-      padding: 11px;
-      border-radius: 10px;
-      font-size: 0.82rem;
-      font-weight: 700;
-      text-align: center;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      margin-top: 4px;
-    }
-
-    /* 📱 5. 모바일 하단 네비 독 */
+    /* 📱 6. 모바일 하단 네비 독 (100% 엄지 존) */
     .mobile-bottom-dock {
       display: none;
       position: fixed;
@@ -952,12 +724,11 @@
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-top: 1px solid var(--border);
-      height: calc(56px + env(safe-area-inset-bottom, 0px));
+      height: calc(54px + env(safe-area-inset-bottom, 0px));
       padding-bottom: env(safe-area-inset-bottom, 0px);
       z-index: var(--z-dock);
       justify-content: space-around;
       align-items: center;
-      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.6);
     }
     .dock-item {
       display: flex;
@@ -966,160 +737,45 @@
       justify-content: center;
       color: var(--text-secondary);
       text-decoration: none;
-      font-size: 0.7rem;
+      font-size: 0.68rem;
       font-weight: 700;
-      gap: 4px;
-      min-width: 68px;
+      gap: 3px;
+      min-width: 60px;
       height: 100%;
-      transition: color 0.15s, transform 0.15s;
+      transition: color 0.15s;
     }
-    .dock-item:active { transform: scale(0.94); }
     .dock-item.active { color: var(--accent-blue); }
-    .dock-item svg { width: 20px; height: 20px; fill: currentColor; }
+    .dock-item svg { width: 18px; height: 18px; fill: currentColor; }
 
-    /* 모바일 반응형 */
+    /* 모바일 전용 반응형 */
     @media (max-width: 768px) {
-      .pc-nav-links { display: none; }
-      body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
-
-      .portal-nav { padding: 8px 14px; min-height: 50px; }
-      .main-title-text { font-size: 1.05rem !important; }
-      .brand-sub-script { font-size: 1.05rem !important; }
-      .kbd-hint { display: none; }
-      
-      .hero-wrapper { padding: 8px 14px 4px 14px; }
-      .hero-badge-season { 
-        font-size: 1.05rem !important;
-        padding: 4px 12px !important;
-        margin-bottom: 8px !important;
-      }
-      .hero-title { font-size: 1.25rem; margin-bottom: 10px; }
-      .portal-search-input { 
-        font-size: 0.88rem !important; 
-        padding: 8px 68px 8px 16px !important; 
-        min-height: 42px !important;
-      }
-      .portal-search-btn { width: 26px; height: 26px; font-size: 0.75rem; }
-      .lnt-slim-banner { 
-        padding: 5px 12px !important; 
-        margin-bottom: 6px !important; 
-      }
-
-      .top-curated-container { padding: 0 12px; margin-bottom: 12px; }
-      .curated-box-wrap { padding: 10px 12px; border-radius: 12px; }
-      
-      .curated-card-track {
-        display: flex !important;
-        overflow-x: auto !important;
-        scroll-snap-type: x mandatory !important;
-        -webkit-overflow-scrolling: touch !important;
-        overscroll-behavior-x: contain !important;
-        scrollbar-width: none !important;
-        gap: 0 !important;
-        width: 100% !important;
-      }
-      .curated-card-track::-webkit-scrollbar { display: none; }
-
-      .curated-rich-card {
-        flex: 0 0 100% !important;
-        min-width: 100% !important;
-        max-width: 100% !important;
-        scroll-snap-align: center !important;
-        padding: 10px 12px !important;
-        min-height: 125px !important;
-      }
-      .card-spot-name { font-size: 0.94rem !important; }
-      .card-desc-rich { font-size: 0.75rem !important; -webkit-line-clamp: 2 !important; line-height: 1.4 !important; }
-
-      .responsive-grid-container, .responsive-insta-grid {
-        display: flex !important;
-        overflow-x: auto !important;
-        scroll-snap-type: x mandatory !important;
-        -webkit-overflow-scrolling: touch !important;
-        overscroll-behavior-x: contain !important;
-        scrollbar-width: none !important;
-        gap: 8px !important;
-        width: 100% !important;
-      }
-      .responsive-grid-container::-webkit-scrollbar, .responsive-insta-grid::-webkit-scrollbar { display: none; }
-
-      .food-uniform-card {
-        flex: 0 0 100% !important;
-        min-width: 100% !important;
-        max-width: 100% !important;
-        scroll-snap-align: center !important;
-      }
-      .insta-uniform-card {
-        flex: 0 0 100% !important;
-        min-width: 100% !important;
-        max-width: 100% !important;
-        scroll-snap-align: center !important;
-        padding: 8px !important;
-      }
-      .insta-thumb-box { aspect-ratio: 16 / 10 !important; }
-
-      .carousel-dots-wrap {
-        display: flex !important;
-        justify-content: center;
-        align-items: center;
-        gap: 5px;
-        padding: 6px 0 0 0;
-      }
-      .carousel-dot {
-        width: 5px;
-        height: 5px;
-        border-radius: 3px;
-        background: rgba(255, 255, 255, 0.22);
-        transition: all 0.25s ease;
-        cursor: pointer;
-      }
-      .carousel-dot.active {
-        width: 14px;
-        background: var(--accent-blue);
-        box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
-      }
-
-      .portal-container { grid-template-columns: 100%; gap: 18px; padding: 0 12px; }
-
-      .insta-modal-overlay { align-items: flex-end !important; padding: 0 !important; }
-      .insta-modal-card { max-width: 100% !important; border-radius: 18px 18px 0 0 !important; animation: sheetSlideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important; max-height: 85vh !important; }
-      @keyframes sheetSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
+      body { padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)); }
+      .portal-container { grid-template-columns: 100%; gap: 20px; padding: 0 14px; }
+      .hero-search-container { padding: 12px 14px 4px 14px; }
+      .slot-machine-section { padding: 0 14px; }
       .mobile-bottom-dock { display: flex; }
     }
   </style>
 </head>
 <body>
 
-  <!-- 🧭 1. 상단 GNB -->
+  <!-- 🧭 1. 상단 GNB (우측 버튼 제거로 초슬림화, 로고 톤앤매너 완벽 유지) -->
   <nav class="portal-nav">
     <div class="portal-nav-inner">
-      <a href="index.html" class="brand-title-link" title="포털 메인 홈">
+      <a href="index.html" class="brand-title-link" title="홈">
         <span class="main-title-text">대한민국 <span class="highlight-pink">낭만 백패킹</span> 로드</span>
         <span class="brand-sub-script">Romantic Backpacking Road</span>
       </a>
-
-      <div class="pc-nav-links">
-        <a href="map.html" class="pc-nav-btn highlight">
-          <span>🗺️ 전국 박지지도</span>
-        </a>
-        <a href="https://www.instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="pc-nav-btn">
-          <span>문의 및 협업</span>
-        </a>
-      </div>
+      <div><!-- 우측 여백 (추후 배너/공지 영역) --></div>
     </div>
   </nav>
 
-  <!-- 🏔️ 2. 컴팩트 히어로 & 지능형 검색창 -->
-  <section class="hero-wrapper">
-    <div class="hero-badge-season" id="heroSeasonBadge">🌌 실시간 낭만 백패킹 시즌</div>
-    <h1 class="hero-title">당신이 찾고 있는 <span class="highlight">낭만의 백패킹 장소는?</span></h1>
-
+  <!-- 🔍 2. 스마트 검색창 & LNT -->
+  <section class="hero-search-container">
     <div class="portal-search-box">
-      <input type="text" id="mainSearchInput" class="portal-search-input" placeholder="검색 예: 서울 근교 백패킹..." autocomplete="off" oninput="onSearchInputChanged(this.value)" onkeyup="if(event.key==='Enter') executePortalSmartSearch()" />
+      <input type="text" id="mainSearchInput" class="portal-search-input" placeholder="검색 예: 선자령, 굴업도, 강원도..." autocomplete="off" oninput="onSearchInputChanged(this.value)" onkeyup="if(event.key==='Enter') executePortalSmartSearch()" />
       <div class="search-action-wrap">
         <button type="button" class="btn-clear-search" id="btnClearSearch" onclick="clearSearchInput()">✕</button>
-        <span class="kbd-hint">/</span>
         <button type="button" class="portal-search-btn" onclick="executePortalSmartSearch()" title="검색">🔍</button>
       </div>
       <ul id="searchAutoDropdown" class="search-auto-dropdown"></ul>
@@ -1127,140 +783,155 @@
 
     <div class="lnt-slim-banner">
       <span class="lnt-badge-mini">🌿 LNT</span>
-      <span class="lnt-text-mini">100% 비화식 준수와 흔적 없는 클린 백패킹 실천</span>
+      <span>100% 비화식 준수와 흔적 없는 클린 백패킹 실천</span>
     </div>
   </section>
 
-  <!-- 🎲 3. [상단] 오늘의 추천 낭만 박지 (3단 리치 카드) -->
-  <section class="top-curated-container">
-    <div class="curated-box-wrap">
-      <div class="curated-header-bar">
-        <div class="curated-title-text">🎲 오늘의 추천 낭만 박지</div>
-        <div class="header-actions">
-          <button type="button" class="btn-action-shuffle" onclick="shuffleCuratedSpots()" title="새로운 박지 추천">
-            <span class="dice-icon">🎲</span> 다른 박지 보기
-          </button>
-          <button type="button" class="nav-arrow-btn" onclick="slideRail('curatedCardTrack', -1)" title="이전 박지">❮</button>
-          <button type="button" class="nav-arrow-btn" onclick="slideRail('curatedCardTrack', 1)" title="다음 박지">❯</button>
+  <!-- 🎰 3. 오늘의 행운 박지 슬롯머신 (모바일 1개 전용, 7회 제한, 잭팟 연출) -->
+  <section class="slot-machine-section">
+    <div class="slot-card-container" id="slotCardContainer">
+      
+      <div class="destiny-banner-tag" id="destinyBanner">
+        🌟 [운명 알림] 연속 당첨! 이번 주말은 무조건 여기로 떠나세요! 🎒
+      </div>
+
+      <div class="slot-header">
+        <div class="slot-title">🎰 오늘의 행운 박지</div>
+        <div class="slot-chances-badge" id="slotChancesBadge">🎟️ 오늘 남은 기회: 7/7</div>
+      </div>
+
+      <div class="slot-body-card" id="slotBodyCard" onclick="goToCurrentSlotSpot()">
+        <div class="slot-row-top">
+          <div class="slot-spot-left">
+            <span class="slot-tag" id="slotTag">✨ #추천</span>
+            <span class="slot-spot-name" id="slotSpotName">불러오는 중...</span>
+            <span class="slot-spot-region" id="slotSpotRegion"></span>
+          </div>
+          <span class="slot-spot-diff" id="slotSpotDiff">⭐⭐</span>
         </div>
+        <div class="slot-desc" id="slotDesc">박지 데이터를 불러오는 중입니다.</div>
+        <div class="slot-tip" id="slotTip">💡 꿀팁: 비화식 준수</div>
       </div>
 
-      <div class="curated-card-track" id="curatedCardTrack">
-        <!-- 구글 시트 기반 3단 리치 카드 자동 렌더링 -->
+      <button type="button" class="slot-btn-spin" id="btnSpinSlot" onclick="spinLuckySlot()">
+        <span>⚡ 행운의 박지 돌리기</span>
+      </button>
+
+      <div class="recharge-link-box" id="rechargeLinkBox">
+        <span>오늘의 기회를 다 쓰셨나요? </span>
+        <span class="recharge-btn" onclick="rechargeChancesViaMap()">🗺️ 전국 박지지도를 보고 오면 +1회 충전!</span>
       </div>
-      <div class="carousel-dots-wrap" id="curatedDotsWrap"></div>
+
     </div>
   </section>
 
-  <!-- 📦 4. 포털 메인 2열 레이아웃 -->
+  <!-- 📦 4. 포털 메인 레이아웃 -->
   <div class="portal-container">
     
     <main class="main-column">
       
-      <!-- 🎬 1. 이 주의 낭만 백패킹 영상 -->
-      <section class="swipe-section-wrap" id="ytSectionWrap">
-        <div class="section-header">
-          <div class="section-title">🎬 이 주의 낭만 백패킹 영상</div>
+      <!-- 🔥 1. 낭만 커뮤니티 라운지 (위로 이동) -->
+      <section class="community-box">
+        <div class="section-title" style="margin-bottom: 0;">🔥 낭만 커뮤니티 라운지</div>
+        
+        <!-- 📊 이번 주 어디 가시나요? (실시간 투표) -->
+        <div class="poll-wrap">
+          <div class="poll-question">
+            <span>📊 이번 주말 어디로 떠나시나요?</span>
+            <span class="poll-voted-count" id="pollVoteCountText">총 238명 참여</span>
+          </div>
+          <div class="poll-options-list" id="pollOptionsList">
+            <!-- 투표 항목 동적 렌더링 -->
+          </div>
         </div>
-        <div class="yt-full-card">
+
+        <!-- 💬 실시간 백패커 한줄톡 (출정 소통 피드) -->
+        <div class="talk-feed-wrap">
+          <div class="poll-question">
+            <span>💬 실시간 출정톡 & 짧은 소통</span>
+          </div>
+          <div class="talk-input-row">
+            <input type="text" id="talkNameInput" class="talk-name-input" placeholder="닉네임" maxlength="6" />
+            <input type="text" id="talkMsgInput" class="talk-msg-input" placeholder="출정지/현장상황 한줄 남기기..." maxlength="40" onkeyup="if(event.key==='Enter') submitTalkMessage()" />
+            <button type="button" class="talk-submit-btn" onclick="submitTalkMessage()">등록</button>
+          </div>
+          <ul class="talk-list" id="talkListFeed">
+            <!-- 소통 피드 목록 -->
+          </ul>
+        </div>
+      </section>
+
+      <!-- 🎬 2. 낭만 미디어 (영상 & 숏츠, 아래로 이동) -->
+      <section class="swipe-section-wrap">
+        <div class="section-title">🎬 이 주의 낭만 추천 영상</div>
+        <div class="yt-card-box">
           <div class="video-box">
             <iframe id="ytIframe" src="https://www.youtube.com/embed/4JQHNcThibg?rel=0&enablejsapi=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe>
           </div>
           <div class="video-caption-bar">
-            <span class="video-caption-title" id="ytCaptionTitle">비가 내리는 날 산속 바위틈에서 하루를 보낸다면 오지브로님 영상 처럼 정말 낭만적일까?</span>
+            <span class="video-caption-title" id="ytCaptionTitle">비 내리는 날 산속 바위틈 백패킹 영상</span>
             <span class="video-badge" id="ytBadge">🎥 스포트라이트</span>
           </div>
         </div>
       </section>
 
-      <!-- 🍲 2. 특색 있는 LNT 비화식 푸드 (네이버 실시간 블로그 검색 100% 매칭) -->
-      <section class="swipe-section-wrap">
-        <div class="section-header">
-          <div class="section-title">🍲 실시간 인기: 특색 있는 LNT 비화식 푸드</div>
-          <div class="header-actions">
-            <button type="button" class="nav-arrow-btn" onclick="slideRail('foodGridRail', -1)" title="이전 메뉴">❮</button>
-            <button type="button" class="nav-arrow-btn" onclick="slideRail('foodGridRail', 1)" title="다음 메뉴">❯</button>
-          </div>
+      <!-- 📱 세로 숏츠 인앱 플레이어 -->
+      <section class="shorts-container">
+        <div class="section-title" style="margin-bottom: 0;">📱 낭만 숏츠 즉시 감상</div>
+        <div class="shorts-tabs-bar">
+          <button type="button" class="shorts-tab-btn active" onclick="switchShortsTab(0)">🎬 대관령 선자령</button>
+          <button type="button" class="shorts-tab-btn" onclick="switchShortsTab(1)">🌊 굴업도 일몰</button>
+          <button type="button" class="shorts-tab-btn" onclick="switchShortsTab(2)">🌾 영남알프스 억새</button>
         </div>
-
-        <div class="responsive-grid-container" id="foodGridRail">
-          <!-- 4개 직관적 카드 -->
+        <div class="shorts-player-box">
+          <iframe id="shortsIframe" src="https://www.youtube.com/embed/g_mN90qJ43s?rel=0" allowfullscreen loading="lazy"></iframe>
         </div>
-        <div class="carousel-dots-wrap" id="foodDotsWrap"></div>
-      </section>
-
-      <!-- 📸 3. 요즘 뜨는 낭만 피드 & 릴스 -->
-      <section class="swipe-section-wrap">
-        <div class="section-header">
-          <div class="section-title">📸 요즘 뜨는 낭만 피드 & 릴스</div>
-          <div class="header-actions">
-            <button type="button" class="nav-arrow-btn" onclick="slideRail('instaGridRail', -1)" title="이전 피드">❮</button>
-            <button type="button" class="nav-arrow-btn" onclick="slideRail('instaGridRail', 1)" title="다음 피드">❯</button>
-          </div>
-        </div>
-
-        <div class="responsive-insta-grid" id="instaGridRail"></div>
-        <div class="carousel-dots-wrap" id="instaDotsWrap"></div>
       </section>
 
     </main>
 
-    <!-- 📊 사이드바 -->
+    <!-- 📊 5. 사이드바 (날씨 & 인기 TOP 5) -->
     <aside class="side-column">
       <div class="sticky-sidebar-wrap">
         
-        <!-- 🌤️ [탭 전환] 진짜 실시간 산악 날씨 & 풍속 가이드 -->
         <div class="widget-box">
           <div class="weather-tab-header">
-            <button type="button" class="w-tab-btn active" id="tabBtnWeather" onclick="switchWeatherTab('weather')">🌤️ 실시간 날씨</button>
+            <button type="button" class="w-tab-btn active" id="tabBtnWeather" onclick="switchWeatherTab('weather')">🌤️ 산악 날씨</button>
             <button type="button" class="w-tab-btn" id="tabBtnWind" onclick="switchWeatherTab('wind')">💨 풍속 기준</button>
           </div>
 
           <div id="weatherViewReal">
             <div class="mountain-weather-grid">
               <div class="m-weather-item">
-                <div class="m-weather-head"><span class="m-weather-name">대관령 선자령</span><span class="m-weather-icon" id="wIcon-0">⏳</span></div>
-                <div class="m-weather-body"><span class="m-weather-temp" id="wTemp-0">--℃</span><span class="m-weather-wind" id="wWind-0">💨 --m/s</span></div>
+                <div class="m-weather-head"><span class="m-weather-name">선자령</span><span id="wIcon-0">⏳</span></div>
+                <div class="m-weather-body"><span class="m-weather-temp" id="wTemp-0">--℃</span><span class="m-weather-wind" id="wWind-0">--m/s</span></div>
               </div>
               <div class="m-weather-item">
-                <div class="m-weather-head"><span class="m-weather-name">설악산 대청봉</span><span class="m-weather-icon" id="wIcon-1">⏳</span></div>
-                <div class="m-weather-body"><span class="m-weather-temp" id="wTemp-1">--℃</span><span class="m-weather-wind" id="wWind-1">💨 --m/s</span></div>
+                <div class="m-weather-head"><span class="m-weather-name">대청봉</span><span id="wIcon-1">⏳</span></div>
+                <div class="m-weather-body"><span class="m-weather-temp" id="wTemp-1">--℃</span><span class="m-weather-wind" id="wWind-1">--m/s</span></div>
               </div>
               <div class="m-weather-item">
-                <div class="m-weather-head"><span class="m-weather-name">영남알프스 간월재</span><span class="m-weather-icon" id="wIcon-2">⏳</span></div>
-                <div class="m-weather-body"><span class="m-weather-temp" id="wTemp-2">--℃</span><span class="m-weather-wind" id="wWind-2">💨 --m/s</span></div>
+                <div class="m-weather-head"><span class="m-weather-name">간월재</span><span id="wIcon-2">⏳</span></div>
+                <div class="m-weather-body"><span class="m-weather-temp" id="wTemp-2">--℃</span><span class="m-weather-wind" id="wWind-2">--m/s</span></div>
               </div>
               <div class="m-weather-item">
-                <div class="m-weather-head"><span class="m-weather-name">지리산 천왕봉</span><span class="m-weather-icon" id="wIcon-3">⏳</span></div>
-                <div class="m-weather-body"><span class="m-weather-temp" id="wTemp-3">--℃</span><span class="m-weather-wind" id="wWind-3">💨 --m/s</span></div>
+                <div class="m-weather-head"><span class="m-weather-name">천왕봉</span><span id="wIcon-3">⏳</span></div>
+                <div class="m-weather-body"><span class="m-weather-temp" id="wTemp-3">--℃</span><span class="m-weather-wind" id="wWind-3">--m/s</span></div>
               </div>
             </div>
           </div>
 
           <div id="weatherViewWind" style="display: none;">
             <div class="wind-guide-box">
-              <div class="weather-row">
-                <span>🍃 풍속 0 ~ 3 m/s</span>
-                <span class="weather-badge badge-safe">쾌적한 피칭</span>
-              </div>
-              <div class="weather-row">
-                <span>💨 풍속 4 ~ 7 m/s</span>
-                <span class="weather-badge badge-warn">스트링 팩다운</span>
-              </div>
-              <div class="weather-row">
-                <span>⚠️ 풍속 8 m/s 이상</span>
-                <span class="weather-badge badge-danger">능선 피칭 금지</span>
-              </div>
+              <div class="weather-row"><span>🍃 0 ~ 3 m/s</span><span class="badge-safe">쾌적한 피칭</span></div>
+              <div class="weather-row"><span>💨 4 ~ 7 m/s</span><span class="badge-warn">스트링 팩다운</span></div>
+              <div class="weather-row"><span>⚠️ 8 m/s 이상</span><span class="badge-danger">능선 피칭 금지</span></div>
             </div>
           </div>
         </div>
 
-        <!-- 🔥 실시간 인기 박지 TOP 5 -->
         <div class="widget-box">
-          <div class="widget-title-simple">
-            <span>🔥 실시간 인기 박지 TOP 5</span>
-            <span style="font-size:0.7rem; color:var(--text-muted);">조회순</span>
-          </div>
+          <div class="section-title" style="font-size: 0.86rem; margin-bottom: 8px;">🔥 실시간 인기 박지 TOP 5</div>
           <ul class="rank-list" id="popularRankList"></ul>
         </div>
 
@@ -1268,28 +939,7 @@
     </aside>
   </div>
 
-  <!-- 💬 피드/릴스 인앱 모달 -->
-  <div class="insta-modal-overlay" id="instaModalOverlay" onclick="closeInstaModal(event)">
-    <div class="insta-modal-card" onclick="event.stopPropagation()">
-      <button type="button" class="modal-close-btn" onclick="closeInstaModalDirect()">✕</button>
-      <div class="modal-img-box">
-        <img src="" id="modalImg" alt="미리보기" class="modal-img" />
-      </div>
-      <div class="modal-body">
-        <div class="modal-header-row">
-          <span class="modal-user" id="modalUser">낭만 릴스</span>
-          <span class="modal-badge" id="modalBadge">인기 피드</span>
-        </div>
-        <div class="modal-desc" id="modalDesc">피드 설명 내용</div>
-        <div class="modal-tags" id="modalTags">#백패킹 #LNT</div>
-        <a href="#" target="_blank" rel="noopener noreferrer" id="modalLinkBtn" class="modal-insta-btn">
-          <span>인스타그램에서 원본 영상 보기 ➔</span>
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- 📱 5. 모바일 하단 네비 독 -->
+  <!-- 📱 6. 모바일 하단 네비 독 -->
   <nav class="mobile-bottom-dock">
     <a href="index.html" class="dock-item active">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -1311,148 +961,220 @@
     const GOOGLE_SHEET_CONFIG_GID = '1983931878';
 
     let registeredSpots = [];
-
-    // 🍲 네이버 모바일 실시간 블로그 검색 엔진 100% 매칭 (에러 없음)
-    const verifiedFoodBlogs = [
-      {
-        badge: '🔥 발열팩 정찬',
-        icon: '🍱',
-        bgClass: 'art-bg-0',
-        title: '불 없이 완성하는 백패킹 핫앤쿡 & 발열팩 실전 조리 팁',
-        desc: '국립공원 능선에서도 취사 단속 없이 즐기는 따뜻한 발열도시락 실전 노하우.',
-        link: 'https://m.search.naver.com/search.naver?where=m_blog&query=' + encodeURIComponent('백패킹 핫앤쿡 발열도시락 사용법 꿀팁'),
-        blogger: '네이버 블로그 실시간 인기글'
-      },
-      {
-        badge: '🍜 100℃ 보온병 수열',
-        icon: '🍜',
-        bgClass: 'art-bg-1',
-        title: '찬 바람 부는 산 정상에서 고온 보온병으로 즐기는 컵라면 & 라밥',
-        desc: '스탠리·써모스 보온병 온수로 즐기는 얼큰한 국물과 누룽지 꿀조합.',
-        link: 'https://m.search.naver.com/search.naver?where=m_blog&query=' + encodeURIComponent('백패킹 보온병 컵라면 라밥'),
-        blogger: '네이버 블로그 실시간 인기글'
-      },
-      {
-        badge: '🧀 콜드 핑거푸드',
-        icon: '🧀',
-        bgClass: 'art-bg-2',
-        title: '노을 보며 즐기는 브리치즈 & 살라미 견과 와인 안주 플래터',
-        desc: '조리 쓰레기 제로! 텐트 내부 냄새 없이 깔끔하게 즐기는 낭만 안주 세팅.',
-        link: 'https://m.search.naver.com/search.naver?where=m_blog&query=' + encodeURIComponent('백패킹 와인 안주 치즈 플래터'),
-        blogger: '네이버 블로그 실시간 인기글'
-      },
-      {
-        badge: '☕ 모닝 일출 브런치',
-        icon: '☕',
-        bgClass: 'art-bg-3',
-        title: '텐트 지퍼 열고 맞이하는 일출! 드립백 커피 & 베이글 조합',
-        desc: '보온병 온수로 간편하게 내리는 향긋한 모닝 드립커피와 크림치즈 베이글.',
-        link: 'https://m.search.naver.com/search.naver?where=m_blog&query=' + encodeURIComponent('백패킹 아침 드립커피 베이글'),
-        blogger: '네이버 블로그 실시간 인기글'
-      }
-    ];
-
-    let instaFeedList = [
-      {
-        title: '대관령 선자령 은하수 피칭',
-        badge: '▶ 릴스',
-        img: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&auto=format&fit=crop&q=80',
-        desc: '풍력발전기 능선 위로 쏟아지는 밤하늘 은하수. 매서운 바람 속에서도 잊지 못할 낭만의 하룻밤!',
-        tags: '#선자령 #은하수백패킹 #LNT',
-        url: 'https://www.instagram.com'
-      },
-      {
-        title: '굴업도 개머리언덕 붉은 낙조',
-        badge: '📷 인기',
-        img: 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=800&auto=format&fit=crop&q=80',
-        desc: '한국의 갈라파고스 굴업도 개머리언덕! 야생 사슴들과 마주하며 감상하는 서해 바다의 황홀한 붉은 일몰.',
-        tags: '#굴업도 #개머리언덕 #섬백패킹',
-        url: 'https://www.instagram.com'
-      },
-      {
-        title: '영남알프스 황금빛 억새 능선',
-        badge: '▶ 릴스',
-        img: 'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?w=800&auto=format&fit=crop&q=80',
-        desc: '영남알프스의 황금빛 억새평원 사이로 지는 따스한 노을. 잘 정비된 임도길로 초보 백패커에게 추천.',
-        tags: '#간월재 #영남알프스 #억새평원',
-        url: 'https://www.instagram.com'
-      }
-    ];
+    let currentSlotSpot = null;
+    let lastSlotSpot = null;
 
     // -------------------------------------------------------------
-    // 🍲 1. 비화식 푸드 카드 렌더링
+    // 🎰 1. 행운의 박지 슬롯머신 로직 (1일 7회, 잭팟 연출, 충전)
     // -------------------------------------------------------------
-    function renderFoodCards() {
-      const rail = document.getElementById('foodGridRail');
-      if (!rail) return;
+    const MAX_DAILY_CHANCES = 7;
 
-      rail.innerHTML = verifiedFoodBlogs.map((item) => `
-        <div class="food-uniform-card" onclick="window.open('${item.link}', '_blank')">
-          <div class="food-art-banner ${item.bgClass}">
-            <div class="food-art-icon">${item.icon}</div>
-            <div class="food-art-badge-wrap">
-              <span class="food-type-pill">${item.badge}</span>
-              <span class="food-live-badge">N 블로그 검색</span>
-            </div>
-          </div>
-          <div class="food-title">${escapeHtml(item.title)}</div>
-          <div class="food-desc">${escapeHtml(item.desc)}</div>
-          <div class="food-footer-bar">
-            <span class="food-author">✍️ ${escapeHtml(item.blogger)}</span>
-            <span class="food-btn-text">실제 후기 보기 ➔</span>
-          </div>
-        </div>
-      `).join('');
-
-      setupFoodRailDots();
+    function getTodayKey() {
+      const d = new Date();
+      return `slot_chances_${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`;
     }
 
-    // -------------------------------------------------------------
-    // 🧠 2. 검색 엔진
-    // -------------------------------------------------------------
-    const STOP_WORDS = ['백패킹', '박지', '노지', '캠핑', '갈만한곳', '갈 만한 곳', '추천', '근처', '근교', '명소', '어디', '가볼만한곳'];
-
-    const REGION_ALIAS_MAP = {
-      '서울근교': ['경기', '인천', '가평', '양평', '포천', '남양주', '동두천', '연천', '파주', '강화'],
-      '수도권': ['경기', '인천', '서울'],
-      '경남': ['경상남도', '통영', '거제', '남해', '밀양', '산청', '양산', '함양', '고성', '창원', '김해', '진주', '하동'],
-      '경북': ['경상북도', '문경', '영주', '포항', '봉화', '청송', '안동', '영천', '경주', '구미', '상주', '울진', '영덕'],
-      '전남': ['전라남도', '여수', '순천', '고흥', '신안', '완도', '진도', '구례', '담양', '해남', '영암', '보성'],
-      '전북': ['전라북도', '무주', '진안', '장수', '남원', '임실', '순창', '완주', '부안', '고창'],
-      '강원': ['강원도', '평창', '대관령', '강릉', '인제', '홍천', '춘천', '정선', '태백', '영월', '양양', '속초', '고성', '삼척'],
-      '충남': ['충청남도', '태안', '보령', '서산', '당진', '아산', '천안', '공주', '부여', '청양', '예산', '홍성'],
-      '충북': ['충청북도', '단양', '제천', '충주', '괴산', '보은', '옥천', '영동', '음성', '진천'],
-      '제주': ['제주도', '서귀포', '우도', '비양도']
-    };
-
-    function cleanSearchQuery(raw) {
-      let q = raw.trim();
-      STOP_WORDS.forEach(sw => {
-        const reg = new RegExp(sw, 'gi');
-        q = q.replace(reg, ' ');
-      });
-      return q.replace(/\s+/g, ' ').trim();
+    function getRemainingChances() {
+      const key = getTodayKey();
+      const saved = localStorage.getItem(key);
+      if (saved === null) {
+        localStorage.setItem(key, String(MAX_DAILY_CHANCES));
+        return MAX_DAILY_CHANCES;
+      }
+      return parseInt(saved, 10);
     }
 
-    const PLACEHOLDER_LIST = [
-      '검색 예: 서울 근교 백패킹',
-      '검색 예: 경남 백패킹 명소',
-      '검색 예: 대관령 선자령 은하수',
-      '검색 예: 굴업도 개머리언덕',
-      '검색 예: 가을 억새평원 박지'
-    ];
-    let placeholderIdx = 0;
-    function startPlaceholderRolling() {
-      const input = document.getElementById('mainSearchInput');
-      if (!input) return;
-      setInterval(() => {
-        if (document.activeElement !== input && !input.value) {
-          placeholderIdx = (placeholderIdx + 1) % PLACEHOLDER_LIST.length;
-          input.placeholder = PLACEHOLDER_LIST[placeholderIdx];
+    function updateChancesUI() {
+      const remaining = getRemainingChances();
+      const badge = document.getElementById('slotChancesBadge');
+      const btn = document.getElementById('btnSpinSlot');
+      const rechargeBox = document.getElementById('rechargeLinkBox');
+
+      if (badge) badge.innerText = `🎟️ 오늘 남은 기회: ${remaining}/${MAX_DAILY_CHANCES}`;
+
+      if (remaining <= 0) {
+        btn.classList.add('disabled');
+        btn.innerHTML = `<span>🔒 오늘 기회 소진! (내일 00시 초기화)</span>`;
+        if (rechargeBox) rechargeBox.style.display = 'block';
+      } else {
+        btn.classList.remove('disabled');
+        btn.innerHTML = `<span>⚡ 행운의 박지 돌리기 (${remaining}회 남음)</span>`;
+        if (rechargeBox) rechargeBox.style.display = 'none';
+      }
+    }
+
+    function spinLuckySlot() {
+      const remaining = getRemainingChances();
+      if (remaining <= 0) {
+        alert('오늘의 뽑기 기회를 모두 사용하셨습니다!\n하단 지도를 둘러보고 오시면 +1회 충전됩니다.');
+        return;
+      }
+      if (registeredSpots.length === 0) return;
+
+      const card = document.getElementById('slotBodyCard');
+      const container = document.getElementById('slotCardContainer');
+      const banner = document.getElementById('destinyBanner');
+
+      // 롤링 애니메이션 시작
+      card.classList.add('rolling');
+
+      // 기회 차감
+      localStorage.setItem(getTodayKey(), String(remaining - 1));
+      updateChancesUI();
+
+      setTimeout(() => {
+        card.classList.remove('rolling');
+        
+        // 랜덤 박지 추첨
+        const randIdx = Math.floor(Math.random() * registeredSpots.length);
+        const picked = registeredSpots[randIdx];
+
+        // 🌟 운명 잭팟 검사 (연속 같은 박지 당첨)
+        if (lastSlotSpot && lastSlotSpot.name === picked.name) {
+          container.classList.add('destiny-jackpot');
+          if (banner) banner.style.display = 'block';
+        } else {
+          container.classList.remove('destiny-jackpot');
+          if (banner) banner.style.display = 'none';
         }
-      }, 3000);
+
+        lastSlotSpot = picked;
+        currentSlotSpot = picked;
+        displaySlotSpot(picked);
+      }, 350);
     }
 
+    function displaySlotSpot(s) {
+      if (!s) return;
+      document.getElementById('slotTag').innerText = `✨ #${(s.theme || '낭만박지').split(/[,#/]/)[0].trim()}`;
+      document.getElementById('slotSpotName').innerText = s.name;
+      document.getElementById('slotSpotRegion').innerText = s.region ? `(${s.region})` : '';
+      document.getElementById('slotSpotDiff').innerText = `난이도 ${s.difficulty || '⭐⭐'}`;
+      document.getElementById('slotDesc').innerText = s.desc || '자연 속에서 즐기는 조용하고 낭만적인 하룻밤.';
+      document.getElementById('slotTip').innerText = `💡 꿀팁: ${s.tip || '비화식 준수'}`;
+    }
+
+    function goToCurrentSlotSpot() {
+      if (currentSlotSpot && currentSlotSpot.name) {
+        location.href = `map.html?spot=${encodeURIComponent(currentSlotSpot.name)}`;
+      }
+    }
+
+    function rechargeChancesViaMap() {
+      const key = getTodayKey();
+      const current = getRemainingChances();
+      localStorage.setItem(key, String(current + 1));
+      location.href = 'map.html';
+    }
+
+    // -------------------------------------------------------------
+    // 📊 2. 실시간 투표 & 💬 한줄 소통 피드
+    // -------------------------------------------------------------
+    const POLL_STORAGE_KEY = 'romantic_poll_choice_v1';
+    let pollData = [
+      { id: 1, text: '❄️ 강원도 설산 & 능선 피칭', votes: 142 },
+      { id: 2, text: '🌊 서해/남해 섬 & 바다 뷰', votes: 68 },
+      { id: 3, text: '🌲 숲속 조용한 힐링 노지', votes: 34 },
+      { id: 4, text: '🏠 이번 주는 장비 정비(방콕)', votes: 12 }
+    ];
+
+    function renderPoll() {
+      const wrap = document.getElementById('pollOptionsList');
+      if (!wrap) return;
+      
+      const userChoice = localStorage.getItem(POLL_STORAGE_KEY);
+      const totalVotes = pollData.reduce((acc, cur) => acc + cur.votes, 0);
+      document.getElementById('pollVoteCountText').innerText = `총 ${totalVotes.toLocaleString()}명 참여`;
+
+      wrap.innerHTML = pollData.map(opt => {
+        const pct = Math.round((opt.votes / totalVotes) * 100);
+        const isSelected = userChoice == opt.id;
+        const isVoted = userChoice !== null;
+
+        return `
+          <div class="poll-option-item ${isSelected ? 'selected' : ''} ${isVoted ? 'voted' : ''}" onclick="votePollOption(${opt.id})">
+            <div class="poll-option-bar" style="width: ${isVoted ? pct : 0}%"></div>
+            <span class="poll-option-text">${opt.text} ${isSelected ? '✓' : ''}</span>
+            <span class="poll-option-pct">${pct}%</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function votePollOption(id) {
+      const prev = localStorage.getItem(POLL_STORAGE_KEY);
+      if (prev == id) return;
+
+      if (prev !== null) {
+        const oldOpt = pollData.find(o => o.id == prev);
+        if (oldOpt) oldOpt.votes--;
+      }
+
+      const target = pollData.find(o => o.id == id);
+      if (target) target.votes++;
+
+      localStorage.setItem(POLL_STORAGE_KEY, String(id));
+      renderPoll();
+    }
+
+    // 💬 한줄 출정 피드
+    let talkMessages = [
+      { user: '산바람', msg: '선자령 텐트 쳤습니다. 현재 바람 잔잔해요!', time: '방금' },
+      { user: '굴업러', msg: '내일 아침 굴업도 배편 정상 운항하네요 ㅎㅎ', time: '10분 전' },
+      { user: '캠린이', msg: '비화식 핫앤쿡 챙겨서 첫 출정 준비 중입니다 ⛺', time: '23분 전' }
+    ];
+
+    function renderTalkFeed() {
+      const list = document.getElementById('talkListFeed');
+      if (!list) return;
+      list.innerHTML = talkMessages.map(m => `
+        <li class="talk-item">
+          <div class="talk-left">
+            <span class="talk-user">${escapeHtml(m.user)}</span>
+            <span class="talk-text">${escapeHtml(m.msg)}</span>
+          </div>
+          <span class="talk-time">${m.time}</span>
+        </li>
+      `).join('');
+    }
+
+    function submitTalkMessage() {
+      const nameInput = document.getElementById('talkNameInput');
+      const msgInput = document.getElementById('talkMsgInput');
+      const user = nameInput.value.trim() || '익명';
+      const msg = msgInput.value.trim();
+
+      if (!msg) {
+        alert('출정 한줄 메시지를 입력해주세요!');
+        return;
+      }
+
+      talkMessages.unshift({ user, msg, time: '방금' });
+      if (talkMessages.length > 8) talkMessages.pop();
+
+      msgInput.value = '';
+      renderTalkFeed();
+    }
+
+    // -------------------------------------------------------------
+    // 📱 3. 숏츠 탭 전환 뷰어
+    // -------------------------------------------------------------
+    const shortsList = [
+      'https://www.youtube.com/embed/g_mN90qJ43s?rel=0',
+      'https://www.youtube.com/embed/xS6U8_m5x3Y?rel=0',
+      'https://www.youtube.com/embed/4JQHNcThibg?rel=0'
+    ];
+
+    function switchShortsTab(idx) {
+      const buttons = document.querySelectorAll('.shorts-tab-btn');
+      buttons.forEach((b, i) => b.classList.toggle('active', i === idx));
+      const iframe = document.getElementById('shortsIframe');
+      if (iframe && shortsList[idx]) iframe.src = shortsList[idx];
+    }
+
+    // -------------------------------------------------------------
+    // 🔍 4. 스마트 검색 & 자동완성
+    // -------------------------------------------------------------
     let searchDebounceTimer = null;
     function onSearchInputChanged(value) {
       const clearBtn = document.getElementById('btnClearSearch');
@@ -1479,59 +1201,21 @@
         dropdown.style.display = 'none';
         return;
       }
+      const target = keyword.trim().toLowerCase();
+      const matches = registeredSpots.filter(s => 
+        s.name.toLowerCase().includes(target) || s.region.toLowerCase().includes(target)
+      ).slice(0, 5);
 
-      const raw = keyword.trim();
-      const cleaned = cleanSearchQuery(raw).toLowerCase();
-      const searchTarget = cleaned || raw.toLowerCase();
-
-      let spotMatches = registeredSpots.filter(s => {
-        return s.name.toLowerCase().includes(searchTarget) || 
-               s.region.toLowerCase().includes(searchTarget) ||
-               s.theme.toLowerCase().includes(searchTarget);
-      });
-
-      let matchedRegionKey = null;
-      for (const [rKey, aliases] of Object.entries(REGION_ALIAS_MAP)) {
-        if (searchTarget.includes(rKey.toLowerCase()) || aliases.some(a => searchTarget.includes(a.toLowerCase()))) {
-          matchedRegionKey = rKey;
-          const regionSpots = registeredSpots.filter(s => 
-            aliases.some(a => s.region.toLowerCase().includes(a.toLowerCase()))
-          );
-          spotMatches = Array.from(new Set([...spotMatches, ...regionSpots]));
-          break;
-        }
-      }
-
-      let html = '';
-      if (matchedRegionKey) {
-        html += `
-          <li class="auto-item" onclick="smartRouteToRegion('${matchedRegionKey}')">
+      if (matches.length > 0) {
+        dropdown.innerHTML = matches.map(s => `
+          <li class="auto-item" onclick="location.href='map.html?spot=${encodeURIComponent(s.name)}'">
             <div class="auto-item-left">
-              <span class="auto-badge-region">🗺️ 지역 모아보기</span>
-              <span class="auto-item-name">'${matchedRegionKey}' 추천 박지 전체보기</span>
+              <span class="auto-badge-spot">📍 박지</span>
+              <span class="auto-item-name">${escapeHtml(s.name)}</span>
             </div>
-            <span class="auto-item-sub">${spotMatches.length}곳 등록됨</span>
+            <span style="font-size:0.7rem; color:var(--text-muted);">${escapeHtml(s.region)}</span>
           </li>
-        `;
-      }
-
-      const topSpots = spotMatches.slice(0, 5);
-      if (topSpots.length > 0) {
-        topSpots.forEach(s => {
-          html += `
-            <li class="auto-item" onclick="smartRouteToSpot('${escapeJsString(s.name)}')">
-              <div class="auto-item-left">
-                <span class="auto-badge-spot">📍 등록 박지</span>
-                <span class="auto-item-name">${escapeHtml(s.name)}</span>
-              </div>
-              <span class="auto-item-sub">${escapeHtml(s.region)}</span>
-            </li>
-          `;
-        });
-      }
-
-      if (html) {
-        dropdown.innerHTML = html;
+        `).join('');
         dropdown.style.display = 'block';
       } else {
         dropdown.style.display = 'none';
@@ -1541,26 +1225,12 @@
     function executePortalSmartSearch() {
       const input = document.getElementById('mainSearchInput');
       const q = input ? input.value.trim() : '';
-      if (!q) {
-        location.href = 'map.html';
-        return;
-      }
-      const clean = cleanSearchQuery(q);
-      smartRouteToSpot(clean || q);
-    }
-
-    function smartRouteToSpot(queryName) {
-      const clean = queryName.trim();
-      if (!clean) return;
-      location.href = `map.html?spot=${encodeURIComponent(clean)}`;
-    }
-
-    function smartRouteToRegion(regionName) {
-      location.href = `map.html?region=${encodeURIComponent(regionName)}`;
+      if (!q) { location.href = 'map.html'; return; }
+      location.href = `map.html?spot=${encodeURIComponent(q)}`;
     }
 
     // -------------------------------------------------------------
-    // 🎲 3. 구글 시트 로드 & 3단 리치 카드 렌더링
+    // 📦 5. 구글 시트 로드 & 산악 날씨 연동
     // -------------------------------------------------------------
     async function loadPortalSpotData() {
       const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_MAIN_GID}&_t=${Date.now()}`;
@@ -1577,83 +1247,39 @@
                   const getVal = (...keys) => {
                     for (const k of keys) {
                       for (const rk of Object.keys(row)) {
-                        if (rk.toLowerCase().replace(/\s+/g, '') === k.toLowerCase().replace(/\s+/g, '')) {
-                          return row[rk];
-                        }
+                        if (rk.toLowerCase().replace(/\s+/g, '') === k.toLowerCase().replace(/\s+/g, '')) return row[rk];
                       }
                     }
                     return '';
                   };
-
                   return {
-                    id: getVal('id') || String(idx),
-                    name: getVal('name', '산', '박지명', '이름', 'spotName'),
-                    region: getVal('region', '지역', '주소', '시군구', '위치') || '전국',
-                    theme: getVal('theme', '태그', '테마', 'vibe', '카테고리') || '낭만박지',
-                    desc: getVal('desc', '특징', '설명', '한줄설명', 'description') || '자연 속에서 즐기는 조용하고 낭만적인 하룻밤.',
-                    difficulty: getVal('difficulty', '난이도', 'level') || '⭐⭐',
-                    tip: getVal('tip', '들머리', '핵심팁', '주의사항', 'entryPoint') || '비화식 준수'
+                    name: getVal('name', '산', '박지명', '이름'),
+                    region: getVal('region', '지역', '주소') || '전국',
+                    theme: getVal('theme', '태그', '테마') || '낭만박지',
+                    desc: getVal('desc', '특징', '설명') || '자연 속에서 즐기는 조용한 하룻밤.',
+                    difficulty: getVal('difficulty', '난이도') || '⭐⭐',
+                    tip: getVal('tip', '들머리', '핵심팁') || '비화식 필수'
                   };
                 }).filter(s => s.name && s.name.trim() !== '');
 
-                renderRandomCuratedSpots();
-                renderPopularRankList();
+                if (registeredSpots.length > 0) {
+                  currentSlotSpot = registeredSpots[0];
+                  displaySlotSpot(currentSlotSpot);
+                  renderPopularRankList();
+                }
               }
             }
           });
         }
-      } catch (e) {
-        console.error('구글 시트 로드 실패:', e);
-      }
-    }
-
-    function renderRandomCuratedSpots() {
-      const track = document.getElementById('curatedCardTrack');
-      const dotsWrap = document.getElementById('curatedDotsWrap');
-      if (!track) return;
-
-      if (registeredSpots.length === 0) {
-        track.innerHTML = `<div style="padding:10px; color:var(--text-muted); font-size:0.76rem;">등록된 박지 데이터를 불러오는 중입니다...</div>`;
-        return;
-      }
-
-      const shuffled = [...registeredSpots].sort(() => 0.5 - Math.random());
-      const selected = shuffled.slice(0, 3);
-
-      track.innerHTML = selected.map(s => {
-        const tagText = s.theme.split(/[,#/]/)[0].trim() || '낭만박지';
-        return `
-          <div class="curated-rich-card" onclick="smartRouteToSpot('${escapeJsString(s.name)}')">
-            <div class="card-row-top">
-              <div class="card-top-left">
-                <span class="card-theme-badge">✨ #${escapeHtml(tagText)}</span>
-                <span class="card-spot-name">${escapeHtml(s.name)}</span>
-                <span class="card-spot-region">${escapeHtml(s.region)}</span>
-              </div>
-              <span class="card-spot-diff">난이도 ${escapeHtml(s.difficulty)}</span>
-            </div>
-            <div class="card-desc-rich">${escapeHtml(s.desc)}</div>
-            <div class="card-tip-badge-row">
-              <span>💡 ${escapeHtml(s.tip)}</span>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      setupCarouselDots(track, dotsWrap, selected.length, 0);
-    }
-
-    function shuffleCuratedSpots() {
-      renderRandomCuratedSpots();
+      } catch (e) {}
     }
 
     function renderPopularRankList() {
       const listEl = document.getElementById('popularRankList');
       if (!listEl || registeredSpots.length === 0) return;
-
       const top5 = registeredSpots.slice(0, 5);
       listEl.innerHTML = top5.map((s, idx) => `
-        <li class="rank-item" onclick="smartRouteToSpot('${escapeJsString(s.name)}')">
+        <li class="rank-item" onclick="location.href='map.html?spot=${encodeURIComponent(s.name)}'">
           <div class="rank-left">
             <span class="rank-num ${idx === 0 ? 'rank-1' : idx === 1 ? 'rank-2' : idx === 2 ? 'rank-3' : ''}">${idx + 1}</span>
             <span class="rank-name">${escapeHtml(s.name)}</span>
@@ -1663,107 +1289,20 @@
       `).join('');
     }
 
-    // -------------------------------------------------------------
-    // 🎬 4. 유튜브 설정 탭 연동
-    // -------------------------------------------------------------
-    function parseYouTubeUniversalUrl(url) {
-      if (!url) return null;
-      const str = String(url).trim();
-
-      const listMatch = str.match(/[?&]list=([^#&?]+)/);
-      const listId = listMatch ? listMatch[1] : null;
-
-      const videoMatch = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/|watch\?.+&v=))([\w-]{11})/);
-      const vid = videoMatch ? videoMatch[1] : null;
-
-      if (listId && !vid) {
-        return { embedUrl: `https://www.youtube-nocookie.com/embed/videoseries?list=${listId}&rel=0`, badge: '📺 추천 재생목록' };
-      }
-      if (vid) {
-        const listParam = listId ? `&list=${listId}` : '';
-        return { embedUrl: `https://www.youtube-nocookie.com/embed/${vid}?rel=0&enablejsapi=1${listParam}`, badge: '🎥 스포트라이트' };
-      }
-      return null;
-    }
-
-    async function loadFeaturedVideoFromConfigSheet() {
-      const configUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_CONFIG_GID}&_t=${Date.now()}`;
-      try {
-        const res = await fetch(configUrl);
-        if (res.ok) {
-          const csvText = await res.text();
-          Papa.parse(csvText, {
-            header: true,
-            skipEmptyLines: true,
-            transformHeader: h => h.replace(/^\uFEFF/, '').trim(),
-            complete: function(results) {
-              if (results.data && results.data.length > 0) {
-                for (const row of results.data) {
-                  const getVal = (...keys) => {
-                    for (const k of keys) {
-                      for (const rk of Object.keys(row)) {
-                        if (rk.toLowerCase().replace(/\s+/g, '') === k.toLowerCase().replace(/\s+/g, '')) {
-                          return row[rk];
-                        }
-                      }
-                    }
-                    return '';
-                  };
-
-                  const videoUrl = getVal('featuredVideo', '유튜브', 'youtubeUrl', 'link', '영상링크', '영상');
-                  const caption = getVal('featuredCaption', '영상설명', 'caption', '제목');
-
-                  if (videoUrl && videoUrl.trim()) {
-                    const parsed = parseYouTubeUniversalUrl(videoUrl);
-                    if (parsed) {
-                      const iframe = document.getElementById('ytIframe');
-                      const capTitle = document.getElementById('ytCaptionTitle');
-                      const badge = document.getElementById('ytBadge');
-
-                      if (iframe) iframe.src = parsed.embedUrl;
-                      if (capTitle && caption) capTitle.innerText = caption.trim();
-                      if (badge) badge.innerText = parsed.badge;
-                      break;
-                    }
-                  }
-                }
-              }
-            }
-          });
-        }
-      } catch (e) {
-        console.log('설정 탭 연동 실패 (기본 영상 유지):', e);
-      }
-    }
-
-    // -------------------------------------------------------------
-    // 🌤️ 5. 실시간 산악 날씨 (Open-Meteo API)
-    // -------------------------------------------------------------
-    const MOUNTAINS_COORDS = [
-      { name: '대관령 선자령', lat: 37.697, lon: 128.761 },
-      { name: '설악산 대청봉', lat: 38.119, lon: 128.465 },
-      { name: '영남알프스 간월재', lat: 35.547, lon: 129.043 },
-      { name: '지리산 천왕봉', lat: 35.337, lon: 127.731 }
+    // 🌤️ 실시간 날씨
+    const MOUNTAINS = [
+      { name: '선자령', lat: 37.697, lon: 128.761 },
+      { name: '대청봉', lat: 38.119, lon: 128.465 },
+      { name: '간월재', lat: 35.547, lon: 129.043 },
+      { name: '천왕봉', lat: 35.337, lon: 127.731 }
     ];
 
-    function getWeatherIconByWmoCode(code) {
-      if (code === 0) return '☀️';
-      if (code === 1 || code === 2) return '🌤️';
-      if (code === 3) return '☁️';
-      if (code === 45 || code === 48) return '🌫️';
-      if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return '🌧️';
-      if ([71, 73, 75, 77, 85, 86].includes(code)) return '❄️';
-      if ([95, 96, 99].includes(code)) return '⛈️';
-      return '⛅';
-    }
-
     async function fetchRealMountainWeather() {
-      const lats = MOUNTAINS_COORDS.map(m => m.lat).join(',');
-      const lons = MOUNTAINS_COORDS.map(m => m.lon).join(',');
-      const apiUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,wind_speed_10m,weather_code&wind_speed_unit=ms&timezone=Asia%2FSeoul`;
-
+      const lats = MOUNTAINS.map(m => m.lat).join(',');
+      const lons = MOUNTAINS.map(m => m.lon).join(',');
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}&current=temperature_2m,wind_speed_10m,weather_code&wind_speed_unit=ms&timezone=Asia%2FSeoul`;
       try {
-        const res = await fetch(apiUrl);
+        const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
           const list = Array.isArray(data) ? data : [data];
@@ -1771,221 +1310,23 @@
             if (item.current) {
               const temp = Math.round(item.current.temperature_2m);
               const wind = (item.current.wind_speed_10m).toFixed(1);
-              const icon = getWeatherIconByWmoCode(item.current.weather_code);
-
-              const tempEl = document.getElementById(`wTemp-${idx}`);
-              const windEl = document.getElementById(`wWind-${idx}`);
-              const iconEl = document.getElementById(`wIcon-${idx}`);
-
-              if (tempEl) tempEl.innerText = `${temp}℃`;
-              if (windEl) windEl.innerText = `💨 ${wind}m/s`;
-              if (iconEl) iconEl.innerText = icon;
-            }
-          });
-        }
-      } catch (e) {
-        console.log('실시간 기상 API 연동 실패:', e);
-      }
-    }
-
-    function switchWeatherTab(tabType) {
-      const btnW = document.getElementById('tabBtnWeather');
-      const btnWind = document.getElementById('tabBtnWind');
-      const viewW = document.getElementById('weatherViewReal');
-      const viewWind = document.getElementById('weatherViewWind');
-
-      if (tabType === 'weather') {
-        btnW.classList.add('active');
-        btnWind.classList.remove('active');
-        viewW.style.display = 'block';
-        viewWind.style.display = 'none';
-      } else {
-        btnWind.classList.add('active');
-        btnW.classList.remove('active');
-        viewW.style.display = 'none';
-        viewWind.style.display = 'block';
-      }
-    }
-
-    // -------------------------------------------------------------
-    // 📸 6. 인스타그램 & 릴스
-    // -------------------------------------------------------------
-    function renderInstaGrid() {
-      const track = document.getElementById('instaGridRail');
-      const dotsWrap = document.getElementById('instaDotsWrap');
-      if (!track) return;
-
-      track.innerHTML = instaFeedList.map((feed, idx) => `
-        <div class="insta-uniform-card" onclick="openInstaModal(${idx})">
-          <div class="insta-thumb-box">
-            <img src="${feed.img}" alt="${feed.title}" class="insta-thumb-img" loading="lazy" />
-            <span class="insta-reels-badge">${feed.badge || '▶ 릴스'}</span>
-          </div>
-          <div class="insta-card-title">${escapeHtml(feed.title)}</div>
-          <div class="insta-card-desc">${escapeHtml(feed.desc)}</div>
-        </div>
-      `).join('');
-
-      setupCarouselDots(track, dotsWrap, instaFeedList.length, 8);
-    }
-
-    async function loadFeedsFromSheet() {
-      const feedUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('피드')}&_t=${Date.now()}`;
-      try {
-        const res = await fetch(feedUrl);
-        if (res.ok) {
-          const csvText = await res.text();
-          Papa.parse(csvText, {
-            header: true,
-            skipEmptyLines: true,
-            transformHeader: h => h.replace(/^\uFEFF/, '').trim(),
-            complete: function(results) {
-              if (results.data && results.data.length > 0) {
-                const list = results.data.map(row => {
-                  const getVal = (...keys) => {
-                    for (const k of keys) {
-                      for (const rk of Object.keys(row)) {
-                        if (rk.toLowerCase().replace(/\s+/g, '') === k.toLowerCase().replace(/\s+/g, '')) return row[rk];
-                      }
-                    }
-                    return '';
-                  };
-                  return {
-                    title: getVal('title', '제목', '박지명') || '낭만 릴스',
-                    badge: getVal('badge', '구분', '태그') || '▶ 릴스',
-                    img: getVal('img', '이미지', '썸네일') || 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&auto=format&fit=crop&q=80',
-                    desc: getVal('desc', '설명', '내용') || '자연 속에서 즐기는 조용한 하룻밤.',
-                    tags: getVal('tags', '해시태그') || '#백패킹 #LNT',
-                    url: getVal('url', '링크', '인스타링크') || 'https://www.instagram.com'
-                  };
-                }).filter(f => f.img && f.img.startsWith('http'));
-
-                if (list.length > 0) {
-                  instaFeedList = list.slice(0, 6); 
-                  renderInstaGrid();
-                }
-              }
+              const tEl = document.getElementById(`wTemp-${idx}`);
+              const wEl = document.getElementById(`wWind-${idx}`);
+              const iEl = document.getElementById(`wIcon-${idx}`);
+              if (tEl) tEl.innerText = `${temp}℃`;
+              if (wEl) wEl.innerText = `${wind}m/s`;
+              if (iEl) iEl.innerText = item.current.weather_code <= 2 ? '☀️' : (item.current.weather_code >= 51 ? '🌧️' : '☁️');
             }
           });
         }
       } catch (e) {}
     }
 
-    function setupFoodRailDots() {
-      const track = document.getElementById('foodGridRail');
-      const dotsWrap = document.getElementById('foodDotsWrap');
-      if (track && dotsWrap) {
-        setupCarouselDots(track, dotsWrap, 4, 8);
-      }
-    }
-
-    function setupCarouselDots(railElem, dotsWrapElem, totalCount, gap = 8) {
-      if (!railElem || !dotsWrapElem) return;
-      if (totalCount <= 1) {
-        dotsWrapElem.innerHTML = '';
-        return;
-      }
-
-      dotsWrapElem.innerHTML = Array.from({ length: totalCount }).map((_, i) => `
-        <div class="carousel-dot ${i === 0 ? 'active' : ''}" onclick="scrollRailToIndex('${railElem.id}', ${i})"></div>
-      `).join('');
-
-      railElem.addEventListener('scroll', () => {
-        const itemWidth = railElem.offsetWidth;
-        const scrollLeft = railElem.scrollLeft;
-        const activeIdx = Math.min(totalCount - 1, Math.max(0, Math.round(scrollLeft / itemWidth)));
-
-        const dots = dotsWrapElem.querySelectorAll('.carousel-dot');
-        dots.forEach((dot, idx) => {
-          dot.classList.toggle('active', idx === activeIdx);
-        });
-      }, { passive: true });
-    }
-
-    function slideRail(railId, direction) {
-      const rail = document.getElementById(railId);
-      if (!rail) return;
-      const scrollAmount = rail.offsetWidth;
-      rail.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
-    }
-
-    function scrollRailToIndex(railId, index) {
-      const rail = document.getElementById(railId);
-      if (!rail) return;
-      rail.scrollTo({ left: index * rail.offsetWidth, behavior: 'smooth' });
-    }
-
-    // 💬 모달 제어
-    function openInstaModal(idx) {
-      const data = instaFeedList[idx];
-      if (!data) return;
-
-      document.getElementById('modalImg').src = data.img;
-      document.getElementById('modalUser').textContent = data.title;
-      document.getElementById('modalBadge').textContent = data.badge || '인기 피드';
-      document.getElementById('modalDesc').textContent = data.desc;
-      document.getElementById('modalTags').textContent = data.tags;
-      document.getElementById('modalLinkBtn').href = data.url;
-
-      document.getElementById('instaModalOverlay').style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-
-      window.history.pushState({ modalOpen: true }, '');
-    }
-
-    function closeInstaModalDirect(fromHistory = false) {
-      const overlay = document.getElementById('instaModalOverlay');
-      if (overlay && overlay.style.display === 'flex') {
-        overlay.style.display = 'none';
-        document.body.style.overflow = '';
-        if (!fromHistory && window.history.state && window.history.state.modalOpen) {
-          window.history.back();
-        }
-      }
-    }
-
-    function closeInstaModal(e) {
-      if (e.target.id === 'instaModalOverlay') closeInstaModalDirect();
-    }
-
-    window.addEventListener('popstate', (e) => {
-      const overlay = document.getElementById('instaModalOverlay');
-      if (overlay && overlay.style.display === 'flex') closeInstaModalDirect(true);
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        closeInstaModalDirect();
-        const dd = document.getElementById('searchAutoDropdown');
-        if (dd) dd.style.display = 'none';
-      }
-      if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
-        e.preventDefault();
-        const searchInput = document.getElementById('mainSearchInput');
-        if (searchInput) {
-          searchInput.focus();
-          searchInput.select();
-        }
-      }
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.portal-search-box')) {
-        const dd = document.getElementById('searchAutoDropdown');
-        if (dd) dd.style.display = 'none';
-      }
-    });
-
-    function updateSeasonalBadge() {
-      const month = new Date().getMonth() + 1;
-      let badgeText = '';
-      if (month >= 3 && month <= 5) badgeText = `🌸 ${month}월은 봄꽃 & 포근한 산행 시즌`;
-      else if (month >= 6 && month <= 8) badgeText = `🌌 ${month}월은 은하수 & 계곡 피서 시즌`;
-      else if (month >= 9 && month <= 11) badgeText = `🌾 ${month}월은 황금 억새 & 단풍 트레킹 시즌`;
-      else badgeText = `❄️ ${month}월 설산 눈꽃 & 겨울 낭만 시즌`;
-      
-      const el = document.getElementById('heroSeasonBadge');
-      if (el) el.innerText = badgeText;
+    function switchWeatherTab(tab) {
+      document.getElementById('tabBtnWeather').classList.toggle('active', tab === 'weather');
+      document.getElementById('tabBtnWind').classList.toggle('active', tab === 'wind');
+      document.getElementById('weatherViewReal').style.display = tab === 'weather' ? 'block' : 'none';
+      document.getElementById('weatherViewWind').style.display = tab === 'wind' ? 'block' : 'none';
     }
 
     function escapeHtml(text) {
@@ -1993,19 +1334,12 @@
       return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    function escapeJsString(str) {
-      return (str || '').replace(/'/g, "\\'");
-    }
-
-    // 🚀 초기화 실행
+    // 🚀 초기 실행
     window.addEventListener('DOMContentLoaded', () => {
-      updateSeasonalBadge();
-      startPlaceholderRolling();
-      renderInstaGrid();
-      renderFoodCards();         // 👈 네이버 검색엔진 딥링크 연동 실행
+      updateChancesUI();
+      renderPoll();
+      renderTalkFeed();
       loadPortalSpotData();
-      loadFeedsFromSheet();
-      loadFeaturedVideoFromConfigSheet();
       fetchRealMountainWeather();
     });
   </script>
