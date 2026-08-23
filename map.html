@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>대한민국 낭만 백패킹 로드 | 전국 지도 (4.5ver)</title>
+  <title>대한민국 낭만 백패킹 로드 | 전국 지도 (4.5ver Pro)</title>
 
   <!-- 🔤 웹폰트: Pretendard + Gmarket Sans + Caveat -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
@@ -17,6 +17,8 @@
   
   <!-- Naver Maps Open API -->
   <script type="text/javascript" src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=nokunumn03&submodules=geocoder"></script>
+  <!-- Naver Map Marker Clustering CDN -->
+  <script src="https://navermaps.github.io/maps.js.ncp/docs/js/MarkerClustering.js"></script>
   <!-- CSV Parser -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
@@ -459,7 +461,7 @@
       text-align: center;
     }
 
-    /* 🏷️ 필터 영역 (상태 + 지역 + 지형) */
+    /* 🏷️ 3단 필터 바 (개인화 찜/완주 추가) */
     .filter-wrapper {
       background: var(--bg-deep);
       border-bottom: 1px solid var(--border);
@@ -520,6 +522,14 @@
     .status-filter-btn.btn-status-hot.active {
       background: linear-gradient(135deg, #e11d48, #f43f5e);
       border-color: #fda4af;
+    }
+    .status-filter-btn.btn-status-fav.active {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      border-color: #fcd34d;
+    }
+    .status-filter-btn.btn-status-done.active {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border-color: #38bdf8;
     }
 
     .region-btn.active {
@@ -649,9 +659,9 @@
     .btn-edit { background: #0284c7; }
     .btn-del { background: #ef4444; }
 
-    #map { flex: 1; height: 100%; position: relative; background: var(--bg-deep); }
+    #map { flex: 1; height: 100%; position: relative; background: var(--bg-deep); touch-action: pan-x pan-y; }
     
-    /* 💻 ① PC 전용 난이도 범례 (50% 초슬림화, 텍스트 위장, 7회 탭 유지) */
+    /* 💻 ① PC 전용 초슬림 범례 */
     .pc-map-legend-bar {
       position: absolute;
       top: 10px;
@@ -741,7 +751,7 @@
       right: 0 !important;
     }
 
-    /* 🗺️ ③ 모바일 우측 세로형 전환 바 (30% 슬림화) */
+    /* 🗺️ ③ 모바일 우측 세로형 전환 바 */
     .hud-map-type-vertical {
       display: none;
       position: absolute;
@@ -780,7 +790,7 @@
       color: #ffffff;
     }
 
-    /* 📱 ① 모바일 난이도 범례 (50% 초슬림화, 텍스트 위장) */
+    /* 📱 ① 모바일 전용 초슬림 범례 */
     .hud-bottom-left-legend {
       display: none;
       position: absolute;
@@ -801,7 +811,7 @@
       pointer-events: auto;
     }
 
-    /* 📱 ② 모바일 드론 버튼 (50% 초미니 캡슐형) */
+    /* 📱 ② 모바일 전용 드론 버튼 */
     .hud-bottom-right-drone {
       display: none;
       position: absolute;
@@ -867,7 +877,7 @@
       cursor: pointer;
     }
 
-    /* 📍 마커 스타일 */
+    /* 📍 마커 스타일 (GPU 부하 없는 네이티브 SVG 그림자) */
     .custom-spot-marker-wrap {
       position: relative;
       display: flex;
@@ -908,14 +918,32 @@
     }
     
     .marker-label-elev { color: #86efac; font-size: 0.64rem; font-weight: 700; }
-    .marker-svg-icon { filter: drop-shadow(0 2px 5px rgba(0,0,0,0.6)); display: block; }
+    .marker-svg-icon { display: block; }
+
+    /* 🟢 마커 클러스터링 네온 배지 */
+    .custom-cluster-marker {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(13, 148, 136, 0.92);
+      border: 2px solid #2dd4bf;
+      color: #ffffff;
+      font-size: 0.76rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(45, 212, 191, 0.45);
+      cursor: pointer;
+      user-select: none;
+    }
 
     /* 🖥️ PC 팝업창 규격 */
     .compact-info-window {
       padding: 12px 14px;
       width: min(330px, calc(100vw - 32px)) !important;
       max-width: min(330px, calc(100vw - 32px)) !important;
-      max-height: min(380px, 50dvh);
+      max-height: min(420px, 55dvh);
       overflow-y: auto !important;
       overflow-x: hidden !important;
       display: flex;
@@ -982,6 +1010,96 @@
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+
+    /* ⛅ 실시간 기상 & 일몰 칩 바 */
+    .spot-live-weather-bar {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin: 2px 0;
+    }
+    .weather-chip {
+      font-size: 0.66rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 5px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: rgba(14, 165, 233, 0.15);
+      color: #7dd3fc;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .weather-wind-safe { background: rgba(34, 197, 94, 0.15); color: #86efac; border-color: rgba(74, 222, 128, 0.3); }
+    .weather-wind-warn { background: rgba(234, 179, 8, 0.15); color: #fde047; border-color: rgba(250, 204, 21, 0.3); }
+    .weather-wind-danger { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border-color: rgba(248, 113, 113, 0.3); }
+
+    /* ⭐ 백패커 개인화 툴바 (찜/완주) */
+    .user-personal-action-bar {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin: 3px 0;
+    }
+    .btn-user-action {
+      flex: 1;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+    .btn-user-action.bookmarked {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: #f59e0b;
+      color: #fde047;
+    }
+    .btn-user-action.visited {
+      background: rgba(2, 132, 199, 0.2);
+      border-color: #38bdf8;
+      color: #7dd3fc;
+    }
+
+    /* 🔒 나만의 비공개 메모장 */
+    .user-private-memo-box {
+      margin-top: 4px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 5px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .user-private-memo-header {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--accent-teal);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .user-private-memo-input {
+      width: 100%;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: #ffffff;
+      font-size: 0.72rem;
+      padding: 4px 6px;
+      outline: none;
+      resize: vertical;
+      min-height: 32px;
     }
 
     /* 🔒 들머리 잠금 & Peek-Through */
@@ -1286,7 +1404,7 @@
       width: 100% !important;
       max-width: 100vw !important;
       bottom: calc(56px + env(safe-area-inset-bottom, 0px));
-      max-height: 48dvh;
+      max-height: 52dvh;
       background: rgba(9, 12, 19, 0.98);
       border-top: 1.5px solid var(--border-glow);
       border-radius: 18px 18px 0 0;
@@ -1377,7 +1495,7 @@
     }
     .app-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* 🗺️ 클린 지도 모드 (지도 + 마커만 표시) */
+    /* 🗺️ 클린 지도 모드 */
     body.clean-map-mode .clean-hide {
       display: none !important;
     }
@@ -1534,6 +1652,8 @@
           <button class="filter-btn status-filter-btn active" onclick="filterByStatus('ALL')">전체</button>
           <button class="filter-btn status-filter-btn btn-status-new" onclick="filterByStatus('NEW')">✨ NEW</button>
           <button class="filter-btn status-filter-btn btn-status-hot" onclick="filterByStatus('HOT')">🔥 HOT</button>
+          <button class="filter-btn status-filter-btn btn-status-fav" onclick="filterByStatus('BOOKMARK')">⭐ 찜</button>
+          <button class="filter-btn status-filter-btn btn-status-done" onclick="filterByStatus('VISITED')">🚩 완주</button>
         </div>
         <div class="region-filter-bar" id="regionFilterBar">
           <span class="filter-label">지역</span>
@@ -1569,7 +1689,7 @@
     </div>
     
     <main id="map">
-      <!-- 💻 ① PC 전용 초슬림 범례 (텍스트 위장, 7회 탭 유지) -->
+      <!-- 💻 ① PC 전용 초슬림 범례 -->
       <div class="pc-map-legend-bar pc-only clean-hide" onclick="handleLegendAdminClick()">
         <div class="legend-item"><span class="legend-dot dot-green"></span> 쉬움</div>
         <div class="legend-item"><span class="legend-dot dot-yellow"></span> 보통</div>
@@ -1586,20 +1706,20 @@
         <ul id="mobileSearchDropdown" class="search-dropdown mobile-search-dropdown"></ul>
       </div>
 
-      <!-- 🗺️ ③ 모바일 전용 일반/위성 30% 슬림 세로바 -->
+      <!-- 🗺️ ③ 모바일 우측 세로형 전환 바 -->
       <div class="hud-map-type-vertical mobile-only clean-hide">
         <button type="button" class="map-type-btn active" id="btnMapNormal" onclick="setMapType('NORMAL')">일반</button>
         <button type="button" class="map-type-btn" id="btnMapHybrid" onclick="setMapType('HYBRID')">위성</button>
       </div>
 
-      <!-- 📱 ① 모바일 전용 초슬림 범례 (텍스트 위장, 7회 탭 유지) -->
+      <!-- 📱 ① 모바일 전용 초슬림 범례 -->
       <div class="hud-bottom-left-legend mobile-only clean-hide" onclick="handleLegendAdminClick()">
         <div class="legend-item"><span class="legend-dot dot-green"></span> 쉬움</div>
         <div class="legend-item"><span class="legend-dot dot-yellow"></span> 보통</div>
         <div class="legend-item"><span class="legend-dot dot-red"></span> 어려움</div>
       </div>
 
-      <!-- 📱 ② 모바일 전용 드론 버튼 (50% 초미니 캡슐) -->
+      <!-- 📱 ② 모바일 전용 드론 버튼 -->
       <button type="button" class="hud-bottom-right-drone mobile-only clean-hide" id="mobileDroneBtn" onclick="toggleDroneOverlay()">
         <span>🛸 드론규제</span>
       </button>
@@ -1735,7 +1855,7 @@
 
   <script>
     const BASE_VERSION_NUM = 4.5;
-    const CURRENT_VERSION = `${BASE_VERSION_NUM.toFixed(1)}ver`;
+    const CURRENT_VERSION = `${BASE_VERSION_NUM.toFixed(1)}ver Pro`;
 
     const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
     const GOOGLE_SHEET_GID = '0';
@@ -1846,6 +1966,11 @@
     let spots = [];
     let spotComments = JSON.parse(localStorage.getItem('okbm_comments')) || {};
 
+    /* 🔒 백패커 개인화 저장소 (localStorage) */
+    let userBookmarks = new Set(JSON.parse(localStorage.getItem('okbm_bookmarks')) || []);
+    let userVisited = new Set(JSON.parse(localStorage.getItem('okbm_visited')) || []);
+    let userMemos = JSON.parse(localStorage.getItem('okbm_memos')) || {};
+
     let isAdminMode = false;
     let isCleanMapMode = false;
     let isDroneOverlayOn = false;
@@ -1861,6 +1986,7 @@
     let currentActiveMarker = null;
 
     const spotMarkerMap = new Map();
+    let markerClustererInstance = null;
     let tempSearchMarker = null;
     let tempPickedMarker = null;
 
@@ -2120,12 +2246,13 @@
       }
     }
 
+    /* 📍 마커 생성 (무거운 CSS drop-shadow 제거, 경량 인라인 SVG 그림자 적용) */
     function createCustomMarkerIcon(spot) {
       const isMobile = window.innerWidth <= 768;
       const d = parseInt(spot.difficulty, 10) || 3;
       const color = d <= 2 ? '#10b981' : (d >= 4 ? '#f43f5e' : '#f59e0b');
       const pinWidth = isMobile ? 24 : 28;
-      const pinHeight = isMobile ? 30 : 34;
+      const pinHeight = isMobile ? 32 : 36;
 
       const elevText = spot.elevation ? `<span class="marker-label-elev">(${escapeHtml(spot.elevation)})</span>` : '';
 
@@ -2136,7 +2263,8 @@
               <span>${escapeHtml(spot.name)}</span>
               ${elevText}
             </div>
-            <svg class="marker-svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 34" width="${pinWidth}" height="${pinHeight}">
+            <svg class="marker-svg-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="${pinWidth}" height="${pinHeight}">
+              <ellipse cx="14" cy="34" rx="6" ry="2" fill="rgba(0,0,0,0.35)"/>
               <path fill="${color}" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round" d="M14 1 C6.82 1 1 6.82 1 14 C1 19.8 4.8 24.7 10 26.3 L14 32.5 L18 26.3 C23.2 24.7 27 19.8 27 14 C27 6.82 21.18 1 14 1 Z"/>
               <path fill="#ffffff" d="M14 7 L7.5 18 H20.5 Z"/>
               <polygon fill="${color}" points="14,10.5 10.5,18 17.5,18"/>
@@ -2162,6 +2290,8 @@
       let html = '';
       if (getSpotViews(spot) >= 5) html += `<span class="badge-status badge-hot">🔥 HOT!</span>`;
       if (spot.isNew) html += `<span class="badge-status badge-new">✨ NEW!</span>`;
+      if (userBookmarks.has(String(spot.id))) html += `<span class="badge-status" style="background:#f59e0b; color:#fff;">⭐ 찜</span>`;
+      if (userVisited.has(String(spot.id))) html += `<span class="badge-status" style="background:#0284c7; color:#fff;">🚩 완주</span>`;
       return html;
     }
 
@@ -2201,6 +2331,67 @@
       const badgeClass = status === 'no' ? 'drone-no' : (status === 'warn' ? 'drone-warn' : 'drone-ok');
       const badgeText = status === 'no' ? '🚫 드론금지' : (status === 'warn' ? '⚠️ 승인필요' : '🛸 자유비행');
       return `<div class="instant-tooltip-box" data-tooltip="${r}"><span class="drone-badge ${badgeClass}">${badgeText}</span></div>`;
+    }
+
+    /* 🌅 0초 천문학 일몰 시각 계산 함수 */
+    function calculateSunsetTime(lat, lng, date = new Date()) {
+      const rad = Math.PI / 180;
+      const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+      const declination = 23.45 * Math.sin(rad * (360 / 365 * (dayOfYear - 81)));
+      const latRad = lat * rad;
+      const decRad = declination * rad;
+      
+      const cosHourAngle = (Math.sin(-0.83 * rad) - Math.sin(latRad) * Math.sin(decRad)) / (Math.cos(latRad) * Math.cos(decRad));
+      if (cosHourAngle > 1 || cosHourAngle < -1) return null;
+      
+      const hourAngle = Math.acos(cosHourAngle) / rad;
+      const solarNoon = 12 - (lng - 135) / 15;
+      
+      const B = rad * (360 / 365 * (dayOfYear - 81));
+      const eot = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
+      const sunsetSolar = solarNoon + (hourAngle / 15) - (eot / 60);
+      
+      let hours = Math.floor(sunsetSolar);
+      let minutes = Math.round((sunsetSolar - hours) * 60);
+      if (minutes >= 60) { hours += 1; minutes -= 60; }
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+
+    /* 💨 실시간 풍속/기온 비동기 로딩 (Open-Meteo) */
+    const weatherCache = new Map();
+    async function loadLiveWeatherForSpot(spotId, lat, lng) {
+      if (!lat || !lng) return;
+      const cached = weatherCache.get(spotId);
+      if (cached && (Date.now() - cached.time < 1000 * 60 * 15)) {
+        renderWeatherUI(spotId, cached.data);
+        return;
+      }
+
+      try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m&wind_speed_unit=ms`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          const wData = {
+            temp: Math.round(data.current.temperature_2m),
+            wind: Number(data.current.wind_speed_10m.toFixed(1))
+          };
+          weatherCache.set(spotId, { time: Date.now(), data: wData });
+          renderWeatherUI(spotId, wData);
+        }
+      } catch (e) {}
+    }
+
+    function renderWeatherUI(spotId, wData) {
+      const el = document.getElementById(`liveWeatherBox_${spotId}`);
+      if (!el) return;
+      const windClass = wData.wind <= 3.5 ? 'weather-wind-safe' : (wData.wind <= 6.5 ? 'weather-wind-warn' : 'weather-wind-danger');
+      const windText = wData.wind <= 3.5 ? '안전' : (wData.wind <= 6.5 ? '주의' : '강풍주의');
+      
+      el.innerHTML = `
+        <span class="weather-chip">🌡️ ${wData.temp}℃</span>
+        <span class="weather-chip ${windClass}">💨 바람 ${wData.wind}m/s (${windText})</span>
+      `;
     }
 
     function detectRegionAndCity(lat, lng, name = '', entryPoint = '') {
@@ -2320,29 +2511,12 @@
       document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
     }
 
+    /* 🧭 안정적인 지도 중심 이동 (단일 통합 morph 호출로 튕김/깨짐 방지) */
     function smoothCenterMapOnSpot(lat, lng, keepCurrentZoom = true) {
-      const isMobile = window.innerWidth <= 768;
       const targetLatLng = new naver.maps.LatLng(lat, lng);
-      
       const currentZoom = map.getZoom();
       const targetZoom = (!keepCurrentZoom && currentZoom < 11) ? 12 : currentZoom;
-
-      if (currentZoom !== targetZoom) map.setZoom(targetZoom, false);
-      
-      const proj = map.getProjection();
-      if (!proj) {
-        map.setCenter(targetLatLng);
-        return;
-      }
-
-      const targetPoint = proj.fromCoordToOffset(targetLatLng);
-      const offsetY = isMobile ? Math.round(window.innerHeight * 0.16) : 0;
-      const offsetX = isMobile ? 0 : 145;
-
-      const cameraPoint = new naver.maps.Point(targetPoint.x + offsetX, targetPoint.y + offsetY);
-      const cameraLatLng = proj.fromOffsetToCoord(cameraPoint);
-
-      map.panTo(cameraLatLng, { duration: 300, easing: 'easeOutCubic' });
+      map.morph(targetLatLng, targetZoom, { duration: 320, easing: 'easeOutCubic' });
     }
 
     function openMobileBottomSheet(spot) {
@@ -2352,6 +2526,7 @@
       
       content.innerHTML = generateDetailContentHtml(spot, true);
       sheet.classList.add('open');
+      loadLiveWeatherForSpot(spot.id, spot.lat, spot.lng);
       
       requestAnimationFrame(() => {
         content.scrollTop = 0;
@@ -2362,7 +2537,9 @@
         }, 15);
       });
 
-      window.history.pushState({ bottomSheetOpen: true }, '');
+      if (!window.history.state || !window.history.state.bottomSheetOpen) {
+        window.history.pushState({ bottomSheetOpen: true }, '');
+      }
     }
 
     function closeMobileBottomSheet(fromHistory = false) {
@@ -2372,6 +2549,7 @@
         currentActiveSpot = null;
         document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active-spot'));
         spotMarkerMap.forEach(m => m.setZIndex(100));
+        clearAllUnlockTimers();
         if (!fromHistory && window.history.state && window.history.state.bottomSheetOpen) {
           window.history.back();
         }
@@ -2388,6 +2566,7 @@
       infoWindow.close();
       currentActiveSpot = null;
       currentActiveMarker = null;
+      clearAllUnlockTimers();
       document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active-spot'));
       spotMarkerMap.forEach(m => m.setZIndex(100));
     }
@@ -2435,6 +2614,7 @@
           </div>
         `);
         infoWindow.open(map, currentActiveMarker);
+        loadLiveWeatherForSpot(spot.id, spot.lat, spot.lng);
         
         requestAnimationFrame(() => {
           const pcCard = document.getElementById('pcInfoWindowCard');
@@ -2446,6 +2626,12 @@
     }
 
     const spotUnlockTimers = {};
+    function clearAllUnlockTimers() {
+      Object.keys(spotUnlockTimers).forEach(id => {
+        clearInterval(spotUnlockTimers[id]);
+        delete spotUnlockTimers[id];
+      });
+    }
 
     function isSpotUnlocked(spotId) {
       return sessionStorage.getItem(`okbm_unlocked_${spotId}`) === 'true';
@@ -2496,18 +2682,72 @@
       }, 1000);
     }
 
+    /* ⭐ 백패커 개인화 저장소 토글 함수 */
+    function toggleUserBookmark(spotId) {
+      const sId = String(spotId);
+      if (userBookmarks.has(sId)) {
+        userBookmarks.delete(sId);
+        showToast('⭐ 찜 목록에서 제외되었습니다');
+      } else {
+        userBookmarks.add(sId);
+        showToast('⭐ 내 찜 목록에 추가되었습니다!');
+      }
+      localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks]));
+      refreshCurrentSpotPopup();
+      renderSpots();
+    }
+
+    function toggleUserVisited(spotId) {
+      const sId = String(spotId);
+      if (userVisited.has(sId)) {
+        userVisited.delete(sId);
+        showToast('🚩 완주 목록에서 제외되었습니다');
+      } else {
+        userVisited.add(sId);
+        showToast('🚩 박지 완주 깃발을 꽂았습니다! 🏕️');
+      }
+      localStorage.setItem('okbm_visited', JSON.stringify([...userVisited]));
+      refreshCurrentSpotPopup();
+      renderSpots();
+    }
+
+    function saveUserPrivateMemo(spotId, text) {
+      const sId = String(spotId);
+      userMemos[sId] = text.trim();
+      localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
+      showToast('🔒 나만의 비공개 메모가 저장되었습니다');
+    }
+
+    function refreshCurrentSpotPopup() {
+      if (!currentActiveSpot) return;
+      if (window.innerWidth <= 768) {
+        const content = document.getElementById('mobileSheetContent');
+        if (content) content.innerHTML = generateDetailContentHtml(currentActiveSpot, true);
+      } else {
+        infoWindow.setContent(`
+          <div class="compact-info-window" id="pcInfoWindowCard" style="position: relative;">
+            ${generateDetailContentHtml(currentActiveSpot, false)}
+          </div>
+        `);
+      }
+    }
+
     function generateDetailContentHtml(spot, isMobileSheet = false) {
       const { navAddress, guide } = parseEntryPoint(spot.entryPoint || spot.name);
       const searchTarget = navAddress || spot.name;
       const naverSearchUrl = getNaverMapSearchUrl(searchTarget);
       const cleanAddress = escapeHtml(navAddress || spot.name);
       const check = autoDetectDroneStatus(spot.lat, spot.lng);
+      const sunset = calculateSunsetTime(spot.lat, spot.lng);
 
       const ytList = spot.youtubeUrls || (spot.youtubeUrl ? [spot.youtubeUrl] : []);
       const cleanUser = (spot.instaId?.trim() || "oklionnature").replace('@', '').replace(/https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '');
       const instaLink = `https://instagram.com/${encodeURIComponent(cleanUser)}`;
 
       const isUnlocked = isAdminMode || isSpotUnlocked(spot.id);
+      const isFav = userBookmarks.has(String(spot.id));
+      const isDone = userVisited.has(String(spot.id));
+      const memoText = userMemos[String(spot.id)] || '';
 
       const closeBtn = isMobileSheet
         ? `<button type="button" class="sheet-close-btn" onclick="closeMobileBottomSheet()">✕</button>`
@@ -2524,8 +2764,25 @@
             ${closeBtn}
           </div>
 
-          <div style="margin: 3px 0 2px 0;">${getMetaBadgesHtml(spot)}</div>
+          <div class="spot-live-weather-bar">
+            ${sunset ? `<span class="weather-chip" style="color:#fed7aa; border-color:rgba(245,158,11,0.35);">🌅 일몰 ${sunset}</span>` : ''}
+            <div id="liveWeatherBox_${spot.id}" style="display:inline-flex; gap:4px;">
+              <span class="weather-chip">⛅ 기상 로딩중...</span>
+            </div>
+          </div>
+
+          <div style="margin: 2px 0;">${getMetaBadgesHtml(spot)}</div>
           <div class="spot-coords-text">📍 ${spot.lat}, ${spot.lng}</div>
+
+          <!-- ⭐ 찜하기 / 완주 툴바 -->
+          <div class="user-personal-action-bar">
+            <button type="button" class="btn-user-action ${isFav ? 'bookmarked' : ''}" onclick="toggleUserBookmark('${spot.id}')">
+              ${isFav ? '⭐ 찜 완료' : '☆ 찜하기'}
+            </button>
+            <button type="button" class="btn-user-action ${isDone ? 'visited' : ''}" onclick="toggleUserVisited('${spot.id}')">
+              ${isDone ? '🚩 완주 박지' : '⚑ 다녀왔어요'}
+            </button>
+          </div>
           
           <div class="locked-entry-wrap" id="lockedEntryWrap_${spot.id}">
             <div class="locked-entry-inner ${isUnlocked ? '' : 'is-locked'}" id="lockedEntryInner_${spot.id}">
@@ -2546,6 +2803,15 @@
           ${guide ? `<div class="entry-guide-chip">💡 길 안내: ${escapeHtml(guide)}</div>` : ''}
 
           ${spot.desc?.trim() ? `<div class="sheet-desc-box">${escapeHtml(spot.desc.trim())}</div>` : ''}
+
+          <!-- 🔒 나만의 비공개 메모장 -->
+          <div class="user-private-memo-box">
+            <div class="user-private-memo-header">
+              <span>🔒 나만의 비밀 메모 (내 폰에만 저장)</span>
+              <button type="button" style="background:none; border:none; color:var(--accent-blue); font-size:0.68rem; font-weight:700; cursor:pointer;" onclick="saveUserPrivateMemo('${spot.id}', document.getElementById('privateMemoInput_${spot.id}').value)">저장</button>
+            </div>
+            <textarea id="privateMemoInput_${spot.id}" class="user-private-memo-input" placeholder="예: 3번 데크가 명당, 모기향 필수..." rows="1">${escapeHtml(memoText)}</textarea>
+          </div>
 
           <div class="spot-action-line">
             ${ytList.slice(0, 2).map((url, i) => url?.trim() ? `<a href="javascript:void(0)" onclick="triggerSpotUnlock('${spot.id}', '${escapeHtml(cleanYouTubeUrl(url.trim()))}')" class="link-btn btn-yt btn-yt-wide">▶ YouTube 영상${ytList.length > 1 ? ` (${i + 1})` : ''}</a>` : '').join('')}
@@ -2881,18 +3147,7 @@
       spotComments[spotId].push(newComment);
       localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
 
-      const targetSpot = spots.find(s => String(s.id) === String(spotId));
-      if (targetSpot) {
-        if (window.innerWidth <= 768) {
-          openMobileBottomSheet(targetSpot);
-        } else {
-          infoWindow.setContent(`
-            <div class="compact-info-window" id="pcInfoWindowCard" style="position: relative;">
-              ${generateDetailContentHtml(targetSpot, false)}
-            </div>
-          `);
-        }
-      }
+      refreshCurrentSpotPopup();
 
       try {
         await fetch(GAS_API_URL, {
@@ -2977,7 +3232,7 @@
       else if (!e.target.value.trim()) showTopRankings(mode);
     }
 
-    /* 🚀 [초고속 60fps 렌더링 & 마커 풀링 최적화 엔진] */
+    /* 🚀 [마커 풀링 & 마커 클러스터링 동기화 렌더링 엔진] */
     function renderSpots(forceOpenRegion = null) {
       const openedRegions = new Set();
       document.querySelectorAll('.region-group').forEach(group => {
@@ -2989,7 +3244,16 @@
       });
       if (forceOpenRegion) openedRegions.add(forceOpenRegion);
 
-      // 마커 풀링: 기존 인스턴스 보존 & 신규만 생성
+      // 1. 고아 마커 메모리 해제
+      const currentIds = new Set(spots.map(s => String(s.id)));
+      spotMarkerMap.forEach((marker, id) => {
+        if (!currentIds.has(id)) {
+          marker.setMap(null);
+          spotMarkerMap.delete(id);
+        }
+      });
+
+      // 2. 신규 마커 인스턴스 생성
       spots.forEach(spot => {
         const sId = String(spot.id);
         if (!spotMarkerMap.has(sId)) {
@@ -3055,6 +3319,7 @@
 
       spots.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
       let visibleCount = 0;
+      const activeMarkers = [];
 
       spots.forEach((spot) => {
         if (!spot.region || !spot.cityName) {
@@ -3063,17 +3328,31 @@
           spot.cityName = spot.cityName || res.cityName;
         }
 
+        const sId = String(spot.id);
+
+        // 상태/개인화 필터
         if (currentStatusFilter === 'NEW' && !spot.isNew) {
-          const m = spotMarkerMap.get(String(spot.id));
+          const m = spotMarkerMap.get(sId);
           if (m) m.setMap(null);
           return;
         }
         if (currentStatusFilter === 'HOT' && getSpotViews(spot) < 5) {
-          const m = spotMarkerMap.get(String(spot.id));
+          const m = spotMarkerMap.get(sId);
+          if (m) m.setMap(null);
+          return;
+        }
+        if (currentStatusFilter === 'BOOKMARK' && !userBookmarks.has(sId)) {
+          const m = spotMarkerMap.get(sId);
+          if (m) m.setMap(null);
+          return;
+        }
+        if (currentStatusFilter === 'VISITED' && !userVisited.has(sId)) {
+          const m = spotMarkerMap.get(sId);
           if (m) m.setMap(null);
           return;
         }
 
+        // 지형 필터
         if (currentTerrainFilter !== 'ALL') {
           const tList = spot.terrain || [];
           const matched = tList.some(t => {
@@ -3087,20 +3366,24 @@
             return t.includes(currentTerrainFilter);
           });
           if (!matched) {
-            const m = spotMarkerMap.get(String(spot.id));
+            const m = spotMarkerMap.get(sId);
             if (m) m.setMap(null);
             return;
           }
         }
 
+        // 지역 필터
         if (currentRegionFilter !== 'ALL' && currentRegionFilter !== spot.region) {
-          const m = spotMarkerMap.get(String(spot.id));
+          const m = spotMarkerMap.get(sId);
           if (m) m.setMap(null);
           return;
         }
 
-        const m = spotMarkerMap.get(String(spot.id));
-        if (m) m.setMap(map);
+        const m = spotMarkerMap.get(sId);
+        if (m) {
+          m.setMap(map);
+          activeMarkers.push(m);
+        }
 
         const r = spot.region || '경기';
         if (grouped[r]) grouped[r].push(spot);
@@ -3108,6 +3391,29 @@
       });
 
       document.getElementById('spotCount').innerText = `${visibleCount}개`;
+
+      // 🟢 마커 클러스터링 동기화
+      if (typeof MarkerClustering !== 'undefined') {
+        if (markerClustererInstance) {
+          markerClustererInstance.setMap(null);
+        }
+        markerClustererInstance = new MarkerClustering({
+          minClusterSize: 2,
+          maxZoom: 12,
+          map: map,
+          markers: activeMarkers,
+          disableClickZoom: false,
+          gridSize: 110,
+          icons: [{
+            content: '<div class="custom-cluster-marker"></div>',
+            size: new naver.maps.Size(36, 36),
+            anchor: new naver.maps.Point(18, 18)
+          }],
+          stylingFunction: function(clusterMarker, count) {
+            clusterMarker.getElement().querySelector('.custom-cluster-marker').innerText = count;
+          }
+        });
+      }
 
       const fragment = document.createDocumentFragment();
 
@@ -3622,7 +3928,14 @@
 
       spots.splice(index, 1);
       delete spotComments[deletedId];
+      userBookmarks.delete(String(deletedId));
+      userVisited.delete(String(deletedId));
+      delete userMemos[String(deletedId)];
+
       localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
+      localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks]));
+      localStorage.setItem('okbm_visited', JSON.stringify([...userVisited]));
+      localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
 
       closeAllPopups();
       updateNewSpotFlags(spots);
@@ -3679,7 +3992,9 @@
         btn.classList.toggle('active', 
           (status === 'ALL' && btn.innerText.includes('전체')) ||
           (status === 'NEW' && btn.innerText.includes('NEW')) ||
-          (status === 'HOT' && btn.innerText.includes('HOT'))
+          (status === 'HOT' && btn.innerText.includes('HOT')) ||
+          (status === 'BOOKMARK' && btn.innerText.includes('찜')) ||
+          (status === 'VISITED' && btn.innerText.includes('완주'))
         );
       });
       renderSpots();
@@ -3752,7 +4067,13 @@
     }
 
     function exportDataBackup() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(spots, null, 2));
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+        spots,
+        comments: spotComments,
+        bookmarks: [...userBookmarks],
+        visited: [...userVisited],
+        memos: userMemos
+      }, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
       downloadAnchor.setAttribute("download", `okbm_spots_backup_${new Date().toISOString().slice(0,10)}.json`);
@@ -3775,6 +4096,18 @@
             if (imported.comments) {
               spotComments = imported.comments;
               localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
+            }
+            if (imported.bookmarks) {
+              userBookmarks = new Set(imported.bookmarks);
+              localStorage.setItem('okbm_bookmarks', JSON.stringify(imported.bookmarks));
+            }
+            if (imported.visited) {
+              userVisited = new Set(imported.visited);
+              localStorage.setItem('okbm_visited', JSON.stringify(imported.visited));
+            }
+            if (imported.memos) {
+              userMemos = imported.memos;
+              localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
             }
           } else {
             return alert('유효하지 않은 백업 파일입니다.');
