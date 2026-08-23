@@ -21,15 +21,15 @@
   <style>
     :root {
       --bg-deep: #030508;
-      --bg-surface: #0a0e17;
-      --bg-card: #101726;
-      --bg-card-hover: #162035;
+      --bg-surface: #090c13;
+      --bg-card: #0e131d;
+      --bg-card-hover: #151c2a;
       --border: rgba(255, 255, 255, 0.08);
-      --border-light: rgba(255, 255, 255, 0.14);
-      --border-glow: rgba(56, 189, 248, 0.35);
+      --border-titanium: rgba(255, 255, 255, 0.14);
+      --border-subtle: #1a2233;
       --text-primary: #f8fafc;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
       --accent-blue: #38bdf8;
       --accent-sky: #0ea5e9;
       --accent-teal: #2dd4bf;
@@ -38,14 +38,20 @@
       --accent-rose: #f43f5e;
       --font-display: 'GmarketSans', -apple-system, sans-serif;
       --font-script: 'Caveat', cursive;
-      --font-body: 'Pretendard', -apple-system, sans-serif;
+      --font-body: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
 
       --z-header: 500;
       --z-dock: 600;
-      --z-dropdown: 900;
+      --z-dropdown: 950;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    button, input, select, textarea {
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
+      letter-spacing: -0.02em;
+    }
+
     html, body {
       width: 100%;
       max-width: 100vw;
@@ -54,30 +60,30 @@
       background-color: var(--bg-deep);
       color: var(--text-primary);
       font-family: var(--font-body);
-      line-height: 1.5;
+      line-height: 1.45;
       -webkit-font-smoothing: antialiased;
-      letter-spacing: -0.015em;
+      letter-spacing: -0.02em;
     }
     body {
       background: radial-gradient(circle at 50% 0%, #0d1a33 0%, #050811 50%, #020407 100%);
       padding-bottom: 30px;
     }
 
-    /* 🧭 1. 상단 GNB */
+    /* 🧭 1. 상단 헤더 (map.html과 규격/디자인 100% 동일) */
     .portal-nav {
       position: sticky;
       top: 0;
       z-index: var(--z-header);
-      background: rgba(3, 5, 8, 0.88);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      width: 100%;
+      background: rgba(3, 5, 8, 0.98);
       border-bottom: 1px solid var(--border);
-      padding: 8px 16px;
-      padding-top: calc(8px + env(safe-area-inset-top, 0px));
+      padding: 6px 14px;
+      padding-top: calc(6px + env(safe-area-inset-top, 0px));
+      user-select: none;
+      min-height: 50px;
       display: flex;
       justify-content: center;
       align-items: center;
-      width: 100%;
     }
     .portal-nav-inner {
       width: 100%;
@@ -85,21 +91,23 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 10px;
     }
     .brand-title-link {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      text-decoration: none;
       white-space: nowrap;
-      user-select: none;
+      text-decoration: none;
+      min-width: 0;
     }
     .main-title-text {
       font-family: var(--font-display);
-      font-size: 1.18rem;
+      font-size: clamp(1.05rem, 3.8vw, 1.45rem);
       font-weight: 700;
       color: #ffffff;
       letter-spacing: -0.03em;
+      white-space: nowrap;
       display: inline-flex;
       align-items: center;
       gap: 4px;
@@ -108,24 +116,25 @@
       background: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #f472b6 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 0 10px rgba(244, 63, 94, 0.35));
+      filter: drop-shadow(0 0 10px rgba(244, 63, 94, 0.5));
       font-weight: 800;
     }
     .brand-sub-script {
       font-family: var(--font-script);
-      font-size: 1.12rem;
+      font-size: clamp(0.95rem, 3.2vw, 1.35rem);
       font-weight: 700;
-      color: var(--accent-blue);
+      color: #38bdf8;
       letter-spacing: 0.02em;
-      opacity: 0.95;
+      opacity: 0.9;
+      transform: translateY(1px);
     }
 
-    /* 🔍 2. 스마트 검색창 (여백 50% 축소) */
+    /* 🔍 2. 스마트 검색창 (map.html 규격 & 톤앤매너 동일) */
     .hero-search-container {
       width: 100%;
       max-width: 800px;
       margin: 0 auto;
-      padding: 8px 14px 4px 14px;
+      padding: 6px 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -134,71 +143,79 @@
       position: relative;
       width: 100%;
       max-width: 520px;
+      display: flex;
+      align-items: center;
     }
     .portal-search-input {
       width: 100%;
-      padding: 9px 75px 9px 16px;
-      font-size: 0.9rem;
-      font-family: var(--font-body);
-      border-radius: 24px;
-      border: 1.5px solid rgba(56, 189, 248, 0.28);
-      background: rgba(10, 14, 23, 0.85);
-      backdrop-filter: blur(16px);
-      color: #fff;
+      height: 36px;
+      min-height: 36px;
+      padding: 5px 62px 5px 14px;
+      border-radius: 18px;
+      border: 1px solid var(--border-titanium);
+      background: var(--bg-surface);
+      color: #ffffff;
+      font-size: 0.82rem;
       outline: none;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-      transition: all 0.25s ease;
-      min-height: 42px;
+      transition: all 0.2s ease;
+    }
+    .portal-search-input::placeholder {
+      color: var(--text-muted);
+      font-size: 0.76rem;
     }
     .portal-search-input:focus {
-      background: #060911;
+      background: #000000;
       border-color: var(--accent-blue);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 12px rgba(56, 189, 248, 0.3);
     }
-    .search-action-wrap {
+    
+    .btn-clear-search {
       position: absolute;
-      right: 6px;
+      right: 32px;
       top: 50%;
       transform: translateY(-50%);
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .btn-clear-search {
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: var(--text-secondary);
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      font-size: 0.65rem;
+      font-weight: 800;
       display: none;
-      background: rgba(255, 255, 255, 0.12);
-      border: none;
-      color: #cbd5e1;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      font-size: 0.68rem;
-      cursor: pointer;
       align-items: center;
       justify-content: center;
-    }
-    .portal-search-btn {
-      background: linear-gradient(135deg, #0284c7, #0ea5e9);
-      border: none;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      font-size: 0.78rem;
       cursor: pointer;
+      z-index: 5;
+      padding: 0;
+    }
+    .btn-clear-search:hover {
+      background: var(--accent-rose);
+      color: #ffffff;
+    }
+
+    .portal-search-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--accent-blue);
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 3px;
+      z-index: 5;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #fff;
-      box-shadow: 0 2px 6px rgba(14, 165, 233, 0.4);
     }
 
     .search-auto-dropdown {
       position: absolute;
-      top: calc(100% + 6px);
+      top: 42px;
       left: 0; right: 0;
-      background: rgba(10, 14, 23, 0.96);
-      backdrop-filter: blur(20px);
-      border: 1px solid var(--border-glow);
+      background: rgba(9, 12, 19, 0.98);
+      border: 1px solid var(--border-titanium);
       border-radius: 12px;
       box-shadow: 0 16px 40px rgba(0,0,0,0.95);
       list-style: none;
@@ -209,17 +226,17 @@
       text-align: left;
     }
     .auto-item {
-      padding: 9px 14px;
-      border-bottom: 1px solid var(--border);
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border-subtle);
       display: flex;
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
-      font-size: 0.84rem;
+      font-size: 0.82rem;
     }
     .auto-item:last-child { border-bottom: none; }
     .auto-item:hover { background: var(--bg-card-hover); }
-    .auto-item-left { display: flex; align-items: center; gap: 8px; overflow: hidden; }
+    .auto-item-left { display: flex; align-items: center; gap: 6px; overflow: hidden; }
     .auto-item-name { font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .auto-badge-spot { font-size: 0.65rem; color: #38bdf8; background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px; font-weight: 700; flex-shrink: 0; }
 
@@ -232,13 +249,13 @@
       border-radius: 20px;
       padding: 3px 10px;
       margin-top: 6px;
-      font-size: 0.73rem;
+      font-size: 0.72rem;
       color: var(--text-secondary);
     }
     .lnt-badge-mini {
       background: rgba(45, 212, 191, 0.2);
       color: var(--accent-teal);
-      font-size: 0.68rem;
+      font-size: 0.66rem;
       font-weight: 800;
       padding: 1px 5px;
       border-radius: 4px;
@@ -268,8 +285,8 @@
 
     /* 🎯 3. 어디로 떠날까? 결정 장애 탈출 픽 */
     .lucky-card-wrap {
-      background: rgba(16, 23, 38, 0.75);
-      border: 1px solid rgba(56, 189, 248, 0.22);
+      background: rgba(14, 19, 29, 0.75);
+      border: 1px solid var(--border-titanium);
       border-radius: 16px;
       padding: 14px;
       backdrop-filter: blur(14px);
@@ -320,7 +337,6 @@
       color: var(--accent-blue);
       flex-shrink: 0;
     }
-    /* 다채로운 태그 색상 */
     .tag-cave { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
     .tag-beach { background: rgba(14, 165, 233, 0.15); color: #38bdf8; }
     .tag-island { background: rgba(16, 185, 129, 0.15); color: #34d399; }
@@ -333,7 +349,6 @@
     .spot-desc-text { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; word-break: keep-all; }
     .spot-tip-bar { font-size: 0.73rem; color: var(--accent-teal); font-weight: 600; padding-top: 5px; border-top: 1px dashed rgba(255, 255, 255, 0.08); }
 
-    /* 대형화된 주사위 버튼 */
     .btn-dice-prominent {
       width: 100%;
       background: linear-gradient(135deg, #0284c7, #0ea5e9);
@@ -358,7 +373,7 @@
     /* 🎬 4. 이 주의 추천 영상 */
     .yt-card-box {
       background: var(--bg-surface);
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-titanium);
       border-radius: 14px;
       padding: 10px;
       display: flex;
@@ -406,7 +421,7 @@
     /* 🔥 5. 낭만 커뮤니티 라운지 */
     .community-box {
       background: var(--bg-surface);
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-titanium);
       border-radius: 14px;
       padding: 14px;
       display: flex;
@@ -457,7 +472,7 @@
     .poll-option-item.selected .poll-pct,
     .poll-option-item.voted .poll-pct { display: block; }
 
-    /* 💬 세련된 일체형 캡슐 출정톡 */
+    /* 💬 캡슐 출정톡 */
     .talk-feed-wrap {
       border-top: 1px dashed rgba(255, 255, 255, 0.08);
       padding-top: 12px;
@@ -535,7 +550,7 @@
     .talk-content { color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .talk-time-text { font-size: 0.66rem; color: var(--text-muted); flex-shrink: 0; }
 
-    /* 🎒 6. 백패킹 큐레이션 배너 슬롯 (장비/음식/영상 대비) */
+    /* 🎒 6. 백패킹 큐레이션 배너 */
     .spotlight-banner-slot {
       background: linear-gradient(135deg, rgba(14, 165, 233, 0.12) 0%, rgba(45, 212, 191, 0.06) 100%);
       border: 1px solid rgba(56, 189, 248, 0.25);
@@ -563,11 +578,9 @@
       display: none;
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      background: rgba(4, 7, 13, 0.95);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      background: rgba(3, 5, 8, 0.98);
       border-top: 1px solid var(--border);
-      height: calc(52px + env(safe-area-inset-bottom, 0px));
+      height: calc(56px + env(safe-area-inset-bottom, 0px));
       padding-bottom: env(safe-area-inset-bottom, 0px);
       z-index: var(--z-dock);
       justify-content: space-around;
@@ -580,218 +593,30 @@
       justify-content: center;
       color: var(--text-secondary);
       text-decoration: none;
-      font-size: 0.66rem;
+      font-size: 0.72rem;
       font-weight: 700;
-      gap: 2px;
-      min-width: 60px;
+      gap: 3px;
+      min-width: 54px;
       height: 100%;
       transition: color 0.15s;
     }
     .dock-item.active { color: var(--accent-blue); }
-    .dock-item svg { width: 17px; height: 17px; fill: currentColor; }
+    .dock-item svg { width: 19px; height: 19px; fill: currentColor; }
 
     @media (max-width: 768px) {
-      body { padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
+      body { padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px)); }
       .mobile-bottom-dock { display: flex; }
-    }
-  </style>
-</head>
-<body>
-    .portal-nav {
-      position: sticky;
-      top: 0;
-      z-index: var(--z-header);
-      background: rgba(3, 5, 8, 0.98);
-      border-bottom: 1px solid var(--border);
-      padding: 6px 14px;
-      padding-top: calc(6px + env(safe-area-inset-top, 0px));
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 100%;
-      min-height: 50px;
-    }
-    .portal-nav-inner {
-      width: 100%;
-      max-width: 800px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-    .brand-title-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      text-decoration: none;
-      white-space: nowrap;
-      user-select: none;
-      min-width: 0;
-    }
-    .main-title-text {
-      font-family: var(--font-display);
-      font-size: clamp(1.05rem, 3.8vw, 1.45rem);
-      font-weight: 700;
-      color: #ffffff;
-      letter-spacing: -0.03em;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      white-space: nowrap;
-    }
-    .main-title-text .highlight-pink {
-      background: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #f472b6 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 0 10px rgba(244, 63, 94, 0.5));
-      font-weight: 800;
-    }
-    .brand-sub-script {
-      font-family: var(--font-script);
-      font-size: clamp(0.95rem, 3.2vw, 1.35rem);
-      font-weight: 700;
-      color: #38bdf8;
-      letter-spacing: 0.02em;
-      opacity: 0.9;
-      transform: translateY(1px);
-    }
-
-    /* 🔍 2. 스마트 검색창 (map.html 스타일 & 규격 적용) */
-    .hero-search-container {
-      width: 100%;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 6px 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .portal-search-box {
-      position: relative;
-      width: 100%;
-      max-width: 520px;
-      display: flex;
-      align-items: center;
-    }
-    .portal-search-input {
-      width: 100%;
-      height: 36px;
-      min-height: 36px;
-      padding: 5px 62px 5px 14px;
-      border-radius: 18px;
-      border: 1px solid var(--border-light);
-      background: var(--bg-surface);
-      color: #ffffff;
-      font-size: 0.82rem;
-      outline: none;
-      transition: all 0.2s ease;
-    }
-    .portal-search-input::placeholder {
-      color: var(--text-muted);
-      font-size: 0.76rem;
-    }
-    .portal-search-input:focus {
-      background: #000000;
-      border-color: var(--accent-blue);
-    }
-    
-    .btn-clear-search {
-      position: absolute;
-      right: 32px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(255, 255, 255, 0.15);
-      border: none;
-      color: var(--text-secondary);
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      font-size: 0.65rem;
-      font-weight: 800;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      z-index: 5;
-      padding: 0;
-    }
-    .btn-clear-search:hover {
-      background: var(--accent-rose);
-      color: #ffffff;
-    }
-    
-    .portal-search-btn {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: var(--accent-blue);
-      font-size: 0.9rem;
-      cursor: pointer;
-      padding: 3px;
-      z-index: 5;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .search-auto-dropdown {
-      position: absolute;
-      top: 44px;
-      left: 0; right: 0;
-      background: rgba(9, 12, 19, 0.98);
-      border: 1px solid var(--border-light);
-      border-radius: 12px;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.95);
-      list-style: none;
-      max-height: 280px;
-      overflow-y: auto;
-      display: none;
-      z-index: var(--z-dropdown);
-      text-align: left;
-    }
-    .auto-item {
-      padding: 9px 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      font-size: 0.82rem;
-    }
-    .auto-item:last-child { border-bottom: none; }
-    .auto-item:hover { background: var(--bg-card-hover); }
-    .auto-item-left { display: flex; align-items: center; gap: 6px; overflow: hidden; }
-    .auto-item-name { font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .auto-badge-spot { font-size: 0.65rem; color: #38bdf8; background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px; font-weight: 700; flex-shrink: 0; }
-
-    .lnt-slim-banner {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(45, 212, 191, 0.06);
-      border: 1px solid rgba(45, 212, 191, 0.2);
-      border-radius: 20px;
-      padding: 3px 10px;
-      margin-top: 6px;
-      font-size: 0.72rem;
-      color: var(--text-secondary);
-    }
-    .lnt-badge-mini {
-      background: rgba(45, 212, 191, 0.2);
-      color: var(--accent-teal);
-      font-size: 0.66rem;
-      font-weight: 800;
-      padding: 1px 5px;
-      border-radius: 4px;
     }
 
     @media (max-width: 380px) {
       .brand-sub-script { display: none !important; }
       .main-title-text { font-size: 1.05rem !important; }
     }
+  </style>
+</head>
+<body>
+
+  <!-- 🧭 1. 상단 헤더 (map.html과 100% 동일 규격) -->
   <nav class="portal-nav">
     <div class="portal-nav-inner">
       <a href="index.html" class="brand-title-link" title="홈">
@@ -802,7 +627,7 @@
     </div>
   </nav>
 
-  <!-- 🔍 2. 스마트 검색창 & LNT (map.html과 동일 스타일) -->
+  <!-- 🔍 2. 스마트 검색창 & LNT -->
   <section class="hero-search-container">
     <div class="portal-search-box">
       <input type="text" id="mainSearchInput" class="portal-search-input" placeholder="산, 섬, 해변, 계곡, 박지 검색..." autocomplete="off" oninput="onSearchInputChanged(this.value)" onkeyup="if(event.key==='Enter') executePortalSmartSearch()" />
@@ -817,14 +642,13 @@
     </div>
   </section>
 
-
   <!-- 📦 메인 콘텐츠 흐름 -->
   <main class="portal-main-content">
 
     <!-- 🎯 3. 어디로 떠날까? 결정 장애 탈출 픽 -->
     <section class="lucky-card-wrap">
       <div class="lucky-header">
-        <div class="section-title" style="margin-bottom: 0;"> 이번주는 어디로 떠나면 좋을까?</div>
+        <div class="section-title" style="margin-bottom: 0;">이번주는 어디로 떠나면 좋을까?</div>
       </div>
 
       <div class="lucky-spot-card" id="luckySpotCard" onclick="goToCurrentLuckySpot()">
@@ -845,7 +669,7 @@
       </button>
     </section>
 
-    <!-- 🎬 4. 이 주의 추천 영상 (구글 시트 실시간 연동 완료) -->
+    <!-- 🎬 4. 이 주의 추천 영상 -->
     <section class="swipe-section-wrap">
       <div class="section-title">🎬 이 주의 낭만 백패킹 영상</div>
       <div class="yt-card-box">
@@ -872,7 +696,7 @@
         <div class="poll-options-list" id="pollOptionsList"></div>
       </div>
 
-      <!-- 💬 세련된 캡슐 출정톡 -->
+      <!-- 💬 캡슐 출정톡 -->
       <div class="talk-feed-wrap">
         <div class="poll-header-row">
           <span>💬 실시간 출정톡 & 짧은 소통</span>
@@ -886,7 +710,7 @@
       </div>
     </section>
 
-    <!-- 🎒 6. 백패킹 큐레이션 배너 슬롯 (장비/음식/영상 공간) -->
+    <!-- 🎒 6. 백패킹 큐레이션 배너 -->
     <section class="spotlight-banner-slot" onclick="location.href='map.html'">
       <div class="banner-slot-left">
         <span class="banner-slot-badge">🎒 CURATION & GEAR</span>
@@ -923,7 +747,7 @@
     let currentLuckySpot = null;
 
     // -------------------------------------------------------------
-    // 🎲 1. 어디로 떠날까? 결정 장애 탈출 픽 (주사위 롤링 & 다채로운 태그)
+    // 🎲 1. 어디로 떠날까? 결정 장애 탈출 픽
     // -------------------------------------------------------------
     function getTagClass(tag) {
       if (!tag) return '';
@@ -975,7 +799,7 @@
     }
 
     // -------------------------------------------------------------
-    // 🎬 2. 유튜브 추천 영상 (구글 시트 설정 탭 gid=1983931878 연동)
+    // 🎬 2. 유튜브 추천 영상
     // -------------------------------------------------------------
     function parseYouTubeUniversalUrl(url) {
       if (!url) return null;
@@ -1027,9 +851,7 @@
             }
           });
         }
-      } catch (e) {
-        console.log('유튜브 설정 탭 로드 실패:', e);
-      }
+      } catch (e) {}
     }
 
     // -------------------------------------------------------------
@@ -1120,7 +942,7 @@
     }
 
     // -------------------------------------------------------------
-    // 🔍 4. 스마트 검색 & 자동완성
+    // 🔍 4. 스마트 검색 & 자동완성 (페이지 이동용)
     // -------------------------------------------------------------
     let searchDebounceTimer = null;
     function onSearchInputChanged(value) {
