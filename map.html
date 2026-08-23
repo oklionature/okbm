@@ -2588,7 +2588,7 @@ function focusSpotOnMap(spot, keepZoom = false) {
             </div>
             ${!isUnlocked ? `
               <div class="entry-lock-overlay" id="entryLockOverlay_${spot.id}" onclick="triggerSpotUnlock('${spot.id}', '${ytList[0] ? escapeHtml(cleanYouTubeUrl(ytList[0].trim())) : instaLink}')">
-                // ⬇️ [바꿀 코드 - '들머리 주소' 하이라이트 및 크기 확대]
+               
 <span>🔒 등록자 분께 감사 인사를 전해 보세요.<br> YouTube나 등록자 링크를 누르면 <strong style="color: #fde047; font-size: 0.82rem; font-weight: 800; text-decoration: underline; text-underline-offset: 3px;">들머리 주소</strong>가 열립니다</span>
               </div>s
             ` : ''}
