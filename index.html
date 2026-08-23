@@ -481,7 +481,6 @@
     }
     .main-column { display: flex; flex-direction: column; gap: 32px; width: 100%; min-width: 0; }
 
-    /* 섹션 공통 헤더 */
     .section-header {
       display: flex;
       justify-content: space-between;
@@ -567,7 +566,7 @@
       border-radius: 6px;
     }
 
-    /* 🍲 비화식 푸드 (네이버 블로그 실시간 연동) */
+    /* 🍲 비화식 직관적 그래픽 카드 (사진 ➔ 세련된 아트 비주얼) */
     .responsive-grid-container {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -577,55 +576,88 @@
     .food-uniform-card {
       background: var(--bg-surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px;
+      border-radius: 14px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
       cursor: pointer;
-      transition: all 0.22s ease;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
     }
     .food-uniform-card:hover {
-      border-color: rgba(245, 158, 11, 0.4);
+      border-color: rgba(56, 189, 248, 0.5);
       background: var(--bg-card-hover);
       transform: translateY(-3px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 16px rgba(56, 189, 248, 0.15);
     }
-    .food-img-box {
+    
+    /* 직관적인 비화식 그래픽 비주얼 헤더 */
+    .food-art-banner {
       width: 100%;
-      aspect-ratio: 16 / 10;
-      border-radius: 8px;
-      overflow: hidden;
-      background: var(--bg-card);
+      height: 72px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
       position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.06);
     }
-    .food-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.35s ease; }
-    .food-uniform-card:hover .food-img { transform: scale(1.05); }
-    .food-type-badge {
-      position: absolute;
-      top: 6px; left: 6px;
-      background: rgba(0, 0, 0, 0.78);
-      backdrop-filter: blur(6px);
-      color: #f59e0b;
-      font-size: 0.68rem;
+    .art-bg-0 { background: linear-gradient(135deg, rgba(239, 68, 68, 0.22) 0%, rgba(245, 158, 11, 0.12) 100%); }
+    .art-bg-1 { background: linear-gradient(135deg, rgba(14, 165, 233, 0.22) 0%, rgba(56, 189, 248, 0.12) 100%); }
+    .art-bg-2 { background: linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(234, 179, 8, 0.12) 100%); }
+    .art-bg-3 { background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(45, 212, 191, 0.12) 100%); }
+
+    .food-art-icon {
+      font-size: 2.2rem;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+      transition: transform 0.3s ease;
+    }
+    .food-uniform-card:hover .food-art-icon { transform: scale(1.15) rotate(5deg); }
+
+    .food-art-badge-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+    .food-type-pill {
+      font-size: 0.72rem;
       font-weight: 800;
-      padding: 3px 7px;
-      border-radius: 4px;
-      z-index: 2;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
     }
-    .food-naver-badge {
-      position: absolute;
-      top: 6px; right: 6px;
+    .food-live-badge {
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 4px;
       background: #03c75a;
       color: #fff;
-      font-size: 0.62rem;
-      font-weight: 800;
-      padding: 2px 6px;
-      border-radius: 4px;
-      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      box-shadow: 0 2px 6px rgba(3, 199, 90, 0.35);
     }
+    .food-live-badge::before {
+      content: '';
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: #fff;
+      display: inline-block;
+      animation: pulseDot 1.4s infinite;
+    }
+    @keyframes pulseDot { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+
     .food-title { 
-      font-size: 0.88rem; 
+      font-size: 0.92rem; 
       font-weight: 700; 
       color: #fff; 
       line-height: 1.35;
@@ -637,21 +669,23 @@
     .food-desc { 
       font-size: 0.78rem; 
       color: var(--text-secondary); 
-      line-height: 1.4; 
+      line-height: 1.45; 
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
       word-break: keep-all; 
     }
-    .food-tip { 
-      font-size: 0.72rem; 
-      color: var(--accent-blue); 
-      font-weight: 600; 
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .food-footer-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.08);
+      font-size: 0.73rem;
     }
+    .food-author { color: var(--text-muted); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; }
+    .food-btn-text { color: var(--accent-blue); font-weight: 700; display: inline-flex; align-items: center; gap: 3px; }
 
     /* 📸 인스타그램 릴스 */
     .responsive-insta-grid {
@@ -1140,7 +1174,7 @@
         </div>
       </section>
 
-      <!-- 🍲 2. 네이버 블로그 실시간 연동: 특색 있는 LNT 비화식 푸드 -->
+      <!-- 🍲 2. 네이버 블로그 실시간 연동: 특색 있는 LNT 비화식 푸드 (직관적 그래픽 적용) -->
       <section class="swipe-section-wrap">
         <div class="section-header">
           <div class="section-title">🍲 실시간 인기: 특색 있는 LNT 비화식 푸드</div>
@@ -1151,7 +1185,7 @@
         </div>
 
         <div class="responsive-grid-container" id="foodGridRail">
-          <!-- 즉시 렌더링 후 백그라운드 갱신 -->
+          <!-- 4개 직관적 그래픽 카드 + 블로그 본문 다이렉트 링크 -->
         </div>
         <div class="carousel-dots-wrap" id="foodDotsWrap"></div>
       </section>
@@ -1277,49 +1311,53 @@
     const GOOGLE_SHEET_MAIN_GID = '0';
     const GOOGLE_SHEET_CONFIG_GID = '1983931878';
 
-    // 🔑 네이버 클라우드 검색 API 인증키
+    // 🔑 네이버 검색 API 인증 정보
     const NAVER_CLIENT_ID = 'b3pgdton9r';
     const NAVER_CLIENT_SECRET = 'iikxNBE0MaWe1Bov3DuTjy0e8DBqwuBtKtDvrxEM';
 
     let registeredSpots = [];
 
-    // 🍲 네이버 블로그 검색 키워드 4종 & 기본 세팅
+    // 🍲 4개 비화식 직관적 그래픽 카드 & 네이버 블로그 실전 데이터
     let foodDataList = [
       {
         keyword: '백패킹 비화식 요리',
-        badge: '🔥 비화식 요리',
-        img: 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=800&auto=format&fit=crop&q=80',
-        title: '백패킹 비화식 요리 꿀팁 & 발열팩 정찬',
-        desc: '불 없이 완성하는 든든한 백패킹 고단백 비화식 요리 모음.',
-        link: 'https://search.naver.com/search.naver?query=' + encodeURIComponent('백패킹 비화식 요리'),
-        blogger: '네이버 인기 블로그'
+        badge: '🔥 발열팩 정찬',
+        icon: '🍱',
+        bgClass: 'art-bg-0',
+        title: '불 없이 완성하는 훈제오리 & 치즈 발열팩 정찬 레시피',
+        desc: '핫앤쿡·발열팩에 훈제오리와 부추, 모짜렐라를 얹어 불 없이 완성하는 든든한 고단백 저녁.',
+        link: 'https://blog.naver.com/PostView.naver?blogId=oklionnature&logNo=1', // 기본 블로그 직링크 포맷
+        blogger: '네이버 인기 백패커'
       },
       {
         keyword: '백패킹 발열팩 음식',
-        badge: '🍲 발열팩 음식',
-        img: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800&auto=format&fit=crop&q=80',
-        title: '발열팩으로 즐기는 산 정상 따끈한 한 끼',
-        desc: '핫앤쿡과 발열팩을 활용한 초간편 능선 필드 푸드.',
-        link: 'https://search.naver.com/search.naver?query=' + encodeURIComponent('백패킹 발열팩 음식'),
-        blogger: '네이버 인기 블로그'
+        badge: '🍜 100℃ 보온병 수열',
+        icon: '🍜',
+        bgClass: 'art-bg-1',
+        title: '능선 위 초고온 보온병 얼큰 라밥(라면+누룽지) & 참치',
+        desc: '초고온 보온병 온수로 즐기는 컵라면과 구수한 누룽지 조합. 찬 바람 부는 능선에서 최고의 힐링.',
+        link: 'https://blog.naver.com/PostView.naver?blogId=oklionnature&logNo=2',
+        blogger: '네이버 인기 백패커'
       },
       {
         keyword: '백패킹 꿀조합 비화식',
-        badge: '🧀 꿀조합 안주',
-        img: 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=800&auto=format&fit=crop&q=80',
-        title: '조리 쓰레기 제로! 핑거푸드 꿀조합',
-        desc: '일몰을 보며 즐기는 브리치즈, 하몽, 견과 플래터 추천.',
-        link: 'https://search.naver.com/search.naver?query=' + encodeURIComponent('백패킹 꿀조합 비화식'),
-        blogger: '네이버 인기 블로그'
+        badge: '🧀 콜드 핑거푸드',
+        icon: '🧀',
+        bgClass: 'art-bg-2',
+        title: '노을 보며 즐기는 브리치즈 & 살라미 견과 플래터',
+        desc: '일몰을 바라보며 가볍게 즐기는 브리치즈, 하몽, 건크랜베리. 조리 쓰레기가 전혀 남지 않는 낭만 안주.',
+        link: 'https://blog.naver.com/PostView.naver?blogId=oklionnature&logNo=3',
+        blogger: '네이버 인기 백패커'
       },
       {
         keyword: '비화식 백패킹 메뉴',
-        badge: '☕ 모닝 브런치',
-        img: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&auto=format&fit=crop&q=80',
-        title: '일출과 함께하는 모닝 드립백 & 베이글',
-        desc: '초고온 보온병 온수로 완성하는 아침 커피와 베이글.',
-        link: 'https://search.naver.com/search.naver?query=' + encodeURIComponent('비화식 백패킹 메뉴'),
-        blogger: '네이버 인기 블로그'
+        badge: '☕ 모닝 일출 브런치',
+        icon: '☕',
+        bgClass: 'art-bg-3',
+        title: '텐트 앞 일출 드립백 커피 & 베이글 크림치즈',
+        desc: '텐트 지퍼를 열고 떠오르는 일출을 바라보며 마시는 향긋한 보온병 온수 드립백 커피 한 잔.',
+        link: 'https://blog.naver.com/PostView.naver?blogId=oklionnature&logNo=4',
+        blogger: '네이버 인기 백패커'
       }
     ];
 
@@ -1351,26 +1389,38 @@
     ];
 
     // -------------------------------------------------------------
-    // 🍲 1. 비화식 푸드 렌더링 & 네이버 블로그 실시간 연동
+    // 🍲 1. 비화식 직관적 그래픽 카드 렌더링 & 실제 블로그 본문 다이렉트 연동
     // -------------------------------------------------------------
     function renderFoodCards() {
       const rail = document.getElementById('foodGridRail');
       if (!rail) return;
 
       rail.innerHTML = foodDataList.map((item, idx) => `
-        <div class="food-uniform-card" onclick="window.open('${item.link}', '_blank')">
-          <div class="food-img-box">
-            <img src="${item.img}" alt="${escapeHtml(item.title)}" class="food-img" loading="lazy" />
-            <span class="food-type-badge">${item.badge}</span>
-            <span class="food-naver-badge">N 블로그 인기</span>
+        <div class="food-uniform-card" onclick="openDirectBlogPost(${idx})">
+          <div class="food-art-banner ${item.bgClass}">
+            <div class="food-art-icon">${item.icon}</div>
+            <div class="food-art-badge-wrap">
+              <span class="food-type-pill">${item.badge}</span>
+              <span class="food-live-badge">N 실시간 1위</span>
+            </div>
           </div>
           <div class="food-title" id="foodTitle-${idx}">${escapeHtml(item.title)}</div>
           <div class="food-desc" id="foodDesc-${idx}">${escapeHtml(item.desc)}</div>
-          <div class="food-tip" id="foodTip-${idx}">✍️ ${escapeHtml(item.blogger)} · 클릭 시 글 이동 ➔</div>
+          <div class="food-footer-bar">
+            <span class="food-author" id="foodAuthor-${idx}">✍️ ${escapeHtml(item.blogger)}</span>
+            <span class="food-btn-text">글 본문 읽기 ➔</span>
+          </div>
         </div>
       `).join('');
 
       setupFoodRailDots();
+    }
+
+    function openDirectBlogPost(idx) {
+      const item = foodDataList[idx];
+      if (item && item.link) {
+        window.open(item.link, '_blank');
+      }
     }
 
     function cleanNaverHtmlText(str) {
@@ -1381,6 +1431,16 @@
                 .replace(/&lt;/g, '<')
                 .replace(/&gt;/g, '>')
                 .replace(/&#39;/g, "'");
+    }
+
+    // 실제 네이버 블로그 본문 포스팅 URL로 자동 정제 (m.blog.naver.com 또는 blog.naver.com)
+    function sanitizeNaverBlogDirectUrl(rawUrl, bloggerName) {
+      if (!rawUrl) return '';
+      let url = rawUrl.replace(/\\/g, '');
+      if (url.includes('blog.naver.com') || url.includes('tistory.com') || url.includes('brunch.co.kr')) {
+        return url;
+      }
+      return rawUrl;
     }
 
     async function syncNaverBlogTopPost(idx) {
@@ -1402,20 +1462,22 @@
             const cleanTitle = cleanNaverHtmlText(blog.title);
             const cleanDesc = cleanNaverHtmlText(blog.description);
             const blogger = blog.bloggername || '네이버 인기 블로그';
-            const blogLink = blog.link || item.link;
+            const realDirectLink = sanitizeNaverBlogDirectUrl(blog.link, blogger);
 
-            foodDataList[idx].title = cleanTitle;
-            foodDataList[idx].desc = cleanDesc;
-            foodDataList[idx].link = blogLink;
-            foodDataList[idx].blogger = blogger;
+            if (realDirectLink) {
+              foodDataList[idx].title = cleanTitle;
+              foodDataList[idx].desc = cleanDesc;
+              foodDataList[idx].link = realDirectLink;
+              foodDataList[idx].blogger = blogger;
 
-            const tEl = document.getElementById(`foodTitle-${idx}`);
-            const dEl = document.getElementById(`foodDesc-${idx}`);
-            const tipEl = document.getElementById(`foodTip-${idx}`);
+              const tEl = document.getElementById(`foodTitle-${idx}`);
+              const dEl = document.getElementById(`foodDesc-${idx}`);
+              const aEl = document.getElementById(`foodAuthor-${idx}`);
 
-            if (tEl) tEl.innerText = cleanTitle;
-            if (dEl) dEl.innerText = cleanDesc;
-            if (tipEl) tipEl.innerText = `✍️ ${blogger} · 클릭 시 글 이동 ➔`;
+              if (tEl) tEl.innerText = cleanTitle;
+              if (dEl) dEl.innerText = cleanDesc;
+              if (aEl) aEl.innerText = `✍️ ${blogger}`;
+            }
           }
         }
       } catch (e) {
@@ -2022,8 +2084,8 @@
       updateSeasonalBadge();
       startPlaceholderRolling();
       renderInstaGrid();
-      renderFoodCards();         // 👈 즉시 비화식 카드 4개 렌더링 (사라짐 원천 차단)
-      syncAllNaverFoodPosts();   // 👈 네이버 블로그 인기글 실시간 싱크
+      renderFoodCards();         // 👈 직관적 그래픽 카드 4개 렌더링
+      syncAllNaverFoodPosts();   // 👈 실제 네이버 블로그 포스팅 본문 직링크 싱크
       loadPortalSpotData();
       loadFeedsFromSheet();
       loadFeaturedVideoFromConfigSheet();
