@@ -1151,7 +1151,7 @@
         </div>
 
         <div class="responsive-grid-container" id="foodGridRail">
-          <!-- 네이버 블로그 검색 API 결과 4개 자동 렌더링 -->
+          <!-- 즉시 렌더링 후 백그라운드 갱신 -->
         </div>
         <div class="carousel-dots-wrap" id="foodDotsWrap"></div>
       </section>
@@ -1283,39 +1283,43 @@
 
     let registeredSpots = [];
 
-    // 🍲 네이버 블로그 검색 키워드 4종 & 기본 썸네일
-    const NAVER_FOOD_QUERIES = [
+    // 🍲 네이버 블로그 검색 키워드 4종 & 기본 세팅
+    let foodDataList = [
       {
         keyword: '백패킹 비화식 요리',
         badge: '🔥 비화식 요리',
         img: 'https://images.unsplash.com/photo-1543339308-43e59d6b73a6?w=800&auto=format&fit=crop&q=80',
-        defaultTitle: '백패킹 비화식 요리 꿀팁 & 레시피',
-        defaultDesc: '불 없이 완성하는 든든한 백패킹 고단백 비화식 요리 모음.',
-        defaultBlogger: '네이버 블로그'
+        title: '백패킹 비화식 요리 꿀팁 & 발열팩 정찬',
+        desc: '불 없이 완성하는 든든한 백패킹 고단백 비화식 요리 모음.',
+        link: 'https://search.naver.com/search.naver?query=' + encodeURIComponent('백패킹 비화식 요리'),
+        blogger: '네이버 인기 블로그'
       },
       {
         keyword: '백패킹 발열팩 음식',
         badge: '🍲 발열팩 음식',
         img: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=800&auto=format&fit=crop&q=80',
-        defaultTitle: '발열팩으로 즐기는 산 정상 따끈한 한 끼',
-        defaultDesc: '핫앤쿡과 발열팩을 활용한 초간편 능선 필드 푸드.',
-        defaultBlogger: '네이버 블로그'
+        title: '발열팩으로 즐기는 산 정상 따끈한 한 끼',
+        desc: '핫앤쿡과 발열팩을 활용한 초간편 능선 필드 푸드.',
+        link: 'https://search.naver.com/search.naver?query=' + encodeURIComponent('백패킹 발열팩 음식'),
+        blogger: '네이버 인기 블로그'
       },
       {
         keyword: '백패킹 꿀조합 비화식',
         badge: '🧀 꿀조합 안주',
         img: 'https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=800&auto=format&fit=crop&q=80',
-        defaultTitle: '조리 쓰레기 제로! 핑거푸드 꿀조합',
-        defaultDesc: '일몰을 보며 즐기는 브리치즈, 하몽, 견과 플래터 추천.',
-        defaultBlogger: '네이버 블로그'
+        title: '조리 쓰레기 제로! 핑거푸드 꿀조합',
+        desc: '일몰을 보며 즐기는 브리치즈, 하몽, 견과 플래터 추천.',
+        link: 'https://search.naver.com/search.naver?query=' + encodeURIComponent('백패킹 꿀조합 비화식'),
+        blogger: '네이버 인기 블로그'
       },
       {
         keyword: '비화식 백패킹 메뉴',
-        badge: '⛺ 추천 메뉴',
+        badge: '☕ 모닝 브런치',
         img: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&auto=format&fit=crop&q=80',
-        defaultTitle: '일출과 함께하는 모닝 드립백 & 브런치',
-        defaultDesc: '초고온 보온병 온수로 완성하는 아침 커피와 베이글.',
-        defaultBlogger: '네이버 블로그'
+        title: '일출과 함께하는 모닝 드립백 & 베이글',
+        desc: '초고온 보온병 온수로 완성하는 아침 커피와 베이글.',
+        link: 'https://search.naver.com/search.naver?query=' + encodeURIComponent('비화식 백패킹 메뉴'),
+        blogger: '네이버 인기 블로그'
       }
     ];
 
@@ -1347,8 +1351,28 @@
     ];
 
     // -------------------------------------------------------------
-    // 🍲 1. 네이버 블로그 검색 API (인기순 sim) 실시간 연동
+    // 🍲 1. 비화식 푸드 렌더링 & 네이버 블로그 실시간 연동
     // -------------------------------------------------------------
+    function renderFoodCards() {
+      const rail = document.getElementById('foodGridRail');
+      if (!rail) return;
+
+      rail.innerHTML = foodDataList.map((item, idx) => `
+        <div class="food-uniform-card" onclick="window.open('${item.link}', '_blank')">
+          <div class="food-img-box">
+            <img src="${item.img}" alt="${escapeHtml(item.title)}" class="food-img" loading="lazy" />
+            <span class="food-type-badge">${item.badge}</span>
+            <span class="food-naver-badge">N 블로그 인기</span>
+          </div>
+          <div class="food-title" id="foodTitle-${idx}">${escapeHtml(item.title)}</div>
+          <div class="food-desc" id="foodDesc-${idx}">${escapeHtml(item.desc)}</div>
+          <div class="food-tip" id="foodTip-${idx}">✍️ ${escapeHtml(item.blogger)} · 클릭 시 글 이동 ➔</div>
+        </div>
+      `).join('');
+
+      setupFoodRailDots();
+    }
+
     function cleanNaverHtmlText(str) {
       if (!str) return '';
       return str.replace(/<[^>]*>?/g, '')
@@ -1359,10 +1383,9 @@
                 .replace(/&#39;/g, "'");
     }
 
-    async function fetchNaverBlogTopPost(queryObj) {
-      const keyword = queryObj.keyword;
-      // 네이버 오픈 API 블로그 검색 (sim = 정확도/인기순)
-      const targetApiUrl = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(keyword)}&display=1&sort=sim`;
+    async function syncNaverBlogTopPost(idx) {
+      const item = foodDataList[idx];
+      const targetApiUrl = `https://openapi.naver.com/v1/search/blog.json?query=${encodeURIComponent(item.keyword)}&display=1&sort=sim`;
       const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetApiUrl)}`;
 
       try {
@@ -1375,54 +1398,33 @@
         if (res.ok) {
           const data = await res.json();
           if (data && data.items && data.items.length > 0) {
-            const item = data.items[0];
-            return {
-              title: cleanNaverHtmlText(item.title) || queryObj.defaultTitle,
-              desc: cleanNaverHtmlText(item.description) || queryObj.defaultDesc,
-              link: item.link || `https://search.naver.com/search.naver?query=${encodeURIComponent(keyword)}`,
-              blogger: item.bloggername || queryObj.defaultBlogger,
-              badge: queryObj.badge,
-              img: queryObj.img
-            };
+            const blog = data.items[0];
+            const cleanTitle = cleanNaverHtmlText(blog.title);
+            const cleanDesc = cleanNaverHtmlText(blog.description);
+            const blogger = blog.bloggername || '네이버 인기 블로그';
+            const blogLink = blog.link || item.link;
+
+            foodDataList[idx].title = cleanTitle;
+            foodDataList[idx].desc = cleanDesc;
+            foodDataList[idx].link = blogLink;
+            foodDataList[idx].blogger = blogger;
+
+            const tEl = document.getElementById(`foodTitle-${idx}`);
+            const dEl = document.getElementById(`foodDesc-${idx}`);
+            const tipEl = document.getElementById(`foodTip-${idx}`);
+
+            if (tEl) tEl.innerText = cleanTitle;
+            if (dEl) dEl.innerText = cleanDesc;
+            if (tipEl) tipEl.innerText = `✍️ ${blogger} · 클릭 시 글 이동 ➔`;
           }
         }
       } catch (e) {
-        console.log(`네이버 검색 API 통신 (${keyword}) fallback 전환:`, e);
+        // 기본 렌더링 유지
       }
-
-      // Fallback
-      return {
-        title: queryObj.defaultTitle,
-        desc: queryObj.defaultDesc,
-        link: `https://search.naver.com/search.naver?query=${encodeURIComponent(keyword)}`,
-        blogger: queryObj.defaultBlogger,
-        badge: queryObj.badge,
-        img: queryObj.img
-      };
     }
 
-    async function loadNaverFoodPosts() {
-      const rail = document.getElementById('foodGridRail');
-      if (!rail) return;
-
-      // 4개 키워드 비동기 동시 호출
-      const promises = NAVER_FOOD_QUERIES.map(q => fetchNaverBlogTopPost(q));
-      const results = await Promise.all(promises);
-
-      rail.innerHTML = results.map(item => `
-        <div class="food-uniform-card" onclick="window.open('${item.link}', '_blank')">
-          <div class="food-img-box">
-            <img src="${item.img}" alt="${escapeHtml(item.title)}" class="food-img" loading="lazy" />
-            <span class="food-type-badge">${item.badge}</span>
-            <span class="food-naver-badge">N 블로그 인기</span>
-          </div>
-          <div class="food-title">${escapeHtml(item.title)}</div>
-          <div class="food-desc">${escapeHtml(item.desc)}</div>
-          <div class="food-tip">✍️ 블로그: ${escapeHtml(item.blogger)} · 클릭 시 이동 ➔</div>
-        </div>
-      `).join('');
-
-      setupFoodRailDots();
+    function syncAllNaverFoodPosts() {
+      foodDataList.forEach((_, idx) => syncNaverBlogTopPost(idx));
     }
 
     // -------------------------------------------------------------
@@ -2020,7 +2022,8 @@
       updateSeasonalBadge();
       startPlaceholderRolling();
       renderInstaGrid();
-      loadNaverFoodPosts(); // 👈 네이버 블로그 실시간 검색 로드
+      renderFoodCards();         // 👈 즉시 비화식 카드 4개 렌더링 (사라짐 원천 차단)
+      syncAllNaverFoodPosts();   // 👈 네이버 블로그 인기글 실시간 싱크
       loadPortalSpotData();
       loadFeedsFromSheet();
       loadFeaturedVideoFromConfigSheet();
