@@ -688,7 +688,7 @@
 
     #map { flex: 1; height: 100%; position: relative; background: var(--bg-deep); touch-action: pan-x pan-y; }
     
-    /* 💻 ① PC 전용 초슬림 범례 */
+    /* 💻 ① PC 전용 초슬림 범례 (좌측 상단) */
     .pc-map-legend-bar {
       position: absolute;
       top: 10px;
@@ -817,77 +817,84 @@
       color: #ffffff;
     }
 
-    /* 📱 ① 모바일 전용 초슬림 범례 (좌측) */
+    /* ========================================================
+       🎯 📱 하단 3대 플로팅 HUD 버튼 (균형감 & 톤앤매너 완벽 통일)
+       ======================================================== */
+    /* 1. 좌측: 범례 (쉬움/보통/어려움) */
     .hud-bottom-left-legend {
       display: none;
       position: absolute;
       bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 8px);
       left: 8px;
       z-index: var(--z-hud);
-      height: 26px;
-      padding: 0 8px;
+      height: 30px;
+      padding: 0 10px;
       background: rgba(9, 12, 19, 0.9);
       border: 1px solid var(--border);
-      border-radius: 13px;
+      border-radius: 15px;
       align-items: center;
-      gap: 5px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      gap: 6px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
       user-select: none;
       white-space: nowrap;
       cursor: default;
       pointer-events: auto;
     }
 
-    /* 📍 GPS 내 위치 원터치 버튼 (정중앙 밸런스 배치) */
+    /* 2. 중앙: 📍 내 위치 찾기 (정중앙 밸런스 배치) */
     .hud-gps-btn {
       position: absolute;
       bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 8px);
       left: 50%;
       transform: translateX(-50%);
       z-index: var(--z-hud);
-      height: 28px;
+      height: 30px;
       padding: 0 12px;
-      background: rgba(9, 12, 19, 0.92);
-      border: 1.2px solid var(--accent-blue);
-      border-radius: 14px;
+      background: rgba(9, 12, 19, 0.9);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      border-radius: 15px;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 4px;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 700;
-      color: #7dd3fc !important;
+      color: var(--text-secondary) !important;
       cursor: pointer;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.6);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
       user-select: none;
       white-space: nowrap;
       transition: all 0.15s ease;
     }
-    .hud-gps-btn:hover { background: rgba(2, 132, 199, 0.25); color: #fff !important; }
+    .hud-gps-btn:hover {
+      background: rgba(2, 132, 199, 0.25);
+      border-color: var(--accent-blue);
+      color: #ffffff !important;
+    }
 
-    /* 📱 ② 모바일 전용 드론 버튼 (우측 균형 캡슐) */
+    /* 3. 우측: 🛸 드론 규제 (우측 균형 캡슐) */
     .hud-bottom-right-drone {
       display: none;
       position: absolute;
       bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 8px);
       right: 8px;
       z-index: var(--z-hud);
-      height: 28px;
+      height: 30px;
       padding: 0 10px;
-      background: rgba(9, 12, 19, 0.92);
-      border: 1.2px solid rgba(244, 63, 94, 0.55);
-      border-radius: 14px;
+      background: rgba(9, 12, 19, 0.9);
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      border-radius: 15px;
       align-items: center;
       justify-content: center;
       gap: 4px;
       font-size: 0.7rem;
       font-weight: 700;
-      color: #fecdd3 !important;
+      color: var(--text-secondary) !important;
       cursor: pointer;
       transition: all 0.15s ease;
       white-space: nowrap;
       user-select: none;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.6);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
       letter-spacing: -0.02em;
     }
     .hud-bottom-right-drone:hover {
@@ -1398,11 +1405,12 @@
       text-align: center;
     }
 
+    /* 4줄 시그니처 경고문구 박스 */
     .app-disclaimer-box {
       font-size: 0.66rem;
-      color: var(--text-muted);
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px dashed var(--border);
+      color: #fca5a5;
+      background: rgba(244, 63, 94, 0.08);
+      border: 1px dashed rgba(244, 63, 94, 0.45);
       padding: 6px 8px;
       border-radius: 6px;
       line-height: 1.45;
@@ -1571,7 +1579,7 @@
       display: none !important;
     }
 
-    /* 🌿 LNT 7원칙 전용 모달 */
+    /* 🌿 LNT 7원칙 풀스크린 실천 서약 모달 */
     .lnt-modal-card {
       background: var(--bg-surface);
       color: var(--text-primary);
@@ -1824,19 +1832,22 @@
         <button type="button" class="map-type-btn" id="btnMapHybrid" onclick="setMapType('HYBRID')">위성</button>
       </div>
 
-      <!-- 📱 ① 모바일 전용 초슬림 범례 (좌측) -->
+      <!-- ========================================================
+           🎯 📱 하단 3대 플로팅 HUD (크기 균일화 & 정중앙 밸런스 배치)
+           ======================================================== -->
+      <!-- 1. 좌측: 범례 -->
       <div class="hud-bottom-left-legend mobile-only clean-hide" onclick="handleLegendAdminClick()">
         <div class="legend-item"><span class="legend-dot dot-green"></span> 쉬움</div>
         <div class="legend-item"><span class="legend-dot dot-yellow"></span> 보통</div>
         <div class="legend-item"><span class="legend-dot dot-red"></span> 어려움</div>
       </div>
 
-      <!-- 📍 GPS 내 위치 원터치 버튼 (정중앙 밸런스 배치) -->
+      <!-- 2. 중앙: 📍 내 위치 찾기 (정중앙 밸런스 배치) -->
       <button type="button" class="hud-gps-btn clean-hide" onclick="locateUserPosition()" title="현재 내 위치로 이동">
         <span>📍 내 위치 찾기</span>
       </button>
 
-      <!-- 📱 ② 모바일 전용 드론 버튼 (우측 밸런스 배치) -->
+      <!-- 3. 우측: 🛸 드론 규제 확인 -->
       <button type="button" class="hud-bottom-right-drone mobile-only clean-hide" id="mobileDroneBtn" onclick="toggleDroneOverlay()">
         <span>🛸 드론 규제 확인</span>
       </button>
@@ -2234,8 +2245,7 @@
 
     naver.maps.Event.addListener(map, 'dragstart', () => closeAllPopups());
     naver.maps.Event.addListener(map, 'pinchstart', () => closeAllPopups());
-    naver.maps.Event.addListener(map, 'zoom_changed', () => updateClusters());
-    naver.maps.Event.addListener(map, 'bounds_changed', () => updateClusters());
+    naver.maps.Event.addListener(map, 'idle', () => updateClusters());
 
     document.addEventListener('DOMContentLoaded', () => {
       const vTag = document.getElementById('versionTagBtn');
@@ -3154,7 +3164,7 @@
           </div>
 
           <!-- 4줄 시그니처 경고문구 100% 반영 -->
-          <div class="app-disclaimer-box" style="color: #fca5a5; border-color: rgba(244, 63, 94, 0.45); background: rgba(244, 63, 94, 0.08);">
+          <div class="app-disclaimer-box">
             ※ 현지 지자체 조례 및 산불조심기간에 따라 야영 통제될 수 있습니다.<br>
             ※ 들머리와 영상속 박지정보는 틀릴수가있습니다. 확인을 꼭 하고가세요!<br>
             ※ 양심을 버리지마세요! 쓰레기는 전량 회수하고 LNT를 실천해 주세요.<br>
@@ -3566,27 +3576,23 @@
 
     /* 🟢 [100% 안전한 자체 내장형 마커 클러스터링 엔진 - 증발 버그 0%] */
     function updateClusters() {
-      // 기존 클러스터 뱃지 제거
       clusterMarkers.forEach(m => m.setMap(null));
       clusterMarkers = [];
 
       const zoom = map.getZoom();
       const visibleMarkers = [];
 
-      // 등록된 모든 유효 마커 수집
       spotMarkerMap.forEach(marker => {
         if (marker.getMap()) {
           visibleMarkers.push(marker);
         }
       });
 
-      // 줌 레벨 12 이상(상세 뷰)에서는 모든 마커를 강제 노출하고 클러스터링 종료
       if (zoom >= 12) {
         visibleMarkers.forEach(m => m.setVisible(true));
         return;
       }
 
-      // 거리 기반 클러스터링 연산
       const clusterRadius = Math.max(0.18, 1.8 / Math.pow(2, zoom - 6));
       const clusters = [];
       const visited = new Set();
@@ -3613,7 +3619,6 @@
         clusters.push(cluster);
       }
 
-      // 3단계 대형 네온 배지 생성
       clusters.forEach(cluster => {
         if (cluster.length > 1) {
           cluster.forEach(m => m.setVisible(false));
@@ -4340,7 +4345,7 @@
       localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
       localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks]));
       localStorage.setItem('okbm_visited', JSON.stringify([...userVisited]));
-      localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
+localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
 
       closeAllPopups();
       updateFilterCounts();
@@ -4516,4 +4521,40 @@
               localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
             }
           } else {
-            return
+            return alert('유효하지 않은 백업 파일입니다.');
+          }
+          updateNewSpotFlags(spots);
+          updateFilterCounts();
+          renderSpots();
+          alert('데이터가 성공적으로 복원되었습니다.');
+        } catch (err) {
+          alert('JSON 파일 파싱 실패');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        spotMarkerMap.forEach((marker) => {
+          if (marker.spotData) marker.setIcon(createCustomMarkerIcon(marker.spotData));
+        });
+        updateSmartResetButtons();
+      }, 150);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.pc-search-container') && !e.target.closest('.mobile-floating-search') && !e.target.closest('.custom-modal-overlay') && !e.target.closest('#pinPickerBanner')) {
+        document.getElementById('pcSearchDropdown').style.display = 'none';
+        document.getElementById('mobileSearchDropdown').style.display = 'none';
+      }
+    });
+
+    // 🚀 초기 실행
+    fetchSpotsFromGoogleSheet();
+    fetchCommentsFromSheet();
+  </script>
+</body>
+</html>
