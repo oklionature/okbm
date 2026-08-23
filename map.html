@@ -3669,7 +3669,7 @@ if (currentStatusFilter === 'NEW') {
   spots.sort((a, b) => (b.sheetIndex || 0) - (a.sheetIndex || 0) || Number(b.id) - Number(a.id));
 } else {
       spots.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-     { let visibleCount = 0;
+} let visibleCount = 0;
 
       spots.forEach((spot) => {
         if (!spot.region || !spot.cityName) {
