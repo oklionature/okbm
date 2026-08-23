@@ -1,3 +1,5 @@
+최종 확인 시안을 바탕으로 모든 기능과 버그 픽스를 완벽하게 통합하여 검수한 **대한민국 낭만 백패킹 로드 전체 완성 코드(4.5ver
+Pro)**입니다.
 
 <!DOCTYPE html>
 <html lang="ko">
@@ -385,23 +387,6 @@
     }
     .sidebar-header-left { display: flex; align-items: center; gap: 5px; white-space: nowrap; flex-shrink: 0; }
     .sidebar-header-actions { display: flex; align-items: center; gap: 5px; flex-wrap: nowrap; }
-
-    .btn-lnt-guide {
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.4);
-      color: #6ee7b7 !important;
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 0.68rem;
-      font-weight: 700;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.15s;
-    }
-    .btn-lnt-guide:hover {
-      background: #10b981;
-      color: #ffffff !important;
-    }
 
     .btn-sidebar-submit {
       background: linear-gradient(135deg, #0d9488, #0f766e);
@@ -856,6 +841,30 @@
       pointer-events: auto;
     }
 
+    /* 📍 GPS 내 위치 원터치 버튼 */
+    .hud-gps-btn {
+      position: absolute;
+      bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 8px);
+      right: 90px;
+      z-index: var(--z-hud);
+      height: 22px;
+      padding: 0 8px;
+      background: rgba(9, 12, 19, 0.9);
+      border: 1px solid var(--accent-blue);
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      font-size: 0.64rem;
+      font-weight: 700;
+      color: #7dd3fc !important;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      user-select: none;
+    }
+    .hud-gps-btn:hover { background: rgba(2, 132, 199, 0.25); color: #fff !important; }
+
     /* 📱 ② 모바일 전용 드론 버튼 */
     .hud-bottom-right-drone {
       display: none;
@@ -1167,23 +1176,6 @@
       min-height: 32px;
     }
 
-    /* 📺 1번 인앱 유튜브 영상 컨테이너 (이탈 0%) */
-    .inapp-video-container {
-      display: none;
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      border-radius: 8px;
-      overflow: hidden;
-      margin-top: 4px;
-      background: #000;
-      border: 1px solid var(--border-glow);
-    }
-    .inapp-video-container iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-
     /* 🔒 들머리 잠금 & Peek-Through */
     .locked-entry-wrap {
       position: relative;
@@ -1211,7 +1203,7 @@
     .entry-lock-overlay {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(9, 12, 19, 0.65);
+      background: rgba(9, 12, 19, 0.72);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -1229,14 +1221,20 @@
       transition: all 0.2s;
     }
     .entry-lock-overlay:hover {
-      background: rgba(9, 12, 19, 0.78);
+      background: rgba(9, 12, 19, 0.85);
       border-color: var(--accent-rose);
     }
     .entry-lock-overlay.counting {
       border-color: #f59e0b;
       color: #fde047;
-      background: rgba(9, 12, 19, 0.9);
+      background: rgba(9, 12, 19, 0.92);
       cursor: default;
+    }
+    .entry-lock-overlay.pledge-ready {
+      border-color: #10b981;
+      background: rgba(6, 78, 59, 0.92);
+      color: #a7f3d0;
+      cursor: pointer;
     }
     .unlock-progress-track {
       width: 85%;
@@ -1313,12 +1311,19 @@
       margin-top: 3px;
     }
 
-    .spot-action-line {
+    /* 2단 정돈된 액션 버튼 레이아웃 */
+    .spot-action-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 4px;
+      width: 100%;
+    }
+    .spot-action-row {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       gap: 4px;
-      margin-top: 4px;
       width: 100%;
     }
     .link-btn {
@@ -1337,13 +1342,7 @@
       line-height: 1.3;
       border: none;
     }
-    .btn-yt-wide {
-      background: linear-gradient(135deg, #e11d48, #be123c);
-      padding: 4px 12px !important;
-      font-size: 0.72rem !important;
-      font-weight: 700;
-      min-width: 105px;
-    }
+    .btn-yt { background: linear-gradient(135deg, #e11d48, #be123c); }
     .btn-blog { background: linear-gradient(135deg, #059669, #047857); }
     .btn-share-spot { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
     .btn-insta { 
@@ -1584,7 +1583,7 @@
       display: none !important;
     }
 
-    /* 🌿 LNT 7원칙 전용 모달 */
+    /* 🌿 LNT 7원칙 모달 */
     .lnt-modal-card {
       background: var(--bg-surface);
       color: var(--text-primary);
@@ -1755,7 +1754,7 @@
         </div>
 
         <div class="sidebar-header-actions">
-          <button type="button" class="btn-lnt-guide" onclick="openLntModal()">🌿 K-LNT 7원칙</button>
+          <button type="button" class="btn-lnt-guide" onclick="openLntModal()">🌿 K-LNT 수칙</button>
           <button type="button" class="btn-sidebar-submit" onclick="openUserProposalModal()">➕ 제보</button>
           <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="header-insta-badge" title="협업 및 문의">
             <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
@@ -1844,6 +1843,11 @@
         <div class="legend-item"><span class="legend-dot dot-yellow"></span> 보통</div>
         <div class="legend-item"><span class="legend-dot dot-red"></span> 어려움</div>
       </div>
+
+      <!-- 📍 GPS 내 위치 원터치 버튼 -->
+      <button type="button" class="hud-gps-btn clean-hide" onclick="locateUserPosition()" title="현재 내 위치로 이동">
+        <span>📍 내위치</span>
+      </button>
 
       <!-- 📱 ② 모바일 전용 드론 버튼 -->
       <button type="button" class="hud-bottom-right-drone mobile-only clean-hide" id="mobileDroneBtn" onclick="toggleDroneOverlay()">
@@ -2204,9 +2208,10 @@
     let currentActiveMarker = null;
 
     const spotMarkerMap = new Map();
-    let markerClustererInstance = null;
+    let clusterMarkers = []; // 자체 내장 클러스터링 마커 배열
     let tempSearchMarker = null;
     let tempPickedMarker = null;
+    let userLocationMarker = null;
 
     let modalMode = 'PROPOSAL';
     let modalEditIndex = -1;
@@ -2241,6 +2246,8 @@
 
     naver.maps.Event.addListener(map, 'dragstart', () => closeAllPopups());
     naver.maps.Event.addListener(map, 'pinchstart', () => closeAllPopups());
+    naver.maps.Event.addListener(map, 'zoom_changed', () => updateClusters());
+    naver.maps.Event.addListener(map, 'bounds_changed', () => updateClusters());
 
     document.addEventListener('DOMContentLoaded', () => {
       const vTag = document.getElementById('versionTagBtn');
@@ -2322,6 +2329,45 @@
       const visitedBtn = document.getElementById('btnFilterVisited');
       if (favBtn) favBtn.innerText = `⭐ 찜 (${userBookmarks.size})`;
       if (visitedBtn) visitedBtn.innerText = `🚩 클리어 (${userVisited.size})`;
+    }
+
+    /* 📍 GPS 내 위치 찾기 기능 */
+    function locateUserPosition() {
+      if (!navigator.geolocation) {
+        return alert('현재 브라우저에서는 위치 서비스를 지원하지 않습니다.');
+      }
+      showToast('📍 현재 위치를 탐색하는 중입니다...');
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const userLatLng = new naver.maps.LatLng(lat, lng);
+
+          if (!userLocationMarker) {
+            userLocationMarker = new naver.maps.Marker({
+              position: userLatLng,
+              map: map,
+              icon: {
+                content: `
+                  <div style="width:20px; height:20px; border-radius:50%; background:#0284c7; border:3px solid #ffffff; box-shadow:0 0 14px rgba(2,132,199,0.8);"></div>
+                `,
+                anchor: new naver.maps.Point(10, 10)
+              },
+              zIndex: 99999
+            });
+          } else {
+            userLocationMarker.setPosition(userLatLng);
+            userLocationMarker.setMap(map);
+          }
+
+          map.morph(userLatLng, 12, { duration: 400, easing: 'easeOutCubic' });
+          showToast('📍 현재 위치로 이동했습니다');
+        },
+        (error) => {
+          alert('위치 정보를 가져올 수 없습니다. 브라우저 위치 권한을 확인해주세요.');
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      );
     }
 
     function areAllRegionAccordionsClosed() {
@@ -2877,18 +2923,12 @@
       return sessionStorage.getItem(`okbm_unlocked_${spotId}`) === 'true';
     }
 
-    /* 📺 1번 인앱 유튜브 영상 재생 (이탈 0% 잠금 해제 트리거) */
-    function triggerSpotUnlock(spotId, targetUrl, youtubeVideoId = '') {
+    /* 🌿 들머리 잠금 해제 (등록자 감사 7초 후 ➡️ LNT 필수 실천 서약 버튼 활성화) */
+    function triggerSpotUnlock(spotId, targetUrl) {
+      if (targetUrl) window.open(targetUrl, '_blank', 'noopener,noreferrer');
+
       if (isAdminMode || isSpotUnlocked(spotId)) return;
       if (spotUnlockTimers[spotId]) return;
-
-      // 1. 유튜브 인앱 플레이어 컨테이너 활성화
-      const videoContainer = document.getElementById(`inappVideoContainer_${spotId}`);
-      const videoIframe = document.getElementById(`inappVideoIframe_${spotId}`);
-      if (videoContainer && videoIframe && youtubeVideoId) {
-        videoIframe.src = `https://www.youtube-nocookie.com/embed/${youtubeVideoId}?autoplay=1`;
-        videoContainer.style.display = 'block';
-      }
 
       let countdown = 7;
       const overlayEl = document.getElementById(`entryLockOverlay_${spotId}`);
@@ -2900,7 +2940,7 @@
         const progressPct = ((7 - cnt) / 7) * 100;
         curEl.innerHTML = `
           <div style="display:flex; flex-direction:column; align-items:center; width:100%; gap:3px;">
-            <span>⏳ 영상 감상 중... <strong>${cnt}초</strong> 뒤 들머리가 열립니다</span>
+            <span>⏳ 감사 인사 확인 중... <strong>${cnt}초</strong> 뒤 서약 버튼이 활성화됩니다</span>
             <div class="unlock-progress-track">
               <div class="unlock-progress-fill" style="width: ${progressPct}%;"></div>
             </div>
@@ -2917,16 +2957,32 @@
         } else {
           clearInterval(spotUnlockTimers[spotId]);
           delete spotUnlockTimers[spotId];
-          sessionStorage.setItem(`okbm_unlocked_${spotId}`, 'true');
 
-          const finalOverlay = document.getElementById(`entryLockOverlay_${spotId}`);
-          const innerContent = document.getElementById(`lockedEntryInner_${spotId}`);
-          if (finalOverlay) finalOverlay.style.display = 'none';
-          if (innerContent) innerContent.classList.remove('is-locked');
-
-          showToast('🔓 들머리 주소와 길안내가 활성화되었습니다!');
+          const curEl = document.getElementById(`entryLockOverlay_${spotId}`);
+          if (curEl) {
+            curEl.classList.remove('counting');
+            curEl.classList.add('pledge-ready');
+            curEl.innerHTML = `
+              <div style="display:flex; flex-direction:column; align-items:center; width:100%; gap:3px;">
+                <span style="color:#a7f3d0; font-weight:800; font-size:0.74rem;">🌿 [K-LNT 서약] 산림 내 비화식 준수 & 쓰레기 전량 회수</span>
+                <span style="color:#ffffff; font-size:0.68rem; text-decoration:underline; font-weight:700;">서약하고 들머리 주소 열기 ➔</span>
+              </div>
+            `;
+            curEl.onclick = () => completeLntPledgeAndUnlock(spotId);
+          }
         }
       }, 1000);
+    }
+
+    function completeLntPledgeAndUnlock(spotId) {
+      sessionStorage.setItem(`okbm_unlocked_${spotId}`, 'true');
+
+      const finalOverlay = document.getElementById(`entryLockOverlay_${spotId}`);
+      const innerContent = document.getElementById(`lockedEntryInner_${spotId}`);
+      if (finalOverlay) finalOverlay.style.display = 'none';
+      if (innerContent) innerContent.classList.remove('is-locked');
+
+      showToast('🔓 K-LNT 실천 서약 완료! 들머리 주소가 열렸습니다 🌿');
     }
 
     /* ⭐ 찜하기 / 🚩 클리어 스마트 전환 로직 */
@@ -3019,12 +3075,6 @@
       }
     }
 
-    function extractYouTubeId(url) {
-      if (!url) return '';
-      const match = url.match(/^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|shorts\/|\&v=)([^#\&\?]*).*/);
-      return (match && match[1].length === 11) ? match[1] : '';
-    }
-
     function generateDetailContentHtml(spot, isMobileSheet = false) {
       const { navAddress, guide } = parseEntryPoint(spot.entryPoint || spot.name);
       const searchTarget = navAddress || spot.name;
@@ -3034,7 +3084,6 @@
       const sunset = calculateSunsetTime(spot.lat, spot.lng);
 
       const ytList = spot.youtubeUrls || (spot.youtubeUrl ? [spot.youtubeUrl] : []);
-      const firstYtId = ytList[0] ? extractYouTubeId(ytList[0]) : '';
       const cleanUser = (spot.instaId?.trim() || "oklionnature").replace('@', '').replace(/https?:\/\/(www\.)?instagram\.com\//, '').replace(/\/$/, '');
       const instaLink = `https://instagram.com/${encodeURIComponent(cleanUser)}`;
 
@@ -3078,11 +3127,6 @@
             </button>
           </div>
           
-          <!-- 📺 1번 인앱 유튜브 영상 플레이어 (이탈 0%) -->
-          <div class="inapp-video-container" id="inappVideoContainer_${spot.id}">
-            <iframe id="inappVideoIframe_${spot.id}" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-          </div>
-
           <div class="locked-entry-wrap" id="lockedEntryWrap_${spot.id}">
             <div class="locked-entry-inner ${isUnlocked ? '' : 'is-locked'}" id="lockedEntryInner_${spot.id}">
               <a href="${escapeHtml(naverSearchUrl)}" target="_blank" rel="noopener noreferrer" class="compact-entry-link" title="네이버 지도 길안내로 이동">
@@ -3093,8 +3137,8 @@
               </button>
             </div>
             ${!isUnlocked ? `
-              <div class="entry-lock-overlay" id="entryLockOverlay_${spot.id}" onclick="triggerSpotUnlock('${spot.id}', '${ytList[0] ? escapeHtml(cleanYouTubeUrl(ytList[0].trim())) : instaLink}', '${firstYtId}')">
-                <span>🔒 등록자 영상 보고 감사 전하기<br>여기를 누르면 <strong style="color: #fde047; font-size: 0.8rem; font-weight: 800; text-decoration: underline; text-underline-offset: 3px;">들머리 주소</strong>가 열립니다</span>
+              <div class="entry-lock-overlay" id="entryLockOverlay_${spot.id}" onclick="triggerSpotUnlock('${spot.id}', '${ytList[0] ? escapeHtml(cleanYouTubeUrl(ytList[0].trim())) : instaLink}')">
+                <span>🔒 등록자 분께 감사 인사를 전해 보세요.<br>YouTube나 등록자 링크를 누르면 <strong style="color: #fde047; font-size: 0.8rem; font-weight: 800; text-decoration: underline; text-underline-offset: 3px;">들머리 주소</strong>가 열립니다</span>
               </div>
             ` : ''}
           </div>
@@ -3112,15 +3156,20 @@
             <textarea id="privateMemoInput_${spot.id}" class="user-private-memo-input" placeholder="예: 3번 데크가 명당, 모기향 필수..." rows="1">${escapeHtml(memoText)}</textarea>
           </div>
 
-          <div class="spot-action-line">
-            ${ytList.slice(0, 2).map((url, i) => url?.trim() ? `<a href="javascript:void(0)" onclick="triggerSpotUnlock('${spot.id}', '${escapeHtml(cleanYouTubeUrl(url.trim()))}', '${extractYouTubeId(url.trim())}')" class="link-btn btn-yt btn-yt-wide">▶ 영상 보기${ytList.length > 1 ? ` (${i + 1})` : ''}</a>` : '').join('')}
-            ${spot.blogUrl?.trim() ? `<a href="${escapeHtml(spot.blogUrl.trim())}" target="_blank" rel="noopener noreferrer" class="link-btn btn-blog" onclick="event.stopPropagation();">📝 블로그</a>` : ''}
-            <button type="button" class="link-btn btn-share-spot" onclick="shareSpotCard('${spot.id}')">📤 공유</button>
-            <a href="${instaLink}" target="_blank" rel="noopener noreferrer" class="link-btn btn-insta" title="등록자 인스타그램">
-              <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-              등록자
-            </a>
-            ${getDroneBadgeHtml(check.status, check.reason)}
+          <!-- 2단 정돈된 액션 버튼 그리드 -->
+          <div class="spot-action-grid">
+            <div class="spot-action-row">
+              ${ytList.slice(0, 2).map((url, i) => url?.trim() ? `<a href="javascript:void(0)" onclick="triggerSpotUnlock('${spot.id}', '${escapeHtml(cleanYouTubeUrl(url.trim()))}')" class="link-btn btn-yt">▶ YouTube 영상${ytList.length > 1 ? ` (${i + 1})` : ''}</a>` : '').join('')}
+              ${spot.blogUrl?.trim() ? `<a href="${escapeHtml(spot.blogUrl.trim())}" target="_blank" rel="noopener noreferrer" class="link-btn btn-blog" onclick="event.stopPropagation();">📝 블로그</a>` : ''}
+              <button type="button" class="link-btn btn-share-spot" onclick="shareSpotCard('${spot.id}')">📤 공유</button>
+            </div>
+            <div class="spot-action-row">
+              <a href="javascript:void(0)" onclick="triggerSpotUnlock('${spot.id}', '${instaLink}')" class="link-btn btn-insta" title="등록자 인스타그램">
+                <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                <span>등록자</span>
+              </a>
+              ${getDroneBadgeHtml(check.status, check.reason)}
+            </div>
           </div>
 
           <div class="app-disclaimer-box" style="color: #fca5a5; border-color: rgba(244, 63, 94, 0.45); background: rgba(244, 63, 94, 0.08);">
@@ -3531,7 +3580,93 @@
       else if (!e.target.value.trim()) showTopRankings(mode);
     }
 
-    /* 🚀 [마커 풀링 & 3단계 대형 클러스터링 렌더링 엔진] */
+    /* 🟢 [100% 안전한 자체 내장형 마커 클러스터링 엔진] */
+    function updateClusters() {
+      // 기존 클러스터 뱃지 제거
+      clusterMarkers.forEach(m => m.setMap(null));
+      clusterMarkers = [];
+
+      const zoom = map.getZoom();
+      const visibleMarkers = [];
+
+      spotMarkerMap.forEach(marker => {
+        if (marker.getMap() && marker.getVisible()) {
+          visibleMarkers.push(marker);
+        }
+      });
+
+      // 줌 레벨 12 이상(상세 뷰)에서는 클러스터링 해제하고 개별 마커 노출
+      if (zoom >= 12) {
+        visibleMarkers.forEach(m => m.setVisible(true));
+        return;
+      }
+
+      // 거리 기반 클러스터링 연산 (줌 레벨에 따라 묶음 반경 동적 조절)
+      const clusterRadius = Math.max(0.18, 1.8 / Math.pow(2, zoom - 6));
+      const clusters = [];
+      const visited = new Set();
+
+      for (let i = 0; i < visibleMarkers.length; i++) {
+        if (visited.has(i)) continue;
+        const m1 = visibleMarkers[i];
+        const pos1 = m1.getPosition();
+        const cluster = [m1];
+        visited.add(i);
+
+        for (let j = i + 1; j < visibleMarkers.length; j++) {
+          if (visited.has(j)) continue;
+          const m2 = visibleMarkers[j];
+          const pos2 = m2.getPosition();
+          const dLat = Math.abs(pos1.lat() - pos2.lat());
+          const dLng = Math.abs(pos1.lng() - pos2.lng());
+
+          if (dLat < clusterRadius && dLng < clusterRadius) {
+            cluster.push(m2);
+            visited.add(j);
+          }
+        }
+        clusters.push(cluster);
+      }
+
+      // 3단계 대형 네온 배지 생성
+      clusters.forEach(cluster => {
+        if (cluster.length > 1) {
+          cluster.forEach(m => m.setVisible(false));
+          
+          let avgLat = 0, avgLng = 0;
+          cluster.forEach(m => {
+            avgLat += m.getPosition().lat();
+            avgLng += m.getPosition().lng();
+          });
+          avgLat /= cluster.length;
+          avgLng /= cluster.length;
+
+          const count = cluster.length;
+          const sizeClass = count < 10 ? 'cluster-sm' : (count < 30 ? 'cluster-md' : 'cluster-lg');
+          const badgeSize = count < 10 ? 44 : (count < 30 ? 50 : 58);
+
+          const cMarker = new naver.maps.Marker({
+            position: new naver.maps.LatLng(avgLat, avgLng),
+            map: map,
+            icon: {
+              content: `<div class="custom-cluster-marker ${sizeClass}">${count}</div>`,
+              anchor: new naver.maps.Point(badgeSize / 2, badgeSize / 2)
+            },
+            zIndex: 500
+          });
+
+          naver.maps.Event.addListener(cMarker, 'click', () => {
+            map.morph(new naver.maps.LatLng(avgLat, avgLng), zoom + 2, { duration: 300, easing: 'easeOutCubic' });
+          });
+
+          clusterMarkers.push(cMarker);
+        } else {
+          cluster[0].setVisible(true);
+        }
+      });
+    }
+
+    /* 🚀 [마커 풀링 및 사이드바 렌더링] */
     function renderSpots(forceOpenRegion = null) {
       const openedRegions = new Set();
       document.querySelectorAll('.region-group').forEach(group => {
@@ -3618,7 +3753,6 @@
 
       spots.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
       let visibleCount = 0;
-      const activeMarkers = [];
 
       spots.forEach((spot) => {
         if (!spot.region || !spot.cityName) {
@@ -3678,7 +3812,7 @@
         const m = spotMarkerMap.get(sId);
         if (m) {
           m.setMap(map);
-          activeMarkers.push(m);
+          m.setVisible(true);
         }
 
         const r = spot.region || '경기';
@@ -3687,33 +3821,6 @@
       });
 
       document.getElementById('spotCount').innerText = `${visibleCount}개`;
-
-      // 🟢 [안전 클러스터링 동기화] (null 참조 오류 원천 방어)
-      if (typeof MarkerClustering !== 'undefined') {
-        if (markerClustererInstance) {
-          markerClustererInstance.setMap(null);
-        }
-        markerClustererInstance = new MarkerClustering({
-          minClusterSize: 2,
-          maxZoom: 12,
-          map: map,
-          markers: activeMarkers,
-          disableClickZoom: false,
-          gridSize: 120,
-          icons: [
-            { content: '<div class="custom-cluster-marker cluster-sm"></div>', size: new naver.maps.Size(44, 44), anchor: new naver.maps.Point(22, 22) },
-            { content: '<div class="custom-cluster-marker cluster-md"></div>', size: new naver.maps.Size(50, 50), anchor: new naver.maps.Point(25, 25) },
-            { content: '<div class="custom-cluster-marker cluster-lg"></div>', size: new naver.maps.Size(58, 58), anchor: new naver.maps.Point(29, 29) }
-          ],
-          indexGenerator: [10, 30],
-          stylingFunction: function(clusterMarker, count) {
-            try {
-              const el = clusterMarker?.getElement()?.querySelector('.custom-cluster-marker');
-              if (el) el.innerText = count;
-            } catch (err) {}
-          }
-        });
-      }
 
       const fragment = document.createDocumentFragment();
 
@@ -3798,6 +3905,7 @@
       spotListEl.appendChild(fragment);
       updateAdminUI();
       updateSmartResetButtons();
+      updateClusters();
     }
 
     function openUserProposalModal() {
