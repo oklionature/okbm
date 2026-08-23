@@ -2532,7 +2532,7 @@
     function updateNewSpotFlags(spotList) {
       if (!spotList || spotList.length === 0) return;
       const sorted = [...spotList].sort((a, b) => (b.sheetIndex || 0) - (a.sheetIndex || 0));
-      const top7Ids = new Set(sorted.slice(0, 7).map(s => String(s.id)));
+      const top7Ids = new Set(sorted.slice(0, 30).map(s => String(s.id)));
       spotList.forEach(s => s.isNew = top7Ids.has(String(s.id)));
     }
 
@@ -3665,7 +3665,9 @@
 
       const targetOrder = ["서울/인천", "경기", "강원", "충청", "전라", "경상", "제주"];
       const grouped = Object.fromEntries(targetOrder.map(r => [r, []]));
-
+if (currentStatusFilter === 'NEW') {
+  spots.sort((a, b) => (b.sheetIndex || 0) - (a.sheetIndex || 0) || Number(b.id) - Number(a.id));
+} else {
       spots.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
       let visibleCount = 0;
 
