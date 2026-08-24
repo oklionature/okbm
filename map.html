@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta name="referrer" content="origin" />
   <title>대한민국 낭만 백패킹 로드 (4.5ver Master Final)</title>
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/webfontworld/gmarket/GmarketSans.css" />
@@ -141,7 +142,13 @@
     .btn-edit, .btn-del { border: none; border-radius: 5px; padding: 3px 7px; font-size: 0.68rem; cursor: pointer; display: none; font-weight: 700; color: #fff; }
     .btn-edit { background: #0284c7; } .btn-del { background: #ef4444; }
 
-    #map { flex: 1; width: 100%; height: 100%; position: relative; background: var(--bg-deep); touch-action: pan-x pan-y; }
+    .map-stage { flex: 1; width: 100%; height: 100%; position: relative; min-width: 0; min-height: 0; background: var(--bg-deep); }
+    #map { position: absolute; inset: 0; width: 100%; height: 100%; background: var(--bg-deep); touch-action: pan-x pan-y; }
+    .map-sdk-fallback { position: absolute; inset: 0; z-index: 4; display: flex; align-items: center; justify-content: center; padding: 24px; pointer-events: none; }
+    .map-sdk-fallback[hidden] { display: none !important; }
+    .map-sdk-fallback-card { max-width: 340px; background: rgba(14,19,29,0.94); border: 1px solid var(--border-titanium); border-radius: 14px; padding: 16px 18px; color: var(--text-secondary); font-size: 0.8rem; line-height: 1.55; font-weight: 600; text-align: center; }
+    .map-sdk-fallback-card strong { display: block; color: #fff; font-size: 0.88rem; margin-bottom: 8px; }
+    .map-sdk-fallback-card code { display: inline-block; margin-top: 8px; color: var(--accent-blue); font-size: 0.74rem; word-break: break-all; }
 
     /* [세로 토글 슬림 툴바] 기본 상태: 완전 은닉 ➔ 토글 탭만 노출 */
     .map-vertical-toolbar-wrap {
@@ -340,7 +347,7 @@
       .main-title { font-size: 1.12rem !important; }
       .brand-sub-script { font-size: 1.05rem !important; }
       .container { flex: 1 !important; width: 100% !important; height: 100% !important; position: relative !important; }
-      #map { position: absolute !important; top: 0; left: 0; right: 0; bottom: 0; width: 100% !important; height: 100% !important; }
+      .map-stage, #map { position: absolute !important; top: 0; left: 0; right: 0; bottom: 0; width: 100% !important; height: 100% !important; }
       .mobile-only { display: flex !important; }
       .mobile-top-search-dock { display: block !important; }
       .sidebar { position: absolute; top: 0; left: 0; right: 0; width: 100% !important; height: calc(100% - 56px - env(safe-area-inset-bottom, 0px)) !important; z-index: var(--z-sidebar) !important; border-right: none; border-bottom: 1px solid var(--border); transform: translateY(0); }
@@ -449,7 +456,15 @@
     <!-- PC 좌측 세로 중앙 50% 플로팅 닫기 탭 -->
     <button type="button" class="floating-drawer-close-tab pc-only" id="floatingDrawerCloseTab" onclick="closePcSlidingDrawer()" title="정보창 닫기">◀ 정보창 닫기</button>
     
-    <main id="map">
+    <main class="map-stage">
+      <div id="map"></div>
+      <div class="map-sdk-fallback" id="mapSdkFallback" hidden>
+        <div class="map-sdk-fallback-card">
+          <strong>카카오맵을 불러오지 못했습니다</strong>
+          카카오 디벨로퍼스 → 앱 키 → JavaScript 키의 <em>JavaScript SDK 도메인</em>에 아래 주소를 추가하세요.
+          <code id="mapSdkOriginHint"></code>
+        </div>
+      </div>
       <!-- [세로 토글 슬림 툴바] 기본 상태: 완전 은닉 ➔ 토글 탭만 노출 -->
       <div class="map-vertical-toolbar-wrap clean-hide" id="mapVerticalToolbarWrap">
         <div class="map-vertical-toolbar">
@@ -704,10 +719,18 @@
       if (text) text.innerText = isOpen ? '닫기' : '필터';
     }
 
-    function initMapEngine() {
+    function showMapSdkFallback() {
+      const fallback = document.getElementById('mapSdkFallback');
+      const hint = document.getElementById('mapSdkOriginHint');
+      if (hint) hint.textContent = window.location.origin;
+      if (fallback) fallback.hidden = false;
+    }
+    function hideMapSdkFallback() {
+      const fallback = document.getElementById('mapSdkFallback');
+      if (fallback) fallback.hidden = true;
+    }
+    function startKakaoMap() {
       if (map) return;
-      if (!window.kakao || !kakao.maps || typeof kakao.maps.Map !== 'function') return;
-
       const container = document.getElementById('map');
       if (!container) return;
       const options = {
@@ -716,6 +739,7 @@
       };
       map = new kakao.maps.Map(container, options);
       geocoder = new kakao.maps.services.Geocoder();
+      hideMapSdkFallback();
 
       setTimeout(() => { if (map) map.relayout(); }, 250);
 
@@ -743,6 +767,18 @@
         renderSpots(); 
         checkUrlParamSpotFocus(); 
       }
+    }
+    function initMapEngine() {
+      if (map) return;
+      if (window.kakao && kakao.maps && typeof kakao.maps.Map === 'function') {
+        startKakaoMap();
+        return;
+      }
+      if (window.kakao && kakao.maps && typeof kakao.maps.load === 'function') {
+        kakao.maps.load(startKakaoMap);
+        return;
+      }
+      showMapSdkFallback();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
