@@ -1,17 +1,18 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta name="referrer" content="origin" />
   <title>대한민국 낭만 백패킹 로드 (4.5ver Master Final)</title>
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/webfontworld/gmarket/GmarketSans.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+  
+  <!-- 카카오맵 공식 SDK (서비스 & 클러스터러 라이브러리 탑재) -->
+  <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=557f5de0f6391a2419bc5592e6a9c9c1&libraries=services,clusterer"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
     :root {
@@ -71,7 +72,7 @@
     .container { display: flex; width: 100%; flex: 1; position: relative; overflow: hidden; }
     .sidebar { width: 390px; max-width: 100%; height: 100%; background-color: var(--bg-surface); border-right: 1px solid var(--border-titanium); display: flex; flex-direction: column; flex-shrink: 0; z-index: var(--z-sidebar); color: var(--text-primary); position: relative; box-shadow: 4px 0 20px rgba(0,0,0,0.6); }
 
-    /* PC 슬라이딩 드로어 (좌측 중앙 플로팅 닫기 탭 ◀) */
+    /* PC 슬라이딩 드로어 (좌측 세로 50% 플로팅 닫기 탭 ◀) */
     .pc-sliding-drawer { position: absolute; top: 0; left: 390px; width: 380px; height: 100%; background: rgba(9,12,19,0.97); border-right: 1.5px solid var(--border-titanium); z-index: var(--z-pc-drawer); box-shadow: 12px 0 36px rgba(0,0,0,0.85); transform: translateX(-100%); opacity: 0; visibility: hidden; pointer-events: none; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease, visibility 0.3s; display: flex; flex-direction: column; overflow-y: auto; padding: 14px 16px; gap: 7px; backdrop-filter: blur(14px); }
     .pc-sliding-drawer.open { transform: translateX(0); opacity: 1; visibility: visible; pointer-events: auto; }
     .pc-sliding-drawer::-webkit-scrollbar { width: 4px; } .pc-sliding-drawer::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
@@ -142,28 +143,22 @@
     .btn-edit, .btn-del { border: none; border-radius: 5px; padding: 3px 7px; font-size: 0.68rem; cursor: pointer; display: none; font-weight: 700; color: #fff; }
     .btn-edit { background: #0284c7; } .btn-del { background: #ef4444; }
 
-    .map-stage { flex: 1; width: 100%; height: 100%; position: relative; min-width: 0; min-height: 0; background: var(--bg-deep); }
-    #map { position: absolute; inset: 0; width: 100%; height: 100%; background: var(--bg-deep); touch-action: pan-x pan-y; }
-    .map-sdk-fallback { position: absolute; inset: 0; z-index: 4; display: flex; align-items: center; justify-content: center; padding: 24px; pointer-events: none; }
-    .map-sdk-fallback[hidden] { display: none !important; }
-    .map-sdk-fallback-card { max-width: 340px; background: rgba(14,19,29,0.94); border: 1px solid var(--border-titanium); border-radius: 14px; padding: 16px 18px; color: var(--text-secondary); font-size: 0.8rem; line-height: 1.55; font-weight: 600; text-align: center; }
-    .map-sdk-fallback-card strong { display: block; color: #fff; font-size: 0.88rem; margin-bottom: 8px; }
-    .map-sdk-fallback-card code { display: inline-block; margin-top: 8px; color: var(--accent-blue); font-size: 0.74rem; word-break: break-all; }
+    #map { flex: 1; width: 100%; height: 100%; position: relative; background: var(--bg-deep); touch-action: pan-x pan-y; }
 
-    /* [세로 토글 슬림 툴바] 기본 상태: 완전 은닉 ➔ 토글 탭만 노출 */
+    /* [세로 슬림 토글 툴바] 기본 상태: 완전 숨김 ➔ 탭만 노출 */
     .map-vertical-toolbar-wrap {
       position: absolute; top: 14px; left: 0; z-index: var(--z-side-toolbar);
       display: flex; align-items: flex-start;
-      transform: translateX(-100%); /* 기본 상태: 숨김 */
+      transform: translateX(-100%);
       transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
     }
     .map-vertical-toolbar-wrap.open {
-      transform: translateX(0); /* 클릭 시 펼쳐짐 */
+      transform: translateX(0);
     }
 
     .map-vertical-toolbar {
       display: flex; flex-direction: column; gap: 3px;
-      background: rgba(9, 12, 19, 0.55);
+      background: rgba(9, 12, 19, 0.6);
       border: 1px solid rgba(255, 255, 255, 0.14);
       border-left: none;
       border-radius: 0 14px 14px 0; padding: 7px 6px;
@@ -174,7 +169,6 @@
     }
     .map-vertical-toolbar::-webkit-scrollbar { display: none; }
 
-    /* 좌측 벽에 작게 돌출된 토글 버튼 */
     .toolbar-toggle-tab-btn {
       position: absolute; left: 100%; top: 6px;
       background: rgba(9, 12, 19, 0.75);
@@ -217,6 +211,15 @@
 
     .pin-picker-banner { display: none; position: absolute; top: 50px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #0f766e, #0284c7); color: #fff; padding: 7px 16px; border-radius: 18px; font-size: 0.8rem; font-weight: 700; z-index: var(--z-modal); box-shadow: 0 4px 20px rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.4); align-items: center; gap: 8px; }
     .btn-cancel-pin-pick { background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.3); color: #fff; border-radius: 10px; padding: 3px 9px; font-size: 0.7rem; cursor: pointer; }
+
+    /* 비비드 네온 3단계 텐트 클러스터 */
+    .custom-cluster-badge { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; font-weight: 800; border-radius: 50% !important; cursor: pointer; backdrop-filter: blur(16px); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); user-select: none; }
+    .custom-cluster-badge:hover { transform: scale(1.14); }
+    .cluster-step-small { width: 54px; height: 54px; background: rgba(16, 185, 129, 0.35); border: 2.2px solid #00FF9D; box-shadow: 0 0 24px rgba(0, 255, 157, 0.75); }
+    .cluster-step-medium { width: 60px; height: 60px; background: rgba(6, 182, 212, 0.40); border: 2.5px solid #00E5FF; box-shadow: 0 0 28px rgba(0, 229, 255, 0.8); }
+    .cluster-step-large { width: 66px; height: 66px; background: rgba(245, 158, 11, 0.45); border: 2.8px solid #FFD600; box-shadow: 0 0 34px rgba(255, 214, 0, 0.95); }
+    .cluster-tent-icon { width: 23px; height: 23px; margin-bottom: 1px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.85)); }
+    .cluster-count { font-family: var(--font-display); font-size: 0.88rem; font-weight: 800; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.9); }
 
     /* 마커 및 상단 툴팁 (중복 문구 제거 & 깔끔한 고도 표기) */
     .custom-spot-marker-wrap { position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer; z-index: 100; transition: transform 0.2s; user-select: none; }
@@ -347,7 +350,7 @@
       .main-title { font-size: 1.12rem !important; }
       .brand-sub-script { font-size: 1.05rem !important; }
       .container { flex: 1 !important; width: 100% !important; height: 100% !important; position: relative !important; }
-      .map-stage, #map { position: absolute !important; top: 0; left: 0; right: 0; bottom: 0; width: 100% !important; height: 100% !important; }
+      #map { position: absolute !important; top: 0; left: 0; right: 0; bottom: 0; width: 100% !important; height: 100% !important; }
       .mobile-only { display: flex !important; }
       .mobile-top-search-dock { display: block !important; }
       .sidebar { position: absolute; top: 0; left: 0; right: 0; width: 100% !important; height: calc(100% - 56px - env(safe-area-inset-bottom, 0px)) !important; z-index: var(--z-sidebar) !important; border-right: none; border-bottom: 1px solid var(--border); transform: translateY(0); }
@@ -456,15 +459,7 @@
     <!-- PC 좌측 세로 중앙 50% 플로팅 닫기 탭 -->
     <button type="button" class="floating-drawer-close-tab pc-only" id="floatingDrawerCloseTab" onclick="closePcSlidingDrawer()" title="정보창 닫기">◀ 정보창 닫기</button>
     
-    <main class="map-stage">
-      <div id="map"></div>
-      <div class="map-sdk-fallback" id="mapSdkFallback" hidden>
-        <div class="map-sdk-fallback-card">
-          <strong>카카오맵을 불러오지 못했습니다</strong>
-          카카오 디벨로퍼스 → 앱 키 → JavaScript 키의 <em>JavaScript SDK 도메인</em>에 아래 주소를 추가하세요.
-          <code id="mapSdkOriginHint"></code>
-        </div>
-      </div>
+    <main id="map">
       <!-- [세로 토글 슬림 툴바] 기본 상태: 완전 은닉 ➔ 토글 탭만 노출 -->
       <div class="map-vertical-toolbar-wrap clean-hide" id="mapVerticalToolbarWrap">
         <div class="map-vertical-toolbar">
@@ -612,7 +607,6 @@
     </div>
   </div>
 
-  <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=557f5de0f6391a2419bc5592e6a9c9c1&libraries=services,clusterer"></script>
   <script>
     const CURRENT_VERSION = "4.5ver Pro";
     const KAKAO_APP_KEY = "557f5de0f6391a2419bc5592e6a9c9c1";
@@ -626,7 +620,7 @@
 
     const DEFAULT_MAP_CENTER = { lat: 36.3, lng: 127.8 };
     const DEFAULT_MAP_LEVEL = 11;
-    let map = null, geocoder = null;
+    let map = null, geocoder = null, globalClusterer = null;
 
     const ICONS = {
       DECK: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M3 7h18M3 12h18M3 17h18M7 3v18M17 3v18" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
@@ -700,7 +694,7 @@
 
     let isAdminMode = false, isCleanMapMode = false, currentMapLayerState = 0;
     let currentMasterTab = 'REGION', currentRegionFilter = 'ALL', currentTerrainFilter = 'ALL', currentCourseFilter = 'ALL', currentMyFilter = 'ALL';
-    let currentVerticalFilter = 'ALL'; // 세로 툴바 선택 필터
+    let currentVerticalFilter = 'ALL';
     let isSidebarCollapsed = (window.innerWidth <= 768), currentActiveSpot = null, pendingUnlockSpotId = null, isZoomDetailedState = false;
 
     const spotOverlayMap = new Map();
@@ -719,66 +713,49 @@
       if (text) text.innerText = isOpen ? '닫기' : '필터';
     }
 
-    function showMapSdkFallback() {
-      const fallback = document.getElementById('mapSdkFallback');
-      const hint = document.getElementById('mapSdkOriginHint');
-      if (hint) hint.textContent = window.location.origin;
-      if (fallback) fallback.hidden = false;
-    }
-    function hideMapSdkFallback() {
-      const fallback = document.getElementById('mapSdkFallback');
-      if (fallback) fallback.hidden = true;
-    }
-    function startKakaoMap() {
-      if (map) return;
-      const container = document.getElementById('map');
-      if (!container) return;
-      const options = {
-        center: new kakao.maps.LatLng(DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng),
-        level: DEFAULT_MAP_LEVEL
-      };
-      map = new kakao.maps.Map(container, options);
-      geocoder = new kakao.maps.services.Geocoder();
-      hideMapSdkFallback();
-
-      setTimeout(() => { if (map) map.relayout(); }, 250);
-
-      kakao.maps.event.addListener(map, 'zoom_changed', () => updateLODMarkers());
-      kakao.maps.event.addListener(map, 'click', handleMapClick);
-
-      container.addEventListener('touchstart', (e) => {
-        if (e.touches && e.touches.length === 1) {
-          mapRadarTimer = setTimeout(() => {
-            if (map && map.getLevel() <= 7) {
-              document.body.classList.add('map-radar-active');
-              showToast('📡 주변 박지 레이더 ON', 1200);
-            }
-          }, 400);
-        }
-      }, { passive: true });
-      container.addEventListener('touchend', () => {
-        if (mapRadarTimer) clearTimeout(mapRadarTimer);
-        document.body.classList.remove('map-radar-active');
-      }, { passive: true });
-
-      if (spots && spots.length > 0) { 
-        spots = spots.filter(s => !BLOCKED_SPOT_IDS.has(String(s.id)));
-        updateNewSpotFlags(spots); 
-        renderSpots(); 
-        checkUrlParamSpotFocus(); 
-      }
-    }
+    /* 카카오맵 SDK 안전 로딩 및 맵 엔진 시작 */
     function initMapEngine() {
-      if (map) return;
-      if (window.kakao && kakao.maps && typeof kakao.maps.Map === 'function') {
-        startKakaoMap();
+      if (typeof kakao === 'undefined' || !kakao.maps) {
+        console.warn('⚠️ 카카오맵 SDK 로드 대기 중...');
         return;
       }
-      if (window.kakao && kakao.maps && typeof kakao.maps.load === 'function') {
-        kakao.maps.load(startKakaoMap);
-        return;
-      }
-      showMapSdkFallback();
+      kakao.maps.load(() => {
+        const container = document.getElementById('map');
+        if (!container) return;
+        const options = {
+          center: new kakao.maps.LatLng(DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng),
+          level: DEFAULT_MAP_LEVEL
+        };
+        map = new kakao.maps.Map(container, options);
+        geocoder = new kakao.maps.services.Geocoder();
+
+        setTimeout(() => { if (map) map.relayout(); }, 250);
+
+        kakao.maps.event.addListener(map, 'zoom_changed', () => updateLODMarkers());
+        kakao.maps.event.addListener(map, 'click', handleMapClick);
+
+        container.addEventListener('touchstart', (e) => {
+          if (e.touches && e.touches.length === 1) {
+            mapRadarTimer = setTimeout(() => {
+              if (map && map.getLevel() <= 7) {
+                document.body.classList.add('map-radar-active');
+                showToast('📡 주변 박지 레이더 ON', 1200);
+              }
+            }, 400);
+          }
+        }, { passive: true });
+        container.addEventListener('touchend', () => {
+          if (mapRadarTimer) clearTimeout(mapRadarTimer);
+          document.body.classList.remove('map-radar-active');
+        }, { passive: true });
+
+        if (spots && spots.length > 0) { 
+          spots = spots.filter(s => !BLOCKED_SPOT_IDS.has(String(s.id)));
+          updateNewSpotFlags(spots); 
+          renderSpots(); 
+          checkUrlParamSpotFocus(); 
+        }
+      });
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -806,7 +783,7 @@
       });
     });
 
-    /* 일반 ➔ 스카이뷰(위성) ➔ 산림청 지형도 3단계 전환 */
+    /* 일반 ➔ 스카이뷰(위성) ➔ 산림청 지형도 3단계 원클릭 전환 부활 */
     function toggleMapTypeMode() {
       if (!map) return;
       const textEl = document.getElementById('towerMapTypeText'), btnEl = document.getElementById('towerBtnMapType');
@@ -929,6 +906,7 @@
       }
     }
 
+    /* 모바일 바텀시트 좌/우 스와이프 스마트 릴레이 탐색 기능 부활 */
     function initBottomSheetSwipeGesture() {
       const sheet = document.getElementById('mobileBottomSheet'), handleArea = document.getElementById('sheetHandleArea');
       if (!sheet || !handleArea) return;
@@ -1013,7 +991,7 @@
     function closeLntModal() { document.getElementById('lntModalOverlay').style.display = 'none'; }
     function confirmLntPledgeAndUnlock() { closeLntModal(); if (pendingUnlockSpotId) { completeLntPledgeAndUnlock(pendingUnlockSpotId); pendingUnlockSpotId = null; } }
 
-    /* 마커 DOM 생성 (🚩/⭐ 단독 노출 & 툴팁 중복 제거) */
+    /* 마커 DOM 생성 (🚩/⭐ 성취감 뱃지 단독 노출 & 툴팁 중복 제거) */
     function createMarkerDomElement(spot, isDetailed = false) {
       const isMobile = window.innerWidth <= 768;
       const d = parseInt(spot.difficulty, 10) || 3;
@@ -1092,6 +1070,7 @@
       });
     }
 
+    /* 스마트 초기화 버튼 부활 */
     function updateSmartResetButtons() {
       const isMobile = window.innerWidth <= 768;
       const isListOpen = isMobile ? !isSidebarCollapsed : true;
@@ -1158,6 +1137,7 @@
       return html;
     }
 
+    /* 일몰 시간 천문학적 계산 공식 부활 */
     function calculateSunsetTime(lat, lng, date = new Date()) {
       const rad = Math.PI / 180;
       const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
@@ -1174,6 +1154,7 @@
       return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     }
 
+    /* 실시간 기상/풍속 정보 로딩 부활 */
     const weatherCache = new Map();
     async function loadLiveWeatherForSpot(spotId, lat, lng) {
       if (!lat || !lng) return;
@@ -1455,6 +1436,7 @@
       }
     }
 
+    /* 3대 내비게이션 길안내 원클릭 다이렉트 실행 부활 */
     function navigateToNaviApp(type, spotName, address, lat, lng) {
       const targetQuery = address || spotName;
       if (type === 'kakao') {
@@ -1568,6 +1550,7 @@
       if (target) copyTextToClipboard(parseEntryPoint(target.entryPoint || target.name).navAddress || target.name);
     }
 
+    /* 관리자 마커 드래그 시 들머리 주소(D열) 100% 영구 보존 로직 부활 */
     async function saveUpdatedLocation(spotId, newLat, newLng) {
       const targetSpot = spots.find(s => String(s.id) === String(spotId));
       if (!targetSpot) return;
@@ -1602,6 +1585,7 @@
       } catch (err) {}
     }
 
+    /* 구글 시트 연동 (GID 1143125586 1순위 ➔ 0 Fallback) */
     async function fetchSpotsFromGoogleSheet(isManual = false) {
       let gidsToTry = [PRIMARY_SHEET_GID, FALLBACK_SHEET_GID];
       for (let gid of gidsToTry) {
@@ -2313,7 +2297,7 @@
           if (data.spots) { spots = data.spots; localStorage.setItem('okbm_spots_cache', JSON.stringify(spots)); }
           renderSubChips(); renderSpots();
           alert('📂 데이터가 정상 복원되었습니다!');
-        } catch (err) { alert('백업 파일 형식이 올바르지 않습니다.'); }
+        } catch (err) {}
       };
       reader.readAsText(file);
     }
