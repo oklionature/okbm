@@ -1,11 +1,12 @@
 
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>대한민국 낭만 백패킹 로드 | 전국 지도 (4.5ver Pro Master Ultimate)</title>
+  <title>대한민국 낭만 백패킹 로드 | 전국 지도 (4.5ver Pro Master)</title>
 
   <!-- 웹폰트: Pretendard + Gmarket Sans + Caveat -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
@@ -666,6 +667,7 @@
     }
     .spot-item.card-hidden { display: none !important; }
 
+    /* 1행: 이름 + 고도 + 코스 (우측 88px 안전 패딩) */
     .spot-header-row {
       display: flex;
       align-items: center;
@@ -677,6 +679,7 @@
     }
     .spot-name { font-size: 0.9rem; font-weight: 800; color: var(--accent-blue); word-break: keep-all; }
     
+    /* 2행: 상태 뱃지 + 지형 태그 */
     .spot-tags-row {
       display: flex;
       align-items: center;
@@ -917,7 +920,7 @@
       cursor: pointer;
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
-      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
       will-change: transform;
       box-sizing: border-box;
       user-select: none;
@@ -1451,7 +1454,7 @@
       box-sizing: border-box !important;
     }
 
-    /* 📱 모바일 하단 독 */
+    /* 📱 모바일 하단 네비 독 */
     .mobile-bottom-dock {
       display: none;
       position: fixed;
@@ -1972,6 +1975,7 @@
       DEL: `<svg viewBox="0 0 24 24" class="ui-icon" style="width:11px; height:11px;"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke="currentColor" stroke-width="2" fill="none"/></svg>`
     };
 
+    /* 🍞 필수 핵심 알림 전용 함수 */
     function showToast(msg, duration = 2200) {
       const t = document.getElementById('appToast');
       if (!t) return;
@@ -2069,7 +2073,7 @@
     let mapLongPressTimer = null;
     let mapLongPressPos = null;
 
-    /* ⚡ [대형 원형 스프레드 발광 텐트 클러스터 엔진] */
+    /* ⚡ [원형 스프레드 발광 텐트 클러스터 엔진] */
     class NativeNaverClusterer {
       constructor(mapInstance) {
         this.map = mapInstance;
@@ -2364,6 +2368,7 @@
       }
     }
 
+    /* 🔗 URL 딥링크 파라미터 확인 및 포커스 */
     function checkUrlParamSpotFocus() {
       const urlParams = new URLSearchParams(window.location.search);
       const targetName = urlParams.get('spot') || urlParams.get('q');
@@ -2374,7 +2379,7 @@
           cleanTarget.includes(s.name.toLowerCase())
         );
         if (foundSpot) {
-          setTimeout(() => focusSpotOnMap(foundSpot, false), 350);
+          setTimeout(() => focusSpotOnMap(foundSpot), 350);
         }
       }
     }
@@ -2436,6 +2441,8 @@
       
       if (currentActiveSpot) refreshCurrentSpotPopup();
       renderSpots();
+
+      showToast(isAdminMode ? '🔑 관리자 모드 ON (정보창에서 즉시 수정/삭제 가능)' : '관리자 모드가 비활성화되었습니다');
     }
 
     function updateAdminUI() {
@@ -2844,7 +2851,6 @@
       const isMobile = window.innerWidth <= 768;
       const targetLatLng = new naver.maps.LatLng(lat, lng);
       
-      // 과도한 줌인 억제 (기존 줌이 9 이상이면 유지, 낮으면 최대 9~10으로 자연스러운 산세 조망)
       const currentZoom = map.getZoom();
       const targetZoom = currentZoom < 9 ? 9 : (currentZoom > 11 ? 10 : currentZoom);
 
@@ -2856,13 +2862,12 @@
         const cameraPoint = new naver.maps.Point(targetPoint.x, targetPoint.y + Math.round(window.innerHeight * 0.16));
         map.panTo(proj.fromOffsetToCoord(cameraPoint), { duration: 300, easing: 'easeOutCubic' });
       } else {
-        // PC: 사이드바(390px) + 드로어(360px) 고려하여 우측 여백의 중심으로 카메라 정렬
         const proj = map.getProjection();
         if (!proj) { map.morph(targetLatLng, targetZoom, { duration: 300, easing: 'easeOutCubic' }); return; }
         if (currentZoom !== targetZoom) map.setZoom(targetZoom, false);
         
         const targetPoint = proj.fromCoordToOffset(targetLatLng);
-        const offsetX = Math.round(360 / 2); // 드로어 너비 절반만큼 우측 여백 확보
+        const offsetX = Math.round(360 / 2);
         const cameraPoint = new naver.maps.Point(targetPoint.x - offsetX, targetPoint.y);
         map.panTo(proj.fromOffsetToCoord(cameraPoint), { duration: 300, easing: 'easeOutCubic' });
       }
@@ -4212,8 +4217,8 @@
       }
 
       results.forEach(res => {
-        const
-li.className = 'dropdown-item';
+        const li = document.createElement('li');
+        li.className = 'dropdown-item';
         li.innerHTML = `
           <div style="flex:1; padding-right:8px;">
             <div style="font-weight:700; color:${res.isInternal ? 'var(--accent-blue)' : '#fff'}; font-size:0.84rem;">${escapeHtml(res.title)}</div>
