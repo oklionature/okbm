@@ -6,7 +6,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>대한민국 낭만 백패킹 로드 (4.5ver Master Ultimate)</title>
+  <title>대한민국 낭만 백패킹 로드 (4.5ver Pro Ultimate Master)</title>
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/webfontworld/gmarket/GmarketSans.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,7 +22,7 @@
       --accent-blue: #38bdf8; --accent-teal: #2dd4bf; --accent-emerald: #10b981;
       --accent-amber: #f59e0b; --accent-rose: #f43f5e; --accent-purple: #a855f7;
       --font-display: 'GmarketSans', sans-serif; --font-script: 'Caveat', cursive; --font-body: 'Pretendard', sans-serif;
-      --z-map: 1; --z-hud: 100; --z-header: 500; --z-sidebar-btn: 600; --z-pc-drawer: 650; --z-drawer-btn: 660; --z-sidebar: 700;
+      --z-map: 1; --z-map-filter: 90; --z-hud: 100; --z-header: 500; --z-pc-drawer: 650; --z-drawer-btn: 660; --z-sidebar: 700;
       --z-dock: 900; --z-bottomsheet: 850; --z-dropdown: 950; --z-modal: 1000; --z-toast: 2000;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -70,16 +70,16 @@
     .mobile-search-btn { position: absolute; right: 10px; background: none; border: none; color: var(--accent-blue); cursor: pointer; display: flex; align-items: center; padding: 3px; z-index: 5; }
 
     .container { display: flex; width: 100%; flex: 1; position: relative; overflow: hidden; }
-    .sidebar { width: 390px; max-width: 100%; height: 100%; background-color: var(--bg-surface); border-right: 1px solid var(--border-titanium); display: flex; flex-direction: column; flex-shrink: 0; z-index: var(--z-sidebar); color: var(--text-primary); transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1); position: relative; box-shadow: 4px 0 20px rgba(0,0,0,0.6); }
-    .sidebar.pc-collapsed { margin-left: -390px !important; }
-    
-    /* PC 세로 정중앙 일관성 토글 버튼 */
-    .pc-sidebar-toggle-btn { position: absolute; top: 50%; left: 390px; transform: translateY(-50%); width: 24px; height: 52px; background: rgba(9,12,19,0.96); border: 1px solid var(--border-titanium); border-left: none; border-radius: 0 8px 8px 0; color: var(--accent-blue); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: var(--z-sidebar-btn); font-size: 0.78rem; font-weight: 800; transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1); }
-    .sidebar.pc-collapsed ~ .pc-sidebar-toggle-btn { left: 0 !important; }
+    .sidebar { width: 390px; max-width: 100%; height: 100%; background-color: var(--bg-surface); border-right: 1px solid var(--border-titanium); display: flex; flex-direction: column; flex-shrink: 0; z-index: var(--z-sidebar); color: var(--text-primary); position: relative; box-shadow: 4px 0 20px rgba(0,0,0,0.6); }
 
+    /* PC 슬라이딩 드로어 (기본 상태 완벽 격리) */
+    .pc-sliding-drawer { position: absolute; top: 0; left: 390px; width: 360px; height: 100%; background: rgba(9,12,19,0.96); border-right: 1.5px solid var(--border-titanium); z-index: var(--z-pc-drawer); box-shadow: 12px 0 36px rgba(0,0,0,0.85); transform: translateX(-105%); transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; overflow-y: auto; padding: 14px 16px; gap: 7px; backdrop-filter: blur(14px); visibility: hidden; pointer-events: none; }
+    .pc-sliding-drawer.open { transform: translateX(0); visibility: visible; pointer-events: auto; }
+    .pc-sliding-drawer::-webkit-scrollbar { width: 4px; } .pc-sliding-drawer::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+    /* PC 드로어 전용 세로 정중앙 50% 토글 버튼 (정보창 열릴 때만 표시) */
     .pc-drawer-toggle-btn { position: absolute; top: 50%; left: 750px; transform: translateY(-50%); width: 24px; height: 52px; background: rgba(9,12,19,0.96); border: 1px solid var(--border-titanium); border-left: none; border-radius: 0 8px 8px 0; color: #f43f5e; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: var(--z-drawer-btn); font-size: 0.78rem; font-weight: 800; transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1); }
     .pc-sliding-drawer.open ~ .pc-drawer-toggle-btn { display: flex !important; }
-    .sidebar.pc-collapsed ~ .pc-drawer-toggle-btn { left: 360px !important; }
 
     .sidebar-header { padding: 8px 14px; min-height: 44px; font-weight: 700; font-size: 0.86rem; background-color: var(--bg-deep); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
     .sidebar-header-left { display: flex; align-items: center; gap: 8px; }
@@ -144,11 +144,15 @@
     .btn-edit { background: #0284c7; } .btn-del { background: #ef4444; }
 
     #map { flex: 1; width: 100%; height: 100%; position: relative; background: var(--bg-deep); touch-action: pan-x pan-y; }
-    
-    .pc-sliding-drawer { position: absolute; top: 0; left: 390px; width: 360px; height: 100%; background: rgba(9,12,19,0.96); border-right: 1.5px solid var(--border-titanium); z-index: var(--z-pc-drawer); box-shadow: 12px 0 36px rgba(0,0,0,0.85); transform: translateX(-105%); transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; overflow-y: auto; padding: 14px 16px; gap: 7px; backdrop-filter: blur(14px); visibility: hidden; }
-    .pc-sliding-drawer.open { transform: translateX(0); visibility: visible; }
-    .sidebar.pc-collapsed ~ .pc-sliding-drawer { left: 0 !important; }
-    .pc-sliding-drawer::-webkit-scrollbar { width: 4px; } .pc-sliding-drawer::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+    /* 지도 상단 플로팅 퀵-필터 HUD 바 */
+    .map-floating-filter-hud { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: var(--z-map-filter); display: flex; align-items: center; background: rgba(9,12,19,0.94); border: 1.2px solid var(--border-titanium); border-radius: 24px; padding: 3px; gap: 3px; box-shadow: 0 8px 24px rgba(0,0,0,0.85); backdrop-filter: blur(12px); max-width: 95vw; overflow-x: auto; scrollbar-width: none; }
+    .map-floating-filter-hud::-webkit-scrollbar { display: none; }
+    .hud-filter-chip { padding: 4px 10px; border-radius: 16px; border: none; background: transparent; color: var(--text-muted); font-size: 0.72rem; font-weight: 700; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px; transition: all 0.2s; }
+    .hud-filter-chip.active { background: var(--bg-card); color: #fff; border: 1px solid var(--border-titanium); }
+    .hud-filter-chip.chip-easy.active { background: rgba(16,185,129,0.25); color: #6ee7b7; border-color: #10b981; }
+    .hud-filter-chip.chip-mid.active { background: rgba(245,158,11,0.25); color: #fde047; border-color: #f59e0b; }
+    .hud-filter-chip.chip-hard.active { background: rgba(244,63,94,0.25); color: #fda4af; border-color: #f43f5e; }
 
     .hud-control-tower { position: absolute; bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 14px); right: 12px; z-index: var(--z-hud); display: flex; flex-direction: column; background: rgba(9,12,19,0.95); border: 1px solid var(--border-titanium); border-radius: 14px; box-shadow: 0 6px 22px rgba(0,0,0,0.8); overflow: hidden; width: 42px; }
     .tower-btn { width: 42px; height: 42px; background: transparent; border: none; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 0.74rem; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; gap: 2px; }
@@ -168,12 +172,12 @@
     .cluster-count { font-family: var(--font-display); font-size: 0.86rem; font-weight: 800; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.9); }
 
     .custom-spot-marker-wrap { position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer; z-index: 100; transition: transform 0.2s; }
-    .custom-spot-marker-wrap.active-marker { transform: scale(1.15); z-index: 999999 !important; }
-    .custom-spot-marker-wrap.active-marker::before { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 40px; height: 40px; border-radius: 50%; background: rgba(56,189,248,0.5); animation: markerPulseRing 1.8s infinite ease-out; z-index: -1; }
+    .custom-spot-marker-wrap.active-marker { transform: scale(1.18); z-index: 999999 !important; }
+    .custom-spot-marker-wrap.active-marker::before { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 42px; height: 42px; border-radius: 50%; background: rgba(56,189,248,0.55); animation: markerPulseRing 1.8s infinite ease-out; z-index: -1; }
     @keyframes markerPulseRing { 0% { transform: translateX(-50%) scale(0.6); opacity: 0.95; } 100% { transform: translateX(-50%) scale(2.2); opacity: 0; } }
 
     .marker-label-chip { display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: rgba(9,12,19,0.96); border: 1.2px solid var(--border-titanium); color: #fff; padding: 3px 8px; border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.95); min-width: 60px; max-width: 150px; text-align: center; pointer-events: none; z-index: 1000; flex-direction: column; gap: 1px; backdrop-filter: blur(6px); }
-    .marker-label-chip.show-chip, .custom-spot-marker-wrap.active-marker .marker-label-chip, .custom-spot-marker-wrap:hover .marker-label-chip { display: flex !important; transform: translateX(-50%) translateY(-2px); border-color: var(--accent-blue); }
+    .marker-label-chip.show-chip, .custom-spot-marker-wrap.active-marker .marker-label-chip, .custom-spot-marker-wrap:hover .marker-label-chip, body.map-radar-active .marker-label-chip { display: flex !important; transform: translateX(-50%) translateY(-2px); border-color: var(--accent-blue); }
     .chip-name-main { font-size: 0.72rem; font-weight: 800; color: #f8fafc; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .chip-name-sub { font-size: 0.6rem; color: #94a3b8; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .chip-sub-row { display: flex; align-items: center; justify-content: center; gap: 4px; font-size: 0.6rem; font-weight: 700; margin-top: 1px; }
@@ -227,9 +231,10 @@
     .user-private-memo-header { font-size: 0.7rem; font-weight: 700; color: var(--accent-teal); display: flex; justify-content: space-between; align-items: center; }
     .user-private-memo-input { width: 100%; background: var(--bg-deep); border: 1px solid var(--border); border-radius: 5px; color: #fff; font-size: 0.74rem; padding: 5px 7px; outline: none; resize: vertical; min-height: 34px; }
     
-    /* 복원된 4대 시그니처 경고문구 박스 */
-    .app-disclaimer-box { font-size: 0.68rem; color: #fca5a5; background: rgba(244,63,94,0.08); border: 1px dashed rgba(244,63,94,0.45); padding: 8px 10px; border-radius: 7px; line-height: 1.5; margin-top: 5px; }
+    /* 4대 시그니처 법적 경고문구 (각각 1줄 밀착) */
+    .app-disclaimer-box { font-size: 0.67rem; color: #fca5a5; background: rgba(244,63,94,0.08); border: 1px dashed rgba(244,63,94,0.45); padding: 7px 9px; border-radius: 7px; line-height: 1.4; margin-top: 5px; }
     .app-disclaimer-box ul { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+    .app-disclaimer-box li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     .comments-section { margin-top: 6px; border-top: 1px dashed var(--border); padding-top: 6px; width: 100%; }
     .comments-title { font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
@@ -281,7 +286,7 @@
 
     @media (min-width: 769px) { .mobile-only { display: none !important; } .pc-only { display: flex !important; } }
     @media (max-width: 768px) {
-      .pc-only, .pc-sidebar-toggle-btn, .pc-drawer-toggle-btn, .pc-sliding-drawer { display: none !important; }
+      .pc-only, .pc-drawer-toggle-btn, .pc-sliding-drawer { display: none !important; }
       .header { padding: 0 10px !important; height: 50px !important; justify-content: center !important; }
       .header-row-1 { justify-content: center !important; }
       .main-title { font-size: 1.12rem !important; }
@@ -390,15 +395,20 @@
       <div class="spot-list" id="spotList"></div>
     </aside>
     
-    <!-- PC 사이드바 토글 버튼 (세로 정중앙 50%) -->
-    <div class="pc-sidebar-toggle-btn pc-only clean-hide" id="pcSidebarToggleBtn" onclick="togglePcSidebar()">◀</div>
-    
     <!-- PC 슬라이딩 드로어 (기본 상태 완벽 격리) -->
     <div class="pc-sliding-drawer pc-only clean-hide" id="pcSlidingDrawer"></div>
     <!-- PC 드로어 전용 세로 정중앙 50% 토글 버튼 -->
     <div class="pc-drawer-toggle-btn pc-only clean-hide" id="pcDrawerToggleBtn" onclick="closePcSlidingDrawer()">◀</div>
     
     <main id="map">
+      <!-- 지도 플로팅 퀵-필터 HUD 바 -->
+      <div class="map-floating-filter-hud clean-hide">
+        <button type="button" class="hud-filter-chip active" id="hudFilterAll" onclick="applyMapHudFilter('ALL')">전체</button>
+        <button type="button" class="hud-filter-chip chip-easy" id="hudFilterEasy" onclick="applyMapHudFilter('EASY')">🟢 쉬움(야영·해변)</button>
+        <button type="button" class="hud-filter-chip chip-mid" id="hudFilterMid" onclick="applyMapHudFilter('MID')">🟡 보통</button>
+        <button type="button" class="hud-filter-chip chip-hard" id="hudFilterHard" onclick="applyMapHudFilter('HARD')">🔴 하드코어</button>
+      </div>
+
       <div class="hud-control-tower clean-hide">
         <button type="button" class="tower-btn" id="towerBtnMapType" onclick="toggleMapTypeMode()" title="일반/위성 지도 전환">
           <svg viewBox="0 0 24 24" class="ui-icon" style="width:16px; height:16px; margin:0;"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>
@@ -508,9 +518,9 @@
       <div class="app-disclaimer-box">
         <strong>⚠️ 대한민국 백패커 필수 법적 유의사항</strong>
         <ul>
-          <li>1. 산림보호법 제34조에 따라 산림 내 화기 사용 및 취사는 절대 금지(과태료 부과 대상)입니다.</li>
-          <li>2. 자연공원법에 의해 지정된 국립공원·도립공원 야영 금지 구역을 반드시 준수하세요.</li>
-          <li>3. 본 서비스의 정보는 백패커 제보를 기반으로 하며 현지 통제 및 기상 상황에 따라 달라질 수 있습니다.</li>
+          <li>1. 산림보호법 제34조: 산림 내 화기 사용 및 취사 절대 금지(과태료 대상).</li>
+          <li>2. 자연공원법에 의해 지정된 국립공원·도립공원 야영 금지 구역을 준수하세요.</li>
+          <li>3. 본 서비스 정보는 제보 기반이며 현지 통제 및 기상에 따라 달라질 수 있습니다.</li>
           <li>4. 입산 통제 기간 및 사유지 여부를 방문 전 관할 지자체에 재확인하세요.</li>
         </ul>
       </div>
@@ -534,9 +544,9 @@
     const ICONS = {
       DECK: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M3 7h18M3 12h18M3 17h18M7 3v18M17 3v18" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
       ROCK: `<svg viewBox="0 0 24 24" class="ui-icon"><polygon points="4 20 2 12 8 4 17 6 22 14 19 20 4 20" stroke="currentColor" stroke-width="1.8" fill="none"/><line x1="8" y1="4" x2="12" y2="13" stroke="currentColor" stroke-width="1.5"/><line x1="12" y1="13" x2="19" y2="20" stroke="currentColor" stroke-width="1.5"/></svg>`,
-      SOIL: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M12 2L4 18h16L12 2z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 9l4 9H8l4-9z" fill="currentColor"/></svg>`, // 정통 텐트/노지 아이콘
+      SOIL: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M12 2L4 18h16L12 2z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 9l4 9H8l4-9z" fill="currentColor"/></svg>`,
       BEACH: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M2 17c3 0 3-2 6-2s3 2 6 2 3-2 6-2M2 20c3 0 3-2 6-2s3 2 6 2 3-2 6-2" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
-      ISLAND: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M2 19c4 0 5-2 10-2s6 2 10 2" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M12 5c-3 0-5 3-4 7h8c1-4-1-7-4-7z" fill="currentColor"/><circle cx="17" cy="4" r="2" fill="currentColor"/></svg>`, // 섬/야자수 느낌 아이콘
+      ISLAND: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M2 19c4 0 5-2 10-2s6 2 10 2" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M12 5c-3 0-5 3-4 7h8c1-4-1-7-4-7z" fill="currentColor"/><circle cx="17" cy="4" r="2" fill="currentColor"/></svg>`,
       VALLEY: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M3 4l7 16M21 4l-7 16M10 12c1.5 0 2.5 1 4 1" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
       CAVE: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M3 20C3 11 7 4 12 4s9 7 9 16H3z" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
       ETC: `<svg viewBox="0 0 24 24" class="ui-icon"><polygon points="12 2 15 8 21 9 17 14 18 20 12 17 6 20 7 14 3 9 9 8 12 2" fill="currentColor"/></svg>`,
@@ -604,14 +614,14 @@
     let userVisited = new Set(JSON.parse(localStorage.getItem('okbm_visited')) || []);
     let userMemos = JSON.parse(localStorage.getItem('okbm_memos')) || {};
 
-    let isAdminMode = false, isCleanMapMode = false, isPcSidebarCollapsed = false, currentMapTypeMode = 'NORMAL';
-    let currentMasterTab = 'REGION', currentRegionFilter = 'ALL', currentTerrainFilter = 'ALL', currentCourseFilter = 'ALL', currentMyFilter = 'ALL';
+    let isAdminMode = false, isCleanMapMode = false, currentMapTypeMode = 'NORMAL';
+    let currentMasterTab = 'REGION', currentRegionFilter = 'ALL', currentTerrainFilter = 'ALL', currentCourseFilter = 'ALL', currentMyFilter = 'ALL', currentHudFilter = 'ALL';
     let isSidebarCollapsed = (window.innerWidth <= 768), currentActiveSpot = null, currentActiveMarker = null, pendingUnlockSpotId = null, isZoomDetailedState = false;
 
     const spotMarkerMap = new Map();
     let tempSearchMarker = null, tempPickedMarker = null, userLocationMarker = null;
     let modalMode = 'PROPOSAL', modalEditIndex = -1, modalPendingData = { lat: 0, lng: 0, address: '' }, isPickingLocationMode = false;
-    let mapLongPressTimer = null, mapLongPressPos = null;
+    let mapLongPressTimer = null, mapLongPressPos = null, mapRadarTimer = null;
 
     /* 네온 3D 알파인 텐트 클러스터링 엔진 */
     class NativeNaverClusterer {
@@ -676,8 +686,8 @@
         zoomControlOptions: { position: naver.maps.Position.RIGHT_CENTER }
       });
       globalClusterer = new NativeNaverClusterer(map);
-      naver.maps.Event.addListener(map, 'dragstart', () => { clearMapLongPressTimer(); closeAllPopups(); });
-      naver.maps.Event.addListener(map, 'pinchstart', () => { clearMapLongPressTimer(); closeAllPopups(); });
+      naver.maps.Event.addListener(map, 'dragstart', () => { clearMapLongPressTimer(); });
+      naver.maps.Event.addListener(map, 'pinchstart', () => { clearMapLongPressTimer(); });
       naver.maps.Event.addListener(map, 'zoom_changed', () => updateLODMarkers());
       naver.maps.Event.addListener(map, 'click', handleMapClick);
       naver.maps.Event.addListener(map, 'mousedown', handleMapMouseDown);
@@ -686,25 +696,21 @@
       const mapDiv = document.getElementById('map');
       if (mapDiv) {
         mapDiv.addEventListener('touchstart', (e) => {
-          if (!isAdminMode || isPickingLocationMode) return;
           if (e.touches && e.touches.length === 1) {
             clearMapLongPressTimer();
-            const touch = e.touches[0];
-            mapLongPressTimer = setTimeout(() => {
-              if (map) {
-                const proj = map.getProjection();
-                if (proj) {
-                  const rect = mapDiv.getBoundingClientRect();
-                  const offset = new naver.maps.Point(touch.clientX - rect.left, touch.clientY - rect.top);
-                  const coord = proj.fromOffsetToCoord(offset);
-                  if (coord) triggerAdminLongPressAdd(coord.lat(), coord.lng());
-                }
+            mapRadarTimer = setTimeout(() => {
+              if (map && map.getZoom() >= 10) {
+                document.body.classList.add('map-radar-active');
+                showToast('📡 주변 박지 레이더 ON', 1200);
               }
-            }, 2200);
+            }, 400);
           }
         }, { passive: true });
-        mapDiv.addEventListener('touchend', clearMapLongPressTimer, { passive: true });
-        mapDiv.addEventListener('touchmove', clearMapLongPressTimer, { passive: true });
+        mapDiv.addEventListener('touchend', () => {
+          clearMapLongPressTimer();
+          if (mapRadarTimer) clearTimeout(mapRadarTimer);
+          document.body.classList.remove('map-radar-active');
+        }, { passive: true });
       }
       setTimeout(() => { if (map) { naver.maps.Event.trigger(map, 'resize'); map.setCenter(DEFAULT_MAP_CENTER); } }, 200);
     }
@@ -803,6 +809,14 @@
       }
     }
 
+    function applyMapHudFilter(type) {
+      currentHudFilter = type;
+      document.querySelectorAll('.hud-filter-chip').forEach(b => b.classList.remove('active'));
+      const el = { 'ALL': 'hudFilterAll', 'EASY': 'hudFilterEasy', 'MID': 'hudFilterMid', 'HARD': 'hudFilterHard' }[type];
+      if (document.getElementById(el)) document.getElementById(el).classList.add('active');
+      renderSpots();
+    }
+
     function checkUrlParamSpotFocus() {
       const urlParams = new URLSearchParams(window.location.search);
       const targetName = urlParams.get('spot') || urlParams.get('q');
@@ -813,17 +827,61 @@
       }
     }
 
+    /* 모바일 바텀시트 좌/우 스와이프 스마트 릴레이 탐색 기능 탑재 */
     function initBottomSheetSwipeGesture() {
       const sheet = document.getElementById('mobileBottomSheet'), handleArea = document.getElementById('sheetHandleArea');
       if (!sheet || !handleArea) return;
-      let startY = 0, isDragging = false;
-      handleArea.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; isDragging = true; sheet.classList.add('dragging'); }, { passive: true });
-      window.addEventListener('touchmove', (e) => { if (!isDragging) return; const deltaY = e.touches[0].clientY - startY; if (deltaY > 0) sheet.style.transform = `translateY(${deltaY}px)`; }, { passive: true });
+      let startX = 0, startY = 0, isDragging = false;
+      
+      handleArea.addEventListener('touchstart', (e) => { 
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY; 
+        isDragging = true; 
+      }, { passive: true });
+
       window.addEventListener('touchend', (e) => {
-        if (!isDragging) return; isDragging = false; sheet.classList.remove('dragging');
+        if (!isDragging) return; 
+        isDragging = false;
+        const deltaX = (e.changedTouches ? e.changedTouches[0].clientX : 0) - startX;
         const deltaY = (e.changedTouches ? e.changedTouches[0].clientY : 0) - startY;
-        if (deltaY > 75) { sheet.style.transform = ''; closeMobileBottomSheet(); } else { sheet.style.transform = 'translateY(0)'; }
+
+        if (Math.abs(deltaX) > 65 && Math.abs(deltaY) < 45) {
+          if (deltaX < 0) navigateToNearbySpot('EAST'); // 좌로 스와이프: 우측(동쪽) 산으로
+          else navigateToNearbySpot('WEST'); // 우로 스와이프: 좌측(서쪽) 산으로
+        } else if (deltaY > 75) {
+          closeMobileBottomSheet();
+        }
       });
+    }
+
+    function navigateToNearbySpot(direction = 'EAST') {
+      if (!map || !currentActiveSpot) return;
+      const bounds = map.getBounds();
+      if (!bounds) return;
+      
+      // 현재 화면 내에 위치한 박지들 필터링
+      const visibleSpots = spots.filter(s => {
+        const latlng = new naver.maps.LatLng(s.lat, s.lng);
+        return bounds.hasLatLng(latlng) && String(s.id) !== String(currentActiveSpot.id);
+      });
+
+      if (visibleSpots.length === 0) {
+        showToast('📍 화면 내에 다른 박지가 없습니다. 지도를 이동해보세요');
+        return;
+      }
+
+      let candidates = [];
+      if (direction === 'EAST') {
+        candidates = visibleSpots.filter(s => s.lng > currentActiveSpot.lng).sort((a, b) => a.lng - b.lng);
+      } else {
+        candidates = visibleSpots.filter(s => s.lng < currentActiveSpot.lng).sort((a, b) => b.lng - a.lng);
+      }
+
+      const target = candidates.length > 0 ? candidates[0] : visibleSpots[0];
+      if (target) {
+        showToast(`🧭 [${direction === 'EAST' ? '동쪽' : '서쪽'}] ${target.name}(으)로 이동`, 1200);
+        focusSpotOnMap(target);
+      }
     }
 
     let versionAdminClickCount = 0, versionAdminTimer = null;
@@ -879,7 +937,7 @@
               zIndex: 99999
             });
           } else { userLocationMarker.setPosition(userLatLng); userLocationMarker.setMap(map); }
-          if (map) map.morph(userLatLng, 10, { duration: 320, easing: 'easeOutCubic' });
+          if (map) map.morph(userLatLng, 12, { duration: 320, easing: 'easeOutCubic' });
         },
         () => alert('위치 권한을 확인해주세요.'), { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
       );
@@ -963,7 +1021,7 @@
 
     function updateSmartResetButtons() {
       const isMobile = window.innerWidth <= 768;
-      const isListOpen = isMobile ? !isSidebarCollapsed : !isPcSidebarCollapsed;
+      const isListOpen = isMobile ? !isSidebarCollapsed : true;
       const allClosed = areAllRegionAccordionsClosed();
       let labelText = isCleanMapMode ? 'UI 보이기' : (isListOpen ? (allClosed ? '모두 열기' : '모두 닫기') : '지도 초기화');
       const pcResetText = document.getElementById('pcResetMapBtnText'), dockResetText = document.getElementById('dockResetMapText');
@@ -973,7 +1031,7 @@
 
     function handleSmartResetClick() {
       const isMobile = window.innerWidth <= 768;
-      const isListOpen = isMobile ? !isSidebarCollapsed : !isPcSidebarCollapsed;
+      const isListOpen = isMobile ? !isSidebarCollapsed : true;
       if (isCleanMapMode) { toggleCleanMapMode(false); return; }
       if (isListOpen) {
         if (areAllRegionAccordionsClosed()) expandAllRegionAccordions();
@@ -990,14 +1048,6 @@
       document.body.classList.toggle('clean-map-mode', isCleanMapMode);
       if (isCleanMapMode) closeAllPopups();
       updateSmartResetButtons();
-    }
-    function togglePcSidebar() {
-      isPcSidebarCollapsed = !isPcSidebarCollapsed;
-      const sidebar = document.getElementById('sidebar'), toggleBtn = document.getElementById('pcSidebarToggleBtn');
-      sidebar.classList.toggle('pc-collapsed', isPcSidebarCollapsed);
-      toggleBtn.innerText = isPcSidebarCollapsed ? '▶' : '◀';
-      updateSmartResetButtons();
-      if (map) setTimeout(() => naver.maps.Event.trigger(map, 'resize'), 280);
     }
     function toggleMobileSidebar() {
       isSidebarCollapsed = !isSidebarCollapsed;
@@ -1132,25 +1182,24 @@
       document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
     }
 
-    /* 모바일에서 정보창이 떠도 마커와 이름이 완벽히 보이도록 보정 */
+    /* 읍·면·동 상세 등고선 단위(Zoom 12) 자동 줌인 & 정확한 뷰포트 센터링 */
     function smoothCenterMapOnSpot(lat, lng) {
       if (!map) return;
       const isMobile = window.innerWidth <= 768;
       const targetLatLng = new naver.maps.LatLng(lat, lng);
-      const currentZoom = map.getZoom();
-      const targetZoom = currentZoom < 9 ? 9 : (currentZoom > 10 ? 10 : currentZoom);
+      const targetZoom = 12; // 읍면동 상세 단위 확대
 
       if (isMobile) {
         const proj = map.getProjection();
         if (!proj) { map.morph(targetLatLng, targetZoom, { duration: 300, easing: 'easeOutCubic' }); return; }
-        if (currentZoom !== targetZoom) map.setZoom(targetZoom, false);
+        map.setZoom(targetZoom, false);
         const targetPoint = proj.fromCoordToOffset(targetLatLng);
         const cameraPoint = new naver.maps.Point(targetPoint.x, targetPoint.y + Math.round(window.innerHeight * 0.22));
         map.panTo(proj.fromOffsetToCoord(cameraPoint), { duration: 300, easing: 'easeOutCubic' });
       } else {
         const proj = map.getProjection();
         if (!proj) { map.morph(targetLatLng, targetZoom, { duration: 300, easing: 'easeOutCubic' }); return; }
-        if (currentZoom !== targetZoom) map.setZoom(targetZoom, false);
+        map.setZoom(targetZoom, false);
         const targetPoint = proj.fromCoordToOffset(targetLatLng);
         const offsetX = Math.round(360 / 2);
         const cameraPoint = new naver.maps.Point(targetPoint.x - offsetX, targetPoint.y);
@@ -1243,7 +1292,8 @@
 
       const marker = spotMarkerMap.get(String(spot.id));
       if (marker && map) {
-        marker.setMap(map); marker.setZIndex(999999);
+        marker.setMap(map); 
+        marker.setZIndex(999999);
         marker.setIcon(createCustomMarkerIcon(spot, true));
       }
 
@@ -1430,10 +1480,10 @@
           <div class="app-disclaimer-box">
             <strong>⚠️ 대한민국 백패커 필수 법적 유의사항</strong>
             <ul>
-              <li>1. 산림보호법 제34조 준수: 산림 내 화기 사용 및 취사 절대 금지(비화식 준수 필수).</li>
+              <li>1. 산림보호법 제34조: 산림 내 화기 사용 및 취사 절대 금지(과태료 대상).</li>
               <li>2. 자연공원법에 의해 지정된 국립공원·도립공원 야영 금지 구역을 준수하세요.</li>
               <li>3. 영상 속 박지와 들머리 정보는 기상 및 현지 통제에 따라 변동될 수 있습니다.</li>
-              <li>4. 쓰레기 100% 되가져오기 및 사유지 무단침입 금지 등 K-LNT 7원칙을 실천하세요.</li>
+              <li>4. 쓰레기 되가져오기 및 사유지 무단침입 금지 등 K-LNT 7원칙을 실천하세요.</li>
             </ul>
           </div>
           ${getCommentsHtml(spot.id)}
@@ -1736,6 +1786,18 @@
       displaySpots.forEach(spot => {
         const sId = String(spot.id), marker = spotMarkerMap.get(sId);
         let match = true;
+        
+        // 플로팅 HUD 필터 매칭
+        if (currentHudFilter === 'EASY') {
+          const isEasyDiff = (parseInt(spot.difficulty, 10) || 3) <= 2;
+          const isEasyTerrain = (spot.terrain || []).some(t => t.includes('해변') || t.includes('데크') || t.includes('노지'));
+          if (!isEasyDiff && !isEasyTerrain) match = false;
+        } else if (currentHudFilter === 'MID') {
+          if ((parseInt(spot.difficulty, 10) || 3) !== 3) match = false;
+        } else if (currentHudFilter === 'HARD') {
+          if ((parseInt(spot.difficulty, 10) || 3) < 4) match = false;
+        }
+
         if (currentMasterTab === 'REGION') { if (currentRegionFilter !== 'ALL' && spot.region !== currentRegionFilter) match = false; }
         else if (currentMasterTab === 'TERRAIN') { if (currentTerrainFilter !== 'ALL') { match = (spot.terrain || []).some(t => t.includes(currentTerrainFilter)); } }
         else if (currentMasterTab === 'COURSE') {
