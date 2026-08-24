@@ -6,7 +6,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>대한민국 낭만 백패킹 로드 (4.5ver Pro Ultimate Master)</title>
+  <title>대한민국 낭만 백패킹 로드 (4.5ver Master Final)</title>
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/webfontworld/gmarket/GmarketSans.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,7 +22,7 @@
       --accent-blue: #38bdf8; --accent-teal: #2dd4bf; --accent-emerald: #10b981;
       --accent-amber: #f59e0b; --accent-rose: #f43f5e; --accent-purple: #a855f7;
       --font-display: 'GmarketSans', sans-serif; --font-script: 'Caveat', cursive; --font-body: 'Pretendard', sans-serif;
-      --z-map: 1; --z-map-filter: 90; --z-hud: 100; --z-header: 500; --z-pc-drawer: 650; --z-drawer-btn: 660; --z-sidebar: 700;
+      --z-map: 1; --z-map-filter: 90; --z-hud: 100; --z-header: 500; --z-pc-drawer: 650; --z-sidebar: 700;
       --z-dock: 900; --z-bottomsheet: 850; --z-dropdown: 950; --z-modal: 1000; --z-toast: 2000;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -72,14 +72,10 @@
     .container { display: flex; width: 100%; flex: 1; position: relative; overflow: hidden; }
     .sidebar { width: 390px; max-width: 100%; height: 100%; background-color: var(--bg-surface); border-right: 1px solid var(--border-titanium); display: flex; flex-direction: column; flex-shrink: 0; z-index: var(--z-sidebar); color: var(--text-primary); position: relative; box-shadow: 4px 0 20px rgba(0,0,0,0.6); }
 
-    /* PC 슬라이딩 드로어 (기본 상태 완벽 격리) */
-    .pc-sliding-drawer { position: absolute; top: 0; left: 390px; width: 360px; height: 100%; background: rgba(9,12,19,0.96); border-right: 1.5px solid var(--border-titanium); z-index: var(--z-pc-drawer); box-shadow: 12px 0 36px rgba(0,0,0,0.85); transform: translateX(-105%); transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; overflow-y: auto; padding: 14px 16px; gap: 7px; backdrop-filter: blur(14px); visibility: hidden; pointer-events: none; }
-    .pc-sliding-drawer.open { transform: translateX(0); visibility: visible; pointer-events: auto; }
+    /* PC 슬라이딩 드로어 (우측으로 부드럽게 슬라이딩 오픈 & 닫힐 때 100% 완전 은닉) */
+    .pc-sliding-drawer { position: absolute; top: 0; left: 390px; width: 360px; height: 100%; background: rgba(9,12,19,0.96); border-right: 1.5px solid var(--border-titanium); z-index: var(--z-pc-drawer); box-shadow: 12px 0 36px rgba(0,0,0,0.85); transform: translateX(-100%); opacity: 0; visibility: hidden; pointer-events: none; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease, visibility 0.3s; display: flex; flex-direction: column; overflow-y: auto; padding: 14px 16px; gap: 7px; backdrop-filter: blur(14px); }
+    .pc-sliding-drawer.open { transform: translateX(0); opacity: 1; visibility: visible; pointer-events: auto; }
     .pc-sliding-drawer::-webkit-scrollbar { width: 4px; } .pc-sliding-drawer::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-
-    /* PC 드로어 전용 세로 정중앙 50% 토글 버튼 (정보창 열릴 때만 표시) */
-    .pc-drawer-toggle-btn { position: absolute; top: 50%; left: 750px; transform: translateY(-50%); width: 24px; height: 52px; background: rgba(9,12,19,0.96); border: 1px solid var(--border-titanium); border-left: none; border-radius: 0 8px 8px 0; color: #f43f5e; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: var(--z-drawer-btn); font-size: 0.78rem; font-weight: 800; transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1); }
-    .pc-sliding-drawer.open ~ .pc-drawer-toggle-btn { display: flex !important; }
 
     .sidebar-header { padding: 8px 14px; min-height: 44px; font-weight: 700; font-size: 0.86rem; background-color: var(--bg-deep); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
     .sidebar-header-left { display: flex; align-items: center; gap: 8px; }
@@ -162,14 +158,14 @@
     .pin-picker-banner { display: none; position: absolute; top: 50px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #0f766e, #0284c7); color: #fff; padding: 7px 16px; border-radius: 18px; font-size: 0.8rem; font-weight: 700; z-index: var(--z-modal); box-shadow: 0 4px 20px rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.4); align-items: center; gap: 8px; }
     .btn-cancel-pin-pick { background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.3); color: #fff; border-radius: 10px; padding: 3px 9px; font-size: 0.7rem; cursor: pointer; }
 
-    /* 비비드 네온 3단계 텐트 클러스터 */
+    /* 비비드 네온 3단계 텐트 클러스터 (유색 컬러 텐트 완벽 복원) */
     .custom-cluster-badge { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; font-weight: 800; border-radius: 50% !important; cursor: pointer; backdrop-filter: blur(16px); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); user-select: none; }
     .custom-cluster-badge:hover { transform: scale(1.14); }
-    .cluster-step-small { width: 52px; height: 52px; background: rgba(16, 185, 129, 0.28); border: 2.2px solid #00FF9D; box-shadow: 0 0 24px rgba(0, 255, 157, 0.75); }
-    .cluster-step-medium { width: 58px; height: 58px; background: rgba(6, 182, 212, 0.32); border: 2.5px solid #00E5FF; box-shadow: 0 0 28px rgba(0, 229, 255, 0.8); }
-    .cluster-step-large { width: 64px; height: 64px; background: rgba(245, 158, 11, 0.36); border: 2.8px solid #FFD600; box-shadow: 0 0 34px rgba(255, 214, 0, 0.95); }
-    .cluster-tent-icon { width: 22px; height: 22px; margin-bottom: 1px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.85)); }
-    .cluster-count { font-family: var(--font-display); font-size: 0.86rem; font-weight: 800; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.9); }
+    .cluster-step-small { width: 54px; height: 54px; background: rgba(16, 185, 129, 0.28); border: 2.2px solid #00FF9D; box-shadow: 0 0 24px rgba(0, 255, 157, 0.75); }
+    .cluster-step-medium { width: 60px; height: 60px; background: rgba(6, 182, 212, 0.32); border: 2.5px solid #00E5FF; box-shadow: 0 0 28px rgba(0, 229, 255, 0.8); }
+    .cluster-step-large { width: 66px; height: 66px; background: rgba(245, 158, 11, 0.36); border: 2.8px solid #FFD600; box-shadow: 0 0 34px rgba(255, 214, 0, 0.95); }
+    .cluster-tent-icon { width: 23px; height: 23px; margin-bottom: 1px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.85)); }
+    .cluster-count { font-family: var(--font-display); font-size: 0.88rem; font-weight: 800; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.9); }
 
     .custom-spot-marker-wrap { position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer; z-index: 100; transition: transform 0.2s; }
     .custom-spot-marker-wrap.active-marker { transform: scale(1.18); z-index: 999999 !important; }
@@ -186,9 +182,9 @@
     .marker-svg-icon { display: block; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.7)); }
 
     /* 마커 우측 상단 성취감 뱃지 (클리어 🚩 vs 찜 ⭐) */
-    .marker-corner-badge { position: absolute; top: -5px; right: -5px; width: 19px; height: 19px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; border: 1.8px solid #ffffff; z-index: 5; }
-    .marker-badge-visited { background: #0284c7; color: #fff; box-shadow: 0 0 10px #38bdf8; }
-    .marker-badge-fav { background: #f59e0b; color: #fff; box-shadow: 0 0 10px #fbbf24; }
+    .marker-corner-badge { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; border: 2px solid #ffffff; z-index: 5; }
+    .marker-badge-visited { background: #0284c7; color: #fff; box-shadow: 0 0 12px #38bdf8; }
+    .marker-badge-fav { background: #f59e0b; color: #fff; box-shadow: 0 0 12px #fbbf24; }
 
     .sheet-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; position: relative; width: 100%; }
     .compact-title { font-size: 1.02rem; font-weight: 800; color: var(--accent-blue); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 0; }
@@ -286,7 +282,7 @@
 
     @media (min-width: 769px) { .mobile-only { display: none !important; } .pc-only { display: flex !important; } }
     @media (max-width: 768px) {
-      .pc-only, .pc-drawer-toggle-btn, .pc-sliding-drawer { display: none !important; }
+      .pc-only, .pc-sliding-drawer { display: none !important; }
       .header { padding: 0 10px !important; height: 50px !important; justify-content: center !important; }
       .header-row-1 { justify-content: center !important; }
       .main-title { font-size: 1.12rem !important; }
@@ -395,10 +391,8 @@
       <div class="spot-list" id="spotList"></div>
     </aside>
     
-    <!-- PC 슬라이딩 드로어 (기본 상태 완벽 격리) -->
+    <!-- PC 슬라이딩 드로어 (우측으로 부드럽게 펼쳐짐) -->
     <div class="pc-sliding-drawer pc-only clean-hide" id="pcSlidingDrawer"></div>
-    <!-- PC 드로어 전용 세로 정중앙 50% 토글 버튼 -->
-    <div class="pc-drawer-toggle-btn pc-only clean-hide" id="pcDrawerToggleBtn" onclick="closePcSlidingDrawer()">◀</div>
     
     <main id="map">
       <!-- 지도 플로팅 퀵-필터 HUD 바 -->
@@ -623,7 +617,7 @@
     let modalMode = 'PROPOSAL', modalEditIndex = -1, modalPendingData = { lat: 0, lng: 0, address: '' }, isPickingLocationMode = false;
     let mapLongPressTimer = null, mapLongPressPos = null, mapRadarTimer = null;
 
-    /* 네온 3D 알파인 텐트 클러스터링 엔진 */
+    /* 네온 3D 유색 알파인 텐트 클러스터링 엔진 */
     class NativeNaverClusterer {
       constructor(mapInstance) {
         this.map = mapInstance; this.allMarkers = []; this.clusterMarkers = []; this.gridSize = 75; this.minClusterSize = 2; this.maxZoom = 9;
@@ -655,15 +649,21 @@
           if (c.markers.length >= this.minClusterSize) {
             const count = c.markers.length;
             const stepClass = count < 6 ? 'cluster-step-small' : (count < 20 ? 'cluster-step-medium' : 'cluster-step-large');
-            const radiusOffset = stepClass === 'cluster-step-small' ? 26 : (stepClass === 'cluster-step-medium' ? 29 : 32);
+            const radiusOffset = stepClass === 'cluster-step-small' ? 27 : (stepClass === 'cluster-step-medium' ? 30 : 33);
+            
+            // 텐트 본체 유색 네온 컬러 주입
+            const tentFlyColor = count < 6 ? '#00FF9D' : (count < 20 ? '#00E5FF' : '#FFD600');
+            const tentInnerColor = count < 6 ? '#059669' : (count < 20 ? '#0284c7' : '#d97706');
+
             const clusterMarker = new naver.maps.Marker({
               position: c.centerCoord, map: this.map,
               icon: {
                 content: `
                   <div class="custom-cluster-badge ${stepClass}">
                     <svg class="cluster-tent-icon" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M14 6 L4 26 H24 L14 6 Z" fill="#ffffff" fill-opacity="0.95"/>
-                      <polygon points="14,11 7,26 21,26" fill="rgba(0,0,0,0.35)"/>
+                      <path d="M14 5 L3 27 H25 L14 5 Z" fill="${tentFlyColor}" stroke="#ffffff" stroke-width="1.2"/>
+                      <polygon points="14,11 6,27 22,27" fill="${tentInnerColor}"/>
+                      <line x1="14" y1="5" x2="14" y2="27" stroke="#ffffff" stroke-width="1.2"/>
                     </svg>
                     <span class="cluster-count">${count}</span>
                   </div>`,
@@ -827,7 +827,7 @@
       }
     }
 
-    /* 모바일 바텀시트 좌/우 스와이프 스마트 릴레이 탐색 기능 탑재 */
+    /* 모바일 바텀시트 좌/우 스와이프 스마트 릴레이 탐색 기능 */
     function initBottomSheetSwipeGesture() {
       const sheet = document.getElementById('mobileBottomSheet'), handleArea = document.getElementById('sheetHandleArea');
       if (!sheet || !handleArea) return;
@@ -846,8 +846,8 @@
         const deltaY = (e.changedTouches ? e.changedTouches[0].clientY : 0) - startY;
 
         if (Math.abs(deltaX) > 65 && Math.abs(deltaY) < 45) {
-          if (deltaX < 0) navigateToNearbySpot('EAST'); // 좌로 스와이프: 우측(동쪽) 산으로
-          else navigateToNearbySpot('WEST'); // 우로 스와이프: 좌측(서쪽) 산으로
+          if (deltaX < 0) navigateToNearbySpot('EAST'); // 좌로 스와이프: 동쪽 산으로
+          else navigateToNearbySpot('WEST'); // 우로 스와이프: 서쪽 산으로
         } else if (deltaY > 75) {
           closeMobileBottomSheet();
         }
@@ -859,14 +859,13 @@
       const bounds = map.getBounds();
       if (!bounds) return;
       
-      // 현재 화면 내에 위치한 박지들 필터링
       const visibleSpots = spots.filter(s => {
         const latlng = new naver.maps.LatLng(s.lat, s.lng);
         return bounds.hasLatLng(latlng) && String(s.id) !== String(currentActiveSpot.id);
       });
 
       if (visibleSpots.length === 0) {
-        showToast('📍 화면 내에 다른 박지가 없습니다. 지도를 이동해보세요');
+        showToast('📍 화면 내에 다른 박지가 없습니다');
         return;
       }
 
@@ -879,7 +878,7 @@
 
       const target = candidates.length > 0 ? candidates[0] : visibleSpots[0];
       if (target) {
-        showToast(`🧭 [${direction === 'EAST' ? '동쪽' : '서쪽'}] ${target.name}(으)로 이동`, 1200);
+        showToast(`🧭 ${target.name}(으)로 이동`, 1200);
         focusSpotOnMap(target);
       }
     }
@@ -943,7 +942,7 @@
       );
     }
 
-    /* 클리어 🚩 vs 찜 ⭐ 마커 뱃지 완벽 분리 구현 */
+    /* 클리어 🚩 vs 찜 ⭐ 대형 네온 뱃지 마커 */
     function createCustomMarkerIcon(spot, isDetailed = false) {
       const isMobile = window.innerWidth <= 768;
       const d = parseInt(spot.difficulty, 10) || 3;
@@ -1187,7 +1186,7 @@
       if (!map) return;
       const isMobile = window.innerWidth <= 768;
       const targetLatLng = new naver.maps.LatLng(lat, lng);
-      const targetZoom = 12; // 읍면동 상세 단위 확대
+      const targetZoom = 12;
 
       if (isMobile) {
         const proj = map.getProjection();
@@ -1426,7 +1425,9 @@
       const isUnlocked = isAdminMode || isSpotUnlocked(spot.id);
       const isFav = userBookmarks.has(String(spot.id)), isDone = userVisited.has(String(spot.id));
       const memoText = userMemos[String(spot.id)] || '';
-      const closeBtn = isMobileSheet ? `<button type="button" class="sheet-close-btn" onclick="closeMobileBottomSheet()">✕</button>` : `<button type="button" class="sheet-close-btn" onclick="closePcSlidingDrawer()" title="정보창 닫기">◀</button>`;
+      const closeBtn = isMobileSheet 
+        ? `<button type="button" class="sheet-close-btn" onclick="closeMobileBottomSheet()">✕</button>` 
+        : `<button type="button" class="sheet-close-btn" onclick="closePcSlidingDrawer()" title="정보창 닫기">◀</button>`;
       const adminTopActions = isAdminMode ? `
         <button type="button" class="btn-admin-top btn-admin-top-edit" onclick="editSpotById(event, '${spot.id}')">${ICONS.EDIT}수정</button>
         <button type="button" class="btn-admin-top btn-admin-top-del" onclick="deleteSpotById(event, '${spot.id}')">${ICONS.DEL}삭제</button>
