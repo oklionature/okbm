@@ -1,3 +1,7 @@
+요청하신 사항을 반영하여 모바일 관련 코드(바텀시트, 터치 제스처, 모바일 하단독 및 반응형 뷰)는 100% 그대로 유지하고, PC 버전의
+UX/UI(사이드바-마커 클릭 연동, 카메라 중심 이동 및 마커 명칭 상시 노출, 대시보드형 인포윈도우, 마우스 오버 반응)를 직관적이고 시인성
+있게 전면 고도화한 전체 완성형 코드입니다.
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -27,7 +31,7 @@
       --bg-card: #0e131d;
       --bg-card-hover: #151c2a;
       --border: rgba(255, 255, 255, 0.08);
-      --border-titanium: rgba(255, 255, 255, 0.14);
+      --border-titanium: rgba(255, 255, 255, 0.16);
       --border-subtle: #1a2233;
       --text-primary: #f8fafc;
       --text-secondary: #cbd5e1;
@@ -84,13 +88,13 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 6px 14px;
+      padding: 6px 16px;
       padding-top: calc(6px + env(safe-area-inset-top, 0px));
       z-index: var(--z-header);
       border-bottom: 1px solid var(--border);
       user-select: none;
       flex-shrink: 0;
-      min-height: 50px;
+      min-height: 52px;
     }
     .header-row-1 {
       display: flex;
@@ -99,7 +103,7 @@
       width: 100%;
       gap: 10px;
     }
-    .header-left { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; min-width: 0; }
+    .header-left { display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; min-width: 0; }
     
     .header-title-box {
       display: inline-flex;
@@ -112,7 +116,7 @@
     
     .main-title {
       font-family: var(--font-display);
-      font-size: clamp(1.05rem, 3.8vw, 1.45rem);
+      font-size: clamp(1.05rem, 3.8vw, 1.42rem);
       font-weight: 700;
       color: #ffffff;
       letter-spacing: -0.03em;
@@ -156,45 +160,53 @@
       100% { box-shadow: 0 0 10px rgba(16,185,129,0.8); }
     }
     
-    .header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
     .header-btn {
       background: var(--bg-card);
-      border: 1px solid var(--border);
-      padding: 6px 12px;
-      border-radius: 16px;
-      font-size: 0.76rem;
+      border: 1px solid var(--border-titanium);
+      padding: 7px 14px;
+      border-radius: 18px;
+      font-size: 0.78rem;
       font-weight: 700;
       color: var(--text-secondary);
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       white-space: nowrap;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
     }
-    .header-btn:hover { background: var(--bg-card-hover); color: #ffffff; border-color: var(--border-titanium); }
+    .header-btn:hover { 
+      background: var(--bg-card-hover); 
+      color: #ffffff; 
+      border-color: var(--accent-blue);
+      transform: translateY(-1px);
+    }
 
     .admin-only-btn { display: none; background: rgba(13, 148, 136, 0.2); color: var(--accent-teal); border-color: rgba(45, 212, 191, 0.4); }
     .admin-only-btn:hover { background: rgba(13, 148, 136, 0.4); color: #fff; }
 
-    /* 🔍 PC 검색창 */
-    .pc-search-container { position: relative; display: flex; align-items: center; width: 320px; }
+    /* 🔍 PC 검색창 (시인성 & 편의성 강화) */
+    .pc-search-container { position: relative; display: flex; align-items: center; width: 340px; }
     .search-input {
       width: 100%;
-      padding: 7px 54px 7px 13px;
-      min-height: 35px;
-      border-radius: 18px;
-      border: 1.2px solid var(--border-titanium);
+      padding: 8px 56px 8px 14px;
+      min-height: 38px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border-titanium);
       background: var(--bg-surface);
       color: #fff;
-      font-size: 0.82rem;
+      font-size: 0.84rem;
+      font-weight: 600;
       outline: none;
       transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
     }
-    .search-input::placeholder { color: var(--text-muted); font-size: 0.76rem; }
-    .search-input:focus { border-color: var(--accent-blue); background: #05070c; }
+    .search-input::placeholder { color: var(--text-muted); font-size: 0.78rem; }
+    .search-input:focus { border-color: var(--accent-blue); background: #05070c; box-shadow: 0 0 12px rgba(56, 189, 248, 0.35); }
     
     .search-clear-btn {
       position: absolute;
-      right: 30px;
+      right: 32px;
       top: 50%;
       transform: translateY(-50%);
       background: rgba(255, 255, 255, 0.15);
@@ -218,35 +230,35 @@
 
     .search-btn-icon {
       position: absolute;
-      right: 10px;
+      right: 12px;
       background: none;
       border: none;
-      color: var(--text-secondary);
+      color: var(--accent-blue);
       cursor: pointer;
-      font-size: 0.88rem;
+      font-size: 0.95rem;
       z-index: 5;
     }
 
     /* 드롭다운 */
     .search-dropdown {
       position: absolute;
-      top: 40px;
+      top: 44px;
       left: 0; right: 0;
       background: rgba(9, 12, 19, 0.98);
       color: var(--text-primary);
-      border-radius: 12px;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.95);
+      border-radius: 14px;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.95);
       list-style: none;
-      max-height: 280px;
+      max-height: 300px;
       overflow-y: auto;
       display: none;
       z-index: var(--z-dropdown);
       border: 1px solid var(--border-titanium);
     }
     .dropdown-header {
-      padding: 8px 12px;
+      padding: 9px 14px;
       background-color: var(--bg-deep);
-      font-size: 0.74rem;
+      font-size: 0.76rem;
       font-weight: 700;
       color: var(--accent-blue);
       border-bottom: 1px solid var(--border-subtle);
@@ -255,35 +267,35 @@
       align-items: center;
     }
     .dropdown-item {
-      padding: 9px 12px;
+      padding: 10px 14px;
       border-bottom: 1px solid var(--border-subtle);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.82rem;
+      font-size: 0.84rem;
       cursor: pointer;
-      transition: background 0.12s;
+      transition: background 0.15s;
     }
     .dropdown-item:hover { background: var(--bg-card-hover); }
     .top-rank-row { display: flex; align-items: center; justify-content: space-between; width: 100%; }
-    .top-rank-left { display: flex; align-items: center; gap: 6px; }
+    .top-rank-left { display: flex; align-items: center; gap: 8px; }
     .rank-badge {
       display: inline-block;
-      width: 18px;
-      height: 18px;
-      line-height: 18px;
+      width: 20px;
+      height: 20px;
+      line-height: 20px;
       text-align: center;
       border-radius: 50%;
-      font-size: 0.65rem;
+      font-size: 0.68rem;
       font-weight: 800;
     }
     .rank-1 { background: #fef08a; color: #854d0e; }
     .rank-2 { background: #e2e8f0; color: #334155; }
     .rank-3 { background: #fed7aa; color: #9a3412; }
     .rank-etc { background: var(--bg-card); color: var(--text-muted); }
-    .top-spot-title { font-weight: 700; color: var(--accent-blue); font-size: 0.84rem; }
-    .top-spot-city { font-size: 0.7rem; color: #7dd3fc; background: rgba(56, 189, 248, 0.12); padding: 2px 5px; border-radius: 4px; }
-    .top-spot-views { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
+    .top-spot-title { font-weight: 700; color: var(--accent-blue); font-size: 0.86rem; }
+    .top-spot-city { font-size: 0.72rem; color: #7dd3fc; background: rgba(56, 189, 248, 0.12); padding: 2px 6px; border-radius: 4px; }
+    .top-spot-views { font-size: 0.74rem; color: var(--text-muted); font-weight: 600; }
     .btn-quick-add { background: #0f766e; color: #ffffff; border: none; border-radius: 4px; padding: 3px 6px; font-size: 0.68rem; font-weight: 700; cursor: pointer; display: none; }
 
     /* 📱 모바일 상단 일체형 검색 독 */
@@ -353,13 +365,13 @@
       overflow-x: hidden !important;
     }
     
-    /* 📋 사이드바 */
+    /* 📋 사이드바 (PC 뷰포트 시인성 극대화) */
     .sidebar {
-      width: 380px;
+      width: 390px;
       max-width: 100%;
       height: 100%;
       background-color: var(--bg-surface);
-      border-right: 1px solid var(--border);
+      border-right: 1px solid var(--border-titanium);
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
@@ -368,39 +380,41 @@
       overflow-x: hidden !important;
       transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.6);
     }
-    .sidebar.pc-collapsed { margin-left: -380px !important; }
+    .sidebar.pc-collapsed { margin-left: -390px !important; }
 
     .pc-sidebar-toggle-btn {
       position: absolute;
       top: 50%;
-      left: 380px;
+      left: 390px;
       transform: translateY(-50%);
-      width: 22px;
-      height: 48px;
-      background: rgba(9, 12, 19, 0.95);
+      width: 24px;
+      height: 52px;
+      background: rgba(9, 12, 19, 0.96);
       border: 1px solid var(--border-titanium);
       border-left: none;
-      border-radius: 0 6px 6px 0;
+      border-radius: 0 8px 8px 0;
       color: var(--accent-blue);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       z-index: var(--z-sidebar-btn);
-      box-shadow: 3px 0 10px rgba(0,0,0,0.5);
-      transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1), background 0.15s;
-      font-size: 0.74rem;
+      box-shadow: 4px 0 12px rgba(0,0,0,0.6);
+      transition: left 0.28s cubic-bezier(0.4, 0, 0.2, 1), background 0.15s, color 0.15s;
+      font-size: 0.78rem;
+      font-weight: 800;
       user-select: none;
     }
     .pc-sidebar-toggle-btn:hover { background: var(--bg-card-hover); color: #ffffff; }
     .sidebar.pc-collapsed ~ .pc-sidebar-toggle-btn { left: 0 !important; }
 
     .sidebar-header {
-      padding: 8px 12px;
-      min-height: 44px;
+      padding: 10px 14px;
+      min-height: 48px;
       font-weight: 700;
-      font-size: 0.84rem;
+      font-size: 0.86rem;
       background-color: var(--bg-deep);
       border-bottom: 1px solid var(--border);
       display: flex;
@@ -408,43 +422,45 @@
       align-items: center;
       flex-shrink: 0;
       width: 100%;
-      gap: 5px;
+      gap: 6px;
     }
-    .sidebar-header-left { display: flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0; }
-    .sidebar-header-actions { display: flex; align-items: center; gap: 5px; flex-wrap: nowrap; }
+    .sidebar-header-left { display: flex; align-items: center; gap: 8px; white-space: nowrap; flex-shrink: 0; }
+    .sidebar-header-actions { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
 
     .btn-sidebar-submit {
       background: linear-gradient(135deg, #0d9488, #0f766e);
       border: 1px solid #14b8a6;
       color: #ffffff !important;
-      padding: 5px 11px;
-      border-radius: 12px;
-      font-size: 0.72rem;
+      padding: 5px 12px;
+      border-radius: 14px;
+      font-size: 0.74rem;
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
-      box-shadow: 0 2px 6px rgba(13, 148, 136, 0.3);
+      box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
       transition: all 0.15s;
     }
-    .btn-sidebar-submit:hover { background: linear-gradient(135deg, #115e59, #0f766e); }
+    .btn-sidebar-submit:hover { background: linear-gradient(135deg, #115e59, #0f766e); transform: translateY(-1px); }
 
     .header-insta-badge {
       display: inline-flex;
       align-items: center;
-      gap: 3px;
+      gap: 4px;
       background: linear-gradient(45deg, #ea580c 0%, #e11d48 50%, #c026d3 100%);
-      padding: 5px 9px;
-      border-radius: 12px;
+      padding: 5px 10px;
+      border-radius: 14px;
       color: #ffffff !important;
       text-decoration: none;
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       font-weight: 700;
       border: 1px solid rgba(255, 255, 255, 0.25);
       white-space: nowrap;
+      transition: transform 0.15s ease;
     }
-    .header-insta-badge svg { width: 10px; height: 10px; fill: #ffffff; flex-shrink: 0; }
+    .header-insta-badge:hover { transform: translateY(-1px); }
+    .header-insta-badge svg { width: 11px; height: 11px; fill: #ffffff; flex-shrink: 0; }
 
-    /* 🔑 숨은 관리자 트리거: 7회 탭 */
+    /* 🔑 숨은 관리자 트리거 */
     .version-tag {
       font-size: 0.7rem;
       font-weight: 600;
@@ -452,8 +468,6 @@
       user-select: none;
       -webkit-user-select: none;
       cursor: default !important;
-      -webkit-tap-highlight-color: transparent !important;
-      -webkit-touch-callout: none;
       outline: none;
       padding: 0;
     }
@@ -464,15 +478,15 @@
       background: #059669;
       color: #ffffff;
       text-decoration: none;
-      padding: 3px 6px;
-      border-radius: 4px;
-      font-size: 0.68rem;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.7rem;
       font-weight: bold;
     }
 
     .admin-data-tools {
       display: none;
-      padding: 6px 8px;
+      padding: 6px 10px;
       background: var(--bg-card);
       border-bottom: 1px solid var(--border);
       gap: 6px;
@@ -482,10 +496,10 @@
     }
     .admin-tool-btn {
       flex: 1;
-      padding: 4px 6px;
-      font-size: 0.7rem;
+      padding: 5px 8px;
+      font-size: 0.72rem;
       font-weight: 700;
-      border-radius: 4px;
+      border-radius: 6px;
       border: 1px solid var(--border);
       background: var(--bg-surface);
       color: var(--text-secondary);
@@ -493,14 +507,14 @@
       text-align: center;
     }
 
-    /* 🏷️ 3단 필터 바 */
+    /* 🏷️ 3단 필터 바 (PC 시인성 강화) */
     .filter-wrapper {
       background: var(--bg-deep);
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--border-titanium);
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      padding: 7px 10px;
+      gap: 7px;
+      padding: 9px 12px;
       flex-shrink: 0;
       z-index: 10;
       width: 100%;
@@ -519,18 +533,18 @@
     .status-filter-bar::-webkit-scrollbar, .region-filter-bar::-webkit-scrollbar, .terrain-filter-bar::-webkit-scrollbar { display: none; }
     
     .filter-label {
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--accent-blue);
       white-space: nowrap;
-      margin-right: 2px;
-      background: var(--bg-surface);
-      padding: 3px 6px;
-      border-radius: 4px;
+      margin-right: 3px;
+      background: rgba(56, 189, 248, 0.08);
+      padding: 3px 7px;
+      border-radius: 6px;
       flex-shrink: 0;
     }
     .filter-btn {
-      padding: 5px 11px;
+      padding: 5px 12px;
       border-radius: 14px;
       border: 1px solid var(--border);
       background: var(--bg-card);
@@ -542,10 +556,12 @@
       flex-shrink: 0;
       transition: all 0.15s ease;
     }
+    .filter-btn:hover { background: var(--bg-card-hover); color: #ffffff; border-color: var(--border-titanium); }
     .status-filter-btn.active {
       background: #0d9488;
       color: #ffffff;
       border-color: #2dd4bf;
+      box-shadow: 0 0 8px rgba(45, 212, 191, 0.4);
     }
     .status-filter-btn.btn-status-new.active {
       background: linear-gradient(135deg, #059669, #10b981);
@@ -568,11 +584,13 @@
       background: #0284c7;
       color: #ffffff;
       border-color: var(--accent-blue);
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
     }
     .terrain-filter-btn.active {
       background: #0f766e;
       color: #ffffff;
       border-color: var(--accent-teal);
+      box-shadow: 0 0 8px rgba(45, 212, 191, 0.4);
     }
 
     .spot-list { 
@@ -583,16 +601,17 @@
       position: relative;
       background: var(--bg-surface);
       width: 100%;
-      padding-bottom: 20px;
+      padding-bottom: 24px;
     }
-    .spot-list::-webkit-scrollbar { width: 4px; }
-    .spot-list::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+    .spot-list::-webkit-scrollbar { width: 5px; }
+    .spot-list::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    .spot-list::-webkit-scrollbar-thumb:hover { background: #334155; }
     
     .region-group { border-bottom: 1px solid var(--border-subtle); width: 100%; }
     .region-group-title {
-      padding: 8px 12px;
+      padding: 9px 14px;
       background-color: var(--bg-deep);
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       font-weight: 700;
       color: var(--text-secondary);
       cursor: pointer;
@@ -600,59 +619,64 @@
       justify-content: space-between;
       align-items: center;
       user-select: none;
-      border-left: 2px solid transparent;
+      border-left: 3px solid transparent;
       transition: all 0.15s;
       width: 100%;
     }
     .region-group-title:hover { background-color: var(--bg-card); border-left-color: var(--accent-blue); color: #ffffff; }
 
-    /* 박지 카드 스타일 */
+    /* 박지 카드 스타일 (PC 시인성 & 포커스 강화) */
     .spot-item {
-      padding: 10px 12px;
+      padding: 11px 14px;
       border-bottom: 1px solid var(--border-subtle);
-      border-left: 2px solid transparent;
+      border-left: 3px solid transparent;
       cursor: pointer;
       position: relative;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 5px;
       background: var(--bg-surface);
-      transition: all 0.15s ease;
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
       width: 100%;
       overflow-x: hidden !important;
     }
-    .spot-item:hover { background-color: var(--bg-card); }
+    .spot-item:hover { 
+      background-color: var(--bg-card); 
+      border-left-color: rgba(56, 189, 248, 0.4);
+    }
     .spot-item.active-spot {
       background-color: var(--bg-card-hover) !important;
-      border-left: 2px solid var(--accent-blue) !important;
+      border-left: 3px solid var(--accent-blue) !important;
+      box-shadow: inset 0 0 12px rgba(56, 189, 248, 0.12);
     }
-    .spot-header-row { display: flex; justify-content: space-between; align-items: center; padding-right: 68px; }
-    .spot-name-wrapper { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-    .spot-name { font-size: 0.88rem; font-weight: 700; color: var(--accent-blue); word-break: keep-all; }
+    .spot-header-row { display: flex; justify-content: space-between; align-items: center; padding-right: 70px; }
+    .spot-name-wrapper { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .spot-name { font-size: 0.92rem; font-weight: 800; color: var(--accent-blue); word-break: keep-all; }
     
-    .badge-status { font-size: 0.62rem; font-weight: 800; padding: 1px 5px; border-radius: 4px; display: inline-flex; align-items: center; white-space: nowrap; }
+    .badge-status { font-size: 0.64rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; white-space: nowrap; }
     .badge-new { background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; }
     .badge-hot { background: linear-gradient(135deg, #f43f5e, #f97316); color: #ffffff; }
 
     .spot-card-quick-actions {
       position: absolute;
-      top: 8px;
-      right: 8px;
+      top: 10px;
+      right: 10px;
       display: flex;
       align-items: center;
-      gap: 3px;
+      gap: 4px;
     }
     .btn-card-quick {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid var(--border);
       color: var(--text-muted);
-      border-radius: 5px;
-      padding: 3px 6px;
-      font-size: 0.68rem;
+      border-radius: 6px;
+      padding: 3px 7px;
+      font-size: 0.7rem;
       font-weight: 700;
       cursor: pointer;
       transition: all 0.15s ease;
     }
+    .btn-card-quick:hover { color: #fff; background: rgba(255, 255, 255, 0.12); }
     .btn-card-quick.active-fav {
       background: rgba(245, 158, 11, 0.25);
       border-color: #f59e0b;
@@ -664,10 +688,10 @@
       color: #7dd3fc;
     }
 
-    .spot-meta-badges { display: flex; flex-wrap: wrap; gap: 3px; align-items: center; }
+    .spot-meta-badges { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
     .meta-tag {
-      font-size: 0.65rem;
-      padding: 2px 5px;
+      font-size: 0.66rem;
+      padding: 2px 6px;
       border-radius: 4px;
       font-weight: 700;
       display: inline-flex;
@@ -675,34 +699,34 @@
       gap: 2px;
       white-space: nowrap;
     }
-    .tag-terrain-deck { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25); }
-    .tag-terrain-rock { background: rgba(148, 163, 184, 0.12); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.25); }
-    .tag-terrain-soil { background: rgba(34, 197, 94, 0.12); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.25); }
-    .tag-terrain-beach { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
-    .tag-terrain-island { background: rgba(45, 212, 191, 0.15); color: var(--accent-teal); border: 1px solid rgba(45, 212, 191, 0.3); }
-    .tag-terrain-valley { background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); }
-    .tag-terrain-cave { background: rgba(217, 70, 239, 0.12); color: #e879f9; border: 1px solid rgba(217, 70, 239, 0.25); }
-    .tag-terrain-etc { background: rgba(168, 85, 247, 0.12); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.25); }
-    .tag-diff { background: rgba(2, 132, 199, 0.2); color: #fde047; border: 1px solid rgba(2, 132, 199, 0.4); }
-    .tag-dist { background: rgba(16, 185, 129, 0.12); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.25); }
-    .tag-rating { background: rgba(245, 158, 11, 0.12); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.25); font-weight: 800; }
+    .tag-terrain-deck { background: rgba(245, 158, 11, 0.14); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.28); }
+    .tag-terrain-rock { background: rgba(148, 163, 184, 0.14); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.28); }
+    .tag-terrain-soil { background: rgba(34, 197, 94, 0.14); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.28); }
+    .tag-terrain-beach { background: rgba(14, 165, 233, 0.16); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.38); }
+    .tag-terrain-island { background: rgba(45, 212, 191, 0.16); color: var(--accent-teal); border: 1px solid rgba(45, 212, 191, 0.35); }
+    .tag-terrain-valley { background: rgba(56, 189, 248, 0.14); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.28); }
+    .tag-terrain-cave { background: rgba(217, 70, 239, 0.14); color: #e879f9; border: 1px solid rgba(217, 70, 239, 0.28); }
+    .tag-terrain-etc { background: rgba(168, 85, 247, 0.14); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.28); }
+    .tag-diff { background: rgba(2, 132, 199, 0.22); color: #fde047; border: 1px solid rgba(2, 132, 199, 0.45); }
+    .tag-dist { background: rgba(16, 185, 129, 0.14); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .tag-rating { background: rgba(245, 158, 11, 0.14); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); font-weight: 800; }
 
     .spot-desc-single {
-      font-size: 0.72rem;
+      font-size: 0.74rem;
       color: var(--text-secondary);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: 100%;
-      line-height: 1.35;
+      line-height: 1.4;
     }
 
     .spot-coords-text {
-      font-size: 0.68rem;
+      font-size: 0.7rem;
       color: var(--text-muted);
       background: var(--bg-deep);
-      padding: 2px 6px;
-      border-radius: 4px;
+      padding: 3px 7px;
+      border-radius: 5px;
       border: 1px solid var(--border);
       width: fit-content;
       font-family: monospace;
@@ -710,9 +734,9 @@
     
     .btn-edit, .btn-del {
       border: none;
-      border-radius: 4px;
-      padding: 3px 6px;
-      font-size: 0.66rem;
+      border-radius: 5px;
+      padding: 3px 7px;
+      font-size: 0.68rem;
       cursor: pointer;
       display: none;
       font-weight: 700;
@@ -733,26 +757,26 @@
     /* 🕹️ 우측 엄지 컨트롤 타워 */
     .hud-control-tower {
       position: absolute;
-      bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 12px);
-      right: 10px;
+      bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 14px);
+      right: 12px;
       z-index: var(--z-hud);
       display: flex;
       flex-direction: column;
-      background: rgba(9, 12, 19, 0.94);
+      background: rgba(9, 12, 19, 0.95);
       border: 1px solid var(--border-titanium);
-      border-radius: 12px;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.75);
+      border-radius: 14px;
+      box-shadow: 0 6px 22px rgba(0, 0, 0, 0.8);
       overflow: hidden;
-      width: 38px;
+      width: 42px;
     }
     .tower-btn {
-      width: 38px;
-      height: 38px;
+      width: 42px;
+      height: 42px;
       background: transparent;
       border: none;
       border-bottom: 1px solid var(--border);
       color: var(--text-secondary);
-      font-size: 0.72rem;
+      font-size: 0.74rem;
       font-weight: 800;
       display: flex;
       flex-direction: column;
@@ -765,13 +789,13 @@
       gap: 1px;
     }
     .tower-btn:last-child { border-bottom: none; }
-    .tower-btn:hover { background: rgba(255, 255, 255, 0.08); color: #ffffff; }
+    .tower-btn:hover { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
     .tower-btn.active {
-      background: rgba(2, 132, 199, 0.3) !important;
+      background: rgba(2, 132, 199, 0.35) !important;
       color: #38bdf8 !important;
     }
-    .tower-btn-icon { font-size: 0.85rem; line-height: 1; }
-    .tower-btn-text { font-size: 0.58rem; font-weight: 700; line-height: 1; letter-spacing: -0.03em; }
+    .tower-btn-icon { font-size: 0.9rem; line-height: 1; }
+    .tower-btn-text { font-size: 0.6rem; font-weight: 700; line-height: 1; letter-spacing: -0.03em; }
 
     .pin-picker-banner {
       display: none;
@@ -781,15 +805,15 @@
       transform: translateX(-50%);
       background: linear-gradient(135deg, #0f766e, #0284c7);
       color: #ffffff;
-      padding: 6px 14px;
-      border-radius: 16px;
-      font-size: 0.78rem;
+      padding: 7px 16px;
+      border-radius: 18px;
+      font-size: 0.8rem;
       font-weight: 700;
       z-index: var(--z-modal);
-      box-shadow: 0 4px 18px rgba(0,0,0,0.8);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.85);
       border: 1px solid rgba(255,255,255,0.4);
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       white-space: nowrap;
     }
     .btn-cancel-pin-pick {
@@ -797,12 +821,12 @@
       border: 1px solid rgba(255,255,255,0.3);
       color: #ffffff;
       border-radius: 10px;
-      padding: 2px 8px;
-      font-size: 0.68rem;
+      padding: 3px 9px;
+      font-size: 0.7rem;
       cursor: pointer;
     }
 
-    /* 📍 마커 래퍼 & 스마트 칩 */
+    /* 📍 마커 래퍼 & 스마트 칩 (PC 상시/호버/활성 시인성 특화) */
     .custom-spot-marker-wrap {
       position: relative;
       display: flex;
@@ -812,6 +836,12 @@
       pointer-events: auto;
       user-select: none;
       z-index: 100;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .custom-spot-marker-wrap.active-marker {
+      transform: scale(1.12);
+      z-index: 999999 !important;
     }
 
     .custom-spot-marker-wrap.active-marker::before {
@@ -820,52 +850,54 @@
       bottom: 2px;
       left: 50%;
       transform: translateX(-50%);
-      width: 32px;
-      height: 32px;
+      width: 38px;
+      height: 38px;
       border-radius: 50%;
-      background: rgba(56, 189, 248, 0.35);
+      background: rgba(56, 189, 248, 0.45);
       animation: markerPulseRing 1.8s infinite ease-out;
       z-index: -1;
       pointer-events: none;
     }
     @keyframes markerPulseRing {
-      0% { transform: translateX(-50%) scale(0.6); opacity: 0.9; }
-      100% { transform: translateX(-50%) scale(1.9); opacity: 0; }
+      0% { transform: translateX(-50%) scale(0.6); opacity: 0.95; }
+      100% { transform: translateX(-50%) scale(2.1); opacity: 0; }
     }
 
     .marker-label-chip {
       display: none;
       position: absolute;
-      bottom: calc(100% + 4px);
+      bottom: calc(100% + 5px);
       left: 50%;
       transform: translateX(-50%);
       background: rgba(9, 12, 19, 0.96);
-      border: 1px solid var(--border-titanium);
+      border: 1.2px solid var(--border-titanium);
       color: #ffffff;
-      padding: 2px 6px;
-      border-radius: 6px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.85);
-      min-width: 48px;
-      max-width: 105px;
+      padding: 3px 8px;
+      border-radius: 8px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.9);
+      min-width: 54px;
+      max-width: 130px;
       width: max-content;
       text-align: center;
       pointer-events: none;
       z-index: 1000;
       flex-direction: column;
       gap: 1px;
-      transition: all 0.15s ease;
+      transition: all 0.18s ease;
+      backdrop-filter: blur(4px);
     }
 
     .marker-label-chip.show-chip,
     .custom-spot-marker-wrap.active-marker .marker-label-chip,
     .custom-spot-marker-wrap:hover .marker-label-chip {
       display: flex !important;
-      transform: translateX(-50%) scale(1.02);
+      transform: translateX(-50%) translateY(-2px);
       border-color: var(--accent-blue);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
     }
     
     .chip-name-main {
-      font-size: 0.60rem;
+      font-size: 0.68rem;
       font-weight: 800;
       color: #f8fafc;
       line-height: 1.2;
@@ -873,7 +905,7 @@
       text-align: center;
     }
     .chip-name-sub {
-      font-size: 0.52rem;
+      font-size: 0.58rem;
       color: #94a3b8;
       line-height: 1.15;
       word-break: break-word;
@@ -883,52 +915,53 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 3px;
-      font-size: 0.54rem;
+      gap: 4px;
+      font-size: 0.58rem;
       font-weight: 700;
       margin-top: 1px;
     }
     .marker-label-elev { color: #86efac; }
-    .chip-clear-badge { color: #fde047; background: rgba(245, 158, 11, 0.2); padding: 0.5px 3px; border-radius: 2px; }
-    .marker-svg-icon { display: block; }
+    .chip-clear-badge { color: #fde047; background: rgba(245, 158, 11, 0.25); padding: 0.5px 4px; border-radius: 3px; }
+    .marker-svg-icon { display: block; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6)); }
 
-    /* 🖥️ PC 팝업창 규격 */
+    /* 🖥️ PC 전용 모던 대시보드형 팝업 인포윈도우 (시인성/직관성 극대화) */
     .compact-info-window {
-      padding: 12px 14px;
-      width: min(330px, calc(100vw - 32px)) !important;
-      max-width: min(330px, calc(100vw - 32px)) !important;
-      max-height: min(420px, 55dvh);
+      padding: 14px 16px;
+      width: 350px !important;
+      max-width: 350px !important;
+      max-height: 520px;
       overflow-y: auto !important;
       overflow-x: hidden !important;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 7px;
       line-height: 1.45;
       background: rgba(9, 12, 19, 0.98) !important;
       color: var(--text-primary);
-      border-radius: 14px !important;
-      border: 1px solid var(--border-titanium) !important;
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.85) !important;
+      border-radius: 16px !important;
+      border: 1.5px solid var(--border-titanium) !important;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.95), 0 0 1px 1px rgba(255,255,255,0.1) !important;
       word-break: break-word;
       z-index: var(--z-modal) !important;
       box-sizing: border-box !important;
+      backdrop-filter: blur(8px);
     }
     .compact-info-window::-webkit-scrollbar { width: 4px; }
     .compact-info-window::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
 
     .compact-reposition-window {
-      padding: 10px 12px !important;
-      width: 220px !important;
-      max-width: 220px !important;
+      padding: 12px 14px !important;
+      width: 240px !important;
+      max-width: 240px !important;
       background: rgba(9, 12, 19, 0.98) !important;
       color: var(--text-primary);
-      border-radius: 12px !important;
-      border: 1.4px solid var(--accent-blue) !important;
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.9) !important;
+      border-radius: 14px !important;
+      border: 1.5px solid var(--accent-blue) !important;
+      box-shadow: 0 14px 32px rgba(0, 0, 0, 0.9) !important;
       display: flex;
       flex-direction: column;
-      gap: 5px;
-      font-size: 0.74rem;
+      gap: 6px;
+      font-size: 0.76rem;
       z-index: var(--z-modal) !important;
     }
     .btn-save-location {
@@ -937,7 +970,7 @@
       color: #fff;
       font-weight: 800;
       border-radius: 6px;
-      padding: 5px 8px;
+      padding: 6px 10px;
       cursor: pointer;
       transition: all 0.15s;
     }
@@ -948,17 +981,17 @@
       align-items: center;
       justify-content: space-between;
       gap: 6px;
-      padding-right: 22px;
+      padding-right: 24px;
       position: relative;
       width: 100%;
     }
     .compact-title { 
-      font-size: 0.96rem; 
-      font-weight: 700; 
+      font-size: 1.02rem; 
+      font-weight: 800; 
       color: var(--accent-blue); 
       display: flex; 
       align-items: center; 
-      gap: 5px; 
+      gap: 6px; 
       flex-wrap: wrap; 
     }
     .sheet-close-btn {
@@ -966,30 +999,32 @@
       top: -2px; right: -2px;
       background: rgba(255,255,255,0.08);
       border: 1px solid var(--border);
-      width: 22px; height: 22px;
+      width: 24px; height: 24px;
       border-radius: 50%;
-      font-size: 11px;
+      font-size: 12px;
       cursor: pointer;
       font-weight: bold;
       color: #cbd5e1;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.15s ease;
     }
+    .sheet-close-btn:hover { background: var(--accent-rose); color: #ffffff; }
 
     /* ⛅ 실시간 기상 & 일몰 칩 바 */
     .spot-live-weather-bar {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       flex-wrap: wrap;
       margin: 2px 0;
     }
     .weather-chip {
-      font-size: 0.66rem;
+      font-size: 0.68rem;
       font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 5px;
+      padding: 3px 7px;
+      border-radius: 6px;
       display: inline-flex;
       align-items: center;
       gap: 3px;
@@ -1005,17 +1040,17 @@
     .user-personal-action-bar {
       display: flex;
       align-items: center;
-      gap: 5px;
-      margin: 3px 0;
+      gap: 6px;
+      margin: 4px 0;
     }
     .btn-user-action {
       flex: 1;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 0.7rem;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 0.74rem;
       font-weight: 700;
       cursor: pointer;
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-titanium);
       background: var(--bg-card);
       color: var(--text-secondary);
       display: inline-flex;
@@ -1024,13 +1059,14 @@
       gap: 4px;
       transition: all 0.15s ease;
     }
+    .btn-user-action:hover { background: var(--bg-card-hover); color: #fff; border-color: var(--accent-blue); }
     .btn-user-action.bookmarked {
-      background: rgba(245, 158, 11, 0.2);
+      background: rgba(245, 158, 11, 0.22);
       border-color: #f59e0b;
       color: #fde047;
     }
     .btn-user-action.visited {
-      background: rgba(2, 132, 199, 0.2);
+      background: rgba(2, 132, 199, 0.22);
       border-color: #38bdf8;
       color: #7dd3fc;
     }
@@ -1038,7 +1074,7 @@
     /* 🔒 들머리 잠금 */
     .locked-entry-wrap {
       position: relative;
-      margin-top: 3px;
+      margin-top: 4px;
       border-radius: 8px;
       overflow: hidden;
       min-height: 52px;
@@ -1062,31 +1098,31 @@
     .entry-lock-overlay {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(9, 12, 19, 0.75);
+      background: rgba(9, 12, 19, 0.8);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 5px 10px;
+      padding: 6px 12px;
       border-radius: 8px;
       border: 1px dashed rgba(244, 63, 94, 0.65);
       z-index: 10;
-      font-size: 0.7rem;
+      font-size: 0.72rem;
       font-weight: 700;
       color: #fecdd3;
-      line-height: 1.35;
+      line-height: 1.4;
       cursor: pointer;
       transition: all 0.2s;
     }
     .entry-lock-overlay:hover {
-      background: rgba(9, 12, 19, 0.88);
+      background: rgba(9, 12, 19, 0.92);
       border-color: var(--accent-rose);
     }
     .entry-lock-overlay.counting {
       border-color: #f59e0b;
       color: #fde047;
-      background: rgba(9, 12, 19, 0.92);
+      background: rgba(9, 12, 19, 0.94);
       cursor: default;
     }
     .unlock-progress-track {
@@ -1094,7 +1130,7 @@
       height: 3px;
       background: rgba(255, 255, 255, 0.15);
       border-radius: 2px;
-      margin-top: 3px;
+      margin-top: 4px;
       overflow: hidden;
       position: relative;
     }
@@ -1107,11 +1143,11 @@
 
     /* 🚗 들머리 & 주소복사 바 */
     .compact-entry-link {
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       color: #7dd3fc;
-      background: rgba(2, 132, 199, 0.15);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      padding: 6px 9px;
+      background: rgba(2, 132, 199, 0.16);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 7px 10px;
       border-radius: 8px;
       flex: 1;
       word-break: break-all;
@@ -1126,24 +1162,24 @@
     .compact-entry-link:hover { background: #0284c7; color: #ffffff !important; }
     .btn-copy-address {
       background: var(--bg-card);
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-titanium);
       color: var(--text-secondary);
       border-radius: 8px;
-      padding: 0 10px;
-      font-size: 0.74rem;
+      padding: 0 12px;
+      font-size: 0.76rem;
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
       transition: all 0.15s;
     }
-    .btn-copy-address:hover { background: var(--bg-card-hover); color: #fff; border-color: var(--border-titanium); }
+    .btn-copy-address:hover { background: var(--bg-card-hover); color: #fff; border-color: var(--accent-blue); }
 
     .entry-guide-chip {
-      font-size: 0.72rem;
+      font-size: 0.74rem;
       color: #fde047;
-      background: rgba(245, 158, 11, 0.12);
-      border: 1px solid rgba(245, 158, 11, 0.25);
-      padding: 3px 7px;
+      background: rgba(245, 158, 11, 0.14);
+      border: 1px solid rgba(245, 158, 11, 0.28);
+      padding: 4px 8px;
       border-radius: 6px;
       line-height: 1.4;
       word-break: keep-all;
@@ -1151,17 +1187,17 @@
     }
 
     .sheet-desc-box {
-      font-size: 0.82rem;
+      font-size: 0.84rem;
       font-weight: 500;
       color: #f1f5f9;
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid var(--border);
-      padding: 7px 9px;
+      padding: 8px 10px;
       border-radius: 8px;
       word-break: keep-all;
       white-space: pre-line;
       line-height: 1.45;
-      margin-top: 3px;
+      margin-top: 4px;
     }
 
     /* 🎬 액션 버튼 라인 */
@@ -1169,8 +1205,8 @@
       display: flex;
       flex-wrap: wrap;
       align-items: center;
-      gap: 4px;
-      margin-top: 4px;
+      gap: 5px;
+      margin-top: 5px;
       width: 100%;
     }
     .link-btn {
@@ -1179,40 +1215,42 @@
       justify-content: center;
       gap: 4px;
       text-decoration: none;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 0.68rem;
+      padding: 5px 10px;
+      border-radius: 7px;
+      font-size: 0.72rem;
       font-weight: 700;
       color: #ffffff !important;
       cursor: pointer;
       white-space: nowrap;
       line-height: 1.3;
       border: none;
+      transition: transform 0.15s ease;
     }
+    .link-btn:hover { transform: translateY(-1px); }
     .btn-yt { background: linear-gradient(135deg, #e11d48, #be123c); }
     .btn-blog { background: linear-gradient(135deg, #059669, #047857); }
     .btn-share-spot { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
     .btn-insta { 
       background: linear-gradient(45deg, #ea580c 0%, #e11d48 50%, #c026d3 100%);
-      font-size: 0.68rem;
-      padding: 4px 7px;
+      font-size: 0.72rem;
+      padding: 5px 8px;
       gap: 3px;
     }
-    .btn-insta svg { width: 10px; height: 10px; flex-shrink: 0; fill: #ffffff; }
+    .btn-insta svg { width: 11px; height: 11px; flex-shrink: 0; fill: #ffffff; }
 
     /* 🔒 나만의 비공개 메모장 */
     .user-private-memo-box {
       margin-top: 4px;
       background: rgba(255, 255, 255, 0.02);
-      border: 1px dashed rgba(255, 255, 255, 0.15);
-      border-radius: 6px;
-      padding: 5px 8px;
+      border: 1px dashed rgba(255, 255, 255, 0.16);
+      border-radius: 7px;
+      padding: 6px 9px;
       display: flex;
       flex-direction: column;
       gap: 3px;
     }
     .user-private-memo-header {
-      font-size: 0.68rem;
+      font-size: 0.7rem;
       font-weight: 700;
       color: var(--accent-teal);
       display: flex;
@@ -1223,46 +1261,46 @@
       width: 100%;
       background: var(--bg-deep);
       border: 1px solid var(--border);
-      border-radius: 4px;
+      border-radius: 5px;
       color: #ffffff;
-      font-size: 0.72rem;
-      padding: 4px 6px;
+      font-size: 0.74rem;
+      padding: 5px 7px;
       outline: none;
       resize: vertical;
-      min-height: 32px;
+      min-height: 34px;
     }
 
     /* 4줄 시그니처 경고문구 박스 */
     .app-disclaimer-box {
-      font-size: 0.66rem;
+      font-size: 0.68rem;
       color: #fca5a5;
       background: rgba(244, 63, 94, 0.08);
       border: 1px dashed rgba(244, 63, 94, 0.45);
-      padding: 6px 8px;
-      border-radius: 6px;
+      padding: 7px 9px;
+      border-radius: 7px;
       line-height: 1.45;
       margin-top: 5px;
       word-break: keep-all;
     }
 
     .comments-section {
-      margin-top: 5px;
+      margin-top: 6px;
       border-top: 1px dashed var(--border);
-      padding-top: 5px;
+      padding-top: 6px;
       width: 100%;
     }
     .comments-title {
-      font-size: 0.72rem;
+      font-size: 0.74rem;
       font-weight: 700;
       color: var(--text-secondary);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 3px;
+      margin-bottom: 4px;
     }
     .comments-list {
       list-style: none;
-      max-height: 60px;
+      max-height: 68px;
       overflow-y: auto;
       margin-bottom: 4px;
       display: flex;
@@ -1272,36 +1310,36 @@
     .comment-item {
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 4px 6px;
-      font-size: 0.68rem;
+      border-radius: 5px;
+      padding: 4px 7px;
+      font-size: 0.7rem;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       gap: 4px;
     }
     .comment-author { font-weight: 700; color: var(--accent-blue); white-space: nowrap; }
-    .comment-rating-stars { color: #f59e0b; font-size: 0.6rem; white-space: nowrap; }
+    .comment-rating-stars { color: #f59e0b; font-size: 0.62rem; white-space: nowrap; }
     .comment-text { color: var(--text-secondary); word-break: break-all; flex: 1; }
     
-    .comment-form { display: flex; flex-direction: column; gap: 3px; width: 100%; }
-    .comment-form-row { display: flex; gap: 3px; width: 100%; }
+    .comment-form { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+    .comment-form-row { display: flex; gap: 4px; width: 100%; }
     .comment-select-rating {
       flex: 1.2;
-      padding: 3px;
+      padding: 4px;
       border: 1px solid var(--border);
-      border-radius: 4px;
-      font-size: 0.68rem;
+      border-radius: 5px;
+      font-size: 0.7rem;
       background: var(--bg-deep);
       color: #fcd34d;
       font-weight: bold;
       outline: none;
     }
-    .comment-input-author { flex: 1; min-width: 46px; padding: 3px 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.68rem; outline: none; background: var(--bg-deep); color: #fff; }
-    .comment-input-text { flex: 1; padding: 3px 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 0.68rem; outline: none; background: var(--bg-deep); color: #fff; }
-    .comment-btn-submit { background: #0f766e; color: #ffffff; border: none; border-radius: 4px; padding: 3px 8px; font-size: 0.68rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .comment-input-author { flex: 1; min-width: 48px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 5px; font-size: 0.7rem; outline: none; background: var(--bg-deep); color: #fff; }
+    .comment-input-text { flex: 1; padding: 4px 6px; border: 1px solid var(--border); border-radius: 5px; font-size: 0.7rem; outline: none; background: var(--bg-deep); color: #fff; }
+    .comment-btn-submit { background: #0f766e; color: #ffffff; border: none; border-radius: 5px; padding: 4px 9px; font-size: 0.7rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
 
-    /* 📱 모바일 바텀시트 */
+    /* 📱 모바일 바텀시트 (기존 유지) */
     .mobile-bottom-sheet {
       display: none;
       position: fixed;
@@ -1354,7 +1392,7 @@
       box-sizing: border-box !important;
     }
 
-    /* 📱 모바일 하단 네비 독 */
+    /* 📱 모바일 하단 네비 독 (기존 유지) */
     .mobile-bottom-dock {
       display: none;
       position: fixed;
@@ -1392,18 +1430,18 @@
     /* 🍞 토스트 알림 */
     .app-toast {
       position: fixed;
-      top: 66px;
+      top: 68px;
       left: 50%;
       transform: translateX(-50%) translateY(-15px);
       background: rgba(14, 19, 29, 0.96);
-      border: 1px solid var(--border-titanium);
+      border: 1.5px solid var(--border-titanium);
       color: #ffffff;
-      padding: 7px 16px;
-      border-radius: 18px;
-      font-size: 0.78rem;
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 0.82rem;
       font-weight: 700;
       z-index: var(--z-toast);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.85);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.85);
       pointer-events: none;
       opacity: 0;
       transition: all 0.22s ease;
@@ -1469,40 +1507,40 @@
     .custom-modal {
       background: var(--bg-surface);
       color: var(--text-primary);
-      width: 420px;
+      width: 430px;
       max-width: calc(100vw - 24px);
       max-height: 88vh;
       overflow-y: auto;
-      border-radius: 14px;
+      border-radius: 16px;
       box-shadow: 0 20px 50px rgba(0,0,0,0.95);
-      padding: 15px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 9px;
-      border: 1px solid var(--border-titanium);
+      border: 1.5px solid var(--border-titanium);
     }
-    .custom-modal h3 { font-size: 0.94rem; color: var(--accent-blue); font-weight: 700; }
+    .custom-modal h3 { font-size: 0.96rem; color: var(--accent-blue); font-weight: 800; }
     .modal-field { display: flex; flex-direction: column; gap: 2px; }
-    .modal-field label { font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); }
+    .modal-field label { font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); }
     .modal-input {
       width: 100%;
-      padding: 6px 9px;
+      padding: 7px 10px;
       border: 1px solid var(--border);
-      border-radius: 5px;
-      font-size: 0.8rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
       outline: none;
       background: var(--bg-deep);
       color: #ffffff;
     }
-    .modal-textarea { resize: vertical; min-height: 44px; line-height: 1.35; }
+    .modal-textarea { resize: vertical; min-height: 46px; line-height: 1.35; }
     .modal-input:focus { border-color: var(--accent-blue); }
     
     .checkbox-group { display: flex; flex-wrap: wrap; gap: 5px 10px; font-size: 0.76rem; color: var(--text-secondary); font-weight: 600; }
     .checkbox-group label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
-    .select-diff { padding: 5px 7px; border-radius: 5px; border: 1px solid var(--border); font-size: 0.76rem; color: var(--text-primary); outline: none; background: var(--bg-deep); }
+    .select-diff { padding: 6px 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.78rem; color: var(--text-primary); outline: none; background: var(--bg-deep); }
     
-    .modal-btn-row { display: flex; justify-content: flex-end; gap: 7px; margin-top: 4px; }
-    .modal-btn { padding: 6px 12px; border-radius: 5px; font-size: 0.76rem; font-weight: 700; cursor: pointer; border: none; }
+    .modal-btn-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 5px; }
+    .modal-btn { padding: 7px 14px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: none; }
     .modal-btn-cancel { background: var(--bg-card); color: var(--text-secondary); }
     .modal-btn-save { background: #0f766e; color: #ffffff; }
 
@@ -1603,7 +1641,7 @@
       <div class="sidebar-header">
         <div class="sidebar-header-left">
           <span>📍 박지 목록</span>
-          <span id="spotCount" style="color: var(--accent-blue); font-size: 0.76rem; font-weight: 800;">0개</span>
+          <span id="spotCount" style="color: var(--accent-blue); font-size: 0.78rem; font-weight: 800;">0개</span>
           <!-- 🔑 숨은 관리자 트리거: 7회 탭 -->
           <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagAdminClick()">4.5ver Pro</span>
         </div>
@@ -1723,7 +1761,7 @@
         </h3>
       </div>
       
-      <p style="font-size:0.72rem; color:#fde047; line-height:1.4; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); padding:6px 8px; border-radius:6px;">
+      <p style="font-size:0.74rem; color:#fde047; line-height:1.4; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); padding:6px 8px; border-radius:6px;">
         ⚠️ <strong>박지 보존을 위한 필수 실천</strong>: 자연을 훼손하지 않는 성숙한 백패킹 문화가 소중한 박지 폐쇄를 막습니다.
       </p>
 
@@ -1772,7 +1810,7 @@
   <div class="custom-modal-overlay" id="customModalOverlay">
     <div class="custom-modal">
       <h3 id="modalTitle">📍 박지 제보 / 추천 등록</h3>
-      <p id="modalNotice" style="font-size:0.72rem; color:#fde047; line-height:1.4;">
+      <p id="modalNotice" style="font-size:0.74rem; color:#fde047; line-height:1.4;">
         🎒 멋진 백패킹 박지를 제보해주세요! 작성해주신 정보는 <strong>관리자 확인 및 승인 후 정식 등록</strong>됩니다.
       </p>
       
@@ -1785,7 +1823,7 @@
         <label>2. 박지 핀 위치 (지도에서 직접 콕 찍기)</label>
         <div style="display: flex; gap: 6px; align-items: center;">
           <input type="text" id="modalInputCoordsDisplay" class="modal-input" style="flex:1;" placeholder="위치 미지정 (아래 버튼으로 선택)" readonly />
-          <button type="button" class="modal-btn" style="background: #0284c7; color:#fff; font-weight:700; white-space:nowrap; padding:5px 9px;" onclick="startPinPicking()">📍 콕 찍기</button>
+          <button type="button" class="modal-btn" style="background: #0284c7; color:#fff; font-weight:700; white-space:nowrap; padding:6px 10px;" onclick="startPinPicking()">📍 콕 찍기</button>
         </div>
       </div>
 
@@ -1798,7 +1836,7 @@
         <label>4. 고도 / 해발 (자동 측정 또는 직접 입력)</label>
         <div style="display: flex; gap: 6px;">
           <input type="text" id="modalInputElevation" class="modal-input" style="flex:1;" placeholder="예: 385m (해변은 5m 등)" />
-          <button type="button" class="modal-btn" style="background:var(--bg-card); color:#fff; padding:5px 9px;" onclick="fetchElevationForModal()">⛰️ 측정</button>
+          <button type="button" class="modal-btn" style="background:var(--bg-card); color:#fff; padding:6px 10px;" onclick="fetchElevationForModal()">⛰️ 측정</button>
         </div>
       </div>
 
@@ -1833,7 +1871,7 @@
           </select>
         </div>
 
-        <div class="modal-field" style="width: 105px;">
+        <div class="modal-field" style="width: 110px;">
           <label>8. 편도 거리(km)</label>
           <input type="text" id="modalInputDistance" class="modal-input" placeholder="예: 2.5" />
         </div>
@@ -2262,9 +2300,9 @@
               map: map,
               icon: {
                 content: `
-                  <div style="width:20px; height:20px; border-radius:50%; background:#0284c7; border:3px solid #ffffff; box-shadow:0 0 14px rgba(2,132,199,0.9);"></div>
+                  <div style="width:22px; height:22px; border-radius:50%; background:#0284c7; border:3px solid #ffffff; box-shadow:0 0 16px rgba(2,132,199,0.9);"></div>
                 `,
-                anchor: new naver.maps.Point(10, 10)
+                anchor: new naver.maps.Point(11, 11)
               },
               zIndex: 99999
             });
@@ -2283,6 +2321,7 @@
       );
     }
 
+    /* 🎯 마커 아이콘 생성 (PC 활성 시 라벨 상시 노출 및 선명도 향상) */
     function createCustomMarkerIcon(spot, isDetailed = false) {
       const isMobile = window.innerWidth <= 768;
       const d = parseInt(spot.difficulty, 10) || 3;
@@ -2294,16 +2333,16 @@
       if (!isDetailed && !isActive) {
         return {
           content: `
-            <div style="position:relative; width:11px; height:11px; border-radius:50%; background:${color}; border:2px solid #ffffff; box-shadow:0 0 8px ${color}, 0 0 4px rgba(0,0,0,0.8); cursor:pointer; pointer-events:auto; transition:transform 0.15s ease;">
+            <div style="position:relative; width:12px; height:12px; border-radius:50%; background:${color}; border:2px solid #ffffff; box-shadow:0 0 8px ${color}, 0 0 4px rgba(0,0,0,0.8); cursor:pointer; pointer-events:auto; transition:transform 0.15s ease;">
               ${isDone ? `<div style="position:absolute; top:-3px; right:-3px; width:4px; height:4px; border-radius:50%; background:#fde047; border:1px solid #000;"></div>` : ''}
             </div>
           `,
-          anchor: new naver.maps.Point(5.5, 5.5)
+          anchor: new naver.maps.Point(6, 6)
         };
       }
 
-      const pinWidth = isMobile ? 30 : 34;
-      const pinHeight = isMobile ? 38 : 42;
+      const pinWidth = isMobile ? 30 : 36;
+      const pinHeight = isMobile ? 38 : 44;
 
       return {
         content: `
@@ -2716,6 +2755,7 @@
       document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
     }
 
+    /* 🗺️ 부드러운 카메라 중심 이동 (PC: 마커 위치를 중심에 완벽 정렬) */
     function smoothCenterMapOnSpot(lat, lng, keepCurrentZoom = true) {
       if (!map) return;
       const isMobile = window.innerWidth <= 768;
@@ -2813,6 +2853,7 @@
       updateLODMarkers();
     }
 
+    /* 🎯 박지 포커스 (PC: 사이드바 및 마커 클릭 시 마커 라벨 상시 노출 & 대시보드 팝업 오픈) */
     function focusSpotOnMap(spot, keepZoom = false) {
       incrementSpotCount(spot.id);
       
@@ -2860,7 +2901,7 @@
       } else {
         closeMobileBottomSheet();
         if (infoWindow && map) {
-          infoWindow.setOptions({ pixelOffset: new naver.maps.Point(0, -10) });
+          infoWindow.setOptions({ pixelOffset: new naver.maps.Point(0, -12) });
           infoWindow.setContent(`
             <div class="compact-info-window" id="pcInfoWindowCard" style="position: relative;">
               ${generateDetailContentHtml(spot, false)}
@@ -2904,7 +2945,7 @@
         curEl.classList.add('counting');
         const progressPct = ((7 - cnt) / 7) * 100;
         curEl.innerHTML = `
-          <div style="display:flex; flex-direction:column; align-items:center; width:100%; gap:3px;">
+          <div style="display:flex; flex-direction:column; align-items:center; width:100%; gap:4px;">
             <span>⏳ 감사 인사 확인 중... <strong>${cnt}초</strong> 뒤 서약창이 열립니다</span>
             <div class="unlock-progress-track">
               <div class="unlock-progress-fill" style="width: ${progressPct}%;"></div>
@@ -3041,7 +3082,7 @@
           <div class="sheet-title-row">
             <div class="compact-title">
               <span>${escapeHtml(spot.name)}</span>
-              ${spot.elevation ? '<span style="font-size:0.74rem; color:#86efac;">(' + escapeHtml(spot.elevation) + ')</span>' : ''}
+              ${spot.elevation ? '<span style="font-size:0.76rem; color:#86efac; font-weight:normal;">(' + escapeHtml(spot.elevation) + ')</span>' : ''}
               ${getSpotStatusBadges(spot)}
             </div>
             ${closeBtn}
@@ -3077,7 +3118,7 @@
             </div>
             ${!isUnlocked ? `
               <div class="entry-lock-overlay" id="entryLockOverlay_${spot.id}" onclick="triggerSpotUnlock('${spot.id}', '${ytList[0] ? escapeHtml(cleanYouTubeUrl(ytList[0].trim())) : instaLink}')">
-                <span>🔒 등록자 분께 감사 인사를 전해 보세요.<br>YouTube나 등록자 링크를 누르면 <strong style="color: #fde047; font-size: 0.8rem; font-weight: 800; text-decoration: underline; text-underline-offset: 3px;">들머리 주소</strong>가 열립니다</span>
+                <span>🔒 등록자 분께 감사 인사를 전해 보세요.<br>YouTube나 등록자 링크를 누르면 <strong style="color: #fde047; font-size: 0.82rem; font-weight: 800; text-decoration: underline; text-underline-offset: 3px;">들머리 주소</strong>가 열립니다</span>
               </div>
             ` : ''}
           </div>
@@ -3097,8 +3138,8 @@
 
           <div class="user-private-memo-box">
             <div class="user-private-memo-header">
-              <span>🔒 나만의 비밀 메모 (내 폰에만 저장)</span>
-              <button type="button" style="background:none; border:none; color:var(--accent-blue); font-size:0.68rem; font-weight:700; cursor:pointer;" onclick="saveUserPrivateMemo('${spot.id}', document.getElementById('privateMemoInput_${spot.id}').value)">저장</button>
+              <span>🔒 나만의 비밀 메모 (내 폰/PC에만 저장)</span>
+              <button type="button" style="background:none; border:none; color:var(--accent-blue); font-size:0.72rem; font-weight:700; cursor:pointer;" onclick="saveUserPrivateMemo('${spot.id}', document.getElementById('privateMemoInput_${spot.id}').value)">저장</button>
             </div>
             <textarea id="privateMemoInput_${spot.id}" class="user-private-memo-input" placeholder="예: 3번 데크가 명당, 모기향 필수..." rows="1">${escapeHtml(memoText)}</textarea>
           </div>
@@ -3355,7 +3396,7 @@
     function getCommentsHtml(spotId) {
       const cList = spotComments[spotId] || [];
       let listHtml = cList.length === 0 
-        ? '<li style="color:var(--text-muted); font-size:0.66rem;">첫 평점과 후기를 남겨보세요!</li>'
+        ? '<li style="color:var(--text-muted); font-size:0.68rem;">첫 평점과 후기를 남겨보세요!</li>'
         : cList.map(c => {
             let safeRating = Number(c.rating) || 5;
             if (safeRating > 5) safeRating = 5;
@@ -3549,9 +3590,11 @@
 
             marker.spotData = spot;
 
-            naver.maps.Event.addListener(marker, 'mouseover', () => marker.setZIndex(999999));
+            naver.maps.Event.addListener(marker, 'mouseover', () => {
+              marker.setZIndex(999999);
+            });
             naver.maps.Event.addListener(marker, 'mouseout', () => {
-              if (currentActiveSpot?.id !== spot.id) marker.setZIndex(100);
+              if (!currentActiveSpot || currentActiveSpot.id !== spot.id) marker.setZIndex(100);
             });
 
             let markerDragStartPos = null;
@@ -3559,7 +3602,7 @@
               markerDragStartPos = marker.getPosition();
             });
 
-            // 🎯 마커 드래그 감도 보정 (실제 30m 이상 이동했을 때만 좌표 변경 팝업 표시)
+            // 🎯 마커 드래그 감도 보정 (30m 이상 이동했을 때만 좌표 변경 팝업 표시)
             naver.maps.Event.addListener(marker, 'dragend', () => {
               if (!isAdminMode) return;
               const movedLatLng = marker.getPosition();
@@ -3577,13 +3620,13 @@
               const newLng = parseFloat(movedLatLng.lng().toFixed(6));
 
               if (infoWindow) {
-                infoWindow.setOptions({ pixelOffset: new naver.maps.Point(0, -10) });
+                infoWindow.setOptions({ pixelOffset: new naver.maps.Point(0, -12) });
                 infoWindow.setContent(`
                   <div class="compact-reposition-window">
-                    <div style="font-size:0.78rem; font-weight:800; color:var(--accent-blue);">📍 '${escapeHtml(spot.name)}'</div>
-                    <div style="font-size:0.68rem; color:#f87171; font-weight:bold;">새 좌표로 박지 위치를 이동할까요?</div>
-                    <div class="spot-coords-text" style="font-size:0.66rem; padding:3px 5px;">위도: ${newLat}<br>경도: ${newLng}</div>
-                    <div style="display:flex; gap:4px; margin-top:3px;">
+                    <div style="font-size:0.82rem; font-weight:800; color:var(--accent-blue);">📍 '${escapeHtml(spot.name)}'</div>
+                    <div style="font-size:0.72rem; color:#f87171; font-weight:bold;">새 좌표로 박지 위치를 이동할까요?</div>
+                    <div class="spot-coords-text" style="font-size:0.68rem; padding:3px 6px;">위도: ${newLat}<br>경도: ${newLng}</div>
+                    <div style="display:flex; gap:5px; margin-top:4px;">
                       <button type="button" class="btn-save-location" style="flex:1;" onclick="saveUpdatedLocation('${spot.id}', ${newLat}, ${newLng})">💾 저장</button>
                       <button type="button" class="btn-save-location" style="background:#334155; border-color:#64748b; flex:1;" onclick="closeAllPopups(); renderSpots();">취소</button>
                     </div>
@@ -3696,7 +3739,7 @@
       // 🔑 관리자 모드: 최신순 통합 검수 뷰
       if (isAdminMode) {
         const adminHeaderDiv = document.createElement('div');
-        adminHeaderDiv.style.cssText = "padding:7px 12px; background:rgba(16,185,129,0.15); border-bottom:1px solid rgba(16,185,129,0.3); font-size:0.75rem; color:#6ee7b7; font-weight:bold;";
+        adminHeaderDiv.style.cssText = "padding:8px 14px; background:rgba(16,185,129,0.15); border-bottom:1px solid rgba(16,185,129,0.3); font-size:0.78rem; color:#6ee7b7; font-weight:bold;";
         adminHeaderDiv.innerText = `⚡ [관리자 검수] 최신 등록순 목록 (${visibleCount}개)`;
         fragment.appendChild(adminHeaderDiv);
 
@@ -3715,7 +3758,7 @@
 
           const groupTitle = document.createElement('div');
           groupTitle.className = 'region-group-title';
-          groupTitle.innerHTML = `<span>📌 ${regionKey}</span><span style="color:var(--text-muted); font-size:0.72rem;">${items.length}개 ${shouldBeOpen ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}</span>`;
+          groupTitle.innerHTML = `<span>📌 ${regionKey}</span><span style="color:var(--text-muted); font-size:0.74rem;">${items.length}개 ${shouldBeOpen ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}</span>`;
           if (shouldBeOpen) groupTitle.style.borderLeftColor = '#0f766e';
 
           const groupItemsContainer = document.createElement('div');
@@ -3745,6 +3788,7 @@
       updateSmartResetButtons();
     }
 
+    /* 🖥️ PC 마우스 호버 연동 기능 추가 */
     function createSpotCardElement(spot) {
       const firstLineDesc = (spot.desc || '').split('\n')[0].trim();
       const { navAddress } = parseEntryPoint(spot.entryPoint);
@@ -3758,7 +3802,7 @@
         <div class="spot-header-row">
           <div class="spot-name-wrapper">
             <span class="spot-name">${escapeHtml(spot.name)}</span>
-            ${spot.elevation ? `<span style="font-size:0.7rem; color:#86efac; font-weight:normal;">(${escapeHtml(spot.elevation)})</span>` : ''}
+            ${spot.elevation ? `<span style="font-size:0.74rem; color:#86efac; font-weight:normal;">(${escapeHtml(spot.elevation)})</span>` : ''}
             ${getSpotStatusBadges(spot)}
           </div>
         </div>
@@ -3775,7 +3819,7 @@
         </div>
 
         ${getMetaBadgesHtml(spot)}
-        <div style="font-size:0.7rem; color:#7dd3fc; margin-top:2px;">🚗 ${escapeHtml(navAddress || spot.entryPoint)}</div>
+        <div style="font-size:0.72rem; color:#7dd3fc; margin-top:2px;">🚗 ${escapeHtml(navAddress || spot.entryPoint)}</div>
         ${firstLineDesc ? `<div class="spot-desc-single" title="${escapeHtml(spot.desc)}">📝 ${escapeHtml(firstLineDesc)}</div>` : ''}
       `;
 
@@ -3786,6 +3830,20 @@
           updateDockSidebarText(false);
         }
         focusSpotOnMap(spot, false);
+      });
+
+      // 💻 PC 마우스 오버 시 마커 임시 강조
+      li.addEventListener('mouseenter', () => {
+        if (window.innerWidth > 768 && (!currentActiveSpot || currentActiveSpot.id !== spot.id)) {
+          const marker = spotMarkerMap.get(String(spot.id));
+          if (marker) marker.setZIndex(999990);
+        }
+      });
+      li.addEventListener('mouseleave', () => {
+        if (window.innerWidth > 768 && (!currentActiveSpot || currentActiveSpot.id !== spot.id)) {
+          const marker = spotMarkerMap.get(String(spot.id));
+          if (marker) marker.setZIndex(100);
+        }
       });
 
       return li;
@@ -3946,7 +4004,6 @@
         return;
       }
 
-      // 지도 빈 곳 클릭 시 모든 팝업 및 이동 확인창 닫기
       closeAllPopups();
     }
 
@@ -4276,8 +4333,8 @@
         li.className = 'dropdown-item';
         li.innerHTML = `
           <div style="flex:1; padding-right:8px;">
-            <div style="font-weight:700; color:${res.isInternal ? 'var(--accent-blue)' : '#fff'}; font-size:0.82rem;">${escapeHtml(res.title)}</div>
-            <div style="font-size:0.7rem; color:var(--text-muted);">${escapeHtml(res.sub)}</div>
+            <div style="font-weight:700; color:${res.isInternal ? 'var(--accent-blue)' : '#fff'}; font-size:0.84rem;">${escapeHtml(res.title)}</div>
+            <div style="font-size:0.72rem; color:var(--text-muted);">${escapeHtml(res.sub)}</div>
           </div>
           ${(isAdminMode && !res.isInternal) ? `<button class="btn-quick-add" style="display:inline-block;" onclick="event.stopPropagation(); quickAddFromSearch('${escapeHtml(res.title)}', ${res.lat}, ${res.lng}, '${escapeHtml(res.sub)}')">➕ 등록</button>` : ''}
         `;
