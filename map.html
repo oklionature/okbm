@@ -12,6 +12,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <!-- Kakao Maps JS SDK: 공식 가이드(autoload=false + kakao.maps.load) -->
+  <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=557f5de0f6391a2419bc5592e6a9c9c1&libraries=services,clusterer&autoload=false"></script>
   <style>
     :root {
       --bg-deep: #030508; --bg-surface: #090c13; --bg-card: #0e131d; --bg-card-hover: #151c2a;
@@ -703,32 +705,14 @@
       if (text) text.innerText = isOpen ? '닫기' : '필터';
     }
 
-    /* 카카오맵 SDK 동적 안전 로더 (먹통 방지 100% 보장) */
-    function loadKakaoSdkDynamically(callback) {
-      if (typeof kakao !== 'undefined' && kakao.maps && kakao.maps.load) {
-        kakao.maps.load(callback);
-        return;
-      }
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&libraries=services,clusterer&autoload=false`;
-      script.onload = () => {
-        if (window.kakao && window.kakao.maps) {
-          window.kakao.maps.load(callback);
-        }
-      };
-      script.onerror = () => {
-        console.error('카카오맵 SDK 로드 실패. 카카오 콘솔 활성화 설정을 확인해주세요.');
-        showToast('⚠️ 카카오맵 인증 오류: [제품 설정 ➔ 카카오맵 ON] 확인 필요', 4000);
-      };
-      document.head.appendChild(script);
-    }
-
     function initMapEngine() {
-      loadKakaoSdkDynamically(() => {
+      if (!window.kakao || !kakao.maps || typeof kakao.maps.load !== 'function') return;
+      if (map) return;
+
+      kakao.maps.load(function () {
         const container = document.getElementById('map');
-        if (!container) return;
-        const options = {
+        if (!container || map) return;
+         const options = {
           center: new kakao.maps.LatLng(DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng),
           level: DEFAULT_MAP_LEVEL
         };
