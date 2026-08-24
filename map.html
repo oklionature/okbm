@@ -1,11 +1,12 @@
 
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <title>대한민국 낭만 백패킹 로드 | 전국 지도 (4.5ver Pro Master)</title>
+  <title>대한민국 낭만 백패킹 로드 | 전국 지도 (4.5ver Pro Ultimate Master)</title>
 
   <!-- 웹폰트: Pretendard + Gmarket Sans + Caveat -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
@@ -77,10 +78,10 @@
       letter-spacing: -0.02em;
     }
     
-    /* 🧭 공통 인라인 SVG 아이콘 클래스 */
+    /* 🧭 공통 인라인 SVG 아이콘 */
     .ui-icon {
-      width: 13px;
-      height: 13px;
+      width: 14px;
+      height: 14px;
       display: inline-block;
       vertical-align: -1.5px;
       margin-right: 3px;
@@ -511,42 +512,43 @@
       text-align: center;
     }
 
-    /* 🏷️ 2-Tier 스마트 세그먼트 필터 바 */
+    /* 🏷️ [2-Tier 스마트 세그먼트 필터 바 - 20% 스케일업 & 정렬] */
     .filter-wrapper {
       background: var(--bg-deep);
       border-bottom: 1px solid var(--border-titanium);
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      padding: 8px 10px;
+      gap: 8px;
+      padding: 10px 12px;
       flex-shrink: 0;
       z-index: 10;
       width: 100%;
     }
     
-    /* 1단: 마스터 탭 */
+    /* 1단: 마스터 탭 (지역별 ➔ 지형별 ➔ 코스별 ➔ 마이보관) */
     .master-tab-bar {
       display: flex;
       background: rgba(255, 255, 255, 0.04);
-      border-radius: 10px;
-      padding: 2px;
-      gap: 3px;
+      border-radius: 12px;
+      padding: 3px;
+      gap: 4px;
       width: 100%;
     }
     .master-tab-btn {
       flex: 1;
-      padding: 6px 4px;
+      padding: 8px 4px;
+      min-height: 38px;
       border: none;
-      border-radius: 8px;
+      border-radius: 9px;
       background: transparent;
       color: var(--text-muted);
-      font-size: 0.72rem;
+      font-size: 0.82rem;
       font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 3px;
+      gap: 4px;
       transition: all 0.18s ease;
       white-space: nowrap;
     }
@@ -554,7 +556,7 @@
     .master-tab-btn.active {
       background: var(--bg-card);
       color: var(--accent-blue);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
       border: 1px solid var(--border-titanium);
     }
 
@@ -562,7 +564,7 @@
     .sub-chips-bar {
       display: flex;
       overflow-x: auto;
-      gap: 4px;
+      gap: 6px;
       align-items: center;
       padding: 2px 0;
       -webkit-overflow-scrolling: touch;
@@ -572,12 +574,13 @@
     .sub-chips-bar::-webkit-scrollbar { display: none; }
 
     .filter-chip {
-      padding: 4px 10px;
-      border-radius: 12px;
+      padding: 6px 12px;
+      min-height: 32px;
+      border-radius: 14px;
       border: 1px solid var(--border);
       background: var(--bg-card);
       color: var(--text-secondary);
-      font-size: 0.72rem;
+      font-size: 0.78rem;
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
@@ -585,19 +588,19 @@
       transition: all 0.15s ease;
       display: inline-flex;
       align-items: center;
-      gap: 3px;
+      gap: 4px;
     }
     .filter-chip:hover { background: var(--bg-card-hover); color: #ffffff; border-color: var(--border-titanium); }
     .filter-chip.active {
       background: #0284c7;
       color: #ffffff;
       border-color: var(--accent-blue);
-      box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.45);
     }
     .filter-chip.chip-status.active {
       background: #0d9488;
       border-color: #2dd4bf;
-      box-shadow: 0 0 8px rgba(45, 212, 191, 0.4);
+      box-shadow: 0 0 10px rgba(45, 212, 191, 0.45);
     }
 
     .spot-list { 
@@ -633,14 +636,14 @@
 
     /* 박지 카드 */
     .spot-item {
-      padding: 11px 14px;
+      padding: 12px 14px;
       border-bottom: 1px solid var(--border-subtle);
       border-left: 3px solid transparent;
       cursor: pointer;
       position: relative;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 6px;
       background: var(--bg-surface);
       transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
       width: 100%;
@@ -852,49 +855,57 @@
       cursor: pointer;
     }
 
-    /* ⛺ [오로라 네온 & 텐트 일원화] 프리미엄 글래스모피즘 클러스터 뱃지 */
+    /* ⛺ [대형 발광 텐트 네뷸라 클러스터] - 55% 반투명 프로스트 글래스 + 방사형 글로우 */
     .custom-cluster-badge {
       position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-weight: 800;
+      border-radius: 24px;
+      cursor: pointer;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+      will-change: transform;
+      box-sizing: border-box;
+      user-select: none;
+      padding: 4px 6px;
+    }
+    .custom-cluster-badge:hover { transform: scale(1.14); }
+    
+    /* 2~5개: 소프트 에메랄드 쉼터 (52x40px) */
+    .cluster-step-small {
+      min-width: 52px; height: 40px;
+      background: rgba(13, 148, 136, 0.55);
+      border: 1.5px solid rgba(45, 212, 191, 0.75);
+      box-shadow: 0 0 24px rgba(45, 212, 191, 0.5), 0 8px 24px rgba(0,0,0,0.6);
+    }
+    /* 6~19개: 일렉트릭 딥블루 인기명소 (60x44px) */
+    .cluster-step-medium {
+      min-width: 60px; height: 44px;
+      background: rgba(2, 132, 199, 0.58);
+      border: 1.8px solid rgba(56, 189, 248, 0.85);
+      box-shadow: 0 0 28px rgba(56, 189, 248, 0.6), 0 10px 28px rgba(0,0,0,0.7);
+    }
+    /* 20개+: 코스믹 오로라 바이올렛 백패킹 성지 (68x48px) */
+    .cluster-step-large {
+      min-width: 68px; height: 48px;
+      background: linear-gradient(135deg, rgba(147, 51, 234, 0.6), rgba(79, 70, 229, 0.6));
+      border: 2px solid rgba(192, 132, 252, 0.9);
+      box-shadow: 0 0 32px rgba(168, 85, 247, 0.75), 0 12px 32px rgba(0,0,0,0.8);
+    }
+    
+    .cluster-inner-row {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 4px;
-      color: #ffffff;
-      font-weight: 800;
-      border-radius: 20px;
-      cursor: pointer;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
-      will-change: transform;
-      box-sizing: border-box;
-      user-select: none;
     }
-    .custom-cluster-badge:hover { transform: scale(1.12); }
-    
-    /* 2~5개: 에메랄드 (한적한 쉼터) */
-    .cluster-step-small {
-      width: 46px; height: 32px;
-      background: rgba(13, 148, 136, 0.78);
-      border: 1.5px solid #2dd4bf;
-      box-shadow: 0 4px 16px rgba(45, 212, 191, 0.45);
-    }
-    /* 6~19개: 스카이블루 (인기 명소) */
-    .cluster-step-medium {
-      width: 54px; height: 36px;
-      background: rgba(2, 132, 199, 0.82);
-      border: 1.8px solid #38bdf8;
-      box-shadow: 0 6px 20px rgba(56, 189, 248, 0.55);
-    }
-    /* 20개+: 오로라 바이올렛 (백패킹 성지) */
-    .cluster-step-large {
-      width: 62px; height: 38px;
-      background: linear-gradient(135deg, rgba(147, 51, 234, 0.85), rgba(79, 70, 229, 0.85));
-      border: 2px solid #c084fc;
-      box-shadow: 0 6px 24px rgba(168, 85, 247, 0.65);
-    }
-    .cluster-tent-icon { width: 14px; height: 14px; fill: #ffffff; }
-    .cluster-count { font-family: var(--font-display); font-size: 0.82rem; font-weight: 800; line-height: 1; }
+    .cluster-tent-icon { width: 15px; height: 15px; fill: #ffffff; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+    .cluster-count { font-family: var(--font-display); font-size: 0.86rem; font-weight: 800; line-height: 1; text-shadow: 0 2px 6px rgba(0,0,0,0.8); }
 
     /* 📍 마커 래퍼 & 스마트 칩 */
     .custom-spot-marker-wrap {
@@ -1020,12 +1031,12 @@
     }
     .btn-save-location:hover { background: #115e59; }
 
-    /* 👑 정보창 1열 헤더 (관리자 수정/삭제 버튼 통합) */
+    /* 👑 정보창 1열 헤더 (관리자 수정/삭제 버튼 통합 및 겹침 방지 레이아웃) */
     .sheet-title-row {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
-      gap: 6px;
+      gap: 8px;
       position: relative;
       width: 100%;
     }
@@ -1038,6 +1049,7 @@
       gap: 6px; 
       flex-wrap: wrap; 
       flex: 1;
+      min-width: 0;
     }
     .sheet-top-actions {
       display: flex;
@@ -1618,7 +1630,7 @@
       <!-- 💻 PC 우측 툴바 -->
       <div class="header-right pc-only">
         <div class="pc-search-container clean-hide">
-          <input type="text" id="pcSearchInput" class="search-input" placeholder="산/계곡/섬/해변/봉우리 검색..." autocomplete="off" onfocus="showTopRankings('pc')" oninput="handleSearchInputChange('pc')" onkeyup="handleSearchInput(event, 'pc')" />
+          <input type="text" id="pcSearchInput" class="search-input" placeholder="산/계곡/섬/해변/봉우리/코스/지형 검색..." autocomplete="off" onfocus="showTopRankings('pc')" oninput="handleSearchInputChange('pc')" onkeyup="handleSearchInput(event, 'pc')" />
           <button type="button" id="pcSearchClearBtn" class="search-clear-btn" onclick="clearSearchInput('pc', true)" title="검색어 지우기">✕</button>
           <button type="button" class="search-btn-icon" onclick="executeSearch('pc')">
             <svg viewBox="0 0 24 24" class="ui-icon" style="width:16px; height:16px; margin:0;"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="currentColor" stroke-width="2.2" fill="none"/></svg>
@@ -1640,7 +1652,7 @@
   <!-- 📱 모바일 상단 검색 독 -->
   <div class="mobile-top-search-dock mobile-only clean-hide">
     <div class="mobile-search-inner">
-      <input type="text" id="mobileSearchInput" class="mobile-search-input" placeholder="산, 섬, 해변, 계곡, 박지 검색..." autocomplete="off" onfocus="showTopRankings('mobile')" oninput="handleSearchInputChange('mobile')" onkeyup="handleSearchInput(event, 'mobile')" />
+      <input type="text" id="mobileSearchInput" class="mobile-search-input" placeholder="산, 섬, 해변, 계곡, 박지, 코스 검색..." autocomplete="off" onfocus="showTopRankings('mobile')" oninput="handleSearchInputChange('mobile')" onkeyup="handleSearchInput(event, 'mobile')" />
       <button type="button" id="mobileSearchClearBtn" class="search-clear-btn mobile-search-clear-btn" onclick="clearSearchInput('mobile', true)">✕</button>
       <button type="button" class="mobile-search-btn" onclick="executeSearch('mobile')">
         <svg viewBox="0 0 24 24" class="ui-icon" style="width:16px; height:16px; margin:0;"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke="currentColor" stroke-width="2.2" fill="none"/></svg>
@@ -1679,7 +1691,7 @@
         <input type="file" id="importFileInput" style="display:none" accept=".json" onchange="importDataBackup(event)" />
       </div>
       
-      <!-- 🏷️ [2-Tier 스마트 필터 바] 지역별 ➔ 코스/테마 ➔ 지형별 ➔ 마이보관 -->
+      <!-- 🏷️ [2-Tier 스마트 필터 바 - 20% 스케일업: 지역별 ➔ 지형별 ➔ 코스별 ➔ 마이보관] -->
       <div class="filter-wrapper">
         <!-- 1단 마스터 세그먼트 탭 -->
         <div class="master-tab-bar" id="masterTabBar">
@@ -1687,13 +1699,13 @@
             <svg viewBox="0 0 24 24" class="ui-icon"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="currentColor"/></svg>
             <span>지역별</span>
           </button>
-          <button type="button" class="master-tab-btn" onclick="switchMasterTab('COURSE')">
-            <svg viewBox="0 0 24 24" class="ui-icon"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor"/></svg>
-            <span>코스/테마</span>
-          </button>
           <button type="button" class="master-tab-btn" onclick="switchMasterTab('TERRAIN')">
             <svg viewBox="0 0 24 24" class="ui-icon"><path d="M14 6l6 12H4l5-8 3 4 2-8z" fill="currentColor"/></svg>
             <span>지형별</span>
+          </button>
+          <button type="button" class="master-tab-btn" onclick="switchMasterTab('COURSE')">
+            <svg viewBox="0 0 24 24" class="ui-icon"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor"/></svg>
+            <span>코스별</span>
           </button>
           <button type="button" class="master-tab-btn" onclick="switchMasterTab('MY')">
             <svg viewBox="0 0 24 24" class="ui-icon"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="currentColor"/></svg>
@@ -1844,7 +1856,7 @@
       </div>
 
       <div class="modal-field">
-        <label>7. 지형 형태 (다중 선택 가능)</label>
+        <label>7. 지형 형태 (다중 선택 가능 - 복합 지형 지원)</label>
         <div class="checkbox-group" style="padding-top: 2px;">
           <label><input type="checkbox" id="chkDeck" value="데크" /> 데크</label>
           <label><input type="checkbox" id="chkRock" value="돌박지" /> 돌박지</label>
@@ -1861,11 +1873,11 @@
         <div class="modal-field" style="flex: 1;">
           <label>8. 난이도</label>
           <select id="modalSelectDiff" class="select-diff">
-            <option value="1">⭐ (매우 쉬움)</option>
-            <option value="2">⭐⭐ (쉬움)</option>
-            <option value="3" selected>⭐⭐⭐ (보통)</option>
-            <option value="4">⭐⭐⭐⭐ (힘듦)</option>
-            <option value="5">⭐⭐⭐⭐⭐ (극악)</option>
+            <option value="1">★ (매우 쉬움)</option>
+            <option value="2">★★ (쉬움)</option>
+            <option value="3" selected>★★★ (보통)</option>
+            <option value="4">★★★★ (힘듦)</option>
+            <option value="5">★★★★★ (극악)</option>
           </select>
         </div>
 
@@ -1935,6 +1947,7 @@
       PIN: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" fill="currentColor"/></svg>`,
       NAV: `<svg viewBox="0 0 24 24" class="ui-icon"><polygon points="3 11 22 2 13 21 11 13 3 11" fill="currentColor"/></svg>`,
       COPY: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M8 7v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-8a2 2 0 00-2 2z" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M16 5V3a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2h2" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
+      DIST: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M3 12h18M3 6h4M17 18h4M7 12l3-3m0 6l-3-3m10 0l-3-3m0 6l3-3" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
       EDIT: `<svg viewBox="0 0 24 24" class="ui-icon" style="width:11px; height:11px;"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" fill="none"/></svg>`,
       DEL: `<svg viewBox="0 0 24 24" class="ui-icon" style="width:11px; height:11px;"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke="currentColor" stroke-width="2" fill="none"/></svg>`
     };
@@ -2015,11 +2028,11 @@
     let isPcSidebarCollapsed = false;
     let currentMapTypeMode = 'NORMAL';
     
-    // 2-Tier 스마트 필터 상태
+    // 2-Tier 스마트 필터 상태 (지역별 ➔ 지형별 ➔ 코스별 ➔ 마이보관)
     let currentMasterTab = 'REGION';
     let currentRegionFilter = 'ALL';
-    let currentCourseFilter = 'ALL';
     let currentTerrainFilter = 'ALL';
+    let currentCourseFilter = 'ALL';
     let currentMyFilter = 'ALL';
 
     let isSidebarCollapsed = (window.innerWidth <= 768);
@@ -2041,7 +2054,7 @@
     let mapLongPressTimer = null;
     let mapLongPressPos = null;
 
-    /* ⚡ [고성능 오로라 네온 클러스터링 엔진] */
+    /* ⚡ [대형 발광 텐트 네뷸라 클러스터 엔진] */
     class NativeNaverClusterer {
       constructor(mapInstance) {
         this.map = mapInstance;
@@ -2051,8 +2064,7 @@
         this.minClusterSize = 2;
         this.maxZoom = 9;
         
-        naver.maps.Event.addListener(this.map, 'zoom_changed', () => this.redraw());
-        naver.maps.Event.addListener(this.map, 'dragend', () => this.redraw());
+        naver.maps.Event.addListener(this.map, 'idle', () => this.redraw());
       }
 
       setMarkers(markers) {
@@ -2072,7 +2084,7 @@
 
         if (zoom > this.maxZoom) {
           this.allMarkers.forEach(m => {
-            if (bounds.hasLatLng(m.getPosition())) m.setMap(this.map);
+            if (bounds && bounds.hasLatLng(m.getPosition())) m.setMap(this.map);
             else m.setMap(null);
           });
           return;
@@ -2085,7 +2097,7 @@
         this.allMarkers.forEach(m => {
           m.setMap(null);
           const pos = m.getPosition();
-          if (!bounds.hasLatLng(pos)) return;
+          if (bounds && !bounds.hasLatLng(pos)) return;
 
           const p = proj.fromCoordToOffset(pos);
           let added = false;
@@ -2119,11 +2131,13 @@
               icon: {
                 content: `
                   <div class="custom-cluster-badge ${stepClass}">
-                    <svg class="cluster-tent-icon" viewBox="0 0 28 36"><path fill="#ffffff" d="M14 7 L7.5 18 H20.5 Z"/></svg>
-                    <span class="cluster-count">${count}</span>
+                    <div class="cluster-inner-row">
+                      <svg class="cluster-tent-icon" viewBox="0 0 28 36"><path fill="#ffffff" d="M14 7 L7.5 18 H20.5 Z"/></svg>
+                      <span class="cluster-count">${count}</span>
+                    </div>
                   </div>
                 `,
-                anchor: new naver.maps.Point(stepClass === 'cluster-step-small' ? 23 : (stepClass === 'cluster-step-medium' ? 27 : 31), 18)
+                anchor: new naver.maps.Point(stepClass === 'cluster-step-small' ? 26 : (stepClass === 'cluster-step-medium' ? 30 : 34), 22)
               },
               zIndex: 500
             });
@@ -2265,11 +2279,11 @@
       fetchCommentsFromSheet();
     });
 
-    /* 🏷️ 2-Tier 스마트 필터 탭 제어 */
+    /* 🏷️ 2-Tier 스마트 필터 탭 제어 (지역별 ➔ 지형별 ➔ 코스별 ➔ 마이보관) */
     function switchMasterTab(tabName) {
       currentMasterTab = tabName;
       document.querySelectorAll('.master-tab-btn').forEach(btn => btn.classList.remove('active'));
-      const activeIdx = { 'REGION': 0, 'COURSE': 1, 'TERRAIN': 2, 'MY': 3 }[tabName];
+      const activeIdx = { 'REGION': 0, 'TERRAIN': 1, 'COURSE': 2, 'MY': 3 }[tabName];
       document.querySelectorAll('.master-tab-btn')[activeIdx].classList.add('active');
       renderSubChips();
       renderSpots();
@@ -2287,21 +2301,6 @@
           btn.className = `filter-chip ${currentRegionFilter === r ? 'active' : ''}`;
           btn.innerHTML = `${r === 'ALL' ? '전체' : r}`;
           btn.onclick = () => { currentRegionFilter = r; renderSubChips(); renderSpots(); };
-          container.appendChild(btn);
-        });
-      } else if (currentMasterTab === 'COURSE') {
-        const courses = [
-          { key: 'ALL', label: '전체' },
-          { key: 'SHORTEST', label: `${ICONS.SHORTEST}최단코스` },
-          { key: 'TRAVERSE', label: `${ICONS.TRAVERSE}종주코스` },
-          { key: 'HOT', label: `${ICONS.FLAME}HOT` },
-          { key: 'NEW', label: `${ICONS.SPARK}NEW` }
-        ];
-        courses.forEach(c => {
-          const btn = document.createElement('button');
-          btn.className = `filter-chip chip-status ${currentCourseFilter === c.key ? 'active' : ''}`;
-          btn.innerHTML = c.label;
-          btn.onclick = () => { currentCourseFilter = c.key; renderSubChips(); renderSpots(); };
           container.appendChild(btn);
         });
       } else if (currentMasterTab === 'TERRAIN') {
@@ -2323,9 +2322,25 @@
           btn.onclick = () => { currentTerrainFilter = t.key; renderSubChips(); renderSpots(); };
           container.appendChild(btn);
         });
-      } else if (currentMasterTab === 'MY') {
-        const myOpts = [
+      } else if (currentMasterTab === 'COURSE') {
+        const courses = [
           { key: 'ALL', label: '전체' },
+          { key: 'SHORTEST', label: `${ICONS.SHORTEST}최단코스` },
+          { key: 'TRAVERSE', label: `${ICONS.TRAVERSE}종주코스` },
+          { key: 'HOT', label: `${ICONS.FLAME}HOT` },
+          { key: 'NEW', label: `${ICONS.SPARK}NEW` }
+        ];
+        courses.forEach(c => {
+          const btn = document.createElement('button');
+          btn.className = `filter-chip chip-status ${currentCourseFilter === c.key ? 'active' : ''}`;
+          btn.innerHTML = c.label;
+          btn.onclick = () => { currentCourseFilter = c.key; renderSubChips(); renderSpots(); };
+          container.appendChild(btn);
+        });
+      } else if (currentMasterTab === 'MY') {
+        const myTotalCount = new Set([...userBookmarks, ...userVisited]).size;
+        const myOpts = [
+          { key: 'ALL', label: `전체 (${myTotalCount})` },
           { key: 'BOOKMARK', label: `${ICONS.STAR}찜 (${userBookmarks.size})` },
           { key: 'VISITED', label: `${ICONS.FLAG}클리어 (${userVisited.size})` }
         ];
@@ -2611,6 +2626,7 @@
       if (dockResetText) dockResetText.innerText = labelText;
     }
 
+    /* 🔄 지도 초기화 + 실시간 데이터 새로고침 연동 */
     function handleSmartResetClick() {
       const isMobile = window.innerWidth <= 768;
       const isListOpen = isMobile ? !isSidebarCollapsed : !isPcSidebarCollapsed;
@@ -2626,6 +2642,7 @@
         updateSmartResetButtons();
       } else {
         resetMapView();
+        fetchSpotsFromGoogleSheet(true);
       }
     }
 
@@ -2633,7 +2650,7 @@
       if (!map) return;
       closeAllPopups();
       map.morph(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, { duration: 320, easing: 'easeOutCubic' });
-      showToast('🔄 지도가 초기 위치로 복귀했습니다');
+      showToast('🔄 지도를 초기화하고 데이터를 새로고침합니다');
     }
 
     function toggleCleanMapMode(forceState = null) {
@@ -2958,7 +2975,7 @@
         const overlay = document.getElementById(`entryLockOverlay_${spotId}`);
         if (overlay) {
           overlay.classList.add('counting');
-          const pct = Math.min(100, ((7 - remaining) / 7) * 100);
+          const pct = Math.min(100, Math.max(0, ((7 - remaining) / 7) * 100));
           overlay.innerHTML = `
             <div style="display:flex; flex-direction:column; align-items:center; width:100%; gap:4px;">
               <span>⏳ 감사 인사 확인 중... <strong>${remaining}초</strong> 후 서약창이 열립니다</span>
@@ -3038,7 +3055,7 @@
     function shareSpotCard(spotId) {
       const spot = spots.find(s => String(s.id) === String(spotId));
       if (!spot) return;
-      const shareText = `🎒 [대한민국 낭만 백패킹 로드]\n📍 박지명: ${spot.name} (${spot.elevation || '고도미상'})\n⛰️ 지형: ${(spot.terrain || []).join(', ')} (난이도 ⭐${spot.difficulty || 3})\n\n🔒 상세 들머리 주소와 길안내는 지도에서 직접 확인하세요:\n`;
+      const shareText = `🎒 [대한민국 낭만 백패킹 로드]\n📍 박지명: ${spot.name} (${spot.elevation || '고도미상'})\n⛰️ 지형: ${(spot.terrain || []).join(', ')} (난이도 ★${spot.difficulty || 3})\n\n🔒 상세 들머리 주소와 길안내는 지도에서 직접 확인하세요:\n`;
       const shareUrl = `${window.location.origin}${window.location.pathname}?spot=${encodeURIComponent(spot.name)}`;
 
       if (navigator.share) {
@@ -3058,7 +3075,7 @@
       }
     }
 
-    /* 👑 [1열 관리자 액션 탑재] 정보창 HTML 생성 */
+    /* 👑 [1열 관리자 액션 & 다중 지형 복합 지원] 정보창 HTML 생성 */
     function generateDetailContentHtml(spot, isMobileSheet = false) {
       const { navAddress, guide } = parseEntryPoint(spot.entryPoint || spot.name);
       const naverSearchUrl = getNaverMapSearchUrl(navAddress || spot.name);
@@ -3230,7 +3247,7 @@
       } catch (err) {}
     }
 
-    /* ⚡ SWR 백그라운드 시트 패치 & 3단계 최단/종주 자동 분석 엔진 */
+    /* ⚡ SWR 백그라운드 시트 패치 & 복합 지형/코스 자동 분석 엔진 */
     async function fetchSpotsFromGoogleSheet(isManual = false) {
       const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_GID}&_t=${Date.now()}`;
       try {
@@ -3274,7 +3291,7 @@
                 const rawTerrain = getVal('terrain', '지형', '지형형태');
                 const rawCourse = getVal('courseType', '코스', '코스구분', '코스형태');
 
-                /* 🧠 [3단계 최단/종주 스마트 자동 판별 알고리즘] */
+                /* 🧠 [3단계 최단/종주 스마트 자동 판별] */
                 let courseType = '일반';
                 const combined = (name + ' ' + desc).toLowerCase();
                 const distNum = parseFloat(distance) || 0;
@@ -3291,8 +3308,8 @@
                   courseType = '종주';
                 }
 
-                /* 🏷️ 지형 스마트 키워드 분석 */
-                let terrainList = ['데크'];
+                /* 🏷️ [복합 다중 지형 완벽 분석] */
+                let terrainList = [];
                 if (rawTerrain && String(rawTerrain).trim()) {
                   terrainList = String(rawTerrain).split(/[\n,]+/).map(t => {
                     const tr = t.trim();
@@ -3301,16 +3318,15 @@
                     return tr;
                   }).filter(Boolean);
                 } else {
-                  const autoT = [];
-                  if (combined.includes('해변') || combined.includes('해수욕장') || combined.includes('바닷가') || combined.includes('백사장')) autoT.push('해변');
-                  if (combined.includes('계곡')) autoT.push('계곡');
-                  if (combined.includes('동굴') || combined.includes('굴')) autoT.push('동굴');
-                  if (combined.includes('섬')) autoT.push('섬');
-                  if (combined.includes('돌박지') || combined.includes('바위')) autoT.push('돌박지');
-                  if (combined.includes('노지')) autoT.push('노지');
-                  if (combined.includes('데크') || combined.includes('활공장')) autoT.push('데크');
-                  if (autoT.length > 0) terrainList = autoT;
+                  if (combined.includes('해변') || combined.includes('해수욕장') || combined.includes('바닷가') || combined.includes('백사장')) terrainList.push('해변');
+                  if (combined.includes('계곡')) terrainList.push('계곡');
+                  if (combined.includes('동굴') || combined.includes('굴')) terrainList.push('동굴');
+                  if (combined.includes('섬')) terrainList.push('섬');
+                  if (combined.includes('돌박지') || combined.includes('바위')) terrainList.push('돌박지');
+                  if (combined.includes('노지')) terrainList.push('노지');
+                  if (combined.includes('데크') || combined.includes('활공장')) terrainList.push('데크');
                 }
+                if (terrainList.length === 0) terrainList.push('데크');
 
                 const res = detectRegionAndCity(lat, lng, name, entryPoint);
                 const spotId = getVal('id') ? String(getVal('id')).trim() : String(idx + 1);
@@ -3365,6 +3381,7 @@
       return { avg, count: cList.length };
     }
 
+    /* 🏷️ 다중 지형 복합 뱃지 렌더링 */
     function getMetaBadgesHtml(spot) {
       let html = '<div class="spot-meta-badges">';
       (spot.terrain || []).forEach(t => {
@@ -3377,8 +3394,8 @@
         else if (t.includes('동굴')) html += `<span class="meta-tag tag-terrain-cave">${ICONS.CAVE}동굴</span>`;
         else html += `<span class="meta-tag tag-terrain-etc">${ICONS.ETC}기타</span>`;
       });
-      html += `<span class="meta-tag tag-diff">난이도 ${'⭐'.repeat(Math.min(5, Math.max(1, parseInt(spot.difficulty, 10) || 3)))}</span>`;
-      if (spot.distance?.trim()) html += `<span class="meta-tag tag-dist">🚶 ${escapeHtml(spot.distance.trim().replace(/km$/i, ''))}km</span>`;
+      html += `<span class="meta-tag tag-diff">난이도 ${'★'.repeat(Math.min(5, Math.max(1, parseInt(spot.difficulty, 10) || 3)))}</span>`;
+      if (spot.distance?.trim()) html += `<span class="meta-tag tag-dist">${ICONS.DIST} ${escapeHtml(spot.distance.trim().replace(/km$/i, ''))}km</span>`;
       const rMeta = getSpotRatingMeta(spot.id);
       if (rMeta) html += `<span class="meta-tag tag-rating">★ ${rMeta.avg} (${rMeta.count})</span>`;
       html += '</div>';
@@ -3406,11 +3423,11 @@
           <div class="comment-form">
             <div class="comment-form-row">
               <select class="comment-select-rating" id="cRating_${spotId}">
-                <option value="5" selected>⭐ 5점</option>
-                <option value="4">⭐ 4점</option>
-                <option value="3">⭐ 3점</option>
-                <option value="2">⭐ 2점</option>
-                <option value="1">⭐ 1점</option>
+                <option value="5" selected>★ 5점 (최고)</option>
+                <option value="4">★ 4점 (추천)</option>
+                <option value="3">★ 3점 (보통)</option>
+                <option value="2">★ 2점 (아쉬움)</option>
+                <option value="1">★ 1점 (비추천)</option>
               </select>
               <input type="text" class="comment-input-author" id="cAuthor_${spotId}" placeholder="닉네임" />
             </div>
@@ -3508,7 +3525,7 @@
       else if (!e.target.value.trim()) showTopRankings(mode);
     }
 
-    /* ⚡ 렌더링 & 2-Tier 스마트 필터링 엔진 */
+    /* ⚡ [렌더링 및 2-Tier 스마트 필터링 엔진 - 마이보관 독립 격리] */
     function renderSpots() {
       if (!map) return;
 
@@ -3587,17 +3604,22 @@
 
         let match = true;
         
-        if (currentMasterTab === 'REGION' && currentRegionFilter !== 'ALL' && spot.region !== currentRegionFilter) match = false;
-        else if (currentMasterTab === 'COURSE') {
+        if (currentMasterTab === 'REGION') {
+          if (currentRegionFilter !== 'ALL' && spot.region !== currentRegionFilter) match = false;
+        } else if (currentMasterTab === 'TERRAIN') {
+          if (currentTerrainFilter !== 'ALL') {
+            const tList = spot.terrain || [];
+            match = tList.some(t => t.includes(currentTerrainFilter));
+          }
+        } else if (currentMasterTab === 'COURSE') {
           if (currentCourseFilter === 'SHORTEST' && spot.courseType !== '최단') match = false;
           else if (currentCourseFilter === 'TRAVERSE' && spot.courseType !== '종주') match = false;
           else if (currentCourseFilter === 'HOT' && getSpotViews(spot) < 5) match = false;
           else if (currentCourseFilter === 'NEW' && !spot.isNew) match = false;
-        } else if (currentMasterTab === 'TERRAIN' && currentTerrainFilter !== 'ALL') {
-          const tList = spot.terrain || [];
-          match = tList.some(t => t.includes(currentTerrainFilter));
         } else if (currentMasterTab === 'MY') {
-          if (currentMyFilter === 'BOOKMARK' && !userBookmarks.has(sId)) match = false;
+          // 마이보관 전체는 찜 또는 클리어한 박지만 독립 추출
+          if (currentMyFilter === 'ALL' && (!userBookmarks.has(sId) && !userVisited.has(sId))) match = false;
+          else if (currentMyFilter === 'BOOKMARK' && !userBookmarks.has(sId)) match = false;
           else if (currentMyFilter === 'VISITED' && !userVisited.has(sId)) match = false;
         }
 
@@ -4052,6 +4074,7 @@
       } catch (err) {}
     }
 
+    /* 🔍 복합 키워드(이름/설명/들머리/코스/지형) 3중 하이브리드 탐색기 */
     async function executeSearch(mode = 'pc') {
       const inputEl = document.getElementById(mode === 'mobile' ? 'mobileSearchInput' : 'pcSearchInput');
       const dropdown = document.getElementById(mode === 'mobile' ? 'mobileSearchDropdown' : 'pcSearchDropdown');
@@ -4065,13 +4088,28 @@
       const seenCoords = new Set();
       const lowerQ = rawQuery.toLowerCase();
 
+      // 1. 내부 등록 박지 (지형, 코스 포함 복합 검색)
       spots.forEach(spot => {
-        if (spot.name?.toLowerCase().includes(lowerQ) || spot.desc?.toLowerCase().includes(lowerQ) || spot.entryPoint?.toLowerCase().includes(lowerQ)) {
+        const matchName = spot.name?.toLowerCase().includes(lowerQ);
+        const matchDesc = spot.desc?.toLowerCase().includes(lowerQ);
+        const matchEntry = spot.entryPoint?.toLowerCase().includes(lowerQ);
+        const matchCourse = spot.courseType?.toLowerCase().includes(lowerQ);
+        const matchTerrain = (spot.terrain || []).some(t => t.toLowerCase().includes(lowerQ));
+
+        if (matchName || matchDesc || matchEntry || matchCourse || matchTerrain) {
           seenCoords.add(`${spot.lat.toFixed(4)},${spot.lng.toFixed(4)}`);
-          results.push({ title: `[등록박지] ${spot.name}`, sub: `${spot.cityName ? `[${spot.cityName}] ` : ''}${spot.entryPoint || '들머리 정보'}`, lat: spot.lat, lng: spot.lng, isInternal: true, spotObj: spot });
+          results.push({ 
+            title: `[등록박지] ${spot.name}`, 
+            sub: `${spot.cityName ? `[${spot.cityName}] ` : ''}${spot.entryPoint || '들머리 정보'} (${spot.courseType || '일반'} / ${(spot.terrain || []).join(',')})`, 
+            lat: spot.lat, 
+            lng: spot.lng, 
+            isInternal: true, 
+            spotObj: spot 
+          });
         }
       });
 
+      // 2. 카카오 장소 검색
       try {
         const res = await fetch(`${GAS_API_URL}?action=SEARCH_KAKAO&q=${encodeURIComponent(rawQuery)}&_t=${Date.now()}`);
         if (res.ok) {
@@ -4090,6 +4128,7 @@
         }
       } catch (err) {}
 
+      // 3. 네이버 지오코딩 2차 검색
       if (naver.maps.Service?.geocode) {
         try {
           await new Promise((resolve) => {
