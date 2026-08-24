@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -9,7 +11,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/webfontworld/gmarket/GmarketSans.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Libre+Barcode+39&display=swap" rel="stylesheet">
   
   <!-- 카카오맵 공식 SDK (서비스 & 클러스터러 라이브러리 탑재) -->
   <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=557f5de0f6391a2419bc5592e6a9c9c1&libraries=services,clusterer"></script>
@@ -21,7 +23,7 @@
       --text-primary: #f8fafc; --text-secondary: #cbd5e1; --text-muted: #94a3b8;
       --accent-blue: #38bdf8; --accent-teal: #2dd4bf; --accent-emerald: #10b981;
       --accent-amber: #f59e0b; --accent-rose: #f43f5e; --accent-purple: #a855f7;
-      --font-display: 'GmarketSans', sans-serif; --font-script: 'Caveat', cursive; --font-body: 'Pretendard', sans-serif;
+      --font-display: 'GmarketSans', sans-serif; --font-script: 'Caveat', cursive; --font-barcode: 'Libre Barcode 39', cursive; --font-body: 'Pretendard', sans-serif;
       --z-map: 1; --z-side-toolbar: 85; --z-hud: 100; --z-header: 500; --z-pc-drawer: 650; --z-sidebar: 700;
       --z-dock: 900; --z-bottomsheet: 850; --z-dropdown: 950; --z-modal: 1000; --z-toast: 2000;
     }
@@ -145,7 +147,7 @@
 
     #map { flex: 1; width: 100%; height: 100%; position: relative; background: var(--bg-deep); touch-action: pan-x pan-y; }
 
-    /* [세로 슬림 토글 툴바] 기본 상태: 완전 숨김 ➔ 탭만 노출 */
+    /* [세로 슬림 토글 툴바] */
     .map-vertical-toolbar-wrap {
       position: absolute; top: 14px; left: 0; z-index: var(--z-side-toolbar);
       display: flex; align-items: flex-start;
@@ -212,16 +214,16 @@
     .pin-picker-banner { display: none; position: absolute; top: 50px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #0f766e, #0284c7); color: #fff; padding: 7px 16px; border-radius: 18px; font-size: 0.8rem; font-weight: 700; z-index: var(--z-modal); box-shadow: 0 4px 20px rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.4); align-items: center; gap: 8px; }
     .btn-cancel-pin-pick { background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.3); color: #fff; border-radius: 10px; padding: 3px 9px; font-size: 0.7rem; cursor: pointer; }
 
-    /* 비비드 네온 3단계 텐트 클러스터 */
+    /* 🔮 비비드 네온 3단계 텐트 클러스터 */
     .custom-cluster-badge { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; font-weight: 800; border-radius: 50% !important; cursor: pointer; backdrop-filter: blur(16px); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); user-select: none; }
     .custom-cluster-badge:hover { transform: scale(1.14); }
-    .cluster-step-small { width: 54px; height: 54px; background: rgba(16, 185, 129, 0.35); border: 2.2px solid #00FF9D; box-shadow: 0 0 24px rgba(0, 255, 157, 0.75); }
-    .cluster-step-medium { width: 60px; height: 60px; background: rgba(6, 182, 212, 0.40); border: 2.5px solid #00E5FF; box-shadow: 0 0 28px rgba(0, 229, 255, 0.8); }
-    .cluster-step-large { width: 66px; height: 66px; background: rgba(245, 158, 11, 0.45); border: 2.8px solid #FFD600; box-shadow: 0 0 34px rgba(255, 214, 0, 0.95); }
-    .cluster-tent-icon { width: 23px; height: 23px; margin-bottom: 1px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.85)); }
+    .cluster-step-small { width: 54px; height: 54px; background: rgba(16, 185, 129, 0.4); border: 2.2px solid #00FF9D; box-shadow: 0 0 24px rgba(0, 255, 157, 0.75); }
+    .cluster-step-medium { width: 60px; height: 60px; background: rgba(6, 182, 212, 0.45); border: 2.5px solid #00E5FF; box-shadow: 0 0 28px rgba(0, 229, 255, 0.8); }
+    .cluster-step-large { width: 66px; height: 66px; background: rgba(245, 158, 11, 0.5); border: 2.8px solid #FFD600; box-shadow: 0 0 34px rgba(255, 214, 0, 0.95); }
+    .cluster-tent-icon { font-size: 18px; line-height: 1; margin-bottom: 2px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.85)); }
     .cluster-count { font-family: var(--font-display); font-size: 0.88rem; font-weight: 800; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.9); }
 
-    /* 마커 및 상단 툴팁 (중복 문구 제거 & 깔끔한 고도 표기) */
+    /* 마커 및 상단 툴팁 */
     .custom-spot-marker-wrap { position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer; z-index: 100; transition: transform 0.2s; user-select: none; }
     .custom-spot-marker-wrap.active-marker { transform: scale(1.18); z-index: 999999 !important; }
     .custom-spot-marker-wrap.active-marker::before { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 42px; height: 42px; border-radius: 50%; background: rgba(56,189,248,0.55); animation: markerPulseRing 1.8s infinite ease-out; z-index: -1; }
@@ -235,10 +237,30 @@
     .marker-label-elev { color: #86efac; }
     .marker-svg-icon { display: block; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.7)); }
 
-    /* 마커 우측 상단 성취감 뱃지 (🚩 / ⭐ 단독 노출) */
+    /* 마커 우측 상단 성취감 뱃지 */
     .marker-corner-badge { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; border: 2px solid #ffffff; z-index: 5; }
     .marker-badge-visited { background: #0284c7; color: #fff; box-shadow: 0 0 12px #38bdf8; }
     .marker-badge-fav { background: #f59e0b; color: #fff; box-shadow: 0 0 12px #fbbf24; }
+
+    /* 🏷️ 바코드 티켓 카드 (중앙 완벽 정렬 CSS) */
+    .barcode-ticket-card {
+      background: linear-gradient(135deg, #0e131d 0%, #151d2c 100%);
+      border: 1px dashed rgba(56, 189, 248, 0.4);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 4px;
+      margin-top: 6px;
+      width: 100%;
+      box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.6);
+    }
+    .barcode-title { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.12em; color: var(--accent-teal); text-transform: uppercase; text-align: center; }
+    .barcode-graphic { font-family: var(--font-barcode); font-size: 38px; line-height: 1; color: #ffffff; letter-spacing: 4px; user-select: none; display: flex; justify-content: center; align-items: center; width: 100%; text-align: center; margin: 2px 0; }
+    .barcode-sub-number { font-family: monospace; font-size: 0.68rem; letter-spacing: 2px; color: var(--text-muted); text-align: center; }
 
     .sheet-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; position: relative; width: 100%; }
     .compact-title { font-size: 1.02rem; font-weight: 800; color: var(--accent-blue); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 0; }
@@ -460,7 +482,7 @@
     <button type="button" class="floating-drawer-close-tab pc-only" id="floatingDrawerCloseTab" onclick="closePcSlidingDrawer()" title="정보창 닫기">◀ 정보창 닫기</button>
     
     <main id="map">
-      <!-- [세로 토글 슬림 툴바] 기본 상태: 완전 은닉 ➔ 토글 탭만 노출 -->
+      <!-- [세로 토글 슬림 툴바] -->
       <div class="map-vertical-toolbar-wrap clean-hide" id="mapVerticalToolbarWrap">
         <div class="map-vertical-toolbar">
           <div class="vtoolbar-title">지형 분류</div>
@@ -477,7 +499,6 @@
           <button type="button" class="vtoolbar-btn btn-easy" id="vFilter_EASY" onclick="applyVerticalToolbarFilter('EASY')">🟢 초급(퇴근박)</button>
           <button type="button" class="vtoolbar-btn btn-hard" id="vFilter_HARD" onclick="applyVerticalToolbarFilter('HARD')">🔴 상급(하드)</button>
         </div>
-        <!-- 좌측 벽에 작게 돌출된 토글 버튼 (기본 상태에서 이것만 보임) -->
         <button type="button" class="toolbar-toggle-tab-btn" id="vtoolbarToggleBtn" onclick="toggleVerticalToolbar()" title="필터 툴바 열기/닫기">
           <span id="vtoolbarToggleIcon">🧭</span>
           <span id="vtoolbarToggleText">필터</span>
@@ -615,7 +636,6 @@
     const FALLBACK_SHEET_GID = '0';
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyCUzZ5bXcLpKXKqBjJC2xS-WP3YJ5MYUmZAzaB6SZixQooH_Y5SioISn0UFVOlOdLL/exec';
     
-    // 6대 단속/불법 폐쇄 박지 영구 차단 목록
     const BLOCKED_SPOT_IDS = new Set(['183', '205', '208', '209', '210', '211']);
 
     const DEFAULT_MAP_CENTER = { lat: 36.3, lng: 127.8 };
@@ -698,11 +718,11 @@
     let isSidebarCollapsed = (window.innerWidth <= 768), currentActiveSpot = null, pendingUnlockSpotId = null, isZoomDetailedState = false;
 
     const spotOverlayMap = new Map();
+    const spotMarkerMap = new Map();
     let tempSearchMarker = null, tempPickedMarker = null, userLocationOverlay = null;
     let modalMode = 'PROPOSAL', modalEditIndex = -1, modalPendingData = { lat: 0, lng: 0, address: '' }, isPickingLocationMode = false;
     let mapRadarTimer = null;
 
-    /* 세로 툴바 접기/펼치기 토글 함수 */
     function toggleVerticalToolbar() {
       const tb = document.getElementById('mapVerticalToolbarWrap');
       const icon = document.getElementById('vtoolbarToggleIcon');
@@ -713,7 +733,7 @@
       if (text) text.innerText = isOpen ? '닫기' : '필터';
     }
 
-    /* 카카오맵 SDK 안전 로딩 및 맵 엔진 시작 */
+    /* 🗺️ 카카오맵 및 마커 클러스터러 초기화 */
     function initMapEngine() {
       if (typeof kakao === 'undefined' || !kakao.maps) {
         console.warn('⚠️ 카카오맵 SDK 로드 대기 중...');
@@ -728,6 +748,53 @@
         };
         map = new kakao.maps.Map(container, options);
         geocoder = new kakao.maps.services.Geocoder();
+
+        // 🔮 비비드 네온 3단계 클러스터러 생성 & 연결
+        globalClusterer = new kakao.maps.MarkerClusterer({
+          map: map,
+          averageCenter: true,
+          minLevel: 8,
+          disableClickZoom: false,
+          calculator: [10, 30],
+          styles: [
+            {
+              width: '54px', height: '54px',
+              background: 'rgba(16, 185, 129, 0.4)',
+              border: '2.2px solid #00FF9D',
+              borderRadius: '50%',
+              color: '#fff',
+              textAlign: 'center',
+              lineHeight: '50px',
+              fontSize: '14px',
+              fontWeight: '800',
+              boxShadow: '0 0 24px rgba(0, 255, 157, 0.75)'
+            },
+            {
+              width: '60px', height: '60px',
+              background: 'rgba(6, 182, 212, 0.45)',
+              border: '2.5px solid #00E5FF',
+              borderRadius: '50%',
+              color: '#fff',
+              textAlign: 'center',
+              lineHeight: '56px',
+              fontSize: '15px',
+              fontWeight: '800',
+              boxShadow: '0 0 28px rgba(0, 229, 255, 0.8)'
+            },
+            {
+              width: '66px', height: '66px',
+              background: 'rgba(245, 158, 11, 0.5)',
+              border: '2.8px solid #FFD600',
+              borderRadius: '50%',
+              color: '#fff',
+              textAlign: 'center',
+              lineHeight: '62px',
+              fontSize: '16px',
+              fontWeight: '800',
+              boxShadow: '0 0 34px rgba(255, 214, 0, 0.95)'
+            }
+          ]
+        });
 
         setTimeout(() => { if (map) map.relayout(); }, 250);
 
@@ -783,7 +850,6 @@
       });
     });
 
-    /* 일반 ➔ 스카이뷰(위성) ➔ 산림청 지형도 3단계 원클릭 전환 부활 */
     function toggleMapTypeMode() {
       if (!map) return;
       const textEl = document.getElementById('towerMapTypeText'), btnEl = document.getElementById('towerBtnMapType');
@@ -830,7 +896,6 @@
       );
     }
 
-    /* 세로 토글 툴바 필터 클릭 핸들러 */
     function applyVerticalToolbarFilter(filterVal) {
       currentVerticalFilter = filterVal;
       document.querySelectorAll('.vtoolbar-btn').forEach(b => b.classList.remove('active'));
@@ -906,7 +971,6 @@
       }
     }
 
-    /* 모바일 바텀시트 좌/우 스와이프 스마트 릴레이 탐색 기능 부활 */
     function initBottomSheetSwipeGesture() {
       const sheet = document.getElementById('mobileBottomSheet'), handleArea = document.getElementById('sheetHandleArea');
       if (!sheet || !handleArea) return;
@@ -991,7 +1055,6 @@
     function closeLntModal() { document.getElementById('lntModalOverlay').style.display = 'none'; }
     function confirmLntPledgeAndUnlock() { closeLntModal(); if (pendingUnlockSpotId) { completeLntPledgeAndUnlock(pendingUnlockSpotId); pendingUnlockSpotId = null; } }
 
-    /* 마커 DOM 생성 (🚩/⭐ 성취감 뱃지 단독 노출 & 툴팁 중복 제거) */
     function createMarkerDomElement(spot, isDetailed = false) {
       const isMobile = window.innerWidth <= 768;
       const d = parseInt(spot.difficulty, 10) || 3;
@@ -1006,8 +1069,8 @@
 
       if (!isDetailed && !isActive) {
         wrapper.innerHTML = `
-          <div style="position:relative; width:13px; height:13px; border-radius:50%; background:${color}; border:2px solid #ffffff; box-shadow:0 0 8px ${color}; cursor:pointer;">
-            ${isDone ? `<div style="position:absolute; top:-3px; right:-3px; width:5px; height:5px; border-radius:50%; background:#38bdf8;"></div>` : (isFav ? `<div style="position:absolute; top:-3px; right:-3px; width:5px; height:5px; border-radius:50%; background:#fde047;"></div>` : '')}
+          <div style="position:relative; width:14px; height:14px; border-radius:50%; background:${color}; border:2px solid #ffffff; box-shadow:0 0 10px ${color}; cursor:pointer;">
+            ${isDone ? `<div style="position:absolute; top:-3px; right:-3px; width:6px; height:6px; border-radius:50%; background:#38bdf8;"></div>` : (isFav ? `<div style="position:absolute; top:-3px; right:-3px; width:6px; height:6px; border-radius:50%; background:#fde047;"></div>` : '')}
           </div>`;
         return wrapper;
       }
@@ -1070,7 +1133,6 @@
       });
     }
 
-    /* 스마트 초기화 버튼 부활 */
     function updateSmartResetButtons() {
       const isMobile = window.innerWidth <= 768;
       const isListOpen = isMobile ? !isSidebarCollapsed : true;
@@ -1137,7 +1199,6 @@
       return html;
     }
 
-    /* 일몰 시간 천문학적 계산 공식 부활 */
     function calculateSunsetTime(lat, lng, date = new Date()) {
       const rad = Math.PI / 180;
       const dayOfYear = Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
@@ -1154,7 +1215,6 @@
       return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     }
 
-    /* 실시간 기상/풍속 정보 로딩 부활 */
     const weatherCache = new Map();
     async function loadLiveWeatherForSpot(spotId, lat, lng) {
       if (!lat || !lng) return;
@@ -1436,7 +1496,6 @@
       }
     }
 
-    /* 3대 내비게이션 길안내 원클릭 다이렉트 실행 부활 */
     function navigateToNaviApp(type, spotName, address, lat, lng) {
       const targetQuery = address || spotName;
       if (type === 'kakao') {
@@ -1524,6 +1583,14 @@
             <button type="button" class="link-btn btn-share-spot" onclick="shareSpotCard('${spot.id}')">📤 공유</button>
             <a href="javascript:void(0)" onclick="triggerSpotUnlock('${spot.id}', '${instaLink}')" class="link-btn btn-insta" title="등록자 인스타그램"><span>등록자</span></a>
           </div>
+          
+          <!-- 🏷️ 바코드 티켓 카드 (중앙 완벽 정렬) -->
+          <div class="barcode-ticket-card">
+            <div class="barcode-title">⛺ ROMANTIC BACKPACKING BOARDING PASS</div>
+            <div class="barcode-graphic">*${escapeHtml(spot.name.replace(/\s+/g, ''))}*</div>
+            <div class="barcode-sub-number">NO. ${spot.id || '2026'}-${escapeHtml(spot.cityName || 'KOREA')}-LNT-CLEAN</div>
+          </div>
+
           <div class="user-private-memo-box">
             <div class="user-private-memo-header">
               <span style="display:flex; align-items:center; gap:3px;">${ICONS.MEMO} 나만의 비밀 메모 (내 폰/PC에만 저장)</span>
@@ -1550,7 +1617,6 @@
       if (target) copyTextToClipboard(parseEntryPoint(target.entryPoint || target.name).navAddress || target.name);
     }
 
-    /* 관리자 마커 드래그 시 들머리 주소(D열) 100% 영구 보존 로직 부활 */
     async function saveUpdatedLocation(spotId, newLat, newLng) {
       const targetSpot = spots.find(s => String(s.id) === String(spotId));
       if (!targetSpot) return;
@@ -1585,7 +1651,6 @@
       } catch (err) {}
     }
 
-    /* 구글 시트 연동 (GID 1143125586 1순위 ➔ 0 Fallback) */
     async function fetchSpotsFromGoogleSheet(isManual = false) {
       let gidsToTry = [PRIMARY_SHEET_GID, FALLBACK_SHEET_GID];
       for (let gid of gidsToTry) {
@@ -1816,7 +1881,7 @@
       else if (!e.target.value.trim()) showTopRankings(mode);
     }
 
-    /* 마커 및 목록 렌더링 */
+    /* 📍 마커 렌더링 & 클러스터러 100% 실시간 연동 */
     function renderSpots() {
       const currentIds = new Set(spots.map(s => String(s.id)));
       spotOverlayMap.forEach((overlay, id) => { 
@@ -1825,22 +1890,46 @@
           spotOverlayMap.delete(id); 
         } 
       });
+      spotMarkerMap.forEach((marker, id) => {
+        if (!currentIds.has(id)) {
+          if (marker.setMap) marker.setMap(null);
+          spotMarkerMap.delete(id);
+        }
+      });
+
+      // 클러스터러 초기화
+      if (globalClusterer) {
+        globalClusterer.clear();
+      }
+
+      const activeMarkersForCluster = [];
 
       spots.forEach(spot => {
         const lat = parseFloat(spot.lat), lng = parseFloat(spot.lng);
         if (isNaN(lat) || isNaN(lng) || lat < 30 || lng < 120) return;
         const sId = String(spot.id);
+        const latlng = new kakao.maps.LatLng(lat, lng);
+
+        // 1. 커스텀 오버레이 생성/캐싱
         if (!spotOverlayMap.has(sId) && map) {
           const contentDom = createMarkerDomElement(spot, isZoomDetailedState || (currentActiveSpot && String(currentActiveSpot.id) === sId));
-
           const overlay = new kakao.maps.CustomOverlay({
-            position: new kakao.maps.LatLng(lat, lng),
+            position: latlng,
             content: contentDom,
             yAnchor: 1.0,
             zIndex: 100
           });
           overlay.spotData = spot;
           spotOverlayMap.set(sId, overlay);
+        }
+
+        // 2. 카카오 마커 생성 (클러스터러 연동용 투명/핀 마커)
+        if (!spotMarkerMap.has(sId) && map) {
+          const marker = new kakao.maps.Marker({
+            position: latlng
+          });
+          kakao.maps.event.addListener(marker, 'click', () => focusSpotOnMap(spot));
+          spotMarkerMap.set(sId, marker);
         }
       });
 
@@ -1856,7 +1945,9 @@
       const grouped = Object.fromEntries(targetOrder.map(r => [r, []]));
 
       displaySpots.forEach(spot => {
-        const sId = String(spot.id), overlay = spotOverlayMap.get(sId);
+        const sId = String(spot.id);
+        const overlay = spotOverlayMap.get(sId);
+        const marker = spotMarkerMap.get(sId);
         let match = true;
         
         // 1. 세로 토글 툴바 필터 매칭
@@ -1886,13 +1977,20 @@
 
         if (match) {
           if (overlay && map) overlay.setMap(map);
+          if (marker) activeMarkersForCluster.push(marker);
           const r = spot.region || '경기';
           if (grouped[r]) grouped[r].push(spot);
           visibleCount++;
         } else {
           if (overlay && overlay.setMap) overlay.setMap(null);
+          if (marker && marker.setMap) marker.setMap(null);
         }
       });
+
+      // 클러스터러에 필터링된 마커들 일괄 등록
+      if (globalClusterer && activeMarkersForCluster.length > 0) {
+        globalClusterer.addMarkers(activeMarkersForCluster);
+      }
 
       document.getElementById('spotCount').innerText = `${visibleCount}개`;
       const fragment = document.createDocumentFragment();
@@ -2171,6 +2269,8 @@
       const deletedId = targetSpot.id, deletedName = targetSpot.name;
       const ov = spotOverlayMap.get(String(deletedId));
       if (ov && ov.setMap) { ov.setMap(null); spotOverlayMap.delete(String(deletedId)); }
+      const mk = spotMarkerMap.get(String(deletedId));
+      if (mk && mk.setMap) { mk.setMap(null); spotMarkerMap.delete(String(deletedId)); }
       spots.splice(index, 1);
       delete spotComments[deletedId]; userBookmarks.delete(String(deletedId)); userVisited.delete(String(deletedId)); delete userMemos[String(deletedId)];
       localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
