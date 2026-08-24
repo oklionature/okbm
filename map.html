@@ -12,8 +12,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <!-- Kakao Maps JS SDK: 공식 가이드(autoload=false + kakao.maps.load) -->
-  <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=557f5de0f6391a2419bc5592e6a9c9c1&libraries=services,clusterer&autoload=false"></script>
   <style>
     :root {
       --bg-deep: #030508; --bg-surface: #090c13; --bg-card: #0e131d; --bg-card-hover: #151c2a;
@@ -599,6 +597,7 @@
     </div>
   </div>
 
+  <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=557f5de0f6391a2419bc5592e6a9c9c1&libraries=services,clusterer"></script>
   <script>
     const CURRENT_VERSION = "4.5ver Pro";
     const KAKAO_APP_KEY = "557f5de0f6391a2419bc5592e6a9c9c1";
@@ -706,46 +705,44 @@
     }
 
     function initMapEngine() {
-      if (!window.kakao || !kakao.maps || typeof kakao.maps.load !== 'function') return;
       if (map) return;
+      if (!window.kakao || !kakao.maps || typeof kakao.maps.Map !== 'function') return;
 
-      kakao.maps.load(function () {
-        const container = document.getElementById('map');
-        if (!container || map) return;
-         const options = {
-          center: new kakao.maps.LatLng(DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng),
-          level: DEFAULT_MAP_LEVEL
-        };
-        map = new kakao.maps.Map(container, options);
-        geocoder = new kakao.maps.services.Geocoder();
+      const container = document.getElementById('map');
+      if (!container) return;
+      const options = {
+        center: new kakao.maps.LatLng(DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng),
+        level: DEFAULT_MAP_LEVEL
+      };
+      map = new kakao.maps.Map(container, options);
+      geocoder = new kakao.maps.services.Geocoder();
 
-        setTimeout(() => { if (map) map.relayout(); }, 250);
+      setTimeout(() => { if (map) map.relayout(); }, 250);
 
-        kakao.maps.event.addListener(map, 'zoom_changed', () => updateLODMarkers());
-        kakao.maps.event.addListener(map, 'click', handleMapClick);
+      kakao.maps.event.addListener(map, 'zoom_changed', () => updateLODMarkers());
+      kakao.maps.event.addListener(map, 'click', handleMapClick);
 
-        container.addEventListener('touchstart', (e) => {
-          if (e.touches && e.touches.length === 1) {
-            mapRadarTimer = setTimeout(() => {
-              if (map && map.getLevel() <= 7) {
-                document.body.classList.add('map-radar-active');
-                showToast('📡 주변 박지 레이더 ON', 1200);
-              }
-            }, 400);
-          }
-        }, { passive: true });
-        container.addEventListener('touchend', () => {
-          if (mapRadarTimer) clearTimeout(mapRadarTimer);
-          document.body.classList.remove('map-radar-active');
-        }, { passive: true });
-
-        if (spots && spots.length > 0) { 
-          spots = spots.filter(s => !BLOCKED_SPOT_IDS.has(String(s.id)));
-          updateNewSpotFlags(spots); 
-          renderSpots(); 
-          checkUrlParamSpotFocus(); 
+      container.addEventListener('touchstart', (e) => {
+        if (e.touches && e.touches.length === 1) {
+          mapRadarTimer = setTimeout(() => {
+            if (map && map.getLevel() <= 7) {
+              document.body.classList.add('map-radar-active');
+              showToast('📡 주변 박지 레이더 ON', 1200);
+            }
+          }, 400);
         }
-      });
+      }, { passive: true });
+      container.addEventListener('touchend', () => {
+        if (mapRadarTimer) clearTimeout(mapRadarTimer);
+        document.body.classList.remove('map-radar-active');
+      }, { passive: true });
+
+      if (spots && spots.length > 0) { 
+        spots = spots.filter(s => !BLOCKED_SPOT_IDS.has(String(s.id)));
+        updateNewSpotFlags(spots); 
+        renderSpots(); 
+        checkUrlParamSpotFocus(); 
+      }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
