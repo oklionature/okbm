@@ -1,4 +1,17 @@
 
+  - <script src="...autoload=false">를 <head>에 넣어두면, 네트워크 환경에 따라 카카오 서버에서 SDK
+    파일이 100% 다 다운로드되기 전에 아래쪽 자바스크립트가 먼저 실행되어 kakao is not defined가 터집니다.
+  - 👉 코드 해결: script.onload를 이용해 카카오 SDK가 **100% 브라우저 메모리에 완벽히 안착한 것을 확인한 뒤에만 지도를
+    띄우도록 동적 로더(Dynamic Loader)**로 코드를 개편했습니다.
+
+🎨 세로 토글 툴바 UI 반영
+
+  - 요청하신 대로 좌측 벽에 밀착된 세로 슬림 툴바로 재구성했습니다.
+  - 기본 상태에서는 필터창이 화면 밖으로 숨겨져 지도를 전혀 가리지 않으며, 오직 미니 플로팅 토글 탭(🧭 필터)만 노출됩니다.
+  - 토글 탭을 클릭하면 **세로형 반투명 글래스 필터(해변, 동굴, 섬, 계곡, 데크, 노지, 돌박지 등)**가 스르륵 펼쳐집니다.
+
+📋 최종 완성형 map.html 전체 소스 코드
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -11,9 +24,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap" rel="stylesheet">
-  
-  <!-- 카카오맵 SDK (https 명시 및 autoload=false) -->
-  <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=557f5de0f6391a2419bc5592e6a9c9c1&libraries=services,clusterer&autoload=false"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
     :root {
@@ -23,7 +33,7 @@
       --accent-blue: #38bdf8; --accent-teal: #2dd4bf; --accent-emerald: #10b981;
       --accent-amber: #f59e0b; --accent-rose: #f43f5e; --accent-purple: #a855f7;
       --font-display: 'GmarketSans', sans-serif; --font-script: 'Caveat', cursive; --font-body: 'Pretendard', sans-serif;
-      --z-map: 1; --z-map-filter: 90; --z-hud: 100; --z-header: 500; --z-pc-drawer: 650; --z-sidebar: 700;
+      --z-map: 1; --z-side-toolbar: 85; --z-hud: 100; --z-header: 500; --z-pc-drawer: 650; --z-sidebar: 700;
       --z-dock: 900; --z-bottomsheet: 850; --z-dropdown: 950; --z-modal: 1000; --z-toast: 2000;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -73,7 +83,7 @@
     .container { display: flex; width: 100%; flex: 1; position: relative; overflow: hidden; }
     .sidebar { width: 390px; max-width: 100%; height: 100%; background-color: var(--bg-surface); border-right: 1px solid var(--border-titanium); display: flex; flex-direction: column; flex-shrink: 0; z-index: var(--z-sidebar); color: var(--text-primary); position: relative; box-shadow: 4px 0 20px rgba(0,0,0,0.6); }
 
-    /* PC 슬라이딩 드로어 (부드러운 오픈 & 좌측 중앙 플로팅 닫기 탭) */
+    /* PC 슬라이딩 드로어 (좌측 중앙 플로팅 닫기 탭 ◀) */
     .pc-sliding-drawer { position: absolute; top: 0; left: 390px; width: 380px; height: 100%; background: rgba(9,12,19,0.97); border-right: 1.5px solid var(--border-titanium); z-index: var(--z-pc-drawer); box-shadow: 12px 0 36px rgba(0,0,0,0.85); transform: translateX(-100%); opacity: 0; visibility: hidden; pointer-events: none; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease, visibility 0.3s; display: flex; flex-direction: column; overflow-y: auto; padding: 14px 16px; gap: 7px; backdrop-filter: blur(14px); }
     .pc-sliding-drawer.open { transform: translateX(0); opacity: 1; visibility: visible; pointer-events: auto; }
     .pc-sliding-drawer::-webkit-scrollbar { width: 4px; } .pc-sliding-drawer::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
@@ -146,27 +156,65 @@
 
     #map { flex: 1; width: 100%; height: 100%; position: relative; background: var(--bg-deep); touch-action: pan-x pan-y; }
 
-    /* [원상복구] 지도 상단 가로 플로팅 HUD 칩 바 (필터만 깔끔하게 단독 노출) */
-    .map-floating-filter-hud {
-      position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
-      z-index: var(--z-map-filter); display: flex; align-items: center;
-      background: rgba(9, 12, 19, 0.92); border: 1.2px solid var(--border-titanium);
-      border-radius: 24px; padding: 3px 6px; gap: 4px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.85); backdrop-filter: blur(12px);
-      max-width: 95vw; overflow-x: auto; scrollbar-width: none;
+    /* [세로 토글 슬림 툴바] 기본 상태: 완전 은닉 ➔ 토글 탭만 노출 */
+    .map-vertical-toolbar-wrap {
+      position: absolute; top: 14px; left: 0; z-index: var(--z-side-toolbar);
+      display: flex; align-items: flex-start;
+      transform: translateX(-100%); /* 기본 상태: 숨김 */
+      transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
     }
-    .map-floating-filter-hud::-webkit-scrollbar { display: none; }
-    .hud-filter-chip {
-      padding: 5px 10px; border-radius: 16px; border: none;
-      background: transparent; color: var(--text-muted); font-size: 0.72rem; font-weight: 700;
-      cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;
-      transition: all 0.2s;
+    .map-vertical-toolbar-wrap.open {
+      transform: translateX(0); /* 클릭 시 펼쳐짐 */
     }
-    .hud-filter-chip:hover { color: #fff; background: rgba(255,255,255,0.06); }
-    .hud-filter-chip.active { background: var(--bg-card); color: #fff; border: 1px solid var(--border-titanium); }
-    .hud-filter-chip.chip-terrain.active { background: #0284c7; color: #fff; border-color: var(--accent-blue); box-shadow: 0 0 8px rgba(56,189,248,0.5); }
-    .hud-filter-chip.chip-easy.active { background: rgba(16,185,129,0.25); color: #6ee7b7; border-color: #10b981; }
-    .hud-filter-chip.chip-hard.active { background: rgba(244,63,94,0.25); color: #fda4af; border-color: #f43f5e; }
+
+    .map-vertical-toolbar {
+      display: flex; flex-direction: column; gap: 3px;
+      background: rgba(9, 12, 19, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-left: none;
+      border-radius: 0 14px 14px 0; padding: 7px 6px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(14px);
+      max-height: calc(100vh - 170px); overflow-y: auto;
+      scrollbar-width: none;
+    }
+    .map-vertical-toolbar::-webkit-scrollbar { display: none; }
+
+    /* 좌측 벽에 작게 돌출된 토글 버튼 */
+    .toolbar-toggle-tab-btn {
+      position: absolute; left: 100%; top: 6px;
+      background: rgba(9, 12, 19, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-left: none;
+      border-radius: 0 10px 10px 0;
+      color: #fff; padding: 8px 8px;
+      font-size: 0.72rem; font-weight: 800;
+      cursor: pointer; display: flex; align-items: center; gap: 4px;
+      box-shadow: 4px 0 14px rgba(0,0,0,0.6);
+      backdrop-filter: blur(8px);
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .toolbar-toggle-tab-btn:hover { background: #0284c7; }
+
+    .vtoolbar-title {
+      font-size: 0.6rem; font-weight: 800; color: rgba(255,255,255,0.7);
+      padding: 2px 4px; text-transform: uppercase; letter-spacing: 0.05em;
+      border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 2px;
+    }
+    .vtoolbar-btn {
+      padding: 4.5px 8px; border-radius: 7px; border: 1px solid transparent;
+      background: rgba(255, 255, 255, 0.05); color: var(--text-secondary);
+      font-size: 0.71rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+      display: flex; align-items: center; gap: 4px; transition: all 0.15s ease;
+    }
+    .vtoolbar-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+    .vtoolbar-btn.active {
+      background: #0284c7; color: #fff; border-color: var(--accent-blue);
+      box-shadow: 0 0 10px rgba(56,189,248,0.55);
+    }
+    .vtoolbar-btn.btn-easy.active { background: rgba(16,185,129,0.4); color: #6ee7b7; border-color: #10b981; }
+    .vtoolbar-btn.btn-hard.active { background: rgba(244,63,94,0.4); color: #fda4af; border-color: #f43f5e; }
 
     .hud-control-tower { position: absolute; bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 14px); right: 12px; z-index: var(--z-hud); display: flex; flex-direction: column; background: rgba(9,12,19,0.95); border: 1px solid var(--border-titanium); border-radius: 14px; box-shadow: 0 6px 22px rgba(0,0,0,0.8); overflow: hidden; width: 44px; }
     .tower-btn { width: 44px; height: 44px; background: transparent; border: none; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 0.72rem; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; gap: 2px; }
@@ -175,15 +223,6 @@
 
     .pin-picker-banner { display: none; position: absolute; top: 50px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #0f766e, #0284c7); color: #fff; padding: 7px 16px; border-radius: 18px; font-size: 0.8rem; font-weight: 700; z-index: var(--z-modal); box-shadow: 0 4px 20px rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.4); align-items: center; gap: 8px; }
     .btn-cancel-pin-pick { background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.3); color: #fff; border-radius: 10px; padding: 3px 9px; font-size: 0.7rem; cursor: pointer; }
-
-    /* 비비드 네온 3단계 텐트 클러스터 */
-    .custom-cluster-badge { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; font-weight: 800; border-radius: 50% !important; cursor: pointer; backdrop-filter: blur(16px); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); user-select: none; }
-    .custom-cluster-badge:hover { transform: scale(1.14); }
-    .cluster-step-small { width: 54px; height: 54px; background: rgba(16, 185, 129, 0.35); border: 2.2px solid #00FF9D; box-shadow: 0 0 24px rgba(0, 255, 157, 0.75); }
-    .cluster-step-medium { width: 60px; height: 60px; background: rgba(6, 182, 212, 0.40); border: 2.5px solid #00E5FF; box-shadow: 0 0 28px rgba(0, 229, 255, 0.8); }
-    .cluster-step-large { width: 66px; height: 66px; background: rgba(245, 158, 11, 0.45); border: 2.8px solid #FFD600; box-shadow: 0 0 34px rgba(255, 214, 0, 0.95); }
-    .cluster-tent-icon { width: 23px; height: 23px; margin-bottom: 1px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.85)); }
-    .cluster-count { font-family: var(--font-display); font-size: 0.88rem; font-weight: 800; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.9); }
 
     /* 마커 및 상단 툴팁 (중복 문구 제거 & 깔끔한 고도 표기) */
     .custom-spot-marker-wrap { position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer; z-index: 100; transition: transform 0.2s; user-select: none; }
@@ -320,7 +359,7 @@
       .sidebar { position: absolute; top: 0; left: 0; right: 0; width: 100% !important; height: calc(100% - 56px - env(safe-area-inset-bottom, 0px)) !important; z-index: var(--z-sidebar) !important; border-right: none; border-bottom: 1px solid var(--border); transform: translateY(0); }
       .sidebar.collapsed { transform: translateY(-130%) !important; }
       .mobile-bottom-dock { display: flex !important; }
-      .map-floating-filter-hud { top: 8px; max-width: 96vw; }
+      .map-vertical-toolbar-wrap { top: 8px; }
     }
   </style>
 </head>
@@ -424,18 +463,28 @@
     <button type="button" class="floating-drawer-close-tab pc-only" id="floatingDrawerCloseTab" onclick="closePcSlidingDrawer()" title="정보창 닫기">◀ 정보창 닫기</button>
     
     <main id="map">
-      <!-- [원상복구] 지도 상단 가로 플로팅 HUD 칩 바 (필터만 깔끔하게 단독 노출) -->
-      <div class="map-floating-filter-hud clean-hide">
-        <button type="button" class="hud-filter-chip active" id="hudFilterAll" onclick="applyMapHudFilter('ALL')">✨ 전체</button>
-        <button type="button" class="hud-filter-chip chip-terrain" id="hudFilterBeach" onclick="applyMapHudFilter('해변')">🏝️ 해변</button>
-        <button type="button" class="hud-filter-chip chip-terrain" id="hudFilterCave" onclick="applyMapHudFilter('동굴')">🕳️ 동굴</button>
-        <button type="button" class="hud-filter-chip chip-terrain" id="hudFilterIsland" onclick="applyMapHudFilter('섬')">⛵ 섬</button>
-        <button type="button" class="hud-filter-chip chip-terrain" id="hudFilterValley" onclick="applyMapHudFilter('계곡')">🌊 계곡</button>
-        <button type="button" class="hud-filter-chip chip-terrain" id="hudFilterDeck" onclick="applyMapHudFilter('데크')">🌲 데크</button>
-        <button type="button" class="hud-filter-chip chip-terrain" id="hudFilterSoil" onclick="applyMapHudFilter('노지')">🏕️ 노지</button>
-        <button type="button" class="hud-filter-chip chip-terrain" id="hudFilterRock" onclick="applyMapHudFilter('돌박지')">🪨 돌박지</button>
-        <button type="button" class="hud-filter-chip chip-easy" id="hudFilterEasy" onclick="applyMapHudFilter('EASY')">🟢 쉬움</button>
-        <button type="button" class="hud-filter-chip chip-hard" id="hudFilterHard" onclick="applyMapHudFilter('HARD')">🔴 하드</button>
+      <!-- [세로 토글 슬림 툴바] 기본 상태: 완전 은닉 ➔ 토글 탭만 노출 -->
+      <div class="map-vertical-toolbar-wrap clean-hide" id="mapVerticalToolbarWrap">
+        <div class="map-vertical-toolbar">
+          <div class="vtoolbar-title">지형 분류</div>
+          <button type="button" class="vtoolbar-btn active" id="vFilter_ALL" onclick="applyVerticalToolbarFilter('ALL')">✨ 전체보기</button>
+          <button type="button" class="vtoolbar-btn" id="vFilter_BEACH" onclick="applyVerticalToolbarFilter('해변')">🏝️ 해변·모래</button>
+          <button type="button" class="vtoolbar-btn" id="vFilter_CAVE" onclick="applyVerticalToolbarFilter('동굴')">🕳️ 동굴박지</button>
+          <button type="button" class="vtoolbar-btn" id="vFilter_ISLAND" onclick="applyVerticalToolbarFilter('섬')">⛵ 섬 백패킹</button>
+          <button type="button" class="vtoolbar-btn" id="vFilter_VALLEY" onclick="applyVerticalToolbarFilter('계곡')">🌊 계곡·폭포</button>
+          <button type="button" class="vtoolbar-btn" id="vFilter_DECK" onclick="applyVerticalToolbarFilter('데크')">🌲 전망데크</button>
+          <button type="button" class="vtoolbar-btn" id="vFilter_SOIL" onclick="applyVerticalToolbarFilter('노지')">🏕️ 잔디노지</button>
+          <button type="button" class="vtoolbar-btn" id="vFilter_ROCK" onclick="applyVerticalToolbarFilter('돌박지')">🪨 암릉·돌박지</button>
+          
+          <div class="vtoolbar-title" style="margin-top: 6px;">난이도</div>
+          <button type="button" class="vtoolbar-btn btn-easy" id="vFilter_EASY" onclick="applyVerticalToolbarFilter('EASY')">🟢 초급(퇴근박)</button>
+          <button type="button" class="vtoolbar-btn btn-hard" id="vFilter_HARD" onclick="applyVerticalToolbarFilter('HARD')">🔴 상급(하드)</button>
+        </div>
+        <!-- 좌측 벽에 작게 돌출된 토글 버튼 (기본 상태에서 이것만 보임) -->
+        <button type="button" class="toolbar-toggle-tab-btn" id="vtoolbarToggleBtn" onclick="toggleVerticalToolbar()" title="필터 툴바 열기/닫기">
+          <span id="vtoolbarToggleIcon">🧭</span>
+          <span id="vtoolbarToggleText">필터</span>
+        </button>
       </div>
 
       <!-- 우측 컨트롤 타워 (일반 ➔ 위성 ➔ 지형 3단계 순환) -->
@@ -563,6 +612,7 @@
 
   <script>
     const CURRENT_VERSION = "4.5ver Pro";
+    const KAKAO_APP_KEY = "557f5de0f6391a2419bc5592e6a9c9c1";
     const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
     const PRIMARY_SHEET_GID = '1143125586';
     const FALLBACK_SHEET_GID = '0';
@@ -646,7 +696,8 @@
     let userMemos = JSON.parse(localStorage.getItem('okbm_memos')) || {};
 
     let isAdminMode = false, isCleanMapMode = false, currentMapLayerState = 0;
-    let currentMasterTab = 'REGION', currentRegionFilter = 'ALL', currentTerrainFilter = 'ALL', currentCourseFilter = 'ALL', currentMyFilter = 'ALL', currentHudFilter = 'ALL';
+    let currentMasterTab = 'REGION', currentRegionFilter = 'ALL', currentTerrainFilter = 'ALL', currentCourseFilter = 'ALL', currentMyFilter = 'ALL';
+    let currentVerticalFilter = 'ALL'; // 세로 툴바 선택 필터
     let isSidebarCollapsed = (window.innerWidth <= 768), currentActiveSpot = null, pendingUnlockSpotId = null, isZoomDetailedState = false;
 
     const spotOverlayMap = new Map();
@@ -654,54 +705,76 @@
     let modalMode = 'PROPOSAL', modalEditIndex = -1, modalPendingData = { lat: 0, lng: 0, address: '' }, isPickingLocationMode = false;
     let mapRadarTimer = null;
 
-    /* 카카오맵 SDK 안전 로딩 및 캔버스 초기화 */
-    function initMapEngine() {
-      if (typeof kakao === 'undefined' || !kakao.maps) {
-        console.warn('⚠️ 카카오맵 SDK 로드 중...');
+    /* 세로 툴바 접기/펼치기 토글 함수 */
+    function toggleVerticalToolbar() {
+      const tb = document.getElementById('mapVerticalToolbarWrap');
+      const icon = document.getElementById('vtoolbarToggleIcon');
+      const text = document.getElementById('vtoolbarToggleText');
+      if (!tb) return;
+      const isOpen = tb.classList.toggle('open');
+      if (icon) icon.innerText = isOpen ? '◀' : '🧭';
+      if (text) text.innerText = isOpen ? '닫기' : '필터';
+    }
+
+    /* 카카오맵 SDK 동적 안전 로더 (먹통 방지 100% 보장) */
+    function loadKakaoSdkDynamically(callback) {
+      if (typeof kakao !== 'undefined' && kakao.maps && kakao.maps.load) {
+        kakao.maps.load(callback);
         return;
       }
-      try {
-        kakao.maps.load(() => {
-          const container = document.getElementById('map');
-          if (!container) return;
-          const options = {
-            center: new kakao.maps.LatLng(DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng),
-            level: DEFAULT_MAP_LEVEL
-          };
-          map = new kakao.maps.Map(container, options);
-          geocoder = new kakao.maps.services.Geocoder();
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&libraries=services,clusterer&autoload=false`;
+      script.onload = () => {
+        if (window.kakao && window.kakao.maps) {
+          window.kakao.maps.load(callback);
+        }
+      };
+      script.onerror = () => {
+        console.error('카카오맵 SDK 로드 실패. 카카오 콘솔 활성화 설정을 확인해주세요.');
+        showToast('⚠️ 카카오맵 인증 오류: [제품 설정 ➔ 카카오맵 ON] 확인 필요', 4000);
+      };
+      document.head.appendChild(script);
+    }
 
-          // 렌더링 리사이즈 보정
-          setTimeout(() => { if (map) map.relayout(); }, 200);
+    function initMapEngine() {
+      loadKakaoSdkDynamically(() => {
+        const container = document.getElementById('map');
+        if (!container) return;
+        const options = {
+          center: new kakao.maps.LatLng(DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng),
+          level: DEFAULT_MAP_LEVEL
+        };
+        map = new kakao.maps.Map(container, options);
+        geocoder = new kakao.maps.services.Geocoder();
 
-          kakao.maps.event.addListener(map, 'zoom_changed', () => updateLODMarkers());
-          kakao.maps.event.addListener(map, 'click', handleMapClick);
+        setTimeout(() => { if (map) map.relayout(); }, 250);
 
-          container.addEventListener('touchstart', (e) => {
-            if (e.touches && e.touches.length === 1) {
-              mapRadarTimer = setTimeout(() => {
-                if (map && map.getLevel() <= 7) {
-                  document.body.classList.add('map-radar-active');
-                  showToast('📡 주변 박지 레이더 ON', 1200);
-                }
-              }, 400);
-            }
-          }, { passive: true });
-          container.addEventListener('touchend', () => {
-            if (mapRadarTimer) clearTimeout(mapRadarTimer);
-            document.body.classList.remove('map-radar-active');
-          }, { passive: true });
+        kakao.maps.event.addListener(map, 'zoom_changed', () => updateLODMarkers());
+        kakao.maps.event.addListener(map, 'click', handleMapClick);
 
-          if (spots && spots.length > 0) { 
-            spots = spots.filter(s => !BLOCKED_SPOT_IDS.has(String(s.id)));
-            updateNewSpotFlags(spots); 
-            renderSpots(); 
-            checkUrlParamSpotFocus(); 
+        container.addEventListener('touchstart', (e) => {
+          if (e.touches && e.touches.length === 1) {
+            mapRadarTimer = setTimeout(() => {
+              if (map && map.getLevel() <= 7) {
+                document.body.classList.add('map-radar-active');
+                showToast('📡 주변 박지 레이더 ON', 1200);
+              }
+            }, 400);
           }
-        });
-      } catch (err) {
-        console.error('카카오맵 엔진 로드 에러:', err);
-      }
+        }, { passive: true });
+        container.addEventListener('touchend', () => {
+          if (mapRadarTimer) clearTimeout(mapRadarTimer);
+          document.body.classList.remove('map-radar-active');
+        }, { passive: true });
+
+        if (spots && spots.length > 0) { 
+          spots = spots.filter(s => !BLOCKED_SPOT_IDS.has(String(s.id)));
+          updateNewSpotFlags(spots); 
+          renderSpots(); 
+          checkUrlParamSpotFocus(); 
+        }
+      });
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -776,22 +849,22 @@
       );
     }
 
-    /* 상단 가로 플로팅 HUD 칩 필터 적용 (지형 & 난이도) */
-    function applyMapHudFilter(type) {
-      currentHudFilter = type;
-      document.querySelectorAll('.hud-filter-chip').forEach(b => b.classList.remove('active'));
+    /* 세로 토글 툴바 필터 클릭 핸들러 */
+    function applyVerticalToolbarFilter(filterVal) {
+      currentVerticalFilter = filterVal;
+      document.querySelectorAll('.vtoolbar-btn').forEach(b => b.classList.remove('active'));
 
-      const chipIdMap = {
-        'ALL': 'hudFilterAll', '해변': 'hudFilterBeach', '동굴': 'hudFilterCave',
-        '섬': 'hudFilterIsland', '계곡': 'hudFilterValley', '데크': 'hudFilterDeck',
-        '노지': 'hudFilterSoil', '돌박지': 'hudFilterRock', 'EASY': 'hudFilterEasy', 'HARD': 'hudFilterHard'
+      const vMap = {
+        'ALL': 'vFilter_ALL', '해변': 'vFilter_BEACH', '동굴': 'vFilter_CAVE',
+        '섬': 'vFilter_ISLAND', '계곡': 'vFilter_VALLEY', '데크': 'vFilter_DECK',
+        '노지': 'vFilter_SOIL', '돌박지': 'vFilter_ROCK', 'EASY': 'vFilter_EASY', 'HARD': 'vFilter_HARD'
       };
-      if (chipIdMap[type] && document.getElementById(chipIdMap[type])) {
-        document.getElementById(chipIdMap[type]).classList.add('active');
+      if (vMap[filterVal] && document.getElementById(vMap[filterVal])) {
+        document.getElementById(vMap[filterVal]).classList.add('active');
       }
 
       renderSpots();
-      showToast(`🧭 [${type === 'ALL' ? '전체' : type}] 박지 필터 적용`, 900);
+      showToast(`🧭 [${filterVal === 'ALL' ? '전체' : filterVal}] 필터 적용`, 900);
     }
 
     function switchMasterTab(tabName) {
@@ -936,7 +1009,7 @@
     function closeLntModal() { document.getElementById('lntModalOverlay').style.display = 'none'; }
     function confirmLntPledgeAndUnlock() { closeLntModal(); if (pendingUnlockSpotId) { completeLntPledgeAndUnlock(pendingUnlockSpotId); pendingUnlockSpotId = null; } }
 
-    /* 마커 DOM 생성 (🚩 / ⭐ 코너 뱃지 단독 노출 & 상단 툴팁 중복 제거) */
+    /* 마커 DOM 생성 (🚩/⭐ 단독 노출 & 툴팁 중복 제거) */
     function createMarkerDomElement(spot, isDetailed = false) {
       const isMobile = window.innerWidth <= 768;
       const d = parseInt(spot.difficulty, 10) || 3;
@@ -1378,7 +1451,6 @@
       }
     }
 
-    /* 3대 내비게이션 길안내 원클릭 다이렉트 실행 */
     function navigateToNaviApp(type, spotName, address, lat, lng) {
       const targetQuery = address || spotName;
       if (type === 'kakao') {
@@ -1492,7 +1564,6 @@
       if (target) copyTextToClipboard(parseEntryPoint(target.entryPoint || target.name).navAddress || target.name);
     }
 
-    /* 관리자 핀 이동 시 들머리 주소(D열) 100% 영구 보존 및 E/F열 단독 업데이트 */
     async function saveUpdatedLocation(spotId, newLat, newLng) {
       const targetSpot = spots.find(s => String(s.id) === String(spotId));
       if (!targetSpot) return;
@@ -1527,7 +1598,6 @@
       } catch (err) {}
     }
 
-    /* 시트 연동: 활성 GID 1143125586 1순위 ➔ 0 Fallback */
     async function fetchSpotsFromGoogleSheet(isManual = false) {
       let gidsToTry = [PRIMARY_SHEET_GID, FALLBACK_SHEET_GID];
       for (let gid of gidsToTry) {
@@ -1758,7 +1828,7 @@
       else if (!e.target.value.trim()) showTopRankings(mode);
     }
 
-    /* 맵 마커 및 목록 렌더링 */
+    /* 마커 및 목록 렌더링 */
     function renderSpots() {
       const currentIds = new Set(spots.map(s => String(s.id)));
       spotOverlayMap.forEach((overlay, id) => { 
@@ -1801,15 +1871,15 @@
         const sId = String(spot.id), overlay = spotOverlayMap.get(sId);
         let match = true;
         
-        // 1. 상단 플로팅 칩 필터 매칭
-        if (currentHudFilter === 'EASY') {
+        // 1. 세로 토글 툴바 필터 매칭
+        if (currentVerticalFilter === 'EASY') {
           const isEasyDiff = (parseInt(spot.difficulty, 10) || 3) <= 2;
           const isEasyTerrain = (spot.terrain || []).some(t => t.includes('해변') || t.includes('데크') || t.includes('노지'));
           if (!isEasyDiff && !isEasyTerrain) match = false;
-        } else if (currentHudFilter === 'HARD') {
+        } else if (currentVerticalFilter === 'HARD') {
           if ((parseInt(spot.difficulty, 10) || 3) < 4) match = false;
-        } else if (currentHudFilter !== 'ALL') {
-          if (!(spot.terrain || []).some(t => t.includes(currentHudFilter))) match = false;
+        } else if (currentVerticalFilter !== 'ALL') {
+          if (!(spot.terrain || []).some(t => t.includes(currentVerticalFilter))) match = false;
         }
 
         // 2. 사이드바 마스터 탭 바 필터 매칭
