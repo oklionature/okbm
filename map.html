@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -10,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap" rel="stylesheet">
-  <!-- 카카오맵 SDK (autoload=false로 안전 비동기 로드 보장) -->
+  <!-- 카카오맵 SDK (비동기 안전 로딩 autoload=false) -->
   <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=557f5de0f6391a2419bc5592e6a9c9c1&libraries=services,clusterer&autoload=false"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
@@ -144,31 +145,60 @@
 
     #map { flex: 1; width: 100%; height: 100%; position: relative; background: var(--bg-deep); touch-action: pan-x pan-y; }
 
-    /* 지도 사이드 밀착 슬림 필터 툴바 (Side-docked Filter Toolbar) */
-    .map-side-filter-toolbar {
+    /* 반투명 접이식(토글) 슬림 사이드 툴바 */
+    .map-collapsible-toolbar-wrap {
       position: absolute; top: 12px; left: 12px; z-index: var(--z-side-toolbar);
-      display: flex; flex-direction: column; gap: 4px;
-      background: rgba(9,12,19,0.92); border: 1.2px solid var(--border-titanium);
-      border-radius: 12px; padding: 6px 5px; box-shadow: 0 8px 24px rgba(0,0,0,0.85);
-      backdrop-filter: blur(14px); max-height: calc(100% - 120px); overflow-y: auto;
+      display: flex; align-items: flex-start; transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
-    .map-side-filter-toolbar::-webkit-scrollbar { width: 3px; }
-    .map-side-filter-toolbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+    .map-collapsible-toolbar-wrap.collapsed {
+      transform: translateX(calc(-100% + 28px));
+    }
 
-    .side-filter-section-title { font-size: 0.62rem; font-weight: 800; color: var(--text-muted); padding: 2px 4px; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 2px; }
-    .side-filter-btn {
-      padding: 5px 8px; border-radius: 8px; border: 1px solid transparent;
-      background: transparent; color: var(--text-secondary); font-size: 0.72rem; font-weight: 700;
-      cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 4px;
-      transition: all 0.15s ease;
+    .map-side-filter-toolbar {
+      display: flex; flex-direction: column; gap: 3px;
+      background: rgba(9, 12, 19, 0.45); /* 완전 투명 글래스 */
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px; padding: 6px 5px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+      max-height: calc(100vh - 160px); overflow-y: auto;
+      scrollbar-width: none;
     }
-    .side-filter-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .map-side-filter-toolbar::-webkit-scrollbar { display: none; }
+
+    .toolbar-toggle-btn {
+      width: 26px; height: 38px;
+      background: rgba(9, 12, 19, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-left: none;
+      border-radius: 0 8px 8px 0;
+      color: var(--accent-blue);
+      font-size: 0.72rem; font-weight: 800;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      box-shadow: 4px 0 14px rgba(0,0,0,0.5);
+      backdrop-filter: blur(8px);
+      margin-top: 4px;
+    }
+    .toolbar-toggle-btn:hover { background: #0284c7; color: #fff; }
+
+    .side-filter-section-title {
+      font-size: 0.6rem; font-weight: 800; color: rgba(255,255,255,0.65);
+      padding: 2px 4px; text-transform: uppercase; letter-spacing: 0.05em;
+      border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 2px;
+    }
+    .side-filter-btn {
+      padding: 4.5px 7px; border-radius: 7px; border: 1px solid transparent;
+      background: rgba(255, 255, 255, 0.04); color: var(--text-secondary);
+      font-size: 0.71rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+      display: flex; align-items: center; gap: 4px; transition: all 0.15s ease;
+    }
+    .side-filter-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
     .side-filter-btn.active {
       background: #0284c7; color: #fff; border-color: var(--accent-blue);
-      box-shadow: 0 0 10px rgba(56,189,248,0.5);
+      box-shadow: 0 0 10px rgba(56,189,248,0.55);
     }
-    .side-filter-btn.btn-easy.active { background: rgba(16,185,129,0.3); color: #6ee7b7; border-color: #10b981; }
-    .side-filter-btn.btn-hard.active { background: rgba(244,63,94,0.3); color: #fda4af; border-color: #f43f5e; }
+    .side-filter-btn.btn-easy.active { background: rgba(16,185,129,0.4); color: #6ee7b7; border-color: #10b981; }
+    .side-filter-btn.btn-hard.active { background: rgba(244,63,94,0.4); color: #fda4af; border-color: #f43f5e; }
 
     .hud-control-tower { position: absolute; bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 14px); right: 12px; z-index: var(--z-hud); display: flex; flex-direction: column; background: rgba(9,12,19,0.95); border: 1px solid var(--border-titanium); border-radius: 14px; box-shadow: 0 6px 22px rgba(0,0,0,0.8); overflow: hidden; width: 44px; }
     .tower-btn { width: 44px; height: 44px; background: transparent; border: none; border-bottom: 1px solid var(--border); color: var(--text-secondary); font-size: 0.72rem; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; gap: 2px; }
@@ -178,7 +208,6 @@
     .pin-picker-banner { display: none; position: absolute; top: 50px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #0f766e, #0284c7); color: #fff; padding: 7px 16px; border-radius: 18px; font-size: 0.8rem; font-weight: 700; z-index: var(--z-modal); box-shadow: 0 4px 20px rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.4); align-items: center; gap: 8px; }
     .btn-cancel-pin-pick { background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.3); color: #fff; border-radius: 10px; padding: 3px 9px; font-size: 0.7rem; cursor: pointer; }
 
-    /* 마커 및 상단 툴팁 (중복 문구 제거 & 깔끔한 고도 표기) */
     .custom-spot-marker-wrap { position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer; z-index: 100; transition: transform 0.2s; user-select: none; }
     .custom-spot-marker-wrap.active-marker { transform: scale(1.18); z-index: 999999 !important; }
     .custom-spot-marker-wrap.active-marker::before { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 42px; height: 42px; border-radius: 50%; background: rgba(56,189,248,0.55); animation: markerPulseRing 1.8s infinite ease-out; z-index: -1; }
@@ -192,7 +221,6 @@
     .marker-label-elev { color: #86efac; }
     .marker-svg-icon { display: block; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.7)); }
 
-    /* 마커 우측 상단 성취감 뱃지 (🚩 / ⭐ 단독 노출) */
     .marker-corner-badge { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; border: 2px solid #ffffff; z-index: 5; }
     .marker-badge-visited { background: #0284c7; color: #fff; box-shadow: 0 0 12px #38bdf8; }
     .marker-badge-fav { background: #f59e0b; color: #fff; box-shadow: 0 0 12px #fbbf24; }
@@ -313,7 +341,7 @@
       .sidebar { position: absolute; top: 0; left: 0; right: 0; width: 100% !important; height: calc(100% - 56px - env(safe-area-inset-bottom, 0px)) !important; z-index: var(--z-sidebar) !important; border-right: none; border-bottom: 1px solid var(--border); transform: translateY(0); }
       .sidebar.collapsed { transform: translateY(-130%) !important; }
       .mobile-bottom-dock { display: flex !important; }
-      .map-side-filter-toolbar { top: 8px; left: 8px; max-height: calc(100% - 140px); }
+      .map-collapsible-toolbar-wrap { top: 8px; left: 8px; }
     }
   </style>
 </head>
@@ -417,25 +445,28 @@
     <button type="button" class="floating-drawer-close-tab pc-only" id="floatingDrawerCloseTab" onclick="closePcSlidingDrawer()" title="정보창 닫기">◀ 정보창 닫기</button>
     
     <main id="map">
-      <!-- 지도 좌측 사이드 밀착 슬림 필터 툴바 (Side-docked Filter Toolbar) -->
-      <div class="map-side-filter-toolbar clean-hide">
-        <div class="side-filter-section-title">지형 퀵필터</div>
-        <button type="button" class="side-filter-btn active" id="sideFilter_ALL" onclick="applyMapSideFilter('TERRAIN', 'ALL')">✨ 전체보기</button>
-        <button type="button" class="side-filter-btn" id="sideFilter_BEACH" onclick="applyMapSideFilter('TERRAIN', '해변')">🏝️ 해변·모래</button>
-        <button type="button" class="side-filter-btn" id="sideFilter_CAVE" onclick="applyMapSideFilter('TERRAIN', '동굴')">🕳️ 동굴박지</button>
-        <button type="button" class="side-filter-btn" id="sideFilter_ISLAND" onclick="applyMapSideFilter('TERRAIN', '섬')">⛵ 섬 백패킹</button>
-        <button type="button" class="side-filter-btn" id="sideFilter_VALLEY" onclick="applyMapSideFilter('TERRAIN', '계곡')">🌊 계곡·폭포</button>
-        <button type="button" class="side-filter-btn" id="sideFilter_DECK" onclick="applyMapSideFilter('TERRAIN', '데크')">🌲 전망데크</button>
-        <button type="button" class="side-filter-btn" id="sideFilter_SOIL" onclick="applyMapSideFilter('TERRAIN', '노지')">🏕️ 잔디노지</button>
-        <button type="button" class="side-filter-btn" id="sideFilter_ROCK" onclick="applyMapSideFilter('TERRAIN', '돌박지')">🪨 암릉·돌박지</button>
-        
-        <div class="side-filter-section-title" style="margin-top: 6px;">난이도 필터</div>
-        <button type="button" class="side-filter-btn btn-easy" id="sideFilter_EASY" onclick="applyMapSideFilter('DIFF', 'EASY')">🟢 초급(퇴근박)</button>
-        <button type="button" class="side-filter-btn btn-mid" id="sideFilter_MID" onclick="applyMapSideFilter('DIFF', 'MID')">🟡 중급(기본)</button>
-        <button type="button" class="side-filter-btn btn-hard" id="sideFilter_HARD" onclick="applyMapSideFilter('DIFF', 'HARD')">🔴 상급(하드)</button>
+      <!-- 반투명 접이식 슬림 툴바 -->
+      <div class="map-collapsible-toolbar-wrap clean-hide" id="mapCollapsibleToolbar">
+        <div class="map-side-filter-toolbar">
+          <div class="side-filter-section-title">지형 퀵필터</div>
+          <button type="button" class="side-filter-btn active" id="sideFilter_ALL" onclick="applyMapSideFilter('TERRAIN', 'ALL')">✨ 전체보기</button>
+          <button type="button" class="side-filter-btn" id="sideFilter_BEACH" onclick="applyMapSideFilter('TERRAIN', '해변')">🏝️ 해변·모래</button>
+          <button type="button" class="side-filter-btn" id="sideFilter_CAVE" onclick="applyMapSideFilter('TERRAIN', '동굴')">🕳️ 동굴박지</button>
+          <button type="button" class="side-filter-btn" id="sideFilter_ISLAND" onclick="applyMapSideFilter('TERRAIN', '섬')">⛵ 섬 백패킹</button>
+          <button type="button" class="side-filter-btn" id="sideFilter_VALLEY" onclick="applyMapSideFilter('TERRAIN', '계곡')">🌊 계곡·폭포</button>
+          <button type="button" class="side-filter-btn" id="sideFilter_DECK" onclick="applyMapSideFilter('TERRAIN', '데크')">🌲 전망데크</button>
+          <button type="button" class="side-filter-btn" id="sideFilter_SOIL" onclick="applyMapSideFilter('TERRAIN', '노지')">🏕️ 잔디노지</button>
+          <button type="button" class="side-filter-btn" id="sideFilter_ROCK" onclick="applyMapSideFilter('TERRAIN', '돌박지')">🪨 암릉·돌박지</button>
+          
+          <div class="side-filter-section-title" style="margin-top: 6px;">난이도 필터</div>
+          <button type="button" class="side-filter-btn btn-easy" id="sideFilter_EASY" onclick="applyMapSideFilter('DIFF', 'EASY')">🟢 초급(퇴근박)</button>
+          <button type="button" class="side-filter-btn btn-mid" id="sideFilter_MID" onclick="applyMapSideFilter('DIFF', 'MID')">🟡 중급(기본)</button>
+          <button type="button" class="side-filter-btn btn-hard" id="sideFilter_HARD" onclick="applyMapSideFilter('DIFF', 'HARD')">🔴 상급(하드)</button>
+        </div>
+        <button type="button" class="toolbar-toggle-btn" id="toolbarToggleBtn" onclick="toggleMapToolbar()" title="필터 툴바 접기/펼치기">◀</button>
       </div>
 
-      <!-- 지도 우측 컨트롤 타워 (일반 ➔ 위성 ➔ 지형 3단계 순환) -->
+      <!-- 우측 컨트롤 타워 (일반 ➔ 위성 ➔ 지형 3단계 순환) -->
       <div class="hud-control-tower clean-hide">
         <button type="button" class="tower-btn" id="towerBtnMapType" onclick="toggleMapTypeMode()" title="일반/스카이뷰/지형도 전환">
           <svg viewBox="0 0 24 24" class="ui-icon" style="width:16px; height:16px; margin:0;"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>
@@ -644,7 +675,7 @@
 
     let isAdminMode = false, isCleanMapMode = false, currentMapLayerState = 0;
     let currentMasterTab = 'REGION', currentRegionFilter = 'ALL', currentTerrainFilter = 'ALL', currentCourseFilter = 'ALL', currentMyFilter = 'ALL';
-    let currentMapFilterType = 'ALL', currentMapFilterValue = 'ALL'; // 사이드 툴바 필터
+    let currentMapFilterType = 'TERRAIN', currentMapFilterValue = 'ALL';
     let isSidebarCollapsed = (window.innerWidth <= 768), currentActiveSpot = null, pendingUnlockSpotId = null, isZoomDetailedState = false;
 
     const spotOverlayMap = new Map();
@@ -652,45 +683,63 @@
     let modalMode = 'PROPOSAL', modalEditIndex = -1, modalPendingData = { lat: 0, lng: 0, address: '' }, isPickingLocationMode = false;
     let mapRadarTimer = null;
 
-    /* 카카오맵 SDK 안전 로딩 콜백 */
+    /* 툴바 접기/펼치기 토글 */
+    function toggleMapToolbar() {
+      const tb = document.getElementById('mapCollapsibleToolbar');
+      const btn = document.getElementById('toolbarToggleBtn');
+      if (!tb || !btn) return;
+      const isCollapsed = tb.classList.toggle('collapsed');
+      btn.innerText = isCollapsed ? '▶' : '◀';
+    }
+
+    /* 카카오맵 SDK 안전 로딩 및 캔버스 자동 리사이징 */
     function initMapEngine() {
-      kakao.maps.load(() => {
-        const container = document.getElementById('map');
-        const options = {
-          center: new kakao.maps.LatLng(DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng),
-          level: DEFAULT_MAP_LEVEL
-        };
-        map = new kakao.maps.Map(container, options);
-        geocoder = new kakao.maps.services.Geocoder();
+      if (typeof kakao === 'undefined' || !kakao.maps) {
+        console.warn('⚠️ 카카오맵 SDK가 로드되지 않았습니다. 개발자 콘솔의 Web 도메인을 확인하세요.');
+        return;
+      }
+      try {
+        kakao.maps.load(() => {
+          const container = document.getElementById('map');
+          if (!container) return;
+          const options = {
+            center: new kakao.maps.LatLng(DEFAULT_MAP_CENTER.lat, DEFAULT_MAP_CENTER.lng),
+            level: DEFAULT_MAP_LEVEL
+          };
+          map = new kakao.maps.Map(container, options);
+          geocoder = new kakao.maps.services.Geocoder();
 
-        kakao.maps.event.addListener(map, 'zoom_changed', () => updateLODMarkers());
-        kakao.maps.event.addListener(map, 'click', handleMapClick);
+          // 화면 리사이즈 보정
+          setTimeout(() => { if (map) map.relayout(); }, 250);
 
-        container.addEventListener('touchstart', (e) => {
-          if (e.touches && e.touches.length === 1) {
-            mapRadarTimer = setTimeout(() => {
-              if (map && map.getLevel() <= 7) {
-                document.body.classList.add('map-radar-active');
-                showToast('📡 주변 박지 레이더 ON', 1200);
-              }
-            }, 400);
+          kakao.maps.event.addListener(map, 'zoom_changed', () => updateLODMarkers());
+          kakao.maps.event.addListener(map, 'click', handleMapClick);
+
+          container.addEventListener('touchstart', (e) => {
+            if (e.touches && e.touches.length === 1) {
+              mapRadarTimer = setTimeout(() => {
+                if (map && map.getLevel() <= 7) {
+                  document.body.classList.add('map-radar-active');
+                  showToast('📡 주변 박지 레이더 ON', 1200);
+                }
+              }, 400);
+            }
+          }, { passive: true });
+          container.addEventListener('touchend', () => {
+            if (mapRadarTimer) clearTimeout(mapRadarTimer);
+            document.body.classList.remove('map-radar-active');
+          }, { passive: true });
+
+          if (spots && spots.length > 0) { 
+            spots = spots.filter(s => !BLOCKED_SPOT_IDS.has(String(s.id)));
+            updateNewSpotFlags(spots); 
+            renderSpots(); 
+            checkUrlParamSpotFocus(); 
           }
-        }, { passive: true });
-        container.addEventListener('touchend', () => {
-          if (mapRadarTimer) clearTimeout(mapRadarTimer);
-          document.body.classList.remove('map-radar-active');
-        }, { passive: true });
-
-        // 데이터 렌더링 시작
-        if (spots && spots.length > 0) { 
-          spots = spots.filter(s => !BLOCKED_SPOT_IDS.has(String(s.id)));
-          updateNewSpotFlags(spots); 
-          renderSpots(); 
-          checkUrlParamSpotFocus(); 
-        }
-        fetchSpotsFromGoogleSheet();
-        fetchCommentsFromSheet();
-      });
+        });
+      } catch (err) {
+        console.error('카카오맵 엔진 로드 에러:', err);
+      }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -705,6 +754,8 @@
       } else { updateSmartResetButtons(); }
       initBottomSheetSwipeGesture();
       renderSubChips();
+      fetchSpotsFromGoogleSheet();
+      fetchCommentsFromSheet();
 
       document.addEventListener('click', (e) => {
         const pcDrop = document.getElementById('pcSearchDropdown');
@@ -716,7 +767,7 @@
       });
     });
 
-    /* 일반 ➔ 스카이뷰(위성) ➔ 산림청 지형도 3단계 원클릭 전환 */
+    /* 일반 ➔ 스카이뷰(위성) ➔ 산림청 지형도 3단계 전환 */
     function toggleMapTypeMode() {
       if (!map) return;
       const textEl = document.getElementById('towerMapTypeText'), btnEl = document.getElementById('towerBtnMapType');
@@ -746,6 +797,7 @@
       if (!navigator.geolocation) return alert('현재 브라우저에서는 위치 서비스를 지원하지 않습니다.');
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          if (!map) return;
           const lat = position.coords.latitude, lng = position.coords.longitude;
           const locPos = new kakao.maps.LatLng(lat, lng);
           if (!userLocationOverlay) {
@@ -762,7 +814,7 @@
       );
     }
 
-    /* 지도 사이드 툴바 필터 (지형 및 난이도 즉시 분류) */
+    /* 사이드 반투명 툴바 필터 */
     function applyMapSideFilter(type, value) {
       currentMapFilterType = type;
       currentMapFilterValue = value;
@@ -778,7 +830,7 @@
       }
 
       renderSpots();
-      showToast(`🧭 [${value === 'ALL' ? '전체' : value}] 박지 필터 적용`, 1000);
+      showToast(`🧭 [${value === 'ALL' ? '전체' : value}] 필터 적용`, 900);
     }
 
     function switchMasterTab(tabName) {
@@ -839,7 +891,6 @@
       }
     }
 
-    /* 모바일 바텀시트 좌/우 스와이프 스마트 릴레이 탐색 기능 */
     function initBottomSheetSwipeGesture() {
       const sheet = document.getElementById('mobileBottomSheet'), handleArea = document.getElementById('sheetHandleArea');
       if (!sheet || !handleArea) return;
@@ -924,7 +975,7 @@
     function closeLntModal() { document.getElementById('lntModalOverlay').style.display = 'none'; }
     function confirmLntPledgeAndUnlock() { closeLntModal(); if (pendingUnlockSpotId) { completeLntPledgeAndUnlock(pendingUnlockSpotId); pendingUnlockSpotId = null; } }
 
-    /* 마커 DOM 생성 (이벤트 리스너 직접 바인딩으로 안전성 100% 확보) */
+    /* 마커 DOM 생성 */
     function createMarkerDomElement(spot, isDetailed = false) {
       const isMobile = window.innerWidth <= 768;
       const d = parseInt(spot.difficulty, 10) || 3;
@@ -1366,7 +1417,6 @@
       }
     }
 
-    /* 3대 내비게이션 길안내 다이렉트 실행 핸들러 */
     function navigateToNaviApp(type, spotName, address, lat, lng) {
       const targetQuery = address || spotName;
       if (type === 'kakao') {
@@ -1480,7 +1530,6 @@
       if (target) copyTextToClipboard(parseEntryPoint(target.entryPoint || target.name).navAddress || target.name);
     }
 
-    /* 관리자 마커 이동 시 들머리 주소(D열) 보존 */
     async function saveUpdatedLocation(spotId, newLat, newLng) {
       const targetSpot = spots.find(s => String(s.id) === String(spotId));
       if (!targetSpot) return;
@@ -1515,7 +1564,6 @@
       } catch (err) {}
     }
 
-    /* 시트 연동: GID 1143125586 ➔ 0 Fallback */
     async function fetchSpotsFromGoogleSheet(isManual = false) {
       let gidsToTry = [PRIMARY_SHEET_GID, FALLBACK_SHEET_GID];
       for (let gid of gidsToTry) {
@@ -1748,11 +1796,10 @@
 
     /* 맵 마커 및 목록 렌더링 */
     function renderSpots() {
-      if (!map) return;
       const currentIds = new Set(spots.map(s => String(s.id)));
       spotOverlayMap.forEach((overlay, id) => { 
         if (!currentIds.has(id)) { 
-          overlay.setMap(null); 
+          if (overlay.setMap) overlay.setMap(null); 
           spotOverlayMap.delete(id); 
         } 
       });
@@ -1761,7 +1808,7 @@
         const lat = parseFloat(spot.lat), lng = parseFloat(spot.lng);
         if (isNaN(lat) || isNaN(lng) || lat < 30 || lng < 120) return;
         const sId = String(spot.id);
-        if (!spotOverlayMap.has(sId)) {
+        if (!spotOverlayMap.has(sId) && map) {
           const contentDom = createMarkerDomElement(spot, isZoomDetailedState || (currentActiveSpot && String(currentActiveSpot.id) === sId));
 
           const overlay = new kakao.maps.CustomOverlay({
@@ -1790,7 +1837,7 @@
         const sId = String(spot.id), overlay = spotOverlayMap.get(sId);
         let match = true;
         
-        // 1. 사이드 밀착 퀵 필터 매칭
+        // 1. 사이드 필터 매칭
         if (currentMapFilterType === 'TERRAIN' && currentMapFilterValue !== 'ALL') {
           if (!(spot.terrain || []).some(t => t.includes(currentMapFilterValue))) match = false;
         } else if (currentMapFilterType === 'DIFF') {
@@ -1815,12 +1862,12 @@
         }
 
         if (match) {
-          if (overlay) overlay.setMap(map);
+          if (overlay && map) overlay.setMap(map);
           const r = spot.region || '경기';
           if (grouped[r]) grouped[r].push(spot);
           visibleCount++;
         } else {
-          if (overlay) overlay.setMap(null);
+          if (overlay && overlay.setMap) overlay.setMap(null);
         }
       });
 
@@ -1978,6 +2025,7 @@
     function cancelPinPicking() { isPickingLocationMode = false; document.getElementById('pinPickerBanner').style.display = 'none'; document.getElementById('customModalOverlay').style.display = 'flex'; }
 
     function handleMapClick(mouseEvent) {
+      if (!mouseEvent.latLng) return;
       const latLng = mouseEvent.latLng;
       const lat = parseFloat(latLng.getLat().toFixed(6)), lng = parseFloat(latLng.getLng().toFixed(6));
 
@@ -2099,7 +2147,7 @@
       if (!confirm(`'${targetSpot.name}' 박지를 정말 삭제하시겠습니까?`)) return;
       const deletedId = targetSpot.id, deletedName = targetSpot.name;
       const ov = spotOverlayMap.get(String(deletedId));
-      if (ov) { ov.setMap(null); spotOverlayMap.delete(String(deletedId)); }
+      if (ov && ov.setMap) { ov.setMap(null); spotOverlayMap.delete(String(deletedId)); }
       spots.splice(index, 1);
       delete spotComments[deletedId]; userBookmarks.delete(String(deletedId)); userVisited.delete(String(deletedId)); delete userMemos[String(deletedId)];
       localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
@@ -2149,50 +2197,52 @@
         }
       });
 
-      const places = new kakao.maps.services.Places();
-      places.keywordSearch(rawQuery, (data, status) => {
-        if (status === kakao.maps.services.Status.OK) {
-          data.forEach(item => {
-            const lat = parseFloat(item.y), lng = parseFloat(item.x);
-            const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
-            if (!seenCoords.has(key)) {
-              seenCoords.add(key);
-              results.push({ 
-                title: item.place_name, 
-                sub: `[${item.category_group_name || '장소'}] ${item.road_address_name || item.address_name || ''}`, 
-                lat, lng, isInternal: false 
-              });
-            }
+      if (typeof kakao !== 'undefined' && kakao.maps && kakao.maps.services) {
+        const places = new kakao.maps.services.Places();
+        places.keywordSearch(rawQuery, (data, status) => {
+          if (status === kakao.maps.services.Status.OK) {
+            data.forEach(item => {
+              const lat = parseFloat(item.y), lng = parseFloat(item.x);
+              const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+              if (!seenCoords.has(key)) {
+                seenCoords.add(key);
+                results.push({ 
+                  title: item.place_name, 
+                  sub: `[${item.category_group_name || '장소'}] ${item.road_address_name || item.address_name || ''}`, 
+                  lat, lng, isInternal: false 
+                });
+              }
+            });
+          }
+
+          dropdown.innerHTML = `<div class="dropdown-header"><span>🔍 검색 결과 (${results.length})</span><button type="button" class="btn-close-dropdown" onclick="document.getElementById('${mode === 'mobile' ? 'mobileSearchDropdown' : 'pcSearchDropdown'}').style.display='none';">✕ 닫기</button></div>`;
+          if (results.length === 0) { dropdown.innerHTML += '<li class="dropdown-item" style="color:var(--text-muted);">검색 결과가 없습니다.</li>'; return; }
+
+          results.forEach(res => {
+            const li = document.createElement('li');
+            li.className = 'dropdown-item';
+            li.innerHTML = `
+              <div style="flex:1; padding-right:8px;">
+                <div style="font-weight:700; color:${res.isInternal ? 'var(--accent-blue)' : '#fff'}; font-size:0.84rem;">${escapeHtml(res.title)}</div>
+                <div style="font-size:0.72rem; color:var(--text-muted);">${escapeHtml(res.sub)}</div>
+              </div>
+              ${(isAdminMode && !res.isInternal) ? `<button class="btn-quick-add" style="display:inline-block;" onclick="event.stopPropagation(); quickAddFromSearch('${escapeHtml(res.title)}', ${res.lat}, ${res.lng}, '${escapeHtml(res.sub)}')">➕ 등록</button>` : ''}`;
+
+            li.addEventListener('click', () => {
+              dropdown.style.display = 'none';
+              if (window.innerWidth <= 768) { isSidebarCollapsed = true; document.getElementById('sidebar').classList.add('collapsed'); updateDockSidebarText(false); }
+              if (res.isInternal && res.spotObj) { focusSpotOnMap(res.spotObj); }
+              else {
+                smoothCenterMapOnSpot(res.lat, res.lng);
+                if (tempSearchMarker) tempSearchMarker.setMap(null);
+                tempSearchMarker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(res.lat, res.lng), map: map });
+                setTimeout(() => { if (tempSearchMarker) tempSearchMarker.setMap(null); }, 3500);
+              }
+            });
+            dropdown.appendChild(li);
           });
-        }
-
-        dropdown.innerHTML = `<div class="dropdown-header"><span>🔍 검색 결과 (${results.length})</span><button type="button" class="btn-close-dropdown" onclick="document.getElementById('${mode === 'mobile' ? 'mobileSearchDropdown' : 'pcSearchDropdown'}').style.display='none';">✕ 닫기</button></div>`;
-        if (results.length === 0) { dropdown.innerHTML += '<li class="dropdown-item" style="color:var(--text-muted);">검색 결과가 없습니다.</li>'; return; }
-
-        results.forEach(res => {
-          const li = document.createElement('li');
-          li.className = 'dropdown-item';
-          li.innerHTML = `
-            <div style="flex:1; padding-right:8px;">
-              <div style="font-weight:700; color:${res.isInternal ? 'var(--accent-blue)' : '#fff'}; font-size:0.84rem;">${escapeHtml(res.title)}</div>
-              <div style="font-size:0.72rem; color:var(--text-muted);">${escapeHtml(res.sub)}</div>
-            </div>
-            ${(isAdminMode && !res.isInternal) ? `<button class="btn-quick-add" style="display:inline-block;" onclick="event.stopPropagation(); quickAddFromSearch('${escapeHtml(res.title)}', ${res.lat}, ${res.lng}, '${escapeHtml(res.sub)}')">➕ 등록</button>` : ''}`;
-
-          li.addEventListener('click', () => {
-            dropdown.style.display = 'none';
-            if (window.innerWidth <= 768) { isSidebarCollapsed = true; document.getElementById('sidebar').classList.add('collapsed'); updateDockSidebarText(false); }
-            if (res.isInternal && res.spotObj) { focusSpotOnMap(res.spotObj); }
-            else {
-              smoothCenterMapOnSpot(res.lat, res.lng);
-              if (tempSearchMarker) tempSearchMarker.setMap(null);
-              tempSearchMarker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(res.lat, res.lng), map: map });
-              setTimeout(() => { if (tempSearchMarker) tempSearchMarker.setMap(null); }, 3500);
-            }
-          });
-          dropdown.appendChild(li);
         });
-      });
+      }
     }
 
     function quickAddFromSearch(title, lat, lng, sub) {
