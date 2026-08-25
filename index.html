@@ -8,7 +8,7 @@
   <meta http-equiv="Expires" content="0" />
   <title>대한민국 낭만 백패킹 로드 | 포털</title>
 
-  <!-- 🔤 웹폰트: map.html과 100% 동일하게 로드 -->
+  <!-- 🔤 웹폰트 로드 -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/webfontworld/gmarket/GmarketSans.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -69,7 +69,7 @@
       padding-bottom: 30px;
     }
 
-    /* 🧭 1. 상단 헤더 & 타이틀 폰트 (map.html과 100% 동일) */
+    /* 🧭 1. 상단 헤더 & 타이틀 */
     .portal-nav {
       position: sticky;
       top: 0;
@@ -87,7 +87,7 @@
     }
     .portal-nav-inner {
       width: 100%;
-      max-width: 800px;
+      max-width: 860px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -129,12 +129,12 @@
       transform: translateY(1px);
     }
 
-    /* 🔍 2. 스마트 검색창 (map.html 규격 & 톤앤매너 동일) */
+    /* 🔍 2. 스마트 검색창 */
     .hero-search-container {
       width: 100%;
-      max-width: 800px;
+      max-width: 860px;
       margin: 0 auto;
-      padding: 6px 10px;
+      padding: 10px 14px 6px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -142,42 +142,44 @@
     .portal-search-box {
       position: relative;
       width: 100%;
-      max-width: 520px;
+      max-width: 540px;
       display: flex;
       align-items: center;
     }
     .portal-search-input {
       width: 100%;
-      height: 36px;
-      min-height: 36px;
-      padding: 5px 62px 5px 14px;
-      border-radius: 18px;
+      height: 40px;
+      min-height: 40px;
+      padding: 6px 66px 6px 16px;
+      border-radius: 20px;
       border: 1px solid var(--border-titanium);
       background: var(--bg-surface);
       color: #ffffff;
-      font-size: 0.82rem;
+      font-size: 0.85rem;
       outline: none;
       transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
     }
     .portal-search-input::placeholder {
       color: var(--text-muted);
-      font-size: 0.76rem;
+      font-size: 0.8rem;
     }
     .portal-search-input:focus {
       background: #000000;
       border-color: var(--accent-blue);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
     }
     
     .btn-clear-search {
       position: absolute;
-      right: 32px;
+      right: 34px;
       top: 50%;
       transform: translateY(-50%);
       background: rgba(255, 255, 255, 0.15);
       border: none;
       color: var(--text-secondary);
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
       border-radius: 50%;
       font-size: 0.65rem;
       font-weight: 800;
@@ -186,7 +188,6 @@
       justify-content: center;
       cursor: pointer;
       z-index: 5;
-      padding: 0;
     }
     .btn-clear-search:hover {
       background: var(--accent-rose);
@@ -201,9 +202,9 @@
       background: none;
       border: none;
       color: var(--accent-blue);
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       cursor: pointer;
-      padding: 3px;
+      padding: 4px;
       z-index: 5;
       display: flex;
       align-items: center;
@@ -212,11 +213,11 @@
 
     .search-auto-dropdown {
       position: absolute;
-      top: 42px;
+      top: 46px;
       left: 0; right: 0;
       background: rgba(9, 12, 19, 0.98);
       border: 1px solid var(--border-titanium);
-      border-radius: 12px;
+      border-radius: 14px;
       box-shadow: 0 16px 40px rgba(0,0,0,0.95);
       list-style: none;
       max-height: 280px;
@@ -226,7 +227,7 @@
       text-align: left;
     }
     .auto-item {
-      padding: 9px 12px;
+      padding: 10px 14px;
       border-bottom: 1px solid var(--border-subtle);
       display: flex;
       justify-content: space-between;
@@ -240,145 +241,245 @@
     .auto-item-name { font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .auto-badge-spot { font-size: 0.65rem; color: #38bdf8; background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px; font-weight: 700; flex-shrink: 0; }
 
+    /* 🌿 LNT 배너 */
     .lnt-slim-banner {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      background: rgba(45, 212, 191, 0.06);
-      border: 1px solid rgba(45, 212, 191, 0.2);
-      border-radius: 20px;
-      padding: 3px 10px;
-      margin-top: 6px;
-      font-size: 0.72rem;
-      color: var(--text-secondary);
+      gap: 8px;
+      background: rgba(45, 212, 191, 0.08);
+      border: 1px solid rgba(45, 212, 191, 0.28);
+      border-radius: 22px;
+      padding: 6px 14px;
+      margin-top: 10px;
+      font-size: 0.8rem;
+      color: #e2e8f0;
+      box-shadow: 0 2px 10px rgba(45, 212, 191, 0.05);
     }
     .lnt-badge-mini {
-      background: rgba(45, 212, 191, 0.2);
+      background: rgba(45, 212, 191, 0.22);
       color: var(--accent-teal);
-      font-size: 0.66rem;
+      font-size: 0.72rem;
       font-weight: 800;
-      padding: 1px 5px;
-      border-radius: 4px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      letter-spacing: 0.02em;
     }
 
-    /* 📦 메인 콘텐츠 */
+    /* 📦 메인 레이아웃 */
     .portal-main-content {
       width: 100%;
-      max-width: 720px;
+      max-width: 860px;
       margin: 0 auto;
-      padding: 0 14px;
+      padding: 10px 14px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 20px;
     }
 
     .section-title {
       font-family: var(--font-display);
-      font-size: 0.94rem;
+      font-size: 0.98rem;
       font-weight: 700;
       display: flex;
       align-items: center;
       gap: 6px;
-      margin-bottom: 8px;
       color: #fff;
     }
 
     /* 🎯 3. 어디로 떠날까? 결정 장애 탈출 픽 */
-    .lucky-card-wrap {
+    .lucky-section-wrap {
       background: rgba(14, 19, 29, 0.75);
       border: 1px solid var(--border-titanium);
-      border-radius: 16px;
-      padding: 14px;
+      border-radius: 18px;
+      padding: 16px 16px 14px;
       backdrop-filter: blur(14px);
       box-shadow: 0 8px 24px rgba(0,0,0,0.35);
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
     }
     .lucky-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    
+
+    /* PC: 3열 Grid / Mobile: Scroll-Snap Slider */
+    .lucky-grid-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      width: 100%;
+    }
+
+    /* 고정화된 박지 카드 */
     .lucky-spot-card {
       background: var(--bg-surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 14px;
+      border-radius: 14px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
-      gap: 7px;
+      justify-content: space-between;
+      height: 165px;
+      min-height: 165px;
+      max-height: 165px;
       cursor: pointer;
-      transition: all 0.25s ease;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, background-color 0.25s ease;
+      position: relative;
+      overflow: hidden;
     }
     .lucky-spot-card:hover {
       background: var(--bg-card-hover);
-      border-color: rgba(56, 189, 248, 0.4);
-      transform: translateY(-2px);
+      border-color: rgba(56, 189, 248, 0.5);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
     }
     .lucky-spot-card.rolling {
       animation: cardPulse 0.3s ease infinite alternate;
-      filter: blur(1px);
+      filter: blur(1.5px);
     }
     @keyframes cardPulse {
-      0% { opacity: 0.7; transform: scale(0.99); }
+      0% { opacity: 0.6; transform: scale(0.98); }
       100% { opacity: 1; transform: scale(1.01); }
     }
 
-    .spot-top-row { display: flex; justify-content: space-between; align-items: center; }
-    .spot-left-box { display: flex; align-items: center; gap: 8px; overflow: hidden; }
+    .spot-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
     .spot-tag-pill {
       font-size: 0.68rem;
       font-weight: 800;
       padding: 2px 7px;
-      border-radius: 4px;
+      border-radius: 6px;
       background: rgba(56, 189, 248, 0.15);
       color: var(--accent-blue);
       flex-shrink: 0;
+      white-space: nowrap;
     }
-    .tag-cave { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
-    .tag-beach { background: rgba(14, 165, 233, 0.15); color: #38bdf8; }
-    .tag-island { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-    .tag-forest { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
-    .tag-sunset { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
+    .tag-ocean { background: rgba(14, 165, 233, 0.18); color: #38bdf8; }
+    .tag-mountain { background: rgba(16, 185, 129, 0.18); color: #34d399; }
+    .tag-forest { background: rgba(34, 197, 94, 0.18); color: #4ade80; }
+    .tag-island { background: rgba(168, 85, 247, 0.18); color: #c084fc; }
+    .tag-sunset { background: rgba(249, 115, 22, 0.18); color: #fb923c; }
 
-    .spot-name-text { font-family: var(--font-display); font-size: 1.02rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .spot-region-text { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; flex-shrink: 0; }
-    .spot-diff-text { font-size: 0.72rem; color: var(--accent-amber); font-weight: 700; flex-shrink: 0; }
-    .spot-desc-text { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; word-break: keep-all; }
-    .spot-tip-bar { font-size: 0.73rem; color: var(--accent-teal); font-weight: 600; padding-top: 5px; border-top: 1px dashed rgba(255, 255, 255, 0.08); }
+    .spot-diff-text {
+      font-size: 0.72rem;
+      color: var(--accent-amber);
+      font-weight: 800;
+      flex-shrink: 0;
+      letter-spacing: 0.5px;
+    }
+
+    .spot-body-area {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin: 4px 0;
+    }
+    .spot-title-line {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      overflow: hidden;
+    }
+    .spot-name-text {
+      font-family: var(--font-display);
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .spot-region-text {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .spot-desc-text {
+      font-size: 0.76rem;
+      color: var(--text-secondary);
+      line-height: 1.35;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-height: 32px;
+      word-break: keep-all;
+    }
+
+    .spot-tip-bar {
+      font-size: 0.72rem;
+      color: var(--accent-teal);
+      font-weight: 600;
+      padding-top: 5px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.08);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* 🔘 모바일 전용 슬라이드 인디케이터 점(Dots) - 타이트하게 최적화 */
+    .mobile-slider-dots {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      padding: 0;
+      margin: 2px 0 0 0; /* 여백 대폭 축소 */
+    }
+    .dot-item {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      transition: all 0.25s ease;
+    }
+    .dot-item.active {
+      width: 16px;
+      border-radius: 4px;
+      background: var(--accent-blue);
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+    }
 
     .btn-dice-prominent {
       width: 100%;
       background: linear-gradient(135deg, #0284c7, #0ea5e9);
       border: none;
       color: #fff;
-      font-size: 0.88rem;
+      font-size: 0.9rem;
       font-weight: 800;
-      padding: 10px;
+      padding: 11px;
       border-radius: 12px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 7px;
+      gap: 8px;
       box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35);
       transition: all 0.2s ease;
+      margin-top: 2px;
     }
     .btn-dice-prominent:active { transform: scale(0.98); }
-    .dice-icon { font-size: 1rem; display: inline-block; transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    .btn-dice-prominent.rolling .dice-icon { transform: rotate(360deg) scale(1.25); }
+    .dice-icon { font-size: 1.05rem; display: inline-block; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .btn-dice-prominent.rolling .dice-icon { transform: rotate(360deg) scale(1.2); }
 
     /* 🎬 4. 이 주의 추천 영상 */
     .yt-card-box {
       background: var(--bg-surface);
       border: 1px solid var(--border-titanium);
       border-radius: 14px;
-      padding: 10px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 9px;
     }
     .video-box {
       width: 100%;
@@ -413,8 +514,8 @@
       font-weight: 800;
       font-size: 0.68rem;
       background: rgba(56, 189, 248, 0.12);
-      padding: 2px 6px;
-      border-radius: 4px;
+      padding: 2px 7px;
+      border-radius: 5px;
       white-space: nowrap;
     }
 
@@ -422,36 +523,36 @@
     .community-box {
       background: var(--bg-surface);
       border: 1px solid var(--border-titanium);
-      border-radius: 14px;
-      padding: 14px;
+      border-radius: 16px;
+      padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 16px;
     }
-    .poll-wrap { display: flex; flex-direction: column; gap: 7px; }
+    .poll-wrap { display: flex; flex-direction: column; gap: 8px; }
     .poll-header-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.85rem;
+      font-size: 0.86rem;
       font-weight: 800;
       color: #fff;
     }
-    .poll-count-text { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
-    .poll-options-list { display: flex; flex-direction: column; gap: 5px; }
+    .poll-count-text { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
+    .poll-options-list { display: flex; flex-direction: column; gap: 6px; }
     .poll-option-item {
       position: relative;
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 8px 12px;
+      padding: 9px 12px;
       cursor: pointer;
       overflow: hidden;
       transition: all 0.2s ease;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 0.78rem;
+      font-size: 0.8rem;
       font-weight: 700;
     }
     .poll-option-item:hover { border-color: rgba(56, 189, 248, 0.4); }
@@ -475,10 +576,10 @@
     /* 💬 캡슐 출정톡 */
     .talk-feed-wrap {
       border-top: 1px dashed rgba(255, 255, 255, 0.08);
-      padding-top: 12px;
+      padding-top: 14px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 9px;
     }
     .capsule-input-bar {
       display: flex;
@@ -486,16 +587,16 @@
       background: rgba(0, 0, 0, 0.45);
       border: 1.5px solid rgba(56, 189, 248, 0.3);
       border-radius: 24px;
-      padding: 2px 4px 2px 10px;
+      padding: 3px 5px 3px 12px;
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
     }
     .capsule-nick {
-      width: 60px;
+      width: 65px;
       background: transparent;
       border: none;
       border-right: 1px solid var(--border);
       color: var(--accent-teal);
-      font-size: 0.76rem;
+      font-size: 0.78rem;
       font-weight: 800;
       outline: none;
       padding-right: 6px;
@@ -505,7 +606,7 @@
       background: transparent;
       border: none;
       color: #fff;
-      font-size: 0.76rem;
+      font-size: 0.78rem;
       outline: none;
       padding: 0 8px;
     }
@@ -531,19 +632,19 @@
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 5px;
-      max-height: 120px;
+      gap: 6px;
+      max-height: 125px;
       overflow-y: auto;
     }
     .talk-bubble {
       background: rgba(255, 255, 255, 0.02);
       border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 6px;
-      padding: 5px 8px;
+      border-radius: 7px;
+      padding: 6px 10px;
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      font-size: 0.73rem;
+      font-size: 0.74rem;
     }
     .talk-bubble-left { display: flex; align-items: center; gap: 6px; overflow: hidden; }
     .talk-author { color: var(--accent-teal); font-weight: 800; flex-shrink: 0; }
@@ -568,12 +669,12 @@
       transform: translateY(-2px);
     }
     .banner-slot-left { display: flex; flex-direction: column; gap: 3px; }
-    .banner-slot-badge { font-size: 0.68rem; font-weight: 800; color: var(--accent-teal); }
-    .banner-slot-title { font-size: 0.9rem; font-weight: 700; color: #fff; }
-    .banner-slot-desc { font-size: 0.74rem; color: var(--text-secondary); }
+    .banner-slot-badge { font-size: 0.7rem; font-weight: 800; color: var(--accent-teal); }
+    .banner-slot-title { font-size: 0.92rem; font-weight: 700; color: #fff; }
+    .banner-slot-desc { font-size: 0.76rem; color: var(--text-secondary); }
     .banner-slot-arrow { font-size: 1.1rem; color: var(--accent-blue); }
 
-    /* 📱 7. 모바일 하단 네비 독 */
+    /* 📱 7. 모바일 하단 독 */
     .mobile-bottom-dock {
       display: none;
       position: fixed;
@@ -603,12 +704,34 @@
     .dock-item.active { color: var(--accent-blue); }
     .dock-item svg { width: 19px; height: 19px; fill: currentColor; }
 
+    /* 📱 반응형 분기 */
     @media (max-width: 768px) {
       body { padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px)); }
       .mobile-bottom-dock { display: flex; }
-       .main-title { font-size: 1.12rem !important; }
+      .main-title { font-size: 1.12rem !important; }
       .brand-sub-script { font-size: 1.05rem !important; }
-  
+
+      /* 모바일 가로 스와이프 슬라이더 */
+      .lucky-grid-container {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        gap: 12px;
+        padding-bottom: 2px;
+        scrollbar-width: none;
+      }
+      .lucky-grid-container::-webkit-scrollbar {
+        display: none;
+      }
+      .lucky-spot-card {
+        flex: 0 0 100%;
+        width: 100%;
+        scroll-snap-align: start;
+      }
+      .mobile-slider-dots {
+        display: flex;
+      }
     }
 
     @media (max-width: 380px) {
@@ -619,7 +742,7 @@
 </head>
 <body>
 
-  <!-- 🧭 1. 상단 GNB (map.html과 폰트/클래스/구조 100% 동일) -->
+  <!-- 🧭 1. 상단 GNB -->
   <nav class="portal-nav">
     <div class="portal-nav-inner">
       <a href="index.html" class="brand-title-link" title="홈">
@@ -630,7 +753,7 @@
     </div>
   </nav>
 
-  <!-- 🔍 2. 스마트 검색창 & LNT -->
+  <!-- 🔍 2. 스마트 검색창 & LNT 배너 -->
   <section class="hero-search-container">
     <div class="portal-search-box">
       <input type="text" id="mainSearchInput" class="portal-search-input" placeholder="산, 섬, 해변, 계곡, 박지 검색..." autocomplete="off" oninput="onSearchInputChanged(this.value)" onkeyup="if(event.key==='Enter') executePortalSmartSearch()" />
@@ -640,41 +763,86 @@
     </div>
 
     <div class="lnt-slim-banner">
-      <span class="lnt-badge-mini">🌿 LNT</span>
-      <span>100% 비화식 준수와 흔적 없는 클린 백패킹 실천</span>
+      <span class="lnt-badge-mini">🌿 LNT 실천</span>
+      <span>100% 비화식 준수 & 흔적 없는 클린 백패킹</span>
     </div>
   </section>
 
-  <!-- 📦 메인 콘텐츠 흐름 -->
+  <!-- 📦 메인 콘텐츠 -->
   <main class="portal-main-content">
 
     <!-- 🎯 3. 어디로 떠날까? 결정 장애 탈출 픽 -->
-    <section class="lucky-card-wrap">
+    <section class="lucky-section-wrap">
       <div class="lucky-header">
-        <div class="section-title" style="margin-bottom: 0;">이번주는 어디로 떠나면 좋을까?</div>
+        <div class="section-title">이번주는 어디로 떠나면 좋을까?</div>
       </div>
 
-      <div class="lucky-spot-card" id="luckySpotCard" onclick="goToCurrentLuckySpot()">
-        <div class="spot-top-row">
-          <div class="spot-left-box">
-            <span class="spot-tag-pill" id="luckyTag">✨ #추천</span>
-            <span class="spot-name-text" id="luckyName">불러오는 중...</span>
-            <span class="spot-region-text" id="luckyRegion"></span>
+      <!-- PC: 3열 나열 / 모바일: 스와이프 3슬라이드 -->
+      <div class="lucky-grid-container" id="luckyGridContainer">
+        <!-- Card 1 -->
+        <div class="lucky-spot-card" id="luckyCard0" onclick="goToLuckySpot(0)">
+          <div class="spot-header-row">
+            <span class="spot-tag-pill" id="luckyTag0">🏔️ 추천박지</span>
+            <span class="spot-diff-text" id="luckyDiff0">⭐⭐</span>
           </div>
-          <span class="spot-diff-text" id="luckyDiff">⭐⭐</span>
+          <div class="spot-body-area">
+            <div class="spot-title-line">
+              <span class="spot-name-text" id="luckyName0">불러오는 중...</span>
+              <span class="spot-region-text" id="luckyRegion0"></span>
+            </div>
+            <div class="spot-desc-text" id="luckyDesc0">데이터를 안전하게 로드하고 있습니다.</div>
+          </div>
+          <div class="spot-tip-bar" id="luckyTip0">💡 꿀팁: 비화식 준수</div>
         </div>
-        <div class="spot-desc-text" id="luckyDesc">자연 속에서 즐기는 조용하고 낭만적인 하룻밤.</div>
-        <div class="spot-tip-bar" id="luckyTip">💡 꿀팁: 비화식 준수</div>
+
+        <!-- Card 2 -->
+        <div class="lucky-spot-card" id="luckyCard1" onclick="goToLuckySpot(1)">
+          <div class="spot-header-row">
+            <span class="spot-tag-pill" id="luckyTag1">🌊 힐링로드</span>
+            <span class="spot-diff-text" id="luckyDiff1">⭐⭐</span>
+          </div>
+          <div class="spot-body-area">
+            <div class="spot-title-line">
+              <span class="spot-name-text" id="luckyName1">불러오는 중...</span>
+              <span class="spot-region-text" id="luckyRegion1"></span>
+            </div>
+            <div class="spot-desc-text" id="luckyDesc1">데이터를 안전하게 로드하고 있습니다.</div>
+          </div>
+          <div class="spot-tip-bar" id="luckyTip1">💡 꿀팁: 비화식 준수</div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="lucky-spot-card" id="luckyCard2" onclick="goToLuckySpot(2)">
+          <div class="spot-header-row">
+            <span class="spot-tag-pill" id="luckyTag2">🌌 은하수뷰</span>
+            <span class="spot-diff-text" id="luckyDiff2">⭐⭐</span>
+          </div>
+          <div class="spot-body-area">
+            <div class="spot-title-line">
+              <span class="spot-name-text" id="luckyName2">불러오는 중...</span>
+              <span class="spot-region-text" id="luckyRegion2"></span>
+            </div>
+            <div class="spot-desc-text" id="luckyDesc2">데이터를 안전하게 로드하고 있습니다.</div>
+          </div>
+          <div class="spot-tip-bar" id="luckyTip2">💡 꿀팁: 비화식 준수</div>
+        </div>
+      </div>
+
+      <!-- 모바일 전용 슬라이드 인디케이터 점 3개 (타이트한 여백) -->
+      <div class="mobile-slider-dots" id="mobileSliderDots">
+        <div class="dot-item active" data-idx="0"></div>
+        <div class="dot-item" data-idx="1"></div>
+        <div class="dot-item" data-idx="2"></div>
       </div>
 
       <button type="button" class="btn-dice-prominent" id="btnRollDice" onclick="rollLuckySpot()">
-        <span class="dice-icon">🎲</span> 주사위 굴려 다른 곳 뽑기
+        <span class="dice-icon">🎲</span> 주사위 굴려 3곳 새로고침
       </button>
     </section>
 
     <!-- 🎬 4. 이 주의 추천 영상 -->
-    <section class="swipe-section-wrap">
-      <div class="section-title">🎬 이 주의 낭만 백패킹 영상</div>
+    <section>
+      <div class="section-title" style="margin-bottom: 8px;">🎬 이 주의 낭만 백패킹 영상</div>
       <div class="yt-card-box">
         <div class="video-box">
           <iframe id="ytIframe" src="https://www.youtube-nocookie.com/embed/4JQHNcThibg?rel=0&enablejsapi=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe>
@@ -688,7 +856,7 @@
 
     <!-- 🔥 5. 낭만 커뮤니티 라운지 -->
     <section class="community-box">
-      <div class="section-title" style="margin-bottom: 0;">🔥 낭만 커뮤니티 라운지</div>
+      <div class="section-title">🔥 낭만 커뮤니티 라운지</div>
       
       <!-- 📊 실시간 투표 -->
       <div class="poll-wrap">
@@ -742,70 +910,221 @@
   </nav>
 
   <script>
-    // ⚙️ 구글 웹앱 배포 URL 연동 완료
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycby3UfPoQvdyECFHTSZJmOx_htGRKiysAd8-vNSvnMZrg8rXhVkW-0XMcp4H9kxeAcVJ/exec';
-
     const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
     const GOOGLE_SHEET_MAIN_GID = '0';
     const GOOGLE_SHEET_CONFIG_GID = '1983931878';
 
     let registeredSpots = [];
-    let currentLuckySpot = null;
+    let currentLuckySpots = [null, null, null];
 
     // -------------------------------------------------------------
-    // 🎲 1. 어디로 떠날까? 결정 장애 탈출 픽
+    // ⭐ 1. 난이도 정밀 별표 변환 (앞자리 숫자 추출 & 오류 보정)
     // -------------------------------------------------------------
-    function getTagClass(tag) {
-      if (!tag) return '';
-      if (tag.includes('동굴')) return 'tag-cave';
-      if (tag.includes('해변') || tag.includes('바다')) return 'tag-beach';
-      if (tag.includes('섬')) return 'tag-island';
-      if (tag.includes('숲') || tag.includes('나무') || tag.includes('계곡')) return 'tag-forest';
-      if (tag.includes('일출') || tag.includes('노을') || tag.includes('낙조')) return 'tag-sunset';
-      return '';
+    function parseDifficultyStars(rawDiff) {
+      if (!rawDiff) return '⭐⭐';
+      const str = String(rawDiff).trim();
+
+      // 이미 ⭐ 이나 ★이 연속으로 들어있는 경우
+      const starMatch = str.match(/[⭐★]+/g);
+      if (starMatch && starMatch[0].length >= 1 && starMatch[0].length <= 5) {
+        return '⭐'.repeat(starMatch[0].length);
+      }
+
+      // 문자열 내 첫 번째 숫자 추출 (예: "3", "3(보통)", "난이도: 4", "LV.2")
+      const numMatch = str.match(/\d/);
+      if (numMatch) {
+        let n = parseInt(numMatch[0], 10);
+        if (n < 1) n = 1;
+        if (n > 5) n = 5;
+        return '⭐'.repeat(n);
+      }
+
+      // 텍스트 기반 변환
+      if (str.includes('상') || str.includes('어려움') || str.includes('상급') || str.includes('극상')) return '⭐⭐⭐⭐';
+      if (str.includes('중상')) return '⭐⭐⭐⭐';
+      if (str.includes('중') || str.includes('보통')) return '⭐⭐⭐';
+      if (str.includes('초보') || str.includes('쉬움') || str.includes('하')) return '⭐';
+
+      return '⭐⭐';
     }
 
+    // -------------------------------------------------------------
+    // 🏷️ 2. 특성 기반 스마트 태그 추출
+    // -------------------------------------------------------------
+    function analyzeSpotTag(spot) {
+      const combined = `${spot.name} ${spot.theme} ${spot.desc} ${spot.region}`.toLowerCase();
+
+      if (combined.includes('바다') || combined.includes('해변') || combined.includes('해수욕장') || combined.includes('오션') || combined.includes('몽돌')) {
+        return { text: '🌊 오션뷰', class: 'tag-ocean' };
+      }
+      if (combined.includes('섬') || combined.includes('도') || combined.includes('굴업') || combined.includes('선착장')) {
+        return { text: '🏝️ 섬백패킹', class: 'tag-island' };
+      }
+      if (combined.includes('숲') || combined.includes('잣나무') || combined.includes('계곡') || combined.includes('휴양림')) {
+        return { text: '🌲 힐링숲길', class: 'tag-forest' };
+      }
+      if (combined.includes('일출') || combined.includes('노을') || combined.includes('낙조') || combined.includes('은하수') || combined.includes('별') || combined.includes('풍력')) {
+        return { text: '🌌 은하수/노을', class: 'tag-sunset' };
+      }
+      if (combined.includes('산') || combined.includes('봉') || combined.includes('능선') || combined.includes('고지') || combined.includes('데크') || combined.includes('활공장')) {
+        return { text: '🏔️ 마운틴뷰', class: 'tag-mountain' };
+      }
+      
+      const customTag = spot.theme ? spot.theme.replace(/[#\s]/g, '').slice(0, 5) : '힐링노지';
+      return { text: `✨ ${customTag}`, class: 'tag-mountain' };
+    }
+
+    // -------------------------------------------------------------
+    // 💡 3. 요약 내용 및 지형 특성 맞춤형 스마트 꿀팁 생성
+    // -------------------------------------------------------------
+    function getSmartDynamicTip(spot) {
+      // 1) 시트에 유효한 팁 데이터가 직접 작성되어 있는 경우 최우선 사용
+      if (spot.tip && spot.tip.trim() !== '' && !spot.tip.includes('100% 비화식 준수') && spot.tip.length > 2) {
+        return spot.tip.trim();
+      }
+
+      const txt = `${spot.name} ${spot.theme} ${spot.desc} ${spot.region}`.toLowerCase();
+
+      // 2) 내용/지형 기반 상황별 실전 꿀팁 스마트 매칭
+      if (txt.includes('섬') || txt.includes('여객선') || txt.includes('항') || txt.includes('도')) {
+        const islandTips = [
+          '기상 상황에 따른 배편 운항 여부와 물때 사전 확인 필수',
+          '강한 해풍 대비 샌드팩 또는 크로스 팩다운 철저',
+          '섬 내 식수 공급처 확인 및 비상 보온의류 필수 지참',
+          '막배 시간과 선착장 이동 동선 여유있게 계획하기'
+        ];
+        return islandTips[Math.floor(Math.random() * islandTips.length)];
+      }
+
+      if (txt.includes('데크') || txt.includes('전망대') || txt.includes('활공장')) {
+        const deckTips = [
+          '나사형/오징어 데크팩 지참 및 바닥 냉기 차단 매트 보강',
+          '일반 등산객 배려를 위해 일몰 후 피칭, 일출 후 철수 권장',
+          '강풍 취약 지형이므로 스트링을 난간에 단단히 결속',
+          '헤드랜턴 지참 및 야간 시야 확보 주의'
+        ];
+        return deckTips[Math.floor(Math.random() * deckTips.length)];
+      }
+
+      if (txt.includes('해변') || txt.includes('바다') || txt.includes('모래') || txt.includes('몽돌')) {
+        const beachTips = [
+          '만조 시 바닷물 유입선 확인 후 안전거리 확보 피칭',
+          '모래 유입 방지용 그라운드시트 꼼꼼히 세팅',
+          '텐트 지지력 강화를 위해 샌드팩이나 큰 돌 활용 팩다운',
+          '해풍으로 체감온도가 낮으니 윈드브레이커 준비'
+        ];
+        return beachTips[Math.floor(Math.random() * beachTips.length)];
+      }
+
+      if (txt.includes('계곡') || txt.includes('숲') || txt.includes('잣나무') || txt.includes('휴양림')) {
+        const forestTips = [
+          '바닥 습기 차단 풋프린트 & 방충망 필수 구비',
+          '호우 예보 시 계곡물 범람 위험지 피칭 절대 금지',
+          '낙가지대 피해서 텐트 자리 선정하기',
+          '식수 정수 장비 및 방한 용품 필수 지참'
+        ];
+        return forestTips[Math.floor(Math.random() * forestTips.length)];
+      }
+
+      if (txt.includes('암릉') || txt.includes('바위') || txt.includes('동굴') || txt.includes('절벽')) {
+        const rockTips = [
+          '바위 결속용 스트링 여유분 및 팩 대신 돌 앵커 활용',
+          '미끄럼 방지 등산화 착용 및 낙석 위험 구역 주의',
+          '돌바닥 요철 대비 에어매트와 폼매트 이중 보강',
+          '절벽 인근 야간 이동 시 헤드랜턴 필수 착용'
+        ];
+        return rockTips[Math.floor(Math.random() * rockTips.length)];
+      }
+
+      if (txt.includes('산') || txt.includes('봉') || txt.includes('능선')) {
+        const mountainTips = [
+          '산 정상부는 기온 변화가 심하므로 방한 레이어 필수',
+          '들머리 최단 등산로 및 하산 코스 사전 다운로드',
+          '능선 강풍 대비 가이스트링 텐션 팽팽하게 고정',
+          '일몰 전 여유 있게 박지 도착하여 베이스캠프 구축'
+        ];
+        return mountainTips[Math.floor(Math.random() * mountainTips.length)];
+      }
+
+      // 기본 공통 백패킹 꿀팁 모음
+      const generalTips = [
+        'LNT 실천: 머문 자리는 처음보다 더 깨끗하게 정리',
+        '보온병과 발열체 활용으로 안전한 비화식 식사 권장',
+        '야간 기온 급강하 대비 핫팩 및 보온 양말 준비',
+        '비상 보조배터리와 오프라인 지도 앱 필수 준비'
+      ];
+      return generalTips[Math.floor(Math.random() * generalTips.length)];
+    }
+
+    // -------------------------------------------------------------
+    // 🎲 4. 3개 박지 랜덤 추천 & 슬라이더 연동
+    // -------------------------------------------------------------
     function rollLuckySpot() {
       if (registeredSpots.length === 0) return;
-      const card = document.getElementById('luckySpotCard');
       const btn = document.getElementById('btnRollDice');
+      const cards = [0, 1, 2].map(i => document.getElementById(`luckyCard${i}`));
 
       if (btn) btn.classList.add('rolling');
-      if (card) card.classList.add('rolling');
+      cards.forEach(c => { if(c) c.classList.add('rolling'); });
 
       setTimeout(() => {
         if (btn) btn.classList.remove('rolling');
-        if (card) card.classList.remove('rolling');
+        cards.forEach(c => { if(c) c.classList.remove('rolling'); });
 
-        const randIdx = Math.floor(Math.random() * registeredSpots.length);
-        currentLuckySpot = registeredSpots[randIdx];
-        displayLuckySpot(currentLuckySpot);
+        const shuffled = [...registeredSpots].sort(() => 0.5 - Math.random());
+        currentLuckySpots = shuffled.slice(0, 3);
+        displayLuckySpots(currentLuckySpots);
       }, 300);
     }
 
-    function displayLuckySpot(s) {
-      if (!s) return;
-      const tagEl = document.getElementById('luckyTag');
-      const rawTag = (s.theme || '낭만박지').split(/[,#/]/)[0].trim() || '추천';
-      
-      tagEl.className = `spot-tag-pill ${getTagClass(rawTag)}`;
-      tagEl.innerText = `✨ #${rawTag}`;
+    function displayLuckySpots(spots) {
+      spots.forEach((s, idx) => {
+        if (!s) return;
+        const tagInfo = analyzeSpotTag(s);
+        const tagEl = document.getElementById(`luckyTag${idx}`);
+        
+        if (tagEl) {
+          tagEl.className = `spot-tag-pill ${tagInfo.class}`;
+          tagEl.innerText = tagInfo.text;
+        }
 
-      document.getElementById('luckyName').innerText = s.name;
-      document.getElementById('luckyRegion').innerText = s.region ? `(${s.region})` : '';
-      document.getElementById('luckyDiff').innerText = `난이도 ${s.difficulty || '⭐⭐'}`;
-      document.getElementById('luckyDesc').innerText = s.desc || '자연 속에서 즐기는 조용하고 낭만적인 하룻밤.';
-      document.getElementById('luckyTip').innerText = `💡 꿀팁: ${s.tip || '비화식 준수'}`;
+        document.getElementById(`luckyName${idx}`).innerText = s.name;
+        document.getElementById(`luckyRegion${idx}`).innerText = s.region ? `(${s.region})` : '';
+        document.getElementById(`luckyDiff${idx}`).innerText = parseDifficultyStars(s.difficulty);
+        document.getElementById(`luckyDesc${idx}`).innerText = s.desc || '자연 속에서 즐기는 조용하고 평화로운 하룻밤.';
+        
+        // 동적 꿀팁 적용
+        const dynamicTip = getSmartDynamicTip(s);
+        document.getElementById(`luckyTip${idx}`).innerText = `💡 꿀팁: ${dynamicTip}`;
+      });
     }
 
-    function goToCurrentLuckySpot() {
-      if (currentLuckySpot && currentLuckySpot.name) {
-        location.href = `map.html?spot=${encodeURIComponent(currentLuckySpot.name)}`;
+    function goToLuckySpot(idx) {
+      const spot = currentLuckySpots[idx];
+      if (spot && spot.name) {
+        location.href = `map.html?spot=${encodeURIComponent(spot.name)}`;
       }
     }
 
+    // 모바일 슬라이더 스크롤 위치 감지 -> 인디케이터(Dot) 자동 하이라이트
+    function setupMobileSliderDots() {
+      const slider = document.getElementById('luckyGridContainer');
+      const dots = document.querySelectorAll('.dot-item');
+      if (!slider || dots.length === 0) return;
+
+      slider.addEventListener('scroll', () => {
+        const width = slider.offsetWidth;
+        if (width <= 0) return;
+        const page = Math.round(slider.scrollLeft / width);
+        dots.forEach((d, i) => {
+          d.classList.toggle('active', i === page);
+        });
+      }, { passive: true });
+    }
+
     // -------------------------------------------------------------
-    // 🎬 2. 유튜브 추천 영상
+    // 🎬 5. 유튜브 추천 영상
     // -------------------------------------------------------------
     function parseYouTubeUniversalUrl(url) {
       if (!url) return null;
@@ -861,7 +1180,7 @@
     }
 
     // -------------------------------------------------------------
-    // 📊 3. 커뮤니티 투표 (시트 실시간 연동 & 100% 비율 반영)
+    // 📊 6. 커뮤니티 투표
     // -------------------------------------------------------------
     const POLL_STORAGE_KEY = 'romantic_poll_user_pick';
     let pollData = [
@@ -933,7 +1252,7 @@
     }
 
     // -------------------------------------------------------------
-    // 💬 4. 출정톡 (시트 실시간 연동)
+    // 💬 7. 실시간 출정톡
     // -------------------------------------------------------------
     let talkMessages = [
       { user: '산바람', msg: '선자령 피칭 완료! 현재 바람 잔잔하고 은하수 기대됩니다.', time: '방금' },
@@ -997,7 +1316,7 @@
     }
 
     // -------------------------------------------------------------
-    // 🔍 5. 스마트 검색 & 자동완성
+    // 🔍 8. 스마트 검색 및 자동완성
     // -------------------------------------------------------------
     let searchDebounceTimer = null;
     function onSearchInputChanged(value) {
@@ -1054,7 +1373,7 @@
     }
 
     // -------------------------------------------------------------
-    // 📦 6. 구글 시트 박지 데이터 로드
+    // 📦 9. 구글 시트 박지 데이터 로드
     // -------------------------------------------------------------
     async function loadPortalSpotData() {
       const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_MAIN_GID}&_t=${Date.now()}`;
@@ -1079,16 +1398,16 @@
                   return {
                     name: getVal('name', '산', '박지명', '이름', 'spotName'),
                     region: getVal('region', '지역', '주소', '시군구', '위치') || '전국',
-                    theme: getVal('theme', '테마', '태그', '카테고리', '특징', 'vibe', '키워드', 'type') || '낭만박지',
+                    theme: getVal('theme', '테마', '태그', '카테고리', '특징', 'vibe', '키워드', 'type') || '',
                     desc: getVal('desc', '특징', '설명', '한줄설명', 'description') || '자연 속에서 즐기는 조용한 하룻밤.',
                     difficulty: getVal('difficulty', '난이도', 'level') || '⭐⭐',
-                    tip: getVal('tip', '들머리', '핵심팁', '주의사항') || '비화식 필수'
+                    tip: getVal('tip', '들머리', '핵심팁', '주의사항') || ''
                   };
                 }).filter(s => s.name && s.name.trim() !== '');
 
                 if (registeredSpots.length > 0) {
-                  currentLuckySpot = registeredSpots[0];
-                  displayLuckySpot(currentLuckySpot);
+                  currentLuckySpots = registeredSpots.slice(0, 3);
+                  displayLuckySpots(currentLuckySpots);
                 }
               }
             }
@@ -1106,10 +1425,9 @@
     window.addEventListener('DOMContentLoaded', () => {
       renderPoll();
       renderTalkList();
+      setupMobileSliderDots();
       loadPortalSpotData();
       loadFeaturedVideoFromConfigSheet();
-      
-      // 구글 시트 실시간 데이터 연동
       loadPollDataFromSheet();
       loadTalksFromSheet();
     });
