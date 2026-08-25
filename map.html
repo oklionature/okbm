@@ -816,7 +816,7 @@
     const CURRENT_VERSION = "5.2ver Final Master";
     const KAKAO_APP_KEY = "557f5de0f6391a2419bc5592e6a9c9c1";
     const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
-    const PRIMARY_SHEET_GID = '1143125586';
+    const PRIMARY_SHEET_GID = '0';
     const FALLBACK_SHEET_GID = '0';
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyCUzZ5bXcLpKXKqBjJC2xS-WP3YJ5MYUmZAzaB6SZixQooH_Y5SioISn0UFVOlOdLL/exec';
     
@@ -1935,7 +1935,7 @@
     async function fetchSpotsFromGoogleSheet(isManual = false) {
       let gidsToTry = [PRIMARY_SHEET_GID, FALLBACK_SHEET_GID];
       for (let gid of gidsToTry) {
-        const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}&_t=${Date.now()}`;
+       const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv&gid=${gid}&_t=${Date.now()}`;
         try {
           const response = await fetch(url, { cache: 'no-store' });
           if (!response.ok) continue;
