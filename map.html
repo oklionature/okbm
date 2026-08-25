@@ -410,8 +410,8 @@
     /* ==========================================================================
        📱 [하단 시트 50 : 50 (50dvh) 정밀 분할 & 고정 닫기 ✕]
        ========================================================================== */
-    .mobile-bottom-sheet {
-      display: none;
+.mobile-bottom-sheet {
+      display: flex;
       position: fixed;
       left: 0;
       right: 0;
@@ -428,6 +428,11 @@
       transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
       flex-direction: column;
       overflow: hidden;
+      pointer-events: none !important; /* 닫혀 있을 때는 지도를 절대 막지 않음! */
+    }
+    .mobile-bottom-sheet.open {
+      transform: translateY(0);
+      pointer-events: auto !important; /* 열렸을 때만 터치 가능 */
     }
     .mobile-bottom-sheet.open { display: flex; transform: translateY(0); }
     .sheet-handle-bar-area { width: 100%; padding: 8px 0 4px 0; display: flex; justify-content: center; flex-shrink: 0; }
@@ -996,13 +1001,13 @@
         globalClusterer = new kakao.maps.MarkerClusterer({
           map: map,
           averageCenter: true,
-          minLevel: 12, // 전국뷰(13)에서 딱 2번 확대하면 바로 클러스터 풀림
-          disableClickZoom: false,
+          minLevel: 10,
+          disableClickZoom: true, // 개별 마커 클릭 가로챔 100% 방지!
           calculator: [10, 30],
           styles: [
             {
               width: '54px', height: '54px',
-              background: 'rgba(16, 185, 129, 0.4)',
+              background: 'rgba(16, 185, 129, 0.5)',
               border: '2.2px solid #00FF9D',
               borderRadius: '50%',
               color: '#fff',
@@ -1014,7 +1019,7 @@
             },
             {
               width: '60px', height: '60px',
-              background: 'rgba(6, 182, 212, 0.45)',
+              background: 'rgba(6, 182, 212, 0.5)',
               border: '2.5px solid #00E5FF',
               borderRadius: '50%',
               color: '#fff',
@@ -1026,7 +1031,7 @@
             },
             {
               width: '66px', height: '66px',
-              background: 'rgba(245, 158, 11, 0.5)',
+              background: 'rgba(245, 158, 11, 0.55)',
               border: '2.8px solid #FFD600',
               borderRadius: '50%',
               color: '#fff',
@@ -1037,6 +1042,12 @@
               boxShadow: '0 0 34px rgba(255, 214, 0, 0.95)'
             }
           ]
+        });
+
+        // 🟢 숫자가 적힌 동그라미(클러스터)를 누를 때만 지도가 부드럽게 줌인되도록 설정
+        kakao.maps.event.addListener(globalClusterer, 'clusterclick', (cluster) => {
+          const level = map.getLevel() - 2;
+          map.setLevel(Math.max(1, level), { anchor: cluster.getCenter(), animate: true });
         });
 
         setTimeout(() => { if (map) map.relayout(); }, 250);
@@ -1731,24 +1742,82 @@
       }
     }
 
-    function navigateToNaviApp(type, spotName, address, lat, lng) {
-      const targetQuery = address || spotName;
+    // 🧭 들머리 전용 스마트 내비게이션 라우팅 (방안 1: 실시간 좌표 변환 ➔ 방안 2: 장소 검색 폴백)
+    const entryCoordsCache = new Map();
+
+    async function navigateToNaviApp(type, spotName, address, fallbackLat, fallbackLng) {
+      const targetQuery = (address && address.trim()) ? address.trim() : spotName;
+      const naviTitle = `${spotName} 들머리`;
+
+      let targetLat = null;
+      let targetLng = null;
+
+      // 1. 캐시 확인 또는 실시간 주소->좌표 변환 (방안 1)
+      if (entryCoordsCache.has(targetQuery)) {
+        const cached = entryCoordsCache.get(targetQuery);
+        targetLat = cached.lat;
+        targetLng = cached.lng;
+      } else if (address && address.trim()) {
+        try {
+          const coords = await searchCoordsByQuery(targetQuery);
+          if (coords && coords.lat && coords.lng) {
+            targetLat = coords.lat;
+            targetLng = coords.lng;
+            entryCoordsCache.set(targetQuery, { lat: targetLat, lng: targetLng });
+          }
+        } catch (e) {
+          console.warn('들머리 좌표 변환 실패:', e);
+        }
+      }
+
+      // 2. 좌표 변환 성공 여부에 따른 분기 실행
+      const hasValidCoords = (targetLat !== null && targetLng !== null);
+
       if (type === 'kakao') {
-        window.open(`https://map.kakao.com/link/to/${encodeURIComponent(spotName)},${lat},${lng}`, '_blank');
+        if (hasValidCoords) {
+          // [방안 1] 들머리 실제 좌표로 다이렉트 길안내
+          window.open(`https://map.kakao.com/link/to/${encodeURIComponent(naviTitle)},${targetLat},${targetLng}`, '_blank');
+        } else {
+          // [방안 2 폴백] 들머리 주소 검색 모드로 이동
+          window.open(`https://map.kakao.com/link/search/${encodeURIComponent(targetQuery)}`, '_blank');
+        }
       } else if (type === 'tmap') {
-        const tmapAppUrl = `tmap://route?goalname=${encodeURIComponent(spotName)}&goallng=${lng}&goallat=${lat}`;
-        const tmapWebUrl = `https://map.kakao.com/link/to/${encodeURIComponent(spotName)},${lat},${lng}`;
-        const startTime = Date.now();
-        window.location.href = tmapAppUrl;
-        setTimeout(() => { if (Date.now() - startTime < 1500) window.open(tmapWebUrl, '_blank'); }, 1000);
+        if (hasValidCoords) {
+          // [방안 1] 들머리 좌표로 티맵 실행
+          const tmapAppUrl = `tmap://route?goalname=${encodeURIComponent(naviTitle)}&goallng=${targetLng}&goallat=${targetLat}`;
+          const tmapWebUrl = `https://map.kakao.com/link/to/${encodeURIComponent(naviTitle)},${targetLat},${targetLng}`;
+          const startTime = Date.now();
+          window.location.href = tmapAppUrl;
+          setTimeout(() => { if (Date.now() - startTime < 1500) window.open(tmapWebUrl, '_blank'); }, 1000);
+        } else {
+          // [방안 2 폴백] 티맵 장소 검색창으로 실행
+          const tmapSearchUrl = `tmap://search?name=${encodeURIComponent(targetQuery)}`;
+          const kakaoSearchWeb = `https://map.kakao.com/link/search/${encodeURIComponent(targetQuery)}`;
+          const startTime = Date.now();
+          window.location.href = tmapSearchUrl;
+          setTimeout(() => { if (Date.now() - startTime < 1500) window.open(kakaoSearchWeb, '_blank'); }, 1000);
+        }
       } else if (type === 'naver') {
-        const naverAppUrl = `nmap://route/car?dlat=${lat}&dlng=${lng}&dname=${encodeURIComponent(spotName)}&appname=okbm`;
-        const naverWebUrl = `https://map.naver.com/p/search/${encodeURIComponent(targetQuery)}`;
-        const startTime = Date.now();
-        window.location.href = naverAppUrl;
-        setTimeout(() => { if (Date.now() - startTime < 1500) window.open(naverWebUrl, '_blank'); }, 1000);
+        if (hasValidCoords) {
+          // [방안 1] 들머리 좌표로 네이버 지도 실행
+          const naverAppUrl = `nmap://route/car?dlat=${targetLat}&dlng=${targetLng}&dname=${encodeURIComponent(naviTitle)}&appname=okbm`;
+          const naverWebUrl = `https://map.naver.com/p/search/${encodeURIComponent(targetQuery)}`;
+          const startTime = Date.now();
+          window.location.href = naverAppUrl;
+          setTimeout(() => { if (Date.now() - startTime < 1500) window.open(naverWebUrl, '_blank'); }, 1000);
+        } else {
+          // [방안 2 폴백] 네이버 지도 검색창으로 실행
+          const naverAppSearch = `nmap://search?query=${encodeURIComponent(targetQuery)}&appname=okbm`;
+          const naverWebUrl = `https://map.naver.com/p/search/${encodeURIComponent(targetQuery)}`;
+          const startTime = Date.now();
+          window.location.href = naverAppSearch;
+          setTimeout(() => { if (Date.now() - startTime < 1500) window.open(naverWebUrl, '_blank'); }, 1000);
+        }
       } else if (type === 'roadview') {
-        window.open(`https://map.kakao.com/link/roadview/${lat},${lng}`, '_blank');
+        // 로드뷰: 들머리 좌표 우선, 실패 시 산 좌표
+        const rvLat = hasValidCoords ? targetLat : fallbackLat;
+        const rvLng = hasValidCoords ? targetLng : fallbackLng;
+        window.open(`https://map.kakao.com/link/roadview/${rvLat},${rvLng}`, '_blank');
       }
     }
 
@@ -2119,8 +2188,19 @@
 
         if (!spotNativeMarkerMap.has(sId) && map) {
           const markerImg = createPureSvgMarkerImage(spot.difficulty);
-          const marker = new kakao.maps.Marker({ position: latlng, image: markerImg });
-          kakao.maps.event.addListener(marker, 'click', () => focusSpotOnMap(spot));
+          const marker = new kakao.maps.Marker({
+            position: latlng,
+            image: markerImg,
+            clickable: true,
+            zIndex: 9999 // 마커가 지도 위의 모든 클릭을 최우선으로 가로채도록 보장!
+          });
+          
+          // 마커 클릭 시 즉시 정보창 띄우기
+          kakao.maps.event.addListener(marker, 'click', (e) => {
+            if (kakao.maps.event.preventMap) kakao.maps.event.preventMap(); // 지도 확대 차단
+            focusSpotOnMap(spot);
+          });
+          
           marker.spotData = spot;
           spotNativeMarkerMap.set(sId, marker);
         }
@@ -2426,9 +2506,10 @@
         }
         return;
       }
+      
+      // 지도 바탕을 터치하면 열린 팝업을 닫고 마커 터치 권한 100% 복구
       closeAllPopups();
     }
-
     async function saveCustomModal() {
       const name = document.getElementById('modalInputName').value.trim(), entryPoint = document.getElementById('modalInputEntry').value.trim();
       if (!name) return alert('산/박지 이름을 입력해주세요.');
