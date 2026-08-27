@@ -1,490 +1,489 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" class="notranslate">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="google" content="notranslate" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>대한민국 낭만 백패킹 로드 | 포털</title>
+  <title>낭만루트 | 대한민국 260+ 백패킹 필드 팩트맵</title>
 
-  <!-- 🔤 웹폰트 로드 -->
-  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/webfontworld/gmarket/GmarketSans.css" />
+  <!-- 🔤 면도날 선명도 텍스트 렌더링 전용 최상위 웹폰트 CDN -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT/fonts/static/woff2/SUIT.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
   
   <!-- CSV Parser -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <style>
     :root {
-      --bg-deep: #030508;
-      --bg-surface: #090c13;
-      --bg-card: #0e131d;
-      --bg-card-hover: #151c2a;
-      --border: rgba(255, 255, 255, 0.08);
-      --border-titanium: rgba(255, 255, 255, 0.14);
-      --border-subtle: #1a2233;
-      --text-primary: #f8fafc;
-      --text-secondary: #cbd5e1;
-      --text-muted: #94a3b8;
-      --accent-blue: #38bdf8;
-      --accent-sky: #0ea5e9;
-      --accent-teal: #2dd4bf;
-      --accent-emerald: #10b981;
-      --accent-amber: #f59e0b;
-      --accent-rose: #f43f5e;
-      --font-display: 'GmarketSans', -apple-system, sans-serif;
-      --font-script: 'Caveat', cursive;
-      --font-body: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+      /* 🏛️ 5번 B&W 실버 프로스트 + 1번 후광 낭만루트 브랜딩 픽스 팔레트 */
+      --bg-base: #010204;
+      --bg-surface: #07090e;
+      --bg-card: #0e121a;
+      --border-hairline: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(203, 213, 225, 0.2);
+      
+      --text-primary: #ffffff;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-silver: #e2e8f0;
+      
+      --pt-star: #f59e0b;       /* 별점 앰버 골드 */
+      --pt-sage: #34d399;        /* K-LNT 클린 세이지 그린 */
+      --pt-video: #fb7185;      /* 영상 발굴 로즈 */
+      --pt-cyan: #38bdf8;       /* 시안 액센트 */
+
+      --font-display: 'SUIT', -apple-system, sans-serif;
+      --font-en: 'Space Grotesk', -apple-system, sans-serif;
+      --font-body: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
 
       --z-header: 500;
       --z-dock: 600;
       --z-dropdown: 950;
+      --z-modal: 1000;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0;
+      /* 🔥 [핵심] 글자 뭉개짐·번짐 100% 박멸 안티앨리어싱 엔진 */
+      -webkit-font-smoothing: antialiased !important;
+      -moz-osx-font-smoothing: grayscale !important;
+      text-rendering: optimizeLegibility !important;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     button, input, select, textarea {
       font-family: var(--font-body);
       -webkit-font-smoothing: antialiased;
-      letter-spacing: -0.02em;
     }
 
     html, body {
       width: 100%;
-      max-width: 100vw;
       min-height: 100dvh;
       overflow-x: hidden;
-      background-color: var(--bg-deep);
+      background-color: var(--bg-base);
       color: var(--text-primary);
       font-family: var(--font-body);
       line-height: 1.45;
-      -webkit-font-smoothing: antialiased;
-      letter-spacing: -0.02em;
-    }
-    body {
-      background: radial-gradient(circle at 50% 0%, #0d1a33 0%, #050811 50%, #020407 100%);
-      padding-bottom: 30px;
     }
 
-    /* 🧭 1. 상단 헤더 & 타이틀 */
-    .portal-nav {
+    /* ✨ [산속 밤하늘 은하수 펄감 & 스타더스트 배경] */
+    body {
+      background: 
+        radial-gradient(1.5px 1.5px at 20px 30px, rgba(255, 255, 255, 0.28), transparent),
+        radial-gradient(1.5px 1.5px at 120px 80px, rgba(56, 189, 248, 0.35), transparent),
+        radial-gradient(1px 1px at 240px 150px, rgba(255, 255, 255, 0.22), transparent),
+        radial-gradient(1.5px 1.5px at 320px 40px, rgba(52, 211, 153, 0.3), transparent),
+        radial-gradient(circle at 50% 0%, #0d1726 0%, #040810 40%, #010204 100%) !important;
+      background-size: 100% 100%, 350px 350px, 280px 280px, 400px 400px, 100% 100% !important;
+      padding-bottom: 75px;
+    }
+
+    /* 🧭 공통 벡터 SVG 아이콘 (거대 확대 방지 max-size 고정) */
+    .icon-svg {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      vertical-align: middle;
+      max-width: 24px;
+      max-height: 24px;
+    }
+    .icon-svg svg { width: 100%; height: 100%; }
+
+    /* ========================================================
+     /* 🧭 1. 상단 GNB (88px 높이 강제 고정) */
+   /* 🧭 1. 상단 GNB (홈 포털 전용 - 세이지 그린 테마) */
+    @import url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/Arita-buri-SemiBold.woff');
+
+    .apple-integrated-header {
       position: sticky;
       top: 0;
       z-index: var(--z-header);
       width: 100%;
-      background: rgba(3, 5, 8, 0.98);
-      border-bottom: 1px solid var(--border);
-      padding: 6px 14px;
-      padding-top: calc(6px + env(safe-area-inset-top, 0px));
+      background: rgba(0, 0, 0, 0.94);
+      border-bottom: 1px solid var(--border-hairline);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 10px 14px 8px !important;
+      padding-top: calc(10px + env(safe-area-inset-top, 0px)) !important;
       user-select: none;
-      min-height: 50px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .portal-nav-inner {
-      width: 100%;
-      max-width: 860px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-    .brand-title-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      white-space: nowrap;
-      text-decoration: none;
-      min-width: 0;
-    }
-    .main-title {
-      font-family: var(--font-display);
-      font-size: clamp(1.05rem, 3.8vw, 1.45rem);
-      font-weight: 700;
-      color: #ffffff;
-      letter-spacing: -0.03em;
-      white-space: nowrap;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .main-title .highlight-pink {
-      background: linear-gradient(135deg, #f43f5e 0%, #fb7185 50%, #f472b6 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 0 10px rgba(244, 63, 94, 0.5));
-      font-weight: 800;
-    }
-    .brand-sub-script {
-      font-family: var(--font-script);
-      font-size: clamp(0.95rem, 3.2vw, 1.35rem);
-      font-weight: 700;
-      color: #38bdf8;
-      letter-spacing: 0.02em;
-      opacity: 0.9;
-      transform: translateY(1px);
-    }
-
-    /* 🔍 2. 스마트 검색창 */
-    .hero-search-container {
-      width: 100%;
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 10px 14px 6px;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      gap: 8px !important;
     }
-    .portal-search-box {
-      position: relative;
-      width: 100%;
-      max-width: 540px;
+
+    .header-top-row {
+      height: 28px;
+      min-height: 28px;
       display: flex;
       align-items: center;
-    }
-    .portal-search-input {
+      justify-content: flex-start; /* 👈 좌측 정렬 (아래 검색바와 시작선 일치) */
       width: 100%;
-      height: 40px;
-      min-height: 40px;
-      padding: 6px 66px 6px 16px;
-      border-radius: 20px;
-      border: 1px solid var(--border-titanium);
-      background: var(--bg-surface);
-      color: #ffffff;
-      font-size: 0.85rem;
-      outline: none;
-      transition: all 0.2s ease;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 0 2px;
+      box-sizing: border-box;
     }
-    .portal-search-input::placeholder {
-      color: var(--text-muted);
-      font-size: 0.8rem;
+
+    .brand-line {
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+      text-decoration: none;
+      transition: transform 0.15s ease;
+      margin: 0;
+      flex-shrink: 0;
     }
-    .portal-search-input:focus {
-      background: #000000;
-      border-color: var(--accent-blue);
-      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+    .brand-line:active { transform: scale(0.98); }
+
+    .brand-sym-box {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      flex-shrink: 0;
     }
-    
-    .btn-clear-search {
+    .brand-sym-box::before {
+      content: '';
       position: absolute;
-      right: 34px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(255, 255, 255, 0.15);
-      border: none;
-      color: var(--text-secondary);
-      width: 20px;
-      height: 20px;
+      width: 30px;
+      height: 30px;
+      background: radial-gradient(circle, rgba(52, 211, 153, 0.55) 0%, transparent 70%); /* 🌿 세이지 후광 */
       border-radius: 50%;
-      font-size: 0.65rem;
-      font-weight: 800;
+      z-index: -1;
+      filter: blur(4px);
+    }
+    .brand-sym-box svg { width: 20px; height: 20px; }
+    
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      text-shadow: 0 0 16px rgba(255, 255, 255, 0.35);
+    }
+    .brand-dot {
+      width: 3.5px;
+      height: 3.5px;
+      background: #34d399; /* 🌿 세이지 그린 점 */
+      border-radius: 50%;
+      box-shadow: 0 0 6px #34d399;
+      flex-shrink: 0;
+    }
+    .brand-en {
+      font-family: 'Arita-buri-SemiBold', serif !important;
+      font-size: 0.86rem;
+      font-weight: normal;
+      color: #6ee7b7; /* 🌿 세이지 그린 텍스트 */
+      letter-spacing: -0.02em;
+      line-height: 1;
+      text-shadow: 0 0 10px rgba(110, 231, 183, 0.25);
+      white-space: nowrap;
+    }
+
+    /* 🔍 인라인 슬릭 검색창 */
+    .apple-search-box {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .apple-search-bar {
+      width: 100%;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid var(--border-hairline);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .apple-search-bar:focus-within {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+    .apple-search-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #ffffff;
+      font-size: 0.8rem;
+      font-weight: 500;
+      outline: none;
+      letter-spacing: -0.01em;
+    }
+    .apple-search-input::placeholder { color: #64748b; }
+    .btn-clear-search {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: #cbd5e1;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      font-size: 0.6rem;
       display: none;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      z-index: 5;
     }
-    .btn-clear-search:hover {
-      background: var(--accent-rose);
-      color: #ffffff;
-    }
-
-    .portal-search-btn {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: var(--accent-blue);
-      font-size: 0.95rem;
-      cursor: pointer;
-      padding: 4px;
-      z-index: 5;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
     .search-auto-dropdown {
       position: absolute;
-      top: 46px;
+      top: 40px;
       left: 0; right: 0;
-      background: rgba(9, 12, 19, 0.98);
-      border: 1px solid var(--border-titanium);
-      border-radius: 14px;
+      background: rgba(7, 9, 14, 0.98);
+      border: 1px solid var(--border-accent);
+      border-radius: 12px;
       box-shadow: 0 16px 40px rgba(0,0,0,0.95);
       list-style: none;
-      max-height: 280px;
+      max-height: 240px;
       overflow-y: auto;
       display: none;
       z-index: var(--z-dropdown);
       text-align: left;
     }
     .auto-item {
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--border-subtle);
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       display: flex;
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
     }
     .auto-item:last-child { border-bottom: none; }
-    .auto-item:hover { background: var(--bg-card-hover); }
-    .auto-item-left { display: flex; align-items: center; gap: 6px; overflow: hidden; }
-    .auto-item-name { font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .auto-badge-spot { font-size: 0.65rem; color: #38bdf8; background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px; font-weight: 700; flex-shrink: 0; }
+    .auto-item:hover, .auto-item:active { background: rgba(255, 255, 255, 0.06); }
 
-    /* 🌿 LNT 배너 */
-    .lnt-slim-banner {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(45, 212, 191, 0.08);
-      border: 1px solid rgba(45, 212, 191, 0.28);
-      border-radius: 22px;
-      padding: 6px 14px;
-      margin-top: 10px;
-      font-size: 0.8rem;
-      color: #e2e8f0;
-      box-shadow: 0 2px 10px rgba(45, 212, 191, 0.05);
-    }
-    .lnt-badge-mini {
-      background: rgba(45, 212, 191, 0.22);
-      color: var(--accent-teal);
-      font-size: 0.72rem;
-      font-weight: 800;
-      padding: 2px 7px;
-      border-radius: 6px;
-      letter-spacing: 0.02em;
-    }
-
-    /* 📦 메인 레이아웃 */
+    /* 📦 메인 콘텐츠 피드 */
     .portal-main-content {
-      width: 100%;
-      max-width: 860px;
+      max-width: 480px;
       margin: 0 auto;
-      padding: 10px 14px;
+      padding: 10px 12px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 13px;
     }
-
-    .section-title {
+    .section-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       font-family: var(--font-display);
-      font-size: 0.98rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: #fff;
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+      padding: 0 2px;
     }
+    .section-title-row .icon-svg { width: 14px; height: 14px; color: var(--accent-silver); }
 
-    /* 🎯 3. 어디로 떠날까? 결정 장애 탈출 픽 */
+    /* 🎯 3. 어디로 떠날까 카드 (꿀팁 제거 후 단단한 116px 고정 높이) */
     .lucky-section-wrap {
-      background: rgba(14, 19, 29, 0.75);
-      border: 1px solid var(--border-titanium);
-      border-radius: 18px;
-      padding: 16px 16px 14px;
-      backdrop-filter: blur(14px);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .lucky-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    /* PC: 3열 Grid / Mobile: Scroll-Snap Slider */
-    .lucky-grid-container {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      width: 100%;
-    }
-
-    /* 고정화된 박지 카드 */
-    .lucky-spot-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
+      background: var(--bg-card);
+      border: 1px solid var(--border-accent);
       border-radius: 14px;
-      padding: 14px;
+      padding: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+    .lucky-grid-container {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      gap: 9px;
+      scrollbar-width: none;
+    }
+    .lucky-grid-container::-webkit-scrollbar { display: none; }
+    
+    .lucky-spot-card {
+      flex: 0 0 100%;
+      scroll-snap-align: start;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-hairline);
+      border-radius: 10px;
+      padding: 11px 12px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      height: 165px;
-      min-height: 165px;
-      max-height: 165px;
+      height: 116px;
       cursor: pointer;
-      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, background-color 0.25s ease;
-      position: relative;
-      overflow: hidden;
+      transition: transform 0.15s ease, border-color 0.15s ease;
     }
-    .lucky-spot-card:hover {
-      background: var(--bg-card-hover);
-      border-color: rgba(56, 189, 248, 0.5);
-      transform: translateY(-3px);
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+    .lucky-spot-card:active {
+      transform: scale(0.98);
+      border-color: rgba(255, 255, 255, 0.35);
     }
     .lucky-spot-card.rolling {
       animation: cardPulse 0.3s ease infinite alternate;
-      filter: blur(1.5px);
+      filter: blur(1px);
     }
-    @keyframes cardPulse {
-      0% { opacity: 0.6; transform: scale(0.98); }
-      100% { opacity: 1; transform: scale(1.01); }
-    }
+    @keyframes cardPulse { 0% { opacity: 0.6; } 100% { opacity: 1; } }
 
     .spot-header-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 6px;
     }
     .spot-tag-pill {
-      font-size: 0.68rem;
-      font-weight: 800;
-      padding: 2px 7px;
-      border-radius: 6px;
-      background: rgba(56, 189, 248, 0.15);
-      color: var(--accent-blue);
-      flex-shrink: 0;
-      white-space: nowrap;
-    }
-    .tag-ocean { background: rgba(14, 165, 233, 0.18); color: #38bdf8; }
-    .tag-mountain { background: rgba(16, 185, 129, 0.18); color: #34d399; }
-    .tag-forest { background: rgba(34, 197, 94, 0.18); color: #4ade80; }
-    .tag-island { background: rgba(168, 85, 247, 0.18); color: #c084fc; }
-    .tag-sunset { background: rgba(249, 115, 22, 0.18); color: #fb923c; }
-
-    .spot-diff-text {
-      font-size: 0.72rem;
-      color: var(--accent-amber);
-      font-weight: 800;
-      flex-shrink: 0;
-      letter-spacing: 0.5px;
-    }
-
-    .spot-body-area {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      margin: 4px 0;
-    }
-    .spot-title-line {
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-      overflow: hidden;
-    }
-    .spot-name-text {
-      font-family: var(--font-display);
-      font-size: 0.98rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.65rem;
       font-weight: 700;
-      color: #fff;
+      padding: 1.5px 6px;
+      border-radius: 4px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #7dd3fc;
+    }
+    .spot-tag-pill .icon-svg { width: 11px; height: 11px; }
+    
+    .tag-ocean { background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.3); color: #7dd3fc; }
+    .tag-mountain { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.2); color: #cbd5e1; }
+    .tag-forest { background: rgba(52, 211, 153, 0.12); border-color: rgba(52, 211, 153, 0.25); color: #6ee7b7; }
+    .tag-island { background: rgba(192, 132, 252, 0.12); border-color: rgba(192, 132, 252, 0.25); color: #d8b4fe; }
+
+    .badge-elev {
+      background: rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      margin-left: 3px;
+    }
+    .star-wrap { display: inline-flex; align-items: center; gap: 1.5px; }
+    .star-svg { width: 11px; height: 11px; fill: var(--pt-star); }
+    .star-svg.empty { fill: rgba(255, 255, 255, 0.12); }
+
+    .spot-title-text {
+      font-family: var(--font-display);
+      font-size: 0.94rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.01em;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .spot-region-text {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      font-weight: 600;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
     .spot-desc-text {
-      font-size: 0.76rem;
-      color: var(--text-secondary);
+      font-size: 0.74rem;
+      color: #cbd5e1;
       line-height: 1.35;
+      font-weight: 400;
+      letter-spacing: -0.01em;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      text-overflow: ellipsis;
-      min-height: 32px;
-      word-break: keep-all;
     }
 
-    .spot-tip-bar {
-      font-size: 0.72rem;
-      color: var(--accent-teal);
-      font-weight: 600;
-      padding-top: 5px;
-      border-top: 1px dashed rgba(255, 255, 255, 0.08);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    /* 🔘 모바일 전용 슬라이드 인디케이터 점(Dots) - 타이트하게 최적화 */
     .mobile-slider-dots {
-      display: none;
+      display: flex;
       justify-content: center;
       align-items: center;
-      gap: 5px;
-      padding: 0;
-      margin: 2px 0 0 0; /* 여백 대폭 축소 */
+      gap: 4px;
+      margin: 1px 0;
     }
     .dot-item {
-      width: 6px;
-      height: 6px;
+      width: 4px;
+      height: 4px;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.2);
-      transition: all 0.25s ease;
+      transition: all 0.2s;
     }
     .dot-item.active {
-      width: 16px;
-      border-radius: 4px;
-      background: var(--accent-blue);
-      box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+      width: 12px;
+      border-radius: 2px;
+      background: #ffffff;
     }
 
+    /* 🎲 정밀 주사위 버튼 */
     .btn-dice-prominent {
       width: 100%;
-      background: linear-gradient(135deg, #0284c7, #0ea5e9);
+      background: #ffffff;
       border: none;
-      color: #fff;
-      font-size: 0.9rem;
-      font-weight: 800;
-      padding: 11px;
-      border-radius: 12px;
+      color: #000000;
+      font-size: 0.82rem;
+      font-weight: 900;
+      padding: 9px;
+      border-radius: 8px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35);
-      transition: all 0.2s ease;
-      margin-top: 2px;
+      gap: 6px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+      transition: transform 0.1s ease;
     }
     .btn-dice-prominent:active { transform: scale(0.98); }
-    .dice-icon { font-size: 1.05rem; display: inline-block; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    .btn-dice-prominent.rolling .dice-icon { transform: rotate(360deg) scale(1.2); }
+    .dice-icon-box { width: 15px; height: 15px; display: inline-flex; }
 
-    /* 🎬 4. 이 주의 추천 영상 */
-    .yt-card-box {
+    /* 🌿 LNT 배너 (세이지 그린 & 산악 SVG 복원) */
+    .lnt-slim-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(52, 211, 153, 0.08);
+      border: 1px solid rgba(52, 211, 153, 0.25);
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #a7f3d0;
+    }
+    .lnt-badge-mini {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(52, 211, 153, 0.22);
+      color: var(--pt-sage);
+      font-size: 0.64rem;
+      font-weight: 800;
+      padding: 1.5px 6px;
+      border-radius: 4px;
+    }
+
+    /* 🎬 4. 영상 섹션 (타이틀 시인성 확대 및 로케이션 발굴 삭제) */
+    .featured-video-section {
       background: var(--bg-surface);
-      border: 1px solid var(--border-titanium);
-      border-radius: 14px;
-      padding: 12px;
+      border: 1px solid var(--border-accent);
+      border-radius: 12px;
+      padding: 10px;
       display: flex;
       flex-direction: column;
-      gap: 9px;
+      gap: 8px;
+    }
+    .video-title-bold-head {
+      font-family: var(--font-display);
+      font-size: 1.02rem; /* 시인성 대폭 확대 */
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: -0.02em;
     }
     .video-box {
       width: 100%;
       aspect-ratio: 16 / 9;
-      border-radius: 10px;
+      border-radius: 8px;
       overflow: hidden;
       background: #000;
       position: relative;
@@ -493,199 +492,225 @@
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%; border: 0;
     }
-    .video-caption-bar {
+    .video-info-strip {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 2px 4px;
-      gap: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      gap: 6px;
     }
-    .video-caption-title {
-      font-size: 0.84rem;
-      font-weight: 700;
-      color: var(--text-primary);
+    .video-title-text {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       flex: 1;
-    }
-    .video-badge {
-      color: var(--accent-blue);
-      font-weight: 800;
-      font-size: 0.68rem;
-      background: rgba(56, 189, 248, 0.12);
-      padding: 2px 7px;
-      border-radius: 5px;
-      white-space: nowrap;
-    }
-
-    /* 🔥 5. 낭만 커뮤니티 라운지 */
-    .community-box {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-titanium);
-      border-radius: 16px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .poll-wrap { display: flex; flex-direction: column; gap: 8px; }
-    .poll-header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.86rem;
-      font-weight: 800;
       color: #fff;
     }
-    .poll-count-text { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
-    .poll-options-list { display: flex; flex-direction: column; gap: 6px; }
-    .poll-option-item {
-      position: relative;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 9px 12px;
-      cursor: pointer;
-      overflow: hidden;
-      transition: all 0.2s ease;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.8rem;
+    .btn-find-location {
+      background: rgba(244, 63, 94, 0.14);
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      color: #fb7185;
+      font-size: 0.68rem;
       font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      text-decoration: none;
     }
-    .poll-option-item:hover { border-color: rgba(56, 189, 248, 0.4); }
-    .poll-bar-fill {
-      position: absolute;
-      top: 0; left: 0; bottom: 0;
-      background: rgba(56, 189, 248, 0.16);
-      width: 0%;
-      transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      z-index: 1;
-    }
-    .poll-text { position: relative; z-index: 2; color: #fff; }
-    .poll-pct { position: relative; z-index: 2; color: var(--accent-blue); font-weight: 800; display: none; }
-    .poll-option-item.selected {
-      border-color: var(--accent-blue);
-      background: rgba(56, 189, 248, 0.08);
-    }
-    .poll-option-item.selected .poll-pct,
-    .poll-option-item.voted .poll-pct { display: block; }
+    .btn-find-location:active { transform: scale(0.95); }
 
-    /* 💬 캡슐 출정톡 */
-    .talk-feed-wrap {
-      border-top: 1px dashed rgba(255, 255, 255, 0.08);
-      padding-top: 14px;
+    /* 🔥 5. 낭만 라운지 */
+    .community-box-tight {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-accent);
+      border-radius: 12px;
+      padding: 10px;
       display: flex;
       flex-direction: column;
       gap: 9px;
     }
-    .capsule-input-bar {
+    .poll-grid-tight {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+    }
+    .poll-item-tight {
+      position: relative;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-hairline);
+      border-radius: 6px;
+      padding: 6px 8px;
+      cursor: pointer;
+      overflow: hidden;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      min-height: 31px;
+      transition: transform 0.1s ease;
+    }
+    .poll-item-tight:active { transform: scale(0.97); }
+    .poll-item-tight.selected {
+      border-color: rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .poll-bar-fill {
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      background: rgba(255, 255, 255, 0.15);
+      width: 0%;
+      transition: width 0.3s ease;
+      z-index: 1;
+    }
+    .poll-text-tight {
+      position: relative;
+      z-index: 2;
       display: flex;
       align-items: center;
-      background: rgba(0, 0, 0, 0.45);
-      border: 1.5px solid rgba(56, 189, 248, 0.3);
-      border-radius: 24px;
-      padding: 3px 5px 3px 12px;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+      gap: 3px;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .poll-text-tight .icon-svg { width: 11px; height: 11px; color: #fff; }
+    .poll-pct-tight {
+      position: relative;
+      z-index: 2;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* 출정톡 */
+    .talk-section-tight {
+      border-top: 1px dashed var(--border-hairline);
+      padding-top: 7px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .capsule-input-bar-tight {
+      display: flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid var(--border-accent);
+      border-radius: 16px;
+      padding: 1px 2px 1px 8px;
     }
     .capsule-nick {
-      width: 65px;
-      background: transparent;
+      width: 48px;
+      background: none;
       border: none;
-      border-right: 1px solid var(--border);
-      color: var(--accent-teal);
-      font-size: 0.78rem;
-      font-weight: 800;
+      border-right: 1px solid var(--border-hairline);
+      color: var(--accent-silver);
+      font-size: 0.7rem;
+      font-weight: 700;
       outline: none;
-      padding-right: 6px;
     }
     .capsule-msg {
       flex: 1;
-      background: transparent;
+      background: none;
       border: none;
       color: #fff;
-      font-size: 0.78rem;
+      font-size: 0.72rem;
+      padding: 0 5px;
       outline: none;
-      padding: 0 8px;
     }
     .capsule-send-btn {
-      background: linear-gradient(135deg, #0284c7, #0ea5e9);
+      background: var(--accent-silver);
       border: none;
-      width: 28px;
-      height: 28px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
-      color: #fff;
-      font-size: 0.8rem;
+      color: #000;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 8px rgba(14, 165, 233, 0.4);
-      flex-shrink: 0;
-      transition: transform 0.15s;
     }
     .capsule-send-btn:active { transform: scale(0.9); }
+    .capsule-send-btn .icon-svg { width: 11px; height: 11px; }
 
-    .talk-list {
+    .talk-list-tight {
       list-style: none;
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      max-height: 125px;
+      gap: 3px;
+      max-height: 68px;
       overflow-y: auto;
     }
-    .talk-bubble {
+    .talk-bubble-tight {
       background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 7px;
-      padding: 6px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 4px;
+      padding: 3px 6px;
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
-      font-size: 0.74rem;
+      align-items: center;
+      font-size: 0.68rem;
     }
-    .talk-bubble-left { display: flex; align-items: center; gap: 6px; overflow: hidden; }
-    .talk-author { color: var(--accent-teal); font-weight: 800; flex-shrink: 0; }
-    .talk-content { color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .talk-time-text { font-size: 0.66rem; color: var(--text-muted); flex-shrink: 0; }
 
-    /* 🎒 6. 백패킹 큐레이션 배너 */
+    /* 🎒 6. 큐레이션 배너 */
     .spotlight-banner-slot {
-      background: linear-gradient(135deg, rgba(14, 165, 233, 0.12) 0%, rgba(45, 212, 191, 0.06) 100%);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      border-radius: 14px;
-      padding: 14px 16px;
+      background: rgba(14, 18, 26, 0.7);
+      border: 1px solid var(--border-accent);
+      border-radius: 10px;
+      padding: 9px 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
-      transition: all 0.25s ease;
+      transition: transform 0.1s ease;
     }
-    .spotlight-banner-slot:hover {
-      background: linear-gradient(135deg, rgba(14, 165, 233, 0.2) 0%, rgba(45, 212, 191, 0.12) 100%);
-      border-color: var(--accent-blue);
-      transform: translateY(-2px);
-    }
-    .banner-slot-left { display: flex; flex-direction: column; gap: 3px; }
-    .banner-slot-badge { font-size: 0.7rem; font-weight: 800; color: var(--accent-teal); }
-    .banner-slot-title { font-size: 0.92rem; font-weight: 700; color: #fff; }
-    .banner-slot-desc { font-size: 0.76rem; color: var(--text-secondary); }
-    .banner-slot-arrow { font-size: 1.1rem; color: var(--accent-blue); }
+    .spotlight-banner-slot:active { transform: scale(0.98); }
 
-    /* 📱 7. 모바일 하단 독 */
-    .mobile-bottom-dock {
+    /* 👤 보관함 모달 */
+    .my-info-modal {
       display: none;
       position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: var(--z-modal);
+      backdrop-filter: blur(8px);
+      justify-content: center;
+      align-items: flex-end;
+    }
+    .my-info-content {
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-accent);
+      border-radius: 18px 18px 0 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+   /* 📱 7. 하단 네비 독 (map.html과 0.1px 단위 완전 일치 규격) */
+    .mobile-bottom-dock {
+      position: fixed;
       bottom: 0; left: 0; right: 0;
-      background: rgba(3, 5, 8, 0.98);
-      border-top: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.96);
+      border-top: 1px solid var(--border-hairline);
       height: calc(56px + env(safe-area-inset-bottom, 0px));
       padding-bottom: env(safe-area-inset-bottom, 0px);
-      z-index: var(--z-dock);
+      display: flex;
       justify-content: space-around;
       align-items: center;
+      z-index: var(--z-dock);
+      user-select: none;
+      -webkit-user-select: none;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
     .dock-item {
       display: flex;
@@ -696,218 +721,286 @@
       text-decoration: none;
       font-size: 0.72rem;
       font-weight: 700;
+      font-family: var(--font-body);
+      letter-spacing: -0.02em;
       gap: 3px;
+      background: none;
+      border: none;
+      outline: none;
+      cursor: pointer;
       min-width: 54px;
-      height: 100%;
-      transition: color 0.15s;
+      min-height: 48px;
+      padding: 0;
+      margin: 0;
+      transition: transform 0.15s ease, color 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
     }
-    .dock-item.active { color: var(--accent-blue); }
-    .dock-item svg { width: 19px; height: 19px; fill: currentColor; }
-
-    /* 📱 반응형 분기 */
-    @media (max-width: 768px) {
-      body { padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px)); }
-      .mobile-bottom-dock { display: flex; }
-      .main-title { font-size: 1.12rem !important; }
-      .brand-sub-script { font-size: 1.05rem !important; }
-
-      /* 모바일 가로 스와이프 슬라이더 */
-      .lucky-grid-container {
-        display: flex;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        -webkit-overflow-scrolling: touch;
-        gap: 12px;
-        padding-bottom: 2px;
-        scrollbar-width: none;
-      }
-      .lucky-grid-container::-webkit-scrollbar {
-        display: none;
-      }
-      .lucky-spot-card {
-        flex: 0 0 100%;
-        width: 100%;
-        scroll-snap-align: start;
-      }
-      .mobile-slider-dots {
-        display: flex;
-      }
+    .dock-item:active { 
+      transform: scale(0.94); 
     }
-
-    @media (max-width: 380px) {
-      .brand-sub-script { display: none !important; }
-      .main-title { font-size: 1.05rem !important; }
+    .dock-item.active { 
+      color: #38bdf8 !important; 
+    }
+    .dock-item svg { 
+      width: 19px; 
+      height: 19px; 
+      fill: currentColor; 
+      flex-shrink: 0;
+      display: block;
+    }
+    .dock-item span {
+      line-height: 1;
+      display: block;
+      color: inherit;
     }
   </style>
 </head>
 <body>
 
-  <!-- 🧭 1. 상단 GNB -->
-  <nav class="portal-nav">
-    <div class="portal-nav-inner">
-      <a href="index.html" class="brand-title-link" title="홈">
-        <span class="main-title">대한민국 <span class="highlight-pink">낭만 백패킹</span> 로드</span>
-        <span class="brand-sub-script">Romantic Backpacking Road</span>
+  <!-- 🧭 1. 상단 GNB & 인라인 슬림 검색바 -->
+  <header class="apple-integrated-header notranslate">
+    <div class="header-top-row">
+      <a href="index.html" class="brand-line" onclick="triggerHaptic(10)" title="낭만루트 홈">
+        <div class="brand-sym-box">
+          <svg viewBox="0 0 32 32" fill="none">
+            <path d="M5 25L13 11l5 8 8-14" stroke="#64748b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M13 11l4-6 9 14" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round"/>
+            <circle cx="17" cy="5" r="2.2" fill="#34d399"/>
+          </svg>
+        </div>
+        <span class="brand-title">낭만루트</span>
+        <span class="brand-dot"></span>
+        <span class="brand-en">일상을 떠나 자연으로</span>
       </a>
-      <div></div>
     </div>
-  </nav>
 
-  <!-- 🔍 2. 스마트 검색창 & LNT 배너 -->
-  <section class="hero-search-container">
-    <div class="portal-search-box">
-      <input type="text" id="mainSearchInput" class="portal-search-input" placeholder="산, 섬, 해변, 계곡, 박지 검색..." autocomplete="off" oninput="onSearchInputChanged(this.value)" onkeyup="if(event.key==='Enter') executePortalSmartSearch()" />
-      <button type="button" class="btn-clear-search" id="btnClearSearch" onclick="clearSearchInput()" title="검색어 지우기">✕</button>
-      <button type="button" class="portal-search-btn" onclick="executePortalSmartSearch()" title="검색">🔍</button>
+    <!-- 슬림 인라인 검색바 -->
+    <div class="apple-search-box">
+      <div class="apple-search-bar">
+        <span class="icon-svg" style="width:14px; height:14px; color:#94a3b8;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input type="text" id="mainSearchInput" class="apple-search-input" placeholder="산, 섬, 활공장, 해변, 데크 검색..." autocomplete="off" oninput="onSearchInputChanged(this.value)" onkeyup="if(event.key==='Enter') executePortalSmartSearch()" />
+        <button type="button" class="btn-clear-search" id="btnClearSearch" onclick="triggerHaptic(10); clearSearchInput();">✕</button>
+      </div>
       <ul id="searchAutoDropdown" class="search-auto-dropdown"></ul>
     </div>
+  </header>
 
-    <div class="lnt-slim-banner">
-      <span class="lnt-badge-mini">🌿 LNT 실천</span>
-      <span>100% 비화식 준수 & 흔적 없는 클린 백패킹</span>
-    </div>
-  </section>
-
-  <!-- 📦 메인 콘텐츠 -->
-  <main class="portal-main-content">
+  <!-- 📦 메인 콘텐츠 피드 -->
+  <main class="portal-main-content notranslate">
 
     <!-- 🎯 3. 어디로 떠날까? 결정 장애 탈출 픽 -->
     <section class="lucky-section-wrap">
-      <div class="lucky-header">
-        <div class="section-title">이번주는 어디로 떠나면 좋을까?</div>
+      <div class="section-title-row">
+        <div style="display:flex; align-items:center; gap:5px;">
+          <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor"/></svg></span>
+          <span>이번 주 어디로 떠날까?</span>
+        </div>
+        <span style="font-size:0.68rem; color:#64748b; font-weight:600;">실시간 추천</span>
       </div>
 
-      <!-- PC: 3열 나열 / 모바일: 스와이프 3슬라이드 -->
       <div class="lucky-grid-container" id="luckyGridContainer">
-        <!-- Card 1 -->
-        <div class="lucky-spot-card" id="luckyCard0" onclick="goToLuckySpot(0)">
+        <!-- Card 0 -->
+        <div class="lucky-spot-card" id="luckyCard0" onclick="triggerHaptic(15); goToLuckySpot(0);">
           <div class="spot-header-row">
-            <span class="spot-tag-pill" id="luckyTag0">🏔️ 추천박지</span>
-            <span class="spot-diff-text" id="luckyDiff0">⭐⭐</span>
-          </div>
-          <div class="spot-body-area">
-            <div class="spot-title-line">
-              <span class="spot-name-text" id="luckyName0">불러오는 중...</span>
-              <span class="spot-region-text" id="luckyRegion0"></span>
+            <div style="display:flex; align-items:center;">
+              <span class="spot-tag-pill" id="luckyTag0">
+                <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg></span>
+                마운틴
+              </span>
+              <span class="badge-elev" id="luckyElev0">587m</span>
             </div>
-            <div class="spot-desc-text" id="luckyDesc0">데이터를 안전하게 로드하고 있습니다.</div>
+            <div class="star-wrap" id="luckyDiff0">
+              <svg class="star-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="star-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="star-svg empty" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
           </div>
-          <div class="spot-tip-bar" id="luckyTip0">💡 꿀팁: 비화식 준수</div>
+          <div>
+            <div class="spot-title-text" id="luckyName0">남양주 백봉산 (정상 전망데크)</div>
+            <div class="spot-desc-text" id="luckyDesc0">해발 587m 정상 전망데크에서 남양주 시가지와 야경을 360도로 조망할 수 있습니다.</div>
+          </div>
+        </div>
+
+        <!-- Card 1 -->
+        <div class="lucky-spot-card" id="luckyCard1" onclick="triggerHaptic(15); goToLuckySpot(1);">
+          <div class="spot-header-row">
+            <div style="display:flex; align-items:center;">
+              <span class="spot-tag-pill" id="luckyTag1">
+                <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg></span>
+                오션뷰
+              </span>
+              <span class="badge-elev" id="luckyElev1">120m</span>
+            </div>
+            <div class="star-wrap" id="luckyDiff1">
+              <svg class="star-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <svg class="star-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+          </div>
+          <div>
+            <div class="spot-title-text" id="luckyName1">불러오는 중...</div>
+            <div class="spot-desc-text" id="luckyDesc1">데이터를 안전하게 로드하고 있습니다.</div>
+          </div>
         </div>
 
         <!-- Card 2 -->
-        <div class="lucky-spot-card" id="luckyCard1" onclick="goToLuckySpot(1)">
+        <div class="lucky-spot-card" id="luckyCard2" onclick="triggerHaptic(15); goToLuckySpot(2);">
           <div class="spot-header-row">
-            <span class="spot-tag-pill" id="luckyTag1">🌊 힐링로드</span>
-            <span class="spot-diff-text" id="luckyDiff1">⭐⭐</span>
-          </div>
-          <div class="spot-body-area">
-            <div class="spot-title-line">
-              <span class="spot-name-text" id="luckyName1">불러오는 중...</span>
-              <span class="spot-region-text" id="luckyRegion1"></span>
+            <div style="display:flex; align-items:center;">
+              <span class="spot-tag-pill" id="luckyTag2">
+                <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m14 14 3-3 3 3h-2v4h-2v-4z"/><path d="m4 14 4-5 4 5h-2.5v5h-3v-5z"/></svg></span>
+                힐링숲
+              </span>
+              <span class="badge-elev" id="luckyElev2">450m</span>
             </div>
-            <div class="spot-desc-text" id="luckyDesc1">데이터를 안전하게 로드하고 있습니다.</div>
-          </div>
-          <div class="spot-tip-bar" id="luckyTip1">💡 꿀팁: 비화식 준수</div>
-        </div>
-
-        <!-- Card 3 -->
-        <div class="lucky-spot-card" id="luckyCard2" onclick="goToLuckySpot(2)">
-          <div class="spot-header-row">
-            <span class="spot-tag-pill" id="luckyTag2">🌌 은하수뷰</span>
-            <span class="spot-diff-text" id="luckyDiff2">⭐⭐</span>
-          </div>
-          <div class="spot-body-area">
-            <div class="spot-title-line">
-              <span class="spot-name-text" id="luckyName2">불러오는 중...</span>
-              <span class="spot-region-text" id="luckyRegion2"></span>
+            <div class="star-wrap" id="luckyDiff2">
+              <svg class="star-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             </div>
+          </div>
+          <div>
+            <div class="spot-title-text" id="luckyName2">불러오는 중...</div>
             <div class="spot-desc-text" id="luckyDesc2">데이터를 안전하게 로드하고 있습니다.</div>
           </div>
-          <div class="spot-tip-bar" id="luckyTip2">💡 꿀팁: 비화식 준수</div>
         </div>
       </div>
 
-      <!-- 모바일 전용 슬라이드 인디케이터 점 3개 (타이트한 여백) -->
-      <div class="mobile-slider-dots" id="mobileSliderDots">
+      <!-- 모바일 인디케이터 -->
+      <div class="mobile-slider-dots">
         <div class="dot-item active" data-idx="0"></div>
         <div class="dot-item" data-idx="1"></div>
         <div class="dot-item" data-idx="2"></div>
       </div>
 
-      <button type="button" class="btn-dice-prominent" id="btnRollDice" onclick="rollLuckySpot()">
-        <span class="dice-icon">🎲</span> 주사위 굴려 3곳 새로고침
+      <!-- 🎲 정밀 주사위 SVG 탑재 -->
+      <button type="button" class="btn-dice-prominent" id="btnRollDice" onclick="triggerHaptic(20); rollLuckySpot();">
+        <span class="dice-icon-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="18" height="18" x="3" y="3" rx="4"/>
+            <path d="M16 8h.01"/><path d="M8 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/><path d="M12 12h.01"/>
+          </svg>
+        </span>
+        3곳 새로 추천받기
       </button>
     </section>
 
-    <!-- 🎬 4. 이 주의 추천 영상 -->
-    <section>
-      <div class="section-title" style="margin-bottom: 8px;">🎬 이 주의 낭만 백패킹 영상</div>
-      <div class="yt-card-box">
-        <div class="video-box">
-          <iframe id="ytIframe" src="https://www.youtube-nocookie.com/embed/4JQHNcThibg?rel=0&enablejsapi=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe>
-        </div>
-        <div class="video-caption-bar">
-          <span class="video-caption-title" id="ytCaptionTitle">비가 내리는 날 산속 바위틈에서 하루를 보낸다면 오지브로님 영상 처럼 정말 낭만적일까?</span>
-          <span class="video-badge" id="ytBadge">🎥 스포트라이트</span>
-        </div>
+    <!-- 🌿 LNT 배너 (세이지 그린 & 산악 SVG) -->
+    <div class="lnt-slim-banner">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span class="lnt-badge-mini">
+          <span class="icon-svg" style="width:11px; height:11px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m8 3 4 8 5-5 5 15H2L8 3z"/>
+            </svg>
+          </span>
+          K-LNT
+        </span>
+        <span>산에서 화기 사용 절대 금지! 흔적 없는 클린 백패킹</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:2px; color:var(--pt-sage); font-size:0.65rem; font-weight:700;">
+        <span>서약</span>
+        <span class="icon-svg" style="width:10px; height:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+      </div>
+    </div>
+
+    <!-- 🎬 4. 영상 섹션 (타이틀 시인성 확대 및 로케이션 발굴 배지 삭제) -->
+    <section class="featured-video-section">
+      <div class="video-title-bold-head">
+        <span class="icon-svg" style="width:18px; height:18px; color:var(--pt-rose);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect width="20" height="15" x="2" y="4.5" rx="3"/><polygon points="10 8.5 16 12 10 15.5 10 8.5" fill="currentColor"/></svg></span>
+        <span>🎬 영상 속 그 장소, 여긴 어딜까?</span>
+      </div>
+      <div class="video-box">
+        <iframe id="ytIframe" src="https://www.youtube-nocookie.com/embed/4JQHNctHibg?rel=0&enablejsapi=1" allowfullscreen loading="lazy"></iframe>
+      </div>
+      <div class="video-info-strip">
+        <span class="video-title-text" id="ytCaptionTitle">비 내리는 날 산속 바위틈 낭만 비박</span>
+        <button type="button" class="btn-find-location" id="btnFindSpot" onclick="triggerHaptic(15); location.href='map.html?spot=충주%20고봉';">
+          <span>박지 보기</span>
+          <span class="icon-svg" style="width:10px; height:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+        </button>
       </div>
     </section>
 
-    <!-- 🔥 5. 낭만 커뮤니티 라운지 -->
-    <section class="community-box">
-      <div class="section-title">🔥 낭만 커뮤니티 라운지</div>
-      
-      <!-- 📊 실시간 투표 -->
-      <div class="poll-wrap">
-        <div class="poll-header-row">
-          <span>📊 이번 주말 어디로 떠나시나요?</span>
-          <span class="poll-count-text" id="pollCountText">총 238명 참여</span>
+    <!-- 🔥 5. 낭만 라운지 -->
+    <section class="community-box-tight">
+      <div>
+        <div class="section-title-row" style="margin-bottom:6px;">
+          <div style="display:flex; align-items:center; gap:5px;">
+            <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg></span>
+            <span>이번 주말 출정 계획</span>
+          </div>
+          <span style="color:var(--text-muted); font-size:0.68rem;" id="pollCountText">총 238명 참여</span>
         </div>
-        <div class="poll-options-list" id="pollOptionsList"></div>
+        <div class="poll-grid-tight" id="pollOptionsList"></div>
       </div>
 
-      <!-- 💬 캡슐 출정톡 -->
-      <div class="talk-feed-wrap">
-        <div class="poll-header-row">
-          <span>💬 실시간 출정톡 & 짧은 소통</span>
+      <!-- 실시간 출정 한줄톡 -->
+      <div class="talk-section-tight">
+        <div class="section-title-row" style="margin-bottom:2px;">
+          <div style="display:flex; align-items:center; gap:5px;">
+            <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+            <span>실시간 출정톡</span>
+          </div>
         </div>
-        <div class="capsule-input-bar">
+        <div class="capsule-input-bar-tight">
           <input type="text" id="talkNickInput" class="capsule-nick" placeholder="닉네임" maxlength="6" />
-          <input type="text" id="talkMsgInput" class="capsule-msg" placeholder="출정지/현장상황 한줄 남기기..." maxlength="40" onkeyup="if(event.key==='Enter') submitTalkBubble()" />
-          <button type="button" class="capsule-send-btn" onclick="submitTalkBubble()" title="전송">➔</button>
+          <input type="text" id="talkMsgInput" class="capsule-msg" placeholder="현장 상황 한줄..." maxlength="40" onkeyup="if(event.key==='Enter') submitTalkBubble()" />
+          <button type="button" class="capsule-send-btn" onclick="triggerHaptic(15); submitTalkBubble();" title="전송">
+            <span class="icon-svg" style="width:11px; height:11px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+          </button>
         </div>
-        <ul class="talk-list" id="talkBubbleList"></ul>
+        <ul class="talk-list-tight" id="talkBubbleList"></ul>
       </div>
     </section>
 
-    <!-- 🎒 6. 백패킹 큐레이션 배너 -->
-    <section class="spotlight-banner-slot" onclick="location.href='map.html'">
+    <!-- 🎒 6. 큐레이션 배너 -->
+    <section class="spotlight-banner-slot" onclick="triggerHaptic(15); location.href='map.html';">
       <div class="banner-slot-left">
-        <span class="banner-slot-badge">🎒 CURATION & GEAR</span>
-        <span class="banner-slot-title">낭만 백패커 추천 장비 & LNT 비화식 가이드</span>
-        <span class="banner-slot-desc">안전하고 가벼운 백패킹을 위한 실전 꿀팁 모음</span>
+        <span style="font-size:0.62rem; font-weight:800; color:var(--pt-sage); letter-spacing:0.05em;">🎒 CURATION & GEAR</span>
+        <span style="font-size:0.85rem; font-weight:700; color:#fff;">낭만 백패커 추천 장비 & 클린 캠핑 가이드</span>
       </div>
-      <div class="banner-slot-arrow">➔</div>
+      <span class="icon-svg" style="width:12px; height:12px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
     </section>
 
   </main>
 
-  <!-- 📱 7. 모바일 하단 네비 독 -->
-  <nav class="mobile-bottom-dock">
-    <a href="index.html" class="dock-item active">
+  <!-- 👤 6. 보관함 모달 -->
+  <div class="my-info-modal" id="myInfoModal" onclick="if(event.target===this) closeMyInfoModal()">
+    <div class="my-info-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-hairline); padding-bottom:10px;">
+        <span style="font-weight:800; font-size:0.95rem; color:#fff;">👤 내 낭만 보관함</span>
+        <button style="background:none; border:none; color:#fff; font-size:1.1rem; cursor:pointer;" onclick="triggerHaptic(10); closeMyInfoModal();">✕</button>
+      </div>
+      <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-hairline); border-radius:10px; padding:12px;">
+        <span style="font-size:0.78rem; color:#34d399; font-weight:800;">🌿 클린 백패커 서약</span>
+        <div style="font-size:0.88rem; font-weight:700; color:#fff; margin-top:2px;">클린 백패커 레벨 1</div>
+        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:4px;">화기 사용 금지와 흔적 없는 야영을 실천합니다.</div>
+      </div>
+      <div>
+        <div style="font-weight:700; font-size:0.85rem; margin-bottom:6px; color:#fff;">❤️ 찜한 박지 목록</div>
+        <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.5;">
+          지도 화면에서 하트(❤️)를 누르면 관심 박지가 이곳에 저장됩니다.
+        </div>
+      </div>
+      <button class="btn-dice-prominent" onclick="triggerHaptic(15); location.href='map.html';">📍 전국 박지 지도로 이동</button>
+    </div>
+  </div>
+
+ <!-- 📱 7. 하단 네비 독 (3개 메뉴 유지) -->
+  <div class="mobile-bottom-dock notranslate">
+    <a href="index.html" class="dock-item active" title="홈" onclick="triggerHaptic(10);">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
       <span>홈</span>
     </a>
-    <a href="map.html" class="dock-item">
+    <a href="map.html" class="dock-item" title="전국지도" onclick="triggerHaptic(10);">
       <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
-      <span>전국 박지지도</span>
+      <span>전국지도</span>
     </a>
-    <a href="https://www.instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="dock-item">
-      <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-      <span>문의 및 협업</span>
-    </a>
-  </nav>
+    <button type="button" class="dock-item" title="보관함" onclick="triggerHaptic(12); openMyInfoModal();">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      <span>보관함</span>
+    </button>
+  </div>
 
   <script>
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycby3UfPoQvdyECFHTSZJmOx_htGRKiysAd8-vNSvnMZrg8rXhVkW-0XMcp4H9kxeAcVJ/exec';
@@ -919,147 +1012,50 @@
     let currentLuckySpots = [null, null, null];
 
     // -------------------------------------------------------------
-    // ⭐ 1. 난이도 정밀 별표 변환 (앞자리 숫자 추출 & 오류 보정)
+    // 📳 웹 표준 스마트 햅틱(Haptic) 엔진
     // -------------------------------------------------------------
-    function parseDifficultyStars(rawDiff) {
-      if (!rawDiff) return '⭐⭐';
-      const str = String(rawDiff).trim();
-
-      // 이미 ⭐ 이나 ★이 연속으로 들어있는 경우
-      const starMatch = str.match(/[⭐★]+/g);
-      if (starMatch && starMatch[0].length >= 1 && starMatch[0].length <= 5) {
-        return '⭐'.repeat(starMatch[0].length);
+    function triggerHaptic(duration = 12) {
+      if (typeof window !== 'undefined' && 'navigator' in window && typeof navigator.vibrate === 'function') {
+        try { navigator.vibrate(duration); } catch (e) {}
       }
-
-      // 문자열 내 첫 번째 숫자 추출 (예: "3", "3(보통)", "난이도: 4", "LV.2")
-      const numMatch = str.match(/\d/);
-      if (numMatch) {
-        let n = parseInt(numMatch[0], 10);
-        if (n < 1) n = 1;
-        if (n > 5) n = 5;
-        return '⭐'.repeat(n);
-      }
-
-      // 텍스트 기반 변환
-      if (str.includes('상') || str.includes('어려움') || str.includes('상급') || str.includes('극상')) return '⭐⭐⭐⭐';
-      if (str.includes('중상')) return '⭐⭐⭐⭐';
-      if (str.includes('중') || str.includes('보통')) return '⭐⭐⭐';
-      if (str.includes('초보') || str.includes('쉬움') || str.includes('하')) return '⭐';
-
-      return '⭐⭐';
     }
 
-    // -------------------------------------------------------------
-    // 🏷️ 2. 특성 기반 스마트 태그 추출
-    // -------------------------------------------------------------
+    function openMyInfoModal() { document.getElementById('myInfoModal').style.display = 'flex'; }
+    function closeMyInfoModal() { document.getElementById('myInfoModal').style.display = 'none'; }
+
+    function renderStarSvg(count) {
+      let html = '';
+      for (let i = 0; i < 3; i++) {
+        if (i < count) {
+          html += `<svg class="star-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+        } else {
+          html += `<svg class="star-svg empty" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+        }
+      }
+      return html;
+    }
+
+    // 🏷️ 엄격한 태그 검증기 (연어봉 등 산에 섬백패킹 오매칭 원천 차단)
     function analyzeSpotTag(spot) {
-      const combined = `${spot.name} ${spot.theme} ${spot.desc} ${spot.region}`.toLowerCase();
+      const name = (spot.name || '').toLowerCase();
+      const theme = (spot.theme || '').toLowerCase();
+      const region = (spot.region || '').toLowerCase();
 
-      if (combined.includes('바다') || combined.includes('해변') || combined.includes('해수욕장') || combined.includes('오션') || combined.includes('몽돌')) {
-        return { text: '🌊 오션뷰', class: 'tag-ocean' };
+      const isRealIsland = name.endsWith('도') || theme.includes('섬백패킹') || theme.includes('선착장') || region.includes('옹진군') || region.includes('신안군') || region.includes('완도') || region.includes('울릉');
+      const isNotMountain = !name.includes('봉') && !name.includes('산') && !name.includes('능선') && !name.includes('대');
+
+      if (isRealIsland && isNotMountain) {
+        return { text: '섬백패킹', class: 'tag-island', svg: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>' };
       }
-      if (combined.includes('섬') || combined.includes('도') || combined.includes('굴업') || combined.includes('선착장')) {
-        return { text: '🏝️ 섬백패킹', class: 'tag-island' };
+      if (name.includes('해변') || name.includes('해수욕장') || theme.includes('오션') || theme.includes('바다') || theme.includes('몽돌')) {
+        return { text: '오션뷰', class: 'tag-ocean', svg: '<path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>' };
       }
-      if (combined.includes('숲') || combined.includes('잣나무') || combined.includes('계곡') || combined.includes('휴양림')) {
-        return { text: '🌲 힐링숲길', class: 'tag-forest' };
+      if (name.includes('숲') || name.includes('휴양림') || theme.includes('잣나무') || theme.includes('계곡') || theme.includes('숲길')) {
+        return { text: '힐링숲', class: 'tag-forest', svg: '<path d="m14 14 3-3 3 3h-2v4h-2v-4z"/><path d="m4 14 4-5 4 5h-2.5v5h-3v-5z"/>' };
       }
-      if (combined.includes('일출') || combined.includes('노을') || combined.includes('낙조') || combined.includes('은하수') || combined.includes('별') || combined.includes('풍력')) {
-        return { text: '🌌 은하수/노을', class: 'tag-sunset' };
-      }
-      if (combined.includes('산') || combined.includes('봉') || combined.includes('능선') || combined.includes('고지') || combined.includes('데크') || combined.includes('활공장')) {
-        return { text: '🏔️ 마운틴뷰', class: 'tag-mountain' };
-      }
-      
-      const customTag = spot.theme ? spot.theme.replace(/[#\s]/g, '').slice(0, 5) : '힐링노지';
-      return { text: `✨ ${customTag}`, class: 'tag-mountain' };
+      return { text: '마운틴', class: 'tag-mountain', svg: '<path d="m8 3 4 8 5-5 5 15H2L8 3z"/>' };
     }
 
-    // -------------------------------------------------------------
-    // 💡 3. 요약 내용 및 지형 특성 맞춤형 스마트 꿀팁 생성
-    // -------------------------------------------------------------
-    function getSmartDynamicTip(spot) {
-      // 1) 시트에 유효한 팁 데이터가 직접 작성되어 있는 경우 최우선 사용
-      if (spot.tip && spot.tip.trim() !== '' && !spot.tip.includes('100% 비화식 준수') && spot.tip.length > 2) {
-        return spot.tip.trim();
-      }
-
-      const txt = `${spot.name} ${spot.theme} ${spot.desc} ${spot.region}`.toLowerCase();
-
-      // 2) 내용/지형 기반 상황별 실전 꿀팁 스마트 매칭
-      if (txt.includes('섬') || txt.includes('여객선') || txt.includes('항') || txt.includes('도')) {
-        const islandTips = [
-          '기상 상황에 따른 배편 운항 여부와 물때 사전 확인 필수',
-          '강한 해풍 대비 샌드팩 또는 크로스 팩다운 철저',
-          '섬 내 식수 공급처 확인 및 비상 보온의류 필수 지참',
-          '막배 시간과 선착장 이동 동선 여유있게 계획하기'
-        ];
-        return islandTips[Math.floor(Math.random() * islandTips.length)];
-      }
-
-      if (txt.includes('데크') || txt.includes('전망대') || txt.includes('활공장')) {
-        const deckTips = [
-          '나사형/오징어 데크팩 지참 및 바닥 냉기 차단 매트 보강',
-          '일반 등산객 배려를 위해 일몰 후 피칭, 일출 후 철수 권장',
-          '강풍 취약 지형이므로 스트링을 난간에 단단히 결속',
-          '헤드랜턴 지참 및 야간 시야 확보 주의'
-        ];
-        return deckTips[Math.floor(Math.random() * deckTips.length)];
-      }
-
-      if (txt.includes('해변') || txt.includes('바다') || txt.includes('모래') || txt.includes('몽돌')) {
-        const beachTips = [
-          '만조 시 바닷물 유입선 확인 후 안전거리 확보 피칭',
-          '모래 유입 방지용 그라운드시트 꼼꼼히 세팅',
-          '텐트 지지력 강화를 위해 샌드팩이나 큰 돌 활용 팩다운',
-          '해풍으로 체감온도가 낮으니 윈드브레이커 준비'
-        ];
-        return beachTips[Math.floor(Math.random() * beachTips.length)];
-      }
-
-      if (txt.includes('계곡') || txt.includes('숲') || txt.includes('잣나무') || txt.includes('휴양림')) {
-        const forestTips = [
-          '바닥 습기 차단 풋프린트 & 방충망 필수 구비',
-          '호우 예보 시 계곡물 범람 위험지 피칭 절대 금지',
-          '낙가지대 피해서 텐트 자리 선정하기',
-          '식수 정수 장비 및 방한 용품 필수 지참'
-        ];
-        return forestTips[Math.floor(Math.random() * forestTips.length)];
-      }
-
-      if (txt.includes('암릉') || txt.includes('바위') || txt.includes('동굴') || txt.includes('절벽')) {
-        const rockTips = [
-          '바위 결속용 스트링 여유분 및 팩 대신 돌 앵커 활용',
-          '미끄럼 방지 등산화 착용 및 낙석 위험 구역 주의',
-          '돌바닥 요철 대비 에어매트와 폼매트 이중 보강',
-          '절벽 인근 야간 이동 시 헤드랜턴 필수 착용'
-        ];
-        return rockTips[Math.floor(Math.random() * rockTips.length)];
-      }
-
-      if (txt.includes('산') || txt.includes('봉') || txt.includes('능선')) {
-        const mountainTips = [
-          '산 정상부는 기온 변화가 심하므로 방한 레이어 필수',
-          '들머리 최단 등산로 및 하산 코스 사전 다운로드',
-          '능선 강풍 대비 가이스트링 텐션 팽팽하게 고정',
-          '일몰 전 여유 있게 박지 도착하여 베이스캠프 구축'
-        ];
-        return mountainTips[Math.floor(Math.random() * mountainTips.length)];
-      }
-
-      // 기본 공통 백패킹 꿀팁 모음
-      const generalTips = [
-        'LNT 실천: 머문 자리는 처음보다 더 깨끗하게 정리',
-        '보온병과 발열체 활용으로 안전한 비화식 식사 권장',
-        '야간 기온 급강하 대비 핫팩 및 보온 양말 준비',
-        '비상 보조배터리와 오프라인 지도 앱 필수 준비'
-      ];
-      return generalTips[Math.floor(Math.random() * generalTips.length)];
-    }
-
-    // -------------------------------------------------------------
-    // 🎲 4. 3개 박지 랜덤 추천 & 슬라이더 연동
-    // -------------------------------------------------------------
     function rollLuckySpot() {
       if (registeredSpots.length === 0) return;
       const btn = document.getElementById('btnRollDice');
@@ -1081,51 +1077,47 @@
     function displayLuckySpots(spots) {
       spots.forEach((s, idx) => {
         if (!s) return;
-        const tagInfo = analyzeSpotTag(s);
+        const tag = analyzeSpotTag(s);
         const tagEl = document.getElementById(`luckyTag${idx}`);
-        
         if (tagEl) {
-          tagEl.className = `spot-tag-pill ${tagInfo.class}`;
-          tagEl.innerText = tagInfo.text;
+          tagEl.className = `spot-tag-pill ${tag.class}`;
+          tagEl.innerHTML = `<span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${tag.svg}</svg></span> ${tag.text}`;
         }
 
-        document.getElementById(`luckyName${idx}`).innerText = s.name;
-        document.getElementById(`luckyRegion${idx}`).innerText = s.region ? `(${s.region})` : '';
-        document.getElementById(`luckyDiff${idx}`).innerText = parseDifficultyStars(s.difficulty);
-        document.getElementById(`luckyDesc${idx}`).innerText = s.desc || '자연 속에서 즐기는 조용하고 평화로운 하룻밤.';
+        const nameEl = document.getElementById(`luckyName${idx}`);
+        if (nameEl) nameEl.innerText = s.name;
+
+        const elevEl = document.getElementById(`luckyElev${idx}`);
+        if (elevEl) elevEl.innerText = s.elevation ? `${s.elevation}m` : (s.region ? `${s.region}` : '전망데크');
         
-        // 동적 꿀팁 적용
-        const dynamicTip = getSmartDynamicTip(s);
-        document.getElementById(`luckyTip${idx}`).innerText = `💡 꿀팁: ${dynamicTip}`;
+        const numDiff = parseInt(String(s.difficulty).replace(/[^0-9]/g, '') || '2', 10);
+        const diffEl = document.getElementById(`luckyDiff${idx}`);
+        if (diffEl) diffEl.innerHTML = renderStarSvg(numDiff);
+        
+        let descView = s.desc || '자연 속에서 누리는 평화로운 하룻밤.';
+        if (descView.includes('[뷰/특징]')) {
+          descView = descView.split('[접근/코스]')[0].replace('[뷰/특징]', '').trim();
+        }
+        const descEl = document.getElementById(`luckyDesc${idx}`);
+        if (descEl) descEl.innerText = descView;
       });
     }
 
     function goToLuckySpot(idx) {
       const spot = currentLuckySpots[idx];
-      if (spot && spot.name) {
-        location.href = `map.html?spot=${encodeURIComponent(spot.name)}`;
-      }
+      if (spot && spot.name) location.href = `map.html?spot=${encodeURIComponent(spot.name)}`;
     }
 
-    // 모바일 슬라이더 스크롤 위치 감지 -> 인디케이터(Dot) 자동 하이라이트
     function setupMobileSliderDots() {
       const slider = document.getElementById('luckyGridContainer');
       const dots = document.querySelectorAll('.dot-item');
-      if (!slider || dots.length === 0) return;
-
+      if (!slider) return;
       slider.addEventListener('scroll', () => {
-        const width = slider.offsetWidth;
-        if (width <= 0) return;
-        const page = Math.round(slider.scrollLeft / width);
-        dots.forEach((d, i) => {
-          d.classList.toggle('active', i === page);
-        });
+        const page = Math.round(slider.scrollLeft / slider.offsetWidth);
+        dots.forEach((d, i) => d.classList.toggle('active', i === page));
       }, { passive: true });
     }
 
-    // -------------------------------------------------------------
-    // 🎬 5. 유튜브 추천 영상
-    // -------------------------------------------------------------
     function parseYouTubeUniversalUrl(url) {
       if (!url) return null;
       const str = String(url).trim();
@@ -1134,12 +1126,10 @@
       const videoMatch = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/|watch\?.+&v=))([\w-]{11})/);
       const vid = videoMatch ? videoMatch[1] : null;
 
-      if (listId && !vid) {
-        return { embedUrl: `https://www.youtube-nocookie.com/embed/videoseries?list=${listId}&rel=0`, badge: '📺 추천 재생목록' };
-      }
+      if (listId && !vid) return { embedUrl: `https://www.youtube-nocookie.com/embed/videoseries?list=${listId}&rel=0` };
       if (vid) {
         const listParam = listId ? `&list=${listId}` : '';
-        return { embedUrl: `https://www.youtube-nocookie.com/embed/${vid}?rel=0&enablejsapi=1${listParam}`, badge: '🎥 스포트라이트' };
+        return { embedUrl: `https://www.youtube-nocookie.com/embed/${vid}?rel=0&enablejsapi=1${listParam}` };
       }
       return null;
     }
@@ -1153,23 +1143,25 @@
           Papa.parse(csvText, {
             header: true,
             skipEmptyLines: true,
-            transformHeader: h => h.replace(/^\uFEFF/, '').trim(),
             complete: function(results) {
               if (results.data && results.data.length > 0) {
                 const row = results.data[0];
                 const videoUrl = row.featuredVideo || row['영상'] || row['유튜브'];
                 const caption = row.featuredCaption || row['영상설명'] || row['제목'];
+                const spotLink = row.featuredSpot || row['연결박지'] || '충주 고봉';
 
                 if (videoUrl) {
                   const parsed = parseYouTubeUniversalUrl(videoUrl);
                   if (parsed) {
                     const iframe = document.getElementById('ytIframe');
                     const capTitle = document.getElementById('ytCaptionTitle');
-                    const badge = document.getElementById('ytBadge');
+                    const btn = document.getElementById('btnFindSpot');
 
                     if (iframe) iframe.src = parsed.embedUrl;
                     if (capTitle && caption) capTitle.innerText = caption.trim();
-                    if (badge) badge.innerText = parsed.badge;
+                    if (btn && spotLink) {
+                      btn.onclick = () => { triggerHaptic(15); location.href = `map.html?spot=${encodeURIComponent(spotLink)}`; };
+                    }
                   }
                 }
               }
@@ -1179,15 +1171,12 @@
       } catch (e) {}
     }
 
-    // -------------------------------------------------------------
-    // 📊 6. 커뮤니티 투표
-    // -------------------------------------------------------------
     const POLL_STORAGE_KEY = 'romantic_poll_user_pick';
     let pollData = [
-      { id: 1, text: '❄️ 강원도 설산 & 능선 피칭', votes: 142 },
-      { id: 2, text: '🌊 서해/남해 섬 & 바다 뷰', votes: 68 },
-      { id: 3, text: '🌲 숲속 조용한 힐링 노지', votes: 34 },
-      { id: 4, text: '🏠 이번 주는 장비 정비(방콕)', votes: 12 }
+      { id: 1, text: '설산/능선', svg: '<path d="m10 20-1.25-2.5L6 18"/><path d="M14 20l1.25-2.5L18 18"/><path d="m4 14 2.5-1.25L6 10"/><path d="m4 10 2.5 1.25L6 14"/><path d="m14 4 1.25 2.5L18 6"/><path d="m10 4-1.25 2.5L6 6"/><path d="m20 10-2.5 1.25L18 14"/><path d="m20 14-2.5-1.25L18 10"/><path d="M2 12h20"/><path d="M12 2v20"/>', votes: 142 },
+      { id: 2, text: '섬/바다', svg: '<path d="M2 6c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>', votes: 68 },
+      { id: 3, text: '조용한 숲', svg: '<path d="m14 14 3-3 3 3h-2v4h-2v-4z"/><path d="m4 14 4-5 4 5h-2.5v5h-3v-5z"/>', votes: 34 },
+      { id: 4, text: '방콕/정비', svg: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>', votes: 12 }
     ];
 
     async function loadPollDataFromSheet() {
@@ -1195,7 +1184,7 @@
         const res = await fetch(`${GAS_API_URL}?action=GET_POLL`);
         const result = await res.json();
         if (result.status === 'success' && result.data && result.data.length > 0) {
-          pollData = result.data;
+          result.data.forEach((d, i) => { if(pollData[i]) pollData[i].votes = d.votes; });
           renderPoll();
         }
       } catch (e) {}
@@ -1206,18 +1195,20 @@
       if (!wrap) return;
       const userChoice = localStorage.getItem(POLL_STORAGE_KEY);
       const totalVotes = pollData.reduce((acc, cur) => acc + cur.votes, 0) || 1;
-      document.getElementById('pollCountText').innerText = `총 ${totalVotes.toLocaleString()}명 참여`;
+      const countEl = document.getElementById('pollCountText');
+      if (countEl) countEl.innerText = `총 ${totalVotes.toLocaleString()}명 참여`;
 
       wrap.innerHTML = pollData.map(opt => {
         const pct = Math.round((opt.votes / totalVotes) * 100);
         const isSelected = userChoice == opt.id;
-        const isVoted = userChoice !== null;
-
         return `
-          <div class="poll-option-item ${isSelected ? 'selected' : ''} ${isVoted ? 'voted' : ''}" onclick="votePollOption(${opt.id})">
-            <div class="poll-bar-fill" style="width: ${isVoted ? pct : 0}%"></div>
-            <span class="poll-text">${opt.text} ${isSelected ? '✓' : ''}</span>
-            <span class="poll-pct">${pct}%</span>
+          <div class="poll-item-tight ${isSelected ? 'selected' : ''}" onclick="triggerHaptic(12); votePollOption(${opt.id});">
+            <div class="poll-bar-fill" style="width: ${pct}%;"></div>
+            <span class="poll-text-tight">
+              <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${opt.svg}</svg></span>
+              ${opt.text}
+            </span>
+            <span class="poll-pct-tight">${pct}%</span>
           </div>
         `;
       }).join('');
@@ -1242,11 +1233,7 @@
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'VOTE_POLL',
-            optionId: id,
-            prevOptionId: prev
-          })
+          body: JSON.stringify({ action: 'VOTE_POLL', optionId: id, prevOptionId: prev })
         });
       } catch (e) {}
     }
@@ -1255,9 +1242,9 @@
     // 💬 7. 실시간 출정톡
     // -------------------------------------------------------------
     let talkMessages = [
-      { user: '산바람', msg: '선자령 피칭 완료! 현재 바람 잔잔하고 은하수 기대됩니다.', time: '방금' },
+      { user: '산바람', msg: '선자령 피칭 완료! 바람 잔잔하고 별빛 좋습니다.', time: '방금' },
       { user: '굴업러', msg: '내일 아침 굴업도 배편 정상 운항하네요 ㅎㅎ', time: '12분 전' },
-      { user: '캠린이', msg: '비화식 보온병 챙겨서 첫 출정 준비 중입니다 ⛺', time: '35분 전' }
+      { user: '캠린이', msg: '보온병 챙겨서 첫 출정 준비 중입니다 ⛺', time: '35분 전' }
     ];
 
     async function loadTalksFromSheet() {
@@ -1275,12 +1262,12 @@
       const list = document.getElementById('talkBubbleList');
       if (!list) return;
       list.innerHTML = talkMessages.map(m => `
-        <li class="talk-bubble">
+        <li class="talk-bubble-tight">
           <div class="talk-bubble-left">
-            <span class="talk-author">${escapeHtml(m.user)}</span>
-            <span class="talk-content">${escapeHtml(m.msg)}</span>
+            <span style="color:var(--text-primary); font-weight:800; font-size:0.68rem; margin-right:4px;">${escapeHtml(m.user)}</span>
+            <span style="color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(m.msg)}</span>
           </div>
-          <span class="talk-time-text">${m.time}</span>
+          <span style="color:var(--text-muted); font-size:0.62rem; flex-shrink:0;">${m.time}</span>
         </li>
       `).join('');
     }
@@ -1291,10 +1278,7 @@
       const user = nickInput.value.trim() || '익명';
       const msg = msgInput.value.trim();
 
-      if (!msg) {
-        alert('출정 메시지를 입력해주세요!');
-        return;
-      }
+      if (!msg) return;
 
       talkMessages.unshift({ user, msg, time: '방금' });
       if (talkMessages.length > 10) talkMessages.pop();
@@ -1306,11 +1290,7 @@
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'ADD_TALK',
-            user: user,
-            msg: msg
-          })
+          body: JSON.stringify({ action: 'ADD_TALK', user, msg })
         });
       } catch (e) {}
     }
@@ -1351,10 +1331,10 @@
 
       if (matches.length > 0) {
         dropdown.innerHTML = matches.map(s => `
-          <li class="auto-item" onclick="location.href='map.html?spot=${encodeURIComponent(s.name)}'">
-            <div class="auto-item-left">
-              <span class="auto-badge-spot">📍 박지</span>
-              <span class="auto-item-name">${escapeHtml(s.name)}</span>
+          <li class="auto-item" onclick="triggerHaptic(12); location.href='map.html?spot=${encodeURIComponent(s.name)}';">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:0.65rem; color:#38bdf8; background:rgba(56,189,248,0.12); padding:2px 6px; border-radius:4px; font-weight:700;">📍 박지</span>
+              <span style="font-weight:700; color:#fff;">${escapeHtml(s.name)}</span>
             </div>
             <span style="font-size:0.7rem; color:var(--text-muted);">${escapeHtml(s.region)}</span>
           </li>
@@ -1386,7 +1366,7 @@
             skipEmptyLines: true,
             complete: function(results) {
               if (results.data && results.data.length > 0) {
-                registeredSpots = results.data.map((row) => {
+                registeredSpots = results.data.map(row => {
                   const getVal = (...keys) => {
                     for (const k of keys) {
                       for (const rk of Object.keys(row)) {
@@ -1396,12 +1376,12 @@
                     return '';
                   };
                   return {
-                    name: getVal('name', '산', '박지명', '이름', 'spotName'),
-                    region: getVal('region', '지역', '주소', '시군구', '위치') || '전국',
-                    theme: getVal('theme', '테마', '태그', '카테고리', '특징', 'vibe', '키워드', 'type') || '',
-                    desc: getVal('desc', '특징', '설명', '한줄설명', 'description') || '자연 속에서 즐기는 조용한 하룻밤.',
-                    difficulty: getVal('difficulty', '난이도', 'level') || '⭐⭐',
-                    tip: getVal('tip', '들머리', '핵심팁', '주의사항') || ''
+                    name: getVal('fullName', 'name', 'spot_main', '산', '이름', 'spotName'),
+                    region: getVal('cityName', 'region', '지역', '주소', '시군구') || '전국',
+                    elevation: getVal('elevation', '고도') || '',
+                    theme: getVal('terrain', 'theme', '지형', '테마', '태그') || '',
+                    desc: getVal('desc_summary', 'desc', '특징', '설명', '한줄설명') || '자연 속에서 즐기는 조용한 하룻밤.',
+                    difficulty: getVal('difficulty', '난이도', 'level') || '2'
                   };
                 }).filter(s => s.name && s.name.trim() !== '');
 
@@ -1421,7 +1401,7 @@
       return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // 🚀 초기 실행
+    // 🚀 최종 초기화
     window.addEventListener('DOMContentLoaded', () => {
       renderPoll();
       renderTalkList();
@@ -1432,5 +1412,5 @@
       loadTalksFromSheet();
     });
   </script>
-</body>
 </html>
+</body>
