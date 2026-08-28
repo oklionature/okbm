@@ -214,20 +214,63 @@
     .section-title-row .icon-svg { width: 14px; height: 14px; color: var(--accent-silver); }
 
     /* ========================================================
-       ⚖️ 1. [홈 첫 화면] BPL 배낭 패킹 계산기 시스템
+       ⚖️ 1. [홈 화면] 배낭 무게 계산기 컴팩트 카드 & 작업 모달창
        ======================================================== */
-    .packing-master-card {
+    .packing-summary-banner {
       background: var(--bg-card);
-      border: 1.5px solid var(--border-accent);
+      border: 1px solid var(--border-accent);
       border-radius: 14px;
-      padding: 12px;
+      padding: 11px 12px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      gap: 9px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .packing-summary-banner:active {
+      transform: scale(0.985);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .pack-banner-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .pack-banner-body {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-hairline);
+      border-radius: 10px;
+      padding: 9px 12px;
     }
 
-    /* 칼로리표 스타일 무게 & 등급 대시보드 */
+    .packing-modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.88);
+      z-index: var(--z-modal);
+      backdrop-filter: blur(10px);
+      justify-content: center;
+      align-items: flex-end;
+    }
+    .packing-modal-window {
+      width: 100%;
+      max-width: 480px;
+      background: var(--bg-surface);
+      border: 1.5px solid var(--border-accent);
+      border-radius: 20px 20px 0 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 88vh;
+      overflow-y: auto;
+    }
+
+    /* 대시보드 게이지 */
     .weight-dashboard-strip {
       background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(6, 182, 212, 0.08));
       border: 1.5px solid rgba(16, 185, 129, 0.4);
@@ -262,7 +305,6 @@
     .bpl-standard { background: rgba(245, 158, 11, 0.2); color: #fde047; border: 1px solid #f59e0b; }
     .bpl-heavy { background: rgba(244, 63, 94, 0.2); color: #fda4af; border: 1px solid #f43f5e; }
 
-    /* 게이지 바 */
     .weight-gauge-bg {
       width: 100%;
       height: 6px;
@@ -278,7 +320,6 @@
       transition: width 0.3s ease;
     }
 
-    /* 7대 카테고리 슬롯 리스트 */
     .category-slots-grid {
       display: flex;
       flex-direction: column;
@@ -327,7 +368,7 @@
       color: #fff;
       font-weight: 800;
       font-size: 0.78rem;
-      padding: 8px;
+      padding: 9px;
       border-radius: 8px;
       cursor: pointer;
       display: flex;
@@ -342,7 +383,7 @@
       color: var(--text-secondary);
       font-weight: 700;
       font-size: 0.74rem;
-      padding: 8px;
+      padding: 9px;
       border-radius: 8px;
       cursor: pointer;
     }
@@ -552,6 +593,27 @@
       max-height: 85vh; overflow-y: auto;
     }
 
+    /* 🛡️ 보관함 클라우드 안전 고지 배너 */
+    .cloud-status-banner {
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 0.72rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .cloud-status-guest {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fde047;
+    }
+    .cloud-status-member {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      color: #6ee7b7;
+    }
+
     .basecamp-tabs {
       display: flex; background: rgba(255,255,255,0.05);
       border-radius: 10px; padding: 3px; gap: 3px;
@@ -669,51 +731,31 @@
   <main class="portal-main-content notranslate">
 
     <!-- ========================================================
-         🎒 1. [첫 번째 위치] 배낭 패킹 체크리스트 & 실시간 무게 계산기
+         🎒 1. [홈 화면] 배낭 무게 계산기 컴팩트 카드 (터치 시 작업창 오픈)
          ======================================================== -->
-    <section class="packing-master-card">
-      <div class="section-title-row">
-        <div style="display:flex; align-items:center; gap:5px;">
+    <section class="packing-summary-banner" onclick="triggerHaptic(12); openPackingModal();">
+      <div class="pack-banner-header">
+        <div style="display:flex; align-items:center; gap:6px;">
           <span class="icon-svg" style="width:16px; height:16px; color:#34d399;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>
           </span>
-          <span>BPL 배낭 패킹 & 실시간 무게 계산기</span>
+          <span style="font-family:var(--font-display); font-size:0.92rem; font-weight:800; color:#fff;">배낭 무게 계산기</span>
         </div>
-        <span style="font-size:0.68rem; color:#34d399; font-weight:800;">LIGHTER PACK</span>
+        <span style="font-size:0.72rem; color:#38bdf8; font-weight:800; display:flex; align-items:center; gap:2px;">
+          <span>패킹하기</span>
+          <svg viewBox="0 0 24 24" style="width:10px; height:10px;" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </span>
       </div>
 
-      <!-- 칼로리표 스타일 무게 대시보드 -->
-      <div class="weight-dashboard-strip">
-        <div class="weight-dash-top">
-          <div>
-            <div style="font-size:0.68rem; font-weight:800; color:#94a3b8;">배낭 총 무게 (Total Base Weight)</div>
-            <div class="weight-val-big" id="totalWeightKgText">0.00 kg</div>
-          </div>
-          <div style="text-align:right;">
-            <div id="bplStatusBadge" class="weight-bpl-badge bpl-ul">
-              <svg viewBox="0 0 24 24" class="icon-svg" style="width:10px; height:10px;"><circle cx="12" cy="12" r="10" fill="currentColor"/></svg>
-              <span id="bplStatusText">울트라라이트 (UL)</span>
-            </div>
-            <div style="font-size:0.68rem; color:#cbd5e1; font-family:var(--font-en); margin-top:2px;" id="totalWeightGramsText">0 g</div>
-          </div>
+      <div class="pack-banner-body">
+        <div>
+          <div style="font-size:0.68rem; color:#94a3b8; font-weight:700;">현재 세팅 총 무게</div>
+          <div style="font-family:var(--font-en); font-size:1.4rem; font-weight:900; color:#34d399; line-height:1.1;" id="mainBannerKgText">0.00 kg</div>
         </div>
-        <div class="weight-gauge-bg">
-          <div class="weight-gauge-fill" id="weightGaugeFill"></div>
+        <div style="text-align:right;">
+          <div id="mainBannerBadge" class="weight-bpl-badge bpl-ul">울트라라이트 (UL)</div>
+          <div style="font-size:0.68rem; color:#cbd5e1; margin-top:2px;" id="mainBannerItemCount">장비 0개 선택됨</div>
         </div>
-      </div>
-
-      <!-- 7대 카테고리 슬롯 (클릭 시 전용 장비 팝업 열림) -->
-      <div class="category-slots-grid" id="categorySlotsContainer"></div>
-
-      <!-- 액션 버튼 -->
-      <div class="packing-action-row">
-        <button type="button" class="btn-save-pack" onclick="saveCurrentPackingRecord()">
-          <svg viewBox="0 0 24 24" class="icon-svg" style="width:13px; height:13px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          <span>오늘의 출정 패킹 보관함에 저장</span>
-        </button>
-        <button type="button" class="btn-reset-pack" onclick="resetAllGearSelections()">
-          <span>전체 초기화 ↺</span>
-        </button>
       </div>
     </section>
 
@@ -735,7 +777,7 @@
       </div>
     </section>
 
-    <!-- 🎯 3. [유튜브 밑으로 이동] 어디로 떠날까? 픽 -->
+    <!-- 🎯 3. 어디로 떠날까 카드 -->
     <section class="lucky-section-wrap">
       <div class="section-title-row">
         <div style="display:flex; align-items:center; gap:5px;">
@@ -813,7 +855,7 @@
       <span style="color:var(--pt-sage); font-size:0.65rem; font-weight:700;">비화식 필수 ➔</span>
     </div>
 
-    <!-- 🔥 4. 낭만 라운지 & 출정톡 -->
+    <!-- 🔥 4. 낭만 라운지 & 실시간 출정톡 -->
     <section class="community-box-tight">
       <div>
         <div class="section-title-row" style="margin-bottom:6px;">
@@ -821,7 +863,7 @@
             <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg></span>
             <span>이번 주말 출정 계획</span>
           </div>
-          <span style="color:var(--text-muted); font-size:0.68rem;" id="pollCountText">투표 중...</span>
+          <span style="color:var(--text-muted); font-size:0.68rem;" id="pollCountText">총 128명 참여</span>
         </div>
         <div class="poll-grid-tight" id="pollOptionsList"></div>
       </div>
@@ -848,6 +890,58 @@
   </main>
 
   <!-- ========================================================
+       🎒 배낭 무게 계산기 전용 작업 모달창
+       ======================================================== -->
+  <div class="packing-modal-overlay" id="packingCalculatorModal" onclick="if(event.target===this) closePackingModal()">
+    <div class="packing-modal-window">
+      <!-- 상단 헤더 -->
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="icon-svg" style="width:17px; height:17px; color:#34d399;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>
+          </span>
+          <span style="font-weight:900; font-size:1.02rem; color:#fff;">배낭 무게 계산기</span>
+        </div>
+        <button type="button" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer; padding:4px;" onclick="closePackingModal()">✕</button>
+      </div>
+
+      <!-- 실시간 무게 대시보드 게이지 -->
+      <div class="weight-dashboard-strip">
+        <div class="weight-dash-top">
+          <div>
+            <div style="font-size:0.68rem; font-weight:800; color:#94a3b8;">배낭 총 무게 (Total Weight)</div>
+            <div class="weight-val-big" id="totalWeightKgText">0.00 kg</div>
+          </div>
+          <div style="text-align:right;">
+            <div id="bplStatusBadge" class="weight-bpl-badge bpl-ul">
+              <svg viewBox="0 0 24 24" class="icon-svg" style="width:10px; height:10px;"><circle cx="12" cy="12" r="10" fill="currentColor"/></svg>
+              <span id="bplStatusText">울트라라이트 (UL)</span>
+            </div>
+            <div style="font-size:0.68rem; color:#cbd5e1; font-family:var(--font-en); margin-top:2px;" id="totalWeightGramsText">0 g</div>
+          </div>
+        </div>
+        <div class="weight-gauge-bg">
+          <div class="weight-gauge-fill" id="weightGaugeFill"></div>
+        </div>
+      </div>
+
+      <!-- 7대 항목 슬롯 -->
+      <div class="category-slots-grid" id="categorySlotsContainer"></div>
+
+      <!-- 작업 버튼 -->
+      <div class="packing-action-row">
+        <button type="button" class="btn-save-pack" onclick="saveCurrentPackingRecord()">
+          <svg viewBox="0 0 24 24" class="icon-svg" style="width:13px; height:13px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <span>오늘의 출정 패킹 저장</span>
+        </button>
+        <button type="button" class="btn-reset-pack" onclick="resetAllGearSelections()">
+          <span>전체 초기화 ↺</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
        🗂️ 5. [내 보관함 모달] 3대 탭
        ======================================================== -->
   <div class="my-basecamp-modal" id="myInfoModal" onclick="if(event.target===this) closeMyInfoModal()">
@@ -857,9 +951,8 @@
           <svg viewBox="0 0 24 24" class="icon-svg" style="width:17px; height:17px; color:#38bdf8;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
           <span>내 낭만 보관함</span>
         </span>
-        <button style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer;" onclick="triggerHaptic(10); closeMyInfoModal();">✕</button>
+        <button type="button" style="background:none; border:none; color:#94a3b8; font-size:1.4rem; cursor:pointer; padding:6px; line-height:1;" onclick="event.stopPropagation(); closeMyInfoModal();">✕</button>
       </div>
-
       <!-- 3대 탭 바 -->
       <div class="basecamp-tabs">
         <button type="button" class="basecamp-tab-btn active" onclick="switchBasecampTab('history')">패킹 기록 히스토리</button>
@@ -930,17 +1023,17 @@
   </div>
 
   <!-- ========================================================
-       📦 6. [신규] 카테고리별 대표 장비 선택 팝업 모달
+       📦 6. 카테고리별 장비 선택 팝업 모달
        ======================================================== -->
   <div class="gear-preset-modal" id="gearPresetModal" onclick="if(event.target===this) closeGearPresetModal()">
     <div class="gear-preset-content">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <span style="font-weight:800; font-size:0.95rem; color:#fff;" id="presetModalCategoryTitle">장비 선택</span>
-        <button style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer;" onclick="closeGearPresetModal()">✕</button>
+        <button type="button" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer;" onclick="closeGearPresetModal()">✕</button>
       </div>
 
       <div style="font-size:0.72rem; color:#94a3b8;">
-        인기 대표 장비를 터치하여 즉시 담거나, 하단에서 직접 입력하세요.
+        대표 장비를 터치하여 즉시 담거나, 하단에서 직접 추가하세요.
       </div>
 
       <!-- 대표 장비 리스트 -->
@@ -979,7 +1072,7 @@
     <div class="custom-modal">
       <h3 style="color:#38bdf8; font-size:1.05rem; font-weight:800; text-align:center;">낭만 백패커 로그인</h3>
       <p style="font-size:0.75rem; color:#cbd5e1; line-height:1.45; text-align:center;">
-        로그인 시 나만의 배낭 패킹 기록과 비밀 메모가 안전하게 저장됩니다.
+        로그인 시 나만의 배낭 패킹 기록과 비밀 메모가 구글 클라우드에 평생 안전하게 보관됩니다.
       </p>
       <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
         <button type="button" class="modal-btn" style="background:#fee500; color:#191919; font-weight:800;" onclick="loginWithKakao()">
@@ -1015,7 +1108,7 @@
 
   <script>
     const KAKAO_APP_KEY = "557f5de0f6391a2419bc5592e6a9c9c1";
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycby3UfPoQvdyECFHTSZJmOx_htGRKiysAd8-vNSvnMZrg8rXhVkW-0XMcp4H9kxeAcVJ/exec';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
     const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
     const GOOGLE_SHEET_MAIN_GID = '0';
     const GOOGLE_SHEET_CONFIG_GID = '1983931878';
@@ -1023,115 +1116,98 @@
     let registeredSpots = [];
     let currentLuckySpots = [null, null, null];
 
-    // 🏷️ 7대 표준 백패킹 카테고리 정의 및 인기 대표 장비 공식 DB
+    // 🏷️ 7대 카테고리 & 기본 DB
     const CATEGORIES = [
       {
-        id: 'shelter',
-        title: '숙영 (텐트/타프)',
+        id: 'shelter', title: '텐트 · 타프',
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#38bdf8;"><path d="M12 2L2 20h20L12 2z"/><path d="M12 2v18M7 20l5-9 5 9"/></svg>',
         defaultItem: { name: '제로그램 엘찰텐 프로 1.5P', weight: 1450 },
         db: [
           { name: '제로그램 엘찰텐 프로 1.5P', weight: 1450 },
           { name: 'MSR 허바허바 NX 2P', weight: 1540 },
-          { name: '힐레베르그 니악 (Niak)', weight: 1700 },
-          { name: '네이처하이크 클라우드피크2', weight: 2200 },
-          { name: '블랙다이아몬드 피츠로이', weight: 3200 },
-          { name: '빅아그네스 카퍼스퍼 HV UL2', weight: 1420 }
+          { name: '힐레베르그 니악', weight: 1700 },
+          { name: '네이처하이크 클라우드피크2', weight: 2200 }
         ]
       },
       {
-        id: 'sleep',
-        title: '수면 (침낭/매트)',
+        id: 'sleep', title: '침낭 · 매트',
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#34d399;"><path d="M2 17h20M2 13h20M4 9h16a2 2 0 0 1 2 2v6H2v-6a2 2 0 0 1 2-2z"/></svg>',
         defaultItem: { name: '써마레스트 네오에어 엑스썸', weight: 430 },
         db: [
-          { name: '써마레스트 네오에어 엑스썸 NXT', weight: 430 },
-          { name: '씨투써밋 이더라이트 XT 인슐', weight: 490 },
-          { name: '니모 텐서 익스트림 올시즌', weight: 540 },
+          { name: '써마레스트 엑스썸 NXT', weight: 430 },
+          { name: '씨투써밋 이더라이트 XT', weight: 490 },
           { name: '큐물러스 파이라 850 (구스)', weight: 1200 },
-          { name: '몽벨 다운허거 650 #1', weight: 1150 },
-          { name: '씨투써밋 에어로 울트라라이트 베개', weight: 60 }
+          { name: '몽벨 다운허거 650 #1', weight: 1150 }
         ]
       },
       {
-        id: 'pack',
-        title: '배낭 (Pack & Bag)',
+        id: 'pack', title: '배낭 (Pack)',
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#a78bfa;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>',
         defaultItem: { name: '그레고리 발토로 65L', weight: 2200 },
         db: [
           { name: '그레고리 발토로 65L', weight: 2200 },
           { name: '오스프리 케스트렐 58L', weight: 1760 },
-          { name: '클라터뮤젠 그립 3.0 60L', weight: 1900 },
-          { name: 'HMG 하이퍼라이트 윈드라이더 3400 (55L)', weight: 910 },
-          { name: '카이팩 58L', weight: 2100 }
+          { name: 'HMG 윈드라이더 3400 (55L)', weight: 910 }
         ]
       },
       {
-        id: 'kitchen',
-        title: '취사/보온 (Kitchen)',
+        id: 'kitchen', title: '취사 · 식기',
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#f59e0b;"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>',
         defaultItem: { name: '스탠리 클래식 보온병 1.0L', weight: 1450 },
         db: [
-          { name: '스탠리 클래식 보온병 1.0L (물포함)', weight: 1450 },
-          { name: '써모스 산악전용 보온병 900ml (물포함)', weight: 1290 },
-          { name: '핫앤쿡 발열도시락 2팩 (식사)', weight: 680 },
-          { name: '스노우피크 티타늄 싱글머그 450', weight: 70 },
-          { name: '에버뉴 티타늄 쿠커 570FD', weight: 55 }
+          { name: '스탠리 보온병 1.0L (물포함)', weight: 1450 },
+          { name: '써모스 산악전용 보온병 900ml', weight: 1290 },
+          { name: '핫앤쿡 발열도시락 2팩', weight: 680 },
+          { name: '스노우피크 티타늄 450 머그', weight: 70 }
         ]
       },
       {
-        id: 'wear',
-        title: '의류/방한 (Wear)',
+        id: 'wear', title: '보온의류 · 방한',
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#fb7185;"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>',
-        defaultItem: { name: '경량 우모복 & 윈드재킷', weight: 650 },
+        defaultItem: { name: '경량 다운자켓 & 바람막이', weight: 650 },
         db: [
-          { name: '경량 우모복(다운자켓) & 윈드재킷', weight: 650 },
+          { name: '경량 다운자켓 & 바람막이', weight: 650 },
           { name: '아크테릭스 아톰 LT 후디', weight: 375 },
-          { name: '랩 마이크로라이트 알파인 자켓', weight: 465 },
-          { name: '우모바지 & 다운부티 (동계)', weight: 420 },
-          { name: '여벌 메리노울 양말 & 비니', weight: 140 }
+          { name: '동계 우모바지 & 다운부티', weight: 420 }
         ]
       },
       {
-        id: 'electronics',
-        title: '전자/안전 (Tech & Safety)',
+        id: 'electronics', title: '랜턴 · 소품 · 안전',
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#fde047;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
         defaultItem: { name: '페츨 악틱 코어 & 10000mAh', weight: 320 },
         db: [
           { name: '페츨 악틱 코어 헤드랜턴', weight: 80 },
-          { name: '블랙다이아몬드 스팟 400', weight: 77 },
           { name: '나이트코어 NB10000 보조배터리', weight: 150 },
-          { name: '백패킹용 응급구급키트 & 테이핑', weight: 120 },
-          { name: 'K-LNT 다용도 롤팩 쓰레기봉투', weight: 25 }
+          { name: '백패킹 응급구급 파우치', weight: 120 },
+          { name: 'K-LNT 롤팩 쓰레기봉투', weight: 25 }
         ]
       },
       {
-        id: 'camp',
-        title: '가구/힐링 (Luxury)',
+        id: 'camp', title: '테이블 · 체어',
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#38bdf8;"><rect x="4" y="10" width="16" height="4" rx="1"/><path d="M6 14v6M18 14v6M8 10V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4"/></svg>',
         defaultItem: { name: '헬리녹스 체어원', weight: 890 },
         db: [
           { name: '헬리녹스 체어원', weight: 890 },
           { name: '헬리녹스 체어제로 (초경량)', weight: 490 },
           { name: '베른 트레킹패드 테이블', weight: 230 },
-          { name: '소토 필드호퍼 테이블', weight: 395 },
-          { name: '경량 카본 삼각대', weight: 650 }
+          { name: '소토 필드호퍼 테이블', weight: 395 }
         ]
       }
     ];
 
-    // 현재 선택된 장비 상태
-    let selectedGearMap = JSON.parse(localStorage.getItem('okbm_selected_gears')) || {
-      shelter: CATEGORIES[0].defaultItem,
-      sleep: CATEGORIES[1].defaultItem,
-      pack: CATEGORIES[2].defaultItem,
-      kitchen: CATEGORIES[3].defaultItem,
-      wear: CATEGORIES[4].defaultItem,
-      electronics: CATEGORIES[5].defaultItem,
-      camp: CATEGORIES[6].defaultItem
-    };
+    let selectedGearMap = {};
+    try {
+      const saved = localStorage.getItem('okbm_selected_gears');
+      if (saved) selectedGearMap = JSON.parse(saved);
+    } catch (e) { selectedGearMap = {}; }
 
-    let packingHistoryList = JSON.parse(localStorage.getItem('okbm_packing_history')) || [];
+    CATEGORIES.forEach(cat => {
+      if (!selectedGearMap[cat.id] || typeof selectedGearMap[cat.id] !== 'object') {
+        selectedGearMap[cat.id] = cat.defaultItem || { name: '미지참', weight: 0 };
+      }
+    });
+
+    let packingHistoryList = safeGetJSON('okbm_packing_history', []);
     let currentOpeningCategoryId = null;
 
     function safeGetJSON(key, defaultVal) {
@@ -1156,28 +1232,84 @@
       }
     }
 
-    // 🔑 상단 로그인 / 계정 UI 제어
+    // 📊 [1] 일일 방문자수(PV/UV) 카운팅
+    function trackDailyVisit() {
+      const sessionKey = 'okbm_visit_recorded_' + new Date().toISOString().slice(0, 10);
+      if (!sessionStorage.getItem(sessionKey)) {
+        sessionStorage.setItem(sessionKey, 'true');
+        fetch(GAS_API_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'RECORD_VISIT',
+            isLogin: isUserLoggedIn()
+          })
+        }).catch(() => {});
+      }
+    }
+
+    // ☁️ [2] 유저 보관함(찜/정복/메모/패킹) 구글 시트 클라우드 1줄 압축 백업
+    function syncUserDataToCloud() {
+      if (!isUserLoggedIn()) return;
+      const profile = safeGetJSON('user_profile', null) || authState.userProfile;
+      if (!profile || !profile.id) return;
+
+      const payload = {
+        action: 'SAVE_USER_DATA',
+        userId: profile.id,
+        nickname: profile.nickname,
+        bookmarks: safeGetJSON('okbm_bookmarks', []),
+        visited: safeGetJSON('okbm_visited', []),
+        memos: safeGetJSON('okbm_memos', {}),
+        packHistory: safeGetJSON('okbm_packing_history', [])
+      };
+
+      fetch(GAS_API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      }).catch(() => {});
+    }
+
+    // 🔑 상단 GNB 및 보관함 상태 UI 제어
     function updateHeaderAuthUI() {
       const btn = document.getElementById('headerAuthBtn');
       const text = document.getElementById('headerAuthText');
-      if (!btn || !text) return;
+      const statusBanner = document.getElementById('cloudStatusBanner');
+      const statusText = document.getElementById('cloudStatusText');
+      const statusAction = document.getElementById('cloudStatusAction');
 
+      const isLogged = isUserLoggedIn();
       const profile = safeGetJSON('user_profile', null) || authState.userProfile;
-      if (isUserLoggedIn() && profile && profile.nickname) {
-        btn.classList.add('logged-in');
-        text.innerText = profile.nickname;
-      } else {
-        btn.classList.remove('logged-in');
-        text.innerText = '로그인';
+
+      if (btn && text) {
+        if (isLogged && profile && profile.nickname) {
+          btn.classList.add('logged-in');
+          text.innerText = profile.nickname;
+        } else {
+          btn.classList.remove('logged-in');
+          text.innerText = '로그인';
+        }
+      }
+
+      if (statusBanner && statusText && statusAction) {
+        if (isLogged) {
+          statusBanner.className = 'cloud-status-banner cloud-status-member';
+          statusText.innerText = '🟢 낭만 클라우드 실시간 안전 백업 중';
+          statusAction.innerText = '동기화됨 ✓';
+        } else {
+          statusBanner.className = 'cloud-status-banner cloud-status-guest';
+          statusText.innerText = '⚠️ 기기 임시 보관 중 (캐시 삭제 시 초기화 주의)';
+          statusAction.innerText = '카카오 1초 연동 ➔';
+        }
       }
     }
 
     function handleAuthBtnClick() {
-      if (isUserLoggedIn()) {
-        openUserProfileModal();
-      } else {
-        openLoginModal();
-      }
+      if (isUserLoggedIn()) openUserProfileModal();
+      else openLoginModal();
     }
 
     function openLoginModal() { document.getElementById('loginModalOverlay').style.display = 'flex'; }
@@ -1203,13 +1335,20 @@
       authState.isLoggedIn = true;
 
       updateHeaderAuthUI();
+      syncUserDataToCloud();
       closeUserProfileModal();
       alert(`닉네임이 [${clean}] (으)로 변경되었습니다!`);
     }
 
+    // 🔑 [3] 카카오 로그인 ➔ 구글 시트에서 회원 보관함 데이터 복원
     function loginWithKakao() {
-      if (typeof Kakao === 'undefined') return alert('카카오 SDK를 불러오지 못했습니다.');
-      if (!Kakao.isInitialized()) Kakao.init(KAKAO_APP_KEY);
+      if (typeof Kakao === 'undefined') {
+        alert('카카오 SDK를 불러오지 못했습니다.');
+        return;
+      }
+      if (!Kakao.isInitialized()) {
+        Kakao.init(KAKAO_APP_KEY);
+      }
 
       Kakao.Auth.login({
         scope: 'profile_nickname',
@@ -1217,10 +1356,30 @@
           Kakao.API.request({
             url: '/v2/user/me',
             success: function(res) {
-              const kakaoName = res.kakao_account?.profile?.nickname || '낭만백패커';
-              let customNickname = prompt('낭만루트에서 사용할 닉네임을 설정해주세요:', kakaoName) || kakaoName;
-              const profile = { id: 'kakao_' + res.id, nickname: customNickname.trim(), isMember: true };
+              const kakaoId = 'kakao_' + res.id;
+              
+              // 1. 카카오 원래 닉네임 가져오기
+              let kakaoNick = '낭만백패커';
+              if (res.properties && res.properties.nickname) {
+                kakaoNick = res.properties.nickname;
+              } else if (res.kakao_account && res.kakao_account.profile && res.kakao_account.profile.nickname) {
+                kakaoNick = res.kakao_account.profile.nickname;
+              }
 
+              // 2. 💡 [핵심] 귀찮은 prompt 질문창을 아예 삭제하고 바로 로그인!
+              const existingProfile = safeGetJSON('user_profile', null);
+              const finalNickname = (existingProfile && existingProfile.id === kakaoId && existingProfile.nickname)
+                ? existingProfile.nickname
+                : kakaoNick;
+
+              const profile = {
+                id: kakaoId,
+                nickname: finalNickname,
+                isMember: true,
+                createdAt: (existingProfile && existingProfile.createdAt) ? existingProfile.createdAt : Date.now()
+              };
+
+              // 브라우저 저장소에 보관
               localStorage.setItem('user_auth_token', authObj.access_token || ('token_' + Date.now()));
               localStorage.setItem('user_profile', JSON.stringify(profile));
               authState.isLoggedIn = true;
@@ -1228,13 +1387,38 @@
 
               updateHeaderAuthUI();
               closeLoginModal();
-              alert(`[${profile.nickname}]님 환영합니다!`);
+              triggerHaptic(15);
+
+              // 3. 구글 시트 users 탭으로 회원 정보와 보관함 1줄 압축 전송
+              fetch(GAS_API_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                  action: 'USER_SYNC',
+                  userId: kakaoId,
+                  nickname: profile.nickname,
+                  bookmarks: safeGetJSON('okbm_bookmarks', []),
+                  visited: safeGetJSON('okbm_visited', []),
+                  memos: safeGetJSON('okbm_memos', {}),
+                  packHistory: safeGetJSON('okbm_packing_history', [])
+                })
+              }).catch(function(err) {});
+
+              alert('[' + profile.nickname + ']님 환영합니다!');
+              if (typeof renderCategorySlots === 'function') renderCategorySlots();
+              if (typeof renderSpots === 'function') renderSpots();
+            },
+            fail: function(err) {
+              alert('카카오 정보를 가져오지 못했습니다.');
             }
           });
+        },
+        fail: function(err) {
+          alert('카카오 로그인이 취소되었습니다.');
         }
       });
     }
-
     function loginQuickAsMember(name = '낭만백패커') {
       const profile = { nickname: name, id: 'guest_' + Date.now(), isMember: true };
       localStorage.setItem('user_auth_token', 'token_' + Date.now());
@@ -1243,30 +1427,67 @@
       authState.userProfile = profile;
       updateHeaderAuthUI();
       closeLoginModal();
+      syncUserDataToCloud();
     }
 
-    function logoutUser() {
+   function logoutUser() {
+      // 1. 브라우저에서 로그인 토큰과 내 정보 삭제
       localStorage.removeItem('user_auth_token');
       localStorage.removeItem('user_profile');
+      
+      // 2. 💡 [핵심] 로그아웃 시 폰 화면의 보관함 데이터도 깨끗하게 비우기!
+      localStorage.removeItem('okbm_bookmarks');
+      localStorage.removeItem('okbm_visited');
+      localStorage.removeItem('okbm_memos');
+      localStorage.removeItem('okbm_packing_history');
+      
       authState.isLoggedIn = false;
       authState.userProfile = null;
+      packingHistoryList = [];
+
       updateHeaderAuthUI();
-      alert('로그아웃 되었습니다.');
+      triggerHaptic(10);
+      alert('로그아웃 되었습니다. 보관함이 비워집니다.');
+
+      // 3. 화면 UI 즉시 갱신
+      if (typeof renderPackingHistoryList === 'function') renderPackingHistoryList();
+      if (typeof renderBasecampRecordData === 'function') renderBasecampRecordData();
+      if (typeof renderBasecampMemos === 'function') renderBasecampMemos();
+      if (typeof renderSpots === 'function') renderSpots();
+      if (typeof renderCategorySlots === 'function') renderCategorySlots();
     }
 
     // ========================================================
-    // ⚖️ 1. 메인화면 BPL 계산기 및 카테고리 렌더러
+    // 🎒 1. 배낭 무게 계산기 모달 & 카테고리 렌더러
     // ========================================================
+    function openPackingModal() {
+      const modal = document.getElementById('packingCalculatorModal');
+      if (modal) {
+        modal.style.display = 'flex';
+        renderCategorySlots();
+      }
+    }
+
+    function closePackingModal() {
+      const modal = document.getElementById('packingCalculatorModal');
+      if (modal) modal.style.display = 'none';
+    }
+
     function renderCategorySlots() {
       const container = document.getElementById('categorySlotsContainer');
-      if (!container) return;
-
       let totalGrams = 0;
+      let selectedCount = 0;
 
-      container.innerHTML = CATEGORIES.map(cat => {
+      const renderedHtml = CATEGORIES.map(cat => {
         const item = selectedGearMap[cat.id];
-        const isSelected = item && item.weight > 0;
-        if (isSelected) totalGrams += Number(item.weight);
+        const isSelected = item && Number(item.weight) > 0;
+        if (isSelected) {
+          totalGrams += Number(item.weight);
+          selectedCount++;
+        }
+
+        const itemName = (item && item.name) ? escapeHtml(item.name) : '미지참';
+        const itemWeightKg = (item && item.weight) ? (Number(item.weight) / 1000).toFixed(2) : '0.00';
 
         return `
           <div class="category-slot-card" onclick="openGearPresetModal('${cat.id}')">
@@ -1276,7 +1497,7 @@
             </div>
             <div class="category-slot-right">
               ${isSelected ? `
-                <span class="slot-selected-info">${escapeHtml(item.name)} (${(item.weight/1000).toFixed(2)}kg)</span>
+                <span class="slot-selected-info">${itemName} (${itemWeightKg}kg)</span>
                 <span style="color:#64748b; font-size:0.75rem;">⌵</span>
               ` : `
                 <span style="font-size:0.72rem; color:var(--text-muted);">미선택 +</span>
@@ -1286,32 +1507,51 @@
         `;
       }).join('');
 
-      // 상단 칼로리표 무게 & BPL 등급 갱신
+      if (container) container.innerHTML = renderedHtml;
+
       const totalKg = (totalGrams / 1000).toFixed(2);
-      document.getElementById('totalWeightKgText').innerText = `${totalKg} kg`;
-      document.getElementById('totalWeightGramsText').innerText = `${totalGrams.toLocaleString()} g`;
+
+      // 홈 화면 컴팩트 배너 갱신
+      const mainKg = document.getElementById('mainBannerKgText');
+      const mainCount = document.getElementById('mainBannerItemCount');
+      const mainBadge = document.getElementById('mainBannerBadge');
+      if (mainKg) mainKg.innerText = `${totalKg} kg`;
+      if (mainCount) mainCount.innerText = `장비 ${selectedCount}개 세팅됨`;
+
+      // 계산기 모달 내부 대시보드 갱신
+      const totalKgText = document.getElementById('totalWeightKgText');
+      const totalGramsText = document.getElementById('totalWeightGramsText');
+      if (totalKgText) totalKgText.innerText = `${totalKg} kg`;
+      if (totalGramsText) totalGramsText.innerText = `${totalGrams.toLocaleString()} g`;
 
       const badge = document.getElementById('bplStatusBadge');
       const badgeText = document.getElementById('bplStatusText');
       const gauge = document.getElementById('weightGaugeFill');
 
-      // 5kg 이하: UL / 5~8kg: Standard / 8kg 초과: Heavy
-      if (totalGrams <= 5000) {
-        badge.className = 'weight-bpl-badge bpl-ul';
-        badgeText.innerText = '울트라라이트 (UL)';
-      } else if (totalGrams <= 8000) {
-        badge.className = 'weight-bpl-badge bpl-standard';
-        badgeText.innerText = '낭만 경량 세팅 (Standard)';
-      } else {
-        badge.className = 'weight-bpl-badge bpl-heavy';
-        badgeText.innerText = '헤비 패커 모드 (Heavy)';
+      let badgeClass = 'weight-bpl-badge bpl-ul';
+      let badgeLabel = '울트라라이트 (UL)';
+
+      if (totalGrams > 8000) {
+        badgeClass = 'weight-bpl-badge bpl-heavy';
+        badgeLabel = '헤비 세팅 (8kg+)';
+      } else if (totalGrams > 5000) {
+        badgeClass = 'weight-bpl-badge bpl-standard';
+        badgeLabel = '낭만 스탠다드 (5~8kg)';
       }
 
-      const gaugePct = Math.min(100, Math.round((totalGrams / 12000) * 100));
-      gauge.style.width = `${gaugePct}%`;
+      if (badge) badge.className = badgeClass;
+      if (badgeText) badgeText.innerText = badgeLabel;
+      if (mainBadge) {
+        mainBadge.className = badgeClass;
+        mainBadge.innerText = badgeLabel;
+      }
+
+      if (gauge) {
+        const gaugePct = Math.min(100, Math.round((totalGrams / 12000) * 100));
+        gauge.style.width = `${gaugePct}%`;
+      }
     }
 
-    // 팝업 모달 열기
     function openGearPresetModal(categoryId) {
       currentOpeningCategoryId = categoryId;
       const category = CATEGORIES.find(c => c.id === categoryId);
@@ -1348,6 +1588,7 @@
       closeGearPresetModal();
       renderCategorySlots();
       triggerHaptic(15);
+      syncUserDataToCloud();
     }
 
     function addCustomGearToCurrentCategory() {
@@ -1368,21 +1609,41 @@
     }
 
     function resetAllGearSelections() {
-      if (!confirm('모든 카테고리 장비를 초기화하시겠습니까?')) return;
+      if (!confirm('모든 장비 세팅을 초기화하시겠습니까?')) return;
       CATEGORIES.forEach(c => {
         selectedGearMap[c.id] = { name: '미지참', weight: 0 };
       });
       localStorage.setItem('okbm_selected_gears', JSON.stringify(selectedGearMap));
       renderCategorySlots();
       triggerHaptic(15);
+      syncUserDataToCloud();
     }
 
     function saveCurrentPackingRecord() {
+      // 1. 비로그인 차단
+      if (!isUserLoggedIn()) {
+        alert('출정 패킹 기록 저장은 로그인 후 이용하실 수 있습니다.');
+        openLoginModal();
+        return;
+      }
+
       const activeItems = Object.keys(selectedGearMap).map(k => selectedGearMap[k]).filter(i => i && i.weight > 0);
       if (activeItems.length === 0) return alert('선택된 장비가 없습니다.');
 
       const totalGrams = activeItems.reduce((sum, g) => sum + Number(g.weight), 0);
       const totalKg = (totalGrams / 1000).toFixed(2);
+      const currentItemsStr = activeItems.map(g => `${g.name} (${g.weight}g)`).sort().join(' / ');
+
+      // 💡 [핵심] 동일한 장비 세팅과 무게로 연속 중복 저장 방지
+      if (packingHistoryList.length > 0) {
+        const lastRecord = packingHistoryList[0];
+        const lastItemsStr = (lastRecord.items || []).slice().sort().join(' / ');
+        if (lastRecord.weightKg === totalKg && lastItemsStr === currentItemsStr) {
+          alert('이미 동일한 장비 구성으로 보관함에 저장되어 있습니다! 👍');
+          return;
+        }
+      }
+
       const now = new Date();
       const timeStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
@@ -1398,20 +1659,66 @@
       packingHistoryList.unshift(newRecord);
       localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
       triggerHaptic(20);
-      alert(`[ ${timeStr} ]\n총 무게 ${totalKg}kg 패킹 기록이 보관함에 저장되었습니다!`);
+      
+      // 구글 시트 users 탭으로 실시간 클라우드 전송
+      syncUserDataToCloud();
+      alert(`[ ${timeStr} ]\n총 무게 ${totalKg}kg 패킹 기록이 회원님의 보관함에 안전하게 저장되었습니다!`);
+    }
+
+    async function loadGearDbFromGoogleSheet() {
+      if (!GOOGLE_SHEET_CONFIG_GID) return;
+      const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_CONFIG_GID}&_t=${Date.now()}`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const csvText = await res.text();
+        Papa.parse(csvText, {
+          header: true, skipEmptyLines: true,
+          complete: function(results) {
+            if (results.data && results.data.length > 0) {
+              results.data.forEach(row => {
+                const catId = row.category_id || row.category;
+                const name = row.item_name || row.name;
+                const weight = parseInt(row.weight_g || row.weight, 10);
+                const targetCat = CATEGORIES.find(c => c.id === catId);
+                if (targetCat && name && !isNaN(weight)) {
+                  if (!targetCat.db.some(g => g.name === name)) {
+                    targetCat.db.push({ name, weight });
+                  }
+                }
+              });
+            }
+          }
+        });
+      } catch (e) {}
     }
 
     // ========================================================
     // 🗂️ 5. 보관함 모달 & 3대 탭
     // ========================================================
-    function openMyInfoModal(initialTab = 'history') {
+   function openMyInfoModal(initialTab = 'history') {
+      // 💡 비로그인 상태면 보관함을 열지 않고 로그인 창 유도
+      if (!isUserLoggedIn()) {
+        alert('내 낭만 보관함은 로그인 후 이용하실 수 있습니다.');
+        openLoginModal();
+        return;
+      }
+
       document.getElementById('myInfoModal').style.display = 'flex';
+      updateHeaderAuthUI();
       switchBasecampTab(initialTab);
       renderPackingHistoryList();
       renderBasecampRecordData();
       renderBasecampMemos();
     }
-    function closeMyInfoModal() { document.getElementById('myInfoModal').style.display = 'none'; }
+
+    // 💡 [빠져있던 닫기 함수 완벽 추가!]
+    function closeMyInfoModal() {
+      const modal = document.getElementById('myInfoModal');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    }
 
     function switchBasecampTab(tabKey) {
       document.querySelectorAll('.basecamp-tab-btn').forEach((b, idx) => {
@@ -1427,7 +1734,7 @@
       if (!container) return;
 
       if (packingHistoryList.length === 0) {
-        container.innerHTML = '<div style="font-size:0.75rem; color:var(--text-muted); padding:16px 0; text-align:center;">저장된 출정 패킹 기록이 없습니다.<br>홈 화면에서 [오늘의 출정 패킹 보관함에 저장]을 눌러보세요!</div>';
+        container.innerHTML = '<div style="font-size:0.75rem; color:var(--text-muted); padding:16px 0; text-align:center;">저장된 출정 패킹 기록이 없습니다.<br>홈 화면에서 [오늘의 출정 패킹 저장]을 눌러보세요!</div>';
         return;
       }
 
@@ -1452,6 +1759,7 @@
       packingHistoryList = packingHistoryList.filter(h => h.id !== id);
       localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
       renderPackingHistoryList();
+      syncUserDataToCloud();
     }
 
     function renderBasecampRecordData() {
@@ -1528,18 +1836,18 @@
       `).join('');
     }
 
-    // 어디로 떠날까? 추천 로직
+    // 🎯 어디로 떠날까? 추천 로직
     function rollLuckySpot() {
       if (registeredSpots.length === 0) return;
       const btn = document.getElementById('btnRollDice');
-      if (btn) btn.classList.add('rolling');
+      if (btn) btn.style.opacity = '0.5';
 
       setTimeout(() => {
-        if (btn) btn.classList.remove('rolling');
+        if (btn) btn.style.opacity = '1';
         const shuffled = [...registeredSpots].sort(() => 0.5 - Math.random());
         currentLuckySpots = shuffled.slice(0, 3);
         displayLuckySpots(currentLuckySpots);
-      }, 250);
+      }, 200);
     }
 
     function displayLuckySpots(spots) {
@@ -1551,6 +1859,8 @@
         if (elevEl) elevEl.innerText = s.elevation ? `${s.elevation}m` : (s.region || '전망데크');
         const descEl = document.getElementById(`luckyDesc${idx}`);
         if (descEl) descEl.innerText = s.desc;
+        const tagEl = document.getElementById(`luckyTag${idx}`);
+        if (tagEl) tagEl.innerText = s.region || '추천박지';
       });
     }
 
@@ -1569,7 +1879,109 @@
       }, { passive: true });
     }
 
-    // 시트 데이터 로드
+    // 🔥 4. 투표 & 실시간 출정톡 구글 시트 연동
+    const POLL_OPTIONS = [
+      { id: 'opt1', text: '⛰️ 높은 산 박지', count: 48 },
+      { id: 'opt2', text: '🌊 바다/오션뷰', count: 35 },
+      { id: 'opt3', text: '🌲 조용한 숲속', count: 29 },
+      { id: 'opt4', text: '🏠 이번 주는 휴식', count: 16 }
+    ];
+
+    let userSelectedPoll = localStorage.getItem('okbm_user_poll');
+
+    function renderPollUI() {
+      const list = document.getElementById('pollOptionsList');
+      if (!list) return;
+
+      const totalVotes = POLL_OPTIONS.reduce((acc, cur) => acc + cur.count, 0);
+      document.getElementById('pollCountText').innerText = `총 ${totalVotes}명 참여`;
+
+      list.innerHTML = POLL_OPTIONS.map(opt => {
+        const isSelected = userSelectedPoll === opt.id;
+        const pct = totalVotes > 0 ? Math.round((opt.count / totalVotes) * 100) : 0;
+        return `
+          <div class="poll-item-tight ${isSelected ? 'selected' : ''}" onclick="votePoll('${opt.id}')">
+            <div class="poll-bar-fill" style="width:${pct}%"></div>
+            <div class="poll-text-tight">
+              <span>${opt.text}</span>
+            </div>
+            <span class="poll-pct-tight">${pct}%</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function votePoll(optId) {
+      if (userSelectedPoll === optId) return;
+      userSelectedPoll = optId;
+      localStorage.setItem('okbm_user_poll', optId);
+      const opt = POLL_OPTIONS.find(o => o.id === optId);
+      if (opt) opt.count++;
+      triggerHaptic(15);
+      renderPollUI();
+    }
+
+    let talkList = safeGetJSON('okbm_talk_messages', [
+      { nick: '구름이', msg: '오늘 태기산 일몰 대박이네요!' },
+      { nick: '산토끼', msg: '바람이 좀 붑니다. 방한 철저히 하세요.' }
+    ]);
+
+    async function fetchCloudTalks() {
+      try {
+        const res = await fetch(`${GAS_API_URL}?action=GET_TALKS&_t=${Date.now()}`);
+        if (res.ok) {
+          const cloudTalks = await res.json();
+          if (Array.isArray(cloudTalks) && cloudTalks.length > 0) {
+            talkList = cloudTalks.map(t => ({ nick: t.nickname, msg: t.message }));
+            localStorage.setItem('okbm_talk_messages', JSON.stringify(talkList));
+            renderTalkList();
+          }
+        }
+      } catch (e) {}
+    }
+
+    function renderTalkList() {
+      const listEl = document.getElementById('talkBubbleList');
+      if (!listEl) return;
+      listEl.innerHTML = talkList.slice(0, 6).map(t => `
+        <li class="talk-bubble-tight">
+          <span style="color:#38bdf8; font-weight:800;">${escapeHtml(t.nick)}</span>
+          <span style="color:#e2e8f0; flex:1; margin-left:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(t.msg)}</span>
+        </li>
+      `).join('');
+    }
+
+  function submitTalkBubble() {
+      const nickInput = document.getElementById('talkNickInput');
+      const msgInput = document.getElementById('talkMsgInput');
+      const profile = safeGetJSON('user_profile', null);
+      const nick = (profile && profile.nickname) ? profile.nickname : (nickInput.value.trim() || '익명');
+      const userId = (profile && profile.id) ? profile.id : 'guest';
+      const msg = msgInput.value.trim();
+
+      if (!msg) return alert('메시지를 입력해주세요.');
+
+      const newTalk = { nick, msg };
+      talkList.unshift(newTalk);
+      localStorage.setItem('okbm_talk_messages', JSON.stringify(talkList));
+      msgInput.value = '';
+      renderTalkList();
+      triggerHaptic(15);
+
+      // 💡 A:id, B:user_id, C:nickname, D:message, E:created_at 순서로 1:1 전송
+      fetch(GAS_API_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'ADD_TALK',
+          userId: userId,
+          nickname: nick,
+          message: msg
+        })
+      }).catch(() => {});
+    }
+    // 🌐 박지 데이터 로드
     async function loadPortalSpotData() {
       const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_MAIN_GID}&_t=${Date.now()}`;
       try {
@@ -1603,12 +2015,18 @@
       return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
+    // 🚀 초기화 실행
     window.addEventListener('DOMContentLoaded', () => {
       if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) Kakao.init(KAKAO_APP_KEY);
+      trackDailyVisit();
       updateHeaderAuthUI();
       renderCategorySlots();
+      renderPollUI();
+      renderTalkList();
       setupMobileSliderDots();
+      loadGearDbFromGoogleSheet();
       loadPortalSpotData();
+      fetchCloudTalks();
     });
   </script>
 </body>
