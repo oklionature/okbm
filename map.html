@@ -1,10 +1,10 @@
-<!DOCTYPE html>
 <html lang="ko" class="notranslate">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="google" content="notranslate" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="google" content="notranslate" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <!DOCTYPE html>
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>낭만루트 | 대한민국 260+ 백패킹 필드 팩트맵</title>
@@ -13,8 +13,8 @@
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT/fonts/static/woff2/SUIT.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
   
   <!-- 카카오 SDK & 카카오맵 공식 SDK -->
   <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
@@ -89,16 +89,20 @@
     }
 
     .ui-icon { 
-      width: 13px; 
-      height: 13px; 
+      width: 14px; 
+      height: 14px; 
       display: inline-block; 
-      vertical-align: -1.5px; 
+      vertical-align: -2px; 
       margin-right: 3px; 
-      fill: currentColor; 
+      fill: none; 
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
       flex-shrink: 0; 
     }
 
-  /* 🧭 1. 상단 GNB (인덱스와 100% 동일 480px 규격) */
+    /* 🧭 1. 상단 GNB */
     @import url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/Arita-buri-SemiBold.woff');
 
     .apple-integrated-header {
@@ -126,7 +130,7 @@
       align-items: center;
       justify-content: space-between;
       width: 100%;
-      max-width: 480px; /* 👈 인덱스와 동일한 480px */
+      max-width: 480px;
       margin: 0 auto;
       padding: 0 2px;
       box-sizing: border-box;
@@ -145,9 +149,12 @@
     }
     .brand-line:active { transform: scale(0.98); }
 
+    /* 🔻 기존 .brand-sym-box::before 부터 .brand-en 까지 교체 */
+
+    /* ☀️ [7단계 32px 확정] 시원하고 뚜렷한 심볼 박스 */
     .brand-sym-box {
-      width: 24px;
-      height: 24px;
+      width: 36px;
+      height: 36px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -157,14 +164,14 @@
     .brand-sym-box::before {
       content: '';
       position: absolute;
-      width: 30px;
-      height: 30px;
-      background: radial-gradient(circle, rgba(245, 158, 11, 0.55) 0%, transparent 70%);
+      width: 42px;
+      height: 42px;
+      background: radial-gradient(circle at 65% 25%, rgba(245, 158, 11, 0.35) 0%, rgba(244, 114, 182, 0.22) 45%, transparent 70%);
       border-radius: 50%;
       z-index: -1;
       filter: blur(4px);
     }
-    .brand-sym-box svg { width: 20px; height: 20px; display: block; }
+    .brand-sym-box svg { width: 32px; height: 32px; display: block; }
     
     .brand-title {
       font-family: var(--font-display);
@@ -190,12 +197,12 @@
       font-family: 'Arita-buri-SemiBold', serif !important;
       font-size: 0.86rem;
       font-weight: normal;
-      color: #fde047;
+      color: #fda4af; /* 샴페인 로즈 핑크 */
       letter-spacing: -0.02em;
       line-height: 1;
       display: inline-flex;
       align-items: center;
-      text-shadow: 0 0 10px rgba(253, 224, 71, 0.25);
+      text-shadow: 0 0 10px rgba(253, 164, 175, 0.3);
       white-space: nowrap;
     }
 
@@ -230,7 +237,7 @@
       cursor: pointer; 
       display: inline-flex; 
       align-items: center; 
-      gap: 3px; 
+      gap: 5px; 
       transition: all 0.2s ease; 
       white-space: nowrap; 
     }
@@ -260,8 +267,7 @@
       color: #ffffff;
     }
 
-    /* 🔍 인라인 검색바 (인덱스와 돋보기/너비 480px 100% 동일) */
-   /* 🔍 인라인 검색바 (돋보기 & 텍스트 수직 정중앙 100% 일치) */
+    /* 🔍 인라인 검색바 */
     .apple-search-box {
       position: relative;
       width: 100%;
@@ -275,7 +281,7 @@
       border: 1px solid var(--border-hairline);
       border-radius: 10px;
       display: flex;
-      align-items: center; /* 👈 세로 정중앙 정렬 */
+      align-items: center;
       padding: 0 10px;
       gap: 6px;
       transition: all 0.2s ease;
@@ -286,21 +292,17 @@
       border-color: rgba(255, 255, 255, 0.3);
     }
     
-    /* 돋보기 아이콘 아래로 처지는 현상 100% 방지 */
-    .apple-search-bar .icon-svg,
-    .apple-search-bar .ui-icon {
+    .apple-search-bar .icon-svg {
       display: inline-flex !important;
       align-items: center !important;
       justify-content: center !important;
-      vertical-align: 0 !important; /* 👈 -1.5px 처짐 강제 제거 */
       margin: 0 !important;
       width: 14px !important;
       height: 14px !important;
       line-height: 1 !important;
       flex-shrink: 0;
     }
-    .apple-search-bar .icon-svg svg,
-    .apple-search-bar .ui-icon svg {
+    .apple-search-bar .icon-svg svg {
       width: 14px;
       height: 14px;
       display: block;
@@ -318,7 +320,7 @@
       letter-spacing: -0.01em;
       padding: 0;
       margin: 0;
-      line-height: normal; /* 👈 텍스트 세로 중앙 정렬 */
+      line-height: normal;
       display: flex;
       align-items: center;
     }
@@ -409,17 +411,17 @@
     .sidebar-header { padding: 8px 14px; min-height: 44px; font-weight: 700; font-size: 0.86rem; background-color: var(--bg-base); border-bottom: 1px solid var(--border-hairline); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
     .sidebar-header-left { display: flex; align-items: center; gap: 8px; }
     .sidebar-header-actions { display: flex; align-items: center; gap: 6px; }
-    .btn-sidebar-submit { background: linear-gradient(135deg, #0d9488, #0f766e); border: 1px solid #14b8a6; color: #fff; padding: 4px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; }
+    .btn-sidebar-submit { background: linear-gradient(135deg, #0d9488, #0f766e); border: 1px solid #14b8a6; color: #fff; padding: 4px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
     .header-insta-badge { display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(45deg, #ea580c, #e11d48, #c026d3); padding: 4px 9px; border-radius: 12px; color: #fff; text-decoration: none; font-size: 0.7rem; font-weight: 700; }
     
     .version-tag { font-size: 0.68rem; font-weight: 600; color: var(--text-muted); cursor: default; user-select: none; }
     .sheet-edit-link { display: none; align-items: center; gap: 3px; background: #059669; color: #fff; text-decoration: none; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; }
     .admin-data-tools { display: none; padding: 6px 10px; background: var(--bg-card); border-bottom: 1px solid var(--border-hairline); gap: 6px; }
-    .admin-tool-btn { flex: 1; padding: 4px 8px; font-size: 0.7rem; font-weight: 700; border-radius: 6px; border: 1px solid var(--border-hairline); background: var(--bg-surface); color: var(--text-secondary); cursor: pointer; }
+    .admin-tool-btn { flex: 1; padding: 4px 8px; font-size: 0.7rem; font-weight: 700; border-radius: 6px; border: 1px solid var(--border-hairline); background: var(--bg-surface); color: var(--text-secondary); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
 
     .filter-wrapper { background: var(--bg-base); border-bottom: 1px solid var(--border-titanium); display: flex; flex-direction: column; gap: 4px; padding: 5px 8px; flex-shrink: 0; }
     .master-tab-bar { display: flex; background: rgba(255,255,255,0.04); border-radius: 8px; padding: 2px; gap: 2px; width: 100%; }
-    .master-tab-btn { flex: 1; padding: 4px 1px; min-height: 26px; border: none; border-radius: 6px; background: transparent; color: var(--text-muted); font-size: 0.74rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 2px; white-space: nowrap; }
+    .master-tab-btn { flex: 1; padding: 4px 1px; min-height: 26px; border: none; border-radius: 6px; background: transparent; color: var(--text-muted); font-size: 0.74rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; white-space: nowrap; }
     .master-tab-btn.active { background: var(--bg-card); color: var(--accent-blue); border: 1px solid var(--border-titanium); }
     .sub-chips-bar { display: flex; overflow-x: auto; gap: 4px; align-items: center; padding: 1px 0; scrollbar-width: none; width: 100%; }
     .sub-chips-bar::-webkit-scrollbar { display: none; }
@@ -449,15 +451,26 @@
     
     .badge-sub-point { background: rgba(56,189,248,0.14); color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); font-size: 0.80rem; font-weight: 800; padding: 2px 7px; border-radius: 5px; display: inline-flex; align-items: center; gap: 3px; margin: 2px 0 1px 0; }
 
-    .badge-drone { font-size: 0.63rem; font-weight: 800; padding: 1.5px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; }
+    .badge-drone { font-size: 0.63rem; font-weight: 800; padding: 1.5px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; }
     .drone-ok { background: rgba(16,185,129,0.16); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.35); }
     .drone-warn { background: rgba(245,158,11,0.16); color: #fde047; border: 1px solid rgba(245,158,11,0.35); }
     .drone-no { background: rgba(244,63,94,0.16); color: #fda4af; border: 1px solid rgba(244,63,94,0.35); }
 
-    .spot-card-quick-actions { position: absolute; top: 9px; right: 10px; display: flex; align-items: center; gap: 4px; z-index: 5; }
-    .btn-card-quick { background: rgba(255,255,255,0.05); border: 1px solid var(--border-hairline); color: var(--text-muted); border-radius: 6px; padding: 3px 6px; font-size: 0.68rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 2px; transition: all 0.2s ease; }
+   .spot-card-quick-actions { position: static !important; display: flex !important; align-items: center; gap: 3px; flex-shrink: 0; margin-left: auto !important; }
+    .btn-card-quick { background: rgba(255,255,255,0.05); border: 1px solid var(--border-hairline); color: var(--text-muted); border-radius: 5px; padding: 2.5px 6px; font-size: 0.65rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 2px; transition: all 0.2s ease; }
     .btn-card-quick.active-fav { background: #f43f5e !important; border: 1.5px solid #f43f5e !important; color: #ffffff !important; box-shadow: 0 0 10px rgba(244,63,94,0.55); font-weight: 900; }
     .btn-card-quick.active-done { background: #0284c7 !important; border: 1.5px solid #38bdf8 !important; color: #ffffff !important; box-shadow: 0 0 10px rgba(56,189,248,0.55); font-weight: 900; }
+    
+    .city-badge-colored {
+      font-size: 0.74rem !important;
+      font-weight: 800 !important;
+      color: #2dd4bf !important;
+      background: rgba(45, 212, 191, 0.14) !important;
+      border: 1px solid rgba(45, 212, 191, 0.35) !important;
+      padding: 1px 5px !important;
+      border-radius: 4px !important;
+      letter-spacing: -0.01em !important;
+    }
     
     .meta-tag { font-size: 0.65rem; padding: 2px 5px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; flex-shrink: 0; }
     .tag-terrain-deck { background: rgba(245,158,11,0.14); color: #fbbf24; border: 1px solid rgba(245,158,11,0.28); }
@@ -469,7 +482,18 @@
     .tag-diff { background: rgba(2,132,199,0.22); color: #fde047; border: 1px solid rgba(2,132,199,0.45); }
     .tag-dist { background: rgba(16,185,129,0.14); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
     
-    .spot-desc-single { font-size: 0.73rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .spot-desc-multi {
+      font-size: 0.74rem;
+      color: #cbd5e1;
+      line-height: 1.45;
+      margin-top: 3px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      word-break: break-all;
+    }
     .spot-coords-text { font-size: 0.7rem; color: var(--text-muted); background: var(--bg-base); padding: 3px 7px; border-radius: 5px; border: 1px solid var(--border-hairline); width: fit-content; display: inline-flex; align-items: center; gap: 3px; font-family: monospace; }
     .btn-edit, .btn-del { border: none; border-radius: 5px; padding: 3px 7px; font-size: 0.68rem; cursor: pointer; display: none; font-weight: 700; color: #fff; }
     .btn-edit { background: #0284c7; } .btn-del { background: #ef4444; }
@@ -503,32 +527,118 @@
     .tower-toggle-btn.active-status { background: rgba(2,132,199,0.3); color: #38bdf8; }
     .tower-toggle-btn.active-terrain { background: rgba(13,148,136,0.3); color: #2dd4bf; }
 
-    /* 마커 라벨 위치 정밀 정렬 */
-    .lod-marker-container { position: relative; width: 34px; height: 42px; pointer-events: none !important; }
-    .marker-badge-corner { position: absolute; top: -6px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.4); border: 1.5px solid #ffffff; z-index: 10; pointer-events: none !important; }
-    .badge-corner-fav { left: -7px; background: #f43f5e; color: #ffffff; }
-    .badge-corner-visited { right: -7px; background: #0284c7; color: #ffffff; }
+    /* 🏷️ 마커 라벨 스타일: [3단 세로 배열 + 100% 투명 배경 + 글자 윤곽선 5단계(0.5px) + 그림자 0%] */
+.lod-marker-container {
+  position: relative !important;
+  width: 34px !important;
+  height: 42px !important;
+  pointer-events: none !important;
+}
+.marker-badge-corner {
+  position: absolute;
+  top: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1.5px solid #ffffff;
+  z-index: 10;
+  pointer-events: none !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  padding: 0 !important;
+  box-sizing: border-box;
+}
+/* 뱃지 내부 아이콘을 10px로 축소하고 정중앙 고정 */
+.marker-badge-corner svg,
+.marker-badge-corner .ui-icon {
+  width: 10px !important;
+  height: 10px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  vertical-align: 0 !important;
+  display: block !important;
+  flex-shrink: 0;
+}
+.badge-corner-fav {
+  left: -7px;
+  background: #f43f5e;
+  color: #ffffff;
+}
+.badge-corner-visited {
+  right: -7px;
+  background: #0284c7;
+  color: #ffffff;
+}
 
-    .lod-marker-label {
-      position: absolute; bottom: 42px; left: 50%; transform: translateX(-50%);
-      background: transparent !important;
-      backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-      border: none !important; padding: 0 !important;
-      box-shadow: none !important; pointer-events: none !important;
-      display: flex; flex-direction: column; align-items: center; gap: 1px; white-space: nowrap; min-width: 58px;
-    }
-    .lod-label-row-1 { 
-      font-size: 0.78rem; font-weight: 900; line-height: 1.2; 
-      text-shadow: 0 0 4px #000, 0 0 6px #000, 0 0 8px #000; 
-    }
-    .lod-label-row-2 { 
-      font-size: 0.65rem; color: #38bdf8; font-weight: 800; 
-      text-shadow: 0 0 4px #000, 0 0 6px #000; 
-    }
-    .lod-label-row-3 { 
-      font-size: 0.60rem; color: #86efac; font-weight: 800; 
-      text-shadow: 0 0 4px #000, 0 0 6px #000; 
-    }
+/* 🚫 말풍선 외곽 테두리/배경 완벽 삭제 (글자만 플로팅) */
+.lod-marker-label {
+  position: absolute !important;
+  bottom: 44px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important; /* 👈 외곽선 테두리 완전 삭제 */
+  outline: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 1px !important;
+  white-space: nowrap !important;
+  filter: none !important;
+}
+
+/* 1단 산이름: 볼트 옐로우 + 1.0px 딥블랙 윤곽선 */
+.lod-label-row-1 {
+  font-family: 'SUIT', 'Pretendard Variable', sans-serif !important;
+  font-size: 0.94rem !important;
+  font-weight: 900 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.03em !important;
+  color: #FACC15 !important;
+  text-shadow: 0 2px 6px #000000, 0 0 4px #000000 !important;
+  -webkit-text-stroke: 1.0px #000000 !important;
+  paint-order: stroke fill !important;
+}
+
+/* 2단 서브포인트: 아이스 시안 + 0.8px 딥블랙 윤곽선 */
+.lod-label-row-2 {
+  font-family: 'Pretendard Variable', 'Pretendard', sans-serif !important;
+  font-size: 0.68rem !important;
+  color: #22D3EE !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.02em !important;
+  text-shadow: 0 2px 5px #000000 !important;
+  -webkit-text-stroke: 0.8px #000000 !important;
+  paint-order: stroke fill !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* 3단 해발고도: 네온 라임 그린 + 0.8px 딥블랙 윤곽선 */
+.lod-label-row-3 {
+  font-family: 'Space Grotesk', 'SUIT', sans-serif !important;
+  font-size: 0.68rem !important;
+  color: #4ADE80 !important;
+  font-weight: 900 !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.01em !important;
+  text-shadow: 0 2px 5px #000000 !important;
+  -webkit-text-stroke: 0.8px #000000 !important;
+  paint-order: stroke fill !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 1px !important;
+}
 
     /* 4단계 요약 카드 */
     .summary-block-wrap { display: flex; flex-direction: column; gap: 5px; margin-top: 4px; width: 100%; }
@@ -547,7 +657,7 @@
     .entry-guide-chip { font-size: 0.73rem; color: #fde047; background: rgba(245,158,11,0.14); border: 1px solid rgba(245,158,11,0.28); padding: 4px 8px; border-radius: 6px; margin-top: 2px; display: flex; align-items: center; gap: 4px; }
     .entry-row-2 { display: flex; gap: 4px; width: 100%; margin-top: 2px; }
 
-    .navi-btn-cell { flex: 1; padding: 7px 2px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 2px; transition: transform 0.1s ease; }
+    .navi-btn-cell { flex: 1; padding: 7px 2px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 4px; transition: transform 0.1s ease; }
     .navi-btn-cell:active { transform: scale(0.96); }
     .cell-kakao { background: #fee500; color: #191919; }
     .cell-tmap { background: #004fff; color: #ffffff; }
@@ -562,7 +672,7 @@
       text-align: center; padding: 6px 10px; border-radius: 8px;
       border: 1.5px dashed rgba(244,63,94,0.75); z-index: 10; cursor: pointer;
     }
-    .lock-main-text { font-size: 0.80rem !important; font-weight: 900 !important; color: #fde047 !important; line-height: 1.3; }
+    .lock-main-text { font-size: 0.80rem !important; font-weight: 900 !important; color: #fde047 !important; line-height: 1.3; display: flex; align-items: center; gap: 4px; }
     .lock-sub-text { font-size: 0.65rem !important; color: #cbd5e1 !important; margin-top: 2px; }
 
     .guest-member-lock-card {
@@ -572,7 +682,7 @@
       align-items: center; justify-content: center; text-align: center; gap: 7px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.85);
     }
-    .btn-quick-login-unlock { background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #38bdf8; color: #fff; border-radius: 8px; font-weight: 800; cursor: pointer; transition: all 0.2s; }
+    .btn-quick-login-unlock { background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #38bdf8; color: #fff; border-radius: 8px; font-weight: 800; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
 
     .btn-gpx-track-toggle {
       width: 100%; background: rgba(13, 148, 136, 0.2); border: 1.5px solid #14b8a6; color: #2dd4bf;
@@ -584,7 +694,7 @@
     .sheet-title-row { display: flex; align-items: center; justify-content: space-between; width: 100%; padding-bottom: 4px; border-bottom: 1px solid var(--border-hairline); cursor: pointer; }
     .compact-title { font-size: 1.12rem !important; font-weight: 900 !important; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .spot-live-weather-bar { display: flex; align-items: center; gap: 4px; margin: 4px 0; flex-wrap: wrap; }
-    .weather-chip { font-size: 0.65rem !important; background: rgba(255,255,255,0.05); border: 1px solid var(--border-hairline); border-radius: 10px; padding: 2px 6px; color: var(--text-secondary); font-weight: 600; }
+    .weather-chip { font-size: 0.65rem !important; background: rgba(255,255,255,0.05); border: 1px solid var(--border-hairline); border-radius: 10px; padding: 2px 6px; color: var(--text-secondary); font-weight: 600; display: inline-flex; align-items: center; gap: 3px; }
     .weather-wind-safe { color: #6ee7b7; border-color: rgba(16,185,129,0.35); }
     .weather-wind-warn { color: #fde047; border-color: rgba(245,158,11,0.35); }
     .weather-wind-danger { color: #fda4af; border-color: rgba(244,63,94,0.35); font-weight: 800; }
@@ -694,7 +804,7 @@
     .dock-item.active { color: var(--accent-blue); } 
     .dock-item svg { width: 19px; height: 19px; fill: currentColor; }
 
-    .app-toast { position: fixed; top: 68px; left: 50%; transform: translateX(-50%) translateY(-15px); background: #0e131d; border: 1.5px solid var(--border-titanium); color: #fff; padding: 8px 18px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; z-index: var(--z-toast); box-shadow: 0 8px 24px rgba(0,0,0,0.85); pointer-events: none; opacity: 0; transition: all 0.22s ease; }
+    .app-toast { position: fixed; top: 68px; left: 50%; transform: translateX(-50%) translateY(-15px); background: #0e131d; border: 1.5px solid var(--border-titanium); color: #fff; padding: 8px 18px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; z-index: var(--z-toast); box-shadow: 0 8px 24px rgba(0,0,0,0.85); pointer-events: none; opacity: 0; transition: all 0.22s ease; display: inline-flex; align-items: center; gap: 6px; }
     .app-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     body.clean-map-mode .clean-hide { display: none !important; }
 
@@ -737,7 +847,7 @@
     .login-box-card { width: 360px; text-align: center; gap: 12px; }
     .login-btn-social-group { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 6px; }
     .btn-social-kakao { background: #fee500; color: #191919; font-weight: 800; padding: 11px; border-radius: 8px; border: none; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
-    .btn-quick-guest-login { background: var(--bg-card); border: 1px solid var(--border-titanium); color: var(--text-secondary); font-weight: 700; padding: 9px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; }
+    .btn-quick-guest-login { background: var(--bg-card); border: 1px solid var(--border-titanium); color: var(--text-secondary); font-weight: 700; padding: 9px; border-radius: 8px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
 
     @media (min-width: 769px) { 
       .mobile-only { display: none !important; } 
@@ -759,17 +869,35 @@
 </head>
 <body>
   <div id="appToast" class="app-toast"></div>
-  
 
-    </div><!-- 🧭 1. 상단 GNB -->
+  <!-- 🧭 1. 상단 GNB -->
   <header class="apple-integrated-header notranslate" id="header">
     <div class="header-top-row">
       <a href="index.html" class="brand-line" onclick="triggerHaptic('light');" title="홈으로 이동">
+       <!-- 🔻 기존 <div class="brand-sym-box">...</div> 전체 교체 -->
+
         <div class="brand-sym-box">
           <svg viewBox="0 0 32 32" fill="none">
-            <path d="M5 25L13 11l5 8 8-14" stroke="#64748b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M13 11l4-6 9 14" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round"/>
-            <circle cx="17" cy="5" r="2.2" fill="#f59e0b"/>
+            <!-- 배경 샴페인 로즈 & 골드 안개 일출 (중심 21, 6 고정) -->
+            <circle cx="21" cy="6" r="9" fill="rgba(244,114,182,0.12)"/>
+            <circle cx="21" cy="6" r="6" fill="rgba(245,158,11,0.18)"/>
+            <circle cx="21" cy="6" r="3.8" fill="rgba(251,191,36,0.28)"/>
+            
+            <!-- 첫 번째 R: Romantic 낭만 능선 (샴페인 로즈 핑크) -->
+            <circle cx="2" cy="24" r="1.8" fill="#fda4af"/>
+            <circle cx="9" cy="12" r="2.2" fill="#fda4af"/>
+            <circle cx="14" cy="16" r="1.8" fill="#fda4af"/>
+            <circle cx="13" cy="24" r="1.8" fill="#fda4af"/>
+            <path d="M2 24L9 12H12.5L14 16L10 16M10 16L13 24" stroke="#fda4af" stroke-width="1.8" stroke-linecap="round"/>
+            
+            <!-- 두 번째 R: Route 강인한 탐색 피크 (플래티넘 화이트 만년설 & 골든 비콘) -->
+            <circle cx="21" cy="6" r="2.8" fill="#f59e0b"/>
+            <circle cx="27" cy="13" r="2.2" fill="#e2e8f0"/>
+            <circle cx="30" cy="24" r="2.4" fill="#e2e8f0"/>
+            <path d="M13 24L21 6H25L27 13L22 13M22 13L30 24" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
+            
+            <!-- 최고봉 정상 핀 (Pure White Core) -->
+            <circle cx="21" cy="6" r="1" fill="#ffffff"/>
           </svg>
         </div>
         <span class="brand-title">낭만루트</span>
@@ -780,8 +908,16 @@
       <div class="header-right-actions">
         <span class="admin-status-badge pc-only" id="adminBadge">관리자 ON</span>
         
+        <!-- 🔻 기존 #headerAuthBtn 영역을 아래 코드로 교체 -->
+
+        <!-- 🔻 기존 #headerAuthBtn 영역을 아래 코드로 교체 -->
         <button type="button" class="header-auth-btn" id="headerAuthBtn" onclick="handleAuthBtnClick()">
-          <span id="headerAuthIcon">🔑</span>
+          <span id="headerAuthIcon" style="display:inline-flex; align-items:center; justify-content:center;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; margin-right:3px; display:inline-block; vertical-align:-1px;">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-4 4-6 8-6s8 2 8 6"/>
+            </svg>
+          </span>
           <span id="headerAuthText">로그인</span>
         </button>
 
@@ -797,7 +933,7 @@
       </div>
     </div>
 
-    <!-- 슬림 검색바 (인덱스와 완벽 일치) -->
+    <!-- 슬림 검색바 -->
     <div class="apple-search-box">
       <div class="apple-search-bar">
         <span class="icon-svg" style="width:14px; height:14px; color:#94a3b8;">
@@ -814,14 +950,13 @@
     <aside class="sidebar collapsed clean-hide" id="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-header-left">
-          <svg viewBox="0 0 24 24" class="ui-icon" style="color:var(--accent-blue);"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" fill="currentColor"/></svg>
+          <span id="sidebarCampIcon" style="display:inline-flex; align-items:center;"></span>
           <span>박지 목록</span>
           <span id="spotCount" style="color: var(--accent-blue); font-size: 0.78rem; font-weight: 800;">0개</span>
           <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagAdminClick()">6.1ver Master</span>
         </div>
         <div class="sidebar-header-actions">
-          <button type="button" class="btn-sidebar-submit" onclick="openUserProposalModal()">
-            <svg viewBox="0 0 24 24" class="ui-icon" style="width:12px; height:12px;"><path d="M12 4v16m8-8H4" stroke="currentColor" stroke-width="2.5" fill="none"/></svg>
+          <button type="button" class="btn-sidebar-submit" id="btnSidebarSubmit" onclick="openUserProposalModal()">
             <span>제보</span>
           </button>
           <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" class="header-insta-badge" title="협업">
@@ -831,26 +966,26 @@
         </div>
       </div>
       <div class="admin-data-tools" id="adminDataTools">
-        <button type="button" class="admin-tool-btn" onclick="exportDataBackup()">💾 백업</button>
-        <button type="button" class="admin-tool-btn" onclick="document.getElementById('importFileInput').click()">📂 복원</button>
+        <button type="button" class="admin-tool-btn" onclick="exportDataBackup()"><span id="iconToolBackup"></span> 백업</button>
+        <button type="button" class="admin-tool-btn" onclick="document.getElementById('importFileInput').click()"><span id="iconToolRestore"></span> 복원</button>
         <input type="file" id="importFileInput" style="display:none" accept=".json" onchange="importDataBackup(event)" />
       </div>
       <div class="filter-wrapper">
         <div class="master-tab-bar" id="masterTabBar">
           <button type="button" class="master-tab-btn active" onclick="switchMasterTab('REGION')">
-            <svg viewBox="0 0 24 24" class="ui-icon"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="currentColor"/></svg>
+            <span id="tabIconRegion"></span>
             <span>지역별</span>
           </button>
           <button type="button" class="master-tab-btn" onclick="switchMasterTab('TERRAIN')">
-            <svg viewBox="0 0 24 24" class="ui-icon"><path d="M14 6l6 12H4l5-8 3 4 2-8z" fill="currentColor"/></svg>
+            <span id="tabIconTerrain"></span>
             <span>지형별</span>
           </button>
           <button type="button" class="master-tab-btn" onclick="switchMasterTab('COURSE')">
-            <svg viewBox="0 0 24 24" class="ui-icon"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor"/></svg>
+            <span id="tabIconCourse"></span>
             <span>코스별</span>
           </button>
           <button type="button" class="master-tab-btn" onclick="switchMasterTab('MY')">
-            <svg viewBox="0 0 24 24" class="ui-icon"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="currentColor"/></svg>
+            <span id="tabIconMy"></span>
             <span>마이보관</span>
           </button>
         </div>
@@ -872,15 +1007,15 @@
       <div class="left-bottom-filter-wrap clean-hide" id="leftBottomFilterWrap">
         <div class="left-filter-tower-box">
           <button type="button" class="tower-toggle-btn" id="btnCycleDifficulty" onclick="cycleDifficultyFilter()" title="난이도 필터">
-            <span id="iconCycleDifficulty"><svg viewBox="0 0 24 24" class="ui-icon" style="width:14px; height:14px; margin:0;"><path d="M14 6l6 12H4l5-8 3 4 2-8z" fill="currentColor"/></svg></span>
+            <span id="iconCycleDifficulty"></span>
             <span class="tower-btn-text" id="labelCycleDifficulty">난이도</span>
           </button>
           <button type="button" class="tower-toggle-btn" id="btnCycleStatus" onclick="cycleStatusFilter()" title="상태 및 코스 필터">
-            <span id="iconCycleStatus"><svg viewBox="0 0 24 24" class="ui-icon" style="width:14px; height:14px; margin:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="currentColor"/></svg></span>
+            <span id="iconCycleStatus"></span>
             <span class="tower-btn-text" id="labelCycleStatus">상태</span>
           </button>
           <button type="button" class="tower-toggle-btn" id="btnCycleTerrain" onclick="cycleTerrainFilter()" title="지형 필터">
-            <span id="iconCycleTerrain"><svg viewBox="0 0 24 24" class="ui-icon" style="width:14px; height:14px; margin:0;"><path d="M3 7h18M3 12h18M3 17h18M7 3v18M17 3v18" stroke="currentColor" stroke-width="1.8" fill="none"/></svg></span>
+            <span id="iconCycleTerrain"></span>
             <span class="tower-btn-text" id="labelCycleTerrain">지형</span>
           </button>
         </div>
@@ -904,20 +1039,21 @@
       </div>
 
       <div id="pinPickerBanner" class="pin-picker-banner">
-        <span>📍 지도를 클릭하여 박지 위치를 콕 찍어주세요!</span>
+        <span id="bannerPinIcon"></span>
+        <span>지도를 클릭하여 박지 위치를 콕 찍어주세요!</span>
         <button type="button" class="btn-cancel-pin-pick" onclick="cancelPinPicking()">취소</button>
       </div>
     </main>
   </div>
 
-  <!-- 모바일 50dvh 바텀 시트 (터치 관통 방지 탑재) -->
+  <!-- 모바일 50dvh 바텀 시트 -->
   <div class="mobile-bottom-sheet" id="mobileBottomSheet" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
     <button type="button" class="fixed-floating-close-btn" onclick="closeMobileBottomSheet()" title="닫기">✕</button>
     <div class="sheet-handle-bar-area"><div class="sheet-handle-bar"></div></div>
     <div class="sheet-content" id="mobileSheetContent"></div>
   </div>
 
-  <!-- 모바일 하단 독 (햅틱 연결 완료) -->
+  <!-- 모바일 하단 독 -->
   <div class="mobile-bottom-dock">
     <a href="index.html" class="dock-item" title="홈" onclick="triggerHaptic('light');">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -933,19 +1069,24 @@
     </button>
   </div>
 
-  <!-- 간편 로그인 모달 (태그 닫힘 버그 완벽 수정) -->
+  <!-- 간편 로그인 모달 -->
   <div class="custom-modal-overlay" id="loginModalOverlay" onclick="event.stopPropagation();">
     <div class="custom-modal login-box-card">
-      <h3 style="color:#38bdf8; font-size:1.05rem; font-weight:800;">🏕️ 낭만 백패커 로그인</h3>
+      <h3 style="color:#38bdf8; font-size:1.05rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:6px;">
+        <span id="loginModalCampIcon"></span>
+        <span>낭만 백패커 로그인</span>
+      </h3>
       <p style="font-size:0.75rem; color:#cbd5e1; line-height:1.45;">
         소중한 박지 보존과 클린 백패킹 문화를 위해<br><strong>로그인 시 상세 들머리 주소와 4단계 실전 팁</strong>이 100% 해금됩니다.
       </p>
       <div class="login-btn-social-group">
         <button type="button" class="btn-social-kakao" onclick="loginWithKakao()">
-          💬 카카오 1초 간편 로그인
+          <span id="kakaoLoginIcon" style="display:inline-flex;"></span>
+          <span>카카오 1초 간편 로그인</span>
         </button>
         <button type="button" class="btn-quick-guest-login" onclick="loginQuickAsMember('낭만백패커')">
-          ⚡ 닉네임으로 바로 로그인 (체험)
+          <span id="quickGuestIcon" style="display:inline-flex; color:#fde047;"></span>
+          <span>닉네임으로 바로 로그인 (체험)</span>
         </button>
       </div>
       <div class="modal-btn-row" style="justify-content:center; margin-top:6px;">
@@ -963,10 +1104,14 @@
           <span>대한민국 백패커 K-LNT 7원칙</span>
         </h3>
       </div>
-      <p style="font-size:0.74rem; color:#fde047; line-height:1.4; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); padding:6px 8px; border-radius:6px;">
-        ⚠️ <strong>박지 보존을 위한 필수 실천</strong>: 자연을 훼손하지 않는 성숙한 백패킹 문화가 소중한 박지 폐쇄를 막습니다.
+      <p style="font-size:0.74rem; color:#fde047; line-height:1.4; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); padding:6px 8px; border-radius:6px; display:flex; align-items:center; gap:5px;">
+        <span id="lntAlertTopIcon"></span>
+        <span><strong>박지 보존을 위한 필수 실천</strong>: 자연을 훼손하지 않는 성숙한 백패킹 문화가 소중한 박지 폐쇄를 막습니다.</span>
       </p>
-      <div class="lnt-rule-item" style="border-left-color:#f43f5e; background:rgba(244,63,94,0.08);"><div class="lnt-rule-title" style="color:#fda4af;">1. 🚫 산림 내 화기 사용 및 취사 절대 금지 [비화식 필수]</div><div class="lnt-rule-desc" style="color:#fecdd3;"><strong>「산림보호법 제34조」</strong> 준수: 버너·불멍은 절대 불가하며 보온병 온수, 비화식 발열팩(핫앤쿡 등)만 이용합니다.</div></div>
+      <div class="lnt-rule-item" style="border-left-color:#f43f5e; background:rgba(244,63,94,0.08);">
+        <div class="lnt-rule-title" style="color:#fda4af;"><span id="lntProhibitIcon"></span> 1. 산림 내 화기 사용 및 취사 절대 금지 [비화식 필수]</div>
+        <div class="lnt-rule-desc" style="color:#fecdd3;"><strong>「산림보호법 제34조」</strong> 준수: 버너·불멍은 절대 불가하며 보온병 온수, 비화식 발열팩(핫앤쿡 등)만 이용합니다.</div>
+      </div>
       <div class="lnt-rule-item"><div class="lnt-rule-title">2. 지정된 단단한 바닥(데크·돌박지·기존 노지) 이용하기</div><div class="lnt-rule-desc">식생과 풀밭 훼손을 방지하고, 기존에 조성된 데크와 단단한 노지 위주로 피칭합니다.</div></div>
       <div class="lnt-rule-item"><div class="lnt-rule-title">3. 발생한 모든 쓰레기는 100% 회수 하산하기</div><div class="lnt-rule-desc">음식물 잔반, 물티슈, 과일 껍질까지 단 하나의 흔적도 남기지 않고 배낭에 다시 담아옵니다.</div></div>
       <div class="lnt-rule-item"><div class="lnt-rule-title">4. 자연 및 주변 환경을 있는 그대로 보존하기</div><div class="lnt-rule-desc">자연석 이동 금지, 나뭇가지 꺾지 않기, 팩으로 나무뿌리를 손상시키지 않습니다.</div></div>
@@ -982,15 +1127,15 @@
   <!-- 제보 / 등록 / 수정 모달 -->
   <div class="custom-modal-overlay" id="customModalOverlay">
     <div class="custom-modal">
-      <h3 id="modalTitle">📍 박지 제보 / 추천 등록</h3>
-      <p id="modalNotice" style="font-size:0.74rem; color:#fde047; line-height:1.4;">🎒 멋진 백패킹 박지를 제보해주세요! 관리자 승인 후 정식 등록됩니다.</p>
+      <h3 id="modalTitle" style="display:flex; align-items:center; gap:6px;"></h3>
+      <p id="modalNotice" style="font-size:0.74rem; color:#fde047; line-height:1.4; display:flex; align-items:center; gap:4px;"></p>
       <div class="modal-field"><label>1. 산/박지 이름 *</label><input type="text" id="modalInputName" class="modal-input" placeholder="예: 남양주 백봉산" /></div>
       <div class="modal-field"><label>2. 세부 박지 포인트</label><input type="text" id="modalInputSub" class="modal-input" placeholder="예: 정상 전망데크" /></div>
       <div class="modal-field">
         <label>3. 박지 핀 위치</label>
         <div style="display: flex; gap: 6px; align-items: center;">
           <input type="text" id="modalInputCoordsDisplay" class="modal-input" style="flex:1;" placeholder="위치 미지정" readonly />
-          <button type="button" class="modal-btn" style="background: #0284c7; color:#fff; font-weight:700; padding:6px 10px;" onclick="startPinPicking()">📍 콕 찍기</button>
+          <button type="button" class="modal-btn" style="background: #0284c7; color:#fff; font-weight:700; padding:6px 10px; display:inline-flex; align-items:center; gap:4px;" onclick="startPinPicking()"><span id="btnModalPinPickIcon"></span><span>콕 찍기</span></button>
         </div>
       </div>
       <div class="modal-field"><label>4. 들머리 명칭</label><input type="text" id="modalInputTrailheadName" class="modal-input" placeholder="예: 마치고개 갓길" /></div>
@@ -999,15 +1144,15 @@
         <label>6. 고도 / 해발 (m)</label>
         <div style="display: flex; gap: 6px;">
           <input type="text" id="modalInputElevation" class="modal-input" style="flex:1;" placeholder="587" />
-          <button type="button" class="modal-btn" style="background:var(--bg-card); color:#fff; padding:6px 10px;" onclick="fetchElevationForModal()">⛰️ 측정</button>
+          <button type="button" class="modal-btn" style="background:var(--bg-card); color:#fff; padding:6px 10px; display:inline-flex; align-items:center; gap:4px;" onclick="fetchElevationForModal()"><span id="btnModalElevIcon"></span><span>측정</span></button>
         </div>
       </div>
       <div class="modal-field">
         <label>7. 코스 유형 선택</label>
         <div style="display:flex; gap:6px;">
-          <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:3px; background:var(--bg-base); border:1px solid var(--border-hairline); padding:6px; border-radius:6px; font-size:0.74rem; cursor:pointer;"><input type="radio" name="modalCourseType" value="최단" checked /> ⚡ 최단코스</label>
-          <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:3px; background:var(--bg-base); border:1px solid var(--border-hairline); padding:6px; border-radius:6px; font-size:0.74rem; cursor:pointer;"><input type="radio" name="modalCourseType" value="종주" /> 🥾 종주코스</label>
-          <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:3px; background:var(--bg-base); border:1px solid var(--border-hairline); padding:6px; border-radius:6px; font-size:0.74rem; cursor:pointer;"><input type="radio" name="modalCourseType" value="일반" /> 🏕️ 일반박지</label>
+          <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:4px; background:var(--bg-base); border:1px solid var(--border-hairline); padding:6px; border-radius:6px; font-size:0.74rem; cursor:pointer;"><input type="radio" name="modalCourseType" value="최단" checked /> <span id="radioFastIcon"></span> 최단코스</label>
+          <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:4px; background:var(--bg-base); border:1px solid var(--border-hairline); padding:6px; border-radius:6px; font-size:0.74rem; cursor:pointer;"><input type="radio" name="modalCourseType" value="종주" /> <span id="radioTraverseIcon"></span> 종주코스</label>
+          <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:4px; background:var(--bg-base); border:1px solid var(--border-hairline); padding:6px; border-radius:6px; font-size:0.74rem; cursor:pointer;"><input type="radio" name="modalCourseType" value="일반" /> <span id="radioCampIcon"></span> 일반박지</label>
         </div>
       </div>
       <div class="modal-field">
@@ -1052,33 +1197,70 @@
     const NATIONWIDE_LEVEL = 13;
     let map = null, geocoder = null, globalClusterer = null;
 
+    // ✨ 28종 확정 100% SVG 벡터 라이브러리
     const ICONS = {
+      // 1. GNB & 인증 (로그인: 20번 백패커 솔리드 / 회원: 4번 인증 하이커)
+      // 🔻 ICONS 객체 내부의 AUTH: 를 아래 코드로 교체
+      AUTH: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; margin-right:3px; display:inline-block; vertical-align:-1px;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>`,
+      MEMBER: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#6ee7b7;"><circle cx="10" cy="8" r="4"/><path d="M3 20c0-3.5 3-6 7-6"/><circle cx="17" cy="16" r="3.5" fill="#10b981"/><path d="M15 16l1.5 1.5 3-3" stroke="#fff"/></svg>`,
+      BACKPACK: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><rect x="4" y="2" width="16" height="5" rx="2.5"/><path d="M8 2v5M16 2v5M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M12 7l-4 4M12 7l4 4M8 15h8v4H8z"/></svg>`,
+      TALK: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`,
+      FAST: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+      
+      // 2. 박지 & 지형 & 태그 (산: 색 채운 만년설 쌍봉 산 벡터)
+      CAMP: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><path d="M3 19C4 9 9 4 12 4s8 5 9 15z"/><path d="M12 4v15M3 19h18M7 19c2-5 3-9 5-15M17 19c-2-5-3-9-5-15"/></svg>`,
+      MOUNTAIN: `<svg viewBox="0 0 24 24" class="ui-icon" style="color:#10b981;"><polygon points="2 20 8.5 7 15 17 22 20 2 20" fill="rgba(16,185,129,0.45)" stroke="#10b981" stroke-width="1.6"/><polygon points="8.5 7 10.5 11 6.5 11" fill="#6ee7b7"/><polygon points="17 11 19 14.5 15 14.5" fill="#a7f3d0"/></svg>`,
+      PIN: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/></svg>`,
+      HIKING: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><path d="M4 2l16 20M20 2L4 22M3 19h4M17 19h4M3 5h3M18 5h3"/></svg>`,
+      DRONE: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><rect x="9" y="9" width="6" height="6" rx="1.5"/><path d="M9 9L4 4M15 9l5-5M9 15l-5 5M15 15l5 5"/><circle cx="4" cy="4" r="2.5"/><circle cx="20" cy="4" r="2.5"/><circle cx="4" cy="20" r="2.5"/><circle cx="20" cy="20" r="2.5"/></svg>`,
+      
       DECK: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M3 7h18M3 12h18M3 17h18M7 3v18M17 3v18" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
       ROCK: `<svg viewBox="0 0 24 24" class="ui-icon"><polygon points="4 20 2 12 8 4 17 6 22 14 19 20 4 20" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
       SOIL: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M12 2L4 18h16L12 2z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
       BEACH: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M2 17c3 0 3-2 6-2s3 2 6 2 3-2 6-2M2 20c3 0 3-2 6-2s3 2 6 2 3-2 6-2" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
       ISLAND: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M2 19c4 0 5-2 10-2s6 2 10 2" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
       VALLEY: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M3 4l7 16M21 4l-7 16" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
-      CAVE: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M4 19h16c0-7-3.5-13-8-13S4 12 4 19z" fill="currentColor"/></svg>`,
-      SHORTEST: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor"/></svg>`,
-      TRAVERSE: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M4 18l5-7 4 4 6-9" stroke="currentColor" stroke-width="2" fill="none"/></svg>`,
+      CAVE: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M4 19h16c0-7-3.5-13-8-13S4 12 4 19z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+      SHORTEST: `<svg viewBox="0 0 24 24" class="ui-icon"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
+      TRAVERSE: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M4 2l16 20M20 2L4 22M3 19h4M17 19h4M3 5h3M18 5h3" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
       HEART: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>`,
-      FLAG: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7" stroke="currentColor" stroke-width="2" fill="none"/></svg>`,
-      PIN: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 110-5 2.5 2.5 0 010 5z" fill="currentColor"/></svg>`,
-      NAV: `<svg viewBox="0 0 24 24" class="ui-icon"><polygon points="3 11 22 2 13 21 11 13 3 11" fill="currentColor"/></svg>`,
-      COPY: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M8 7v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-8a2 2 0 00-2 2z" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M16 5V3a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2h2" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
-      DIST: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M4 19L19 4M4 19h6M4 19v-6M19 4h-6M19 4v6" stroke="currentColor" stroke-width="2"/></svg>`,
-      MEMO: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
-      EDIT: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" fill="none"/></svg>`,
-      DEL: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke="currentColor" stroke-width="2" fill="none"/></svg>`
-    };
+      FLAG: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
 
+      // 3. 기상 & 날씨 바 (일몰: 4번 수평선 2단 선셋)
+      SUNSET: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#fed7aa;"><path d="M2 16c4-1.5 7-1.5 10 0s6 1.5 10 0M2 20c4-1.5 7-1.5 10 0s6 1.5 10 0"/><path d="M7 16a5 5 0 0 1 10 0"/><path d="M12 3v5M6 7l2 2M18 7l-2 2"/></svg>`,
+      TEMP: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>`,
+      WIND: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#6ee7b7;"><path d="M4 8h12a3 3 0 1 0-3-3M2 13h16a3 3 0 1 1-3 3M6 18h9a2 2 0 1 0-2-2"/></svg>`,
+
+      // 4. 내비 & 액션 & 잠금
+      LOCK: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#fde047;"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>`,
+      UNLOCK: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#6ee7b7;"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0"/></svg>`,
+      COPY: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><path d="M8 7v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2z"/><path d="M16 5V3a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2"/></svg>`,
+      TIP: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#fde047;"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-7 7c0 2.5 1.5 4.5 3 6h8c1.5-1.5 3-3.5 3-6a7 7 0 0 0-7-7z"/></svg>`,
+      SHARE: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>`,
+      ROADVIEW: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`,
+      NAV: `<svg viewBox="0 0 24 24" class="ui-icon"><polygon points="3 11 22 2 13 21 11 13 3 11" fill="currentColor"/></svg>`,
+      DIST: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M4 19L19 4M4 19h6M4 19v-6M19 4h-6M19 4v6" stroke="currentColor" stroke-width="1.8"/></svg>`,
+
+      // 5. 4단계 상세 카드 & LNT & 메모 (1단계: 3번 5가닥 태양 / 2단계: 7번 점선지도 / 4단계: 6번 만년필)
+      VIEW_CARD: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#38bdf8;"><path d="M3 17h18M2 21h20"/><path d="M6 17a6 6 0 0 1 12 0"/><path d="M12 4v4M4.9 7.9l2.8 2.8M19.1 7.9l-2.8 2.8M2 13h4M18 13h4"/></svg>`,
+      TRAIL_CARD: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#2dd4bf;"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><path d="M9 3v15M15 6v15"/><path d="M6 14c3-2 6 2 9 0" stroke-dasharray="2 2"/></svg>`,
+      PITCH_CARD: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#10b981;"><path d="M12 2L2 20h20L12 2z"/><path d="M12 2v18M7 20l5-9 5 9"/></svg>`,
+      ALERT_CARD: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#f59e0b;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+      BAN_LNT: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#f43f5e;"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>`,
+      MEMO: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#2dd4bf;"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18"/><circle cx="11" cy="11" r="1.5" fill="currentColor"/></svg>`,
+      
+      BACKUP: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,
+      RESTORE: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
+      EDIT: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
+      DEL: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`
+    };
+    
     let authState = {
       isLoggedIn: localStorage.getItem('user_auth_token') ? true : false,
       userProfile: JSON.parse(localStorage.getItem('user_profile')) || null
     };
 
-    // 📳 [모바일 햅틱 엔진] 네이티브 앱 수준의 4단계 진동 피드백
+    // 📳 [모바일 햅틱 엔진]
     function triggerHaptic(type = 'light') {
       if (!navigator.vibrate) return;
       try {
@@ -1092,36 +1274,44 @@
     function showToast(msg, duration = 2200) {
       const t = document.getElementById('appToast');
       if (!t) return;
-      t.innerText = msg; t.classList.add('show');
+      t.innerHTML = msg; 
+      t.classList.add('show');
       clearTimeout(t._timer);
       t._timer = setTimeout(() => { t.classList.remove('show'); }, duration);
     }
-    function copyTextToClipboard(text, alertMsg = '주소가 복사되었습니다 📋') {
+
+    function copyTextToClipboard(text, alertMsg = '주소가 복사되었습니다') {
       if (!text) return;
       triggerHaptic('medium');
+      const formattedAlert = `${ICONS.COPY} <span>${alertMsg}</span>`;
       if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(text).then(() => showToast(alertMsg)).catch(() => fallbackCopy(text, alertMsg));
-      } else { fallbackCopy(text, alertMsg); }
+        navigator.clipboard.writeText(text).then(() => showToast(formattedAlert)).catch(() => fallbackCopy(text, formattedAlert));
+      } else { fallbackCopy(text, formattedAlert); }
     }
+
     function fallbackCopy(text, alertMsg) {
       const temp = document.createElement('textarea');
       temp.value = text; document.body.appendChild(temp); temp.select();
       try { document.execCommand('copy'); showToast(alertMsg); } catch (err) {}
       document.body.removeChild(temp);
     }
+
     function escapeHtml(text) {
       if (text === null || text === undefined) return '';
       return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
+
     function getSpotDiffColorClass(difficulty = 3) {
       const d = parseInt(difficulty, 10) || 3;
       return d <= 2 ? 'color-diff-easy' : (d >= 4 ? 'color-diff-hard' : 'color-diff-mid');
     }
+
     function parseEntryPoint(rawEntry) {
       if (!rawEntry) return { navAddress: '', guide: '' };
       const parts = String(rawEntry).trim().split(/[,]+/);
       return { navAddress: parts[0].trim(), guide: parts.slice(1).map(p => p.trim()).filter(Boolean).join(', ') };
     }
+
     function cleanYouTubeUrl(url) {
       if (!url) return '';
       const match = url.match(/^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|shorts\/|\&v=)([^#\&\?]*).*/);
@@ -1190,11 +1380,10 @@
       const lntModal = document.getElementById('lntModalOverlay');
       if (lntModal) lntModal.style.display = 'none';
       triggerHaptic('heavy');
-      showToast('🔓 들머리 주소와 4대 내비가 해금되었습니다!');
+      showToast(`${ICONS.UNLOCK} <span>들머리 주소와 4대 내비가 해금되었습니다!</span>`);
       refreshCurrentSpotPopup();
     }
 
-    // 🛡️ 1. 로그인 상태 100% 통합 판별 함수
     function isUserLoggedIn() {
       try {
         const token = localStorage.getItem('user_auth_token');
@@ -1204,7 +1393,6 @@
       }
     }
 
-    // 🔄 2. 정보창 실시간 강제 새로고침 (모바일/PC 완벽 분리 렌더링)
     function refreshCurrentSpotPopup() {
       const isMobile = window.innerWidth <= 768;
       const mobileSheet = document.getElementById('mobileBottomSheet');
@@ -1231,7 +1419,6 @@
       window.__MANUAL_ACTIVE_ID__ = String(targetSpot.id).trim();
       localStorage.setItem('okbm_active_spot_id', String(targetSpot.id).trim());
 
-      // 📱 [모바일 화면] 바텀시트 전용 강제 갱신
       if (isMobile || (mobileSheet && mobileSheet.classList.contains('open'))) {
         if (mobileContent) {
           mobileContent.innerHTML = generateDetailContentHtml(targetSpot, true);
@@ -1242,7 +1429,6 @@
         }
       }
 
-      // 💻 [PC 화면] 슬라이딩 드로어 전용 강제 갱신
       if (!isMobile || (pcDrawer && pcDrawer.classList.contains('open'))) {
         if (pcDrawer) {
           pcDrawer._spotData = targetSpot;
@@ -1252,7 +1438,6 @@
       }
     }
 
-    // 📱 3. 모바일 전용 바텀시트 열기
     function openMobileBottomSheet(spot) {
       currentActiveSpot = spot;
       window.__ACTIVE_SPOT_OBJECT__ = spot;
@@ -1283,7 +1468,6 @@
       }
     }
 
-    // 💻 4. PC 전용 슬라이딩 드로어 열기
     function openPcSlidingDrawer(spot) {
       currentActiveSpot = spot;
       window.__ACTIVE_SPOT_OBJECT__ = spot;
@@ -1314,7 +1498,6 @@
       updateLODLabels();
     }
 
-    // 💬 5. 카카오 1초 간편 로그인
     function loginWithKakao() {
       if (typeof Kakao === 'undefined') {
         alert('카카오 SDK를 불러오지 못했습니다.');
@@ -1346,30 +1529,25 @@
               updateHeaderAuthUI();
               closeLoginModal();
               triggerHaptic('success');
-              showToast(`🎉 ${profile.nickname}님 환영합니다!`);
+              showToast(`${ICONS.MEMBER} <span>${profile.nickname}님 환영합니다!</span>`);
 
               refreshCurrentSpotPopup();
               renderSpots();
             },
             fail: function(error) {
-              console.error('사용자 정보 요청 실패:', error);
-              showToast('⚠️ 사용자 정보를 불러오지 못했습니다.');
+              showToast(`${ICONS.ALERT_CARD} <span>사용자 정보를 불러오지 못했습니다.</span>`);
             }
           });
         },
         fail: function(err) {
-          console.error('카카오 로그인 취소/실패:', err);
           showToast('카카오 로그인이 취소되었습니다.');
         }
       });
     }
 
-    // 🚪 6. 로그아웃
     function logoutUser() {
       if (typeof Kakao !== 'undefined' && Kakao.Auth && Kakao.Auth.getAccessToken()) {
-        Kakao.Auth.logout(function() {
-          console.log('카카오 세션 로그아웃 완료');
-        });
+        Kakao.Auth.logout(function() {});
       }
 
       localStorage.removeItem('user_auth_token'); 
@@ -1385,7 +1563,6 @@
       renderSpots();
     }
 
-    // ⚙️ 7. 필수 전역 변수
     let isAdminMode = false, isCleanMapMode = false, currentMapLayerState = 0;
     let currentMasterTab = 'REGION', currentRegionFilter = 'ALL', currentTerrainFilter = 'ALL', currentCourseFilter = 'ALL', currentMyFilter = 'ALL';
     let currentHudFilterDiff = 'ALL', currentHudFilterStatus = 'ALL', currentHudFilterTerrain = 'ALL';
@@ -1396,8 +1573,8 @@
     let tempSearchMarker = null, tempPickedMarker = null, userLocationOverlay = null;
     let modalMode = 'PROPOSAL', modalEditIndex = -1, modalPendingData = { lat: 0, lng: 0, address: '' }, isPickingLocationMode = false;
     let currentGpxPolyline = null, activeGpxSpotId = null;
-
-    // 🔑 8. 상단 GNB 로그인 UI 제어 함수
+   
+    // 🔑 8. 상단 GNB 로그인 UI 제어 (20번 백패커 / 4번 인증회원 적용)
     function updateHeaderAuthUI() {
       const btn = document.getElementById('headerAuthBtn');
       const text = document.getElementById('headerAuthText');
@@ -1409,11 +1586,11 @@
 
       if (isLogged && profile) {
         btn.classList.add('logged-in');
-        if (icon) icon.innerText = '🌲';
+        if (icon) icon.innerHTML = ICONS.MEMBER;
         text.innerText = profile.nickname || '회원';
       } else {
         btn.classList.remove('logged-in');
-        if (icon) icon.innerText = '🔑';
+        if (icon) icon.innerHTML = ICONS.AUTH;
         text.innerText = '로그인';
       }
     }
@@ -1449,12 +1626,11 @@
       updateHeaderAuthUI();
       closeLoginModal();
       triggerHaptic('success');
-      showToast(`🎉 ${nickname}님 환영합니다!`);
+      showToast(`${ICONS.MEMBER} <span>${nickname}님 환영합니다!</span>`);
 
       refreshCurrentSpotPopup();
       renderSpots();
     }
-    
     
     function createPureSvgMarkerImage(difficulty = 3) {
       const d = parseInt(difficulty, 10) || 3;
@@ -1478,9 +1654,9 @@
 
     const CYCLE_DIFF_LIST = [
       { key: 'ALL', label: '난이도', icon: ICONS.ROCK, cls: '' },
-      { key: 'EASY', label: '쉬움', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="color:#10b981; width:14px; height:14px; margin:0;"><path d="M14 6l6 12H4l5-8 3 4 2-8z" stroke="#10b981" stroke-width="2" fill="none"/></svg>`, cls: 'active-diff-easy' },
-      { key: 'MID', label: '보통', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="color:#f59e0b; width:14px; height:14px; margin:0;"><path d="M14 6l6 12H4l5-8 3 4 2-8z" stroke="#f59e0b" stroke-width="2" fill="none"/></svg>`, cls: 'active-diff-mid' },
-      { key: 'HARD', label: '어려움', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="color:#f43f5e; width:14px; height:14px; margin:0;"><path d="M14 6l6 12H4l5-8 3 4 2-8z" stroke="#f43f5e" stroke-width="2" fill="none"/></svg>`, cls: 'active-diff-hard' }
+      { key: 'EASY', label: '쉬움', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="color:#10b981; width:14px; height:14px; margin:0;"><polygon points="4 20 2 12 8 4 17 6 22 14 19 20 4 20" stroke="#10b981" stroke-width="2" fill="none"/></svg>`, cls: 'active-diff-easy' },
+      { key: 'MID', label: '보통', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="color:#f59e0b; width:14px; height:14px; margin:0;"><polygon points="4 20 2 12 8 4 17 6 22 14 19 20 4 20" stroke="#f59e0b" stroke-width="2" fill="none"/></svg>`, cls: 'active-diff-mid' },
+      { key: 'HARD', label: '어려움', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="color:#f43f5e; width:14px; height:14px; margin:0;"><polygon points="4 20 2 12 8 4 17 6 22 14 19 20 4 20" stroke="#f43f5e" stroke-width="2" fill="none"/></svg>`, cls: 'active-diff-hard' }
     ];
     let cycleDiffIdx = 0;
     function cycleDifficultyFilter() {
@@ -1496,13 +1672,13 @@
     }
 
     const CYCLE_STATUS_LIST = [
-      { key: 'ALL', label: '상태', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="width:14px; height:14px; margin:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="currentColor"/></svg>` },
-      { key: 'BOOKMARK', label: '찜', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="color:#f43f5e; width:14px; height:14px; margin:0;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>` },
-      { key: 'VISITED', label: '클리어', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="color:#38bdf8; width:14px; height:14px; margin:0;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7" stroke="currentColor" stroke-width="2" fill="none"/></svg>` },
-      { key: 'HOT', label: 'HOT', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="color:#f43f5e; width:14px; height:14px; margin:0;"><path d="M12 2c-.5 3-3 4.5-3 7.5A4.5 4.5 0 0013.5 14c3 0 4.5-2.5 4.5-4.5 0-3-4-5-4-7.5zM12 22a7 7 0 01-7-7c0-3.5 3-6 5-8 .5 2 2.5 3.5 4 3.5s3 1.5 3 4.5a7 7 0 01-7 7z" fill="currentColor"/></svg>` },
-      { key: 'NEW', label: 'NEW', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="color:#10b981; width:14px; height:14px; margin:0;"><polygon points="12 2 14.5 9.5 22 12 14.5 14.5 12 22 9.5 14.5 2 12 9.5 9.5 12 2" fill="currentColor"/></svg>` },
-      { key: 'SHORTEST', label: '최단', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="color:#10b981; width:14px; height:14px; margin:0;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor"/></svg>` },
-      { key: 'TRAVERSE', label: '종주', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="color:#a855f7; width:14px; height:14px; margin:0;"><path d="M4 18l5-7 4 4 6-9" stroke="currentColor" stroke-width="2" fill="none"/></svg>` }
+      { key: 'ALL', label: '상태', icon: ICONS.FAST },
+      { key: 'BOOKMARK', label: '찜', icon: ICONS.HEART },
+      { key: 'VISITED', label: '클리어', icon: ICONS.FLAG },
+      { key: 'HOT', label: 'HOT', icon: `<span style="color:#f43f5e; font-size:0.65rem; font-weight:900;">HOT</span>` },
+      { key: 'NEW', label: 'NEW', icon: `<span style="color:#10b981; font-size:0.65rem; font-weight:900;">NEW</span>` },
+      { key: 'SHORTEST', label: '최단', icon: ICONS.FAST },
+      { key: 'TRAVERSE', label: '종주', icon: ICONS.HIKING }
     ];
     let cycleStatusIdx = 0;
     function cycleStatusFilter() {
@@ -1518,14 +1694,14 @@
     }
 
     const CYCLE_TERRAIN_LIST = [
-      { key: 'ALL', label: '지형', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="width:14px; height:14px; margin:0;"><path d="M3 7h18M3 12h18M3 17h18M7 3v18M17 3v18" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>` },
-      { key: '데크', label: '데크', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="width:14px; height:14px; margin:0;"><path d="M3 7h18M3 12h18M3 17h18M7 3v18M17 3v18" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>` },
-      { key: '암릉', label: '암릉', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="width:14px; height:14px; margin:0;"><polygon points="4 20 2 12 8 4 17 6 22 14 19 20 4 20" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>` },
-      { key: '노지', label: '노지', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="width:14px; height:14px; margin:0;"><path d="M12 2L4 18h16L12 2z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>` },
-      { key: '섬', label: '섬', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="width:14px; height:14px; margin:0;"><path d="M2 19c4 0 5-2 10-2s6 2 10 2" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>` },
-      { key: '해변', label: '해변', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="width:14px; height:14px; margin:0;"><path d="M2 17c3 0 3-2 6-2s3 2 6 2 3-2 6-2M2 20c3 0 3-2 6-2s3 2 6 2 3-2 6-2" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>` },
-      { key: '계곡', label: '계곡', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="width:14px; height:14px; margin:0;"><path d="M3 4l7 16M21 4l-7 16" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>` },
-      { key: '동굴', label: '동굴', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="width:14px; height:14px; margin:0;"><path d="M4 19h16c0-7-3.5-13-8-13S4 12 4 19z" fill="currentColor"/></svg>` }
+      { key: 'ALL', label: '지형', icon: ICONS.DECK },
+      { key: '데크', label: '데크', icon: ICONS.DECK },
+      { key: '암릉', label: '암릉', icon: ICONS.ROCK },
+      { key: '노지', label: '노지', icon: ICONS.SOIL },
+      { key: '섬', label: '섬', icon: ICONS.ISLAND },
+      { key: '해변', label: '해변', icon: ICONS.BEACH },
+      { key: '계곡', label: '계곡', icon: ICONS.VALLEY },
+      { key: '동굴', label: '동굴', icon: ICONS.CAVE }
     ];
     let cycleTerrainIdx = 0;
     function cycleTerrainFilter() {
@@ -1538,6 +1714,36 @@
       document.getElementById('labelCycleTerrain').innerText = cur.label;
       currentHudFilterTerrain = cur.key;
       renderSpots();
+    }
+
+    // 🎨 정적 HTML 영역 벡터 바인딩 함수
+    function initStaticVectors() {
+      document.getElementById('sidebarCampIcon').innerHTML = ICONS.CAMP;
+      document.getElementById('btnSidebarSubmit').innerHTML = `${ICONS.BACKPACK}<span>제보</span>`;
+      document.getElementById('iconToolBackup').innerHTML = ICONS.BACKUP;
+      document.getElementById('iconToolRestore').innerHTML = ICONS.RESTORE;
+      
+      document.getElementById('tabIconRegion').innerHTML = ICONS.PIN;
+      document.getElementById('tabIconTerrain').innerHTML = ICONS.ROCK;
+      document.getElementById('tabIconCourse').innerHTML = ICONS.FAST;
+      document.getElementById('tabIconMy').innerHTML = ICONS.HEART;
+
+      document.getElementById('iconCycleDifficulty').innerHTML = ICONS.ROCK;
+      document.getElementById('iconCycleStatus').innerHTML = ICONS.FAST;
+      document.getElementById('iconCycleTerrain').innerHTML = ICONS.DECK;
+
+      document.getElementById('bannerPinIcon').innerHTML = ICONS.PIN;
+      document.getElementById('loginModalCampIcon').innerHTML = ICONS.CAMP;
+      document.getElementById('kakaoLoginIcon').innerHTML = ICONS.TALK;
+      document.getElementById('quickGuestIcon').innerHTML = ICONS.FAST;
+      document.getElementById('lntAlertTopIcon').innerHTML = ICONS.ALERT_CARD;
+      document.getElementById('lntProhibitIcon').innerHTML = ICONS.BAN_LNT;
+
+      document.getElementById('btnModalPinPickIcon').innerHTML = ICONS.PIN;
+      document.getElementById('btnModalElevIcon').innerHTML = ICONS.MOUNTAIN;
+      document.getElementById('radioFastIcon').innerHTML = ICONS.FAST;
+      document.getElementById('radioTraverseIcon').innerHTML = ICONS.HIKING;
+      document.getElementById('radioCampIcon').innerHTML = ICONS.CAMP;
     }
 
     function initMapEngine() {
@@ -1581,6 +1787,7 @@
       if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
         Kakao.init(KAKAO_APP_KEY);
       }
+      initStaticVectors();
       initMapEngine();
       updateHeaderAuthUI();
       if (window.innerWidth <= 768) {
@@ -1689,7 +1896,7 @@
     function locateUserPosition(e) {
       if (e) e.stopPropagation();
       triggerHaptic('medium');
-      if (!navigator.geolocation) { showToast('⚠️ 위치 서비스를 지원하지 않습니다.'); return; }
+      if (!navigator.geolocation) { showToast(`${ICONS.ALERT_CARD} <span>위치 서비스를 지원하지 않습니다.</span>`); return; }
       navigator.geolocation.getCurrentPosition((pos) => {
         if (!map) return;
         const loc = new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
@@ -1699,8 +1906,8 @@
           userLocationOverlay = new kakao.maps.CustomOverlay({ map, position: loc, content: el, zIndex: 9999 });
         } else { userLocationOverlay.setPosition(loc); userLocationOverlay.setMap(map); }
         map.setLevel(7, { animate: true }); map.panTo(loc);
-        showToast('📍 현재 내 위치로 이동했습니다');
-      }, () => showToast('⚠️ GPS 권한을 허용해주세요'));
+        showToast(`${ICONS.PIN} <span>현재 내 위치로 이동했습니다</span>`);
+      }, () => showToast(`${ICONS.ALERT_CARD} <span>GPS 권한을 허용해주세요</span>`));
     }
 
     function switchMasterTab(tabName) {
@@ -1733,7 +1940,7 @@
           container.appendChild(btn);
         });
       } else if (currentMasterTab === 'COURSE') {
-        [{ key: 'ALL', label: '전체' }, { key: 'SHORTEST', label: `${ICONS.SHORTEST}최단코스` }, { key: 'TRAVERSE', label: `${ICONS.TRAVERSE}종주코스` }, { key: 'HOT', label: `🔥HOT` }, { key: 'NEW', label: `✨NEW` }].forEach(c => {
+        [{ key: 'ALL', label: '전체' }, { key: 'SHORTEST', label: `${ICONS.FAST}최단코스` }, { key: 'TRAVERSE', label: `${ICONS.HIKING}종주코스` }, { key: 'HOT', label: `HOT` }, { key: 'NEW', label: `NEW` }].forEach(c => {
           const btn = document.createElement('button');
           btn.className = `filter-chip chip-status ${currentCourseFilter === c.key ? 'active' : ''}`;
           btn.innerHTML = c.label;
@@ -1847,9 +2054,9 @@
       const btnDiff = document.getElementById('btnCycleDifficulty');
       const btnStatus = document.getElementById('btnCycleStatus');
       const btnTerrain = document.getElementById('btnCycleTerrain');
-      if (btnDiff) { btnDiff.className = 'tower-toggle-btn'; document.getElementById('iconCycleDifficulty').innerHTML = `<svg viewBox="0 0 24 24" class="ui-icon" style="width:14px; height:14px; margin:0;"><path d="M14 6l6 12H4l5-8 3 4 2-8z" fill="currentColor"/></svg>`; document.getElementById('labelCycleDifficulty').innerText = '난이도'; }
-      if (btnStatus) { btnStatus.className = 'tower-toggle-btn'; document.getElementById('iconCycleStatus').innerHTML = `<svg viewBox="0 0 24 24" class="ui-icon" style="width:14px; height:14px; margin:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="currentColor"/></svg>`; document.getElementById('labelCycleStatus').innerText = '상태'; }
-      if (btnTerrain) { btnTerrain.className = 'tower-toggle-btn'; document.getElementById('iconCycleTerrain').innerHTML = `<svg viewBox="0 0 24 24" class="ui-icon" style="width:14px; height:14px; margin:0;"><path d="M3 7h18M3 12h18M3 17h18M7 3v18M17 3v18" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`; document.getElementById('labelCycleTerrain').innerText = '지형'; }
+      if (btnDiff) { btnDiff.className = 'tower-toggle-btn'; document.getElementById('iconCycleDifficulty').innerHTML = ICONS.ROCK; document.getElementById('labelCycleDifficulty').innerText = '난이도'; }
+      if (btnStatus) { btnStatus.className = 'tower-toggle-btn'; document.getElementById('iconCycleStatus').innerHTML = ICONS.FAST; document.getElementById('labelCycleStatus').innerText = '상태'; }
+      if (btnTerrain) { btnTerrain.className = 'tower-toggle-btn'; document.getElementById('iconCycleTerrain').innerHTML = ICONS.DECK; document.getElementById('labelCycleTerrain').innerText = '지형'; }
 
       clearSearchInput('pc', false);
       closeAllPopups();
@@ -1882,17 +2089,17 @@
     function getDroneStatusBadge(status) {
       if (!status) return '';
       const s = String(status).trim().toLowerCase();
-      if (s === 'ok' || s.includes('가능')) return `<span class="badge-drone drone-ok">🚁 드론OK</span>`;
-      if (s === 'warn' || s.includes('주의')) return `<span class="badge-drone drone-warn">⚠️ 드론주의</span>`;
-      if (s === 'no' || s.includes('금지')) return `<span class="badge-drone drone-no">🚫 드론금지</span>`;
+      if (s === 'ok' || s.includes('가능')) return `<span class="badge-drone drone-ok">${ICONS.DRONE} 드론OK</span>`;
+      if (s === 'warn' || s.includes('주의')) return `<span class="badge-drone drone-warn">${ICONS.DRONE} 드론주의</span>`;
+      if (s === 'no' || s.includes('금지')) return `<span class="badge-drone drone-no">${ICONS.DRONE} 드론금지</span>`;
       return '';
     }
 
     function getSpotStatusBadges(spot) {
       const sId = String(spot.id).trim();
       let html = '';
-      if (spot.courseType === '최단') html += `<span class="badge-status" style="background:rgba(16,185,129,0.16); color:#6ee7b7; border:1px solid rgba(16,185,129,0.35);">${ICONS.SHORTEST}최단</span>`;
-      else if (spot.courseType === '종주') html += `<span class="badge-status" style="background:rgba(168,85,247,0.16); color:#d8b4fe; border:1px solid rgba(168,85,247,0.35);">${ICONS.TRAVERSE}종주</span>`;
+      if (spot.courseType === '최단') html += `<span class="badge-status" style="background:rgba(16,185,129,0.16); color:#6ee7b7; border:1px solid rgba(16,185,129,0.35);">${ICONS.FAST}최단</span>`;
+      else if (spot.courseType === '종주') html += `<span class="badge-status" style="background:rgba(168,85,247,0.16); color:#d8b4fe; border:1px solid rgba(168,85,247,0.35);">${ICONS.HIKING}종주</span>`;
       if (getSpotViews(spot) >= 5) html += `<span class="badge-status badge-hot">HOT</span>`;
       if (spot.isNew) html += `<span class="badge-status badge-new">NEW</span>`;
       if (userBookmarks.has(sId)) html += `<span class="badge-status" style="background:#f43f5e; color:#fff;">${ICONS.HEART}찜</span>`;
@@ -1928,6 +2135,23 @@
       }
     }
 
+    // 🌡️ 온도별 3색 동적 수은 온도계 함수
+    function getDynamicTempSvg(temp) {
+      const t = Number(temp) || 18;
+      let color = '#fde047'; // 보통: 옐로우
+      let fill = '#fde047';
+
+      if (t <= 5) {
+        color = '#38bdf8'; // 추움: 아이스 블루
+        fill = '#38bdf8';
+      } else if (t >= 25) {
+        color = '#f43f5e'; // 더움: 비비드 레드
+        fill = '#f43f5e';
+      }
+
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:${color};"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/><circle cx="11.5" cy="17.5" r="2.2" fill="${fill}" stroke="none"/><path d="M11.5 8v6" stroke="${fill}" stroke-width="1.5"/></svg>`;
+    }
+
     const weatherCache = new Map();
     async function loadLiveWeatherForSpot(spotId, lat, lng) {
       if (!lat || !lng) return;
@@ -1949,15 +2173,17 @@
       } catch (e) {
         clearTimeout(timeoutId);
         const el = document.getElementById(`liveWeatherBox_${spotId}`);
-        if (el) el.innerHTML = `<span class="weather-chip" style="color:var(--text-muted);">⛅ 기상 연동 대기</span>`;
+        if (el) el.innerHTML = `<span class="weather-chip" style="color:var(--text-muted);">${ICONS.TEMP} 기상 연동 대기</span>`;
       }
     }
+
     function renderWeatherUI(spotId, wData) {
       const el = document.getElementById(`liveWeatherBox_${spotId}`);
       if (!el) return;
+      const tempSvg = getDynamicTempSvg(wData.temp);
       const windClass = wData.wind <= 3.5 ? 'weather-wind-safe' : (wData.wind <= 6.5 ? 'weather-wind-warn' : 'weather-wind-danger');
       const windText = wData.wind <= 3.5 ? '안전' : (wData.wind <= 6.5 ? '주의' : '강풍주의');
-      el.innerHTML = `<span class="weather-chip">🌡️ ${wData.temp}℃</span><span class="weather-chip ${windClass}">💨 바람 ${wData.wind}m/s (${windText})</span>`;
+      el.innerHTML = `<span class="weather-chip">${tempSvg} ${wData.temp}℃</span><span class="weather-chip ${windClass}">${ICONS.WIND} 바람 ${wData.wind}m/s (${windText})</span>`;
     }
 
     async function getElevation(lat, lng) {
@@ -1996,7 +2222,7 @@
         const coords = await searchCoordsByQuery(document.getElementById('modalInputEntry').value.trim() || document.getElementById('modalInputName').value.trim());
         if (coords) { lat = coords.lat; lng = coords.lng; modalPendingData.lat = lat; modalPendingData.lng = lng; }
       }
-      if (!lat || !lng) return alert('좌표가 없습니다. [📍 콕 찍기]로 먼저 위치를 지정해주세요.');
+      if (!lat || !lng) return alert('좌표가 없습니다. [콕 찍기]로 먼저 위치를 지정해주세요.');
       document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
     }
 
@@ -2027,6 +2253,8 @@
       setTimeout(() => updateLODLabels(), 220);
     }
 
+   // 🏷️ 카카오맵 마커 라벨 렌더러 [3단 세로 정렬 + 100% 투명 배경 + 윤곽선 5단계]
+    // 🏷️ 카카오맵 마커 라벨 렌더러 [1단/2단 위치핀 완전 제거 + 3단 산 벡터 유지]
     function updateLODLabels() {
       if (!map) return;
       const currentLevel = map.getLevel();
@@ -2076,14 +2304,14 @@
         if (!screenPoint) return;
 
         const isFullMode = isSelected || (currentLevel <= 7);
-        const labelWidth = isFullMode ? 82 : 54;
-        const labelHeight = isFullMode ? 46 : 20;
+        const labelWidth = isFullMode ? 90 : 58;
+        const labelHeight = isFullMode ? 54 : 22;
 
         const box = {
           left: screenPoint.x - labelWidth / 2,
           right: screenPoint.x + labelWidth / 2,
-          top: screenPoint.y - labelHeight - 40,
-          bottom: screenPoint.y - 40
+          top: screenPoint.y - labelHeight - 44,
+          bottom: screenPoint.y - 44
         };
 
         const hasCollision = occupiedBoxes.some(b => {
@@ -2106,7 +2334,7 @@
             row1Name = parenMatch[1].trim();
             if (!row2Sub) row2Sub = parenMatch[2].trim();
           }
-          const row3Elev = spot.elevation ? `⛰️ ${String(spot.elevation).replace(/m$/i,'')}m` : '';
+          const row3Elev = spot.elevation ? `${String(spot.elevation).replace(/m$/i,'')}m` : '';
           const isFav = userBookmarks.has(id);
           const isDone = userVisited.has(id);
 
@@ -2114,16 +2342,19 @@
           labelDiv.className = 'lod-marker-container';
 
           const labelTransform = isSelected 
-            ? 'transform: translateX(-50%) scale(1.08); filter: drop-shadow(0 0 8px rgba(56,189,248,0.95));' 
+            ? 'transform: translateX(-50%) scale(1.08);' 
             : 'transform: translateX(-50%);';
 
           labelDiv.innerHTML = `
-            ${isFav ? `<div class="marker-badge-corner badge-corner-fav">❤️</div>` : ''}
-            ${isDone ? `<div class="marker-badge-corner badge-corner-visited">🚩</div>` : ''}
-            <div class="lod-marker-label" style="position: absolute; bottom: 42px; left: 50%; ${labelTransform} display: flex; flex-direction: column; align-items: center; white-space: nowrap;">
-              <div class="lod-label-row-1 ${diffClass}">${isSelected ? '📍 ' : ''}${escapeHtml(row1Name)}</div>
+            ${isFav ? `<div class="marker-badge-corner badge-corner-fav" title="찜한 박지">${ICONS.HEART}</div>` : ''}
+            ${isDone ? `<div class="marker-badge-corner badge-corner-visited" title="클리어 박지">${ICONS.FLAG}</div>` : ''}
+            <div class="lod-marker-label" style="position: absolute; bottom: 44px; left: 50%; ${labelTransform}">
+              <!-- 1단: 산 이름 (위치핀 완전 삭제) -->
+              <div class="lod-label-row-1 ${diffClass}">${escapeHtml(row1Name)}</div>
+              <!-- 2단: 세부 서브포인트 (위치핀 완전 삭제) -->
               ${(isFullMode && row2Sub) ? `<div class="lod-label-row-2">${escapeHtml(row2Sub)}</div>` : ''}
-              ${(isFullMode && row3Elev) ? `<div class="lod-label-row-3">${escapeHtml(row3Elev)}</div>` : ''}
+              <!-- 3단: 해발 고도 (산 벡터 아이콘만 유지) -->
+              ${(isFullMode && row3Elev) ? `<div class="lod-label-row-3">${ICONS.MOUNTAIN}${escapeHtml(row3Elev)}</div>` : ''}
             </div>
           `;
           overlay.setContent(labelDiv);
@@ -2189,13 +2420,13 @@
         userBookmarks.delete(sId);
         isNowBookmarked = false;
         triggerHaptic('light');
-        showToast('🤍 찜 목록에서 해제되었습니다.');
+        showToast(`${ICONS.HEART} <span>찜 목록에서 해제되었습니다.</span>`);
       } else {
         bList.add(sId);
         userBookmarks.add(sId);
         isNowBookmarked = true;
         triggerHaptic('success');
-        showToast('❤️ 찜 목록에 추가되었습니다!');
+        showToast(`${ICONS.HEART} <span>찜 목록에 추가되었습니다!</span>`);
       }
 
       localStorage.setItem('okbm_bookmarks', JSON.stringify([...bList]));
@@ -2203,20 +2434,20 @@
       document.querySelectorAll('.btn-action-fav').forEach(btn => {
         if (isNowBookmarked) {
           btn.classList.add('bookmarked');
-          btn.innerHTML = '❤️ 찜됨';
+          btn.innerHTML = `${ICONS.HEART} 찜됨`;
         } else {
           btn.classList.remove('bookmarked');
-          btn.innerHTML = '🤍 찜하기';
+          btn.innerHTML = `${ICONS.HEART} 찜하기`;
         }
       });
 
       document.querySelectorAll(`#spotItem_${sId} .btn-card-quick:first-child`).forEach(btn => {
         if (isNowBookmarked) {
           btn.classList.add('active-fav');
-          btn.innerHTML = '❤️ 찜';
+          btn.innerHTML = `${ICONS.HEART} 찜`;
         } else {
           btn.classList.remove('active-fav');
-          btn.innerHTML = '🤍 찜';
+          btn.innerHTML = `${ICONS.HEART} 찜`;
         }
       });
 
@@ -2224,7 +2455,7 @@
       updateLODLabels();
     }
 
-    function toggleUserVisited(spotId, e = null) {
+   function toggleUserVisited(spotId, e = null) {
       if (e) { e.preventDefault(); e.stopPropagation(); }
       const sId = String(spotId || (currentActiveSpot ? currentActiveSpot.id : '')).trim();
       if (!sId) return;
@@ -2238,7 +2469,7 @@
         userVisited.delete(sId);
         isNowVisited = false;
         triggerHaptic('light');
-        showToast('🚩 클리어 목록에서 제외되었습니다.');
+        showToast(`${ICONS.FLAG} <span>클리어 목록에서 제외되었습니다.</span>`);
       } else {
         vList.add(sId);
         bList.delete(sId);
@@ -2246,26 +2477,44 @@
         userBookmarks.delete(sId);
         isNowVisited = true;
         triggerHaptic('success');
-        showToast('🚩 박지 정복 클리어! 🏕️');
+        showToast(`${ICONS.FLAG} <span>박지 정복 클리어!</span>`);
       }
 
       localStorage.setItem('okbm_visited', JSON.stringify([...vList]));
       localStorage.setItem('okbm_bookmarks', JSON.stringify([...bList]));
 
+      // 1. 정보창 내부 다녀왔음/클리어 버튼 상태 갱신
       document.querySelectorAll('.btn-action-visited').forEach(btn => {
         if (isNowVisited) {
           btn.classList.add('visited');
-          btn.innerHTML = '🚩 클리어';
+          btn.innerHTML = `${ICONS.FLAG} 클리어`;
         } else {
           btn.classList.remove('visited');
-          btn.innerHTML = '▶ 다녀왔음';
+          btn.innerHTML = `▶ 다녀왔음`;
         }
       });
 
+      // 2. 박지 목록 카드의 퀵 클리어 버튼 색상 즉시 갱신 (파란색 active-done)
+      document.querySelectorAll(`#spotItem_${sId} .btn-card-quick`).forEach((btn) => {
+        if (btn.innerText.includes('클리어')) {
+          if (isNowVisited) {
+            btn.classList.add('active-done');
+          } else {
+            btn.classList.remove('active-done');
+          }
+        }
+      });
+
+      // 3. 클리어 시 찜 상태 해제 동기화
       if (isNowVisited) {
         document.querySelectorAll('.btn-action-fav').forEach(btn => {
           btn.classList.remove('bookmarked');
-          btn.innerHTML = '🤍 찜하기';
+          btn.innerHTML = `${ICONS.HEART} 찜하기`;
+        });
+        document.querySelectorAll(`#spotItem_${sId} .btn-card-quick`).forEach(btn => {
+          if (btn.innerText.includes('찜')) {
+            btn.classList.remove('active-fav');
+          }
         });
       }
 
@@ -2278,7 +2527,7 @@
       triggerHaptic('light');
       userMemos[String(spotId).trim()] = text.trim();
       localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
-      showToast('📝 나만의 메모가 저장되었습니다.');
+      showToast(`${ICONS.MEMO} <span>나만의 메모가 저장되었습니다.</span>`);
     }
 
     function shareSpotCard(spotId) {
@@ -2287,8 +2536,8 @@
       triggerHaptic('light');
       const titleName = spot.fullName || `${spot.spot_main} (${spot.spot_sub || ''})`;
       const shareUrl = `${window.location.origin}${window.location.pathname}?spot=${encodeURIComponent(spot.spot_main || spot.name)}`;
-      if (navigator.share) { navigator.share({ title: `🏕️ [낭만백패킹] ${titleName}`, url: shareUrl }).catch(() => {}); }
-      else { copyTextToClipboard(shareUrl, '📋 박지 공유 링크가 복사되었습니다!'); }
+      if (navigator.share) { navigator.share({ title: `[낭만백패킹] ${titleName}`, url: shareUrl }).catch(() => {}); }
+      else { copyTextToClipboard(shareUrl, '박지 공유 링크가 복사되었습니다!'); }
     }
 
     const entryCoordsCache = new Map();
@@ -2349,18 +2598,18 @@
         currentGpxPolyline.setMap(null);
         currentGpxPolyline = null;
         activeGpxSpotId = null;
-        showToast('🥾 등산로 코스선 표시를 해제했습니다.');
+        showToast(`${ICONS.HIKING} <span>등산로 코스선 표시를 해제했습니다.</span>`);
         refreshCurrentSpotPopup();
         return;
       }
 
       if (!gpxUrl || !gpxUrl.trim()) {
-        showToast('⚠️ 해당 박지의 GPX 등산로 데이터가 준비 중입니다.');
+        showToast(`${ICONS.ALERT_CARD} <span>해당 박지의 GPX 등산로 데이터가 준비 중입니다.</span>`);
         return;
       }
 
       try {
-        showToast('⏳ 등산로 GPX 경로를 불러오는 중...');
+        showToast(`${ICONS.HIKING} <span>등산로 GPX 경로를 불러오는 중...</span>`);
         const res = await fetch(gpxUrl);
         if (!res.ok) throw new Error('GPX fetch failed');
         const gpxText = await res.text();
@@ -2369,7 +2618,7 @@
         const trkpts = xml.getElementsByTagName('trkpt');
 
         if (!trkpts || trkpts.length === 0) {
-          showToast('⚠️ GPX 트랙 포인트가 없습니다.');
+          showToast(`${ICONS.ALERT_CARD} <span>GPX 트랙 포인트가 없습니다.</span>`);
           return;
         }
 
@@ -2388,10 +2637,10 @@
 
         activeGpxSpotId = sId;
         triggerHaptic('medium');
-        showToast('🥾 지도에 등산로 주황색 코스선이 표시되었습니다!');
+        showToast(`${ICONS.HIKING} <span>지도에 등산로 주황색 코스선이 표시되었습니다!</span>`);
         refreshCurrentSpotPopup();
       } catch (err) {
-        showToast('⚠️ GPX 파일을 불러오지 못했습니다.');
+        showToast(`${ICONS.ALERT_CARD} <span>GPX 파일을 불러오지 못했습니다.</span>`);
       }
     }
 
@@ -2420,6 +2669,7 @@
       return { view, access, pitch, tip, hasParsed };
     }
 
+   // 📄 상세창 템플릿 엔진 (일출 3번 / 일몰 4번 / 메모 6번 만년필 / 코스 7번 점선지도 적용)
     function generateDetailContentHtml(spot, isMobileSheet = false) {
       const sId = String(spot.id).trim();
       const isMember = isUserLoggedIn();
@@ -2432,6 +2682,9 @@
         if (!cleanSubName) cleanSubName = parenMatch[2].trim();
       }
       if (cleanSubName && cleanMainName.includes(cleanSubName)) cleanSubName = '';
+
+      // 🏛️ 구글 시트 C열 연동 시군구/지역 명칭 (없을 시 region으로 대체)
+      const cityName = spot.cityName ? String(spot.cityName).trim() : (spot.region ? String(spot.region).trim() : '');
 
       const tName = spot.trailhead_name || `${cleanMainName} 들머리`;
       const rawAddr = spot.trailhead_addr || spot.entryPoint || `${cleanMainName} 인근 주차장`;
@@ -2459,8 +2712,9 @@
         <div style="position: relative; width: 100%;">
           <div class="sheet-title-row" onclick="smoothCenterMapOnSpot(${spot.lat}, ${spot.lng})" title="지도를 박지 중심으로 이동">
             <div class="compact-title">
+              ${cityName ? `<span class="city-badge-colored">${escapeHtml(cityName)}</span>` : ''}
               <span class="${diffClass}">${escapeHtml(cleanMainName)}</span>
-              ${spot.elevation ? '<span style="font-size:0.76rem; color:#86efac; font-weight:700;">(⛰️ ' + escapeHtml(spot.elevation) + ')</span>' : ''}
+              ${spot.elevation ? '<span style="font-size:0.76rem; color:#86efac; font-weight:700; display:inline-flex; align-items:center; gap:2px;">(' + ICONS.MOUNTAIN + escapeHtml(spot.elevation) + ')</span>' : ''}
               ${getSpotStatusBadges(spot)}
             </div>
             <div style="display:flex; align-items:center; gap:6px;" onclick="event.stopPropagation();">${adminTopActions}${closeBtn}</div>
@@ -2468,7 +2722,7 @@
 
           ${cleanSubName ? `
             <div style="margin: 2px 0 1px 0;">
-              <span class="badge-sub-point">📍 ${escapeHtml(cleanSubName)}</span>
+              <span class="badge-sub-point">${ICONS.PIN} ${escapeHtml(cleanSubName)}</span>
             </div>` : ''}
 
           <div style="display:flex; flex-direction:column; gap:2px; margin: 2px 0;">
@@ -2477,34 +2731,34 @@
               ${spot.droneStatus ? getDroneStatusBadge(spot.droneStatus) : ''}
             </div>
             <div class="spot-live-weather-bar" style="margin:0;">
-              ${sunset ? `<span class="weather-chip" style="color:#fed7aa; border-color:rgba(245,158,11,0.35);">🌅 일몰 ${sunset}</span>` : ''}
-              <div id="liveWeatherBox_${spot.id}" style="display:inline-flex; gap:4px;"><span class="weather-chip">⛅ 기상 연동 완료</span></div>
+              ${sunset ? `<span class="weather-chip" style="color:#fed7aa; border-color:rgba(245,158,11,0.35);">${ICONS.SUNSET} 일몰 ${sunset}</span>` : ''}
+              <div id="liveWeatherBox_${spot.id}" style="display:inline-flex; gap:4px;"><span class="weather-chip">${ICONS.TEMP} 기상 연동 완료</span></div>
               <div class="spot-coords-text" style="font-size:0.65rem; padding:1px 5px;">${ICONS.PIN} ${spot.lat}, ${spot.lng}</div>
             </div>
           </div>
 
           <div class="summary-block-wrap" style="margin-top:2px;">
             <div class="summary-card summary-card-view">
-              <div class="summary-card-title" style="color:#38bdf8;">🌅 [뷰/특징]</div>
+              <div class="summary-card-title" style="color:#38bdf8;">${ICONS.VIEW_CARD} [뷰/특징]</div>
               <div>${escapeHtml(summary.view || spot.desc || '탁 트인 자연 경관을 즐길 수 있는 추천 박지.')}</div>
             </div>
           </div>
 
           ${!isMember ? `
             <div class="guest-member-lock-card">
-              <div style="font-size:0.88rem; font-weight:800; color:#fde047;">🔒 낭만 회원 전용 정보 안내</div>
+              <div style="font-size:0.88rem; font-weight:800; color:#fde047; display:flex; align-items:center; gap:4px;">${ICONS.LOCK} 낭만 회원 전용 정보 안내</div>
               <div style="font-size:0.72rem; color:#cbd5e1; line-height:1.45;">
                 소중한 박지 보존과 클린 백패킹 문화를 위해<br><strong>[찜/클리어/들머리 내비/2~4단계 실전 팁]</strong>은 로그인 후 공개됩니다.
               </div>
               <button type="button" class="btn-quick-login-unlock" style="width:100%; padding:9px; font-size:0.80rem;" onclick="triggerHaptic('light'); openLoginModal();">
-                🔑 1초 간편 로그인하고 즉시 확인하기
+                ${ICONS.AUTH} 1초 간편 로그인하고 즉시 확인하기
               </button>
             </div>
           ` : `
             <div class="user-action-grid-3">
-              <button type="button" class="btn-action-3 btn-action-fav ${isFav ? 'bookmarked' : ''}" onclick="toggleUserBookmark('${sId}', event)">${isFav ? `❤️ 찜됨` : `🤍 찜하기`}</button>
-              <button type="button" class="btn-action-3 btn-action-visited ${isDone ? 'visited' : ''}" onclick="toggleUserVisited('${sId}', event)">${isDone ? `🚩 클리어` : `▶ 다녀왔음`}</button>
-              <button type="button" class="btn-action-3 btn-action-share" onclick="shareSpotCard('${sId}')">📤 공유</button>
+              <button type="button" class="btn-action-3 btn-action-fav ${isFav ? 'bookmarked' : ''}" onclick="toggleUserBookmark('${sId}', event)">${ICONS.HEART} ${isFav ? `찜됨` : `찜하기`}</button>
+              <button type="button" class="btn-action-3 btn-action-visited ${isDone ? 'visited' : ''}" onclick="toggleUserVisited('${sId}', event)">${ICONS.FLAG} ${isDone ? `클리어` : `다녀왔음`}</button>
+              <button type="button" class="btn-action-3 btn-action-share" onclick="shareSpotCard('${sId}')">${ICONS.SHARE} 공유</button>
             </div>
 
             <div class="entry-module-container">
@@ -2512,23 +2766,23 @@
                 <a href="javascript:void(0)" onclick="navigateToNaviApp('kakao', '${escapeHtml(cleanMainName)}', '${cleanAddress}', ${spot.lat}, ${spot.lng})" class="entry-address-2line">${ICONS.NAV} ${escapeHtml(tName)}: ${cleanAddress} ↗</a>
                 <button type="button" class="btn-copy-entry" onclick="copyTextToClipboard('${cleanAddress}')">${ICONS.COPY} 복사</button>
               </div>
-              ${guide ? `<div class="entry-guide-chip">💡 길 안내: ${escapeHtml(guide)}</div>` : ''}
+              ${guide ? `<div class="entry-guide-chip">${ICONS.TIP} 길 안내: ${escapeHtml(guide)}</div>` : ''}
               <div class="entry-row-2">
-                <button type="button" class="navi-btn-cell cell-kakao" onclick="navigateToNaviApp('kakao', '${escapeHtml(cleanMainName)}', '${cleanAddress}', ${spot.lat}, ${spot.lng})">🟡 카카오</button>
-                <button type="button" class="navi-btn-cell cell-tmap" onclick="navigateToNaviApp('tmap', '${escapeHtml(cleanMainName)}', '${cleanAddress}', ${spot.lat}, ${spot.lng})">🔵 티맵</button>
-                <button type="button" class="navi-btn-cell cell-naver" onclick="navigateToNaviApp('naver', '${escapeHtml(cleanMainName)}', '${cleanAddress}', ${spot.lat}, ${spot.lng})">🟢 네이버</button>
-                <button type="button" class="navi-btn-cell cell-reserve" onclick="navigateToNaviApp('roadview', '${escapeHtml(cleanMainName)}', '${cleanAddress}', ${spot.lat}, ${spot.lng})">📸 로드뷰</button>
+                <button type="button" class="navi-btn-cell cell-kakao" onclick="navigateToNaviApp('kakao', '${escapeHtml(cleanMainName)}', '${cleanAddress}', ${spot.lat}, ${spot.lng})">카카오</button>
+                <button type="button" class="navi-btn-cell cell-tmap" onclick="navigateToNaviApp('tmap', '${escapeHtml(cleanMainName)}', '${cleanAddress}', ${spot.lat}, ${spot.lng})">티맵</button>
+                <button type="button" class="navi-btn-cell cell-naver" onclick="navigateToNaviApp('naver', '${escapeHtml(cleanMainName)}', '${cleanAddress}', ${spot.lat}, ${spot.lng})">네이버</button>
+                <button type="button" class="navi-btn-cell cell-reserve" onclick="navigateToNaviApp('roadview', '${escapeHtml(cleanMainName)}', '${cleanAddress}', ${spot.lat}, ${spot.lng})">${ICONS.ROADVIEW} 로드뷰</button>
               </div>
 
               ${!isUnlocked ? `
                 <div class="entry-lock-overlay-tight" id="entryLockOverlay_${sId}" onclick="triggerSpotUnlock('${sId}', '${escapeHtml(targetUnlockLink)}')">
-                  <span class="lock-main-text">🔒 클릭 시 들머리 주소 및 4대 내비 공개</span>
+                  <span class="lock-main-text">${ICONS.LOCK} 클릭 시 들머리 주소 및 4대 내비 공개</span>
                   <span class="lock-sub-text">K-LNT 서약 후 상세 목적지와 길안내가 열립니다</span>
                 </div>` : ''}
 
               ${spot.gpxUrl ? `
                 <button type="button" class="btn-gpx-track-toggle ${isGpxActive ? 'active' : ''}" onclick="toggleGpxTrack('${sId}', '${escapeHtml(spot.gpxUrl)}')">
-                  ${isGpxActive ? '🥾 지도에서 등산로 선 지우기 ✕' : '🥾 등산로 GPX 코스선 지도에 표시'}
+                  ${ICONS.HIKING} ${isGpxActive ? '지도에서 등산로 선 지우기 ✕' : '등산로 GPX 코스선 지도에 표시'}
                 </button>
               ` : ''}
             </div>
@@ -2536,17 +2790,17 @@
             <div class="summary-block-wrap">
               ${summary.access ? `
                 <div class="summary-card summary-card-access">
-                  <div class="summary-card-title" style="color:#2dd4bf;">🥾 [접근/코스]</div>
+                  <div class="summary-card-title" style="color:#2dd4bf;">${ICONS.TRAIL_CARD} [접근/코스]</div>
                   <div>${escapeHtml(summary.access)}</div>
                 </div>` : ''}
               ${summary.pitch ? `
                 <div class="summary-card summary-card-pitch">
-                  <div class="summary-card-title" style="color:#10b981;">⛺ [박지/피칭]</div>
+                  <div class="summary-card-title" style="color:#10b981;">${ICONS.PITCH_CARD} [박지/피칭]</div>
                   <div>${escapeHtml(summary.pitch)}</div>
                 </div>` : ''}
               ${summary.tip ? `
                 <div class="summary-card summary-card-tip">
-                  <div class="summary-card-title" style="color:#f59e0b;">⚠️ [주의/팁]</div>
+                  <div class="summary-card-title" style="color:#f59e0b;">${ICONS.ALERT_CARD} [주의/팁]</div>
                   <div>${escapeHtml(summary.tip)}</div>
                 </div>` : ''}
             </div>
@@ -2554,8 +2808,8 @@
 
           <div class="spot-action-line">
             ${(spot.youtubeUrls || []).slice(0, 2).map((url, i) => `<a href="${escapeHtml(cleanYouTubeUrl(url))}" target="_blank" rel="noopener noreferrer" class="link-btn btn-yt" onclick="triggerHaptic('light');">▶ YouTube 영상${(spot.youtubeUrls.length > 1 ? ` (${i + 1})` : '')}</a>`).join('')}
-            ${(spot.blogUrls || []).slice(0, 2).map((url, i) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="link-btn btn-blog" onclick="triggerHaptic('light');">📝 블로그 후기${(spot.blogUrls.length > 1 ? ` (${i + 1})` : '')}</a>`).join('')}
-            <a href="${escapeHtml(spot.authorSnsUrl || 'https://instagram.com/oklionnature')}" target="_blank" rel="noopener noreferrer" class="link-btn btn-insta" title="등록자 프로필 / SNS" onclick="triggerHaptic('light');"><span>📷 등록자 프로필</span></a>
+            ${(spot.blogUrls || []).slice(0, 2).map((url, i) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="link-btn btn-blog" onclick="triggerHaptic('light');">${ICONS.MEMO} 블로그 후기${(spot.blogUrls.length > 1 ? ` (${i + 1})` : '')}</a>`).join('')}
+            <a href="${escapeHtml(spot.authorSnsUrl || 'https://instagram.com/oklionnature')}" target="_blank" rel="noopener noreferrer" class="link-btn btn-insta" title="등록자 프로필 / SNS" onclick="triggerHaptic('light');"><span>${ICONS.ROADVIEW} 등록자 프로필</span></a>
           </div>
 
           <div class="user-private-memo-box">
@@ -2730,7 +2984,7 @@
 
       return `
         <div class="comments-section" onclick="event.stopPropagation();">
-          <div class="comments-title"><span>💬 출정톡 & 별점 (${cList.length})</span></div>
+          <div class="comments-title"><span style="display:flex; align-items:center; gap:4px;">${ICONS.TALK} 출정톡 & 별점 (${cList.length})</span></div>
           <ul class="comments-list">${listHtml}</ul>
           
           <div class="comment-form">
@@ -2776,7 +3030,7 @@
       localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
       refreshCurrentSpotPopup();
       renderSpots();
-      showToast('💬 출정톡이 등록되었습니다!');
+      showToast(`${ICONS.TALK} <span>출정톡이 등록되었습니다!</span>`);
       
       try {
         await fetch(GAS_API_URL, {
@@ -2881,18 +3135,21 @@
           if (!row2Sub) row2Sub = parenMatch[2].trim();
         }
 
-        const row3Elev = spot.elevation ? `⛰️ ${String(spot.elevation).replace(/m$/i,'')}m` : '';
+        const row3Elev = spot.elevation ? `${String(spot.elevation).replace(/m$/i,'')}m` : '';
         const diffClass = getSpotDiffColorClass(spot.difficulty);
 
         const labelDiv = document.createElement('div');
         labelDiv.className = 'lod-marker-container';
         labelDiv.innerHTML = `
-          ${isFav ? `<div class="marker-badge-corner badge-corner-fav" title="찜한 박지">❤️</div>` : ''}
-          ${isDone ? `<div class="marker-badge-corner badge-corner-visited" title="클리어 박지">🚩</div>` : ''}
+          ${isFav ? `<div class="marker-badge-corner badge-corner-fav" title="찜한 박지">${ICONS.HEART}</div>` : ''}
+          ${isDone ? `<div class="marker-badge-corner badge-corner-visited" title="클리어 박지">${ICONS.FLAG}</div>` : ''}
           <div class="lod-marker-label">
+            <!-- 1단: 산 이름 -->
             <div class="lod-label-row-1 ${diffClass}">${escapeHtml(row1Name)}</div>
-            ${row2Sub ? `<div class="lod-label-row-2">${escapeHtml(row2Sub)}</div>` : ''}
-            ${row3Elev ? `<div class="lod-label-row-3">${row3Elev}</div>` : ''}
+            <!-- 2단: 세부 서브포인트 -->
+            ${row2Sub ? `<div class="lod-label-row-2">${ICONS.PIN}${escapeHtml(row2Sub)}</div>` : ''}
+            <!-- 3단: 해발 고도 -->
+            ${row3Elev ? `<div class="lod-label-row-3">${ICONS.MOUNTAIN}${row3Elev}</div>` : ''}
           </div>`;
 
         if (spotLabelOverlayMap.has(sId)) {
@@ -2985,7 +3242,7 @@
       if (isAdminMode) {
         const adminHeaderDiv = document.createElement('div');
         adminHeaderDiv.style.cssText = "padding:8px 14px; background:rgba(16,185,129,0.15); border-bottom:1px solid rgba(16,185,129,0.3); font-size:0.78rem; color:#6ee7b7; font-weight:bold;";
-        adminHeaderDiv.innerText = `⚡ [관리자 검수] 최신 등록순 목록 (${visibleCount}개)`;
+        adminHeaderDiv.innerHTML = `${ICONS.FAST} [관리자 검수] 최신 등록순 목록 (${visibleCount}개)`;
         fragment.appendChild(adminHeaderDiv);
         displaySpots.forEach(spot => { 
           const mk = spotNativeMarkerMap.get(String(spot.id).trim());
@@ -2996,14 +3253,14 @@
           const items = grouped[regionKey];
           if (!items || items.length === 0) return;
           
-          const wasOpen = currentlyOpenRegions.has(regionKey) || currentlyOpenRegions.has(`${ICONS.PIN}${regionKey}`);
+          const wasOpen = currentlyOpenRegions.has(regionKey) || currentlyOpenRegions.has(`${regionKey}`);
           const shouldBeOpen = wasOpen || (currentMasterTab === 'REGION' && currentRegionFilter === regionKey);
 
           const groupDiv = document.createElement('div');
           groupDiv.className = 'region-group';
           const groupTitle = document.createElement('div');
           groupTitle.className = 'region-group-title';
-          groupTitle.innerHTML = `<span>${ICONS.PIN}${regionKey}</span><span style="color:var(--text-muted); font-size:0.74rem;">${items.length}개 ${shouldBeOpen ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}</span>`;
+          groupTitle.innerHTML = `<span style="display:flex; align-items:center; gap:4px;">${ICONS.PIN}${regionKey}</span><span style="color:var(--text-muted); font-size:0.74rem;">${items.length}개 ${shouldBeOpen ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}</span>`;
           if (shouldBeOpen) groupTitle.style.borderLeftColor = '#0f766e';
           
           const groupItemsContainer = document.createElement('div');
@@ -3027,34 +3284,88 @@
       updateSmartResetButtons();
     }
 
-    function createSpotCardElement(spot) {
+   function createSpotCardElement(spot) {
       const sId = String(spot.id).trim();
-      const isMember = isUserLoggedIn();
       const isFav = userBookmarks.has(sId), isDone = userVisited.has(sId);
       const diffClass = getSpotDiffColorClass(spot.difficulty);
       const summary = parseStructuredSummary(spot.desc_summary || spot.desc);
-      const firstLine = summary.view || spot.desc || '';
-      const { navAddress } = parseEntryPoint(spot.trailhead_addr || spot.entryPoint);
+      
+      const descText = summary.view || spot.desc_summary || spot.desc || '탁 트인 자연 경관을 즐길 수 있는 추천 박지.';
+      const rawName = (spot.spot_main || spot.name || '').trim();
+      const cityName = spot.cityName ? String(spot.cityName).trim() : '';
+
+      // 🏷️ 지형 태그 중복 제거 및 메인 1개 / 보조 지형 분리
+      const uniqueTerrains = [];
+      const tSet = new Set();
+      (spot.terrain || []).forEach(t => {
+        let key = '';
+        if (t.includes('데크')) key = '데크';
+        else if (t.includes('암릉') || t.includes('바위') || t.includes('돌')) key = '암릉';
+        else if (t.includes('노지') || t.includes('흙')) key = '노지';
+        else if (t.includes('해변') || t.includes('모래')) key = '해변';
+        else if (t.includes('섬')) key = '섬';
+        else if (t.includes('계곡')) key = '계곡';
+        else if (t.includes('동굴')) key = '동굴';
+        
+        if (key && !tSet.has(key)) {
+          tSet.add(key);
+          uniqueTerrains.push(key);
+        }
+      });
+
+      const getTerrainTagHtml = (name) => {
+        if (name === '데크') return `<span class="meta-tag tag-terrain-deck">${ICONS.DECK}데크</span>`;
+        if (name === '암릉') return `<span class="meta-tag tag-terrain-rock">${ICONS.ROCK}암릉</span>`;
+        if (name === '노지') return `<span class="meta-tag tag-terrain-soil">${ICONS.SOIL}노지</span>`;
+        if (name === '해변') return `<span class="meta-tag tag-terrain-beach">${ICONS.BEACH}해변</span>`;
+        if (name === '섬') return `<span class="meta-tag tag-terrain-island">${ICONS.ISLAND}섬</span>`;
+        if (name === '계곡') return `<span class="meta-tag tag-terrain-valley">${ICONS.VALLEY}계곡</span>`;
+        if (name === '동굴') return `<span class="meta-tag tag-terrain-rock">${ICONS.CAVE}동굴</span>`;
+        return '';
+      };
+
+      const mainTerrainHtml = uniqueTerrains.length > 0 ? getTerrainTagHtml(uniqueTerrains[0]) : '';
+      const subTerrainsHtml = uniqueTerrains.slice(1).map(t => getTerrainTagHtml(t)).join('');
 
       const li = document.createElement('div');
-      li.className = 'spot-item'; li.id = `spotItem_${spot.id}`;
+      li.className = 'spot-item'; 
+      li.id = `spotItem_${spot.id}`;
       li.innerHTML = `
-        <div class="spot-header-row">
-          <span class="spot-name-colored ${diffClass}">${escapeHtml(spot.spot_main || spot.name)}</span>
-          ${spot.spot_sub ? `<span class="badge-sub-point" style="font-size:0.72rem; padding:1.5px 6px;">${escapeHtml(spot.spot_sub)}</span>` : ''}
-          ${spot.elevation ? `<span style="font-size:0.74rem; color:#86efac; font-weight:normal;">(${escapeHtml(spot.elevation)})</span>` : ''}
+        <!-- [1열] 민트색 지역 뱃지 + 산이름 2단계 확대 + 세부포인트 + 고도 -->
+        <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; width:100%;">
+          ${cityName ? `<span class="city-badge-colored">${escapeHtml(cityName)}</span>` : ''}
+          <span class="spot-name-colored ${diffClass}" style="font-size:1.02rem; font-weight:900; letter-spacing:-0.02em;">${escapeHtml(rawName)}</span>
+          ${spot.spot_sub ? `<span class="badge-sub-point" style="font-size:0.70rem; padding:1px 5px;">${escapeHtml(spot.spot_sub)}</span>` : ''}
+          ${spot.elevation ? `<span style="font-size:0.70rem; color:#86efac; font-weight:700; display:inline-flex; align-items:center; gap:2px;">(${ICONS.MOUNTAIN}${escapeHtml(spot.elevation)})</span>` : ''}
         </div>
-        <div class="spot-tags-row">${getSpotStatusBadges(spot)}${getMetaBadgesHtml(spot)}</div>
-        <div class="spot-card-quick-actions" onclick="event.stopPropagation();">
-          <button type="button" class="btn-card-quick ${isFav ? 'active-fav' : ''}" onclick="toggleUserBookmark('${sId}', event)">${isFav ? '❤️' : '🤍'} 찜</button>
-          <button type="button" class="btn-card-quick ${isDone ? 'active-done' : ''}" onclick="toggleUserVisited('${sId}', event)">🚩 클리어</button>
-          <button class="btn-edit" style="display:${isAdminMode ? 'inline-block' : 'none'};" onclick="editSpotById(event, '${spot.id}')">수정</button>
-          <button class="btn-del" style="display:${isAdminMode ? 'inline-block' : 'none'};" onclick="deleteSpotById(event, '${spot.id}')">삭제</button>
+
+        <!-- [2열 - 1행] [코스/상태 + 대표지형 1개] ──────── [우측 찜/클리어/수정/삭제 버튼 고정] -->
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:5px; margin-top:3px; width:100%;">
+          <div style="display:flex; align-items:center; gap:3px; flex-wrap:nowrap; overflow:hidden;">
+            ${getSpotStatusBadges(spot)}
+            ${mainTerrainHtml}
+          </div>
+          <div class="spot-card-quick-actions" style="display:flex; align-items:center; gap:3px; flex-shrink:0; margin-left:auto;" onclick="event.stopPropagation();">
+            <button type="button" class="btn-card-quick ${isFav ? 'active-fav' : ''}" onclick="toggleUserBookmark('${sId}', event)">${ICONS.HEART} 찜</button>
+            <button type="button" class="btn-card-quick ${isDone ? 'active-done' : ''}" onclick="toggleUserVisited('${sId}', event)">${ICONS.FLAG} 클리어</button>
+            <button class="btn-edit" style="display:${isAdminMode ? 'inline-block' : 'none'};" onclick="editSpotById(event, '${spot.id}')">수정</button>
+            <button class="btn-del" style="display:${isAdminMode ? 'inline-block' : 'none'};" onclick="deleteSpotById(event, '${spot.id}')">삭제</button>
+          </div>
         </div>
-        <div style="font-size:0.71rem; color:#7dd3fc; margin-top:2px;">
-          ${ICONS.NAV} ${isMember ? escapeHtml(spot.trailhead_name ? `${spot.trailhead_name} (${navAddress})` : navAddress) : '🔒 들머리 상세주소 (회원 공개)'}
+
+        <!-- [2열 - 2행] [보조지형들 + 난이도 + 거리] -->
+        <div style="display:flex; align-items:center; gap:3px; flex-wrap:wrap; width:100%;">
+          ${subTerrainsHtml}
+          <span class="meta-tag tag-diff">난이도 ${'★'.repeat(Math.min(5, Math.max(1, parseInt(spot.difficulty, 10) || 3)))}</span>
+          ${spot.distance?.trim() ? `<span class="meta-tag tag-dist">${ICONS.DIST} ${escapeHtml(spot.distance.trim())}</span>` : ''}
         </div>
-        ${firstLine ? `<div class="spot-desc-single" title="${escapeHtml(firstLine)}">🌅 ${escapeHtml(firstLine)}</div>` : ''}`;
+
+        <!-- [3열] 2줄 요약 설명 -->
+        <div class="spot-desc-multi" title="${escapeHtml(descText)}" style="display:flex; align-items:flex-start; gap:4px; margin-top:3px;">
+          <span style="flex-shrink:0; margin-top:2px;">${ICONS.VIEW_CARD}</span>
+          <span>${escapeHtml(descText)}</span>
+        </div>`;
+
       li.addEventListener('click', () => focusSpotOnMap(spot));
       return li;
     }
@@ -3062,8 +3373,9 @@
     function openUserProposalModal() {
       triggerHaptic('light');
       modalMode = 'PROPOSAL'; modalPendingData = { lat: 0, lng: 0, address: '' };
-      document.getElementById('modalTitle').innerText = '📍 박지 제보 / 추천 등록';
-      document.getElementById('modalNotice').style.display = 'block';
+      document.getElementById('modalTitle').innerHTML = `${ICONS.PIN} <span>박지 제보 / 추천 등록</span>`;
+      document.getElementById('modalNotice').style.display = 'flex';
+      document.getElementById('modalNotice').innerHTML = `${ICONS.BACKPACK} <span>멋진 백패킹 박지를 제보해주세요! 관리자 승인 후 정식 등록됩니다.</span>`;
       document.getElementById('modalSubmitBtn').innerText = '제보 접수하기';
       clearModalInputs();
       document.getElementById('customModalOverlay').style.display = 'flex';
@@ -3071,12 +3383,12 @@
 
     function openAddModal(defaultName = "", lat = 0, lng = 0, address = "") {
       modalMode = 'ADD'; modalPendingData = { lat, lng, address };
-      document.getElementById('modalTitle').innerText = '📍 새 박지 정식 등록 (관리자)';
+      document.getElementById('modalTitle').innerHTML = `${ICONS.PIN} <span>새 박지 정식 등록 (관리자)</span>`;
       document.getElementById('modalNotice').style.display = 'none';
       document.getElementById('modalSubmitBtn').innerText = '등록 완료';
       clearModalInputs();
       document.getElementById('modalInputName').value = defaultName !== "새 박지 위치" ? defaultName : '';
-      document.getElementById('modalInputCoordsDisplay').value = (lat && lng) ? `📍 위도: ${lat}, 경도: ${lng}` : '';
+      document.getElementById('modalInputCoordsDisplay').value = (lat && lng) ? `위도: ${lat}, 경도: ${lng}` : '';
       document.getElementById('modalInputEntry').value = address || '';
       document.getElementById('customModalOverlay').style.display = 'flex';
       if (lat && lng) getElevation(lat, lng).then(elev => { document.getElementById('modalInputElevation').value = elev; });
@@ -3085,13 +3397,13 @@
     function openEditModal(index) {
       modalMode = 'EDIT'; modalEditIndex = index;
       const spot = spots[index];
-      document.getElementById('modalTitle').innerText = '✏️ 박지 정보 수정 (관리자)';
+      document.getElementById('modalTitle').innerHTML = `${ICONS.EDIT} <span>박지 정보 수정 (관리자)</span>`;
       document.getElementById('modalNotice').style.display = 'none';
       document.getElementById('modalSubmitBtn').innerText = '수정 내용 저장';
       
       document.getElementById('modalInputName').value = spot.spot_main || spot.name || '';
       document.getElementById('modalInputSub').value = spot.spot_sub || '';
-      document.getElementById('modalInputCoordsDisplay').value = `📍 위도: ${spot.lat}, 경도: ${spot.lng}`;
+      document.getElementById('modalInputCoordsDisplay').value = `위도: ${spot.lat}, 경도: ${spot.lng}`;
       document.getElementById('modalInputTrailheadName').value = spot.trailhead_name || '';
       document.getElementById('modalInputEntry').value = spot.trailhead_addr || spot.entryPoint || '';
       document.getElementById('modalInputElevation').value = String(spot.elevation || '').replace(/m$/i, '');
@@ -3163,7 +3475,7 @@
         if (tempPickedMarker) tempPickedMarker.setMap(null);
         tempPickedMarker = new kakao.maps.Marker({ position: mouseEvent.latLng, map: map });
         
-        document.getElementById('modalInputCoordsDisplay').value = `📍 위도: ${lat}, 경도: ${lng}`;
+        document.getElementById('modalInputCoordsDisplay').value = `위도: ${lat}, 경도: ${lng}`;
         if (geocoder) {
           geocoder.coord2Address(lng, lat, async (result, status) => {
             if (status === kakao.maps.services.Status.OK && result.length > 0) {
@@ -3231,7 +3543,7 @@
             body: JSON.stringify({ action: 'PROPOSE', spot_main: name, spot_sub: sub, fullName, lat, lng, elevation: elevation || '450m', trailhead_name: tName, trailhead_addr: entry, desc_summary: desc, youtubeUrls: ytList.join('\n'), blogUrl, authorSnsUrl, courseType, terrain: terrainList.join(', '), difficulty, distance_km: distance, region: autoDetect.region, cityName: autoDetect.cityName })
           });
           triggerHaptic('success');
-          alert('🎒 소중한 박지 제보가 접수되었습니다!\n관리자 확인 후 정식 등록됩니다. 감사합니다!');
+          alert('소중한 박지 제보가 접수되었습니다!\n관리자 확인 후 정식 등록됩니다. 감사합니다!');
         } catch (e) { alert('제보 접수 중 통신 오류가 발생했습니다.'); }
       } else if (modalMode === 'ADD') {
         const newSpot = {
@@ -3314,7 +3626,7 @@
         updateDockSidebarText(false);
       }
       
-      dropdown.innerHTML = `<div class="dropdown-header"><span>🔍 검색 중...</span><button type="button" class="btn-close-dropdown" onclick="document.getElementById('pcSearchDropdown').style.display='none';">✕ 닫기</button></div>`;
+      dropdown.innerHTML = `<div class="dropdown-header"><span>검색 중...</span><button type="button" class="btn-close-dropdown" onclick="document.getElementById('pcSearchDropdown').style.display='none';">✕ 닫기</button></div>`;
       dropdown.style.display = 'block';
 
       const results = [], seenCoords = new Set(), lowerQ = rawQuery.toLowerCase();
@@ -3355,7 +3667,7 @@
             });
           }
 
-          dropdown.innerHTML = `<div class="dropdown-header"><span>🔍 검색 결과 (${results.length})</span><button type="button" class="btn-close-dropdown" onclick="document.getElementById('pcSearchDropdown').style.display='none';">✕ 닫기</button></div>`;
+          dropdown.innerHTML = `<div class="dropdown-header"><span>검색 결과 (${results.length})</span><button type="button" class="btn-close-dropdown" onclick="document.getElementById('pcSearchDropdown').style.display='none';">✕ 닫기</button></div>`;
           if (results.length === 0) { dropdown.innerHTML += '<li class="dropdown-item" style="color:var(--text-muted);">검색 결과가 없습니다.</li>'; return; }
 
           results.forEach(res => {
@@ -3408,7 +3720,7 @@
           if (data.memos) { userMemos = data.memos; localStorage.setItem('okbm_memos', JSON.stringify(userMemos)); }
           if (data.spots) { spots = data.spots; localStorage.setItem('okbm_spots_cache', JSON.stringify(spots)); }
           renderSubChips(); renderSpots();
-          alert('📂 데이터가 정상 복원되었습니다!');
+          alert('데이터가 정상 복원되었습니다!');
         } catch (err) {}
       };
       reader.readAsText(file);
@@ -3416,5 +3728,4 @@
   </script>
 </body>
 </html>
-
 
