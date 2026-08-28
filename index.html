@@ -9,19 +9,22 @@
   <meta http-equiv="Expires" content="0" />
   <title>낭만루트 | 대한민국 260+ 백패킹 필드 팩트맵</title>
 
-  <!-- 🔤 면도날 선명도 텍스트 렌더링 전용 최상위 웹폰트 CDN -->
+  <!-- 🔤 최상위 웹폰트 CDN -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT/fonts/static/woff2/SUIT.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
   
-  <!-- CSV Parser -->
+  <!-- 카카오 SDK & CSV Parser & HTML2Canvas -->
+  <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
   <style>
+    @import url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/Arita-buri-SemiBold.woff');
+
     :root {
-      /* 🏛️ 5번 B&W 실버 프로스트 + 1번 후광 낭만루트 브랜딩 픽스 팔레트 */
       --bg-base: #010204;
       --bg-surface: #07090e;
       --bg-card: #0e121a;
@@ -33,10 +36,10 @@
       --text-muted: #64748b;
       --accent-silver: #e2e8f0;
       
-      --pt-star: #f59e0b;       /* 별점 앰버 골드 */
-      --pt-sage: #34d399;        /* K-LNT 클린 세이지 그린 */
-      --pt-video: #fb7185;      /* 영상 발굴 로즈 */
-      --pt-cyan: #38bdf8;       /* 시안 액센트 */
+      --pt-star: #f59e0b;
+      --pt-sage: #34d399;
+      --pt-rose: #f43f5e;
+      --pt-cyan: #38bdf8;
 
       --font-display: 'SUIT', -apple-system, sans-serif;
       --font-en: 'Space Grotesk', -apple-system, sans-serif;
@@ -52,7 +55,6 @@
       box-sizing: border-box; 
       margin: 0; 
       padding: 0;
-      /* 🔥 [핵심] 글자 뭉개짐·번짐 100% 박멸 안티앨리어싱 엔진 */
       -webkit-font-smoothing: antialiased !important;
       -moz-osx-font-smoothing: grayscale !important;
       text-rendering: optimizeLegibility !important;
@@ -74,7 +76,6 @@
       line-height: 1.45;
     }
 
-    /* ✨ [산속 밤하늘 은하수 펄감 & 스타더스트 배경] */
     body {
       background: 
         radial-gradient(1.5px 1.5px at 20px 30px, rgba(255, 255, 255, 0.28), transparent),
@@ -86,7 +87,6 @@
       padding-bottom: 75px;
     }
 
-    /* 🧭 공통 벡터 SVG 아이콘 (거대 확대 방지 max-size 고정) */
     .icon-svg {
       display: inline-flex;
       align-items: center;
@@ -98,11 +98,7 @@
     }
     .icon-svg svg { width: 100%; height: 100%; }
 
-    /* ========================================================
-     /* 🧭 1. 상단 GNB (88px 높이 강제 고정) */
-   /* 🧭 1. 상단 GNB (홈 포털 전용 - 세이지 그린 테마) */
-    @import url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/Arita-buri-SemiBold.woff');
-
+    /* 🧭 1. 상단 GNB */
     .apple-integrated-header {
       position: sticky;
       top: 0;
@@ -112,172 +108,88 @@
       border-bottom: 1px solid var(--border-hairline);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      padding: 10px 14px 8px !important;
+      padding: 10px 14px !important;
       padding-top: calc(10px + env(safe-area-inset-top, 0px)) !important;
       user-select: none;
-      display: flex;
-      flex-direction: column;
-      gap: 8px !important;
     }
 
     .header-top-row {
-      height: 28px;
-      min-height: 28px;
+      height: 32px;
       display: flex;
       align-items: center;
-      justify-content: flex-start; /* 👈 좌측 정렬 (아래 검색바와 시작선 일치) */
+      justify-content: space-between;
       width: 100%;
       max-width: 480px;
       margin: 0 auto;
-      padding: 0 2px;
-      box-sizing: border-box;
     }
 
     .brand-line {
-      height: 28px;
+      height: 32px;
       display: inline-flex;
       align-items: center;
-      justify-content: flex-start;
       gap: 8px;
       text-decoration: none;
       transition: transform 0.15s ease;
-      margin: 0;
       flex-shrink: 0;
     }
     .brand-line:active { transform: scale(0.98); }
 
     .brand-sym-box {
-      width: 36px;
-      height: 36px;
+      width: 34px;
+      height: 34px;
       display: flex;
       align-items: center;
       justify-content: center;
       position: relative;
       flex-shrink: 0;
     }
-    /* ☀️ [7단계 32px 확정] 심볼 박스 */
-    .brand-sym-box {
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      flex-shrink: 0;
-    }
-    .brand-sym-box::before {
-      content: '';
-      position: absolute;
-      width: 42px;
-      height: 42px;
-      background: radial-gradient(circle at 65% 25%, rgba(245, 158, 11, 0.35) 0%, rgba(244, 114, 182, 0.22) 45%, transparent 70%);
-      border-radius: 50%;
-      z-index: -1;
-      filter: blur(4px);
-    }
-    .brand-sym-box svg { width: 32px; height: 32px; display: block; }
+    .brand-sym-box svg { width: 30px; height: 30px; display: block; }
     
     .brand-title {
       font-family: var(--font-display);
-      font-size: 1.15rem;
+      font-size: 1.12rem;
       font-weight: 900;
       color: #ffffff;
       line-height: 1;
       letter-spacing: -0.02em;
-      text-shadow: 0 0 16px rgba(255, 255, 255, 0.35);
     }
     .brand-dot {
       width: 3.5px;
       height: 3.5px;
-      background: #34d399; /* 🌿 기존 세이지 그린 점 */
+      background: #34d399;
       border-radius: 50%;
       box-shadow: 0 0 6px #34d399;
-      flex-shrink: 0;
     }
     .brand-en {
       font-family: 'Arita-buri-SemiBold', serif !important;
-      font-size: 0.86rem;
-      font-weight: normal;
-      color: #6ee7b7; /* 🌿 기존 세이지 그린 텍스트 */
+      font-size: 0.84rem;
+      color: #6ee7b7;
       letter-spacing: -0.02em;
       line-height: 1;
-      text-shadow: 0 0 10px rgba(110, 231, 183, 0.25);
-      } white-space: nowrap;
-    
+      white-space: nowrap;
+    }
 
-    /* 🔍 인라인 슬릭 검색창 */
-    .apple-search-box {
-      position: relative;
-      width: 100%;
-      max-width: 480px;
-      margin: 0 auto;
+    .header-auth-btn { 
+      height: 26px;
+      background: rgba(56,189,248,0.12); 
+      border: 1px solid rgba(56,189,248,0.4); 
+      color: var(--pt-cyan); 
+      padding: 0 8px; 
+      border-radius: 13px; 
+      font-size: 0.72rem; 
+      font-weight: 800; 
+      cursor: pointer; 
+      display: inline-flex; 
+      align-items: center; 
+      gap: 4px; 
+      transition: all 0.2s ease; 
+      white-space: nowrap; 
     }
-    .apple-search-bar {
-      width: 100%;
-      height: 36px;
-      background: rgba(255, 255, 255, 0.07);
-      border: 1px solid var(--border-hairline);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      padding: 0 10px;
-      gap: 6px;
-      transition: all 0.2s ease;
+    .header-auth-btn.logged-in { 
+      background: rgba(16,185,129,0.16); 
+      border-color: rgba(16,185,129,0.45); 
+      color: #6ee7b7; 
     }
-    .apple-search-bar:focus-within {
-      background: rgba(255, 255, 255, 0.12);
-      border-color: rgba(255, 255, 255, 0.3);
-    }
-    .apple-search-input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: #ffffff;
-      font-size: 0.8rem;
-      font-weight: 500;
-      outline: none;
-      letter-spacing: -0.01em;
-    }
-    .apple-search-input::placeholder { color: #64748b; }
-    .btn-clear-search {
-      background: rgba(255, 255, 255, 0.2);
-      border: none;
-      color: #cbd5e1;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      font-size: 0.6rem;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-    .search-auto-dropdown {
-      position: absolute;
-      top: 40px;
-      left: 0; right: 0;
-      background: rgba(7, 9, 14, 0.98);
-      border: 1px solid var(--border-accent);
-      border-radius: 12px;
-      box-shadow: 0 16px 40px rgba(0,0,0,0.95);
-      list-style: none;
-      max-height: 240px;
-      overflow-y: auto;
-      display: none;
-      z-index: var(--z-dropdown);
-      text-align: left;
-    }
-    .auto-item {
-      padding: 9px 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      font-size: 0.78rem;
-    }
-    .auto-item:last-child { border-bottom: none; }
-    .auto-item:hover, .auto-item:active { background: rgba(255, 255, 255, 0.06); }
 
     /* 📦 메인 콘텐츠 피드 */
     .portal-main-content {
@@ -286,7 +198,7 @@
       padding: 10px 12px;
       display: flex;
       flex-direction: column;
-      gap: 13px;
+      gap: 14px;
     }
     .section-title-row {
       display: flex;
@@ -301,176 +213,141 @@
     }
     .section-title-row .icon-svg { width: 14px; height: 14px; color: var(--accent-silver); }
 
-    /* 🎯 3. 어디로 떠날까 카드 (꿀팁 제거 후 단단한 116px 고정 높이) */
-    .lucky-section-wrap {
+    /* ========================================================
+       ⚖️ 1. [홈 첫 화면] BPL 배낭 패킹 계산기 시스템
+       ======================================================== */
+    .packing-master-card {
       background: var(--bg-card);
-      border: 1px solid var(--border-accent);
+      border: 1.5px solid var(--border-accent);
       border-radius: 14px;
-      padding: 11px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 9px;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
     }
-    .lucky-grid-container {
-      display: flex;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      gap: 9px;
-      scrollbar-width: none;
-    }
-    .lucky-grid-container::-webkit-scrollbar { display: none; }
-    
-    .lucky-spot-card {
-      flex: 0 0 100%;
-      scroll-snap-align: start;
-      background: var(--bg-surface);
-      border: 1px solid var(--border-hairline);
-      border-radius: 10px;
-      padding: 11px 12px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      height: 116px;
-      cursor: pointer;
-      transition: transform 0.15s ease, border-color 0.15s ease;
-    }
-    .lucky-spot-card:active {
-      transform: scale(0.98);
-      border-color: rgba(255, 255, 255, 0.35);
-    }
-    .lucky-spot-card.rolling {
-      animation: cardPulse 0.3s ease infinite alternate;
-      filter: blur(1px);
-    }
-    @keyframes cardPulse { 0% { opacity: 0.6; } 100% { opacity: 1; } }
 
-    .spot-header-row {
+    /* 칼로리표 스타일 무게 & 등급 대시보드 */
+    .weight-dashboard-strip {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(6, 182, 212, 0.08));
+      border: 1.5px solid rgba(16, 185, 129, 0.4);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .weight-dash-top {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-end;
     }
-    .spot-tag-pill {
+    .weight-val-big {
+      font-family: var(--font-en);
+      font-size: 1.7rem;
+      font-weight: 900;
+      color: #34d399;
+      line-height: 1;
+    }
+    .weight-bpl-badge {
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
       display: inline-flex;
       align-items: center;
       gap: 3px;
-      font-size: 0.65rem;
-      font-weight: 700;
-      padding: 1.5px 6px;
-      border-radius: 4px;
-      background: rgba(56, 189, 248, 0.12);
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      color: #7dd3fc;
     }
-    .spot-tag-pill .icon-svg { width: 11px; height: 11px; }
-    
-    .tag-ocean { background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.3); color: #7dd3fc; }
-    .tag-mountain { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.2); color: #cbd5e1; }
-    .tag-forest { background: rgba(52, 211, 153, 0.12); border-color: rgba(52, 211, 153, 0.25); color: #6ee7b7; }
-    .tag-island { background: rgba(192, 132, 252, 0.12); border-color: rgba(192, 132, 252, 0.25); color: #d8b4fe; }
+    .bpl-ul { background: rgba(52, 211, 153, 0.2); color: #6ee7b7; border: 1px solid #34d399; }
+    .bpl-standard { background: rgba(245, 158, 11, 0.2); color: #fde047; border: 1px solid #f59e0b; }
+    .bpl-heavy { background: rgba(244, 63, 94, 0.2); color: #fda4af; border: 1px solid #f43f5e; }
 
-    .badge-elev {
-      background: rgba(255, 255, 255, 0.08);
-      color: #94a3b8;
-      font-size: 0.68rem;
-      font-weight: 700;
-      padding: 1px 5px;
-      border-radius: 3px;
-      margin-left: 3px;
-    }
-    .star-wrap { display: inline-flex; align-items: center; gap: 1.5px; }
-    .star-svg { width: 11px; height: 11px; fill: var(--pt-star); }
-    .star-svg.empty { fill: rgba(255, 255, 255, 0.12); }
-
-    .spot-title-text {
-      font-family: var(--font-display);
-      font-size: 0.94rem;
-      font-weight: 800;
-      color: #ffffff;
-      letter-spacing: -0.01em;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .spot-desc-text {
-      font-size: 0.74rem;
-      color: #cbd5e1;
-      line-height: 1.35;
-      font-weight: 400;
-      letter-spacing: -0.01em;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .mobile-slider-dots {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 4px;
-      margin: 1px 0;
-    }
-    .dot-item {
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.2);
-      transition: all 0.2s;
-    }
-    .dot-item.active {
-      width: 12px;
-      border-radius: 2px;
-      background: #ffffff;
-    }
-
-    /* 🎲 정밀 주사위 버튼 */
-    .btn-dice-prominent {
+    /* 게이지 바 */
+    .weight-gauge-bg {
       width: 100%;
-      background: #ffffff;
-      border: none;
-      color: #000000;
-      font-size: 0.82rem;
-      font-weight: 900;
-      padding: 9px;
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+    .weight-gauge-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #34d399, #f59e0b, #f43f5e);
+      transition: width 0.3s ease;
+    }
+
+    /* 7대 카테고리 슬롯 리스트 */
+    .category-slots-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .category-slot-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-hairline);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .category-slot-card:active {
+      transform: scale(0.98);
+      background: rgba(255, 255, 255, 0.06);
+    }
+    .category-slot-left {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .category-slot-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .slot-selected-info {
+      font-size: 0.72rem;
+      color: var(--pt-cyan);
+      font-weight: 800;
+      font-family: var(--font-en);
+    }
+
+    .packing-action-row { display: flex; gap: 6px; }
+    .btn-save-pack {
+      flex: 2;
+      background: linear-gradient(135deg, #0d9488, #0f766e);
+      border: 1px solid #14b8a6;
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.78rem;
+      padding: 8px;
       border-radius: 8px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.6);
-      transition: transform 0.1s ease;
-    }
-    .btn-dice-prominent:active { transform: scale(0.98); }
-    .dice-icon-box { width: 15px; height: 15px; display: inline-flex; }
-
-    /* 🌿 LNT 배너 (세이지 그린 & 산악 SVG 복원) */
-    .lnt-slim-banner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(52, 211, 153, 0.08);
-      border: 1px solid rgba(52, 211, 153, 0.25);
-      border-radius: 10px;
-      padding: 6px 10px;
-      font-size: 0.7rem;
-      font-weight: 600;
-      color: #a7f3d0;
-    }
-    .lnt-badge-mini {
-      display: inline-flex;
-      align-items: center;
       gap: 4px;
-      background: rgba(52, 211, 153, 0.22);
-      color: var(--pt-sage);
-      font-size: 0.64rem;
-      font-weight: 800;
-      padding: 1.5px 6px;
-      border-radius: 4px;
+    }
+    .btn-reset-pack {
+      flex: 1;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border-hairline);
+      color: var(--text-secondary);
+      font-weight: 700;
+      font-size: 0.74rem;
+      padding: 8px;
+      border-radius: 8px;
+      cursor: pointer;
     }
 
-    /* 🎬 4. 영상 섹션 (타이틀 시인성 확대 및 로케이션 발굴 삭제) */
+    /* 🎬 2. 영상 섹션 */
     .featured-video-section {
       background: var(--bg-surface);
       border: 1px solid var(--border-accent);
@@ -482,13 +359,12 @@
     }
     .video-title-bold-head {
       font-family: var(--font-display);
-      font-size: 1.02rem; /* 시인성 대폭 확대 */
+      font-size: 0.98rem;
       font-weight: 800;
       color: #ffffff;
       display: flex;
       align-items: center;
       gap: 6px;
-      letter-spacing: -0.02em;
     }
     .video-box {
       width: 100%;
@@ -532,405 +408,316 @@
       flex-shrink: 0;
       text-decoration: none;
     }
-    .btn-find-location:active { transform: scale(0.95); }
 
-    /* 🔥 5. 낭만 라운지 */
-    .community-box-tight {
-      background: var(--bg-surface);
+    /* 🎯 3. 어디로 떠날까 카드 */
+    .lucky-section-wrap {
+      background: var(--bg-card);
       border: 1px solid var(--border-accent);
-      border-radius: 12px;
-      padding: 10px;
+      border-radius: 14px;
+      padding: 11px;
       display: flex;
       flex-direction: column;
       gap: 9px;
     }
-    .poll-grid-tight {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 5px;
+    .lucky-grid-container {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      gap: 9px;
+      scrollbar-width: none;
     }
-    .poll-item-tight {
-      position: relative;
-      background: rgba(255, 255, 255, 0.02);
+    .lucky-grid-container::-webkit-scrollbar { display: none; }
+    
+    .lucky-spot-card {
+      flex: 0 0 100%;
+      scroll-snap-align: start;
+      background: var(--bg-surface);
       border: 1px solid var(--border-hairline);
-      border-radius: 6px;
-      padding: 6px 8px;
-      cursor: pointer;
-      overflow: hidden;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.7rem;
-      font-weight: 600;
-      min-height: 31px;
-      transition: transform 0.1s ease;
-    }
-    .poll-item-tight:active { transform: scale(0.97); }
-    .poll-item-tight.selected {
-      border-color: rgba(255, 255, 255, 0.35);
-      background: rgba(255, 255, 255, 0.06);
-    }
-    .poll-bar-fill {
-      position: absolute;
-      top: 0; left: 0; bottom: 0;
-      background: rgba(255, 255, 255, 0.15);
-      width: 0%;
-      transition: width 0.3s ease;
-      z-index: 1;
-    }
-    .poll-text-tight {
-      position: relative;
-      z-index: 2;
-      display: flex;
-      align-items: center;
-      gap: 3px;
-      color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .poll-text-tight .icon-svg { width: 11px; height: 11px; color: #fff; }
-    .poll-pct-tight {
-      position: relative;
-      z-index: 2;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    /* 출정톡 */
-    .talk-section-tight {
-      border-top: 1px dashed var(--border-hairline);
-      padding-top: 7px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-    .capsule-input-bar-tight {
-      display: flex;
-      align-items: center;
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid var(--border-accent);
-      border-radius: 16px;
-      padding: 1px 2px 1px 8px;
-    }
-    .capsule-nick {
-      width: 48px;
-      background: none;
-      border: none;
-      border-right: 1px solid var(--border-hairline);
-      color: var(--accent-silver);
-      font-size: 0.7rem;
-      font-weight: 700;
-      outline: none;
-    }
-    .capsule-msg {
-      flex: 1;
-      background: none;
-      border: none;
-      color: #fff;
-      font-size: 0.72rem;
-      padding: 0 5px;
-      outline: none;
-    }
-    .capsule-send-btn {
-      background: var(--accent-silver);
-      border: none;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      color: #000;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .capsule-send-btn:active { transform: scale(0.9); }
-    .capsule-send-btn .icon-svg { width: 11px; height: 11px; }
-
-    .talk-list-tight {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      max-height: 68px;
-      overflow-y: auto;
-    }
-    .talk-bubble-tight {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.04);
-      border-radius: 4px;
-      padding: 3px 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.68rem;
-    }
-
-    /* 🎒 6. 큐레이션 배너 */
-    .spotlight-banner-slot {
-      background: rgba(14, 18, 26, 0.7);
-      border: 1px solid var(--border-accent);
       border-radius: 10px;
-      padding: 9px 12px;
+      padding: 11px 12px;
       display: flex;
+      flex-direction: column;
       justify-content: space-between;
-      align-items: center;
+      height: 116px;
       cursor: pointer;
-      transition: transform 0.1s ease;
     }
-    .spotlight-banner-slot:active { transform: scale(0.98); }
+    .spot-header-row { display: flex; justify-content: space-between; align-items: center; }
+    .spot-tag-pill {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 0.65rem; font-weight: 700; padding: 1.5px 6px;
+      border-radius: 4px; background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3); color: #7dd3fc;
+    }
+    .badge-elev {
+      background: rgba(255, 255, 255, 0.08); color: #94a3b8;
+      font-size: 0.68rem; font-weight: 700; padding: 1px 5px; border-radius: 3px;
+    }
+    .star-wrap { display: inline-flex; align-items: center; gap: 1.5px; }
+    .star-svg { width: 11px; height: 11px; fill: var(--pt-star); }
+    .star-svg.empty { fill: rgba(255, 255, 255, 0.12); }
 
-    /* 👤 보관함 모달 */
-    .my-info-modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.85);
-      z-index: var(--z-modal);
-      backdrop-filter: blur(8px);
-      justify-content: center;
-      align-items: flex-end;
+    .spot-title-text {
+      font-family: var(--font-display);
+      font-size: 0.94rem; font-weight: 800; color: #ffffff;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .my-info-content {
-      width: 100%;
-      max-width: 480px;
+    .spot-desc-text {
+      font-size: 0.74rem; color: #cbd5e1; line-height: 1.35;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+
+    .mobile-slider-dots { display: flex; justify-content: center; align-items: center; gap: 4px; }
+    .dot-item { width: 4px; height: 4px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); }
+    .dot-item.active { width: 12px; border-radius: 2px; background: #ffffff; }
+
+    .btn-dice-prominent {
+      width: 100%; background: #ffffff; border: none; color: #000000;
+      font-size: 0.82rem; font-weight: 900; padding: 9px; border-radius: 8px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+
+    /* 🌿 LNT 배너 */
+    .lnt-slim-banner {
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.25);
+      border-radius: 10px; padding: 6px 10px; font-size: 0.7rem; font-weight: 600; color: #a7f3d0;
+    }
+    .lnt-badge-mini {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(52, 211, 153, 0.22); color: var(--pt-sage);
+      font-size: 0.64rem; font-weight: 800; padding: 1.5px 6px; border-radius: 4px;
+    }
+
+    /* 🔥 4. 낭만 라운지 & 출정톡 */
+    .community-box-tight {
       background: var(--bg-surface);
       border: 1px solid var(--border-accent);
-      border-radius: 18px 18px 0 0;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      max-height: 80vh;
-      overflow-y: auto;
+      border-radius: 12px; padding: 10px;
+      display: flex; flex-direction: column; gap: 9px;
     }
+    .poll-grid-tight { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .poll-item-tight {
+      position: relative; background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-hairline); border-radius: 6px;
+      padding: 6px 8px; cursor: pointer; overflow: hidden;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.7rem; font-weight: 600; min-height: 31px;
+    }
+    .poll-item-tight.selected { border-color: rgba(255, 255, 255, 0.35); background: rgba(255, 255, 255, 0.06); }
+    .poll-bar-fill { position: absolute; top: 0; left: 0; bottom: 0; background: rgba(255, 255, 255, 0.15); width: 0%; transition: width 0.3s; z-index: 1; }
+    .poll-text-tight { position: relative; z-index: 2; display: flex; align-items: center; gap: 3px; color: #fff; }
+    .poll-pct-tight { position: relative; z-index: 2; font-weight: 700; color: #fff; }
 
-   /* 📱 7. 하단 네비 독 (map.html과 0.1px 단위 완전 일치 규격) */
+    .talk-section-tight { border-top: 1px dashed var(--border-hairline); padding-top: 7px; display: flex; flex-direction: column; gap: 5px; }
+    .capsule-input-bar-tight {
+      display: flex; align-items: center; background: rgba(0, 0, 0, 0.6);
+      border: 1px solid var(--border-accent); border-radius: 16px; padding: 1px 2px 1px 8px;
+    }
+    .capsule-nick { width: 54px; background: none; border: none; border-right: 1px solid var(--border-hairline); color: var(--accent-silver); font-size: 0.7rem; font-weight: 700; outline: none; }
+    .capsule-msg { flex: 1; background: none; border: none; color: #fff; font-size: 0.72rem; padding: 0 5px; outline: none; }
+    .capsule-send-btn { background: var(--accent-silver); border: none; width: 22px; height: 22px; border-radius: 50%; color: #000; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .talk-list-tight { list-style: none; display: flex; flex-direction: column; gap: 3px; max-height: 68px; overflow-y: auto; }
+    .talk-bubble-tight { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 4px; padding: 3px 6px; display: flex; justify-content: space-between; align-items: center; font-size: 0.68rem; }
+
+    /* 📱 하단 네비 독 */
     .mobile-bottom-dock {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      background: rgba(0, 0, 0, 0.96);
-      border-top: 1px solid var(--border-hairline);
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(0, 0, 0, 0.96); border-top: 1px solid var(--border-hairline);
       height: calc(56px + env(safe-area-inset-bottom, 0px));
       padding-bottom: env(safe-area-inset-bottom, 0px);
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      z-index: var(--z-dock);
-      user-select: none;
-      -webkit-user-select: none;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      display: flex; justify-content: space-around; align-items: center;
+      z-index: var(--z-dock); user-select: none;
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     }
     .dock-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-secondary);
-      text-decoration: none;
-      font-size: 0.72rem;
-      font-weight: 700;
-      font-family: var(--font-body);
-      letter-spacing: -0.02em;
-      gap: 3px;
-      background: none;
-      border: none;
-      outline: none;
-      cursor: pointer;
-      min-width: 54px;
-      min-height: 48px;
-      padding: 0;
-      margin: 0;
-      transition: transform 0.15s ease, color 0.15s ease;
-      -webkit-tap-highlight-color: transparent;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: var(--text-secondary); text-decoration: none; font-size: 0.72rem; font-weight: 700;
+      gap: 3px; background: none; border: none; cursor: pointer; min-width: 54px; min-height: 48px;
     }
-    .dock-item:active { 
-      transform: scale(0.94); 
+    .dock-item.active { color: #38bdf8 !important; }
+    .dock-item svg { width: 19px; height: 19px; fill: currentColor; }
+
+    /* ========================================================
+       🗂️ 5. [내 보관함 모달] & [장비 선택 카테고리 모달]
+       ======================================================== */
+    .my-basecamp-modal {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.88); z-index: var(--z-modal);
+      backdrop-filter: blur(10px); justify-content: center; align-items: flex-end;
     }
-    .dock-item.active { 
-      color: #38bdf8 !important; 
+    .my-basecamp-content {
+      width: 100%; max-width: 480px; background: var(--bg-surface);
+      border: 1.5px solid var(--border-accent); border-radius: 20px 20px 0 0;
+      padding: 16px; display: flex; flex-direction: column; gap: 12px;
+      max-height: 85vh; overflow-y: auto;
     }
-    .dock-item svg { 
-      width: 19px; 
-      height: 19px; 
-      fill: currentColor; 
-      flex-shrink: 0;
-      display: block;
+
+    .basecamp-tabs {
+      display: flex; background: rgba(255,255,255,0.05);
+      border-radius: 10px; padding: 3px; gap: 3px;
     }
-    .dock-item span {
-      line-height: 1;
-      display: block;
-      color: inherit;
+    .basecamp-tab-btn {
+      flex: 1; padding: 7px 0; border: none; background: transparent;
+      color: var(--text-muted); font-size: 0.76rem; font-weight: 800;
+      border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
+    }
+    .basecamp-tab-btn.active {
+      background: var(--bg-card); color: #38bdf8; box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    .basecamp-panel { display: none; flex-direction: column; gap: 12px; }
+    .basecamp-panel.active { display: flex; }
+
+    .pack-history-card {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border-hairline);
+      border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;
+    }
+
+    .insta-story-card {
+      background: linear-gradient(145deg, #0f172a, #020617);
+      border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: 16px;
+      padding: 16px; display: flex; flex-direction: column; gap: 12px;
+      position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+    .progress-bar-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-top: 4px; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #38bdf8, #10b981); width: 0%; transition: width 0.4s ease; }
+
+    /* 장비 선택 전용 팝업 모달 */
+    .gear-preset-modal {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.88); z-index: calc(var(--z-modal) + 50);
+      backdrop-filter: blur(10px); justify-content: center; align-items: flex-end;
+    }
+    .gear-preset-content {
+      width: 100%; max-width: 480px; background: var(--bg-surface);
+      border: 1.5px solid var(--border-accent); border-radius: 20px 20px 0 0;
+      padding: 16px; display: flex; flex-direction: column; gap: 10px;
+      max-height: 80vh; overflow-y: auto;
+    }
+
+    .gear-db-list { display: flex; flex-direction: column; gap: 5px; }
+    .gear-db-item {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border-hairline);
+      border-radius: 8px; padding: 9px 11px; display: flex; justify-content: space-between;
+      align-items: center; cursor: pointer; transition: all 0.15s;
+    }
+    .gear-db-item:hover, .gear-db-item:active {
+      background: rgba(56, 189, 248, 0.12); border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    /* 공통 모달 오버레이 */
+    .custom-modal-overlay { 
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+      background: rgba(3, 5, 8, 0.92); backdrop-filter: blur(6px);
+      display: none; justify-content: center; align-items: center; 
+      z-index: 99999; padding: 16px;
+    }
+    .custom-modal { 
+      background: var(--bg-surface); color: var(--text-primary); 
+      width: 360px; max-width: calc(100vw - 24px); border-radius: 16px; 
+      padding: 16px; display: flex; flex-direction: column; gap: 10px; 
+      border: 1.5px solid var(--border-accent); 
+    }
+    .modal-input { 
+      width: 100%; padding: 8px 10px; border: 1px solid var(--border-hairline); 
+      border-radius: 6px; font-size: 0.82rem; outline: none; background: var(--bg-base); color: #fff; 
+    }
+    .modal-btn { 
+      padding: 8px 14px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: none; 
     }
   </style>
 </head>
 <body>
 
-  <!-- 🧭 1. 상단 GNB & 인라인 슬림 검색바 -->
+  <!-- 🧭 1. 상단 GNB (심플 브랜딩 + 로그인) -->
   <header class="apple-integrated-header notranslate">
     <div class="header-top-row">
       <a href="index.html" class="brand-line" onclick="triggerHaptic(10)" title="낭만루트 홈">
         <div class="brand-sym-box">
-              <svg viewBox="0 0 32 32" fill="none">
-                <!-- 배경 샴페인 로즈 & 골드 안개 일출 (중심 21, 6 고정) -->
-                <circle cx="21" cy="6" r="9" fill="rgba(244,114,182,0.12)"/>
-                <circle cx="21" cy="6" r="6" fill="rgba(245,158,11,0.18)"/>
-                <circle cx="21" cy="6" r="3.8" fill="rgba(251,191,36,0.28)"/>
-                
-                <!-- 첫 번째 R: Romantic 낭만 능선 (샴페인 로즈 핑크) -->
-                <circle cx="2" cy="24" r="1.8" fill="#fda4af"/>
-                <circle cx="9" cy="12" r="2.2" fill="#fda4af"/>
-                <circle cx="14" cy="16" r="1.8" fill="#fda4af"/>
-                <circle cx="13" cy="24" r="1.8" fill="#fda4af"/>
-                <path d="M2 24L9 12H12.5L14 16L10 16M10 16L13 24" stroke="#fda4af" stroke-width="1.8" stroke-linecap="round"/>
-                
-                <!-- 두 번째 R: Route 강인한 탐색 피크 (플래티넘 화이트 만년설 & 골든 비콘) -->
-                <circle cx="21" cy="6" r="2.8" fill="#f59e0b"/>
-                <circle cx="27" cy="13" r="2.2" fill="#e2e8f0"/>
-                <circle cx="30" cy="24" r="2.4" fill="#e2e8f0"/>
-                <path d="M13 24L21 6H25L27 13L22 13M22 13L30 24" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
-                
-                <!-- 최고봉 정상 핀 (Pure White Core) -->
-                <circle cx="21" cy="6" r="1" fill="#ffffff"/>
-              </svg>
-            </div>
+          <svg viewBox="0 0 32 32" fill="none">
+            <circle cx="21" cy="6" r="9" fill="rgba(244,114,182,0.12)"/>
+            <circle cx="21" cy="6" r="6" fill="rgba(245,158,11,0.18)"/>
+            <circle cx="21" cy="6" r="3.8" fill="rgba(251,191,36,0.28)"/>
+            <circle cx="2" cy="24" r="1.8" fill="#fda4af"/>
+            <circle cx="9" cy="12" r="2.2" fill="#fda4af"/>
+            <circle cx="14" cy="16" r="1.8" fill="#fda4af"/>
+            <circle cx="13" cy="24" r="1.8" fill="#fda4af"/>
+            <path d="M2 24L9 12H12.5L14 16L10 16M10 16L13 24" stroke="#fda4af" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="21" cy="6" r="2.8" fill="#f59e0b"/>
+            <circle cx="27" cy="13" r="2.2" fill="#e2e8f0"/>
+            <circle cx="30" cy="24" r="2.4" fill="#e2e8f0"/>
+            <path d="M13 24L21 6H25L27 13L22 13M22 13L30 24" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
+            <circle cx="21" cy="6" r="1" fill="#ffffff"/>
+          </svg>
+        </div>
         <span class="brand-title">낭만루트</span>
         <span class="brand-dot"></span>
         <span class="brand-en">일상을 떠나 자연으로</span>
       </a>
-    </div>
 
-    <!-- 슬림 인라인 검색바 -->
-    <div class="apple-search-box">
-      <div class="apple-search-bar">
-        <span class="icon-svg" style="width:14px; height:14px; color:#94a3b8;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <!-- 🔑 상단 로그인 / 회원 관리 버튼 -->
+      <button type="button" class="header-auth-btn" id="headerAuthBtn" onclick="handleAuthBtnClick()">
+        <span id="headerAuthIcon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; margin-right:3px; display:inline-block; vertical-align:-1px;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
         </span>
-        <input type="text" id="mainSearchInput" class="apple-search-input" placeholder="산, 섬, 활공장, 해변, 데크 검색..." autocomplete="off" oninput="onSearchInputChanged(this.value)" onkeyup="if(event.key==='Enter') executePortalSmartSearch()" />
-        <button type="button" class="btn-clear-search" id="btnClearSearch" onclick="triggerHaptic(10); clearSearchInput();">✕</button>
-      </div>
-      <ul id="searchAutoDropdown" class="search-auto-dropdown"></ul>
+        <span id="headerAuthText">로그인</span>
+      </button>
     </div>
   </header>
 
   <!-- 📦 메인 콘텐츠 피드 -->
   <main class="portal-main-content notranslate">
 
-    <!-- 🎯 3. 어디로 떠날까? 결정 장애 탈출 픽 -->
-    <section class="lucky-section-wrap">
+    <!-- ========================================================
+         🎒 1. [첫 번째 위치] 배낭 패킹 체크리스트 & 실시간 무게 계산기
+         ======================================================== -->
+    <section class="packing-master-card">
       <div class="section-title-row">
         <div style="display:flex; align-items:center; gap:5px;">
-          <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor"/></svg></span>
-          <span>이번 주 어디로 떠날까?</span>
+          <span class="icon-svg" style="width:16px; height:16px; color:#34d399;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>
+          </span>
+          <span>BPL 배낭 패킹 & 실시간 무게 계산기</span>
         </div>
-        <span style="font-size:0.68rem; color:#64748b; font-weight:600;">실시간 추천</span>
+        <span style="font-size:0.68rem; color:#34d399; font-weight:800;">LIGHTER PACK</span>
       </div>
 
-      <div class="lucky-grid-container" id="luckyGridContainer">
-        <!-- Card 0 -->
-        <div class="lucky-spot-card" id="luckyCard0" onclick="triggerHaptic(15); goToLuckySpot(0);">
-          <div class="spot-header-row">
-            <div style="display:flex; align-items:center;">
-              <span class="spot-tag-pill" id="luckyTag0">
-                <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg></span>
-                마운틴
-              </span>
-              <span class="badge-elev" id="luckyElev0">587m</span>
-            </div>
-            <div class="star-wrap" id="luckyDiff0">
-              <svg class="star-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <svg class="star-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <svg class="star-svg empty" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            </div>
-          </div>
+      <!-- 칼로리표 스타일 무게 대시보드 -->
+      <div class="weight-dashboard-strip">
+        <div class="weight-dash-top">
           <div>
-            <div class="spot-title-text" id="luckyName0">남양주 백봉산 (정상 전망데크)</div>
-            <div class="spot-desc-text" id="luckyDesc0">해발 587m 정상 전망데크에서 남양주 시가지와 야경을 360도로 조망할 수 있습니다.</div>
+            <div style="font-size:0.68rem; font-weight:800; color:#94a3b8;">배낭 총 무게 (Total Base Weight)</div>
+            <div class="weight-val-big" id="totalWeightKgText">0.00 kg</div>
+          </div>
+          <div style="text-align:right;">
+            <div id="bplStatusBadge" class="weight-bpl-badge bpl-ul">
+              <svg viewBox="0 0 24 24" class="icon-svg" style="width:10px; height:10px;"><circle cx="12" cy="12" r="10" fill="currentColor"/></svg>
+              <span id="bplStatusText">울트라라이트 (UL)</span>
+            </div>
+            <div style="font-size:0.68rem; color:#cbd5e1; font-family:var(--font-en); margin-top:2px;" id="totalWeightGramsText">0 g</div>
           </div>
         </div>
-
-        <!-- Card 1 -->
-        <div class="lucky-spot-card" id="luckyCard1" onclick="triggerHaptic(15); goToLuckySpot(1);">
-          <div class="spot-header-row">
-            <div style="display:flex; align-items:center;">
-              <span class="spot-tag-pill" id="luckyTag1">
-                <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/></svg></span>
-                오션뷰
-              </span>
-              <span class="badge-elev" id="luckyElev1">120m</span>
-            </div>
-            <div class="star-wrap" id="luckyDiff1">
-              <svg class="star-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <svg class="star-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            </div>
-          </div>
-          <div>
-            <div class="spot-title-text" id="luckyName1">불러오는 중...</div>
-            <div class="spot-desc-text" id="luckyDesc1">데이터를 안전하게 로드하고 있습니다.</div>
-          </div>
-        </div>
-
-        <!-- Card 2 -->
-        <div class="lucky-spot-card" id="luckyCard2" onclick="triggerHaptic(15); goToLuckySpot(2);">
-          <div class="spot-header-row">
-            <div style="display:flex; align-items:center;">
-              <span class="spot-tag-pill" id="luckyTag2">
-                <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m14 14 3-3 3 3h-2v4h-2v-4z"/><path d="m4 14 4-5 4 5h-2.5v5h-3v-5z"/></svg></span>
-                힐링숲
-              </span>
-              <span class="badge-elev" id="luckyElev2">450m</span>
-            </div>
-            <div class="star-wrap" id="luckyDiff2">
-              <svg class="star-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            </div>
-          </div>
-          <div>
-            <div class="spot-title-text" id="luckyName2">불러오는 중...</div>
-            <div class="spot-desc-text" id="luckyDesc2">데이터를 안전하게 로드하고 있습니다.</div>
-          </div>
+        <div class="weight-gauge-bg">
+          <div class="weight-gauge-fill" id="weightGaugeFill"></div>
         </div>
       </div>
 
-      <!-- 모바일 인디케이터 -->
-      <div class="mobile-slider-dots">
-        <div class="dot-item active" data-idx="0"></div>
-        <div class="dot-item" data-idx="1"></div>
-        <div class="dot-item" data-idx="2"></div>
-      </div>
+      <!-- 7대 카테고리 슬롯 (클릭 시 전용 장비 팝업 열림) -->
+      <div class="category-slots-grid" id="categorySlotsContainer"></div>
 
-      <!-- 🎲 정밀 주사위 SVG 탑재 -->
-      <button type="button" class="btn-dice-prominent" id="btnRollDice" onclick="triggerHaptic(20); rollLuckySpot();">
-        <span class="dice-icon-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <rect width="18" height="18" x="3" y="3" rx="4"/>
-            <path d="M16 8h.01"/><path d="M8 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/><path d="M12 12h.01"/>
-          </svg>
-        </span>
-        3곳 새로 추천받기
-      </button>
+      <!-- 액션 버튼 -->
+      <div class="packing-action-row">
+        <button type="button" class="btn-save-pack" onclick="saveCurrentPackingRecord()">
+          <svg viewBox="0 0 24 24" class="icon-svg" style="width:13px; height:13px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <span>오늘의 출정 패킹 보관함에 저장</span>
+        </button>
+        <button type="button" class="btn-reset-pack" onclick="resetAllGearSelections()">
+          <span>전체 초기화 ↺</span>
+        </button>
+      </div>
     </section>
 
-    <!-- 🌿 LNT 배너 (세이지 그린 & 산악 SVG) -->
-    <div class="lnt-slim-banner">
-      <div style="display:flex; align-items:center; gap:6px;">
-        <span class="lnt-badge-mini">
-          <span class="icon-svg" style="width:11px; height:11px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-              <path d="m8 3 4 8 5-5 5 15H2L8 3z"/>
-            </svg>
-          </span>
-          K-LNT
-        </span>
-        <span>산에서 화기 사용 절대 금지! 흔적 없는 클린 백패킹</span>
-      </div>
-      <div style="display:flex; align-items:center; gap:2px; color:var(--pt-sage); font-size:0.65rem; font-weight:700;">
-        <span>서약</span>
-        <span class="icon-svg" style="width:10px; height:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
-      </div>
-    </div>
-
-    <!-- 🎬 4. 영상 섹션 (타이틀 시인성 확대 및 로케이션 발굴 배지 삭제) -->
+    <!-- 🎬 2. 영상 섹션 -->
     <section class="featured-video-section">
       <div class="video-title-bold-head">
         <span class="icon-svg" style="width:18px; height:18px; color:var(--pt-rose);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect width="20" height="15" x="2" y="4.5" rx="3"/><polygon points="10 8.5 16 12 10 15.5 10 8.5" fill="currentColor"/></svg></span>
@@ -948,7 +735,85 @@
       </div>
     </section>
 
-    <!-- 🔥 5. 낭만 라운지 -->
+    <!-- 🎯 3. [유튜브 밑으로 이동] 어디로 떠날까? 픽 -->
+    <section class="lucky-section-wrap">
+      <div class="section-title-row">
+        <div style="display:flex; align-items:center; gap:5px;">
+          <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor"/></svg></span>
+          <span>이번 주 어디로 떠날까?</span>
+        </div>
+        <span style="font-size:0.68rem; color:#64748b; font-weight:600;">랜덤 3곳 추천</span>
+      </div>
+
+      <div class="lucky-grid-container" id="luckyGridContainer">
+        <!-- Card 0 -->
+        <div class="lucky-spot-card" id="luckyCard0" onclick="triggerHaptic(15); goToLuckySpot(0);">
+          <div class="spot-header-row">
+            <div style="display:flex; align-items:center;">
+              <span class="spot-tag-pill" id="luckyTag0">마운틴</span>
+              <span class="badge-elev" id="luckyElev0">587m</span>
+            </div>
+            <div class="star-wrap" id="luckyDiff0"></div>
+          </div>
+          <div>
+            <div class="spot-title-text" id="luckyName0">불러오는 중...</div>
+            <div class="spot-desc-text" id="luckyDesc0">데이터를 로드하고 있습니다.</div>
+          </div>
+        </div>
+
+        <!-- Card 1 -->
+        <div class="lucky-spot-card" id="luckyCard1" onclick="triggerHaptic(15); goToLuckySpot(1);">
+          <div class="spot-header-row">
+            <div style="display:flex; align-items:center;">
+              <span class="spot-tag-pill" id="luckyTag1">오션뷰</span>
+              <span class="badge-elev" id="luckyElev1">120m</span>
+            </div>
+            <div class="star-wrap" id="luckyDiff1"></div>
+          </div>
+          <div>
+            <div class="spot-title-text" id="luckyName1">불러오는 중...</div>
+            <div class="spot-desc-text" id="luckyDesc1">데이터를 로드하고 있습니다.</div>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="lucky-spot-card" id="luckyCard2" onclick="triggerHaptic(15); goToLuckySpot(2);">
+          <div class="spot-header-row">
+            <div style="display:flex; align-items:center;">
+              <span class="spot-tag-pill" id="luckyTag2">힐링숲</span>
+              <span class="badge-elev" id="luckyElev2">450m</span>
+            </div>
+            <div class="star-wrap" id="luckyDiff2"></div>
+          </div>
+          <div>
+            <div class="spot-title-text" id="luckyName2">불러오는 중...</div>
+            <div class="spot-desc-text" id="luckyDesc2">데이터를 로드하고 있습니다.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mobile-slider-dots">
+        <div class="dot-item active" data-idx="0"></div>
+        <div class="dot-item" data-idx="1"></div>
+        <div class="dot-item" data-idx="2"></div>
+      </div>
+
+      <button type="button" class="btn-dice-prominent" id="btnRollDice" onclick="triggerHaptic(20); rollLuckySpot();">
+        <svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px;"><rect width="18" height="18" x="3" y="3" rx="4"/><path d="M16 8h.01"/><path d="M8 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/><path d="M12 12h.01"/></svg>
+        <span>3곳 새로 추천받기</span>
+      </button>
+    </section>
+
+    <!-- 🌿 LNT 배너 -->
+    <div class="lnt-slim-banner">
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span class="lnt-badge-mini">K-LNT</span>
+        <span>산에서 화기 사용 절대 금지! 흔적 없는 클린 백패킹</span>
+      </div>
+      <span style="color:var(--pt-sage); font-size:0.65rem; font-weight:700;">비화식 필수 ➔</span>
+    </div>
+
+    <!-- 🔥 4. 낭만 라운지 & 출정톡 -->
     <section class="community-box-tight">
       <div>
         <div class="section-title-row" style="margin-bottom:6px;">
@@ -956,12 +821,12 @@
             <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg></span>
             <span>이번 주말 출정 계획</span>
           </div>
-          <span style="color:var(--text-muted); font-size:0.68rem;" id="pollCountText">총 238명 참여</span>
+          <span style="color:var(--text-muted); font-size:0.68rem;" id="pollCountText">투표 중...</span>
         </div>
         <div class="poll-grid-tight" id="pollOptionsList"></div>
       </div>
 
-      <!-- 실시간 출정 한줄톡 -->
+      <!-- 실시간 출정톡 -->
       <div class="talk-section-tight">
         <div class="section-title-row" style="margin-bottom:2px;">
           <div style="display:flex; align-items:center; gap:5px;">
@@ -980,40 +845,120 @@
       </div>
     </section>
 
-    <!-- 🎒 6. 큐레이션 배너 -->
-    <section class="spotlight-banner-slot" onclick="triggerHaptic(15); location.href='map.html';">
-      <div class="banner-slot-left">
-        <span style="font-size:0.62rem; font-weight:800; color:var(--pt-sage); letter-spacing:0.05em;">🎒 CURATION & GEAR</span>
-        <span style="font-size:0.85rem; font-weight:700; color:#fff;">낭만 백패커 추천 장비 & 클린 캠핑 가이드</span>
-      </div>
-      <span class="icon-svg" style="width:12px; height:12px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
-    </section>
-
   </main>
 
-  <!-- 👤 6. 보관함 모달 -->
-  <div class="my-info-modal" id="myInfoModal" onclick="if(event.target===this) closeMyInfoModal()">
-    <div class="my-info-content">
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-hairline); padding-bottom:10px;">
-        <span style="font-weight:800; font-size:0.95rem; color:#fff;">👤 내 낭만 보관함</span>
-        <button style="background:none; border:none; color:#fff; font-size:1.1rem; cursor:pointer;" onclick="triggerHaptic(10); closeMyInfoModal();">✕</button>
+  <!-- ========================================================
+       🗂️ 5. [내 보관함 모달] 3대 탭
+       ======================================================== -->
+  <div class="my-basecamp-modal" id="myInfoModal" onclick="if(event.target===this) closeMyInfoModal()">
+    <div class="my-basecamp-content">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-weight:900; font-size:1.02rem; color:#fff; display:flex; align-items:center; gap:5px;">
+          <svg viewBox="0 0 24 24" class="icon-svg" style="width:17px; height:17px; color:#38bdf8;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <span>내 낭만 보관함</span>
+        </span>
+        <button style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer;" onclick="triggerHaptic(10); closeMyInfoModal();">✕</button>
       </div>
-      <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-hairline); border-radius:10px; padding:12px;">
-        <span style="font-size:0.78rem; color:#34d399; font-weight:800;">🌿 클린 백패커 서약</span>
-        <div style="font-size:0.88rem; font-weight:700; color:#fff; margin-top:2px;">클린 백패커 레벨 1</div>
-        <div style="font-size:0.72rem; color:var(--text-muted); margin-top:4px;">화기 사용 금지와 흔적 없는 야영을 실천합니다.</div>
+
+      <!-- 3대 탭 바 -->
+      <div class="basecamp-tabs">
+        <button type="button" class="basecamp-tab-btn active" onclick="switchBasecampTab('history')">패킹 기록 히스토리</button>
+        <button type="button" class="basecamp-tab-btn" onclick="switchBasecampTab('record')">정복 기록 & 인스타</button>
+        <button type="button" class="basecamp-tab-btn" onclick="switchBasecampTab('memo')">비밀 메모</button>
       </div>
-      <div>
-        <div style="font-weight:700; font-size:0.85rem; margin-bottom:6px; color:#fff;">❤️ 찜한 박지 목록</div>
-        <div style="font-size:0.75rem; color:var(--text-secondary); line-height:1.5;">
-          지도 화면에서 하트(❤️)를 누르면 관심 박지가 이곳에 저장됩니다.
+
+      <!-- 탭 1: 시간별 패킹 기록 히스토리 -->
+      <div class="basecamp-panel active" id="tabPanelHistory">
+        <div style="font-size:0.75rem; color:#94a3b8;">
+          출정 전 저장해 둔 배낭 무게와 장비 구성 목록입니다.
+        </div>
+        <div id="packingHistoryContainer" style="display:flex; flex-direction:column; gap:8px; max-height:360px; overflow-y:auto;"></div>
+      </div>
+
+      <!-- 탭 2: 정복 기록 & 인스타 스토리 캡처 카드 -->
+      <div class="basecamp-panel" id="tabPanelRecord">
+        <div class="insta-story-card" id="instaCaptureArea">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:0.72rem; font-weight:800; color:#38bdf8; letter-spacing:0.04em;">ROMANTIC ROOT FIELD CARD</div>
+            <div style="font-size:0.65rem; color:#94a3b8; font-family:var(--font-en);">낭만루트 공식 인증</div>
+          </div>
+          <div>
+            <div style="font-size:1.2rem; font-weight:900; color:#fff;" id="cardUserNick">낭만 백패커</div>
+            <div style="font-size:0.72rem; color:#cbd5e1; margin-top:2px;">자연 속에서 흔적 없이 머무는 클린 하이커</div>
+          </div>
+          <div style="background:rgba(0,0,0,0.4); border-radius:10px; padding:10px; border:1px solid rgba(255,255,255,0.06);">
+            <div style="display:flex; justify-content:space-between; font-size:0.75rem; font-weight:800;">
+              <span style="color:#6ee7b7;">전국 박지 정복률</span>
+              <span style="color:#fff;" id="cardProgressText">0 / 260곳 (0%)</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="cardProgressBar"></div>
+            </div>
+            <div style="display:flex; justify-content:space-around; margin-top:10px; text-align:center;">
+              <div>
+                <div style="font-size:0.68rem; color:#94a3b8;">정복한 박지</div>
+                <div style="font-size:1.05rem; font-weight:900; color:#38bdf8;" id="cardVisitedCount">0</div>
+              </div>
+              <div style="border-left:1px solid rgba(255,255,255,0.1);"></div>
+              <div>
+                <div style="font-size:0.68rem; color:#94a3b8;">찜한 박지</div>
+                <div style="font-size:1.05rem; font-weight:900; color:#f43f5e;" id="cardFavCount">0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="btn-dice-prominent" onclick="captureAndShareInstaCard()" style="background:linear-gradient(135deg, #e11d48, #c026d3); color:#fff;">
+          <svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px;"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          <span>인스타 스토리용 이미지 저장 / 공유</span>
+        </button>
+
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <div style="font-size:0.78rem; font-weight:800; color:#cbd5e1;">❤️ 찜 & 🚩 정복 목록</div>
+          <div id="basecampSpotList" style="display:flex; flex-direction:column; gap:4px; max-height:160px; overflow-y:auto;"></div>
         </div>
       </div>
-      <button class="btn-dice-prominent" onclick="triggerHaptic(15); location.href='map.html';">📍 전국 박지 지도로 이동</button>
+
+      <!-- 탭 3: 나만의 박지 메모장 -->
+      <div class="basecamp-panel" id="tabPanelMemo">
+        <div style="font-size:0.76rem; color:#94a3b8;">
+          지도 화면에서 기록해둔 나만의 비밀 꿀팁 메모 모음입니다.
+        </div>
+        <div id="basecampMemoListContainer" style="display:flex; flex-direction:column; gap:6px; max-height:350px; overflow-y:auto;"></div>
+      </div>
     </div>
   </div>
 
- <!-- 📱 7. 하단 네비 독 (3개 메뉴 유지) -->
+  <!-- ========================================================
+       📦 6. [신규] 카테고리별 대표 장비 선택 팝업 모달
+       ======================================================== -->
+  <div class="gear-preset-modal" id="gearPresetModal" onclick="if(event.target===this) closeGearPresetModal()">
+    <div class="gear-preset-content">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-weight:800; font-size:0.95rem; color:#fff;" id="presetModalCategoryTitle">장비 선택</span>
+        <button style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer;" onclick="closeGearPresetModal()">✕</button>
+      </div>
+
+      <div style="font-size:0.72rem; color:#94a3b8;">
+        인기 대표 장비를 터치하여 즉시 담거나, 하단에서 직접 입력하세요.
+      </div>
+
+      <!-- 대표 장비 리스트 -->
+      <div class="gear-db-list" id="presetGearDbList"></div>
+
+      <!-- 커스텀 장비 직접 추가 -->
+      <div style="margin-top:6px; border-top:1px dashed var(--border-accent); padding-top:8px;">
+        <div style="font-size:0.74rem; font-weight:800; color:#cbd5e1; margin-bottom:4px;">직접 장비 추가</div>
+        <div style="display:flex; gap:4px;">
+          <input type="text" id="customInputGearName" class="modal-input" placeholder="장비명" style="flex:2;" />
+          <input type="number" id="customInputGearWeight" class="modal-input" placeholder="무게(g)" style="flex:1;" />
+          <button type="button" class="modal-btn" style="background:#0f766e; color:#fff; font-weight:800;" onclick="addCustomGearToCurrentCategory()">추가</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📱 7. 하단 네비 독 -->
   <div class="mobile-bottom-dock notranslate">
     <a href="index.html" class="dock-item active" title="홈" onclick="triggerHaptic(10);">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -1029,7 +974,47 @@
     </button>
   </div>
 
+  <!-- 간편 로그인 모달 -->
+  <div class="custom-modal-overlay" id="loginModalOverlay" onclick="event.stopPropagation();">
+    <div class="custom-modal">
+      <h3 style="color:#38bdf8; font-size:1.05rem; font-weight:800; text-align:center;">낭만 백패커 로그인</h3>
+      <p style="font-size:0.75rem; color:#cbd5e1; line-height:1.45; text-align:center;">
+        로그인 시 나만의 배낭 패킹 기록과 비밀 메모가 안전하게 저장됩니다.
+      </p>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
+        <button type="button" class="modal-btn" style="background:#fee500; color:#191919; font-weight:800;" onclick="loginWithKakao()">
+          카카오 1초 간편 로그인
+        </button>
+        <button type="button" class="modal-btn" style="background:var(--bg-card); color:#cbd5e1; border:1px solid var(--border-accent);" onclick="loginQuickAsMember('낭만백패커')">
+          체험 닉네임으로 바로 로그인
+        </button>
+      </div>
+      <button type="button" class="modal-btn" style="background:transparent; color:#94a3b8; margin-top:4px;" onclick="closeLoginModal()">닫기</button>
+    </div>
+  </div>
+
+  <!-- 👤 닉네임 변경 및 계정 관리 모달 -->
+  <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="event.stopPropagation();">
+    <div class="custom-modal">
+      <h3 style="color:#38bdf8; font-size:1.05rem; font-weight:800; text-align:center;">내 계정 관리</h3>
+      <div style="margin-top:6px;">
+        <label style="color:#94a3b8; font-size:0.75rem; font-weight:700;">활동 닉네임 변경</label>
+        <div style="display:flex; gap:6px; margin-top:4px;">
+          <input type="text" id="profileModalNicknameInput" class="modal-input" placeholder="새 닉네임 입력" style="flex:1;" />
+          <button type="button" class="modal-btn" style="background:#0284c7; color:#fff; font-weight:800;" onclick="saveNewNicknameFromModal()">변경</button>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:8px;">
+        <button type="button" class="modal-btn" style="background:rgba(244,63,94,0.15); border:1px solid #f43f5e; color:#fda4af; font-weight:800;" onclick="closeUserProfileModal(); logoutUser();">
+          로그아웃
+        </button>
+        <button type="button" class="modal-btn" style="background:transparent; color:#94a3b8;" onclick="closeUserProfileModal()">닫기</button>
+      </div>
+    </div>
+  </div>
+
   <script>
+    const KAKAO_APP_KEY = "557f5de0f6391a2419bc5592e6a9c9c1";
     const GAS_API_URL = 'https://script.google.com/macros/s/AKfycby3UfPoQvdyECFHTSZJmOx_htGRKiysAd8-vNSvnMZrg8rXhVkW-0XMcp4H9kxeAcVJ/exec';
     const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
     const GOOGLE_SHEET_MAIN_GID = '0';
@@ -1038,95 +1023,534 @@
     let registeredSpots = [];
     let currentLuckySpots = [null, null, null];
 
-    // -------------------------------------------------------------
-    // 📳 웹 표준 스마트 햅틱(Haptic) 엔진
-    // -------------------------------------------------------------
+    // 🏷️ 7대 표준 백패킹 카테고리 정의 및 인기 대표 장비 공식 DB
+    const CATEGORIES = [
+      {
+        id: 'shelter',
+        title: '숙영 (텐트/타프)',
+        icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#38bdf8;"><path d="M12 2L2 20h20L12 2z"/><path d="M12 2v18M7 20l5-9 5 9"/></svg>',
+        defaultItem: { name: '제로그램 엘찰텐 프로 1.5P', weight: 1450 },
+        db: [
+          { name: '제로그램 엘찰텐 프로 1.5P', weight: 1450 },
+          { name: 'MSR 허바허바 NX 2P', weight: 1540 },
+          { name: '힐레베르그 니악 (Niak)', weight: 1700 },
+          { name: '네이처하이크 클라우드피크2', weight: 2200 },
+          { name: '블랙다이아몬드 피츠로이', weight: 3200 },
+          { name: '빅아그네스 카퍼스퍼 HV UL2', weight: 1420 }
+        ]
+      },
+      {
+        id: 'sleep',
+        title: '수면 (침낭/매트)',
+        icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#34d399;"><path d="M2 17h20M2 13h20M4 9h16a2 2 0 0 1 2 2v6H2v-6a2 2 0 0 1 2-2z"/></svg>',
+        defaultItem: { name: '써마레스트 네오에어 엑스썸', weight: 430 },
+        db: [
+          { name: '써마레스트 네오에어 엑스썸 NXT', weight: 430 },
+          { name: '씨투써밋 이더라이트 XT 인슐', weight: 490 },
+          { name: '니모 텐서 익스트림 올시즌', weight: 540 },
+          { name: '큐물러스 파이라 850 (구스)', weight: 1200 },
+          { name: '몽벨 다운허거 650 #1', weight: 1150 },
+          { name: '씨투써밋 에어로 울트라라이트 베개', weight: 60 }
+        ]
+      },
+      {
+        id: 'pack',
+        title: '배낭 (Pack & Bag)',
+        icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#a78bfa;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>',
+        defaultItem: { name: '그레고리 발토로 65L', weight: 2200 },
+        db: [
+          { name: '그레고리 발토로 65L', weight: 2200 },
+          { name: '오스프리 케스트렐 58L', weight: 1760 },
+          { name: '클라터뮤젠 그립 3.0 60L', weight: 1900 },
+          { name: 'HMG 하이퍼라이트 윈드라이더 3400 (55L)', weight: 910 },
+          { name: '카이팩 58L', weight: 2100 }
+        ]
+      },
+      {
+        id: 'kitchen',
+        title: '취사/보온 (Kitchen)',
+        icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#f59e0b;"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>',
+        defaultItem: { name: '스탠리 클래식 보온병 1.0L', weight: 1450 },
+        db: [
+          { name: '스탠리 클래식 보온병 1.0L (물포함)', weight: 1450 },
+          { name: '써모스 산악전용 보온병 900ml (물포함)', weight: 1290 },
+          { name: '핫앤쿡 발열도시락 2팩 (식사)', weight: 680 },
+          { name: '스노우피크 티타늄 싱글머그 450', weight: 70 },
+          { name: '에버뉴 티타늄 쿠커 570FD', weight: 55 }
+        ]
+      },
+      {
+        id: 'wear',
+        title: '의류/방한 (Wear)',
+        icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#fb7185;"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>',
+        defaultItem: { name: '경량 우모복 & 윈드재킷', weight: 650 },
+        db: [
+          { name: '경량 우모복(다운자켓) & 윈드재킷', weight: 650 },
+          { name: '아크테릭스 아톰 LT 후디', weight: 375 },
+          { name: '랩 마이크로라이트 알파인 자켓', weight: 465 },
+          { name: '우모바지 & 다운부티 (동계)', weight: 420 },
+          { name: '여벌 메리노울 양말 & 비니', weight: 140 }
+        ]
+      },
+      {
+        id: 'electronics',
+        title: '전자/안전 (Tech & Safety)',
+        icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#fde047;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+        defaultItem: { name: '페츨 악틱 코어 & 10000mAh', weight: 320 },
+        db: [
+          { name: '페츨 악틱 코어 헤드랜턴', weight: 80 },
+          { name: '블랙다이아몬드 스팟 400', weight: 77 },
+          { name: '나이트코어 NB10000 보조배터리', weight: 150 },
+          { name: '백패킹용 응급구급키트 & 테이핑', weight: 120 },
+          { name: 'K-LNT 다용도 롤팩 쓰레기봉투', weight: 25 }
+        ]
+      },
+      {
+        id: 'camp',
+        title: '가구/힐링 (Luxury)',
+        icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#38bdf8;"><rect x="4" y="10" width="16" height="4" rx="1"/><path d="M6 14v6M18 14v6M8 10V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4"/></svg>',
+        defaultItem: { name: '헬리녹스 체어원', weight: 890 },
+        db: [
+          { name: '헬리녹스 체어원', weight: 890 },
+          { name: '헬리녹스 체어제로 (초경량)', weight: 490 },
+          { name: '베른 트레킹패드 테이블', weight: 230 },
+          { name: '소토 필드호퍼 테이블', weight: 395 },
+          { name: '경량 카본 삼각대', weight: 650 }
+        ]
+      }
+    ];
+
+    // 현재 선택된 장비 상태
+    let selectedGearMap = JSON.parse(localStorage.getItem('okbm_selected_gears')) || {
+      shelter: CATEGORIES[0].defaultItem,
+      sleep: CATEGORIES[1].defaultItem,
+      pack: CATEGORIES[2].defaultItem,
+      kitchen: CATEGORIES[3].defaultItem,
+      wear: CATEGORIES[4].defaultItem,
+      electronics: CATEGORIES[5].defaultItem,
+      camp: CATEGORIES[6].defaultItem
+    };
+
+    let packingHistoryList = JSON.parse(localStorage.getItem('okbm_packing_history')) || [];
+    let currentOpeningCategoryId = null;
+
+    function safeGetJSON(key, defaultVal) {
+      try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultVal;
+      } catch (e) { return defaultVal; }
+    }
+
+    let authState = {
+      isLoggedIn: !!localStorage.getItem('user_auth_token'),
+      userProfile: safeGetJSON('user_profile', null)
+    };
+
+    function isUserLoggedIn() {
+      return !!localStorage.getItem('user_auth_token') || authState.isLoggedIn;
+    }
+
     function triggerHaptic(duration = 12) {
       if (typeof window !== 'undefined' && 'navigator' in window && typeof navigator.vibrate === 'function') {
         try { navigator.vibrate(duration); } catch (e) {}
       }
     }
 
-    function openMyInfoModal() { document.getElementById('myInfoModal').style.display = 'flex'; }
+    // 🔑 상단 로그인 / 계정 UI 제어
+    function updateHeaderAuthUI() {
+      const btn = document.getElementById('headerAuthBtn');
+      const text = document.getElementById('headerAuthText');
+      if (!btn || !text) return;
+
+      const profile = safeGetJSON('user_profile', null) || authState.userProfile;
+      if (isUserLoggedIn() && profile && profile.nickname) {
+        btn.classList.add('logged-in');
+        text.innerText = profile.nickname;
+      } else {
+        btn.classList.remove('logged-in');
+        text.innerText = '로그인';
+      }
+    }
+
+    function handleAuthBtnClick() {
+      if (isUserLoggedIn()) {
+        openUserProfileModal();
+      } else {
+        openLoginModal();
+      }
+    }
+
+    function openLoginModal() { document.getElementById('loginModalOverlay').style.display = 'flex'; }
+    function closeLoginModal() { document.getElementById('loginModalOverlay').style.display = 'none'; }
+
+    function openUserProfileModal() {
+      const profile = safeGetJSON('user_profile', null) || authState.userProfile;
+      const input = document.getElementById('profileModalNicknameInput');
+      if (input && profile) input.value = profile.nickname || '';
+      document.getElementById('userProfileModalOverlay').style.display = 'flex';
+    }
+    function closeUserProfileModal() { document.getElementById('userProfileModalOverlay').style.display = 'none'; }
+
+    function saveNewNicknameFromModal() {
+      const input = document.getElementById('profileModalNicknameInput');
+      if (!input || !input.value.trim()) return alert('새 닉네임을 입력해주세요.');
+
+      const clean = input.value.trim();
+      let profile = safeGetJSON('user_profile', null) || authState.userProfile || { isMember: true };
+      profile.nickname = clean;
+      localStorage.setItem('user_profile', JSON.stringify(profile));
+      authState.userProfile = profile;
+      authState.isLoggedIn = true;
+
+      updateHeaderAuthUI();
+      closeUserProfileModal();
+      alert(`닉네임이 [${clean}] (으)로 변경되었습니다!`);
+    }
+
+    function loginWithKakao() {
+      if (typeof Kakao === 'undefined') return alert('카카오 SDK를 불러오지 못했습니다.');
+      if (!Kakao.isInitialized()) Kakao.init(KAKAO_APP_KEY);
+
+      Kakao.Auth.login({
+        scope: 'profile_nickname',
+        success: function(authObj) {
+          Kakao.API.request({
+            url: '/v2/user/me',
+            success: function(res) {
+              const kakaoName = res.kakao_account?.profile?.nickname || '낭만백패커';
+              let customNickname = prompt('낭만루트에서 사용할 닉네임을 설정해주세요:', kakaoName) || kakaoName;
+              const profile = { id: 'kakao_' + res.id, nickname: customNickname.trim(), isMember: true };
+
+              localStorage.setItem('user_auth_token', authObj.access_token || ('token_' + Date.now()));
+              localStorage.setItem('user_profile', JSON.stringify(profile));
+              authState.isLoggedIn = true;
+              authState.userProfile = profile;
+
+              updateHeaderAuthUI();
+              closeLoginModal();
+              alert(`[${profile.nickname}]님 환영합니다!`);
+            }
+          });
+        }
+      });
+    }
+
+    function loginQuickAsMember(name = '낭만백패커') {
+      const profile = { nickname: name, id: 'guest_' + Date.now(), isMember: true };
+      localStorage.setItem('user_auth_token', 'token_' + Date.now());
+      localStorage.setItem('user_profile', JSON.stringify(profile));
+      authState.isLoggedIn = true;
+      authState.userProfile = profile;
+      updateHeaderAuthUI();
+      closeLoginModal();
+    }
+
+    function logoutUser() {
+      localStorage.removeItem('user_auth_token');
+      localStorage.removeItem('user_profile');
+      authState.isLoggedIn = false;
+      authState.userProfile = null;
+      updateHeaderAuthUI();
+      alert('로그아웃 되었습니다.');
+    }
+
+    // ========================================================
+    // ⚖️ 1. 메인화면 BPL 계산기 및 카테고리 렌더러
+    // ========================================================
+    function renderCategorySlots() {
+      const container = document.getElementById('categorySlotsContainer');
+      if (!container) return;
+
+      let totalGrams = 0;
+
+      container.innerHTML = CATEGORIES.map(cat => {
+        const item = selectedGearMap[cat.id];
+        const isSelected = item && item.weight > 0;
+        if (isSelected) totalGrams += Number(item.weight);
+
+        return `
+          <div class="category-slot-card" onclick="openGearPresetModal('${cat.id}')">
+            <div class="category-slot-left">
+              <span>${cat.icon}</span>
+              <span>${cat.title}</span>
+            </div>
+            <div class="category-slot-right">
+              ${isSelected ? `
+                <span class="slot-selected-info">${escapeHtml(item.name)} (${(item.weight/1000).toFixed(2)}kg)</span>
+                <span style="color:#64748b; font-size:0.75rem;">⌵</span>
+              ` : `
+                <span style="font-size:0.72rem; color:var(--text-muted);">미선택 +</span>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 상단 칼로리표 무게 & BPL 등급 갱신
+      const totalKg = (totalGrams / 1000).toFixed(2);
+      document.getElementById('totalWeightKgText').innerText = `${totalKg} kg`;
+      document.getElementById('totalWeightGramsText').innerText = `${totalGrams.toLocaleString()} g`;
+
+      const badge = document.getElementById('bplStatusBadge');
+      const badgeText = document.getElementById('bplStatusText');
+      const gauge = document.getElementById('weightGaugeFill');
+
+      // 5kg 이하: UL / 5~8kg: Standard / 8kg 초과: Heavy
+      if (totalGrams <= 5000) {
+        badge.className = 'weight-bpl-badge bpl-ul';
+        badgeText.innerText = '울트라라이트 (UL)';
+      } else if (totalGrams <= 8000) {
+        badge.className = 'weight-bpl-badge bpl-standard';
+        badgeText.innerText = '낭만 경량 세팅 (Standard)';
+      } else {
+        badge.className = 'weight-bpl-badge bpl-heavy';
+        badgeText.innerText = '헤비 패커 모드 (Heavy)';
+      }
+
+      const gaugePct = Math.min(100, Math.round((totalGrams / 12000) * 100));
+      gauge.style.width = `${gaugePct}%`;
+    }
+
+    // 팝업 모달 열기
+    function openGearPresetModal(categoryId) {
+      currentOpeningCategoryId = categoryId;
+      const category = CATEGORIES.find(c => c.id === categoryId);
+      if (!category) return;
+
+      document.getElementById('presetModalCategoryTitle').innerText = `${category.title} 장비 선택`;
+      const listEl = document.getElementById('presetGearDbList');
+
+      listEl.innerHTML = `
+        <div class="gear-db-item" style="border-color:#f43f5e; background:rgba(244,63,94,0.08);" onclick="selectGearForCategory(null, 0)">
+          <span style="color:#fda4af; font-size:0.78rem; font-weight:700;">장비 미지참 (0g)</span>
+          <span style="color:#fda4af; font-size:0.74rem;">비우기 ✕</span>
+        </div>
+      ` + category.db.map(g => `
+        <div class="gear-db-item" onclick="selectGearForCategory('${escapeHtml(g.name)}', ${g.weight})">
+          <span style="font-size:0.8rem; font-weight:700; color:#fff;">${escapeHtml(g.name)}</span>
+          <span style="font-size:0.75rem; font-family:var(--font-en); font-weight:800; color:#38bdf8;">${(g.weight/1000).toFixed(2)}kg (${g.weight}g)</span>
+        </div>
+      `).join('');
+
+      document.getElementById('gearPresetModal').style.display = 'flex';
+      triggerHaptic(10);
+    }
+
+    function closeGearPresetModal() {
+      document.getElementById('gearPresetModal').style.display = 'none';
+      currentOpeningCategoryId = null;
+    }
+
+    function selectGearForCategory(name, weight) {
+      if (!currentOpeningCategoryId) return;
+      selectedGearMap[currentOpeningCategoryId] = { name: name || '미지참', weight: Number(weight) || 0 };
+      localStorage.setItem('okbm_selected_gears', JSON.stringify(selectedGearMap));
+      closeGearPresetModal();
+      renderCategorySlots();
+      triggerHaptic(15);
+    }
+
+    function addCustomGearToCurrentCategory() {
+      if (!currentOpeningCategoryId) return;
+      const nameInput = document.getElementById('customInputGearName');
+      const weightInput = document.getElementById('customInputGearWeight');
+      const name = nameInput.value.trim();
+      const weight = parseInt(weightInput.value, 10);
+
+      if (!name || isNaN(weight) || weight < 0) return alert('장비명과 정확한 무게(g)를 입력해주세요.');
+
+      const cat = CATEGORIES.find(c => c.id === currentOpeningCategoryId);
+      if (cat) cat.db.unshift({ name, weight });
+
+      selectGearForCategory(name, weight);
+      nameInput.value = '';
+      weightInput.value = '';
+    }
+
+    function resetAllGearSelections() {
+      if (!confirm('모든 카테고리 장비를 초기화하시겠습니까?')) return;
+      CATEGORIES.forEach(c => {
+        selectedGearMap[c.id] = { name: '미지참', weight: 0 };
+      });
+      localStorage.setItem('okbm_selected_gears', JSON.stringify(selectedGearMap));
+      renderCategorySlots();
+      triggerHaptic(15);
+    }
+
+    function saveCurrentPackingRecord() {
+      const activeItems = Object.keys(selectedGearMap).map(k => selectedGearMap[k]).filter(i => i && i.weight > 0);
+      if (activeItems.length === 0) return alert('선택된 장비가 없습니다.');
+
+      const totalGrams = activeItems.reduce((sum, g) => sum + Number(g.weight), 0);
+      const totalKg = (totalGrams / 1000).toFixed(2);
+      const now = new Date();
+      const timeStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+      const newRecord = {
+        id: 'pack_' + Date.now(),
+        date: timeStr,
+        weightKg: totalKg,
+        weightGrams: totalGrams,
+        itemCount: activeItems.length,
+        items: activeItems.map(g => `${g.name} (${g.weight}g)`)
+      };
+
+      packingHistoryList.unshift(newRecord);
+      localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
+      triggerHaptic(20);
+      alert(`[ ${timeStr} ]\n총 무게 ${totalKg}kg 패킹 기록이 보관함에 저장되었습니다!`);
+    }
+
+    // ========================================================
+    // 🗂️ 5. 보관함 모달 & 3대 탭
+    // ========================================================
+    function openMyInfoModal(initialTab = 'history') {
+      document.getElementById('myInfoModal').style.display = 'flex';
+      switchBasecampTab(initialTab);
+      renderPackingHistoryList();
+      renderBasecampRecordData();
+      renderBasecampMemos();
+    }
     function closeMyInfoModal() { document.getElementById('myInfoModal').style.display = 'none'; }
 
-    function renderStarSvg(count) {
-      let html = '';
-      for (let i = 0; i < 3; i++) {
-        if (i < count) {
-          html += `<svg class="star-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+    function switchBasecampTab(tabKey) {
+      document.querySelectorAll('.basecamp-tab-btn').forEach((b, idx) => {
+        b.classList.toggle('active', (tabKey === 'history' && idx === 0) || (tabKey === 'record' && idx === 1) || (tabKey === 'memo' && idx === 2));
+      });
+      document.getElementById('tabPanelHistory').classList.toggle('active', tabKey === 'history');
+      document.getElementById('tabPanelRecord').classList.toggle('active', tabKey === 'record');
+      document.getElementById('tabPanelMemo').classList.toggle('active', tabKey === 'memo');
+    }
+
+    function renderPackingHistoryList() {
+      const container = document.getElementById('packingHistoryContainer');
+      if (!container) return;
+
+      if (packingHistoryList.length === 0) {
+        container.innerHTML = '<div style="font-size:0.75rem; color:var(--text-muted); padding:16px 0; text-align:center;">저장된 출정 패킹 기록이 없습니다.<br>홈 화면에서 [오늘의 출정 패킹 보관함에 저장]을 눌러보세요!</div>';
+        return;
+      }
+
+      container.innerHTML = packingHistoryList.map(h => `
+        <div class="pack-history-card">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.72rem; color:#94a3b8;">📅 ${h.date}</span>
+            <button type="button" style="background:none; border:none; color:#f43f5e; font-size:0.7rem; font-weight:800; cursor:pointer;" onclick="deletePackingHistoryItem('${h.id}')">기록 삭제</button>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline;">
+            <span style="font-size:1.15rem; font-weight:900; color:#34d399; font-family:var(--font-en);">${h.weightKg} kg</span>
+            <span style="font-size:0.72rem; color:#cbd5e1;">장비 ${h.itemCount}개</span>
+          </div>
+          <div style="font-size:0.7rem; color:#94a3b8; line-height:1.35; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+            ${escapeHtml(h.items.join(' / '))}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function deletePackingHistoryItem(id) {
+      packingHistoryList = packingHistoryList.filter(h => h.id !== id);
+      localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
+      renderPackingHistoryList();
+    }
+
+    function renderBasecampRecordData() {
+      const bookmarks = new Set(safeGetJSON('okbm_bookmarks', []));
+      const visited = new Set(safeGetJSON('okbm_visited', []));
+      const profile = safeGetJSON('user_profile', null);
+      const nick = profile ? profile.nickname : '낭만 백패커';
+
+      document.getElementById('cardUserNick').innerText = nick;
+      document.getElementById('cardVisitedCount').innerText = visited.size;
+      document.getElementById('cardFavCount').innerText = bookmarks.size;
+
+      const totalTarget = 260;
+      const pct = Math.min(100, Math.round((visited.size / totalTarget) * 100));
+      document.getElementById('cardProgressText').innerText = `${visited.size} / ${totalTarget}곳 (${pct}%)`;
+      document.getElementById('cardProgressBar').style.width = `${pct}%`;
+
+      const listEl = document.getElementById('basecampSpotList');
+      if (listEl) {
+        let items = [];
+        visited.forEach(id => items.push({ id, type: 'visited' }));
+        bookmarks.forEach(id => items.push({ id, type: 'fav' }));
+
+        if (items.length === 0) {
+          listEl.innerHTML = '<div style="font-size:0.72rem; color:var(--text-muted); padding:6px 0;">지도 화면에서 찜(❤️)이나 정복(🚩)을 누르면 목록이 표시됩니다.</div>';
         } else {
-          html += `<svg class="star-svg empty" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+          listEl.innerHTML = items.slice(0, 8).map(it => `
+            <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-hairline); border-radius:6px; padding:6px 9px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="location.href='map.html';">
+              <span style="font-size:0.76rem; font-weight:700; color:#fff;">${it.type === 'visited' ? '🚩 정복 박지' : '❤️ 찜한 박지'} (${it.id})</span>
+              <span style="font-size:0.68rem; color:#38bdf8;">지도로 보기 ➔</span>
+            </div>
+          `).join('');
         }
       }
-      return html;
     }
 
-    // 🏷️ 엄격한 태그 검증기 (연어봉 등 산에 섬백패킹 오매칭 원천 차단)
-    function analyzeSpotTag(spot) {
-      const name = (spot.name || '').toLowerCase();
-      const theme = (spot.theme || '').toLowerCase();
-      const region = (spot.region || '').toLowerCase();
+    function captureAndShareInstaCard() {
+      const card = document.getElementById('instaCaptureArea');
+      if (!card || typeof html2canvas === 'undefined') return;
 
-      const isRealIsland = name.endsWith('도') || theme.includes('섬백패킹') || theme.includes('선착장') || region.includes('옹진군') || region.includes('신안군') || region.includes('완도') || region.includes('울릉');
-      const isNotMountain = !name.includes('봉') && !name.includes('산') && !name.includes('능선') && !name.includes('대');
-
-      if (isRealIsland && isNotMountain) {
-        return { text: '섬백패킹', class: 'tag-island', svg: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>' };
-      }
-      if (name.includes('해변') || name.includes('해수욕장') || theme.includes('오션') || theme.includes('바다') || theme.includes('몽돌')) {
-        return { text: '오션뷰', class: 'tag-ocean', svg: '<path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>' };
-      }
-      if (name.includes('숲') || name.includes('휴양림') || theme.includes('잣나무') || theme.includes('계곡') || theme.includes('숲길')) {
-        return { text: '힐링숲', class: 'tag-forest', svg: '<path d="m14 14 3-3 3 3h-2v4h-2v-4z"/><path d="m4 14 4-5 4 5h-2.5v5h-3v-5z"/>' };
-      }
-      return { text: '마운틴', class: 'tag-mountain', svg: '<path d="m8 3 4 8 5-5 5 15H2L8 3z"/>' };
+      triggerHaptic(15);
+      html2canvas(card, { backgroundColor: '#020617', scale: 2 }).then(canvas => {
+        canvas.toBlob(blob => {
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'romantic_root.png', { type: 'image/png' })] })) {
+            const file = new File([blob], 'romantic_root.png', { type: 'image/png' });
+            navigator.share({ title: '나의 낭만루트 출정 기록', files: [file] }).catch(() => {});
+          } else {
+            const link = document.createElement('a');
+            link.download = '낭만루트_출정기록.png';
+            link.href = canvas.toDataURL();
+            link.click();
+            alert('인스타 공유용 이미지가 다운로드되었습니다!');
+          }
+        });
+      });
     }
 
+    function renderBasecampMemos() {
+      const memoObj = safeGetJSON('okbm_memos', {});
+      const container = document.getElementById('basecampMemoListContainer');
+      if (!container) return;
+
+      const keys = Object.keys(memoObj);
+      if (keys.length === 0) {
+        container.innerHTML = '<div style="font-size:0.74rem; color:var(--text-muted); padding:16px 0; text-align:center;">작성된 박지 메모가 없습니다. 지도 화면에서 나만의 팁을 기록해보세요!</div>';
+        return;
+      }
+
+      container.innerHTML = keys.map(k => `
+        <div style="background:rgba(255,255,255,0.03); border:1px dashed var(--border-accent); border-radius:8px; padding:8px 10px;">
+          <div style="font-size:0.75rem; font-weight:800; color:#38bdf8;">📍 박지 번호: ${k}</div>
+          <div style="font-size:0.74rem; color:#fff; margin-top:3px; white-space:pre-wrap;">${escapeHtml(memoObj[k])}</div>
+        </div>
+      `).join('');
+    }
+
+    // 어디로 떠날까? 추천 로직
     function rollLuckySpot() {
       if (registeredSpots.length === 0) return;
       const btn = document.getElementById('btnRollDice');
-      const cards = [0, 1, 2].map(i => document.getElementById(`luckyCard${i}`));
-
       if (btn) btn.classList.add('rolling');
-      cards.forEach(c => { if(c) c.classList.add('rolling'); });
 
       setTimeout(() => {
         if (btn) btn.classList.remove('rolling');
-        cards.forEach(c => { if(c) c.classList.remove('rolling'); });
-
         const shuffled = [...registeredSpots].sort(() => 0.5 - Math.random());
         currentLuckySpots = shuffled.slice(0, 3);
         displayLuckySpots(currentLuckySpots);
-      }, 300);
+      }, 250);
     }
 
     function displayLuckySpots(spots) {
       spots.forEach((s, idx) => {
         if (!s) return;
-        const tag = analyzeSpotTag(s);
-        const tagEl = document.getElementById(`luckyTag${idx}`);
-        if (tagEl) {
-          tagEl.className = `spot-tag-pill ${tag.class}`;
-          tagEl.innerHTML = `<span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${tag.svg}</svg></span> ${tag.text}`;
-        }
-
         const nameEl = document.getElementById(`luckyName${idx}`);
         if (nameEl) nameEl.innerText = s.name;
-
         const elevEl = document.getElementById(`luckyElev${idx}`);
-        if (elevEl) elevEl.innerText = s.elevation ? `${s.elevation}m` : (s.region ? `${s.region}` : '전망데크');
-        
-        const numDiff = parseInt(String(s.difficulty).replace(/[^0-9]/g, '') || '2', 10);
-        const diffEl = document.getElementById(`luckyDiff${idx}`);
-        if (diffEl) diffEl.innerHTML = renderStarSvg(numDiff);
-        
-        let descView = s.desc || '자연 속에서 누리는 평화로운 하룻밤.';
-        if (descView.includes('[뷰/특징]')) {
-          descView = descView.split('[접근/코스]')[0].replace('[뷰/특징]', '').trim();
-        }
+        if (elevEl) elevEl.innerText = s.elevation ? `${s.elevation}m` : (s.region || '전망데크');
         const descEl = document.getElementById(`luckyDesc${idx}`);
-        if (descEl) descEl.innerText = descView;
+        if (descEl) descEl.innerText = s.desc;
       });
     }
 
@@ -1145,243 +1569,7 @@
       }, { passive: true });
     }
 
-    function parseYouTubeUniversalUrl(url) {
-      if (!url) return null;
-      const str = String(url).trim();
-      const listMatch = str.match(/[?&]list=([^#&?]+)/);
-      const listId = listMatch ? listMatch[1] : null;
-      const videoMatch = str.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/|watch\?.+&v=))([\w-]{11})/);
-      const vid = videoMatch ? videoMatch[1] : null;
-
-      if (listId && !vid) return { embedUrl: `https://www.youtube-nocookie.com/embed/videoseries?list=${listId}&rel=0` };
-      if (vid) {
-        const listParam = listId ? `&list=${listId}` : '';
-        return { embedUrl: `https://www.youtube-nocookie.com/embed/${vid}?rel=0&enablejsapi=1${listParam}` };
-      }
-      return null;
-    }
-
-    async function loadFeaturedVideoFromConfigSheet() {
-      const configUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_CONFIG_GID}&_t=${Date.now()}`;
-      try {
-        const res = await fetch(configUrl);
-        if (res.ok) {
-          const csvText = await res.text();
-          Papa.parse(csvText, {
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-              if (results.data && results.data.length > 0) {
-                const row = results.data[0];
-                const videoUrl = row.featuredVideo || row['영상'] || row['유튜브'];
-                const caption = row.featuredCaption || row['영상설명'] || row['제목'];
-                const spotLink = row.featuredSpot || row['연결박지'] || '충주 고봉';
-
-                if (videoUrl) {
-                  const parsed = parseYouTubeUniversalUrl(videoUrl);
-                  if (parsed) {
-                    const iframe = document.getElementById('ytIframe');
-                    const capTitle = document.getElementById('ytCaptionTitle');
-                    const btn = document.getElementById('btnFindSpot');
-
-                    if (iframe) iframe.src = parsed.embedUrl;
-                    if (capTitle && caption) capTitle.innerText = caption.trim();
-                    if (btn && spotLink) {
-                      btn.onclick = () => { triggerHaptic(15); location.href = `map.html?spot=${encodeURIComponent(spotLink)}`; };
-                    }
-                  }
-                }
-              }
-            }
-          });
-        }
-      } catch (e) {}
-    }
-
-    const POLL_STORAGE_KEY = 'romantic_poll_user_pick';
-    let pollData = [
-      { id: 1, text: '설산/능선', svg: '<path d="m10 20-1.25-2.5L6 18"/><path d="M14 20l1.25-2.5L18 18"/><path d="m4 14 2.5-1.25L6 10"/><path d="m4 10 2.5 1.25L6 14"/><path d="m14 4 1.25 2.5L18 6"/><path d="m10 4-1.25 2.5L6 6"/><path d="m20 10-2.5 1.25L18 14"/><path d="m20 14-2.5-1.25L18 10"/><path d="M2 12h20"/><path d="M12 2v20"/>', votes: 142 },
-      { id: 2, text: '섬/바다', svg: '<path d="M2 6c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>', votes: 68 },
-      { id: 3, text: '조용한 숲', svg: '<path d="m14 14 3-3 3 3h-2v4h-2v-4z"/><path d="m4 14 4-5 4 5h-2.5v5h-3v-5z"/>', votes: 34 },
-      { id: 4, text: '방콕/정비', svg: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>', votes: 12 }
-    ];
-
-    async function loadPollDataFromSheet() {
-      try {
-        const res = await fetch(`${GAS_API_URL}?action=GET_POLL`);
-        const result = await res.json();
-        if (result.status === 'success' && result.data && result.data.length > 0) {
-          result.data.forEach((d, i) => { if(pollData[i]) pollData[i].votes = d.votes; });
-          renderPoll();
-        }
-      } catch (e) {}
-    }
-
-    function renderPoll() {
-      const wrap = document.getElementById('pollOptionsList');
-      if (!wrap) return;
-      const userChoice = localStorage.getItem(POLL_STORAGE_KEY);
-      const totalVotes = pollData.reduce((acc, cur) => acc + cur.votes, 0) || 1;
-      const countEl = document.getElementById('pollCountText');
-      if (countEl) countEl.innerText = `총 ${totalVotes.toLocaleString()}명 참여`;
-
-      wrap.innerHTML = pollData.map(opt => {
-        const pct = Math.round((opt.votes / totalVotes) * 100);
-        const isSelected = userChoice == opt.id;
-        return `
-          <div class="poll-item-tight ${isSelected ? 'selected' : ''}" onclick="triggerHaptic(12); votePollOption(${opt.id});">
-            <div class="poll-bar-fill" style="width: ${pct}%;"></div>
-            <span class="poll-text-tight">
-              <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${opt.svg}</svg></span>
-              ${opt.text}
-            </span>
-            <span class="poll-pct-tight">${pct}%</span>
-          </div>
-        `;
-      }).join('');
-    }
-
-    async function votePollOption(id) {
-      const prev = localStorage.getItem(POLL_STORAGE_KEY);
-      if (prev == id) return;
-
-      if (prev !== null) {
-        const oldOpt = pollData.find(o => o.id == prev);
-        if (oldOpt && oldOpt.votes > 0) oldOpt.votes--;
-      }
-      const target = pollData.find(o => o.id == id);
-      if (target) target.votes++;
-
-      localStorage.setItem(POLL_STORAGE_KEY, String(id));
-      renderPoll();
-
-      try {
-        fetch(GAS_API_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'VOTE_POLL', optionId: id, prevOptionId: prev })
-        });
-      } catch (e) {}
-    }
-
-    // -------------------------------------------------------------
-    // 💬 7. 실시간 출정톡
-    // -------------------------------------------------------------
-    let talkMessages = [
-      { user: '산바람', msg: '선자령 피칭 완료! 바람 잔잔하고 별빛 좋습니다.', time: '방금' },
-      { user: '굴업러', msg: '내일 아침 굴업도 배편 정상 운항하네요 ㅎㅎ', time: '12분 전' },
-      { user: '캠린이', msg: '보온병 챙겨서 첫 출정 준비 중입니다 ⛺', time: '35분 전' }
-    ];
-
-    async function loadTalksFromSheet() {
-      try {
-        const res = await fetch(`${GAS_API_URL}?action=GET_TALKS`);
-        const result = await res.json();
-        if (result.status === 'success' && result.data && result.data.length > 0) {
-          talkMessages = result.data;
-          renderTalkList();
-        }
-      } catch (e) {}
-    }
-
-    function renderTalkList() {
-      const list = document.getElementById('talkBubbleList');
-      if (!list) return;
-      list.innerHTML = talkMessages.map(m => `
-        <li class="talk-bubble-tight">
-          <div class="talk-bubble-left">
-            <span style="color:var(--text-primary); font-weight:800; font-size:0.68rem; margin-right:4px;">${escapeHtml(m.user)}</span>
-            <span style="color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(m.msg)}</span>
-          </div>
-          <span style="color:var(--text-muted); font-size:0.62rem; flex-shrink:0;">${m.time}</span>
-        </li>
-      `).join('');
-    }
-
-    async function submitTalkBubble() {
-      const nickInput = document.getElementById('talkNickInput');
-      const msgInput = document.getElementById('talkMsgInput');
-      const user = nickInput.value.trim() || '익명';
-      const msg = msgInput.value.trim();
-
-      if (!msg) return;
-
-      talkMessages.unshift({ user, msg, time: '방금' });
-      if (talkMessages.length > 10) talkMessages.pop();
-      msgInput.value = '';
-      renderTalkList();
-
-      try {
-        await fetch(GAS_API_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'ADD_TALK', user, msg })
-        });
-      } catch (e) {}
-    }
-
-    // -------------------------------------------------------------
-    // 🔍 8. 스마트 검색 및 자동완성
-    // -------------------------------------------------------------
-    let searchDebounceTimer = null;
-    function onSearchInputChanged(value) {
-      const clearBtn = document.getElementById('btnClearSearch');
-      if (clearBtn) clearBtn.style.display = value ? 'flex' : 'none';
-
-      clearTimeout(searchDebounceTimer);
-      searchDebounceTimer = setTimeout(() => {
-        handleSmartAutoSearch(value);
-      }, 150);
-    }
-
-    function clearSearchInput() {
-      const input = document.getElementById('mainSearchInput');
-      if (input) {
-        input.value = '';
-        input.focus();
-        onSearchInputChanged('');
-      }
-    }
-
-    function handleSmartAutoSearch(keyword) {
-      const dropdown = document.getElementById('searchAutoDropdown');
-      if (!keyword || !keyword.trim() || registeredSpots.length === 0) {
-        dropdown.style.display = 'none';
-        return;
-      }
-      const target = keyword.trim().toLowerCase();
-      const matches = registeredSpots.filter(s => 
-        s.name.toLowerCase().includes(target) || s.region.toLowerCase().includes(target)
-      ).slice(0, 5);
-
-      if (matches.length > 0) {
-        dropdown.innerHTML = matches.map(s => `
-          <li class="auto-item" onclick="triggerHaptic(12); location.href='map.html?spot=${encodeURIComponent(s.name)}';">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <span style="font-size:0.65rem; color:#38bdf8; background:rgba(56,189,248,0.12); padding:2px 6px; border-radius:4px; font-weight:700;">📍 박지</span>
-              <span style="font-weight:700; color:#fff;">${escapeHtml(s.name)}</span>
-            </div>
-            <span style="font-size:0.7rem; color:var(--text-muted);">${escapeHtml(s.region)}</span>
-          </li>
-        `).join('');
-        dropdown.style.display = 'block';
-      } else {
-        dropdown.style.display = 'none';
-      }
-    }
-
-    function executePortalSmartSearch() {
-      const input = document.getElementById('mainSearchInput');
-      const q = input ? input.value.trim() : '';
-      if (!q) { location.href = 'map.html'; return; }
-      location.href = `map.html?spot=${encodeURIComponent(q)}`;
-    }
-
-    // -------------------------------------------------------------
-    // 📦 9. 구글 시트 박지 데이터 로드
-    // -------------------------------------------------------------
+    // 시트 데이터 로드
     async function loadPortalSpotData() {
       const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_MAIN_GID}&_t=${Date.now()}`;
       try {
@@ -1389,28 +1577,15 @@
         if (res.ok) {
           const csvText = await res.text();
           Papa.parse(csvText, {
-            header: true,
-            skipEmptyLines: true,
+            header: true, skipEmptyLines: true,
             complete: function(results) {
               if (results.data && results.data.length > 0) {
-                registeredSpots = results.data.map(row => {
-                  const getVal = (...keys) => {
-                    for (const k of keys) {
-                      for (const rk of Object.keys(row)) {
-                        if (rk.toLowerCase().replace(/\s+/g, '') === k.toLowerCase().replace(/\s+/g, '')) return row[rk];
-                      }
-                    }
-                    return '';
-                  };
-                  return {
-                    name: getVal('fullName', 'name', 'spot_main', '산', '이름', 'spotName'),
-                    region: getVal('cityName', 'region', '지역', '주소', '시군구') || '전국',
-                    elevation: getVal('elevation', '고도') || '',
-                    theme: getVal('terrain', 'theme', '지형', '테마', '태그') || '',
-                    desc: getVal('desc_summary', 'desc', '특징', '설명', '한줄설명') || '자연 속에서 즐기는 조용한 하룻밤.',
-                    difficulty: getVal('difficulty', '난이도', 'level') || '2'
-                  };
-                }).filter(s => s.name && s.name.trim() !== '');
+                registeredSpots = results.data.map(row => ({
+                  name: row.fullName || row.name || row.spot_main || '',
+                  region: row.cityName || row.region || '전국',
+                  elevation: row.elevation || '',
+                  desc: row.desc_summary || row.desc || '자연 속에서 즐기는 조용한 하룻밤.'
+                })).filter(s => s.name.trim() !== '');
 
                 if (registeredSpots.length > 0) {
                   currentLuckySpots = registeredSpots.slice(0, 3);
@@ -1428,16 +1603,13 @@
       return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // 🚀 최종 초기화
     window.addEventListener('DOMContentLoaded', () => {
-      renderPoll();
-      renderTalkList();
+      if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) Kakao.init(KAKAO_APP_KEY);
+      updateHeaderAuthUI();
+      renderCategorySlots();
       setupMobileSliderDots();
       loadPortalSpotData();
-      loadFeaturedVideoFromConfigSheet();
-      loadPollDataFromSheet();
-      loadTalksFromSheet();
     });
   </script>
-</html>
 </body>
+</html>
