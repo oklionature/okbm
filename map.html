@@ -1062,7 +1062,7 @@
     </button>
   </div>
 
-  <!-- 간편 로그인 모달 -->
+ <!-- 간편 로그인 모달 -->
   <div class="custom-modal-overlay" id="loginModalOverlay" onclick="event.stopPropagation();">
     <div class="custom-modal login-box-card">
       <h3 style="color:#38bdf8; font-size:1.05rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:6px;">
@@ -1077,16 +1077,13 @@
           <span id="kakaoLoginIcon" style="display:inline-flex;"></span>
           <span>카카오 1초 간편 로그인</span>
         </button>
-        <button type="button" class="btn-quick-guest-login" onclick="loginQuickAsMember('낭만백패커')">
-          <span id="quickGuestIcon" style="display:inline-flex; color:#fde047;"></span>
-          <span>닉네임으로 바로 로그인 (체험)</span>
-        </button>
       </div>
       <div class="modal-btn-row" style="justify-content:center; margin-top:6px;">
         <button type="button" class="modal-btn modal-btn-cancel" onclick="closeLoginModal()">닫기</button>
       </div>
     </div>
   </div>
+
 
   <!-- 👤 닉네임 변경 및 회원 관리 모달 -->
   <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="event.stopPropagation();">
@@ -1563,7 +1560,7 @@
         success: function(authObj) {
           Kakao.API.request({
             url: '/v2/user/me',
-            success: function(res) {
+            success: async function(res) {
               const kakaoId = 'kakao_' + res.id;
               
               // 1. 카카오 실제 닉네임 가져오기
@@ -1574,7 +1571,6 @@
                 kakaoNick = res.kakao_account.profile.nickname;
               }
 
-              // 2. 💡 [핵심] 귀찮은 닉네임 prompt() 질문창을 아예 삭제하여 즉시 통과!
               const existingProfile = safeGetJSON('user_profile', null);
               const finalNickname = (existingProfile && existingProfile.id === kakaoId && existingProfile.nickname)
                 ? existingProfile.nickname
@@ -1584,44 +1580,37 @@
                 id: kakaoId,
                 nickname: finalNickname,
                 isMember: true,
-                createdAt: (existingProfile && existingProfile.createdAt) ? existingProfile.createdAt : Date.now()
+                createdAt: (existingProfile && existingProfile.createdAt) ? existingProfile.createdAt : Date.now(),
+                lastNicknameChangedAt: (existingProfile && existingProfile.lastNicknameChangedAt) ? existingProfile.lastNicknameChangedAt : 0
               };
 
-              // 브라우저 저장소 보관
+              // 브라우저 계정 저장
               localStorage.setItem('user_auth_token', authObj.access_token || ('token_' + Date.now()));
               localStorage.setItem('user_profile', JSON.stringify(profile));
               authState.isLoggedIn = true;
               authState.userProfile = profile;
 
-              // 3. 💡 [핵심] 상단 UI 갱신 및 로그인 팝업창 즉시 닫기!
+              // 2. 🛡️ 클라우드(구글시트)와 로컬 데이터 동기화 및 메모리 복원
+              userBookmarks = new Set(safeGetJSON('okbm_bookmarks', []).map(s => String(s).trim()));
+              userVisited = new Set(safeGetJSON('okbm_visited', []).map(s => String(s).trim()));
+              userMemos = safeGetJSON('okbm_memos', {});
+
+              // 상단 UI 갱신 및 팝업 닫기
               updateHeaderAuthUI();
               closeLoginModal();
               triggerHaptic('success');
-              showToast(`${ICONS.MEMBER} <span>[${profile.nickname}]님 환영합니다!</span>`);
+              showToast(`${ICONS.MEMBER} <span>[${profile.nickname}]님 환영합니다! 보관함이 동기화되었습니다.</span>`);
 
-              // 4. 구글 시트 users 탭으로 회원 및 보관함 동기화
-              fetch(GAS_API_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({
-                  action: 'USER_SYNC',
-                  userId: kakaoId,
-                  nickname: profile.nickname,
-                  bookmarks: safeGetJSON('okbm_bookmarks', []),
-                  visited: safeGetJSON('okbm_visited', []),
-                  memos: safeGetJSON('okbm_memos', {}),
-                  packHistory: safeGetJSON('okbm_packing_history', [])
-                })
-              }).catch(function(err) {});
+              // 3. 구글 시트 백업 동기화
+              syncUserDataToCloud();
 
-              // 5. 지도 화면 즉시 갱신 (잠금 해제 및 마커 상태 반영)
+              // 4. 화면 즉시 갱신
               refreshCurrentSpotPopup();
               renderSubChips();
               renderSpots();
             },
             fail: function(error) {
-              showToast(`${ICONS.ALERT_CARD} <span>사용자 정보를 불러오지 못했습니다.</span>`);
+              showToast(`${ICONS.ALERT_CARD} <span>카카오 프로필 정보를 가져오지 못했습니다.</span>`);
             }
           });
         },
@@ -1636,28 +1625,22 @@
         Kakao.Auth.logout(function() {});
       }
 
+      // 🛡️ 핵심 개선: 인증 정보만 지우고, 찜/패킹/메모 등 내 소중한 데이터는 절대 지우지 않습니다!
       localStorage.removeItem('user_auth_token'); 
       localStorage.removeItem('user_profile');
-      localStorage.removeItem('okbm_bookmarks');
-      localStorage.removeItem('okbm_visited');
-      localStorage.removeItem('okbm_memos');
-      localStorage.removeItem('okbm_packing_history');
       
       authState.isLoggedIn = false;
       authState.userProfile = null;
-      userBookmarks.clear();
-      userVisited.clear();
-      userMemos = {};
       
       updateHeaderAuthUI();
       triggerHaptic('light');
-      showToast('로그아웃 되었습니다. 보관함이 비워집니다.');
+      showToast('로그아웃 되었습니다. (내 보관함 정보는 기기에 안전하게 보관됩니다)');
 
       refreshCurrentSpotPopup();
       renderSubChips();
       renderSpots();
     }
-
+   
     let isAdminMode = false, isCleanMapMode = false, currentMapLayerState = 0;
     let currentMasterTab = 'REGION', currentRegionFilter = 'ALL', currentTerrainFilter = 'ALL', currentCourseFilter = 'ALL', currentMyFilter = 'ALL';
     let currentHudFilterDiff = 'ALL', currentHudFilterStatus = 'ALL', currentHudFilterTerrain = 'ALL';
@@ -1722,7 +1705,27 @@
 
       const cleanNick = input.value.trim();
       let profile = safeGetJSON('user_profile', null) || authState.userProfile || { isMember: true };
+
+      // 1. 기존 사용 중인 닉네임과 동일한 경우 쿨타임 차감 없이 안내
+      if (profile.nickname === cleanNick) {
+        showToast('현재 사용 중인 닉네임과 동일합니다.');
+        return;
+      }
+
+      // 2. 14일(2주일) 변경 쿨타임 검사 (14일 = 14 * 24 * 60 * 60 * 1000 밀리초)
+      const COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
+      const lastChanged = profile.lastNicknameChangedAt || 0;
+      const now = Date.now();
+
+      if (lastChanged && (now - lastChanged < COOLDOWN_MS)) {
+        const remainingDays = Math.ceil((COOLDOWN_MS - (now - lastChanged)) / (1000 * 60 * 60 * 24));
+        alert(`닉네임은 2주(14일)에 한 번만 변경하실 수 있습니다.\n\n앞으로 [ ${remainingDays}일 ] 후에 다시 변경 가능합니다.`);
+        return;
+      }
+
+      // 3. 닉네임 및 변경 시각 저장
       profile.nickname = cleanNick;
+      profile.lastNicknameChangedAt = now;
 
       localStorage.setItem('user_profile', JSON.stringify(profile));
       authState.userProfile = profile;
@@ -1743,6 +1746,7 @@
       showToast(`${ICONS.MEMBER} <span>닉네임이 [${cleanNick}] (으)로 변경되었습니다!</span>`);
     }
 
+  
     function openLoginModal() { 
       const modal = document.getElementById('loginModalOverlay');
       if (modal) modal.style.display = 'flex'; 
@@ -1856,7 +1860,7 @@
     }
 
     // 🎨 정적 HTML 영역 벡터 바인딩 함수
-    function initStaticVectors() {
+   function initStaticVectors() {
       document.getElementById('sidebarCampIcon').innerHTML = ICONS.CAMP;
       document.getElementById('btnSidebarSubmit').innerHTML = `${ICONS.BACKPACK}<span>제보</span>`;
       document.getElementById('iconToolBackup').innerHTML = ICONS.BACKUP;
@@ -1874,7 +1878,6 @@
       document.getElementById('bannerPinIcon').innerHTML = ICONS.PIN;
       document.getElementById('loginModalCampIcon').innerHTML = ICONS.CAMP;
       document.getElementById('kakaoLoginIcon').innerHTML = ICONS.TALK;
-      document.getElementById('quickGuestIcon').innerHTML = ICONS.FAST;
       document.getElementById('lntAlertTopIcon').innerHTML = ICONS.ALERT_CARD;
       document.getElementById('lntProhibitIcon').innerHTML = ICONS.BAN_LNT;
 
