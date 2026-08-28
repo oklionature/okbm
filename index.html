@@ -147,8 +147,18 @@
     .brand-line:active { transform: scale(0.98); }
 
     .brand-sym-box {
-      width: 24px;
-      height: 24px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      flex-shrink: 0;
+    }
+    /* ☀️ [7단계 32px 확정] 심볼 박스 */
+    .brand-sym-box {
+      width: 36px;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -158,14 +168,14 @@
     .brand-sym-box::before {
       content: '';
       position: absolute;
-      width: 30px;
-      height: 30px;
-      background: radial-gradient(circle, rgba(52, 211, 153, 0.55) 0%, transparent 70%); /* 🌿 세이지 후광 */
+      width: 42px;
+      height: 42px;
+      background: radial-gradient(circle at 65% 25%, rgba(245, 158, 11, 0.35) 0%, rgba(244, 114, 182, 0.22) 45%, transparent 70%);
       border-radius: 50%;
       z-index: -1;
       filter: blur(4px);
     }
-    .brand-sym-box svg { width: 20px; height: 20px; }
+    .brand-sym-box svg { width: 32px; height: 32px; display: block; }
     
     .brand-title {
       font-family: var(--font-display);
@@ -179,7 +189,7 @@
     .brand-dot {
       width: 3.5px;
       height: 3.5px;
-      background: #34d399; /* 🌿 세이지 그린 점 */
+      background: #34d399; /* 🌿 기존 세이지 그린 점 */
       border-radius: 50%;
       box-shadow: 0 0 6px #34d399;
       flex-shrink: 0;
@@ -188,12 +198,12 @@
       font-family: 'Arita-buri-SemiBold', serif !important;
       font-size: 0.86rem;
       font-weight: normal;
-      color: #6ee7b7; /* 🌿 세이지 그린 텍스트 */
+      color: #6ee7b7; /* 🌿 기존 세이지 그린 텍스트 */
       letter-spacing: -0.02em;
       line-height: 1;
       text-shadow: 0 0 10px rgba(110, 231, 183, 0.25);
-      white-space: nowrap;
-    }
+      } white-space: nowrap;
+    
 
     /* 🔍 인라인 슬릭 검색창 */
     .apple-search-box {
@@ -762,12 +772,29 @@
     <div class="header-top-row">
       <a href="index.html" class="brand-line" onclick="triggerHaptic(10)" title="낭만루트 홈">
         <div class="brand-sym-box">
-          <svg viewBox="0 0 32 32" fill="none">
-            <path d="M5 25L13 11l5 8 8-14" stroke="#64748b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M13 11l4-6 9 14" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round"/>
-            <circle cx="17" cy="5" r="2.2" fill="#34d399"/>
-          </svg>
-        </div>
+              <svg viewBox="0 0 32 32" fill="none">
+                <!-- 배경 샴페인 로즈 & 골드 안개 일출 (중심 21, 6 고정) -->
+                <circle cx="21" cy="6" r="9" fill="rgba(244,114,182,0.12)"/>
+                <circle cx="21" cy="6" r="6" fill="rgba(245,158,11,0.18)"/>
+                <circle cx="21" cy="6" r="3.8" fill="rgba(251,191,36,0.28)"/>
+                
+                <!-- 첫 번째 R: Romantic 낭만 능선 (샴페인 로즈 핑크) -->
+                <circle cx="2" cy="24" r="1.8" fill="#fda4af"/>
+                <circle cx="9" cy="12" r="2.2" fill="#fda4af"/>
+                <circle cx="14" cy="16" r="1.8" fill="#fda4af"/>
+                <circle cx="13" cy="24" r="1.8" fill="#fda4af"/>
+                <path d="M2 24L9 12H12.5L14 16L10 16M10 16L13 24" stroke="#fda4af" stroke-width="1.8" stroke-linecap="round"/>
+                
+                <!-- 두 번째 R: Route 강인한 탐색 피크 (플래티넘 화이트 만년설 & 골든 비콘) -->
+                <circle cx="21" cy="6" r="2.8" fill="#f59e0b"/>
+                <circle cx="27" cy="13" r="2.2" fill="#e2e8f0"/>
+                <circle cx="30" cy="24" r="2.4" fill="#e2e8f0"/>
+                <path d="M13 24L21 6H25L27 13L22 13M22 13L30 24" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
+                
+                <!-- 최고봉 정상 핀 (Pure White Core) -->
+                <circle cx="21" cy="6" r="1" fill="#ffffff"/>
+              </svg>
+            </div>
         <span class="brand-title">낭만루트</span>
         <span class="brand-dot"></span>
         <span class="brand-en">일상을 떠나 자연으로</span>
