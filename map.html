@@ -1,13 +1,22 @@
+<!DOCTYPE html>
 <html lang="ko" class="notranslate">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="google" content="notranslate" />
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <!DOCTYPE html>
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-  <title>낭만루트 | 대한민국 260+ 백패킹 필드 팩트맵</title>
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <!-- 🧭 브라우저 탭 제목 -->
+    <title>낭만루트 ROMANTIC ROOT | 전국 백패킹 지도 커뮤니티</title>
+
+    <!-- 📱 카카오톡 / 문자 링크 공유 시 나타나는 미리보기 카드 (Open Graph) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="낭만루트 ROMANTIC ROOT | 전국 백패킹 지도 커뮤니티" />
+    <meta property="og:description" content="전국 검증된 백패킹 박지, 들머리 주소, 네비바로가기까지, 실전 코스 정보" />
+    <meta property="og:image" content="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80" />
+    <meta name="description" content="전국 검증된 백패킹 박지, 들머리 주소, 네비바로가기까지 실전 코스 정보" />
 
   <!-- 🔤 면도날 선명도 텍스트 렌더링 전용 웹폰트 CDN -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
@@ -1094,6 +1103,28 @@
       </div>
     </div>
   </div>
+  <!-- 👤 닉네임 변경 및 회원 관리 모달 -->
+  <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="event.stopPropagation();">
+    <div class="custom-modal login-box-card">
+      <h3 style="color:#38bdf8; font-size:1.05rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:6px;">
+        <svg viewBox="0 0 24 24" class="ui-icon" style="width:18px; height:18px; color:#6ee7b7;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+        <span>내 계정 관리</span>
+      </h3>
+      <div class="modal-field" style="text-align:left; margin-top:6px;">
+        <label style="color:#94a3b8; font-size:0.75rem; font-weight:700;">활동 닉네임 변경</label>
+        <div style="display:flex; gap:6px; margin-top:4px;">
+          <input type="text" id="profileModalNicknameInput" class="modal-input" placeholder="새 닉네임 입력" style="flex:1;" />
+          <button type="button" class="modal-btn" style="background:#0284c7; color:#fff; font-weight:800; padding:6px 12px;" onclick="saveNewNicknameFromModal()">변경</button>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; width:100%; margin-top:10px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;">
+        <button type="button" class="modal-btn" style="background:rgba(244,63,94,0.15); border:1px solid #f43f5e; color:#fda4af; font-weight:800; padding:8px;" onclick="closeUserProfileModal(); logoutUser();">
+          로그아웃
+        </button>
+        <button type="button" class="modal-btn modal-btn-cancel" onclick="closeUserProfileModal()">닫기</button>
+      </div>
+    </div>
+  </div>
 
   <!-- K-LNT 7원칙 모달 -->
   <div class="custom-modal-overlay" id="lntModalOverlay">
@@ -1498,7 +1529,7 @@
       updateLODLabels();
     }
 
-    function loginWithKakao() {
+   function loginWithKakao() {
       if (typeof Kakao === 'undefined') {
         alert('카카오 SDK를 불러오지 못했습니다.');
         return;
@@ -1513,14 +1544,30 @@
           Kakao.API.request({
             url: '/v2/user/me',
             success: function(res) {
-              const userNickname = res.kakao_account?.profile?.nickname || '카카오 회원';
+              const kakaoDefaultName = res.kakao_account?.profile?.nickname || '낭만백패커';
+              
+              // 💡 가입 시 닉네임 직접 설정
+              let customNickname = prompt(
+                '낭만루트에서 활동할 닉네임을 설정해주세요:\n(설정 후 14일 동안 변경할 수 없습니다)',
+                kakaoDefaultName
+              );
+
+              if (!customNickname || !customNickname.trim()) {
+                customNickname = kakaoDefaultName;
+              } else {
+                customNickname = customNickname.trim();
+              }
+
+              const now = Date.now();
               const profile = {
                 id: 'kakao_' + res.id,
-                nickname: userNickname,
-                isMember: true
+                nickname: customNickname,
+                isMember: true,
+                createdAt: now,
+                lastNicknameChange: now // 💡 최초 설정일 저장
               };
 
-              localStorage.setItem('user_auth_token', authObj.access_token || ('token_' + Date.now()));
+              localStorage.setItem('user_auth_token', authObj.access_token || ('token_' + now));
               localStorage.setItem('user_profile', JSON.stringify(profile));
 
               authState.isLoggedIn = true;
@@ -1529,7 +1576,7 @@
               updateHeaderAuthUI();
               closeLoginModal();
               triggerHaptic('success');
-              showToast(`${ICONS.MEMBER} <span>${profile.nickname}님 환영합니다!</span>`);
+              showToast(`${ICONS.MEMBER} <span>[${profile.nickname}]님 환영합니다!</span>`);
 
               refreshCurrentSpotPopup();
               renderSpots();
@@ -1574,7 +1621,7 @@
     let modalMode = 'PROPOSAL', modalEditIndex = -1, modalPendingData = { lat: 0, lng: 0, address: '' }, isPickingLocationMode = false;
     let currentGpxPolyline = null, activeGpxSpotId = null;
    
-    // 🔑 8. 상단 GNB 로그인 UI 제어 (20번 백패커 / 4번 인증회원 적용)
+    // 🔑 8. 상단 GNB 로그인 UI 제어
     function updateHeaderAuthUI() {
       const btn = document.getElementById('headerAuthBtn');
       const text = document.getElementById('headerAuthText');
@@ -1582,12 +1629,12 @@
       if (!btn || !text) return;
 
       const isLogged = isUserLoggedIn();
-      const profile = safeGetJSON('user_profile', authState.userProfile);
+      const profile = safeGetJSON('user_profile', null) || authState.userProfile;
 
-      if (isLogged && profile) {
+      if (isLogged && profile && profile.nickname) {
         btn.classList.add('logged-in');
         if (icon) icon.innerHTML = ICONS.MEMBER;
-        text.innerText = profile.nickname || '회원';
+        text.innerText = profile.nickname;
       } else {
         btn.classList.remove('logged-in');
         if (icon) icon.innerHTML = ICONS.AUTH;
@@ -1595,14 +1642,59 @@
       }
     }
 
-    function handleAuthBtnClick() {
+   function handleAuthBtnClick() {
       if (isUserLoggedIn()) {
-        if (confirm('로그아웃 하시겠습니까?')) {
-          logoutUser();
-        }
+        openUserProfileModal();
       } else { 
         openLoginModal(); 
       }
+    }
+
+    function openUserProfileModal() {
+      const modal = document.getElementById('userProfileModalOverlay');
+      const input = document.getElementById('profileModalNicknameInput');
+      const profile = safeGetJSON('user_profile', null) || authState.userProfile;
+      if (input && profile) {
+        input.value = profile.nickname || '';
+      }
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeUserProfileModal() {
+      const modal = document.getElementById('userProfileModalOverlay');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function saveNewNicknameFromModal() {
+      const input = document.getElementById('profileModalNicknameInput');
+      if (!input || !input.value.trim()) {
+        alert('변경할 닉네임을 입력해주세요.');
+        return;
+      }
+
+      const cleanNick = input.value.trim();
+      let profile = safeGetJSON('user_profile', null) || authState.userProfile || { isMember: true };
+      profile.nickname = cleanNick;
+
+      localStorage.setItem('user_profile', JSON.stringify(profile));
+      authState.userProfile = profile;
+      authState.isLoggedIn = true;
+
+      // 1. 상단바 닉네임 UI 즉시 교체
+      updateHeaderAuthUI();
+
+      // 2. 출정톡 작성자 입력창 실시간 교체
+      document.querySelectorAll('.comment-input-author').forEach(el => {
+        el.value = cleanNick;
+      });
+
+      // 3. 상세창 및 리스트 즉시 새로고침
+      refreshCurrentSpotPopup();
+      renderSpots();
+
+      closeUserProfileModal();
+      triggerHaptic('success');
+      showToast(`${ICONS.MEMBER} <span>닉네임이 [${cleanNick}] (으)로 변경되었습니다!</span>`);
     }
 
     function openLoginModal() { 
