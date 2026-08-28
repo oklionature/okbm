@@ -19,13 +19,12 @@
     <meta property="og:image" content="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80" />
     <meta name="description" content="전국 검증된 백패킹 박지, 들머리 주소, 네비바로가기까지 실전 코스 정보" />
 
-  <!-- 🔤 최상위 웹폰트 CDN -->
+  <!-- 🔤 최상위 웹폰트 CDN (미사용 폰트 제거 및 연결 가속 최적화) -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT/fonts/static/woff2/SUIT.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
-  
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
   <!-- 카카오 SDK & 카카오맵 공식 SDK -->
   <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
   <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=557f5de0f6391a2419bc5592e6a9c9c1&libraries=services,clusterer"></script>
@@ -1447,13 +1446,11 @@
       const mobileContent = document.getElementById('mobileSheetContent');
       const pcDrawer = document.getElementById('pcSlidingDrawer');
 
+      // 1. 활성 박지 객체 단일화 탐색
       let targetSpot = currentActiveSpot;
-      if (!targetSpot && window.__ACTIVE_SPOT_OBJECT__) {
-        targetSpot = window.__ACTIVE_SPOT_OBJECT__;
-      }
       if (!targetSpot) {
         const savedId = localStorage.getItem('okbm_active_spot_id') || window.__MANUAL_ACTIVE_ID__;
-        if (savedId) {
+        if (savedId && Array.isArray(spots)) {
           targetSpot = spots.find(s => String(s.id).trim() === String(savedId).trim());
         }
       }
@@ -1462,12 +1459,14 @@
 
       if (!targetSpot) return;
 
+      // 상태 동기화
       currentActiveSpot = targetSpot;
       window.__ACTIVE_SPOT_OBJECT__ = targetSpot;
       window.__MANUAL_ACTIVE_ID__ = String(targetSpot.id).trim();
       localStorage.setItem('okbm_active_spot_id', String(targetSpot.id).trim());
 
-      if (isMobile || (mobileSheet && mobileSheet.classList.contains('open'))) {
+      // 2. [최적화] 현재 사용 중인 디바이스 화면(모바일 vs PC)에만 렌더링 수행 (2중 낭비 방지)
+      if (isMobile) {
         if (mobileContent) {
           mobileContent.innerHTML = generateDetailContentHtml(targetSpot, true);
         }
@@ -1475,18 +1474,17 @@
           mobileSheet._spotData = targetSpot;
           mobileSheet.classList.add('open');
         }
-      }
-
-      if (!isMobile || (pcDrawer && pcDrawer.classList.contains('open'))) {
+      } else {
         if (pcDrawer) {
           pcDrawer._spotData = targetSpot;
           pcDrawer.innerHTML = generateDetailContentHtml(targetSpot, false);
-          if (!isMobile) pcDrawer.classList.add('open');
+          pcDrawer.classList.add('open');
         }
       }
     }
 
     function openMobileBottomSheet(spot) {
+      if (!spot) return;
       currentActiveSpot = spot;
       window.__ACTIVE_SPOT_OBJECT__ = spot;
       window.__MANUAL_ACTIVE_ID__ = String(spot.id).trim();
@@ -1499,6 +1497,7 @@
       sheet._spotData = spot;
       content.innerHTML = generateDetailContentHtml(spot, true);
       sheet.classList.add('open');
+      
       loadLiveWeatherForSpot(spot.id, spot.lat, spot.lng);
       requestAnimationFrame(() => { content.scrollTop = 0; });
     }
@@ -1517,6 +1516,7 @@
     }
 
     function openPcSlidingDrawer(spot) {
+      if (!spot) return;
       currentActiveSpot = spot;
       window.__ACTIVE_SPOT_OBJECT__ = spot;
       window.__MANUAL_ACTIVE_ID__ = String(spot.id).trim();
@@ -1530,6 +1530,7 @@
       drawer.innerHTML = generateDetailContentHtml(spot, false);
       drawer.classList.add('open');
       if (closeTab) closeTab.classList.add('visible');
+      
       loadLiveWeatherForSpot(spot.id, spot.lat, spot.lng);
       requestAnimationFrame(() => { drawer.scrollTop = 0; });
     }
@@ -2294,14 +2295,36 @@
       return `<svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:${color};"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/><circle cx="11.5" cy="17.5" r="2.2" fill="${fill}" stroke="none"/><path d="M11.5 8v6" stroke="${fill}" stroke-width="1.5"/></svg>`;
     }
 
+    // 30분 로컬 캐시를 활용한 날씨 초고속 렌더링
     const weatherCache = new Map();
     async function loadLiveWeatherForSpot(spotId, lat, lng) {
       if (!lat || !lng) return;
-      const cached = weatherCache.get(spotId);
-      if (cached && (Date.now() - cached.time < 1800000)) { renderWeatherUI(spotId, cached.data); return; }
+      const sId = String(spotId).trim();
+      const cacheKey = `okbm_weather_${sId}`;
       
+      // 1. 메모리 캐시 확인 (0ms)
+      const memoryCached = weatherCache.get(sId);
+      if (memoryCached && (Date.now() - memoryCached.time < 1800000)) {
+        renderWeatherUI(sId, memoryCached.data);
+        return;
+      }
+
+      // 2. 세션 스토리지 캐시 확인 (새로고침 시에도 0ms 즉시 표시)
+      try {
+        const sessionItem = sessionStorage.getItem(cacheKey);
+        if (sessionItem) {
+          const parsed = JSON.parse(sessionItem);
+          if (Date.now() - parsed.time < 1800000) {
+            weatherCache.set(sId, parsed);
+            renderWeatherUI(sId, parsed.data);
+            return;
+          }
+        }
+      } catch (e) {}
+      
+      // 3. 캐시가 없을 때만 오픈 메테오 API 호출 (타임아웃 3초 가드)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
 
       try {
         const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m&wind_speed_unit=ms`, { signal: controller.signal });
@@ -2309,12 +2332,14 @@
         if (res.ok) {
           const data = await res.json();
           const wData = { temp: Math.round(data.current.temperature_2m), wind: Number(data.current.wind_speed_10m.toFixed(1)) };
-          weatherCache.set(spotId, { time: Date.now(), data: wData });
-          renderWeatherUI(spotId, wData);
+          const cacheObj = { time: Date.now(), data: wData };
+          weatherCache.set(sId, cacheObj);
+          try { sessionStorage.setItem(cacheKey, JSON.stringify(cacheObj)); } catch (e) {}
+          renderWeatherUI(sId, wData);
         }
       } catch (e) {
         clearTimeout(timeoutId);
-        const el = document.getElementById(`liveWeatherBox_${spotId}`);
+        const el = document.getElementById(`liveWeatherBox_${sId}`);
         if (el) el.innerHTML = `<span class="weather-chip" style="color:var(--text-muted);">${ICONS.TEMP} 기상 연동 대기</span>`;
       }
     }
@@ -2329,28 +2354,44 @@
     }
 
     async function getElevation(lat, lng) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
       try {
-        const res = await fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`);
+        const res = await fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`, { signal: controller.signal });
+        clearTimeout(timeoutId);
         const data = await res.json();
         if (data?.results?.length > 0) return `${Math.round(data.results[0].elevation)}m`;
-      } catch (e) {}
+      } catch (e) {
+        clearTimeout(timeoutId);
+      }
       return '450m';
     }
 
+    // 주소 검색 결과 메모이제이션 캐시 (카카오 API 낭비 방지)
+    const geocodeQueryCache = new Map();
     async function searchCoordsByQuery(query) {
       if (!query?.trim()) return null;
       const cleanQ = query.trim();
+      if (geocodeQueryCache.has(cleanQ)) {
+        return geocodeQueryCache.get(cleanQ);
+      }
       return new Promise((resolve) => {
         if (!geocoder) return resolve(null);
         geocoder.addressSearch(cleanQ, (result, status) => {
           if (status === kakao.maps.services.Status.OK && result.length > 0) {
-            resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x), title: result[0].address_name });
+            const resObj = { lat: parseFloat(result[0].y), lng: parseFloat(result[0].x), title: result[0].address_name };
+            geocodeQueryCache.set(cleanQ, resObj);
+            resolve(resObj);
           } else {
             const places = new kakao.maps.services.Places();
             places.keywordSearch(cleanQ, (pResult, pStatus) => {
               if (pStatus === kakao.maps.services.Status.OK && pResult.length > 0) {
-                resolve({ lat: parseFloat(pResult[0].y), lng: parseFloat(pResult[0].x), title: pResult[0].place_name, address: pResult[0].road_address_name || pResult[0].address_name });
-              } else { resolve(null); }
+                const resObj = { lat: parseFloat(pResult[0].y), lng: parseFloat(pResult[0].x), title: pResult[0].place_name, address: pResult[0].road_address_name || pResult[0].address_name };
+                geocodeQueryCache.set(cleanQ, resObj);
+                resolve(resObj);
+              } else {
+                resolve(null);
+              }
             });
           }
         });
@@ -2368,10 +2409,12 @@
       document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
     }
 
-    function smoothCenterMapOnSpot(lat, lng) {
+   function smoothCenterMapOnSpot(lat, lng) {
       if (!map) return;
       const isMobile = window.innerWidth <= 768;
-      if (map.getLevel() > 7) { map.setLevel(7, { animate: false }); } 
+      if (map.getLevel() > 7) { 
+        map.setLevel(7, { animate: false }); 
+      } 
       
       const proj = map.getProjection();
       const rawLatLng = new kakao.maps.LatLng(lat, lng);
@@ -2391,12 +2434,14 @@
         map.panTo(rawLatLng);
       }
 
-      setTimeout(() => updateLODLabels(), 60);
-      setTimeout(() => updateLODLabels(), 220);
+      // [안정화] 지도 이동 애니메이션(0.3초) 후 라벨 정상 복원
+      setTimeout(() => updateLODLabels(), 150);
+      setTimeout(() => updateLODLabels(), 350);
     }
 
     function updateLODLabels() {
       if (!map) return;
+      
       const currentLevel = map.getLevel();
       const proj = map.getProjection();
       const occupiedBoxes = [];
@@ -2429,6 +2474,7 @@
         const overlay = spotLabelOverlayMap.get(id);
         if (!overlay) return;
 
+        // 전국 뷰(11레벨 이상)에서는 클러스터러 원형만 표시
         if (currentLevel >= 11) {
           overlay.setMap(null);
           return;
@@ -2969,125 +3015,141 @@
     }
 
     async function fetchCommentsFromSheet() {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
       try {
-        const res = await fetch(`${GAS_API_URL}?action=GET_COMMENTS&_t=${Date.now()}`);
-        if (res.ok) { spotComments = await res.json(); localStorage.setItem('okbm_comments', JSON.stringify(spotComments)); renderSpots(); }
-      } catch (err) {}
+        const res = await fetch(`${GAS_API_URL}?action=GET_COMMENTS&_t=${Date.now()}`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok) { 
+          spotComments = await res.json(); 
+          localStorage.setItem('okbm_comments', JSON.stringify(spotComments)); 
+          renderSpots(); 
+        }
+      } catch (err) {
+        clearTimeout(timeoutId);
+      }
     }
 
-    async function fetchSpotsFromGoogleSheet() {
-      let gidsToTry = [PRIMARY_SHEET_GID, FALLBACK_SHEET_GID];
-      for (let gid of gidsToTry) {
-        const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv&gid=${gid}&_t=${Date.now()}`;
-        try {
-          const response = await fetch(url, { cache: 'no-store' });
-          if (!response.ok) continue;
-          const csvText = await response.text();
-          if (!csvText || csvText.trim().length <= 10) continue;
+    async function fetchSpotsFromGoogleSheet(isManual = false) {
+      if (isManual) {
+        showToast(`${ICONS.FAST} <span>구글 시트 최신 데이터를 동기화하는 중...</span>`);
+      }
+      const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv&gid=${PRIMARY_SHEET_GID}&_t=${Date.now()}`;
+      try {
+        const response = await fetch(url, { cache: 'no-store' });
+        if (!response.ok) throw new Error('시트 응답 오류');
+        const csvText = await response.text();
+        if (!csvText || csvText.trim().length <= 10) throw new Error('데이터 비어있음');
 
-          Papa.parse(csvText, {
-            header: true, skipEmptyLines: true, transformHeader: h => h.replace(/^\uFEFF/, '').trim(),
-            complete: function(results) {
-              const rows = results.data;
-              if (rows && rows.length > 0) {
-                const mapped = [];
-                const dedupeKeySet = new Set();
+        Papa.parse(csvText, {
+          header: true,
+          skipEmptyLines: true,
+          transformHeader: h => h.replace(/^\uFEFF/, '').trim(),
+          complete: function(results) {
+            const rows = results.data;
+            if (rows && rows.length > 0) {
+              const mapped = [];
+              const dedupeKeySet = new Set();
 
-                rows.forEach((row, idx) => {
-                  const getVal = (...keys) => {
-                    for (const k of keys) {
-                      for (const rk of Object.keys(row)) {
-                        if (rk.toLowerCase().replace(/[\s_]/g, '') === k.toLowerCase().replace(/[\s_]/g, '')) return row[rk];
-                      }
+              rows.forEach((row, idx) => {
+                const getVal = (...keys) => {
+                  for (const k of keys) {
+                    for (const rk of Object.keys(row)) {
+                      if (rk.toLowerCase().replace(/[\s_]/g, '') === k.toLowerCase().replace(/[\s_]/g, '')) return row[rk];
                     }
-                    return '';
-                  };
-                  const spot_main = getVal('spot_main', '산이름', '메인산명', 'name', '산');
-                  const spot_sub = getVal('spot_sub', '세부박지', '포인트');
-                  const fullName = getVal('fullName', '전체명칭', '명칭') || (spot_sub ? `${spot_main} (${spot_sub})` : spot_main);
-
-                  const lat = parseFloat(getVal('campsite_lat', 'lat', '위도', 'latitude', 'y')) || 0;
-                  const lng = parseFloat(getVal('campsite_lng', 'lng', '경도', 'longitude', 'x')) || 0;
-                  if ((!spot_main && !fullName) || lat === 0 || lng === 0 || isNaN(lat) || isNaN(lng)) return;
-
-                  const rawId = getVal('id');
-                  const fallbackUniqueId = `spot_${(spot_main || fullName).trim().replace(/\s+/g, '')}_${lat.toFixed(3)}_${lng.toFixed(3)}`;
-                  const spotId = rawId ? String(rawId).trim() : fallbackUniqueId;
-                  if (BLOCKED_SPOT_IDS.has(spotId)) return;
-
-                  const dedupeKey = `${(spot_main || fullName).trim().replace(/\s+/g,'')}_${(spot_sub||'').trim()}_${lat.toFixed(3)}_${lng.toFixed(3)}`;
-                  if (dedupeKeySet.has(dedupeKey)) return;
-                  dedupeKeySet.add(dedupeKey);
-
-                  let region = getVal('region', '지역');
-                  let cityName = getVal('cityName', '시군구', '시군');
-                  const trailhead_addr = getVal('trailhead_addr', '들머리주소', 'entryPoint', '주소') || '들머리 정보 미입력';
-
-                  if (!region || region === '경기') {
-                    const autoDetect = detectRegionAndCity(lat, lng, spot_main || fullName, trailhead_addr);
-                    if (!region) region = autoDetect.region;
-                    if (!cityName) cityName = autoDetect.cityName;
                   }
-                  if (region === '서울인천') region = '서울/인천';
-                  
-                  let elevation = getVal('elevation', '고도', '해발');
-                  if (elevation && !String(elevation).includes('m') && !isNaN(elevation)) elevation = `${elevation}m`;
+                  return '';
+                };
+                const spot_main = getVal('spot_main', '산이름', '메인산명', 'name', '산');
+                const spot_sub = getVal('spot_sub', '세부박지', '포인트');
+                const fullName = getVal('fullName', '전체명칭', '명칭') || (spot_sub ? `${spot_main} (${spot_sub})` : spot_main);
 
-                  const terrainRaw = getVal('terrain', '지형', '지형형태');
-                  let terrainList = [];
-                  if (terrainRaw && String(terrainRaw).trim()) {
-                    terrainList = String(terrainRaw).split(/[\n,]+/).map(t => {
-                      const tr = t.trim();
-                      if (tr === '바위' || tr === '돌박지') return '암릉';
-                      if (tr.includes('해변') || tr.includes('해수욕장')) return '해변';
-                      return tr;
-                    }).filter(Boolean);
-                  }
-                  if (terrainList.length === 0) terrainList = ['데크'];
+                const lat = parseFloat(getVal('campsite_lat', 'lat', '위도', 'latitude', 'y')) || 0;
+                const lng = parseFloat(getVal('campsite_lng', 'lng', '경도', 'longitude', 'x')) || 0;
+                if ((!spot_main && !fullName) || lat === 0 || lng === 0 || isNaN(lat) || isNaN(lng)) return;
 
-                  const trailhead_name = getVal('trailhead_name', '들머리명칭', '시작점');
-                  const difficulty = getVal('difficulty', '난이도') || '3';
-                  
-                  let distance_km = getVal('distance_km', '편도거리', '거리', 'distance');
-                  if (distance_km && !String(distance_km).includes('km') && !isNaN(distance_km)) distance_km = `${distance_km}km`;
+                const rawId = getVal('id');
+                const fallbackUniqueId = `spot_${(spot_main || fullName).trim().replace(/\s+/g, '')}_${lat.toFixed(3)}_${lng.toFixed(3)}`;
+                const spotId = rawId ? String(rawId).trim() : fallbackUniqueId;
+                if (BLOCKED_SPOT_IDS.has(spotId)) return;
 
-                  const desc_summary = getVal('desc_summary', '요약', 'desc', '특징') || '';
-                  const droneStatus = getVal('droneStatus', '드론', 'drone') || '';
-                  const gpxUrl = getVal('gpxUrl', 'gpx', 'gpx_url', '등산로gpx') || '';
-                  const authorSnsUrl = getVal('authorSns', '등록자sns', 'author_sns', '인스타') || '';
+                const dedupeKey = `${(spot_main || fullName).trim().replace(/\s+/g,'')}_${(spot_sub||'').trim()}_${lat.toFixed(3)}_${lng.toFixed(3)}`;
+                if (dedupeKeySet.has(dedupeKey)) return;
+                dedupeKeySet.add(dedupeKey);
 
-                  const rawMedia = getVal('mediaUrls', '유튜브', 'youtubeUrls', '미디어', 'blogUrl');
-                  const mediaList = rawMedia ? String(rawMedia).split(/[\|\n,]+/).map(u => u.trim()).filter(Boolean) : [];
-                  const ytList = mediaList.filter(u => u.includes('youtu.be') || u.includes('youtube.com'));
-                  const blogList = mediaList.filter(u => u.includes('blog.naver.com') || u.includes('tistory.com') || (!u.includes('youtu') && u.startsWith('http')));
+                let region = getVal('region', '지역');
+                let cityName = getVal('cityName', '시군구', '시군');
+                const trailhead_addr = getVal('trailhead_addr', '들머리주소', 'entryPoint', '주소') || '들머리 정보 미입력';
 
-                  const distNum = parseFloat(distance_km) || 0;
-                  const combined = (fullName + ' ' + desc_summary).toLowerCase();
-                  let courseType = '일반';
-                  if (distNum > 0 && distNum <= 3.0) courseType = '최단';
-                  else if (distNum >= 7.0) courseType = '종주';
-                  else if (combined.includes('최단') || combined.includes('단거리') || combined.includes('퇴근박') || combined.includes('활공장') || combined.includes('헬기장')) courseType = '최단';
-                  else if (combined.includes('종주') || combined.includes('능선') || combined.includes('대간') || combined.includes('정맥')) courseType = '종주';
+                if (!region || region === '경기') {
+                  const autoDetect = detectRegionAndCity(lat, lng, spot_main || fullName, trailhead_addr);
+                  if (!region) region = autoDetect.region;
+                  if (!cityName) cityName = autoDetect.cityName;
+                }
+                if (region === '서울인천') region = '서울/인천';
+                
+                let elevation = getVal('elevation', '고도', '해발');
+                if (elevation && !String(elevation).includes('m') && !isNaN(elevation)) elevation = `${elevation}m`;
 
-                  const savedViews = parseInt(localStorage.getItem(`okbm_views_${spotId}`), 10) || 0;
+                const terrainRaw = getVal('terrain', '지형', '지형형태');
+                let terrainList = [];
+                if (terrainRaw && String(terrainRaw).trim()) {
+                  terrainList = String(terrainRaw).split(/[\n,]+/).map(t => {
+                    const tr = t.trim();
+                    if (tr === '바위' || tr === '돌박지') return '암릉';
+                    if (tr.includes('해변') || tr.includes('해수욕장')) return '해변';
+                    return tr;
+                  }).filter(Boolean);
+                }
+                if (terrainList.length === 0) terrainList = ['데크'];
 
-                  mapped.push({
-                    id: spotId, name: spot_main || fullName, spot_main, spot_sub, fullName, elevation, trailhead_name, trailhead_addr, entryPoint: trailhead_addr, lat, lng, region: region || '경기', cityName: cityName || '', desc_summary, desc: desc_summary, droneStatus, gpxUrl, authorSnsUrl, youtubeUrls: ytList, blogUrls: blogList, courseType, terrain: terrainList, difficulty, distance: distance_km, searchCount: savedViews, sheetIndex: idx
-                  });
+                const trailhead_name = getVal('trailhead_name', '들머리명칭', '시작점');
+                const difficulty = getVal('difficulty', '난이도') || '3';
+                
+                let distance_km = getVal('distance_km', '편도거리', '거리', 'distance');
+                if (distance_km && !String(distance_km).includes('km') && !isNaN(distance_km)) distance_km = `${distance_km}km`;
+
+                const desc_summary = getVal('desc_summary', '요약', 'desc', '특징') || '';
+                const droneStatus = getVal('droneStatus', '드론', 'drone') || '';
+                const gpxUrl = getVal('gpxUrl', 'gpx', 'gpx_url', '등산로gpx') || '';
+                const authorSnsUrl = getVal('authorSns', '등록자sns', 'author_sns', '인스타') || '';
+
+                const rawMedia = getVal('mediaUrls', '유튜브', 'youtubeUrls', '미디어', 'blogUrl');
+                const mediaList = rawMedia ? String(rawMedia).split(/[\|\n,]+/).map(u => u.trim()).filter(Boolean) : [];
+                const ytList = mediaList.filter(u => u.includes('youtu.be') || u.includes('youtube.com'));
+                const blogList = mediaList.filter(u => u.includes('blog.naver.com') || u.includes('tistory.com') || (!u.includes('youtu') && u.startsWith('http')));
+
+                const distNum = parseFloat(distance_km) || 0;
+                const combined = (fullName + ' ' + desc_summary).toLowerCase();
+                let courseType = '일반';
+                if (distNum > 0 && distNum <= 3.0) courseType = '최단';
+                else if (distNum >= 7.0) courseType = '종주';
+                else if (combined.includes('최단') || combined.includes('단거리') || combined.includes('퇴근박') || combined.includes('활공장') || combined.includes('헬기장')) courseType = '최단';
+                else if (combined.includes('종주') || combined.includes('능선') || combined.includes('대간') || combined.includes('정맥')) courseType = '종주';
+
+                const savedViews = parseInt(localStorage.getItem(`okbm_views_${spotId}`), 10) || 0;
+
+                mapped.push({
+                  id: spotId, name: spot_main || fullName, spot_main, spot_sub, fullName, elevation, trailhead_name, trailhead_addr, entryPoint: trailhead_addr, lat, lng, region: region || '경기', cityName: cityName || '', desc_summary, desc: desc_summary, droneStatus, gpxUrl, authorSnsUrl, youtubeUrls: ytList, blogUrls: blogList, courseType, terrain: terrainList, difficulty, distance: distance_km, searchCount: savedViews, sheetIndex: idx
                 });
+              });
 
-                if (mapped.length > 0) {
-                  spots = mapped; 
-                  localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
-                  updateNewSpotFlags(spots); 
-                  renderSpots(); 
-                  checkUrlParamSpotFocus();
+              if (mapped.length > 0) {
+                spots = mapped; 
+                localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
+                updateNewSpotFlags(spots); 
+                renderSpots(); 
+                checkUrlParamSpotFocus();
+                if (isManual) {
+                  triggerHaptic('success');
+                  showToast(`${ICONS.BACKUP} <span>박지 데이터(${mapped.length}개) 동기화 완료!</span>`);
                 }
               }
             }
-          });
-          break;
-        } catch (e) {}
+          }
+        });
+      } catch (e) {
+        if (isManual) showToast(`${ICONS.ALERT_CARD} <span>시트 동기화 실패. 네트워크를 확인하세요.</span>`);
       }
     }
 
@@ -3239,13 +3301,24 @@
       });
 
       const currentIds = new Set(spots.map(s => String(s.id).trim()));
-      spotNativeMarkerMap.forEach((marker, id) => { if (!currentIds.has(id)) { marker.setMap(null); spotNativeMarkerMap.delete(id); } });
-      spotLabelOverlayMap.forEach((overlay, id) => { if (!currentIds.has(id)) { overlay.setMap(null); spotLabelOverlayMap.delete(id); } });
+      spotNativeMarkerMap.forEach((marker, id) => { 
+        if (!currentIds.has(id)) { 
+          marker.setMap(null); 
+          spotNativeMarkerMap.delete(id); 
+        } 
+      });
+      spotLabelOverlayMap.forEach((overlay, id) => { 
+        if (!currentIds.has(id)) { 
+          overlay.setMap(null); 
+          spotLabelOverlayMap.delete(id); 
+        } 
+      });
 
       if (globalClusterer) globalClusterer.clear();
       const activeMarkers = [];
 
-      displaySpots = [...spots];
+      // [버그 수정] 전역 변수 오염 방지 (let 선언)
+      let displaySpots = [...spots];
       if (isAdminMode) {
         displaySpots.sort((a, b) => (b.sheetIndex || 0) - (a.sheetIndex || 0) || Number(b.id) - Number(a.id));
       } else {
@@ -3266,7 +3339,10 @@
 
         if (!spotNativeMarkerMap.has(sId) && map) {
           const marker = new kakao.maps.Marker({
-            position: latlng, image: createPureSvgMarkerImage(spot.difficulty), clickable: true, zIndex: 9999
+            position: latlng, 
+            image: createPureSvgMarkerImage(spot.difficulty), 
+            clickable: true, 
+            zIndex: 9999
           });
           kakao.maps.event.addListener(marker, 'click', () => focusSpotOnMap(spot));
           marker.spotData = spot;
@@ -3299,7 +3375,7 @@
             ${row3Elev ? `<div class="lod-label-row-3">${ICONS.MOUNTAIN}${row3Elev}</div>` : ''}
           </div>`;
 
-       if (spotLabelOverlayMap.has(sId)) {
+        if (spotLabelOverlayMap.has(sId)) {
           spotLabelOverlayMap.get(sId).setContent(labelDiv);
         } else if (map) {
           const labelOverlay = new kakao.maps.CustomOverlay({ position: latlng, content: labelDiv, yAnchor: 1.0, zIndex: 150 });
@@ -3343,9 +3419,11 @@
 
         const regKey = (spot.region === '서울인천' || spot.region === '서울/인천') ? '서울/인천' : spot.region;
 
-        if (currentMasterTab === 'REGION') { if (currentRegionFilter !== 'ALL' && regKey !== (currentRegionFilter === '서울인천' ? '서울/인천' : currentRegionFilter)) match = false; }
-        else if (currentMasterTab === 'TERRAIN') { if (currentTerrainFilter !== 'ALL' && !(spot.terrain || []).some(t => t.includes(currentTerrainFilter))) match = false; }
-        else if (currentMasterTab === 'COURSE') {
+        if (currentMasterTab === 'REGION') { 
+          if (currentRegionFilter !== 'ALL' && regKey !== (currentRegionFilter === '서울인천' ? '서울/인천' : currentRegionFilter)) match = false; 
+        } else if (currentMasterTab === 'TERRAIN') { 
+          if (currentTerrainFilter !== 'ALL' && !(spot.terrain || []).some(t => t.includes(currentTerrainFilter))) match = false; 
+        } else if (currentMasterTab === 'COURSE') {
           if (currentCourseFilter === 'SHORTEST' && spot.courseType !== '최단') match = false;
           else if (currentCourseFilter === 'TRAVERSE' && spot.courseType !== '종주') match = false;
           else if (currentCourseFilter === 'HOT' && getSpotViews(spot) < 5) match = false;
@@ -3368,7 +3446,9 @@
 
       if (globalClusterer && activeMarkers.length > 0) globalClusterer.addMarkers(activeMarkers);
       updateLODLabels();
-      document.getElementById('spotCount').innerText = `${visibleCount}개`;
+      
+      const spotCountEl = document.getElementById('spotCount');
+      if (spotCountEl) spotCountEl.innerText = `${visibleCount}개`;
 
       const fragment = document.createDocumentFragment();
 
@@ -3410,7 +3490,9 @@
           });
 
           items.forEach(spot => groupItemsContainer.appendChild(createSpotCardElement(spot)));
-          groupDiv.appendChild(groupTitle); groupDiv.appendChild(groupItemsContainer); fragment.appendChild(groupDiv);
+          groupDiv.appendChild(groupTitle); 
+          groupDiv.appendChild(groupItemsContainer); 
+          fragment.appendChild(groupDiv);
         });
       }
       spotListEl.appendChild(fragment);
@@ -3500,34 +3582,70 @@
 
     function openUserProposalModal() {
       triggerHaptic('light');
-      modalMode = 'PROPOSAL'; modalPendingData = { lat: 0, lng: 0, address: '' };
-      document.getElementById('modalTitle').innerHTML = `${ICONS.PIN} <span>박지 제보 / 추천 등록</span>`;
-      document.getElementById('modalNotice').style.display = 'flex';
-      document.getElementById('modalNotice').innerHTML = `${ICONS.BACKPACK} <span>멋진 백패킹 박지를 제보해주세요! 관리자 승인 후 정식 등록됩니다.</span>`;
-      document.getElementById('modalSubmitBtn').innerText = '제보 접수하기';
+      modalMode = 'PROPOSAL'; 
+      modalPendingData = { lat: 0, lng: 0, address: '' };
+      
+      const titleEl = document.getElementById('modalTitle');
+      const noticeEl = document.getElementById('modalNotice');
+      const btnEl = document.getElementById('modalSubmitBtn');
+      
+      if (titleEl) titleEl.innerHTML = `${ICONS.PIN} <span>박지 제보 / 추천 등록</span>`;
+      if (noticeEl) {
+        noticeEl.style.display = 'flex';
+        noticeEl.innerHTML = `${ICONS.BACKPACK} <span>멋진 백패킹 박지를 제보해주세요! 관리자 승인 후 정식 등록됩니다.</span>`;
+      }
+      if (btnEl) btnEl.innerText = '제보 접수하기';
+      
       clearModalInputs();
-      document.getElementById('customModalOverlay').style.display = 'flex';
+      const overlay = document.getElementById('customModalOverlay');
+      if (overlay) overlay.style.display = 'flex';
     }
 
     function openAddModal(defaultName = "", lat = 0, lng = 0, address = "") {
-      modalMode = 'ADD'; modalPendingData = { lat, lng, address };
-      document.getElementById('modalTitle').innerHTML = `${ICONS.PIN} <span>새 박지 정식 등록 (관리자)</span>`;
-      document.getElementById('modalNotice').style.display = 'none';
-      document.getElementById('modalSubmitBtn').innerText = '등록 완료';
+      modalMode = 'ADD'; 
+      modalPendingData = { lat, lng, address };
+      
+      const titleEl = document.getElementById('modalTitle');
+      const noticeEl = document.getElementById('modalNotice');
+      const btnEl = document.getElementById('modalSubmitBtn');
+      
+      if (titleEl) titleEl.innerHTML = `${ICONS.PIN} <span>새 박지 정식 등록 (관리자)</span>`;
+      if (noticeEl) noticeEl.style.display = 'none';
+      if (btnEl) btnEl.innerText = '등록 완료';
+      
       clearModalInputs();
-      document.getElementById('modalInputName').value = defaultName !== "새 박지 위치" ? defaultName : '';
-      document.getElementById('modalInputCoordsDisplay').value = (lat && lng) ? `위도: ${lat}, 경도: ${lng}` : '';
-      document.getElementById('modalInputEntry').value = address || '';
-      document.getElementById('customModalOverlay').style.display = 'flex';
-      if (lat && lng) getElevation(lat, lng).then(elev => { document.getElementById('modalInputElevation').value = elev; });
+      const nameInput = document.getElementById('modalInputName');
+      const coordsInput = document.getElementById('modalInputCoordsDisplay');
+      const entryInput = document.getElementById('modalInputEntry');
+      
+      if (nameInput) nameInput.value = defaultName !== "새 박지 위치" ? defaultName : '';
+      if (coordsInput) coordsInput.value = (lat && lng) ? `위도: ${lat}, 경도: ${lng}` : '';
+      if (entryInput) entryInput.value = address || '';
+      
+      const overlay = document.getElementById('customModalOverlay');
+      if (overlay) overlay.style.display = 'flex';
+      
+      if (lat && lng) {
+        getElevation(lat, lng).then(elev => { 
+          const elevInput = document.getElementById('modalInputElevation');
+          if (elevInput) elevInput.value = elev; 
+        });
+      }
     }
 
     function openEditModal(index) {
-      modalMode = 'EDIT'; modalEditIndex = index;
+      if (!spots || !spots[index]) return;
+      modalMode = 'EDIT'; 
+      modalEditIndex = index;
       const spot = spots[index];
-      document.getElementById('modalTitle').innerHTML = `${ICONS.EDIT} <span>박지 정보 수정 (관리자)</span>`;
-      document.getElementById('modalNotice').style.display = 'none';
-      document.getElementById('modalSubmitBtn').innerText = '수정 내용 저장';
+      
+      const titleEl = document.getElementById('modalTitle');
+      const noticeEl = document.getElementById('modalNotice');
+      const btnEl = document.getElementById('modalSubmitBtn');
+      
+      if (titleEl) titleEl.innerHTML = `${ICONS.EDIT} <span>박지 정보 수정 (관리자)</span>`;
+      if (noticeEl) noticeEl.style.display = 'none';
+      if (btnEl) btnEl.innerText = '수정 내용 저장';
       
       document.getElementById('modalInputName').value = spot.spot_main || spot.name || '';
       document.getElementById('modalInputSub').value = spot.spot_sub || '';
@@ -3554,33 +3672,60 @@
       document.getElementById('chkValley').checked = tList.some(t => t.includes('계곡'));
       document.getElementById('chkCave').checked = tList.some(t => t.includes('동굴'));
 
-      document.getElementById('customModalOverlay').style.display = 'flex';
+      const overlay = document.getElementById('customModalOverlay');
+      if (overlay) overlay.style.display = 'flex';
     }
 
     function clearModalInputs() {
-      document.getElementById('modalInputName').value = '';
-      document.getElementById('modalInputSub').value = '';
-      document.getElementById('modalInputCoordsDisplay').value = '';
-      document.getElementById('modalInputTrailheadName').value = '';
-      document.getElementById('modalInputEntry').value = '';
-      document.getElementById('modalInputElevation').value = '';
-      document.getElementById('modalInputDesc').value = '';
-      document.getElementById('modalInputYoutube').value = '';
-      document.getElementById('modalInputBlog').value = '';
-      document.getElementById('modalInputAuthorSns').value = '';
-      document.getElementById('modalInputDistance').value = '';
-      document.querySelector('input[name="modalCourseType"][value="최단"]').checked = true;
-      document.getElementById('chkDeck').checked = true;
-      ['chkRock', 'chkSoil', 'chkBeach', 'chkIsland', 'chkValley', 'chkCave'].forEach(id => { const el = document.getElementById(id); if (el) el.checked = false; });
-      document.getElementById('modalSelectDiff').value = '3';
+      const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+      setVal('modalInputName', '');
+      setVal('modalInputSub', '');
+      setVal('modalInputCoordsDisplay', '');
+      setVal('modalInputTrailheadName', '');
+      setVal('modalInputEntry', '');
+      setVal('modalInputElevation', '');
+      setVal('modalInputDesc', '');
+      setVal('modalInputYoutube', '');
+      setVal('modalInputBlog', '');
+      setVal('modalInputAuthorSns', '');
+      setVal('modalInputDistance', '');
+      
+      const fastRadio = document.querySelector('input[name="modalCourseType"][value="최단"]');
+      if (fastRadio) fastRadio.checked = true;
+      
+      const deckChk = document.getElementById('chkDeck');
+      if (deckChk) deckChk.checked = true;
+      ['chkRock', 'chkSoil', 'chkBeach', 'chkIsland', 'chkValley', 'chkCave'].forEach(id => { 
+        const el = document.getElementById(id); 
+        if (el) el.checked = false; 
+      });
+      setVal('modalSelectDiff', '3');
     }
 
     function closeCustomModal() {
-      document.getElementById('customModalOverlay').style.display = 'none';
-      if (tempPickedMarker) { tempPickedMarker.setMap(null); tempPickedMarker = null; }
+      const overlay = document.getElementById('customModalOverlay');
+      if (overlay) overlay.style.display = 'none';
+      if (tempPickedMarker) { 
+        tempPickedMarker.setMap(null); 
+        tempPickedMarker = null; 
+      }
     }
-    function startPinPicking() { isPickingLocationMode = true; document.getElementById('customModalOverlay').style.display = 'none'; document.getElementById('pinPickerBanner').style.display = 'flex'; }
-    function cancelPinPicking() { isPickingLocationMode = false; document.getElementById('pinPickerBanner').style.display = 'none'; document.getElementById('customModalOverlay').style.display = 'flex'; }
+
+    function startPinPicking() { 
+      isPickingLocationMode = true; 
+      const overlay = document.getElementById('customModalOverlay');
+      const banner = document.getElementById('pinPickerBanner');
+      if (overlay) overlay.style.display = 'none'; 
+      if (banner) banner.style.display = 'flex'; 
+    }
+
+    function cancelPinPicking() { 
+      isPickingLocationMode = false; 
+      const overlay = document.getElementById('customModalOverlay');
+      const banner = document.getElementById('pinPickerBanner');
+      if (banner) banner.style.display = 'none'; 
+      if (overlay) overlay.style.display = 'flex'; 
+    }
 
     let isMarkerClickProcessing = false;
 
@@ -3596,14 +3741,20 @@
       if (!mouseEvent.latLng) return;
       if (isPickingLocationMode) {
         isPickingLocationMode = false;
-        document.getElementById('pinPickerBanner').style.display = 'none';
-        const lat = parseFloat(mouseEvent.latLng.getLat().toFixed(6)), lng = parseFloat(mouseEvent.latLng.getLng().toFixed(6));
-        modalPendingData.lat = lat; modalPendingData.lng = lng;
+        const banner = document.getElementById('pinPickerBanner');
+        if (banner) banner.style.display = 'none';
+        
+        const lat = parseFloat(mouseEvent.latLng.getLat().toFixed(6));
+        const lng = parseFloat(mouseEvent.latLng.getLng().toFixed(6));
+        modalPendingData.lat = lat; 
+        modalPendingData.lng = lng;
         
         if (tempPickedMarker) tempPickedMarker.setMap(null);
         tempPickedMarker = new kakao.maps.Marker({ position: mouseEvent.latLng, map: map });
         
-        document.getElementById('modalInputCoordsDisplay').value = `위도: ${lat}, 경도: ${lng}`;
+        const coordsDisplay = document.getElementById('modalInputCoordsDisplay');
+        if (coordsDisplay) coordsDisplay.value = `위도: ${lat}, 경도: ${lng}`;
+
         if (geocoder) {
           geocoder.coord2Address(lng, lat, async (result, status) => {
             if (status === kakao.maps.services.Status.OK && result.length > 0) {
@@ -3614,6 +3765,8 @@
             document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
             document.getElementById('customModalOverlay').style.display = 'flex';
           });
+        } else {
+          document.getElementById('customModalOverlay').style.display = 'flex';
         }
         return;
       }
@@ -3621,84 +3774,182 @@
     }
 
     async function saveCustomModal() {
-      const name = document.getElementById('modalInputName').value.trim();
-      const sub = document.getElementById('modalInputSub').value.trim();
-      const tName = document.getElementById('modalInputTrailheadName').value.trim();
-      const entry = document.getElementById('modalInputEntry').value.trim();
-      if (!name || !entry) return alert('박지명과 들머리 주소를 입력해주세요.');
+      const name = document.getElementById('modalInputName')?.value.trim();
+      const sub = document.getElementById('modalInputSub')?.value.trim();
+      const tName = document.getElementById('modalInputTrailheadName')?.value.trim();
+      const entry = document.getElementById('modalInputEntry')?.value.trim();
+      
+      if (!name || !entry) {
+        alert('박지명과 들머리 주소를 입력해주세요.');
+        return;
+      }
 
       const submitBtn = document.getElementById('modalSubmitBtn');
-      submitBtn.disabled = true; submitBtn.innerText = '저장 처리 중...';
-
-      let lat = modalPendingData.lat || (modalMode === 'EDIT' ? spots[modalEditIndex].lat : 0);
-      let lng = modalPendingData.lng || (modalMode === 'EDIT' ? spots[modalEditIndex].lng : 0);
-
-      if (!lat || !lng) {
-        const coords = await searchCoordsByQuery(entry || name);
-        if (coords) { lat = coords.lat; lng = coords.lng; } else { lat = 37.5665; lng = 126.9780; }
+      if (submitBtn) {
+        submitBtn.disabled = true; 
+        submitBtn.innerText = '저장 처리 중...';
       }
 
-      let elevation = document.getElementById('modalInputElevation').value.trim();
-      if (!elevation && lat && lng) elevation = await getElevation(lat, lng);
-      if (elevation && !String(elevation).includes('m') && !isNaN(elevation)) elevation = `${elevation}m`;
+      try {
+        let lat = modalPendingData.lat || (modalMode === 'EDIT' ? spots[modalEditIndex].lat : 0);
+        let lng = modalPendingData.lng || (modalMode === 'EDIT' ? spots[modalEditIndex].lng : 0);
 
-      const desc = document.getElementById('modalInputDesc').value.trim();
-      const rawYt = document.getElementById('modalInputYoutube').value.trim();
-      const ytList = rawYt ? rawYt.split(/[\n,]+/).map(u => u.trim()).filter(Boolean) : [];
-      const blogUrl = document.getElementById('modalInputBlog').value.trim();
-      const authorSnsUrl = document.getElementById('modalInputAuthorSns').value.trim();
-      const distance = document.getElementById('modalInputDistance').value.trim();
-      const difficulty = document.getElementById('modalSelectDiff').value;
-      const courseType = document.querySelector('input[name="modalCourseType"]:checked')?.value || '일반';
+        if (!lat || !lng) {
+          const coords = await searchCoordsByQuery(entry || name);
+          if (coords) { 
+            lat = coords.lat; 
+            lng = coords.lng; 
+          } else { 
+            lat = 37.5665; 
+            lng = 126.9780; 
+          }
+        }
 
-      const terrainList = [];
-      if (document.getElementById('chkDeck').checked) terrainList.push('데크');
-      if (document.getElementById('chkRock').checked) terrainList.push('암릉');
-      if (document.getElementById('chkSoil').checked) terrainList.push('노지');
-      if (document.getElementById('chkBeach').checked) terrainList.push('해변');
-      if (document.getElementById('chkIsland').checked) terrainList.push('섬');
-      if (document.getElementById('chkValley').checked) terrainList.push('계곡');
-      if (document.getElementById('chkCave').checked) terrainList.push('동굴');
-      if (terrainList.length === 0) terrainList.push('데크');
+        let elevation = document.getElementById('modalInputElevation')?.value.trim();
+        if (!elevation && lat && lng) elevation = await getElevation(lat, lng);
+        if (elevation && !String(elevation).includes('m') && !isNaN(elevation)) elevation = `${elevation}m`;
 
-      const autoDetect = detectRegionAndCity(lat, lng, name, entry);
-      const fullName = sub ? `${name} (${sub})` : name;
+        const desc = document.getElementById('modalInputDesc')?.value.trim();
+        const rawYt = document.getElementById('modalInputYoutube')?.value.trim();
+        const ytList = rawYt ? rawYt.split(/[\n,]+/).map(u => u.trim()).filter(Boolean) : [];
+        const blogUrl = document.getElementById('modalInputBlog')?.value.trim();
+        const authorSnsUrl = document.getElementById('modalInputAuthorSns')?.value.trim();
+        const distance = document.getElementById('modalInputDistance')?.value.trim();
+        const difficulty = document.getElementById('modalSelectDiff')?.value || '3';
+        const courseType = document.querySelector('input[name="modalCourseType"]:checked')?.value || '일반';
 
-      if (modalMode === 'PROPOSAL') {
-        try {
-          await fetch(GAS_API_URL, {
-            method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'PROPOSE', spot_main: name, spot_sub: sub, fullName, lat, lng, elevation: elevation || '450m', trailhead_name: tName, trailhead_addr: entry, desc_summary: desc, youtubeUrls: ytList.join('\n'), blogUrl, authorSnsUrl, courseType, terrain: terrainList.join(', '), difficulty, distance_km: distance, region: autoDetect.region, cityName: autoDetect.cityName })
-          });
-          triggerHaptic('success');
-          alert('소중한 박지 제보가 접수되었습니다!\n관리자 확인 후 정식 등록됩니다. 감사합니다!');
-        } catch (e) { alert('제보 접수 중 통신 오류가 발생했습니다.'); }
-      } else if (modalMode === 'ADD') {
-        const newSpot = {
-          id: String(Date.now()), name, spot_main: name, spot_sub: sub, fullName, lat, lng, elevation: elevation || '450m', trailhead_name: tName, trailhead_addr: entry, entryPoint: entry, desc_summary: desc, desc, youtubeUrls: ytList, blogUrls: blogUrl ? [blogUrl] : [], authorSnsUrl, courseType, terrain: terrainList, difficulty, distance: distance ? `${distance}km` : '', region: autoDetect.region, cityName: autoDetect.cityName, searchCount: 0, sheetIndex: spots.length
-        };
-        spots.unshift(newSpot); localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
-        updateNewSpotFlags(spots); renderSpots(); focusSpotOnMap(newSpot);
-        try {
-          await fetch(GAS_API_URL, {
-            method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'ADD', ...newSpot, youtubeUrls: ytList.join('\n'), terrain: terrainList.join(', ') })
-          });
-        } catch (e) {}
-      } else if (modalMode === 'EDIT') {
-        const target = spots[modalEditIndex];
-        Object.assign(target, { name, spot_main: name, spot_sub: sub, fullName, lat, lng, elevation: elevation || target.elevation, trailhead_name: tName, trailhead_addr: entry, entryPoint: entry, desc_summary: desc, desc, youtubeUrls: ytList, blogUrls: blogUrl ? [blogUrl] : target.blogUrls, authorSnsUrl, distance: distance ? `${distance}km` : target.distance, difficulty, courseType, terrain: terrainList, region: autoDetect.region, cityName: autoDetect.cityName });
-        localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
-        renderSpots(); focusSpotOnMap(target);
-        try {
-          await fetch(GAS_API_URL, {
-            method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'EDIT', ...target, youtubeUrls: ytList.join('\n'), terrain: terrainList.join(', ') })
-          });
-        } catch (e) {}
+        const terrainList = [];
+        if (document.getElementById('chkDeck')?.checked) terrainList.push('데크');
+        if (document.getElementById('chkRock')?.checked) terrainList.push('암릉');
+        if (document.getElementById('chkSoil')?.checked) terrainList.push('노지');
+        if (document.getElementById('chkBeach')?.checked) terrainList.push('해변');
+        if (document.getElementById('chkIsland')?.checked) terrainList.push('섬');
+        if (document.getElementById('chkValley')?.checked) terrainList.push('계곡');
+        if (document.getElementById('chkCave')?.checked) terrainList.push('동굴');
+        if (terrainList.length === 0) terrainList.push('데크');
+
+        const autoDetect = detectRegionAndCity(lat, lng, name, entry);
+        const fullName = sub ? `${name} (${sub})` : name;
+
+        if (modalMode === 'PROPOSAL') {
+          try {
+            await fetch(GAS_API_URL, {
+              method: 'POST', 
+              mode: 'no-cors', 
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({ 
+                action: 'PROPOSE', 
+                spot_main: name, 
+                spot_sub: sub, 
+                fullName, 
+                lat, 
+                lng, 
+                elevation: elevation || '450m', 
+                trailhead_name: tName, 
+                trailhead_addr: entry, 
+                desc_summary: desc, 
+                youtubeUrls: ytList.join('\n'), 
+                blogUrl, 
+                authorSnsUrl, 
+                courseType, 
+                terrain: terrainList.join(', '), 
+                difficulty, 
+                distance_km: distance, 
+                region: autoDetect.region, 
+                cityName: autoDetect.cityName 
+              })
+            });
+            triggerHaptic('success');
+            alert('소중한 박지 제보가 접수되었습니다!\n관리자 확인 후 정식 등록됩니다. 감사합니다!');
+          } catch (e) { 
+            alert('제보 접수 중 통신 오류가 발생했습니다.'); 
+          }
+        } else if (modalMode === 'ADD') {
+          const newSpot = {
+            id: String(Date.now()), 
+            name, 
+            spot_main: name, 
+            spot_sub: sub, 
+            fullName, 
+            lat, 
+            lng, 
+            elevation: elevation || '450m', 
+            trailhead_name: tName, 
+            trailhead_addr: entry, 
+            entryPoint: entry, 
+            desc_summary: desc, 
+            desc, 
+            youtubeUrls: ytList, 
+            blogUrls: blogUrl ? [blogUrl] : [], 
+            authorSnsUrl, 
+            courseType, 
+            terrain: terrainList, 
+            difficulty, 
+            distance: distance ? `${distance}km` : '', 
+            region: autoDetect.region, 
+            cityName: autoDetect.cityName, 
+            searchCount: 0, 
+            sheetIndex: spots.length
+          };
+          spots.unshift(newSpot); 
+          localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
+          updateNewSpotFlags(spots); 
+          renderSpots(); 
+          focusSpotOnMap(newSpot);
+          try {
+            await fetch(GAS_API_URL, {
+              method: 'POST', 
+              mode: 'no-cors', 
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({ action: 'ADD', ...newSpot, youtubeUrls: ytList.join('\n'), terrain: terrainList.join(', ') })
+            });
+          } catch (e) {}
+        } else if (modalMode === 'EDIT') {
+          const target = spots[modalEditIndex];
+          if (target) {
+            Object.assign(target, { 
+              name, 
+              spot_main: name, 
+              spot_sub: sub, 
+              fullName, 
+              lat, 
+              lng, 
+              elevation: elevation || target.elevation, 
+              trailhead_name: tName, 
+              trailhead_addr: entry, 
+              entryPoint: entry, 
+              desc_summary: desc, 
+              desc, 
+              youtubeUrls: ytList, 
+              blogUrls: blogUrl ? [blogUrl] : target.blogUrls, 
+              authorSnsUrl, 
+              distance: distance ? `${distance}km` : target.distance, 
+              difficulty, 
+              courseType, 
+              terrain: terrainList, 
+              region: autoDetect.region, 
+              cityName: autoDetect.cityName 
+            });
+            localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
+            renderSpots(); 
+            focusSpotOnMap(target);
+            try {
+              await fetch(GAS_API_URL, {
+                method: 'POST', 
+                mode: 'no-cors', 
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: 'EDIT', ...target, youtubeUrls: ytList.join('\n'), terrain: terrainList.join(', ') })
+              });
+            } catch (e) {}
+          }
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false; 
+          submitBtn.innerText = modalMode === 'PROPOSAL' ? '제보 접수하기' : '저장 완료';
+        }
+        closeCustomModal();
       }
-      submitBtn.disabled = false; submitBtn.innerText = modalMode === 'PROPOSAL' ? '제보 접수하기' : '저장 완료';
-      closeCustomModal();
     }
 
     function editSpotById(e, id) {
@@ -3706,32 +3957,58 @@
       const idx = spots.findIndex(s => String(s.id).trim() === String(id).trim());
       if (idx !== -1) openEditModal(idx);
     }
+
     function deleteSpotById(e, id) {
       if (e) e.stopPropagation();
       const idx = spots.findIndex(s => String(s.id).trim() === String(id).trim());
       if (idx !== -1) deleteSpot(e, idx);
     }
+
     async function deleteSpot(e, index) {
       if (e) e.stopPropagation();
       const targetSpot = spots[index];
+      if (!targetSpot) return;
       if (!confirm(`'${targetSpot.name}' 박지를 정말 삭제하시겠습니까?`)) return;
-      const deletedId = targetSpot.id, deletedName = targetSpot.name;
-      const mk = spotNativeMarkerMap.get(String(deletedId).trim());
-      if (mk && mk.setMap) { mk.setMap(null); spotNativeMarkerMap.delete(String(deletedId).trim()); }
-      const lbl = spotLabelOverlayMap.get(String(deletedId).trim());
-      if (lbl && lbl.setMap) { lbl.setMap(null); spotLabelOverlayMap.delete(String(deletedId).trim()); }
+      
+      const deletedId = targetSpot.id;
+      const deletedName = targetSpot.name;
+      const sId = String(deletedId).trim();
+      
+      // 마커 및 오버레이 안전 해제
+      const mk = spotNativeMarkerMap.get(sId);
+      if (mk && mk.setMap) { 
+        mk.setMap(null); 
+        spotNativeMarkerMap.delete(sId); 
+      }
+      const lbl = spotLabelOverlayMap.get(sId);
+      if (lbl && lbl.setMap) { 
+        lbl.setMap(null); 
+        spotLabelOverlayMap.delete(sId); 
+      }
+      
       spots.splice(index, 1);
-      delete spotComments[deletedId]; userBookmarks.delete(String(deletedId).trim()); userVisited.delete(String(deletedId).trim()); delete userMemos[String(deletedId).trim()];
+      delete spotComments[deletedId]; 
+      userBookmarks.delete(sId); 
+      userVisited.delete(sId); 
+      delete userMemos[sId];
+      
       localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
       localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
       localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks]));
       localStorage.setItem('okbm_visited', JSON.stringify([...userVisited]));
       localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
+      
       syncUserDataToCloud();
-      closeAllPopups(); renderSubChips(); updateNewSpotFlags(spots); renderSpots();
+      closeAllPopups(); 
+      renderSubChips(); 
+      updateNewSpotFlags(spots); 
+      renderSpots();
+      
       try {
         await fetch(GAS_API_URL, {
-          method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          method: 'POST', 
+          mode: 'no-cors', 
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: 'DELETE', id: deletedId, name: deletedName })
         });
       } catch (err) {}
@@ -3827,31 +4104,78 @@
       }
     }
 
-    function exportDataBackup() {
-      const backupData = { spots, comments: spotComments, bookmarks: [...userBookmarks], visited: [...userVisited], memos: userMemos, exportDate: new Date().toISOString() };
-      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `backpacking_backup_${new Date().toISOString().slice(0, 10)}.json`; a.click();
-      URL.revokeObjectURL(url);
+   function exportDataBackup() {
+      try {
+        const backupData = { 
+          spots, 
+          comments: spotComments, 
+          bookmarks: [...userBookmarks], 
+          visited: [...userVisited], 
+          memos: userMemos, 
+          exportDate: new Date().toISOString(),
+          version: CURRENT_VERSION
+        };
+        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; 
+        a.download = `romantic_root_backup_${new Date().toISOString().slice(0, 10)}.json`; 
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast(`${ICONS.BACKUP} <span>백업 파일이 안전하게 다운로드되었습니다.</span>`);
+      } catch (err) {
+        alert('백업 파일 생성 중 오류가 발생했습니다.');
+      }
     }
 
     function importDataBackup(e) {
-      const file = e.target.files[0];
+      const file = e.target.files && e.target.files[0];
       if (!file) return;
+
       const reader = new FileReader();
       reader.onload = (event) => {
         try {
           const data = JSON.parse(event.target.result);
-          if (data.comments) { spotComments = data.comments; localStorage.setItem('okbm_comments', JSON.stringify(spotComments)); }
-          if (data.bookmarks) { userBookmarks = new Set(data.bookmarks.map(s => String(s).trim())); localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks])); }
-          if (data.visited) { userVisited = new Set(data.visited.map(s => String(s).trim())); localStorage.setItem('okbm_visited', JSON.stringify([...userVisited])); }
-          if (data.memos) { userMemos = data.memos; localStorage.setItem('okbm_memos', JSON.stringify(userMemos)); }
-          if (data.spots) { spots = data.spots; localStorage.setItem('okbm_spots_cache', JSON.stringify(spots)); }
-          renderSubChips(); renderSpots();
+          if (!data || typeof data !== 'object') {
+            throw new Error('유효하지 않은 데이터 구조');
+          }
+
+          // 1. 데이터 안전 복원
+          if (data.comments && typeof data.comments === 'object') { 
+            spotComments = data.comments; 
+            localStorage.setItem('okbm_comments', JSON.stringify(spotComments)); 
+          }
+          if (Array.isArray(data.bookmarks)) { 
+            userBookmarks = new Set(data.bookmarks.map(s => String(s).trim())); 
+            localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks])); 
+          }
+          if (Array.isArray(data.visited)) { 
+            userVisited = new Set(data.visited.map(s => String(s).trim())); 
+            localStorage.setItem('okbm_visited', JSON.stringify([...userVisited])); 
+          }
+          if (data.memos && typeof data.memos === 'object') { 
+            userMemos = data.memos; 
+            localStorage.setItem('okbm_memos', JSON.stringify(userMemos)); 
+          }
+          if (Array.isArray(data.spots) && data.spots.length > 0) { 
+            spots = data.spots; 
+            localStorage.setItem('okbm_spots_cache', JSON.stringify(spots)); 
+          }
+
+          // 2. 화면 및 클라우드 즉시 동기화
+          renderSubChips(); 
+          renderSpots();
+          refreshCurrentSpotPopup();
           syncUserDataToCloud();
-          alert('데이터가 정상 복원되었습니다!');
-        } catch (err) {}
+          
+          triggerHaptic('success');
+          alert('데이터가 성공적으로 복원되었습니다!');
+        } catch (err) {
+          alert('올바른 백업 JSON 파일 형식이 아닙니다. 파일을 확인해 주세요.');
+        } finally {
+          // 파일 인풋 초기화 (동일 파일 재선택 가능)
+          e.target.value = '';
+        }
       };
       reader.readAsText(file);
     }
