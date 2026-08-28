@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="ko" class="notranslate">
 <head>
@@ -9,12 +11,12 @@
   <meta http-equiv="Expires" content="0" />
   <title>낭만루트 | 대한민국 260+ 백패킹 필드 팩트맵</title>
 
-  <!-- 🔤 최상위 웹폰트 CDN -->
+  <!-- 🔤 최상위 웹폰트 CDN (영문 필기체 Dancing Script 포함) -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT/fonts/static/woff2/SUIT.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Montserrat:wght@700;800;900&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
   
   <!-- 카카오 SDK & CSV Parser & HTML2Canvas -->
   <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
@@ -43,6 +45,7 @@
 
       --font-display: 'SUIT', -apple-system, sans-serif;
       --font-en: 'Space Grotesk', -apple-system, sans-serif;
+      --font-script: 'Dancing Script', cursive;
       --font-body: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
 
       --z-header: 500;
@@ -214,7 +217,7 @@
     .section-title-row .icon-svg { width: 14px; height: 14px; color: var(--accent-silver); }
 
     /* ========================================================
-       ⚖️ 1. [홈 화면] 배낭 무게 계산기 컴팩트 카드 & 작업 모달창
+       ⚖️ 1. 오늘의 배낭 무게는? 컴팩트 카드 & 작업 모달창
        ======================================================== */
     .packing-summary-banner {
       background: var(--bg-card);
@@ -270,7 +273,6 @@
       overflow-y: auto;
     }
 
-    /* 대시보드 게이지 */
     .weight-dashboard-strip {
       background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(6, 182, 212, 0.08));
       border: 1.5px solid rgba(16, 185, 129, 0.4);
@@ -347,17 +349,6 @@
       font-size: 0.8rem;
       font-weight: 700;
       color: #fff;
-    }
-    .category-slot-right {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .slot-selected-info {
-      font-size: 0.72rem;
-      color: var(--pt-cyan);
-      font-weight: 800;
-      font-family: var(--font-en);
     }
 
     .packing-action-row { display: flex; gap: 6px; }
@@ -529,7 +520,7 @@
       font-size: 0.64rem; font-weight: 800; padding: 1.5px 6px; border-radius: 4px;
     }
 
-    /* 🔥 4. 낭만 라운지 & 출정톡 */
+    /* 🔥 4. 낭만 라운지 & 실시간 박지톡 */
     .community-box-tight {
       background: var(--bg-surface);
       border: 1px solid var(--border-accent);
@@ -546,8 +537,8 @@
     }
     .poll-item-tight.selected { border-color: rgba(255, 255, 255, 0.35); background: rgba(255, 255, 255, 0.06); }
     .poll-bar-fill { position: absolute; top: 0; left: 0; bottom: 0; background: rgba(255, 255, 255, 0.15); width: 0%; transition: width 0.3s; z-index: 1; }
-    .poll-text-tight { position: relative; z-index: 2; display: flex; align-items: center; gap: 3px; color: #fff; }
-    .poll-pct-tight { position: relative; z-index: 2; font-weight: 700; color: #fff; }
+    .poll-text-tight { position: relative; z-index: 2; display: flex; align-items: center; gap: 4px; color: #fff; font-weight: 700; }
+    .poll-pct-tight { position: relative; z-index: 2; font-weight: 800; color: #fff; font-family: var(--font-en); }
 
     .talk-section-tight { border-top: 1px dashed var(--border-hairline); padding-top: 7px; display: flex; flex-direction: column; gap: 5px; }
     .capsule-input-bar-tight {
@@ -579,7 +570,7 @@
     .dock-item svg { width: 19px; height: 19px; fill: currentColor; }
 
     /* ========================================================
-       🗂️ 5. [내 보관함 모달] & [장비 선택 카테고리 모달]
+       🗂️ 5. [내 보관함 모달] 3대 탭 (클리어 / 찜 / 패킹 기록)
        ======================================================== */
     .my-basecamp-modal {
       display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -593,7 +584,6 @@
       max-height: 85vh; overflow-y: auto;
     }
 
-    /* 🛡️ 보관함 클라우드 안전 고지 배너 */
     .cloud-status-banner {
       border-radius: 8px;
       padding: 7px 10px;
@@ -635,16 +625,37 @@
       border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;
     }
 
+    /* 📸 [2030 감성] 인스타그램 스토리 공유 카드 */
     .insta-story-card {
-      background: linear-gradient(145deg, #0f172a, #020617);
-      border: 1.5px solid rgba(56, 189, 248, 0.4); border-radius: 16px;
-      padding: 16px; display: flex; flex-direction: column; gap: 12px;
-      position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      background: linear-gradient(145deg, #0d1527, #020408);
+      border: 1.5px solid rgba(56, 189, 248, 0.4);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.9);
+    }
+    .insta-brand-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding-bottom: 8px;
+    }
+    .insta-script-title {
+      font-family: var(--font-script);
+      font-size: 1.25rem;
+      color: #38bdf8;
+      line-height: 1;
+      text-shadow: 0 0 10px rgba(56,189,248,0.4);
     }
     .progress-bar-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-top: 4px; }
     .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #38bdf8, #10b981); width: 0%; transition: width 0.4s ease; }
 
-    /* 장비 선택 전용 팝업 모달 */
+    /* 장비 선택 팝업 */
     .gear-preset-modal {
       display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0, 0, 0, 0.88); z-index: calc(var(--z-modal) + 50);
@@ -691,7 +702,7 @@
 </head>
 <body>
 
-  <!-- 🧭 1. 상단 GNB (심플 브랜딩 + 로그인) -->
+  <!-- 🧭 1. 상단 GNB -->
   <header class="apple-integrated-header notranslate">
     <div class="header-top-row">
       <a href="index.html" class="brand-line" onclick="triggerHaptic(10)" title="낭만루트 홈">
@@ -730,16 +741,14 @@
   <!-- 📦 메인 콘텐츠 피드 -->
   <main class="portal-main-content notranslate">
 
-    <!-- ========================================================
-         🎒 1. [홈 화면] 배낭 무게 계산기 컴팩트 카드 (터치 시 작업창 오픈)
-         ======================================================== -->
+    <!-- 🎒 1. 오늘의 배낭 무게는? 컴팩트 카드 -->
     <section class="packing-summary-banner" onclick="triggerHaptic(12); openPackingModal();">
       <div class="pack-banner-header">
         <div style="display:flex; align-items:center; gap:6px;">
           <span class="icon-svg" style="width:16px; height:16px; color:#34d399;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>
           </span>
-          <span style="font-family:var(--font-display); font-size:0.92rem; font-weight:800; color:#fff;">배낭 무게 계산기</span>
+          <span style="font-family:var(--font-display); font-size:0.92rem; font-weight:800; color:#fff;">오늘의 배낭 무게는?</span>
         </div>
         <span style="font-size:0.72rem; color:#38bdf8; font-weight:800; display:flex; align-items:center; gap:2px;">
           <span>패킹하기</span>
@@ -754,7 +763,7 @@
         </div>
         <div style="text-align:right;">
           <div id="mainBannerBadge" class="weight-bpl-badge bpl-ul">울트라라이트 (UL)</div>
-          <div style="font-size:0.68rem; color:#cbd5e1; margin-top:2px;" id="mainBannerItemCount">장비 0개 선택됨</div>
+          <div style="font-size:0.68rem; color:#cbd5e1; margin-top:2px;" id="mainBannerItemCount">장비 0개 세팅됨</div>
         </div>
       </div>
     </section>
@@ -763,7 +772,7 @@
     <section class="featured-video-section">
       <div class="video-title-bold-head">
         <span class="icon-svg" style="width:18px; height:18px; color:var(--pt-rose);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect width="20" height="15" x="2" y="4.5" rx="3"/><polygon points="10 8.5 16 12 10 15.5 10 8.5" fill="currentColor"/></svg></span>
-        <span>🎬 영상 속 그 장소, 여긴 어딜까?</span>
+        <span>영상 속 그 장소, 여긴 어딜까?</span>
       </div>
       <div class="video-box">
         <iframe id="ytIframe" src="https://www.youtube-nocookie.com/embed/4JQHNctHibg?rel=0&enablejsapi=1" allowfullscreen loading="lazy"></iframe>
@@ -814,7 +823,7 @@
           </div>
           <div>
             <div class="spot-title-text" id="luckyName1">불러오는 중...</div>
-            <div class="spot-desc-text" id="luckyDesc1">데이터를 로드하고 있습니다.</div>
+            <div class="spot-desc-text" id="luckyDesc0">데이터를 로드하고 있습니다.</div>
           </div>
         </div>
 
@@ -855,25 +864,25 @@
       <span style="color:var(--pt-sage); font-size:0.65rem; font-weight:700;">비화식 필수 ➔</span>
     </div>
 
-    <!-- 🔥 4. 낭만 라운지 & 실시간 출정톡 -->
+    <!-- 🔥 4. 이번 주말 어디 가세요? & 실시간 박지톡 -->
     <section class="community-box-tight">
       <div>
         <div class="section-title-row" style="margin-bottom:6px;">
           <div style="display:flex; align-items:center; gap:5px;">
             <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg></span>
-            <span>이번 주말 출정 계획</span>
+            <span>이번 주말 어디 가세요?</span>
           </div>
           <span style="color:var(--text-muted); font-size:0.68rem;" id="pollCountText">총 128명 참여</span>
         </div>
         <div class="poll-grid-tight" id="pollOptionsList"></div>
       </div>
 
-      <!-- 실시간 출정톡 -->
+      <!-- 실시간 박지톡 -->
       <div class="talk-section-tight">
         <div class="section-title-row" style="margin-bottom:2px;">
           <div style="display:flex; align-items:center; gap:5px;">
             <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
-            <span>실시간 출정톡</span>
+            <span>실시간 박지톡</span>
           </div>
         </div>
         <div class="capsule-input-bar-tight">
@@ -890,7 +899,7 @@
   </main>
 
   <!-- ========================================================
-       🎒 배낭 무게 계산기 전용 작업 모달창
+       🎒 오늘의 배낭 무게는? 작업 모달창
        ======================================================== -->
   <div class="packing-modal-overlay" id="packingCalculatorModal" onclick="if(event.target===this) closePackingModal()">
     <div class="packing-modal-window">
@@ -900,7 +909,7 @@
           <span class="icon-svg" style="width:17px; height:17px; color:#34d399;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>
           </span>
-          <span style="font-weight:900; font-size:1.02rem; color:#fff;">배낭 무게 계산기</span>
+          <span style="font-weight:900; font-size:1.02rem; color:#fff;">오늘의 배낭 무게는?</span>
         </div>
         <button type="button" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer; padding:4px;" onclick="closePackingModal()">✕</button>
       </div>
@@ -925,14 +934,14 @@
         </div>
       </div>
 
-      <!-- 7대 항목 슬롯 -->
+      <!-- 8대 항목 슬롯 -->
       <div class="category-slots-grid" id="categorySlotsContainer"></div>
 
       <!-- 작업 버튼 -->
       <div class="packing-action-row">
         <button type="button" class="btn-save-pack" onclick="saveCurrentPackingRecord()">
           <svg viewBox="0 0 24 24" class="icon-svg" style="width:13px; height:13px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          <span>오늘의 출정 패킹 저장</span>
+          <span>내 배낭 패킹 저장</span>
         </button>
         <button type="button" class="btn-reset-pack" onclick="resetAllGearSelections()">
           <span>전체 초기화 ↺</span>
@@ -942,7 +951,7 @@
   </div>
 
   <!-- ========================================================
-       🗂️ 5. [내 보관함 모달] 3대 탭
+       🗂️ 5. [내 보관함 모달] 3대 탭 (클리어 / 찜 / 패킹 기록)
        ======================================================== -->
   <div class="my-basecamp-modal" id="myInfoModal" onclick="if(event.target===this) closeMyInfoModal()">
     <div class="my-basecamp-content">
@@ -953,27 +962,50 @@
         </span>
         <button type="button" style="background:none; border:none; color:#94a3b8; font-size:1.4rem; cursor:pointer; padding:6px; line-height:1;" onclick="event.stopPropagation(); closeMyInfoModal();">✕</button>
       </div>
-      <!-- 3대 탭 바 -->
+
+      <!-- 🛡️ 클라우드 동기화 상태 고지 배너 -->
+      <div id="cloudStatusBanner" class="cloud-status-banner cloud-status-guest" onclick="if(!isUserLoggedIn()) openLoginModal();">
+        <span id="cloudStatusText">기기 임시 보관 중 (캐시 삭제 시 초기화 주의)</span>
+        <span id="cloudStatusAction" style="font-weight:800; text-decoration:underline;">카카오 1초 연동 ➔</span>
+      </div>
+
+      <!-- 3대 탭 바 (클리어 / 찜 / 패킹 기록) -->
       <div class="basecamp-tabs">
-        <button type="button" class="basecamp-tab-btn active" onclick="switchBasecampTab('history')">패킹 기록 히스토리</button>
-        <button type="button" class="basecamp-tab-btn" onclick="switchBasecampTab('record')">정복 기록 & 인스타</button>
+        <button type="button" class="basecamp-tab-btn active" onclick="switchBasecampTab('history')">패킹 기록</button>
+        <button type="button" class="basecamp-tab-btn" onclick="switchBasecampTab('record')">클리어 & 찜</button>
         <button type="button" class="basecamp-tab-btn" onclick="switchBasecampTab('memo')">비밀 메모</button>
       </div>
 
-      <!-- 탭 1: 시간별 패킹 기록 히스토리 -->
+      <!-- 탭 1: 패킹 기록 히스토리 -->
       <div class="basecamp-panel active" id="tabPanelHistory">
         <div style="font-size:0.75rem; color:#94a3b8;">
-          출정 전 저장해 둔 배낭 무게와 장비 구성 목록입니다.
+          저장해 둔 배낭 무게와 장비 구성 히스토리입니다.
         </div>
         <div id="packingHistoryContainer" style="display:flex; flex-direction:column; gap:8px; max-height:360px; overflow-y:auto;"></div>
       </div>
 
-      <!-- 탭 2: 정복 기록 & 인스타 스토리 캡처 카드 -->
+      <!-- 탭 2: 클리어 & 찜 & 인스타 스토리 카드 -->
       <div class="basecamp-panel" id="tabPanelRecord">
         <div class="insta-story-card" id="instaCaptureArea">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div style="font-size:0.72rem; font-weight:800; color:#38bdf8; letter-spacing:0.04em;">ROMANTIC ROOT FIELD CARD</div>
-            <div style="font-size:0.65rem; color:#94a3b8; font-family:var(--font-en);">낭만루트 공식 인증</div>
+          <div class="insta-brand-row">
+            <div class="brand-sym-box" style="width:28px; height:28px;">
+              <svg viewBox="0 0 32 32" fill="none">
+                <circle cx="21" cy="6" r="9" fill="rgba(244,114,182,0.12)"/>
+                <circle cx="21" cy="6" r="6" fill="rgba(245,158,11,0.18)"/>
+                <circle cx="21" cy="6" r="3.8" fill="rgba(251,191,36,0.28)"/>
+                <circle cx="2" cy="24" r="1.8" fill="#fda4af"/>
+                <circle cx="9" cy="12" r="2.2" fill="#fda4af"/>
+                <circle cx="14" cy="16" r="1.8" fill="#fda4af"/>
+                <circle cx="13" cy="24" r="1.8" fill="#fda4af"/>
+                <path d="M2 24L9 12H12.5L14 16L10 16M10 16L13 24" stroke="#fda4af" stroke-width="1.8" stroke-linecap="round"/>
+                <circle cx="21" cy="6" r="2.8" fill="#f59e0b"/>
+                <circle cx="27" cy="13" r="2.2" fill="#e2e8f0"/>
+                <circle cx="30" cy="24" r="2.4" fill="#e2e8f0"/>
+                <path d="M13 24L21 6H25L27 13L22 13M22 13L30 24" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
+                <circle cx="21" cy="6" r="1" fill="#ffffff"/>
+              </svg>
+            </div>
+            <div class="insta-script-title">Romantic Root Field Card</div>
           </div>
           <div>
             <div style="font-size:1.2rem; font-weight:900; color:#fff;" id="cardUserNick">낭만 백패커</div>
@@ -989,7 +1021,7 @@
             </div>
             <div style="display:flex; justify-content:space-around; margin-top:10px; text-align:center;">
               <div>
-                <div style="font-size:0.68rem; color:#94a3b8;">정복한 박지</div>
+                <div style="font-size:0.68rem; color:#94a3b8;">클리어한 박지</div>
                 <div style="font-size:1.05rem; font-weight:900; color:#38bdf8;" id="cardVisitedCount">0</div>
               </div>
               <div style="border-left:1px solid rgba(255,255,255,0.1);"></div>
@@ -1007,7 +1039,10 @@
         </button>
 
         <div style="display:flex; flex-direction:column; gap:6px;">
-          <div style="font-size:0.78rem; font-weight:800; color:#cbd5e1;">❤️ 찜 & 🚩 정복 목록</div>
+          <div style="font-size:0.78rem; font-weight:800; color:#cbd5e1; display:flex; align-items:center; gap:4px;">
+            <svg viewBox="0 0 24 24" class="icon-svg" style="width:12px; height:12px; color:#f43f5e;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>
+            <span>클리어 & 찜 아카이브</span>
+          </div>
           <div id="basecampSpotList" style="display:flex; flex-direction:column; gap:4px; max-height:160px; overflow-y:auto;"></div>
         </div>
       </div>
@@ -1028,7 +1063,7 @@
   <div class="gear-preset-modal" id="gearPresetModal" onclick="if(event.target===this) closeGearPresetModal()">
     <div class="gear-preset-content">
       <div style="display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-weight:800; font-size:0.95rem; color:#fff;" id="presetModalCategoryTitle">장비 선택</span>
+        <span style="font-weight:800; font-size:0.95rem; color:#fff;" id="presetModalCategoryTitle">장비 선택 및 검색</span>
         <button type="button" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer;" onclick="closeGearPresetModal()">✕</button>
       </div>
 
@@ -1065,6 +1100,51 @@
       <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
       <span>보관함</span>
     </button>
+  </div>
+
+  <!-- 📸 [2030 감성] 패킹 완료 & 인스타 스토리 캡처 모달창 -->
+  <div class="custom-modal-overlay" id="packShareModalOverlay" onclick="if(event.target===this) closePackShareModal();">
+    <div class="custom-modal" style="width:380px; max-width:92vw;">
+      <!-- 인스타 캡처 전용 카드 영역 -->
+      <div id="packShareCaptureArea" class="insta-story-card">
+        <div class="insta-brand-row">
+          <div class="brand-sym-box" style="width:28px; height:28px;">
+            <svg viewBox="0 0 32 32" fill="none">
+              <circle cx="21" cy="6" r="9" fill="rgba(244,114,182,0.12)"/>
+              <circle cx="21" cy="6" r="6" fill="rgba(245,158,11,0.18)"/>
+              <circle cx="21" cy="6" r="3.8" fill="rgba(251,191,36,0.28)"/>
+              <circle cx="2" cy="24" r="1.8" fill="#fda4af"/>
+              <circle cx="9" cy="12" r="2.2" fill="#fda4af"/>
+              <circle cx="14" cy="16" r="1.8" fill="#fda4af"/>
+              <circle cx="13" cy="24" r="1.8" fill="#fda4af"/>
+              <path d="M2 24L9 12H12.5L14 16L10 16M10 16L13 24" stroke="#fda4af" stroke-width="1.8" stroke-linecap="round"/>
+              <circle cx="21" cy="6" r="2.8" fill="#f59e0b"/>
+              <circle cx="27" cy="13" r="2.2" fill="#e2e8f0"/>
+              <circle cx="30" cy="24" r="2.4" fill="#e2e8f0"/>
+              <path d="M13 24L21 6H25L27 13L22 13M22 13L30 24" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
+              <circle cx="21" cy="6" r="1" fill="#ffffff"/>
+            </svg>
+          </div>
+          <div class="insta-script-title">Romantic Root Packing Card</div>
+        </div>
+        <div>
+          <div style="font-size:1.15rem; font-weight:900; color:#fff;" id="shareCardNick">낭만 백패커</div>
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:4px;">
+            <div style="font-size:1.65rem; font-weight:900; color:#34d399; font-family:var(--font-en);" id="shareCardTotalWeight">0.00 kg</div>
+            <div class="weight-bpl-badge bpl-ul" id="shareCardBadge">울트라라이트 (UL)</div>
+          </div>
+        </div>
+        <!-- 패킹 목록 리스트 -->
+        <div id="shareCardItemsList" style="background:rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:3px; max-height:160px; overflow-y:auto;"></div>
+        <div style="font-size:0.6rem; color:#64748b; text-align:right; font-family:var(--font-en);">Verified by Romantic Root</div>
+      </div>
+
+      <button type="button" class="btn-dice-prominent" onclick="captureAndSharePackCard()" style="background:linear-gradient(135deg, #e11d48, #c026d3); color:#fff; margin-top:4px;">
+        <svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px;"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        <span>인스타 스토리용 이미지 저장 / 공유</span>
+      </button>
+      <button type="button" class="modal-btn" style="background:transparent; color:#94a3b8;" onclick="closePackShareModal()">닫기</button>
+    </div>
   </div>
 
   <!-- 간편 로그인 모달 -->
@@ -1116,94 +1196,110 @@
     let registeredSpots = [];
     let currentLuckySpots = [null, null, null];
 
-    // 🏷️ 7대 카테고리 & 기본 DB
+    // 🏷️ 8대 실전 백패킹 카테고리 (식수·식량 포함)
     const CATEGORIES = [
       {
         id: 'shelter', title: '텐트 · 타프',
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#38bdf8;"><path d="M12 2L2 20h20L12 2z"/><path d="M12 2v18M7 20l5-9 5 9"/></svg>',
-        defaultItem: { name: '제로그램 엘찰텐 프로 1.5P', weight: 1450 },
         db: [
           { name: '제로그램 엘찰텐 프로 1.5P', weight: 1450 },
           { name: 'MSR 허바허바 NX 2P', weight: 1540 },
           { name: '힐레베르그 니악', weight: 1700 },
-          { name: '네이처하이크 클라우드피크2', weight: 2200 }
+          { name: '네이처하이크 클라우드피크2', weight: 2200 },
+          { name: '경량 실타프 & 스트링', weight: 450 }
         ]
       },
       {
         id: 'sleep', title: '침낭 · 매트',
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#34d399;"><path d="M2 17h20M2 13h20M4 9h16a2 2 0 0 1 2 2v6H2v-6a2 2 0 0 1 2-2z"/></svg>',
-        defaultItem: { name: '써마레스트 네오에어 엑스썸', weight: 430 },
         db: [
-          { name: '써마레스트 엑스썸 NXT', weight: 430 },
+          { name: '써마레스트 엑스썸 NXT (에어매트)', weight: 430 },
           { name: '씨투써밋 이더라이트 XT', weight: 490 },
-          { name: '큐물러스 파이라 850 (구스)', weight: 1200 },
-          { name: '몽벨 다운허거 650 #1', weight: 1150 }
+          { name: '큐물러스 파이라 850 (구스침낭)', weight: 1200 },
+          { name: '몽벨 다운허거 650 #1', weight: 1150 },
+          { name: '씨투써밋 에어로스 울트라라이트 베개', weight: 60 }
         ]
       },
       {
         id: 'pack', title: '배낭 (Pack)',
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#a78bfa;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>',
-        defaultItem: { name: '그레고리 발토로 65L', weight: 2200 },
         db: [
           { name: '그레고리 발토로 65L', weight: 2200 },
           { name: '오스프리 케스트렐 58L', weight: 1760 },
-          { name: 'HMG 윈드라이더 3400 (55L)', weight: 910 }
+          { name: 'HMG 윈드라이더 3400 (55L)', weight: 910 },
+          { name: '미스테리랜치 글래셔 71L', weight: 2900 }
         ]
       },
       {
-        id: 'kitchen', title: '취사 · 식기',
+        id: 'food', title: '식수 · 식량 · 간식',
+        icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#10b981;"><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/><path d="M12 6v6l4 2"/></svg>',
+        db: [
+          { name: '생수 2.0L (식수)', weight: 2000 },
+          { name: '생수 1.0L (식수)', weight: 1000 },
+          { name: '핫앤쿡 발열도시락 1팩', weight: 340 },
+          { name: '전투식량 / 건조식 1팩', weight: 120 },
+          { name: '에너지바 / 행동식 파우치', weight: 250 },
+          { name: '보온병 온수 1.0L', weight: 1450 }
+        ]
+      },
+      {
+        id: 'kitchen', title: '취사 · 식기 · 보온병',
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#f59e0b;"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>',
-        defaultItem: { name: '스탠리 클래식 보온병 1.0L', weight: 1450 },
         db: [
-          { name: '스탠리 보온병 1.0L (물포함)', weight: 1450 },
-          { name: '써모스 산악전용 보온병 900ml', weight: 1290 },
-          { name: '핫앤쿡 발열도시락 2팩', weight: 680 },
-          { name: '스노우피크 티타늄 450 머그', weight: 70 }
+          { name: '스탠리 클래식 보온병 1.0L (빈통)', weight: 650 },
+          { name: '써모스 산악전용 보온병 900ml', weight: 390 },
+          { name: '스노우피크 티타늄 450 머그', weight: 70 },
+          { name: '티타늄 수저 & 포크 세트', weight: 35 },
+          { name: '씨투써밋 엑스팬더블 접이식 보울', weight: 80 }
         ]
       },
       {
-        id: 'wear', title: '보온의류 · 방한',
+        id: 'wear', title: '보온의류 · 방한 · 의류',
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#fb7185;"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>',
-        defaultItem: { name: '경량 다운자켓 & 바람막이', weight: 650 },
         db: [
-          { name: '경량 다운자켓 & 바람막이', weight: 650 },
-          { name: '아크테릭스 아톰 LT 후디', weight: 375 },
-          { name: '동계 우모바지 & 다운부티', weight: 420 }
+          { name: '헤비 다운 우모복 (동계 패딩)', weight: 750 },
+          { name: '경량 다운자켓 (간절기)', weight: 320 },
+          { name: '방풍 바람막이 & 고어텍스 자켓', weight: 280 },
+          { name: '우모바지 (다운 팬츠)', weight: 380 },
+          { name: '다운부티 (보온 텐트 슈즈)', weight: 160 },
+          { name: '여벌 베이스레이어 & 양말 세트', weight: 220 },
+          { name: '방한 장갑 & 비니 모자', weight: 110 }
         ]
       },
       {
-        id: 'electronics', title: '랜턴 · 소품 · 안전',
+        id: 'electronics', title: '랜턴 · 안전 · 전자기기',
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#fde047;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
-        defaultItem: { name: '페츨 악틱 코어 & 10000mAh', weight: 320 },
         db: [
           { name: '페츨 악틱 코어 헤드랜턴', weight: 80 },
+          { name: '골제로 라이트하우스 미니 랜턴', weight: 68 },
           { name: '나이트코어 NB10000 보조배터리', weight: 150 },
+          { name: '20000mAh 대용량 보조배터리', weight: 350 },
           { name: '백패킹 응급구급 파우치', weight: 120 },
-          { name: 'K-LNT 롤팩 쓰레기봉투', weight: 25 }
+          { name: 'K-LNT 롤팩 쓰레기봉투 & 파우치', weight: 25 }
         ]
       },
       {
-        id: 'camp', title: '테이블 · 체어',
+        id: 'camp', title: '테이블 · 체어 · 소품',
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#38bdf8;"><rect x="4" y="10" width="16" height="4" rx="1"/><path d="M6 14v6M18 14v6M8 10V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4"/></svg>',
-        defaultItem: { name: '헬리녹스 체어원', weight: 890 },
         db: [
           { name: '헬리녹스 체어원', weight: 890 },
           { name: '헬리녹스 체어제로 (초경량)', weight: 490 },
-          { name: '베른 트레킹패드 테이블', weight: 230 },
-          { name: '소토 필드호퍼 테이블', weight: 395 }
+          { name: '베른 트레킹패드 경량 테이블', weight: 230 },
+          { name: '소토 필드호퍼 원터치 테이블', weight: 395 },
+          { name: '하이커 1인용 접이식 방석', weight: 35 }
         ]
       }
     ];
 
     let selectedGearMap = {};
     try {
-      const saved = localStorage.getItem('okbm_selected_gears');
+      const saved = localStorage.getItem('okbm_selected_gears_multi');
       if (saved) selectedGearMap = JSON.parse(saved);
     } catch (e) { selectedGearMap = {}; }
 
     CATEGORIES.forEach(cat => {
-      if (!selectedGearMap[cat.id] || typeof selectedGearMap[cat.id] !== 'object') {
-        selectedGearMap[cat.id] = cat.defaultItem || { name: '미지참', weight: 0 };
+      if (!Array.isArray(selectedGearMap[cat.id])) {
+        selectedGearMap[cat.id] = cat.db[0] ? [{ id: 'item_' + Date.now() + '_' + Math.random(), ...cat.db[0] }] : [];
       }
     });
 
@@ -1232,7 +1328,7 @@
       }
     }
 
-    // 📊 [1] 일일 방문자수(PV/UV) 카운팅
+    // 📊 일일 방문자수(PV/UV) 카운팅
     function trackDailyVisit() {
       const sessionKey = 'okbm_visit_recorded_' + new Date().toISOString().slice(0, 10);
       if (!sessionStorage.getItem(sessionKey)) {
@@ -1249,7 +1345,7 @@
       }
     }
 
-    // ☁️ [2] 유저 보관함(찜/정복/메모/패킹) 구글 시트 클라우드 1줄 압축 백업
+    // ☁️ 유저 보관함 구글 시트 1줄 압축 백업
     function syncUserDataToCloud() {
       if (!isUserLoggedIn()) return;
       const profile = safeGetJSON('user_profile', null) || authState.userProfile;
@@ -1301,7 +1397,7 @@
           statusAction.innerText = '동기화됨 ✓';
         } else {
           statusBanner.className = 'cloud-status-banner cloud-status-guest';
-          statusText.innerText = '⚠️ 기기 임시 보관 중 (캐시 삭제 시 초기화 주의)';
+          statusText.innerText = '기기 임시 보관 중 (캐시 삭제 시 초기화 주의)';
           statusAction.innerText = '카카오 1초 연동 ➔';
         }
       }
@@ -1340,7 +1436,7 @@
       alert(`닉네임이 [${clean}] (으)로 변경되었습니다!`);
     }
 
-    // 🔑 [3] 카카오 로그인 ➔ 구글 시트에서 회원 보관함 데이터 복원
+    // 🔑 카카오 로그인
     function loginWithKakao() {
       if (typeof Kakao === 'undefined') {
         alert('카카오 SDK를 불러오지 못했습니다.');
@@ -1358,7 +1454,6 @@
             success: function(res) {
               const kakaoId = 'kakao_' + res.id;
               
-              // 1. 카카오 원래 닉네임 가져오기
               let kakaoNick = '낭만백패커';
               if (res.properties && res.properties.nickname) {
                 kakaoNick = res.properties.nickname;
@@ -1366,7 +1461,6 @@
                 kakaoNick = res.kakao_account.profile.nickname;
               }
 
-              // 2. 💡 [핵심] 귀찮은 prompt 질문창을 아예 삭제하고 바로 로그인!
               const existingProfile = safeGetJSON('user_profile', null);
               const finalNickname = (existingProfile && existingProfile.id === kakaoId && existingProfile.nickname)
                 ? existingProfile.nickname
@@ -1379,7 +1473,6 @@
                 createdAt: (existingProfile && existingProfile.createdAt) ? existingProfile.createdAt : Date.now()
               };
 
-              // 브라우저 저장소에 보관
               localStorage.setItem('user_auth_token', authObj.access_token || ('token_' + Date.now()));
               localStorage.setItem('user_profile', JSON.stringify(profile));
               authState.isLoggedIn = true;
@@ -1389,7 +1482,6 @@
               closeLoginModal();
               triggerHaptic(15);
 
-              // 3. 구글 시트 users 탭으로 회원 정보와 보관함 1줄 압축 전송
               fetch(GAS_API_URL, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -1407,7 +1499,6 @@
 
               alert('[' + profile.nickname + ']님 환영합니다!');
               if (typeof renderCategorySlots === 'function') renderCategorySlots();
-              if (typeof renderSpots === 'function') renderSpots();
             },
             fail: function(err) {
               alert('카카오 정보를 가져오지 못했습니다.');
@@ -1419,6 +1510,7 @@
         }
       });
     }
+
     function loginQuickAsMember(name = '낭만백패커') {
       const profile = { nickname: name, id: 'guest_' + Date.now(), isMember: true };
       localStorage.setItem('user_auth_token', 'token_' + Date.now());
@@ -1430,12 +1522,9 @@
       syncUserDataToCloud();
     }
 
-   function logoutUser() {
-      // 1. 브라우저에서 로그인 토큰과 내 정보 삭제
+    function logoutUser() {
       localStorage.removeItem('user_auth_token');
       localStorage.removeItem('user_profile');
-      
-      // 2. 💡 [핵심] 로그아웃 시 폰 화면의 보관함 데이터도 깨끗하게 비우기!
       localStorage.removeItem('okbm_bookmarks');
       localStorage.removeItem('okbm_visited');
       localStorage.removeItem('okbm_memos');
@@ -1449,11 +1538,9 @@
       triggerHaptic(10);
       alert('로그아웃 되었습니다. 보관함이 비워집니다.');
 
-      // 3. 화면 UI 즉시 갱신
       if (typeof renderPackingHistoryList === 'function') renderPackingHistoryList();
       if (typeof renderBasecampRecordData === 'function') renderBasecampRecordData();
       if (typeof renderBasecampMemos === 'function') renderBasecampMemos();
-      if (typeof renderSpots === 'function') renderSpots();
       if (typeof renderCategorySlots === 'function') renderCategorySlots();
     }
 
@@ -1476,32 +1563,36 @@
     function renderCategorySlots() {
       const container = document.getElementById('categorySlotsContainer');
       let totalGrams = 0;
-      let selectedCount = 0;
+      let totalItemCount = 0;
 
       const renderedHtml = CATEGORIES.map(cat => {
-        const item = selectedGearMap[cat.id];
-        const isSelected = item && Number(item.weight) > 0;
-        if (isSelected) {
-          totalGrams += Number(item.weight);
-          selectedCount++;
-        }
+        const items = selectedGearMap[cat.id] || [];
+        const catGrams = items.reduce((sum, it) => sum + Number(it.weight || 0), 0);
+        totalGrams += catGrams;
+        totalItemCount += items.length;
 
-        const itemName = (item && item.name) ? escapeHtml(item.name) : '미지참';
-        const itemWeightKg = (item && item.weight) ? (Number(item.weight) / 1000).toFixed(2) : '0.00';
+        const itemsTagsHtml = items.length > 0 ? items.map((it, idx) => `
+          <div style="background:rgba(56, 189, 248, 0.12); border:1px solid rgba(56, 189, 248, 0.3); border-radius:6px; padding:2px 7px; display:inline-flex; align-items:center; gap:5px; margin:2px 0;">
+            <span style="font-size:0.73rem; color:#fff; font-weight:700;">${escapeHtml(it.name)}</span>
+            <span style="font-size:0.68rem; color:#38bdf8; font-family:var(--font-en); font-weight:800;">${(it.weight/1000).toFixed(2)}kg</span>
+            <button type="button" style="background:none; border:none; color:#f43f5e; font-size:0.8rem; font-weight:900; cursor:pointer; padding:0 2px;" onclick="event.stopPropagation(); removeGearFromCategory('${cat.id}', ${idx});">✕</button>
+          </div>
+        `).join('') : `<span style="font-size:0.72rem; color:var(--text-muted);">미선택 (터치하여 추가 +)</span>`;
 
         return `
-          <div class="category-slot-card" onclick="openGearPresetModal('${cat.id}')">
-            <div class="category-slot-left">
-              <span>${cat.icon}</span>
-              <span>${cat.title}</span>
+          <div class="category-slot-card" onclick="openGearPresetModal('${cat.id}')" style="flex-direction:column; align-items:flex-start; gap:4px; cursor:pointer;">
+            <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+              <div class="category-slot-left">
+                <span>${cat.icon}</span>
+                <span>${cat.title}</span>
+                <span style="font-size:0.68rem; color:#94a3b8; font-weight:700;">(${items.length}개)</span>
+              </div>
+              <div style="font-size:0.75rem; color:#34d399; font-family:var(--font-en); font-weight:800;">
+                ${(catGrams/1000).toFixed(2)} kg
+              </div>
             </div>
-            <div class="category-slot-right">
-              ${isSelected ? `
-                <span class="slot-selected-info">${itemName} (${itemWeightKg}kg)</span>
-                <span style="color:#64748b; font-size:0.75rem;">⌵</span>
-              ` : `
-                <span style="font-size:0.72rem; color:var(--text-muted);">미선택 +</span>
-              `}
+            <div style="display:flex; flex-wrap:wrap; gap:3px; width:100%;">
+              ${itemsTagsHtml}
             </div>
           </div>
         `;
@@ -1511,14 +1602,12 @@
 
       const totalKg = (totalGrams / 1000).toFixed(2);
 
-      // 홈 화면 컴팩트 배너 갱신
       const mainKg = document.getElementById('mainBannerKgText');
       const mainCount = document.getElementById('mainBannerItemCount');
       const mainBadge = document.getElementById('mainBannerBadge');
       if (mainKg) mainKg.innerText = `${totalKg} kg`;
-      if (mainCount) mainCount.innerText = `장비 ${selectedCount}개 세팅됨`;
+      if (mainCount) mainCount.innerText = `장비 ${totalItemCount}개 세팅됨`;
 
-      // 계산기 모달 내부 대시보드 갱신
       const totalKgText = document.getElementById('totalWeightKgText');
       const totalGramsText = document.getElementById('totalWeightGramsText');
       if (totalKgText) totalKgText.innerText = `${totalKg} kg`;
@@ -1547,7 +1636,7 @@
       }
 
       if (gauge) {
-        const gaugePct = Math.min(100, Math.round((totalGrams / 12000) * 100));
+        const gaugePct = Math.min(100, Math.round((totalGrams / 14000) * 100));
         gauge.style.width = `${gaugePct}%`;
       }
     }
@@ -1557,23 +1646,54 @@
       const category = CATEGORIES.find(c => c.id === categoryId);
       if (!category) return;
 
-      document.getElementById('presetModalCategoryTitle').innerText = `${category.title} 장비 선택`;
-      const listEl = document.getElementById('presetGearDbList');
-
-      listEl.innerHTML = `
-        <div class="gear-db-item" style="border-color:#f43f5e; background:rgba(244,63,94,0.08);" onclick="selectGearForCategory(null, 0)">
-          <span style="color:#fda4af; font-size:0.78rem; font-weight:700;">장비 미지참 (0g)</span>
-          <span style="color:#fda4af; font-size:0.74rem;">비우기 ✕</span>
-        </div>
-      ` + category.db.map(g => `
-        <div class="gear-db-item" onclick="selectGearForCategory('${escapeHtml(g.name)}', ${g.weight})">
-          <span style="font-size:0.8rem; font-weight:700; color:#fff;">${escapeHtml(g.name)}</span>
-          <span style="font-size:0.75rem; font-family:var(--font-en); font-weight:800; color:#38bdf8;">${(g.weight/1000).toFixed(2)}kg (${g.weight}g)</span>
-        </div>
-      `).join('');
-
+      document.getElementById('presetModalCategoryTitle').innerText = `${category.title} 장비 선택 및 검색`;
+      renderPresetGearList('');
       document.getElementById('gearPresetModal').style.display = 'flex';
       triggerHaptic(10);
+    }
+
+    function renderPresetGearList(query = '') {
+      const category = CATEGORIES.find(c => c.id === currentOpeningCategoryId);
+      const listEl = document.getElementById('presetGearDbList');
+      if (!category || !listEl) return;
+
+      const currentSelectedItems = selectedGearMap[category.id] || [];
+      const cleanQ = query.trim().toLowerCase();
+      const filteredDb = category.db.filter(g => g.name.toLowerCase().includes(cleanQ));
+
+      let html = `
+        <div style="margin-bottom:6px; position:sticky; top:0; z-index:10; background:var(--bg-surface); padding-bottom:4px;">
+          <input type="text" class="modal-input" placeholder="🔍 ${category.title} 장비명 검색..." value="${escapeHtml(query)}" oninput="renderPresetGearList(this.value)" style="border-color:#38bdf8; font-size:0.76rem;" />
+        </div>
+
+        <div class="gear-db-item" style="border-color:#f43f5e; background:rgba(244,63,94,0.08);" onclick="clearAllGearsInCategory('${category.id}')">
+          <span style="color:#fda4af; font-size:0.78rem; font-weight:700;">해당 카테고리 전체 비우기</span>
+          <span style="color:#fda4af; font-size:0.74rem;">비우기 ✕</span>
+        </div>
+      `;
+
+      if (filteredDb.length === 0) {
+        html += `<div style="font-size:0.74rem; color:var(--text-muted); text-align:center; padding:12px 0;">검색 결과가 없습니다. 하단에서 직접 추가해보세요!</div>`;
+      } else {
+        html += filteredDb.map(g => {
+          const countInPack = currentSelectedItems.filter(it => it.name === g.name).length;
+          const isAdded = countInPack > 0;
+
+          return `
+            <div class="gear-db-item" style="${isAdded ? 'background:rgba(16,185,129,0.12); border-color:#10b981;' : ''}" onclick="addGearToCategory('${escapeHtml(g.name)}', ${g.weight})">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:0.8rem; font-weight:700; color:#fff;">${escapeHtml(g.name)}</span>
+                ${isAdded ? `<span style="background:#10b981; color:#fff; font-size:0.65rem; font-weight:900; padding:1px 5px; border-radius:10px;">+${countInPack}개 담김</span>` : ''}
+              </div>
+              <span style="font-size:0.75rem; font-family:var(--font-en); font-weight:800; color:${isAdded ? '#6ee7b7' : '#38bdf8'};">
+                + ${(g.weight/1000).toFixed(2)}kg
+              </span>
+            </div>
+          `;
+        }).join('');
+      }
+
+      listEl.innerHTML = html;
     }
 
     function closeGearPresetModal() {
@@ -1581,11 +1701,42 @@
       currentOpeningCategoryId = null;
     }
 
-    function selectGearForCategory(name, weight) {
+    function addGearToCategory(name, weight) {
       if (!currentOpeningCategoryId) return;
-      selectedGearMap[currentOpeningCategoryId] = { name: name || '미지참', weight: Number(weight) || 0 };
-      localStorage.setItem('okbm_selected_gears', JSON.stringify(selectedGearMap));
-      closeGearPresetModal();
+      if (!Array.isArray(selectedGearMap[currentOpeningCategoryId])) {
+        selectedGearMap[currentOpeningCategoryId] = [];
+      }
+      selectedGearMap[currentOpeningCategoryId].push({
+        id: 'item_' + Date.now() + '_' + Math.random(),
+        name: name,
+        weight: Number(weight) || 0
+      });
+
+      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
+      renderCategorySlots();
+      
+      const searchInput = document.querySelector('#presetGearDbList input');
+      const currentQuery = searchInput ? searchInput.value : '';
+      renderPresetGearList(currentQuery);
+
+      triggerHaptic(15);
+      syncUserDataToCloud();
+    }
+
+    function removeGearFromCategory(categoryId, itemIndex) {
+      if (selectedGearMap[categoryId]) {
+        selectedGearMap[categoryId].splice(itemIndex, 1);
+        localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
+        renderCategorySlots();
+        triggerHaptic(10);
+        syncUserDataToCloud();
+      }
+    }
+
+    function clearAllGearsInCategory(categoryId) {
+      selectedGearMap[categoryId] = [];
+      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
+      renderPresetGearList('');
       renderCategorySlots();
       triggerHaptic(15);
       syncUserDataToCloud();
@@ -1603,38 +1754,43 @@
       const cat = CATEGORIES.find(c => c.id === currentOpeningCategoryId);
       if (cat) cat.db.unshift({ name, weight });
 
-      selectGearForCategory(name, weight);
+      addGearToCategory(name, weight);
       nameInput.value = '';
       weightInput.value = '';
     }
 
     function resetAllGearSelections() {
-      if (!confirm('모든 장비 세팅을 초기화하시겠습니까?')) return;
+      if (!confirm('배낭의 모든 장비 세팅을 비우시겠습니까?')) return;
       CATEGORIES.forEach(c => {
-        selectedGearMap[c.id] = { name: '미지참', weight: 0 };
+        selectedGearMap[c.id] = [];
       });
-      localStorage.setItem('okbm_selected_gears', JSON.stringify(selectedGearMap));
+      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
       renderCategorySlots();
       triggerHaptic(15);
       syncUserDataToCloud();
     }
 
+    // 💡 내 배낭 패킹 저장 ➔ 인스타 공유 카드 즉시 팝업
     function saveCurrentPackingRecord() {
-      // 1. 비로그인 차단
       if (!isUserLoggedIn()) {
-        alert('출정 패킹 기록 저장은 로그인 후 이용하실 수 있습니다.');
+        alert('패킹 기록 저장은 로그인 후 이용하실 수 있습니다.');
         openLoginModal();
         return;
       }
 
-      const activeItems = Object.keys(selectedGearMap).map(k => selectedGearMap[k]).filter(i => i && i.weight > 0);
-      if (activeItems.length === 0) return alert('선택된 장비가 없습니다.');
+      const allItems = [];
+      CATEGORIES.forEach(c => {
+        (selectedGearMap[c.id] || []).forEach(it => {
+          if (it.weight > 0) allItems.push(it);
+        });
+      });
 
-      const totalGrams = activeItems.reduce((sum, g) => sum + Number(g.weight), 0);
+      if (allItems.length === 0) return alert('선택된 장비가 없습니다.');
+
+      const totalGrams = allItems.reduce((sum, g) => sum + Number(g.weight), 0);
       const totalKg = (totalGrams / 1000).toFixed(2);
-      const currentItemsStr = activeItems.map(g => `${g.name} (${g.weight}g)`).sort().join(' / ');
+      const currentItemsStr = allItems.map(g => `${g.name} (${g.weight}g)`).sort().join(' / ');
 
-      // 💡 [핵심] 동일한 장비 세팅과 무게로 연속 중복 저장 방지
       if (packingHistoryList.length > 0) {
         const lastRecord = packingHistoryList[0];
         const lastItemsStr = (lastRecord.items || []).slice().sort().join(' / ');
@@ -1652,17 +1808,69 @@
         date: timeStr,
         weightKg: totalKg,
         weightGrams: totalGrams,
-        itemCount: activeItems.length,
-        items: activeItems.map(g => `${g.name} (${g.weight}g)`)
+        itemCount: allItems.length,
+        items: allItems.map(g => `${g.name} (${g.weight}g)`)
       };
 
       packingHistoryList.unshift(newRecord);
       localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
       triggerHaptic(20);
-      
-      // 구글 시트 users 탭으로 실시간 클라우드 전송
       syncUserDataToCloud();
-      alert(`[ ${timeStr} ]\n총 무게 ${totalKg}kg 패킹 기록이 회원님의 보관함에 안전하게 저장되었습니다!`);
+
+      openPackShareModal(newRecord, allItems);
+    }
+
+    // 📸 인스타 공유 카드 팝업 열기
+    function openPackShareModal(record, items) {
+      const profile = safeGetJSON('user_profile', null);
+      const nick = profile ? profile.nickname : '낭만 백패커';
+
+      document.getElementById('shareCardNick').innerText = nick;
+      document.getElementById('shareCardTotalWeight').innerText = `${record.weightKg} kg`;
+
+      const badge = document.getElementById('shareCardBadge');
+      if (badge) {
+        badge.className = document.getElementById('bplStatusBadge').className;
+        badge.innerText = document.getElementById('bplStatusText').innerText;
+      }
+
+      const listEl = document.getElementById('shareCardItemsList');
+      if (listEl) {
+        listEl.innerHTML = items.map(it => `
+          <div style="font-size:0.68rem; color:#cbd5e1; display:flex; justify-content:space-between;">
+            <span>• ${escapeHtml(it.name)}</span>
+            <span style="font-family:var(--font-en); color:#38bdf8; font-weight:700;">${(it.weight/1000).toFixed(2)}kg</span>
+          </div>
+        `).join('');
+      }
+
+      document.getElementById('packShareModalOverlay').style.display = 'flex';
+      closePackingModal();
+    }
+
+    function closePackShareModal() {
+      document.getElementById('packShareModalOverlay').style.display = 'none';
+    }
+
+    function captureAndSharePackCard() {
+      const card = document.getElementById('packShareCaptureArea');
+      if (!card || typeof html2canvas === 'undefined') return;
+
+      triggerHaptic(15);
+      html2canvas(card, { backgroundColor: '#020617', scale: 2 }).then(canvas => {
+        canvas.toBlob(blob => {
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'romantic_packing.png', { type: 'image/png' })] })) {
+            const file = new File([blob], 'romantic_packing.png', { type: 'image/png' });
+            navigator.share({ title: '나의 배낭 패킹 기록', files: [file] }).catch(() => {});
+          } else {
+            const link = document.createElement('a');
+            link.download = '낭만루트_패킹기록.png';
+            link.href = canvas.toDataURL();
+            link.click();
+            alert('인스타 공유용 패킹 카드가 다운로드되었습니다!');
+          }
+        });
+      });
     }
 
     async function loadGearDbFromGoogleSheet() {
@@ -1696,8 +1904,7 @@
     // ========================================================
     // 🗂️ 5. 보관함 모달 & 3대 탭
     // ========================================================
-   function openMyInfoModal(initialTab = 'history') {
-      // 💡 비로그인 상태면 보관함을 열지 않고 로그인 창 유도
+    function openMyInfoModal(initialTab = 'history') {
       if (!isUserLoggedIn()) {
         alert('내 낭만 보관함은 로그인 후 이용하실 수 있습니다.');
         openLoginModal();
@@ -1712,7 +1919,6 @@
       renderBasecampMemos();
     }
 
-    // 💡 [빠져있던 닫기 함수 완벽 추가!]
     function closeMyInfoModal() {
       const modal = document.getElementById('myInfoModal');
       if (modal) {
@@ -1734,32 +1940,58 @@
       if (!container) return;
 
       if (packingHistoryList.length === 0) {
-        container.innerHTML = '<div style="font-size:0.75rem; color:var(--text-muted); padding:16px 0; text-align:center;">저장된 출정 패킹 기록이 없습니다.<br>홈 화면에서 [오늘의 출정 패킹 저장]을 눌러보세요!</div>';
+        container.innerHTML = '<div style="font-size:0.75rem; color:var(--text-muted); padding:16px 0; text-align:center;">저장된 패킹 기록이 없습니다.<br>홈 화면에서 [오늘의 배낭 무게는?]을 기록해보세요!</div>';
         return;
       }
 
-      container.innerHTML = packingHistoryList.map(h => `
-        <div class="pack-history-card">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:0.72rem; color:#94a3b8;">📅 ${h.date}</span>
-            <button type="button" style="background:none; border:none; color:#f43f5e; font-size:0.7rem; font-weight:800; cursor:pointer;" onclick="deletePackingHistoryItem('${h.id}')">기록 삭제</button>
+      container.innerHTML = packingHistoryList.map((h, idx) => {
+        const itemsList = Array.isArray(h.items) ? h.items : [];
+        const itemsDetailHtml = itemsList.map(it => `
+          <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:3px 7px; font-size:0.68rem; color:#e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+            <span>• ${escapeHtml(it)}</span>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:baseline;">
-            <span style="font-size:1.15rem; font-weight:900; color:#34d399; font-family:var(--font-en);">${h.weightKg} kg</span>
-            <span style="font-size:0.72rem; color:#cbd5e1;">장비 ${h.itemCount}개</span>
+        `).join('');
+
+        return `
+          <div class="pack-history-card" style="cursor:pointer;" onclick="togglePackDetail(${idx})">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:0.72rem; color:#94a3b8; font-family:var(--font-en);">${h.date}</span>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:0.68rem; color:#38bdf8; font-weight:700;" id="packToggleText_${idx}">상세보기 ▾</span>
+                <button type="button" style="background:none; border:none; color:#f43f5e; font-size:0.7rem; font-weight:800; cursor:pointer;" onclick="event.stopPropagation(); deletePackingHistoryItem('${h.id}');">삭제</button>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline;">
+              <span style="font-size:1.15rem; font-weight:900; color:#34d399; font-family:var(--font-en);">${h.weightKg} kg</span>
+              <span style="font-size:0.72rem; color:#cbd5e1;">장비 ${h.itemCount}개 구성</span>
+            </div>
+
+            <div id="packDetailBox_${idx}" style="display:none; flex-direction:column; gap:3px; margin-top:6px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:6px;">
+              ${itemsDetailHtml}
+            </div>
           </div>
-          <div style="font-size:0.7rem; color:#94a3b8; line-height:1.35; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-            ${escapeHtml(h.items.join(' / '))}
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
+    }
+
+    function togglePackDetail(index) {
+      const box = document.getElementById(`packDetailBox_${index}`);
+      const text = document.getElementById(`packToggleText_${index}`);
+      if (!box) return;
+
+      const isHidden = box.style.display === 'none';
+      box.style.display = isHidden ? 'flex' : 'none';
+      if (text) text.innerText = isHidden ? '접기 ▴' : '상세보기 ▾';
+      triggerHaptic(10);
     }
 
     function deletePackingHistoryItem(id) {
+      if (!confirm('이 패킹 기록을 삭제하시겠습니까?')) return;
       packingHistoryList = packingHistoryList.filter(h => h.id !== id);
       localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
       renderPackingHistoryList();
       syncUserDataToCloud();
+      triggerHaptic(15);
     }
 
     function renderBasecampRecordData() {
@@ -1784,14 +2016,21 @@
         bookmarks.forEach(id => items.push({ id, type: 'fav' }));
 
         if (items.length === 0) {
-          listEl.innerHTML = '<div style="font-size:0.72rem; color:var(--text-muted); padding:6px 0;">지도 화면에서 찜(❤️)이나 정복(🚩)을 누르면 목록이 표시됩니다.</div>';
+          listEl.innerHTML = '<div style="font-size:0.72rem; color:var(--text-muted); padding:6px 0;">지도 화면에서 찜이나 클리어를 누르면 목록이 표시됩니다.</div>';
         } else {
-          listEl.innerHTML = items.slice(0, 8).map(it => `
-            <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-hairline); border-radius:6px; padding:6px 9px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="location.href='map.html';">
-              <span style="font-size:0.76rem; font-weight:700; color:#fff;">${it.type === 'visited' ? '🚩 정복 박지' : '❤️ 찜한 박지'} (${it.id})</span>
-              <span style="font-size:0.68rem; color:#38bdf8;">지도로 보기 ➔</span>
-            </div>
-          `).join('');
+          listEl.innerHTML = items.slice(0, 10).map(it => {
+            const foundSpot = registeredSpots.find(s => String(s.id).trim() === String(it.id).trim());
+            const spotDisplayName = foundSpot ? (foundSpot.fullName || foundSpot.name) : `박지 #${it.id}`;
+
+            return `
+              <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-hairline); border-radius:6px; padding:6px 9px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="location.href='map.html?spot=${encodeURIComponent(spotDisplayName)}';">
+                <span style="font-size:0.76rem; font-weight:700; color:#fff;">
+                  ${it.type === 'visited' ? '클리어' : '찜'} : ${escapeHtml(spotDisplayName)}
+                </span>
+                <span style="font-size:0.68rem; color:#38bdf8;">지도로 보기 ➔</span>
+              </div>
+            `;
+          }).join('');
         }
       }
     }
@@ -1805,10 +2044,10 @@
         canvas.toBlob(blob => {
           if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'romantic_root.png', { type: 'image/png' })] })) {
             const file = new File([blob], 'romantic_root.png', { type: 'image/png' });
-            navigator.share({ title: '나의 낭만루트 출정 기록', files: [file] }).catch(() => {});
+            navigator.share({ title: '나의 낭만루트 박지 아카이브', files: [file] }).catch(() => {});
           } else {
             const link = document.createElement('a');
-            link.download = '낭만루트_출정기록.png';
+            link.download = '낭만루트_박지_아카이브.png';
             link.href = canvas.toDataURL();
             link.click();
             alert('인스타 공유용 이미지가 다운로드되었습니다!');
@@ -1828,12 +2067,17 @@
         return;
       }
 
-      container.innerHTML = keys.map(k => `
-        <div style="background:rgba(255,255,255,0.03); border:1px dashed var(--border-accent); border-radius:8px; padding:8px 10px;">
-          <div style="font-size:0.75rem; font-weight:800; color:#38bdf8;">📍 박지 번호: ${k}</div>
-          <div style="font-size:0.74rem; color:#fff; margin-top:3px; white-space:pre-wrap;">${escapeHtml(memoObj[k])}</div>
-        </div>
-      `).join('');
+      container.innerHTML = keys.map(k => {
+        const foundSpot = registeredSpots.find(s => String(s.id).trim() === String(k).trim());
+        const spotDisplayName = foundSpot ? (foundSpot.fullName || foundSpot.name) : `박지 #${k}`;
+
+        return `
+          <div style="background:rgba(255,255,255,0.03); border:1px dashed var(--border-accent); border-radius:8px; padding:8px 10px;">
+            <div style="font-size:0.75rem; font-weight:800; color:#38bdf8;">📍 ${escapeHtml(spotDisplayName)}</div>
+            <div style="font-size:0.74rem; color:#fff; margin-top:3px; white-space:pre-wrap;">${escapeHtml(memoObj[k])}</div>
+          </div>
+        `;
+      }).join('');
     }
 
     // 🎯 어디로 떠날까? 추천 로직
@@ -1879,12 +2123,12 @@
       }, { passive: true });
     }
 
-    // 🔥 4. 투표 & 실시간 출정톡 구글 시트 연동
+    // 4. 이번 주말 어디 가세요? & 실시간 박지톡 구글 시트 연동
     const POLL_OPTIONS = [
-      { id: 'opt1', text: '⛰️ 높은 산 박지', count: 48 },
-      { id: 'opt2', text: '🌊 바다/오션뷰', count: 35 },
-      { id: 'opt3', text: '🌲 조용한 숲속', count: 29 },
-      { id: 'opt4', text: '🏠 이번 주는 휴식', count: 16 }
+      { id: 'opt1', text: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:12px; height:12px; color:#10b981; margin-right:4px;"><polygon points="2 20 8.5 7 15 17 22 20 2 20" fill="currentColor"/></svg> 높은 산 정상', count: 48 },
+      { id: 'opt2', text: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:12px; height:12px; color:#38bdf8; margin-right:4px;"><path d="M2 17c3 0 3-2 6-2s3 2 6 2 3-2 6-2M2 20c3 0 3-2 6-2s3 2 6 2 3-2 6-2" stroke="currentColor" stroke-width="2" fill="none"/></svg> 바다 / 오션뷰', count: 35 },
+      { id: 'opt3', text: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:12px; height:12px; color:#34d399; margin-right:4px;"><path d="M12 2L4 18h16L12 2z" fill="currentColor"/></svg> 조용한 숲속', count: 29 },
+      { id: 'opt4', text: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:12px; height:12px; color:#f59e0b; margin-right:4px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="currentColor"/></svg> 이번 주는 휴식', count: 16 }
     ];
 
     let userSelectedPoll = localStorage.getItem('okbm_user_poll');
@@ -1951,7 +2195,7 @@
       `).join('');
     }
 
-  function submitTalkBubble() {
+    function submitTalkBubble() {
       const nickInput = document.getElementById('talkNickInput');
       const msgInput = document.getElementById('talkMsgInput');
       const profile = safeGetJSON('user_profile', null);
@@ -1968,7 +2212,6 @@
       renderTalkList();
       triggerHaptic(15);
 
-      // 💡 A:id, B:user_id, C:nickname, D:message, E:created_at 순서로 1:1 전송
       fetch(GAS_API_URL, {
         method: 'POST',
         mode: 'no-cors',
@@ -1981,7 +2224,7 @@
         })
       }).catch(() => {});
     }
-    // 🌐 박지 데이터 로드
+
     async function loadPortalSpotData() {
       const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_MAIN_GID}&_t=${Date.now()}`;
       try {
@@ -1993,7 +2236,9 @@
             complete: function(results) {
               if (results.data && results.data.length > 0) {
                 registeredSpots = results.data.map(row => ({
+                  id: row.id || row.spotId || '',
                   name: row.fullName || row.name || row.spot_main || '',
+                  fullName: row.fullName || row.name || row.spot_main || '',
                   region: row.cityName || row.region || '전국',
                   elevation: row.elevation || '',
                   desc: row.desc_summary || row.desc || '자연 속에서 즐기는 조용한 하룻밤.'
@@ -2015,7 +2260,6 @@
       return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    // 🚀 초기화 실행
     window.addEventListener('DOMContentLoaded', () => {
       if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) Kakao.init(KAKAO_APP_KEY);
       trackDailyVisit();
@@ -2031,3 +2275,4 @@
   </script>
 </body>
 </html>
+
