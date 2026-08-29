@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="ko" class="notranslate">
 <head>
@@ -9,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>낭만루트 | 대한민국 260+ 백패킹 필드 팩트맵</title>
+  <title>낭만루트 ROMANTIC ROUTE | 대한민국 전국 백패킹 필드 팩트맵</title>
 
   <!-- 🔤 최상위 웹폰트 CDN -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
@@ -24,14 +22,19 @@
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 
   <style>
-    @import url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/Arita-buri-SemiBold.woff');
+    @font-face {
+      font-family: 'Arita-buri-SemiBold';
+      src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/Arita-buri-SemiBold.woff') format('woff');
+      font-weight: 600;
+      font-style: normal;
+    }
 
     :root {
-      --bg-base: #010204;
+      --bg-base: #000000;
       --bg-surface: #07090e;
-      --bg-card: #0e121a;
+      --bg-card: #080b11;
       --border-hairline: rgba(255, 255, 255, 0.08);
-      --border-accent: rgba(203, 213, 225, 0.2);
+      --border-accent: rgba(203, 213, 225, 0.18);
       
       --text-primary: #ffffff;
       --text-secondary: #94a3b8;
@@ -73,21 +76,34 @@
       width: 100%;
       min-height: 100dvh;
       overflow-x: hidden;
-      background-color: var(--bg-base);
+      background-color: #000000;
       color: var(--text-primary);
       font-family: var(--font-body);
       line-height: 1.45;
     }
 
     body {
-      background: 
-        radial-gradient(1.5px 1.5px at 20px 30px, rgba(255, 255, 255, 0.28), transparent),
-        radial-gradient(1.5px 1.5px at 120px 80px, rgba(56, 189, 248, 0.35), transparent),
-        radial-gradient(1px 1px at 240px 150px, rgba(255, 255, 255, 0.22), transparent),
-        radial-gradient(1.5px 1.5px at 320px 40px, rgba(52, 211, 153, 0.3), transparent),
-        radial-gradient(circle at 50% 0%, #0d1726 0%, #040810 40%, #010204 100%) !important;
-      background-size: 100% 100%, 350px 350px, 280px 280px, 400px 400px, 100% 100% !important;
+      background: #000000 !important;
       padding-bottom: 75px;
+    }
+
+    /* 🌌 슬로우 힐링 미세별 애니메이션 (5.0s ~ 8.5s) */
+    @keyframes slowCelestialTwinkle {
+      0%, 100% { opacity: 0.12; transform: scale(0.7) rotate(0deg); }
+      50% { opacity: 0.85; transform: scale(1.1) rotate(45deg); filter: drop-shadow(0 0 3px rgba(255,255,255,0.7)); }
+    }
+    @keyframes slowCelestialPulse {
+      0%, 100% { opacity: 0.45; transform: scale(1); }
+      50% { opacity: 0.12; transform: scale(0.6); }
+    }
+
+    /* 전체 앱 배경 전용 고정 은하수 캔버스 */
+    .global-app-starlight-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
     }
 
     .icon-svg {
@@ -109,89 +125,159 @@
       width: 100%;
       background: rgba(0, 0, 0, 0.94);
       border-bottom: 1px solid var(--border-hairline);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      padding: 10px 14px !important;
-      padding-top: calc(10px + env(safe-area-inset-top, 0px)) !important;
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      padding: 0 14px !important;
+      padding-top: env(safe-area-inset-top, 0px) !important;
       user-select: none;
+      overflow: hidden;
     }
 
     .header-top-row {
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      max-width: 480px;
-      margin: 0 auto;
+      height: 52px !important;
+      min-height: 52px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      width: 100% !important;
+      max-width: 480px !important;
+      margin: 0 auto !important;
+      position: relative;
+      z-index: 3;
+    }
+
+    .gnb-starlight-canvas {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
     }
 
     .brand-line {
-      height: 32px;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      text-decoration: none;
-      transition: transform 0.15s ease;
-      flex-shrink: 0;
+      height: 52px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: flex-start !important;
+      gap: 7px !important;
+      text-decoration: none !important;
+      transition: transform 0.15s ease !important;
+      margin: 0 !important;
+      flex-shrink: 0 !important;
     }
     .brand-line:active { transform: scale(0.98); }
 
     .brand-sym-box {
-      width: 34px;
-      height: 34px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      flex-shrink: 0;
+      width: 34px !important;
+      height: 34px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      position: relative !important;
+      flex-shrink: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
     }
-    .brand-sym-box svg { width: 30px; height: 30px; display: block; }
+    .brand-sym-box::before {
+      content: '';
+      position: absolute;
+      width: 38px;
+      height: 38px;
+      background: radial-gradient(circle at 65% 25%, rgba(245, 158, 11, 0.35) 0%, rgba(244, 114, 182, 0.22) 45%, transparent 70%);
+      border-radius: 50%;
+      z-index: -1;
+      filter: blur(4px);
+    }
+    .brand-sym-box svg { 
+      width: 30px !important; 
+      height: 30px !important; 
+      display: block !important; 
+      margin: 0 !important;
+    }
     
     .brand-title {
-      font-family: var(--font-display);
-      font-size: 1.12rem;
-      font-weight: 900;
-      color: #ffffff;
-      line-height: 1;
-      letter-spacing: -0.02em;
+      font-family: 'SUIT', sans-serif !important;
+      font-size: 1.12rem !important;
+      font-weight: 900 !important;
+      color: #ffffff !important;
+      line-height: 1 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      letter-spacing: -0.02em !important;
+      text-shadow: 0 0 16px rgba(255, 255, 255, 0.35) !important;
+      margin: 0 !important;
+      padding: 0 !important;
     }
+
     .brand-dot {
-      width: 3.5px;
-      height: 3.5px;
-      background: #34d399;
-      border-radius: 50%;
-      box-shadow: 0 0 6px #34d399;
+      width: 3px !important;
+      height: 3px !important;
+      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #94a3b8 70%, #475569 100%) !important;
+      box-shadow: 0 0 6px rgba(255, 255, 255, 0.8), 0 0 8px rgba(56, 189, 248, 0.3) !important;
+      border-radius: 50% !important;
+      display: inline-block !important;
+      flex-shrink: 0 !important;
+      margin: 0 !important;
+      transform: translateY(0.5px) !important;
     }
+
     .brand-en {
-      font-family: 'Arita-buri-SemiBold', serif !important;
-      font-size: 0.84rem;
-      color: #6ee7b7;
-      letter-spacing: -0.02em;
-      line-height: 1;
-      white-space: nowrap;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 7px !important;
+      white-space: nowrap !important;
+      line-height: 1 !important;
+    }
+
+    .word-romantic, .word-route {
+      font-family: 'Space Grotesk', -apple-system, sans-serif !important;
+      text-transform: uppercase !important;
+      line-height: 1 !important;
+      display: inline-block !important;
+      background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 25%, #cbd5e1 50%, #94a3b8 75%, #e2e8f0 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      filter: drop-shadow(0 0 8px rgba(226, 232, 240, 0.45)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8)) !important;
+    }
+
+    .word-romantic {
+      font-size: 0.68rem !important;
+      font-weight: 800 !important;
+      letter-spacing: 0.09em !important;
+      transform: translateY(-1.6px) !important;
+      opacity: 0.96 !important;
+    }
+
+    .word-route {
+      font-size: 0.74rem !important;
+      font-weight: 900 !important;
+      letter-spacing: 0.06em !important;
+      transform: translateY(2.2px) !important;
     }
 
     .header-auth-btn { 
-      height: 26px;
-      background: rgba(56,189,248,0.12); 
-      border: 1px solid rgba(56,189,248,0.4); 
-      color: var(--pt-cyan); 
-      padding: 0 8px; 
-      border-radius: 13px; 
-      font-size: 0.72rem; 
-      font-weight: 800; 
-      cursor: pointer; 
-      display: inline-flex; 
-      align-items: center; 
-      gap: 4px; 
-      transition: all 0.2s ease; 
-      white-space: nowrap; 
+      height: 28px !important;
+      line-height: 28px !important;
+      background: rgba(56,189,248,0.12) !important; 
+      border: 1px solid rgba(56,189,248,0.4) !important; 
+      color: var(--pt-cyan) !important; 
+      padding: 0 9px !important; 
+      border-radius: 14px !important; 
+      font-size: 0.72rem !important; 
+      font-weight: 800 !important; 
+      cursor: pointer !important; 
+      display: inline-flex !important; 
+      align-items: center !important; 
+      justify-content: center !important;
+      gap: 3px !important; 
+      transition: all 0.2s ease !important; 
+      white-space: nowrap !important; 
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
     }
     .header-auth-btn.logged-in { 
-      background: rgba(16,185,129,0.16); 
-      border-color: rgba(16,185,129,0.45); 
-      color: #6ee7b7; 
+      background: rgba(16,185,129,0.16) !important; 
+      border-color: rgba(16,185,129,0.45) !important; 
+      color: #6ee7b7 !important; 
     }
 
     /* 📦 메인 콘텐츠 피드 */
@@ -202,6 +288,8 @@
       display: flex;
       flex-direction: column;
       gap: 14px;
+      position: relative;
+      z-index: 1;
     }
     .section-title-row {
       display: flex;
@@ -216,11 +304,45 @@
     }
     .section-title-row .icon-svg { width: 14px; height: 14px; color: var(--accent-silver); }
 
+    /* 🌌 [LV 5. 스페이스 블랙 프로 (Space Black Pro)] 카드 공통 스타일 */
+    .packing-summary-banner,
+    .featured-video-section,
+    .community-box-tight,
+    .lucky-half-card,
+    .weather-half-card,
+    .my-basecamp-content,
+    .packing-modal-window,
+    .custom-modal {
+      position: relative !important;
+      overflow: hidden !important;
+      background: linear-gradient(180deg, #07090e 0%, #020305 100%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.07) !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.17) !important;
+      border-radius: 16px !important;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .packing-summary-banner > *,
+    .featured-video-section > *,
+    .community-box-tight > *,
+    .lucky-half-card > *,
+    .weather-half-card > * {
+      position: relative;
+      z-index: 2;
+    }
+
+    .card-starlight-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+
     /* ⚖️ 오늘의 배낭 무게 배너 */
     .packing-summary-banner {
-      background: var(--bg-card);
-      border: 1px solid var(--border-accent);
-      border-radius: 14px;
       padding: 11px 12px;
       display: flex;
       flex-direction: column;
@@ -228,33 +350,49 @@
       cursor: pointer;
       transition: all 0.15s ease;
     }
-    .packing-summary-banner:active {
-      transform: scale(0.985);
-      background: rgba(255, 255, 255, 0.04);
-    }
+    .packing-summary-banner:active { transform: scale(0.985); }
     .pack-banner-header { display: flex; justify-content: space-between; align-items: center; }
     .pack-banner-body {
       display: flex; justify-content: space-between; align-items: center;
-      background: var(--bg-surface); border: 1px solid var(--border-hairline);
+      background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.06);
       border-radius: 10px; padding: 9px 12px;
     }
 
+    /* 🔥 [100% 전체화면 풀스크린] 배낭 패킹 모달 엔진 */
     .packing-modal-overlay {
-      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.88); z-index: var(--z-modal);
-      backdrop-filter: blur(10px); justify-content: center; align-items: flex-end;
+      display: none; 
+      position: fixed; 
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #000000; 
+      z-index: var(--z-modal);
+      justify-content: center; 
+      align-items: stretch;
+      touch-action: pan-y;
     }
     .packing-modal-window {
-      width: 100%; max-width: 480px; background: var(--bg-surface);
-      border: 1.5px solid var(--border-accent); border-radius: 20px 20px 0 0;
-      padding: 16px; display: flex; flex-direction: column; gap: 12px;
-      max-height: 88vh; overflow-y: auto;
+      width: 100%; 
+      max-width: 480px;
+      margin: 0 auto;
+      height: 100dvh !important; /* 모바일 풀스크린 100% 채움 */
+      max-height: 100dvh !important;
+      border-radius: 0 !important; /* 상단 잘림 및 둥근 모서리 제거 */
+      border: none !important;
+      border-top: none !important;
+      padding: calc(14px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px)) 16px !important;
+      display: flex; 
+      flex-direction: column; 
+      gap: 12px;
+      overflow-y: auto !important; /* 전체화면 내 부드러운 상하 스크롤 */
+      -webkit-overflow-scrolling: touch !important; /* iOS 관성 스크롤 */
+      overscroll-behavior-y: contain !important;
+      touch-action: pan-y !important;
     }
 
     .weight-dashboard-strip {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(6, 182, 212, 0.08));
-      border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 12px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 182, 212, 0.06));
+      border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 12px;
       padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;
+      flex-shrink: 0;
     }
     .weight-dash-top { display: flex; justify-content: space-between; align-items: flex-end; }
     .weight-val-big {
@@ -270,7 +408,7 @@
     .bpl-heavy { background: rgba(244, 63, 94, 0.2); color: #fda4af; border: 1px solid #f43f5e; }
 
     .weight-gauge-bg {
-      width: 100%; height: 6px; background: rgba(255,255,255,0.1);
+      width: 100%; height: 6px; background: rgba(255,255,255,0.08);
       border-radius: 3px; overflow: hidden; position: relative;
     }
     .weight-gauge-fill {
@@ -279,32 +417,38 @@
       transition: width 0.3s ease;
     }
 
-    .category-slots-grid { display: flex; flex-direction: column; gap: 6px; }
+    .category-slots-grid { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 6px; 
+      flex-shrink: 0;
+      touch-action: pan-y;
+    }
     .category-slot-card {
-      background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-hairline);
+      background: rgba(255, 255, 255, 0.025); border: 1px solid var(--border-hairline);
       border-radius: 8px; padding: 8px 10px; display: flex; justify-content: space-between;
       align-items: center; cursor: pointer; transition: all 0.15s ease;
+      touch-action: pan-y;
     }
-    .category-slot-card:active { transform: scale(0.98); background: rgba(255, 255, 255, 0.06); }
+    .category-slot-card:active { transform: scale(0.98); background: rgba(255, 255, 255, 0.05); }
     .category-slot-left { display: flex; align-items: center; gap: 7px; font-size: 0.8rem; font-weight: 700; color: #fff; }
 
-    .packing-action-row { display: flex; gap: 6px; }
+    .packing-action-row { display: flex; gap: 6px; flex-shrink: 0; padding-top: 4px; }
     .btn-save-pack {
       flex: 2; background: linear-gradient(135deg, #0d9488, #0f766e);
       border: 1px solid #14b8a6; color: #fff; font-weight: 800; font-size: 0.78rem;
-      padding: 9px; border-radius: 8px; cursor: pointer; display: flex;
+      padding: 10px; border-radius: 8px; cursor: pointer; display: flex;
       align-items: center; justify-content: center; gap: 4px;
     }
     .btn-reset-pack {
-      flex: 1; background: rgba(255,255,255,0.06); border: 1px solid var(--border-hairline);
+      flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border-hairline);
       color: var(--text-secondary); font-weight: 700; font-size: 0.74rem;
-      padding: 9px; border-radius: 8px; cursor: pointer;
+      padding: 10px; border-radius: 8px; cursor: pointer;
     }
 
     /* 🎬 영상 섹션 */
     .featured-video-section {
-      background: var(--bg-surface); border: 1px solid var(--border-accent);
-      border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 8px;
+      padding: 10px; display: flex; flex-direction: column; gap: 8px;
     }
     .video-title-bold-head {
       font-family: var(--font-display); font-size: 0.98rem; font-weight: 800;
@@ -324,57 +468,40 @@
       gap: 4px; flex-shrink: 0; text-decoration: none;
     }
 
-    /* 🎯 어디로 떠날까 카드 */
-    .lucky-section-wrap {
-      background: var(--bg-card); border: 1px solid var(--border-accent);
-      border-radius: 14px; padding: 11px; display: flex; flex-direction: column; gap: 9px;
+    /* 🎯 50:50 듀얼 그리드 [어디 갈까? + 실전 기상] */
+    .dual-grid-section-wrap {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 8px !important;
+      width: 100% !important;
     }
-    .lucky-grid-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 9px; scrollbar-width: none; }
-    .lucky-grid-container::-webkit-scrollbar { display: none; }
-    .lucky-spot-card {
-      flex: 0 0 100%; scroll-snap-align: start; background: var(--bg-surface);
-      border: 1px solid var(--border-hairline); border-radius: 10px; padding: 11px 12px;
-      display: flex; flex-direction: column; justify-content: space-between; height: 116px; cursor: pointer;
-    }
-    .spot-header-row { display: flex; justify-content: space-between; align-items: center; }
-    .spot-tag-pill {
-      display: inline-flex; align-items: center; gap: 3px; font-size: 0.65rem;
-      font-weight: 700; padding: 1.5px 6px; border-radius: 4px;
-      background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #7dd3fc;
-    }
-    .badge-elev { background: rgba(255, 255, 255, 0.08); color: #94a3b8; font-size: 0.68rem; font-weight: 700; padding: 1px 5px; border-radius: 3px; }
-    .star-wrap { display: inline-flex; align-items: center; gap: 1.5px; }
-    .star-svg { width: 11px; height: 11px; fill: var(--pt-star); }
-    .star-svg.empty { fill: rgba(255, 255, 255, 0.12); }
-    .spot-title-text { font-family: var(--font-display); font-size: 0.94rem; font-weight: 800; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .spot-desc-text { font-size: 0.74rem; color: #cbd5e1; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-    .mobile-slider-dots { display: flex; justify-content: center; align-items: center; gap: 4px; }
-    .dot-item { width: 4px; height: 4px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); }
-    .dot-item.active { width: 12px; border-radius: 2px; background: #ffffff; }
-
-    .btn-dice-prominent {
-      width: 100%; background: #ffffff; border: none; color: #000000;
-      font-size: 0.82rem; font-weight: 900; padding: 9px; border-radius: 8px;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+    .lucky-half-card, .weather-half-card {
+      padding: 11px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 138px;
+      cursor: pointer;
+      transition: transform 0.15s ease;
     }
+    .lucky-half-card:active, .weather-half-card:active { transform: scale(0.985); }
 
     /* 🌿 LNT 배너 */
     .lnt-slim-banner {
       display: flex; align-items: center; justify-content: space-between;
-      background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.25);
+      background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.22);
       border-radius: 10px; padding: 6px 10px; font-size: 0.7rem; font-weight: 600; color: #a7f3d0;
     }
     .lnt-badge-mini {
       display: inline-flex; align-items: center; gap: 4px;
-      background: rgba(52, 211, 153, 0.22); color: var(--pt-sage);
+      background: rgba(52, 211, 153, 0.2); color: var(--pt-sage);
       font-size: 0.64rem; font-weight: 800; padding: 1.5px 6px; border-radius: 4px;
     }
 
-    /* 🔥 낭만 라운지 & 박지톡 */
+    /* 🔥 커뮤니티 & 박지톡 */
     .community-box-tight {
-      background: var(--bg-surface); border: 1px solid var(--border-accent);
-      border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 9px;
+      padding: 10px; display: flex; flex-direction: column; gap: 9px;
     }
     .poll-grid-tight { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
     .poll-item-tight {
@@ -383,8 +510,8 @@
       cursor: pointer; overflow: hidden; display: flex; justify-content: space-between;
       align-items: center; font-size: 0.7rem; font-weight: 600; min-height: 31px;
     }
-    .poll-item-tight.selected { border-color: rgba(255, 255, 255, 0.35); background: rgba(255, 255, 255, 0.06); }
-    .poll-bar-fill { position: absolute; top: 0; left: 0; bottom: 0; background: rgba(255, 255, 255, 0.15); width: 0%; transition: width 0.3s; z-index: 1; }
+    .poll-item-tight.selected { border-color: rgba(255, 255, 255, 0.35); background: rgba(255, 255, 255, 0.05); }
+    .poll-bar-fill { position: absolute; top: 0; left: 0; bottom: 0; background: rgba(255, 255, 255, 0.12); width: 0%; transition: width 0.3s; z-index: 1; }
     .poll-text-tight { position: relative; z-index: 2; display: flex; align-items: center; gap: 4px; color: #fff; font-weight: 700; }
     .poll-pct-tight { position: relative; z-index: 2; font-weight: 800; color: #fff; font-family: var(--font-en); }
 
@@ -424,8 +551,8 @@
       backdrop-filter: blur(10px); justify-content: center; align-items: flex-end;
     }
     .my-basecamp-content {
-      width: 100%; max-width: 480px; background: var(--bg-surface);
-      border: 1.5px solid var(--border-accent); border-radius: 20px 20px 0 0;
+      width: 100%; max-width: 480px;
+      border-radius: 20px 20px 0 0 !important;
       padding: 16px; display: flex; flex-direction: column; gap: 12px;
       max-height: 85vh; overflow-y: auto;
     }
@@ -442,11 +569,6 @@
     .basecamp-panel { display: none; flex-direction: column; gap: 12px; }
     .basecamp-panel.active { display: flex; }
 
-    .pack-history-card {
-      background: rgba(255,255,255,0.03); border: 1px solid var(--border-hairline);
-      border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px;
-    }
-
     /* 장비 프리셋 팝업 */
     .gear-preset-modal {
       display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -454,8 +576,8 @@
       backdrop-filter: blur(10px); justify-content: center; align-items: flex-end;
     }
     .gear-preset-content {
-      width: 100%; max-width: 480px; background: var(--bg-surface);
-      border: 1.5px solid var(--border-accent); border-radius: 20px 20px 0 0;
+      width: 100%; max-width: 480px;
+      border-radius: 20px 20px 0 0 !important;
       padding: 16px; display: flex; flex-direction: column; gap: 10px;
       max-height: 80vh; overflow-y: auto;
     }
@@ -475,10 +597,10 @@
       z-index: 99999; padding: 14px;
     }
     .custom-modal { 
-      background: var(--bg-surface); color: var(--text-primary); 
-      width: 390px; max-width: calc(100vw - 20px); border-radius: 18px; 
+      color: var(--text-primary); 
+      width: 390px; max-width: calc(100vw - 20px); border-radius: 18px !important; 
       padding: 16px; display: flex; flex-direction: column; gap: 10px; 
-      border: 1.5px solid var(--border-accent); box-shadow: 0 25px 60px rgba(0,0,0,0.9);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.9);
       max-height: 94vh; overflow-y: auto;
     }
     .modal-input { 
@@ -487,9 +609,7 @@
     }
     .modal-btn { padding: 8px 14px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: none; }
 
-    /* ========================================================
-       📸 6대 템플릿 & 등록 박지 실시간 검색 드롭다운 스타일
-       ======================================================== */
+    /* 🏷️ 6대 템플릿 선택 칩 바 */
     .template-selector-bar {
       display: flex; gap: 5px; overflow-x: auto; padding-bottom: 4px;
       scrollbar-width: none;
@@ -541,8 +661,12 @@
 </head>
 <body>
 
+  <!-- 🌌 전체 앱 배경 고정 은하수 캔버스 -->
+  <div id="globalAppMilkyWayLayer" class="global-app-starlight-canvas"></div>
+
   <!-- 🧭 1. 상단 GNB -->
   <header class="apple-integrated-header notranslate">
+    <div id="gnbMilkyWayLayer" class="gnb-starlight-canvas"></div>
     <div class="header-top-row">
       <a href="index.html" class="brand-line" onclick="triggerHaptic(10)" title="낭만루트 홈">
         <div class="brand-sym-box">
@@ -564,10 +688,13 @@
         </div>
         <span class="brand-title">낭만루트</span>
         <span class="brand-dot"></span>
-        <span class="brand-en">일상을 떠나 자연으로</span>
+        <span class="brand-en">
+          <span class="word-romantic">ROMANTIC</span>
+          <span class="word-route">ROUTE</span>
+        </span>
       </a>
 
-      <!-- 🔑 상단 로그인 / 계정 관리 버튼 -->
+      <!-- 🔑 로그인 버튼 -->
       <button type="button" class="header-auth-btn" id="headerAuthBtn" onclick="handleAuthBtnClick()">
         <span id="headerAuthIcon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; margin-right:3px; display:inline-block; vertical-align:-1px;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
@@ -580,7 +707,7 @@
   <!-- 📦 메인 콘텐츠 피드 -->
   <main class="portal-main-content notranslate">
 
-    <!-- 🎒 1. 오늘의 배낭 무게는? 컴팩트 배너 -->
+    <!-- 🎒 1. 배낭 무게 배너 -->
     <section class="packing-summary-banner" onclick="triggerHaptic(12); openPackingModal();">
       <div class="pack-banner-header">
         <div style="display:flex; align-items:center; gap:6px;">
@@ -625,74 +752,68 @@
       </div>
     </section>
 
-    <!-- 🎯 3. 어디로 떠날까 카드 -->
-    <section class="lucky-section-wrap">
-      <div class="section-title-row">
-        <div style="display:flex; align-items:center; gap:5px;">
-          <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor"/></svg></span>
-          <span>이번 주 어디로 떠날까?</span>
-        </div>
-        <span style="font-size:0.68rem; color:#64748b; font-weight:600;">랜덤 3곳 추천</span>
-      </div>
-
-      <div class="lucky-grid-container" id="luckyGridContainer">
-        <!-- Card 0 -->
-        <div class="lucky-spot-card" id="luckyCard0" onclick="triggerHaptic(15); goToLuckySpot(0);">
-          <div class="spot-header-row">
-            <div style="display:flex; align-items:center;">
-              <span class="spot-tag-pill" id="luckyTag0">마운틴</span>
-              <span class="badge-elev" id="luckyElev0">587m</span>
-            </div>
-            <div class="star-wrap" id="luckyDiff0"></div>
+    <!-- 🎯 3. [50:50 듀얼 그리드] 어디 갈까? & 실전 기상 위젯 -->
+    <div class="dual-grid-section-wrap">
+      
+      <!-- 좌측 50%: 어디로 떠날까 럭키 카드 -->
+      <div class="lucky-half-card" onclick="triggerHaptic(15); goToLuckySpot();">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:0.74rem; font-weight:900; color:#38bdf8; display:flex; align-items:center; gap:3px;">
+            <svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor"/></svg>
+            <span>어디 갈까?</span>
           </div>
-          <div>
-            <div class="spot-title-text" id="luckyName0">불러오는 중...</div>
-            <div class="spot-desc-text" id="luckyDesc0">데이터를 로드하고 있습니다.</div>
-          </div>
+          <button type="button" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; font-size:0.65rem; font-weight:800; padding:2px 6px; border-radius:4px; cursor:pointer;" onclick="event.stopPropagation(); rollLuckySpot();">↺ 픽</button>
         </div>
 
-        <!-- Card 1 -->
-        <div class="lucky-spot-card" id="luckyCard1" onclick="triggerHaptic(15); goToLuckySpot(1);">
-          <div class="spot-header-row">
-            <div style="display:flex; align-items:center;">
-              <span class="spot-tag-pill" id="luckyTag1">오션뷰</span>
-              <span class="badge-elev" id="luckyElev1">120m</span>
-            </div>
-            <div class="star-wrap" id="luckyDiff1"></div>
+        <div>
+          <div style="display:flex; align-items:center; gap:4px; margin-bottom:2px;">
+            <span id="luckyTag" style="font-size:0.6rem; font-weight:900; background:rgba(56,189,248,0.2); color:#7dd3fc; padding:1px 5px; border-radius:4px;">강원</span>
+            <span id="luckyElev" style="font-size:0.6rem; font-weight:800; color:#86efac;">832m</span>
           </div>
-          <div>
-            <div class="spot-title-text" id="luckyName1">불러오는 중...</div>
-            <div class="spot-desc-text" id="luckyDesc0">데이터를 로드하고 있습니다.</div>
+          <div id="luckyName" style="font-size:0.96rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            대관령 선자령
+          </div>
+          <div id="luckyDesc" style="font-size:0.68rem; color:#94a3b8; font-weight:700; line-height:1.3; margin-top:2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+            탁 트인 풍차 능선과 환상적인 일몰 조망
           </div>
         </div>
 
-        <!-- Card 2 -->
-        <div class="lucky-spot-card" id="luckyCard2" onclick="triggerHaptic(15); goToLuckySpot(2);">
-          <div class="spot-header-row">
-            <div style="display:flex; align-items:center;">
-              <span class="spot-tag-pill" id="luckyTag2">힐링숲</span>
-              <span class="badge-elev" id="luckyElev2">450m</span>
-            </div>
-            <div class="star-wrap" id="luckyDiff2"></div>
-          </div>
-          <div>
-            <div class="spot-title-text" id="luckyName2">불러오는 중...</div>
-            <div class="spot-desc-text" id="luckyDesc2">데이터를 로드하고 있습니다.</div>
-          </div>
+        <div style="font-size:0.65rem; color:#38bdf8; font-weight:800; text-align:right;">
+          지도로 보기 ➔
         </div>
       </div>
 
-      <div class="mobile-slider-dots">
-        <div class="dot-item active" data-idx="0"></div>
-        <div class="dot-item" data-idx="1"></div>
-        <div class="dot-item" data-idx="2"></div>
+      <!-- 우측 50%: 실시간 기상 & 풍속 위젯 -->
+      <div class="weather-half-card" onclick="triggerHaptic(12); location.href='map.html';">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:0.74rem; font-weight:900; color:#34d399; display:flex; align-items:center; gap:3px;">
+            <svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+            <span>실전 기상</span>
+          </div>
+          <span style="font-size:0.58rem; font-weight:900; color:#34d399; background:rgba(52,211,153,0.15); border:1px solid #34d399; padding:1px 5px; border-radius:10px;">● LIVE</span>
+        </div>
+
+        <div>
+          <div style="display:flex; align-items:baseline; gap:4px;">
+            <span id="feedWeatherTemp" style="font-size:1.25rem; font-weight:900; color:#ffffff; font-family:'Space Grotesk', sans-serif;">14.2°C</span>
+            <span id="feedWeatherCondition" style="font-size:0.68rem; color:#94a3b8; font-weight:700;">맑음</span>
+          </div>
+          <div style="margin-top:3px;">
+            <span id="feedWeatherWindBadge" style="display:inline-flex; align-items:center; gap:3px; font-size:0.62rem; font-weight:900; background:rgba(16,185,129,0.2); border:1px solid #10b981; color:#6ee7b7; padding:2px 5px; border-radius:4px;">
+              💨 바람 2.1m/s (피칭 안전)
+            </span>
+          </div>
+          <div id="feedWeatherSunset" style="font-size:0.65rem; color:#cbd5e1; margin-top:3px; font-weight:600;">
+            🌅 오늘 일몰 18:42
+          </div>
+        </div>
+
+        <div style="font-size:0.65rem; color:#34d399; font-weight:800; text-align:right;">
+          전국 기상 ➔
+        </div>
       </div>
 
-      <button type="button" class="btn-dice-prominent" id="btnRollDice" onclick="triggerHaptic(20); rollLuckySpot();">
-        <svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px;"><rect width="18" height="18" x="3" y="3" rx="4"/><path d="M16 8h.01"/><path d="M8 8h.01"/><path d="M8 16h.01"/><path d="M16 16h.01"/><path d="M12 12h.01"/></svg>
-        <span>3곳 새로 추천받기</span>
-      </button>
-    </section>
+    </div>
 
     <!-- 🌿 LNT 배너 -->
     <div class="lnt-slim-banner">
@@ -737,9 +858,7 @@
 
   </main>
 
-  <!-- ========================================================
-       🎒 오늘의 배낭 무게는? 패킹 모달창
-       ======================================================== -->
+  <!-- 🎒 배낭 무게 계산기 모달 -->
   <div class="packing-modal-overlay" id="packingCalculatorModal" onclick="if(event.target===this) closePackingModal()">
     <div class="packing-modal-window">
       <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -752,7 +871,6 @@
         <button type="button" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer; padding:4px;" onclick="closePackingModal()">✕</button>
       </div>
 
-      <!-- 실시간 무게 대시보드 -->
       <div class="weight-dashboard-strip">
         <div class="weight-dash-top">
           <div>
@@ -772,10 +890,8 @@
         </div>
       </div>
 
-      <!-- 8대 항목 슬롯 -->
       <div class="category-slots-grid" id="categorySlotsContainer"></div>
 
-      <!-- 작업 버튼 -->
       <div class="packing-action-row">
         <button type="button" class="btn-save-pack" onclick="saveCurrentPackingRecord()">
           <svg viewBox="0 0 24 24" class="icon-svg" style="width:13px; height:13px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -788,47 +904,38 @@
     </div>
   </div>
 
-<!-- 📸 [최신 LNT 6대 시그니처 템플릿] 최종 패킹 모달 & 모바일 포토 스튜디오 -->
+  <!-- 📸 공유 카드 모달 -->
   <div class="custom-modal-overlay" id="packShareModalOverlay" onclick="if(event.target===this) closePackShareModal();">
     <div class="custom-modal">
-      
-      <!-- 상단 헤더 & 닫기 -->
       <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
         <span style="font-weight:900; font-size:0.95rem; color:#fff; display:flex; align-items:center; gap:5px; white-space:nowrap;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="icon-svg" style="width:16px; height:16px; color:#38bdf8;"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M3 9h4M17 9h4M3 15h4M17 15h4"/></svg>
-          <span>필드 아카이브 카드 선택</span>
+          <span>LNT 클린 패킹 카드</span>
         </span>
         <button type="button" style="background:none; border:none; color:#94a3b8; font-size:1.3rem; cursor:pointer; line-height:1; padding:2px;" onclick="closePackShareModal()">✕</button>
       </div>
 
-      <!-- 📍 박지 검색 & 사진 첨부 버튼 -->
       <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-hairline); border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:5px; position:relative;">
         <div style="position:relative; width:100%;">
           <div style="display:flex; gap:4px; align-items:center; position:relative;">
             <div style="position:relative; flex:1; display:flex; align-items:center;">
-              <input type="text" id="shareCardSpotInput" class="modal-input" placeholder="박지 검색 또는 직접 입력 (예: 선자령)" style="font-size:0.75rem; padding:6px 26px 6px 8px; width:100%;" oninput="handleSpotSearchInput(this.value); updateShareCardLive();" onfocus="handleSpotSearchInput(this.value);" autocomplete="off" />
+              <input type="text" id="shareCardSpotInput" class="modal-input" placeholder="박지 검색 또는 직접 입력" style="font-size:0.75rem; padding:6px 26px 6px 8px; width:100%;" oninput="handleSpotSearchInput(this.value); updateShareCardLive();" onfocus="handleSpotSearchInput(this.value);" autocomplete="off" />
               <button type="button" id="btnSpotInputClear" style="display:none; position:absolute; right:7px; background:rgba(255,255,255,0.2); border:none; color:#cbd5e1; width:15px; height:15px; border-radius:50%; font-size:0.55rem; cursor:pointer; align-items:center; justify-content:center;" onclick="clearSpotSearchInput()">✕</button>
             </div>
-            <button type="button" class="modal-btn" style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.4); color:#38bdf8; font-size:0.7rem; padding:6px 9px; flex-shrink:0; font-weight:800; display:flex; align-items:center; gap:3px;" onclick="toggleSpotDropdownList()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-svg" style="width:11px; height:11px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <span>검색</span>
-            </button>
+            <button type="button" class="modal-btn" style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.4); color:#38bdf8; font-size:0.7rem; padding:6px 9px; flex-shrink:0; font-weight:800;" onclick="toggleSpotDropdownList()">검색</button>
           </div>
           <div id="spotSearchDropdown" class="spot-search-dropdown-list"></div>
         </div>
         
-        <input type="text" id="shareCardMemoInput" class="modal-input" placeholder="한줄 소감 (예: 똥바람 불어도 꿀잠 예약!)" maxlength="35" style="font-size:0.75rem; padding:6px 8px;" oninput="updateShareCardLive()" />
-
-        <!-- 📷 사진 첨부 버튼 (클릭 시 풀스크린 스튜디오로 전환) -->
+        <input type="text" id="shareCardMemoInput" class="modal-input" placeholder="한줄 메모" maxlength="35" style="font-size:0.75rem; padding:6px 8px;" oninput="updateShareCardLive()" />
         <input type="file" id="shareCardPhotoInput" accept="image/*" style="display:none;" onchange="handleShareCardPhotoUpload(event)" />
-        <button type="button" class="modal-btn" style="width:100%; background:linear-gradient(135deg, rgba(56,189,248,0.2), rgba(14,165,233,0.3)); border:1.5px dashed #38bdf8; color:#38bdf8; font-size:0.78rem; font-weight:800; padding:9px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:6px; margin-top:2px;" onclick="document.getElementById('shareCardPhotoInput').click()">
+        <button type="button" class="modal-btn" style="width:100%; background:linear-gradient(135deg, rgba(56,189,248,0.18), rgba(14,165,233,0.28)); border:1.5px dashed #38bdf8; color:#38bdf8; font-size:0.78rem; font-weight:800; padding:9px; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:6px;" onclick="document.getElementById('shareCardPhotoInput').click()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-svg" style="width:15px; height:15px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           <span>내 사진으로 전체화면 스튜디오 열기 ➔</span>
         </button>
       </div>
 
-      <!-- 🏷️ 6대 템플릿 선택 칩 바 -->
-      <div class="template-selector-bar" id="templateSelectorBar" style="display:flex; gap:5px; overflow-x:auto; flex-wrap:nowrap; padding:2px 0; scrollbar-width:none;">
+      <div class="template-selector-bar" id="templateSelectorBar">
         <button type="button" class="tmpl-chip-btn active" onclick="switchShareCardTemplate(1)">영수증</button>
         <button type="button" class="tmpl-chip-btn" onclick="switchShareCardTemplate(2)">고프코어</button>
         <button type="button" class="tmpl-chip-btn" onclick="switchShareCardTemplate(3)">애플 HUD</button>
@@ -837,59 +944,54 @@
         <button type="button" class="tmpl-chip-btn" onclick="switchShareCardTemplate(6)">필름스냅</button>
       </div>
 
-      <!-- 📸 기본 템플릿 카드 렌더 마운트 -->
-      <div id="packShareCaptureArea" class="share-card-container"></div>
+      <div style="width:100%; display:flex; justify-content:center; align-items:center; min-height:420px;">
+        <div id="packShareCaptureArea" class="share-card-container" style="width:100%; min-height:420px; box-sizing:border-box; display:flex; flex-direction:column; justify-content:space-between;"></div>
+      </div>
 
-      <!-- 🚀 공유 버튼 그룹 -->
       <div style="display:flex; flex-direction:column; gap:5px; margin-top:6px;">
         <div style="display:flex; gap:5px;">
           <button type="button" class="modal-btn" style="flex:1; background:#ffffff; color:#000; font-weight:900; padding:9px 4px; font-size:0.75rem;" onclick="captureAndSavePackCard()">💾 이미지 저장</button>
           <button type="button" class="modal-btn" style="flex:1; background:#fee500; color:#191919; font-weight:800; padding:9px 4px; font-size:0.75rem;" onclick="sharePackCardToKakao()">🟡 카카오톡</button>
           <button type="button" class="modal-btn" style="flex:1; background:linear-gradient(45deg, #ea580c, #e11d48, #c026d3); color:#fff; font-weight:800; padding:9px 4px; font-size:0.75rem;" onclick="sharePackCardToInstagram()">📸 인스타그램</button>
         </div>
-        <button type="button" class="modal-btn" style="width:100%; background:linear-gradient(135deg, #0d9488, #0f766e); border:1px solid #14b8a6; color:#ffffff; font-weight:800; padding:10px; font-size:0.82rem;" onclick="saveCardToVaultAndOpenBasecamp()">내 낭만보관함에 저장</button>
+        <button type="button" id="btnSaveToVaultMain" class="modal-btn" style="width:100%; background:linear-gradient(135deg, #0d9488, #0f766e); border:1px solid #14b8a6; color:#ffffff; font-weight:800; padding:10px; font-size:0.82rem;" onclick="saveCardToVaultAndOpenBasecamp()">내 낭만보관함에 저장</button>
       </div>
-
     </div>
   </div>
 
-  <!-- ========================================================
-       📱 [신규] 모바일 전용 풀스크린 포토 스튜디오 (3:4 및 자유 슬라이더 조절 지원)
-       ======================================================== -->
+  <!-- 📱 [신규] 모바일 풀스크린 포토 스튜디오 (3:4, 자유 슬라이더, 사진 확대/폭 조절) -->
   <div id="photoStudioOverlay" style="display:none; position:fixed; inset:0; z-index:999999; background:#000000; justify-content:center; align-items:center; overflow:hidden;">
-    
-    <!-- 1. 중앙 캔버스 무대 -->
     <div id="photoStudioStage" style="position:relative; width:100%; height:100%; max-width:440px; display:flex; justify-content:center; align-items:center; padding:env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0;">
-      
-      <!-- 순수 캡처 대상 카드 (UI 요소는 절대 들어가지 않음) -->
       <div id="photoStudioCardTarget" style="width:100%; max-height:100%; overflow:hidden; position:relative; display:flex; justify-content:center; align-items:center; transition:aspect-ratio 0.15s ease;"></div>
-
-      <!-- 2. 상단 투명 플로팅 툴바 (사진 위에 둥둥 뜸) -->
+      
+      <!-- 상단 툴바 -->
       <div style="position:absolute; top:calc(12px + env(safe-area-inset-top, 0px)); left:14px; right:14px; display:flex; justify-content:space-between; align-items:center; z-index:100; pointer-events:auto;">
         <button type="button" style="background:rgba(0,0,0,0.55); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.25); color:#fff; font-size:0.75rem; font-weight:800; padding:6px 12px; border-radius:20px; cursor:pointer;" onclick="closePhotoStudio()">✕ 닫기</button>
-        
         <div style="display:flex; gap:6px; align-items:center;">
-          <!-- 텍스트 색상 전환 버튼 -->
           <div style="display:flex; background:rgba(0,0,0,0.55); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.25); border-radius:20px; padding:3px 4px; gap:3px;">
             <button type="button" id="btnStudioColorWhite" style="background:#ffffff; color:#000; border:none; width:22px; height:22px; border-radius:50%; font-size:0.65rem; font-weight:900; cursor:pointer;" onclick="setStudioTextColor('white')">W</button>
             <button type="button" id="btnStudioColorBlack" style="background:#111111; color:#fff; border:1px solid rgba(255,255,255,0.3); width:22px; height:22px; border-radius:50%; font-size:0.65rem; font-weight:900; cursor:pointer;" onclick="setStudioTextColor('black')">B</button>
           </div>
-          
-          <!-- 원클릭 저장 버튼 -->
           <button type="button" style="background:#38bdf8; color:#000000; font-size:0.76rem; font-weight:900; padding:6px 14px; border-radius:20px; border:none; cursor:pointer; box-shadow:0 4px 15px rgba(56,189,248,0.4);" onclick="captureAndSaveStudioCard()">💾 저장</button>
         </div>
       </div>
 
-      <!-- 3. 자유 비율 조절 미세 슬라이더 패널 (자유 모드 시 활성화) -->
-      <div id="studioFreeRatioSliderContainer" style="display:none; position:absolute; bottom:calc(58px + env(safe-area-inset-bottom, 0px)); left:20px; right:20px; background:rgba(0,0,0,0.65); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(56,189,248,0.35); border-radius:14px; padding:6px 12px; z-index:100; flex-direction:column; gap:3px;">
+      <!-- 슬라이더 패널 -->
+      <div id="studioFreeRatioSliderContainer" style="display:none; position:absolute; bottom:calc(58px + env(safe-area-inset-bottom, 0px)); left:20px; right:20px; background:rgba(0,0,0,0.7); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(56,189,248,0.35); border-radius:14px; padding:8px 12px; z-index:100; flex-direction:column; gap:6px;">
         <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.65rem; color:#94a3b8; font-weight:700;">
-          <span>🎚️ 비율 미세 조절</span>
+          <span>🎚️ 비율 조절</span>
           <span id="freeRatioValLabel" style="color:#38bdf8; font-family:var(--font-mono); font-weight:900;">3 : 4</span>
         </div>
         <input type="range" id="studioFreeRatioSlider" min="0.52" max="1.0" step="0.01" value="0.75" style="width:100%; accent-color:#38bdf8; cursor:pointer;" oninput="handleFreeRatioChange(this.value)" />
+
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.65rem; color:#94a3b8; font-weight:700; border-top:1px dashed rgba(255,255,255,0.15); padding-top:4px;">
+          <span>🔍 사진 폭/확대</span>
+          <span id="freePhotoScaleLabel" style="color:#34d399; font-family:var(--font-mono); font-weight:900;">100%</span>
+        </div>
+        <input type="range" id="studioPhotoScaleSlider" min="1.0" max="1.6" step="0.02" value="1.0" style="width:100%; accent-color:#34d399; cursor:pointer;" oninput="handlePhotoScaleChange(this.value)" />
       </div>
 
-      <!-- 4. 하단 투명 플로팅 비율 선택 바 (사진 위에 둥둥 뜸) -->
+      <!-- 비율 선택 바 -->
       <div style="position:absolute; bottom:calc(12px + env(safe-area-inset-bottom, 0px)); display:flex; background:rgba(0,0,0,0.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.2); border-radius:24px; padding:4px 6px; gap:3px; z-index:100; pointer-events:auto; overflow-x:auto; max-width:92%;">
         <button type="button" id="btnStudioRatioAuto" class="modal-btn" style="font-size:0.65rem; font-weight:900; padding:4px 8px; border-radius:14px; background:transparent; color:#cbd5e1; white-space:nowrap;" onclick="setStudioRatio('auto')">자동</button>
         <button type="button" id="btnStudioRatio11" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:transparent; color:#cbd5e1; white-space:nowrap;" onclick="setStudioRatio('1/1')">1:1</button>
@@ -898,9 +1000,7 @@
         <button type="button" id="btnStudioRatio916" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:#38bdf8; color:#000; white-space:nowrap;" onclick="setStudioRatio('9/16')">9:16</button>
         <button type="button" id="btnStudioRatioFree" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:transparent; color:#38bdf8; border:1px dashed rgba(56,189,248,0.5); white-space:nowrap;" onclick="setStudioRatio('free')">자유 🎚️</button>
       </div>
-
     </div>
-
   </div>
 
   <!-- 🗂️ 5. [내 보관함 모달] -->
@@ -1037,11 +1137,12 @@
     const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
     const GOOGLE_SHEET_MAIN_GID = '0';
     const GOOGLE_SHEET_CONFIG_GID = '1983931878';
+    const GOOGLE_SHEET_GEAR_GID = '2014805196'; 
 
     let registeredSpots = [];
-    let currentLuckySpots = [null, null, null];
+    let currentLuckySpot = null;
 
-    // 🏷️ 8대 실전 백패킹 카테고리
+    // 🏷️ 8대 실전 백패킹 카테고리 DB
     const CATEGORIES = [
       {
         id: 'shelter', title: '텐트 · 타프',
@@ -1149,7 +1250,15 @@
     let currentSharePhoto = '';
     let currentPhotoTextColor = 'white';
     let currentCardRatio = '9/16';
-    let currentCustomRatioVal = 0.75; // 3:4 기본값
+    let currentCustomRatioVal = 0.75;
+    let currentPhotoScaleVal = 1.0;
+    let openedFromBasecamp = false;
+
+    function getFormattedTimestamp() {
+      const d = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    }
 
     const SVG_ICONS = {
       brandLogo: (color = '#ffffff', stroke = '#fda4af') => `
@@ -1169,8 +1278,11 @@
           <circle cx="21" cy="6" r="1" fill="${color}"/>
         </svg>
       `,
-      pin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:12px; height:12px; display:inline-block; vertical-align:-1px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`,
-      lntShield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px; height:13px; display:inline-block; vertical-align:-2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>`
+      pin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; display:inline-block; vertical-align:-2px; margin-right:3px; flex-shrink:0;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`,
+      calendar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px; height:11px; display:inline-block; vertical-align:-1px; margin-right:3px; flex-shrink:0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="19" y1="10" y2="10"/></svg>`,
+      quote: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:11px; height:11px; display:inline-block; vertical-align:-1px; margin-right:4px; flex-shrink:0; opacity:0.85;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+      bullet: `<svg viewBox="0 0 24 24" fill="currentColor" style="width:4px; height:4px; display:inline-block; vertical-align:middle; margin-right:4px; opacity:0.7; flex-shrink:0;"><circle cx="12" cy="12" r="6"/></svg>`,
+      lntShield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; display:inline-block; vertical-align:-2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>`
     };
 
     function safeGetJSON(key, defaultVal) {
@@ -1195,18 +1307,208 @@
       }
     }
 
+    // 🌌 [LV 5. 스페이스 블랙 프로 엔진] 90% 은은한 배경 잔별 + 10% 힐링 십자별 주입
+    function initStarlightEngines() {
+      const metallicColors = ['#ffffff', '#f8fafc', '#e2e8f0', '#cbd5e1', '#38bdf8', '#fde047', '#fda4af', '#34d399'];
+
+      const makeSubtleDotStar = (top, left, size, opacity, dur, delay) => `
+        <div style="position:absolute; top:${top}%; left:${left}%; width:${size}px; height:${size}px; border-radius:50%; background:#ffffff; opacity:${opacity}; animation:slowCelestialPulse ${dur}s infinite ease-in-out ${delay}s;"></div>
+      `;
+
+      const makeCrossStar = (top, left, size, color, dur, delay) => `
+        <svg viewBox="0 0 24 24" style="position:absolute; top:${top}%; left:${left}%; width:${size}px; height:${size}px; color:${color}; fill:currentColor; animation:slowCelestialTwinkle ${dur}s infinite ease-in-out ${delay}s;">
+          <path d="M12,2 Q12,12 2,12 Q12,12 12,22 Q12,12 22,12 Q12,12 12,2 Z"/>
+          <circle cx="12" cy="12" r="1.2" fill="#ffffff"/>
+        </svg>
+      `;
+
+      // 1. 전체 앱 배경 (55개: 90% 미세잔별 + 10% 포인트 십자별)
+      const globalLayer = document.getElementById('globalAppMilkyWayLayer');
+      if (globalLayer) {
+        let html = '';
+        for (let i = 0; i < 55; i++) {
+          const top = Math.floor(Math.random() * 96) + 2;
+          const left = Math.floor(Math.random() * 96) + 2;
+          const dur = (Math.random() * 3.5 + 5.0).toFixed(1);
+          const delay = (Math.random() * 6).toFixed(1);
+          
+          if (i % 10 === 0) {
+            // 10% 포인트 십자별
+            const size = (Math.random() * 2.0 + 3.2).toFixed(1);
+            const color = metallicColors[Math.floor(Math.random() * metallicColors.length)];
+            html += makeCrossStar(top, left, size, color, dur, delay);
+          } else {
+            // 90% 은은한 배경 잔별
+            const size = (Math.random() * 1.5 + 1.0).toFixed(1);
+            const opacity = (Math.random() * 0.35 + 0.15).toFixed(2);
+            html += makeSubtleDotStar(top, left, size, opacity, dur, delay);
+          }
+        }
+        globalLayer.innerHTML = html;
+      }
+
+      // 2. GNB 헤더 바 (35개 미세 잔별 위주)
+      const gnbLayer = document.getElementById('gnbMilkyWayLayer');
+      if (gnbLayer) {
+        let html = '';
+        for (let i = 0; i < 80; i++) {
+          const top = Math.floor(Math.random() * 85) + 5;
+          const left = Math.floor(Math.random() * 96) + 2;
+          const dur = (Math.random() * 3.5 + 5.0).toFixed(1);
+          const delay = (Math.random() * 6).toFixed(1);
+          
+          if (i % 10 === 0) {
+            const size = (Math.random() * 1.8 + 2.8).toFixed(1);
+            const color = metallicColors[Math.floor(Math.random() * metallicColors.length)];
+            html += makeCrossStar(top, left, size, color, dur, delay);
+          } else {
+            const size = (Math.random() * 1.2 + 0.8).toFixed(1);
+            const opacity = (Math.random() * 0.3 + 0.12).toFixed(2);
+            html += makeSubtleDotStar(top, left, size, opacity, dur, delay);
+          }
+        }
+        gnbLayer.innerHTML = html;
+      }
+
+      // 3. 메인 카드들 내부 (10개씩 독립 은은한 별빛)
+      const targetCards = document.querySelectorAll('.packing-summary-banner, .featured-video-section, .lucky-half-card, .weather-half-card, .community-box-tight');
+      targetCards.forEach(card => {
+        if (card.querySelector('.card-starlight-layer')) return;
+        const starLayer = document.createElement('div');
+        starLayer.className = 'card-starlight-layer';
+        let html = '';
+        for (let i = 0; i < 10; i++) {
+          const top = Math.floor(Math.random() * 85) + 6;
+          const left = Math.floor(Math.random() * 90) + 5;
+          const dur = (Math.random() * 3.5 + 5.0).toFixed(1);
+          const delay = (Math.random() * 6).toFixed(1);
+          
+          if (i === 0) {
+            const size = 3.5;
+            const color = metallicColors[Math.floor(Math.random() * metallicColors.length)];
+            html += makeCrossStar(top, left, size, color, dur, delay);
+          } else {
+            const size = (Math.random() * 1.4 + 0.9).toFixed(1);
+            const opacity = (Math.random() * 0.25 + 0.12).toFixed(2);
+            html += makeSubtleDotStar(top, left, size, opacity, dur, delay);
+          }
+        }
+        starLayer.innerHTML = html;
+        card.appendChild(starLayer);
+      });
+    }
+
+    // 💌 [LV 5. 스페이스 블랙 프로] 공유받은 박지 도착 팝업 로직
+    function checkIncomingSharedSpot() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sharedSpot = urlParams.get('spot');
+      if (!sharedSpot) return;
+
+      const spotName = decodeURIComponent(sharedSpot).trim();
+      const old = document.getElementById('sharedSpotFloatingPopup');
+      if (old) old.remove();
+
+      const popup = document.createElement('div');
+      popup.id = 'sharedSpotFloatingPopup';
+      popup.style.cssText = `
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -45%);
+        width: calc(100% - 32px); max-width: 410px;
+        background: linear-gradient(180deg, #07090e 0%, #020305 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-top: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 18px; padding: 16px 17px; display: flex; flex-direction: column; gap: 10px;
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.92), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        z-index: 999999; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      `;
+
+      const SVGS = {
+        sparkle: `<svg viewBox="0 0 24 24" style="width:13px; height:13px; flex-shrink:0;" fill="none"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" fill="url(#spkG)"/><defs><linearGradient id="spkG" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fde047"/><stop offset="100%" stop-color="#38bdf8"/></linearGradient></defs></svg>`,
+        pin: `<svg viewBox="0 0 24 24" style="width:17px; height:17px; flex-shrink:0; display:inline-block; vertical-align:-3px;" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="url(#pinG)"/><circle cx="12" cy="9" r="2.6" fill="#ffffff"/><defs><linearGradient id="pinG" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f43f5e"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient></defs></svg>`,
+        arrow: `<svg viewBox="0 0 24 24" style="width:14px; height:14px; flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`,
+        close: `<svg viewBox="0 0 24 24" style="width:12px; height:12px; flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+      };
+
+      popup.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:7px;">
+            <span style="font-family:'SUIT', sans-serif; font-size:1.02rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">낭만루트</span>
+            <span style="background:rgba(56,189,248,0.18); border:1px solid #38bdf8; color:#7dd3fc; font-size:0.65rem; font-weight:900; padding:2px 7px; border-radius:12px; display:inline-flex; align-items:center; gap:4px;">
+              ${SVGS.sparkle}<span>공유받은 박지</span>
+            </span>
+          </div>
+          <button onclick="document.getElementById('sharedSpotFloatingPopup').remove()" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+            ${SVGS.close}
+          </button>
+        </div>
+
+        <div>
+          <div style="font-size:0.68rem; color:#38bdf8; font-weight:800; margin-bottom:3px; letter-spacing:0.5px;">DESTINATION // 목적지 박지</div>
+          <div style="font-size:1.12rem; font-weight:900; color:#ffffff; line-height:1.25; word-break:keep-all; display:flex; align-items:center; gap:5px;">
+            ${SVGS.pin}<span>${escapeHtml(spotName)}</span>
+          </div>
+        </div>
+
+        <div style="font-size:0.75rem; color:#e2e8f0; line-height:1.5; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.08); padding:9px 11px; border-radius:10px; word-break:keep-all;">
+          낭만을 찾아가는, <strong style="color:#38bdf8;">낭만루트</strong>에서 정확한 들머리 내비 목적지, 실전 코스 꿀팁부터 오늘의 배낭 무게 패킹까지 한 번에 확인하세요.
+        </div>
+
+        <div style="display:flex; gap:6px; margin-top:2px;">
+          <button onclick="document.getElementById('sharedSpotFloatingPopup').remove()" style="flex:1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:#cbd5e1; font-size:0.76rem; font-weight:800; padding:10px 0; border-radius:8px; cursor:pointer;">홈 둘러보기</button>
+          <button onclick="location.href='map.html?spot=' + encodeURIComponent('${escapeHtml(spotName)}');" style="flex:2; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#ffffff; font-size:0.8rem; font-weight:900; padding:10px 0; border-radius:8px; cursor:pointer; box-shadow:0 4px 14px rgba(56,189,248,0.4); display:flex; align-items:center; justify-content:center; gap:5px;">
+            <span>지도에서 박지 보기</span>
+            ${SVGS.arrow}
+          </button>
+        </div>
+      `;
+
+      document.body.appendChild(popup);
+    }
+
+    // 🔔 토스트 시스템
+    const TOAST_ICONS = {
+      download: `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+      success: `<svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; flex-shrink:0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>`,
+      insta: `<svg viewBox="0 0 24 24" fill="none" stroke="#fb7185" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>`,
+      vault: `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; flex-shrink:0;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`,
+      warn: `<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+      info: `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`
+    };
+
+    function showToast(message, type = 'success', duration = 2400) {
+      let container = document.getElementById('romanticToastContainer');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'romanticToastContainer';
+        container.style.cssText = 'position:fixed; bottom:calc(68px + env(safe-area-inset-bottom, 0px)); left:50%; transform:translateX(-50%); z-index:9999999; display:flex; flex-direction:column; align-items:center; gap:6px; pointer-events:none; width:max-content; max-width:90vw;';
+        document.body.appendChild(container);
+      }
+
+      const iconSvg = TOAST_ICONS[type] || TOAST_ICONS.info;
+      const borderColor = type === 'warn' ? 'rgba(245,158,11,0.45)' : (type === 'insta' ? 'rgba(244,63,94,0.45)' : (type === 'success' ? 'rgba(52,211,153,0.45)' : 'rgba(56,189,248,0.45)'));
+
+      const toast = document.createElement('div');
+      toast.style.cssText = `
+        background: rgba(7, 10, 15, 0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        border: 1.5px solid ${borderColor}; box-shadow: 0 12px 35px rgba(0,0,0,0.85);
+        color: #ffffff; font-size: 0.76rem; font-weight: 800; padding: 9px 14px; border-radius: 24px;
+        display: flex; align-items: center; gap: 7px; opacity: 0; transform: translateY(12px) scale(0.95);
+        transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: auto; word-break: keep-all; font-family: var(--font-body);
+      `;
+      toast.innerHTML = `${iconSvg}<span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0) scale(1)'; });
+      setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(10px) scale(0.95)'; setTimeout(() => toast.remove(), 220); }, duration);
+    }
+
+    // 🔑 계정 및 클라우드 로직
     function trackDailyVisit() {
       const sessionKey = 'okbm_visit_recorded_' + new Date().toISOString().slice(0, 10);
       if (!sessionStorage.getItem(sessionKey)) {
         sessionStorage.setItem(sessionKey, 'true');
         fetch(GAS_API_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'RECORD_VISIT',
-            isLogin: isUserLoggedIn()
-          })
+          method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'RECORD_VISIT', isLogin: isUserLoggedIn() })
         }).catch(() => {});
       }
     }
@@ -1216,21 +1518,13 @@
       const profile = safeGetJSON('user_profile', null) || authState.userProfile;
       if (!profile || !profile.id) return;
 
-      const payload = {
-        action: 'SAVE_USER_DATA',
-        userId: profile.id,
-        nickname: profile.nickname,
-        bookmarks: safeGetJSON('okbm_bookmarks', []),
-        visited: safeGetJSON('okbm_visited', []),
-        memos: safeGetJSON('okbm_memos', {}),
-        packHistory: safeGetJSON('okbm_packing_history', [])
-      };
-
       fetch(GAS_API_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
+        method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'SAVE_USER_DATA', userId: profile.id, nickname: profile.nickname,
+          bookmarks: safeGetJSON('okbm_bookmarks', []), visited: safeGetJSON('okbm_visited', []),
+          memos: safeGetJSON('okbm_memos', {}), packHistory: safeGetJSON('okbm_packing_history', [])
+        })
       }).catch(() => {});
     }
 
@@ -1272,37 +1566,30 @@
       else openLoginModal();
     }
 
-    function openLoginModal() { document.getElementById('loginModalOverlay').style.display = 'flex'; }
-    function closeLoginModal() { document.getElementById('loginModalOverlay').style.display = 'none'; }
-
+    function openLoginModal() { const modal = document.getElementById('loginModalOverlay'); if (modal) modal.style.display = 'flex'; }
+    function closeLoginModal() { const modal = document.getElementById('loginModalOverlay'); if (modal) modal.style.display = 'none'; }
     function openUserProfileModal() {
       const profile = safeGetJSON('user_profile', null) || authState.userProfile;
       const input = document.getElementById('profileModalNicknameInput');
       if (input && profile) input.value = profile.nickname || '';
-      document.getElementById('userProfileModalOverlay').style.display = 'flex';
+      const modal = document.getElementById('userProfileModalOverlay');
+      if (modal) modal.style.display = 'flex';
     }
-    function closeUserProfileModal() { document.getElementById('userProfileModalOverlay').style.display = 'none'; }
+    function closeUserProfileModal() { const modal = document.getElementById('userProfileModalOverlay'); if (modal) modal.style.display = 'none'; }
 
     function saveNewNicknameFromModal() {
       const input = document.getElementById('profileModalNicknameInput');
-      if (!input || !input.value.trim()) return alert('새 닉네임을 입력해주세요.');
-
+      if (!input || !input.value.trim()) return showToast('새 닉네임을 입력해주세요.', 'warn');
       const clean = input.value.trim();
       let profile = safeGetJSON('user_profile', null) || authState.userProfile || { isMember: true };
-
-      if (profile.nickname === clean) {
-        alert('현재 사용 중인 닉네임과 동일합니다.');
-        return;
-      }
+      if (profile.nickname === clean) return showToast('현재 사용 중인 닉네임과 동일합니다.', 'warn');
 
       const COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
       const lastChanged = profile.lastNicknameChangedAt || 0;
       const now = Date.now();
-
       if (lastChanged && (now - lastChanged < COOLDOWN_MS)) {
         const remainingDays = Math.ceil((COOLDOWN_MS - (now - lastChanged)) / (1000 * 60 * 60 * 24));
-        alert(`닉네임은 2주(14일)에 한 번만 변경하실 수 있습니다.\n\n앞으로 [ ${remainingDays}일 ] 후에 다시 변경 가능합니다.`);
-        return;
+        return showToast(`닉네임은 14일 쿨타임 제한이 있습니다. (${remainingDays}일 후 변경 가능)`, 'warn');
       }
 
       profile.nickname = clean;
@@ -1310,16 +1597,15 @@
       localStorage.setItem('user_profile', JSON.stringify(profile));
       authState.userProfile = profile;
       authState.isLoggedIn = true;
-
       updateHeaderAuthUI();
       syncUserDataToCloud();
       closeUserProfileModal();
       triggerHaptic(15);
-      alert(`닉네임이 [${clean}] (으)로 변경되었습니다!`);
+      showToast(`닉네임이 [${clean}] (으)로 변경되었습니다!`, 'success');
     }
 
     function loginWithKakao() {
-      if (typeof Kakao === 'undefined') return alert('카카오 SDK를 불러오지 못했습니다.');
+      if (typeof Kakao === 'undefined') return showToast('카카오 SDK를 불러오지 못했습니다.', 'warn');
       if (!Kakao.isInitialized()) Kakao.init(KAKAO_APP_KEY);
 
       Kakao.Auth.login({
@@ -1333,14 +1619,10 @@
               if (res.properties && res.properties.nickname) kakaoNick = res.properties.nickname;
 
               const existingProfile = safeGetJSON('user_profile', null);
-              const finalNickname = (existingProfile && existingProfile.id === kakaoId && existingProfile.nickname)
-                ? existingProfile.nickname
-                : kakaoNick;
+              const finalNickname = (existingProfile && existingProfile.id === kakaoId && existingProfile.nickname) ? existingProfile.nickname : kakaoNick;
 
               const profile = { 
-                id: kakaoId, 
-                nickname: finalNickname, 
-                isMember: true, 
+                id: kakaoId, nickname: finalNickname, isMember: true, 
                 createdAt: (existingProfile && existingProfile.createdAt) ? existingProfile.createdAt : Date.now(),
                 lastNicknameChangedAt: (existingProfile && existingProfile.lastNicknameChangedAt) ? existingProfile.lastNicknameChangedAt : 0
               };
@@ -1349,19 +1631,17 @@
               localStorage.setItem('user_profile', JSON.stringify(profile));
               authState.isLoggedIn = true;
               authState.userProfile = profile;
-
               packingHistoryList = safeGetJSON('okbm_packing_history', []);
-
               updateHeaderAuthUI();
               closeLoginModal();
               triggerHaptic(15);
               syncUserDataToCloud();
-              alert(`[${profile.nickname}]님 환영합니다! 보관함이 동기화되었습니다.`);
+              showToast(`[${profile.nickname}]님 환영합니다! 보관함 동기화 완료`, 'success');
               renderCategorySlots();
             }
           });
         },
-        fail: function() { alert('카카오 로그인이 취소되었습니다.'); }
+        fail: function() { showToast('카카오 로그인이 취소되었습니다.', 'warn'); }
       });
     }
 
@@ -1369,42 +1649,39 @@
       if (typeof Kakao !== 'undefined' && Kakao.Auth && Kakao.Auth.getAccessToken()) {
         Kakao.Auth.logout(function() {});
       }
-
       localStorage.removeItem('user_auth_token');
       localStorage.removeItem('user_profile');
-      
       authState.isLoggedIn = false;
       authState.userProfile = null;
-
       updateHeaderAuthUI();
       triggerHaptic(10);
-      alert('로그아웃 되었습니다. (내 보관함 정보는 기기에 안전하게 보관됩니다)');
-      
+      showToast('로그아웃 완료 (보관함 데이터는 안전하게 보관됩니다)', 'info');
       renderPackingHistoryList();
       renderBasecampRecordData();
       renderBasecampMemos();
       renderCategorySlots();
     }
 
-    // ========================================================
-    // 🎒 1. 배낭 무게 계산기
-    // ========================================================
+    // 🎒 패킹 계산기 엔진 (배경 스크롤 간섭 완벽 차단)
     function openPackingModal() {
       const modal = document.getElementById('packingCalculatorModal');
       if (modal) {
+        document.body.style.overflow = 'hidden'; // 🔥 배경 터치 가로채기 방지
         modal.style.display = 'flex';
         renderCategorySlots();
       }
     }
-    function closePackingModal() {
-      const modal = document.getElementById('packingCalculatorModal');
-      if (modal) modal.style.display = 'none';
+    function closePackingModal() { 
+      const modal = document.getElementById('packingCalculatorModal'); 
+      if (modal) {
+        document.body.style.overflow = ''; // 🔥 배경 스크롤 잠금 해제
+        modal.style.display = 'none'; 
+      }
     }
 
     function renderCategorySlots() {
       const container = document.getElementById('categorySlotsContainer');
-      let totalGrams = 0;
-      let totalItemCount = 0;
+      let totalGrams = 0, totalItemCount = 0;
 
       const renderedHtml = CATEGORIES.map(cat => {
         const items = selectedGearMap[cat.id] || [];
@@ -1415,7 +1692,7 @@
         const itemsTagsHtml = items.length > 0 ? items.map((it, idx) => `
           <div style="background:rgba(56, 189, 248, 0.12); border:1px solid rgba(56, 189, 248, 0.3); border-radius:6px; padding:2px 7px; display:inline-flex; align-items:center; gap:5px; margin:2px 0;">
             <span style="font-size:0.73rem; color:#fff; font-weight:700;">${escapeHtml(it.name)}</span>
-            <span style="font-size:0.68rem; color:#38bdf8; font-family:var(--font-mono); font-weight:800;">${(it.weight/1000).toFixed(2)}kg</span>
+            <span style="font-size:0.68rem; color:#38bdf8; font-family:'JetBrains Mono', monospace; font-weight:800;">${(it.weight/1000).toFixed(2)}kg</span>
             <button type="button" style="background:none; border:none; color:#f43f5e; font-size:0.8rem; font-weight:900; cursor:pointer; padding:0 2px;" onclick="event.stopPropagation(); removeGearFromCategory('${cat.id}', ${idx});">✕</button>
           </div>
         `).join('') : `<span style="font-size:0.72rem; color:var(--text-muted);">미선택 (터치하여 추가 +)</span>`;
@@ -1428,7 +1705,7 @@
                 <span>${cat.title}</span>
                 <span style="font-size:0.68rem; color:#94a3b8; font-weight:700;">(${items.length}개)</span>
               </div>
-              <div style="font-size:0.75rem; color:#34d399; font-family:var(--font-mono); font-weight:800;">
+              <div style="font-size:0.75rem; color:#34d399; font-family:'JetBrains Mono', monospace; font-weight:800;">
                 ${(catGrams/1000).toFixed(2)} kg
               </div>
             </div>
@@ -1458,17 +1735,15 @@
       const gauge = document.getElementById('weightGaugeFill');
 
       let badgeClass = 'weight-bpl-badge bpl-ul';
-      let badgeLabel = '울트라라이트 (UL)';
+      let badgeLabel = 'BPL 초경량 (UL ≤6kg)';
 
-      if (totalGrams > 8000) {
+      if (totalGrams >= 14500) {
         badgeClass = 'weight-bpl-badge bpl-heavy';
-        badgeLabel = '헤비 세팅 (8kg+)';
-      } else if (totalGrams > 5000) {
+        badgeLabel = '헤비 패킹 (15kg+)';
+      } else if (totalGrams > 6500) {
         badgeClass = 'weight-bpl-badge bpl-standard';
-        badgeLabel = '낭만 스탠다드 (5~8kg)';
+        badgeLabel = '보통 스탠다드 (7~14kg)';
       }
-
-      if (badge) badge.className = badgeClass;
       if (badgeText) badgeText.innerText = badgeLabel;
       if (mainBadge) {
         mainBadge.className = badgeClass;
@@ -1497,33 +1772,56 @@
 
       const currentSelectedItems = selectedGearMap[category.id] || [];
       const cleanQ = query.trim().toLowerCase();
-      const filteredDb = category.db.filter(g => g.name.toLowerCase().includes(cleanQ));
+      
+      // 장비명, 브랜드, 상세스펙 다중 스마트 검색
+      const filteredDb = category.db.filter(g => 
+        (g.name && g.name.toLowerCase().includes(cleanQ)) ||
+        (g.brand && g.brand.toLowerCase().includes(cleanQ)) ||
+        (g.specs && g.specs.toLowerCase().includes(cleanQ)) ||
+        (g.weightType && g.weightType.toLowerCase().includes(cleanQ))
+      );
 
       let html = `
         <div style="margin-bottom:6px; position:sticky; top:0; z-index:10; background:var(--bg-surface); padding-bottom:4px;">
-          <input type="text" class="modal-input" placeholder="🔍 ${category.title} 장비명 검색..." value="${escapeHtml(query)}" oninput="renderPresetGearList(this.value)" style="border-color:#38bdf8; font-size:0.76rem;" />
+          <input type="text" class="modal-input" placeholder="🔍 브랜드, 장비명, 스펙 검색..." value="${escapeHtml(query)}" oninput="renderPresetGearList(this.value)" style="border-color:#38bdf8; font-size:0.76rem;" />
         </div>
-        <div class="gear-db-item" style="border-color:#f43f5e; background:rgba(244,63,94,0.08);" onclick="clearAllGearsInCategory('${category.id}')">
-          <span style="color:#fda4af; font-size:0.78rem; font-weight:700;">해당 카테고리 전체 비우기</span>
-          <span style="color:#fda4af; font-size:0.74rem;">비우기 ✕</span>
+        <div class="gear-db-item" style="border-color:#f43f5e; background:rgba(244,63,94,0.08); padding:7px 10px; margin-bottom:5px;" onclick="clearAllGearsInCategory('${category.id}')">
+          <span style="color:#fda4af; font-size:0.75rem; font-weight:700;">해당 카테고리 전체 비우기</span>
+          <span style="color:#fda4af; font-size:0.72rem;">비우기 ✕</span>
         </div>
       `;
 
       if (filteredDb.length === 0) {
-        html += `<div style="font-size:0.74rem; color:var(--text-muted); text-align:center; padding:12px 0;">검색 결과가 없습니다. 하단에서 직접 추가해보세요!</div>`;
+        html += `<div style="font-size:0.74rem; color:var(--text-muted); text-align:center; padding:16px 0;">일치하는 장비가 없습니다. 하단에서 직접 추가해보세요!</div>`;
       } else {
         html += filteredDb.map(g => {
           const countInPack = currentSelectedItems.filter(it => it.name === g.name).length;
           const isAdded = countInPack > 0;
+          const brandHtml = g.brand ? `<span style="font-size:0.62rem; font-weight:900; color:#38bdf8; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); padding:1px 5px; border-radius:3px;">${escapeHtml(g.brand)}</span>` : '';
+          const typeHtml = g.weightType ? `<span style="color:#34d399; font-weight:800;">🏷️ ${escapeHtml(g.weightType)}</span>` : '';
+          const specsHtml = g.specs ? `<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(g.specs)}</span>` : '';
+          const divider = (g.weightType && g.specs) ? `<span style="color:#475569;">·</span>` : '';
+
           return `
-            <div class="gear-db-item" style="${isAdded ? 'background:rgba(16,185,129,0.12); border-color:#10b981;' : ''}" onclick="addGearToCategory('${escapeHtml(g.name)}', ${g.weight})">
-              <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-size:0.8rem; font-weight:700; color:#fff;">${escapeHtml(g.name)}</span>
-                ${isAdded ? `<span style="background:#10b981; color:#fff; font-size:0.65rem; font-weight:900; padding:1px 5px; border-radius:10px;">+${countInPack}개</span>` : ''}
+            <div class="gear-db-item" style="${isAdded ? 'background:rgba(16,185,129,0.12); border-color:#10b981;' : 'background:#090d14;'} border:1px solid ${isAdded ? '#10b981':'rgba(255,255,255,0.08)'}; border-top:1px solid ${isAdded ? '#10b981':'rgba(255,255,255,0.16)'}; border-radius:10px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; cursor:pointer;" onclick="addGearToCategory('${escapeHtml(g.name)}', ${g.weight})">
+              <div style="flex:1; min-width:0; padding-right:8px;">
+                <div style="display:flex; align-items:center; gap:4px; margin-bottom:2px;">
+                  ${brandHtml}
+                  <span style="font-size:0.78rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(g.name)}</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:4px; font-size:0.63rem; color:#94a3b8;">
+                  ${typeHtml}
+                  ${divider}
+                  ${specsHtml}
+                </div>
               </div>
-              <span style="font-size:0.75rem; font-family:var(--font-mono); font-weight:800; color:${isAdded ? '#6ee7b7' : '#38bdf8'};">
-                + ${(g.weight/1000).toFixed(2)}kg
-              </span>
+              <div style="text-align:right; flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end;">
+                <div style="font-size:0.95rem; font-weight:900; font-family:'JetBrains Mono', monospace; color:${isAdded ? '#6ee7b7' : '#38bdf8'}; line-height:1;">
+                  ${(g.weight/1000).toFixed(2)}kg
+                </div>
+                <div style="font-size:0.6rem; color:#64748b; font-family:'JetBrains Mono', monospace; margin-top:2px;">${g.weight}g</div>
+                ${isAdded ? `<span style="background:#10b981; color:#fff; font-size:0.58rem; font-weight:900; padding:1px 5px; border-radius:8px; margin-top:2px;">+${countInPack}개 담김</span>` : ''}
+              </div>
             </div>
           `;
         }).join('');
@@ -1531,21 +1829,12 @@
       listEl.innerHTML = html;
     }
 
-    function closeGearPresetModal() {
-      document.getElementById('gearPresetModal').style.display = 'none';
-      currentOpeningCategoryId = null;
-    }
+    function closeGearPresetModal() { document.getElementById('gearPresetModal').style.display = 'none'; currentOpeningCategoryId = null; }
 
     function addGearToCategory(name, weight) {
       if (!currentOpeningCategoryId) return;
-      if (!Array.isArray(selectedGearMap[currentOpeningCategoryId])) {
-        selectedGearMap[currentOpeningCategoryId] = [];
-      }
-      selectedGearMap[currentOpeningCategoryId].push({
-        id: 'item_' + Date.now() + '_' + Math.random(),
-        name: name,
-        weight: Number(weight) || 0
-      });
+      if (!Array.isArray(selectedGearMap[currentOpeningCategoryId])) selectedGearMap[currentOpeningCategoryId] = [];
+      selectedGearMap[currentOpeningCategoryId].push({ id: 'item_' + Date.now() + '_' + Math.random(), name, weight: Number(weight) || 0 });
       localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
       renderCategorySlots();
       const searchInput = document.querySelector('#presetGearDbList input');
@@ -1579,13 +1868,11 @@
       const weightInput = document.getElementById('customInputGearWeight');
       const name = nameInput.value.trim();
       const weight = parseInt(weightInput.value, 10);
-      if (!name || isNaN(weight) || weight < 0) return alert('장비명과 정확한 무게(g)를 입력해주세요.');
-
+      if (!name || isNaN(weight) || weight < 0) return showToast('장비명과 정확한 무게(g)를 입력해주세요.', 'warn');
       const cat = CATEGORIES.find(c => c.id === currentOpeningCategoryId);
       if (cat) cat.db.unshift({ name, weight });
       addGearToCategory(name, weight);
-      nameInput.value = '';
-      weightInput.value = '';
+      nameInput.value = ''; weightInput.value = '';
     }
 
     function resetAllGearSelections() {
@@ -1597,24 +1884,14 @@
       syncUserDataToCloud();
     }
 
-    // ========================================================
-    // 💡 패킹 저장
-    // ========================================================
+    // 💾 패킹 저장 & 6대 템플릿 로직
     function saveCurrentPackingRecord() {
-      if (!isUserLoggedIn()) {
-        alert('패킹 기록 저장은 로그인 후 이용하실 수 있습니다.');
-        openLoginModal();
-        return;
-      }
-
       const allItems = [];
       CATEGORIES.forEach(c => {
-        (selectedGearMap[c.id] || []).forEach(it => {
-          if (it.weight > 0) allItems.push(it);
-        });
+        (selectedGearMap[c.id] || []).forEach(it => { if (it.weight > 0) allItems.push(it); });
       });
 
-      if (allItems.length === 0) return alert('선택된 장비가 없습니다.');
+      if (allItems.length === 0) return showToast('선택된 장비가 없습니다. 배낭에 장비를 담아주세요!', 'warn');
 
       const totalGrams = allItems.reduce((sum, g) => sum + Number(g.weight), 0);
       const totalKg = (totalGrams / 1000).toFixed(2);
@@ -1627,44 +1904,27 @@
         const lastTimestamp = lastRecord.timestamp || 0;
         const isSameSetup = (lastRecord.weightKg === totalKg && lastItemsStr === currentItemsStr);
         const isWithinOneHour = (nowTime - lastTimestamp) < (60 * 60 * 1000);
-
-        if (isSameSetup && isWithinOneHour) {
-          openPackShareModal(lastRecord, allItems, false);
-          return;
-        }
+        if (isSameSetup && isWithinOneHour) { openPackShareModal(lastRecord, allItems, false); return; }
       }
 
       const now = new Date();
       const timeStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
       const newRecord = {
-        id: 'pack_' + Date.now(),
-        timestamp: nowTime,
-        date: timeStr,
-        weightKg: totalKg,
-        weightGrams: totalGrams,
-        itemCount: allItems.length,
-        items: allItems.map(g => `${g.name} (${g.weight}g)`),
-        photo: ''
+        id: 'pack_' + Date.now(), timestamp: nowTime, date: timeStr,
+        weightKg: totalKg, weightGrams: totalGrams, itemCount: allItems.length,
+        items: allItems.map(g => `${g.name} (${g.weight}g)`), photo: ''
       };
 
       packingHistoryList.unshift(newRecord);
       localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
       triggerHaptic(20);
       syncUserDataToCloud();
-
       openPackShareModal(newRecord, allItems, false);
     }
 
     function openPackShareModal(record, items, forceStudio = false) {
-      currentShareRecord = record || {
-        id: 'pack_' + Date.now(),
-        date: new Date().toLocaleDateString(),
-        weightKg: '0.00',
-        weightGrams: 0,
-        items: []
-      };
-      
+      currentShareRecord = record || { id: 'pack_' + Date.now(), date: new Date().toLocaleDateString(), weightKg: '0.00', weightGrams: 0, items: [] };
       currentShareItems = items || (currentShareRecord.items ? currentShareRecord.items.map(str => {
         const m = str.match(/^(.*?)\s*\((\d+)g\)$/);
         return m ? { name: m[1], weight: parseInt(m[2], 10) } : { name: str, weight: 0 };
@@ -1678,17 +1938,15 @@
       const memoInput = document.getElementById('shareCardMemoInput');
       const clearBtn = document.getElementById('btnSpotInputClear');
 
-      if (spotInput) {
-        spotInput.value = currentShareRecord.spot || '강원 대관령 선자령 (832m)';
-        if (clearBtn) clearBtn.style.display = spotInput.value ? 'flex' : 'none';
-      }
-      if (memoInput) memoInput.value = currentShareRecord.memo || '똥바람 불어도 꿀잠 예약!';
+      if (spotInput) { spotInput.value = currentShareRecord.spot || '강원 대관령 선자령 (832m)'; if (clearBtn) clearBtn.style.display = spotInput.value ? 'flex' : 'none'; }
+      if (memoInput) memoInput.value = currentShareRecord.memo || '아니 온 듯 다녀가기, 비화식 꿀잠 세팅!';
 
-      if (forceStudio && currentSharePhoto) {
-        openPhotoStudio();
-        return;
-      }
+      const editBox = document.querySelector('#packShareModalOverlay .custom-modal > div:nth-child(2)');
+      const vaultBtn = document.getElementById('btnSaveToVaultMain');
+      if (openedFromBasecamp) { if (editBox) editBox.style.display = 'none'; if (vaultBtn) vaultBtn.style.display = 'none'; }
+      else { if (editBox) editBox.style.display = 'flex'; if (vaultBtn) vaultBtn.style.display = 'block'; }
 
+      if (forceStudio && currentSharePhoto) { openPhotoStudio(); return; }
       document.getElementById('packShareModalOverlay').style.display = 'flex';
       closePackingModal();
       switchShareCardTemplate(selectedTemplateId);
@@ -1698,11 +1956,14 @@
       document.getElementById('packShareModalOverlay').style.display = 'none';
       const dropdown = document.getElementById('spotSearchDropdown');
       if (dropdown) dropdown.style.display = 'none';
+      const editBox = document.querySelector('#packShareModalOverlay .custom-modal > div:nth-child(2)');
+      const vaultBtn = document.getElementById('btnSaveToVaultMain');
+      if (editBox) editBox.style.display = 'flex';
+      if (vaultBtn) vaultBtn.style.display = 'block';
+      if (openedFromBasecamp) { openedFromBasecamp = false; openMyInfoModal('history'); }
     }
 
-    // ========================================================
-    // 📸 [풀스크린] 모바일 포토 스튜디오 에디터 제어 엔진 (자유 비율 포함)
-    // ========================================================
+    // 📸 포토 스튜디오 로직
     function openPhotoStudio() {
       closePackShareModal();
       const studio = document.getElementById('photoStudioOverlay');
@@ -1715,58 +1976,43 @@
     function closePhotoStudio() {
       const studio = document.getElementById('photoStudioOverlay');
       if (studio) studio.style.display = 'none';
-      document.getElementById('packShareModalOverlay').style.display = 'flex';
-      updateShareCardLive();
+      if (openedFromBasecamp) { openedFromBasecamp = false; openMyInfoModal('history'); }
+      else { document.getElementById('packShareModalOverlay').style.display = 'flex'; updateShareCardLive(); }
       triggerHaptic(10);
     }
 
     function setStudioRatio(ratio) {
       currentCardRatio = ratio;
       const sliderContainer = document.getElementById('studioFreeRatioSliderContainer');
-      if (sliderContainer) {
-        sliderContainer.style.display = (ratio === 'free') ? 'flex' : 'none';
-      }
-      updateStudioUI();
-      updateStudioCardLive();
-      triggerHaptic(10);
+      if (sliderContainer) sliderContainer.style.display = (ratio === 'free') ? 'flex' : 'none';
+      updateStudioUI(); updateStudioCardLive(); triggerHaptic(10);
     }
 
     function handleFreeRatioChange(val) {
       currentCustomRatioVal = parseFloat(val);
       const label = document.getElementById('freeRatioValLabel');
-      if (label) {
-        label.innerText = `1 : ${(1 / currentCustomRatioVal).toFixed(2)}`;
-      }
+      if (label) label.innerText = `1 : ${(1 / currentCustomRatioVal).toFixed(2)}`;
       updateStudioCardLive();
     }
 
-    function setStudioTextColor(color) {
-      currentPhotoTextColor = color;
-      updateStudioUI();
-      updateStudioCardLive();
-      triggerHaptic(10);
+    function handlePhotoScaleChange(val) {
+      currentPhotoScaleVal = parseFloat(val);
+      const label = document.getElementById('freePhotoScaleLabel');
+      if (label) label.innerText = `${Math.round(currentPhotoScaleVal * 100)}%`;
+      const img = document.getElementById('photoStudioBgImage');
+      if (img) img.style.transform = `scale(${currentPhotoScaleVal})`;
     }
+
+    function setStudioTextColor(color) { currentPhotoTextColor = color; updateStudioUI(); updateStudioCardLive(); triggerHaptic(10); }
 
     function updateStudioUI() {
-      const mapBtns = { 
-        'auto': 'btnStudioRatioAuto', 
-        '1/1': 'btnStudioRatio11', 
-        '4/5': 'btnStudioRatio45', 
-        '3/4': 'btnStudioRatio34', 
-        '9/16': 'btnStudioRatio916',
-        'free': 'btnStudioRatioFree'
-      };
-      
+      const mapBtns = { 'auto': 'btnStudioRatioAuto', '1/1': 'btnStudioRatio11', '4/5': 'btnStudioRatio45', '3/4': 'btnStudioRatio34', '9/16': 'btnStudioRatio916', 'free': 'btnStudioRatioFree' };
       Object.keys(mapBtns).forEach(r => {
         const btn = document.getElementById(mapBtns[r]);
         if (!btn) return;
-        if (r === currentCardRatio) {
-          btn.style.background = '#38bdf8'; btn.style.color = '#000000'; btn.style.fontWeight = '900';
-        } else {
-          btn.style.background = 'transparent'; btn.style.color = '#cbd5e1'; btn.style.fontWeight = '800';
-        }
+        if (r === currentCardRatio) { btn.style.background = '#38bdf8'; btn.style.color = '#000000'; btn.style.fontWeight = '900'; }
+        else { btn.style.background = 'transparent'; btn.style.color = '#cbd5e1'; btn.style.fontWeight = '800'; }
       });
-
       const btnW = document.getElementById('btnStudioColorWhite');
       const btnB = document.getElementById('btnStudioColorBlack');
       if (btnW && btnB) {
@@ -1778,126 +2024,16 @@
     function updateStudioCardLive() {
       const container = document.getElementById('photoStudioCardTarget');
       if (!container || !currentSharePhoto) return;
-
       const spotInput = document.getElementById('shareCardSpotInput');
       const memoInput = document.getElementById('shareCardMemoInput');
       const spotVal = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '전국 낭만 박지';
       const memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : '';
-
-      container.innerHTML = generateStudioPhotoCardMarkup(currentShareRecord, currentShareItems, spotVal, memoVal, currentSharePhoto, currentPhotoTextColor, currentCardRatio, currentCustomRatioVal);
-    }
-
-    // 🎨 사진 전체화면 무손실 플로팅 스탬프 렌더러 (3:4 및 자유 슬라이더 비율 지원)
-    function generateStudioPhotoCardMarkup(record, items, spot, memo, photoUrl, textColor = 'white', ratio = '9/16', customVal = 0.75) {
-      const profile = safeGetJSON('user_profile', null);
-      const nick = profile ? profile.nickname : '낭만백패커';
-      const weight = record ? record.weightKg : '0.00';
-
-      const isWhite = (textColor === 'white');
-      const textCol = isWhite ? '#ffffff' : '#000000';
-      const subCol = isWhite ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.85)';
-      const brandCol = isWhite ? '#38bdf8' : '#0284c7';
-      const textShadow = isWhite 
-        ? 'text-shadow: 0 2px 10px rgba(0,0,0,0.95), 0 0 4px rgba(0,0,0,0.9);' 
-        : 'text-shadow: 0 1px 8px rgba(255,255,255,0.95), 0 0 4px rgba(255,255,255,0.9);';
-
-      const logo = isWhite ? SVG_ICONS.brandLogo('#ffffff', '#fda4af') : SVG_ICONS.brandLogo('#000000', '#f43f5e');
-
-      let ratioStyle = 'width: 100vw; height: 100dvh; max-width: 440px;';
-      let paddingStyle = 'padding:calc(65px + env(safe-area-inset-top, 0px)) 20px calc(70px + env(safe-area-inset-bottom, 0px)) 20px;';
-
-      if (ratio === '1/1') {
-        ratioStyle = 'width: 100%; aspect-ratio: 1 / 1; border-radius: 12px;';
-        paddingStyle = 'padding: 16px 14px;';
-      } else if (ratio === '4/5') {
-        ratioStyle = 'width: 100%; aspect-ratio: 4 / 5; border-radius: 12px;';
-        paddingStyle = 'padding: 20px 16px;';
-      } else if (ratio === '3/4') {
-        ratioStyle = 'width: 100%; aspect-ratio: 3 / 4; border-radius: 12px;';
-        paddingStyle = 'padding: 22px 16px;';
-      } else if (ratio === 'free') {
-        ratioStyle = `width: 100%; aspect-ratio: ${customVal} / 1; border-radius: 10px; max-height: 82vh;`;
-        paddingStyle = 'padding: 18px 14px;';
-      } else if (ratio === '9/16') {
-        ratioStyle = 'width: 100vw; height: 100dvh; max-width: 440px; border-radius: 0;';
-        paddingStyle = 'padding:calc(65px + env(safe-area-inset-top, 0px)) 20px calc(70px + env(safe-area-inset-bottom, 0px)) 20px;';
-      }
-
-      const scrimGrad = isWhite
-        ? 'linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.05) 35%, rgba(0,0,0,0.15) 60%, rgba(0,0,0,0.85) 100%)'
-        : 'linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.1) 35%, rgba(255,255,255,0.2) 60%, rgba(255,255,255,0.9) 100%)';
-
-      const gearRowsClean = (items || []).slice(0, 6).map(it => `
-        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; padding:1.5px 0; ${textShadow}">
-          <span style="color:${textCol}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:75%; font-weight:700;">• ${escapeHtml(it.name || it)}</span>
-          <span style="color:${brandCol}; font-weight:900; font-family:var(--font-mono);">${it.weight ? (it.weight / 1000).toFixed(2) + 'kg' : ''}</span>
-        </div>
-      `).join('');
-
-      return `
-        <div style="position:relative; overflow:hidden; box-sizing:border-box; ${ratioStyle} display:flex; flex-direction:column; justify-content:space-between; background:#000;">
-          <img src="${photoUrl}" alt="Background" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:1; display:block;" />
-          <div style="position:absolute; top:0; left:0; width:100%; height:100%; background:${scrimGrad}; z-index:2; pointer-events:none;"></div>
-          
-          <div style="position:relative; z-index:3; height:100%; display:flex; flex-direction:column; justify-content:space-between; ${paddingStyle} box-sizing:border-box; ${textShadow}">
-            
-            <!-- 상단 정보 영역 -->
-            <div>
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-                <div style="display:flex; align-items:center; gap:6px;">
-                  ${logo}
-                  <div>
-                    <div style="font-weight:900; font-size:0.9rem; color:${textCol}; letter-spacing:0.5px; line-height:1.1;">ROMANTIC ROOT</div>
-                    <div style="font-size:0.56rem; color:${subCol}; font-weight:700;">FIELD PACKING ARCHIVE</div>
-                  </div>
-                </div>
-                <div style="font-size:0.58rem; font-weight:900; color:${brandCol}; border:1.5px solid ${brandCol}; padding:2px 7px; border-radius:12px; white-space:nowrap; backdrop-filter:blur(4px);">LNT VERIFIED</div>
-              </div>
-
-              <div style="margin-top:12px;">
-                <div style="font-size:0.58rem; color:${subCol}; font-weight:800; letter-spacing:1px;">DESTINATION TARGET</div>
-                <div style="font-size:1.18rem; font-weight:900; color:${textCol}; line-height:1.2; word-break:keep-all;">📍 ${escapeHtml(spot)}</div>
-              </div>
-
-              ${memo ? `<div style="font-size:0.75rem; color:${textCol}; font-style:italic; margin-top:4px; opacity:0.95; font-weight:700;">💬 "${escapeHtml(memo)}"</div>` : ''}
-            </div>
-
-            <!-- 하단 장비 및 무게 영역 -->
-            <div>
-              <div style="display:flex; flex-direction:column; gap:1.5px; margin-bottom:10px; border-bottom:1.5px solid rgba(255,255,255,0.3); padding-bottom:6px;">
-                ${gearRowsClean}
-              </div>
-
-              <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-                <div>
-                  <div style="font-size:0.58rem; color:${subCol}; font-weight:800;">HIKER</div>
-                  <div style="font-size:0.95rem; font-weight:900; color:${textCol};">${escapeHtml(nick)}</div>
-                </div>
-                <div style="text-align:right;">
-                  <div style="font-size:0.58rem; color:${subCol}; font-weight:800;">TOTAL WEIGHT</div>
-                  <div style="font-size:2.3rem; font-weight:900; font-family:var(--font-en); color:${brandCol}; line-height:0.9;">
-                    ${weight}<span style="font-size:0.95rem; color:${textCol}; margin-left:3px;">KG</span>
-                  </div>
-                </div>
-              </div>
-
-              <div style="margin-top:8px; font-size:0.58rem; color:${subCol}; display:flex; justify-content:space-between; align-items:center; font-weight:800;">
-                <span style="display:inline-flex; align-items:center; gap:3px; color:${brandCol};">
-                  ${SVG_ICONS.lntShield} 비화식 · 흔적 없는 클린 백패킹
-                </span>
-                <span>PHOTO STAMP OFFICIAL</span>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      `;
+      container.innerHTML = generateStudioPhotoCardMarkup(currentShareRecord, currentShareItems, spotVal, memoVal, currentSharePhoto, currentPhotoTextColor, currentCardRatio, currentCustomRatioVal, currentPhotoScaleVal);
     }
 
     function handleShareCardPhotoUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
-
       const reader = new FileReader();
       reader.onload = function(evt) {
         const img = new Image();
@@ -1905,42 +2041,34 @@
           const canvas = document.createElement('canvas');
           const MAX_SIZE = 1440;
           let width = img.width, height = img.height;
-
-          if (width > height) {
-            if (width > MAX_SIZE) { height = Math.round(height * (MAX_SIZE / width)); width = MAX_SIZE; }
-          } else {
-            if (height > MAX_SIZE) { width = Math.round(width * (MAX_SIZE / height)); height = MAX_SIZE; }
-          }
-
+          if (width > height) { if (width > MAX_SIZE) { height = Math.round(height * (MAX_SIZE / width)); width = MAX_SIZE; } }
+          else { if (height > MAX_SIZE) { width = Math.round(width * (MAX_SIZE / height)); height = MAX_SIZE; } }
           canvas.width = width; canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
-
           currentSharePhoto = canvas.toDataURL('image/jpeg', 0.88);
           openPhotoStudio();
         };
         img.src = evt.target.result;
       };
       reader.readAsDataURL(file);
+      e.target.value = '';
     }
 
     function captureAndSaveStudioCard() {
       const card = document.getElementById('photoStudioCardTarget');
       if (!card || typeof html2canvas === 'undefined') return;
-
       triggerHaptic(15);
-      html2canvas(card, {
-        backgroundColor: '#000000', scale: 2.5, useCORS: true, allowTaint: true, logging: false
-      }).then(canvas => {
+      html2canvas(card, { backgroundColor: '#000000', scale: 3, useCORS: true, allowTaint: true, logging: false, scrollX: 0, scrollY: 0 }).then(canvas => {
         const link = document.createElement('a');
-        link.download = `낭만루트_스튜디오_${Date.now()}.png`;
+        link.download = `낭만루트_LNT_${getFormattedTimestamp()}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
-        alert('📸 1080p 고화질 풀 카드가 갤러리에 저장되었습니다!');
+        showToast('초고화질 클린 패킹 카드가 갤러리에 저장되었습니다!', 'download');
       });
     }
 
-    // 📍 260+ 등록 박지 실시간 검색 드롭다운
+    // 📍 템플릿 스위처 & 등록 박지 연동 드롭다운
     function handleSpotSearchInput(query = '') {
       const dropdown = document.getElementById('spotSearchDropdown');
       const clearBtn = document.getElementById('btnSpotInputClear');
@@ -2022,158 +2150,315 @@
     function updateShareCardLive() {
       const container = document.getElementById('packShareCaptureArea');
       if (!container) return;
-
       const spotInput = document.getElementById('shareCardSpotInput');
       const memoInput = document.getElementById('shareCardMemoInput');
       const spotVal = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '전국 낭만 박지';
       const memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : '';
-
-      container.className = `share-card-container sc-theme-${selectedTemplateId}`;
+      container.className = 'share-card-container';
       container.innerHTML = generateCardMarkup(selectedTemplateId, currentShareRecord, currentShareItems, spotVal, memoVal);
     }
 
-    // 🎨 기본 6대 텍스트 템플릿
+    function renderAdaptiveGearList(items, options = {}) {
+      const total = (items && items.length) ? items.length : 0;
+      if (total === 0) {
+        return `<div style="font-size:0.72rem; color:${options.subColor || '#94a3b8'}; text-align:center; padding:10px 0; font-family:var(--font-body);">세팅된 장비가 없습니다.</div>`;
+      }
+      const isTwoCol = total >= 10;
+      const maxDisplay = isTwoCol ? 18 : 9;
+      const displayItems = items.slice(0, maxDisplay);
+      const remaining = total - maxDisplay;
+
+      let fontSize = '0.74rem', paddingY = '2.5px';
+      if (total >= 15) { fontSize = '0.62rem'; paddingY = '1px'; }
+      else if (total >= 10) { fontSize = '0.67rem'; paddingY = '1.8px'; }
+      else if (total >= 7) { fontSize = '0.68rem'; paddingY = '1.8px'; }
+
+      const nameColor = options.nameColor || 'inherit';
+      const wtColor = options.wtColor || '#38bdf8';
+      const textShadow = options.textShadow ? `text-shadow:${options.textShadow};` : '';
+
+      const rowsHtml = displayItems.map(it => {
+        const rawName = typeof it === 'string' ? it : (it.name || '');
+        const cleanName = rawName.replace(/\s*\(\d+g\)$/, '');
+        const weightGrams = it.weight || (rawName.match(/\((\d+)g\)/) ? parseInt(rawName.match(/\((\d+)g\)/)[1], 10) : 0);
+        const weightStr = weightGrams > 0 ? `${(weightGrams / 1000).toFixed(2)}kg` : '';
+
+        return `
+          <div style="display:flex; justify-content:space-between; align-items:center; font-size:${fontSize}; padding:${paddingY} 0; gap:4px; min-width:0; box-sizing:border-box; ${textShadow}">
+            <span style="color:${nameColor}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; font-weight:700; display:flex; align-items:center; font-family:inherit;">
+              ${SVG_ICONS.bullet}<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(cleanName)}</span>
+            </span>
+            <span style="font-family:'JetBrains Mono', monospace; font-weight:800; color:${wtColor}; flex-shrink:0; font-size:0.92em; letter-spacing:0px;">${weightStr}</span>
+          </div>
+        `;
+      }).join('');
+
+      const remainingHtml = remaining > 0 ? `
+        <div style="font-size:0.58rem; color:${options.subColor || '#94a3b8'}; text-align:right; grid-column: 1 / -1; margin-top:2px; font-weight:700; font-family:var(--font-body);">
+          + 그 외 ${remaining}개 장비 포함
+        </div>
+      ` : '';
+
+      return `
+        <div style="display:grid; grid-template-columns:${isTwoCol ? '1fr 1fr' : '1fr'}; column-gap:10px; row-gap:0px; width:100%; box-sizing:border-box;">
+          ${rowsHtml}
+          ${remainingHtml}
+        </div>
+      `;
+    }
+
+    // 🎨 사진 전체화면 LNT 플로팅 스탬프
+    function generateStudioPhotoCardMarkup(record, items, spot, memo, photoUrl, textColor = 'white', ratio = '9/16', customVal = 0.75, scaleVal = 1.0) {
+      const profile = safeGetJSON('user_profile', null);
+      const nick = profile ? profile.nickname : '낭만백패커';
+      const weight = record ? record.weightKg : '0.00';
+      const dateStr = (record && record.date) ? record.date : (() => {
+        const d = new Date(); return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+      })();
+
+      const isWhite = (textColor === 'white');
+      const textCol = isWhite ? '#ffffff' : '#000000';
+      const subCol = isWhite ? 'rgba(255,255,255,0.9)' : '#0f172a';
+      const brandCol = isWhite ? '#38bdf8' : '#0369a1';
+      const borderCol = isWhite ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.4)';
+      const textShadowStyle = isWhite ? '0 2px 8px rgba(0,0,0,0.95), 0 0 4px rgba(0,0,0,0.9)' : '0 0 3px #ffffff, 0 0 6px #ffffff, 0 1px 2px rgba(255,255,255,0.95)';
+      const logo = isWhite ? SVG_ICONS.brandLogo('#ffffff', '#fda4af') : SVG_ICONS.brandLogo('#000000', '#e11d48');
+
+      let ratioStyle = 'width: 100vw; height: 100dvh; max-width: 440px;';
+      let paddingStyle = 'padding:calc(55px + env(safe-area-inset-top, 0px)) 18px calc(65px + env(safe-area-inset-bottom, 0px)) 18px;';
+
+      if (ratio === '3/4') { ratioStyle = 'width: 100%; aspect-ratio: 3 / 4; border-radius: 12px; max-height: 82vh;'; paddingStyle = 'padding: 18px 16px;'; }
+      else if (ratio === '1/1') { ratioStyle = 'width: 100%; aspect-ratio: 1 / 1; border-radius: 12px; max-height: 82vh;'; paddingStyle = 'padding: 14px 12px;'; }
+      else if (ratio === '4/5') { ratioStyle = 'width: 100%; aspect-ratio: 4 / 5; border-radius: 12px; max-height: 82vh;'; paddingStyle = 'padding: 16px 14px;'; }
+      else if (ratio === 'free') { ratioStyle = `width: 100%; aspect-ratio: ${customVal} / 1; border-radius: 10px; max-height: 82vh;`; paddingStyle = 'padding: 16px 14px;'; }
+      else if (ratio === '9/16') { ratioStyle = 'width: 100vw; height: 100dvh; max-width: 440px; border-radius: 0;'; paddingStyle = 'padding:calc(55px + env(safe-area-inset-top, 0px)) 18px calc(65px + env(safe-area-inset-bottom, 0px)) 18px;'; }
+
+      const scrimLayerHtml = isWhite ? `<div style="position:absolute; top:0; left:0; width:100%; height:100%; background:linear-gradient(180deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.05) 35%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.75) 100%); z-index:2; pointer-events:none;"></div>` : '';
+
+      return `
+        <div style="position:relative; overflow:hidden; box-sizing:border-box; ${ratioStyle} display:flex; flex-direction:column; justify-content:space-between; background:#000000; font-family:'Pretendard Variable', sans-serif;">
+          <img id="photoStudioBgImage" src="${photoUrl}" alt="Background" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:1; display:block; transform:scale(${scaleVal}); transform-origin:center; transition:transform 0.1s ease;" />
+          ${scrimLayerHtml}
+          
+          <div style="position:relative; z-index:3; height:100%; display:flex; flex-direction:column; justify-content:space-between; ${paddingStyle} box-sizing:border-box;">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  ${logo}
+                  <div>
+                    <div style="font-weight:900; font-size:0.88rem; color:${textCol}; letter-spacing:0.5px; line-height:1.1; text-shadow:${textShadowStyle}; font-family:'Space Grotesk', sans-serif;">ROMANTIC ROUTE</div>
+                    <div style="font-size:0.56rem; color:${subCol}; font-weight:800; text-shadow:${textShadowStyle}; letter-spacing:0.5px;">K-LNT CLEAN BACKPACKER</div>
+                  </div>
+                </div>
+                <div style="font-size:0.58rem; font-weight:900; color:${brandCol}; background:${isWhite ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.85)'}; border:1.5px solid ${brandCol}; padding:2px 7px; border-radius:12px; white-space:nowrap; backdrop-filter:blur(4px); box-shadow:${isWhite ? 'none' : '0 1px 4px rgba(0,0,0,0.15)'}; font-family:'Space Grotesk', sans-serif;">LNT VERIFIED</div>
+              </div>
+
+              <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.64rem; font-weight:900; color:${brandCol}; font-family:'JetBrains Mono', monospace; text-shadow:${textShadowStyle}; display:flex; align-items:center;">
+                  ${SVG_ICONS.calendar}<span style="margin-left:3px;">${escapeHtml(dateStr)}</span>
+                </span>
+                <span style="font-size:0.54rem; color:${subCol}; font-weight:800; letter-spacing:1px; text-shadow:${textShadowStyle}; font-family:'Space Grotesk', sans-serif;">TARGET DESTINATION</span>
+              </div>
+
+              <div style="font-size:1.18rem; font-weight:900; color:${textCol}; line-height:1.2; word-break:keep-all; margin-top:2px; text-shadow:${textShadowStyle}; display:flex; align-items:center; font-family:'SUIT', sans-serif;">
+                ${SVG_ICONS.pin}<span style="margin-left:3px;">${escapeHtml(spot)}</span>
+              </div>
+
+              ${memo ? `<div style="font-size:0.74rem; color:${textCol}; margin-top:4px; font-weight:800; display:flex; align-items:flex-start; text-shadow:${textShadowStyle}; line-height:1.35;">${SVG_ICONS.quote}<span>${escapeHtml(memo)}</span></div>` : ''}
+            </div>
+
+            <div>
+              <div style="margin-bottom:8px; border-bottom:1.5px solid ${borderCol}; padding-bottom:6px;">
+                ${renderAdaptiveGearList(items, { nameColor: textCol, wtColor: brandCol, subColor: subCol, textShadow: textShadowStyle })}
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                <div>
+                  <div style="font-size:0.56rem; color:${subCol}; font-weight:800; letter-spacing:0.5px; text-shadow:${textShadowStyle}; font-family:'Space Grotesk', sans-serif;">CLEAN HIKER</div>
+                  <div style="font-size:1.22rem; font-weight:900; color:${textCol}; letter-spacing:-0.02em; text-shadow:${textShadowStyle}; line-height:1.1; font-family:'SUIT', sans-serif;">
+                    ${escapeHtml(nick)}
+                  </div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:0.56rem; color:${subCol}; font-weight:800; text-shadow:${textShadowStyle}; font-family:'Space Grotesk', sans-serif;">TOTAL BPL WEIGHT</div>
+                  <div style="font-size:2.3rem; font-weight:900; font-family:'Space Grotesk', sans-serif; color:${brandCol}; line-height:0.9; text-shadow:${textShadowStyle};">
+                    ${weight}<span style="font-size:0.9rem; color:${textCol}; margin-left:3px;">KG</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-top:6px; font-size:0.56rem; color:${subCol}; display:flex; justify-content:space-between; align-items:center; font-weight:800; text-shadow:${textShadowStyle};">
+                <span style="display:inline-flex; align-items:center; gap:3px; color:${brandCol};">
+                  ${SVG_ICONS.lntShield} 머문 자리는 처음처럼 · 비화식 클린 백패킹
+                </span>
+                <span style="font-family:'Space Grotesk', sans-serif;">LNT MASTER</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 🎨 6대 시그니처 템플릿 마크업
     function generateCardMarkup(tmplId, record, items, spot, memo) {
       const profile = safeGetJSON('user_profile', null);
       const nick = profile ? profile.nickname : '낭만백패커';
       const weight = record ? record.weightKg : '0.00';
+      const dateStr = (record && record.date) ? record.date : (() => {
+        const d = new Date(); return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+      })();
 
       const logoWhite = SVG_ICONS.brandLogo('#ffffff', '#fda4af');
       const logoDark = SVG_ICONS.brandLogo('#000000', '#f43f5e');
-
-      const makeRows = (nameCol = 'inherit', wtCol = '#38bdf8') => (items || []).slice(0, 6).map(it => `
-        <div class="sc-row">
-          <span class="sc-name" style="color:${nameCol};">• ${escapeHtml(it.name || it)}</span>
-          <span class="sc-wt" style="color:${wtCol}; font-weight:800;">${it.weight ? (it.weight / 1000).toFixed(2) + 'kg' : ''}</span>
-        </div>
-      `).join('');
-
-      const memoHtml = memo ? `
-        <div style="font-size:0.68rem; color:#cbd5e1; background:rgba(255,255,255,0.06); padding:4px 8px; border-radius:4px; margin:4px 0; font-style:italic; word-break:break-word;">
-          💬 "${escapeHtml(memo)}"
-        </div>
-      ` : '';
+      const memoHtml = memo ? `<div style="font-size:0.68rem; color:#cbd5e1; background:rgba(255,255,255,0.06); padding:4px 8px; border-radius:4px; margin:4px 0; display:flex; align-items:flex-start; word-break:break-word; line-height:1.35;">${SVG_ICONS.quote}<span>${escapeHtml(memo)}</span></div>` : '';
 
       switch (tmplId) {
         case 1:
           return `
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px dashed #a8a29e; padding-bottom:8px; gap:8px;">
-              <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
-                ${logoDark}
-                <div style="min-width:0; overflow:hidden;">
-                  <div style="font-weight:900; font-size:0.88rem; line-height:1.1; color:#000; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">낭만루트 · ROMANTIC ROOT</div>
-                  <div style="font-size:0.58rem; color:#78716c; margin-top:2px;">CLEAN HIKING RECEIPT</div>
+            <div style="background:#f5f5f4; color:#1c1917; padding:18px 16px; font-family:'JetBrains Mono', monospace; width:100%; box-sizing:border-box; border-radius:12px; box-shadow:0 15px 35px rgba(0,0,0,0.85);">
+              <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px dashed #a8a29e; padding-bottom:8px; gap:8px;">
+                <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
+                  ${logoDark}
+                  <div style="min-width:0; overflow:hidden;">
+                    <div style="font-weight:900; font-size:0.88rem; line-height:1.1; color:#000000; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">낭만루트 · ROMANTIC ROUTE</div>
+                    <div style="font-size:0.58rem; color:#78716c; margin-top:2px;">K-LNT CLEAN BACKPACKING PACK</div>
+                  </div>
                 </div>
+                <span style="font-size:0.62rem; font-weight:800; background:#000000; color:#ffffff; padding:1px 6px; border-radius:2px; flex-shrink:0;">LNT 준수</span>
               </div>
-              <span style="font-size:0.62rem; font-weight:800; background:#000; color:#fff; padding:1px 6px; border-radius:2px; flex-shrink:0;">LNT</span>
-            </div>
-            <div style="margin:8px 0 2px 0; font-size:0.78rem; font-weight:900; display:flex; align-items:flex-start; gap:4px; color:#1c1917; line-height:1.3; word-break:keep-all;">
-              <span style="flex-shrink:0; margin-top:1px;">${SVG_ICONS.pin}</span>
-              <span style="flex:1;">${escapeHtml(spot)}</span>
-            </div>
-            <div style="font-size:0.68rem; color:#57534e; margin-bottom:6px;">하이커: ${escapeHtml(nick)} (비화식 클린 백패킹)</div>
-            ${memoHtml}
-            <div style="border-top:1px solid #d6d3d1; margin-bottom:6px;"></div>
-            <div style="display:flex; flex-direction:column; gap:2px;">${makeRows('#292524', '#000000')}</div>
-            <div style="border-top:2px solid #000; margin:10px 0 6px 0;"></div>
-            <div style="display:flex; justify-content:space-between; align-items:baseline;">
-              <span style="font-weight:900; font-size:0.85rem;">배낭 총 무게</span>
-              <span style="font-weight:900; font-size:1.55rem; font-family:var(--font-en);">${weight} KG</span>
-            </div>
-            <div style="margin-top:10px; border:1.5px dashed #dc2626; color:#dc2626; padding:5px; text-align:center; font-weight:900; font-size:0.7rem; transform:rotate(-1deg); display:flex; align-items:center; justify-content:center; gap:5px;">
-              ${SVG_ICONS.lntShield} <span>LNT 흔적 없는 클린 하이킹 완료</span>
+              <div style="margin:8px 0 2px 0; font-size:0.82rem; font-weight:900; display:flex; align-items:center; gap:4px; color:#1c1917; line-height:1.3; word-break:keep-all;">
+                ${SVG_ICONS.pin}<span>${escapeHtml(spot)}</span>
+              </div>
+              <div style="background:#e7e5e4; padding:5px 8px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; margin:4px 0 6px 0;">
+                <span style="font-size:0.68rem; color:#44403c; font-weight:800;">CLEAN HIKER</span>
+                <strong style="font-size:0.95rem; color:#000000; font-weight:900;">${escapeHtml(nick)}</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:0.62rem; color:#78716c; margin-bottom:6px; align-items:center;">
+                <span style="display:flex; align-items:center;">${SVG_ICONS.calendar}<span style="margin-left:3px;">발행일시: ${escapeHtml(dateStr)}</span></span>
+                <span>VERIFIED BPL</span>
+              </div>
+              ${memo ? `<div style="font-size:0.68rem; color:#44403c; background:#e7e5e4; padding:4px 8px; border-radius:4px; margin:4px 0; display:flex; align-items:flex-start; word-break:break-word;">${SVG_ICONS.quote}<span>${escapeHtml(memo)}</span></div>` : ''}
+              <div style="border-top:1px solid #d6d3d1; margin-bottom:6px;"></div>
+              ${renderAdaptiveGearList(items, { nameColor: '#292524', wtColor: '#000000', subColor: '#78716c' })}
+              <div style="border-top:2px solid #000000; margin:10px 0 6px 0;"></div>
+              <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                <span style="font-weight:900; font-size:0.85rem;">배낭 BPL 총 무게</span>
+                <span style="font-weight:900; font-size:1.55rem; font-family:'Space Grotesk', sans-serif;">${weight} KG</span>
+              </div>
+              <div style="margin-top:10px; border:1.5px dashed #dc2626; color:#dc2626; padding:5px; text-align:center; font-weight:900; font-size:0.68rem; display:flex; align-items:center; justify-content:center; gap:5px;">
+                ${SVG_ICONS.lntShield} <span>머문 자리는 처음처럼 · 흔적 없는 클린 백패킹</span>
+              </div>
             </div>
           `;
         case 2:
           return `
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #30363d; padding-bottom:8px; width:100%; gap:8px;">
-              <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
-                ${logoWhite}
-                <div style="min-width:0; overflow:hidden;">
-                  <div style="font-weight:900; font-size:0.82rem; color:#fff; letter-spacing:0.02em; white-space:nowrap;">ROMANTIC ROOT // SPEC</div>
+            <div style="background:#090c10; border:1.5px solid #21262d; padding:18px 16px; font-family:'JetBrains Mono', monospace; width:100%; box-sizing:border-box; border-radius:12px; box-shadow:0 15px 35px rgba(0,0,0,0.85); color:#ffffff;">
+              <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #30363d; padding-bottom:8px; width:100%; gap:8px;">
+                <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
+                  ${logoWhite}
+                  <div style="min-width:0; overflow:hidden;">
+                    <div style="font-weight:900; font-size:0.82rem; color:#ffffff; letter-spacing:0.02em; white-space:nowrap;">ROMANTIC ROUTE // SPEC</div>
+                  </div>
                 </div>
+                <span style="background:#161b22; border:1px solid #30363d; color:#58a6ff; font-size:0.56rem; font-weight:800; padding:2px 6px; flex-shrink:0;">LNT PROTOCOL</span>
               </div>
-              <span style="background:#161b22; border:1px solid #30363d; color:#58a6ff; font-size:0.56rem; font-weight:800; padding:2px 6px; flex-shrink:0;">LNT PROTOCOL</span>
-            </div>
-            <div style="margin:8px 0 4px 0; background:#0d1117; border:1px solid #30363d; padding:6px 8px; border-left:3px solid #38bdf8;">
-              <div style="font-size:0.54rem; color:#8b949e; letter-spacing:1px; margin-bottom:2px;">EXPEDITION TARGET</div>
-              <div style="font-size:0.78rem; font-weight:900; color:#38bdf8; line-height:1.25; word-break:keep-all;">📍 ${escapeHtml(spot)}</div>
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:4px 0 8px 0; background:#161b22; padding:6px 8px; border:1px solid #21262d;">
-              <div style="min-width:0; overflow:hidden;"><span style="font-size:0.54rem; color:#8b949e; display:block;">HIKER</span><strong style="font-size:0.78rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;">${escapeHtml(nick)}</strong></div>
-              <div style="text-align:right;"><span style="font-size:0.54rem; color:#8b949e; display:block;">TOTAL WEIGHT</span><strong style="font-size:1.1rem; color:#34d399; font-family:var(--font-en);">${weight} <small style="font-size:0.65rem;">KG</small></strong></div>
-            </div>
-            ${memoHtml}
-            <div style="background:#010409; padding:8px; border:1px solid #21262d; margin:6px 0;">${makeRows('rgba(255,255,255,0.85)', '#58a6ff')}</div>
-            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #30363d; padding-top:6px; font-size:0.58rem; color:#8b949e;">
-              <span style="display:inline-flex; align-items:center; gap:4px; color:#34d399;">${SVG_ICONS.lntShield} LNT TRACE 0% / FIRE-FREE</span>
-              <span>VERIFIED EXPEDITION</span>
+              <div style="margin:8px 0 4px 0; background:#0d1117; border:1px solid #30363d; padding:6px 8px; border-left:3px solid #38bdf8;">
+                <div style="font-size:0.54rem; color:#8b949e; letter-spacing:1px; margin-bottom:2px;">EXPEDITION TARGET</div>
+                <div style="font-size:0.78rem; font-weight:900; color:#38bdf8; line-height:1.25; word-break:keep-all; display:flex; align-items:center;">${SVG_ICONS.pin}<span style="margin-left:3px;">${escapeHtml(spot)}</span></div>
+              </div>
+              <div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:4px; margin:4px 0 8px 0; background:#161b22; padding:6px 8px; border:1px solid #21262d; box-sizing:border-box;">
+                <div><span style="font-size:0.52rem; color:#8b949e; display:block;">CLEAN HIKER</span><strong style="font-size:0.96rem; color:#ffffff; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; line-height:1.15;">${escapeHtml(nick)}</strong></div>
+                <div><span style="font-size:0.52rem; color:#8b949e; display:block;">DATE</span><strong style="font-size:0.68rem; color:#cbd5e1;">${escapeHtml(dateStr.slice(0,10))}</strong></div>
+                <div style="text-align:right;"><span style="font-size:0.52rem; color:#8b949e; display:block;">WEIGHT</span><strong style="font-size:1.0rem; color:#34d399; font-family:'Space Grotesk', sans-serif;">${weight} <small style="font-size:0.6rem;">KG</small></strong></div>
+              </div>
+              ${memoHtml}
+              <div style="background:#010409; padding:8px; border:1px solid #21262d; margin:6px 0; border-radius:4px;">
+                ${renderAdaptiveGearList(items, { nameColor: 'rgba(255,255,255,0.88)', wtColor: '#58a6ff', subColor: '#8b949e' })}
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #30363d; padding-top:6px; font-size:0.58rem; color:#8b949e;">
+                <span style="display:inline-flex; align-items:center; gap:4px; color:#34d399;">${SVG_ICONS.lntShield} LNT TRACE 0% / FIRE-FREE</span>
+                <span>VERIFIED BPL PACK</span>
+              </div>
             </div>
           `;
         case 3:
           return `
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1f2937; padding-bottom:8px; gap:8px;">
-              <div style="display:flex; align-items:center; gap:6px; min-width:0; flex-shrink:0;">
-                ${SVG_ICONS.brandLogo('#ccff00', '#ccff00')}
-                <span style="font-weight:900; font-size:0.82rem; color:#ccff00; letter-spacing:0.5px;">ROMANTIC ROOT</span>
+            <div style="background:#030712; border:1px solid #1f2937; padding:18px 16px; font-family:'Space Grotesk', sans-serif; width:100%; box-sizing:border-box; border-radius:12px; box-shadow:0 15px 35px rgba(0,0,0,0.85); color:#ffffff;">
+              <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1f2937; padding-bottom:8px; gap:8px;">
+                <div style="display:flex; align-items:center; gap:6px; min-width:0; flex-shrink:0;">
+                  ${SVG_ICONS.brandLogo('#ccff00', '#ccff00')}
+                  <span style="font-weight:900; font-size:0.82rem; color:#ccff00; letter-spacing:0.5px;">ROMANTIC ROUTE</span>
+                </div>
+                <span style="font-size:0.58rem; color:#34d399; border:1px solid rgba(52,211,153,0.3); background:rgba(52,211,153,0.1); padding:2px 6px; border-radius:10px; flex-shrink:0;">● SYS.VERIFIED</span>
               </div>
-              <span style="font-size:0.58rem; color:#34d399; border:1px solid rgba(52,211,153,0.3); background:rgba(52,211,153,0.1); padding:2px 6px; border-radius:10px; flex-shrink:0;">● SYS.VERIFIED</span>
-            </div>
-            <div style="margin:8px 0 6px 0; border-bottom:1px solid #1f2937; padding-bottom:8px;">
-              <div style="font-size:0.62rem; color:#9ca3af; margin-bottom:3px; word-break:keep-all; line-height:1.2;">DESTINATION // <strong style="color:#ccff00;">📍 ${escapeHtml(spot)}</strong></div>
-              <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:4px;">
-                <div style="font-size:0.68rem; color:#6b7280;">HIKER // <strong style="color:#fff;">${escapeHtml(nick)}</strong></div>
-                <div style="font-size:1.9rem; font-weight:900; color:#fff; line-height:1; font-family:var(--font-mono);">${weight}<span style="font-size:0.85rem; color:#ccff00; margin-left:3px;">KG</span></div>
+              <div style="margin:8px 0 6px 0; border-bottom:1px solid #1f2937; padding-bottom:8px;">
+                <div style="font-size:0.62rem; color:#9ca3af; margin-bottom:3px; word-break:keep-all; line-height:1.2; display:flex; align-items:center;">DESTINATION // <strong style="color:#ccff00; margin-left:4px; display:inline-flex; align-items:center;">${SVG_ICONS.pin}<span style="margin-left:2px;">${escapeHtml(spot)}</span></strong></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:4px 8px; border-radius:4px; border:1px solid #1f2937; margin:5px 0;">
+                  <span>HIKER // <strong style="color:#38bdf8; font-size:0.96rem; font-weight:900; font-family:'SUIT', sans-serif;">${escapeHtml(nick)}</strong></span>
+                  <span style="display:inline-flex; align-items:center; font-family:'JetBrains Mono', monospace; font-size:0.65rem; color:#9ca3af;">${SVG_ICONS.calendar}<span style="margin-left:3px;">${escapeHtml(dateStr)}</span></span>
+                </div>
+                <div style="text-align:right; margin-top:2px;">
+                  <span style="font-size:1.8rem; font-weight:900; color:#ffffff; line-height:1; font-family:'JetBrains Mono', monospace;">${weight}<span style="font-size:0.85rem; color:#ccff00; margin-left:3px;">KG</span></span>
+                </div>
               </div>
-            </div>
-            ${memoHtml}
-            <div style="background:rgba(255,255,255,0.02); padding:8px; border:1px solid #1f2937; margin:6px 0;">${makeRows('#d1d5db', '#ccff00')}</div>
-            <div style="font-size:0.6rem; color:#34d399; text-align:center; display:flex; align-items:center; justify-content:center; gap:5px; font-weight:700;">
-              ${SVG_ICONS.lntShield} <span>LNT VERIFIED : 비화식 & 흔적 없는 머무름</span>
+              ${memoHtml}
+              <div style="background:rgba(255,255,255,0.02); padding:8px; border:1px solid #1f2937; margin:6px 0; border-radius:4px;">
+                ${renderAdaptiveGearList(items, { nameColor: '#d1d5db', wtColor: '#ccff00', subColor: '#6b7280' })}
+              </div>
+              <div style="font-size:0.6rem; color:#34d399; text-align:center; display:flex; align-items:center; justify-content:center; gap:5px; font-weight:700;">
+                ${SVG_ICONS.lntShield} <span>K-LNT VERIFIED : 비화식 & 흔적 없는 클린 백패킹</span>
+              </div>
             </div>
           `;
         case 4:
           return `
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:8px; gap:8px;">
-              <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
-                ${logoWhite}
-                <span style="font-weight:900; font-size:0.82rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">낭만루트 · ROMANTIC ROOT</span>
+            <div style="background:#0f172a; padding:18px 16px; border:1px solid #334155; font-family:'Space Grotesk', sans-serif; width:100%; box-sizing:border-box; border-radius:12px; box-shadow:0 15px 35px rgba(0,0,0,0.85); color:#ffffff;">
+              <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:8px; gap:8px;">
+                <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
+                  ${logoWhite}
+                  <span style="font-weight:900; font-size:0.82rem; color:#ffffff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">낭만루트 · ROMANTIC ROUTE</span>
+                </div>
+                <span style="color:#38bdf8; font-size:0.62rem; font-weight:800; flex-shrink:0;">LNT PASS</span>
               </div>
-              <span style="color:#38bdf8; font-size:0.62rem; font-weight:800; flex-shrink:0;">LNT PASS</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin:10px 0; gap:8px;">
-              <div style="flex-shrink:0;"><small style="font-size:0.56rem; color:#64748b; display:block;">출발</small><span style="font-size:1.1rem; font-weight:900; color:#fff;">CITY</span></div>
-              <div style="color:#38bdf8; font-weight:800; font-size:0.75rem; flex-shrink:0;">➔➔➔</div>
-              <div style="flex:1; min-width:0; text-align:right;"><small style="font-size:0.56rem; color:#64748b; display:block;">도착 박지</small><span style="font-size:0.92rem; font-weight:900; color:#34d399; line-height:1.2; word-break:keep-all; display:block;">${escapeHtml(spot)}</span></div>
-            </div>
-            <div style="display:flex; justify-content:space-between; background:#1e293b; padding:8px 10px; border-radius:6px; margin-bottom:8px; gap:4px;">
-              <div style="flex:1; min-width:0; overflow:hidden;"><small style="font-size:0.54rem; color:#94a3b8; display:block;">하이커</small><strong style="font-size:0.78rem; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;">${escapeHtml(nick)}</strong></div>
-              <div style="flex-shrink:0; text-align:center;"><small style="font-size:0.54rem; color:#94a3b8; display:block;">배낭 무게</small><strong style="font-size:0.78rem; color:#38bdf8;">${weight} KG</strong></div>
-              <div style="flex-shrink:0; text-align:right;"><small style="font-size:0.54rem; color:#94a3b8; display:block;">인증</small><strong style="font-size:0.78rem; color:#34d399;">LNT 준수</strong></div>
-            </div>
-            ${memoHtml}
-            <div style="border-top:2px dashed #334155; margin:8px -16px; padding:8px 16px 0 16px;">
-              <div style="font-size:0.62rem; color:#94a3b8; font-weight:800; margin-bottom:4px;">GEAR MANIFEST</div>
-              ${makeRows('#cbd5e1', '#38bdf8')}
+              <div style="display:flex; justify-content:space-between; align-items:center; margin:10px 0; gap:8px;">
+                <div style="flex-shrink:0;"><small style="font-size:0.56rem; color:#64748b; display:block;">출발</small><span style="font-size:1.1rem; font-weight:900; color:#ffffff;">CITY</span></div>
+                <div style="color:#38bdf8; font-weight:800; font-size:0.75rem; flex-shrink:0;">➔➔➔</div>
+                <div style="flex:1; min-width:0; text-align:right;"><small style="font-size:0.56rem; color:#64748b; display:block;">도착 박지</small><span style="font-size:0.92rem; font-weight:900; color:#34d399; line-height:1.2; word-break:keep-all; display:block; font-family:'SUIT', sans-serif;">${escapeHtml(spot)}</span></div>
+              </div>
+              <div style="display:flex; justify-content:space-between; background:#1e293b; padding:8px 10px; border-radius:6px; margin-bottom:8px; gap:4px; align-items:center;">
+                <div><small style="font-size:0.52rem; color:#94a3b8; display:block;">PASSENGER / 클린 하이커</small><strong style="font-size:0.98rem; color:#ffffff; font-weight:900; display:block; line-height:1.15; font-family:'SUIT', sans-serif;">${escapeHtml(nick)}</strong></div>
+                <div><small style="font-size:0.52rem; color:#94a3b8; display:block;">탑승일자 (DATE)</small><strong style="font-size:0.72rem; color:#38bdf8; font-family:'JetBrains Mono', monospace; display:inline-flex; align-items:center;">${SVG_ICONS.calendar}<span style="margin-left:3px;">${escapeHtml(dateStr.slice(0,10))}</span></strong></div>
+                <div style="text-align:right;"><small style="font-size:0.52rem; color:#94a3b8; display:block;">배낭 무게</small><strong style="font-size:0.75rem; color:#34d399;">${weight} KG</strong></div>
+              </div>
+              ${memoHtml}
+              <div style="border-top:2px dashed #334155; margin:8px -16px; padding:8px 16px 0 16px;">
+                <div style="font-size:0.62rem; color:#94a3b8; font-weight:800; margin-bottom:4px;">GEAR MANIFEST</div>
+                ${renderAdaptiveGearList(items, { nameColor: '#cbd5e1', wtColor: '#38bdf8', subColor: '#64748b' })}
+              </div>
             </div>
           `;
         case 5:
           return `
-            <div style="display:flex; gap:10px; align-items:stretch; width:100%;">
-              <div style="writing-mode:vertical-rl; font-size:0.64rem; color:#71717a; letter-spacing:2px; border-left:1px solid #27272a; padding-left:5px; flex-shrink:0; max-height:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                ${escapeHtml(spot)} — 머문 자리에 흔적 없는 여정
+            <div style="background:#18181b; padding:20px 16px; border:1px solid #27272a; display:flex; gap:12px; font-family:'Noto Serif KR', serif; width:100%; box-sizing:border-box; border-radius:12px; box-shadow:0 15px 35px rgba(0,0,0,0.85); color:#ffffff;">
+              <div style="writing-mode:vertical-rl; font-size:0.62rem; color:#71717a; letter-spacing:2px; border-left:1px solid #27272a; padding-left:5px; flex-shrink:0; max-height:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                LNT 머문 자리는 처음처럼 — 흔적 없는 클린 백패킹
               </div>
               <div style="flex:1; min-width:0; display:flex; flex-direction:column; justify-content:space-between;">
                 <div>
-                  <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">${logoWhite}<span style="font-size:0.78rem; font-weight:900; color:#fff; letter-spacing:1px; white-space:nowrap;">ROMANTIC ROOT</span></div>
+                  <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">${logoWhite}<span style="font-size:0.78rem; font-weight:900; color:#ffffff; letter-spacing:1px; white-space:nowrap; font-family:'Space Grotesk', sans-serif;">ROMANTIC ROUTE</span></div>
                   <div style="font-size:0.95rem; font-weight:900; color:#e4e4e7; line-height:1.25; word-break:keep-all;">${escapeHtml(spot)}</div>
-                  <div style="font-size:0.72rem; color:#38bdf8; margin:3px 0;">${escapeHtml(nick)} · ${weight}kg</div>
+                  <div style="font-size:0.94rem; font-weight:900; color:#38bdf8; margin:3px 0;">
+                    ${escapeHtml(nick)} <span style="font-size:0.65rem; color:#a1a1aa; font-weight:600;">(클린 하이커)</span>
+                  </div>
+                  <div style="font-size:0.66rem; color:#71717a; font-family:'JetBrains Mono', monospace; display:flex; align-items:center;">
+                    ${SVG_ICONS.calendar}<span style="margin-left:3px;">${escapeHtml(dateStr)} · ${weight}kg</span>
+                  </div>
                   ${memoHtml}
                 </div>
                 <div>
                   <div style="height:1px; background:#27272a; margin:6px 0;"></div>
-                  <div style="display:flex; flex-direction:column; gap:2px;">${makeRows('#d4d4d8', '#a1a1aa')}</div>
-                  <div style="font-size:0.58rem; color:#34d399; margin-top:8px; display:flex; align-items:center; gap:4px; font-family:var(--font-body);">${SVG_ICONS.lntShield} <span>LNT 인증 : 자연 그대로를 보존합니다</span></div>
+                  ${renderAdaptiveGearList(items, { nameColor: '#d4d4d8', wtColor: '#a1a1aa', subColor: '#71717a' })}
+                  <div style="font-size:0.58rem; color:#34d399; margin-top:8px; display:flex; align-items:center; gap:4px; font-family:'Pretendard Variable', sans-serif;">${SVG_ICONS.lntShield} <span>LNT 인증 : 자연 그대로를 보존합니다</span></div>
                 </div>
               </div>
             </div>
@@ -2181,17 +2466,24 @@
         case 6:
         default:
           return `
-            <div style="background:#18181b; color:#fff; padding:14px 10px 10px 10px; text-align:center; border-radius:4px; position:relative; width:100%;">
-              <div style="position:absolute; top:6px; right:6px; font-size:0.55rem; background:#059669; color:#fff; padding:1.5px 5px; font-weight:900; border-radius:2px; display:flex; align-items:center; gap:2px;">${SVG_ICONS.lntShield} LNT</div>
-              <div style="display:flex; justify-content:center; align-items:center; gap:5px; margin-bottom:2px;">${logoWhite}<span style="font-size:0.78rem; font-weight:800; letter-spacing:1px;">낭만루트 아카이브</span></div>
-              <div style="font-family:var(--font-en); font-size:2rem; font-weight:900; color:#38bdf8; line-height:1.1; margin-top:4px;">${weight} <small style="font-size:0.85rem; color:#fff;">KG</small></div>
-              <div style="font-size:0.65rem; color:#a1a1aa; margin-top:2px; padding:0 8px; line-height:1.25; word-break:keep-all;">📍 ${escapeHtml(spot)} (비화식)</div>
-            </div>
-            ${memoHtml}
-            <div style="margin-top:6px;">
-              <div style="font-size:0.82rem; font-weight:900; color:#000;">${escapeHtml(nick)}의 패킹 기록</div>
-              <div style="margin:4px 0; border-top:1px solid #e4e4e7; border-bottom:1px solid #e4e4e7; padding:3px 0;">${makeRows('#3f3f46', '#000')}</div>
-              <div style="font-size:0.58rem; color:#059669; font-family:var(--font-mono); font-weight:700;">LEAVE NO TRACE OFFICIAL ARCHIVE</div>
+            <div style="background:#ffffff; color:#000000; padding:14px 14px 18px 14px; font-family:'Pretendard Variable', sans-serif; width:100%; box-sizing:border-box; border-radius:12px; box-shadow:0 15px 35px rgba(0,0,0,0.85);">
+              <div style="background:#18181b; color:#ffffff; padding:14px 10px 10px 10px; text-align:center; border-radius:4px; position:relative; width:100%; box-sizing:border-box;">
+                <div style="position:absolute; top:6px; right:6px; font-size:0.55rem; background:#059669; color:#ffffff; padding:1.5px 5px; font-weight:900; border-radius:2px; display:flex; align-items:center; gap:2px;">${SVG_ICONS.lntShield} LNT</div>
+                <div style="display:flex; justify-content:center; align-items:center; gap:5px; margin-bottom:2px;">${logoWhite}<span style="font-size:0.78rem; font-weight:800; letter-spacing:1px;">낭만루트 아카이브</span></div>
+                <div style="font-family:'Space Grotesk', sans-serif; font-size:2rem; font-weight:900; color:#38bdf8; line-height:1.1; margin-top:4px;">${weight} <small style="font-size:0.85rem; color:#ffffff;">KG</small></div>
+                <div style="font-size:0.65rem; color:#a1a1aa; margin-top:2px; padding:0 8px; line-height:1.25; word-break:keep-all; display:flex; align-items:center; justify-content:center;">${SVG_ICONS.pin}<span style="margin-left:3px;">${escapeHtml(spot)} (비화식)</span></div>
+                <div style="font-size:0.6rem; color:#fbbf24; font-family:'JetBrains Mono', monospace; font-weight:700; margin-top:3px; display:flex; align-items:center; justify-content:center;">${SVG_ICONS.calendar}<span style="margin-left:3px;">TIMESTAMP : ${escapeHtml(dateStr)}</span></div>
+              </div>
+              ${memoHtml}
+              <div style="margin-top:6px;">
+                <div style="font-size:1.02rem; font-weight:900; color:#000000; letter-spacing:-0.02em;">
+                  <span style="color:#059669;">[${escapeHtml(nick)}]</span>님의 클린 패킹 기록
+                </div>
+                <div style="margin:4px 0; border-top:1px solid #e4e4e7; border-bottom:1px solid #e4e4e7; padding:4px 0;">
+                  ${renderAdaptiveGearList(items, { nameColor: '#3f3f46', wtColor: '#000000', subColor: '#a1a1aa' })}
+                </div>
+                <div style="font-size:0.58rem; color:#059669; font-family:'JetBrains Mono', monospace; font-weight:700;">LEAVE NO TRACE OFFICIAL ARCHIVE</div>
+              </div>
             </div>
           `;
       }
@@ -2201,17 +2493,24 @@
       const card = document.getElementById('packShareCaptureArea');
       if (!card || typeof html2canvas === 'undefined') return;
       triggerHaptic(15);
-      html2canvas(card, { backgroundColor: '#000000', scale: 2.5, useCORS: true, allowTaint: true, logging: false }).then(canvas => {
+      html2canvas(card, { 
+        backgroundColor: null, scale: 3, useCORS: true, allowTaint: true, logging: false, scrollX: 0, scrollY: 0,
+        windowWidth: document.documentElement.offsetWidth,
+        onclone: (clonedDoc) => {
+          const el = clonedDoc.getElementById('packShareCaptureArea');
+          if (el) { el.style.maxHeight = 'none'; el.style.overflow = 'visible'; el.style.transform = 'none'; }
+        }
+      }).then(canvas => {
         const link = document.createElement('a');
-        link.download = `낭만루트_패킹카드_${Date.now()}.png`;
+        link.download = `낭만루트_LNT_${getFormattedTimestamp()}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
-        alert('📸 필드 아카이브 카드가 갤러리에 저장되었습니다!');
+        showToast('클린 백패킹 카드가 갤러리에 저장되었습니다!', 'download');
       });
     }
 
     function sharePackCardToKakao() {
-      if (typeof Kakao === 'undefined') return alert('카카오 SDK를 불러오지 못했습니다.');
+      if (typeof Kakao === 'undefined') return showToast('카카오 SDK를 불러오지 못했습니다.', 'warn');
       if (!Kakao.isInitialized()) Kakao.init(KAKAO_APP_KEY);
 
       const spotInput = document.getElementById('shareCardSpotInput');
@@ -2223,12 +2522,12 @@
       Kakao.Share.sendDefault({
         objectType: 'feed',
         content: {
-          title: `[${nick}]님의 백패킹 배낭 패킹 완료!`,
+          title: `[낭만루트] [${nick}]님의 LNT 클린 백패킹 패킹 완료!`,
           description: `목적지: ${spotName}\n총 무게: ${weight}kg (비화식 클린 백패킹)`,
           imageUrl: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80',
-          link: { mobileWebUrl: window.location.href, webUrl: window.location.href }
+          link: { mobileWebUrl: window.location.origin + window.location.pathname, webUrl: window.location.origin + window.location.pathname }
         },
-        buttons: [{ title: '나도 배낭 무게 재보기', link: { mobileWebUrl: window.location.href, webUrl: window.location.href } }]
+        buttons: [{ title: '나도 배낭 무게 재보기', link: { mobileWebUrl: window.location.origin + window.location.pathname, webUrl: window.location.origin + window.location.pathname } }]
       });
       triggerHaptic(15);
     }
@@ -2237,29 +2536,31 @@
       const card = document.getElementById('packShareCaptureArea');
       if (!card || typeof html2canvas === 'undefined') return;
       triggerHaptic(15);
-      html2canvas(card, { backgroundColor: '#000000', scale: 2.5, useCORS: true, allowTaint: true }).then(canvas => {
+      html2canvas(card, { 
+        backgroundColor: null, scale: 3, useCORS: true, allowTaint: true, scrollX: 0, scrollY: 0,
+        onclone: (clonedDoc) => {
+          const el = clonedDoc.getElementById('packShareCaptureArea');
+          if (el) { el.style.maxHeight = 'none'; el.style.overflow = 'visible'; }
+        }
+      }).then(canvas => {
         canvas.toBlob(blob => {
-          const file = new File([blob], 'romantic_packing.png', { type: 'image/png' });
+          const fileName = `낭만루트_LNT_${getFormattedTimestamp()}.png`;
+          const file = new File([blob], fileName, { type: 'image/png' });
           if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-            navigator.share({ title: '낭만루트 백패킹 아카이브', text: '#낭만루트 #백패킹 #BPL', files: [file] }).catch(() => {});
+            navigator.share({ title: '낭만루트 ROMANTIC ROUTE K-LNT 클린 백패킹', text: '#낭만루트 #클린백패킹 #LNT #BPL #백패커', files: [file] }).catch(() => {});
           } else {
             const link = document.createElement('a');
-            link.download = `낭만루트_인스타_${Date.now()}.png`;
+            link.download = fileName;
             link.href = canvas.toDataURL('image/png');
             link.click();
-            alert('카드가 저장되었습니다! 인스타그램에 공유해보세요 ✨');
+            setTimeout(() => { window.location.href = 'instagram://story-camera'; }, 300);
+            showToast('갤러리에 저장 완료! 인스타그램에 인증해보세요.', 'insta', 3000);
           }
         });
       });
     }
 
     function saveCardToVaultAndOpenBasecamp() {
-      if (!isUserLoggedIn()) {
-        alert('보관함 저장은 로그인 후 이용하실 수 있습니다.');
-        openLoginModal();
-        return;
-      }
-
       const spotInput = document.getElementById('shareCardSpotInput');
       const memoInput = document.getElementById('shareCardMemoInput');
       const spotVal = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '전국 낭만 박지';
@@ -2270,25 +2571,14 @@
         const timeStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
         const totalGrams = (currentShareItems || []).reduce((sum, g) => sum + Number(g.weight || 0), 0);
         currentShareRecord = {
-          id: 'pack_' + Date.now(),
-          timestamp: Date.now(),
-          date: timeStr,
-          weightKg: (totalGrams / 1000).toFixed(2),
-          weightGrams: totalGrams,
-          itemCount: (currentShareItems || []).length,
-          items: (currentShareItems || []).map(g => `${g.name} (${g.weight}g)`),
-          spot: spotVal,
-          memo: memoVal,
-          photo: currentSharePhoto,
-          textColor: currentPhotoTextColor,
-          ratio: currentCardRatio
+          id: 'pack_' + Date.now(), timestamp: Date.now(), date: timeStr,
+          weightKg: (totalGrams / 1000).toFixed(2), weightGrams: totalGrams,
+          itemCount: (currentShareItems || []).length, items: (currentShareItems || []).map(g => `${g.name} (${g.weight}g)`),
+          spot: spotVal, memo: memoVal, photo: currentSharePhoto, textColor: currentPhotoTextColor, ratio: currentCardRatio
         };
       } else {
-        currentShareRecord.spot = spotVal;
-        currentShareRecord.memo = memoVal;
-        currentShareRecord.photo = currentSharePhoto;
-        currentShareRecord.textColor = currentPhotoTextColor;
-        currentShareRecord.ratio = currentCardRatio;
+        currentShareRecord.spot = spotVal; currentShareRecord.memo = memoVal;
+        currentShareRecord.photo = currentSharePhoto; currentShareRecord.textColor = currentPhotoTextColor; currentShareRecord.ratio = currentCardRatio;
       }
 
       try {
@@ -2296,27 +2586,59 @@
         const existingIdx = packingHistoryList.findIndex(h => h.id === currentShareRecord.id);
         if (existingIdx !== -1) packingHistoryList[existingIdx] = currentShareRecord;
         else packingHistoryList.unshift(currentShareRecord);
-        if (packingHistoryList.length > 15) packingHistoryList = packingHistoryList.slice(0, 15);
+        if (packingHistoryList.length > 20) packingHistoryList = packingHistoryList.slice(0, 20);
         localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
         syncUserDataToCloud();
       } catch (err) {
         currentShareRecord.photo = '';
         localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
       }
-
-      closePackShareModal();
       triggerHaptic(20);
-      alert('내 낭만보관함에 성공적으로 저장되었습니다!');
-      openMyInfoModal('history');
+      showToast('내 낭만보관함에 성공적으로 저장되었습니다!', 'vault');
+    }
+
+    // 🗂️ 보관함 캘린더 엔진
+    let calViewYear = new Date().getFullYear();
+    let calViewMonth = new Date().getMonth();
+    let calSelectedDate = null;
+    let calQuickFilter = 'all';
+
+    function changePackingCalMonth(delta) {
+      calViewMonth += delta;
+      if (calViewMonth < 0) { calViewMonth = 11; calViewYear--; }
+      else if (calViewMonth > 11) { calViewMonth = 0; calViewYear++; }
+      calSelectedDate = null;
+      renderPackingHistoryList();
+      triggerHaptic(10);
+    }
+
+    function selectPackingCalDate(dateStr) {
+      calSelectedDate = (calSelectedDate === dateStr) ? null : dateStr;
+      renderPackingHistoryList();
+      triggerHaptic(10);
+    }
+
+    function setPackingQuickFilter(filterKey) {
+      calQuickFilter = filterKey;
+      renderPackingHistoryList();
+      triggerHaptic(10);
+    }
+
+    function normalizeDateToYMD(dateStr) {
+      if (!dateStr) return '';
+      const m = String(dateStr).match(/(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
+      return m ? `${m[1]}.${String(m[2]).padStart(2, '0')}.${String(m[3]).padStart(2, '0')}` : '';
     }
 
     function openMyInfoModal(initialTab = 'history') {
-      if (!isUserLoggedIn()) {
-        alert('내 낭만 보관함은 로그인 후 이용하실 수 있습니다.');
-        openLoginModal();
-        return;
+      const modal = document.getElementById('myInfoModal');
+      const content = modal ? modal.querySelector('.my-basecamp-content') : null;
+      if (content) {
+        content.style.height = '92vh'; content.style.maxHeight = '92vh';
+        content.style.borderRadius = '24px 24px 0 0';
+        content.style.padding = '12px 14px calc(20px + env(safe-area-inset-bottom, 0px)) 14px';
       }
-      document.getElementById('myInfoModal').style.display = 'flex';
+      if (modal) modal.style.display = 'flex';
       updateHeaderAuthUI();
       switchBasecampTab(initialTab);
       renderPackingHistoryList();
@@ -2324,10 +2646,7 @@
       renderBasecampMemos();
     }
 
-    function closeMyInfoModal() {
-      const modal = document.getElementById('myInfoModal');
-      if (modal) modal.style.display = 'none';
-    }
+    function closeMyInfoModal() { const modal = document.getElementById('myInfoModal'); if (modal) modal.style.display = 'none'; }
 
     function switchBasecampTab(tabKey) {
       document.querySelectorAll('.basecamp-tab-btn').forEach((b, idx) => {
@@ -2341,57 +2660,210 @@
     function renderPackingHistoryList() {
       const container = document.getElementById('packingHistoryContainer');
       if (!container) return;
-
+      container.style.maxHeight = 'none'; container.style.overflow = 'visible';
+      container.style.display = 'flex'; container.style.flexDirection = 'column'; container.style.gap = '6px';
       packingHistoryList = safeGetJSON('okbm_packing_history', []);
 
-      if (packingHistoryList.length === 0) {
-        container.innerHTML = '<div style="font-size:0.75rem; color:var(--text-muted); padding:16px 0; text-align:center;">저장된 패킹 기록이 없습니다.<br>홈 화면에서 [오늘의 배낭 무게는?]을 기록해보세요!</div>';
-        return;
-      }
+      const packDateMap = {};
+      packingHistoryList.forEach(h => {
+        const ymd = normalizeDateToYMD(h.date);
+        if (ymd) { if (!packDateMap[ymd]) packDateMap[ymd] = []; packDateMap[ymd].push(h); }
+      });
 
-      container.innerHTML = packingHistoryList.map((h, idx) => {
-        const spotName = h.spot || '전국 낭만 박지';
-        const photoThumb = h.photo ? `
-          <img src="${h.photo}" style="width:36px; height:36px; border-radius:4px; object-fit:cover; border:1px solid rgba(255,255,255,0.15);" />
-        ` : '';
-        return `
-          <div class="pack-history-card" style="cursor:pointer;" onclick="openHistoryRecordCard(${idx})">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:0.72rem; color:#94a3b8; font-family:var(--font-mono);">${h.date}</span>
-              <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-size:0.68rem; color:#38bdf8; font-weight:800;">기록지 보기 ➔</span>
-                <button type="button" style="background:none; border:none; color:#f43f5e; font-size:0.7rem; font-weight:800; cursor:pointer;" onclick="event.stopPropagation(); deletePackingHistoryItem('${h.id}');">삭제</button>
-              </div>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-              <div>
-                <div style="font-size:1.15rem; font-weight:900; color:#34d399; font-family:var(--font-en);">${h.weightKg} kg</div>
-                <div style="font-size:0.75rem; font-weight:800; color:#fff; max-width:230px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">📍 ${escapeHtml(spotName)}</div>
-              </div>
-              ${photoThumb}
-            </div>
+      const firstDayIndex = new Date(calViewYear, calViewMonth, 1).getDay();
+      const lastDate = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+      const monthPrefix = `${calViewYear}.${String(calViewMonth + 1).padStart(2, '0')}`;
+
+      let monthlyPackCount = 0;
+      Object.keys(packDateMap).forEach(k => { if (k.startsWith(monthPrefix)) monthlyPackCount += packDateMap[k].length; });
+
+      let daysHtml = '';
+      for (let i = 0; i < firstDayIndex; i++) daysHtml += `<div style="height:26px;"></div>`;
+
+      for (let d = 1; d <= lastDate; d++) {
+        const currentYmd = `${monthPrefix}.${String(d).padStart(2, '0')}`;
+        const hasPack = !!packDateMap[currentYmd];
+        const isSelected = (calSelectedDate === currentYmd);
+        const dayOfWeek = (firstDayIndex + d - 1) % 7;
+        let dayColor = (dayOfWeek === 0) ? '#f87171' : ((dayOfWeek === 6) ? '#38bdf8' : '#cbd5e1');
+        let bgStyle = isSelected ? 'background:rgba(56,189,248,0.3); border:1.5px solid #38bdf8;' : (hasPack ? 'background:rgba(52,211,153,0.16); border:1px solid rgba(52,211,153,0.4);' : 'background:rgba(255,255,255,0.02); border:1px solid transparent;');
+
+        daysHtml += `
+          <div onclick="selectPackingCalDate('${currentYmd}')" style="height:26px; border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; position:relative; ${bgStyle} transition:all 0.1s;">
+            <span style="font-size:0.68rem; font-weight:${hasPack ? '900' : '600'}; color:${dayColor}; font-family:'Space Grotesk', sans-serif;">${d}</span>
+            ${hasPack ? `<span style="width:3.5px; height:3.5px; border-radius:50%; background:#34d399; box-shadow:0 0 5px #34d399; position:absolute; bottom:2px;"></span>` : ''}
           </div>
         `;
-      }).join('');
+      }
+
+      const calendarWidgetHtml = `
+        <div style="background:#07090e; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:9px 11px; margin-bottom:2px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button type="button" onclick="changePackingCalMonth(-1)" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#fff; width:22px; height:22px; border-radius:50%; font-size:0.62rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">◀</button>
+              <span style="font-weight:900; font-size:0.84rem; color:#ffffff; font-family:'Space Grotesk', sans-serif;">${calViewYear}년 ${calViewMonth + 1}월</span>
+              <button type="button" onclick="changePackingCalMonth(1)" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#fff; width:22px; height:22px; border-radius:50%; font-size:0.62rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">▶</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:5px;">
+              <span style="font-size:0.62rem; color:#34d399; font-weight:800; background:rgba(52,211,153,0.15); border:1px solid rgba(52,211,153,0.35); padding:2px 7px; border-radius:10px;">이번 달 ${monthlyPackCount}회 힐링</span>
+              ${calSelectedDate ? `<button type="button" onclick="selectPackingCalDate(null)" style="background:none; border:none; color:#38bdf8; font-size:0.62rem; cursor:pointer; font-weight:800; text-decoration:underline;">전체보기 ↺</button>` : ''}
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.58rem; color:#64748b; font-weight:800; margin-bottom:3px;">
+            <span style="color:#f87171;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#38bdf8;">토</span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:1.5px;">${daysHtml}</div>
+        </div>
+      `;
+
+      const filterChipsHtml = `
+        <div style="display:flex; gap:4px; overflow-x:auto; padding:2px 0; margin-bottom:4px; scrollbar-width:none;">
+          <button type="button" onclick="setPackingQuickFilter('all')" style="background:${calQuickFilter === 'all' ? '#38bdf8' : 'rgba(255,255,255,0.05)'}; color:${calQuickFilter === 'all' ? '#000' : '#94a3b8'}; border:1px solid ${calQuickFilter === 'all' ? '#38bdf8' : 'rgba(255,255,255,0.12)'}; font-size:0.65rem; font-weight:800; padding:3px 8px; border-radius:14px; white-space:nowrap; cursor:pointer;">전체</button>
+          <button type="button" onclick="setPackingQuickFilter('photo')" style="background:${calQuickFilter === 'photo' ? '#38bdf8' : 'rgba(255,255,255,0.05)'}; color:${calQuickFilter === 'photo' ? '#000' : '#94a3b8'}; border:1px solid ${calQuickFilter === 'photo' ? '#38bdf8' : 'rgba(255,255,255,0.12)'}; font-size:0.65rem; font-weight:800; padding:3px 8px; border-radius:14px; white-space:nowrap; cursor:pointer;">📷 사진 기록</button>
+          <button type="button" onclick="setPackingQuickFilter('ul')" style="background:${calQuickFilter === 'ul' ? '#34d399' : 'rgba(255,255,255,0.05)'}; color:${calQuickFilter === 'ul' ? '#000' : '#94a3b8'}; border:1px solid ${calQuickFilter === 'ul' ? '#34d399' : 'rgba(255,255,255,0.12)'}; font-size:0.65rem; font-weight:800; padding:3px 8px; border-radius:14px; white-space:nowrap; cursor:pointer;">🟢 UL (&lt;5kg)</button>
+          <button type="button" onclick="setPackingQuickFilter('std')" style="background:${calQuickFilter === 'std' ? '#f59e0b' : 'rgba(255,255,255,0.05)'}; color:${calQuickFilter === 'std' ? '#000' : '#94a3b8'}; border:1px solid ${calQuickFilter === 'std' ? '#f59e0b' : 'rgba(255,255,255,0.12)'}; font-size:0.65rem; font-weight:800; padding:3px 8px; border-radius:14px; white-space:nowrap; cursor:pointer;">🟡 스탠다드 (5~8kg)</button>
+          <button type="button" onclick="setPackingQuickFilter('heavy')" style="background:${calQuickFilter === 'heavy' ? '#f43f5e' : 'rgba(255,255,255,0.05)'}; color:${calQuickFilter === 'heavy' ? '#000' : '#94a3b8'}; border:1px solid ${calQuickFilter === 'heavy' ? '#f43f5e' : 'rgba(255,255,255,0.12)'}; font-size:0.65rem; font-weight:800; padding:3px 8px; border-radius:14px; white-space:nowrap; cursor:pointer;">🔴 헤비 (&gt;8kg)</button>
+        </div>
+      `;
+
+      let filteredList = packingHistoryList;
+      if (calSelectedDate) filteredList = filteredList.filter(h => normalizeDateToYMD(h.date) === calSelectedDate);
+      if (calQuickFilter === 'photo') filteredList = filteredList.filter(h => !!h.photo);
+      else if (calQuickFilter === 'ul') filteredList = filteredList.filter(h => parseFloat(h.weightKg || 0) < 5.0);
+      else if (calQuickFilter === 'std') filteredList = filteredList.filter(h => { const w = parseFloat(h.weightKg || 0); return w >= 5.0 && w <= 8.0; });
+      else if (calQuickFilter === 'heavy') filteredList = filteredList.filter(h => parseFloat(h.weightKg || 0) > 8.0);
+
+      let cardsHtml = '';
+      if (filteredList.length === 0) {
+        cardsHtml = `<div style="font-size:0.75rem; color:#64748b; padding:20px 0; text-align:center; background:rgba(255,255,255,0.02); border-radius:10px;">${calSelectedDate ? `[${calSelectedDate}]에 해당하는 패킹 기록이 없습니다.` : '저장된 패킹 기록이 없습니다.'}</div>`;
+      } else {
+        cardsHtml = filteredList.map(h => {
+          const originalIndex = packingHistoryList.findIndex(item => item.id === h.id);
+          const spotName = h.spot || '전국 낭만 박지';
+          const itemCount = (h.items && Array.isArray(h.items)) ? h.items.length : (h.itemCount || 0);
+          const weightNum = parseFloat(h.weightKg || 0);
+          let badgeLabel = 'UL 초경량', badgeBg = 'rgba(52, 211, 153, 0.16)', badgeColor = '#34d399', weightTextColor = '#34d399';
+
+          if (weightNum >= 14.5) { badgeLabel = '헤비'; badgeBg = 'rgba(244, 63, 94, 0.16)'; badgeColor = '#fb7185'; weightTextColor = '#fb7185'; }
+          else if (weightNum > 6.5) { badgeLabel = '보통'; badgeBg = 'rgba(245, 158, 11, 0.16)'; badgeColor = '#fde047'; weightTextColor = '#fde047'; }
+
+          const photoThumb = h.photo ? `<img src="${h.photo}" style="width:36px; height:36px; border-radius:6px; object-fit:cover; border:1px solid rgba(255,255,255,0.15); flex-shrink:0;" />` : '';
+
+          return `
+            <div class="swipe-item-container" style="position:relative; overflow:hidden; border-radius:10px; margin-bottom:4px; background:#dc2626; touch-action:pan-y;">
+              <div class="swipe-delete-btn" onclick="deletePackingHistoryItem('${h.id}')" style="position:absolute; right:0; top:0; bottom:0; width:72px; background:linear-gradient(135deg, #ef4444, #b91c1c); color:#ffffff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:0.68rem; font-weight:800; cursor:pointer; z-index:1;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" style="width:15px; height:15px;"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
+                <span>삭제</span>
+              </div>
+              <div class="swipe-front-card" data-idx="${originalIndex}" style="background:#090d14; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; position:relative; z-index:2; transform:translateX(0px); transition:transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); cursor:pointer; box-sizing:border-box;">
+                <div style="flex:1; min-width:0; padding-right:8px;">
+                  <div style="font-size:0.78rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:3px;">
+                    ${SVG_ICONS.pin}<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(spotName)}</span>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:5px; font-size:0.64rem; color:#94a3b8; margin-top:2px; font-family:'JetBrains Mono', monospace;">
+                    <span>${h.date ? h.date.slice(0, 16) : ''}</span>
+                    <span style="color:#475569;">·</span>
+                    <span style="color:#cbd5e1; font-family:'Pretendard Variable', sans-serif; font-weight:700;">장비 ${itemCount}개</span>
+                  </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                  <div style="text-align:right;">
+                    <div style="font-size:1.1rem; font-weight:900; color:${weightTextColor}; font-family:'Space Grotesk', sans-serif; line-height:1;">
+                      ${weightNum.toFixed(2)}<span style="font-size:0.65rem; margin-left:1px; color:#cbd5e1;">kg</span>
+                    </div>
+                    <div style="font-size:0.56rem; font-weight:800; color:${badgeColor}; background:${badgeBg}; padding:1px 5px; border-radius:4px; display:inline-block; margin-top:2px;">
+                      ${badgeLabel}
+                    </div>
+                  </div>
+                  ${photoThumb}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      container.innerHTML = `
+        <div style="width:32px; height:4px; border-radius:2px; background:rgba(255,255,255,0.2); margin:0 auto 6px auto;"></div>
+        ${calendarWidgetHtml}
+        ${filterChipsHtml}
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; margin-bottom:4px; padding:0 2px;">
+          <span style="font-size:0.72rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:4px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" style="width:13px; height:13px;"><rect width="18" height="18" x="3" y="3" rx="2"/><line x1="3" x2="21" y1="9" y2="9"/></svg>
+            <span>${calSelectedDate ? `[${calSelectedDate}] 힐링 기록` : '패킹 기록 목록'} (${filteredList.length}개)</span>
+          </span>
+          <span style="font-size:0.6rem; color:#64748b;">← 밀어서 삭제</span>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:2px; max-height:calc(92vh - 350px); overflow-y:auto; padding-top:2px;">
+          ${cardsHtml}
+        </div>
+      `;
+
+      attachSwipeToDeleteEvents();
+    }
+
+    function attachSwipeToDeleteEvents() {
+      const containers = document.querySelectorAll('.swipe-item-container');
+      containers.forEach(container => {
+        const card = container.querySelector('.swipe-front-card');
+        if (!card) return;
+        let startX = 0, startY = 0, startTime = 0, isSwiping = false, isScrollingVertical = false, isOpen = false;
+
+        card.addEventListener('touchstart', e => {
+          startX = e.touches[0].clientX; startY = e.touches[0].clientY; startTime = Date.now();
+          isSwiping = false; isScrollingVertical = false; card.style.transition = 'none';
+        }, { passive: true });
+
+        card.addEventListener('touchmove', e => {
+          const diffX = e.touches[0].clientX - startX; const diffY = e.touches[0].clientY - startY;
+          const absX = Math.abs(diffX); const absY = Math.abs(diffY);
+          if (!isSwiping && absY > 7 && absY > absX) { isScrollingVertical = true; return; }
+          if (!isScrollingVertical && absX > 10 && absX > absY) isSwiping = true;
+          if (isSwiping) {
+            const moveX = isOpen ? Math.min(0, Math.max(-100, -72 + diffX)) : Math.min(0, Math.max(-100, diffX));
+            card.style.transform = `translateX(${moveX}px)`;
+          }
+        }, { passive: true });
+
+        card.addEventListener('touchend', e => {
+          card.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
+          const diffX = e.changedTouches[0].clientX - startX; const diffY = e.changedTouches[0].clientY - startY;
+          const totalMoved = Math.hypot(diffX, diffY); const touchDuration = Date.now() - startTime;
+
+          if (isSwiping) {
+            if (!isOpen && diffX < -30) { card.style.transform = 'translateX(-72px)'; isOpen = true; triggerHaptic(10); }
+            else if (isOpen && diffX > 20) { card.style.transform = 'translateX(0px)'; isOpen = false; }
+            else { card.style.transform = isOpen ? 'translateX(-72px)' : 'translateX(0px)'; }
+          } else if (!isScrollingVertical) {
+            if (isOpen) { card.style.transform = 'translateX(0px)'; isOpen = false; }
+            else {
+              if (totalMoved < 6 && touchDuration < 400) {
+                const idx = parseInt(card.getAttribute('data-idx'), 10);
+                if (!isNaN(idx)) openHistoryRecordCard(idx);
+              }
+            }
+          }
+        }, { passive: true });
+      });
     }
 
     function openHistoryRecordCard(index) {
       packingHistoryList = safeGetJSON('okbm_packing_history', []);
       const record = packingHistoryList[index];
       if (!record) return;
-
-      closeMyInfoModal();
-      openPackShareModal(record, null, false);
+      openedFromBasecamp = true;
+      document.getElementById('myInfoModal').style.display = 'none';
+      openPackShareModal(record, null, !!record.photo);
       triggerHaptic(15);
     }
 
     function deletePackingHistoryItem(id) {
-      if (!confirm('이 패킹 기록을 삭제하시겠습니까?')) return;
       packingHistoryList = safeGetJSON('okbm_packing_history', []).filter(h => h.id !== id);
       localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
       renderPackingHistoryList();
       syncUserDataToCloud();
       triggerHaptic(15);
+      showToast('패킹 기록이 삭제되었습니다.', 'info');
     }
 
     function renderBasecampRecordData() {
@@ -2443,53 +2915,36 @@
       }).join('');
     }
 
-    // 🎯 럭키 박지 추천 함수
-    function displayLuckySpots(spots) {
-      spots.forEach((s, idx) => {
-        if (!s) return;
-        const nameEl = document.getElementById(`luckyName${idx}`);
-        if (nameEl) nameEl.innerText = s.name;
-        const elevEl = document.getElementById(`luckyElev${idx}`);
-        if (elevEl) elevEl.innerText = s.elevation ? `${s.elevation}m` : (s.region || '전망데크');
-        const descEl = document.getElementById(`luckyDesc${idx}`);
-        if (descEl) descEl.innerText = s.desc;
-        const tagEl = document.getElementById(`luckyTag${idx}`);
-        if (tagEl) tagEl.innerText = s.region || '추천박지';
-      });
+    // 🎯 럭키 박지 추천 & 실전 기상 듀얼 엔진
+    function displayLuckySpot(spot) {
+      if (!spot) return;
+      const nameEl = document.getElementById('luckyName');
+      const elevEl = document.getElementById('luckyElev');
+      const descEl = document.getElementById('luckyDesc');
+      const tagEl = document.getElementById('luckyTag');
+      if (nameEl) nameEl.innerText = spot.name;
+      if (elevEl) elevEl.innerText = spot.elevation ? `${spot.elevation}m` : '전망';
+      if (descEl) descEl.innerText = spot.desc || '자연 속에서 즐기는 조용한 하룻밤.';
+      if (tagEl) tagEl.innerText = spot.region || '전국';
     }
 
-    function goToLuckySpot(idx) {
-      const spot = currentLuckySpots[idx];
-      if (spot && spot.name) location.href = `map.html?spot=${encodeURIComponent(spot.name)}`;
+    function goToLuckySpot() {
+      if (currentLuckySpot && currentLuckySpot.name) location.href = `map.html?spot=${encodeURIComponent(currentLuckySpot.name)}`;
+      else location.href = 'map.html';
     }
 
     function rollLuckySpot() {
-      if (registeredSpots.length === 0) return;
-      const btn = document.getElementById('btnRollDice');
-      if (btn) btn.style.opacity = '0.5';
-      setTimeout(() => {
-        if (btn) btn.style.opacity = '1';
-        const shuffled = [...registeredSpots].sort(() => 0.5 - Math.random());
-        currentLuckySpots = shuffled.slice(0, 3);
-        displayLuckySpots(currentLuckySpots);
-      }, 200);
+      if (!registeredSpots || registeredSpots.length === 0) return;
+      currentLuckySpot = registeredSpots[Math.floor(Math.random() * registeredSpots.length)];
+      displayLuckySpot(currentLuckySpot);
+      triggerHaptic(15);
     }
 
-    function setupMobileSliderDots() {
-      const slider = document.getElementById('luckyGridContainer');
-      const dots = document.querySelectorAll('.dot-item');
-      if (!slider) return;
-      slider.addEventListener('scroll', () => {
-        const page = Math.round(slider.scrollLeft / slider.offsetWidth);
-        dots.forEach((d, i) => d.classList.toggle('active', i === page));
-      }, { passive: true });
-    }
-
-    // 4. 설문 & 박지톡
+    // 설문 & 실시간 박지톡
     const POLL_OPTIONS = [
       { id: 'opt1', text: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:12px; height:12px; color:#10b981; margin-right:4px;"><polygon points="2 20 8.5 7 15 17 22 20 2 20" fill="currentColor"/></svg> 높은 산 정상', count: 48 },
       { id: 'opt2', text: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:12px; height:12px; color:#38bdf8; margin-right:4px;"><path d="M2 17c3 0 3-2 6-2s3 2 6 2 3-2 6-2M2 20c3 0 3-2 6-2s3 2 6 2 3-2 6-2" stroke="currentColor" stroke-width="2" fill="none"/></svg> 바다 / 오션뷰', count: 35 },
-      { id: 'opt3', text: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:12px; height:12px; color:#34d399; margin-right:4px;"><path d="M12 2L4 18h16L12 2z" fill="currentColor"/></svg> 조용한 숲속', count: 29 },
+      { id: 'opt3', text: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:12px; height:12px; color:#34d399;"><path d="M12 2L4 18h16L12 2z" fill="currentColor"/></svg> 조용한 숲속', count: 29 },
       { id: 'opt4', text: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:12px; height:12px; color:#f59e0b; margin-right:4px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="currentColor"/></svg> 이번 주는 휴식', count: 16 }
     ];
 
@@ -2560,7 +3015,7 @@
       const nick = (profile && profile.nickname) ? profile.nickname : (nickInput.value.trim() || '익명');
       const userId = (profile && profile.id) ? profile.id : 'guest';
       const msg = msgInput.value.trim();
-      if (!msg) return alert('메시지를 입력해주세요.');
+      if (!msg) return showToast('현장 상황 한 줄을 입력해주세요.', 'warn');
 
       const newTalk = { nick, msg };
       talkList.unshift(newTalk);
@@ -2568,40 +3023,63 @@
       msgInput.value = '';
       renderTalkList();
       triggerHaptic(15);
+      showToast('실시간 박지톡이 등록되었습니다!', 'success');
 
       fetch(GAS_API_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'ADD_TALK', userId: userId, nickname: nick, message: msg })
+        method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'ADD_TALK', userId, nickname: nick, message: msg })
       }).catch(() => {});
     }
 
-    async function loadGearDbFromGoogleSheet() {
-      if (!GOOGLE_SHEET_CONFIG_GID) return;
-      const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_CONFIG_GID}&_t=${Date.now()}`;
-      try {
-        const res = await fetch(url);
-        if (!res.ok) return;
-        const csvText = await res.text();
-        Papa.parse(csvText, {
-          header: true, skipEmptyLines: true,
-          complete: function(results) {
-            if (results.data && results.data.length > 0) {
-              results.data.forEach(row => {
-                const catId = row.category_id || row.category;
-                const name = row.item_name || row.name;
-                const weight = parseInt(row.weight_g || row.weight, 10);
-                const targetCat = CATEGORIES.find(c => c.id === catId);
-                if (targetCat && name && !isNaN(weight)) {
-                  if (!targetCat.db.some(g => g.name === name)) targetCat.db.push({ name, weight });
-                }
+   async function loadGearDbFromGoogleSheet() {
+  if (!GOOGLE_SHEET_GEAR_GID) return;
+  const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_GEAR_GID}&_t=${Date.now()}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const csvText = await res.text();
+    Papa.parse(csvText, {
+      header: true, skipEmptyLines: true,
+      complete: function(results) {
+        if (results.data && results.data.length > 0) {
+          const sheetGearsByCategory = {};
+          
+          results.data.forEach(row => {
+            const catId = (row.category_id || row.category || '').trim();
+            const name = (row.item_name || row.name || '').trim();
+            const weight = parseInt(row.weight_g || row.weight, 10);
+            const brand = (row.brand || '').trim();
+            const weightType = (row.weight_type || '').trim();
+            const specs = (row.specs_detail || '').trim();
+            const verified = (row.verified === 'TRUE' || row.verified === true);
+
+            if (catId && name && !isNaN(weight)) {
+              if (!sheetGearsByCategory[catId]) sheetGearsByCategory[catId] = [];
+              sheetGearsByCategory[catId].push({
+                id: row.gear_id || ('gear_' + Date.now()),
+                name: name,
+                weight: weight,
+                brand: brand,
+                weightType: weightType,
+                specs: specs,
+                verified: verified
               });
             }
-          }
-        });
-      } catch (e) {}
-    }
+          });
+
+          // 구글 시트 gears 탭 데이터로 카테고리 DB 100% 동기화
+          CATEGORIES.forEach(cat => {
+            if (sheetGearsByCategory[cat.id] && sheetGearsByCategory[cat.id].length > 0) {
+              cat.db = sheetGearsByCategory[cat.id];
+            }
+          });
+          
+          renderCategorySlots();
+        }
+      }
+    });
+  } catch (e) {}
+}
 
     async function loadPortalSpotData() {
       const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_MAIN_GID}&_t=${Date.now()}`;
@@ -2623,13 +3101,8 @@
               })).filter(s => s.name.trim() !== '');
 
               if (registeredSpots.length > 0) {
-                currentLuckySpots = registeredSpots.slice(0, 3);
-                displayLuckySpots(currentLuckySpots);
-
-                const datalist = document.getElementById('spotDataList');
-                if (datalist) {
-                  datalist.innerHTML = registeredSpots.slice(0, 50).map(s => `<option value="${escapeHtml(s.fullName || s.name)}"></option>`).join('');
-                }
+                currentLuckySpot = registeredSpots[0];
+                displayLuckySpot(currentLuckySpot);
               }
             }
           }
@@ -2644,12 +3117,13 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) Kakao.init(KAKAO_APP_KEY);
+      initStarlightEngines();
+      checkIncomingSharedSpot();
       trackDailyVisit();
       updateHeaderAuthUI();
       renderCategorySlots();
       renderPollUI();
       renderTalkList();
-      setupMobileSliderDots();
       loadGearDbFromGoogleSheet();
       loadPortalSpotData();
       fetchCloudTalks();
