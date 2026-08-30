@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko" class="notranslate" data-theme="light">
   <head>
@@ -33,11 +32,11 @@
 
     <style>
       @font-face {
-  font-family: 'Arita-buri-SemiBold';
-  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/Arita-buri-SemiBold.woff') format('woff');
-}
+        font-family: 'Arita-buri-SemiBold';
+        src: url('https://cdn.jsdelivr.net/gh/projectnoonfonts_one@1.0/Arita-buri-SemiBold.woff') format('woff');
+      }
 
-      /* 🌙 1. 다크 모드 테마 변수 (기본값) */
+      /* 🌙 1. 다크 모드 테마 변수 */
       :root, html[data-theme="dark"] {
         --bg-base: #010204;
         --bg-surface: #07090e;
@@ -68,7 +67,6 @@
         --modal-bg: #090c13;
         --modal-overlay: rgba(3, 5, 8, 0.92);
 
-        /* ☁️ 다크 모드용 로그인 버튼 (딥 티타늄/네온 블루 글래스) */
         --auth-btn-bg: rgba(56, 189, 248, 0.12);
         --auth-btn-border: rgba(56, 189, 248, 0.4);
         --auth-btn-color: #38bdf8;
@@ -102,7 +100,6 @@
         --accent-rose: #e11d48;
         --accent-purple: #9333ea;
 
-        /* ☁️ 헤더 2번: 맑은 세룰리안 스카이 */
         --header-bg: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 60%, #93c5fd 100%);
         --search-bar-bg: rgba(255, 255, 255, 0.92);
         --search-bar-border: #ffffff;
@@ -196,7 +193,7 @@
       }
 
       .header-top-row {
-        height: 42px !important;
+        height: 52px !important;
         min-height: 52px !important;
         display: flex !important;
         align-items: center !important;
@@ -208,17 +205,6 @@
         box-sizing: border-box !important;
       }
 
-      .brand-line {
-        height: 42px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: flex-start !important;
-        gap: 7px !important;
-        text-decoration: none !important;
-        transition: transform 0.15s ease !important;
-        margin: 0 !important;
-        flex-shrink: 0 !important;
-      }
       .brand-line {
         height: 52px !important;
         display: inline-flex !important;
@@ -232,7 +218,6 @@
       }
       .brand-line:active { transform: scale(0.98); }
 
-      /* 로고 34px 박스 & 30px SVG 크기 강제 고정 */
       .brand-sym-box {
         width: 34px !important;
         height: 34px !important;
@@ -250,7 +235,6 @@
         display: block !important; 
       }
 
-      /* ☁️ 라이트 모드 로고 뒤 화이트 몽글 구름 광채 */
       html[data-theme="light"] .brand-sym-box::before {
         content: '' !important;
         position: absolute !important;
@@ -266,7 +250,6 @@
         pointer-events: none !important;
       }
 
-      /* 🌙 다크 모드 로고 뒤 앰비언트 글로우 */
       html[data-theme="dark"] .brand-sym-box::before {
         content: '';
         position: absolute;
@@ -278,7 +261,6 @@
         filter: blur(4px);
       }
 
-      /* 🏷️ 메인 타이틀: 완벽한 수직 중앙 정렬 */
       .brand-title {
         font-family: 'SUIT', sans-serif !important;
         font-size: 1.12rem !important;
@@ -288,14 +270,13 @@
         display: inline-flex !important;
         align-items: center !important;
         letter-spacing: -0.02em !important;
-        transform: translateY(0.5px) !important; /* 🎯 수직 정중앙 미세 보정 */
+        transform: translateY(0.5px) !important;
       }
       html[data-theme="light"] .brand-title {
         color: #075985 !important;
         text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9) !important;
       }
 
-      /* 🔸 연결 점(Dot): 수직 정중앙 정렬 */
       .brand-dot {
         width: 3.5px !important;
         height: 3.5px !important;
@@ -305,25 +286,24 @@
         display: inline-block !important;
         flex-shrink: 0 !important;
         margin: 0 1px !important;
-        transform: translateY(1px) !important; /* 🎯 수직 정중앙 보정 */
+        transform: translateY(1px) !important;
       }
       html[data-theme="light"] .brand-dot {
         background: #0369a1 !important;
         box-shadow: 0 0 6px #0369a1 !important;
       }
 
-      /* 🌿 서브타이틀: 다크모드 밝은 그린(#6ee7b7) + 수직 정중앙 완벽 배치 */
       .brand-en {
         font-family: 'Arita-buri-SemiBold', serif !important;
         font-size: 0.84rem !important;
         font-weight: normal !important;
-        color: #6ee7b7 !important; /* 🌿 다크모드: 화사하고 밝은 에메랄드 그린 */
+        color: #6ee7b7 !important;
         letter-spacing: -0.02em !important;
         line-height: 1 !important;
         display: inline-flex !important;
         align-items: center !important;
         white-space: nowrap !important;
-        transform: translateY(1.2px) !important; /* 🎯 들려있던 세리프 폰트를 정중앙으로 하향 보정 */
+        transform: translateY(1.2px) !important;
         text-shadow: 0 0 10px rgba(110, 231, 183, 0.35) !important;
       }
       html[data-theme="light"] .brand-en {
@@ -350,7 +330,6 @@
         flex-shrink: 0 !important;
       }
 
-      /* ☁️ 다크 모드 로그인 버튼 */
       html[data-theme="dark"] .header-auth-btn { 
         height: 28px !important;
         line-height: 28px !important;
@@ -376,7 +355,6 @@
         color: var(--auth-btn-logged-color) !important; 
       }
 
-      /* ☁️ 라이트 모드 1번 확정: 25px 화이트 솜구름 로그인 버튼 */
       html[data-theme="light"] .header-auth-btn {
         position: relative !important;
         overflow: visible !important;
@@ -400,37 +378,6 @@
         transition: all 0.2s ease !important;
         white-space: nowrap !important;
       }
-      html[data-theme="light"] .header-auth-btn::before {
-        content: '' !important;
-        position: absolute !important;
-        width: 28px !important;
-        height: 9px !important;
-        top: -3.4px !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
-        border-radius: 50% 50% 0 0 / 100% 100% 0 0 !important;
-        z-index: -1 !important;
-        box-shadow: 0 -2px 5px rgba(2, 132, 199, 0.1), inset 0 1.5px 1.5px #ffffff !important;
-      }
-      html[data-theme="light"] .header-auth-btn::after {
-        content: '' !important;
-        display: block !important;
-        position: absolute !important;
-        width: 22px !important;
-        height: 6px !important;
-        bottom: -1.5px !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%) !important;
-        border-radius: 0 0 50% 50% / 0 0 100% 100% !important;
-        z-index: -1 !important;
-        box-shadow: 0 3px 6px rgba(2, 132, 199, 0.14), inset 0 -1px 1px rgba(186, 230, 253, 0.5) !important;
-      }
-      html[data-theme="light"] .header-auth-btn > * {
-        position: relative !important;
-        z-index: 3 !important;
-      }
       html[data-theme="light"] .header-auth-btn.logged-in {
         color: #065f46 !important;
       }
@@ -438,7 +385,7 @@
         color: #10b981 !important;
       }
 
-      /* 🪵 4번 픽스: 하단독 & HUD 타워 내추럴 카키 토프 흙색 파스텔톤 */
+      /* 🪵 하단독 & HUD 타워 카키 토프 톤 */
       html[data-theme="light"] .mobile-bottom-dock {
         background: #f1ebd9 !important;
         border-top: 1.5px solid rgba(199, 187, 163, 0.75) !important;
@@ -450,53 +397,19 @@
       html[data-theme="light"] .dock-item.active {
         color: #826e47 !important;
       }
-      html[data-theme="light"] .dock-item:active {
-        background: #e0d7c0 !important;
-      }
 
-      /* 좌측 필터 타워 */
-      html[data-theme="light"] .left-filter-tower-box {
-        background: #f1ebd9 !important;
-        border: 1.5px solid rgba(199, 187, 163, 0.75) !important;
-        box-shadow: 0 8px 24px rgba(100, 85, 60, 0.15) !important;
-      }
-      html[data-theme="light"] .tower-toggle-btn {
-        color: #443a2c !important;
-        border-bottom: 1px solid rgba(199, 187, 163, 0.75) !important;
-      }
-      html[data-theme="light"] .tower-toggle-btn:hover,
-      html[data-theme="light"] .tower-toggle-btn:active {
-        background: #e0d7c0 !important;
-      }
-
-      /* 우측 줌/내위치 타워 */
-      html[data-theme="light"] .right-hud-tower-box {
-        background: #f1ebd9 !important;
-        border: 1.5px solid rgba(199, 187, 163, 0.75) !important;
-        box-shadow: 0 8px 24px rgba(100, 85, 60, 0.15) !important;
-      }
-      html[data-theme="light"] .tower-btn {
-        color: #443a2c !important;
-        border-bottom: 1px solid rgba(199, 187, 163, 0.75) !important;
-      }
-      html[data-theme="light"] .tower-btn:hover,
-      html[data-theme="light"] .tower-btn:active {
-        background: #e0d7c0 !important;
-      }
-
-      /* 우측 상단 레이어/테마 타워 */
+      html[data-theme="light"] .left-filter-tower-box,
+      html[data-theme="light"] .right-hud-tower-box,
       html[data-theme="light"] .top-hud-tower-box {
         background: #f1ebd9 !important;
         border: 1.5px solid rgba(199, 187, 163, 0.75) !important;
-        box-shadow: 0 6px 20px rgba(100, 85, 60, 0.15) !important;
+        box-shadow: 0 8px 24px rgba(100, 85, 60, 0.15) !important;
       }
+      html[data-theme="light"] .tower-toggle-btn,
+      html[data-theme="light"] .tower-btn,
       html[data-theme="light"] .top-hud-btn {
         color: #443a2c !important;
         border-bottom: 1px solid rgba(199, 187, 163, 0.75) !important;
-      }
-      html[data-theme="light"] .top-hud-btn:hover,
-      html[data-theme="light"] .top-hud-btn:active {
-        background: #e0d7c0 !important;
       }
 
       .header-btn {
@@ -515,12 +428,8 @@
         gap: 3px !important;
         white-space: nowrap !important;
       }
-      .header-btn:hover {
-        background: var(--bg-card-hover) !important;
-        color: var(--text-primary) !important;
-      }
 
-      /* 🔍 2열 초밀착 풀와이드 슬림 검색바 */
+      /* 🔍 슬림 검색바 */
       .apple-search-box {
         position: relative !important;
         width: 100% !important;
@@ -544,15 +453,6 @@
         border-color: var(--accent-blue) !important;
       }
       
-      .apple-search-bar .icon-svg {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        width: 14px !important;
-        height: 14px !important;
-        flex-shrink: 0;
-      }
-
       .apple-search-input {
         flex: 1;
         height: 100%;
@@ -640,7 +540,7 @@
       .top-spot-city { font-size: 0.72rem; color: var(--accent-blue); background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px; }
       .top-spot-views { font-size: 0.74rem; color: var(--text-muted); }
 
-      /* 🗺️ 메인 레이아웃 및 사이드바 */
+      /* 🗺️ 사이드바 & 슬라이딩 드로어 */
       .container { display: flex; width: 100%; flex: 1; position: relative; overflow: hidden; }
       .sidebar { width: 390px; max-width: 100%; height: 100%; background-color: var(--bg-surface); border-right: 1px solid var(--border-titanium); display: flex; flex-direction: column; flex-shrink: 0; z-index: var(--z-sidebar); color: var(--text-primary); position: relative; box-shadow: 4px 0 20px rgba(0,0,0,0.15); }
 
@@ -740,7 +640,7 @@
 
       #map { flex: 1; width: 100%; height: 100%; position: relative; background: var(--bg-base); touch-action: pan-x pan-y; }
 
-      /* 🧭 HUD 타워 시스템 (우측 상단 2열 타워: 1열 위성/지도 + 2열 테마 전환) */
+      /* 🧭 HUD 타워 시스템 */
       .top-right-hud-group { 
         position: absolute; 
         top: 8px; 
@@ -976,7 +876,7 @@
       .dock-item.active { color: var(--accent-blue); } 
       .dock-item svg { width: 19px; height: 19px; fill: currentColor; }
 
-      .app-toast { position: fixed; top: 68px; left: 50%; transform: translateX(-50%) translateY(-15px); background: var(--bg-surface); border: 1.5px solid var(--border-titanium); color: var(--text-primary); padding: 8px 18px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; z-index: var(--z-toast); box-shadow: 0 8px 24px rgba(0,0,0,0.5); pointer-events: none; opacity: 0; transition: all 0.22s ease; display: inline-flex; align-items: center; gap: 6px; }
+      .app-toast { position: fixed; top: 68px; left: 50%; transform: translateX(-50%) translateY(-15px); background: var(--bg-surface); border: 1.5px solid var(--border-titanium); color: var(--text-primary); padding: 8px 18px; border-radius: 20px; font-size: 0.82rem; font-weight: 700;  box-shadow: 0 8px 24px rgba(0,0,0,0.5); pointer-events: none; opacity: 0; transition: all 0.22s ease; display: inline-flex; align-items: center; gap: 6px; }
       .app-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
       body.clean-map-mode .clean-hide { display: none !important; }
 
@@ -1035,7 +935,6 @@
         .sidebar.collapsed { transform: translateY(-130%) !important; }
         .mobile-bottom-dock { display: flex !important; }
       }
-      
     </style>
   </head>
   <body>
@@ -1047,40 +946,29 @@
         <a href="index.html" class="brand-line" onclick="triggerHaptic('light');" title="홈으로 이동">
           <div class="brand-sym-box">
             <svg viewBox="0 0 32 32" fill="none" style="overflow: visible;">
-              <!-- 🌅 [은은한 픽스] 딱딱한 테두리를 없애고 부드럽게 번지는 3단 소프트 노을빛 -->
               <circle cx="21" cy="6" r="14" fill="rgba(251,146,60,0.15)"/>
               <circle cx="21" cy="6" r="9" fill="rgba(234,88,12,0.28)"/>
               <circle cx="21" cy="6" r="5" fill="rgba(244,63,94,0.42)"/>
-              
-              <!-- 왼쪽 핑크 산 능선 및 노드 -->
               <circle cx="2" cy="24" r="1.8" fill="#fda4af"/>
               <circle cx="9" cy="12" r="2.2" fill="#fda4af"/>
               <circle cx="14" cy="16" r="1.8" fill="#fda4af"/>
               <circle cx="13" cy="24" r="1.8" fill="#fda4af"/>
               <path d="M2 24L9 12H12.5L14 16L10 16M10 16L13 24" stroke="#fda4af" stroke-width="1.8" stroke-linecap="round"/>
-              
-              <!-- 📍 오른쪽 메인 9번 선셋 주황 알 코어 (자연스러운 순백 림) -->
               <circle cx="21" cy="6" r="2.8" fill="#ea580c" stroke="#ffffff" stroke-width="0.6"/>
               <circle cx="27" cy="13" r="2.2" fill="#e2e8f0"/>
               <circle cx="30" cy="24" r="2.4" fill="#e2e8f0"/>
-              
-              <!-- 🏔️ 얇고 은은하게 정돈된 순백의 큰 'R'자 -->
               <path d="M13 24L21 6H25L27 13L22 13M22 13L30 24" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" style="filter: drop-shadow(0 0 1px rgba(3, 105, 161, 0.6)) drop-shadow(0 1px 2px rgba(7, 89, 133, 0.25));"/>
-              
-              <!-- ✨ 태양 중심 은은한 화이트 스파크 -->
               <circle cx="21" cy="6" r="1.0" fill="#ffffff"/>
             </svg>
           </div>
-          <!-- 🎯 낭만루트 텍스트 복구 -->
           <span class="brand-title">낭만루트</span>
-          <span class="brand-dot"></s></span>
+          <span class="brand-dot"></span>
           <span class="brand-en">길 위에서 만나는 풍경</span>
         </a>
 
         <div class="header-right-actions">
           <span class="admin-status-badge pc-only" id="adminBadge">관리자 ON</span>
           
-          <!-- ☁️ 로그인 버튼 (1번 프리셋 구름 쉐입 완벽 고정) -->
           <button type="button" class="header-auth-btn" id="headerAuthBtn" onclick="handleAuthBtnClick()">
             <span id="headerAuthIcon" style="display:inline-flex; align-items:center; justify-content:center;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; margin-right:3px; display:inline-block; vertical-align:-1px;">
@@ -1098,7 +986,7 @@
         </div>
       </div>
 
-      <!-- 🔍 2열 초밀착 풀와이드 슬림 검색바 -->
+      <!-- 🔍 2열 슬림 검색바 -->
       <div class="apple-search-box">
         <div class="apple-search-bar">
           <span class="icon-svg" style="width:14px; height:14px; color:var(--text-muted);">
@@ -1164,16 +1052,14 @@
       <button type="button" class="floating-drawer-close-tab clean-hide" id="floatingDrawerCloseTab" onclick="closePcSlidingDrawer()" title="정보창 닫기">◀ 정보창 닫기</button>
       
       <main id="map">
-        <!-- 🧭 우측 상단 HUD 타워: 1열 위성/지도 모드 + 2열 테마 전환 (일반/다크) -->
+        <!-- 🧭 우측 상단 HUD 타워: 1열 위성/지도 모드 + 2열 테마 전환 -->
         <div class="top-right-hud-group clean-hide">
           <div class="top-hud-tower-box">
-            <!-- 1. 지도 타입 전환 (위성 / 지형도 / 일반) -->
             <button type="button" class="top-hud-btn" id="topRightLayerBtn" onclick="toggleMapTypeMode()" title="위성/일반/지형도 전환">
               <svg viewBox="0 0 24 24" class="ui-icon" style="width:15px; height:15px; margin:0;"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>
               <span style="font-size:0.55rem; font-weight:800;" id="towerMapTypeText">위성</span>
             </button>
             
-            <!-- 2. 테마 전환 (일반 라이트 ☀️ / 다크 🌙) -->
             <button type="button" class="top-hud-btn" id="topRightThemeBtn" onclick="toggleAppTheme()" title="일반(라이트)/다크 모드 전환">
               <span id="themeToggleIcon" style="display:inline-flex; align-items:center; justify-content:center;">
                 <svg viewBox="0 0 24 24" class="ui-icon" style="width:15px; height:15px; margin:0;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -1381,47 +1267,90 @@
         </div>
       </div>
     </div>
+       <script>
+        // 🧰 [공통 유틸 1순위 선언 - ReferenceError 100% 영구 방어]
+      function safeGetJSON(key, defaultVal) {
+        try {
+          var item = localStorage.getItem(key);
+          return item ? JSON.parse(item) : defaultVal;
+        } catch (e) {
+          return defaultVal;
+        }
+      }
 
-    <script>
-      const CURRENT_VERSION = "6.2ver Final Master";
-      const KAKAO_APP_KEY = "557f5de0f6391a2419bc5592e6a9c9c1";
-      const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
-      const PRIMARY_SHEET_GID = '0';
-      const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
+      function escapeHtml(text) {
+        if (text === null || text === undefined) return '';
+        return String(text)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function triggerHaptic(duration) {
+        if (typeof window !== 'undefined' && 'navigator' in window && typeof navigator.vibrate === 'function') {
+          try { navigator.vibrate(duration || 12); } catch (e) {}
+        }
+      }
+
+      function showToast(msg, duration) {
+        var t = document.getElementById('appToast');
+        if (!t) return;
+        t.innerHTML = msg;
+        t.classList.add('show');
+        clearTimeout(t._timer);
+        t._timer = setTimeout(function() { t.classList.remove('show'); }, duration || 2200);
+      }
+
+      // 🌐 [상수 및 환경 설정]
+      window.CURRENT_VERSION = "6.2ver Final Master";
+      window.KAKAO_APP_KEY = window.KAKAO_APP_KEY || "557f5de0f6391a2419bc5592e6a9c9c1";
+      window.GOOGLE_SHEET_ID = window.GOOGLE_SHEET_ID || '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
+      window.PRIMARY_SHEET_GID = window.PRIMARY_SHEET_GID || '0';
+      window.GAS_API_URL = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
       
-      const BLOCKED_SPOT_IDS = new Set(['183', '205', '208', '209', '210', '211']);
-      const NATIONWIDE_CENTER = { lat: 35.85, lng: 127.75 };
-      const NATIONWIDE_LEVEL = 13;
-      let map = null, geocoder = null, globalClusterer = null;
+      var BLOCKED_SPOT_IDS = new Set(['183', '205', '208', '209', '210', '211']);
+      var NATIONWIDE_CENTER = { lat: 35.85, lng: 127.75 };
+      var NATIONWIDE_LEVEL = 13;
+      var map = null, geocoder = null, globalClusterer = null;
 
-      // 🗺️ 지도 마커 / 오버레이 / UI 상태 전역 변수 (중복 선언 완전 제거)
-      let spotNativeMarkerMap = new Map();
-      let spotLabelOverlayMap = new Map();
-      let currentActiveSpot = null;
-      let isAdminMode = false;
-      let isPickingLocationMode = false;
-      let modalPendingData = { lat: 0, lng: 0, address: '' };
-      let modalMode = 'ADD';
-      let modalEditIndex = -1;
-      let tempPickedMarker = null;
-      let tempSearchMarker = null;
-      let userLocationOverlay = null;
-      let currentMapLayerState = 0;
-      let isSidebarCollapsed = true;
+      // 📦 [데이터 배열 안전 초기화]
+      var spots = safeGetJSON('okbm_spots_cache', []) || [];
+      var spotComments = safeGetJSON('okbm_comments', {}) || {};
+      var userBookmarks = new Set((safeGetJSON('okbm_bookmarks', []) || []).map(function(s) { return String(s).trim(); }));
+      var userVisited = new Set((safeGetJSON('okbm_visited', []) || []).map(function(s) { return String(s).trim(); }));
+      var userMemos = safeGetJSON('okbm_memos', {}) || {};
 
-      let currentMasterTab = 'REGION';
-      let currentRegionFilter = 'ALL';
-      let currentTerrainFilter = 'ALL';
-      let currentCourseFilter = 'ALL';
-      let currentMyFilter = 'ALL';
+      // 🗺️ 지도 마커 / 오버레이 / UI 상태 전역 변수
+      var spotNativeMarkerMap = new Map();
+      var spotLabelOverlayMap = new Map();
+      var currentActiveSpot = null;
+      var isAdminMode = false;
+      var isPickingLocationMode = false;
+      var modalPendingData = { lat: 0, lng: 0, address: '' };
+      var modalMode = 'ADD';
+      var modalEditIndex = -1;
+      var tempPickedMarker = null;
+      var tempSearchMarker = null;
+      var userLocationOverlay = null;
+      var currentMapLayerState = 0;
+      var isSidebarCollapsed = true;
 
-      let currentHudFilterDiff = 'ALL';
-      let currentHudFilterStatus = 'ALL';
-      let currentHudFilterTerrain = 'ALL';
+      var currentMasterTab = 'REGION';
+      var currentRegionFilter = 'ALL';
+      var currentTerrainFilter = 'ALL';
+      var currentCourseFilter = 'ALL';
+      var currentMyFilter = 'ALL';
 
-      let currentGpxPolyline = null;
-      let activeGpxSpotId = null;
-      let pendingUnlockSpotId = null;
+      var currentHudFilterDiff = 'ALL';
+      var currentHudFilterStatus = 'ALL';
+      var currentHudFilterTerrain = 'ALL';
+
+      var currentGpxPolyline = null;
+      var activeGpxSpotId = null;
+      var pendingUnlockSpotId = null;
+      
 
       // ✨ 28종 확정 100% SVG 벡터 라이브러리
       const ICONS = {
@@ -1481,45 +1410,9 @@
         userProfile: JSON.parse(localStorage.getItem('user_profile')) || null
       };
 
-      function updateHeaderAuthUI() {
-        const btn = document.getElementById('headerAuthBtn');
-        const text = document.getElementById('headerAuthText');
-        const isLogged = isUserLoggedIn();
-        const profile = safeGetJSON('user_profile', null) || authState.userProfile;
-
-        if (btn && text) {
-          if (isLogged && profile && profile.nickname) {
-            btn.classList.add('logged-in');
-            text.innerText = profile.nickname;
-          } else {
-            btn.classList.remove('logged-in');
-            text.innerText = '로그인';
-          }
-        }
-      }
-
-      function triggerHaptic(type = 'light') {
-        if (!navigator.vibrate) return;
-        try {
-          if (type === 'light') navigator.vibrate(10);
-          else if (type === 'medium') navigator.vibrate(18);
-          else if (type === 'success') navigator.vibrate([20, 40, 20]);
-          else if (type === 'heavy') navigator.vibrate([30, 50, 40]);
-        } catch (e) {}
-      }
-
-      function showToast(msg, duration = 2200) {
-        const t = document.getElementById('appToast');
-        if (!t) return;
-        t.innerHTML = msg; 
-        t.classList.add('show');
-        clearTimeout(t._timer);
-        t._timer = setTimeout(() => { t.classList.remove('show'); }, duration);
-      }
-
       function copyTextToClipboard(text, alertMsg = '주소가 복사되었습니다') {
         if (!text) return;
-        triggerHaptic('medium');
+        triggerHaptic(15);
         const formattedAlert = `${ICONS.COPY} <span>${alertMsg}</span>`;
         if (navigator.clipboard && window.isSecureContext) {
           navigator.clipboard.writeText(text).then(() => showToast(formattedAlert)).catch(() => fallbackCopy(text, formattedAlert));
@@ -1531,11 +1424,6 @@
         temp.value = text; document.body.appendChild(temp); temp.select();
         try { document.execCommand('copy'); showToast(alertMsg); } catch (err) {}
         document.body.removeChild(temp);
-      }
-
-      function escapeHtml(text) {
-        if (text === null || text === undefined) return '';
-        return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
       }
 
       function getSpotDiffColorClass(difficulty = 3) {
@@ -1574,31 +1462,22 @@
         return { region: '경기', cityName: '경기' };
       }
 
-      function safeGetJSON(key, defaultVal) {
-        try {
-          const item = localStorage.getItem(key);
-          return item ? JSON.parse(item) : defaultVal;
-        } catch (e) {
-          return defaultVal;
-        }
-      }
-
-      let spots = safeGetJSON('okbm_spots_cache', []);
-      let spotComments = safeGetJSON('okbm_comments', {});
-      let userBookmarks = new Set((safeGetJSON('okbm_bookmarks', [])).map(s => String(s).trim()));
-      let userVisited = new Set((safeGetJSON('okbm_visited', [])).map(s => String(s).trim()));
-      let userMemos = safeGetJSON('okbm_memos', {});
+      var spots = safeGetJSON('okbm_spots_cache', []);
+      var spotComments = safeGetJSON('okbm_comments', {});
+      var userBookmarks = new Set((safeGetJSON('okbm_bookmarks', [])).map(s => String(s).trim()));
+      var userVisited = new Set((safeGetJSON('okbm_visited', [])).map(s => String(s).trim()));
+      var userMemos = safeGetJSON('okbm_memos', {});
 
       // ☀️/🌙 테마 전환 엔진 (우측 상단 HUD 연동)
-      let currentAppTheme = localStorage.getItem('okbm_theme') || 'light';
+      var currentAppTheme = localStorage.getItem('okbm_theme') || 'light';
 
       function applyTheme(theme) {
         currentAppTheme = theme;
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('okbm_theme', theme);
 
-        const iconEl = document.getElementById('themeToggleIcon');
-        const textEl = document.getElementById('themeToggleText');
+        var iconEl = document.getElementById('themeToggleIcon');
+        var textEl = document.getElementById('themeToggleText');
 
         if (theme === 'light') {
           if (iconEl) iconEl.innerHTML = ICONS.MOON;
@@ -1607,61 +1486,19 @@
           if (iconEl) iconEl.innerHTML = ICONS.SUN;
           if (textEl) textEl.innerText = '일반';
         }
-        updateHeaderAuthUI();
+        if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
       }
 
       function toggleAppTheme() {
-        triggerHaptic('light');
-        const newTheme = currentAppTheme === 'dark' ? 'light' : 'dark';
+        triggerHaptic(10);
+        var newTheme = currentAppTheme === 'dark' ? 'light' : 'dark';
         applyTheme(newTheme);
         showToast(newTheme === 'light' ? '☀️ 일반(라이트) 모드로 전환되었습니다.' : '🌙 다크 모드로 전환되었습니다.');
-      }
-//// ☁️ 유저 보관함 구글 시트 클라우드 백업 및 복원 (실명 리셋 원천 차단 & 닉네임·찜목록 영구 잠금)
-      window.isCloudDataLoaded = false;
-
-      async function loadUserDataFromCloud(userId) {
-        if (!userId) return null;
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 4500);
-          const res = await fetch(`${GAS_API_URL}?action=GET_USER_DATA&userId=${encodeURIComponent(userId)}&_t=${Date.now()}`, { signal: controller.signal });
-          clearTimeout(timeoutId);
-          if (res.ok) {
-            const data = await res.json();
-            return (data && (data.userData || data.data)) ? (data.userData || data.data) : data;
-          }
-        } catch (e) {}
-        return null;
-      }
-
-      function syncUserDataToCloud() {
-        if (!isUserLoggedIn() || !window.isCloudDataLoaded) return; // 🛡️ 클라우드 확인 전 빈 데이터 덮어쓰기 절대 차단
-        const profile = safeGetJSON('user_profile', null) || authState.userProfile;
-        if (!profile || !profile.id) return;
-
-        const payload = {
-          action: 'SAVE_USER_DATA',
-          userId: profile.id,
-          nickname: profile.nickname,
-          createdAt: profile.createdAt || Date.now(),
-          lastNicknameChangedAt: profile.lastNicknameChangedAt || 0,
-          bookmarks: [...userBookmarks],
-          visited: [...userVisited],
-          memos: userMemos,
-          packHistory: safeGetJSON('okbm_packing_history', [])
-        };
-
-        fetch(GAS_API_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
-        }).catch(() => {});
       }
 
       function isSpotUnlocked(spotId) {
         if (isAdminMode) return true;
-        const unlockedList = safeGetJSON('okbm_unlocked_spots', []);
+        var unlockedList = safeGetJSON('okbm_unlocked_spots', []);
         return unlockedList.includes(String(spotId).trim());
       }
 
@@ -1670,44 +1507,35 @@
         if (targetUrl && targetUrl.trim() && targetUrl !== 'undefined') {
           try { window.open(targetUrl, '_blank'); } catch (e) {}
         }
-        const lntModal = document.getElementById('lntModalOverlay');
+        var lntModal = document.getElementById('lntModalOverlay');
         if (lntModal) lntModal.style.display = 'flex';
       }
 
       function confirmLntPledgeAndUnlock() {
         if (pendingUnlockSpotId) {
-          let unlockedList = safeGetJSON('okbm_unlocked_spots', []);
-          const sId = String(pendingUnlockSpotId).trim();
+          var unlockedList = safeGetJSON('okbm_unlocked_spots', []);
+          var sId = String(pendingUnlockSpotId).trim();
           if (!unlockedList.includes(sId)) {
             unlockedList.push(sId);
             localStorage.setItem('okbm_unlocked_spots', JSON.stringify(unlockedList));
           }
         }
-        const lntModal = document.getElementById('lntModalOverlay');
+        var lntModal = document.getElementById('lntModalOverlay');
         if (lntModal) lntModal.style.display = 'none';
-        triggerHaptic('heavy');
+        triggerHaptic(20);
         showToast(`${ICONS.UNLOCK} <span>들머리 주소와 4대 내비가 해금되었습니다!</span>`);
         refreshCurrentSpotPopup();
       }
 
-      function isUserLoggedIn() {
-        try {
-          const token = localStorage.getItem('user_auth_token');
-          return !!(token && token.trim().length > 0) || !!(authState && authState.isLoggedIn);
-        } catch (e) {
-          return false;
-        }
-      }
-
       function refreshCurrentSpotPopup() {
-        const isMobile = window.innerWidth <= 768;
-        const mobileSheet = document.getElementById('mobileBottomSheet');
-        const mobileContent = document.getElementById('mobileSheetContent');
-        const pcDrawer = document.getElementById('pcSlidingDrawer');
+        var isMobile = window.innerWidth <= 768;
+        var mobileSheet = document.getElementById('mobileBottomSheet');
+        var mobileContent = document.getElementById('mobileSheetContent');
+        var pcDrawer = document.getElementById('pcSlidingDrawer');
 
-        let targetSpot = currentActiveSpot;
+        var targetSpot = currentActiveSpot;
         if (!targetSpot) {
-          const savedId = localStorage.getItem('okbm_active_spot_id') || window.__MANUAL_ACTIVE_ID__;
+          var savedId = localStorage.getItem('okbm_active_spot_id') || window.__MANUAL_ACTIVE_ID__;
           if (savedId && Array.isArray(spots)) {
             targetSpot = spots.find(s => String(s.id).trim() === String(savedId).trim());
           }
@@ -1741,8 +1569,8 @@
         window.__MANUAL_ACTIVE_ID__ = String(spot.id).trim();
         localStorage.setItem('okbm_active_spot_id', String(spot.id).trim());
 
-        const sheet = document.getElementById('mobileBottomSheet');
-        const content = document.getElementById('mobileSheetContent');
+        var sheet = document.getElementById('mobileBottomSheet');
+        var content = document.getElementById('mobileSheetContent');
         if (!sheet || !content) return;
 
         sheet._spotData = spot;
@@ -1754,7 +1582,7 @@
       }
 
       function closeMobileBottomSheet() {
-        const sheet = document.getElementById('mobileBottomSheet');
+        var sheet = document.getElementById('mobileBottomSheet');
         if (sheet && sheet.classList.contains('open')) {
           sheet.classList.remove('open');
           currentActiveSpot = null;
@@ -1773,8 +1601,8 @@
         window.__MANUAL_ACTIVE_ID__ = String(spot.id).trim();
         localStorage.setItem('okbm_active_spot_id', String(spot.id).trim());
 
-        const drawer = document.getElementById('pcSlidingDrawer');
-        const closeTab = document.getElementById('floatingDrawerCloseTab');
+        var drawer = document.getElementById('pcSlidingDrawer');
+        var closeTab = document.getElementById('floatingDrawerCloseTab');
         if (!drawer) return;
 
         drawer._spotData = spot;
@@ -1787,8 +1615,8 @@
       }
 
       function closePcSlidingDrawer() {
-        const drawer = document.getElementById('pcSlidingDrawer');
-        const closeTab = document.getElementById('floatingDrawerCloseTab');
+        var drawer = document.getElementById('pcSlidingDrawer');
+        var closeTab = document.getElementById('floatingDrawerCloseTab');
         if (drawer) drawer.classList.remove('open');
         if (closeTab) closeTab.classList.remove('visible');
         currentActiveSpot = null;
@@ -1796,259 +1624,6 @@
         window.__MANUAL_ACTIVE_ID__ = null;
         document.querySelectorAll('.spot-item').forEach(el => el.classList.remove('active-spot'));
         updateLODLabels();
-      }
-
-      function loginWithKakao() {
-        if (typeof Kakao === 'undefined') {
-          alert('카카오 SDK를 불러오지 못했습니다.');
-          return;
-        }
-        if (!Kakao.isInitialized()) {
-          Kakao.init(KAKAO_APP_KEY);
-        }
-
-        // 🔑 SDK v1 호환: Invalid parameter 에러를 일으키던 prompt 키 제거
-        Kakao.Auth.login({
-          scope: 'profile_nickname',
-          success: function(authObj) {
-            Kakao.API.request({
-              url: '/v2/user/me',
-              success: async function(res) {
-                const kakaoId = 'kakao_' + res.id;
-                let kakaoNick = '낭만백패커';
-                if (res.properties && res.properties.nickname) {
-                  kakaoNick = res.properties.nickname;
-                } else if (res.kakao_account && res.kakao_account.profile && res.kakao_account.profile.nickname) {
-                  kakaoNick = res.kakao_account.profile.nickname;
-                }
-
-                // ☁️ 1. 클라우드(구글 시트)에서 사용자 원본 데이터 조회
-                const cloudData = await loadUserDataFromCloud(kakaoId);
-                const accountLocalProfile = safeGetJSON(`user_profile_${kakaoId}`, null);
-
-                // 🏷️ 2. 실명 리셋 방어벽: 유효한 닉네임인지 확인 (엔진 메시지가 아닌 실제 커스텀 닉네임 우선)
-                const isCloudNickValid = (cloudData && typeof cloudData.nickname === 'string' && cloudData.nickname.trim() && !cloudData.nickname.includes('ENGINE') && !cloudData.nickname.includes('RUNNING'));
-                const savedCustomNick = localStorage.getItem(`okbm_custom_nickname_${kakaoId}`) || (accountLocalProfile && accountLocalProfile.nickname ? accountLocalProfile.nickname : null);
-
-                let finalNickname = kakaoNick;
-                if (isCloudNickValid) {
-                  finalNickname = cloudData.nickname.trim();
-                } else if (savedCustomNick && savedCustomNick.trim()) {
-                  finalNickname = savedCustomNick.trim();
-                }
-
-                // ⏱️ 3. 14일 쿨다운 타임스탬프 보존
-                const finalCreatedAt = (cloudData && cloudData.createdAt) || (accountLocalProfile && accountLocalProfile.createdAt) || Date.now();
-                const finalLastNicknameChangedAt = (cloudData && cloudData.lastNicknameChangedAt) 
-                  ? cloudData.lastNicknameChangedAt 
-                  : ((accountLocalProfile && accountLocalProfile.lastNicknameChangedAt) ? accountLocalProfile.lastNicknameChangedAt : (savedCustomNick ? (Date.now() - 1000) : 0));
-
-                const profile = {
-                  id: kakaoId,
-                  nickname: finalNickname,
-                  isMember: true,
-                  createdAt: finalCreatedAt,
-                  lastNicknameChangedAt: finalLastNicknameChangedAt
-                };
-
-                // 💾 4. 세션 토큰 및 프로필 영구 보존
-                localStorage.setItem('user_auth_token', authObj.access_token || ('token_' + Date.now()));
-                localStorage.setItem('user_profile', JSON.stringify(profile));
-                localStorage.setItem(`user_profile_${kakaoId}`, JSON.stringify(profile));
-                if (savedCustomNick) {
-                  localStorage.setItem(`okbm_custom_nickname_${kakaoId}`, finalNickname);
-                }
-                authState.isLoggedIn = true;
-                authState.userProfile = profile;
-
-                // 📦 5. 찜 목록 보존: 클라우드에 실제 배열이 있을 때만 사용, 없으면 로컬 데이터 100% 보존
-                const hasCloudBookmarks = (cloudData && Array.isArray(cloudData.bookmarks) && cloudData.bookmarks.length > 0);
-                const hasCloudVisited = (cloudData && Array.isArray(cloudData.visited) && cloudData.visited.length > 0);
-                const hasCloudMemos = (cloudData && cloudData.memos && typeof cloudData.memos === 'object' && Object.keys(cloudData.memos).length > 0);
-
-                const localBookmarks = safeGetJSON(`okbm_bookmarks_${kakaoId}`, safeGetJSON('okbm_bookmarks', []));
-                const localVisited = safeGetJSON(`okbm_visited_${kakaoId}`, safeGetJSON('okbm_visited', []));
-                const localMemos = safeGetJSON(`okbm_memos_${kakaoId}`, safeGetJSON('okbm_memos', {}));
-
-                const finalBookmarks = hasCloudBookmarks ? [...cloudData.bookmarks, ...localBookmarks] : localBookmarks;
-                const finalVisited = hasCloudVisited ? [...cloudData.visited, ...localVisited] : localVisited;
-                const finalMemos = hasCloudMemos ? { ...localMemos, ...cloudData.memos } : localMemos;
-
-                userBookmarks = new Set(finalBookmarks.map(s => String(s).trim()));
-                userVisited = new Set(finalVisited.map(s => String(s).trim()));
-                userMemos = finalMemos;
-
-                // 🎒 게스트 상태에서 작성해둔 패킹 기록 안전 병합
-                const guestPacks = safeGetJSON('okbm_packing_history', []);
-                const cloudPacks = (cloudData && Array.isArray(cloudData.packHistory)) ? cloudData.packHistory : [];
-                const mergedPacks = [...guestPacks];
-                cloudPacks.forEach(cp => {
-                  if (!mergedPacks.some(p => p.id === cp.id)) mergedPacks.push(cp);
-                });
-
-                localStorage.setItem('okbm_packing_history', JSON.stringify(mergedPacks));
-                localStorage.setItem(`okbm_bookmarks_${kakaoId}`, JSON.stringify([...userBookmarks]));
-                localStorage.setItem(`okbm_visited_${kakaoId}`, JSON.stringify([...userVisited]));
-                localStorage.setItem(`okbm_memos_${kakaoId}`, JSON.stringify(userMemos));
-
-                localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks]));
-                localStorage.setItem('okbm_visited', JSON.stringify([...userVisited]));
-                localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
-
-                window.isCloudDataLoaded = true; // 🔓 락 해제
-
-                updateHeaderAuthUI();
-                closeLoginModal();
-                triggerHaptic('success');
-                showToast(`${ICONS.MEMBER} <span>[${profile.nickname}]님 환영합니다! 보관함이 동기화되었습니다.</span>`);
-
-                // 🛡️ 로그인 직후 무조건 덮어쓰지 않고, 유효한 데이터가 있을 때만 안전 동기화
-                if (userBookmarks.size > 0 || userVisited.size > 0 || savedCustomNick) {
-                  syncUserDataToCloud();
-                }
-
-                refreshCurrentSpotPopup();
-                renderSubChips();
-                renderSpots();
-              },
-              fail: function(error) {
-                showToast(`${ICONS.ALERT_CARD} <span>카카오 프로필 정보를 가져오지 못했습니다.</span>`);
-              }
-            });
-          },
-          fail: function(err) {
-            showToast('카카오 로그인이 취소되었습니다.');
-          }
-        });
-      }
-
-      function logoutUser() {
-        if (typeof Kakao !== 'undefined' && Kakao.Auth && Kakao.Auth.getAccessToken()) {
-          Kakao.Auth.logout(function() {});
-        }
-
-        localStorage.removeItem('user_auth_token'); 
-        localStorage.removeItem('user_profile');
-        
-        authState.isLoggedIn = false;
-        authState.userProfile = null;
-        window.isCloudDataLoaded = false;
-
-        // 🧹 활성 메모리 및 로컬 활성 뷰 초기화
-        userBookmarks = new Set();
-        userVisited = new Set();
-        userMemos = {};
-        
-        localStorage.removeItem('okbm_bookmarks');
-        localStorage.removeItem('okbm_visited');
-        localStorage.removeItem('okbm_memos');
-        
-        updateHeaderAuthUI();
-        triggerHaptic('light');
-        showToast('로그아웃 되었습니다.');
-
-        refreshCurrentSpotPopup();
-        renderSubChips();
-        renderSpots();
-      }
-
-      // 🔄 앱 시작 시 로그인 상태인 경우 안전 동기화
-      if (isUserLoggedIn()) {
-        const initialProfile = safeGetJSON('user_profile', null);
-        if (initialProfile && initialProfile.id) {
-          loadUserDataFromCloud(initialProfile.id).then(cloudData => {
-            if (cloudData) {
-              if (cloudData.bookmarks && Array.isArray(cloudData.bookmarks) && cloudData.bookmarks.length > 0) {
-                userBookmarks = new Set(cloudData.bookmarks.map(s => String(s).trim()));
-                localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks]));
-              }
-              if (cloudData.visited && Array.isArray(cloudData.visited) && cloudData.visited.length > 0) {
-                userVisited = new Set(cloudData.visited.map(s => String(s).trim()));
-                localStorage.setItem('okbm_visited', JSON.stringify([...userVisited]));
-              }
-              if (cloudData.memos && typeof cloudData.memos === 'object' && Object.keys(cloudData.memos).length > 0) {
-                userMemos = cloudData.memos;
-                localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
-              }
-              if (cloudData.nickname && typeof cloudData.nickname === 'string' && cloudData.nickname.trim() && !cloudData.nickname.includes('ENGINE') && initialProfile.nickname !== cloudData.nickname) {
-                initialProfile.nickname = cloudData.nickname;
-                localStorage.setItem('user_profile', JSON.stringify(initialProfile));
-                authState.userProfile = initialProfile;
-                updateHeaderAuthUI();
-              }
-              renderSubChips();
-              renderSpots();
-            }
-            window.isCloudDataLoaded = true;
-          });
-        } else {
-          window.isCloudDataLoaded = true;
-        }
-      } else {
-        window.isCloudDataLoaded = true;
-      }
-      function handleAuthBtnClick() {
-        if (isUserLoggedIn()) openUserProfileModal();
-        else openLoginModal(); 
-      }
-
-      function openUserProfileModal() {
-        const modal = document.getElementById('userProfileModalOverlay');
-        const input = document.getElementById('profileModalNicknameInput');
-        const profile = safeGetJSON('user_profile', null) || authState.userProfile;
-        if (input && profile) input.value = profile.nickname || '';
-        if (modal) modal.style.display = 'flex';
-      }
-
-      function closeUserProfileModal() {
-        const modal = document.getElementById('userProfileModalOverlay');
-        if (modal) modal.style.display = 'none';
-      }
-
-      function saveNewNicknameFromModal() {
-        const input = document.getElementById('profileModalNicknameInput');
-        if (!input || !input.value.trim()) return alert('변경할 닉네임을 입력해주세요.');
-
-        const cleanNick = input.value.trim();
-        let profile = safeGetJSON('user_profile', null) || authState.userProfile || { isMember: true };
-        if (profile.nickname === cleanNick) return showToast('현재 사용 중인 닉네임과 동일합니다.');
-
-        const COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
-        const lastChanged = profile.lastNicknameChangedAt || 0;
-        const now = Date.now();
-
-        if (lastChanged && (now - lastChanged < COOLDOWN_MS)) {
-          const remainingDays = Math.ceil((COOLDOWN_MS - (now - lastChanged)) / (1000 * 60 * 60 * 24));
-          return alert(`닉네임은 2주(14일)에 한 번만 변경하실 수 있습니다.\n\n[ ${remainingDays}일 ] 후에 다시 변경 가능합니다.`);
-        }
-
-        profile.nickname = cleanNick;
-        profile.lastNicknameChangedAt = now;
-        localStorage.setItem('user_profile', JSON.stringify(profile));
-        if (profile.id) {
-          localStorage.setItem(`user_profile_${profile.id}`, JSON.stringify(profile));
-          localStorage.setItem(`okbm_custom_nickname_${profile.id}`, cleanNick);
-        }
-        authState.userProfile = profile;
-        authState.isLoggedIn = true;
-
-        updateHeaderAuthUI();
-        syncUserDataToCloud();
-        refreshCurrentSpotPopup();
-        renderSpots();
-        closeUserProfileModal();
-        triggerHaptic('success');
-        showToast(`${ICONS.MEMBER} <span>닉네임이 [${cleanNick}] (으)로 변경되었습니다!</span>`);
-      }
-
-      function openLoginModal() { 
-        const modal = document.getElementById('loginModalOverlay');
-        if (modal) modal.style.display = 'flex'; 
-      }
-      
-      function closeLoginModal() { 
-        const modal = document.getElementById('loginModalOverlay');
-        if (modal) modal.style.display = 'none'; 
       }
 
       function createPureSvgMarkerImage(difficulty = 3) {
@@ -2079,7 +1654,7 @@
       ];
       let cycleDiffIdx = 0;
       function cycleDifficultyFilter() {
-        triggerHaptic('light');
+        triggerHaptic(10);
         cycleDiffIdx = (cycleDiffIdx + 1) % CYCLE_DIFF_LIST.length;
         const cur = CYCLE_DIFF_LIST[cycleDiffIdx];
         const btn = document.getElementById('btnCycleDifficulty');
@@ -2101,7 +1676,7 @@
       ];
       let cycleStatusIdx = 0;
       function cycleStatusFilter() {
-        triggerHaptic('light');
+        triggerHaptic(10);
         cycleStatusIdx = (cycleStatusIdx + 1) % CYCLE_STATUS_LIST.length;
         const cur = CYCLE_STATUS_LIST[cycleStatusIdx];
         const btn = document.getElementById('btnCycleStatus');
@@ -2124,7 +1699,7 @@
       ];
       let cycleTerrainIdx = 0;
       function cycleTerrainFilter() {
-        triggerHaptic('light');
+        triggerHaptic(10);
         cycleTerrainIdx = (cycleTerrainIdx + 1) % CYCLE_TERRAIN_LIST.length;
         const cur = CYCLE_TERRAIN_LIST[cycleTerrainIdx];
         const btn = document.getElementById('btnCycleTerrain');
@@ -2182,7 +1757,7 @@
           });
 
           kakao.maps.event.addListener(globalClusterer, 'clusterclick', (cluster) => {
-            triggerHaptic('light');
+            triggerHaptic(10);
             map.setLevel(Math.max(1, map.getLevel() - 2), { anchor: cluster.getCenter(), animate: true });
           });
 
@@ -2207,7 +1782,7 @@
         initStaticVectors();
         applyTheme(currentAppTheme);
         initMapEngine();
-        updateHeaderAuthUI();
+        if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
         if (window.innerWidth <= 768) {
           isSidebarCollapsed = true;
           const sidebar = document.getElementById('sidebar');
@@ -2248,7 +1823,7 @@
             if (deltaX < 0) navigateToNearbySpot('EAST');
             else navigateToNearbySpot('WEST');
           } else if (deltaY > 50) {
-            triggerHaptic('light');
+            triggerHaptic(10);
             closeMobileBottomSheet();
           }
         }, { passive: true });
@@ -2279,17 +1854,17 @@
 
       function zoomInMap(e) { 
         if (e) e.stopPropagation(); 
-        triggerHaptic('light');
+        triggerHaptic(10);
         if (map) map.setLevel(Math.max(1, map.getLevel() - 1), { animate: true }); 
       }
       function zoomOutMap(e) { 
         if (e) e.stopPropagation(); 
-        triggerHaptic('light');
+        triggerHaptic(10);
         if (map) map.setLevel(Math.min(14, map.getLevel() + 1), { animate: true }); 
       }
 
       function toggleMapTypeMode() {
-        triggerHaptic('light');
+        triggerHaptic(10);
         if (!map) return;
         const textEl = document.getElementById('towerMapTypeText'), btnEl = document.getElementById('topRightLayerBtn');
         currentMapLayerState = (currentMapLayerState + 1) % 3;
@@ -2313,7 +1888,7 @@
 
       function locateUserPosition(e) {
         if (e) e.stopPropagation();
-        triggerHaptic('medium');
+        triggerHaptic(15);
         if (!navigator.geolocation) return showToast(`${ICONS.ALERT_CARD} <span>위치 서비스를 지원하지 않습니다.</span>`);
         navigator.geolocation.getCurrentPosition((pos) => {
           if (!map) return;
@@ -2329,7 +1904,7 @@
       }
 
       function switchMasterTab(tabName) {
-        triggerHaptic('medium');
+        triggerHaptic(12);
         currentMasterTab = tabName;
         document.querySelectorAll('.master-tab-btn').forEach(btn => btn.classList.remove('active'));
         const activeIdx = { 'REGION': 0, 'TERRAIN': 1, 'COURSE': 2, 'MY': 3 }[tabName];
@@ -2346,7 +1921,7 @@
             const btn = document.createElement('button');
             btn.className = `filter-chip ${currentRegionFilter === r ? 'active' : ''}`;
             btn.innerHTML = `${r === 'ALL' ? '전체' : r}`;
-            btn.onclick = () => { triggerHaptic('light'); currentRegionFilter = r; renderSubChips(); renderSpots(); };
+            btn.onclick = () => { triggerHaptic(10); currentRegionFilter = r; renderSubChips(); renderSpots(); };
             container.appendChild(btn);
           });
         } else if (currentMasterTab === 'TERRAIN') {
@@ -2354,7 +1929,7 @@
             const btn = document.createElement('button');
             btn.className = `filter-chip ${currentTerrainFilter === t.key ? 'active' : ''}`;
             btn.innerHTML = t.label;
-            btn.onclick = () => { triggerHaptic('light'); currentTerrainFilter = t.key; renderSubChips(); renderSpots(); };
+            btn.onclick = () => { triggerHaptic(10); currentTerrainFilter = t.key; renderSubChips(); renderSpots(); };
             container.appendChild(btn);
           });
         } else if (currentMasterTab === 'COURSE') {
@@ -2362,7 +1937,7 @@
             const btn = document.createElement('button');
             btn.className = `filter-chip chip-status ${currentCourseFilter === c.key ? 'active' : ''}`;
             btn.innerHTML = c.label;
-            btn.onclick = () => { triggerHaptic('light'); currentCourseFilter = c.key; renderSubChips(); renderSpots(); };
+            btn.onclick = () => { triggerHaptic(10); currentCourseFilter = c.key; renderSubChips(); renderSpots(); };
             container.appendChild(btn);
           });
         } else if (currentMasterTab === 'MY') {
@@ -2374,7 +1949,7 @@
             const btn = document.createElement('button');
             btn.className = `filter-chip ${currentMyFilter === m.key ? 'active' : ''}`;
             btn.innerHTML = m.label;
-            btn.onclick = () => { triggerHaptic('light'); currentMyFilter = m.key; renderSubChips(); renderSpots(); };
+            btn.onclick = () => { triggerHaptic(10); currentMyFilter = m.key; renderSubChips(); renderSpots(); };
             container.appendChild(btn);
           });
         }
@@ -2443,7 +2018,7 @@
       }
 
       function handleSmartResetClick() {
-        triggerHaptic('medium');
+        triggerHaptic(15);
         const isMobile = window.innerWidth <= 768;
         const isListOpen = isMobile ? !isSidebarCollapsed : true;
         if (isListOpen && document.querySelectorAll('.region-group').length > 0) {
@@ -2766,7 +2341,7 @@
 
       function focusSpotOnMap(spot) {
         if (!spot) return;
-        triggerHaptic('medium');
+        triggerHaptic(12);
         isMarkerClickProcessing = true;
         setTimeout(() => { isMarkerClickProcessing = false; }, 300);
 
@@ -2802,7 +2377,7 @@
       function toggleUserBookmark(spotId, e = null) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         if (!isUserLoggedIn()) {
-          triggerHaptic('light');
+          triggerHaptic(10);
           openLoginModal();
           showToast(`${ICONS.LOCK} <span>찜하기는 로그인 후 이용하실 수 있습니다.</span>`);
           return;
@@ -2815,10 +2390,10 @@
 
         if (bList.has(sId)) {
           bList.delete(sId); userBookmarks.delete(sId); isNowBookmarked = false;
-          triggerHaptic('light'); showToast(`${ICONS.HEART} <span>찜 목록에서 해제되었습니다.</span>`);
+          triggerHaptic(10); showToast(`${ICONS.HEART} <span>찜 목록에서 해제되었습니다.</span>`);
         } else {
           bList.add(sId); userBookmarks.add(sId); isNowBookmarked = true;
-          triggerHaptic('success'); showToast(`${ICONS.HEART} <span>찜 목록에 추가되었습니다!</span>`);
+          triggerHaptic(15); showToast(`${ICONS.HEART} <span>찜 목록에 추가되었습니다!</span>`);
         }
 
         localStorage.setItem('okbm_bookmarks', JSON.stringify([...bList]));
@@ -2840,14 +2415,17 @@
 
         renderSubChips();
         updateLODLabels();
-        refreshCurrentSpotPopup();
-        renderSpots();
+        const mobileSheet = document.getElementById('mobileBottomSheet');
+        const pcDrawer = document.getElementById('pcSlidingDrawer');
+        if ((mobileSheet && mobileSheet.classList.contains('open')) || (pcDrawer && pcDrawer.classList.contains('open'))) {
+          refreshCurrentSpotPopup();
+        }
       }
 
       function toggleUserVisited(spotId, e = null) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         if (!isUserLoggedIn()) {
-          triggerHaptic('light');
+          triggerHaptic(10);
           openLoginModal();
           showToast(`${ICONS.LOCK} <span>클리어 등록은 로그인 후 이용하실 수 있습니다.</span>`);
           return;
@@ -2861,10 +2439,10 @@
 
         if (vList.has(sId)) {
           vList.delete(sId); userVisited.delete(sId); isNowVisited = false;
-          triggerHaptic('light'); showToast(`${ICONS.FLAG} <span>클리어 목록에서 제외되었습니다.</span>`);
+          triggerHaptic(10); showToast(`${ICONS.FLAG} <span>클리어 목록에서 제외되었습니다.</span>`);
         } else {
           vList.add(sId); bList.delete(sId); userVisited.add(sId); userBookmarks.delete(sId); isNowVisited = true;
-          triggerHaptic('success'); showToast(`${ICONS.FLAG} <span>박지 정복 클리어!</span>`);
+          triggerHaptic(15); showToast(`${ICONS.FLAG} <span>박지 정복 클리어!</span>`);
         }
 
         localStorage.setItem('okbm_visited', JSON.stringify([...vList]));
@@ -2890,13 +2468,16 @@
 
         renderSubChips();
         updateLODLabels();
-        refreshCurrentSpotPopup();
-        renderSpots();
+        const mobileSheet = document.getElementById('mobileBottomSheet');
+        const pcDrawer = document.getElementById('pcSlidingDrawer');
+        if ((mobileSheet && mobileSheet.classList.contains('open')) || (pcDrawer && pcDrawer.classList.contains('open'))) {
+          refreshCurrentSpotPopup();
+        }
       }
 
       function saveUserPrivateMemo(spotId, text) {
         if (!isUserLoggedIn()) return openLoginModal();
-        triggerHaptic('light');
+        triggerHaptic(10);
         userMemos[String(spotId).trim()] = text.trim();
         localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
         const profile = safeGetJSON('user_profile', null);
@@ -2910,7 +2491,7 @@
       function shareSpotCard(spotId) {
         const spot = spots.find(s => String(s.id).trim() === String(spotId).trim());
         if (!spot) return;
-        triggerHaptic('light');
+        triggerHaptic(10);
         const titleName = spot.fullName || `${spot.spot_main} (${spot.spot_sub || ''})`;
         const shareUrl = `${window.location.origin}${window.location.pathname}?spot=${encodeURIComponent(spot.spot_main || spot.name)}`;
         if (navigator.share) navigator.share({ title: `[낭만백패킹] ${titleName}`, url: shareUrl }).catch(() => {});
@@ -2919,7 +2500,7 @@
 
       const entryCoordsCache = new Map();
       async function navigateToNaviApp(type, spotName, address, fallbackLat, fallbackLng) {
-        triggerHaptic('light');
+        triggerHaptic(10);
         const targetQuery = (address && address.trim()) ? address.trim() : spotName;
         const naviTitle = `${spotName} 들머리`;
 
@@ -2966,7 +2547,7 @@
 
       async function toggleGpxTrack(spotId, gpxUrl) {
         const sId = String(spotId).trim();
-        triggerHaptic('light');
+        triggerHaptic(10);
         if (currentGpxPolyline && activeGpxSpotId === sId) {
           currentGpxPolyline.setMap(null); currentGpxPolyline = null; activeGpxSpotId = null;
           showToast(`${ICONS.HIKING} <span>등산로 코스선 표시를 해제했습니다.</span>`);
@@ -2993,7 +2574,7 @@
           if (currentGpxPolyline) currentGpxPolyline.setMap(null);
           currentGpxPolyline = new kakao.maps.Polyline({ map, path, strokeWeight: 4.5, strokeColor: '#f97316', strokeOpacity: 0.9, strokeStyle: 'solid' });
           activeGpxSpotId = sId;
-          triggerHaptic('medium');
+          triggerHaptic(15);
           showToast(`${ICONS.HIKING} <span>지도에 등산로 주황색 코스선이 표시되었습니다!</span>`);
           refreshCurrentSpotPopup();
         } catch (err) { showToast(`${ICONS.ALERT_CARD} <span>GPX 파일을 불러오지 못했습니다.</span>`); }
@@ -3052,7 +2633,6 @@
 
         return `
           <div style="position: relative; width: 100%;">
-            <!-- 1열: 지역/산이름/고도/상태 + 닫기버튼 -->
             <div class="sheet-title-row" style="padding-right: ${isMobileSheet ? '36px' : '0'};" onclick="smoothCenterMapOnSpot(${spot.lat}, ${spot.lng})" title="지도를 박지 중심으로 이동">
               <div class="compact-title">
                 ${cityName ? `<span class="city-badge-colored">${escapeHtml(cityName)}</span>` : ''}
@@ -3063,27 +2643,23 @@
               <div style="display:flex; align-items:center; gap:6px;" onclick="event.stopPropagation();">${adminTopActions}${closeBtn}</div>
             </div>
 
-            <!-- 2열: 세부포인트 단독 배치 (찜/클리어/공유는 들머리 위로 이동) -->
             ${cleanSubName ? `
               <div style="display:flex; align-items:center; margin: 4px 0 2px 0; width:100%;">
                 <span class="badge-sub-point" style="margin:0;">${ICONS.PIN} ${escapeHtml(cleanSubName)}</span>
               </div>
             ` : ''}
 
-            <!-- 3열: 지형/난이도/거리/드론 1줄 유지 -->
             <div style="display:flex; align-items:center; gap:4px; margin: 2px 0 3px 0; width:100%; overflow-x:auto; white-space:nowrap; scrollbar-width:none; flex-wrap:nowrap;">
               ${getMetaBadgesHtml(spot)}
               ${spot.droneStatus ? getDroneStatusBadge(spot.droneStatus) : ''}
             </div>
 
-            <!-- 4열: 일몰 / 날씨 / 위경도 좌표 -->
             <div class="spot-live-weather-bar" style="margin: 2px 0 4px 0; display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
               ${sunset ? `<span class="weather-chip" style="color:#fed7aa; border-color:rgba(245,158,11,0.35);">${ICONS.SUNSET} 일몰 ${sunset}</span>` : ''}
               <div id="liveWeatherBox_${spot.id}" style="display:inline-flex; gap:4px;"><span class="weather-chip">${ICONS.TEMP} 기상 연동 완료</span></div>
               <div class="spot-coords-text" style="font-size:0.65rem; padding:1px 5px;">${ICONS.PIN} ${spot.lat}, ${spot.lng}</div>
             </div>
 
-            <!-- 5열: 1단계 [뷰/특징] 요약 카드 -->
             <div class="summary-block-wrap" style="margin-top:2px;">
               <div class="summary-card summary-card-view">
                 <div class="summary-card-title" style="color:#38bdf8;">${ICONS.VIEW_CARD} [뷰/특징]</div>
@@ -3091,7 +2667,6 @@
               </div>
             </div>
 
-            <!-- 🎯 6열: [찜 / 클리어 / 공유] 들머리 바로 위 33% 3분할 큼직한 터치 바 배치 -->
             <div class="user-action-grid-3" style="display:flex; gap:5px; width:100%; margin:6px 0 4px 0;" onclick="event.stopPropagation();">
               <button type="button" class="btn-action-3 btn-action-fav ${isFav ? 'bookmarked' : ''}" onclick="toggleUserBookmark('${sId}', event)">
                 ${ICONS.HEART} <span>${isFav ? '찜됨' : '찜하기'}</span>
@@ -3110,12 +2685,11 @@
                 <div style="font-size:0.72rem; color:var(--text-secondary); line-height:1.45;">
                   소중한 박지 보존과 클린 백패킹 문화를 위해<br><strong>[들머리 내비/2~4단계 실전 팁]</strong>은 로그인 후 공개됩니다.
                 </div>
-                <button type="button" class="btn-quick-login-unlock" style="width:100%; padding:9px; font-size:0.80rem;" onclick="triggerHaptic('light'); openLoginModal();">
+                <button type="button" class="btn-quick-login-unlock" style="width:100%; padding:9px; font-size:0.80rem;" onclick="triggerHaptic(10); openLoginModal();">
                   ${ICONS.AUTH} 1초 간편 로그인하고 즉시 확인하기
                 </button>
               </div>
             ` : `
-              <!-- 들머리 및 4대 내비 모듈 -->
               <div class="entry-module-container">
                 <div class="entry-row-1">
                   <a href="javascript:void(0)" onclick="navigateToNaviApp('kakao', '${escapeHtml(cleanMainName)}', '${cleanAddress}', ${spot.lat}, ${spot.lng})" class="entry-address-2line">${ICONS.NAV} ${escapeHtml(tName)}: ${cleanAddress} ↗</a>
@@ -3162,9 +2736,9 @@
             `}
 
             <div class="spot-action-line">
-              ${(spot.youtubeUrls || []).slice(0, 2).map((url, i) => `<a href="${escapeHtml(cleanYouTubeUrl(url))}" target="_blank" rel="noopener noreferrer" class="link-btn btn-yt" onclick="triggerHaptic('light');">▶ YouTube 영상${(spot.youtubeUrls.length > 1 ? ` (${i + 1})` : '')}</a>`).join('')}
-              ${(spot.blogUrls || []).slice(0, 2).map((url, i) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="link-btn btn-blog" onclick="triggerHaptic('light');">${ICONS.MEMO} 블로그 후기${(spot.blogUrls.length > 1 ? ` (${i + 1})` : '')}</a>`).join('')}
-              <a href="${escapeHtml(spot.authorSnsUrl || 'https://instagram.com/oklionnature')}" target="_blank" rel="noopener noreferrer" class="link-btn btn-insta" title="등록자 프로필 / SNS" onclick="triggerHaptic('light');"><span>${ICONS.ROADVIEW} 등록자 프로필</span></a>
+              ${(spot.youtubeUrls || []).slice(0, 2).map((url, i) => `<a href="${escapeHtml(cleanYouTubeUrl(url))}" target="_blank" rel="noopener noreferrer" class="link-btn btn-yt" onclick="triggerHaptic(10);">▶ YouTube 영상${(spot.youtubeUrls.length > 1 ? ` (${i + 1})` : '')}</a>`).join('')}
+              ${(spot.blogUrls || []).slice(0, 2).map((url, i) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="link-btn btn-blog" onclick="triggerHaptic(10);">${ICONS.MEMO} 블로그 후기${(spot.blogUrls.length > 1 ? ` (${i + 1})` : '')}</a>`).join('')}
+              <a href="${escapeHtml(spot.authorSnsUrl || 'https://instagram.com/oklionnature')}" target="_blank" rel="noopener noreferrer" class="link-btn btn-insta" title="등록자 프로필 / SNS" onclick="triggerHaptic(10);"><span>${ICONS.ROADVIEW} 등록자 프로필</span></a>
             </div>
 
             <div class="user-private-memo-box">
@@ -3203,114 +2777,139 @@
       }
 
       async function fetchSpotsFromGoogleSheet(isManual = false) {
-        if (isManual) showToast(`${ICONS.FAST} <span>구글 시트 최신 데이터를 동기화하는 중...</span>`);
-        const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv&gid=${PRIMARY_SHEET_GID}&_t=${Date.now()}`;
+        if (isManual && typeof showToast === 'function') {
+          showToast(`${ICONS.FAST} <span>구글 시트 최신 데이터를 동기화하는 중...</span>`);
+        }
+
+        // 🚀 1순위: GAS 백엔드 직통 API 호출 (CORS 차단 100% 우회)
         try {
-          const response = await fetch(url, { cache: 'no-store' });
+          const gasRes = await fetch(`${GAS_API_URL}?action=GET_SPOTS&_t=${Date.now()}`);
+          if (gasRes.ok) {
+            const rawSpots = await gasRes.json();
+            if (Array.isArray(rawSpots) && rawSpots.length > 0) {
+              processAndApplySpotData(rawSpots);
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('[MapEngine] GAS 직통 수신 실패, gviz 백업망으로 전환:', e);
+        }
+
+        // 🌐 2순위: 구글 공식 gviz CSV API 호출 (공개 시트 안전 수신)
+        const gvizUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${PRIMARY_SHEET_GID}&_t=${Date.now()}`;
+        try {
+          const response = await fetch(gvizUrl, { cache: 'no-store' });
           if (!response.ok) throw new Error('시트 응답 오류');
           const csvText = await response.text();
           if (!csvText || csvText.trim().length <= 10) throw new Error('데이터 비어있음');
 
           Papa.parse(csvText, {
-            header: true, skipEmptyLines: true,
+            header: true,
+            skipEmptyLines: true,
             transformHeader: h => h.replace(/^\uFEFF/, '').trim(),
             complete: function(results) {
-              const rows = results.data;
-              if (rows && rows.length > 0) {
-                const mapped = [], dedupeKeySet = new Set();
-
-                rows.forEach((row, idx) => {
-                  const getVal = (...keys) => {
-                    for (const k of keys) {
-                      for (const rk of Object.keys(row)) {
-                        if (rk.toLowerCase().replace(/[\s_]/g, '') === k.toLowerCase().replace(/[\s_]/g, '')) return row[rk];
-                      }
-                    }
-                    return '';
-                  };
-                  const spot_main = getVal('spot_main', '산이름', '메인산명', 'name', '산');
-                  const spot_sub = getVal('spot_sub', '세부박지', '포인트');
-                  const fullName = getVal('fullName', '전체명칭', '명칭') || (spot_sub ? `${spot_main} (${spot_sub})` : spot_main);
-
-                  const lat = parseFloat(getVal('campsite_lat', 'lat', '위도', 'latitude', 'y')) || 0;
-                  const lng = parseFloat(getVal('campsite_lng', 'lng', '경도', 'longitude', 'x')) || 0;
-                  if ((!spot_main && !fullName) || lat === 0 || lng === 0 || isNaN(lat) || isNaN(lng)) return;
-
-                  const rawId = getVal('id');
-                  const fallbackUniqueId = `spot_${(spot_main || fullName).trim().replace(/\s+/g, '')}_${lat.toFixed(3)}_${lng.toFixed(3)}`;
-                  const spotId = rawId ? String(rawId).trim() : fallbackUniqueId;
-                  if (BLOCKED_SPOT_IDS.has(spotId)) return;
-
-                  const dedupeKey = `${(spot_main || fullName).trim().replace(/\s+/g,'')}_${(spot_sub||'').trim()}_${lat.toFixed(3)}_${lng.toFixed(3)}`;
-                  if (dedupeKeySet.has(dedupeKey)) return;
-                  dedupeKeySet.add(dedupeKey);
-
-                  let region = getVal('region', '지역'), cityName = getVal('cityName', '시군구', '시군');
-                  const trailhead_addr = getVal('trailhead_addr', '들머리주소', 'entryPoint', '주소') || '들머리 정보 미입력';
-
-                  if (!region || region === '경기') {
-                    const autoDetect = detectRegionAndCity(lat, lng, spot_main || fullName, trailhead_addr);
-                    if (!region) region = autoDetect.region;
-                    if (!cityName) cityName = autoDetect.cityName;
-                  }
-                  if (region === '서울인천') region = '서울/인천';
-                  
-                  let elevation = getVal('elevation', '고도', '해발');
-                  if (elevation && !String(elevation).includes('m') && !isNaN(elevation)) elevation = `${elevation}m`;
-
-                  const terrainRaw = getVal('terrain', '지형', '지형형태');
-                  let terrainList = [];
-                  if (terrainRaw && String(terrainRaw).trim()) {
-                    terrainList = String(terrainRaw).split(/[\n,]+/).map(t => {
-                      const tr = t.trim();
-                      if (tr === '바위' || tr === '돌박지') return '암릉';
-                      if (tr.includes('해변') || tr.includes('해수욕장')) return '해변';
-                      return tr;
-                    }).filter(Boolean);
-                  }
-                  if (terrainList.length === 0) terrainList = ['데크'];
-
-                  const trailhead_name = getVal('trailhead_name', '들머리명칭', '시작점');
-                  const difficulty = getVal('difficulty', '난이도') || '3';
-                  let distance_km = getVal('distance_km', '편도거리', '거리', 'distance');
-                  if (distance_km && !String(distance_km).includes('km') && !isNaN(distance_km)) distance_km = `${distance_km}km`;
-
-                  const desc_summary = getVal('desc_summary', '요약', 'desc', '특징') || '';
-                  const droneStatus = getVal('droneStatus', '드론', 'drone') || '';
-                  const gpxUrl = getVal('gpxUrl', 'gpx', 'gpx_url', '등산로gpx') || '';
-                  const authorSnsUrl = getVal('authorSns', '등록자sns', 'author_sns', '인스타') || '';
-
-                  const rawMedia = getVal('mediaUrls', '유튜브', 'youtubeUrls', '미디어', 'blogUrl');
-                  const mediaList = rawMedia ? String(rawMedia).split(/[\|\n,]+/).map(u => u.trim()).filter(Boolean) : [];
-                  const ytList = mediaList.filter(u => u.includes('youtu.be') || u.includes('youtube.com'));
-                  const blogList = mediaList.filter(u => u.includes('blog.naver.com') || u.includes('tistory.com') || (!u.includes('youtu') && u.startsWith('http')));
-
-                  const distNum = parseFloat(distance_km) || 0;
-                  const combined = (fullName + ' ' + desc_summary).toLowerCase();
-                  let courseType = '일반';
-                  if (distNum > 0 && distNum <= 3.0) courseType = '최단';
-                  else if (distNum >= 7.0) courseType = '종주';
-                  else if (combined.includes('최단') || combined.includes('단거리') || combined.includes('퇴근박') || combined.includes('활공장')) courseType = '최단';
-                  else if (combined.includes('종주') || combined.includes('능선') || combined.includes('대간')) courseType = '종주';
-
-                  const savedViews = parseInt(localStorage.getItem(`okbm_views_${spotId}`), 10) || 0;
-
-                  mapped.push({
-                    id: spotId, name: spot_main || fullName, spot_main, spot_sub, fullName, elevation, trailhead_name, trailhead_addr, entryPoint: trailhead_addr, lat, lng, region: region || '경기', cityName: cityName || '', desc_summary, desc: desc_summary, droneStatus, gpxUrl, authorSnsUrl, youtubeUrls: ytList, blogUrls: blogList, courseType, terrain: terrainList, difficulty, distance: distance_km, searchCount: savedViews, sheetIndex: idx
-                  });
-                });
-
-                if (mapped.length > 0) {
-                  spots = mapped; 
-                  localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
-                  updateNewSpotFlags(spots); 
-                  renderSpots(); 
-                  checkUrlParamSpotFocus();
-                }
+              if (results.data && results.data.length > 0) {
+                processAndApplySpotData(results.data);
               }
             }
           });
-        } catch (e) {}
+        } catch (err) {
+          console.error('[MapEngine] 시트 데이터 수신 실패:', err);
+        }
+      }
+
+      function processAndApplySpotData(rows) {
+        const mapped = [], dedupeKeySet = new Set();
+
+        rows.forEach((row, idx) => {
+          const getVal = (...keys) => {
+            for (const k of keys) {
+              for (const rk of Object.keys(row)) {
+                if (rk.toLowerCase().replace(/[\s_]/g, '') === k.toLowerCase().replace(/[\s_]/g, '')) return row[rk];
+              }
+            }
+            return '';
+          };
+
+          const spot_main = getVal('spot_main', '산이름', '메인산명', 'name', '산');
+          const spot_sub = getVal('spot_sub', '세부박지', '포인트');
+          const fullName = getVal('fullName', '전체명칭', '명칭') || (spot_sub ? `${spot_main} (${spot_sub})` : spot_main);
+
+          const lat = parseFloat(getVal('campsite_lat', 'lat', '위도', 'latitude', 'y')) || 0;
+          const lng = parseFloat(getVal('campsite_lng', 'lng', '경도', 'longitude', 'x')) || 0;
+          if ((!spot_main && !fullName) || lat === 0 || lng === 0 || isNaN(lat) || isNaN(lng)) return;
+
+          const rawId = getVal('id');
+          const fallbackUniqueId = `spot_${(spot_main || fullName).trim().replace(/\s+/g, '')}_${lat.toFixed(3)}_${lng.toFixed(3)}`;
+          const spotId = rawId ? String(rawId).trim() : fallbackUniqueId;
+          if (BLOCKED_SPOT_IDS.has(spotId)) return;
+
+          const dedupeKey = `${(spot_main || fullName).trim().replace(/\s+/g,'')}_${(spot_sub||'').trim()}_${lat.toFixed(3)}_${lng.toFixed(3)}`;
+          if (dedupeKeySet.has(dedupeKey)) return;
+          dedupeKeySet.add(dedupeKey);
+
+          let region = getVal('region', '지역'), cityName = getVal('cityName', '시군구', '시군');
+          const trailhead_addr = getVal('trailhead_addr', '들머리주소', 'entryPoint', '주소') || '들머리 정보 미입력';
+
+          if (!region || region === '경기') {
+            const autoDetect = detectRegionAndCity(lat, lng, spot_main || fullName, trailhead_addr);
+            if (!region) region = autoDetect.region;
+            if (!cityName) cityName = autoDetect.cityName;
+          }
+          if (region === '서울인천') region = '서울/인천';
+          
+          let elevation = getVal('elevation', '고도', '해발');
+          if (elevation && !String(elevation).includes('m') && !isNaN(elevation)) elevation = `${elevation}m`;
+
+          const terrainRaw = getVal('terrain', '지형', '지형형태');
+          let terrainList = [];
+          if (terrainRaw && String(terrainRaw).trim()) {
+            terrainList = String(terrainRaw).split(/[\n,]+/).map(t => {
+              const tr = t.trim();
+              if (tr === '바위' || tr === '돌박지') return '암릉';
+              if (tr.includes('해변') || tr.includes('해수욕장')) return '해변';
+              return tr;
+            }).filter(Boolean);
+          }
+          if (terrainList.length === 0) terrainList = ['데크'];
+
+          const trailhead_name = getVal('trailhead_name', '들머리명칭', '시작점');
+          const difficulty = getVal('difficulty', '난이도') || '3';
+          let distance_km = getVal('distance_km', '편도거리', '거리', 'distance');
+          if (distance_km && !String(distance_km).includes('km') && !isNaN(distance_km)) distance_km = `${distance_km}km`;
+
+          const desc_summary = getVal('desc_summary', '요약', 'desc', '특징') || '';
+          const droneStatus = getVal('droneStatus', '드론', 'drone') || '';
+          const gpxUrl = getVal('gpxUrl', 'gpx', 'gpx_url', '등산로gpx') || '';
+          const authorSnsUrl = getVal('authorSns', '등록자sns', 'author_sns', '인스타') || '';
+
+          const rawMedia = getVal('mediaUrls', '유튜브', 'youtubeUrls', '미디어', 'blogUrl');
+          const mediaList = rawMedia ? String(rawMedia).split(/[\|\n,]+/).map(u => u.trim()).filter(Boolean) : [];
+          const ytList = mediaList.filter(u => u.includes('youtu.be') || u.includes('youtube.com'));
+          const blogList = mediaList.filter(u => u.includes('blog.naver.com') || u.includes('tistory.com') || (!u.includes('youtu') && u.startsWith('http')));
+
+          const distNum = parseFloat(distance_km) || 0;
+          const combined = (fullName + ' ' + desc_summary).toLowerCase();
+          let courseType = '일반';
+          if (distNum > 0 && distNum <= 3.0) courseType = '최단';
+          else if (distNum >= 7.0) courseType = '종주';
+          else if (combined.includes('최단') || combined.includes('단거리') || combined.includes('퇴근박') || combined.includes('활공장')) courseType = '최단';
+          else if (combined.includes('종주') || combined.includes('능선') || combined.includes('대간')) courseType = '종주';
+
+          const savedViews = parseInt(localStorage.getItem(`okbm_views_${spotId}`), 10) || 0;
+
+          mapped.push({
+            id: spotId, name: spot_main || fullName, spot_main, spot_sub, fullName, elevation, trailhead_name, trailhead_addr, entryPoint: trailhead_addr, lat, lng, region: region || '경기', cityName: cityName || '', desc_summary, desc: desc_summary, droneStatus, gpxUrl, authorSnsUrl, youtubeUrls: ytList, blogUrls: blogList, courseType, terrain: terrainList, difficulty, distance: distance_km, searchCount: savedViews, sheetIndex: idx
+          });
+        });
+
+        if (mapped.length > 0) {
+          spots = mapped; 
+          localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
+          updateNewSpotFlags(spots); 
+          renderSpots(); 
+          checkUrlParamSpotFocus();
+        }
       }
 
       function getMetaBadgesHtml(spot) {
@@ -3363,7 +2962,7 @@
               ` : `
                 <div style="background:var(--bg-card); border:1px dashed var(--border-hairline); padding:6px; border-radius:6px; text-align:center;">
                   <span style="font-size:0.7rem; color:var(--text-muted);">현장 피드백 및 별점 작성은 로그인 후 가능합니다.</span>
-                  <button type="button" style="background:none; border:none; color:var(--accent-blue); font-size:0.72rem; font-weight:800; cursor:pointer; margin-left:4px;" onclick="triggerHaptic('light'); openLoginModal();">로그인</button>
+                  <button type="button" style="background:none; border:none; color:var(--accent-blue); font-size:0.72rem; font-weight:800; cursor:pointer; margin-left:4px;" onclick="triggerHaptic(10); openLoginModal();">로그인</button>
                 </div>
               `}
             </div>
@@ -3381,7 +2980,7 @@
         if (!text) return alert('후기 내용을 입력해주세요.');
 
         isCommentSubmitting = true;
-        triggerHaptic('success');
+        triggerHaptic(15);
         const newComment = { author, text, rating, date: new Date().toLocaleDateString() };
         if (!spotComments[spotId]) spotComments[spotId] = [];
         spotComments[spotId].push(newComment);
@@ -3441,7 +3040,7 @@
               <div class="top-rank-left"><span class="rank-badge ${rankClass}">${idx + 1}</span><span class="top-spot-title">${escapeHtml(item.spot_main || item.name)}</span><span class="top-spot-city">${escapeHtml(item.cityName || item.region)}</span></div>
               <div class="top-spot-views">👁️ ${getSpotViews(item)}회</div>
             </div>`;
-          li.addEventListener('click', () => { triggerHaptic('light'); dropdown.style.display = 'none'; focusSpotOnMap(item); });
+          li.addEventListener('click', () => { triggerHaptic(10); dropdown.style.display = 'none'; focusSpotOnMap(item); });
           dropdown.appendChild(li);
         });
       }
@@ -3642,7 +3241,7 @@
             groupItemsContainer.style.display = shouldBeOpen ? 'block' : 'none';
 
             groupTitle.addEventListener('click', () => {
-              triggerHaptic('light');
+              triggerHaptic(10);
               const isClosed = groupItemsContainer.style.display === 'none';
               groupItemsContainer.style.display = isClosed ? 'block' : 'none';
               groupTitle.querySelector('span:last-child').innerHTML = `${items.length}개 ${isClosed ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}`;
@@ -3742,7 +3341,7 @@
       }
 
       function openUserProposalModal() {
-        triggerHaptic('light');
+        triggerHaptic(10);
         modalMode = 'PROPOSAL'; 
         modalPendingData = { lat: 0, lng: 0, address: '' };
         
@@ -4012,7 +3611,7 @@
                   cityName: autoDetect.cityName 
                 })
               });
-              triggerHaptic('success');
+              triggerHaptic(15);
               alert('소중한 박지 제보가 접수되었습니다!\n관리자 확인 후 정식 등록됩니다. 감사합니다!');
             } catch (e) { alert('제보 접수 중 통신 오류가 발생했습니다.'); }
           } else if (modalMode === 'ADD') {
@@ -4174,7 +3773,7 @@
         const dropdown = document.getElementById('pcSearchDropdown');
         const rawQuery = inputEl ? inputEl.value.trim() : '';
         if (!rawQuery) return;
-        triggerHaptic('medium');
+        triggerHaptic(12);
 
         if (window.innerWidth <= 768) {
           isSidebarCollapsed = true;
@@ -4237,7 +3836,7 @@
                 ${(isAdminMode && !res.isInternal) ? `<button class="btn-quick-add" style="display:inline-block;" onclick="event.stopPropagation(); quickAddFromSearch('${escapeHtml(res.title)}', ${res.lat}, ${res.lng}, '${escapeHtml(res.sub)}')">➕ 등록</button>` : ''}`;
 
               li.addEventListener('click', () => {
-                triggerHaptic('light');
+                triggerHaptic(10);
                 dropdown.style.display = 'none';
                 if (window.innerWidth <= 768) { isSidebarCollapsed = true; document.getElementById('sidebar').classList.add('collapsed'); updateDockSidebarText(false); }
                 if (res.isInternal && res.spotObj) { focusSpotOnMap(res.spotObj); }
@@ -4245,8 +3844,7 @@
                   smoothCenterMapOnSpot(res.lat, res.lng);
                   if (tempSearchMarker) tempSearchMarker.setMap(null);
                   tempSearchMarker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(res.lat, res.lng), map: map });
-                  set
-                  Timeout(() => { if (tempSearchMarker) tempSearchMarker.setMap(null); }, 3500);
+                  setTimeout(() => { if (tempSearchMarker) tempSearchMarker.setMap(null); }, 3500);
                 }
               });
               dropdown.appendChild(li);
@@ -4315,7 +3913,7 @@
             refreshCurrentSpotPopup();
             syncUserDataToCloud();
             
-            triggerHaptic('success');
+            triggerHaptic(15);
             alert('데이터가 성공적으로 복원되었습니다!');
           } catch (err) {
             alert('올바른 백업 JSON 파일 형식이 아닙니다. 파일을 확인해 주세요.');
@@ -4326,5 +3924,7 @@
         reader.readAsText(file);
       }
     </script>
+    <script src="romantic-sync.js?v=2.0.1"></script>
   </body>
 </html>
+
