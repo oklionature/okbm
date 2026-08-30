@@ -1,5 +1,6 @@
+
 <!DOCTYPE html>
-<html lang="ko" class="notranslate">
+<html lang="ko" class="notranslate" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
@@ -11,30 +12,38 @@
     <!-- 🧭 브라우저 탭 제목 -->
     <title>낭만루트 ROMANTIC ROOT | 전국 백패킹 지도 커뮤니티</title>
 
-    <!-- 📱 카카오톡 / 문자 링크 공유 시 나타나는 미리보기 카드 (Open Graph) -->
+    <!-- 📱 SNS 공유 미리보기 카드 (Open Graph) -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="낭만루트 ROMANTIC ROOT | 전국 백패킹 지도 커뮤니티" />
     <meta property="og:description" content="전국 검증된 백패킹 박지, 들머리 주소, 네비바로가기까지, 실전 코스 정보" />
     <meta property="og:image" content="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80" />
     <meta name="description" content="전국 검증된 백패킹 박지, 들머리 주소, 네비바로가기까지 실전 코스 정보" />
 
-    <!-- 🔤 최상위 웹폰트 CDN (미사용 폰트 제거 및 연결 가속 최적화) -->
+    <!-- 🔤 웹폰트 CDN -->
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT/fonts/static/woff2/SUIT.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
+    
     <!-- 카카오 SDK & 카카오맵 공식 SDK -->
     <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=557f5de0f6391a2419bc5592e6a9c9c1&libraries=services,clusterer"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
     <style>
-      :root {
+      @font-face {
+  font-family: 'Arita-buri-SemiBold';
+  src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/Arita-buri-SemiBold.woff') format('woff');
+}
+
+      /* 🌙 1. 다크 모드 테마 변수 (기본값) */
+      :root, html[data-theme="dark"] {
         --bg-base: #010204;
         --bg-surface: #07090e;
         --bg-card: #0e121a;
         --bg-card-hover: #151c2a;
+        --bg-hud: #090c13;
         --border-hairline: rgba(255, 255, 255, 0.08);
         --border-accent: rgba(203, 213, 225, 0.2);
         --border-titanium: rgba(255, 255, 255, 0.18);
@@ -52,9 +61,59 @@
         --accent-rose: #f43f5e;
         --accent-purple: #a855f7;
 
+        --header-bg: rgba(1, 2, 4, 0.96);
+        --search-bar-bg: rgba(255, 255, 255, 0.08);
+        --search-bar-border: rgba(255, 255, 255, 0.12);
+        --dock-bg: rgba(0, 0, 0, 0.96);
+        --modal-bg: #090c13;
+        --modal-overlay: rgba(3, 5, 8, 0.92);
+
+        /* ☁️ 다크 모드용 로그인 버튼 (딥 티타늄/네온 블루 글래스) */
+        --auth-btn-bg: rgba(56, 189, 248, 0.12);
+        --auth-btn-border: rgba(56, 189, 248, 0.4);
+        --auth-btn-color: #38bdf8;
+        --auth-btn-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+        --auth-btn-logged-bg: rgba(16, 185, 129, 0.16);
+        --auth-btn-logged-border: rgba(16, 185, 129, 0.45);
+        --auth-btn-logged-color: #6ee7b7;
+      }
+
+      /* ☀️ 2. 일반(라이트) 모드 테마 변수 */
+      html[data-theme="light"] {
+        --bg-base: #e0f2fe;
+        --bg-surface: #ffffff;
+        --bg-card: #f8fafc;
+        --bg-card-hover: #e2d7c0;
+        --bg-hud: #f1ebd9;
+        --border-hairline: rgba(199, 187, 163, 0.4);
+        --border-accent: rgba(130, 110, 71, 0.3);
+        --border-titanium: rgba(199, 187, 163, 0.75);
+        --border-subtle: #e5dec9;
+        
+        --text-primary: #0f172a;
+        --text-secondary: #443a2c;
+        --text-muted: #826e47;
+        --accent-silver: #574d43;
+        
+        --accent-blue: #0284c7;
+        --accent-teal: #0d9488;
+        --accent-emerald: #059669;
+        --accent-amber: #826e47;
+        --accent-rose: #e11d48;
+        --accent-purple: #9333ea;
+
+        /* ☁️ 헤더 2번: 맑은 세룰리안 스카이 */
+        --header-bg: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 60%, #93c5fd 100%);
+        --search-bar-bg: rgba(255, 255, 255, 0.92);
+        --search-bar-border: #ffffff;
+        --dock-bg: #f1ebd9;
+        --modal-bg: #ffffff;
+        --modal-overlay: rgba(15, 23, 42, 0.65);
+      }
+
+      :root {
         --font-display: 'SUIT', -apple-system, sans-serif;
         --font-en: 'Space Grotesk', -apple-system, sans-serif;
-        --font-script: 'Dancing Script', cursive;
         --font-body: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
 
         --z-map: 1; 
@@ -95,6 +154,7 @@
         background-color: var(--bg-base); 
         color: var(--text-primary); 
         line-height: 1.45; 
+        transition: background-color 0.25s ease, color 0.25s ease;
       }
 
       .ui-icon { 
@@ -111,29 +171,32 @@
         flex-shrink: 0; 
       }
 
-      /* 🧭 1. 상단 GNB (index.html 100% 동일 광학 정렬 계승) */
-      @import url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_one@1.0/Arita-buri-SemiBold.woff');
-
+      /* 🧭 1. 상단 GNB 레이아웃 */
       .apple-integrated-header {
         position: relative;
         z-index: var(--z-header);
         width: 100%;
-        background: rgba(1, 2, 4, 0.96);
+        background: var(--header-bg);
         border-bottom: 1px solid var(--border-hairline);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        padding: 0 14px 8px 14px !important;
+        padding: 0 14px 4px 14px !important;
         padding-top: env(safe-area-inset-top, 0px) !important;
         user-select: none;
         display: flex;
         flex-direction: column;
-        gap: 4px !important;
+        gap: 2px !important;
         flex-shrink: 0;
         box-sizing: border-box;
       }
 
+      html[data-theme="light"] .apple-integrated-header {
+        border-bottom: 1.5px solid rgba(56, 189, 248, 0.35) !important;
+        box-shadow: 0 4px 18px rgba(56, 189, 248, 0.15) !important;
+      }
+
       .header-top-row {
-        height: 52px !important;
+        height: 42px !important;
         min-height: 52px !important;
         display: flex !important;
         align-items: center !important;
@@ -145,6 +208,17 @@
         box-sizing: border-box !important;
       }
 
+      .brand-line {
+        height: 42px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 7px !important;
+        text-decoration: none !important;
+        transition: transform 0.15s ease !important;
+        margin: 0 !important;
+        flex-shrink: 0 !important;
+      }
       .brand-line {
         height: 52px !important;
         display: inline-flex !important;
@@ -158,6 +232,7 @@
       }
       .brand-line:active { transform: scale(0.98); }
 
+      /* 로고 34px 박스 & 30px SVG 크기 강제 고정 */
       .brand-sym-box {
         width: 34px !important;
         height: 34px !important;
@@ -166,39 +241,61 @@
         justify-content: center !important;
         position: relative !important;
         flex-shrink: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-      .brand-sym-box::before {
-        content: '';
-        position: absolute;
-        width: 38px;
-        height: 38px;
-        background: radial-gradient(circle at 65% 25%, rgba(245, 158, 11, 0.35) 0%, rgba(244, 114, 182, 0.22) 45%, transparent 70%);
-        border-radius: 50%;
-        z-index: -1;
-        filter: blur(4px);
       }
       .brand-sym-box svg { 
         width: 30px !important; 
         height: 30px !important; 
+        max-width: 30px !important;
+        max-height: 30px !important;
         display: block !important; 
-        margin: 0 !important;
       }
-      
+
+      /* ☁️ 라이트 모드 로고 뒤 화이트 몽글 구름 광채 */
+      html[data-theme="light"] .brand-sym-box::before {
+        content: '' !important;
+        position: absolute !important;
+        width: 44px !important;
+        height: 44px !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        background: radial-gradient(circle at 65% 25%, #ffffff 0%, rgba(255, 255, 255, 0.9) 40%, rgba(147, 197, 253, 0.4) 65%, transparent 80%) !important;
+        border-radius: 50% !important;
+        z-index: -1 !important;
+        filter: blur(4.5px) !important;
+        pointer-events: none !important;
+      }
+
+      /* 🌙 다크 모드 로고 뒤 앰비언트 글로우 */
+      html[data-theme="dark"] .brand-sym-box::before {
+        content: '';
+        position: absolute;
+        width: 38px;
+        height: 38px;
+        background: radial-gradient(circle at 65% 25%, rgba(245, 158, 11, 0.35) 0%, rgba(16, 185, 129, 0.25) 45%, transparent 70%);
+        border-radius: 50%;
+        z-index: -1;
+        filter: blur(4px);
+      }
+
+      /* 🏷️ 메인 타이틀: 완벽한 수직 중앙 정렬 */
       .brand-title {
         font-family: 'SUIT', sans-serif !important;
         font-size: 1.12rem !important;
         font-weight: 900 !important;
-        color: #ffffff !important;
+        color: var(--text-primary) !important;
         line-height: 1 !important;
         display: inline-flex !important;
         align-items: center !important;
         letter-spacing: -0.02em !important;
-        text-shadow: 0 0 16px rgba(255, 255, 255, 0.35) !important;
-        margin: 0 !important;
-        padding: 0 !important;
+        transform: translateY(0.5px) !important; /* 🎯 수직 정중앙 미세 보정 */
       }
+      html[data-theme="light"] .brand-title {
+        color: #075985 !important;
+        text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9) !important;
+      }
+
+      /* 🔸 연결 점(Dot): 수직 정중앙 정렬 */
       .brand-dot {
         width: 3.5px !important;
         height: 3.5px !important;
@@ -208,20 +305,30 @@
         display: inline-block !important;
         flex-shrink: 0 !important;
         margin: 0 1px !important;
-        transform: translateY(0.5px) !important; /* 🎯 광학적 수직 중심 보정 */
+        transform: translateY(1px) !important; /* 🎯 수직 정중앙 보정 */
       }
+      html[data-theme="light"] .brand-dot {
+        background: #0369a1 !important;
+        box-shadow: 0 0 6px #0369a1 !important;
+      }
+
+      /* 🌿 서브타이틀: 다크모드 밝은 그린(#6ee7b7) + 수직 정중앙 완벽 배치 */
       .brand-en {
         font-family: 'Arita-buri-SemiBold', serif !important;
         font-size: 0.84rem !important;
         font-weight: normal !important;
-        color: #fda4af !important;
+        color: #6ee7b7 !important; /* 🌿 다크모드: 화사하고 밝은 에메랄드 그린 */
         letter-spacing: -0.02em !important;
         line-height: 1 !important;
         display: inline-flex !important;
         align-items: center !important;
-        text-shadow: 0 0 10px rgba(253, 164, 175, 0.3) !important;
         white-space: nowrap !important;
-        transform: translateY(-0.5px) !important; /* 🎯 세리프 폰트 처짐 광학 보정 */
+        transform: translateY(1.2px) !important; /* 🎯 들려있던 세리프 폰트를 정중앙으로 하향 보정 */
+        text-shadow: 0 0 10px rgba(110, 231, 183, 0.35) !important;
+      }
+      html[data-theme="light"] .brand-en {
+        color: #0369a1 !important;
+        text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9) !important;
       }
 
       .admin-status-badge { 
@@ -243,12 +350,13 @@
         flex-shrink: 0 !important;
       }
 
-      .header-auth-btn { 
+      /* ☁️ 다크 모드 로그인 버튼 */
+      html[data-theme="dark"] .header-auth-btn { 
         height: 28px !important;
         line-height: 28px !important;
-        background: rgba(56,189,248,0.12) !important; 
-        border: 1px solid rgba(56,189,248,0.4) !important; 
-        color: var(--accent-blue) !important; 
+        background: var(--auth-btn-bg) !important; 
+        border: 1px solid var(--auth-btn-border) !important; 
+        color: var(--auth-btn-color) !important; 
         padding: 0 9px !important; 
         border-radius: 14px !important; 
         font-size: 0.72rem !important; 
@@ -260,18 +368,141 @@
         gap: 3px !important; 
         transition: all 0.2s ease !important; 
         white-space: nowrap !important; 
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35) !important;
+        box-shadow: var(--auth-btn-shadow) !important;
       }
-      .header-auth-btn.logged-in { 
-        background: rgba(16,185,129,0.16) !important; 
-        border-color: rgba(16,185,129,0.45) !important; 
-        color: #6ee7b7 !important; 
+      html[data-theme="dark"] .header-auth-btn.logged-in { 
+        background: var(--auth-btn-logged-bg) !important; 
+        border-color: var(--auth-btn-logged-border) !important; 
+        color: var(--auth-btn-logged-color) !important; 
+      }
+
+      /* ☁️ 라이트 모드 1번 확정: 25px 화이트 솜구름 로그인 버튼 */
+      html[data-theme="light"] .header-auth-btn {
+        position: relative !important;
+        overflow: visible !important;
+        height: 25px !important;
+        line-height: 25px !important;
+        padding: 0 9.5px !important;
+        border-radius: 13px 13px 16px 16px / 12px 12px 18px 18px !important;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+        border: 1.5px solid #ffffff !important;
+        box-shadow: 0 3px 10px rgba(2, 132, 199, 0.22), inset 0 1.5px 2px #ffffff !important;
+        color: #0369a1 !important;
+        font-weight: 900 !important;
+        font-size: 0.67rem !important;
+        letter-spacing: -0.02em !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 3.5px !important;
+        cursor: pointer !important;
+        z-index: 10 !important;
+        transition: all 0.2s ease !important;
+        white-space: nowrap !important;
+      }
+      html[data-theme="light"] .header-auth-btn::before {
+        content: '' !important;
+        position: absolute !important;
+        width: 28px !important;
+        height: 9px !important;
+        top: -3.4px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+        border-radius: 50% 50% 0 0 / 100% 100% 0 0 !important;
+        z-index: -1 !important;
+        box-shadow: 0 -2px 5px rgba(2, 132, 199, 0.1), inset 0 1.5px 1.5px #ffffff !important;
+      }
+      html[data-theme="light"] .header-auth-btn::after {
+        content: '' !important;
+        display: block !important;
+        position: absolute !important;
+        width: 22px !important;
+        height: 6px !important;
+        bottom: -1.5px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%) !important;
+        border-radius: 0 0 50% 50% / 0 0 100% 100% !important;
+        z-index: -1 !important;
+        box-shadow: 0 3px 6px rgba(2, 132, 199, 0.14), inset 0 -1px 1px rgba(186, 230, 253, 0.5) !important;
+      }
+      html[data-theme="light"] .header-auth-btn > * {
+        position: relative !important;
+        z-index: 3 !important;
+      }
+      html[data-theme="light"] .header-auth-btn.logged-in {
+        color: #065f46 !important;
+      }
+      html[data-theme="light"] .header-auth-btn.logged-in svg {
+        color: #10b981 !important;
+      }
+
+      /* 🪵 4번 픽스: 하단독 & HUD 타워 내추럴 카키 토프 흙색 파스텔톤 */
+      html[data-theme="light"] .mobile-bottom-dock {
+        background: #f1ebd9 !important;
+        border-top: 1.5px solid rgba(199, 187, 163, 0.75) !important;
+        box-shadow: 0 -4px 18px rgba(100, 85, 60, 0.12) !important;
+      }
+      html[data-theme="light"] .dock-item {
+        color: #443a2c !important;
+      }
+      html[data-theme="light"] .dock-item.active {
+        color: #826e47 !important;
+      }
+      html[data-theme="light"] .dock-item:active {
+        background: #e0d7c0 !important;
+      }
+
+      /* 좌측 필터 타워 */
+      html[data-theme="light"] .left-filter-tower-box {
+        background: #f1ebd9 !important;
+        border: 1.5px solid rgba(199, 187, 163, 0.75) !important;
+        box-shadow: 0 8px 24px rgba(100, 85, 60, 0.15) !important;
+      }
+      html[data-theme="light"] .tower-toggle-btn {
+        color: #443a2c !important;
+        border-bottom: 1px solid rgba(199, 187, 163, 0.75) !important;
+      }
+      html[data-theme="light"] .tower-toggle-btn:hover,
+      html[data-theme="light"] .tower-toggle-btn:active {
+        background: #e0d7c0 !important;
+      }
+
+      /* 우측 줌/내위치 타워 */
+      html[data-theme="light"] .right-hud-tower-box {
+        background: #f1ebd9 !important;
+        border: 1.5px solid rgba(199, 187, 163, 0.75) !important;
+        box-shadow: 0 8px 24px rgba(100, 85, 60, 0.15) !important;
+      }
+      html[data-theme="light"] .tower-btn {
+        color: #443a2c !important;
+        border-bottom: 1px solid rgba(199, 187, 163, 0.75) !important;
+      }
+      html[data-theme="light"] .tower-btn:hover,
+      html[data-theme="light"] .tower-btn:active {
+        background: #e0d7c0 !important;
+      }
+
+      /* 우측 상단 레이어/테마 타워 */
+      html[data-theme="light"] .top-hud-tower-box {
+        background: #f1ebd9 !important;
+        border: 1.5px solid rgba(199, 187, 163, 0.75) !important;
+        box-shadow: 0 6px 20px rgba(100, 85, 60, 0.15) !important;
+      }
+      html[data-theme="light"] .top-hud-btn {
+        color: #443a2c !important;
+        border-bottom: 1px solid rgba(199, 187, 163, 0.75) !important;
+      }
+      html[data-theme="light"] .top-hud-btn:hover,
+      html[data-theme="light"] .top-hud-btn:active {
+        background: #e0d7c0 !important;
       }
 
       .header-btn {
         height: 28px !important;
         line-height: 28px !important;
-        background: rgba(255, 255, 255, 0.08) !important;
+        background: var(--search-bar-bg) !important;
         border: 1px solid var(--border-hairline) !important;
         color: var(--text-secondary) !important;
         padding: 0 9px !important;
@@ -285,8 +516,8 @@
         white-space: nowrap !important;
       }
       .header-btn:hover {
-        background: rgba(255, 255, 255, 0.15) !important;
-        color: #ffffff !important;
+        background: var(--bg-card-hover) !important;
+        color: var(--text-primary) !important;
       }
 
       /* 🔍 2열 초밀착 풀와이드 슬림 검색바 */
@@ -299,8 +530,8 @@
       .apple-search-bar {
         width: 100% !important;
         height: 36px !important;
-        background: rgba(255, 255, 255, 0.08) !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        background: var(--search-bar-bg) !important;
+        border: 1px solid var(--search-bar-border) !important;
         border-radius: 10px !important;
         display: flex !important;
         align-items: center !important;
@@ -310,24 +541,16 @@
         box-sizing: border-box !important;
       }
       .apple-search-bar:focus-within {
-        background: rgba(255, 255, 255, 0.12) !important;
-        border-color: rgba(255, 255, 255, 0.3) !important;
+        border-color: var(--accent-blue) !important;
       }
       
       .apple-search-bar .icon-svg {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
-        margin: 0 !important;
         width: 14px !important;
         height: 14px !important;
-        line-height: 1 !important;
         flex-shrink: 0;
-      }
-      .apple-search-bar .icon-svg svg {
-        width: 14px;
-        height: 14px;
-        display: block;
       }
 
       .apple-search-input {
@@ -335,7 +558,7 @@
         height: 100%;
         background: transparent;
         border: none;
-        color: #ffffff;
+        color: var(--text-primary);
         font-size: 0.82rem !important;
         font-weight: 500;
         outline: none;
@@ -343,18 +566,15 @@
         padding: 0;
         margin: 0;
         line-height: normal;
-        display: flex;
-        align-items: center;
       }
       .apple-search-input::placeholder { 
-        color: #64748b; 
-        line-height: normal;
+        color: var(--text-muted); 
       }
       
       .btn-clear-search {
-        background: rgba(255, 255, 255, 0.2);
+        background: rgba(148, 163, 184, 0.3);
         border: none;
-        color: #cbd5e1;
+        color: var(--text-secondary);
         width: 16px;
         height: 16px;
         border-radius: 50%;
@@ -371,10 +591,10 @@
         top: 42px; 
         left: 0; 
         right: 0; 
-        background: #090c13; 
+        background: var(--bg-surface); 
         color: var(--text-primary); 
         border-radius: 12px; 
-        box-shadow: 0 18px 40px rgba(0,0,0,0.95); 
+        box-shadow: 0 18px 40px rgba(0,0,0,0.5); 
         list-style: none; 
         max-height: 320px; 
         overflow-y: auto; 
@@ -384,7 +604,7 @@
       }
       .dropdown-header { 
         padding: 8px 12px; 
-        background-color: var(--bg-surface); 
+        background-color: var(--bg-card); 
         font-size: 0.74rem; 
         font-weight: 700; 
         color: var(--accent-blue); 
@@ -394,7 +614,7 @@
         align-items: center; 
       }
       .btn-close-dropdown { 
-        background: rgba(255,255,255,0.08); 
+        background: var(--bg-surface); 
         border: 1px solid var(--border-hairline); 
         color: var(--text-muted); 
         border-radius: 4px; 
@@ -417,17 +637,17 @@
       .rank-badge { width: 20px; height: 20px; line-height: 20px; text-align: center; border-radius: 50%; font-size: 0.68rem; font-weight: 800; }
       .rank-1 { background: #fef08a; color: #854d0e; } .rank-2 { background: #e2e8f0; color: #334155; } .rank-3 { background: #fed7aa; color: #9a3412; } .rank-etc { background: var(--bg-card); color: var(--text-muted); }
       .top-spot-title { font-weight: 700; color: var(--accent-blue); font-size: 0.86rem; }
-      .top-spot-city { font-size: 0.72rem; color: #7dd3fc; background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px; }
+      .top-spot-city { font-size: 0.72rem; color: var(--accent-blue); background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px; }
       .top-spot-views { font-size: 0.74rem; color: var(--text-muted); }
 
-      /* 🗺️ 메인 레이아웃 및 지도 영역 */
+      /* 🗺️ 메인 레이아웃 및 사이드바 */
       .container { display: flex; width: 100%; flex: 1; position: relative; overflow: hidden; }
-      .sidebar { width: 390px; max-width: 100%; height: 100%; background-color: var(--bg-surface); border-right: 1px solid var(--border-titanium); display: flex; flex-direction: column; flex-shrink: 0; z-index: var(--z-sidebar); color: var(--text-primary); position: relative; box-shadow: 4px 0 20px rgba(0,0,0,0.6); }
+      .sidebar { width: 390px; max-width: 100%; height: 100%; background-color: var(--bg-surface); border-right: 1px solid var(--border-titanium); display: flex; flex-direction: column; flex-shrink: 0; z-index: var(--z-sidebar); color: var(--text-primary); position: relative; box-shadow: 4px 0 20px rgba(0,0,0,0.15); }
 
-      .pc-sliding-drawer { position: absolute; top: 0; left: 390px; width: 380px; height: 100%; background: #090c13 !important; border-right: 1.5px solid var(--border-titanium); z-index: var(--z-pc-drawer); box-shadow: 12px 0 36px rgba(0,0,0,0.95); transform: translateX(-100%); opacity: 0; visibility: hidden; pointer-events: none; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease, visibility 0.3s; display: flex; flex-direction: column; overflow-y: auto; padding: 14px 16px; gap: 7px; }
+      .pc-sliding-drawer { position: absolute; top: 0; left: 390px; width: 380px; height: 100%; background: var(--bg-surface) !important; border-right: 1.5px solid var(--border-titanium); z-index: var(--z-pc-drawer); box-shadow: 12px 0 36px rgba(0,0,0,0.4); transform: translateX(-100%); opacity: 0; visibility: hidden; pointer-events: none; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease, visibility 0.3s; display: flex; flex-direction: column; overflow-y: auto; padding: 14px 16px; gap: 7px; }
       .pc-sliding-drawer.open { transform: translateX(0); opacity: 1; visibility: visible; pointer-events: auto; }
       
-      .floating-drawer-close-tab { position: fixed; left: 770px; top: 50%; transform: translateY(-50%); background: #0f172a; border: 1.5px solid var(--accent-blue); color: #fff; padding: 12px 8px; border-radius: 0 12px 12px 0; font-size: 0.74rem; font-weight: 800; cursor: pointer; z-index: calc(var(--z-pc-drawer) + 10); display: none !important; align-items: center; justify-content: center; writing-mode: vertical-rl; text-orientation: mixed; gap: 4px; box-shadow: 6px 0 18px rgba(0,0,0,0.7); }
+      .floating-drawer-close-tab { position: fixed; left: 770px; top: 50%; transform: translateY(-50%); background: var(--bg-card); border: 1.5px solid var(--accent-blue); color: var(--text-primary); padding: 12px 8px; border-radius: 0 12px 12px 0; font-size: 0.74rem; font-weight: 800; cursor: pointer; z-index: calc(var(--z-pc-drawer) + 10); display: none !important; align-items: center; justify-content: center; writing-mode: vertical-rl; text-orientation: mixed; gap: 4px; box-shadow: 6px 0 18px rgba(0,0,0,0.3); }
       .pc-sliding-drawer.open ~ .floating-drawer-close-tab { display: flex !important; }
 
       .sidebar-header { padding: 8px 14px; min-height: 44px; font-weight: 700; font-size: 0.86rem; background-color: var(--bg-base); border-bottom: 1px solid var(--border-hairline); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
@@ -442,13 +662,13 @@
       .admin-tool-btn { flex: 1; padding: 4px 8px; font-size: 0.7rem; font-weight: 700; border-radius: 6px; border: 1px solid var(--border-hairline); background: var(--bg-surface); color: var(--text-secondary); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
 
       .filter-wrapper { background: var(--bg-base); border-bottom: 1px solid var(--border-titanium); display: flex; flex-direction: column; gap: 4px; padding: 5px 8px; flex-shrink: 0; }
-      .master-tab-bar { display: flex; background: rgba(255,255,255,0.04); border-radius: 8px; padding: 2px; gap: 2px; width: 100%; }
+      .master-tab-bar { display: flex; background: var(--bg-card); border-radius: 8px; padding: 2px; gap: 2px; width: 100%; }
       .master-tab-btn { flex: 1; padding: 4px 1px; min-height: 26px; border: none; border-radius: 6px; background: transparent; color: var(--text-muted); font-size: 0.74rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; white-space: nowrap; }
-      .master-tab-btn.active { background: var(--bg-card); color: var(--accent-blue); border: 1px solid var(--border-titanium); }
+      .master-tab-btn.active { background: var(--bg-surface); color: var(--accent-blue); border: 1px solid var(--border-titanium); }
       .sub-chips-bar { display: flex; overflow-x: auto; gap: 4px; align-items: center; padding: 1px 0; scrollbar-width: none; width: 100%; }
       .sub-chips-bar::-webkit-scrollbar { display: none; }
       .filter-chip { padding: 3px 8px; min-height: 24px; border-radius: 12px; border: 1px solid var(--border-hairline); background: var(--bg-card); color: var(--text-secondary); font-size: 0.71rem; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; }
-      .filter-chip.active { background: #0284c7; color: #fff; border-color: var(--accent-blue); box-shadow: 0 0 8px rgba(56,189,248,0.45); }
+      .filter-chip.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); box-shadow: 0 0 8px rgba(56,189,248,0.45); }
       .filter-chip.chip-status.active { background: #0d9488; border-color: #2dd4bf; box-shadow: 0 0 8px rgba(45,212,191,0.45); }
 
       .spot-list { flex: 1; overflow-y: auto; list-style: none; background: var(--bg-surface); width: 100%; padding-bottom: 24px; }
@@ -464,48 +684,45 @@
       .color-diff-mid { color: #f59e0b !important; }
       .color-diff-hard { color: #f43f5e !important; }
       
-      .spot-tags-row { display: flex; align-items: center; gap: 4px; flex-wrap: nowrap; overflow-x: hidden; width: 100%; }
-      .spot-meta-badges { display: inline-flex; align-items: center; gap: 4px; flex-wrap: nowrap; }
       .badge-status { font-size: 0.63rem; font-weight: 800; padding: 2px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; flex-shrink: 0; }
       .badge-new { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
       .badge-hot { background: linear-gradient(135deg, #f43f5e, #f97316); color: #fff; }
       
-      .badge-sub-point { background: rgba(56,189,248,0.14); color: #38bdf8; border: 1px solid rgba(56,189,248,0.4); font-size: 0.80rem; font-weight: 800; padding: 2px 7px; border-radius: 5px; display: inline-flex; align-items: center; gap: 3px; margin: 2px 0 1px 0; }
+      .badge-sub-point { background: rgba(56,189,248,0.14); color: var(--accent-blue); border: 1px solid rgba(56,189,248,0.4); font-size: 0.80rem; font-weight: 800; padding: 2px 7px; border-radius: 5px; display: inline-flex; align-items: center; gap: 3px; margin: 2px 0 1px 0; }
 
       .badge-drone { font-size: 0.63rem; font-weight: 800; padding: 1.5px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; }
-      .drone-ok { background: rgba(16,185,129,0.16); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.35); }
-      .drone-warn { background: rgba(245,158,11,0.16); color: #fde047; border: 1px solid rgba(245,158,11,0.35); }
-      .drone-no { background: rgba(244,63,94,0.16); color: #fda4af; border: 1px solid rgba(244,63,94,0.35); }
+      .drone-ok { background: rgba(16,185,129,0.16); color: #059669; border: 1px solid rgba(16,185,129,0.35); }
+      .drone-warn { background: rgba(245,158,11,0.16); color: #d97706; border: 1px solid rgba(245,158,11,0.35); }
+      .drone-no { background: rgba(244,63,94,0.16); color: #e11d48; border: 1px solid rgba(244,63,94,0.35); }
 
       .spot-card-quick-actions { position: static !important; display: flex !important; align-items: center; gap: 3px; flex-shrink: 0; margin-left: auto !important; }
-      .btn-card-quick { background: rgba(255,255,255,0.05); border: 1px solid var(--border-hairline); color: var(--text-muted); border-radius: 5px; padding: 2.5px 6px; font-size: 0.65rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 2px; transition: all 0.2s ease; }
+      .btn-card-quick { background: var(--bg-card); border: 1px solid var(--border-hairline); color: var(--text-muted); border-radius: 5px; padding: 2.5px 6px; font-size: 0.65rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 2px; transition: all 0.2s ease; }
       .btn-card-quick.active-fav { background: #f43f5e !important; border: 1.5px solid #f43f5e !important; color: #ffffff !important; box-shadow: 0 0 10px rgba(244,63,94,0.55); font-weight: 900; }
       .btn-card-quick.active-done { background: #0284c7 !important; border: 1.5px solid #38bdf8 !important; color: #ffffff !important; box-shadow: 0 0 10px rgba(56,189,248,0.55); font-weight: 900; }
       
       .city-badge-colored {
         font-size: 0.74rem !important;
         font-weight: 800 !important;
-        color: #2dd4bf !important;
+        color: #0d9488 !important;
         background: rgba(45, 212, 191, 0.14) !important;
         border: 1px solid rgba(45, 212, 191, 0.35) !important;
         padding: 1px 5px !important;
         border-radius: 4px !important;
-        letter-spacing: -0.01em !important;
       }
       
       .meta-tag { font-size: 0.65rem; padding: 2px 5px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; flex-shrink: 0; }
-      .tag-terrain-deck { background: rgba(245,158,11,0.14); color: #fbbf24; border: 1px solid rgba(245,158,11,0.28); }
-      .tag-terrain-rock { background: rgba(148,163,184,0.14); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.28); }
-      .tag-terrain-soil { background: rgba(34,197,94,0.14); color: #4ade80; border: 1px solid rgba(34,197,94,0.28); }
-      .tag-terrain-beach { background: rgba(14,165,233,0.16); color: #38bdf8; border: 1px solid rgba(56,189,248,0.38); }
+      .tag-terrain-deck { background: rgba(245,158,11,0.14); color: #d97706; border: 1px solid rgba(245,158,11,0.28); }
+      .tag-terrain-rock { background: rgba(148,163,184,0.14); color: var(--text-secondary); border: 1px solid rgba(148,163,184,0.28); }
+      .tag-terrain-soil { background: rgba(34,197,94,0.14); color: #16a34a; border: 1px solid rgba(34,197,94,0.28); }
+      .tag-terrain-beach { background: rgba(14,165,233,0.16); color: #0284c7; border: 1px solid rgba(56,189,248,0.38); }
       .tag-terrain-island { background: rgba(45,212,191,0.16); color: var(--accent-teal); border: 1px solid rgba(45,212,191,0.35); }
-      .tag-terrain-valley { background: rgba(56,189,248,0.14); color: #38bdf8; border: 1px solid rgba(56,189,248,0.28); }
-      .tag-diff { background: rgba(2,132,199,0.22); color: #fde047; border: 1px solid rgba(2,132,199,0.45); }
-      .tag-dist { background: rgba(16,185,129,0.14); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+      .tag-terrain-valley { background: rgba(56,189,248,0.14); color: #0284c7; border: 1px solid rgba(56,189,248,0.28); }
+      .tag-diff { background: rgba(2,132,199,0.18); color: var(--accent-amber); border: 1px solid rgba(2,132,199,0.35); }
+      .tag-dist { background: rgba(16,185,129,0.14); color: var(--accent-emerald); border: 1px solid rgba(16,185,129,0.3); }
       
       .spot-desc-multi {
         font-size: 0.74rem;
-        color: #cbd5e1;
+        color: var(--text-secondary);
         line-height: 1.45;
         margin-top: 3px;
         display: -webkit-box;
@@ -519,146 +736,87 @@
       .btn-edit, .btn-del { border: none; border-radius: 5px; padding: 3px 7px; font-size: 0.68rem; cursor: pointer; display: none; font-weight: 700; color: #fff; }
       .btn-edit { background: #0284c7; } .btn-del { background: #ef4444; }
       .btn-quick-add { background: #0f766e; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; font-weight: 800; cursor: pointer; }
-      .sheet-close-btn { background: rgba(255,255,255,0.08); border: 1px solid var(--border-titanium); color: var(--text-secondary); width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; font-weight: 800; }
-      .sheet-close-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+      .sheet-close-btn { background: var(--bg-card); border: 1px solid var(--border-titanium); color: var(--text-secondary); width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; font-weight: 800; }
 
       #map { flex: 1; width: 100%; height: 100%; position: relative; background: var(--bg-base); touch-action: pan-x pan-y; }
 
-      /* HUD 타워 시스템 */
-      .top-right-layer-btn { position: absolute; top: 8px; right: 8px; z-index: var(--z-hud); width: 38px; height: 38px; background: #090c13; border: 1.5px solid var(--border-titanium); border-radius: 10px; box-shadow: 0 4px 18px rgba(0,0,0,0.85); color: var(--text-secondary); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; gap: 1px; }
-      @media (min-width: 769px) { .top-right-layer-btn { top: 16px; right: 16px; } }
-      .top-right-layer-btn.active-hybrid { background: rgba(2,132,199,0.35) !important; color: #38bdf8 !important; border-color: var(--accent-blue) !important; }
-      .top-right-layer-btn.active-terrain { background: rgba(16,185,129,0.35) !important; color: #6ee7b7 !important; border-color: #10b981 !important; }
+      /* 🧭 HUD 타워 시스템 (우측 상단 2열 타워: 1열 위성/지도 + 2열 테마 전환) */
+      .top-right-hud-group { 
+        position: absolute; 
+        top: 8px; 
+        right: 8px; 
+        z-index: var(--z-hud); 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        width: 38px; 
+        height: 76px; 
+      }
+      @media (min-width: 769px) { .top-right-hud-group { top: 16px; right: 16px; } }
+      .top-hud-tower-box { 
+        width: 38px; 
+        height: 76px; 
+        background: var(--bg-hud); 
+        border: 1.5px solid var(--border-titanium); 
+        border-radius: 10px; 
+        box-shadow: 0 6px 20px rgba(0,0,0,0.4); 
+        overflow: hidden; 
+        display: flex; 
+        flex-direction: column; 
+      }
+      .top-hud-btn { 
+        width: 38px; 
+        flex: 1; 
+        background: transparent; 
+        border: none; 
+        border-bottom: 1px solid var(--border-hairline); 
+        color: var(--text-secondary); 
+        font-size: 0.72rem; 
+        font-weight: 800; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        justify-content: center; 
+        cursor: pointer; 
+        gap: 1px; 
+        user-select: none; 
+      }
+      .top-hud-btn:last-child { border-bottom: none; }
+      .top-hud-btn.active-layer { color: var(--accent-blue) !important; background: rgba(56,189,248,0.15) !important; }
 
       .right-bottom-hud-group { position: absolute; bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 10px); right: 8px; z-index: var(--z-hud); display: flex; flex-direction: column; align-items: center; width: 38px; height: 114px; }
       @media (min-width: 769px) { .right-bottom-hud-group { bottom: 20px; right: 16px; } }
-      .right-hud-tower-box { width: 38px; height: 114px; background: #090c13; border: 1.5px solid var(--border-titanium); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.85); overflow: hidden; display: flex; flex-direction: column; }
+      .right-hud-tower-box { width: 38px; height: 114px; background: var(--bg-hud); border: 1.5px solid var(--border-titanium); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); overflow: hidden; display: flex; flex-direction: column; }
       .tower-btn { width: 38px; flex: 1; background: transparent; border: none; border-bottom: 1px solid var(--border-hairline); color: var(--text-secondary); font-size: 0.72rem; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; gap: 1px; user-select: none; }
       .tower-btn:last-child { border-bottom: none; }
       .tower-btn-text { font-size: 0.55rem; font-weight: 700; line-height: 1; }
 
       .left-bottom-filter-wrap { position: absolute; bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 10px); left: 8px; z-index: var(--z-hud); display: flex; flex-direction: column; align-items: center; width: 38px; height: 114px; }
       @media (min-width: 769px) { .left-bottom-filter-wrap { bottom: 20px; left: 16px; } }
-      .left-filter-tower-box { width: 38px; height: 114px; background: #090c13; border: 1.5px solid var(--border-titanium); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.85); overflow: hidden; display: flex; flex-direction: column; }
+      .left-filter-tower-box { width: 38px; height: 114px; background: var(--bg-hud); border: 1.5px solid var(--border-titanium); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); overflow: hidden; display: flex; flex-direction: column; }
       .tower-toggle-btn { width: 38px; flex: 1; background: transparent; border: none; border-bottom: 1px solid var(--border-hairline); color: var(--text-secondary); font-size: 0.72rem; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; gap: 1px; user-select: none; }
       .tower-toggle-btn:last-child { border-bottom: none; }
-      .tower-toggle-btn.active-diff-easy { background: rgba(16,185,129,0.25); color: #6ee7b7; }
-      .tower-toggle-btn.active-diff-mid { background: rgba(245,158,11,0.25); color: #fde047; }
-      .tower-toggle-btn.active-diff-hard { background: rgba(244,63,94,0.25); color: #fda4af; }
-      .tower-toggle-btn.active-status { background: rgba(2,132,199,0.3); color: #38bdf8; }
-      .tower-toggle-btn.active-terrain { background: rgba(13,148,136,0.3); color: #2dd4bf; }
+      .tower-toggle-btn.active-diff-easy { background: rgba(16,185,129,0.25); color: #10b981; }
+      .tower-toggle-btn.active-diff-mid { background: rgba(245,158,11,0.25); color: #f59e0b; }
+      .tower-toggle-btn.active-diff-hard { background: rgba(244,63,94,0.25); color: #f43f5e; }
+      .tower-toggle-btn.active-status { background: rgba(2,132,199,0.3); color: var(--accent-blue); }
+      .tower-toggle-btn.active-terrain { background: rgba(13,148,136,0.3); color: var(--accent-teal); }
 
       /* 🏷️ 마커 라벨 스타일 */
-      .lod-marker-container {
-        position: relative !important;
-        width: 34px !important;
-        height: 42px !important;
-        pointer-events: none !important;
-      }
-      .marker-badge-corner {
-        position: absolute;
-        top: -6px;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        border: 1.5px solid #ffffff;
-        z-index: 10;
-        pointer-events: none !important;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
-        padding: 0 !important;
-        box-sizing: border-box;
-      }
-      .marker-badge-corner svg,
-      .marker-badge-corner .ui-icon {
-        width: 10px !important;
-        height: 10px !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        vertical-align: 0 !important;
-        display: block !important;
-        flex-shrink: 0;
-      }
-      .badge-corner-fav {
-        left: -7px;
-        background: #f43f5e;
-        color: #ffffff;
-      }
-      .badge-corner-visited {
-        right: -7px;
-        background: #0284c7;
-        color: #ffffff;
-      }
+      .lod-marker-container { position: relative !important; width: 34px !important; height: 42px !important; pointer-events: none !important; }
+      .marker-badge-corner { position: absolute; top: -6px; width: 18px; height: 18px; border-radius: 50%; display: flex !important; align-items: center !important; justify-content: center !important; border: 1.5px solid #ffffff; z-index: 10; pointer-events: none !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6); padding: 0 !important; box-sizing: border-box; }
+      .marker-badge-corner svg, .marker-badge-corner .ui-icon { width: 10px !important; height: 10px !important; margin: 0 !important; padding: 0 !important; vertical-align: 0 !important; display: block !important; flex-shrink: 0; }
+      .badge-corner-fav { left: -7px; background: #f43f5e; color: #ffffff; }
+      .badge-corner-visited { right: -7px; background: #0284c7; color: #ffffff; }
 
-      .lod-marker-label {
-        position: absolute !important;
-        bottom: 44px !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        background: transparent !important;
-        background-color: transparent !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-        border: none !important;
-        outline: none !important;
-        border-radius: 0 !important;
-        padding: 0 !important;
-        box-shadow: none !important;
-        pointer-events: none !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        gap: 1px !important;
-        white-space: nowrap !important;
-        filter: none !important;
-      }
-
-      .lod-label-row-1 {
-        font-family: 'SUIT', 'Pretendard Variable', sans-serif !important;
-        font-size: 0.94rem !important;
-        font-weight: 900 !important;
-        line-height: 1.15 !important;
-        letter-spacing: -0.03em !important;
-        color: #FACC15 !important;
-        text-shadow: 0 2px 6px #000000, 0 0 4px #000000 !important;
-        -webkit-text-stroke: 1.0px #000000 !important;
-        paint-order: stroke fill !important;
-      }
-
-      .lod-label-row-2 {
-        font-family: 'Pretendard Variable', 'Pretendard', sans-serif !important;
-        font-size: 0.68rem !important;
-        color: #22D3EE !important;
-        font-weight: 800 !important;
-        line-height: 1.2 !important;
-        letter-spacing: -0.02em !important;
-        text-shadow: 0 2px 5px #000000 !important;
-        -webkit-text-stroke: 0.8px #000000 !important;
-        paint-order: stroke fill !important;
-        display: flex !important;
-        align-items: center !important;
-      }
-
-      .lod-label-row-3 {
-        font-family: 'Space Grotesk', 'SUIT', sans-serif !important;
-        font-size: 0.68rem !important;
-        color: #4ADE80 !important;
-        font-weight: 900 !important;
-        line-height: 1.2 !important;
-        letter-spacing: -0.01em !important;
-        text-shadow: 0 2px 5px #000000 !important;
-        -webkit-text-stroke: 0.8px #000000 !important;
-        paint-order: stroke fill !important;
-        display: flex !important;
-        align-items: center !important;
-        gap: 1px !important;
-      }
+      .lod-marker-label { position: absolute !important; bottom: 44px !important; left: 50%; transform: translateX(-50%); background: transparent !important; border: none !important; box-shadow: none !important; pointer-events: none !important; display: flex !important; flex-direction: column !important; align-items: center !important; gap: 1px !important; white-space: nowrap !important; }
+      .lod-label-row-1 { font-family: 'SUIT', 'Pretendard Variable', sans-serif !important; font-size: 0.94rem !important; font-weight: 900 !important; line-height: 1.15 !important; letter-spacing: -0.03em !important; color: #FACC15 !important; text-shadow: 0 2px 6px #000000, 0 0 4px #000000 !important; -webkit-text-stroke: 1.0px #000000 !important; paint-order: stroke fill !important; }
+      .lod-label-row-2 { font-family: 'Pretendard Variable', 'Pretendard', sans-serif !important; font-size: 0.68rem !important; color: #22D3EE !important; font-weight: 800 !important; line-height: 1.2 !important; text-shadow: 0 2px 5px #000000 !important; -webkit-text-stroke: 0.8px #000000 !important; paint-order: stroke fill !important; display: flex !important; align-items: center !important; }
+      .lod-label-row-3 { font-family: 'Space Grotesk', 'SUIT', sans-serif !important; font-size: 0.68rem !important; color: #4ADE80 !important; font-weight: 900 !important; line-height: 1.2 !important; text-shadow: 0 2px 5px #000000 !important; -webkit-text-stroke: 0.8px #000000 !important; paint-order: stroke fill !important; display: flex !important; align-items: center !important; gap: 1px !important; }
 
       /* 4단계 요약 카드 */
       .summary-block-wrap { display: flex; flex-direction: column; gap: 5px; margin-top: 4px; width: 100%; }
-      .summary-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border-hairline); border-radius: 7px; padding: 7px 9px; font-size: 0.77rem; line-height: 1.4; }
+      .summary-card { background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 7px; padding: 7px 9px; font-size: 0.77rem; line-height: 1.4; color: var(--text-primary); }
       .summary-card-view { border-left: 3px solid #38bdf8; background: rgba(56,189,248,0.06); }
       .summary-card-access { border-left: 3px solid #2dd4bf; background: rgba(45,212,191,0.06); }
       .summary-card-pitch { border-left: 3px solid #10b981; background: rgba(16,185,129,0.06); }
@@ -668,9 +826,9 @@
       /* 들머리 & 내비 모듈 */
       .entry-module-container { display: flex; flex-direction: column; gap: 4px; width: 100%; margin: 4px 0; position: relative; }
       .entry-row-1 { display: flex; gap: 4px; width: 100%; align-items: stretch; }
-      .entry-address-2line { flex: 3; font-size: 0.78rem; color: #7dd3fc; background: rgba(2,132,199,0.14); border: 1px solid rgba(56,189,248,0.3); padding: 6px 9px; border-radius: 7px; text-decoration: none; display: flex; align-items: center; gap: 4px; line-height: 1.35; word-break: break-all; min-height: 40px; font-weight: 700; }
+      .entry-address-2line { flex: 3; font-size: 0.78rem; color: var(--accent-blue); background: rgba(2,132,199,0.12); border: 1px solid rgba(56,189,248,0.3); padding: 6px 9px; border-radius: 7px; text-decoration: none; display: flex; align-items: center; gap: 4px; line-height: 1.35; word-break: break-all; min-height: 40px; font-weight: 700; }
       .btn-copy-entry { flex: 1; background: var(--bg-card); border: 1px solid var(--border-titanium); color: var(--text-secondary); border-radius: 7px; font-size: 0.74rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-height: 40px; }
-      .entry-guide-chip { font-size: 0.73rem; color: #fde047; background: rgba(245,158,11,0.14); border: 1px solid rgba(245,158,11,0.28); padding: 4px 8px; border-radius: 6px; margin-top: 2px; display: flex; align-items: center; gap: 4px; }
+      .entry-guide-chip { font-size: 0.73rem; color: var(--accent-amber); background: rgba(245,158,11,0.14); border: 1px solid rgba(245,158,11,0.28); padding: 4px 8px; border-radius: 6px; margin-top: 2px; display: flex; align-items: center; gap: 4px; }
       .entry-row-2 { display: flex; gap: 4px; width: 100%; margin-top: 2px; }
 
       .navi-btn-cell { flex: 1; padding: 7px 2px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 4px; transition: transform 0.1s ease; }
@@ -678,30 +836,30 @@
       .cell-kakao { background: #fee500; color: #191919; }
       .cell-tmap { background: #004fff; color: #ffffff; }
       .cell-naver { background: #03c75a; color: #ffffff; }
-      .cell-reserve { background: #334155; color: #f8fafc; border: 1px solid var(--border-titanium); }
+      .cell-reserve { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-titanium); }
 
       .entry-lock-overlay-tight {
         position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(9, 12, 19, 0.88) !important;
+        background: var(--modal-overlay) !important;
         backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         text-align: center; padding: 6px 10px; border-radius: 8px;
         border: 1.5px dashed rgba(244,63,94,0.75); z-index: 10; cursor: pointer;
       }
       .lock-main-text { font-size: 0.80rem !important; font-weight: 900 !important; color: #fde047 !important; line-height: 1.3; display: flex; align-items: center; gap: 4px; }
-      .lock-sub-text { font-size: 0.65rem !important; color: #cbd5e1 !important; margin-top: 2px; }
+      .lock-sub-text { font-size: 0.65rem !important; color: var(--text-secondary) !important; margin-top: 2px; }
 
       .guest-member-lock-card {
-        width: 100%; background: linear-gradient(145deg, rgba(14, 19, 29, 0.95), rgba(3, 5, 8, 0.98));
+        width: 100%; background: var(--bg-card);
         border: 1.5px dashed rgba(56, 189, 248, 0.45); border-radius: 10px;
         padding: 14px 12px; margin: 6px 0; display: flex; flex-direction: column;
         align-items: center; justify-content: center; text-align: center; gap: 7px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.85);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.25);
       }
       .btn-quick-login-unlock { background: linear-gradient(135deg, #0284c7, #0369a1); border: 1px solid #38bdf8; color: #fff; border-radius: 8px; font-weight: 800; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
 
       .btn-gpx-track-toggle {
-        width: 100%; background: rgba(13, 148, 136, 0.2); border: 1.5px solid #14b8a6; color: #2dd4bf;
+        width: 100%; background: rgba(13, 148, 136, 0.2); border: 1.5px solid #14b8a6; color: var(--accent-teal);
         font-size: 0.74rem; font-weight: 800; padding: 7px 10px; border-radius: 7px; cursor: pointer;
         display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 4px;
       }
@@ -710,27 +868,27 @@
       .sheet-title-row { display: flex; align-items: center; justify-content: space-between; width: 100%; padding-bottom: 4px; border-bottom: 1px solid var(--border-hairline); cursor: pointer; }
       .compact-title { font-size: 1.12rem !important; font-weight: 900 !important; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
       .spot-live-weather-bar { display: flex; align-items: center; gap: 4px; margin: 4px 0; flex-wrap: wrap; }
-      .weather-chip { font-size: 0.65rem !important; background: rgba(255,255,255,0.05); border: 1px solid var(--border-hairline); border-radius: 10px; padding: 2px 6px; color: var(--text-secondary); font-weight: 600; display: inline-flex; align-items: center; gap: 3px; }
-      .weather-wind-safe { color: #6ee7b7; border-color: rgba(16,185,129,0.35); }
-      .weather-wind-warn { color: #fde047; border-color: rgba(245,158,11,0.35); }
-      .weather-wind-danger { color: #fda4af; border-color: rgba(244,63,94,0.35); font-weight: 800; }
+      .weather-chip { font-size: 0.65rem !important; background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 10px; padding: 2px 6px; color: var(--text-secondary); font-weight: 600; display: inline-flex; align-items: center; gap: 3px; }
+      .weather-wind-safe { color: var(--accent-emerald); border-color: rgba(16,185,129,0.35); }
+      .weather-wind-warn { color: var(--accent-amber); border-color: rgba(245,158,11,0.35); }
+      .weather-wind-danger { color: var(--accent-rose); border-color: rgba(244,63,94,0.35); font-weight: 800; }
 
       .mobile-bottom-sheet {
         display: flex; position: fixed; left: 0; right: 0; width: 100%;
         bottom: calc(56px + env(safe-area-inset-bottom, 0px)); height: 50dvh; max-height: 50dvh;
-        background: #090c13 !important; border-top: 1.5px solid rgba(255,255,255,0.2) !important; border-radius: 18px 18px 0 0;
-        z-index: var(--z-bottomsheet); box-shadow: 0 -12px 40px rgba(0,0,0,0.98);
+        background: var(--modal-bg) !important; border-top: 1.5px solid var(--border-titanium) !important; border-radius: 18px 18px 0 0;
+        z-index: var(--z-bottomsheet); box-shadow: 0 -12px 40px rgba(0,0,0,0.5);
         transform: translateY(105%); transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
         flex-direction: column; overflow: hidden; pointer-events: none !important;
       }
       .mobile-bottom-sheet.open { transform: translateY(0); pointer-events: auto !important; }
       .sheet-handle-bar-area { width: 100%; padding: 8px 0 4px 0; display: flex; justify-content: center; flex-shrink: 0; cursor: grab; }
-      .sheet-handle-bar { width: 44px; height: 4.5px; background: rgba(255,255,255,0.28); border-radius: 3px; }
+      .sheet-handle-bar { width: 44px; height: 4.5px; background: rgba(148,163,184,0.4); border-radius: 3px; }
       
       .fixed-floating-close-btn {
         position: absolute; top: 10px; right: 12px; z-index: 50;
-        background: rgba(255,255,255,0.1); border: 1px solid var(--border-titanium);
-        width: 28px; height: 28px; border-radius: 50%; color: #cbd5e1; font-size: 13px; font-weight: 800;
+        background: var(--bg-card); border: 1px solid var(--border-titanium);
+        width: 28px; height: 28px; border-radius: 50%; color: var(--text-secondary); font-size: 13px; font-weight: 800;
         display: flex; align-items: center; justify-content: center; cursor: pointer;
       }
       .sheet-content { overflow-y: auto; padding: 2px 12px 14px 12px; display: flex; flex-direction: column; gap: 3px; width: 100%; }
@@ -740,44 +898,42 @@
       .btn-action-3 { flex: 1; padding: 8px 4px; border-radius: 8px; font-size: 0.74rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 3px; transition: all 0.25s ease; border: 1.5px solid transparent; }
       
       .btn-action-3.btn-action-fav {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1.5px solid rgba(255, 255, 255, 0.15);
-        color: #94a3b8;
+        background: var(--bg-card);
+        border: 1.5px solid var(--border-hairline);
+        color: var(--text-secondary);
       }
       .btn-action-3.btn-action-fav.bookmarked {
         background: #f43f5e !important;
         border: 1.5px solid #f43f5e !important;
         color: #ffffff !important;
         box-shadow: 0 0 16px rgba(244, 63, 94, 0.6) !important;
-        font-weight: 900 !important;
       }
 
       .btn-action-3.btn-action-visited {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1.5px solid rgba(255, 255, 255, 0.15);
-        color: #94a3b8;
+        background: var(--bg-card);
+        border: 1.5px solid var(--border-hairline);
+        color: var(--text-secondary);
       }
       .btn-action-3.btn-action-visited.visited {
         background: #0284c7 !important;
         border: 1.5px solid #38bdf8 !important;
         color: #ffffff !important;
         box-shadow: 0 0 16px rgba(56, 189, 248, 0.6) !important;
-        font-weight: 900 !important;
       }
-      .btn-action-share { background: rgba(59,130,246,0.08); border: 1.5px solid rgba(96,165,250,0.45); color: #93c5fd; }
+      .btn-action-share { background: rgba(59,130,246,0.08); border: 1.5px solid rgba(96,165,250,0.45); color: var(--accent-blue); }
 
       .spot-action-line { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 4px; width: 100%; }
       .link-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; text-decoration: none; padding: 5px 10px; border-radius: 7px; font-size: 0.72rem; font-weight: 700; color: #fff; cursor: pointer; border: none; }
       .btn-yt { background: linear-gradient(135deg, #e11d48, #be123c); } .btn-blog { background: linear-gradient(135deg, #059669, #047857); } .btn-insta { background: linear-gradient(45deg, #ea580c, #e11d48, #c026d3); }
 
-      .user-private-memo-box { margin-top: 4px; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.16); border-radius: 7px; padding: 6px 9px; display: flex; flex-direction: column; gap: 3px; }
+      .user-private-memo-box { margin-top: 4px; background: var(--bg-card); border: 1px dashed var(--border-hairline); border-radius: 7px; padding: 6px 9px; display: flex; flex-direction: column; gap: 3px; }
       .user-private-memo-header { font-size: 0.7rem; font-weight: 700; color: var(--accent-teal); display: flex; justify-content: space-between; align-items: center; }
-      .user-private-memo-input { width: 100%; background: var(--bg-base); border: 1px solid var(--border-hairline); border-radius: 5px; color: #fff; font-size: 0.74rem; padding: 5px 7px; outline: none; resize: vertical; min-height: 34px; }
+      .user-private-memo-input { width: 100%; background: var(--bg-base); border: 1px solid var(--border-hairline); border-radius: 5px; color: var(--text-primary); font-size: 0.74rem; padding: 5px 7px; outline: none; resize: vertical; min-height: 34px; }
       
       .app-disclaimer-box {
         font-size: clamp(0.68rem, 2.7vw, 0.76rem) !important;
         letter-spacing: -0.04em !important;
-        color: #f8fafc !important;
+        color: var(--text-primary) !important;
         background: rgba(244, 63, 94, 0.05) !important;
         border: 1px dashed rgba(244, 63, 94, 0.45) !important;
         padding: 8px 10px !important;
@@ -799,8 +955,8 @@
       .comment-text { color: var(--text-secondary); word-break: break-all; flex: 1; }
       .comment-form { display: flex; flex-direction: column; gap: 4px; width: 100%; }
       .comment-form-row { display: flex; gap: 4px; width: 100%; }
-      .comment-select-rating { flex: 1.2; padding: 4px; border: 1px solid var(--border-hairline); border-radius: 5px; font-size: 0.7rem; background: var(--bg-base); color: #fcd34d; font-weight: bold; outline: none; }
-      .comment-input-author, .comment-input-text { flex: 1; padding: 4px 6px; border: 1px solid var(--border-hairline); border-radius: 5px; font-size: 0.7rem; outline: none; background: var(--bg-base); color: #fff; }
+      .comment-select-rating { flex: 1.2; padding: 4px; border: 1px solid var(--border-hairline); border-radius: 5px; font-size: 0.7rem; background: var(--bg-base); color: var(--text-primary); font-weight: bold; outline: none; }
+      .comment-input-author, .comment-input-text { flex: 1; padding: 4px 6px; border: 1px solid var(--border-hairline); border-radius: 5px; font-size: 0.7rem; outline: none; background: var(--bg-base); color: var(--text-primary); }
       .comment-btn-submit { background: #0f766e; color: #fff; border: none; border-radius: 5px; padding: 4px 9px; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
 
       /* 📱 하단 네비 독 */
@@ -808,7 +964,7 @@
         display: none; 
         position: fixed; 
         bottom: 0; left: 0; right: 0; 
-        background: rgba(0, 0, 0, 0.96); 
+        background: var(--dock-bg); 
         border-top: 1px solid var(--border-hairline); 
         height: calc(56px + env(safe-area-inset-bottom, 0px)); 
         padding-bottom: env(safe-area-inset-bottom, 0px); 
@@ -820,15 +976,15 @@
       .dock-item.active { color: var(--accent-blue); } 
       .dock-item svg { width: 19px; height: 19px; fill: currentColor; }
 
-      .app-toast { position: fixed; top: 68px; left: 50%; transform: translateX(-50%) translateY(-15px); background: #0e131d; border: 1.5px solid var(--border-titanium); color: #fff; padding: 8px 18px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; z-index: var(--z-toast); box-shadow: 0 8px 24px rgba(0,0,0,0.85); pointer-events: none; opacity: 0; transition: all 0.22s ease; display: inline-flex; align-items: center; gap: 6px; }
+      .app-toast { position: fixed; top: 68px; left: 50%; transform: translateX(-50%) translateY(-15px); background: var(--bg-surface); border: 1.5px solid var(--border-titanium); color: var(--text-primary); padding: 8px 18px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; z-index: var(--z-toast); box-shadow: 0 8px 24px rgba(0,0,0,0.5); pointer-events: none; opacity: 0; transition: all 0.22s ease; display: inline-flex; align-items: center; gap: 6px; }
       .app-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
       body.clean-map-mode .clean-hide { display: none !important; }
 
-      /* 모달 레이어 최상단 고정 (z-index 99999) */
+      /* 모달 레이어 */
       .custom-modal-overlay { 
         position: fixed; 
         top: 0; left: 0; right: 0; bottom: 0; 
-        background: rgba(3, 5, 8, 0.92) !important; 
+        background: var(--modal-overlay) !important; 
         backdrop-filter: blur(6px);
         -webkit-backdrop-filter: blur(6px);
         display: none; 
@@ -838,16 +994,15 @@
         padding: 16px;
         box-sizing: border-box;
       }
-      #lntModalOverlay { z-index: 100005 !important; }
-      .lnt-modal-card { background: var(--bg-surface); color: var(--text-primary); width: 440px; max-width: calc(100vw - 24px); max-height: 85vh; overflow-y: auto; border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.95); padding: 16px; display: flex; flex-direction: column; gap: 10px; border: 1.5px solid rgba(16,185,129,0.4); }
-      .lnt-rule-item { background: rgba(255,255,255,0.02); border: 1px solid var(--border-hairline); border-left: 3px solid #10b981; padding: 8px 10px; border-radius: 6px; display: flex; flex-direction: column; gap: 2px; }
-      .lnt-rule-title { font-size: 0.8rem; font-weight: 800; color: #6ee7b7; display: flex; align-items: center; gap: 5px; }
+      .lnt-modal-card { background: var(--modal-bg); color: var(--text-primary); width: 440px; max-width: calc(100vw - 24px); max-height: 85vh; overflow-y: auto; border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); padding: 16px; display: flex; flex-direction: column; gap: 10px; border: 1.5px solid rgba(16,185,129,0.4); }
+      .lnt-rule-item { background: var(--bg-card); border: 1px solid var(--border-hairline); border-left: 3px solid #10b981; padding: 8px 10px; border-radius: 6px; display: flex; flex-direction: column; gap: 2px; }
+      .lnt-rule-title { font-size: 0.8rem; font-weight: 800; color: var(--accent-emerald); display: flex; align-items: center; gap: 5px; }
       .lnt-rule-desc { font-size: 0.72rem; color: var(--text-secondary); line-height: 1.4; }
 
-      .custom-modal { background: var(--bg-surface); color: var(--text-primary); width: 430px; max-width: calc(100vw - 24px); max-height: 88vh; overflow-y: auto; border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.95); padding: 16px; display: flex; flex-direction: column; gap: 9px; border: 1.5px solid var(--border-titanium); }
+      .custom-modal { background: var(--modal-bg); color: var(--text-primary); width: 430px; max-width: calc(100vw - 24px); max-height: 88vh; overflow-y: auto; border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); padding: 16px; display: flex; flex-direction: column; gap: 9px; border: 1.5px solid var(--border-titanium); }
       .modal-field { display: flex; flex-direction: column; gap: 2px; }
       .modal-field label { font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); }
-      .modal-input { width: 100%; padding: 7px 10px; border: 1px solid var(--border-hairline); border-radius: 6px; font-size: 0.82rem; outline: none; background: var(--bg-base); color: #fff; }
+      .modal-input { width: 100%; padding: 7px 10px; border: 1px solid var(--border-hairline); border-radius: 6px; font-size: 0.82rem; outline: none; background: var(--bg-base); color: var(--text-primary); }
       .modal-textarea { resize: vertical; min-height: 46px; line-height: 1.35; }
       .checkbox-group { display: flex; flex-wrap: wrap; gap: 5px 10px; font-size: 0.76rem; color: var(--text-secondary); font-weight: 600; }
       .checkbox-group label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
@@ -857,45 +1012,13 @@
       .modal-btn-cancel { background: var(--bg-card); color: var(--text-secondary); }
       .modal-btn-save { background: #0f766e; color: #fff; }
 
-      .pin-picker-banner { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: rgba(14, 19, 29, 0.95); border: 1.5px solid var(--accent-blue); padding: 8px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 800; color: #fff; z-index: var(--z-modal); display: none; align-items: center; gap: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.8); }
+      .pin-picker-banner { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: var(--bg-surface); border: 1.5px solid var(--accent-blue); padding: 8px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 800; color: var(--text-primary); z-index: var(--z-modal); display: none; align-items: center; gap: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
       .btn-cancel-pin-pick { background: #f43f5e; color: #fff; border: none; padding: 4px 10px; border-radius: 12px; font-size: 0.74rem; font-weight: 800; cursor: pointer; }
 
-      /* 🔑 로그인 모달 (index.html 100% 동일 규격) */
-      .login-box-card { 
-        width: 330px !important; 
-        max-width: calc(100vw - 32px) !important; 
-        padding: 14px !important; 
-        text-align: center; 
-        gap: 9px !important; 
-      }
-      .login-box-card h3 {
-        font-size: 0.96rem !important;
-        font-weight: 800 !important;
-      }
-      .login-box-card p {
-        font-size: 0.72rem !important;
-        line-height: 1.4 !important;
-        color: #94a3b8 !important;
-      }
+      /* 🔑 로그인 모달 */
+      .login-box-card { width: 330px !important; max-width: calc(100vw - 32px) !important; padding: 14px !important; text-align: center; gap: 9px !important; }
       .login-btn-social-group { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 6px; }
-      .btn-social-kakao { 
-        background: #fee500; 
-        color: #191919; 
-        font-weight: 800 !important; 
-        padding: 9px !important; 
-        border-radius: 8px !important; 
-        border: none; 
-        font-size: 0.80rem !important; 
-        cursor: pointer; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        gap: 6px; 
-      }
-      .login-box-card .modal-btn {
-        font-size: 0.72rem !important;
-        padding: 6px 12px !important;
-      }
+      .btn-social-kakao { background: #fee500; color: #191919; font-weight: 800 !important; padding: 9px !important; border-radius: 8px !important; border: none; font-size: 0.80rem !important; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
 
       @media (min-width: 769px) { 
         .mobile-only { display: none !important; } 
@@ -903,7 +1026,6 @@
       }
       @media (max-width: 768px) {
         .pc-only, .pc-sliding-drawer, .floating-drawer-close-tab { display: none !important; }
-    
         .container { flex: 1 !important; width: 100% !important; height: 100% !important; position: relative !important; }
         #map { position: absolute !important; top: 0; left: 0; right: 0; bottom: 0; width: 100% !important; height: 100% !important; }
         .left-bottom-filter-wrap { bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 10px) !important; left: 8px !important; }
@@ -913,43 +1035,52 @@
         .sidebar.collapsed { transform: translateY(-130%) !important; }
         .mobile-bottom-dock { display: flex !important; }
       }
+      
     </style>
   </head>
   <body>
     <div id="appToast" class="app-toast"></div>
 
-    <!-- 🧭 1. 상단 GNB (1열 index.html 100% 동일 규격 로고/로그인 + 2열 초밀착 풀와이드 검색바) -->
+    <!-- 🧭 1. 상단 GNB -->
     <header class="apple-integrated-header notranslate" id="header">
       <div class="header-top-row">
         <a href="index.html" class="brand-line" onclick="triggerHaptic('light');" title="홈으로 이동">
           <div class="brand-sym-box">
-            <svg viewBox="0 0 32 32" fill="none">
-              <circle cx="21" cy="6" r="9" fill="rgba(244,114,182,0.12)"/>
-              <circle cx="21" cy="6" r="6" fill="rgba(245,158,11,0.18)"/>
-              <circle cx="21" cy="6" r="3.8" fill="rgba(251,191,36,0.28)"/>
+            <svg viewBox="0 0 32 32" fill="none" style="overflow: visible;">
+              <!-- 🌅 [은은한 픽스] 딱딱한 테두리를 없애고 부드럽게 번지는 3단 소프트 노을빛 -->
+              <circle cx="21" cy="6" r="14" fill="rgba(251,146,60,0.15)"/>
+              <circle cx="21" cy="6" r="9" fill="rgba(234,88,12,0.28)"/>
+              <circle cx="21" cy="6" r="5" fill="rgba(244,63,94,0.42)"/>
               
+              <!-- 왼쪽 핑크 산 능선 및 노드 -->
               <circle cx="2" cy="24" r="1.8" fill="#fda4af"/>
               <circle cx="9" cy="12" r="2.2" fill="#fda4af"/>
               <circle cx="14" cy="16" r="1.8" fill="#fda4af"/>
               <circle cx="13" cy="24" r="1.8" fill="#fda4af"/>
               <path d="M2 24L9 12H12.5L14 16L10 16M10 16L13 24" stroke="#fda4af" stroke-width="1.8" stroke-linecap="round"/>
               
-              <circle cx="21" cy="6" r="2.8" fill="#f59e0b"/>
+              <!-- 📍 오른쪽 메인 9번 선셋 주황 알 코어 (자연스러운 순백 림) -->
+              <circle cx="21" cy="6" r="2.8" fill="#ea580c" stroke="#ffffff" stroke-width="0.6"/>
               <circle cx="27" cy="13" r="2.2" fill="#e2e8f0"/>
               <circle cx="30" cy="24" r="2.4" fill="#e2e8f0"/>
-              <path d="M13 24L21 6H25L27 13L22 13M22 13L30 24" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
               
-              <circle cx="21" cy="6" r="1" fill="#ffffff"/>
+              <!-- 🏔️ 얇고 은은하게 정돈된 순백의 큰 'R'자 -->
+              <path d="M13 24L21 6H25L27 13L22 13M22 13L30 24" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" style="filter: drop-shadow(0 0 1px rgba(3, 105, 161, 0.6)) drop-shadow(0 1px 2px rgba(7, 89, 133, 0.25));"/>
+              
+              <!-- ✨ 태양 중심 은은한 화이트 스파크 -->
+              <circle cx="21" cy="6" r="1.0" fill="#ffffff"/>
             </svg>
           </div>
+          <!-- 🎯 낭만루트 텍스트 복구 -->
           <span class="brand-title">낭만루트</span>
-          <span class="brand-dot"></span>
+          <span class="brand-dot"></s></span>
           <span class="brand-en">길 위에서 만나는 풍경</span>
         </a>
 
         <div class="header-right-actions">
           <span class="admin-status-badge pc-only" id="adminBadge">관리자 ON</span>
           
+          <!-- ☁️ 로그인 버튼 (1번 프리셋 구름 쉐입 완벽 고정) -->
           <button type="button" class="header-auth-btn" id="headerAuthBtn" onclick="handleAuthBtnClick()">
             <span id="headerAuthIcon" style="display:inline-flex; align-items:center; justify-content:center;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; margin-right:3px; display:inline-block; vertical-align:-1px;">
@@ -970,7 +1101,7 @@
       <!-- 🔍 2열 초밀착 풀와이드 슬림 검색바 -->
       <div class="apple-search-box">
         <div class="apple-search-bar">
-          <span class="icon-svg" style="width:14px; height:14px; color:#94a3b8;">
+          <span class="icon-svg" style="width:14px; height:14px; color:var(--text-muted);">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </span>
           <input type="text" id="pcSearchInput" class="apple-search-input" placeholder="산, 섬, 활공장, 해변, 데크 검색..." autocomplete="off" onfocus="showTopRankings('pc')" oninput="handleSearchInputChange('pc')" onkeyup="handleSearchInput(event, 'pc')" />
@@ -987,7 +1118,7 @@
             <span id="sidebarCampIcon" style="display:inline-flex; align-items:center;"></span>
             <span>박지 목록</span>
             <span id="spotCount" style="color: var(--accent-blue); font-size: 0.78rem; font-weight: 800;">0개</span>
-            <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagAdminClick()">6.1ver Master</span>
+            <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagAdminClick()">6.2ver Master</span>
           </div>
           <div class="sidebar-header-actions">
             <button type="button" class="btn-sidebar-submit" id="btnSidebarSubmit" onclick="openUserProposalModal()">
@@ -1033,10 +1164,24 @@
       <button type="button" class="floating-drawer-close-tab clean-hide" id="floatingDrawerCloseTab" onclick="closePcSlidingDrawer()" title="정보창 닫기">◀ 정보창 닫기</button>
       
       <main id="map">
-        <button type="button" class="top-right-layer-btn clean-hide" id="topRightLayerBtn" onclick="toggleMapTypeMode()" title="위성/일반/지형도 전환">
-          <svg viewBox="0 0 24 24" class="ui-icon" style="width:16px; height:16px; margin:0;"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>
-          <span style="font-size:0.58rem; font-weight:800;" id="towerMapTypeText">위성</span>
-        </button>
+        <!-- 🧭 우측 상단 HUD 타워: 1열 위성/지도 모드 + 2열 테마 전환 (일반/다크) -->
+        <div class="top-right-hud-group clean-hide">
+          <div class="top-hud-tower-box">
+            <!-- 1. 지도 타입 전환 (위성 / 지형도 / 일반) -->
+            <button type="button" class="top-hud-btn" id="topRightLayerBtn" onclick="toggleMapTypeMode()" title="위성/일반/지형도 전환">
+              <svg viewBox="0 0 24 24" class="ui-icon" style="width:15px; height:15px; margin:0;"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>
+              <span style="font-size:0.55rem; font-weight:800;" id="towerMapTypeText">위성</span>
+            </button>
+            
+            <!-- 2. 테마 전환 (일반 라이트 ☀️ / 다크 🌙) -->
+            <button type="button" class="top-hud-btn" id="topRightThemeBtn" onclick="toggleAppTheme()" title="일반(라이트)/다크 모드 전환">
+              <span id="themeToggleIcon" style="display:inline-flex; align-items:center; justify-content:center;">
+                <svg viewBox="0 0 24 24" class="ui-icon" style="width:15px; height:15px; margin:0;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+              </span>
+              <span style="font-size:0.55rem; font-weight:800;" id="themeToggleText">일반</span>
+            </button>
+          </div>
+        </div>
 
         <div class="left-bottom-filter-wrap clean-hide" id="leftBottomFilterWrap">
           <div class="left-filter-tower-box">
@@ -1103,14 +1248,14 @@
       </button>
     </div>
 
-    <!-- 🔑 간편 로그인 모달 (index.html 100% 동일 규격) -->
+    <!-- 🔑 간편 로그인 모달 -->
     <div class="custom-modal-overlay" id="loginModalOverlay" onclick="event.stopPropagation();">
       <div class="custom-modal login-box-card">
-        <h3 style="color:#38bdf8; display:flex; align-items:center; justify-content:center; gap:6px;">
+        <h3 style="color:var(--accent-blue); display:flex; align-items:center; justify-content:center; gap:6px;">
           <span id="loginModalCampIcon"></span>
           <span>낭만 백패커 로그인</span>
         </h3>
-        <p>
+        <p style="font-size:0.72rem; color:var(--text-secondary); line-height:1.4;">
           소중한 박지 보존과 클린 백패킹 문화를 위해<br><strong>로그인 시 상세 들머리 주소와 4단계 실전 팁</strong>이 100% 해금됩니다.
         </p>
         <div class="login-btn-social-group">
@@ -1128,18 +1273,18 @@
     <!-- 👤 닉네임 변경 및 회원 관리 모달 -->
     <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="event.stopPropagation();">
       <div class="custom-modal login-box-card">
-        <h3 style="color:#38bdf8; display:flex; align-items:center; justify-content:center; gap:6px;">
-          <svg viewBox="0 0 24 24" class="ui-icon" style="width:18px; height:18px; color:#6ee7b7;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+        <h3 style="color:var(--accent-blue); display:flex; align-items:center; justify-content:center; gap:6px;">
+          <svg viewBox="0 0 24 24" class="ui-icon" style="width:18px; height:18px; color:var(--accent-emerald);"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
           <span>내 계정 관리</span>
         </h3>
         <div class="modal-field" style="text-align:left; margin-top:6px;">
-          <label style="color:#94a3b8; font-size:0.72rem; font-weight:700;">활동 닉네임 변경</label>
+          <label style="color:var(--text-secondary); font-size:0.72rem; font-weight:700;">활동 닉네임 변경</label>
           <div style="display:flex; gap:6px; margin-top:4px;">
             <input type="text" id="profileModalNicknameInput" class="modal-input" placeholder="새 닉네임 입력" style="flex:1; font-size:0.78rem; padding:6px 8px;" />
             <button type="button" class="modal-btn" style="background:#0284c7; color:#fff; font-weight:800; padding:6px 12px; font-size:0.72rem;" onclick="saveNewNicknameFromModal()">변경</button>
           </div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:8px; width:100%; margin-top:10px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:10px;">
+        <div style="display:flex; flex-direction:column; gap:8px; width:100%; margin-top:10px; border-top:1px dashed var(--border-hairline); padding-top:10px;">
           <button type="button" class="modal-btn" style="background:rgba(244,63,94,0.15); border:1px solid #f43f5e; color:#fda4af; font-weight:800; padding:8px; font-size:0.72rem;" onclick="closeUserProfileModal(); logoutUser();">
             로그아웃
           </button>
@@ -1152,18 +1297,18 @@
     <div class="custom-modal-overlay" id="lntModalOverlay">
       <div class="lnt-modal-card">
         <div style="border-bottom:1px solid var(--border-hairline); padding-bottom:8px;">
-          <h3 style="color:#6ee7b7; font-size:0.96rem; font-weight:800; display:flex; align-items:center; gap:5px;">
+          <h3 style="color:var(--accent-emerald); font-size:0.96rem; font-weight:800; display:flex; align-items:center; gap:5px;">
             <svg viewBox="0 0 24 24" class="ui-icon" style="width:16px; height:16px; color:#10b981;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor"/></svg>
             <span>대한민국 백패커 K-LNT 7원칙</span>
           </h3>
         </div>
-        <p style="font-size:0.74rem; color:#fde047; line-height:1.4; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); padding:6px 8px; border-radius:6px; display:flex; align-items:center; gap:5px;">
+        <p style="font-size:0.74rem; color:var(--accent-amber); line-height:1.4; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); padding:6px 8px; border-radius:6px; display:flex; align-items:center; gap:5px;">
           <span id="lntAlertTopIcon"></span>
           <span><strong>박지 보존을 위한 필수 실천</strong>: 자연을 훼손하지 않는 성숙한 백패킹 문화가 소중한 박지 폐쇄를 막습니다.</span>
         </p>
         <div class="lnt-rule-item" style="border-left-color:#f43f5e; background:rgba(244,63,94,0.08);">
-          <div class="lnt-rule-title" style="color:#fda4af;"><span id="lntProhibitIcon"></span> 1. 산림 내 화기 사용 및 취사 절대 금지 [비화식 필수]</div>
-          <div class="lnt-rule-desc" style="color:#fecdd3;"><strong>「산림보호법 제34조」</strong> 준수: 버너·불멍은 절대 불가하며 보온병 온수, 비화식 발열팩(핫앤쿡 등)만 이용합니다.</div>
+          <div class="lnt-rule-title" style="color:var(--accent-rose);"><span id="lntProhibitIcon"></span> 1. 산림 내 화기 사용 및 취사 절대 금지 [비화식 필수]</div>
+          <div class="lnt-rule-desc"><strong>「산림보호법 제34조」</strong> 준수: 버너·불멍은 절대 불가하며 보온병 온수, 비화식 발열팩(핫앤쿡 등)만 이용합니다.</div>
         </div>
         <div class="lnt-rule-item"><div class="lnt-rule-title">2. 지정된 단단한 바닥(데크·돌박지·기존 노지) 이용하기</div><div class="lnt-rule-desc">식생과 풀밭 훼손을 방지하고, 기존에 조성된 데크와 단단한 노지 위주로 피칭합니다.</div></div>
         <div class="lnt-rule-item"><div class="lnt-rule-title">3. 발생한 모든 쓰레기는 100% 회수 하산하기</div><div class="lnt-rule-desc">음식물 잔반, 물티슈, 과일 껍질까지 단 하나의 흔적도 남기지 않고 배낭에 다시 담아옵니다.</div></div>
@@ -1181,7 +1326,7 @@
     <div class="custom-modal-overlay" id="customModalOverlay">
       <div class="custom-modal">
         <h3 id="modalTitle" style="display:flex; align-items:center; gap:6px;"></h3>
-        <p id="modalNotice" style="font-size:0.74rem; color:#fde047; line-height:1.4; display:flex; align-items:center; gap:4px;"></p>
+        <p id="modalNotice" style="font-size:0.74rem; color:var(--accent-amber); line-height:1.4; display:flex; align-items:center; gap:4px;"></p>
         <div class="modal-field"><label>1. 산/박지 이름 *</label><input type="text" id="modalInputName" class="modal-input" placeholder="예: 남양주 백봉산" /></div>
         <div class="modal-field"><label>2. 세부 박지 포인트</label><input type="text" id="modalInputSub" class="modal-input" placeholder="예: 정상 전망데크" /></div>
         <div class="modal-field">
@@ -1197,7 +1342,7 @@
           <label>6. 고도 / 해발 (m)</label>
           <div style="display: flex; gap: 6px;">
             <input type="text" id="modalInputElevation" class="modal-input" style="flex:1;" placeholder="587" />
-            <button type="button" class="modal-btn" style="background:var(--bg-card); color:#fff; padding:6px 10px; display:inline-flex; align-items:center; gap:4px;" onclick="fetchElevationForModal()"><span id="btnModalElevIcon"></span><span>측정</span></button>
+            <button type="button" class="modal-btn" style="background:var(--bg-card); color:var(--text-primary); padding:6px 10px; display:inline-flex; align-items:center; gap:4px;" onclick="fetchElevationForModal()"><span id="btnModalElevIcon"></span><span>측정</span></button>
           </div>
         </div>
         <div class="modal-field">
@@ -1238,17 +1383,45 @@
     </div>
 
     <script>
-      const CURRENT_VERSION = "6.1ver Final Master";
+      const CURRENT_VERSION = "6.2ver Final Master";
       const KAKAO_APP_KEY = "557f5de0f6391a2419bc5592e6a9c9c1";
       const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
       const PRIMARY_SHEET_GID = '0';
-      const FALLBACK_SHEET_GID = '0';
       const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
       
       const BLOCKED_SPOT_IDS = new Set(['183', '205', '208', '209', '210', '211']);
       const NATIONWIDE_CENTER = { lat: 35.85, lng: 127.75 };
       const NATIONWIDE_LEVEL = 13;
       let map = null, geocoder = null, globalClusterer = null;
+
+      // 🗺️ 지도 마커 / 오버레이 / UI 상태 전역 변수 (중복 선언 완전 제거)
+      let spotNativeMarkerMap = new Map();
+      let spotLabelOverlayMap = new Map();
+      let currentActiveSpot = null;
+      let isAdminMode = false;
+      let isPickingLocationMode = false;
+      let modalPendingData = { lat: 0, lng: 0, address: '' };
+      let modalMode = 'ADD';
+      let modalEditIndex = -1;
+      let tempPickedMarker = null;
+      let tempSearchMarker = null;
+      let userLocationOverlay = null;
+      let currentMapLayerState = 0;
+      let isSidebarCollapsed = true;
+
+      let currentMasterTab = 'REGION';
+      let currentRegionFilter = 'ALL';
+      let currentTerrainFilter = 'ALL';
+      let currentCourseFilter = 'ALL';
+      let currentMyFilter = 'ALL';
+
+      let currentHudFilterDiff = 'ALL';
+      let currentHudFilterStatus = 'ALL';
+      let currentHudFilterTerrain = 'ALL';
+
+      let currentGpxPolyline = null;
+      let activeGpxSpotId = null;
+      let pendingUnlockSpotId = null;
 
       // ✨ 28종 확정 100% SVG 벡터 라이브러리
       const ICONS = {
@@ -1271,8 +1444,6 @@
         ISLAND: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M2 19c4 0 5-2 10-2s6 2 10 2" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
         VALLEY: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M3 4l7 16M21 4l-7 16" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
         CAVE: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M4 19h16c0-7-3.5-13-8-13S4 12 4 19z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
-        SHORTEST: `<svg viewBox="0 0 24 24" class="ui-icon"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
-        TRAVERSE: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M4 2l16 20M20 2L4 22M3 19h4M17 19h4M3 5h3M18 5h3" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
         HEART: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>`,
         FLAG: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
 
@@ -1294,20 +1465,39 @@
         PITCH_CARD: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#10b981;"><path d="M12 2L2 20h20L12 2z"/><path d="M12 2v18M7 20l5-9 5 9"/></svg>`,
         ALERT_CARD: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#f59e0b;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
         BAN_LNT: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#f43f5e;"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>`,
-        MEMO: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#2dd4bf;"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18"/><circle cx="11" cy="11" r="1.5" fill="currentColor"/></svg>`,
+        MEMO: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:#2dd4bf;"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18"/><circle cx="11" r="1.5" fill="currentColor"/></svg>`,
         
         BACKUP: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,
         RESTORE: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
         EDIT: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
-        DEL: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`
+        DEL: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
+
+        SUN: `<svg viewBox="0 0 24 24" class="ui-icon" style="width:15px; height:15px; margin:0;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
+        MOON: `<svg viewBox="0 0 24 24" class="ui-icon" style="width:15px; height:15px; margin:0;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`
       };
-      
+
       let authState = {
         isLoggedIn: localStorage.getItem('user_auth_token') ? true : false,
         userProfile: JSON.parse(localStorage.getItem('user_profile')) || null
       };
 
-      // 📳 모바일 햅틱 엔진
+      function updateHeaderAuthUI() {
+        const btn = document.getElementById('headerAuthBtn');
+        const text = document.getElementById('headerAuthText');
+        const isLogged = isUserLoggedIn();
+        const profile = safeGetJSON('user_profile', null) || authState.userProfile;
+
+        if (btn && text) {
+          if (isLogged && profile && profile.nickname) {
+            btn.classList.add('logged-in');
+            text.innerText = profile.nickname;
+          } else {
+            btn.classList.remove('logged-in');
+            text.innerText = '로그인';
+          }
+        }
+      }
+
       function triggerHaptic(type = 'light') {
         if (!navigator.vibrate) return;
         try {
@@ -1399,26 +1589,53 @@
       let userVisited = new Set((safeGetJSON('okbm_visited', [])).map(s => String(s).trim()));
       let userMemos = safeGetJSON('okbm_memos', {});
 
-      // 📊 일일 방문자수(PV/UV) 카운팅
-      function trackDailyVisit() {
-        const sessionKey = 'okbm_visit_recorded_' + new Date().toISOString().slice(0, 10);
-        if (!sessionStorage.getItem(sessionKey)) {
-          sessionStorage.setItem(sessionKey, 'true');
-          fetch(GAS_API_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({
-              action: 'RECORD_VISIT',
-              isLogin: isUserLoggedIn()
-            })
-          }).catch(() => {});
+      // ☀️/🌙 테마 전환 엔진 (우측 상단 HUD 연동)
+      let currentAppTheme = localStorage.getItem('okbm_theme') || 'light';
+
+      function applyTheme(theme) {
+        currentAppTheme = theme;
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('okbm_theme', theme);
+
+        const iconEl = document.getElementById('themeToggleIcon');
+        const textEl = document.getElementById('themeToggleText');
+
+        if (theme === 'light') {
+          if (iconEl) iconEl.innerHTML = ICONS.MOON;
+          if (textEl) textEl.innerText = '다크';
+        } else {
+          if (iconEl) iconEl.innerHTML = ICONS.SUN;
+          if (textEl) textEl.innerText = '일반';
         }
+        updateHeaderAuthUI();
       }
 
-      // ☁️ 유저 보관함 구글 시트 클라우드 1줄 백업
+      function toggleAppTheme() {
+        triggerHaptic('light');
+        const newTheme = currentAppTheme === 'dark' ? 'light' : 'dark';
+        applyTheme(newTheme);
+        showToast(newTheme === 'light' ? '☀️ 일반(라이트) 모드로 전환되었습니다.' : '🌙 다크 모드로 전환되었습니다.');
+      }
+//// ☁️ 유저 보관함 구글 시트 클라우드 백업 및 복원 (실명 리셋 원천 차단 & 닉네임·찜목록 영구 잠금)
+      window.isCloudDataLoaded = false;
+
+      async function loadUserDataFromCloud(userId) {
+        if (!userId) return null;
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 4500);
+          const res = await fetch(`${GAS_API_URL}?action=GET_USER_DATA&userId=${encodeURIComponent(userId)}&_t=${Date.now()}`, { signal: controller.signal });
+          clearTimeout(timeoutId);
+          if (res.ok) {
+            const data = await res.json();
+            return (data && (data.userData || data.data)) ? (data.userData || data.data) : data;
+          }
+        } catch (e) {}
+        return null;
+      }
+
       function syncUserDataToCloud() {
-        if (!isUserLoggedIn()) return;
+        if (!isUserLoggedIn() || !window.isCloudDataLoaded) return; // 🛡️ 클라우드 확인 전 빈 데이터 덮어쓰기 절대 차단
         const profile = safeGetJSON('user_profile', null) || authState.userProfile;
         if (!profile || !profile.id) return;
 
@@ -1426,9 +1643,11 @@
           action: 'SAVE_USER_DATA',
           userId: profile.id,
           nickname: profile.nickname,
-          bookmarks: safeGetJSON('okbm_bookmarks', []),
-          visited: safeGetJSON('okbm_visited', []),
-          memos: safeGetJSON('okbm_memos', {}),
+          createdAt: profile.createdAt || Date.now(),
+          lastNicknameChangedAt: profile.lastNicknameChangedAt || 0,
+          bookmarks: [...userBookmarks],
+          visited: [...userVisited],
+          memos: userMemos,
           packHistory: safeGetJSON('okbm_packing_history', [])
         };
 
@@ -1440,7 +1659,6 @@
         }).catch(() => {});
       }
 
-      // 🔒 2중 잠금 유지
       function isSpotUnlocked(spotId) {
         if (isAdminMode) return true;
         const unlockedList = safeGetJSON('okbm_unlocked_spots', []);
@@ -1505,13 +1723,8 @@
         localStorage.setItem('okbm_active_spot_id', String(targetSpot.id).trim());
 
         if (isMobile) {
-          if (mobileContent) {
-            mobileContent.innerHTML = generateDetailContentHtml(targetSpot, true);
-          }
-          if (mobileSheet) {
-            mobileSheet._spotData = targetSpot;
-            mobileSheet.classList.add('open');
-          }
+          if (mobileContent) mobileContent.innerHTML = generateDetailContentHtml(targetSpot, true);
+          if (mobileSheet) { mobileSheet._spotData = targetSpot; mobileSheet.classList.add('open'); }
         } else {
           if (pcDrawer) {
             pcDrawer._spotData = targetSpot;
@@ -1594,6 +1807,7 @@
           Kakao.init(KAKAO_APP_KEY);
         }
 
+        // 🔑 SDK v1 호환: Invalid parameter 에러를 일으키던 prompt 키 제거
         Kakao.Auth.login({
           scope: 'profile_nickname',
           success: function(authObj) {
@@ -1608,34 +1822,91 @@
                   kakaoNick = res.kakao_account.profile.nickname;
                 }
 
-                const existingProfile = safeGetJSON('user_profile', null);
-                const finalNickname = (existingProfile && existingProfile.id === kakaoId && existingProfile.nickname)
-                  ? existingProfile.nickname
-                  : kakaoNick;
+                // ☁️ 1. 클라우드(구글 시트)에서 사용자 원본 데이터 조회
+                const cloudData = await loadUserDataFromCloud(kakaoId);
+                const accountLocalProfile = safeGetJSON(`user_profile_${kakaoId}`, null);
+
+                // 🏷️ 2. 실명 리셋 방어벽: 유효한 닉네임인지 확인 (엔진 메시지가 아닌 실제 커스텀 닉네임 우선)
+                const isCloudNickValid = (cloudData && typeof cloudData.nickname === 'string' && cloudData.nickname.trim() && !cloudData.nickname.includes('ENGINE') && !cloudData.nickname.includes('RUNNING'));
+                const savedCustomNick = localStorage.getItem(`okbm_custom_nickname_${kakaoId}`) || (accountLocalProfile && accountLocalProfile.nickname ? accountLocalProfile.nickname : null);
+
+                let finalNickname = kakaoNick;
+                if (isCloudNickValid) {
+                  finalNickname = cloudData.nickname.trim();
+                } else if (savedCustomNick && savedCustomNick.trim()) {
+                  finalNickname = savedCustomNick.trim();
+                }
+
+                // ⏱️ 3. 14일 쿨다운 타임스탬프 보존
+                const finalCreatedAt = (cloudData && cloudData.createdAt) || (accountLocalProfile && accountLocalProfile.createdAt) || Date.now();
+                const finalLastNicknameChangedAt = (cloudData && cloudData.lastNicknameChangedAt) 
+                  ? cloudData.lastNicknameChangedAt 
+                  : ((accountLocalProfile && accountLocalProfile.lastNicknameChangedAt) ? accountLocalProfile.lastNicknameChangedAt : (savedCustomNick ? (Date.now() - 1000) : 0));
 
                 const profile = {
                   id: kakaoId,
                   nickname: finalNickname,
                   isMember: true,
-                  createdAt: (existingProfile && existingProfile.createdAt) ? existingProfile.createdAt : Date.now(),
-                  lastNicknameChangedAt: (existingProfile && existingProfile.lastNicknameChangedAt) ? existingProfile.lastNicknameChangedAt : 0
+                  createdAt: finalCreatedAt,
+                  lastNicknameChangedAt: finalLastNicknameChangedAt
                 };
 
+                // 💾 4. 세션 토큰 및 프로필 영구 보존
                 localStorage.setItem('user_auth_token', authObj.access_token || ('token_' + Date.now()));
                 localStorage.setItem('user_profile', JSON.stringify(profile));
+                localStorage.setItem(`user_profile_${kakaoId}`, JSON.stringify(profile));
+                if (savedCustomNick) {
+                  localStorage.setItem(`okbm_custom_nickname_${kakaoId}`, finalNickname);
+                }
                 authState.isLoggedIn = true;
                 authState.userProfile = profile;
 
-                userBookmarks = new Set(safeGetJSON('okbm_bookmarks', []).map(s => String(s).trim()));
-                userVisited = new Set(safeGetJSON('okbm_visited', []).map(s => String(s).trim()));
-                userMemos = safeGetJSON('okbm_memos', {});
+                // 📦 5. 찜 목록 보존: 클라우드에 실제 배열이 있을 때만 사용, 없으면 로컬 데이터 100% 보존
+                const hasCloudBookmarks = (cloudData && Array.isArray(cloudData.bookmarks) && cloudData.bookmarks.length > 0);
+                const hasCloudVisited = (cloudData && Array.isArray(cloudData.visited) && cloudData.visited.length > 0);
+                const hasCloudMemos = (cloudData && cloudData.memos && typeof cloudData.memos === 'object' && Object.keys(cloudData.memos).length > 0);
+
+                const localBookmarks = safeGetJSON(`okbm_bookmarks_${kakaoId}`, safeGetJSON('okbm_bookmarks', []));
+                const localVisited = safeGetJSON(`okbm_visited_${kakaoId}`, safeGetJSON('okbm_visited', []));
+                const localMemos = safeGetJSON(`okbm_memos_${kakaoId}`, safeGetJSON('okbm_memos', {}));
+
+                const finalBookmarks = hasCloudBookmarks ? [...cloudData.bookmarks, ...localBookmarks] : localBookmarks;
+                const finalVisited = hasCloudVisited ? [...cloudData.visited, ...localVisited] : localVisited;
+                const finalMemos = hasCloudMemos ? { ...localMemos, ...cloudData.memos } : localMemos;
+
+                userBookmarks = new Set(finalBookmarks.map(s => String(s).trim()));
+                userVisited = new Set(finalVisited.map(s => String(s).trim()));
+                userMemos = finalMemos;
+
+                // 🎒 게스트 상태에서 작성해둔 패킹 기록 안전 병합
+                const guestPacks = safeGetJSON('okbm_packing_history', []);
+                const cloudPacks = (cloudData && Array.isArray(cloudData.packHistory)) ? cloudData.packHistory : [];
+                const mergedPacks = [...guestPacks];
+                cloudPacks.forEach(cp => {
+                  if (!mergedPacks.some(p => p.id === cp.id)) mergedPacks.push(cp);
+                });
+
+                localStorage.setItem('okbm_packing_history', JSON.stringify(mergedPacks));
+                localStorage.setItem(`okbm_bookmarks_${kakaoId}`, JSON.stringify([...userBookmarks]));
+                localStorage.setItem(`okbm_visited_${kakaoId}`, JSON.stringify([...userVisited]));
+                localStorage.setItem(`okbm_memos_${kakaoId}`, JSON.stringify(userMemos));
+
+                localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks]));
+                localStorage.setItem('okbm_visited', JSON.stringify([...userVisited]));
+                localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
+
+                window.isCloudDataLoaded = true; // 🔓 락 해제
 
                 updateHeaderAuthUI();
                 closeLoginModal();
                 triggerHaptic('success');
                 showToast(`${ICONS.MEMBER} <span>[${profile.nickname}]님 환영합니다! 보관함이 동기화되었습니다.</span>`);
 
-                syncUserDataToCloud();
+                // 🛡️ 로그인 직후 무조건 덮어쓰지 않고, 유효한 데이터가 있을 때만 안전 동기화
+                if (userBookmarks.size > 0 || userVisited.size > 0 || savedCustomNick) {
+                  syncUserDataToCloud();
+                }
+
                 refreshCurrentSpotPopup();
                 renderSubChips();
                 renderSpots();
@@ -1661,64 +1932,71 @@
         
         authState.isLoggedIn = false;
         authState.userProfile = null;
+        window.isCloudDataLoaded = false;
+
+        // 🧹 활성 메모리 및 로컬 활성 뷰 초기화
+        userBookmarks = new Set();
+        userVisited = new Set();
+        userMemos = {};
+        
+        localStorage.removeItem('okbm_bookmarks');
+        localStorage.removeItem('okbm_visited');
+        localStorage.removeItem('okbm_memos');
         
         updateHeaderAuthUI();
         triggerHaptic('light');
-        showToast('로그아웃 되었습니다. (내 보관함 정보는 기기에 안전하게 보관됩니다)');
+        showToast('로그아웃 되었습니다.');
 
         refreshCurrentSpotPopup();
         renderSubChips();
         renderSpots();
       }
-     
-      let isAdminMode = false, isCleanMapMode = false, currentMapLayerState = 0;
-      let currentMasterTab = 'REGION', currentRegionFilter = 'ALL', currentTerrainFilter = 'ALL', currentCourseFilter = 'ALL', currentMyFilter = 'ALL';
-      let currentHudFilterDiff = 'ALL', currentHudFilterStatus = 'ALL', currentHudFilterTerrain = 'ALL';
-      let isSidebarCollapsed = (window.innerWidth <= 768), currentActiveSpot = null, pendingUnlockSpotId = null;
 
-      const spotNativeMarkerMap = new Map();
-      const spotLabelOverlayMap = new Map();
-      let tempSearchMarker = null, tempPickedMarker = null, userLocationOverlay = null;
-      let modalMode = 'PROPOSAL', modalEditIndex = -1, modalPendingData = { lat: 0, lng: 0, address: '' }, isPickingLocationMode = false;
-      let currentGpxPolyline = null, activeGpxSpotId = null;
-     
-      // 🔑 상단 GNB 로그인 UI 제어
-      function updateHeaderAuthUI() {
-        const btn = document.getElementById('headerAuthBtn');
-        const text = document.getElementById('headerAuthText');
-        const icon = document.getElementById('headerAuthIcon');
-        if (!btn || !text) return;
-
-        const isLogged = isUserLoggedIn();
-        const profile = safeGetJSON('user_profile', null) || authState.userProfile;
-        const userVectorSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; margin-right:3px; display:inline-block; vertical-align:-1px;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>`;
-
-        if (isLogged && profile && profile.nickname) {
-          btn.classList.add('logged-in');
-          if (icon) icon.innerHTML = userVectorSvg;
-          text.innerText = profile.nickname;
+      // 🔄 앱 시작 시 로그인 상태인 경우 안전 동기화
+      if (isUserLoggedIn()) {
+        const initialProfile = safeGetJSON('user_profile', null);
+        if (initialProfile && initialProfile.id) {
+          loadUserDataFromCloud(initialProfile.id).then(cloudData => {
+            if (cloudData) {
+              if (cloudData.bookmarks && Array.isArray(cloudData.bookmarks) && cloudData.bookmarks.length > 0) {
+                userBookmarks = new Set(cloudData.bookmarks.map(s => String(s).trim()));
+                localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks]));
+              }
+              if (cloudData.visited && Array.isArray(cloudData.visited) && cloudData.visited.length > 0) {
+                userVisited = new Set(cloudData.visited.map(s => String(s).trim()));
+                localStorage.setItem('okbm_visited', JSON.stringify([...userVisited]));
+              }
+              if (cloudData.memos && typeof cloudData.memos === 'object' && Object.keys(cloudData.memos).length > 0) {
+                userMemos = cloudData.memos;
+                localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
+              }
+              if (cloudData.nickname && typeof cloudData.nickname === 'string' && cloudData.nickname.trim() && !cloudData.nickname.includes('ENGINE') && initialProfile.nickname !== cloudData.nickname) {
+                initialProfile.nickname = cloudData.nickname;
+                localStorage.setItem('user_profile', JSON.stringify(initialProfile));
+                authState.userProfile = initialProfile;
+                updateHeaderAuthUI();
+              }
+              renderSubChips();
+              renderSpots();
+            }
+            window.isCloudDataLoaded = true;
+          });
         } else {
-          btn.classList.remove('logged-in');
-          if (icon) icon.innerHTML = userVectorSvg;
-          text.innerText = '로그인';
+          window.isCloudDataLoaded = true;
         }
+      } else {
+        window.isCloudDataLoaded = true;
       }
-
       function handleAuthBtnClick() {
-        if (isUserLoggedIn()) {
-          openUserProfileModal();
-        } else { 
-          openLoginModal(); 
-        }
+        if (isUserLoggedIn()) openUserProfileModal();
+        else openLoginModal(); 
       }
 
       function openUserProfileModal() {
         const modal = document.getElementById('userProfileModalOverlay');
         const input = document.getElementById('profileModalNicknameInput');
         const profile = safeGetJSON('user_profile', null) || authState.userProfile;
-        if (input && profile) {
-          input.value = profile.nickname || '';
-        }
+        if (input && profile) input.value = profile.nickname || '';
         if (modal) modal.style.display = 'flex';
       }
 
@@ -1729,18 +2007,11 @@
 
       function saveNewNicknameFromModal() {
         const input = document.getElementById('profileModalNicknameInput');
-        if (!input || !input.value.trim()) {
-          alert('변경할 닉네임을 입력해주세요.');
-          return;
-        }
+        if (!input || !input.value.trim()) return alert('변경할 닉네임을 입력해주세요.');
 
         const cleanNick = input.value.trim();
         let profile = safeGetJSON('user_profile', null) || authState.userProfile || { isMember: true };
-
-        if (profile.nickname === cleanNick) {
-          showToast('현재 사용 중인 닉네임과 동일합니다.');
-          return;
-        }
+        if (profile.nickname === cleanNick) return showToast('현재 사용 중인 닉네임과 동일합니다.');
 
         const COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
         const lastChanged = profile.lastNicknameChangedAt || 0;
@@ -1748,27 +2019,23 @@
 
         if (lastChanged && (now - lastChanged < COOLDOWN_MS)) {
           const remainingDays = Math.ceil((COOLDOWN_MS - (now - lastChanged)) / (1000 * 60 * 60 * 24));
-          alert(`닉네임은 2주(14일)에 한 번만 변경하실 수 있습니다.\n\n앞으로 [ ${remainingDays}일 ] 후에 다시 변경 가능합니다.`);
-          return;
+          return alert(`닉네임은 2주(14일)에 한 번만 변경하실 수 있습니다.\n\n[ ${remainingDays}일 ] 후에 다시 변경 가능합니다.`);
         }
 
         profile.nickname = cleanNick;
         profile.lastNicknameChangedAt = now;
-
         localStorage.setItem('user_profile', JSON.stringify(profile));
+        if (profile.id) {
+          localStorage.setItem(`user_profile_${profile.id}`, JSON.stringify(profile));
+          localStorage.setItem(`okbm_custom_nickname_${profile.id}`, cleanNick);
+        }
         authState.userProfile = profile;
         authState.isLoggedIn = true;
 
         updateHeaderAuthUI();
         syncUserDataToCloud();
-
-        document.querySelectorAll('.comment-input-author').forEach(el => {
-          el.value = cleanNick;
-        });
-
         refreshCurrentSpotPopup();
         renderSpots();
-
         closeUserProfileModal();
         triggerHaptic('success');
         showToast(`${ICONS.MEMBER} <span>닉네임이 [${cleanNick}] (으)로 변경되었습니다!</span>`);
@@ -1868,7 +2135,6 @@
         renderSpots();
       }
 
-      // 🎨 정적 HTML 영역 벡터 바인딩 함수
       function initStaticVectors() {
         document.getElementById('sidebarCampIcon').innerHTML = ICONS.CAMP;
         document.getElementById('btnSidebarSubmit').innerHTML = `${ICONS.BACKPACK}<span>제보</span>`;
@@ -1939,7 +2205,7 @@
           Kakao.init(KAKAO_APP_KEY);
         }
         initStaticVectors();
-        trackDailyVisit();
+        applyTheme(currentAppTheme);
         initMapEngine();
         updateHeaderAuthUI();
         if (window.innerWidth <= 768) {
@@ -2032,23 +2298,23 @@
         if (currentMapLayerState === 0) {
           map.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
           if (textEl) textEl.innerText = '위성';
-          if (btnEl) btnEl.classList.remove('active-hybrid', 'active-terrain');
+          if (btnEl) btnEl.classList.remove('active-layer');
         } else if (currentMapLayerState === 1) {
           map.setMapTypeId(kakao.maps.MapTypeId.HYBRID);
           if (textEl) textEl.innerText = '지형도';
-          if (btnEl) { btnEl.classList.remove('active-terrain'); btnEl.classList.add('active-hybrid'); }
+          if (btnEl) btnEl.classList.add('active-layer');
         } else if (currentMapLayerState === 2) {
           map.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
           map.addOverlayMapTypeId(kakao.maps.MapTypeId.TERRAIN);
           if (textEl) textEl.innerText = '일반';
-          if (btnEl) { btnEl.classList.remove('active-hybrid'); btnEl.classList.add('active-terrain'); }
+          if (btnEl) btnEl.classList.add('active-layer');
         }
       }
 
       function locateUserPosition(e) {
         if (e) e.stopPropagation();
         triggerHaptic('medium');
-        if (!navigator.geolocation) { showToast(`${ICONS.ALERT_CARD} <span>위치 서비스를 지원하지 않습니다.</span>`); return; }
+        if (!navigator.geolocation) return showToast(`${ICONS.ALERT_CARD} <span>위치 서비스를 지원하지 않습니다.</span>`);
         navigator.geolocation.getCurrentPosition((pos) => {
           if (!map) return;
           const loc = new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
@@ -2166,18 +2432,11 @@
         });
       }
 
-      function toggleCleanMapMode(forceState = null) {
-        if (forceState !== null) isCleanMapMode = forceState;
-        else isCleanMapMode = !isCleanMapMode;
-        document.body.classList.toggle('clean-map-mode', isCleanMapMode);
-        updateSmartResetButtons();
-      }
-
       function updateSmartResetButtons() {
         const isMobile = window.innerWidth <= 768;
         const isListOpen = isMobile ? !isSidebarCollapsed : true;
         const allClosed = areAllRegionAccordionsClosed();
-        let labelText = isCleanMapMode ? 'UI 보이기' : (isListOpen ? (allClosed ? '모두 열기' : '모두 닫기') : '초기화');
+        let labelText = isListOpen ? (allClosed ? '모두 열기' : '모두 닫기') : '초기화';
         const pcResetText = document.getElementById('pcResetMapBtnText'), dockResetText = document.getElementById('dockResetMapText');
         if (pcResetText) pcResetText.innerText = labelText;
         if (dockResetText) dockResetText.innerText = labelText;
@@ -2185,8 +2444,6 @@
 
       function handleSmartResetClick() {
         triggerHaptic('medium');
-        if (isCleanMapMode) { toggleCleanMapMode(false); return; }
-        
         const isMobile = window.innerWidth <= 768;
         const isListOpen = isMobile ? !isSidebarCollapsed : true;
         if (isListOpen && document.querySelectorAll('.region-group').length > 0) {
@@ -2246,14 +2503,11 @@
       }
 
       function getSpotStatusBadges(spot) {
-        const sId = String(spot.id).trim();
         let html = '';
-        if (spot.courseType === '최단') html += `<span class="badge-status" style="background:rgba(16,185,129,0.16); color:#6ee7b7; border:1px solid rgba(16,185,129,0.35);">${ICONS.FAST}최단</span>`;
-        else if (spot.courseType === '종주') html += `<span class="badge-status" style="background:rgba(168,85,247,0.16); color:#d8b4fe; border:1px solid rgba(168,85,247,0.35);">${ICONS.HIKING}종주</span>`;
+        if (spot.courseType === '최단') html += `<span class="badge-status" style="background:rgba(16,185,129,0.16); color:#10b981; border:1px solid rgba(16,185,129,0.35);">${ICONS.FAST}최단</span>`;
+        else if (spot.courseType === '종주') html += `<span class="badge-status" style="background:rgba(168,85,247,0.16); color:#a855f7; border:1px solid rgba(168,85,247,0.35);">${ICONS.HIKING}종주</span>`;
         if (getSpotViews(spot) >= 5) html += `<span class="badge-status badge-hot">HOT</span>`;
         if (spot.isNew) html += `<span class="badge-status badge-new">NEW</span>`;
-        if (userBookmarks.has(sId)) html += `<span class="badge-status" style="background:#f43f5e; color:#fff;">${ICONS.HEART}찜</span>`;
-        if (userVisited.has(sId)) html += `<span class="badge-status" style="background:#0284c7; color:#fff;">${ICONS.FLAG}클리어</span>`;
         return html;
       }
 
@@ -2287,16 +2541,9 @@
 
       function getDynamicTempSvg(temp) {
         const t = Number(temp) || 18;
-        let color = '#fde047';
-        let fill = '#fde047';
-
-        if (t <= 5) {
-          color = '#38bdf8';
-          fill = '#38bdf8';
-        } else if (t >= 25) {
-          color = '#f43f5e';
-          fill = '#f43f5e';
-        }
+        let color = '#fde047', fill = '#fde047';
+        if (t <= 5) { color = '#38bdf8'; fill = '#38bdf8'; }
+        else if (t >= 25) { color = '#f43f5e'; fill = '#f43f5e'; }
 
         return `<svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="ui-icon" style="color:${color};"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/><circle cx="11.5" cy="17.5" r="2.2" fill="${fill}" stroke="none"/><path d="M11.5 8v6" stroke="${fill}" stroke-width="1.5"/></svg>`;
       }
@@ -2363,9 +2610,7 @@
           clearTimeout(timeoutId);
           const data = await res.json();
           if (data?.results?.length > 0) return `${Math.round(data.results[0].elevation)}m`;
-        } catch (e) {
-          clearTimeout(timeoutId);
-        }
+        } catch (e) {}
         return '450m';
       }
 
@@ -2373,9 +2618,7 @@
       async function searchCoordsByQuery(query) {
         if (!query?.trim()) return null;
         const cleanQ = query.trim();
-        if (geocodeQueryCache.has(cleanQ)) {
-          return geocodeQueryCache.get(cleanQ);
-        }
+        if (geocodeQueryCache.has(cleanQ)) return geocodeQueryCache.get(cleanQ);
         return new Promise((resolve) => {
           if (!geocoder) return resolve(null);
           geocoder.addressSearch(cleanQ, (result, status) => {
@@ -2390,9 +2633,7 @@
                   const resObj = { lat: parseFloat(pResult[0].y), lng: parseFloat(pResult[0].x), title: pResult[0].place_name, address: pResult[0].road_address_name || pResult[0].address_name };
                   geocodeQueryCache.set(cleanQ, resObj);
                   resolve(resObj);
-                } else {
-                  resolve(null);
-                }
+                } else { resolve(null); }
               });
             }
           });
@@ -2406,16 +2647,14 @@
           const coords = await searchCoordsByQuery(document.getElementById('modalInputEntry').value.trim() || document.getElementById('modalInputName').value.trim());
           if (coords) { lat = coords.lat; lng = coords.lng; modalPendingData.lat = lat; modalPendingData.lng = lng; }
         }
-        if (!lat || !lng) return alert('좌표가 없습니다. [콕 찍기]로 먼저 위치를 지정해주세요.');
+        if (!lat || !lng) return alert('위치를 먼저 지정해주세요.');
         document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
       }
 
       function smoothCenterMapOnSpot(lat, lng) {
         if (!map) return;
         const isMobile = window.innerWidth <= 768;
-        if (map.getLevel() > 7) { 
-          map.setLevel(7, { animate: false }); 
-        } 
+        if (map.getLevel() > 7) map.setLevel(7, { animate: false }); 
         
         const proj = map.getProjection();
         const rawLatLng = new kakao.maps.LatLng(lat, lng);
@@ -2426,22 +2665,15 @@
             const offsetX = isMobile ? 0 : -Math.round(window.innerWidth * 0.10);
             const offsetY = isMobile ? Math.round(window.innerHeight * 0.22) : 0;
             const adjustedPoint = new kakao.maps.Point(centerPoint.x + offsetX, centerPoint.y + offsetY);
-            const adjustedLatLng = proj.coordsFromPoint(adjustedPoint);
-            map.panTo(adjustedLatLng);
-          } else {
-            map.panTo(rawLatLng);
-          }
-        } else {
-          map.panTo(rawLatLng);
-        }
+            map.panTo(proj.coordsFromPoint(adjustedPoint));
+          } else { map.panTo(rawLatLng); }
+        } else { map.panTo(rawLatLng); }
 
         setTimeout(() => updateLODLabels(), 150);
-        setTimeout(() => updateLODLabels(), 350);
       }
 
       function updateLODLabels() {
         if (!map) return;
-        
         const currentLevel = map.getLevel();
         const proj = map.getProjection();
         const occupiedBoxes = [];
@@ -2474,12 +2706,7 @@
           const overlay = spotLabelOverlayMap.get(id);
           if (!overlay) return;
 
-          if (currentLevel >= 11) {
-            overlay.setMap(null);
-            return;
-          }
-
-          if (!isSelected && currentLevel >= 12) {
+          if (currentLevel >= 11 || (!isSelected && currentLevel >= 12)) {
             overlay.setMap(null);
             return;
           }
@@ -2489,50 +2716,33 @@
           if (!screenPoint) return;
 
           const isFullMode = isSelected || (currentLevel <= 7);
-          const labelWidth = isFullMode ? 90 : 58;
-          const labelHeight = isFullMode ? 54 : 22;
+          const labelWidth = isFullMode ? 90 : 58, labelHeight = isFullMode ? 54 : 22;
 
           const box = {
-            left: screenPoint.x - labelWidth / 2,
-            right: screenPoint.x + labelWidth / 2,
-            top: screenPoint.y - labelHeight - 44,
-            bottom: screenPoint.y - 44
+            left: screenPoint.x - labelWidth / 2, right: screenPoint.x + labelWidth / 2,
+            top: screenPoint.y - labelHeight - 44, bottom: screenPoint.y - 44
           };
 
-          const hasCollision = occupiedBoxes.some(b => {
-            return !(box.left > b.right + 4 || 
-                     box.right < b.left - 4 || 
-                     box.top > b.bottom + 2 || 
-                     box.bottom < b.top - 2);
-          });
+          const hasCollision = occupiedBoxes.some(b => !(box.left > b.right + 4 || box.right < b.left - 4 || box.top > b.bottom + 2 || box.bottom < b.top - 2));
 
           if (!isSelected && hasCollision && priority < 10000) {
             overlay.setMap(null);
           } else {
             occupiedBoxes.push(box);
-
             const diffClass = getSpotDiffColorClass(spot.difficulty);
             let row1Name = (spot.spot_main || spot.name || '무명박지').trim();
             let row2Sub = (spot.spot_sub || '').trim();
             const parenMatch = row1Name.match(/^(.*?)\s*[\(\[（](.*?)[\)\]）]/);
-            if (parenMatch) {
-              row1Name = parenMatch[1].trim();
-              if (!row2Sub) row2Sub = parenMatch[2].trim();
-            }
+            if (parenMatch) { row1Name = parenMatch[1].trim(); if (!row2Sub) row2Sub = parenMatch[2].trim(); }
             const row3Elev = spot.elevation ? `${String(spot.elevation).replace(/m$/i,'')}m` : '';
-            const isFav = userBookmarks.has(id);
-            const isDone = userVisited.has(id);
 
             const labelDiv = document.createElement('div');
             labelDiv.className = 'lod-marker-container';
-
-            const labelTransform = isSelected 
-              ? 'transform: translateX(-50%) scale(1.08);' 
-              : 'transform: translateX(-50%);';
+            const labelTransform = isSelected ? 'transform: translateX(-50%) scale(1.08);' : 'transform: translateX(-50%);';
 
             labelDiv.innerHTML = `
-              ${isFav ? `<div class="marker-badge-corner badge-corner-fav" title="찜한 박지">${ICONS.HEART}</div>` : ''}
-              ${isDone ? `<div class="marker-badge-corner badge-corner-visited" title="클리어 박지">${ICONS.FLAG}</div>` : ''}
+              ${userBookmarks.has(id) ? `<div class="marker-badge-corner badge-corner-fav" title="찜한 박지">${ICONS.HEART}</div>` : ''}
+              ${userVisited.has(id) ? `<div class="marker-badge-corner badge-corner-visited" title="클리어 박지">${ICONS.FLAG}</div>` : ''}
               <div class="lod-marker-label" style="position: absolute; bottom: 44px; left: 50%; ${labelTransform}">
                 <div class="lod-label-row-1 ${diffClass}">${escapeHtml(row1Name)}</div>
                 ${(isFullMode && row2Sub) ? `<div class="lod-label-row-2">${escapeHtml(row2Sub)}</div>` : ''}
@@ -2591,6 +2801,12 @@
 
       function toggleUserBookmark(spotId, e = null) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
+        if (!isUserLoggedIn()) {
+          triggerHaptic('light');
+          openLoginModal();
+          showToast(`${ICONS.LOCK} <span>찜하기는 로그인 후 이용하실 수 있습니다.</span>`);
+          return;
+        }
         const sId = String(spotId || (currentActiveSpot ? currentActiveSpot.id : '')).trim();
         if (!sId) return;
 
@@ -2598,48 +2814,44 @@
         let isNowBookmarked = false;
 
         if (bList.has(sId)) {
-          bList.delete(sId);
-          userBookmarks.delete(sId);
-          isNowBookmarked = false;
-          triggerHaptic('light');
-          showToast(`${ICONS.HEART} <span>찜 목록에서 해제되었습니다.</span>`);
+          bList.delete(sId); userBookmarks.delete(sId); isNowBookmarked = false;
+          triggerHaptic('light'); showToast(`${ICONS.HEART} <span>찜 목록에서 해제되었습니다.</span>`);
         } else {
-          bList.add(sId);
-          userBookmarks.add(sId);
-          isNowBookmarked = true;
-          triggerHaptic('success');
-          showToast(`${ICONS.HEART} <span>찜 목록에 추가되었습니다!</span>`);
+          bList.add(sId); userBookmarks.add(sId); isNowBookmarked = true;
+          triggerHaptic('success'); showToast(`${ICONS.HEART} <span>찜 목록에 추가되었습니다!</span>`);
         }
 
         localStorage.setItem('okbm_bookmarks', JSON.stringify([...bList]));
+        const profile = safeGetJSON('user_profile', null);
+        if (profile && profile.id) {
+          localStorage.setItem(`okbm_bookmarks_${profile.id}`, JSON.stringify([...bList]));
+        }
         syncUserDataToCloud();
 
         document.querySelectorAll('.btn-action-fav').forEach(btn => {
-          if (isNowBookmarked) {
-            btn.classList.add('bookmarked');
-            btn.innerHTML = `${ICONS.HEART} 찜됨`;
-          } else {
-            btn.classList.remove('bookmarked');
-            btn.innerHTML = `${ICONS.HEART} 찜하기`;
-          }
+          if (isNowBookmarked) { btn.classList.add('bookmarked'); btn.innerHTML = `${ICONS.HEART} 찜됨`; }
+          else { btn.classList.remove('bookmarked'); btn.innerHTML = `${ICONS.HEART} 찜하기`; }
         });
 
         document.querySelectorAll(`#spotItem_${sId} .btn-card-quick:first-child`).forEach(btn => {
-          if (isNowBookmarked) {
-            btn.classList.add('active-fav');
-            btn.innerHTML = `${ICONS.HEART} 찜`;
-          } else {
-            btn.classList.remove('active-fav');
-            btn.innerHTML = `${ICONS.HEART} 찜`;
-          }
+          if (isNowBookmarked) btn.classList.add('active-fav');
+          else btn.classList.remove('active-fav');
         });
 
         renderSubChips();
         updateLODLabels();
+        refreshCurrentSpotPopup();
+        renderSpots();
       }
 
       function toggleUserVisited(spotId, e = null) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
+        if (!isUserLoggedIn()) {
+          triggerHaptic('light');
+          openLoginModal();
+          showToast(`${ICONS.LOCK} <span>클리어 등록은 로그인 후 이용하실 수 있습니다.</span>`);
+          return;
+        }
         const sId = String(spotId || (currentActiveSpot ? currentActiveSpot.id : '')).trim();
         if (!sId) return;
 
@@ -2648,66 +2860,49 @@
         let isNowVisited = false;
 
         if (vList.has(sId)) {
-          vList.delete(sId);
-          userVisited.delete(sId);
-          isNowVisited = false;
-          triggerHaptic('light');
-          showToast(`${ICONS.FLAG} <span>클리어 목록에서 제외되었습니다.</span>`);
+          vList.delete(sId); userVisited.delete(sId); isNowVisited = false;
+          triggerHaptic('light'); showToast(`${ICONS.FLAG} <span>클리어 목록에서 제외되었습니다.</span>`);
         } else {
-          vList.add(sId);
-          bList.delete(sId);
-          userVisited.add(sId);
-          userBookmarks.delete(sId);
-          isNowVisited = true;
-          triggerHaptic('success');
-          showToast(`${ICONS.FLAG} <span>박지 정복 클리어!</span>`);
+          vList.add(sId); bList.delete(sId); userVisited.add(sId); userBookmarks.delete(sId); isNowVisited = true;
+          triggerHaptic('success'); showToast(`${ICONS.FLAG} <span>박지 정복 클리어!</span>`);
         }
 
         localStorage.setItem('okbm_visited', JSON.stringify([...vList]));
         localStorage.setItem('okbm_bookmarks', JSON.stringify([...bList]));
+        const profile = safeGetJSON('user_profile', null);
+        if (profile && profile.id) {
+          localStorage.setItem(`okbm_visited_${profile.id}`, JSON.stringify([...vList]));
+          localStorage.setItem(`okbm_bookmarks_${profile.id}`, JSON.stringify([...bList]));
+        }
         syncUserDataToCloud();
 
         document.querySelectorAll('.btn-action-visited').forEach(btn => {
-          if (isNowVisited) {
-            btn.classList.add('visited');
-            btn.innerHTML = `${ICONS.FLAG} 클리어`;
-          } else {
-            btn.classList.remove('visited');
-            btn.innerHTML = `▶ 다녀왔음`;
-          }
+          if (isNowVisited) { btn.classList.add('visited'); btn.innerHTML = `${ICONS.FLAG} 클리어`; }
+          else { btn.classList.remove('visited'); btn.innerHTML = `▶ 다녀왔음`; }
         });
 
         document.querySelectorAll(`#spotItem_${sId} .btn-card-quick`).forEach((btn) => {
           if (btn.innerText.includes('클리어')) {
-            if (isNowVisited) {
-              btn.classList.add('active-done');
-            } else {
-              btn.classList.remove('active-done');
-            }
+            if (isNowVisited) btn.classList.add('active-done');
+            else btn.classList.remove('active-done');
           }
         });
 
-        if (isNowVisited) {
-          document.querySelectorAll('.btn-action-fav').forEach(btn => {
-            btn.classList.remove('bookmarked');
-            btn.innerHTML = `${ICONS.HEART} 찜하기`;
-          });
-          document.querySelectorAll(`#spotItem_${sId} .btn-card-quick`).forEach(btn => {
-            if (btn.innerText.includes('찜')) {
-              btn.classList.remove('active-fav');
-            }
-          });
-        }
-
         renderSubChips();
         updateLODLabels();
+        refreshCurrentSpotPopup();
+        renderSpots();
       }
 
       function saveUserPrivateMemo(spotId, text) {
-        if (!isUserLoggedIn()) { openLoginModal(); return; }
+        if (!isUserLoggedIn()) return openLoginModal();
         triggerHaptic('light');
         userMemos[String(spotId).trim()] = text.trim();
         localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
+        const profile = safeGetJSON('user_profile', null);
+        if (profile && profile.id) {
+          localStorage.setItem(`okbm_memos_${profile.id}`, JSON.stringify(userMemos));
+        }
         syncUserDataToCloud();
         showToast(`${ICONS.MEMO} <span>나만의 메모가 안전하게 저장되었습니다.</span>`);
       }
@@ -2718,8 +2913,8 @@
         triggerHaptic('light');
         const titleName = spot.fullName || `${spot.spot_main} (${spot.spot_sub || ''})`;
         const shareUrl = `${window.location.origin}${window.location.pathname}?spot=${encodeURIComponent(spot.spot_main || spot.name)}`;
-        if (navigator.share) { navigator.share({ title: `[낭만백패킹] ${titleName}`, url: shareUrl }).catch(() => {}); }
-        else { copyTextToClipboard(shareUrl, '박지 공유 링크가 복사되었습니다!'); }
+        if (navigator.share) navigator.share({ title: `[낭만백패킹] ${titleName}`, url: shareUrl }).catch(() => {});
+        else copyTextToClipboard(shareUrl, '박지 공유 링크가 복사되었습니다!');
       }
 
       const entryCoordsCache = new Map();
@@ -2754,9 +2949,7 @@
             const startTime = Date.now();
             window.location.href = tmapAppUrl;
             setTimeout(() => { if (Date.now() - startTime < 1500) window.open(tmapWebUrl, '_blank'); }, 1000);
-          } else {
-            window.open(`https://map.kakao.com/link/search/${encodeURIComponent(targetQuery)}`, '_blank');
-          }
+          } else { window.open(`https://map.kakao.com/link/search/${encodeURIComponent(targetQuery)}`, '_blank'); }
         } else if (type === 'naver') {
           if (hasValidCoords) {
             const naverAppUrl = `nmap://route/car?dlat=${targetLat}&dlng=${targetLng}&dname=${encodeURIComponent(naviTitle)}&appname=okbm`;
@@ -2764,9 +2957,7 @@
             const startTime = Date.now();
             window.location.href = naverAppUrl;
             setTimeout(() => { if (Date.now() - startTime < 1500) window.open(naverWebUrl, '_blank'); }, 1000);
-          } else {
-            window.open(`https://map.naver.com/p/search/${encodeURIComponent(targetQuery)}`, '_blank');
-          }
+          } else { window.open(`https://map.naver.com/p/search/${encodeURIComponent(targetQuery)}`, '_blank'); }
         } else if (type === 'roadview') {
           const rvLat = hasValidCoords ? targetLat : fallbackLat, rvLng = hasValidCoords ? targetLng : fallbackLng;
           window.open(`https://map.kakao.com/link/roadview/${rvLat},${rvLng}`, '_blank');
@@ -2777,53 +2968,35 @@
         const sId = String(spotId).trim();
         triggerHaptic('light');
         if (currentGpxPolyline && activeGpxSpotId === sId) {
-          currentGpxPolyline.setMap(null);
-          currentGpxPolyline = null;
-          activeGpxSpotId = null;
+          currentGpxPolyline.setMap(null); currentGpxPolyline = null; activeGpxSpotId = null;
           showToast(`${ICONS.HIKING} <span>등산로 코스선 표시를 해제했습니다.</span>`);
           refreshCurrentSpotPopup();
           return;
         }
 
-        if (!gpxUrl || !gpxUrl.trim()) {
-          showToast(`${ICONS.ALERT_CARD} <span>해당 박지의 GPX 등산로 데이터가 준비 중입니다.</span>`);
-          return;
-        }
+        if (!gpxUrl || !gpxUrl.trim()) return showToast(`${ICONS.ALERT_CARD} <span>해당 박지의 GPX 등산로 데이터가 준비 중입니다.</span>`);
 
         try {
           showToast(`${ICONS.HIKING} <span>등산로 GPX 경로를 불러오는 중...</span>`);
           const res = await fetch(gpxUrl);
           if (!res.ok) throw new Error('GPX fetch failed');
           const gpxText = await res.text();
-          const parser = new DOMParser();
-          const xml = parser.parseFromString(gpxText, 'text/xml');
+          const xml = new DOMParser().parseFromString(gpxText, 'text/xml');
           const trkpts = xml.getElementsByTagName('trkpt');
-
-          if (!trkpts || trkpts.length === 0) {
-            showToast(`${ICONS.ALERT_CARD} <span>GPX 트랙 포인트가 없습니다.</span>`);
-            return;
-          }
 
           const path = [];
           for (let i = 0; i < trkpts.length; i++) {
-            const lat = parseFloat(trkpts[i].getAttribute('lat'));
-            const lon = parseFloat(trkpts[i].getAttribute('lon'));
+            const lat = parseFloat(trkpts[i].getAttribute('lat')), lon = parseFloat(trkpts[i].getAttribute('lon'));
             if (!isNaN(lat) && !isNaN(lon)) path.push(new kakao.maps.LatLng(lat, lon));
           }
 
           if (currentGpxPolyline) currentGpxPolyline.setMap(null);
-
-          currentGpxPolyline = new kakao.maps.Polyline({
-            map: map, path: path, strokeWeight: 4.5, strokeColor: '#f97316', strokeOpacity: 0.9, strokeStyle: 'solid'
-          });
-
+          currentGpxPolyline = new kakao.maps.Polyline({ map, path, strokeWeight: 4.5, strokeColor: '#f97316', strokeOpacity: 0.9, strokeStyle: 'solid' });
           activeGpxSpotId = sId;
           triggerHaptic('medium');
           showToast(`${ICONS.HIKING} <span>지도에 등산로 주황색 코스선이 표시되었습니다!</span>`);
           refreshCurrentSpotPopup();
-        } catch (err) {
-          showToast(`${ICONS.ALERT_CARD} <span>GPX 파일을 불러오지 못했습니다.</span>`);
-        }
+        } catch (err) { showToast(`${ICONS.ALERT_CARD} <span>GPX 파일을 불러오지 못했습니다.</span>`); }
       }
 
       function parseStructuredSummary(rawText) {
@@ -2833,15 +3006,11 @@
         let view = '', access = '', pitch = '', tip = '', hasParsed = false;
 
         lines.forEach(line => {
-          if (line.startsWith('[뷰/특징]') || line.startsWith('[뷰]') || line.startsWith('[특징]')) {
-            view = line.replace(/^\[.*?\]\s*/, ''); hasParsed = true;
-          } else if (line.startsWith('[접근/코스]') || line.startsWith('[접근]') || line.startsWith('[코스]')) {
-            access = line.replace(/^\[.*?\]\s*/, ''); hasParsed = true;
-          } else if (line.startsWith('[박지/피칭]') || line.startsWith('[박지]') || line.startsWith('[피칭]')) {
-            pitch = line.replace(/^\[.*?\]\s*/, ''); hasParsed = true;
-          } else if (line.startsWith('[주의/팁]') || line.startsWith('[주의]') || line.startsWith('[팁]')) {
-            tip = line.replace(/^\[.*?\]\s*/, ''); hasParsed = true;
-          } else {
+          if (line.startsWith('[뷰/특징]') || line.startsWith('[뷰]') || line.startsWith('[특징]')) { view = line.replace(/^\[.*?\]\s*/, ''); hasParsed = true; }
+          else if (line.startsWith('[접근/코스]') || line.startsWith('[접근]') || line.startsWith('[코스]')) { access = line.replace(/^\[.*?\]\s*/, ''); hasParsed = true; }
+          else if (line.startsWith('[박지/피칭]') || line.startsWith('[박지]') || line.startsWith('[피칭]')) { pitch = line.replace(/^\[.*?\]\s*/, ''); hasParsed = true; }
+          else if (line.startsWith('[주의/팁]') || line.startsWith('[주의]') || line.startsWith('[팁]')) { tip = line.replace(/^\[.*?\]\s*/, ''); hasParsed = true; }
+          else {
             if (!view) view = line;
             else if (!access) access = line;
             else if (!pitch) pitch = line;
@@ -2858,14 +3027,10 @@
         let cleanMainName = (spot.spot_main || spot.name || '').trim();
         let cleanSubName = (spot.spot_sub || '').trim();
         const parenMatch = cleanMainName.match(/^(.*?)\s*[\(\[（](.*?)[\)\]）]/);
-        if (parenMatch) {
-          cleanMainName = parenMatch[1].trim();
-          if (!cleanSubName) cleanSubName = parenMatch[2].trim();
-        }
+        if (parenMatch) { cleanMainName = parenMatch[1].trim(); if (!cleanSubName) cleanSubName = parenMatch[2].trim(); }
         if (cleanSubName && cleanMainName.includes(cleanSubName)) cleanSubName = '';
 
         const cityName = spot.cityName ? String(spot.cityName).trim() : (spot.region ? String(spot.region).trim() : '');
-
         const tName = spot.trailhead_name || `${cleanMainName} 들머리`;
         const rawAddr = spot.trailhead_addr || spot.entryPoint || `${cleanMainName} 인근 주차장`;
         const { navAddress, guide } = parseEntryPoint(rawAddr);
@@ -2873,12 +3038,9 @@
         const sunset = calculateSunsetTime(spot.lat, spot.lng);
 
         const summary = parseStructuredSummary(spot.desc_summary || spot.desc);
-        const isFav = userBookmarks.has(sId);
-        const isDone = userVisited.has(sId);
-        const memoText = userMemos[sId] || '';
-        const diffClass = getSpotDiffColorClass(spot.difficulty);
-        const isGpxActive = (activeGpxSpotId === sId);
-        const isUnlocked = isSpotUnlocked(sId) || isAdminMode;
+        const isFav = userBookmarks.has(sId), isDone = userVisited.has(sId);
+        const memoText = userMemos[sId] || '', diffClass = getSpotDiffColorClass(spot.difficulty);
+        const isGpxActive = (activeGpxSpotId === sId), isUnlocked = isSpotUnlocked(sId) || isAdminMode;
         
         const ytList = (spot.youtubeUrls || []).filter(u => u && u.trim().length > 5);
         const targetUnlockLink = ytList.length > 0 ? cleanYouTubeUrl(ytList[0]) : (spot.authorSnsUrl || 'https://instagram.com/oklionnature');
@@ -2890,33 +3052,38 @@
 
         return `
           <div style="position: relative; width: 100%;">
-            <div class="sheet-title-row" onclick="smoothCenterMapOnSpot(${spot.lat}, ${spot.lng})" title="지도를 박지 중심으로 이동">
+            <!-- 1열: 지역/산이름/고도/상태 + 닫기버튼 -->
+            <div class="sheet-title-row" style="padding-right: ${isMobileSheet ? '36px' : '0'};" onclick="smoothCenterMapOnSpot(${spot.lat}, ${spot.lng})" title="지도를 박지 중심으로 이동">
               <div class="compact-title">
                 ${cityName ? `<span class="city-badge-colored">${escapeHtml(cityName)}</span>` : ''}
                 <span class="${diffClass}">${escapeHtml(cleanMainName)}</span>
-                ${spot.elevation ? '<span style="font-size:0.76rem; color:#86efac; font-weight:700; display:inline-flex; align-items:center; gap:2px;">(' + ICONS.MOUNTAIN + escapeHtml(spot.elevation) + ')</span>' : ''}
+                ${spot.elevation ? '<span style="font-size:0.76rem; color:var(--accent-emerald); font-weight:700; display:inline-flex; align-items:center; gap:2px;">(' + ICONS.MOUNTAIN + escapeHtml(spot.elevation) + ')</span>' : ''}
                 ${getSpotStatusBadges(spot)}
               </div>
               <div style="display:flex; align-items:center; gap:6px;" onclick="event.stopPropagation();">${adminTopActions}${closeBtn}</div>
             </div>
 
+            <!-- 2열: 세부포인트 단독 배치 (찜/클리어/공유는 들머리 위로 이동) -->
             ${cleanSubName ? `
-              <div style="margin: 2px 0 1px 0;">
-                <span class="badge-sub-point">${ICONS.PIN} ${escapeHtml(cleanSubName)}</span>
-              </div>` : ''}
+              <div style="display:flex; align-items:center; margin: 4px 0 2px 0; width:100%;">
+                <span class="badge-sub-point" style="margin:0;">${ICONS.PIN} ${escapeHtml(cleanSubName)}</span>
+              </div>
+            ` : ''}
 
-            <div style="display:flex; flex-direction:column; gap:2px; margin: 2px 0;">
-              <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
-                ${getMetaBadgesHtml(spot)}
-                ${spot.droneStatus ? getDroneStatusBadge(spot.droneStatus) : ''}
-              </div>
-              <div class="spot-live-weather-bar" style="margin:0;">
-                ${sunset ? `<span class="weather-chip" style="color:#fed7aa; border-color:rgba(245,158,11,0.35);">${ICONS.SUNSET} 일몰 ${sunset}</span>` : ''}
-                <div id="liveWeatherBox_${spot.id}" style="display:inline-flex; gap:4px;"><span class="weather-chip">${ICONS.TEMP} 기상 연동 완료</span></div>
-                <div class="spot-coords-text" style="font-size:0.65rem; padding:1px 5px;">${ICONS.PIN} ${spot.lat}, ${spot.lng}</div>
-              </div>
+            <!-- 3열: 지형/난이도/거리/드론 1줄 유지 -->
+            <div style="display:flex; align-items:center; gap:4px; margin: 2px 0 3px 0; width:100%; overflow-x:auto; white-space:nowrap; scrollbar-width:none; flex-wrap:nowrap;">
+              ${getMetaBadgesHtml(spot)}
+              ${spot.droneStatus ? getDroneStatusBadge(spot.droneStatus) : ''}
             </div>
 
+            <!-- 4열: 일몰 / 날씨 / 위경도 좌표 -->
+            <div class="spot-live-weather-bar" style="margin: 2px 0 4px 0; display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+              ${sunset ? `<span class="weather-chip" style="color:#fed7aa; border-color:rgba(245,158,11,0.35);">${ICONS.SUNSET} 일몰 ${sunset}</span>` : ''}
+              <div id="liveWeatherBox_${spot.id}" style="display:inline-flex; gap:4px;"><span class="weather-chip">${ICONS.TEMP} 기상 연동 완료</span></div>
+              <div class="spot-coords-text" style="font-size:0.65rem; padding:1px 5px;">${ICONS.PIN} ${spot.lat}, ${spot.lng}</div>
+            </div>
+
+            <!-- 5열: 1단계 [뷰/특징] 요약 카드 -->
             <div class="summary-block-wrap" style="margin-top:2px;">
               <div class="summary-card summary-card-view">
                 <div class="summary-card-title" style="color:#38bdf8;">${ICONS.VIEW_CARD} [뷰/특징]</div>
@@ -2924,23 +3091,31 @@
               </div>
             </div>
 
+            <!-- 🎯 6열: [찜 / 클리어 / 공유] 들머리 바로 위 33% 3분할 큼직한 터치 바 배치 -->
+            <div class="user-action-grid-3" style="display:flex; gap:5px; width:100%; margin:6px 0 4px 0;" onclick="event.stopPropagation();">
+              <button type="button" class="btn-action-3 btn-action-fav ${isFav ? 'bookmarked' : ''}" onclick="toggleUserBookmark('${sId}', event)">
+                ${ICONS.HEART} <span>${isFav ? '찜됨' : '찜하기'}</span>
+              </button>
+              <button type="button" class="btn-action-3 btn-action-visited ${isDone ? 'visited' : ''}" onclick="toggleUserVisited('${sId}', event)">
+                ${ICONS.FLAG} <span>${isDone ? '클리어' : '다녀왔음'}</span>
+              </button>
+              <button type="button" class="btn-action-3 btn-action-share" onclick="shareSpotCard('${sId}')">
+                ${ICONS.SHARE} <span>공유</span>
+              </button>
+            </div>
+
             ${!isMember ? `
               <div class="guest-member-lock-card">
-                <div style="font-size:0.88rem; font-weight:800; color:#fde047; display:flex; align-items:center; gap:4px;">${ICONS.LOCK} 낭만 회원 전용 정보 안내</div>
-                <div style="font-size:0.72rem; color:#cbd5e1; line-height:1.45;">
-                  소중한 박지 보존과 클린 백패킹 문화를 위해<br><strong>[찜/클리어/들머리 내비/2~4단계 실전 팁]</strong>은 로그인 후 공개됩니다.
+                <div style="font-size:0.88rem; font-weight:800; color:var(--accent-amber); display:flex; align-items:center; gap:4px;">${ICONS.LOCK} 낭만 회원 전용 정보 안내</div>
+                <div style="font-size:0.72rem; color:var(--text-secondary); line-height:1.45;">
+                  소중한 박지 보존과 클린 백패킹 문화를 위해<br><strong>[들머리 내비/2~4단계 실전 팁]</strong>은 로그인 후 공개됩니다.
                 </div>
                 <button type="button" class="btn-quick-login-unlock" style="width:100%; padding:9px; font-size:0.80rem;" onclick="triggerHaptic('light'); openLoginModal();">
                   ${ICONS.AUTH} 1초 간편 로그인하고 즉시 확인하기
                 </button>
               </div>
             ` : `
-              <div class="user-action-grid-3">
-                <button type="button" class="btn-action-3 btn-action-fav ${isFav ? 'bookmarked' : ''}" onclick="toggleUserBookmark('${sId}', event)">${ICONS.HEART} ${isFav ? `찜됨` : `찜하기`}</button>
-                <button type="button" class="btn-action-3 btn-action-visited ${isDone ? 'visited' : ''}" onclick="toggleUserVisited('${sId}', event)">${ICONS.FLAG} ${isDone ? `클리어` : `다녀왔음`}</button>
-                <button type="button" class="btn-action-3 btn-action-share" onclick="shareSpotCard('${sId}')">${ICONS.SHARE} 공유</button>
-              </div>
-
+              <!-- 들머리 및 4대 내비 모듈 -->
               <div class="entry-module-container">
                 <div class="entry-row-1">
                   <a href="javascript:void(0)" onclick="navigateToNaviApp('kakao', '${escapeHtml(cleanMainName)}', '${cleanAddress}', ${spot.lat}, ${spot.lng})" class="entry-address-2line">${ICONS.NAV} ${escapeHtml(tName)}: ${cleanAddress} ↗</a>
@@ -3024,15 +3199,11 @@
             localStorage.setItem('okbm_comments', JSON.stringify(spotComments)); 
             renderSpots(); 
           }
-        } catch (err) {
-          clearTimeout(timeoutId);
-        }
+        } catch (err) { clearTimeout(timeoutId); }
       }
 
       async function fetchSpotsFromGoogleSheet(isManual = false) {
-        if (isManual) {
-          showToast(`${ICONS.FAST} <span>구글 시트 최신 데이터를 동기화하는 중...</span>`);
-        }
+        if (isManual) showToast(`${ICONS.FAST} <span>구글 시트 최신 데이터를 동기화하는 중...</span>`);
         const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/export?format=csv&gid=${PRIMARY_SHEET_GID}&_t=${Date.now()}`;
         try {
           const response = await fetch(url, { cache: 'no-store' });
@@ -3041,14 +3212,12 @@
           if (!csvText || csvText.trim().length <= 10) throw new Error('데이터 비어있음');
 
           Papa.parse(csvText, {
-            header: true,
-            skipEmptyLines: true,
+            header: true, skipEmptyLines: true,
             transformHeader: h => h.replace(/^\uFEFF/, '').trim(),
             complete: function(results) {
               const rows = results.data;
               if (rows && rows.length > 0) {
-                const mapped = [];
-                const dedupeKeySet = new Set();
+                const mapped = [], dedupeKeySet = new Set();
 
                 rows.forEach((row, idx) => {
                   const getVal = (...keys) => {
@@ -3076,8 +3245,7 @@
                   if (dedupeKeySet.has(dedupeKey)) return;
                   dedupeKeySet.add(dedupeKey);
 
-                  let region = getVal('region', '지역');
-                  let cityName = getVal('cityName', '시군구', '시군');
+                  let region = getVal('region', '지역'), cityName = getVal('cityName', '시군구', '시군');
                   const trailhead_addr = getVal('trailhead_addr', '들머리주소', 'entryPoint', '주소') || '들머리 정보 미입력';
 
                   if (!region || region === '경기') {
@@ -3104,7 +3272,6 @@
 
                   const trailhead_name = getVal('trailhead_name', '들머리명칭', '시작점');
                   const difficulty = getVal('difficulty', '난이도') || '3';
-                  
                   let distance_km = getVal('distance_km', '편도거리', '거리', 'distance');
                   if (distance_km && !String(distance_km).includes('km') && !isNaN(distance_km)) distance_km = `${distance_km}km`;
 
@@ -3123,8 +3290,8 @@
                   let courseType = '일반';
                   if (distNum > 0 && distNum <= 3.0) courseType = '최단';
                   else if (distNum >= 7.0) courseType = '종주';
-                  else if (combined.includes('최단') || combined.includes('단거리') || combined.includes('퇴근박') || combined.includes('활공장') || combined.includes('헬기장')) courseType = '최단';
-                  else if (combined.includes('종주') || combined.includes('능선') || combined.includes('대간') || combined.includes('정맥')) courseType = '종주';
+                  else if (combined.includes('최단') || combined.includes('단거리') || combined.includes('퇴근박') || combined.includes('활공장')) courseType = '최단';
+                  else if (combined.includes('종주') || combined.includes('능선') || combined.includes('대간')) courseType = '종주';
 
                   const savedViews = parseInt(localStorage.getItem(`okbm_views_${spotId}`), 10) || 0;
 
@@ -3147,7 +3314,7 @@
       }
 
       function getMetaBadgesHtml(spot) {
-        let html = '<div class="spot-meta-badges">';
+        let html = '<div style="display:inline-flex; align-items:center; gap:3px; flex-wrap:nowrap; white-space:nowrap;">';
         (spot.terrain || []).forEach(t => {
           if (t.includes('데크')) html += `<span class="meta-tag tag-terrain-deck">${ICONS.DECK}데크</span>`;
           else if (t.includes('암릉') || t.includes('바위') || t.includes('돌')) html += `<span class="meta-tag tag-terrain-rock">${ICONS.ROCK}암릉</span>`;
@@ -3190,12 +3357,11 @@
                   <input type="text" class="comment-input-author" id="cAuthor_${spotId}" value="${escapeHtml(userNick)}" readonly />
                 </div>
                 <div class="comment-form-row">
-                  <input type="text" class="comment-input-text" id="cText_${spotId}" placeholder="생생 후기 남기기..." on
-keyup="if(event.keyCode===13) addComment('${spotId}')" />
+                  <input type="text" class="comment-input-text" id="cText_${spotId}" placeholder="생생 후기 남기기..." onkeyup="if(event.keyCode===13) addComment('${spotId}')" />
                   <button type="button" class="comment-btn-submit" onclick="addComment('${spotId}')">등록</button>
                 </div>
               ` : `
-                <div style="background:rgba(255,255,255,0.03); border:1px dashed var(--border-hairline); padding:6px; border-radius:6px; text-align:center;">
+                <div style="background:var(--bg-card); border:1px dashed var(--border-hairline); padding:6px; border-radius:6px; text-align:center;">
                   <span style="font-size:0.7rem; color:var(--text-muted);">현장 피드백 및 별점 작성은 로그인 후 가능합니다.</span>
                   <button type="button" style="background:none; border:none; color:var(--accent-blue); font-size:0.72rem; font-weight:800; cursor:pointer; margin-left:4px;" onclick="triggerHaptic('light'); openLoginModal();">로그인</button>
                 </div>
@@ -3239,11 +3405,13 @@ keyup="if(event.keyCode===13) addComment('${spotId}')" />
         const key = `okbm_views_${spotId}`, views = (parseInt(localStorage.getItem(key), 10) || target.searchCount || 0) + 1;
         localStorage.setItem(key, views); target.searchCount = views;
       }
+
       function handleSearchInputChange(mode = 'pc') {
         const inputEl = document.getElementById('pcSearchInput');
         const clearBtn = document.getElementById('pcSearchClearBtn');
         if (inputEl && clearBtn) clearBtn.style.display = inputEl.value.trim().length > 0 ? 'flex' : 'none';
       }
+
       function clearSearchInput(mode = 'pc', shouldFocus = false) {
         const inputEl = document.getElementById('pcSearchInput');
         const clearBtn = document.getElementById('pcSearchClearBtn');
@@ -3447,7 +3615,7 @@ keyup="if(event.keyCode===13) addComment('${spotId}')" />
 
         if (isAdminMode) {
           const adminHeaderDiv = document.createElement('div');
-          adminHeaderDiv.style.cssText = "padding:8px 14px; background:rgba(16,185,129,0.15); border-bottom:1px solid rgba(16,185,129,0.3); font-size:0.78rem; color:#6ee7b7; font-weight:bold;";
+          adminHeaderDiv.style.cssText = "padding:8px 14px; background:rgba(16,185,129,0.15); border-bottom:1px solid rgba(16,185,129,0.3); font-size:0.78rem; color:var(--accent-emerald); font-weight:bold;";
           adminHeaderDiv.innerHTML = `${ICONS.FAST} [관리자 검수] 최신 등록순 목록 (${visibleCount}개)`;
           fragment.appendChild(adminHeaderDiv);
           displaySpots.forEach(spot => { 
@@ -3542,7 +3710,7 @@ keyup="if(event.keyCode===13) addComment('${spotId}')" />
             ${cityName ? `<span class="city-badge-colored">${escapeHtml(cityName)}</span>` : ''}
             <span class="spot-name-colored ${diffClass}" style="font-size:1.02rem; font-weight:900; letter-spacing:-0.02em;">${escapeHtml(rawName)}</span>
             ${spot.spot_sub ? `<span class="badge-sub-point" style="font-size:0.70rem; padding:1px 5px;">${escapeHtml(spot.spot_sub)}</span>` : ''}
-            ${spot.elevation ? `<span style="font-size:0.70rem; color:#86efac; font-weight:700; display:inline-flex; align-items:center; gap:2px;">(${ICONS.MOUNTAIN}${escapeHtml(spot.elevation)})</span>` : ''}
+            ${spot.elevation ? `<span style="font-size:0.70rem; color:var(--accent-emerald); font-weight:700; display:inline-flex; align-items:center; gap:2px;">(${ICONS.MOUNTAIN}${escapeHtml(spot.elevation)})</span>` : ''}
           </div>
 
           <div style="display:flex; align-items:center; justify-content:space-between; gap:5px; margin-top:3px; width:100%;">
@@ -3772,10 +3940,7 @@ keyup="if(event.keyCode===13) addComment('${spotId}')" />
         const tName = document.getElementById('modalInputTrailheadName')?.value.trim();
         const entry = document.getElementById('modalInputEntry')?.value.trim();
         
-        if (!name || !entry) {
-          alert('박지명과 들머리 주소를 입력해주세요.');
-          return;
-        }
+        if (!name || !entry) return alert('박지명과 들머리 주소를 입력해주세요.');
 
         const submitBtn = document.getElementById('modalSubmitBtn');
         if (submitBtn) {
@@ -3789,13 +3954,8 @@ keyup="if(event.keyCode===13) addComment('${spotId}')" />
 
           if (!lat || !lng) {
             const coords = await searchCoordsByQuery(entry || name);
-            if (coords) { 
-              lat = coords.lat; 
-              lng = coords.lng; 
-            } else { 
-              lat = 37.5665; 
-              lng = 126.9780; 
-            }
+            if (coords) { lat = coords.lat; lng = coords.lng; } 
+            else { lat = 37.5665; lng = 126.9780; }
           }
 
           let elevation = document.getElementById('modalInputElevation')?.value.trim();
@@ -3854,9 +4014,7 @@ keyup="if(event.keyCode===13) addComment('${spotId}')" />
               });
               triggerHaptic('success');
               alert('소중한 박지 제보가 접수되었습니다!\n관리자 확인 후 정식 등록됩니다. 감사합니다!');
-            } catch (e) { 
-              alert('제보 접수 중 통신 오류가 발생했습니다.'); 
-            }
+            } catch (e) { alert('제보 접수 중 통신 오류가 발생했습니다.'); }
           } else if (modalMode === 'ADD') {
             const newSpot = {
               id: String(Date.now()), 
@@ -4073,7 +4231,7 @@ keyup="if(event.keyCode===13) addComment('${spotId}')" />
               li.className = 'dropdown-item';
               li.innerHTML = `
                 <div style="flex:1; padding-right:8px;">
-                  <div style="font-weight:700; color:${res.isInternal ? 'var(--accent-blue)' : '#fff'}; font-size:0.84rem;">${escapeHtml(res.title)}</div>
+                  <div style="font-weight:700; color:${res.isInternal ? 'var(--accent-blue)' : 'var(--text-primary)'}; font-size:0.84rem;">${escapeHtml(res.title)}</div>
                   <div style="font-size:0.72rem; color:var(--text-muted);">${escapeHtml(res.sub)}</div>
                 </div>
                 ${(isAdminMode && !res.isInternal) ? `<button class="btn-quick-add" style="display:inline-block;" onclick="event.stopPropagation(); quickAddFromSearch('${escapeHtml(res.title)}', ${res.lat}, ${res.lng}, '${escapeHtml(res.sub)}')">➕ 등록</button>` : ''}`;
@@ -4087,7 +4245,8 @@ keyup="if(event.keyCode===13) addComment('${spotId}')" />
                   smoothCenterMapOnSpot(res.lat, res.lng);
                   if (tempSearchMarker) tempSearchMarker.setMap(null);
                   tempSearchMarker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(res.lat, res.lng), map: map });
-                  setTimeout(() => { if (tempSearchMarker) tempSearchMarker.setMap(null); }, 3500);
+                  set
+                  Timeout(() => { if (tempSearchMarker) tempSearchMarker.setMap(null); }, 3500);
                 }
               });
               dropdown.appendChild(li);
@@ -4128,9 +4287,7 @@ keyup="if(event.keyCode===13) addComment('${spotId}')" />
         reader.onload = (event) => {
           try {
             const data = JSON.parse(event.target.result);
-            if (!data || typeof data !== 'object') {
-              throw new Error('유효하지 않은 데이터 구조');
-            }
+            if (!data || typeof data !== 'object') throw new Error('유효하지 않은 데이터 구조');
 
             if (data.comments && typeof data.comments === 'object') { 
               spotComments = data.comments; 
