@@ -346,14 +346,6 @@
       z-index: 2;
     }
 
-    .card-starlight-layer {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 1;
-      overflow: hidden;
-    }
-
     /* ⚖️ 배낭 무게 배너 */
     .packing-summary-banner {
       padding: 11px 12px;
@@ -417,7 +409,7 @@
     .weight-dash-top { display: flex; justify-content: space-between; align-items: flex-end; }
     .weight-val-big {
       font-family: var(--font-en), var(--font-mono), sans-serif;
-      font-size: 2.0rem !important; /* 20% 추가 확대 */
+      font-size: 2.0rem !important;
       font-weight: 900 !important;
       color: #34d399;
       line-height: 0.95;
@@ -490,7 +482,7 @@
       height: 28px !important;
     }
 
-    /* 담긴 장비 전체 노출 & 유연 반응형 */
+    /* 담긴 장비 태그 */
     .slot-gears-wrap {
       display: flex !important;
       flex-wrap: wrap !important;
@@ -561,7 +553,6 @@
       cursor: pointer !important;
       white-space: nowrap !important;
     }
-    /* 🔵 패킹창 나가기: 시안 블루 통일 */
     .btn-pack-30-exit {
       flex: 3 !important;
       height: 44px !important;
@@ -579,7 +570,7 @@
       box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important;
     }
 
-    /* 🚪 [장비창 하단 50:50 완벽 대칭 44px 듀얼 바] */
+    /* 🚪 장비창 하단 50:50 듀얼 바 */
     .gear-preset-content {
       position: relative !important;
       padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
@@ -608,7 +599,6 @@
       box-sizing: border-box !important;
     }
 
-    /* 좌측: 전체 비우기 (다크 티타늄 톤) */
     .btn-gear-dual-clear {
       flex: 1 1 0% !important;
       width: 50% !important;
@@ -627,7 +617,6 @@
     }
     .btn-gear-dual-clear:active { background: rgba(255, 255, 255, 0.1) !important; transform: scale(0.98); }
 
-    /* 우측: 나가기 (시안 블루 통일) */
     .btn-gear-dual-close {
       flex: 1 1 0% !important;
       width: 50% !important;
@@ -648,7 +637,7 @@
     }
     .btn-gear-dual-close:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(2, 132, 199, 0.5) !important; }
 
-    /* 🔍 장비 검색창 확대 */
+    /* 🔍 장비 검색창 */
     #gearSearchFixedInput {
       height: 42px !important;
       font-size: 0.85rem !important;
@@ -682,7 +671,6 @@
       cursor: pointer !important;
       white-space: nowrap !important;
     }
-    /* 🔵 카드 모달 나가기: 시안 블루 통일 */
     .btn-card-40 {
       flex: 4 !important;
       height: 42px !important;
@@ -1091,7 +1079,7 @@
       <!-- ⭐ 티타늄 글래스 로그인 버튼 -->
       <button type="button" class="header-auth-btn" id="headerAuthBtn" onclick="handleAuthBtnClick()">
         <span id="headerAuthIcon" style="display:inline-flex; align-items:center; justify-content:center;">
-          <svg viewBox="0 0 24 24" style="width:13px; height:13px; margin-right:2px; fill:#fde047; color:#fde047; flex-shrink:0; display:inline-block; vertical-align:-1px;"><path d="M12,1 Q12,12 1,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,1 Z"/><circle cx="12" cy="12" r="1.5" fill="#ffffff"/></svg>
+          <svg viewBox="0 0 24 24" style="width:13px; height:13px; margin-right:2px; fill:#fde047; color:#fde047; flex-shrink:0; display:inline-block; vertical-align:-1px;"><path d="M12,1 Q12,12 1,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,1 Z"/><circle cx="12" cy="12" r="1.5" fill="#ffffff"/></svg>
         </span>
         <span id="headerAuthText">로그인</span>
       </button>
@@ -1475,10 +1463,15 @@
           <button type="button" id="btnGearSearchClear" style="display:none; position:absolute; right:8px; background:rgba(255,255,255,0.25); border:none; color:#ffffff; width:17px; height:17px; border-radius:50%; font-size:0.6rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0;" onclick="clearGearSearchInput()">✕</button>
         </div>
 
-        <div style="display:flex; gap:5px; align-items:center; background:rgba(255,255,255,0.03); border:1px dashed rgba(56,189,248,0.3); border-radius:8px; padding:5px 7px;">
-          <input type="text" id="customInputGearName" class="modal-input" placeholder="직접 추가할 장비명" style="flex:2.2; font-size:0.75rem; padding:6px 8px; border-radius:6px;" />
-          <input type="number" id="customInputGearWeight" class="modal-input" placeholder="무게(g)" style="flex:1.2; font-size:0.75rem; padding:6px 6px; border-radius:6px; font-family:'JetBrains Mono', monospace;" />
-          <button type="button" class="modal-btn" style="background:linear-gradient(135deg, #0d9488, #0f766e); border:1px solid #14b8a6; color:#fff; font-weight:900; padding:6px 11px; font-size:0.73rem; border-radius:6px; flex-shrink:0;" onclick="addCustomGearToCurrentCategory()">+ 등록</button>
+        <!-- 🌟 [모바일 최적화 2단 반응형 장비 등록 바] -->
+        <div style="display:flex; flex-direction:column; gap:5px; background:rgba(255,255,255,0.03); border:1px dashed rgba(56,189,248,0.35); border-radius:8px; padding:6px 8px; box-sizing:border-box;">
+          <div style="width:100%;">
+            <input type="text" id="customInputGearName" class="modal-input" placeholder="직접 추가할 장비명 (예: 백패킹 다운슈즈)" style="width:100%; font-size:0.76rem; padding:7px 9px; border-radius:6px; box-sizing:border-box;" />
+          </div>
+          <div style="display:flex; gap:6px; width:100%; align-items:center;">
+            <input type="number" id="customInputGearWeight" class="modal-input" placeholder="무게 (g)" style="flex:1; font-size:0.76rem; padding:7px 9px; border-radius:6px; font-family:'JetBrains Mono', monospace; box-sizing:border-box;" />
+            <button type="button" class="modal-btn" style="flex:1; background:linear-gradient(135deg, #0d9488, #0f766e); border:1px solid #14b8a6; color:#fff; font-weight:900; padding:7px 0; font-size:0.76rem; border-radius:6px; box-sizing:border-box; display:flex; align-items:center; justify-content:center;" onclick="addCustomGearToCurrentCategory()">+ 장비 등록</button>
+          </div>
         </div>
       </div>
 
@@ -1551,7 +1544,7 @@
     </div>
   </div>
 
-  <!-- 📱 하단 네비 독 (낭만보관함 적용) -->
+  <!-- 📱 하단 네비 독 -->
   <div class="mobile-bottom-dock notranslate">
     <a href="index.html" class="dock-item active" title="홈" onclick="triggerHaptic(10);">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -1566,21 +1559,75 @@
       <span>낭만보관함</span>
     </button>
   </div>
-  *
-
   <script>
-    const KAKAO_APP_KEY = "557f5de0f6391a2419bc5592e6a9c9c1";
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
-    const GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
-    const GOOGLE_SHEET_MAIN_GID = '0';
-    const GOOGLE_SHEET_CONFIG_GID = '1983931878';
-    const GOOGLE_SHEET_GEAR_GID = '2014805196'; 
+    // 🧰 [공통 유틸 - ReferenceError 원천 방지]
+    function safeGetJSON(key, defaultVal) {
+      try {
+        var item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultVal;
+      } catch (e) {
+        return defaultVal;
+      }
+    }
 
-    let registeredSpots = [];
-    let currentLuckySpot = null;
+    function escapeHtml(text) {
+      if (text === null || text === undefined) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function triggerHaptic(duration) {
+      if (typeof window !== 'undefined' && 'navigator' in window && typeof navigator.vibrate === 'function') {
+        try { navigator.vibrate(duration || 12); } catch (e) {}
+      }
+    }
+
+    function showToast(msg, type, duration) {
+      var container = document.getElementById('romanticToastContainer');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'romanticToastContainer';
+        container.style.cssText = 'position:fixed; bottom:calc(68px + env(safe-area-inset-bottom, 0px)); left:50%; transform:translateX(-50%); z-index:9999999; display:flex; flex-direction:column; align-items:center; gap:6px; pointer-events:none; width:max-content; max-width:90vw;';
+        document.body.appendChild(container);
+      }
+      var toast = document.createElement('div');
+      toast.style.cssText = 'background:rgba(7,10,15,0.94); border:1.5px solid #38bdf8; color:#ffffff; font-size:0.76rem; font-weight:800; padding:9px 14px; border-radius:24px; box-shadow:0 12px 35px rgba(0,0,0,0.85);';
+      toast.innerText = msg;
+      container.appendChild(toast);
+      setTimeout(function() { toast.remove(); }, duration || 2200);
+    }
+
+    // 🎨 [10대 슬롯 라인아트 벡터 SVG - 최상단 우선 선언]
+    var FINAL_LINE_VECTORS = {
+      shelter: '<svg viewBox="0 0 48 48" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 38C6 20 14 8 24 8s18 12 18 30H6z"/><path d="M14 38c0-12 4-20 10-20s10 8 10 20M6 38h36"/></svg>',
+      sleep: '<svg viewBox="0 0 48 48" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="16" height="28" rx="8"/><line x1="6" y1="18" x2="22" y2="18"/><line x1="6" y1="26" x2="22" y2="26"/><path d="M26 14c4-3 10-3 14 0v24a6 6 0 0 1-12 0V14"/></svg>',
+      pack: '<svg viewBox="0 0 48 48" fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="4" width="32" height="9" rx="4.5" stroke="#34d399"/><rect x="12" y="15" width="24" height="27" rx="3"/><path d="M6 6l6 36M42 6l-6 36M12 25h24"/></svg>',
+      food: '<svg viewBox="0 0 48 48" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M24 4c-6 9-12 17-12 25a12 12 0 0 0 24 0c0-8-6-16-12-25z"/><path d="M24 16v13l8 4"/></svg>',
+      kitchen: '<svg viewBox="0 0 48 48" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18h28v18a6 6 0 0 1-6 6H14a6 6 0 0 1-6-6V18z"/><path d="M36 24h5a3 3 0 0 1 0 6h-5M14 8c0 3-3 5-3 8M22 6c0 4-3 6-3 10M30 8c0 3-3 5-3 8"/></svg>',
+      wear: '<svg viewBox="0 0 48 48" fill="none" stroke="#fb7185" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M34 8l-10-4-10 4L2 26l7 3 3-11v24h24V18l3 11 7-3-12-18z"/><path d="M18 14h12l-6 8-6-8z"/></svg>',
+      electronics: '<svg viewBox="0 0 48 48" fill="none" stroke="#fde047" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="26 3 10 27 24 27 22 45 38 21 24 21 26 3"/></svg>',
+      camp: '<svg viewBox="0 0 48 48" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14h28v14a5 5 0 0 1-5 5H15a5 5 0 0 1-5-5V14z"/><path d="M14 33L8 45M34 33l6 12M15 33l18 12M33 33L15 45"/></svg>',
+      slot9: '<svg viewBox="0 0 48 48" fill="none" stroke="#fb7185" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="24" cy="36" rx="14" ry="5"/><path d="M16 36V22h16v14M24 22v-8M20 14l4-8 4 8"/></svg>',
+      slot10: '<svg viewBox="0 0 48 48" fill="none" stroke="#fde047" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="16" width="36" height="26" rx="4"/><path d="M24 16v26M6 26h36M18 16c0-6 6-10 6-10s6 4 6 10"/></svg>'
+    };
+
+    // 🌐 [상수 및 환경 설정]
+    window.KAKAO_APP_KEY = window.KAKAO_APP_KEY || "557f5de0f6391a2419bc5592e6a9c9c1";
+    window.GAS_API_URL = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
+    window.GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
+    window.GOOGLE_SHEET_MAIN_GID = '0';
+    window.GOOGLE_SHEET_CONFIG_GID = '1983931878';
+    window.GOOGLE_SHEET_GEAR_GID = '2014805196'; 
+
+    var registeredSpots = [];
+    var currentLuckySpot = null;
 
     // 🏷️ 8대 실전 백패킹 카테고리 DB
-    const CATEGORIES = [
+    var CATEGORIES = [
       {
         id: 'shelter', title: '텐트 · 타프',
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#38bdf8;"><path d="M12 2L2 20h20L12 2z"/><path d="M12 2v18M7 20l5-9 5 9"/></svg>',
@@ -1588,7 +1635,7 @@
           { name: '제로그램 엘찰텐 프로 1.5P', weight: 1450, brand: 'ZEROGRAM', verified: true, specs: '4계절 경량 텐트' },
           { name: 'MSR 허바허바 NX 2P', weight: 1540, brand: 'MSR', verified: true, specs: '백패킹 베스트셀러' },
           { name: '힐레베르그 니악', weight: 1700, brand: 'Hilleberg', verified: true, specs: '고강도 3계절 텐트' },
-          { name: '네이처하이크 클라우드피크2', weight: 2200, brand: 'Naturehike', verified: false, specs: '가성비 자립식' },
+          { name: '지팩스 듀플렉스 텐트 (2P DCF)', weight: 550, brand: 'Zpacks', verified: true, specs: '초경량 다이니마 텐트' },
           { name: '경량 실타프 & 스트링', weight: 450, brand: 'Custom', verified: true, specs: '초경량 쉘터' }
         ]
       },
@@ -1597,9 +1644,9 @@
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#34d399;"><path d="M2 17h20M2 13h20M4 9h16a2 2 0 0 1 2 2v6H2v-6a2 2 0 0 1 2-2z"/></svg>',
         db: [
           { name: '써마레스트 엑스썸 NXT (에어매트)', weight: 430, brand: 'Therm-a-Rest', verified: true, specs: 'R값 7.3 동계 최강' },
+          { name: '써마레스트 엑스라이트 NXT (에어매트)', weight: 354, brand: 'Therm-a-Rest', verified: true, specs: 'R값 4.5 3계절 표준' },
           { name: '씨투써밋 이더라이트 XT', weight: 490, brand: 'Sea to Summit', verified: true, specs: '두께 10cm 극상의 편안함' },
           { name: '큐물러스 파이라 850 (구스침낭)', weight: 1200, brand: 'Cumulus', verified: true, specs: '850FP 폴란드 구스' },
-          { name: '몽벨 다운허거 650 #1', weight: 1150, brand: 'Montbell', verified: false, specs: '신축성 좋은 다운침낭' },
           { name: '씨투써밋 에어로스 울트라라이트 베개', weight: 60, brand: 'Sea to Summit', verified: true, specs: '초경량 에어베개' }
         ]
       },
@@ -1610,7 +1657,7 @@
           { name: 'CAYL 태백 50L 롤탑 배낭', weight: 910, brand: 'CAYL', verified: true, specs: 'BPL 최적화 배낭' },
           { name: 'HMG 윈드라이더 3400 (55L)', weight: 910, brand: 'Hyperlite Mountain Gear', verified: true, specs: '다이니마 방수 원단' },
           { name: '오스프리 케스트렐 58L', weight: 1760, brand: 'Osprey', verified: false, specs: '편안한 등판 프레임' },
-          { name: '그레고리 발토로 65L', weight: 2200, brand: 'Gregory', verified: false, specs: '헤비 패킹 밸런스' }
+          { name: '미스테리랜치 브릿저 55L', weight: 2400, brand: 'Mystery Ranch', verified: false, specs: '헤비 패킹 밸런스' }
         ]
       },
       {
@@ -1618,7 +1665,7 @@
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#10b981;"><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/><path d="M12 6v6l4 2"/></svg>',
         db: [
           { name: '생수 2.0L (식수)', weight: 2000, brand: 'Water', verified: true, specs: '1박 기준 필수 식수' },
-          { name: '생수 1.0L (식수)', weight: 1000, brand: 'Water', verified: true, specs: '보조 식수' },
+          { name: '생수 1.0L (보조식수)', weight: 1000, brand: 'Water', verified: true, specs: '보조 식수' },
           { name: '핫앤쿡 발열도시락 1팩', weight: 340, brand: 'Hotncook', verified: true, specs: '비화식 필수 발열팩' },
           { name: '전투식량 / 건조식 1팩', weight: 120, brand: 'Food', verified: true, specs: '온수 전용 초경량식' },
           { name: '보온병 온수 1.0L', weight: 1450, brand: 'Hot Water', verified: true, specs: '동계 보온 필수' }
@@ -1630,7 +1677,8 @@
         db: [
           { name: '스탠리 클래식 보온병 1.0L (빈통)', weight: 650, brand: 'Stanley', verified: true, specs: '보온력 우수' },
           { name: '써모스 산악전용 보온병 900ml', weight: 390, brand: 'Thermos', verified: true, specs: '산악 경량 보온병' },
-          { name: '스노우피크 티타늄 450 머그', weight: 70, brand: 'Snowpeak', verified: true, specs: '싱글월 티타늄' },
+          { name: '소토 윈드마스터 SOD-310 버너', weight: 67, brand: 'SOTO', verified: true, specs: '내풍성 마이크로 레귤레이터' },
+          { name: '스노우피크 티타늄 450 머그', weight: 70, brand: 'Snowpeak', verified: true, specs: '싱글월 티타늄 머그' },
           { name: '티타늄 수저 & 포크 세트', weight: 35, brand: 'Gear', verified: true, specs: '초경량 커트러리' }
         ]
       },
@@ -1639,6 +1687,7 @@
         icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#fb7185;"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>',
         db: [
           { name: '헤비 다운 우모복 (동계 패딩)', weight: 750, brand: 'Wear', verified: true, specs: '영하권 필수 보온의류' },
+          { name: '큐물러스 네베 다운팬츠 (우모바지)', weight: 330, brand: 'Cumulus', verified: true, specs: '850FP 구스 충전' },
           { name: '경량 다운자켓 (간절기)', weight: 320, brand: 'Wear', verified: true, specs: '800FP 경량 패딩' },
           { name: '방풍 바람막이 & 고어텍스 자켓', weight: 280, brand: 'Wear', verified: true, specs: '능선 방풍 필수' },
           { name: '우모바지 (다운 팬츠)', weight: 380, brand: 'Wear', verified: true, specs: '극동계 텐트내 보온' }
@@ -1666,42 +1715,87 @@
       }
     ];
 
- 
+    var ORIGINAL_CATEGORIES_DB = JSON.parse(JSON.stringify(CATEGORIES));
 
-    // 💾 원본 카테고리 기본 장비 DB 백업 (로그아웃 롤백용)
-    const ORIGINAL_CATEGORIES_DB = JSON.parse(JSON.stringify(CATEGORIES));
-
-    let selectedGearMap = {};
+    window.selectedGearMap = window.selectedGearMap || {};
     try {
-      const saved = localStorage.getItem('okbm_selected_gears_multi');
-      if (saved) selectedGearMap = JSON.parse(saved);
-    } catch (e) { selectedGearMap = {}; }
+      var saved = localStorage.getItem('okbm_selected_gears_multi');
+      if (saved) window.selectedGearMap = JSON.parse(saved);
+    } catch (e) { window.selectedGearMap = {}; }
 
-    // 🎒 최초 실행 시 무조건 0.00kg 빈 배낭으로 초기화 (기본 자동 담김 완전 제거)
-    CATEGORIES.forEach(cat => {
-      if (!Array.isArray(selectedGearMap[cat.id])) {
-        selectedGearMap[cat.id] = [];
-      }
+    CATEGORIES.forEach(function(cat) {
+      if (!Array.isArray(window.selectedGearMap[cat.id])) window.selectedGearMap[cat.id] = [];
     });
 
-    let packingHistoryList = safeGetJSON('okbm_packing_history', []);
-    let favoriteGearSet = new Set(safeGetJSON('okbm_favorite_gears', []));
-    let currentOpeningCategoryId = null;
-    let currentShareRecord = null;
-    let currentShareItems = [];
-    let selectedTemplateId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
+    window.packingHistoryList = safeGetJSON('okbm_packing_history', []);
+    window.favoriteGearSet = new Set(safeGetJSON('okbm_favorite_gears', []));
+    var currentOpeningCategoryId = null;
+    window.currentShareRecord = null;
+    window.currentShareItems = [];
+    window.selectedTemplateId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
 
-    let currentSharePhoto = '';
-    let currentPhotoTextColor = 'white';
-    let currentCardRatio = '9/16';
-    let currentCustomRatioVal = 0.75;
-    let currentPhotoScaleVal = 1.0;
-    let openedFromBasecamp = false;
+    window.currentSharePhoto = '';
+    window.currentPhotoTextColor = 'white';
+    window.currentCardRatio = '9/16';
+    var currentCustomRatioVal = 0.75;
+    var currentPhotoScaleVal = 1.0;
+    window.openedFromBasecamp = false;
 
-    // 🗂️ 보관함 캘린더 상태 변수
-    let calViewYear = new Date().getFullYear();
-    let calViewMonth = new Date().getMonth();
-    let calSelectedDate = null;
+    var calViewYear = new Date().getFullYear();
+    var calViewMonth = new Date().getMonth();
+    var calSelectedDate = null;
+    var isVaultSaving = false;
+
+    // 🔒 패킹 공유 모달 닫기
+    function closePackShareModal() {
+      const modal = document.getElementById('packShareModalOverlay');
+      if (modal) modal.style.display = 'none';
+      if (openedFromBasecamp) {
+        openedFromBasecamp = false;
+        openMyInfoModal('history');
+      }
+      triggerHaptic(10);
+    }
+
+    // 📅 날짜 문자열 표준화 (YYYY.MM.DD)
+    function normalizeDateToYMD(dateStr) {
+      if (!dateStr) return '';
+      const m = String(dateStr).match(/(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
+      if (m) return `${m[1]}.${String(m[2]).padStart(2, '0')}.${String(m[3]).padStart(2, '0')}`;
+      const d = new Date(dateStr);
+      if (!isNaN(d.getTime())) {
+        return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+      }
+      return '';
+    }
+
+    // 🧹 패킹 기록 중복 ID 안전 필터링
+    function cleanupDuplicateHistory(list) {
+      if (!Array.isArray(list)) return [];
+      const seen = new Set();
+      return list.filter(item => {
+        if (!item || !item.id) return false;
+        const key = item.id;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    // 💾 패킹 기록 로컬스토리지 영구 안전 저장
+    function saveRecordToHistoryStorage(record) {
+      if (!record) return;
+      packingHistoryList = safeGetJSON('okbm_packing_history', []);
+      const idx = packingHistoryList.findIndex(h => h.id === record.id);
+      if (idx !== -1) {
+        packingHistoryList[idx] = record;
+      } else {
+        packingHistoryList.unshift(record);
+      }
+      if (packingHistoryList.length > 30) packingHistoryList = packingHistoryList.slice(0, 30);
+      localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
+      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+    }
 
     function getFormattedTimestamp() {
       const d = new Date();
@@ -1709,96 +1803,20 @@
       return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
     }
 
-    const SVG_ICONS = {
-      brandLogo: (color = '#ffffff', stroke = '#fda4af') => `
-        <svg viewBox="0 0 32 32" fill="none" style="width:20px; height:20px; display:block; flex-shrink:0;">
-          <circle cx="21" cy="6" r="9" fill="rgba(244,114,182,0.15)"/>
-          <circle cx="21" cy="6" r="6" fill="rgba(245,158,11,0.2)"/>
-          <circle cx="21" cy="6" r="3.8" fill="rgba(251,191,36,0.35)"/>
-          <circle cx="2" cy="24" r="1.8" fill="${stroke}"/>
-          <circle cx="9" cy="12" r="2.2" fill="${stroke}"/>
-          <circle cx="14" cy="16" r="1.8" fill="${stroke}"/>
-          <circle cx="13" cy="24" r="1.8" fill="${stroke}"/>
-          <path d="M2 24L9 12H12.5L14 16L10 16M10 16L13 24" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round"/>
-          <circle cx="21" cy="6" r="2.8" fill="#f59e0b"/>
-          <circle cx="27" cy="13" r="2.2" fill="${color}"/>
-          <circle cx="30" cy="24" r="2.4" fill="${color}"/>
-          <path d="M13 24L21 6H25L27 13L22 13M22 13L30 24" stroke="${color}" stroke-width="2.6" stroke-linecap="round"/>
-          <circle cx="21" cy="6" r="1" fill="${color}"/>
-        </svg>
-      `,
-      pin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:11px; height:11px; display:inline-block; vertical-align:-2px; margin-right:3px; flex-shrink:0;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`,
-      calendar: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px; height:10px; display:inline-block; vertical-align:-1px; margin-right:3px; flex-shrink:0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="19" y1="10" y2="10"/></svg>`,
-      quote: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:10px; height:10px; display:inline-block; vertical-align:-1px; margin-right:3px; flex-shrink:0; opacity:0.85;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
-      bullet: `<svg viewBox="0 0 24 24" fill="currentColor" style="width:3.5px; height:3.5px; display:inline-block; vertical-align:middle; margin-right:3px; opacity:0.7; flex-shrink:0;"><circle cx="12" cy="12" r="6"/></svg>`,
-      lntShield: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; display:inline-block; vertical-align:-2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>`
-    };
-
-    function escapeHtml(text) {
-      if (!text) return '';
-      return String(text)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-
-    function safeGetJSON(key, defaultVal) {
-      try {
-        const item = localStorage.getItem(key);
-        return item ? JSON.parse(item) : defaultVal;
-      } catch (e) { return defaultVal; }
-    }
-
-    let authState = {
-      isLoggedIn: !!localStorage.getItem('user_auth_token'),
-      userProfile: safeGetJSON('user_profile', null)
-    };
-
-    function isUserLoggedIn() {
-      return !!localStorage.getItem('user_auth_token') || authState.isLoggedIn;
-    }
-
-    function triggerHaptic(duration = 12) {
-      if (typeof window !== 'undefined' && 'navigator' in window && typeof navigator.vibrate === 'function') {
-        try { navigator.vibrate(duration); } catch (e) {}
-      }
-    }
-
     // 🌌 은하수 배경 엔진
     function initStarlightEngines() {
       const metallicColors = ['#ffffff', '#f8fafc', '#e2e8f0', '#cbd5e1', '#38bdf8', '#fde047', '#fda4af', '#34d399'];
-
-      const makeSubtleDotStar = (top, left, size, opacity, dur, delay) => `
-        <div style="position:absolute; top:${top}%; left:${left}%; width:${size}px; height:${size}px; border-radius:50%; background:#ffffff; opacity:${opacity}; animation:slowCelestialPulse ${dur}s infinite ease-in-out ${delay}s;"></div>
-      `;
-
-      const makeCrossStar = (top, left, size, color, dur, delay) => `
-        <svg viewBox="0 0 24 24" style="position:absolute; top:${top}%; left:${left}%; width:${size}px; height:${size}px; color:${color}; fill:currentColor; animation:slowCelestialTwinkle ${dur}s infinite ease-in-out ${delay}s;">
-          <path d="M12,2 Q12,12 2,12 Q12,12 12,22 Q12,12 22,12 Q12,12 12,2 Z"/>
-          <circle cx="12" cy="12" r="1.2" fill="#ffffff"/>
-        </svg>
-      `;
+      const makeSubtleDotStar = (top, left, size, opacity, dur, delay) => `<div style="position:absolute; top:${top}%; left:${left}%; width:${size}px; height:${size}px; border-radius:50%; background:#ffffff; opacity:${opacity}; animation:slowCelestialPulse ${dur}s infinite ease-in-out ${delay}s;"></div>`;
+      const makeCrossStar = (top, left, size, color, dur, delay) => `<svg viewBox="0 0 24 24" style="position:absolute; top:${top}%; left:${left}%; width:${size}px; height:${size}px; color:${color}; fill:currentColor; animation:slowCelestialTwinkle ${dur}s infinite ease-in-out ${delay}s;"><path d="M12,2 Q12,12 2,12 Q12,12 12,22 Q12,12 22,12 Q12,12 12,2 Z"/><circle cx="12" cy="12" r="1.2" fill="#ffffff"/></svg>`;
 
       const globalLayer = document.getElementById('globalAppMilkyWayLayer');
       if (globalLayer) {
         let html = '';
         for (let i = 0; i < 55; i++) {
-          const top = Math.floor(Math.random() * 96) + 2;
-          const left = Math.floor(Math.random() * 96) + 2;
-          const dur = (Math.random() * 3.5 + 5.0).toFixed(1);
-          const delay = (Math.random() * 6).toFixed(1);
-          
-          if (i % 10 === 0) {
-            const size = (Math.random() * 2.0 + 3.2).toFixed(1);
-            const color = metallicColors[Math.floor(Math.random() * metallicColors.length)];
-            html += makeCrossStar(top, left, size, color, dur, delay);
-          } else {
-            const size = (Math.random() * 1.5 + 1.0).toFixed(1);
-            const opacity = (Math.random() * 0.35 + 0.15).toFixed(2);
-            html += makeSubtleDotStar(top, left, size, opacity, dur, delay);
-          }
+          const top = Math.floor(Math.random() * 96) + 2, left = Math.floor(Math.random() * 96) + 2;
+          const dur = (Math.random() * 3.5 + 5.0).toFixed(1), delay = (Math.random() * 6).toFixed(1);
+          if (i % 10 === 0) html += makeCrossStar(top, left, (Math.random() * 2.0 + 3.2).toFixed(1), metallicColors[Math.floor(Math.random() * metallicColors.length)], dur, delay);
+          else html += makeSubtleDotStar(top, left, (Math.random() * 1.5 + 1.0).toFixed(1), (Math.random() * 0.35 + 0.15).toFixed(2), dur, delay);
         }
         globalLayer.innerHTML = html;
       }
@@ -1807,667 +1825,19 @@
       if (gnbLayer) {
         let html = '';
         for (let i = 0; i < 40; i++) {
-          const top = Math.floor(Math.random() * 85) + 5;
-          const left = Math.floor(Math.random() * 96) + 2;
-          const dur = (Math.random() * 3.5 + 5.0).toFixed(1);
-          const delay = (Math.random() * 6).toFixed(1);
-          
-          if (i % 8 === 0) {
-            const size = (Math.random() * 1.8 + 2.8).toFixed(1);
-            const color = metallicColors[Math.floor(Math.random() * metallicColors.length)];
-            html += makeCrossStar(top, left, size, color, dur, delay);
-          } else {
-            const size = (Math.random() * 1.2 + 0.8).toFixed(1);
-            const opacity = (Math.random() * 0.3 + 0.12).toFixed(2);
-            html += makeSubtleDotStar(top, left, size, opacity, dur, delay);
-          }
+          const top = Math.floor(Math.random() * 85) + 5, left = Math.floor(Math.random() * 96) + 2;
+          const dur = (Math.random() * 3.5 + 5.0).toFixed(1), delay = (Math.random() * 6).toFixed(1);
+          if (i % 8 === 0) html += makeCrossStar(top, left, (Math.random() * 1.8 + 2.8).toFixed(1), metallicColors[Math.floor(Math.random() * metallicColors.length)], dur, delay);
+          else html += makeSubtleDotStar(top, left, (Math.random() * 1.2 + 0.8).toFixed(1), (Math.random() * 0.3 + 0.12).toFixed(2), dur, delay);
         }
         gnbLayer.innerHTML = html;
       }
-
-      const targetCards = document.querySelectorAll('.packing-summary-banner, .featured-video-section, .lucky-half-card, .weather-half-card, .community-box-tight');
-      targetCards.forEach(card => {
-        if (card.querySelector('.card-starlight-layer')) return;
-        const starLayer = document.createElement('div');
-        starLayer.className = 'card-starlight-layer';
-        let html = '';
-        for (let i = 0; i < 8; i++) {
-          const top = Math.floor(Math.random() * 85) + 6;
-          const left = Math.floor(Math.random() * 90) + 5;
-          const dur = (Math.random() * 3.5 + 5.0).toFixed(1);
-          const delay = (Math.random() * 6).toFixed(1);
-          
-          if (i === 0) {
-            const size = 3.5;
-            const color = metallicColors[Math.floor(Math.random() * metallicColors.length)];
-            html += makeCrossStar(top, left, size, color, dur, delay);
-          } else {
-            const size = (Math.random() * 1.4 + 0.9).toFixed(1);
-            const opacity = (Math.random() * 0.25 + 0.12).toFixed(2);
-            html += makeSubtleDotStar(top, left, size, opacity, dur, delay);
-          }
-        }
-        starLayer.innerHTML = html;
-        card.appendChild(starLayer);
-      });
-    }
-
-    // 🔔 토스트 시스템
-    const TOAST_ICONS = {
-      download: `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
-      success: `<svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; flex-shrink:0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>`,
-      insta: `<svg viewBox="0 0 24 24" fill="none" stroke="#fb7185" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; flex-shrink:0;"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>`,
-      vault: `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; flex-shrink:0;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>`,
-      warn: `<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
-      info: `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`
-    };
-
-    function showToast(message, type = 'success', duration = 2400) {
-      let container = document.getElementById('romanticToastContainer');
-      if (!container) {
-        container = document.createElement('div');
-        container.id = 'romanticToastContainer';
-        container.style.cssText = 'position:fixed; bottom:calc(68px + env(safe-area-inset-bottom, 0px)); left:50%; transform:translateX(-50%); z-index:9999999; display:flex; flex-direction:column; align-items:center; gap:6px; pointer-events:none; width:max-content; max-width:90vw;';
-        document.body.appendChild(container);
-      }
-
-      const iconSvg = TOAST_ICONS[type] || TOAST_ICONS.info;
-      const borderColor = type === 'warn' ? 'rgba(245,158,11,0.45)' : (type === 'insta' ? 'rgba(244,63,94,0.45)' : (type === 'success' ? 'rgba(52,211,153,0.45)' : 'rgba(56,189,248,0.45)'));
-
-      const toast = document.createElement('div');
-      toast.style.cssText = `
-        background: rgba(7, 10, 15, 0.94); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-        border: 1.5px solid ${borderColor}; box-shadow: 0 12px 35px rgba(0,0,0,0.85);
-        color: #ffffff; font-size: 0.76rem; font-weight: 800; padding: 9px 14px; border-radius: 24px;
-        display: flex; align-items: center; gap: 7px; opacity: 0; transform: translateY(12px) scale(0.95);
-        transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1); pointer-events: auto; word-break: keep-all; font-family: var(--font-body);
-      `;
-      toast.innerHTML = `${iconSvg}<span>${escapeHtml(message)}</span>`;
-      container.appendChild(toast);
-
-      requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0) scale(1)'; });
-      setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(10px) scale(0.95)'; setTimeout(() => toast.remove(), 220); }, duration);
-    }
-
-    // 🔑 1. 계정 및 클라우드 동기화 (클라우드 우선 복원 & 14일 닉네임 영구 고정 & 덮어쓰기 방지 락)
-    window.isCloudDataLoaded = false;
-
-    function trackDailyVisit() {
-      const sessionKey = 'okbm_visit_recorded_' + new Date().toISOString().slice(0, 10);
-      if (!sessionStorage.getItem(sessionKey)) {
-        sessionStorage.setItem(sessionKey, 'true');
-        fetch(GAS_API_URL, {
-          method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'RECORD_VISIT', isLogin: isUserLoggedIn() })
-        }).catch(() => {});
-      }
-    }
-
-    async function loadUserDataFromCloud(userId) {
-      if (!userId) return null;
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 4500);
-        const res = await fetch(`${GAS_API_URL}?action=GET_USER_DATA&userId=${encodeURIComponent(userId)}&_t=${Date.now()}`, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        if (res.ok) {
-          const data = await res.json();
-          return (data && (data.userData || data.data)) ? (data.userData || data.data) : data;
-        }
-      } catch (e) {}
-      return null;
-    }
-
-    function syncUserDataToCloud() {
-      if (!isUserLoggedIn() || !window.isCloudDataLoaded) return; // 🛡️ 클라우드 원본 조회 완료 전 빈 데이터 덮어쓰기 절대 차단
-      const profile = safeGetJSON('user_profile', null) || authState.userProfile;
-      if (!profile || !profile.id) return;
-
-      // ⚡ 대용량 사진(Base64) 제외 경량 패킹 데이터 전송
-      const rawHistory = safeGetJSON('okbm_packing_history', []);
-      const lightweightPackHistory = rawHistory.map(h => {
-        const copy = { ...h };
-        delete copy.photo;
-        return copy;
-      });
-
-      // 🌟 즐겨찾기(⭐) 및 커스텀 장비 동기화 보존
-      const rawMemos = safeGetJSON('okbm_memos', {});
-      const syncMemos = {
-        ...rawMemos,
-        __favorite_gears__: safeGetJSON('okbm_favorite_gears', []),
-        __custom_gears__: safeGetJSON('okbm_custom_gears', [])
-      };
-
-      fetch(GAS_API_URL, {
-        method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          action: 'SAVE_USER_DATA', 
-          userId: profile.id, 
-          nickname: profile.nickname,
-          createdAt: profile.createdAt || Date.now(),
-          lastNicknameChangedAt: profile.lastNicknameChangedAt || 0,
-          bookmarks: safeGetJSON('okbm_bookmarks', []), 
-          visited: safeGetJSON('okbm_visited', []),
-          memos: syncMemos, 
-          packHistory: lightweightPackHistory
-        })
-      }).catch(() => {});
-    }
-
-    function updateHeaderAuthUI() {
-      const btn = document.getElementById('headerAuthBtn');
-      const text = document.getElementById('headerAuthText');
-      const icon = document.getElementById('headerAuthIcon');
-      const statusBanner = document.getElementById('cloudStatusBanner');
-      const statusText = document.getElementById('cloudStatusText');
-      const statusAction = document.getElementById('cloudStatusAction');
-
-      const isLogged = isUserLoggedIn();
-      const profile = safeGetJSON('user_profile', null) || authState.userProfile;
-      const starIconSvg = `<svg viewBox="0 0 24 24" style="width:13px; height:13px; margin-right:2px; fill:#fde047; color:#fde047; flex-shrink:0; display:inline-block; vertical-align:-1px;"><path d="M12,1 Q12,12 1,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,1 Z"/><circle cx="12" cy="12" r="1.5" fill="#ffffff"/></svg>`;
-
-      if (btn && text) {
-        if (icon) icon.innerHTML = starIconSvg;
-        if (isLogged && profile && profile.nickname) {
-          btn.classList.add('logged-in');
-          text.innerText = profile.nickname;
-        } else {
-          btn.classList.remove('logged-in');
-          text.innerText = '로그인';
-        }
-      }
-
-      if (statusBanner && statusText && statusAction) {
-        if (isLogged) {
-          statusBanner.className = 'cloud-status-banner cloud-status-member';
-          statusText.innerText = '🟢 낭만 클라우드 실시간 안전 백업 중';
-          statusAction.innerText = '동기화됨 ✓';
-        } else {
-          statusBanner.className = 'cloud-status-banner cloud-status-guest';
-          statusText.innerText = '기기 임시 보관 중 (캐시 삭제 시 초기화 주의)';
-          statusAction.innerText = '카카오 1초 연동 ➔';
-        }
-      }
-    }
-
-    function handleAuthBtnClick() {
-      if (isUserLoggedIn()) openUserProfileModal();
-      else openLoginModal();
-    }
-
-    function openLoginModal() { const modal = document.getElementById('loginModalOverlay'); if (modal) modal.style.display = 'flex'; }
-    function closeLoginModal() { const modal = document.getElementById('loginModalOverlay'); if (modal) modal.style.display = 'none'; }
-    function openUserProfileModal() {
-      const profile = safeGetJSON('user_profile', null) || authState.userProfile;
-      const input = document.getElementById('profileModalNicknameInput');
-      if (input && profile) input.value = profile.nickname || '';
-      const modal = document.getElementById('userProfileModalOverlay');
-      if (modal) modal.style.display = 'flex';
-    }
-    function closeUserProfileModal() { const modal = document.getElementById('userProfileModalOverlay'); if (modal) modal.style.display = 'none'; }
-
-    function saveNewNicknameFromModal() {
-      const input = document.getElementById('profileModalNicknameInput');
-      if (!input || !input.value.trim()) return showToast('새 닉네임을 입력해주세요.', 'warn');
-      const clean = input.value.trim();
-      let profile = safeGetJSON('user_profile', null) || authState.userProfile || { isMember: true };
-      if (profile.nickname === clean) return showToast('현재 사용 중인 닉네임과 동일합니다.', 'warn');
-
-      // ⏱️ 14일(2주) 쿨다운 제한 검증
-      const COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
-      const lastChanged = profile.lastNicknameChangedAt || 0;
-      const now = Date.now();
-
-      if (lastChanged && (now - lastChanged < COOLDOWN_MS)) {
-        const remainingDays = Math.ceil((COOLDOWN_MS - (now - lastChanged)) / (1000 * 60 * 60 * 24));
-        return alert(`닉네임은 2주(14일)에 한 번만 변경하실 수 있습니다.\n\n[ ${remainingDays}일 ] 후에 다시 변경 가능합니다.`);
-      }
-
-      profile.nickname = clean;
-      profile.lastNicknameChangedAt = now;
-      localStorage.setItem('user_profile', JSON.stringify(profile));
-      if (profile.id) {
-        localStorage.setItem(`user_profile_${profile.id}`, JSON.stringify(profile));
-        localStorage.setItem(`okbm_custom_nickname_${profile.id}`, clean);
-      }
-      authState.userProfile = profile;
-      authState.isLoggedIn = true;
-
-      updateHeaderAuthUI();
-      syncUserDataToCloud();
-      closeUserProfileModal();
-      triggerHaptic(15);
-      showToast(`닉네임이 [${clean}] (으)로 변경되었습니다!`, 'success');
-    }
-
-    // 🚪 2. 로그인 시 클라우드 데이터 안전 복원 (카카오 실명 덮어쓰기 원천 차단)
-    function loginWithKakao() {
-      if (typeof Kakao === 'undefined') return showToast('카카오 SDK를 불러오지 못했습니다.', 'warn');
-      if (!Kakao.isInitialized()) Kakao.init(KAKAO_APP_KEY);
-
-      Kakao.Auth.login({
-        scope: 'profile_nickname',
-        prompt: 'select_account',
-        success: function(authObj) {
-          Kakao.API.request({
-            url: '/v2/user/me',
-            success: async function(res) {
-              const kakaoId = 'kakao_' + res.id;
-              let kakaoNick = '낭만백패커';
-              if (res.properties && res.properties.nickname) kakaoNick = res.properties.nickname;
-              else if (res.kakao_account && res.kakao_account.profile && res.kakao_account.profile.nickname) kakaoNick = res.kakao_account.profile.nickname;
-
-              // ☁️ 1. 클라우드(구글 시트)에서 사용자 원본 데이터 조회
-              const cloudData = await loadUserDataFromCloud(kakaoId);
-              const accountLocalProfile = safeGetJSON(`user_profile_${kakaoId}`, null);
-
-              // 🏷️ 2. 닉네임 & 14일 쿨다운 고정 (카카오 실명 덮어쓰기 차단)
-              const finalNickname = (cloudData && cloudData.nickname)
-                ? cloudData.nickname
-                : (accountLocalProfile && accountLocalProfile.nickname ? accountLocalProfile.nickname : kakaoNick);
-
-              const finalCreatedAt = (cloudData && cloudData.createdAt) || (accountLocalProfile && accountLocalProfile.createdAt) || Date.now();
-              const finalLastNicknameChangedAt = (cloudData && cloudData.lastNicknameChangedAt) || (accountLocalProfile && accountLocalProfile.lastNicknameChangedAt) || 0;
-
-              const profile = { 
-                id: kakaoId, 
-                nickname: finalNickname, 
-                isMember: true, 
-                createdAt: finalCreatedAt,
-                lastNicknameChangedAt: finalLastNicknameChangedAt
-              };
-
-              // 💾 3. 세션 토큰 및 프로필 영구 보존
-              localStorage.setItem('user_auth_token', authObj.access_token || ('token_' + Date.now()));
-              localStorage.setItem('user_profile', JSON.stringify(profile));
-              localStorage.setItem(`user_profile_${kakaoId}`, JSON.stringify(profile));
-              authState.isLoggedIn = true;
-              authState.userProfile = profile;
-
-              // 📦 4. 클라우드 우선 복원 & 게스트 패킹 기록 안전 병합
-              if (cloudData) {
-                if (cloudData.bookmarks && Array.isArray(cloudData.bookmarks)) {
-                  localStorage.setItem('okbm_bookmarks', JSON.stringify(cloudData.bookmarks));
-                }
-                if (cloudData.visited && Array.isArray(cloudData.visited)) {
-                  localStorage.setItem('okbm_visited', JSON.stringify(cloudData.visited));
-                }
-                
-                // 🎒 게스트 상태에서 세팅해둔 패킹 기록 병합
-                const guestPacks = safeGetJSON('okbm_packing_history', []);
-                const cloudPacks = (cloudData.packHistory && Array.isArray(cloudData.packHistory)) ? cloudData.packHistory : [];
-                const mergedPacks = [...guestPacks];
-                cloudPacks.forEach(cp => {
-                  if (!mergedPacks.some(p => p.id === cp.id)) mergedPacks.push(cp);
-                });
-                packingHistoryList = mergedPacks;
-                localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
-
-                if (cloudData.memos && typeof cloudData.memos === 'object') {
-                  const m = cloudData.memos;
-                  if (m.__favorite_gears__) {
-                    favoriteGearSet = new Set(m.__favorite_gears__);
-                    localStorage.setItem('okbm_favorite_gears', JSON.stringify(m.__favorite_gears__));
-                  }
-                  if (m.__custom_gears__ && Array.isArray(m.__custom_gears__)) {
-                    localStorage.setItem('okbm_custom_gears', JSON.stringify(m.__custom_gears__));
-                    m.__custom_gears__.forEach(cg => {
-                      const targetCat = CATEGORIES.find(c => c.id === cg.category_id);
-                      if (targetCat && !targetCat.db.some(d => d.name === cg.name)) {
-                        targetCat.db.unshift(cg);
-                      }
-                    });
-                  }
-                  localStorage.setItem('okbm_memos', JSON.stringify(m));
-                }
-              }
-
-              window.isCloudDataLoaded = true; // 🔓 클라우드 안전 로드 완료 확인 락 해제
-
-              updateHeaderAuthUI();
-              renderCategorySlots();
-              renderPackingHistoryList();
-              renderBasecampRecordData();
-              renderBasecampMemos();
-              closeLoginModal();
-              triggerHaptic(15);
-              showToast(`[${profile.nickname}]님 환영합니다! 보관함이 동기화되었습니다.`, 'success');
-
-              syncUserDataToCloud();
-            }
-          });
-        },
-        fail: function() { showToast('카카오 로그인이 취소되었습니다.', 'warn'); }
-      });
-    }
-
-    // 🚪 3. 로그아웃 시 세션 안전 초기화
-    function logoutUser() {
-      if (typeof Kakao !== 'undefined' && Kakao.Auth && Kakao.Auth.getAccessToken()) {
-        Kakao.Auth.logout(function() {});
-      }
-
-      localStorage.removeItem('user_auth_token');
-      localStorage.removeItem('user_profile');
-      authState.isLoggedIn = false;
-      authState.userProfile = null;
-      window.isCloudDataLoaded = false;
-
-      localStorage.removeItem('okbm_favorite_gears');
-      localStorage.removeItem('okbm_custom_gears');
-      localStorage.removeItem('okbm_packing_history');
-      localStorage.removeItem('okbm_bookmarks');
-      localStorage.removeItem('okbm_visited');
-      localStorage.removeItem('okbm_memos');
-      localStorage.removeItem('okbm_selected_gears_multi');
-
-      favoriteGearSet = new Set();
-      packingHistoryList = [];
-      currentShareRecord = null;
-      currentShareItems = [];
-      currentSharePhoto = '';
-      calSelectedDate = null;
-      
-      selectedGearMap = {};
-      CATEGORIES.forEach(cat => { selectedGearMap[cat.id] = []; });
-
-      CATEGORIES.forEach(cat => {
-        const orig = ORIGINAL_CATEGORIES_DB.find(o => o.id === cat.id);
-        if (orig && Array.isArray(orig.db)) {
-          cat.db = JSON.parse(JSON.stringify(orig.db));
-        }
-      });
-
-      updateHeaderAuthUI();
-      renderCategorySlots();
-      renderPackingHistoryList();
-      renderBasecampRecordData();
-      renderBasecampMemos();
-
-      closeUserProfileModal();
-      triggerHaptic(10);
-      showToast('로그아웃되었습니다. (기기 내 데이터 초기화 완료)', 'info', 2200);
-    }
-
-    // 🔄 앱 시작 시 로그인 상태인 경우 구글 시트 원본 자동 동기화
-    if (isUserLoggedIn()) {
-      const initialProfile = safeGetJSON('user_profile', null);
-      if (initialProfile && initialProfile.id) {
-        loadUserDataFromCloud(initialProfile.id).then(cloudData => {
-          if (cloudData) {
-            if (cloudData.bookmarks && Array.isArray(cloudData.bookmarks)) {
-              localStorage.setItem('okbm_bookmarks', JSON.stringify(cloudData.bookmarks));
-            }
-            if (cloudData.visited && Array.isArray(cloudData.visited)) {
-              localStorage.setItem('okbm_visited', JSON.stringify(cloudData.visited));
-            }
-            if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
-              packingHistoryList = cloudData.packHistory;
-              localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
-            }
-            if (cloudData.memos && typeof cloudData.memos === 'object') {
-              const m = cloudData.memos;
-              if (m.__favorite_gears__) {
-                favoriteGearSet = new Set(m.__favorite_gears__);
-                localStorage.setItem('okbm_favorite_gears', JSON.stringify(m.__favorite_gears__));
-              }
-              if (m.__custom_gears__ && Array.isArray(m.__custom_gears__)) {
-                localStorage.setItem('okbm_custom_gears', JSON.stringify(m.__custom_gears__));
-                m.__custom_gears__.forEach(cg => {
-                  const targetCat = CATEGORIES.find(c => c.id === cg.category_id);
-                  if (targetCat && !targetCat.db.some(d => d.name === cg.name)) {
-                    targetCat.db.unshift(cg);
-                  }
-                });
-              }
-              localStorage.setItem('okbm_memos', JSON.stringify(m));
-            }
-            if (cloudData.nickname && initialProfile.nickname !== cloudData.nickname) {
-              initialProfile.nickname = cloudData.nickname;
-              localStorage.setItem('user_profile', JSON.stringify(initialProfile));
-              authState.userProfile = initialProfile;
-              updateHeaderAuthUI();
-            }
-            renderPackingHistoryList();
-            renderBasecampRecordData();
-            renderBasecampMemos();
-          }
-          window.isCloudDataLoaded = true;
-        });
-      } else {
-        window.isCloudDataLoaded = true;
-      }
-    } else {
-      window.isCloudDataLoaded = true;
-    }
-
-    // 🎒 패킹 계산기 엔진
-    function openPackingModal() {
-      const modal = document.getElementById('packingCalculatorModal');
-      if (modal) {
-        document.body.style.overflow = 'hidden';
-        modal.style.display = 'flex';
-        renderCategorySlots();
-      }
-    }
-    function closePackingModal() { 
-      const modal = document.getElementById('packingCalculatorModal'); 
-      if (modal) {
-        document.body.style.overflow = '';
-        modal.style.display = 'none'; 
-      }
-    }
-
-    let isGearScrollMoving = false;
-    let gearTouchStartX = 0, gearTouchStartY = 0;
-    let gearLongPressTimer = null;
-    let isGearLongPressTriggered = false;
-
-    function handleGearCardTouchStart(name, weight, e) {
-      if (e.target.closest('.stepper-btn-box')) return;
-      isGearScrollMoving = false;
-      isGearLongPressTriggered = false;
-      gearTouchStartX = e.touches[0].clientX;
-      gearTouchStartY = e.touches[0].clientY;
-
-      gearLongPressTimer = setTimeout(() => {
-        isGearLongPressTriggered = true;
-        triggerHaptic(35);
-        removeSpecificGearCompletely(name);
-        showToast(`[${name}] 배낭에서 완전 삭제 ✕`, 'info');
-
-      }, 450);
-    }
-
-    function handleGearCardTouchMove(e) {
-      const diffX = Math.abs(e.touches[0].clientX - gearTouchStartX);
-      const diffY = Math.abs(e.touches[0].clientY - gearTouchStartY);
-      if (diffX > 8 || diffY > 8) {
-        isGearScrollMoving = true;
-        clearTimeout(gearLongPressTimer);
-      }
-    }
-
-    function handleGearCardTouchEnd() {
-      clearTimeout(gearLongPressTimer);
-    }
-
-    function handleGearCardClick(name, weight, e) {
-      if (e.target.closest('.stepper-btn-box')) return;
-      if (isGearScrollMoving || isGearLongPressTriggered) return;
-      triggerHaptic(12);
-      addGearToCategory(name, weight);
-    }
-
-    function handleGearSearchInput(val) {
-      const clearBtn = document.getElementById('btnGearSearchClear');
-      if (clearBtn) clearBtn.style.display = val.trim().length > 0 ? 'flex' : 'none';
-      renderPresetGearList(val);
-    }
-
-    function clearGearSearchInput() {
-      const input = document.getElementById('gearSearchFixedInput');
-      const clearBtn = document.getElementById('btnGearSearchClear');
-      if (input) { input.value = ''; input.focus(); }
-      if (clearBtn) clearBtn.style.display = 'none';
-      renderPresetGearList('');
-      triggerHaptic(10);
-    }
-
-    function closeGearPresetModal() { 
-      document.getElementById('gearPresetModal').style.display = 'none'; 
-      currentOpeningCategoryId = null; 
-    }
-
-    function addGearToCategory(name, weight, e) {
-      if (e) { e.preventDefault(); e.stopPropagation(); }
-      if (!currentOpeningCategoryId) return;
-      if (!Array.isArray(selectedGearMap[currentOpeningCategoryId])) selectedGearMap[currentOpeningCategoryId] = [];
-      selectedGearMap[currentOpeningCategoryId].push({ id: 'item_' + Date.now() + '_' + Math.random(), name, weight: Number(weight) || 0 });
-      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
-      renderCategorySlots();
-      const searchInput = document.getElementById('gearSearchFixedInput');
-      renderPresetGearList(searchInput ? searchInput.value : '');
-      triggerHaptic(12);
-      syncUserDataToCloud();
-    }
-
-    function decrementGearCount(gearName, e) {
-      if (e) { e.preventDefault(); e.stopPropagation(); }
-      if (!currentOpeningCategoryId || !selectedGearMap[currentOpeningCategoryId]) return;
-      const list = selectedGearMap[currentOpeningCategoryId];
-      const targetIdx = list.findIndex(it => it.name === gearName);
-      if (targetIdx !== -1) {
-        list.splice(targetIdx, 1);
-        localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
-        renderCategorySlots();
-        const searchInput = document.getElementById('gearSearchFixedInput');
-        renderPresetGearList(searchInput ? searchInput.value : '');
-        triggerHaptic(10);
-        syncUserDataToCloud();
-      }
-    }
-
-    function removeSpecificGearCompletely(gearName) {
-      if (!currentOpeningCategoryId || !selectedGearMap[currentOpeningCategoryId]) return;
-      selectedGearMap[currentOpeningCategoryId] = selectedGearMap[currentOpeningCategoryId].filter(it => it.name !== gearName);
-      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
-      renderCategorySlots();
-      const searchInput = document.getElementById('gearSearchFixedInput');
-      renderPresetGearList(searchInput ? searchInput.value : '');
-      syncUserDataToCloud();
-    }
-
-    function removeGearFromCategory(categoryId, itemIndex) {
-      if (selectedGearMap[categoryId]) {
-        selectedGearMap[categoryId].splice(itemIndex, 1);
-        localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
-        renderCategorySlots();
-        triggerHaptic(10);
-        syncUserDataToCloud();
-      }
-    }
-
-    function clearAllGearsInCategory(categoryId) {
-      if (!categoryId) return;
-      selectedGearMap[categoryId] = [];
-      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
-      const searchInput = document.getElementById('gearSearchFixedInput');
-      renderPresetGearList(searchInput ? searchInput.value : '');
-      renderCategorySlots();
-      triggerHaptic(15);
-      showToast('해당 카테고리가 모두 비워졌습니다.', 'info');
-      syncUserDataToCloud();
-    }
-
-    // 🌟 [모바일 최적화 & 영구 보존] 내 장비 직접 등록 함수
-    function addCustomGearToCurrentCategory() {
-      if (!currentOpeningCategoryId) return;
-      const nameInput = document.getElementById('customInputGearName');
-      const weightInput = document.getElementById('customInputGearWeight');
-      if (!nameInput || !weightInput) return;
-
-      const name = nameInput.value.trim();
-      const weight = parseInt(weightInput.value, 10);
-      if (!name || isNaN(weight) || weight < 0) return showToast('장비명과 정확한 무게(g)를 입력해주세요.', 'warn');
-      
-      const newCustomItem = {
-        id: 'custom_' + Date.now(),
-        name: name,
-        weight: weight,
-        brand: '직접등록',
-        category_id: currentOpeningCategoryId,
-        verified: true,
-        specs: '내 커스텀 장비'
-      };
-
-      // 1. 커스텀 장비 영구 스토리지에 보관
-      const customGears = safeGetJSON('okbm_custom_gears', []);
-      if (!customGears.some(g => g.name === name)) {
-        customGears.unshift(newCustomItem);
-        localStorage.setItem('okbm_custom_gears', JSON.stringify(customGears));
-      }
-
-      // 2. 카테고리 DB에 추가
-      const cat = CATEGORIES.find(c => c.id === currentOpeningCategoryId);
-      if (cat && !cat.db.some(d => d.name === name)) {
-        cat.db.unshift(newCustomItem);
-      }
-
-      // 3. 내 장비 찜(⭐)에 자동 등록
-      favoriteGearSet.add(name);
-      localStorage.setItem('okbm_favorite_gears', JSON.stringify([...favoriteGearSet]));
-
-      // 4. 배낭에 자동 담기
-      addGearToCategory(name, weight);
-
-      // 입력창 초기화
-      nameInput.value = '';
-      weightInput.value = '';
-      
-      showToast(`⭐ [${name}]이 내 장비로 등록되었습니다!`, 'success');
-      syncUserDataToCloud();
-    }
-
-    function resetAllGearSelections() {
-      const modal = document.getElementById('packResetConfirmModal');
-      if (modal) {
-        modal.style.display = 'flex';
-        triggerHaptic(12);
-      }
-    }
-
-    function closeResetConfirmModal() {
-      const modal = document.getElementById('packResetConfirmModal');
-      if (modal) modal.style.display = 'none';
-    }
-
-    function executeResetAllGears() {
-      CATEGORIES.forEach(c => { selectedGearMap[c.id] = []; });
-      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
-      renderCategorySlots();
-      closeResetConfirmModal();
-      triggerHaptic(20);
-      showToast('배낭의 모든 장비가 초기화되었습니다.', 'info');
-      syncUserDataToCloud();
     }
 
     // 🎨 확정 10대 라인아트 벡터 SVG
-    const FINAL_LINE_VECTORS = {
-      shelter: `<svg viewBox="0 0 48 48" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 38C6 20 14 8 24 8s18 12 18 30H6z"/><path d="M14 38c0-12 4-20 10-20s10 8 10 20M6 38h36"/></svg>`,
-      sleep: `<svg viewBox="0 0 48 48" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="16" height="28" rx="8"/><line x1="6" y1="18" x2="22" y2="18"/><line x1="6" y1="26" x2="22" y2="26"/><path d="M26 14c4-3 10-3 14 0v24a6 6 0 0 1-12 0V14"/></svg>`,
-      pack: `<svg viewBox="0 0 48 48" fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="4" width="32" height="9" rx="4.5" stroke="#34d399"/><rect x="12" y="15" width="24" height="27" rx="3"/><path d="M6 6l6 36M42 6l-6 36M12 25h24"/></svg>`,
-      food: `<svg viewBox="0 0 48 48" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M24 4c-6 9-12 17-12 25a12 12 0 0 0 24 0c0-8-6-16-12-25z"/><path d="M24 16v13l8 4"/></svg>`,
-      kitchen: `<svg viewBox="0 0 48 48" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18h28v18a6 6 0 0 1-6 6H14a6 6 0 0 1-6-6V18z"/><path d="M36 24h5a3 3 0 0 1 0 6h-5M14 8c0 3-3 5-3 8M22 6c0 4-3 6-3 10M30 8c0 3-3 5-3 8"/></svg>`,
-      wear: `<svg viewBox="0 0 48 48" fill="none" stroke="#fb7185" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M34 8l-10-4-10 4L2 26l7 3 3-11v24h24V18l3 11 7-3-12-18z"/><path d="M18 14h12l-6 8-6-8z"/></svg>`,
-      electronics: `<svg viewBox="0 0 48 48" fill="none" stroke="#fde047" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="26 3 10 27 24 27 22 45 38 21 24 21 26 3"/></svg>`,
-      camp: `<svg viewBox="0 0 48 48" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14h28v14a5 5 0 0 1-5 5H15a5 5 0 0 1-5-5V14z"/><path d="M14 33L8 45M34 33l6 12M15 33l18 12M33 33L15 45"/></svg>`,
-      slot9: `<svg viewBox="0 0 48 48" fill="none" stroke="#fb7185" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="24" cy="36" rx="14" ry="5"/><path d="M16 36V22h16v14M24 22v-8M20 14l4-8 4 8"/></svg>`,
-      slot10: `<svg viewBox="0 0 48 48" fill="none" stroke="#fde047" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="16" width="36" height="26" rx="4"/><path d="M24 16v26M6 26h36M18 16c0-6 6-10 6-10s6 4 6 10"/></svg>`
-    };
+     
 
-    // ⭐ [완벽 저장 & 최상단 고정] 장비 즐겨찾기(내 장비) 토글
+    // ⭐ 장비 즐겨찾기(내 장비) 토글
     function toggleFavoriteGear(gearName, e) {
       if (e) { e.preventDefault(); e.stopPropagation(); }
 
@@ -2487,14 +1857,14 @@
       }
 
       localStorage.setItem('okbm_favorite_gears', JSON.stringify([...favoriteGearSet]));
-      syncUserDataToCloud();
+      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
       triggerHaptic(15);
 
       const searchInput = document.getElementById('gearSearchFixedInput');
       renderPresetGearList(searchInput ? searchInput.value : '');
     }
 
-    // 10대 카테고리 슬롯 렌더링
+    // 🎒 10대 카테고리 슬롯 렌더링
     function renderCategorySlots() {
       const container = document.getElementById('categorySlotsContainer');
       if (!container) return;
@@ -2509,9 +1879,9 @@
 
         let gearsListHtml = '<span style="color:#94a3b8; font-size:0.56rem; font-weight:700; background:rgba(0,0,0,0.6); padding:1px 4px; border-radius:3px;">미선택 +</span>';
         if (items.length > 0) {
-          gearsListHtml = items.map(it => {
+          gearsListHtml = items.map((it, idx) => {
             const cleanName = it.name.replace(/\s*\(.*\)/, '');
-            return `<span class="mini-gear-tag" title="${escapeHtml(it.name)}">${escapeHtml(cleanName)}</span>`;
+            return `<span class="mini-gear-tag" onclick="event.stopPropagation(); removeGearFromCategory('${cat.id}', ${idx})" title="${escapeHtml(it.name)} (${it.weight}g) - 클릭 시 삭제">${escapeHtml(cleanName)} ✕</span>`;
           }).join('');
         }
 
@@ -2623,14 +1993,14 @@
       if (searchInput) searchInput.value = '';
       if (clearBtn) clearBtn.style.display = 'none';
 
-      // 인풋 엔터키 등록 지원
       const nameInput = document.getElementById('customInputGearName');
       const weightInput = document.getElementById('customInputGearWeight');
       if (nameInput) nameInput.onkeydown = (e) => { if (e.key === 'Enter') addCustomGearToCurrentCategory(); };
       if (weightInput) weightInput.onkeydown = (e) => { if (e.key === 'Enter') addCustomGearToCurrentCategory(); };
 
       renderPresetGearList('');
-      document.getElementById('gearPresetModal').style.display = 'flex';
+      const modal = document.getElementById('gearPresetModal');
+      if (modal) modal.style.setProperty('display', 'flex', 'important');
       triggerHaptic(10);
     }
 
@@ -2649,7 +2019,6 @@
         (g.weightType && g.weightType.toLowerCase().includes(cleanQ))
       );
 
-      // ⭐ 1순위: 내 장비 체크 항목 상단 정렬
       filteredDb.sort((a, b) => {
         const aFav = favoriteGearSet.has(a.name) ? 1 : 0;
         const bFav = favoriteGearSet.has(b.name) ? 1 : 0;
@@ -2738,168 +2107,217 @@
       listEl.innerHTML = html;
     }
 
-    // 🎒 중복 방지 & 패킹 저장
-    let isSavingPacking = false;
-    let isVaultSaving = false;
+    let isGearScrollMoving = false;
+    let gearTouchStartX = 0, gearTouchStartY = 0;
+    let gearLongPressTimer = null;
+    let isGearLongPressTriggered = false;
 
-    function normalizeDateToYMD(dateStr) {
-      if (!dateStr) return '';
-      const m = String(dateStr).match(/(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
-      return m ? `${m[1]}.${String(m[2]).padStart(2, '0')}.${String(m[3]).padStart(2, '0')}` : '';
+    function handleGearCardTouchStart(name, weight, e) {
+      if (e.target.closest('.stepper-btn-box')) return;
+      isGearScrollMoving = false;
+      isGearLongPressTriggered = false;
+      gearTouchStartX = e.touches[0].clientX;
+      gearTouchStartY = e.touches[0].clientY;
+
+      gearLongPressTimer = setTimeout(() => {
+        isGearLongPressTriggered = true;
+        triggerHaptic(35);
+        removeSpecificGearCompletely(name);
+        showToast(`[${name}] 배낭에서 완전 삭제 ✕`, 'info');
+      }, 450);
     }
 
-    function getGearFingerprint(items) {
-      if (!items || !items.length) return '';
-      return items.map(it => (it.name || '').trim() + ':' + Number(it.weight || 0)).sort().join('|');
-    }
-
-    function cleanupDuplicateHistory(list) {
-      if (!Array.isArray(list)) return [];
-      const cleanList = [];
-      const seenFingerprints = new Set();
-
-      list.forEach(item => {
-        if (!item) return;
-        const date = normalizeDateToYMD(item.date) || 'nodate';
-        const fp = getGearFingerprint(item.items) || (item.weightKg + '_' + (item.itemCount || 0));
-        const uniqueKey = `${date}_${fp}`;
-
-        if (!seenFingerprints.has(uniqueKey)) {
-          seenFingerprints.add(uniqueKey);
-          cleanList.push(item);
-        }
-      });
-      return cleanList;
-    }
-
-    function saveRecordToHistoryStorage(record) {
-      if (!record) return;
-      let rawList = safeGetJSON('okbm_packing_history', []);
-      packingHistoryList = cleanupDuplicateHistory(rawList);
-
-      const currentYmd = normalizeDateToYMD(record.date);
-      const currentFp = getGearFingerprint(record.items);
-
-      let existingIdx = packingHistoryList.findIndex(h => {
-        if (h.id && record.id && h.id === record.id) return true;
-        const hYmd = normalizeDateToYMD(h.date);
-        const hFp = getGearFingerprint(h.items);
-        return hYmd === currentYmd && hFp === currentFp;
-      });
-
-      if (existingIdx !== -1) {
-        record.id = packingHistoryList[existingIdx].id;
-        packingHistoryList[existingIdx] = { ...packingHistoryList[existingIdx], ...record };
-      } else {
-        packingHistoryList.unshift({ ...record });
+    function handleGearCardTouchMove(e) {
+      const diffX = Math.abs(e.touches[0].clientX - gearTouchStartX);
+      const diffY = Math.abs(e.touches[0].clientY - gearTouchStartY);
+      if (diffX > 8 || diffY > 8) {
+        isGearScrollMoving = true;
+        clearTimeout(gearLongPressTimer);
       }
-
-      if (packingHistoryList.length > 30) packingHistoryList = packingHistoryList.slice(0, 30);
-      localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
-
-      syncUserDataToCloud();
-      renderPackingHistoryList();
     }
 
-    function saveCurrentPackingRecord() {
-      if (isSavingPacking) return;
-      isSavingPacking = true;
-      setTimeout(() => { isSavingPacking = false; }, 800);
+    function handleGearCardTouchEnd() {
+      clearTimeout(gearLongPressTimer);
+    }
 
-      let allItems = [];
-      let totalGrams = 0;
-      CATEGORIES.forEach(cat => {
-        const items = selectedGearMap[cat.id] || [];
-        items.forEach(it => {
-          if (it && it.name) {
-            allItems.push({
-              name: it.name,
-              weight: Number(it.weight || 0),
-              category: cat.title
-            });
-            totalGrams += Number(it.weight || 0);
-          }
-        });
-      });
+    function handleGearCardClick(name, weight, e) {
+      if (e.target.closest('.stepper-btn-box')) return;
+      if (isGearScrollMoving || isGearLongPressTriggered) return;
+      triggerHaptic(12);
+      addGearToCategory(name, weight);
+    }
 
-      if (allItems.length === 0) {
-        showToast('선택된 장비가 없습니다. 먼저 장비를 추가해주세요.', 'warn');
-        return;
+    function handleGearSearchInput(val) {
+      const clearBtn = document.getElementById('btnGearSearchClear');
+      if (clearBtn) clearBtn.style.display = val.trim().length > 0 ? 'flex' : 'none';
+      renderPresetGearList(val);
+    }
+
+    function clearGearSearchInput() {
+      const input = document.getElementById('gearSearchFixedInput');
+      const clearBtn = document.getElementById('btnGearSearchClear');
+      if (input) { input.value = ''; input.focus(); }
+      if (clearBtn) clearBtn.style.display = 'none';
+      renderPresetGearList('');
+      triggerHaptic(10);
+    }
+
+    function closeGearPresetModal() { 
+      const modal = document.getElementById('gearPresetModal');
+      if (modal) modal.style.setProperty('display', 'none', 'important');
+      currentOpeningCategoryId = null; 
+    }
+
+    function addGearToCategory(name, weight, e) {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      if (!currentOpeningCategoryId) return;
+      if (!Array.isArray(selectedGearMap[currentOpeningCategoryId])) selectedGearMap[currentOpeningCategoryId] = [];
+      selectedGearMap[currentOpeningCategoryId].push({ id: 'item_' + Date.now() + '_' + Math.random(), name, weight: Number(weight) || 0 });
+      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
+      renderCategorySlots();
+      const searchInput = document.getElementById('gearSearchFixedInput');
+      renderPresetGearList(searchInput ? searchInput.value : '');
+      triggerHaptic(12);
+      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+    }
+
+    function decrementGearCount(gearName, e) {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      if (!currentOpeningCategoryId || !selectedGearMap[currentOpeningCategoryId]) return;
+      const list = selectedGearMap[currentOpeningCategoryId];
+      const targetIdx = list.findIndex(it => it.name === gearName);
+      if (targetIdx !== -1) {
+        list.splice(targetIdx, 1);
+        localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
+        renderCategorySlots();
+        const searchInput = document.getElementById('gearSearchFixedInput');
+        renderPresetGearList(searchInput ? searchInput.value : '');
+        triggerHaptic(10);
+        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
       }
+    }
 
-      const weightKg = (totalGrams / 1000).toFixed(2);
-      const now = new Date();
-      const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-      
-      const currentFp = getGearFingerprint(allItems);
-      const currentYmd = normalizeDateToYMD(dateStr);
+    function removeSpecificGearCompletely(gearName) {
+      if (!currentOpeningCategoryId || !selectedGearMap[currentOpeningCategoryId]) return;
+      selectedGearMap[currentOpeningCategoryId] = selectedGearMap[currentOpeningCategoryId].filter(it => it.name !== gearName);
+      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
+      renderCategorySlots();
+      const searchInput = document.getElementById('gearSearchFixedInput');
+      renderPresetGearList(searchInput ? searchInput.value : '');
+      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+    }
 
-      packingHistoryList = cleanupDuplicateHistory(safeGetJSON('okbm_packing_history', []));
-      const existingRecord = packingHistoryList.find(h => normalizeDateToYMD(h.date) === currentYmd && getGearFingerprint(h.items) === currentFp);
+    function removeGearFromCategory(categoryId, itemIndex) {
+      if (selectedGearMap[categoryId]) {
+        selectedGearMap[categoryId].splice(itemIndex, 1);
+        localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
+        renderCategorySlots();
+        triggerHaptic(10);
+        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+      }
+    }
 
-      const recordId = existingRecord ? existingRecord.id : ('pack_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5));
-
-      currentShareRecord = {
-        id: recordId,
-        date: existingRecord ? existingRecord.date : dateStr,
-        weightKg: weightKg,
-        totalGrams: totalGrams,
-        itemCount: allItems.length,
-        items: allItems,
-        spot: existingRecord ? (existingRecord.spot || '강원 대관령 선자령 (832m)') : '강원 대관령 선자령 (832m)',
-        memo: existingRecord ? (existingRecord.memo || '비화식으로 즐기는 조용한 하룻밤') : '비화식으로 즐기는 조용한 하룻밤',
-        photo: existingRecord ? (existingRecord.photo || '') : '',
-        textColor: existingRecord ? (existingRecord.textColor || 'white') : 'white',
-        ratio: existingRecord ? (existingRecord.ratio || '9/16') : '9/16'
-      };
-      currentShareItems = allItems;
-      currentSharePhoto = currentShareRecord.photo || '';
-
-      saveRecordToHistoryStorage(currentShareRecord);
-
-      closePackingModal();
-      openPackShareModal(currentShareRecord, allItems, false);
+    function clearAllGearsInCategory(categoryId) {
+      if (!categoryId) return;
+      selectedGearMap[categoryId] = [];
+      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
+      const searchInput = document.getElementById('gearSearchFixedInput');
+      renderPresetGearList(searchInput ? searchInput.value : '');
+      renderCategorySlots();
       triggerHaptic(15);
-      showToast(existingRecord ? '기존 패킹 기록을 불러왔습니다.' : `총 ${weightKg}kg 패킹이 저장되었습니다!`, 'success');
+      showToast('해당 카테고리가 모두 비워졌습니다.', 'info');
+      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
     }
 
-    function openPackShareModal(record, items, isPhoto = false) {
-      if (record) {
-        currentShareRecord = { ...record };
-        currentShareItems = (items && items.length > 0) ? items : (record.items || []);
-        if (record.photo) currentSharePhoto = record.photo;
-        if (record.textColor) currentPhotoTextColor = record.textColor;
-        if (record.ratio) currentCardRatio = record.ratio;
+    function addCustomGearToCurrentCategory() {
+      if (!currentOpeningCategoryId) return;
+      const nameInput = document.getElementById('customInputGearName');
+      const weightInput = document.getElementById('customInputGearWeight');
+      if (!nameInput || !weightInput) return;
+
+      const name = nameInput.value.trim();
+      const weight = parseInt(weightInput.value, 10);
+      if (!name || isNaN(weight) || weight < 0) return showToast('장비명과 정확한 무게(g)를 입력해주세요.', 'warn');
+      
+      const newCustomItem = {
+        id: 'custom_' + Date.now(),
+        name: name,
+        weight: weight,
+        brand: '직접등록',
+        category_id: currentOpeningCategoryId,
+        verified: true,
+        specs: '내 커스텀 장비'
+      };
+
+      const customGears = safeGetJSON('okbm_custom_gears', []);
+      if (!customGears.some(g => g.name === name)) {
+        customGears.unshift(newCustomItem);
+        localStorage.setItem('okbm_custom_gears', JSON.stringify(customGears));
       }
 
-      const spotInput = document.getElementById('shareCardSpotInput');
-      const memoInput = document.getElementById('shareCardMemoInput');
-      if (spotInput && currentShareRecord) spotInput.value = currentShareRecord.spot || '';
-      if (memoInput && currentShareRecord) memoInput.value = currentShareRecord.memo || '';
+      const cat = CATEGORIES.find(c => c.id === currentOpeningCategoryId);
+      if (cat && !cat.db.some(d => d.name === name)) {
+        cat.db.unshift(newCustomItem);
+      }
 
-      const modal = document.getElementById('packShareModalOverlay');
-      if (modal) modal.style.display = 'flex';
+      favoriteGearSet.add(name);
+      localStorage.setItem('okbm_favorite_gears', JSON.stringify([...favoriteGearSet]));
 
-      switchShareCardTemplate(selectedTemplateId);
-      updateShareCardLive();
+      addGearToCategory(name, weight);
+
+      nameInput.value = '';
+      weightInput.value = '';
+      
+      showToast(`⭐ [${name}]이 내 장비로 등록되었습니다!`, 'success');
+      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
     }
 
-    function closePackShareModal() {
-      document.getElementById('packShareModalOverlay').style.display = 'none';
-      const dropdown = document.getElementById('spotSearchDropdown');
-      if (dropdown) dropdown.style.display = 'none';
-      const editBox = document.querySelector('#packShareModalOverlay .custom-modal > div:nth-child(2)');
-      const vaultBtn = document.getElementById('btnSaveToVaultMain');
-      if (editBox) editBox.style.display = 'flex';
-      if (vaultBtn) vaultBtn.style.display = 'block';
-      if (openedFromBasecamp) { openedFromBasecamp = false; openMyInfoModal('history'); }
+    function resetAllGearSelections() {
+      const modal = document.getElementById('packResetConfirmModal');
+      if (modal) {
+        modal.style.setProperty('display', 'flex', 'important');
+        triggerHaptic(12);
+      }
+    }
+
+    function closeResetConfirmModal() {
+      const modal = document.getElementById('packResetConfirmModal');
+      if (modal) modal.style.setProperty('display', 'none', 'important');
+    }
+
+    function executeResetAllGears() {
+      CATEGORIES.forEach(c => { selectedGearMap[c.id] = []; });
+      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
+      renderCategorySlots();
+      closeResetConfirmModal();
+      triggerHaptic(20);
+      showToast('배낭의 모든 장비가 초기화되었습니다.', 'info');
+      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+    }
+
+    function openPackingModal() {
+      const modal = document.getElementById('packingCalculatorModal');
+      if (modal) {
+        document.body.style.overflow = 'hidden';
+        modal.style.setProperty('display', 'flex', 'important');
+        renderCategorySlots();
+      }
+      triggerHaptic(12);
+    }
+    
+    function closePackingModal() { 
+      const modal = document.getElementById('packingCalculatorModal'); 
+      if (modal) {
+        document.body.style.overflow = '';
+        modal.style.setProperty('display', 'none', 'important'); 
+      }
     }
 
     // 📸 포토 스튜디오 로직
     function openPhotoStudio() {
-      closePackShareModal();
+      if (typeof closePackShareModal === 'function') closePackShareModal();
       const studio = document.getElementById('photoStudioOverlay');
-      if (studio) studio.style.display = 'flex';
+      if (studio) studio.style.setProperty('display', 'flex', 'important');
       updateStudioUI();
       updateStudioCardLive();
       triggerHaptic(15);
@@ -2907,9 +2325,15 @@
 
     function closePhotoStudio() {
       const studio = document.getElementById('photoStudioOverlay');
-      if (studio) studio.style.display = 'none';
-      if (openedFromBasecamp) { openedFromBasecamp = false; openMyInfoModal('history'); }
-      else { document.getElementById('packShareModalOverlay').style.display = 'flex'; updateShareCardLive(); }
+      if (studio) studio.style.setProperty('display', 'none', 'important');
+      if (openedFromBasecamp) { 
+        openedFromBasecamp = false; 
+        openMyInfoModal('history'); 
+      } else { 
+        const modal = document.getElementById('packShareModalOverlay');
+        if (modal) modal.style.setProperty('display', 'flex', 'important'); 
+        if (typeof updateShareCardLive === 'function') updateShareCardLive(); 
+      }
       triggerHaptic(10);
     }
 
@@ -2917,7 +2341,9 @@
       currentCardRatio = ratio;
       const sliderContainer = document.getElementById('studioFreeRatioSliderContainer');
       if (sliderContainer) sliderContainer.style.display = (ratio === 'free') ? 'flex' : 'none';
-      updateStudioUI(); updateStudioCardLive(); triggerHaptic(10);
+      updateStudioUI(); 
+      updateStudioCardLive(); 
+      triggerHaptic(10);
     }
 
     function handleFreeRatioChange(val) {
@@ -2935,7 +2361,12 @@
       if (img) img.style.transform = `scale(${currentPhotoScaleVal})`;
     }
 
-    function setStudioTextColor(color) { currentPhotoTextColor = color; updateStudioUI(); updateStudioCardLive(); triggerHaptic(10); }
+    function setStudioTextColor(color) { 
+      currentPhotoTextColor = color; 
+      updateStudioUI(); 
+      updateStudioCardLive(); 
+      triggerHaptic(10); 
+    }
 
     function updateStudioUI() {
       const mapBtns = { 'auto': 'btnStudioRatioAuto', '1/1': 'btnStudioRatio11', '4/5': 'btnStudioRatio45', '3/4': 'btnStudioRatio34', '9/16': 'btnStudioRatio916', 'free': 'btnStudioRatioFree' };
@@ -2953,16 +2384,111 @@
       }
     }
 
-    function updateStudioCardLive() {
-      const container = document.getElementById('photoStudioCardTarget');
-      if (!container || !currentSharePhoto) return;
-      const spotInput = document.getElementById('shareCardSpotInput');
-      const memoInput = document.getElementById('shareCardMemoInput');
-      const spotVal = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '강원 대관령 선자령 (832m)';
-      const memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : '비화식으로 즐기는 조용한 하룻밤';
-      container.innerHTML = generateStudioPhotoCardMarkup(currentShareRecord, currentShareItems, spotVal, memoVal, currentSharePhoto, currentPhotoTextColor, currentCardRatio, currentCustomRatioVal, currentPhotoScaleVal);
+// 🎨 [포토 스튜디오 전용 고품질 카드 마크업 생성 엔진]
+    function generateStudioPhotoCardMarkup(record, items, spot, memo, photo, textColor, ratio, customRatioVal, photoScale) {
+      var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
+      var nick = (profile && profile.nickname) ? profile.nickname : '낭만백패커';
+      var weight = record ? record.weightKg : '0.00';
+      var dateStr = (record && record.date) ? record.date : (function() {
+        var d = new Date();
+        return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
+      })();
+
+      var isDarkText = (textColor === 'black');
+      var colorPrimary = isDarkText ? '#0f172a' : '#ffffff';
+      var colorSecondary = isDarkText ? '#334155' : '#cbd5e1';
+      var colorMuted = isDarkText ? '#64748b' : '#94a3b8';
+      var glassBg = isDarkText ? 'rgba(255, 255, 255, 0.72)' : 'rgba(0, 0, 0, 0.62)';
+      var glassBorder = isDarkText ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.18)';
+      var overlayGradient = isDarkText
+        ? 'linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.1) 40%, rgba(255,255,255,0.88) 100%)'
+        : 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.08) 40%, rgba(0,0,0,0.85) 100%)';
+
+      var ratioStyle = 'aspect-ratio: 9/16;';
+      if (ratio === '1/1') ratioStyle = 'aspect-ratio: 1/1;';
+      else if (ratio === '4/5') ratioStyle = 'aspect-ratio: 4/5;';
+      else if (ratio === '3/4') ratioStyle = 'aspect-ratio: 3/4;';
+      else if (ratio === '9/16') ratioStyle = 'aspect-ratio: 9/16;';
+      else if (ratio === 'free') ratioStyle = 'aspect-ratio: ' + (customRatioVal || 0.75) + ';';
+      else if (ratio === 'auto') ratioStyle = 'aspect-ratio: 9/16;';
+
+      var scaleVal = Number(photoScale) || 1.0;
+      var logoSvg = (typeof SVG_ICONS !== 'undefined' && typeof SVG_ICONS.brandLogo === 'function')
+        ? SVG_ICONS.brandLogo(colorPrimary, isDarkText ? '#0284c7' : '#38bdf8')
+        : '';
+      var pinSvg = (typeof SVG_ICONS !== 'undefined' && SVG_ICONS.pin) ? SVG_ICONS.pin : '📍';
+      var lntShieldSvg = (typeof SVG_ICONS !== 'undefined' && SVG_ICONS.lntShield) ? SVG_ICONS.lntShield : '🛡️';
+
+      var gearListHtml = '';
+      if (typeof renderAdaptiveGearList === 'function') {
+        gearListHtml = renderAdaptiveGearList(items, {
+          nameColor: colorPrimary,
+          wtColor: isDarkText ? '#0284c7' : '#38bdf8',
+          subColor: colorMuted,
+          fontSize: '0.62rem',
+          paddingY: '0.6px'
+        });
+      }
+
+      return '<div style="position:relative; width:100%; max-width:390px; ' + ratioStyle + ' max-height:86vh; margin:0 auto; border-radius:14px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.9); user-select:none; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">' +
+        // 1. 고화질 배경 사진 레이어
+        '<img id="photoStudioBgImage" src="' + photo + '" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scale(' + scaleVal + '); transform-origin:center center; transition:transform 0.1s ease; pointer-events:none; z-index:1;" />' +
+        // 2. 가독성 그라데이션 오버레이
+        '<div style="position:absolute; inset:0; background:' + overlayGradient + '; pointer-events:none; z-index:2;"></div>' +
+        // 3. 카드 상단 & 하단 콘텐츠
+        '<div style="position:relative; z-index:3; width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-between; padding:14px 12px; box-sizing:border-box;">' +
+          // [상단 영역] 브랜드 로고 + 박지 정보
+          '<div style="display:flex; flex-direction:column; gap:5px;">' +
+            '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid ' + glassBorder + '; padding-bottom:4px;">' +
+              '<div style="display:flex; align-items:center; gap:4px;">' +
+                logoSvg +
+                '<span style="font-family:\'Space Grotesk\', sans-serif; font-size:0.78rem; font-weight:900; letter-spacing:1px; color:' + colorPrimary + ';">ROMANTIC ROUTE</span>' +
+              '</div>' +
+              '<span style="font-size:0.46rem; font-weight:900; background:' + (isDarkText ? '#0284c7' : '#38bdf8') + '; color:' + (isDarkText ? '#fff' : '#000') + '; padding:1.5px 6px; border-radius:4px;">LNT EXPEDITION</span>' +
+            '</div>' +
+            '<div style="background:' + glassBg + '; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid ' + glassBorder + '; border-radius:8px; padding:6px 8px;">' +
+              '<div style="font-size:0.92rem; font-weight:900; color:' + colorPrimary + '; line-height:1.2; font-family:\'SUIT\', sans-serif;">' +
+                pinSvg + ' ' + escapeHtml(spot) +
+              '</div>' +
+              '<div style="font-size:0.56rem; color:' + colorMuted + '; margin-top:2px; font-weight:700;">' +
+                'Explorer. <strong style="color:' + colorPrimary + ';">' + escapeHtml(nick) + '</strong> (' + escapeHtml(dateStr) + ')' +
+              '</div>' +
+              '<div style="font-size:0.58rem; color:' + colorSecondary + '; font-style:italic; margin-top:2px;">' +
+                '“' + escapeHtml(memo) + '”' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          // [하단 영역] 장비 목록 + 배낭 무게 + LNT 서약
+          '<div style="display:flex; flex-direction:column; gap:5px; margin-top:auto;">' +
+            (items && items.length > 0 ? (
+              '<div style="background:' + glassBg + '; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid ' + glassBorder + '; border-radius:8px; padding:5px 7px; max-height:140px; overflow:hidden;">' +
+                gearListHtml +
+              '</div>'
+            ) : '') +
+            '<div style="display:flex; justify-content:space-between; align-items:baseline; padding:0 2px;">' +
+              '<span style="font-size:0.56rem; font-weight:800; color:' + colorMuted + '; font-family:\'Space Grotesk\', sans-serif;">TOTAL WEIGHT</span>' +
+              '<span style="font-size:1.35rem; font-weight:900; color:' + colorPrimary + '; font-family:\'Space Grotesk\', sans-serif;">' + weight + ' <small style="font-size:0.65rem;">KG</small></span>' +
+            '</div>' +
+            '<div style="background:' + glassBg + '; border:1px solid ' + glassBorder + '; border-radius:6px; padding:4px 6px; text-align:center;">' +
+              '<span style="font-size:0.62rem; font-weight:900; color:' + (isDarkText ? '#047857' : '#34d399') + '; display:inline-flex; align-items:center; gap:3px;">' +
+                lntShieldSvg + ' <span>[' + escapeHtml(nick) + ']님은 LNT를 준수합니다</span>' +
+              '</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
     }
 
+    // 🖼️ 포토 스튜디오 실시간 화면 갱신
+    function updateStudioCardLive() {
+      var container = document.getElementById('photoStudioCardTarget');
+      if (!container || !currentSharePhoto) return;
+      var spotInput = document.getElementById('shareCardSpotInput');
+      var memoInput = document.getElementById('shareCardMemoInput');
+      var spotVal = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '강원 대관령 선자령 (832m)';
+      var memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : '비화식으로 즐기는 조용한 하룻밤';
+      container.innerHTML = generateStudioPhotoCardMarkup(currentShareRecord, currentShareItems, spotVal, memoVal, currentSharePhoto, currentPhotoTextColor, currentCardRatio, currentCustomRatioVal, currentPhotoScaleVal);
+    }
     function handleShareCardPhotoUpload(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -3045,7 +2571,7 @@
       if (input) { input.value = ''; input.focus(); }
       if (clearBtn) clearBtn.style.display = 'none';
       handleSpotSearchInput('');
-      updateShareCardLive();
+      if (typeof updateShareCardLive === 'function') updateShareCardLive();
       triggerHaptic(10);
     }
 
@@ -3064,208 +2590,65 @@
       if (clearBtn) clearBtn.style.display = 'flex';
       const dropdown = document.getElementById('spotSearchDropdown');
       if (dropdown) dropdown.style.display = 'none';
-      updateShareCardLive();
+      if (typeof updateShareCardLive === 'function') updateShareCardLive();
       triggerHaptic(10);
     }
 
-    function renderAdaptiveGearList(items, options = {}) {
-      const list = items && items.length > 0 ? items : [];
-      const total = list.length;
-      if (total === 0) {
-        return `<div style="font-size:0.65rem; color:${options.subColor || '#94a3b8'}; text-align:center; padding:6px 0;">세팅된 장비가 없습니다.</div>`;
-      }
-      const isTwoCol = total >= 11;
-      const maxDisplay = isTwoCol ? 20 : 10;
-      const displayItems = list.slice(0, maxDisplay);
-      const remaining = total - maxDisplay;
-
-      let fontSize = options.fontSize || '0.62rem', paddingY = options.paddingY || '0.8px';
-      if (total >= 15) { fontSize = '0.50rem'; paddingY = '0.3px'; }
-      else if (total >= 11) { fontSize = '0.54rem'; paddingY = '0.5px'; }
-      else if (total >= 8) { fontSize = '0.60rem'; paddingY = '0.7px'; }
-
-      const nameColor = options.nameColor || 'inherit';
-      const wtColor = options.wtColor || '#38bdf8';
-
-      const rowsHtml = displayItems.map((it) => {
-        const rawName = typeof it === 'string' ? it : (it.name || '');
-        const cleanName = rawName.replace(/\s*\(\d+g\)$/, '');
-        const weightGrams = it.weight || 0;
-        const weightStr = weightGrams > 0 ? `${(weightGrams / 1000).toFixed(2)}kg` : '';
-        return `
-          <div style="display:flex; justify-content:space-between; align-items:center; font-size:${fontSize}; padding:${paddingY} 0; gap:2px; min-width:0; box-sizing:border-box;">
-            <span style="color:${nameColor}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; font-weight:700; display:flex; align-items:center;">
-              ${options.bullet !== undefined ? options.bullet : SVG_ICONS.bullet}<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(cleanName)}</span>
-            </span>
-            <span style="font-family:'JetBrains Mono', monospace; font-weight:800; color:${wtColor}; flex-shrink:0; font-size:0.92em; letter-spacing:0px;">${weightStr}</span>
-          </div>
-        `;
-      }).join('');
-
-      const remainingHtml = remaining > 0 ? `<div style="font-size:0.48rem; color:${options.subColor || '#94a3b8'}; text-align:right; margin-top:1px; font-weight:800;">+ 그 외 ${remaining}개 장비 포함</div>` : '';
-      return `<div style="display:grid; grid-template-columns:${isTwoCol ? '1fr 1fr' : '1fr'}; column-gap:6px; row-gap:0px; width:100%; box-sizing:border-box;">${rowsHtml}${remainingHtml}</div>`;
-    }
-
-    function generateStudioPhotoCardMarkup(record, items, spot, memo, photoUrl, textColor = 'white', ratio = '9/16', customVal = 0.75, scaleVal = 1.0) {
-      const profile = safeGetJSON('user_profile', null);
-      const nick = profile ? profile.nickname : '낭만탐험가';
-      const weight = record ? record.weightKg : '0.00';
-      const dateStr = (record && record.date) ? record.date : (() => {
-        const d = new Date(); return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
-      })();
-
-      const isWhite = (textColor === 'white');
-      const textCol = isWhite ? '#ffffff' : '#000000';
-      const subCol = isWhite ? 'rgba(255,255,255,0.9)' : '#0f172a';
-      const brandCol = isWhite ? '#38bdf8' : '#0369a1';
-      const borderCol = isWhite ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.4)';
-      const textShadowStyle = isWhite ? '0 2px 8px rgba(0,0,0,0.95), 0 0 4px rgba(0,0,0,0.9)' : '0 0 3px #ffffff, 0 0 6px #ffffff, 0 1px 2px rgba(255,255,255,0.95)';
-      const logo = isWhite ? SVG_ICONS.brandLogo('#ffffff', '#fda4af') : SVG_ICONS.brandLogo('#000000', '#e11d48');
-
-      let ratioStyle = 'width: 100vw; height: 100dvh; max-width: 440px;';
-      let paddingStyle = 'padding:calc(55px + env(safe-area-inset-top, 0px)) 16px calc(65px + env(safe-area-inset-bottom, 0px)) 16px;';
-
-      if (ratio === '3/4') { ratioStyle = 'width: 100%; aspect-ratio: 3 / 4; border-radius: 12px; max-height: 80vh;'; paddingStyle = 'padding: 16px 14px;'; }
-      else if (ratio === '1/1') { ratioStyle = 'width: 100%; aspect-ratio: 1 / 1; border-radius: 12px; max-height: 80vh;'; paddingStyle = 'padding: 12px 10px;'; }
-      else if (ratio === '4/5') { ratioStyle = 'width: 100%; aspect-ratio: 4 / 5; border-radius: 12px; max-height: 80vh;'; paddingStyle = 'padding: 14px 12px;'; }
-      else if (ratio === 'free') { ratioStyle = `width: 100%; aspect-ratio: ${customVal} / 1; border-radius: 10px; max-height: 80vh;`; paddingStyle = 'padding: 14px 12px;'; }
-      else if (ratio === '9/16') { ratioStyle = 'width: 100vw; height: 100dvh; max-width: 440px; border-radius: 0;'; paddingStyle = 'padding:calc(55px + env(safe-area-inset-top, 0px)) 18px calc(65px + env(safe-area-inset-bottom, 0px)) 18px;'; }
-
-      const scrimLayerHtml = isWhite ? `<div style="position:absolute; top:0; left:0; width:100%; height:100%; background:linear-gradient(180deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.05) 35%, rgba(0,0,0,0.15) 55%, rgba(0,0,0,0.75) 100%); z-index:2; pointer-events:none;"></div>` : '';
-
-      return `
-        <div style="position:relative; overflow:hidden; box-sizing:border-box; ${ratioStyle} display:flex; flex-direction:column; justify-content:space-between; background:#000000; font-family:'Pretendard Variable', sans-serif;">
-          <img id="photoStudioBgImage" src="${photoUrl}" alt="Background" style="position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:1; display:block; transform:scale(${scaleVal}); transform-origin:center; transition:transform 0.1s ease;" />
-          ${scrimLayerHtml}
-          
-          <div style="position:relative; z-index:3; height:100%; display:flex; flex-direction:column; justify-content:space-between; ${paddingStyle} box-sizing:border-box;">
-            <div>
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
-                <div style="display:flex; align-items:center; gap:6px;">
-                  ${logo}
-                  <div>
-                    <div style="font-weight:900; font-size:0.85rem; color:${textCol}; letter-spacing:0.5px; line-height:1.1; text-shadow:${textShadowStyle}; font-family:'Space Grotesk', sans-serif;">ROMANTIC ROUTE</div>
-                    <div style="font-size:0.54rem; color:${subCol}; font-weight:800; text-shadow:${textShadowStyle}; letter-spacing:0.5px;">K-LNT CLEAN TRAIL</div>
-                  </div>
-                </div>
-                <div style="font-size:0.55rem; font-weight:900; color:${brandCol}; background:${isWhite ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.85)'}; border:1.5px solid ${brandCol}; padding:2px 6px; border-radius:12px; white-space:nowrap; backdrop-filter:blur(4px); font-family:'Space Grotesk', sans-serif;">LNT VERIFIED</div>
-              </div>
-
-              <div style="margin-top:8px; display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size:0.62rem; font-weight:900; color:${brandCol}; font-family:'JetBrains Mono', monospace; text-shadow:${textShadowStyle}; display:flex; align-items:center;">
-                  ${SVG_ICONS.calendar}<span style="margin-left:3px;">${escapeHtml(dateStr)}</span>
-                </span>
-                <span style="font-size:0.52rem; color:${subCol}; font-weight:800; letter-spacing:1px; text-shadow:${textShadowStyle}; font-family:'Space Grotesk', sans-serif;">TARGET LOCATION</span>
-              </div>
-
-              <div style="font-size:1.1rem; font-weight:900; color:${textCol}; line-height:1.2; word-break:keep-all; margin-top:2px; text-shadow:${textShadowStyle}; display:flex; align-items:center; font-family:'SUIT', sans-serif;">
-                ${SVG_ICONS.pin}<span style="margin-left:3px;">${escapeHtml(spot)}</span>
-              </div>
-
-              ${memo ? `<div style="font-size:0.7rem; color:${textCol}; margin-top:3px; font-weight:800; display:flex; align-items:flex-start; text-shadow:${textShadowStyle}; line-height:1.3;">${SVG_ICONS.quote}<span>${escapeHtml(memo)}</span></div>` : ''}
-            </div>
-
-            <div>
-              <div style="margin-bottom:6px; border-bottom:1.5px solid ${borderCol}; padding-bottom:4px;">
-                ${renderAdaptiveGearList(items, { nameColor: textCol, wtColor: brandCol, subColor: subCol, textShadow: textShadowStyle })}
-              </div>
-
-              <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-                <div>
-                  <div style="font-size:0.52rem; color:${subCol}; font-weight:800; letter-spacing:0.5px; text-shadow:${textShadowStyle}; font-family:'Space Grotesk', sans-serif;">EXPLORER</div>
-                  <div style="font-size:1.15rem; font-weight:900; color:${textCol}; letter-spacing:-0.02em; text-shadow:${textShadowStyle}; line-height:1.1; font-family:'SUIT', sans-serif;">
-                    ${escapeHtml(nick)}
-                  </div>
-                </div>
-                <div style="text-align:right;">
-                  <div style="font-size:0.52rem; color:${subCol}; font-weight:800; text-shadow:${textShadowStyle}; font-family:'Space Grotesk', sans-serif;">TOTAL BPL WEIGHT</div>
-                  <div style="font-size:2.0rem; font-weight:900; font-family:'Space Grotesk', sans-serif; color:${brandCol}; line-height:0.9; text-shadow:${textShadowStyle};">
-                    ${weight}<span style="font-size:0.85rem; color:${textCol}; margin-left:2px;">KG</span>
-                  </div>
-                </div>
-              </div>
-
-              <div style="margin-top:4px; font-size:0.52rem; color:${subCol}; display:flex; justify-content:space-between; align-items:center; font-weight:800; text-shadow:${textShadowStyle};">
-                <span style="display:inline-flex; align-items:center; gap:3px; color:${brandCol};">
-                  ${SVG_ICONS.lntShield} [${escapeHtml(nick)}]님은 LNT를 준수합니다
-                </span>
-                <span style="font-family:'Space Grotesk', sans-serif;">LNT MASTER</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function switchShareCardTemplate(tmplId) {
-      selectedTemplateId = Number(tmplId);
-      localStorage.setItem('romantic_selected_template', tmplId);
-      document.querySelectorAll('.tmpl-chip-btn').forEach((btn, idx) => {
-        btn.classList.toggle('active', (idx + 1) === Number(tmplId));
-      });
-      updateShareCardLive();
-      triggerHaptic(10);
-    }
-
-    function updateShareCardLive() {
-      const container = document.getElementById('packShareCaptureArea');
-      if (!container) return;
-      const spotInput = document.getElementById('shareCardSpotInput');
-      const memoInput = document.getElementById('shareCardMemoInput');
-      const spotVal = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '강원 대관령 선자령 (832m)';
-      const memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : '비화식으로 즐기는 조용한 하룻밤';
-      container.className = 'share-card-container';
-      if (typeof generateCardMarkup === 'function') {
-        container.innerHTML = generateCardMarkup(selectedTemplateId, currentShareRecord, currentShareItems, spotVal, memoVal);
-      }
-    }
-
+    // 💾 카드 캡처 및 이미지 다운로드
     function captureAndSavePackCard() {
-      const card = document.getElementById('packShareCaptureArea');
-      if (!card || typeof html2canvas === 'undefined') return;
+      const captureArea = document.getElementById('packShareCaptureArea');
+      if (!captureArea || typeof html2canvas === 'undefined') return;
       triggerHaptic(15);
-      html2canvas(card, { 
-        backgroundColor: null, scale: 3, useCORS: true, allowTaint: true, logging: false, scrollX: 0, scrollY: 0,
-        windowWidth: document.documentElement.offsetWidth,
-        onclone: (clonedDoc) => {
-          const el = clonedDoc.getElementById('packShareCaptureArea');
-          if (el) { el.style.maxHeight = 'none'; el.style.overflow = 'visible'; el.style.transform = 'none'; }
-        }
-      }).then(canvas => {
+      html2canvas(captureArea, { backgroundColor: null, scale: 3, useCORS: true, allowTaint: true, logging: false }).then(canvas => {
         const link = document.createElement('a');
-        link.download = `낭만루트_LNT_${getFormattedTimestamp()}.png`;
+        link.download = `낭만루트_패킹카드_${getFormattedTimestamp()}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
-        showToast('클린 백패킹 카드가 갤러리에 저장되었습니다!', 'download');
+        showToast('패킹 카드가 갤러리에 저장되었습니다!', 'download');
       });
     }
 
+    // 🟡 카카오톡 공유
     function sharePackCardToKakao() {
-      if (typeof Kakao === 'undefined') return showToast('카카오 SDK를 불러오지 못했습니다.', 'warn');
-      if (!Kakao.isInitialized()) Kakao.init(KAKAO_APP_KEY);
-
+      if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) {
+        showToast('카카오 연동을 준비 중입니다.', 'warn');
+        return;
+      }
+      triggerHaptic(15);
       const spotInput = document.getElementById('shareCardSpotInput');
-      const spotName = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '낭만루트 백패킹';
+      const spotName = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '낭만 백패킹 여정';
       const weight = currentShareRecord ? currentShareRecord.weightKg : '0.00';
-      const profile = safeGetJSON('user_profile', null);
-      const nick = profile ? profile.nickname : '낭만백패커';
-
-      Kakao.Share.sendDefault({
+      
+      Kakao.Link.sendDefault({
         objectType: 'feed',
         content: {
-          title: `[낭만루트] [${nick}]님의 LNT 클린 백패킹 패킹 완료!`,
-          description: `목적지: ${spotName}\n총 무게: ${weight}kg (비화식 클린 백패킹)`,
-          imageUrl: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80',
-          link: { mobileWebUrl: window.location.origin + window.location.pathname, webUrl: window.location.origin + window.location.pathname }
+          title: `[낭만루트] ${spotName} 배낭 패킹 완료!`,
+          description: `총 배낭 무게: ${weight}kg | 흔적 없는 클린 백패킹 실천`,
+          imageUrl: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80',
+          link: {
+            mobileWebUrl: window.location.href,
+            webUrl: window.location.href
+          }
         },
-        buttons: [{ title: '나도 배낭 무게 재보기', link: { mobileWebUrl: window.location.origin + window.location.pathname, webUrl: window.location.origin + window.location.pathname } }]
+        buttons: [
+          {
+            title: '나도 패킹하기',
+            link: {
+              mobileWebUrl: window.location.origin + window.location.pathname,
+              webUrl: window.location.origin + window.location.pathname
+            }
+          }
+        ]
       });
-      triggerHaptic(15);
     }
 
+    // 📸 인스타그램 공유 안내
     function sharePackCardToInstagram() {
+      triggerHaptic(12);
       captureAndSavePackCard();
-      showToast('인스타그램 스토리에 사진을 업로드해 보세요!', 'insta');
+      setTimeout(() => {
+        alert('카드 이미지가 기기에 저장되었습니다!\n인스타그램 스토리나 피드에 이미지를 업로드해 보세요 📸');
+      }, 600);
     }
 
     // =========================================================================
@@ -3273,17 +2656,21 @@
     // =========================================================================
     function openMyInfoModal(initialTab = 'history') {
       const modal = document.getElementById('myInfoModal');
-      if (modal) modal.style.display = 'flex';
-      updateHeaderAuthUI();
+      if (modal) {
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('z-index', '99999999', 'important');
+      }
+      if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
       switchBasecampTab(initialTab);
       renderPackingHistoryList();
       renderBasecampRecordData();
       renderBasecampMemos();
+      triggerHaptic(12);
     }
 
     function closeMyInfoModal() { 
       const modal = document.getElementById('myInfoModal'); 
-      if (modal) modal.style.display = 'none'; 
+      if (modal) modal.style.setProperty('display', 'none', 'important'); 
     }
 
     function switchBasecampTab(tabKey) {
@@ -3313,7 +2700,6 @@
       triggerHaptic(10);
     }
 
-    // 💾 내 낭만보관함 저장 (비회원 가드)
     function saveCardToVaultAndOpenBasecamp() {
       if (!isUserLoggedIn()) {
         triggerHaptic(12);
@@ -3324,35 +2710,41 @@
 
       if (isVaultSaving) return;
       isVaultSaving = true;
-      setTimeout(() => { isVaultSaving = false; }, 1000);
+      setTimeout(function() { isVaultSaving = false; }, 800);
 
-      if (!currentShareRecord) {
+      var record = window.currentShareRecord || currentShareRecord;
+      if (!record) {
         showToast('저장할 패킹 데이터가 없습니다.', 'warn');
         return;
       }
 
-      const spotInput = document.getElementById('shareCardSpotInput');
-      const memoInput = document.getElementById('shareCardMemoInput');
-      const spotVal = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : (currentShareRecord.spot || '강원 대관령 선자령 (832m)');
-      const memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : (currentShareRecord.memo || '비화식으로 즐기는 조용한 하룻밤');
+      var spotInput = document.getElementById('shareCardSpotInput');
+      var memoInput = document.getElementById('shareCardMemoInput');
+      var spotVal = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : (record.spot || '강원 대관령 선자령 (832m)');
+      var memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : (record.memo || '비화식으로 즐기는 조용한 하룻밤');
 
-      const isAlreadySame = packingHistoryList.some(h => 
-        h.id === currentShareRecord.id && 
-        h.spot === spotVal && 
-        h.memo === memoVal && 
-        (h.photo || '') === (currentSharePhoto || '')
-      );
+      record.spot = spotVal;
+      record.memo = memoVal;
+      record.photo = window.currentSharePhoto || '';
+      record.textColor = window.currentPhotoTextColor || 'white';
+      record.ratio = window.currentCardRatio || '9/16';
 
-      currentShareRecord.spot = spotVal;
-      currentShareRecord.memo = memoVal;
-      currentShareRecord.photo = (typeof currentSharePhoto !== 'undefined' ? currentSharePhoto : '') || '';
-      currentShareRecord.textColor = (typeof currentPhotoTextColor !== 'undefined' ? currentPhotoTextColor : 'white') || 'white';
-      currentShareRecord.ratio = (typeof currentCardRatio !== 'undefined' ? currentCardRatio : '9/16') || '9/16';
+      saveRecordToHistoryStorage(record);
 
-      saveRecordToHistoryStorage(currentShareRecord);
-      
       triggerHaptic(20);
-      showToast(isAlreadySame ? '이미 보관함에 최신 상태로 보관 중입니다.' : '내 낭만보관함에 안전하게 저장되었습니다!', 'vault');
+      showToast('내 낭만보관함에 안전하게 저장되었습니다!', 'success');
+
+      // 🚪 1. 현재 패킹 카드 모달 닫기
+      if (typeof closePackShareModal === 'function') {
+        closePackShareModal();
+      }
+
+      // 🗂️ 2. 내 낭만보관함 창 즉시 열기 (힐링 기록 탭 활성화)
+      setTimeout(function() {
+        if (typeof openMyInfoModal === 'function') {
+          openMyInfoModal('history');
+        }
+      }, 150);
     }
 
     // 🌸 힐링 기록 렌더링
@@ -3543,8 +2935,10 @@
       const record = packingHistoryList[index];
       if (!record) return;
       openedFromBasecamp = true;
-      document.getElementById('myInfoModal').style.display = 'none';
-      openPackShareModal(record, null, !!record.photo);
+      document.getElementById('myInfoModal').style.setProperty('display', 'none', 'important');
+      if (typeof openPackShareModal === 'function') {
+        openPackShareModal(record, null, !!record.photo);
+      }
       triggerHaptic(15);
     }
 
@@ -3552,7 +2946,7 @@
       packingHistoryList = safeGetJSON('okbm_packing_history', []).filter(h => h.id !== id);
       localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
       renderPackingHistoryList();
-      syncUserDataToCloud();
+      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
       triggerHaptic(15);
       showToast('패킹 기록이 삭제되었습니다.', 'info');
     }
@@ -3755,8 +3149,59 @@
       }).catch(() => {});
     }
 
-    // 🌐 구글 시트 연동 (커스텀 장비 보존 로직 추가)
+    // 🌐 구글 시트 연동
     async function loadGearDbFromGoogleSheet() {
+      try {
+        const res = await fetch(`${GAS_API_URL}?action=GET_GEARS&_t=${Date.now()}`);
+        if (res.ok) {
+          const gearsData = await res.json();
+          if (Array.isArray(gearsData) && gearsData.length > 0) {
+            const sheetGearsByCategory = {};
+
+            gearsData.forEach(row => {
+              const catId = String(row.category_id || row.category || '').trim();
+              const name = String(row.item_name || row.name || '').trim();
+              const weight = parseInt(row.weight_g || row.weight, 10);
+              const brand = String(row.brand || '').trim();
+              const weightType = String(row.weight_type || '').trim();
+              const specs = String(row.specs_detail || '').trim();
+              const verified = (row.verified === 'TRUE' || row.verified === true);
+
+              if (catId && name && !isNaN(weight)) {
+                if (!sheetGearsByCategory[catId]) sheetGearsByCategory[catId] = [];
+                sheetGearsByCategory[catId].push({
+                  id: row.gear_id || ('gear_' + Date.now()),
+                  name: name,
+                  weight: weight,
+                  brand: brand,
+                  weightType: weightType,
+                  specs: specs,
+                  verified: verified
+                });
+              }
+            });
+
+            const customGears = safeGetJSON('okbm_custom_gears', []);
+            CATEGORIES.forEach(cat => {
+              if (sheetGearsByCategory[cat.id] && sheetGearsByCategory[cat.id].length > 0) {
+                cat.db = sheetGearsByCategory[cat.id];
+              }
+              const myCatCustoms = customGears.filter(cg => cg.category_id === cat.id);
+              myCatCustoms.forEach(cg => {
+                if (!cat.db.some(d => d.name === cg.name)) {
+                  cat.db.unshift(cg);
+                }
+              });
+            });
+
+            renderCategorySlots();
+            const searchInput = document.getElementById('gearSearchFixedInput');
+            if (currentOpeningCategoryId) renderPresetGearList(searchInput ? searchInput.value : '');
+            return;
+          }
+        }
+      } catch (e) {}
+
       if (!GOOGLE_SHEET_GEAR_GID) return;
       const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_GEAR_GID}&_t=${Date.now()}`;
       try {
@@ -3792,7 +3237,6 @@
                 }
               });
 
-              // 구글 시트 DB 로드 후 커스텀 등록 장비 최상단 재주입
               const customGears = safeGetJSON('okbm_custom_gears', []);
               CATEGORIES.forEach(cat => {
                 if (sheetGearsByCategory[cat.id] && sheetGearsByCategory[cat.id].length > 0) {
@@ -3890,7 +3334,7 @@
       if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) Kakao.init(KAKAO_APP_KEY);
       initStarlightEngines();
       trackDailyVisit();
-      updateHeaderAuthUI();
+      if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
       renderCategorySlots();
       renderPollUI();
       renderTalkList();
@@ -3898,15 +3342,72 @@
       loadPortalSpotData();
       fetchCloudTalks();
       checkIncomingSharedSpot();
+
+      // 🔄 앱 시작 시 로그인 상태인 경우 구글 시트 원본 자동 동기화 (G열 배낭 복원)
+      if (isUserLoggedIn()) {
+        const initialProfile = safeGetJSON('user_profile', null);
+        if (initialProfile && initialProfile.id) {
+          loadUserDataFromCloud(initialProfile.id).then(cloudData => {
+            if (cloudData) {
+              if (cloudData.bookmarks && Array.isArray(cloudData.bookmarks)) {
+                localStorage.setItem('okbm_bookmarks', JSON.stringify(cloudData.bookmarks));
+              }
+              if (cloudData.visited && Array.isArray(cloudData.visited)) {
+                localStorage.setItem('okbm_visited', JSON.stringify(cloudData.visited));
+              }
+              if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
+                packingHistoryList = cloudData.packHistory;
+                localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
+              }
+
+              // 🎒 G열 my_gears 복원
+              const myGears = cloudData.myGears || null;
+              if (myGears) {
+                if (myGears.selectedGears && typeof myGears.selectedGears === 'object' && Object.keys(myGears.selectedGears).length > 0) {
+                  selectedGearMap = myGears.selectedGears;
+                  localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
+                }
+                if (myGears.favoriteGears && Array.isArray(myGears.favoriteGears)) {
+                  favoriteGearSet = new Set(myGears.favoriteGears);
+                  localStorage.setItem('okbm_favorite_gears', JSON.stringify(myGears.favoriteGears));
+                }
+                if (myGears.customGears && Array.isArray(myGears.customGears)) {
+                  localStorage.setItem('okbm_custom_gears', JSON.stringify(myGears.customGears));
+                  CATEGORIES.forEach(cat => {
+                    myGears.customGears.forEach(cg => {
+                      if (cg.category_id === cat.id && !cat.db.some(d => d.name === cg.name)) {
+                        cat.db.unshift(cg);
+                      }
+                    });
+                  });
+                }
+              }
+
+              if (cloudData.memos && typeof cloudData.memos === 'object') {
+                localStorage.setItem('okbm_memos', JSON.stringify(cloudData.memos));
+              }
+              if (cloudData.nickname && initialProfile.nickname !== cloudData.nickname && !cloudData.nickname.includes('ENGINE')) {
+                initialProfile.nickname = cloudData.nickname;
+                localStorage.setItem('user_profile', JSON.stringify(initialProfile));
+                if (typeof authState !== 'undefined') authState.userProfile = initialProfile;
+                if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
+              }
+              renderCategorySlots();
+              renderPackingHistoryList();
+              renderBasecampRecordData();
+              renderBasecampMemos();
+            }
+            window.isCloudDataLoaded = true;
+          });
+        } else {
+          window.isCloudDataLoaded = true;
+        }
+      } else {
+        window.isCloudDataLoaded = true;
+      }
     });
-
-
-
-  
   </script>
-  <script src="romantic-sync.js"></script>
-  <script src="templates.js"></script> 
-
+  <script src="romantic-sync.js?v=2.0.1"></script>
+  <script src="templates.js?v=2.0.1"></script>
 </body>
 </html>
-
