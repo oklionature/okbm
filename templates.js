@@ -1,6 +1,31 @@
 // =========================================================================
-// 🚀 [templates.js] 20종 템플릿 엔진 & 스와이프 제스처 시스템 (v2.0.1 Final Master)
+// 🚀 [templates.js] 20종 템플릿 엔진 & 스와이프 제스처 시스템 (v2.0.6 Auto-Sync Master)
 // =========================================================================
+
+// 🔀 [템플릿 확정 정렬 순서 및 명칭 정의 (영수증-솜사탕 선두 / 살구↔블러썸 / 스카이↔레몬 교체)]
+var TEMPLATE_ORDER = [1, 8, 15, 2, 12, 3, 18, 4, 14, 5, 11, 6, 16, 7, 17, 13, 9, 19, 10, 20];
+var TEMPLATE_NAMES = {
+  1: '영수증',
+  8: '솜사탕',
+  15: '살구노을',
+  2: '보딩패스',
+  12: '라벤더',
+  3: '에어메일',
+  18: '레몬',
+  4: '뮤지엄',
+  14: '다꾸',
+  5: 'CAD 도면',
+  11: '블러썸',
+  6: '코닥 슬라이드',
+  16: '핑크문',
+  7: '매거진',
+  17: '민트',
+  13: '스카이',
+  9: '버터',
+  19: '럭셔리',
+  10: '세이지',
+  20: '젠'
+};
 
 // 🎨 [내장 SVG 아이콘 팩 - 참조 에러 원천 방지]
 var SVG_ICONS = window.SVG_ICONS || {
@@ -41,7 +66,7 @@ function escapeHtml(text) {
     .replace(/'/g, '&#39;');
 }
 
-// 🧰 [적응형 장비 리스트 엔진] - 카드 공간에 맞춰 폰트 및 행 자동 최적화
+// 🧰 [적응형 장비 리스트 엔진] - 20개까지 1열(1Col) 유지, 21개 이상부터 2열 적용
 function renderAdaptiveGearList(items, options) {
   options = options || {};
   var list = (items && items.length > 0) ? items : [];
@@ -49,20 +74,19 @@ function renderAdaptiveGearList(items, options) {
   if (total === 0) {
     return '<div style="font-size:0.65rem; color:' + (options.subColor || '#94a3b8') + '; text-align:center; padding:6px 0;">세팅된 장비가 없습니다.</div>';
   }
-  var isTwoCol = total >= 11;
-  var maxDisplay = isTwoCol ? 20 : 10;
-  var displayItems = list.slice(0, maxDisplay);
-  var remaining = total - maxDisplay;
+  
+  var isTwoCol = total >= 21;
+  var displayItems = list; 
 
   var fontSize = options.fontSize || '0.62rem';
   var paddingY = options.paddingY || '0.8px';
-  if (total >= 15) { fontSize = '0.50rem'; paddingY = '0.3px'; }
+  if (total >= 19) { fontSize = '0.46rem'; paddingY = '0.2px'; }
+  else if (total >= 17) { fontSize = '0.50rem'; paddingY = '0.3px'; }
   else if (total >= 11) { fontSize = '0.54rem'; paddingY = '0.5px'; }
   else if (total >= 8) { fontSize = '0.60rem'; paddingY = '0.7px'; }
 
   var nameColor = options.nameColor || 'inherit';
   var wtColor = options.wtColor || '#38bdf8';
-
   var rowsHtml = displayItems.map(function(it) {
     var rawName = (typeof it === 'string') ? it : (it.name || '');
     var cleanName = rawName.replace(/\s*\(\d+g\)$/, '');
@@ -76,8 +100,7 @@ function renderAdaptiveGearList(items, options) {
     '</div>';
   }).join('');
 
-  var remainingHtml = remaining > 0 ? '<div style="font-size:0.48rem; color:' + (options.subColor || '#94a3b8') + '; text-align:right; margin-top:1px; font-weight:800;">+ 그 외 ' + remaining + '개 장비 포함</div>' : '';
-  return '<div style="display:grid; grid-template-columns:' + (isTwoCol ? '1fr 1fr' : '1fr') + '; column-gap:6px; row-gap:0px; width:100%; box-sizing:border-box;">' + rowsHtml + remainingHtml + '</div>';
+  return '<div style="display:grid; grid-template-columns:' + (isTwoCol ? '1fr 1fr' : '1fr') + '; column-gap:6px; row-gap:0px; width:100%; box-sizing:border-box;">' + rowsHtml + '</div>';
 }
 
 // 🚪 1. 배낭 패킹 저장 & 카드 생성 모달 호출 (중복 생성 방지)
@@ -101,7 +124,6 @@ function saveCurrentPackingRecord() {
   var currentItemsStr = allItems.map(function(g) { return g.name + ' (' + g.weight + 'g)'; }).sort().join(' / ');
   var nowTime = Date.now();
 
-  // 중복 저장 방지 (동일 무게와 장비 구성이면 새로 생성하지 않고 기존 기록 오픈)
   if (typeof safeGetJSON === 'function') {
     packingHistoryList = safeGetJSON('okbm_packing_history', []);
     if (packingHistoryList.length > 0) {
@@ -138,6 +160,42 @@ function saveCurrentPackingRecord() {
   if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
 
   openPackShareModal(newRecord, allItems, false);
+}
+
+// 🏷️ [지능형 상단 템플릿 칩 컨테이너 탐색 및 자동 렌더링 엔진]
+function findTemplateChipContainer() {
+  var direct = document.querySelector('.share-card-tmpl-chips') || 
+               document.getElementById('shareCardTmplChips') || 
+               document.getElementById('packCardTmplScroll') ||
+               document.querySelector('.tmpl-chips-container') ||
+               document.querySelector('.tmpl-chips-scroll');
+  if (direct) return direct;
+
+  var modal = document.getElementById('packShareModalOverlay');
+  if (!modal) return null;
+
+  var buttons = Array.from(modal.querySelectorAll('button, div'));
+  var matched = buttons.find(function(el) {
+    var txt = el.textContent || '';
+    return (txt.includes('영수증') || txt.includes('보딩패스') || el.classList.contains('tmpl-chip-btn')) && el.children.length <= 1;
+  });
+
+  return matched ? matched.parentElement : null;
+}
+
+function renderTemplateChips() {
+  var chipContainer = findTemplateChipContainer();
+  if (!chipContainer) return;
+
+  var html = TEMPLATE_ORDER.map(function(tId) {
+    var isActive = (Number(tId) === Number(selectedTemplateId));
+    var name = TEMPLATE_NAMES[tId] || ('테마 ' + tId);
+    return '<button type="button" class="tmpl-chip-btn' + (isActive ? ' active' : '') + '" onclick="switchShareCardTemplate(' + tId + ')" data-tmpl="' + tId + '">' +
+      escapeHtml(name) +
+    '</button>';
+  }).join('');
+
+  chipContainer.innerHTML = html;
 }
 
 // 🖼️ 2. 공유 모달 오픈
@@ -191,29 +249,44 @@ function openPackShareModal(record, items, forceStudio) {
   if (modal) modal.style.setProperty('display', 'flex', 'important');
   if (typeof closePackingModal === 'function') closePackingModal();
 
-  selectedTemplateId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
+  var savedTmpl = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
+  selectedTemplateId = TEMPLATE_ORDER.indexOf(savedTmpl) !== -1 ? savedTmpl : TEMPLATE_ORDER[0];
+
+  renderTemplateChips();
   switchShareCardTemplate(selectedTemplateId);
 
   setTimeout(function() { initCardSwipeGesture(); }, 80);
 }
 
-// 🏷️ 3. 템플릿 전환 & 상단 칩 스크롤 연동
+// 🏷️ 3. 템플릿 전환 & 상단 칩/이름 실시간 동기화
 function switchShareCardTemplate(tmplId, isSwipe) {
   var targetId = Number(tmplId);
-  if (targetId < 1) targetId = 20;
-  if (targetId > 20) targetId = 1;
+  if (TEMPLATE_ORDER.indexOf(targetId) === -1) {
+    targetId = TEMPLATE_ORDER[0];
+  }
 
   selectedTemplateId = targetId;
   localStorage.setItem('romantic_selected_template', targetId);
 
-  var chips = document.querySelectorAll('.tmpl-chip-btn');
-  chips.forEach(function(btn, idx) {
-    var isActive = (idx + 1) === selectedTemplateId;
+  var chips = document.querySelectorAll('.tmpl-chip-btn, [data-tmpl]');
+  if (chips.length === 0) {
+    renderTemplateChips();
+    chips = document.querySelectorAll('.tmpl-chip-btn, [data-tmpl]');
+  }
+
+  chips.forEach(function(btn) {
+    var bId = Number(btn.getAttribute('data-tmpl'));
+    var isActive = (bId === selectedTemplateId);
     btn.classList.toggle('active', isActive);
     if (isActive && typeof btn.scrollIntoView === 'function') {
       btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
   });
+
+  var nameDisplay = document.getElementById('currentTmplNameTitle') || document.querySelector('.share-card-tmpl-title');
+  if (nameDisplay) {
+    nameDisplay.textContent = TEMPLATE_NAMES[selectedTemplateId] || '';
+  }
 
   updateShareCardLive();
   if (typeof triggerHaptic === 'function') triggerHaptic(12);
@@ -232,7 +305,7 @@ function updateShareCardLive() {
   container.innerHTML = generateCardMarkup(selectedTemplateId, currentShareRecord, currentShareItems, spotVal, memoVal);
 }
 
-// 🖐️ 5. 카드 좌우 스와이프 제스처 인터랙션 엔진
+// 🖐️ 5. 카드 좌우 스와이프 제스처 인터랙션 엔진 (확정 순서에 따른 이전/다음 순환)
 var cardTouchStartX = 0;
 var cardTouchStartY = 0;
 var cardTouchStartTime = 0;
@@ -285,12 +358,16 @@ function initCardSwipeGesture() {
     var absY = Math.abs(diffY);
     var duration = Date.now() - cardTouchStartTime;
 
+    var curIdx = TEMPLATE_ORDER.indexOf(selectedTemplateId);
+    if (curIdx === -1) curIdx = 0;
+
     if (isCardSwiping && (absX > 30 || (absX > 15 && duration < 250)) && absX > absY) {
       if (diffX < 0) {
         card.style.transform = 'translateX(-40px)';
         card.style.opacity = '0.3';
         setTimeout(function() {
-          switchShareCardTemplate(selectedTemplateId + 1, true);
+          var nextIdx = (curIdx + 1) % TEMPLATE_ORDER.length;
+          switchShareCardTemplate(TEMPLATE_ORDER[nextIdx], true);
           card.style.transform = 'translateX(0px)';
           card.style.opacity = '1';
         }, 70);
@@ -298,7 +375,8 @@ function initCardSwipeGesture() {
         card.style.transform = 'translateX(40px)';
         card.style.opacity = '0.3';
         setTimeout(function() {
-          switchShareCardTemplate(selectedTemplateId - 1, true);
+          var prevIdx = (curIdx - 1 + TEMPLATE_ORDER.length) % TEMPLATE_ORDER.length;
+          switchShareCardTemplate(TEMPLATE_ORDER[prevIdx], true);
           card.style.transform = 'translateX(0px)';
           card.style.opacity = '1';
         }, 70);
@@ -337,7 +415,7 @@ function initCardSwipeGesture() {
   });
 }
 
-// 🎨 6. [총 20대 전체 템플릿 마크업 생성 엔진]
+// 🎨 6. [총 20대 전체 템플릿 마크업 생성 엔진 - 검정 아티팩트 방지 & 밀착 테두리 마감]
 function generateCardMarkup(tmplId, record, items, spot, memo) {
   var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
   var nick = profile ? profile.nickname : '낭만탐험가';
@@ -359,7 +437,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
   var logoSage = SVG_ICONS.brandLogo('#15803d', '#86efac');
   var logoTeal = SVG_ICONS.brandLogo('#0d9488', '#5eead4');
 
-  var baseStyle = 'width:100%; aspect-ratio:3/4; max-width:330px; margin:0 auto; box-sizing:border-box; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,0.9); display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; position:relative; touch-action:pan-y;';
+  // 🛡️ 캡처 시 외곽 검은 잔여물(box-shadow 오염) 제거 및 완벽한 외곽 클리핑 스타일
+  var baseStyle = 'width:100%; aspect-ratio:3/4; max-width:330px; margin:0 auto; box-sizing:border-box; border-radius:14px; box-shadow:none; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; position:relative; touch-action:pan-y;';
 
   var makePledge = function(color, bg, border, sub) {
     return '<div style="margin-top:4px; padding:4px 6px; border:1px dashed ' + border + '; background:' + bg + '; border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; text-align:center;">' +
@@ -371,8 +450,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
   };
 
   switch (Number(tmplId)) {
-    case 1: // 🧾 01. 영수증
-      return '<div style="' + baseStyle + ' background:#f4f1ea; color:#1c1917; padding:12px 11px; font-family:\'JetBrains Mono\', monospace; border-top:3px dashed #78716c; border-bottom:3px dashed #78716c;">' +
+    case 1: // 🧾 영수증
+      return '<div style="' + baseStyle + ' background:#f4f1ea; color:#1c1917; padding:12px 11px; font-family:\'JetBrains Mono\', monospace; border:1.5px solid #78716c; border-top:3px dashed #78716c; border-bottom:3px dashed #78716c;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="text-align:center; border-bottom:1.2px dashed #78716c; padding-bottom:3px;">' +
             '<div style="font-size:0.85rem; font-weight:900; letter-spacing:1px;">* ROMANTIC ROUTE POS *</div>' +
@@ -395,7 +474,7 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '<span style="font-weight:900; font-size:0.70rem;">TOTAL WEIGHT</span>' +
             '<span style="font-weight:900; font-size:1.38rem; font-family:\'Space Grotesk\', sans-serif;">' + weight + ' KG</span>' +
           '</div>' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; margin-top:3px; background:#e7e2d7; padding:3px 5px; border-radius:4px;">' +
+          '<div style="display:flex; justify-content:space-between; align-items:center; margin-top:3px; background:#e7e2d7; padding:3px 5px; border-radius:4px; border:1px solid #d6cfc4;">' +
             '<div style="height:15px; width:75px; background:repeating-linear-gradient(90deg, #000 0px, #000 2px, transparent 2px, transparent 4px, #000 4px, #000 7px, transparent 7px, transparent 8px);"></div>' +
             '<div style="border:1.2px solid #1e3a8a; color:#1e3a8a; padding:2px 5px; border-radius:3px; font-size:0.55rem; font-weight:900;">' +
               '★ [' + escapeHtml(nick) + ']님은 LNT를 준수합니다 ★' +
@@ -404,19 +483,19 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 2: // 🎫 02. 보딩패스
-      return '<div style="' + baseStyle + ' background:#0f172a; border:1px solid #334155; padding:12px 11px; font-family:\'Space Grotesk\', sans-serif; color:#ffffff;">' +
+    case 2: // 🎫 보딩패스
+      return '<div style="' + baseStyle + ' background:#0f172a; border:1.5px solid #334155; padding:12px 11px; font-family:\'Space Grotesk\', sans-serif; color:#ffffff;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.2px dashed #38bdf8; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:4px;">' + logoWhite + '<span style="font-size:0.75rem; font-weight:900; letter-spacing:1px;">ROMANTIC AIRWAYS</span></div>' +
             '<span style="background:#0284c7; color:#fff; font-size:0.46rem; font-weight:900; padding:1px 5px; border-radius:3px;">FIRST CLASS</span>' +
           '</div>' +
-          '<div style="display:grid; grid-template-columns:1fr auto 1fr; gap:4px; align-items:center; background:#1e293b; border-radius:5px; padding:4px 7px;">' +
+          '<div style="display:grid; grid-template-columns:1fr auto 1fr; gap:4px; align-items:center; background:#1e293b; border-radius:5px; padding:4px 7px; border:1px solid #334155;">' +
             '<div><small style="font-size:0.40rem; color:#94a3b8; display:block;">DEPARTURE</small><strong style="font-size:0.80rem; color:#fff;">SEL</strong><small style="font-size:0.42rem; color:#cbd5e1; display:block;">CITY</small></div>' +
             '<div style="text-align:center; color:#38bdf8;"><div style="font-size:0.62rem;">✈ RR-832</div><small style="font-size:0.40rem; color:#64748b;">' + escapeHtml(dateStr) + '</small></div>' +
             '<div style="text-align:right;"><small style="font-size:0.40rem; color:#94a3b8; display:block;">DESTINATION</small><strong style="font-size:0.80rem; color:#34d399;">SZR</strong><small style="font-size:0.42rem; color:#34d399; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(targetSpot) + '</small></div>' +
           '</div>' +
-          '<div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:2px; background:#1e293b; padding:2px 5px; border-radius:3px; font-size:0.46rem; color:#94a3b8;">' +
+          '<div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:2px; background:#1e293b; padding:2px 5px; border-radius:3px; font-size:0.46rem; color:#94a3b8; border:1px solid #334155;">' +
             '<div>PAX: <strong style="color:#fff;">' + escapeHtml(nick) + '</strong></div>' +
             '<div>GATE: <strong style="color:#38bdf8;">LNT-01</strong></div>' +
             '<div style="text-align:right;">SEAT: <strong style="color:#34d399;">01A</strong></div>' +
@@ -433,14 +512,14 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '<span style="font-size:0.56rem; color:#94a3b8;">BAGGAGE WEIGHT</span>' +
             '<span style="font-size:1.35rem; font-weight:900; color:#34d399;">' + weight + ' KG</span>' +
           '</div>' +
-          '<div style="font-size:0.55rem; color:#38bdf8; text-align:center; font-weight:900; background:#1e293b; padding:3px; border-radius:3px; margin-top:2px;">' +
+          '<div style="font-size:0.55rem; color:#38bdf8; text-align:center; font-weight:900; background:#1e293b; border:1px solid #334155; padding:3px; border-radius:3px; margin-top:2px;">' +
             '✈ [' + escapeHtml(nick) + ']님은 LNT를 준수합니다' +
           '</div>' +
         '</div>' +
       '</div>';
 
-    case 3: // 📮 03. 에어메일
-      return '<div style="' + baseStyle + ' background:#fcfbf7; color:#1e293b; padding:12px 10px; font-family:\'Noto Serif KR\', serif; border:5px solid transparent; border-image: repeating-linear-gradient(135deg, #1e3a8a 0, #1e3a8a 10px, transparent 10px, transparent 15px, #b91c1c 15px, #b91c1c 25px, transparent 25px, transparent 30px) 10;">' +
+    case 3: // 📮 에어메일
+      return '<div style="' + baseStyle + ' background:#fcfbf7; color:#1e293b; padding:12px 10px; font-family:\'Noto Serif KR\', serif; border:4px solid #1e3a8a;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1.2px solid #cbd5e1; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:4px;">' +
@@ -482,8 +561,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 4: // 🏛️ 04. 뮤지엄
-      return '<div style="' + baseStyle + ' background:#f4f6f4; color:#1c1917; padding:12px 11px; font-family:\'Pretendard Variable\', sans-serif; border:1px solid #d1d5db;">' +
+    case 4: // 🏛️ 뮤지엄
+      return '<div style="' + baseStyle + ' background:#f4f6f4; color:#1c1917; padding:12px 11px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #1c1917;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #1c1917; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:4px;">' +
@@ -501,7 +580,7 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
               '“' + escapeHtml(targetMemo) + '”' +
             '</div>' +
           '</div>' +
-          '<div style="background:#ffffff; border:1px solid #e5e7eb; border-radius:5px; padding:4px 6px; flex:1; overflow:hidden;">' +
+          '<div style="background:#ffffff; border:1px solid #d1d5db; border-radius:5px; padding:4px 6px; flex:1; overflow:hidden;">' +
             renderAdaptiveGearList(list, { nameColor: '#27272a', wtColor: '#059669', bullet: '■ ' }) +
           '</div>' +
         '</div>' +
@@ -516,8 +595,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 5: // ⚡ 05. CAD 도면
-      return '<div style="' + baseStyle + ' background:#0a0d14; border:1px solid #1e293b; padding:12px 11px; font-family:\'JetBrains Mono\', monospace; color:#f8fafc; position:relative;">' +
+    case 5: // ⚡ CAD 도면
+      return '<div style="' + baseStyle + ' background:#0a0d14; border:1.5px solid #d4ff00; padding:12px 11px; font-family:\'JetBrains Mono\', monospace; color:#f8fafc; position:relative;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1.2px solid #334155; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:4px;">' +
@@ -548,8 +627,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 6: // 📸 06. 코닥 슬라이드
-      return '<div style="' + baseStyle + ' background:#f5f4ef; color:#18181b; padding:9px 8px 10px 8px; font-family:\'Pretendard Variable\', sans-serif; border:1px solid #d4d4d8;">' +
+    case 6: // 📸 코닥 슬라이드
+      return '<div style="' + baseStyle + ' background:#f5f4ef; color:#18181b; padding:9px 8px 10px 8px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #a1a1aa;">' +
         '<div style="background:#030303; color:#ffffff; padding:5px 6px 4px 6px; border-radius:5px; border:1.2px solid #27272a; flex:1; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden;">' +
           '<div>' +
             '<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.40rem; color:#a1a1aa; font-family:\'JetBrains Mono\', monospace; border-bottom:1px solid #27272a; padding-bottom:1px; margin-bottom:2px;">' +
@@ -577,8 +656,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 7: // 📖 07. 매거진
-      return '<div style="' + baseStyle + ' background:#f4f1ea; color:#1a1918; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif;">' +
+    case 7: // 📖 매거진
+      return '<div style="' + baseStyle + ' background:#f4f1ea; color:#1a1918; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #1a1918;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #1a1918; padding-bottom:2px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
@@ -608,8 +687,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 8: // ☁️ 08. 솜사탕
-      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #fff0f5 0%, #f0f9ff 100%); color:#334155; padding:11px 10px; font-family:\'Gaegu\', cursive;">' +
+    case 8: // ☁️ 솜사탕
+      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #fff0f5 0%, #f0f9ff 100%); color:#334155; padding:11px 10px; font-family:\'Gaegu\', cursive; border:1.5px solid #fbcfe8;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px dashed #f472b6; padding-bottom:2px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
@@ -635,8 +714,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 9: // 🧈 09. 버터
-      return '<div style="' + baseStyle + ' background:#fffdf5; color:#292524; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif;">' +
+    case 9: // 🧈 버터
+      return '<div style="' + baseStyle + ' background:#fffdf5; color:#292524; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #fed7aa;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f5eedc; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
@@ -662,8 +741,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 10: // 🌿 10. 세이지
-      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #f0fdf4 0%, #e6f4ea 100%); color:#14532d; padding:11px 10px; font-family:\'Playfair Display\', serif;">' +
+    case 10: // 🌿 세이지
+      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #f0fdf4 0%, #e6f4ea 100%); color:#14532d; padding:11px 10px; font-family:\'Playfair Display\', serif; border:1.5px solid #86efac;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.2px solid #bbf7d0; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
@@ -686,8 +765,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 11: // 💖 11. 블러썸
-      return '<div style="' + baseStyle + ' background:#ffffff; color:#1c1917; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.2px solid #fecdd3;">' +
+    case 11: // 💖 블러썸
+      return '<div style="' + baseStyle + ' background:#ffffff; color:#1c1917; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #fda4af;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ffe4e6; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
@@ -713,8 +792,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 12: // 🌸 12. 라벤더
-      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #faf5ff 0%, #f3e8ff 100%); color:#581c87; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif;">' +
+    case 12: // 🌸 라벤더
+      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #faf5ff 0%, #f3e8ff 100%); color:#581c87; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #d8b4fe;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.2px solid #e9d5ff; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
@@ -737,8 +816,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 13: // ☁️ 13. 스카이
-      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%); color:#0c4a6e; padding:11px 10px; font-family:\'Space Grotesk\', sans-serif;">' +
+    case 13: // ☁️ 스카이
+      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%); color:#0c4a6e; padding:11px 10px; font-family:\'Space Grotesk\', sans-serif; border:1.5px solid #7dd3fc;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.2px solid #bae6fd; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
@@ -761,8 +840,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 14: // 🏷️ 14. 다꾸
-      return '<div style="' + baseStyle + ' background:#faf7f2; color:#292524; padding:11px 10px; font-family:\'Gaegu\', cursive;">' +
+    case 14: // 🏷️ 다꾸
+      return '<div style="' + baseStyle + ' background:#faf7f2; color:#292524; padding:11px 10px; font-family:\'Gaegu\', cursive; border:1.5px solid #fed7aa;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px dashed #d6cfc4; padding-bottom:2px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
@@ -787,8 +866,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 15: // 🍑 15. 살구노을
-      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%); color:#431407; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif;">' +
+    case 15: // 🍑 살구노을
+      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%); color:#431407; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #fdba74;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.2px solid #fed7aa; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
@@ -811,8 +890,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 16: // 🌙 16. 핑크문
-      return '<div style="' + baseStyle + ' background:radial-gradient(circle at 80% 20%, #2e0825 0%, #0d020f 70%, #000000 100%); color:#ffffff; padding:11px 10px; font-family:\'Cinzel\', serif; border:1.2px solid rgba(244,114,182,0.4);">' +
+    case 16: // 🌙 핑크문
+      return '<div style="' + baseStyle + ' background:radial-gradient(circle at 80% 20%, #2e0825 0%, #0d020f 70%, #000000 100%); color:#ffffff; padding:11px 10px; font-family:\'Cinzel\', serif; border:1.5px solid rgba(244,114,182,0.6);">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(244,114,182,0.25); padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
@@ -835,8 +914,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 17: // 🍦 17. 민트
-      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%); color:#064e3b; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif;">' +
+    case 17: // 🍦 민트
+      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%); color:#064e3b; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #6ee7b7;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.2px solid #a7f3d0; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
@@ -859,8 +938,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 18: // 🍋 18. 레몬
-      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #fefce8 0%, #fef9c3 100%); color:#713f12; padding:11px 10px; font-family:\'Gaegu\', cursive;">' +
+    case 18: // 🍋 레몬
+      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #fefce8 0%, #fef9c3 100%); color:#713f12; padding:11px 10px; font-family:\'Gaegu\', cursive; border:1.5px solid #fde047;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px dashed #fde047; padding-bottom:2px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
@@ -885,8 +964,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 19: // ✨ 19. 럭셔리
-      return '<div style="' + baseStyle + ' background:#121214; color:#f4f4f5; padding:11px 10px; font-family:\'Noto Serif KR\', serif; border:1px solid #27272a;">' +
+    case 19: // ✨ 럭셔리
+      return '<div style="' + baseStyle + ' background:#121214; color:#f4f4f5; padding:11px 10px; font-family:\'Noto Serif KR\', serif; border:1.5px solid #eab308;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #27272a; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
@@ -913,9 +992,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 20: // 🎋 20. 젠 (Zen)
+    case 20: // 🎋 젠 (Zen)
     default:
-      return '<div style="' + baseStyle + ' background:#18181b; padding:11px 10px; border:1px solid #27272a; display:flex; flex-direction:row; gap:6px; font-family:\'Noto Serif KR\', serif; color:#ffffff;">' +
+      return '<div style="' + baseStyle + ' background:#18181b; padding:11px 10px; border:1.5px solid #3f3f46; display:flex; flex-direction:row; gap:6px; font-family:\'Noto Serif KR\', serif; color:#ffffff;">' +
         '<div style="writing-mode:vertical-rl; font-size:0.46rem; color:#71717a; letter-spacing:1px; border-left:1px solid #27272a; padding-left:2px; flex-shrink:0;">' +
           'LNT 머문 자리는 처음처럼 — 흔적 없는 클린 백패킹' +
         '</div>' +
