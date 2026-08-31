@@ -1601,6 +1601,190 @@
       setTimeout(function() { toast.remove(); }, duration || 2200);
     }
 
+    // 🎒 [핵심 엔진 최상단 선언: 10대 슬롯 렌더링 & 모달 열기 보장]
+    window.renderCategorySlots = function() {
+      const container = document.getElementById('categorySlotsContainer');
+      if (!container) return;
+
+      let totalGrams = 0, totalItemCount = 0;
+      const cats = (typeof CATEGORIES !== 'undefined' && Array.isArray(CATEGORIES)) ? CATEGORIES.slice(0, 8) : [
+        { id: 'shelter', title: '텐트 · 타프', icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#38bdf8;"><path d="M12 2L2 20h20L12 2z"/></svg>' },
+        { id: 'sleep', title: '침낭 · 매트', icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#34d399;"><path d="M2 17h20M2 13h20M4 9h16a2 2 0 0 1 2 2v6H2v-6a2 2 0 0 1 2-2z"/></svg>' },
+        { id: 'pack', title: '배낭 (Pack)', icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#a78bfa;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>' },
+        { id: 'food', title: '식수 · 식량 · 간식', icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#10b981;"><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/></svg>' },
+        { id: 'kitchen', title: '취사 · 식기 · 보온병', icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#f59e0b;"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg>' },
+        { id: 'wear', title: '보온의류 · 방한', icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#fb7185;"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>' },
+        { id: 'electronics', title: '랜턴 · 안전 · 전자기기', icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#fde047;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' },
+        { id: 'camp', title: '테이블 · 체어 · 소품', icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#38bdf8;"><rect x="4" y="10" width="16" height="4" rx="1"/><path d="M6 14v6M18 14v6M8 10V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4"/></svg>' }
+      ];
+
+      const gearMap = window.selectedGearMap || {};
+
+      let renderedHtml = cats.map(cat => {
+        const items = gearMap[cat.id] || [];
+        const catGrams = items.reduce((sum, it) => sum + Number(it.weight || 0), 0);
+        totalGrams += catGrams;
+        totalItemCount += items.length;
+
+        let gearsListHtml = '<span style="color:#94a3b8; font-size:0.56rem; font-weight:700; background:rgba(0,0,0,0.6); padding:1px 4px; border-radius:3px;">미선택 +</span>';
+        if (items.length > 0) {
+          gearsListHtml = items.map((it, idx) => {
+            const cleanName = (it.name || it.itemName || '장비').replace(/\s*\(.*\)/, '');
+            return `<span class="mini-gear-tag" onclick="event.stopPropagation(); window.removeGearFromCategory('${cat.id}', ${idx})" title="${escapeHtml(cleanName)} (${it.weight}g) - 클릭 시 삭제">${escapeHtml(cleanName)} ✕</span>`;
+          }).join('');
+        }
+
+        const vecSvg = (typeof FINAL_LINE_VECTORS !== 'undefined' && FINAL_LINE_VECTORS[cat.id]) ? FINAL_LINE_VECTORS[cat.id] : '';
+
+        return `
+          <div class="category-slot-card" onclick="window.openGearPresetModal('${cat.id}')">
+            <div class="slot-bg-watermark-vector">${vecSvg}</div>
+            <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fff; text-shadow:0 1px 3px #000;">
+                  <span>${cat.icon}</span>
+                  <span>${cat.title}</span>
+                </div>
+                <div style="font-size:0.68rem; color:#34d399; font-family:'JetBrains Mono', monospace; font-weight:900; background:rgba(0,0,0,0.7); padding:1px 4px; border-radius:3px;">
+                  ${(catGrams/1000).toFixed(2)}k
+                </div>
+              </div>
+              <div class="slot-gears-wrap">
+                ${gearsListHtml}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const slot9Vec = (typeof FINAL_LINE_VECTORS !== 'undefined' && FINAL_LINE_VECTORS.slot9) ? FINAL_LINE_VECTORS.slot9 : '';
+      const slot10Vec = (typeof FINAL_LINE_VECTORS !== 'undefined' && FINAL_LINE_VECTORS.slot10) ? FINAL_LINE_VECTORS.slot10 : '';
+
+      renderedHtml += `
+        <div class="category-slot-card" style="border-color:#fb7185; background:rgba(244,63,94,0.04);" onclick="showToast('🔥 요즘 유행하는 백패킹 인기 핫템 랭킹 준비 중입니다!', 'info')">
+          <div class="slot-bg-watermark-vector">${slot9Vec}</div>
+          <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+              <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fb7185; text-shadow:0 1px 3px #000;">
+                <span>🔥</span>
+                <span>요즘 유행하는 장비</span>
+              </div>
+              <span style="font-size:0.56rem; color:#fff; font-weight:900; background:#f43f5e; padding:1px 4px; border-radius:3px;">HOT</span>
+            </div>
+            <div class="slot-gears-wrap">
+              <span style="color:#cbd5e1; font-size:0.56rem; font-weight:800; background:rgba(0,0,0,0.65); padding:1px 4px; border-radius:3px;">인기 장비 랭킹 ➔</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      renderedHtml += `
+        <div class="category-slot-card" style="border-color:#fde047; background:rgba(253,224,71,0.04);" onclick="showToast('🎁 백패커 전용 특가 및 제휴 혜택 공간입니다!', 'info')">
+          <div class="slot-bg-watermark-vector">${slot10Vec}</div>
+          <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+              <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fde047; text-shadow:0 1px 3px #000;">
+                <span>🎁</span>
+                <span>백패커 특가 혜택</span>
+              </div>
+              <span style="font-size:0.56rem; color:#000; font-weight:900; background:#fde047; padding:1px 4px; border-radius:3px;">SALE</span>
+            </div>
+            <div class="slot-gears-wrap">
+              <span style="color:#cbd5e1; font-size:0.56rem; font-weight:800; background:rgba(0,0,0,0.65); padding:1px 4px; border-radius:3px;">공구/할인 이벤트 ➔</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = renderedHtml;
+
+      const totalKg = (totalGrams / 1000).toFixed(2);
+      const mainKg = document.getElementById('mainBannerKgText');
+      const mainCount = document.getElementById('mainBannerItemCount');
+      const mainBadge = document.getElementById('mainBannerBadge');
+      if (mainKg) mainKg.innerText = `${totalKg} kg`;
+      if (mainCount) mainCount.innerText = `장비 ${totalItemCount}개 세팅됨`;
+
+      const totalKgText = document.getElementById('totalWeightKgText');
+      const totalGramsText = document.getElementById('totalWeightGramsText');
+      if (totalKgText) totalKgText.innerText = `${totalKg} kg`;
+      if (totalGramsText) totalGramsText.innerText = `${totalGrams.toLocaleString()} g (${totalItemCount}개)`;
+
+      const badge = document.getElementById('bplStatusBadge');
+      const badgeText = document.getElementById('bplStatusText');
+      const gauge = document.getElementById('weightGaugeFill');
+
+      let badgeClass = 'weight-bpl-badge bpl-ul';
+      let badgeLabel = 'BPL 초경량 (UL ≤6kg)';
+
+      if (totalGrams >= 14500) {
+        badgeClass = 'weight-bpl-badge bpl-heavy';
+        badgeLabel = '헤비 패킹 (15kg+)';
+      } else if (totalGrams > 6500) {
+        badgeClass = 'weight-bpl-badge bpl-standard';
+        badgeLabel = '보통 스탠다드 (7~14kg)';
+      }
+      if (badgeText) badgeText.innerText = badgeLabel;
+      if (mainBadge) {
+        mainBadge.className = badgeClass;
+        mainBadge.innerText = badgeLabel;
+      }
+      if (gauge) {
+        const gaugePct = Math.min(100, Math.round((totalGrams / 14000) * 100));
+        gauge.style.width = `${gaugePct}%`;
+      }
+    };
+
+    window.openPackingModal = function() {
+      const modal = document.getElementById('packingCalculatorModal');
+      if (modal) {
+        document.body.style.overflow = 'hidden';
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('z-index', '1000', 'important');
+        window.renderCategorySlots();
+      }
+      triggerHaptic(12);
+    };
+
+    window.closePackingModal = function() { 
+      const modal = document.getElementById('packingCalculatorModal'); 
+      if (modal) {
+        document.body.style.overflow = '';
+        modal.style.setProperty('display', 'none', 'important'); 
+      }
+    };
+
+    window.removeGearFromCategory = function(categoryId, itemIndex) {
+      if (window.selectedGearMap && window.selectedGearMap[categoryId]) {
+        window.selectedGearMap[categoryId].splice(itemIndex, 1);
+        localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
+        window.renderCategorySlots();
+        triggerHaptic(10);
+        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+      }
+    };
+
+    window.openGearPresetModal = function(categoryId) {
+      window.currentOpeningCategoryId = categoryId;
+      const category = (typeof CATEGORIES !== 'undefined') ? CATEGORIES.find(c => c.id === categoryId) : null;
+      const titleEl = document.getElementById('presetModalCategoryTitle');
+      if (titleEl) titleEl.innerText = category ? `${category.title} 장비 선택 & 등록` : '장비 선택 & 등록';
+
+      const searchInput = document.getElementById('gearSearchFixedInput');
+      const clearBtn = document.getElementById('btnGearSearchClear');
+      if (searchInput) searchInput.value = '';
+      if (clearBtn) clearBtn.style.display = 'none';
+
+      if (typeof renderPresetGearList === 'function') renderPresetGearList('');
+
+      const modal = document.getElementById('gearPresetModal');
+      if (modal) {
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('z-index', '9999999', 'important');
+      }
+      triggerHaptic(10);
+    };
+
     // 🎨 [10대 슬롯 라인아트 벡터 SVG - 최상단 우선 선언]
     var FINAL_LINE_VECTORS = {
       shelter: '<svg viewBox="0 0 48 48" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 38C6 20 14 8 24 8s18 12 18 30H6z"/><path d="M14 38c0-12 4-20 10-20s10 8 10 20M6 38h36"/></svg>',
@@ -1837,157 +2021,15 @@
     // 🎨 확정 10대 라인아트 벡터 SVG
      
 
-    // ⭐ 장비 즐겨찾기(내 장비) 토글
-    function toggleFavoriteGear(gearName, e) {
-      if (e) { e.preventDefault(); e.stopPropagation(); }
-
-      if (!isUserLoggedIn()) {
-        triggerHaptic(12);
-        showToast('⭐ 내 장비 찜하기는 로그인 후 이용 가능합니다.', 'warn', 2200);
-        openLoginModal();
-        return;
-      }
-
-      if (favoriteGearSet.has(gearName)) {
-        favoriteGearSet.delete(gearName);
-        showToast(`[${gearName}] 내 장비 해제`, 'info');
-      } else {
-        favoriteGearSet.add(gearName);
-        showToast(`⭐ [${gearName}] 내 장비로 체크됨 (맨 위 고정)`, 'success');
-      }
-
-      localStorage.setItem('okbm_favorite_gears', JSON.stringify([...favoriteGearSet]));
-      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-      triggerHaptic(15);
-
-      const searchInput = document.getElementById('gearSearchFixedInput');
-      renderPresetGearList(searchInput ? searchInput.value : '');
-    }
-
-    // 🎒 10대 카테고리 슬롯 렌더링
-    function renderCategorySlots() {
-      const container = document.getElementById('categorySlotsContainer');
-      if (!container) return;
-
-      let totalGrams = 0, totalItemCount = 0;
-
-      let renderedHtml = CATEGORIES.slice(0, 8).map(cat => {
-        const items = selectedGearMap[cat.id] || [];
-        const catGrams = items.reduce((sum, it) => sum + Number(it.weight || 0), 0);
-        totalGrams += catGrams;
-        totalItemCount += items.length;
-
-        let gearsListHtml = '<span style="color:#94a3b8; font-size:0.56rem; font-weight:700; background:rgba(0,0,0,0.6); padding:1px 4px; border-radius:3px;">미선택 +</span>';
-        if (items.length > 0) {
-          gearsListHtml = items.map((it, idx) => {
-            const cleanName = it.name.replace(/\s*\(.*\)/, '');
-            return `<span class="mini-gear-tag" onclick="event.stopPropagation(); removeGearFromCategory('${cat.id}', ${idx})" title="${escapeHtml(it.name)} (${it.weight}g) - 클릭 시 삭제">${escapeHtml(cleanName)} ✕</span>`;
-          }).join('');
-        }
-
-        const vecSvg = FINAL_LINE_VECTORS[cat.id] || '';
-
-        return `
-          <div class="category-slot-card" onclick="openGearPresetModal('${cat.id}')">
-            <div class="slot-bg-watermark-vector">${vecSvg}</div>
-            <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fff; text-shadow:0 1px 3px #000;">
-                  <span>${cat.icon}</span>
-                  <span>${cat.title}</span>
-                </div>
-                <div style="font-size:0.68rem; color:#34d399; font-family:'JetBrains Mono', monospace; font-weight:900; background:rgba(0,0,0,0.7); padding:1px 4px; border-radius:3px;">
-                  ${(catGrams/1000).toFixed(2)}k
-                </div>
-              </div>
-              <div class="slot-gears-wrap">
-                ${gearsListHtml}
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      renderedHtml += `
-        <div class="category-slot-card" style="border-color:#fb7185; background:rgba(244,63,94,0.04);" onclick="showToast('🔥 요즘 유행하는 백패킹 인기 핫템 랭킹 준비 중입니다!', 'info')">
-          <div class="slot-bg-watermark-vector">${FINAL_LINE_VECTORS.slot9}</div>
-          <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-              <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fb7185; text-shadow:0 1px 3px #000;">
-                <span>🔥</span>
-                <span>요즘 유행하는 장비</span>
-              </div>
-              <span style="font-size:0.56rem; color:#fff; font-weight:900; background:#f43f5e; padding:1px 4px; border-radius:3px;">HOT</span>
-            </div>
-            <div class="slot-gears-wrap">
-              <span style="color:#cbd5e1; font-size:0.56rem; font-weight:800; background:rgba(0,0,0,0.65); padding:1px 4px; border-radius:3px;">인기 장비 랭킹 ➔</span>
-            </div>
-          </div>
-        </div>
-      `;
-
-      renderedHtml += `
-        <div class="category-slot-card" style="border-color:#fde047; background:rgba(253,224,71,0.04);" onclick="showToast('🎁 백패커 전용 특가 및 제휴 혜택 공간입니다!', 'info')">
-          <div class="slot-bg-watermark-vector">${FINAL_LINE_VECTORS.slot10}</div>
-          <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-              <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fde047; text-shadow:0 1px 3px #000;">
-                <span>🎁</span>
-                <span>백패커 특가 혜택</span>
-              </div>
-              <span style="font-size:0.56rem; color:#000; font-weight:900; background:#fde047; padding:1px 4px; border-radius:3px;">SALE</span>
-            </div>
-            <div class="slot-gears-wrap">
-              <span style="color:#cbd5e1; font-size:0.56rem; font-weight:800; background:rgba(0,0,0,0.65); padding:1px 4px; border-radius:3px;">공구/할인 이벤트 ➔</span>
-            </div>
-          </div>
-        </div>
-      `;
-
-      container.innerHTML = renderedHtml;
-
-      const totalKg = (totalGrams / 1000).toFixed(2);
-      const mainKg = document.getElementById('mainBannerKgText');
-      const mainCount = document.getElementById('mainBannerItemCount');
-      const mainBadge = document.getElementById('mainBannerBadge');
-      if (mainKg) mainKg.innerText = `${totalKg} kg`;
-      if (mainCount) mainCount.innerText = `장비 ${totalItemCount}개 세팅됨`;
-
-      const totalKgText = document.getElementById('totalWeightKgText');
-      const totalGramsText = document.getElementById('totalWeightGramsText');
-      if (totalKgText) totalKgText.innerText = `${totalKg} kg`;
-      if (totalGramsText) totalGramsText.innerText = `${totalGrams.toLocaleString()} g (${totalItemCount}개)`;
-
-      const badge = document.getElementById('bplStatusBadge');
-      const badgeText = document.getElementById('bplStatusText');
-      const gauge = document.getElementById('weightGaugeFill');
-
-      let badgeClass = 'weight-bpl-badge bpl-ul';
-      let badgeLabel = 'BPL 초경량 (UL ≤6kg)';
-
-      if (totalGrams >= 14500) {
-        badgeClass = 'weight-bpl-badge bpl-heavy';
-        badgeLabel = '헤비 패킹 (15kg+)';
-      } else if (totalGrams > 6500) {
-        badgeClass = 'weight-bpl-badge bpl-standard';
-        badgeLabel = '보통 스탠다드 (7~14kg)';
-      }
-      if (badgeText) badgeText.innerText = badgeLabel;
-      if (mainBadge) {
-        mainBadge.className = badgeClass;
-        mainBadge.innerText = badgeLabel;
-      }
-      if (gauge) {
-        const gaugePct = Math.min(100, Math.round((totalGrams / 14000) * 100));
-        gauge.style.width = `${gaugePct}%`;
-      }
-    }
-
-    function openGearPresetModal(categoryId) {
+    // 🛡️ [장비 선택 & 등록 풀스크린 모달 z-index 및 렌더링 최상단 보장]
+    window.openGearPresetModal = function(categoryId) {
       currentOpeningCategoryId = categoryId;
       const category = CATEGORIES.find(c => c.id === categoryId);
       if (!category) return;
-      document.getElementById('presetModalCategoryTitle').innerText = `${category.title} 장비 선택`;
+      
+      const titleEl = document.getElementById('presetModalCategoryTitle');
+      if (titleEl) titleEl.innerText = `${category.title} 장비 선택 & 등록`;
+      
       const searchInput = document.getElementById('gearSearchFixedInput');
       const clearBtn = document.getElementById('btnGearSearchClear');
       if (searchInput) searchInput.value = '';
@@ -1995,14 +2037,24 @@
 
       const nameInput = document.getElementById('customInputGearName');
       const weightInput = document.getElementById('customInputGearWeight');
-      if (nameInput) nameInput.onkeydown = (e) => { if (e.key === 'Enter') addCustomGearToCurrentCategory(); };
-      if (weightInput) weightInput.onkeydown = (e) => { if (e.key === 'Enter') addCustomGearToCurrentCategory(); };
+      if (nameInput) {
+        nameInput.value = '';
+        nameInput.onkeydown = (e) => { if (e.key === 'Enter') addCustomGearToCurrentCategory(); };
+      }
+      if (weightInput) {
+        weightInput.value = '';
+        weightInput.onkeydown = (e) => { if (e.key === 'Enter') addCustomGearToCurrentCategory(); };
+      }
 
       renderPresetGearList('');
+      
       const modal = document.getElementById('gearPresetModal');
-      if (modal) modal.style.setProperty('display', 'flex', 'important');
+      if (modal) {
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('z-index', '9999999', 'important');
+      }
       triggerHaptic(10);
-    }
+    };
 
     function renderPresetGearList(query = '') {
       const category = CATEGORIES.find(c => c.id === currentOpeningCategoryId);
@@ -2475,7 +2527,7 @@
               '</span>' +
             '</div>' +
           '</div>' +
-        '</div>' +
+        
       '</div>';
     }
 
@@ -2489,518 +2541,1054 @@
       var memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : '비화식으로 즐기는 조용한 하룻밤';
       container.innerHTML = generateStudioPhotoCardMarkup(currentShareRecord, currentShareItems, spotVal, memoVal, currentSharePhoto, currentPhotoTextColor, currentCardRatio, currentCustomRatioVal, currentPhotoScaleVal);
     }
-    function handleShareCardPhotoUpload(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        const img = new Image();
-        img.onload = function() {
-          const canvas = document.createElement('canvas');
-          const MAX_SIZE = 1440;
-          let width = img.width, height = img.height;
-          if (width > height) { if (width > MAX_SIZE) { height = Math.round(height * (MAX_SIZE / width)); width = MAX_SIZE; } }
-          else { if (height > MAX_SIZE) { width = Math.round(width * (MAX_SIZE / height)); height = MAX_SIZE; } }
-          canvas.width = width; canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          currentSharePhoto = canvas.toDataURL('image/jpeg', 0.88);
-          openPhotoStudio();
+  // 🗂️ [낭만보관함] 원본 templates.js 1:1 직결 & 충돌 방지 완결형 파이프라인
+    window.currentCardIndex = 0;
+    window.activeBasecampTab = 'history'; // 'history' | 'record' | 'memo'
+    window.archiveFilter = 'all'; // 'all' | 'visited' | 'fav'
+    window.currentViewMode = 'card'; // 'card' | 'list'
+    window.selectedRecordIds = new Set();
+    window.activeSelectedDateKey = '';
+    window.__memoryStore = window.__memoryStore || {};
+
+    // 🛡️ 스토리지 접근 차단(SecurityError) 방어 통합 엔진
+    function safeGetStorage(key, defaultVal) {
+      try {
+        var item = localStorage.getItem(key);
+        if (item !== null) return JSON.parse(item);
+      } catch (e) {}
+      if (window.__memoryStore[key] !== undefined) return window.__memoryStore[key];
+      return defaultVal;
+    }
+
+    function safeSetStorage(key, value) {
+      try {
+        localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+      } catch (e) {}
+      window.__memoryStore[key] = (typeof value === 'string' ? JSON.parse(value) : value);
+    }
+
+    window.fieldDiaries = safeGetStorage('okbm_field_diaries', {});
+
+    // 🎨 메인 인덱스 통일형 정품 SVG 아이콘 시스템
+    var BASECAMP_ICONS = {
+      pin: '<svg viewBox="0 0 24 24" style="width:12px; height:12px; flex-shrink:0; vertical-align:-1px;" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+      compass: '<svg viewBox="0 0 24 24" style="width:28px; height:28px; color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor"/></svg>',
+      note: '<svg viewBox="0 0 24 24" style="width:12px; height:12px; color:#38bdf8; vertical-align:-1.5px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+      trash: '<svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+      save: '<svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>',
+      flag: '<svg viewBox="0 0 24 24" style="width:13px; height:13px; color:#f43f5e; vertical-align:-2px;" fill="currentColor"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>',
+      star: '<svg viewBox="0 0 24 24" style="width:13px; height:13px; color:#f59e0b; vertical-align:-2px;" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+      lock: '<svg viewBox="0 0 24 24" style="width:13px; height:13px; color:#38bdf8; vertical-align:-2px;" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+      back: '<svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>',
+      backpack: '<svg viewBox="0 0 24 24" style="width:12px; height:12px; vertical-align:-1.5px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>'
+    };
+
+    // 🔄 과거 저장 기록 100% 복원 및 정규화(Normalization) 엔진
+    function normalizeHistoryRecord(r, idx) {
+      var now = new Date();
+      var y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
+      if (r && r.date) {
+        var parts = String(r.date).match(/\d+/g);
+        if (parts && parts.length >= 3) {
+          y = parseInt(parts[0], 10);
+          m = parseInt(parts[1], 10);
+          d = parseInt(parts[2], 10);
+        }
+      } else if (r && r.year && r.month && r.day) {
+        y = r.year; m = r.month; d = r.day;
+      }
+
+      var rawList = Array.isArray(r.items) ? r.items : (Array.isArray(r.gears) ? r.gears : []);
+      var cleanItems = rawList.map(function(it) {
+        if (typeof it === 'string') {
+          var match = it.match(/^(.*?)\s*\((\d+)g\)$/);
+          return match ? { name: match[1], weight: parseInt(match[2], 10), categoryId: '' } : { name: it, weight: 0, categoryId: '' };
+        }
+        return {
+          id: it.id || ('item_' + Math.random()),
+          name: it.name || it.itemName || '장비',
+          weight: Number(it.weight || it.weight_g || 0),
+          categoryId: it.categoryId || it.category_id || ''
         };
-        img.src = evt.target.result;
+      });
+
+      var totalGrams = cleanItems.reduce(function(sum, it){ return sum + it.weight; }, 0);
+      var firstGearName = cleanItems[0] ? cleanItems[0].name : '';
+
+      return {
+        id: (r && r.id) || ('pack_' + Date.now() + '_' + idx),
+        templateId: (r && r.templateId !== undefined) ? parseInt(r.templateId, 10) : 1,
+        date: (r && r.date) || (y + '.' + String(m).padStart(2, '0') + '.' + String(d).padStart(2, '0')),
+        year: y,
+        month: m,
+        day: d,
+        spot: (r && (r.spot || r.spotName)) ? (r.spot || r.spotName) : (firstGearName ? (firstGearName + ' 패킹') : '선자령 백패킹'),
+        weightKg: (r && r.weightKg !== undefined && r.weightKg !== '0.00') ? r.weightKg : (totalGrams > 0 ? (totalGrams / 1000).toFixed(2) : '0.00'),
+        weightGrams: (r && r.weightGrams) ? r.weightGrams : totalGrams,
+        itemCount: cleanItems.length,
+        memo: (r && r.memo !== undefined) ? r.memo : '비화식으로 즐기는 조용한 하룻밤',
+        items: cleanItems,
+        photo: (r && r.photo) || ''
       };
-      reader.readAsDataURL(file);
-      e.target.value = '';
     }
 
-    function captureAndSaveStudioCard() {
-      const card = document.getElementById('photoStudioCardTarget');
-      if (!card || typeof html2canvas === 'undefined') return;
-      triggerHaptic(15);
-      html2canvas(card, { backgroundColor: '#000000', scale: 3, useCORS: true, allowTaint: true, logging: false, scrollX: 0, scrollY: 0 }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = `낭만루트_LNT_${getFormattedTimestamp()}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        showToast('초고화질 클린 패킹 카드가 갤러리에 저장되었습니다!', 'download');
-      });
-    }
-
-    function handleSpotSearchInput(query = '') {
-      const dropdown = document.getElementById('spotSearchDropdown');
-      const clearBtn = document.getElementById('btnSpotInputClear');
-      if (clearBtn) clearBtn.style.display = query.trim() ? 'flex' : 'none';
-      if (!dropdown) return;
-
-      const cleanQ = query.trim().toLowerCase();
-      let candidates = registeredSpots || [];
-      if (cleanQ) {
-        candidates = candidates.filter(s => 
-          (s.fullName && s.fullName.toLowerCase().includes(cleanQ)) ||
-          (s.name && s.name.toLowerCase().includes(cleanQ)) ||
-          (s.region && s.region.toLowerCase().includes(cleanQ))
-        );
-      }
-
-      if (candidates.length === 0) {
-        dropdown.innerHTML = `<div style="padding:8px 10px; font-size:0.72rem; color:#94a3b8; text-align:center;">일치하는 등록 박지가 없습니다.<br><span style="color:#38bdf8;">직접 입력하신 내용이 카드에 즉시 반영됩니다.</span></div>`;
-        dropdown.style.display = 'block';
-        return;
-      }
-
-      dropdown.innerHTML = candidates.slice(0, 15).map(s => {
-        const spotName = s.fullName || s.name;
-        const regionName = s.region ? `[${s.region}] ` : '';
-        const elevText = s.elevation ? ` (${s.elevation}${String(s.elevation).includes('m')?'':'m'})` : '';
-        const fullTitle = `${regionName}${spotName}${elevText}`;
-        return `
-          <div class="spot-dropdown-item" onclick="selectSpotForShareCard('${escapeHtml(fullTitle)}')">
-            <span style="font-weight:700; display:flex; align-items:center; gap:4px;">
-              ${SVG_ICONS.pin} ${escapeHtml(spotName)}
-            </span>
-            <span style="font-size:0.65rem; color:#38bdf8;">${escapeHtml(s.region || '')} ${escapeHtml(elevText)}</span>
-          </div>
-        `;
-      }).join('');
-      dropdown.style.display = 'block';
-    }
-
-    function clearSpotSearchInput() {
-      const input = document.getElementById('shareCardSpotInput');
-      const clearBtn = document.getElementById('btnSpotInputClear');
-      if (input) { input.value = ''; input.focus(); }
-      if (clearBtn) clearBtn.style.display = 'none';
-      handleSpotSearchInput('');
-      if (typeof updateShareCardLive === 'function') updateShareCardLive();
-      triggerHaptic(10);
-    }
-
-    function toggleSpotDropdownList() {
-      const dropdown = document.getElementById('spotSearchDropdown');
-      const input = document.getElementById('shareCardSpotInput');
-      if (!dropdown) return;
-      if (dropdown.style.display === 'block') dropdown.style.display = 'none';
-      else handleSpotSearchInput(input ? input.value : '');
-    }
-
-    function selectSpotForShareCard(formattedSpotName) {
-      const input = document.getElementById('shareCardSpotInput');
-      const clearBtn = document.getElementById('btnSpotInputClear');
-      if (input) input.value = formattedSpotName;
-      if (clearBtn) clearBtn.style.display = 'flex';
-      const dropdown = document.getElementById('spotSearchDropdown');
-      if (dropdown) dropdown.style.display = 'none';
-      if (typeof updateShareCardLive === 'function') updateShareCardLive();
-      triggerHaptic(10);
-    }
-
-    // 💾 카드 캡처 및 이미지 다운로드
-    function captureAndSavePackCard() {
-      const captureArea = document.getElementById('packShareCaptureArea');
-      if (!captureArea || typeof html2canvas === 'undefined') return;
-      triggerHaptic(15);
-      html2canvas(captureArea, { backgroundColor: null, scale: 3, useCORS: true, allowTaint: true, logging: false }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = `낭만루트_패킹카드_${getFormattedTimestamp()}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        showToast('패킹 카드가 갤러리에 저장되었습니다!', 'download');
-      });
-    }
-
-    // 🟡 카카오톡 공유
-    function sharePackCardToKakao() {
-      if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) {
-        showToast('카카오 연동을 준비 중입니다.', 'warn');
-        return;
-      }
-      triggerHaptic(15);
-      const spotInput = document.getElementById('shareCardSpotInput');
-      const spotName = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '낭만 백패킹 여정';
-      const weight = currentShareRecord ? currentShareRecord.weightKg : '0.00';
-      
-      Kakao.Link.sendDefault({
-        objectType: 'feed',
-        content: {
-          title: `[낭만루트] ${spotName} 배낭 패킹 완료!`,
-          description: `총 배낭 무게: ${weight}kg | 흔적 없는 클린 백패킹 실천`,
-          imageUrl: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80',
-          link: {
-            mobileWebUrl: window.location.href,
-            webUrl: window.location.href
-          }
-        },
-        buttons: [
-          {
-            title: '나도 패킹하기',
-            link: {
-              mobileWebUrl: window.location.origin + window.location.pathname,
-              webUrl: window.location.origin + window.location.pathname
+  /// 💾 배낭 패킹 저장 & 카드 생성 액션 (충돌 없는 단일 통합 파이프라인)
+    function saveCurrentPackingRecord() {
+      var packedItems = [];
+      var totalGrams = 0;
+      if (typeof CATEGORIES !== 'undefined' && typeof selectedGearMap !== 'undefined') {
+        CATEGORIES.forEach(function(cat) {
+          var list = selectedGearMap[cat.id] || [];
+          list.forEach(function(it) {
+            if (it && (it.name || it.itemName)) {
+              var gName = it.name || it.itemName;
+              var gWeight = Number(it.weight || it.weight_g || 0);
+              packedItems.push({
+                id: it.id || ('item_' + Date.now() + '_' + Math.random()),
+                name: gName,
+                weight: gWeight,
+                categoryId: cat.id
+              });
+              totalGrams += gWeight;
             }
-          }
-        ]
-      });
-    }
-
-    // 📸 인스타그램 공유 안내
-    function sharePackCardToInstagram() {
-      triggerHaptic(12);
-      captureAndSavePackCard();
-      setTimeout(() => {
-        alert('카드 이미지가 기기에 저장되었습니다!\n인스타그램 스토리나 피드에 이미지를 업로드해 보세요 📸');
-      }, 600);
-    }
-
-    // =========================================================================
-    // 🗂️ [보관함 & 캘린더 엔진]
-    // =========================================================================
-    function openMyInfoModal(initialTab = 'history') {
-      const modal = document.getElementById('myInfoModal');
-      if (modal) {
-        modal.style.setProperty('display', 'flex', 'important');
-        modal.style.setProperty('z-index', '99999999', 'important');
+          });
+        });
       }
-      if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
-      switchBasecampTab(initialTab);
-      renderPackingHistoryList();
-      renderBasecampRecordData();
-      renderBasecampMemos();
-      triggerHaptic(12);
+
+      if (packedItems.length === 0) {
+        if (typeof showToast === 'function') showToast('장비를 1개 이상 추가해주세요.', 'warn');
+        return;
+      }
+
+      var now = new Date();
+      var targetDateStr = window.activeSelectedDateKey || (now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0'));
+      var parts = targetDateStr.match(/\d+/g) || [now.getFullYear(), now.getMonth() + 1, now.getDate()];
+      var tYear = parseInt(parts[0], 10);
+      var tMonth = parseInt(parts[1], 10);
+      var tDay = parseInt(parts[2], 10);
+      var cleanDateStr = tYear + '.' + String(tMonth).padStart(2, '0') + '.' + String(tDay).padStart(2, '0');
+      var totalKg = (totalGrams / 1000).toFixed(2);
+
+      var newRecord = {
+        id: 'pack_' + Date.now(),
+        templateId: window.selectedTemplateId || 1,
+        date: cleanDateStr,
+        year: tYear,
+        month: tMonth,
+        day: tDay,
+        spot: (currentLuckySpot && currentLuckySpot.name) ? currentLuckySpot.name : '대관령 선자령 (832m)',
+        weightKg: totalKg,
+        weightGrams: totalGrams,
+        itemCount: packedItems.length,
+        memo: '비화식으로 즐기는 조용한 하룻밤',
+        items: packedItems,
+        photo: window.currentSharePhoto || ''
+      };
+
+      window.currentShareRecord = newRecord;
+      window.currentShareItems = packedItems;
+      saveRecordToHistoryStorage(newRecord);
+
+      closePackingModal();
+      
+      if (typeof openPackShareModal === 'function') {
+        openPackShareModal(newRecord, packedItems, false);
+      } else {
+        var shareModal = document.getElementById('packShareModalOverlay');
+        if (shareModal) {
+          shareModal.style.setProperty('display', 'flex', 'important');
+          if (typeof updateShareCardLive === 'function') updateShareCardLive();
+        }
+      }
+      
+      triggerHaptic(15);
+      if (typeof showToast === 'function') showToast('🎒 [' + cleanDateStr + '] 배낭 패킹이 저장되었습니다!', 'success');
     }
 
-    function closeMyInfoModal() { 
-      const modal = document.getElementById('myInfoModal'); 
-      if (modal) modal.style.setProperty('display', 'none', 'important'); 
-    }
-
-    function switchBasecampTab(tabKey) {
-      document.querySelectorAll('.basecamp-tab-btn').forEach((b, idx) => {
-        b.classList.toggle('active', (tabKey === 'history' && idx === 0) || (tabKey === 'record' && idx === 1) || (tabKey === 'memo' && idx === 2));
-      });
-      const pHist = document.getElementById('tabPanelHistory');
-      const pRec = document.getElementById('tabPanelRecord');
-      const pMemo = document.getElementById('tabPanelMemo');
-      if (pHist) pHist.classList.toggle('active', tabKey === 'history');
-      if (pRec) pRec.classList.toggle('active', tabKey === 'record');
-      if (pMemo) pMemo.classList.toggle('active', tabKey === 'memo');
-    }
-
-    function changePackingCalMonth(delta) {
-      calViewMonth += delta;
-      if (calViewMonth < 0) { calViewMonth = 11; calViewYear--; }
-      else if (calViewMonth > 11) { calViewMonth = 0; calViewYear++; }
-      calSelectedDate = null;
-      renderPackingHistoryList();
-      triggerHaptic(10);
-    }
-
-    function selectPackingCalDate(dateStr) {
-      calSelectedDate = (calSelectedDate === dateStr) ? null : dateStr;
-      renderPackingHistoryList();
-      triggerHaptic(10);
-    }
-
+    // 💾 카드 모달에서 낭만보관함에 저장 후 즉시 열기 (선택 날짜 100% 직결 연동)
     function saveCardToVaultAndOpenBasecamp() {
-      if (!isUserLoggedIn()) {
-        triggerHaptic(12);
-        showToast('나만의 낭만보관함 저장은 로그인 후 이용 가능합니다.', 'warn', 2200);
-        openLoginModal();
-        return;
-      }
-
-      if (isVaultSaving) return;
-      isVaultSaving = true;
-      setTimeout(function() { isVaultSaving = false; }, 800);
-
-      var record = window.currentShareRecord || currentShareRecord;
-      if (!record) {
-        showToast('저장할 패킹 데이터가 없습니다.', 'warn');
-        return;
-      }
-
       var spotInput = document.getElementById('shareCardSpotInput');
       var memoInput = document.getElementById('shareCardMemoInput');
-      var spotVal = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : (record.spot || '강원 대관령 선자령 (832m)');
-      var memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : (record.memo || '비화식으로 즐기는 조용한 하룻밤');
+      var liveSpot = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : (window.currentShareRecord ? window.currentShareRecord.spot : '대관령 선자령 (832m)');
+      var liveMemo = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : '비화식으로 즐기는 조용한 하룻밤';
 
-      record.spot = spotVal;
-      record.memo = memoVal;
-      record.photo = window.currentSharePhoto || '';
-      record.textColor = window.currentPhotoTextColor || 'white';
-      record.ratio = window.currentCardRatio || '9/16';
+      var now = new Date();
+      var targetDateStr = window.activeSelectedDateKey || (window.currentShareRecord ? window.currentShareRecord.date : (now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0')));
+      var parts = targetDateStr.match(/\d+/g) || [now.getFullYear(), now.getMonth() + 1, now.getDate()];
+      var tYear = parseInt(parts[0], 10);
+      var tMonth = parseInt(parts[1], 10);
+      var tDay = parseInt(parts[2], 10);
+      var cleanDateStr = tYear + '.' + String(tMonth).padStart(2, '0') + '.' + String(tDay).padStart(2, '0');
 
-      saveRecordToHistoryStorage(record);
-
-      triggerHaptic(20);
-      showToast('내 낭만보관함에 안전하게 저장되었습니다!', 'success');
-
-      // 🚪 1. 현재 패킹 카드 모달 닫기
-      if (typeof closePackShareModal === 'function') {
-        closePackShareModal();
+      if (!window.currentShareRecord) {
+        var totalGrams = 0;
+        var liveItems = [];
+        CATEGORIES.forEach(function(cat) {
+          (selectedGearMap[cat.id] || []).forEach(function(it) {
+            liveItems.push({ id: it.id || ('item_' + Date.now()), name: it.name || it.itemName || '장비', weight: Number(it.weight || it.weight_g || 0), categoryId: cat.id });
+            totalGrams += Number(it.weight || it.weight_g || 0);
+          });
+        });
+        window.currentShareRecord = {
+          id: 'pack_' + Date.now(),
+          templateId: window.selectedTemplateId || 1,
+          date: cleanDateStr,
+          year: tYear, month: tMonth, day: tDay,
+          spot: liveSpot, weightKg: (totalGrams / 1000).toFixed(2), weightGrams: totalGrams,
+          itemCount: liveItems.length, memo: liveMemo, items: liveItems, photo: window.currentSharePhoto || ''
+        };
+      } else {
+        window.currentShareRecord.date = cleanDateStr;
+        window.currentShareRecord.year = tYear;
+        window.currentShareRecord.month = tMonth;
+        window.currentShareRecord.day = tDay;
+        window.currentShareRecord.spot = liveSpot;
+        window.currentShareRecord.memo = liveMemo;
+        window.currentShareRecord.templateId = window.selectedTemplateId || window.currentShareRecord.templateId || 1;
+        window.currentShareRecord.photo = window.currentSharePhoto || window.currentShareRecord.photo || '';
       }
 
-      // 🗂️ 2. 내 낭만보관함 창 즉시 열기 (힐링 기록 탭 활성화)
-      setTimeout(function() {
-        if (typeof openMyInfoModal === 'function') {
-          openMyInfoModal('history');
-        }
-      }, 150);
+      saveRecordToHistoryStorage(window.currentShareRecord);
+      closePackShareModal();
+      window.activeSelectedDateKey = cleanDateStr;
+      openMyInfoModal('history');
+      if (typeof showToast === 'function') showToast('✅ [' + cleanDateStr + '] 내 낭만보관함에 안전하게 저장되었습니다!', 'success');
+      triggerHaptic(15);
     }
 
-    // 🌸 힐링 기록 렌더링
-    function renderPackingHistoryList() {
-      const container = document.getElementById('packingHistoryContainer');
-      if (!container) return;
+    // 🔍 [박지 실시간 검색 & 첫 목록 드롭다운 완결 엔진]
+    window.handleSpotSearchInput = function(query) {
+      var dropdown = document.getElementById('spotSearchDropdown');
+      var clearBtn = document.getElementById('btnSpotInputClear');
+      if (!dropdown) return;
 
-      packingHistoryList = cleanupDuplicateHistory(safeGetJSON('okbm_packing_history', []));
-      localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
+      var cleanQ = (query !== undefined && query !== null) ? String(query).trim().toLowerCase() : '';
+      if (clearBtn) clearBtn.style.display = cleanQ.length > 0 ? 'flex' : 'none';
 
-      container.style.display = 'flex';
-      container.style.flexDirection = 'column';
-      container.style.gap = '6px';
-      container.style.overflow = 'visible';
+      var spots = (window.registeredSpots && window.registeredSpots.length > 0) ? window.registeredSpots : [
+        { name: '대관령 선자령', fullName: '대관령 선자령', elevation: '832', region: '강원 평창' },
+        { name: '충주 고봉 비박지', fullName: '충주 고봉 비박지', elevation: '450', region: '충북 충주' },
+        { name: '태기산 풍차 능선', fullName: '태기산 풍차 능선', elevation: '1261', region: '강원 횡성' },
+        { name: '굴업도 개머리언덕', fullName: '굴업도 개머리언덕', elevation: '120', region: '인천 옹진' },
+        { name: '화악산 중봉 헬기장', fullName: '화악산 중봉 헬기장', elevation: '1446', region: '경기 가평' },
+        { name: '비양도 백패킹존', fullName: '제주 우도 비양도', elevation: '15', region: '제주 우도' }
+      ];
 
-      const pinIconSvg = (typeof SVG_ICONS !== 'undefined' && SVG_ICONS.pin) ? SVG_ICONS.pin : '📍';
+      var filtered = cleanQ.length > 0 
+        ? spots.filter(function(s) {
+            var n = (s.fullName || s.name || '').toLowerCase();
+            var r = (s.region || '').toLowerCase();
+            return n.includes(cleanQ) || r.includes(cleanQ);
+          })
+        : spots.slice(0, 10);
 
-      const packDateMap = {};
-      packingHistoryList.forEach(h => {
-        const ymd = normalizeDateToYMD(h.date);
-        if (ymd) { if (!packDateMap[ymd]) packDateMap[ymd] = []; packDateMap[ymd].push(h); }
-      });
-
-      const firstDayIndex = new Date(calViewYear, calViewMonth, 1).getDay();
-      const lastDate = new Date(calViewYear, calViewMonth + 1, 0).getDate();
-      const monthPrefix = `${calViewYear}.${String(calViewMonth + 1).padStart(2, '0')}`;
-
-      let monthlyPackCount = 0;
-      Object.keys(packDateMap).forEach(k => { if (k.startsWith(monthPrefix)) monthlyPackCount += packDateMap[k].length; });
-
-      let daysHtml = '';
-      for (let i = 0; i < firstDayIndex; i++) daysHtml += `<div style="height:26px;"></div>`;
-
-      for (let d = 1; d <= lastDate; d++) {
-        const currentYmd = `${monthPrefix}.${String(d).padStart(2, '0')}`;
-        const hasPack = !!packDateMap[currentYmd];
-        const isSelected = (calSelectedDate === currentYmd);
-        const dayOfWeek = (firstDayIndex + d - 1) % 7;
-        let dayColor = (dayOfWeek === 0) ? '#f87171' : ((dayOfWeek === 6) ? '#38bdf8' : '#cbd5e1');
-        let bgStyle = isSelected ? 'background:rgba(56,189,248,0.3); border:1.5px solid #38bdf8;' : (hasPack ? 'background:rgba(52,211,153,0.16); border:1px solid rgba(52,211,153,0.4);' : 'background:rgba(255,255,255,0.02); border:1px solid transparent;');
-
-        daysHtml += `
-          <div onclick="selectPackingCalDate('${currentYmd}')" style="height:26px; border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; position:relative; ${bgStyle} transition:all 0.1s;">
-            <span style="font-size:0.68rem; font-weight:${hasPack ? '900' : '600'}; color:${dayColor}; font-family:'Space Grotesk', sans-serif;">${d}</span>
-            ${hasPack ? `<span style="width:3.5px; height:3.5px; border-radius:50%; background:#34d399; box-shadow:0 0 5px #34d399; position:absolute; bottom:2px;"></span>` : ''}
-          </div>
-        `;
-      }
-
-      const calendarWidgetHtml = `
-        <div style="background:#07090e; border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:9px 11px; margin-bottom:4px; flex-shrink:0;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <button type="button" onclick="changePackingCalMonth(-1)" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#fff; width:22px; height:22px; border-radius:50%; font-size:0.62rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">◀</button>
-              <span style="font-weight:900; font-size:0.84rem; color:#ffffff; font-family:'Space Grotesk', sans-serif;">${calViewYear}년 ${calViewMonth + 1}월</span>
-              <button type="button" onclick="changePackingCalMonth(1)" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#fff; width:22px; height:22px; border-radius:50%; font-size:0.62rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">▶</button>
-            </div>
-            <div style="display:flex; align-items:center; gap:5px;">
-              <span style="font-size:0.62rem; color:#34d399; font-weight:800; background:rgba(52,211,153,0.15); border:1px solid rgba(52,211,153,0.35); padding:2px 7px; border-radius:10px;">이번 달 ${monthlyPackCount}회 힐링</span>
-              ${calSelectedDate ? `<button type="button" onclick="selectPackingCalDate(null)" style="background:none; border:none; color:#38bdf8; font-size:0.62rem; cursor:pointer; font-weight:800; text-decoration:underline;">전체보기 ↺</button>` : ''}
-            </div>
-          </div>
-          <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.58rem; color:#64748b; font-weight:800; margin-bottom:3px;">
-            <span style="color:#f87171;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#38bdf8;">토</span>
-          </div>
-          <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:1.5px;">${daysHtml}</div>
-        </div>
-      `;
-
-      let filteredList = packingHistoryList;
-      if (calSelectedDate) filteredList = filteredList.filter(h => normalizeDateToYMD(h.date) === calSelectedDate);
-
-      let cardsHtml = '';
-      if (filteredList.length === 0) {
-        cardsHtml = `<div style="font-size:0.75rem; color:#64748b; padding:20px 0; text-align:center; background:rgba(255,255,255,0.02); border-radius:10px;">${calSelectedDate ? `[${calSelectedDate}]에 해당하는 힐링 기록이 없습니다.` : '저장된 힐링 기록이 없습니다.'}</div>`;
+      if (filtered.length === 0) {
+        dropdown.innerHTML = '<div style="padding:9px 10px; font-size:0.72rem; color:#94a3b8; text-align:center;">일치하는 박지가 없습니다.<br><span style="color:#38bdf8; font-size:0.65rem;">(입력하신 이름으로 직접 등록됩니다)</span></div>';
       } else {
-        cardsHtml = filteredList.map(h => {
-          const originalIndex = packingHistoryList.findIndex(item => item.id === h.id);
-          const spotName = h.spot || '강원 대관령 선자령 (832m)';
-          const itemCount = (h.items && Array.isArray(h.items)) ? h.items.length : (h.itemCount || 0);
-          const weightNum = parseFloat(h.weightKg || 0);
-          let badgeLabel = 'UL 초경량', badgeBg = 'rgba(52, 211, 153, 0.16)', badgeColor = '#34d399', weightTextColor = '#34d399';
-
-          if (weightNum >= 14.5) { badgeLabel = '헤비'; badgeBg = 'rgba(244, 63, 94, 0.16)'; badgeColor = '#fb7185'; weightTextColor = '#fb7185'; }
-          else if (weightNum > 6.5) { badgeLabel = '보통'; badgeBg = 'rgba(245, 158, 11, 0.16)'; badgeColor = '#fde047'; weightTextColor = '#fde047'; }
-
-          const photoThumb = h.photo ? `<img src="${h.photo}" style="width:38px; height:38px; border-radius:6px; object-fit:cover; border:1px solid rgba(255,255,255,0.15); flex-shrink:0;" />` : '';
-
-          return `
-            <div class="swipe-item-container" style="position:relative; overflow:hidden; border-radius:10px; margin-bottom:6px; background:#dc2626; touch-action:pan-y; min-height:56px; flex-shrink:0;">
-              <div class="swipe-delete-btn" onclick="deletePackingHistoryItem('${h.id}')" style="position:absolute; right:0; top:0; bottom:0; width:72px; background:linear-gradient(135deg, #ef4444, #b91c1c); color:#ffffff; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:0.68rem; font-weight:800; cursor:pointer; z-index:1;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" style="width:15px; height:15px;"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
-                <span>삭제</span>
-              </div>
-              <div class="swipe-front-card" data-idx="${originalIndex}" style="background:#090d14; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:9px 11px; display:flex; justify-content:space-between; align-items:center; position:relative; z-index:2; transform:translateX(0px); transition:transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); cursor:pointer; box-sizing:border-box; min-height:56px;">
-                <div style="flex:1; min-width:0; padding-right:8px;">
-                  <div style="font-size:0.78rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:3px;">
-                    ${pinIconSvg}<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(spotName)}</span>
-                  </div>
-                  <div style="display:flex; align-items:center; gap:5px; font-size:0.64rem; color:#94a3b8; margin-top:3px; font-family:'JetBrains Mono', monospace;">
-                    <span>${h.date ? h.date.slice(0, 16) : ''}</span>
-                    <span style="color:#475569;">·</span>
-                    <span style="color:#cbd5e1; font-family:'Pretendard Variable', sans-serif; font-weight:700;">장비 ${itemCount}개</span>
-                  </div>
-                </div>
-                <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-                  <div style="text-align:right;">
-                    <div style="font-size:1.1rem; font-weight:900; color:${weightTextColor}; font-family:'Space Grotesk', sans-serif; line-height:1;">
-                      ${weightNum.toFixed(2)}<span style="font-size:0.65rem; margin-left:1px; color:#cbd5e1;">kg</span>
-                    </div>
-                    <div style="font-size:0.56rem; font-weight:800; color:${badgeColor}; background:${badgeBg}; padding:1px 5px; border-radius:4px; display:inline-block; margin-top:3px;">
-                      ${badgeLabel}
-                    </div>
-                  </div>
-                  ${photoThumb}
-                </div>
-              </div>
-            </div>
-          `;
+        dropdown.innerHTML = filtered.map(function(s) {
+          var dName = s.fullName || s.name;
+          var meta = s.elevation ? (s.elevation + 'm') : s.region;
+          return '<div class="spot-dropdown-item" onclick="selectSpotFromDropdown(\'' + escapeHtml(dName) + '\')">' +
+            '<span style="font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:75%;">📍 ' + escapeHtml(dName) + '</span>' +
+            '<span style="font-size:0.62rem; font-weight:800; color:#38bdf8; font-family:var(--font-en); flex-shrink:0;">' + escapeHtml(meta) + '</span>' +
+          '</div>';
         }).join('');
       }
+      dropdown.style.display = 'block';
+    };
 
-      container.innerHTML = `
-        <div style="width:32px; height:4px; border-radius:2px; background:rgba(255,255,255,0.2); margin:0 auto 6px auto;"></div>
-        ${calendarWidgetHtml}
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; margin-bottom:4px; padding:0 2px; flex-shrink:0;">
-          <span style="font-size:0.72rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:4px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" style="width:13px; height:13px;"><rect width="18" height="18" x="3" y="3" rx="2"/><line x1="3" x2="21" y1="9" y2="9"/></svg>
-            <span>${calSelectedDate ? `[${calSelectedDate}] 힐링 기록` : '힐링 기록 목록'} (${filteredList.length}개)</span>
-          </span>
-          <span style="font-size:0.6rem; color:#64748b;">← 밀어서 삭제</span>
+    window.toggleSpotDropdownList = function() {
+      var input = document.getElementById('shareCardSpotInput');
+      var dropdown = document.getElementById('spotSearchDropdown');
+      if (!dropdown) return;
+      if (dropdown.style.display === 'block') {
+        dropdown.style.display = 'none';
+      } else {
+        window.handleSpotSearchInput(input ? input.value : '');
+      }
+    };
+
+    window.selectSpotFromDropdown = function(spotName) {
+      var input = document.getElementById('shareCardSpotInput');
+      var dropdown = document.getElementById('spotSearchDropdown');
+      if (input) input.value = spotName;
+      if (dropdown) dropdown.style.display = 'none';
+      if (window.currentShareRecord) window.currentShareRecord.spot = spotName;
+      if (typeof updateShareCardLive === 'function') updateShareCardLive();
+      var clearBtn = document.getElementById('btnSpotInputClear');
+      if (clearBtn) clearBtn.style.display = 'flex';
+      triggerHaptic(10);
+    };
+
+    window.clearSpotSearchInput = function() {
+      var input = document.getElementById('shareCardSpotInput');
+      var clearBtn = document.getElementById('btnSpotInputClear');
+      var dropdown = document.getElementById('spotSearchDropdown');
+      if (input) { input.value = ''; input.focus(); }
+      if (clearBtn) clearBtn.style.display = 'none';
+      window.handleSpotSearchInput('');
+      if (typeof updateShareCardLive === 'function') updateShareCardLive();
+      triggerHaptic(8);
+    };
+
+    // 모달 외부 클릭 시 박지 드롭다운 닫기
+    document.addEventListener('click', function(e) {
+      var dropdown = document.getElementById('spotSearchDropdown');
+      var input = document.getElementById('shareCardSpotInput');
+      if (dropdown && dropdown.style.display === 'block') {
+        if (!dropdown.contains(e.target) && e.target !== input && !e.target.closest('.modal-btn')) {
+          dropdown.style.display = 'none';
+        }
+      }
+    });
+
+    // 🎒 [카드를 450ms 꾹 누르면 열리는 출정 배낭 패킹 체크리스트 모달 (번쩍임 0% 부분 갱신)]
+    window.packedCheckSet = window.packedCheckSet || new Set();
+
+    window.togglePackCheckItemDirect = function(recordId, idx, totalItems) {
+      var key = recordId + '_' + idx;
+      var isNowChecked = !window.packedCheckSet.has(key);
+      if (isNowChecked) {
+        window.packedCheckSet.add(key);
+      } else {
+        window.packedCheckSet.delete(key);
+      }
+
+      var rowEl = document.getElementById('packCheckRow_' + idx);
+      var boxEl = document.getElementById('packCheckBox_' + idx);
+      var textEl = document.getElementById('packCheckText_' + idx);
+      var wtEl = document.getElementById('packCheckWt_' + idx);
+
+      if (rowEl && boxEl && textEl && wtEl) {
+        rowEl.style.background = isNowChecked ? 'rgba(52,211,153,0.12)' : 'rgba(255,255,255,0.035)';
+        rowEl.style.borderColor = isNowChecked ? '#34d399' : 'rgba(255,255,255,0.08)';
+        boxEl.style.borderColor = isNowChecked ? '#34d399' : '#64748b';
+        boxEl.style.background = isNowChecked ? '#34d399' : 'transparent';
+        boxEl.innerHTML = isNowChecked ? '<svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:#000; fill:none; stroke-width:3.5;"><polyline points="20 6 9 17 4 12"/></svg>' : '';
+        textEl.style.color = isNowChecked ? '#6ee7b7' : '#ffffff';
+        textEl.style.textDecoration = isNowChecked ? 'line-through' : 'none';
+        textEl.style.opacity = isNowChecked ? '0.75' : '1.0';
+        wtEl.style.color = isNowChecked ? '#6ee7b7' : '#94a3b8';
+      }
+
+      var checkedCount = 0;
+      for (var i = 0; i < totalItems; i++) {
+        if (window.packedCheckSet.has(recordId + '_' + i)) checkedCount++;
+      }
+      var progressPct = totalItems > 0 ? Math.round((checkedCount / totalItems) * 100) : 0;
+
+      var labelEl = document.getElementById('packProgressLabel');
+      var barEl = document.getElementById('packProgressBar');
+      if (labelEl) labelEl.innerText = checkedCount + ' / ' + totalItems + '개 완료 (' + progressPct + '%)';
+      if (barEl) barEl.style.width = progressPct + '%';
+
+      triggerHaptic(12);
+    };
+
+    window.resetPackChecklistDirect = function(recordId, totalItems) {
+      for (var i = 0; i < totalItems; i++) {
+        window.packedCheckSet.delete(recordId + '_' + i);
+        var rowEl = document.getElementById('packCheckRow_' + i);
+        var boxEl = document.getElementById('packCheckBox_' + i);
+        var textEl = document.getElementById('packCheckText_' + i);
+        var wtEl = document.getElementById('packCheckWt_' + i);
+
+        if (rowEl && boxEl && textEl && wtEl) {
+          rowEl.style.background = 'rgba(255,255,255,0.035)';
+          rowEl.style.borderColor = 'rgba(255,255,255,0.08)';
+          boxEl.style.borderColor = '#64748b';
+          boxEl.style.background = 'transparent';
+          boxEl.innerHTML = '';
+          textEl.style.color = '#ffffff';
+          textEl.style.textDecoration = 'none';
+          textEl.style.opacity = '1.0';
+          wtEl.style.color = '#94a3b8';
+        }
+      }
+
+      var labelEl = document.getElementById('packProgressLabel');
+      var barEl = document.getElementById('packProgressBar');
+      if (labelEl) labelEl.innerText = '0 / ' + totalItems + '개 완료 (0%)';
+      if (barEl) barEl.style.width = '0%';
+      triggerHaptic(15);
+    };
+
+    window.openPackChecklistModal = function(record) {
+      if (!record) return;
+      var old = document.getElementById('packChecklistModalOverlay');
+      if (old) old.remove();
+
+      var items = Array.isArray(record.items) ? record.items : [];
+      var totalItems = items.length;
+      var checkedCount = items.filter(function(it, idx) { return window.packedCheckSet.has(record.id + '_' + idx); }).length;
+      var progressPct = totalItems > 0 ? Math.round((checkedCount / totalItems) * 100) : 0;
+
+      var overlay = document.createElement('div');
+      overlay.id = 'packChecklistModalOverlay';
+      overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.88); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); z-index:9999999; display:flex; justify-content:center; align-items:flex-end; pointer-events:none;';
+
+      overlay.innerHTML = `
+        <div style="width:100%; max-width:480px; height:88vh; max-height:88vh; background:#07090e; border-top:1.5px solid rgba(56,189,248,0.4); border-radius:20px 20px 0 0; padding:18px 16px calc(24px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; box-shadow:0 -14px 45px rgba(0,0,0,0.95); overflow:hidden; pointer-events:auto;">
+          <div style="flex-shrink:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <svg viewBox="0 0 24 24" style="width:20px; height:20px; color:#38bdf8; flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>
+                <div>
+                  <div style="font-family:'SUIT', sans-serif; font-size:1.02rem; font-weight:900; color:#fff;">출정 배낭 패킹 체크리스트</div>
+                  <div style="font-size:0.68rem; color:#94a3b8; margin-top:1px;">배낭에 넣으면서 하나씩 체크하여 검수하세요</div>
+                </div>
+              </div>
+              <button onclick="document.getElementById('packChecklistModalOverlay').remove()" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:1.0rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
+            </div>
+
+            <!-- 패킹 진행률 바 -->
+            <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(226,232,240,0.15); border-radius:10px; padding:10px 12px; margin-top:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.74rem; font-weight:800; margin-bottom:6px;">
+                <span style="color:#ffffff; font-size:0.86rem; font-weight:900; font-family:'SUIT', sans-serif;">📍 ${escapeHtml(record.spot)}</span>
+                <span style="font-family:'JetBrains Mono', monospace; color:#38bdf8; font-weight:900;" id="packProgressLabel">${checkedCount} / ${totalItems}개 완료 (${progressPct}%)</span>
+              </div>
+              <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
+                <div id="packProgressBar" style="width:${progressPct}%; height:100%; background:linear-gradient(90deg, #38bdf8, #34d399); transition:width 0.25s ease;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 큼직한 실전 장비 체크리스트 목록 (마이크로 갱신 적용) -->
+          <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; display:flex; flex-direction:column; gap:6px; padding:10px 0;">
+            ${items.map(function(it, idx) {
+              var itemKey = record.id + '_' + idx;
+              var isChecked = window.packedCheckSet.has(itemKey);
+              var itName = it.name || it.itemName || '장비';
+              var itWeight = it.weight || it.weight_g || 0;
+              return `
+                <div id="packCheckRow_${idx}" onclick="window.togglePackCheckItemDirect('${record.id}', ${idx}, ${totalItems})" style="width:100%; background:${isChecked ? 'rgba(52,211,153,0.12)' : 'rgba(255,255,255,0.035)'}; border:1.2px solid ${isChecked ? '#34d399' : 'rgba(255,255,255,0.08)'}; border-radius:10px; padding:11px 12px; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; box-sizing:border-box; transition:background 0.15s ease, border-color 0.15s ease;">
+                  <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+                    <div id="packCheckBox_${idx}" style="width:20px; height:20px; border-radius:5px; border:1.5px solid ${isChecked ? '#34d399' : '#64748b'}; background:${isChecked ? '#34d399' : 'transparent'}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                      ${isChecked ? '<svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:#000; fill:none; stroke-width:3.5;"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+                    </div>
+                    <span id="packCheckText_${idx}" style="font-family:'SUIT', sans-serif; font-size:0.84rem; font-weight:800; color:${isChecked ? '#6ee7b7' : '#ffffff'}; text-decoration:${isChecked ? 'line-through' : 'none'}; opacity:${isChecked ? 0.75 : 1.0}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                      ${escapeHtml(itName)}
+                    </span>
+                  </div>
+                  <span id="packCheckWt_${idx}" style="font-family:'JetBrains Mono', monospace; font-size:0.75rem; color:${isChecked ? '#6ee7b7' : '#94a3b8'}; font-weight:900; flex-shrink:0;">
+                    ${(itWeight/1000).toFixed(2)}kg
+                  </span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- 하단 체크 초기화 & 완료 닫기 바 -->
+          <div style="display:flex; gap:8px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08); flex-shrink:0;">
+            <button onclick="window.resetPackChecklistDirect('${record.id}', ${totalItems})" style="flex:1; height:44px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:10px; color:#cbd5e1; font-family:'SUIT', sans-serif; font-size:0.78rem; font-weight:800; cursor:pointer;">
+              ↺ 체크 초기화
+            </button>
+            <button onclick="document.getElementById('packChecklistModalOverlay').remove()" style="flex:2; height:44px; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; border-radius:10px; color:#ffffff; font-family:'SUIT', sans-serif; font-size:0.82rem; font-weight:900; cursor:pointer; box-shadow:0 4px 14px rgba(2,132,199,0.35); display:flex; align-items:center; justify-content:center; gap:4px;">
+              <svg viewBox="0 0 24 24" style="width:14px; height:14px; stroke:#fff; fill:none; stroke-width:3;"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>패킹 검수 완료</span>
+            </button>
+          </div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:4px; overflow-y:auto; padding-top:2px; padding-bottom:12px;">
-          ${cardsHtml}
+      `;
+      document.body.appendChild(overlay);
+
+      setTimeout(function() {
+        if (overlay) overlay.style.pointerEvents = 'auto';
+      }, 300);
+    };
+
+    // 🎨 [정품 templates.js 1:1 직결 렌더러] 원본 generateCardMarkup 완벽 연동
+    function renderDynamicRecordTemplate(cur, index) {
+      var tmplId = parseInt(cur.templateId || '1', 10);
+      var items = Array.isArray(cur.items) ? cur.items : [];
+
+      var renderFn = window.renderTemplateCard || window.generateCardMarkup;
+      if (typeof renderFn === 'function') {
+        try {
+          var rendered = renderFn(tmplId, cur, items, cur.spot || '선자령 백패킹', cur.memo || '비화식 출정', cur.photo || '');
+          if (rendered && typeof rendered === 'string' && rendered.trim().length > 0) {
+            return '<div style="position:relative; width:100%; height:100%; aspect-ratio:3/4 !important; display:flex; flex-direction:column; justify-content:center; align-items:center; overflow:hidden; border-radius:12px; box-sizing:border-box;">' +
+              '<div style="flex:1; width:100%; height:100%; overflow:hidden; display:flex; align-items:center; justify-content:center;">' + rendered + '</div>' +
+            '</div>';
+          }
+        } catch (e) {}
+      }
+
+      // Fallback 100% 3:4 비율 영수증 카드 (DEST 박지명 폰트 대폭 확대)
+      return '<div style="width:100%; height:100%; aspect-ratio:3/4 !important; background:#ffffff; color:#000000; border-radius:12px; padding:10px 13px 9px 13px; box-shadow:0 14px 35px rgba(0,0,0,0.88); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;">' +
+        '<div style="flex-shrink:0;">' +
+          '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+            '<span style="font-family:\'Space Grotesk\', sans-serif; font-size:0.75rem; font-weight:900; letter-spacing:0.04em; color:#000;">ROMANTIC ROUTE POS</span>' +
+            '<span style="font-family:\'Space Grotesk\', sans-serif; font-size:0.56rem; font-weight:900; color:#0284c7; background:#e0f2fe; padding:1.5px 5px; border-radius:4px;">#0' + (index + 1) + '</span>' +
+          '</div>' +
+          '<div style="border-bottom:1.5px dashed #000000; margin:3px 0;"></div>' +
+          '<div style="font-family:\'JetBrains Mono\', monospace; font-size:0.58rem; line-height:1.3; color:#334155;">' +
+            '<div>DEST : <strong style="font-size:0.96rem; color:#000; font-family:\'SUIT\', sans-serif; font-weight:900; line-height:1.2; display:inline-block; margin-top:1px;">' + escapeHtml(cur.spot) + '</strong></div>' +
+            '<div style="margin-top:2px;">DATE : ' + escapeHtml(cur.date) + '</div>' +
+            '<div style="color:#64748b; font-style:italic; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:1px;">MEMO : "' + escapeHtml(cur.memo) + '"</div>' +
+          '</div>' +
+          '<div style="border-bottom:1px dashed #cbd5e1; margin:3px 0;"></div>' +
+          '<div style="display:flex; justify-content:space-between; font-size:0.54rem; font-weight:800; color:#64748b; margin-bottom:1px;">' +
+            '<span>[ITEM NAME]</span>' +
+            '<span>[WEIGHT]</span>' +
+          '</div>' +
+        '</div>' +
+        '<div style="flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; display:flex; flex-direction:column; gap:1.5px; padding:1px 0;">' +
+          (items.length > 0 ? items.map(function(it) {
+            var itName = it.name || it.itemName || '장비';
+            var itWeight = it.weight || it.weight_g || 0;
+            return '<div style="display:flex; justify-content:space-between; font-family:\'JetBrains Mono\', monospace; font-size:0.56rem; color:#0f172a; font-weight:700;">' +
+              '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:75%;">• ' + escapeHtml(itName) + '</span>' +
+              '<span>' + (itWeight / 1000).toFixed(2) + 'kg</span>' +
+            '</div>';
+          }).join('') : '<div style="font-size:0.56rem; color:#94a3b8; text-align:center; padding:8px 0;">패킹된 장비 목록이 없습니다.</div>') +
+        '</div>' +
+        '<div style="flex-shrink:0; margin-top:2px;">' +
+          '<div style="border-top:1.5px dashed #000000; padding-top:3px; display:flex; justify-content:space-between; align-items:baseline;">' +
+            '<span style="font-family:\'Space Grotesk\', sans-serif; font-size:0.60rem; font-weight:900; color:#64748b;">TOTAL WEIGHT</span>' +
+            '<span style="font-family:\'Space Grotesk\', sans-serif; font-size:1.20rem; font-weight:900; color:#000; line-height:1;">' + cur.weightKg + ' <small style="font-size:0.60rem;">KG</small></span>' +
+          '</div>' +
+          '<div style="display:flex; justify-content:space-between; align-items:center; margin-top:3px; border-top:1px solid #e2e8f0; padding-top:2px;">' +
+            '<div style="font-family:\'Space Grotesk\', monospace; font-size:0.60rem; letter-spacing:1px; color:#475569;">||| | |||| || ||| |</div>' +
+            '<span style="font-size:0.50rem; font-weight:900; color:#047857; background:#d1fae5; border:1px solid #6ee7b7; padding:1px 4px; border-radius:3px;">🛡️ LNT 클린 서약</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }
+
+    function openMyInfoModal(tab) {
+      var modal = document.getElementById('myInfoModal');
+      if (modal) {
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('background', '#000000', 'important');
+        modal.style.setProperty('align-items', 'stretch', 'important');
+        document.body.style.overflow = 'hidden';
+      }
+
+      var rawList = safeGetStorage('okbm_packing_history', []);
+      if (Array.isArray(rawList) && rawList.length > 0) {
+        window.interactiveHistory = rawList.map(function(r, i) { return normalizeHistoryRecord(r, i); });
+        window.interactiveHistory.sort(function(a, b) { return a.day - b.day; });
+      } else {
+        window.interactiveHistory = [];
+      }
+
+      var now = new Date();
+      if (!window.activeSelectedDateKey) {
+        var first = window.interactiveHistory[0];
+        window.activeSelectedDateKey = first ? first.date : (now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0'));
+      }
+
+      var initialIdx = window.interactiveHistory.findIndex(function(h) {
+        var hDate = h.date ? h.date.replace(/[-/]/g, '.') : (h.year + '.' + String(h.month).padStart(2, '0') + '.' + String(h.day).padStart(2, '0'));
+        var parts = hDate.match(/\d+/g);
+        if (parts && parts.length >= 3) {
+          hDate = parts[0] + '.' + String(parts[1]).padStart(2, '0') + '.' + String(parts[2]).padStart(2, '0');
+        }
+        return hDate === window.activeSelectedDateKey;
+      });
+      window.currentCardIndex = initialIdx !== -1 ? initialIdx : (window.interactiveHistory.length > 0 ? 0 : -1);
+
+      var activeParts = String(window.activeSelectedDateKey).match(/\d+/g);
+      if (activeParts && activeParts.length >= 2) {
+        window.calViewYear = parseInt(activeParts[0], 10);
+        window.calViewMonth = parseInt(activeParts[1], 10);
+      } else {
+        window.calViewYear = now.getFullYear();
+        window.calViewMonth = now.getMonth() + 1;
+      }
+
+      window.fieldDiaries = safeGetStorage('okbm_field_diaries', {});
+      window.activeBasecampTab = tab || 'history';
+      renderFullBasecampStage();
+      triggerHaptic(10);
+    }
+
+    function closeMyInfoModal() {
+      var modal = document.getElementById('myInfoModal');
+      if (modal) {
+        modal.style.setProperty('display', 'none', 'important');
+        document.body.style.overflow = '';
+      }
+      triggerHaptic(10);
+    }
+
+    function switchBasecampTab(tabId) {
+      window.activeBasecampTab = tabId || 'history';
+      renderFullBasecampStage();
+      triggerHaptic(8);
+    }
+
+    function changeBasecampMonth(delta) {
+      if (!window.calViewYear) window.calViewYear = new Date().getFullYear();
+      if (!window.calViewMonth) window.calViewMonth = new Date().getMonth() + 1;
+
+      window.calViewMonth += delta;
+      if (window.calViewMonth < 1) {
+        window.calViewMonth = 12;
+        window.calViewYear -= 1;
+      } else if (window.calViewMonth > 12) {
+        window.calViewMonth = 1;
+        window.calViewYear += 1;
+      }
+      renderFullBasecampStage();
+      triggerHaptic(8);
+    }
+
+    function saveLiveFieldDiary(text) {
+      var key = window.activeSelectedDateKey;
+      if (!key) return;
+      if (text.trim().length > 0) {
+        window.fieldDiaries[key] = text;
+      } else {
+        delete window.fieldDiaries[key];
+      }
+      safeSetStorage('okbm_field_diaries', window.fieldDiaries);
+      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+      
+      var parts = key.split('.');
+      var day = parseInt(parts[2], 10);
+      var dotEl = document.getElementById('diaryDot_' + day);
+      if (dotEl) dotEl.style.display = text.trim().length > 0 ? 'block' : 'none';
+    }
+
+    function handleCalendarDateClick(day, month, year) {
+      var dateKey = year + '.' + String(month).padStart(2, '0') + '.' + String(day).padStart(2, '0');
+      window.activeSelectedDateKey = dateKey;
+
+      var foundIdx = window.interactiveHistory.findIndex(function(h) {
+        var hDate = h.date ? h.date.replace(/[-/]/g, '.') : (h.year + '.' + String(h.month).padStart(2, '0') + '.' + String(h.day).padStart(2, '0'));
+        var parts = hDate.match(/\d+/g);
+        if (parts && parts.length >= 3) {
+          hDate = parts[0] + '.' + String(parts[1]).padStart(2, '0') + '.' + String(parts[2]).padStart(2, '0');
+        }
+        return hDate === dateKey;
+      });
+
+      window.currentCardIndex = foundIdx;
+      renderFullBasecampStage('fade');
+      triggerHaptic(10);
+    }
+
+    function navigateCardRecord(direction) {
+      var total = window.interactiveHistory.length;
+      var cardEl = document.getElementById('swipeCardTarget');
+      if (!cardEl || total <= 1) return;
+
+      if (direction === 'next' && window.currentCardIndex < total - 1) {
+        cardEl.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 1, 1), opacity 0.2s';
+        cardEl.style.transform = 'translateX(-120%) rotate(-5deg)';
+        cardEl.style.opacity = '0';
+        setTimeout(function() {
+          window.currentCardIndex++;
+          var cur = window.interactiveHistory[window.currentCardIndex];
+          if (cur) window.activeSelectedDateKey = cur.date;
+          renderFullBasecampStage('slide-left');
+        }, 180);
+      } else if (direction === 'prev' && window.currentCardIndex > 0) {
+        cardEl.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 1, 1), opacity 0.2s';
+        cardEl.style.transform = 'translateX(120%) rotate(5deg)';
+        cardEl.style.opacity = '0';
+        setTimeout(function() {
+          window.currentCardIndex--;
+          var cur = window.interactiveHistory[window.currentCardIndex];
+          if (cur) window.activeSelectedDateKey = cur.date;
+          renderFullBasecampStage('slide-right');
+        }, 180);
+      } else {
+        cardEl.style.transition = 'transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        cardEl.style.transform = 'translateX(0px) rotate(0deg)';
+      }
+    }
+
+    function deleteSingleLogRecord(id, e) {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      var target = window.interactiveHistory.find(function(h) { return h.id === id; });
+      var spotName = target ? target.spot : '기록';
+
+      if (confirm('[' + spotName + '] 기록을 삭제할까요?')) {
+        window.interactiveHistory = window.interactiveHistory.filter(function(h) { return h.id !== id; });
+        if (window.selectedRecordIds) window.selectedRecordIds.delete(id);
+        window.currentCardIndex = Math.max(0, window.interactiveHistory.length - 1);
+        var cur = window.interactiveHistory[window.currentCardIndex];
+        if (cur) window.activeSelectedDateKey = cur.date;
+        safeSetStorage('okbm_packing_history', window.interactiveHistory);
+        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+        triggerHaptic(15);
+        showToast('출정 기록이 삭제되었습니다.', 'info');
+        renderFullBasecampStage('fade');
+      }
+    }
+
+    function deleteSelectedBatchRecords() {
+      if (!window.selectedRecordIds) return;
+      var count = window.selectedRecordIds.size;
+      if (count === 0) return;
+
+      if (confirm('선택한 ' + count + '개의 기록을 일괄 삭제할까요?')) {
+        window.interactiveHistory = window.interactiveHistory.filter(function(h) { return !window.selectedRecordIds.has(h.id); });
+        window.selectedRecordIds.clear();
+        window.currentCardIndex = 0;
+        var cur = window.interactiveHistory[0];
+        if (cur) window.activeSelectedDateKey = cur.date;
+        safeSetStorage('okbm_packing_history', window.interactiveHistory);
+        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+        triggerHaptic(20);
+        showToast(count + '개의 기록이 삭제되었습니다.', 'info');
+        renderFullBasecampStage('fade');
+      }
+    }
+
+    function renderFullBasecampStage(animType) {
+      var content = document.querySelector('.my-basecamp-content');
+      if (!content) return;
+
+      content.style.cssText = 'width: 100% !important; max-width: 480px !important; height: 100dvh !important; max-height: 100dvh !important; margin: 0 auto !important; padding: 0 !important; background: #000000 !important; border: none !important; border-radius: 0 !important; display: flex !important; flex-direction: column !important; justify-content: space-between !important; overflow: hidden !important; box-sizing: border-box !important;';
+
+      var now = new Date();
+      var viewYear = window.calViewYear || now.getFullYear();
+      var viewMonth = window.calViewMonth || (now.getMonth() + 1);
+
+      var dateParts = String(window.activeSelectedDateKey).match(/\d+/g) || [viewYear, viewMonth, 1];
+      var activeDay = (parseInt(dateParts[0], 10) === viewYear && parseInt(dateParts[1], 10) === viewMonth) ? parseInt(dateParts[2], 10) : -1;
+
+      var allHistory = window.interactiveHistory || [];
+      var totalCount = allHistory.length;
+      var monthHistory = allHistory.filter(function(h) { return h.year === viewYear && h.month === viewMonth; });
+      var monthCount = monthHistory.length;
+
+      var recordedDays = new Set(monthHistory.map(function(h) { return h.day; }));
+
+      var firstDayIndex = new Date(viewYear, viewMonth - 1, 1).getDay();
+      var lastDayOfMonth = new Date(viewYear, viewMonth, 0).getDate();
+
+      // 📅 1. 달력 그리드 생성 (42칸 칼고정 그리드)
+      var calendarDaysHtml = '';
+      for (var b = 0; b < firstDayIndex; b++) {
+        calendarDaysHtml += '<div style="height:17px;"></div>';
+      }
+
+      for (var d = 1; d <= lastDayOfMonth; d++) {
+        var isSelected = (d === activeDay);
+        var isRecorded = recordedDays.has(d);
+        var checkKey = viewYear + '.' + String(viewMonth).padStart(2, '0') + '.' + String(d).padStart(2, '0');
+        var hasDiary = !!(window.fieldDiaries && window.fieldDiaries[checkKey] && window.fieldDiaries[checkKey].trim().length > 0);
+
+        var dayStyle = 'position:relative; height:17px; line-height:17px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:\'Space Grotesk\', sans-serif; font-size:0.68rem; font-weight:800; border-radius:4px; cursor:pointer; transition:all 0.15s ease;';
+        if (isSelected) dayStyle += 'background:#00bcd4; color:#000000; font-weight:900; box-shadow:0 0 8px rgba(0,188,212,0.9); transform:scale(1.05);';
+        else if (isRecorded) dayStyle += 'color:#34d399; font-weight:900; text-decoration:underline; text-underline-offset:2px;';
+        else dayStyle += 'color:#cbd5e1;';
+
+        var diaryDotHtml = '<span id="diaryDot_' + d + '" style="position:absolute; bottom:1px; width:3px; height:3px; background:' + (isSelected ? '#000000' : '#f59e0b') + '; border-radius:50%; display:' + (hasDiary ? 'block' : 'none') + ';"></span>';
+        calendarDaysHtml += '<div style="' + dayStyle + '" onclick="handleCalendarDateClick(' + d + ', ' + viewMonth + ', ' + viewYear + ')">' + d + diaryDotHtml + '</div>';
+      }
+
+      for (var tail = firstDayIndex + lastDayOfMonth; tail < 42; tail++) {
+        calendarDaysHtml += '<div style="height:17px;"></div>';
+      }
+
+      var hasRecord = (window.currentCardIndex !== -1 && window.interactiveHistory[window.currentCardIndex]);
+      var cur = hasRecord ? window.interactiveHistory[window.currentCardIndex] : null;
+
+      // 🎫 2. 중앙 컨텐츠 (카드 모드 vs 원래 크기 체킹리스트 모드)
+      var historyMiddleHtml = '';
+      if (window.currentViewMode === 'list') {
+        var selectedCount = window.selectedRecordIds ? window.selectedRecordIds.size : 0;
+        var isAllSelected = (selectedCount === allHistory.length && selectedCount > 0);
+
+        historyMiddleHtml = `
+          <div style="width:100%; height:100%; max-height:clamp(270px, 42vh, 350px); background:#080b11; border:1px solid rgba(226, 232, 240, 0.22); border-radius:12px; padding:10px 12px; box-shadow:0 14px 35px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.18); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; flex-shrink:0; width:100%;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <button onclick="if(window.selectedRecordIds && window.selectedRecordIds.size === window.interactiveHistory.length){window.selectedRecordIds.clear();}else{window.selectedRecordIds = window.selectedRecordIds || new Set(); window.interactiveHistory.forEach(function(h){window.selectedRecordIds.add(h.id);});} renderFullBasecampStage();" style="background:rgba(255,255,255,0.06); border:1px solid rgba(226,232,240,0.25); color:#cbd5e1; font-family:'SUIT', sans-serif; font-size:0.64rem; font-weight:800; padding:3px 7px; border-radius:4px; cursor:pointer;">
+                  ${isAllSelected ? '선택 해제' : '전체 선택'}
+                </button>
+                <span style="font-family:'Space Grotesk', sans-serif; font-size:0.64rem; font-weight:800; color:${selectedCount > 0 ? '#38bdf8' : '#94a3b8'};">
+                  ${selectedCount > 0 ? (selectedCount + '개 선택됨') : ('총 ' + allHistory.length + '개의 출정 기록')}
+                </span>
+              </div>
+              ${selectedCount > 0 ? `
+                <button onclick="deleteSelectedBatchRecords()" style="background:#ef4444; border:none; color:#ffffff; font-family:'SUIT', sans-serif; font-size:0.62rem; font-weight:900; padding:3px 8px; border-radius:4px; cursor:pointer; box-shadow:0 2px 8px rgba(239,68,68,0.4);">
+                  🗑️ 선택 삭제
+                </button>
+              ` : ''}
+            </div>
+            <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; display:flex; flex-direction:column; gap:5px; padding:6px 0;">
+              ${allHistory.map(function(h, i) {
+                var isChecked = window.selectedRecordIds && window.selectedRecordIds.has(h.id);
+                var isCurrent = (i === window.currentCardIndex);
+                return `
+                  <div onclick="window.currentCardIndex = ${i}; window.activeSelectedDateKey = '${h.date}'; window.currentViewMode = 'card'; renderFullBasecampStage();" style="width:100%; min-height:42px; background:${isChecked ? 'rgba(56,189,248,0.12)' : (isCurrent ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.035)')}; border:1px solid ${isChecked ? '#38bdf8' : (isCurrent ? 'rgba(226,232,240,0.3)' : 'rgba(255,255,255,0.08)')}; border-radius:8px; padding:0 10px; display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer; box-sizing:border-box;">
+                    <div onclick="event.stopPropagation(); window.selectedRecordIds = window.selectedRecordIds || new Set(); if(window.selectedRecordIds.has('${h.id}')){window.selectedRecordIds.delete('${h.id}');}else{window.selectedRecordIds.add('${h.id}');} renderFullBasecampStage();" style="width:16px; height:16px; border-radius:4px; border:1.2px solid ${isChecked ? '#38bdf8' : '#64748b'}; background:${isChecked ? '#38bdf8' : 'transparent'}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                      ${isChecked ? '<span style="font-size:0.60rem; color:#000; font-weight:900;">✓</span>' : ''}
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                      <div style="font-family:'SUIT', sans-serif; font-size:0.75rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        📍 ${escapeHtml(h.spot)}
+                      </div>
+                    </div>
+                    <div style="text-align:right; flex-shrink:0; display:flex; align-items:center; gap:6px;">
+                      <span style="font-family:'JetBrains Mono', monospace; font-size:0.56rem; color:#94a3b8;">${h.date}</span>
+                      <span style="font-family:'JetBrains Mono', monospace; font-size:0.62rem; color:#34d399; font-weight:900;">${h.weightKg}kg</span>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      } else {
+        if (hasRecord) {
+          historyMiddleHtml = '<div id="swipeCardTarget" style="width:100%; max-width:clamp(250px, 68vw, 305px); height:auto; max-height:clamp(270px, 40vh, 340px); aspect-ratio:3/4 !important; border-radius:12px; box-sizing:border-box; cursor:grab; touch-action:none; transform-origin:bottom center; margin:0 auto; display:flex; justify-content:center; align-items:center; overflow:hidden;">' +
+            renderDynamicRecordTemplate(cur, window.currentCardIndex) +
+          '</div>';
+        } else {
+          historyMiddleHtml = '<div id="swipeCardTarget" style="width:100%; max-width:clamp(250px, 68vw, 305px); height:auto; max-height:clamp(270px, 40vh, 340px); aspect-ratio:3/4 !important; background:linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%); color:#ffffff; border:1px dashed rgba(226,232,240,0.3); border-radius:12px; padding:12px 11px; box-shadow:0 14px 35px rgba(0,0,0,0.85); display:flex; flex-direction:column; justify-content:space-between; align-items:center; box-sizing:border-box; text-align:center; margin:0 auto;">' +
+            '<div style="display:flex; justify-content:space-between; align-items:center; width:100%;">' +
+              '<span style="font-family:\'Space Grotesk\', sans-serif; font-size:0.62rem; font-weight:800; color:#38bdf8; letter-spacing:0.05em;">NEXT ROUTE</span>' +
+              '<span style="font-family:\'Space Grotesk\', sans-serif; font-size:0.56rem; font-weight:800; color:#cbd5e1; background:rgba(255,255,255,0.08); padding:1.5px 5px; border-radius:3px;">' + escapeHtml(window.activeSelectedDateKey) + '</span>' +
+            '</div>' +
+            '<div style="display:flex; flex-direction:column; align-items:center; gap:5px; margin:auto 0;">' +
+              '<div style="width:44px; height:44px; border-radius:50%; background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.3); display:flex; align-items:center; justify-content:center; box-shadow:0 0 14px rgba(56,189,248,0.15);">' +
+                BASECAMP_ICONS.compass +
+              '</div>' +
+              '<div style="font-family:\'SUIT\', sans-serif; font-size:0.86rem; font-weight:900; color:#ffffff; letter-spacing:-0.01em;">다음 여행을 계획해볼까요?</div>' +
+              '<div style="font-family:\'Pretendard\', sans-serif; font-size:0.62rem; color:#94a3b8; line-height:1.4;">어디로 떠날지, 무엇을 챙길지<br>미리 적어보세요.</div>' +
+            '</div>' +
+            '<button onclick="closeMyInfoModal(); openPackingModal();" style="width:100%; height:32px; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; border-radius:6px; color:#ffffff; font-family:\'SUIT\', sans-serif; font-size:0.68rem; font-weight:900; display:flex; align-items:center; justify-content:center; gap:4px; cursor:pointer; box-shadow:0 4px 12px rgba(2,132,199,0.35);">' +
+              '<span>+ 이날의 배낭 패킹하러 가기</span>' +
+            '</button>' +
+          '</div>';
+        }
+      }
+
+      var currentDiaryText = (window.fieldDiaries && window.fieldDiaries[window.activeSelectedDateKey]) || '';
+
+      // 🚩 [탭 2: 클리어 & 찜 본문]
+      var bookmarks = new Set(safeGetStorage('okbm_bookmarks', []));
+      var visited = new Set(safeGetStorage('okbm_visited', []));
+      var archiveItems = [];
+      visited.forEach(function(id) { archiveItems.push({ id: id, type: 'visited' }); });
+      bookmarks.forEach(function(id) { archiveItems.push({ id: id, type: 'fav' }); });
+
+      var filteredArchive = archiveItems.filter(function(b) {
+        if (window.archiveFilter === 'visited') return b.type === 'visited';
+        if (window.archiveFilter === 'fav') return b.type === 'fav';
+        return true;
+      });
+
+      var recordTabHtml = '<div style="flex:1; width:100%; display:flex; flex-direction:column; gap:6px; padding:6px 0; overflow-y:auto; -webkit-overflow-scrolling:touch;">' +
+        '<div style="display:flex; gap:4px; background:rgba(255,255,255,0.05); border:1px solid rgba(226,232,240,0.18); border-radius:8px; padding:2px; flex-shrink:0;">' +
+          '<button onclick="window.archiveFilter = \'all\'; renderFullBasecampStage();" style="flex:1; background:' + (window.archiveFilter === 'all' ? '#38bdf8' : 'transparent') + '; color:' + (window.archiveFilter === 'all' ? '#000' : '#94a3b8') + '; border:none; border-radius:6px; padding:4px 0; font-family:\'SUIT\', sans-serif; font-size:0.68rem; font-weight:900; cursor:pointer;">전체 (' + archiveItems.length + ')</button>' +
+          '<button onclick="window.archiveFilter = \'visited\'; renderFullBasecampStage();" style="flex:1; background:' + (window.archiveFilter === 'visited' ? '#38bdf8' : 'transparent') + '; color:' + (window.archiveFilter === 'visited' ? '#000' : '#94a3b8') + '; border:none; border-radius:6px; padding:4px 0; font-family:\'SUIT\', sans-serif; font-size:0.68rem; font-weight:900; cursor:pointer;">🚩 클리어</button>' +
+          '<button onclick="window.archiveFilter = \'fav\'; renderFullBasecampStage();" style="flex:1; background:' + (window.archiveFilter === 'fav' ? '#38bdf8' : 'transparent') + '; color:' + (window.archiveFilter === 'fav' ? '#000' : '#94a3b8') + '; border:none; border-radius:6px; padding:4px 0; font-family:\'SUIT\', sans-serif; font-size:0.68rem; font-weight:900; cursor:pointer;">⭐ 찜</button>' +
+        '</div>' +
+        '<div style="display:flex; flex-direction:column; gap:5px;">' +
+          (filteredArchive.length === 0 ? '<div style="font-size:0.72rem; color:var(--text-muted); padding:35px 0; text-align:center;">저장된 박지 아카이브가 없습니다.<br>전국 지도에서 찜이나 클리어를 눌러보세요!</div>' :
+            filteredArchive.map(function(item) {
+              var foundSpot = registeredSpots.find(function(s) { return String(s.id).trim() === String(item.id).trim(); });
+              var spotDisplayName = foundSpot ? (foundSpot.fullName || foundSpot.name) : ('박지 #' + item.id);
+              var spotElev = foundSpot && foundSpot.elevation ? (foundSpot.elevation + 'm') : (foundSpot ? foundSpot.region : '전국');
+              return '<div onclick="location.href=\'map.html?spot=' + encodeURIComponent(spotDisplayName) + '\';" style="background:rgba(255,255,255,0.035); border:1px solid rgba(226,232,240,0.14); border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">' +
+                '<div>' +
+                  '<div style="font-family:\'SUIT\', sans-serif; font-size:0.75rem; font-weight:900; color:#fff; display:flex; align-items:center; gap:4px;">' +
+                    (item.type === 'visited' ? BASECAMP_ICONS.flag : BASECAMP_ICONS.star) +
+                    '<span>' + escapeHtml(spotDisplayName) + '</span>' +
+                  '</div>' +
+                  '<div style="font-family:\'Space Grotesk\', sans-serif; font-size:0.55rem; color:#94a3b8; margin-top:2px;">' +
+                    '고도/지역: ' + escapeHtml(spotElev) +
+                  '</div>' +
+                '</div>' +
+                '<span style="font-family:\'SUIT\', sans-serif; font-size:0.62rem; color:#38bdf8; font-weight:800;">지도로 보기 ➔</span>' +
+              '</div>';
+            }).join('')
+          ) +
+        '</div>' +
+      '</div>';
+
+      // 📝 [탭 3: 비밀 메모 본문]
+      var memoObj = safeGetStorage('okbm_memos', {});
+      var memoKeys = Object.keys(memoObj).filter(function(k) { return !k.startsWith('__'); });
+
+      var memoTabHtml = '<div style="flex:1; width:100%; display:flex; flex-direction:column; gap:6px; padding:6px 0; overflow-y:auto; -webkit-overflow-scrolling:touch;">' +
+        '<div style="font-family:\'Pretendard\', sans-serif; font-size:0.66rem; color:#94a3b8; line-height:1.4;">' +
+          '지도 화면에서 기록해둔 나만의 비밀 꿀팁과 현장 메모 모음입니다.' +
+        '</div>' +
+        '<div style="display:flex; flex-direction:column; gap:6px;">' +
+          (memoKeys.length === 0 ? '<div style="font-size:0.72rem; color:var(--text-muted); padding:35px 0; text-align:center;">작성된 비밀 메모가 없습니다.<br>지도 화면에서 나만의 현장 꿀팁을 기록해보세요!</div>' :
+            memoKeys.map(function(k) {
+              var foundSpot = registeredSpots.find(function(s) { return String(s.id).trim() === String(k).trim(); });
+              var spotDisplayName = foundSpot ? (foundSpot.fullName || foundSpot.name) : ('박지 #' + k);
+              return '<div onclick="location.href=\'map.html?spot=' + encodeURIComponent(spotDisplayName) + '\';" style="background:rgba(255,255,255,0.035); border:1px dashed rgba(56,189,248,0.3); border-radius:8px; padding:9px 11px; cursor:pointer;">' +
+                '<div style="font-family:\'SUIT\', sans-serif; font-size:0.75rem; font-weight:900; color:#38bdf8; display:flex; align-items:center; justify-content:space-between;">' +
+                  '<div style="display:flex; align-items:center; gap:4px;">' +
+                    BASECAMP_ICONS.lock + ' <span>' + escapeHtml(spotDisplayName) + '</span>' +
+                  '</div>' +
+                  '<span style="font-size:0.58rem; color:#94a3b8;">지도로 이동 ➔</span>' +
+                '</div>' +
+                '<div style="font-family:\'Pretendard Variable\', sans-serif; font-size:0.68rem; color:#e2e8f0; line-height:1.45; margin-top:4px;">' +
+                  '“' + escapeHtml(memoObj[k]) + '”' +
+                '</div>' +
+              '</div>';
+            }).join('')
+          ) +
+        '</div>' +
+      '</div>';
+
+      content.innerHTML = `
+        <!-- 📦 상단 낭만루트 바 완전 제거 ➔ 큼직한 3대 탭으로 바로 시작 -->
+        <div style="flex:1; width:100%; display:flex; flex-direction:column; justify-content:space-between; padding:calc(8px + env(safe-area-inset-top, 0px)) 14px 0 14px; box-sizing:border-box; overflow:hidden;">
+          
+          <!-- 🏷️ 3대 탭 & 슬림 달력 (연/월 네비게이션 & 우측 끝 총 기록수 뱃지) -->
+          <div style="display:flex; flex-direction:column; flex-shrink:0;">
+            <div style="display:flex; background:rgba(255,255,255,0.08); padding:2.5px; border-radius:9px 9px 0 0; gap:2.5px; border:1px solid rgba(226,232,240,0.2); border-bottom:none;">
+              <button onclick="switchBasecampTab('history')" style="flex:1; background:${window.activeBasecampTab==='history' ? '#38bdf8' : 'transparent'}; color:${window.activeBasecampTab==='history' ? '#000' : '#94a3b8'}; border:none; border-radius:7px; padding:6px 0; font-family:'SUIT', sans-serif; font-size:0.78rem; font-weight:900; cursor:pointer;">힐링 기록</button>
+              <button onclick="switchBasecampTab('record')" style="flex:1; background:${window.activeBasecampTab==='record' ? '#38bdf8' : 'transparent'}; color:${window.activeBasecampTab==='record' ? '#000' : '#94a3b8'}; border:none; border-radius:7px; padding:6px 0; font-family:'SUIT', sans-serif; font-size:0.78rem; font-weight:800; cursor:pointer;">클리어 & 찜</button>
+              <button onclick="switchBasecampTab('memo')" style="flex:1; background:${window.activeBasecampTab==='memo' ? '#38bdf8' : 'transparent'}; color:${window.activeBasecampTab==='memo' ? '#000' : '#94a3b8'}; border:none; border-radius:7px; padding:6px 0; font-family:'SUIT', sans-serif; font-size:0.78rem; font-weight:800; cursor:pointer;">비밀 메모</button>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(226,232,240,0.2); border-radius:0 0 10px 10px; padding:5px 10px; box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);">
+              
+              <!-- 🧭 연/월 네비게이션 & 우측 끝 총 기록수 뱃지 -->
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+                <div style="display:flex; align-items:center; gap:4px;">
+                  <button onclick="changeBasecampMonth(-1)" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; border-radius:4px; width:20px; height:20px; font-size:0.60rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">◀</button>
+                  <span style="font-family:'SUIT', sans-serif; font-size:0.88rem; font-weight:900; color:#fff; min-width:80px; text-align:center;">${viewYear}년 ${viewMonth}월</span>
+                  <button onclick="changeBasecampMonth(1)" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; border-radius:4px; width:20px; height:20px; font-size:0.60rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">▶</button>
+                </div>
+
+                <!-- 🌟 우측 끝 밀착 총 기록수 뱃지 -->
+                <div style="font-family:'Space Grotesk', sans-serif; font-size:0.56rem; font-weight:900; background:rgba(56,189,248,0.15); border:1px solid #38bdf8; color:#7dd3fc; padding:2px 7px; border-radius:10px; display:flex; align-items:center; gap:3px;">
+                  <span>총 ${totalCount}회</span>
+                  <span style="color:#cbd5e1; opacity:0.6;">|</span>
+                  <span style="color:#34d399;">${viewMonth}월 ${monthCount}회</span>
+                </div>
+              </div>
+
+              <!-- 요일 헤더 -->
+              <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-family:'Pretendard', sans-serif; font-size:0.60rem; font-weight:800; color:#64748b; margin-bottom:1px;">
+                <span style="color:#f43f5e;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#38bdf8;">토</span>
+              </div>
+
+              <!-- 42칸 칼고정 날짜 그리드 -->
+              <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:1px; text-align:center;">
+                ${calendarDaysHtml}
+              </div>
+            </div>
+          </div>
+
+          <!-- 🎫 중앙 3:4 카드 영역 (or 목록 뷰) -->
+          <div style="width:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; margin:3px 0; flex:1; min-height:0; position:relative; touch-action:pan-y;">
+            ${historyMiddleHtml}
+            ${hasRecord && window.currentViewMode === 'card' ? '<div style="font-size:0.58rem; color:#64748b; margin-top:2px;">💡 카드를 <strong>꾹~ 누르면</strong> 출정 배낭 패킹 체크리스트가 열립니다</div>' : ''}
+          </div>
+
+          <!-- ✍️ 하단 5줄 메모장 & [카드 | 목록] 스위처 완벽 복원 -->
+          <div style="flex-shrink:0; display:flex; flex-direction:column; margin-bottom:4px; width:100%; height:110px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; padding:0 2px;">
+              <div style="display:flex; align-items:center; gap:4px;">
+                <span style="font-family:'Space Grotesk', sans-serif; font-size:0.68rem; font-weight:900; color:#38bdf8;">${window.activeSelectedDateKey}</span>
+                <span style="font-family:'Space Grotesk', sans-serif; font-size:0.58rem; font-weight:800; color:#64748b;">NOTE</span>
+              </div>
+
+              <!-- 🌟 NOTE 우측에 [카드 | 목록] 스위처 완벽 복원 -->
+              <div style="display:inline-flex; background:rgba(255,255,255,0.08); border:1px solid rgba(226,232,240,0.22); border-radius:12px; padding:1px; gap:2px;">
+                <button onclick="window.currentViewMode = 'card'; renderFullBasecampStage();" style="background:${window.currentViewMode === 'card' ? '#38bdf8' : 'transparent'}; color:${window.currentViewMode === 'card' ? '#000' : '#94a3b8'}; border:none; border-radius:10px; padding:1.5px 7px; font-family:'SUIT', sans-serif; font-size:0.56rem; font-weight:900; cursor:pointer;">카드</button>
+                <button onclick="window.currentViewMode = 'list'; renderFullBasecampStage();" style="background:${window.currentViewMode === 'list' ? '#38bdf8' : 'transparent'}; color:${window.currentViewMode === 'list' ? '#000' : '#94a3b8'}; border:none; border-radius:10px; padding:1.5px 7px; font-family:'SUIT', sans-serif; font-size:0.56rem; font-weight:900; cursor:pointer;">목록</button>
+              </div>
+            </div>
+
+            <textarea id="liveDiaryInputArea" 
+                      placeholder="다녀온 백패킹의 생생한 소감이나 다음 출정 계획을 적어보세요..." 
+                      oninput="saveLiveFieldDiary(this.value)"
+                      style="width:100%; height:100% !important; background:rgba(255,255,255,0.04); border:1px solid rgba(226,232,240,0.18); border-radius:8px; color:#ffffff; font-family:'Pretendard Variable', 'Pretendard', sans-serif; font-size:0.72rem; line-height:1.45; padding:6px 8px; box-sizing:border-box; outline:none; resize:none; display:block;">${currentDiaryText}</textarea>
+          </div>
+
+        </div>
+
+        <!-- 📱 하단 액션 독 -->
+        <div style="height:calc(46px + env(safe-area-inset-bottom, 0px)); padding-bottom:env(safe-area-inset-bottom, 0px); width:100%; display:flex; justify-content:space-around; align-items:center; background:rgba(0,0,0,0.96); border-top:1px solid rgba(255,255,255,0.12); box-sizing:border-box; flex-shrink:0;">
+          <button onclick="if(typeof syncUserDataToCloud==='function') syncUserDataToCloud(); showToast('✅ 낭만보관함 데이터가 안전하게 저장되었습니다!', 'success');" style="background:none; border:none; color:#38bdf8; display:flex; flex-direction:column; align-items:center; gap:2px; font-family:'SUIT', sans-serif; font-size:0.66rem; font-weight:800; cursor:pointer; min-width:54px;">
+            ${BASECAMP_ICONS.save}
+            <span>저장</span>
+          </button>
+          <button onclick="${hasRecord ? `deleteSingleLogRecord('${cur.id}')` : `showToast('삭제할 기록이 없습니다.', 'warn');`}" style="background:none; border:none; color:${hasRecord ? '#f43f5e' : '#475569'}; display:flex; flex-direction:column; align-items:center; gap:2px; font-family:'SUIT', sans-serif; font-size:0.66rem; font-weight:800; cursor:pointer; min-width:54px;">
+            ${BASECAMP_ICONS.trash}
+            <span>삭제</span>
+          </button>
+          <button onclick="closeMyInfoModal()" style="background:none; border:none; color:#94a3b8; display:flex; flex-direction:column; align-items:center; gap:2px; font-family:'SUIT', sans-serif; font-size:0.66rem; font-weight:800; cursor:pointer; min-width:54px;">
+            ${BASECAMP_ICONS.back}
+            <span>뒤로</span>
+          </button>
         </div>
       `;
 
-      attachSwipeToDeleteEvents();
-    }
+      // 🌟 [카드를 450ms 꾹 누르면 실전 출정 패킹 체킹리스트 모달 오픈 & 쫀득한 스와이프 모션]
+      var cardTarget = document.getElementById('swipeCardTarget');
+      if (cardTarget && hasRecord && window.activeBasecampTab === 'history' && window.currentViewMode === 'card') {
+        var startX = 0, startY = 0, currentX = 0, isDragging = false;
+        var longPressTimer = null;
+        var isLongPressTriggered = false;
 
-    function attachSwipeToDeleteEvents() {
-      const containers = document.querySelectorAll('.swipe-item-container');
-      containers.forEach(container => {
-        const card = container.querySelector('.swipe-front-card');
-        if (!card) return;
-        let startX = 0, startY = 0, startTime = 0, isSwiping = false, isScrollingVertical = false, isOpen = false;
+        cardTarget.onpointerdown = function(e) {
+          isDragging = true;
+          isLongPressTriggered = false;
+          startX = e.clientX;
+          startY = e.clientY;
+          try { cardTarget.setPointerCapture(e.pointerId); } catch (err) {}
 
-        card.addEventListener('touchstart', e => {
-          startX = e.touches[0].clientX; startY = e.touches[0].clientY; startTime = Date.now();
-          isSwiping = false; isScrollingVertical = false; card.style.transition = 'none';
-        }, { passive: true });
+          longPressTimer = setTimeout(function() {
+            isLongPressTriggered = true;
+            triggerHaptic(30);
+            window.openPackChecklistModal(window.interactiveHistory[window.currentCardIndex]);
+          }, 450);
+        };
 
-        card.addEventListener('touchmove', e => {
-          const diffX = e.touches[0].clientX - startX; const diffY = e.touches[0].clientY - startY;
-          const absX = Math.abs(diffX); const absY = Math.abs(diffY);
-          if (!isSwiping && absY > 7 && absY > absX) { isScrollingVertical = true; return; }
-          if (!isScrollingVertical && absX > 10 && absX > absY) isSwiping = true;
-          if (isSwiping) {
-            const moveX = isOpen ? Math.min(0, Math.max(-100, -72 + diffX)) : Math.min(0, Math.max(-100, diffX));
-            card.style.transform = `translateX(${moveX}px)`;
+        cardTarget.onpointermove = function(e) {
+          if (!isDragging) return;
+          var diffX = e.clientX - startX;
+          var diffY = e.clientY - startY;
+          if (Math.abs(diffX) > 8 || Math.abs(diffY) > 8) {
+            clearTimeout(longPressTimer);
           }
-        }, { passive: true });
+          if (isLongPressTriggered) return;
+          currentX = e.clientX;
+          cardTarget.style.transform = 'translateX(' + (diffX * 0.45) + 'px) rotate(' + (diffX * 0.015) + 'deg)';
+        };
 
-        card.addEventListener('touchend', e => {
-          card.style.transition = 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)';
-          const diffX = e.changedTouches[0].clientX - startX; const diffY = e.changedTouches[0].clientY - startY;
-          const totalMoved = Math.hypot(diffX, diffY); const touchDuration = Date.now() - startTime;
+        cardTarget.onpointerup = function(e) {
+          clearTimeout(longPressTimer);
+          if (!isDragging) return;
+          isDragging = false;
+          try { cardTarget.releasePointerCapture(e.pointerId); } catch (err) {}
+          if (isLongPressTriggered) return;
 
-          if (isSwiping) {
-            if (!isOpen && diffX < -30) { card.style.transform = 'translateX(-72px)'; isOpen = true; triggerHaptic(10); }
-            else if (isOpen && diffX > 20) { card.style.transform = 'translateX(0px)'; isOpen = false; }
-            else { card.style.transform = isOpen ? 'translateX(-72px)' : 'translateX(0px)'; }
-          } else if (!isScrollingVertical) {
-            if (isOpen) { card.style.transform = 'translateX(0px)'; isOpen = false; }
-            else {
-              if (totalMoved < 6 && touchDuration < 400) {
-                const idx = parseInt(card.getAttribute('data-idx'), 10);
-                if (!isNaN(idx)) openHistoryRecordCard(idx);
-              }
-            }
+          var diffX = currentX - startX;
+          if (diffX < -55) navigateCardRecord('next');
+          else if (diffX > 55) navigateCardRecord('prev');
+          else {
+            cardTarget.style.transition = 'transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            cardTarget.style.transform = 'translateX(0) rotate(0deg)';
           }
-        }, { passive: true });
-      });
-    }
+        };
 
-    function openHistoryRecordCard(index) {
-      packingHistoryList = safeGetJSON('okbm_packing_history', []);
-      const record = packingHistoryList[index];
-      if (!record) return;
-      openedFromBasecamp = true;
-      document.getElementById('myInfoModal').style.setProperty('display', 'none', 'important');
-      if (typeof openPackShareModal === 'function') {
-        openPackShareModal(record, null, !!record.photo);
+        cardTarget.onpointercancel = function(e) {
+          clearTimeout(longPressTimer);
+          isDragging = false;
+        };
       }
-      triggerHaptic(15);
     }
 
-    function deletePackingHistoryItem(id) {
-      packingHistoryList = safeGetJSON('okbm_packing_history', []).filter(h => h.id !== id);
-      localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
-      renderPackingHistoryList();
-      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-      triggerHaptic(15);
-      showToast('패킹 기록이 삭제되었습니다.', 'info');
+    // 🎒 안전 함수 브릿지 (동기화 완료 후 호출 에러 방지)
+    function renderPackingHistoryList() {
+      if (typeof renderFullBasecampStage === 'function') renderFullBasecampStage();
     }
-
     function renderBasecampRecordData() {
-      const bookmarks = new Set(safeGetJSON('okbm_bookmarks', []));
-      const visited = new Set(safeGetJSON('okbm_visited', []));
-      const listEl = document.getElementById('basecampSpotList');
-      if (listEl) {
-        let items = [];
-        visited.forEach(id => items.push({ id, type: 'visited' }));
-        bookmarks.forEach(id => items.push({ id, type: 'fav' }));
-
-        if (items.length === 0) {
-          listEl.innerHTML = '<div style="font-size:0.72rem; color:var(--text-muted); padding:6px 0;">지도 화면에서 찜이나 클리어를 누르면 목록이 표시됩니다.</div>';
-        } else {
-          listEl.innerHTML = items.slice(0, 10).map(it => {
-            const foundSpot = registeredSpots.find(s => String(s.id).trim() === String(it.id).trim());
-            const spotDisplayName = foundSpot ? (foundSpot.fullName || foundSpot.name) : `박지 #${it.id}`;
-            return `
-              <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-hairline); border-radius:6px; padding:6px 9px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="location.href='map.html?spot=${encodeURIComponent(spotDisplayName)}';">
-                <span style="font-size:0.76rem; font-weight:700; color:#fff;">
-                  ${it.type === 'visited' ? '클리어' : '찜'} : ${escapeHtml(spotDisplayName)}
-                </span>
-                <span style="font-size:0.68rem; color:#38bdf8;">지도로 보기 ➔</span>
-              </div>
-            `;
-          }).join('');
-        }
-      }
+      if (typeof renderFullBasecampStage === 'function') renderFullBasecampStage();
     }
-
     function renderBasecampMemos() {
-      const memoObj = safeGetJSON('okbm_memos', {});
-      const container = document.getElementById('basecampMemoListContainer');
-      if (!container) return;
-      const keys = Object.keys(memoObj).filter(k => !k.startsWith('__'));
-      if (keys.length === 0) {
-        container.innerHTML = '<div style="font-size:0.74rem; color:var(--text-muted); padding:16px 0; text-align:center;">작성된 박지 메모가 없습니다. 지도 화면에서 나만의 팁을 기록해보세요!</div>';
-        return;
-      }
-      container.innerHTML = keys.map(k => {
-        const foundSpot = registeredSpots.find(s => String(s.id).trim() === String(k).trim());
-        const spotDisplayName = foundSpot ? (foundSpot.fullName || foundSpot.name) : `박지 #${k}`;
-        return `
-          <div style="background:rgba(255,255,255,0.03); border:1px dashed var(--border-accent); border-radius:8px; padding:8px 10px;">
-            <div style="font-size:0.75rem; font-weight:800; color:#38bdf8;">📍 ${escapeHtml(spotDisplayName)}</div>
-            <div style="font-size:0.74rem; color:#fff; margin-top:3px; white-space:pre-wrap;">${escapeHtml(memoObj[k])}</div>
-          </div>
-        `;
-      }).join('');
+      if (typeof renderFullBasecampStage === 'function') renderFullBasecampStage();
     }
-
-    // 🎯 럭키 박지 & 기상 위젯
     function displayLuckySpot(spot) {
       if (!spot) return;
       const nameEl = document.getElementById('luckyName');
