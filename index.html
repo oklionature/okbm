@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="ko" class="notranslate">
 <head>
@@ -1233,7 +1235,7 @@
 
   </main>
 
-  <!-- 🎒 배낭 무게 계산기 모달 (상단 ✕ 제거 & 대시보드 20% 확대) -->
+  <!-- 🎒 배낭 무게 계산기 모달 -->
   <div class="packing-modal-overlay" id="packingCalculatorModal" onclick="if(event.target===this) closePackingModal()">
     <div class="packing-modal-window">
       <div style="display:flex; align-items:center; gap:6px; padding:2px 0;">
@@ -1399,50 +1401,7 @@
 
   <!-- 🗂️ 5. [내 보관함 모달] -->
   <div class="my-basecamp-modal" id="myInfoModal" onclick="if(event.target===this) closeMyInfoModal()">
-    <div class="my-basecamp-content">
-      <div style="display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
-        <span style="font-weight:900; font-size:1.02rem; color:#fff; display:flex; align-items:center; gap:5px;">
-          <svg viewBox="0 0 24 24" class="icon-svg" style="width:17px; height:17px; color:#38bdf8;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-          <span>내 낭만 보관함</span>
-        </span>
-        <button type="button" style="background:none; border:none; color:#94a3b8; font-size:1.4rem; cursor:pointer; padding:6px; line-height:1;" onclick="event.stopPropagation(); closeMyInfoModal();">✕</button>
-      </div>
-
-      <div id="cloudStatusBanner" class="cloud-status-banner cloud-status-guest" onclick="if(!isUserLoggedIn()) openLoginModal();" style="flex-shrink:0; font-size:0.72rem; padding:6px 10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-        <span id="cloudStatusText">기기 임시 보관 중 (캐시 삭제 시 초기화 주의)</span>
-        <span id="cloudStatusAction" style="font-weight:800; text-decoration:underline; color:#38bdf8; cursor:pointer;">카카오 1초 연동 ➔</span>
-      </div>
-
-      <div class="basecamp-tabs">
-        <button type="button" class="basecamp-tab-btn active" onclick="switchBasecampTab('history')">힐링 기록</button>
-        <button type="button" class="basecamp-tab-btn" onclick="switchBasecampTab('record')">클리어 & 찜</button>
-        <button type="button" class="basecamp-tab-btn" onclick="switchBasecampTab('memo')">비밀 메모</button>
-      </div>
-
-      <!-- 탭 1: 힐링 기록 -->
-      <div class="basecamp-panel active" id="tabPanelHistory">
-        <div id="packingHistoryContainer" style="display:flex; flex-direction:column; gap:6px;"></div>
-      </div>
-
-      <!-- 탭 2: 클리어 & 찜 -->
-      <div class="basecamp-panel" id="tabPanelRecord">
-        <div style="display:flex; flex-direction:column; gap:6px;">
-          <div style="font-size:0.78rem; font-weight:800; color:#cbd5e1; display:flex; align-items:center; gap:4px;">
-            <svg viewBox="0 0 24 24" class="icon-svg" style="width:12px; height:12px; color:#f43f5e;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>
-            <span>클리어 & 찜 아카이브</span>
-          </div>
-          <div id="basecampSpotList" style="display:flex; flex-direction:column; gap:4px; max-height:220px; overflow-y:auto;"></div>
-        </div>
-      </div>
-
-      <!-- 탭 3: 나만의 박지 메모장 -->
-      <div class="basecamp-panel" id="tabPanelMemo">
-        <div style="font-size:0.76rem; color:#94a3b8;">
-          지도 화면에서 기록해둔 나만의 비밀 꿀팁 메모 모음입니다.
-        </div>
-        <div id="basecampMemoListContainer" style="display:flex; flex-direction:column; gap:6px; max-height:350px; overflow-y:auto;"></div>
-      </div>
-    </div>
+    <div class="my-basecamp-content"></div>
   </div>
 
   <!-- 📦 카테고리별 장비 선택 풀스크린 팝업 -->
@@ -1454,7 +1413,7 @@
             <span class="icon-svg" style="width:16px; height:16px; color:#38bdf8;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
             </span>
-            <span style="font-weight:900; font-size:1.02rem; color:#fff;" id="presetModalCategoryTitle">장비 선택</span>
+            <span style="font-weight:900; font-size:1.02rem; color:#fff;" id="presetModalCategoryTitle">장비 선택 & 등록</span>
           </div>
         </div>
 
@@ -1559,6 +1518,7 @@
       <span>낭만보관함</span>
     </button>
   </div>
+
   <script>
     // 🧰 [공통 유틸 - ReferenceError 원천 방지]
     function safeGetJSON(key, defaultVal) {
@@ -1601,191 +1561,7 @@
       setTimeout(function() { toast.remove(); }, duration || 2200);
     }
 
-    // 🎒 [핵심 엔진 최상단 선언: 10대 슬롯 렌더링 & 모달 열기 보장]
-    window.renderCategorySlots = function() {
-      const container = document.getElementById('categorySlotsContainer');
-      if (!container) return;
-
-      let totalGrams = 0, totalItemCount = 0;
-      const cats = (typeof CATEGORIES !== 'undefined' && Array.isArray(CATEGORIES)) ? CATEGORIES.slice(0, 8) : [
-        { id: 'shelter', title: '텐트 · 타프', icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#38bdf8;"><path d="M12 2L2 20h20L12 2z"/></svg>' },
-        { id: 'sleep', title: '침낭 · 매트', icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#34d399;"><path d="M2 17h20M2 13h20M4 9h16a2 2 0 0 1 2 2v6H2v-6a2 2 0 0 1 2-2z"/></svg>' },
-        { id: 'pack', title: '배낭 (Pack)', icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#a78bfa;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>' },
-        { id: 'food', title: '식수 · 식량 · 간식', icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#10b981;"><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/></svg>' },
-        { id: 'kitchen', title: '취사 · 식기 · 보온병', icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#f59e0b;"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg>' },
-        { id: 'wear', title: '보온의류 · 방한', icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#fb7185;"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>' },
-        { id: 'electronics', title: '랜턴 · 안전 · 전자기기', icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#fde047;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' },
-        { id: 'camp', title: '테이블 · 체어 · 소품', icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#38bdf8;"><rect x="4" y="10" width="16" height="4" rx="1"/><path d="M6 14v6M18 14v6M8 10V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4"/></svg>' }
-      ];
-
-      const gearMap = window.selectedGearMap || {};
-
-      let renderedHtml = cats.map(cat => {
-        const items = gearMap[cat.id] || [];
-        const catGrams = items.reduce((sum, it) => sum + Number(it.weight || 0), 0);
-        totalGrams += catGrams;
-        totalItemCount += items.length;
-
-        let gearsListHtml = '<span style="color:#94a3b8; font-size:0.56rem; font-weight:700; background:rgba(0,0,0,0.6); padding:1px 4px; border-radius:3px;">미선택 +</span>';
-        if (items.length > 0) {
-          gearsListHtml = items.map((it, idx) => {
-            const cleanName = (it.name || it.itemName || '장비').replace(/\s*\(.*\)/, '');
-            return `<span class="mini-gear-tag" onclick="event.stopPropagation(); window.removeGearFromCategory('${cat.id}', ${idx})" title="${escapeHtml(cleanName)} (${it.weight}g) - 클릭 시 삭제">${escapeHtml(cleanName)} ✕</span>`;
-          }).join('');
-        }
-
-        const vecSvg = (typeof FINAL_LINE_VECTORS !== 'undefined' && FINAL_LINE_VECTORS[cat.id]) ? FINAL_LINE_VECTORS[cat.id] : '';
-
-        return `
-          <div class="category-slot-card" onclick="window.openGearPresetModal('${cat.id}')">
-            <div class="slot-bg-watermark-vector">${vecSvg}</div>
-            <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fff; text-shadow:0 1px 3px #000;">
-                  <span>${cat.icon}</span>
-                  <span>${cat.title}</span>
-                </div>
-                <div style="font-size:0.68rem; color:#34d399; font-family:'JetBrains Mono', monospace; font-weight:900; background:rgba(0,0,0,0.7); padding:1px 4px; border-radius:3px;">
-                  ${(catGrams/1000).toFixed(2)}k
-                </div>
-              </div>
-              <div class="slot-gears-wrap">
-                ${gearsListHtml}
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      const slot9Vec = (typeof FINAL_LINE_VECTORS !== 'undefined' && FINAL_LINE_VECTORS.slot9) ? FINAL_LINE_VECTORS.slot9 : '';
-      const slot10Vec = (typeof FINAL_LINE_VECTORS !== 'undefined' && FINAL_LINE_VECTORS.slot10) ? FINAL_LINE_VECTORS.slot10 : '';
-
-      renderedHtml += `
-        <div class="category-slot-card" style="border-color:#fb7185; background:rgba(244,63,94,0.04);" onclick="showToast('🔥 요즘 유행하는 백패킹 인기 핫템 랭킹 준비 중입니다!', 'info')">
-          <div class="slot-bg-watermark-vector">${slot9Vec}</div>
-          <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-              <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fb7185; text-shadow:0 1px 3px #000;">
-                <span>🔥</span>
-                <span>요즘 유행하는 장비</span>
-              </div>
-              <span style="font-size:0.56rem; color:#fff; font-weight:900; background:#f43f5e; padding:1px 4px; border-radius:3px;">HOT</span>
-            </div>
-            <div class="slot-gears-wrap">
-              <span style="color:#cbd5e1; font-size:0.56rem; font-weight:800; background:rgba(0,0,0,0.65); padding:1px 4px; border-radius:3px;">인기 장비 랭킹 ➔</span>
-            </div>
-          </div>
-        </div>
-      `;
-
-      renderedHtml += `
-        <div class="category-slot-card" style="border-color:#fde047; background:rgba(253,224,71,0.04);" onclick="showToast('🎁 백패커 전용 특가 및 제휴 혜택 공간입니다!', 'info')">
-          <div class="slot-bg-watermark-vector">${slot10Vec}</div>
-          <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-              <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fde047; text-shadow:0 1px 3px #000;">
-                <span>🎁</span>
-                <span>백패커 특가 혜택</span>
-              </div>
-              <span style="font-size:0.56rem; color:#000; font-weight:900; background:#fde047; padding:1px 4px; border-radius:3px;">SALE</span>
-            </div>
-            <div class="slot-gears-wrap">
-              <span style="color:#cbd5e1; font-size:0.56rem; font-weight:800; background:rgba(0,0,0,0.65); padding:1px 4px; border-radius:3px;">공구/할인 이벤트 ➔</span>
-            </div>
-          </div>
-        </div>
-      `;
-
-      container.innerHTML = renderedHtml;
-
-      const totalKg = (totalGrams / 1000).toFixed(2);
-      const mainKg = document.getElementById('mainBannerKgText');
-      const mainCount = document.getElementById('mainBannerItemCount');
-      const mainBadge = document.getElementById('mainBannerBadge');
-      if (mainKg) mainKg.innerText = `${totalKg} kg`;
-      if (mainCount) mainCount.innerText = `장비 ${totalItemCount}개 세팅됨`;
-
-      const totalKgText = document.getElementById('totalWeightKgText');
-      const totalGramsText = document.getElementById('totalWeightGramsText');
-      if (totalKgText) totalKgText.innerText = `${totalKg} kg`;
-      if (totalGramsText) totalGramsText.innerText = `${totalGrams.toLocaleString()} g (${totalItemCount}개)`;
-
-      const badge = document.getElementById('bplStatusBadge');
-      const badgeText = document.getElementById('bplStatusText');
-      const gauge = document.getElementById('weightGaugeFill');
-
-      let badgeClass = 'weight-bpl-badge bpl-ul';
-      let badgeLabel = 'BPL 초경량 (UL ≤6kg)';
-
-      if (totalGrams >= 14500) {
-        badgeClass = 'weight-bpl-badge bpl-heavy';
-        badgeLabel = '헤비 패킹 (15kg+)';
-      } else if (totalGrams > 6500) {
-        badgeClass = 'weight-bpl-badge bpl-standard';
-        badgeLabel = '보통 스탠다드 (7~14kg)';
-      }
-      if (badgeText) badgeText.innerText = badgeLabel;
-      if (mainBadge) {
-        mainBadge.className = badgeClass;
-        mainBadge.innerText = badgeLabel;
-      }
-      if (gauge) {
-        const gaugePct = Math.min(100, Math.round((totalGrams / 14000) * 100));
-        gauge.style.width = `${gaugePct}%`;
-      }
-    };
-
-    window.openPackingModal = function() {
-      const modal = document.getElementById('packingCalculatorModal');
-      if (modal) {
-        document.body.style.overflow = 'hidden';
-        modal.style.setProperty('display', 'flex', 'important');
-        modal.style.setProperty('z-index', '1000', 'important');
-        window.renderCategorySlots();
-      }
-      triggerHaptic(12);
-    };
-
-    window.closePackingModal = function() { 
-      const modal = document.getElementById('packingCalculatorModal'); 
-      if (modal) {
-        document.body.style.overflow = '';
-        modal.style.setProperty('display', 'none', 'important'); 
-      }
-    };
-
-    window.removeGearFromCategory = function(categoryId, itemIndex) {
-      if (window.selectedGearMap && window.selectedGearMap[categoryId]) {
-        window.selectedGearMap[categoryId].splice(itemIndex, 1);
-        localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
-        window.renderCategorySlots();
-        triggerHaptic(10);
-        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-      }
-    };
-
-    window.openGearPresetModal = function(categoryId) {
-      window.currentOpeningCategoryId = categoryId;
-      const category = (typeof CATEGORIES !== 'undefined') ? CATEGORIES.find(c => c.id === categoryId) : null;
-      const titleEl = document.getElementById('presetModalCategoryTitle');
-      if (titleEl) titleEl.innerText = category ? `${category.title} 장비 선택 & 등록` : '장비 선택 & 등록';
-
-      const searchInput = document.getElementById('gearSearchFixedInput');
-      const clearBtn = document.getElementById('btnGearSearchClear');
-      if (searchInput) searchInput.value = '';
-      if (clearBtn) clearBtn.style.display = 'none';
-
-      if (typeof renderPresetGearList === 'function') renderPresetGearList('');
-
-      const modal = document.getElementById('gearPresetModal');
-      if (modal) {
-        modal.style.setProperty('display', 'flex', 'important');
-        modal.style.setProperty('z-index', '9999999', 'important');
-      }
-      triggerHaptic(10);
-    };
-
-    // 🎨 [10대 슬롯 라인아트 벡터 SVG - 최상단 우선 선언]
+    // 🎨 [10대 슬롯 라인아트 벡터 SVG]
     var FINAL_LINE_VECTORS = {
       shelter: '<svg viewBox="0 0 48 48" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 38C6 20 14 8 24 8s18 12 18 30H6z"/><path d="M14 38c0-12 4-20 10-20s10 8 10 20M6 38h36"/></svg>',
       sleep: '<svg viewBox="0 0 48 48" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="16" height="28" rx="8"/><line x1="6" y1="18" x2="22" y2="18"/><line x1="6" y1="26" x2="22" y2="26"/><path d="M26 14c4-3 10-3 14 0v24a6 6 0 0 1-12 0V14"/></svg>',
@@ -1899,8 +1675,6 @@
       }
     ];
 
-    var ORIGINAL_CATEGORIES_DB = JSON.parse(JSON.stringify(CATEGORIES));
-
     window.selectedGearMap = window.selectedGearMap || {};
     try {
       var saved = localStorage.getItem('okbm_selected_gears_multi');
@@ -1925,10 +1699,157 @@
     var currentPhotoScaleVal = 1.0;
     window.openedFromBasecamp = false;
 
-    var calViewYear = new Date().getFullYear();
-    var calViewMonth = new Date().getMonth();
-    var calSelectedDate = null;
-    var isVaultSaving = false;
+    // 🎒 [핵심 엔진 최상단 선언: 10대 슬롯 렌더링 & 모달 열기 보장]
+    window.renderCategorySlots = function() {
+      const container = document.getElementById('categorySlotsContainer');
+      if (!container) return;
+
+      let totalGrams = 0, totalItemCount = 0;
+      const cats = (typeof CATEGORIES !== 'undefined' && Array.isArray(CATEGORIES)) ? CATEGORIES.slice(0, 8) : [];
+      const gearMap = window.selectedGearMap || {};
+
+      let renderedHtml = cats.map(cat => {
+        const items = gearMap[cat.id] || [];
+        const catGrams = items.reduce((sum, it) => sum + Number(it.weight || 0), 0);
+        totalGrams += catGrams;
+        totalItemCount += items.length;
+
+        let gearsListHtml = '<span style="color:#94a3b8; font-size:0.56rem; font-weight:700; background:rgba(0,0,0,0.6); padding:1px 4px; border-radius:3px;">미선택 +</span>';
+        if (items.length > 0) {
+          gearsListHtml = items.map((it, idx) => {
+            const cleanName = (it.name || it.itemName || '장비').replace(/\s*\(.*\)/, '');
+            return `<span class="mini-gear-tag" onclick="event.stopPropagation(); window.removeGearFromCategory('${cat.id}', ${idx})" title="${escapeHtml(cleanName)} (${it.weight}g) - 클릭 시 삭제">${escapeHtml(cleanName)} ✕</span>`;
+          }).join('');
+        }
+
+        const vecSvg = (typeof FINAL_LINE_VECTORS !== 'undefined' && FINAL_LINE_VECTORS[cat.id]) ? FINAL_LINE_VECTORS[cat.id] : '';
+
+        return `
+          <div class="category-slot-card" onclick="window.openGearPresetModal('${cat.id}')">
+            <div class="slot-bg-watermark-vector">${vecSvg}</div>
+            <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fff; text-shadow:0 1px 3px #000;">
+                  <span>${cat.icon}</span>
+                  <span>${cat.title}</span>
+                </div>
+                <div style="font-size:0.68rem; color:#34d399; font-family:'JetBrains Mono', monospace; font-weight:900; background:rgba(0,0,0,0.7); padding:1px 4px; border-radius:3px;">
+                  ${(catGrams/1000).toFixed(2)}k
+                </div>
+              </div>
+              <div class="slot-gears-wrap">
+                ${gearsListHtml}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const slot9Vec = (typeof FINAL_LINE_VECTORS !== 'undefined' && FINAL_LINE_VECTORS.slot9) ? FINAL_LINE_VECTORS.slot9 : '';
+      const slot10Vec = (typeof FINAL_LINE_VECTORS !== 'undefined' && FINAL_LINE_VECTORS.slot10) ? FINAL_LINE_VECTORS.slot10 : '';
+
+      renderedHtml += `
+        <div class="category-slot-card" style="border-color:#fb7185; background:rgba(244,63,94,0.04);" onclick="showToast('🔥 요즘 유행하는 백패킹 인기 핫템 랭킹 준비 중입니다!', 'info')">
+          <div class="slot-bg-watermark-vector">${slot9Vec}</div>
+          <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+              <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fb7185; text-shadow:0 1px 3px #000;">
+                <span>🔥</span>
+                <span>요즘 유행하는 장비</span>
+              </div>
+              <span style="font-size:0.56rem; color:#fff; font-weight:900; background:#f43f5e; padding:1px 4px; border-radius:3px;">HOT</span>
+            </div>
+            <div class="slot-gears-wrap">
+              <span style="color:#cbd5e1; font-size:0.56rem; font-weight:800; background:rgba(0,0,0,0.65); padding:1px 4px; border-radius:3px;">인기 장비 랭킹 ➔</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      renderedHtml += `
+        <div class="category-slot-card" style="border-color:#fde047; background:rgba(253,224,71,0.04);" onclick="showToast('🎁 백패커 전용 특가 및 제휴 혜택 공간입니다!', 'info')">
+          <div class="slot-bg-watermark-vector">${slot10Vec}</div>
+          <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+              <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fde047; text-shadow:0 1px 3px #000;">
+                <span>🎁</span>
+                <span>백패커 특가 혜택</span>
+              </div>
+              <span style="font-size:0.56rem; color:#000; font-weight:900; background:#fde047; padding:1px 4px; border-radius:3px;">SALE</span>
+            </div>
+            <div class="slot-gears-wrap">
+              <span style="color:#cbd5e1; font-size:0.56rem; font-weight:800; background:rgba(0,0,0,0.65); padding:1px 4px; border-radius:3px;">공구/할인 이벤트 ➔</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = renderedHtml;
+
+      const totalKg = (totalGrams / 1000).toFixed(2);
+      const mainKg = document.getElementById('mainBannerKgText');
+      const mainCount = document.getElementById('mainBannerItemCount');
+      const mainBadge = document.getElementById('mainBannerBadge');
+      if (mainKg) mainKg.innerText = `${totalKg} kg`;
+      if (mainCount) mainCount.innerText = `장비 ${totalItemCount}개 세팅됨`;
+
+      const totalKgText = document.getElementById('totalWeightKgText');
+      const totalGramsText = document.getElementById('totalWeightGramsText');
+      if (totalKgText) totalKgText.innerText = `${totalKg} kg`;
+      if (totalGramsText) totalGramsText.innerText = `${totalGrams.toLocaleString()} g (${totalItemCount}개)`;
+
+      const badgeText = document.getElementById('bplStatusText');
+      const gauge = document.getElementById('weightGaugeFill');
+
+      let badgeClass = 'weight-bpl-badge bpl-ul';
+      let badgeLabel = 'BPL 초경량 (UL ≤6kg)';
+
+      if (totalGrams >= 14500) {
+        badgeClass = 'weight-bpl-badge bpl-heavy';
+        badgeLabel = '헤비 패킹 (15kg+)';
+      } else if (totalGrams > 6500) {
+        badgeClass = 'weight-bpl-badge bpl-standard';
+        badgeLabel = '보통 스탠다드 (7~14kg)';
+      }
+      if (badgeText) badgeText.innerText = badgeLabel;
+      if (mainBadge) {
+        mainBadge.className = badgeClass;
+        mainBadge.innerText = badgeLabel;
+      }
+      if (gauge) {
+        const gaugePct = Math.min(100, Math.round((totalGrams / 14000) * 100));
+        gauge.style.width = `${gaugePct}%`;
+      }
+    };
+
+    window.openPackingModal = function() {
+      const modal = document.getElementById('packingCalculatorModal');
+      if (modal) {
+        document.body.style.overflow = 'hidden';
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('z-index', '1000', 'important');
+        window.renderCategorySlots();
+      }
+      triggerHaptic(12);
+    };
+
+    window.closePackingModal = function() { 
+      const modal = document.getElementById('packingCalculatorModal'); 
+      if (modal) {
+        document.body.style.overflow = '';
+        modal.style.setProperty('display', 'none', 'important'); 
+      }
+    };
+
+    window.removeGearFromCategory = function(categoryId, itemIndex) {
+      if (window.selectedGearMap && window.selectedGearMap[categoryId]) {
+        window.selectedGearMap[categoryId].splice(itemIndex, 1);
+        localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
+        window.renderCategorySlots();
+        triggerHaptic(10);
+        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+      }
+    };
 
     // 🔒 패킹 공유 모달 닫기
     function closePackShareModal() {
@@ -1941,32 +1862,6 @@
       triggerHaptic(10);
     }
 
-    // 📅 날짜 문자열 표준화 (YYYY.MM.DD)
-    function normalizeDateToYMD(dateStr) {
-      if (!dateStr) return '';
-      const m = String(dateStr).match(/(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
-      if (m) return `${m[1]}.${String(m[2]).padStart(2, '0')}.${String(m[3]).padStart(2, '0')}`;
-      const d = new Date(dateStr);
-      if (!isNaN(d.getTime())) {
-        return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
-      }
-      return '';
-    }
-
-    // 🧹 패킹 기록 중복 ID 안전 필터링
-    function cleanupDuplicateHistory(list) {
-      if (!Array.isArray(list)) return [];
-      const seen = new Set();
-      return list.filter(item => {
-        if (!item || !item.id) return false;
-        const key = item.id;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-    }
-
-    // 💾 패킹 기록 로컬스토리지 영구 안전 저장
     function saveRecordToHistoryStorage(record) {
       if (!record) return;
       packingHistoryList = safeGetJSON('okbm_packing_history', []);
@@ -1991,7 +1886,7 @@
     function initStarlightEngines() {
       const metallicColors = ['#ffffff', '#f8fafc', '#e2e8f0', '#cbd5e1', '#38bdf8', '#fde047', '#fda4af', '#34d399'];
       const makeSubtleDotStar = (top, left, size, opacity, dur, delay) => `<div style="position:absolute; top:${top}%; left:${left}%; width:${size}px; height:${size}px; border-radius:50%; background:#ffffff; opacity:${opacity}; animation:slowCelestialPulse ${dur}s infinite ease-in-out ${delay}s;"></div>`;
-      const makeCrossStar = (top, left, size, color, dur, delay) => `<svg viewBox="0 0 24 24" style="position:absolute; top:${top}%; left:${left}%; width:${size}px; height:${size}px; color:${color}; fill:currentColor; animation:slowCelestialTwinkle ${dur}s infinite ease-in-out ${delay}s;"><path d="M12,2 Q12,12 2,12 Q12,12 12,22 Q12,12 22,12 Q12,12 12,2 Z"/><circle cx="12" cy="12" r="1.2" fill="#ffffff"/></svg>`;
+      const makeCrossStar = (top, left, size, color, dur, delay) => `<svg viewBox="0 0 24 24" style="position:absolute; top:${top}%; left:${left}%; width:${size}px; height:${size}px; color:${color}; fill:currentColor; animation:slowCelestialTwinkle ${dur}s infinite ease-in-out ${delay}s;"><path d="M12,2 Q12,12 2,12 Q12,12 12,22 Q12,12 22,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,1 Z"/><circle cx="12" cy="12" r="1.2" fill="#ffffff"/></svg>`;
 
       const globalLayer = document.getElementById('globalAppMilkyWayLayer');
       if (globalLayer) {
@@ -2018,10 +1913,7 @@
       }
     }
 
-    // 🎨 확정 10대 라인아트 벡터 SVG
-     
-
-    // 🛡️ [장비 선택 & 등록 풀스크린 모달 z-index 및 렌더링 최상단 보장]
+    // 🛡️ [장비 선택 & 등록 풀스크린 모달]
     window.openGearPresetModal = function(categoryId) {
       currentOpeningCategoryId = categoryId;
       const category = CATEGORIES.find(c => c.id === categoryId);
@@ -2259,16 +2151,6 @@
       if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
     }
 
-    function removeGearFromCategory(categoryId, itemIndex) {
-      if (selectedGearMap[categoryId]) {
-        selectedGearMap[categoryId].splice(itemIndex, 1);
-        localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
-        renderCategorySlots();
-        triggerHaptic(10);
-        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-      }
-    }
-
     function clearAllGearsInCategory(categoryId) {
       if (!categoryId) return;
       selectedGearMap[categoryId] = [];
@@ -2347,25 +2229,9 @@
       if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
     }
 
-    function openPackingModal() {
-      const modal = document.getElementById('packingCalculatorModal');
-      if (modal) {
-        document.body.style.overflow = 'hidden';
-        modal.style.setProperty('display', 'flex', 'important');
-        renderCategorySlots();
-      }
-      triggerHaptic(12);
-    }
-    
-    function closePackingModal() { 
-      const modal = document.getElementById('packingCalculatorModal'); 
-      if (modal) {
-        document.body.style.overflow = '';
-        modal.style.setProperty('display', 'none', 'important'); 
-      }
-    }
-
-    // 📸 포토 스튜디오 로직
+    // =========================================================================
+    // 📸 [내 사진 전체화면 포토 스튜디오 엔진 & 카드 연동]
+    // =========================================================================
     function openPhotoStudio() {
       if (typeof closePackShareModal === 'function') closePackShareModal();
       const studio = document.getElementById('photoStudioOverlay');
@@ -2436,9 +2302,8 @@
       }
     }
 
-// 🎨 [포토 스튜디오 전용 고품질 카드 마크업 생성 엔진]
     function generateStudioPhotoCardMarkup(record, items, spot, memo, photo, textColor, ratio, customRatioVal, photoScale) {
-      var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
+      var profile = safeGetJSON('user_profile', null);
       var nick = (profile && profile.nickname) ? profile.nickname : '낭만백패커';
       var weight = record ? record.weightKg : '0.00';
       var dateStr = (record && record.date) ? record.date : (function() {
@@ -2467,7 +2332,7 @@
       var scaleVal = Number(photoScale) || 1.0;
       var logoSvg = (typeof SVG_ICONS !== 'undefined' && typeof SVG_ICONS.brandLogo === 'function')
         ? SVG_ICONS.brandLogo(colorPrimary, isDarkText ? '#0284c7' : '#38bdf8')
-        : '';
+        : '<svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:#38bdf8;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
       var pinSvg = (typeof SVG_ICONS !== 'undefined' && SVG_ICONS.pin) ? SVG_ICONS.pin : '📍';
       var lntShieldSvg = (typeof SVG_ICONS !== 'undefined' && SVG_ICONS.lntShield) ? SVG_ICONS.lntShield : '🛡️';
 
@@ -2480,16 +2345,21 @@
           fontSize: '0.62rem',
           paddingY: '0.6px'
         });
+      } else if (items && items.length > 0) {
+        gearListHtml = items.slice(0, 8).map(function(it) {
+          var iName = it.name || it.itemName || '장비';
+          var iWt = it.weight || it.weight_g || 0;
+          return '<div style="display:flex; justify-content:space-between; font-size:0.62rem; color:' + colorPrimary + '; font-family:var(--font-mono);">' +
+            '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:75%;">' + escapeHtml(iName) + '</span>' +
+            '<span>' + (iWt / 1000).toFixed(2) + 'kg</span>' +
+          '</div>';
+        }).join('');
       }
 
       return '<div style="position:relative; width:100%; max-width:390px; ' + ratioStyle + ' max-height:86vh; margin:0 auto; border-radius:14px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.9); user-select:none; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">' +
-        // 1. 고화질 배경 사진 레이어
         '<img id="photoStudioBgImage" src="' + photo + '" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scale(' + scaleVal + '); transform-origin:center center; transition:transform 0.1s ease; pointer-events:none; z-index:1;" />' +
-        // 2. 가독성 그라데이션 오버레이
         '<div style="position:absolute; inset:0; background:' + overlayGradient + '; pointer-events:none; z-index:2;"></div>' +
-        // 3. 카드 상단 & 하단 콘텐츠
         '<div style="position:relative; z-index:3; width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-between; padding:14px 12px; box-sizing:border-box;">' +
-          // [상단 영역] 브랜드 로고 + 박지 정보
           '<div style="display:flex; flex-direction:column; gap:5px;">' +
             '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid ' + glassBorder + '; padding-bottom:4px;">' +
               '<div style="display:flex; align-items:center; gap:4px;">' +
@@ -2510,7 +2380,6 @@
               '</div>' +
             '</div>' +
           '</div>' +
-          // [하단 영역] 장비 목록 + 배낭 무게 + LNT 서약
           '<div style="display:flex; flex-direction:column; gap:5px; margin-top:auto;">' +
             (items && items.length > 0 ? (
               '<div style="background:' + glassBg + '; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid ' + glassBorder + '; border-radius:8px; padding:5px 7px; max-height:140px; overflow:hidden;">' +
@@ -2527,30 +2396,175 @@
               '</span>' +
             '</div>' +
           '</div>' +
-        
+        '</div>' +
       '</div>';
     }
 
-    // 🖼️ 포토 스튜디오 실시간 화면 갱신
     function updateStudioCardLive() {
       var container = document.getElementById('photoStudioCardTarget');
       if (!container || !currentSharePhoto) return;
       var spotInput = document.getElementById('shareCardSpotInput');
       var memoInput = document.getElementById('shareCardMemoInput');
-      var spotVal = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '강원 대관령 선자령 (832m)';
-      var memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : '비화식으로 즐기는 조용한 하룻밤';
-      container.innerHTML = generateStudioPhotoCardMarkup(currentShareRecord, currentShareItems, spotVal, memoVal, currentSharePhoto, currentPhotoTextColor, currentCardRatio, currentCustomRatioVal, currentPhotoScaleVal);
+      var spotVal = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : (window.currentShareRecord ? window.currentShareRecord.spot : '강원 대관령 선자령 (832m)');
+      var memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : (window.currentShareRecord ? window.currentShareRecord.memo : '비화식으로 즐기는 조용한 하룻밤');
+      container.innerHTML = generateStudioPhotoCardMarkup(window.currentShareRecord, window.currentShareItems, spotVal, memoVal, currentSharePhoto, currentPhotoTextColor, currentCardRatio, currentCustomRatioVal, currentPhotoScaleVal);
     }
-  // 🗂️ [낭만보관함] 원본 templates.js 1:1 직결 & 충돌 방지 완결형 파이프라인
+
+    function handleShareCardPhotoUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const MAX_SIZE = 1440;
+          let width = img.width, height = img.height;
+          if (width > height) { if (width > MAX_SIZE) { height = Math.round(height * (MAX_SIZE / width)); width = MAX_SIZE; } }
+          else { if (height > MAX_SIZE) { width = Math.round(width * (MAX_SIZE / height)); height = MAX_SIZE; } }
+          canvas.width = width; canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          currentSharePhoto = canvas.toDataURL('image/jpeg', 0.88);
+          if (window.currentShareRecord) window.currentShareRecord.photo = currentSharePhoto;
+          openPhotoStudio();
+        };
+        img.src = evt.target.result;
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    }
+
+    function captureAndSaveStudioCard() {
+      const card = document.getElementById('photoStudioCardTarget');
+      if (!card || typeof html2canvas === 'undefined') return;
+      triggerHaptic(15);
+      html2canvas(card, { backgroundColor: '#000000', scale: 3, useCORS: true, allowTaint: true, logging: false, scrollX: 0, scrollY: 0 }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `낭만루트_LNT_${getFormattedTimestamp()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showToast('초고화질 클린 패킹 카드가 갤러리에 저장되었습니다!', 'download');
+      });
+    }
+
+    window.openPackShareModal = function(record, items, openStudioDirectly) {
+      window.currentShareRecord = record || window.currentShareRecord;
+      window.currentShareItems = items || (record && record.items) || [];
+      window.currentSharePhoto = (record && record.photo) ? record.photo : window.currentSharePhoto || '';
+      
+      var spotInput = document.getElementById('shareCardSpotInput');
+      var memoInput = document.getElementById('shareCardMemoInput');
+      if (spotInput && record && record.spot) spotInput.value = record.spot;
+      if (memoInput && record && record.memo) memoInput.value = record.memo;
+
+      if (openStudioDirectly && window.currentSharePhoto) {
+        openPhotoStudio();
+        return;
+      }
+
+      var modal = document.getElementById('packShareModalOverlay');
+      if (modal) {
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('z-index', '99999', 'important');
+      }
+      if (typeof updateShareCardLive === 'function') updateShareCardLive();
+      triggerHaptic(12);
+    };
+
+    window.switchShareCardTemplate = function(templateId) {
+      window.selectedTemplateId = templateId;
+      localStorage.setItem('romantic_selected_template', String(templateId));
+      document.querySelectorAll('.tmpl-chip-btn').forEach(function(btn, idx) {
+        btn.classList.toggle('active', (idx + 1) === templateId);
+      });
+      if (typeof updateShareCardLive === 'function') updateShareCardLive();
+      triggerHaptic(8);
+    };
+
+    window.updateShareCardLive = function() {
+      var captureArea = document.getElementById('packShareCaptureArea');
+      if (!captureArea) return;
+      var spotInput = document.getElementById('shareCardSpotInput');
+      var memoInput = document.getElementById('shareCardMemoInput');
+      var spotVal = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : (window.currentShareRecord ? window.currentShareRecord.spot : '강원 대관령 선자령 (832m)');
+      var memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : (window.currentShareRecord ? window.currentShareRecord.memo : '비화식으로 즐기는 조용한 하룻밤');
+      var record = window.currentShareRecord || { weightKg: '0.00', date: '' };
+      var items = window.currentShareItems || [];
+      var tmplId = window.selectedTemplateId || 1;
+      
+      if (typeof window.generateCardMarkup === 'function') {
+        captureArea.innerHTML = window.generateCardMarkup(tmplId, record, items, spotVal, memoVal, window.currentSharePhoto || '');
+      } else if (typeof renderDynamicRecordTemplate === 'function') {
+        captureArea.innerHTML = renderDynamicRecordTemplate(record, 0);
+      }
+    };
+
+    function captureAndSavePackCard() {
+      const captureArea = document.getElementById('packShareCaptureArea');
+      if (!captureArea || typeof html2canvas === 'undefined') return;
+      triggerHaptic(15);
+      html2canvas(captureArea, { backgroundColor: null, scale: 3, useCORS: true, allowTaint: true, logging: false }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `낭만루트_패킹카드_${getFormattedTimestamp()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        showToast('패킹 카드가 갤러리에 저장되었습니다!', 'download');
+      });
+    }
+
+    function sharePackCardToKakao() {
+      if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) {
+        showToast('카카오 연동을 준비 중입니다.', 'warn');
+        return;
+      }
+      triggerHaptic(15);
+      const spotInput = document.getElementById('shareCardSpotInput');
+      const spotName = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '낭만 백패킹 여정';
+      const weight = currentShareRecord ? currentShareRecord.weightKg : '0.00';
+      
+      Kakao.Link.sendDefault({
+        objectType: 'feed',
+        content: {
+          title: `[낭만루트] ${spotName} 배낭 패킹 완료!`,
+          description: `총 배낭 무게: ${weight}kg | 흔적 없는 클린 백패킹 실천`,
+          imageUrl: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80',
+          link: {
+            mobileWebUrl: window.location.href,
+            webUrl: window.location.href
+          }
+        },
+        buttons: [
+          {
+            title: '나도 패킹하기',
+            link: {
+              mobileWebUrl: window.location.origin + window.location.pathname,
+              webUrl: window.location.origin + window.location.pathname
+            }
+          }
+        ]
+      });
+    }
+
+    function sharePackCardToInstagram() {
+      triggerHaptic(12);
+      captureAndSavePackCard();
+      setTimeout(() => {
+        alert('카드 이미지가 기기에 저장되었습니다!\n인스타그램 스토리나 피드에 이미지를 업로드해 보세요 📸');
+      }, 600);
+    }
+
+    // =========================================================================
+    // 🗂️ [낭만보관함] 원본 templates.js 1:1 직결 & 완결형 파이프라인
+    // =========================================================================
     window.currentCardIndex = 0;
-    window.activeBasecampTab = 'history'; // 'history' | 'record' | 'memo'
-    window.archiveFilter = 'all'; // 'all' | 'visited' | 'fav'
-    window.currentViewMode = 'card'; // 'card' | 'list'
+    window.activeBasecampTab = 'history';
+    window.archiveFilter = 'all';
+    window.currentViewMode = 'card';
     window.selectedRecordIds = new Set();
     window.activeSelectedDateKey = '';
     window.__memoryStore = window.__memoryStore || {};
 
-    // 🛡️ 스토리지 접근 차단(SecurityError) 방어 통합 엔진
     function safeGetStorage(key, defaultVal) {
       try {
         var item = localStorage.getItem(key);
@@ -2569,7 +2583,6 @@
 
     window.fieldDiaries = safeGetStorage('okbm_field_diaries', {});
 
-    // 🎨 메인 인덱스 통일형 정품 SVG 아이콘 시스템
     var BASECAMP_ICONS = {
       pin: '<svg viewBox="0 0 24 24" style="width:12px; height:12px; flex-shrink:0; vertical-align:-1px;" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
       compass: '<svg viewBox="0 0 24 24" style="width:28px; height:28px; color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor"/></svg>',
@@ -2583,7 +2596,6 @@
       backpack: '<svg viewBox="0 0 24 24" style="width:12px; height:12px; vertical-align:-1.5px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>'
     };
 
-    // 🔄 과거 저장 기록 100% 복원 및 정규화(Normalization) 엔진
     function normalizeHistoryRecord(r, idx) {
       var now = new Date();
       var y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
@@ -2632,7 +2644,6 @@
       };
     }
 
-  /// 💾 배낭 패킹 저장 & 카드 생성 액션 (충돌 없는 단일 통합 파이프라인)
     function saveCurrentPackingRecord() {
       var packedItems = [];
       var totalGrams = 0;
@@ -2693,19 +2704,12 @@
       
       if (typeof openPackShareModal === 'function') {
         openPackShareModal(newRecord, packedItems, false);
-      } else {
-        var shareModal = document.getElementById('packShareModalOverlay');
-        if (shareModal) {
-          shareModal.style.setProperty('display', 'flex', 'important');
-          if (typeof updateShareCardLive === 'function') updateShareCardLive();
-        }
       }
       
       triggerHaptic(15);
       if (typeof showToast === 'function') showToast('🎒 [' + cleanDateStr + '] 배낭 패킹이 저장되었습니다!', 'success');
     }
 
-    // 💾 카드 모달에서 낭만보관함에 저장 후 즉시 열기 (선택 날짜 100% 직결 연동)
     function saveCardToVaultAndOpenBasecamp() {
       var spotInput = document.getElementById('shareCardSpotInput');
       var memoInput = document.getElementById('shareCardMemoInput');
@@ -2756,7 +2760,6 @@
       triggerHaptic(15);
     }
 
-    // 🔍 [박지 실시간 검색 & 첫 목록 드롭다운 완결 엔진]
     window.handleSpotSearchInput = function(query) {
       var dropdown = document.getElementById('spotSearchDropdown');
       var clearBtn = document.getElementById('btnSpotInputClear');
@@ -2831,7 +2834,6 @@
       triggerHaptic(8);
     };
 
-    // 모달 외부 클릭 시 박지 드롭다운 닫기
     document.addEventListener('click', function(e) {
       var dropdown = document.getElementById('spotSearchDropdown');
       var input = document.getElementById('shareCardSpotInput');
@@ -2842,7 +2844,7 @@
       }
     });
 
-    // 🎒 [카드를 450ms 꾹 누르면 열리는 출정 배낭 패킹 체크리스트 모달 (번쩍임 0% 부분 갱신)]
+    // 🎒 [카드를 450ms 꾹 누르면 열리는 출정 배낭 패킹 체크리스트 모달]
     window.packedCheckSet = window.packedCheckSet || new Set();
 
     window.togglePackCheckItemDirect = function(recordId, idx, totalItems) {
@@ -2953,7 +2955,7 @@
             </div>
           </div>
 
-          <!-- 큼직한 실전 장비 체크리스트 목록 (마이크로 갱신 적용) -->
+          <!-- 큼직한 실전 장비 체크리스트 목록 -->
           <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; display:flex; flex-direction:column; gap:6px; padding:10px 0;">
             ${items.map(function(it, idx) {
               var itemKey = record.id + '_' + idx;
@@ -2997,7 +2999,6 @@
       }, 300);
     };
 
-    // 🎨 [정품 templates.js 1:1 직결 렌더러] 원본 generateCardMarkup 완벽 연동
     function renderDynamicRecordTemplate(cur, index) {
       var tmplId = parseInt(cur.templateId || '1', 10);
       var items = Array.isArray(cur.items) ? cur.items : [];
@@ -3014,7 +3015,6 @@
         } catch (e) {}
       }
 
-      // Fallback 100% 3:4 비율 영수증 카드 (DEST 박지명 폰트 대폭 확대)
       return '<div style="width:100%; height:100%; aspect-ratio:3/4 !important; background:#ffffff; color:#000000; border-radius:12px; padding:10px 13px 9px 13px; box-shadow:0 14px 35px rgba(0,0,0,0.88); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;">' +
         '<div style="flex-shrink:0;">' +
           '<div style="display:flex; justify-content:space-between; align-items:center;">' +
@@ -3262,7 +3262,6 @@
       var firstDayIndex = new Date(viewYear, viewMonth - 1, 1).getDay();
       var lastDayOfMonth = new Date(viewYear, viewMonth, 0).getDate();
 
-      // 📅 1. 달력 그리드 생성 (42칸 칼고정 그리드)
       var calendarDaysHtml = '';
       for (var b = 0; b < firstDayIndex; b++) {
         calendarDaysHtml += '<div style="height:17px;"></div>';
@@ -3290,7 +3289,6 @@
       var hasRecord = (window.currentCardIndex !== -1 && window.interactiveHistory[window.currentCardIndex]);
       var cur = hasRecord ? window.interactiveHistory[window.currentCardIndex] : null;
 
-      // 🎫 2. 중앙 컨텐츠 (카드 모드 vs 원래 크기 체킹리스트 모드)
       var historyMiddleHtml = '';
       if (window.currentViewMode === 'list') {
         var selectedCount = window.selectedRecordIds ? window.selectedRecordIds.size : 0;
@@ -3337,7 +3335,7 @@
             </div>
           </div>
         `;
-      } else {
+     } else {
         if (hasRecord) {
           historyMiddleHtml = '<div id="swipeCardTarget" style="width:100%; max-width:clamp(250px, 68vw, 305px); height:auto; max-height:clamp(270px, 40vh, 340px); aspect-ratio:3/4 !important; border-radius:12px; box-sizing:border-box; cursor:grab; touch-action:none; transform-origin:bottom center; margin:0 auto; display:flex; justify-content:center; align-items:center; overflow:hidden;">' +
             renderDynamicRecordTemplate(cur, window.currentCardIndex) +
@@ -3435,11 +3433,17 @@
         '</div>' +
       '</div>';
 
+      var tabContentHtml = historyMiddleHtml;
+      if (window.activeBasecampTab === 'record') {
+        tabContentHtml = recordTabHtml;
+      } else if (window.activeBasecampTab === 'memo') {
+        tabContentHtml = memoTabHtml;
+      }
+
       content.innerHTML = `
-        <!-- 📦 상단 낭만루트 바 완전 제거 ➔ 큼직한 3대 탭으로 바로 시작 -->
         <div style="flex:1; width:100%; display:flex; flex-direction:column; justify-content:space-between; padding:calc(8px + env(safe-area-inset-top, 0px)) 14px 0 14px; box-sizing:border-box; overflow:hidden;">
           
-          <!-- 🏷️ 3대 탭 & 슬림 달력 (연/월 네비게이션 & 우측 끝 총 기록수 뱃지) -->
+          <!-- 🏷️ 3대 탭 & 슬림 달력 -->
           <div style="display:flex; flex-direction:column; flex-shrink:0;">
             <div style="display:flex; background:rgba(255,255,255,0.08); padding:2.5px; border-radius:9px 9px 0 0; gap:2.5px; border:1px solid rgba(226,232,240,0.2); border-bottom:none;">
               <button onclick="switchBasecampTab('history')" style="flex:1; background:${window.activeBasecampTab==='history' ? '#38bdf8' : 'transparent'}; color:${window.activeBasecampTab==='history' ? '#000' : '#94a3b8'}; border:none; border-radius:7px; padding:6px 0; font-family:'SUIT', sans-serif; font-size:0.78rem; font-weight:900; cursor:pointer;">힐링 기록</button>
@@ -3447,62 +3451,55 @@
               <button onclick="switchBasecampTab('memo')" style="flex:1; background:${window.activeBasecampTab==='memo' ? '#38bdf8' : 'transparent'}; color:${window.activeBasecampTab==='memo' ? '#000' : '#94a3b8'}; border:none; border-radius:7px; padding:6px 0; font-family:'SUIT', sans-serif; font-size:0.78rem; font-weight:800; cursor:pointer;">비밀 메모</button>
             </div>
 
-            <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(226,232,240,0.2); border-radius:0 0 10px 10px; padding:5px 10px; box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);">
-              
-              <!-- 🧭 연/월 네비게이션 & 우측 끝 총 기록수 뱃지 -->
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
-                <div style="display:flex; align-items:center; gap:4px;">
-                  <button onclick="changeBasecampMonth(-1)" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; border-radius:4px; width:20px; height:20px; font-size:0.60rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">◀</button>
-                  <span style="font-family:'SUIT', sans-serif; font-size:0.88rem; font-weight:900; color:#fff; min-width:80px; text-align:center;">${viewYear}년 ${viewMonth}월</span>
-                  <button onclick="changeBasecampMonth(1)" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; border-radius:4px; width:20px; height:20px; font-size:0.60rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">▶</button>
+            ${window.activeBasecampTab === 'history' ? `
+              <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(226,232,240,0.2); border-radius:0 0 10px 10px; padding:5px 10px; box-shadow:inset 0 1px 0 rgba(255,255,255,0.1);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+                  <div style="display:flex; align-items:center; gap:4px;">
+                    <button onclick="changeBasecampMonth(-1)" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; border-radius:4px; width:20px; height:20px; font-size:0.60rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">◀</button>
+                    <span style="font-family:'SUIT', sans-serif; font-size:0.88rem; font-weight:900; color:#fff; min-width:80px; text-align:center;">${viewYear}년 ${viewMonth}월</span>
+                    <button onclick="changeBasecampMonth(1)" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; border-radius:4px; width:20px; height:20px; font-size:0.60rem; display:flex; align-items:center; justify-content:center; cursor:pointer;">▶</button>
+                  </div>
+                  <div style="font-family:'Space Grotesk', sans-serif; font-size:0.56rem; font-weight:900; background:rgba(56,189,248,0.15); border:1px solid #38bdf8; color:#7dd3fc; padding:2px 7px; border-radius:10px; display:flex; align-items:center; gap:3px;">
+                    <span>총 ${totalCount}회</span>
+                    <span style="color:#cbd5e1; opacity:0.6;">|</span>
+                    <span style="color:#34d399;">${viewMonth}월 ${monthCount}회</span>
+                  </div>
                 </div>
-
-                <!-- 🌟 우측 끝 밀착 총 기록수 뱃지 -->
-                <div style="font-family:'Space Grotesk', sans-serif; font-size:0.56rem; font-weight:900; background:rgba(56,189,248,0.15); border:1px solid #38bdf8; color:#7dd3fc; padding:2px 7px; border-radius:10px; display:flex; align-items:center; gap:3px;">
-                  <span>총 ${totalCount}회</span>
-                  <span style="color:#cbd5e1; opacity:0.6;">|</span>
-                  <span style="color:#34d399;">${viewMonth}월 ${monthCount}회</span>
+                <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-family:'Pretendard', sans-serif; font-size:0.60rem; font-weight:800; color:#64748b; margin-bottom:1px;">
+                  <span style="color:#f43f5e;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#38bdf8;">토</span>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:1px; text-align:center;">
+                  ${calendarDaysHtml}
                 </div>
               </div>
-
-              <!-- 요일 헤더 -->
-              <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-family:'Pretendard', sans-serif; font-size:0.60rem; font-weight:800; color:#64748b; margin-bottom:1px;">
-                <span style="color:#f43f5e;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#38bdf8;">토</span>
-              </div>
-
-              <!-- 42칸 칼고정 날짜 그리드 -->
-              <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:1px; text-align:center;">
-                ${calendarDaysHtml}
-              </div>
-            </div>
+            ` : ''}
           </div>
 
-          <!-- 🎫 중앙 3:4 카드 영역 (or 목록 뷰) -->
+          <!-- 🎫 중앙 컨텐츠 영역 -->
           <div style="width:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; margin:3px 0; flex:1; min-height:0; position:relative; touch-action:pan-y;">
-            ${historyMiddleHtml}
-            ${hasRecord && window.currentViewMode === 'card' ? '<div style="font-size:0.58rem; color:#64748b; margin-top:2px;">💡 카드를 <strong>꾹~ 누르면</strong> 출정 배낭 패킹 체크리스트가 열립니다</div>' : ''}
+            ${tabContentHtml}
+            ${hasRecord && window.activeBasecampTab === 'history' && window.currentViewMode === 'card' ? '<div style="font-size:0.58rem; color:#64748b; margin-top:2px;">💡 카드를 <strong>꾹~ 누르면</strong> 출정 배낭 패킹 체크리스트가 열립니다</div>' : ''}
           </div>
 
-          <!-- ✍️ 하단 5줄 메모장 & [카드 | 목록] 스위처 완벽 복원 -->
-          <div style="flex-shrink:0; display:flex; flex-direction:column; margin-bottom:4px; width:100%; height:110px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; padding:0 2px;">
-              <div style="display:flex; align-items:center; gap:4px;">
-                <span style="font-family:'Space Grotesk', sans-serif; font-size:0.68rem; font-weight:900; color:#38bdf8;">${window.activeSelectedDateKey}</span>
-                <span style="font-family:'Space Grotesk', sans-serif; font-size:0.58rem; font-weight:800; color:#64748b;">NOTE</span>
+          <!-- ✍️ 하단 5줄 메모장 (힐링 기록 탭일 때만 노출) -->
+          ${window.activeBasecampTab === 'history' ? `
+            <div style="flex-shrink:0; display:flex; flex-direction:column; margin-bottom:4px; width:100%; height:110px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; padding:0 2px;">
+                <div style="display:flex; align-items:center; gap:4px;">
+                  <span style="font-family:'Space Grotesk', sans-serif; font-size:0.68rem; font-weight:900; color:#38bdf8;">${window.activeSelectedDateKey}</span>
+                  <span style="font-family:'Space Grotesk', sans-serif; font-size:0.58rem; font-weight:800; color:#64748b;">NOTE</span>
+                </div>
+                <div style="display:inline-flex; background:rgba(255,255,255,0.08); border:1px solid rgba(226,232,240,0.22); border-radius:12px; padding:1px; gap:2px;">
+                  <button onclick="window.currentViewMode = 'card'; renderFullBasecampStage();" style="background:${window.currentViewMode === 'card' ? '#38bdf8' : 'transparent'}; color:${window.currentViewMode === 'card' ? '#000' : '#94a3b8'}; border:none; border-radius:10px; padding:1.5px 7px; font-family:'SUIT', sans-serif; font-size:0.56rem; font-weight:900; cursor:pointer;">카드</button>
+                  <button onclick="window.currentViewMode = 'list'; renderFullBasecampStage();" style="background:${window.currentViewMode === 'list' ? '#38bdf8' : 'transparent'}; color:${window.currentViewMode === 'list' ? '#000' : '#94a3b8'}; border:none; border-radius:10px; padding:1.5px 7px; font-family:'SUIT', sans-serif; font-size:0.56rem; font-weight:900; cursor:pointer;">목록</button>
+                </div>
               </div>
-
-              <!-- 🌟 NOTE 우측에 [카드 | 목록] 스위처 완벽 복원 -->
-              <div style="display:inline-flex; background:rgba(255,255,255,0.08); border:1px solid rgba(226,232,240,0.22); border-radius:12px; padding:1px; gap:2px;">
-                <button onclick="window.currentViewMode = 'card'; renderFullBasecampStage();" style="background:${window.currentViewMode === 'card' ? '#38bdf8' : 'transparent'}; color:${window.currentViewMode === 'card' ? '#000' : '#94a3b8'}; border:none; border-radius:10px; padding:1.5px 7px; font-family:'SUIT', sans-serif; font-size:0.56rem; font-weight:900; cursor:pointer;">카드</button>
-                <button onclick="window.currentViewMode = 'list'; renderFullBasecampStage();" style="background:${window.currentViewMode === 'list' ? '#38bdf8' : 'transparent'}; color:${window.currentViewMode === 'list' ? '#000' : '#94a3b8'}; border:none; border-radius:10px; padding:1.5px 7px; font-family:'SUIT', sans-serif; font-size:0.56rem; font-weight:900; cursor:pointer;">목록</button>
-              </div>
+              <textarea id="liveDiaryInputArea" 
+                        placeholder="다녀온 백패킹의 생생한 소감이나 다음 출정 계획을 적어보세요..." 
+                        oninput="saveLiveFieldDiary(this.value)"
+                        style="width:100%; height:100% !important; background:rgba(255,255,255,0.04); border:1px solid rgba(226,232,240,0.18); border-radius:8px; color:#ffffff; font-family:'Pretendard Variable', 'Pretendard', sans-serif; font-size:0.72rem; line-height:1.45; padding:6px 8px; box-sizing:border-box; outline:none; resize:none; display:block;">${currentDiaryText}</textarea>
             </div>
-
-            <textarea id="liveDiaryInputArea" 
-                      placeholder="다녀온 백패킹의 생생한 소감이나 다음 출정 계획을 적어보세요..." 
-                      oninput="saveLiveFieldDiary(this.value)"
-                      style="width:100%; height:100% !important; background:rgba(255,255,255,0.04); border:1px solid rgba(226,232,240,0.18); border-radius:8px; color:#ffffff; font-family:'Pretendard Variable', 'Pretendard', sans-serif; font-size:0.72rem; line-height:1.45; padding:6px 8px; box-sizing:border-box; outline:none; resize:none; display:block;">${currentDiaryText}</textarea>
-          </div>
+          ` : ''}
 
         </div>
 
@@ -3523,7 +3520,6 @@
         </div>
       `;
 
-      // 🌟 [카드를 450ms 꾹 누르면 실전 출정 패킹 체킹리스트 모달 오픈 & 쫀득한 스와이프 모션]
       var cardTarget = document.getElementById('swipeCardTarget');
       if (cardTarget && hasRecord && window.activeBasecampTab === 'history' && window.currentViewMode === 'card') {
         var startX = 0, startY = 0, currentX = 0, isDragging = false;
@@ -3579,7 +3575,6 @@
       }
     }
 
-    // 🎒 안전 함수 브릿지 (동기화 완료 후 호출 에러 방지)
     function renderPackingHistoryList() {
       if (typeof renderFullBasecampStage === 'function') renderFullBasecampStage();
     }
@@ -3589,6 +3584,7 @@
     function renderBasecampMemos() {
       if (typeof renderFullBasecampStage === 'function') renderFullBasecampStage();
     }
+
     function displayLuckySpot(spot) {
       if (!spot) return;
       const nameEl = document.getElementById('luckyName');
@@ -3921,7 +3917,7 @@
 
       if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) Kakao.init(KAKAO_APP_KEY);
       initStarlightEngines();
-      trackDailyVisit();
+      if (typeof trackDailyVisit === 'function') trackDailyVisit();
       if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
       renderCategorySlots();
       renderPollUI();
@@ -3931,62 +3927,62 @@
       fetchCloudTalks();
       checkIncomingSharedSpot();
 
-      // 🔄 앱 시작 시 로그인 상태인 경우 구글 시트 원본 자동 동기화 (G열 배낭 복원)
-      if (isUserLoggedIn()) {
+      if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
         const initialProfile = safeGetJSON('user_profile', null);
         if (initialProfile && initialProfile.id) {
-          loadUserDataFromCloud(initialProfile.id).then(cloudData => {
-            if (cloudData) {
-              if (cloudData.bookmarks && Array.isArray(cloudData.bookmarks)) {
-                localStorage.setItem('okbm_bookmarks', JSON.stringify(cloudData.bookmarks));
-              }
-              if (cloudData.visited && Array.isArray(cloudData.visited)) {
-                localStorage.setItem('okbm_visited', JSON.stringify(cloudData.visited));
-              }
-              if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
-                packingHistoryList = cloudData.packHistory;
-                localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
-              }
+          if (typeof loadUserDataFromCloud === 'function') {
+            loadUserDataFromCloud(initialProfile.id).then(cloudData => {
+              if (cloudData) {
+                if (cloudData.bookmarks && Array.isArray(cloudData.bookmarks)) {
+                  localStorage.setItem('okbm_bookmarks', JSON.stringify(cloudData.bookmarks));
+                }
+                if (cloudData.visited && Array.isArray(cloudData.visited)) {
+                  localStorage.setItem('okbm_visited', JSON.stringify(cloudData.visited));
+                }
+                if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
+                  packingHistoryList = cloudData.packHistory;
+                  localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
+                }
 
-              // 🎒 G열 my_gears 복원
-              const myGears = cloudData.myGears || null;
-              if (myGears) {
-                if (myGears.selectedGears && typeof myGears.selectedGears === 'object' && Object.keys(myGears.selectedGears).length > 0) {
-                  selectedGearMap = myGears.selectedGears;
-                  localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
-                }
-                if (myGears.favoriteGears && Array.isArray(myGears.favoriteGears)) {
-                  favoriteGearSet = new Set(myGears.favoriteGears);
-                  localStorage.setItem('okbm_favorite_gears', JSON.stringify(myGears.favoriteGears));
-                }
-                if (myGears.customGears && Array.isArray(myGears.customGears)) {
-                  localStorage.setItem('okbm_custom_gears', JSON.stringify(myGears.customGears));
-                  CATEGORIES.forEach(cat => {
-                    myGears.customGears.forEach(cg => {
-                      if (cg.category_id === cat.id && !cat.db.some(d => d.name === cg.name)) {
-                        cat.db.unshift(cg);
-                      }
+                const myGears = cloudData.myGears || null;
+                if (myGears) {
+                  if (myGears.selectedGears && typeof myGears.selectedGears === 'object' && Object.keys(myGears.selectedGears).length > 0) {
+                    selectedGearMap = myGears.selectedGears;
+                    localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
+                  }
+                  if (myGears.favoriteGears && Array.isArray(myGears.favoriteGears)) {
+                    favoriteGearSet = new Set(myGears.favoriteGears);
+                    localStorage.setItem('okbm_favorite_gears', JSON.stringify(myGears.favoriteGears));
+                  }
+                  if (myGears.customGears && Array.isArray(myGears.customGears)) {
+                    localStorage.setItem('okbm_custom_gears', JSON.stringify(myGears.customGears));
+                    CATEGORIES.forEach(cat => {
+                      myGears.customGears.forEach(cg => {
+                        if (cg.category_id === cat.id && !cat.db.some(d => d.name === cg.name)) {
+                          cat.db.unshift(cg);
+                        }
+                      });
                     });
-                  });
+                  }
                 }
-              }
 
-              if (cloudData.memos && typeof cloudData.memos === 'object') {
-                localStorage.setItem('okbm_memos', JSON.stringify(cloudData.memos));
+                if (cloudData.memos && typeof cloudData.memos === 'object') {
+                  localStorage.setItem('okbm_memos', JSON.stringify(cloudData.memos));
+                }
+                if (cloudData.nickname && initialProfile.nickname !== cloudData.nickname && !cloudData.nickname.includes('ENGINE')) {
+                  initialProfile.nickname = cloudData.nickname;
+                  localStorage.setItem('user_profile', JSON.stringify(initialProfile));
+                  if (typeof authState !== 'undefined') authState.userProfile = initialProfile;
+                  if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
+                }
+                renderCategorySlots();
+                renderPackingHistoryList();
+                renderBasecampRecordData();
+                renderBasecampMemos();
               }
-              if (cloudData.nickname && initialProfile.nickname !== cloudData.nickname && !cloudData.nickname.includes('ENGINE')) {
-                initialProfile.nickname = cloudData.nickname;
-                localStorage.setItem('user_profile', JSON.stringify(initialProfile));
-                if (typeof authState !== 'undefined') authState.userProfile = initialProfile;
-                if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
-              }
-              renderCategorySlots();
-              renderPackingHistoryList();
-              renderBasecampRecordData();
-              renderBasecampMemos();
-            }
-            window.isCloudDataLoaded = true;
-          });
+              window.isCloudDataLoaded = true;
+            });
+          }
         } else {
           window.isCloudDataLoaded = true;
         }
