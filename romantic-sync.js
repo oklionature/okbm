@@ -112,8 +112,6 @@ function trackDailyVisit() {
   }
 }
 
-// 💾 4. 구글 시트 클라우드 9열 실시간 안전 동기화 (영역별 격리 전송)
-// 💾 4. 구글 시트 클라우드 9열 실시간 안전 동기화 (전송 락 해제 및 즉시 전송)
 function syncUserDataToCloud() {
   // 🛡️ 로그인 상태(kakao_ID 보유)가 확인되면 즉시 전송 실행
   if (!isUserLoggedIn()) return;
@@ -124,15 +122,22 @@ function syncUserDataToCloud() {
   var isMapPage = (typeof window.location !== 'undefined' && window.location.pathname.includes('map.html'));
   var isIndexPage = !isMapPage;
 
-  var rawHistory = safeGetJSON('okbm_packing_history', []) || window.packingHistoryList || [];
+  // 1. 패킹 기록 동기화 (interactiveHistory 우선 참조하여 삭제 상태 100% 반영)
+  var rawHistory = safeGetJSON('okbm_packing_history', []);
+  if (window.interactiveHistory && Array.isArray(window.interactiveHistory)) {
+    rawHistory = window.interactiveHistory;
+  }
+  window.packingHistoryList = rawHistory;
+
   var lightweightPackHistory = rawHistory.map(function(h) {
     var copy = Object.assign({}, h);
     delete copy.photo; // 대용량 사진 데이터만 제외하고 텍스트 제원은 100% 보존
     return copy;
   });
 
-  var currentGears = (typeof window.selectedGearMap !== 'undefined' && window.selectedGearMap) ? window.selectedGearMap : safeGetJSON('okbm_selected_gears_multi', {});
-  var currentFavs = (typeof window.favoriteGearSet !== 'undefined' && window.favoriteGearSet) ? Array.from(window.favoriteGearSet) : safeGetJSON('okbm_favorite_gears', []);
+  // 2. 마이 장비 세팅값 (슬롯 담김, 찜, 커스텀 삭제 상태 직통 반영)
+  var currentGears = window.selectedGearMap || safeGetJSON('okbm_selected_gears_multi', {});
+  var currentFavs = window.favoriteGearSet ? Array.from(window.favoriteGearSet) : safeGetJSON('okbm_favorite_gears', []);
   var currentCustoms = safeGetJSON('okbm_custom_gears', []);
 
   var myGearsPayload = {
