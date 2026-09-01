@@ -86,6 +86,7 @@
 
     body {
       background: #000000 !important;
+      padding-top: calc(52px + env(safe-area-inset-top, 0px)) !important;
       padding-bottom: 75px;
     }
 
@@ -120,18 +121,20 @@
 
     /* 🧭 1. 상단 GNB */
     .apple-integrated-header {
-      position: sticky;
-      top: 0;
-      z-index: var(--z-header);
-      width: 100%;
-      background: rgba(0, 0, 0, 0.94);
-      border-bottom: 1px solid var(--border-hairline);
-      backdrop-filter: blur(25px);
-      -webkit-backdrop-filter: blur(25px);
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      z-index: var(--z-header) !important;
+      width: 100% !important;
+      background: rgba(0, 0, 0, 0.94) !important;
+      border-bottom: 1px solid var(--border-hairline) !important;
+      backdrop-filter: blur(25px) !important;
+      -webkit-backdrop-filter: blur(25px) !important;
       padding: 0 14px !important;
       padding-top: env(safe-area-inset-top, 0px) !important;
-      user-select: none;
-      overflow: hidden;
+      user-select: none !important;
+      overflow: hidden !important;
     }
 
     .header-top-row {
@@ -2106,6 +2109,93 @@
       triggerHaptic(10);
     }
 
+    // 🔍 [클린패킹카드 박지 검색 및 드롭다운 엔진]
+    window.handleSpotSearchInput = function(val) {
+      val = val || '';
+      var clearBtn = document.getElementById('btnSpotInputClear');
+      var dropdown = document.getElementById('spotSearchDropdown');
+      if (clearBtn) clearBtn.style.display = val.trim().length > 0 ? 'flex' : 'none';
+      if (!dropdown) return;
+
+      var spotList = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
+        ? registeredSpots
+        : safeGetJSON('okbm_spots_cache', []);
+
+      var cleanQ = val.trim().toLowerCase();
+      var filtered = spotList.filter(function(s) {
+        var sName = (s.name || s.fullName || s.spot_main || '').toLowerCase();
+        var sReg = (s.region || s.cityName || '').toLowerCase();
+        return sName.includes(cleanQ) || sReg.includes(cleanQ);
+      });
+
+      if (filtered.length === 0) {
+        dropdown.innerHTML = '<div style="padding:8px 10px; font-size:0.7rem; color:#94a3b8; text-align:center;">일치하는 박지가 없습니다. (직접 입력 가능)</div>';
+        dropdown.style.display = 'block';
+        return;
+      }
+
+      var html = filtered.slice(0, 15).map(function(s) {
+        var displayName = s.fullName || s.name || s.spot_main || '';
+        var elevText = s.elevation ? (String(s.elevation).includes('m') ? s.elevation : s.elevation + 'm') : '';
+        var regionText = s.region || s.cityName || '전국';
+        var safeName = escapeHtml(displayName);
+        var safeElev = escapeHtml(elevText);
+
+        return '<div class="spot-dropdown-item" onclick="selectSpotFromDropdown(\'' + safeName + '\', \'' + safeElev + '\')">' +
+          '<div style="font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">📍 ' + safeName + '</div>' +
+          '<div style="font-size:0.62rem; color:#38bdf8; font-weight:700; flex-shrink:0; margin-left:6px;">' + escapeHtml(regionText) + (safeElev ? ' · ' + safeElev : '') + '</div>' +
+        '</div>';
+      }).join('');
+
+      dropdown.innerHTML = html;
+      dropdown.style.display = 'block';
+    };
+
+    window.toggleSpotDropdownList = function() {
+      var dropdown = document.getElementById('spotSearchDropdown');
+      var input = document.getElementById('shareCardSpotInput');
+      if (!dropdown) return;
+      if (dropdown.style.display === 'block') {
+        dropdown.style.display = 'none';
+      } else {
+        window.handleSpotSearchInput(input ? input.value : '');
+      }
+      triggerHaptic(10);
+    };
+
+    window.clearSpotSearchInput = function() {
+      var input = document.getElementById('shareCardSpotInput');
+      var clearBtn = document.getElementById('btnSpotInputClear');
+      var dropdown = document.getElementById('spotSearchDropdown');
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
+      if (clearBtn) clearBtn.style.display = 'none';
+      if (dropdown) dropdown.style.display = 'none';
+      if (typeof updateShareCardLive === 'function') updateShareCardLive();
+      triggerHaptic(10);
+    };
+
+    window.selectSpotFromDropdown = function(spotName, elevation) {
+      var input = document.getElementById('shareCardSpotInput');
+      var clearBtn = document.getElementById('btnSpotInputClear');
+      var dropdown = document.getElementById('spotSearchDropdown');
+
+      var fullSpotTitle = spotName + (elevation ? ' (' + elevation + ')' : '');
+      if (input) input.value = fullSpotTitle;
+      if (clearBtn) clearBtn.style.display = 'flex';
+      if (dropdown) dropdown.style.display = 'none';
+
+      if (window.currentShareRecord) {
+        window.currentShareRecord.spot = fullSpotTitle;
+        if (elevation) window.currentShareRecord.elevation = elevation;
+      }
+
+      if (typeof updateShareCardLive === 'function') updateShareCardLive();
+      triggerHaptic(12);
+    };
+
     function closeGearPresetModal() { 
       const modal = document.getElementById('gearPresetModal');
       if (modal) modal.style.setProperty('display', 'none', 'important');
@@ -2991,48 +3081,147 @@
   <script src="templates.js?v=2.0.1"></script>
   <script src="romantic-basecamp.js?v=2.3.0"></script>
 
-  <!-- 🔔 푸시 알림 권한 요청 및 등록 코드 -->
-<script>
-  document.addEventListener('DOMContentLoaded', async () => {
-    // 앱(Capacitor) 환경인지 확인
-    if (window.Capacitor && window.Capacitor.Plugins) {
-      const { PushNotifications } = window.Capacitor.Plugins;
+  <!-- 🔔 푸시 알림 권한 요청 및 안드로이드 뒤로가기 버튼 완벽 제어 -->
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 앱(Capacitor) 환경인지 확인
+      if (window.Capacitor && window.Capacitor.Plugins) {
+        const { PushNotifications, App } = window.Capacitor.Plugins;
 
-      if (PushNotifications) {
-        try {
-          // 1. 알림 권한 확인 및 요청
-          let permStatus = await PushNotifications.checkPermissions();
-          if (permStatus.receive === 'prompt') {
-            permStatus = await PushNotifications.requestPermissions();
+        // 1. 푸시 알림 초기화 및 권한 요청
+        if (PushNotifications) {
+          try {
+            let permStatus = await PushNotifications.checkPermissions();
+            if (permStatus.receive === 'prompt') {
+              permStatus = await PushNotifications.requestPermissions();
+            }
+
+            if (permStatus.receive === 'granted') {
+              await PushNotifications.register();
+
+              PushNotifications.addListener('registration', (token) => {
+                console.log('✅ FCM 기기 토큰 발급 성공:', token.value);
+              });
+
+              PushNotifications.addListener('registrationError', (error) => {
+                console.error('❌ 푸시 등록 에러:', error);
+              });
+
+              PushNotifications.addListener('pushNotificationReceived', (notification) => {
+                console.log('📬 푸시 알림 수신:', notification);
+                if (typeof showToast === 'function') {
+                  showToast(`📬 ${notification.title || '알림'}: ${notification.body || ''}`, 'info', 3000);
+                }
+              });
+            }
+          } catch (e) {
+            console.error('푸시 알림 초기화 실패:', e);
           }
+        }
 
-          if (permStatus.receive === 'granted') {
-            // 2. 알림 서비스 등록
-            await PushNotifications.register();
+        // 2. 안드로이드 뒤로가기(Back Button) 제어
+        if (App) {
+          let lastBackTime = 0;
 
-            // 3. 기기 고유 토큰(FCM Token) 발급 성공 시
-            PushNotifications.addListener('registration', (token) => {
-              console.log('✅ FCM 기기 토큰 발급 성공:', token.value);
-              // alert('FCM 토큰: ' + token.value); // 확인용 알림창
-            });
+          App.addListener('backButton', ({ canGoBack }) => {
+            // 1) 동적으로 생성된 피드/상세 모달 닫기
+            const dynamicModals = ['modalRichAfterTrip', 'singleTripFeedModal', 'pastTripsListModal', 'sharedSpotFloatingPopup'];
+            for (const mId of dynamicModals) {
+              const el = document.getElementById(mId);
+              if (el) {
+                el.remove();
+                return;
+              }
+            }
 
-            // 4. 오류 발생 시
-            PushNotifications.addListener('registrationError', (error) => {
-              console.error('❌ 푸시 등록 에러:', error);
-            });
+            // 2) 포토 스튜디오 닫기
+            const photoStudio = document.getElementById('photoStudioOverlay');
+            if (photoStudio && photoStudio.style.display === 'flex') {
+              if (typeof closePhotoStudio === 'function') closePhotoStudio();
+              else photoStudio.style.display = 'none';
+              return;
+            }
 
-            // 5. 앱이 켜져 있을 때 푸시 알림 도착 시
-            PushNotifications.addListener('pushNotificationReceived', (notification) => {
-              console.log('📬 푸시 알림 수신:', notification);
-              alert(notification.title + '\n' + notification.body);
-            });
-          }
-        } catch (e) {
-          console.error('푸시 알림 초기화 실패:', e);
+            // 3) 장비 프리셋 모달 닫기
+            const gearModal = document.getElementById('gearPresetModal');
+            if (gearModal && gearModal.style.display === 'flex') {
+              if (typeof closeGearPresetModal === 'function') closeGearPresetModal();
+              else gearModal.style.display = 'none';
+              return;
+            }
+
+            // 4) 초기화 확인 모달 닫기
+            const resetModal = document.getElementById('packResetConfirmModal');
+            if (resetModal && resetModal.style.display === 'flex') {
+              if (typeof closeResetConfirmModal === 'function') closeResetConfirmModal();
+              else resetModal.style.display = 'none';
+              return;
+            }
+
+            // 5) 패킹 공유 모달 닫기
+            const shareModal = document.getElementById('packShareModalOverlay');
+            if (shareModal && shareModal.style.display === 'flex') {
+              if (typeof closePackShareModal === 'function') closePackShareModal();
+              else shareModal.style.display = 'none';
+              return;
+            }
+
+            // 6) 보관함 모달 닫기
+            const myInfoModal = document.getElementById('myInfoModal');
+            if (myInfoModal && myInfoModal.style.display === 'flex') {
+              if (typeof closeMyInfoModal === 'function') closeMyInfoModal();
+              else {
+                myInfoModal.style.display = 'none';
+                document.body.style.overflow = '';
+              }
+              return;
+            }
+
+            // 7) 배낭 무게 계산기 모달 닫기
+            const packCalcModal = document.getElementById('packingCalculatorModal');
+            if (packCalcModal && packCalcModal.style.display === 'flex') {
+              if (typeof closePackingModal === 'function') closePackingModal();
+              else {
+                packCalcModal.style.display = 'none';
+                document.body.style.overflow = '';
+              }
+              return;
+            }
+
+            // 8) 로그인 / 프로필 관리 모달 닫기
+            const loginModal = document.getElementById('loginModalOverlay');
+            if (loginModal && loginModal.style.display === 'flex') {
+              if (typeof closeLoginModal === 'function') closeLoginModal();
+              else loginModal.style.display = 'none';
+              return;
+            }
+            const profileModal = document.getElementById('userProfileModalOverlay');
+            if (profileModal && profileModal.style.display === 'flex') {
+              if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
+              else profileModal.style.display = 'none';
+              return;
+            }
+
+            // 9) 웹 히스토리 뒤로가기
+            if (window.history.length > 1 && canGoBack) {
+              window.history.back();
+              return;
+            }
+
+            // 10) 홈 화면 2초 연속 터치 시 종료
+            const currentTime = new Date().getTime();
+            if (currentTime - lastBackTime < 2000) {
+              App.exitApp();
+            } else {
+              lastBackTime = currentTime;
+              if (typeof showToast === 'function') {
+                showToast('\'뒤로\' 버튼을 한 번 더 누르면 앱이 종료됩니다.', 'info', 2000);
+              }
+            }
+          });
         }
       }
-    }
-  });
-</script>
+    });
+  </script>
 </body>
 </html>
