@@ -209,7 +209,11 @@ function openPackShareModal(record, items, forceStudio) {
     items: []
   };
 
-  currentShareItems = items || (currentShareRecord.items ? currentShareRecord.items.map(function(str) {
+  currentShareItems = items || (currentShareRecord.items ? currentShareRecord.items.map(function(item) {
+    if (typeof item === 'object' && item !== null) {
+      return { name: item.name || item.itemName || '', weight: Number(item.weight || item.weight_g || 0) };
+    }
+    var str = String(item || '');
     var m = str.match(/^(.*?)\s*\((\d+)g\)$/);
     return m ? { name: m[1], weight: parseInt(m[2], 10) } : { name: str, weight: 0 };
   }) : []);
