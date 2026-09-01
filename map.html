@@ -2496,9 +2496,9 @@
         const spot = spots.find(s => String(s.id).trim() === String(spotId).trim());
         if (!spot) return;
         triggerHaptic(10);
-        const titleName = spot.fullName || `${spot.spot_main} (${spot.spot_sub || ''})`;
+      const titleName = spot.fullName || `${spot.spot_main} (${spot.spot_sub || ''})`;
         const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1) + 'index.html';
-const shareUrl = `${window.location.origin}${basePath}?spot=${encodeURIComponent(spot.spot_main || spot.name)}`;
+        const shareUrl = `${window.location.origin}${basePath}?spot=${encodeURIComponent(spot.spot_main || spot.name)}`;
         if (navigator.share) navigator.share({ title: `[낭만백패킹] ${titleName}`, url: shareUrl }).catch(() => {});
         else copyTextToClipboard(shareUrl, '박지 공유 링크가 복사되었습니다!');
       }
