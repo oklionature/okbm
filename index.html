@@ -2991,5 +2991,48 @@
   <script src="templates.js?v=2.0.1"></script>
   <script src="romantic-basecamp.js?v=2.3.0"></script>
 
+  <!-- 🔔 푸시 알림 권한 요청 및 등록 코드 -->
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    // 앱(Capacitor) 환경인지 확인
+    if (window.Capacitor && window.Capacitor.Plugins) {
+      const { PushNotifications } = window.Capacitor.Plugins;
+
+      if (PushNotifications) {
+        try {
+          // 1. 알림 권한 확인 및 요청
+          let permStatus = await PushNotifications.checkPermissions();
+          if (permStatus.receive === 'prompt') {
+            permStatus = await PushNotifications.requestPermissions();
+          }
+
+          if (permStatus.receive === 'granted') {
+            // 2. 알림 서비스 등록
+            await PushNotifications.register();
+
+            // 3. 기기 고유 토큰(FCM Token) 발급 성공 시
+            PushNotifications.addListener('registration', (token) => {
+              console.log('✅ FCM 기기 토큰 발급 성공:', token.value);
+              // alert('FCM 토큰: ' + token.value); // 확인용 알림창
+            });
+
+            // 4. 오류 발생 시
+            PushNotifications.addListener('registrationError', (error) => {
+              console.error('❌ 푸시 등록 에러:', error);
+            });
+
+            // 5. 앱이 켜져 있을 때 푸시 알림 도착 시
+            PushNotifications.addListener('pushNotificationReceived', (notification) => {
+              console.log('📬 푸시 알림 수신:', notification);
+              alert(notification.title + '\n' + notification.body);
+            });
+          }
+        } catch (e) {
+          console.error('푸시 알림 초기화 실패:', e);
+        }
+      }
+    }
+  });
+</script>
 </body>
 </html>
