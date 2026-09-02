@@ -1,5 +1,3 @@
-
-
 /**
  * 낭만루트 힐링 보관함 & 피드 엔진 (romantic-basecamp.js v2.3.0)
  * - 20종 템플릿 연동 3D 양면 엽서 카드 (앞면 패킹지 ↔ 뒷면 엽서)
@@ -98,23 +96,111 @@
   };
 
   // 💾 [스토리지 유틸 엔진]
+ // 💾 [스마트폰 내장 대용량 영구 저장소(IndexedDB) & 하이브리드 캐시 엔진]
+  var DB_NAME = 'okbm_vault_db';
+  var DB_VERSION = 1;
+  var STORE_NAME = 'packing_vault';
+
+  function getIndexedDBInstance() {
+    return new Promise(function(resolve, reject) {
+      if (typeof indexedDB === 'undefined') {
+        resolve(null);
+        return;
+      }
+      var request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = function(e) {
+        var db = e.target.result;
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+          db.createObjectStore(STORE_NAME, { keyPath: 'key' });
+        }
+      };
+      request.onsuccess = function(e) {
+        resolve(e.target.result);
+      };
+      request.onerror = function() {
+        resolve(null);
+      };
+    });
+  }
+
+  window.saveToIndexedDB = async function(key, value) {
+    try {
+      var db = await getIndexedDBInstance();
+      if (!db) return false;
+      return new Promise(function(resolve) {
+        var tx = db.transaction(STORE_NAME, 'readwrite');
+        var store = tx.objectStore(STORE_NAME);
+        store.put({ key: key, data: value, updatedAt: Date.now() });
+        tx.oncomplete = function() { resolve(true); };
+        tx.onerror = function() { resolve(false); };
+      });
+    } catch (e) {
+      return false;
+    }
+  };
+
+  window.loadFromIndexedDB = async function(key) {
+    try {
+      var db = await getIndexedDBInstance();
+      if (!db) return null;
+      return new Promise(function(resolve) {
+        var tx = db.transaction(STORE_NAME, 'readonly');
+        var store = tx.objectStore(STORE_NAME);
+        var req = store.get(key);
+        req.onsuccess = function() {
+          resolve(req.result ? req.result.data : null);
+        };
+        req.onerror = function() { resolve(null); };
+      });
+    } catch (e) {
+      return null;
+    }
+  };
+
+  // 🔄 [기존 localStorage 데이터 ➔ IndexedDB 대용량 저장소 자동 이관]
+  (async function autoMigrateToIndexedDB() {
+    try {
+      var idbHistory = await window.loadFromIndexedDB('okbm_packing_history');
+      if (!idbHistory || !Array.isArray(idbHistory) || idbHistory.length === 0) {
+        var rawLocal = localStorage.getItem('okbm_packing_history');
+        if (rawLocal) {
+          var parsed = JSON.parse(rawLocal);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            await window.saveToIndexedDB('okbm_packing_history', parsed);
+            window.__memoryStore['okbm_packing_history'] = parsed;
+          }
+        }
+      } else {
+        window.__memoryStore['okbm_packing_history'] = idbHistory;
+        window.interactiveHistory = idbHistory.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
+      }
+    } catch (e) {}
+  })();
+
   window.safeGetStorage = function(key, defaultVal) {
+    if (window.__memoryStore[key] !== undefined && window.__memoryStore[key] !== null) {
+      return window.__memoryStore[key];
+    }
     try {
       var item = localStorage.getItem(key);
-      if (item !== null) return JSON.parse(item);
+      if (item !== null) {
+        var parsed = JSON.parse(item);
+        window.__memoryStore[key] = parsed;
+        return parsed;
+      }
     } catch (e) {}
-    if (window.__memoryStore[key] !== undefined) return window.__memoryStore[key];
     return defaultVal;
   };
 
   window.safeSetStorage = function(key, value) {
+    window.__memoryStore[key] = (typeof value === 'string' ? JSON.parse(value) : value);
+    window.saveToIndexedDB(key, window.__memoryStore[key]);
     try {
       var str = typeof value === 'string' ? value : JSON.stringify(value);
       localStorage.setItem(key, str);
     } catch (e) {
-      console.warn('[Storage Quota] 스마트폰 저장소 최적화 저장 진행');
+      // 5MB 초과 시에도 스마트폰 IndexedDB에 영구 저장되므로 안전함
     }
-    window.__memoryStore[key] = (typeof value === 'string' ? JSON.parse(value) : value);
   };
 
   window.fieldDiaries = window.safeGetStorage('okbm_field_diaries', {});
@@ -144,54 +230,65 @@
     return window.NATURAL_BORDER_PALETTES[paletteIdx];
   };
 
-  // 🌌 [소프트 앰비언트 FX]
+  // 🌌 [0.5mm 정밀 사각 테두리 엣지 글로우 FX - 8대 네온 컬러 랜덤 발광]
   if (!document.getElementById('basecamp-soft-ambient-fx-style')) {
     var fxStyle = document.createElement('style');
     fxStyle.id = 'basecamp-soft-ambient-fx-style';
     fxStyle.innerHTML = `
-      @keyframes organic_soft_circle_glow {
-        0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0; filter: blur(12px); }
-        45% { opacity: 0.85; filter: blur(20px); }
-        100% { transform: translate(-50%, -50%) scale(1.15); opacity: 0; filter: blur(28px); }
+      @keyframes card_edge_sharp_pulse {
+        0% {
+          opacity: 0;
+          box-shadow: 0 0 0px var(--edge-color), inset 0 0 0px var(--edge-color);
+        }
+        35% {
+          opacity: 1;
+          box-shadow: 0 0 6px 1px var(--edge-color), inset 0 0 3px var(--edge-color);
+        }
+        100% {
+          opacity: 0;
+          box-shadow: 0 0 10px 2px var(--edge-color), inset 0 0 5px var(--edge-color);
+        }
       }
-      .soft-ambient-layer {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 300px;
-        height: 380px;
-        border-radius: 24px;
-        pointer-events: none;
-        z-index: 0;
-        transform: translate(-50%, -50%);
+      .card-05mm-edge-layer {
+        position: absolute !important;
+        inset: -1px !important;
+        width: calc(100% + 2px) !important;
+        height: calc(100% + 2px) !important;
+        border-radius: 16px !important;
+        border: 1.5px solid var(--edge-color) !important;
+        pointer-events: none !important;
+        z-index: 999999 !important;
+        box-sizing: border-box !important;
         opacity: 0;
       }
     `;
     document.head.appendChild(fxStyle);
   }
 
+  window.EDGE_05MM_COLORS = [
+    '#38bdf8', '#34d399', '#fbbf24', '#f43f5e',
+    '#c084fc', '#fb923c', '#a3e635', '#ffffff'
+  ];
+
   window.triggerSoftAmbientFX = function(cardEl) {
+    if (!cardEl) cardEl = document.getElementById('swipePostcardTarget');
     if (!cardEl) return;
-    var layer = cardEl.querySelector('.soft-ambient-layer');
+
+    var layer = cardEl.querySelector('.card-05mm-edge-layer');
     if (!layer) {
       layer = document.createElement('div');
-      layer.className = 'soft-ambient-layer';
+      layer.className = 'card-05mm-edge-layer';
       cardEl.appendChild(layer);
     }
-    var gradients = [
-      'radial-gradient(ellipse at center, rgba(52,211,153,0.7) 0%, rgba(2,132,199,0.4) 40%, transparent 68%)',
-      'radial-gradient(ellipse at center, rgba(251,191,36,0.7) 0%, rgba(234,88,12,0.4) 40%, transparent 68%)',
-      'radial-gradient(ellipse at center, rgba(167,243,208,0.7) 0%, rgba(5,150,105,0.4) 40%, transparent 68%)',
-      'radial-gradient(ellipse at center, rgba(196,181,253,0.7) 0%, rgba(99,102,241,0.4) 40%, transparent 68%)',
-      'radial-gradient(ellipse at center, rgba(253,164,175,0.7) 0%, rgba(190,18,60,0.4) 40%, transparent 68%)'
-    ];
-    layer.style.background = gradients[Math.floor(Math.random() * gradients.length)];
+
+    var randomColor = window.EDGE_05MM_COLORS[Math.floor(Math.random() * window.EDGE_05MM_COLORS.length)];
+    layer.style.setProperty('--edge-color', randomColor);
     layer.style.animation = 'none';
     layer.offsetHeight;
-    layer.style.animation = 'organic_soft_circle_glow 0.75s cubic-bezier(0.15, 0.85, 0.25, 1) forwards';
+    layer.style.animation = 'card_edge_sharp_pulse 0.65s cubic-bezier(0.2, 0.8, 0.25, 1) forwards';
   };
 
-  // 🔄 [히스토리 레코드 정규화]
+  // 🔄 [히스토리 레코드 정규화 - 메모 자동 채우기 완전 제거 & 순수 빈칸 보장]
   window.normalizeHistoryRecord = function(r, idx) {
     var now = new Date();
     var y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
@@ -234,6 +331,11 @@
     var firstGearName = cleanItems[0] ? cleanItems[0].name : '';
     var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
 
+    var rawMemo = (r && r.memo !== undefined && r.memo !== null) ? String(r.memo) : '';
+    if (rawMemo.includes('비화식으로') || rawMemo.includes('칼각 피칭') || rawMemo.includes('도착! 더블월') || rawMemo.includes('에서 보낸 조용한 하룻밤') || rawMemo.includes('자리를 털고 일어나는 순간까지')) {
+      rawMemo = '';
+    }
+
     var norm = {
       id: recordId,
       templateId: (r && r.templateId !== undefined && r.templateId !== null) ? parseInt(r.templateId, 10) : (window.selectedTemplateId || savedTmplId || 1),
@@ -251,23 +353,26 @@
       terrain: (r && r.terrain) ? r.terrain : 'peak',
       terrainText: (r && r.terrainText) ? r.terrainText : '능선·정상',
       meal: (r && r.meal) ? r.meal : 'hotmeal',
-      mealText: (r && r.mealText) ? r.mealText : '핫앤쿡 발열식',
+      mealText: (r && r.mealText) ? r.mealText : '발열식',
       companion: (r && r.companion) ? r.companion : 'solo',
-      companionText: (r && r.companionText) ? r.companionText : '나홀로 솔캠',
+      companionText: (r && r.companionText) ? r.companionText : '솔캠',
       wind: (r && r.wind) ? r.wind : 'windGale',
-      windText: (r && r.windText) ? r.windText : '매서운 돌풍',
-      memo: (r && r.memo !== undefined) ? r.memo : '',
+      windText: (r && r.windText) ? r.windText : '돌풍',
+      hardText: (r && r.hardText) ? r.hardText : '',
+      goodText: (r && r.goodText) ? r.goodText : '',
+      memoryText: (r && r.memoryText) ? r.memoryText : '',
+      memo: rawMemo,
+      oneLineMemo: (r && r.oneLineMemo && !r.oneLineMemo.includes('비화식')) ? r.oneLineMemo : '',
       items: cleanItems,
       photos: rawPhotos,
       photo: rawPhotos[0],
       fieldPhoto: rawPhotos[0]
     };
 
-    if (!norm.memo) norm.memo = window.composePoeticBackpackingStory(norm);
     return norm;
   };
 
-  // 🎒 [패킹 저장 및 공유 카드 호출]
+  // 🎒 [패킹 저장 및 공유 카드 호출 - 기본 메모 완전 빈칸]
   window.saveCurrentPackingRecord = function() {
     var packedItems = [];
     var totalGrams = 0;
@@ -306,6 +411,8 @@
     var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
     var defPhoto = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';
     var recordId = 'pack_' + Date.now();
+    var spotTitle = (window.currentLuckySpot && window.currentLuckySpot.name) ? window.currentLuckySpot.name : '대관령 선자령';
+    var spotElev = (window.currentLuckySpot && window.currentLuckySpot.elevation) ? `${window.currentLuckySpot.elevation}m` : '832m';
 
     var newRecord = {
       id: recordId,
@@ -314,17 +421,21 @@
       year: tYear,
       month: tMonth,
       day: tDay,
-      spot: (window.currentLuckySpot && window.currentLuckySpot.name) ? window.currentLuckySpot.name : '대관령 선자령 (832m)',
-      elevation: (window.currentLuckySpot && window.currentLuckySpot.elevation) ? `${window.currentLuckySpot.elevation}m` : '832m',
+      spot: spotTitle,
+      elevation: spotElev,
       weightKg: totalKg,
       weightGrams: totalGrams,
       itemCount: packedItems.length,
       weather: 'stars', weatherText: '은하수·별밤',
       terrain: 'peak', terrainText: '능선·정상',
-      meal: 'hotmeal', mealText: '핫앤쿡 발열식',
-      companion: 'solo', companionText: '나홀로 솔캠',
-      wind: 'windGale', windText: '매서운 돌풍',
-      memo: '비화식으로 즐기는 조용한 하룻밤',
+      meal: 'hotmeal', mealText: '발열식',
+      companion: 'solo', companionText: '솔캠',
+      wind: 'windGale', windText: '돌풍',
+      hardText: '',
+      goodText: '',
+      memoryText: '',
+      memo: '',
+      oneLineMemo: `${spotTitle} 백패킹`,
       items: packedItems,
       photos: [window.currentSharePhoto || defPhoto],
       photo: window.currentSharePhoto || defPhoto,
@@ -350,12 +461,12 @@
     if (typeof showToast === 'function') showToast('🎒 [' + cleanDateStr + '] 배낭 패킹이 저장되었습니다!', 'success');
   };
 
-  // 💾 [공유 모달에서 보관함으로 저장]
+  // 💾 [공유 모달에서 보관함으로 저장 - 기본 메모 완전 빈칸]
   window.saveCardToVaultAndOpenBasecamp = function() {
     var spotInput = document.getElementById('shareCardSpotInput');
     var memoInput = document.getElementById('shareCardMemoInput');
-    var liveSpot = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : (window.currentShareRecord ? window.currentShareRecord.spot : '대관령 선자령 (832m)');
-    var liveMemo = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : '비화식으로 즐기는 조용한 하룻밤';
+    var liveSpot = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : (window.currentShareRecord ? window.currentShareRecord.spot : '대관령 선자령');
+    var liveMemo = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : '';
 
     var now = new Date();
     var targetDateStr = window.activeSelectedDateKey || (window.currentShareRecord ? window.currentShareRecord.date : (now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0')));
@@ -385,7 +496,7 @@
         date: cleanDateStr,
         year: tYear, month: tMonth, day: tDay,
         spot: liveSpot, elevation: '832m', weightKg: (totalGrams / 1000).toFixed(2), weightGrams: totalGrams,
-        itemCount: liveItems.length, memo: liveMemo, weather: 'stars', weatherText: '은하수·별밤', terrain: 'peak', terrainText: '능선·정상', meal: 'hotmeal', mealText: '핫앤쿡 발열식', companion: 'solo', companionText: '나홀로 솔캠', wind: 'windGale', windText: '매서운 돌풍',
+        itemCount: liveItems.length, memo: liveMemo, oneLineMemo: `${liveSpot} 백패킹`, weather: 'stars', weatherText: '은하수·별밤', terrain: 'peak', terrainText: '능선·정상', meal: 'hotmeal', mealText: '발열식', companion: 'solo', companionText: '솔캠', wind: 'windGale', windText: '돌풍',
         items: liveItems, photos: [window.currentSharePhoto || defPhoto], photo: window.currentSharePhoto || defPhoto, fieldPhoto: window.currentSharePhoto || defPhoto
       };
     } else {
@@ -395,6 +506,7 @@
       window.currentShareRecord.day = tDay;
       window.currentShareRecord.spot = liveSpot;
       window.currentShareRecord.memo = liveMemo;
+      window.currentShareRecord.oneLineMemo = `${liveSpot} 백패킹`;
       window.currentShareRecord.templateId = window.selectedTemplateId || window.currentShareRecord.templateId || savedTmplId || 1;
       if (!Array.isArray(window.currentShareRecord.photos) || window.currentShareRecord.photos.length === 0) {
         window.currentShareRecord.photos = [window.currentSharePhoto || window.currentShareRecord.fieldPhoto || defPhoto];
@@ -419,7 +531,6 @@
     if (typeof showToast === 'function') showToast('✅ [' + cleanDateStr + '] 보관함에 안전하게 저장되었습니다!', 'success');
     triggerHaptic(15);
   };
-
   // 📸 [피드 이미지 다운로드 캡처]
   window.captureAndSaveSingleTripCard = function(targetElementId, filenamePrefix) {
     var target = document.getElementById(targetElementId);
@@ -500,119 +611,272 @@
     return str;
   }
 
-  // 🧠 [지능형 감성 문장 생성기]
+  // 🧠 [지능형 감성 문장 생성기 - 사용자 입력값 최우선 & 완전 랜덤 페르소나/MBTI 다형성 엔진]
   window.composePoeticBackpackingStory = function(record, forcedTone, forcedMbti) {
     if (!record) return '자연 속에서 비화식으로 즐긴 조용한 하룻밤.';
 
-    var extractList = function(rawText, fallback) {
-      if (Array.isArray(rawText) && rawText.length > 0) return rawText;
-      if (typeof rawText === 'string' && rawText.trim()) {
-        return rawText.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
-      }
-      return [fallback];
+    var pickRandom = function(arr) {
+      if (!Array.isArray(arr) || arr.length === 0) return '';
+      return arr[Math.floor(Math.random() * arr.length)];
     };
 
     var spot = record.spot || '선자령';
-    var weathers = extractList(record.weatherText || record.weather, '은하수');
-    var terrains = extractList(record.terrainText || record.terrain, '능선');
-    var meals = extractList(record.mealText || record.meal, '핫앤쿡');
-    var comps = extractList(record.companionText || record.companion, '솔로');
-    var winds = extractList(record.windText || record.wind, '돌풍');
-    var tents = extractList(record.tentText || record.tent, '더블월');
-    var temps = extractList(record.tempText || record.temp, '선선함');
-    var views = extractList(record.viewText || record.view, '파노라마뷰');
-    var approaches = extractList(record.approachText || record.approach, '꿀박지');
     var weight = record.weightKg || '5.4';
 
-    var formatApproach = function(app) {
-      if (app.includes('빡센')) return '가파른 업힐 코스를 올라';
-      if (app.includes('꿀박지')) return '수월한 코스로';
-      if (app.includes('트레킹')) return '가벼운 트레킹으로';
-      if (app.includes('임도')) return '완만한 임도를 따라';
-      if (app.includes('암릉')) return '스릴 넘치는 암릉 코스를 지나';
-      return app + ' 코스로';
-    };
-
-    var formatTemp = function(temp) {
-      if (temp.includes('혹한') || temp.includes('영하')) return '영하의 매서운 추위 속';
-      if (temp.includes('선선')) return '선선한 가을 공기 속';
-      if (temp.includes('쌀쌀')) return '쌀쌀한 밤공기 속';
-      if (temp.includes('쾌적')) return '쾌적하고 시원한 날씨 속';
-      if (temp.includes('포근')) return '포근한 날씨 속';
-      return temp + ' 날씨 속';
-    };
-
-    var joinWithAnd = function(list) {
-      if (!list || list.length === 0) return '';
-      if (list.length === 1) return list[0];
-      var first = list[0];
-      var rest = list.slice(1).join(', ');
-      return getJosa(first, '과/와') + ' ' + rest;
-    };
-
-    var cleanComps = Array.from(new Set(comps.map(c => c.includes('솔') ? '솔로' : c)));
-
-    var appTxt = formatApproach(approaches[0]);
-    var terTxt = terrains[0];
-    var tentTxt = tents.join(', ');
-    var tempTxt = formatTemp(temps[0]);
-    var windTxt = winds[0];
-    var viewTxt = joinWithAnd(views);
-    var weatherTxt = weathers.join('·');
-    var compTxt = cleanComps.join(', ');
-    var mealTxt = meals.join(', ');
+    // ✍️ 사용자가 직접 입력한 3대 핵심 상황 데이터 추출
+    var hard = (record.hardText || (window.__richState && window.__richState.hardText) || '').trim();
+    var good = (record.goodText || (window.__richState && window.__richState.goodText) || '').trim();
+    var memory = (record.memoryText || (window.__richState && window.__richState.memoryText) || '').trim();
 
     var style = forcedTone || (window.__richState && window.__richState.selectedTone) || 'insta';
     var mbti = forcedMbti || (window.__richState && window.__richState.selectedMbti) || 'INFP';
 
-    var mbtiPoint = '';
-    if (mbti === 'INTJ') mbtiPoint = `배낭 ${weight}kg 오차 없이 세팅하고 계획된 타임라인대로 움직여서 완벽히 뇌 용량 정리함.`;
-    else if (mbti === 'INTP') mbtiPoint = `침낭에 누워 온갖 생각의 나래를 펼치며 혼자 멍때리니 복잡했던 머리가 싹 비워짐.`;
-    else if (mbti === 'ENTJ') mbtiPoint = `목표 시간 단축해서 완벽 주파하고 정상에서 마주한 뷰 덕분에 확실한 성취감 얻음.`;
-    else if (mbti === 'ENTP') mbtiPoint = `남들 안 하는 신박한 세팅으로 1박 즐기니까 캠핑이 두 배로 스릴 있고 재밌었음ㅋㅋ`;
-    else if (mbti === 'INFJ') mbtiPoint = `세상의 소란스러움을 벗어나 산의 품에서 마주한 풍경이 깊은 마음의 위로를 주었습니다.`;
-    else if (mbti === 'INFP') mbtiPoint = `노을빛에 왠지 모르게 뭉클해져서 좋아하는 노래 들으며 작은 우주에 혼자 떠 있는 기분이었음✨`;
-    else if (mbti === 'ENFJ') mbtiPoint = `모두 다치지 않고 즐겁게 완주해서 너무 감사했고 따뜻한 밥 한 그릇의 온기가 참 훈훈했음^^`;
-    else if (mbti === 'ENFP') mbtiPoint = `진짜 텐트 치는 것도 재밌고 뷰도 레전드라 텐션 폭발함ㅠㅠ 백패킹 평생 할 거야 완전 힐링!💕`;
-    else if (mbti === 'ISTJ') mbtiPoint = `가이라인 45도 각도 칼각 팩다운 및 주변 정리 수칙 3회 점검 완료. 군더더기 없는 정석 1박.`;
-    else if (mbti === 'ISFJ') mbtiPoint = `주변에 방해 안 되게 조용히 텐트 안에서 온기를 느끼며 편안하게 힐링하고 왔습니다.`;
-    else if (mbti === 'ESTJ') mbtiPoint = `코스 주파부터 피칭, 비화식 식사까지 타임테이블대로 일사천리 진행 완료. 깔끔한 일정.`;
-    else if (mbti === 'ESFJ') mbtiPoint = `다 같이 모여 맛있는 거 나눠 먹고 예쁜 풍경 보며 추억 쌓아서 너무 행복하고 뿌듯했음ㅎㅎ`;
-    else if (mbti === 'ISTP') mbtiPoint = `바람 셌지만 텐트 치고 밥 먹고 푹 잠. 뷰 좋았고 생존 세팅 완벽했음. 하산 끝.`;
-    else if (mbti === 'ISFP') mbtiPoint = `피칭 끝나자마자 침낭 속으로 쏙 들어가서 텐트 지퍼 열고 뷰 감상.. 이게 진짜 극락이지~`;
-    else if (mbti === 'ESTP') mbtiPoint = `바람 살벌했지만 팩 짱짱하게 박고 정면 승부 갈김ㅋㅋ 역시 이 스릴에 백패킹 옴!`;
-    else if (mbti === 'ESFP') mbtiPoint = `노을 텐풍 인생샷 대성공 📸 텐트 색감이랑 하늘 조합 미쳤음! 밤하늘 아래서 신나게 즐김!`;
+    // 🧬 16종 MBTI별 2~3가지 다형성 심리 풀
+    var mbtiPools = {
+      INTJ: [
+        `배낭 ${weight}kg 오차 없이 세팅하고 계획된 동선대로 움직여서 완벽히 뇌 용량 정리함.`,
+        `불필요한 생각과 군더더기 짐을 전부 덜어내고 오롯이 통제된 고요함을 만끽함.`
+      ],
+      INTP: [
+        `침낭에 누워 온갖 생각의 나래를 펼치며 혼자 멍때리니 복잡했던 머리가 싹 비워짐.`,
+        `자연의 소리를 배경음악 삼아 끊임없이 상상에 잠기며 나만의 우주를 탐구함.`
+      ],
+      ENTJ: [
+        `목표 시간 단축해서 완벽 주파하고 정상에서 마주한 뷰 덕분에 확실한 성취감 얻음.`,
+        `한계를 넘어서는 쾌감과 정상 피칭의 짜릿한 성취로 다음 주를 살아갈 에너지를 완충함.`
+      ],
+      ENTP: [
+        `남들 안 하는 신박한 세팅으로 1박 즐기니까 캠핑이 두 배로 스릴 있고 재밌었음ㅋㅋ`,
+        `예상 밖의 돌발 변수마저 하나의 놀이처럼 유쾌하게 즐기며 완벽한 도파민 충전 완료!`
+      ],
+      INFJ: [
+        `세상의 소란스러움을 벗어나 산의 품에서 마주한 풍경이 깊은 마음의 위로를 주었습니다.`,
+        `자연이 건네는 무언의 위로 속에서 내면의 깊은 소리에 귀를 기울인 뜻깊은 밤이었습니다.`
+      ],
+      INFP: [
+        `노을빛에 왠지 모르게 뭉클해져서 좋아하는 노래 들으며 작은 우주에 혼자 떠 있는 기분이었음✨`,
+        `바람 소리와 별빛 하나하나에 감성이 몽글몽글 차올라 가슴 깊이 위로받은 밤이었음🌙`
+      ],
+      ENFJ: [
+        `모두 다치지 않고 즐겁게 완주해서 너무 감사했고 따뜻한 밥 한 그릇의 온기가 참 훈훈했음^^`,
+        `함께한 온기와 자연이 준 벅찬 감동을 가슴에 품고 내려가는 따뜻하고 풍요로운 여정.`
+      ],
+      ENFP: [
+        `진짜 텐트 치는 것도 재밌고 뷰도 레전드라 텐션 폭발함ㅠㅠ 백패킹 평생 할 거야 완전 힐링!💕`,
+        `눈길 닿는 모든 순간이 선물 같아서 감탄사만 오백 번 외치며 신나게 즐기고 온 1박!`
+      ],
+      ISTJ: [
+        `가이라인 45도 각도 칼각 팩다운 및 주변 정리 수칙 3회 점검 완료. 군더더기 없는 정석 1박.`,
+        `패킹 리스트 체크부터 LNT 수칙 이행까지 오차 없이 정석대로 수행한 무결점 백패킹.`
+      ],
+      ISFJ: [
+        `주변에 방해 안 되게 조용히 텐트 안에서 온기를 느끼며 편안하게 힐링하고 왔습니다.`,
+        `머문 자리 하나 흐트러짐 없이 정돈하고 소소한 일상의 온기를 되찾은 평온한 하룻밤.`
+      ],
+      ESTJ: [
+        `코스 주파부터 피칭, 비화식 식사까지 타임테이블대로 일사천리 진행 완료. 깔끔한 일정.`,
+        `출발부터 복귀까지 철저한 계획하에 완벽히 통제된 깔끔하고 생산적인 백패킹.`
+      ],
+      ESFJ: [
+        `다 같이 모여 맛있는 거 나눠 먹고 예쁜 풍경 보며 추억 쌓아서 너무 행복하고 뿌듯했음ㅎㅎ`,
+        `좋은 사람들과 따뜻한 정을 나누고 아름다운 풍경을 공유해서 배로 행복했던 시간!`
+      ],
+      ISTP: [
+        `바람 셌지만 텐트 치고 밥 먹고 푹 잠. 뷰 좋았고 생존 세팅 완벽했음. 하산 끝.`,
+        `장비 성능 확실히 테스트 완료. 군더더기 없이 깔끔하게 먹고 자고 내려옴.`
+      ],
+      ISFP: [
+        `피칭 끝나자마자 침낭 속으로 쏙 들어가서 텐트 지퍼 열고 뷰 감상.. 이게 진짜 극락이지~`,
+        `아무것도 안 하고 텐트 문 열어둔 채 멍하니 흘러가는 구름만 봐도 세상 부러울 게 없음.`
+      ],
+      ESTP: [
+        `바람 살벌했지만 팩 짱짱하게 박고 정면 승부 갈김ㅋㅋ 역시 이 스릴에 백패킹 옴!`,
+        `야생 그대로의 자연과 거침없이 부딪히며 온몸으로 만끽한 짜릿한 액티비티!`
+      ],
+      ESFP: [
+        `노을 텐풍 인생샷 대성공 📸 텐트 색감이랑 하늘 조합 미쳤음! 밤하늘 아래서 신나게 즐김!`,
+        `시시각각 변하는 하늘 색감에 반해서 셔터만 수백 장 누름! 흥 넘치고 행복했던 1박!`
+      ]
+    };
 
+    var mbtiPoint = pickRandom(mbtiPools[mbti] || mbtiPools.INFP);
+
+    // 🎭 문체(페르소나)별 다형성 랜덤 빌더
     var story = '';
+
     if (style === 'insta') {
-      story = `${appTxt} ${spot} ${terTxt} 도착! ${tentTxt} 텐트 칼각 피칭 끝냄. ${tempTxt} ${getJosa(windTxt, '이/가')} 불었지만 눈앞에 펼쳐진 ${getJosa(viewTxt, '과/와')} ${weatherTxt} 조합 진심 폼 미쳤음.. ${compTxt}로 와서 ${mealTxt} 순삭하고 텐트 안에서 멍때리는데 힐링 그 자체. ${mbtiPoint} 배낭 ${weight}kg 가벼운 세팅으로 머문 자리 싹 정리하고 흔적 없이 클린 철수 완료!`;
-    } else if (style === 'friend') {
-      story = `야 이번에 ${appTxt} ${spot} ${terTxt} 다녀왔는데 진짜 역대급이었음ㅋㅋ ${tentTxt} 텐트 치는데 ${tempTxt} ${getJosa(windTxt, '이/가')} 불어서 날아갈 뻔하다가 ${getJosa(viewTxt, '과/와')} ${weatherTxt} 보고 감탄함ㅠㅠ ${compTxt}로 따뜻한 ${mealTxt} 먹는데 극락이더라.. ${mbtiPoint} 배낭 ${weight}kg 싹 챙겨서 클린 하산 완료. 담에 너도 무조건 같이 가자!`;
+      var intro = pickRandom([
+        `${spot} 백패킹 피칭 완료! 🔥`,
+        `드디어 와본 ${spot}, 소문대로 뷰 터졌다 ✨`,
+        `오늘 밤 우리 집은 ${spot} 꼭대기 🏕️`,
+        `도시 소음 탈출해서 ${spot}으로 순간이동 완료 🚀`
+      ]);
+      var partHard = hard ? pickRandom([
+        `올라갈 때 ${hard} 때문에 살짝 멘붕 올 뻔했지만,`,
+        `오르는 길에 ${hard}으로 고비가 있었지만,`,
+        `${hard}의 매서운 순간을 뚫고 올라와,`
+      ]) : `거친 숨을 몰아쉬며 오른 정상,`;
+
+      var partGood = good ? pickRandom([
+        ` 피칭 끝내고 ${good} 즐기니까 피로가 싹 날아감..`,
+        ` 텐트 안에서 ${good} 누리는데 진짜 극락 그 자체..`,
+        ` ${good} 맛보는 순간 올라온 보람 200% 느낌..`
+      ]) : ` 눈앞에 펼쳐진 파노라마 뷰에 피로가 싹 녹아내림..`;
+
+      var partMemory = memory ? pickRandom([
+        ` 특히 ${memory}은(는) 평생 못 잊을 인생 명장면이었음✨`,
+        ` 무엇보다 ${memory} 마주한 순간엔 진심으로 멍하니 감탄만 나옴✨`,
+        ` 밤하늘과 어우러진 ${memory}의 여운은 오래갈 듯✨`
+      ]) : ` 온 세상을 붉게 물들이던 풍경은 단연 레전드였음✨`;
+
+      var partLnt = pickRandom([
+        `배낭 ${weight}kg 싹 챙겨서 클린 LNT 하산 완료!`,
+        `머문 자리는 처음보다 깨끗하게 정리하고 ${weight}kg 배낭 메고 하산!`,
+        `쓰레기 하나 남기지 않고 클린하게 ${weight}kg 패킹 철수 완료!`
+      ]);
+
+      story = `${intro} ${partHard}${partGood}${partMemory} ${mbtiPoint} ${partLnt}`;
+
     } else if (style === 'diary') {
-      story = `주말을 맞아 ${appTxt} ${spot} ${terTxt}에 다녀왔습니다. ${tentTxt} 텐트를 단단히 치고 마주한 ${tempTxt} ${getJosa(windTxt, '과/와')} 풍경. 눈앞에 펼쳐진 ${getJosa(viewTxt, '과/와')} ${weatherTxt} 풍경이 참 시원하고 좋더군요. ${compTxt}로 따뜻하게 ${mealTxt} 챙겨 먹으며 조용히 쉬었습니다. ${mbtiPoint} 배낭 ${weight}kg 가볍게 꾸려 머문 자리는 깨끗하게 정리하고 하산 완료했습니다.`;
+      var intro = pickRandom([
+        `주말을 맞아 ${spot}으로 백패킹을 다녀왔다.`,
+        `복잡한 마음을 비워내고자 ${spot}의 품을 찾았다.`,
+        `계절의 숨결을 오롯이 느끼려 ${spot}으로 발걸음을 옮겼다.`
+      ]);
+      var partHard = hard ? pickRandom([
+        ` 오르는 길에 ${hard}으로 꽤나 고생했지만,`,
+        ` 산행 중 ${hard}의 고비를 마주하며 숨이 턱까지 찼지만,`,
+        ` ${hard}의 매서움에 체력적 한계를 느끼기도 했지만,`
+      ]) : ` 오르는 길은 땀으로 젖었지만,`;
+
+      var partGood = good ? pickRandom([
+        ` 단단히 텐트를 치고 ${good} 시간을 보내며 큰 위로를 받았다.`,
+        ` 피칭을 마치고 ${good} 누리니 비로소 마음에 평온이 찾아왔다.`,
+        ` 고요 속에서 ${good} 음미하며 참된 휴식을 맛보았다.`
+      ]) : ` 조용히 머물며 큰 마음의 쉼을 얻었다.`;
+
+      var partMemory = memory ? pickRandom([
+        ` 가만히 마주했던 ${memory}의 짙은 여운이 가슴 깊이 남는다.`,
+        ` 특히 두 눈에 담았던 ${memory}의 순간은 오래도록 잊히지 않을 것 같다.`,
+        ` 어둠 속에서 빛나던 ${memory}의 찰나는 이번 여정의 가장 큰 선물이었다.`
+      ]) : ` 고요한 밤하늘의 여운이 길게 맴돈다.`;
+
+      var partLnt = pickRandom([
+        `배낭 ${weight}kg 가볍게 정리하고 머문 자리를 정갈히 치운 뒤 산을 내려왔다.`,
+        `자연에 감사하며 작은 흔적 하나 남기지 않고 ${weight}kg 배낭과 함께 귀가했다.`
+      ]);
+
+      story = `${intro}${partHard}${partGood}${partMemory} ${mbtiPoint} ${partLnt}`;
+
     } else if (style === 'essay') {
-      story = `${appTxt} 마침내 ${spot} ${terTxt}에 닿아 가만히 ${tentTxt} 텐트를 세웠습니다. ${tempTxt} ${getJosa(windTxt, '이/가')} 스쳐 지나갔지만, 눈앞에 펼쳐진 ${getJosa(viewTxt, '과/와')} ${weatherTxt} 풍경은 땀 흘려 올라온 피로를 씻어내리기에 충분했습니다. ${compTxt}로 따뜻한 ${mealTxt} 한 끼로 온기를 채우고 마주한 밤의 침묵. ${mbtiPoint} ${weight}kg 배낭을 챙겨 머문 자리는 처음처럼 깨끗하게 정리하고 흔적 없이 길을 나섭니다.`;
+      var intro = pickRandom([
+        `마침내 닿은 ${spot}의 고요한 품.`,
+        `바람의 결을 따라 닿은 ${spot}의 능선 위에서.`,
+        `세상의 경계를 넘어 마주한 ${spot}의 광활한 침묵.`
+      ]);
+      var partHard = hard ? pickRandom([
+        ` ${hard}의 고단함마저 산길에 묻어두고 오롯이 나에게 집중했다.`,
+        ` ${hard}이라는 자연의 무게 앞에서도 묵묵히 한 걸음을 내디뎠다.`,
+        ` 스쳐 지나간 ${hard}의 고통은 정직하게 살아있음을 일깨워주었다.`
+      ]) : ` 발걸음 끝에 오롯이 나 자신과 마주했다.`;
+
+      var partGood = good ? pickRandom([
+        ` 자연이 내어준 침묵 속에서 ${good} 온기를 음미하던 찰나,`,
+        ` 가만히 ${good} 품어 안으며 메말랐던 마음에 온기가 차올랐다.`,
+        ` 온전한 고립 속에서 ${good} 느끼던 순간은 더없이 평화로웠다.`
+      ]) : ` 자연이 내어준 고요 속에서 따스한 온기를 음미하던 찰나,`;
+
+      var partMemory = memory ? pickRandom([
+        ` 눈앞에 번져가던 ${memory}의 찰나는 길고 짙은 영혼의 울림을 주었다.`,
+        ` 아스라이 흩어지던 ${memory}의 풍경은 메마른 가슴을 촉촉이 적셨다.`,
+        ` 영원처럼 멈춰 선 ${memory}의 경이로움 앞에 말을 잃고 서 있었다.`
+      ]) : ` 눈앞의 풍경은 짙은 울림을 주었다.`;
+
+      var partLnt = pickRandom([
+        `${weight}kg의 작은 짐을 챙겨 머문 자리엔 단 하나의 발자국도 남기지 않고 길을 나선다.`,
+        `머문 흔적을 모두 지우고 ${weight}kg의 배낭과 함께 자연 속으로 스며들듯 하산한다.`
+      ]);
+
+      story = `${intro}${partHard}${partGood}${partMemory} ${mbtiPoint} ${partLnt}`;
+
     } else if (style === 'senior') {
-      story = `호젓한 ${spot} ${terTxt}에 올라서니 가슴이 뻥 뚫립니다^^ ${appTxt} 든든하게 ${tentTxt} 치고 마주한 ${getJosa(viewTxt, '과/와')} ${weatherTxt} 절경에 피로가 싹 가시네요. ${tempTxt} ${getJosa(windTxt, '속에서도')} ${compTxt}로 나눈 따뜻한 ${mealTxt} 한 끼에 감사하며 머물다 갑니다. ${mbtiPoint} 배낭 ${weight}kg 가볍게 챙겨 흔적 없이 클린 하산 완료! 안산즐산!`;
-    } else if (style === 'vogue') {
-      story = `이번 주말 ${spot} 트리핑 바이브 진짜 어메이징..✨ ${appTxt} ${tentTxt} 칼각 피칭 끝내고 ${tempTxt} 즐긴 ${viewTxt}! ${getJosa(windTxt, '이/가')} 불어도 ${weatherTxt} 조합 완전 퍼펙트해서 힐링 만땅이었음. ${compTxt}로 ${mealTxt} 칠링 타임 제대로 갖고 꿀잠. ${mbtiPoint} ${weight}kg 세팅으로 LNT 실천하고 클린 체크아웃 완료!`;
+      var intro = pickRandom([
+        `호젓한 ${spot}에 올라서니 가슴이 확 트입니다^^`,
+        `기분 좋은 땀 흘리며 닿은 ${spot}, 경치가 기가 막힙니다!`,
+        `사방이 탁 트인 ${spot}에 둥지를 트니 신선이 따로 없네요^^`
+      ]);
+      var partHard = hard ? pickRandom([
+        ` 올라올 때 ${hard}으로 숨이 턱까지 차올랐지만,`,
+        ` 오는 길에 ${hard}으로 땀 꽤나 흘렸지만,`,
+        ` ${hard}의 험난한 고비를 무사히 넘기고 나니,`
+      ]) : ` 땀 흘려 능선에 올라서니,`;
+
+      var partGood = good ? pickRandom([
+        ` 텐트 단단히 치고 ${good} 즐기는 이 맛에 산에 오릅니다.`,
+        ` 시원한 바람맞으며 ${good} 곁들이니 신선놀음이 부럽지 않네요.`,
+        ` 꿀맛 같은 ${good} 나누며 산이 주는 행복을 듬뿍 느낍니다.`
+      ]) : ` 시원한 바람맞으며 힐링하는 이 맛에 산에 오릅니다.`;
+
+      var partMemory = memory ? pickRandom([
+        ` 특히 눈앞에 펼쳐진 ${memory}의 절경은 두 눈에 평생 담아갑니다.`,
+        ` 장엄하게 빛나던 ${memory}의 풍경은 정말 장관이었습니다.`,
+        ` 밤하늘 수놓은 ${memory}의 장관에 가슴 뭉클한 감동을 받았습니다.`
+      ]) : ` 눈앞에 펼쳐진 절경에 감사한 마음입니다.`;
+
+      var partLnt = pickRandom([
+        `배낭 ${weight}kg 챙겨 머문 자리 흔적 없이 클린 하산 완료! 안산즐산!`,
+        `머물다 간 자리 깨끗하게 정리하고 ${weight}kg 짊어지고 기분 좋게 하산했습니다. 안산즐산!`
+      ]);
+
+      story = `${intro}${partHard}${partGood}${partMemory} ${mbtiPoint} ${partLnt}`;
+
     } else if (style === 'docu') {
-      story = `해발 고지대, ${tempTxt} 거친 ${getJosa(windTxt, '이/가')} 몰아치는 ${spot} ${terTxt}. ${appTxt} 올라온 하이커가 ${tentTxt} 텐트를 피칭한다. 눈앞에 펼쳐진 웅장한 ${getJosa(viewTxt, '과/와')} ${weatherTxt}. 그는 ${compTxt}로 따끈한 ${mealTxt} 한 끼를 즐기며 야생의 밤을 맞이한다. ${mbtiPoint} ${weight}kg 배낭을 메고 머문 자리에 단 하나의 흔적도 남기지 않은 채 다시 하산한다.`;
-    } else {
-      story = `${spot} ${terTxt} 1박 완료. ${appTxt} 주파 후 ${tentTxt} 피칭. ${tempTxt} ${getJosa(windTxt, '이/가')} 불었지만 ${getJosa(viewTxt, '과/와')} ${weatherTxt} 감상 성공. ${compTxt}로 ${mealTxt} 식사 완료. ${mbtiPoint} 배낭 ${weight}kg 세팅으로 쓰레기 전량 회수 후 깔끔하게 하산.`;
+      var intro = pickRandom([
+        `해발 고지대, 거친 바람을 뚫고 도달한 ${spot}.`,
+        `문명의 소음이 잦아든 곳, 척박한 야생의 ${spot}.`,
+        `자연의 민낯과 조우하는 해발 능선, ${spot}.`
+      ]);
+      var partHard = hard ? pickRandom([
+        ` 하이커는 ${hard}의 거친 고비를 넘기며 묵묵히 발걸음을 옮겼다.`,
+        ` 산행 내내 몰아친 ${hard}은 인간의 인내심을 시험했다.`,
+        ` 험준한 지형과 ${hard}의 무게를 온몸으로 견뎌내야 했다.`
+      ]) : ` 하이커는 묵묵히 정상을 향해 나아갔다.`;
+
+      var partGood = good ? pickRandom([
+        ` 비박지에 텐트를 세우고 ${good} 마주하며 짧은 평온을 찾는다.`,
+        ` 안식처를 완성한 뒤 ${good} 누리며 지친 몸을 달랜다.`,
+        ` 야생 속에서 마주한 ${good} 그에게 작은 위안이 되어준다.`
+      ]) : ` 비박지에 텐트를 세우고 짧은 평온을 찾는다.`;
+
+      var partMemory = memory ? pickRandom([
+        ` 야생의 밤, 그의 기억에 가장 깊이 각인된 장면은 바로 ${memory}.`,
+        ` 장엄한 침묵 속에서 마주한 ${memory}은 경이로운 대자연의 실체를 드러낸다.`,
+        ` 어둠 속을 꿰뚫는 ${memory}의 순간, 하이커는 자연에 대한 경외감을 느낀다.`
+      ]) : ` 야생의 밤, 자연의 경이로움이 가슴 깊이 각인된다.`;
+
+      var partLnt = pickRandom([
+        `배낭 ${weight}kg을 짊어지고 그는 흔적 하나 남기지 않은 채 산을 내려간다.`,
+        `자연이 내어준 자리를 본래의 모습대로 되돌려놓은 뒤, ${weight}kg의 배낭과 함께 침묵 속으로 퇴장한다.`
+      ]);
+
+      story = `${intro}${partHard}${partGood}${partMemory} ${mbtiPoint} ${partLnt}`;
     }
 
     return story;
   };
-
-  // 🗂️ [3D 엽서 카드 렌더링]
+// 🗂️ [3D 엽서 카드 렌더링 - 작성완료/미작성 스탬프 뱃지 & 동적 0.5mm 엣지 연동]
   window.render3DPostcardElement = function(cur, index) {
     if (!cur) return '';
     var items = Array.isArray(cur.items) ? cur.items : [];
     var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
     var tmplId = cur.templateId || window.selectedTemplateId || savedTmplId || 1;
     var borderGrad = window.getCardStableBorderGradient(cur, index);
-    var shortCardMemo = cur.oneLineMemo || (cur.spot ? ('비화식으로 즐긴 ' + cur.spot + ' 1박') : '비화식으로 즐기는 조용한 하룻밤');
+    var shortCardMemo = cur.oneLineMemo || (cur.spot ? (cur.spot + ' 백패킹') : '자연 속 힐링 백패킹');
+
+    var isCompleted = Boolean(cur.memo && cur.memo.trim().length > 0);
+    var statusBadgeHtml = isCompleted
+      ? '<span style="font-size:0.52rem; background:rgba(52,211,153,0.18); border:1px solid #34d399; color:#6ee7b7; font-weight:900; padding:1.5px 5px; border-radius:4px; display:inline-flex; align-items:center; gap:2px;">✍️ 작성완료</span>'
+      : '<span style="font-size:0.52rem; background:rgba(251,146,60,0.18); border:1px solid #fb923c; color:#fdba74; font-weight:900; padding:1.5px 5px; border-radius:4px; display:inline-flex; align-items:center; gap:2px;">⏳ 일지 미작성</span>';
 
     var frontContentHtml = '';
     var genFn = (typeof window.generateCardMarkup === 'function') ? window.generateCardMarkup : (typeof generateCardMarkup === 'function' ? generateCardMarkup : null);
@@ -625,7 +889,10 @@
           <div>
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px dashed #000; padding-bottom:3px;">
               <span style="font-family:'Space Grotesk', sans-serif; font-size:0.72rem; font-weight:900;">ROMANTIC PACK</span>
-              <span style="font-size:0.5rem; background:#0284c7; color:#fff; font-weight:900; padding:1px 4px; border-radius:3px;">#0${index+1} 앞면</span>
+              <div style="display:flex; align-items:center; gap:4px;">
+                ${statusBadgeHtml}
+                <span style="font-size:0.5rem; background:#0284c7; color:#fff; font-weight:900; padding:1.5px 4px; border-radius:3px;">#0${index+1}</span>
+              </div>
             </div>
             <div style="margin-top:5px; font-size:0.88rem; font-weight:900; display:flex; align-items:center; gap:3px;">
               ${window.VEC_ICONS.pin} <span>${escapeHtml(cur.spot)} (${escapeHtml(cur.elevation)})</span>
@@ -653,7 +920,7 @@
     var isFlipped = !!window.isPostcardFlipped;
     var mainPhoto = (cur.photos && cur.photos[0]) || cur.fieldPhoto;
 
-    return `
+   return `
       <div id="swipePostcardTarget" class="postcard-3d-wrapper ${isFlipped ? 'flipped' : ''}" style="width:100%; max-width:280px; aspect-ratio:3/4; position:relative; cursor:pointer; touch-action:pan-y; padding:2px; border-radius:15px; background:${borderGrad}; box-shadow:0 8px 24px rgba(0,0,0,0.85); box-sizing:border-box;">
         <div class="postcard-face-front" style="inset:2px !important; width:calc(100% - 4px) !important; height:calc(100% - 4px) !important; overflow:hidden; border-radius:13px; background:#0b0f19;">
           ${frontContentHtml}
@@ -663,8 +930,11 @@
           <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.0) 35%, rgba(0,0,0,0.65) 100%);"></div>
           <div style="position:relative; z-index:2; width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-between; padding:12px 14px; box-sizing:border-box;">
             <div style="display:flex; flex-direction:column; gap:3px;">
-              <div style="display:flex; align-items:center; gap:4px; font-size:0.95rem; font-weight:900; color:#ffffff; text-shadow:0 1px 4px rgba(0,0,0,0.95);">
-                ${window.VEC_ICONS.pin} <span>${escapeHtml(cur.spot)}</span>
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:4px; font-size:0.95rem; font-weight:900; color:#ffffff; text-shadow:0 1px 4px rgba(0,0,0,0.95);">
+                  ${window.VEC_ICONS.pin} <span>${escapeHtml(cur.spot)}</span>
+                </div>
+                ${statusBadgeHtml}
               </div>
               <div style="font-size:0.62rem; color:#e2e8f0; font-family:'JetBrains Mono', monospace; font-weight:700; text-shadow:0 1px 3px rgba(0,0,0,0.95); margin-left:14px;">
                 ${escapeHtml(cur.elevation)} · ${cur.date}
@@ -681,7 +951,7 @@
     `;
   };
 
-  // 📱 지난 피드 목록 모달
+  // 📱 지난 피드 목록 모달 (표준 GNB 탑재 & 상단 안내문구 완전 삭제 & 하단 5:5 듀얼 바)
   window.openPastTripsListModal = function() {
     var old = document.getElementById('pastTripsListModal');
     if (old) old.remove();
@@ -694,23 +964,50 @@
 
     var modalEl = document.createElement('div');
     modalEl.id = 'pastTripsListModal';
-    modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:rgba(0,0,0,0.94); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); z-index:1000000; display:flex; flex-direction:column; justify-content:flex-start; box-sizing:border-box; overflow:hidden;';
+    modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000000; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;';
 
     modalEl.innerHTML = `
-      <div style="flex-shrink:0; height:52px; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.12); display:flex; justify-content:space-between; align-items:center; padding:0 14px; box-sizing:border-box; z-index:10;">
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span style="font-size:0.95rem; font-weight:900; color:#fff;">📱 지난 백패킹 피드 목록</span>
-          <span style="font-size:0.62rem; color:#38bdf8; font-weight:800; background:rgba(56,189,248,0.15); padding:2px 7px; border-radius:4px;">총 ${logs.length}개</span>
+      <!-- 🧭 최상단: index.html 100% 동일 규격 표준 GNB -->
+      <div style="position:relative !important; flex-shrink:0 !important; width:100% !important; height:52px !important; min-height:52px !important; border-bottom:1px solid rgba(255,255,255,0.08) !important; background:rgba(0, 0, 0, 0.94) !important; backdrop-filter:blur(25px) !important; -webkit-backdrop-filter:blur(25px) !important; padding:0 14px !important; padding-top:env(safe-area-inset-top, 0px) !important; margin:0 !important; box-sizing:content-box !important; z-index:10 !important; user-select:none !important;">
+        <div style="height:52px !important; min-height:52px !important; display:flex !important; align-items:center !important; justify-content:flex-start !important; width:100% !important; max-width:480px !important; margin:0 auto !important;">
+          <div class="brand-line" style="height:52px !important; display:inline-flex !important; align-items:center !important; justify-content:flex-start !important; gap:7px !important; margin:0 !important; flex-shrink:0 !important;">
+            <div class="brand-sym-box" style="width:34px !important; height:34px !important; display:flex !important; align-items:center !important; justify-content:center !important; position:relative !important; flex-shrink:0 !important; margin:0 !important; padding:0 !important;">
+              <svg viewBox="0 0 32 32" fill="none" style="width:30px !important; height:30px !important; display:block !important; margin:0 !important;">
+                <circle cx="21" cy="6" r="9" fill="rgba(244,114,182,0.12)"/>
+                <circle cx="21" cy="6" r="6" fill="rgba(245,158,11,0.18)"/>
+                <circle cx="21" cy="6" r="3.8" fill="rgba(251,191,36,0.28)"/>
+                <circle cx="2" cy="24" r="1.8" fill="#fda4af"/>
+                <circle cx="9" cy="12" r="2.2" fill="#fda4af"/>
+                <circle cx="14" cy="16" r="1.8" fill="#fda4af"/>
+                <circle cx="13" cy="24" r="1.8" fill="#fda4af"/>
+                <path d="M2 24L9 12H12.5L14 16L10 16M10 16L13 24" stroke="#fda4af" stroke-width="1.8" stroke-linecap="round"/>
+                <circle cx="21" cy="6" r="2.8" fill="#f59e0b"/>
+                <circle cx="27" cy="13" r="2.2" fill="#e2e8f0"/>
+                <circle cx="30" cy="24" r="2.4" fill="#e2e8f0"/>
+                <path d="M13 24L21 6H25L27 13L22 13M22 13L30 24" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
+                <circle cx="21" cy="6" r="1" fill="#ffffff"/>
+              </svg>
+            </div>
+            <span class="brand-title" style="font-family:'SUIT', sans-serif !important; font-size:1.12rem !important; font-weight:900 !important; color:#ffffff !important; line-height:1 !important; display:inline-flex !important; align-items:center !important; letter-spacing:-0.02em !important; text-shadow:0 0 16px rgba(255, 255, 255, 0.35) !important; margin:0 !important; padding:0 !important;">낭만루트</span>
+            <span class="brand-dot" style="width:3px !important; height:3px !important; background:radial-gradient(circle at 30% 30%, #ffffff 0%, #94a3b8 70%, #475569 100%) !important; box-shadow:0 0 6px rgba(255, 255, 255, 0.8), 0 0 8px rgba(56, 189, 248, 0.3) !important; border-radius:50% !important; display:inline-block !important; flex-shrink:0 !important; margin:0 !important; transform:translateY(0.5px) !important;"></span>
+            <span class="brand-en" style="display:inline-flex !important; align-items:center !important; gap:7px !important; white-space:nowrap !important; line-height:1 !important;">
+              <span class="word-romantic" style="font-family:'Space Grotesk', -apple-system, sans-serif !important; text-transform:uppercase !important; line-height:1 !important; display:inline-block !important; background:linear-gradient(180deg, #ffffff 0%, #f1f5f9 25%, #cbd5e1 50%, #94a3b8 75%, #e2e8f0 100%) !important; -webkit-background-clip:text !important; -webkit-text-fill-color:transparent !important; filter:drop-shadow(0 0 8px rgba(226, 232, 240, 0.45)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8)) !important; font-size:0.68rem !important; font-weight:800 !important; letter-spacing:0.09em !important; transform:translateY(-1.6px) !important; opacity:0.96 !important;">ROMANTIC</span>
+              <span class="word-route" style="font-family:'Space Grotesk', -apple-system, sans-serif !important; text-transform:uppercase !important; line-height:1 !important; display:inline-block !important; background:linear-gradient(180deg, #ffffff 0%, #f1f5f9 25%, #cbd5e1 50%, #94a3b8 75%, #e2e8f0 100%) !important; -webkit-background-clip:text !important; -webkit-text-fill-color:transparent !important; filter:drop-shadow(0 0 8px rgba(226, 232, 240, 0.45)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8)) !important; font-size:0.74rem !important; font-weight:900 !important; letter-spacing:0.06em !important; transform:translateY(2.2px) !important;">ROUTE</span>
+            </span>
+          </div>
         </div>
-        <button onclick="document.getElementById('pastTripsListModal').remove();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; font-size:0.8rem; font-weight:900; padding:5px 12px; border-radius:14px; cursor:pointer;">✕ 닫기</button>
       </div>
 
-      <div style="flex:1 1 0%; min-height:0; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:14px 12px calc(80px + env(safe-area-inset-bottom, 30px)) 12px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box;">
-        <div style="font-size:0.68rem; color:#94a3b8; line-height:1.45; margin-bottom:4px; padding:0 2px;">
-          기록을 톡 누르면 <strong>[현장 사진들 + 패킹 무게 기록지]</strong>가 인스타그램 피드로 시원하게 펼쳐집니다.
-        </div>
+      <!-- 📌 서브헤더: 지난 백패킹 피드 목록 & 뱃지 (안내 문구 완전 삭제) -->
+      <div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:10px 16px; box-sizing:border-box;">
+        <span style="font-size:0.92rem; font-weight:900; color:#fff;">📱 지난 백패킹 피드 목록</span>
+        <span style="font-size:0.62rem; color:#38bdf8; font-weight:800; background:rgba(56,189,248,0.15); padding:2px 8px; border-radius:5px; border:1px solid rgba(56,189,248,0.3);">총 ${logs.length}개</span>
+      </div>
+
+      <!-- 🗂️ 피드 카드 리스트 -->
+      <div style="flex:1 1 0%; min-height:0; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px 20px 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
         ${logs.length === 0 ? `
-          <div style="text-align:center; padding:40px 10px; color:#94a3b8; font-size:0.78rem;">
+          <div style="text-align:center; padding:50px 10px; color:#94a3b8; font-size:0.78rem;">
             기록된 백패킹이 없습니다.<br>배낭을 패킹하고 보관함에 저장해보세요!
           </div>
         ` : logs.map(function(r, idx) {
@@ -719,13 +1016,13 @@
           var thumbPhoto = (r.photos && r.photos[0]) || r.fieldPhoto || 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';
           var safeId = escapeHtml(String(r.id));
           return `
-            <div onclick="window.openSingleTripDualFeedModal('${safeId}')" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:11px 13px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:all 0.15s ease; flex-shrink:0;">
-              <div style="display:flex; align-items:center; gap:11px; min-width:0;">
+            <div onclick="window.openSingleTripDualFeedModal('${safeId}')" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:all 0.15s ease; flex-shrink:0;">
+              <div style="display:flex; align-items:center; gap:10px; min-width:0;">
                 <div style="width:44px; height:44px; border-radius:8px; overflow:hidden; background:#1e293b; flex-shrink:0; border:1px solid rgba(255,255,255,0.1);">
                   <img src="${thumbPhoto}" style="width:100%; height:100%; object-fit:cover;" />
                 </div>
                 <div style="min-width:0;">
-                  <div style="font-size:0.88rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  <div style="font-size:0.86rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                     ${window.VEC_ICONS.pin} <span>${escapeHtml(r.spot)}</span>
                     <span style="font-size:0.55rem; color:#fde047; font-weight:800; background:rgba(253,224,71,0.15); border:1px solid rgba(253,224,71,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">${escapeHtml(tName)}</span>
                   </div>
@@ -739,178 +1036,40 @@
             </div>
           `;
         }).join('')}
-        <div style="width:100%; height:60px; flex-shrink:0; pointer-events:none;"></div>
+      </div>
+
+      <!-- 🚪 하단 5:5 듀얼 바: [🎲 랜덤 추억 보기] + [◀ 뒤로] -->
+      <div style="flex-shrink:0; display:flex; gap:8px; padding:10px 14px calc(12px + env(safe-area-inset-bottom, 0px)) 14px; background:rgba(7,9,14,0.98); border-top:1px solid rgba(255,255,255,0.12); box-sizing:border-box; z-index:10;">
+        <button onclick="window.openRandomFeedTrip();" style="flex:1; height:44px; background:linear-gradient(135deg, rgba(56,189,248,0.15), rgba(2,132,199,0.25)); border:1px solid #38bdf8; color:#38bdf8; font-size:0.82rem; font-weight:900; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;">
+          <span>🎲 랜덤 추억 보기</span>
+        </button>
+        <button onclick="document.getElementById('pastTripsListModal').remove(); triggerHaptic(10);" style="flex:1; height:44px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#f1f5f9; font-size:0.82rem; font-weight:900; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;">
+          <span>◀ 뒤로</span>
+        </button>
       </div>
     `;
     document.body.appendChild(modalEl);
     triggerHaptic(12);
   };
 
-  // 📱 [인스타그램 세로 듀얼 피드 뷰어]
-  window.openSingleTripDualFeedModal = function(recordId) {
-    if (!window.interactiveHistory || window.interactiveHistory.length === 0) {
-      var rawLogs = window.safeGetStorage('okbm_packing_history', []);
-      if (Array.isArray(rawLogs) && rawLogs.length > 0) {
-        window.interactiveHistory = rawLogs.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
-      }
-    }
-
-    var log = (window.interactiveHistory || []).find(function(r) { return String(r.id).trim() === String(recordId).trim(); });
-    if (!log && window.interactiveHistory && window.interactiveHistory.length > 0) {
-      log = window.interactiveHistory[0];
-    }
-    if (!log) {
-      if (typeof showToast === 'function') showToast('선택한 기록을 찾을 수 없습니다.', 'warn');
+  // 🎲 [랜덤 추억 피드 직행 헬퍼]
+  window.openRandomFeedTrip = function() {
+    var logs = window.interactiveHistory || [];
+    if (logs.length === 0) {
+      if (typeof showToast === 'function') showToast('저장된 백패킹 기록이 없습니다.', 'warn');
       return;
     }
-
-    var old = document.getElementById('singleTripFeedModal');
-    if (old) old.remove();
-
-    var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
-    var nick = (profile && profile.nickname) ? profile.nickname : '낭만백패커';
-
-    var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
-    var tmplId = log.templateId || window.selectedTemplateId || savedTmplId || 1;
-    var items = Array.isArray(log.items) ? log.items : [];
-    var borderGrad = (typeof window.getCardStableBorderGradient === 'function') 
-      ? window.getCardStableBorderGradient(log, 0) 
-      : 'linear-gradient(135deg, #10b981, #047857)';
-
-    var photosList = (Array.isArray(log.photos) && log.photos.length > 0)
-      ? log.photos 
-      : [log.fieldPhoto || log.photo || 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80'];
-
-    var shortCardMemo = log.oneLineMemo || (log.spot ? ('비화식으로 즐긴 ' + log.spot + ' 1박') : '비화식으로 즐기는 조용한 하룻밤');
-
-    var packingSheetMarkup = '';
-    var genFn = (typeof window.generateCardMarkup === 'function') ? window.generateCardMarkup : (typeof generateCardMarkup === 'function' ? generateCardMarkup : null);
-
-    if (genFn) {
-      packingSheetMarkup = genFn(tmplId, log, items, log.spot, shortCardMemo, photosList[0]);
-    } else {
-      packingSheetMarkup = `
-        <div style="height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#f4f1ea; color:#1c1917; padding:12px; border-radius:13px;">
-          <div>
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px dashed #000; padding-bottom:3px;">
-              <span style="font-family:'Space Grotesk', sans-serif; font-size:0.75rem; font-weight:900;">ROMANTIC PACK</span>
-              <span style="font-size:0.52rem; background:#0284c7; color:#fff; font-weight:900; padding:1px 5px; border-radius:3px;">#0${tmplId} 패킹지</span>
-            </div>
-            <div style="margin-top:6px; font-size:0.95rem; font-weight:900; display:flex; align-items:center; gap:3px;">
-              ${window.VEC_ICONS.pin} <span>${escapeHtml(log.spot)} (${escapeHtml(log.elevation)})</span>
-            </div>
-            <div style="font-size:0.60rem; color:#64748b; font-family:'JetBrains Mono', monospace; margin-top:2px;">${log.date} · 장비 ${items.length}개 세팅</div>
-            <div style="margin-top:8px; border-top:1px dashed #cbd5e1; padding-top:5px; font-size:0.65rem; display:flex; flex-direction:column; gap:2.5px; max-height:160px; overflow-y:auto;">
-              ${items.map(function(it) { return '<div style="display:flex; justify-content:space-between;"><span>• ' + escapeHtml(it.name) + '</span><span style="font-weight:700;">' + ((it.weight||0)/1000).toFixed(2) + 'kg</span></div>'; }).join('')}
-            </div>
-          </div>
-          <div style="border-top:1.5px dashed #000; padding-top:5px; display:flex; justify-content:space-between; align-items:baseline;">
-            <span style="font-size:0.68rem; font-weight:900; color:#64748b;">TOTAL WEIGHT</span>
-            <span style="font-size:1.4rem; font-weight:900; color:#000; font-family:'Space Grotesk', sans-serif;">${log.weightKg} KG</span>
-          </div>
-        </div>
-      `;
+    var randomIdx = Math.floor(Math.random() * logs.length);
+    var picked = logs[randomIdx];
+    if (picked) {
+      var modal = document.getElementById('pastTripsListModal');
+      if (modal) modal.remove();
+      window.openSingleTripDualFeedModal(String(picked.id));
+      triggerHaptic(15);
+      if (typeof showToast === 'function') showToast('🎲 [' + picked.spot + '] 추억 피드를 불러왔습니다!', 'info');
     }
-
-    var feedModal = document.createElement('div');
-    feedModal.id = 'singleTripFeedModal';
-    feedModal.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000002; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;';
-
-    feedModal.innerHTML = `
-      <div style="flex-shrink:0; height:52px; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.12); display:flex; justify-content:space-between; align-items:center; padding:0 14px; box-sizing:border-box; z-index:10;">
-        <button onclick="document.getElementById('singleTripFeedModal').remove();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; font-size:0.75rem; font-weight:800; padding:5px 11px; border-radius:12px; cursor:pointer;">◀ 지난 목록</button>
-        <div style="font-size:0.88rem; font-weight:900; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:55%; display:flex; align-items:center; gap:3px;">
-          ${window.VEC_ICONS.pin} <span>${escapeHtml(log.spot)}</span>
-        </div>
-        <button onclick="document.getElementById('singleTripFeedModal').remove(); if(document.getElementById('pastTripsListModal')) document.getElementById('pastTripsListModal').remove();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; font-size:0.8rem; font-weight:900; padding:5px 11px; border-radius:14px; cursor:pointer;">✕ 닫기</button>
-      </div>
-
-      <div style="flex:1 1 0%; min-height:0; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:14px 12px calc(120px + env(safe-area-inset-bottom, 30px)) 12px; display:flex; flex-direction:column; gap:16px; box-sizing:border-box;">
-        
-        <div id="dualFeedCaptureTarget" style="background:#0b0f19; border:1px solid rgba(255,255,255,0.12); border-radius:18px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 12px 35px rgba(0,0,0,0.85); flex-shrink:0;">
-          
-          <div style="padding:12px 14px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08);">
-            <div style="display:flex; align-items:center; gap:9px;">
-              <div style="width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg, #0284c7, #10b981); display:flex; align-items:center; justify-content:center; font-size:1.0rem; border:1px solid rgba(255,255,255,0.2);">🏕️</div>
-              <div>
-                <div style="font-size:0.86rem; font-weight:900; color:#ffffff;">${escapeHtml(nick)}</div>
-                <div style="font-size:0.60rem; color:#94a3b8; font-family:'JetBrains Mono', monospace;">${log.date} · BPL ${log.weightKg}kg</div>
-              </div>
-            </div>
-            <span style="font-size:0.62rem; color:#34d399; font-weight:800; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.3); padding:2px 8px; border-radius:6px;">LNT 클린 실천</span>
-          </div>
-
-          <div style="display:flex; flex-direction:column; gap:8px; padding:8px 0; background:#000;">
-            ${photosList.map(function(pUrl, pIdx) {
-              return `
-                <div style="width:100%; aspect-ratio:3/4; overflow:hidden; position:relative; background:#05070a; cursor:pointer;" onclick="if(typeof window.triggerSoftAmbientFX==='function') window.triggerSoftAmbientFX(this);">
-                  <img src="${pUrl}" style="width:100%; height:100%; object-fit:cover; display:block;" />
-                  <div style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.6); backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,0.2); border-radius:6px; padding:3px 7px; font-size:0.56rem; color:#cbd5e1; font-weight:800;">
-                    사진 ${pIdx+1} / ${photosList.length}
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-
-          <div style="padding:10px 12px; background:#080b11; border-top:1px solid rgba(255,255,255,0.08);">
-            <div style="font-size:0.75rem; font-weight:900; color:#38bdf8; margin-bottom:8px; display:flex; align-items:center; gap:4px;">
-              🎒 <span>이날의 배낭 패킹 세팅지</span>
-            </div>
-            <div style="width:100%; aspect-ratio:3/4; border-radius:14px; padding:2px; background:${borderGrad}; box-shadow:0 8px 24px rgba(0,0,0,0.7); box-sizing:border-box;">
-              <div style="width:100%; height:100%; border-radius:12px; overflow:hidden; background:#0b0f19;">
-                ${packingSheetMarkup}
-              </div>
-            </div>
-          </div>
-
-          <div style="padding:14px; display:flex; flex-direction:column; gap:10px; background:#080b11; border-top:1px solid rgba(255,255,255,0.08);">
-            
-            <div style="display:flex; gap:4px; flex-wrap:wrap;">
-              ${window.renderMultiBadgeHtml(log.weatherText, log.weather, 'rgba(253,224,71,0.5)', 'rgba(253,224,71,0.1)', '#fef08a')}
-              ${window.renderMultiBadgeHtml(log.terrainText, log.terrain, 'rgba(52,211,153,0.5)', 'rgba(52,211,153,0.1)', '#a7f3d0')}
-              ${window.renderMultiBadgeHtml(log.mealText, log.meal, 'rgba(244,63,94,0.5)', 'rgba(244,63,94,0.1)', '#fecdd3')}
-              ${window.renderMultiBadgeHtml(log.companionText, log.companion, 'rgba(56,189,248,0.5)', 'rgba(56,189,248,0.1)', '#bae6fd')}
-            </div>
-
-            <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:12px 14px;">
-              <div style="font-size:0.78rem; color:#f1f5f9; line-height:1.65; font-family:'SUIT', sans-serif;">
-                “${escapeHtml(log.memo)}”
-              </div>
-            </div>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:0 2px;">
-              <span style="font-size:0.54rem; color:#34d399; font-weight:900; display:inline-flex; align-items:center;">
-                ${window.VEC_ICONS.shield} K-LNT 흔적 없는 백패킹 실천
-              </span>
-              <span style="font-size:0.56rem; color:#38bdf8; font-weight:800;">#${log.spot.replace(/\s+/g,'')} #BPL</span>
-            </div>
-
-            <button onclick="window.openRichAfterTripModal(window.interactiveHistory.find(function(r){return String(r.id).trim()==='${log.id}';}))" style="width:100%; height:42px; background:linear-gradient(135deg, #0d9488, #0f766e); border:1px solid #14b8a6; color:#fff; font-size:0.80rem; font-weight:900; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; margin-top:4px; box-shadow:0 4px 12px rgba(13,148,136,0.3);">
-              <span>✏️ 이 피드 기록 & 멀티 사진 수정</span>
-            </button>
-
-          </div>
-
-        </div>
-
-        <div style="width:100%; height:40px; flex-shrink:0; pointer-events:none;"></div>
-      </div>
-
-      <div style="flex-shrink:0; display:flex; gap:8px; padding:10px 14px calc(12px + env(safe-area-inset-bottom, 0px)) 12px; background:rgba(7,9,14,0.98); border-top:1px solid rgba(255,255,255,0.12); box-sizing:border-box; z-index:10;">
-        <button onclick="window.captureAndSaveSingleTripCard('dualFeedCaptureTarget', '${escapeHtml(log.spot)}')" style="flex:1; height:42px; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#fff; font-size:0.82rem; font-weight:900; border-radius:10px; cursor:pointer; box-shadow:0 4px 12px rgba(2,132,199,0.35);">
-          💾 피드 갤러리에 저장
-        </button>
-        <button onclick="document.getElementById('singleTripFeedModal').remove()" style="width:90px; height:42px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; font-size:0.78rem; font-weight:800; border-radius:10px; cursor:pointer;">
-          ✕ 닫기
-        </button>
-      </div>
-    `;
-    document.body.appendChild(feedModal);
-    triggerHaptic(12);
   };
-
-  // 📝 [다녀온 기록 작성 모달]
+// 📝 [낭만 일지 작성 모달 - 사진 썸네일 관리 / 개별 캡션 / 100% 백지 보장]
   window.openRichAfterTripModal = function(record) {
     if (!record) return;
     var old = document.getElementById('modalRichAfterTrip');
@@ -918,38 +1077,35 @@
 
     window.__richCurrentRecord = record;
 
-    var parseCurrentTags = function(rawText, defId) {
-      if (Array.isArray(rawText)) return rawText;
-      if (typeof rawText === 'string' && rawText.trim()) return rawText.split(',').map(s=>s.trim()).filter(Boolean);
-      return [defId];
-    };
-
     window.__richState = {
       selectedTone: 'insta',
       selectedMbti: 'INFP',
-      weathers: new Set(parseCurrentTags(record.weatherText || record.weather, '은하수')),
-      terrains: new Set(parseCurrentTags(record.terrainText || record.terrain, '능선')),
-      meals: new Set(parseCurrentTags(record.mealText || record.meal, '핫앤쿡')),
-      comps: new Set(parseCurrentTags(record.companionText || record.companion, '솔로')),
-      winds: new Set(parseCurrentTags(record.windText || record.wind, '돌풍')),
-      tents: new Set(parseCurrentTags(record.tentText || record.tent, '더블월')),
-      temps: new Set(parseCurrentTags(record.tempText || record.temp, '선선함')),
-      views: new Set(parseCurrentTags(record.viewText || record.view, '파노라마뷰')),
-      approaches: new Set(parseCurrentTags(record.approachText || record.approach, '꿀박지'))
+      hardText: record.hardText || '',
+      goodText: record.goodText || '',
+      memoryText: record.memoryText || ''
     };
 
+    var rawMemo = (record.memo || '').trim();
+    if (rawMemo.includes('비화식으로') || rawMemo.includes('칼각 피칭') || rawMemo.includes('도착! 더블월') || rawMemo.includes('에서 보낸 조용한 하룻밤') || rawMemo.includes('자리를 털고 일어나는 순간까지')) {
+      rawMemo = '';
+    }
+
     window.__tempUploadedPhotos = (Array.isArray(record.photos) && record.photos.length > 0)
-      ? record.photos.slice()
+      ? record.photos.slice(0, 10)
       : [record.fieldPhoto || record.photo || 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80'];
 
+    window.__tempPhotoCaptions = Array.isArray(record.photoCaptions)
+      ? record.photoCaptions.slice(0, 10)
+      : new Array(window.__tempUploadedPhotos.length).fill('');
+
     var mainStyles = [
-      { id: 'insta', name: '🔥 인스타 음슴체' },
-      { id: 'friend', name: '💬 절친 카톡 썰' },
+      { id: 'insta', name: '🔥 인스타 피드' },
       { id: 'diary', name: '☕ 담백한 일기' },
-      { id: 'essay', name: '🖋️ 문학 수필' },
-      { id: 'senior', name: '🌿 4050 산악낭만' },
-      { id: 'vogue', name: '🕶️ 보그 잉글리시' },
-      { id: 'docu', name: '🎙️ 다큐 내레이션' }
+      { id: 'cozy', name: '🌷 감성 몽글' },
+      { id: 'essay', name: '🖋️ 산악 수필' },
+      { id: 'senior', name: '🌿 베테랑 산꾼' },
+      { id: 'docu', name: '🎙️ 다큐 내레이션' },
+      { id: 'bpl', name: '🎒 BPL 미니멀로그' }
     ];
 
     var mbtiList = [
@@ -959,39 +1115,6 @@
       'ISTP', 'ISFP', 'ESTP', 'ESFP'
     ];
 
-    var approachList = [{ name: '꿀박지' }, { name: '가벼운트레킹' }, { name: '완만한임도' }, { name: '빡센업힐' }, { name: '암릉코스' }, { name: '장거리종주' }];
-    var terrainList = [{ name: '정상' }, { name: '능선' }, { name: '데크' }, { name: '숲속' }, { name: '해변' }, { name: '섬' }, { name: '계곡' }];
-    var tentList = [{ name: '더블월' }, { name: '싱글월' }, { name: '쉘터' }, { name: '타프' }, { name: '비비색' }, { name: '알파인' }, { name: '자립형' }];
-    var tempList = [{ name: '선선함' }, { name: '영하혹한' }, { name: '쌀쌀함' }, { name: '쾌적함' }, { name: '서늘함' }, { name: '포근함' }, { name: '무더위' }];
-    var windList = [{ name: '돌풍' }, { name: '똥바람' }, { name: '시원한바람' }, { name: '미풍' }, { name: '솔솔부는바람' }, { name: '무풍' }, { name: '칼바람' }];
-    var viewList = [{ name: '파노라마뷰' }, { name: '운해' }, { name: '노을' }, { name: '야경' }, { name: '별빛' }, { name: '수평선' }, { name: '마운틴뷰' }];
-    var weatherList = [{ name: '은하수' }, { name: '맑음' }, { name: '노을' }, { name: '일출' }, { name: '운해' }, { name: '우중' }, { name: '설경' }];
-    var compList = [{ name: '솔로' }, { name: '듀오' }, { name: '커플' }, { name: '크루' }, { name: '소모임' }, { name: '반려견' }, { name: '가족' }];
-    var mealList = [{ name: '핫앤쿡' }, { name: '전투식량' }, { name: '발열도시락' }, { name: '샌드위치' }, { name: '드립커피' }, { name: '비화식밀키트' }, { name: '에너지바' }];
-
-    var renderCategorySection = function(catKey, catTitle, catColor, itemList, placeholderText) {
-      return `
-        <div>
-          <label style="font-size:0.68rem; color:${catColor}; font-weight:800; display:block; margin-bottom:4px;">${catTitle}</label>
-          <div id="chipGroup_${catKey}" style="display:flex; gap:4px; flex-wrap:wrap;">
-            ${itemList.map(function(item) {
-              var isAct = window.__richState[catKey].has(item.name);
-              return `
-                <button type="button" class="rich-multi-chip" onclick="window.__toggleRichMulti('${catKey}', '${item.name}', this, '${catColor}')" style="background:${isAct ? catColor : 'rgba(255,255,255,0.06)'}; color:${isAct ? '#000' : '#cbd5e1'}; border:${isAct ? 'none' : '1px solid rgba(255,255,255,0.12)'}; padding:4px 7px; border-radius:6px; font-size:0.64rem; font-weight:${isAct ? '900' : '800'}; cursor:pointer;">
-                  ${item.name}
-                </button>
-              `;
-            }).join('')}
-            <button type="button" onclick="window.__toggleDirectInput('directInput_${catKey}')" style="background:rgba(255,255,255,0.04); border:1px dashed ${catColor}; color:${catColor}; padding:4px 7px; border-radius:6px; font-size:0.64rem; font-weight:800; cursor:pointer;">+ 직접 입력</button>
-          </div>
-          <div id="directInput_${catKey}Wrap" style="display:none; margin-top:4px; gap:4px;">
-            <input type="text" id="directInput_${catKey}" placeholder="${placeholderText}" style="flex:1; height:30px; background:rgba(255,255,255,0.06); border:1px solid ${catColor}; color:#fff; border-radius:6px; padding:0 8px; font-size:0.72rem; box-sizing:border-box;" />
-            <button type="button" onclick="window.__addCustomRichChip('${catKey}', 'directInput_${catKey}', '${catColor}')" style="background:${catColor}; color:#000; border:none; border-radius:6px; padding:0 8px; font-size:0.68rem; font-weight:900; cursor:pointer;">추가</button>
-          </div>
-        </div>
-      `;
-    };
-
     var formModal = document.createElement('div');
     formModal.id = 'modalRichAfterTrip';
     formModal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.92); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); z-index:1000005; display:flex; justify-content:center; align-items:center; padding:14px; box-sizing:border-box;';
@@ -999,39 +1122,93 @@
     formModal.innerHTML = `
       <div style="width:100%; max-width:440px; max-height:92vh; background:#080b11; border:1.5px solid #38bdf8; border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:12px; box-shadow:0 24px 60px rgba(0,0,0,0.95); box-sizing:border-box; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain;">
         
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.12); padding-bottom:6px; flex-shrink:0;">
-          <div style="display:flex; align-items:center; gap:6px;">
-            <span style="font-size:0.98rem; font-weight:900; color:#fff;">📸 다녀온 현장 기록 & 글 작성</span>
-            <span style="font-size:0.60rem; color:#38bdf8; font-weight:800; background:rgba(56,189,248,0.15); padding:2px 6px; border-radius:4px;">10개 항목 100% 반영</span>
+        <!-- 🌅 모달 헤더: 낭만 일지 (폰트 1.18rem 스케일업 & 노을빛 SVG) -->
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.12); padding-bottom:8px; flex-shrink:0;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <svg viewBox="0 0 24 24" fill="none" style="width:22px; height:22px; flex-shrink:0;">
+              <defs>
+                <linearGradient id="sunsetSkyGradModal" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f43f5e"/>
+                  <stop offset="50%" stop-color="#f97316"/>
+                  <stop offset="100%" stop-color="#f59e0b"/>
+                </linearGradient>
+              </defs>
+              <circle cx="12" cy="9" r="4" fill="url(#sunsetSkyGradModal)"/>
+              <path d="M12 2v2M4.93 4.93l1.41 1.41M19.07 4.93l-1.41 1.41M2 19h20" stroke="url(#sunsetSkyGradModal)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M3 19l4.5-5.5 3.5 4 4.5-6.5 5.5 8" stroke="#fdba74" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span style="font-size:1.18rem; font-weight:900; color:#fff; letter-spacing:-0.02em; text-shadow:0 2px 10px rgba(249,115,22,0.3);">낭만 일지</span>
           </div>
-          <button onclick="document.getElementById('modalRichAfterTrip').remove()" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer;">✕</button>
+          <button onclick="document.getElementById('modalRichAfterTrip').remove()" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer; padding:2px 6px;">✕</button>
         </div>
 
+        <!-- 📷 사진 관리 그리드 & 전체 해제 / 추가 -->
         <div>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <label style="font-size:0.68rem; color:#38bdf8; font-weight:800;">1. 🌄 현장 사진 (여러 장 선택 가능)</label>
-            <span id="photoCountNotice" style="font-size:0.58rem; color:#86efac; font-weight:800;">현재 ${window.__tempUploadedPhotos.length}장 등록됨</span>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <div style="display:flex; align-items:center; gap:4px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px;">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+              </svg>
+              <label style="font-size:0.70rem; color:#38bdf8; font-weight:900;">현장 사진 관리</label>
+              <span id="photoCountNotice" style="font-size:0.62rem; color:#86efac; font-weight:800;">(${window.__tempUploadedPhotos.length} / 10장)</span>
+            </div>
+            <button type="button" onclick="window.__clearAllRichPhotos()" style="background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.4); color:#fda4af; font-size:0.58rem; font-weight:800; padding:2px 6px; border-radius:4px; cursor:pointer;">
+              전체 해제
+            </button>
           </div>
+
+          <!-- 썸네일 리스트 -->
+          <div id="richPhotoThumbnailsGrid" style="display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none;">
+            ${window.__tempUploadedPhotos.map(function(url, pIdx) {
+              return `
+                <div style="position:relative; width:52px; height:52px; border-radius:6px; overflow:hidden; border:1px solid rgba(56,189,248,0.4); flex-shrink:0;">
+                  <img src="${url}" style="width:100%; height:100%; object-fit:cover;" />
+                  <button type="button" onclick="window.__removeRichSinglePhoto(${pIdx})" style="position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,0.75); color:#fff; border:none; font-size:10px; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer;">✕</button>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
           <input type="file" id="richMultiPhotoInput" accept="image/*" multiple style="display:none;" onchange="window.__handleRichMultiPhotoUpload(event)" />
-          <button type="button" id="btnUploadMultiPhotoNotice" onclick="document.getElementById('richMultiPhotoInput').click()" style="width:100%; height:36px; background:rgba(56,189,248,0.1); border:1px dashed #38bdf8; color:#7dd3fc; border-radius:8px; font-size:0.72rem; font-weight:800; cursor:pointer;">
-            📷 갤러리에서 사진 여러 장 선택 (자동 최적화)
+          <button type="button" id="btnUploadMultiPhotoNotice" onclick="document.getElementById('richMultiPhotoInput').click()" style="width:100%; height:34px; background:rgba(56,189,248,0.08); border:1px dashed #38bdf8; color:#7dd3fc; border-radius:8px; font-size:0.72rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; margin-top:2px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>사진 추가하기 (최대 10장)</span>
           </button>
         </div>
 
-        <!-- 9대 카테고리 -->
-        ${renderCategorySection('approaches', '2. 🥾 어프로치 코스', '#fb923c', approachList, '직접 어프로치 입력')}
-        ${renderCategorySection('terrains', '3. 🌲 지형 형태', '#34d399', terrainList, '직접 지형 입력')}
-        ${renderCategorySection('tents', '4. ⛺ 텐트 & 쉘터', '#a78bfa', tentList, '직접 텐트 모델 입력')}
-        ${renderCategorySection('temps', '5. 🌡️ 체감 온도', '#38bdf8', tempList, '직접 온도 입력')}
-        ${renderCategorySection('winds', '6. 💨 현장 바람', '#94a3b8', windList, '직접 바람 입력')}
-        ${renderCategorySection('views', '7. 🌄 풍경 뷰', '#fde047', viewList, '직접 뷰 입력')}
-        ${renderCategorySection('weathers', '8. 🌤️ 하늘 & 기상', '#f59e0b', weatherList, '직접 기상 입력')}
-        ${renderCategorySection('comps', '9. 👥 동행', '#38bdf8', compList, '직접 동행 입력')}
-        ${renderCategorySection('meals', '10. ♨️ 식단 & 취사', '#f43f5e', mealList, '직접 식단 입력')}
+        <!-- ✍️ 3대 직접 입력창 (현장 언어) -->
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div>
+            <div style="display:flex; align-items:center; gap:4px; margin-bottom:3px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <label style="font-size:0.70rem; color:#fb923c; font-weight:900;">1. 힘들었던 점 (선택)</label>
+            </div>
+            <input type="text" id="richInputHard" value="${escapeHtml(window.__richState.hardText)}" placeholder="예: 정상 전 숨이 턱 막히던 오르막, 능선에서 때려 박히던 똥바람, 너덜길에 털린 무릎..." oninput="window.__handleRichDirectInputChange('hardText', this.value)" style="width:100%; height:32px; background:rgba(255,255,255,0.06); border:1px solid rgba(251,146,60,0.4); color:#fff; border-radius:6px; padding:0 8px; font-size:0.74rem; box-sizing:border-box; outline:none;" />
+          </div>
 
-        <!-- 🎭 문체 스타일 -->
-        <div style="margin-top:4px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.15);">
-          <label style="font-size:0.68rem; color:#f43f5e; font-weight:900; display:block; margin-bottom:5px;">🎭 문체 스타일 선택 (원클릭 합성)</label>
+          <div>
+            <div style="display:flex; align-items:center; gap:4px; margin-bottom:3px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px;"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <label style="font-size:0.70rem; color:#34d399; font-weight:900;">2. 좋았던 점 (선택)</label>
+            </div>
+            <input type="text" id="richInputGood" value="${escapeHtml(window.__richState.goodText)}" placeholder="예: 텐트 지퍼 열었을 때 터진 운해, 뻐근한 다리 뻗고 침낭 속 들어간 순간, 발열팩 데워먹던 저녁..." oninput="window.__handleRichDirectInputChange('goodText', this.value)" style="width:100%; height:32px; background:rgba(255,255,255,0.06); border:1px solid rgba(52,211,153,0.4); color:#fff; border-radius:6px; padding:0 8px; font-size:0.74rem; box-sizing:border-box; outline:none;" />
+          </div>
+
+          <div>
+            <div style="display:flex; align-items:center; gap:4px; margin-bottom:3px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fde047" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <label style="font-size:0.70rem; color:#fde047; font-weight:900;">3. 기억에 남는 것 (선택)</label>
+            </div>
+            <input type="text" id="richInputMemory" value="${escapeHtml(window.__richState.memoryText)}" placeholder="예: 붉게 타오르다 순식간에 저문 노을, 밤새 텐트 때리던 바람 소리, 새벽에 쏟아진 별..." oninput="window.__handleRichDirectInputChange('memoryText', this.value)" style="width:100%; height:32px; background:rgba(255,255,255,0.06); border:1px solid rgba(253,224,71,0.4); color:#fff; border-radius:6px; padding:0 8px; font-size:0.74rem; box-sizing:border-box; outline:none;" />
+          </div>
+        </div>
+
+        <!-- 🎨 작성 스타일 선택 -->
+        <div style="margin-top:2px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.15);">
+          <div style="display:flex; align-items:center; gap:4px; margin-bottom:5px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f43f5e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px;"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+            <label style="font-size:0.70rem; color:#f43f5e; font-weight:900;">작성 스타일 선택</label>
+          </div>
           <div style="display:flex; gap:4px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none;">
             ${mainStyles.map(function(t) {
               var isSelected = (window.__richState.selectedTone === t.id);
@@ -1044,9 +1221,12 @@
           </div>
         </div>
 
-        <!-- 🧬 MBTI 16종 -->
+        <!-- 🧬 MBTI 16종 선택 -->
         <div>
-          <label style="font-size:0.68rem; color:#38bdf8; font-weight:900; display:block; margin-bottom:5px;">🧬 내 MBTI 선택 (성격 케미 실시간 합성)</label>
+          <div style="display:flex; align-items:center; gap:4px; margin-bottom:5px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px;"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993"/><path d="M15 2c-1.798 1.998-2.518 3.995-2.807 5.993"/></svg>
+            <label style="font-size:0.70rem; color:#38bdf8; font-weight:900;">내 MBTI 선택 (사고방식 & 시선 반영)</label>
+          </div>
           <div style="display:flex; gap:4px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none;">
             ${mbtiList.map(function(m) {
               var isSelected = (window.__richState.selectedMbti === m);
@@ -1059,23 +1239,68 @@
           </div>
         </div>
 
-        <!-- 📝 본문창 -->
+        <!-- 📝 본문창 및 AI 작성 버튼 -->
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <label style="font-size:0.72rem; color:#34d399; font-weight:900;">✨ 실시간 합성 피드 본문</label>
-            <button type="button" onclick="window.__refreshAutoStoryMemo()" style="background:rgba(56,189,248,0.15); border:1px solid #38bdf8; color:#38bdf8; padding:3px 9px; border-radius:5px; font-size:0.64rem; font-weight:900; cursor:pointer;">↺ 다시 조합</button>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+              <label style="font-size:0.72rem; color:#34d399; font-weight:900;">낭만 본문</label>
+            </div>
+            <button type="button" id="btnTriggerAiStory" onclick="window.__refreshAutoStoryMemo(true)" style="background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#fff; padding:4px 11px; border-radius:6px; font-size:0.66rem; font-weight:900; cursor:pointer; box-shadow:0 2px 8px rgba(2,132,199,0.4); display:flex; align-items:center; gap:4px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              <span>AI 감성 글 작성하기</span>
+            </button>
           </div>
-          <textarea id="richFormMemoInput" style="width:100%; height:140px; background:rgba(255,255,255,0.06); border:1.2px solid rgba(52,211,153,0.5); color:#fff; border-radius:10px; padding:10px 12px; font-size:0.76rem; line-height:1.6; box-sizing:border-box; outline:none; resize:none; font-family:'SUIT', sans-serif;">${escapeHtml(record.memo || '')}</textarea>
+          <textarea id="richFormMemoInput" placeholder="글을 작성해보세요!" style="width:100%; height:110px; background:rgba(255,255,255,0.06); border:1.2px solid rgba(52,211,153,0.5); color:#fff; border-radius:10px; padding:10px 12px; font-size:0.80rem; line-height:1.6; box-sizing:border-box; outline:none; resize:none; font-family:'SUIT', sans-serif;">${escapeHtml(rawMemo)}</textarea>
         </div>
 
-        <button onclick="window.__saveRichAfterTrip('${record.id}')" style="width:100%; height:44px; background:linear-gradient(135deg, #0d9488, #0f766e); border:1px solid #14b8a6; color:#fff; font-size:0.86rem; font-weight:900; border-radius:10px; cursor:pointer; flex-shrink:0; box-shadow:0 4px 14px rgba(13,148,136,0.35); margin-top:4px;">
-          ✓ 피드 기록 & 사진 저장하기
+        <!-- 🎒 낭만 저장하기 최종 버튼 -->
+        <button onclick="window.__saveRichAfterTrip('${record.id}')" style="width:100%; height:44px; background:linear-gradient(135deg, #0d9488, #0f766e); border:1px solid #14b8a6; color:#fff; font-size:0.88rem; font-weight:900; border-radius:10px; cursor:pointer; flex-shrink:0; box-shadow:0 4px 14px rgba(13,148,136,0.35); margin-top:2px; display:flex; align-items:center; justify-content:center; gap:6px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <span>낭만 저장하기</span>
         </button>
 
       </div>
     `;
     document.body.appendChild(formModal);
-    window.__refreshAutoStoryMemo();
+  };
+
+  // 📷 [사진 개별 삭제 & 전체 해제 헬퍼]
+  window.__removeRichSinglePhoto = function(idx) {
+    if (!Array.isArray(window.__tempUploadedPhotos)) return;
+    window.__tempUploadedPhotos.splice(idx, 1);
+    if (Array.isArray(window.__tempPhotoCaptions)) window.__tempPhotoCaptions.splice(idx, 1);
+
+    var grid = document.getElementById('richPhotoThumbnailsGrid');
+    var countNotice = document.getElementById('photoCountNotice');
+    if (grid) {
+      grid.innerHTML = window.__tempUploadedPhotos.map(function(url, pIdx) {
+        return `
+          <div style="position:relative; width:52px; height:52px; border-radius:6px; overflow:hidden; border:1px solid rgba(56,189,248,0.4); flex-shrink:0;">
+            <img src="${url}" style="width:100%; height:100%; object-fit:cover;" />
+            <button type="button" onclick="window.__removeRichSinglePhoto(${pIdx})" style="position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,0.75); color:#fff; border:none; font-size:10px; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer;">✕</button>
+          </div>
+        `;
+      }).join('');
+    }
+    if (countNotice) countNotice.innerText = `(${window.__tempUploadedPhotos.length} / 10장)`;
+    triggerHaptic(8);
+  };
+
+  window.__clearAllRichPhotos = function() {
+    window.__tempUploadedPhotos = [];
+    window.__tempPhotoCaptions = [];
+    var grid = document.getElementById('richPhotoThumbnailsGrid');
+    var countNotice = document.getElementById('photoCountNotice');
+    if (grid) grid.innerHTML = '';
+    if (countNotice) countNotice.innerText = `(0 / 10장)`;
+    if (typeof showToast === 'function') showToast('모든 사진 선택이 해제되었습니다.', 'info');
+    triggerHaptic(10);
+  };
+
+  window.__handleRichDirectInputChange = function(fieldKey, val) {
+    if (!window.__richState) return;
+    window.__richState[fieldKey] = val;
   };
 
   window.__selectToneStyle = function(toneId, btnEl) {
@@ -1096,8 +1321,7 @@
       btnEl.style.fontWeight = '900';
     }
 
-    window.__refreshAutoStoryMemo();
-    triggerHaptic(10);
+    triggerHaptic(8);
   };
 
   window.__selectMbtiType = function(mbti, btnEl) {
@@ -1118,93 +1342,160 @@
       btnEl.style.fontWeight = '900';
     }
 
-    window.__refreshAutoStoryMemo();
-    triggerHaptic(10);
-  };
-
-  window.__toggleRichMulti = function(categoryKey, valName, btnEl, activeColor) {
-    var set = window.__richState[categoryKey];
-    if (!set) return;
-
-    if (set.has(valName)) {
-      if (set.size > 1) set.delete(valName);
-    } else {
-      set.add(valName);
-    }
-
-    var isNowActive = set.has(valName);
-    btnEl.style.background = isNowActive ? activeColor : 'rgba(255,255,255,0.06)';
-    btnEl.style.color = isNowActive ? '#000' : '#cbd5e1';
-    btnEl.style.border = isNowActive ? 'none' : '1px solid rgba(255,255,255,0.12)';
-    btnEl.style.fontWeight = isNowActive ? '900' : '800';
-
-    window.__refreshAutoStoryMemo();
     triggerHaptic(8);
   };
+// 🤖 [Google Gemini 3.1 Flash-Lite 백엔드 안전 연동]
+  window.callGeminiFlashLiteAi = async function(spot, elevation, weight, hard, good, memory, style, mbti) {
+    var gasUrl = window.OKBM_GAS_URL || window.GAS_API_URL || window.GAS_URL || 'https://script.google.com/macros/s/AKfycbz_구글시트_배포_URL/exec';
 
-  window.__addCustomRichChip = function(categoryKey, inputId, activeColor) {
-    var input = document.getElementById(inputId);
-    if (!input || !input.value.trim()) return;
-    var customVal = input.value.trim();
-    window.__richState[categoryKey].add(customVal);
+    try {
+      var response = await fetch(gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'GENERATE_BASECAMP_LOG',
+          spot: spot,
+          elevation: elevation,
+          weight: weight,
+          hard: hard,
+          good: good,
+          memory: memory,
+          style: style,
+          mbti: mbti
+        })
+      });
 
-    var group = document.getElementById('chipGroup_' + categoryKey);
-    if (group) {
-      var newBtn = document.createElement('button');
-      newBtn.type = 'button';
-      newBtn.className = 'rich-multi-chip';
-      newBtn.style.cssText = `background:${activeColor}; color:#000; border:none; padding:4px 7px; border-radius:6px; font-size:0.64rem; font-weight:900; cursor:pointer;`;
-      newBtn.innerText = customVal;
-      newBtn.onclick = function() { window.__toggleRichMulti(categoryKey, customVal, newBtn, activeColor); };
-      group.insertBefore(newBtn, group.lastElementChild);
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+      }
+
+      var data = await response.json();
+      if (data && data.status === 'SUCCESS' && data.text) {
+        return data.text.trim().replace(/,\s*$/, '.');
+      } else if (data && data.message) {
+        throw new Error(data.message);
+      }
+    } catch (err) {
+      console.error('[Gemini 3.1 Flash-Lite Backend Error]', err);
     }
 
-    input.value = '';
-    window.__toggleDirectInput(inputId);
-    window.__refreshAutoStoryMemo();
-    triggerHaptic(10);
+    return null;
   };
 
-  window.__toggleDirectInput = function(inputId) {
-    var wrap = document.getElementById(inputId + 'Wrap') || document.getElementById(inputId);
-    if (wrap) {
-      wrap.style.display = (wrap.style.display === 'none' || wrap.style.display === '' ? 'flex' : 'none');
-      var realInput = document.getElementById(inputId);
-      if (realInput && wrap.style.display === 'flex') realInput.focus();
-    }
-  };
+  // ⏱️ [1분(60초) 쿨다운 타이머 & 명시적 AI 글짓기 엔진]
+  window.__lastAiStoryCallTime = 0;
+  window.__aiCooldownTimerId = null;
 
-  window.__refreshAutoStoryMemo = function() {
+  window.__refreshAutoStoryMemo = async function(isUserTriggered) {
     if (!window.__richState) return;
     var memoArea = document.getElementById('richFormMemoInput');
     if (!memoArea) return;
 
+    var triggerBtn = document.getElementById('btnTriggerAiStory');
+
+    if (isUserTriggered) {
+      var now = Date.now();
+      var elapsed = (now - window.__lastAiStoryCallTime) / 1000;
+      if (elapsed < 60) {
+        var remainSec = Math.ceil(60 - elapsed);
+        if (typeof showToast === 'function') {
+          showToast(`⏳ AI 호출 보호 중입니다. ${remainSec}초 후에 다시 작성할 수 있습니다!`, 'warn');
+        }
+        triggerHaptic(20);
+        return;
+      }
+
+      window.__lastAiStoryCallTime = now;
+
+      if (triggerBtn) {
+        triggerBtn.disabled = true;
+        triggerBtn.style.opacity = '0.5';
+        triggerBtn.style.cursor = 'not-allowed';
+
+        if (window.__aiCooldownTimerId) clearInterval(window.__aiCooldownTimerId);
+
+        var countdown = 60;
+        triggerBtn.innerText = `⏳ 60초 대기`;
+
+        window.__aiCooldownTimerId = setInterval(function() {
+          countdown--;
+          if (countdown > 0) {
+            if (triggerBtn) triggerBtn.innerText = `⏳ ${countdown}초 대기`;
+          } else {
+            clearInterval(window.__aiCooldownTimerId);
+            window.__aiCooldownTimerId = null;
+            if (triggerBtn) {
+              triggerBtn.disabled = false;
+              triggerBtn.style.opacity = '1';
+              triggerBtn.style.cursor = 'pointer';
+              triggerBtn.innerText = '↺ 다시 조합';
+            }
+          }
+        }, 1000);
+      }
+
+      memoArea.value = '✨ "낭만라이터가 소중한 추억을 글로 담아내는 중입니다.. ✍️"';
+      memoArea.style.opacity = '0.6';
+    }
+
     var cur = window.__richCurrentRecord || (window.interactiveHistory && window.interactiveHistory[window.currentCardIndex || 0]) || {};
+    var spot = cur.spot || '선자령';
+    var elevation = cur.elevation || '832m';
+    var weight = cur.weightKg || '5.4';
+    var hard = (window.__richState.hardText || '').trim();
+    var good = (window.__richState.goodText || '').trim();
+    var memory = (window.__richState.memoryText || '').trim();
+    var tone = window.__richState.selectedTone || 'insta';
+    var mbti = window.__richState.selectedMbti || 'INFP';
 
-    var tempRecord = {
-      spot: cur.spot || '선자령',
-      weatherText: Array.from(window.__richState.weathers).join(','),
-      terrainText: Array.from(window.__richState.terrains).join(','),
-      mealText: Array.from(window.__richState.meals).join(','),
-      companionText: Array.from(window.__richState.comps).join(','),
-      windText: Array.from(window.__richState.winds).join(','),
-      tentText: Array.from(window.__richState.tents).join(', '),
-      tempText: Array.from(window.__richState.temps).join(','),
-      viewText: Array.from(window.__richState.views).join(','),
-      approachText: Array.from(window.__richState.approaches).join(','),
-      weightKg: cur.weightKg || '5.4',
-      memo: '',
-      __autoGenerated: true
-    };
+    var aiStory = await window.callGeminiFlashLiteAi(spot, elevation, weight, hard, good, memory, tone, mbti);
 
-    memoArea.value = window.composePoeticBackpackingStory(tempRecord, window.__richState.selectedTone, window.__richState.selectedMbti);
+    memoArea.style.opacity = '1';
+
+    if (aiStory) {
+      memoArea.value = aiStory;
+      if (isUserTriggered && typeof showToast === 'function') {
+        showToast('✨ AI가 맞춤 감성 글을 완성했습니다!', 'success');
+      }
+    } else {
+      var tempRecord = {
+        spot: spot,
+        elevation: elevation,
+        hardText: hard,
+        goodText: good,
+        memoryText: memory,
+        weightKg: weight
+      };
+      memoArea.value = window.composePoeticBackpackingStory(tempRecord, tone, mbti);
+    }
+
+    if (isUserTriggered) {
+      triggerHaptic(10);
+    }
   };
-
+// 📷 [사진 누적(Append) 등록 - 최대 10장 한도 제어]
   window.__handleRichMultiPhotoUpload = function(e) {
     var files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    if (typeof showToast === 'function') showToast('⚡ ' + files.length + '장의 사진을 최적화하는 중...', 'info');
+    if (!Array.isArray(window.__tempUploadedPhotos)) {
+      window.__tempUploadedPhotos = [];
+    }
+
+    var currentCount = window.__tempUploadedPhotos.length;
+    var availableSlots = 10 - currentCount;
+
+    if (availableSlots <= 0) {
+      if (typeof showToast === 'function') showToast('⚠️ 사진은 최대 10장까지만 등록할 수 있습니다.', 'warn');
+      return;
+    }
+
+    var filesToProcess = files.slice(0, availableSlots);
+    if (files.length > availableSlots) {
+      if (typeof showToast === 'function') showToast(`최대 10장 한도로 ${availableSlots}장의 사진만 추가됩니다.`, 'info');
+    } else {
+      if (typeof showToast === 'function') showToast('⚡ ' + filesToProcess.length + '장의 사진을 최적화하는 중...', 2000);
+    }
 
     var compressSingle = function(file) {
       return new Promise(function(resolve) {
@@ -1232,69 +1523,100 @@
       });
     };
 
-    Promise.all(files.map(compressSingle)).then(function(compressedUrls) {
-      window.__tempUploadedPhotos = compressedUrls;
-      var noticeBtn = document.getElementById('btnUploadMultiPhotoNotice');
+    Promise.all(filesToProcess.map(compressSingle)).then(function(compressedUrls) {
+      window.__tempUploadedPhotos = window.__tempUploadedPhotos.concat(compressedUrls).slice(0, 10);
+      var grid = document.getElementById('richPhotoThumbnailsGrid');
       var countNotice = document.getElementById('photoCountNotice');
-      if (noticeBtn) {
-        noticeBtn.innerText = '✓ 총 ' + compressedUrls.length + '장 사진 최적화 완료!';
-        noticeBtn.style.background = 'rgba(52,211,153,0.15)';
-        noticeBtn.style.borderColor = '#34d399';
-        noticeBtn.style.color = '#6ee7b7';
+      if (grid) {
+        grid.innerHTML = window.__tempUploadedPhotos.map(function(url, pIdx) {
+          return `
+            <div style="position:relative; width:52px; height:52px; border-radius:6px; overflow:hidden; border:1px solid rgba(56,189,248,0.4); flex-shrink:0;">
+              <img src="${url}" style="width:100%; height:100%; object-fit:cover;" />
+              <button type="button" onclick="window.__removeRichSinglePhoto(${pIdx})" style="position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,0.75); color:#fff; border:none; font-size:10px; line-height:1; display:flex; align-items:center; justify-content:center; cursor:pointer;">✕</button>
+            </div>
+          `;
+        }).join('');
       }
-      if (countNotice) countNotice.innerText = '총 ' + compressedUrls.length + '장 등록 완료';
-      if (typeof showToast === 'function') showToast('🌟 사진이 준비되었습니다!', 'success');
+      if (countNotice) countNotice.innerText = `(${window.__tempUploadedPhotos.length} / 10장)`;
+      if (typeof showToast === 'function') showToast('🌟 사진 ' + compressedUrls.length + '장이 추가되었습니다!', 2000);
     });
   };
-
-  // 💾 [저장 시 카드 내부 메모와 피드 본문 완전 분리 저장]
-  window.__saveRichAfterTrip = function(recordId) {
-    var target = (window.interactiveHistory || []).find(function(r) { return String(r.id).trim() === String(recordId).trim(); });
-    if (!target && window.interactiveHistory && window.interactiveHistory.length > 0) {
-      target = window.interactiveHistory[window.currentCardIndex || 0];
+ // 💾 [낭만 일지 & 멀티 사진 최종 저장]
+  // 💾 [낭만 일지 & 멀티 사진 IndexedDB 대용량 영구 저장]
+  window.__saveRichAfterTrip = async function(recordId) {
+    var rawLogs = window.safeGetStorage('okbm_packing_history', []);
+    if (Array.isArray(rawLogs) && rawLogs.length > 0) {
+      window.interactiveHistory = rawLogs.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
+    } else if (!window.interactiveHistory) {
+      window.interactiveHistory = [];
     }
+
+    var target = (window.interactiveHistory || []).find(function(r) {
+      return String(r.id).trim() === String(recordId).trim();
+    });
+
+    if (!target && window.__richCurrentRecord) {
+      target = (window.interactiveHistory || []).find(function(r) {
+        return String(r.id).trim() === String(window.__richCurrentRecord.id).trim();
+      });
+    }
+
+    if (!target && window.interactiveHistory && window.interactiveHistory.length > 0) {
+      var fallbackIdx = (typeof window.currentCardIndex === 'number' && window.currentCardIndex >= 0) ? window.currentCardIndex : 0;
+      target = window.interactiveHistory[fallbackIdx];
+    }
+
     if (!target) {
       if (typeof showToast === 'function') showToast('저장할 대상 기록을 찾을 수 없습니다.', 'warn');
       return;
     }
 
     if (window.__richState) {
-      target.weatherText = Array.from(window.__richState.weathers).join(', ');
-      target.terrainText = Array.from(window.__richState.terrains).join(', ');
-      target.mealText = Array.from(window.__richState.meals).join(', ');
-      target.companionText = Array.from(window.__richState.comps).join(', ');
-      target.windText = Array.from(window.__richState.winds).join(', ');
-      target.tentText = Array.from(window.__richState.tents).join(', ');
-      target.tempText = Array.from(window.__richState.temps).join(', ');
-      target.viewText = Array.from(window.__richState.views).join(', ');
-      target.approachText = Array.from(window.__richState.approaches).join(', ');
+      target.hardText = window.__richState.hardText || '';
+      target.goodText = window.__richState.goodText || '';
+      target.memoryText = window.__richState.memoryText || '';
     }
 
     var memoInput = document.getElementById('richFormMemoInput');
     var userTypedMemo = memoInput ? memoInput.value.trim() : '';
 
-    if (userTypedMemo.length > 0) {
-      target.memo = userTypedMemo;
-    } else {
-      target.memo = window.composePoeticBackpackingStory(target);
-    }
-
-    target.oneLineMemo = '비화식으로 즐긴 ' + (target.spot || '박지') + ' 1박';
+    target.memo = userTypedMemo;
+    target.oneLineMemo = target.spot ? (target.spot + ' 백패킹') : '자연 속 힐링 백패킹';
 
     if (Array.isArray(window.__tempUploadedPhotos) && window.__tempUploadedPhotos.length > 0) {
-      target.photos = window.__tempUploadedPhotos.slice();
+      target.photos = window.__tempUploadedPhotos.slice(0, 10);
       target.fieldPhoto = target.photos[0];
       target.photo = target.photos[0];
-      
-      var savedPhotosMap = window.safeGetStorage('okbm_phone_photos_map', {});
-      savedPhotosMap[target.id] = target.photos;
-      window.safeSetStorage('okbm_phone_photos_map', savedPhotosMap);
-      
       window.__tempUploadedPhotos = null;
     }
 
-    window.safeSetStorage('okbm_packing_history', window.interactiveHistory);
-    if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+    if (Array.isArray(window.__tempPhotoCaptions)) {
+      target.photoCaptions = window.__tempPhotoCaptions.slice(0, 10);
+      window.__tempPhotoCaptions = null;
+    }
+
+    var existingIndex = window.interactiveHistory.findIndex(function(r) {
+      return String(r.id).trim() === String(target.id).trim();
+    });
+    if (existingIndex !== -1) {
+      window.interactiveHistory[existingIndex] = target;
+    } else {
+      window.interactiveHistory.unshift(target);
+    }
+
+    // 📱 [내 스마트폰 대용량 IndexedDB에 고화질 사진 및 일지 영구 저장]
+    window.__memoryStore['okbm_packing_history'] = window.interactiveHistory;
+    await window.saveToIndexedDB('okbm_packing_history', window.interactiveHistory);
+
+    try {
+      localStorage.setItem('okbm_packing_history', JSON.stringify(window.interactiveHistory));
+    } catch (e) {
+      // 5MB 용량 한도 초과 시에도 IndexedDB에 100% 안전 저장 완료
+    }
+
+    if (typeof syncUserDataToCloud === 'function') {
+      syncUserDataToCloud();
+    }
 
     var m = document.getElementById('modalRichAfterTrip');
     if (m) m.remove();
@@ -1308,15 +1630,300 @@
     }
 
     triggerHaptic(15);
-    if (typeof showToast === 'function') showToast('🌟 피드 기록과 사진이 안전하게 저장되었습니다!', 'success');
+    if (typeof showToast === 'function') showToast('🎒 스마트폰에 낭만 일지가 안전하게 저장되었습니다!', 'success');
+  };
+  window.openSingleTripDualFeedModal = function(recordId) {
+    if (!window.interactiveHistory || window.interactiveHistory.length === 0) {
+      var rawLogs = window.safeGetStorage('okbm_packing_history', []);
+      if (Array.isArray(rawLogs) && rawLogs.length > 0) {
+        window.interactiveHistory = rawLogs.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
+      }
+    }
+
+    var logs = window.interactiveHistory || [];
+    if (logs.length === 0) {
+      if (typeof showToast === 'function') showToast('선택한 기록을 찾을 수 없습니다.', 'warn');
+      return;
+    }
+
+    var startIdx = logs.findIndex(function(r) { return String(r.id).trim() === String(recordId).trim(); });
+    if (startIdx === -1) startIdx = 0;
+
+    var old = document.getElementById('singleTripFeedModal');
+    if (old) old.remove();
+
+    window.__currentFeedLoadedIndices = new Set([startIdx]);
+    window.__currentVisibleFeedId = String(logs[startIdx].id);
+
+    // 개별 피드 카드 렌더러 함수 (액자형 사진 베젤, 슬림 명조 폰트, 정교한 배낭 벡터)
+    function buildSingleFeedCardHtml(log) {
+      var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
+      var tmplId = log.templateId || window.selectedTemplateId || savedTmplId || 1;
+      var items = Array.isArray(log.items) ? log.items : [];
+      var borderGrad = (typeof window.getCardStableBorderGradient === 'function') 
+        ? window.getCardStableBorderGradient(log, 0) 
+        : 'linear-gradient(135deg, #10b981, #047857)';
+
+      var photosList = (Array.isArray(log.photos) && log.photos.length > 0)
+        ? log.photos 
+        : [log.fieldPhoto || log.photo || 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80'];
+
+      var shortCardMemo = log.oneLineMemo || (log.spot ? (log.spot + ' 백패킹') : '자연 속 힐링 백패킹');
+
+      var packingSheetMarkup = '';
+      var genFn = (typeof window.generateCardMarkup === 'function') ? window.generateCardMarkup : (typeof generateCardMarkup === 'function' ? generateCardMarkup : null);
+
+      if (genFn) {
+        packingSheetMarkup = genFn(tmplId, log, items, log.spot, shortCardMemo, photosList[0]);
+      } else {
+        packingSheetMarkup = `
+          <div style="height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#f4f1ea; color:#1c1917; padding:12px; border-radius:13px;">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px dashed #000; padding-bottom:3px;">
+                <span style="font-family:'Space Grotesk', sans-serif; font-size:0.75rem; font-weight:900;">ROMANTIC PACK</span>
+                <span style="font-size:0.52rem; background:#0284c7; color:#fff; font-weight:900; padding:1px 5px; border-radius:3px;">#0${tmplId} 패킹지</span>
+              </div>
+              <div style="margin-top:6px; font-size:0.95rem; font-weight:900; display:flex; align-items:center; gap:3px;">
+                ${window.VEC_ICONS.pin} <span>${escapeHtml(log.spot)} (${escapeHtml(log.elevation)})</span>
+              </div>
+              <div style="font-size:0.60rem; color:#64748b; font-family:'JetBrains Mono', monospace; margin-top:2px;">${log.date} · 장비 ${items.length}개 세팅</div>
+              <div style="margin-top:8px; border-top:1px dashed #cbd5e1; padding-top:5px; font-size:0.65rem; display:flex; flex-direction:column; gap:2.5px; max-height:160px; overflow-y:auto;">
+                ${items.map(function(it) { return '<div style="display:flex; justify-content:space-between;"><span>• ' + escapeHtml(it.name) + '</span><span style="font-weight:700;">' + ((it.weight||0)/1000).toFixed(2) + 'kg</span></div>'; }).join('')}
+              </div>
+            </div>
+            <div style="border-top:1.5px dashed #000; padding-top:5px; display:flex; justify-content:space-between; align-items:baseline;">
+              <span style="font-size:0.68rem; font-weight:900; color:#64748b;">TOTAL WEIGHT</span>
+              <span style="font-size:1.4rem; font-weight:900; color:#000; font-family:'Space Grotesk', sans-serif;">${log.weightKg} KG</span>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="single-feed-block" data-record-id="${escapeHtml(String(log.id))}" style="background:#000000; border:1px solid rgba(255,255,255,0.14); border-radius:18px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 16px 45px rgba(0,0,0,0.95); flex-shrink:0; margin-bottom:36px;">
+          
+          <!-- 카드 헤더 (박지명 & 날짜) -->
+          <div style="padding:12px 14px; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:0.88rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:5px;">
+              ${window.VEC_ICONS.pin}
+              <span>${escapeHtml(log.spot)}</span>
+            </div>
+            <span style="font-size:0.68rem; color:#94a3b8; font-weight:700; font-family:'JetBrains Mono', monospace;">${escapeHtml(log.date)}</span>
+          </div>
+
+          <!-- 📖 [아리따부리 0.74rem 슬림 가독성 폰트 + 은은한 펄 섀도우] -->
+          ${log.memo ? `
+            <div style="padding:16px 18px 14px 18px; background:rgba(255,255,255,0.025); border-bottom:1px solid rgba(226,232,240,0.12); position:relative;">
+              <div style="font-family:'Arita-buri-SemiBold', 'Noto Serif KR', serif; font-size:0.74rem; font-weight:300; color:#f1f5f9; line-height:1.65; word-break:keep-all; text-shadow:0 0 8px rgba(255,255,255,0.22); letter-spacing:-0.01em;">
+                “${escapeHtml(log.memo)}”
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- 📷 3:4 현장 사진들 (액자형 슬림 베젤 & 마진 분리 마감) -->
+          <div style="display:flex; flex-direction:column; padding:8px 8px 0 8px; background:#000;">
+            ${photosList.map(function(pUrl, pIdx) {
+              var caption = (log.photoCaptions && log.photoCaptions[pIdx]) ? log.photoCaptions[pIdx].trim() : '';
+              return `
+                <div style="width:100%; aspect-ratio:3/4; overflow:hidden; position:relative; background:#05070a; border:1px solid rgba(255,255,255,0.12); border-radius:10px; margin-bottom:8px; box-sizing:border-box; cursor:pointer;" onclick="if(typeof window.triggerSoftAmbientFX==='function') window.triggerSoftAmbientFX(this);">
+                  <img src="${pUrl}" style="width:100%; height:100%; object-fit:cover; display:block;" />
+                  ${caption ? `
+                    <div style="position:absolute; bottom:0; left:0; right:0; padding:28px 14px 10px 14px; background:linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0) 100%); pointer-events:none; box-sizing:border-box;">
+                      <div style="font-size:0.74rem; color:#ffffff; font-weight:700; line-height:1.45; text-shadow:0 1px 4px rgba(0,0,0,0.95), 0 0 10px rgba(0,0,0,0.8); font-family:'SUIT', sans-serif;">
+                        ${escapeHtml(caption)}
+                      </div>
+                    </div>
+                  ` : ''}
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- 🎒 3:4 배낭 패킹 세팅지 (정교한 배낭 백터 아이콘 + '이날의 배낭 패킹.') -->
+          <div style="padding:10px 14px 14px 14px; background:#07090e; border-top:1px solid rgba(255,255,255,0.08);">
+            <div style="font-size:0.75rem; font-weight:900; color:#38bdf8; margin-bottom:8px; display:flex; align-items:center; gap:5px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; flex-shrink:0;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>
+              <span>이날의 배낭 패킹.</span>
+            </div>
+            <div style="width:100%; aspect-ratio:3/4; border-radius:14px; padding:2px; background:${borderGrad}; box-shadow:0 8px 24px rgba(0,0,0,0.8); box-sizing:border-box;">
+              <div style="width:100%; height:100%; border-radius:12px; overflow:hidden; background:#0b0f19;">
+                ${packingSheetMarkup}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      `;
+    }
+
+    var feedModal = document.createElement('div');
+    feedModal.id = 'singleTripFeedModal';
+    feedModal.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000002; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;';
+
+    feedModal.innerHTML = `
+      <!-- 🧭 최상단: index.html 100% 동일 규격 표준 GNB -->
+      <div style="position:relative !important; flex-shrink:0 !important; width:100% !important; height:52px !important; min-height:52px !important; border-bottom:1px solid rgba(255,255,255,0.08) !important; background:rgba(0, 0, 0, 0.94) !important; backdrop-filter:blur(25px) !important; -webkit-backdrop-filter:blur(25px) !important; padding:0 14px !important; padding-top:env(safe-area-inset-top, 0px) !important; margin:0 !important; box-sizing:content-box !important; z-index:10 !important; user-select:none !important;">
+        <div style="height:52px !important; min-height:52px !important; display:flex !important; align-items:center !important; justify-content:flex-start !important; width:100% !important; max-width:480px !important; margin:0 auto !important;">
+          <div class="brand-line" style="height:52px !important; display:inline-flex !important; align-items:center !important; justify-content:flex-start !important; gap:7px !important; margin:0 !important; flex-shrink:0 !important;">
+            <div class="brand-sym-box" style="width:34px !important; height:34px !important; display:flex !important; align-items:center !important; justify-content:center !important; position:relative !important; flex-shrink:0 !important; margin:0 !important; padding:0 !important;">
+              <svg viewBox="0 0 32 32" fill="none" style="width:30px !important; height:30px !important; display:block !important; margin:0 !important;">
+                <circle cx="21" cy="6" r="9" fill="rgba(244,114,182,0.12)"/>
+                <circle cx="21" cy="6" r="6" fill="rgba(245,158,11,0.18)"/>
+                <circle cx="21" cy="6" r="3.8" fill="rgba(251,191,36,0.28)"/>
+                <circle cx="2" cy="24" r="1.8" fill="#fda4af"/>
+                <circle cx="9" cy="12" r="2.2" fill="#fda4af"/>
+                <circle cx="14" cy="16" r="1.8" fill="#fda4af"/>
+                <circle cx="13" cy="24" r="1.8" fill="#fda4af"/>
+                <path d="M2 24L9 12H12.5L14 16L10 16M10 16L13 24" stroke="#fda4af" stroke-width="1.8" stroke-linecap="round"/>
+                <circle cx="21" cy="6" r="2.8" fill="#f59e0b"/>
+                <circle cx="27" cy="13" r="2.2" fill="#e2e8f0"/>
+                <circle cx="30" cy="24" r="2.4" fill="#e2e8f0"/>
+                <path d="M13 24L21 6H25L27 13L22 13M22 13L30 24" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
+                <circle cx="21" cy="6" r="1" fill="#ffffff"/>
+              </svg>
+            </div>
+            <span class="brand-title" style="font-family:'SUIT', sans-serif !important; font-size:1.12rem !important; font-weight:900 !important; color:#ffffff !important; line-height:1 !important; display:inline-flex !important; align-items:center !important; letter-spacing:-0.02em !important; text-shadow:0 0 16px rgba(255, 255, 255, 0.35) !important; margin:0 !important; padding:0 !important;">낭만루트</span>
+            <span class="brand-dot" style="width:3px !important; height:3px !important; background:radial-gradient(circle at 30% 30%, #ffffff 0%, #94a3b8 70%, #475569 100%) !important; box-shadow:0 0 6px rgba(255, 255, 255, 0.8), 0 0 8px rgba(56, 189, 248, 0.3) !important; border-radius:50% !important; display:inline-block !important; flex-shrink:0 !important; margin:0 !important; transform:translateY(0.5px) !important;"></span>
+            <span class="brand-en" style="display:inline-flex !important; align-items:center !important; gap:7px !important; white-space:nowrap !important; line-height:1 !important;">
+              <span class="word-romantic" style="font-family:'Space Grotesk', -apple-system, sans-serif !important; text-transform:uppercase !important; line-height:1 !important; display:inline-block !important; background:linear-gradient(180deg, #ffffff 0%, #f1f5f9 25%, #cbd5e1 50%, #94a3b8 75%, #e2e8f0 100%) !important; -webkit-background-clip:text !important; -webkit-text-fill-color:transparent !important; filter:drop-shadow(0 0 8px rgba(226, 232, 240, 0.45)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8)) !important; font-size:0.68rem !important; font-weight:800 !important; letter-spacing:0.09em !important; transform:translateY(-1.6px) !important; opacity:0.96 !important;">ROMANTIC</span>
+              <span class="word-route" style="font-family:'Space Grotesk', -apple-system, sans-serif !important; text-transform:uppercase !important; line-height:1 !important; display:inline-block !important; background:linear-gradient(180deg, #ffffff 0%, #f1f5f9 25%, #cbd5e1 50%, #94a3b8 75%, #e2e8f0 100%) !important; -webkit-background-clip:text !important; -webkit-text-fill-color:transparent !important; filter:drop-shadow(0 0 8px rgba(226, 232, 240, 0.45)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8)) !important; font-size:0.74rem !important; font-weight:900 !important; letter-spacing:0.06em !important; transform:translateY(2.2px) !important;">ROUTE</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 📖 메인 피드 스크롤 컨테이너 (60fps 부드러운 관성 스크롤 복구) -->
+      <div id="dualFeedScrollContainer" style="flex:1 1 0%; min-height:0; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(80px + env(safe-area-inset-bottom, 20px)) 12px; display:flex; flex-direction:column; box-sizing:border-box;">
+        <div id="dualFeedCardsWrapper">
+          ${buildSingleFeedCardHtml(logs[startIdx])}
+        </div>
+        
+        <div id="infiniteFeedLoaderTrigger" style="padding:16px 0 24px 0; text-align:center; color:#64748b; font-size:0.70rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:6px;">
+          ${(logs.length > 1) ? '<span>⚡ 아래로 스크롤 시 이전 기록이 계속 이어집니다</span>' : '<span>마지막 기록입니다 ✨</span>'}
+        </div>
+      </div>
+
+      <!-- 🛠️ 하단 4단 슬림 바: [🔗 공유] │ [💾 갤러리 저장] │ [✏️ 일지 수정] │ [◀ 뒤로] -->
+      <div style="flex-shrink:0; display:flex; gap:6px; padding:10px 12px calc(12px + env(safe-area-inset-bottom, 0px)) 12px; background:rgba(7,9,14,0.98); border-top:1px solid rgba(255,255,255,0.12); box-sizing:border-box; z-index:10;">
+        <button onclick="window.shareSingleTripDualFeed(window.__currentVisibleFeedId)" style="flex:1; height:42px; background:linear-gradient(135deg, #f43f5e, #be123c); border:1px solid #fda4af; color:#fff; font-size:0.76rem; font-weight:900; border-radius:9px; cursor:pointer; box-shadow:0 4px 12px rgba(244,63,94,0.35); display:flex; align-items:center; justify-content:center; gap:3px;">
+          🔗 공유
+        </button>
+        <button onclick="window.captureAndSaveSingleTripCard('dualFeedCardsWrapper', '낭만루트_피드')" style="flex:1.2; height:42px; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#fff; font-size:0.76rem; font-weight:900; border-radius:9px; cursor:pointer; box-shadow:0 4px 12px rgba(2,132,199,0.35); display:flex; align-items:center; justify-content:center; gap:3px;">
+          💾 저장
+        </button>
+        <button onclick="var targetLog = (window.interactiveHistory||[]).find(function(r){return String(r.id).trim()===String(window.__currentVisibleFeedId).trim();}); if(targetLog) window.openRichAfterTripModal(targetLog);" style="flex:1.3; height:42px; background:linear-gradient(135deg, #0d9488, #0f766e); border:1px solid #14b8a6; color:#fff; font-size:0.76rem; font-weight:900; border-radius:9px; cursor:pointer; box-shadow:0 4px 12px rgba(13,148,136,0.35); display:flex; align-items:center; justify-content:center; gap:3px;">
+          ✏️ 일지 수정
+        </button>
+        <button onclick="document.getElementById('singleTripFeedModal').remove(); triggerHaptic(10);" style="flex:1; height:42px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#cbd5e1; font-size:0.76rem; font-weight:900; border-radius:9px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:3px;">
+          ◀ 뒤로
+        </button>
+      </div>
+    `;
+    document.body.appendChild(feedModal);
+
+    // ⚡ [피드 끝 도달 시 45ms 브레이크 햅틱 & 다음 피드 무한 연속 로딩]
+    var scrollContainer = document.getElementById('dualFeedScrollContainer');
+    var cardsWrapper = document.getElementById('dualFeedCardsWrapper');
+    var loaderTrigger = document.getElementById('infiniteFeedLoaderTrigger');
+    var nextLoadPointer = (startIdx + 1) % logs.length;
+    var isAppendingNext = false;
+
+    if (scrollContainer && cardsWrapper) {
+      scrollContainer.addEventListener('scroll', function() {
+        var scrollTop = scrollContainer.scrollTop;
+        var scrollHeight = scrollContainer.scrollHeight;
+        var clientHeight = scrollContainer.clientHeight;
+
+        var feedBlocks = cardsWrapper.querySelectorAll('.single-feed-block');
+        feedBlocks.forEach(function(block) {
+          var rect = block.getBoundingClientRect();
+          if (rect.top <= 140 && rect.bottom >= 140) {
+            var activeId = block.getAttribute('data-record-id');
+            if (activeId && window.__currentVisibleFeedId !== activeId) {
+              window.__currentVisibleFeedId = activeId;
+            }
+          }
+        });
+
+        if (!isAppendingNext && (scrollTop + clientHeight >= scrollHeight - 70)) {
+          if (window.__currentFeedLoadedIndices.size < logs.length) {
+            isAppendingNext = true;
+
+            while (window.__currentFeedLoadedIndices.has(nextLoadPointer) && window.__currentFeedLoadedIndices.size < logs.length) {
+              nextLoadPointer = (nextLoadPointer + 1) % logs.length;
+            }
+
+            if (!window.__currentFeedLoadedIndices.has(nextLoadPointer)) {
+              var nextLog = logs[nextLoadPointer];
+              window.__currentFeedLoadedIndices.add(nextLoadPointer);
+
+              // 🛑 피드 끝 완충 지대 통과 시 묵직한 45ms 브레이크 햅틱 ("덜컥")
+              if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+                try { navigator.vibrate(45); } catch (e) {}
+              }
+
+              var tempDiv = document.createElement('div');
+              tempDiv.innerHTML = buildSingleFeedCardHtml(nextLog);
+              while (tempDiv.firstChild) {
+                cardsWrapper.appendChild(tempDiv.firstChild);
+              }
+
+              nextLoadPointer = (nextLoadPointer + 1) % logs.length;
+
+              if (window.__currentFeedLoadedIndices.size >= logs.length && loaderTrigger) {
+                loaderTrigger.innerHTML = '<span>모든 기록을 불러왔습니다 ✨</span>';
+              }
+            }
+
+            setTimeout(function() {
+              isAppendingNext = false;
+            }, 300);
+          }
+        }
+      }, { passive: true });
+    }
+
+    triggerHaptic(12);
   };
 
-  // 🛡️ [보관함 화면 상단 GNB 고정 & 메인 스테이지]
+  // 🔗 [인스타그램 / 카카오톡 / 네이티브 Web Share API 공유 엔진]
+  window.shareSingleTripDualFeed = async function(recordId) {
+    var log = (window.interactiveHistory || []).find(function(r) { return String(r.id).trim() === String(recordId).trim(); });
+    if (!log) return;
+
+    var shareTitle = `[낭만루트] ${log.spot} 백패킹 일지`;
+    var shareText = log.memo ? `${log.memo}\n\n📍 ${log.spot} (${log.elevation}) · ${log.date}` : `📍 ${log.spot} (${log.elevation}) · ${log.date} 백패킹 기록`;
+    var shareUrl = window.location.href;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl
+        });
+        if (typeof showToast === 'function') showToast('🌟 공유창이 열렸습니다!', 'success');
+      } catch (err) {
+        if (err.name !== 'AbortError' && typeof showToast === 'function') {
+          showToast('공유 링크가 클립보드에 복사되었습니다.', 'info');
+        }
+      }
+    } else {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareText + '\n' + shareUrl);
+        if (typeof showToast === 'function') showToast('📋 낭만 일지가 클립보드에 복사되었습니다!', 'success');
+      } else {
+        if (typeof showToast === 'function') showToast('공유 기능을 지원하지 않는 브라우저입니다.', 'warn');
+      }
+    }
+    triggerHaptic(10);
+  };
+
+ // 🛡️ [보관함 화면 상단 GNB 고정 & 메인 스테이지 - 캘린더 별/점 구분 & 하단 상태 분기]
   window.renderFullBasecampStage = function(animType) {
     var content = document.querySelector('.my-basecamp-content');
     if (!content) return;
 
-    // 🔒 gap: 0 !important 추가하여 상단 10px 강제 벌어짐 완벽 차단
     content.style.cssText = 'width: 100% !important; max-width: 480px !important; height: 100dvh !important; max-height: 100dvh !important; margin: 0 auto !important; padding: 0 !important; gap: 0 !important; background: #000000 !important; border: none !important; border-radius: 0 !important; display: flex !important; flex-direction: column !important; justify-content: space-between !important; overflow: hidden !important; box-sizing: border-box !important; overscroll-behavior: none !important; -webkit-overscroll-behavior: none !important; touch-action: pan-y !important;';
 
     var now = new Date();
@@ -1348,11 +1955,10 @@
     var dateParts = String(window.activeSelectedDateKey).match(/\d+/g) || [viewYear, viewMonth, 1];
     var activeDay = (parseInt(dateParts[0], 10) === viewYear && parseInt(dateParts[1], 10) === viewMonth) ? parseInt(dateParts[2], 10) : -1;
 
-    var recordedDays = new Set(monthHistory.map(function(h) { return h.day; }));
-
     var firstDayIndex = new Date(viewYear, viewMonth - 1, 1).getDay();
     var lastDayOfMonth = new Date(viewYear, viewMonth, 0).getDate();
 
+    // 💡 달력 날짜별 [황금별: 작성완료] vs [하늘색점: 미작성] 분기 렌더링
     var calendarDaysHtml = '';
     for (var b = 0; b < firstDayIndex; b++) {
       calendarDaysHtml += '<div style="height:17px;"></div>';
@@ -1360,15 +1966,30 @@
 
     for (var d = 1; d <= lastDayOfMonth; d++) {
       var isSelected = (d === activeDay);
-      var isRecorded = recordedDays.has(d);
+      var dayRecord = monthHistory.find(function(h) { return h.day === d; });
+      var isRecorded = !!dayRecord;
+      var isCompleted = isRecorded && Boolean(dayRecord.memo && dayRecord.memo.trim().length > 0);
 
       var dayStyle = 'position:relative; height:17px; line-height:17px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:\'Space Grotesk\', sans-serif; font-size:0.64rem; font-weight:800; border-radius:3px; cursor:pointer; transition:all 0.15s ease;';
-      if (isSelected) dayStyle += 'background:#00bcd4; color:#000000; font-weight:900; box-shadow:0 0 6px rgba(0,188,212,0.9); transform:scale(1.12);';
-      else if (isRecorded) dayStyle += 'color:#34d399; font-weight:900; text-decoration:underline;';
-      else dayStyle += 'color:#cbd5e1;';
+      
+      if (isSelected) {
+        dayStyle += 'background:#00bcd4; color:#000000; font-weight:900; box-shadow:0 0 6px rgba(0,188,212,0.9); transform:scale(1.12);';
+      } else if (isCompleted) {
+        dayStyle += 'color:#fde047; font-weight:900;'; // 작성완료 날짜는 황금색
+      } else if (isRecorded) {
+        dayStyle += 'color:#38bdf8; font-weight:900;'; // 미작성 패킹 날짜는 하늘색
+      } else {
+        dayStyle += 'color:#cbd5e1;';
+      }
 
-      var dot = isRecorded ? '<span style="position:absolute; bottom:0.5px; width:3px; height:3px; background:' + (isSelected ? '#000' : '#34d399') + '; border-radius:50%;"></span>' : '';
-      calendarDaysHtml += '<div style="' + dayStyle + '" onclick="window.handleCalendarDateClick(' + d + ', ' + viewMonth + ', ' + viewYear + ')">' + d + dot + '</div>';
+      var dotOrStar = '';
+      if (isCompleted) {
+        dotOrStar = `<span style="position:absolute; bottom:0.5px; font-size:7px; color:${isSelected ? '#000' : '#f59e0b'}; line-height:1; font-weight:900;">★</span>`;
+      } else if (isRecorded) {
+        dotOrStar = `<span style="position:absolute; bottom:1px; width:3px; height:3px; background:${isSelected ? '#000' : '#38bdf8'}; border-radius:50%;"></span>`;
+      }
+
+      calendarDaysHtml += `<div style="${dayStyle}" onclick="window.handleCalendarDateClick(${d}, ${viewMonth}, ${viewYear})">${d}${dotOrStar}</div>`;
     }
 
     var historyMiddleHtml = '';
@@ -1382,13 +2003,15 @@
           <div style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; display:flex; flex-direction:column; gap:4px; padding:4px 0;">
             ${allHistory.map(function(h, i) {
               var isCurrent = (i === window.currentCardIndex);
+              var isItemCompleted = Boolean(h.memo && h.memo.trim().length > 0);
               return `
                 <div onclick="window.currentCardIndex = ${i}; window.activeSelectedDateKey = '${h.date}'; window.currentViewMode = 'card'; window.renderFullBasecampStage();" style="width:100%; min-height:42px; background:${isCurrent ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.035)'}; border:1px solid ${isCurrent ? '#38bdf8' : 'rgba(255,255,255,0.08)'}; border-radius:8px; padding:0 10px; display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer; box-sizing:border-box;">
                   <div>
-                    <div style="font-size:0.76rem; font-weight:900; color:#fff; display:flex; align-items:center; gap:3px;">
-                      ${window.VEC_ICONS.pin} <span>${escapeHtml(h.spot)} (${escapeHtml(h.elevation)})</span>
+                    <div style="font-size:0.76rem; font-weight:900; color:#fff; display:flex; align-items:center; gap:4px;">
+                      ${window.VEC_ICONS.pin} <span>${escapeHtml(h.spot)}</span>
+                      ${isItemCompleted ? `<span style="font-size:0.52rem; color:#6ee7b7; background:rgba(52,211,153,0.2); border:1px solid #34d399; padding:0 4px; border-radius:3px;">완료</span>` : `<span style="font-size:0.52rem; color:#fdba74; background:rgba(251,146,60,0.2); border:1px solid #fb923c; padding:0 4px; border-radius:3px;">미작성</span>`}
                     </div>
-                    <div style="font-size:0.56rem; color:#94a3b8; margin-top:1px;">${h.date} · 배낭 ${h.items ? h.items.length : 0}개 장비</div>
+                    <div style="font-size:0.56rem; color:#94a3b8; margin-top:1px;">${h.date} · ${h.elevation} · 장비 ${h.items ? h.items.length : 0}개</div>
                   </div>
                   <div style="text-align:right;">
                     <span style="font-size:0.72rem; font-weight:900; color:#34d399; font-family:'Space Grotesk', sans-serif;">${h.weightKg}kg</span>
@@ -1499,8 +2122,34 @@
       tabContentHtml = memoTabHtml;
     }
 
+    // 💡 작성완료 여부에 따른 하단 메인 액션 버튼 분기 제어
+    var isCurCompleted = cur && Boolean(cur.memo && cur.memo.trim().length > 0);
+    var mainActionButtonHtml = '';
+
+    if (!hasRecord) {
+      mainActionButtonHtml = `
+        <button onclick="showToast('기록을 먼저 선택해주세요.', 'warn')" style="flex:1.2; height:38px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#94a3b8; font-size:0.75rem; font-weight:800; border-radius:8px; cursor:pointer;">
+          📸 다녀온 기록 작성
+        </button>
+      `;
+    } else if (isCurCompleted) {
+      // 작성 완료된 기록 ➔ 보관함에서는 수정 불가 & 작성완료 뱃지 노출 (피드 목록에서만 수정 가능)
+      mainActionButtonHtml = `
+        <div style="flex:1.2; height:38px; background:rgba(52,211,153,0.15); border:1px solid rgba(52,211,153,0.4); color:#6ee7b7; font-size:0.74rem; font-weight:900; border-radius:8px; display:flex; align-items:center; justify-content:center; gap:4px; user-select:none; box-sizing:border-box;">
+          <span>✅ 낭만 일지 작성완료</span>
+        </div>
+      `;
+    } else {
+      // 미작성 기록 ➔ 다녀온 기록 작성 버튼 생성
+      mainActionButtonHtml = `
+        <button onclick="window.openRichAfterTripModal(window.interactiveHistory[window.currentCardIndex])" style="flex:1.2; height:38px; background:linear-gradient(135deg, #0d9488, #0f766e); border:1px solid #14b8a6; color:#fff; font-size:0.75rem; font-weight:900; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 4px 12px rgba(13,148,136,0.3);">
+          <span>📸 다녀온 기록 작성</span>
+        </button>
+      `;
+    }
+
     content.innerHTML = `
-     <!-- 🧭 보관함 최상단 고정 GNB (인덱스 메인 1:1 완벽 일치 & 높이 52px · 로그인 제거) -->
+      <!-- 🧭 보관함 최상단 고정 GNB -->
       <div style="position:relative !important; flex-shrink:0 !important; width:100% !important; height:52px !important; min-height:52px !important; border-bottom:1px solid rgba(255,255,255,0.08) !important; background:rgba(0, 0, 0, 0.94) !important; backdrop-filter:blur(25px) !important; -webkit-backdrop-filter:blur(25px) !important; padding:0 14px !important; padding-top:env(safe-area-inset-top, 0px) !important; margin:0 !important; box-sizing:content-box !important; z-index:10 !important; user-select:none !important;">
         <div style="height:52px !important; min-height:52px !important; display:flex !important; align-items:center !important; justify-content:flex-start !important; width:100% !important; max-width:480px !important; margin:0 auto !important;">
           <div class="brand-line" style="height:52px !important; display:inline-flex !important; align-items:center !important; justify-content:flex-start !important; gap:7px !important; margin:0 !important; flex-shrink:0 !important;">
@@ -1531,7 +2180,7 @@
         </div>
       </div>
 
-      <!-- 본문 영역 (GNB 바닥에 1px로 강제 밀착) -->
+      <!-- 본문 영역 -->
       <div style="flex:1; width:100%; display:flex; flex-direction:column; justify-content:space-between; padding:1px 12px 0 12px; margin:0 !important; gap:0 !important; box-sizing:border-box; overflow:hidden;">
         
         <div style="flex-shrink:0; display:flex; flex-direction:column; gap:4px; margin:0 !important; padding:0 !important;">
@@ -1544,7 +2193,7 @@
           ${window.activeBasecampTab === 'history' ? `
             <div style="display:flex; flex-direction:column; gap:4px; margin-top:2px;">
               <div style="background:linear-gradient(135deg, rgba(56,189,248,0.12), rgba(16,185,129,0.08)); border:1px solid rgba(56,189,248,0.3); border-radius:8px; padding:5px 8px; display:flex; justify-content:space-around; align-items:center; text-align:center;">
-                <div><div style="font-size:0.54rem; color:#94a3b8; font-weight:700;">올해 야영</div><div style="font-size:0.92rem; font-weight:900; color:#38bdf8; font-family:'Space Grotesk', sans-serif;">${totalCount}회</div></div>
+                <div><div style="font-size:0.54rem; color:#94a3b8; font-weight:700;">2026 힐링</div><div style="font-size:0.92rem; font-weight:900; color:#38bdf8; font-family:'Space Grotesk', sans-serif;">${totalCount}회</div></div>
                 <div style="width:1px; height:14px; background:rgba(255,255,255,0.15);"></div>
                 <div><div style="font-size:0.54rem; color:#94a3b8; font-weight:700;">누적 고도</div><div style="font-size:0.92rem; font-weight:900; color:#34d399; font-family:'Space Grotesk', sans-serif;">${accumElevStr}</div></div>
                 <div style="width:1px; height:14px; background:rgba(255,255,255,0.15);"></div>
@@ -1583,11 +2232,9 @@
 
       </div>
 
-      <!-- 🚪 최하단 바 (인덱스 하단독바와 총 높이 56px 1:1 완벽 일치) -->
+      <!-- 🚪 최하단 바 (미작성 시 작성 버튼 / 작성 완료 시 뱃지 표기) -->
       <div style="flex-shrink:0; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; min-height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; display:flex; align-items:center; gap:6px; padding:0 12px env(safe-area-inset-bottom, 0px) 12px !important; background:rgba(0,0,0,0.96); border-top:1px solid rgba(255,255,255,0.12); box-sizing:border-box; z-index:10;">
-        <button onclick="${hasRecord ? `window.openRichAfterTripModal(window.interactiveHistory[window.currentCardIndex])` : `showToast('기록을 먼저 선택해주세요.', 'warn')`}" style="flex:1.2; height:38px; background:linear-gradient(135deg, #0d9488, #0f766e); border:1px solid #14b8a6; color:#fff; font-size:0.75rem; font-weight:900; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 4px 12px rgba(13,148,136,0.3);">
-          <span>📸 다녀온 기록 작성</span>
-        </button>
+        ${mainActionButtonHtml}
         <button onclick="window.openPastTripsListModal()" style="flex:1.2; height:38px; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#fff; font-size:0.75rem; font-weight:900; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 4px 12px rgba(2,132,199,0.35);">
           <span>📱 피드 목록 ➔</span>
         </button>
