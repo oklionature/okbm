@@ -1054,7 +1054,7 @@
   <!-- 🧭 1. 상단 GNB -->
   <header class="apple-integrated-header notranslate">
     <div id="gnbMilkyWayLayer" class="gnb-starlight-canvas"></div>
-    <div class="header-top-row">
+   <div class="header-top-row">
       <a href="index.html" class="brand-line" onclick="triggerHaptic(10)" title="낭만루트 홈">
         <div class="brand-sym-box">
           <svg viewBox="0 0 32 32" fill="none">
@@ -1074,11 +1074,6 @@
           </svg>
         </div>
         <span class="brand-title">낭만루트</span>
-        <span class="brand-dot"></span>
-        <span class="brand-en">
-          <span class="word-romantic">ROMANTIC</span>
-          <span class="word-route">ROUTE</span>
-        </span>
       </a>
 
       <!-- ⭐ 티타늄 글래스 로그인 버튼 -->
@@ -2566,6 +2561,10 @@
     }
 
     window.openPackShareModal = function(record, items, openStudioDirectly) {
+      if (typeof openPackShareModal === 'function' && openPackShareModal !== window.openPackShareModal) {
+        openPackShareModal(record, items, openStudioDirectly);
+        return;
+      }
       window.currentShareRecord = record || window.currentShareRecord;
       window.currentShareItems = items || (record && record.items) || [];
       window.currentSharePhoto = (record && record.photo) ? record.photo : window.currentSharePhoto || '';
@@ -2575,7 +2574,7 @@
       if (spotInput && record && record.spot) spotInput.value = record.spot;
       if (memoInput && record && record.memo) memoInput.value = record.memo;
 
-      if (openStudioDirectly && window.currentSharePhoto) {
+      if (openStudioDirectly && window.currentSharePhoto && typeof openPhotoStudio === 'function') {
         openPhotoStudio();
         return;
       }
@@ -2590,16 +2589,21 @@
     };
 
     window.switchShareCardTemplate = function(templateId) {
-      window.selectedTemplateId = templateId;
+      if (typeof switchShareCardTemplate === 'function' && switchShareCardTemplate !== window.switchShareCardTemplate) {
+        switchShareCardTemplate(templateId);
+        return;
+      }
+      window.selectedTemplateId = Number(templateId);
       localStorage.setItem('romantic_selected_template', String(templateId));
-      document.querySelectorAll('.tmpl-chip-btn').forEach(function(btn, idx) {
-        btn.classList.toggle('active', (idx + 1) === templateId);
-      });
       if (typeof updateShareCardLive === 'function') updateShareCardLive();
       triggerHaptic(8);
     };
 
     window.updateShareCardLive = function() {
+      if (typeof updateShareCardLive === 'function' && updateShareCardLive !== window.updateShareCardLive) {
+        updateShareCardLive();
+        return;
+      }
       var captureArea = document.getElementById('packShareCaptureArea');
       if (!captureArea) return;
       var spotInput = document.getElementById('shareCardSpotInput');
@@ -2612,8 +2616,8 @@
       
       if (typeof window.generateCardMarkup === 'function') {
         captureArea.innerHTML = window.generateCardMarkup(tmplId, record, items, spotVal, memoVal, window.currentSharePhoto || '');
-      } else if (typeof renderDynamicRecordTemplate === 'function') {
-        captureArea.innerHTML = renderDynamicRecordTemplate(record, 0);
+      } else if (typeof generateCardMarkup === 'function') {
+        captureArea.innerHTML = generateCardMarkup(tmplId, record, items, spotVal, memoVal, window.currentSharePhoto || '');
       }
     };
 
@@ -3026,9 +3030,13 @@
                   localStorage.setItem('okbm_visited', JSON.stringify(cloudData.visited));
                 }
                 if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
-                  packingHistoryList = cloudData.packHistory;
-                  localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
-                }
+              packingHistoryList = cloudData.packHistory;
+              window.interactiveHistory = cloudData.packHistory;
+              localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
+              if (typeof window.saveToIndexedDB === 'function') {
+                window.saveToIndexedDB('okbm_packing_history', cloudData.packHistory);
+              }
+            }
 
                 const myGears = cloudData.myGears || null;
                 if (myGears) {
