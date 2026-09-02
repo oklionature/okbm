@@ -103,8 +103,13 @@ function renderAdaptiveGearList(items, options) {
   return '<div style="display:grid; grid-template-columns:' + (isTwoCol ? '1fr 1fr' : '1fr') + '; column-gap:6px; row-gap:0px; width:100%; box-sizing:border-box;">' + rowsHtml + '</div>';
 }
 
-// 🚪 1. 배낭 패킹 저장 & 카드 생성 모달 호출 (중복 생성 방지)
+// 🚪 1. 배낭 패킹 저장 & 카드 생성 모달 호출 (보관함 및 클라우드 엔진 단일화)
 function saveCurrentPackingRecord() {
+  if (typeof window.saveCurrentPackingRecord === 'function' && window.saveCurrentPackingRecord !== saveCurrentPackingRecord) {
+    window.saveCurrentPackingRecord();
+    return;
+  }
+
   var allItems = [];
   if (typeof CATEGORIES !== 'undefined' && typeof selectedGearMap !== 'undefined') {
     CATEGORIES.forEach(function(c) {
@@ -119,45 +124,31 @@ function saveCurrentPackingRecord() {
     return;
   }
 
-  var totalGrams = allItems.reduce(function(sum, g) { return sum + Number(g.weight); }, 0);
+  var totalGrams = allItems.reduce(function(sum, g) { return sum + Number(g.weight || 0); }, 0);
   var totalKg = (totalGrams / 1000).toFixed(2);
-  var currentItemsStr = allItems.map(function(g) { return g.name + ' (' + g.weight + 'g)'; }).sort().join(' / ');
-  var nowTime = Date.now();
-
-  if (typeof safeGetJSON === 'function') {
-    packingHistoryList = safeGetJSON('okbm_packing_history', []);
-    if (packingHistoryList.length > 0) {
-      var lastRecord = packingHistoryList[0];
-      var lastItemsStr = (lastRecord.items || []).slice().sort().join(' / ');
-      if (lastRecord.weightKg === totalKg && lastItemsStr === currentItemsStr) {
-        openPackShareModal(lastRecord, allItems, false);
-        return;
-      }
-    }
-  }
-
   var now = new Date();
-  var timeStr = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0') + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  var timeStr = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
 
   var newRecord = {
     id: 'pack_' + Date.now(),
-    timestamp: nowTime,
     date: timeStr,
     weightKg: totalKg,
     weightGrams: totalGrams,
     itemCount: allItems.length,
-    items: allItems.map(function(g) { return g.name + ' (' + g.weight + 'g)'; }),
+    items: allItems.map(function(g) { return { id: g.id || ('item_' + Math.random()), name: g.name, weight: g.weight }; }),
     photo: ''
   };
 
-  if (typeof packingHistoryList !== 'undefined') {
-    packingHistoryList.unshift(newRecord);
-    if (packingHistoryList.length > 30) packingHistoryList = packingHistoryList.slice(0, 30);
-    localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
-  }
+  if (!window.interactiveHistory) window.interactiveHistory = [];
+  window.interactiveHistory.unshift(newRecord);
+  window.packingHistoryList = window.interactiveHistory;
 
-  if (typeof triggerHaptic === 'function') triggerHaptic(20);
-  if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+  if (typeof window.saveToIndexedDB === 'function') {
+    window.saveToIndexedDB('okbm_packing_history', window.interactiveHistory);
+  }
+  if (typeof syncUserDataToCloud === 'function') {
+    syncUserDataToCloud();
+  }
 
   openPackShareModal(newRecord, allItems, false);
 }
