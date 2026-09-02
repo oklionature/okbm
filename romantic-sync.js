@@ -125,16 +125,20 @@ function syncUserDataToCloud() {
   var isMapPage = (typeof window.location !== 'undefined' && window.location.pathname.includes('map.html'));
   var isIndexPage = !isMapPage;
 
-  // 1. 패킹 기록 동기화 (interactiveHistory 우선 참조하여 삭제 상태 100% 반영)
-  var rawHistory = safeGetJSON('okbm_packing_history', []);
-  if (window.interactiveHistory && Array.isArray(window.interactiveHistory)) {
-    rawHistory = window.interactiveHistory;
-  }
-  window.packingHistoryList = rawHistory;
+  // 1. 패킹 기록 동기화 (interactiveHistory 및 IndexedDB 메모리 우선 참조하여 최신 상태 100% 반영)
+  var rawHistory = (window.interactiveHistory && Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0)
+    ? window.interactiveHistory
+    : safeGetJSON('okbm_packing_history', []);
 
+  window.packingHistoryList = rawHistory;
+  window.interactiveHistory = rawHistory;
+
+  // ★ 드라이브 아카이브 전송용: 사진 Base64 속성(photo, photos, fieldPhoto) 완전 제거 (0.01MB 초경량화)
   var lightweightPackHistory = rawHistory.map(function(h) {
     var copy = Object.assign({}, h);
-    delete copy.photo; // 대용량 사진 데이터만 제외하고 텍스트 제원은 100% 보존
+    delete copy.photo;
+    delete copy.photos;
+    delete copy.fieldPhoto;
     return copy;
   });
 
@@ -164,15 +168,21 @@ function syncUserDataToCloud() {
     myGears: myGearsPayload
   };
 
-  fetch(window.GAS_API_URL, {
+  var targetGasUrl = window.GAS_API_URL || GAS_API_URL;
+  if (!targetGasUrl || targetGasUrl.includes('구글시트_배포_URL')) return;
+
+  fetch(targetGasUrl, {
     method: 'POST',
-    mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(payload)
-  }).then(function() {
-    console.log('✅ [RomanticSync] 구글 시트 전송 완료:', payload.userId);
+  }).then(function(res) {
+    return res.json();
+  }).then(function(data) {
+    if (data && data.status === 'SUCCESS') {
+      console.log('✅ [RomanticSync] 구글 시트 동기화 성공: 총 ' + (data.count || lightweightPackHistory.length) + '건 아카이브 반영 완료');
+    }
   }).catch(function(err) {
-    console.warn('[RomanticSync] 클라우드 전송 에러:', err);
+    console.warn('[RomanticSync] 클라우드 전송 경고:', err);
   });
 }
 
