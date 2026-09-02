@@ -34,30 +34,33 @@ function triggerHaptic(duration) {
   }
 }
 
-// 🧰 [공통 유틸] 안전한 토스트 메시지 출력
+/// 🧰 [공통 유틸] 안전한 토스트 메시지 출력 (매개변수 타입 자동 감지 보정)
 function showToast(msg, typeOrDuration, maybeDuration) {
-  if (typeof window.showToast === 'function' && window.showToast !== showToast) {
-    window.showToast(msg, typeOrDuration, maybeDuration);
-    return;
+  var dur = 2500;
+  if (typeof typeOrDuration === 'number') {
+    dur = typeOrDuration;
+  } else if (typeof maybeDuration === 'number') {
+    dur = maybeDuration;
   }
+
   var toastEl = document.getElementById('appToast');
   if (toastEl) {
     toastEl.innerHTML = msg;
     toastEl.classList.add('show');
     clearTimeout(toastEl._timer);
-    var dur = (typeof typeOrDuration === 'number') ? typeOrDuration : (typeof maybeDuration === 'number' ? maybeDuration : 2200);
     toastEl._timer = setTimeout(function() {
       toastEl.classList.remove('show');
     }, dur);
     return;
   }
+
   var container = document.getElementById('romanticToastContainer');
   if (container) {
     var toast = document.createElement('div');
-    toast.style.cssText = 'background:rgba(7,10,15,0.94); border:1.5px solid #38bdf8; color:#ffffff; font-size:0.76rem; font-weight:800; padding:9px 14px; border-radius:24px; box-shadow:0 12px 35px rgba(0,0,0,0.85);';
-    toast.innerText = msg;
+    toast.style.cssText = 'background:rgba(7,10,15,0.95); border:1.5px solid #38bdf8; color:#ffffff; font-size:0.76rem; font-weight:800; padding:10px 15px; border-radius:24px; box-shadow:0 12px 35px rgba(0,0,0,0.9); z-index:9999999; display:flex; align-items:center; gap:5px;';
+    toast.innerHTML = msg;
     container.appendChild(toast);
-    setTimeout(function() { toast.remove(); }, 2200);
+    setTimeout(function() { toast.remove(); }, dur);
   }
 }
 
@@ -243,9 +246,34 @@ function closeLoginModal() {
 
 function openUserProfileModal() {
   try {
-    var profile = safeGetJSON('user_profile', null);
+    var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : null);
     var input = document.getElementById('profileModalNicknameInput');
     if (input && profile) input.value = profile.nickname || '';
+
+    // 🛡️ 모달 오픈 시 14일 쿨다운 잔여일 사전 체크
+    var COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
+    var lastChanged = profile ? (Number(profile.lastNicknameChangedAt) || 0) : 0;
+    var now = Date.now();
+
+    var statusNoticeEl = document.getElementById('profileModalCooldownNotice');
+    if (!statusNoticeEl && input && input.parentElement) {
+      statusNoticeEl = document.createElement('div');
+      statusNoticeEl.id = 'profileModalCooldownNotice';
+      statusNoticeEl.style.cssText = 'font-size:0.68rem; margin-top:5px; font-weight:800; display:flex; align-items:center; gap:4px;';
+      input.parentElement.parentElement.appendChild(statusNoticeEl);
+    }
+
+    if (statusNoticeEl) {
+      if (lastChanged > 0 && (now - lastChanged < COOLDOWN_MS)) {
+        var remainingDays = Math.ceil((COOLDOWN_MS - (now - lastChanged)) / (1000 * 60 * 60 * 24));
+        statusNoticeEl.style.color = '#f59e0b';
+        statusNoticeEl.innerHTML = '⏳ 닉네임 변경 쿨다운 중 [' + remainingDays + '일 후 변경 가능]';
+      } else {
+        statusNoticeEl.style.color = '#34d399';
+        statusNoticeEl.innerHTML = '✓ 현재 닉네임 변경이 가능합니다 (변경 후 14일 쿨다운)';
+      }
+    }
+
     var modal = document.getElementById('userProfileModalOverlay');
     if (modal) modal.style.setProperty('display', 'flex', 'important');
     triggerHaptic(12);
@@ -259,30 +287,32 @@ function closeUserProfileModal() {
   } catch (e) {}
 }
 
-// ⏱️ 7. 닉네임 변경 및 14일 쿨다운 영구 기록
-// ⏱️ 7. 닉네임 변경 및 14일 쿨다운 체크 (고품질 벡터 알림 적용)
+// ⏱️ 7. 닉네임 변경 및 14일 쿨다운 체크 (1순위 쿨다운 검사 & 3.5초 유지)
 function saveNewNicknameFromModal() {
-  var input = document.getElementById('profileModalNicknameInput');
-  if (!input || !input.value.trim()) {
-    showToast('<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; margin-right:3px; vertical-align:-2px; flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span>새 닉네임을 입력해주세요.</span>', 'warn');
-    return;
-  }
-  var clean = input.value.trim();
   var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : { isMember: true });
-  if (profile && profile.nickname === clean) {
-    showToast('<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; margin-right:3px; vertical-align:-2px; flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> <span>현재 사용 중인 닉네임과 동일합니다.</span>', 'info');
-    return;
-  }
-
   var COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
-  var lastChanged = Number(profile.lastNicknameChangedAt) || 0;
+  var lastChanged = profile ? (Number(profile.lastNicknameChangedAt) || 0) : 0;
   var now = Date.now();
 
-  // 🛡️ 14일 쿨다운 시 시스템 alert() 대신 앰버 골드 시계 SVG 벡터 토스트 출력
+  var clockVectorSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; margin-right:4px; vertical-align:-2px; flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
+
+  // 🛡️ [1순위] 14일 쿨다운 상태이면 어떤 입력이든 즉시 14일 잔여일 경고 출력
   if (lastChanged > 0 && (now - lastChanged < COOLDOWN_MS)) {
     var remainingDays = Math.ceil((COOLDOWN_MS - (now - lastChanged)) / (1000 * 60 * 60 * 24));
-    var clockVectorSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; margin-right:4px; vertical-align:-2px; flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-    showToast(clockVectorSvg + ' <span>닉네임은 14일마다 1회 변경 가능합니다. [' + remainingDays + '일 후 가능]</span>', 'warn', 3000);
+    triggerHaptic(20);
+    showToast(clockVectorSvg + ' <span>닉네임은 14일마다 1회 변경 가능합니다. [' + remainingDays + '일 후 가능]</span>', 3500);
+    return;
+  }
+
+  var input = document.getElementById('profileModalNicknameInput');
+  if (!input || !input.value.trim()) {
+    showToast('<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="width:15px; height:15px; margin-right:3px; vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> <span>새 닉네임을 입력해주세요.</span>', 2500);
+    return;
+  }
+
+  var clean = input.value.trim();
+  if (profile && profile.nickname === clean) {
+    showToast('<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" style="width:15px; height:15px; margin-right:3px; vertical-align:-2px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> <span>현재 사용 중인 닉네임과 동일합니다.</span>', 2500);
     return;
   }
 
@@ -303,8 +333,8 @@ function saveNewNicknameFromModal() {
   closeUserProfileModal();
   triggerHaptic(15);
 
-  var checkSuccessSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; margin-right:4px; vertical-align:-2px; flex-shrink:0;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
-  showToast(checkSuccessSvg + ' <span>닉네임이 [' + clean + '] (으)로 변경되었습니다!</span>', 'success');
+  var checkSuccessSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; margin-right:4px; vertical-align:-2px; flex-shrink:0;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+  showToast(checkSuccessSvg + ' <span>닉네임이 [' + clean + '] (으)로 변경되었습니다!</span>', 2500);
 
   if (typeof renderSpots === 'function') renderSpots();
   if (typeof refreshCurrentSpotPopup === 'function') refreshCurrentSpotPopup();
