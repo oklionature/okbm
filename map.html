@@ -595,7 +595,7 @@
         navigation: auto;
       }
 
-      /* 📱 하단 네비 독 (인덱스와 100% 동일한 5대 메뉴 규격 및 고정 렌더링) */
+      /* 하단 네비 독 고정 렌더링 */
       .mobile-bottom-dock { 
         display: flex !important; 
         position: fixed; 
@@ -612,8 +612,6 @@
         transform: translateZ(0);
         -webkit-transform: translateZ(0);
         contain: layout size style;
-        will-change: transform;
-        view-transition-name: persistent-bottom-dock;
       }
       .dock-item { 
         display: flex; 
@@ -917,7 +915,7 @@
       </a>
 
       <!-- 3. 낭만계획 -->
-      <button type="button" class="dock-item" title="낭만계획" onclick="triggerHaptic(12); location.href='index.html?open=basecamp&tab=plan';">
+      <button type="button" class="dock-item" title="낭만계획" onclick="triggerHaptic(12); if(typeof openPlanModal==='function') openPlanModal('calendar'); else location.href='index.html?open=basecamp&tab=plan';">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2"/>
           <line x1="16" y1="2" x2="16" y2="6"/>
@@ -929,7 +927,7 @@
       </button>
 
       <!-- 4. 낭만보관함 -->
-      <button type="button" class="dock-item" title="낭만보관함" onclick="triggerHaptic(12); location.href='index.html?open=basecamp&tab=history';">
+      <button type="button" class="dock-item" title="낭만보관함" onclick="triggerHaptic(12); if(typeof openHistoryModal==='function') openHistoryModal(); else location.href='index.html?open=basecamp&tab=history';">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 8v13H3V8"/>
           <path d="M1 3h22v5H1z"/>
@@ -1220,6 +1218,15 @@
         isLoggedIn: localStorage.getItem('user_auth_token') ? true : false,
         userProfile: JSON.parse(localStorage.getItem('user_profile')) || null
       };
+
+      function isUserLoggedIn() {
+        if (typeof window.isUserLoggedIn === 'function' && window.isUserLoggedIn !== isUserLoggedIn) {
+          return window.isUserLoggedIn();
+        }
+        var token = localStorage.getItem('user_auth_token');
+        var profile = safeGetJSON('user_profile', null);
+        return !!(token && token.trim().length > 0 && profile && profile.id);
+      }
 
       function copyTextToClipboard(text, alertMsg = '주소가 복사되었습니다') {
         if (!text) return;
@@ -2126,14 +2133,20 @@
             if (parenMatch) { row1Name = parenMatch[1].trim(); if (!row2Sub) row2Sub = parenMatch[2].trim(); }
             const row3Elev = spot.elevation ? `${String(spot.elevation).replace(/m$/i,'')}m` : '';
 
-            const labelDiv = document.createElement('div');
+           const labelDiv = document.createElement('div');
             labelDiv.className = 'lod-marker-container';
+            labelDiv.style.pointerEvents = 'auto';
+            labelDiv.style.cursor = 'pointer';
+            labelDiv.onclick = (e) => {
+              e.stopPropagation();
+              focusSpotOnMap(spot);
+            };
             const labelTransform = isSelected ? 'transform: translateX(-50%) scale(1.08);' : 'transform: translateX(-50%);';
 
             labelDiv.innerHTML = `
               ${userBookmarks.has(id) ? `<div class="marker-badge-corner badge-corner-fav" title="찜한 박지">${ICONS.HEART}</div>` : ''}
               ${userVisited.has(id) ? `<div class="marker-badge-corner badge-corner-visited" title="클리어 박지">${ICONS.FLAG}</div>` : ''}
-              <div class="lod-marker-label" style="position: absolute; bottom: 44px; left: 50%; ${labelTransform}">
+              <div class="lod-marker-label" style="position: absolute; bottom: 44px; left: 50%; pointer-events: auto; ${labelTransform}">
                 <div class="lod-label-row-1 ${diffClass}">${escapeHtml(row1Name)}</div>
                 ${(isFullMode && row2Sub) ? `<div class="lod-label-row-2">${escapeHtml(row2Sub)}</div>` : ''}
                 ${(isFullMode && row3Elev) ? `<div class="lod-label-row-3">${ICONS.MOUNTAIN}${escapeHtml(row3Elev)}</div>` : ''}
@@ -2158,7 +2171,7 @@
         if (!spot) return;
         triggerHaptic(12);
         isMarkerClickProcessing = true;
-        setTimeout(() => { isMarkerClickProcessing = false; }, 300);
+        setTimeout(() => { isMarkerClickProcessing = false; }, 400);
 
         incrementSpotCount(spot.id);
         const pcDrop = document.getElementById('pcSearchDropdown');
@@ -2176,7 +2189,8 @@
           activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
 
-        if (window.innerWidth <= 768) {
+        const isMobileView = window.innerWidth <= 768 || ('ontouchstart' in window && window.innerWidth <= 1024);
+        if (isMobileView) {
           const sidebar = document.getElementById('sidebar');
           if (sidebar) sidebar.classList.add('collapsed');
           updateDockSidebarText(false);
@@ -2506,19 +2520,18 @@
                 </button>
               </div>
             ` : `
-              <div class="entry-module-container">
+             <div class="entry-module-container">
                 <div class="entry-row-1">
-                  <a href="javascript:void(0)" onclick="navigateToNaviApp('kakao', '${escapeHtml(cleanMainName)}', '${cleanAddress}', ${spot.lat}, ${spot.lng})" class="entry-address-2line">${ICONS.NAV} ${escapeHtml(tName)}: ${cleanAddress} ↗</a>
-                  <button type="button" class="btn-copy-entry" onclick="copyTextToClipboard('${cleanAddress}')">${ICONS.COPY} 복사</button>
+                  <a href="javascript:void(0)" onclick="navigateToNaviApp('kakao', this.dataset.name, this.dataset.addr, ${spot.lat}, ${spot.lng})" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}" class="entry-address-2line">${ICONS.NAV} ${escapeHtml(tName)}: ${cleanAddress} ↗</a>
+                  <button type="button" class="btn-copy-entry" onclick="copyTextToClipboard(this.dataset.addr)" data-addr="${cleanAddress}">${ICONS.COPY} 복사</button>
                 </div>
                 ${guide ? `<div class="entry-guide-chip">${ICONS.TIP} 길 안내: ${escapeHtml(guide)}</div>` : ''}
                 <div class="entry-row-2">
-                  <button type="button" class="navi-btn-cell cell-kakao" onclick="navigateToNaviApp('kakao', '${escapeHtml(cleanMainName)}', '${cleanAddress}', ${spot.lat}, ${spot.lng})">카카오</button>
-                  <button type="button" class="navi-btn-cell cell-tmap" onclick="navigateToNaviApp('tmap', '${escapeHtml(cleanMainName)}', '${cleanAddress}', ${spot.lat}, ${spot.lng})">티맵</button>
-                  <button type="button" class="navi-btn-cell cell-naver" onclick="navigateToNaviApp('naver', '${escapeHtml(cleanMainName)}', '${cleanAddress}', ${spot.lat}, ${spot.lng})">네이버</button>
-                  <button type="button" class="navi-btn-cell cell-reserve" onclick="navigateToNaviApp('roadview', '${escapeHtml(cleanMainName)}', '${cleanAddress}', ${spot.lat}, ${spot.lng})">${ICONS.ROADVIEW} 로드뷰</button>
+                  <button type="button" class="navi-btn-cell cell-kakao" onclick="navigateToNaviApp('kakao', this.dataset.name, this.dataset.addr, ${spot.lat}, ${spot.lng})" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}">카카오</button>
+                  <button type="button" class="navi-btn-cell cell-tmap" onclick="navigateToNaviApp('tmap', this.dataset.name, this.dataset.addr, ${spot.lat}, ${spot.lng})" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}">티맵</button>
+                  <button type="button" class="navi-btn-cell cell-naver" onclick="navigateToNaviApp('naver', this.dataset.name, this.dataset.addr, ${spot.lat}, ${spot.lng})" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}">네이버</button>
+                  <button type="button" class="navi-btn-cell cell-reserve" onclick="navigateToNaviApp('roadview', this.dataset.name, this.dataset.addr, ${spot.lat}, ${spot.lng})" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}">${ICONS.ROADVIEW} 로드뷰</button>
                 </div>
-
                 ${!isUnlocked ? `
                   <div class="entry-lock-overlay-tight" id="entryLockOverlay_${sId}" onclick="triggerSpotUnlock('${sId}', '${escapeHtml(targetUnlockLink)}')">
                     <span class="lock-main-text">${ICONS.LOCK} 클릭 시 들머리 주소 및 4대 내비 공개</span>
@@ -2940,12 +2953,18 @@
           const row3Elev = spot.elevation ? `${String(spot.elevation).replace(/m$/i,'')}m` : '';
           const diffClass = getSpotDiffColorClass(spot.difficulty);
 
-          const labelDiv = document.createElement('div');
+         const labelDiv = document.createElement('div');
           labelDiv.className = 'lod-marker-container';
+          labelDiv.style.pointerEvents = 'auto';
+          labelDiv.style.cursor = 'pointer';
+          labelDiv.onclick = (e) => {
+            e.stopPropagation();
+            focusSpotOnMap(spot);
+          };
           labelDiv.innerHTML = `
             ${isFav ? `<div class="marker-badge-corner badge-corner-fav" title="찜한 박지">${ICONS.HEART}</div>` : ''}
             ${isDone ? `<div class="marker-badge-corner badge-corner-visited" title="클리어 박지">${ICONS.FLAG}</div>` : ''}
-            <div class="lod-marker-label">
+            <div class="lod-marker-label" style="pointer-events: auto;">
               <div class="lod-label-row-1 ${diffClass}">${escapeHtml(row1Name)}</div>
               ${row2Sub ? `<div class="lod-label-row-2">${ICONS.PIN}${escapeHtml(row2Sub)}</div>` : ''}
               ${row3Elev ? `<div class="lod-label-row-3">${ICONS.MOUNTAIN}${row3Elev}</div>` : ''}
@@ -2954,7 +2973,13 @@
           if (spotLabelOverlayMap.has(sId)) {
             spotLabelOverlayMap.get(sId).setContent(labelDiv);
           } else if (map) {
-            const labelOverlay = new kakao.maps.CustomOverlay({ position: latlng, content: labelDiv, yAnchor: 1.0, zIndex: 150 });
+            const labelOverlay = new kakao.maps.CustomOverlay({ 
+              position: latlng, 
+              content: labelDiv, 
+              yAnchor: 1.0, 
+              zIndex: 150,
+              clickable: true
+            });
             spotLabelOverlayMap.set(sId, labelOverlay);
           }
         });
@@ -3010,8 +3035,8 @@
             else if (currentMyFilter === 'VISITED' && !userVisited.has(sId)) match = false;
           }
 
-          if (match) {
-            if (marker) { marker.setMap(map); activeMarkers.push(marker); }
+         if (match) {
+            activeMarkers.push(marker);
             if (grouped[regKey]) grouped[regKey].push(spot);
             visibleCount++;
           } else {
@@ -3310,7 +3335,6 @@
         if (pcDrop) pcDrop.style.display = 'none';
 
         if (isMarkerClickProcessing) {
-          isMarkerClickProcessing = false;
           return;
         }
 
@@ -3740,7 +3764,9 @@
         reader.readAsText(file);
       }
     </script>
-    <script src="romantic-sync.js?v=2.0.1"></script>
+   <script src="romantic-sync.js?v=2.0.1"></script>
+    <script src="templates.js?v=2.0.1"></script>
+    <script src="romantic-history.js?v=2.4.0"></script>
+    <script src="romantic-plan.js?v=2.4.0"></script>
   </body>
 </html>
-
