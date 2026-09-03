@@ -1,10 +1,12 @@
+
 /**
  * 🏕️ 낭만루트 낭만보관함(History) 전담 코어 엔진 (romantic-history.js)
  * - 스마트폰 대용량 IndexedDB(okbm_vault_db) 사진 영구 저장 & 텍스트 분리 하이브리드 캐시 엔진
  * - 3D 엽서 ↔ 피드 목록 ↔ 피드 상세 ↔ 낭만 일지 100% 실시간 사진 & 글 동기화
  * - 야영 캘린더 (연/월 이동, 보관함 완료일 ★ / 계획일 ⚑ 완벽 분리 표시)
  * - 박지명 / 날짜 / 고도 / 일지 본문 / 사진 10장 전방위 수정 지원
- * - 에어비앤비형 56px 전폭 단일 액션 독 탑재
+ * - [5대 하단독 완성 체계]: 낭만기록 · 피드 · 스튜디오 · 클리어맵 · 마이리포트
+ * - 피드 카드 상단 [···] 액션바 (1초 일지수정, 스튜디오 인출, 공유, 삭제) 탑재
  */
 
 (function() {
@@ -133,7 +135,7 @@
     layer.style.animation = 'card_edge_sharp_pulse 0.65s cubic-bezier(0.2, 0.8, 0.25, 1) forwards';
   };
 
-  // 💾 [스마트폰 내장 대용량 영구 저장소(IndexedDB) & 텍스트/사진 분리형 하이브리드 캐시 엔진 원본 복원]
+  // 💾 [스마트폰 내장 대용량 영구 저장소(IndexedDB) & 텍스트/사진 분리형 하이브리드 캐시 엔진]
   var DB_NAME = 'okbm_vault_db';
   var DB_VERSION = 1;
   var STORE_NAME = 'packing_vault';
@@ -190,6 +192,9 @@
   };
 
   window.safeGetStorage = function(key, defaultVal) {
+    if (window.__memoryStore && window.__memoryStore[key] !== undefined && window.__memoryStore[key] !== null) {
+      return window.__memoryStore[key];
+    }
     try {
       var item = localStorage.getItem(key);
       if (item !== null) {
@@ -198,9 +203,6 @@
         return parsed;
       }
     } catch (e) {}
-    if (window.__memoryStore[key] !== undefined && window.__memoryStore[key] !== null) {
-      return window.__memoryStore[key];
-    }
     return defaultVal;
   };
 
@@ -224,33 +226,101 @@
     } catch (e) {}
   };
 
+ // ⚠️ [중복 등록 차단 안내 팝업창 엔진]
+  window.showDuplicateRecordAlertModal = function(spotName, dateStr, weightStr) {
+    var old = document.getElementById('duplicateRecordAlertModal');
+    if (old) old.remove();
+    var el = document.createElement('div');
+    el.id = 'duplicateRecordAlertModal';
+    el.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.82); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:1000030; display:flex; justify-content:center; align-items:center; padding:20px; box-sizing:border-box;';
+    el.innerHTML = `
+      <div style="width:100%; max-width:295px; background:#0e121a; border:1.5px solid #f59e0b; border-radius:18px; padding:22px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:8px; box-shadow:0 20px 50px rgba(0,0,0,0.95); box-sizing:border-box;">
+        <div style="font-size:2.4rem; line-height:1;">⚠️</div>
+        <div style="font-size:1.02rem; font-weight:900; color:#ffffff; margin-top:2px;">이미 등록된 기록입니다</div>
+        <div style="font-size:0.80rem; font-weight:800; color:#fde047; margin-top:2px;">[${dateStr}] ${escapeHtml(spotName)}</div>
+        <div style="font-size:0.72rem; color:#94a3b8; line-height:1.45; margin-top:2px;">
+          동일한 날짜에 같은 장비(${weightStr ? weightStr + 'kg' : ''})로<br>
+          이미 보관함에 저장된 기록이 있어 중복 등록되지 않습니다.
+        </div>
+        <button type="button" onclick="document.getElementById('duplicateRecordAlertModal').remove(); triggerHaptic(10);" style="width:100%; height:38px; background:linear-gradient(135deg, #f59e0b, #d97706); border:none; border-radius:10px; color:#fff; font-size:0.82rem; font-weight:900; cursor:pointer; margin-top:6px; box-shadow:0 4px 12px rgba(245,158,11,0.35);">
+          확인
+        </button>
+      </div>
+    `;
+    document.body.appendChild(el);
+  };
+
   // 💾 [피드 목록 & 보관함 완벽 동기화 단일 저장 엔진]
   window.savePackingHistoryRecord = function(record) {
     if (!record) return null;
+
+    var nowTime = Date.now();
+    if (window.__lastPackingSaveTime && (nowTime - window.__lastPackingSaveTime < 500)) {
+      return null;
+    }
+    window.__lastPackingSaveTime = nowTime;
+
     var normalized = window.normalizeHistoryRecord(record, 0);
+    var normDate = String(normalized.date || '').replace(/[-/]/g, '.').trim();
+    var normSpot = String(normalized.spot || '').trim();
+
     var list = window.safeGetStorage('okbm_packing_history', []) || [];
-    var existIdx = list.findIndex(function(it) { return String(it.id) === String(normalized.id); });
+
+    // 🛡️ ID 매칭 또는 (동일 날짜 + 동일 장소) 기존 기록 탐색
+    var existIdx = list.findIndex(function(it) { 
+      return String(it.id).trim() === String(normalized.id).trim(); 
+    });
+
+    if (existIdx === -1 && normDate && normSpot) {
+      existIdx = list.findIndex(function(it) {
+        var itDate = String(it.date || '').replace(/[-/]/g, '.').trim();
+        var itSpot = String(it.spot || '').trim();
+        return itDate === normDate && itSpot === normSpot;
+      });
+    }
+
+    
+    // 🛡️ 같은 날, 같은 장소의 기록이 이미 있으면 새 카드를 복제하지 않고 기존 카드를 업데이트
     if (existIdx !== -1) {
+      normalized.id = list[existIdx].id; // 기존 고유 ID 보존 (새 카드로 증식 방지)
       list[existIdx] = Object.assign({}, list[existIdx], normalized);
     } else {
       list.unshift(normalized);
     }
-    window.interactiveHistory = list.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
-    window.packingHistoryList = window.interactiveHistory;
-    window.safeSetStorage('okbm_packing_history', list);
 
-    if (normalized.photos && normalized.photos.length > 0) {
+    var rawPhotos = [];
+    if (Array.isArray(record.photos) && record.photos.length > 0) rawPhotos = record.photos;
+    else if (record.photo) rawPhotos = [record.photo];
+    else if (record.fieldPhoto) rawPhotos = [record.fieldPhoto];
+    else if (normalized.photos && normalized.photos.length > 0) rawPhotos = normalized.photos;
+
+    if (rawPhotos.length > 0) {
+      normalized.photos = rawPhotos;
+      normalized.photo = rawPhotos[0];
+      normalized.fieldPhoto = rawPhotos[0];
+
       var savedPhotosMap = window.safeGetStorage('okbm_phone_photos_map', {}) || {};
-      savedPhotosMap[String(normalized.id)] = normalized.photos;
-      savedPhotosMap[String(normalized.date)] = normalized.photos;
+      if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
+        savedPhotosMap = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], savedPhotosMap);
+      }
+      savedPhotosMap[String(normalized.id)] = rawPhotos;
+      savedPhotosMap[String(normalized.date)] = rawPhotos;
+      savedPhotosMap[String(normalized.date).replace(/[-/]/g, '.')] = rawPhotos;
+
+      window.__memoryStore['okbm_phone_photos_map'] = savedPhotosMap;
       window.safeSetStorage('okbm_phone_photos_map', savedPhotosMap);
     }
+
+    window.interactiveHistory = list.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
+    window.packingHistoryList = window.interactiveHistory;
+    window.__memoryStore['okbm_packing_history'] = window.interactiveHistory;
+    window.safeSetStorage('okbm_packing_history', list);
 
     if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
     return normalized;
   };
 
-  // 🔄 [앱 구동 즉시 폰의 IndexedDB 사진 맵 및 히스토리 메모리로 사전 복원]
+  // 🔄 [앱 구동 즉시 폰의 IndexedDB 사진 맵 및 히스토리 메모리로 사전 복원 & 사진 유실 방어]
   (async function preloadIndexedDbToMemory() {
     try {
       var idbPhotosMap = await window.loadFromIndexedDB('okbm_phone_photos_map');
@@ -258,26 +328,36 @@
         window.__memoryStore['okbm_phone_photos_map'] = idbPhotosMap;
       }
 
-      var idbHistory = await window.loadFromIndexedDB('okbm_packing_history');
-      if (idbHistory && Array.isArray(idbHistory) && idbHistory.length > 0) {
-        window.__memoryStore['okbm_packing_history'] = idbHistory;
-        window.interactiveHistory = idbHistory.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
-        window.packingHistoryList = window.interactiveHistory;
-        if (typeof window.renderHistoryStage === 'function') window.renderHistoryStage();
-      } else {
-        var rawLocal = localStorage.getItem('okbm_packing_history');
-        if (rawLocal) {
-          var parsed = JSON.parse(rawLocal);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            window.__memoryStore['okbm_packing_history'] = parsed;
-            window.interactiveHistory = parsed.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
-            window.packingHistoryList = window.interactiveHistory;
-            await window.saveToIndexedDB('okbm_packing_history', parsed);
-            if (typeof window.renderHistoryStage === 'function') window.renderHistoryStage();
-          }
+      var rawList = await window.loadFromIndexedDB('okbm_packing_history');
+      if (!rawList || !Array.isArray(rawList) || rawList.length === 0) {
+        var localRaw = localStorage.getItem('okbm_packing_history');
+        if (localRaw) {
+          try { rawList = JSON.parse(localRaw); } catch(e) {}
         }
       }
-    } catch (e) {}
+
+      if (rawList && Array.isArray(rawList) && rawList.length > 0) {
+        window.interactiveHistory = rawList.map(function(r, i) {
+          var norm = window.normalizeHistoryRecord(r, i);
+          if ((!norm.photos || norm.photos.length === 0) && idbPhotosMap) {
+            var found = idbPhotosMap[String(norm.id)] || idbPhotosMap[String(norm.date)] || idbPhotosMap[String(norm.date).replace(/[-/]/g, '.')];
+            if (found && found.length > 0) {
+              norm.photos = found;
+              norm.photo = found[0];
+              norm.fieldPhoto = found[0];
+            }
+          }
+          return norm;
+        });
+        window.packingHistoryList = window.interactiveHistory;
+        window.__memoryStore['okbm_packing_history'] = window.interactiveHistory;
+        if (typeof window.renderHistoryStage === 'function') {
+          window.renderHistoryStage();
+        }
+      }
+    } catch (e) {
+      console.warn('[RomanticHistory] 사진 사전 복원 경고:', e);
+    }
   })();
 
   // 📷 [폰 내장 DB(IndexedDB)에서 사진을 100% 안전하게 꺼내오는 탐색기]
@@ -285,9 +365,13 @@
     if (!record) return [];
     var rId = String(record.id || '').trim();
     var rDate = String(record.date || '').trim();
+    var altDate = rDate.replace(/[-/]/g, '.');
     var savedPhotosMap = window.safeGetStorage('okbm_phone_photos_map', {}) || {};
+    if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
+      savedPhotosMap = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], savedPhotosMap);
+    }
 
-    var localPhotos = (rId && savedPhotosMap[rId]) || (rDate && savedPhotosMap[rDate]);
+    var localPhotos = (rId && savedPhotosMap[rId]) || (rDate && savedPhotosMap[rDate]) || (altDate && savedPhotosMap[altDate]);
     if (Array.isArray(localPhotos) && localPhotos.length > 0) return localPhotos.filter(Boolean);
     if (typeof localPhotos === 'string' && localPhotos.trim().length > 10) return [localPhotos.trim()];
 
@@ -324,27 +408,6 @@
     return window.NATURAL_BORDER_PALETTES[paletteIdx];
   };
 
-  // 🌌 [0.5mm 엣지 앰비언트 글로우 FX]
-  window.EDGE_05MM_COLORS = ['#38bdf8', '#34d399', '#fbbf24', '#f43f5e', '#c084fc', '#fb923c', '#a3e635', '#ffffff'];
-
-  window.triggerSoftAmbientFX = function(cardEl) {
-    if (!cardEl) cardEl = document.getElementById('swipePostcardTarget');
-    if (!cardEl) return;
-
-    var layer = cardEl.querySelector('.card-05mm-edge-layer');
-    if (!layer) {
-      layer = document.createElement('div');
-      layer.className = 'card-05mm-edge-layer';
-      cardEl.appendChild(layer);
-    }
-
-    var randomColor = window.EDGE_05MM_COLORS[Math.floor(Math.random() * window.EDGE_05MM_COLORS.length)];
-    layer.style.setProperty('--edge-color', randomColor);
-    layer.style.animation = 'none';
-    layer.offsetHeight;
-    layer.style.animation = 'card_edge_sharp_pulse 0.65s cubic-bezier(0.2, 0.8, 0.25, 1) forwards';
-  };
-
   // 🔄 [히스토리 레코드 정규화 엔진 - 작성 글 원본 보존]
   window.normalizeHistoryRecord = function(r, idx) {
     var now = new Date();
@@ -360,7 +423,7 @@
       y = r.year; m = r.month; d = r.day;
     }
 
-    var recordId = (r && r.id) ? String(r.id) : ('pack_' + (r && r.date ? r.date.replace(/\D/g, '') : Date.now()) + '_' + idx);
+    var recordId = (r && r.id) ? String(r.id) : ('pack_' + (r && r.date ? String(r.date).replace(/\D/g, '') : Date.now()) + '_' + idx);
     var rawPhotos = getRecordPhotos(r);
 
     var rawList = Array.isArray(r.items) ? r.items : (Array.isArray(r.gears) ? r.gears : []);
@@ -378,8 +441,6 @@
     var totalGrams = cleanItems.reduce(function(sum, it) { return sum + it.weight; }, 0);
     var firstGearName = cleanItems[0] ? cleanItems[0].name : '';
     var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
-
-    // 작성 글 보존
     var userMemo = (r && r.memo !== undefined && r.memo !== null) ? String(r.memo).trim() : '';
 
     return {
@@ -477,9 +538,9 @@
             </div>
             <div style="font-size:0.56rem; color:#64748b; font-family:'JetBrains Mono', monospace; margin-top:2px;">${cur.date} · 배낭 ${items.length}개 장비</div>
             <div style="margin-top:6px; border-top:1px dashed #cbd5e1; padding-top:4px; font-size:0.58rem; display:flex; flex-direction:column; gap:2px; max-height:125px; overflow:hidden;">
-              ${items.slice(0, 6).map(it => `
-                <div style="display:flex; justify-content:space-between;"><span>• ${escapeHtml(it.name)}</span><span>${(it.weight/1000).toFixed(2)}kg</span></div>
-              `).join('')}
+              ${items.slice(0, 6).map(function(it) {
+                return '<div style="display:flex; justify-content:space-between;"><span>• ' + escapeHtml(it.name) + '</span><span>' + ((it.weight||0)/1000).toFixed(2) + 'kg</span></div>';
+              }).join('')}
             </div>
           </div>
           <div>
@@ -505,7 +566,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:22px; height:22px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </div>
           <div style="font-size:0.80rem; font-weight:900; color:#e2e8f0;">등록된 현장 사진이 없습니다.</div>
-          <div style="font-size:0.60rem; color:#94a3b8; line-height:1.4;">하단의 [일지 수정하기]에서<br>현장 사진을 추가해보세요!</div>
+          <div style="font-size:0.60rem; color:#94a3b8; line-height:1.4;">상단 [···] 메뉴에서<br>현장 사진을 추가해보세요!</div>
         </div>`;
 
     return `
@@ -527,9 +588,10 @@
                 ${escapeHtml(cur.elevation)} · ${cur.date}
               </div>
             </div>
-            <div style="text-align:right;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+              <button onclick="window.openTripActionMenu('${escapeHtml(String(cur.id))}', event)" style="background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.25); color:#fff; border-radius:6px; font-size:0.75rem; font-weight:900; padding:3px 8px; cursor:pointer;">··· 관리</button>
               <span style="font-size:0.52rem; font-weight:900; color:#fff; font-family:'Space Grotesk', sans-serif; background:rgba(0,0,0,0.55); backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,0.25); padding:2px 6px; border-radius:4px;">
-                BPL ${cur.weightKg}kg
+                ${cur.weightKg}kg
               </span>
             </div>
           </div>
@@ -540,108 +602,376 @@
 
   // 📱 [지난 피드 목록 모달]
   window.openPastTripsListModal = function() {
-    var old = document.getElementById('pastTripsListModal');
+    try {
+      var old = document.getElementById('pastTripsListModal');
+      if (old) old.remove();
+
+      var singleModal = document.getElementById('singleTripFeedModal');
+      if (singleModal) singleModal.remove();
+
+      var clearModal = document.getElementById('clearMapModal');
+      if (clearModal) clearModal.remove();
+
+      var reportModal = document.getElementById('myReportModal');
+      if (reportModal) reportModal.remove();
+
+      var savedPhotosMap = window.safeGetStorage('okbm_phone_photos_map', {}) || {};
+      if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
+        savedPhotosMap = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], savedPhotosMap);
+      }
+
+      var rawLogs = (window.interactiveHistory && Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0)
+        ? window.interactiveHistory
+        : (window.safeGetStorage('okbm_packing_history', []) || []);
+
+      if (Array.isArray(rawLogs) && rawLogs.length > 0) {
+        window.interactiveHistory = rawLogs.filter(Boolean).map(function(r, i) {
+          var norm = window.normalizeHistoryRecord(r, i);
+          if (!norm.photos || norm.photos.length === 0) {
+            var matched = savedPhotosMap[String(norm.id)] || savedPhotosMap[String(norm.date)] || savedPhotosMap[String(norm.date || '').replace(/[-/]/g, '.')];
+            if (Array.isArray(matched) && matched.length > 0) {
+              norm.photos = matched;
+              norm.photo = matched[0];
+              norm.fieldPhoto = matched[0];
+            }
+          }
+          return norm;
+        });
+      }
+      var logs = (window.interactiveHistory || []).filter(Boolean);
+
+      var modalEl = document.createElement('div');
+      modalEl.id = 'pastTripsListModal';
+      modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000000; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+
+      var cardsHtml = '';
+      if (logs.length === 0) {
+        cardsHtml = '<div style="text-align:center; padding:50px 10px; color:#94a3b8; font-size:0.78rem;">기록된 출정이 없습니다.<br>배낭을 패킹하고 보관함에 저장해보세요!</div>';
+      } else {
+        cardsHtml = logs.map(function(r) {
+          if (!r) return '';
+          var tId = r.templateId || 1;
+          var tName = (typeof TEMPLATE_NAMES !== 'undefined' && TEMPLATE_NAMES[tId]) ? TEMPLATE_NAMES[tId] : ('테마 ' + tId);
+          var photos = getRecordPhotos(r);
+          var thumbPhoto = (photos && photos.length > 0 && photos[0]) ? photos[0] : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';
+          var safeId = escapeHtml(String(r.id || ''));
+          var spotTitle = escapeHtml(r.spot || '방문 스팟');
+          var elevText = escapeHtml(r.elevation || '');
+          var dateText = escapeHtml(r.date || '');
+          var weightStr = escapeHtml(String(r.weightKg || '0.00'));
+
+          return '<div onclick="window.openSingleTripDualFeedModal(\'' + safeId + '\')" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:all 0.15s ease; flex-shrink:0;">' +
+            '<div style="display:flex; align-items:center; gap:10px; min-width:0;">' +
+              '<div style="width:44px; height:44px; border-radius:8px; overflow:hidden; background:#1e293b; flex-shrink:0; border:1px solid rgba(255,255,255,0.1);">' +
+                '<img src="' + thumbPhoto + '" style="width:100%; height:100%; object-fit:cover;" />' +
+              '</div>' +
+              '<div style="min-width:0;">' +
+                '<div style="font-size:0.86rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
+                  HISTORY_VEC_ICONS.pin + ' <span>' + spotTitle + '</span>' +
+                  '<span style="font-size:0.55rem; color:#fde047; font-weight:800; background:rgba(253,224,71,0.15); border:1px solid rgba(253,224,71,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">' + escapeHtml(tName) + '</span>' +
+                '</div>' +
+                '<div style="font-size:0.62rem; color:#94a3b8; margin-top:2px;">' + dateText + (elevText ? ' · ' + elevText : '') + '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div style="text-align:right; flex-shrink:0; margin-left:8px;">' +
+              '<span style="font-size:0.86rem; font-weight:900; color:#34d399; font-family:\'Space Grotesk\', sans-serif;">' + weightStr + 'kg</span>' +
+              '<span style="font-size:0.60rem; color:#38bdf8; font-weight:800; display:block; margin-top:2px;">피드 보기 ➔</span>' +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      modalEl.innerHTML = `
+        <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button onclick="document.getElementById('pastTripsListModal').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
+            <span style="font-size:0.95rem; font-weight:900; color:#fff;">📱 지난 피드 목록</span>
+          </div>
+          <span style="font-size:0.65rem; color:#38bdf8; font-weight:800; background:rgba(56,189,248,0.15); padding:2px 8px; border-radius:5px; border:1px solid rgba(56,189,248,0.3);">총 ${logs.length}개</span>
+        </div>
+
+        <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(70px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
+          ${cardsHtml}
+        </div>
+
+        <div id="pastTripsDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(7,9,14,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000002 !important; user-select:none !important; overscroll-behavior:none !important; touch-action:none !important;">
+          <div onclick="window.togglePastTripsDockDeck(); triggerHaptic(10);" style="position:absolute; top:2px; left:50%; transform:translateX(-50%); width:44px; height:8px; display:flex; align-items:center; justify-content:center; z-index:115; cursor:pointer;">
+            <div style="width:28px; height:3.5px; border-radius:2px; background:rgba(255,255,255,0.35);"></div>
+          </div>
+
+          <div id="pastTripsSubToolsDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:translateY(0); z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
+            <button type="button" class="dock-item" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.activeHistorySubFilter='all'; window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+              <span>낭만기록</span>
+            </button>
+            <button type="button" class="dock-item active" onclick="var c=document.querySelector('#pastTripsListModal > div:nth-child(2)'); if(c) c.scrollTo({top:0, behavior:'smooth'}); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#38bdf8 !important; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
+              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+              <span>피드</span>
+            </button>
+            <button type="button" class="dock-item" onclick="window.openHistoryStudioModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <span>스튜디오</span>
+            </button>
+            <button type="button" class="dock-item" onclick="window.openClearMapModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+              <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.2;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+              <span>클리어맵</span>
+            </button>
+            <button type="button" class="dock-item" onclick="window.openMyReportModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              <span>마이리포트</span>
+            </button>
+          </div>
+
+          <div id="pastTripsMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:translateY(100%); z-index:104; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; background:rgba(7,9,14,0.98); box-sizing:border-box;">
+            <a href="index.html" class="dock-item" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
+              <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              <span>낭만루터</span>
+            </a>
+            <a href="map.html" class="dock-item" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
+              <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
+              <span>전국지도</span>
+            </a>
+            <button type="button" class="dock-item" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+                <path d="M9 16l2 2 4-4"/>
+              </svg>
+              <span>낭만계획</span>
+            </button>
+            <button type="button" class="dock-item active" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.renderHistoryStage(); triggerHaptic(12);" style="color:#38bdf8 !important;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 8v13H3V8"/>
+                <path d="M1 3h22v5H1z"/>
+                <path d="M10 12h4"/>
+              </svg>
+              <span>낭만보관함</span>
+            </button>
+            <button type="button" class="dock-item" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);">
+              <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              <span>내정보</span>
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modalEl);
+
+      window.__pastTripsDockMode = 'tools';
+      window.togglePastTripsDockDeck = function(forceMode) {
+        if (forceMode) window.__pastTripsDockMode = forceMode;
+        else window.__pastTripsDockMode = (window.__pastTripsDockMode === 'tools') ? 'main' : 'tools';
+        var sub = document.getElementById('pastTripsSubToolsDeck');
+        var main = document.getElementById('pastTripsMainNavDeck');
+        if (!sub || !main) return;
+        if (window.__pastTripsDockMode === 'tools') {
+          sub.style.transform = 'translateY(0)';
+          main.style.transform = 'translateY(100%)';
+        } else {
+          sub.style.transform = 'translateY(100%)';
+          main.style.transform = 'translateY(0)';
+        }
+      };
+
+      var dock = document.getElementById('pastTripsDualDockContainer');
+      if (dock) {
+        var startX = 0, startY = 0;
+        dock.addEventListener('touchstart', function(e) {
+          if (!e.touches || e.touches.length !== 1) return;
+          startX = e.touches[0].clientX;
+          startY = e.touches[0].clientY;
+        }, { passive: true });
+        dock.addEventListener('touchend', function(e) {
+          if (!e.changedTouches || e.changedTouches.length !== 1) return;
+          var diffX = e.changedTouches[0].clientX - startX;
+          var diffY = e.changedTouches[0].clientY - startY;
+          if (diffY > 18 && Math.abs(diffY) > Math.abs(diffX)) {
+            triggerHaptic(10);
+            window.togglePastTripsDockDeck('main');
+          } else if (diffY < -18 && Math.abs(diffY) > Math.abs(diffX)) {
+            triggerHaptic(10);
+            window.togglePastTripsDockDeck('tools');
+          } else if (Math.abs(diffX) > 28) {
+            triggerHaptic(10);
+            window.togglePastTripsDockDeck();
+          }
+        }, { passive: true });
+      }
+
+      triggerHaptic(12);
+    } catch (err) {
+      console.error('[OpenPastTripsModal Error]', err);
+      if (typeof showToast === 'function') showToast('피드 목록을 여는 중 오류가 발생했습니다: ' + err.message, 'warn');
+    }
+  };
+
+// [3번 스튜디오: 20종 감성 템플릿 인출 스튜디오 연결]
+  window.openHistoryStudioModal = function(targetRecord) {
+    var cur = targetRecord || (window.interactiveHistory && window.interactiveHistory[window.currentCardIndex]) || (window.interactiveHistory && window.interactiveHistory[0]);
+    if (!cur) {
+      if (typeof showToast === 'function') showToast('스튜디오로 인출할 기록이 없습니다.', 'warn');
+      return;
+    }
+    triggerHaptic(12);
+
+    ['pastTripsListModal', 'singleTripFeedModal', 'clearMapModal', 'myReportModal'].forEach(function(mId) {
+      var el = document.getElementById(mId);
+      if (el) el.remove();
+    });
+
+    if (typeof window.closeHistoryModal === 'function') {
+      window.closeHistoryModal();
+    }
+
+    if (typeof openPackShareModal === 'function') {
+      openPackShareModal(cur, cur.items || [], false);
+    } else {
+      if (typeof showToast === 'function') showToast('템플릿 스튜디오 엔진을 불러오는 중입니다.', 'info');
+    }
+  };
+
+  // 🗺️ [4번 클리어맵: 블랙야크 완등 지도 스타일 - 전국 8도 도장깨기 컬러링 지도 뷰]
+  window.openClearMapModal = function() {
+    var old = document.getElementById('clearMapModal');
     if (old) old.remove();
 
-    var rawLogs = window.safeGetStorage('okbm_packing_history', []);
-    if (Array.isArray(rawLogs) && rawLogs.length > 0) {
-      window.interactiveHistory = rawLogs.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
-    }
-    var logs = window.interactiveHistory || [];
+    var pastList = document.getElementById('pastTripsListModal');
+    if (pastList) pastList.remove();
+
+    var singleModal = document.getElementById('singleTripFeedModal');
+    if (singleModal) singleModal.remove();
+
+    var reportModal = document.getElementById('myReportModal');
+    if (reportModal) reportModal.remove();
+
+    var visitedIds = new Set(safeGetJSON('okbm_visited', []));
+    var spotList = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots)) ? registeredSpots : safeGetJSON('okbm_spots_cache', []);
+
+    var clearedSpots = Array.from(visitedIds).map(function(sId) {
+      var found = spotList.find(function(s) { return String(s.id).trim() === String(sId).trim(); });
+      return {
+        id: sId,
+        name: found ? (found.fullName || found.name) : ('스팟 #' + sId),
+        region: found ? (found.cityName || found.region || '기타') : '기타',
+        elevation: found && found.elevation ? (found.elevation + 'm') : ''
+      };
+    });
+
+    var regions = ['서울/인천', '경기', '강원', '충청', '전라', '경상', '제주'];
+    var regionStats = {};
+    regions.forEach(function(reg) { regionStats[reg] = 0; });
+    clearedSpots.forEach(function(sp) {
+      var reg = sp.region;
+      if (reg.includes('서울') || reg.includes('인천')) regionStats['서울/인천'] = (regionStats['서울/인천'] || 0) + 1;
+      else if (reg.includes('경기')) regionStats['경기'] = (regionStats['경기'] || 0) + 1;
+      else if (reg.includes('강원')) regionStats['강원'] = (regionStats['강원'] || 0) + 1;
+      else if (reg.includes('충')) regionStats['충청'] = (regionStats['충청'] || 0) + 1;
+      else if (reg.includes('전')) regionStats['전라'] = (regionStats['전라'] || 0) + 1;
+      else if (reg.includes('경')) regionStats['경상'] = (regionStats['경상'] || 0) + 1;
+      else if (reg.includes('제주')) regionStats['제주'] = (regionStats['제주'] || 0) + 1;
+    });
 
     var modalEl = document.createElement('div');
-    modalEl.id = 'pastTripsListModal';
-    modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000000; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    modalEl.id = 'clearMapModal';
+    modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000004; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     modalEl.innerHTML = `
       <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
         <div style="display:flex; align-items:center; gap:8px;">
-          <button onclick="document.getElementById('pastTripsListModal').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
-          <span style="font-size:0.95rem; font-weight:900; color:#fff;">📱 지난 백패킹 피드 목록</span>
+          <button type="button" onclick="document.getElementById('clearMapModal').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
+          <span style="font-size:0.95rem; font-weight:900; color:#fff; display:flex; align-items:center; gap:5px;">
+            <svg viewBox="0 0 24 24" style="width:17px; height:17px; fill:none; stroke:#34d399; stroke-width:2.2;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            <span>클리어맵 (완등 도감)</span>
+          </span>
         </div>
-        <span style="font-size:0.65rem; color:#38bdf8; font-weight:800; background:rgba(56,189,248,0.15); padding:2px 8px; border-radius:5px; border:1px solid rgba(56,189,248,0.3);">총 ${logs.length}개</span>
+        <span style="font-size:0.65rem; color:#34d399; font-weight:900; background:rgba(52,211,153,0.15); border:1px solid rgba(52,211,153,0.3); padding:2px 8px; border-radius:12px;">정복 ${clearedSpots.length}곳</span>
       </div>
 
-      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(70px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
-        ${logs.length === 0 ? `
-          <div style="text-align:center; padding:50px 10px; color:#94a3b8; font-size:0.78rem;">
-            기록된 백패킹이 없습니다.<br>배낭을 패킹하고 보관함에 저장해보세요!
+      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(70px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box;">
+        <div style="background:linear-gradient(135deg, rgba(52,211,153,0.15), rgba(6,182,212,0.08)); border:1.5px solid rgba(52,211,153,0.35); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.75rem; font-weight:900; color:#34d399;">전국 8도 완등 컬러링 현황</span>
+            <span style="font-size:0.62rem; color:#94a3b8; font-weight:700;">방문 시 색상이 채워집니다</span>
           </div>
-        ` : logs.map(function(r) {
-          var tId = r.templateId || 1;
-          var tName = (typeof TEMPLATE_NAMES !== 'undefined' && TEMPLATE_NAMES[tId]) ? TEMPLATE_NAMES[tId] : ('테마 ' + tId);
-          var photos = getRecordPhotos(r);
-          var thumbPhoto = photos[0] || 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';
-          var safeId = escapeHtml(String(r.id));
-          return `
-            <div onclick="window.openSingleTripDualFeedModal('${safeId}')" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:all 0.15s ease; flex-shrink:0;">
-              <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-                <div style="width:44px; height:44px; border-radius:8px; overflow:hidden; background:#1e293b; flex-shrink:0; border:1px solid rgba(255,255,255,0.1);">
-                  <img src="${thumbPhoto}" style="width:100%; height:100%; object-fit:cover;" />
+          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px;">
+            ${regions.map(function(reg) {
+              var cnt = regionStats[reg] || 0;
+              var isUnlocked = cnt > 0;
+              return `
+                <div style="background:${isUnlocked ? 'rgba(52,211,153,0.18)' : 'rgba(255,255,255,0.03)'}; border:1px solid ${isUnlocked ? '#34d399' : 'rgba(255,255,255,0.08)'}; border-radius:8px; padding:6px 4px; text-align:center;">
+                  <div style="font-size:0.65rem; font-weight:800; color:${isUnlocked ? '#6ee7b7' : '#64748b'};">${reg}</div>
+                  <div style="font-size:0.82rem; font-weight:900; color:${isUnlocked ? '#ffffff' : '#475569'}; font-family:'Space Grotesk', sans-serif; margin-top:2px;">${cnt}곳</div>
                 </div>
-                <div style="min-width:0;">
-                  <div style="font-size:0.86rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                    ${HISTORY_VEC_ICONS.pin} <span>${escapeHtml(r.spot)}</span>
-                    <span style="font-size:0.55rem; color:#fde047; font-weight:800; background:rgba(253,224,71,0.15); border:1px solid rgba(253,224,71,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">${escapeHtml(tName)}</span>
-                  </div>
-                  <div style="font-size:0.62rem; color:#94a3b8; margin-top:2px;">${r.date} · ${r.elevation}</div>
-                </div>
-              </div>
-              <div style="text-align:right; flex-shrink:0; margin-left:8px;">
-                <span style="font-size:0.86rem; font-weight:900; color:#34d399; font-family:'Space Grotesk', sans-serif;">${r.weightKg}kg</span>
-                <span style="font-size:0.60rem; color:#38bdf8; font-weight:800; display:block; margin-top:2px;">피드 보기 ➔</span>
-              </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:0 2px;">
+            <span style="font-size:0.75rem; font-weight:900; color:#ffffff;">정복된 스팟 도감 (${clearedSpots.length}곳)</span>
+            <span style="font-size:0.60rem; color:#94a3b8;">터치 시 전국지도로 바로 이동</span>
+          </div>
+          ${clearedSpots.length === 0 ? `
+            <div style="text-align:center; padding:50px 10px; color:#94a3b8; font-size:0.76rem; line-height:1.5;">
+              아직 정복된 스팟이 없습니다.<br>전국지도에서 다녀온 곳에 클리어 깃발을 꽂아보세요!
             </div>
-          `;
-        }).join('')}
+          ` : clearedSpots.map(function(sp) {
+            return `
+              <div onclick="location.href='map.html?spot=' + encodeURIComponent('${escapeHtml(sp.name)}');" style="background:rgba(255,255,255,0.035); border:1px solid rgba(52,211,153,0.25); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+                <div style="min-width:0; flex:1; padding-right:8px;">
+                  <div style="font-size:0.84rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                    <svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:#34d399; stroke:#34d399; flex-shrink:0;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                    <span>${escapeHtml(sp.name)}</span>
+                  </div>
+                  <div style="font-size:0.62rem; color:#94a3b8; margin-top:2px;">${escapeHtml(sp.region)} ${sp.elevation ? ' · ' + escapeHtml(sp.elevation) : ''}</div>
+                </div>
+                <span style="font-size:0.60rem; color:#34d399; font-weight:800; background:rgba(52,211,153,0.12); padding:3px 7px; border-radius:5px; border:1px solid rgba(52,211,153,0.3); flex-shrink:0;">지도로 보기 ➔</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
       </div>
 
-      <!-- 🏛️ 인덱스 일치 5대 하단독 듀얼 시스템 -->
-      <div id="pastTripsDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(7,9,14,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000002 !important; user-select:none !important; overscroll-behavior:none !important; touch-action:none !important;">
-        
-        <div onclick="window.togglePastTripsDockDeck(); triggerHaptic(10);" style="position:absolute; top:2px; left:50%; transform:translateX(-50%); width:44px; height:8px; display:flex; align-items:center; justify-content:center; z-index:115; cursor:pointer;">
+      <div id="clearMapDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(7,9,14,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000005 !important; user-select:none !important; overscroll-behavior:none !important; touch-action:none !important;">
+        <div onclick="window.toggleClearMapDockDeck(); triggerHaptic(10);" style="position:absolute; top:2px; left:50%; transform:translateX(-50%); width:44px; height:8px; display:flex; align-items:center; justify-content:center; z-index:115; cursor:pointer;">
           <div style="width:28px; height:3.5px; border-radius:2px; background:rgba(255,255,255,0.35);"></div>
         </div>
 
-        <!-- 1. 5대 도구 데크 (피드목록 / 일지수정 / 클리어 / 비밀메모 / 랜덤보기) -->
-        <div id="pastTripsSubToolsDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:translateY(0); z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-          <button type="button" class="dock-item active" onclick="var c=document.querySelector('#pastTripsListModal > div:nth-child(2)'); if(c) c.scrollTo({top:0, behavior:'smooth'}); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#38bdf8 !important; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
+        <div id="clearMapSubToolsDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:translateY(0); z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
+          <button type="button" class="dock-item" onclick="var m=document.getElementById('clearMapModal'); if(m) m.remove(); window.activeHistorySubFilter='all'; window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
             <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-            <span>피드목록</span>
+            <span>낭만기록</span>
           </button>
-          
-          <button type="button" class="dock-item" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); if(window.interactiveHistory && window.interactiveHistory[0]){ window.openRichAfterTripModal(window.interactiveHistory[0]); } triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#cbd5e1; font-size:0.67rem; font-weight:800; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            <span>일지수정</span>
+          <button type="button" class="dock-item" onclick="var m=document.getElementById('clearMapModal'); if(m) m.remove(); window.openPastTripsListModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            <span>피드</span>
           </button>
-
-          <button type="button" class="dock-item" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.activeHistorySubFilter='visited'; window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#34d399; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
+          <button type="button" class="dock-item" onclick="window.openHistoryStudioModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>스튜디오</span>
+          </button>
+          <button type="button" class="dock-item active" onclick="triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#38bdf8 !important; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
             <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.2;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-            <span>클리어</span>
+            <span>클리어맵</span>
           </button>
-
-          <button type="button" class="dock-item" onclick="window.openHistorySecretMemoModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#fde047; font-size:0.67rem; font-weight:800; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <span>비밀메모</span>
-          </button>
-
-          <button type="button" class="dock-item" onclick="window.openRandomFeedTrip(); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#cbd5e1; font-size:0.67rem; font-weight:800; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="8.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="15.5" r="1.5"/><circle cx="8.5" cy="15.5" r="1.5"/><circle cx="12" cy="12" r="1.5"/></svg>
-            <span>랜덤보기</span>
+          <button type="button" class="dock-item" onclick="window.openMyReportModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>마이리포트</span>
           </button>
         </div>
 
-        <!-- 2. 인덱스 일치 메인 5대 네비게이션 독 -->
-        <div id="pastTripsMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:translateY(100%); z-index:104; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; background:rgba(7,9,14,0.98); box-sizing:border-box;">
-          <a href="index.html" class="dock-item" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
+        <div id="clearMapMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:translateY(100%); z-index:104; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; background:rgba(7,9,14,0.98); box-sizing:border-box;">
+          <a href="index.html" class="dock-item" onclick="var m=document.getElementById('clearMapModal'); if(m) m.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
             <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
             <span>낭만루터</span>
           </a>
-          <a href="map.html" class="dock-item" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
+          <a href="map.html" class="dock-item" onclick="var m=document.getElementById('clearMapModal'); if(m) m.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
             <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
             <span>전국지도</span>
           </a>
-          <button type="button" class="dock-item" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);">
+          <button type="button" class="dock-item" onclick="var m=document.getElementById('clearMapModal'); if(m) m.remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2"/>
               <line x1="16" y1="2" x2="16" y2="6"/>
@@ -651,7 +981,7 @@
             </svg>
             <span>낭만계획</span>
           </button>
-          <button type="button" class="dock-item active" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.renderHistoryStage(); triggerHaptic(12);" style="color:#38bdf8 !important;">
+          <button type="button" class="dock-item active" onclick="var m=document.getElementById('clearMapModal'); if(m) m.remove(); window.renderHistoryStage(); triggerHaptic(12);" style="color:#38bdf8 !important;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 8v13H3V8"/>
               <path d="M1 3h22v5H1z"/>
@@ -659,24 +989,24 @@
             </svg>
             <span>낭만보관함</span>
           </button>
-          <button type="button" class="dock-item" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);">
+          <button type="button" class="dock-item" onclick="var m=document.getElementById('clearMapModal'); if(m) m.remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);">
             <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
             <span>내정보</span>
           </button>
         </div>
       </div>
     `;
+
     document.body.appendChild(modalEl);
 
-    // 듀얼독 토글 및 제스처 바인딩
-    window.__pastTripsDockMode = 'tools';
-    window.togglePastTripsDockDeck = function(forceMode) {
-      if (forceMode) window.__pastTripsDockMode = forceMode;
-      else window.__pastTripsDockMode = (window.__pastTripsDockMode === 'tools') ? 'main' : 'tools';
-      var sub = document.getElementById('pastTripsSubToolsDeck');
-      var main = document.getElementById('pastTripsMainNavDeck');
+    window.__clearMapDockMode = 'tools';
+    window.toggleClearMapDockDeck = function(forceMode) {
+      if (forceMode) window.__clearMapDockMode = forceMode;
+      else window.__clearMapDockMode = (window.__clearMapDockMode === 'tools') ? 'main' : 'tools';
+      var sub = document.getElementById('clearMapSubToolsDeck');
+      var main = document.getElementById('clearMapMainNavDeck');
       if (!sub || !main) return;
-      if (window.__pastTripsDockMode === 'tools') {
+      if (window.__clearMapDockMode === 'tools') {
         sub.style.transform = 'translateY(0)';
         main.style.transform = 'translateY(100%)';
       } else {
@@ -684,50 +1014,255 @@
         main.style.transform = 'translateY(0)';
       }
     };
-
-    var dock = document.getElementById('pastTripsDualDockContainer');
-    if (dock) {
-      var startX = 0, startY = 0;
-      dock.addEventListener('touchstart', function(e) {
-        if (!e.touches || e.touches.length !== 1) return;
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-      }, { passive: true });
-      dock.addEventListener('touchend', function(e) {
-        if (!e.changedTouches || e.changedTouches.length !== 1) return;
-        var diffX = e.changedTouches[0].clientX - startX;
-        var diffY = e.changedTouches[0].clientY - startY;
-        if (diffY > 18 && Math.abs(diffY) > Math.abs(diffX)) {
-          triggerHaptic(10);
-          window.togglePastTripsDockDeck('main');
-        } else if (diffY < -18 && Math.abs(diffY) > Math.abs(diffX)) {
-          triggerHaptic(10);
-          window.togglePastTripsDockDeck('tools');
-        } else if (Math.abs(diffX) > 28) {
-          triggerHaptic(10);
-          window.togglePastTripsDockDeck();
-        }
-      }, { passive: true });
-    }
-
     triggerHaptic(12);
   };
 
-  window.openRandomFeedTrip = function() {
-    var logs = window.interactiveHistory || [];
-    if (logs.length === 0) {
-      if (typeof showToast === 'function') showToast('저장된 백패킹 기록이 없습니다.', 'warn');
-      return;
-    }
-    var randomIdx = Math.floor(Math.random() * logs.length);
-    var picked = logs[randomIdx];
-    if (picked) {
-      var modal = document.getElementById('pastTripsListModal');
-      if (modal) modal.remove();
-      window.openSingleTripDualFeedModal(String(picked.id));
-      triggerHaptic(15);
-      if (typeof showToast === 'function') showToast('🎲 [' + picked.spot + '] 추억 피드를 불러왔습니다!', 'info');
-    }
+  // 📈 [5번 마이리포트: 내 아웃도어 라이프 성취와 총결산 리포트]
+  window.openMyReportModal = function() {
+    var old = document.getElementById('myReportModal');
+    if (old) old.remove();
+
+    var clearModal = document.getElementById('clearMapModal');
+    if (clearModal) clearModal.remove();
+
+    var pastList = document.getElementById('pastTripsListModal');
+    if (pastList) pastList.remove();
+
+    var singleModal = document.getElementById('singleTripFeedModal');
+    if (singleModal) singleModal.remove();
+
+    var logs = (window.interactiveHistory || []).filter(Boolean);
+    var count = logs.length;
+    var totalGrams = logs.reduce(function(sum, r) { return sum + (r.weightGrams || Math.round((parseFloat(r.weightKg) || 0) * 1000)); }, 0);
+    var avgWeightStr = count > 0 ? (totalGrams / count / 1000).toFixed(2) : '0.00';
+    var avgTier = parseFloat(avgWeightStr) <= 6.0 ? 'UL 초경량' : (parseFloat(avgWeightStr) <= 12.0 ? '스탠다드' : '헤비');
+
+    var totalElev = 0, maxElev = 0, maxSpot = '-', minWeight = 999, maxWeight = 0, gearCounts = {};
+    logs.forEach(function(r) {
+      var el = parseInt(String(r.elevation || '0').replace(/\D/g, ''), 10) || 0;
+      totalElev += el;
+      if (el > maxElev) { maxElev = el; maxSpot = r.spot || '-'; }
+      var w = parseFloat(r.weightKg) || 0;
+      if (w > 0 && w < minWeight) minWeight = w;
+      if (w > maxWeight) maxWeight = w;
+      (r.items || []).forEach(function(it) {
+        var gName = (it && (it.name || it.itemName)) ? String(it.name || it.itemName).replace(/\s*\(.*?\)/, '').trim() : '';
+        if (gName) gearCounts[gName] = (gearCounts[gName] || 0) + 1;
+      });
+    });
+    if (minWeight === 999) minWeight = 0;
+
+    var topGear = '-', topGearCount = 0;
+    Object.keys(gearCounts).forEach(function(k) {
+      if (gearCounts[k] > topGearCount) { topGearCount = gearCounts[k]; topGear = k; }
+    });
+
+    var everestPercent = Math.min(100, Math.round((totalElev / 8848) * 100));
+
+    var modalEl = document.createElement('div');
+    modalEl.id = 'myReportModal';
+    modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000004; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+
+    modalEl.innerHTML = `
+      <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" onclick="document.getElementById('myReportModal').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
+          <span style="font-size:0.95rem; font-weight:900; color:#fff; display:flex; align-items:center; gap:5px;">
+            <svg viewBox="0 0 24 24" style="width:17px; height:17px; stroke:#38bdf8; fill:none; stroke-width:2.2;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>마이리포트 (총결산)</span>
+          </span>
+        </div>
+        <button type="button" onclick="document.getElementById('myReportModal').remove(); triggerHaptic(10);" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
+      </div>
+
+      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(70px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box;">
+        
+        <div style="background:linear-gradient(135deg, rgba(56,189,248,0.14), rgba(16,185,129,0.08)); border:1.5px solid rgba(56,189,248,0.35); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.80rem; font-weight:900; color:#38bdf8;">나의 아웃도어 라이프 마일스톤</span>
+            <span style="font-size:0.62rem; color:#fde047; font-weight:800; background:rgba(253,224,71,0.15); padding:2px 6px; border-radius:4px;">${avgTier}</span>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <div style="background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px;">
+              <div style="font-size:0.62rem; color:#94a3b8; font-weight:700;">텐트 밖에서 보낸 밤</div>
+              <div style="font-size:1.35rem; font-weight:900; color:#ffffff; font-family:'Space Grotesk', sans-serif; margin-top:2px;">총 ${count}회</div>
+            </div>
+            <div style="background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px;">
+              <div style="font-size:0.62rem; color:#94a3b8; font-weight:700;">평균 패킹 무게</div>
+              <div style="font-size:1.35rem; font-weight:900; color:#34d399; font-family:'Space Grotesk', sans-serif; margin-top:2px;">${avgWeightStr}kg</div>
+            </div>
+          </div>
+
+          <div style="background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:0.65rem; color:#94a3b8; font-weight:800;">누적 오른 고도 (에베레스트 8,848m 기준)</span>
+              <span style="font-size:0.75rem; color:#fde047; font-weight:900; font-family:'Space Grotesk', sans-serif;">+${totalElev.toLocaleString()}m (${everestPercent}%)</span>
+            </div>
+            <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
+              <div style="width:${everestPercent}%; height:100%; background:linear-gradient(90deg, #38bdf8, #fde047);"></div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.65rem; color:#cbd5e1; border-top:1px dashed rgba(255,255,255,0.12); padding-top:8px;">
+            <div>미니멀 패킹: <strong style="color:#34d399;">${minWeight > 0 ? minWeight.toFixed(2) + 'kg' : '-'}</strong></div>
+            <div>맥스 패킹: <strong style="color:#f43f5e;">${maxWeight > 0 ? maxWeight.toFixed(2) + 'kg' : '-'}</strong></div>
+            <div style="grid-column:1 / -1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">최고도 스팟: <strong style="color:#38bdf8;">${escapeHtml(maxSpot)} (${maxElev}m)</strong></div>
+            <div style="grid-column:1 / -1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">원픽 기어: <strong style="color:#fde047;">${escapeHtml(topGear)} (${topGearCount}회)</strong></div>
+          </div>
+        </div>
+
+        <button type="button" onclick="window.openHistoryStudioModal();" style="width:100%; height:46px; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; border-radius:12px; color:#ffffff; font-size:0.86rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(2,132,199,0.35);">
+          <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span>나의 아웃도어 결산 카드 만들기 (스튜디오 ➔)</span>
+        </button>
+      </div>
+
+      <div id="myReportDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(7,9,14,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000005 !important; user-select:none !important; overscroll-behavior:none !important; touch-action:none !important;">
+        <div onclick="window.toggleMyReportDockDeck(); triggerHaptic(10);" style="position:absolute; top:2px; left:50%; transform:translateX(-50%); width:44px; height:8px; display:flex; align-items:center; justify-content:center; z-index:115; cursor:pointer;">
+          <div style="width:28px; height:3.5px; border-radius:2px; background:rgba(255,255,255,0.35);"></div>
+        </div>
+
+        <div id="myReportSubToolsDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:translateY(0); z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
+          <button type="button" class="dock-item" onclick="var m=document.getElementById('myReportModal'); if(m) m.remove(); window.activeHistorySubFilter='all'; window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            <span>낭만기록</span>
+          </button>
+          <button type="button" class="dock-item" onclick="var m=document.getElementById('myReportModal'); if(m) m.remove(); window.openPastTripsListModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            <span>피드</span>
+          </button>
+          <button type="button" class="dock-item" onclick="window.openHistoryStudioModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>스튜디오</span>
+          </button>
+          <button type="button" class="dock-item" onclick="window.openClearMapModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.2;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            <span>클리어맵</span>
+          </button>
+          <button type="button" class="dock-item active" onclick="triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#38bdf8 !important; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>마이리포트</span>
+          </button>
+        </div>
+
+        <div id="myReportMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:translateY(100%); z-index:104; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; background:rgba(7,9,14,0.98); box-sizing:border-box;">
+          <a href="index.html" class="dock-item" onclick="var m=document.getElementById('myReportModal'); if(m) m.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
+            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <span>낭만루터</span>
+          </a>
+          <a href="map.html" class="dock-item" onclick="var m=document.getElementById('myReportModal'); if(m) m.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
+            <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
+            <span>전국지도</span>
+          </a>
+          <button type="button" class="dock-item" onclick="var m=document.getElementById('myReportModal'); if(m) m.remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+              <path d="M9 16l2 2 4-4"/>
+            </svg>
+            <span>낭만계획</span>
+          </button>
+          <button type="button" class="dock-item active" onclick="var m=document.getElementById('myReportModal'); if(m) m.remove(); window.renderHistoryStage(); triggerHaptic(12);" style="color:#38bdf8 !important;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 8v13H3V8"/>
+              <path d="M1 3h22v5H1z"/>
+              <path d="M10 12h4"/>
+            </svg>
+            <span>낭만보관함</span>
+          </button>
+          <button type="button" class="dock-item" onclick="var m=document.getElementById('myReportModal'); if(m) m.remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);">
+            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <span>내정보</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modalEl);
+
+    window.__myReportDockMode = 'tools';
+    window.toggleMyReportDockDeck = function(forceMode) {
+      if (forceMode) window.__myReportDockMode = forceMode;
+      else window.__myReportDockMode = (window.__myReportDockMode === 'tools') ? 'main' : 'tools';
+      var sub = document.getElementById('myReportSubToolsDeck');
+      var main = document.getElementById('myReportMainNavDeck');
+      if (!sub || !main) return;
+      if (window.__myReportDockMode === 'tools') {
+        sub.style.transform = 'translateY(0)';
+        main.style.transform = 'translateY(100%)';
+      } else {
+        sub.style.transform = 'translateY(100%)';
+        main.style.transform = 'translateY(0)';
+      }
+    };
+    triggerHaptic(12);
+  };
+
+  // ⚙️ [피드 카드 상단 액션바: 1초 수정/삭제/스튜디오/공유 메뉴]
+  window.openTripActionMenu = function(recordId, e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    triggerHaptic(10);
+    var log = (window.interactiveHistory || []).find(function(r) { return String(r.id).trim() === String(recordId).trim(); });
+    if (!log) return;
+
+    var old = document.getElementById('tripActionActionSheet');
+    if (old) old.remove();
+
+    var sheet = document.createElement('div');
+    sheet.id = 'tripActionActionSheet';
+    sheet.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:1000009; display:flex; justify-content:center; align-items:flex-end; backdrop-filter:blur(6px);';
+
+    sheet.innerHTML = `
+      <div style="width:100%; max-width:440px; background:#0e121a; border-top:1.5px solid rgba(56,189,248,0.35); border-radius:18px 18px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
+          <span style="font-size:0.86rem; font-weight:900; color:#fff;">[${escapeHtml(log.spot)}] 기록 관리</span>
+          <button type="button" onclick="document.getElementById('tripActionActionSheet').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer;">✕</button>
+        </div>
+
+        <button type="button" onclick="document.getElementById('tripActionActionSheet').remove(); window.openRichAfterTripModal(window.interactiveHistory.find(r=>r.id==='${log.id}'));" style="width:100%; height:42px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:8px; padding:0 14px;">
+          <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:#38bdf8; fill:none; stroke-width:2.2;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          <span>✍️ 일지 & 현장 사진 수정</span>
+        </button>
+
+        <button type="button" onclick="document.getElementById('tripActionActionSheet').remove(); window.openHistoryStudioModal(window.interactiveHistory.find(r=>r.id==='${log.id}'));" style="width:100%; height:42px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:8px; padding:0 14px;">
+          <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:#fde047; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span>🎨 20종 템플릿 스튜디오로 인출</span>
+        </button>
+
+        <button type="button" onclick="document.getElementById('tripActionActionSheet').remove(); window.shareSingleTripDualFeed('${log.id}');" style="width:100%; height:42px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:8px; padding:0 14px;">
+          <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:#34d399; fill:none; stroke-width:2.2;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+          <span>📤 SNS 공유하기</span>
+        </button>
+
+        <button type="button" onclick="if(confirm('이 기록을 보관함에서 삭제하시겠습니까?')){ window.deleteTripRecord('${log.id}'); document.getElementById('tripActionActionSheet').remove(); }" style="width:100%; height:42px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); border-radius:10px; color:#fda4af; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:8px; padding:0 14px;">
+          <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:#f43f5e; fill:none; stroke-width:2.2;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <span>🗑️ 기록 삭제</span>
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(sheet);
+  };
+
+  window.deleteTripRecord = function(recordId) {
+    var rawList = window.safeGetStorage('okbm_packing_history', []) || [];
+    var filtered = rawList.filter(function(r) { return String(r.id).trim() !== String(recordId).trim(); });
+    window.interactiveHistory = filtered.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
+    window.packingHistoryList = window.interactiveHistory;
+    window.safeSetStorage('okbm_packing_history', filtered);
+    if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+
+    var single = document.getElementById('singleTripFeedModal');
+    if (single) single.remove();
+    var past = document.getElementById('pastTripsListModal');
+    if (past) past.remove();
+
+    window.renderHistoryStage();
+    triggerHaptic(15);
+    if (typeof showToast === 'function') showToast('기록이 삭제되었습니다.', 'info');
   };
 
   // 📖 [백패킹 피드 상세 듀얼 뷰 - 랜덤보기 및 피드 상세 하단독 일치화]
@@ -789,16 +1324,16 @@
         `;
       }
 
-      return `
-        <div class="single-feed-block" data-record-id="${escapeHtml(String(log.id))}" style="background:#000000; border:1px solid rgba(255,255,255,0.14); border-radius:18px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 16px 45px rgba(0,0,0,0.95); flex-shrink:0; margin-bottom:36px;">
+     return `
+        <div class="single-feed-block" data-record-id="${escapeHtml(String(log.id))}" style="background:#000000; border:1px solid rgba(255,255,255,0.14); border-radius:18px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 16px 45px rgba(0,0,0,0.95); flex-shrink:0; margin-bottom:32px; scroll-snap-align:start !important; scroll-snap-stop:normal !important; box-sizing:border-box;">
           <div style="padding:12px 14px; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
-            <div style="font-size:0.88rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:5px;">
+            <div style="font-size:0.88rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:5px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
               ${HISTORY_VEC_ICONS.pin}
               <span>${escapeHtml(log.spot)}</span>
             </div>
-            <div style="display:flex; align-items:center; gap:6px;">
+            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
               <span style="font-size:0.68rem; color:#94a3b8; font-weight:700; font-family:'JetBrains Mono', monospace;">${escapeHtml(log.date)}</span>
-              <button onclick="window.shareSingleTripDualFeed('${escapeHtml(String(log.id))}')" style="background:rgba(255,255,255,0.08); border:none; color:#38bdf8; font-size:0.65rem; font-weight:800; padding:2px 7px; border-radius:4px; cursor:pointer;">공유</button>
+              <button onclick="window.openTripActionMenu('${escapeHtml(String(log.id))}', event)" style="background:rgba(255,255,255,0.08); border:none; color:#38bdf8; font-size:0.85rem; font-weight:900; padding:2px 8px; border-radius:4px; cursor:pointer; letter-spacing:1px;" title="기록 관리">···</button>
             </div>
           </div>
 
@@ -831,6 +1366,13 @@
               </div>
             </div>
           </div>
+
+          <!-- 피드 종료 지점 안내선 -->
+          <div style="display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 16px; background:#05070b; border-top:1px dashed rgba(255,255,255,0.08);">
+            <div style="flex:1; height:1px; background:rgba(255,255,255,0.1);"></div>
+            <span style="font-size:0.56rem; font-weight:800; color:#64748b; letter-spacing:1px;">NEXT TRIP ➔</span>
+            <div style="flex:1; height:1px; background:rgba(255,255,255,0.1);"></div>
+          </div>
         </div>
       `;
     };
@@ -841,11 +1383,11 @@
 
     feedModal.innerHTML = `
       <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
-        <span style="font-size:0.95rem; font-weight:900; color:#fff;">📖 백패킹 피드 상세</span>
+        <span style="font-size:0.95rem; font-weight:900; color:#fff;">📖 피드 상세</span>
         <button onclick="document.getElementById('singleTripFeedModal').remove(); triggerHaptic(10);" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
       </div>
 
-      <div id="dualFeedScrollContainer" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(70px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; box-sizing:border-box;">
+      <div id="dualFeedScrollContainer" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; scroll-snap-type:y proximity !important; padding:12px 12px calc(70px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; box-sizing:border-box;">
         <div id="dualFeedCardsWrapper">
           ${window.buildSingleFeedCardHtml(logs[startIdx])}
         </div>
@@ -855,42 +1397,34 @@
         </div>
       </div>
 
-      <!-- 🏛️ 인덱스 일치 5대 하단독 듀얼 시스템 -->
       <div id="singleFeedDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(7,9,14,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000003 !important; user-select:none !important; overscroll-behavior:none !important; touch-action:none !important;">
-        
         <div onclick="window.toggleSingleFeedDockDeck(); triggerHaptic(10);" style="position:absolute; top:2px; left:50%; transform:translateX(-50%); width:44px; height:8px; display:flex; align-items:center; justify-content:center; z-index:115; cursor:pointer;">
           <div style="width:28px; height:3.5px; border-radius:2px; background:rgba(255,255,255,0.35);"></div>
         </div>
 
-        <!-- 1. 5대 도구 데크 (피드목록 / 일지수정 / 클리어 / 비밀메모 / 랜덤보기) -->
         <div id="singleFeedSubToolsDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:translateY(0); z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-          <button type="button" class="dock-item" onclick="var s=document.getElementById('singleTripFeedModal'); if(s) s.remove(); window.openPastTripsListModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#cbd5e1; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
+          <button type="button" class="dock-item" onclick="var s=document.getElementById('singleTripFeedModal'); if(s) s.remove(); window.activeHistorySubFilter='all'; window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
             <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-            <span>피드목록</span>
+            <span>낭만기록</span>
           </button>
-          
-          <button type="button" class="dock-item" onclick="var targetLog = (window.interactiveHistory||[]).find(function(r){return String(r.id).trim()===String(window.__currentVisibleFeedId).trim();}); if(targetLog){ window.openRichAfterTripModal(targetLog); } triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#38bdf8; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            <span>일지수정</span>
+          <button type="button" class="dock-item active" onclick="var s=document.getElementById('singleTripFeedModal'); if(s) s.remove(); window.openPastTripsListModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#38bdf8 !important; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            <span>피드</span>
           </button>
-
-          <button type="button" class="dock-item" onclick="var s=document.getElementById('singleTripFeedModal'); if(s) s.remove(); window.activeHistorySubFilter='visited'; window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#34d399; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
+          <button type="button" class="dock-item" onclick="var targetLog = (window.interactiveHistory||[]).find(function(r){return String(r.id).trim()===String(window.__currentVisibleFeedId).trim();}); window.openHistoryStudioModal(targetLog);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>스튜디오</span>
+          </button>
+          <button type="button" class="dock-item" onclick="window.openClearMapModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
             <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.2;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-            <span>클리어</span>
+            <span>클리어맵</span>
           </button>
-
-          <button type="button" class="dock-item" onclick="window.openHistorySecretMemoModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#fde047; font-size:0.67rem; font-weight:800; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <span>비밀메모</span>
-          </button>
-
-          <button type="button" class="dock-item active" onclick="window.openRandomFeedTrip(); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#38bdf8 !important; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="8.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="15.5" r="1.5"/><circle cx="8.5" cy="15.5" r="1.5"/><circle cx="12" cy="12" r="1.5"/></svg>
-            <span>랜덤보기</span>
+          <button type="button" class="dock-item" onclick="window.openMyReportModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>마이리포트</span>
           </button>
         </div>
 
-        <!-- 2. 인덱스 일치 메인 5대 네비게이션 독 -->
         <div id="singleFeedMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:translateY(100%); z-index:104; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; background:rgba(7,9,14,0.98); box-sizing:border-box;">
           <a href="index.html" class="dock-item" onclick="var s=document.getElementById('singleTripFeedModal'); if(s) s.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
             <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -927,7 +1461,6 @@
     `;
     document.body.appendChild(feedModal);
 
-    // 듀얼독 토글 및 제스처 바인딩
     window.__singleFeedDockMode = 'tools';
     window.toggleSingleFeedDockDeck = function(forceMode) {
       if (forceMode) window.__singleFeedDockMode = forceMode;
@@ -976,21 +1509,34 @@
     var isAppendingNext = false;
 
     if (scrollContainer && cardsWrapper) {
+      var lastHapticIndex = startIdx;
+
       scrollContainer.addEventListener('scroll', function() {
         var scrollTop = scrollContainer.scrollTop;
         var scrollHeight = scrollContainer.scrollHeight;
         var clientHeight = scrollContainer.clientHeight;
 
-        var feedBlocks = cardsWrapper.querySelectorAll('.single-feed-block');
-        feedBlocks.forEach(function(block) {
-          var rect = block.getBoundingClientRect();
-          if (rect.top <= 140 && rect.bottom >= 140) {
-            var activeId = block.getAttribute('data-record-id');
-            if (activeId && window.__currentVisibleFeedId !== activeId) {
-              window.__currentVisibleFeedId = activeId;
+        // 🛡️ 가벼운 인덱스 기반 스냅 감지 (프레임 드랍 100% 제거)
+        var feedBlocks = cardsWrapper.children;
+        var cTop = scrollContainer.getBoundingClientRect().top;
+
+        for (var i = 0; i < feedBlocks.length; i++) {
+          var bRect = feedBlocks[i].getBoundingClientRect();
+          var diff = bRect.top - cTop;
+
+          // 다음 카드가 화면 상단 스냅 영역(-30px ~ 80px)에 안착하는 순간
+          if (diff >= -30 && diff <= 80) {
+            if (lastHapticIndex !== i) {
+              lastHapticIndex = i;
+              triggerHaptic(16); // 카드가 자석처럼 착 걸리는 손맛 햅틱
             }
+            var activeId = feedBlocks[i].getAttribute('data-record-id');
+            if (activeId) window.__currentVisibleFeedId = activeId;
+            break;
           }
-        });
+        }
+
+      
 
         if (!isAppendingNext && (scrollTop + clientHeight >= scrollHeight - 70)) {
           if (window.__currentFeedLoadedIndices.size < logs.length) {
@@ -1266,73 +1812,6 @@
     triggerHaptic(8);
   };
 
-  // 🔒 [비밀메모 모달 엔진]
-  window.openHistorySecretMemoModal = function() {
-    var old = document.getElementById('historySecretMemoModal');
-    if (old) old.remove();
-
-    var memoObj = safeGetJSON('okbm_memos', {});
-    var spotList = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots)) ? registeredSpots : safeGetJSON('okbm_spots_cache', []);
-    var keys = Object.keys(memoObj).filter(function(k) { return memoObj[k] && String(memoObj[k]).trim().length > 0; });
-
-    var memoList = keys.map(function(sId) {
-      var found = spotList.find(function(s) { return String(s.id).trim() === String(sId).trim(); });
-      return {
-        id: sId,
-        name: found ? (found.fullName || found.name) : ('박지 #' + sId),
-        region: found ? found.region : '전국',
-        elevation: found && found.elevation ? (found.elevation + 'm') : '',
-        memo: String(memoObj[sId]).trim()
-      };
-    });
-
-    var modalEl = document.createElement('div');
-    modalEl.id = 'historySecretMemoModal';
-    modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000000; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;';
-
-    modalEl.innerHTML = `
-      <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <button type="button" onclick="document.getElementById('historySecretMemoModal').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
-          <span style="font-size:0.95rem; font-weight:900; color:#fff;">🔒 나만의 박지 비밀메모</span>
-        </div>
-        <span style="font-size:0.65rem; color:#fde047; font-weight:800; background:rgba(253,224,71,0.15); padding:2px 8px; border-radius:5px; border:1px solid rgba(253,224,71,0.3);">총 ${memoList.length}개</span>
-      </div>
-
-      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px 20px 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
-        ${memoList.length === 0 ? `
-          <div style="text-align:center; padding:50px 10px; color:#94a3b8; font-size:0.78rem; line-height:1.6;">
-            작성된 비밀메모가 없습니다.<br>
-            전국지도 박지 상세화면에서 나만의 비밀 메모를 남겨보세요!
-          </div>
-        ` : memoList.map(function(item) {
-          return `
-            <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(253,224,71,0.3); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:6px;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div style="font-size:0.86rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:4px;">
-                  <span style="color:#fde047;">🔒</span>
-                  <span>${escapeHtml(item.name)}</span>
-                </div>
-                <button type="button" onclick="location.href='map.html?spot=' + encodeURIComponent('${escapeHtml(item.name)}');" style="background:rgba(56,189,248,0.15); border:1px solid #38bdf8; color:#7dd3fc; font-size:0.62rem; font-weight:800; padding:2px 7px; border-radius:5px; cursor:pointer;">지도로 가기 ➔</button>
-              </div>
-              <div style="font-size:0.75rem; color:#e2e8f0; font-family:'SUIT', sans-serif; line-height:1.5; background:rgba(0,0,0,0.4); padding:8px 10px; border-radius:8px; border:1px dashed rgba(255,255,255,0.1); word-break:keep-all;">
-                “${escapeHtml(item.memo)}”
-              </div>
-            </div>
-          `;
-        }).join('')}
-      </div>
-
-      <div style="flex-shrink:0 !important; width:100%; height:calc(56px + env(safe-area-inset-bottom, 0px)); padding:6px 14px calc(8px + env(safe-area-inset-bottom, 0px)) 14px; background:rgba(7,9,14,0.98); border-top:1px solid rgba(255,255,255,0.12); box-sizing:border-box; z-index:1000001 !important; display:flex; align-items:center;">
-        <button type="button" onclick="document.getElementById('historySecretMemoModal').remove(); triggerHaptic(10);" style="width:100%; height:44px; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#fff; font-size:0.84rem; font-weight:900; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
-          <span>확인 닫기 ✓</span>
-        </button>
-      </div>
-    `;
-    document.body.appendChild(modalEl);
-    triggerHaptic(12);
-  };
-
   // 🔄 [하단 독 모드 전환 및 스와이프 제스처 바인딩 엔진]
   window.__historyDockDeckMode = 'tools';
 
@@ -1371,28 +1850,24 @@
       var diffX = e.changedTouches[0].clientX - startX;
       var diffY = e.changedTouches[0].clientY - startY;
 
-      // 아래로 쓸기 ➔ 기본 5대 독
       if (diffY > 18 && Math.abs(diffY) > Math.abs(diffX)) {
         if (window.__historyDockDeckMode === 'tools') {
           triggerHaptic(10);
           window.toggleHistoryDockDeckMode('main');
         }
-      }
-      // 위로 쓸기 ➔ 보관함 5대 도구
-      else if (diffY < -18 && Math.abs(diffY) > Math.abs(diffX)) {
+      } else if (diffY < -18 && Math.abs(diffY) > Math.abs(diffX)) {
         if (window.__historyDockDeckMode === 'main') {
           triggerHaptic(10);
           window.toggleHistoryDockDeckMode('tools');
         }
-      }
-      // 좌우 쓸기 ➔ 양방향 토글
-      else if (Math.abs(diffX) > 28) {
+      } else if (Math.abs(diffX) > 28) {
         triggerHaptic(10);
         window.toggleHistoryDockDeckMode();
       }
     }, { passive: true });
   };
-// 🏛️ [낭만보관함 메인 스테이지 렌더링 엔진 - 완벽 복원]
+
+  // 🏛️ [낭만보관함 메인 스테이지 렌더링 엔진]
   window.renderHistoryStage = function() {
     var modal = document.getElementById('romanticHistoryModal');
     if (!modal) return;
@@ -1404,7 +1879,6 @@
     var hasRecord = (window.currentCardIndex >= 0 && window.currentCardIndex < allHistory.length);
     var cur = hasRecord ? allHistory[window.currentCardIndex] : null;
 
-    // 🗓️ [핵심] 현재 카드의 날짜에 맞춰 달력 연/월(Month) 자동 동기화 추적!
     var now = new Date();
     if (cur && cur.year && cur.month) {
       window.calViewYear = Number(cur.year);
@@ -1473,75 +1947,23 @@
       calendarDaysHtml += '<div style="height:18px !important; line-height:18px !important;"></div>';
     }
 
-    // 중앙 콘텐츠 (3D 카드 vs 클리어 목록)
     var centerContentHtml = '';
-    if (window.activeHistorySubFilter === 'visited') {
-      var visitedIds = new Set(safeGetJSON('okbm_visited', []));
-      var memoObj = safeGetJSON('okbm_memos', {});
-      var spotList = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots)) ? registeredSpots : safeGetJSON('okbm_spots_cache', []);
-
-      var clearedSpots = Array.from(visitedIds).map(function(sId) {
-        var found = spotList.find(function(s) { return String(s.id).trim() === String(sId).trim(); });
-        return {
-          id: sId,
-          name: found ? (found.fullName || found.name) : ('박지 #' + sId),
-          elevation: found && found.elevation ? (found.elevation + 'm') : (found ? found.region : '전국'),
-          memo: memoObj[sId] ? String(memoObj[sId]).trim() : ''
-        };
-      });
-
+    if (hasRecord) {
+      centerContentHtml = window.render3DPostcardElement(cur, window.currentCardIndex);
+    } else {
       centerContentHtml = `
-        <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:6px; padding:4px 0; overflow-y:auto; box-sizing:border-box;">
-          <div style="font-size:0.75rem; font-weight:900; color:#38bdf8; padding:2px 4px; display:flex; justify-content:space-between; align-items:center;">
-            <span>🚩 내가 정복한 클리어 박지 (${clearedSpots.length}개)</span>
-            <button type="button" onclick="window.activeHistorySubFilter='all'; window.renderHistoryStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; font-size:0.62rem; font-weight:800; padding:2px 7px; border-radius:5px; cursor:pointer;">엽서 카드 ➔</button>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:6px; flex:1; overflow-y:auto;">
-            ${clearedSpots.length === 0 ? `
-              <div style="text-align:center; padding:50px 0; color:#94a3b8; font-size:0.78rem;">
-                아직 클리어한 박지가 없습니다.<br>
-                전국지도에서 다녀온 박지에 🚩 클리어를 남겨보세요!
-              </div>
-            ` : clearedSpots.map(function(s) {
-              return `
-                <div onclick="location.href='map.html?spot=' + encodeURIComponent('${escapeHtml(s.name)}');" style="background:rgba(255,255,255,0.035); border:1px solid rgba(56,189,248,0.25); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
-                  <div>
-                    <div style="font-size:0.84rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:4px;">
-                      <span>🚩</span> <span>${escapeHtml(s.name)}</span>
-                    </div>
-                    <div style="font-size:0.64rem; color:#94a3b8; margin-top:2px;">고도/위치: ${escapeHtml(s.elevation)}</div>
-                    ${s.memo ? `<div style="font-size:0.68rem; color:#cbd5e1; margin-top:3px; font-style:italic;">🔒 “${escapeHtml(s.memo)}”</div>` : ''}
-                  </div>
-                  <span style="font-size:0.62rem; color:#38bdf8; font-weight:800;">지도로 보기 ➔</span>
-                </div>
-              `;
-            }).join('')}
-          </div>
+        <div style="width:100%; max-width:280px; aspect-ratio:3/4; background:rgba(255,255,255,0.03); color:#ffffff; border:1px dashed rgba(255,255,255,0.15); border-radius:14px; padding:16px 12px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; box-sizing:border-box; gap:8px;">
+          <div style="font-size:2rem; line-height:1;">🏕️</div>
+          <div style="font-size:0.88rem; font-weight:800; color:#cbd5e1; line-height:1.4;">[${activeDateStr}]<br>출정 기록이 없습니다</div>
         </div>
       `;
-    } else {
-      if (hasRecord) {
-        centerContentHtml = window.render3DPostcardElement(cur, window.currentCardIndex);
-      } else {
-        centerContentHtml = `
-          <div style="width:100%; max-width:280px; aspect-ratio:3/4; background:linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%); color:#ffffff; border:1.5px dashed rgba(56,189,248,0.4); border-radius:14px; padding:16px 12px; display:flex; flex-direction:column; justify-content:space-between; align-items:center; text-align:center; box-sizing:border-box;">
-            <span style="font-size:0.62rem; font-weight:900; color:#38bdf8; font-family:'Space Grotesk', sans-serif;">ROMANTIC ARCHIVE</span>
-            <div>
-              <div style="font-size:2.2rem; margin-bottom:4px;">🏕️</div>
-              <div style="font-size:0.95rem; font-weight:900; color:#fff; line-height:1.35;">[${activeDateStr}]<br>출정 기록이 없습니다</div>
-              <div style="font-size:0.65rem; color:#94a3b8; margin-top:6px; line-height:1.45;">이 날짜에 떠날 계획을 세우시겠습니까?</div>
-            </div>
-            <button onclick="window.closeHistoryModal(); if(typeof window.openPlanModal==='function') window.openPlanModal(); triggerHaptic(12);" style="width:100%; height:38px; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; border-radius:8px; color:#fff; font-size:0.78rem; font-weight:900; cursor:pointer;">
-              <span>🗓️ 낭만계획 세우기 ➔</span>
-            </button>
-          </div>
-        `;
-      }
     }
+
+    
 
     var isHistoryToolsActive = (window.__historyDockDeckMode !== 'main');
 
-    // 🌟 [인덱스 일치 메인 5대 독 + 보관함 전용 5대 도구 듀얼독]
+    // 🌟 [5대 독 완성 라인업: 낭만기록 · 피드 · 스튜디오 · 클리어맵 · 마이리포트]
     var bottomDualDockHtml = `
       <div id="historyDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(7,9,14,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000 !important; user-select:none !important; overscroll-behavior:none !important; touch-action:none !important;">
         
@@ -1549,32 +1971,32 @@
           <div style="width:28px; height:3.5px; border-radius:2px; background:rgba(255,255,255,0.35);"></div>
         </div>
 
-        <!-- 1. 낭만보관함 5대 도구 데크 (피드목록 / 일지수정 / 클리어 / 비밀메모 / 랜덤보기) -->
+        <!-- 1. 낭만보관함 5대 도구 데크 (낭만기록 / 피드 / 스튜디오 / 클리어맵 / 마이리포트) -->
         <div id="historySubToolsDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:${isHistoryToolsActive ? 'translateY(0)' : 'translateY(100%)'}; z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
           
-          <button type="button" class="dock-item" onclick="window.openPastTripsListModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#cbd5e1; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
+          <button type="button" class="dock-item active" onclick="window.activeHistorySubFilter='all'; window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#38bdf8 !important; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
             <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-            <span>피드목록</span>
+            <span>낭만기록</span>
           </button>
           
-          <button type="button" class="dock-item" onclick="if(window.interactiveHistory && window.interactiveHistory[window.currentCardIndex]){ window.openRichAfterTripModal(window.interactiveHistory[window.currentCardIndex]); } else { if(typeof showToast==='function') showToast('수정할 백패킹 기록이 없습니다.', 'warn'); } triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#38bdf8; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            <span>일지수정</span>
+          <button type="button" class="dock-item" onclick="window.openPastTripsListModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            <span>피드</span>
           </button>
 
-          <button type="button" class="dock-item ${window.activeHistorySubFilter === 'visited' ? 'active' : ''}" onclick="window.activeHistorySubFilter = (window.activeHistorySubFilter === 'visited' ? 'all' : 'visited'); window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activeHistorySubFilter === 'visited' ? '#38bdf8 !important' : '#34d399'}; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
+          <button type="button" class="dock-item" onclick="window.openHistoryStudioModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>스튜디오</span>
+          </button>
+
+          <button type="button" class="dock-item" onclick="window.openClearMapModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
             <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.2;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-            <span>클리어</span>
+            <span>클리어맵</span>
           </button>
 
-          <button type="button" class="dock-item" onclick="window.openHistorySecretMemoModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#fde047; font-size:0.67rem; font-weight:800; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <span>비밀메모</span>
-          </button>
-
-          <button type="button" class="dock-item" onclick="window.openRandomFeedTrip(); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#cbd5e1; font-size:0.67rem; font-weight:800; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="8.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="15.5" r="1.5"/><circle cx="8.5" cy="15.5" r="1.5"/><circle cx="12" cy="12" r="1.5"/></svg>
-            <span>랜덤보기</span>
+          <button type="button" class="dock-item" onclick="window.openMyReportModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>마이리포트</span>
           </button>
         </div>
 
@@ -1614,52 +2036,64 @@
       </div>
     `;
 
-    var content = modal.querySelector('.romantic-history-content');
+   var content = modal.querySelector('.romantic-history-content');
     if (!content) return;
 
-    // 상단 헤더 완전히 제거하고 시원하게 배치
-    content.innerHTML = `
-      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; justify-content:space-between; padding:calc(10px + env(safe-area-inset-top, 0px)) 12px 0 12px; margin:0 !important; gap:6px !important; box-sizing:border-box; overflow:hidden;">
-        <!-- 상단 통계 요약 바 -->
-        <div style="flex-shrink:0 !important; display:flex; flex-direction:column; gap:4px;">
-          <div style="height:38px; background:linear-gradient(135deg, rgba(56,189,248,0.12), rgba(16,185,129,0.08)); border:1px solid rgba(56,189,248,0.3); border-radius:8px; padding:4px 8px; display:flex; justify-content:space-around; align-items:center; text-align:center;">
-            <div><div style="font-size:0.54rem; color:#94a3b8; font-weight:700;">2026 힐링</div><div style="font-size:0.92rem; font-weight:900; color:#38bdf8; font-family:'Space Grotesk', sans-serif;">${totalCount}회</div></div>
-            <div style="width:1px; height:14px; background:rgba(255,255,255,0.15);"></div>
-            <div><div style="font-size:0.54rem; color:#94a3b8; font-weight:700;">누적 고도</div><div style="font-size:0.92rem; font-weight:900; color:#34d399; font-family:'Space Grotesk', sans-serif;">${accumElevStr}</div></div>
-            <div style="width:1px; height:14px; background:rgba(255,255,255,0.15);"></div>
-            <div><div style="font-size:0.54rem; color:#94a3b8; font-weight:700;">평균 무게</div><div style="font-size:0.92rem; font-weight:900; color:#fde047; font-family:'Space Grotesk', sans-serif;">${avgWeightStr}</div></div>
-          </div>
+    var viewSlot = content.querySelector('#historyMainStageViewContainer');
+    var existingDock = content.querySelector('#historyDualDockContainer');
 
-          <!-- 6주 캘린더 -->
-          <div style="height:162px; background:rgba(255,255,255,0.035); border:1px solid rgba(226,232,240,0.16); border-radius:8px; padding:4px 6px; display:flex; flex-direction:column; justify-content:space-between;">
-            <div style="display:flex; justify-content:space-between; align-items:center; height:20px;">
-              <div style="display:flex; align-items:center; gap:3px;">
-                <button type="button" onclick="window.changeHistoryMonth(-1)" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:16px; height:16px; border-radius:3px; font-size:0.55rem; cursor:pointer;">◀</button>
-                <span style="font-size:0.72rem; font-weight:900; color:#fff;">${viewYear}년 ${viewMonth}월</span>
-                <button type="button" onclick="window.changeHistoryMonth(1)" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:16px; height:16px; border-radius:3px; font-size:0.55rem; cursor:pointer;">▶</button>
-              </div>
-              <div style="display:flex; align-items:center; gap:4px;">
-                <span style="font-size:0.54rem; color:#38bdf8; font-weight:800; font-family:'Space Grotesk', sans-serif;">${viewMonth}월 ${monthCount}회</span>
-              </div>
-            </div>
-            <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.50rem; font-weight:800; color:#64748b; height:14px; line-height:14px;">
-              <span style="color:#f43f5e;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#38bdf8;">토</span>
-            </div>
-            <div style="display:grid; grid-template-columns:repeat(7, 1fr); grid-template-rows:repeat(6, 18px); gap:1px; text-align:center; height:114px;">
-              ${calendarDaysHtml}
-            </div>
-          </div>
+    var topAndCenterViewHtml = `
+      <div style="flex-shrink:0 !important; display:flex; flex-direction:column; gap:4px;">
+        <div style="height:38px; background:linear-gradient(135deg, rgba(56,189,248,0.12), rgba(16,185,129,0.08)); border:1px solid rgba(56,189,248,0.3); border-radius:8px; padding:4px 8px; display:flex; justify-content:space-around; align-items:center; text-align:center;">
+          <div><div style="font-size:0.54rem; color:#94a3b8; font-weight:700;">2026 힐링</div><div style="font-size:0.92rem; font-weight:900; color:#38bdf8; font-family:'Space Grotesk', sans-serif;">${totalCount}회</div></div>
+          <div style="width:1px; height:14px; background:rgba(255,255,255,0.15);"></div>
+          <div><div style="font-size:0.54rem; color:#94a3b8; font-weight:700;">누적 고도</div><div style="font-size:0.92rem; font-weight:900; color:#34d399; font-family:'Space Grotesk', sans-serif;">${accumElevStr}</div></div>
+          <div style="width:1px; height:14px; background:rgba(255,255,255,0.15);"></div>
+          <div><div style="font-size:0.54rem; color:#94a3b8; font-weight:700;">평균 무게</div><div style="font-size:0.92rem; font-weight:900; color:#fde047; font-family:'Space Grotesk', sans-serif;">${avgWeightStr}</div></div>
         </div>
 
-        <!-- 중앙 콘텐츠 슬롯 -->
-        <div id="basecampCenterContentSlot" style="flex:1 1 0% !important; width:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:0 !important; position:relative; padding:2px 0; overflow:hidden;">
-          ${centerContentHtml}
+        <div style="height:162px; background:rgba(255,255,255,0.035); border:1px solid rgba(226,232,240,0.16); border-radius:8px; padding:4px 6px; display:flex; flex-direction:column; justify-content:space-between;">
+          <div style="display:flex; justify-content:space-between; align-items:center; height:20px;">
+            <div style="display:flex; align-items:center; gap:3px;">
+              <button type="button" onclick="window.changeHistoryMonth(-1)" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:16px; height:16px; border-radius:3px; font-size:0.55rem; cursor:pointer;">◀</button>
+              <span style="font-size:0.72rem; font-weight:900; color:#fff;">${viewYear}년 ${viewMonth}월</span>
+              <button type="button" onclick="window.changeHistoryMonth(1)" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:16px; height:16px; border-radius:3px; font-size:0.55rem; cursor:pointer;">▶</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <span style="font-size:0.54rem; color:#38bdf8; font-weight:800; font-family:'Space Grotesk', sans-serif;">${viewMonth}월 ${monthCount}회</span>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.50rem; font-weight:800; color:#64748b; height:14px; line-height:14px;">
+            <span style="color:#f43f5e;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#38bdf8;">토</span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(7, 1fr); grid-template-rows:repeat(6, 18px); gap:1px; text-align:center; height:114px;">
+            ${calendarDaysHtml}
+          </div>
         </div>
       </div>
 
-      <!-- 🏛️ 듀얼 하단독 -->
-      ${bottomDualDockHtml}
+      <div id="basecampCenterContentSlot" style="flex:1 1 0% !important; width:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:0 !important; position:relative; padding:2px 0; overflow:hidden;">
+        ${centerContentHtml}
+      </div>
     `;
+
+    if (!viewSlot || !existingDock) {
+      content.innerHTML = `
+        <div id="historyMainStageViewContainer" style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; justify-content:space-between; padding:calc(10px + env(safe-area-inset-top, 0px)) 12px 0 12px; margin:0 !important; gap:6px !important; box-sizing:border-box; overflow:hidden;">
+          ${topAndCenterViewHtml}
+        </div>
+        ${bottomDualDockHtml}
+      `;
+    } else {
+      viewSlot.innerHTML = topAndCenterViewHtml;
+
+      var subDeck = existingDock.querySelector('#historySubToolsDeck');
+      var mainDeck = existingDock.querySelector('#historyMainNavDeck');
+      if (subDeck && mainDeck) {
+        subDeck.style.transform = isHistoryToolsActive ? 'translateY(0)' : 'translateY(100%)';
+        mainDeck.style.transform = isHistoryToolsActive ? 'translateY(100%)' : 'translateY(0)';
+      }
+    }
 
     if (typeof window.bindHistoryDualDockGestures === 'function') {
       window.bindHistoryDualDockGestures();
@@ -1709,22 +2143,18 @@
         var absX = Math.abs(diffX);
 
         if (!isHorizontalSwipe || absX < 30) {
-          // 탭 또는 단순 클릭: 엽서 앞뒤 회전
           window.isPostcardFlipped = !window.isPostcardFlipped;
           cardTarget.classList.toggle('flipped', window.isPostcardFlipped);
           cardTarget.style.transform = window.isPostcardFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)';
           window.triggerSoftAmbientFX(cardTarget);
           triggerHaptic(8);
         } else {
-          // 수평 스와이프: 카드 넘기기 및 달(Month) 자동 전환
           var total = window.interactiveHistory.length;
           if (total > 1) {
-            if (diffX > -30) {
-              // 왼쪽으로 밀기 -> 다음 카드 
-              window.currentCardIndex = (window.currentCardIndex + 1) % total;
-            } else if (diffX < 30) {
-              // 오른쪽으로 밀기 -> 이전 카드 
+            if (diffX < -30) {
               window.currentCardIndex = (window.currentCardIndex - 1 + total) % total;
+            } else if (diffX > 30) {
+              window.currentCardIndex = (window.currentCardIndex + 1) % total;
             }
             var nextRecord = window.interactiveHistory[window.currentCardIndex];
             if (nextRecord) {
@@ -1732,7 +2162,7 @@
               window.calViewMonth = Number(nextRecord.month);
               window.activeSelectedDateKey = nextRecord.date;
             }
-            window.isPostcardFlipped = false;
+            // 🛡️ 앞/뒷면 상태 유지: 스와이프해도 flipped 상태를 강제 초기화하지 않고 그대로 유지
             window.renderHistoryStage();
             triggerHaptic(12);
           } else {
@@ -1751,11 +2181,9 @@
       };
     }
   };
-  
 
   window.handleHistoryCalendarClick = function(day, month, year) {
     var dateKey = year + '.' + String(month).padStart(2, '0') + '.' + String(day).padStart(2, '0');
-    window.activeSelectedDateKey = dateKey;
 
     var foundIdx = (window.interactiveHistory || []).findIndex(function(h) {
       if (Number(h.year) === Number(year) && Number(h.month) === Number(month) && Number(h.day) === Number(day)) return true;
@@ -1763,10 +2191,17 @@
       return hDate === dateKey;
     });
 
-    window.currentCardIndex = foundIdx !== -1 ? foundIdx : -1;
+    if (foundIdx === -1) {
+      triggerHaptic(5);
+      return;
+    }
+
+    window.activeSelectedDateKey = dateKey;
+    window.currentCardIndex = foundIdx;
     window.activeHistorySubFilter = 'all';
     window.renderHistoryStage();
     triggerHaptic(10);
+  
   };
 
   // 🚀 [낭만보관함 모달 오픈 / 클로즈]
