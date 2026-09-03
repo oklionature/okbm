@@ -1325,7 +1325,7 @@
       }
 
      return `
-        <div class="single-feed-block" data-record-id="${escapeHtml(String(log.id))}" style="background:#000000; border:1px solid rgba(255,255,255,0.14); border-radius:18px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 16px 45px rgba(0,0,0,0.95); flex-shrink:0; margin-bottom:32px; scroll-snap-align:start !important; scroll-snap-stop:normal !important; box-sizing:border-box;">
+        <div class="single-feed-block" data-record-id="${escapeHtml(String(log.id))}" style="background:#000000; border:1px solid rgba(255,255,255,0.14); border-radius:18px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 16px 45px rgba(0,0,0,0.95); flex-shrink:0; margin-bottom:24px; box-sizing:border-box;">
           <div style="padding:12px 14px; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
             <div style="font-size:0.88rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:5px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
               ${HISTORY_VEC_ICONS.pin}
@@ -1387,7 +1387,7 @@
         <button onclick="document.getElementById('singleTripFeedModal').remove(); triggerHaptic(10);" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
       </div>
 
-      <div id="dualFeedScrollContainer" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; scroll-snap-type:y proximity !important; padding:12px 12px calc(70px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; box-sizing:border-box;">
+      <div id="dualFeedScrollContainer" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(70px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; box-sizing:border-box;">
         <div id="dualFeedCardsWrapper">
           ${window.buildSingleFeedCardHtml(logs[startIdx])}
         </div>
@@ -1509,36 +1509,23 @@
     var isAppendingNext = false;
 
     if (scrollContainer && cardsWrapper) {
-      var lastHapticIndex = startIdx;
-
       scrollContainer.addEventListener('scroll', function() {
         var scrollTop = scrollContainer.scrollTop;
         var scrollHeight = scrollContainer.scrollHeight;
         var clientHeight = scrollContainer.clientHeight;
 
-        // 🛡️ 가벼운 인덱스 기반 스냅 감지 (프레임 드랍 100% 제거)
         var feedBlocks = cardsWrapper.children;
         var cTop = scrollContainer.getBoundingClientRect().top;
-
         for (var i = 0; i < feedBlocks.length; i++) {
           var bRect = feedBlocks[i].getBoundingClientRect();
-          var diff = bRect.top - cTop;
-
-          // 다음 카드가 화면 상단 스냅 영역(-30px ~ 80px)에 안착하는 순간
-          if (diff >= -30 && diff <= 80) {
-            if (lastHapticIndex !== i) {
-              lastHapticIndex = i;
-              triggerHaptic(16); // 카드가 자석처럼 착 걸리는 손맛 햅틱
-            }
+          if (bRect.top <= cTop + 120 && bRect.bottom >= cTop + 60) {
             var activeId = feedBlocks[i].getAttribute('data-record-id');
             if (activeId) window.__currentVisibleFeedId = activeId;
             break;
           }
         }
 
-      
-
-        if (!isAppendingNext && (scrollTop + clientHeight >= scrollHeight - 70)) {
+        if (!isAppendingNext && (scrollTop + clientHeight >= scrollHeight - 90)) {
           if (window.__currentFeedLoadedIndices.size < logs.length) {
             isAppendingNext = true;
 
@@ -1561,7 +1548,7 @@
               }
             }
 
-            setTimeout(function() { isAppendingNext = false; }, 300);
+            setTimeout(function() { isAppendingNext = false; }, 250);
           }
         }
       }, { passive: true });
