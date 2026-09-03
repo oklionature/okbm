@@ -2,29 +2,83 @@
 // 🚀 [templates.js] 20종 템플릿 엔진 & 스와이프 제스처 시스템 (v2.0.6 Auto-Sync Master)
 // =========================================================================
 
+// 🎨 [템플릿 칩 바 전용 스타일시트 자동 주입 - map.html 등 외부 화면 깨짐 100% 방어]
+if (!document.getElementById('template-chips-core-style')) {
+  var chipStyle = document.createElement('style');
+  chipStyle.id = 'template-chips-core-style';
+  chipStyle.innerHTML = `
+    .template-selector-bar {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      gap: 5px !important;
+      overflow-x: auto !important;
+      overflow-y: hidden !important;
+      -webkit-overflow-scrolling: touch !important;
+      padding: 4px 2px 6px 2px !important;
+      scrollbar-width: none !important;
+      flex-shrink: 0 !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .template-selector-bar::-webkit-scrollbar { display: none !important; }
+
+    .tmpl-chip-btn {
+      background: rgba(255, 255, 255, 0.08) !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
+      color: #cbd5e1 !important;
+      font-size: 0.70rem !important;
+      font-weight: 800 !important;
+      padding: 5px 10px !important;
+      border-radius: 16px !important;
+      white-space: nowrap !important;
+      word-break: keep-all !important;
+      cursor: pointer !important;
+      transition: all 0.15s ease !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 3px !important;
+      flex-shrink: 0 !important;
+      box-sizing: border-box !important;
+      user-select: none !important;
+      height: 28px !important;
+      line-height: 1 !important;
+    }
+    .tmpl-chip-btn.active {
+      background: #38bdf8 !important;
+      color: #000000 !important;
+      border-color: #38bdf8 !important;
+      font-weight: 900 !important;
+      box-shadow: 0 2px 8px rgba(56, 189, 248, 0.45) !important;
+    }
+  `;
+  document.head.appendChild(chipStyle);
+}
+
 // 🔀 [템플릿 확정 정렬 순서 및 명칭 정의 (영수증-솜사탕 선두 / 살구↔블러썸 / 스카이↔레몬 교체)]
 var TEMPLATE_ORDER = [1, 8, 15, 2, 12, 3, 18, 4, 14, 5, 11, 6, 16, 7, 17, 13, 9, 19, 10, 20];
 var TEMPLATE_NAMES = {
-  1: '영수증',
-  8: '솜사탕',
-  15: '살구노을',
-  2: '보딩패스',
-  12: '라벤더',
-  3: '에어메일',
-  18: '레몬',
-  4: '뮤지엄',
-  14: '다꾸',
-  5: 'CAD 도면',
-  11: '블러썸',
-  6: '코닥 슬라이드',
-  16: '핑크문',
-  7: '매거진',
-  17: '민트',
-  13: '스카이',
-  9: '버터',
-  19: '럭셔리',
-  10: '세이지',
-  20: '젠'
+  1: '🧾 영수증',
+  8: '☁️ 솜사탕',
+  15: '🍑 살구노을',
+  2: '🎫 보딩패스',
+  12: '🌸 라벤더',
+  3: '📮 에어메일',
+  18: '🍋 레몬버터',
+  4: '🏛️ 뮤지엄',
+  14: '🏷️ 다꾸스티커',
+  5: '⚡ CAD 도면',
+  11: '💖 블러썸',
+  6: '📸 코닥 슬라이드',
+  16: '🌙 핑크문',
+  7: '📖 매거진',
+  17: '🍦 민트젤라또',
+  13: '☁️ 스카이블루',
+  9: '🧈 버터',
+  19: '✨ 럭셔리',
+  10: '🌿 세이지',
+  20: '🎋 젠(Zen)'
 };
 
 // 🎨 [내장 SVG 아이콘 팩 - 참조 에러 원천 방지]
@@ -155,7 +209,8 @@ function saveCurrentPackingRecord() {
 
 // 🏷️ [지능형 상단 템플릿 칩 컨테이너 탐색 및 자동 렌더링 엔진]
 function findTemplateChipContainer() {
-  var direct = document.querySelector('.share-card-tmpl-chips') || 
+  var direct = document.getElementById('templateSelectorBar') ||
+               document.querySelector('.share-card-tmpl-chips') || 
                document.getElementById('shareCardTmplChips') || 
                document.getElementById('packCardTmplScroll') ||
                document.querySelector('.tmpl-chips-container') ||
@@ -189,9 +244,255 @@ function renderTemplateChips() {
   chipContainer.innerHTML = html;
 }
 
-// 🖼️ 2. 공유 모달 오픈
+// 🔍 [박지 실시간 검색 & 자동완성 전담 엔진 (신규 삽입)]
+window.handleSpotSearchInput = function(val) {
+  val = val || '';
+  var clearBtn = document.getElementById('btnSpotInputClear');
+  var dropdown = document.getElementById('spotSearchDropdown');
+  if (clearBtn) clearBtn.style.display = (val.trim().length > 0) ? 'flex' : 'none';
+  if (!dropdown) return;
+
+  var cleanQ = val.trim().toLowerCase();
+  if (!cleanQ) {
+    dropdown.style.display = 'none';
+    return;
+  }
+
+  // 전국지도(map.html), 메인(index.html), 로컬스토리지 전체에서 박지 데이터 확보
+  var spotList = [];
+  if (typeof spots !== 'undefined' && Array.isArray(spots) && spots.length > 0) spotList = spots;
+  else if (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0) spotList = registeredSpots;
+  else if (typeof safeGetJSON === 'function') spotList = safeGetJSON('okbm_spots_cache', []);
+
+  var filtered = spotList.filter(function(s) {
+    if (!s) return false;
+    var sName = (s.name || s.fullName || s.spot_main || '').toLowerCase();
+    var sReg = (s.region || s.cityName || '').toLowerCase();
+    var sSub = (s.spot_sub || '').toLowerCase();
+    return sName.includes(cleanQ) || sReg.includes(cleanQ) || sSub.includes(cleanQ);
+  });
+
+  if (filtered.length === 0) {
+    dropdown.innerHTML = '<div style="padding:10px; font-size:0.72rem; color:#94a3b8; text-align:center;">일치하는 박지가 없습니다. (직접 입력 가능)</div>';
+    dropdown.style.display = 'block';
+    return;
+  }
+
+  dropdown.innerHTML = filtered.slice(0, 12).map(function(s) {
+    var displayName = s.fullName || s.name || s.spot_main || '';
+    var elevText = s.elevation ? (String(s.elevation).includes('m') ? s.elevation : s.elevation + 'm') : '';
+    var regionText = s.region || s.cityName || '전국';
+    var safeName = escapeHtml(displayName);
+    var safeElev = escapeHtml(elevText);
+
+    return '<div class="spot-dropdown-item" onclick="selectSpotFromDropdown(\'' + safeName + '\', \'' + safeElev + '\')">' +
+      '<div style="font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">📍 ' + safeName + '</div>' +
+      '<div style="font-size:0.62rem; color:#38bdf8; font-weight:700; flex-shrink:0; margin-left:6px;">' + escapeHtml(regionText) + (safeElev ? ' · ' + safeElev : '') + '</div>' +
+    '</div>';
+  }).join('');
+
+  dropdown.style.display = 'block';
+};
+
+window.toggleSpotDropdownList = function() {
+  var dropdown = document.getElementById('spotSearchDropdown');
+  var input = document.getElementById('shareCardSpotInput');
+  if (!dropdown) return;
+  if (dropdown.style.display === 'block') {
+    dropdown.style.display = 'none';
+  } else {
+    window.handleSpotSearchInput(input ? input.value : '');
+  }
+  if (typeof triggerHaptic === 'function') triggerHaptic(10);
+};
+
+window.clearSpotSearchInput = function() {
+  var input = document.getElementById('shareCardSpotInput');
+  var clearBtn = document.getElementById('btnSpotInputClear');
+  var dropdown = document.getElementById('spotSearchDropdown');
+  if (input) {
+    input.value = '';
+    input.focus();
+  }
+  if (clearBtn) clearBtn.style.display = 'none';
+  if (dropdown) dropdown.style.display = 'none';
+  if (typeof updateShareCardLive === 'function') updateShareCardLive();
+  if (typeof triggerHaptic === 'function') triggerHaptic(10);
+};
+
+window.selectSpotFromDropdown = function(spotName, elevation) {
+  var input = document.getElementById('shareCardSpotInput');
+  var clearBtn = document.getElementById('btnSpotInputClear');
+  var dropdown = document.getElementById('spotSearchDropdown');
+  var fullSpotTitle = spotName + (elevation ? ' (' + elevation + ')' : '');
+  if (input) input.value = fullSpotTitle;
+  if (clearBtn) clearBtn.style.display = 'flex';
+  if (dropdown) dropdown.style.display = 'none';
+
+  if (window.currentShareRecord) {
+    window.currentShareRecord.spot = fullSpotTitle;
+    if (elevation) window.currentShareRecord.elevation = elevation;
+  }
+  if (typeof updateShareCardLive === 'function') updateShareCardLive();
+  if (typeof triggerHaptic === 'function') triggerHaptic(12);
+};
+/// 💾 [공용 금고 연동] 스튜디오 ➔ 낭만보관함 직통 저장 단일 함수
+// 💾 [공용 금고 연동] 스튜디오 ➔ 낭만보관함 직통 저장 단일 함수 (선자령 하드코딩 완전 박멸)
+window.saveCardToVaultAndOpenBasecamp = function() {
+  var spotInput = document.getElementById('shareCardSpotInput');
+  var memoInput = document.getElementById('shareCardMemoInput');
+  
+  // 사용자가 입력한 박지명이 있으면 입력값 사용, 없으면 기존 레코드의 박지명 사용, 둘 다 없으면 빈칸('') 유지
+  var liveSpot = (spotInput && spotInput.value.trim().length > 0) 
+    ? spotInput.value.trim() 
+    : (window.currentShareRecord && window.currentShareRecord.spot ? window.currentShareRecord.spot : '');
+    
+  var liveMemo = (memoInput && memoInput.value.trim().length > 0) 
+    ? memoInput.value.trim() 
+    : (window.currentShareRecord && window.currentShareRecord.memo ? window.currentShareRecord.memo : '');
+
+  var now = new Date();
+  var cleanDateStr = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
+
+  var rec = window.currentShareRecord || {};
+  var items = (Array.isArray(window.currentShareItems) && window.currentShareItems.length > 0) ? window.currentShareItems : (rec.items || []);
+
+  if (items.length === 0 && window.selectedGearMap) {
+    Object.keys(window.selectedGearMap).forEach(function(catId) {
+      (window.selectedGearMap[catId] || []).forEach(function(it) {
+        if (it && (it.name || it.itemName)) {
+          items.push({
+            name: it.name || it.itemName,
+            weight: Number(it.weight || it.weight_g || 0)
+          });
+        }
+      });
+    });
+  }
+
+  var totalGrams = items.reduce(function(sum, g) { return sum + Number(g.weight || 0); }, 0);
+  var weightKg = (totalGrams > 0) ? (totalGrams / 1000).toFixed(2) : (rec.weightKg || '0.00');
+
+  var photosToSave = [];
+  if (window.currentSharePhoto && typeof window.currentSharePhoto === 'string' && window.currentSharePhoto.length > 10) {
+    photosToSave.push(window.currentSharePhoto);
+  } else if (Array.isArray(rec.photos) && rec.photos.length > 0) {
+    photosToSave = rec.photos;
+  } else if (rec.photo) {
+    photosToSave.push(rec.photo);
+  }
+
+  var newRecord = {
+    id: rec.id || ('pack_' + Date.now()),
+    date: rec.date || cleanDateStr,
+    spot: liveSpot,
+    memo: liveMemo,
+    elevation: rec.elevation || '',
+    weightKg: weightKg,
+    weightGrams: totalGrams || rec.weightGrams || 0,
+    itemCount: items.length,
+    items: items,
+    photo: photosToSave[0] || '',
+    photos: photosToSave,
+    fieldPhoto: photosToSave[0] || '',
+    templateId: window.selectedTemplateId || rec.templateId || 1
+  };
+
+  var savedResult = null;
+  if (typeof window.savePackingHistoryRecord === 'function') {
+    savedResult = window.savePackingHistoryRecord(newRecord);
+  }
+
+  // 진짜 중복으로 차단 팝업이 뜬 경우에만 중단
+  if (savedResult === null) {
+    return;
+  }
+
+  if (typeof closePackShareModal === 'function') closePackShareModal();
+  if (typeof window.openHistoryModal === 'function') window.openHistoryModal();
+  if (typeof showToast === 'function') showToast('🎒 낭만보관함에 안전하게 저장되었습니다!', 'success');
+  if (typeof triggerHaptic === 'function') triggerHaptic(15);
+};
+
+// 🖼️ 2. 공유 모달 오픈 (초록색 저장 버튼 100% 노출 슬림 규격)
+function ensurePackShareModalDOM() {
+  var modal = document.getElementById('packShareModalOverlay');
+  if (modal) modal.remove();
+
+  modal = document.createElement('div');
+  modal.id = 'packShareModalOverlay';
+  modal.className = 'custom-modal-overlay';
+  modal.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0, 0, 0, 0.88); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); z-index:1000008 !important; justify-content:center; align-items:center; padding:calc(8px + env(safe-area-inset-top, 0px)) 8px calc(12px + env(safe-area-inset-bottom, 0px)) 8px !important; touch-action:none; overflow:hidden; box-sizing:border-box;';
+  modal.onclick = function(e) { if (e.target === modal) closePackShareModal(); };
+
+  modal.innerHTML = `
+    <div class="custom-modal" style="width:100% !important; max-width:365px !important; max-height:95dvh !important; height:auto !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; overscroll-behavior:contain !important; padding:8px 8px 12px 8px !important; gap:4px !important; display:flex !important; flex-direction:column !important; box-sizing:border-box !important; border-radius:14px !important; margin:0 auto; background:linear-gradient(180deg, #0d121c 0%, #05080f 100%) !important; border:1px solid rgba(255,255,255,0.12) !important; box-shadow:0 24px 60px rgba(0,0,0,0.95) !important;">
+      
+      <!-- 상단 헤더 -->
+      <div style="display:flex; justify-content:space-between; align-items:center; width:100%; padding:0 2px;">
+        <span style="font-weight:900; font-size:0.88rem; color:#fff; display:flex; align-items:center; gap:5px; white-space:nowrap;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="icon-svg" style="width:14px; height:14px; color:#38bdf8;"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M3 9h4M17 9h4M3 15h4M17 15h4"/></svg>
+          <span>LNT 클린 패킹 카드 스튜디오</span>
+        </span>
+        <button type="button" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer; line-height:1; padding:2px 4px;" onclick="closePackShareModal()">✕</button>
+      </div>
+
+      <!-- 검색창 및 메모창 -->
+      <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:5px; display:flex; flex-direction:column; gap:4px; position:relative;">
+        <div style="position:relative; width:100%;">
+          <div style="display:flex; gap:4px; align-items:center; position:relative;">
+            <div style="position:relative; flex:1; display:flex; align-items:center;">
+              <input type="text" id="shareCardSpotInput" class="modal-input" placeholder="박지 검색 (비공개 시 빈칸)" style="font-size:0.74rem; padding:5px 28px 5px 8px; width:100%; height:30px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#ffffff; outline:none; box-sizing:border-box;" oninput="handleSpotSearchInput(this.value); updateShareCardLive();" onfocus="handleSpotSearchInput(this.value);" autocomplete="off" />
+              <button type="button" id="btnSpotInputClear" style="display:none; position:absolute; right:6px; background:rgba(255,255,255,0.25); border:none; color:#ffffff; width:17px; height:17px; border-radius:50%; font-size:0.6rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0; z-index:5;" onclick="clearSpotSearchInput()">✕</button>
+            </div>
+            <button type="button" class="modal-btn" style="height:30px; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.4); color:#38bdf8; font-size:0.68rem; padding:0 8px; flex-shrink:0; font-weight:800; border-radius:6px; cursor:pointer;" onclick="toggleSpotDropdownList()">검색</button>
+          </div>
+          <div id="spotSearchDropdown" class="spot-search-dropdown-list"></div>
+        </div>
+        
+        <input type="text" id="shareCardMemoInput" class="modal-input" placeholder="한줄 메모 (미입력 시 빈칸)" maxlength="35" style="font-size:0.74rem; height:30px; padding:5px 8px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#ffffff; outline:none; box-sizing:border-box;" oninput="updateShareCardLive()" />
+      </div>
+
+      <!-- 20대 전체 템플릿 선택 바 -->
+      <div class="template-selector-bar" id="templateSelectorBar"></div>
+
+      <!-- 카드 프리뷰 (290px 컴팩트 규격: 아래 버튼 노출 100% 보장) -->
+      <div style="width:100%; display:flex; justify-content:center; align-items:center; padding:1px 0;">
+        <div id="packShareCaptureArea" class="share-card-container" style="width:100%; max-width:290px; margin:0 auto; border-radius:12px; overflow:hidden; box-sizing:border-box; flex-shrink:0; box-shadow:0 10px 25px rgba(0,0,0,0.9);"></div>
+      </div>
+
+      <!-- 하단 버튼군 (초록색 버튼 100% 정상 노출) -->
+      <div style="display:flex; flex-direction:column; gap:4px; margin-top:2px;">
+        <div style="display:flex; gap:4px;">
+          <button type="button" class="modal-btn" style="flex:1; height:32px; background:#ffffff; color:#000; font-weight:900; font-size:0.70rem; border:none; border-radius:6px; cursor:pointer;" onclick="if(typeof captureAndSavePackCard==='function') captureAndSavePackCard();">💾 이미지 저장</button>
+          <button type="button" class="modal-btn" style="flex:1; height:32px; background:#fee500; color:#191919; font-weight:800; font-size:0.70rem; border:none; border-radius:6px; cursor:pointer;" onclick="if(typeof sharePackCardToKakao==='function') sharePackCardToKakao();">🟡 카카오톡</button>
+          <button type="button" class="modal-btn" style="flex:1; height:32px; background:linear-gradient(45deg, #ea580c, #e11d48, #c026d3); color:#fff; font-weight:800; font-size:0.70rem; border:none; border-radius:6px; cursor:pointer;" onclick="if(typeof sharePackCardToInstagram==='function') sharePackCardToInstagram();">📸 인스타그램</button>
+        </div>
+        <button type="button" id="btnSaveToVaultMain" class="modal-btn" style="width:100% !important; height:38px !important; background:linear-gradient(135deg, #0d9488 0%, #0f766e 100%); border:1px solid #14b8a6; color:#ffffff; font-weight:900; font-size:0.80rem; border-radius:8px; cursor:pointer; box-shadow:0 4px 14px rgba(13,148,136,0.35); display:flex; align-items:center; justify-content:center; gap:5px;" onclick="saveCardToVaultAndOpenBasecamp();">
+          내 낭만보관함에 저장하기 ✓
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  return modal;
+}
+
+window.closePackShareModal = function() {
+  var modal = document.getElementById('packShareModalOverlay');
+  if (modal) modal.style.setProperty('display', 'none', 'important');
+  if (typeof triggerHaptic === 'function') triggerHaptic(10);
+  var historyModal = document.getElementById('romanticHistoryModal');
+  if (historyModal && historyModal.style.display === 'none') {
+    historyModal.style.setProperty('display', 'flex', 'important');
+  }
+};
+
 function openPackShareModal(record, items, forceStudio) {
   forceStudio = forceStudio || false;
+  ensurePackShareModalDOM();
+
   currentShareRecord = record || {
     id: 'pack_' + Date.now(),
     date: new Date().toLocaleDateString(),
@@ -200,14 +501,28 @@ function openPackShareModal(record, items, forceStudio) {
     items: []
   };
 
-  currentShareItems = items || (currentShareRecord.items ? currentShareRecord.items.map(function(item) {
+  var candidateItems = (Array.isArray(items) && items.length > 0) ? items : (currentShareRecord.items || currentShareRecord.gears || []);
+  currentShareItems = candidateItems.map(function(item) {
     if (typeof item === 'object' && item !== null) {
       return { name: item.name || item.itemName || '', weight: Number(item.weight || item.weight_g || 0) };
     }
     var str = String(item || '');
     var m = str.match(/^(.*?)\s*\((\d+)g\)$/);
     return m ? { name: m[1], weight: parseInt(m[2], 10) } : { name: str, weight: 0 };
-  }) : []);
+  });
+
+  if (currentShareItems.length === 0 && window.selectedGearMap) {
+    Object.keys(window.selectedGearMap).forEach(function(catId) {
+      (window.selectedGearMap[catId] || []).forEach(function(it) {
+        if (it && (it.name || it.itemName)) {
+          currentShareItems.push({
+            name: it.name || it.itemName,
+            weight: Number(it.weight || it.weight_g || 0)
+          });
+        }
+      });
+    });
+  }
 
   currentSharePhoto = currentShareRecord.photo || '';
   currentPhotoTextColor = currentShareRecord.textColor || 'white';
@@ -218,31 +533,18 @@ function openPackShareModal(record, items, forceStudio) {
   var clearBtn = document.getElementById('btnSpotInputClear');
 
   if (spotInput) {
-    spotInput.value = currentShareRecord.spot || '강원 대관령 선자령 (832m)';
-    if (clearBtn) clearBtn.style.display = spotInput.value ? 'flex' : 'none';
+    spotInput.value = '';
+    if (clearBtn) clearBtn.style.display = 'none';
   }
   if (memoInput) {
-    memoInput.value = currentShareRecord.memo || '비화식으로 즐기는 조용한 하룻밤';
-  }
-
-  var editBox = document.querySelector('#packShareModalOverlay .custom-modal > div:nth-child(2)');
-  var vaultBtn = document.getElementById('btnSaveToVaultMain');
-  if (typeof openedFromBasecamp !== 'undefined' && openedFromBasecamp) {
-    if (editBox) editBox.style.display = 'none';
-    if (vaultBtn) vaultBtn.style.display = 'none';
-  } else {
-    if (editBox) editBox.style.display = 'flex';
-    if (vaultBtn) vaultBtn.style.display = 'block';
-  }
-
-  if (forceStudio && currentSharePhoto && typeof openPhotoStudio === 'function') {
-    openPhotoStudio();
-    return;
+    memoInput.value = '';
   }
 
   var modal = document.getElementById('packShareModalOverlay');
-  if (modal) modal.style.setProperty('display', 'flex', 'important');
-  if (typeof closePackingModal === 'function') closePackingModal();
+  if (modal) {
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('z-index', '1000008', 'important');
+  }
 
   var savedTmpl = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
   selectedTemplateId = TEMPLATE_ORDER.indexOf(savedTmpl) !== -1 ? savedTmpl : TEMPLATE_ORDER[0];
@@ -293,8 +595,8 @@ function updateShareCardLive() {
   if (!container) return;
   var spotInput = document.getElementById('shareCardSpotInput');
   var memoInput = document.getElementById('shareCardMemoInput');
-  var spotVal = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '강원 대관령 선자령 (832m)';
-  var memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : '비화식으로 즐기는 조용한 하룻밤';
+  var spotVal = (spotInput && spotInput.value) ? spotInput.value.trim() : '';
+  var memoVal = (memoInput && memoInput.value) ? memoInput.value.trim() : '';
 
   container.className = 'share-card-container';
   container.innerHTML = generateCardMarkup(selectedTemplateId, currentShareRecord, currentShareItems, spotVal, memoVal);
@@ -361,8 +663,8 @@ function initCardSwipeGesture() {
         card.style.transform = 'translateX(-40px)';
         card.style.opacity = '0.3';
         setTimeout(function() {
-          var nextIdx = (curIdx + 1) % TEMPLATE_ORDER.length;
-          switchShareCardTemplate(TEMPLATE_ORDER[nextIdx], true);
+          var prevIdx = (curIdx - 1 + TEMPLATE_ORDER.length) % TEMPLATE_ORDER.length;
+          switchShareCardTemplate(TEMPLATE_ORDER[prevIdx], true);
           card.style.transform = 'translateX(0px)';
           card.style.opacity = '1';
         }, 70);
@@ -370,8 +672,8 @@ function initCardSwipeGesture() {
         card.style.transform = 'translateX(40px)';
         card.style.opacity = '0.3';
         setTimeout(function() {
-          var prevIdx = (curIdx - 1 + TEMPLATE_ORDER.length) % TEMPLATE_ORDER.length;
-          switchShareCardTemplate(TEMPLATE_ORDER[prevIdx], true);
+          var nextIdx = (curIdx + 1) % TEMPLATE_ORDER.length;
+          switchShareCardTemplate(TEMPLATE_ORDER[nextIdx], true);
           card.style.transform = 'translateX(0px)';
           card.style.opacity = '1';
         }, 70);
@@ -410,7 +712,6 @@ function initCardSwipeGesture() {
   });
 }
 
-// 🎨 6. [총 20대 전체 템플릿 마크업 생성 엔진 - 검정 아티팩트 방지 & 밀착 테두리 마감]
 function generateCardMarkup(tmplId, record, items, spot, memo) {
   var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
   var nick = profile ? profile.nickname : '낭만탐험가';
@@ -420,9 +721,14 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
     return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
   })();
 
-  var targetSpot = spot || '강원 대관령 선자령 (832m)';
-  var targetMemo = memo || '비화식으로 즐기는 조용한 하룻밤';
+  var targetSpot = (spot !== undefined && spot !== null) ? String(spot).trim() : '';
+  var targetMemo = (memo !== undefined && memo !== null) ? String(memo).trim() : '';
   var list = items || [];
+
+  // 🛡️ [박지 비공개 & 여백 레이아웃 보존 헬퍼]
+  var spotText = targetSpot ? escapeHtml(targetSpot) : '&nbsp;';
+  var spotPinText = targetSpot ? (SVG_ICONS.pin + escapeHtml(targetSpot)) : '&nbsp;';
+  var memoQuotes = targetMemo ? ('“' + escapeHtml(targetMemo) + '”') : '';
 
   var logoDark = SVG_ICONS.brandLogo('#000000', '#0284c7');
   var logoWhite = SVG_ICONS.brandLogo('#ffffff', '#38bdf8');
@@ -432,7 +738,6 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
   var logoSage = SVG_ICONS.brandLogo('#15803d', '#86efac');
   var logoTeal = SVG_ICONS.brandLogo('#0d9488', '#5eead4');
 
-  // 🛡️ 캡처 시 외곽 검은 잔여물(box-shadow 오염) 제거 및 완벽한 외곽 클리핑 스타일
   var baseStyle = 'width:100%; aspect-ratio:3/4; max-width:330px; margin:0 auto; box-sizing:border-box; border-radius:14px; box-shadow:none; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; position:relative; touch-action:pan-y;';
 
   var makePledge = function(color, bg, border, sub) {
@@ -453,9 +758,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '<div style="font-size:0.46rem; color:#78716c;">REG: #2026 // EXPLORER: ' + escapeHtml(nick) + '</div>' +
           '</div>' +
           '<div style="font-size:0.58rem; color:#44403c;">' +
-            '<div>DEST : <strong>' + escapeHtml(targetSpot) + '</strong></div>' +
+            '<div>DEST : <strong>' + spotText + '</strong></div>' +
             '<div>DATE : ' + escapeHtml(dateStr) + ' | ID: <strong style="color:#000;">' + escapeHtml(nick) + '</strong></div>' +
-            '<div style="font-style:italic; margin-top:1px; color:#000;">MEMO : "' + escapeHtml(targetMemo) + '"</div>' +
+            (targetMemo ? '<div style="font-style:italic; margin-top:1px; color:#000;">MEMO : "' + escapeHtml(targetMemo) + '"</div>' : '') +
           '</div>' +
           '<div style="border-top:1px dashed #78716c; border-bottom:1px dashed #78716c; padding:2px 0; font-size:0.50rem; font-weight:900; display:flex; justify-content:space-between;">' +
             '<span>[ITEM NAME]</span><span>[WEIGHT]</span>' +
@@ -488,16 +793,14 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
           '<div style="display:grid; grid-template-columns:1fr auto 1fr; gap:4px; align-items:center; background:#1e293b; border-radius:5px; padding:4px 7px; border:1px solid #334155;">' +
             '<div><small style="font-size:0.40rem; color:#94a3b8; display:block;">DEPARTURE</small><strong style="font-size:0.80rem; color:#fff;">SEL</strong><small style="font-size:0.42rem; color:#cbd5e1; display:block;">CITY</small></div>' +
             '<div style="text-align:center; color:#38bdf8;"><div style="font-size:0.62rem;">✈ RR-832</div><small style="font-size:0.40rem; color:#64748b;">' + escapeHtml(dateStr) + '</small></div>' +
-            '<div style="text-align:right;"><small style="font-size:0.40rem; color:#94a3b8; display:block;">DESTINATION</small><strong style="font-size:0.80rem; color:#34d399;">SZR</strong><small style="font-size:0.42rem; color:#34d399; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(targetSpot) + '</small></div>' +
+            '<div style="text-align:right;"><small style="font-size:0.40rem; color:#94a3b8; display:block;">DESTINATION</small><strong style="font-size:0.80rem; color:#34d399;">' + (targetSpot ? 'SZR' : 'SECRET') + '</strong><small style="font-size:0.42rem; color:#34d399; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + spotText + '</small></div>' +
           '</div>' +
           '<div style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:2px; background:#1e293b; padding:2px 5px; border-radius:3px; font-size:0.46rem; color:#94a3b8; border:1px solid #334155;">' +
             '<div>PAX: <strong style="color:#fff;">' + escapeHtml(nick) + '</strong></div>' +
             '<div>GATE: <strong style="color:#38bdf8;">LNT-01</strong></div>' +
             '<div style="text-align:right;">SEAT: <strong style="color:#34d399;">01A</strong></div>' +
           '</div>' +
-          '<div style="font-size:0.56rem; color:#94a3b8; font-style:italic;">' +
-            'REMARKS: "' + escapeHtml(targetMemo) + '"' +
-          '</div>' +
+          (targetMemo ? '<div style="font-size:0.56rem; color:#94a3b8; font-style:italic;">REMARKS: "' + escapeHtml(targetMemo) + '"</div>' : '') +
           '<div style="border-top:1px dashed #334155; padding-top:2px; flex:1; overflow:hidden;">' +
             renderAdaptiveGearList(list, { nameColor: '#cbd5e1', wtColor: '#38bdf8' }) +
           '</div>' +
@@ -534,12 +837,10 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '</div>' +
           '</div>' +
           '<div>' +
-            '<div style="font-size:0.90rem; font-weight:900; color:#0f172a; font-family:\'SUIT\', sans-serif; line-height:1.2;">' +
-              '📍 ' + escapeHtml(targetSpot) +
+            '<div style="font-size:0.90rem; font-weight:900; color:#0f172a; font-family:\'SUIT\', sans-serif; line-height:1.2; min-height:1.2em;">' +
+              spotPinText +
             '</div>' +
-            '<div style="font-size:0.58rem; color:#334155; font-style:italic; margin-top:1px;">' +
-              '“' + escapeHtml(targetMemo) + '”' +
-            '</div>' +
+            (targetMemo ? '<div style="font-size:0.58rem; color:#334155; font-style:italic; margin-top:1px;">' + memoQuotes + '</div>' : '') +
           '</div>' +
           '<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:5px; padding:4px 6px; flex:1; overflow:hidden;">' +
             renderAdaptiveGearList(list, { nameColor: '#1e293b', wtColor: '#1e3a8a', bullet: '· ' }) +
@@ -568,12 +869,10 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
           '</div>' +
           '<div>' +
             '<div style="font-size:0.44rem; font-weight:800; color:#52525b; letter-spacing:1px; font-family:\'Space Grotesk\', sans-serif;">EXPEDITION OBJECT</div>' +
-            '<div style="font-size:1.0rem; font-weight:900; color:#1c1917; line-height:1.15; font-family:\'SUIT\', sans-serif;">' +
-              escapeHtml(targetSpot) +
+            '<div style="font-size:1.0rem; font-weight:900; color:#1c1917; line-height:1.15; font-family:\'SUIT\', sans-serif; min-height:1.15em;">' +
+              spotText +
             '</div>' +
-            '<div style="font-size:0.60rem; color:#44403c; font-style:italic; margin-top:1px; border-left:2px solid #1c1917; padding-left:4px;">' +
-              '“' + escapeHtml(targetMemo) + '”' +
-            '</div>' +
+            (targetMemo ? '<div style="font-size:0.60rem; color:#44403c; font-style:italic; margin-top:1px; border-left:2px solid #1c1917; padding-left:4px;">' + memoQuotes + '</div>' : '') +
           '</div>' +
           '<div style="background:#ffffff; border:1px solid #d1d5db; border-radius:5px; padding:4px 6px; flex:1; overflow:hidden;">' +
             renderAdaptiveGearList(list, { nameColor: '#27272a', wtColor: '#059669', bullet: '■ ' }) +
@@ -603,9 +902,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '</div>' +
             '<div style="font-size:0.46rem; font-weight:900; color:#d4ff00;">37°41\'N</div>' +
           '</div>' +
-          '<div style="background:rgba(212,255,0,0.06); border-left:2.5px solid #d4ff00; border:1px solid #1e293b; padding:3px 5px; border-radius:0 4px 4px 0;">' +
-            '<div style="font-size:0.88rem; font-weight:900; color:#ffffff; font-family:\'SUIT\', sans-serif;">' + escapeHtml(targetSpot) + '</div>' +
-            '<div style="font-size:0.52rem; color:#38bdf8; font-style:italic;">&gt;&gt; LOG: "' + escapeHtml(targetMemo) + '"</div>' +
+          '<div style="background:rgba(212,255,0,0.06); border-left:2.5px solid #d4ff00; border:1px solid #1e293b; padding:3px 5px; border-radius:0 4px 4px 0; min-height:1.4em;">' +
+            '<div style="font-size:0.88rem; font-weight:900; color:#ffffff; font-family:\'SUIT\', sans-serif;">' + spotText + '</div>' +
+            (targetMemo ? '<div style="font-size:0.52rem; color:#38bdf8; font-style:italic;">&gt;&gt; LOG: "' + escapeHtml(targetMemo) + '"</div>' : '') +
           '</div>' +
           '<div style="background:#07090e; border:1px solid #1e293b; border-radius:4px; padding:3px 5px; flex:1; overflow:hidden;">' +
             renderAdaptiveGearList(list, { nameColor: '#e2e8f0', wtColor: '#d4ff00', bullet: '<span style="color:#d4ff00; margin-right:2px;">+</span>' }) +
@@ -629,12 +928,10 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.40rem; color:#a1a1aa; font-family:\'JetBrains Mono\', monospace; border-bottom:1px solid #27272a; padding-bottom:1px; margin-bottom:2px;">' +
               '<span>■ ■ 낭만루트 EKT 100</span><span>▶ 24A ■ ■</span>' +
             '</div>' +
-            '<div style="font-size:0.90rem; font-weight:900; color:#ffffff; font-family:\'SUIT\', sans-serif; line-height:1.2;">' +
-              SVG_ICONS.pin + escapeHtml(targetSpot) +
+            '<div style="font-size:0.90rem; font-weight:900; color:#ffffff; font-family:\'SUIT\', sans-serif; line-height:1.2; min-height:1.2em;">' +
+              spotPinText +
             '</div>' +
-            '<div style="font-size:0.56rem; color:#fde047; font-family:\'JetBrains Mono\', monospace;">' +
-              '"' + escapeHtml(targetMemo) + '"' +
-            '</div>' +
+            (targetMemo ? '<div style="font-size:0.56rem; color:#fde047; font-family:\'JetBrains Mono\', monospace;">"' + escapeHtml(targetMemo) + '"</div>' : '') +
           '</div>' +
           '<div style="margin-top:2px; border-top:1px dashed #27272a; padding-top:2px; flex:1; overflow:hidden;">' +
             renderAdaptiveGearList(list, { nameColor: '#f4f4f5', wtColor: '#38bdf8', bullet: '· ' }) +
@@ -662,8 +959,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '<span style="font-size:0.44rem; font-weight:900; background:#000; color:#fff; padding:1px 3px; border-radius:2px;">ISSUE 08</span>' +
           '</div>' +
           '<div>' +
-            '<div style="font-size:0.85rem; font-weight:900; color:#1a1918; line-height:1.2; font-family:\'SUIT\', sans-serif;">' +
-              SVG_ICONS.pin + escapeHtml(targetSpot) +
+            '<div style="font-size:0.85rem; font-weight:900; color:#1a1918; line-height:1.2; font-family:\'SUIT\', sans-serif; min-height:1.2em;">' +
+              spotPinText +
             '</div>' +
             '<div style="font-size:0.56rem; font-weight:800; color:#57534e;">' +
               'Story by <strong>' + escapeHtml(nick) + '</strong> (' + dateStr + ')' +
@@ -692,8 +989,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '</div>' +
             '<span style="font-size:0.58rem; font-weight:700; background:#f472b6; color:#fff; padding:1px 4px; border-radius:5px;">힐링 🌸</span>' +
           '</div>' +
-          '<div style="background:#ffffff; border-radius:6px; padding:4px 6px; border:1px solid #fbcfe8;">' +
-            '<div style="font-size:0.92rem; font-weight:700; color:#831843;">' + escapeHtml(targetSpot) + '</div>' +
+          '<div style="background:#ffffff; border-radius:6px; padding:4px 6px; border:1px solid #fbcfe8; min-height:1.4em;">' +
+            '<div style="font-size:0.92rem; font-weight:700; color:#831843;">' + spotText + '</div>' +
             '<div style="font-size:0.62rem; color:#db2777;">기록 : <strong>' + escapeHtml(nick) + '</strong> (' + dateStr + ')</div>' +
           '</div>' +
           '<div style="background:rgba(255,255,255,0.85); border-radius:6px; padding:4px 6px; border:1px dashed #fbcfe8; flex:1; overflow:hidden;">' +
@@ -719,8 +1016,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '</div>' +
             '<span style="font-family:\'Caveat\', cursive; font-size:0.80rem; color:#ea580c; font-weight:700;">Sunny Moments</span>' +
           '</div>' +
-          '<div style="background:#ffffff; border:1px solid #f5eedc; border-radius:6px; padding:4px 6px;">' +
-            '<div style="font-size:0.85rem; font-weight:900; color:#431407; line-height:1.2; font-family:\'SUIT\', sans-serif;">' + SVG_ICONS.pin + escapeHtml(targetSpot) + '</div>' +
+          '<div style="background:#ffffff; border:1px solid #f5eedc; border-radius:6px; padding:4px 6px; min-height:1.4em;">' +
+            '<div style="font-size:0.85rem; font-weight:900; color:#431407; line-height:1.2; font-family:\'SUIT\', sans-serif;">' + spotPinText + '</div>' +
             '<div style="font-size:0.56rem; color:#78716c; margin-top:1px;">Explorer. <strong style="color:#ea580c;">' + escapeHtml(nick) + '</strong> (' + dateStr + ')</div>' +
           '</div>' +
           '<div style="background:#fcfaf5; border:1px dashed #d6cfc4; border-radius:6px; padding:4px 6px; flex:1; overflow:hidden;">' +
@@ -746,7 +1043,7 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '</div>' +
             '<span style="font-size:0.44rem; font-weight:900; background:#16a34a; color:#fff; padding:1px 3px; border-radius:3px;">NATURE</span>' +
           '</div>' +
-          '<div style="font-size:0.85rem; font-weight:900; color:#14532d; font-family:\'SUIT\', sans-serif;">' + SVG_ICONS.pin + escapeHtml(targetSpot) + '</div>' +
+          '<div style="font-size:0.85rem; font-weight:900; color:#14532d; font-family:\'SUIT\', sans-serif; min-height:1.2em;">' + spotPinText + '</div>' +
           '<div style="background:rgba(255,255,255,0.75); border-radius:5px; padding:4px 6px; border:1px solid #bbf7d0; flex:1; overflow:hidden; font-family:\'Pretendard Variable\', sans-serif;">' +
             renderAdaptiveGearList(list, { nameColor: '#14532d', wtColor: '#16a34a', subColor: '#166534' }) +
           '</div>' +
@@ -770,8 +1067,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '</div>' +
             '<span style="font-size:0.65rem; color:#f43f5e;">♥</span>' +
           '</div>' +
-          '<div style="background:#fff1f2; border-radius:5px; padding:4px 6px; border:1px solid #fecdd3;">' +
-            '<div style="font-size:0.85rem; font-weight:900; color:#881337; font-family:\'SUIT\', sans-serif;">' + SVG_ICONS.pin + escapeHtml(targetSpot) + '</div>' +
+          '<div style="background:#fff1f2; border-radius:5px; padding:4px 6px; border:1px solid #fecdd3; min-height:1.4em;">' +
+            '<div style="font-size:0.85rem; font-weight:900; color:#881337; font-family:\'SUIT\', sans-serif;">' + spotPinText + '</div>' +
             '<div style="font-size:0.56rem; color:#e11d48; font-weight:800;">Explorer. ' + escapeHtml(nick) + '</div>' +
           '</div>' +
           '<div style="background:#fafafa; border-radius:5px; padding:4px 6px; border:1px solid #f4f4f5; flex:1; overflow:hidden;">' +
@@ -797,7 +1094,7 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '</div>' +
             '<span style="font-size:0.42rem; font-weight:900; background:#9333ea; color:#fff; padding:1px 3px; border-radius:3px;">DREAMY</span>' +
           '</div>' +
-          '<div style="font-size:0.85rem; font-weight:900; color:#581c87; font-family:\'SUIT\', sans-serif;">' + SVG_ICONS.pin + escapeHtml(targetSpot) + '</div>' +
+          '<div style="font-size:0.85rem; font-weight:900; color:#581c87; font-family:\'SUIT\', sans-serif; min-height:1.2em;">' + spotPinText + '</div>' +
           '<div style="background:rgba(255,255,255,0.85); border-radius:5px; padding:4px 6px; border:1px solid #e9d5ff; flex:1; overflow:hidden;">' +
             renderAdaptiveGearList(list, { nameColor: '#581c87', wtColor: '#9333ea', subColor: '#6b21a8' }) +
           '</div>' +
@@ -821,7 +1118,7 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '</div>' +
             '<span style="font-size:0.42rem; font-weight:900; background:#0284c7; color:#fff; padding:1px 3px; border-radius:3px;">CLEAN</span>' +
           '</div>' +
-          '<div style="font-size:0.85rem; font-weight:900; color:#0c4a6e; font-family:\'SUIT\', sans-serif;">' + SVG_ICONS.pin + escapeHtml(targetSpot) + '</div>' +
+          '<div style="font-size:0.85rem; font-weight:900; color:#0c4a6e; font-family:\'SUIT\', sans-serif; min-height:1.2em;">' + spotPinText + '</div>' +
           '<div style="background:rgba(255,255,255,0.85); border-radius:5px; padding:4px 6px; border:1px solid #bae6fd; flex:1; overflow:hidden; font-family:\'Pretendard Variable\', sans-serif;">' +
             renderAdaptiveGearList(list, { nameColor: '#0c4a6e', wtColor: '#0284c7', subColor: '#0369a1' }) +
           '</div>' +
@@ -845,8 +1142,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '</div>' +
             '<span style="font-size:0.58rem; font-weight:700; background:#fed7aa; color:#9a3412; padding:1px 3px; border-radius:3px;">MY TRAIL</span>' +
           '</div>' +
-          '<div style="background:#ffffff; border-radius:5px; padding:4px 6px; border:1px solid #e7e2d7;">' +
-            '<div style="font-size:0.90rem; font-weight:700; color:#431407;">' + escapeHtml(targetSpot) + '</div>' +
+          '<div style="background:#ffffff; border-radius:5px; padding:4px 6px; border:1px solid #e7e2d7; min-height:1.4em;">' +
+            '<div style="font-size:0.90rem; font-weight:700; color:#431407;">' + spotText + '</div>' +
           '</div>' +
           '<div style="background:#fcfaf5; border-radius:5px; padding:4px 6px; border:1px dashed #d6cfc4; flex:1; overflow:hidden;">' +
             renderAdaptiveGearList(list, { nameColor: '#44403c', wtColor: '#c2410c', subColor: '#a8a29e' }) +
@@ -871,7 +1168,7 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '</div>' +
             '<span style="font-size:0.46rem; color:#9a3412; font-family:\'JetBrains Mono\', monospace;">' + dateStr + '</span>' +
           '</div>' +
-          '<div style="font-size:0.85rem; font-weight:900; color:#7c2d12; font-family:\'SUIT\', sans-serif;">' + SVG_ICONS.pin + escapeHtml(targetSpot) + '</div>' +
+          '<div style="font-size:0.85rem; font-weight:900; color:#7c2d12; font-family:\'SUIT\', sans-serif; min-height:1.2em;">' + spotPinText + '</div>' +
           '<div style="background:rgba(255,255,255,0.75); border-radius:5px; padding:4px 6px; border:1px solid #fed7aa; flex:1; overflow:hidden;">' +
             renderAdaptiveGearList(list, { nameColor: '#7c2d12', wtColor: '#ea580c', subColor: '#9a3412' }) +
           '</div>' +
@@ -895,7 +1192,7 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '</div>' +
             '<span style="font-size:0.42rem; font-weight:900; background:#e11d48; color:#fff; padding:1px 3px; border-radius:4px;">STARLIGHT</span>' +
           '</div>' +
-          '<div style="font-size:0.85rem; font-weight:900; color:#ffffff; font-family:\'SUIT\', sans-serif;">' + SVG_ICONS.pin + escapeHtml(targetSpot) + '</div>' +
+          '<div style="font-size:0.85rem; font-weight:900; color:#ffffff; font-family:\'SUIT\', sans-serif; min-height:1.2em;">' + spotPinText + '</div>' +
           '<div style="background:rgba(0,0,0,0.55); border-radius:5px; padding:4px 6px; border:1px solid rgba(244,114,182,0.15); flex:1; overflow:hidden; font-family:\'Pretendard Variable\', sans-serif;">' +
             renderAdaptiveGearList(list, { nameColor: '#fce7f3', wtColor: '#f472b6', subColor: '#f43f5e' }) +
           '</div>' +
@@ -919,7 +1216,7 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '</div>' +
             '<span style="font-size:0.46rem; color:#047857; font-family:\'JetBrains Mono\', monospace;">' + dateStr + '</span>' +
           '</div>' +
-          '<div style="font-size:0.85rem; font-weight:900; color:#064e3b; font-family:\'SUIT\', sans-serif;">' + SVG_ICONS.pin + escapeHtml(targetSpot) + '</div>' +
+          '<div style="font-size:0.85rem; font-weight:900; color:#064e3b; font-family:\'SUIT\', sans-serif; min-height:1.2em;">' + spotPinText + '</div>' +
           '<div style="background:rgba(255,255,255,0.8); border-radius:5px; padding:4px 6px; border:1px solid #a7f3d0; flex:1; overflow:hidden;">' +
             renderAdaptiveGearList(list, { nameColor: '#064e3b', wtColor: '#0d9488', subColor: '#047857' }) +
           '</div>' +
@@ -943,8 +1240,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '</div>' +
             '<span style="font-size:0.58rem; font-weight:700; background:#fef08a; color:#854d0e; padding:1px 3px; border-radius:3px;">SUNNY</span>' +
           '</div>' +
-          '<div style="background:#ffffff; border-radius:5px; padding:4px 6px; border:1px solid #fef08a;">' +
-            '<div style="font-size:0.90rem; font-weight:700; color:#713f12;">' + escapeHtml(targetSpot) + '</div>' +
+          '<div style="background:#ffffff; border-radius:5px; padding:4px 6px; border:1px solid #fef08a; min-height:1.4em;">' +
+            '<div style="font-size:0.90rem; font-weight:700; color:#713f12;">' + spotText + '</div>' +
           '</div>' +
           '<div style="background:#fffef0; border-radius:5px; padding:4px 6px; border:1px dashed #fde047; flex:1; overflow:hidden;">' +
             renderAdaptiveGearList(list, { nameColor: '#713f12', wtColor: '#ca8a04', subColor: '#a16207' }) +
@@ -969,7 +1266,7 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '</div>' +
             '<span style="font-size:0.40rem; color:#71717a; font-family:\'JetBrains Mono\', monospace;">SPEC</span>' +
           '</div>' +
-          '<div style="font-size:0.85rem; font-weight:900; color:#ffffff; line-height:1.25;">' + escapeHtml(targetSpot) + '</div>' +
+          '<div style="font-size:0.85rem; font-weight:900; color:#ffffff; line-height:1.25; min-height:1.25em;">' + spotText + '</div>' +
           '<div style="background:#18181b; padding:4px 6px; border-radius:5px; border:1px solid #27272a; flex:1; overflow:hidden;">' +
             renderAdaptiveGearList(list, { nameColor: '#d4d4d8', wtColor: '#fde047', subColor: '#71717a' }) +
           '</div>' +
@@ -999,8 +1296,8 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
               logoWhite +
               '<span style="font-size:0.62rem; font-weight:900; color:#fff; font-family:\'Space Grotesk\', sans-serif;">ROMANTIC ROUTE</span>' +
             '</div>' +
-            '<div style="font-size:0.78rem; font-weight:900; color:#e4e4e7; line-height:1.2; word-break:keep-all;">' +
-              escapeHtml(targetSpot) +
+            '<div style="font-size:0.78rem; font-weight:900; color:#e4e4e7; line-height:1.2; word-break:keep-all; min-height:1.2em;">' +
+              spotText +
             '</div>' +
             '<div style="font-size:0.68rem; font-weight:900; color:#38bdf8; margin:1px 0;">' +
               escapeHtml(nick) +
