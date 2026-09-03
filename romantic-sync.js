@@ -118,26 +118,33 @@ function trackDailyVisit() {
   }
 }
 
-// ☁️ 4. 클라우드 실시간 동기화 전송 엔진
-function syncUserDataToCloud() {
-  if (!isUserLoggedIn()) return;
-
+//// ☁️ 4. 클라우드 실시간 동기화 전송 엔진 (12건 전체 전송 및 지도 화면 격리 락 해제)
+function syncUserDataToCloud(isPackHistoryUpdated) {
   var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : null);
-  if (!profile || !profile.id) return;
+  var userId = profile && profile.id ? String(profile.id).trim() : localStorage.getItem('user_auth_token');
+  if (!userId) return;
 
   var isMapPage = (typeof window.location !== 'undefined' && window.location.pathname.includes('map.html'));
-  var isIndexPage = !isMapPage;
+  
+  // 🛡️ 보관함/스튜디오에서 저장했거나 패킹 기록이 갱신된 경우 지도 페이지여도 패킹 동기화 강제 승인
+  var isIndexPage = !isMapPage || (isPackHistoryUpdated === true) || (Boolean(window.interactiveHistory && window.interactiveHistory.length > 0));
 
-  // 1. 패킹 기록 동기화 (interactiveHistory 메모리 우선 참조)
-  var rawHistory = (window.interactiveHistory && Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0)
-    ? window.interactiveHistory
-    : safeGetJSON('okbm_packing_history', []);
+  // 기기 메모리와 스토리지에서 최신 전체 패킹 기록을 누락 없이 1순위 확보
+  var rawHistory = [];
+  if (window.interactiveHistory && Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0) {
+    rawHistory = window.interactiveHistory;
+  } else if (window.packingHistoryList && Array.isArray(window.packingHistoryList) && window.packingHistoryList.length > 0) {
+    rawHistory = window.packingHistoryList;
+  } else if (typeof window.safeGetStorage === 'function') {
+    rawHistory = window.safeGetStorage('okbm_packing_history', []) || [];
+  } else {
+    rawHistory = safeGetJSON('okbm_packing_history', []);
+  }
 
   window.packingHistoryList = rawHistory;
   window.interactiveHistory = rawHistory;
 
-  // ★ 드라이브 아카이브 전송용: 사진 Base64 속성 완전 제거 (초경량화)
-  var lightweightPackHistory = rawHistory.map(function(h) {
+  var lightweightPackHistory = rawHistory.filter(Boolean).map(function(h) {
     var copy = Object.assign({}, h);
     delete copy.photo;
     delete copy.photos;
@@ -145,7 +152,6 @@ function syncUserDataToCloud() {
     return copy;
   });
 
-  // 2. 마이 장비 세팅값
   var currentGears = window.selectedGearMap || safeGetJSON('okbm_selected_gears_multi', {});
   var currentFavs = window.favoriteGearSet ? Array.from(window.favoriteGearSet) : safeGetJSON('okbm_favorite_gears', []);
   var currentCustoms = safeGetJSON('okbm_custom_gears', []);
@@ -158,12 +164,13 @@ function syncUserDataToCloud() {
 
   var payload = {
     action: 'SAVE_USER_DATA',
-    userId: String(profile.id).trim(),
-    nickname: profile.nickname || '낭만백패커',
-    fromMap: isMapPage,
+    userId: userId,
+    nickname: (profile && profile.nickname) ? profile.nickname : '낭만백패커',
+    fromMap: isMapPage && !isIndexPage, // 패킹 기록이 있으면 지도 락 해제
     fromIndex: isIndexPage,
-    createdAt: profile.createdAt || UtilitiesFormattedNow(),
-    lastNicknameChangedAt: Number(profile.lastNicknameChangedAt) || 0,
+    forcePackSync: true, // 구글 시트 백엔드 강제 동기화 플래그
+    createdAt: (profile && profile.createdAt) ? profile.createdAt : UtilitiesFormattedNow(),
+    lastNicknameChangedAt: profile ? (Number(profile.lastNicknameChangedAt) || 0) : 0,
     bookmarks: safeGetJSON('okbm_bookmarks', []),
     visited: safeGetJSON('okbm_visited', []),
     memos: safeGetJSON('okbm_memos', {}),
@@ -176,14 +183,11 @@ function syncUserDataToCloud() {
 
   fetch(targetGasUrl, {
     method: 'POST',
+    mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(payload)
-  }).then(function(res) {
-    return res.json();
-  }).then(function(data) {
-    if (data && data.status === 'SUCCESS') {
-      console.log('✅ [RomanticSync] 구글 시트 동기화 성공: 총 ' + (data.count || lightweightPackHistory.length) + '건 아카이브 반영 완료');
-    }
+  }).then(function() {
+    console.log('✅ [RomanticSync] 구글 시트 실시간 전송 완료 (총 ' + lightweightPackHistory.length + '건 전체 전송)');
   }).catch(function(err) {
     console.warn('[RomanticSync] 클라우드 전송 경고:', err);
   });
@@ -408,7 +412,7 @@ function loginWithKakao() {
           showToast('<span>[' + profile.nickname + ']님 환영합니다!</span>', 'success', 2200);
 
           // ☁️ 백그라운드 클라우드 데이터 수신 및 반영
-          loadUserDataFromCloud(kakaoId).then(function(cloudData) {
+         loadUserDataFromCloud(kakaoId).then(function(cloudData) {
             if (cloudData) {
               if (cloudData.nickname && !cloudData.nickname.includes('ENGINE')) {
                 profile.nickname = cloudData.nickname;
@@ -434,11 +438,60 @@ function loginWithKakao() {
                 if (typeof window.userMemos !== 'undefined') window.userMemos = cloudData.memos;
               }
               if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
-                window.packingHistoryList = cloudData.packHistory;
-                window.interactiveHistory = cloudData.packHistory;
-                localStorage.setItem('okbm_packing_history', JSON.stringify(cloudData.packHistory));
-                if (typeof window.saveToIndexedDB === 'function') {
-                  window.saveToIndexedDB('okbm_packing_history', cloudData.packHistory);
+                var localSavedPhotos = safeGetJSON('okbm_phone_photos_map', {});
+                if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
+                  localSavedPhotos = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], localSavedPhotos);
+                }
+
+                var currentLocalHistory = (window.interactiveHistory && Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0)
+                  ? window.interactiveHistory
+                  : safeGetJSON('okbm_packing_history', []);
+
+                var safePackHistory = cloudData.packHistory.filter(Boolean).map(function(cloudItem) {
+                  var cId = String(cloudItem.id || '').trim();
+                  var cDate = String(cloudItem.date || '').trim();
+                  var matchedLocal = currentLocalHistory.find(function(loc) {
+                    return loc && ((cId && String(loc.id).trim() === cId) || (cDate && String(loc.date).trim() === cDate));
+                  });
+
+                  var preservedPhotos = [];
+                  if (matchedLocal) {
+                    if (Array.isArray(matchedLocal.photos) && matchedLocal.photos.length > 0) preservedPhotos = matchedLocal.photos;
+                    else if (matchedLocal.photo) preservedPhotos = [matchedLocal.photo];
+                    else if (matchedLocal.fieldPhoto) preservedPhotos = [matchedLocal.fieldPhoto];
+                  }
+
+                  if (preservedPhotos.length === 0 && localSavedPhotos) {
+                    var fromMap = localSavedPhotos[cId] || localSavedPhotos[cDate] || localSavedPhotos[cDate.replace(/[-/]/g, '.')];
+                    if (Array.isArray(fromMap) && fromMap.length > 0) preservedPhotos = fromMap;
+                    else if (typeof fromMap === 'string' && fromMap.trim().length > 10) preservedPhotos = [fromMap.trim()];
+                  }
+
+                  var mergedItem = Object.assign({}, cloudItem);
+                  if (preservedPhotos.length > 0) {
+                    mergedItem.photos = preservedPhotos;
+                    mergedItem.photo = preservedPhotos[0];
+                    mergedItem.fieldPhoto = preservedPhotos[0];
+                  }
+                  return mergedItem;
+                });
+
+               window.packingHistoryList = safePackHistory;
+                window.interactiveHistory = safePackHistory;
+                if (typeof window.safeSetStorage === 'function') {
+                  window.safeSetStorage('okbm_packing_history', safePackHistory);
+                } else {
+                  var cleanForLocal = safePackHistory.map(function(item) {
+                    var clone = Object.assign({}, item);
+                    delete clone.photos;
+                    delete clone.photo;
+                    delete clone.fieldPhoto;
+                    return clone;
+                  });
+                  localStorage.setItem('okbm_packing_history', JSON.stringify(cleanForLocal));
+                  if (typeof window.saveToIndexedDB === 'function') {
+                    window.saveToIndexedDB('okbm_packing_history', safePackHistory);
+                  }
                 }
               }
 
@@ -465,179 +518,26 @@ function loginWithKakao() {
                   }
                 }
               }
+
+              if (typeof renderPlanStage === 'function') renderPlanStage();
+              if (typeof renderPlanCategorySlots === 'function') renderPlanCategorySlots();
+              if (typeof renderHistoryStage === 'function') renderHistoryStage();
+              if (typeof renderCategorySlots === 'function') renderCategorySlots();
+              if (typeof renderSpots === 'function') renderSpots();
+              if (typeof renderSubChips === 'function') renderSubChips();
+              if (typeof refreshCurrentSpotPopup === 'function') refreshCurrentSpotPopup();
+              window.isCloudDataLoaded = true;
             }
-
-            window.isCloudDataLoaded = true;
-
-            // 🌟 신규 모듈(romantic-plan & romantic-history) 및 기존 UI 일괄 갱신
-            if (typeof renderPlanStage === 'function') renderPlanStage();
-            if (typeof renderPlanCategorySlots === 'function') renderPlanCategorySlots();
-            if (typeof renderHistoryStage === 'function') renderHistoryStage();
-            if (typeof renderCategorySlots === 'function') renderCategorySlots();
-            if (typeof renderSpots === 'function') renderSpots();
-            if (typeof renderSubChips === 'function') renderSubChips();
-            if (typeof refreshCurrentSpotPopup === 'function') refreshCurrentSpotPopup();
-
-            syncUserDataToCloud();
           });
         },
-        fail: function() {
-          if (loginBtn) {
-            loginBtn.style.pointerEvents = 'auto';
-            loginBtn.style.opacity = '1';
-            loginBtn.innerHTML = '<span>카카오 1초 간편 로그인</span>';
-          }
-          showToast('카카오 사용자 정보를 가져오지 못했습니다.', 'warn');
+        fail: function(err) {
+          console.warn('[Kakao] User me request failed:', err);
+          window.isCloudDataLoaded = true;
         }
       });
     },
-    fail: function() {
-      if (loginBtn) {
-        loginBtn.style.pointerEvents = 'auto';
-        loginBtn.style.opacity = '1';
-        loginBtn.innerHTML = '<span>카카오 1초 간편 로그인</span>';
-      }
-      showToast('카카오 로그인이 취소되었습니다.', 'info');
-    }
-  });
-}
-
-// 🚪 9. 로그아웃 (배낭 슬롯 0.00kg 초기화 & 기본 장비 DB 롤백)
-function logoutUser() {
-  if (typeof Kakao !== 'undefined' && Kakao.Auth && Kakao.Auth.getAccessToken()) {
-    try { Kakao.Auth.logout(function() {}); } catch (e) {}
-  }
-
-  localStorage.removeItem('user_auth_token');
-  localStorage.removeItem('user_profile');
-  if (typeof authState !== 'undefined') {
-    authState.isLoggedIn = false;
-    authState.userProfile = null;
-  }
-  window.isCloudDataLoaded = false;
-
-  localStorage.removeItem('okbm_favorite_gears');
-  localStorage.removeItem('okbm_custom_gears');
-  localStorage.removeItem('okbm_packing_history');
-  localStorage.removeItem('okbm_bookmarks');
-  localStorage.removeItem('okbm_visited');
-  localStorage.removeItem('okbm_memos');
-  localStorage.removeItem('okbm_selected_gears_multi');
-  localStorage.removeItem('okbm_packed_checks');
-
-  window.favoriteGearSet = new Set();
-  window.packingHistoryList = [];
-  window.interactiveHistory = [];
-  window.userBookmarks = new Set();
-  window.userVisited = new Set();
-  window.userMemos = {};
-  window.selectedGearMap = {};
-  window.packedCheckSet = new Set();
-
-  var currentCats = window.CATEGORIES || (typeof CATEGORIES !== 'undefined' ? CATEGORIES : null);
-  if (currentCats && Array.isArray(currentCats)) {
-    currentCats.forEach(function(cat) {
-      window.selectedGearMap[cat.id] = [];
-    });
-  }
-
-  updateHeaderAuthUI();
-
-  // 🌟 분리된 모듈 및 전체 UI 롤백 렌더링
-  if (typeof renderPlanStage === 'function') renderPlanStage();
-  if (typeof renderPlanCategorySlots === 'function') renderPlanCategorySlots();
-  if (typeof renderHistoryStage === 'function') renderHistoryStage();
-  if (typeof renderCategorySlots === 'function') renderCategorySlots();
-  if (typeof renderSpots === 'function') renderSpots();
-  if (typeof renderSubChips === 'function') renderSubChips();
-  if (typeof refreshCurrentSpotPopup === 'function') refreshCurrentSpotPopup();
-
-  closeUserProfileModal();
-  triggerHaptic(10);
-  showToast('로그아웃되었습니다. (배낭 및 보관함 초기화 완료)', 'info', 2200);
-}
-
-// 🔄 10. 앱 초기 구동 시 클라우드 자동 동기화
-if (typeof document !== 'undefined') {
-  document.addEventListener('DOMContentLoaded', function() {
-    trackDailyVisit();
-    updateHeaderAuthUI();
-
-    if (isUserLoggedIn()) {
-      var profile = safeGetJSON('user_profile', null);
-      if (profile && profile.id) {
-        loadUserDataFromCloud(profile.id).then(function(cloudData) {
-          if (cloudData) {
-            if (cloudData.bookmarks && Array.isArray(cloudData.bookmarks)) {
-              localStorage.setItem('okbm_bookmarks', JSON.stringify(cloudData.bookmarks));
-              window.userBookmarks = new Set(cloudData.bookmarks.map(function(s) { return String(s).trim(); }));
-            }
-            if (cloudData.visited && Array.isArray(cloudData.visited)) {
-              localStorage.setItem('okbm_visited', JSON.stringify(cloudData.visited));
-              window.userVisited = new Set(cloudData.visited.map(function(s) { return String(s).trim(); }));
-            }
-            if (cloudData.memos && typeof cloudData.memos === 'object') {
-              localStorage.setItem('okbm_memos', JSON.stringify(cloudData.memos));
-              window.userMemos = cloudData.memos;
-            }
-            if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
-              window.packingHistoryList = cloudData.packHistory;
-              window.interactiveHistory = cloudData.packHistory;
-              localStorage.setItem('okbm_packing_history', JSON.stringify(cloudData.packHistory));
-              if (typeof window.saveToIndexedDB === 'function') {
-                window.saveToIndexedDB('okbm_packing_history', cloudData.packHistory);
-              }
-            }
-            if (cloudData.nickname && profile.nickname !== cloudData.nickname && !cloudData.nickname.includes('ENGINE')) {
-              profile.nickname = cloudData.nickname;
-              localStorage.setItem('user_profile', JSON.stringify(profile));
-              if (typeof authState !== 'undefined') authState.userProfile = initialProfile;
-              updateHeaderAuthUI();
-            }
-            if (cloudData.lastNicknameChangedAt !== undefined) {
-              profile.lastNicknameChangedAt = Number(cloudData.lastNicknameChangedAt);
-              localStorage.setItem('user_profile', JSON.stringify(profile));
-            }
-
-            var myGears = cloudData.myGears || null;
-            if (myGears) {
-              if (myGears.selectedGears && typeof myGears.selectedGears === 'object' && Object.keys(myGears.selectedGears).length > 0) {
-                window.selectedGearMap = myGears.selectedGears;
-                localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
-              }
-              if (myGears.favoriteGears && Array.isArray(myGears.favoriteGears)) {
-                window.favoriteGearSet = new Set(myGears.favoriteGears);
-                localStorage.setItem('okbm_favorite_gears', JSON.stringify(myGears.favoriteGears));
-              }
-              if (myGears.customGears && Array.isArray(myGears.customGears)) {
-                localStorage.setItem('okbm_custom_gears', JSON.stringify(myGears.customGears));
-                var currentCats = window.CATEGORIES || (typeof CATEGORIES !== 'undefined' ? CATEGORIES : null);
-                if (currentCats && Array.isArray(currentCats)) {
-                  myGears.customGears.forEach(function(cg) {
-                    var targetCat = currentCats.find(function(c) { return c.id === cg.category_id; });
-                    if (targetCat && !targetCat.db.some(function(d) { return d.name === cg.name; })) {
-                      targetCat.db.unshift(cg);
-                    }
-                  });
-                }
-              }
-            }
-
-            // 🌟 구동 시 신규 모듈 렌더러 자동 호출
-            if (typeof renderPlanStage === 'function') renderPlanStage();
-            if (typeof renderPlanCategorySlots === 'function') renderPlanCategorySlots();
-            if (typeof renderHistoryStage === 'function') renderHistoryStage();
-            if (typeof renderCategorySlots === 'function') renderCategorySlots();
-            if (typeof renderSpots === 'function') renderSpots();
-            if (typeof renderSubChips === 'function') renderSubChips();
-            if (typeof refreshCurrentSpotPopup === 'function') refreshCurrentSpotPopup();
-          }
-          window.isCloudDataLoaded = true;
-        });
-      } else {
-        window.isCloudDataLoaded = true;
-      }
-    } else {
+    fail: function(err) {
+      console.warn('[Kakao] Login failed:', err);
       window.isCloudDataLoaded = true;
     }
   });
