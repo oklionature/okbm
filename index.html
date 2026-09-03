@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="ko" class="notranslate">
 <head>
@@ -30,25 +28,20 @@
       font-weight: 600;
       font-style: normal;
     }
-
     :root {
-      --bg-base: #000000;
-      --bg-surface: #07090e;
-      --bg-card: #080b11;
+      --bg-base: #030508;
+      --bg-surface: rgba(12, 16, 24, 0.78);
+      --bg-card: rgba(16, 22, 34, 0.75);
       --border-hairline: rgba(255, 255, 255, 0.08);
-      --border-accent: rgba(203, 213, 225, 0.18);
+      --border-pearl: rgba(255, 255, 255, 0.22);
       
       --text-primary: #ffffff;
       --text-secondary: #94a3b8;
       --text-muted: #64748b;
-      --accent-silver: #e2e8f0;
-      
-      --pt-star: #f59e0b;
-      --pt-sage: #34d399;
-      --pt-rose: #f43f5e;
-      --pt-cyan: #38bdf8;
+      --accent-silver: #f1f5f9;
+      --accent-pearl: #e2e8f0;
 
-      --font-display: 'SUIT', -apple-system, sans-serif;
+      --font-display: 'SUIT', -apple-system, BlinkMacSystemFont, sans-serif;
       --font-en: 'Space Grotesk', -apple-system, sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
       --font-body: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -67,6 +60,7 @@
       -moz-osx-font-smoothing: grayscale !important;
       text-rendering: optimizeLegibility !important;
       -webkit-tap-highlight-color: transparent;
+      letter-spacing: -0.02em;
     }
 
     button, input, select, textarea {
@@ -78,22 +72,22 @@
       width: 100%;
       min-height: 100dvh;
       overflow-x: hidden;
-      background-color: #000000;
+      background-color: #030508;
       color: var(--text-primary);
       font-family: var(--font-body);
       line-height: 1.45;
     }
 
     body {
-      background: #000000 !important;
+      background: radial-gradient(circle at 50% -10%, #0c1424 0%, #030508 60%, #000000 100%) !important;
       padding-top: calc(52px + env(safe-area-inset-top, 0px)) !important;
       padding-bottom: 75px;
     }
 
     /* 🌌 은하수 애니메이션 */
     @keyframes slowCelestialTwinkle {
-      0%, 100% { opacity: 0.12; transform: scale(0.7) rotate(0deg); }
-      50% { opacity: 0.85; transform: scale(1.1) rotate(45deg); filter: drop-shadow(0 0 3px rgba(255,255,255,0.7)); }
+      0%, 100% { opacity: 0.15; transform: scale(0.7) rotate(0deg); }
+      50% { opacity: 0.9; transform: scale(1.1) rotate(45deg); filter: drop-shadow(0 0 3px rgba(255,255,255,0.8)); }
     }
     @keyframes slowCelestialPulse {
       0%, 100% { opacity: 0.45; transform: scale(1); }
@@ -127,10 +121,10 @@
       right: 0 !important;
       z-index: var(--z-header) !important;
       width: 100% !important;
-      background: rgba(0, 0, 0, 0.94) !important;
+      background: rgba(3, 5, 8, 0.88) !important;
       border-bottom: 1px solid var(--border-hairline) !important;
-      backdrop-filter: blur(25px) !important;
-      -webkit-backdrop-filter: blur(25px) !important;
+      backdrop-filter: blur(25px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
       padding: 0 14px !important;
       padding-top: env(safe-area-inset-top, 0px) !important;
       user-select: none !important;
@@ -172,8 +166,8 @@
     .brand-line:active { transform: scale(0.98); }
 
     .brand-sym-box {
-      width: 34px !important;
-      height: 34px !important;
+      width: 32px !important;
+      height: 32px !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
@@ -185,78 +179,33 @@
     .brand-sym-box::before {
       content: '';
       position: absolute;
-      width: 38px;
-      height: 38px;
-      background: radial-gradient(circle at 65% 25%, rgba(245, 158, 11, 0.35) 0%, rgba(244, 114, 182, 0.22) 45%, transparent 70%);
+      width: 34px;
+      height: 34px;
+      background: radial-gradient(circle at 65% 25%, rgba(245, 158, 11, 0.3) 0%, rgba(244, 114, 182, 0.15) 45%, transparent 70%);
       border-radius: 50%;
       z-index: -1;
       filter: blur(4px);
     }
     .brand-sym-box svg { 
-      width: 30px !important; 
-      height: 30px !important; 
+      width: 26px !important; 
+      height: 26px !important; 
       display: block !important; 
       margin: 0 !important;
     }
     
     .brand-title {
-      font-family: 'SUIT', sans-serif !important;
-      font-size: 1.12rem !important;
+      font-family: var(--font-display) !important;
+      font-size: 1.02rem !important;
       font-weight: 900 !important;
-      color: #ffffff !important;
-      line-height: 1 !important;
-      display: inline-flex !important;
-      align-items: center !important;
-      letter-spacing: -0.02em !important;
-      text-shadow: 0 0 16px rgba(255, 255, 255, 0.35) !important;
-      margin: 0 !important;
-      padding: 0 !important;
-    }
-
-    .brand-dot {
-      width: 3px !important;
-      height: 3px !important;
-      background: radial-gradient(circle at 30% 30%, #ffffff 0%, #94a3b8 70%, #475569 100%) !important;
-      box-shadow: 0 0 6px rgba(255, 255, 255, 0.8), 0 0 8px rgba(56, 189, 248, 0.3) !important;
-      border-radius: 50% !important;
-      display: inline-block !important;
-      flex-shrink: 0 !important;
-      margin: 0 !important;
-      transform: translateY(0.5px) !important;
-    }
-
-    .brand-en {
-      display: inline-flex !important;
-      align-items: center !important;
-      gap: 7px !important;
-      white-space: nowrap !important;
-      line-height: 1 !important;
-    }
-
-    .word-romantic, .word-route {
-      font-family: 'Space Grotesk', -apple-system, sans-serif !important;
-      text-transform: uppercase !important;
-      line-height: 1 !important;
-      display: inline-block !important;
-      background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 25%, #cbd5e1 50%, #94a3b8 75%, #e2e8f0 100%) !important;
+      background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 60%, #cbd5e1 100%) !important;
       -webkit-background-clip: text !important;
       -webkit-text-fill-color: transparent !important;
-      filter: drop-shadow(0 0 8px rgba(226, 232, 240, 0.45)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8)) !important;
-    }
-
-    .word-romantic {
-      font-size: 0.68rem !important;
-      font-weight: 800 !important;
-      letter-spacing: 0.09em !important;
-      transform: translateY(-1.6px) !important;
-      opacity: 0.96 !important;
-    }
-
-    .word-route {
-      font-size: 0.74rem !important;
-      font-weight: 900 !important;
-      letter-spacing: 0.06em !important;
-      transform: translateY(2.2px) !important;
+      line-height: 1 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      letter-spacing: -0.025em !important;
+      margin: 0 !important;
+      padding: 0 !important;
     }
 
     .header-auth-btn { 
@@ -264,15 +213,14 @@
       line-height: 28px !important;
       padding: 0 10px !important;
       border-radius: 14px !important;
-      background: linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 100%) !important;
+      background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%) !important;
       border: 1px solid rgba(255, 255, 255, 0.15) !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.28) !important;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
       color: #fde047 !important;
-      font-family: 'SUIT', 'Pretendard Variable', sans-serif !important;
-      font-size: 0.73rem !important;
+      font-family: var(--font-body) !important;
+      font-size: 0.72rem !important;
       font-weight: 800 !important;
-      letter-spacing: -0.01em !important;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9) !important;
       cursor: pointer !important;
       display: inline-flex !important;
       align-items: center !important;
@@ -283,29 +231,16 @@
       transition: all 0.2s ease !important;
       white-space: nowrap !important;
     }
-    .header-auth-btn:hover {
-      background: rgba(255, 255, 255, 0.1) !important;
-      border-color: rgba(255, 255, 255, 0.3) !important;
-      transform: scale(1.03) !important;
-    }
-    .header-auth-btn:active {
-      transform: scale(0.97) !important;
-    }
-    .header-auth-btn.logged-in { 
-      background: linear-gradient(180deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 100%) !important;
-      border: 1px solid rgba(255, 255, 255, 0.15) !important;
-      color: #fde047 !important;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
-    }
+    .header-auth-btn:active { transform: scale(0.97) !important; }
 
     /* 📦 메인 콘텐츠 피드 */
     .portal-main-content {
       max-width: 480px;
       margin: 0 auto;
-      padding: 10px 12px;
+      padding: 8px 12px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 10px;
       position: relative;
       z-index: 1;
     }
@@ -314,112 +249,50 @@
       justify-content: space-between;
       align-items: center;
       font-family: var(--font-display);
-      font-size: 0.88rem;
-      font-weight: 800;
-      color: var(--text-primary);
-      letter-spacing: -0.01em;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      letter-spacing: -0.015em;
       padding: 0 2px;
     }
-    .section-title-row .icon-svg { width: 14px; height: 14px; color: var(--accent-silver); }
+    .section-title-row .icon-svg { width: 13px; height: 13px; color: var(--accent-silver); }
 
     /* 🌌 카드 공통 스타일 */
     .packing-summary-banner,
     .featured-video-section,
+    .curation-discovery-card,
     .community-box-tight,
-    .lucky-half-card,
-    .weather-half-card,
-    .my-basecamp-content,
-    .packing-modal-window,
     .custom-modal {
       position: relative !important;
       overflow: hidden !important;
-      background: linear-gradient(180deg, #07090e 0%, #020305 100%) !important;
+      background: rgba(0, 0, 0, 0.35) !important;
       border: 1px solid rgba(255, 255, 255, 0.07) !important;
-      border-top: 1px solid rgba(255, 255, 255, 0.17) !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.16) !important;
       border-radius: 16px !important;
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-    }
-
-    .packing-summary-banner > *,
-    .featured-video-section > *,
-    .community-box-tight > *,
-    .lucky-half-card > *,
-    .weather-half-card > * {
-      position: relative;
-      z-index: 2;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45) !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
     }
 
     /* ⚖️ 배낭 무게 배너 */
     .packing-summary-banner {
-      padding: 11px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 9px;
-      cursor: pointer;
-      transition: all 0.15s ease;
+      padding: 11px 13px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 8px !important;
+      cursor: pointer !important;
+      transition: transform 0.15s ease, background 0.15s ease !important;
     }
     .packing-summary-banner:active { transform: scale(0.985); }
     .pack-banner-header { display: flex; justify-content: space-between; align-items: center; }
     .pack-banner-body {
       display: flex; justify-content: space-between; align-items: center;
-      background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 10px; padding: 9px 12px;
+      background: rgba(255, 255, 255, 0.02) !important;
+      border: 1px solid rgba(255, 255, 255, 0.04) !important;
+      border-radius: 10px !important;
+      padding: 8px 12px !important;
     }
 
-    /* ========================================================= */
-    /* 🎒 [패킹 모달 100dvh 한눈 뷰 & 확대 대시보드] */
-    /* ========================================================= */
-    .packing-modal-overlay {
-      display: none; 
-      position: fixed; 
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: #000000; 
-      z-index: var(--z-modal);
-      justify-content: center; 
-      align-items: stretch;
-      touch-action: pan-y;
-    }
-    .packing-modal-window {
-      width: 100%; 
-      max-width: 480px;
-      margin: 0 auto;
-      height: 100dvh !important;
-      max-height: 100dvh !important;
-      border-radius: 0 !important;
-      border: none !important;
-      padding: calc(10px + env(safe-area-inset-top, 0px)) 12px calc(12px + env(safe-area-inset-bottom, 0px)) 12px !important;
-      display: flex !important; 
-      flex-direction: column !important; 
-      justify-content: space-between !important;
-      gap: 6px !important;
-      overflow: hidden !important;
-      box-sizing: border-box !important;
-      background: #000000 !important;
-    }
-
-    /* ⚖️ 상단 대시보드 20% 추가 확대 */
-    .weight-dashboard-strip {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(6, 182, 212, 0.07)) !important;
-      border: 1.5px solid rgba(52, 211, 153, 0.4) !important;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
-      border-radius: 12px !important;
-      padding: 9px 12px !important;
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 5px !important;
-      flex-shrink: 0 !important;
-    }
-    .weight-dash-top { display: flex; justify-content: space-between; align-items: flex-end; }
-    .weight-val-big {
-      font-family: var(--font-en), var(--font-mono), sans-serif;
-      font-size: 2.0rem !important;
-      font-weight: 900 !important;
-      color: #34d399;
-      line-height: 0.95;
-      letter-spacing: -0.03em;
-    }
     .weight-bpl-badge {
       font-size: 0.68rem; font-weight: 800; padding: 2px 6px;
       border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;
@@ -428,269 +301,156 @@
     .bpl-standard { background: rgba(245, 158, 11, 0.2); color: #fde047; border: 1px solid #f59e0b; }
     .bpl-heavy { background: rgba(244, 63, 94, 0.2); color: #fda4af; border: 1px solid #f43f5e; }
 
-    .weight-gauge-bg {
-      width: 100%; height: 9px; background: rgba(255,255,255,0.1);
-      border-radius: 5px; overflow: hidden; position: relative;
-    }
-    .weight-gauge-fill {
-      height: 100%; width: 0%;
-      background: linear-gradient(90deg, #34d399, #f59e0b, #f43f5e);
-      transition: width 0.3s ease;
-    }
-
-    /* 2열 5행(2x5) 카테고리 슬롯 그리드 */
-    .category-slots-grid { 
-      display: grid !important; 
-      grid-template-columns: 1fr 1fr !important;
-      gap: 4px !important; 
-      flex: 1 !important;
-      min-height: 0 !important;
-      overflow-y: auto !important;
-      padding: 1px 0 !important;
-    }
-    .category-slot-card {
-      position: relative !important;
-      overflow: hidden !important;
-      background: rgba(255, 255, 255, 0.025) !important;
-      border: 1px solid rgba(255, 255, 255, 0.07) !important;
-      border-top: 1px solid rgba(255, 255, 255, 0.14) !important;
-      border-radius: 8px !important;
-      padding: 5px 6px !important;
+    /* 🏔️ 추천 박지 큐레이션 카드 */
+    .curation-discovery-card {
+      padding: 12px 14px !important;
       display: flex !important;
       flex-direction: column !important;
-      justify-content: flex-start !important;
-      min-height: 54px !important;
-      margin: 0 !important;
-      box-sizing: border-box !important;
+      gap: 8px !important;
       cursor: pointer !important;
+      transition: transform 0.15s ease !important;
+    }
+    .curation-discovery-card:active { transform: scale(0.985); }
+
+    .curation-head {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+      padding-bottom: 7px !important;
+      gap: 6px !important;
+      flex-wrap: nowrap !important;
+    }
+    .curation-head-left {
+      display: flex !important;
+      align-items: center !important;
+      gap: 5px !important;
+      min-width: 0 !important;
+      flex: 1 !important;
+    }
+    .curation-badge-pill {
+      font-size: 0.60rem !important;
+      font-weight: 800 !important;
+      background: rgba(255, 255, 255, 0.04) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      color: #e2e8f0 !important;
+      padding: 1.5px 5px !important;
+      border-radius: 4px !important;
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
+    }
+    .curation-roll-btn {
+      background: rgba(255, 255, 255, 0.03) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      color: #cbd5e1 !important;
+      font-size: 0.64rem !important;
+      font-weight: 800 !important;
+      padding: 3px 8px !important;
+      border-radius: 12px !important;
+      cursor: pointer !important;
+      white-space: nowrap !important;
+      flex-shrink: 0 !important;
       transition: all 0.15s ease !important;
     }
-    .category-slot-card:active {
-      background: rgba(56, 189, 248, 0.08) !important;
-      border-color: rgba(56, 189, 248, 0.35) !important;
-    }
-
-    /* 슬롯 우측 하단 상징 벡터 그래픽 */
-    .slot-bg-watermark-vector {
-      position: absolute !important;
-      right: 1px !important;
-      bottom: 1px !important;
-      opacity: 0.85 !important;
-      pointer-events: none !important;
-      z-index: 1 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-    }
-    .slot-bg-watermark-vector svg {
-      width: 28px !important;
-      height: 28px !important;
-    }
-
-    /* 담긴 장비 태그 */
-    .slot-gears-wrap {
-      display: flex !important;
-      flex-wrap: wrap !important;
-      gap: 2px !important;
-      width: 100% !important;
-      max-height: 48px !important;
-      overflow-y: auto !important;
-      scrollbar-width: none !important;
-    }
-    .slot-gears-wrap::-webkit-scrollbar { display: none !important; }
-
-    .mini-gear-tag {
-      display: inline-flex !important;
-      align-items: center !important;
-      background: rgba(0, 0, 0, 0.85) !important;
-      border: 1px solid rgba(56, 189, 248, 0.45) !important;
-      color: #7dd3fc !important;
-      font-size: 0.54rem !important;
-      font-weight: 800 !important;
-      padding: 1px 3.5px !important;
-      border-radius: 3px !important;
-      max-width: 98% !important;
+    .curation-roll-btn:active { transform: scale(0.92); background: rgba(255, 255, 255, 0.08); color: #fff; }
+    
+    .curation-body-desc {
+      font-size: 0.73rem !important;
+      color: #94a3b8 !important;
+      line-height: 1.45 !important;
+      display: -webkit-box !important;
+      -webkit-line-clamp: 2 !important;
+      -webkit-box-orient: vertical !important;
       overflow: hidden !important;
       text-overflow: ellipsis !important;
-      white-space: nowrap !important;
-      backdrop-filter: blur(4px) !important;
-      line-height: 1.15 !important;
+      word-break: keep-all !important;
     }
 
-    /* 패킹 모달 하단 40 : 30 : 30 버튼 */
-    .packing-action-row { 
-      display: flex !important; 
-      gap: 5px !important; 
-      flex-shrink: 0 !important; 
-      margin-top: auto !important;
-      padding-top: 3px !important; 
-      width: 100% !important;
+    .curation-expanded-details {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      padding-top: 8px;
+      margin-top: 4px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.06);
+      animation: fadeInDetails 0.25s ease forwards;
     }
-    .btn-pack-40 {
-      flex: 4 !important;
-      height: 44px !important;
-      font-size: 0.82rem !important;
-      font-weight: 900 !important;
-      border-radius: 9px !important;
-      background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
-      border: 1px solid #14b8a6 !important;
-      box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35) !important;
-      color: #ffffff !important;
+    .curation-expanded-details.show { display: flex !important; }
+
+    @keyframes fadeInDetails {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .detail-spec-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      font-size: 0.68rem;
+      line-height: 1.4;
+      background: rgba(255, 255, 255, 0.015);
+      padding: 5px 7px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+    .detail-spec-tag {
+      font-size: 0.58rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 1px 4px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      margin-top: 1px;
+      white-space: nowrap;
+    }
+    .detail-spec-val {
+      color: #cbd5e1;
+      flex: 1;
+      word-break: keep-all;
+    }
+
+    .curation-bottom-actions {
       display: flex !important;
+      justify-content: space-between !important;
       align-items: center !important;
-      justify-content: center !important;
-      gap: 4px !important;
-      cursor: pointer !important;
-      white-space: nowrap !important;
-    }
-    .btn-pack-30-reset {
-      flex: 3 !important;
-      height: 44px !important;
-      font-size: 0.74rem !important;
-      font-weight: 800 !important;
-      border-radius: 9px !important;
-      background: rgba(255, 255, 255, 0.05) !important;
-      border: 1px solid rgba(255, 255, 255, 0.12) !important;
-      color: #94a3b8 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      cursor: pointer !important;
-      white-space: nowrap !important;
-    }
-    .btn-pack-30-exit {
-      flex: 3 !important;
-      height: 44px !important;
-      font-size: 0.76rem !important;
-      font-weight: 900 !important;
-      border-radius: 9px !important;
-      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
-      border: 1px solid #38bdf8 !important;
-      color: #ffffff !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      cursor: pointer !important;
-      white-space: nowrap !important;
-      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important;
-    }
-
-    /* 🚪 장비창 하단 50:50 듀얼 바 */
-    .gear-preset-content {
-      position: relative !important;
-      padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
-      height: 100dvh !important;
-      box-sizing: border-box !important;
-    }
-    .gear-preset-content .gear-db-list {
-      padding-bottom: 75px !important;
-    }
-
-    #gearPresetDualBottomBar {
-      position: fixed !important;
-      bottom: 0 !important;
-      left: 50% !important;
-      transform: translateX(-50%) !important;
-      width: 100% !important;
-      max-width: 480px !important;
-      padding: 8px 12px calc(10px + env(safe-area-inset-bottom, 0px)) 12px !important;
-      background: rgba(7, 9, 14, 0.96) !important;
-      border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
-      backdrop-filter: blur(16px) !important;
-      -webkit-backdrop-filter: blur(16px) !important;
-      display: flex !important;
-      gap: 8px !important;
-      z-index: 9999999 !important;
-      box-sizing: border-box !important;
-    }
-
-    .btn-gear-dual-clear {
-      flex: 1 1 0% !important;
-      width: 50% !important;
-      height: 44px !important;
-      background: rgba(255, 255, 255, 0.06) !important;
-      border: 1px solid rgba(255, 255, 255, 0.16) !important;
-      border-radius: 9px !important;
-      color: #cbd5e1 !important;
-      font-size: 0.80rem !important;
-      font-weight: 800 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      cursor: pointer !important;
-      transition: all 0.15s ease !important;
-    }
-    .btn-gear-dual-clear:active { background: rgba(255, 255, 255, 0.1) !important; transform: scale(0.98); }
-
-    .btn-gear-dual-close {
-      flex: 1 1 0% !important;
-      width: 50% !important;
-      height: 44px !important;
-      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
-      border: 1px solid #38bdf8 !important;
-      border-radius: 9px !important;
-      color: #ffffff !important;
-      font-size: 0.82rem !important;
-      font-weight: 900 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      gap: 4px !important;
-      cursor: pointer !important;
-      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important;
-      transition: all 0.15s ease !important;
-    }
-    .btn-gear-dual-close:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(2, 132, 199, 0.5) !important; }
-
-    /* 🔍 장비 검색창 */
-    #gearSearchFixedInput {
-      height: 42px !important;
-      font-size: 0.85rem !important;
-      font-weight: 700 !important;
-      padding: 0 32px 0 12px !important;
-      border: 1.5px solid #38bdf8 !important;
-      background: rgba(255, 255, 255, 0.05) !important;
-      border-radius: 8px !important;
-      box-shadow: 0 0 10px rgba(56, 189, 248, 0.12) !important;
-    }
-
-    /* 클린패킹카드 하단 버튼 */
-    .card-modal-bottom-row {
-      display: flex !important;
-      gap: 5px !important;
-      width: 100% !important;
       margin-top: 4px !important;
+      padding-top: 4px !important;
     }
-    .btn-card-60 {
-      flex: 6 !important;
-      height: 42px !important;
-      background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%) !important;
-      border: 1px solid #14b8a6 !important;
-      color: #ffffff !important;
-      font-size: 0.78rem !important;
-      font-weight: 900 !important;
-      border-radius: 8px !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
+    .btn-curation-more {
+      background: rgba(255, 255, 255, 0.03) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      color: #cbd5e1 !important;
+      font-size: 0.65rem !important;
+      font-weight: 700 !important;
+      padding: 4px 9px !important;
+      border-radius: 6px !important;
       cursor: pointer !important;
-      white-space: nowrap !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 3px !important;
+      transition: all 0.15s ease !important;
     }
-    .btn-card-40 {
-      flex: 4 !important;
-      height: 42px !important;
-      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
-      border: 1px solid #38bdf8 !important;
+    .btn-curation-nav {
+      background: rgba(255, 255, 255, 0.08) !important;
+      border: 1px solid rgba(255, 255, 255, 0.18) !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
       color: #ffffff !important;
-      font-size: 0.78rem !important;
-      font-weight: 900 !important;
-      border-radius: 8px !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
+      font-size: 0.68rem !important;
+      font-weight: 800 !important;
+      padding: 4px 10px !important;
+      border-radius: 6px !important;
       cursor: pointer !important;
-      white-space: nowrap !important;
-      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35) !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.35) !important;
+      transition: all 0.15s ease !important;
+    }
+    .btn-curation-nav:active {
+      transform: scale(0.96);
+      background: rgba(255, 255, 255, 0.14) !important;
     }
 
     /* 🎬 영상 섹션 */
@@ -698,52 +458,36 @@
       padding: 10px; display: flex; flex-direction: column; gap: 8px;
     }
     .video-title-bold-head {
-      font-family: var(--font-display); font-size: 0.98rem; font-weight: 800;
+      font-family: var(--font-display); font-size: 0.84rem; font-weight: 800;
       color: #ffffff; display: flex; align-items: center; gap: 6px;
     }
     .video-box {
       width: 100%; aspect-ratio: 16 / 9; border-radius: 8px;
       overflow: hidden; background: #000; position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.06);
     }
     .video-box iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
-    .video-info-strip { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 600; gap: 6px; }
-    .video-title-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; color: #fff; }
+    .video-info-strip { display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; font-weight: 600; gap: 6px; }
+    .video-title-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; color: #cbd5e1; font-size: 0.73rem; }
     .btn-find-location {
-      background: rgba(244, 63, 94, 0.14); border: 1px solid rgba(244, 63, 94, 0.3);
-      color: #fb7185; font-size: 0.68rem; font-weight: 700; padding: 4px 8px;
-      border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center;
-      gap: 4px; flex-shrink: 0; text-decoration: none;
+      background: rgba(255, 255, 255, 0.06) !important;
+      border: 1px solid rgba(255, 255, 255, 0.14) !important;
+      border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
+      color: #ffffff !important; font-size: 0.66rem; font-weight: 800; padding: 4px 8px;
+      border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center;
+      gap: 3px; flex-shrink: 0; text-decoration: none;
     }
-
-    /* 🎯 50:50 듀얼 그리드 */
-    .dual-grid-section-wrap {
-      display: grid !important;
-      grid-template-columns: 1fr 1fr !important;
-      gap: 8px !important;
-      width: 100% !important;
-    }
-
-    .lucky-half-card, .weather-half-card {
-      padding: 11px 12px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      height: 138px;
-      cursor: pointer;
-      transition: transform 0.15s ease;
-    }
-    .lucky-half-card:active, .weather-half-card:active { transform: scale(0.985); }
 
     /* 🌿 LNT 배너 */
     .lnt-slim-banner {
       display: flex; align-items: center; justify-content: space-between;
-      background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.22);
-      border-radius: 10px; padding: 6px 10px; font-size: 0.7rem; font-weight: 600; color: #a7f3d0;
+      background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px; padding: 6px 10px; font-size: 0.66rem; font-weight: 600; color: #94a3b8;
     }
     .lnt-badge-mini {
       display: inline-flex; align-items: center; gap: 4px;
-      background: rgba(52, 211, 153, 0.2); color: var(--pt-sage);
-      font-size: 0.64rem; font-weight: 800; padding: 1.5px 6px; border-radius: 4px;
+      background: rgba(255, 255, 255, 0.05); color: #e2e8f0;
+      font-size: 0.60rem; font-weight: 800; padding: 1.5px 6px; border-radius: 4px;
     }
 
     /* 🔥 커뮤니티 & 박지톡 */
@@ -752,22 +496,22 @@
     }
     .poll-grid-tight { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
     .poll-item-tight {
-      position: relative; background: rgba(255, 255, 255, 0.02);
+      position: relative; background: rgba(255, 255, 255, 0.015);
       border: 1px solid var(--border-hairline); border-radius: 6px; padding: 6px 8px;
       cursor: pointer; overflow: hidden; display: flex; justify-content: space-between;
-      align-items: center; font-size: 0.7rem; font-weight: 600; min-height: 31px;
+      align-items: center; font-size: 0.68rem; font-weight: 600; min-height: 31px;
     }
-    .poll-item-tight.selected { border-color: rgba(255, 255, 255, 0.35); background: rgba(255, 255, 255, 0.05); }
-    .poll-bar-fill { position: absolute; top: 0; left: 0; bottom: 0; background: rgba(255, 255, 255, 0.12); width: 0%; transition: width 0.3s; z-index: 1; }
-    .poll-text-tight { position: relative; z-index: 2; display: flex; align-items: center; gap: 4px; color: #fff; font-weight: 700; }
-    .poll-pct-tight { position: relative; z-index: 2; font-weight: 800; color: #fff; font-family: var(--font-en); }
+    .poll-item-tight.selected { border-color: rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.03); }
+    .poll-bar-fill { position: absolute; top: 0; left: 0; bottom: 0; background: rgba(255, 255, 255, 0.06); width: 0%; transition: width 0.3s; z-index: 1; }
+    .poll-text-tight { position: relative; z-index: 2; display: flex; align-items: center; gap: 4px; color: #cbd5e1; font-weight: 700; }
+    .poll-pct-tight { position: relative; z-index: 2; font-weight: 800; color: #ffffff; font-family: var(--font-en); font-size: 0.66rem; }
 
     .talk-section-tight { border-top: 1px dashed var(--border-hairline); padding-top: 7px; display: flex; flex-direction: column; gap: 5px; }
     .capsule-input-bar-tight {
       display: flex;
       align-items: center;
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid var(--border-accent);
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 16px;
       padding: 1px 2px 1px 8px;
     }
@@ -775,25 +519,43 @@
     .capsule-msg { flex: 1; background: none; border: none; color: #fff; font-size: 0.72rem; padding: 0 5px; outline: none; }
     .capsule-send-btn { background: var(--accent-silver); border: none; width: 22px; height: 22px; border-radius: 50%; color: #000; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .talk-list-tight { list-style: none; display: flex; flex-direction: column; gap: 3px; max-height: 68px; overflow-y: auto; }
-    .talk-bubble-tight { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 4px; padding: 3px 6px; display: flex; justify-content: space-between; align-items: center; font-size: 0.68rem; }
+    .talk-bubble-tight { background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255, 255, 255, 0.03); border-radius: 4px; padding: 3px 6px; display: flex; justify-content: space-between; align-items: center; font-size: 0.68rem; }
+    .talk-bubble-tight span:first-child { color: #e2e8f0 !important; font-weight: 800; }
 
-    /* 📱 하단 네비 독 */
+    /* 📱 하단 네비 독 (가로 1줄 5열 완벽 복구) */
     .mobile-bottom-dock {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: rgba(0, 0, 0, 0.96); border-top: 1px solid var(--border-hairline);
-      height: calc(56px + env(safe-area-inset-bottom, 0px));
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-      display: flex; justify-content: space-around; align-items: center;
-      z-index: var(--z-dock); user-select: none;
-      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      width: 100% !important;
+      background: rgba(0, 0, 0, 0.96) !important;
+      border-top: 1px solid var(--border-hairline) !important;
+      height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+      padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+      display: flex !important;
+      flex-direction: row !important;
+      justify-content: space-around !important;
+      align-items: center !important;
+      z-index: var(--z-dock) !important;
+      user-select: none !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
+      transform: translateZ(0) !important;
+      -webkit-transform: translateZ(0) !important;
+      box-sizing: border-box !important;
     }
+   
     .dock-item {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      color: var(--text-secondary); text-decoration: none; font-size: 0.72rem; font-weight: 700;
-      gap: 3px; background: none; border: none; cursor: pointer; min-width: 54px; min-height: 48px;
+      color: var(--text-secondary); text-decoration: none; font-size: 0.67rem; font-weight: 700;
+      gap: 3px; background: none; border: none; cursor: pointer; flex: 1; min-width: 0; min-height: 48px;
+      padding: 0 2px; transition: color 0.15s ease, transform 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
     }
+    .dock-item:active { transform: scale(0.93); }
     .dock-item.active { color: #38bdf8 !important; }
-    .dock-item svg { width: 19px; height: 19px; fill: currentColor; }
+    .dock-item svg { width: 19px; height: 19px; fill: currentColor; flex-shrink: 0; }
 
     /* 📸 패킹 공유 모달 */
     #packShareModalOverlay {
@@ -939,84 +701,6 @@
       background: rgba(255, 255, 255, 0.08);
     }
 
-    /* 4. 🗂️ 내 낭만 보관함 모달 */
-    .my-basecamp-modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.88);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      z-index: 99999;
-      justify-content: center;
-      align-items: flex-end;
-    }
-    .my-basecamp-content {
-      width: 100%;
-      max-width: 480px;
-      max-height: 92vh;
-      height: 92vh;
-      background: #07090e;
-      border-top: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 20px 20px 0 0;
-      padding: 16px 14px calc(24px + env(safe-area-inset-bottom, 0px)) 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      box-sizing: border-box;
-      overflow: hidden;
-    }
-    .basecamp-tabs {
-      display: flex;
-      gap: 4px;
-      background: rgba(255, 255, 255, 0.04);
-      padding: 3px;
-      border-radius: 8px;
-      flex-shrink: 0;
-    }
-    .basecamp-tab-btn {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: #94a3b8;
-      font-size: 0.76rem;
-      font-weight: 800;
-      padding: 6px 0;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .basecamp-tab-btn.active {
-      background: #38bdf8;
-      color: #000000;
-    }
-    .basecamp-panel { display: none; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-    .basecamp-panel.active { display: flex; }
-
-    /* 5. 📦 장비 선택 풀스크린 모달 */
-    .gear-preset-modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: #000000;
-      z-index: 999999;
-      justify-content: center;
-      align-items: stretch;
-    }
-    .gear-preset-content {
-      width: 100%;
-      max-width: 480px;
-      margin: 0 auto;
-      height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      padding: calc(14px + env(safe-area-inset-top, 0px)) 14px calc(24px + env(safe-area-inset-bottom, 0px)) 14px;
-      box-sizing: border-box;
-    }
-    .gear-db-list {
-      flex: 1;
-      overflow-y: auto;
-      margin-top: 8px;
-    }
     .spot-search-dropdown-list {
       display: none;
       position: absolute;
@@ -1054,7 +738,7 @@
   <!-- 🧭 1. 상단 GNB -->
   <header class="apple-integrated-header notranslate">
     <div id="gnbMilkyWayLayer" class="gnb-starlight-canvas"></div>
-   <div class="header-top-row">
+    <div class="header-top-row">
       <a href="index.html" class="brand-line" onclick="triggerHaptic(10)" title="낭만루트 홈">
         <div class="brand-sym-box">
           <svg viewBox="0 0 32 32" fill="none">
@@ -1079,7 +763,7 @@
       <!-- ⭐ 티타늄 글래스 로그인 버튼 -->
       <button type="button" class="header-auth-btn" id="headerAuthBtn" onclick="handleAuthBtnClick()">
         <span id="headerAuthIcon" style="display:inline-flex; align-items:center; justify-content:center;">
-          <svg viewBox="0 0 24 24" style="width:13px; height:13px; margin-right:2px; fill:#fde047; color:#fde047; flex-shrink:0; display:inline-block; vertical-align:-1px;"><path d="M12,1 Q12,12 1,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,1 Z"/><circle cx="12" cy="12" r="1.5" fill="#ffffff"/></svg>
+          <svg viewBox="0 0 24 24" style="width:13px; height:13px; margin-right:2px; fill:#fde047; color:#fde047; flex-shrink:0; display:inline-block; vertical-align:-1px;"><path d="M12,1 Q12,12 1,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,1 Z"/><circle cx="12" cy="12" r="1.5" fill="#ffffff"/></svg>
         </span>
         <span id="headerAuthText">로그인</span>
       </button>
@@ -1089,16 +773,16 @@
   <!-- 📦 메인 콘텐츠 피드 -->
   <main class="portal-main-content notranslate">
 
-    <!-- 🎒 1. 배낭 무게 배너 -->
-    <section class="packing-summary-banner" onclick="triggerHaptic(12); openPackingModal();">
+    <!-- 🎒 1. 배낭 무게 배너 (낭만계획 계산기 다이렉트 연동) -->
+    <section class="packing-summary-banner" onclick="triggerHaptic(12); if(typeof openPlanModal==='function') openPlanModal('calculator'); else if(typeof openPackingModal==='function') openPackingModal();">
       <div class="pack-banner-header">
         <div style="display:flex; align-items:center; gap:6px;">
-          <span class="icon-svg" style="width:16px; height:16px; color:#34d399;">
+          <span class="icon-svg" style="width:15px; height:15px; color:#e2e8f0;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>
           </span>
-          <span style="font-family:var(--font-display); font-size:0.92rem; font-weight:800; color:#fff;">오늘의 배낭 무게는?</span>
+          <span style="font-family:var(--font-display); font-size:0.86rem; font-weight:800; color:#fff;">오늘의 배낭 무게는?</span>
         </div>
-        <span style="font-size:0.72rem; color:#38bdf8; font-weight:800; display:flex; align-items:center; gap:2px;">
+        <span style="font-size:0.70rem; color:#cbd5e1; font-weight:800; display:flex; align-items:center; gap:2px;">
           <span>패킹하기</span>
           <svg viewBox="0 0 24 24" style="width:10px; height:10px;" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
         </span>
@@ -1106,12 +790,12 @@
 
       <div class="pack-banner-body">
         <div>
-          <div style="font-size:0.68rem; color:#94a3b8; font-weight:700;">현재 세팅 총 무게</div>
-          <div style="font-family:var(--font-en); font-size:1.4rem; font-weight:900; color:#34d399; line-height:1.1;" id="mainBannerKgText">0.00 kg</div>
+          <div style="font-size:0.65rem; color:#94a3b8; font-weight:700;">현재 세팅 총 무게</div>
+          <div style="font-family:var(--font-en), var(--font-mono); font-size:1.35rem; font-weight:900; color:#ffffff; line-height:1.1;" id="mainBannerKgText">0.00 kg</div>
         </div>
         <div style="text-align:right;">
-          <div id="mainBannerBadge" class="weight-bpl-badge bpl-ul">울트라라이트 (UL)</div>
-          <div style="font-size:0.68rem; color:#cbd5e1; margin-top:2px;" id="mainBannerItemCount">장비 0개 세팅됨</div>
+          <div id="mainBannerBadge" class="weight-bpl-badge bpl-ul" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#e2e8f0;">울트라라이트 (UL)</div>
+          <div style="font-size:0.65rem; color:#cbd5e1; margin-top:2px;" id="mainBannerItemCount">장비 0개 세팅됨</div>
         </div>
       </div>
     </section>
@@ -1119,7 +803,7 @@
     <!-- 🎬 2. 영상 섹션 -->
     <section class="featured-video-section">
       <div class="video-title-bold-head">
-        <span class="icon-svg" style="width:18px; height:18px; color:var(--pt-rose);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect width="20" height="15" x="2" y="4.5" rx="3"/><polygon points="10 8.5 16 12 10 15.5 10 8.5" fill="currentColor"/></svg></span>
+        <span class="icon-svg" style="width:16px; height:16px; color:#94a3b8;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect width="20" height="15" x="2" y="4.5" rx="3"/><polygon points="10 8.5 16 12 10 15.5 10 8.5" fill="currentColor"/></svg></span>
         <span>영상 속 그 장소, 여긴 어딜까?</span>
       </div>
       <div class="video-box">
@@ -1128,68 +812,48 @@
       <div class="video-info-strip">
         <span class="video-title-text" id="ytCaptionTitle">비 내리는 날 산속 바위틈 낭만 비박</span>
         <button type="button" class="btn-find-location" id="btnFindSpot" onclick="triggerHaptic(15); location.href='map.html?spot=충주%20고봉';">
-          <span>박지 보기</span>
+          <span>찾아가기</span>
           <span class="icon-svg" style="width:10px; height:10px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
         </button>
       </div>
     </section>
 
-    <!-- 🎯 3. [50:50 듀얼 그리드] 어디 갈까? & 실전 기상 위젯 -->
-    <div class="dual-grid-section-wrap">
-      <div class="lucky-half-card" onclick="triggerHaptic(15); goToLuckySpot();">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div style="font-size:0.74rem; font-weight:900; color:#38bdf8; display:flex; align-items:center; gap:3px;">
-            <svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor"/></svg>
-            <span>어디 갈까?</span>
-          </div>
-          <button type="button" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; font-size:0.65rem; font-weight:800; padding:2px 6px; border-radius:4px; cursor:pointer;" onclick="event.stopPropagation(); rollLuckySpot();">↺ 픽</button>
+    <!-- 🎯 3. 오늘의 추천 박지 큐레이션 -->
+    <section class="curation-discovery-card" onclick="triggerHaptic(12); goToLuckySpot();">
+      <div class="curation-head">
+        <div class="curation-head-left">
+          <span class="icon-svg" style="width:13px; height:13px; color:#94a3b8; flex-shrink:0;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor"/></svg>
+          </span>
+          <span style="font-size:0.75rem; font-weight:700; color:#e2e8f0; white-space:nowrap;">이번 주말 추천 박지</span>
+          <span id="luckyTag" class="curation-badge-pill">남양주시</span>
+          <span id="luckyElev" style="font-size:0.62rem; font-weight:700; color:#94a3b8; font-family:var(--font-mono); white-space:nowrap;">587m</span>
         </div>
+        <button type="button" class="curation-roll-btn" onclick="event.stopPropagation(); rollLuckySpot();">↺ 다른 박지</button>
+      </div>
 
-        <div>
-          <div style="display:flex; align-items:center; gap:4px; margin-bottom:2px;">
-            <span id="luckyTag" style="font-size:0.6rem; font-weight:900; background:rgba(56,189,248,0.2); color:#7dd3fc; padding:1px 5px; border-radius:4px;">강원</span>
-            <span id="luckyElev" style="font-size:0.6rem; font-weight:800; color:#86efac;">832m</span>
-          </div>
-          <div id="luckyName" style="font-size:0.96rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-            대관령 선자령
-          </div>
-          <div id="luckyDesc" style="font-size:0.68rem; color:#94a3b8; font-weight:700; line-height:1.3; margin-top:2px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
-            탁 트인 풍차 능선과 환상적인 일몰 조망
-          </div>
+      <div style="display:flex; flex-direction:column; gap:3px;">
+        <div id="luckyName" style="font-size:0.96rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:-0.02em;">
+          남양주 백봉산 (정상 전망데크)
         </div>
-
-        <div style="font-size:0.65rem; color:#38bdf8; font-weight:800; text-align:right;">
-          지도로 보기 ➔
+        <div id="luckyDesc" class="curation-body-desc">
+          해발 587m 백봉산 정상 전망데크는 남양주 시가지를 360도로 조망할 수 있는 최적의 장소입니다.
         </div>
       </div>
 
-      <div class="weather-half-card" onclick="triggerHaptic(12); refreshWeatherWidget();">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div style="font-size:0.74rem; font-weight:900; color:#f59e0b; display:flex; align-items:center; gap:3px;">
-            <svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-            <span>실전 기상</span>
-          </div>
-          <span style="font-size:0.62rem; color:#34d399; font-weight:800;" id="weatherStatusBadge">쾌적 박지</span>
-        </div>
+      <div id="luckyDetailsExpanded" class="curation-expanded-details" onclick="event.stopPropagation();"></div>
 
-        <div>
-          <div style="display:flex; align-items:baseline; gap:5px;">
-            <span id="weatherTempBig" style="font-family:var(--font-en); font-size:1.45rem; font-weight:900; color:#ffffff; line-height:1;">14°C</span>
-            <span id="weatherWindText" style="font-size:0.68rem; font-weight:800; color:#38bdf8;">풍속 2.1m/s</span>
-          </div>
-          <div id="weatherTargetName" style="font-size:0.7rem; color:#cbd5e1; font-weight:700; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-            선자령 능선 기준
-          </div>
-          <div style="font-size:0.64rem; color:#94a3b8; line-height:1.2; margin-top:2px;">
-            일몰 19:12 · 돌풍 주의
-          </div>
-        </div>
-
-        <div style="font-size:0.65rem; color:#f59e0b; font-weight:800; text-align:right;">
-          기상 새로고침 ↺
-        </div>
+      <div class="curation-bottom-actions">
+        <button type="button" id="btnToggleSpotMore" class="btn-curation-more" onclick="event.stopPropagation(); toggleSpotDetails();">
+          <span id="toggleSpotMoreText">상세 정보 더보기</span>
+          <span id="toggleSpotMoreArrow" style="font-size:0.60rem;">▾</span>
+        </button>
+        <button type="button" class="btn-curation-nav" onclick="event.stopPropagation(); goToLuckySpot();">
+          <span>찾아가기</span>
+          <svg viewBox="0 0 24 24" style="width:10px; height:10px;" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
       </div>
-    </div>
+    </section>
 
     <!-- 🌿 LNT 배너 -->
     <div class="lnt-slim-banner">
@@ -1197,7 +861,7 @@
         <span class="lnt-badge-mini">K-LNT</span>
         <span>산에서 화기 사용 절대 금지! 흔적 없는 클린 백패킹</span>
       </div>
-      <span style="color:var(--pt-sage); font-size:0.65rem; font-weight:700;">비화식 필수 ➔</span>
+      <span style="color:#6ee7b7; font-size:0.65rem; font-weight:700;">비화식 필수 ➔</span>
     </div>
 
     <!-- 🔥 4. 설문 & 실시간 박지톡 -->
@@ -1233,53 +897,7 @@
 
   </main>
 
-  <!-- 🎒 배낭 무게 계산기 모달 -->
-  <div class="packing-modal-overlay" id="packingCalculatorModal" onclick="if(event.target===this) closePackingModal()">
-    <div class="packing-modal-window">
-      <div style="display:flex; align-items:center; gap:6px; padding:2px 0;">
-        <span class="icon-svg" style="width:17px; height:17px; color:#34d399;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>
-        </span>
-        <span style="font-weight:900; font-size:1.02rem; color:#fff;">오늘의 배낭 무게는?</span>
-      </div>
-
-      <div class="weight-dashboard-strip">
-        <div class="weight-dash-top">
-          <div>
-            <div style="font-size:0.68rem; font-weight:800; color:#94a3b8;">배낭 총 무게 (Total Weight)</div>
-            <div class="weight-val-big" id="totalWeightKgText">0.00 kg</div>
-          </div>
-          <div style="text-align:right;">
-            <div id="bplStatusBadge" class="weight-bpl-badge bpl-ul">
-              <svg viewBox="0 0 24 24" class="icon-svg" style="width:10px; height:10px;"><circle cx="12" cy="12" r="10" fill="currentColor"/></svg>
-              <span id="bplStatusText">울트라라이트 (UL)</span>
-            </div>
-            <div style="font-size:0.68rem; color:#cbd5e1; font-family:var(--font-en); margin-top:2px;" id="totalWeightGramsText">0 g</div>
-          </div>
-        </div>
-        <div class="weight-gauge-bg">
-          <div class="weight-gauge-fill" id="weightGaugeFill"></div>
-        </div>
-      </div>
-
-      <div class="category-slots-grid" id="categorySlotsContainer"></div>
-
-      <div class="packing-action-row">
-        <button type="button" class="btn-pack-40" onclick="saveCurrentPackingRecord()">
-          <svg viewBox="0 0 24 24" class="icon-svg" style="width:13px; height:13px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
-          <span>패킹 저장 & 카드</span>
-        </button>
-        <button type="button" class="btn-pack-30-reset" onclick="resetAllGearSelections()">
-          <span>↺ 초기화</span>
-        </button>
-        <button type="button" class="btn-pack-30-exit" onclick="triggerHaptic(10); closePackingModal();">
-          <span>✕ 나가기</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 📸 공유 카드 모달 -->
+  <!-- 📸 패킹 공유 모달 -->
   <div class="custom-modal-overlay" id="packShareModalOverlay" onclick="if(event.target===this) closePackShareModal();">
     <div class="custom-modal">
       <div style="display:flex; justify-content:space-between; align-items:center; width:100%; padding:0 2px;">
@@ -1345,9 +963,10 @@
           <button type="button" class="modal-btn" style="flex:1; background:#fee500; color:#191919; font-weight:800; padding:8px 4px; font-size:0.73rem;" onclick="sharePackCardToKakao()">🟡 카카오톡</button>
           <button type="button" class="modal-btn" style="flex:1; background:linear-gradient(45deg, #ea580c, #e11d48, #c026d3); color:#fff; font-weight:800; padding:8px 4px; font-size:0.73rem;" onclick="sharePackCardToInstagram()">📸 인스타그램</button>
         </div>
-        <div class="card-modal-bottom-row">
-          <button type="button" id="btnSaveToVaultMain" class="btn-card-60" onclick="saveCardToVaultAndOpenBasecamp()">내 낭만보관함에 저장</button>
-          <button type="button" class="btn-card-40" onclick="triggerHaptic(10); closePackShareModal();">✕ 나가기</button>
+        <div style="margin-top:4px;">
+          <button type="button" id="btnSaveToVaultMain" class="modal-btn" style="width:100% !important; height:44px !important; background:linear-gradient(135deg, #0d9488 0%, #0f766e 100%); border:1px solid #14b8a6; color:#ffffff; font-weight:900; font-size:0.84rem; border-radius:10px; box-shadow:0 4px 14px rgba(13,148,136,0.35);" onclick="saveCardToVaultAndOpenBasecamp()">
+            내 낭만보관함에 저장하기 ✓
+          </button>
         </div>
       </div>
     </div>
@@ -1360,7 +979,7 @@
       
       <!-- 상단 툴바 -->
       <div style="position:absolute; top:calc(12px + env(safe-area-inset-top, 0px)); left:14px; right:14px; display:flex; justify-content:space-between; align-items:center; z-index:100; pointer-events:auto;">
-        <button type="button" style="background:rgba(0,0,0,0.55); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.25); color:#fff; font-size:0.75rem; font-weight:800; padding:6px 12px; border-radius:20px; cursor:pointer;" onclick="closePhotoStudio()">✕ 닫기</button>
+        <button type="button" style="background:rgba(0,0,0,0.55); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.25); color:#fff; font-size:0.75rem; font-weight:800; padding:6px 12px; border-radius:20px; cursor:pointer;" onclick="closePhotoStudio()">◀ 뒤로</button>
         <div style="display:flex; gap:6px; align-items:center;">
           <div style="display:flex; background:rgba(0,0,0,0.55); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.25); border-radius:20px; padding:3px 4px; gap:3px;">
             <button type="button" id="btnStudioColorWhite" style="background:#ffffff; color:#000; border:none; width:22px; height:22px; border-radius:50%; font-size:0.65rem; font-weight:900; cursor:pointer;" onclick="setStudioTextColor('white')">W</button>
@@ -1397,22 +1016,19 @@
     </div>
   </div>
 
-  <!-- 🗂️ 5. [내 보관함 모달] -->
-  <div class="my-basecamp-modal" id="myInfoModal" onclick="if(event.target===this) closeMyInfoModal()">
-    <div class="my-basecamp-content"></div>
-  </div>
-
-  <!-- 📦 카테고리별 장비 선택 풀스크린 팝업 -->
-  <div class="gear-preset-modal" id="gearPresetModal" onclick="if(event.target===this) closeGearPresetModal()">
-    <div class="gear-preset-content">
+  <!-- 📦 카테고리별 장비 선택 풀스크린 팝업 (romantic-plan.js 연동 전담) -->
+  <div class="custom-modal-overlay" id="gearPresetModal" onclick="if(event.target===this) closeGearPresetModal()" style="display:none; position:fixed; inset:0; background:#000000; z-index:9999999; justify-content:center; align-items:stretch; padding:0;">
+    <div style="width:100%; max-width:480px; margin:0 auto; height:100dvh; display:flex; flex-direction:column; padding:calc(12px + env(safe-area-inset-top, 0px)) 14px calc(64px + env(safe-area-inset-bottom, 0px)) 14px; box-sizing:border-box;">
       <div style="flex-shrink:0; display:flex; flex-direction:column; gap:6px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08);">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <div style="display:flex; align-items:center; gap:6px;">
+            <button type="button" onclick="closeGearPresetModal()" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
             <span class="icon-svg" style="width:16px; height:16px; color:#38bdf8;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
             </span>
             <span style="font-weight:900; font-size:1.02rem; color:#fff;" id="presetModalCategoryTitle">장비 선택 & 등록</span>
           </div>
+          <button type="button" onclick="closeGearPresetModal()" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:2px 6px;">✕</button>
         </div>
 
         <div style="position:relative; width:100%; display:flex; align-items:center;">
@@ -1420,7 +1036,6 @@
           <button type="button" id="btnGearSearchClear" style="display:none; position:absolute; right:8px; background:rgba(255,255,255,0.25); border:none; color:#ffffff; width:17px; height:17px; border-radius:50%; font-size:0.6rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0;" onclick="clearGearSearchInput()">✕</button>
         </div>
 
-        <!-- 🌟 [모바일 최적화 2단 반응형 장비 등록 바] -->
         <div style="display:flex; flex-direction:column; gap:5px; background:rgba(255,255,255,0.03); border:1px dashed rgba(56,189,248,0.35); border-radius:8px; padding:6px 8px; box-sizing:border-box;">
           <div style="width:100%;">
             <input type="text" id="customInputGearName" class="modal-input" placeholder="직접 추가할 장비명 (예: 백패킹 다운슈즈)" style="width:100%; font-size:0.76rem; padding:7px 9px; border-radius:6px; box-sizing:border-box;" />
@@ -1432,93 +1047,193 @@
         </div>
       </div>
 
-      <div class="gear-db-list" id="presetGearDbList"></div>
+      <div class="gear-db-list" id="presetGearDbList" style="flex:1; overflow-y:auto; margin-top:8px;"></div>
 
-      <!-- 🚪 장비창 하단 50:50 44px 듀얼 바 -->
-      <div id="gearPresetDualBottomBar">
-        <button type="button" class="btn-gear-dual-clear" onclick="clearAllGearsInCategory(currentOpeningCategoryId)">
-          <span>↺ 전체 비우기</span>
+      <div style="position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; height:calc(56px + env(safe-area-inset-bottom, 0px)); padding:6px 12px calc(8px + env(safe-area-inset-bottom, 0px)) 12px; background:rgba(7,9,14,0.98); border-top:1px solid rgba(255,255,255,0.12); display:flex; align-items:center; gap:8px; box-sizing:border-box; z-index:9999999;">
+        <button type="button" onclick="clearAllGearsInCategory(currentOpeningCategoryId)" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1; font-size:0.75rem; font-weight:800; height:44px; padding:0 14px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; white-space:nowrap; flex-shrink:0;">
+          <span>↺ 비우기</span>
         </button>
-        <button type="button" class="btn-gear-dual-close" onclick="triggerHaptic(12); closeGearPresetModal();">
-          <span>✕ 나가기</span>
+        <button type="button" onclick="triggerHaptic(12); closeGearPresetModal();" style="flex:1; height:44px; background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border:1px solid #38bdf8; color:#ffffff; font-size:0.84rem; font-weight:900; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(2,132,199,0.35); white-space:nowrap;">
+          <span>장비 선택 완료 ✓</span>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- 🎒 전체 초기화 확인 팝업 -->
-  <div class="custom-modal-overlay" id="packResetConfirmModal" onclick="if(event.target===this) closeResetConfirmModal();" style="z-index:9999999;">
-    <div class="custom-modal" style="max-width:310px; text-align:center; padding:18px 16px; gap:12px; border:1.5px solid rgba(244,63,94,0.45); box-shadow:0 20px 50px rgba(0,0,0,0.95);">
-      <div style="display:flex; justify-content:center;">
-        <div style="width:44px; height:44px; border-radius:50%; background:rgba(244,63,94,0.15); border:1.5px solid rgba(244,63,94,0.4); display:flex; align-items:center; justify-content:center; color:#f43f5e;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:22px; height:22px;"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
+ <!-- 로그인 모달 -->
+  <div class="custom-modal-overlay" id="loginModalOverlay" onclick="if(event.target===this) closeLoginModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100%; height:100dvh; max-height:100dvh; padding:0 !important; margin:0 !important; overflow:hidden !important; touch-action:none !important; overscroll-behavior:none !important;">
+    <div style="width:100%; max-width:480px; margin:0 auto; height:100%; height:100dvh; max-height:100dvh; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden !important; touch-action:none !important; overscroll-behavior:none !important;">
+      <div style="flex:1 1 0% !important; min-height:0 !important; overflow:hidden !important; padding:calc(20px + env(safe-area-inset-top, 0px)) 16px 16px 16px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:12px; text-align:center; box-sizing:border-box; touch-action:none !important;">
+        <div style="width:54px; height:54px; border-radius:50%; background:rgba(56,189,248,0.12); border:1.5px solid #38bdf8; display:flex; align-items:center; justify-content:center; font-size:1.6rem;">
+          🏕️
+        </div>
+        <div>
+          <h3 style="color:#38bdf8; font-size:1.15rem; font-weight:900;">낭만 백패커 로그인</h3>
+          <p style="font-size:0.78rem; color:#94a3b8; line-height:1.5; margin-top:6px;">
+            로그인 시 나만의 배낭 패킹 기록, 10대 슬롯 세팅,<br>그리고 소중한 비밀 메모가 구글 클라우드에 영구 백업됩니다.
+          </p>
+        </div>
+        <div style="width:100%; max-width:320px; display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+          <button type="button" class="modal-btn btn-social-kakao" style="width:100%; height:44px; font-size:0.86rem; font-weight:900; border-radius:10px; box-shadow:0 4px 14px rgba(254,229,0,0.25);" onclick="loginWithKakao()">
+            카카오 1초 간편 로그인
+          </button>
+          <button type="button" class="modal-btn" style="width:100%; height:40px; background:rgba(255,255,255,0.06); color:#cbd5e1; font-weight:800; font-size:0.78rem; border-radius:10px;" onclick="closeLoginModal()">
+            닫기
+          </button>
         </div>
       </div>
-      <div>
-        <div style="font-size:1.02rem; font-weight:900; color:#ffffff; margin-bottom:4px;">배낭 전체 초기화</div>
-        <div style="font-size:0.75rem; color:#94a3b8; line-height:1.45;">현재 세팅된 모든 장비가 비워집니다.<br><strong style="color:#fda4af;">정말 전체 초기화할까요?</strong></div>
-      </div>
-      <div style="display:flex; gap:6px;">
-        <button type="button" class="modal-btn" style="flex:1; background:rgba(255,255,255,0.08); color:#cbd5e1; font-weight:800; font-size:0.78rem; padding:10px 0;" onclick="closeResetConfirmModal()">취소</button>
-        <button type="button" class="modal-btn" style="flex:1.2; background:linear-gradient(135deg, #ef4444, #b91c1c); color:#ffffff; font-weight:900; font-size:0.78rem; padding:10px 0; border:1px solid #f87171;" onclick="executeResetAllGears()">비우기 ↺</button>
-      </div>
-    </div>
-  </div>
 
-  <!-- 로그인 모달 -->
-  <div class="custom-modal-overlay" id="loginModalOverlay" onclick="event.stopPropagation();">
-    <div class="custom-modal">
-      <h3 style="color:#38bdf8; font-size:1.05rem; font-weight:800; text-align:center;">낭만 백패커 로그인</h3>
-      <p style="font-size:0.75rem; color:#cbd5e1; line-height:1.45; text-align:center;">
-        로그인 시 나만의 배낭 패킹 기록과 비밀 메모가 구글 클라우드에 평생 안전하게 보관됩니다.
-      </p>
-      <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
-        <button type="button" class="modal-btn" style="background:#fee500; color:#191919; font-weight:800;" onclick="loginWithKakao()">
-          카카오 1초 간편 로그인
+      <!-- 🏛️ 내정보 로그인 상태 5대 하단독 -->
+      <div class="mobile-bottom-dock notranslate" style="position:static !important; flex-shrink:0 !important; width:100% !important;">
+        <a href="index.html" class="dock-item" onclick="closeLoginModal(); triggerHaptic(10);">
+          <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          <span>낭만루터</span>
+        </a>
+        <a href="map.html" class="dock-item" onclick="closeLoginModal(); triggerHaptic(10);">
+          <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
+          <span>전국지도</span>
+        </a>
+        <button type="button" class="dock-item" onclick="closeLoginModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+            <path d="M9 16l2 2 4-4"/>
+          </svg>
+          <span>낭만계획</span>
+        </button>
+        <button type="button" class="dock-item" onclick="closeLoginModal(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 8v13H3V8"/>
+            <path d="M1 3h22v5H1z"/>
+            <path d="M10 12h4"/>
+          </svg>
+          <span>낭만보관함</span>
+        </button>
+        <button type="button" class="dock-item active" onclick="triggerHaptic(10);" style="color:#38bdf8 !important;">
+          <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          <span>내정보</span>
         </button>
       </div>
-      <button type="button" class="modal-btn" style="background:transparent; color:#94a3b8; margin-top:4px;" onclick="closeLoginModal()">닫기</button>
     </div>
   </div>
 
   <!-- 계정 관리 모달 -->
-  <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="event.stopPropagation();">
-    <div class="custom-modal">
-      <h3 style="color:#38bdf8; font-size:1.05rem; font-weight:800; text-align:center;">내 계정 관리</h3>
-      <div style="margin-top:6px;">
-        <label style="color:#94a3b8; font-size:0.75rem; font-weight:700;">활동 닉네임 변경</label>
-        <div style="display:flex; gap:6px; margin-top:4px;">
-          <input type="text" id="profileModalNicknameInput" class="modal-input" placeholder="새 닉네임 입력" style="flex:1;" />
-          <button type="button" class="modal-btn" style="background:#0284c7; color:#fff; font-weight:800;" onclick="saveNewNicknameFromModal()">변경</button>
+  <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="if(event.target===this) closeUserProfileModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100%; height:100dvh; max-height:100dvh; padding:0 !important; margin:0 !important; overflow:hidden !important; touch-action:none !important; overscroll-behavior:none !important;">
+    <div style="width:100%; max-width:480px; margin:0 auto; height:100%; height:100dvh; max-height:100dvh; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden !important; touch-action:none !important; overscroll-behavior:none !important;">
+      
+      <div style="flex:1 1 0% !important; min-height:0 !important; overflow:hidden !important; padding:calc(16px + env(safe-area-inset-top, 0px)) 16px 16px 16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; touch-action:none !important;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px; flex-shrink:0;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:1.3rem;">👤</span>
+            <div>
+              <div style="font-size:1.05rem; font-weight:900; color:#ffffff;">내 계정 관리</div>
+              <div style="font-size:0.68rem; color:#38bdf8; font-weight:700;">낭만 백패커 회원 프로필</div>
+            </div>
+          </div>
+          <button type="button" onclick="closeUserProfileModal()" style="background:none; border:none; color:#94a3b8; font-size:1.3rem; cursor:pointer; padding:2px 6px;">✕</button>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
+          <label style="color:#94a3b8; font-size:0.75rem; font-weight:800;">활동 닉네임 변경</label>
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="profileModalNicknameInput" class="modal-input" placeholder="새 닉네임 입력" style="flex:1; height:42px; font-size:0.86rem;" />
+            <button type="button" class="modal-btn" style="background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#fff; font-weight:900; padding:0 16px; height:42px; border-radius:8px;" onclick="saveNewNicknameFromModal()">변경</button>
+          </div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:8px; flex-shrink:0;">
+          <div style="font-size:0.78rem; font-weight:800; color:#34d399;">☁️ 낭만 클라우드 실시간 동기화 중</div>
+          <div style="font-size:0.70rem; color:#94a3b8; line-height:1.5;">내 장비, 패킹 기록, 찜/클리어 박지 및 비밀 메모가 구글 클라우드에 평생 안전하게 보관됩니다.</div>
+          <button type="button" class="modal-btn" style="background:rgba(244,63,94,0.15); border:1px solid #f43f5e; color:#fda4af; font-weight:800; height:42px; border-radius:8px; margin-top:6px; font-size:0.82rem;" onclick="closeUserProfileModal(); logoutUser();">
+            로그아웃
+          </button>
         </div>
       </div>
-      <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:8px;">
-        <button type="button" class="modal-btn" style="background:rgba(244,63,94,0.15); border:1px solid #f43f5e; color:#fda4af; font-weight:800;" onclick="closeUserProfileModal(); logoutUser();">
-          로그아웃
+
+      <!-- 🏛️ 내정보 계정관리 5대 하단독 -->
+      <div class="mobile-bottom-dock notranslate" style="position:static !important; flex-shrink:0 !important; width:100% !important;">
+        <a href="index.html" class="dock-item" onclick="closeUserProfileModal(); triggerHaptic(10);">
+          <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          <span>낭만루터</span>
+        </a>
+        <a href="map.html" class="dock-item" onclick="closeUserProfileModal(); triggerHaptic(10);">
+          <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
+          <span>전국지도</span>
+        </a>
+        <button type="button" class="dock-item" onclick="closeUserProfileModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+            <path d="M9 16l2 2 4-4"/>
+          </svg>
+          <span>낭만계획</span>
         </button>
-        <button type="button" class="modal-btn" style="background:transparent; color:#94a3b8;" onclick="closeUserProfileModal()">닫기</button>
+        <button type="button" class="dock-item" onclick="closeUserProfileModal(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 8v13H3V8"/>
+            <path d="M1 3h22v5H1z"/>
+            <path d="M10 12h4"/>
+          </svg>
+          <span>낭만보관함</span>
+        </button>
+        <button type="button" class="dock-item active" onclick="triggerHaptic(10);" style="color:#38bdf8 !important;">
+          <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          <span>내정보</span>
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- 📱 하단 네비 독 -->
+  <!-- 📱 하단 네비 독 (5대 핵심 메뉴) -->
   <div class="mobile-bottom-dock notranslate">
-    <a href="index.html" class="dock-item active" title="홈" onclick="triggerHaptic(10);">
+    <!-- 1. 낭만루터 (홈 메인) -->
+    <a href="index.html" class="dock-item active" title="낭만루터" onclick="triggerHaptic(10);">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-      <span>홈</span>
+      <span>낭만루터</span>
     </a>
+
+    <!-- 2. 전국지도 -->
     <a href="map.html" class="dock-item" title="전국지도" onclick="triggerHaptic(10);">
       <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
       <span>전국지도</span>
     </a>
-    <button type="button" class="dock-item" title="낭만보관함" onclick="triggerHaptic(12); openMyInfoModal();">
-      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+
+   <!-- 3. 낭만계획 (달력 첫 화면 호출) -->
+    <button type="button" class="dock-item" title="낭만계획" onclick="triggerHaptic(12); if(typeof openPlanModal==='function') openPlanModal('calendar'); else openMyInfoModal('plan');">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+        <path d="M9 16l2 2 4-4"/>
+      </svg>
+      <span>낭만계획</span>
+    </button>
+    
+
+    <!-- 4. 낭만보관함 (romantic-history.js 다이렉트 호출) -->
+    <button type="button" class="dock-item" title="낭만보관함" onclick="triggerHaptic(12); if(typeof openHistoryModal==='function') openHistoryModal(); else if(typeof openMyInfoModal==='function') openMyInfoModal('history');">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 8v13H3V8"/>
+        <path d="M1 3h22v5H1z"/>
+        <path d="M10 12h4"/>
+      </svg>
       <span>낭만보관함</span>
+    </button>
+
+    <!-- 5. 내정보 (로그인 / 프로필 / 계정 관리) -->
+    <button type="button" class="dock-item" title="내정보" onclick="triggerHaptic(12); handleAuthBtnClick();">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      <span>내정보</span>
     </button>
   </div>
 
   <script>
-    // 🧰 [공통 유틸 - ReferenceError 원천 방지]
+    // 🧰 [공통 유틸리티]
     function safeGetJSON(key, defaultVal) {
       try {
         var item = localStorage.getItem(key);
@@ -1559,332 +1274,28 @@
       setTimeout(function() { toast.remove(); }, duration || 2200);
     }
 
-    // 🎨 [10대 슬롯 라인아트 벡터 SVG]
-    var FINAL_LINE_VECTORS = {
-      shelter: '<svg viewBox="0 0 48 48" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 38C6 20 14 8 24 8s18 12 18 30H6z"/><path d="M14 38c0-12 4-20 10-20s10 8 10 20M6 38h36"/></svg>',
-      sleep: '<svg viewBox="0 0 48 48" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="16" height="28" rx="8"/><line x1="6" y1="18" x2="22" y2="18"/><line x1="6" y1="26" x2="22" y2="26"/><path d="M26 14c4-3 10-3 14 0v24a6 6 0 0 1-12 0V14"/></svg>',
-      pack: '<svg viewBox="0 0 48 48" fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="4" width="32" height="9" rx="4.5" stroke="#34d399"/><rect x="12" y="15" width="24" height="27" rx="3"/><path d="M6 6l6 36M42 6l-6 36M12 25h24"/></svg>',
-      food: '<svg viewBox="0 0 48 48" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M24 4c-6 9-12 17-12 25a12 12 0 0 0 24 0c0-8-6-16-12-25z"/><path d="M24 16v13l8 4"/></svg>',
-      kitchen: '<svg viewBox="0 0 48 48" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18h28v18a6 6 0 0 1-6 6H14a6 6 0 0 1-6-6V18z"/><path d="M36 24h5a3 3 0 0 1 0 6h-5M14 8c0 3-3 5-3 8M22 6c0 4-3 6-3 10M30 8c0 3-3 5-3 8"/></svg>',
-      wear: '<svg viewBox="0 0 48 48" fill="none" stroke="#fb7185" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M34 8l-10-4-10 4L2 26l7 3 3-11v24h24V18l3 11 7-3-12-18z"/><path d="M18 14h12l-6 8-6-8z"/></svg>',
-      electronics: '<svg viewBox="0 0 48 48" fill="none" stroke="#fde047" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="26 3 10 27 24 27 22 45 38 21 24 21 26 3"/></svg>',
-      camp: '<svg viewBox="0 0 48 48" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14h28v14a5 5 0 0 1-5 5H15a5 5 0 0 1-5-5V14z"/><path d="M14 33L8 45M34 33l6 12M15 33l18 12M33 33L15 45"/></svg>',
-      slot9: '<svg viewBox="0 0 48 48" fill="none" stroke="#fb7185" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="24" cy="36" rx="14" ry="5"/><path d="M16 36V22h16v14M24 22v-8M20 14l4-8 4 8"/></svg>',
-      slot10: '<svg viewBox="0 0 48 48" fill="none" stroke="#fde047" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="16" width="36" height="26" rx="4"/><path d="M24 16v26M6 26h36M18 16c0-6 6-10 6-10s6 4 6 10"/></svg>'
-    };
-
     // 🌐 [상수 및 환경 설정]
     window.KAKAO_APP_KEY = window.KAKAO_APP_KEY || "557f5de0f6391a2419bc5592e6a9c9c1";
     window.GAS_API_URL = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
     window.GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
     window.GOOGLE_SHEET_MAIN_GID = '0';
-    window.GOOGLE_SHEET_CONFIG_GID = '1983931878';
-    window.GOOGLE_SHEET_GEAR_GID = '2014805196'; 
 
     var registeredSpots = [];
     var currentLuckySpot = null;
-
-    // 🏷️ 8대 실전 백패킹 카테고리 DB
-    var CATEGORIES = [
-      {
-        id: 'shelter', title: '텐트 · 타프',
-        icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#38bdf8;"><path d="M12 2L2 20h20L12 2z"/><path d="M12 2v18M7 20l5-9 5 9"/></svg>',
-        db: [
-          { name: '제로그램 엘찰텐 프로 1.5P', weight: 1450, brand: 'ZEROGRAM', verified: true, specs: '4계절 경량 텐트' },
-          { name: 'MSR 허바허바 NX 2P', weight: 1540, brand: 'MSR', verified: true, specs: '백패킹 베스트셀러' },
-          { name: '힐레베르그 니악', weight: 1700, brand: 'Hilleberg', verified: true, specs: '고강도 3계절 텐트' },
-          { name: '지팩스 듀플렉스 텐트 (2P DCF)', weight: 550, brand: 'Zpacks', verified: true, specs: '초경량 다이니마 텐트' },
-          { name: '경량 실타프 & 스트링', weight: 450, brand: 'Custom', verified: true, specs: '초경량 쉘터' }
-        ]
-      },
-      {
-        id: 'sleep', title: '침낭 · 매트',
-        icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#34d399;"><path d="M2 17h20M2 13h20M4 9h16a2 2 0 0 1 2 2v6H2v-6a2 2 0 0 1 2-2z"/></svg>',
-        db: [
-          { name: '써마레스트 엑스썸 NXT (에어매트)', weight: 430, brand: 'Therm-a-Rest', verified: true, specs: 'R값 7.3 동계 최강' },
-          { name: '써마레스트 엑스라이트 NXT (에어매트)', weight: 354, brand: 'Therm-a-Rest', verified: true, specs: 'R값 4.5 3계절 표준' },
-          { name: '씨투써밋 이더라이트 XT', weight: 490, brand: 'Sea to Summit', verified: true, specs: '두께 10cm 극상의 편안함' },
-          { name: '큐물러스 파이라 850 (구스침낭)', weight: 1200, brand: 'Cumulus', verified: true, specs: '850FP 폴란드 구스' },
-          { name: '씨투써밋 에어로스 울트라라이트 베개', weight: 60, brand: 'Sea to Summit', verified: true, specs: '초경량 에어베개' }
-        ]
-      },
-      {
-        id: 'pack', title: '배낭 (Pack)',
-        icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#a78bfa;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>',
-        db: [
-          { name: 'CAYL 태백 50L 롤탑 배낭', weight: 910, brand: 'CAYL', verified: true, specs: 'BPL 최적화 배낭' },
-          { name: 'HMG 윈드라이더 3400 (55L)', weight: 910, brand: 'Hyperlite Mountain Gear', verified: true, specs: '다이니마 방수 원단' },
-          { name: '오스프리 케스트렐 58L', weight: 1760, brand: 'Osprey', verified: false, specs: '편안한 등판 프레임' },
-          { name: '미스테리랜치 브릿저 55L', weight: 2400, brand: 'Mystery Ranch', verified: false, specs: '헤비 패킹 밸런스' }
-        ]
-      },
-      {
-        id: 'food', title: '식수 · 식량 · 간식',
-        icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#10b981;"><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/><path d="M12 6v6l4 2"/></svg>',
-        db: [
-          { name: '생수 2.0L (식수)', weight: 2000, brand: 'Water', verified: true, specs: '1박 기준 필수 식수' },
-          { name: '생수 1.0L (보조식수)', weight: 1000, brand: 'Water', verified: true, specs: '보조 식수' },
-          { name: '핫앤쿡 발열도시락 1팩', weight: 340, brand: 'Hotncook', verified: true, specs: '비화식 필수 발열팩' },
-          { name: '전투식량 / 건조식 1팩', weight: 120, brand: 'Food', verified: true, specs: '온수 전용 초경량식' },
-          { name: '보온병 온수 1.0L', weight: 1450, brand: 'Hot Water', verified: true, specs: '동계 보온 필수' }
-        ]
-      },
-      {
-        id: 'kitchen', title: '취사 · 식기 · 보온병',
-        icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#f59e0b;"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>',
-        db: [
-          { name: '스탠리 클래식 보온병 1.0L (빈통)', weight: 650, brand: 'Stanley', verified: true, specs: '보온력 우수' },
-          { name: '써모스 산악전용 보온병 900ml', weight: 390, brand: 'Thermos', verified: true, specs: '산악 경량 보온병' },
-          { name: '소토 윈드마스터 SOD-310 버너', weight: 67, brand: 'SOTO', verified: true, specs: '내풍성 마이크로 레귤레이터' },
-          { name: '스노우피크 티타늄 450 머그', weight: 70, brand: 'Snowpeak', verified: true, specs: '싱글월 티타늄 머그' },
-          { name: '티타늄 수저 & 포크 세트', weight: 35, brand: 'Gear', verified: true, specs: '초경량 커트러리' }
-        ]
-      },
-      {
-        id: 'wear', title: '보온의류 · 방한 · 의류',
-        icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#fb7185;"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>',
-        db: [
-          { name: '헤비 다운 우모복 (동계 패딩)', weight: 750, brand: 'Wear', verified: true, specs: '영하권 필수 보온의류' },
-          { name: '큐물러스 네베 다운팬츠 (우모바지)', weight: 330, brand: 'Cumulus', verified: true, specs: '850FP 구스 충전' },
-          { name: '경량 다운자켓 (간절기)', weight: 320, brand: 'Wear', verified: true, specs: '800FP 경량 패딩' },
-          { name: '방풍 바람막이 & 고어텍스 자켓', weight: 280, brand: 'Wear', verified: true, specs: '능선 방풍 필수' },
-          { name: '우모바지 (다운 팬츠)', weight: 380, brand: 'Wear', verified: true, specs: '극동계 텐트내 보온' }
-        ]
-      },
-      {
-        id: 'electronics', title: '랜턴 · 안전 · 전자기기',
-        icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#fde047;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
-        db: [
-          { name: '페츨 악틱 코어 헤드랜턴', weight: 80, brand: 'Petzl', verified: true, specs: '450루멘 충전식' },
-          { name: '골제로 라이트하우스 미니 랜턴', weight: 68, brand: 'GoalZero', verified: true, specs: '텐트 조명 최강' },
-          { name: '나이트코어 NB10000 보조배터리', weight: 150, brand: 'Nitecore', verified: true, specs: '카본 초경량 10000mAh' },
-          { name: 'K-LNT 롤팩 쓰레기봉투 & 파우치', weight: 25, brand: 'LNT', verified: true, specs: '클린 백패킹 필수' }
-        ]
-      },
-      {
-        id: 'camp', title: '테이블 · 체어 · 소품',
-        icon: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:14px; height:14px; color:#38bdf8;"><rect x="4" y="10" width="16" height="4" rx="1"/><path d="M6 14v6M18 14v6M8 10V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4"/></svg>',
-        db: [
-          { name: '헬리녹스 체어원', weight: 890, brand: 'Helinox', verified: true, specs: '편안한 착좌감' },
-          { name: '헬리녹스 체어제로 (초경량)', weight: 490, brand: 'Helinox', verified: true, specs: 'BPL 체어' },
-          { name: '베른 트레킹패드 경량 테이블', weight: 230, brand: 'Verne', verified: true, specs: '접이식 솔로 테이블' },
-          { name: '하이커 1인용 접이식 방석', weight: 35, brand: 'Mat', verified: true, specs: '바닥 냉기 차단' }
-        ]
-      }
-    ];
-
-    window.selectedGearMap = window.selectedGearMap || {};
-    try {
-      var saved = localStorage.getItem('okbm_selected_gears_multi');
-      if (saved) window.selectedGearMap = JSON.parse(saved);
-    } catch (e) { window.selectedGearMap = {}; }
-
-    CATEGORIES.forEach(function(cat) {
-      if (!Array.isArray(window.selectedGearMap[cat.id])) window.selectedGearMap[cat.id] = [];
-    });
-
-    window.packingHistoryList = safeGetJSON('okbm_packing_history', []);
-    window.favoriteGearSet = new Set(safeGetJSON('okbm_favorite_gears', []));
-    var currentOpeningCategoryId = null;
     window.currentShareRecord = null;
     window.currentShareItems = [];
     window.selectedTemplateId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
-
     window.currentSharePhoto = '';
     window.currentPhotoTextColor = 'white';
     window.currentCardRatio = '9/16';
     var currentCustomRatioVal = 0.75;
     var currentPhotoScaleVal = 1.0;
-    window.openedFromBasecamp = false;
-
-    // 🎒 [핵심 엔진 최상단 선언: 10대 슬롯 렌더링 & 모달 열기 보장]
-    window.renderCategorySlots = function() {
-      const container = document.getElementById('categorySlotsContainer');
-      if (!container) return;
-
-      let totalGrams = 0, totalItemCount = 0;
-      const cats = (typeof CATEGORIES !== 'undefined' && Array.isArray(CATEGORIES)) ? CATEGORIES.slice(0, 8) : [];
-      const gearMap = window.selectedGearMap || {};
-
-      let renderedHtml = cats.map(cat => {
-        const items = gearMap[cat.id] || [];
-        const catGrams = items.reduce((sum, it) => sum + Number(it.weight || 0), 0);
-        totalGrams += catGrams;
-        totalItemCount += items.length;
-
-        let gearsListHtml = '<span style="color:#94a3b8; font-size:0.56rem; font-weight:700; background:rgba(0,0,0,0.6); padding:1px 4px; border-radius:3px;">미선택 +</span>';
-        if (items.length > 0) {
-          gearsListHtml = items.map((it, idx) => {
-            const cleanName = (it.name || it.itemName || '장비').replace(/\s*\(.*\)/, '');
-            return `<span class="mini-gear-tag" onclick="event.stopPropagation(); window.removeGearFromCategory('${cat.id}', ${idx})" title="${escapeHtml(cleanName)} (${it.weight}g) - 클릭 시 삭제">${escapeHtml(cleanName)} ✕</span>`;
-          }).join('');
-        }
-
-        const vecSvg = (typeof FINAL_LINE_VECTORS !== 'undefined' && FINAL_LINE_VECTORS[cat.id]) ? FINAL_LINE_VECTORS[cat.id] : '';
-
-        return `
-          <div class="category-slot-card" onclick="window.openGearPresetModal('${cat.id}')">
-            <div class="slot-bg-watermark-vector">${vecSvg}</div>
-            <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fff; text-shadow:0 1px 3px #000;">
-                  <span>${cat.icon}</span>
-                  <span>${cat.title}</span>
-                </div>
-                <div style="font-size:0.68rem; color:#34d399; font-family:'JetBrains Mono', monospace; font-weight:900; background:rgba(0,0,0,0.7); padding:1px 4px; border-radius:3px;">
-                  ${(catGrams/1000).toFixed(2)}k
-                </div>
-              </div>
-              <div class="slot-gears-wrap">
-                ${gearsListHtml}
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      const slot9Vec = (typeof FINAL_LINE_VECTORS !== 'undefined' && FINAL_LINE_VECTORS.slot9) ? FINAL_LINE_VECTORS.slot9 : '';
-      const slot10Vec = (typeof FINAL_LINE_VECTORS !== 'undefined' && FINAL_LINE_VECTORS.slot10) ? FINAL_LINE_VECTORS.slot10 : '';
-
-      renderedHtml += `
-        <div class="category-slot-card" style="border-color:#fb7185; background:rgba(244,63,94,0.04);" onclick="showToast('🔥 요즘 유행하는 백패킹 인기 핫템 랭킹 준비 중입니다!', 'info')">
-          <div class="slot-bg-watermark-vector">${slot9Vec}</div>
-          <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-              <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fb7185; text-shadow:0 1px 3px #000;">
-                <span>🔥</span>
-                <span>요즘 유행하는 장비</span>
-              </div>
-              <span style="font-size:0.56rem; color:#fff; font-weight:900; background:#f43f5e; padding:1px 4px; border-radius:3px;">HOT</span>
-            </div>
-            <div class="slot-gears-wrap">
-              <span style="color:#cbd5e1; font-size:0.56rem; font-weight:800; background:rgba(0,0,0,0.65); padding:1px 4px; border-radius:3px;">인기 장비 랭킹 ➔</span>
-            </div>
-          </div>
-        </div>
-      `;
-
-      renderedHtml += `
-        <div class="category-slot-card" style="border-color:#fde047; background:rgba(253,224,71,0.04);" onclick="showToast('🎁 백패커 전용 특가 및 제휴 혜택 공간입니다!', 'info')">
-          <div class="slot-bg-watermark-vector">${slot10Vec}</div>
-          <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-              <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fde047; text-shadow:0 1px 3px #000;">
-                <span>🎁</span>
-                <span>백패커 특가 혜택</span>
-              </div>
-              <span style="font-size:0.56rem; color:#000; font-weight:900; background:#fde047; padding:1px 4px; border-radius:3px;">SALE</span>
-            </div>
-            <div class="slot-gears-wrap">
-              <span style="color:#cbd5e1; font-size:0.56rem; font-weight:800; background:rgba(0,0,0,0.65); padding:1px 4px; border-radius:3px;">공구/할인 이벤트 ➔</span>
-            </div>
-          </div>
-        </div>
-      `;
-
-      container.innerHTML = renderedHtml;
-
-      const totalKg = (totalGrams / 1000).toFixed(2);
-      const mainKg = document.getElementById('mainBannerKgText');
-      const mainCount = document.getElementById('mainBannerItemCount');
-      const mainBadge = document.getElementById('mainBannerBadge');
-      if (mainKg) mainKg.innerText = `${totalKg} kg`;
-      if (mainCount) mainCount.innerText = `장비 ${totalItemCount}개 세팅됨`;
-
-      const totalKgText = document.getElementById('totalWeightKgText');
-      const totalGramsText = document.getElementById('totalWeightGramsText');
-      if (totalKgText) totalKgText.innerText = `${totalKg} kg`;
-      if (totalGramsText) totalGramsText.innerText = `${totalGrams.toLocaleString()} g (${totalItemCount}개)`;
-
-      const badgeText = document.getElementById('bplStatusText');
-      const gauge = document.getElementById('weightGaugeFill');
-
-      let badgeClass = 'weight-bpl-badge bpl-ul';
-      let badgeLabel = 'BPL 초경량 (UL ≤6kg)';
-
-      if (totalGrams >= 14500) {
-        badgeClass = 'weight-bpl-badge bpl-heavy';
-        badgeLabel = '헤비 패킹 (15kg+)';
-      } else if (totalGrams > 6500) {
-        badgeClass = 'weight-bpl-badge bpl-standard';
-        badgeLabel = '보통 스탠다드 (7~14kg)';
-      }
-      if (badgeText) badgeText.innerText = badgeLabel;
-      if (mainBadge) {
-        mainBadge.className = badgeClass;
-        mainBadge.innerText = badgeLabel;
-      }
-      if (gauge) {
-        const gaugePct = Math.min(100, Math.round((totalGrams / 14000) * 100));
-        gauge.style.width = `${gaugePct}%`;
-      }
-    };
-
-    window.openPackingModal = function() {
-      const modal = document.getElementById('packingCalculatorModal');
-      if (modal) {
-        document.body.style.overflow = 'hidden';
-        modal.style.setProperty('display', 'flex', 'important');
-        modal.style.setProperty('z-index', '1000', 'important');
-        window.renderCategorySlots();
-      }
-      triggerHaptic(12);
-    };
-
-    window.closePackingModal = function() { 
-      const modal = document.getElementById('packingCalculatorModal'); 
-      if (modal) {
-        document.body.style.overflow = '';
-        modal.style.setProperty('display', 'none', 'important'); 
-      }
-    };
-
-    window.removeGearFromCategory = function(categoryId, itemIndex) {
-      if (window.selectedGearMap && window.selectedGearMap[categoryId]) {
-        window.selectedGearMap[categoryId].splice(itemIndex, 1);
-        localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
-        window.renderCategorySlots();
-        triggerHaptic(10);
-        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-      }
-    };
-
-    // 🔒 패킹 공유 모달 닫기
-    function closePackShareModal() {
-      const modal = document.getElementById('packShareModalOverlay');
-      if (modal) modal.style.display = 'none';
-      if (openedFromBasecamp) {
-        openedFromBasecamp = false;
-        openMyInfoModal('history');
-      }
-      triggerHaptic(10);
-    }
-
-    function saveRecordToHistoryStorage(record) {
-      if (!record) return;
-      packingHistoryList = safeGetJSON('okbm_packing_history', []);
-      const idx = packingHistoryList.findIndex(h => h.id === record.id);
-      if (idx !== -1) {
-        packingHistoryList[idx] = record;
-      } else {
-        packingHistoryList.unshift(record);
-      }
-      if (packingHistoryList.length > 30) packingHistoryList = packingHistoryList.slice(0, 30);
-      localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
-      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-    }
-
-    function getFormattedTimestamp() {
-      const d = new Date();
-      const pad = n => String(n).padStart(2, '0');
-      return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-    }
 
     // 🌌 은하수 배경 엔진
     function initStarlightEngines() {
       const metallicColors = ['#ffffff', '#f8fafc', '#e2e8f0', '#cbd5e1', '#38bdf8', '#fde047', '#fda4af', '#34d399'];
       const makeSubtleDotStar = (top, left, size, opacity, dur, delay) => `<div style="position:absolute; top:${top}%; left:${left}%; width:${size}px; height:${size}px; border-radius:50%; background:#ffffff; opacity:${opacity}; animation:slowCelestialPulse ${dur}s infinite ease-in-out ${delay}s;"></div>`;
-      const makeCrossStar = (top, left, size, color, dur, delay) => `<svg viewBox="0 0 24 24" style="position:absolute; top:${top}%; left:${left}%; width:${size}px; height:${size}px; color:${color}; fill:currentColor; animation:slowCelestialTwinkle ${dur}s infinite ease-in-out ${delay}s;"><path d="M12,2 Q12,12 2,12 Q12,12 12,22 Q12,12 22,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,1 Z"/><circle cx="12" cy="12" r="1.2" fill="#ffffff"/></svg>`;
+      const makeCrossStar = (top, left, size, color, dur, delay) => `<svg viewBox="0 0 24 24" style="position:absolute; top:${top}%; left:${left}%; width:${size}px; height:${size}px; color:${color}; fill:currentColor; animation:slowCelestialTwinkle ${dur}s infinite ease-in-out ${delay}s;"><path d="M12,2 Q12,12 2,12 Q12,12 12,22 Q12,12 22,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,1 Z"/><circle cx="12" cy="12" r="1.2" fill="#ffffff"/></svg>`;
 
       const globalLayer = document.getElementById('globalAppMilkyWayLayer');
       if (globalLayer) {
@@ -1911,188 +1322,11 @@
       }
     }
 
-    // 🛡️ [장비 선택 & 등록 풀스크린 모달]
-    window.openGearPresetModal = function(categoryId) {
-      currentOpeningCategoryId = categoryId;
-      const category = CATEGORIES.find(c => c.id === categoryId);
-      if (!category) return;
-      
-      const titleEl = document.getElementById('presetModalCategoryTitle');
-      if (titleEl) titleEl.innerText = `${category.title} 장비 선택 & 등록`;
-      
-      const searchInput = document.getElementById('gearSearchFixedInput');
-      const clearBtn = document.getElementById('btnGearSearchClear');
-      if (searchInput) searchInput.value = '';
-      if (clearBtn) clearBtn.style.display = 'none';
-
-      const nameInput = document.getElementById('customInputGearName');
-      const weightInput = document.getElementById('customInputGearWeight');
-      if (nameInput) {
-        nameInput.value = '';
-        nameInput.onkeydown = (e) => { if (e.key === 'Enter') addCustomGearToCurrentCategory(); };
-      }
-      if (weightInput) {
-        weightInput.value = '';
-        weightInput.onkeydown = (e) => { if (e.key === 'Enter') addCustomGearToCurrentCategory(); };
-      }
-
-      renderPresetGearList('');
-      
-      const modal = document.getElementById('gearPresetModal');
-      if (modal) {
-        modal.style.setProperty('display', 'flex', 'important');
-        modal.style.setProperty('z-index', '9999999', 'important');
-      }
-      triggerHaptic(10);
-    };
-
-    function renderPresetGearList(query = '') {
-      const category = CATEGORIES.find(c => c.id === currentOpeningCategoryId);
-      const listEl = document.getElementById('presetGearDbList');
-      if (!category || !listEl) return;
-
-      const currentSelectedItems = selectedGearMap[category.id] || [];
-      const cleanQ = query.trim().toLowerCase();
-      
-      let filteredDb = category.db.filter(g => 
-        (g.name && g.name.toLowerCase().includes(cleanQ)) ||
-        (g.brand && g.brand.toLowerCase().includes(cleanQ)) ||
-        (g.specs && g.specs.toLowerCase().includes(cleanQ)) ||
-        (g.weightType && g.weightType.toLowerCase().includes(cleanQ))
-      );
-
-      filteredDb.sort((a, b) => {
-        const aFav = favoriteGearSet.has(a.name) ? 1 : 0;
-        const bFav = favoriteGearSet.has(b.name) ? 1 : 0;
-        if (aFav !== bFav) return bFav - aFav;
-
-        const aInPack = currentSelectedItems.some(it => it.name === a.name) ? 1 : 0;
-        const bInPack = currentSelectedItems.some(it => it.name === b.name) ? 1 : 0;
-        if (aInPack !== bInPack) return bInPack - aInPack;
-
-        return 0;
-      });
-
-      let html = '';
-      if (filteredDb.length === 0) {
-        html = `<div style="font-size:0.76rem; color:var(--text-muted); text-align:center; padding:35px 0;">일치하는 장비가 없습니다.<br>상단에서 직접 내 장비를 등록해보세요!</div>`;
-      } else {
-        html = filteredDb.map(g => {
-          const countInPack = currentSelectedItems.filter(it => it.name === g.name).length;
-          const isAdded = countInPack > 0;
-          const isFav = favoriteGearSet.has(g.name);
-          
-          const addedBadge = isAdded ? `<span style="font-size:0.58rem; font-weight:900; background:#10b981; color:#000; padding:1px 5px; border-radius:4px; flex-shrink:0;">✓ 담김 ${countInPack}개</span>` : '';
-          const myGearBadge = isFav ? `<span style="font-size:0.58rem; font-weight:900; background:rgba(253, 224, 71, 0.18); border:1px solid #fde047; color:#fde047; padding:1px 5px; border-radius:4px; flex-shrink:0;">⭐ 내 장비</span>` : '';
-          const brandHtml = g.brand ? `<span style="font-size:0.62rem; font-weight:900; color:#38bdf8; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); padding:1px 5px; border-radius:3px; flex-shrink:0;">${escapeHtml(g.brand)}</span>` : '';
-          const isVerified = (g.verified === true || String(g.weightType).includes('실측'));
-          const verifiedBadgeHtml = isVerified ? `<span style="font-size:0.58rem; font-weight:800; background:rgba(52, 211, 153, 0.18); border:1px solid rgba(52, 211, 153, 0.4); color:#6ee7b7; padding:1px 4px; border-radius:3px; flex-shrink:0;">✓ 실측</span>` : '';
-
-          const specsHtml = g.specs ? `
-            <div style="font-size:0.64rem; color:#94a3b8; line-height:1.3; margin-top:2px; margin-left:24px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-              ${escapeHtml(g.specs)}
-            </div>
-          ` : '';
-
-          return `
-            <div class="gear-db-item" 
-                 onclick="handleGearCardClick('${escapeHtml(g.name)}', ${g.weight}, event)"
-                 ontouchstart="handleGearCardTouchStart('${escapeHtml(g.name)}', ${g.weight}, event)"
-                 ontouchmove="handleGearCardTouchMove(event)"
-                 ontouchend="handleGearCardTouchEnd()"
-                 style="${isAdded ? 'background:linear-gradient(135deg, rgba(16,185,129,0.22), rgba(6,182,212,0.1)); border:1.5px solid #10b981; box-shadow:0 0 10px rgba(16,185,129,0.2);' : (isFav ? 'background:rgba(253,224,71,0.04); border:1px solid rgba(253,224,71,0.35);' : 'background:#090d14; border:1px solid rgba(255,255,255,0.08);')}; border-radius:10px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; cursor:pointer; user-select:none;">
-              
-              <div style="flex:1; min-width:0; padding-right:8px; display:flex; flex-direction:column; gap:1px;">
-                <div style="display:flex; align-items:center; gap:5px;">
-                  <button type="button" onclick="toggleFavoriteGear('${escapeHtml(g.name)}', event)" title="내 장비 체크" style="background:none; border:none; font-size:1.05rem; cursor:pointer; padding:0 2px;">
-                    ${isFav ? '⭐' : '<span style="color:#475569; opacity:0.6;">☆</span>'}
-                  </button>
-                  <div style="font-size:0.78rem; font-weight:800; color:#ffffff; line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">
-                    ${escapeHtml(g.name)}
-                  </div>
-                </div>
-                
-                <div style="display:flex; align-items:center; gap:4px; margin-left:24px; flex-wrap:wrap;">
-                  ${addedBadge}
-                  ${myGearBadge}
-                  ${brandHtml}
-                  ${verifiedBadgeHtml}
-                </div>
-
-                ${specsHtml}
-              </div>
-
-              <div style="text-align:right; flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; justify-content:center; min-width:68px; gap:3px;">
-                <div style="font-size:0.90rem; font-weight:900; font-family:'JetBrains Mono', monospace; color:${isAdded ? '#6ee7b7' : '#38bdf8'}; line-height:1;">
-                  ${(g.weight/1000).toFixed(2)}<span style="font-size:0.55rem; margin-left:1px; color:#cbd5e1;">kg</span>
-                </div>
-                
-                ${isAdded ? `
-                  <div class="stepper-btn-box" style="display:flex; align-items:center; background:#064e3b; border:1.5px solid #10b981; border-radius:16px; padding:1px 3px; gap:2px; height:24px; box-sizing:border-box;" 
-                       onclick="event.stopPropagation();" 
-                       ontouchstart="event.stopPropagation();" 
-                       ontouchend="event.stopPropagation();">
-                    <button type="button" style="background:none; border:none; color:#ffffff; width:18px; height:18px; font-size:0.9rem; font-weight:900; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="decrementGearCount('${escapeHtml(g.name)}', event)">−</button>
-                    <span style="font-size:0.72rem; font-weight:900; color:#ffffff; min-width:14px; text-align:center; font-family:'JetBrains Mono', monospace;">${countInPack}</span>
-                    <button type="button" style="background:none; border:none; color:#ffffff; width:18px; height:18px; font-size:0.9rem; font-weight:900; display:flex; align-items:center; justify-content:center;" onclick="addGearToCategory('${escapeHtml(g.name)}', ${g.weight}, event)">+</button>
-                  </div>
-                ` : `
-                  <button type="button" class="stepper-btn-box" style="background:rgba(56,189,248,0.15); border:1px solid #38bdf8; color:#7dd3fc; font-size:0.65rem; font-weight:800; padding:2px 8px; border-radius:10px; cursor:pointer; height:20px; display:inline-flex; align-items:center; justify-content:center;" onclick="event.stopPropagation(); addGearToCategory('${escapeHtml(g.name)}', ${g.weight});">
-                    + 담기
-                  </button>
-                `}
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
-      listEl.innerHTML = html;
-    }
-
-    let isGearScrollMoving = false;
-    let gearTouchStartX = 0, gearTouchStartY = 0;
-    let gearLongPressTimer = null;
-    let isGearLongPressTriggered = false;
-
-    function handleGearCardTouchStart(name, weight, e) {
-      if (e.target.closest('.stepper-btn-box')) return;
-      isGearScrollMoving = false;
-      isGearLongPressTriggered = false;
-      gearTouchStartX = e.touches[0].clientX;
-      gearTouchStartY = e.touches[0].clientY;
-
-      gearLongPressTimer = setTimeout(() => {
-        isGearLongPressTriggered = true;
-        triggerHaptic(35);
-        removeSpecificGearCompletely(name);
-        showToast(`[${name}] 배낭에서 완전 삭제 ✕`, 'info');
-      }, 450);
-    }
-
-    function handleGearCardTouchMove(e) {
-      const diffX = Math.abs(e.touches[0].clientX - gearTouchStartX);
-      const diffY = Math.abs(e.touches[0].clientY - gearTouchStartY);
-      if (diffX > 8 || diffY > 8) {
-        isGearScrollMoving = true;
-        clearTimeout(gearLongPressTimer);
-      }
-    }
-
-    function handleGearCardTouchEnd() {
-      clearTimeout(gearLongPressTimer);
-    }
-
-    function handleGearCardClick(name, weight, e) {
-      if (e.target.closest('.stepper-btn-box')) return;
-      if (isGearScrollMoving || isGearLongPressTriggered) return;
-      triggerHaptic(12);
-      addGearToCategory(name, weight);
-    }
-
+    // 🔍 장비 검색/선택 핸들러 호환 연결
     function handleGearSearchInput(val) {
       const clearBtn = document.getElementById('btnGearSearchClear');
       if (clearBtn) clearBtn.style.display = val.trim().length > 0 ? 'flex' : 'none';
-      renderPresetGearList(val);
+      if (typeof renderPresetGearList === 'function') renderPresetGearList(val);
     }
 
     function clearGearSearchInput() {
@@ -2100,11 +1334,11 @@
       const clearBtn = document.getElementById('btnGearSearchClear');
       if (input) { input.value = ''; input.focus(); }
       if (clearBtn) clearBtn.style.display = 'none';
-      renderPresetGearList('');
+      if (typeof renderPresetGearList === 'function') renderPresetGearList('');
       triggerHaptic(10);
     }
 
-    // 🔍 [클린패킹카드 박지 검색 및 드롭다운 엔진]
+    // 🔍 클린패킹카드 박지 검색 핸들러
     window.handleSpotSearchInput = function(val) {
       val = val || '';
       var clearBtn = document.getElementById('btnSpotInputClear');
@@ -2150,11 +1384,8 @@
       var dropdown = document.getElementById('spotSearchDropdown');
       var input = document.getElementById('shareCardSpotInput');
       if (!dropdown) return;
-      if (dropdown.style.display === 'block') {
-        dropdown.style.display = 'none';
-      } else {
-        window.handleSpotSearchInput(input ? input.value : '');
-      }
+      if (dropdown.style.display === 'block') dropdown.style.display = 'none';
+      else window.handleSpotSearchInput(input ? input.value : '');
       triggerHaptic(10);
     };
 
@@ -2162,10 +1393,7 @@
       var input = document.getElementById('shareCardSpotInput');
       var clearBtn = document.getElementById('btnSpotInputClear');
       var dropdown = document.getElementById('spotSearchDropdown');
-      if (input) {
-        input.value = '';
-        input.focus();
-      }
+      if (input) { input.value = ''; input.focus(); }
       if (clearBtn) clearBtn.style.display = 'none';
       if (dropdown) dropdown.style.display = 'none';
       if (typeof updateShareCardLive === 'function') updateShareCardLive();
@@ -2176,7 +1404,6 @@
       var input = document.getElementById('shareCardSpotInput');
       var clearBtn = document.getElementById('btnSpotInputClear');
       var dropdown = document.getElementById('spotSearchDropdown');
-
       var fullSpotTitle = spotName + (elevation ? ' (' + elevation + ')' : '');
       if (input) input.value = fullSpotTitle;
       if (clearBtn) clearBtn.style.display = 'flex';
@@ -2186,166 +1413,65 @@
         window.currentShareRecord.spot = fullSpotTitle;
         if (elevation) window.currentShareRecord.elevation = elevation;
       }
-
       if (typeof updateShareCardLive === 'function') updateShareCardLive();
       triggerHaptic(12);
     };
 
-    function closeGearPresetModal() { 
-      const modal = document.getElementById('gearPresetModal');
-      if (modal) modal.style.setProperty('display', 'none', 'important');
-      currentOpeningCategoryId = null; 
+    function closePackShareModal() {
+      const modal = document.getElementById('packShareModalOverlay');
+      if (modal) modal.style.display = 'none';
+      triggerHaptic(10);
     }
 
-    function addGearToCategory(name, weight, e) {
-      if (e) { e.preventDefault(); e.stopPropagation(); }
-      if (!currentOpeningCategoryId) return;
-      if (!Array.isArray(selectedGearMap[currentOpeningCategoryId])) selectedGearMap[currentOpeningCategoryId] = [];
-      selectedGearMap[currentOpeningCategoryId].push({ id: 'item_' + Date.now() + '_' + Math.random(), name, weight: Number(weight) || 0 });
-      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
-      renderCategorySlots();
-      const searchInput = document.getElementById('gearSearchFixedInput');
-      renderPresetGearList(searchInput ? searchInput.value : '');
-      triggerHaptic(12);
-      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-    }
+    function saveCardToVaultAndOpenBasecamp() {
+      var spotInput = document.getElementById('shareCardSpotInput');
+      var memoInput = document.getElementById('shareCardMemoInput');
+      var liveSpot = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '대관령 선자령';
+      var liveMemo = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : '';
+      var now = new Date();
+      var cleanDateStr = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
 
-    function decrementGearCount(gearName, e) {
-      if (e) { e.preventDefault(); e.stopPropagation(); }
-      if (!currentOpeningCategoryId || !selectedGearMap[currentOpeningCategoryId]) return;
-      const list = selectedGearMap[currentOpeningCategoryId];
-      const targetIdx = list.findIndex(it => it.name === gearName);
-      if (targetIdx !== -1) {
-        list.splice(targetIdx, 1);
-        localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
-        renderCategorySlots();
-        const searchInput = document.getElementById('gearSearchFixedInput');
-        renderPresetGearList(searchInput ? searchInput.value : '');
-        triggerHaptic(10);
-        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-      }
-    }
+      var rec = window.currentShareRecord || {};
+      var items = window.currentShareItems || rec.items || [];
+      var totalGrams = items.reduce(function(sum, g) { return sum + Number(g.weight || 0); }, 0);
+      var weightKg = (totalGrams > 0) ? (totalGrams / 1000).toFixed(2) : (rec.weightKg || '0.00');
 
-    function removeSpecificGearCompletely(gearName) {
-      if (!currentOpeningCategoryId || !selectedGearMap[currentOpeningCategoryId]) return;
-      selectedGearMap[currentOpeningCategoryId] = selectedGearMap[currentOpeningCategoryId].filter(it => it.name !== gearName);
-      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
-      renderCategorySlots();
-      const searchInput = document.getElementById('gearSearchFixedInput');
-      renderPresetGearList(searchInput ? searchInput.value : '');
-      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-    }
-
-    function clearAllGearsInCategory(categoryId) {
-      if (!categoryId) return;
-      selectedGearMap[categoryId] = [];
-      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
-      const searchInput = document.getElementById('gearSearchFixedInput');
-      renderPresetGearList(searchInput ? searchInput.value : '');
-      renderCategorySlots();
-      triggerHaptic(15);
-      showToast('해당 카테고리가 모두 비워졌습니다.', 'info');
-      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-    }
-
-    function addCustomGearToCurrentCategory() {
-      if (!currentOpeningCategoryId) return;
-      const nameInput = document.getElementById('customInputGearName');
-      const weightInput = document.getElementById('customInputGearWeight');
-      if (!nameInput || !weightInput) return;
-
-      const name = nameInput.value.trim();
-      const weight = parseInt(weightInput.value, 10);
-      if (!name || isNaN(weight) || weight < 0) return showToast('장비명과 정확한 무게(g)를 입력해주세요.', 'warn');
-      
-      const newCustomItem = {
-        id: 'custom_' + Date.now(),
-        name: name,
-        weight: weight,
-        brand: '직접등록',
-        category_id: currentOpeningCategoryId,
-        verified: true,
-        specs: '내 커스텀 장비'
+      var newRecord = {
+        id: rec.id || ('pack_' + Date.now()),
+        date: rec.date || cleanDateStr,
+        spot: liveSpot,
+        memo: liveMemo,
+        elevation: rec.elevation || '832m',
+        weightKg: weightKg,
+        weightGrams: totalGrams || rec.weightGrams || 0,
+        itemCount: items.length,
+        items: items,
+        photo: window.currentSharePhoto || rec.photo || '',
+        photos: window.currentSharePhoto ? [window.currentSharePhoto] : (rec.photos || []),
+        templateId: window.selectedTemplateId || rec.templateId || 1
       };
 
-      const customGears = safeGetJSON('okbm_custom_gears', []);
-      if (!customGears.some(g => g.name === name)) {
-        customGears.unshift(newCustomItem);
-        localStorage.setItem('okbm_custom_gears', JSON.stringify(customGears));
-      }
-
-      const cat = CATEGORIES.find(c => c.id === currentOpeningCategoryId);
-      if (cat && !cat.db.some(d => d.name === name)) {
-        cat.db.unshift(newCustomItem);
-      }
-
-      favoriteGearSet.add(name);
-      localStorage.setItem('okbm_favorite_gears', JSON.stringify([...favoriteGearSet]));
-
-      addGearToCategory(name, weight);
-
-      nameInput.value = '';
-      weightInput.value = '';
-      
-      showToast(`⭐ [${name}]이 내 장비로 등록되었습니다!`, 'success');
-      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-    }
-
-    function resetAllGearSelections() {
-      const modal = document.getElementById('packResetConfirmModal');
-      if (modal) {
-        modal.style.setProperty('display', 'flex', 'important');
-        triggerHaptic(12);
-      }
-    }
-
-    function closeResetConfirmModal() {
-      const modal = document.getElementById('packResetConfirmModal');
-      if (modal) modal.style.setProperty('display', 'none', 'important');
-    }
-
-    function executeResetAllGears() {
-      CATEGORIES.forEach(c => { 
-        if (window.selectedGearMap) window.selectedGearMap[c.id] = []; 
-      });
-      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap || {}));
-      renderCategorySlots();
-      closeResetConfirmModal();
-      triggerHaptic(20);
-      showToast('배낭의 모든 장비가 초기화되었습니다.', 'info');
-      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-    }
-
-    // ⭐ [내 장비 찜 토글 함수 - 에러 원천 차단 및 클라우드 즉시 동기화]
-    window.toggleFavoriteGear = function(gearName, e) {
-      if (e) { e.preventDefault(); e.stopPropagation(); }
-      if (!gearName) return;
-
-      if (!window.favoriteGearSet) window.favoriteGearSet = new Set();
-
-      if (window.favoriteGearSet.has(gearName)) {
-        window.favoriteGearSet.delete(gearName);
-        showToast(`☆ [${gearName}] 내 장비 해제`, 'info');
+      if (typeof window.savePackingHistoryRecord === 'function') {
+        window.savePackingHistoryRecord(newRecord);
       } else {
-        window.favoriteGearSet.add(gearName);
-        showToast(`⭐ [${gearName}] 내 장비 등록!`, 'success');
+        var historyList = safeGetJSON('okbm_packing_history', []);
+        var existIdx = historyList.findIndex(function(h) { return String(h.id) === String(newRecord.id); });
+        if (existIdx !== -1) historyList[existIdx] = newRecord;
+        else historyList.unshift(newRecord);
+        localStorage.setItem('okbm_packing_history', JSON.stringify(historyList));
+        if (typeof window.saveToIndexedDB === 'function') window.saveToIndexedDB('okbm_packing_history', historyList);
+        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
       }
 
-      localStorage.setItem('okbm_favorite_gears', JSON.stringify([...window.favoriteGearSet]));
-      
-      const searchInput = document.getElementById('gearSearchFixedInput');
-      renderPresetGearList(searchInput ? searchInput.value : '');
-      renderCategorySlots();
-      triggerHaptic(10);
+      closePackShareModal();
+      if (typeof openHistoryModal === 'function') openHistoryModal();
+      showToast('✅ 낭만 피드 목록에 저장되었습니다!', 'success');
+      triggerHaptic(15);
+    }
 
-      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-    };
-
-    // =========================================================================
-    // 📸 [내 사진 전체화면 포토 스튜디오 엔진 & 카드 연동]
-    // =========================================================================
+    // 📸 포토 스튜디오 함수군
     function openPhotoStudio() {
-      if (typeof closePackShareModal === 'function') closePackShareModal();
+      closePackShareModal();
       const studio = document.getElementById('photoStudioOverlay');
       if (studio) studio.style.setProperty('display', 'flex', 'important');
       updateStudioUI();
@@ -2356,14 +1482,9 @@
     function closePhotoStudio() {
       const studio = document.getElementById('photoStudioOverlay');
       if (studio) studio.style.setProperty('display', 'none', 'important');
-      if (openedFromBasecamp) { 
-        openedFromBasecamp = false; 
-        openMyInfoModal('history'); 
-      } else { 
-        const modal = document.getElementById('packShareModalOverlay');
-        if (modal) modal.style.setProperty('display', 'flex', 'important'); 
-        if (typeof updateShareCardLive === 'function') updateShareCardLive(); 
-      }
+      const modal = document.getElementById('packShareModalOverlay');
+      if (modal) modal.style.setProperty('display', 'flex', 'important'); 
+      if (typeof updateShareCardLive === 'function') updateShareCardLive();
       triggerHaptic(10);
     }
 
@@ -2414,112 +1535,36 @@
       }
     }
 
-    function generateStudioPhotoCardMarkup(record, items, spot, memo, photo, textColor, ratio, customRatioVal, photoScale) {
-      var profile = safeGetJSON('user_profile', null);
-      var nick = (profile && profile.nickname) ? profile.nickname : '낭만백패커';
-      var weight = record ? record.weightKg : '0.00';
-      var dateStr = (record && record.date) ? record.date : (function() {
-        var d = new Date();
-        return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
-      })();
-
-      var isDarkText = (textColor === 'black');
-      var colorPrimary = isDarkText ? '#0f172a' : '#ffffff';
-      var colorSecondary = isDarkText ? '#334155' : '#cbd5e1';
-      var colorMuted = isDarkText ? '#64748b' : '#94a3b8';
-      var glassBg = isDarkText ? 'rgba(255, 255, 255, 0.72)' : 'rgba(0, 0, 0, 0.62)';
-      var glassBorder = isDarkText ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.18)';
-      var overlayGradient = isDarkText
-        ? 'linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.1) 40%, rgba(255,255,255,0.88) 100%)'
-        : 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.08) 40%, rgba(0,0,0,0.85) 100%)';
-
-      var ratioStyle = 'aspect-ratio: 9/16;';
-      if (ratio === '1/1') ratioStyle = 'aspect-ratio: 1/1;';
-      else if (ratio === '4/5') ratioStyle = 'aspect-ratio: 4/5;';
-      else if (ratio === '3/4') ratioStyle = 'aspect-ratio: 3/4;';
-      else if (ratio === '9/16') ratioStyle = 'aspect-ratio: 9/16;';
-      else if (ratio === 'free') ratioStyle = 'aspect-ratio: ' + (customRatioVal || 0.75) + ';';
-      else if (ratio === 'auto') ratioStyle = 'aspect-ratio: 9/16;';
-
-      var scaleVal = Number(photoScale) || 1.0;
-      var logoSvg = (typeof SVG_ICONS !== 'undefined' && typeof SVG_ICONS.brandLogo === 'function')
-        ? SVG_ICONS.brandLogo(colorPrimary, isDarkText ? '#0284c7' : '#38bdf8')
-        : '<svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:#38bdf8;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
-      var pinSvg = (typeof SVG_ICONS !== 'undefined' && SVG_ICONS.pin) ? SVG_ICONS.pin : '📍';
-      var lntShieldSvg = (typeof SVG_ICONS !== 'undefined' && SVG_ICONS.lntShield) ? SVG_ICONS.lntShield : '🛡️';
-
-      var gearListHtml = '';
-      if (typeof renderAdaptiveGearList === 'function') {
-        gearListHtml = renderAdaptiveGearList(items, {
-          nameColor: colorPrimary,
-          wtColor: isDarkText ? '#0284c7' : '#38bdf8',
-          subColor: colorMuted,
-          fontSize: '0.62rem',
-          paddingY: '0.6px'
-        });
-      } else if (items && items.length > 0) {
-        gearListHtml = items.slice(0, 8).map(function(it) {
-          var iName = it.name || it.itemName || '장비';
-          var iWt = it.weight || it.weight_g || 0;
-          return '<div style="display:flex; justify-content:space-between; font-size:0.62rem; color:' + colorPrimary + '; font-family:var(--font-mono);">' +
-            '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:75%;">' + escapeHtml(iName) + '</span>' +
-            '<span>' + (iWt / 1000).toFixed(2) + 'kg</span>' +
-          '</div>';
-        }).join('');
-      }
-
-      return '<div style="position:relative; width:100%; max-width:390px; ' + ratioStyle + ' max-height:86vh; margin:0 auto; border-radius:14px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.9); user-select:none; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">' +
-        '<img id="photoStudioBgImage" src="' + photo + '" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scale(' + scaleVal + '); transform-origin:center center; transition:transform 0.1s ease; pointer-events:none; z-index:1;" />' +
-        '<div style="position:absolute; inset:0; background:' + overlayGradient + '; pointer-events:none; z-index:2;"></div>' +
-        '<div style="position:relative; z-index:3; width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-between; padding:14px 12px; box-sizing:border-box;">' +
-          '<div style="display:flex; flex-direction:column; gap:5px;">' +
-            '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid ' + glassBorder + '; padding-bottom:4px;">' +
-              '<div style="display:flex; align-items:center; gap:4px;">' +
-                logoSvg +
-                '<span style="font-family:\'Space Grotesk\', sans-serif; font-size:0.78rem; font-weight:900; letter-spacing:1px; color:' + colorPrimary + ';">ROMANTIC ROUTE</span>' +
-              '</div>' +
-              '<span style="font-size:0.46rem; font-weight:900; background:' + (isDarkText ? '#0284c7' : '#38bdf8') + '; color:' + (isDarkText ? '#fff' : '#000') + '; padding:1.5px 6px; border-radius:4px;">LNT EXPEDITION</span>' +
-            '</div>' +
-            '<div style="background:' + glassBg + '; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid ' + glassBorder + '; border-radius:8px; padding:6px 8px;">' +
-              '<div style="font-size:0.92rem; font-weight:900; color:' + colorPrimary + '; line-height:1.2; font-family:\'SUIT\', sans-serif;">' +
-                pinSvg + ' ' + escapeHtml(spot) +
-              '</div>' +
-              '<div style="font-size:0.56rem; color:' + colorMuted + '; margin-top:2px; font-weight:700;">' +
-                'Explorer. <strong style="color:' + colorPrimary + ';">' + escapeHtml(nick) + '</strong> (' + escapeHtml(dateStr) + ')' +
-              '</div>' +
-              '<div style="font-size:0.58rem; color:' + colorSecondary + '; font-style:italic; margin-top:2px;">' +
-                '“' + escapeHtml(memo) + '”' +
-              '</div>' +
-            '</div>' +
-          '</div>' +
-          '<div style="display:flex; flex-direction:column; gap:5px; margin-top:auto;">' +
-            (items && items.length > 0 ? (
-              '<div style="background:' + glassBg + '; backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid ' + glassBorder + '; border-radius:8px; padding:5px 7px; max-height:140px; overflow:hidden;">' +
-                gearListHtml +
-              '</div>'
-            ) : '') +
-            '<div style="display:flex; justify-content:space-between; align-items:baseline; padding:0 2px;">' +
-              '<span style="font-size:0.56rem; font-weight:800; color:' + colorMuted + '; font-family:\'Space Grotesk\', sans-serif;">TOTAL WEIGHT</span>' +
-              '<span style="font-size:1.35rem; font-weight:900; color:' + colorPrimary + '; font-family:\'Space Grotesk\', sans-serif;">' + weight + ' <small style="font-size:0.65rem;">KG</small></span>' +
-            '</div>' +
-            '<div style="background:' + glassBg + '; border:1px solid ' + glassBorder + '; border-radius:6px; padding:4px 6px; text-align:center;">' +
-              '<span style="font-size:0.62rem; font-weight:900; color:' + (isDarkText ? '#047857' : '#34d399') + '; display:inline-flex; align-items:center; gap:3px;">' +
-                lntShieldSvg + ' <span>[' + escapeHtml(nick) + ']님은 LNT를 준수합니다</span>' +
-              '</span>' +
-            '</div>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-    }
-
     function updateStudioCardLive() {
       var container = document.getElementById('photoStudioCardTarget');
       if (!container || !currentSharePhoto) return;
       var spotInput = document.getElementById('shareCardSpotInput');
       var memoInput = document.getElementById('shareCardMemoInput');
-      var spotVal = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : (window.currentShareRecord ? window.currentShareRecord.spot : '강원 대관령 선자령 (832m)');
-      var memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : (window.currentShareRecord ? window.currentShareRecord.memo : '비화식으로 즐기는 조용한 하룻밤');
-      container.innerHTML = generateStudioPhotoCardMarkup(window.currentShareRecord, window.currentShareItems, spotVal, memoVal, currentSharePhoto, currentPhotoTextColor, currentCardRatio, currentCustomRatioVal, currentPhotoScaleVal);
+      var spotVal = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '강원 대관령 선자령 (832m)';
+      var memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : '비화식으로 즐기는 조용한 하룻밤';
+      
+      var profile = safeGetJSON('user_profile', null);
+      var nick = (profile && profile.nickname) ? profile.nickname : '낭만백패커';
+      var isDarkText = (currentPhotoTextColor === 'black');
+      var colorPrimary = isDarkText ? '#0f172a' : '#ffffff';
+      var glassBg = isDarkText ? 'rgba(255, 255, 255, 0.72)' : 'rgba(0, 0, 0, 0.62)';
+      var glassBorder = isDarkText ? 'rgba(0, 0, 0, 0.15)' : 'rgba(255, 255, 255, 0.18)';
+
+      container.innerHTML = `
+        <div style="position:relative; width:100%; max-width:390px; aspect-ratio:${currentCardRatio === 'free' ? currentCustomRatioVal : (currentCardRatio === '1/1' ? '1/1' : (currentCardRatio === '4/5' ? '4/5' : (currentCardRatio === '3/4' ? '3/4' : '9/16')))}; max-height:86vh; margin:0 auto; border-radius:14px; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.9); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
+          <img id="photoStudioBgImage" src="${currentSharePhoto}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scale(${currentPhotoScaleVal}); pointer-events:none; z-index:1;" />
+          <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.85) 100%); pointer-events:none; z-index:2;"></div>
+          <div style="position:relative; z-index:3; width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-between; padding:14px 12px; box-sizing:border-box;">
+            <div style="background:${glassBg}; backdrop-filter:blur(10px); border:1px solid ${glassBorder}; border-radius:8px; padding:6px 8px;">
+              <div style="font-size:0.92rem; font-weight:900; color:${colorPrimary};">📍 ${escapeHtml(spotVal)}</div>
+              <div style="font-size:0.58rem; color:${colorPrimary}; font-style:italic; margin-top:2px;">“${escapeHtml(memoVal)}”</div>
+            </div>
+            <div style="background:${glassBg}; border:1px solid ${glassBorder}; border-radius:6px; padding:4px 6px; text-align:center;">
+              <span style="font-size:0.62rem; font-weight:900; color:#34d399;">[${escapeHtml(nick)}]님은 LNT를 준수합니다</span>
+            </div>
+          </div>
+        </div>
+      `;
     }
 
     function handleShareCardPhotoUpload(e) {
@@ -2538,7 +1583,6 @@
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
           currentSharePhoto = canvas.toDataURL('image/jpeg', 0.88);
-          if (window.currentShareRecord) window.currentShareRecord.photo = currentSharePhoto;
           openPhotoStudio();
         };
         img.src = evt.target.result;
@@ -2551,75 +1595,14 @@
       const card = document.getElementById('photoStudioCardTarget');
       if (!card || typeof html2canvas === 'undefined') return;
       triggerHaptic(15);
-      html2canvas(card, { backgroundColor: '#000000', scale: 3, useCORS: true, allowTaint: true, logging: false, scrollX: 0, scrollY: 0 }).then(canvas => {
+      html2canvas(card, { backgroundColor: '#000000', scale: 3, useCORS: true, allowTaint: true, logging: false }).then(canvas => {
         const link = document.createElement('a');
-        link.download = `낭만루트_LNT_${getFormattedTimestamp()}.png`;
+        link.download = `낭만루트_LNT_${Date.now()}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
-        showToast('초고화질 클린 패킹 카드가 갤러리에 저장되었습니다!', 'download');
+        showToast('클린 패킹 카드가 갤러리에 저장되었습니다!', 'download');
       });
     }
-
-    window.openPackShareModal = function(record, items, openStudioDirectly) {
-      if (typeof openPackShareModal === 'function' && openPackShareModal !== window.openPackShareModal) {
-        openPackShareModal(record, items, openStudioDirectly);
-        return;
-      }
-      window.currentShareRecord = record || window.currentShareRecord;
-      window.currentShareItems = items || (record && record.items) || [];
-      window.currentSharePhoto = (record && record.photo) ? record.photo : window.currentSharePhoto || '';
-      
-      var spotInput = document.getElementById('shareCardSpotInput');
-      var memoInput = document.getElementById('shareCardMemoInput');
-      if (spotInput && record && record.spot) spotInput.value = record.spot;
-      if (memoInput && record && record.memo) memoInput.value = record.memo;
-
-      if (openStudioDirectly && window.currentSharePhoto && typeof openPhotoStudio === 'function') {
-        openPhotoStudio();
-        return;
-      }
-
-      var modal = document.getElementById('packShareModalOverlay');
-      if (modal) {
-        modal.style.setProperty('display', 'flex', 'important');
-        modal.style.setProperty('z-index', '99999', 'important');
-      }
-      if (typeof updateShareCardLive === 'function') updateShareCardLive();
-      triggerHaptic(12);
-    };
-
-    window.switchShareCardTemplate = function(templateId) {
-      if (typeof switchShareCardTemplate === 'function' && switchShareCardTemplate !== window.switchShareCardTemplate) {
-        switchShareCardTemplate(templateId);
-        return;
-      }
-      window.selectedTemplateId = Number(templateId);
-      localStorage.setItem('romantic_selected_template', String(templateId));
-      if (typeof updateShareCardLive === 'function') updateShareCardLive();
-      triggerHaptic(8);
-    };
-
-    window.updateShareCardLive = function() {
-      if (typeof updateShareCardLive === 'function' && updateShareCardLive !== window.updateShareCardLive) {
-        updateShareCardLive();
-        return;
-      }
-      var captureArea = document.getElementById('packShareCaptureArea');
-      if (!captureArea) return;
-      var spotInput = document.getElementById('shareCardSpotInput');
-      var memoInput = document.getElementById('shareCardMemoInput');
-      var spotVal = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : (window.currentShareRecord ? window.currentShareRecord.spot : '강원 대관령 선자령 (832m)');
-      var memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : (window.currentShareRecord ? window.currentShareRecord.memo : '비화식으로 즐기는 조용한 하룻밤');
-      var record = window.currentShareRecord || { weightKg: '0.00', date: '' };
-      var items = window.currentShareItems || [];
-      var tmplId = window.selectedTemplateId || 1;
-      
-      if (typeof window.generateCardMarkup === 'function') {
-        captureArea.innerHTML = window.generateCardMarkup(tmplId, record, items, spotVal, memoVal, window.currentSharePhoto || '');
-      } else if (typeof generateCardMarkup === 'function') {
-        captureArea.innerHTML = generateCardMarkup(tmplId, record, items, spotVal, memoVal, window.currentSharePhoto || '');
-      }
-    };
 
     function captureAndSavePackCard() {
       const captureArea = document.getElementById('packShareCaptureArea');
@@ -2627,7 +1610,7 @@
       triggerHaptic(15);
       html2canvas(captureArea, { backgroundColor: null, scale: 3, useCORS: true, allowTaint: true, logging: false }).then(canvas => {
         const link = document.createElement('a');
-        link.download = `낭만루트_패킹카드_${getFormattedTimestamp()}.png`;
+        link.download = `낭만루트_패킹카드_${Date.now()}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
         showToast('패킹 카드가 갤러리에 저장되었습니다!', 'download');
@@ -2635,35 +1618,18 @@
     }
 
     function sharePackCardToKakao() {
-      if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) {
-        showToast('카카오 연동을 준비 중입니다.', 'warn');
-        return;
-      }
+      if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) return showToast('카카오 SDK를 초기화 중입니다.', 'warn');
       triggerHaptic(15);
       const spotInput = document.getElementById('shareCardSpotInput');
-      const spotName = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '낭만 백패킹 여정';
-      const weight = currentShareRecord ? currentShareRecord.weightKg : '0.00';
-      
+      const spotName = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '대관령 선자령';
       Kakao.Link.sendDefault({
         objectType: 'feed',
         content: {
           title: `[낭만루트] ${spotName} 배낭 패킹 완료!`,
-          description: `총 배낭 무게: ${weight}kg | 흔적 없는 클린 백패킹 실천`,
+          description: `흔적 없는 클린 백패킹 실천`,
           imageUrl: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80',
-          link: {
-            mobileWebUrl: window.location.href,
-            webUrl: window.location.href
-          }
-        },
-        buttons: [
-          {
-            title: '나도 패킹하기',
-            link: {
-              mobileWebUrl: window.location.origin + window.location.pathname,
-              webUrl: window.location.origin + window.location.pathname
-            }
-          }
-        ]
+          link: { mobileWebUrl: window.location.href, webUrl: window.location.href }
+        }
       });
     }
 
@@ -2671,8 +1637,54 @@
       triggerHaptic(12);
       captureAndSavePackCard();
       setTimeout(function() {
-        alert('카드 이미지가 기기에 저장되었습니다!\n인스타그램 스토리나 피드에 이미지를 업로드해 보세요 📸');
+        alert('카드 이미지가 기기에 저장되었습니다!\n인스타그램 피드나 스토리에 공유해보세요 📸');
       }, 600);
+    }
+
+    function parseSpotStructuredDetails(rawText) {
+      if (!rawText) return [];
+      const normalized = String(rawText).replace(/\r\n/g, '\n').trim();
+      const keywordRegex = /(?:\[\s*([^\]]+?)\s*\]|([가-힣a-zA-Z0-9\s]{1,8}\/[가-힣a-zA-Z0-9\s]{1,8}|뷰\s*특징|접근\s*코스|박지\s*피칭|주의\s*사항|이용\s*안내)[:\s]?)/g;
+      const matches = [];
+      let m;
+      while ((m = keywordRegex.exec(normalized)) !== null) {
+        const rawTag = (m[1] || m[2] || m[0]).replace(/[\[\]:\/]/g, ' ').trim();
+        matches.push({ tag: rawTag, start: m.index, end: m.index + m[0].length });
+      }
+      if (matches.length === 0) return [{ tag: '안내', content: normalized }];
+      const results = [];
+      for (let i = 0; i < matches.length; i++) {
+        const contentStart = matches[i].end;
+        const contentEnd = (i + 1 < matches.length) ? matches[i + 1].start : normalized.length;
+        const content = normalized.substring(contentStart, contentEnd).replace(/\s+/g, ' ').trim();
+        if (content) results.push({ tag: matches[i].tag, content });
+      }
+      return results;
+    }
+
+    function cleanSpotDescription(rawText) {
+      if (!rawText) return '자연 속에서 즐기는 조용한 하룻밤.';
+      const structured = parseSpotStructuredDetails(rawText);
+      if (structured && structured.length > 0) {
+        const highlight = structured.find(s => s.tag.includes('뷰') || s.tag.includes('특징')) || structured[0];
+        const sentences = highlight.content.split(/(?<=[.!?])\s+/);
+        return sentences.slice(0, 2).join(' ').trim();
+      }
+      return '자연 속에서 즐기는 조용한 하룻밤.';
+    }
+
+    let isSpotDetailsExpanded = false;
+    function toggleSpotDetails() {
+      isSpotDetailsExpanded = !isSpotDetailsExpanded;
+      const panel = document.getElementById('luckyDetailsExpanded');
+      const label = document.getElementById('toggleSpotMoreText');
+      const arrow = document.getElementById('toggleSpotMoreArrow');
+      if (panel) {
+        panel.classList.toggle('show', isSpotDetailsExpanded);
+        if (label) label.innerText = isSpotDetailsExpanded ? '접기' : '상세 정보 더보기';
+        if (arrow) arrow.innerText = isSpotDetailsExpanded ? '▴' : '▾';
+      }
+      triggerHaptic(10);
     }
 
     function displayLuckySpot(spot) {
@@ -2681,67 +1693,54 @@
       const elevEl = document.getElementById('luckyElev');
       const descEl = document.getElementById('luckyDesc');
       const tagEl = document.getElementById('luckyTag');
-      if (nameEl) nameEl.innerText = spot.name;
-      if (elevEl) elevEl.innerText = spot.elevation ? `${spot.elevation}m` : '전망';
-      if (descEl) descEl.innerText = spot.desc || '자연 속에서 즐기는 조용한 하룻밤.';
+      const expandedPanel = document.getElementById('luckyDetailsExpanded');
+
+      if (nameEl) nameEl.innerText = spot.name || spot.fullName || '추천 박지';
+      if (elevEl) elevEl.innerText = spot.elevation ? (String(spot.elevation).includes('m') ? spot.elevation : `${spot.elevation}m`) : '전망';
       if (tagEl) tagEl.innerText = spot.region || '전국';
 
-      const wTarget = document.getElementById('weatherTargetName');
-      if (wTarget) wTarget.innerText = `${spot.name} 기준`;
+      const rawDesc = spot.desc || spot.desc_summary || '';
+      if (descEl) descEl.innerText = cleanSpotDescription(rawDesc);
+
+      if (expandedPanel) {
+        const structured = parseSpotStructuredDetails(rawDesc);
+        if (structured.length > 0) {
+          expandedPanel.innerHTML = structured.map(item => `
+            <div class="detail-spec-row">
+              <span class="detail-spec-tag">${escapeHtml(item.tag)}</span>
+              <span class="detail-spec-val">${escapeHtml(item.content)}</span>
+            </div>
+          `).join('');
+        }
+      }
     }
 
     function goToLuckySpot() {
-      if (currentLuckySpot && currentLuckySpot.name) location.href = `map.html?spot=${encodeURIComponent(currentLuckySpot.name)}`;
-      else location.href = 'map.html';
+      if (currentLuckySpot && (currentLuckySpot.name || currentLuckySpot.fullName)) {
+        location.href = `map.html?spot=${encodeURIComponent(currentLuckySpot.fullName || currentLuckySpot.name)}`;
+      } else {
+        location.href = 'map.html';
+      }
     }
 
     function rollLuckySpot() {
       if (!registeredSpots || registeredSpots.length === 0) return;
       currentLuckySpot = registeredSpots[Math.floor(Math.random() * registeredSpots.length)];
       displayLuckySpot(currentLuckySpot);
-      refreshWeatherWidget(false);
-      triggerHaptic(15);
+      isSpotDetailsExpanded = false;
+      const panel = document.getElementById('luckyDetailsExpanded');
+      if (panel) panel.classList.remove('show');
+      triggerHaptic(12);
     }
 
-    function refreshWeatherWidget(showToastMsg = true) {
-      const temps = [11, 12, 14, 15, 17, 9, 8];
-      const winds = [1.8, 2.4, 3.1, 4.2, 1.2, 5.0];
-      const conditions = [
-        { status: '쾌적 박지', color: '#34d399' },
-        { status: '돌풍 주의', color: '#f59e0b' },
-        { status: '비박 최적', color: '#38bdf8' }
-      ];
-
-      const rTemp = temps[Math.floor(Math.random() * temps.length)];
-      const rWind = winds[Math.floor(Math.random() * winds.length)];
-      const rCond = conditions[Math.floor(Math.random() * conditions.length)];
-
-      const tempEl = document.getElementById('weatherTempBig');
-      const windEl = document.getElementById('weatherWindText');
-      const badgeEl = document.getElementById('weatherStatusBadge');
-
-      if (tempEl) tempEl.innerText = `${rTemp}°C`;
-      if (windEl) windEl.innerText = `풍속 ${rWind}m/s`;
-      if (badgeEl) {
-        badgeEl.innerText = rCond.status;
-        badgeEl.style.color = rCond.color;
-      }
-
-      if (showToastMsg) {
-        showToast('최신 필드 기상 정보를 갱신했습니다.', 'info');
-      }
-    }
-
-    // 🔥 설문 & 박지톡
     const POLL_OPTIONS = [
-      { id: 'opt1', text: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:12px; height:12px; color:#10b981; margin-right:4px;"><polygon points="2 20 8.5 7 15 17 22 20 2 20" fill="currentColor"/></svg> 높은 산 정상', count: 48 },
-      { id: 'opt2', text: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:12px; height:12px; color:#38bdf8; margin-right:4px;"><path d="M2 17c3 0 3-2 6-2s3 2 6 2 3-2 6-2M2 20c3 0 3-2 6-2s3 2 6 2 3-2 6-2" stroke="currentColor" stroke-width="2" fill="none"/></svg> 바다 / 오션뷰', count: 35 },
-      { id: 'opt3', text: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:12px; height:12px; color:#34d399;"><path d="M12 2L4 18h16L12 2z" fill="currentColor"/></svg> 조용한 숲속', count: 29 },
-      { id: 'opt4', text: '<svg viewBox="0 0 24 24" class="icon-svg" style="width:12px; height:12px; color:#f59e0b; margin-right:4px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="currentColor"/></svg> 이번 주는 휴식', count: 16 }
+      { id: 'opt1', text: '⛰️ 높은 산 정상', count: 48 },
+      { id: 'opt2', text: '🌊 바다 / 오션뷰', count: 35 },
+      { id: 'opt3', text: '🌲 조용한 숲속', count: 29 },
+      { id: 'opt4', text: '⛺ 이번 주는 휴식', count: 16 }
     ];
 
     let userSelectedPoll = localStorage.getItem('okbm_user_poll');
-
     function renderPollUI() {
       const list = document.getElementById('pollOptionsList');
       if (!list) return;
@@ -2775,20 +1774,6 @@
       { nick: '산토끼', msg: '바람이 좀 붑니다. 방한 철저히 하세요.' }
     ]);
 
-    async function fetchCloudTalks() {
-      try {
-        const res = await fetch(`${GAS_API_URL}?action=GET_TALKS&_t=${Date.now()}`);
-        if (res.ok) {
-          const cloudTalks = await res.json();
-          if (Array.isArray(cloudTalks) && cloudTalks.length > 0) {
-            talkList = cloudTalks.map(t => ({ nick: t.nickname, msg: t.message }));
-            localStorage.setItem('okbm_talk_messages', JSON.stringify(talkList));
-            renderTalkList();
-          }
-        }
-      } catch (e) {}
-    }
-
     function renderTalkList() {
       const listEl = document.getElementById('talkBubbleList');
       if (!listEl) return;
@@ -2805,130 +1790,15 @@
       const msgInput = document.getElementById('talkMsgInput');
       const profile = safeGetJSON('user_profile', null);
       const nick = (profile && profile.nickname) ? profile.nickname : (nickInput.value.trim() || '익명');
-      const userId = (profile && profile.id) ? profile.id : 'guest';
       const msg = msgInput.value.trim();
       if (!msg) return showToast('현장 상황 한 줄을 입력해주세요.', 'warn');
 
-      const newTalk = { nick, msg };
-      talkList.unshift(newTalk);
+      talkList.unshift({ nick, msg });
       localStorage.setItem('okbm_talk_messages', JSON.stringify(talkList));
       msgInput.value = '';
       renderTalkList();
       triggerHaptic(15);
       showToast('실시간 박지톡이 등록되었습니다!', 'success');
-
-      fetch(GAS_API_URL, {
-        method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'ADD_TALK', userId, nickname: nick, message: msg })
-      }).catch(() => {});
-    }
-
-    // 🌐 구글 시트 연동
-    async function loadGearDbFromGoogleSheet() {
-      try {
-        const res = await fetch(`${GAS_API_URL}?action=GET_GEARS&_t=${Date.now()}`);
-        if (res.ok) {
-          const gearsData = await res.json();
-          if (Array.isArray(gearsData) && gearsData.length > 0) {
-            const sheetGearsByCategory = {};
-
-            gearsData.forEach(row => {
-              const catId = String(row.category_id || row.category || '').trim();
-              const name = String(row.item_name || row.name || '').trim();
-              const weight = parseInt(row.weight_g || row.weight, 10);
-              const brand = String(row.brand || '').trim();
-              const weightType = String(row.weight_type || '').trim();
-              const specs = String(row.specs_detail || '').trim();
-              const verified = (row.verified === 'TRUE' || row.verified === true);
-
-              if (catId && name && !isNaN(weight)) {
-                if (!sheetGearsByCategory[catId]) sheetGearsByCategory[catId] = [];
-                sheetGearsByCategory[catId].push({
-                  id: row.gear_id || ('gear_' + Date.now()),
-                  name: name,
-                  weight: weight,
-                  brand: brand,
-                  weightType: weightType,
-                  specs: specs,
-                  verified: verified
-                });
-              }
-            });
-
-            const customGears = safeGetJSON('okbm_custom_gears', []);
-            CATEGORIES.forEach(cat => {
-              if (sheetGearsByCategory[cat.id] && sheetGearsByCategory[cat.id].length > 0) {
-                cat.db = sheetGearsByCategory[cat.id];
-              }
-              const myCatCustoms = customGears.filter(cg => cg.category_id === cat.id);
-              myCatCustoms.forEach(cg => {
-                if (!cat.db.some(d => d.name === cg.name)) {
-                  cat.db.unshift(cg);
-                }
-              });
-            });
-
-            renderCategorySlots();
-            const searchInput = document.getElementById('gearSearchFixedInput');
-            if (currentOpeningCategoryId) renderPresetGearList(searchInput ? searchInput.value : '');
-            return;
-          }
-        }
-      } catch (e) {}
-
-      if (!GOOGLE_SHEET_GEAR_GID) return;
-      const url = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GOOGLE_SHEET_GEAR_GID}&_t=${Date.now()}`;
-      try {
-        const res = await fetch(url);
-        if (!res.ok) return;
-        const csvText = await res.text();
-        Papa.parse(csvText, {
-          header: true, skipEmptyLines: true,
-          complete: function(results) {
-            if (results.data && results.data.length > 0) {
-              const sheetGearsByCategory = {};
-              
-              results.data.forEach(row => {
-                const catId = (row.category_id || row.category || '').trim();
-                const name = (row.item_name || row.name || '').trim();
-                const weight = parseInt(row.weight_g || row.weight, 10);
-                const brand = (row.brand || '').trim();
-                const weightType = (row.weight_type || '').trim();
-                const specs = (row.specs_detail || '').trim();
-                const verified = (row.verified === 'TRUE' || row.verified === true);
-
-                if (catId && name && !isNaN(weight)) {
-                  if (!sheetGearsByCategory[catId]) sheetGearsByCategory[catId] = [];
-                  sheetGearsByCategory[catId].push({
-                    id: row.gear_id || ('gear_' + Date.now()),
-                    name: name,
-                    weight: weight,
-                    brand: brand,
-                    weightType: weightType,
-                    specs: specs,
-                    verified: verified
-                  });
-                }
-              });
-
-              const customGears = safeGetJSON('okbm_custom_gears', []);
-              CATEGORIES.forEach(cat => {
-                if (sheetGearsByCategory[cat.id] && sheetGearsByCategory[cat.id].length > 0) {
-                  cat.db = sheetGearsByCategory[cat.id];
-                }
-                const myCatCustoms = customGears.filter(cg => cg.category_id === cat.id);
-                myCatCustoms.forEach(cg => {
-                  if (!cat.db.some(d => d.name === cg.name)) {
-                    cat.db.unshift(cg);
-                  }
-                });
-              });
-              
-              renderCategorySlots();
-            }
-          }
-        });
-      } catch (e) {}
     }
 
     async function loadPortalSpotData() {
@@ -2960,180 +1830,168 @@
       } catch (e) {}
     }
 
-    // 🚀 앱 부팅 엔트리포인트
+    // 🚀 앱 부팅 및 URL 라우팅 핸들러
     window.addEventListener('DOMContentLoaded', () => {
-      function checkIncomingSharedSpot() {
+      function checkIncomingDirectTab() {
         const urlParams = new URLSearchParams(window.location.search);
-        const sharedSpot = urlParams.get('spot');
-        if (!sharedSpot) return;
-
-        const spotName = decodeURIComponent(sharedSpot).trim();
-        const old = document.getElementById('sharedSpotFloatingPopup');
-        if (old) old.remove();
-
-        const popup = document.createElement('div');
-        popup.id = 'sharedSpotFloatingPopup';
-        popup.style.cssText = `
-          position: fixed; top: 50%; left: 50%; transform: translate(-50%, -45%);
-          width: calc(100% - 32px); max-width: 410px;
-          background: linear-gradient(180deg, #07090e 0%, #020305 100%);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-top: 1px solid rgba(255, 255, 255, 0.18);
-          border-radius: 18px; padding: 16px 17px; display: flex; flex-direction: column; gap: 10px;
-          box-shadow: 0 24px 48px rgba(0, 0, 0, 0.92), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-          z-index: 999999; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-        `;
-
-        popup.innerHTML = `
-          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
-            <div style="display:flex; align-items:center; gap:7px;">
-              <span style="font-family:'SUIT', sans-serif; font-size:1.02rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">낭만루트</span>
-              <span style="background:rgba(56,189,248,0.18); border:1px solid #38bdf8; color:#7dd3fc; font-size:0.65rem; font-weight:900; padding:2px 7px; border-radius:12px;">공유받은 박지</span>
-            </div>
-            <button onclick="document.getElementById('sharedSpotFloatingPopup').remove()" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; cursor:pointer; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center;">✕</button>
-          </div>
-          <div>
-            <div style="font-size:0.68rem; color:#38bdf8; font-weight:800; margin-bottom:3px;">DESTINATION // 목적지 박지</div>
-            <div style="font-size:1.12rem; font-weight:900; color:#ffffff; line-height:1.25;">📍 ${escapeHtml(spotName)}</div>
-          </div>
-          <div style="display:flex; gap:6px; margin-top:4px;">
-            <button onclick="document.getElementById('sharedSpotFloatingPopup').remove()" style="flex:1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:#cbd5e1; font-size:0.76rem; font-weight:800; padding:9px 0; border-radius:8px; cursor:pointer;">닫기</button>
-            <button onclick="location.href='map.html?spot=' + encodeURIComponent('${escapeHtml(spotName)}');" style="flex:2; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#ffffff; font-size:0.8rem; font-weight:900; padding:9px 0; border-radius:8px; cursor:pointer;">지도에서 박지 보기 ➔</button>
-          </div>
-        `;
-
-        document.body.appendChild(popup);
+        const openParam = urlParams.get('open');
+        const tabParam = urlParams.get('tab');
+        if (openParam === 'basecamp' || openParam === 'plan' || tabParam === 'plan') {
+          setTimeout(() => {
+            if (typeof openPlanModal === 'function') openPlanModal('checklist');
+          }, 250);
+        } else if (openParam === 'history' || tabParam === 'history') {
+          setTimeout(() => {
+            if (typeof openHistoryModal === 'function') openHistoryModal();
+          }, 250);
+        }
       }
 
       if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) Kakao.init(KAKAO_APP_KEY);
       initStarlightEngines();
+      checkIncomingDirectTab();
       if (typeof trackDailyVisit === 'function') trackDailyVisit();
       if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
-      renderCategorySlots();
       renderPollUI();
       renderTalkList();
-      loadGearDbFromGoogleSheet();
       loadPortalSpotData();
-      fetchCloudTalks();
-      checkIncomingSharedSpot();
 
-      if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
-        const initialProfile = safeGetJSON('user_profile', null);
-        if (initialProfile && initialProfile.id) {
-          if (typeof loadUserDataFromCloud === 'function') {
-            loadUserDataFromCloud(initialProfile.id).then(cloudData => {
-              if (cloudData) {
-                if (cloudData.bookmarks && Array.isArray(cloudData.bookmarks)) {
-                  localStorage.setItem('okbm_bookmarks', JSON.stringify(cloudData.bookmarks));
-                }
-                if (cloudData.visited && Array.isArray(cloudData.visited)) {
-                  localStorage.setItem('okbm_visited', JSON.stringify(cloudData.visited));
-                }
-                if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
-              packingHistoryList = cloudData.packHistory;
-              window.interactiveHistory = cloudData.packHistory;
-              localStorage.setItem('okbm_packing_history', JSON.stringify(packingHistoryList));
-              if (typeof window.saveToIndexedDB === 'function') {
-                window.saveToIndexedDB('okbm_packing_history', cloudData.packHistory);
-              }
-            }
-
-                const myGears = cloudData.myGears || null;
-                if (myGears) {
-                  if (myGears.selectedGears && typeof myGears.selectedGears === 'object' && Object.keys(myGears.selectedGears).length > 0) {
-                    selectedGearMap = myGears.selectedGears;
-                    localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(selectedGearMap));
-                  }
-                  if (myGears.favoriteGears && Array.isArray(myGears.favoriteGears)) {
-                    favoriteGearSet = new Set(myGears.favoriteGears);
-                    localStorage.setItem('okbm_favorite_gears', JSON.stringify(myGears.favoriteGears));
-                  }
-                  if (myGears.customGears && Array.isArray(myGears.customGears)) {
-                    localStorage.setItem('okbm_custom_gears', JSON.stringify(myGears.customGears));
-                    CATEGORIES.forEach(cat => {
-                      myGears.customGears.forEach(cg => {
-                        if (cg.category_id === cat.id && !cat.db.some(d => d.name === cg.name)) {
-                          cat.db.unshift(cg);
-                        }
-                      });
-                    });
-                  }
-                }
-
-                if (cloudData.memos && typeof cloudData.memos === 'object') {
-                  localStorage.setItem('okbm_memos', JSON.stringify(cloudData.memos));
-                }
-                if (cloudData.nickname && initialProfile.nickname !== cloudData.nickname && !cloudData.nickname.includes('ENGINE')) {
-                  initialProfile.nickname = cloudData.nickname;
-                  localStorage.setItem('user_profile', JSON.stringify(initialProfile));
-                  if (typeof authState !== 'undefined') authState.userProfile = initialProfile;
-                  if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
-                }
-                renderCategorySlots();
-                renderPackingHistoryList();
-                renderBasecampRecordData();
-                renderBasecampMemos();
-              }
-              window.isCloudDataLoaded = true;
-            });
-          }
-        } else {
-          window.isCloudDataLoaded = true;
-        }
-      } else {
-        window.isCloudDataLoaded = true;
-      }
+      // 배낭 요약 배너 실시간 반영
+      const savedGears = safeGetJSON('okbm_selected_gears_multi', {});
+      let totalGrams = 0, totalCount = 0;
+      Object.keys(savedGears).forEach(catId => {
+        (savedGears[catId] || []).forEach(it => {
+          totalGrams += Number(it.weight || 0);
+          totalCount++;
+        });
+      });
+      const totalKg = (totalGrams / 1000).toFixed(2);
+      const bannerKg = document.getElementById('mainBannerKgText');
+      const bannerCount = document.getElementById('mainBannerItemCount');
+      if (bannerKg) bannerKg.innerText = `${totalKg} kg`;
+      if (bannerCount) bannerCount.innerText = `장비 ${totalCount}개 세팅됨`;
     });
   </script>
+
+  <!-- 🏕️ 낭만루트 4대 분할 모듈 스크립트 연결 -->
   <script src="romantic-sync.js?v=2.0.1"></script>
   <script src="templates.js?v=2.0.1"></script>
-  <script src="romantic-basecamp.js?v=2.3.0"></script>
+  <script src="romantic-history.js?v=2.4.0"></script>
+  <script src="romantic-plan.js?v=2.4.0"></script>
 
-  <!-- 🔔 푸시 알림 권한 요청 및 안드로이드 뒤로가기 버튼 완벽 제어 -->
+  <!-- 🔔 안드로이드 시스템 백버튼 & iOS 좌측 에지 스와이프 모달 LIFO 탈출 통합 엔진 -->
+
+  <!-- 🔔 안드로이드 백버튼 & iOS 에지 스와이프 모달 LIFO 탈출 통합 엔진 -->
   <script>
+    window.modalCloseStack = [];
+
+    window.registerModalOpen = function(modalId, closeFn) {
+      window.modalCloseStack = window.modalCloseStack.filter(m => m.id !== modalId);
+      window.modalCloseStack.push({ id: modalId, close: closeFn });
+      if (typeof history !== 'undefined' && history.pushState) {
+        history.pushState({ modalOpen: modalId }, '');
+      }
+    };
+
+    window.unregisterModalClose = function(modalId) {
+      window.modalCloseStack = window.modalCloseStack.filter(m => m.id !== modalId);
+    };
+
+    window.closeTopmostModal = function() {
+      if (window.modalCloseStack && window.modalCloseStack.length > 0) {
+        const top = window.modalCloseStack.pop();
+        if (top && typeof top.close === 'function') {
+          top.close();
+          return true;
+        }
+      }
+      return false;
+    };
+
+    (function initEdgeSwipeDismiss() {
+      let touchStartX = 0, touchStartY = 0, isEdgeTracking = false;
+
+      document.addEventListener('touchstart', (e) => {
+        if (!e.touches || e.touches.length !== 1) return;
+        const x = e.touches[0].clientX;
+        const y = e.touches[0].clientY;
+        if (x <= 35 && window.modalCloseStack.length > 0) {
+          touchStartX = x;
+          touchStartY = y;
+          isEdgeTracking = true;
+        } else {
+          isEdgeTracking = false;
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchmove', (e) => {
+        if (!isEdgeTracking || !e.touches || e.touches.length !== 1) return;
+        const diffX = e.touches[0].clientX - touchStartX;
+        const diffY = Math.abs(e.touches[0].clientY - touchStartY);
+        if (diffX > 65 && diffX > diffY * 1.5) {
+          isEdgeTracking = false;
+          triggerHaptic(12);
+          window.closeTopmostModal();
+        }
+      }, { passive: true });
+
+      document.addEventListener('touchend', () => { isEdgeTracking = false; }, { passive: true });
+      document.addEventListener('touchcancel', () => { isEdgeTracking = false; }, { passive: true });
+    })();
+
+    window.addEventListener('popstate', () => {
+      if (window.modalCloseStack.length > 0) {
+        window.closeTopmostModal();
+      }
+    });
+
     document.addEventListener('DOMContentLoaded', async () => {
-      // 앱(Capacitor) 환경인지 확인
+      const wrapModal = (openName, closeName, modalId) => {
+        const origOpen = window[openName];
+        const origClose = window[closeName];
+        if (typeof origOpen === 'function') {
+          window[openName] = function(...args) {
+            const res = origOpen.apply(this, args);
+            window.registerModalOpen(modalId, origClose);
+            return res;
+          };
+        }
+        if (typeof origClose === 'function') {
+          window[closeName] = function(...args) {
+            window.unregisterModalClose(modalId);
+            return origClose.apply(this, args);
+          };
+        }
+      };
+
+      wrapModal('openPlanModal', 'closePlanModal', 'romanticPlanModal');
+      wrapModal('openHistoryModal', 'closeHistoryModal', 'romanticHistoryModal');
+      wrapModal('openGearPresetModal', 'closeGearPresetModal', 'gearPresetModal');
+      wrapModal('openPackShareModal', 'closePackShareModal', 'packShareModalOverlay');
+      wrapModal('openPhotoStudio', 'closePhotoStudio', 'photoStudioOverlay');
+
       if (window.Capacitor && window.Capacitor.Plugins) {
         const { PushNotifications, App } = window.Capacitor.Plugins;
 
-        // 1. 푸시 알림 초기화 및 권한 요청
         if (PushNotifications) {
           try {
             let permStatus = await PushNotifications.checkPermissions();
             if (permStatus.receive === 'prompt') {
               permStatus = await PushNotifications.requestPermissions();
             }
-
             if (permStatus.receive === 'granted') {
               await PushNotifications.register();
-
-              PushNotifications.addListener('registration', (token) => {
-                console.log('✅ FCM 기기 토큰 발급 성공:', token.value);
-              });
-
-              PushNotifications.addListener('registrationError', (error) => {
-                console.error('❌ 푸시 등록 에러:', error);
-              });
-
-              PushNotifications.addListener('pushNotificationReceived', (notification) => {
-                console.log('📬 푸시 알림 수신:', notification);
-                if (typeof showToast === 'function') {
-                  showToast(`📬 ${notification.title || '알림'}: ${notification.body || ''}`, 'info', 3000);
-                }
-              });
             }
-          } catch (e) {
-            console.error('푸시 알림 초기화 실패:', e);
-          }
+          } catch (e) {}
         }
 
-        // 2. 안드로이드 뒤로가기(Back Button) 제어
         if (App) {
           let lastBackTime = 0;
 
           App.addListener('backButton', ({ canGoBack }) => {
-            // 1) 동적으로 생성된 피드/상세 모달 닫기
-            const dynamicModals = ['modalRichAfterTrip', 'singleTripFeedModal', 'pastTripsListModal', 'sharedSpotFloatingPopup'];
+            if (window.closeTopmostModal()) return;
+
+            const dynamicModals = ['modalRichAfterTrip', 'singleTripFeedModal', 'pastTripsListModal', 'sharedSpotFloatingPopup', 'romanticPlanModal', 'romanticHistoryModal'];
             for (const mId of dynamicModals) {
               const el = document.getElementById(mId);
               if (el) {
@@ -3142,81 +2000,11 @@
               }
             }
 
-            // 2) 포토 스튜디오 닫기
-            const photoStudio = document.getElementById('photoStudioOverlay');
-            if (photoStudio && photoStudio.style.display === 'flex') {
-              if (typeof closePhotoStudio === 'function') closePhotoStudio();
-              else photoStudio.style.display = 'none';
-              return;
-            }
-
-            // 3) 장비 프리셋 모달 닫기
-            const gearModal = document.getElementById('gearPresetModal');
-            if (gearModal && gearModal.style.display === 'flex') {
-              if (typeof closeGearPresetModal === 'function') closeGearPresetModal();
-              else gearModal.style.display = 'none';
-              return;
-            }
-
-            // 4) 초기화 확인 모달 닫기
-            const resetModal = document.getElementById('packResetConfirmModal');
-            if (resetModal && resetModal.style.display === 'flex') {
-              if (typeof closeResetConfirmModal === 'function') closeResetConfirmModal();
-              else resetModal.style.display = 'none';
-              return;
-            }
-
-            // 5) 패킹 공유 모달 닫기
-            const shareModal = document.getElementById('packShareModalOverlay');
-            if (shareModal && shareModal.style.display === 'flex') {
-              if (typeof closePackShareModal === 'function') closePackShareModal();
-              else shareModal.style.display = 'none';
-              return;
-            }
-
-            // 6) 보관함 모달 닫기
-            const myInfoModal = document.getElementById('myInfoModal');
-            if (myInfoModal && myInfoModal.style.display === 'flex') {
-              if (typeof closeMyInfoModal === 'function') closeMyInfoModal();
-              else {
-                myInfoModal.style.display = 'none';
-                document.body.style.overflow = '';
-              }
-              return;
-            }
-
-            // 7) 배낭 무게 계산기 모달 닫기
-            const packCalcModal = document.getElementById('packingCalculatorModal');
-            if (packCalcModal && packCalcModal.style.display === 'flex') {
-              if (typeof closePackingModal === 'function') closePackingModal();
-              else {
-                packCalcModal.style.display = 'none';
-                document.body.style.overflow = '';
-              }
-              return;
-            }
-
-            // 8) 로그인 / 프로필 관리 모달 닫기
-            const loginModal = document.getElementById('loginModalOverlay');
-            if (loginModal && loginModal.style.display === 'flex') {
-              if (typeof closeLoginModal === 'function') closeLoginModal();
-              else loginModal.style.display = 'none';
-              return;
-            }
-            const profileModal = document.getElementById('userProfileModalOverlay');
-            if (profileModal && profileModal.style.display === 'flex') {
-              if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
-              else profileModal.style.display = 'none';
-              return;
-            }
-
-            // 9) 웹 히스토리 뒤로가기
             if (window.history.length > 1 && canGoBack) {
               window.history.back();
               return;
             }
 
-            // 10) 홈 화면 2초 연속 터치 시 종료
             const currentTime = new Date().getTime();
             if (currentTime - lastBackTime < 2000) {
               App.exitApp();
