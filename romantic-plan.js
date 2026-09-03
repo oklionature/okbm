@@ -398,9 +398,91 @@
     }
   };
 
-  // 🔍 [장비 프리셋 검색 및 등록 모달]
+ // 📦 [장비 선택 모달 DOM 자동 생성 및 동적 보장 엔진]
+  function ensureGearPresetModalDOM() {
+    var modal = document.getElementById('gearPresetModal');
+    if (modal) return modal;
+
+    modal = document.createElement('div');
+    modal.id = 'gearPresetModal';
+    modal.className = 'custom-modal-overlay';
+    modal.style.cssText = 'display:none; position:fixed; inset:0; background:#000000; z-index:1000010 !important; justify-content:center; align-items:stretch; padding:0;';
+    modal.onclick = function(e) { if (e.target === modal) window.closeGearPresetModal(); };
+
+    modal.innerHTML = `
+      <div style="width:100%; max-width:480px; margin:0 auto; height:100dvh; display:flex; flex-direction:column; padding:calc(12px + env(safe-area-inset-top, 0px)) 14px calc(64px + env(safe-area-inset-bottom, 0px)) 14px; box-sizing:border-box;">
+        <div style="flex-shrink:0; display:flex; flex-direction:column; gap:6px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08);">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button type="button" onclick="window.closeGearPresetModal()" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
+              <span class="icon-svg" style="width:16px; height:16px; color:#38bdf8; display:flex; align-items:center; justify-content:center;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:16px; height:16px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              </span>
+              <span style="font-weight:900; font-size:1.02rem; color:#fff;" id="presetModalCategoryTitle">장비 선택 & 등록</span>
+            </div>
+            <button type="button" onclick="window.closeGearPresetModal()" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:2px 6px;">✕</button>
+          </div>
+
+          <div style="position:relative; width:100%; display:flex; align-items:center;">
+            <input type="text" id="gearSearchFixedInput" class="modal-input" placeholder="🔍 브랜드, 장비명, 스펙 검색..." oninput="window.handleGearSearchInput(this.value)" style="border:1px solid #38bdf8; background:rgba(255,255,255,0.05); color:#fff; font-size:0.85rem; padding:0 32px 0 12px; height:42px; border-radius:8px; width:100%; box-sizing:border-box; outline:none;" />
+            <button type="button" id="btnGearSearchClear" style="display:none; position:absolute; right:8px; background:rgba(255,255,255,0.25); border:none; color:#ffffff; width:17px; height:17px; border-radius:50%; font-size:0.6rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0;" onclick="window.clearGearSearchInput()">✕</button>
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:5px; background:rgba(255,255,255,0.03); border:1px dashed rgba(56,189,248,0.35); border-radius:8px; padding:6px 8px; box-sizing:border-box;">
+            <div style="width:100%;">
+              <input type="text" id="customInputGearName" class="modal-input" placeholder="직접 추가할 장비명 (예: 백패킹 다운슈즈)" style="width:100%; font-size:0.76rem; padding:7px 9px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); color:#fff; outline:none; box-sizing:border-box;" />
+            </div>
+            <div style="display:flex; gap:6px; width:100%; align-items:center;">
+              <input type="number" id="customInputGearWeight" class="modal-input" placeholder="무게 (g)" style="flex:1; font-size:0.76rem; padding:7px 9px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); color:#fff; outline:none; font-family:'JetBrains Mono', monospace; box-sizing:border-box;" />
+              <button type="button" class="modal-btn" style="flex:1; height:32px; background:linear-gradient(135deg, #0d9488, #0f766e); border:1px solid #14b8a6; color:#fff; font-weight:900; padding:0; font-size:0.76rem; border-radius:6px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="window.addCustomGearToCurrentCategory()">+ 장비 등록</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="gear-db-list" id="presetGearDbList" style="flex:1; overflow-y:auto; margin-top:8px; display:flex; flex-direction:column; gap:6px;"></div>
+
+        <div style="position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; height:calc(56px + env(safe-area-inset-bottom, 0px)); padding:6px 12px calc(8px + env(safe-area-inset-bottom, 0px)) 12px; background:rgba(7,9,14,0.98); border-top:1px solid rgba(255,255,255,0.12); display:flex; align-items:center; gap:8px; box-sizing:border-box; z-index:1000015;">
+          <button type="button" onclick="window.clearAllGearsInCategory(window.currentOpeningCategoryId)" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1; font-size:0.75rem; font-weight:800; height:44px; padding:0 14px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; white-space:nowrap; flex-shrink:0;">
+            <span>↺ 비우기</span>
+          </button>
+          <button type="button" onclick="window.closeGearPresetModal();" style="flex:1; height:44px; background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border:1px solid #38bdf8; color:#ffffff; font-size:0.84rem; font-weight:900; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(2,132,199,0.35); white-space:nowrap;">
+            <span>장비 선택 완료 ✓</span>
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    return modal;
+  }
+
+  // 🔍 [장비 검색창 입력 및 지우기 전담 함수]
+  window.handleGearSearchInput = function(val) {
+    var clearBtn = document.getElementById('btnGearSearchClear');
+    if (clearBtn) clearBtn.style.display = (val && val.trim().length > 0) ? 'flex' : 'none';
+    if (typeof window.renderPresetGearList === 'function') {
+      window.renderPresetGearList(val);
+    }
+  };
+
+  window.clearGearSearchInput = function() {
+    var input = document.getElementById('gearSearchFixedInput');
+    var clearBtn = document.getElementById('btnGearSearchClear');
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+    if (clearBtn) clearBtn.style.display = 'none';
+    if (typeof window.renderPresetGearList === 'function') {
+      window.renderPresetGearList('');
+    }
+    triggerHaptic(10);
+  };
+
+  // 🔍 [장비 프리셋 검색 및 등록 모달 오픈]
   window.openGearPresetModal = function(categoryId) {
     window.currentOpeningCategoryId = categoryId;
+    ensureGearPresetModalDOM();
+
     var category = (window.CATEGORIES || []).find(function(c) { return c.id === categoryId; });
     if (!category) return;
 
@@ -417,7 +499,7 @@
     var modal = document.getElementById('gearPresetModal');
     if (modal) {
       modal.style.setProperty('display', 'flex', 'important');
-      modal.style.setProperty('z-index', '9999999', 'important');
+      modal.style.setProperty('z-index', '1000010', 'important');
     }
     triggerHaptic(10);
   };
@@ -576,8 +658,7 @@
     if (typeof showToast === 'function') showToast('해당 슬롯이 모두 비워졌습니다.', 'info');
     if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
   };
-
-  // 🗑️ [배낭계산기 담긴 장비 전체 초기화 엔진]
+// 🗑️ [배낭계산기 담긴 장비 전체 초기화 엔진]
   window.resetPlanCalculatorGears = function() {
     if (!confirm('배낭에 담긴 모든 장비를 비우고 초기화할까요?')) return;
     window.selectedGearMap = {};
@@ -587,92 +668,6 @@
     if (typeof window.renderPlanCategorySlots === 'function') window.renderPlanCategorySlots();
     window.renderPlanStage();
     if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-  };
-
- // 🎒 [패킹 저장 및 20종 템플릿 카드 스튜디오 즉시 호출 복원]
-  window.saveCurrentPackingRecord = function() {
-    var packedItems = [];
-    var totalGrams = 0;
-    if (typeof window.CATEGORIES !== 'undefined' && typeof window.selectedGearMap !== 'undefined') {
-      window.CATEGORIES.forEach(function(cat) {
-        (window.selectedGearMap[cat.id] || []).forEach(function(it) {
-          if (it && (it.name || it.itemName)) {
-            var gName = it.name || it.itemName;
-            var gWeight = Number(it.weight || it.weight_g || 0);
-            packedItems.push({
-              id: it.id || ('item_' + Date.now() + '_' + Math.random()),
-              name: gName,
-              weight: gWeight,
-              categoryId: cat.id
-            });
-            totalGrams += gWeight;
-          }
-        });
-      });
-    }
-
-    if (packedItems.length === 0) {
-      if (typeof showToast === 'function') showToast('장비를 1개 이상 담아주세요.', 'warn');
-      return;
-    }
-
-    var now = new Date();
-    var targetDateStr = window.activeSelectedDateKey || (now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0'));
-    var parts = targetDateStr.match(/\d+/g) || [now.getFullYear(), now.getMonth() + 1, now.getDate()];
-    var tYear = parseInt(parts[0], 10);
-    var tMonth = parseInt(parts[1], 10);
-    var tDay = parseInt(parts[2], 10);
-    var cleanDateStr = tYear + '.' + String(tMonth).padStart(2, '0') + '.' + String(tDay).padStart(2, '0');
-    var totalKg = (totalGrams / 1000).toFixed(2);
-    var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
-    var recordId = 'pack_' + Date.now();
-    var spotTitle = (window.currentLuckySpot && window.currentLuckySpot.name) ? window.currentLuckySpot.name : '대관령 선자령';
-    var spotElev = (window.currentLuckySpot && window.currentLuckySpot.elevation) ? `${window.currentLuckySpot.elevation}m` : '832m';
-
-    var newRecord = {
-      id: recordId,
-      templateId: window.selectedTemplateId || savedTmplId || 1,
-      date: cleanDateStr,
-      year: tYear,
-      month: tMonth,
-      day: tDay,
-      spot: spotTitle,
-      elevation: spotElev,
-      weightKg: totalKg,
-      weightGrams: totalGrams,
-      itemCount: packedItems.length,
-      memo: '',
-      oneLineMemo: `${spotTitle} 백패킹`,
-      items: packedItems,
-      photos: [],
-      photo: '',
-      fieldPhoto: ''
-    };
-
-    window.currentShareRecord = newRecord;
-    window.currentShareItems = packedItems;
-
-    if (typeof window.savePackingHistoryRecord === 'function') {
-      window.savePackingHistoryRecord(newRecord);
-    } else {
-      var historyList = safeGetJSON('okbm_packing_history', []);
-      historyList.unshift(newRecord);
-      window.interactiveHistory = historyList;
-      window.packingHistoryList = historyList;
-      localStorage.setItem('okbm_packing_history', JSON.stringify(historyList));
-      if (typeof window.saveToIndexedDB === 'function') {
-        window.saveToIndexedDB('okbm_packing_history', historyList);
-      }
-      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-    }
-
-    window.closePlanModal();
-
-    if (typeof openPackShareModal === 'function') {
-      openPackShareModal(newRecord, packedItems, false);
-    }
-    triggerHaptic(15);
-    if (typeof showToast === 'function') showToast('🎒 피드 및 보관함에 저장되었습니다!', 'success');
   };
 
   window.addCustomGearToCurrentCategory = function() {
@@ -779,8 +774,8 @@
     var totalKg = (totalGrams / 1000).toFixed(2);
     var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
     var recordId = 'pack_' + Date.now();
-    var spotTitle = (window.currentLuckySpot && window.currentLuckySpot.name) ? window.currentLuckySpot.name : '대관령 선자령';
-    var spotElev = (window.currentLuckySpot && window.currentLuckySpot.elevation) ? `${window.currentLuckySpot.elevation}m` : '832m';
+    var spotTitle = (window.currentLuckySpot && window.currentLuckySpot.name) ? window.currentLuckySpot.name : '';
+    var spotElev = (window.currentLuckySpot && window.currentLuckySpot.elevation) ? `${window.currentLuckySpot.elevation}m` : '';
 
     var newRecord = {
       id: recordId,
@@ -794,8 +789,8 @@
       weightKg: totalKg,
       weightGrams: totalGrams,
       itemCount: packedItems.length,
-      memo: '비화식으로 즐기는 조용한 하룻밤',
-      oneLineMemo: `${spotTitle} 백패킹`,
+      memo: '',
+      oneLineMemo: spotTitle ? `${spotTitle} 백패킹` : '',
       items: packedItems,
       photos: [],
       photo: '',
@@ -805,15 +800,9 @@
     window.currentShareRecord = newRecord;
     window.currentShareItems = packedItems;
 
-    var historyList = safeGetJSON('okbm_packing_history', []);
-    historyList.unshift(newRecord);
-    window.interactiveHistory = historyList;
-    window.packingHistoryList = historyList;
-    localStorage.setItem('okbm_packing_history', JSON.stringify(historyList));
-    if (typeof window.saveToIndexedDB === 'function') {
-      window.saveToIndexedDB('okbm_packing_history', historyList);
+    if (typeof window.savePackingHistoryRecord === 'function') {
+      window.savePackingHistoryRecord(newRecord);
     }
-    if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
 
     window.closePlanModal();
 
@@ -1024,10 +1013,19 @@
     window.renderPlanStage();
   };
 
-  // 🏛️ [낭만계획 메인 렌더러 함수 - 100% 정상 선언]
+ // 🏛️ [낭만계획 메인 렌더러 함수 - 100% 정상 선언]
   window.renderPlanStage = function() {
     var modal = document.getElementById('romanticPlanModal');
     if (!modal) return;
+
+    if (!(window.favoriteGearSet instanceof Set)) {
+      var rawFav = Array.isArray(window.favoriteGearSet) ? window.favoriteGearSet : safeGetJSON('okbm_favorite_gears', []);
+      window.favoriteGearSet = new Set(Array.isArray(rawFav) ? rawFav : []);
+    }
+    if (!(window.packedCheckSet instanceof Set)) {
+      var rawChk = Array.isArray(window.packedCheckSet) ? window.packedCheckSet : safeGetJSON('okbm_packed_checks', []);
+      window.packedCheckSet = new Set(Array.isArray(rawChk) ? rawChk : []);
+    }
 
     var now = new Date();
     var viewYear = window.calViewYear || now.getFullYear();
@@ -1042,14 +1040,15 @@
     var lastDayOfMonth = new Date(viewYear, viewMonth, 0).getDate();
 
     var historyList = window.interactiveHistory || safeGetJSON('okbm_packing_history', []);
+    if (!Array.isArray(historyList)) historyList = [];
     var monthHistory = historyList.filter(function(h) {
-      return Number(h.year) === Number(viewYear) && Number(h.month) === Number(viewMonth);
+      return h && Number(h.year) === Number(viewYear) && Number(h.month) === Number(viewMonth);
     });
 
-    var planMemosObj = safeGetJSON('okbm_plan_memos', {});
-    var currentDayMemo = planMemosObj[activeDateStr] || '';
+    var planMemosObj = safeGetJSON('okbm_plan_memos', {}) || {};
+    var currentDayMemo = (planMemosObj && planMemosObj[activeDateStr]) ? String(planMemosObj[activeDateStr]) : '';
 
- var todayYear = now.getFullYear();
+    var todayYear = now.getFullYear();
     var todayMonth = now.getMonth() + 1;
     var todayDate = now.getDate();
 
@@ -1063,10 +1062,10 @@
       var isToday = (Number(viewYear) === todayYear && Number(viewMonth) === todayMonth && Number(d) === todayDate);
       var thisDateKey = viewYear + '.' + String(viewMonth).padStart(2, '0') + '.' + String(d).padStart(2, '0');
 
-      var dayRecord = monthHistory.find(function(h) { return Number(h.day) === Number(d); });
+      var dayRecord = monthHistory.find(function(h) { return h && Number(h.day) === Number(d); });
       var isRecorded = !!dayRecord;
-      var isCompleted = isRecorded && Boolean(dayRecord.memo && dayRecord.memo.trim().length > 0);
-      var hasPlanMemo = Boolean(planMemosObj[thisDateKey] && planMemosObj[thisDateKey].trim().length > 0);
+      var isCompleted = isRecorded && Boolean(dayRecord.memo && String(dayRecord.memo).trim().length > 0);
+      var hasPlanMemo = Boolean(planMemosObj && planMemosObj[thisDateKey] && String(planMemosObj[thisDateKey]).trim().length > 0);
 
       var dayStyle = 'position:relative; height:100% !important; width:100% !important; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:\'Space Grotesk\', sans-serif; font-size:0.76rem; font-weight:800; border-radius:6px; cursor:pointer; user-select:none; transition:all 0.12s ease; box-sizing:border-box;';
       var markerSymbol = '';
@@ -1526,28 +1525,28 @@
           <div style="width:28px; height:3.5px; border-radius:2px; background:rgba(255,255,255,0.35);"></div>
         </div>
 
-     <div id="planSubToolsDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:${isPlanToolsActive ? 'translateY(0)' : 'translateY(100%)'}; z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-            <button type="button" class="dock-item ${window.activePlanSubMode === 'calendar' ? 'active' : ''}" onclick="window.activePlanSubMode='calendar'; window.renderPlanStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'calendar' ? '#38bdf8 !important' : '#cbd5e1'}; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="21" y2="10"/></svg>
+    <div id="planSubToolsDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:${isPlanToolsActive ? 'translateY(0)' : 'translateY(100%)'}; z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
+            <button type="button" class="dock-item ${window.activePlanSubMode === 'calendar' ? 'active' : ''}" onclick="window.activePlanSubMode='calendar'; window.renderPlanStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'calendar' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activePlanSubMode === 'calendar' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
+              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               <span>달력</span>
             </button>
             
-            <button type="button" class="dock-item ${window.activePlanSubMode === 'checklist' ? 'active' : ''}" onclick="window.activePlanSubMode='checklist'; window.renderPlanStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'checklist' ? '#34d399 !important' : '#cbd5e1'}; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
+            <button type="button" class="dock-item ${window.activePlanSubMode === 'checklist' ? 'active' : ''}" onclick="window.activePlanSubMode='checklist'; window.renderPlanStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'checklist' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activePlanSubMode === 'checklist' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
               <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
               <span>체크리스트</span>
             </button>
 
-            <button type="button" class="dock-item ${window.activePlanSubMode === 'calculator' ? 'active' : ''}" onclick="window.activePlanSubMode='calculator'; window.renderPlanStage(); setTimeout(window.renderPlanCategorySlots, 50); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'calculator' ? '#38bdf8 !important' : '#cbd5e1'}; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
+            <button type="button" class="dock-item ${window.activePlanSubMode === 'calculator' ? 'active' : ''}" onclick="window.activePlanSubMode='calculator'; window.renderPlanStage(); setTimeout(window.renderPlanCategorySlots, 50); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'calculator' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activePlanSubMode === 'calculator' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
               <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>
               <span>배낭계산기</span>
             </button>
 
-            <button type="button" class="dock-item ${window.activePlanSubMode === 'bookmarks' ? 'active' : ''}" onclick="window.activePlanSubMode='bookmarks'; window.renderPlanStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'bookmarks' ? '#fde047 !important' : '#fde047'}; font-size:0.67rem; font-weight:800; cursor:pointer; min-height:48px; padding:0;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:#fde047;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <button type="button" class="dock-item ${window.activePlanSubMode === 'bookmarks' ? 'active' : ''}" onclick="window.activePlanSubMode='bookmarks'; window.renderPlanStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'bookmarks' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activePlanSubMode === 'bookmarks' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
+              <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               <span>찜</span>
             </button>
 
-            <button type="button" class="dock-item ${window.activePlanSubMode === 'gears' ? 'active' : ''}" onclick="window.activePlanSubMode='gears'; window.renderPlanStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'gears' ? '#38bdf8 !important' : '#cbd5e1'}; font-size:0.67rem; font-weight:800; cursor:pointer; min-height:48px; padding:0;">
+            <button type="button" class="dock-item ${window.activePlanSubMode === 'gears' ? 'active' : ''}" onclick="window.activePlanSubMode='gears'; window.renderPlanStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'gears' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activePlanSubMode === 'gears' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
               <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
               <span>장비관리</span>
             </button>
@@ -1591,13 +1590,42 @@
     var content = modal.querySelector('.romantic-plan-content');
     if (!content) return;
 
-    content.innerHTML = `
-      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; padding:calc(10px + env(safe-area-inset-top, 0px)) 12px 0 12px; margin:0 !important; box-sizing:border-box; overflow:hidden;">
-        ${currentViewHtml}
-      </div>
+    var viewSlot = content.querySelector('#planMainViewContainer');
+    var existingDock = content.querySelector('#planDualDockContainer');
 
-      ${bottomDualDockHtml}
-    `;
+    if (!viewSlot || !existingDock) {
+      content.innerHTML = `
+        <div id="planMainViewContainer" style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; padding:calc(10px + env(safe-area-inset-top, 0px)) 12px 0 12px; margin:0 !important; box-sizing:border-box; overflow:hidden;">
+          ${currentViewHtml}
+        </div>
+        ${bottomDualDockHtml}
+      `;
+    } else {
+      viewSlot.innerHTML = currentViewHtml;
+      
+      var subButtons = existingDock.querySelectorAll('#planSubToolsDeck .dock-item');
+      var modeKeys = ['calendar', 'checklist', 'calculator', 'bookmarks', 'gears'];
+      subButtons.forEach(function(btn, bIdx) {
+        var key = modeKeys[bIdx];
+        if (key === window.activePlanSubMode) {
+          btn.classList.add('active');
+          btn.style.setProperty('color', '#38bdf8', 'important');
+          btn.style.setProperty('font-weight', '900', 'important');
+        } else {
+          btn.classList.remove('active');
+          btn.style.setProperty('color', '#94a3b8', 'important');
+          btn.style.setProperty('font-weight', '700', 'important');
+        }
+      });
+
+      var subDeck = existingDock.querySelector('#planSubToolsDeck');
+      var mainDeck = existingDock.querySelector('#planMainNavDeck');
+      if (subDeck && mainDeck) {
+        subDeck.style.transform = isPlanToolsActive ? 'translateY(0)' : 'translateY(100%)';
+        mainDeck.style.transform = isPlanToolsActive ? 'translateY(100%)' : 'translateY(0)';
+      }
+    }
+
     if (window.activePlanSubMode === 'calculator') {
       window.renderPlanCategorySlots();
     }
@@ -1826,17 +1854,25 @@
     delete planMemos[dateKey];
     localStorage.setItem('okbm_plan_memos', JSON.stringify(planMemos));
 
-    // 2. 패킹 히스토리(달력 별/점 생성 원인) 완전 삭제
-    var historyList = safeGetJSON('okbm_packing_history', []);
+   var historyList = (window.interactiveHistory && Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0)
+      ? window.interactiveHistory
+      : (typeof window.safeGetStorage === 'function' ? window.safeGetStorage('okbm_packing_history', []) : safeGetJSON('okbm_packing_history', []));
+
     historyList = historyList.filter(function(h) {
       var hDate = h.date ? h.date.replace(/[-/]/g, '.') : '';
       return hDate !== dateKey && String(h.date) !== String(dateKey);
     });
+
     window.interactiveHistory = historyList;
     window.packingHistoryList = historyList;
-    localStorage.setItem('okbm_packing_history', JSON.stringify(historyList));
-    if (typeof window.saveToIndexedDB === 'function') {
-      window.saveToIndexedDB('okbm_packing_history', historyList);
+
+    if (typeof window.safeSetStorage === 'function') {
+      window.safeSetStorage('okbm_packing_history', historyList);
+    } else {
+      localStorage.setItem('okbm_packing_history', JSON.stringify(historyList));
+      if (typeof window.saveToIndexedDB === 'function') {
+        window.saveToIndexedDB('okbm_packing_history', historyList);
+      }
     }
 
     // 3. 해당 날짜 음식/소모품 삭제
@@ -2048,26 +2084,44 @@
     }, { passive: true });
   };
 
-  // 🚀 [낭만계획 모달 오픈 / 클로즈 - 진입 시 무조건 달력 첫 화면 강제]
+ // 🚀 [낭만계획 모달 오픈 / 클로즈 - 진입 시 타 모달 차단 및 최상위 레이어 보장]
   window.openPlanModal = function(subMode) {
-    window.activePlanSubMode = 'calendar';
+    window.activePlanSubMode = subMode || 'calendar';
+
+    // 1. 낭만보관함 및 기타 레이어 강제 은닉 (화면 가림 원천 차단)
+    var historyModal = document.getElementById('romanticHistoryModal');
+    if (historyModal) {
+      historyModal.style.setProperty('display', 'none', 'important');
+    }
+
+    ['pastTripsListModal', 'singleTripFeedModal', 'clearMapModal', 'myReportModal', 'tripActionActionSheet'].forEach(function(mId) {
+      var el = document.getElementById(mId);
+      if (el) el.remove();
+    });
+
     var modal = document.getElementById('romanticPlanModal');
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'romanticPlanModal';
-      modal.style.cssText = 'display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100vw !important; max-width:100vw !important; overflow-x:hidden !important; touch-action:pan-y !important;';
+      modal.style.cssText = 'display:none; position:fixed; inset:0; background:#000000; z-index:1000005 !important; justify-content:center; align-items:stretch; width:100vw !important; max-width:100vw !important; overflow-x:hidden !important; touch-action:pan-y !important; transform:translateZ(0); -webkit-transform:translateZ(0);';
       modal.innerHTML = '<div class="romantic-plan-content" style="width:100% !important; max-width:480px !important; margin:0 auto; height:100dvh; max-height:100dvh; display:flex; flex-direction:column; justify-content:space-between; overflow-x:hidden !important; overflow-y:hidden !important; box-sizing:border-box;"></div>';
       document.body.appendChild(modal);
     }
 
     modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('z-index', '1000005', 'important');
+    document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
 
     if (typeof window.loadGearDbFromGoogleSheet === 'function') {
       window.loadGearDbFromGoogleSheet();
     }
 
-    window.renderPlanStage();
+    try {
+      window.renderPlanStage();
+    } catch (err) {
+      console.error('[RomanticPlan] renderPlanStage error:', err);
+    }
     triggerHaptic(10);
   };
 
