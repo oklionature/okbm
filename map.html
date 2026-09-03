@@ -168,289 +168,50 @@
         flex-shrink: 0; 
       }
 
-      /* 🧭 1. 상단 GNB 레이아웃 */
-      .apple-integrated-header {
-        position: relative;
-        z-index: var(--z-header);
-        width: 100%;
-        background: var(--header-bg);
-        border-bottom: 1px solid var(--border-hairline);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        padding: 0 14px 4px 14px !important;
-        padding-top: env(safe-area-inset-top, 0px) !important;
-        user-select: none;
-        display: flex;
-        flex-direction: column;
-        gap: 2px !important;
-        flex-shrink: 0;
-        box-sizing: border-box;
-      }
-
-      html[data-theme="light"] .apple-integrated-header {
-        border-bottom: 1.5px solid rgba(56, 189, 248, 0.35) !important;
-        box-shadow: 0 4px 18px rgba(56, 189, 248, 0.15) !important;
-      }
-
-      .header-top-row {
-        height: 52px !important;
-        min-height: 52px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        box-sizing: border-box !important;
-      }
-
-      .brand-line {
-        height: 52px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: flex-start !important;
-        gap: 7px !important;
-        text-decoration: none !important;
-        transition: transform 0.15s ease !important;
-        margin: 0 !important;
-        flex-shrink: 0 !important;
-      }
-      .brand-line:active { transform: scale(0.98); }
-
-      .brand-sym-box {
-        width: 34px !important;
-        height: 34px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        position: relative !important;
-        flex-shrink: 0 !important;
-      }
-      .brand-sym-box svg { 
-        width: 30px !important; 
-        height: 30px !important; 
-        max-width: 30px !important;
-        max-height: 30px !important;
-        display: block !important; 
-      }
-
-      html[data-theme="light"] .brand-sym-box::before {
-        content: '' !important;
+     /* 🔍 당근마켓 스타일 상단 플로팅 글래스 검색창 */
+      .floating-top-search-wrap {
         position: absolute !important;
-        width: 44px !important;
-        height: 44px !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        background: radial-gradient(circle at 65% 25%, #ffffff 0%, rgba(255, 255, 255, 0.9) 40%, rgba(147, 197, 253, 0.4) 65%, transparent 80%) !important;
-        border-radius: 50% !important;
-        z-index: -1 !important;
-        filter: blur(4.5px) !important;
-        pointer-events: none !important;
+        top: calc(10px + env(safe-area-inset-top, 0px)) !important;
+        left: 12px !important;
+        right: 12px !important;
+        max-width: 480px !important;
+        margin: 0 auto !important;
+        z-index: var(--z-header) !important;
+        pointer-events: auto !important;
       }
 
-      html[data-theme="dark"] .brand-sym-box::before {
-        content: '';
-        position: absolute;
-        width: 38px;
-        height: 38px;
-        background: radial-gradient(circle at 65% 25%, rgba(245, 158, 11, 0.35) 0%, rgba(16, 185, 129, 0.25) 45%, transparent 70%);
-        border-radius: 50%;
-        z-index: -1;
-        filter: blur(4px);
-      }
-
-      .brand-title {
-        font-family: 'SUIT', sans-serif !important;
-        font-size: 1.12rem !important;
-        font-weight: 900 !important;
-        color: var(--text-primary) !important;
-        line-height: 1 !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        letter-spacing: -0.02em !important;
-        transform: translateY(0.5px) !important;
-      }
-      html[data-theme="light"] .brand-title {
-        color: #075985 !important;
-        text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9) !important;
-      }
-
-      .brand-dot {
-        width: 3.5px !important;
-        height: 3.5px !important;
-        background: #f59e0b !important;
-        border-radius: 50% !important;
-        box-shadow: 0 0 6px #f59e0b !important;
-        display: inline-block !important;
-        flex-shrink: 0 !important;
-        margin: 0 1px !important;
-        transform: translateY(1px) !important;
-      }
-      html[data-theme="light"] .brand-dot {
-        background: #0369a1 !important;
-        box-shadow: 0 0 6px #0369a1 !important;
-      }
-
-      .brand-en {
-        font-family: 'Arita-buri-SemiBold', serif !important;
-        font-size: 0.84rem !important;
-        font-weight: normal !important;
-        color: #6ee7b7 !important;
-        letter-spacing: -0.02em !important;
-        line-height: 1 !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        white-space: nowrap !important;
-        transform: translateY(1.2px) !important;
-        text-shadow: 0 0 10px rgba(110, 231, 183, 0.35) !important;
-      }
-      html[data-theme="light"] .brand-en {
-        color: #0369a1 !important;
-        text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9) !important;
-      }
-
-      .admin-status-badge { 
-        display: none; 
-        background: rgba(16,185,129,0.2); 
-        color: var(--accent-emerald); 
-        border: 1px solid rgba(16,185,129,0.4); 
-        font-size: 0.68rem; 
-        padding: 2px 6px; 
-        border-radius: 5px; 
-        font-weight: 800; 
-      }
-
-      .header-right-actions {
-        display: flex !important;
-        align-items: center !important;
-        gap: 6px !important;
-        margin-left: auto !important;
-        flex-shrink: 0 !important;
-      }
-
-      html[data-theme="dark"] .header-auth-btn { 
-        height: 28px !important;
-        line-height: 28px !important;
-        background: var(--auth-btn-bg) !important; 
-        border: 1px solid var(--auth-btn-border) !important; 
-        color: var(--auth-btn-color) !important; 
-        padding: 0 9px !important; 
-        border-radius: 14px !important; 
-        font-size: 0.72rem !important; 
-        font-weight: 800 !important; 
-        cursor: pointer !important; 
-        display: inline-flex !important; 
-        align-items: center !important; 
-        justify-content: center !important;
-        gap: 3px !important; 
-        transition: all 0.2s ease !important; 
-        white-space: nowrap !important; 
-        box-shadow: var(--auth-btn-shadow) !important;
-      }
-      html[data-theme="dark"] .header-auth-btn.logged-in { 
-        background: var(--auth-btn-logged-bg) !important; 
-        border-color: var(--auth-btn-logged-border) !important; 
-        color: var(--auth-btn-logged-color) !important; 
-      }
-
-      html[data-theme="light"] .header-auth-btn {
-        position: relative !important;
-        overflow: visible !important;
-        height: 25px !important;
-        line-height: 25px !important;
-        padding: 0 9.5px !important;
-        border-radius: 13px 13px 16px 16px / 12px 12px 18px 18px !important;
-        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
-        border: 1.5px solid #ffffff !important;
-        box-shadow: 0 3px 10px rgba(2, 132, 199, 0.22), inset 0 1.5px 2px #ffffff !important;
-        color: #0369a1 !important;
-        font-weight: 900 !important;
-        font-size: 0.67rem !important;
-        letter-spacing: -0.02em !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 3.5px !important;
-        cursor: pointer !important;
-        z-index: 10 !important;
-        transition: all 0.2s ease !important;
-        white-space: nowrap !important;
-      }
-      html[data-theme="light"] .header-auth-btn.logged-in {
-        color: #065f46 !important;
-      }
-      html[data-theme="light"] .header-auth-btn.logged-in svg {
-        color: #10b981 !important;
-      }
-
-      /* 🪵 하단독 & HUD 타워 카키 토프 톤 */
-      html[data-theme="light"] .mobile-bottom-dock {
-        background: #f1ebd9 !important;
-        border-top: 1.5px solid rgba(199, 187, 163, 0.75) !important;
-        box-shadow: 0 -4px 18px rgba(100, 85, 60, 0.12) !important;
-      }
-      html[data-theme="light"] .dock-item {
-        color: #443a2c !important;
-      }
-      html[data-theme="light"] .dock-item.active {
-        color: #826e47 !important;
-      }
-
-      html[data-theme="light"] .left-filter-tower-box,
-      html[data-theme="light"] .right-hud-tower-box,
-      html[data-theme="light"] .top-hud-tower-box {
-        background: #f1ebd9 !important;
-        border: 1.5px solid rgba(199, 187, 163, 0.75) !important;
-        box-shadow: 0 8px 24px rgba(100, 85, 60, 0.15) !important;
-      }
-      html[data-theme="light"] .tower-toggle-btn,
-      html[data-theme="light"] .tower-btn,
-      html[data-theme="light"] .top-hud-btn {
-        color: #443a2c !important;
-        border-bottom: 1px solid rgba(199, 187, 163, 0.75) !important;
-      }
-
-      .header-btn {
-        height: 28px !important;
-        line-height: 28px !important;
-        background: var(--search-bar-bg) !important;
-        border: 1px solid var(--border-hairline) !important;
-        color: var(--text-secondary) !important;
-        padding: 0 9px !important;
-        border-radius: 14px !important;
-        font-size: 0.72rem !important;
-        font-weight: 700 !important;
-        cursor: pointer !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 3px !important;
-        white-space: nowrap !important;
-      }
-
-      /* 🔍 슬림 검색바 */
       .apple-search-box {
         position: relative !important;
         width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 !important;
       }
+
       .apple-search-bar {
         width: 100% !important;
-        height: 36px !important;
-        background: var(--search-bar-bg) !important;
-        border: 1px solid var(--search-bar-border) !important;
-        border-radius: 10px !important;
+        height: 44px !important;
+        background: rgba(7, 10, 17, 0.78) !important;
+        border: 1px solid rgba(255, 255, 255, 0.14) !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.28) !important;
+        border-radius: 14px !important;
         display: flex !important;
         align-items: center !important;
-        padding: 0 10px !important;
-        gap: 6px !important;
+        padding: 0 12px !important;
+        gap: 8px !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
+        backdrop-filter: blur(18px) !important;
+        -webkit-backdrop-filter: blur(18px) !important;
         transition: all 0.2s ease !important;
         box-sizing: border-box !important;
       }
+
+      html[data-theme="light"] .apple-search-bar {
+        background: rgba(255, 255, 255, 0.90) !important;
+        border: 1.5px solid rgba(255, 255, 255, 1) !important;
+        box-shadow: 0 8px 24px rgba(100, 85, 60, 0.18) !important;
+      }
+
       .apple-search-bar:focus-within {
         border-color: var(--accent-blue) !important;
+        box-shadow: 0 8px 28px rgba(56, 189, 248, 0.35) !important;
       }
       
       .apple-search-input {
@@ -459,8 +220,8 @@
         background: transparent;
         border: none;
         color: var(--text-primary);
-        font-size: 0.82rem !important;
-        font-weight: 500;
+        font-size: 0.88rem !important;
+        font-weight: 700;
         outline: none;
         letter-spacing: -0.01em;
         padding: 0;
@@ -469,16 +230,17 @@
       }
       .apple-search-input::placeholder { 
         color: var(--text-muted); 
+        font-weight: 600;
       }
       
       .btn-clear-search {
-        background: rgba(148, 163, 184, 0.3);
+        background: rgba(148, 163, 184, 0.25);
         border: none;
         color: var(--text-secondary);
-        width: 16px;
-        height: 16px;
+        width: 18px;
+        height: 18px;
         border-radius: 50%;
-        font-size: 0.6rem;
+        font-size: 0.65rem;
         display: none;
         align-items: center;
         justify-content: center;
@@ -488,60 +250,25 @@
 
       .search-dropdown { 
         position: absolute; 
-        top: 42px; 
+        top: 50px; 
         left: 0; 
         right: 0; 
         background: var(--bg-surface); 
         color: var(--text-primary); 
-        border-radius: 12px; 
-        box-shadow: 0 18px 40px rgba(0,0,0,0.5); 
+        border-radius: 14px; 
+        box-shadow: 0 18px 45px rgba(0,0,0,0.65); 
         list-style: none; 
         max-height: 320px; 
         overflow-y: auto; 
         display: none; 
         z-index: var(--z-dropdown); 
         border: 1.5px solid var(--border-titanium); 
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
       }
-      .dropdown-header { 
-        padding: 8px 12px; 
-        background-color: var(--bg-card); 
-        font-size: 0.74rem; 
-        font-weight: 700; 
-        color: var(--accent-blue); 
-        border-bottom: 1px solid var(--border-subtle); 
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-      }
-      .btn-close-dropdown { 
-        background: var(--bg-surface); 
-        border: 1px solid var(--border-hairline); 
-        color: var(--text-muted); 
-        border-radius: 4px; 
-        padding: 2px 6px; 
-        font-size: 0.68rem; 
-        cursor: pointer; 
-      }
-      .dropdown-item { 
-        padding: 9px 12px; 
-        border-bottom: 1px solid var(--border-subtle); 
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-        font-size: 0.82rem; 
-        cursor: pointer; 
-      }
-      .dropdown-item:hover { background: var(--bg-card-hover); }
-      .top-rank-row { display: flex; align-items: center; justify-content: space-between; width: 100%; }
-      .top-rank-left { display: flex; align-items: center; gap: 8px; }
-      .rank-badge { width: 20px; height: 20px; line-height: 20px; text-align: center; border-radius: 50%; font-size: 0.68rem; font-weight: 800; }
-      .rank-1 { background: #fef08a; color: #854d0e; } .rank-2 { background: #e2e8f0; color: #334155; } .rank-3 { background: #fed7aa; color: #9a3412; } .rank-etc { background: var(--bg-card); color: var(--text-muted); }
-      .top-spot-title { font-weight: 700; color: var(--accent-blue); font-size: 0.86rem; }
-      .top-spot-city { font-size: 0.72rem; color: var(--accent-blue); background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px; }
-      .top-spot-views { font-size: 0.74rem; color: var(--text-muted); }
 
       /* 🗺️ 사이드바 & 슬라이딩 드로어 */
-      .container { display: flex; width: 100%; flex: 1; position: relative; overflow: hidden; }
+      .container { display: flex; width: 100%; flex: 1; position: relative; overflow: hidden; height: 100dvh !important; }
       .sidebar { width: 390px; max-width: 100%; height: 100%; background-color: var(--bg-surface); border-right: 1px solid var(--border-titanium); display: flex; flex-direction: column; flex-shrink: 0; z-index: var(--z-sidebar); color: var(--text-primary); position: relative; box-shadow: 4px 0 20px rgba(0,0,0,0.15); }
 
       .pc-sliding-drawer { position: absolute; top: 0; left: 390px; width: 380px; height: 100%; background: var(--bg-surface) !important; border-right: 1.5px solid var(--border-titanium); z-index: var(--z-pc-drawer); box-shadow: 12px 0 36px rgba(0,0,0,0.4); transform: translateX(-100%); opacity: 0; visibility: hidden; pointer-events: none; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease, visibility 0.3s; display: flex; flex-direction: column; overflow-y: auto; padding: 14px 16px; gap: 7px; }
@@ -640,11 +367,11 @@
 
       #map { flex: 1; width: 100%; height: 100%; position: relative; background: var(--bg-base); touch-action: pan-x pan-y; }
 
-      /* 🧭 HUD 타워 시스템 */
+      /* 🧭 HUD 타워 시스템 (상단 검색바 바로 아래로 최적 정렬) */
       .top-right-hud-group { 
         position: absolute; 
-        top: 8px; 
-        right: 8px; 
+        top: calc(60px + env(safe-area-inset-top, 0px)); 
+        right: 12px; 
         z-index: var(--z-hud); 
         display: flex; 
         flex-direction: column; 
@@ -652,7 +379,12 @@
         width: 38px; 
         height: 76px; 
       }
-      @media (min-width: 769px) { .top-right-hud-group { top: 16px; right: 16px; } }
+      @media (min-width: 769px) { 
+        .top-right-hud-group { 
+          top: calc(64px + env(safe-area-inset-top, 0px)); 
+          right: 16px; 
+        } 
+      }
       .top-hud-tower-box { 
         width: 38px; 
         height: 76px; 
@@ -859,24 +591,109 @@
       .comment-input-author, .comment-input-text { flex: 1; padding: 4px 6px; border: 1px solid var(--border-hairline); border-radius: 5px; font-size: 0.7rem; outline: none; background: var(--bg-base); color: var(--text-primary); }
       .comment-btn-submit { background: #0f766e; color: #fff; border: none; border-radius: 5px; padding: 4px 9px; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
 
-      /* 📱 하단 네비 독 */
+      @view-transition {
+        navigation: auto;
+      }
+
+      /* 📱 하단 네비 독 (인덱스와 100% 동일한 5대 메뉴 규격 및 고정 렌더링) */
       .mobile-bottom-dock { 
-        display: none; 
+        display: flex !important; 
         position: fixed; 
         bottom: 0; left: 0; right: 0; 
-        background: var(--dock-bg); 
+        background: rgba(0, 0, 0, 0.96) !important; 
         border-top: 1px solid var(--border-hairline); 
         height: calc(56px + env(safe-area-inset-bottom, 0px)); 
         padding-bottom: env(safe-area-inset-bottom, 0px); 
         z-index: var(--z-dock); 
         justify-content: space-around; 
         align-items: center; 
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+        contain: layout size style;
+        will-change: transform;
+        view-transition-name: persistent-bottom-dock;
       }
-      .dock-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-secondary); text-decoration: none; font-size: 0.72rem; font-weight: 700; gap: 3px; background: none; border: none; cursor: pointer; min-width: 54px; min-height: 48px; }
-      .dock-item.active { color: var(--accent-blue); } 
-      .dock-item svg { width: 19px; height: 19px; fill: currentColor; }
+      .dock-item { 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        justify-content: center; 
+        color: var(--text-secondary); 
+        text-decoration: none; 
+        font-size: 0.67rem; 
+        font-weight: 700; 
+        gap: 3px; 
+        background: none; 
+        border: none; 
+        cursor: pointer; 
+        flex: 1; 
+        min-width: 0; 
+        min-height: 48px; 
+        padding: 0 2px;
+        transition: color 0.15s ease, transform 0.15s ease;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .dock-item:active { transform: scale(0.93); }
+      .dock-item.active { color: var(--accent-blue) !important; } 
+      .dock-item svg { width: 19px; height: 19px; fill: currentColor; flex-shrink: 0; }
 
-      .app-toast { position: fixed; top: 68px; left: 50%; transform: translateX(-50%) translateY(-15px); background: var(--bg-surface); border: 1.5px solid var(--border-titanium); color: var(--text-primary); padding: 8px 18px; border-radius: 20px; font-size: 0.82rem; font-weight: 700;  box-shadow: 0 8px 24px rgba(0,0,0,0.5); pointer-events: none; opacity: 0; transition: all 0.22s ease; display: inline-flex; align-items: center; gap: 6px; }
+      /* 🧭 지도 전용 플로팅 퀵 액션 허브 (박지목록 & 초기화 완벽 승계) */
+      .map-floating-quick-bar {
+        position: absolute;
+        bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 10px);
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: calc(var(--z-hud) + 10);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(9, 12, 19, 0.88);
+        border: 1px solid var(--border-titanium);
+        border-top: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 24px;
+        padding: 4px 6px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+      html[data-theme="light"] .map-floating-quick-bar {
+        background: rgba(241, 235, 217, 0.94) !important;
+        border: 1.5px solid rgba(199, 187, 163, 0.8) !important;
+        box-shadow: 0 8px 24px rgba(100, 85, 60, 0.2) !important;
+      }
+      .btn-floating-hub {
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        font-size: 0.73rem;
+        font-weight: 800;
+        padding: 5px 10px;
+        border-radius: 18px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+      }
+      .btn-floating-hub:active {
+        transform: scale(0.95);
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .btn-floating-hub.highlight {
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(2, 132, 199, 0.35));
+        border: 1px solid rgba(56, 189, 248, 0.45);
+        color: var(--accent-blue);
+      }
+      html[data-theme="light"] .btn-floating-hub.highlight {
+        background: #0284c7 !important;
+        color: #ffffff !important;
+        border: none !important;
+      }
+
+      .app-toast { position: fixed; top: 68px; left: 50%; transform: translateX(-50%) translateY(-15px); background: var(--bg-surface); border: 1.5px solid var(--border-titanium); color: var(--text-primary); padding: 8px 18px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,0.5); pointer-events: none; opacity: 0; transition: all 0.22s ease; display: inline-flex; align-items: center; gap: 6px; }
       .app-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
       body.clean-map-mode .clean-hide { display: none !important; }
 
@@ -940,52 +757,19 @@
   <body>
     <div id="appToast" class="app-toast"></div>
 
-    <!-- 🧭 1. 상단 GNB -->
-    <header class="apple-integrated-header notranslate" id="header">
-    <div class="header-top-row">
-        <a href="index.html" class="brand-line" onclick="triggerHaptic('light');" title="홈으로 이동">
-          <div class="brand-sym-box">
-            <svg viewBox="0 0 32 32" fill="none" style="overflow: visible;">
-              <circle cx="21" cy="6" r="14" fill="rgba(251,146,60,0.15)"/>
-              <circle cx="21" cy="6" r="9" fill="rgba(234,88,12,0.28)"/>
-              <circle cx="21" cy="6" r="5" fill="rgba(244,63,94,0.42)"/>
-              <circle cx="2" cy="24" r="1.8" fill="#fda4af"/>
-              <circle cx="9" cy="12" r="2.2" fill="#fda4af"/>
-              <circle cx="14" cy="16" r="1.8" fill="#fda4af"/>
-              <circle cx="13" cy="24" r="1.8" fill="#fda4af"/>
-              <path d="M2 24L9 12H12.5L14 16L10 16M10 16L13 24" stroke="#fda4af" stroke-width="1.8" stroke-linecap="round"/>
-              <circle cx="21" cy="6" r="2.8" fill="#ea580c" stroke="#ffffff" stroke-width="0.6"/>
-              <circle cx="27" cy="13" r="2.2" fill="#e2e8f0"/>
-              <circle cx="30" cy="24" r="2.4" fill="#e2e8f0"/>
-              <path d="M13 24L21 6H25L27 13L22 13M22 13L30 24" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" style="filter: drop-shadow(0 0 1px rgba(3, 105, 161, 0.6)) drop-shadow(0 1px 2px rgba(7, 89, 133, 0.25));"/>
-              <circle cx="21" cy="6" r="1.0" fill="#ffffff"/>
-            </svg>
-          </div>
-          <span class="brand-title">낭만루트</span>
-        </a>
-
-        <div class="header-right-actions">
-          <span class="admin-status-badge pc-only" id="adminBadge">관리자 ON</span>
-          
-          <button type="button" class="header-btn pc-only" id="resetMapBtn" onclick="handleSmartResetClick()">
-                <svg viewBox="0 0 24 24" class="ui-icon"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="2" fill="none"/></svg>
-                <span id="pcResetMapBtnText">초기화</span>
-              </button>
-        </div>
-      </div>
-
-      <!-- 🔍 2열 슬림 검색바 -->
+    <!-- 🔍 당근마켓 스타일 지도 위 투명 플로팅 검색창 -->
+    <div class="floating-top-search-wrap notranslate">
       <div class="apple-search-box">
         <div class="apple-search-bar">
-          <span class="icon-svg" style="width:14px; height:14px; color:var(--text-muted);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span class="icon-svg" style="width:16px; height:16px; color:var(--accent-blue); display:flex; align-items:center; justify-content:center;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           </span>
           <input type="text" id="pcSearchInput" class="apple-search-input" placeholder="산, 섬, 활공장, 해변, 데크 검색..." autocomplete="off" onfocus="showTopRankings('pc')" oninput="handleSearchInputChange('pc')" onkeyup="handleSearchInput(event, 'pc')" />
           <button type="button" id="pcSearchClearBtn" class="btn-clear-search" onclick="clearSearchInput('pc', true)">✕</button>
         </div>
         <ul id="pcSearchDropdown" class="search-dropdown"></ul>
       </div>
-    </header>
+    </div>
 
     <div class="container">
       <aside class="sidebar collapsed clean-hide" id="sidebar">
@@ -1106,19 +890,58 @@
       <div class="sheet-content" id="mobileSheetContent"></div>
     </div>
 
-    <!-- 모바일 하단 독 -->
-    <div class="mobile-bottom-dock">
-      <a href="index.html" class="dock-item" title="홈" onclick="triggerHaptic('light');">
-        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-        <span>홈</span>
-      </a>
-      <button type="button" class="dock-item" id="dockSpotListBtn" onclick="triggerHaptic('light'); toggleMobileSidebar();">
-        <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+   <!-- 🧭 모바일 지도 전용 플로팅 퀵 허브 (박지목록 & 초기화 쾌속 버튼) -->
+    <div class="map-floating-quick-bar mobile-only clean-hide" id="mapFloatingQuickBar">
+      <button type="button" class="btn-floating-hub highlight" id="dockSpotListBtn" onclick="triggerHaptic(12); toggleMobileSidebar();">
+        <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
         <span id="dockSpotListText">박지목록</span>
       </button>
-      <button type="button" class="dock-item" id="dockResetMapBtn" onclick="triggerHaptic('medium'); handleSmartResetClick();">
-        <svg id="dockResetMapIcon" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+      <button type="button" class="btn-floating-hub" id="dockResetMapBtn" onclick="triggerHaptic(12); handleSmartResetClick();">
+        <svg id="dockResetMapIcon" viewBox="0 0 24 24" style="width:14px; height:14px; fill:currentColor;"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
         <span id="dockResetMapText">초기화</span>
+      </button>
+    </div>
+
+    <!-- 📱 하단 네비 독 (인덱스와 동일한 낭만루트 5대 메인 탭) -->
+    <div class="mobile-bottom-dock notranslate">
+      <!-- 1. 낭만루터 -->
+      <a href="index.html" class="dock-item" title="낭만루터" onclick="triggerHaptic(10);">
+        <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span>낭만루터</span>
+      </a>
+
+      <!-- 2. 전국지도 (현재 활성화) -->
+      <a href="map.html" class="dock-item active" title="전국지도" onclick="triggerHaptic(10);">
+        <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
+        <span>전국지도</span>
+      </a>
+
+      <!-- 3. 낭만계획 -->
+      <button type="button" class="dock-item" title="낭만계획" onclick="triggerHaptic(12); location.href='index.html?open=basecamp&tab=plan';">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+          <path d="M9 16l2 2 4-4"/>
+        </svg>
+        <span>낭만계획</span>
+      </button>
+
+      <!-- 4. 낭만보관함 -->
+      <button type="button" class="dock-item" title="낭만보관함" onclick="triggerHaptic(12); location.href='index.html?open=basecamp&tab=history';">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 8v13H3V8"/>
+          <path d="M1 3h22v5H1z"/>
+          <path d="M10 12h4"/>
+        </svg>
+        <span>낭만보관함</span>
+      </button>
+
+      <!-- 5. 내정보 -->
+      <button type="button" class="dock-item" title="내정보" onclick="triggerHaptic(12); handleAuthBtnClick();">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        <span>내정보</span>
       </button>
     </div>
 
