@@ -193,8 +193,9 @@ function saveCurrentPackingRecord() {
     photo: ''
   };
 
-  if (!window.interactiveHistory) window.interactiveHistory = [];
-  window.interactiveHistory.unshift(newRecord);
+ if (!window.interactiveHistory) window.interactiveHistory = [];
+  // 🚀 [등록순서 변경]: 최근 등록은 제일 뒤로 등록 (push)
+  window.interactiveHistory.push(newRecord);
   window.packingHistoryList = window.interactiveHistory;
 
   if (typeof window.saveToIndexedDB === 'function') {
@@ -336,13 +337,10 @@ window.selectSpotFromDropdown = function(spotName, elevation) {
   if (typeof updateShareCardLive === 'function') updateShareCardLive();
   if (typeof triggerHaptic === 'function') triggerHaptic(12);
 };
-/// 💾 [공용 금고 연동] 스튜디오 ➔ 낭만보관함 직통 저장 단일 함수
-// 💾 [공용 금고 연동] 스튜디오 ➔ 낭만보관함 직통 저장 단일 함수 (선자령 하드코딩 완전 박멸)
-window.saveCardToVaultAndOpenBasecamp = function() {
+window.saveCardToVaultAndOpenBasecamp = async function() {
   var spotInput = document.getElementById('shareCardSpotInput');
   var memoInput = document.getElementById('shareCardMemoInput');
   
-  // 사용자가 입력한 박지명이 있으면 입력값 사용, 없으면 기존 레코드의 박지명 사용, 둘 다 없으면 빈칸('') 유지
   var liveSpot = (spotInput && spotInput.value.trim().length > 0) 
     ? spotInput.value.trim() 
     : (window.currentShareRecord && window.currentShareRecord.spot ? window.currentShareRecord.spot : '');
@@ -373,9 +371,10 @@ window.saveCardToVaultAndOpenBasecamp = function() {
   var totalGrams = items.reduce(function(sum, g) { return sum + Number(g.weight || 0); }, 0);
   var weightKg = (totalGrams > 0) ? (totalGrams / 1000).toFixed(2) : (rec.weightKg || '0.00');
 
+  var pendingPhoto = window.currentSharePhoto;
   var photosToSave = [];
-  if (window.currentSharePhoto && typeof window.currentSharePhoto === 'string' && window.currentSharePhoto.length > 10) {
-    photosToSave.push(window.currentSharePhoto);
+  if (pendingPhoto && typeof pendingPhoto === 'string' && pendingPhoto.length > 10) {
+    photosToSave.push(pendingPhoto);
   } else if (Array.isArray(rec.photos) && rec.photos.length > 0) {
     photosToSave = rec.photos;
   } else if (rec.photo) {
@@ -398,20 +397,55 @@ window.saveCardToVaultAndOpenBasecamp = function() {
     templateId: window.selectedTemplateId || rec.templateId || 1
   };
 
-  var savedResult = null;
+  // 🚀 1. 내 폰에는 0.05초 즉시 보관하고 모달은 바로 닫기
   if (typeof window.savePackingHistoryRecord === 'function') {
-    savedResult = window.savePackingHistoryRecord(newRecord);
-  }
-
-  // 진짜 중복으로 차단 팝업이 뜬 경우에만 중단
-  if (savedResult === null) {
-    return;
+    window.savePackingHistoryRecord(newRecord);
   }
 
   if (typeof closePackShareModal === 'function') closePackShareModal();
   if (typeof window.openHistoryModal === 'function') window.openHistoryModal();
-  if (typeof showToast === 'function') showToast('🎒 낭만보관함에 안전하게 저장되었습니다!', 'success');
+  if (typeof showToast === 'function') showToast('🎒 낭만보관함 저장 완료! (사진 동기화 중...)', 'success', 2500);
   if (typeof triggerHaptic === 'function') triggerHaptic(15);
+
+  // 📸 2. 대표님 직관대로 "하나씩 따로따로 순서대로" 드라이브에 안전 업로드 후 최종 시트 전송
+ // 📸 2. 대표님 직관대로 "하나씩 따로따로 0.5초 텀을 주며" 드라이브에 4장 전수 안전 업로드
+  var photosToUpload = (Array.isArray(window.__studioMultiPhotos) && window.__studioMultiPhotos.length > 0) 
+    ? window.__studioMultiPhotos 
+    : (pendingPhoto ? [pendingPhoto] : []);
+
+  (async function() {
+    var finalDriveUrls = [];
+    for (var i = 0; i < photosToUpload.length; i++) {
+      var b64Item = photosToUpload[i];
+      if (typeof b64Item === 'string' && b64Item.startsWith('data:') && typeof window.uploadSinglePhotoToDrive === 'function') {
+        var singleUrl = await window.uploadSinglePhotoToDrive(b64Item, 'pack_' + newRecord.id + '_' + i + '.jpg');
+        if (singleUrl && singleUrl.startsWith('http')) {
+          finalDriveUrls.push(singleUrl);
+        }
+        // ⏳ 구글 서버가 다음 사진을 안정적으로 받도록 0.4초 안전 딜레이
+        await new Promise(function(resolve) { setTimeout(resolve, 400); });
+      } else if (typeof b64Item === 'string' && b64Item.startsWith('http')) {
+        finalDriveUrls.push(b64Item);
+      }
+    }
+
+    if (finalDriveUrls.length > 0) {
+      newRecord.photos = finalDriveUrls;
+      newRecord.photo = finalDriveUrls[0];
+      newRecord.fieldPhoto = finalDriveUrls[0];
+
+      if (typeof window.savePackingHistoryRecord === 'function') {
+        window.savePackingHistoryRecord(newRecord);
+      }
+      if (typeof window.shareFeedToCommunity === 'function') {
+        window.shareFeedToCommunity(newRecord);
+      }
+    } else {
+      if (typeof window.shareFeedToCommunity === 'function') {
+        window.shareFeedToCommunity(newRecord);
+      }
+    }
+  })();
 };
 
 function ensurePackShareModalDOM() {
