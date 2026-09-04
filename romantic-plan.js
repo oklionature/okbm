@@ -15,10 +15,11 @@
     var style = document.createElement('style');
     style.id = 'romantic-plan-core-style';
     style.innerHTML = `
-      .weight-dashboard-strip {
-        background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(6, 182, 212, 0.07)) !important;
-        border: 1.5px solid rgba(52, 211, 153, 0.4) !important;
-        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+     .weight-dashboard-strip {
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.09) 0%, rgba(15, 23, 42, 0.65) 50%, rgba(3, 5, 8, 0.85) 100%) !important;
+        border: 1px solid rgba(56, 189, 248, 0.28) !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.22) !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
         border-radius: 12px !important;
         padding: 9px 12px !important;
         display: flex !important;
@@ -32,7 +33,8 @@
         font-family: 'Space Grotesk', 'JetBrains Mono', sans-serif !important;
         font-size: 1.8rem !important;
         font-weight: 900 !important;
-        color: #34d399 !important;
+        color: #38bdf8 !important;
+        text-shadow: 0 0 16px rgba(56, 189, 248, 0.45) !important;
         line-height: 0.95 !important;
         letter-spacing: -0.03em !important;
       }
@@ -40,16 +42,18 @@
         font-size: 0.68rem !important; font-weight: 800 !important; padding: 2px 6px !important;
         border-radius: 4px !important; display: inline-flex !important; align-items: center !important; gap: 3px !important;
       }
-      .bpl-ul { background: rgba(52, 211, 153, 0.2) !important; color: #6ee7b7 !important; border: 1px solid #34d399 !important; }
+      .bpl-ul { background: rgba(56, 189, 248, 0.18) !important; color: #7dd3fc !important; border: 1px solid #38bdf8 !important; }
       .bpl-standard { background: rgba(245, 158, 11, 0.2) !important; color: #fde047 !important; border: 1px solid #f59e0b !important; }
       .bpl-heavy { background: rgba(244, 63, 94, 0.2) !important; color: #fda4af !important; border: 1px solid #f43f5e !important; }
       .weight-gauge-bg {
-        width: 100% !important; height: 8px !important; background: rgba(255,255,255,0.1) !important;
+        width: 100% !important; height: 8px !important; background: rgba(255, 255, 255, 0.08) !important;
         border-radius: 4px !important; overflow: hidden !important; position: relative !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
       }
       .weight-gauge-fill {
         height: 100% !important; width: 0% !important;
-        background: linear-gradient(90deg, #34d399, #f59e0b, #f43f5e) !important;
+        background: linear-gradient(90deg, #38bdf8 0%, #818cf8 55%, #f43f5e 100%) !important;
+        box-shadow: 0 0 10px rgba(56, 189, 248, 0.5) !important;
         transition: width 0.3s ease !important;
       }
       .category-slots-grid { 
@@ -161,25 +165,25 @@
     }
   }
 
-  // 🎨 [10대 슬롯 28px 라인아트 벡터]
+  // 🎨 [10대 슬롯 28px 라인아트 벡터] - 아날로그 밤숲 감성: 눈부심 제로 은은한 반투명 미스트 기어
   var PLAN_SLOT_VECTORS = {
-    shelter: '<svg viewBox="0 0 48 48" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 38C6 20 14 8 24 8s18 12 18 30H6z"/><path d="M14 38c0-12 4-20 10-20s10 8 10 20M6 38h36"/></svg>',
-    sleep: '<svg viewBox="0 0 48 48" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="16" height="28" rx="8"/><line x1="6" y1="18" x2="22" y2="18"/><line x1="6" y1="26" x2="22" y2="26"/><path d="M26 14c4-3 10-3 14 0v24a6 6 0 0 1-12 0V14"/></svg>',
-    pack: '<svg viewBox="0 0 48 48" fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="4" width="32" height="9" rx="4.5" stroke="#34d399"/><rect x="12" y="15" width="24" height="27" rx="3"/><path d="M6 6l6 36M42 6l-6 36M12 25h24"/></svg>',
-    food: '<svg viewBox="0 0 48 48" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M24 4c-6 9-12 17-12 25a12 12 0 0 0 24 0c0-8-6-16-12-25z"/><path d="M24 16v13l8 4"/></svg>',
-    kitchen: '<svg viewBox="0 0 48 48" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18h28v18a6 6 0 0 1-6 6H14a6 6 0 0 1-6-6V18z"/><path d="M36 24h5a3 3 0 0 1 0 6h-5M14 8c0 3-3 5-3 8M22 6c0 4-3 6-3 10M30 8c0 3-3 5-3 8"/></svg>',
-    wear: '<svg viewBox="0 0 48 48" fill="none" stroke="#fb7185" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M34 8l-10-4-10 4L2 26l7 3 3-11v24h24V18l3 11 7-3-12-18z"/><path d="M18 14h12l-6 8-6-8z"/></svg>',
-    electronics: '<svg viewBox="0 0 48 48" fill="none" stroke="#fde047" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="26 3 10 27 24 27 22 45 38 21 24 21 26 3"/></svg>',
-    camp: '<svg viewBox="0 0 48 48" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14h28v14a5 5 0 0 1-5 5H15a5 5 0 0 1-5-5V14z"/><path d="M14 33L8 45M34 33l6 12M15 33l18 12M33 33L15 45"/></svg>',
-    slot9: '<svg viewBox="0 0 48 48" fill="none" stroke="#fb7185" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="24" cy="36" rx="14" ry="5"/><path d="M16 36V22h16v14M24 22v-8M20 14l4-8 4 8"/></svg>',
-    slot10: '<svg viewBox="0 0 48 48" fill="none" stroke="#fde047" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="16" width="36" height="26" rx="4"/><path d="M24 16v26M6 26h36M18 16c0-6 6-10 6-10s6 4 6 10"/></svg>'
+    shelter: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 38C6 20 14 8 24 8s18 12 18 30H6z"/><path d="M14 38c0-12 4-20 10-20s10 8 10 20M6 38h36"/></svg>',
+    sleep: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="16" height="28" rx="8"/><line x1="6" y1="18" x2="22" y2="18"/><line x1="6" y1="26" x2="22" y2="26"/><path d="M26 14c4-3 10-3 14 0v24a6 6 0 0 1-12 0V14"/></svg>',
+    pack: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="4" width="32" height="9" rx="4.5" stroke="rgba(255,255,255,0.06)"/><rect x="12" y="15" width="24" height="27" rx="3"/><path d="M6 6l6 36M42 6l-6 36M12 25h24"/></svg>',
+    food: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M24 4c-6 9-12 17-12 25a12 12 0 0 0 24 0c0-8-6-16-12-25z"/><path d="M24 16v13l8 4"/></svg>',
+    kitchen: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18h28v18a6 6 0 0 1-6 6H14a6 6 0 0 1-6-6V18z"/><path d="M36 24h5a3 3 0 0 1 0 6h-5M14 8c0 3-3 5-3 8M22 6c0 4-3 6-3 10M30 8c0 3-3 5-3 8"/></svg>',
+    wear: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M34 8l-10-4-10 4L2 26l7 3 3-11v24h24V18l3 11 7-3-12-18z"/><path d="M18 14h12l-6 8-6-8z"/></svg>',
+    electronics: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="26 3 10 27 24 27 22 45 38 21 24 21 26 3"/></svg>',
+    camp: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14h28v14a5 5 0 0 1-5 5H15a5 5 0 0 1-5-5V14z"/><path d="M14 33L8 45M34 33l6 12M15 33l18 12M33 33L15 45"/></svg>',
+    slot9: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="24" cy="36" rx="14" ry="5"/><path d="M16 36V22h16v14M24 22v-8M20 14l4-8 4 8"/></svg>',
+    slot10: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="16" width="36" height="26" rx="4"/><path d="M24 16v26M6 26h36M18 16c0-6 6-10 6-10s6 4 6 10"/></svg>'
   };
 
-  // 🏷️ 8대 기본 카테고리
+  // 🏷️ 8대 기본 카테고리 - 눈이 편안한 은회색 반투명 스트로크 아이콘
   var DEFAULT_CATEGORIES = [
     {
       id: 'shelter', title: '텐트 · 타프',
-      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#38bdf8; stroke-width:2.2;"><path d="M12 2L2 20h20L12 2z"/><path d="M12 2v18M7 20l5-9 5 9"/></svg>',
+      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:rgba(255,255,255,0.55); stroke-width:2.2;"><path d="M12 2L2 20h20L12 2z"/><path d="M12 2v18M7 20l5-9 5 9"/></svg>',
       db: [
         { name: '제로그램 엘찰텐 프로 1.5P', weight: 1450, brand: 'ZEROGRAM', verified: true, specs: '4계절 경량 텐트' },
         { name: 'MSR 허바허바 NX 2P', weight: 1540, brand: 'MSR', verified: true, specs: '백패킹 베스트셀러' },
@@ -190,7 +194,7 @@
     },
     {
       id: 'sleep', title: '침낭 · 매트',
-      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#34d399; stroke-width:2.2;"><path d="M2 17h20M2 13h20M4 9h16a2 2 0 0 1 2 2v6H2v-6a2 2 0 0 1 2-2z"/></svg>',
+      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:rgba(255,255,255,0.55); stroke-width:2.2;"><path d="M2 17h20M2 13h20M4 9h16a2 2 0 0 1 2 2v6H2v-6a2 2 0 0 1 2-2z"/></svg>',
       db: [
         { name: '써마레스트 엑스썸 NXT (에어매트)', weight: 430, brand: 'Therm-a-Rest', verified: true, specs: 'R값 7.3 동계 최강' },
         { name: '써마레스트 엑스라이트 NXT (에어매트)', weight: 354, brand: 'Therm-a-Rest', verified: true, specs: 'R값 4.5 3계절 표준' },
@@ -201,7 +205,7 @@
     },
     {
       id: 'pack', title: '배낭 (Pack)',
-      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#a78bfa; stroke-width:2.2;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>',
+      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:rgba(255,255,255,0.55); stroke-width:2.2;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>',
       db: [
         { name: 'CAYL 태백 50L 롤탑 배낭', weight: 910, brand: 'CAYL', verified: true, specs: 'BPL 최적화 배낭' },
         { name: 'HMG 윈드라이더 3400 (55L)', weight: 910, brand: 'Hyperlite Mountain Gear', verified: true, specs: '다이니마 방수 원단' },
@@ -211,7 +215,7 @@
     },
     {
       id: 'food', title: '식수 · 식량 · 간식',
-      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#10b981; stroke-width:2.2;"><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/><path d="M12 6v6l4 2"/></svg>',
+      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:rgba(255,255,255,0.55); stroke-width:2.2;"><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/><path d="M12 6v6l4 2"/></svg>',
       db: [
         { name: '생수 2.0L (식수)', weight: 2000, brand: 'Water', verified: true, specs: '1박 기준 필수 식수' },
         { name: '생수 1.0L (보조식수)', weight: 1000, brand: 'Water', verified: true, specs: '보조 식수' },
@@ -222,7 +226,7 @@
     },
     {
       id: 'kitchen', title: '취사 · 식기 · 보온병',
-      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#f59e0b; stroke-width:2.2;"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>',
+      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:rgba(255,255,255,0.55); stroke-width:2.2;"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>',
       db: [
         { name: '스탠리 클래식 보온병 1.0L (빈통)', weight: 650, brand: 'Stanley', verified: true, specs: '보온력 우수' },
         { name: '써모스 산악전용 보온병 900ml', weight: 390, brand: 'Thermos', verified: true, specs: '산악 경량 보온병' },
@@ -233,7 +237,7 @@
     },
     {
       id: 'wear', title: '보온의류 · 방한 · 의류',
-      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#fb7185; stroke-width:2.2;"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>',
+      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:rgba(255,255,255,0.55); stroke-width:2.2;"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>',
       db: [
         { name: '헤비 다운 우모복 (동계 패딩)', weight: 750, brand: 'Wear', verified: true, specs: '영하권 필수 보온의류' },
         { name: '큐물러스 네베 다운팬츠 (우모바지)', weight: 330, brand: 'Cumulus', verified: true, specs: '850FP 구스 충전' },
@@ -244,7 +248,7 @@
     },
     {
       id: 'electronics', title: '랜턴 · 안전 · 전자기기',
-      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#fde047; stroke-width:2.2;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:rgba(255,255,255,0.55); stroke-width:2.2;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
       db: [
         { name: '페츨 악틱 코어 헤드랜턴', weight: 80, brand: 'Petzl', verified: true, specs: '450루멘 충전식' },
         { name: '골제로 라이트하우스 미니 랜턴', weight: 68, brand: 'GoalZero', verified: true, specs: '텐트 조명 최강' },
@@ -254,7 +258,7 @@
     },
     {
       id: 'camp', title: '테이블 · 체어 · 소품',
-      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#38bdf8; stroke-width:2.2;"><rect x="4" y="10" width="16" height="4" rx="1"/><path d="M6 14v6M18 14v6M8 10V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4"/></svg>',
+      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:rgba(255,255,255,0.55); stroke-width:2.2;"><rect x="4" y="10" width="16" height="4" rx="1"/><path d="M6 14v6M18 14v6M8 10V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4"/></svg>',
       db: [
         { name: '헬리녹스 체어원', weight: 890, brand: 'Helinox', verified: true, specs: '편안한 착좌감' },
         { name: '헬리녹스 체어제로 (초경량)', weight: 490, brand: 'Helinox', verified: true, specs: 'BPL 체어' },
@@ -324,36 +328,36 @@
     var slot10Vec = PLAN_SLOT_VECTORS.slot10 || '';
 
     renderedHtml += `
-      <div class="category-slot-card" style="border-color:#fb7185; background:rgba(244,63,94,0.04);" onclick="if(typeof showToast==='function') showToast('🔥 요즘 유행하는 백패킹 인기 핫템 랭킹 준비 중입니다!', 'info');">
+      <div class="category-slot-card" style="border-color:rgba(255,255,255,0.14); background:rgba(255,255,255,0.015);" onclick="if(typeof showToast==='function') showToast('🔥 요즘 유행하는 백패킹 인기 핫템 랭킹 준비 중입니다!', 'info');">
         <div class="slot-bg-watermark-vector">${slot9Vec}</div>
         <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
           <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-            <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fb7185; text-shadow:0 1px 3px #000;">
+            <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#cbd5e1; text-shadow:0 1px 3px #000;">
               <span>🔥</span>
               <span>요즘 유행하는 장비</span>
             </div>
-            <span style="font-size:0.56rem; color:#fff; font-weight:900; background:#f43f5e; padding:1px 4px; border-radius:3px;">HOT</span>
+            <span style="font-size:0.54rem; color:#fff; font-weight:900; background:rgba(255,255,255,0.12); padding:1.5px 5.5px; border-radius:3.5px;">HOT</span>
           </div>
           <div class="slot-gears-wrap">
-            <span style="color:#cbd5e1; font-size:0.56rem; font-weight:800; background:rgba(0,0,0,0.65); padding:1px 4px; border-radius:3px;">인기 장비 랭킹 ➔</span>
+            <span style="color:#94a3b8; font-size:0.56rem; font-weight:700; background:rgba(0,0,0,0.65); padding:1px 4px; border-radius:3px;">인기 장비 랭킹 ➔</span>
           </div>
         </div>
       </div>
     `;
 
     renderedHtml += `
-      <div class="category-slot-card" style="border-color:#fde047; background:rgba(253,224,71,0.04);" onclick="if(typeof showToast==='function') showToast('🎁 백패커 전용 특가 및 제휴 혜택 공간입니다!', 'info');">
+      <div class="category-slot-card" style="border-color:rgba(255,255,255,0.14); background:rgba(255,255,255,0.015);" onclick="if(typeof showToast==='function') showToast('🎁 백패커 전용 특가 및 제휴 혜택 공간입니다!', 'info');">
         <div class="slot-bg-watermark-vector">${slot10Vec}</div>
         <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
           <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-            <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fde047; text-shadow:0 1px 3px #000;">
+            <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#cbd5e1; text-shadow:0 1px 3px #000;">
               <span>🎁</span>
               <span>백패커 특가 혜택</span>
             </div>
-            <span style="font-size:0.56rem; color:#000; font-weight:900; background:#fde047; padding:1px 4px; border-radius:3px;">SALE</span>
+            <span style="font-size:0.54rem; color:#fff; font-weight:900; background:rgba(255,255,255,0.12); padding:1.5px 5.5px; border-radius:3.5px;">SALE</span>
           </div>
           <div class="slot-gears-wrap">
-            <span style="color:#cbd5e1; font-size:0.56rem; font-weight:800; background:rgba(0,0,0,0.65); padding:1px 4px; border-radius:3px;">공구/할인 이벤트 ➔</span>
+            <span style="color:#94a3b8; font-size:0.56rem; font-weight:700; background:rgba(0,0,0,0.65); padding:1px 4px; border-radius:3px;">공구/할인 이벤트 ➔</span>
           </div>
         </div>
       </div>
@@ -398,15 +402,14 @@
     }
   };
 
- // 📦 [장비 선택 모달 DOM 자동 생성 및 동적 보장 엔진]
-  function ensureGearPresetModalDOM() {
+ function ensureGearPresetModalDOM() {
     var modal = document.getElementById('gearPresetModal');
     if (modal) return modal;
 
     modal = document.createElement('div');
     modal.id = 'gearPresetModal';
     modal.className = 'custom-modal-overlay';
-    modal.style.cssText = 'display:none; position:fixed; inset:0; background:#000000; z-index:1000010 !important; justify-content:center; align-items:stretch; padding:0;';
+    modal.style.cssText = 'display:none; position:fixed; inset:0; background:#07090e; z-index:1000010 !important; justify-content:center; align-items:stretch; padding:0;';
     modal.onclick = function(e) { if (e.target === modal) window.closeGearPresetModal(); };
 
     modal.innerHTML = `
@@ -414,38 +417,38 @@
         <div style="flex-shrink:0; display:flex; flex-direction:column; gap:6px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08);">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:6px;">
-              <button type="button" onclick="window.closeGearPresetModal()" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
+              <button type="button" onclick="window.closeGearPresetModal()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
               <span class="icon-svg" style="width:16px; height:16px; color:#38bdf8; display:flex; align-items:center; justify-content:center;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:16px; height:16px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
               </span>
-              <span style="font-weight:900; font-size:1.02rem; color:#fff;" id="presetModalCategoryTitle">장비 선택 & 등록</span>
+              <span style="font-weight:900; font-size:1.02rem; color:#f8fafc;" id="presetModalCategoryTitle">장비 선택 & 등록</span>
             </div>
-            <button type="button" onclick="window.closeGearPresetModal()" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:2px 6px;">✕</button>
+            <button type="button" onclick="window.closeGearPresetModal()" style="background:none; border:none; color:#64748b; font-size:1.1rem; cursor:pointer; padding:2px 6px;">✕</button>
           </div>
 
           <div style="position:relative; width:100%; display:flex; align-items:center;">
-            <input type="text" id="gearSearchFixedInput" class="modal-input" placeholder="🔍 브랜드, 장비명, 스펙 검색..." oninput="window.handleGearSearchInput(this.value)" style="border:1px solid #38bdf8; background:rgba(255,255,255,0.05); color:#fff; font-size:0.85rem; padding:0 32px 0 12px; height:42px; border-radius:8px; width:100%; box-sizing:border-box; outline:none;" />
-            <button type="button" id="btnGearSearchClear" style="display:none; position:absolute; right:8px; background:rgba(255,255,255,0.25); border:none; color:#ffffff; width:17px; height:17px; border-radius:50%; font-size:0.6rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0;" onclick="window.clearGearSearchInput()">✕</button>
+            <input type="text" id="gearSearchFixedInput" class="modal-input" placeholder="🔍 브랜드, 장비명, 스펙 검색..." oninput="window.handleGearSearchInput(this.value)" style="border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.035); color:#ffffff; font-size:0.85rem; padding:0 32px 0 12px; height:42px; border-radius:8px; width:100%; box-sizing:border-box; outline:none;" />
+            <button type="button" id="btnGearSearchClear" style="display:none; position:absolute; right:8px; background:rgba(255,255,255,0.15); border:none; color:#cbd5e1; width:17px; height:17px; border-radius:50%; font-size:0.6rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0;" onclick="window.clearGearSearchInput()">✕</button>
           </div>
 
-          <div style="display:flex; flex-direction:column; gap:5px; background:rgba(255,255,255,0.03); border:1px dashed rgba(56,189,248,0.35); border-radius:8px; padding:6px 8px; box-sizing:border-box;">
+          <div style="display:flex; flex-direction:column; gap:5px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:6px 8px; box-sizing:border-box;">
             <div style="width:100%;">
-              <input type="text" id="customInputGearName" class="modal-input" placeholder="직접 추가할 장비명 (예: 백패킹 다운슈즈)" style="width:100%; font-size:0.76rem; padding:7px 9px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); color:#fff; outline:none; box-sizing:border-box;" />
+              <input type="text" id="customInputGearName" class="modal-input" placeholder="직접 추가할 장비명 (예: 백패킹 다운슈즈)" style="width:100%; font-size:0.76rem; padding:7px 9px; border-radius:6px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:#f8fafc; outline:none; box-sizing:border-box;" />
             </div>
             <div style="display:flex; gap:6px; width:100%; align-items:center;">
-              <input type="number" id="customInputGearWeight" class="modal-input" placeholder="무게 (g)" style="flex:1; font-size:0.76rem; padding:7px 9px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); color:#fff; outline:none; font-family:'JetBrains Mono', monospace; box-sizing:border-box;" />
-              <button type="button" class="modal-btn" style="flex:1; height:32px; background:linear-gradient(135deg, #0d9488, #0f766e); border:1px solid #14b8a6; color:#fff; font-weight:900; padding:0; font-size:0.76rem; border-radius:6px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="window.addCustomGearToCurrentCategory()">+ 장비 등록</button>
+              <input type="number" id="customInputGearWeight" class="modal-input" placeholder="무게 (g)" style="flex:1; font-size:0.76rem; padding:7px 9px; border-radius:6px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:#f8fafc; outline:none; font-family:'JetBrains Mono', monospace; box-sizing:border-box;" />
+              <button type="button" class="modal-btn" style="flex:1; height:32px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); color:#f1f5f9; font-weight:800; padding:0; font-size:0.76rem; border-radius:6px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; cursor:pointer;" onclick="window.addCustomGearToCurrentCategory()">+ 장비 등록</button>
             </div>
           </div>
         </div>
 
         <div class="gear-db-list" id="presetGearDbList" style="flex:1; overflow-y:auto; margin-top:8px; display:flex; flex-direction:column; gap:6px;"></div>
 
-        <div style="position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; height:calc(56px + env(safe-area-inset-bottom, 0px)); padding:6px 12px calc(8px + env(safe-area-inset-bottom, 0px)) 12px; background:rgba(7,9,14,0.98); border-top:1px solid rgba(255,255,255,0.12); display:flex; align-items:center; gap:8px; box-sizing:border-box; z-index:1000015;">
-          <button type="button" onclick="window.clearAllGearsInCategory(window.currentOpeningCategoryId)" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1; font-size:0.75rem; font-weight:800; height:44px; padding:0 14px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; white-space:nowrap; flex-shrink:0;">
+        <div style="position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; height:calc(56px + env(safe-area-inset-bottom, 0px)); padding:6px 12px calc(8px + env(safe-area-inset-bottom, 0px)) 12px; background:rgba(7,9,14,0.98); border-top:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; gap:8px; box-sizing:border-box; z-index:1000015;">
+          <button type="button" onclick="window.clearAllGearsInCategory(window.currentOpeningCategoryId)" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; font-size:0.75rem; font-weight:700; height:44px; padding:0 14px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; white-space:nowrap; flex-shrink:0;">
             <span>↺ 비우기</span>
           </button>
-          <button type="button" onclick="window.closeGearPresetModal();" style="flex:1; height:44px; background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border:1px solid #38bdf8; color:#ffffff; font-size:0.84rem; font-weight:900; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(2,132,199,0.35); white-space:nowrap;">
+          <button type="button" onclick="window.closeGearPresetModal();" style="flex:1; height:44px; background:linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.06) 100%); border:1px solid rgba(255,255,255,0.2); color:#ffffff; font-size:0.84rem; font-weight:800; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(0,0,0,0.5); white-space:nowrap;">
             <span>장비 선택 완료 ✓</span>
           </button>
         </div>
@@ -511,7 +514,7 @@
     window.renderPlanCategorySlots();
   };
 
-  window.renderPresetGearList = function(query) {
+ window.renderPresetGearList = function(query) {
     var category = (window.CATEGORIES || []).find(function(c) { return c.id === window.currentOpeningCategoryId; });
     var listEl = document.getElementById('presetGearDbList');
     if (!category || !listEl) return;
@@ -541,7 +544,7 @@
     window.__currentFilteredGears = filteredDb;
 
     if (filteredDb.length === 0) {
-      listEl.innerHTML = '<div style="font-size:0.76rem; color:#94a3b8; text-align:center; padding:35px 0;">일치하는 장비가 없습니다.<br>상단에서 직접 내 장비를 등록해보세요!</div>';
+      listEl.innerHTML = '<div style="font-size:0.76rem; color:#64748b; text-align:center; padding:35px 0;">일치하는 장비가 없습니다.<br>상단에서 직접 내 장비를 등록해보세요!</div>';
       return;
     }
 
@@ -550,19 +553,19 @@
       var isAdded = countInPack > 0;
       var isFav = window.favoriteGearSet && window.favoriteGearSet.has(g.name);
 
-      var addedBadge = isAdded ? '<span style="font-size:0.58rem; font-weight:900; background:#10b981; color:#000; padding:1px 5px; border-radius:4px; flex-shrink:0;">✓ 담김 ' + countInPack + '개</span>' : '';
-      var myGearBadge = isFav ? '<span style="font-size:0.58rem; font-weight:900; background:rgba(253, 224, 71, 0.18); border:1px solid #fde047; color:#fde047; padding:1px 5px; border-radius:4px; flex-shrink:0;">⭐ 내 장비</span>' : '';
-      var brandHtml = g.brand ? '<span style="font-size:0.62rem; font-weight:900; color:#38bdf8; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.3); padding:1px 5px; border-radius:3px; flex-shrink:0;">' + escapeHtml(g.brand) + '</span>' : '';
-      var verifiedBadgeHtml = g.verified ? '<span style="font-size:0.58rem; font-weight:800; background:rgba(52, 211, 153, 0.18); border:1px solid rgba(52, 211, 153, 0.4); color:#6ee7b7; padding:1px 4px; border-radius:3px; flex-shrink:0;">✓ 실측</span>' : '';
+      var addedBadge = isAdded ? '<span style="font-size:0.58rem; font-weight:800; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); color:#f8fafc; padding:1px 5px; border-radius:4px; flex-shrink:0;">담김 ' + countInPack + '개</span>' : '';
+      var myGearBadge = isFav ? '<span style="font-size:0.58rem; font-weight:800; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#e2e8f0; padding:1px 5px; border-radius:4px; flex-shrink:0;">⭐ 내 장비</span>' : '';
+      var brandHtml = g.brand ? '<span style="font-size:0.60rem; font-weight:700; color:#94a3b8; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); padding:1px 4px; border-radius:3px; flex-shrink:0;">' + escapeHtml(g.brand) + '</span>' : '';
+      var verifiedBadgeHtml = g.verified ? '<span style="font-size:0.58rem; font-weight:700; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:#cbd5e1; padding:1px 4px; border-radius:3px; flex-shrink:0;">실측</span>' : '';
 
       return `
-        <div class="gear-db-item" onclick="window.addGearByIndex(${idx});" style="${isAdded ? 'background:linear-gradient(135deg, rgba(16,185,129,0.22), rgba(6,182,212,0.1)); border:1.5px solid #10b981;' : (isFav ? 'background:rgba(253,224,71,0.04); border:1px solid rgba(253,224,71,0.35);' : 'background:#090d14; border:1px solid rgba(255,255,255,0.08);')}; border-radius:10px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; cursor:pointer; user-select:none;">
+        <div class="gear-db-item" onclick="window.addGearByIndex(${idx});" style="${isAdded ? 'background:rgba(255,255,255,0.055); border:1px solid rgba(255,255,255,0.22);' : (isFav ? 'background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.12);' : 'background:rgba(255,255,255,0.015); border:1px solid rgba(255,255,255,0.06);')}; border-radius:10px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; cursor:pointer; user-select:none; transition:all 0.15s ease;">
           <div style="flex:1; min-width:0; padding-right:8px; display:flex; flex-direction:column; gap:2px;">
             <div style="display:flex; align-items:center; gap:5px;">
-              <button type="button" onclick="window.toggleFavoriteGearByIndex(${idx}, event)" style="background:none; border:none; font-size:1.05rem; cursor:pointer; padding:0 2px;">
-                ${isFav ? '⭐' : '<span style="color:#475569; opacity:0.6;">☆</span>'}
+              <button type="button" onclick="window.toggleFavoriteGearByIndex(${idx}, event)" style="background:none; border:none; font-size:1.0rem; cursor:pointer; padding:0 2px;">
+                ${isFav ? '⭐' : '<span style="color:#475569; opacity:0.4;">☆</span>'}
               </button>
-              <div style="font-size:0.78rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">
+              <div style="font-size:0.78rem; font-weight:800; color:${isAdded ? '#ffffff' : '#e2e8f0'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">
                 ${escapeHtml(g.name)}
               </div>
             </div>
@@ -574,17 +577,17 @@
             </div>
           </div>
           <div style="text-align:right; flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
-            <div style="font-size:0.90rem; font-weight:900; font-family:'JetBrains Mono', monospace; color:${isAdded ? '#6ee7b7' : '#38bdf8'};">
-              ${(g.weight / 1000).toFixed(2)}<span style="font-size:0.55rem; color:#cbd5e1;">kg</span>
+            <div style="font-size:0.86rem; font-weight:900; font-family:'JetBrains Mono', monospace; color:${isAdded ? '#f8fafc' : '#94a3b8'};">
+              ${(g.weight / 1000).toFixed(2)}<span style="font-size:0.55rem; color:#64748b; margin-left:1px;">kg</span>
             </div>
             ${isAdded ? `
-              <div style="display:flex; align-items:center; background:#064e3b; border:1.5px solid #10b981; border-radius:16px; padding:1px 3px; gap:2px; height:24px;" onclick="event.stopPropagation();">
+              <div style="display:flex; align-items:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); border-radius:16px; padding:1px 3px; gap:2px; height:24px;" onclick="event.stopPropagation();">
                 <button type="button" style="background:none; border:none; color:#ffffff; width:18px; height:18px; font-size:0.9rem; font-weight:900; cursor:pointer;" onclick="window.decrementGearByIndex(${idx}, event)">−</button>
                 <span style="font-size:0.72rem; font-weight:900; color:#ffffff; min-width:14px; text-align:center; font-family:'JetBrains Mono', monospace;">${countInPack}</span>
                 <button type="button" style="background:none; border:none; color:#ffffff; width:18px; height:18px; font-size:0.9rem; font-weight:900; cursor:pointer;" onclick="window.addGearByIndex(${idx}, event)">+</button>
               </div>
             ` : `
-              <button type="button" style="background:rgba(56,189,248,0.15); border:1px solid #38bdf8; color:#7dd3fc; font-size:0.65rem; font-weight:800; padding:2px 8px; border-radius:10px; cursor:pointer;" onclick="event.stopPropagation(); window.addGearByIndex(${idx});">
+              <button type="button" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#cbd5e1; font-size:0.65rem; font-weight:700; padding:2px 8px; border-radius:10px; cursor:pointer;" onclick="event.stopPropagation(); window.addGearByIndex(${idx});">
                 + 담기
               </button>
             `}
@@ -1517,42 +1520,58 @@
 
     var isPlanToolsActive = (window.__planDockDeckMode !== 'main');
 
-    // 🌟 듀얼 하단독 설정
-    var bottomDualDockHtml = `
+    // 🌟 [하단독 서브모드 전환 및 동일 탭 재터치 시 독 전환 엔진]
+  window.switchPlanSubMode = function(mode) {
+    if (window.activePlanSubMode === mode) {
+      // 이미 켜져 있는 탭을 한 번 더 누르면 독 전환!
+      window.togglePlanDockDeckMode();
+      triggerHaptic(12);
+      return;
+    }
+    window.activePlanSubMode = mode;
+    window.renderPlanStage();
+    if (mode === 'calculator') {
+      setTimeout(window.renderPlanCategorySlots, 50);
+    }
+    triggerHaptic(10);
+  };
+
+  // 🌟 듀얼 하단독 설정 (상하 슬라이드 모션 제거 -> 은은하고 자연스러운 페이드 전환)
+  var bottomDualDockHtml = `
       <div id="planDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(7,9,14,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000 !important; user-select:none !important; overscroll-behavior:none !important; touch-action:none !important;">
         
         <div onclick="window.togglePlanDockDeckMode(); triggerHaptic(10);" style="position:absolute; top:2px; left:50%; transform:translateX(-50%); width:44px; height:8px; display:flex; align-items:center; justify-content:center; z-index:115; cursor:pointer;">
           <div style="width:28px; height:3.5px; border-radius:2px; background:rgba(255,255,255,0.35);"></div>
         </div>
 
-    <div id="planSubToolsDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:${isPlanToolsActive ? 'translateY(0)' : 'translateY(100%)'}; z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-            <button type="button" class="dock-item ${window.activePlanSubMode === 'calendar' ? 'active' : ''}" onclick="window.activePlanSubMode='calendar'; window.renderPlanStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'calendar' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activePlanSubMode === 'calendar' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              <span>달력</span>
-            </button>
-            
-            <button type="button" class="dock-item ${window.activePlanSubMode === 'checklist' ? 'active' : ''}" onclick="window.activePlanSubMode='checklist'; window.renderPlanStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'checklist' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activePlanSubMode === 'checklist' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-              <span>체크리스트</span>
-            </button>
+        <div id="planSubToolsDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:opacity 0.18s ease; opacity:${isPlanToolsActive ? '1' : '0'}; pointer-events:${isPlanToolsActive ? 'auto' : 'none'}; z-index:${isPlanToolsActive ? '105' : '100'}; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
+          <button type="button" class="dock-item ${window.activePlanSubMode === 'calendar' ? 'active' : ''}" onclick="window.switchPlanSubMode('calendar');" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'calendar' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activePlanSubMode === 'calendar' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>달력</span>
+          </button>
+          
+          <button type="button" class="dock-item ${window.activePlanSubMode === 'checklist' ? 'active' : ''}" onclick="window.switchPlanSubMode('checklist');" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'checklist' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activePlanSubMode === 'checklist' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <span>체크리스트</span>
+          </button>
 
-            <button type="button" class="dock-item ${window.activePlanSubMode === 'calculator' ? 'active' : ''}" onclick="window.activePlanSubMode='calculator'; window.renderPlanStage(); setTimeout(window.renderPlanCategorySlots, 50); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'calculator' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activePlanSubMode === 'calculator' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>
-              <span>배낭계산기</span>
-            </button>
+          <button type="button" class="dock-item ${window.activePlanSubMode === 'calculator' ? 'active' : ''}" onclick="window.switchPlanSubMode('calculator');" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'calculator' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activePlanSubMode === 'calculator' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>
+            <span>배낭계산기</span>
+          </button>
 
-            <button type="button" class="dock-item ${window.activePlanSubMode === 'bookmarks' ? 'active' : ''}" onclick="window.activePlanSubMode='bookmarks'; window.renderPlanStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'bookmarks' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activePlanSubMode === 'bookmarks' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              <span>찜</span>
-            </button>
+          <button type="button" class="dock-item ${window.activePlanSubMode === 'bookmarks' ? 'active' : ''}" onclick="window.switchPlanSubMode('bookmarks');" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'bookmarks' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activePlanSubMode === 'bookmarks' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>찜</span>
+          </button>
 
-            <button type="button" class="dock-item ${window.activePlanSubMode === 'gears' ? 'active' : ''}" onclick="window.activePlanSubMode='gears'; window.renderPlanStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'gears' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activePlanSubMode === 'gears' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-              <span>장비관리</span>
-            </button>
-          </div>
+          <button type="button" class="dock-item ${window.activePlanSubMode === 'gears' ? 'active' : ''}" onclick="window.switchPlanSubMode('gears');" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activePlanSubMode === 'gears' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activePlanSubMode === 'gears' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            <span>장비관리</span>
+          </button>
+        </div>
 
-        <div id="planMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:${isPlanToolsActive ? 'translateY(100%)' : 'translateY(0)'}; z-index:104; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; background:rgba(7,9,14,0.98); box-sizing:border-box;">
+        <div id="planMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:opacity 0.18s ease; opacity:${isPlanToolsActive ? '0' : '1'}; pointer-events:${isPlanToolsActive ? 'none' : 'auto'}; z-index:${isPlanToolsActive ? '100' : '105'}; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; background:rgba(7,9,14,0.98); box-sizing:border-box;">
           <a href="index.html" class="dock-item" onclick="window.closePlanModal(); triggerHaptic(10);" style="text-decoration:none;">
             <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
             <span>낭만루터</span>
@@ -1561,7 +1580,7 @@
             <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
             <span>전국지도</span>
           </a>
-        <button type="button" class="dock-item active" onclick="window.activePlanSubMode='calendar'; window.renderPlanStage(); window.togglePlanDockDeckMode(); triggerHaptic(12);" style="color:#38bdf8 !important;">
+          <button type="button" class="dock-item active" onclick="window.togglePlanDockDeckMode('tools'); triggerHaptic(12);" style="color:#38bdf8 !important;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="4" width="18" height="18" rx="2"/>
               <line x1="16" y1="2" x2="16" y2="6"/>
@@ -1621,8 +1640,13 @@
       var subDeck = existingDock.querySelector('#planSubToolsDeck');
       var mainDeck = existingDock.querySelector('#planMainNavDeck');
       if (subDeck && mainDeck) {
-        subDeck.style.transform = isPlanToolsActive ? 'translateY(0)' : 'translateY(100%)';
-        mainDeck.style.transform = isPlanToolsActive ? 'translateY(100%)' : 'translateY(0)';
+        subDeck.style.opacity = isPlanToolsActive ? '1' : '0';
+        subDeck.style.pointerEvents = isPlanToolsActive ? 'auto' : 'none';
+        subDeck.style.zIndex = isPlanToolsActive ? '105' : '100';
+
+        mainDeck.style.opacity = isPlanToolsActive ? '0' : '1';
+        mainDeck.style.pointerEvents = isPlanToolsActive ? 'none' : 'auto';
+        mainDeck.style.zIndex = isPlanToolsActive ? '100' : '105';
       }
     }
 
@@ -2026,7 +2050,7 @@
     }
   };
 
-  // 🔄 [하단 독 모드 전환 및 스와이프 제스처 바인딩 엔진]
+  // 🔄 [하단 독 모드 전환 및 스와이프 제스처 바인딩 엔진 - 페이드 전환 적용]
   window.togglePlanDockDeckMode = function(forceMode) {
     if (forceMode) {
       window.__planDockDeckMode = forceMode;
@@ -2036,13 +2060,15 @@
     var sub = document.getElementById('planSubToolsDeck');
     var main = document.getElementById('planMainNavDeck');
     if (!sub || !main) return;
-    if (window.__planDockDeckMode === 'tools') {
-      sub.style.transform = 'translateY(0)';
-      main.style.transform = 'translateY(100%)';
-    } else {
-      sub.style.transform = 'translateY(100%)';
-      main.style.transform = 'translateY(0)';
-    }
+    var isTools = (window.__planDockDeckMode === 'tools');
+
+    sub.style.opacity = isTools ? '1' : '0';
+    sub.style.pointerEvents = isTools ? 'auto' : 'none';
+    sub.style.zIndex = isTools ? '105' : '100';
+
+    main.style.opacity = isTools ? '0' : '1';
+    main.style.pointerEvents = isTools ? 'none' : 'auto';
+    main.style.zIndex = isTools ? '100' : '105';
   };
 
   window.bindPlanDualDockGestures = function() {
