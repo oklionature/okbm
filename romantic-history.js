@@ -280,12 +280,13 @@
     }
 
     
-    // 🛡️ 같은 날, 같은 장소의 기록이 이미 있으면 새 카드를 복제하지 않고 기존 카드를 업데이트
+  // 🛡️ 같은 날, 같은 장소의 기록이 이미 있으면 새 카드를 복제하지 않고 기존 카드를 업데이트
     if (existIdx !== -1) {
       normalized.id = list[existIdx].id; // 기존 고유 ID 보존 (새 카드로 증식 방지)
       list[existIdx] = Object.assign({}, list[existIdx], normalized);
     } else {
-      list.unshift(normalized);
+      // 🚀 [등록순서 변경]: 최근 등록은 제일 뒤로 등록 (push)
+      list.push(normalized);
     }
 
     var rawPhotos = [];
@@ -360,7 +361,7 @@
     }
   })();
 
-  // 📷 [폰 내장 DB(IndexedDB)에서 사진을 100% 안전하게 꺼내오는 탐색기]
+// 📷 [폰 내장 DB(IndexedDB)에서 사진을 100% 안전하게 꺼내오는 탐색기 & 1200px 화질 승격]
   function getRecordPhotos(record) {
     if (!record) return [];
     var rId = String(record.id || '').trim();
@@ -372,14 +373,20 @@
     }
 
     var localPhotos = (rId && savedPhotosMap[rId]) || (rDate && savedPhotosMap[rDate]) || (altDate && savedPhotosMap[altDate]);
-    if (Array.isArray(localPhotos) && localPhotos.length > 0) return localPhotos.filter(Boolean);
-    if (typeof localPhotos === 'string' && localPhotos.trim().length > 10) return [localPhotos.trim()];
+    var rawList = [];
+    if (Array.isArray(localPhotos) && localPhotos.length > 0) rawList = localPhotos.filter(Boolean);
+    else if (typeof localPhotos === 'string' && localPhotos.trim().length > 10) rawList = [localPhotos.trim()];
+    else if (Array.isArray(record.photos) && record.photos.length > 0) rawList = record.photos.filter(Boolean);
+    else if (record.fieldPhoto && String(record.fieldPhoto).trim().length > 10) rawList = [String(record.fieldPhoto).trim()];
+    else if (record.photo && String(record.photo).trim().length > 10) rawList = [String(record.photo).trim()];
 
-    if (Array.isArray(record.photos) && record.photos.length > 0) return record.photos.filter(Boolean);
-    if (record.fieldPhoto && String(record.fieldPhoto).trim().length > 10) return [String(record.fieldPhoto).trim()];
-    if (record.photo && String(record.photo).trim().length > 10) return [String(record.photo).trim()];
-
-    return [];
+    // 🌟 [1200px 스위트스팟]: 대화면 폰 화질열화 0% 보장 + 용량 85% 다이어트
+    return rawList.map(function(url) {
+      if (typeof url === 'string' && url.includes('drive.google.com/thumbnail')) {
+        return url.replace(/sz=w\d+/g, 'sz=w1200');
+      }
+      return url;
+    });
   }
 
   // 🎨 [3D 엽서 테두리 팔레트]
@@ -600,7 +607,195 @@
     `;
   };
 
-  // 📱 [지난 피드 목록 모달]
+  // 🌐 [핵심 누락 해결] templates.js 사진 업로드 연동을 위한 전역 스코프 노출
+  if (typeof uploadSinglePhotoToDrive === 'function') {
+    window.uploadSinglePhotoToDrive = uploadSinglePhotoToDrive;
+  }
+
+  // 📱 [지난 피드 목록 모달 & 다중 체크 일괄 삭제 통합 엔진]
+  window.__isPastTripsSelectMode = false;
+  window.__selectedPastTripIds = new Set();
+
+  window.togglePastTripsSelectMode = function() {
+    window.__isPastTripsSelectMode = !window.__isPastTripsSelectMode;
+    window.__selectedPastTripIds.clear();
+    triggerHaptic(12);
+    window.openPastTripsListModal();
+  };
+
+  window.togglePastTripItemSelection = function(recordId, e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    var sId = String(recordId).trim();
+    if (window.__selectedPastTripIds.has(sId)) {
+      window.__selectedPastTripIds.delete(sId);
+      triggerHaptic(8);
+    } else {
+      window.__selectedPastTripIds.add(sId);
+      triggerHaptic(12);
+    }
+    window.updatePastTripsSelectionUI();
+  };
+
+  window.toggleAllPastTripsSelection = function() {
+    var logs = (window.interactiveHistory || []).filter(Boolean);
+    if (window.__selectedPastTripIds.size === logs.length) {
+      window.__selectedPastTripIds.clear();
+      triggerHaptic(8);
+    } else {
+      logs.forEach(function(r) {
+        if (r && r.id) window.__selectedPastTripIds.add(String(r.id).trim());
+      });
+      triggerHaptic(12);
+    }
+    window.updatePastTripsSelectionUI();
+  };
+
+  window.updatePastTripsSelectionUI = function() {
+    var logs = (window.interactiveHistory || []).filter(Boolean);
+    var selectedCount = window.__selectedPastTripIds.size;
+
+    var headerCountEl = document.getElementById('pastTripsSelectedCountText');
+    if (headerCountEl) {
+      headerCountEl.innerText = selectedCount > 0 ? (selectedCount + '개 선택됨') : '선택 없음';
+    }
+
+    var selectAllBtn = document.getElementById('btnPastTripsSelectAll');
+    if (selectAllBtn) {
+      selectAllBtn.innerText = (selectedCount === logs.length && logs.length > 0) ? '전체해제' : '전체선택';
+    }
+
+    var deleteActionBar = document.getElementById('pastTripsBatchDeleteBar');
+    var deleteBtnText = document.getElementById('pastTripsBatchDeleteCountText');
+    if (deleteActionBar && deleteBtnText) {
+      if (selectedCount > 0) {
+        deleteActionBar.style.display = 'flex';
+        deleteBtnText.innerText = '선택한 ' + selectedCount + '개 기록 영구 삭제 🗑️';
+      } else {
+        deleteActionBar.style.display = 'none';
+      }
+    }
+
+    logs.forEach(function(r) {
+      var sId = String(r.id).trim();
+      var cardEl = document.getElementById('pastTripRowCard_' + sId);
+      var checkboxEl = document.getElementById('pastTripCheckbox_' + sId);
+      var isChecked = window.__selectedPastTripIds.has(sId);
+
+      if (cardEl) {
+        cardEl.style.borderColor = isChecked ? '#38bdf8' : 'rgba(255, 255, 255, 0.12)';
+        cardEl.style.background = isChecked ? 'rgba(56, 189, 248, 0.12)' : 'rgba(255, 255, 255, 0.04)';
+      }
+      if (checkboxEl) {
+        checkboxEl.style.background = isChecked ? '#38bdf8' : 'transparent';
+        checkboxEl.style.borderColor = isChecked ? '#38bdf8' : 'rgba(255, 255, 255, 0.35)';
+        checkboxEl.innerHTML = isChecked ? '<span style="color:#000000; font-size:12px; font-weight:900; line-height:1;">✓</span>' : '';
+      }
+    });
+  };
+
+ window.executeBatchDeletePastTrips = function() {
+    var selectedCount = window.__selectedPastTripIds.size;
+    if (selectedCount === 0) return;
+
+    triggerHaptic(20);
+    var confirmMsg = '선택한 ' + selectedCount + '개의 출정 기록을 삭제하시겠습니까?\n' +
+      '• 모든 기기에서 즉시 삭제되며 부활하지 않습니다.\n' +
+      '• 공용 피드 및 구글 클라우드에서 안전하게 정리됩니다.';
+    
+    if (!confirm(confirmMsg)) return;
+
+    var rawList = window.safeGetStorage('okbm_packing_history', []) || [];
+    var savedPhotosMap = window.safeGetStorage('okbm_phone_photos_map', {}) || {};
+    if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
+      savedPhotosMap = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], savedPhotosMap);
+    }
+
+    var idsToDelete = new Set(window.__selectedPastTripIds);
+    var targetRecordsToDelete = [];
+    var tombstones = [];
+
+    var remainingList = rawList.filter(function(r) {
+      var rId = String(r.id).trim();
+      if (idsToDelete.has(rId)) {
+        targetRecordsToDelete.push(r);
+        tombstones.push({
+          id: rId,
+          date: r.date || '',
+          isDeleted: true,
+          deletedAt: Date.now()
+        });
+        return false;
+      }
+      return true;
+    });
+
+    targetRecordsToDelete.forEach(function(delItem) {
+      var dId = String(delItem.id || '').trim();
+      var dDate = String(delItem.date || '').trim();
+      var altDate = dDate.replace(/[-/]/g, '.');
+
+      if (dId && savedPhotosMap[dId]) delete savedPhotosMap[dId];
+      if (dDate && savedPhotosMap[dDate]) delete savedPhotosMap[dDate];
+      if (altDate && savedPhotosMap[altDate]) delete savedPhotosMap[altDate];
+
+      if (typeof window.deleteFeedFromCommunity === 'function') {
+        window.deleteFeedFromCommunity(dId, dDate);
+      }
+    });
+
+    window.__memoryStore['okbm_phone_photos_map'] = savedPhotosMap;
+    window.safeSetStorage('okbm_phone_photos_map', savedPhotosMap);
+
+    // 🪦 툼스톤을 포함한 전체 큐를 클라우드 전송용으로 임시 등록
+    window.__tombstoneHistoryQueue = remainingList.concat(tombstones);
+
+    window.interactiveHistory = remainingList.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
+    window.packingHistoryList = window.interactiveHistory;
+    window.safeSetStorage('okbm_packing_history', remainingList);
+
+    // 홈 피드 캐시에서도 즉시 말소
+    if (Array.isArray(window.__allLoadedFeeds)) {
+      window.__allLoadedFeeds = window.__allLoadedFeeds.filter(function(f) { return !idsToDelete.has(String(f.id).trim()); });
+    }
+    if (Array.isArray(window.heroTopRecords)) {
+      window.heroTopRecords = window.heroTopRecords.filter(function(f) { return !idsToDelete.has(String(f.id).trim()); });
+      window.currentHeroCardIndex = 0;
+      if (typeof window.renderCurrentHeroCard === 'function') {
+        window.renderCurrentHeroCard();
+      }
+    }
+
+    // 🚀 툼스톤을 클라우드로 전송하여 타 기기 부활을 영구 차단
+    if (typeof syncUserDataToCloud === 'function') {
+      syncUserDataToCloud(true);
+    }
+    window.__tombstoneHistoryQueue = null;
+
+    window.__selectedPastTripIds.clear();
+    window.__isPastTripsSelectMode = false;
+
+    if (typeof window.renderHistoryStage === 'function') {
+      window.renderHistoryStage();
+    }
+
+    window.openPastTripsListModal();
+    triggerHaptic(15);
+    if (typeof showToast === 'function') {
+      showToast('🗑️ 총 ' + selectedCount + '개의 기록이 삭제되었습니다.', 'info', 2500);
+    }
+  };
+
+  window.closePastTripsListModal = function() {
+    window.__isPastTripsSelectMode = false;
+    window.__selectedPastTripIds.clear();
+    if (typeof window.unregisterModalClose === 'function') {
+      window.unregisterModalClose('pastTripsListModal');
+    }
+    var modalEl = document.getElementById('pastTripsListModal');
+    if (modalEl) modalEl.remove();
+    triggerHaptic(10);
+  };
+
   window.openPastTripsListModal = function() {
     try {
       var old = document.getElementById('pastTripsListModal');
@@ -639,6 +834,7 @@
         });
       }
       var logs = (window.interactiveHistory || []).filter(Boolean);
+      var isSelectMode = Boolean(window.__isPastTripsSelectMode);
 
       var modalEl = document.createElement('div');
       modalEl.id = 'pastTripsListModal';
@@ -659,13 +855,23 @@
           var elevText = escapeHtml(r.elevation || '');
           var dateText = escapeHtml(r.date || '');
           var weightStr = escapeHtml(String(r.weightKg || '0.00'));
+          var isChecked = window.__selectedPastTripIds.has(String(r.id).trim());
 
-          return '<div onclick="window.openSingleTripDualFeedModal(\'' + safeId + '\')" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:all 0.15s ease; flex-shrink:0;">' +
-            '<div style="display:flex; align-items:center; gap:10px; min-width:0;">' +
+          var clickAction = isSelectMode 
+            ? ('window.togglePastTripItemSelection(\'' + safeId + '\', event)') 
+            : ('window.openSingleTripDualFeedModal(\'' + safeId + '\')');
+
+          return '<div id="pastTripRowCard_' + safeId + '" onclick="' + clickAction + '" style="background:' + (isChecked ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.04)') + '; border:1px solid ' + (isChecked ? '#38bdf8' : 'rgba(255,255,255,0.12)') + '; border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:all 0.15s ease; flex-shrink:0; user-select:none;">' +
+            '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
+              (isSelectMode ? (
+                '<div id="pastTripCheckbox_' + safeId + '" style="width:22px; height:22px; border-radius:6px; border:1.8px solid ' + (isChecked ? '#38bdf8' : 'rgba(255,255,255,0.35)') + '; background:' + (isChecked ? '#38bdf8' : 'transparent') + '; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s ease;">' +
+                  (isChecked ? '<span style="color:#000000; font-size:12px; font-weight:900; line-height:1;">✓</span>' : '') +
+                '</div>'
+              ) : '') +
               '<div style="width:44px; height:44px; border-radius:8px; overflow:hidden; background:#1e293b; flex-shrink:0; border:1px solid rgba(255,255,255,0.1);">' +
                 '<img src="' + thumbPhoto + '" style="width:100%; height:100%; object-fit:cover;" />' +
               '</div>' +
-              '<div style="min-width:0;">' +
+              '<div style="min-width:0; flex:1;">' +
                 '<div style="font-size:0.86rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
                   HISTORY_VEC_ICONS.pin + ' <span>' + spotTitle + '</span>' +
                   '<span style="font-size:0.55rem; color:#fde047; font-weight:800; background:rgba(253,224,71,0.15); border:1px solid rgba(253,224,71,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">' + escapeHtml(tName) + '</span>' +
@@ -675,23 +881,46 @@
             '</div>' +
             '<div style="text-align:right; flex-shrink:0; margin-left:8px;">' +
               '<span style="font-size:0.86rem; font-weight:900; color:#34d399; font-family:\'Space Grotesk\', sans-serif;">' + weightStr + 'kg</span>' +
-              '<span style="font-size:0.60rem; color:#38bdf8; font-weight:800; display:block; margin-top:2px;">피드 보기 ➔</span>' +
+              (!isSelectMode ? '<span style="font-size:0.60rem; color:#38bdf8; font-weight:800; display:block; margin-top:2px;">피드 보기 ➔</span>' : '') +
             '</div>' +
           '</div>';
         }).join('');
       }
 
+      var headerRightHtml = isSelectMode ? (
+        '<div style="display:flex; align-items:center; gap:6px;">' +
+          '<span id="pastTripsSelectedCountText" style="font-size:0.65rem; color:#38bdf8; font-weight:800;">선택 없음</span>' +
+          '<button type="button" id="btnPastTripsSelectAll" onclick="window.toggleAllPastTripsSelection()" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:4px 8px; border-radius:6px; font-size:0.68rem; font-weight:800; cursor:pointer;">전체선택</button>' +
+          '<button type="button" onclick="window.togglePastTripsSelectMode()" style="background:#38bdf8; border:none; color:#000; padding:4px 9px; border-radius:6px; font-size:0.68rem; font-weight:900; cursor:pointer;">완료</button>' +
+        '</div>'
+      ) : (
+        '<div style="display:flex; align-items:center; gap:6px;">' +
+          '<span style="font-size:0.65rem; color:#38bdf8; font-weight:800; background:rgba(56,189,248,0.15); padding:2px 8px; border-radius:5px; border:1px solid rgba(56,189,248,0.3);">총 ' + logs.length + '개</span>' +
+          (logs.length > 0 ? (
+            '<button type="button" onclick="window.togglePastTripsSelectMode()" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#e2e8f0; padding:4px 9px; border-radius:6px; font-size:0.70rem; font-weight:800; cursor:pointer;">선택</button>'
+          ) : '') +
+        '</div>'
+      );
+
       modalEl.innerHTML = `
         <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
           <div style="display:flex; align-items:center; gap:8px;">
-            <button onclick="document.getElementById('pastTripsListModal').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
+            <button onclick="window.closePastTripsListModal();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
             <span style="font-size:0.95rem; font-weight:900; color:#fff;">📱 지난 피드 목록</span>
           </div>
-          <span style="font-size:0.65rem; color:#38bdf8; font-weight:800; background:rgba(56,189,248,0.15); padding:2px 8px; border-radius:5px; border:1px solid rgba(56,189,248,0.3);">총 ${logs.length}개</span>
+          ${headerRightHtml}
         </div>
 
-        <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(70px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
+        <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(85px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
           ${cardsHtml}
+        </div>
+
+        <!-- 🗑️ 다중 선택 삭제 전용 플로팅 액션 바 -->
+        <div id="pastTripsBatchDeleteBar" style="display:none; position:fixed; bottom:calc(64px + env(safe-area-inset-bottom, 0px)); left:50%; transform:translateX(-50%); width:calc(100% - 28px); max-width:420px; z-index:1000005; box-sizing:border-box;">
+          <button type="button" onclick="window.executeBatchDeletePastTrips()" style="width:100%; height:46px; background:linear-gradient(135deg, #e11d48, #be123c); border:1.5px solid #f43f5e; border-radius:12px; color:#ffffff; font-size:0.86rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 8px 24px rgba(225,29,72,0.65);">
+            <svg viewBox="0 0 24 24" style="width:17px; height:17px; stroke:currentColor; fill:none; stroke-width:2.2;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span id="pastTripsBatchDeleteCountText">선택한 기록 영구 삭제 🗑️</span>
+          </button>
         </div>
 
         <div id="pastTripsDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(7,9,14,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000002 !important; user-select:none !important; overscroll-behavior:none !important; touch-action:none !important;">
@@ -700,7 +929,7 @@
           </div>
 
           <div id="pastTripsSubToolsDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:translateY(0); z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-           <button type="button" class="dock-item" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.activeHistorySubFilter='all'; window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.activeHistorySubFilter='all'; window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
               <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
               <span>낭만기록</span>
             </button>
@@ -708,30 +937,30 @@
               <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
               <span>피드</span>
             </button>
-            <button type="button" class="dock-item" onclick="window.openHistoryStudioModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); window.openHistoryStudioModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
               <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
               <span>스튜디오</span>
             </button>
-            <button type="button" class="dock-item" onclick="window.openClearMapModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); window.openClearMapModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
               <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.2;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
               <span>클리어맵</span>
             </button>
-            <button type="button" class="dock-item" onclick="window.openMyReportModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); window.openMyReportModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
               <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
               <span>마이리포트</span>
             </button>
           </div>
 
           <div id="pastTripsMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:translateY(100%); z-index:104; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; background:rgba(7,9,14,0.98); box-sizing:border-box;">
-            <a href="index.html" class="dock-item" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
+            <a href="index.html" class="dock-item" onclick="window.closePastTripsListModal(); var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
               <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
               <span>낭만루터</span>
             </a>
-            <a href="map.html" class="dock-item" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
+            <a href="map.html" class="dock-item" onclick="window.closePastTripsListModal(); var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
               <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
               <span>전국지도</span>
             </a>
-            <button type="button" class="dock-item" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);">
+            <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2"/>
                 <line x1="16" y1="2" x2="16" y2="6"/>
@@ -741,7 +970,7 @@
               </svg>
               <span>낭만계획</span>
             </button>
-            <button type="button" class="dock-item active" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.renderHistoryStage(); triggerHaptic(12);" style="color:#38bdf8 !important;">
+            <button type="button" class="dock-item active" onclick="window.closePastTripsListModal(); var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.renderHistoryStage(); triggerHaptic(12);" style="color:#38bdf8 !important;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 8v13H3V8"/>
                 <path d="M1 3h22v5H1z"/>
@@ -749,7 +978,7 @@
               </svg>
               <span>낭만보관함</span>
             </button>
-            <button type="button" class="dock-item" onclick="var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);">
+            <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);">
               <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
               <span>내정보</span>
             </button>
@@ -757,6 +986,11 @@
         </div>
       `;
       document.body.appendChild(modalEl);
+
+      // 🔔 안드로이드 물리 백버튼 & ESC 탈출 스택 등록
+      if (typeof window.registerModalOpen === 'function') {
+        window.registerModalOpen('pastTripsListModal', window.closePastTripsListModal);
+      }
 
       window.__pastTripsDockMode = 'tools';
       window.togglePastTripsDockDeck = function(forceMode) {
@@ -797,6 +1031,10 @@
             window.togglePastTripsDockDeck();
           }
         }, { passive: true });
+      }
+
+      if (isSelectMode) {
+        window.updatePastTripsSelectionUI();
       }
 
       triggerHaptic(12);
@@ -1290,13 +1528,55 @@
     document.body.appendChild(sheet);
   };
 
-  window.deleteTripRecord = function(recordId) {
+window.deleteTripRecord = function(recordId) {
     var rawList = window.safeGetStorage('okbm_packing_history', []) || [];
-    var filtered = rawList.filter(function(r) { return String(r.id).trim() !== String(recordId).trim(); });
+    var target = rawList.find(function(r) { return String(r.id).trim() === String(recordId).trim(); });
+    var targetDate = target ? target.date : '';
+    var sId = String(recordId).trim();
+
+    var savedPhotosMap = window.safeGetStorage('okbm_phone_photos_map', {}) || {};
+    if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
+      savedPhotosMap = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], savedPhotosMap);
+    }
+    if (sId && savedPhotosMap[sId]) delete savedPhotosMap[sId];
+    if (targetDate && savedPhotosMap[targetDate]) delete savedPhotosMap[targetDate];
+    if (targetDate && savedPhotosMap[targetDate.replace(/[-/]/g, '.')]) delete savedPhotosMap[targetDate.replace(/[-/]/g, '.')];
+    window.__memoryStore['okbm_phone_photos_map'] = savedPhotosMap;
+    window.safeSetStorage('okbm_phone_photos_map', savedPhotosMap);
+
+    var filtered = rawList.filter(function(r) { return String(r.id).trim() !== sId; });
+    var tombstone = {
+      id: sId,
+      date: targetDate,
+      isDeleted: true,
+      deletedAt: Date.now()
+    };
+
+    window.__tombstoneHistoryQueue = filtered.concat([tombstone]);
+
     window.interactiveHistory = filtered.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
     window.packingHistoryList = window.interactiveHistory;
     window.safeSetStorage('okbm_packing_history', filtered);
-    if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+
+    if (Array.isArray(window.__allLoadedFeeds)) {
+      window.__allLoadedFeeds = window.__allLoadedFeeds.filter(function(f) { return String(f.id).trim() !== sId; });
+    }
+    if (Array.isArray(window.heroTopRecords)) {
+      window.heroTopRecords = window.heroTopRecords.filter(function(f) { return String(f.id).trim() !== sId; });
+      window.currentHeroCardIndex = 0;
+      if (typeof window.renderCurrentHeroCard === 'function') {
+        window.renderCurrentHeroCard();
+      }
+    }
+
+    // 🚀 클라우드로 단건 툼스톤 전파
+    if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(true);
+    window.__tombstoneHistoryQueue = null;
+
+    // 🗑️ 구글 시트 공용 피드에서도 즉시 영구 삭제 (유령 피드 방지)
+    if (typeof window.deleteFeedFromCommunity === 'function') {
+      window.deleteFeedFromCommunity(recordId, targetDate);
+    }
 
     var single = document.getElementById('singleTripFeedModal');
     if (single) single.remove();
@@ -1629,13 +1909,14 @@
     triggerHaptic(10);
   };
 
-  // 📝 [낭만 일지 작성 모달 - 박지명/날짜/글/사진 전방위 수정 및 폰 IndexedDB 연동]
+ // 📝 [낭만 일지 작성 모달 - 일반 유저(글 전용 초고속 수정) vs 관리자(사진 추가/교체 전권)]
   window.openRichAfterTripModal = function(record) {
     if (!record) return;
     var old = document.getElementById('modalRichAfterTrip');
     if (old) old.remove();
 
     window.__richCurrentRecord = record;
+    var isAdmin = Boolean(window.isAdminMode || (typeof isAdminMode !== 'undefined' && isAdminMode));
 
     var currentPhotos = getRecordPhotos(record);
     window.__tempUploadedPhotos = currentPhotos.filter(function(url) {
@@ -1647,10 +1928,13 @@
     formModal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.92); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); z-index:1000005; display:flex; justify-content:center; align-items:center; padding:14px; box-sizing:border-box;';
 
     formModal.innerHTML = `
-      <div style="width:100%; max-width:440px; max-height:92vh; background:#080b11; border:1.5px solid #38bdf8; border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:10px; box-shadow:0 24px 60px rgba(0,0,0,0.95); box-sizing:border-box; overflow-y:auto;">
+      <div style="width:100%; max-width:440px; max-height:92vh; background:#080b11; border:1.5px solid ${isAdmin ? '#f59e0b' : '#38bdf8'}; border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:10px; box-shadow:0 24px 60px rgba(0,0,0,0.95); box-sizing:border-box; overflow-y:auto;">
         
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.12); padding-bottom:8px;">
-          <span style="font-size:1.12rem; font-weight:900; color:#fff;">✍️ 낭만 일지 & 기록 수정</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:1.12rem; font-weight:900; color:#fff;">✍️ 낭만 일지 수정</span>
+            ${isAdmin ? '<span style="font-size:0.62rem; color:#fde047; font-weight:900; background:rgba(245,158,11,0.2); border:1px solid #f59e0b; padding:2px 6px; border-radius:4px;">👑 관리자 권한</span>' : ''}
+          </div>
           <button onclick="document.getElementById('modalRichAfterTrip').remove()" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer; padding:0 4px;">✕</button>
         </div>
 
@@ -1667,21 +1951,33 @@
 
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <label id="richPhotoCountLabel" style="font-size:0.70rem; color:#38bdf8; font-weight:900;">현장 사진 (${window.__tempUploadedPhotos.length} / 10장)</label>
-            <button type="button" onclick="window.__clearAllRichPhotos();" style="background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.4); color:#fda4af; font-size:0.58rem; font-weight:800; padding:2px 6px; border-radius:4px; cursor:pointer;">전체 해제</button>
+            <label id="richPhotoCountLabel" style="font-size:0.70rem; color:${isAdmin ? '#fde047' : '#94a3b8'}; font-weight:900;">
+              등록된 사진 (${window.__tempUploadedPhotos.length}장) ${!isAdmin ? '<span style="font-weight:600; color:#64748b;">(수정 불가)</span>' : ''}
+            </label>
+            ${isAdmin ? '<button type="button" onclick="window.__clearAllRichPhotos();" style="background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.4); color:#fda4af; font-size:0.58rem; font-weight:800; padding:2px 6px; border-radius:4px; cursor:pointer;">전체 해제</button>' : ''}
           </div>
-          <div id="richPhotoThumbnailsGrid" style="display:flex; gap:6px; overflow-x:auto; padding-bottom:6px;">
+
+          <div id="richPhotoThumbnailsGrid" style="display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; min-height:56px; align-items:center;">
             ${window.__tempUploadedPhotos.map(function(url, pIdx) {
               return `
-                <div style="position:relative; width:52px; height:52px; border-radius:6px; overflow:hidden; border:1px solid rgba(56,189,248,0.4); flex-shrink:0;">
+                <div style="position:relative; width:52px; height:52px; border-radius:6px; overflow:hidden; border:1px solid rgba(255,255,255,0.2); flex-shrink:0;">
                   <img src="${url}" style="width:100%; height:100%; object-fit:cover;" />
-                  <button type="button" onclick="window.__removeRichSinglePhoto(${pIdx});" style="position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,0.75); color:#fff; border:none; font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
+                  ${isAdmin ? `<button type="button" onclick="window.__removeRichSinglePhoto(${pIdx});" style="position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,0.8); color:#fff; border:none; font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>` : ''}
                 </div>
               `;
             }).join('')}
           </div>
-          <input type="file" id="richMultiPhotoInput" accept="image/*" multiple style="display:none;" onchange="window.__handleRichMultiPhotoUpload(event)" />
-          <button type="button" onclick="document.getElementById('richMultiPhotoInput').click()" style="width:100%; height:34px; background:rgba(56,189,248,0.08); border:1px dashed #38bdf8; color:#7dd3fc; border-radius:8px; font-size:0.72rem; font-weight:800; cursor:pointer; margin-top:2px;">+ 사진 추가 (최대 10장)</button>
+
+          ${isAdmin ? `
+            <input type="file" id="richMultiPhotoInput" accept="image/*" multiple style="position:fixed; top:-9999px; left:-9999px; opacity:0; pointer-events:none;" onchange="window.__handleRichMultiPhotoUpload(event)" />
+            <label for="richMultiPhotoInput" id="btnRichAddPhotoLabel" style="width:100%; height:36px; background:rgba(245,158,11,0.12); border:1.5px dashed #f59e0b; color:#fde047; border-radius:8px; font-size:0.75rem; font-weight:800; cursor:pointer; margin-top:4px; display:flex; align-items:center; justify-content:center; gap:5px; box-sizing:border-box;">
+              <span>👑 [관리자] 사진 추가 / 교체 (최대 10장)</span>
+            </label>
+          ` : `
+            <div style="font-size:0.62rem; color:#64748b; background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.1); border-radius:6px; padding:6px 8px; margin-top:3px; line-height:1.4;">
+              💡 사진은 최초 등록 시 확정됩니다. 사진 변경을 원하시면 기존 기록 삭제 후 재등록해 주세요.
+            </div>
+          `}
         </div>
 
         <div>
@@ -1700,18 +1996,26 @@
   window.__renderRichPhotoThumbnails = function() {
     var grid = document.getElementById('richPhotoThumbnailsGrid');
     var label = document.getElementById('richPhotoCountLabel');
-    if (grid && Array.isArray(window.__tempUploadedPhotos)) {
-      grid.innerHTML = window.__tempUploadedPhotos.map(function(url, pIdx) {
-        return `
-          <div style="position:relative; width:52px; height:52px; border-radius:6px; overflow:hidden; border:1px solid rgba(56,189,248,0.4); flex-shrink:0;">
-            <img src="${url}" style="width:100%; height:100%; object-fit:cover;" />
-            <button type="button" onclick="window.__removeRichSinglePhoto(${pIdx});" style="position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,0.75); color:#fff; border:none; font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
-          </div>
-        `;
-      }).join('');
+    var isAdmin = Boolean(window.isAdminMode || (typeof isAdminMode !== 'undefined' && isAdminMode));
+    if (!Array.isArray(window.__tempUploadedPhotos)) window.__tempUploadedPhotos = [];
+
+    if (grid) {
+      if (window.__tempUploadedPhotos.length === 0) {
+        grid.innerHTML = '<span style="font-size:0.68rem; color:#64748b; padding:6px 2px;">등록된 사진이 없습니다.</span>';
+      } else {
+        grid.innerHTML = window.__tempUploadedPhotos.map(function(url, pIdx) {
+          return `
+            <div style="position:relative; width:52px; height:52px; border-radius:6px; overflow:hidden; border:1px solid rgba(255,255,255,0.2); flex-shrink:0;">
+              <img src="${url}" style="width:100%; height:100%; object-fit:cover;" />
+              ${isAdmin ? `<button type="button" onclick="window.__removeRichSinglePhoto(${pIdx});" style="position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,0.8); color:#fff; border:none; font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>` : ''}
+            </div>
+          `;
+        }).join('');
+      }
     }
-    if (label && Array.isArray(window.__tempUploadedPhotos)) {
-      label.innerText = `현장 사진 (${window.__tempUploadedPhotos.length} / 10장)`;
+
+    if (label) {
+      label.innerHTML = `등록된 사진 (${window.__tempUploadedPhotos.length}장) ${!isAdmin ? '<span style="font-weight:600; color:#64748b;">(수정 불가)</span>' : ''}`;
     }
   };
 
@@ -1730,18 +2034,22 @@
 
   window.__handleRichMultiPhotoUpload = function(e) {
     var files = Array.from(e.target.files || []);
+    e.target.value = '';
     if (files.length === 0) return;
 
     if (!Array.isArray(window.__tempUploadedPhotos)) window.__tempUploadedPhotos = [];
     var currentCount = window.__tempUploadedPhotos.length;
     var availableSlots = 10 - currentCount;
+
     if (availableSlots <= 0) {
       if (typeof showToast === 'function') showToast('사진은 최대 10장까지만 등록 가능합니다.', 'warn');
-      e.target.value = '';
       return;
     }
 
     var filesToProcess = files.slice(0, availableSlots);
+    triggerHaptic(10);
+    if (typeof showToast === 'function') showToast('관리자 사진 최적화 중...', 1000);
+
     var compressSingle = function(file) {
       return new Promise(function(resolve) {
         var reader = new FileReader();
@@ -1749,17 +2057,24 @@
           var img = new Image();
           img.onload = function() {
             var canvas = document.createElement('canvas');
-            var MAX_SIZE = 1200;
-            var width = img.width, height = img.height;
+            var MAX_SIZE = 1600;
+            var width = img.width;
+            var height = img.height;
+
             if (width > height) {
               if (width > MAX_SIZE) { height = Math.round(height * (MAX_SIZE / width)); width = MAX_SIZE; }
             } else {
               if (height > MAX_SIZE) { width = Math.round(width * (MAX_SIZE / height)); height = MAX_SIZE; }
             }
-            canvas.width = width; canvas.height = height;
+
+            canvas.width = width;
+            canvas.height = height;
             var ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', 0.85));
+
+            resolve(canvas.toDataURL('image/jpeg', 0.88));
           };
           img.onerror = function() { resolve(''); };
           img.src = evt.target.result;
@@ -1770,14 +2085,45 @@
     };
 
     Promise.all(filesToProcess.map(compressSingle)).then(function(compressedUrls) {
-      window.__tempUploadedPhotos = window.__tempUploadedPhotos.concat(compressedUrls.filter(Boolean)).slice(0, 10);
+      var validNewList = compressedUrls.filter(Boolean);
+      window.__tempUploadedPhotos = window.__tempUploadedPhotos.concat(validNewList).slice(0, 10);
       window.__renderRichPhotoThumbnails();
-      e.target.value = '';
-      if (typeof showToast === 'function') showToast('🌟 사진이 추가되었습니다!', 'success');
+      triggerHaptic(12);
+      if (typeof showToast === 'function') {
+        showToast(`👑 관리자 사진 ${validNewList.length}장 추가 완료!`, 'success', 1500);
+      }
     });
   };
 
-  window.__saveRichAfterTrip = async function(recordId) {
+  async function uploadSinglePhotoToDrive(base64Data, fileName) {
+    if (!base64Data || typeof base64Data !== 'string' || !base64Data.startsWith('data:')) {
+      return base64Data;
+    }
+    try {
+      var gasUrl = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
+      var res = await fetch(gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'UPLOAD_PHOTO',
+          base64: base64Data,
+          fileName: fileName || ('photo_' + Date.now() + '.jpg')
+        })
+      });
+      if (res.ok) {
+        var data = await res.json();
+        if (data && data.status === 'SUCCESS' && data.url) {
+          return data.url;
+        }
+      }
+    } catch (err) {
+      console.warn('[RomanticHistory] 드라이브 업로드 예외:', err);
+    }
+    return base64Data;
+  }
+
+  // 🚀 [낙관적 UI 엔진]: 모달창은 0.05초 만에 즉시 닫고, 드라이브 업로드는 백그라운드 비동기 처리
+  window.__saveRichAfterTrip = function(recordId) {
     var target = (window.interactiveHistory || []).find(function(r) { return String(r.id).trim() === String(recordId).trim(); });
     if (!target) return;
 
@@ -1789,21 +2135,23 @@
     if (dateInput && dateInput.value.trim()) target.date = dateInput.value.trim();
     target.memo = memoInput ? memoInput.value.trim() : '';
 
-    if (Array.isArray(window.__tempUploadedPhotos)) {
-      target.photos = window.__tempUploadedPhotos.slice(0, 10);
-      target.fieldPhoto = target.photos[0] || '';
-      target.photo = target.photos[0] || '';
+    var photosToProcess = Array.isArray(window.__tempUploadedPhotos) ? window.__tempUploadedPhotos.slice(0, 10) : [];
+    if (photosToProcess.length > 0) {
+      target.photos = photosToProcess;
+      target.fieldPhoto = photosToProcess[0] || '';
+      target.photo = photosToProcess[0] || '';
 
       var savedPhotosMap = window.safeGetStorage('okbm_phone_photos_map', {}) || {};
       savedPhotosMap[String(target.id)] = target.photos;
       savedPhotosMap[String(target.date)] = target.photos;
       window.__memoryStore['okbm_phone_photos_map'] = savedPhotosMap;
-      await window.saveToIndexedDB('okbm_phone_photos_map', savedPhotosMap);
+      window.saveToIndexedDB('okbm_phone_photos_map', savedPhotosMap);
     }
 
+    // 1. 내 폰에는 0.05초 만에 즉시 저장
     window.safeSetStorage('okbm_packing_history', window.interactiveHistory);
-    if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
 
+    // 2. 모달창 즉시 닫기 (유저 대기 시간 0초)
     var m = document.getElementById('modalRichAfterTrip');
     if (m) m.remove();
 
@@ -1815,11 +2163,46 @@
     }
 
     triggerHaptic(15);
-    if (typeof showToast === 'function') showToast('🎒 낭만 일지와 사진이 폰에 안전하게 저장되었습니다!', 'success');
+    if (typeof showToast === 'function') showToast('💾 일지가 저장되었습니다! (사진 백그라운드 동기화 중...)', 'success', 2200);
+
+    // 3. 백그라운드에서 백엔드 드라이브 업로드 및 시트 동기화 순차 진행
+    (async function runBackgroundUpload() {
+      var hasBase64 = photosToProcess.some(function(p) { return typeof p === 'string' && p.startsWith('data:'); });
+      if (hasBase64) {
+        var finalDriveUrls = [];
+        for (var i = 0; i < photosToProcess.length; i++) {
+          var pItem = photosToProcess[i];
+          if (typeof pItem === 'string' && pItem.startsWith('data:')) {
+            var dUrl = await uploadSinglePhotoToDrive(pItem, 'trip_' + target.id + '_' + i + '.jpg');
+            finalDriveUrls.push(dUrl || pItem);
+            await new Promise(function(res) { setTimeout(res, 250); });
+          } else {
+            finalDriveUrls.push(pItem);
+          }
+        }
+
+        target.photos = finalDriveUrls;
+        target.fieldPhoto = finalDriveUrls[0] || '';
+        target.photo = finalDriveUrls[0] || '';
+
+        var updatedPhotosMap = window.safeGetStorage('okbm_phone_photos_map', {}) || {};
+        updatedPhotosMap[String(target.id)] = target.photos;
+        updatedPhotosMap[String(target.date)] = target.photos;
+        window.__memoryStore['okbm_phone_photos_map'] = updatedPhotosMap;
+        window.saveToIndexedDB('okbm_phone_photos_map', updatedPhotosMap);
+        window.safeSetStorage('okbm_packing_history', window.interactiveHistory);
+      }
+
+      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+      if (typeof window.shareFeedToCommunity === 'function') window.shareFeedToCommunity(target);
+    })();
   };
 
+  // 🌐 [핵심 누락 해결] templates.js 연동을 위한 전역 스코프 직통 노출
+  window.uploadSinglePhotoToDrive = uploadSinglePhotoToDrive;
+
   // 🗓️ [달력 월 변경 엔진]
-  window.changeHistoryMonth = function(delta) {
+ window.changeHistoryMonth = function(delta) {
     var now = new Date();
     var curYear = window.calViewYear || now.getFullYear();
     var curMonth = window.calViewMonth || (now.getMonth() + 1);
@@ -1845,19 +2228,97 @@
     triggerHaptic(8);
   };
 
- window.__historyDockDeckMode = 'tools';
+  window.changeHistoryYear = function(year) {
+    window.calViewYear = Number(year);
+    window.renderHistoryStage();
+    triggerHaptic(10);
+    var oldPicker = document.getElementById('historyYearPickerOverlay');
+    if (oldPicker) oldPicker.remove();
+  };
+
+  window.jumpToHistoryToday = function() {
+    var now = new Date();
+    window.calViewYear = now.getFullYear();
+    window.calViewMonth = now.getMonth() + 1;
+    window.activeSelectedDateKey = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
+    window.renderHistoryStage();
+    triggerHaptic(10);
+  };
+
+  window.openYearSelectPicker = function(e) {
+    if (e) e.stopPropagation();
+    triggerHaptic(10);
+    var oldPicker = document.getElementById('historyYearPickerOverlay');
+    if (oldPicker) { oldPicker.remove(); return; }
+
+    var now = new Date();
+    var curYear = window.calViewYear || now.getFullYear();
+
+    var picker = document.createElement('div');
+    picker.id = 'historyYearPickerOverlay';
+    picker.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); z-index:1000050; display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
+    picker.onclick = function(evt) { if (evt.target === picker) picker.remove(); };
+
+    var startY = curYear - 4;
+    var endY = curYear + 4;
+    var yearsHtml = '';
+    for (var y = startY; y <= endY; y++) {
+      var isCurrent = (y === curYear);
+      yearsHtml += '<button type="button" onclick="window.changeHistoryYear(' + y + ')" style="height:38px; border-radius:8px; font-size:0.84rem; font-weight:' + (isCurrent ? '900' : '700') + '; background:' + (isCurrent ? '#38bdf8' : 'rgba(255,255,255,0.06)') + '; color:' + (isCurrent ? '#000000' : '#ffffff') + '; border:1px solid ' + (isCurrent ? '#38bdf8' : 'rgba(255,255,255,0.12)') + '; cursor:pointer;">' + y + '년</button>';
+    }
+
+    picker.innerHTML = `
+      <div style="width:100%; max-width:280px; background:#0c1018; border:1.5px solid rgba(56,189,248,0.4); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px; box-shadow:0 16px 40px rgba(0,0,0,0.9); box-sizing:border-box;" onclick="event.stopPropagation();">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:0.88rem; font-weight:900; color:#ffffff;">연도 선택</span>
+          <button type="button" onclick="document.getElementById('historyYearPickerOverlay').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer;">✕</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;">
+          ${yearsHtml}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(picker);
+  };
+
+  window.bindHistoryCalendarSwipe = function() {
+    var calBox = document.getElementById('historyCalendarCardWrap');
+    if (!calBox || calBox._swipeBound) return;
+    calBox._swipeBound = true;
+
+    var startX = 0, startY = 0;
+    calBox.addEventListener('touchstart', function(e) {
+      if (!e.touches || e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+
+    calBox.addEventListener('touchend', function(e) {
+      if (!e.changedTouches || e.changedTouches.length !== 1) return;
+      var diffX = e.changedTouches[0].clientX - startX;
+      var diffY = e.changedTouches[0].clientY - startY;
+
+      if (Math.abs(diffX) > 35 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+        if (diffX < 0) {
+          window.changeHistoryMonth(1);
+        } else {
+          window.changeHistoryMonth(-1);
+        }
+      }
+    }, { passive: true });
+  };
+
+  window.__historyDockDeckMode = 'tools';
 
   window.handleHistoryDockTabClick = function(targetMode, e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
 
-    // 1. 이미 켜져 있는 '낭만기록'을 누른 경우 -> 기본독으로 전환!
     if (targetMode === 'all') {
       window.toggleHistoryDockDeckMode();
       triggerHaptic(12);
       return;
     }
 
-    // 2. 다른 버튼들을 누른 경우 -> 각각의 해당 페이지를 정상 오픈!
     if (targetMode === 'feed') {
       window.openPastTripsListModal();
     } else if (targetMode === 'studio') {
@@ -1927,8 +2388,7 @@
     }, { passive: true });
   };
 
-  // 🏛️ [낭만보관함 메인 스테이지 렌더링 엔진]
- window.renderHistoryStage = function() {
+  window.renderHistoryStage = function() {
     var modal = document.getElementById('romanticHistoryModal');
     if (!modal) return;
 
@@ -1936,18 +2396,20 @@
     var allHistory = window.interactiveHistory;
     var totalCount = allHistory.length;
 
-    var hasRecord = (window.currentCardIndex >= 0 && window.currentCardIndex < allHistory.length);
-    var cur = hasRecord ? allHistory[window.currentCardIndex] : null;
-
     var now = new Date();
-    if (cur && cur.year && cur.month) {
-      window.calViewYear = Number(cur.year);
-      window.calViewMonth = Number(cur.month);
-      window.activeSelectedDateKey = cur.date;
+    var todayYear = now.getFullYear();
+    var todayMonth = now.getMonth() + 1;
+    var todayDate = now.getDate();
+
+    // 🌟 [과거 고정 결함 영구 교정]: 기본 뷰를 오늘 년/월로 보장!
+    if (!window.calViewYear) window.calViewYear = todayYear;
+    if (!window.calViewMonth) window.calViewMonth = todayMonth;
+    if (!window.activeSelectedDateKey) {
+      window.activeSelectedDateKey = todayYear + '.' + String(todayMonth).padStart(2, '0') + '.' + String(todayDate).padStart(2, '0');
     }
 
-    var viewYear = window.calViewYear || now.getFullYear();
-    var viewMonth = window.calViewMonth || (now.getMonth() + 1);
+    var viewYear = window.calViewYear;
+    var viewMonth = window.calViewMonth;
 
     var monthHistory = allHistory.filter(function(h) { return Number(h.year) === Number(viewYear) && Number(h.month) === Number(viewMonth); });
     var monthCount = monthHistory.length;
@@ -1962,8 +2424,16 @@
     });
     var accumElevStr = totalAccumElevNum > 0 ? (totalAccumElevNum.toLocaleString() + 'm') : '0m';
 
-    if (cur) window.activeSelectedDateKey = cur.date;
-    var activeDateStr = window.activeSelectedDateKey || (now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0'));
+    var cur = allHistory.find(function(h) { return h.date === window.activeSelectedDateKey; });
+    if (!cur && monthHistory.length > 0) {
+      cur = monthHistory[monthHistory.length - 1];
+    }
+    var hasRecord = !!cur;
+    if (cur) {
+      window.currentCardIndex = allHistory.findIndex(function(h) { return String(h.id) === String(cur.id); });
+    }
+
+    var activeDateStr = window.activeSelectedDateKey || (todayYear + '.' + String(todayMonth).padStart(2, '0') + '.' + String(todayDate).padStart(2, '0'));
     var dateParts = activeDateStr.match(/\d+/g) || [viewYear, viewMonth, 1];
     var activeDay = (parseInt(dateParts[0], 10) === viewYear && parseInt(dateParts[1], 10) === viewMonth) ? parseInt(dateParts[2], 10) : -1;
 
@@ -1977,6 +2447,7 @@
 
     for (var d = 1; d <= lastDayOfMonth; d++) {
       var isSelected = (d === activeDay);
+      var isToday = (Number(viewYear) === todayYear && Number(viewMonth) === todayMonth && Number(d) === todayDate);
       var dayRecord = monthHistory.find(function(h) { return Number(h.day) === Number(d); });
       var isRecorded = !!dayRecord;
       var isCompleted = isRecorded && Boolean(dayRecord.memo && dayRecord.memo.trim().length > 0);
@@ -1984,6 +2455,8 @@
       var dayStyle = 'position:relative; height:18px !important; line-height:18px !important; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:\'Space Grotesk\', sans-serif; font-size:0.64rem; font-weight:800; border-radius:4px; cursor:pointer; user-select:none;';
       if (isSelected) {
         dayStyle += 'background:#00bcd4 !important; color:#000000 !important; font-weight:900 !important; box-shadow:0 0 8px rgba(0,188,212,0.85);';
+      } else if (isToday) {
+        dayStyle += 'border:1px solid #38bdf8 !important; color:#38bdf8 !important; font-weight:900 !important; background:rgba(56,189,248,0.14) !important;';
       } else if (isCompleted) {
         dayStyle += 'color:#fde047; font-weight:900;';
       } else if (isRecorded) {
@@ -2008,7 +2481,7 @@
     }
 
     var centerContentHtml = '';
-    if (hasRecord) {
+    if (hasRecord && cur) {
       centerContentHtml = window.render3DPostcardElement(cur, window.currentCardIndex);
     } else {
       centerContentHtml = `
@@ -2100,21 +2573,25 @@
     var topAndCenterViewHtml = `
       <div style="flex-shrink:0 !important; display:flex; flex-direction:column; gap:4px;">
         <div style="height:38px; background:linear-gradient(135deg, rgba(56,189,248,0.12), rgba(16,185,129,0.08)); border:1px solid rgba(56,189,248,0.3); border-radius:8px; padding:4px 8px; display:flex; justify-content:space-around; align-items:center; text-align:center;">
-          <div><div style="font-size:0.54rem; color:#94a3b8; font-weight:700;">2026 힐링</div><div style="font-size:0.92rem; font-weight:900; color:#38bdf8; font-family:'Space Grotesk', sans-serif;">${totalCount}회</div></div>
+          <div><div style="font-size:0.54rem; color:#94a3b8; font-weight:700;">${todayYear} 힐링</div><div style="font-size:0.92rem; font-weight:900; color:#38bdf8; font-family:'Space Grotesk', sans-serif;">${totalCount}회</div></div>
           <div style="width:1px; height:14px; background:rgba(255,255,255,0.15);"></div>
           <div><div style="font-size:0.54rem; color:#94a3b8; font-weight:700;">누적 고도</div><div style="font-size:0.92rem; font-weight:900; color:#34d399; font-family:'Space Grotesk', sans-serif;">${accumElevStr}</div></div>
           <div style="width:1px; height:14px; background:rgba(255,255,255,0.15);"></div>
           <div><div style="font-size:0.54rem; color:#94a3b8; font-weight:700;">평균 무게</div><div style="font-size:0.92rem; font-weight:900; color:#fde047; font-family:'Space Grotesk', sans-serif;">${avgWeightStr}</div></div>
         </div>
 
-        <div style="height:162px; background:rgba(255,255,255,0.035); border:1px solid rgba(226,232,240,0.16); border-radius:8px; padding:4px 6px; display:flex; flex-direction:column; justify-content:space-between;">
+        <div id="historyCalendarCardWrap" style="height:162px; background:rgba(255,255,255,0.035); border:1px solid rgba(226,232,240,0.16); border-radius:8px; padding:4px 6px; display:flex; flex-direction:column; justify-content:space-between; touch-action:pan-y;">
           <div style="display:flex; justify-content:space-between; align-items:center; height:20px;">
-            <div style="display:flex; align-items:center; gap:3px;">
-              <button type="button" onclick="window.changeHistoryMonth(-1)" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:16px; height:16px; border-radius:3px; font-size:0.55rem; cursor:pointer;">◀</button>
-              <span style="font-size:0.72rem; font-weight:900; color:#fff;">${viewYear}년 ${viewMonth}월</span>
-              <button type="button" onclick="window.changeHistoryMonth(1)" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:16px; height:16px; border-radius:3px; font-size:0.55rem; cursor:pointer;">▶</button>
+            <div style="display:flex; align-items:center; gap:2px;">
+              <button type="button" onclick="window.changeHistoryMonth(-1)" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:18px; height:18px; border-radius:3px; font-size:0.55rem; cursor:pointer;">◀</button>
+              <button type="button" onclick="window.openYearSelectPicker(event)" style="background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; padding:1px 6px; border-radius:4px; font-size:0.72rem; font-weight:900; cursor:pointer; font-family:'Space Grotesk', sans-serif;">
+                ${viewYear}년 ▾
+              </button>
+              <span style="font-size:0.72rem; font-weight:900; color:#fff; margin:0 2px;">${viewMonth}월</span>
+              <button type="button" onclick="window.changeHistoryMonth(1)" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:18px; height:18px; border-radius:3px; font-size:0.55rem; cursor:pointer;">▶</button>
             </div>
             <div style="display:flex; align-items:center; gap:4px;">
+              <button type="button" onclick="window.jumpToHistoryToday()" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#fde047; font-size:0.52rem; font-weight:800; padding:1.5px 5px; border-radius:3px; cursor:pointer;">오늘</button>
               <span style="font-size:0.54rem; color:#38bdf8; font-weight:800; font-family:'Space Grotesk', sans-serif;">${viewMonth}월 ${monthCount}회</span>
             </div>
           </div>
@@ -2153,6 +2630,10 @@
         mainDeck.style.pointerEvents = isHistoryToolsActive ? 'none' : 'auto';
         mainDeck.style.zIndex = isHistoryToolsActive ? '100' : '105';
       }
+    }
+
+    if (typeof window.bindHistoryCalendarSwipe === 'function') {
+      window.bindHistoryCalendarSwipe();
     }
 
     if (typeof window.bindHistoryDualDockGestures === 'function') {
