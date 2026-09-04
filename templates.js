@@ -414,7 +414,6 @@ window.saveCardToVaultAndOpenBasecamp = function() {
   if (typeof triggerHaptic === 'function') triggerHaptic(15);
 };
 
-// 🖼️ 2. 공유 모달 오픈 (초록색 저장 버튼 100% 노출 슬림 규격)
 function ensurePackShareModalDOM() {
   var modal = document.getElementById('packShareModalOverlay');
   if (modal) modal.remove();
@@ -422,60 +421,185 @@ function ensurePackShareModalDOM() {
   modal = document.createElement('div');
   modal.id = 'packShareModalOverlay';
   modal.className = 'custom-modal-overlay';
-  modal.style.cssText = 'display:none; position:fixed; inset:0; background:rgba(0, 0, 0, 0.88); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); z-index:1000008 !important; justify-content:center; align-items:center; padding:calc(8px + env(safe-area-inset-top, 0px)) 8px calc(12px + env(safe-area-inset-bottom, 0px)) 8px !important; touch-action:none; overflow:hidden; box-sizing:border-box;';
-  modal.onclick = function(e) { if (e.target === modal) closePackShareModal(); };
+  modal.style.cssText = 'display:none; position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000008 !important; justify-content:center; align-items:stretch; padding:0 !important; margin:0 !important; touch-action:none; overflow:hidden; box-sizing:border-box; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
   modal.innerHTML = `
-    <div class="custom-modal" style="width:100% !important; max-width:365px !important; max-height:95dvh !important; height:auto !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; overscroll-behavior:contain !important; padding:8px 8px 12px 8px !important; gap:4px !important; display:flex !important; flex-direction:column !important; box-sizing:border-box !important; border-radius:14px !important; margin:0 auto; background:linear-gradient(180deg, #0d121c 0%, #05080f 100%) !important; border:1px solid rgba(255,255,255,0.12) !important; box-shadow:0 24px 60px rgba(0,0,0,0.95) !important;">
+    <div style="width:100%; max-width:440px; margin:0 auto; height:100%; height:100dvh; max-height:100dvh; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; position:relative;">
       
-      <!-- 상단 헤더 -->
-      <div style="display:flex; justify-content:space-between; align-items:center; width:100%; padding:0 2px;">
-        <span style="font-weight:900; font-size:0.88rem; color:#fff; display:flex; align-items:center; gap:5px; white-space:nowrap;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="icon-svg" style="width:14px; height:14px; color:#38bdf8;"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M3 9h4M17 9h4M3 15h4M17 15h4"/></svg>
-          <span>LNT 클린 패킹 카드 스튜디오</span>
+      <!-- 1. 상단 헤더 (타이틀 + 이미지 저장 / 보관함 저장 캡슐 + 닫기) -->
+      <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:10px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
+        <span style="font-weight:900; font-size:0.90rem; color:#fff; display:flex; align-items:center; gap:5px; white-space:nowrap; flex-shrink:0;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="icon-svg" style="width:15px; height:15px; color:#38bdf8;"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M3 9h4M17 9h4M3 15h4M17 15h4"/></svg>
+          <span>카드 스튜디오</span>
         </span>
-        <button type="button" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer; line-height:1; padding:2px 4px;" onclick="closePackShareModal()">✕</button>
+        <div style="display:flex; align-items:center; gap:5px; margin-left:auto;">
+          <button type="button" onclick="if(typeof captureAndSavePackCard==='function') captureAndSavePackCard();" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22); color:#ffffff; font-size:0.68rem; font-weight:800; padding:4px 9px; border-radius:9999px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; white-space:nowrap;">
+            💾 이미지 저장
+          </button>
+          <button type="button" id="btnStudioHeaderCapsuleSave" onclick="saveCardToVaultAndOpenBasecamp()" style="background:linear-gradient(135deg, #0d9488 0%, #059669 100%); border:1px solid #14b8a6; color:#ffffff; font-size:0.68rem; font-weight:900; padding:4px 10px; border-radius:9999px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; box-shadow:0 2px 8px rgba(13,148,136,0.35); white-space:nowrap;">
+            🎒 보관함 저장
+          </button>
+          <button type="button" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer; line-height:1; padding:0 2px 0 4px;" onclick="closePackShareModal()">✕</button>
+        </div>
       </div>
 
-      <!-- 검색창 및 메모창 -->
-      <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:5px; display:flex; flex-direction:column; gap:4px; position:relative;">
-        <div style="position:relative; width:100%;">
-          <div style="display:flex; gap:4px; align-items:center; position:relative;">
-            <div style="position:relative; flex:1; display:flex; align-items:center;">
-              <input type="text" id="shareCardSpotInput" class="modal-input" placeholder="박지 검색 (비공개 시 빈칸)" style="font-size:0.74rem; padding:5px 28px 5px 8px; width:100%; height:30px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#ffffff; outline:none; box-sizing:border-box;" oninput="handleSpotSearchInput(this.value); updateShareCardLive();" onfocus="handleSpotSearchInput(this.value);" autocomplete="off" />
-              <button type="button" id="btnSpotInputClear" style="display:none; position:absolute; right:6px; background:rgba(255,255,255,0.25); border:none; color:#ffffff; width:17px; height:17px; border-radius:50%; font-size:0.6rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0; z-index:5;" onclick="clearSpotSearchInput()">✕</button>
-            </div>
-            <button type="button" class="modal-btn" style="height:30px; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.4); color:#38bdf8; font-size:0.68rem; padding:0 8px; flex-shrink:0; font-weight:800; border-radius:6px; cursor:pointer;" onclick="toggleSpotDropdownList()">검색</button>
-          </div>
-          <div id="spotSearchDropdown" class="spot-search-dropdown-list"></div>
-        </div>
+      <!-- 2. 중앙 메인 스크롤 뷰 (검색창 + 메모 + 템플릿 칩 + 카드 프리뷰) -->
+      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:10px 12px calc(72px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
         
-        <input type="text" id="shareCardMemoInput" class="modal-input" placeholder="한줄 메모 (미입력 시 빈칸)" maxlength="35" style="font-size:0.74rem; height:30px; padding:5px 8px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#ffffff; outline:none; box-sizing:border-box;" oninput="updateShareCardLive()" />
-      </div>
-
-      <!-- 20대 전체 템플릿 선택 바 -->
-      <div class="template-selector-bar" id="templateSelectorBar"></div>
-
-      <!-- 카드 프리뷰 (290px 컴팩트 규격: 아래 버튼 노출 100% 보장) -->
-      <div style="width:100%; display:flex; justify-content:center; align-items:center; padding:1px 0;">
-        <div id="packShareCaptureArea" class="share-card-container" style="width:100%; max-width:290px; margin:0 auto; border-radius:12px; overflow:hidden; box-sizing:border-box; flex-shrink:0; box-shadow:0 10px 25px rgba(0,0,0,0.9);"></div>
-      </div>
-
-      <!-- 하단 버튼군 (초록색 버튼 100% 정상 노출) -->
-      <div style="display:flex; flex-direction:column; gap:4px; margin-top:2px;">
-        <div style="display:flex; gap:4px;">
-          <button type="button" class="modal-btn" style="flex:1; height:32px; background:#ffffff; color:#000; font-weight:900; font-size:0.70rem; border:none; border-radius:6px; cursor:pointer;" onclick="if(typeof captureAndSavePackCard==='function') captureAndSavePackCard();">💾 이미지 저장</button>
-          <button type="button" class="modal-btn" style="flex:1; height:32px; background:#fee500; color:#191919; font-weight:800; font-size:0.70rem; border:none; border-radius:6px; cursor:pointer;" onclick="if(typeof sharePackCardToKakao==='function') sharePackCardToKakao();">🟡 카카오톡</button>
-          <button type="button" class="modal-btn" style="flex:1; height:32px; background:linear-gradient(45deg, #ea580c, #e11d48, #c026d3); color:#fff; font-weight:800; font-size:0.70rem; border:none; border-radius:6px; cursor:pointer;" onclick="if(typeof sharePackCardToInstagram==='function') sharePackCardToInstagram();">📸 인스타그램</button>
+        <!-- 검색창 및 메모창 -->
+        <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:6px; display:flex; flex-direction:column; gap:5px; position:relative; flex-shrink:0;">
+          <div style="position:relative; width:100%;">
+            <div style="display:flex; gap:4px; align-items:center; position:relative;">
+              <div style="position:relative; flex:1; display:flex; align-items:center;">
+                <input type="text" id="shareCardSpotInput" class="modal-input" placeholder="박지 검색 (비공개 시 빈칸)" style="font-size:0.75rem; padding:5px 28px 5px 8px; width:100%; height:32px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#ffffff; outline:none; box-sizing:border-box;" oninput="handleSpotSearchInput(this.value); updateShareCardLive();" onfocus="handleSpotSearchInput(this.value);" autocomplete="off" />
+                <button type="button" id="btnSpotInputClear" style="display:none; position:absolute; right:6px; background:rgba(255,255,255,0.25); border:none; color:#ffffff; width:17px; height:17px; border-radius:50%; font-size:0.6rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0; z-index:5;" onclick="clearSpotSearchInput()">✕</button>
+              </div>
+              <button type="button" class="modal-btn" style="height:32px; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.4); color:#38bdf8; font-size:0.70rem; padding:0 10px; flex-shrink:0; font-weight:800; border-radius:6px; cursor:pointer;" onclick="toggleSpotDropdownList()">검색</button>
+            </div>
+            <div id="spotSearchDropdown" class="spot-search-dropdown-list"></div>
+          </div>
+          
+          <input type="text" id="shareCardMemoInput" class="modal-input" placeholder="한줄 메모 (미입력 시 빈칸)" maxlength="35" style="font-size:0.75rem; height:32px; padding:5px 8px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#ffffff; outline:none; box-sizing:border-box;" oninput="updateShareCardLive()" />
+          
+          <input type="file" id="shareCardPhotoInput" accept="image/*" style="display:none;" onchange="if(typeof handleShareCardPhotoUpload==='function') handleShareCardPhotoUpload(event)" />
+          <button type="button" class="modal-btn" style="width:100%; height:32px; background:linear-gradient(135deg, rgba(56,189,248,0.18), rgba(14,165,233,0.28)); border:1.2px dashed #38bdf8; color:#38bdf8; font-size:0.74rem; font-weight:800; padding:0; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:5px;" onclick="document.getElementById('shareCardPhotoInput').click()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-svg" style="width:13px; height:13px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>내 사진으로 전체화면 스튜디오 열기 ➔</span>
+          </button>
         </div>
-        <button type="button" id="btnSaveToVaultMain" class="modal-btn" style="width:100% !important; height:38px !important; background:linear-gradient(135deg, #0d9488 0%, #0f766e 100%); border:1px solid #14b8a6; color:#ffffff; font-weight:900; font-size:0.80rem; border-radius:8px; cursor:pointer; box-shadow:0 4px 14px rgba(13,148,136,0.35); display:flex; align-items:center; justify-content:center; gap:5px;" onclick="saveCardToVaultAndOpenBasecamp();">
-          내 낭만보관함에 저장하기 ✓
-        </button>
+
+        <!-- 20대 전체 템플릿 선택 바 -->
+        <div class="template-selector-bar" id="templateSelectorBar" style="flex-shrink:0;"></div>
+
+        <!-- 카드 프리뷰 영역 -->
+        <div style="width:100%; display:flex; justify-content:center; align-items:center; padding:4px 0 12px 0;">
+          <div id="packShareCaptureArea" class="share-card-container" style="width:100%; max-width:305px; margin:0 auto; border-radius:14px; overflow:hidden; box-sizing:border-box; flex-shrink:0; box-shadow:0 12px 32px rgba(0,0,0,0.95);"></div>
+        </div>
+      </div>
+
+      <!-- 3. 최하단 일체형 듀얼독 (활성 탭 재터치 토글 시스템 완비) -->
+      <div id="studioDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(7,9,14,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000010 !important; user-select:none !important; overscroll-behavior:none !important; touch-action:none !important;">
+        
+        <!-- 데크 1: 스튜디오 5대 서브 도구독 (기본 활성) -->
+        <div id="studioSubToolsDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:opacity 0.18s ease; opacity:1; pointer-events:auto; z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
+          <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof openHistoryModal==='function') openHistoryModal(); if(typeof triggerHaptic==='function') triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            <span>낭만기록</span>
+          </button>
+          
+          <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof openPastTripsListModal==='function') openPastTripsListModal(); if(typeof triggerHaptic==='function') triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+            <span>피드</span>
+          </button>
+
+          <!-- 💡 [핵심] 활성 스튜디오 버튼: 터치 시 메인독으로 토글 전환! -->
+          <button type="button" class="dock-item active" onclick="window.toggleStudioDockDeck(); if(typeof triggerHaptic==='function') triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#38bdf8 !important; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>스튜디오</span>
+          </button>
+
+          <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof openClearMapModal==='function') openClearMapModal(); if(typeof triggerHaptic==='function') triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.2;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+            <span>클리어맵</span>
+          </button>
+
+          <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof openMyReportModal==='function') openMyReportModal(); if(typeof triggerHaptic==='function') triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
+            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>마이리포트</span>
+          </button>
+        </div>
+
+        <!-- 데크 2: 메인 5대 네비독 (토글 시 전환) -->
+        <div id="studioMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:opacity 0.18s ease; opacity:0; pointer-events:none; z-index:100; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; background:rgba(7,9,14,0.98); box-sizing:border-box;">
+          <a href="index.html" class="dock-item" onclick="closePackShareModal(); if(typeof triggerHaptic==='function') triggerHaptic(10);" style="text-decoration:none;">
+            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <span>낭만루터</span>
+          </a>
+          <a href="map.html" class="dock-item" onclick="closePackShareModal(); if(typeof triggerHaptic==='function') triggerHaptic(10);" style="text-decoration:none;">
+            <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
+            <span>전국지도</span>
+          </a>
+          <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); if(typeof triggerHaptic==='function') triggerHaptic(12);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+              <path d="M9 16l2 2 4-4"/>
+            </svg>
+            <span>낭만계획</span>
+          </button>
+          <!-- 💡 [핵심] 메인독의 낭만보관함 버튼: 터치 시 서브 도구독으로 복귀 토글! -->
+          <button type="button" class="dock-item active" onclick="window.toggleStudioDockDeck('tools'); if(typeof triggerHaptic==='function') triggerHaptic(12);" style="color:#38bdf8 !important;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 8v13H3V8"/>
+              <path d="M1 3h22v5H1z"/>
+              <path d="M10 12h4"/>
+            </svg>
+            <span>낭만보관함</span>
+          </button>
+          <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); if(typeof triggerHaptic==='function') triggerHaptic(10);">
+            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <span>내정보</span>
+          </button>
+        </div>
       </div>
     </div>
   `;
 
   document.body.appendChild(modal);
+
+  // 🔄 [스튜디오 전용 듀얼독 토글 및 좌우 스와이프 인터랙션 바인딩]
+  window.__studioDockMode = 'tools';
+  window.toggleStudioDockDeck = function(forceMode) {
+    if (forceMode) {
+      window.__studioDockMode = forceMode;
+    } else {
+      window.__studioDockMode = (window.__studioDockMode === 'tools') ? 'main' : 'tools';
+    }
+
+    var sub = document.getElementById('studioSubToolsDeck');
+    var main = document.getElementById('studioMainNavDeck');
+    if (!sub || !main) return;
+
+    var isTools = (window.__studioDockMode === 'tools');
+    sub.style.opacity = isTools ? '1' : '0';
+    sub.style.pointerEvents = isTools ? 'auto' : 'none';
+    sub.style.zIndex = isTools ? '105' : '100';
+
+    main.style.opacity = isTools ? '0' : '1';
+    main.style.pointerEvents = isTools ? 'none' : 'auto';
+    main.style.zIndex = isTools ? '100' : '105';
+  };
+
+  var sDock = document.getElementById('studioDualDockContainer');
+  if (sDock && !sDock._swipeBound) {
+    sDock._swipeBound = true;
+    var startX = 0, startY = 0;
+    sDock.addEventListener('touchstart', function(e) {
+      if (!e.touches || e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+
+    sDock.addEventListener('touchmove', function(e) {
+      if (!e.touches || e.touches.length !== 1) return;
+      var diffX = Math.abs(e.touches[0].clientX - startX);
+      var diffY = Math.abs(e.touches[0].clientY - startY);
+      if (diffX > diffY && e.cancelable) e.preventDefault();
+    }, { passive: false });
+
+    sDock.addEventListener('touchend', function(e) {
+      if (!e.changedTouches || e.changedTouches.length !== 1) return;
+      var diffX = e.changedTouches[0].clientX - startX;
+      var diffY = e.changedTouches[0].clientY - startY;
+      if (Math.abs(diffX) > 24 && Math.abs(diffX) > Math.abs(diffY)) {
+        if (typeof triggerHaptic === 'function') triggerHaptic(10);
+        window.toggleStudioDockDeck();
+      }
+    }, { passive: true });
+  }
+
   return modal;
 }
 
