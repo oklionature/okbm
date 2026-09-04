@@ -304,6 +304,49 @@ function closeUserProfileModal() {
   } catch (e) {}
 }
 
+// 🚪 [로그아웃 및 기기 세션/배낭 롤백 처리]
+function logoutUser() {
+  triggerHaptic(15);
+
+  if (typeof Kakao !== 'undefined' && Kakao.Auth && typeof Kakao.Auth.logout === 'function') {
+    try {
+      Kakao.Auth.logout(function() {});
+    } catch (e) {}
+  }
+
+  localStorage.removeItem('user_auth_token');
+  localStorage.removeItem('user_profile');
+
+  if (typeof authState !== 'undefined') {
+    authState.isLoggedIn = false;
+    authState.userProfile = null;
+  }
+
+  window.selectedGearMap = {};
+  localStorage.removeItem('okbm_selected_gears_multi');
+
+  var bannerKg = document.getElementById('mainBannerKgText');
+  var bannerCount = document.getElementById('mainBannerItemCount');
+  var bannerBadge = document.getElementById('mainBannerBadge');
+  if (bannerKg) bannerKg.innerText = '0.00 kg';
+  if (bannerCount) bannerCount.innerText = '장비 0개 세팅됨';
+  if (bannerBadge) {
+    bannerBadge.className = 'weight-bpl-badge bpl-ul';
+    bannerBadge.innerText = '울트라라이트 (UL)';
+  }
+
+  updateHeaderAuthUI();
+
+  if (typeof renderCategorySlots === 'function') renderCategorySlots();
+  if (typeof renderPlanStage === 'function') renderPlanStage();
+  if (typeof renderPlanCategorySlots === 'function') renderPlanCategorySlots();
+  if (typeof renderHistoryStage === 'function') renderHistoryStage();
+  if (typeof renderSpots === 'function') renderSpots();
+  if (typeof refreshCurrentSpotPopup === 'function') refreshCurrentSpotPopup();
+
+  showToast('로그아웃되었습니다.', 'info', 2200);
+}
+
 // ⏱️ 7. 닉네임 변경 및 14일 쿨다운 체크
 function saveNewNicknameFromModal() {
   var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : { isMember: true });
