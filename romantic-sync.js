@@ -118,22 +118,19 @@ function trackDailyVisit() {
   }
 }
 
-//// ☁️ 4. 클라우드 실시간 동기화 전송 엔진 (12건 전체 전송 및 지도 화면 격리 락 해제)
 function syncUserDataToCloud(isPackHistoryUpdated) {
   var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : null);
   var userId = profile && profile.id ? String(profile.id).trim() : localStorage.getItem('user_auth_token');
   if (!userId) return;
 
   var isMapPage = (typeof window.location !== 'undefined' && window.location.pathname.includes('map.html'));
-  
-  // 🛡️ 보관함/스튜디오에서 저장했거나 패킹 기록이 갱신된 경우 지도 페이지여도 패킹 동기화 강제 승인
-  var isIndexPage = !isMapPage || (isPackHistoryUpdated === true) || (Boolean(window.interactiveHistory && window.interactiveHistory.length > 0));
+  var isIndexPage = !isMapPage || (isPackHistoryUpdated === true);
 
-  // 기기 메모리와 스토리지에서 최신 전체 패킹 기록을 누락 없이 1순위 확보
+  // 🌐 [0건 삭제 보장] 기록이 0개라도 빈 배열을 정상 수집하여 클라우드 아카이브 갱신
   var rawHistory = [];
-  if (window.interactiveHistory && Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0) {
+  if (window.interactiveHistory && Array.isArray(window.interactiveHistory)) {
     rawHistory = window.interactiveHistory;
-  } else if (window.packingHistoryList && Array.isArray(window.packingHistoryList) && window.packingHistoryList.length > 0) {
+  } else if (window.packingHistoryList && Array.isArray(window.packingHistoryList)) {
     rawHistory = window.packingHistoryList;
   } else if (typeof window.safeGetStorage === 'function') {
     rawHistory = window.safeGetStorage('okbm_packing_history', []) || [];
@@ -144,11 +141,39 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
   window.packingHistoryList = rawHistory;
   window.interactiveHistory = rawHistory;
 
+  // 🪦 [툼스톤 경량화] 삭제된 항목은 4대 핵심 메타만 남겨 전송량 최소화
   var lightweightPackHistory = rawHistory.filter(Boolean).map(function(h) {
+    if (h.isDeleted === true) {
+      return {
+        id: String(h.id),
+        date: String(h.date || ''),
+        isDeleted: true,
+        deletedAt: Number(h.deletedAt) || Date.now()
+      };
+    }
+
     var copy = Object.assign({}, h);
-    delete copy.photo;
-    delete copy.photos;
-    delete copy.fieldPhoto;
+    var validUrls = [];
+    if (Array.isArray(copy.photos)) {
+      validUrls = copy.photos.filter(function(p) { return typeof p === 'string' && p.startsWith('http'); });
+    }
+    if (typeof copy.photo === 'string' && copy.photo.startsWith('http') && !validUrls.includes(copy.photo)) {
+      validUrls.unshift(copy.photo);
+    }
+    if (typeof copy.fieldPhoto === 'string' && copy.fieldPhoto.startsWith('http') && !validUrls.includes(copy.fieldPhoto)) {
+      validUrls.unshift(copy.fieldPhoto);
+    }
+
+    if (validUrls.length > 0) {
+      copy.photos = validUrls;
+      copy.photo = validUrls[0];
+      copy.fieldPhoto = validUrls[0];
+    } else {
+      delete copy.photo;
+      delete copy.photos;
+      delete copy.fieldPhoto;
+    }
+
     return copy;
   });
 
@@ -480,25 +505,46 @@ function loginWithKakao() {
                 localStorage.setItem('okbm_memos', JSON.stringify(cloudData.memos));
                 if (typeof window.userMemos !== 'undefined') window.userMemos = cloudData.memos;
               }
-              if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
+             if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
                 var localSavedPhotos = safeGetJSON('okbm_phone_photos_map', {});
                 if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
                   localSavedPhotos = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], localSavedPhotos);
                 }
 
-                var currentLocalHistory = (window.interactiveHistory && Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0)
+                var currentLocalHistory = (window.interactiveHistory && Array.isArray(window.interactiveHistory))
                   ? window.interactiveHistory
                   : safeGetJSON('okbm_packing_history', []);
 
-                var safePackHistory = cloudData.packHistory.filter(Boolean).map(function(cloudItem) {
-                  var cId = String(cloudItem.id || '').trim();
+                // 1. 클라우드의 삭제 툼스톤 맵과 활성 기록 맵 분리
+                var cloudDeletedIds = new Set();
+                var cloudActiveMap = new Map();
+
+                cloudData.packHistory.filter(Boolean).forEach(function(cItem) {
+                  var cId = String(cItem.id || '').trim();
+                  if (cItem.isDeleted === true) {
+                    if (cId) cloudDeletedIds.add(cId);
+                  } else {
+                    if (cId) cloudActiveMap.set(cId, cItem);
+                  }
+                });
+
+                // 2. 스마트 조율: 클라우드 활성 기록 매핑 및 사진 복원
+                var reconciledMap = new Map();
+
+                cloudActiveMap.forEach(function(cloudItem, cId) {
                   var cDate = String(cloudItem.date || '').trim();
                   var matchedLocal = currentLocalHistory.find(function(loc) {
                     return loc && ((cId && String(loc.id).trim() === cId) || (cDate && String(loc.date).trim() === cDate));
                   });
 
                   var preservedPhotos = [];
-                  if (matchedLocal) {
+                  if (Array.isArray(cloudItem.photos) && cloudItem.photos.length > 0) {
+                    preservedPhotos = cloudItem.photos.filter(function(p) { return typeof p === 'string' && p.startsWith('http'); });
+                  } else if (typeof cloudItem.photo === 'string' && cloudItem.photo.startsWith('http')) {
+                    preservedPhotos = [cloudItem.photo];
+                  }
+
+                  if (preservedPhotos.length === 0 && matchedLocal) {
                     if (Array.isArray(matchedLocal.photos) && matchedLocal.photos.length > 0) preservedPhotos = matchedLocal.photos;
                     else if (matchedLocal.photo) preservedPhotos = [matchedLocal.photo];
                     else if (matchedLocal.fieldPhoto) preservedPhotos = [matchedLocal.fieldPhoto];
@@ -516,11 +562,31 @@ function loginWithKakao() {
                     mergedItem.photo = preservedPhotos[0];
                     mergedItem.fieldPhoto = preservedPhotos[0];
                   }
-                  return mergedItem;
+                  reconciledMap.set(cId, mergedItem);
                 });
 
-               window.packingHistoryList = safePackHistory;
+                // 3. [오프라인 초안 보존] 서버에 툼스톤이 없고 로컬에만 새로 작성된 기록은 보존
+                var hasLocalDraftsToUpload = false;
+                currentLocalHistory.forEach(function(loc) {
+                  if (!loc) return;
+                  var locId = String(loc.id || '').trim();
+                  // 다른 기기에서 삭제 마킹된 것은 기기 로컬에서도 완벽 제거
+                  if (cloudDeletedIds.has(locId)) {
+                    return;
+                  }
+                  // 서버에 아직 올라가지 않은 로컬 새 글은 보존하여 클라우드로 상향 동기화
+                  if (!cloudActiveMap.has(locId) && !loc.isDeleted) {
+                    reconciledMap.set(locId, loc);
+                    hasLocalDraftsToUpload = true;
+                  }
+                });
+
+                var safePackHistory = Array.from(reconciledMap.values());
+                window.packingHistoryList = safePackHistory;
                 window.interactiveHistory = safePackHistory;
+                window.__memoryStore = window.__memoryStore || {};
+                window.__memoryStore['okbm_packing_history'] = safePackHistory;
+
                 if (typeof window.safeSetStorage === 'function') {
                   window.safeSetStorage('okbm_packing_history', safePackHistory);
                 } else {
@@ -535,6 +601,11 @@ function loginWithKakao() {
                   if (typeof window.saveToIndexedDB === 'function') {
                     window.saveToIndexedDB('okbm_packing_history', safePackHistory);
                   }
+                }
+
+                // 오프라인 작성본이 합쳐졌다면 조용히 클라우드로 백업 전송
+                if (hasLocalDraftsToUpload) {
+                  syncUserDataToCloud(true);
                 }
               }
 
@@ -579,9 +650,93 @@ function loginWithKakao() {
         }
       });
     },
-    fail: function(err) {
+   fail: function(err) {
       console.warn('[Kakao] Login failed:', err);
       window.isCloudDataLoaded = true;
     }
   });
 }
+
+window.shareFeedToCommunity = function(feedRecord) {
+  if (!feedRecord) return;
+  var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : null);
+  var userId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('user_auth_token') || 'anonymous');
+  var nickname = (profile && profile.nickname) ? profile.nickname : '낭만백패커';
+
+  var targetGasUrl = window.GAS_API_URL || GAS_API_URL;
+  if (!targetGasUrl || targetGasUrl.includes('구글시트_배포_URL')) return;
+
+  // 🛡️ [0장 누락 방어]: http 링크뿐만 아니라 로컬 등록 사진(data:image)도 100% 정상 수집
+  var allPhotos = [];
+  if (Array.isArray(feedRecord.photos) && feedRecord.photos.length > 0) {
+    allPhotos = feedRecord.photos.filter(function(p) { 
+      return typeof p === 'string' && (p.startsWith('http') || p.startsWith('data:')); 
+    });
+  }
+  if (allPhotos.length === 0 && feedRecord.photo && typeof feedRecord.photo === 'string' && (feedRecord.photo.startsWith('http') || feedRecord.photo.startsWith('data:'))) {
+    allPhotos = [feedRecord.photo];
+  }
+  if (allPhotos.length === 0 && feedRecord.fieldPhoto && typeof feedRecord.fieldPhoto === 'string' && (feedRecord.fieldPhoto.startsWith('http') || feedRecord.fieldPhoto.startsWith('data:'))) {
+    allPhotos = [feedRecord.fieldPhoto];
+  }
+
+  var mainPhoto = allPhotos.length > 0 ? allPhotos[0] : (feedRecord.photo || feedRecord.fieldPhoto || '');
+
+  var payload = {
+    action: 'SHARE_PUBLIC_FEED',
+    userId: userId,
+    nickname: nickname,
+    feed: {
+      id: feedRecord.id,
+      userId: userId,
+      author: nickname,
+      spot: feedRecord.spot || feedRecord.spotName,
+      elevation: feedRecord.elevation,
+      weightKg: feedRecord.weightKg,
+      date: feedRecord.date,
+      memo: feedRecord.memo || feedRecord.oneLineMemo,
+      photo: mainPhoto,
+      photos: allPhotos,
+      items: feedRecord.items || [],
+      templateId: feedRecord.templateId || 1
+    }
+  };
+
+  fetch(targetGasUrl, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  }).then(function() {
+    console.log('✅ [RomanticSync] 다중 사진 (' + allPhotos.length + '장) 공용 피드 최종 전송 성공');
+  }).catch(function(err) {
+    console.warn('[RomanticSync] 커뮤니티 피드 전송 실패:', err);
+  });
+};
+
+// 🗑️ [공용 피드 영구 삭제 연동]
+window.deleteFeedFromCommunity = function(feedId, dateStr) {
+  var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : null);
+  var userId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('user_auth_token') || '');
+
+  var targetGasUrl = window.GAS_API_URL || GAS_API_URL;
+  if (!targetGasUrl || targetGasUrl.includes('구글시트_배포_URL')) return;
+
+  var payload = {
+    action: 'DELETE_PUBLIC_FEED',
+    feedId: feedId || '',
+    date: dateStr || '',
+    userId: userId
+  };
+
+  fetch(targetGasUrl, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  }).then(function() {
+    console.log('✅ [RomanticSync] 공용 피드 서버 영구 삭제 완료');
+  }).catch(function(err) {
+    console.warn('[RomanticSync] 피드 삭제 요청 실패:', err);
+  });
+};
