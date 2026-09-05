@@ -1433,7 +1433,7 @@ window.saveCurrentPackingRecord = function() {
         </div>
 
         <!-- 📋 2. 체크리스트 목록 영역 (1.5px 소프트 라인 & 샴페인 선셋 골드) -->
-        <div id="checklistItemsScrollContainer" style="flex:1 1 0% !important; min-height:0 !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; overscroll-behavior-y:contain !important; touch-action:pan-y !important; display:flex; flex-direction:column; gap:5px; padding-right:2px;">
+        <div id="checklistItemsScrollContainer" style="flex:1 1 0% !important; min-height:0 !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; overscroll-behavior-y:contain !important; overscroll-behavior:contain !important; touch-action:pan-y !important; display:flex; flex-direction:column; gap:5px; padding-right:2px;">
           ${planItems.map(function(it, idx) {
             var checkKey = activeDateStr + '__' + it.name;
             var isChecked = window.packedCheckSet && window.packedCheckSet.has(checkKey);
@@ -1442,7 +1442,7 @@ window.saveCurrentPackingRecord = function() {
             var theme = SOFT_THEMES[it.categoryId] || { color: '#cbd5e1', bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.14)' };
 
             return `
-              <div onclick="window.togglePackCheckByIndex(${idx})" style="background:${isChecked ? 'rgba(253,224,71,0.05)' : 'rgba(15,23,42,0.5)'}; border:1px solid ${isChecked ? 'rgba(253,224,71,0.3)' : 'rgba(255,255,255,0.08)'}; border-left:${isChecked ? '2px solid rgba(253,224,71,0.85)' : '2px solid ' + theme.border}; border-radius:9px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; transition:all 0.12s ease; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.25);">
+              <div onclick="window.togglePackCheckByIndex(${idx})" style="background:${isChecked ? 'rgba(253,224,71,0.05)' : 'rgba(15,23,42,0.5)'}; border:1px solid ${isChecked ? 'rgba(253,224,71,0.3)' : 'rgba(255,255,255,0.08)'}; border-left:${isChecked ? '2px solid rgba(253,224,71,0.85)' : '2px solid ' + theme.border}; border-radius:9px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; touch-action:manipulation; transition:all 0.12s ease; flex-shrink:0; min-height:44px; box-shadow:0 2px 6px rgba(0,0,0,0.25); box-sizing:border-box;">
                 <div style="display:flex; align-items:center; gap:10px; min-width:0;">
                   
                   <!-- 🌟 맑고 얇은 1.2px 샴페인 선셋 골드 체크박스 -->
@@ -1577,143 +1577,81 @@ window.saveCurrentPackingRecord = function() {
               전국지도에서 가보고 싶은 곳을 찜해보세요!
             </div>
           ` : bookmarkedSpots.map(function(s) {
-            return `
-              <div onclick="location.href='map.html?spot=' + encodeURIComponent('${escapeHtml(s.name)}');" style="background:rgba(255,255,255,0.035); border:1px solid rgba(253,224,71,0.22); border-radius:8px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:background 0.15s ease;">
-                <div style="flex:1; min-width:0; padding-right:8px;">
-                  <div style="font-size:0.80rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:5px;">
-                    ${UI_ICONS.starGold}
-                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(s.name)}</span>
-                  </div>
-                  <div style="font-size:0.58rem; color:#94a3b8; margin-top:1px;">고도/위치: ${escapeHtml(s.elevation)}</div>
-                </div>
-                <button type="button" onclick="event.stopPropagation(); window.selectPlanDestination('${escapeHtml(s.name)}', '${escapeHtml(s.elevation)}');" style="background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#ffffff; font-size:0.65rem; font-weight:900; padding:5px 9px; border-radius:6px; cursor:pointer; flex-shrink:0; white-space:nowrap; box-shadow:0 2px 8px rgba(2,132,199,0.3);">
-                  목적지로 설정
-                </button>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      </div>
-    `;
-// 5. [복원] 즐겨찾기(⭐) 내 장비 관리 뷰 (액센트 보더 & 실시간 콤마 가격)
-    window.__activeGearCategoryFilter = window.__activeGearCategoryFilter || 'all';
-   // 5. [복원] 즐겨찾기(⭐) 내 장비 관리 뷰 (독립 대시보드 배너 & 실시간 콤마 자동 합산)
-    window.__activeGearCategoryFilter = window.__activeGearCategoryFilter || 'all';
-    var favSet = window.favoriteGearSet || new Set(safeGetJSON('okbm_favorite_gears', []));
-    var customGears = safeGetJSON('okbm_custom_gears', []);
-    var allCats = window.CATEGORIES || [];
-    var allDbGears = [];
-    allCats.forEach(function(cat) { (cat.db || []).forEach(function(g) { if (g) allDbGears.push(g); }); });
-    customGears.forEach(function(cg) { if (cg) allDbGears.push(cg); });
-
-    var gearMetaObj = safeGetJSON('okbm_gear_meta', {});
-    var totalInvestAmount = 0;
-
-    var CATEGORY_ACCENT_COLORS = {
-      shelter: '#34d399',
-      sleep: '#10b981',
-      pack: '#fbbf24',
-      kitchen: '#fb923c',
-      wear: '#c084fc',
-      electronics: '#38bdf8',
-      camp: '#94a3b8'
-    };
-
-    var myFavGears = [];
-    favSet.forEach(function(favName) {
-      var found = allDbGears.find(function(g) { return g && g.name === favName; });
-      var meta = gearMetaObj[favName] || {};
-      var priceNum = parseInt(String(meta.price || '').replace(/[^0-9]/g, ''), 10) || 0;
-      totalInvestAmount += priceNum;
-
-      var catId = (found && found.category_id) ? found.category_id : '';
-      if (!catId) {
-        var parentCat = allCats.find(function(c) { return (c.db || []).some(function(it) { return it.name === favName; }); });
-        catId = parentCat ? parentCat.id : 'shelter';
-      }
-
-      myFavGears.push({
-        name: favName,
-        brand: found ? found.brand : '내 장비',
-        weight: found ? found.weight : 0,
-        categoryId: catId
-      });
-    });
-
-    // 필터링 적용
-    var filteredFavGears = myFavGears;
-    if (window.__activeGearCategoryFilter !== 'all') {
-      filteredFavGears = myFavGears.filter(function(g) { return g.categoryId === window.__activeGearCategoryFilter; });
-    }
-
-    var gearPresets = safeGetJSON('okbm_gear_presets', []);
-
-    // 7대 장비 전용 카테고리 필터 칩 목록 (식수·식량 제외)
-    var filterTabs = [
-      { id: 'all', title: '전체' },
-      { id: 'shelter', title: '텐트·타프' },
-      { id: 'sleep', title: '침낭·매트' },
-      { id: 'pack', title: '배낭' },
-      { id: 'kitchen', title: '취사·식기' },
-      { id: 'wear', title: '의류' },
-      { id: 'electronics', title: '전자기기' },
-      { id: 'camp', title: '체어·소품' }
-    ];
-
-    var filterChipsHtml = filterTabs.map(function(t) {
-      var isAct = window.__activeGearCategoryFilter === t.id;
-      var count = (t.id === 'all') ? myFavGears.length : myFavGears.filter(function(g) { return g.categoryId === t.id; }).length;
-      return `
-        <button type="button" onclick="window.setGearCategoryFilter('${t.id}')" style="flex-shrink:0; height:28px; padding:0 10px; border-radius:14px; font-size:0.68rem; font-weight:${isAct ? '900' : '700'}; background:${isAct ? '#ffffff' : 'rgba(255,255,255,0.05)'}; color:${isAct ? '#000000' : '#94a3b8'}; border:1px solid ${isAct ? '#ffffff' : 'rgba(255,255,255,0.12)'}; cursor:pointer; transition:all 0.15s ease; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">
-          <span>${t.title}</span>
-          <span style="font-size:0.58rem; opacity:${isAct ? '0.8' : '0.6'}; font-family:'JetBrains Mono', monospace;">${count}</span>
-        </button>
-      `;
-    }).join('');
-
-    var gearsViewHtml = `
-      <div id="planGearsScrollArea" style="flex:1 1 0% !important; min-height:0 !important; width:100% !important; max-width:100% !important; display:flex; flex-direction:column; gap:8px; padding:2px 0; overflow-y:auto !important; overflow-x:hidden !important; overscroll-behavior-y:contain !important; touch-action:pan-y !important; box-sizing:border-box;">
-        
-        <!-- 원클릭 패킹 세트(프리셋) 관리 -->
-        <div style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:8px 10px; display:flex; flex-direction:column; gap:6px; flex-shrink:0; box-sizing:border-box;">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
-            <div style="font-size:0.74rem; font-weight:800; color:#e2e8f0; display:flex; align-items:center; gap:5px; min-width:0;">
-              <svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:#cbd5e1; fill:none; stroke-width:2.2;"><rect x="6" y="7" width="12" height="13" rx="2"/><path d="M9 7V4a3 3 0 0 1 6 0v3"/></svg>
-              <span>원클릭 패킹 세트 (${gearPresets.length}개)</span>
-            </div>
-            <button type="button" onclick="window.saveCurrentGearsAsPreset();" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#fff; font-size:0.62rem; font-weight:800; padding:3px 8px; border-radius:5px; cursor:pointer; flex-shrink:0; white-space:nowrap;">
-              + 세트 저장
-            </button>
-          </div>
-
-          <div style="display:flex; flex-direction:column; gap:4px;">
-            ${gearPresets.length === 0 ? `
-              <div style="font-size:0.65rem; color:#64748b; padding:2px 0;">
-                자주 가는 패킹 조합(예: 3계절 BPL, 극동계)을 저장해 1초 만에 배낭을 채워보세요.
-              </div>
-            ` : gearPresets.map(function(preset) {
+              var safeName = escapeHtml(s.name);
+              var safeElev = escapeHtml(s.elevation);
               return `
-                <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:6px 8px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
-                  <div style="flex:1 1 0%; min-width:0; overflow:hidden;">
-                    <div style="font-size:0.78rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(preset.name)}</div>
-                    <div style="font-size:0.60rem; color:#94a3b8; font-family:'JetBrains Mono', monospace;">
-                      총 ${preset.totalKg}kg · ${preset.itemCount}개 (${preset.createdAt})
+                <div data-spot="${safeName}" onclick="location.href='map.html?spot=' + encodeURIComponent(this.dataset.spot);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(253,224,71,0.22); border-radius:8px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:background 0.15s ease;">
+                  <div style="flex:1; min-width:0; padding-right:8px;">
+                    <div style="font-size:0.80rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:5px;">
+                      ${UI_ICONS.starGold}
+                      <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeName}</span>
                     </div>
+                    <div style="font-size:0.58rem; color:#94a3b8; margin-top:1px;">고도/위치: ${safeElev}</div>
                   </div>
-                  <div style="display:flex; gap:4px; align-items:center; flex-shrink:0;">
-                    <button type="button" onclick="window.loadGearPreset('${preset.id}');" style="background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2); color:#fff; font-size:0.62rem; font-weight:800; padding:4px 8px; border-radius:4px; cursor:pointer;">
-                      채우기 ➔
-                    </button>
-                    <button type="button" onclick="window.deleteGearPreset('${preset.id}');" style="background:none; border:none; color:#64748b; font-size:0.65rem; font-weight:800; padding:2px 5px; cursor:pointer;">
-                      ✕
-                    </button>
-                  </div>
+                  <button type="button" data-spot="${safeName}" data-elevation="${safeElev}" onclick="event.stopPropagation(); window.selectPlanDestination(this.dataset.spot, this.dataset.elevation);" style="background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#ffffff; font-size:0.65rem; font-weight:900; padding:5px 9px; border-radius:6px; cursor:pointer; flex-shrink:0; white-space:nowrap; box-shadow:0 2px 8px rgba(2,132,199,0.3);">
+                    목적지로 설정
+                  </button>
                 </div>
               `;
             }).join('')}
-          </div>
         </div>
+      </div>
+    `;
 
+    // 5. 내 장비관리 뷰 연산 및 렌더링 엔진
+    var gearMetaObj = safeGetJSON('okbm_gear_meta', {});
+    var customGears = safeGetJSON('okbm_custom_gears', []);
+    var allGearsPool = [];
+    (window.CATEGORIES || []).forEach(function(c) {
+      (c.db || []).forEach(function(g) { allGearsPool.push(Object.assign({ categoryId: c.id }, g)); });
+    });
+    customGears.forEach(function(cg) {
+      if (!allGearsPool.some(function(g) { return g.name === cg.name; })) {
+        allGearsPool.push(Object.assign({ categoryId: cg.category_id || 'shelter' }, cg));
+      }
+    });
+
+    var favList = Array.from(window.favoriteGearSet || []);
+    var myFavGears = favList.map(function(name) {
+      var found = allGearsPool.find(function(g) { return g.name === name; });
+      return found || { name: name, weight: 0, brand: '내 장비', categoryId: 'shelter' };
+    });
+
+    var activeCatFilter = window.__activeGearCategoryFilter || 'all';
+    var filteredFavGears = (activeCatFilter === 'all')
+      ? myFavGears
+      : myFavGears.filter(function(g) { return g.categoryId === activeCatFilter; });
+
+    var totalInvestAmount = 0;
+    favList.forEach(function(name) {
+      var meta = gearMetaObj[name] || {};
+      totalInvestAmount += parseInt(String(meta.price || '').replace(/[^0-9]/g, ''), 10) || 0;
+    });
+
+    var CATEGORY_ACCENT_COLORS = {
+      shelter: '#34d399', sleep: '#34d399', pack: '#fbbf24', kitchen: '#fb923c',
+      wear: '#c084fc', electronics: '#38bdf8', camp: '#38bdf8'
+    };
+
+    var catChips = [
+      { id: 'all', label: '전체' },
+      { id: 'shelter', label: '텐트·타프' },
+      { id: 'sleep', label: '침낭·매트' },
+      { id: 'pack', label: '배낭' },
+      { id: 'kitchen', label: '취사·식기' },
+      { id: 'wear', label: '의류' },
+      { id: 'electronics', label: '전자기기' },
+      { id: 'camp', label: '체어·소품' }
+    ];
+
+    var filterChipsHtml = catChips.map(function(c) {
+      var isActive = (c.id === activeCatFilter);
+      return '<button type="button" onclick="window.setGearCategoryFilter(\'' + c.id + '\')" style="background:' + (isActive ? '#38bdf8' : 'rgba(255,255,255,0.06)') + '; color:' + (isActive ? '#000' : '#cbd5e1') + '; border:1px solid ' + (isActive ? '#38bdf8' : 'rgba(255,255,255,0.12)') + '; font-size:0.65rem; font-weight:800; padding:3px 8px; border-radius:12px; white-space:nowrap; cursor:pointer;">' + c.label + '</button>';
+    }).join('');
+
+    var gearsViewHtml = `
+      <div id="planGearsScrollArea" style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:8px; padding:2px 0; overflow-y:auto; overscroll-behavior-y:contain; touch-action:pan-y; box-sizing:border-box;">
+        
         <!-- 새 장비 직접 등록 -->
         <div style="background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.18); border-radius:10px; padding:8px 10px; display:flex; flex-direction:column; gap:5px; flex-shrink:0; box-sizing:border-box;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -1743,7 +1681,7 @@ window.saveCurrentPackingRecord = function() {
           </div>
         </div>
 
-        <!-- 🌟 [독립형 대형 대시보드 배너] 내 장비 개수 & 총 투자 금액 하이라이트 -->
+        <!-- 내 장비 개수 & 총 투자 금액 하이라이트 -->
         <div style="background:linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(15,23,42,0.6) 100%); border:1px solid rgba(255,255,255,0.15); border-top:1px solid rgba(255,255,255,0.25); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
           <div style="font-size:0.80rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:5px;">
             <span>⭐ 내 장비</span>
@@ -1760,7 +1698,9 @@ window.saveCurrentPackingRecord = function() {
           ${filterChipsHtml}
         </div>
 
-       ${filteredFavGears.length === 0 ? `
+        <!-- 장비 목록 영역 -->
+        <div style="display:flex; flex-direction:column; gap:6px; flex:1;">
+          ${filteredFavGears.length === 0 ? `
             <div style="text-align:center; padding:35px 0; color:#64748b; font-size:0.74rem; line-height:1.5;">
               등록된 장비가 없습니다.<br>
               상단에서 직접 등록하거나 배낭계산기에서 ⭐을 눌러보세요.
@@ -1776,7 +1716,6 @@ window.saveCurrentPackingRecord = function() {
             return `
               <div class="my-gear-manage-card" data-gear-name="${safeGearNameAttr}" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-left:2px solid ${accentColor}; border-radius:8px; padding:7px 9px; display:flex; flex-direction:column; gap:5px; box-sizing:border-box; width:100%;">
                 
-                <!-- 1행: 장비명 & 브랜드 스펙 ── 해제 버튼 -->
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; width:100%;">
                   <div style="flex:1 1 0%; min-width:0; overflow:hidden;">
                     <div style="font-size:0.80rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${safeGearNameAttr}">
@@ -1788,7 +1727,6 @@ window.saveCurrentPackingRecord = function() {
                   </div>
 
                   <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
-                    <!-- 3단 상태 미니 세그먼트 -->
                     <select data-gear="${safeGearNameAttr}" onchange="window.updateGearMeta(this.dataset.gear, 'status', this.value)" style="height:22px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.12); border-radius:4px; color:${curStatus === 'repair' ? '#fda4af' : (curStatus === 'sell' ? '#fde047' : '#cbd5e1')}; font-size:0.58rem; font-weight:800; padding:0 3px; outline:none;">
                       <option value="ok" ${curStatus === 'ok' ? 'selected' : ''}>정상</option>
                       <option value="repair" ${curStatus === 'repair' ? 'selected' : ''}>정비요망</option>
@@ -1801,7 +1739,6 @@ window.saveCurrentPackingRecord = function() {
                   </div>
                 </div>
 
-                <!-- 2행: 1-Line 3분할 인풋 (구매일 28% + ₩구매가 32% + 메모 40%) -->
                 <div style="display:flex; gap:4px; width:100%;">
                   <input type="text" placeholder="구매일(24.03)" value="${escapeHtml(meta.purchaseDate || '')}" data-gear="${safeGearNameAttr}" oninput="window.updateGearMeta(this.dataset.gear, 'purchaseDate', this.value)" style="width:28%; height:26px; background:rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:4px; color:#cbd5e1; font-size:0.66rem; padding:0 5px; outline:none; box-sizing:border-box;" />
                   <input type="text" placeholder="₩ 구매가" value="${escapeHtml(displayPrice)}" data-gear="${safeGearNameAttr}" oninput="window.handleGearPriceInput(this.dataset.gear, this)" style="width:32%; height:26px; background:rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:4px; color:#fbbf24; font-weight:700; font-family:'JetBrains Mono', monospace; font-size:0.66rem; padding:0 5px; outline:none; box-sizing:border-box;" />
@@ -1814,7 +1751,6 @@ window.saveCurrentPackingRecord = function() {
         </div>
       </div>
     `;
-
     var currentViewHtml = calendarMemoViewHtml;
     if (window.activePlanSubMode === 'checklist') currentViewHtml = checklistViewHtml;
     else if (window.activePlanSubMode === 'calculator') currentViewHtml = calculatorViewHtml;
