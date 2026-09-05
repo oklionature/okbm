@@ -273,11 +273,40 @@ window.handleSpotSearchInput = function(val) {
     return sName.includes(cleanQ) || sReg.includes(cleanQ) || sSub.includes(cleanQ);
   });
 
-  if (filtered.length === 0) {
-    dropdown.innerHTML = '<div style="padding:10px; font-size:0.72rem; color:#94a3b8; text-align:center;">일치하는 박지가 없습니다. (직접 입력 가능)</div>';
-    dropdown.style.display = 'block';
-    return;
-  }
+  window.selectSpotFromDropdown = function(spotName, elevation) {
+    var input = document.getElementById('shareCardSpotInput');
+    var clearBtn = document.getElementById('btnSpotInputClear');
+    var dropdown = document.getElementById('spotSearchDropdown');
+
+    if (input) {
+      input.value = spotName || '';
+    }
+    if (clearBtn) {
+      clearBtn.style.display = (spotName && spotName.trim().length > 0) ? 'flex' : 'none';
+    }
+    if (dropdown) {
+      dropdown.style.display = 'none';
+    }
+
+    if (window.currentShareRecord) {
+      window.currentShareRecord.spot = spotName || '';
+      if (elevation) window.currentShareRecord.elevation = elevation;
+    }
+
+    if (typeof updateShareCardLive === 'function') {
+      updateShareCardLive();
+    }
+    if (typeof triggerHaptic === 'function') {
+      triggerHaptic(10);
+    }
+  };
+
+  window.handleSpotSearchItemClick = function(el) {
+    if (!el) return;
+    var spotName = el.dataset.spot || '';
+    var elev = el.dataset.elevation || '';
+    window.selectSpotFromDropdown(spotName, elev);
+  };
 
   dropdown.innerHTML = filtered.slice(0, 12).map(function(s) {
     var displayName = s.fullName || s.name || s.spot_main || '';
@@ -286,9 +315,9 @@ window.handleSpotSearchInput = function(val) {
     var safeName = escapeHtml(displayName);
     var safeElev = escapeHtml(elevText);
 
-    return '<div class="spot-dropdown-item" onclick="selectSpotFromDropdown(\'' + safeName + '\', \'' + safeElev + '\')">' +
-      '<div style="font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">📍 ' + safeName + '</div>' +
-      '<div style="font-size:0.62rem; color:#38bdf8; font-weight:700; flex-shrink:0; margin-left:6px;">' + escapeHtml(regionText) + (safeElev ? ' · ' + safeElev : '') + '</div>' +
+    return '<div class="spot-dropdown-item" data-spot="' + safeName + '" data-elevation="' + safeElev + '" onclick="window.handleSpotSearchItemClick(this)">' +
+      '<div style="font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; pointer-events:none;">📍 ' + safeName + '</div>' +
+      '<div style="font-size:0.62rem; color:#38bdf8; font-weight:700; flex-shrink:0; margin-left:6px; pointer-events:none;">' + escapeHtml(regionText) + (safeElev ? ' · ' + safeElev : '') + '</div>' +
     '</div>';
   }).join('');
 
