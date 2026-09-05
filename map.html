@@ -3183,7 +3183,12 @@
 
       function openUserProposalModal() {
         triggerHaptic(10);
-        modalMode = 'PROPOSAL'; 
+        if (!isUserLoggedIn()) {
+          openLoginModal();
+          showToast(`${ICONS.LOCK} <span>박지 제보는 로그인 후 이용하실 수 있습니다.</span>`);
+          return;
+        }
+        modalMode = 'PROPOSAL';
         modalPendingData = { lat: 0, lng: 0, address: '' };
         
         const titleEl = document.getElementById('modalTitle');
@@ -3764,9 +3769,9 @@
         reader.readAsText(file);
       }
     </script>
-   <script src="romantic-sync.js?v=2.0.1"></script>
-    <script src="templates.js?v=2.0.1"></script>
-    <script src="romantic-history.js?v=2.4.0"></script>
-    <script src="romantic-plan.js?v=2.4.0"></script>
+  <script src="romantic-sync.js?v=2.5.0"></script>
+    <script src="templates.js?v=2.5.0"></script>
+    <script src="romantic-history.js?v=2.5.0"></script>
+    <script src="romantic-plan.js?v=2.5.0"></script>
   </body>
 </html>
