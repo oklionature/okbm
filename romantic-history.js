@@ -205,11 +205,14 @@
     } catch (e) {}
     return defaultVal;
   };
-
-  window.safeSetStorage = function(key, value) {
+window.safeSetStorage = function(key, value) {
     var rawObj = (typeof value === 'string' ? JSON.parse(value) : value);
     window.__memoryStore[key] = rawObj;
     window.saveToIndexedDB(key, rawObj);
+
+    if (key === 'okbm_phone_photos_map' || key === 'okbm_trip_photos_map') {
+      return;
+    }
 
     try {
       var cleanObj = rawObj;
@@ -591,15 +594,14 @@
                 </div>
                 ${statusBadgeHtml}
               </div>
-              <div style="font-size:0.62rem; color:#e2e8f0; font-family:'JetBrains Mono', monospace; font-weight:700; text-shadow:0 1px 3px rgba(0,0,0,0.95); margin-left:14px;">
-                ${escapeHtml(cur.elevation)} · ${cur.date}
-              </div>
-            </div>
+// =========================================================================
+// [수정 코드 2-1] romantic-history.js : 3D 엽서 뒷면 직통 일지 작성 라우팅
+// =========================================================================
             <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-              <button onclick="window.openTripActionMenu('${escapeHtml(String(cur.id))}', event)" style="background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.25); color:#fff; border-radius:6px; font-size:0.75rem; font-weight:900; padding:3px 8px; cursor:pointer;">··· 관리</button>
-              <span style="font-size:0.52rem; font-weight:900; color:#fff; font-family:'Space Grotesk', sans-serif; background:rgba(0,0,0,0.55); backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,0.25); padding:2px 6px; border-radius:4px;">
-                ${cur.weightKg}kg
-              </span>
+              <button onclick="event.stopPropagation(); window.openRichAfterTripModal(window.interactiveHistory.find(function(r){return String(r.id)===String('${cur.id}');}));" style="background:linear-gradient(135deg, #0d9488, #059669); border:1px solid #14b8a6; color:#fff; border-radius:6px; font-size:0.75rem; font-weight:900; padding:4px 10px; cursor:pointer; box-shadow:0 2px 8px rgba(13,148,136,0.4);">
+                ✍️ 일지 & 현장사진 남기기
+              </button>
+              <button onclick="window.openTripActionMenu('${escapeHtml(String(cur.id))}', event)" style="background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.25); color:#cbd5e1; border-radius:6px; font-size:0.75rem; font-weight:900; padding:4px 8px; cursor:pointer;">···</button>
             </div>
           </div>
         </div>
@@ -923,45 +925,18 @@
           </button>
         </div>
 
-        <div id="pastTripsDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(7,9,14,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000002 !important; user-select:none !important; overscroll-behavior:none !important; touch-action:none !important;">
-          <div onclick="window.togglePastTripsDockDeck(); triggerHaptic(10);" style="position:absolute; top:2px; left:50%; transform:translateX(-50%); width:44px; height:8px; display:flex; align-items:center; justify-content:center; z-index:115; cursor:pointer;">
-            <div style="width:28px; height:3.5px; border-radius:2px; background:rgba(255,255,255,0.35);"></div>
-          </div>
-
-          <div id="pastTripsSubToolsDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:translateY(0); z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-            <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.activeHistorySubFilter='all'; window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-              <span>낭만기록</span>
-            </button>
-            <button type="button" class="dock-item active" onclick="window.togglePastTripsDockDeck(); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#38bdf8 !important; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-              <span>피드</span>
-            </button>
-            <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); window.openHistoryStudioModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              <span>스튜디오</span>
-            </button>
-            <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); window.openClearMapModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.2;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-              <span>클리어맵</span>
-            </button>
-            <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); window.openMyReportModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              <span>마이리포트</span>
-            </button>
-          </div>
-
-          <div id="pastTripsMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:transform 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform:translateY(100%); z-index:104; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; background:rgba(7,9,14,0.98); box-sizing:border-box;">
-            <a href="index.html" class="dock-item" onclick="window.closePastTripsListModal(); var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
-              <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+  <div id="pastTripsDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000002 !important; user-select:none !important; box-sizing:border-box;">
+          <div id="pastTripsMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
+            <a href="index.html" class="dock-item" onclick="window.closePastTripsListModal(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">
+              <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
               <span>낭만루터</span>
             </a>
-            <a href="map.html" class="dock-item" onclick="window.closePastTripsListModal(); var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
-              <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
+            <a href="map.html" class="dock-item" onclick="window.closePastTripsListModal(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">
+              <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
               <span>전국지도</span>
             </a>
-            <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
                 <rect x="3" y="4" width="18" height="18" rx="2"/>
                 <line x1="16" y1="2" x2="16" y2="6"/>
                 <line x1="8" y1="2" x2="8" y2="6"/>
@@ -970,16 +945,16 @@
               </svg>
               <span>낭만계획</span>
             </button>
-            <button type="button" class="dock-item active" onclick="window.closePastTripsListModal(); var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.renderHistoryStage(); triggerHaptic(12);" style="color:#38bdf8 !important;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <button type="button" class="dock-item active" onclick="window.closePastTripsListModal(); window.renderHistoryStage(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#ffffff !important; font-size:0.67rem; font-weight:900; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
                 <path d="M21 8v13H3V8"/>
                 <path d="M1 3h22v5H1z"/>
                 <path d="M10 12h4"/>
               </svg>
               <span>낭만보관함</span>
             </button>
-            <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); var p=document.getElementById('pastTripsListModal'); if(p) p.remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);">
-              <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
+              <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
               <span>내정보</span>
             </button>
           </div>
@@ -1177,45 +1152,18 @@
           </div>
         </div>
 
-        <div id="clearMapDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(7,9,14,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000025 !important; user-select:none !important; overscroll-behavior:none !important; touch-action:none !important;">
-          <div onclick="window.toggleClearMapDockDeck(); triggerHaptic(10);" style="position:absolute; top:2px; left:50%; transform:translateX(-50%); width:44px; height:8px; display:flex; align-items:center; justify-content:center; z-index:115; cursor:pointer;">
-            <div style="width:28px; height:3.5px; border-radius:2px; background:rgba(255,255,255,0.35);"></div>
-          </div>
-
-          <div id="clearMapSubToolsDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:opacity 0.18s ease; opacity:1; pointer-events:auto; z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-            <button type="button" class="dock-item" onclick="var m=document.getElementById('clearMapModal'); if(m) m.remove(); window.activeHistorySubFilter='all'; window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-              <span>낭만기록</span>
-            </button>
-            <button type="button" class="dock-item" onclick="var m=document.getElementById('clearMapModal'); if(m) m.remove(); window.openPastTripsListModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-              <span>피드</span>
-            </button>
-            <button type="button" class="dock-item" onclick="window.openHistoryStudioModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              <span>스튜디오</span>
-            </button>
-            <button type="button" class="dock-item active" onclick="window.toggleClearMapDockDeck(); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#38bdf8 !important; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.2;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-              <span>클리어맵</span>
-            </button>
-            <button type="button" class="dock-item" onclick="window.openMyReportModal();" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              <span>마이리포트</span>
-            </button>
-          </div>
-
-          <div id="clearMapMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:opacity 0.18s ease; opacity:0; pointer-events:none; z-index:100; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; background:rgba(7,9,14,0.98); box-sizing:border-box;">
-            <a href="index.html" class="dock-item" onclick="var m=document.getElementById('clearMapModal'); if(m) m.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
-              <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+  <div id="clearMapDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000025 !important; user-select:none !important; box-sizing:border-box;">
+          <div id="clearMapMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
+            <a href="index.html" class="dock-item" onclick="document.getElementById('clearMapModal').remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">
+              <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
               <span>낭만루터</span>
             </a>
-            <a href="map.html" class="dock-item" onclick="var m=document.getElementById('clearMapModal'); if(m) m.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
-              <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
+            <a href="map.html" class="dock-item" onclick="document.getElementById('clearMapModal').remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">
+              <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
               <span>전국지도</span>
             </a>
-            <button type="button" class="dock-item" onclick="var m=document.getElementById('clearMapModal'); if(m) m.remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <button type="button" class="dock-item" onclick="document.getElementById('clearMapModal').remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
                 <rect x="3" y="4" width="18" height="18" rx="2"/>
                 <line x1="16" y1="2" x2="16" y2="6"/>
                 <line x1="8" y1="2" x2="8" y2="6"/>
@@ -1224,16 +1172,16 @@
               </svg>
               <span>낭만계획</span>
             </button>
-            <button type="button" class="dock-item active" onclick="window.toggleClearMapDockDeck('tools'); triggerHaptic(12);" style="color:#38bdf8 !important;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <button type="button" class="dock-item active" onclick="document.getElementById('clearMapModal').remove(); window.renderHistoryStage(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#ffffff !important; font-size:0.67rem; font-weight:900; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
                 <path d="M21 8v13H3V8"/>
                 <path d="M1 3h22v5H1z"/>
                 <path d="M10 12h4"/>
               </svg>
               <span>낭만보관함</span>
             </button>
-            <button type="button" class="dock-item" onclick="var m=document.getElementById('clearMapModal'); if(m) m.remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);">
-              <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <button type="button" class="dock-item" onclick="document.getElementById('clearMapModal').remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
+              <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
               <span>내정보</span>
             </button>
           </div>
@@ -2281,43 +2229,11 @@ window.deleteTripRecord = function(recordId) {
     document.body.appendChild(picker);
   };
 
-  window.bindHistoryCalendarSwipe = function() {
-    var calBox = document.getElementById('historyCalendarCardWrap');
-    if (!calBox || calBox._swipeBound) return;
-    calBox._swipeBound = true;
-
-    var startX = 0, startY = 0;
-    calBox.addEventListener('touchstart', function(e) {
-      if (!e.touches || e.touches.length !== 1) return;
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-    }, { passive: true });
-
-    calBox.addEventListener('touchend', function(e) {
-      if (!e.changedTouches || e.changedTouches.length !== 1) return;
-      var diffX = e.changedTouches[0].clientX - startX;
-      var diffY = e.changedTouches[0].clientY - startY;
-
-      if (Math.abs(diffX) > 35 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
-        if (diffX < 0) {
-          window.changeHistoryMonth(1);
-        } else {
-          window.changeHistoryMonth(-1);
-        }
-      }
-    }, { passive: true });
-  };
-
-  window.__historyDockDeckMode = 'tools';
-
+  // =========================================================================
+// [수정 코드 1] romantic-history.js : 불필요한 제스처/토글 핸들러 제거 및 표준화
+// =========================================================================
   window.handleHistoryDockTabClick = function(targetMode, e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
-
-    if (targetMode === 'all') {
-      window.toggleHistoryDockDeckMode();
-      triggerHaptic(12);
-      return;
-    }
 
     if (targetMode === 'feed') {
       window.openPastTripsListModal();
@@ -2331,63 +2247,9 @@ window.deleteTripRecord = function(recordId) {
     triggerHaptic(10);
   };
 
-  window.switchHistorySubMode = function(filterOrMode) {
-    window.handleHistoryDockTabClick(filterOrMode);
-  };
-
-  window.toggleHistoryDockDeckMode = function(forceMode) {
-    if (forceMode) {
-      window.__historyDockDeckMode = forceMode;
-    } else {
-      window.__historyDockDeckMode = (window.__historyDockDeckMode === 'tools') ? 'main' : 'tools';
-    }
-    var sub = document.getElementById('historySubToolsDeck');
-    var main = document.getElementById('historyMainNavDeck');
-    if (!sub || !main) return;
-    var isTools = (window.__historyDockDeckMode === 'tools');
-
-    sub.style.opacity = isTools ? '1' : '0';
-    sub.style.pointerEvents = isTools ? 'auto' : 'none';
-    sub.style.zIndex = isTools ? '105' : '100';
-
-    main.style.opacity = isTools ? '0' : '1';
-    main.style.pointerEvents = isTools ? 'none' : 'auto';
-    main.style.zIndex = isTools ? '100' : '105';
-  };
-
-  window.bindHistoryDualDockGestures = function() {
-    var dock = document.getElementById('historyDualDockContainer');
-    if (!dock || dock._swipeBound) return;
-    dock._swipeBound = true;
-
-    var startX = 0, startY = 0;
-    dock.addEventListener('touchstart', function(e) {
-      if (!e.touches || e.touches.length !== 1) return;
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-    }, { passive: true });
-
-    dock.addEventListener('touchmove', function(e) {
-      if (!e.touches || e.touches.length !== 1) return;
-      var diffX = Math.abs(e.touches[0].clientX - startX);
-      var diffY = Math.abs(e.touches[0].clientY - startY);
-      if (diffX > diffY && e.cancelable) {
-        e.preventDefault();
-      }
-    }, { passive: false });
-
-    dock.addEventListener('touchend', function(e) {
-      if (!e.changedTouches || e.changedTouches.length !== 1) return;
-      var diffX = e.changedTouches[0].clientX - startX;
-      var diffY = e.changedTouches[0].clientY - startY;
-
-      if (Math.abs(diffX) > 24 && Math.abs(diffX) > Math.abs(diffY)) {
-        triggerHaptic(10);
-        window.toggleHistoryDockDeckMode();
-      }
-    }, { passive: true });
-  };
-
+  // =========================================================================
+// [수정 코드] romantic-history.js : renderHistoryStage 전체 정상 블록
+// =========================================================================
   window.renderHistoryStage = function() {
     var modal = document.getElementById('romanticHistoryModal');
     if (!modal) return;
@@ -2401,7 +2263,6 @@ window.deleteTripRecord = function(recordId) {
     var todayMonth = now.getMonth() + 1;
     var todayDate = now.getDate();
 
-    // 🌟 [과거 고정 결함 영구 교정]: 기본 뷰를 오늘 년/월로 보장!
     if (!window.calViewYear) window.calViewYear = todayYear;
     if (!window.calViewMonth) window.calViewMonth = todayMonth;
     if (!window.activeSelectedDateKey) {
@@ -2452,24 +2313,24 @@ window.deleteTripRecord = function(recordId) {
       var isRecorded = !!dayRecord;
       var isCompleted = isRecorded && Boolean(dayRecord.memo && dayRecord.memo.trim().length > 0);
 
-      var dayStyle = 'position:relative; height:18px !important; line-height:18px !important; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:\'Space Grotesk\', sans-serif; font-size:0.64rem; font-weight:800; border-radius:4px; cursor:pointer; user-select:none;';
+      var dayStyle = 'position:relative; height:18px !important; line-height:18px !important; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:\'Space Grotesk\', sans-serif; font-size:0.68rem; font-weight:800; border-radius:4px; cursor:pointer; user-select:none; box-sizing:border-box;';
       if (isSelected) {
-        dayStyle += 'background:#00bcd4 !important; color:#000000 !important; font-weight:900 !important; box-shadow:0 0 8px rgba(0,188,212,0.85);';
+        dayStyle += 'background:rgba(255,255,255,0.22) !important; border:1.2px solid #ffffff !important; color:#ffffff !important; font-weight:900 !important; box-shadow:0 0 10px rgba(255,255,255,0.35); transform:scale(1.05); z-index:2;';
       } else if (isToday) {
-        dayStyle += 'border:1px solid #38bdf8 !important; color:#38bdf8 !important; font-weight:900 !important; background:rgba(56,189,248,0.14) !important;';
+        dayStyle += 'border:1px solid rgba(255,255,255,0.3) !important; color:#ffffff !important; font-weight:800 !important; background:rgba(255,255,255,0.06) !important;';
       } else if (isCompleted) {
-        dayStyle += 'color:#fde047; font-weight:900;';
+        dayStyle += 'color:#f8fafc; font-weight:800; background:rgba(255,255,255,0.035);';
       } else if (isRecorded) {
-        dayStyle += 'color:#38bdf8; font-weight:900;';
+        dayStyle += 'color:#f8fafc; font-weight:800;';
       } else {
-        dayStyle += 'color:#cbd5e1;';
+        dayStyle += 'color:#94a3b8;';
       }
 
       var dotOrStar = '';
       if (isCompleted) {
-        dotOrStar = '<span style="position:absolute; bottom:0px; font-size:7px; color:' + (isSelected ? '#000' : '#f59e0b') + '; font-weight:900;">★</span>';
+        dotOrStar = '<span style="position:absolute; bottom:0px; font-size:11.5px; color:#fbbf24; font-weight:900; line-height:1; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.8));">★</span>';
       } else if (isRecorded) {
-        dotOrStar = '<span style="position:absolute; bottom:1px; width:3px; height:3px; background:' + (isSelected ? '#000' : '#38bdf8') + '; border-radius:50%;"></span>';
+        dotOrStar = '<span style="position:absolute; bottom:2px; width:4.5px; height:4.5px; background:#ffffff; border-radius:50%; box-shadow:0 1px 2px rgba(0,0,0,0.8);"></span>';
       }
 
       calendarDaysHtml += '<div style="' + dayStyle + '" onclick="window.handleHistoryCalendarClick(' + d + ', ' + viewMonth + ', ' + viewYear + ')">' + d + dotOrStar + '</div>';
@@ -2492,95 +2353,27 @@ window.deleteTripRecord = function(recordId) {
       `;
     }
 
-    var isHistoryToolsActive = (window.__historyDockDeckMode !== 'main');
-
-    var bottomDualDockHtml = `
-      <div id="historyDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(7,9,14,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000 !important; user-select:none !important; overscroll-behavior:none !important; touch-action:none !important;">
-        
-        <div onclick="window.toggleHistoryDockDeckMode(); triggerHaptic(10);" style="position:absolute; top:2px; left:50%; transform:translateX(-50%); width:44px; height:8px; display:flex; align-items:center; justify-content:center; z-index:115; cursor:pointer;">
-          <div style="width:28px; height:3.5px; border-radius:2px; background:rgba(255,255,255,0.35);"></div>
-        </div>
-
-        <div id="historySubToolsDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:opacity 0.18s ease; opacity:${isHistoryToolsActive ? '1' : '0'}; pointer-events:${isHistoryToolsActive ? 'auto' : 'none'}; z-index:${isHistoryToolsActive ? '105' : '100'}; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-          
-          <button type="button" class="dock-item ${window.activeHistorySubFilter === 'all' ? 'active' : ''}" onclick="window.handleHistoryDockTabClick('all', event);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activeHistorySubFilter === 'all' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activeHistorySubFilter === 'all' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-            <span>낭만기록</span>
-          </button>
-          
-          <button type="button" class="dock-item ${window.activeHistorySubFilter === 'feed' ? 'active' : ''}" onclick="window.handleHistoryDockTabClick('feed', event);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activeHistorySubFilter === 'feed' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activeHistorySubFilter === 'feed' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-            <span>피드</span>
-          </button>
-
-          <button type="button" class="dock-item ${window.activeHistorySubFilter === 'studio' ? 'active' : ''}" onclick="window.handleHistoryDockTabClick('studio', event);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activeHistorySubFilter === 'studio' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activeHistorySubFilter === 'studio' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            <span>스튜디오</span>
-          </button>
-
-          <button type="button" class="dock-item ${window.activeHistorySubFilter === 'clearmap' ? 'active' : ''}" onclick="window.handleHistoryDockTabClick('clearmap', event);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activeHistorySubFilter === 'clearmap' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activeHistorySubFilter === 'clearmap' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.2;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-            <span>클리어맵</span>
-          </button>
-
-          <button type="button" class="dock-item ${window.activeHistorySubFilter === 'report' ? 'active' : ''}" onclick="window.handleHistoryDockTabClick('report', event);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:${window.activeHistorySubFilter === 'report' ? '#38bdf8 !important' : '#94a3b8 !important'}; font-size:0.67rem; font-weight:${window.activeHistorySubFilter === 'report' ? '900' : '700'}; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            <span>마이리포트</span>
-          </button>
-        </div>
-
-        <div id="historyMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:opacity 0.18s ease; opacity:${isHistoryToolsActive ? '0' : '1'}; pointer-events:${isHistoryToolsActive ? 'none' : 'auto'}; z-index:${isHistoryToolsActive ? '100' : '105'}; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; background:rgba(7,9,14,0.98); box-sizing:border-box;">
-          <a href="index.html" class="dock-item" onclick="window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
-            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-            <span>낭만루터</span>
-          </a>
-          <a href="map.html" class="dock-item" onclick="window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none;">
-            <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
-            <span>전국지도</span>
-          </a>
-          <button type="button" class="dock-item" onclick="window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/>
-              <line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-              <path d="M9 16l2 2 4-4"/>
-            </svg>
-            <span>낭만계획</span>
-          </button>
-          <button type="button" class="dock-item active" onclick="window.toggleHistoryDockDeckMode('tools'); triggerHaptic(12);" style="color:#38bdf8 !important;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 8v13H3V8"/>
-              <path d="M1 3h22v5H1z"/>
-              <path d="M10 12h4"/>
-            </svg>
-            <span>낭만보관함</span>
-          </button>
-          <button type="button" class="dock-item" onclick="window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);">
-            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            <span>내정보</span>
-          </button>
-        </div>
-      </div>
-    `;
-
-    var content = modal.querySelector('.romantic-history-content');
-    if (!content) return;
-
-    var viewSlot = content.querySelector('#historyMainStageViewContainer');
-    var existingDock = content.querySelector('#historyDualDockContainer');
-
     var topAndCenterViewHtml = `
-      <div style="flex-shrink:0 !important; display:flex; flex-direction:column; gap:4px;">
-        <div style="height:38px; background:linear-gradient(135deg, rgba(56,189,248,0.12), rgba(16,185,129,0.08)); border:1px solid rgba(56,189,248,0.3); border-radius:8px; padding:4px 8px; display:flex; justify-content:space-around; align-items:center; text-align:center;">
-          <div><div style="font-size:0.54rem; color:#94a3b8; font-weight:700;">${todayYear} 힐링</div><div style="font-size:0.92rem; font-weight:900; color:#38bdf8; font-family:'Space Grotesk', sans-serif;">${totalCount}회</div></div>
-          <div style="width:1px; height:14px; background:rgba(255,255,255,0.15);"></div>
-          <div><div style="font-size:0.54rem; color:#94a3b8; font-weight:700;">누적 고도</div><div style="font-size:0.92rem; font-weight:900; color:#34d399; font-family:'Space Grotesk', sans-serif;">${accumElevStr}</div></div>
-          <div style="width:1px; height:14px; background:rgba(255,255,255,0.15);"></div>
-          <div><div style="font-size:0.54rem; color:#94a3b8; font-weight:700;">평균 무게</div><div style="font-size:0.92rem; font-weight:900; color:#fde047; font-family:'Space Grotesk', sans-serif;">${avgWeightStr}</div></div>
+      <div style="flex-shrink:0 !important; display:flex; flex-direction:column; gap:6px;">
+        
+        <!-- 1. 상단 통계 & 4대 도구 퀵 바 -->
+        <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:6px 8px; display:flex; flex-direction:column; gap:6px;">
+          <div style="display:flex; justify-content:space-around; align-items:center; text-align:center;">
+            <div><div style="font-size:0.56rem; color:#94a3b8; font-weight:700;">${todayYear} 힐링</div><div style="font-size:0.88rem; font-weight:900; color:#38bdf8; font-family:'Space Grotesk', sans-serif;">${totalCount}회</div></div>
+            <div style="width:1px; height:14px; background:rgba(255,255,255,0.12);"></div>
+            <div><div style="font-size:0.56rem; color:#94a3b8; font-weight:700;">누적 고도</div><div style="font-size:0.88rem; font-weight:900; color:#34d399; font-family:'Space Grotesk', sans-serif;">${accumElevStr}</div></div>
+            <div style="width:1px; height:14px; background:rgba(255,255,255,0.12);"></div>
+            <div><div style="font-size:0.56rem; color:#94a3b8; font-weight:700;">평균 무게</div><div style="font-size:0.88rem; font-weight:900; color:#fbbf24; font-family:'Space Grotesk', sans-serif;">${avgWeightStr}</div></div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:5px;">
+            <button type="button" onclick="window.openPastTripsListModal();" style="height:28px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#ffffff; font-size:0.68rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:2px;">📱피드</button>
+            <button type="button" onclick="window.openHistoryStudioModal();" style="height:28px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#ffffff; font-size:0.68rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:2px;">🎨스튜디오</button>
+            <button type="button" onclick="window.openClearMapModal();" style="height:28px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#ffffff; font-size:0.68rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:2px;">🗺️클리어</button>
+            <button type="button" onclick="window.openMyReportModal();" style="height:28px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#ffffff; font-size:0.68rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:2px;">📊리포트</button>
+          </div>
         </div>
 
-        <div id="historyCalendarCardWrap" style="height:162px; background:rgba(255,255,255,0.035); border:1px solid rgba(226,232,240,0.16); border-radius:8px; padding:4px 6px; display:flex; flex-direction:column; justify-content:space-between; touch-action:pan-y;">
+        <div id="historyCalendarCardWrap" style="height:162px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:6px 8px; display:flex; flex-direction:column; justify-content:space-between; touch-action:pan-y;">
           <div style="display:flex; justify-content:space-between; align-items:center; height:20px;">
             <div style="display:flex; align-items:center; gap:2px;">
               <button type="button" onclick="window.changeHistoryMonth(-1)" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:18px; height:18px; border-radius:3px; font-size:0.55rem; cursor:pointer;">◀</button>
@@ -2609,35 +2402,55 @@ window.deleteTripRecord = function(recordId) {
       </div>
     `;
 
-    if (!viewSlot || !existingDock) {
-      content.innerHTML = `
-        <div id="historyMainStageViewContainer" style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; justify-content:space-between; padding:calc(10px + env(safe-area-inset-top, 0px)) 12px 0 12px; margin:0 !important; gap:6px !important; box-sizing:border-box; overflow:hidden;">
-          ${topAndCenterViewHtml}
+    var bottomDualDockHtml = `
+      <div id="historyDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000 !important; user-select:none !important; box-sizing:border-box;">
+        <div id="historyMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
+          <a href="index.html" class="dock-item" onclick="window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">
+            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <span>낭만루터</span>
+          </a>
+          <a href="map.html" class="dock-item" onclick="window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">
+            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
+            <span>전국지도</span>
+          </a>
+          <button type="button" class="dock-item" onclick="window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+              <path d="M9 16l2 2 4-4"/>
+            </svg>
+            <span>낭만계획</span>
+          </button>
+          <button type="button" class="dock-item active" onclick="window.renderHistoryStage(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#ffffff !important; font-size:0.67rem; font-weight:900; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
+              <path d="M21 8v13H3V8"/>
+              <path d="M1 3h22v5H1z"/>
+              <path d="M10 12h4"/>
+            </svg>
+            <span>낭만보관함</span>
+          </button>
+          <button type="button" class="dock-item" onclick="window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
+            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            <span>내정보</span>
+          </button>
         </div>
-        ${bottomDualDockHtml}
-      `;
-    } else {
-      viewSlot.innerHTML = topAndCenterViewHtml;
+      </div>
+    `;
 
-      var subDeck = existingDock.querySelector('#historySubToolsDeck');
-      var mainDeck = existingDock.querySelector('#historyMainNavDeck');
-      if (subDeck && mainDeck) {
-        subDeck.style.opacity = isHistoryToolsActive ? '1' : '0';
-        subDeck.style.pointerEvents = isHistoryToolsActive ? 'auto' : 'none';
-        subDeck.style.zIndex = isHistoryToolsActive ? '105' : '100';
+    var content = modal.querySelector('.romantic-history-content');
+    if (!content) return;
 
-        mainDeck.style.opacity = isHistoryToolsActive ? '0' : '1';
-        mainDeck.style.pointerEvents = isHistoryToolsActive ? 'none' : 'auto';
-        mainDeck.style.zIndex = isHistoryToolsActive ? '100' : '105';
-      }
-    }
+    content.innerHTML = `
+      <div id="historyMainStageViewContainer" style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; justify-content:space-between; padding:calc(10px + env(safe-area-inset-top, 0px)) 12px 0 12px; margin:0 !important; gap:6px !important; box-sizing:border-box; overflow:hidden;">
+        ${topAndCenterViewHtml}
+      </div>
+      ${bottomDualDockHtml}
+    `;
 
     if (typeof window.bindHistoryCalendarSwipe === 'function') {
       window.bindHistoryCalendarSwipe();
-    }
-
-    if (typeof window.bindHistoryDualDockGestures === 'function') {
-      window.bindHistoryDualDockGestures();
     }
 
     var cardTarget = document.getElementById('swipePostcardTarget');
