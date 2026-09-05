@@ -907,6 +907,15 @@
 <script>
   (function inlineHydrateCriticalUI() {
     try {
+      var cachedHeroCover = localStorage.getItem('okbm_hero_cover_url');
+      if (cachedHeroCover && cachedHeroCover.startsWith('http')) {
+        var quickImg = document.getElementById('heroCoverImg');
+        if (quickImg) {
+          quickImg.src = cachedHeroCover;
+          quickImg.style.opacity = '1';
+        }
+      }
+
       var token = localStorage.getItem('user_auth_token');
       var rawProfile = localStorage.getItem('user_profile');
       var profile = rawProfile ? JSON.parse(rawProfile) : null;
@@ -2042,16 +2051,18 @@ function updateHeroPhotoDisplay() {
 };
 
 async function initDynamicHeroAndFeeds() {
-  initHeroGestureEngine();
-  initSmartHeaderScrollEngine();
+    initHeroGestureEngine();
+    
+    // ⚡ [제5헌법 준수] Cloudflare R2 글로벌 엣지 CDN feeds.json 0.03초 직통 호출
+    var R2_FEEDS_URL = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/feeds.json';
+    initSmartHeaderScrollEngine();
 
   var profile = safeGetJSON('user_profile', null);
-  var currentNick = (profile && profile.nickname) ? profile.nickname : '낭만백패커';
-
   var localHistory = safeGetJSON('okbm_packing_history', []);
-  var cachedFeeds = safeGetJSON('okbm_cached_community_feeds', []);
-  var savedPhotosMap = safeGetJSON('okbm_phone_photos_map', {});
-  var initialFeeds = [];
+    var cachedFeeds = safeGetJSON('okbm_cached_community_feeds', []);
+    var savedPhotosMap = safeGetJSON('okbm_phone_photos_map', {});
+    var instantHeroCover = localStorage.getItem('okbm_hero_cover_url');
+    var initialFeeds = [];
 
   if (Array.isArray(localHistory) && localHistory.length > 0) {
     initialFeeds = localHistory.map(function(item) {
@@ -2099,6 +2110,31 @@ async function initDynamicHeroAndFeeds() {
     }
   } catch (e) {}
 
+  // ⚡ [제5헌법 준수] 1순위: Cloudflare R2 글로벌 CDN feeds.json 0.03초 직통 인출
+  try {
+    var r2Res = await fetch(R2_FEEDS_URL + '?_t=' + Date.now(), { cache: 'no-store' });
+    if (r2Res.ok) {
+      var r2Feeds = await r2Res.json();
+      if (Array.isArray(r2Feeds) && r2Feeds.length > 0) {
+        localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(r2Feeds));
+        if (r2Feeds[0] && (r2Feeds[0].photo || r2Feeds[0].photo_url)) {
+          localStorage.setItem('okbm_hero_cover_url', r2Feeds[0].photo || r2Feeds[0].photo_url);
+        }
+        window.__allLoadedFeeds = r2Feeds;
+        window.heroTopRecords = r2Feeds;
+        renderCurrentHeroCard();
+        console.log('⚡ [Index] Cloudflare R2 CDN 피드 수신 성공');
+        if (typeof window.syncAllLocalFeedsToCommunity === 'function') {
+          window.syncAllLocalFeedsToCommunity();
+        }
+        return;
+      }
+    }
+  } catch (r2Err) {
+    console.log('📡 [Index] R2 대기 ➔ 구글 클라우드 안전 폴백 가동');
+  }
+
+  // 🛡️ 2순위: 구글 클라우드(GAS) 백업 안전망 가동
   try {
     var gasUrl = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
     var res = await fetch(gasUrl + '?action=GET_COMMUNITY_FEEDS&_t=' + Date.now());
@@ -3959,7 +3995,7 @@ function renderTripDetailSheet(activeTrips) {
             var img = new Image();
             img.onload = function() {
               var canvas = document.createElement('canvas');
-              var MAX_SIZE = 1600;
+              var MAX_SIZE = 1200;
               var width = img.width, height = img.height;
               if (width > height) { 
                 if (width > MAX_SIZE) { height = Math.round(height * (MAX_SIZE / width)); width = MAX_SIZE; } 
@@ -3971,7 +4007,12 @@ function renderTripDetailSheet(activeTrips) {
               ctx.imageSmoothingEnabled = true;
               ctx.imageSmoothingQuality = 'high';
               ctx.drawImage(img, 0, 0, width, height);
-              resolve(canvas.toDataURL('image/jpeg', 0.88));
+
+              var outputUrl = canvas.toDataURL('image/webp', 0.80);
+              if (!outputUrl.startsWith('data:image/webp')) {
+                outputUrl = canvas.toDataURL('image/jpeg', 0.80);
+              }
+              resolve(outputUrl);
             };
             img.onerror = function() { resolve(''); };
             img.src = evt.target.result;
