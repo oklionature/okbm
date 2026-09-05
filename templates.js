@@ -321,23 +321,20 @@ window.clearSpotSearchInput = function() {
   if (typeof triggerHaptic === 'function') triggerHaptic(10);
 };
 
-window.selectSpotFromDropdown = function(spotName, elevation) {
-  var input = document.getElementById('shareCardSpotInput');
-  var clearBtn = document.getElementById('btnSpotInputClear');
-  var dropdown = document.getElementById('spotSearchDropdown');
-  var fullSpotTitle = spotName + (elevation ? ' (' + elevation + ')' : '');
-  if (input) input.value = fullSpotTitle;
-  if (clearBtn) clearBtn.style.display = 'flex';
-  if (dropdown) dropdown.style.display = 'none';
-
-  if (window.currentShareRecord) {
-    window.currentShareRecord.spot = fullSpotTitle;
-    if (elevation) window.currentShareRecord.elevation = elevation;
-  }
-  if (typeof updateShareCardLive === 'function') updateShareCardLive();
-  if (typeof triggerHaptic === 'function') triggerHaptic(12);
-};
+// =========================================================================
+// [수정 코드 1-1] templates.js : 출발 전 패킹 카드 즉시 보관함 등록 파이프라인
+// =========================================================================
 window.saveCardToVaultAndOpenBasecamp = async function() {
+  var token = localStorage.getItem('user_auth_token');
+  var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
+  var isLogged = !!(token && token.trim().length > 0 && profile && profile.id && String(profile.id).startsWith('kakao_'));
+  if (!isLogged) {
+    if (typeof triggerHaptic === 'function') triggerHaptic(10);
+    if (typeof showToast === 'function') showToast('🔒 낭만보관함 저장은 로그인 후 이용하실 수 있습니다.');
+    if (typeof openLoginModal === 'function') openLoginModal();
+    return;
+  }
+
   var spotInput = document.getElementById('shareCardSpotInput');
   var memoInput = document.getElementById('shareCardMemoInput');
   
@@ -347,7 +344,7 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
     
   var liveMemo = (memoInput && memoInput.value.trim().length > 0) 
     ? memoInput.value.trim() 
-    : (window.currentShareRecord && window.currentShareRecord.memo ? window.currentShareRecord.memo : '');
+    : (window.currentShareRecord && window.currentShareRecord.oneLineMemo ? window.currentShareRecord.oneLineMemo : '');
 
   var now = new Date();
   var cleanDateStr = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
@@ -371,21 +368,15 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
   var totalGrams = items.reduce(function(sum, g) { return sum + Number(g.weight || 0); }, 0);
   var weightKg = (totalGrams > 0) ? (totalGrams / 1000).toFixed(2) : (rec.weightKg || '0.00');
 
-  var pendingPhoto = window.currentSharePhoto;
-  var photosToSave = [];
-  if (pendingPhoto && typeof pendingPhoto === 'string' && pendingPhoto.length > 10) {
-    photosToSave.push(pendingPhoto);
-  } else if (Array.isArray(rec.photos) && rec.photos.length > 0) {
-    photosToSave = rec.photos;
-  } else if (rec.photo) {
-    photosToSave.push(rec.photo);
-  }
+  var gearPhoto = window.currentSharePhoto || rec.photo || '';
+  var photosToSave = (gearPhoto && typeof gearPhoto === 'string' && gearPhoto.length > 10) ? [gearPhoto] : [];
 
   var newRecord = {
     id: rec.id || ('pack_' + Date.now()),
     date: rec.date || cleanDateStr,
     spot: liveSpot,
-    memo: liveMemo,
+    memo: '',
+    oneLineMemo: liveMemo || (liveSpot ? (liveSpot + ' 패킹') : '출정 준비 완료'),
     elevation: rec.elevation || '',
     weightKg: weightKg,
     weightGrams: totalGrams || rec.weightGrams || 0,
@@ -397,259 +388,108 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
     templateId: window.selectedTemplateId || rec.templateId || 1
   };
 
-  // 🚀 1. 내 폰에는 0.05초 즉시 보관하고 모달은 바로 닫기
+  // 🚀 1. 스마트폰 내장 IndexedDB에 0.05초 만에 즉시 보관
   if (typeof window.savePackingHistoryRecord === 'function') {
     window.savePackingHistoryRecord(newRecord);
   }
 
   if (typeof closePackShareModal === 'function') closePackShareModal();
   if (typeof window.openHistoryModal === 'function') window.openHistoryModal();
-  if (typeof showToast === 'function') showToast('🎒 낭만보관함 저장 완료! (사진 동기화 중...)', 'success', 2500);
+  if (typeof showToast === 'function') showToast('🎒 출정 패킹이 보관함에 등록되었습니다!', 'success', 2500);
   if (typeof triggerHaptic === 'function') triggerHaptic(15);
 
-  // 📸 2. 대표님 직관대로 "하나씩 따로따로 순서대로" 드라이브에 안전 업로드 후 최종 시트 전송
- // 📸 2. 대표님 직관대로 "하나씩 따로따로 0.5초 텀을 주며" 드라이브에 4장 전수 안전 업로드
-  var photosToUpload = (Array.isArray(window.__studioMultiPhotos) && window.__studioMultiPhotos.length > 0) 
-    ? window.__studioMultiPhotos 
-    : (pendingPhoto ? [pendingPhoto] : []);
-
-  (async function() {
-    var finalDriveUrls = [];
-    for (var i = 0; i < photosToUpload.length; i++) {
-      var b64Item = photosToUpload[i];
-      if (typeof b64Item === 'string' && b64Item.startsWith('data:') && typeof window.uploadSinglePhotoToDrive === 'function') {
-        var singleUrl = await window.uploadSinglePhotoToDrive(b64Item, 'pack_' + newRecord.id + '_' + i + '.jpg');
-        if (singleUrl && singleUrl.startsWith('http')) {
-          finalDriveUrls.push(singleUrl);
-        }
-        // ⏳ 구글 서버가 다음 사진을 안정적으로 받도록 0.4초 안전 딜레이
-        await new Promise(function(resolve) { setTimeout(resolve, 400); });
-      } else if (typeof b64Item === 'string' && b64Item.startsWith('http')) {
-        finalDriveUrls.push(b64Item);
-      }
-    }
-
-    if (finalDriveUrls.length > 0) {
-      newRecord.photos = finalDriveUrls;
-      newRecord.photo = finalDriveUrls[0];
-      newRecord.fieldPhoto = finalDriveUrls[0];
-
-      if (typeof window.savePackingHistoryRecord === 'function') {
-        window.savePackingHistoryRecord(newRecord);
-      }
-      if (typeof window.shareFeedToCommunity === 'function') {
-        window.shareFeedToCommunity(newRecord);
-      }
-    } else {
-      if (typeof window.shareFeedToCommunity === 'function') {
-        window.shareFeedToCommunity(newRecord);
-      }
-    }
-  })();
+  // ☁️ 2. 클라우드 동기화 비동기 백업
+  if (typeof syncUserDataToCloud === 'function') {
+    syncUserDataToCloud(true);
+  }
 };
+
+function safeGetJSON(key, defaultVal) {
+  try {
+    var v = localStorage.getItem(key);
+    return v ? JSON.parse(v) : defaultVal;
+  } catch (e) {
+    return defaultVal;
+  }
+}
 
 function ensurePackShareModalDOM() {
   var modal = document.getElementById('packShareModalOverlay');
-  if (modal) modal.remove();
+  if (modal && document.getElementById('packShareCaptureArea')) {
+    return modal;
+  }
 
-  modal = document.createElement('div');
-  modal.id = 'packShareModalOverlay';
-  modal.className = 'custom-modal-overlay';
-  modal.style.cssText = 'display:none; position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000008 !important; justify-content:center; align-items:stretch; padding:0 !important; margin:0 !important; touch-action:none; overflow:hidden; box-sizing:border-box; transform:translateZ(0); -webkit-transform:translateZ(0);';
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'packShareModalOverlay';
+    modal.className = 'custom-modal-overlay active';
+    document.body.appendChild(modal);
+  }
+
+  modal.style.cssText = 'display:none; position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#07090e; z-index:2000010 !important; justify-content:center; align-items:stretch; padding:0 !important; margin:0 !important; overflow:hidden; box-sizing:border-box; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
   modal.innerHTML = `
-    <div style="width:100%; max-width:440px; margin:0 auto; height:100%; height:100dvh; max-height:100dvh; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; position:relative;">
+    <div style="width:100%; max-width:440px; margin:0 auto; height:100dvh; display:flex; flex-direction:column; justify-content:space-between; padding:calc(10px + env(safe-area-inset-top, 0px)) 14px calc(14px + env(safe-area-inset-bottom, 0px)) 14px; box-sizing:border-box; position:relative;">
       
-      <!-- 1. 상단 헤더 (타이틀 + 이미지 저장 / 보관함 저장 캡슐 + 닫기) -->
-      <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:10px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
-        <span style="font-weight:900; font-size:0.90rem; color:#fff; display:flex; align-items:center; gap:5px; white-space:nowrap; flex-shrink:0;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="icon-svg" style="width:15px; height:15px; color:#38bdf8;"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M3 9h4M17 9h4M3 15h4M17 15h4"/></svg>
-          <span>카드 스튜디오</span>
-        </span>
-        <div style="display:flex; align-items:center; gap:5px; margin-left:auto;">
-          <button type="button" onclick="if(typeof captureAndSavePackCard==='function') captureAndSavePackCard();" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22); color:#ffffff; font-size:0.68rem; font-weight:800; padding:4px 9px; border-radius:9999px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; white-space:nowrap;">
-            💾 이미지 저장
-          </button>
-          <button type="button" id="btnStudioHeaderCapsuleSave" onclick="saveCardToVaultAndOpenBasecamp()" style="background:linear-gradient(135deg, #0d9488 0%, #059669 100%); border:1px solid #14b8a6; color:#ffffff; font-size:0.68rem; font-weight:900; padding:4px 10px; border-radius:9999px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; box-shadow:0 2px 8px rgba(13,148,136,0.35); white-space:nowrap;">
-            🎒 보관함 저장
-          </button>
-          <button type="button" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer; line-height:1; padding:0 2px 0 4px;" onclick="closePackShareModal()">✕</button>
+      <div style="display:flex; justify-content:space-between; align-items:center; height:36px; flex-shrink:0;">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-size:1.05rem;">📸</span>
+          <span id="currentTmplNameTitle" style="font-size:0.92rem; font-weight:900; color:#ffffff; font-family:'Pretendard Variable', sans-serif;">공유 카드 스튜디오</span>
         </div>
+        <button type="button" onclick="window.closePackShareModal();" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:1.0rem; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
       </div>
 
-      <!-- 2. 중앙 메인 스크롤 뷰 (검색창 + 메모 + 템플릿 칩 + 카드 프리뷰) -->
-      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:10px 12px calc(72px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
-        
-        <!-- 검색창 및 메모창 -->
-        <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:6px; display:flex; flex-direction:column; gap:5px; position:relative; flex-shrink:0;">
-          <div style="position:relative; width:100%;">
-            <div style="display:flex; gap:4px; align-items:center; position:relative;">
-              <div style="position:relative; flex:1; display:flex; align-items:center;">
-                <input type="text" id="shareCardSpotInput" class="modal-input" placeholder="박지 검색 (비공개 시 빈칸)" style="font-size:0.75rem; padding:5px 28px 5px 8px; width:100%; height:32px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#ffffff; outline:none; box-sizing:border-box;" oninput="handleSpotSearchInput(this.value); updateShareCardLive();" onfocus="handleSpotSearchInput(this.value);" autocomplete="off" />
-                <button type="button" id="btnSpotInputClear" style="display:none; position:absolute; right:6px; background:rgba(255,255,255,0.25); border:none; color:#ffffff; width:17px; height:17px; border-radius:50%; font-size:0.6rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0; z-index:5;" onclick="clearSpotSearchInput()">✕</button>
-              </div>
-              <button type="button" class="modal-btn" style="height:32px; background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.4); color:#38bdf8; font-size:0.70rem; padding:0 10px; flex-shrink:0; font-weight:800; border-radius:6px; cursor:pointer;" onclick="toggleSpotDropdownList()">검색</button>
-            </div>
-            <div id="spotSearchDropdown" class="spot-search-dropdown-list"></div>
-          </div>
-          
-          <input type="text" id="shareCardMemoInput" class="modal-input" placeholder="한줄 메모 (미입력 시 빈칸)" maxlength="35" style="font-size:0.75rem; height:32px; padding:5px 8px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#ffffff; outline:none; box-sizing:border-box;" oninput="updateShareCardLive()" />
-          
-          <input type="file" id="shareCardPhotoInput" accept="image/*" style="display:none;" onchange="if(typeof handleShareCardPhotoUpload==='function') handleShareCardPhotoUpload(event)" />
-          <button type="button" class="modal-btn" style="width:100%; height:32px; background:linear-gradient(135deg, rgba(56,189,248,0.18), rgba(14,165,233,0.28)); border:1.2px dashed #38bdf8; color:#38bdf8; font-size:0.74rem; font-weight:800; padding:0; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:5px;" onclick="document.getElementById('shareCardPhotoInput').click()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-svg" style="width:13px; height:13px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            <span>내 사진으로 전체화면 스튜디오 열기 ➔</span>
-          </button>
-        </div>
+      <div id="templateSelectorBar" class="template-selector-bar"></div>
 
-        <!-- 20대 전체 템플릿 선택 바 -->
-        <div class="template-selector-bar" id="templateSelectorBar" style="flex-shrink:0;"></div>
-
-        <!-- 카드 프리뷰 영역 -->
-        <div style="width:100%; display:flex; justify-content:center; align-items:center; padding:4px 0 12px 0;">
-          <div id="packShareCaptureArea" class="share-card-container" style="width:100%; max-width:305px; margin:0 auto; border-radius:14px; overflow:hidden; box-sizing:border-box; flex-shrink:0; box-shadow:0 12px 32px rgba(0,0,0,0.95);"></div>
-        </div>
+      <div style="flex:1 1 0%; min-height:0; display:flex; align-items:center; justify-content:center; width:100%; padding:4px 0; overflow:hidden; box-sizing:border-box;">
+        <div id="packShareCaptureArea" style="width:100%; max-width:320px; transition:transform 0.2s ease, opacity 0.2s ease;"></div>
       </div>
 
-      <!-- 3. 최하단 일체형 듀얼독 (활성 탭 재터치 토글 시스템 완비) -->
-      <div id="studioDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(7,9,14,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000010 !important; user-select:none !important; overscroll-behavior:none !important; touch-action:none !important;">
-        
-        <!-- 데크 1: 스튜디오 5대 서브 도구독 (기본 활성) -->
-        <div id="studioSubToolsDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:opacity 0.18s ease; opacity:1; pointer-events:auto; z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-          <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof openHistoryModal==='function') openHistoryModal(); if(typeof triggerHaptic==='function') triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-            <span>낭만기록</span>
-          </button>
-          
-          <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof openPastTripsListModal==='function') openPastTripsListModal(); if(typeof triggerHaptic==='function') triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="3" rx="3"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-            <span>피드</span>
-          </button>
-
-          <!-- 💡 [핵심] 활성 스튜디오 버튼: 터치 시 메인독으로 토글 전환! -->
-          <button type="button" class="dock-item active" onclick="window.toggleStudioDockDeck(); if(typeof triggerHaptic==='function') triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#38bdf8 !important; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            <span>스튜디오</span>
-          </button>
-
-          <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof openClearMapModal==='function') openClearMapModal(); if(typeof triggerHaptic==='function') triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2.2;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-            <span>클리어맵</span>
-          </button>
-
-          <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof openMyReportModal==='function') openMyReportModal(); if(typeof triggerHaptic==='function') triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; background:none; border:none; color:#94a3b8 !important; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; padding:0;">
-            <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            <span>마이리포트</span>
-          </button>
+      <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0; width:100%; box-sizing:border-box; margin-top:4px;">
+        <div style="position:relative; width:100%; display:flex; align-items:center;">
+          <input type="text" id="shareCardSpotInput" placeholder="📍 박지/장소명 입력 (자동완성)" oninput="window.handleSpotSearchInput(this.value); if(typeof updateShareCardLive==='function') updateShareCardLive();" style="width:100%; height:36px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:0.78rem; padding:0 30px 0 10px; outline:none; box-sizing:border-box;" />
+          <button type="button" id="btnSpotInputClear" onclick="window.clearSpotSearchInput();" style="display:none; position:absolute; right:8px; background:rgba(255,255,255,0.15); border:none; color:#cbd5e1; width:18px; height:18px; border-radius:50%; font-size:0.65rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0;">✕</button>
+          <div id="spotSearchDropdown" style="display:none; position:absolute; bottom:42px; left:0; right:0; max-height:180px; overflow-y:auto; background:#0f172a; border:1px solid rgba(56,189,248,0.4); border-radius:8px; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.8);"></div>
         </div>
 
-        <!-- 데크 2: 메인 5대 네비독 (토글 시 전환) -->
-        <div id="studioMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:opacity 0.18s ease; opacity:0; pointer-events:none; z-index:100; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; background:rgba(7,9,14,0.98); box-sizing:border-box;">
-          <a href="index.html" class="dock-item" onclick="closePackShareModal(); if(typeof triggerHaptic==='function') triggerHaptic(10);" style="text-decoration:none;">
-            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-            <span>낭만루터</span>
-          </a>
-          <a href="map.html" class="dock-item" onclick="closePackShareModal(); if(typeof triggerHaptic==='function') triggerHaptic(10);" style="text-decoration:none;">
-            <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
-            <span>전국지도</span>
-          </a>
-          <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); if(typeof triggerHaptic==='function') triggerHaptic(12);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="4" width="18" height="18" rx="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/>
-              <line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-              <path d="M9 16l2 2 4-4"/>
-            </svg>
-            <span>낭만계획</span>
-          </button>
-          <!-- 💡 [핵심] 메인독의 낭만보관함 버튼: 터치 시 서브 도구독으로 복귀 토글! -->
-          <button type="button" class="dock-item active" onclick="window.toggleStudioDockDeck('tools'); if(typeof triggerHaptic==='function') triggerHaptic(12);" style="color:#38bdf8 !important;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 8v13H3V8"/>
-              <path d="M1 3h22v5H1z"/>
-              <path d="M10 12h4"/>
-            </svg>
-            <span>낭만보관함</span>
-          </button>
-          <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); if(typeof triggerHaptic==='function') triggerHaptic(10);">
-            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            <span>내정보</span>
-          </button>
-        </div>
+        <input type="text" id="shareCardMemoInput" placeholder="💬 출정 각오 또는 한줄 메모 (선택사항)" oninput="if(typeof updateShareCardLive==='function') updateShareCardLive();" style="width:100%; height:36px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:0.78rem; padding:0 10px; outline:none; box-sizing:border-box;" />
       </div>
+
+      <div style="display:flex; gap:8px; width:100%; flex-shrink:0; margin-top:8px; box-sizing:border-box;">
+        <button type="button" onclick="window.closePackShareModal();" style="flex:0.8; height:42px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; font-size:0.78rem; font-weight:800; border-radius:10px; cursor:pointer;">
+          닫기
+        </button>
+        <button type="button" onclick="window.saveCardToVaultAndOpenBasecamp();" style="flex:2; height:42px; background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border:1px solid #38bdf8; color:#ffffff; font-size:0.85rem; font-weight:900; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(2,132,199,0.4);">
+          <span>🎒 보관함에 출정 등록 ✓</span>
+        </button>
+      </div>
+
     </div>
   `;
-
-  document.body.appendChild(modal);
-
-  // 🔄 [스튜디오 전용 듀얼독 토글 및 좌우 스와이프 인터랙션 바인딩]
-  window.__studioDockMode = 'tools';
-  window.toggleStudioDockDeck = function(forceMode) {
-    if (forceMode) {
-      window.__studioDockMode = forceMode;
-    } else {
-      window.__studioDockMode = (window.__studioDockMode === 'tools') ? 'main' : 'tools';
-    }
-
-    var sub = document.getElementById('studioSubToolsDeck');
-    var main = document.getElementById('studioMainNavDeck');
-    if (!sub || !main) return;
-
-    var isTools = (window.__studioDockMode === 'tools');
-    sub.style.opacity = isTools ? '1' : '0';
-    sub.style.pointerEvents = isTools ? 'auto' : 'none';
-    sub.style.zIndex = isTools ? '105' : '100';
-
-    main.style.opacity = isTools ? '0' : '1';
-    main.style.pointerEvents = isTools ? 'none' : 'auto';
-    main.style.zIndex = isTools ? '100' : '105';
-  };
-
-  var sDock = document.getElementById('studioDualDockContainer');
-  if (sDock && !sDock._swipeBound) {
-    sDock._swipeBound = true;
-    var startX = 0, startY = 0;
-    sDock.addEventListener('touchstart', function(e) {
-      if (!e.touches || e.touches.length !== 1) return;
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-    }, { passive: true });
-
-    sDock.addEventListener('touchmove', function(e) {
-      if (!e.touches || e.touches.length !== 1) return;
-      var diffX = Math.abs(e.touches[0].clientX - startX);
-      var diffY = Math.abs(e.touches[0].clientY - startY);
-      if (diffX > diffY && e.cancelable) e.preventDefault();
-    }, { passive: false });
-
-    sDock.addEventListener('touchend', function(e) {
-      if (!e.changedTouches || e.changedTouches.length !== 1) return;
-      var diffX = e.changedTouches[0].clientX - startX;
-      var diffY = e.changedTouches[0].clientY - startY;
-      if (Math.abs(diffX) > 24 && Math.abs(diffX) > Math.abs(diffY)) {
-        if (typeof triggerHaptic === 'function') triggerHaptic(10);
-        window.toggleStudioDockDeck();
-      }
-    }, { passive: true });
-  }
 
   return modal;
 }
 
 window.closePackShareModal = function() {
   var modal = document.getElementById('packShareModalOverlay');
-  if (modal) modal.style.setProperty('display', 'none', 'important');
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
-  var historyModal = document.getElementById('romanticHistoryModal');
-  if (historyModal && historyModal.style.display === 'none') {
-    historyModal.style.setProperty('display', 'flex', 'important');
+  if (modal) {
+    modal.style.setProperty('display', 'none', 'important');
+    modal.classList.remove('active');
   }
+  document.body.style.overflow = '';
+  if (typeof triggerHaptic === 'function') triggerHaptic(10);
 };
 
-function openPackShareModal(record, items, forceStudio) {
-  forceStudio = forceStudio || false;
-  ensurePackShareModalDOM();
+window.openPackShareModal = function(record, items, forceStudio) {
+  var modal = ensurePackShareModalDOM();
+  if (modal) {
+    modal.classList.add('active');
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('z-index', '2000010', 'important');
+    modal.style.setProperty('visibility', 'visible', 'important');
+    modal.style.setProperty('opacity', '1', 'important');
+  }
+  document.body.style.overflow = 'hidden';
 
   currentShareRecord = record || {
     id: 'pack_' + Date.now(),
@@ -691,17 +531,11 @@ function openPackShareModal(record, items, forceStudio) {
   var clearBtn = document.getElementById('btnSpotInputClear');
 
   if (spotInput) {
-    spotInput.value = '';
-    if (clearBtn) clearBtn.style.display = 'none';
+    spotInput.value = currentShareRecord.spot || '';
+    if (clearBtn) clearBtn.style.display = spotInput.value ? 'flex' : 'none';
   }
   if (memoInput) {
-    memoInput.value = '';
-  }
-
-  var modal = document.getElementById('packShareModalOverlay');
-  if (modal) {
-    modal.style.setProperty('display', 'flex', 'important');
-    modal.style.setProperty('z-index', '1000008', 'important');
+    memoInput.value = currentShareRecord.oneLineMemo || '';
   }
 
   var savedTmpl = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
@@ -710,9 +544,12 @@ function openPackShareModal(record, items, forceStudio) {
   renderTemplateChips();
   switchShareCardTemplate(selectedTemplateId);
 
-  setTimeout(function() { initCardSwipeGesture(); }, 80);
-}
+  setTimeout(function() { initCardSwipeGesture(); }, 60);
+};
 
+function openPackShareModal(record, items, forceStudio) {
+  window.openPackShareModal(record, items, forceStudio);
+}
 // 🏷️ 3. 템플릿 전환 & 상단 칩/이름 실시간 동기화
 function switchShareCardTemplate(tmplId, isSwipe) {
   var targetId = Number(tmplId);
