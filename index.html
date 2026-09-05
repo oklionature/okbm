@@ -232,11 +232,11 @@
     }
     .insta-stage-counter {
       font-size: 0.65rem;
-      color: #38bdf8;
+      color: #e2e8f0;
       font-weight: 800;
       font-family: var(--font-en);
-      background: rgba(56, 189, 248, 0.12);
-      border: 1px solid rgba(56, 189, 248, 0.3);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
       padding: 1.5px 7px;
       border-radius: 12px;
     }
@@ -450,9 +450,9 @@
       font-weight: 900;
     }
     .btn-action-template {
-      background: rgba(56, 189, 248, 0.18);
-      border: 1px solid #38bdf8;
-      color: #7dd3fc;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #f1f5f9;
     }
 
     /* 🏷️ 2단으로 이동한 트렌디 카테고리 칩 바 */
@@ -466,16 +466,16 @@
     }
     .netflix-category-bar::-webkit-scrollbar { display: none; }
     .n-cat-chip {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.14);
-      color: #cbd5e1;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #94a3b8;
       font-size: 0.74rem;
-      font-weight: 800;
+      font-weight: 700;
       padding: 5px 12px;
       border-radius: 18px;
       white-space: nowrap;
       cursor: pointer;
-      transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -485,11 +485,11 @@
       transform: scale(0.95);
     }
     .n-cat-chip.active {
-      background: #38bdf8;
+      background: #ffffff;
       color: #000000;
-      border-color: #38bdf8;
+      border-color: #ffffff;
       font-weight: 900;
-      box-shadow: 0 2px 10px rgba(56, 189, 248, 0.4);
+      box-shadow: 0 2px 14px rgba(255, 255, 255, 0.22);
     }
 
     /* 📜 넷플릭스 가로 레일 */
@@ -519,8 +519,8 @@
     .n-trailer-card {
       width: 108px;
       flex-shrink: 0;
-      background: rgba(255, 255, 255, 0.035);
-      border: 1px solid rgba(255, 255, 255, 0.10);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 12px;
       overflow: hidden;
       display: flex;
@@ -534,9 +534,9 @@
       transform: scale(0.95);
     }
     .n-trailer-card.active {
-      border: 1.5px solid #38bdf8;
-      box-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
-      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 0 16px rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.07);
     }
     .n-trailer-thumb {
       width: 100%;
@@ -933,11 +933,12 @@
       if (!candidate) return;
 
       var cId = String(candidate.id || '').trim();
+      var cleanCId = cId.split(';')[0].trim();
       var cDate = String(candidate.date || '').trim();
       var altDate = cDate.replace(/[-/]/g, '.');
 
       var photoUrl = '';
-      var mappedPhotos = (cId && photosMap[cId]) || (cDate && photosMap[cDate]) || (altDate && photosMap[altDate]);
+      var mappedPhotos = (cleanCId && photosMap[cleanCId]) || (cId && photosMap[cId]) || (cDate && photosMap[cDate]) || (altDate && photosMap[altDate]);
 
       if (Array.isArray(mappedPhotos) && mappedPhotos.length > 0) {
         photoUrl = mappedPhotos[0];
@@ -945,14 +946,25 @@
         photoUrl = mappedPhotos;
       } else if (Array.isArray(candidate.photos) && candidate.photos.length > 0) {
         photoUrl = candidate.photos[0];
+      } else if (candidate.photo_url && String(candidate.photo_url).trim().length > 10) {
+        photoUrl = candidate.photo_url;
+      } else if (candidate.photos_json && String(candidate.photos_json).includes('http')) {
+        var mUrls = String(candidate.photos_json).match(/https?:\/\/[^\s"',\]\)]+/g);
+        if (mUrls && mUrls.length > 0) photoUrl = mUrls[0];
       } else if (candidate.photo) {
         photoUrl = candidate.photo;
       } else if (candidate.fieldPhoto) {
         photoUrl = candidate.fieldPhoto;
       }
 
-      if (photoUrl && photoUrl.includes('drive.google.com/thumbnail')) {
-        photoUrl = photoUrl.replace(/sz=w\d+/g, 'sz=w1200');
+      if (photoUrl && typeof photoUrl === 'string') {
+        photoUrl = photoUrl.replace(/^["']|["']$/g, '').trim();
+        if (photoUrl.includes('drive.google.com')) {
+          var idMatch = photoUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/) || photoUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+          if (idMatch && idMatch[1]) {
+            photoUrl = 'https://lh3.googleusercontent.com/d/' + idMatch[1] + '=w1200';
+          }
+        }
       }
 
       var title = candidate.spot || candidate.spotName || '';
@@ -964,6 +976,7 @@
       if (photoUrl) {
         var img = document.getElementById('heroCoverImg');
         if (img) {
+          img.decoding = 'async';
           img.src = photoUrl;
           img.onload = function() { img.style.opacity = '1'; };
           if (img.complete) { img.style.opacity = '1'; }
@@ -1025,52 +1038,49 @@
 
     <!-- 🎬 4. 영상 속 그 장소 & 기어 랩 (외부 텍스트 삭제 & 탭 시 '더보기' 팝업) -->
     <section class="n-rail-section">
-      <h2 class="n-rail-title">영상 속 그 장소 & 기어 랩</h2>
-      <div class="n-rail-slider">
-        <div class="n-video-single-card" onclick="openVideoDetailModal(0)">
-          <div class="n-video-thumb-box">
-            <img src="https://img.youtube.com/vi/4JQHNctHibg/hqdefault.jpg" alt="영상 썸네일 1" />
-            <div class="n-video-play-icon">
-              <div class="n-video-play-btn-circle">▶</div>
-            </div>
-            <div class="n-video-info-hint-bar">
-              <span>📍 충주 고봉 (우중 비박)</span>
-              <span>더보기 ➔</span>
-            </div>
-          </div>
+  <h2 class="n-rail-title">영상 속 그 장소 & 기어 랩</h2>
+  <div class="n-rail-slider" id="homeVideoRailSlider">
+    <div class="n-video-single-card" onclick="openVideoDetailModal(0)">
+      <div class="n-video-thumb-box">
+        <img src="https://img.youtube.com/vi/4JQHNctHibg/hqdefault.jpg" alt="영상 썸네일 1" />
+        <div class="n-video-play-icon">
+          <div class="n-video-play-btn-circle">▶</div>
         </div>
-
-        <div class="n-video-single-card" onclick="openVideoDetailModal(1)">
-          <div class="n-video-thumb-box">
-            <img src="https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=600&q=80" alt="영상 썸네일 2" />
-            <div class="n-video-play-icon">
-              <div class="n-video-play-btn-circle">▶</div>
-            </div>
-            <div class="n-video-info-hint-bar">
-              <span>📍 50만원대 가성비 3계절 패킹</span>
-              <span>더보기 ➔</span>
-            </div>
-          </div>
+        <div class="n-video-info-hint-bar">
+          <span>📍 충주 고봉 (우중 비박)</span>
+          <span>더보기 ➔</span>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- 🤝 5. 이번 주말 낭만 원정대 (트립 조인 / 동행 매칭) -->
+    <div class="n-video-single-card" onclick="openVideoDetailModal(1)">
+      <div class="n-video-thumb-box">
+        <img src="https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=600&q=80" alt="영상 썸네일 2" />
+        <div class="n-video-play-icon">
+          <div class="n-video-play-btn-circle">▶</div>
+        </div>
+        <div class="n-video-info-hint-bar">
+          <span>📍 50만원대 가성비 3계절 패킹</span>
+          <span>더보기 ➔</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+ <!-- 🤝 5. 이번 주말 낭만 원정대 (트립 조인 / 동행 매칭) -->
     <section class="n-rail-section">
-      <h2 class="n-rail-title">이번 주말 낭만 원정대 (트립 조인)</h2>
-      <div class="n-rail-slider">
-        <div class="n-trip-join-card">
-          <div style="font-size:0.62rem; color:#cbd5e1; font-weight:800;">10.24(토) 출발 · 1명 구함</div>
-          <div style="font-size:0.88rem; font-weight:900; color:#fff;">강원 대관령 선자령</div>
-          <div style="font-size:0.62rem; color:#94a3b8;">#비화식 #풍경사진 #쉘터공유</div>
-          <button type="button" onclick="showToast('방장의 오픈프로필로 연결됩니다.', 2000)" style="width:100%; height:30px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; margin-top:4px;">신청하기 ➔</button>
-        </div>
-        <div class="n-trip-join-card">
-          <div style="font-size:0.62rem; color:#cbd5e1; font-weight:800;">11.02(토) 출발 · 2명 구함</div>
-          <div style="font-size:0.88rem; font-weight:900; color:#fff;">인천 굴업도 섬 백패킹</div>
-          <div style="font-size:0.62rem; color:#94a3b8;">#초보환영 #배편예약완료</div>
-          <button type="button" onclick="showToast('방장의 오픈프로필로 연결됩니다.', 2000)" style="width:100%; height:30px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; margin-top:4px;">신청하기 ➔</button>
-        </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding-right:14px;">
+        <h2 class="n-rail-title" style="display:flex; align-items:center; gap:5px;">
+          <span>🤝</span>
+          <span>이번 주말 낭만 원정대</span>
+        </h2>
+        <button type="button" onclick="openTripJoinListModal()" style="background:none; border:none; color:#38bdf8; font-size:0.68rem; font-weight:800; cursor:pointer;">
+          전체보기 <span id="tripJoinTotalCountText">(0)</span> ➔
+        </button>
+      </div>
+      <div class="n-rail-slider" id="homeTripJoinRailSlider">
+        <!-- JS 동적 렌더링: [+ 원정대 모집하기] + D-Day 정렬 카드 + [전체보기] -->
       </div>
     </section>
 
@@ -1169,26 +1179,27 @@
   <!-- 🛡️ 필수 5대 시스템 모달 레이어 (100% 완전 복원)                -->
   <!-- ============================================================ -->
 
-  <!-- 영상 상세정보(더보기) 팝업 모달 -->
-  <div class="custom-modal-overlay" id="videoDetailModal" onclick="if(event.target===this) closeVideoDetailModal();">
-    <div class="custom-modal" style="border:1px solid rgba(255,255,255,0.15);">
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">
-        <span style="font-size:0.95rem; font-weight:900; color:#fff;" id="videoModalTitle">영상 정보 & 박지</span>
-        <button type="button" onclick="closeVideoDetailModal()" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer;">✕</button>
+<div class="custom-modal-overlay" id="videoDetailModal" onclick="if(event.target===this) closeVideoDetailModal();" style="display:none; position:fixed; inset:0; background:rgba(0, 0, 0, 0.55); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); z-index:1000050 !important; justify-content:center; align-items:flex-end; padding:0 !important; margin:0 !important; box-sizing:border-box;">
+    <div id="videoDetailSheet" style="width:100% !important; max-width:480px !important; max-height:89dvh; height:auto; background:rgba(10, 14, 23, 0.88); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); border-top:1px solid rgba(255, 255, 255, 0.18); border-left:1px solid rgba(255, 255, 255, 0.08); border-right:1px solid rgba(255, 255, 255, 0.08); border-radius:20px 20px 0 0; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 -18px 50px rgba(0, 0, 0, 0.85); margin:0 auto; box-sizing:border-box;">
+      
+      <!-- 상단 드래그 바 -->
+      <div style="width:100%; padding:9px 14px 7px 14px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; box-sizing:border-box;" onclick="event.stopPropagation();">
+        <div style="flex:1; display:flex; justify-content:center; padding-left:26px;">
+          <div style="width:38px; height:4.5px; border-radius:3px; background:rgba(255, 255, 255, 0.3); cursor:pointer;" onclick="closeVideoDetailModal()"></div>
+        </div>
+        <button type="button" onclick="closeVideoDetailModal()" style="background:rgba(255, 255, 255, 0.06); border:1px solid rgba(255, 255, 255, 0.12); color:#94a3b8; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">✕</button>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:8px;">
-        <div style="font-size:0.84rem; font-weight:800; color:#cbd5e1;" id="videoModalSpotName">📍 위치: 충주 고봉 (450m)</div>
-        <button type="button" class="modal-btn" id="btnVideoModalNav" style="width:100%; height:38px; background:#ffffff; color:#000; font-weight:900;">지도에서 박지 찾아가기 ➔</button>
+      <!-- 🎬 상단 16:9 유튜브 플레이어 (터치 인터랙션 100% 보장) -->
+      <div id="videoModalPlayerBox" style="width:100% !important; aspect-ratio:16/9; background:#000000; overflow:hidden; flex-shrink:0; position:relative; margin:0; padding:0; border-bottom:1px solid rgba(255, 255, 255, 0.08); z-index:50; pointer-events:auto !important; touch-action:auto !important;" onclick="event.stopPropagation();">
+        <iframe id="videoModalIframe" src="" style="width:100%; height:100%; border:none; display:block; pointer-events:auto !important; touch-action:auto !important;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="eager"></iframe>
       </div>
 
-      <div style="border-top:1px dashed rgba(255,255,255,0.1); padding-top:8px;">
-        <div style="font-size:0.75rem; font-weight:800; color:#94a3b8; margin-bottom:6px;">이 영상에 나온 세팅 및 장비</div>
-        <div id="videoModalGearList" style="display:flex; flex-direction:column; gap:4px; font-size:0.72rem; color:#cbd5e1;"></div>
+      <!-- 하단 스크롤 영역: map.html 원본 정보창 엔진 연동 + [뷰/특징] + 광고 링크 -->
+      <div id="videoModalBodyContentSlot" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px 14px calc(24px + env(safe-area-inset-bottom, 0px)) 14px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box;" onclick="event.stopPropagation();">
       </div>
     </div>
   </div>
-
   <!-- 1. 🔑 카카오 1초 로그인 모달 -->
   <div class="custom-modal-overlay" id="loginModalOverlay" onclick="if(event.target===this) closeLoginModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100dvh; padding:0; overflow:hidden;">
     <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
@@ -1551,26 +1562,44 @@
       }
 
       var rId = String(record.id || '').trim();
+      var cleanPureId = rId.split(';')[0].trim();
       var rDate = String(record.date || '').trim();
       var altDate = rDate.replace(/[-/]/g, '.');
 
-      var foundList = (rId && savedPhotos[rId]) || (rDate && savedPhotos[rDate]) || (altDate && savedPhotos[altDate]);
+      var foundList = (cleanPureId && savedPhotos[cleanPureId]) || 
+                      (rId && savedPhotos[rId]) || 
+                      (rDate && savedPhotos[rDate]) || 
+                      (altDate && savedPhotos[altDate]);
       var results = [];
 
-      if (Array.isArray(foundList) && foundList.length > 0) results = foundList.filter(Boolean);
-      else if (typeof foundList === 'string' && foundList.length > 20) results = [foundList];
-      else if (Array.isArray(record.photos) && record.photos.length > 0) results = record.photos.filter(Boolean);
-      else if (record.fieldPhoto && String(record.fieldPhoto).trim().length > 20) results = [String(record.fieldPhoto).trim()];
-      else if (record.photo && String(record.photo).trim().length > 20) results = [String(record.photo).trim()];
+      if (Array.isArray(foundList) && foundList.length > 0) {
+        results = foundList.filter(Boolean);
+      } else if (typeof foundList === 'string' && foundList.length > 20) {
+        results = [foundList];
+      } else if (Array.isArray(record.photos) && record.photos.length > 0) {
+        results = record.photos.filter(Boolean);
+      } else if (record.photos_json && String(record.photos_json).includes('http')) {
+        var matchedJsonUrls = String(record.photos_json).match(/https?:\/\/[^\s"',\]\)]+/g);
+        if (matchedJsonUrls && matchedJsonUrls.length > 0) results = matchedJsonUrls;
+      } else if (record.photo_url && String(record.photo_url).trim().length > 20) {
+        results = [String(record.photo_url).trim()];
+      } else if (record.fieldPhoto && String(record.fieldPhoto).trim().length > 20) {
+        results = [String(record.fieldPhoto).trim()];
+      } else if (record.photo && String(record.photo).trim().length > 20) {
+        results = [String(record.photo).trim()];
+      }
 
-      // 🌟 [1200px 스위트스팟]: 대화면 폰 화질열화 0% 보장 + 용량 85% 다이어트로 0.3초 로딩 달성
       return results.filter(function(url) {
-        return typeof url === 'string' && !url.includes('photo-1504280390367');
+        return typeof url === 'string' && url.trim().length > 10;
       }).map(function(url) {
-        if (typeof url === 'string' && url.includes('drive.google.com/thumbnail')) {
-          return url.replace(/sz=w\d+/g, 'sz=w1200');
+        var cleanUrl = url.replace(/^["']|["']$/g, '').trim();
+        if (cleanUrl.includes('drive.google.com')) {
+          var idMatch = cleanUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/) || cleanUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+          if (idMatch && idMatch[1]) {
+            return 'https://lh3.googleusercontent.com/d/' + idMatch[1] + '=w1200';
+          }
         }
-        return url;
+        return cleanUrl;
       });
     }
 
@@ -1785,6 +1814,7 @@ function updateHeroPhotoDisplay() {
   var photos = window.currentHeroPhotosList || [];
   var curIdx = window.currentHeroPhotoIndex || 0;
   var imgEl = document.getElementById('heroCoverImg');
+
   if (imgEl) {
     if (photos.length > 0 && photos[curIdx]) {
       var targetUrl = photos[curIdx];
@@ -1957,7 +1987,7 @@ function updateHeroPhotoDisplay() {
       }, { passive: true });
     }
 
-    var FALLBACK_HERO_PRESET = {
+ var FALLBACK_HERO_PRESET = {
   id: "hero_preset_master",
   spot: "강원 대관령 선자령",
   author: "낭만백패커",
@@ -1966,8 +1996,8 @@ function updateHeroPhotoDisplay() {
   weightKg: "5.52",
   memo: "백두대간 능선을 따라 펼쳐지는 풍차와 억새, 은하수가 쏟아지는 밤",
   oneLineMemo: "백두대간 능선을 따라 펼쳐지는 풍차와 억새, 은하수가 쏟아지는 밤",
-  photo: "https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=1200&q=80",
-  photos: ["https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=1200&q=80"],
+  photo: "",
+  photos: [],
   items: [
     { name: "지팩스 듀플렉스 2P 텐트", weight: 550 },
     { name: "써머레스트 엑스라이트 NXT", weight: 354 },
@@ -1993,9 +2023,10 @@ async function initDynamicHeroAndFeeds() {
     initialFeeds = localHistory.map(function(item) {
       var clone = Object.assign({}, item);
       var iId = String(clone.id || '').trim();
+      var cleanPureId = iId.split(';')[0].trim();
       var iDate = String(clone.date || '').trim();
       var altDate = iDate.replace(/[-/]/g, '.');
-      var matchedPhotos = (iId && savedPhotosMap[iId]) || (iDate && savedPhotosMap[iDate]) || (altDate && savedPhotosMap[altDate]);
+      var matchedPhotos = (cleanPureId && savedPhotosMap[cleanPureId]) || (iId && savedPhotosMap[iId]) || (iDate && savedPhotosMap[iDate]) || (altDate && savedPhotosMap[altDate]);
 
       if (Array.isArray(matchedPhotos) && matchedPhotos.length > 0) {
         clone.photos = matchedPhotos;
@@ -2048,7 +2079,16 @@ async function initDynamicHeroAndFeeds() {
         cloudFeeds.forEach(function(cf) {
           var cid = String(cf.id).trim();
           if (!idSet.has(cid)) {
-            finalFeeds.push(cf);
+            var cItem = Object.assign({}, cf);
+            if (!cItem.photos || cItem.photos.length === 0) {
+              if (cItem.photos_json && String(cItem.photos_json).includes('http')) {
+                var matchedUrls = String(cItem.photos_json).match(/https?:\/\/[^\s"',\]\)]+/g);
+                if (matchedUrls) cItem.photos = matchedUrls;
+              } else if (cItem.photo_url) {
+                cItem.photos = [cItem.photo_url];
+              }
+            }
+            finalFeeds.push(cItem);
             idSet.add(cid);
           }
         });
@@ -2137,64 +2177,1557 @@ async function initDynamicHeroAndFeeds() {
         setTimeout(function() {
           card.style.transition = 'opacity 0.22s ease, transform 0.22s ease';
           card.style.opacity = '1';
-          card.style.transform = 'scale(1)';
+         card.style.transform = 'scale(1)';
         }, 50);
       }
     }
+   // 🌐 유튜브 영상 ID 정규식 추출기 (전역 등록)
+    window.extractYouTubeVideoId = function(url) {
+      if (!url || typeof url !== 'string') return '';
+      var match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/))([a-zA-Z0-9_-]{11})/);
+      return (match && match[1]) ? match[1] : '';
+    };
 
-    // 🎬 [영상 상세정보 '더보기' 팝업 제어]
-    var VIDEO_DATABASE = [
+    var DEFAULT_VIDEO_DATABASE = [
       {
-        title: "비 내리는 날 바위틈 우중 비박",
-        spot: "충주 고봉 (450m)",
+        title: "충주 고봉 (파노라마 능선)",
+        spot: "충주 고봉",
         navSpot: "충주 고봉",
-        gears: [
-          { name: "제로그램 실타프", linkText: "스펙 확인 ↗", url: "https://link.coupang.com" },
-          { name: "핫앤쿡 발열도시락", linkText: "로켓배송 ↗", url: "https://link.coupang.com" },
-          { name: "소토 윈드마스터 SOD-310", linkText: "최저가 ↗", url: "https://link.coupang.com" }
-        ]
-      },
-      {
-        title: "50만원대로 끝내는 3계절 백패킹 패킹",
-        spot: "강원 평창 선자령",
-        navSpot: "대관령 선자령",
-        gears: [
-          { name: "네이처하이크 클라우드피크2", linkText: "구매 링크 ↗", url: "https://link.coupang.com" },
-          { name: "씨투써밋 이더라이트 XT 매트", linkText: "최저가 ↗", url: "https://link.coupang.com" },
-          { name: "페츨 악틱 코어 헤드랜턴", linkText: "상세보기 ↗", url: "https://link.coupang.com" }
-        ]
+        videoUrl: "https://youtu.be/4JQHNctHibg",
+        videoId: "4JQHNctHibg",
+        thumbUrl: "https://img.youtube.com/vi/4JQHNctHibg/hqdefault.jpg",
+        viewDesc: "충주호와 남한강이 내려다보이는 파노라마 암릉 능선 뷰"
       }
     ];
 
-    function openVideoDetailModal(idx) {
-      var item = VIDEO_DATABASE[idx] || VIDEO_DATABASE[0];
+    window.VIDEO_DATABASE = window.VIDEO_DATABASE || DEFAULT_VIDEO_DATABASE.slice();
+
+    // 🎬 홈 메인 슬라이더 렌더러
+    function renderVideoCurationSlider() {
+      var slider = document.getElementById('homeVideoRailSlider');
+      if (!slider) return;
+      var db = (window.VIDEO_DATABASE && window.VIDEO_DATABASE.length > 0) ? window.VIDEO_DATABASE : DEFAULT_VIDEO_DATABASE;
+
+      slider.innerHTML = db.map(function(item, idx) {
+        var spotTitle = item.spot || item.title || '백패킹 필드';
+        var thumb = item.thumbUrl || (item.videoId ? ('https://img.youtube.com/vi/' + item.videoId + '/hqdefault.jpg') : 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=600&q=80');
+
+        return `
+          <div class="n-video-single-card" onclick="openVideoDetailModal(${idx})">
+            <div class="n-video-thumb-box">
+              <img src="${thumb}" alt="${escapeHtml(spotTitle)}" loading="lazy" />
+              <div class="n-video-play-icon">
+                <div class="n-video-play-btn-circle">▶</div>
+              </div>
+              <div class="n-video-info-hint-bar">
+                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:68%;">📍 ${escapeHtml(spotTitle)}</span>
+                <span style="color:#fde047; font-weight:900;">장소확인 ➔</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 📺 영상 상세 팝업 (자연스러운 장소확인 버튼 + 뷰/특징만 노출 + 광고 3종)
+    async function openVideoDetailModal(idxOrUrl) {
+      var db = (window.VIDEO_DATABASE && window.VIDEO_DATABASE.length > 0) ? window.VIDEO_DATABASE : DEFAULT_VIDEO_DATABASE;
+      var item = (typeof idxOrUrl === 'number') ? (db[idxOrUrl] || db[0]) : (db.find(function(v) { return v.videoUrl === idxOrUrl || v.videoId === idxOrUrl; }) || db[0]);
+
       var modal = document.getElementById('videoDetailModal');
-      var titleEl = document.getElementById('videoModalTitle');
-      var spotEl = document.getElementById('videoModalSpotName');
-      var navBtn = document.getElementById('btnVideoModalNav');
-      var gearListEl = document.getElementById('videoModalGearList');
+      var iframe = document.getElementById('videoModalIframe');
+      var bodySlot = document.getElementById('videoModalBodyContentSlot');
 
-      if (titleEl) titleEl.innerText = item.title;
-      if (spotEl) spotEl.innerText = "📍 위치: " + item.spot;
-      if (navBtn) navBtn.onclick = function() { location.href = "map.html?spot=" + encodeURIComponent(item.navSpot); };
+      var spotPool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
+        ? registeredSpots 
+        : (safeGetJSON('okbm_spots_cache', []) || []);
 
-      if (gearListEl) {
-        gearListEl.innerHTML = item.gears.map(function(g) {
-          return '<div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:6px 8px; border-radius:6px; margin-bottom:3px;"><span>• ' + g.name + '</span><a href="' + g.url + '" target="_blank" rel="noopener" style="color:#ffffff; text-decoration:underline; font-weight:800;">' + g.linkText + '</a></div>';
-        }).join('');
+      if (spotPool.length === 0 && typeof loadPortalSpotData === 'function') {
+        await loadPortalSpotData();
+        spotPool = registeredSpots || safeGetJSON('okbm_spots_cache', []) || [];
       }
 
+      var rawSpotName = (item.spot || item.navSpot || '').trim();
+      var isGear = !rawSpotName || rawSpotName === '장비' || rawSpotName === '기어' || rawSpotName.toUpperCase() === 'NONE';
+
+      var matched = null;
+      if (!isGear) {
+        var searchKey = rawSpotName.replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
+        matched = spotPool.find(function(s) { 
+          var n = String(s.name || s.spot_main || s.fullName || '').replace(/[\s\(\[\]\)]/g, '').toLowerCase(); 
+          var k = searchKey.replace(/[\s\(\[\]\)]/g, ''); 
+          return k && (n.includes(k) || k.includes(n)); 
+        });
+      }
+
+      var mainName = matched ? (matched.spot_main || matched.name || matched.fullName) : rawSpotName;
+      var cityName = matched ? (matched.cityName || matched.region || '전국') : (item.city || '전국');
+      var elevStr = matched && matched.elevation ? (String(matched.elevation).includes('m') ? matched.elevation : matched.elevation + 'm') : '';
+      var subPoint = matched ? (matched.spot_sub || '') : '';
+      var navTargetParam = encodeURIComponent(String(mainName).replace(/\s*\(.*?\)/g, ''));
+
+      var rawSummary = (matched && (matched.desc_summary || matched.desc)) ? (matched.desc_summary || matched.desc) : (item.viewDesc || item.title || "");
+      var cleanSummary = String(rawSummary).replace(/\\n/g, '\n');
+      var viewMatch = cleanSummary.match(/\[(?:뷰\/특징|뷰|특징)\]\s*([\s\S]*?)(?=\[(?:접근\/코스|접근|코스|박지\/피칭|박지|피칭|주의\/팁|주의|팁)\]|$)/i);
+      var onlyViewText = viewMatch ? viewMatch[1].trim() : cleanSummary.split(/\n\s*\n|\n(?=\[)/)[0].replace(/^\[.*?\]\s*/, '').trim();
+
+      if (bodySlot) {
+        var adBannersHtml = `
+          <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
+            <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; text-decoration:none;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.1rem; opacity:0.85;">🎒</span>
+                <div>
+                  <div style="font-size:0.77rem; font-weight:800; color:#f8fafc;">영상 속 백패킹 장비 확인하기</div>
+                  <div style="font-size:0.58rem; color:#94a3b8;">텐트 · 침낭 · 에어매트 · 경량 기어 스펙</div>
+                </div>
+              </div>
+              <span style="font-size:0.65rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); padding:3.5px 8px; border-radius:6px; flex-shrink:0;">장비보기 ➔</span>
+            </a>
+
+            <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; text-decoration:none;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.1rem; opacity:0.85;">🍲</span>
+                <div>
+                  <div style="font-size:0.77rem; font-weight:800; color:#f8fafc;">영상 속 비화식 음식 확인하기</div>
+                  <div style="font-size:0.58rem; color:#94a3b8;">핫앤쿡 발열도시락 · 보온식단 · 전투식량 모음</div>
+                </div>
+              </div>
+              <span style="font-size:0.65rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); padding:3.5px 8px; border-radius:6px; flex-shrink:0;">음식보기 ➔</span>
+            </a>
+
+            <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; text-decoration:none;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.1rem; opacity:0.85;">🧥</span>
+                <div>
+                  <div style="font-size:0.77rem; font-weight:800; color:#f8fafc;">영상 속 아웃도어 의류 확인하기</div>
+                  <div style="font-size:0.58rem; color:#94a3b8;">우모복 · 방풍자켓 · 등산화 특가전</div>
+                </div>
+              </div>
+              <span style="font-size:0.65rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); padding:3.5px 8px; border-radius:6px; flex-shrink:0;">특가보기 ➔</span>
+            </a>
+          </div>
+        `;
+
+        bodySlot.innerHTML = isGear ? `
+          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; gap:4px;">
+            <span style="font-size:0.65rem; color:#cbd5e1; font-weight:800; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); padding:1.5px 6px; border-radius:4px; width:fit-content;">🎒 기어 랩 가이드</span>
+            <div style="font-size:1.05rem; font-weight:900; color:#fff;">${escapeHtml(item.title || '추천 기어 세팅')}</div>
+            <div style="font-size:0.75rem; color:#94a3b8; line-height:1.45; margin-top:2px;">${escapeHtml(item.viewDesc || '영상 속 추천 장비 조합과 실전 패킹 팁을 확인하세요.')}</div>
+          </div>
+          ${adBannersHtml}
+        ` : `
+          <!-- 박지 헤더 & 장소확인 인라인 버튼 -->
+          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+            <div style="flex:1; min-width:0;">
+              <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+                <span style="font-size:0.70rem; font-weight:800; color:#cbd5e1; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); padding:1px 5px; border-radius:4px;">${escapeHtml(cityName)}</span>
+                <span style="font-size:1.05rem; font-weight:900; color:#ffffff;">${escapeHtml(mainName)}</span>
+                ${elevStr ? `<span style="font-size:0.78rem; color:#94a3b8; font-weight:800;">(${escapeHtml(elevStr)})</span>` : ''}
+              </div>
+              ${subPoint ? `<div style="font-size:0.68rem; color:#cbd5e1; font-weight:700; margin-top:2px;">📍 ${escapeHtml(subPoint)}</div>` : ''}
+            </div>
+            <button type="button" onclick="closeVideoDetailModal(); location.href='map.html?spot=${navTargetParam}';" style="background:#ffffff; color:#000000; border:none; border-radius:8px; padding:6px 12px; font-size:0.75rem; font-weight:900; cursor:pointer; flex-shrink:0; display:flex; align-items:center; gap:4px;">
+              <span>장소확인 ➔</span>
+            </button>
+          </div>
+
+          <!-- 뷰/특징 1가지만 노출 -->
+          ${onlyViewText ? `
+            <div style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.08); border-left:3px solid rgba(255,255,255,0.6); border-radius:8px; padding:10px 12px; font-size:0.78rem; line-height:1.55; color:#cbd5e1; margin-top:6px;">
+              <div style="font-weight:900; font-size:0.73rem; color:#ffffff; margin-bottom:3px; display:flex; align-items:center; gap:4px;">
+                <span>⛰️</span>
+                <span>[영상 속 스팟 뷰 & 특징]</span>
+              </div>
+              <div>${escapeHtml(onlyViewText)}</div>
+            </div>` : ''}
+
+          <!-- 은은한 3대 광고 배너 -->
+          ${adBannersHtml}
+
+          <div style="border-radius:12px; border:1px dashed rgba(255,255,255,0.1); background:rgba(255,255,255,0.015); padding:10px 12px; text-align:center; margin-top:4px;">
+            <span style="font-size:0.65rem; color:#64748b;">🔒 상세 들머리 주소(네비) 및 코스는 <strong>장소확인(전국지도)</strong>에서 확인 가능합니다.</span>
+          </div>
+        `;
+      }
+
+      var rawId = item.videoId || extractYouTubeVideoId(item.videoUrl);
+      var embedUrl = rawId ? ('https://www.youtube-nocookie.com/embed/' + rawId + '?playsinline=1&rel=0&autoplay=0') : '';
+      if (iframe) iframe.src = embedUrl;
       if (modal) modal.style.display = 'flex';
       triggerHaptic(12);
     }
 
     function closeVideoDetailModal() {
       var modal = document.getElementById('videoDetailModal');
+      var iframe = document.getElementById('videoModalIframe');
+      if (iframe) iframe.src = '';
       if (modal) modal.style.display = 'none';
       triggerHaptic(10);
     }
 
-    // 🔄 [인덱스 하단 듀얼독 전환 & 더블탭/스와이프 엔진]
+    // 📡 구글 시트(설정 탭 gid: 1983931878) 실시간 동기화
+    async function loadFeaturedVideosFromSettingsSheet() {
+      var SETTINGS_GID = '1983931878';
+      var url = 'https://docs.google.com/spreadsheets/d/' + window.GOOGLE_SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + SETTINGS_GID + '&_t=' + Date.now();
+      try {
+        var res = await fetch(url);
+        if (!res.ok) return;
+        var csvText = await res.text();
+        Papa.parse(csvText, {
+          header: true,
+          skipEmptyLines: true,
+          complete: function(results) {
+            if (results.data && results.data.length > 0) {
+              var parsedVideos = [];
+              results.data.forEach(function(row) {
+                var vUrl = row.featuredVideo || row['동영상링크'] || row['영상링크'] || '';
+                var caption = row.featuredCaption || row['소개글'] || row['제목'] || '';
+                var spot = row.spotName || row['박지명'] || row['위치'] || '';
+                var viewDesc = row.viewDesc || row['뷰특징'] || row['특징'] || '';
+                var isActiveRaw = String(row.isActive || row['노출여부'] || 'TRUE').toUpperCase();
+
+                if (isActiveRaw === 'FALSE') return;
+                if (!vUrl && !spot) return;
+
+                var yId = extractYouTubeVideoId(vUrl);
+                if (!yId && !vUrl) return;
+
+                parsedVideos.push({
+                  title: caption || spot || "백패킹 영상",
+                  spot: spot,
+                  navSpot: spot,
+                  viewDesc: viewDesc || caption || "",
+                  videoUrl: vUrl,
+                  videoId: yId,
+                  thumbUrl: yId ? ('https://img.youtube.com/vi/' + yId + '/hqdefault.jpg') : 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=600&q=80'
+                });
+              });
+
+              if (parsedVideos.length > 0) {
+                window.VIDEO_DATABASE = parsedVideos;
+                renderVideoCurationSlider();
+              }
+            }
+          }
+        });
+      } catch (e) {
+        console.warn('[VideoSettings] 설정 탭 로드 예외:', e);
+      }
+    }
+
+ // 🤝 [낭만 원정대 동행 매칭 코어 엔진]
+    var DEFAULT_TRIP_JOINS = [
+      {
+        tripId: "trip_1",
+        spotName: "강원 대관령 선자령",
+        date: "2026.09.12",
+        carpoolInfo: "사당역 07시 카풀 1석",
+        maxCapacity: 4,
+        currentJoined: 2,
+        participants: [
+          { userId: "author_1", nickname: "낭만호랑이", isHost: true },
+          { userId: "member_1", nickname: "솔캠러", isHost: false }
+        ],
+        openChatUrl: "https://open.kakao.com",
+        tags: "#비화식 #풍경사진 #쉘터공유",
+        authorName: "낭만호랑이",
+        desc: "풍차 능선에서 은하수 보고 비화식으로 조용히 힐링하실 분 모십니다."
+      },
+      {
+        tripId: "trip_2",
+        spotName: "인천 굴업도 섬 백패킹",
+        date: "2026.09.19",
+        carpoolInfo: "인천항 연안여객터미널 집결",
+        maxCapacity: 3,
+        currentJoined: 1,
+        participants: [
+          { userId: "author_2", nickname: "바다바람", isHost: true }
+        ],
+        openChatUrl: "https://open.kakao.com",
+        tags: "#개머리언덕 #초보환영 #배편완료",
+        authorName: "바다바람",
+        desc: "배편 예매 완료했습니다. 초보자분도 배낭만 메고 오시면 됩니다!"
+      }
+    ];
+
+ window.TRIP_JOINS_DATABASE = window.TRIP_JOINS_DATABASE || DEFAULT_TRIP_JOINS.slice();
+
+    function getTripPhotosList(trip) {
+      if (!trip) return [];
+      var savedMap = safeGetJSON('okbm_trip_photos_map', {});
+      var tId = String(trip.tripId || '').trim();
+      var localPhotos = tId ? savedMap[tId] : null;
+
+      var rawList = [];
+      if (Array.isArray(localPhotos) && localPhotos.length > 0) {
+        rawList = localPhotos;
+      } else if (typeof localPhotos === 'string' && localPhotos.length > 10) {
+        rawList = [localPhotos];
+      } else if (Array.isArray(trip.photos) && trip.photos.length > 0) {
+        rawList = trip.photos;
+      } else if (trip.photo && String(trip.photo).trim().length > 10) {
+        rawList = [String(trip.photo).trim()];
+      }
+
+      return rawList.map(function(u) {
+        var clean = String(u || '').replace(/^["']|["']$/g, '').trim();
+        if (clean.includes('drive.google.com')) {
+          var idMatch = clean.match(/[?&]id=([a-zA-Z0-9_-]+)/) || clean.match(/\/d\/([a-zA-Z0-9_-]+)/);
+          if (idMatch && idMatch[1]) return 'https://lh3.googleusercontent.com/d/' + idMatch[1] + '=w1200';
+        }
+        return clean;
+      }).filter(function(u) { return u.length > 10; });
+    }
+
+    function getTripDDayBadge(dateStr) {
+      if (!dateStr) return { text: "모집중", cls: "color:#e2e8f0; background:rgba(255,255,255,0.08);" };
+      var parts = dateStr.match(/\d+/g);
+      if (!parts || parts.length < 3) return { text: "모집중", cls: "color:#e2e8f0; background:rgba(255,255,255,0.08);" };
+      var target = new Date(parts[0], parts[1] - 1, parts[2]);
+      var now = new Date();
+      now.setHours(0,0,0,0);
+      var diffDays = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+      if (diffDays < 0) return { text: "마감", cls: "color:#64748b; background:rgba(255,255,255,0.04);", isExpired: true };
+      if (diffDays === 0) return { text: "오늘출발", cls: "color:#ffffff; background:rgba(244,63,94,0.3); font-weight:800;" };
+      return { text: "D-" + diffDays, cls: "color:#ffffff; background:rgba(255,255,255,0.12); font-weight:800;" };
+    }
+
+    function renderHomeTripJoinSlider() {
+      var slider = document.getElementById('homeTripJoinRailSlider');
+      var countEl = document.getElementById('tripJoinTotalCountText');
+      if (!slider) return;
+
+      var now = new Date();
+      now.setHours(0,0,0,0);
+
+      // 마감된 방은 맨 뒤로 밀고, 모집 중인 방을 D-Day 날짜순 우선 정렬
+      var activeTrips = (window.TRIP_JOINS_DATABASE || []).filter(function(t) {
+        var dInfo = getTripDDayBadge(t.date);
+        return !dInfo.isExpired;
+      }).sort(function(a, b) {
+        var aMax = parseInt(a.maxCapacity, 10) || 4;
+        var aCur = parseInt(a.currentJoined, 10) || ((a.participants && a.participants.length) ? a.participants.length : 1);
+        var aFull = Boolean(a.isFull || aCur >= aMax);
+
+        var bMax = parseInt(b.maxCapacity, 10) || 4;
+        var bCur = parseInt(b.currentJoined, 10) || ((b.participants && b.participants.length) ? b.participants.length : 1);
+        var bFull = Boolean(b.isFull || bCur >= bMax);
+
+        if (aFull !== bFull) return aFull ? 1 : -1;
+        var pA = a.date.match(/\d+/g) || [9999,1,1];
+        var pB = b.date.match(/\d+/g) || [9999,1,1];
+        return new Date(pA[0], pA[1]-1, pA[2]) - new Date(pB[0], pB[1]-1, pB[2]);
+      });
+
+      if (countEl) countEl.innerText = "(" + activeTrips.length + ")";
+
+      // 1. 고정 [0번: + 동행 모집하기] 카드
+      var html = `
+        <div onclick="openTripCreateModal()" style="width:115px; flex-shrink:0; background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.22); border-radius:12px; padding:12px 10px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:6px; cursor:pointer;">
+          <div style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:700;">+</div>
+          <div style="font-size:0.75rem; font-weight:800; color:#ffffff;">동행 모집하기</div>
+          <div style="font-size:0.56rem; color:#94a3b8; line-height:1.3;">이번 주말<br>함께 떠나요</div>
+        </div>
+      `;
+
+      // 2. 카드 목록 (실시간 인원 게이지 바 및 X/Y명 뱃지 표시)
+      html += activeTrips.slice(0, 6).map(function(t) {
+        var dBadge = getTripDDayBadge(t.date);
+        var maxCap = parseInt(t.maxCapacity, 10) || 4;
+        var curJoin = parseInt(t.currentJoined, 10) || ((t.participants && t.participants.length) ? t.participants.length : 1);
+        var isFull = Boolean(t.isFull || curJoin >= maxCap);
+        var pct = Math.min(100, Math.round((curJoin / maxCap) * 100));
+        var carpoolBadge = t.carpoolInfo ? `<span style="font-size:0.56rem; color:#cbd5e1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); padding:1px 4px; border-radius:3px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">🚗 ${escapeHtml(t.carpoolInfo)}</span>` : '';
+
+        return `
+          <div onclick="openTripDetailModal('${escapeHtml(t.tripId)}')" style="width:174px; flex-shrink:0; background:${isFull ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.035)'}; border:1px solid ${isFull ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)'}; border-radius:12px; padding:10px 11px; display:flex; flex-direction:column; justify-content:space-between; gap:6px; cursor:pointer; opacity:${isFull ? '0.6' : '1'};">
+            <div style="display:flex; flex-direction:column; gap:3px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.58rem; padding:1px 5px; border-radius:3px; ${isFull ? 'color:#64748b; background:rgba(255,255,255,0.04);' : dBadge.cls}">${isFull ? '마감' : dBadge.text}</span>
+                <span style="font-size:0.60rem; color:${isFull ? '#64748b' : '#34d399'}; font-weight:800; font-family:var(--font-en); background:rgba(52,211,153,0.1); border:1px solid rgba(52,211,153,0.25); padding:1px 5px; border-radius:4px;">
+                  👥 ${curJoin}/${maxCap}명
+                </span>
+              </div>
+              <div style="font-size:0.84rem; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(t.spotName)}</div>
+              <div style="font-size:0.60rem; color:#94a3b8; font-family:var(--font-en);">${escapeHtml(t.date)}</div>
+              ${carpoolBadge}
+              <div style="width:100%; height:3px; background:rgba(255,255,255,0.08); border-radius:2px; overflow:hidden; margin-top:2px;">
+                <div style="width:${pct}%; height:100%; background:${isFull ? '#64748b' : 'linear-gradient(90deg, #38bdf8, #34d399)'};"></div>
+              </div>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed rgba(255,255,255,0.08); padding-top:5px; margin-top:2px;">
+              <span style="font-size:0.58rem; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">👤 ${escapeHtml(t.authorName || '백패커')}</span>
+              <span style="font-size:0.60rem; color:${isFull ? '#64748b' : '#ffffff'}; font-weight:800;">${isFull ? '마감됨' : '참가 ➔'}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (activeTrips.length > 3) {
+        html += `
+          <div onclick="openTripJoinListModal()" style="width:110px; flex-shrink:0; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 10px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:4px; cursor:pointer;">
+            <div style="font-size:1rem; color:#94a3b8;">➔</div>
+            <div style="font-size:0.75rem; font-weight:800; color:#fff;">전체보기</div>
+            <div style="font-size:0.56rem; color:#94a3b8;">(${activeTrips.length}개 원정)</div>
+          </div>
+        `;
+      }
+
+      slider.innerHTML = html;
+    }
+window.syncTripToCloudSheet = function(tripData) {
+      if (!tripData) return;
+      var gasUrl = window.GAS_API_URL || GAS_API_URL;
+      if (!gasUrl || gasUrl.includes('구글시트_배포_URL')) return;
+
+      var photosToUpload = (Array.isArray(tripData.photos) && tripData.photos.length > 0) ? tripData.photos : [];
+
+      (async function() {
+        var finalDriveUrls = [];
+        for (var i = 0; i < photosToUpload.length; i++) {
+          var pItem = photosToUpload[i];
+          if (typeof pItem === 'string' && pItem.startsWith('data:') && typeof window.uploadSinglePhotoToDrive === 'function') {
+            var singleUrl = await window.uploadSinglePhotoToDrive(pItem, 'trip_' + tripData.tripId + '_' + i + '.jpg');
+            finalDriveUrls.push((singleUrl && singleUrl.startsWith('http')) ? singleUrl : pItem);
+            await new Promise(function(res) { setTimeout(res, 350); });
+          } else {
+            finalDriveUrls.push(pItem);
+          }
+        }
+
+        if (finalDriveUrls.length > 0) {
+          tripData.photos = finalDriveUrls;
+          tripData.photo = finalDriveUrls[0];
+        }
+
+        var payload = {
+          action: 'CREATE_TRIP',
+          trip: {
+            tripId: tripData.tripId,
+            spotName: tripData.spotName,
+            date: tripData.date,
+            carpoolInfo: tripData.carpoolInfo,
+            maxCapacity: tripData.maxCapacity || 4,
+            currentJoined: tripData.currentJoined || 1,
+            participants: JSON.stringify(tripData.participants || []),
+            gearShare: tripData.gearShare,
+            openChatUrl: tripData.openChatUrl,
+            photos: JSON.stringify(tripData.photos || []),
+            authorName: tripData.authorName,
+            desc: tripData.desc,
+            isActive: 'TRUE',
+            createdAt: tripData.createdAt
+          }
+        };
+
+        fetch(gasUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        }).catch(function() {});
+      })();
+    };
+
+    window.deleteTripFromCloudSheet = function(tripId, e) {
+      if (e) e.stopPropagation();
+      if (!confirm('이 원정대를 삭제하시겠습니까?\n구글 시트와 업로드된 사진이 모두 영구 삭제됩니다.')) return;
+
+      triggerHaptic(15);
+      var gasUrl = window.GAS_API_URL || GAS_API_URL;
+      window.TRIP_JOINS_DATABASE = (window.TRIP_JOINS_DATABASE || []).filter(function(t) { return t.tripId !== tripId; });
+      renderHomeTripJoinSlider();
+
+      var modal = document.getElementById('tripDetailSheetModal');
+      if (modal) modal.remove();
+
+      showToast('원정대가 삭제되었습니다.', 'info');
+
+      if (gasUrl && !gasUrl.includes('구글시트_배포_URL')) {
+        fetch(gasUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'DELETE_TRIP',
+            tripId: tripId
+          })
+        }).catch(function() {});
+      }
+    };
+  async function loadTripsFromGoogleSheet() {
+      var TRIPS_GID = '1029159607';
+      var sheetId = window.GOOGLE_SHEET_ID || '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
+      var gvizUrl = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/gviz/tq?tqx=out:csv&gid=' + TRIPS_GID + '&_t=' + Date.now();
+
+      try {
+        var res = await fetch(gvizUrl);
+        if (!res.ok) return;
+        var csvText = await res.text();
+        if (typeof Papa === 'undefined') return;
+
+        Papa.parse(csvText, {
+          header: true,
+          skipEmptyLines: true,
+          complete: function(results) {
+            if (results.data && results.data.length > 0) {
+              var savedMap = safeGetJSON('okbm_trip_photos_map', {});
+              var loaded = [];
+              results.data.forEach(function(row) {
+                var isActiveRaw = String(row.isActive || 'TRUE').toUpperCase();
+                if (isActiveRaw === 'FALSE') return;
+
+                var spot = row.spotName || '';
+                var dateStr = row.date || '';
+                if (!spot || !dateStr) return;
+
+                var tId = row.tripId || ('trip_' + Math.random());
+                var localPhotos = savedMap[tId];
+
+                var rawPhotos = String(row.photos || row.photo || '').trim();
+                var photoArr = [];
+
+                if (Array.isArray(localPhotos) && localPhotos.length > 0) {
+                  photoArr = localPhotos;
+                } else if (typeof localPhotos === 'string' && localPhotos.length > 10) {
+                  photoArr = [localPhotos];
+                } else if (rawPhotos.match(/https?:\/\/[^\s"',\]\)]+/g)) {
+                  photoArr = rawPhotos.match(/https?:\/\/[^\s"',\]\)]+/g).map(function(u) {
+                    var clean = u.replace(/^["']|["']$/g, '').trim();
+                    return clean.includes('drive.google.com/thumbnail') ? clean.replace(/sz=w\d+/g, 'sz=w1200') : clean;
+                  });
+                } else if (rawPhotos.startsWith('http')) {
+                  photoArr = [rawPhotos.replace(/^["']|["']$/g, '').trim()];
+                }
+
+                var rawParticipants = String(row.participants || '').trim();
+                var participantArr = [];
+                if (rawParticipants.startsWith('[') && rawParticipants.endsWith(']')) {
+                  try { participantArr = JSON.parse(rawParticipants); } catch(e) { participantArr = []; }
+                }
+
+                var maxCap = parseInt(row.maxCapacity || row.maxMembers, 10) || 4;
+                var curJoin = parseInt(row.currentJoined, 10) || (participantArr.length > 0 ? participantArr.length : 1);
+
+                loaded.push({
+                  tripId: tId,
+                  spotName: spot,
+                  date: dateStr,
+                  carpoolInfo: row.carpoolInfo || '',
+                  maxCapacity: maxCap,
+                  currentJoined: curJoin,
+                  participants: participantArr.length > 0 ? participantArr : [{ userId: 'host', nickname: row.authorName || '방장', isHost: true }],
+                  gearShare: row.gearShare || '',
+                  openChatUrl: row.openChatUrl || 'https://open.kakao.com',
+                  photo: photoArr[0] || '',
+                  photos: photoArr,
+                  authorName: row.authorName || '낭만백패커',
+                  desc: row.desc || '',
+                  isActive: 'TRUE',
+                  createdAt: row.createdAt || ''
+                });
+              });
+
+              if (loaded.length > 0) {
+                window.TRIP_JOINS_DATABASE = loaded;
+                renderHomeTripJoinSlider();
+              }
+            }
+          }
+        });
+      } catch (err) {}
+    }
+ // 💬 [원정대 상세 팝업: 최종 참가 클릭 시 내 달력 등록 & 화면 자동 이동]
+    window.__currentTripJoinModalIdx = 0;
+
+    window.openTripDetailModal = function(tripId) {
+      triggerHaptic(10);
+      var activeTrips = (window.TRIP_JOINS_DATABASE || []).filter(function(t) {
+        return !getTripDDayBadge(t.date).isExpired;
+      });
+      if (activeTrips.length === 0) activeTrips = window.TRIP_JOINS_DATABASE || [];
+
+      var targetIdx = activeTrips.findIndex(function(t) { return String(t.tripId) === String(tripId); });
+      if (targetIdx === -1) targetIdx = 0;
+      window.__currentTripJoinModalIdx = targetIdx;
+
+      renderTripDetailSheet(activeTrips);
+    };
+
+    function openTripDetailModal(tripId) {
+      window.openTripDetailModal(tripId);
+    }
+
+function renderTripDetailSheet(activeTrips) {
+      var trip = activeTrips[window.__currentTripJoinModalIdx];
+      if (!trip) return;
+
+      var old = document.getElementById('tripDetailSheetModal');
+      if (old) old.remove();
+
+      var spotPool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
+        ? registeredSpots : (safeGetJSON('okbm_spots_cache', []) || []);
+
+      var searchKey = String(trip.spotName || '').replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
+      var matched = spotPool.find(function(s) {
+        var n = String(s.name || s.spot_main || s.fullName || '').replace(/[\s\(\[\]\)]/g, '').toLowerCase();
+        var k = searchKey.replace(/[\s\(\[\]\)]/g, '');
+        return k && (n.includes(k) || k.includes(n));
+      });
+
+      var mainName = matched ? (matched.spot_main || matched.name || matched.fullName) : trip.spotName;
+      var cityName = matched ? (matched.cityName || matched.region || '전국') : '전국';
+      var elevStr = matched && matched.elevation ? (String(matched.elevation).includes('m') ? matched.elevation : matched.elevation + 'm') : '';
+      var subPoint = matched ? (matched.spot_sub || '') : '';
+      var navTargetParam = encodeURIComponent(String(mainName).replace(/\s*\(.*?\)/g, ''));
+
+      var photoList = [];
+      if (Array.isArray(trip.photos) && trip.photos.length > 0) {
+        photoList = trip.photos.map(function(u) {
+          var clean = String(u || '').replace(/^["']|["']$/g, '').trim();
+          if (clean.includes('drive.google.com')) {
+            var idMatch = clean.match(/[?&]id=([a-zA-Z0-9_-]+)/) || clean.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if (idMatch && idMatch[1]) {
+              return 'https://lh3.googleusercontent.com/d/' + idMatch[1] + '=w1200';
+            }
+          }
+          return clean;
+        }).filter(function(u) { return u.length > 10; });
+      } else if (trip.photo) {
+        var cleanPhoto = String(trip.photo).replace(/^["']|["']$/g, '').trim();
+        if (cleanPhoto.includes('drive.google.com')) {
+          var sMatch = cleanPhoto.match(/[?&]id=([a-zA-Z0-9_-]+)/) || cleanPhoto.match(/\/d\/([a-zA-Z0-9_-]+)/);
+          if (sMatch && sMatch[1]) {
+            cleanPhoto = 'https://lh3.googleusercontent.com/d/' + sMatch[1] + '=w1200';
+          }
+        }
+        if (cleanPhoto.length > 10) photoList = [cleanPhoto];
+      }
+
+      window.__tripDetailPhotos = photoList;
+      window.__currentTripDetailPhotoIdx = 0;
+
+      var rawSummary = matched ? (matched.desc_summary || matched.desc || '') : '';
+      var cleanSummary = String(rawSummary).replace(/\\n/g, '\n');
+      var viewMatch = cleanSummary.match(/\[(?:뷰\/특징|뷰|특징)\]\s*([\s\S]*?)(?=\[(?:접근\/코스|접근|코스|박지\/피칭|박지|피칭|주의\/팁|주의|팁)\]|$)/i);
+      var onlyViewText = viewMatch ? viewMatch[1].trim() : (cleanSummary.split(/\n\s*\n|\n(?=\[)/)[0] || '').replace(/^\[.*?\]\s*/, '').trim();
+
+      var maxCap = parseInt(trip.maxCapacity, 10) || 4;
+      var curJoin = parseInt(trip.currentJoined, 10) || ((trip.participants && trip.participants.length) ? trip.participants.length : 1);
+      var isFull = Boolean(trip.isFull || curJoin >= maxCap);
+      var totalTrips = activeTrips.length;
+
+      var profile = safeGetJSON('user_profile', null);
+      var currentNick = (profile && profile.nickname) ? profile.nickname : '';
+      var currentUserId = (profile && profile.id) ? String(profile.id).trim() : '';
+      var isAuthor = currentNick && (currentNick === trip.authorName);
+
+      var isAlreadyJoined = Array.isArray(trip.participants) && trip.participants.some(function(p) {
+        return (currentUserId && p.userId === currentUserId) || (currentNick && p.nickname === currentNick);
+      });
+
+      var participantList = Array.isArray(trip.participants) && trip.participants.length > 0
+        ? trip.participants
+        : [{ nickname: trip.authorName || '방장', isHost: true }];
+
+      var modal = document.createElement('div');
+      modal.id = 'tripDetailSheetModal';
+      modal.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000040; display:flex; justify-content:center; align-items:stretch; box-sizing:border-box; overflow:hidden;';
+
+   modal.innerHTML = `
+        <div id="tripDetailCardTarget" style="width:100%; max-width:480px; height:100%; height:100dvh; max-height:100dvh; background:#07090e; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;">
+          
+          <div id="tripDetailInnerScroll" style="flex:1 1 0%; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:calc(10px + env(safe-area-inset-top, 0px)) 12px calc(80px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
+            
+            <div style="width:100%; display:flex; justify-content:center; flex-shrink:0;">
+              <div id="tripDetailPhotoWrapper" onclick="window.cycleTripDetailPhoto(event);" style="width:100%; max-width:420px; aspect-ratio:3/4; position:relative; border-radius:18px; overflow:hidden; border:1px solid rgba(255,255,255,0.16); box-shadow:0 16px 45px rgba(0,0,0,0.95); background:#070a12; box-sizing:border-box; cursor:pointer; touch-action:pan-y;">
+                <img id="tripDetailMainImg" src="${photoList[0]}" alt="Cover" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=1200&q=80';" style="width:100%; height:100%; object-fit:cover; display:block; transition:opacity 0.2s ease;" />
+                <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.45) 0%, transparent 22%, transparent 75%, rgba(0,0,0,0.65) 100%); pointer-events:none;"></div>
+                
+                <div style="position:absolute; top:12px; left:12px; right:12px; display:flex; justify-content:space-between; align-items:center; z-index:5;">
+                  <span style="font-size:0.62rem; color:#e2e8f0; font-family:var(--font-en); font-weight:800; background:rgba(0,0,0,0.55); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.18); padding:2.5px 8px; border-radius:12px;">
+                    EXPEDITION
+                  </span>
+                  <button type="button" onclick="document.getElementById('tripDetailSheetModal').remove(); triggerHaptic(10);" style="width:28px; height:28px; border-radius:50%; background:rgba(0,0,0,0.55); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.22); color:#ffffff; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
+                </div>
+
+                <div style="position:absolute; bottom:10px; left:14px; right:14px; z-index:2; display:flex; flex-direction:column; gap:6px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-size:0.92rem; font-weight:900; color:#ffffff; text-shadow:0 1px 4px rgba(0,0,0,0.95);">👤 ${escapeHtml(trip.authorName || '낭만백패커')}</div>
+                    ${isAuthor ? `
+                      <button type="button" onclick="window.deleteTripFromCloudSheet('${escapeHtml(trip.tripId)}', event);" style="background:rgba(244,63,94,0.3); border:1px solid #f43f5e; color:#fda4af; font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:6px; cursor:pointer;">
+                        원정대 삭제 ✕
+                      </button>
+                    ` : ''}
+                  </div>
+                  <div id="tripDetailStoryBarsContainer" style="display:${(photoList && photoList.length > 1) ? 'flex' : 'none'}; gap:3px; width:100%; height:2.5px;">
+                    ${(photoList || []).map(function(p, pIdx) {
+                      return `<div style="flex:1; height:100%; border-radius:2px; background:rgba(255,255,255,${pIdx === 0 ? '0.95' : '0.3'}); transition:background 0.15s ease;"></div>`;
+                    }).join('')}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+              <div style="flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
+                  <span style="font-size:0.68rem; font-weight:800; color:#cbd5e1; background:rgba(255,255,255,0.08); padding:1.5px 5px; border-radius:4px;">${escapeHtml(cityName)}</span>
+                  <span style="font-size:1.02rem; font-weight:900; color:#ffffff;">${escapeHtml(mainName)}</span>
+                  ${elevStr ? `<span style="font-size:0.75rem; color:#94a3b8;">(${escapeHtml(elevStr)})</span>` : ''}
+                </div>
+                ${subPoint ? `<div style="font-size:0.66rem; color:#cbd5e1; margin-top:2px;">📍 ${escapeHtml(subPoint)}</div>` : ''}
+              </div>
+              <button type="button" onclick="document.getElementById('tripDetailSheetModal').remove(); location.href='map.html?spot=${navTargetParam}';" style="background:#ffffff; color:#000000; border:none; border-radius:8px; padding:6px 12px; font-size:0.75rem; font-weight:900; cursor:pointer; flex-shrink:0; box-shadow:0 2px 8px rgba(255,255,255,0.2);">
+                <span>장소확인 ➔</span>
+              </button>
+            </div>
+
+            ${onlyViewText ? `
+              <div style="background:rgba(255,255,255,0.025); border-left:3px solid rgba(255,255,255,0.6); border-radius:6px; padding:10px 12px; font-size:0.78rem; color:#cbd5e1; line-height:1.5;">
+                <div style="font-size:0.70rem; font-weight:800; color:#fff; margin-bottom:3px;">⛰️ [박지 특징]</div>
+                <div>${escapeHtml(onlyViewText)}</div>
+              </div>` : ''}
+
+            <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:6px;">
+                <div style="font-size:0.78rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:4px;">
+                  <span>📋</span>
+                  <span>원정대 실전 구인 요강</span>
+                </div>
+                <div style="font-size:0.70rem; font-weight:900; color:#34d399; font-family:var(--font-en); background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.3); padding:2px 8px; border-radius:6px;">
+                  👥 ${curJoin} / ${maxCap}명 확정
+                </div>
+              </div>
+
+              <!-- 참가자 닉네임 아바타 칩 바 -->
+              <div style="display:flex; flex-direction:column; gap:4px; padding:4px 0;">
+                <span style="font-size:0.65rem; color:#94a3b8; font-weight:700;">확정 대원 명단:</span>
+                <div style="display:flex; flex-wrap:wrap; gap:5px;">
+                  ${participantList.map(function(p) {
+                    return `
+                      <span style="font-size:0.68rem; font-weight:800; color:#ffffff; background:${p.isHost ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.08)'}; border:1px solid ${p.isHost ? '#38bdf8' : 'rgba(255,255,255,0.18)'}; padding:2.5px 7px; border-radius:6px; display:inline-flex; align-items:center; gap:3px;">
+                        ${p.isHost ? '👑 ' : '⛺ '}${escapeHtml(p.nickname || '대원')}
+                      </span>
+                    `;
+                  }).join('')}
+                  ${!isFull ? `
+                    <span style="font-size:0.68rem; font-weight:700; color:#64748b; border:1px dashed rgba(255,255,255,0.2); padding:2.5px 7px; border-radius:6px;">
+                      + ${maxCap - curJoin}명 모집 중
+                    </span>
+                  ` : ''}
+                </div>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:5px; font-size:0.75rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="color:#94a3b8;">📅 출발 일정</span>
+                  <strong style="color:#fff; font-family:var(--font-en);">${escapeHtml(trip.date)}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="color:#94a3b8;">🚗 이동 / 집결</span>
+                  <strong style="color:#fde68a;">${escapeHtml(trip.carpoolInfo || '들머리 현장 집결')}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="color:#94a3b8;">🎒 장비 / 쉘터</span>
+                  <strong style="color:#fff;">${escapeHtml(trip.gearShare || '방장 쉘터 공유 / 개인 침낭 필수')}</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="color:#34d399;">👥 정원 규모</span>
+                  <strong style="color:#34d399; font-family:var(--font-en);">${curJoin} / ${maxCap}명 (${isFull ? '정원 마감' : (maxCap - curJoin) + '석 남음'})</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="color:#94a3b8;">🌿 매너 수칙</span>
+                  <strong style="color:#34d399;">100% 비화식 · LNT 클린</strong>
+                </div>
+              </div>
+            </div>
+
+            <div style="background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.12); border-radius:10px; padding:10px 14px; font-size:0.76rem; color:#e2e8f0; line-height:1.5;">
+              “${escapeHtml(trip.desc || '자연 속에서 비화식으로 조용히 힐링하며 은하수 보실 분 모십니다.')}”
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:2px; flex-shrink:0;">
+              ${isAlreadyJoined ? `
+                <button type="button" onclick="cancelTripJoin('${escapeHtml(trip.tripId)}')" style="width:100%; height:46px; background:rgba(244,63,94,0.15); border:1px solid #f43f5e; color:#fda4af; border-radius:10px; font-size:0.86rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+                  <span>✕ 참가 신청 취소하기</span>
+                </button>
+              ` : (isFull ? `
+                <button type="button" disabled style="width:100%; height:46px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#64748b; border-radius:10px; font-size:0.86rem; font-weight:900; cursor:not-allowed; display:flex; align-items:center; justify-content:center; gap:6px;">
+                  <span>🔒 정원이 마감되었습니다 (${curJoin}/${maxCap})</span>
+                </button>
+              ` : `
+                <button type="button" onclick="joinTripAndOpenPlan('${escapeHtml(trip.tripId)}')" style="width:100%; height:46px; background:#ffffff; color:#000000; border:none; border-radius:10px; font-size:0.86rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(255,255,255,0.15);">
+                  <span>⛺ 원정대 참가 신청 & 내 달력 등록 (${curJoin}/${maxCap}) ➔</span>
+                </button>
+              `)}
+              <a href="${escapeHtml(trip.openChatUrl || 'https://open.kakao.com')}" target="_blank" rel="noopener noreferrer" style="width:100%; height:40px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; border-radius:10px; text-decoration:none; font-size:0.80rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:5px;">
+                <span>💬 카카오톡 오픈채팅 문의하기</span>
+              </a>
+            </div>
+
+          </div>
+
+          <div style="width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; flex-direction:row !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; box-sizing:border-box; padding-bottom:env(safe-area-inset-bottom, 0px); z-index:100 !important;">
+            <button type="button" class="dock-item active" onclick="document.getElementById('tripDetailSheetModal').remove(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:900; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
+              <svg viewBox="0 0 24 24" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px); fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              <span>낭만루터</span>
+            </button>
+            <button type="button" class="dock-item" onclick="document.getElementById('tripDetailSheetModal').remove(); location.href='map.html'; triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
+              <svg viewBox="0 0 24 24" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px); fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
+              <span>전국지도</span>
+            </button>
+            <button type="button" class="dock-item" onclick="document.getElementById('tripDetailSheetModal').remove(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px);"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
+              <span>낭만계획</span>
+            </button>
+            <button type="button" class="dock-item" onclick="document.getElementById('tripDetailSheetModal').remove(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px);"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+              <span>낭만보관함</span>
+            </button>
+            <button type="button" class="dock-item" onclick="document.getElementById('tripDetailSheetModal').remove(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
+              <svg viewBox="0 0 24 24" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px); fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              <span>내정보</span>
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      var targetEl = document.getElementById('tripDetailCardTarget');
+      if (targetEl && totalTrips > 1) {
+        var startX = 0, startY = 0;
+        targetEl.addEventListener('touchstart', function(e) {
+          if (!e.touches || e.touches.length !== 1) return;
+          startX = e.touches[0].clientX;
+          startY = e.touches[0].clientY;
+        }, { passive: true });
+
+        targetEl.addEventListener('touchend', function(e) {
+          if (!e.changedTouches || e.changedTouches.length !== 1) return;
+          var diffX = e.changedTouches[0].clientX - startX;
+          var diffY = e.changedTouches[0].clientY - startY;
+
+          if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+            if (diffX < 0) {
+              window.__currentTripJoinModalIdx = (window.__currentTripJoinModalIdx + 1) % totalTrips;
+            } else {
+              window.__currentTripJoinModalIdx = (window.__currentTripJoinModalIdx - 1 + totalTrips) % totalTrips;
+            }
+            triggerHaptic(12);
+            renderTripDetailSheet(activeTrips);
+          }
+        }, { passive: true });
+      }
+    }
+    window.cycleTripDetailPhoto = function(e) {
+      if (e) {
+        if (e.target.closest('button')) return;
+        e.stopPropagation();
+      }
+      var photos = window.__tripDetailPhotos || [];
+      if (photos.length <= 1) return;
+
+      window.__currentTripDetailPhotoIdx = (window.__currentTripDetailPhotoIdx + 1) % photos.length;
+      var img = document.getElementById('tripDetailMainImg');
+      var badge = document.getElementById('tripDetailPhotoIndicatorBadge');
+
+      if (img) {
+        img.style.opacity = '0.4';
+        setTimeout(function() {
+          img.src = photos[window.__currentTripDetailPhotoIdx];
+          img.style.opacity = '1';
+        }, 80);
+      }
+      var barsContainer = document.getElementById('tripDetailStoryBarsContainer');
+      if (barsContainer) {
+        var bars = barsContainer.children;
+        for (var b = 0; b < bars.length; b++) {
+          bars[b].style.background = (b === window.__currentTripDetailPhotoIdx) ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.3)';
+        }
+      }
+      triggerHaptic(8);
+    };
+   // ➕ [동행 모집하기: 전 기종 뷰포트 완벽 대응 반응형/적응형 엔진]
+
+ function openTripCreateModal() {
+      var token = localStorage.getItem('user_auth_token');
+      var rawProfile = localStorage.getItem('user_profile');
+      var profile = rawProfile ? JSON.parse(rawProfile) : null;
+      if (!token || !profile || !profile.id) {
+        triggerHaptic(10);
+        showToast('🔒 원정대 모집은 로그인 후 이용 가능합니다.', 2200);
+        if (typeof openLoginModal === 'function') openLoginModal();
+        return;
+      }
+
+      triggerHaptic(10);
+      var old = document.getElementById('tripCreateModal');
+      if (old) old.remove();
+
+      window.__tempTripCreatePhotos = [];
+      window.__currentTripCreatePhotoIdx = 0;
+
+      var modal = document.createElement('div');
+      modal.id = 'tripCreateModal';
+      modal.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000050; display:flex; justify-content:center; align-items:stretch; box-sizing:border-box; overflow:hidden;';
+
+      modal.innerHTML = `
+        <div style="width:100%; max-width:480px; height:100%; height:100dvh; max-height:100dvh; background:#07090e; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;">
+          
+          <div style="flex:1 1 0%; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:calc(10px + env(safe-area-inset-top, 0px)) clamp(12px, 3.5vw, 16px) 12px clamp(12px, 3.5vw, 16px); display:flex; flex-direction:column; gap:clamp(5px, 1.1vh, 8px); box-sizing:border-box;">
+            
+            <div style="position:relative; width:100%; display:flex; flex-direction:column; align-items:center; gap:5px; padding:0 0 4px 0; flex-shrink:0;">
+              <button type="button" onclick="document.getElementById('tripCreateModal').remove(); triggerHaptic(10);" style="position:absolute; top:2px; right:2px; z-index:20; width:32px; height:32px; border-radius:50%; background:rgba(0,0,0,0.65); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.2); color:#cbd5e1; font-size:1.1rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
+
+              <input type="file" id="tripPhotoFileInput" accept="image/*" multiple style="display:none;" onchange="handleTripMultiPhotoUpload(event)" />
+              <div id="tripPhotoStackWrapper" style="position:relative; width:clamp(195px, 58vw, 250px); aspect-ratio:3/4; max-height:40vh; display:flex; justify-content:center; align-items:center; box-sizing:border-box;"></div>
+              <div id="tripPhotoIndicators" style="display:flex; gap:4px; align-items:center; height:12px;"></div>
+            </div>
+
+           <!-- 2. 목적지 박지 검색 -->
+            <div style="position:relative; display:flex; flex-direction:column; gap:2px; z-index:1000060;">
+              <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800;">📍 목적지 박지 (검색) *</label>
+              <input type="text" id="tripInputSpot" placeholder="박지명 검색 (터치 시 목록 노출)" onfocus="handleTripSpotSearch(this.value)" oninput="handleTripSpotSearch(this.value)" autocomplete="off" style="width:100%; height:clamp(33px, 4.3vh, 37px); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:clamp(0.76rem, 2.2vw, 0.82rem); padding:0 10px; outline:none; box-sizing:border-box;" />
+              <div id="tripSpotDropdown" class="spot-search-dropdown-list" style="top:clamp(52px, 6.8vh, 58px); z-index:1000070; background:#0e121a; border:1px solid rgba(56,189,248,0.4); max-height:180px;"></div>
+            </div>
+
+           <div style="display:flex; gap:6px;">
+              <div style="flex:1.2; display:flex; flex-direction:column; gap:2px;">
+                <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800;">📅 출발 날짜 (스케줄 연동) *</label>
+                <input type="text" id="tripInputDate" placeholder="터치하여 달력 선택" readonly onclick="window.openTripDatePickerModal();" style="width:100%; height:clamp(33px, 4.3vh, 37px); background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.35); border-radius:8px; color:#38bdf8; font-size:clamp(0.76rem, 2.2vw, 0.82rem); padding:0 10px; outline:none; box-sizing:border-box; font-family:var(--font-en); font-weight:800; cursor:pointer;" />
+              </div>
+              <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+                <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800;">👥 모집 정원 (총원) *</label>
+                <select id="tripSelectMaxCapacity" style="width:100%; height:clamp(33px, 4.3vh, 37px); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:clamp(0.76rem, 2.2vw, 0.82rem); padding:0 8px; outline:none; box-sizing:border-box; font-weight:800;">
+                  <option value="2">2명 (나 + 1명)</option>
+                  <option value="3">3명 (나 + 2명)</option>
+                  <option value="4" selected>4명 (나 + 3명)</option>
+                  <option value="5">5명 (나 + 4명)</option>
+                  <option value="6">6명 (소그룹)</option>
+                  <option value="8">8명 (단체)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800;">🚗 카풀 및 이동 수단</label>
+              <input type="text" id="tripInputCarpool" placeholder="예: 사당역 07시 카풀 1석 / 들머리 집결" style="width:100%; height:clamp(33px, 4.3vh, 37px); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:clamp(0.76rem, 2.2vw, 0.82rem); padding:0 10px; outline:none; box-sizing:border-box;" />
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800;">🎒 장비 분담 & 안내 사항</label>
+              <input type="text" id="tripInputGearShare" placeholder="예: 방장 4인 쉘터 지참 / 보온병 온수 지참" style="width:100%; height:clamp(33px, 4.3vh, 37px); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:clamp(0.76rem, 2.2vw, 0.82rem); padding:0 10px; outline:none; box-sizing:border-box;" />
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800;">💬 카카오톡 오픈채팅 링크 *</label>
+              <input type="text" id="tripInputChatUrl" placeholder="https://open.kakao.com/o/..." style="width:100%; height:clamp(33px, 4.3vh, 37px); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:clamp(0.76rem, 2.2vw, 0.82rem); padding:0 10px; outline:none; box-sizing:border-box;" />
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:2px;">
+              <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800;">📝 동행 소개글</label>
+              <textarea id="tripInputDesc" rows="2" placeholder="스타일(비화식, 사진, 매너캠핑 등)을 편하게 적어주세요." style="width:100%; height:clamp(42px, 5.5vh, 48px); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:clamp(0.75rem, 2.1vw, 0.80rem); padding:6px 10px; outline:none; resize:none; box-sizing:border-box;"></textarea>
+            </div>
+
+            <button type="button" onclick="submitNewTripJoin()" style="width:100%; height:clamp(38px, 5.2vh, 44px); background:#ffffff; color:#000000; border:none; border-radius:10px; font-size:clamp(0.82rem, 2.4vw, 0.88rem); font-weight:900; cursor:pointer; margin-top:2px; flex-shrink:0; box-shadow:0 4px 14px rgba(255,255,255,0.2);">
+              원정대 등록 완료 ✓
+            </button>
+          </div>
+
+          <div style="width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; flex-direction:row !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; box-sizing:border-box; padding-bottom:env(safe-area-inset-bottom, 0px); z-index:100 !important;">
+            <button type="button" class="dock-item active" onclick="document.getElementById('tripCreateModal').remove(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:900; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
+              <svg viewBox="0 0 24 24" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px); fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              <span>낭만루터</span>
+            </button>
+            <button type="button" class="dock-item" onclick="document.getElementById('tripCreateModal').remove(); location.href='map.html'; triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
+              <svg viewBox="0 0 24 24" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px); fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
+              <span>전국지도</span>
+            </button>
+            <button type="button" class="dock-item" onclick="document.getElementById('tripCreateModal').remove(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px);"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
+              <span>낭만계획</span>
+            </button>
+            <button type="button" class="dock-item" onclick="document.getElementById('tripCreateModal').remove(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px);"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+              <span>낭만보관함</span>
+            </button>
+            <button type="button" class="dock-item" onclick="document.getElementById('tripCreateModal').remove(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
+              <svg viewBox="0 0 24 24" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px); fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              <span>내정보</span>
+            </button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      renderTripPhotoStack();
+    }
+
+    // 🃏 [3:4 완벽 적응형 스택 카드 렌더러 - 유동 크기 100% 흡수]
+    function renderTripPhotoStack() {
+      var wrapper = document.getElementById('tripPhotoStackWrapper');
+      var dots = document.getElementById('tripPhotoIndicators');
+      if (!wrapper) return;
+
+      var photos = window.__tempTripCreatePhotos || [];
+      var total = photos.length;
+
+      if (total === 0) {
+        wrapper.innerHTML = `
+          <div onclick="document.getElementById('tripPhotoFileInput').click()" style="width:100%; height:100%; border-radius:12px; border:1.5px dashed rgba(255,255,255,0.25); background:rgba(255,255,255,0.03); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:clamp(4px, 1vh, 8px); cursor:pointer; box-sizing:border-box;">
+            <span style="font-size:clamp(1.6rem, 4.5vw, 2.1rem); line-height:1;">⛺</span>
+            <span style="font-size:clamp(0.64rem, 1.9vw, 0.70rem); color:#cbd5e1; text-align:center; line-height:1.35;">세로 3:4 텐풍<br>사진 첨부 (최대 3장)</span>
+          </div>
+        `;
+        if (dots) dots.innerHTML = '';
+        return;
+      }
+
+      if (window.__currentTripCreatePhotoIdx >= total) {
+        window.__currentTripCreatePhotoIdx = 0;
+      }
+
+      var stackHtml = '';
+      for (var i = 0; i < total; i++) {
+        var offset = (i - window.__currentTripCreatePhotoIdx + total) % total;
+        var scale = 1 - (offset * 0.05);
+        var translateY = offset * -6;
+        var zIndex = 10 - offset;
+        var opacity = 1 - (offset * 0.25);
+
+        stackHtml += `
+          <div class="trip-photo-stack-card" data-card-idx="${i}" style="position:absolute; inset:0; width:100% !important; height:100% !important; border-radius:12px; overflow:hidden; border:1.5px solid rgba(255,255,255,0.2); box-shadow:0 8px 24px rgba(0,0,0,0.85); background:#070a12; transform:scale(${scale}) translateY(${translateY}px); z-index:${zIndex}; opacity:${opacity}; transition:all 0.3s cubic-bezier(0.16, 1, 0.3, 1); cursor:pointer; box-sizing:border-box;">
+            <img src="${photos[i]}" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />
+            <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 40%, rgba(0,0,0,0.6) 100%); pointer-events:none;"></div>
+            
+            ${offset === 0 ? `
+              <div style="position:absolute; top:8px; left:8px; right:8px; display:flex; justify-content:flex-end; align-items:center; z-index:5;">
+                <button type="button" onclick="removeTripCreatePhoto(${i}, event)" style="width:24px; height:24px; border-radius:50%; background:rgba(0,0,0,0.85); border:1px solid rgba(255,255,255,0.3); color:#fff; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
+              </div>
+              <div style="position:absolute; bottom:8px; left:0; right:0; text-align:center; font-size:0.58rem; color:#cbd5e1; font-weight:800; text-shadow:0 1px 3px #000; pointer-events:none;">
+                터치 시 다음 사진 ➔
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      wrapper.innerHTML = stackHtml;
+
+      if (dots) {
+        var dotsHtml = photos.map(function(p, idx) {
+          var isActive = (idx === window.__currentTripCreatePhotoIdx);
+          return `<div style="width:${isActive ? '16px' : '5px'}; height:5px; border-radius:3px; background:${isActive ? '#ffffff' : 'rgba(255,255,255,0.25)'}; transition:all 0.2s ease;"></div>`;
+        }).join('');
+
+        if (total < 3) {
+          dotsHtml += `<button type="button" onclick="document.getElementById('tripPhotoFileInput').click()" style="background:rgba(255,255,255,0.08); border:1px dashed rgba(255,255,255,0.25); color:#fff; font-size:0.56rem; font-weight:800; padding:1px 6px; border-radius:10px; cursor:pointer; margin-left:6px;">+ 추가</button>`;
+        }
+        dots.innerHTML = dotsHtml;
+      }
+
+      bindPhotoStackSwipeGestures(wrapper);
+    }
+
+    // 👆 스택 카드 터치/스와이프 인터랙션
+    function bindPhotoStackSwipeGestures(wrapper) {
+      if (!wrapper || wrapper._stackBound) return;
+      wrapper._stackBound = true;
+
+      var startX = 0, startY = 0;
+      wrapper.addEventListener('touchstart', function(e) {
+        if (!e.touches || e.touches.length !== 1) return;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+      }, { passive: true });
+
+      wrapper.addEventListener('touchend', function(e) {
+        if (!e.changedTouches || e.changedTouches.length !== 1) return;
+        var diffX = e.changedTouches[0].clientX - startX;
+        var diffY = e.changedTouches[0].clientY - startY;
+        var total = (window.__tempTripCreatePhotos || []).length;
+        if (total <= 1) return;
+
+        // 가로 스와이프 또는 탭 감지 시 카드를 뒤로 넘김
+        if (Math.abs(diffX) > 25 || (Math.abs(diffX) < 10 && Math.abs(diffY) < 10)) {
+          triggerHaptic(8);
+          cycleTripPhotoToBack();
+        }
+      }, { passive: true });
+
+      wrapper.addEventListener('click', function(e) {
+        if (e.target.closest('button')) return;
+        var total = (window.__tempTripCreatePhotos || []).length;
+        if (total > 1) {
+          triggerHaptic(8);
+          cycleTripPhotoToBack();
+        }
+      });
+    }
+
+    function cycleTripPhotoToBack() {
+      var total = (window.__tempTripCreatePhotos || []).length;
+      if (total <= 1) return;
+      window.__currentTripCreatePhotoIdx = (window.__currentTripCreatePhotoIdx + 1) % total;
+      renderTripPhotoStack();
+    }
+
+    function removeTripCreatePhoto(idx, e) {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      triggerHaptic(10);
+      window.__tempTripCreatePhotos.splice(idx, 1);
+      if (window.__currentTripCreatePhotoIdx >= window.__tempTripCreatePhotos.length) {
+        window.__currentTripCreatePhotoIdx = Math.max(0, window.__tempTripCreatePhotos.length - 1);
+      }
+      renderTripPhotoStack();
+    }
+
+  function handleTripMultiPhotoUpload(e) {
+      var files = Array.from(e.target.files || []);
+      e.target.value = '';
+      if (files.length === 0) return;
+
+      var currentPhotos = window.__tempTripCreatePhotos || [];
+      var available = 3 - currentPhotos.length;
+      if (available <= 0) {
+        showToast('사진은 최대 3장까지만 등록 가능합니다.', 'warn');
+        return;
+      }
+
+      var toProcess = files.slice(0, available);
+      triggerHaptic(10);
+      showToast('1080px 고속 압축 중...', 1000);
+
+      var compressSingle = function(file) {
+        return new Promise(function(resolve) {
+          var img = new Image();
+          var url = URL.createObjectURL(file);
+          img.onload = function() {
+            URL.revokeObjectURL(url);
+            var canvas = document.createElement('canvas');
+            var MAX_SIZE = 1080;
+            var w = img.width, h = img.height;
+            if (w > h) {
+              if (w > MAX_SIZE) { h = Math.round(h * (MAX_SIZE / w)); w = MAX_SIZE; }
+            } else {
+              if (h > MAX_SIZE) { w = Math.round(w * (MAX_SIZE / h)); h = MAX_SIZE; }
+            }
+            canvas.width = w;
+            canvas.height = h;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.8));
+          };
+          img.onerror = function() {
+            URL.revokeObjectURL(url);
+            resolve('');
+          };
+          img.src = url;
+        });
+      };
+
+      Promise.all(toProcess.map(compressSingle)).then(function(compressed) {
+        var valids = compressed.filter(Boolean);
+        window.__tempTripCreatePhotos = window.__tempTripCreatePhotos.concat(valids).slice(0, 3);
+        window.__currentTripCreatePhotoIdx = 0;
+        renderTripPhotoStack();
+        triggerHaptic(12);
+      });
+    }
+
+    window.__tripPickerYear = 0;
+    window.__tripPickerMonth = 0;
+    window.__tripPickerSelectedDate = '';
+
+    window.openTripDatePickerModal = function() {
+      triggerHaptic(10);
+      var old = document.getElementById('tripDatePickerModal');
+      if (old) old.remove();
+
+      var now = new Date();
+      var curVal = document.getElementById('tripInputDate')?.value.trim();
+      var parts = curVal ? curVal.match(/\d+/g) : null;
+
+      if (parts && parts.length >= 3) {
+        window.__tripPickerYear = parseInt(parts[0], 10);
+        window.__tripPickerMonth = parseInt(parts[1], 10);
+        window.__tripPickerSelectedDate = window.__tripPickerYear + '.' + String(window.__tripPickerMonth).padStart(2, '0') + '.' + String(parseInt(parts[2], 10)).padStart(2, '0');
+      } else {
+        window.__tripPickerYear = now.getFullYear();
+        window.__tripPickerMonth = now.getMonth() + 1;
+        window.__tripPickerSelectedDate = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
+      }
+
+      var pickerModal = document.createElement('div');
+      pickerModal.id = 'tripDatePickerModal';
+      pickerModal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:2000080 !important; display:flex; justify-content:center; align-items:center; padding:16px; box-sizing:border-box;';
+      pickerModal.onclick = function(e) { if (e.target === pickerModal) pickerModal.remove(); };
+
+      pickerModal.innerHTML = `
+        <div style="width:100%; max-width:340px; background:#0a0d14; border:1.5px solid rgba(56,189,248,0.5); border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:8px; box-shadow:0 24px 60px rgba(0,0,0,0.95); box-sizing:border-box;" onclick="event.stopPropagation();">
+          
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:6px;">
+            <div style="font-size:0.88rem; font-weight:900; color:#fff; display:flex; align-items:center; gap:5px;">
+              <span>📅</span>
+              <span>출발 날짜 & 내 스케줄</span>
+            </div>
+            <button type="button" onclick="document.getElementById('tripDatePickerModal').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer;">✕</button>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; height:26px;">
+            <div style="display:flex; align-items:center; gap:4px;">
+              <button type="button" onclick="window.changeTripPickerMonth(-1);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:22px; height:22px; border-radius:4px; font-size:0.68rem; cursor:pointer;">◀</button>
+              <span id="tripPickerMonthTitle" style="font-size:0.84rem; font-weight:900; color:#38bdf8; font-family:'Space Grotesk', sans-serif;"></span>
+              <button type="button" onclick="window.changeTripPickerMonth(1);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:22px; height:22px; border-radius:4px; font-size:0.68rem; cursor:pointer;">▶</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:5px; font-size:0.55rem; font-weight:800;">
+              <span style="color:#fde047;">★완료</span>
+              <span style="color:#34d399;">⚑계획</span>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.56rem; font-weight:800; color:#64748b; height:16px;">
+            <span style="color:#f43f5e;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#38bdf8;">토</span>
+          </div>
+
+          <div id="tripPickerDaysGrid" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:2px; text-align:center;"></div>
+
+          <div id="tripPickerScheduleHint" style="min-height:36px; background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.12); border-radius:8px; padding:6px 8px; font-size:0.68rem; color:#cbd5e1; line-height:1.4; display:flex; align-items:center;"></div>
+
+          <div style="display:flex; gap:6px; margin-top:2px;">
+            <button type="button" onclick="document.getElementById('tripDatePickerModal').remove();" style="flex:1; height:36px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1; font-size:0.75rem; font-weight:800; border-radius:8px; cursor:pointer;">취소</button>
+            <button type="button" onclick="window.confirmTripDateSelection();" style="flex:1.8; height:36px; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#fff; font-size:0.80rem; font-weight:900; border-radius:8px; cursor:pointer; box-shadow:0 3px 10px rgba(2,132,199,0.35);">이 날짜로 선택 ✓</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(pickerModal);
+      window.renderTripDatePickerCalendar();
+    };
+
+    window.changeTripPickerMonth = function(delta) {
+      window.__tripPickerMonth += delta;
+      if (window.__tripPickerMonth < 1) { window.__tripPickerMonth = 12; window.__tripPickerYear--; }
+      else if (window.__tripPickerMonth > 12) { window.__tripPickerMonth = 1; window.__tripPickerYear++; }
+      window.renderTripDatePickerCalendar();
+      triggerHaptic(8);
+    };
+
+    window.renderTripDatePickerCalendar = function() {
+      var year = window.__tripPickerYear;
+      var month = window.__tripPickerMonth;
+      var titleEl = document.getElementById('tripPickerMonthTitle');
+      var gridEl = document.getElementById('tripPickerDaysGrid');
+      var hintEl = document.getElementById('tripPickerScheduleHint');
+      if (!gridEl) return;
+
+      if (titleEl) titleEl.innerText = year + '년 ' + month + '월';
+
+      var now = new Date();
+      var todayStr = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
+
+      var historyList = window.interactiveHistory || safeGetJSON('okbm_packing_history', []);
+      var planMemosObj = safeGetJSON('okbm_plan_memos', {}) || {};
+
+      var firstDayIndex = new Date(year, month - 1, 1).getDay();
+      var lastDay = new Date(year, month, 0).getDate();
+
+      var daysHtml = '';
+      for (var b = 0; b < firstDayIndex; b++) {
+        daysHtml += '<div style="height:28px;"></div>';
+      }
+
+      for (var d = 1; d <= lastDay; d++) {
+        var dateKey = year + '.' + String(month).padStart(2, '0') + '.' + String(d).padStart(2, '0');
+        var isSelected = (dateKey === window.__tripPickerSelectedDate);
+        var isToday = (dateKey === todayStr);
+
+        var completedRecord = (historyList || []).find(function(h) {
+          return h && (h.date === dateKey || (h.date && h.date.replace(/[-/]/g, '.') === dateKey));
+        });
+        var hasMemo = Boolean(planMemosObj[dateKey] && planMemosObj[dateKey].trim().length > 0);
+
+        var bg = 'rgba(255,255,255,0.025)';
+        var color = '#ffffff';
+        var border = '1px solid rgba(255,255,255,0.06)';
+        var marker = '';
+
+        if (isSelected) {
+          bg = '#0284c7'; color = '#ffffff'; border = '1px solid #38bdf8';
+        } else if (isToday) {
+          border = '1px solid #38bdf8'; color = '#38bdf8';
+        } else if (completedRecord) {
+          marker = '<span style="position:absolute; bottom:1px; font-size:6px; color:#f59e0b;">★</span>';
+          color = '#fde047';
+        } else if (hasMemo) {
+          marker = '<span style="position:absolute; bottom:1px; font-size:6px; color:#34d399;">⚑</span>';
+          color = '#34d399';
+        }
+
+        daysHtml += `
+          <div onclick="window.selectTripPickerDate('${dateKey}');" style="position:relative; height:28px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:'Space Grotesk', sans-serif; font-size:0.75rem; font-weight:800; border-radius:6px; cursor:pointer; background:${bg}; color:${color}; border:${border}; box-sizing:border-box;">
+            ${d}
+            ${marker}
+          </div>
+        `;
+      }
+
+      gridEl.innerHTML = daysHtml;
+
+      if (hintEl) {
+        var sDate = window.__tripPickerSelectedDate;
+        var foundRec = (historyList || []).find(function(h) { return h && (h.date === sDate || (h.date && h.date.replace(/[-/]/g, '.') === sDate)); });
+        var foundMemo = planMemosObj[sDate] || '';
+
+        if (foundRec) {
+          hintEl.innerHTML = '<span style="color:#fde047; font-weight:800;">★ [' + sDate + '] 이미 다녀온 출정: ' + escapeHtml(foundRec.spot || '백패킹') + ' (' + (foundRec.weightKg || '0.00') + 'kg)</span>';
+        } else if (foundMemo) {
+          hintEl.innerHTML = '<span style="color:#34d399; font-weight:800;">⚑ [' + sDate + '] 기존 계획: ' + escapeHtml(foundMemo.slice(0, 38)) + '...</span>';
+        } else {
+          hintEl.innerHTML = '<span style="color:#94a3b8;">✓ [' + sDate + '] 비어있는 일정입니다. 원정대 출발일로 적합합니다!</span>';
+        }
+      }
+    };
+
+    window.selectTripPickerDate = function(dateKey) {
+      window.__tripPickerSelectedDate = dateKey;
+      window.renderTripDatePickerCalendar();
+      triggerHaptic(10);
+    };
+
+   window.confirmTripDateSelection = function() {
+      var input = document.getElementById('tripInputDate');
+      if (input && window.__tripPickerSelectedDate) {
+        input.value = window.__tripPickerSelectedDate;
+      }
+      var modal = document.getElementById('tripDatePickerModal');
+      if (modal) modal.remove();
+      triggerHaptic(12);
+    };
+
+    function handleTripSpotSearch(query) {
+      var dropdown = document.getElementById('tripSpotDropdown');
+      if (!dropdown) return;
+      var q = (query || '').trim().toLowerCase();
+      var pool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
+        ? registeredSpots : (safeGetJSON('okbm_spots_cache', []) || []);
+
+      var matched = q ? pool.filter(function(s) {
+        return (s.name || '').toLowerCase().includes(q) || (s.region || '').toLowerCase().includes(q);
+      }).slice(0, 15) : pool.slice(0, 15);
+
+      if (matched.length === 0) {
+        dropdown.style.display = 'none';
+        return;
+      }
+
+      dropdown.innerHTML = matched.map(function(s) {
+        var spotName = s.fullName || s.name;
+        return `<div class="spot-dropdown-item" onclick="selectTripSpot('${escapeHtml(spotName)}');">
+          <span>${escapeHtml(spotName)}</span>
+          <span style="font-size:0.60rem; color:#94a3b8;">${escapeHtml(s.region || '')}</span>
+        </div>`;
+      }).join('');
+      dropdown.style.display = 'block';
+    }
+
+    window.selectTripSpot = function(spotName) {
+      var input = document.getElementById('tripInputSpot');
+      var dropdown = document.getElementById('tripSpotDropdown');
+      if (input) input.value = spotName;
+      if (dropdown) dropdown.style.display = 'none';
+      triggerHaptic(8);
+    };
+
+    function submitNewTripJoin() {
+      var spot = document.getElementById('tripInputSpot')?.value.trim();
+      var date = document.getElementById('tripInputDate')?.value.trim();
+      var maxCap = parseInt(document.getElementById('tripSelectMaxCapacity')?.value, 10) || 4;
+      var carpool = document.getElementById('tripInputCarpool')?.value.trim();
+      var gearShare = document.getElementById('tripInputGearShare')?.value.trim();
+      var chatUrl = document.getElementById('tripInputChatUrl')?.value.trim();
+      var desc = document.getElementById('tripInputDesc')?.value.trim();
+
+      if (!spot || !date) {
+        showToast('박지와 날짜는 필수 입력 항목입니다.', 'warn');
+        return;
+      }
+
+      var profile = safeGetJSON('user_profile', null);
+      var nick = (profile && profile.nickname) ? profile.nickname : '낭만백패커';
+      var userId = (profile && profile.id) ? String(profile.id).trim() : ('user_' + Date.now());
+      var photoList = (window.__tempTripCreatePhotos && window.__tempTripCreatePhotos.length > 0) ? window.__tempTripCreatePhotos.slice() : [];
+      var tripId = 'trip_' + Date.now();
+
+     if (photoList.length > 0) {
+        var savedMap = (typeof window.safeGetStorage === 'function') 
+          ? window.safeGetStorage('okbm_trip_photos_map', {}) 
+          : safeGetJSON('okbm_trip_photos_map', {});
+        savedMap[tripId] = photoList;
+        if (typeof window.safeSetStorage === 'function') {
+          window.safeSetStorage('okbm_trip_photos_map', savedMap);
+        } else if (typeof window.saveToIndexedDB === 'function') {
+          window.saveToIndexedDB('okbm_trip_photos_map', savedMap);
+        }
+      }
+
+      var defaultPhoto = 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=900&q=80';
+      var mainPhoto = (photoList.length > 0) ? photoList[0] : defaultPhoto;
+
+      var pad = function(n) { return String(n).padStart(2, '0'); };
+      var d = new Date();
+      var timeStr = d.getFullYear() + '.' + pad(d.getMonth() + 1) + '.' + pad(d.getDate()) + '. ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+
+      var newTrip = {
+        tripId: tripId,
+        spotName: spot,
+        date: date,
+        carpoolInfo: carpool || '',
+        maxCapacity: maxCap,
+        currentJoined: 1,
+        participants: [
+          { userId: userId, nickname: nick, isHost: true, joinedAt: Date.now() }
+        ],
+        gearShare: gearShare || '',
+        openChatUrl: chatUrl || 'https://open.kakao.com',
+        photo: mainPhoto,
+        photos: photoList.length > 0 ? photoList : [defaultPhoto],
+        authorName: nick,
+        desc: desc || '함께 안전하고 즐거운 클린 백패킹을 떠나요!',
+        isActive: 'TRUE',
+        createdAt: timeStr
+      };
+
+      window.TRIP_JOINS_DATABASE.unshift(newTrip);
+      renderHomeTripJoinSlider();
+
+      var planMemos = safeGetJSON('okbm_plan_memos', {});
+      var memoText = '📍 목적지: ' + spot + '\n[낭만 원정대 주최] 정원 ' + maxCap + '명 (1명 확정) · ' + (carpool || '집결') + (desc ? ('\n“' + desc + '”') : '');
+      planMemos[date] = planMemos[date] ? (memoText + '\n---\n' + planMemos[date]) : memoText;
+      localStorage.setItem('okbm_plan_memos', JSON.stringify(planMemos));
+
+      triggerHaptic(15);
+      var modal = document.getElementById('tripCreateModal');
+      if (modal) modal.remove();
+
+      showToast('원정대 등록 완료! 내 사진이 안전하게 보관되었습니다.', 'success');
+
+      if (typeof window.syncTripToCloudSheet === 'function') {
+        window.syncTripToCloudSheet(newTrip);
+      }
+    }
+
+    function joinTripAndOpenPlan(tripId) {
+      var token = localStorage.getItem('user_auth_token');
+      var rawProfile = localStorage.getItem('user_profile');
+      var profile = rawProfile ? JSON.parse(rawProfile) : null;
+      if (!token || !profile || !profile.id) {
+        triggerHaptic(10);
+        var detailModal = document.getElementById('tripDetailSheetModal');
+        if (detailModal) detailModal.remove();
+        showToast('🔒 원정대 참가는 로그인 후 가능합니다.', 2200);
+        if (typeof openLoginModal === 'function') openLoginModal();
+        return;
+      }
+      var trip = (window.TRIP_JOINS_DATABASE || []).find(function(t) { return String(t.tripId) === String(tripId); });
+      if (!trip) return;
+      var profile = safeGetJSON('user_profile', null);
+      var nick = (profile && profile.nickname) ? profile.nickname : '낭만대원';
+      var userId = (profile && profile.id) ? String(profile.id).trim() : ('user_' + Date.now());
+
+      trip.participants = trip.participants || [];
+      var exists = trip.participants.some(function(p) { return p.userId === userId || p.nickname === nick; });
+      if (!exists) {
+        trip.participants.push({ userId: userId, nickname: nick, isHost: false, joinedAt: Date.now() });
+        trip.currentJoined = trip.participants.length;
+      }
+
+      var planMemos = safeGetJSON('okbm_plan_memos', {});
+      var memoText = '⛺ [낭만 원정대 동행 참가] ' + trip.spotName + ' (방장: ' + trip.authorName + ')';
+      planMemos[trip.date] = planMemos[trip.date] ? (memoText + '\n---\n' + planMemos[trip.date]) : memoText;
+      localStorage.setItem('okbm_plan_memos', JSON.stringify(planMemos));
+
+      var modal = document.getElementById('tripDetailSheetModal');
+      if (modal) modal.remove();
+
+      triggerHaptic(15);
+      showToast('참가 완료! 낭만계획 달력에 일정이 등록되었습니다.', 'success');
+      renderHomeTripJoinSlider();
+
+      if (typeof window.syncTripToCloudSheet === 'function') {
+        window.syncTripToCloudSheet(trip);
+      }
+    }
+
+    function cancelTripJoin(tripId) {
+      var trip = (window.TRIP_JOINS_DATABASE || []).find(function(t) { return String(t.tripId) === String(tripId); });
+      if (!trip) return;
+      var profile = safeGetJSON('user_profile', null);
+      var nick = (profile && profile.nickname) ? profile.nickname : '';
+      var userId = (profile && profile.id) ? String(profile.id).trim() : '';
+
+      trip.participants = (trip.participants || []).filter(function(p) {
+        return p.userId !== userId && p.nickname !== nick;
+      });
+      trip.currentJoined = Math.max(1, trip.participants.length);
+
+      var modal = document.getElementById('tripDetailSheetModal');
+      if (modal) modal.remove();
+
+      triggerHaptic(10);
+      showToast('원정대 참가가 취소되었습니다.', 'info');
+      renderHomeTripJoinSlider();
+
+      if (typeof window.syncTripToCloudSheet === 'function') {
+        window.syncTripToCloudSheet(trip);
+      }
+    }
+    // 📜 [전체 원정대 목록 모달]
+    function openTripJoinListModal() {
+      triggerHaptic(10);
+      var old = document.getElementById('tripJoinListModal');
+      if (old) old.remove();
+
+      var list = (window.TRIP_JOINS_DATABASE || []).filter(function(t) {
+        return !getTripDDayBadge(t.date).isExpired;
+      });
+
+      var modal = document.createElement('div');
+      modal.id = 'tripJoinListModal';
+      modal.style.cssText = 'position:fixed; inset:0; background:#000000; z-index:1000045; display:flex; flex-direction:column; box-sizing:border-box;';
+
+      modal.innerHTML = `
+        <div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button onclick="document.getElementById('tripJoinListModal').remove()" style="background:none; border:none; color:#cbd5e1; font-size:1.1rem; cursor:pointer;">◀</button>
+            <span style="font-size:0.95rem; font-weight:900; color:#fff;">🤝 전체 원정대 목록</span>
+          </div>
+          <button onclick="document.getElementById('tripJoinListModal').remove(); openTripCreateModal();" style="background:#ffffff; color:#000; font-size:0.72rem; font-weight:900; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;">+ 모집하기</button>
+        </div>
+
+        <div style="flex:1; overflow-y:auto; padding:12px 14px calc(24px + env(safe-area-inset-bottom, 0px)) 14px; display:flex; flex-direction:column; gap:8px; max-width:440px; margin:0 auto; width:100%; box-sizing:border-box;">
+          ${list.length === 0 ? '<div style="text-align:center; color:#64748b; padding:60px 0; font-size:0.78rem;">현재 모집 중인 원정대가 없습니다.</div>' : list.map(function(t) {
+            var dBadge = getTripDDayBadge(t.date);
+            return `
+              <div onclick="document.getElementById('tripJoinListModal').remove(); openTripDetailModal('${escapeHtml(t.tripId)}');" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+                <div style="flex:1; min-width:0; padding-right:8px;">
+                  <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
+                    <span style="font-size:0.60rem; padding:1px 5px; border-radius:3px; ${dBadge.cls}">${dBadge.text}</span>
+                    <span style="font-size:0.86rem; font-weight:900; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(t.spotName)}</span>
+                  </div>
+                  <div style="font-size:0.65rem; color:#94a3b8;">${escapeHtml(t.date)} · ${escapeHtml(t.maxMembers || '')} ${t.carpoolInfo ? ' · 🚗 ' + escapeHtml(t.carpoolInfo) : ''}</div>
+                </div>
+                <span style="font-size:0.68rem; color:#fff; font-weight:800; background:rgba(255,255,255,0.08); padding:4px 8px; border-radius:6px; flex-shrink:0;">신청 ➔</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
     window.__indexDockMode = 'main';
     var lastHomeClickTime = 0;
 
@@ -2569,33 +4102,35 @@ async function initDynamicHeroAndFeeds() {
 
 // [초기 실행 진입점 - 1번 블록: 헤더 인증 UI 즉시 동기화 확립]
 document.addEventListener('DOMContentLoaded', function() {
-  if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
-    Kakao.init(window.KAKAO_APP_KEY);
-  }
+      if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
+        Kakao.init(window.KAKAO_APP_KEY);
+      }
 
-  if (typeof updateHeaderAuthUI === 'function') {
-    updateHeaderAuthUI();
-  }
+      if (typeof updateHeaderAuthUI === 'function') {
+        updateHeaderAuthUI();
+      }
 
-  initDynamicHeroAndFeeds();
-  initIndexDockGestures();
-  checkIncomingDirectTab();
-  refreshMainBannerWeight();
+     initDynamicHeroAndFeeds();
+      initIndexDockGestures();
+      checkIncomingDirectTab();
+     refreshMainBannerWeight();
+      renderHomeTripJoinSlider();
 
-  var scheduleHeavyTasks = window.requestIdleCallback || function(cb) { setTimeout(cb, 60); };
-  scheduleHeavyTasks(function() {
-    initStarlightEngines();
-    loadPortalSpotData();
-    if (typeof trackDailyVisit === 'function') trackDailyVisit();
-  });
-});
+      var scheduleHeavyTasks = window.requestIdleCallback || function(cb) { setTimeout(cb, 60); };
+      scheduleHeavyTasks(function() {
+        initStarlightEngines();
+        loadPortalSpotData();
+        loadFeaturedVideosFromSettingsSheet();
+        loadTripsFromGoogleSheet();
+        if (typeof trackDailyVisit === 'function') trackDailyVisit();
+      });
+    });
   </script>
-
-  <!-- 🏕️ 4대 분할 코어 모듈 스크립트 연결 (완전 호환) -->
-  <script src="romantic-sync.js?v=2.0.1"></script>
-  <script src="templates.js?v=2.0.1"></script>
-  <script src="romantic-history.js?v=2.4.0"></script>
-  <script src="romantic-plan.js?v=2.4.0"></script>
+<!-- 🏕️ 4대 분할 코어 모듈 스크립트 연결 (완전 호환) -->
+  <script src="romantic-sync.js?v=2.5.0"></script>
+  <script src="templates.js?v=2.5.0"></script>
+  <script src="romantic-history.js?v=2.5.0"></script>
+  <script src="romantic-plan.js?v=2.5.0"></script>
 
   <!-- 🔔 안드로이드 물리 백버튼 & iOS 좌측 에지 스와이프 LIFO 모달 탈출 통합 엔진 -->
   <script>
@@ -2714,4 +4249,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   </script>
 </body>
-</html>
+</html>s
