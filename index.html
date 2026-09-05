@@ -1183,30 +1183,55 @@
   <!-- 🛡️ 필수 5대 시스템 모달 레이어 (100% 완전 복원)                -->
   <!-- ============================================================ -->
 
-<div class="custom-modal-overlay" id="videoDetailModal" onclick="if(event.target===this) closeVideoDetailModal();" style="display:none; position:fixed; inset:0; background:rgba(0, 0, 0, 0.75); z-index:1000050 !important; justify-content:center; align-items:flex-end; padding:0 !important; margin:0 !important; box-sizing:border-box;">
-    <div id="videoDetailSheet" style="width:100% !important; max-width:480px !important; max-height:92dvh; height:92dvh; background:#0a0e17; border-top:1px solid rgba(255, 255, 255, 0.18); border-radius:20px 20px 0 0; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 -18px 50px rgba(0, 0, 0, 0.95); margin:0 auto; box-sizing:border-box; transform:translateZ(0);">
+<div class="custom-modal-overlay" id="videoDetailModal" onclick="if(event.target===this) closeVideoDetailModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:1000050 !important; justify-content:center; align-items:stretch; padding:0 !important; margin:0 !important; box-sizing:border-box;">
+    <div id="videoDetailSheet" style="width:100% !important; max-width:480px !important; height:100vh !important; height:100dvh !important; height:100svh !important; max-height:100svh !important; background:#0a0e17; border-radius:0 !important; border:none !important; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; margin:0 auto; box-sizing:border-box; transform:translateZ(0);">
       
-      <!-- 상단 고정 드래그 핸들 & 닫기 탑바 -->
-      <div style="width:100%; padding:10px 14px 8px 14px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); box-sizing:border-box; z-index:60;" onclick="event.stopPropagation();">
-        <div style="flex:1; display:flex; justify-content:center; padding-left:26px;">
-          <div style="width:38px; height:4.5px; border-radius:3px; background:rgba(255, 255, 255, 0.3); cursor:pointer;" onclick="closeVideoDetailModal()"></div>
+      <!-- 1. 상단 풀스크린 닫기 탑바 (Safe Area 완벽 대응) -->
+      <div style="width:100%; padding:10px 14px 8px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); box-sizing:border-box; z-index:60;" onclick="event.stopPropagation();">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="font-size:1.0rem;">🎬</span>
+          <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">영상 속 그 장소</span>
         </div>
-        <button type="button" onclick="closeVideoDetailModal()" style="background:rgba(255, 255, 255, 0.08); border:1px solid rgba(255, 255, 255, 0.15); color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">✕</button>
+        <button type="button" onclick="closeVideoDetailModal()" style="background:rgba(255, 255, 255, 0.08); border:1px solid rgba(255, 255, 255, 0.15); color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.95rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">✕</button>
       </div>
 
-      <!-- 🎬 일체형 단일 스크롤 컨테이너 (유튜브 + 정보창 일체화) -->
+      <!-- 2. 일체형 단일 스크롤 컨테이너 (유튜브 + 정보창) -->
       <div id="videoModalScrollBody" style="flex:1 1 0%; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior-y:contain; display:flex; flex-direction:column; box-sizing:border-box;" onclick="event.stopPropagation();">
         
-        <!-- 1. 유튜브 플레이어 (정보창과 함께 한 몸으로 스크롤됨) -->
         <div id="videoModalPlayerBox" style="width:100% !important; aspect-ratio:16/9; background:#000000; overflow:hidden; flex-shrink:0; position:relative; margin:0; padding:0; border-bottom:1px solid rgba(255, 255, 255, 0.1); z-index:50;">
           <iframe id="videoModalIframe" src="" style="width:100%; height:100%; border:none; display:block;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="eager"></iframe>
         </div>
 
-        <!-- 2. 하단 정보창 및 제휴 링크 -->
-        <div id="videoModalBodyContentSlot" style="padding:14px 14px calc(30px + env(safe-area-inset-bottom, 0px)) 14px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box;">
+        <div id="videoModalBodyContentSlot" style="padding:14px 14px 20px 14px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box;">
         </div>
 
       </div>
+
+      <!-- 3. 🏛️ 최하단 고정 인덱스 5대 메인 독 -->
+      <div style="width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; flex-direction:row !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; box-sizing:border-box; padding-bottom:env(safe-area-inset-bottom, 0px); z-index:100 !important;" onclick="event.stopPropagation();">
+        <button type="button" class="dock-item active" onclick="closeVideoDetailModal(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
+          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          <span>낭만루터</span>
+        </button>
+        <a href="map.html" class="dock-item" onclick="closeVideoDetailModal(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:2px; padding:0 1px;">
+          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
+          <span>전국지도</span>
+        </a>
+        <button type="button" class="dock-item" onclick="closeVideoDetailModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
+          <span>낭만계획</span>
+        </button>
+        <button type="button" class="dock-item" onclick="closeVideoDetailModal(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/>
+          <path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+          <span>낭만보관함</span>
+        </button>
+        <button type="button" class="dock-item" onclick="closeVideoDetailModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
+          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          <span>내정보</span>
+        </button>
+      </div>
+
     </div>
   </div>
   <!-- 1. 🔑 카카오 1초 로그인 모달 -->
@@ -2211,7 +2236,7 @@ async function initDynamicHeroAndFeeds() {
 
     window.VIDEO_DATABASE = window.VIDEO_DATABASE || DEFAULT_VIDEO_DATABASE.slice();
 
-    // 🎬 홈 메인 슬라이더 렌더러
+   // 🎬 홈 메인 슬라이더 렌더러 (원정대 방식 전수 노출)
     function renderVideoCurationSlider() {
       var slider = document.getElementById('homeVideoRailSlider');
       if (!slider) return;
@@ -2229,8 +2254,8 @@ async function initDynamicHeroAndFeeds() {
                 <div class="n-video-play-btn-circle">▶</div>
               </div>
               <div class="n-video-info-hint-bar">
-                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:68%;">📍 ${escapeHtml(spotTitle)}</span>
-                <span style="color:#fde047; font-weight:900;">장소확인 ➔</span>
+                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:65%;">📍 ${escapeHtml(spotTitle)}</span>
+                <span style="color:#38bdf8; font-weight:900;">➔</span>
               </div>
             </div>
           </div>
@@ -4123,6 +4148,7 @@ document.addEventListener('DOMContentLoaded', function() {
       initIndexDockGestures();
       checkIncomingDirectTab();
      refreshMainBannerWeight();
+      renderVideoCurationSlider();
       renderHomeTripJoinSlider();
 
       var scheduleHeavyTasks = window.requestIdleCallback || function(cb) { setTimeout(cb, 60); };
