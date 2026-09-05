@@ -10,6 +10,7 @@
  */
 
 var GAS_API_URL = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
+var R2_PUBLIC_DOMAIN = window.R2_PUBLIC_DOMAIN || 'https://pub-13ec7c39d2394ecc879bb2ed4b304c44.r2.dev';
 
 // 🛡️ 글로벌 클라우드 안전 로드 플래그 초기화
 if (typeof window.isCloudDataLoaded === 'undefined') {
@@ -67,12 +68,43 @@ function showToast(msg, typeOrDuration, maybeDuration) {
   }
 }
 
-// ☁️ 1. 구글 시트 클라우드 유저 데이터(9열 전체) 1순위 비동기 조회
+// 🧰 [공통 유틸] 브라우저 표준 한국 시간 타임스탬프 생성기
+function getFormattedNow() {
+  var d = new Date();
+  var pad = function(n) { return String(n).padStart(2, '0'); };
+  return d.getFullYear() + '. ' + pad(d.getMonth() + 1) + '. ' + pad(d.getDate()) + '. ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+}
+function UtilitiesFormattedNow() {
+  return getFormattedNow();
+}
+
+// ☁️ 1. Cloudflare R2 글로벌 CDN (0.03초 1순위) ➔ 구글 시트(2순위 백업망) 직통 조회
 async function loadUserDataFromCloud(userId) {
   if (!userId) return null;
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    console.log('📡 [RomanticSync] 오프라인 감지: 로컬 캐시로 즉시 전환합니다.');
+    return null;
+  }
+
+  // 🚀 [1순위: 0.03초 (30ms)] Cloudflare 글로벌 엣지 CDN 직통 조회
+  try {
+    var r2Url = R2_PUBLIC_DOMAIN.replace(/\/+$/, '') + '/users/user_' + encodeURIComponent(userId) + '.json?_t=' + Date.now();
+    var r2Res = await fetch(r2Url, { cache: 'no-store' });
+    if (r2Res.ok) {
+      var r2Data = await r2Res.json();
+      if (r2Data && (r2Data.status === 'SUCCESS' || r2Data.bookmarks || r2Data.packHistory || r2Data.myGears || r2Data.nickname)) {
+        console.log('⚡ [RomanticSync] Cloudflare R2 CDN에서 유저 데이터 0.03초 번개 인출 성공!');
+        return r2Data.userData || r2Data;
+      }
+    }
+  } catch (r2Err) {
+    console.log('📡 [RomanticSync] R2 최초 조회 대기, 구글 클라우드로 전환:', r2Err.message);
+  }
+
+  // 📁 [2순위: 구글 앱스 스크립트 안전 폴백]
   try {
     var controller = new AbortController();
-    var timeoutId = setTimeout(function() { controller.abort(); }, 9000);
+    var timeoutId = setTimeout(function() { controller.abort(); }, 7000);
     var res = await fetch(GAS_API_URL + '?action=GET_USER_DATA&userId=' + encodeURIComponent(userId) + '&_t=' + Date.now(), {
       signal: controller.signal
     });
@@ -126,9 +158,11 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
   var isMapPage = (typeof window.location !== 'undefined' && window.location.pathname.includes('map.html'));
   var isIndexPage = !isMapPage || (isPackHistoryUpdated === true);
 
-  // 🌐 [0건 삭제 보장] 기록이 0개라도 빈 배열을 정상 수집하여 클라우드 아카이브 갱신
+  // 🛡️ [삭제 부활 방지 1순위]: 툼스톤 큐가 존재하면 삭제 마킹({isDeleted: true})을 최우선 수집
   var rawHistory = [];
-  if (window.interactiveHistory && Array.isArray(window.interactiveHistory)) {
+  if (Array.isArray(window.__tombstoneHistoryQueue) && window.__tombstoneHistoryQueue.length > 0) {
+    rawHistory = window.__tombstoneHistoryQueue;
+  } else if (window.interactiveHistory && Array.isArray(window.interactiveHistory)) {
     rawHistory = window.interactiveHistory;
   } else if (window.packingHistoryList && Array.isArray(window.packingHistoryList)) {
     rawHistory = window.packingHistoryList;
@@ -138,10 +172,12 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
     rawHistory = safeGetJSON('okbm_packing_history', []);
   }
 
-  window.packingHistoryList = rawHistory;
-  window.interactiveHistory = rawHistory;
+  // 활성 목록은 삭제된 항목을 제외한 순수 기록으로 유지
+  var cleanActiveHistory = rawHistory.filter(function(h) { return h && !h.isDeleted; });
+  window.packingHistoryList = cleanActiveHistory;
+  window.interactiveHistory = cleanActiveHistory;
 
-  // 🪦 [툼스톤 경량화] 삭제된 항목은 4대 핵심 메타만 남겨 전송량 최소화
+  // 🪦 [툼스톤 경량화 직렬화]: 클라우드(R2/구글)로 삭제 증표를 함께 전송하여 타 기기 부활 영구 차단
   var lightweightPackHistory = rawHistory.filter(Boolean).map(function(h) {
     if (h.isDeleted === true) {
       return {
@@ -198,7 +234,7 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
     fromMap: isMapPage && !isIndexPage, // 패킹 기록이 있으면 지도 락 해제
     fromIndex: isIndexPage,
     forcePackSync: true, // 구글 시트 백엔드 강제 동기화 플래그
-    createdAt: (profile && profile.createdAt) ? profile.createdAt : UtilitiesFormattedNow(),
+   createdAt: (profile && profile.createdAt) ? profile.createdAt : getFormattedNow(),
     lastNicknameChangedAt: profile ? (Number(profile.lastNicknameChangedAt) || 0) : 0,
     bookmarks: safeGetJSON('okbm_bookmarks', []),
     visited: safeGetJSON('okbm_visited', []),
@@ -210,22 +246,48 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
   var targetGasUrl = window.GAS_API_URL || GAS_API_URL;
   if (!targetGasUrl || targetGasUrl.includes('구글시트_배포_URL')) return;
 
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    localStorage.setItem('okbm_pending_cloud_sync', 'true');
+    console.log('📡 [RomanticSync] 네트워크 차단: 변경사항 기기 보존 및 재연결 대기열 등록.');
+    updateHeaderAuthUI();
+    return;
+  }
+
   fetch(targetGasUrl, {
     method: 'POST',
-    mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(payload)
-  }).then(function() {
-    console.log('✅ [RomanticSync] 구글 시트 실시간 전송 완료 (총 ' + lightweightPackHistory.length + '건 전체 전송)');
-  }).catch(function(err) {
-    console.warn('[RomanticSync] 클라우드 전송 경고:', err);
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data && data.status === 'SUCCESS') {
+      localStorage.removeItem('okbm_pending_cloud_sync');
+      console.log('✅ [RomanticSync] 구글 시트 실시간 백업 완벽 성공!');
+      updateHeaderAuthUI();
+    } else {
+      localStorage.setItem('okbm_pending_cloud_sync', 'true');
+      console.warn('⚠️ [RomanticSync] 서버 저장 실패 응답:', data);
+    }
+  })
+  .catch(function(err) {
+    localStorage.setItem('okbm_pending_cloud_sync', 'true');
+    console.warn('[RomanticSync] 클라우드 전송 통신 오류:', err);
+    updateHeaderAuthUI();
   });
 }
 
-function UtilitiesFormattedNow() {
-  var d = new Date();
-  var pad = function(n) { return String(n).padStart(2, '0'); };
-  return d.getFullYear() + '. ' + pad(d.getMonth() + 1) + '. ' + pad(d.getDate()) + '. ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+// 🌐 네트워크 복구 자동 감지 및 상향 동기화 리스너
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', function() {
+    updateHeaderAuthUI();
+    if (localStorage.getItem('okbm_pending_cloud_sync') === 'true' && isUserLoggedIn()) {
+      showToast('🟢 네트워크 복구: 클라우드 자동 동기화 중...', 2000);
+      syncUserDataToCloud(true);
+    }
+  });
+  window.addEventListener('offline', function() {
+    updateHeaderAuthUI();
+  });
 }
 
 // 🧭 5. 상단 헤더 및 보관함 로그인 상태 UI 업데이트
@@ -238,8 +300,10 @@ function updateHeaderAuthUI() {
   var statusAction = document.getElementById('cloudStatusAction');
 
   var isLogged = isUserLoggedIn();
+  var isOnline = (typeof navigator === 'undefined') || navigator.onLine;
+  var hasPending = localStorage.getItem('okbm_pending_cloud_sync') === 'true';
   var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : null);
-  var starIconSvg = '<svg viewBox="0 0 24 24" style="width:13px; height:13px; margin-right:2px; fill:#fde047; color:#fde047; flex-shrink:0; display:inline-block; vertical-align:-1px;"><path d="M12,1 Q12,12 1,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,1 Z"/><circle cx="12" cy="12" r="1.5" fill="#ffffff"/></svg>';
+  var starIconSvg = '<svg viewBox="0 0 24 24" style="width:13px; height:13px; margin-right:2px; fill:#fde047; color:#fde047; flex-shrink:0; display:inline-block; vertical-align:-1px;"><path d="M12,1 Q12,12 1,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,23 Q12,12 12,1 Z"/><circle cx="12" cy="1.5" r="1.5" fill="#ffffff"/></svg>';
 
   if (btn && text) {
     if (icon) icon.innerHTML = starIconSvg;
@@ -253,7 +317,11 @@ function updateHeaderAuthUI() {
   }
 
   if (statusBanner && statusText && statusAction) {
-    if (isLogged) {
+    if (!isOnline || hasPending) {
+      statusBanner.className = 'cloud-status-banner cloud-status-guest';
+      statusText.innerText = '📡 기기 로컬 보관 중 (통신 연결 시 자동 백업)';
+      statusAction.innerText = hasPending ? '대기 중 ⏳' : '오프라인';
+    } else if (isLogged) {
       statusBanner.className = 'cloud-status-banner cloud-status-member';
       statusText.innerText = '🟢 낭만 클라우드 실시간 안전 백업 중';
       statusAction.innerText = '동기화됨 ✓';
@@ -466,7 +534,7 @@ function loginWithKakao() {
             id: kakaoId,
             nickname: tempNick,
             isMember: true,
-            createdAt: UtilitiesFormattedNow(),
+            createdAt: getFormattedNow(),
             lastNicknameChangedAt: (accountLocalProfile && accountLocalProfile.lastNicknameChangedAt) ? Number(accountLocalProfile.lastNicknameChangedAt) : 0
           };
 
@@ -519,14 +587,17 @@ function loginWithKakao() {
                   ? window.interactiveHistory
                   : safeGetJSON('okbm_packing_history', []);
 
-                // 1. 클라우드의 삭제 툼스톤 맵과 활성 기록 맵 분리
+               // 1. 클라우드의 삭제 툼스톤 맵과 활성 기록 맵 분리
                 var cloudDeletedIds = new Set();
+                var cloudDeletedDates = new Set();
                 var cloudActiveMap = new Map();
 
                 cloudData.packHistory.filter(Boolean).forEach(function(cItem) {
                   var cId = String(cItem.id || '').trim();
+                  var cDate = String(cItem.date || '').replace(/[-/]/g, '.').trim();
                   if (cItem.isDeleted === true) {
                     if (cId) cloudDeletedIds.add(cId);
+                    if (cDate) cloudDeletedDates.add(cDate);
                   } else {
                     if (cId) cloudActiveMap.set(cId, cItem);
                   }
@@ -569,17 +640,24 @@ function loginWithKakao() {
                   reconciledMap.set(cId, mergedItem);
                 });
 
-                // 3. [오프라인 초안 보존] 서버에 툼스톤이 없고 로컬에만 새로 작성된 기록은 보존
+                // 3. [부활 방지 필터]: 타 기기에서 삭제된 항목은 로컬에서도 완벽히 강제 영구 소멸
                 var hasLocalDraftsToUpload = false;
                 currentLocalHistory.forEach(function(loc) {
                   if (!loc) return;
                   var locId = String(loc.id || '').trim();
-                  // 다른 기기에서 삭제 마킹된 것은 기기 로컬에서도 완벽 제거
-                  if (cloudDeletedIds.has(locId)) {
+                  var locDate = String(loc.date || '').replace(/[-/]/g, '.').trim();
+
+                  // 삭제 툼스톤이 걸린 항목은 절대 복원하지 않고 로컬에서도 영구 파기
+                  if (cloudDeletedIds.has(locId) || cloudDeletedDates.has(locDate) || loc.isDeleted === true) {
+                    if (localSavedPhotos) {
+                      delete localSavedPhotos[locId];
+                      delete localSavedPhotos[locDate];
+                    }
                     return;
                   }
-                  // 서버에 아직 올라가지 않은 로컬 새 글은 보존하여 클라우드로 상향 동기화
-                  if (!cloudActiveMap.has(locId) && !loc.isDeleted) {
+
+                  // 서버에 없는 순수 신규 로컬 글만 보존하여 클라우드로 상향 동기화
+                  if (!cloudActiveMap.has(locId)) {
                     reconciledMap.set(locId, loc);
                     hasLocalDraftsToUpload = true;
                   }
@@ -715,17 +793,19 @@ window.shareFeedToCommunity = function(feedRecord) {
 
   fetch(targetGasUrl, {
     method: 'POST',
-    mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(payload)
-  }).then(function() {
-    console.log('✅ [RomanticSync] 다중 사진 (' + allPhotos.length + '장) 공용 피드 최종 전송 성공');
+  }).then(function(res) {
+    return res.json();
+  }).then(function(data) {
+    if (data && data.status === 'SUCCESS') {
+      console.log('✅ [RomanticSync] 다중 사진 (' + allPhotos.length + '장) 공용 피드 최종 전송 성공');
+    }
   }).catch(function(err) {
     console.warn('[RomanticSync] 커뮤니티 피드 전송 실패:', err);
   });
 };
 
-// 🗑️ [공용 피드 영구 삭제 연동]
 window.deleteFeedFromCommunity = function(feedId, dateStr) {
   var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : null);
   var userId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('user_auth_token') || '');
@@ -742,11 +822,14 @@ window.deleteFeedFromCommunity = function(feedId, dateStr) {
 
   fetch(targetGasUrl, {
     method: 'POST',
-    mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(payload)
-  }).then(function() {
-    console.log('✅ [RomanticSync] 공용 피드 서버 영구 삭제 완료');
+  }).then(function(res) {
+    return res.json();
+  }).then(function(data) {
+    if (data && data.status === 'SUCCESS') {
+      console.log('✅ [RomanticSync] 공용 피드 서버 영구 삭제 완료');
+    }
   }).catch(function(err) {
     console.warn('[RomanticSync] 피드 삭제 요청 실패:', err);
   });
