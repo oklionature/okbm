@@ -180,11 +180,15 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
   var currentGears = window.selectedGearMap || safeGetJSON('okbm_selected_gears_multi', {});
   var currentFavs = window.favoriteGearSet ? Array.from(window.favoriteGearSet) : safeGetJSON('okbm_favorite_gears', []);
   var currentCustoms = safeGetJSON('okbm_custom_gears', []);
+  var currentPresets = safeGetJSON('okbm_gear_presets', []);
+  var currentGearMeta = safeGetJSON('okbm_gear_meta', {});
 
   var myGearsPayload = {
     selectedGears: currentGears,
     favoriteGears: currentFavs,
-    customGears: currentCustoms
+    customGears: currentCustoms,
+    gearPresets: currentPresets,
+    gearMeta: currentGearMeta
   };
 
   var payload = {
@@ -631,6 +635,12 @@ function loginWithKakao() {
                     });
                   }
                 }
+                if (myGears.gearPresets && Array.isArray(myGears.gearPresets)) {
+                  localStorage.setItem('okbm_gear_presets', JSON.stringify(myGears.gearPresets));
+                }
+                if (myGears.gearMeta && typeof myGears.gearMeta === 'object') {
+                  localStorage.setItem('okbm_gear_meta', JSON.stringify(myGears.gearMeta));
+                }
               }
 
               if (typeof renderPlanStage === 'function') renderPlanStage();
@@ -666,7 +676,6 @@ window.shareFeedToCommunity = function(feedRecord) {
   var targetGasUrl = window.GAS_API_URL || GAS_API_URL;
   if (!targetGasUrl || targetGasUrl.includes('구글시트_배포_URL')) return;
 
-  // 🛡️ [0장 누락 방어]: http 링크뿐만 아니라 로컬 등록 사진(data:image)도 100% 정상 수집
   var allPhotos = [];
   if (Array.isArray(feedRecord.photos) && feedRecord.photos.length > 0) {
     allPhotos = feedRecord.photos.filter(function(p) { 
@@ -697,6 +706,8 @@ window.shareFeedToCommunity = function(feedRecord) {
       memo: feedRecord.memo || feedRecord.oneLineMemo,
       photo: mainPhoto,
       photos: allPhotos,
+      photo_url: mainPhoto,
+      photos_json: JSON.stringify(allPhotos),
       items: feedRecord.items || [],
       templateId: feedRecord.templateId || 1
     }
