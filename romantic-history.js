@@ -580,7 +580,7 @@ window.safeSetStorage = function(key, value) {
         </div>`;
 
     return `
-      <div id="swipePostcardTarget" class="postcard-3d-wrapper ${isFlipped ? 'flipped' : ''}" style="width:100%; max-width:280px; aspect-ratio:3/4; position:relative; cursor:pointer; touch-action:pan-y; padding:2px; border-radius:15px; background:${borderGrad}; box-shadow:0 8px 24px rgba(0,0,0,0.85); box-sizing:border-box;">
+      <div id="swipePostcardTarget" class="postcard-3d-wrapper ${isFlipped ? 'flipped' : ''}" style="width:100%; max-width:280px; aspect-ratio:3/4; position:relative; cursor:pointer; touch-action:pan-y; overscroll-behavior:contain; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; padding:2px; border-radius:15px; background:${borderGrad}; box-shadow:0 8px 24px rgba(0,0,0,0.85); box-sizing:border-box;">
         <div class="postcard-face-front" style="inset:2px !important; width:calc(100% - 4px) !important; height:calc(100% - 4px) !important; overflow:hidden; border-radius:13px; background:#0b0f19;">
           ${frontContentHtml}
         </div>
@@ -594,14 +594,12 @@ window.safeSetStorage = function(key, value) {
                 </div>
                 ${statusBadgeHtml}
               </div>
-// =========================================================================
-// [수정 코드 2-1] romantic-history.js : 3D 엽서 뒷면 직통 일지 작성 라우팅
-// =========================================================================
+            </div>
             <div style="display:flex; justify-content:space-between; align-items:flex-end;">
-              <button onclick="event.stopPropagation(); window.openRichAfterTripModal(window.interactiveHistory.find(function(r){return String(r.id)===String('${cur.id}');}));" style="background:linear-gradient(135deg, #0d9488, #059669); border:1px solid #14b8a6; color:#fff; border-radius:6px; font-size:0.75rem; font-weight:900; padding:4px 10px; cursor:pointer; box-shadow:0 2px 8px rgba(13,148,136,0.4);">
+              <button data-record-id="${escapeHtml(String(cur.id))}" onclick="event.stopPropagation(); var self=this; window.openRichAfterTripModal(window.interactiveHistory.find(function(r){return String(r.id)===String(self.dataset.recordId);}));" style="background:linear-gradient(135deg, #0d9488, #059669); border:1px solid #14b8a6; color:#fff; border-radius:6px; font-size:0.75rem; font-weight:900; padding:4px 10px; cursor:pointer; box-shadow:0 2px 8px rgba(13,148,136,0.4); touch-action:manipulation; min-height:36px;">
                 ✍️ 일지 & 현장사진 남기기
               </button>
-              <button onclick="window.openTripActionMenu('${escapeHtml(String(cur.id))}', event)" style="background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.25); color:#cbd5e1; border-radius:6px; font-size:0.75rem; font-weight:900; padding:4px 8px; cursor:pointer;">···</button>
+              <button data-record-id="${escapeHtml(String(cur.id))}" onclick="window.openTripActionMenu(this.dataset.recordId, event)" style="background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.25); color:#cbd5e1; border-radius:6px; font-size:0.75rem; font-weight:900; padding:4px 8px; cursor:pointer; touch-action:manipulation; min-height:36px; min-width:36px;">···</button>
             </div>
           </div>
         </div>
@@ -748,7 +746,7 @@ window.safeSetStorage = function(key, value) {
     window.__memoryStore['okbm_phone_photos_map'] = savedPhotosMap;
     window.safeSetStorage('okbm_phone_photos_map', savedPhotosMap);
 
-    // 🪦 툼스톤을 포함한 전체 큐를 클라우드 전송용으로 임시 등록
+   // 🪦 툼스톤을 포함한 전체 큐를 클라우드 전송용으로 등록
     window.__tombstoneHistoryQueue = remainingList.concat(tombstones);
 
     window.interactiveHistory = remainingList.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
@@ -767,11 +765,11 @@ window.safeSetStorage = function(key, value) {
       }
     }
 
-    // 🚀 툼스톤을 클라우드로 전송하여 타 기기 부활을 영구 차단
+    // 🚀 툼스톤을 클라우드(R2/드라이브)로 전송하여 타 기기 부활을 영구 차단
     if (typeof syncUserDataToCloud === 'function') {
       syncUserDataToCloud(true);
     }
-    window.__tombstoneHistoryQueue = null;
+    setTimeout(function() { window.__tombstoneHistoryQueue = null; }, 3000);
 
     window.__selectedPastTripIds.clear();
     window.__isPastTripsSelectMode = false;
@@ -859,11 +857,7 @@ window.safeSetStorage = function(key, value) {
           var weightStr = escapeHtml(String(r.weightKg || '0.00'));
           var isChecked = window.__selectedPastTripIds.has(String(r.id).trim());
 
-          var clickAction = isSelectMode 
-            ? ('window.togglePastTripItemSelection(\'' + safeId + '\', event)') 
-            : ('window.openSingleTripDualFeedModal(\'' + safeId + '\')');
-
-          return '<div id="pastTripRowCard_' + safeId + '" onclick="' + clickAction + '" style="background:' + (isChecked ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.04)') + '; border:1px solid ' + (isChecked ? '#38bdf8' : 'rgba(255,255,255,0.12)') + '; border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:all 0.15s ease; flex-shrink:0; user-select:none;">' +
+         return '<div id="pastTripRowCard_' + safeId + '" data-record-id="' + safeId + '" onclick="window.__isPastTripsSelectMode ? window.togglePastTripItemSelection(this.dataset.recordId, event) : window.openSingleTripDualFeedModal(this.dataset.recordId)" style="background:' + (isChecked ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.04)') + '; border:1px solid ' + (isChecked ? '#38bdf8' : 'rgba(255,255,255,0.12)') + '; border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:all 0.15s ease; flex-shrink:0; user-select:none;">' +
             '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
               (isSelectMode ? (
                 '<div id="pastTripCheckbox_' + safeId + '" style="width:22px; height:22px; border-radius:6px; border:1.8px solid ' + (isChecked ? '#38bdf8' : 'rgba(255,255,255,0.35)') + '; background:' + (isChecked ? '#38bdf8' : 'transparent') + '; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s ease;">' +
@@ -1831,41 +1825,13 @@ window.deleteTripRecord = function(recordId) {
     triggerHaptic(12);
   };
 
-  window.shareSingleTripDualFeed = async function(recordId) {
-    var log = (window.interactiveHistory || []).find(function(r) { return String(r.id).trim() === String(recordId).trim(); });
-    if (!log) return;
-
-    var shareTitle = `[낭만루트] ${log.spot} 백패킹 일지`;
-    var shareText = log.memo ? `${log.memo}\n\n📍 ${log.spot} (${log.elevation}) · ${log.date}` : `📍 ${log.spot} (${log.elevation}) · ${log.date} 백패킹 기록`;
-    var shareUrl = window.location.href;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
-        if (typeof showToast === 'function') showToast('🌟 공유창이 열렸습니다!', 'success');
-      } catch (err) {
-        if (err.name !== 'AbortError' && typeof showToast === 'function') {
-          showToast('공유 링크가 클립보드에 복사되었습니다.', 'info');
-        }
-      }
-    } else {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(shareText + '\n' + shareUrl);
-        if (typeof showToast === 'function') showToast('📋 낭만 일지가 클립보드에 복사되었습니다!', 'success');
-      }
-    }
-    triggerHaptic(10);
-  };
-
- // 📝 [낭만 일지 작성 모달 - 일반 유저(글 전용 초고속 수정) vs 관리자(사진 추가/교체 전권)]
+  // 📝 [낭만 일지 작성 모달 - 사진 최대 10장 추가/삭제/교체 전면 개방]
   window.openRichAfterTripModal = function(record) {
     if (!record) return;
     var old = document.getElementById('modalRichAfterTrip');
     if (old) old.remove();
 
     window.__richCurrentRecord = record;
-    var isAdmin = Boolean(window.isAdminMode || (typeof isAdminMode !== 'undefined' && isAdminMode));
-
     var currentPhotos = getRecordPhotos(record);
     window.__tempUploadedPhotos = currentPhotos.filter(function(url) {
       return url && !url.includes('images.unsplash.com');
@@ -1876,14 +1842,13 @@ window.deleteTripRecord = function(recordId) {
     formModal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.92); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); z-index:1000005; display:flex; justify-content:center; align-items:center; padding:14px; box-sizing:border-box;';
 
     formModal.innerHTML = `
-      <div style="width:100%; max-width:440px; max-height:92vh; background:#080b11; border:1.5px solid ${isAdmin ? '#f59e0b' : '#38bdf8'}; border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:10px; box-shadow:0 24px 60px rgba(0,0,0,0.95); box-sizing:border-box; overflow-y:auto;">
+      <div style="width:100%; max-width:440px; max-height:92vh; background:#080b11; border:1.5px solid #38bdf8; border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:10px; box-shadow:0 24px 60px rgba(0,0,0,0.95); box-sizing:border-box; overflow-y:auto;">
         
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.12); padding-bottom:8px;">
           <div style="display:flex; align-items:center; gap:6px;">
             <span style="font-size:1.12rem; font-weight:900; color:#fff;">✍️ 낭만 일지 수정</span>
-            ${isAdmin ? '<span style="font-size:0.62rem; color:#fde047; font-weight:900; background:rgba(245,158,11,0.2); border:1px solid #f59e0b; padding:2px 6px; border-radius:4px;">👑 관리자 권한</span>' : ''}
           </div>
-          <button onclick="document.getElementById('modalRichAfterTrip').remove()" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer; padding:0 4px;">✕</button>
+          <button type="button" onclick="document.getElementById('modalRichAfterTrip').remove()" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer; padding:0 4px;">✕</button>
         </div>
 
         <div style="display:flex; gap:6px;">
@@ -1899,10 +1864,10 @@ window.deleteTripRecord = function(recordId) {
 
         <div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <label id="richPhotoCountLabel" style="font-size:0.70rem; color:${isAdmin ? '#fde047' : '#94a3b8'}; font-weight:900;">
-              등록된 사진 (${window.__tempUploadedPhotos.length}장) ${!isAdmin ? '<span style="font-weight:600; color:#64748b;">(수정 불가)</span>' : ''}
+            <label id="richPhotoCountLabel" style="font-size:0.70rem; color:#38bdf8; font-weight:900;">
+              등록된 사진 (${window.__tempUploadedPhotos.length}장 / 최대 10장)
             </label>
-            ${isAdmin ? '<button type="button" onclick="window.__clearAllRichPhotos();" style="background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.4); color:#fda4af; font-size:0.58rem; font-weight:800; padding:2px 6px; border-radius:4px; cursor:pointer;">전체 해제</button>' : ''}
+            <button type="button" onclick="window.__clearAllRichPhotos();" style="background:rgba(244,63,94,0.15); border:1px solid rgba(244,63,94,0.4); color:#fda4af; font-size:0.58rem; font-weight:800; padding:2px 6px; border-radius:4px; cursor:pointer;">전체 해제</button>
           </div>
 
           <div id="richPhotoThumbnailsGrid" style="display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; min-height:56px; align-items:center;">
@@ -1910,22 +1875,16 @@ window.deleteTripRecord = function(recordId) {
               return `
                 <div style="position:relative; width:52px; height:52px; border-radius:6px; overflow:hidden; border:1px solid rgba(255,255,255,0.2); flex-shrink:0;">
                   <img src="${url}" style="width:100%; height:100%; object-fit:cover;" />
-                  ${isAdmin ? `<button type="button" onclick="window.__removeRichSinglePhoto(${pIdx});" style="position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,0.8); color:#fff; border:none; font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>` : ''}
+                  <button type="button" onclick="window.__removeRichSinglePhoto(${pIdx});" style="position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,0.8); color:#fff; border:none; font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
                 </div>
               `;
             }).join('')}
           </div>
 
-          ${isAdmin ? `
-            <input type="file" id="richMultiPhotoInput" accept="image/*" multiple style="position:fixed; top:-9999px; left:-9999px; opacity:0; pointer-events:none;" onchange="window.__handleRichMultiPhotoUpload(event)" />
-            <label for="richMultiPhotoInput" id="btnRichAddPhotoLabel" style="width:100%; height:36px; background:rgba(245,158,11,0.12); border:1.5px dashed #f59e0b; color:#fde047; border-radius:8px; font-size:0.75rem; font-weight:800; cursor:pointer; margin-top:4px; display:flex; align-items:center; justify-content:center; gap:5px; box-sizing:border-box;">
-              <span>👑 [관리자] 사진 추가 / 교체 (최대 10장)</span>
-            </label>
-          ` : `
-            <div style="font-size:0.62rem; color:#64748b; background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.1); border-radius:6px; padding:6px 8px; margin-top:3px; line-height:1.4;">
-              💡 사진은 최초 등록 시 확정됩니다. 사진 변경을 원하시면 기존 기록 삭제 후 재등록해 주세요.
-            </div>
-          `}
+          <input type="file" id="richMultiPhotoInput" accept="image/*" multiple style="display:none;" onchange="window.__handleRichMultiPhotoUpload(event)" />
+          <button type="button" onclick="document.getElementById('richMultiPhotoInput').click();" id="btnRichAddPhotoLabel" style="width:100%; height:36px; background:rgba(56,189,248,0.12); border:1.5px dashed #38bdf8; color:#38bdf8; border-radius:8px; font-size:0.75rem; font-weight:800; cursor:pointer; margin-top:4px; display:flex; align-items:center; justify-content:center; gap:5px; box-sizing:border-box;">
+            <span>📸 현장 사진 추가 / 교체 (최대 10장)</span>
+          </button>
         </div>
 
         <div>
@@ -1933,7 +1892,7 @@ window.deleteTripRecord = function(recordId) {
           <textarea id="richFormMemoInput" placeholder="이날의 백패킹 이야기와 감상을 자유롭게 남겨보세요." style="width:100%; height:120px; background:rgba(255,255,255,0.06); border:1.2px solid rgba(52,211,153,0.5); color:#fff; border-radius:10px; padding:10px 12px; font-size:0.80rem; line-height:1.6; box-sizing:border-box; outline:none; resize:none; font-family:'SUIT', sans-serif; margin-top:4px;">${escapeHtml(record.memo || '')}</textarea>
         </div>
 
-        <button onclick="window.__saveRichAfterTrip('${record.id}')" style="width:100%; height:44px; background:linear-gradient(135deg, #0d9488, #0f766e); border:1px solid #14b8a6; color:#fff; font-size:0.88rem; font-weight:900; border-radius:10px; cursor:pointer; flex-shrink:0;">
+        <button type="button" onclick="window.__saveRichAfterTrip('${record.id}')" style="width:100%; height:44px; background:linear-gradient(135deg, #0d9488, #0f766e); border:1px solid #14b8a6; color:#fff; font-size:0.88rem; font-weight:900; border-radius:10px; cursor:pointer; flex-shrink:0;">
           낭만 저장하기 ✓
         </button>
       </div>
@@ -1941,10 +1900,9 @@ window.deleteTripRecord = function(recordId) {
     document.body.appendChild(formModal);
   };
 
-  window.__renderRichPhotoThumbnails = function() {
+window.__renderRichPhotoThumbnails = function() {
     var grid = document.getElementById('richPhotoThumbnailsGrid');
     var label = document.getElementById('richPhotoCountLabel');
-    var isAdmin = Boolean(window.isAdminMode || (typeof isAdminMode !== 'undefined' && isAdminMode));
     if (!Array.isArray(window.__tempUploadedPhotos)) window.__tempUploadedPhotos = [];
 
     if (grid) {
@@ -1955,7 +1913,7 @@ window.deleteTripRecord = function(recordId) {
           return `
             <div style="position:relative; width:52px; height:52px; border-radius:6px; overflow:hidden; border:1px solid rgba(255,255,255,0.2); flex-shrink:0;">
               <img src="${url}" style="width:100%; height:100%; object-fit:cover;" />
-              ${isAdmin ? `<button type="button" onclick="window.__removeRichSinglePhoto(${pIdx});" style="position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,0.8); color:#fff; border:none; font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>` : ''}
+              <button type="button" onclick="window.__removeRichSinglePhoto(${pIdx});" style="position:absolute; top:2px; right:2px; width:16px; height:16px; border-radius:50%; background:rgba(0,0,0,0.8); color:#fff; border:none; font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
             </div>
           `;
         }).join('');
@@ -1963,7 +1921,7 @@ window.deleteTripRecord = function(recordId) {
     }
 
     if (label) {
-      label.innerHTML = `등록된 사진 (${window.__tempUploadedPhotos.length}장) ${!isAdmin ? '<span style="font-weight:600; color:#64748b;">(수정 불가)</span>' : ''}`;
+      label.innerHTML = `등록된 사진 (${window.__tempUploadedPhotos.length}장 / 최대 10장)`;
     }
   };
 
@@ -2005,7 +1963,7 @@ window.deleteTripRecord = function(recordId) {
           var img = new Image();
           img.onload = function() {
             var canvas = document.createElement('canvas');
-            var MAX_SIZE = 1600;
+            var MAX_SIZE = 1200;
             var width = img.width;
             var height = img.height;
 
@@ -2022,7 +1980,11 @@ window.deleteTripRecord = function(recordId) {
             ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(img, 0, 0, width, height);
 
-            resolve(canvas.toDataURL('image/jpeg', 0.88));
+            var outputUrl = canvas.toDataURL('image/webp', 0.80);
+            if (!outputUrl.startsWith('data:image/webp')) {
+              outputUrl = canvas.toDataURL('image/jpeg', 0.80);
+            }
+            resolve(outputUrl);
           };
           img.onerror = function() { resolve(''); };
           img.src = evt.target.result;
