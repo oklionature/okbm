@@ -1916,77 +1916,34 @@ window.__renderRichPhotoThumbnails = function() {
       return;
     }
 
-    var filesToProcess = files.slice(0, availableSlots);
+   var filesToProcess = files.slice(0, availableSlots);
     triggerHaptic(10);
-    if (typeof showToast === 'function') showToast('아이폰 HEIC 및 사진 변환 중...', 1200);
 
-    var convertIfHeic = async function(file) {
-      var name = (file.name || '').toLowerCase();
-      var type = (file.type || '').toLowerCase();
-      var isHeic = name.endsWith('.heic') || name.endsWith('.heif') || type.includes('heic') || type.includes('heif');
-      if (isHeic && typeof heic2any !== 'undefined') {
-        try {
-          var blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.88 });
-          return Array.isArray(blob) ? blob[0] : blob;
-        } catch (heicErr) {
-          console.warn('[HEIC History] Fallback:', heicErr);
-          return file;
-        }
-      }
-      return file;
-    };
-
-    var compressSingle = function(file) {
-      return new Promise(async function(resolve) {
-        try {
-          var safeFile = await convertIfHeic(file);
-          var reader = new FileReader();
-          reader.onload = function(evt) {
-            var img = new Image();
-            img.onload = function() {
-              var canvas = document.createElement('canvas');
-              var MAX_SIZE = 1200;
-              var width = img.width;
-              var height = img.height;
-
-              if (width > height) {
-                if (width > MAX_SIZE) { height = Math.round(height * (MAX_SIZE / width)); width = MAX_SIZE; }
-              } else {
-                if (height > MAX_SIZE) { width = Math.round(height * (MAX_SIZE / height)); height = MAX_SIZE; }
-              }
-
-              canvas.width = width;
-              canvas.height = height;
-              var ctx = canvas.getContext('2d');
-              ctx.imageSmoothingEnabled = true;
-              ctx.imageSmoothingQuality = 'high';
-              ctx.drawImage(img, 0, 0, width, height);
-
-              var outputUrl = canvas.toDataURL('image/jpeg', 0.85);
-              resolve(outputUrl);
-            };
-            img.onerror = function() { resolve(''); };
-            img.src = evt.target.result;
-          };
-          reader.onerror = function() { resolve(''); };
-          reader.readAsDataURL(safeFile);
-        } catch (err) {
-          resolve('');
-        }
-      });
-    };
+    if (typeof window.showPhotoLoadingModal === 'function') {
+      window.showPhotoLoadingModal(1, filesToProcess.length);
+    }
 
     (async function() {
       var validNewList = [];
       for (var i = 0; i < filesToProcess.length; i++) {
-        var compUrl = await compressSingle(filesToProcess[i]);
+        if (typeof window.showPhotoLoadingModal === 'function') {
+          window.showPhotoLoadingModal(i + 1, filesToProcess.length);
+        }
+        var compUrl = (typeof window.processSinglePhotoSmart === 'function')
+          ? await window.processSinglePhotoSmart(filesToProcess[i])
+          : '';
         if (compUrl && compUrl.length > 50) validNewList.push(compUrl);
       }
+
+      if (typeof window.hidePhotoLoadingModal === 'function') {
+        window.hidePhotoLoadingModal();
+      }
+
       window.__tempUploadedPhotos = (window.__tempUploadedPhotos || []).concat(validNewList).slice(0, 10);
       window.__renderRichPhotoThumbnails();
       triggerHaptic(12);
       if (typeof showToast === 'function') {
-        showToast(`사진 ${validNewList.length}장 추가 완료!`, 'success', 1500);
+        showToast('사진 ' + validNewList.length + '장 추가 완료!', 'success', 1500);
       }
     })();
   };
