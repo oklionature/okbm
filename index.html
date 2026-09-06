@@ -2058,15 +2058,37 @@ async function initDynamicHeroAndFeeds() {
     var R2_FEEDS_URL = r2Domain.replace(/\/+$/, '') + '/feeds.json';
     initSmartHeaderScrollEngine();
 
- var profile = safeGetJSON('user_profile', null);
-  var cachedFeeds = safeGetJSON('okbm_cached_community_feeds', []);
-  var savedPhotosMap = safeGetJSON('okbm_phone_photos_map', {});
-  var initialFeeds = [];
+  var profile = safeGetJSON('user_profile', null);
+  var localHistory = safeGetJSON('okbm_packing_history', []);
+    var cachedFeeds = safeGetJSON('okbm_cached_community_feeds', []);
+    var savedPhotosMap = safeGetJSON('okbm_phone_photos_map', {});
+    var instantHeroCover = localStorage.getItem('okbm_hero_cover_url');
+    var initialFeeds = [];
 
-  // 🛡️ [클라우드 1순위 원칙]: 도메인별로 제각각 흩어진 낡은 로컬 캐시 대신, 검증된 공용 캐시 또는 선자령 기본값을 초기 뼈대로 채용
-  if (Array.isArray(cachedFeeds) && cachedFeeds.length > 0) {
+  if (Array.isArray(localHistory) && localHistory.length > 0) {
+    initialFeeds = localHistory.map(function(item) {
+      var clone = Object.assign({}, item);
+      var iId = String(clone.id || '').trim();
+      var cleanPureId = iId.split(';')[0].trim();
+      var iDate = String(clone.date || '').trim();
+      var altDate = iDate.replace(/[-/]/g, '.');
+      var matchedPhotos = (cleanPureId && savedPhotosMap[cleanPureId]) || (iId && savedPhotosMap[iId]) || (iDate && savedPhotosMap[iDate]) || (altDate && savedPhotosMap[altDate]);
+
+      if (Array.isArray(matchedPhotos) && matchedPhotos.length > 0) {
+        clone.photos = matchedPhotos;
+        clone.photo = matchedPhotos[0];
+        clone.fieldPhoto = matchedPhotos[0];
+      }
+      if (isUserLoggedIn() && profile && profile.nickname) {
+        clone.author = profile.nickname;
+      }
+      return clone;
+    });
+  } else if (Array.isArray(cachedFeeds) && cachedFeeds.length > 0) {
     initialFeeds = cachedFeeds.slice();
-  } else {
+  }
+
+  if (initialFeeds.length === 0) {
     var presetCopy = Object.assign({}, FALLBACK_HERO_PRESET);
     if (isUserLoggedIn() && profile && profile.nickname) {
       presetCopy.author = profile.nickname;
@@ -2089,7 +2111,7 @@ async function initDynamicHeroAndFeeds() {
     }
   } catch (e) {}
 
-  // ⚡ [제5헌법 준수] 1순위: Cloudflare R2 글로벌 CDN feeds.json 0.03초 직통 인출 및 전 도메인 강제 일원화
+  /// ⚡ [제5헌법 준수] 1순위: Cloudflare R2 글로벌 CDN feeds.json 0.03초 직통 인출
   try {
     var r2Res = await fetch(R2_FEEDS_URL + '?_t=' + Date.now(), { cache: 'no-store' });
     if (r2Res.ok) {
@@ -2106,7 +2128,7 @@ async function initDynamicHeroAndFeeds() {
           console.log('⚡ [Index] Cloudflare R2 CDN 피드 수신 성공');
           return;
         } else {
-          // 🧹 [서버 0개 동기화]: 서버 피드가 비어있으면 각 도메인의 과거 로컬 캐시를 강제 파기하고 선자령 기본값으로 리셋
+          // 🧹 [서버 0개 동기화]: 서버 피드가 비어있으면 폰의 과거 로컬 캐시를 즉시 영구 삭제하고 선자령 기본값으로 리셋
           localStorage.removeItem('okbm_cached_community_feeds');
           localStorage.removeItem('okbm_hero_cover_url');
           var resetPreset = Object.assign({}, FALLBACK_HERO_PRESET);
@@ -2117,7 +2139,7 @@ async function initDynamicHeroAndFeeds() {
           window.heroTopRecords = [resetPreset];
           window.currentHeroCardIndex = 0;
           renderCurrentHeroCard();
-          console.log('🧹 [Index] 서버 피드 0개 확인: 로컬 캐시 파기 및 기본 선자령으로 리셋 완료');
+          console.log('🧹 [Index] 서버 피드 0개 확인: 폰 로컬 캐시 파기 및 기본 선자령으로 리셋 완료');
           return;
         }
       }
@@ -2135,10 +2157,34 @@ async function initDynamicHeroAndFeeds() {
       if (Array.isArray(cloudFeeds)) {
         if (cloudFeeds.length > 0) {
           localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(cloudFeeds));
-          window.__allLoadedFeeds = cloudFeeds;
-          window.heroTopRecords = cloudFeeds;
-          renderCurrentHeroCard();
+
+          var finalFeeds = (Array.isArray(localHistory) && localHistory.length > 0) ? initialFeeds.slice() : [];
+          var idSet = new Set(finalFeeds.map(function(f) { return String(f.id).trim(); }));
+
+          cloudFeeds.forEach(function(cf) {
+            var cid = String(cf.id).trim();
+            if (!idSet.has(cid)) {
+              var cItem = Object.assign({}, cf);
+              if (!cItem.photos || cItem.photos.length === 0) {
+                if (cItem.photos_json && String(cItem.photos_json).includes('http')) {
+                  var matchedUrls = String(cItem.photos_json).match(/https?:\/\/[^\s"',\]\)]+/g);
+                  if (matchedUrls) cItem.photos = matchedUrls;
+                } else if (cItem.photo_url) {
+                  cItem.photos = [cItem.photo_url];
+                }
+              }
+              finalFeeds.push(cItem);
+              idSet.add(cid);
+            }
+          });
+
+          if (finalFeeds.length > 0) {
+            window.__allLoadedFeeds = finalFeeds;
+            window.heroTopRecords = finalFeeds;
+            renderCurrentHeroCard();
+          }
         } else {
+          // 🧹 구글 시트 백엔드도 0개일 때 폰 캐시 동시 파기
           localStorage.removeItem('okbm_cached_community_feeds');
           localStorage.removeItem('okbm_hero_cover_url');
           var fallbackOnly = [Object.assign({}, FALLBACK_HERO_PRESET)];
