@@ -1918,10 +1918,25 @@ window.__renderRichPhotoThumbnails = function() {
 
     var filesToProcess = files.slice(0, availableSlots);
     triggerHaptic(10);
-    if (typeof showToast === 'function') showToast('관리자 사진 최적화 중...', 1000);
+    if (typeof showToast === 'function') showToast('아이폰 HEIC 및 사진 변환 중...', 1200);
+
+    var convertIfHeic = async function(file) {
+      var name = (file.name || '').toLowerCase();
+      var isHeic = name.endsWith('.heic') || name.endsWith('.heif') || (file.type && file.type.includes('heic'));
+      if (isHeic && typeof heic2any !== 'undefined') {
+        try {
+          var blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.88 });
+          return Array.isArray(blob) ? blob[0] : blob;
+        } catch (heicErr) {
+          return file;
+        }
+      }
+      return file;
+    };
 
     var compressSingle = function(file) {
-      return new Promise(function(resolve) {
+      return new Promise(async function(resolve) {
+        var safeFile = await convertIfHeic(file);
         var reader = new FileReader();
         reader.onload = function(evt) {
           var img = new Image();

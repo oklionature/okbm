@@ -2137,7 +2137,7 @@
         if (!map) return;
         const currentLevel = map.getLevel();
         const proj = map.getProjection();
-        const bounds = map.getBounds(); // ⚡ 화면 영역 바운드 즉시 획득
+        const bounds = map.getBounds();
         const occupiedBoxes = [];
         const activeId = currentActiveSpot ? String(currentActiveSpot.id).trim() : (window.__MANUAL_ACTIVE_ID__ || null);
 
@@ -2149,12 +2149,12 @@
             const isSelected = (activeId === sId);
             const latlng = new kakao.maps.LatLng(spot.lat, spot.lng);
 
-            // ⚡ [연산 90% 절감]: 현재 화면 밖의 마커는 라벨 계산을 스킵하고 숨김
             if (bounds && !bounds.contain(latlng) && !isSelected) {
               const overlay = spotLabelOverlayMap.get(sId);
-              if (overlay) overlay.setMap(null);
+              if (overlay && overlay.getMap()) overlay.setMap(null);
               return;
             }
+
             const isFav = userBookmarks.has(sId);
             const isDone = userVisited.has(sId);
             const views = spot.searchCount || 0;
@@ -2171,13 +2171,15 @@
         });
 
         candidateSpots.sort((a, b) => b.priority - a.priority);
+        const maxRenderCount = currentLevel <= 6 ? 60 : 35;
+        let renderedCount = 0;
 
         candidateSpots.forEach(({ id, spot, priority, isSelected }) => {
           const overlay = spotLabelOverlayMap.get(id);
           if (!overlay) return;
 
-          if (currentLevel >= 11 || (!isSelected && currentLevel >= 12)) {
-            overlay.setMap(null);
+          if (currentLevel >= 11 || (!isSelected && currentLevel >= 12) || (!isSelected && renderedCount >= maxRenderCount)) {
+            if (overlay.getMap()) overlay.setMap(null);
             return;
           }
 
@@ -2196,9 +2198,11 @@
           const hasCollision = occupiedBoxes.some(b => !(box.left > b.right + 4 || box.right < b.left - 4 || box.top > b.bottom + 2 || box.bottom < b.top - 2));
 
           if (!isSelected && hasCollision && priority < 10000) {
-            overlay.setMap(null);
+            if (overlay.getMap()) overlay.setMap(null);
           } else {
             occupiedBoxes.push(box);
+            renderedCount++;
+            
             const diffClass = getSpotDiffColorClass(spot.difficulty);
             let row1Name = (spot.spot_main || spot.name || '무명박지').trim();
             let row2Sub = (spot.spot_sub || '').trim();
@@ -2206,32 +2210,36 @@
             if (parenMatch) { row1Name = parenMatch[1].trim(); if (!row2Sub) row2Sub = parenMatch[2].trim(); }
             const row3Elev = spot.elevation ? `${String(spot.elevation).replace(/m$/i,'')}m` : '';
 
-           const labelDiv = document.createElement('div');
-            labelDiv.className = 'lod-marker-container';
-            labelDiv.style.pointerEvents = 'auto';
-            labelDiv.style.cursor = 'pointer';
-            labelDiv.onclick = (e) => {
-              e.stopPropagation();
-              focusSpotOnMap(spot);
-            };
-            const labelTransform = isSelected ? 'transform: translateX(-50%) scale(1.08);' : 'transform: translateX(-50%);';
+            const labelKey = `${id}_${isFullMode ? 'full' : 'mini'}_${isSelected ? 'sel' : 'nor'}`;
+            if (overlay._cachedLabelKey !== labelKey) {
+              const labelDiv = document.createElement('div');
+              labelDiv.className = 'lod-marker-container';
+              labelDiv.style.pointerEvents = 'auto';
+              labelDiv.style.cursor = 'pointer';
+              labelDiv.onclick = (e) => {
+                e.stopPropagation();
+                focusSpotOnMap(spot);
+              };
+              const labelTransform = isSelected ? 'transform: translateX(-50%) scale(1.08);' : 'transform: translateX(-50%);';
 
-            labelDiv.innerHTML = `
-              ${userBookmarks.has(id) ? `<div class="marker-badge-corner badge-corner-fav" title="찜한 박지">${ICONS.HEART}</div>` : ''}
-              ${userVisited.has(id) ? `<div class="marker-badge-corner badge-corner-visited" title="클리어 박지">${ICONS.FLAG}</div>` : ''}
-              <div class="lod-marker-label" style="position: absolute; bottom: 44px; left: 50%; pointer-events: auto; ${labelTransform}">
-                <div class="lod-label-row-1 ${diffClass}">${escapeHtml(row1Name)}</div>
-                ${(isFullMode && row2Sub) ? `<div class="lod-label-row-2">${escapeHtml(row2Sub)}</div>` : ''}
-                ${(isFullMode && row3Elev) ? `<div class="lod-label-row-3">${ICONS.MOUNTAIN}${escapeHtml(row3Elev)}</div>` : ''}
-              </div>
-            `;
-            overlay.setContent(labelDiv);
+              labelDiv.innerHTML = `
+                ${userBookmarks.has(id) ? `<div class="marker-badge-corner badge-corner-fav" title="찜한 박지">${ICONS.HEART}</div>` : ''}
+                ${userVisited.has(id) ? `<div class="marker-badge-corner badge-corner-visited" title="클리어 박지">${ICONS.FLAG}</div>` : ''}
+                <div class="lod-marker-label" style="position: absolute; bottom: 44px; left: 50%; pointer-events: auto; ${labelTransform}">
+                  <div class="lod-label-row-1 ${diffClass}">${escapeHtml(row1Name)}</div>
+                  ${(isFullMode && row2Sub) ? `<div class="lod-label-row-2">${escapeHtml(row2Sub)}</div>` : ''}
+                  ${(isFullMode && row3Elev) ? `<div class="lod-label-row-3">${ICONS.MOUNTAIN}${escapeHtml(row3Elev)}</div>` : ''}
+                </div>
+              `;
+              overlay.setContent(labelDiv);
+              overlay._cachedLabelKey = labelKey;
+            }
+
             overlay.setZIndex(isSelected ? 9999 : 150);
-            overlay.setMap(map);
+            if (!overlay.getMap()) overlay.setMap(map);
           }
         });
       }
-
       function closeAllPopups() { 
         closeMobileBottomSheet(); 
         closePcSlidingDrawer(); 

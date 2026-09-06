@@ -20,6 +20,7 @@
   <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
 
   <style>
   @font-face {
@@ -3320,12 +3321,27 @@ function renderTripDetailSheet(activeTrips) {
 
       var toProcess = files.slice(0, available);
       triggerHaptic(10);
-      showToast('1080px 고속 압축 중...', 1000);
+      showToast('아이폰 사진 변환 및 압축 중...', 1200);
+
+      var convertIfHeic = async function(file) {
+        var name = (file.name || '').toLowerCase();
+        var isHeic = name.endsWith('.heic') || name.endsWith('.heif') || (file.type && file.type.includes('heic'));
+        if (isHeic && typeof heic2any !== 'undefined') {
+          try {
+            var blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.88 });
+            return Array.isArray(blob) ? blob[0] : blob;
+          } catch (heicErr) {
+            return file;
+          }
+        }
+        return file;
+      };
 
       var compressSingle = function(file) {
-        return new Promise(function(resolve) {
+        return new Promise(async function(resolve) {
+          var safeFile = await convertIfHeic(file);
           var img = new Image();
-          var url = URL.createObjectURL(file);
+          var url = URL.createObjectURL(safeFile);
           img.onload = function() {
             URL.revokeObjectURL(url);
             var canvas = document.createElement('canvas');
@@ -3935,13 +3951,30 @@ function renderTripDetailSheet(activeTrips) {
       `;
     }
 
-   function handleShareCardPhotoUpload(e) {
+   async function handleShareCardPhotoUpload(e) {
       var files = Array.from(e.target.files || []);
       if (files.length === 0) return;
 
       var filesToProcess = files.slice(0, 10);
+      showToast('아이폰 HEIC 및 사진 변환 중...', 1200);
+
+      var convertIfHeic = async function(file) {
+        var name = (file.name || '').toLowerCase();
+        var isHeic = name.endsWith('.heic') || name.endsWith('.heif') || (file.type && file.type.includes('heic'));
+        if (isHeic && typeof heic2any !== 'undefined') {
+          try {
+            var blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.88 });
+            return Array.isArray(blob) ? blob[0] : blob;
+          } catch (heicErr) {
+            return file;
+          }
+        }
+        return file;
+      };
+
       var compressSingle = function(file) {
-        return new Promise(function(resolve) {
+        return new Promise(async function(resolve) {
+          var safeFile = await convertIfHeic(file);
           var reader = new FileReader();
           reader.onload = function(evt) {
             var img = new Image();
@@ -4072,16 +4105,20 @@ function renderTripDetailSheet(activeTrips) {
         if (window.history && window.history.replaceState) {
           window.history.replaceState({}, document.title, window.location.pathname);
         }
-        setTimeout(function() {
-          if (typeof openHistoryModal === 'function') openHistoryModal();
-        }, 250);
+        if (typeof openHistoryModal === 'function') {
+          openHistoryModal();
+        } else {
+          setTimeout(function() { if (typeof openHistoryModal === 'function') openHistoryModal(); }, 60);
+        }
       } else if (openParam === 'basecamp' || openParam === 'plan' || tabParam === 'plan') {
         if (window.history && window.history.replaceState) {
           window.history.replaceState({}, document.title, window.location.pathname);
         }
-        setTimeout(function() {
-          if (typeof openPlanModal === 'function') openPlanModal('calendar');
-        }, 250);
+        if (typeof openPlanModal === 'function') {
+          openPlanModal('calendar');
+        } else {
+          setTimeout(function() { if (typeof openPlanModal === 'function') openPlanModal('calendar'); }, 60);
+        }
       }
     }
 
