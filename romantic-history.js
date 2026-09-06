@@ -320,7 +320,7 @@ window.safeSetStorage = function(key, value) {
     window.__memoryStore['okbm_packing_history'] = window.interactiveHistory;
     window.safeSetStorage('okbm_packing_history', list);
 
-    // 🚀 [클라우드 일원화]: Base64 사진이 있으면 백그라운드에서 구글 클라우드 영구 URL로 승격 업로드
+   // 🚀 [클라우드 일원화]: 영구 URL 보존 및 구글 시트/R2 피드 100% 직통 동기화
     var hasBase64Photo = rawPhotos.some(function(p) { return typeof p === 'string' && p.startsWith('data:'); });
     if (hasBase64Photo && typeof window.uploadSinglePhotoToDrive === 'function') {
       (async function elevatePhotosToCloud() {
@@ -339,6 +339,7 @@ window.safeSetStorage = function(key, value) {
         normalized.photos = finalCloudUrls;
         normalized.photo = finalCloudUrls[0] || '';
         normalized.fieldPhoto = finalCloudUrls[0] || '';
+        normalized.photo_url = finalCloudUrls[0] || '';
 
         var pMap = window.safeGetStorage('okbm_phone_photos_map', {}) || {};
         pMap[String(normalized.id)] = finalCloudUrls;
@@ -351,7 +352,7 @@ window.safeSetStorage = function(key, value) {
         if (typeof window.shareFeedToCommunity === 'function') window.shareFeedToCommunity(normalized);
       })();
     } else {
-      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(true);
       if (typeof window.shareFeedToCommunity === 'function') window.shareFeedToCommunity(normalized);
     }
 

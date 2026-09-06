@@ -1614,38 +1614,44 @@
 // 🗂️ [사진 목록 추출 헬퍼] 1200px 스위트 스팟 화질 적용 & 4배 고속 로딩
     function getArchivePhotosList(record) {
       if (!record) return [];
-      
-      var savedPhotos = safeGetJSON('okbm_phone_photos_map', {});
-      if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
-        savedPhotos = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], savedPhotos);
-      }
-
-      var rId = String(record.id || '').trim();
-      var cleanPureId = rId.split(';')[0].trim();
-      var rDate = String(record.date || '').trim();
-      var altDate = rDate.replace(/[-/]/g, '.');
-
-      var foundList = (cleanPureId && savedPhotos[cleanPureId]) || 
-                      (rId && savedPhotos[rId]) || 
-                      (rDate && savedPhotos[rDate]) || 
-                      (altDate && savedPhotos[altDate]);
       var results = [];
 
-      if (Array.isArray(foundList) && foundList.length > 0) {
-        results = foundList.filter(Boolean);
-      } else if (typeof foundList === 'string' && foundList.length > 20) {
-        results = [foundList];
-      } else if (Array.isArray(record.photos) && record.photos.length > 0) {
+      // 🌐 1순위: 서버(R2/구글 시트)에서 내려온 공개 CDN 주소 최우선 추출 (타인 기기 100% 노출)
+      if (Array.isArray(record.photos) && record.photos.length > 0) {
         results = record.photos.filter(Boolean);
+      } else if (record.photo_url && String(record.photo_url).trim().length > 10) {
+        results = [String(record.photo_url).trim()];
       } else if (record.photos_json && String(record.photos_json).includes('http')) {
         var matchedJsonUrls = String(record.photos_json).match(/https?:\/\/[^\s"',\]\)]+/g);
         if (matchedJsonUrls && matchedJsonUrls.length > 0) results = matchedJsonUrls;
-      } else if (record.photo_url && String(record.photo_url).trim().length > 20) {
-        results = [String(record.photo_url).trim()];
-      } else if (record.fieldPhoto && String(record.fieldPhoto).trim().length > 20) {
-        results = [String(record.fieldPhoto).trim()];
-      } else if (record.photo && String(record.photo).trim().length > 20) {
+      } else if (record.photo && String(record.photo).trim().length > 10) {
         results = [String(record.photo).trim()];
+      } else if (record.fieldPhoto && String(record.fieldPhoto).trim().length > 10) {
+        results = [String(record.fieldPhoto).trim()];
+      }
+
+      // 📱 2순위: 서버 주소가 없을 때만 로컬 스마트폰 캐시에서 보충
+      if (results.length === 0) {
+        var savedPhotos = safeGetJSON('okbm_phone_photos_map', {});
+        if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
+          savedPhotos = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], savedPhotos);
+        }
+
+        var rId = String(record.id || '').trim();
+        var cleanPureId = rId.split(';')[0].trim();
+        var rDate = String(record.date || '').trim();
+        var altDate = rDate.replace(/[-/]/g, '.');
+
+        var foundList = (cleanPureId && savedPhotos[cleanPureId]) || 
+                        (rId && savedPhotos[rId]) || 
+                        (rDate && savedPhotos[rDate]) || 
+                        (altDate && savedPhotos[altDate]);
+
+        if (Array.isArray(foundList) && foundList.length > 0) {
+          results = foundList.filter(Boolean);
+        } else if (typeof foundList === 'string' && foundList.length > 10) {
+          results = [foundList];
+        }
       }
 
       return results.filter(function(url) {
@@ -2129,10 +2135,22 @@ async function initDynamicHeroAndFeeds() {
     if (res.ok) {
       var cloudFeeds = await res.json();
       if (Array.isArray(cloudFeeds) && cloudFeeds.length > 0) {
-        // R2 캐시와 구글 시트 최신 글을 ID 기준으로 합쳐서 새 글을 즉시 반영
         var feedMap = new Map();
-        cloudFeeds.forEach(function(f) { if (f && f.id) feedMap.set(String(f.id), f); });
-        (window.__allLoadedFeeds || []).forEach(function(f) { if (f && f.id && !feedMap.has(String(f.id))) feedMap.set(String(f.id), f); });
+        cloudFeeds.forEach(function(f) { 
+          if (f && f.id) feedMap.set(String(f.id), f); 
+        });
+
+        // 🛡️ 로컬 캐시와 서버 피드 병합 시, 사진 URL이 존재하는 최신 데이터를 무조건 우선 채택
+        (window.__allLoadedFeeds || []).forEach(function(f) {
+          if (f && f.id) {
+            var existing = feedMap.get(String(f.id));
+            if (!existing) {
+              feedMap.set(String(f.id), f);
+            } else if ((!existing.photo || existing.photo === '') && (f.photo && f.photo !== '')) {
+              feedMap.set(String(f.id), f);
+            }
+          }
+        });
         
         var mergedFeeds = Array.from(feedMap.values());
         localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(mergedFeeds));
@@ -2665,10 +2683,17 @@ window.syncTripToCloudSheet = function(tripData) {
 
         fetch(gasUrl, {
           method: 'POST',
-          mode: 'no-cors',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(payload)
-        }).catch(function() {});
+        }).then(function(res) {
+          return res.json();
+        }).then(function(data) {
+          if (data && data.status === 'SUCCESS') {
+            console.log('✅ [Trip] 구글 시트 원정대 동행 등록 100% 완료');
+          }
+        }).catch(function(err) {
+          console.warn('[Trip] 원정대 등록 통신 오류:', err);
+        });
       })();
     };
 

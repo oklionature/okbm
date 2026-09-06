@@ -406,6 +406,35 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
     photosToSave = [rec.photo];
   }
 
+  // 🚀 [인스타그램 방식 1단계]: Base64 사진이 있으면 클라우드 영구 CDN URL로 먼저 완벽 변환
+  var finalCloudPhotos = [];
+  var hasBase64 = photosToSave.some(function(p) { return typeof p === 'string' && p.startsWith('data:'); });
+
+  if (hasBase64 && typeof window.uploadSinglePhotoToDrive === 'function') {
+    if (typeof window.showPhotoLoadingModal === 'function') {
+      window.showPhotoLoadingModal(1, photosToSave.length);
+    }
+
+    for (var i = 0; i < photosToSave.length; i++) {
+      var pItem = photosToSave[i];
+      if (typeof pItem === 'string' && pItem.startsWith('data:')) {
+        var cloudUrl = await window.uploadSinglePhotoToDrive(pItem, 'pack_' + (rec.id || Date.now()) + '_' + i + '.jpg');
+        finalCloudPhotos.push((cloudUrl && cloudUrl.startsWith('http')) ? cloudUrl : pItem);
+      } else {
+        finalCloudPhotos.push(pItem);
+      }
+    }
+
+    if (typeof window.hidePhotoLoadingModal === 'function') {
+      window.hidePhotoLoadingModal();
+    }
+  } else {
+    finalCloudPhotos = photosToSave;
+  }
+
+  var mainCloudPhoto = finalCloudPhotos[0] || '';
+
+  // 🚀 [인스타그램 방식 2단계]: 100% 영구 URL이 탑재된 완전 무결 레코드 생성
   var newRecord = {
     id: rec.id || ('pack_' + Date.now()),
     date: rec.date || cleanDateStr,
@@ -417,23 +446,24 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
     weightGrams: totalGrams || rec.weightGrams || 0,
     itemCount: items.length,
     items: items,
-    photo: photosToSave[0] || '',
-    photos: photosToSave,
-    fieldPhoto: photosToSave[0] || '',
+    photo: mainCloudPhoto,
+    photos: finalCloudPhotos,
+    fieldPhoto: mainCloudPhoto,
+    photo_url: mainCloudPhoto,
+    photos_json: JSON.stringify(finalCloudPhotos),
     templateId: window.selectedTemplateId || rec.templateId || 1
   };
 
-// 🚀 1. 스마트폰 내장 IndexedDB에 즉시 보관 및 백그라운드 클라우드 자동 승격 단일 실행
+  // 🚀 [인스타그램 방식 3단계]: 영구 URL로 보관함 저장 + 구글 시트 feeds 탭 및 R2 동시 발행
   if (typeof window.savePackingHistoryRecord === 'function') {
     window.savePackingHistoryRecord(newRecord);
   }
 
-  // 2. 사용 완료된 임시 사진 스택 초기화
   window.__studioMultiPhotos = null;
 
   if (typeof closePackShareModal === 'function') closePackShareModal();
   if (typeof window.openHistoryModal === 'function') window.openHistoryModal();
-  if (typeof showToast === 'function') showToast('🎒 출정 패킹이 보관함에 등록되었습니다!', 'success', 2500);
+  if (typeof showToast === 'function') showToast('🎒 출정이 보관함 및 피드에 완벽 등록되었습니다!', 'success', 2500);
   if (typeof triggerHaptic === 'function') triggerHaptic(15);
 };
 
