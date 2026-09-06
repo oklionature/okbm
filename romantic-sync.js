@@ -426,6 +426,9 @@ function closeLoginModal() {
   try {
     var modal = document.getElementById('loginModalOverlay');
     if (modal) modal.style.setProperty('display', 'none', 'important');
+    // 🛡️ 모달 닫힘 즉시 브라우저 화면 터치 잠금 강제 해제
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
   } catch (e) {}
 }
 

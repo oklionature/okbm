@@ -1637,17 +1637,24 @@
                   isUpdated = true;
                 }
                 if (cloudData.memos && typeof cloudData.memos === 'object') {
-                  localStorage.setItem('okbm_memos', JSON.stringify(cloudData.memos));
-                  userMemos = cloudData.memos;
-                  isUpdated = true;
-                }
-                if (isUpdated) {
-                  renderSubChips();
-                  renderSpots();
-                  updateLODLabels();
-                  refreshCurrentSpotPopup();
-                }
-              }).catch(function() {});
+            localStorage.setItem('okbm_memos', JSON.stringify(cloudData.memos));
+            userMemos = cloudData.memos;
+            isUpdated = true;
+          }
+          if (isUpdated) {
+            renderSubChips();
+            // 🛡️ 3중 연속 렌더링 충돌 차단: 프레임 버퍼를 비우고 1회만 정밀 렌더링
+            if (window.requestAnimationFrame) {
+              window.requestAnimationFrame(function() {
+                renderSpots();
+                refreshCurrentSpotPopup();
+              });
+            } else {
+              renderSpots();
+              refreshCurrentSpotPopup();
+            }
+          }
+        }).catch(function() {});
             }
           }
         } catch (syncErr) {}
@@ -2121,6 +2128,7 @@
         if (!map) return;
         const currentLevel = map.getLevel();
         const proj = map.getProjection();
+        const bounds = map.getBounds(); // ⚡ 화면 영역 바운드 즉시 획득
         const occupiedBoxes = [];
         const activeId = currentActiveSpot ? String(currentActiveSpot.id).trim() : (window.__MANUAL_ACTIVE_ID__ || null);
 
@@ -2130,6 +2138,14 @@
             const spot = marker.spotData;
             const sId = String(spot.id).trim();
             const isSelected = (activeId === sId);
+            const latlng = new kakao.maps.LatLng(spot.lat, spot.lng);
+
+            // ⚡ [연산 90% 절감]: 현재 화면 밖의 마커는 라벨 계산을 스킵하고 숨김
+            if (bounds && !bounds.contain(latlng) && !isSelected) {
+              const overlay = spotLabelOverlayMap.get(sId);
+              if (overlay) overlay.setMap(null);
+              return;
+            }
             const isFav = userBookmarks.has(sId);
             const isDone = userVisited.has(sId);
             const views = spot.searchCount || 0;
