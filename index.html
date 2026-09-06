@@ -1,9 +1,28 @@
 <!DOCTYPE html>
 <html lang="ko" class="notranslate">
-<head>
+<<head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="google" content="notranslate" />
+  <script>
+    (function() {
+      var s = window.location.search;
+      if (s.includes('open=plan') || s.includes('open=history') || s.includes('tab=plan') || s.includes('tab=history') || s.includes('open=basecamp')) {
+        document.documentElement.classList.add('direct-modal-pending');
+        setTimeout(function() {
+          document.documentElement.classList.remove('direct-modal-pending');
+        }, 800);
+      }
+    })();
+  </script>
+  <style>
+    html.direct-modal-pending .netflix-feed-container,
+    html.direct-modal-pending .netflix-integrated-header {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+  </style>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -4110,20 +4129,28 @@ function renderTripDetailSheet(activeTrips) {
       }
     }
 
-    // 🔗 [딥링크 탭 파라미터 감지 라우터]
+   // 🔗 [딥링크 탭 파라미터 감지 라우터]
     function checkIncomingDirectTab() {
       var urlParams = new URLSearchParams(window.location.search);
       var openParam = urlParams.get('open');
       var tabParam = urlParams.get('tab');
       
+      var releaseGuard = function() {
+        document.documentElement.classList.remove('direct-modal-pending');
+      };
+
       if (tabParam === 'history' || openParam === 'history') {
         if (window.history && window.history.replaceState) {
           window.history.replaceState({}, document.title, window.location.pathname);
         }
         if (typeof openHistoryModal === 'function') {
           openHistoryModal();
+          releaseGuard();
         } else {
-          setTimeout(function() { if (typeof openHistoryModal === 'function') openHistoryModal(); }, 60);
+          setTimeout(function() { 
+            if (typeof openHistoryModal === 'function') openHistoryModal(); 
+            releaseGuard();
+          }, 60);
         }
       } else if (openParam === 'basecamp' || openParam === 'plan' || tabParam === 'plan') {
         if (window.history && window.history.replaceState) {
@@ -4131,9 +4158,15 @@ function renderTripDetailSheet(activeTrips) {
         }
         if (typeof openPlanModal === 'function') {
           openPlanModal('calendar');
+          releaseGuard();
         } else {
-          setTimeout(function() { if (typeof openPlanModal === 'function') openPlanModal('calendar'); }, 60);
+          setTimeout(function() { 
+            if (typeof openPlanModal === 'function') openPlanModal('calendar'); 
+            releaseGuard();
+          }, 60);
         }
+      } else {
+        releaseGuard();
       }
     }
 
