@@ -1617,6 +1617,39 @@
         fetchSpotsFromGoogleSheet();
         fetchCommentsFromSheet();
 
+        // ☁️ [클라우드 100% 동기화]: 타 브라우저/기기 변경사항(찜, 클리어, 메모) 즉시 반영
+        if (isUserLoggedIn() && typeof loadUserDataFromCloud === 'function') {
+          var profile = safeGetJSON('user_profile', null);
+          var userId = (profile && profile.id) ? String(profile.id).trim() : localStorage.getItem('user_auth_token');
+          if (userId) {
+            loadUserDataFromCloud(userId).then(function(cloudData) {
+              if (!cloudData) return;
+              var isUpdated = false;
+              if (cloudData.bookmarks && Array.isArray(cloudData.bookmarks)) {
+                localStorage.setItem('okbm_bookmarks', JSON.stringify(cloudData.bookmarks));
+                userBookmarks = new Set(cloudData.bookmarks.map(function(s) { return String(s).trim(); }));
+                isUpdated = true;
+              }
+              if (cloudData.visited && Array.isArray(cloudData.visited)) {
+                localStorage.setItem('okbm_visited', JSON.stringify(cloudData.visited));
+                userVisited = new Set(cloudData.visited.map(function(s) { return String(s).trim(); }));
+                isUpdated = true;
+              }
+              if (cloudData.memos && typeof cloudData.memos === 'object') {
+                localStorage.setItem('okbm_memos', JSON.stringify(cloudData.memos));
+                userMemos = cloudData.memos;
+                isUpdated = true;
+              }
+              if (isUpdated) {
+                renderSubChips();
+                renderSpots();
+                updateLODLabels();
+                refreshCurrentSpotPopup();
+              }
+            }).catch(function() {});
+          }
+        }
+
         document.addEventListener('click', (e) => {
           const pcDrop = document.getElementById('pcSearchDropdown');
           const pcInput = document.getElementById('pcSearchInput');
