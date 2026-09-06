@@ -592,12 +592,8 @@
       .comment-input-author, .comment-input-text { flex: 1; padding: 4px 6px; border: 1px solid var(--border-hairline); border-radius: 5px; font-size: 0.7rem; outline: none; background: var(--bg-base); color: var(--text-primary); }
       .comment-btn-submit { background: #0f766e; color: #fff; border: none; border-radius: 5px; padding: 4px 9px; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
 
-      @view-transition {
-        navigation: auto;
-      }
-
       /* 하단 네비 독 고정 렌더링 */
-      .mobile-bottom-dock { 
+      .mobile-bottom-dock {
         display: flex !important; 
         position: fixed; 
         bottom: 0; left: 0; right: 0; 
@@ -1584,12 +1580,12 @@
             map.setLevel(Math.max(1, map.getLevel() - 2), { anchor: cluster.getCenter(), animate: true });
           });
 
-          kakao.maps.event.addListener(map, 'zoom_changed', () => updateLODLabels());
-          kakao.maps.event.addListener(map, 'dragend', () => updateLODLabels());
-          kakao.maps.event.addListener(map, 'idle', () => updateLODLabels());
+          kakao.maps.event.addListener(map, 'zoom_changed', () => debouncedUpdateLODLabels());
+          kakao.maps.event.addListener(map, 'dragend', () => debouncedUpdateLODLabels());
+          kakao.maps.event.addListener(map, 'idle', () => debouncedUpdateLODLabels());
           kakao.maps.event.addListener(map, 'click', handleMapClick);
 
-          if (spots && spots.length > 0) { 
+          if (spots && spots.length > 0) {
             spots = spots.filter(s => !BLOCKED_SPOT_IDS.has(String(s.id).trim()));
             updateNewSpotFlags(spots); 
             renderSpots(); 
