@@ -190,19 +190,16 @@ function saveCurrentPackingRecord() {
     weightGrams: totalGrams,
     itemCount: allItems.length,
     items: allItems.map(function(g) { return { id: g.id || ('item_' + Math.random()), name: g.name, weight: g.weight }; }),
-    photo: ''
+    photo: '',
+    photos: []
   };
 
- if (!window.interactiveHistory) window.interactiveHistory = [];
-  // 🚀 [등록순서 변경]: 최근 등록은 제일 뒤로 등록 (push)
-  window.interactiveHistory.push(newRecord);
-  window.packingHistoryList = window.interactiveHistory;
-
-  if (typeof window.saveToIndexedDB === 'function') {
-    window.saveToIndexedDB('okbm_packing_history', window.interactiveHistory);
-  }
-  if (typeof syncUserDataToCloud === 'function') {
-    syncUserDataToCloud();
+  if (typeof window.savePackingHistoryRecord === 'function') {
+    window.savePackingHistoryRecord(newRecord);
+  } else {
+    if (!window.interactiveHistory) window.interactiveHistory = [];
+    window.interactiveHistory.push(newRecord);
+    window.packingHistoryList = window.interactiveHistory;
   }
 
   openPackShareModal(newRecord, allItems, false);
@@ -394,11 +391,20 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
     });
   }
 
-  var totalGrams = items.reduce(function(sum, g) { return sum + Number(g.weight || 0); }, 0);
+ var totalGrams = items.reduce(function(sum, g) { return sum + Number(g.weight || 0); }, 0);
   var weightKg = (totalGrams > 0) ? (totalGrams / 1000).toFixed(2) : (rec.weightKg || '0.00');
 
-  var gearPhoto = window.currentSharePhoto || rec.photo || '';
-  var photosToSave = (gearPhoto && typeof gearPhoto === 'string' && gearPhoto.length > 10) ? [gearPhoto] : [];
+  // 📸 [다중 사진 완벽 보존]: 스튜디오 다중 사진 배열을 1순위로 채용하여 유실 원천 차단
+  var photosToSave = [];
+  if (Array.isArray(window.__studioMultiPhotos) && window.__studioMultiPhotos.length > 0) {
+    photosToSave = window.__studioMultiPhotos.slice(0, 10);
+  } else if (window.currentSharePhoto && typeof window.currentSharePhoto === 'string' && window.currentSharePhoto.length > 10) {
+    photosToSave = [window.currentSharePhoto];
+  } else if (Array.isArray(rec.photos) && rec.photos.length > 0) {
+    photosToSave = rec.photos.slice(0, 10);
+  } else if (rec.photo && typeof rec.photo === 'string' && rec.photo.length > 10) {
+    photosToSave = [rec.photo];
+  }
 
   var newRecord = {
     id: rec.id || ('pack_' + Date.now()),
@@ -417,20 +423,18 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
     templateId: window.selectedTemplateId || rec.templateId || 1
   };
 
-  // 🚀 1. 스마트폰 내장 IndexedDB에 0.05초 만에 즉시 보관
+  // 🚀 1. 스마트폰 내장 IndexedDB에 즉시 보관 및 백그라운드 클라우드 자동 승격 단일 실행
   if (typeof window.savePackingHistoryRecord === 'function') {
     window.savePackingHistoryRecord(newRecord);
   }
+
+  // 2. 사용 완료된 임시 사진 스택 초기화
+  window.__studioMultiPhotos = null;
 
   if (typeof closePackShareModal === 'function') closePackShareModal();
   if (typeof window.openHistoryModal === 'function') window.openHistoryModal();
   if (typeof showToast === 'function') showToast('🎒 출정 패킹이 보관함에 등록되었습니다!', 'success', 2500);
   if (typeof triggerHaptic === 'function') triggerHaptic(15);
-
-  // ☁️ 2. 클라우드 동기화 비동기 백업
-  if (typeof syncUserDataToCloud === 'function') {
-    syncUserDataToCloud(true);
-  }
 };
 
 function safeGetJSON(key, defaultVal) {
