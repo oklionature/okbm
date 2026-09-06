@@ -2101,7 +2101,20 @@
           } else { map.panTo(rawLatLng); }
         } else { map.panTo(rawLatLng); }
 
-        setTimeout(() => updateLODLabels(), 150);
+        debouncedUpdateLODLabels();
+      }
+
+      // ⚡ [고성능 디바운스 엔진]: 지도 이동 완료 후 120ms 동안 추가 조작이 없을 때만 1회 정밀 연산
+      var lodDebounceTimer = null;
+      function debouncedUpdateLODLabels() {
+        clearTimeout(lodDebounceTimer);
+        lodDebounceTimer = setTimeout(() => {
+          if (window.requestAnimationFrame) {
+            window.requestAnimationFrame(updateLODLabels);
+          } else {
+            updateLODLabels();
+          }
+        }, 120);
       }
 
       function updateLODLabels() {

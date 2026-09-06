@@ -10,7 +10,7 @@
  */
 
 var GAS_API_URL = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
-var R2_PUBLIC_DOMAIN = window.R2_PUBLIC_DOMAIN || 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
+var R2_PUBLIC_DOMAIN = window.R2_PUBLIC_DOMAIN || 'https://pub-13ec7c39d2394ecc879bb2ed4b304c44.r2.dev';
 window.R2_PUBLIC_DOMAIN = R2_PUBLIC_DOMAIN;
 
 // 🛡️ 글로벌 클라우드 안전 로드 플래그 초기화
