@@ -365,7 +365,8 @@
       .btn-quick-add { background: #0f766e; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; font-weight: 800; cursor: pointer; }
       .sheet-close-btn { background: var(--bg-card); border: 1px solid var(--border-titanium); color: var(--text-secondary); width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; font-weight: 800; }
 
-      #map { flex: 1; width: 100%; height: 100%; position: relative; background: var(--bg-base); touch-action: pan-x pan-y; }
+      /* ⚡ [터치 먹통 원천 차단]: 터치 제어권을 카카오맵 엔진에 100% 온전히 위임 */
+      #map { flex: 1; width: 100%; height: 100%; position: relative; background: var(--bg-base); touch-action: none !important; -webkit-touch-callout: none; }
 
       /* 🧭 HUD 타워 시스템 (상단 검색바 바로 아래로 최적 정렬) */
       .top-right-hud-group { 
@@ -914,8 +915,8 @@
         <span>전국지도</span>
       </a>
 
-      <!-- 3. 낭만계획 -->
-      <button type="button" class="dock-item" title="낭만계획" onclick="triggerHaptic(12); if(typeof openPlanModal==='function') openPlanModal('calendar'); else location.href='index.html?open=basecamp&tab=plan';">
+     <!-- 3. 낭만계획 (지도 위 모달 겹침 방지: 홈 직통 안전 라우팅) -->
+      <a href="index.html?open=plan" class="dock-item" title="낭만계획" onclick="triggerHaptic(12);">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2"/>
           <line x1="16" y1="2" x2="16" y2="6"/>
@@ -924,17 +925,17 @@
           <path d="M9 16l2 2 4-4"/>
         </svg>
         <span>낭만계획</span>
-      </button>
+      </a>
 
-      <!-- 4. 낭만보관함 -->
-      <button type="button" class="dock-item" title="낭만보관함" onclick="triggerHaptic(12); if(typeof openHistoryModal==='function') openHistoryModal(); else location.href='index.html?open=basecamp&tab=history';">
+      <!-- 4. 낭만보관함 (지도 위 모달 겹침 방지: 홈 직통 안전 라우팅) -->
+      <a href="index.html?open=history" class="dock-item" title="낭만보관함" onclick="triggerHaptic(12);">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 8v13H3V8"/>
           <path d="M1 3h22v5H1z"/>
           <path d="M10 12h4"/>
         </svg>
         <span>낭만보관함</span>
-      </button>
+      </a>
 
       <!-- 5. 내정보 -->
       <button type="button" class="dock-item" title="내정보" onclick="triggerHaptic(12); handleAuthBtnClick();">
@@ -943,9 +944,9 @@
       </button>
     </div>
 
-    <!-- 🔑 간편 로그인 모달 -->
-    <div class="custom-modal-overlay" id="loginModalOverlay" onclick="event.stopPropagation();">
-      <div class="custom-modal login-box-card">
+    <!-- 🔑 간편 로그인 모달 (배경 터치 시 즉시 닫힘 & 투명 장벽 해제) -->
+    <div class="custom-modal-overlay" id="loginModalOverlay" onclick="if(event.target===this) closeLoginModal();">
+      <div class="custom-modal login-box-card" onclick="event.stopPropagation();">
         <h3 style="color:var(--accent-blue); display:flex; align-items:center; justify-content:center; gap:6px;">
           <span id="loginModalCampIcon"></span>
           <span>낭만 백패커 로그인</span>
@@ -965,9 +966,9 @@
       </div>
     </div>
 
-    <!-- 👤 닉네임 변경 및 회원 관리 모달 -->
-    <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="event.stopPropagation();">
-      <div class="custom-modal login-box-card">
+   <!-- 👤 닉네임 변경 및 회원 관리 모달 (배경 터치 시 즉시 닫힘 & 투명 장벽 해제) -->
+    <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="if(event.target===this) closeUserProfileModal();">
+      <div class="custom-modal login-box-card" onclick="event.stopPropagation();">
         <h3 style="color:var(--accent-blue); display:flex; align-items:center; justify-content:center; gap:6px;">
           <svg viewBox="0 0 24 24" class="ui-icon" style="width:18px; height:18px; color:var(--accent-emerald);"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
           <span>내 계정 관리</span>
