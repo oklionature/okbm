@@ -69,6 +69,19 @@ function showToast(msg, typeOrDuration, maybeDuration) {
   }
 }
 
+// 🧰 [공통 유틸] 브라우저 표준 한국 시간 타임스탬프 생성기
+function getFormattedNow() {
+  var d = new Date();
+  var pad = function(n) { return String(n).padStart(2, '0'); };
+  return d.getFullYear() + '. ' + pad(d.getMonth() + 1) + '. ' + pad(d.getDate()) + '. ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+}
+window.getFormattedNow = getFormattedNow;
+
+function UtilitiesFormattedNow() {
+  return getFormattedNow();
+}
+window.UtilitiesFormattedNow = UtilitiesFormattedNow;
+
 // 🧰 [비상 초기화 엔진] 전 기종 로컬 캐시 & IndexedDB & 클라우드 피드 완전 무결 포맷
 window.executeCleanSlateMasterReset = async function(isSilent) {
   if (!isSilent && !confirm('⚠️ 주의: 모든 출정 기록과 사진 맵이 영구 포맷됩니다.\n(회원 계정 및 찜/클리어 목록은 보존됩니다)\n정말 초기화하시겠습니까?')) {
