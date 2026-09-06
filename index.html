@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko" class="notranslate">
-<<head>
+<head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="google" content="notranslate" />
@@ -28,14 +28,12 @@
   <meta http-equiv="Expires" content="0" />
   <title>낭만루트 ROMANTIC ROUTE | 대한민국 전국 백패킹 필드 팩트맵</title>
 
-  <!-- 🔤 최상위 웹폰트 CDN (400 에러 영구 교정 CDN 탑재) -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT/fonts/static/woff2/SUIT.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Cinzel:wght@700;900&family=Dancing+Script:wght@700&family=Gaegu:wght@700&family=JetBrains+Mono:wght@500;700;800&family=Noto+Serif+KR:wght@600;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
   
-  <!-- 카카오 SDK & CSV Parser & HTML2Canvas -->
   <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -96,7 +94,6 @@
       padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px));
     }
 
-    /* 🌌 은하수 애니메이션 */
     @keyframes slowCelestialTwinkle {
       0%, 100% { opacity: 0.15; transform: scale(0.7) rotate(0deg); }
       50% { opacity: 0.85; transform: scale(1.1) rotate(45deg); }
@@ -124,8 +121,6 @@
     }
     .icon-svg svg { width: 100%; height: 100%; }
 
-    
-    /* 🧭 1. 상단 GNB (GPU 오버드로우 방어 & 하드웨어 가속 강제) */
     .netflix-integrated-header {
       position: fixed !important;
       top: 0 !important; left: 0 !important; right: 0 !important;
@@ -207,7 +202,6 @@
       backdrop-filter: blur(10px) !important;
     }
 
-    /* 📦 메인 콘텐츠 피드 */
     .netflix-feed-container {
       max-width: 480px;
       margin: 0 auto;
@@ -261,7 +255,6 @@
       border-radius: 12px;
     }
 
-    /* 3:4 순수 사진 프레임 (로딩 중 까만 빈칸 방지 스켈레톤 쉬머 탑재) */
     @keyframes heroCardShimmerGlow {
       0% { background-position: -200% 0; }
       100% { background-position: 200% 0; }
@@ -303,7 +296,6 @@
       z-index: 2;
     }
 
-    /* 상단 HUD (스토리 바 + 비밀 태그 + 좋아요) */
     .insta-top-hud {
       position: absolute;
       top: 9px;
@@ -361,7 +353,6 @@
       color: #fda4af;
     }
 
-    /* 💎 사진 바로 아래에 분리 배치되어 첫 화면 하단을 꽉 채우는 슬림 감성 메모장 (저사양 폰 60fps 보장) */
     .insta-glass-memo {
       background: #0a0e17 !important;
       border: 1px solid rgba(255, 255, 255, 0.14) !important;
@@ -475,7 +466,6 @@
       color: #f1f5f9;
     }
 
-    /* 🏷️ 2단으로 이동한 트렌디 카테고리 칩 바 */
     .netflix-category-bar {
       display: flex;
       gap: 6px;
@@ -512,7 +502,6 @@
       box-shadow: 0 2px 14px rgba(255, 255, 255, 0.22);
     }
 
-    /* 📜 넷플릭스 가로 레일 */
     .n-rail-section {
       display: flex;
       flex-direction: column;
@@ -535,7 +524,6 @@
     }
     .n-rail-slider::-webkit-scrollbar { display: none; }
 
-    /* 🎞️ 2단: 백패커들이 아껴둔 숨은 박지 카드 */
     .n-trailer-card {
       width: 108px;
       flex-shrink: 0;
@@ -608,7 +596,6 @@
       white-space: nowrap;
     }
 
-    /* 📸 실물 20종 템플릿 풀스크린 팝업 모달 */
     .template-card-modal-overlay {
       display: none;
       position: fixed;
@@ -649,30 +636,6 @@
       justify-content: center;
     }
 
-    /* 📜 넷플릭스 가로 레일 (Section Rail) */
-    .n-rail-section {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding-left: 14px;
-    }
-    .n-rail-title {
-      font-size: 0.96rem;
-      font-weight: 900;
-      color: #ffffff;
-      letter-spacing: -0.02em;
-    }
-    .n-rail-slider {
-      display: flex;
-      gap: 10px;
-      overflow-x: auto;
-      scrollbar-width: none;
-      padding-right: 14px;
-      padding-bottom: 2px;
-    }
-    .n-rail-slider::-webkit-scrollbar { display: none; }
-
-    /* 🎬 영상 큐레이션 단일 와이드 카드 */
     .n-video-single-card {
       width: 82vw;
       max-width: 350px;
@@ -735,7 +698,6 @@
       color: #e2e8f0;
     }
 
-    /* 🏛️ 3. 하단 듀얼 독 (Dual Dock) 시스템 */
     .mobile-bottom-dock {
       position: fixed !important;
       bottom: 0 !important; left: 0 !important; right: 0 !important;
@@ -762,7 +724,6 @@
     .dock-item.active { color: #ffffff !important; font-weight: 900; }
     .dock-item svg { width: 19px; height: 19px; fill: currentColor; flex-shrink: 0; }
 
-    /* 🛡️ 공통 모달 및 폼 스타일 */
     .custom-modal-overlay {
       display: none;
       position: fixed;
@@ -832,10 +793,8 @@
 </head>
 <body>
 
-  <!-- 🌌 전체 앱 배경 은하수 캔버스 -->
   <div id="globalAppMilkyWayLayer" class="global-app-starlight-canvas"></div>
 
-  <!-- 🧭 1. 상단 GNB: 낭만루트 오리지널 심볼 & 확대된 카테고리 칩 바 -->
   <header class="netflix-integrated-header notranslate">
     <div class="header-top-row">
       <a href="index.html" class="brand-line" onclick="triggerHaptic(10)" title="낭만루트 홈">
@@ -868,14 +827,13 @@
     </div>
   </header>
 
-  <!-- 📦 메인 콘텐츠 피드 -->
   <main class="netflix-feed-container notranslate">
 
  <section class="insta-stage-wrap">
   <div class="insta-stage-header">
     <div class="insta-stage-title">
-      <span>⛺</span>
-      <span>지금, 이 텐풍 어디일까?</span>
+      <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg></span>
+      <span>지금, 이 풍경 어디일까?</span>
     </div>
     <span class="insta-stage-counter" id="heroCardIndexIndicator">1 / 1</span>
   </div>
@@ -888,7 +846,7 @@
       <div class="insta-top-row">
         <span class="insta-spot-tag" id="heroBadgeTag">SECRET SPOT</span>
         <button type="button" class="insta-like-btn" id="btnHeroLike" onclick="handleHeroLikeClick(event)" title="좋아요">
-          <span id="heroLikeIcon">🤍</span>
+          <span id="heroLikeIcon"><svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
           <span id="heroLikeCount">0</span>
         </button>
       </div>
@@ -904,17 +862,17 @@
     <div class="insta-memo-quote" id="heroQuoteText">“자연 속에서 비화식으로 즐기는 조용한 하룻밤”</div>
 
     <div class="insta-memo-facts-row">
-      <span class="insta-fact-badge" id="heroElevBadge">⛰️ -</span>
-      <span class="insta-fact-badge" id="heroTrailBadge">🚶 코스 로딩 중</span>
-      <span class="insta-fact-badge badge-weight" id="heroWeightBadge">🎒 0.00kg</span>
+      <span class="insta-fact-badge" id="heroElevBadge"><svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg> -</span>
+      <span class="insta-fact-badge" id="heroTrailBadge"><svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="5" r="3"/><path d="M12 22v-7l-3-3m3 3l3-3"/></svg> 코스 로딩 중</span>
+      <span class="insta-fact-badge badge-weight" id="heroWeightBadge"><svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2h12v6H6zM4 8h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/></svg> 0.00kg</span>
     </div>
 
     <div class="insta-memo-actions-row">
       <button type="button" class="btn-insta-action btn-action-map" id="btnHeroSpotNav" onclick="handleHeroNavClick(event)">
-        <span>📍 지도 코스 ➔</span>
+        <span><svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> 자세히보기</span>
       </button>
       <button type="button" class="btn-insta-action btn-action-template" onclick="openCurrentTemplateModal(event)">
-        <span>🧾 장비 템플릿 ➔</span>
+        <span><svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> 장비 세팅보기</span>
       </button>
     </div>
   </div>
@@ -945,7 +903,7 @@
         if (headerBtn) headerBtn.classList.add('logged-in');
         if (headerText) headerText.innerText = profile.nickname;
         if (headerIcon) {
-          headerIcon.innerHTML = '<svg viewBox="0 0 24 24" style="width:13px; height:13px; margin-right:2px; fill:#fde047; color:#fde047; flex-shrink:0; display:inline-block; vertical-align:-1px;"><path d="M12,1 Q12,12 1,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,23 Q12,12 12,1 Z"/><circle cx="12" cy="12" r="1.5" fill="#ffffff"/></svg>';
+          headerIcon.innerHTML = '<svg viewBox="0 0 24 24" style="width:13px; height:13px; margin-right:2px; fill:#fde047; color:#fde047; flex-shrink:0; display:inline-block; vertical-align:-1px;"><path d="M12,1 Q12,12 1,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,1 Z"/><circle cx="12" cy="12" r="1.5" fill="#ffffff"/></svg>';
         }
       }
 
@@ -1035,29 +993,26 @@
   })();
 </script>
 
-    <!-- 🌲 2단: 아래로 스크롤하면 나타나는 테마 칩 바 & 숨은 박지 가로 레일 -->
     <section class="n-rail-section" id="heroTrailerSectionWrap" style="margin-top: 4px;">
       <div style="display:flex; justify-content:space-between; align-items:center; padding-right:14px;">
         <h2 class="n-rail-title" style="font-size:0.90rem; color:#e2e8f0; display:flex; align-items:center; gap:5px;">
-          <span>🌲</span>
+          <span class="icon-svg"><svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 10v.01M14 10v.01M12 18v-8M4.93 19h14.14M12 2l8 10h-5v8H9v-8H4l8-10z"/></svg></span>
           <span>백패커들이 아껴둔 숨은 박지</span>
         </h2>
         <span style="font-size:0.62rem; color:#38bdf8; font-weight:800;">터치해서 확인 ➔</span>
       </div>
 
-      <!-- 대표님이 제안하신 최적의 카테고리 칩 바 배치 -->
       <nav class="netflix-category-bar" style="padding:4px 0 6px 0;">
         <button type="button" class="n-cat-chip active" onclick="filterHeroCategory('all', this)">전체</button>
-        <button type="button" class="n-cat-chip" onclick="filterHeroCategory('easy', this)">🌙 퇴근박/초보</button>
-        <button type="button" class="n-cat-chip" onclick="filterHeroCategory('island', this)">🌲 감성/섬</button>
-        <button type="button" class="n-cat-chip" onclick="filterHeroCategory('alpine', this)">⛰️ 능선/알파인</button>
-        <button type="button" class="n-cat-chip" onclick="filterHeroCategory('gear', this)">🎒 경량 기어</button>
+        <button type="button" class="n-cat-chip" onclick="filterHeroCategory('easy', this)"><svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> 퇴근박/초보</button>
+        <button type="button" class="n-cat-chip" onclick="filterHeroCategory('island', this)"><svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 10v.01M14 10v.01M12 18v-8M4.93 19h14.14M12 2l8 10h-5v8H9v-8H4l8-10z"/></svg> 감성/섬</button>
+        <button type="button" class="n-cat-chip" onclick="filterHeroCategory('alpine', this)"><svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg> 능선/알파인</button>
+        <button type="button" class="n-cat-chip" onclick="filterHeroCategory('gear', this)"><svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2h12v6H6zM4 8h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/></svg> 경량 기어</button>
       </nav>
 
       <div class="n-rail-slider" id="heroTrailerRailContainer" style="gap:8px; padding-top:2px;"></div>
     </section>
 
-    <!-- 📸 20종 실물 감성 템플릿 풀스크린 팝업 모달 -->
     <div class="template-card-modal-overlay" id="templateCardModalOverlay" onclick="if(event.target===this) closeTemplateCardModal();">
       <div class="template-card-modal-body">
         <button type="button" class="template-modal-close-btn" onclick="closeTemplateCardModal()">✕</button>
@@ -1065,7 +1020,6 @@
       </div>
     </div>
 
-    <!-- 🎬 4. 영상 속 그 장소 & 기어 랩 (외부 텍스트 삭제 & 탭 시 '더보기' 팝업) -->
     <section class="n-rail-section">
   <h2 class="n-rail-title">영상 속 그 장소 & 기어 랩</h2>
   <div class="n-rail-slider" id="homeVideoRailSlider">
@@ -1097,23 +1051,19 @@
   </div>
 </section>
 
- <!-- 🤝 5. 이번 주말 낭만 원정대 (트립 조인 / 동행 매칭) -->
     <section class="n-rail-section">
       <div style="display:flex; justify-content:space-between; align-items:center; padding-right:14px;">
         <h2 class="n-rail-title" style="display:flex; align-items:center; gap:5px;">
-          <span>🤝</span>
+          <span class="icon-svg"><svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
           <span>이번 주말 낭만 원정대</span>
         </h2>
         <button type="button" onclick="openTripJoinListModal()" style="background:none; border:none; color:#38bdf8; font-size:0.68rem; font-weight:800; cursor:pointer;">
           전체보기 <span id="tripJoinTotalCountText">(0)</span> ➔
         </button>
       </div>
-      <div class="n-rail-slider" id="homeTripJoinRailSlider">
-        <!-- JS 동적 렌더링: [+ 원정대 모집하기] + D-Day 정렬 카드 + [전체보기] -->
-      </div>
+      <div class="n-rail-slider" id="homeTripJoinRailSlider"></div>
     </section>
 
-    <!-- 🎒 6. 배낭 패킹 계산기 배너 -->
     <section style="padding:0 14px;">
       <div onclick="if(typeof openPlanModal==='function') openPlanModal('calculator');" style="background:#0c1018; border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
         <div>
@@ -1128,16 +1078,12 @@
     </section>
 
   </main>
-
-  <!-- 📱 4. 하단 듀얼 네비 독 (Dual Dock) -->
   <div id="mainDualDockContainer" class="mobile-bottom-dock notranslate">
     
-    <!-- 중앙 인디케이터 핸들 (터치 시 전환) -->
     <div onclick="window.toggleIndexDualDock(); triggerHaptic(10);" style="position:absolute; top:2px; left:50%; transform:translateX(-50%); width:44px; height:8px; display:flex; align-items:center; justify-content:center; z-index:115; cursor:pointer;">
       <div style="width:28px; height:3.5px; border-radius:2px; background:rgba(255,255,255,0.35);"></div>
     </div>
 
-    <!-- 데크 1: 메인 5대 GNB 독 -->
     <div id="indexMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:opacity 0.18s ease; opacity:1; pointer-events:auto; z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
       <button type="button" class="dock-item active" title="낭만루터" onclick="window.handleIndexHomeTabClick(event);">
         <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -1175,7 +1121,6 @@
       </button>
     </div>
 
-    <!-- 데크 2: 낭만계획 5대 도구 데크 -->
     <div id="indexPlanToolsDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:opacity 0.18s ease; opacity:0; pointer-events:none; z-index:100; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
       <button type="button" class="dock-item" onclick="triggerHaptic(10); if(typeof openPlanModal==='function') openPlanModal('calendar');">
         <svg viewBox="0 0 24 24" style="width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.2;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -1204,23 +1149,17 @@
     </div>
   </div>
 
-  <!-- ============================================================ -->
-  <!-- 🛡️ 필수 5대 시스템 모달 레이어 (100% 완전 복원)                -->
-  <!-- ============================================================ -->
-
 <div class="custom-modal-overlay" id="videoDetailModal" onclick="if(event.target===this) closeVideoDetailModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:1000050 !important; justify-content:center; align-items:stretch; padding:0 !important; margin:0 !important; box-sizing:border-box;">
     <div id="videoDetailSheet" style="width:100% !important; max-width:480px !important; height:100vh !important; height:100dvh !important; height:100svh !important; max-height:100svh !important; background:#0a0e17; border-radius:0 !important; border:none !important; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; margin:0 auto; box-sizing:border-box; transform:translateZ(0);">
       
-      <!-- 1. 상단 풀스크린 닫기 탑바 (Safe Area 완벽 대응) -->
       <div style="width:100%; padding:10px 14px 8px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); box-sizing:border-box; z-index:60;" onclick="event.stopPropagation();">
         <div style="display:flex; align-items:center; gap:6px;">
-          <span style="font-size:1.0rem;">🎬</span>
+          <span style="font-size:1.0rem;"><svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></span>
           <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">영상 속 그 장소</span>
         </div>
         <button type="button" onclick="closeVideoDetailModal()" style="background:rgba(255, 255, 255, 0.08); border:1px solid rgba(255, 255, 255, 0.15); color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.95rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">✕</button>
       </div>
 
-      <!-- 2. 일체형 단일 스크롤 컨테이너 (유튜브 + 정보창) -->
       <div id="videoModalScrollBody" style="flex:1 1 0%; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior-y:contain; display:flex; flex-direction:column; box-sizing:border-box;" onclick="event.stopPropagation();">
         
         <div id="videoModalPlayerBox" style="width:100% !important; aspect-ratio:16/9; background:#000000; overflow:hidden; flex-shrink:0; position:relative; margin:0; padding:0; border-bottom:1px solid rgba(255, 255, 255, 0.1); z-index:50;">
@@ -1232,7 +1171,6 @@
 
       </div>
 
-      <!-- 3. 🏛️ 최하단 고정 인덱스 5대 메인 독 -->
       <div style="width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; flex-direction:row !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; box-sizing:border-box; padding-bottom:env(safe-area-inset-bottom, 0px); z-index:100 !important;" onclick="event.stopPropagation();">
         <button type="button" class="dock-item active" onclick="closeVideoDetailModal(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
           <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -1259,12 +1197,12 @@
 
     </div>
   </div>
-  <!-- 1. 🔑 카카오 1초 로그인 모달 -->
+
   <div class="custom-modal-overlay" id="loginModalOverlay" onclick="if(event.target===this) closeLoginModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100dvh; padding:0; overflow:hidden;">
     <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
       <div style="flex:1; overflow:hidden; padding:calc(20px + env(safe-area-inset-top, 0px)) 16px 16px 16px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:12px; text-align:center;">
         <div style="width:54px; height:54px; border-radius:50%; background:rgba(255,255,255,0.08); border:1.5px solid #ffffff; display:flex; align-items:center; justify-content:center; font-size:1.6rem;">
-          🏕️
+          <svg viewBox="0 0 24 24" style="width:26px; height:26px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
         </div>
         <div>
           <h3 style="color:#ffffff; font-size:1.15rem; font-weight:900;">낭만 백패커 로그인</h3>
@@ -1282,7 +1220,6 @@
         </div>
       </div>
 
-      <!-- 모달 내부 하단 5대 독 -->
       <div class="mobile-bottom-dock notranslate" style="position:static !important; flex-shrink:0 !important; width:100% !important;">
         <a href="index.html" class="dock-item" onclick="closeLoginModal(); triggerHaptic(10);">
           <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -1308,13 +1245,12 @@
     </div>
   </div>
 
-  <!-- 2. 👤 내 계정 관리 모달 (14일 쿨다운 알림 및 내부 독 완비) -->
   <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="if(event.target===this) closeUserProfileModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100dvh; padding:0; overflow:hidden;">
     <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
       <div style="flex:1; padding:calc(16px + env(safe-area-inset-top, 0px)) 16px 16px 16px; display:flex; flex-direction:column; gap:12px;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
           <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:1.3rem;">👤</span>
+            <span style="font-size:1.3rem;"><svg viewBox="0 0 24 24" style="width:20px; height:20px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
             <div>
               <div style="font-size:1.05rem; font-weight:900; color:#ffffff;">내 계정 관리</div>
               <div style="font-size:0.68rem; color:#94a3b8; font-weight:700;">낭만 백패커 회원 프로필</div>
@@ -1341,7 +1277,6 @@
         </div>
       </div>
 
-      <!-- 모달 내부 하단 5대 독 -->
       <div class="mobile-bottom-dock notranslate" style="position:static !important; flex-shrink:0 !important; width:100% !important;">
         <a href="index.html" class="dock-item" onclick="closeUserProfileModal(); triggerHaptic(10);">
           <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -1367,7 +1302,6 @@
     </div>
   </div>
 
-  <!-- 3. 📦 카테고리별 장비 선택 & 직접 등록 모달 -->
   <div class="custom-modal-overlay" id="gearPresetModal" onclick="if(event.target===this) closeGearPresetModal()" style="display:none; position:fixed; inset:0; background:#000000; z-index:9999999; justify-content:center; align-items:stretch; padding:0;">
     <div style="width:100%; max-width:480px; margin:0 auto; height:100dvh; display:flex; flex-direction:column; padding:calc(12px + env(safe-area-inset-top, 0px)) 14px calc(64px + env(safe-area-inset-bottom, 0px)) 14px; box-sizing:border-box;">
       <div style="flex-shrink:0; display:flex; flex-direction:column; gap:6px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08);">
@@ -1406,14 +1340,11 @@
     </div>
   </div>
 
-  <!-- 4. 20종 템플릿 패킹 공유 모달 (상단 제목 제거 · 3:4 적응형 카드 최대 확대 · 5대 독 완전체) -->
   <div id="packShareModalOverlay" class="custom-modal-overlay" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100dvh; padding:0; overflow:hidden;">
     <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; position:relative;">
       
-      <!-- 상단 미니멀 플로팅 닫기 (제목 바 제거로 세로 가용 높이 극대화) -->
       <button type="button" onclick="closePackShareModal()" style="position:absolute; top:calc(8px + env(safe-area-inset-top, 0px)); right:12px; z-index:20; background:rgba(0,0,0,0.65); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.25); color:#ffffff; width:30px; height:30px; border-radius:50%; font-size:0.95rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
 
-      <!-- 상단 컨트롤러 바 (검색/메모/스튜디오/템플릿 칩 슬림화) -->
       <div style="flex-shrink:0; display:flex; flex-direction:column; gap:4px; padding:calc(8px + env(safe-area-inset-top, 0px)) 12px 2px 12px; box-sizing:border-box; z-index:10;">
         <div style="position:relative; width:100%; padding-right:38px; box-sizing:border-box;">
           <div style="display:flex; gap:4px; align-items:center; position:relative;">
@@ -1439,12 +1370,10 @@
         <div class="template-selector-bar" id="templateSelectorBar"></div>
       </div>
 
-      <!-- 중앙 3:4 적응형 카드 최대 확대 영역 (뷰포트 여백을 꽉 채우는 유동 높이/폭 자동 계산) -->
       <div style="flex:1 1 0%; min-height:0; display:flex; align-items:center; justify-content:center; width:100%; padding:2px 10px; box-sizing:border-box; overflow:hidden;">
         <div id="packShareCaptureArea" style="height:100% !important; max-height:100% !important; aspect-ratio:3/4 !important; width:auto !important; max-width:100% !important; border-radius:14px; overflow:hidden; box-shadow:0 12px 35px rgba(0,0,0,0.85); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;"></div>
       </div>
 
-      <!-- 하단 1단: 3분할 액션 독 (순수 SVG 라인아트) -->
       <div style="flex-shrink:0; background:rgba(10,14,23,0.98); border-top:1px solid rgba(255,255,255,0.1); padding:6px 12px; display:grid; grid-template-columns:1fr 1fr 1.25fr; gap:6px; box-sizing:border-box;">
         <button type="button" onclick="captureAndSavePackCard();" style="height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.16); color:#f8fafc; font-size:0.72rem; font-weight:800; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; white-space:nowrap;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:14px; height:14px; flex-shrink:0;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
@@ -1460,7 +1389,6 @@
         </button>
       </div>
 
-      <!-- 하단 2단: 낭만루트 메인 5대 네비게이션 독 완전체 (5열 1/5 균등 분할 · 잘림 0% 방어) -->
       <div class="mobile-bottom-dock notranslate" style="position:static !important; flex-shrink:0 !important; width:100% !important; background:rgba(0,0,0,0.98) !important; border-top:1px solid rgba(255,255,255,0.08) !important; display:grid !important; grid-template-columns:repeat(5, 1fr) !important; align-items:center !important; height:calc(52px + env(safe-area-inset-bottom, 0px)) !important; padding:0 4px env(safe-area-inset-bottom, 0px) 4px !important; box-sizing:border-box;">
         <a href="index.html" class="dock-item" onclick="closePackShareModal(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; gap:2px; padding:0;">
           <svg viewBox="0 0 24 24" style="width:clamp(17px, 4.5vw, 19px); height:clamp(17px, 4.5vw, 19px); fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -1487,7 +1415,6 @@
     </div>
   </div>
 
-  <!-- 📲 [전용 공유 바텀시트: 카카오톡 · 인스타그램 · 링크 복사 (이모지 0% 순수 SVG)] -->
   <div id="packCardShareActionSheet" onclick="if(event.target===this) closePackCardShareActionSheet();" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:2000030 !important; justify-content:center; align-items:flex-end; box-sizing:border-box;">
     <div style="width:100%; max-width:440px; background:#0e131f; border-top:1.5px solid rgba(255,255,255,0.16); border-radius:18px 18px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:10px; box-shadow:0 -12px 40px rgba(0,0,0,0.95); box-sizing:border-box;" onclick="event.stopPropagation();">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
@@ -1495,17 +1422,14 @@
         <button type="button" onclick="closePackCardShareActionSheet();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer;">✕</button>
       </div>
       <div style="display:flex; flex-direction:column; gap:6px;">
-        <!-- 카카오톡 공유 -->
         <button type="button" onclick="sharePackCardToKakao(); closePackCardShareActionSheet();" style="height:44px; background:#fee500; border:none; border-radius:10px; color:#191919; font-size:0.82rem; font-weight:900; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;">
           <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:#191919;"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.122.49.178.483.376.352.155-.102 2.463-1.69 3.456-2.378.55.08 1.11.122 1.678.122 4.97 0 9-3.186 9-7.115C21 6.185 16.97 3 12 3z"/></svg>
           <span>카카오톡 친구에게 공유</span>
         </button>
-        <!-- 인스타그램 공유 -->
         <button type="button" onclick="sharePackCardToInstagram(); closePackCardShareActionSheet();" style="height:44px; background:linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045); border:none; border-radius:10px; color:#ffffff; font-size:0.82rem; font-weight:900; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:18px; height:18px;"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
           <span>인스타그램 피드 / 스토리 공유</span>
         </button>
-        <!-- 링크 복사 -->
         <button type="button" onclick="copyPackCardLink(); closePackCardShareActionSheet();" style="height:44px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.18); border-radius:10px; color:#ffffff; font-size:0.82rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:18px; height:18px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
           <span>링크 복사</span>
@@ -1513,21 +1437,11 @@
       </div>
     </div>
   </div>
-      </div>
 
-      <div style="display:flex; gap:6px; margin-top:4px;">
-        <button type="button" class="modal-btn" style="flex:1; background:rgba(255,255,255,0.08); color:#fff;" onclick="captureAndSavePackCard()">💾 이미지 저장</button>
-        <button type="button" class="modal-btn" style="flex:1.4; background:#ffffff; color:#000000; font-weight:900;" onclick="saveCardToVaultAndOpenBasecamp()">🎒 보관함 저장</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 5. 📷 모바일 풀스크린 포토 스튜디오 (비율 & 확대 슬라이더 100% 복원) -->
   <div id="photoStudioOverlay" style="display:none; position:fixed; inset:0; z-index:2000005 !important; background:#000000; justify-content:center; align-items:center; overflow:hidden;">
     <div id="photoStudioStage" style="position:relative; width:100%; height:100%; max-width:440px; display:flex; justify-content:center; align-items:center; padding:env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0;">
       <div id="photoStudioCardTarget" style="width:100%; max-height:100%; overflow:hidden; position:relative; display:flex; justify-content:center; align-items:center;"></div>
       
-      <!-- 상단 툴바 -->
       <div style="position:absolute; top:calc(12px + env(safe-area-inset-top, 0px)); left:14px; right:14px; display:flex; justify-content:space-between; align-items:center; z-index:100;">
         <button type="button" style="background:rgba(0,0,0,0.55); border:1px solid rgba(255,255,255,0.25); color:#fff; font-size:0.75rem; font-weight:800; padding:6px 12px; border-radius:20px; cursor:pointer;" onclick="closePhotoStudio()">◀ 뒤로</button>
         <div style="display:flex; gap:6px; align-items:center;">
@@ -1539,7 +1453,6 @@
         </div>
       </div>
 
-      <!-- 자유 비율 및 사진 확대 슬라이더 패널 -->
       <div id="studioFreeRatioSliderContainer" style="display:none; position:absolute; bottom:calc(58px + env(safe-area-inset-bottom, 0px)); left:20px; right:20px; background:rgba(0,0,0,0.7); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.2); border-radius:14px; padding:8px 12px; z-index:100; flex-direction:column; gap:6px;">
         <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.65rem; color:#94a3b8; font-weight:700;">
           <span>🎚️ 비율 조절</span>
@@ -1554,7 +1467,6 @@
         <input type="range" id="studioPhotoScaleSlider" min="1.0" max="1.6" step="0.02" value="1.0" style="width:100%; accent-color:#34d399; cursor:pointer;" oninput="handlePhotoScaleChange(this.value)" />
       </div>
 
-      <!-- 비율 선택 바 -->
       <div style="position:absolute; bottom:calc(12px + env(safe-area-inset-bottom, 0px)); display:flex; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.2); border-radius:24px; padding:4px 6px; gap:3px; z-index:100; overflow-x:auto; max-width:92%;">
         <button type="button" id="btnStudioRatioAuto" class="modal-btn" style="font-size:0.65rem; font-weight:900; padding:4px 8px; border-radius:14px; background:transparent; color:#cbd5e1; white-space:nowrap;" onclick="setStudioRatio('auto')">자동</button>
         <button type="button" id="btnStudioRatio11" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:transparent; color:#cbd5e1; white-space:nowrap;" onclick="setStudioRatio('1/1')">1:1</button>
@@ -1565,11 +1477,9 @@
       </div>
     </div>
   </div>
-  <!-- ============================================================ -->
-  <!-- ⚙️ 낭만루트 인덱스 통합 코어 자바스크립트 엔진                      -->
-  <!-- ============================================================ -->
+  대상 파일: index.html (3/3 파트)
+
   <script>
-    // 🧰 [공통 유틸리티]
     function safeGetJSON(key, defaultVal) {
       try {
         var item = localStorage.getItem(key);
@@ -1618,7 +1528,6 @@
       setTimeout(function() { toast.remove(); }, dur);
     }
 
-    // 🌐 [전역 환경 및 상태 변수]
     window.KAKAO_APP_KEY = window.KAKAO_APP_KEY || "557f5de0f6391a2419bc5592e6a9c9c1";
     window.GAS_API_URL = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
     window.GOOGLE_SHEET_ID = '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
@@ -1635,8 +1544,6 @@
     var currentCustomRatioVal = 0.75;
     var currentPhotoScaleVal = 1.0;
 
- // 💾 [인덱스 전용 IndexedDB 직통 비동기 로더 - 폰 사진 유실 원천 방어]
-   // 💾 [인덱스 전용 IndexedDB 직통 비동기 로더 - 폰 사진 유실 원천 방어]
     function fetchFromIndexedDBDirect(key) {
       return new Promise(function(resolve) {
         if (typeof indexedDB === 'undefined') return resolve(null);
@@ -1654,7 +1561,6 @@
       });
     }
 
-    // 🧰 [장비 리스트 안전 추출 헬퍼]
     function extractCleanGearsFromRecord(record) {
       if (!record) return [];
       var rawItems = record.items || record.gears || [];
@@ -1685,12 +1591,10 @@
       }).filter(function(it) { return it.name && it.name.trim().length > 0; });
     }
 
-// 🗂️ [사진 목록 추출 헬퍼] 1200px 스위트 스팟 화질 적용 & 4배 고속 로딩
     function getArchivePhotosList(record) {
       if (!record) return [];
       var results = [];
 
-      // 🌐 1순위: 서버(R2/구글 시트)에서 내려온 공개 CDN 주소 최우선 추출 (타인 기기 100% 노출)
       if (Array.isArray(record.photos) && record.photos.length > 0) {
         results = record.photos.filter(Boolean);
       } else if (record.photo_url && String(record.photo_url).trim().length > 10) {
@@ -1704,7 +1608,6 @@
         results = [String(record.fieldPhoto).trim()];
       }
 
-      // 📱 2순위: 서버 주소가 없을 때만 로컬 스마트폰 캐시에서 보충
       if (results.length === 0) {
         var savedPhotos = safeGetJSON('okbm_phone_photos_map', {});
         if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
@@ -1742,7 +1645,6 @@
       });
     }
 
-    // 🕒 [비동기 금고 대기소] 폰 IndexedDB에서 실제 15개 출정과 사진을 완벽 인출
     async function getRealArchiveRecordsAsync() {
       try {
         var idbPhotos = await fetchFromIndexedDBDirect('okbm_phone_photos_map');
@@ -1770,7 +1672,6 @@
       return (list || []).filter(Boolean);
     }
 
-    // ❤️ [좋아요 카운터 시스템]
     function getCardLikesCount(cardId) {
       var likesMap = safeGetJSON('okbm_card_likes_count', {});
       return Number(likesMap[cardId]) || 0;
@@ -1809,7 +1710,7 @@
         userLikes.push(sId);
         curCount++;
         triggerHaptic(15);
-        showToast('❤️ 좋아요를 눌렀습니다!', 'success', 1800);
+        showToast('좋아요를 눌렀습니다!', 'success', 1800);
       }
 
       likesMap[cardId] = curCount;
@@ -1836,10 +1737,10 @@
         var iconLike = document.getElementById('heroLikeIcon');
         var textLike = document.getElementById('heroLikeCount');
         if (textLike) textLike.innerText = hCount;
-        if (iconLike) iconLike.innerText = hLiked ? '❤️' : '🤍';
+        if (iconLike) iconLike.innerHTML = hLiked ? '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' : '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
         if (btnLike) btnLike.classList.toggle('liked', hLiked);
       }
-    }
+    } 
 
     function handleHeroNavClick(e) {
       if (e) e.stopPropagation();
@@ -1849,7 +1750,6 @@
       location.href = 'map.html?spot=' + encodeURIComponent(spotName.replace(/\s*\(.*?\)/g, ''));
     }
 
-    // 📸 [20종 실물 감성 템플릿 풀스크린 팝업 모달 제어]
     function openCurrentTemplateModal(e) {
       if (e) e.stopPropagation();
       triggerHaptic(12);
@@ -1881,111 +1781,108 @@
       triggerHaptic(10);
     }
 
-   window.heroTopRecords = [];
+    window.heroTopRecords = [];
     window.currentHeroCardIndex = 0;
     window.currentHeroPhotoIndex = 0;
     window.currentHeroPhotosList = [];
     window.currentHeroRecord = null;
     window.__heroPhotoCache = new Map();
 
-  function preloadHeroPhotos(photoList) {
-  if (!Array.isArray(photoList) || photoList.length === 0) return;
-  photoList.forEach(function(url) {
-    if (url && typeof url === 'string' && !window.__heroPhotoCache.has(url)) {
-      var img = new Image();
-      img.decoding = 'async';
-      img.src = url;
-      window.__heroPhotoCache.set(url, img);
+    function preloadHeroPhotos(photoList) {
+      if (!Array.isArray(photoList) || photoList.length === 0) return;
+      photoList.forEach(function(url) {
+        if (url && typeof url === 'string' && !window.__heroPhotoCache.has(url)) {
+          var img = new Image();
+          img.decoding = 'async';
+          img.src = url;
+          window.__heroPhotoCache.set(url, img);
+        }
+      });
     }
-  });
-}
 
-function renderCurrentHeroCard() {
-  var records = window.heroTopRecords || [];
-  if (records.length === 0) return;
+    function renderCurrentHeroCard() {
+      var records = window.heroTopRecords || [];
+      if (records.length === 0) return;
 
-  var record = records[window.currentHeroCardIndex];
-  window.currentHeroRecord = record;
-  window.currentHeroPhotosList = getArchivePhotosList(record);
-  window.currentHeroPhotoIndex = 0;
+      var record = records[window.currentHeroCardIndex];
+      window.currentHeroRecord = record;
+      window.currentHeroPhotosList = getArchivePhotosList(record);
+      window.currentHeroPhotoIndex = 0;
 
-  preloadHeroPhotos(window.currentHeroPhotosList);
+      preloadHeroPhotos(window.currentHeroPhotosList);
 
-  if (records.length > 1) {
-    var nextIdx = (window.currentHeroCardIndex + 1) % records.length;
-    var nextPhotos = getArchivePhotosList(records[nextIdx]);
-    if (nextPhotos && nextPhotos[0]) preloadHeroPhotos([nextPhotos[0]]);
-  }
-
-  var titleEl = document.getElementById('heroMainTitle');
-  var tagEl = document.getElementById('heroBadgeTag');
-  var authorEl = document.getElementById('heroAuthorText');
-  var quoteEl = document.getElementById('heroQuoteText');
-  var elevBadge = document.getElementById('heroElevBadge');
-  var weightBadge = document.getElementById('heroWeightBadge');
-  var indicatorEl = document.getElementById('heroCardIndexIndicator');
-
-  var spotTitle = record.spot || record.spotName || '낭만 필드 박지';
-  var elevStr = record.elevation ? (String(record.elevation).includes('m') ? record.elevation : record.elevation + 'm') : 'FIELD';
-
-  var profile = safeGetJSON('user_profile', null);
-  var authorName = (profile && profile.nickname) ? profile.nickname : (record.author || '낭만백패커');
-  var memoText = record.memo || record.oneLineMemo || '자연 속에서 비화식으로 즐기는 조용한 하룻밤.';
-
-  var items = extractCleanGearsFromRecord(record);
-  var totalGrams = items.reduce(function(sum, it) { return sum + Number(it.weight || 0); }, 0);
-  var weightStr = (totalGrams > 0) ? (totalGrams / 1000).toFixed(2) : (record.weightKg ? String(record.weightKg) : '0.00');
-
-  if (titleEl) titleEl.innerText = spotTitle;
-  if (tagEl) tagEl.innerText = 'SECRET SPOT';
-  if (authorEl) authorEl.innerText = authorName;
-  if (quoteEl) quoteEl.innerText = '“' + memoText + '”';
-  if (elevBadge) elevBadge.innerText = '⛰️ ' + elevStr;
-  if (weightBadge) weightBadge.innerText = '🎒 ' + weightStr + 'kg';
-  if (indicatorEl) indicatorEl.innerText = (window.currentHeroCardIndex + 1) + ' / ' + records.length;
-
-  updateHeroPhotoDisplay();
-  updateAllLikeUI();
-  renderHeroTrailerRail();
-}
-
-function updateHeroPhotoDisplay() {
-  var photos = window.currentHeroPhotosList || [];
-  var curIdx = window.currentHeroPhotoIndex || 0;
-  var imgEl = document.getElementById('heroCoverImg');
-
-  if (imgEl) {
-    if (photos.length > 0 && photos[curIdx]) {
-      var targetUrl = photos[curIdx];
-      imgEl.decoding = 'async';
-      imgEl.src = targetUrl;
-      imgEl.onload = function() {
-        imgEl.style.opacity = '1';
-      };
-      if (imgEl.complete) {
-        imgEl.style.opacity = '1';
+      if (records.length > 1) {
+        var nextIdx = (window.currentHeroCardIndex + 1) % records.length;
+        var nextPhotos = getArchivePhotosList(records[nextIdx]);
+        if (nextPhotos && nextPhotos[0]) preloadHeroPhotos([nextPhotos[0]]);
       }
-    } else {
-      imgEl.style.opacity = '0';
-    }
-  }
 
-  var barsContainer = document.getElementById('heroStoryBarsContainer');
-  if (barsContainer) {
-    if (photos.length <= 1) {
-      barsContainer.style.display = 'none';
-    } else {
-      barsContainer.style.display = 'flex';
-      barsContainer.innerHTML = photos.map(function(p, i) {
-        return `<div style="flex:1; height:100%; border-radius:2px; background:rgba(255,255,255,${i === curIdx ? '0.95' : '0.3'}); transition:background 0.15s ease;"></div>`;
-      }).join('');
-    }
-  }
-}
-    
-    
+      var titleEl = document.getElementById('heroMainTitle');
+      var tagEl = document.getElementById('heroBadgeTag');
+      var authorEl = document.getElementById('heroAuthorText');
+      var quoteEl = document.getElementById('heroQuoteText');
+      var elevBadge = document.getElementById('heroElevBadge');
+      var weightBadge = document.getElementById('heroWeightBadge');
+      var indicatorEl = document.getElementById('heroCardIndexIndicator');
 
-    // 🌲 [2단 숨은 박지 가로 레일 렌더링 - 화면 카메라 이동 원천 차단]
+      var spotTitle = record.spot || record.spotName || '낭만 필드 박지';
+      var elevStr = record.elevation ? (String(record.elevation).includes('m') ? record.elevation : record.elevation + 'm') : 'FIELD';
+
+      var profile = safeGetJSON('user_profile', null);
+      var authorName = (profile && profile.nickname) ? profile.nickname : (record.author || '낭만백패커');
+      var memoText = record.memo || record.oneLineMemo || '자연 속에서 비화식으로 즐기는 조용한 하룻밤.';
+
+      var items = extractCleanGearsFromRecord(record);
+      var totalGrams = items.reduce(function(sum, it) { return sum + Number(it.weight || 0); }, 0);
+      var weightStr = (totalGrams > 0) ? (totalGrams / 1000).toFixed(2) : (record.weightKg ? String(record.weightKg) : '0.00');
+
+      if (titleEl) titleEl.innerText = spotTitle;
+      if (tagEl) tagEl.innerText = 'SECRET SPOT';
+      if (authorEl) authorEl.innerText = authorName;
+      if (quoteEl) quoteEl.innerText = '“' + memoText + '”';
+      if (elevBadge) elevBadge.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg> ' + elevStr;
+      if (weightBadge) weightBadge.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2h12v6H6zM4 8h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/></svg> ' + weightStr + 'kg';
+      if (indicatorEl) indicatorEl.innerText = (window.currentHeroCardIndex + 1) + ' / ' + records.length;
+
+      updateHeroPhotoDisplay();
+      updateAllLikeUI();
+      renderHeroTrailerRail();
+    }
+
+    function updateHeroPhotoDisplay() {
+      var photos = window.currentHeroPhotosList || [];
+      var curIdx = window.currentHeroPhotoIndex || 0;
+      var imgEl = document.getElementById('heroCoverImg');
+
+      if (imgEl) {
+        if (photos.length > 0 && photos[curIdx]) {
+          var targetUrl = photos[curIdx];
+          imgEl.decoding = 'async';
+          imgEl.src = targetUrl;
+          imgEl.onload = function() {
+            imgEl.style.opacity = '1';
+          };
+          if (imgEl.complete) {
+            imgEl.style.opacity = '1';
+          }
+        } else {
+          imgEl.style.opacity = '0';
+        }
+      }
+
+      var barsContainer = document.getElementById('heroStoryBarsContainer');
+      if (barsContainer) {
+        if (photos.length <= 1) {
+          barsContainer.style.display = 'none';
+        } else {
+          barsContainer.style.display = 'flex';
+          barsContainer.innerHTML = photos.map(function(p, i) {
+            return `<div style="flex:1; height:100%; border-radius:2px; background:rgba(255,255,255,${i === curIdx ? '0.95' : '0.3'}); transition:background 0.15s ease;"></div>`;
+          }).join('');
+        }
+      }
+    }
+
     function renderHeroTrailerRail() {
       var railContainer = document.getElementById('heroTrailerRailContainer');
       var railSection = document.getElementById('heroTrailerSectionWrap');
@@ -2012,7 +1909,7 @@ function updateHeroPhotoDisplay() {
         return `
           <div class="n-trailer-card ${isActive ? 'active' : ''}" onclick="selectHeroCardByIndex(${idx})" id="trailerCardItem_${idx}">
             <div class="n-trailer-thumb">
-              ${thumbUrl ? `<img src="${thumbUrl}" alt="${escapeHtml(spotName)}" />` : `<div style="width:100%; height:100%; background:#090d16; display:flex; align-items:center; justify-content:center; color:#38bdf8; font-size:1.2rem;">⛺</div>`}
+              ${thumbUrl ? `<img src="${thumbUrl}" alt="${escapeHtml(spotName)}" />` : `<div style="width:100%; height:100%; background:#090d16; display:flex; align-items:center; justify-content:center; color:#38bdf8; font-size:1.2rem;"><svg viewBox="0 0 24 24" style="width:20px; height:20px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg></div>`}
               <div class="n-trailer-weight-chip">${escapeHtml(weightStr)}</div>
             </div>
             <div class="n-trailer-info">
@@ -2023,7 +1920,6 @@ function updateHeroPhotoDisplay() {
         `;
       }).join('');
 
-      // 🛡️ [카메라 튐 방어]: 윈도우 스크롤을 유발하는 scrollIntoView를 없애고 레일 내부 가로 스크롤만 이동
       var activeEl = document.getElementById('trailerCardItem_' + window.currentHeroCardIndex);
       if (activeEl && railContainer) {
         var targetScrollLeft = activeEl.offsetLeft - (railContainer.clientWidth / 2) + (activeEl.clientWidth / 2);
@@ -2038,7 +1934,6 @@ function updateHeroPhotoDisplay() {
       renderCurrentHeroCard();
     };
 
-    // 👆 [스마트 제스처: 가로 스와이프(카드 전환) vs 탭(사진 전환)]
     function initHeroGestureEngine() {
       var card = document.getElementById('instaMainCard');
       if (!card || card._gestureBound) return;
@@ -2062,7 +1957,6 @@ function updateHeroPhotoDisplay() {
           return;
         }
 
-        // 1. 가로 스와이프 감지 ➔ 메인 카드 전환
         if (absX > 40 && absX > absY) {
           var totalCards = (window.heroTopRecords || []).length;
           if (totalCards > 1) {
@@ -2077,7 +1971,6 @@ function updateHeroPhotoDisplay() {
           return;
         }
 
-        // 2. 탭 감지 ➔ 사진 전환
         if (absX < 15 && absY < 15 && duration < 350) {
           var rect = card.getBoundingClientRect();
           var tapRatio = (e.clientX - rect.left) / rect.width;
@@ -2096,7 +1989,6 @@ function updateHeroPhotoDisplay() {
       });
     }
 
-    // 🧭 [스마트 헤더: 스크롤 다운 시 숨김 / 스크롤 업 시 노출 엔진]
     function initSmartHeaderScrollEngine() {
       var header = document.querySelector('.netflix-integrated-header');
       if (!header || header._scrollEngineBound) return;
@@ -2126,111 +2018,102 @@ function updateHeroPhotoDisplay() {
       }, { passive: true });
     }
 
- var FALLBACK_HERO_PRESET = {
-  id: "hero_preset_master",
-  spot: "강원 대관령 선자령",
-  author: "낭만백패커",
-  date: "2026.09.04",
-  elevation: "832m",
-  weightKg: "5.52",
-  memo: "백두대간 능선을 따라 펼쳐지는 풍차와 억새, 은하수가 쏟아지는 밤",
-  oneLineMemo: "백두대간 능선을 따라 펼쳐지는 풍차와 억새, 은하수가 쏟아지는 밤",
-  photo: "",
-  photos: [],
-  items: [
-    { name: "지팩스 듀플렉스 2P 텐트", weight: 550 },
-    { name: "써머레스트 엑스라이트 NXT", weight: 354 },
-    { name: "큐물러스 파이라 850 구스침낭", weight: 1200 },
-    { name: "HMG 윈드라이더 3400 (55L)", weight: 910 },
-    { name: "소토 윈드마스터 버너", weight: 67 }
-  ]
-};
+    var FALLBACK_HERO_PRESET = {
+      id: "hero_preset_master",
+      spot: "강원 대관령 선자령",
+      author: "낭만백패커",
+      date: "2026.09.04",
+      elevation: "832m",
+      weightKg: "5.52",
+      memo: "백두대간 능선을 따라 펼쳐지는 풍차와 억새, 은하수가 쏟아지는 밤",
+      oneLineMemo: "백두대간 능선을 따라 펼쳐지는 풍차와 억새, 은하수가 쏟아지는 밤",
+      photo: "",
+      photos: [],
+      items: [
+        { name: "지팩스 듀플렉스 2P 텐트", weight: 550 },
+        { name: "써머레스트 엑스라이트 NXT", weight: 354 },
+        { name: "큐물러스 파이라 850 구스침낭", weight: 1200 },
+        { name: "HMG 윈드라이더 3400 (55L)", weight: 910 },
+        { name: "소토 윈드마스터 버너", weight: 67 }
+      ]
+    };
 
-async function initDynamicHeroAndFeeds() {
-  initHeroGestureEngine();
-  
-  var r2Domain = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
-  window.R2_PUBLIC_DOMAIN = r2Domain;
-  var R2_FEEDS_URL = r2Domain + '/feeds.json';
-  initSmartHeaderScrollEngine();
+    async function initDynamicHeroAndFeeds() {
+      initHeroGestureEngine();
+      
+      var r2Domain = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
+      window.R2_PUBLIC_DOMAIN = r2Domain;
+      var R2_FEEDS_URL = r2Domain + '/feeds.json';
+      initSmartHeaderScrollEngine();
 
-  var profile = safeGetJSON('user_profile', null);
-  var cachedFeeds = safeGetJSON('okbm_cached_community_feeds', []);
-  var initialFeeds = [];
+      var profile = safeGetJSON('user_profile', null);
+      var cachedFeeds = safeGetJSON('okbm_cached_community_feeds', []);
+      var initialFeeds = [];
 
-  if (Array.isArray(cachedFeeds) && cachedFeeds.length > 0) {
-    initialFeeds = cachedFeeds.slice();
-  } else {
-    var presetCopy = Object.assign({}, FALLBACK_HERO_PRESET);
-    if (isUserLoggedIn() && profile && profile.nickname) {
-      presetCopy.author = profile.nickname;
-    }
-    initialFeeds = [presetCopy];
-  }
-
-  window.__allLoadedFeeds = initialFeeds;
-  window.heroTopRecords = initialFeeds;
-  window.currentHeroCardIndex = 0;
-  renderCurrentHeroCard();
-
-  try {
-    var idbPhotos = await fetchFromIndexedDBDirect('okbm_phone_photos_map');
-    if (idbPhotos && typeof idbPhotos === 'object') {
-      window.__memoryStore = window.__memoryStore || {};
-      window.__memoryStore['okbm_phone_photos_map'] = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'] || {}, idbPhotos);
-      updateHeroPhotoDisplay();
-      renderHeroTrailerRail();
-    }
-  } catch (e) {}
-
-  // ⚡ 1순위: Cloudflare R2 글로벌 CDN 조회 (서버를 절대 기준으로 타인 폰 캐시 100% 동기화)
-  try {
-    var r2Res = await fetch(R2_FEEDS_URL + '?_t=' + Date.now(), { cache: 'no-store' });
-    if (r2Res.ok) {
-      var r2Feeds = await r2Res.json();
-      if (Array.isArray(r2Feeds)) {
-        var effectiveFeeds = r2Feeds.length > 0 ? r2Feeds : [Object.assign({}, FALLBACK_HERO_PRESET)];
-        localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(r2Feeds));
-        if (effectiveFeeds[0] && (effectiveFeeds[0].photo || effectiveFeeds[0].photo_url)) {
-          localStorage.setItem('okbm_hero_cover_url', effectiveFeeds[0].photo || effectiveFeeds[0].photo_url);
+      if (Array.isArray(cachedFeeds) && cachedFeeds.length > 0) {
+        initialFeeds = cachedFeeds.slice();
+      } else {
+        var presetCopy = Object.assign({}, FALLBACK_HERO_PRESET);
+        if (isUserLoggedIn() && profile && profile.nickname) {
+          presetCopy.author = profile.nickname;
         }
-        window.__allLoadedFeeds = effectiveFeeds;
-        window.heroTopRecords = effectiveFeeds;
-        window.currentHeroCardIndex = 0;
-        renderCurrentHeroCard();
-        console.log('⚡ [Index] Cloudflare R2 글로벌 CDN 기준 동기화 완료 (' + r2Feeds.length + '개)');
+        initialFeeds = [presetCopy];
+      }
+
+      window.__allLoadedFeeds = initialFeeds;
+      window.heroTopRecords = initialFeeds;
+      window.currentHeroCardIndex = 0;
+      renderCurrentHeroCard();
+
+      try {
+        var idbPhotos = await fetchFromIndexedDBDirect('okbm_phone_photos_map');
+        if (idbPhotos && typeof idbPhotos === 'object') {
+          window.__memoryStore = window.__memoryStore || {};
+          window.__memoryStore['okbm_phone_photos_map'] = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'] || {}, idbPhotos);
+          updateHeroPhotoDisplay();
+          renderHeroTrailerRail();
+        }
+      } catch (e) {}
+
+      try {
+        var r2Res = await fetch(R2_FEEDS_URL + '?_t=' + Date.now(), { cache: 'no-store' });
+        if (r2Res.ok) {
+          var r2Feeds = await r2Res.json();
+          if (Array.isArray(r2Feeds)) {
+            var effectiveFeeds = r2Feeds.length > 0 ? r2Feeds : [Object.assign({}, FALLBACK_HERO_PRESET)];
+            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(r2Feeds));
+            if (effectiveFeeds[0] && (effectiveFeeds[0].photo || effectiveFeeds[0].photo_url)) {
+              localStorage.setItem('okbm_hero_cover_url', effectiveFeeds[0].photo || effectiveFeeds[0].photo_url);
+            }
+            window.__allLoadedFeeds = effectiveFeeds;
+            window.heroTopRecords = effectiveFeeds;
+            window.currentHeroCardIndex = 0;
+            renderCurrentHeroCard();
+          }
+        }
+      } catch (r2Err) {}
+
+      try {
+        var gasUrl = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
+        var res = await fetch(gasUrl + '?action=GET_COMMUNITY_FEEDS&_t=' + Date.now());
+        if (res.ok) {
+          var cloudFeeds = await res.json();
+          if (Array.isArray(cloudFeeds)) {
+            var masterFeeds = cloudFeeds.length > 0 ? cloudFeeds : [Object.assign({}, FALLBACK_HERO_PRESET)];
+            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(cloudFeeds));
+            window.__allLoadedFeeds = masterFeeds;
+            window.heroTopRecords = masterFeeds;
+            window.currentHeroCardIndex = 0;
+            renderCurrentHeroCard();
+          }
+        }
+      } catch (err) {}
+
+      if (typeof window.syncAllLocalFeedsToCommunity === 'function') {
+        window.syncAllLocalFeedsToCommunity();
       }
     }
-  } catch (r2Err) {
-    console.warn('📡 [Index] R2 인출 대기, 구글 클라우드로 전환:', r2Err);
-  }
 
-  // 🌐 2순위: 구글 클라우드 최신 피드 대조 (서버 원본 기준 타인 기기 과거 피드 자동 소멸)
-  try {
-    var gasUrl = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
-    var res = await fetch(gasUrl + '?action=GET_COMMUNITY_FEEDS&_t=' + Date.now());
-    if (res.ok) {
-      var cloudFeeds = await res.json();
-      if (Array.isArray(cloudFeeds)) {
-        var masterFeeds = cloudFeeds.length > 0 ? cloudFeeds : [Object.assign({}, FALLBACK_HERO_PRESET)];
-        localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(cloudFeeds));
-        window.__allLoadedFeeds = masterFeeds;
-        window.heroTopRecords = masterFeeds;
-        window.currentHeroCardIndex = 0;
-        renderCurrentHeroCard();
-        console.log('✅ [Index] 구글 클라우드 중앙 원본 동기화 완료 (' + cloudFeeds.length + '개)');
-      }
-    }
-  } catch (err) {
-    console.warn('[Index] 서버 통신 대기 중:', err);
-  }
-
-  if (typeof window.syncAllLocalFeedsToCommunity === 'function') {
-    window.syncAllLocalFeedsToCommunity();
-  }
-}
-
-    // 🏷️ [메뉴 칩 선택 시 아래 피드 레일 및 히어로 카드 100% 매칭 연동 엔진]
     function filterHeroCategory(catKey, btnEl) {
       document.querySelectorAll('.n-cat-chip').forEach(function(b) { b.classList.remove('active'); });
       if (btnEl) btnEl.classList.add('active');
@@ -2251,7 +2134,6 @@ async function initDynamicHeroAndFeeds() {
 
       var filtered = allLogs;
       if (catKey === 'easy') {
-        // 🌙 퇴근박/초보: 6.8kg 이하 또는 데크, 공원, 산책, 휴양림, 550m 이하 완만한 박지
         filtered = allLogs.filter(function(r) {
           var w = parseFloat(r.weightKg || '0');
           var elev = parseInt(String(r.elevation || '0').replace(/\D/g, ''), 10) || 0;
@@ -2259,20 +2141,17 @@ async function initDynamicHeroAndFeeds() {
           return (w > 0 && w <= 6.8) || (elev > 0 && elev <= 550) || s.includes('데크') || s.includes('초보') || s.includes('퇴근') || s.includes('공원') || s.includes('산책');
         });
       } else if (catKey === 'island') {
-        // 🌲 감성/섬: 섬, 도, 해변, 바다, 해수욕장, 포구
         filtered = allLogs.filter(function(r) {
           var s = (String(r.spot || '') + ' ' + String(r.memo || '')).toLowerCase();
           return s.includes('도') || s.includes('섬') || s.includes('해변') || s.includes('해수욕장') || s.includes('바다') || s.includes('비치') || s.includes('포구');
         });
       } else if (catKey === 'alpine') {
-        // ⛰️ 능선/알파인: 고도 600m 이상 또는 산, 봉, 령, 능선
         filtered = allLogs.filter(function(r) {
           var elev = parseInt(String(r.elevation || '0').replace(/\D/g, ''), 10) || 0;
           var s = (String(r.spot || '') + ' ' + String(r.memo || '')).toLowerCase();
           return elev >= 600 || s.includes('산') || s.includes('봉') || s.includes('령') || s.includes('능선') || s.includes('대간') || s.includes('알파인');
         });
       } else if (catKey === 'gear') {
-        // 🎒 경량 기어: 5.2kg 이하 초경량 BPL/UL 세팅
         filtered = allLogs.filter(function(r) {
           var w = parseFloat(r.weightKg || '0');
           var s = (String(r.spot || '') + ' ' + String(r.memo || '')).toLowerCase();
@@ -2282,15 +2161,12 @@ async function initDynamicHeroAndFeeds() {
 
       if (filtered.length === 0) filtered = allLogs;
 
-      // 1. 해당 카테고리에 맞는 레코드 목록으로 교체
       window.heroTopRecords = filtered;
       window.currentHeroCardIndex = 0;
 
-      // 2. 히어로 및 아래 피드 레일 즉시 동기화
       renderCurrentHeroCard();
       triggerHaptic(12);
 
-      // 3. 카드 전환 시 은은한 비주얼 피드백
       var card = document.getElementById('instaMainCard');
       if (card) {
         card.style.opacity = '0.5';
@@ -2298,11 +2174,11 @@ async function initDynamicHeroAndFeeds() {
         setTimeout(function() {
           card.style.transition = 'opacity 0.22s ease, transform 0.22s ease';
           card.style.opacity = '1';
-         card.style.transform = 'scale(1)';
+          card.style.transform = 'scale(1)';
         }, 50);
       }
     }
-   // 🌐 유튜브 영상 ID 정규식 추출기 (전역 등록)
+
     window.extractYouTubeVideoId = function(url) {
       if (!url || typeof url !== 'string') return '';
       var match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/))([a-zA-Z0-9_-]{11})/);
@@ -2323,7 +2199,6 @@ async function initDynamicHeroAndFeeds() {
 
     window.VIDEO_DATABASE = window.VIDEO_DATABASE || DEFAULT_VIDEO_DATABASE.slice();
 
-   // 🎬 홈 메인 슬라이더 렌더러 (원정대 방식 전수 노출)
     function renderVideoCurationSlider() {
       var slider = document.getElementById('homeVideoRailSlider');
       if (!slider) return;
@@ -2350,7 +2225,6 @@ async function initDynamicHeroAndFeeds() {
       }).join('');
     }
 
-    // 📺 영상 상세 팝업 (자연스러운 장소확인 버튼 + 뷰/특징만 노출 + 광고 3종)
     async function openVideoDetailModal(idxOrUrl) {
       var db = (window.VIDEO_DATABASE && window.VIDEO_DATABASE.length > 0) ? window.VIDEO_DATABASE : DEFAULT_VIDEO_DATABASE;
       var item = (typeof idxOrUrl === 'number') ? (db[idxOrUrl] || db[0]) : (db.find(function(v) { return v.videoUrl === idxOrUrl || v.videoId === idxOrUrl; }) || db[0]);
@@ -2392,43 +2266,42 @@ async function initDynamicHeroAndFeeds() {
       var viewMatch = cleanSummary.match(/\[(?:뷰\/특징|뷰|특징)\]\s*([\s\S]*?)(?=\[(?:접근\/코스|접근|코스|박지\/피칭|박지|피칭|주의\/팁|주의|팁)\]|$)/i);
       var onlyViewText = viewMatch ? viewMatch[1].trim() : cleanSummary.split(/\n\s*\n|\n(?=\[)/)[0].replace(/^\[.*?\]\s*/, '').trim();
 
-      if (bodySlot) {
-        var adBannersHtml = `
-          <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
-            <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; text-decoration:none;">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:1.1rem; opacity:0.85;">🎒</span>
-                <div>
-                  <div style="font-size:0.77rem; font-weight:800; color:#f8fafc;">영상 속 백패킹 장비 확인하기</div>
-                  <div style="font-size:0.58rem; color:#94a3b8;">텐트 · 침낭 · 에어매트 · 경량 기어 스펙</div>
-                </div>
-              </div>
-              <span style="font-size:0.65rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); padding:3.5px 8px; border-radius:6px; flex-shrink:0;">장비보기 ➔</span>
-            </a>
-
-            <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; text-decoration:none;">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:1.1rem; opacity:0.85;">🍲</span>
-                <div>
-                  <div style="font-size:0.77rem; font-weight:800; color:#f8fafc;">영상 속 비화식 음식 확인하기</div>
-                  <div style="font-size:0.58rem; color:#94a3b8;">핫앤쿡 발열도시락 · 보온식단 · 전투식량 모음</div>
-                </div>
-              </div>
-              <span style="font-size:0.65rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); padding:3.5px 8px; border-radius:6px; flex-shrink:0;">음식보기 ➔</span>
-            </a>
-
-            <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; text-decoration:none;">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:1.1rem; opacity:0.85;">🧥</span>
-                <div>
-                  <div style="font-size:0.77rem; font-weight:800; color:#f8fafc;">영상 속 아웃도어 의류 확인하기</div>
-                  <div style="font-size:0.58rem; color:#94a3b8;">우모복 · 방풍자켓 · 등산화 특가전</div>
-                </div>
-              </div>
-              <span style="font-size:0.65rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); padding:3.5px 8px; border-radius:6px; flex-shrink:0;">특가보기 ➔</span>
-            </a>
+     if (bodySlot) {
+var adBannersHtml = `
+<div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
+<a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; text-decoration:none;">
+<div style="display:flex; align-items:center; gap:8px;">
+<span style="display:inline-flex; width:24px; height:24px; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" style="width:20px; height:20px;" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v6H6zM4 8h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/></svg></span>
+<div>
+<div style="font-size:0.77rem; font-weight:800; color:#f8fafc;">영상 속 백패킹 장비 확인하기</div>
+<div style="font-size:0.58rem; color:#94a3b8;">텐트 · 침낭 · 에어매트 · 경량 기어 스펙</div>
+</div>
+</div>
+<span style="font-size:0.65rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); padding:3.5px 8px; border-radius:6px; flex-shrink:0;">장비보기 ➔</span>
+</a>
+<a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; text-decoration:none;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="display:inline-flex; width:24px; height:24px; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" style="width:20px; height:20px;" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg></span>
+            <div>
+              <div style="font-size:0.77rem; font-weight:800; color:#f8fafc;">영상 속 비화식 음식 확인하기</div>
+              <div style="font-size:0.58rem; color:#94a3b8;">핫앤쿡 발열도시락 · 보온식단 · 전투식량 모음</div>
+            </div>
           </div>
-        `;
+          <span style="font-size:0.65rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); padding:3.5px 8px; border-radius:6px; flex-shrink:0;">음식보기 ➔</span>
+        </a>
+
+        <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; text-decoration:none;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="display:inline-flex; width:24px; height:24px; align-items:center; justify-content:center; flex-shrink:0;"><svg viewBox="0 0 24 24" style="width:20px; height:20px;" fill="none" stroke="#a78bfa" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg></span>
+            <div>
+              <div style="font-size:0.77rem; font-weight:800; color:#f8fafc;">영상 속 아웃도어 의류 확인하기</div>
+              <div style="font-size:0.58rem; color:#94a3b8;">우모복 · 방풍자켓 · 등산화 특가전</div>
+            </div>
+          </div>
+          <span style="font-size:0.65rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); padding:3.5px 8px; border-radius:6px; flex-shrink:0;">특가보기 ➔</span>
+        </a>
+      </div>
+    `;
 
         bodySlot.innerHTML = isGear ? `
           <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; gap:4px;">
@@ -2438,7 +2311,6 @@ async function initDynamicHeroAndFeeds() {
           </div>
           ${adBannersHtml}
         ` : `
-          <!-- 박지 헤더 & 장소확인 인라인 버튼 -->
           <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
             <div style="flex:1; min-width:0;">
               <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
@@ -2453,7 +2325,6 @@ async function initDynamicHeroAndFeeds() {
             </button>
           </div>
 
-          <!-- 뷰/특징 1가지만 노출 -->
           ${onlyViewText ? `
             <div style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.08); border-left:3px solid rgba(255,255,255,0.6); border-radius:8px; padding:10px 12px; font-size:0.78rem; line-height:1.55; color:#cbd5e1; margin-top:6px;">
               <div style="font-weight:900; font-size:0.73rem; color:#ffffff; margin-bottom:3px; display:flex; align-items:center; gap:4px;">
@@ -2463,7 +2334,6 @@ async function initDynamicHeroAndFeeds() {
               <div>${escapeHtml(onlyViewText)}</div>
             </div>` : ''}
 
-          <!-- 은은한 3대 광고 배너 -->
           ${adBannersHtml}
 
           <div style="border-radius:12px; border:1px dashed rgba(255,255,255,0.1); background:rgba(255,255,255,0.015); padding:10px 12px; text-align:center; margin-top:4px;">
@@ -2487,7 +2357,6 @@ async function initDynamicHeroAndFeeds() {
       triggerHaptic(10);
     }
 
-    // 📡 구글 시트(설정 탭 gid: 1983931878) 실시간 동기화
     async function loadFeaturedVideosFromSettingsSheet() {
       var SETTINGS_GID = '1983931878';
       var url = 'https://docs.google.com/spreadsheets/d/' + window.GOOGLE_SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + SETTINGS_GID + '&_t=' + Date.now();
@@ -2532,12 +2401,9 @@ async function initDynamicHeroAndFeeds() {
             }
           }
         });
-      } catch (e) {
-        console.warn('[VideoSettings] 설정 탭 로드 예외:', e);
-      }
+      } catch (e) {}
     }
 
- // 🤝 [낭만 원정대 동행 매칭 코어 엔진]
     var DEFAULT_TRIP_JOINS = [
       {
         tripId: "trip_1",
@@ -2572,7 +2438,7 @@ async function initDynamicHeroAndFeeds() {
       }
     ];
 
- window.TRIP_JOINS_DATABASE = window.TRIP_JOINS_DATABASE || DEFAULT_TRIP_JOINS.slice();
+    window.TRIP_JOINS_DATABASE = window.TRIP_JOINS_DATABASE || DEFAULT_TRIP_JOINS.slice();
 
     function getTripPhotosList(trip) {
       if (!trip) return [];
@@ -2622,7 +2488,6 @@ async function initDynamicHeroAndFeeds() {
       var now = new Date();
       now.setHours(0,0,0,0);
 
-      // 마감된 방은 맨 뒤로 밀고, 모집 중인 방을 D-Day 날짜순 우선 정렬
       var activeTrips = (window.TRIP_JOINS_DATABASE || []).filter(function(t) {
         var dInfo = getTripDDayBadge(t.date);
         return !dInfo.isExpired;
@@ -2643,7 +2508,6 @@ async function initDynamicHeroAndFeeds() {
 
       if (countEl) countEl.innerText = "(" + activeTrips.length + ")";
 
-      // 1. 고정 [0번: + 동행 모집하기] 카드
       var html = `
         <div onclick="openTripCreateModal()" style="width:115px; flex-shrink:0; background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.22); border-radius:12px; padding:12px 10px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:6px; cursor:pointer;">
           <div style="width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#ffffff; display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:700;">+</div>
@@ -2652,7 +2516,6 @@ async function initDynamicHeroAndFeeds() {
         </div>
       `;
 
-      // 2. 카드 목록 (실시간 인원 게이지 바 및 X/Y명 뱃지 표시)
       html += activeTrips.slice(0, 6).map(function(t) {
         var dBadge = getTripDDayBadge(t.date);
         var maxCap = parseInt(t.maxCapacity, 10) || 4;
@@ -2697,7 +2560,8 @@ async function initDynamicHeroAndFeeds() {
 
       slider.innerHTML = html;
     }
-window.syncTripToCloudSheet = function(tripData) {
+
+    window.syncTripToCloudSheet = function(tripData) {
       if (!tripData) return;
       var gasUrl = window.GAS_API_URL || GAS_API_URL;
       if (!gasUrl || gasUrl.includes('구글시트_배포_URL')) return;
@@ -2752,9 +2616,7 @@ window.syncTripToCloudSheet = function(tripData) {
           if (data && data.status === 'SUCCESS') {
             console.log('✅ [Trip] 구글 시트 원정대 동행 등록 100% 완료');
           }
-        }).catch(function(err) {
-          console.warn('[Trip] 원정대 등록 통신 오류:', err);
-        });
+        }).catch(function(err) {});
       })();
     };
 
@@ -2768,7 +2630,6 @@ window.syncTripToCloudSheet = function(tripData) {
       var gasUrl = window.GAS_API_URL || GAS_API_URL;
       var targetIdStr = String(tripId).trim();
 
-      // 🪦 1. 로컬 툼스톤 각인 (재로드 시 부활 원천 차단)
       window.__tombstoneTripIds.add(targetIdStr);
       window.TRIP_JOINS_DATABASE = (window.TRIP_JOINS_DATABASE || []).filter(function(t) { 
         return String(t.tripId).trim() !== targetIdStr; 
@@ -2780,7 +2641,6 @@ window.syncTripToCloudSheet = function(tripData) {
 
       showToast('원정대가 삭제되었습니다.', 'info');
 
-      // 🌐 2. 구글 시트 실제 행 삭제 전송
       if (gasUrl && !gasUrl.includes('구글시트_배포_URL')) {
         fetch(gasUrl, {
           method: 'POST',
@@ -2789,12 +2649,11 @@ window.syncTripToCloudSheet = function(tripData) {
             action: 'DELETE_TRIP',
             tripId: targetIdStr
           })
-        }).catch(function(err) {
-          console.warn('[Trip] 삭제 요청 전송 중 오류:', err);
-        });
+        }).catch(function(err) {});
       }
     };
-  async function loadTripsFromGoogleSheet() {
+
+    async function loadTripsFromGoogleSheet() {
       var TRIPS_GID = '1029159607';
       var sheetId = window.GOOGLE_SHEET_ID || '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
       var gvizUrl = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/gviz/tq?tqx=out:csv&gid=' + TRIPS_GID + '&_t=' + Date.now();
@@ -2815,13 +2674,12 @@ window.syncTripToCloudSheet = function(tripData) {
               results.data.forEach(function(row) {
                 var isActiveRaw = String(row.isActive || 'TRUE').toUpperCase();
                 if (isActiveRaw === 'FALSE') return;
-var spot = row.spotName || '';
+                var spot = row.spotName || '';
                 var dateStr = row.date || '';
                 if (!spot || !dateStr) return;
 
                 var tId = String(row.tripId || ('trip_' + spot.replace(/\s+/g, '') + '_' + dateStr.replace(/\D/g, ''))).trim();
 
-                // 🪦 툼스톤에 등록된 삭제된 원정대는 시트에 남아있더라도 화면에 렌더링하지 않음
                 if (window.__tombstoneTripIds && window.__tombstoneTripIds.has(tId)) return;
 
                 var localPhotos = savedMap[tId];
@@ -2879,7 +2737,7 @@ var spot = row.spotName || '';
         });
       } catch (err) {}
     }
- // 💬 [원정대 상세 팝업: 최종 참가 클릭 시 내 달력 등록 & 화면 자동 이동]
+
     window.__currentTripJoinModalIdx = 0;
 
     window.openTripDetailModal = function(tripId) {
@@ -2900,7 +2758,7 @@ var spot = row.spotName || '';
       window.openTripDetailModal(tripId);
     }
 
-function renderTripDetailSheet(activeTrips) {
+    function renderTripDetailSheet(activeTrips) {
       var trip = activeTrips[window.__currentTripJoinModalIdx];
       if (!trip) return;
 
@@ -2976,7 +2834,7 @@ function renderTripDetailSheet(activeTrips) {
       modal.id = 'tripDetailSheetModal';
       modal.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000040; display:flex; justify-content:center; align-items:stretch; box-sizing:border-box; overflow:hidden;';
 
-   modal.innerHTML = `
+      modal.innerHTML = `
         <div id="tripDetailCardTarget" style="width:100%; max-width:480px; height:100%; height:100dvh; max-height:100dvh; background:#07090e; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;">
           
           <div id="tripDetailInnerScroll" style="flex:1 1 0%; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:calc(10px + env(safe-area-inset-top, 0px)) 12px calc(80px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
@@ -3042,7 +2900,6 @@ function renderTripDetailSheet(activeTrips) {
                 </div>
               </div>
 
-              <!-- 참가자 닉네임 아바타 칩 바 -->
               <div style="display:flex; flex-direction:column; gap:4px; padding:4px 0;">
                 <span style="font-size:0.65rem; color:#94a3b8; font-weight:700;">확정 대원 명단:</span>
                 <div style="display:flex; flex-wrap:wrap; gap:5px;">
@@ -3162,6 +3019,7 @@ function renderTripDetailSheet(activeTrips) {
         }, { passive: true });
       }
     }
+
     window.cycleTripDetailPhoto = function(e) {
       if (e) {
         if (e.target.closest('button')) return;
@@ -3190,9 +3048,8 @@ function renderTripDetailSheet(activeTrips) {
       }
       triggerHaptic(8);
     };
-   // ➕ [동행 모집하기: 전 기종 뷰포트 완벽 대응 반응형/적응형 엔진]
 
- function openTripCreateModal() {
+    function openTripCreateModal() {
       var token = localStorage.getItem('user_auth_token');
       var rawProfile = localStorage.getItem('user_profile');
       var profile = rawProfile ? JSON.parse(rawProfile) : null;
@@ -3227,14 +3084,13 @@ function renderTripDetailSheet(activeTrips) {
               <div id="tripPhotoIndicators" style="display:flex; gap:4px; align-items:center; height:12px;"></div>
             </div>
 
-           <!-- 2. 목적지 박지 검색 -->
             <div style="position:relative; display:flex; flex-direction:column; gap:2px; z-index:1000060;">
               <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800;">📍 목적지 박지 (검색) *</label>
               <input type="text" id="tripInputSpot" placeholder="박지명 검색 (터치 시 목록 노출)" onfocus="handleTripSpotSearch(this.value)" oninput="handleTripSpotSearch(this.value)" autocomplete="off" style="width:100%; height:clamp(33px, 4.3vh, 37px); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:clamp(0.76rem, 2.2vw, 0.82rem); padding:0 10px; outline:none; box-sizing:border-box;" />
               <div id="tripSpotDropdown" class="spot-search-dropdown-list" style="top:clamp(52px, 6.8vh, 58px); z-index:1000070; background:#0e121a; border:1px solid rgba(56,189,248,0.4); max-height:180px;"></div>
             </div>
 
-           <div style="display:flex; gap:6px;">
+            <div style="display:flex; gap:6px;">
               <div style="flex:1.2; display:flex; flex-direction:column; gap:2px;">
                 <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800;">📅 출발 날짜 (스케줄 연동) *</label>
                 <input type="text" id="tripInputDate" placeholder="터치하여 달력 선택" readonly onclick="window.openTripDatePickerModal();" style="width:100%; height:clamp(33px, 4.3vh, 37px); background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.35); border-radius:8px; color:#38bdf8; font-size:clamp(0.76rem, 2.2vw, 0.82rem); padding:0 10px; outline:none; box-sizing:border-box; font-family:var(--font-en); font-weight:800; cursor:pointer;" />
@@ -3306,7 +3162,6 @@ function renderTripDetailSheet(activeTrips) {
       renderTripPhotoStack();
     }
 
-    // 🃏 [3:4 완벽 적응형 스택 카드 렌더러 - 유동 크기 100% 흡수]
     function renderTripPhotoStack() {
       var wrapper = document.getElementById('tripPhotoStackWrapper');
       var dots = document.getElementById('tripPhotoIndicators');
@@ -3318,7 +3173,7 @@ function renderTripDetailSheet(activeTrips) {
       if (total === 0) {
         wrapper.innerHTML = `
           <div onclick="document.getElementById('tripPhotoFileInput').click()" style="width:100%; height:100%; border-radius:12px; border:1.5px dashed rgba(255,255,255,0.25); background:rgba(255,255,255,0.03); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:clamp(4px, 1vh, 8px); cursor:pointer; box-sizing:border-box;">
-            <span style="font-size:clamp(1.6rem, 4.5vw, 2.1rem); line-height:1;">⛺</span>
+            <span style="font-size:clamp(1.6rem, 4.5vw, 2.1rem); line-height:1;"><svg viewBox="0 0 24 24" style="width:28px; height:28px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg></span>
             <span style="font-size:clamp(0.64rem, 1.9vw, 0.70rem); color:#cbd5e1; text-align:center; line-height:1.35;">세로 3:4 텐풍<br>사진 첨부 (최대 3장)</span>
           </div>
         `;
@@ -3372,7 +3227,6 @@ function renderTripDetailSheet(activeTrips) {
       bindPhotoStackSwipeGestures(wrapper);
     }
 
-    // 👆 스택 카드 터치/스와이프 인터랙션
     function bindPhotoStackSwipeGestures(wrapper) {
       if (!wrapper || wrapper._stackBound) return;
       wrapper._stackBound = true;
@@ -3391,7 +3245,6 @@ function renderTripDetailSheet(activeTrips) {
         var total = (window.__tempTripCreatePhotos || []).length;
         if (total <= 1) return;
 
-        // 가로 스와이프 또는 탭 감지 시 카드를 뒤로 넘김
         if (Math.abs(diffX) > 25 || (Math.abs(diffX) < 10 && Math.abs(diffY) < 10)) {
           triggerHaptic(8);
           cycleTripPhotoToBack();
@@ -3425,7 +3278,7 @@ function renderTripDetailSheet(activeTrips) {
       renderTripPhotoStack();
     }
 
-  async function handleTripMultiPhotoUpload(e) {
+    async function handleTripMultiPhotoUpload(e) {
       var files = Array.from(e.target.files || []);
       e.target.value = '';
       if (files.length === 0) return;
@@ -3624,7 +3477,7 @@ function renderTripDetailSheet(activeTrips) {
       triggerHaptic(10);
     };
 
-   window.confirmTripDateSelection = function() {
+    window.confirmTripDateSelection = function() {
       var input = document.getElementById('tripInputDate');
       if (input && window.__tripPickerSelectedDate) {
         input.value = window.__tripPickerSelectedDate;
@@ -3688,7 +3541,7 @@ function renderTripDetailSheet(activeTrips) {
       var photoList = (window.__tempTripCreatePhotos && window.__tempTripCreatePhotos.length > 0) ? window.__tempTripCreatePhotos.slice() : [];
       var tripId = 'trip_' + Date.now();
 
-     if (photoList.length > 0) {
+      if (photoList.length > 0) {
         var savedMap = (typeof window.safeGetStorage === 'function') 
           ? window.safeGetStorage('okbm_trip_photos_map', {}) 
           : safeGetJSON('okbm_trip_photos_map', {});
@@ -3811,7 +3664,7 @@ function renderTripDetailSheet(activeTrips) {
         window.syncTripToCloudSheet(trip);
       }
     }
-    // 📜 [전체 원정대 목록 모달]
+
     function openTripJoinListModal() {
       triggerHaptic(10);
       var old = document.getElementById('tripJoinListModal');
@@ -3922,7 +3775,6 @@ function renderTripDetailSheet(activeTrips) {
       }, { passive: true });
     }
 
-    // 🔍 [장비 프리셋 모달 검색 핸들러]
     function handleGearSearchInput(val) {
       var clearBtn = document.getElementById('btnGearSearchClear');
       if (clearBtn) clearBtn.style.display = (val && val.trim().length > 0) ? 'flex' : 'none';
@@ -3942,7 +3794,6 @@ function renderTripDetailSheet(activeTrips) {
       triggerHaptic(10);
     }
 
-    // 📸 [포토 스튜디오 전체화면 엔진]
     function openPhotoStudio() {
       if (typeof closePackShareModal === 'function') closePackShareModal();
       var studio = document.getElementById('photoStudioOverlay');
@@ -4040,94 +3891,94 @@ function renderTripDetailSheet(activeTrips) {
       `;
     }
 
-   window.showPhotoLoadingModal = function(current, total) {
-     var modal = document.getElementById('globalPhotoLoadingModal');
-     if (!modal) {
-       modal = document.createElement('div');
-       modal.id = 'globalPhotoLoadingModal';
-       modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:3000000 !important; display:flex; justify-content:center; align-items:center; padding:20px; box-sizing:border-box;';
-       modal.innerHTML = `
-         <div style="width:100%; max-width:300px; background:#0e131f; border:1.5px solid #38bdf8; border-radius:16px; padding:20px 16px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; box-shadow:0 20px 50px rgba(0,0,0,0.95); box-sizing:border-box;">
-           <div style="width:36px; height:36px; border:3px solid rgba(56,189,248,0.2); border-top-color:#38bdf8; border-radius:50%; animation:spinPhoto 0.8s linear infinite;"></div>
-           <style>@keyframes spinPhoto{to{transform:rotate(360deg);}}</style>
-           <div style="font-size:0.92rem; font-weight:900; color:#ffffff;">사진 등록 및 최적화 중...</div>
-           <div id="photoLoadingProgressText" style="font-size:0.75rem; color:#38bdf8; font-weight:800; font-family:'Space Grotesk', sans-serif;">처리 중 (1/1)</div>
-           <div style="font-size:0.65rem; color:#94a3b8; line-height:1.4;">고화질 사진을 웹 규격에 맞게<br>초고속 변환하고 있습니다.</div>
-         </div>
-       `;
-       document.body.appendChild(modal);
-     }
-     modal.style.display = 'flex';
-     var pText = document.getElementById('photoLoadingProgressText');
-     if (pText && total) pText.innerText = '처리 중 (' + current + ' / ' + total + ')';
-   };
+    window.showPhotoLoadingModal = function(current, total) {
+      var modal = document.getElementById('globalPhotoLoadingModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'globalPhotoLoadingModal';
+        modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:3000000 !important; display:flex; justify-content:center; align-items:center; padding:20px; box-sizing:border-box;';
+        modal.innerHTML = `
+          <div style="width:100%; max-width:300px; background:#0e131f; border:1.5px solid #38bdf8; border-radius:16px; padding:20px 16px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; box-shadow:0 20px 50px rgba(0,0,0,0.95); box-sizing:border-box;">
+            <div style="width:36px; height:36px; border:3px solid rgba(56,189,248,0.2); border-top-color:#38bdf8; border-radius:50%; animation:spinPhoto 0.8s linear infinite;"></div>
+            <style>@keyframes spinPhoto{to{transform:rotate(360deg);}}</style>
+            <div style="font-size:0.92rem; font-weight:900; color:#ffffff;">사진 등록 및 최적화 중...</div>
+            <div id="photoLoadingProgressText" style="font-size:0.75rem; color:#38bdf8; font-weight:800; font-family:'Space Grotesk', sans-serif;">처리 중 (1/1)</div>
+            <div style="font-size:0.65rem; color:#94a3b8; line-height:1.4;">고화질 사진을 웹 규격에 맞게<br>초고속 변환하고 있습니다.</div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      }
+      modal.style.display = 'flex';
+      var pText = document.getElementById('photoLoadingProgressText');
+      if (pText && total) pText.innerText = '처리 중 (' + current + ' / ' + total + ')';
+    };
 
-   window.hidePhotoLoadingModal = function() {
-     var modal = document.getElementById('globalPhotoLoadingModal');
-     if (modal) modal.style.display = 'none';
-   };
+    window.hidePhotoLoadingModal = function() {
+      var modal = document.getElementById('globalPhotoLoadingModal');
+      if (modal) modal.style.display = 'none';
+    };
 
-   window.processSinglePhotoSmart = function(file) {
-     return new Promise(function(resolve) {
-       var directUrl = URL.createObjectURL(file);
-       var directImg = new Image();
+    window.processSinglePhotoSmart = function(file) {
+      return new Promise(function(resolve) {
+        var directUrl = URL.createObjectURL(file);
+        var directImg = new Image();
 
-       var tryCompress = function(imageObj) {
-         try {
-           var canvas = document.createElement('canvas');
-           var MAX_SIZE = 1200;
-           var w = imageObj.width, h = imageObj.height;
-           if (w > h) {
-             if (w > MAX_SIZE) { h = Math.round(h * (MAX_SIZE / w)); w = MAX_SIZE; }
-           } else {
-             if (h > MAX_SIZE) { w = Math.round(w * (MAX_SIZE / h)); h = MAX_SIZE; }
-           }
-           canvas.width = w; canvas.height = h;
-           var ctx = canvas.getContext('2d');
-           ctx.imageSmoothingEnabled = true;
-           ctx.imageSmoothingQuality = 'high';
-           ctx.drawImage(imageObj, 0, 0, w, h);
-           resolve(canvas.toDataURL('image/jpeg', 0.85));
-         } catch (e) {
-           resolve('');
-         }
-       };
+        var tryCompress = function(imageObj) {
+          try {
+            var canvas = document.createElement('canvas');
+            var MAX_SIZE = 1200;
+            var w = imageObj.width, h = imageObj.height;
+            if (w > h) {
+              if (w > MAX_SIZE) { h = Math.round(h * (MAX_SIZE / w)); w = MAX_SIZE; }
+            } else {
+              if (h > MAX_SIZE) { w = Math.round(w * (MAX_SIZE / h)); h = MAX_SIZE; }
+            }
+            canvas.width = w; canvas.height = h;
+            var ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(imageObj, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/jpeg', 0.85));
+          } catch (e) {
+            resolve('');
+          }
+        };
 
-       directImg.onload = function() {
-         URL.revokeObjectURL(directUrl);
-         tryCompress(directImg);
-       };
+        directImg.onload = function() {
+          URL.revokeObjectURL(directUrl);
+          tryCompress(directImg);
+        };
 
-       directImg.onerror = async function() {
-         URL.revokeObjectURL(directUrl);
-         if (typeof heic2any !== 'undefined') {
-           try {
-             var convertedBlob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 });
-             var safeBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-             var fallbackUrl = URL.createObjectURL(safeBlob);
-             var fallbackImg = new Image();
-             fallbackImg.onload = function() {
-               URL.revokeObjectURL(fallbackUrl);
-               tryCompress(fallbackImg);
-             };
-             fallbackImg.onerror = function() {
-               URL.revokeObjectURL(fallbackUrl);
-               resolve('');
-             };
-             fallbackImg.src = fallbackUrl;
-           } catch (err) {
-             resolve('');
-           }
-         } else {
-           resolve('');
-         }
-       };
+        directImg.onerror = async function() {
+          URL.revokeObjectURL(directUrl);
+          if (typeof heic2any !== 'undefined') {
+            try {
+              var convertedBlob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 });
+              var safeBlob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+              var fallbackUrl = URL.createObjectURL(safeBlob);
+              var fallbackImg = new Image();
+              fallbackImg.onload = function() {
+                URL.revokeObjectURL(fallbackUrl);
+                tryCompress(fallbackImg);
+              };
+              fallbackImg.onerror = function() {
+                URL.revokeObjectURL(fallbackUrl);
+                resolve('');
+              };
+              fallbackImg.src = fallbackUrl;
+            } catch (err) {
+              resolve('');
+            }
+          } else {
+            resolve('');
+          }
+        };
 
-       directImg.src = directUrl;
-     });
-   };
+        directImg.src = directUrl;
+      });
+    };
 
-   async function handleShareCardPhotoUpload(e) {
+    async function handleShareCardPhotoUpload(e) {
       var files = Array.from(e.target.files || []);
       if (files.length === 0) return;
 
@@ -4179,7 +4030,7 @@ function renderTripDetailSheet(activeTrips) {
       });
     }
 
-   function sharePackCardToKakao() {
+    function sharePackCardToKakao() {
       if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) return showToast('카카오 SDK 초기화 중...', 2000);
       triggerHaptic(15);
       var spotInput = document.getElementById('shareCardSpotInput');
@@ -4195,7 +4046,6 @@ function renderTripDetailSheet(activeTrips) {
       });
     }
 
-    // 📲 [모바일 Web Share API 및 카카오톡 지능형 분기 공유 엔진]
     window.sharePackCardDirect = async function() {
       triggerHaptic(12);
       var spotInput = document.getElementById('shareCardSpotInput');
@@ -4206,7 +4056,6 @@ function renderTripDetailSheet(activeTrips) {
       var shareText = `흔적 없는 클린 백패킹 LNT 실천\n${spotName} 배낭 패킹 명세 확인하기`;
       var shareUrl = window.location.origin + window.location.pathname;
 
-      // 1. 모바일 브라우저 네이티브 공유창
       if (navigator.share) {
         try {
           await navigator.share({
@@ -4220,13 +4069,11 @@ function renderTripDetailSheet(activeTrips) {
         }
       }
 
-      // 2. 카카오톡 SDK 연동 시 카카오 공유 호출
       if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
         sharePackCardToKakao();
         return;
       }
 
-      // 3. 클립보드 복사 폴백
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(`${shareTitle}\n${shareUrl}`).then(function() {
           showToast('출정 정보가 클립보드에 복사되었습니다!', 'success');
@@ -4275,7 +4122,6 @@ function renderTripDetailSheet(activeTrips) {
       }
     };
 
-   // 🌌 [은하수 캔버스 애니메이션 엔진 - 보급형 AP 60fps 경량화]
     function initStarlightEngines() {
       var metallicColors = ['#ffffff', '#f8fafc', '#cbd5e1'];
       var makeSubtleDotStar = function(top, left, size, opacity, dur, delay) {
@@ -4298,7 +4144,6 @@ function renderTripDetailSheet(activeTrips) {
       }
     }
 
-   // 🔗 [딥링크 탭 파라미터 감지 라우터]
     function checkIncomingDirectTab() {
       var urlParams = new URLSearchParams(window.location.search);
       var openParam = urlParams.get('open');
@@ -4339,7 +4184,6 @@ function renderTripDetailSheet(activeTrips) {
       }
     }
 
-    // 🎒 [배낭 무게 계산기 배너 실시간 업데이트]
     function refreshMainBannerWeight() {
       var savedGears = safeGetJSON('okbm_selected_gears_multi', {});
       var totalGrams = 0, totalCount = 0;
@@ -4354,7 +4198,6 @@ function renderTripDetailSheet(activeTrips) {
       if (bannerKg) bannerKg.innerText = totalKg + ' kg';
     }
 
-    // 🗺️ [구글 시트 박지 데이터 로드]
     async function loadPortalSpotData() {
       var url = 'https://docs.google.com/spreadsheets/d/' + window.GOOGLE_SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + window.GOOGLE_SHEET_MAIN_GID + '&_t=' + Date.now();
       try {
@@ -4378,11 +4221,10 @@ function renderTripDetailSheet(activeTrips) {
             }
           }
         });
-  } catch (e) {}
-}
+      } catch (e) {}
+    }
 
-// [초기 실행 진입점 - 1번 블록: 헤더 인증 UI 즉시 동기화 확립]
-document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
       if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
         Kakao.init(window.KAKAO_APP_KEY);
       }
@@ -4391,10 +4233,10 @@ document.addEventListener('DOMContentLoaded', function() {
         updateHeaderAuthUI();
       }
 
-     initDynamicHeroAndFeeds();
+      initDynamicHeroAndFeeds();
       initIndexDockGestures();
       checkIncomingDirectTab();
-     refreshMainBannerWeight();
+      refreshMainBannerWeight();
       renderVideoCurationSlider();
       renderHomeTripJoinSlider();
 
@@ -4408,13 +4250,12 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
   </script>
-<!-- 🏕️ 4대 분할 코어 모듈 스크립트 연결 (완전 호환) -->
+
   <script src="romantic-sync.js?v=2.5.0"></script>
   <script src="templates.js?v=2.5.0"></script>
   <script src="romantic-history.js?v=2.5.0"></script>
   <script src="romantic-plan.js?v=2.5.0"></script>
 
-  <!-- 🔔 안드로이드 물리 백버튼 & iOS 좌측 에지 스와이프 LIFO 모달 탈출 통합 엔진 -->
   <script>
     window.modalCloseStack = [];
 

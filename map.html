@@ -298,7 +298,7 @@
       .filter-chip.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); box-shadow: 0 0 8px rgba(56,189,248,0.45); }
       .filter-chip.chip-status.active { background: #0d9488; border-color: #2dd4bf; box-shadow: 0 0 8px rgba(45,212,191,0.45); }
 
-      .spot-list { flex: 1; overflow-y: auto; list-style: none; background: var(--bg-surface); width: 100%; padding-bottom: 24px; }
+      .spot-list { flex: 1; overflow-y: auto; list-style: none; background: var(--bg-surface); width: 100%; padding-bottom: 80px; }
       .region-group { border-bottom: 1px solid var(--border-subtle); width: 100%; }
       .region-group-title { padding: 8px 14px; background-color: var(--bg-base); font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid transparent; transition: all 0.2s; }
       
@@ -640,7 +640,7 @@
         bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 10px);
         left: 50%;
         transform: translateX(-50%);
-        z-index: calc(var(--z-hud) + 10);
+        z-index: calc(var(--z-sidebar) + 20);
         display: flex;
         align-items: center;
         gap: 6px;
@@ -1602,7 +1602,7 @@
         applyTheme(currentAppTheme);
         initMapEngine();
         if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
-        if (window.innerWidth <= 768) {
+       if (window.innerWidth <= 768) {
           isSidebarCollapsed = true;
           const sidebar = document.getElementById('sidebar');
           if (sidebar) sidebar.classList.add('collapsed');
@@ -1610,9 +1610,6 @@
         } else { updateSmartResetButtons(); }
         
         initBottomSheetSwipeGesture();
-        renderSubChips();
-        fetchSpotsFromGoogleSheet();
-        fetchCommentsFromSheet();
 
         // ☁️ [클라우드 100% 동기화]: 회원 찜, 클리어, 메모 마커 안전 복원
         try {
@@ -1656,62 +1653,12 @@
           }
         } catch (syncErr) {}
 
-        document.addEventListener('click', (e) => {
+    document.addEventListener('click', (e) => {
           const pcDrop = document.getElementById('pcSearchDropdown');
           const pcInput = document.getElementById('pcSearchInput');
           if (pcDrop && !pcDrop.contains(e.target) && e.target !== pcInput) pcDrop.style.display = 'none';
         });
       });
-
-      function initBottomSheetSwipeGesture() {
-        const sheet = document.getElementById('mobileBottomSheet'), handleArea = document.querySelector('.sheet-handle-bar-area');
-        if (!sheet || !handleArea) return;
-        let startX = 0, startY = 0, isDragging = false;
-        
-        handleArea.addEventListener('touchstart', (e) => { 
-          startX = e.touches[0].clientX;
-          startY = e.touches[0].clientY; 
-          isDragging = true; 
-        }, { passive: true });
-
-        handleArea.addEventListener('touchend', (e) => {
-          if (!isDragging) return; 
-          isDragging = false;
-          const deltaX = (e.changedTouches ? e.changedTouches[0].clientX : 0) - startX;
-          const deltaY = (e.changedTouches ? e.changedTouches[0].clientY : 0) - startY;
-
-          if (Math.abs(deltaX) > 60 && Math.abs(deltaY) < 50) {
-            if (deltaX < 0) navigateToNearbySpot('EAST');
-            else navigateToNearbySpot('WEST');
-          } else if (deltaY > 50) {
-            triggerHaptic(10);
-            closeMobileBottomSheet();
-          }
-        }, { passive: true });
-      }
-
-      function navigateToNearbySpot(direction = 'EAST') {
-        if (!map || !currentActiveSpot) return;
-        const bounds = map.getBounds();
-        if (!bounds) return;
-        
-        const visibleSpots = spots.filter(s => {
-          const latlng = new kakao.maps.LatLng(s.lat, s.lng);
-          return bounds.contain(latlng) && String(s.id).trim() !== String(currentActiveSpot.id).trim();
-        });
-
-        if (visibleSpots.length === 0) return;
-
-        let candidates = [];
-        if (direction === 'EAST') {
-          candidates = visibleSpots.filter(s => s.lng > currentActiveSpot.lng).sort((a, b) => a.lng - b.lng);
-        } else {
-          candidates = visibleSpots.filter(s => s.lng < currentActiveSpot.lng).sort((a, b) => b.lng - a.lng);
-        }
-
-        const target = candidates.length > 0 ? candidates[0] : visibleSpots[0];
-        if (target) focusSpotOnMap(target);
-      }
 
       function zoomInMap(e) { 
         if (e) e.stopPropagation(); 
@@ -1880,7 +1827,7 @@
         });
       }
 
-      function updateSmartResetButtons() {
+function updateSmartResetButtons() {
         const isMobile = window.innerWidth <= 768;
         const isListOpen = isMobile ? !isSidebarCollapsed : true;
         const allClosed = areAllRegionAccordionsClosed();
@@ -1928,7 +1875,7 @@
       }
       function updateDockSidebarText(isOpen) {
         const textEl = document.getElementById('dockSpotListText'), btn = document.getElementById('dockSpotListBtn');
-        if (textEl) textEl.innerText = isOpen ? '목록닫기' : '박지목록';
+        if (textEl) textEl.innerText = isOpen ? '지도복귀' : '박지목록';
         if (btn) btn.classList.toggle('active', isOpen);
         updateSmartResetButtons();
       }
@@ -2668,163 +2615,15 @@
               </ul>
             </div>
 
-            ${getCommentsHtml(spot.id)}
+       <!-- 🏕️ 캠퍼들의 실시간 100자 현장 팁 & 개척자 인스타 링크 섹션 -->
+            ${getFieldReviewsHtml(spot)}
           </div>`;
       }
 
-      async function fetchCommentsFromSheet() {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3500);
-        try {
-          const res = await fetch(`${GAS_API_URL}?action=GET_COMMENTS&_t=${Date.now()}`, { signal: controller.signal });
-          clearTimeout(timeoutId);
-          if (res.ok) { 
-            spotComments = await res.json(); 
-            localStorage.setItem('okbm_comments', JSON.stringify(spotComments)); 
-            renderSpots(); 
-          }
-        } catch (err) { clearTimeout(timeoutId); }
-      }
-
-      async function fetchSpotsFromGoogleSheet(isManual = false) {
-        if (isManual && typeof showToast === 'function') {
-          showToast(`${ICONS.FAST} <span>구글 시트 최신 데이터를 동기화하는 중...</span>`);
-        }
-
-        // 🚀 1순위: GAS 백엔드 직통 API 호출 (CORS 차단 100% 우회)
-        try {
-          const gasRes = await fetch(`${GAS_API_URL}?action=GET_SPOTS&_t=${Date.now()}`);
-          if (gasRes.ok) {
-            const rawSpots = await gasRes.json();
-            if (Array.isArray(rawSpots) && rawSpots.length > 0) {
-              processAndApplySpotData(rawSpots);
-              return;
-            }
-          }
-        } catch (e) {
-          console.warn('[MapEngine] GAS 직통 수신 실패, gviz 백업망으로 전환:', e);
-        }
-
-        // 🌐 2순위: 구글 공식 gviz CSV API 호출 (공개 시트 안전 수신)
-        const gvizUrl = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&gid=${PRIMARY_SHEET_GID}&_t=${Date.now()}`;
-        try {
-          const response = await fetch(gvizUrl, { cache: 'no-store' });
-          if (!response.ok) throw new Error('시트 응답 오류');
-          const csvText = await response.text();
-          if (!csvText || csvText.trim().length <= 10) throw new Error('데이터 비어있음');
-
-          Papa.parse(csvText, {
-            header: true,
-            skipEmptyLines: true,
-            transformHeader: h => h.replace(/^\uFEFF/, '').trim(),
-            complete: function(results) {
-              if (results.data && results.data.length > 0) {
-                processAndApplySpotData(results.data);
-              }
-            }
-          });
-        } catch (err) {
-          console.error('[MapEngine] 시트 데이터 수신 실패:', err);
-        }
-      }
-
-      function processAndApplySpotData(rows) {
-        const mapped = [], dedupeKeySet = new Set();
-
-        rows.forEach((row, idx) => {
-          const getVal = (...keys) => {
-            for (const k of keys) {
-              for (const rk of Object.keys(row)) {
-                if (rk.toLowerCase().replace(/[\s_]/g, '') === k.toLowerCase().replace(/[\s_]/g, '')) return row[rk];
-              }
-            }
-            return '';
-          };
-
-          const spot_main = getVal('spot_main', '산이름', '메인산명', 'name', '산');
-          const spot_sub = getVal('spot_sub', '세부박지', '포인트');
-          const fullName = getVal('fullName', '전체명칭', '명칭') || (spot_sub ? `${spot_main} (${spot_sub})` : spot_main);
-
-          const lat = parseFloat(getVal('campsite_lat', 'lat', '위도', 'latitude', 'y')) || 0;
-          const lng = parseFloat(getVal('campsite_lng', 'lng', '경도', 'longitude', 'x')) || 0;
-          if ((!spot_main && !fullName) || lat === 0 || lng === 0 || isNaN(lat) || isNaN(lng)) return;
-
-          const rawId = getVal('id');
-          const fallbackUniqueId = `spot_${(spot_main || fullName).trim().replace(/\s+/g, '')}_${lat.toFixed(3)}_${lng.toFixed(3)}`;
-          const spotId = rawId ? String(rawId).trim() : fallbackUniqueId;
-          if (BLOCKED_SPOT_IDS.has(spotId)) return;
-
-          const dedupeKey = `${(spot_main || fullName).trim().replace(/\s+/g,'')}_${(spot_sub||'').trim()}_${lat.toFixed(3)}_${lng.toFixed(3)}`;
-          if (dedupeKeySet.has(dedupeKey)) return;
-          dedupeKeySet.add(dedupeKey);
-
-          let region = getVal('region', '지역'), cityName = getVal('cityName', '시군구', '시군');
-          const trailhead_addr = getVal('trailhead_addr', '들머리주소', 'entryPoint', '주소') || '들머리 정보 미입력';
-
-          if (!region || region === '경기') {
-            const autoDetect = detectRegionAndCity(lat, lng, spot_main || fullName, trailhead_addr);
-            if (!region) region = autoDetect.region;
-            if (!cityName) cityName = autoDetect.cityName;
-          }
-          if (region === '서울인천') region = '서울/인천';
-          
-          let elevation = getVal('elevation', '고도', '해발');
-          if (elevation && !String(elevation).includes('m') && !isNaN(elevation)) elevation = `${elevation}m`;
-
-          const terrainRaw = getVal('terrain', '지형', '지형형태');
-          let terrainList = [];
-          if (terrainRaw && String(terrainRaw).trim()) {
-            terrainList = String(terrainRaw).split(/[\n,]+/).map(t => {
-              const tr = t.trim();
-              if (tr === '바위' || tr === '돌박지') return '암릉';
-              if (tr.includes('해변') || tr.includes('해수욕장')) return '해변';
-              return tr;
-            }).filter(Boolean);
-          }
-          if (terrainList.length === 0) terrainList = ['데크'];
-
-          const trailhead_name = getVal('trailhead_name', '들머리명칭', '시작점');
-          const difficulty = getVal('difficulty', '난이도') || '3';
-          let distance_km = getVal('distance_km', '편도거리', '거리', 'distance');
-          if (distance_km && !String(distance_km).includes('km') && !isNaN(distance_km)) distance_km = `${distance_km}km`;
-
-          const desc_summary = getVal('desc_summary', '요약', 'desc', '특징') || '';
-          const droneStatus = getVal('droneStatus', '드론', 'drone') || '';
-          const gpxUrl = getVal('gpxUrl', 'gpx', 'gpx_url', '등산로gpx') || '';
-          const authorSnsUrl = getVal('authorSns', '등록자sns', 'author_sns', '인스타') || '';
-
-          const rawMedia = getVal('mediaUrls', '유튜브', 'youtubeUrls', '미디어', 'blogUrl');
-          const mediaList = rawMedia ? String(rawMedia).split(/[\|\n,]+/).map(u => u.trim()).filter(Boolean) : [];
-          const ytList = mediaList.filter(u => u.includes('youtu.be') || u.includes('youtube.com'));
-          const blogList = mediaList.filter(u => u.includes('blog.naver.com') || u.includes('tistory.com') || (!u.includes('youtu') && u.startsWith('http')));
-
-          const distNum = parseFloat(distance_km) || 0;
-          const combined = (fullName + ' ' + desc_summary).toLowerCase();
-          let courseType = '일반';
-          if (distNum > 0 && distNum <= 3.0) courseType = '최단';
-          else if (distNum >= 7.0) courseType = '종주';
-          else if (combined.includes('최단') || combined.includes('단거리') || combined.includes('퇴근박') || combined.includes('활공장')) courseType = '최단';
-          else if (combined.includes('종주') || combined.includes('능선') || combined.includes('대간')) courseType = '종주';
-
-          const savedViews = parseInt(localStorage.getItem(`okbm_views_${spotId}`), 10) || 0;
-
-          mapped.push({
-            id: spotId, name: spot_main || fullName, spot_main, spot_sub, fullName, elevation, trailhead_name, trailhead_addr, entryPoint: trailhead_addr, lat, lng, region: region || '경기', cityName: cityName || '', desc_summary, desc: desc_summary, droneStatus, gpxUrl, authorSnsUrl, youtubeUrls: ytList, blogUrls: blogList, courseType, terrain: terrainList, difficulty, distance: distance_km, searchCount: savedViews, sheetIndex: idx
-          });
-        });
-
-        if (mapped.length > 0) {
-          spots = mapped; 
-          localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
-          updateNewSpotFlags(spots); 
-          renderSpots(); 
-          checkUrlParamSpotFocus();
-        }
-      }
-
+      // 🏷️ [누락 복원] 지형 & 난이도 메타 배지 생성 엔진
       function getMetaBadgesHtml(spot) {
-        let html = '<div style="display:inline-flex; align-items:center; gap:3px; flex-wrap:nowrap; white-space:nowrap;">';
-        (spot.terrain || []).forEach(t => {
+        var html = '<div style="display:inline-flex; align-items:center; gap:3px; flex-wrap:nowrap; white-space:nowrap;">';
+        (spot.terrain || []).forEach(function(t) {
           if (t.includes('데크')) html += `<span class="meta-tag tag-terrain-deck">${ICONS.DECK}데크</span>`;
           else if (t.includes('암릉') || t.includes('바위') || t.includes('돌')) html += `<span class="meta-tag tag-terrain-rock">${ICONS.ROCK}암릉</span>`;
           else if (t.includes('노지')) html += `<span class="meta-tag tag-terrain-soil">${ICONS.SOIL}노지</span>`;
@@ -2834,78 +2633,107 @@
           else if (t.includes('동굴')) html += `<span class="meta-tag tag-terrain-rock">${ICONS.CAVE}동굴</span>`;
         });
         html += `<span class="meta-tag tag-diff">난이도 ${'★'.repeat(Math.min(5, Math.max(1, parseInt(spot.difficulty, 10) || 3)))}</span>`;
-        if (spot.distance?.trim()) html += `<span class="meta-tag tag-dist">${ICONS.DIST} ${escapeHtml(spot.distance.trim())}</span>`;
+        if (spot.distance && spot.distance.trim()) html += `<span class="meta-tag tag-dist">${ICONS.DIST} ${escapeHtml(spot.distance.trim())}</span>`;
         html += '</div>';
         return html;
       }
 
-      function getCommentsHtml(spotId) {
-        const isMember = isUserLoggedIn();
-        const userNick = (authState.userProfile && authState.userProfile.nickname) ? authState.userProfile.nickname : '낭만백패커';
-        const cList = spotComments[spotId] || [];
-        let listHtml = cList.length === 0 ? '<li style="color:var(--text-muted); font-size:0.68rem;">첫 평점과 생생 후기를 남겨보세요!</li>' : cList.map(c => `
-          <li class="comment-item">
-            <div style="flex:1;"><span class="comment-author">${escapeHtml(c.author)}</span> <span class="comment-rating-stars">${'★'.repeat(Math.min(5, Math.max(1, Number(c.rating) || 5)))}</span>: <span class="comment-text">${escapeHtml(c.text)}</span></div>
-          </li>`).join('');
+      // 🏕️ [박지별 실전 100자 필드 팁 & 개척자 인스타 연동 엔진]
+      function getFieldReviewsHtml(spot) {
+        var cleanSpotName = (spot.spot_main || spot.name || '').trim().toLowerCase();
+        var myHistory = safeGetJSON('okbm_packing_history', []) || [];
+        var communityFeeds = safeGetJSON('okbm_cached_community_feeds', []) || [];
+        var allFeeds = myHistory.concat(communityFeeds);
+
+        var matchedFeeds = allFeeds.filter(function(f) {
+          if (!f || !f.spot) return false;
+          var fSpot = String(f.spot).trim().toLowerCase();
+          return fSpot.includes(cleanSpotName) || cleanSpotName.includes(fSpot);
+        });
+
+        if (matchedFeeds.length === 0) {
+          return `
+            <div style="margin-top:8px; background:rgba(255,255,255,0.03); border:1.5px dashed rgba(56,189,248,0.3); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px;">
+              <div style="font-size:0.75rem; font-weight:800; color:#e2e8f0;">아직 등록된 실전 필드 팁이 없습니다</div>
+              <div style="font-size:0.65rem; color:#94a3b8; line-height:1.4;">
+                이 박지를 다녀오셨나요?<br>첫 번째 개척자로 실전 팁과 인스타를 알려보세요!
+              </div>
+              <button type="button" onclick="location.href='index.html?open=history&spot=' + encodeURIComponent('${escapeHtml(spot.spot_main || spot.name)}');" style="background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#fff; border-radius:6px; font-size:0.70rem; font-weight:900; padding:6px 12px; cursor:pointer; margin-top:2px;">
+                ✍️ 최초 개척 팁 & 인스타 남기기
+              </button>
+            </div>
+          `;
+        }
+
+        var reviewsCardsHtml = matchedFeeds.slice(0, 3).map(function(f) {
+          var memo100 = (f.memo || f.oneLineMemo || '').slice(0, 100);
+          var authorNick = f.author || f.nick || localStorage.getItem('okbm_user_nick') || '개척 캠퍼';
+          var rawInsta = f.instagram || localStorage.getItem('okbm_user_instagram') || '';
+          var cleanInsta = String(rawInsta).replace(/[@\s]/g, '').trim();
+          var weightStr = f.weightKg ? (f.weightKg + 'kg') : '';
+          var photoUrl = (Array.isArray(f.photos) && f.photos[0]) ? f.photos[0] : (f.photo || '');
+
+          return `
+            <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:8px 10px; display:flex; flex-direction:column; gap:5px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+                  <span style="font-size:0.72rem; font-weight:900; color:#ffffff;">${escapeHtml(authorNick)}</span>
+                  ${cleanInsta ? `
+                    <a href="https://instagram.com/${cleanInsta}" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:2px; background:linear-gradient(135deg, rgba(225,48,108,0.2), rgba(245,96,64,0.2)); border:1px solid rgba(225,48,108,0.4); color:#fda4af; padding:1px 5px; border-radius:4px; font-size:0.56rem; font-weight:800; text-decoration:none;">
+                      <span>📸 @${escapeHtml(cleanInsta)}</span>
+                      <span style="font-size:0.50rem; opacity:0.8;">↗</span>
+                    </a>
+                  ` : ''}
+                </div>
+                ${weightStr ? `<span style="font-size:0.62rem; color:#34d399; font-weight:900; font-family:'Space Grotesk', sans-serif;">🎒 ${weightStr}</span>` : ''}
+              </div>
+
+              <div style="display:flex; gap:8px; align-items:center;">
+                ${photoUrl ? `
+                  <div style="width:40px; height:40px; border-radius:6px; overflow:hidden; background:#000; flex-shrink:0; border:1px solid rgba(255,255,255,0.15);">
+                    <img src="${photoUrl}" style="width:100%; height:100%; object-fit:cover;" />
+                  </div>
+                ` : ''}
+                <div style="font-size:0.72rem; color:#cbd5e1; line-height:1.45; word-break:keep-all; flex:1;">
+                  “${escapeHtml(memo100 || '추천 박지입니다.')}”
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
 
         return `
-          <div class="comments-section" onclick="event.stopPropagation();">
-            <div class="comments-title"><span style="display:flex; align-items:center; gap:4px;">${ICONS.TALK} 현장 피드백 & 별점 (${cList.length})</span></div>
-            <ul class="comments-list">${listHtml}</ul>
-            
-            <div class="comment-form">
-              ${isMember ? `
-                <div class="comment-form-row">
-                  <select class="comment-select-rating" id="cRating_${spotId}">
-                    <option value="5" selected>★ 5점 (최고의 박지)</option>
-                    <option value="4">★ 4점 (추천)</option>
-                    <option value="3">★ 3점 (보통)</option>
-                    <option value="2">★ 2점 (아쉬움)</option>
-                    <option value="1">★ 1점 (비추천)</option>
-                  </select>
-                  <input type="text" class="comment-input-author" id="cAuthor_${spotId}" value="${escapeHtml(userNick)}" readonly />
-                </div>
-                <div class="comment-form-row">
-                  <input type="text" class="comment-input-text" id="cText_${spotId}" placeholder="생생 후기 남기기..." onkeyup="if(event.keyCode===13) addComment('${spotId}')" />
-                  <button type="button" class="comment-btn-submit" onclick="addComment('${spotId}')">등록</button>
-                </div>
-              ` : `
-                <div style="background:var(--bg-card); border:1px dashed var(--border-hairline); padding:6px; border-radius:6px; text-align:center;">
-                  <span style="font-size:0.7rem; color:var(--text-muted);">현장 피드백 및 별점 작성은 로그인 후 가능합니다.</span>
-                  <button type="button" style="background:none; border:none; color:var(--accent-blue); font-size:0.72rem; font-weight:800; cursor:pointer; margin-left:4px;" onclick="triggerHaptic(10); openLoginModal();">로그인</button>
-                </div>
-              `}
+          <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px;" onclick="event.stopPropagation();">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:0.74rem; font-weight:900; color:#38bdf8; display:flex; align-items:center; gap:4px;">
+                ${ICONS.VIEW_CARD} 다녀간 캠퍼들의 실전 팁 (${matchedFeeds.length}개)
+              </span>
+              <button type="button" onclick="location.href='index.html?open=history&spot=' + encodeURIComponent('${escapeHtml(spot.spot_main || spot.name)}');" style="background:none; border:none; color:#94a3b8; font-size:0.65rem; font-weight:800; cursor:pointer;">
+                + 내 팁 추가
+              </button>
             </div>
-          </div>`;
+            ${reviewsCardsHtml}
+          </div>
+        `;
       }
 
-      let isCommentSubmitting = false;
-      async function addComment(spotId) {
-        if (!isUserLoggedIn()) { openLoginModal(); return; }
-        if (isCommentSubmitting) return;
-        const profile = safeGetJSON('user_profile', null);
-        const author = (profile && profile.nickname) ? profile.nickname : '백패커';
-        const text = document.getElementById(`cText_${spotId}`)?.value.trim();
-        const rating = parseInt(document.getElementById(`cRating_${spotId}`)?.value, 10) || 5;
-        if (!text) return alert('후기 내용을 입력해주세요.');
-
-        isCommentSubmitting = true;
-        triggerHaptic(15);
-        const newComment = { author, text, rating, date: new Date().toLocaleDateString() };
-        if (!spotComments[spotId]) spotComments[spotId] = [];
-        spotComments[spotId].push(newComment);
-        localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
-        refreshCurrentSpotPopup();
-        renderSpots();
-        showToast(`${ICONS.TALK} <span>생생 후기가 등록되었습니다!</span>`);
-        
-        try {
-          await fetch(GAS_API_URL, {
-            method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({ action: 'ADD_COMMENT', spotId, userId: profile ? profile.id : 'guest', comment: newComment })
-          });
-        } catch (err) {}
-        setTimeout(() => { isCommentSubmitting = false; }, 400);
+      // 📱 [누락 복원] 모바일 바텀시트 터치 스와이프 제스처 핸들러
+      function initBottomSheetSwipeGesture() {
+        var sheet = document.getElementById('mobileBottomSheet');
+        if (!sheet) return;
+        var startY = 0, currentY = 0;
+        sheet.addEventListener('touchstart', function(e) {
+          if (e.touches && e.touches.length === 1) startY = e.touches[0].clientY;
+        }, { passive: true });
+        sheet.addEventListener('touchmove', function(e) {
+          if (e.touches && e.touches.length === 1) currentY = e.touches[0].clientY;
+        }, { passive: true });
+        sheet.addEventListener('touchend', function() {
+          if (currentY && startY && (currentY - startY > 70)) {
+            closeMobileBottomSheet();
+          }
+          startY = 0; currentY = 0;
+        }, { passive: true });
       }
 
       function incrementSpotCount(spotId) {

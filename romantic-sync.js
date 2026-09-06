@@ -841,7 +841,8 @@ window.shareFeedToCommunity = async function(feedRecord) {
   if (!feedRecord) return;
   var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : null);
   var userId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('user_auth_token') || 'anonymous');
-  var nickname = (profile && profile.nickname) ? profile.nickname : '낭만백패커';
+  var nickname = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만백패커');
+  var userInsta = (feedRecord.instagram || localStorage.getItem('okbm_user_instagram') || '').replace(/[@\s]/g, '').trim();
 
   var targetGasUrl = window.GAS_API_URL || GAS_API_URL;
   if (!targetGasUrl || targetGasUrl.includes('구글시트_배포_URL')) return;
@@ -880,11 +881,12 @@ window.shareFeedToCommunity = async function(feedRecord) {
       id: feedRecord.id,
       userId: userId,
       author: nickname,
+      instagram: userInsta ? ('@' + userInsta) : '',
       spot: feedRecord.spot || feedRecord.spotName,
       elevation: feedRecord.elevation,
       weightKg: feedRecord.weightKg,
       date: feedRecord.date,
-      memo: feedRecord.memo || feedRecord.oneLineMemo,
+      memo: (feedRecord.memo || feedRecord.oneLineMemo || '').slice(0, 120),
       photo: mainPhoto,
       photos: allPhotos,
       photo_url: mainPhoto,
@@ -902,7 +904,7 @@ window.shareFeedToCommunity = async function(feedRecord) {
     return res.json();
   }).then(function(data) {
     if (data && data.status === 'SUCCESS') {
-      console.log('✅ [RomanticSync] 다중 사진 (' + allPhotos.length + '장) 공용 피드 최종 전송 성공');
+      console.log('✅ [RomanticSync] 인스타그램 계정 및 120자 팁 포함 공용 피드 전송 성공');
     }
   }).catch(function(err) {
     console.warn('[RomanticSync] 커뮤니티 피드 전송 실패:', err);

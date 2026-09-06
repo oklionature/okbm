@@ -1628,7 +1628,7 @@ window.saveCurrentPackingRecord = function() {
           <div onclick="window.activePlanSubMode='calculator'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; box-sizing:border-box;">
             <div style="display:flex; align-items:center; gap:8px;">
               ${VECTOR_ICONS.calculator}
-              <span style="font-size:0.86rem; font-weight:900; color:#ffffff;">패킹계산기</span>
+              <span style="font-size:0.86rem; font-weight:900; color:#ffffff;">패킹 계획하기</span>
             </div>
             <span style="font-size:0.75rem; color:#94a3b8; font-weight:900;">➔</span>
           </div>
@@ -1733,29 +1733,33 @@ window.saveCurrentPackingRecord = function() {
       camp:        { color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.09)', border: 'rgba(56, 189, 248, 0.28)' }
     };
 
-    var spotMatch = currentDayMemo.match(/📍\s*(?:목적지:\s*)?([^\n\r(]+)/);
-    var spotTitle = spotMatch ? spotMatch[1].trim() : (currentDayMemo ? currentDayMemo.split('\n')[0].slice(0, 20) : '자유 출정 일정');
+   var spotTitle = spotMatch ? spotMatch[1].trim() : (currentDayMemo ? currentDayMemo.split('\n')[0].slice(0, 20) : '자유 일정');
     var isAllComplete = planItems.length > 0 && packedCount === planItems.length;
 
     var checklistViewHtml = `
       <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; justify-content:space-between; gap:6px; padding:2px 0 0 0; overflow:hidden; box-sizing:border-box;">
         
-        <!-- 🏛️ 1. 상단 요약 헤더 (위계 강화 & 쾌적한 높이) -->
-        <div style="background:linear-gradient(135deg, rgba(255,255,255,0.035) 0%, rgba(15,23,42,0.65) 100%); border:1px solid rgba(255,255,255,0.12); border-top:1px solid rgba(255,255,255,0.22); border-radius:12px; padding:12px 14px; flex-shrink:0; display:flex; justify-content:space-between; align-items:center; box-sizing:border-box; box-shadow:0 4px 16px rgba(0,0,0,0.5);">
-          <div style="display:flex; flex-direction:column; gap:3px; min-width:0;">
-            <div style="font-size:0.72rem; color:#94a3b8; font-family:'Space Grotesk', sans-serif; font-weight:800; letter-spacing:0.3px;">
-              ${activeDateStr}
+        <!-- 🏛️ 1. 상단 요약 헤더 (달력 연동 아코디언 드롭다운 + 원버튼 토글) -->
+        <div style="position:relative; background:linear-gradient(135deg, rgba(255,255,255,0.035) 0%, rgba(15,23,42,0.65) 100%); border:1px solid rgba(255,255,255,0.12); border-top:1px solid rgba(255,255,255,0.22); border-radius:12px; padding:10px 12px; flex-shrink:0; display:flex; justify-content:space-between; align-items:center; box-sizing:border-box; box-shadow:0 4px 16px rgba(0,0,0,0.5); z-index:50;">
+          <div onclick="window.togglePlanTripDateInlineDropdown(event);" style="display:flex; flex-direction:column; gap:2px; min-width:0; flex:1; cursor:pointer; padding-right:8px;">
+            <div style="font-size:0.72rem; color:#38bdf8; font-family:'Space Grotesk', sans-serif; font-weight:800; letter-spacing:0.3px; display:flex; align-items:center; gap:4px;">
+              <span>${activeDateStr}</span>
+              <span style="font-size:0.65rem; color:#94a3b8;">▾</span>
             </div>
-            <div style="font-size:0.96rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+            <div style="font-size:0.92rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
               <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#38bdf8; stroke-width:2.2; flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:-0.01em;">${spotTitle}</span>
+              <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:-0.01em;">${escapeHtml(spotTitle)}</span>
             </div>
           </div>
           
-          <div style="display:flex; gap:6px; flex-shrink:0;">
-            <button type="button" onclick="window.toggleAllPackCheckItems(true, '${activeDateStr}')" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#f8fafc; font-size:0.68rem; font-weight:800; padding:6px 10px; border-radius:6px; cursor:pointer;">전체 체크</button>
-            <button type="button" onclick="window.toggleAllPackCheckItems(false, '${activeDateStr}')" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; font-size:0.68rem; font-weight:800; padding:6px 10px; border-radius:6px; cursor:pointer;">전체 해제</button>
+          <div style="display:flex; align-items:center; flex-shrink:0;">
+            <button type="button" onclick="window.toggleAllPackCheckItems(${!isAllComplete}, '${activeDateStr}')" style="background:${isAllComplete ? 'rgba(253,224,71,0.12)' : 'rgba(255,255,255,0.08)'}; border:1px solid ${isAllComplete ? 'rgba(253,224,71,0.4)' : 'rgba(255,255,255,0.18)'}; color:${isAllComplete ? '#fde047' : '#f8fafc'}; font-size:0.70rem; font-weight:800; padding:6px 12px; border-radius:6px; cursor:pointer; transition:all 0.15s ease;">
+              ${isAllComplete ? '전체 해제' : '전체 선택'}
+            </button>
           </div>
+
+          <!-- 인라인 일정 아코디언 드롭다운 -->
+          <div id="calcTripDateDropdown" style="display:none; position:absolute; top:54px; left:0; right:0; z-index:700; background:#0d121d; border:1.5px solid rgba(56,189,248,0.4); border-radius:8px; padding:8px; flex-direction:column; gap:6px; box-shadow:0 16px 40px rgba(0,0,0,0.95); box-sizing:border-box;"></div>
         </div>
 
         <!-- 📋 2. 체크리스트 목록 영역 (1.5px 소프트 라인 & 샴페인 선셋 골드) -->
@@ -2050,9 +2054,17 @@ window.saveCurrentPackingRecord = function() {
       totalInvestAmount += parseInt(String(meta.price || '').replace(/[^0-9]/g, ''), 10) || 0;
     });
 
-    var CATEGORY_ACCENT_COLORS = {
-      shelter: '#34d399', sleep: '#34d399', pack: '#fbbf24', kitchen: '#fb923c',
-      wear: '#c084fc', electronics: '#38bdf8', camp: '#38bdf8'
+    var CATEGORY_PALETTE = {
+      fav:         { color: '#fde047', label: '⭐ 내장비', bg: 'rgba(253,224,71,0.08)',  border: 'rgba(253,224,71,0.25)' },
+      all:         { color: '#e2e8f0', label: '전체',     bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.22)' },
+      shelter:     { color: '#10b981', label: '텐트·타프', bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.25)' },
+      sleep:       { color: '#14b8a6', label: '침낭·매트', bg: 'rgba(20,184,166,0.08)',  border: 'rgba(20,184,166,0.25)' },
+      pack:        { color: '#f43f5e', label: '배낭',     bg: 'rgba(244,63,94,0.08)',   border: 'rgba(244,63,94,0.25)' },
+      food:        { color: '#f97316', label: '음식',     bg: 'rgba(249,115,22,0.08)',  border: 'rgba(249,115,22,0.25)' },
+      kitchen:     { color: '#84cc16', label: '취사',     bg: 'rgba(132,204,22,0.08)',  border: 'rgba(132,204,22,0.25)' },
+      wear:        { color: '#a855f7', label: '의류',     bg: 'rgba(168,85,247,0.08)',  border: 'rgba(168,85,247,0.25)' },
+      electronics: { color: '#eab308', label: '기기·소품', bg: 'rgba(234,179,8,0.08)',   border: 'rgba(234,179,8,0.25)' },
+      camp:        { color: '#06b6d4', label: '테이블·체어',bg: 'rgba(6,182,212,0.08)',  border: 'rgba(6,182,212,0.25)' }
     };
 
     var catChips = [
@@ -2060,15 +2072,21 @@ window.saveCurrentPackingRecord = function() {
       { id: 'shelter', label: '텐트·타프' },
       { id: 'sleep', label: '침낭·매트' },
       { id: 'pack', label: '배낭' },
-      { id: 'kitchen', label: '취사·식기' },
+      { id: 'food', label: '음식' },
+      { id: 'kitchen', label: '취사' },
       { id: 'wear', label: '의류' },
-      { id: 'electronics', label: '전자기기' },
-      { id: 'camp', label: '체어·소품' }
+      { id: 'electronics', label: '기기·소품' },
+      { id: 'camp', label: '테이블·체어' }
     ];
 
     var filterChipsHtml = catChips.map(function(c) {
       var isActive = (c.id === activeCatFilter);
-      return '<button type="button" onclick="window.setGearCategoryFilter(\'' + c.id + '\')" style="background:' + (isActive ? '#38bdf8' : 'rgba(255,255,255,0.06)') + '; color:' + (isActive ? '#000' : '#cbd5e1') + '; border:1px solid ' + (isActive ? '#38bdf8' : 'rgba(255,255,255,0.12)') + '; font-size:0.65rem; font-weight:800; padding:3px 8px; border-radius:12px; white-space:nowrap; cursor:pointer;">' + c.label + '</button>';
+      var pal = CATEGORY_PALETTE[c.id] || { color: '#e2e8f0', bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.22)' };
+      var btnBg = isActive ? pal.bg : 'rgba(255,255,255,0.03)';
+      var btnBorder = isActive ? pal.border : 'rgba(255,255,255,0.08)';
+      var btnColor = isActive ? pal.color : '#94a3b8';
+
+      return '<button type="button" onclick="window.setGearCategoryFilter(\'' + c.id + '\')" style="background:' + btnBg + '; color:' + btnColor + '; border:1px solid ' + btnBorder + '; font-size:0.67rem; font-weight:' + (isActive ? '900' : '700') + '; padding:4px 10px; border-radius:6px; white-space:nowrap; cursor:pointer; transition:all 0.15s ease;">' + c.label + '</button>';
     }).join('');
 
     var gearsViewHtml = `
@@ -2087,10 +2105,11 @@ window.saveCurrentPackingRecord = function() {
               <option value="shelter">텐트·타프</option>
               <option value="sleep">침낭·매트</option>
               <option value="pack">배낭</option>
-              <option value="kitchen">취사·식기</option>
+              <option value="food">음식</option>
+              <option value="kitchen">취사</option>
               <option value="wear">의류</option>
-              <option value="electronics">전자기기</option>
-              <option value="camp">체어·소품</option>
+              <option value="electronics">기기·소품</option>
+              <option value="camp">테이블·체어</option>
             </select>
           </div>
 
@@ -2130,21 +2149,21 @@ window.saveCurrentPackingRecord = function() {
           ` : filteredFavGears.map(function(g) {
             var meta = gearMetaObj[g.name] || { purchaseDate: '', price: '', status: 'ok', memo: '' };
             var curStatus = meta.status || 'ok';
-            var accentColor = CATEGORY_ACCENT_COLORS[g.categoryId] || '#94a3b8';
+            var pal = CATEGORY_PALETTE[g.categoryId] || { color: '#94a3b8', label: '기타', border: 'rgba(255,255,255,0.12)' };
             var rawPrice = parseInt(String(meta.price || '').replace(/[^0-9]/g, ''), 10);
             var displayPrice = !isNaN(rawPrice) && rawPrice > 0 ? rawPrice.toLocaleString() : '';
             var safeGearNameAttr = escapeHtml(g.name);
 
             return `
-              <div class="my-gear-manage-card" data-gear-name="${safeGearNameAttr}" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-left:2px solid ${accentColor}; border-radius:8px; padding:7px 9px; display:flex; flex-direction:column; gap:5px; box-sizing:border-box; width:100%;">
+              <div class="my-gear-manage-card" data-gear-name="${safeGearNameAttr}" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-left:3.5px solid ${pal.color}; border-radius:8px; padding:7px 10px; display:flex; flex-direction:column; gap:5px; box-sizing:border-box; width:100%;">
                 
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; width:100%;">
                   <div style="flex:1 1 0%; min-width:0; overflow:hidden;">
                     <div style="font-size:0.80rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${safeGearNameAttr}">
                       ${safeGearNameAttr}
                     </div>
-                    <div style="font-size:0.60rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; margin-top:1px;">
-                      ${escapeHtml(g.brand || '내 장비')} · ${(g.weight / 1000).toFixed(2)}kg (${g.weight}g)
+                    <div style="font-size:0.58rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; margin-top:2px;">
+                      <span style="color:${pal.color}; font-weight:700;">${escapeHtml(pal.label)}</span> · ${escapeHtml(g.brand || '내 장비')} · ${(g.weight / 1000).toFixed(2)}kg (${g.weight}g)
                     </div>
                   </div>
 
@@ -2173,6 +2192,12 @@ window.saveCurrentPackingRecord = function() {
         </div>
       </div>
     `;
+
+    var currentViewHtml = calendarMemoViewHtml;
+    if (window.activePlanSubMode === 'checklist') currentViewHtml = checklistViewHtml;
+    else if (window.activePlanSubMode === 'calculator') currentViewHtml = calculatorViewHtml;
+    else if (window.activePlanSubMode === 'bookmarks') currentViewHtml = bookmarksViewHtml;
+    else if (window.activePlanSubMode === 'gears') currentViewHtml = gearsViewHtml;
    var currentViewHtml = calendarMemoViewHtml;
     if (window.activePlanSubMode === 'checklist') currentViewHtml = checklistViewHtml;
     else if (window.activePlanSubMode === 'calculator') currentViewHtml = calculatorViewHtml;
