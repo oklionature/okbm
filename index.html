@@ -1406,39 +1406,113 @@
     </div>
   </div>
 
-  <!-- 4. 📸 20종 템플릿 패킹 공유 모달 (모든 검색, 메모, 스튜디오 연동 완비) -->
-  <div id="packShareModalOverlay" class="custom-modal-overlay">
-    <div class="custom-modal" style="max-width:390px !important; max-height:96dvh; overflow-y:auto; padding:10px; gap:8px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px;">
-        <span style="font-weight:900; font-size:0.92rem; color:#fff;">🎒 20종 패킹 카드 발행</span>
-        <button type="button" onclick="closePackShareModal()" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer;">✕</button>
-      </div>
+  <!-- 4. 20종 템플릿 패킹 공유 모달 (상단 제목 제거 · 3:4 적응형 카드 최대 확대 · 5대 독 완전체) -->
+  <div id="packShareModalOverlay" class="custom-modal-overlay" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100dvh; padding:0; overflow:hidden;">
+    <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; position:relative;">
+      
+      <!-- 상단 미니멀 플로팅 닫기 (제목 바 제거로 세로 가용 높이 극대화) -->
+      <button type="button" onclick="closePackShareModal()" style="position:absolute; top:calc(8px + env(safe-area-inset-top, 0px)); right:12px; z-index:20; background:rgba(0,0,0,0.65); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.25); color:#ffffff; width:30px; height:30px; border-radius:50%; font-size:0.95rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
 
-      <div style="display:flex; flex-direction:column; gap:6px;">
-        <div style="position:relative; width:100%;">
+      <!-- 상단 컨트롤러 바 (검색/메모/스튜디오/템플릿 칩 슬림화) -->
+      <div style="flex-shrink:0; display:flex; flex-direction:column; gap:4px; padding:calc(8px + env(safe-area-inset-top, 0px)) 12px 2px 12px; box-sizing:border-box; z-index:10;">
+        <div style="position:relative; width:100%; padding-right:38px; box-sizing:border-box;">
           <div style="display:flex; gap:4px; align-items:center; position:relative;">
             <div style="position:relative; flex:1; display:flex; align-items:center;">
-              <input type="text" id="shareCardSpotInput" class="modal-input" placeholder="박지 검색 (비공개 시 빈칸)" style="font-size:0.75rem; padding:5px 28px 5px 8px; width:100%; height:32px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#ffffff; outline:none; box-sizing:border-box;" oninput="handleSpotSearchInput(this.value); updateShareCardLive();" onfocus="handleSpotSearchInput(this.value);" autocomplete="off" />
-              <button type="button" id="btnSpotInputClear" style="display:none; position:absolute; right:6px; background:rgba(255,255,255,0.25); border:none; color:#ffffff; width:17px; height:17px; border-radius:50%; font-size:0.6rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0; z-index:5;" onclick="clearSpotSearchInput()">✕</button>
+              <input type="text" id="shareCardSpotInput" class="modal-input" placeholder="박지 검색 (비공개 시 빈칸)" style="font-size:0.75rem; padding:4px 26px 4px 8px; width:100%; height:30px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#ffffff; outline:none; box-sizing:border-box;" oninput="handleSpotSearchInput(this.value); updateShareCardLive();" onfocus="handleSpotSearchInput(this.value);" autocomplete="off" />
+              <button type="button" id="btnSpotInputClear" style="display:none; position:absolute; right:6px; background:rgba(255,255,255,0.25); border:none; color:#ffffff; width:16px; height:16px; border-radius:50%; font-size:0.55rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0; z-index:5;" onclick="clearSpotSearchInput()">✕</button>
             </div>
-            <button type="button" class="modal-btn" style="height:32px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2); color:#ffffff; font-size:0.70rem; padding:0 10px; flex-shrink:0; font-weight:800; border-radius:6px; cursor:pointer;" onclick="toggleSpotDropdownList()">검색</button>
+            <button type="button" class="modal-btn" style="height:30px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#ffffff; font-size:0.68rem; padding:0 9px; flex-shrink:0; font-weight:800; border-radius:6px; cursor:pointer;" onclick="toggleSpotDropdownList()">검색</button>
           </div>
           <div id="spotSearchDropdown" class="spot-search-dropdown-list"></div>
         </div>
 
-        <input type="text" id="shareCardMemoInput" class="modal-input" placeholder="한줄 메모 (미입력 시 빈칸)" maxlength="35" style="font-size:0.75rem; height:32px; padding:5px 8px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#ffffff; outline:none; box-sizing:border-box;" oninput="updateShareCardLive()" />
+        <div style="display:flex; gap:4px; align-items:center;">
+          <input type="text" id="shareCardMemoInput" class="modal-input" placeholder="한줄 메모 (미입력 시 빈칸)" maxlength="35" style="flex:1; font-size:0.75rem; height:30px; padding:4px 8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#ffffff; outline:none; box-sizing:border-box;" oninput="updateShareCardLive()" />
+          
+          <input type="file" id="shareCardPhotoInput" accept="image/*" multiple style="display:none;" onchange="if(typeof handleShareCardPhotoUpload==='function') handleShareCardPhotoUpload(event)" />
+          <button type="button" class="modal-btn" style="height:30px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.18); color:#cbd5e1; font-size:0.68rem; font-weight:800; padding:0 8px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; gap:3px; flex-shrink:0; white-space:nowrap;" onclick="document.getElementById('shareCardPhotoInput').click()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:12px; height:12px; flex-shrink:0;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>스튜디오 ➔</span>
+          </button>
+        </div>
 
-        <input type="file" id="shareCardPhotoInput" accept="image/*" multiple style="display:none;" onchange="if(typeof handleShareCardPhotoUpload==='function') handleShareCardPhotoUpload(event)" />
-        <button type="button" class="modal-btn" style="width:100%; height:32px; background:rgba(255,255,255,0.08); border:1px dashed rgba(255,255,255,0.3); color:#ffffff; font-size:0.74rem; font-weight:800; padding:0; border-radius:6px; display:flex; align-items:center; justify-content:center; gap:5px;" onclick="document.getElementById('shareCardPhotoInput').click()">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-svg" style="width:13px; height:13px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          <span>내 사진으로 전체화면 스튜디오 열기 ➔</span>
+        <div class="template-selector-bar" id="templateSelectorBar"></div>
+      </div>
+
+      <!-- 중앙 3:4 적응형 카드 최대 확대 영역 (뷰포트 여백을 꽉 채우는 유동 높이/폭 자동 계산) -->
+      <div style="flex:1 1 0%; min-height:0; display:flex; align-items:center; justify-content:center; width:100%; padding:2px 10px; box-sizing:border-box; overflow:hidden;">
+        <div id="packShareCaptureArea" style="height:100% !important; max-height:100% !important; aspect-ratio:3/4 !important; width:auto !important; max-width:100% !important; border-radius:14px; overflow:hidden; box-shadow:0 12px 35px rgba(0,0,0,0.85); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;"></div>
+      </div>
+
+      <!-- 하단 1단: 3분할 액션 독 (순수 SVG 라인아트) -->
+      <div style="flex-shrink:0; background:rgba(10,14,23,0.98); border-top:1px solid rgba(255,255,255,0.1); padding:6px 12px; display:grid; grid-template-columns:1fr 1fr 1.25fr; gap:6px; box-sizing:border-box;">
+        <button type="button" onclick="captureAndSavePackCard();" style="height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.16); color:#f8fafc; font-size:0.72rem; font-weight:800; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; white-space:nowrap;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:14px; height:14px; flex-shrink:0;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span>이미지 저장</span>
+        </button>
+        <button type="button" onclick="openPackCardShareActionSheet();" style="height:40px; background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.35); color:#38bdf8; font-size:0.72rem; font-weight:800; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; white-space:nowrap;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:14px; height:14px; flex-shrink:0;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <span>공유하기</span>
+        </button>
+        <button type="button" onclick="saveCardToVaultAndOpenBasecamp();" style="height:40px; background:#ffffff; border:none; color:#0f172a; font-size:0.75rem; font-weight:900; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; white-space:nowrap; box-shadow:0 3px 12px rgba(255,255,255,0.2);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:14px; height:14px; flex-shrink:0;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <span>보관함 저장</span>
         </button>
       </div>
 
-      <div class="template-selector-bar" id="templateSelectorBar"></div>
+      <!-- 하단 2단: 낭만루트 메인 5대 네비게이션 독 완전체 (5열 1/5 균등 분할 · 잘림 0% 방어) -->
+      <div class="mobile-bottom-dock notranslate" style="position:static !important; flex-shrink:0 !important; width:100% !important; background:rgba(0,0,0,0.98) !important; border-top:1px solid rgba(255,255,255,0.08) !important; display:grid !important; grid-template-columns:repeat(5, 1fr) !important; align-items:center !important; height:calc(52px + env(safe-area-inset-bottom, 0px)) !important; padding:0 4px env(safe-area-inset-bottom, 0px) 4px !important; box-sizing:border-box;">
+        <a href="index.html" class="dock-item" onclick="closePackShareModal(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; gap:2px; padding:0;">
+          <svg viewBox="0 0 24 24" style="width:clamp(17px, 4.5vw, 19px); height:clamp(17px, 4.5vw, 19px); fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          <span>낭만루터</span>
+        </a>
+        <a href="map.html" class="dock-item" onclick="closePackShareModal(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; gap:2px; padding:0;">
+          <svg viewBox="0 0 24 24" style="width:clamp(17px, 4.5vw, 19px); height:clamp(17px, 4.5vw, 19px); fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
+          <span>전국지도</span>
+        </a>
+        <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; gap:2px; padding:0; cursor:pointer;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:clamp(17px, 4.5vw, 19px); height:clamp(17px, 4.5vw, 19px);"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
+          <span>낭만계획</span>
+        </button>
+        <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; gap:2px; padding:0; cursor:pointer;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:clamp(17px, 4.5vw, 19px); height:clamp(17px, 4.5vw, 19px);"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+          <span>낭만보관함</span>
+        </button>
+        <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; gap:2px; padding:0; cursor:pointer;">
+          <svg viewBox="0 0 24 24" style="width:clamp(17px, 4.5vw, 19px); height:clamp(17px, 4.5vw, 19px); fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          <span>내정보</span>
+        </button>
+      </div>
 
-      <div style="width:100%; display:flex; justify-content:center;">
-        <div id="packShareCaptureArea" style="width:100%; max-width:305px; border-radius:14px; overflow:hidden;"></div>
+    </div>
+  </div>
+
+  <!-- 📲 [전용 공유 바텀시트: 카카오톡 · 인스타그램 · 링크 복사 (이모지 0% 순수 SVG)] -->
+  <div id="packCardShareActionSheet" onclick="if(event.target===this) closePackCardShareActionSheet();" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:2000030 !important; justify-content:center; align-items:flex-end; box-sizing:border-box;">
+    <div style="width:100%; max-width:440px; background:#0e131f; border-top:1.5px solid rgba(255,255,255,0.16); border-radius:18px 18px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:10px; box-shadow:0 -12px 40px rgba(0,0,0,0.95); box-sizing:border-box;" onclick="event.stopPropagation();">
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
+        <span style="font-size:0.88rem; font-weight:900; color:#ffffff;">출정 패킹 카드 공유</span>
+        <button type="button" onclick="closePackCardShareActionSheet();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer;">✕</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <!-- 카카오톡 공유 -->
+        <button type="button" onclick="sharePackCardToKakao(); closePackCardShareActionSheet();" style="height:44px; background:#fee500; border:none; border-radius:10px; color:#191919; font-size:0.82rem; font-weight:900; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;">
+          <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:#191919;"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.122.49.178.483.376.352.155-.102 2.463-1.69 3.456-2.378.55.08 1.11.122 1.678.122 4.97 0 9-3.186 9-7.115C21 6.185 16.97 3 12 3z"/></svg>
+          <span>카카오톡 친구에게 공유</span>
+        </button>
+        <!-- 인스타그램 공유 -->
+        <button type="button" onclick="sharePackCardToInstagram(); closePackCardShareActionSheet();" style="height:44px; background:linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045); border:none; border-radius:10px; color:#ffffff; font-size:0.82rem; font-weight:900; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:18px; height:18px;"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+          <span>인스타그램 피드 / 스토리 공유</span>
+        </button>
+        <!-- 링크 복사 -->
+        <button type="button" onclick="copyPackCardLink(); closePackCardShareActionSheet();" style="height:44px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.18); border-radius:10px; color:#ffffff; font-size:0.82rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:18px; height:18px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <span>링크 복사</span>
+        </button>
+      </div>
+    </div>
+  </div>
       </div>
 
       <div style="display:flex; gap:6px; margin-top:4px;">
@@ -4105,7 +4179,7 @@ function renderTripDetailSheet(activeTrips) {
       });
     }
 
-    function sharePackCardToKakao() {
+   function sharePackCardToKakao() {
       if (typeof Kakao === 'undefined' || !Kakao.isInitialized()) return showToast('카카오 SDK 초기화 중...', 2000);
       triggerHaptic(15);
       var spotInput = document.getElementById('shareCardSpotInput');
@@ -4121,13 +4195,85 @@ function renderTripDetailSheet(activeTrips) {
       });
     }
 
+    // 📲 [모바일 Web Share API 및 카카오톡 지능형 분기 공유 엔진]
+    window.sharePackCardDirect = async function() {
+      triggerHaptic(12);
+      var spotInput = document.getElementById('shareCardSpotInput');
+      var spotName = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '대관령 선자령';
+      var rec = window.currentShareRecord || {};
+      var weight = rec.weightKg || '0.00';
+      var shareTitle = `[낭만루트] ${spotName} 출정 패킹 (${weight}kg)`;
+      var shareText = `흔적 없는 클린 백패킹 LNT 실천\n${spotName} 배낭 패킹 명세 확인하기`;
+      var shareUrl = window.location.origin + window.location.pathname;
+
+      // 1. 모바일 브라우저 네이티브 공유창
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: shareTitle,
+            text: shareText,
+            url: shareUrl
+          });
+          return;
+        } catch (err) {
+          if (err.name === 'AbortError') return;
+        }
+      }
+
+      // 2. 카카오톡 SDK 연동 시 카카오 공유 호출
+      if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
+        sharePackCardToKakao();
+        return;
+      }
+
+      // 3. 클립보드 복사 폴백
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(`${shareTitle}\n${shareUrl}`).then(function() {
+          showToast('출정 정보가 클립보드에 복사되었습니다!', 'success');
+        }).catch(function() {
+          showToast('공유 기능을 지원하지 않는 브라우저입니다.', 'warn');
+        });
+      }
+    };
+
     function sharePackCardToInstagram() {
       triggerHaptic(12);
       captureAndSavePackCard();
       setTimeout(function() {
-        alert('카드 이미지가 기기에 저장되었습니다!\n인스타그램 피드나 스토리에 공유해보세요 📸');
+        showToast('카드 이미지가 저장되었습니다. 인스타그램 피드/스토리에 올려보세요!', 'success', 3000);
       }, 600);
     }
+
+    window.openPackCardShareActionSheet = function() {
+      triggerHaptic(10);
+      var sheet = document.getElementById('packCardShareActionSheet');
+      if (sheet) sheet.style.display = 'flex';
+    };
+
+    window.closePackCardShareActionSheet = function() {
+      var sheet = document.getElementById('packCardShareActionSheet');
+      if (sheet) sheet.style.display = 'none';
+      triggerHaptic(8);
+    };
+
+    window.copyPackCardLink = function() {
+      triggerHaptic(12);
+      var spotInput = document.getElementById('shareCardSpotInput');
+      var spotName = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '선자령 백패킹';
+      var rec = window.currentShareRecord || {};
+      var weight = rec.weightKg || '0.00';
+      var shareText = `[낭만루트] ${spotName} 출정 패킹 완료 (${weight}kg)\n` + window.location.href;
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareText).then(function() {
+          showToast('출정 링크가 클립보드에 복사되었습니다!', 'success');
+        }).catch(function() {
+          showToast('링크 복사에 실패했습니다.', 'warn');
+        });
+      } else {
+        showToast('클립보드를 지원하지 않는 브라우저입니다.', 'warn');
+      }
+    };
 
    // 🌌 [은하수 캔버스 애니메이션 엔진 - 보급형 AP 60fps 경량화]
     function initStarlightEngines() {

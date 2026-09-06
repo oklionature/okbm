@@ -10,131 +10,102 @@
  */
 
 (function() {
-  // 🎨 [10대 슬롯 & 계산기 전용 블랙 & 실버 글래스 스타일 시트]
+  // 🎨 [모던 매트블랙 & 플래티넘 실버 미니멀 스타일시트]
   if (!document.getElementById('romantic-plan-core-style')) {
     var style = document.createElement('style');
     style.id = 'romantic-plan-core-style';
     style.innerHTML = `
-   .weight-dashboard-strip {
-        background: rgba(255, 255, 255, 0.025) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-        border-radius: 12px !important;
-        padding: 10px 14px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: space-between !important;
-        height: 80px !important;
+      .weight-dashboard-strip {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+        height: 88px !important;
         flex-shrink: 0 !important;
         box-sizing: border-box !important;
       }
-      .weight-dash-top { display: flex !important; justify-content: space-between !important; align-items: flex-end !important; }
-      .weight-val-big {
-        font-family: 'Space Grotesk', 'JetBrains Mono', sans-serif !important;
-        font-size: 2.1rem !important;
-        font-weight: 900 !important;
-        line-height: 0.95 !important;
-        letter-spacing: -0.03em !important;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
-        transition: color 0.3s ease !important;
-      }
-      .weight-bpl-badge {
-        font-size: 0.68rem !important; font-weight: 800 !important; padding: 2px 7px !important;
-        border-radius: 5px !important; display: inline-flex !important; align-items: center !important; gap: 3px !important;
-        transition: all 0.3s ease !important;
-      }
-      .bpl-ul { background: rgba(45, 212, 191, 0.12) !important; color: #2dd4bf !important; border: 1px solid rgba(45, 212, 191, 0.35) !important; }
-      .bpl-standard { background: rgba(251, 191, 36, 0.12) !important; color: #fbbf24 !important; border: 1px solid rgba(251, 191, 36, 0.35) !important; }
-      .bpl-heavy { background: rgba(192, 132, 252, 0.12) !important; color: #c084fc !important; border: 1px solid rgba(192, 132, 252, 0.35) !important; }
-      .weight-gauge-bg {
-        width: 100% !important; height: 6px !important; background: rgba(255, 255, 255, 0.06) !important;
-        border-radius: 3px !important; overflow: hidden !important; position: relative !important;
-        border: 1px solid rgba(255, 255, 255, 0.05) !important;
-      }
-      .weight-gauge-fill {
-        height: 100% !important; width: 0% !important;
-        transition: width 0.3s ease, background 0.3s ease !important;
-      }
-     .category-slots-grid { 
-        display: grid !important; 
-        grid-template-columns: 1fr 1fr !important;
-        grid-template-rows: repeat(5, 1fr) !important;
-        gap: 3px !important; 
-        flex: 1 1 0% !important;
-        min-height: 0 !important;
-        overflow: hidden !important;
-        padding: 0 !important;
-        box-sizing: border-box !important;
-      }
-      .category-slot-card {
-        position: relative !important;
-        overflow: hidden !important;
+      .weight-pod-box {
         background: rgba(255, 255, 255, 0.025) !important;
         border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-top: 1px solid rgba(255, 255, 255, 0.16) !important;
-        border-radius: 8px !important;
-        padding: 4px 6px !important;
+        border-radius: 9px !important;
+        padding: 7px 9px !important;
         display: flex !important;
         flex-direction: column !important;
-        justify-content: flex-start !important;
-        height: 100% !important;
-        min-height: 0 !important;
-        max-height: 100% !important;
-        margin: 0 !important;
+        justify-content: space-between !important;
+        min-width: 0 !important;
         box-sizing: border-box !important;
-        cursor: pointer !important;
-        transition: all 0.15s ease !important;
       }
-      .category-slot-card:active {
-        background: rgba(56, 189, 248, 0.08) !important;
-        border-color: rgba(56, 189, 248, 0.35) !important;
+      .weight-val-big {
+        font-family: 'Space Grotesk', 'JetBrains Mono', sans-serif !important;
+        font-size: 1.60rem !important;
+        font-weight: 900 !important;
+        line-height: 1 !important;
+        letter-spacing: -0.03em !important;
+        transition: color 0.2s ease !important;
       }
-      .slot-bg-watermark-vector {
-        position: absolute !important;
-        right: 3px !important;
-        bottom: 3px !important;
-        opacity: 0.85 !important;
-        pointer-events: none !important;
-        z-index: 1 !important;
-      }
-      .slot-bg-watermark-vector svg {
-        width: 30px !important;
-        height: 30px !important;
-        display: block !important;
-      }
-      .slot-gears-wrap {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        gap: 2px !important;
-        width: 100% !important;
-        flex: 1 1 0% !important;
-        min-height: 0 !important;
-        max-height: none !important;
-        overflow-y: auto !important;
-        scrollbar-width: none !important;
-        margin-top: 2px !important;
-        align-content: flex-start !important;
-        z-index: 2 !important;
-      }
-      .slot-gears-wrap::-webkit-scrollbar { display: none !important; }
-      .mini-gear-tag {
+      .weight-bpl-badge {
+        font-size: 0.60rem !important;
+        font-weight: 800 !important;
+        padding: 1px 5px !important;
+        border-radius: 3px !important;
         display: inline-flex !important;
         align-items: center !important;
-        background: rgba(15, 23, 42, 0.9) !important;
-        border: 1px solid rgba(255, 255, 255, 0.18) !important;
-        color: #e2e8f0 !important;
-        font-size: 0.56rem !important;
-        font-weight: 800 !important;
-        padding: 1px 4px !important;
-        border-radius: 3.5px !important;
-        max-width: 98% !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
+        border: 1px solid transparent !important;
         white-space: nowrap !important;
-        backdrop-filter: blur(4px) !important;
-        line-height: 1.15 !important;
-      }}
+      }
+      .weight-gauge-bg {
+        width: 100% !important;
+        height: 3px !important;
+        background: rgba(255, 255, 255, 0.06) !important;
+        border-radius: 2px !important;
+        overflow: hidden !important;
+      }
+      .weight-gauge-fill {
+        height: 100% !important;
+        width: 0% !important;
+        border-radius: 2px !important;
+        transition: width 0.25s ease, background-color 0.2s ease !important;
+      }
+      .gear-popover-sheet {
+        display: none;
+        position: absolute !important;
+        top: 138px !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        background: rgba(11, 15, 25, 0.98) !important;
+        border-top: 1.5px solid rgba(255, 255, 255, 0.15) !important;
+        border-radius: 14px 14px 0 0 !important;
+        z-index: 600 !important;
+        flex-direction: column !important;
+        padding: 12px !important;
+        box-sizing: border-box !important;
+        box-shadow: 0 -12px 35px rgba(0, 0, 0, 0.95) !important;
+      }
+      .calc-slide-sheet {
+        position: fixed !important;
+        left: 50% !important;
+        transform: translate(-50%, 100%) !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        max-width: 480px !important;
+        background: #0d121d !important;
+        border-top: 1.5px solid rgba(255, 255, 255, 0.16) !important;
+        border-radius: 16px 16px 0 0 !important;
+        box-shadow: 0 -10px 35px rgba(0, 0, 0, 0.9) !important;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        z-index: 1000020 !important;
+        display: none;
+        flex-direction: column !important;
+        max-height: 72% !important;
+        box-sizing: border-box !important;
+      }
+      .calc-slide-sheet.active {
+        transform: translate(-50%, 0%) !important;
+        display: flex !important;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -183,8 +154,7 @@
     slot10: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="16" width="36" height="26" rx="4"/><path d="M24 16v26M6 26h36M18 16c0-6 6-10 6-10s6 4 6 10"/></svg>'
   };
 
- // 🏷️ 8대 기본 카테고리 스켈레톤 (하드코딩 장비 완전 제거 ➔ 구글 시트/로컬 캐시에서 100% 동적 주입)
-  var DEFAULT_CATEGORIES = [
+ var DEFAULT_CATEGORIES = [
     {
       id: 'shelter',
       title: '텐트 · 타프',
@@ -194,42 +164,42 @@
     {
       id: 'sleep',
       title: '침낭 · 매트',
-      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#34d399; stroke-width:2.2;"><path d="M2 17h20M2 13h20M4 9h16a2 2 0 0 1 2 2v6H2v-6a2 2 0 0 1 2-2z"/></svg>',
+      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#2dd4bf; stroke-width:2.2;"><path d="M2 17h20M2 13h20M4 9h16a2 2 0 0 1 2 2v6H2v-6a2 2 0 0 1 2-2z"/></svg>',
       db: []
     },
     {
       id: 'pack',
-      title: '배낭 (Pack)',
-      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#fbbf24; stroke-width:2.2;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>',
+      title: '배낭',
+      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#fb923c; stroke-width:2.2;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>',
       db: []
     },
     {
       id: 'food',
-      title: '식수 · 식량 · 간식',
-      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#fb923c; stroke-width:2.2;"><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/><path d="M12 6v6l4 2"/></svg>',
+      title: '음식',
+      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#f97316; stroke-width:2.2;"><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/><path d="M12 6v6l4 2"/></svg>',
       db: []
     },
     {
       id: 'kitchen',
-      title: '취사 · 식기 · 보온병',
-      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#fb923c; stroke-width:2.2;"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>',
+      title: '취사',
+      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#f97316; stroke-width:2.2;"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>',
       db: []
     },
     {
       id: 'wear',
-      title: '보온의류 · 방한 · 의류',
+      title: '의류',
       icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#c084fc; stroke-width:2.2;"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></svg>',
       db: []
     },
     {
       id: 'electronics',
-      title: '랜턴 · 안전 · 전자기기',
-      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#38bdf8; stroke-width:2.2;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+      title: '기기 · 소품',
+      icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#facc15; stroke-width:2.2;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
       db: []
     },
     {
       id: 'camp',
-      title: '테이블 · 체어 · 소품',
+      title: '테이블 · 체어',
       icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#38bdf8; stroke-width:2.2;"><rect x="4" y="10" width="16" height="4" rx="1"/><path d="M6 14v6M18 14v6M8 10V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4"/></svg>',
       db: []
     }
@@ -245,143 +215,435 @@
   window.activePlanSubMode = 'calendar';
   window.__planDockDeckMode = 'tools';
 
-  // 🎒 [계산기 10대 슬롯 렌더링 엔진]
-  window.renderPlanCategorySlots = function() {
-    var container = document.getElementById('planCategorySlotsContainer');
-    if (!container) return;
+/// 🎨 [낭만루트 전용 고정밀 SVG 라인아트 벡터 팩 (이모지 0% 전면 교체)]
+  var PLAN_SVG = {
+    calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px; height:13px; flex-shrink:0; vertical-align:-1px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+    pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px; height:13px; flex-shrink:0; vertical-align:-1px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+    backpack: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:14px; height:14px; flex-shrink:0;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>',
+    reset: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px; height:13px; flex-shrink:0;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>',
+    starFilled: '<svg viewBox="0 0 24 24" fill="#fde047" stroke="#fde047" stroke-width="1" style="width:12px; height:12px; flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+    starOutline: '<svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2" style="width:12px; height:12px; flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+    cardCamera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:14px; height:14px; flex-shrink:0;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+    presetStack: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:14px; height:14px; flex-shrink:0;"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',
+    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px; height:13px; flex-shrink:0;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+  };
 
-    var totalGrams = 0, totalItemCount = 0;
-    var cats = (window.CATEGORIES || []).slice(0, 8);
-    var gearMap = window.selectedGearMap || {};
+ window.__activeCalcCategoryTab = window.__activeCalcCategoryTab || 'fav';
 
-    var renderedHtml = cats.map(function(cat) {
-      var items = gearMap[cat.id] || [];
-      var catGrams = items.reduce(function(sum, it) { return sum + Number(it.weight || 0); }, 0);
-      totalGrams += catGrams;
-      totalItemCount += items.length;
+  window.setCalcCategoryTab = function(catId) {
+    window.__activeCalcCategoryTab = catId;
+    triggerHaptic(8);
+    window.renderPlanCategorySlots();
+  };
+ // 🎒 [내 장비 세트(프리셋) 슬라이드 시트 완전 연동 엔진]
+  window.openQuickPresetPicker = function() {
+    triggerHaptic(10);
+    var sheet = document.getElementById('calcPresetSlideSheet');
+    var backdrop = document.getElementById('calcPresetBackdrop');
+    var listContainer = document.getElementById('calcPresetSheetList');
+    if (!sheet) return;
 
-      var gearsListHtml = '<span style="color:#94a3b8; font-size:0.56rem; font-weight:700; background:rgba(0,0,0,0.6); padding:1px 4px; border-radius:3px;">미선택 +</span>';
-      if (items.length > 0) {
-        gearsListHtml = items.map(function(it, idx) {
-          var cleanName = (it.name || it.itemName || '장비').replace(/\s*\(.*\)/, '');
-          return '<span class="mini-gear-tag" onclick="event.stopPropagation(); window.removeGearFromPlanSlot(\'' + cat.id + '\', ' + idx + ')" title="' + escapeHtml(cleanName) + ' (' + it.weight + 'g) - 터치 시 삭제">' + escapeHtml(cleanName) + ' ✕</span>';
+    var presets = safeGetJSON('okbm_gear_presets', []);
+    if (listContainer) {
+      if (presets.length === 0) {
+        listContainer.innerHTML = `
+          <div style="text-align:center; padding:35px 0; color:#64748b; font-size:0.75rem; line-height:1.5;">
+            저장된 내 장비 세트가 없습니다.<br>
+            현재 배낭에 담긴 장비들을 새 세트로 저장해보세요!
+          </div>
+        `;
+      } else {
+        listContainer.innerHTML = presets.map(function(p) {
+          return `
+            <div onclick="window.loadGearPreset('${p.id}'); window.closeQuickPresetPicker();" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.09); border-radius:8px; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0;">
+              <div style="min-width:0; flex:1; padding-right:8px;">
+                <div style="font-size:0.82rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  ${escapeHtml(p.name)}
+                </div>
+                <div style="font-size:0.62rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; margin-top:2px;">
+                  장비 ${p.itemCount || 0}개 · ${p.totalKg || '0.00'}kg
+                </div>
+              </div>
+              <span style="font-size:0.68rem; font-weight:800; color:#000000; background:#e2e8f0; padding:4px 9px; border-radius:5px; flex-shrink:0;">
+                장착 ➔
+              </span>
+            </div>
+          `;
         }).join('');
       }
+    }
 
-      var vecSvg = PLAN_SLOT_VECTORS[cat.id] || '';
+    if (backdrop) backdrop.style.display = 'block';
+    sheet.style.display = 'flex';
+    setTimeout(function() { sheet.classList.add('active'); }, 10);
+  };
 
-      return `
-        <div class="category-slot-card" onclick="window.openGearPresetModal('${cat.id}')">
-          <div class="slot-bg-watermark-vector">${vecSvg}</div>
-          <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-              <div style="display:flex; align-items:center; gap:3px; font-size:0.71rem; font-weight:900; color:#fff; text-shadow:0 1px 3px #000;">
-                <span>${cat.icon}</span>
-                <span>${cat.title}</span>
-              </div>
-              <div style="font-size:0.68rem; color:#cbd5e1; font-family:'JetBrains Mono', monospace; font-weight:900; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); padding:1px 4px; border-radius:3px;">
-                ${(catGrams / 1000).toFixed(2)}k
-              </div>
+  window.closeQuickPresetPicker = function() {
+    var sheet = document.getElementById('calcPresetSlideSheet');
+    var backdrop = document.getElementById('calcPresetBackdrop');
+    if (sheet) {
+      sheet.classList.remove('active');
+      setTimeout(function() { sheet.style.display = 'none'; }, 250);
+    }
+    if (backdrop) backdrop.style.display = 'none';
+  };
+
+  // 🔍 [실시간 검색 필터링 핸들러]
+  window.handleCalcShelfSearch = function(query) {
+    window.__calcShelfSearchQuery = (query || '').trim().toLowerCase();
+    var clearBtn = document.getElementById('btnCalcSearchClear');
+    if (clearBtn) clearBtn.style.display = window.__calcShelfSearchQuery ? 'flex' : 'none';
+    window.renderPlanCategorySlots();
+  };
+
+  window.clearCalcShelfSearch = function() {
+    var input = document.getElementById('calcShelfSearchInput');
+    if (input) { input.value = ''; input.focus(); }
+    window.handleCalcShelfSearch('');
+  };
+
+  // 🗓️ [최상단 "변경 ▾" 인라인 아코디언 드롭다운 전담 엔진]
+  window.togglePlanTripDateInlineDropdown = function(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    triggerHaptic(8);
+    var dropdown = document.getElementById('calcTripDateDropdown');
+    if (!dropdown) return;
+
+    var isOpen = (dropdown.style.display === 'flex');
+    if (isOpen) {
+      dropdown.style.display = 'none';
+      return;
+    }
+
+    var planMemosObj = safeGetJSON('okbm_plan_memos', {}) || {};
+    var historyList = safeGetJSON('okbm_packing_history', []) || [];
+    var now = new Date();
+    var todayKey = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
+    var tripList = [];
+
+    Object.keys(planMemosObj).forEach(function(k) {
+      var memo = String(planMemosObj[k] || '').trim();
+      if (memo) {
+        var spotMatch = memo.match(/📍\s*(?:목적지:\s*)?([^\n\r(]+)/);
+        var spot = spotMatch ? spotMatch[1].trim() : memo.split('\n')[0].slice(0, 18);
+        tripList.push({ dateKey: k, spot: spot || '일정 메모' });
+      }
+    });
+
+    historyList.forEach(function(h) {
+      if (h && h.date && !tripList.some(function(t) { return t.dateKey === h.date; })) {
+        tripList.push({ dateKey: h.date, spot: h.spot || '출정 기록' });
+      }
+    });
+
+    tripList.sort(function(a, b) {
+      return b.dateKey.localeCompare(a.dateKey);
+    });
+
+    if (tripList.length === 0) {
+      tripList.push({ dateKey: todayKey, spot: '선자령 백패킹' });
+    }
+
+    dropdown.innerHTML = `
+      <div style="font-size:0.72rem; color:#94a3b8; font-weight:800; padding:2px 4px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+        <span>🗓️ 출정 일정 선택</span>
+        <button type="button" onclick="document.getElementById('calcTripDateDropdown').style.display='none';" style="background:none; border:none; color:#94a3b8; font-size:0.9rem; cursor:pointer; padding:0 4px;">✕</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px; max-height:160px; overflow-y:auto; overscroll-behavior:contain; margin-top:2px;">
+        ${tripList.map(function(t) {
+          var isCur = (t.dateKey === window.activeSelectedDateKey);
+          return `
+            <div data-date="${escapeHtml(t.dateKey)}" data-spot="${escapeHtml(t.spot)}" onclick="window.selectInlineTripDate(this.dataset.date, this.dataset.spot);" style="padding:7px 10px; border-radius:6px; background:${isCur ? 'rgba(56,189,248,0.14)' : 'rgba(255,255,255,0.03)'}; border:1px solid ${isCur ? 'rgba(56,189,248,0.35)' : 'rgba(255,255,255,0.06)'}; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+              <span style="font-size:0.78rem; font-family:'Space Grotesk', sans-serif; font-weight:800; color:${isCur ? '#38bdf8' : '#cbd5e1'};">${escapeHtml(t.dateKey)}</span>
+              <span style="font-size:0.74rem; font-weight:700; color:${isCur ? '#ffffff' : '#94a3b8'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;">${escapeHtml(t.spot)}</span>
             </div>
-            <div class="slot-gears-wrap">
-              ${gearsListHtml}
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    var slot9Vec = PLAN_SLOT_VECTORS.slot9 || '';
-    var slot10Vec = PLAN_SLOT_VECTORS.slot10 || '';
-
-    renderedHtml += `
-      <div class="category-slot-card" style="border-color:rgba(255,255,255,0.14); background:rgba(255,255,255,0.015);" onclick="if(typeof showToast==='function') showToast('🔥 요즘 유행하는 백패킹 인기 핫템 랭킹 준비 중입니다!', 'info');">
-        <div class="slot-bg-watermark-vector">${slot9Vec}</div>
-        <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-            <div style="display:flex; align-items:center; gap:5px; font-size:0.71rem; font-weight:900; color:#cbd5e1; text-shadow:0 1px 3px #000;">
-              <svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:#f97316; stroke:none;"><path d="M12 23c4.97 0 9-4.03 9-9 0-5.52-5.5-8.5-6.5-13-1.5 3-2.5 5.5-4.5 7-1.5-3-3-4-3-4s-4 4.5-4 10c0 4.97 4.03 9 9 9z"/></svg>
-              <span>요즘 유행하는 장비</span>
-            </div>
-            <span style="font-size:0.54rem; color:#fff; font-weight:900; background:rgba(255,255,255,0.12); padding:1.5px 5.5px; border-radius:3.5px;">HOT</span>
-          </div>
-          <div class="slot-gears-wrap">
-            <span style="color:#94a3b8; font-size:0.56rem; font-weight:700; background:rgba(0,0,0,0.65); padding:1px 4px; border-radius:3px;">인기 장비 랭킹 ➔</span>
-          </div>
-        </div>
+          `;
+        }).join('')}
       </div>
     `;
+    dropdown.style.display = 'flex';
+  };
 
-    renderedHtml += `
-      <div class="category-slot-card" style="border-color:rgba(255,255,255,0.14); background:rgba(255,255,255,0.015);" onclick="if(typeof showToast==='function') showToast('🎁 백패커 전용 특가 및 제휴 혜택 공간입니다!', 'info');">
-        <div class="slot-bg-watermark-vector">${slot10Vec}</div>
-        <div style="position:relative; z-index:2; width:100%; display:flex; flex-direction:column; gap:2px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-            <div style="display:flex; align-items:center; gap:5px; font-size:0.71rem; font-weight:900; color:#cbd5e1; text-shadow:0 1px 3px #000;">
-              <svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:#ec4899; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
-              <span>백패커 특가 혜택</span>
-            </div>
-            <span style="font-size:0.54rem; color:#fff; font-weight:900; background:rgba(255,255,255,0.12); padding:1.5px 5.5px; border-radius:3.5px;">SALE</span>
-          </div>
-          <div class="slot-gears-wrap">
-            <span style="color:#94a3b8; font-size:0.56rem; font-weight:700; background:rgba(0,0,0,0.65); padding:1px 4px; border-radius:3px;">공구/할인 이벤트 ➔</span>
-          </div>
-        </div>
-      </div>
-    `;
+  window.selectInlineTripDate = function(dateKey, spot) {
+    window.activeSelectedDateKey = dateKey;
+    if (spot && spot !== '일정 메모' && spot !== '출정 기록') {
+      window.currentLuckySpot = { name: spot, elevation: '' };
+    }
+    var dropdown = document.getElementById('calcTripDateDropdown');
+    if (dropdown) dropdown.style.display = 'none';
+    triggerHaptic(10);
+    window.renderPlanStage();
+  };
 
-    container.innerHTML = renderedHtml;
+  window.renderPlanCategorySlots = function() {
+    var shelfContainer = document.getElementById('calcGearShelfList');
+    var tabsContainer = document.getElementById('calcCategoryTabsBar');
 
-   var totalKg = (totalGrams / 1000).toFixed(2);
-    var calcKgText = document.getElementById('planTotalWeightKgText');
-    var calcGramsText = document.getElementById('planTotalWeightGramsText');
-    if (calcKgText) calcKgText.innerText = totalKg + ' kg';
-    if (calcGramsText) calcGramsText.innerText = totalGrams.toLocaleString() + ' g (' + totalItemCount + '개)';
+    var gearMap = window.selectedGearMap || {};
+    var allPackedItems = [];
+    var totalGrams = 0;
 
-    var mainBannerKg = document.getElementById('mainBannerKgText');
-    var mainBannerCount = document.getElementById('mainBannerItemCount');
-    if (mainBannerKg) mainBannerKg.innerText = totalKg + ' kg';
-    if (mainBannerCount) mainBannerCount.innerText = '장비 ' + totalItemCount + '개 세팅됨';
+    (window.CATEGORIES || []).forEach(function(cat) {
+      (gearMap[cat.id] || []).forEach(function(it, idx) {
+        if (it && (it.name || it.itemName)) {
+          var w = Number(it.weight || 0);
+          totalGrams += w;
+          allPackedItems.push({
+            catId: cat.id,
+            idx: idx,
+            name: it.name || it.itemName,
+            weight: w
+          });
+        }
+      });
+    });
 
-    var badgeText = document.getElementById('planBplStatusText');
-    var badgeWrap = document.getElementById('planBplStatusBadge');
-    var gauge = document.getElementById('planWeightGaugeFill');
+var totalKg = (totalGrams / 1000).toFixed(2);
+    var kgEl = document.getElementById('planTotalWeightKgText');
+    var gramsEl = document.getElementById('planTotalWeightGramsText');
+    var gaugeEl = document.getElementById('planWeightGaugeFill');
+    var bplBadge = document.getElementById('planBplStatusBadge');
+    var recentGearBox = document.getElementById('planRecentGearBox');
 
-    // 🎨 3단계 상태별 동적 테마 (UL / 스탠다드 / 헤비)
-    var theme = {
-      color: '#2dd4bf', // UL: 아이스 민트
-      label: 'BPL 초경량 (≤6kg)',
-      badgeClass: 'bpl-ul',
-      gaugeGrad: 'linear-gradient(90deg, #14b8a6 0%, #2dd4bf 100%)'
+   var CATEGORY_PALETTE = {
+      fav:         { color: '#fde047', label: '⭐ 내장비', bg: 'rgba(253,224,71,0.08)',  border: 'rgba(253,224,71,0.25)' },
+      all:         { color: '#e2e8f0', label: '전체',     bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.22)' },
+      shelter:     { color: '#10b981', label: '텐트·타프', bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.25)' },
+      sleep:       { color: '#14b8a6', label: '침낭·매트', bg: 'rgba(20,184,166,0.08)',  border: 'rgba(20,184,166,0.25)' },
+      pack:        { color: '#f43f5e', label: '배낭',     bg: 'rgba(244,63,94,0.08)',   border: 'rgba(244,63,94,0.25)' },
+      food:        { color: '#f97316', label: '음식',     bg: 'rgba(249,115,22,0.08)',  border: 'rgba(249,115,22,0.25)' },
+      kitchen:     { color: '#84cc16', label: '취사',     bg: 'rgba(132,204,22,0.08)',  border: 'rgba(132,204,22,0.25)' },
+      wear:        { color: '#a855f7', label: '의류',     bg: 'rgba(168,85,247,0.08)',  border: 'rgba(168,85,247,0.25)' },
+      electronics: { color: '#eab308', label: '기기·소품', bg: 'rgba(234,179,8,0.08)',   border: 'rgba(234,179,8,0.25)' },
+      camp:        { color: '#06b6d4', label: '테이블·체어',bg: 'rgba(6,182,212,0.08)',  border: 'rgba(6,182,212,0.25)' }
+    };
+
+    var weightTheme = {
+      color: '#2dd4bf',
+      badgeBg: 'rgba(45, 212, 191, 0.12)',
+      badgeBorder: 'rgba(45, 212, 191, 0.28)',
+      text: 'UL 초경량 (≤6kg)'
     };
 
     if (totalGrams > 14000) {
-      theme = {
-        color: '#c084fc', // Hard: 딥 바이올렛
-        label: '헤비 패킹 (14kg+)',
-        badgeClass: 'bpl-heavy',
-        gaugeGrad: 'linear-gradient(90deg, #9333ea 0%, #c084fc 100%)'
+      weightTheme = {
+        color: '#f87171',
+        badgeBg: 'rgba(248, 113, 113, 0.12)',
+        badgeBorder: 'rgba(248, 113, 113, 0.28)',
+        text: '헤비 (14kg+)'
       };
     } else if (totalGrams > 6000) {
-      theme = {
-        color: '#fbbf24', // Standard: 샴페인 앰버
-        label: '스탠다드 (6~14kg)',
-        badgeClass: 'bpl-standard',
-        gaugeGrad: 'linear-gradient(90deg, #d97706 0%, #fbbf24 100%)'
+      weightTheme = {
+        color: '#f59e0b',
+        badgeBg: 'rgba(245, 158, 11, 0.12)',
+        badgeBorder: 'rgba(245, 158, 11, 0.28)',
+        text: '스탠다드 (6~14kg)'
       };
     }
 
-    if (calcKgText) {
-      calcKgText.style.color = theme.color;
+    if (kgEl) {
+      kgEl.innerText = totalKg + ' kg';
+      kgEl.style.setProperty('color', weightTheme.color, 'important');
     }
-    if (badgeText) badgeText.innerText = theme.label;
-    if (badgeWrap) {
-      badgeWrap.className = 'weight-bpl-badge ' + theme.badgeClass;
+    if (gramsEl) {
+      gramsEl.innerText = totalGrams.toLocaleString() + ' g';
     }
-    if (gauge) {
-      var gaugePct = Math.min(100, Math.round((totalGrams / 14000) * 100));
-      gauge.style.width = gaugePct + '%';
-      gauge.style.background = theme.gaugeGrad;
+    if (bplBadge) {
+      bplBadge.innerText = weightTheme.text;
+      bplBadge.style.setProperty('color', weightTheme.color, 'important');
+      bplBadge.style.setProperty('background', weightTheme.badgeBg, 'important');
+      bplBadge.style.setProperty('border-color', weightTheme.badgeBorder, 'important');
+    }
+    if (gaugeEl) {
+      gaugeEl.style.setProperty('width', Math.min(100, Math.round((totalGrams / 14000) * 100)) + '%', 'important');
+      gaugeEl.style.setProperty('background-color', weightTheme.color, 'important');
+    }
+
+    var gearsPillsBox = document.getElementById('planGearsPillsBox');
+    var gearsBottomBox = document.getElementById('planGearsBottomBox');
+
+   if (recentGearBox) {
+      if (allPackedItems.length === 0) {
+        recentGearBox.innerHTML = `
+          <div style="font-size:0.70rem; font-weight:800; color:#94a3b8;">담긴 장비 (0)</div>
+          <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; flex:1; color:#64748b; font-size:0.68rem; line-height:1.3;">
+            <span>배낭 비어있음</span>
+            <span style="font-size:0.58rem; color:#475569;">장비를 담아보세요</span>
+          </div>
+        `;
+      } else {
+        var lastItem = allPackedItems[allPackedItems.length - 1];
+        var lastPal = CATEGORY_PALETTE[lastItem.catId] || { color: '#94a3b8' };
+        recentGearBox.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.70rem; font-weight:800; color:#cbd5e1;">담긴 장비</span>
+            <span style="font-size:0.62rem; font-weight:900; color:#ffffff; background:rgba(255,255,255,0.12); padding:1px 5px; border-radius:4px; font-family:'JetBrains Mono', monospace;">${allPackedItems.length}개 ▾</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:2px; min-width:0;">
+            <div style="font-size:0.78rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+              ${escapeHtml(lastItem.name)}
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:baseline; font-family:'JetBrains Mono', monospace;">
+              <span style="font-size:0.72rem; font-weight:900; color:${lastPal.color};">+${(lastItem.weight / 1000).toFixed(2)}kg</span>
+              <span style="font-size:0.60rem; color:#94a3b8;">${lastItem.weight}g</span>
+            </div>
+          </div>
+          <div style="font-size:0.56rem; color:#38bdf8; font-weight:700; text-align:right;">터치 시 담긴 목록 열기 ➔</div>
+        `;
+      }
+    }
+
+    var popoverListEl = document.getElementById('calcPackedItemsListContainer');
+    if (popoverListEl) {
+      popoverListEl.innerHTML = allPackedItems.length === 0 ? '<div style="text-align:center; padding:35px 0; color:#64748b; font-size:0.75rem;">담긴 장비가 없습니다.</div>' : allPackedItems.map(function(it) {
+        var pal = CATEGORY_PALETTE[it.catId] || { color: '#94a3b8' };
+        return `
+          <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-left:3.5px solid ${pal.color}; border-radius:7px; padding:7px 10px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+            <div style="flex:1; min-width:0; padding-right:8px;">
+              <div style="font-size:0.80rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</div>
+              <div style="font-size:0.60rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; margin-top:1px;">${(it.weight / 1000).toFixed(2)}kg (${it.weight}g)</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+              <button type="button" data-cat="${escapeHtml(it.catId)}" data-gear="${escapeHtml(it.name)}" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.decrementGearCount(this.dataset.gear);" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.3); color:#fda4af; font-size:0.72rem; font-weight:900; width:26px; height:26px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                −
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    if (tabsContainer) {
+      var activeTab = window.__activeCalcCategoryTab;
+      var catList = [
+{ id: 'fav', title: '내장비', isFav: true },
+{ id: 'all', title: '전체' },
+{ id: 'shelter', title: '텐트·타프' },
+{ id: 'sleep', title: '침낭·매트' },
+{ id: 'pack', title: '배낭' },
+{ id: 'food', title: '음식' },
+{ id: 'kitchen', title: '취사' },
+{ id: 'wear', title: '의류' },
+{ id: 'electronics', title: '기기·소품' },
+{ id: 'camp', title: '테이블·체어' }
+];
+
+      tabsContainer.innerHTML = catList.map(function(c) {
+        var isActive = (c.id === activeTab);
+        var inPackCount = 0;
+        if (c.id === 'all') inPackCount = allPackedItems.length;
+        else if (c.id === 'fav') inPackCount = allPackedItems.filter(function(it) { return window.favoriteGearSet && window.favoriteGearSet.has(it.name); }).length;
+        else inPackCount = (gearMap[c.id] || []).length;
+
+        var tTheme = CATEGORY_PALETTE[c.id] || { color: '#cbd5e1', border: 'rgba(255,255,255,0.12)' };
+        var countBadge = inPackCount > 0 ? `<span style="font-size:0.56rem; background:${isActive ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.08)'}; color:${isActive ? '#ffffff' : tTheme.color}; padding:0 3px; border-radius:6px; margin-left:2px; font-family:'JetBrains Mono', monospace; font-weight:800;">${inPackCount}</span>` : '';
+
+        var btnBg = isActive ? tTheme.bg : 'rgba(255,255,255,0.03)';
+        var btnBorder = isActive ? tTheme.border : 'rgba(255,255,255,0.07)';
+        var btnColor = tTheme.color;
+        var starIconHtml = c.isFav ? `${PLAN_SVG.starFilled}&nbsp;` : '';
+
+        return `
+          <button type="button" onclick="window.setCalcCategoryTab('${c.id}')" style="flex:0 0 76px !important; width:76px !important; min-width:76px !important; max-width:76px !important; height:30px !important; background:${btnBg}; border:1px solid ${btnBorder}; color:${btnColor}; font-size:0.67rem; font-weight:${isActive ? '900' : '700'}; padding:0 2px; border-radius:6px; white-space:nowrap; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; box-sizing:border-box; letter-spacing:-0.02em; transition:all 0.15s ease;">
+            ${starIconHtml}<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.title}</span>${countBadge}
+          </button>
+        `;
+      }).join('');
+    }
+
+   // 2. 90% 시원한 풀 장비 선반 렌더링 (검색 & 즐겨찾기 즉시 토글 연동)
+    if (shelfContainer) {
+      var curTab = window.__activeCalcCategoryTab;
+      var cleanQ = window.__calcShelfSearchQuery || '';
+      var pool = [];
+
+      var masterMap = safeGetJSON('okbm_master_gears_cache', {});
+      var customGears = safeGetJSON('okbm_custom_gears', []);
+      var allSource = [];
+      Object.keys(masterMap).forEach(function(k) { (masterMap[k] || []).forEach(function(g) { allSource.push(Object.assign({ category_id: k }, g)); }); });
+      customGears.forEach(function(cg) { allSource.push(cg); });
+
+      if (curTab === 'all') {
+        pool = allSource;
+      } else if (curTab === 'fav') {
+        var favNames = Array.from(window.favoriteGearSet || []);
+        pool = favNames.map(function(fn) {
+          var found = allSource.find(function(g) { return g.name === fn; });
+          return found || { name: fn, weight: 0, category_id: 'shelter', brand: '내 장비' };
+        });
+      } else {
+        pool = allSource.filter(function(g) { return (g.category_id || 'shelter') === curTab; });
+      }
+
+      var filtered = pool.filter(function(g) {
+        if (!g || !g.name) return false;
+        if (!cleanQ) return true;
+        var s = (String(g.name) + ' ' + String(g.brand || '') + ' ' + String(g.specs || '')).toLowerCase();
+        return s.includes(cleanQ);
+      });
+
+      filtered.sort(function(a, b) {
+        var aCat = a.category_id || 'shelter';
+        var bCat = b.category_id || 'shelter';
+        var aCount = (gearMap[aCat] || []).filter(function(it) { return it.name === a.name; }).length;
+        var bCount = (gearMap[bCat] || []).filter(function(it) { return it.name === b.name; }).length;
+        if (aCount !== bCount) return bCount - aCount;
+
+        var aFav = window.favoriteGearSet && window.favoriteGearSet.has(a.name) ? 1 : 0;
+        var bFav = window.favoriteGearSet && window.favoriteGearSet.has(b.name) ? 1 : 0;
+        if (aFav !== bFav) return bFav - aFav;
+
+        return a.name.localeCompare(b.name, 'ko');
+      });
+
+      if (filtered.length === 0) {
+        shelfContainer.innerHTML = `<div style="text-align:center; padding:60px 0; color:#64748b; font-size:0.75rem;">일치하는 장비가 없습니다.<br>상단 검색어를 변경하거나 직접 등록해보세요.</div>`;
+      } else {
+       shelfContainer.innerHTML = filtered.map(function(g) {
+          var targetCatId = g.category_id || 'shelter';
+          var currentCatItems = gearMap[targetCatId] || [];
+          var count = currentCatItems.filter(function(it) { return it.name === g.name; }).length;
+          var isAdded = count > 0;
+          var isFav = window.favoriteGearSet && window.favoriteGearSet.has(g.name);
+          var pal = CATEGORY_PALETTE[targetCatId] || { color: '#94a3b8', border: 'rgba(255,255,255,0.12)' };
+          var safeGearName = escapeHtml(g.name);
+
+          var cardBorder = isAdded ? `border:1px solid ${pal.border}; border-left:3.5px solid ${pal.color} !important;` : 'border:1px solid rgba(255,255,255,0.08); border-left:3.5px solid transparent !important;';
+          var cardBg = isAdded ? 'background:rgba(255,255,255,0.055);' : 'background:rgba(255,255,255,0.02);';
+
+          return `
+            <div style="${cardBg} ${cardBorder} border-radius:8px; padding:7px 10px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; box-sizing:border-box; transition:all 0.15s ease;">
+              <div style="min-width:0; flex:1; padding-right:8px; display:flex; align-items:center; gap:6px;">
+                <button type="button" data-gear="${safeGearName}" onclick="window.toggleFavoriteGear(this.dataset.gear, event);" style="background:none; border:none; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center;">
+                  ${isFav ? PLAN_SVG.starFilled : PLAN_SVG.starOutline}
+                </button>
+                <div style="min-width:0; flex:1;">
+                  <div style="font-size:0.80rem; font-weight:800; color:${isAdded ? '#ffffff' : '#e2e8f0'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                    ${safeGearName}
+                  </div>
+                  <div style="font-size:0.58rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; margin-top:1px;">
+                    <span style="color:${pal.color}; font-weight:700;">${escapeHtml(pal.label || '')}</span> · ${escapeHtml(g.brand || '')} · ${(Number(g.weight || 0) / 1000).toFixed(2)}kg (${g.weight || 0}g)
+                  </div>
+                </div>
+              </div>
+
+              <div style="flex-shrink:0;">
+                ${isAdded ? `
+                  <div style="display:flex; align-items:center; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:14px; padding:1px 4px; gap:4px; height:24px;">
+                    <button type="button" data-cat="${escapeHtml(targetCatId)}" data-gear="${safeGearName}" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.decrementGearCount(this.dataset.gear);" style="background:none; border:none; color:#ffffff; font-size:0.85rem; font-weight:900; cursor:pointer; width:16px;">−</button>
+                    <span style="font-size:0.72rem; font-weight:900; color:#ffffff; font-family:'JetBrains Mono', monospace; min-width:12px; text-align:center;">${count}</span>
+                    <button type="button" data-cat="${escapeHtml(targetCatId)}" data-gear="${safeGearName}" data-weight="${g.weight || 0}" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.addGearToCategory(this.dataset.gear, Number(this.dataset.weight));" style="background:none; border:none; color:#ffffff; font-size:0.85rem; font-weight:900; cursor:pointer; width:16px;">+</button>
+                  </div>
+                ` : `
+                  <button type="button" data-cat="${escapeHtml(targetCatId)}" data-gear="${safeGearName}" data-weight="${g.weight || 0}" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.addGearToCategory(this.dataset.gear, Number(this.dataset.weight));" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.16); color:#ffffff; font-size:0.66rem; font-weight:800; padding:3px 9px; border-radius:6px; cursor:pointer;">
+                    + 담기
+                  </button>
+                `}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
     }
   };
 
@@ -861,8 +1123,10 @@ window.saveCurrentPackingRecord = function() {
       weightKg: totalKg,
       weightGrams: totalGrams,
       itemCount: packedItems.length,
-      memo: '',
-      oneLineMemo: spotTitle ? `${spotTitle} 백패킹` : '출정 준비 완료',
+     memo: '',
+      oneLineMemo: spotTitle ? `${spotTitle} 힐링` : ' 준비 완료',
+      isDraft: true,
+      isPublished: false,
       items: packedItems,
       photos: [],
       photo: '',
@@ -1225,15 +1489,16 @@ window.saveCurrentPackingRecord = function() {
       var tripTitle = spotMatch ? spotMatch[1].trim() : nearestTrip.memo.split('\n')[0].slice(0, 24);
 
       dDayBadgeHtml = `
-        <div onclick="window.activeSelectedDateKey='${nearestTrip.dateKey}'; window.renderPlanStage(); triggerHaptic(10);" style="background:linear-gradient(135deg, rgba(56,189,248,0.15), rgba(52,211,153,0.1)); border:1.2px solid rgba(56,189,248,0.35); border-radius:12px; padding:9px 14px; display:flex; align-items:center; cursor:pointer; flex-shrink:0; box-sizing:border-box; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
-          <div style="display:flex; align-items:center; gap:9px; width:100%; min-width:0;">
-            <span style="font-size:0.78rem; font-family:'Space Grotesk', sans-serif; font-weight:900; color:#ffffff; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; padding:3px 9px; border-radius:6px; flex-shrink:0; box-shadow:0 2px 6px rgba(2,132,199,0.3);">
+        <div onclick="window.startPackingForDate('${nearestTrip.dateKey}', '${escapeHtml(tripTitle)}');" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0; box-sizing:border-box;">
+          <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">
+            <span style="font-size:0.72rem; font-family:'Space Grotesk', sans-serif; font-weight:900; color:#000000; background:#ffffff; padding:2px 7px; border-radius:4px; flex-shrink:0;">
               ${dText}
             </span>
-            <div style="display:flex; align-items:center; gap:5px; font-size:0.85rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0;">
-              <span>${nearestTrip.dateKey}</span> · ${UI_ICONS.pin} <span style="color:#38bdf8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(tripTitle)}</span>
+            <div style="font-size:0.80rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+              <span>${nearestTrip.dateKey}</span> · 📍 <span>${escapeHtml(tripTitle)}</span>
             </div>
           </div>
+          <span style="font-size:0.65rem; color:#cbd5e1; font-weight:800; flex-shrink:0;">패킹하기 ➔</span>
         </div>
       `;
     } else {
@@ -1304,8 +1569,8 @@ window.saveCurrentPackingRecord = function() {
     var calendarMemoViewHtml = `
       <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:6px; padding:2px 0 4px 0; overflow:hidden; box-sizing:border-box;">
         
-        <!-- 1. 달력 카드 (38%) -->
-        <div id="planCalendarCardWrap" style="flex:38 1 0% !important; min-height:0 !important; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.18); border-radius:14px; padding:8px 10px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
+       <!-- 1. 달력 카드 (전체 뷰포트 대비 31% 정밀 적응형 뷰) -->
+        <div id="planCalendarCardWrap" style="height:31% !important; min-height:236px !important; flex-shrink:0 !important; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:6px 10px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
           <div style="display:flex; justify-content:space-between; align-items:center; height:34px; flex-shrink:0;">
             <div style="display:flex; align-items:center; gap:5px;">
               <button type="button" onclick="window.changePlanMonth(-1)" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); color:#ffffff; width:28px; height:28px; border-radius:7px; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;">◀</button>
@@ -1357,10 +1622,10 @@ window.saveCurrentPackingRecord = function() {
           <textarea id="planDailyMemoInput" placeholder="이 날짜의 일정과 챙길 것들을 메모해보세요..." oninput="window.autoSavePlanMemo('${activeDateStr}', this.value)" style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:rgba(0,0,0,0.55); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:5px 8px; font-size:0.82rem; color:#fff; line-height:1.4; outline:none; resize:none; font-family:'Pretendard Variable', sans-serif; box-sizing:border-box;">${currentDayMemo}</textarea>
         </div>
 
-        <!-- 4. 하단 2x2 모던 큐브 그리드 (26%) -->
+     <!-- 4. 하단 2x2 모던 큐브 그리드 (모노크롬 & 원클릭 즉시 전환) -->
         <div style="flex:26 1 0% !important; min-height:0 !important; display:grid; grid-template-columns:1fr 1fr; gap:6px; box-sizing:border-box;">
           
-          <div onclick="window.activePlanSubMode='calculator'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:0 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; box-sizing:border-box;">
+          <div onclick="window.activePlanSubMode='calculator'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; box-sizing:border-box;">
             <div style="display:flex; align-items:center; gap:8px;">
               ${VECTOR_ICONS.calculator}
               <span style="font-size:0.86rem; font-weight:900; color:#ffffff;">패킹계산기</span>
@@ -1368,7 +1633,7 @@ window.saveCurrentPackingRecord = function() {
             <span style="font-size:0.75rem; color:#94a3b8; font-weight:900;">➔</span>
           </div>
 
-          <div onclick="window.activePlanSubMode='checklist'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:0 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; box-sizing:border-box;">
+          <div onclick="window.activePlanSubMode='checklist'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; box-sizing:border-box;">
             <div style="display:flex; align-items:center; gap:8px;">
               ${VECTOR_ICONS.checklist}
               <span style="font-size:0.86rem; font-weight:900; color:#ffffff;">체크리스트</span>
@@ -1376,7 +1641,7 @@ window.saveCurrentPackingRecord = function() {
             <span style="font-size:0.75rem; color:#94a3b8; font-weight:900;">➔</span>
           </div>
 
-          <div onclick="window.activePlanSubMode='bookmarks'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:0 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; box-sizing:border-box;">
+          <div onclick="window.activePlanSubMode='bookmarks'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; box-sizing:border-box;">
             <div style="display:flex; align-items:center; gap:8px;">
               ${VECTOR_ICONS.bookmarks}
               <span style="font-size:0.86rem; font-weight:900; color:#ffffff;">찜 목록</span>
@@ -1384,7 +1649,7 @@ window.saveCurrentPackingRecord = function() {
             <span style="font-size:0.75rem; color:#94a3b8; font-weight:900;">➔</span>
           </div>
 
-          <div onclick="window.activePlanSubMode='gears'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:0 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; box-sizing:border-box;">
+          <div onclick="window.activePlanSubMode='gears'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; box-sizing:border-box;">
             <div style="display:flex; align-items:center; gap:8px;">
               ${VECTOR_ICONS.gears}
               <span style="font-size:0.86rem; font-weight:900; color:#ffffff;">장비관리</span>
@@ -1392,9 +1657,70 @@ window.saveCurrentPackingRecord = function() {
             <span style="font-size:0.75rem; color:#94a3b8; font-weight:900;">➔</span>
           </div>
         </div>
+
+ <div id="planBookmarkBackdrop" onclick="window.closeBookmarksBottomSheet();" style="display:none !important; pointer-events:none !important;"></div>
+        <div id="planBookmarkSlideSheet" class="calc-slide-sheet" style="max-height:67% !important; height:67% !important; border-top:1px solid rgba(255,255,255,0.16) !important; background:#0b0f17 !important; z-index:1000020 !important;">
+          <div style="padding:12px 14px 8px 14px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:6px; font-size:0.84rem; font-weight:800; color:#f1f5f9;">
+              <span id="planBookmarkSheetTitle">가보고 싶은 곳</span>
+            </div>
+            <button type="button" onclick="window.closeBookmarksBottomSheet();" style="background:none; border:none; color:#64748b; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
+          </div>
+          <div id="planBookmarkSheetList" style="flex:1; overflow-y:auto; padding:10px 14px; display:flex; flex-direction:column; gap:6px; overscroll-behavior-y:contain; -webkit-overflow-scrolling:touch;"></div>
+        </div>
       </div>
     `;
 
+  window.openBookmarksBottomSheet = function() {
+    var sheet = document.getElementById('planBookmarkSlideSheet');
+    var listContainer = document.getElementById('planBookmarkSheetList');
+    var titleEl = document.getElementById('planBookmarkSheetTitle');
+    if (!sheet || !listContainer) return;
+
+    var bookmarks = safeGetJSON('okbm_bookmarks', []);
+    var spotList = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots)) ? registeredSpots : safeGetJSON('okbm_spots_cache', []);
+    var bookmarkedSpots = bookmarks.map(function(sId) {
+      var found = spotList.find(function(s) { return String(s.id).trim() === String(sId).trim(); });
+      return {
+        id: sId,
+        name: found ? (found.fullName || found.name) : ('장소 #' + sId),
+        elevation: found && found.elevation ? (found.elevation + 'm') : (found ? found.region : '전국')
+      };
+    });
+
+    if (titleEl) titleEl.innerText = '가보고 싶은 곳 (' + bookmarkedSpots.length + '곳)';
+
+    if (bookmarkedSpots.length === 0) {
+      listContainer.innerHTML = '<div style="text-align:center; padding:35px 0; color:#64748b; font-size:0.75rem; line-height:1.6;">찜해둔 장소가 없습니다.<br>전국지도에서 가보고 싶은 곳을 찜해보세요!</div>';
+    } else {
+      listContainer.innerHTML = bookmarkedSpots.map(function(s) {
+        var safeName = escapeHtml(s.name);
+        var safeElev = escapeHtml(s.elevation);
+        return `
+          <div data-spot="${safeName}" onclick="localStorage.setItem('okbm_target_spot', this.dataset.spot); location.href='map.html?spot=' + encodeURIComponent(this.dataset.spot);" style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:9px 11px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0; transition:all 0.15s ease;">
+            <div style="flex:1; min-width:0; padding-right:8px;">
+              <div style="font-size:0.80rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeName}</div>
+              <div style="font-size:0.60rem; color:#64748b; margin-top:2px;">위치: ${safeElev} · <span style="color:#94a3b8; text-decoration:underline;">지도 보기</span></div>
+            </div>
+            <button type="button" data-spot="${safeName}" data-elevation="${safeElev}" onclick="event.stopPropagation(); window.selectPlanDestination(this.dataset.spot, this.dataset.elevation);" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#f1f5f9; font-size:0.68rem; font-weight:800; padding:5px 10px; border-radius:6px; cursor:pointer; flex-shrink:0; white-space:nowrap;">
+              일정 등록
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    sheet.style.display = 'flex';
+    setTimeout(function() { sheet.classList.add('active'); }, 10);
+  };
+
+  window.closeBookmarksBottomSheet = function() {
+    var sheet = document.getElementById('planBookmarkSlideSheet');
+    if (sheet) {
+      sheet.classList.remove('active');
+      setTimeout(function() { sheet.style.display = 'none'; }, 250);
+    }
+  };
  // 2. 실전 패킹 체크리스트 뷰
     var SOFT_THEMES = {
       shelter:     { color: '#34d399', bg: 'rgba(52, 211, 153, 0.09)', border: 'rgba(52, 211, 153, 0.28)' },
@@ -1489,62 +1815,124 @@ window.saveCurrentPackingRecord = function() {
         </div>
       </div>
     `;
-/// 3. 10대 슬롯 배낭 계산기 뷰
-    var calculatorViewHtml = `
-      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; justify-content:space-between; gap:4px; box-sizing:border-box; overflow:hidden; padding-bottom:4px;">
+/// 3. 군더더기 제로 단일 패킹 캔버스 뷰 (검색 + 전체리본 + 90% 선반 + SVG 듀얼 하단독)
+    var calcSpotName = (window.currentLuckySpot && window.currentLuckySpot.name) 
+      ? window.currentLuckySpot.name 
+      : (spotTitle !== '자유 출정 일정' ? spotTitle : '선자령 백패킹');
+    var calcSpotElev = (window.currentLuckySpot && window.currentLuckySpot.elevation) 
+      ? (String(window.currentLuckySpot.elevation).includes('m') ? window.currentLuckySpot.elevation : window.currentLuckySpot.elevation + 'm') 
+      : '832m';
+
+ var calculatorViewHtml = `
+      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; position:relative;">
         
-        <!-- 1. 무게 요약 대시보드 (컴팩트 높이 68px) -->
-        <div class="weight-dashboard-strip" style="height:68px !important; min-height:68px !important; padding:6px 12px !important; flex-shrink:0;">
-          <div class="weight-dash-top">
-            <div>
-              <div style="font-size:0.62rem; font-weight:800; color:#94a3b8;">배낭 총 무게 (Total Weight)</div>
-              <div class="weight-val-big" id="planTotalWeightKgText" style="font-size:1.75rem !important;">${totalKgStr} kg</div>
-            </div>
-            <div style="text-align:right;">
-              <div id="planBplStatusBadge" class="weight-bpl-badge bpl-ul">
-                <span id="planBplStatusText">울트라라이트 (UL)</span>
+        <!-- 상단 컨트롤 헤더 (출정바 38px + 5:5무게대시보드 88px + 검색창 32px + 균등탭 30px) -->
+        <div style="flex:0 0 auto !important; display:flex; flex-direction:column; padding:2px 0; box-sizing:border-box; gap:5px; flex-shrink:0; position:relative; z-index:20;">
+          
+          <!-- 1. 최상단 출정 브리핑 바 -->
+          <div style="height:38px !important; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:8px; padding:0 10px; display:flex; justify-content:space-between; align-items:center; box-sizing:border-box; flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
+              <span style="font-size:0.80rem; font-family:'Space Grotesk', sans-serif; font-weight:800; color:#e2e8f0; display:flex; align-items:center; gap:4px;">
+                ${PLAN_SVG.calendar} <span>${activeDateStr}</span>
+              </span>
+              <div style="font-size:0.82rem; font-weight:800; color:#cbd5e1; display:flex; align-items:center; gap:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                ${PLAN_SVG.pin} <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(calcSpotName)}</span>
+                <span style="font-size:0.68rem; color:#94a3b8; font-weight:700;">(${escapeHtml(calcSpotElev)})</span>
               </div>
-              <div style="font-size:0.62rem; color:#cbd5e1; font-family:'Space Grotesk', sans-serif; margin-top:1px;" id="planTotalWeightGramsText">${totalGrams.toLocaleString()} g</div>
             </div>
+            <button type="button" onclick="window.togglePlanTripDateInlineDropdown(event);" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#f1f5f9; font-size:0.72rem; font-weight:800; padding:4px 9px; border-radius:5px; cursor:pointer; flex-shrink:0;">
+              변경 ▾
+            </button>
           </div>
-          <div class="weight-gauge-bg" style="height:5px !important;">
-            <div class="weight-gauge-fill" id="planWeightGaugeFill" style="width:${Math.min(100, Math.round((totalGrams / 14000) * 100))}%;"></div>
+
+          <!-- 1-1. 인라인 출정 일정 아코디언 드롭다운 -->
+          <div id="calcTripDateDropdown" style="display:none; position:absolute; top:42px; left:0; right:0; z-index:700; background:#0d121d; border:1.5px solid rgba(56,189,248,0.4); border-radius:8px; padding:8px; flex-direction:column; gap:6px; box-shadow:0 16px 40px rgba(0,0,0,0.95); box-sizing:border-box;"></div>
+
+          <!-- 2. 대시보드 (5:5 완벽 좌우 분할, 높이 88px) -->
+          <div class="weight-dashboard-strip">
+            
+            <!-- 좌측 50% 박스 (무게 연산) -->
+            <div class="weight-pod-box">
+              <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                <span style="font-size:0.70rem; font-weight:800; color:#94a3b8;">배낭 총무게</span>
+                <span id="planTotalWeightGramsText" style="font-size:0.60rem; color:#94a3b8; font-family:'JetBrains Mono', monospace;">${totalGrams.toLocaleString()} g</span>
+              </div>
+              <span class="weight-val-big" id="planTotalWeightKgText">${totalKgStr} kg</span>
+              <div style="display:flex; flex-direction:column; gap:2px;">
+                <div id="planBplStatusBadge" class="weight-bpl-badge">${(totalGrams <= 6000) ? 'UL 초경량 (≤6kg)' : '스탠다드 (6~14kg)'}</div>
+                <div class="weight-gauge-bg">
+                  <div class="weight-gauge-fill" id="planWeightGaugeFill" style="width:${Math.min(100, Math.round((totalGrams / 14000) * 100))}%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 우측 50% 박스 (담긴 장비 뷰어 - 클릭 시 하단 목록 펼침) -->
+            <div class="weight-pod-box" id="planRecentGearBox" onclick="document.getElementById('calcPackedItemsPopover').style.display='flex';" style="cursor:pointer; background:rgba(255,255,255,0.035) !important;"></div>
+
           </div>
+
+          <!-- 3. 통합 검색창 -->
+          <div style="height:32px !important; position:relative; width:100%; display:flex; align-items:center; box-sizing:border-box; flex-shrink:0;">
+            <div style="position:absolute; left:9px; color:#64748b; display:flex; align-items:center; pointer-events:none;">
+              ${PLAN_SVG.search}
+            </div>
+            <input type="text" id="calcShelfSearchInput" placeholder="브랜드, 장비명, 스펙 검색..." oninput="window.handleCalcShelfSearch(this.value)" style="width:100%; height:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:6px; color:#e2e8f0; font-size:0.75rem; padding:0 28px 0 28px; outline:none; box-sizing:border-box;" />
+            <button type="button" id="btnCalcSearchClear" onclick="window.clearCalcShelfSearch()" style="display:none; position:absolute; right:8px; background:rgba(255,255,255,0.12); border:none; color:#cbd5e1; width:16px; height:16px; border-radius:50%; font-size:0.6rem; cursor:pointer; align-items:center; justify-content:center; padding:0;">✕</button>
+          </div>
+
+          <!-- 4. 카테고리 탭 리본 (균등 76px 고정) -->
+          <div id="calcCategoryTabsBar" style="height:30px !important; display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; align-items:center; box-sizing:border-box; flex-shrink:0;"></div>
         </div>
 
-        <!-- 2. 10대 슬롯 그리드 (유동 높이 흡수) -->
-        <div class="category-slots-grid" id="planCategorySlotsContainer" style="flex:1 1 0% !important; min-height:0 !important; margin:1px 0;"></div>
-
-        <!-- 3. 하단 원클릭 빠른 장비 직접 등록 바 (높이 30px) -->
-        <div style="flex-shrink:0 !important; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:3px 5px; display:flex; gap:4px; align-items:center; box-sizing:border-box;">
-          <input type="text" id="quickCalcGearName" placeholder="장비명 직접 추가" style="flex:1.8; min-width:0; height:30px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#fff; font-size:0.72rem; padding:0 6px; outline:none;" />
-          <select id="quickCalcGearCat" style="flex:1.3; min-width:0; height:30px; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#cbd5e1; font-size:0.68rem; font-weight:700; padding:0 2px; outline:none;">
-            <option value="shelter">텐트·타프</option>
-            <option value="sleep">침낭·매트</option>
-            <option value="pack">배낭</option>
-            <option value="food">식수·식량</option>
-            <option value="kitchen">취사·보온병</option>
-            <option value="wear">보온의류</option>
-            <option value="electronics">랜턴·안전</option>
-            <option value="camp">체어·소품</option>
-          </select>
-          <input type="number" id="quickCalcGearWeight" placeholder="무게g" style="width:48px; height:30px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#fff; font-size:0.72rem; padding:0 4px; outline:none; font-family:'JetBrains Mono', monospace;" />
-          <button type="button" onclick="window.addQuickGearFromCalculator();" style="height:30px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22); color:#f8fafc; font-size:0.70rem; font-weight:900; padding:0 8px; border-radius:6px; cursor:pointer; flex-shrink:0; white-space:nowrap;">
-            + 추가
-          </button>
+       <!-- 2-1. 담긴 장비 하단 펼침 명세 -->
+        <div id="calcPackedItemsPopover" class="gear-popover-sheet">
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px; flex-shrink:0;">
+            <span style="font-size:0.84rem; font-weight:900; color:rgba(241,245,249,0.92); display:flex; align-items:center; gap:5px;">
+              ${PLAN_SVG.backpack}
+              <span>담긴 장비 명세</span>
+            </span>
+            <button type="button" onclick="document.getElementById('calcPackedItemsPopover').style.display='none';" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
+          </div>
+          <div id="calcPackedItemsListContainer" style="flex:1; overflow-y:auto; margin-top:8px; display:flex; flex-direction:column; gap:5px;"></div>
         </div>
 
-        <!-- 4. 하단 액션 컨트롤 바 (모바일 터치 최우선 레이어 z-index:200 강제) -->
-        <div style="flex-shrink:0 !important; display:flex; gap:6px; position:relative !important; z-index:200 !important; pointer-events:auto !important; box-sizing:border-box;">
-          <button type="button" onclick="window.resetPlanCalculatorGears();" style="flex:0.7; height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1; font-size:0.75rem; font-weight:800; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; touch-action:manipulation;">
-            <svg viewBox="0 0 24 24" style="width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        <!-- 5. 화면 풀 장비 선반 -->
+        <div id="calcGearShelfList" style="flex:1 1 0% !important; min-height:0 !important; overflow-y:auto !important; display:flex; flex-direction:column; gap:4px; padding-right:1px; margin-top:2px; margin-bottom:0 !important;"></div>
+
+        <!-- 6. 하단 3분할 액션 독 ([초기화] + [내 장비 세트] + [카드로 저장 ➔]) -->
+        <div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-top:1px solid rgba(255,255,255,0.08); padding:6px 0 2px 0; margin:0 !important; display:grid; grid-template-columns:1fr 1.1fr 1.3fr; gap:5px; align-items:center; box-sizing:border-box;">
+          <button type="button" onclick="window.resetPlanCalculatorGears();" style="height:38px; background:rgba(244,63,94,0.06); border:1px solid rgba(244,63,94,0.2); color:#fda4af; font-size:0.72rem; font-weight:800; border-radius:7px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; white-space:nowrap; padding:0 2px;">
+            ${PLAN_SVG.reset}
             <span>초기화</span>
           </button>
-          <button type="button" onclick="window.saveCurrentPackingRecord();" style="flex:2; height:38px; background:#ffffff !important; border:1px solid #ffffff !important; color:#000000 !important; font-size:0.84rem !important; font-weight:900 !important; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(255,255,255,0.25); white-space:nowrap; touch-action:manipulation; -webkit-tap-highlight-color:transparent;">
-            <svg viewBox="0 0 24 24" style="width:15px; height:15px; stroke:#000000; fill:none; stroke-width:2.4;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            <span>📸 공유 카드 만들기 ➔</span>
+          <button type="button" onclick="window.openQuickPresetPicker();" style="height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); color:#cbd5e1; font-size:0.72rem; font-weight:800; border-radius:7px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; white-space:nowrap; padding:0 2px;">
+            ${PLAN_SVG.backpack}
+            <span>내 장비 세트</span>
+          </button>
+          <button type="button" onclick="window.saveCurrentPackingRecord();" style="height:38px; background:rgba(255,255,255,0.12) !important; border:1px solid rgba(255,255,255,0.2) !important; color:rgba(241,245,249,0.92) !important; font-size:0.72rem !important; font-weight:800 !important; border-radius:7px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; white-space:nowrap; padding:0 2px;">
+            ${PLAN_SVG.cardCamera}
+            <span>카드로 저장 ➔</span>
           </button>
         </div>
+
+        <!-- 7. 내 장비 세트 인라인 슬라이드 시트 -->
+        <div id="calcPresetBackdrop" onclick="window.closeQuickPresetPicker();" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000018;"></div>
+        <div id="calcPresetSlideSheet" class="calc-slide-sheet">
+          <div style="padding:12px 14px 8px 14px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:5px; font-size:0.85rem; font-weight:800; color:#f1f5f9;">
+              ${PLAN_SVG.presetStack}
+              <span>내 장비 세트 선택</span>
+            </div>
+            <button type="button" onclick="window.closeQuickPresetPicker();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
+          </div>
+          <div id="calcPresetSheetList" style="flex:1; overflow-y:auto; padding:10px 14px; display:flex; flex-direction:column; gap:6px;"></div>
+          <div style="padding:8px 14px 12px 14px; border-top:1px solid rgba(255,255,255,0.08); flex-shrink:0;">
+            <button type="button" onclick="window.closeQuickPresetPicker(); window.saveCurrentGearsAsPreset();" style="width:100%; height:38px; background:rgba(255,255,255,0.05); border:1px dashed rgba(255,255,255,0.2); color:#cbd5e1; font-size:0.75rem; font-weight:800; border-radius:8px; cursor:pointer;">
+              + 현재 배낭을 새 세트로 저장
+            </button>
+          </div>
+        </div>
+
       </div>
     `;
 
@@ -1557,44 +1945,78 @@ window.saveCurrentPackingRecord = function() {
       return {
         id: sId,
         name: found ? (found.fullName || found.name) : ('장소 #' + sId),
-        elevation: found && found.elevation ? (found.elevation + 'm') : (found ? found.region : '전국')
+    elevation: found && found.elevation ? (found.elevation + 'm') : (found ? found.region : '전국')
       };
     });
+   
 
     var bookmarksViewHtml = `
-      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:6px; padding:2px 0; overflow-y:auto; overscroll-behavior-y:contain; touch-action:pan-y; box-sizing:border-box;">
-        <div style="padding:4px 2px; display:flex; justify-content:space-between; align-items:flex-end;">
-          <div style="display:flex; align-items:center; gap:4px; font-size:0.86rem; font-weight:900; color:#fde047;">
-            ${UI_ICONS.starGold}
-            <span>가보고 싶은 곳 (${bookmarkedSpots.length}곳)</span>
-          </div>
-          <span style="font-size:0.54rem; color:#94a3b8;">장소 터치 시 지도 연동 · 우측 버튼 터치 시 날짜 선택</span>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:4px; flex:1;">
-          ${bookmarkedSpots.length === 0 ? `
-            <div style="text-align:center; padding:60px 0; color:#94a3b8; font-size:0.78rem; line-height:1.6;">
-              찜해둔 장소가 없습니다.<br>
-              전국지도에서 가보고 싶은 곳을 찜해보세요!
+      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:6px; padding:2px 0 4px 0; overflow:hidden; box-sizing:border-box;">
+        
+        <div id="planCalendarCardWrap" style="height:31% !important; min-height:236px !important; flex-shrink:0 !important; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:6px 10px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
+          <div style="display:flex; justify-content:space-between; align-items:center; height:34px; flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:5px;">
+              <button type="button" onclick="window.changePlanMonth(-1)" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); color:#ffffff; width:28px; height:28px; border-radius:7px; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;">◀</button>
+              <button type="button" onclick="window.openPlanYearPicker(event)" style="height:28px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#ffffff; padding:0 10px; border-radius:7px; font-size:0.92rem; font-weight:900; cursor:pointer; font-family:'Space Grotesk', sans-serif; display:flex; align-items:center; gap:3px;">
+                <span>${viewYear}년</span>
+                <span style="font-size:0.75rem; color:#94a3b8;">▾</span>
+              </button>
+              <span style="font-size:0.95rem; font-weight:900; color:#ffffff; margin:0 3px; font-family:'Space Grotesk', sans-serif;">${viewMonth}월</span>
+              <button type="button" onclick="window.changePlanMonth(1)" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); color:#ffffff; width:28px; height:28px; border-radius:7px; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;">▶</button>
             </div>
-          ` : bookmarkedSpots.map(function(s) {
-              var safeName = escapeHtml(s.name);
-              var safeElev = escapeHtml(s.elevation);
-              return `
-                <div data-spot="${safeName}" onclick="location.href='map.html?spot=' + encodeURIComponent(this.dataset.spot);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(253,224,71,0.22); border-radius:8px; padding:6px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:background 0.15s ease;">
-                  <div style="flex:1; min-width:0; padding-right:8px;">
-                    <div style="font-size:0.80rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:5px;">
-                      ${UI_ICONS.starGold}
-                      <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeName}</span>
-                    </div>
-                    <div style="font-size:0.58rem; color:#94a3b8; margin-top:1px;">고도/위치: ${safeElev}</div>
-                  </div>
-                  <button type="button" data-spot="${safeName}" data-elevation="${safeElev}" onclick="event.stopPropagation(); window.selectPlanDestination(this.dataset.spot, this.dataset.elevation);" style="background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#ffffff; font-size:0.65rem; font-weight:900; padding:5px 9px; border-radius:6px; cursor:pointer; flex-shrink:0; white-space:nowrap; box-shadow:0 2px 8px rgba(2,132,199,0.3);">
-                    목적지로 설정
-                  </button>
-                </div>
-              `;
-            }).join('')}
+            
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button type="button" onclick="window.jumpToPlanToday()" style="height:26px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#ffffff; font-size:0.72rem; font-weight:800; padding:0 8px; border-radius:6px; cursor:pointer;">오늘</button>
+              <span style="font-size:0.74rem; color:#fbbf24; font-weight:900; display:flex; align-items:center; gap:3px;">${UI_ICONS.starGold}<span>완료</span></span>
+              <span style="font-size:0.74rem; color:#34d399; font-weight:900; display:flex; align-items:center; gap:3px;">${UI_ICONS.flagGreen}<span>계획</span></span>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.72rem; font-weight:900; color:#cbd5e1; height:20px; line-height:20px; flex-shrink:0; letter-spacing:0.5px; margin-top:8px; margin-bottom:4px;">
+            <span style="color:#f43f5e;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#38bdf8;">토</span>
+          </div>
+          
+          <div style="flex:1 1 0%; min-height:0; display:grid; grid-template-columns:repeat(7, 1fr); grid-template-rows:repeat(6, 1fr); gap:2px; text-align:center;">
+            ${calendarDaysHtml}
+          </div>
         </div>
+
+       <div style="flex:1 1 0% !important; min-height:0 !important; display:flex; flex-direction:column; gap:5px; overflow:hidden; box-sizing:border-box;">
+          <div style="padding:2px 2px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:4px; font-size:0.84rem; font-weight:900; color:#fde047;">
+              ${UI_ICONS.starGold}
+              <span>가보고 싶은 곳 (${bookmarkedSpots.length}곳)</span>
+            </div>
+            <span style="font-size:0.56rem; color:#94a3b8;">날짜 선택 후 [목적지로 설정] 터치</span>
+          </div>
+
+          <div style="flex:1 1 0% !important; min-height:0 !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; overscroll-behavior-y:contain !important; touch-action:pan-y !important; display:flex; flex-direction:column; gap:4px; padding-right:1px;">
+            ${bookmarkedSpots.length === 0 ? `
+              <div style="text-align:center; padding:35px 0; color:#94a3b8; font-size:0.75rem; line-height:1.6;">
+                찜해둔 장소가 없습니다.<br>
+                전국지도에서 가보고 싶은 곳을 찜해보세요!
+              </div>
+            ` : bookmarkedSpots.map(function(s) {
+                var safeName = escapeHtml(s.name);
+                var safeElev = escapeHtml(s.elevation);
+                return `
+                  <div data-spot="${safeName}" onclick="location.href='map.html?spot=' + encodeURIComponent(this.dataset.spot);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(253,224,71,0.2); border-radius:8px; padding:7px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0;">
+                    <div style="flex:1; min-width:0; padding-right:8px;">
+                      <div style="font-size:0.80rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:5px;">
+                        ${UI_ICONS.starGold}
+                        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeName}</span>
+                      </div>
+                      <div style="font-size:0.60rem; color:#94a3b8; margin-top:2px;">고도/위치: ${safeElev}</div>
+                    </div>
+                    <button type="button" data-spot="${safeName}" data-elevation="${safeElev}" onclick="event.stopPropagation(); window.selectPlanDestination(this.dataset.spot, this.dataset.elevation);" style="background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#ffffff; font-size:0.66rem; font-weight:900; padding:5px 9px; border-radius:6px; cursor:pointer; flex-shrink:0; white-space:nowrap; box-shadow:0 2px 8px rgba(2,132,199,0.3);">
+                      목적지로 설정
+                    </button>
+                  </div>
+                `;
+              }).join('')}
+          </div>
+        </div>
+
       </div>
     `;
 
@@ -1751,32 +2173,14 @@ window.saveCurrentPackingRecord = function() {
         </div>
       </div>
     `;
-    var currentViewHtml = calendarMemoViewHtml;
+   var currentViewHtml = calendarMemoViewHtml;
     if (window.activePlanSubMode === 'checklist') currentViewHtml = checklistViewHtml;
     else if (window.activePlanSubMode === 'calculator') currentViewHtml = calculatorViewHtml;
     else if (window.activePlanSubMode === 'bookmarks') currentViewHtml = bookmarksViewHtml;
     else if (window.activePlanSubMode === 'gears') currentViewHtml = gearsViewHtml;
 
-    var isPlanToolsActive = (window.__planDockDeckMode !== 'main');
-
-    // 🌟 [하단독 서브모드 전환 및 동일 탭 재터치 시 독 전환 엔진]
-  window.switchPlanSubMode = function(mode) {
-    if (window.activePlanSubMode === mode) {
-      // 이미 켜져 있는 탭을 한 번 더 누르면 독 전환!
-      window.togglePlanDockDeckMode();
-      triggerHaptic(12);
-      return;
-    }
-    window.activePlanSubMode = mode;
-    window.renderPlanStage();
-    if (mode === 'calculator') {
-      setTimeout(window.renderPlanCategorySlots, 50);
-    }
-    triggerHaptic(10);
-  };
-
-  // 🌟 하단 바 설정 (인덱스 단일 5대 메인 독으로 완전 통일)
-  var bottomDualDockHtml = `
+    // 🏛️ [하단 5대 메인 네비게이션 독 - 누락 복구 및 100% 정상화]
+    var bottomDualDockHtml = `
       <div id="planDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000 !important; user-select:none !important; box-sizing:border-box;">
         <div id="planMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
           <a href="index.html" class="dock-item" onclick="window.closePlanModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">
@@ -1825,6 +2229,26 @@ window.saveCurrentPackingRecord = function() {
 
     if (window.activePlanSubMode === 'calculator') {
       window.renderPlanCategorySlots();
+
+      // 👆 아래로 쓸어내려 월간 달력으로 원터치 복귀하는 제스처
+      var ribbonEl = document.getElementById('weekRibbonSwipeArea');
+      if (ribbonEl && !ribbonEl._swipeBound) {
+        ribbonEl._swipeBound = true;
+        var rStartY = 0;
+        ribbonEl.addEventListener('touchstart', function(e) {
+          if (!e.touches || e.touches.length !== 1) return;
+          rStartY = e.touches[0].clientY;
+        }, { passive: true });
+        ribbonEl.addEventListener('touchend', function(e) {
+          if (!e.changedTouches || e.changedTouches.length !== 1) return;
+          var diffY = e.changedTouches[0].clientY - rStartY;
+          if (diffY > 35) {
+            window.activePlanSubMode = 'calendar';
+            window.renderPlanStage();
+            triggerHaptic(10);
+          }
+        }, { passive: true });
+      }
     }
 
     if (typeof window.bindPlanCalendarSwipe === 'function') {
@@ -2254,14 +2678,6 @@ window.saveCurrentPackingRecord = function() {
     }, 500);
   };
 
-  window.cancelDateLongPress = function() {
-    if (window.__longPressTimer) {
-      clearTimeout(window.__longPressTimer);
-      window.__longPressTimer = null;
-    }
-  };
-
-  // 📅 [달력 날짜 터치: 목적지 대기 시 확인 팝업창 호출]
   window.handlePlanCalendarClick = function(day, month, year) {
     if (window.__longPressTriggered) {
       window.__longPressTriggered = false;
@@ -2270,55 +2686,71 @@ window.saveCurrentPackingRecord = function() {
 
     var dateKey = year + '.' + String(month).padStart(2, '0') + '.' + String(day).padStart(2, '0');
     window.activeSelectedDateKey = dateKey;
-    window.activePlanSubMode = 'calendar';
 
-    // 찜에서 목적지를 정하고 날짜를 콕 찍었을 때 -> 메모장에 바로 적지 않고 확인 팝업 호출!
+    // 📍 찜목록에서 박지 일정등록 선택 후 날짜를 터치한 경우 -> 즉시 메모 및 박지 등록
     if (window.__pendingPlanDestination) {
-      window.openConfirmDestinationDateModal(dateKey, window.__pendingPlanDestination);
+      window.commitPlanDestination(dateKey);
       return;
     }
 
+    // 찜목록 뷰 상태에서는 달력 날짜를 눌러도 찜목록 화면 유지 (선택 날짜만 갱신)
+    if (window.activePlanSubMode === 'bookmarks') {
+      triggerHaptic(8);
+      window.renderPlanStage();
+      return;
+    }
+
+    window.activePlanSubMode = 'calendar';
     window.renderPlanStage();
     triggerHaptic(10);
   };
 
-  // ❓ [목적지 날짜 지정 확인 팝업 모달]
-  window.openConfirmDestinationDateModal = function(dateKey, dest) {
-    var old = document.getElementById('confirmDestinationDateModal');
-    if (old) old.remove();
+ // 📍 [눈높이 '가보고 싶은 곳' 경계선 플로팅 HUD 캡슐 바 엔진]
+  window.openDatePickGuideModal = function(spotName, elevation) {
+    var oldHud = document.getElementById('datePickGuideHud');
+    if (oldHud) oldHud.remove();
+    var oldModal = document.getElementById('datePickGuideModal');
+    if (oldModal) oldModal.remove();
 
-    var modalEl = document.createElement('div');
-    modalEl.id = 'confirmDestinationDateModal';
-    modalEl.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:9999999; display:flex; justify-content:center; align-items:center; padding:20px; box-sizing:border-box;';
-    modalEl.innerHTML = `
-      <div style="width:100%; max-width:300px; background:#0b0f19; border:1.5px solid #38bdf8; border-radius:16px; padding:18px 16px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; box-shadow:0 20px 50px rgba(0,0,0,0.95); box-sizing:border-box;">
-        <div style="font-size:2rem; line-height:1;">🗓️</div>
-        <div style="font-size:0.92rem; font-weight:900; color:#ffffff; line-height:1.45;">
-          <span style="color:#38bdf8;">[${dateKey}]</span>에<br>
-          <span style="color:#fde047;">[${escapeHtml(dest.name)}]</span>(으)로 가시겠습니까?
-        </div>
-        <div style="font-size:0.68rem; color:#94a3b8; line-height:1.4;">
-          확인을 누르면 해당 날짜의 일정 메모에 목적지가 저장됩니다.
-        </div>
-        <div style="display:flex; gap:8px; width:100%; margin-top:4px;">
-          <button type="button" onclick="document.getElementById('confirmDestinationDateModal').remove();" style="flex:1; height:38px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; font-size:0.78rem; font-weight:800; border-radius:8px; cursor:pointer;">
-            취소
-          </button>
-          <button type="button" onclick="window.commitPlanDestination('${dateKey}');" style="flex:1.4; height:38px; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#fff; font-size:0.82rem; font-weight:900; border-radius:8px; cursor:pointer; box-shadow:0 3px 10px rgba(2,132,199,0.35);">
-            확인 ✓
-          </button>
-        </div>
-      </div>
+    var hud = document.createElement('div');
+    hud.id = 'datePickGuideHud';
+    hud.style.cssText = 'position:fixed !important; top:calc(31% + 14px) !important; left:50% !important; transform:translateX(-50%) !important; z-index:10000020 !important; display:flex !important; align-items:center !important; gap:8px !important; background:#0d121d !important; border:1.5px solid rgba(56,189,248,0.75) !important; border-radius:24px !important; height:42px !important; padding:0 10px 0 12px !important; box-shadow:0 8px 30px rgba(0,0,0,0.9), 0 0 14px rgba(56,189,248,0.25) !important; box-sizing:border-box !important; max-width:calc(100vw - 24px) !important; white-space:nowrap !important; pointer-events:auto !important;';
+
+    var safeSpot = escapeHtml(spotName);
+    var pinSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; flex-shrink:0; vertical-align:-1px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+
+    hud.innerHTML = `
+      <span style="display:inline-flex; align-items:center; flex-shrink:0;">${pinSvg}</span>
+      <span style="font-size:0.82rem; font-weight:900; color:#ffffff; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeSpot}</span>
+      <span style="font-size:0.75rem; color:#64748b;">|</span>
+      <span style="font-size:0.78rem; font-weight:800; color:#38bdf8; letter-spacing:-0.01em;">달력에서 날짜를 터치하세요</span>
+      <button type="button" onclick="window.cancelPendingDestination();" style="background:rgba(255,255,255,0.1); border:none; color:#cbd5e1; width:22px; height:22px; border-radius:50%; font-size:0.75rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; margin-left:2px;">✕</button>
     `;
-    document.body.appendChild(modalEl);
+    document.body.appendChild(hud);
   };
 
-  // ✅ [확인을 눌러야만 비로소 메모장에 최종 저장]
+  window.cancelPendingDestination = function() {
+    var hud = document.getElementById('datePickGuideHud');
+    if (hud) hud.remove();
+    window.__pendingPlanDestination = null;
+    triggerHaptic(8);
+  };
+
+  window.selectPlanDestination = function(spotName, elevation) {
+    window.__pendingPlanDestination = { name: spotName, elevation: elevation };
+    triggerHaptic(12);
+    window.openDatePickGuideModal(spotName, elevation);
+  };
+
+
+ // ✅ [확인을 눌러야만 비로소 메모장에 최종 저장]
   window.commitPlanDestination = function(dateKey) {
     var dest = window.__pendingPlanDestination;
     window.__pendingPlanDestination = null;
 
-    var modal = document.getElementById('confirmDestinationDateModal');
+  var hud = document.getElementById('datePickGuideHud');
+    if (hud) hud.remove();
+    var modal = document.getElementById('confirmDestinationDateModal') || document.getElementById('datePickGuideModal');
     if (modal) modal.remove();
 
     if (!dest) return;
@@ -2349,21 +2781,6 @@ window.saveCurrentPackingRecord = function() {
       showToast('✅ [' + dateKey + '] 목적지가 등록되었습니다!', 'success');
     }
     if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-  };
-
-  // 📍 [찜 목록에서 목적지 설정 누를 때: 절대 메모장에 적지 않고 달력으로 이동]
-  window.selectPlanDestination = function(name, elevation) {
-    window.__pendingPlanDestination = { name: name, elevation: String(elevation || '').replace(/m$/i, '') };
-    window.currentLuckySpot = window.__pendingPlanDestination;
-
-    // 메모장에 바로 적지 않고 달력 화면으로만 전환
-    window.activePlanSubMode = 'calendar';
-    window.renderPlanStage();
-    triggerHaptic(15);
-
-    if (typeof showToast === 'function') {
-      showToast('🗓️ 가실 날짜를 달력에서 터치하세요.', 'info', 3000);
-    }
   };
 
   // 🔄 [하단 독 모드 전환 및 스와이프 제스처 바인딩 엔진 - 페이드 전환 적용]

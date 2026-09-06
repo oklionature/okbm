@@ -349,13 +349,16 @@ window.safeSetStorage = function(key, value) {
         window.safeSetStorage('okbm_packing_history', window.interactiveHistory);
 
         if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(true);
-        if (typeof window.shareFeedToCommunity === 'function') window.shareFeedToCommunity(normalized);
+        if (normalized.isPublished === true && typeof window.shareFeedToCommunity === 'function') {
+          window.shareFeedToCommunity(normalized);
+        }
       })();
     } else {
       if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(true);
-      if (typeof window.shareFeedToCommunity === 'function') window.shareFeedToCommunity(normalized);
+      if (normalized.isPublished === true && typeof window.shareFeedToCommunity === 'function') {
+        window.shareFeedToCommunity(normalized);
+      }
     }
-
     return normalized;
   };
   // 🔄 [앱 구동 즉시 폰의 IndexedDB 사진 맵 및 히스토리 메모리로 사전 복원 & 사진 유실 방어]
@@ -1988,6 +1991,8 @@ window.__renderRichPhotoThumbnails = function() {
     if (spotInput && spotInput.value.trim()) target.spot = spotInput.value.trim();
     if (dateInput && dateInput.value.trim()) target.date = dateInput.value.trim();
     target.memo = memoInput ? memoInput.value.trim() : '';
+    target.isPublished = true;
+    target.isDraft = false;
 
     var photosToProcess = Array.isArray(window.__tempUploadedPhotos) ? window.__tempUploadedPhotos.slice(0, 10) : [];
     if (photosToProcess.length > 0) {
