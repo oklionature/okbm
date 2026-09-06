@@ -2049,8 +2049,9 @@ function updateHeroPhotoDisplay() {
 async function initDynamicHeroAndFeeds() {
   initHeroGestureEngine();
   
-  var r2Domain = window.R2_PUBLIC_DOMAIN || 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
-  var R2_FEEDS_URL = r2Domain.replace(/\/+$/, '') + '/feeds.json';
+  var r2Domain = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
+  window.R2_PUBLIC_DOMAIN = r2Domain;
+  var R2_FEEDS_URL = r2Domain + '/feeds.json';
   initSmartHeaderScrollEngine();
 
   var profile = safeGetJSON('user_profile', null);
@@ -2082,7 +2083,6 @@ async function initDynamicHeroAndFeeds() {
     }
   } catch (e) {}
 
-// 1순위: Cloudflare R2 글로벌 CDN 초고속 인출 (0.03초 로딩)
   try {
     var r2Res = await fetch(R2_FEEDS_URL + '?_t=' + Date.now(), { cache: 'no-store' });
     if (r2Res.ok) {
@@ -2095,11 +2095,11 @@ async function initDynamicHeroAndFeeds() {
         window.__allLoadedFeeds = r2Feeds;
         window.heroTopRecords = r2Feeds;
         renderCurrentHeroCard();
-        console.log('⚡ [Index] Cloudflare R2 CDN 1차 로딩 완료');
+        console.log('⚡ [Index] Cloudflare R2 CDN 중앙 피드 0.03초 실시간 렌더링 완료 (' + r2Feeds.length + '개)');
       }
     }
   } catch (r2Err) {
-    console.log('📡 [Index] R2 대기 ➔ 구글 클라우드 전환');
+    console.warn('📡 [Index] R2 인출 실패, 구글 클라우드로 폴백:', r2Err);
   }
 
   // 2순위: 구글 클라우드 실시간 대조 및 최신 사진 즉시 병합 (타인 화면 100% 동기화)

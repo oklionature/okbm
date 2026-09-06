@@ -1839,12 +1839,24 @@
 
       function toggleAdminMode() {
         isAdminMode = !isAdminMode;
-        document.getElementById('adminBadge').style.display = isAdminMode ? 'inline-block' : 'none';
-        document.querySelectorAll('.btn-del, .btn-edit, .btn-quick-add').forEach(btn => btn.style.display = isAdminMode ? 'inline-block' : 'none');
-        document.getElementById('adminDataTools').style.display = isAdminMode ? 'flex' : 'none';
-        document.getElementById('sheetEditLink').style.display = isAdminMode ? 'inline-flex' : 'none';
+        triggerHaptic(15);
+        // 👑 [관리자 모드 100% 정상 부활]: null 안전 가드 및 실시간 UI 반응
+        const badge = document.getElementById('adminBadge');
+        if (badge) badge.style.display = isAdminMode ? 'inline-block' : 'none';
+        
+        const tools = document.getElementById('adminDataTools');
+        if (tools) tools.style.display = isAdminMode ? 'flex' : 'none';
+        
+        const link = document.getElementById('sheetEditLink');
+        if (link) link.style.display = isAdminMode ? 'inline-flex' : 'none';
+
+        document.querySelectorAll('.btn-del, .btn-edit, .btn-quick-add').forEach(btn => {
+          btn.style.display = isAdminMode ? 'inline-block' : 'none';
+        });
+
         renderSpots();
         if (currentActiveSpot) refreshCurrentSpotPopup();
+        showToast(isAdminMode ? '👑 관리자 검수 및 핀콕 모드가 활성화되었습니다!' : '🔒 일반 사용자 모드로 전환되었습니다.');
       }
       document.getElementById('sheetEditLink').href = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/edit`;
 
@@ -3834,9 +3846,7 @@
         reader.readAsText(file);
       }
     </script>
-  <script src="romantic-sync.js?v=2.5.0"></script>
-    <script src="templates.js?v=2.5.0"></script>
-    <script src="romantic-history.js?v=2.5.0"></script>
-    <script src="romantic-plan.js?v=2.5.0"></script>
+ <!-- ⚡ 지도 최적화: 필수 동기화 엔진만 유지하고 불필요한 3대 스크립트 제거 완료 -->
+    <script src="romantic-sync.js?v=2.5.0"></script>
   </body>
 </html>
