@@ -3323,14 +3323,16 @@ function renderTripDetailSheet(activeTrips) {
       triggerHaptic(10);
       showToast('아이폰 사진 변환 및 압축 중...', 1200);
 
-      var convertIfHeic = async function(file) {
+     var convertIfHeic = async function(file) {
         var name = (file.name || '').toLowerCase();
-        var isHeic = name.endsWith('.heic') || name.endsWith('.heif') || (file.type && file.type.includes('heic'));
+        var type = (file.type || '').toLowerCase();
+        var isHeic = name.endsWith('.heic') || name.endsWith('.heif') || type.includes('heic') || type.includes('heif');
         if (isHeic && typeof heic2any !== 'undefined') {
           try {
             var blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.88 });
             return Array.isArray(blob) ? blob[0] : blob;
           } catch (heicErr) {
+            console.warn('[HEIC Trip] Fallback:', heicErr);
             return file;
           }
         }
@@ -3339,40 +3341,48 @@ function renderTripDetailSheet(activeTrips) {
 
       var compressSingle = function(file) {
         return new Promise(async function(resolve) {
-          var safeFile = await convertIfHeic(file);
-          var img = new Image();
-          var url = URL.createObjectURL(safeFile);
-          img.onload = function() {
-            URL.revokeObjectURL(url);
-            var canvas = document.createElement('canvas');
-            var MAX_SIZE = 1080;
-            var w = img.width, h = img.height;
-            if (w > h) {
-              if (w > MAX_SIZE) { h = Math.round(h * (MAX_SIZE / w)); w = MAX_SIZE; }
-            } else {
-              if (h > MAX_SIZE) { w = Math.round(w * (MAX_SIZE / h)); h = MAX_SIZE; }
-            }
-            canvas.width = w;
-            canvas.height = h;
-            var ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
-            resolve(canvas.toDataURL('image/jpeg', 0.8));
-          };
-          img.onerror = function() {
-            URL.revokeObjectURL(url);
+          try {
+            var safeFile = await convertIfHeic(file);
+            var img = new Image();
+            var url = URL.createObjectURL(safeFile);
+            img.onload = function() {
+              URL.revokeObjectURL(url);
+              var canvas = document.createElement('canvas');
+              var MAX_SIZE = 1080;
+              var w = img.width, h = img.height;
+              if (w > h) {
+                if (w > MAX_SIZE) { h = Math.round(h * (MAX_SIZE / w)); w = MAX_SIZE; }
+              } else {
+                if (h > MAX_SIZE) { w = Math.round(h * (MAX_SIZE / h)); h = MAX_SIZE; }
+              }
+              canvas.width = w;
+              canvas.height = h;
+              var ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, w, h);
+              resolve(canvas.toDataURL('image/jpeg', 0.85));
+            };
+            img.onerror = function() {
+              URL.revokeObjectURL(url);
+              resolve('');
+            };
+            img.src = url;
+          } catch (err) {
             resolve('');
-          };
-          img.src = url;
+          }
         });
       };
 
-      Promise.all(toProcess.map(compressSingle)).then(function(compressed) {
-        var valids = compressed.filter(Boolean);
-        window.__tempTripCreatePhotos = window.__tempTripCreatePhotos.concat(valids).slice(0, 3);
+      (async function() {
+        var valids = [];
+        for (var i = 0; i < toProcess.length; i++) {
+          var compressedUrl = await compressSingle(toProcess[i]);
+          if (compressedUrl && compressedUrl.length > 50) valids.push(compressedUrl);
+        }
+        window.__tempTripCreatePhotos = (window.__tempTripCreatePhotos || []).concat(valids).slice(0, 3);
         window.__currentTripCreatePhotoIdx = 0;
         renderTripPhotoStack();
         triggerHaptic(12);
-      });
+      })();
     }
 
     window.__tripPickerYear = 0;
@@ -3956,16 +3966,18 @@ function renderTripDetailSheet(activeTrips) {
       if (files.length === 0) return;
 
       var filesToProcess = files.slice(0, 10);
-      showToast('아이폰 HEIC 및 사진 변환 중...', 1200);
+      showToast('사진 처리 및 최적화 중...', 1500);
 
       var convertIfHeic = async function(file) {
         var name = (file.name || '').toLowerCase();
-        var isHeic = name.endsWith('.heic') || name.endsWith('.heif') || (file.type && file.type.includes('heic'));
+        var type = (file.type || '').toLowerCase();
+        var isHeic = name.endsWith('.heic') || name.endsWith('.heif') || type.includes('heic') || type.includes('heif');
         if (isHeic && typeof heic2any !== 'undefined') {
           try {
             var blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.88 });
             return Array.isArray(blob) ? blob[0] : blob;
           } catch (heicErr) {
+            console.warn('[HEIC] Conversion fallback:', heicErr);
             return file;
           }
         }
@@ -3974,36 +3986,37 @@ function renderTripDetailSheet(activeTrips) {
 
       var compressSingle = function(file) {
         return new Promise(async function(resolve) {
-          var safeFile = await convertIfHeic(file);
-          var reader = new FileReader();
-          reader.onload = function(evt) {
-            var img = new Image();
-            img.onload = function() {
-              var canvas = document.createElement('canvas');
-              var MAX_SIZE = 1200;
-              var width = img.width, height = img.height;
-              if (width > height) { 
-                if (width > MAX_SIZE) { height = Math.round(height * (MAX_SIZE / width)); width = MAX_SIZE; } 
-              } else { 
-                if (height > MAX_SIZE) { width = Math.round(width * (MAX_SIZE / height)); height = MAX_SIZE; } 
-              }
-              canvas.width = width; canvas.height = height;
-              var ctx = canvas.getContext('2d');
-              ctx.imageSmoothingEnabled = true;
-              ctx.imageSmoothingQuality = 'high';
-              ctx.drawImage(img, 0, 0, width, height);
+          try {
+            var safeFile = await convertIfHeic(file);
+            var reader = new FileReader();
+            reader.onload = function(evt) {
+              var img = new Image();
+              img.onload = function() {
+                var canvas = document.createElement('canvas');
+                var MAX_SIZE = 1200;
+                var width = img.width, height = img.height;
+                if (width > height) { 
+                  if (width > MAX_SIZE) { height = Math.round(height * (MAX_SIZE / width)); width = MAX_SIZE; } 
+                } else { 
+                  if (height > MAX_SIZE) { width = Math.round(height * (MAX_SIZE / height)); height = MAX_SIZE; } 
+                }
+                canvas.width = width; canvas.height = height;
+                var ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(img, 0, 0, width, height);
 
-              var outputUrl = canvas.toDataURL('image/webp', 0.80);
-              if (!outputUrl.startsWith('data:image/webp')) {
-                outputUrl = canvas.toDataURL('image/jpeg', 0.80);
-              }
-              resolve(outputUrl);
+                var outputUrl = canvas.toDataURL('image/jpeg', 0.85);
+                resolve(outputUrl);
+              };
+              img.onerror = function() { resolve(''); };
+              img.src = evt.target.result;
             };
-            img.onerror = function() { resolve(''); };
-            img.src = evt.target.result;
-          };
-          reader.onerror = function() { resolve(''); };
-          reader.readAsDataURL(file);
+            reader.onerror = function() { resolve(''); };
+            reader.readAsDataURL(safeFile);
+          } catch (err) {
+            resolve('');
+          }
         });
       };
 
@@ -4017,6 +4030,8 @@ function renderTripDetailSheet(activeTrips) {
           window.__studioMultiPhotos = validList;
           currentSharePhoto = validList[0];
           openPhotoStudio();
+        } else {
+          showToast('지원되지 않는 파일 형식이거나 손상된 사진입니다.', 'warn');
         }
         e.target.value = '';
       })();

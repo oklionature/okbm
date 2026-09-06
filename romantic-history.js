@@ -1922,12 +1922,14 @@ window.__renderRichPhotoThumbnails = function() {
 
     var convertIfHeic = async function(file) {
       var name = (file.name || '').toLowerCase();
-      var isHeic = name.endsWith('.heic') || name.endsWith('.heif') || (file.type && file.type.includes('heic'));
+      var type = (file.type || '').toLowerCase();
+      var isHeic = name.endsWith('.heic') || name.endsWith('.heif') || type.includes('heic') || type.includes('heif');
       if (isHeic && typeof heic2any !== 'undefined') {
         try {
           var blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.88 });
           return Array.isArray(blob) ? blob[0] : blob;
         } catch (heicErr) {
+          console.warn('[HEIC History] Fallback:', heicErr);
           return file;
         }
       }
@@ -1936,52 +1938,57 @@ window.__renderRichPhotoThumbnails = function() {
 
     var compressSingle = function(file) {
       return new Promise(async function(resolve) {
-        var safeFile = await convertIfHeic(file);
-        var reader = new FileReader();
-        reader.onload = function(evt) {
-          var img = new Image();
-          img.onload = function() {
-            var canvas = document.createElement('canvas');
-            var MAX_SIZE = 1200;
-            var width = img.width;
-            var height = img.height;
+        try {
+          var safeFile = await convertIfHeic(file);
+          var reader = new FileReader();
+          reader.onload = function(evt) {
+            var img = new Image();
+            img.onload = function() {
+              var canvas = document.createElement('canvas');
+              var MAX_SIZE = 1200;
+              var width = img.width;
+              var height = img.height;
 
-            if (width > height) {
-              if (width > MAX_SIZE) { height = Math.round(height * (MAX_SIZE / width)); width = MAX_SIZE; }
-            } else {
-              if (height > MAX_SIZE) { width = Math.round(width * (MAX_SIZE / height)); height = MAX_SIZE; }
-            }
+              if (width > height) {
+                if (width > MAX_SIZE) { height = Math.round(height * (MAX_SIZE / width)); width = MAX_SIZE; }
+              } else {
+                if (height > MAX_SIZE) { width = Math.round(height * (MAX_SIZE / height)); height = MAX_SIZE; }
+              }
 
-            canvas.width = width;
-            canvas.height = height;
-            var ctx = canvas.getContext('2d');
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            ctx.drawImage(img, 0, 0, width, height);
+              canvas.width = width;
+              canvas.height = height;
+              var ctx = canvas.getContext('2d');
+              ctx.imageSmoothingEnabled = true;
+              ctx.imageSmoothingQuality = 'high';
+              ctx.drawImage(img, 0, 0, width, height);
 
-            var outputUrl = canvas.toDataURL('image/webp', 0.80);
-            if (!outputUrl.startsWith('data:image/webp')) {
-              outputUrl = canvas.toDataURL('image/jpeg', 0.80);
-            }
-            resolve(outputUrl);
+              var outputUrl = canvas.toDataURL('image/jpeg', 0.85);
+              resolve(outputUrl);
+            };
+            img.onerror = function() { resolve(''); };
+            img.src = evt.target.result;
           };
-          img.onerror = function() { resolve(''); };
-          img.src = evt.target.result;
-        };
-        reader.onerror = function() { resolve(''); };
-        reader.readAsDataURL(file);
+          reader.onerror = function() { resolve(''); };
+          reader.readAsDataURL(safeFile);
+        } catch (err) {
+          resolve('');
+        }
       });
     };
 
-    Promise.all(filesToProcess.map(compressSingle)).then(function(compressedUrls) {
-      var validNewList = compressedUrls.filter(Boolean);
-      window.__tempUploadedPhotos = window.__tempUploadedPhotos.concat(validNewList).slice(0, 10);
+    (async function() {
+      var validNewList = [];
+      for (var i = 0; i < filesToProcess.length; i++) {
+        var compUrl = await compressSingle(filesToProcess[i]);
+        if (compUrl && compUrl.length > 50) validNewList.push(compUrl);
+      }
+      window.__tempUploadedPhotos = (window.__tempUploadedPhotos || []).concat(validNewList).slice(0, 10);
       window.__renderRichPhotoThumbnails();
       triggerHaptic(12);
       if (typeof showToast === 'function') {
-        showToast(`👑 관리자 사진 ${validNewList.length}장 추가 완료!`, 'success', 1500);
+        showToast(`사진 ${validNewList.length}장 추가 완료!`, 'success', 1500);
       }
-    });
+    })();
   };
 
   async function uploadSinglePhotoToDrive(base64Data, fileName) {
