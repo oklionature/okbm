@@ -10,7 +10,8 @@
  */
 
 var GAS_API_URL = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
-var R2_PUBLIC_DOMAIN = window.R2_PUBLIC_DOMAIN || 'https://pub-13ec7c39d2394ecc879bb2ed4b304c44.r2.dev';
+var R2_PUBLIC_DOMAIN = window.R2_PUBLIC_DOMAIN || 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
+window.R2_PUBLIC_DOMAIN = R2_PUBLIC_DOMAIN;
 
 // 🛡️ 글로벌 클라우드 안전 로드 플래그 초기화
 if (typeof window.isCloudDataLoaded === 'undefined') {
@@ -68,16 +69,73 @@ function showToast(msg, typeOrDuration, maybeDuration) {
   }
 }
 
-// 🧰 [공통 유틸] 브라우저 표준 한국 시간 타임스탬프 생성기
-function getFormattedNow() {
-  var d = new Date();
-  var pad = function(n) { return String(n).padStart(2, '0'); };
-  return d.getFullYear() + '. ' + pad(d.getMonth() + 1) + '. ' + pad(d.getDate()) + '. ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
-}
-function UtilitiesFormattedNow() {
-  return getFormattedNow();
-}
+// 🧰 [비상 초기화 엔진] 전 기종 로컬 캐시 & IndexedDB & 클라우드 피드 완전 무결 포맷
+window.executeCleanSlateMasterReset = async function(isSilent) {
+  if (!isSilent && !confirm('⚠️ 주의: 모든 출정 기록과 사진 맵이 영구 포맷됩니다.\n(회원 계정 및 찜/클리어 목록은 보존됩니다)\n정말 초기화하시겠습니까?')) {
+    return;
+  }
 
+  // 1. 메모리 스토어 즉시 비우기
+  window.__memoryStore = window.__memoryStore || {};
+  window.__memoryStore['okbm_packing_history'] = [];
+  window.__memoryStore['okbm_phone_photos_map'] = {};
+  window.__memoryStore['okbm_trip_photos_map'] = {};
+  window.packingHistoryList = [];
+  window.interactiveHistory = [];
+  window.heroTopRecords = [];
+  window.__allLoadedFeeds = [];
+
+  // 2. localStorage 출정/피드 캐시 영구 말소
+  localStorage.removeItem('okbm_packing_history');
+  localStorage.removeItem('okbm_phone_photos_map');
+  localStorage.removeItem('okbm_trip_photos_map');
+  localStorage.removeItem('okbm_cached_community_feeds');
+  localStorage.removeItem('okbm_hero_cover_url');
+  localStorage.removeItem('okbm_card_likes_count');
+
+  // 3. 스마트폰 내장 DB(IndexedDB) 사진 금고 완전 포맷
+  if (typeof window.saveToIndexedDB === 'function') {
+    await window.saveToIndexedDB('okbm_packing_history', []);
+    await window.saveToIndexedDB('okbm_phone_photos_map', {});
+    await window.saveToIndexedDB('okbm_trip_photos_map', {});
+  }
+
+  // 4. 클라우드(구글 시트/R2)로 빈 배열([]) 강제 전송하여 서버 원본 포맷
+  if (isUserLoggedIn()) {
+    syncUserDataToCloud(true);
+  }
+
+  // 5. 공용 피드 탭 일괄 소멸 요청 전송
+  var profile = safeGetJSON('user_profile', null);
+  var userId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('user_auth_token') || '');
+  var targetGasUrl = window.GAS_API_URL || GAS_API_URL;
+  if (targetGasUrl && !targetGasUrl.includes('구글시트_배포_URL')) {
+    fetch(targetGasUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'CLEAR_USER_ALL_FEEDS',
+        userId: userId
+      })
+    }).catch(function() {});
+  }
+
+  triggerHaptic(20);
+  showToast('🧹 모든 피드와 사진이 초기화되었습니다. 새로고침합니다.', 2000);
+
+  setTimeout(function() {
+    var url = new URL(window.location.href);
+    url.searchParams.delete('clean_slate');
+    window.location.href = url.pathname + (url.search ? url.search : '');
+  }, 1200);
+};
+
+// 🌐 주소창 감지 자동 실행기 (?clean_slate=true)
+if (typeof window !== 'undefined' && window.location.search.includes('clean_slate=true')) {
+  setTimeout(function() {
+    window.executeCleanSlateMasterReset(true);
+  }, 300);
+}
 // ☁️ 1. Cloudflare R2 글로벌 CDN (0.03초 1순위) ➔ 구글 시트(2순위 백업망) 직통 조회
 async function loadUserDataFromCloud(userId) {
   if (!userId) return null;
@@ -603,7 +661,7 @@ function loginWithKakao() {
                   }
                 });
 
-                // 2. 스마트 조율: 클라우드 활성 기록 매핑 및 사진 복원
+                // 2. 스마트 조율: 클라우드 활성 기록 매핑 및 글로벌 CDN 사진 1순위 복원
                 var reconciledMap = new Map();
 
                 cloudActiveMap.forEach(function(cloudItem, cId) {
@@ -617,6 +675,8 @@ function loginWithKakao() {
                     preservedPhotos = cloudItem.photos.filter(function(p) { return typeof p === 'string' && p.startsWith('http'); });
                   } else if (typeof cloudItem.photo === 'string' && cloudItem.photo.startsWith('http')) {
                     preservedPhotos = [cloudItem.photo];
+                  } else if (typeof cloudItem.photo_url === 'string' && cloudItem.photo_url.startsWith('http')) {
+                    preservedPhotos = [cloudItem.photo_url];
                   }
 
                   if (preservedPhotos.length === 0 && matchedLocal) {
@@ -631,37 +691,53 @@ function loginWithKakao() {
                     else if (typeof fromMap === 'string' && fromMap.trim().length > 10) preservedPhotos = [fromMap.trim()];
                   }
 
-                  var mergedItem = Object.assign({}, cloudItem);
+                  var mergedItem = Object.assign({}, matchedLocal || {}, cloudItem);
                   if (preservedPhotos.length > 0) {
                     mergedItem.photos = preservedPhotos;
                     mergedItem.photo = preservedPhotos[0];
                     mergedItem.fieldPhoto = preservedPhotos[0];
+                    mergedItem.photo_url = preservedPhotos[0];
+                    localSavedPhotos[cId] = preservedPhotos;
+                    if (cDate) localSavedPhotos[cDate] = preservedPhotos;
                   }
                   reconciledMap.set(cId, mergedItem);
                 });
 
-                // 3. [부활 방지 필터]: 타 기기에서 삭제된 항목은 로컬에서도 완벽히 강제 영구 소멸
+                if (window.__memoryStore) {
+                  window.__memoryStore['okbm_phone_photos_map'] = localSavedPhotos;
+                }
+                if (typeof window.saveToIndexedDB === 'function') {
+                  window.saveToIndexedDB('okbm_phone_photos_map', localSavedPhotos);
+                }
+
+               // 3. [부활 방지 필터]: 타 기기에서 삭제되거나 서버가 초기화된 경우 로컬 캐시 즉시 비우기
                 var hasLocalDraftsToUpload = false;
-                currentLocalHistory.forEach(function(loc) {
-                  if (!loc) return;
-                  var locId = String(loc.id || '').trim();
-                  var locDate = String(loc.date || '').replace(/[-/]/g, '.').trim();
+                if (cloudData.packHistory.length === 0) {
+                  // 서버가 비어있다면 로컬 캐시 전체를 함께 깨끗이 비움
+                  reconciledMap.clear();
+                  localSavedPhotos = {};
+                } else {
+                  currentLocalHistory.forEach(function(loc) {
+                    if (!loc) return;
+                    var locId = String(loc.id || '').trim();
+                    var locDate = String(loc.date || '').replace(/[-/]/g, '.').trim();
 
-                  // 삭제 툼스톤이 걸린 항목은 절대 복원하지 않고 로컬에서도 영구 파기
-                  if (cloudDeletedIds.has(locId) || cloudDeletedDates.has(locDate) || loc.isDeleted === true) {
-                    if (localSavedPhotos) {
-                      delete localSavedPhotos[locId];
-                      delete localSavedPhotos[locDate];
+                    // 삭제 툼스톤이 걸린 항목은 절대 복원하지 않고 로컬에서도 영구 파기
+                    if (cloudDeletedIds.has(locId) || cloudDeletedDates.has(locDate) || loc.isDeleted === true) {
+                      if (localSavedPhotos) {
+                        delete localSavedPhotos[locId];
+                        delete localSavedPhotos[locDate];
+                      }
+                      return;
                     }
-                    return;
-                  }
 
-                  // 서버에 없는 순수 신규 로컬 글만 보존하여 클라우드로 상향 동기화
-                  if (!cloudActiveMap.has(locId)) {
-                    reconciledMap.set(locId, loc);
-                    hasLocalDraftsToUpload = true;
-                  }
-                });
+                    // 서버에 없는 순수 신규 로컬 글만 보존하여 클라우드로 상향 동기화
+                    if (!cloudActiveMap.has(locId)) {
+                      reconciledMap.set(locId, loc);
+                      hasLocalDraftsToUpload = true;
+                    }
+                  });
+                }
 
                 var safePackHistory = Array.from(reconciledMap.values());
                 window.packingHistoryList = safePackHistory;
