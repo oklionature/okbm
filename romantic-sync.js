@@ -837,7 +837,7 @@ function loginWithKakao() {
   });
 }
 
-window.shareFeedToCommunity = function(feedRecord) {
+window.shareFeedToCommunity = async function(feedRecord) {
   if (!feedRecord) return;
   var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : null);
   var userId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('user_auth_token') || 'anonymous');
@@ -846,17 +846,28 @@ window.shareFeedToCommunity = function(feedRecord) {
   var targetGasUrl = window.GAS_API_URL || GAS_API_URL;
   if (!targetGasUrl || targetGasUrl.includes('구글시트_배포_URL')) return;
 
-  var allPhotos = [];
+  var rawPhotos = [];
   if (Array.isArray(feedRecord.photos) && feedRecord.photos.length > 0) {
-    allPhotos = feedRecord.photos.filter(function(p) { 
+    rawPhotos = feedRecord.photos.filter(function(p) { 
       return typeof p === 'string' && (p.startsWith('http') || p.startsWith('data:')); 
     });
+  } else if (feedRecord.photo && typeof feedRecord.photo === 'string') {
+    rawPhotos = [feedRecord.photo];
+  } else if (feedRecord.fieldPhoto && typeof feedRecord.fieldPhoto === 'string') {
+    rawPhotos = [feedRecord.fieldPhoto];
   }
-  if (allPhotos.length === 0 && feedRecord.photo && typeof feedRecord.photo === 'string' && (feedRecord.photo.startsWith('http') || feedRecord.photo.startsWith('data:'))) {
-    allPhotos = [feedRecord.photo];
-  }
-  if (allPhotos.length === 0 && feedRecord.fieldPhoto && typeof feedRecord.fieldPhoto === 'string' && (feedRecord.fieldPhoto.startsWith('http') || feedRecord.fieldPhoto.startsWith('data:'))) {
-    allPhotos = [feedRecord.fieldPhoto];
+
+  // 🚀 Base64 사진이 포함되어 있다면 구글 드라이브/R2 영구 URL로 비동기 승격
+  var allPhotos = [];
+  for (var i = 0; i < rawPhotos.length; i++) {
+    var pItem = rawPhotos[i];
+    if (typeof pItem === 'string' && pItem.startsWith('data:') && typeof window.uploadSinglePhotoToDrive === 'function') {
+      var cloudUrl = await window.uploadSinglePhotoToDrive(pItem, 'feed_' + (feedRecord.id || Date.now()) + '_' + i + '.jpg');
+      allPhotos.push((cloudUrl && cloudUrl.startsWith('http')) ? cloudUrl : pItem);
+      await new Promise(function(res) { setTimeout(res, 200); });
+    } else {
+      allPhotos.push(pItem);
+    }
   }
 
   var mainPhoto = allPhotos.length > 0 ? allPhotos[0] : (feedRecord.photo || feedRecord.fieldPhoto || '');

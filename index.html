@@ -2672,13 +2672,21 @@ window.syncTripToCloudSheet = function(tripData) {
       })();
     };
 
+    window.__tombstoneTripIds = window.__tombstoneTripIds || new Set();
+
     window.deleteTripFromCloudSheet = function(tripId, e) {
       if (e) e.stopPropagation();
       if (!confirm('이 원정대를 삭제하시겠습니까?\n구글 시트와 업로드된 사진이 모두 영구 삭제됩니다.')) return;
 
       triggerHaptic(15);
       var gasUrl = window.GAS_API_URL || GAS_API_URL;
-      window.TRIP_JOINS_DATABASE = (window.TRIP_JOINS_DATABASE || []).filter(function(t) { return t.tripId !== tripId; });
+      var targetIdStr = String(tripId).trim();
+
+      // 🪦 1. 로컬 툼스톤 각인 (재로드 시 부활 원천 차단)
+      window.__tombstoneTripIds.add(targetIdStr);
+      window.TRIP_JOINS_DATABASE = (window.TRIP_JOINS_DATABASE || []).filter(function(t) { 
+        return String(t.tripId).trim() !== targetIdStr; 
+      });
       renderHomeTripJoinSlider();
 
       var modal = document.getElementById('tripDetailSheetModal');
@@ -2686,16 +2694,18 @@ window.syncTripToCloudSheet = function(tripData) {
 
       showToast('원정대가 삭제되었습니다.', 'info');
 
+      // 🌐 2. 구글 시트 실제 행 삭제 전송
       if (gasUrl && !gasUrl.includes('구글시트_배포_URL')) {
         fetch(gasUrl, {
           method: 'POST',
-          mode: 'no-cors',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'DELETE_TRIP',
-            tripId: tripId
+            tripId: targetIdStr
           })
-        }).catch(function() {});
+        }).catch(function(err) {
+          console.warn('[Trip] 삭제 요청 전송 중 오류:', err);
+        });
       }
     };
   async function loadTripsFromGoogleSheet() {
@@ -2719,12 +2729,15 @@ window.syncTripToCloudSheet = function(tripData) {
               results.data.forEach(function(row) {
                 var isActiveRaw = String(row.isActive || 'TRUE').toUpperCase();
                 if (isActiveRaw === 'FALSE') return;
-
-                var spot = row.spotName || '';
+var spot = row.spotName || '';
                 var dateStr = row.date || '';
                 if (!spot || !dateStr) return;
 
-                var tId = row.tripId || ('trip_' + Math.random());
+                var tId = String(row.tripId || ('trip_' + spot.replace(/\s+/g, '') + '_' + dateStr.replace(/\D/g, ''))).trim();
+
+                // 🪦 툼스톤에 등록된 삭제된 원정대는 시트에 남아있더라도 화면에 렌더링하지 않음
+                if (window.__tombstoneTripIds && window.__tombstoneTripIds.has(tId)) return;
+
                 var localPhotos = savedMap[tId];
 
                 var rawPhotos = String(row.photos || row.photo || '').trim();
@@ -3981,7 +3994,7 @@ function renderTripDetailSheet(activeTrips) {
            if (w > h) {
              if (w > MAX_SIZE) { h = Math.round(h * (MAX_SIZE / w)); w = MAX_SIZE; }
            } else {
-             if (h > MAX_SIZE) { width = Math.round(w * (MAX_SIZE / h)); h = MAX_SIZE; }
+             if (h > MAX_SIZE) { w = Math.round(w * (MAX_SIZE / h)); h = MAX_SIZE; }
            }
            canvas.width = w; canvas.height = h;
            var ctx = canvas.getContext('2d');

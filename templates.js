@@ -423,7 +423,7 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
     templateId: window.selectedTemplateId || rec.templateId || 1
   };
 
-  // 🚀 1. 스마트폰 내장 IndexedDB에 즉시 보관 및 백그라운드 클라우드 자동 승격 단일 실행
+// 🚀 1. 스마트폰 내장 IndexedDB에 즉시 보관 및 백그라운드 클라우드 자동 승격 단일 실행
   if (typeof window.savePackingHistoryRecord === 'function') {
     window.savePackingHistoryRecord(newRecord);
   }
