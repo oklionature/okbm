@@ -254,6 +254,7 @@ window.safeSetStorage = function(key, value) {
   };
 
   // 💾 [피드 목록 & 보관함 완벽 동기화 단일 저장 엔진]
+  // 💾 [피드 목록 & 보관함 완벽 동기화 단일 저장 엔진]
   window.savePackingHistoryRecord = function(record) {
     if (!record) return null;
 
@@ -282,8 +283,7 @@ window.safeSetStorage = function(key, value) {
       });
     }
 
-    
-  // 🛡️ 같은 날, 같은 장소의 기록이 이미 있으면 새 카드를 복제하지 않고 기존 카드를 업데이트
+    // 🛡️ 같은 날, 같은 장소의 기록이 이미 있으면 새 카드를 복제하지 않고 기존 카드를 업데이트
     if (existIdx !== -1) {
       normalized.id = list[existIdx].id; // 기존 고유 ID 보존 (새 카드로 증식 방지)
       list[existIdx] = Object.assign({}, list[existIdx], normalized);
@@ -320,10 +320,43 @@ window.safeSetStorage = function(key, value) {
     window.__memoryStore['okbm_packing_history'] = window.interactiveHistory;
     window.safeSetStorage('okbm_packing_history', list);
 
-    if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+    // 🚀 [클라우드 일원화]: Base64 사진이 있으면 백그라운드에서 구글 클라우드 영구 URL로 승격 업로드
+    var hasBase64Photo = rawPhotos.some(function(p) { return typeof p === 'string' && p.startsWith('data:'); });
+    if (hasBase64Photo && typeof window.uploadSinglePhotoToDrive === 'function') {
+      (async function elevatePhotosToCloud() {
+        var finalCloudUrls = [];
+        for (var i = 0; i < rawPhotos.length; i++) {
+          var pItem = rawPhotos[i];
+          if (typeof pItem === 'string' && pItem.startsWith('data:')) {
+            var cUrl = await window.uploadSinglePhotoToDrive(pItem, 'pack_' + normalized.id + '_' + i + '.jpg');
+            finalCloudUrls.push(cUrl || pItem);
+            await new Promise(function(res) { setTimeout(res, 200); });
+          } else {
+            finalCloudUrls.push(pItem);
+          }
+        }
+
+        normalized.photos = finalCloudUrls;
+        normalized.photo = finalCloudUrls[0] || '';
+        normalized.fieldPhoto = finalCloudUrls[0] || '';
+
+        var pMap = window.safeGetStorage('okbm_phone_photos_map', {}) || {};
+        pMap[String(normalized.id)] = finalCloudUrls;
+        pMap[String(normalized.date)] = finalCloudUrls;
+        window.__memoryStore['okbm_phone_photos_map'] = pMap;
+        window.safeSetStorage('okbm_phone_photos_map', pMap);
+        window.safeSetStorage('okbm_packing_history', window.interactiveHistory);
+
+        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(true);
+        if (typeof window.shareFeedToCommunity === 'function') window.shareFeedToCommunity(normalized);
+      })();
+    } else {
+      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+      if (typeof window.shareFeedToCommunity === 'function') window.shareFeedToCommunity(normalized);
+    }
+
     return normalized;
   };
-
   // 🔄 [앱 구동 즉시 폰의 IndexedDB 사진 맵 및 히스토리 메모리로 사전 복원 & 사진 유실 방어]
   (async function preloadIndexedDbToMemory() {
     try {
@@ -368,6 +401,7 @@ window.safeSetStorage = function(key, value) {
   function getRecordPhotos(record) {
     if (!record) return [];
     var rId = String(record.id || '').trim();
+    var cleanPureId = rId.split(';')[0].trim();
     var rDate = String(record.date || '').trim();
     var altDate = rDate.replace(/[-/]/g, '.');
     var savedPhotosMap = window.safeGetStorage('okbm_phone_photos_map', {}) || {};
@@ -375,21 +409,27 @@ window.safeSetStorage = function(key, value) {
       savedPhotosMap = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], savedPhotosMap);
     }
 
-    var localPhotos = (rId && savedPhotosMap[rId]) || (rDate && savedPhotosMap[rDate]) || (altDate && savedPhotosMap[altDate]);
+    var localPhotos = (cleanPureId && savedPhotosMap[cleanPureId]) || (rId && savedPhotosMap[rId]) || (rDate && savedPhotosMap[rDate]) || (altDate && savedPhotosMap[altDate]);
     var rawList = [];
     if (Array.isArray(localPhotos) && localPhotos.length > 0) rawList = localPhotos.filter(Boolean);
     else if (typeof localPhotos === 'string' && localPhotos.trim().length > 10) rawList = [localPhotos.trim()];
     else if (Array.isArray(record.photos) && record.photos.length > 0) rawList = record.photos.filter(Boolean);
+    else if (record.photo_url && String(record.photo_url).trim().length > 10) rawList = [String(record.photo_url).trim()];
     else if (record.fieldPhoto && String(record.fieldPhoto).trim().length > 10) rawList = [String(record.fieldPhoto).trim()];
     else if (record.photo && String(record.photo).trim().length > 10) rawList = [String(record.photo).trim()];
 
-    // 🌟 [1200px 스위트스팟]: 대화면 폰 화질열화 0% 보장 + 용량 85% 다이어트
+    // 🌟 [전 브라우저 엑박 원천 차단 & 1200px 고화질 링크 정규화]
     return rawList.map(function(url) {
-      if (typeof url === 'string' && url.includes('drive.google.com/thumbnail')) {
-        return url.replace(/sz=w\d+/g, 'sz=w1200');
+      if (typeof url !== 'string') return '';
+      var clean = url.replace(/^["']|["']$/g, '').trim();
+      if (clean.includes('drive.google.com')) {
+        var idMatch = clean.match(/[?&]id=([a-zA-Z0-9_-]+)/) || clean.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (idMatch && idMatch[1]) {
+          return 'https://lh3.googleusercontent.com/d/' + idMatch[1] + '=w1200';
+        }
       }
-      return url;
-    });
+      return clean;
+    }).filter(function(u) { return u.length > 10; });
   }
 
   // 🎨 [3D 엽서 테두리 팔레트]
