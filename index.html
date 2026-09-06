@@ -2109,55 +2109,42 @@ async function initDynamicHeroAndFeeds() {
     }
   } catch (e) {}
 
+  // ⚡ 1순위: Cloudflare R2 글로벌 CDN 조회 (서버를 절대 기준으로 타인 폰 캐시 100% 동기화)
   try {
     var r2Res = await fetch(R2_FEEDS_URL + '?_t=' + Date.now(), { cache: 'no-store' });
     if (r2Res.ok) {
       var r2Feeds = await r2Res.json();
-      if (Array.isArray(r2Feeds) && r2Feeds.length > 0) {
+      if (Array.isArray(r2Feeds)) {
+        var effectiveFeeds = r2Feeds.length > 0 ? r2Feeds : [Object.assign({}, FALLBACK_HERO_PRESET)];
         localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(r2Feeds));
-        if (r2Feeds[0] && (r2Feeds[0].photo || r2Feeds[0].photo_url)) {
-          localStorage.setItem('okbm_hero_cover_url', r2Feeds[0].photo || r2Feeds[0].photo_url);
+        if (effectiveFeeds[0] && (effectiveFeeds[0].photo || effectiveFeeds[0].photo_url)) {
+          localStorage.setItem('okbm_hero_cover_url', effectiveFeeds[0].photo || effectiveFeeds[0].photo_url);
         }
-        window.__allLoadedFeeds = r2Feeds;
-        window.heroTopRecords = r2Feeds;
+        window.__allLoadedFeeds = effectiveFeeds;
+        window.heroTopRecords = effectiveFeeds;
+        window.currentHeroCardIndex = 0;
         renderCurrentHeroCard();
-        console.log('⚡ [Index] Cloudflare R2 CDN 중앙 피드 0.03초 실시간 렌더링 완료 (' + r2Feeds.length + '개)');
+        console.log('⚡ [Index] Cloudflare R2 글로벌 CDN 기준 동기화 완료 (' + r2Feeds.length + '개)');
       }
     }
   } catch (r2Err) {
-    console.warn('📡 [Index] R2 인출 실패, 구글 클라우드로 폴백:', r2Err);
+    console.warn('📡 [Index] R2 인출 대기, 구글 클라우드로 전환:', r2Err);
   }
 
-  // 2순위: 구글 클라우드 실시간 대조 및 최신 사진 즉시 병합 (타인 화면 100% 동기화)
+  // 🌐 2순위: 구글 클라우드 최신 피드 대조 (서버 원본 기준 타인 기기 과거 피드 자동 소멸)
   try {
     var gasUrl = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
     var res = await fetch(gasUrl + '?action=GET_COMMUNITY_FEEDS&_t=' + Date.now());
     if (res.ok) {
       var cloudFeeds = await res.json();
-      if (Array.isArray(cloudFeeds) && cloudFeeds.length > 0) {
-        var feedMap = new Map();
-        cloudFeeds.forEach(function(f) { 
-          if (f && f.id) feedMap.set(String(f.id), f); 
-        });
-
-        // 🛡️ 로컬 캐시와 서버 피드 병합 시, 사진 URL이 존재하는 최신 데이터를 무조건 우선 채택
-        (window.__allLoadedFeeds || []).forEach(function(f) {
-          if (f && f.id) {
-            var existing = feedMap.get(String(f.id));
-            if (!existing) {
-              feedMap.set(String(f.id), f);
-            } else if ((!existing.photo || existing.photo === '') && (f.photo && f.photo !== '')) {
-              feedMap.set(String(f.id), f);
-            }
-          }
-        });
-        
-        var mergedFeeds = Array.from(feedMap.values());
-        localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(mergedFeeds));
-        window.__allLoadedFeeds = mergedFeeds;
-        window.heroTopRecords = mergedFeeds;
+      if (Array.isArray(cloudFeeds)) {
+        var masterFeeds = cloudFeeds.length > 0 ? cloudFeeds : [Object.assign({}, FALLBACK_HERO_PRESET)];
+        localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(cloudFeeds));
+        window.__allLoadedFeeds = masterFeeds;
+        window.heroTopRecords = masterFeeds;
+        window.currentHeroCardIndex = 0;
         renderCurrentHeroCard();
-        console.log('✅ [Index] 구글 클라우드 최신 피드 실시간 동기화 완료 (' + mergedFeeds.length + '개)');
+        console.log('✅ [Index] 구글 클라우드 중앙 원본 동기화 완료 (' + cloudFeeds.length + '개)');
       }
     }
   } catch (err) {
