@@ -513,8 +513,9 @@ window.safeSetStorage = function(key, value) {
       hardText: (r && r.hardText) ? r.hardText : '',
       goodText: (r && r.goodText) ? r.goodText : '',
       memoryText: (r && r.memoryText) ? r.memoryText : '',
-      memo: userMemo,
+     memo: userMemo,
       oneLineMemo: (r && r.oneLineMemo) ? r.oneLineMemo : '',
+      photoMemos: (r && Array.isArray(r.photoMemos)) ? r.photoMemos : [],
       isPublished: Boolean(r && r.isPublished === true),
       instagram: (r && r.instagram) ? r.instagram : '',
       items: cleanItems,
@@ -2048,12 +2049,15 @@ window.safeSetStorage = function(key, value) {
     triggerHaptic(12);
   };
 
-// 📸 [사진 업로드 파일 핸들러 엔진 - 1200px 150KB 규격 압축 파이프라인]
+/// [대형 사진 스와이프 뷰어 & 사진별 120자 캡션 동기화 엔진]
   window.__handleRichMultiPhotoUpload = async function(event) {
     var files = event.target.files;
     if (!files || files.length === 0) return;
 
-    var maxSlots = 10 - (window.__tempUploadedPhotos ? window.__tempUploadedPhotos.length : 0);
+    window.__tempUploadedPhotos = window.__tempUploadedPhotos || [];
+    window.__tempPhotoMemos = window.__tempPhotoMemos || [];
+
+    var maxSlots = 10 - window.__tempUploadedPhotos.length;
     if (maxSlots <= 0) {
       if (typeof showToast === 'function') showToast('사진은 최대 10장까지만 등록 가능합니다.', 'warn');
       return;
@@ -2095,67 +2099,165 @@ window.safeSetStorage = function(key, value) {
 
       if (base64 && base64.length > 50) {
         window.__tempUploadedPhotos.push(base64);
-        window.__renderRichPhotoThumbnails();
+        window.__tempPhotoMemos.push('');
       }
     }
+
+    window.__currentSwipePhotoIndex = Math.max(0, window.__tempUploadedPhotos.length - 1);
+    window.__renderRichPhotoStage();
   };
 
   window.__removeRichSinglePhoto = function(index) {
     if (window.__tempUploadedPhotos && window.__tempUploadedPhotos[index] !== undefined) {
       window.__tempUploadedPhotos.splice(index, 1);
-      window.__renderRichPhotoThumbnails();
+      if (window.__tempPhotoMemos) window.__tempPhotoMemos.splice(index, 1);
+      if (window.__currentSwipePhotoIndex >= window.__tempUploadedPhotos.length) {
+        window.__currentSwipePhotoIndex = Math.max(0, window.__tempUploadedPhotos.length - 1);
+      }
+      window.__renderRichPhotoStage();
       triggerHaptic(8);
     }
   };
 
   window.__clearAllRichPhotos = function() {
     window.__tempUploadedPhotos = [];
-    window.__renderRichPhotoThumbnails();
+    window.__tempPhotoMemos = [];
+    window.__currentSwipePhotoIndex = 0;
+    window.__renderRichPhotoStage();
     triggerHaptic(10);
   };
 
-  window.__renderRichPhotoThumbnails = function() {
-    var grid = document.getElementById('richPhotoThumbnailsGrid');
-    var label = document.getElementById('richPhotoCountLabel');
-    if (!grid) return;
+  window.__commitCurrentMemoInput = function() {
+    var memoInput = document.getElementById('richFormMemoInput');
+    if (memoInput && window.__tempPhotoMemos) {
+      var curIdx = window.__currentSwipePhotoIndex || 0;
+      window.__tempPhotoMemos[curIdx] = memoInput.value.slice(0, 120);
+    }
+  };
 
-    var count = window.__tempUploadedPhotos ? window.__tempUploadedPhotos.length : 0;
-    if (label) label.innerText = '등록된 사진 (' + count + '장 / 최대 10장)';
+  window.__onSwipePhotoTrackScroll = function(trackEl) {
+    if (!trackEl) return;
+    var scrollLeft = trackEl.scrollLeft;
+    var width = trackEl.offsetWidth;
+    if (!width) return;
+    var newIdx = Math.round(scrollLeft / width);
+    if (newIdx !== window.__currentSwipePhotoIndex && window.__tempUploadedPhotos[newIdx] !== undefined) {
+      window.__commitCurrentMemoInput();
+      window.__currentSwipePhotoIndex = newIdx;
+      window.__syncActivePhotoMemoUI();
+    }
+  };
+
+  window.__syncActivePhotoMemoUI = function() {
+    var curIdx = window.__currentSwipePhotoIndex || 0;
+    var memos = window.__tempPhotoMemos || [];
+    var memoInput = document.getElementById('richFormMemoInput');
+    var charCounter = document.getElementById('richMemoCharCounter');
+    var photoLabel = document.getElementById('richPhotoCountLabel');
+    var photoIndexBadge = document.getElementById('richPhotoActiveIndexBadge');
+
+    var currentText = memos[curIdx] || '';
+    if (memoInput) memoInput.value = currentText;
+    if (charCounter) charCounter.innerText = currentText.length + '/120자';
+    if (photoIndexBadge) photoIndexBadge.innerText = (window.__tempUploadedPhotos.length > 0) ? ((curIdx + 1) + ' / ' + window.__tempUploadedPhotos.length) : '0 / 0';
+    if (photoLabel) photoLabel.innerText = '등록된 사진 (' + (window.__tempUploadedPhotos ? window.__tempUploadedPhotos.length : 0) + '장 / 최대 10장)';
+
+    var dotsWrap = document.getElementById('richSwipeDotsWrapper');
+    if (dotsWrap) {
+      var dots = dotsWrap.children;
+      for (var d = 0; d < dots.length; d++) {
+        if (d === curIdx) {
+          dots[d].style.width = '14px';
+          dots[d].style.background = '#38bdf8';
+          dots[d].style.boxShadow = '0 0 8px rgba(56,189,248,0.8)';
+        } else {
+          dots[d].style.width = '5px';
+          dots[d].style.background = 'rgba(255,255,255,0.3)';
+          dots[d].style.boxShadow = 'none';
+        }
+      }
+    }
+  };
+
+  window.__handleRichMemoInput = function(text) {
+    var curIdx = window.__currentSwipePhotoIndex || 0;
+    window.__tempPhotoMemos = window.__tempPhotoMemos || [];
+    window.__tempPhotoMemos[curIdx] = text.slice(0, 120);
+    var charCounter = document.getElementById('richMemoCharCounter');
+    if (charCounter) charCounter.innerText = window.__tempPhotoMemos[curIdx].length + '/120자';
+  };
+
+  window.__renderRichPhotoStage = function() {
+    var stageContainer = document.getElementById('richLargePhotoStageContainer');
+    if (!stageContainer) return;
+
+    var photos = window.__tempUploadedPhotos || [];
+    var count = photos.length;
 
     if (count === 0) {
-      grid.innerHTML = `
-        <div onclick="document.getElementById('richMultiPhotoInput').click();" style="width:100%; height:160px; border:1.5px dashed rgba(56,189,248,0.4); border-radius:14px; background:rgba(255,255,255,0.02); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; cursor:pointer;">
-          <div style="width:44px; height:44px; border-radius:50%; background:rgba(56,189,248,0.12); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:22px; height:22px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      stageContainer.innerHTML = `
+        <div onclick="document.getElementById('richMultiPhotoInput').click();" style="width:100%; aspect-ratio:3/4; max-height:420px; border:1.5px dashed rgba(56,189,248,0.35); border-radius:14px; background:radial-gradient(circle at 50% 40%, #0e1726 0%, #06090e 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; cursor:pointer; box-sizing:border-box;">
+          <div style="width:52px; height:52px; border-radius:50%; background:rgba(56,189,248,0.12); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px; height:26px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </div>
-          <span style="font-size:0.84rem; font-weight:800; color:#38bdf8;">현장 사진 추가하기 (최대 10장)</span>
-          <span style="font-size:0.65rem; color:#94a3b8;">터치하여 사진을 선택하세요</span>
+          <span style="font-size:0.90rem; font-weight:900; color:#38bdf8; letter-spacing:-0.02em;">현장 사진 추가하기 (최대 10장)</span>
+          <span style="font-size:0.68rem; color:#64748b;">터치하여 사진을 등록하세요</span>
         </div>
       `;
     } else {
-      var photosHtml = window.__tempUploadedPhotos.map(function(url, pIdx) {
+      var slidesHtml = photos.map(function(url, pIdx) {
         return `
-          <div style="position:relative; width:120px; aspect-ratio:3/4; border-radius:10px; overflow:hidden; border:1.5px solid rgba(255,255,255,0.2); flex-shrink:0; background:#000;">
-            <img src="${url}" style="width:100%; height:100%; object-fit:cover;" />
-            <button type="button" onclick="window.__removeRichSinglePhoto(${pIdx});" style="position:absolute; top:4px; right:4px; width:22px; height:22px; border-radius:50%; background:rgba(0,0,0,0.75); color:#fff; border:1px solid rgba(255,255,255,0.3); font-size:12px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);">✕</button>
-            <div style="position:absolute; bottom:4px; left:4px; background:rgba(0,0,0,0.6); padding:1px 5px; border-radius:4px; font-size:0.55rem; color:#fff; font-weight:800;">#${pIdx + 1}</div>
+          <div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center;">
+            <img src="${url}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(22px) brightness(0.32); transform:scale(1.15); pointer-events:none;" />
+            <img src="${url}" style="position:relative; z-index:2; width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;" />
+            <button type="button" onclick="event.stopPropagation(); window.__removeRichSinglePhoto(${pIdx});" style="position:absolute; top:10px; right:10px; z-index:10; width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,0.75); color:#ffffff; border:1.5px solid rgba(255,255,255,0.3); font-size:14px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px);">✕</button>
           </div>
         `;
       }).join('');
 
-      if (count < 10) {
-        photosHtml += `
-          <div onclick="document.getElementById('richMultiPhotoInput').click();" style="width:90px; aspect-ratio:3/4; border:1.5px dashed rgba(56,189,248,0.5); border-radius:10px; background:rgba(56,189,248,0.06); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; cursor:pointer; flex-shrink:0;">
-            <span style="font-size:1.4rem; color:#38bdf8; line-height:1;">+</span>
-            <span style="font-size:0.62rem; color:#38bdf8; font-weight:800;">추가</span>
-          </div>
-        `;
+      var dotsHtml = '';
+      if (count > 1) {
+        var dotsItems = Array.from({ length: count }).map(function(_, dIdx) {
+          var isCur = (dIdx === (window.__currentSwipePhotoIndex || 0));
+          var dotW = isCur ? '14px' : '5px';
+          var dotBg = isCur ? '#38bdf8' : 'rgba(255,255,255,0.3)';
+          var dotShadow = isCur ? 'box-shadow:0 0 8px rgba(56,189,248,0.8);' : '';
+          return '<div style="width:' + dotW + '; height:4px; border-radius:2px; background:' + dotBg + '; ' + dotShadow + ' transition:all 0.2s ease;"></div>';
+        }).join('');
+        dotsHtml = '<div id="richSwipeDotsWrapper" style="display:flex; justify-content:center; align-items:center; gap:4px; height:10px; margin-top:8px;">' + dotsItems + '</div>';
       }
-      grid.innerHTML = photosHtml;
+
+      stageContainer.innerHTML = `
+        <div style="width:100%; aspect-ratio:3/4; max-height:420px; position:relative; overflow:hidden; border-radius:14px; background:#000000; border:1px solid rgba(255,255,255,0.12); box-shadow:0 12px 30px rgba(0,0,0,0.9);">
+          <div id="richPhotoSwipeTrack" onscroll="window.__onSwipePhotoTrackScroll(this);" style="display:flex !important; width:100% !important; height:100% !important; overflow-x:auto !important; overflow-y:hidden !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; touch-action:pan-x pan-y !important;">
+            ${slidesHtml}
+          </div>
+          ${count < 10 ? `
+            <button type="button" onclick="document.getElementById('richMultiPhotoInput').click();" style="position:absolute; bottom:12px; right:12px; z-index:10; background:rgba(15,23,42,0.85); border:1px solid rgba(56,189,248,0.5); color:#38bdf8; font-size:0.72rem; font-weight:800; padding:6px 12px; border-radius:20px; cursor:pointer; display:flex; align-items:center; gap:4px; backdrop-filter:blur(6px);">
+              <svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:#38bdf8; fill:none; stroke-width:2.5;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>사진추가</span>
+            </button>
+          ` : ''}
+        </div>
+        ${dotsHtml}
+      `;
+
+      setTimeout(function() {
+        var track = document.getElementById('richPhotoSwipeTrack');
+        if (track) {
+          var targetLeft = (window.__currentSwipePhotoIndex || 0) * track.offsetWidth;
+          track.scrollLeft = targetLeft;
+        }
+      }, 30);
     }
+
+    window.__syncActivePhotoMemoUI();
   };
 
-  // 📝 [시원한 모바일 풀스크린 힐링 기록 & 사진 작성 뷰어]
+  // 하위 호환성 영구 보존 알리아스
+  window.__renderRichPhotoThumbnails = window.__renderRichPhotoStage;
+
+  // [모바일 풀스크린 힐링 기록 & 대형 스와이프 에디터]
   window.openRichAfterTripModal = function(record) {
     if (!record) return;
     var old = document.getElementById('modalRichAfterTrip');
@@ -2167,104 +2269,122 @@ window.safeSetStorage = function(key, value) {
       return url && !url.includes('images.unsplash.com');
     });
 
+    // 사진별 120자 메모 맵 정밀 복원 및 길이 동기화 패딩
+    window.__tempPhotoMemos = [];
+    if (Array.isArray(record.photoMemos) && record.photoMemos.length > 0) {
+      window.__tempPhotoMemos = record.photoMemos.slice();
+    } else {
+      var initMemo = (record.memo || record.oneLineMemo || '').slice(0, 120);
+      window.__tempPhotoMemos.push(initMemo);
+    }
+
+    while (window.__tempPhotoMemos.length < Math.max(1, window.__tempUploadedPhotos.length)) {
+      window.__tempPhotoMemos.push('');
+    }
+
+    window.__currentSwipePhotoIndex = 0;
     var savedInsta = localStorage.getItem('okbm_user_instagram') || record.instagram || '';
-    var initialMemo = (record.memo || record.oneLineMemo || '').slice(0, 120);
 
     var formModal = document.createElement('div');
     formModal.id = 'modalRichAfterTrip';
     formModal.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000010; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     formModal.innerHTML = `
-      <!-- 1. 상단 헤더: 닫기 + [📍 장소 · 날짜 고정 뱃지] + 발행 버튼 -->
+      <!-- 1. 상단 고정 헤더: 닫기 + [정밀 벡터 핀 장소·날짜 뱃지] + 발행 버튼 -->
       <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
         <button type="button" onclick="document.getElementById('modalRichAfterTrip').remove(); triggerHaptic(10);" style="background:none; border:none; color:#cbd5e1; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
         
-        <!-- 고정 메타 뱃지 (입력창 전면 제거) -->
-        <div style="display:flex; align-items:center; gap:5px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); padding:3px 10px; border-radius:20px;">
-          <span style="font-size:0.80rem; font-weight:900; color:#38bdf8;">📍 ${escapeHtml(record.spot)}</span>
+        <div style="display:flex; align-items:center; gap:5px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); padding:4px 10px; border-radius:20px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span style="font-size:0.80rem; font-weight:900; color:#38bdf8;">${escapeHtml(record.spot)}</span>
           <span style="font-size:0.65rem; color:#94a3b8; font-family:'JetBrains Mono', monospace;">· ${escapeHtml(record.date)}</span>
         </div>
 
-        <button type="button" onclick="window.__saveRichAfterTrip('${record.id}')" style="background:linear-gradient(135deg, #0284c7, #0369a1); border:none; color:#fff; font-size:0.80rem; font-weight:900; padding:6px 14px; border-radius:8px; cursor:pointer; box-shadow:0 2px 10px rgba(2,132,199,0.4);">
-          발행 ✓
+        <button type="button" onclick="window.__saveRichAfterTrip('${record.id}')" style="background:linear-gradient(135deg, #0284c7, #0369a1); border:none; color:#fff; font-size:0.80rem; font-weight:900; padding:6px 14px; border-radius:8px; cursor:pointer; box-shadow:0 2px 10px rgba(2,132,199,0.4); display:flex; align-items:center; gap:3px;">
+          <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="#ffffff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>발행</span>
         </button>
       </div>
 
-      <!-- 2. 중앙 풀스크린 작업 영역 (시원한 사진 갤러리 + 120자 트렌디 팁) -->
-      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:16px 14px calc(30px + env(safe-area-inset-bottom, 0px)) 14px; display:flex; flex-direction:column; gap:16px; box-sizing:border-box;">
+      <!-- 2. 중앙 스크롤 뷰포트 (대형 사진 스와이프 뷰어 ➔ 하단 메모창 ➔ SNS창) -->
+      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:14px 14px calc(40px + env(safe-area-inset-bottom, 0px)) 14px; display:flex; flex-direction:column; gap:16px; box-sizing:border-box;">
         
-        <!-- 📸 대형 사진 프리뷰 & 추가 섹션 -->
-        <div style="display:flex; flex-direction:column; gap:8px;">
+        <!-- 대형 사진 스와이프 무대 섹션 -->
+        <div style="display:flex; flex-direction:column; gap:6px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span id="richPhotoCountLabel" style="font-size:0.82rem; color:#ffffff; font-weight:900;">
-              등록된 사진 (${window.__tempUploadedPhotos.length}장 / 최대 10장)
-            </span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span id="richPhotoCountLabel" style="font-size:0.82rem; color:#ffffff; font-weight:900;">
+                등록된 사진 (${window.__tempUploadedPhotos.length}장 / 최대 10장)
+              </span>
+              <span id="richPhotoActiveIndexBadge" style="font-size:0.62rem; color:#38bdf8; background:rgba(56,189,248,0.14); padding:1px 6px; border-radius:10px; font-weight:900; font-family:'Space Grotesk', sans-serif;">1 / 1</span>
+            </div>
             <button type="button" onclick="window.__clearAllRichPhotos();" style="background:none; border:none; color:#fda4af; font-size:0.68rem; font-weight:800; cursor:pointer;">전체삭제</button>
           </div>
 
-          <div id="richPhotoThumbnailsGrid" style="display:flex; gap:10px; overflow-x:auto; padding-bottom:6px; min-height:160px; align-items:center; scrollbar-width:none;">
-            <!-- __renderRichPhotoThumbnails에서 자동 렌더링 -->
+          <div id="richLargePhotoStageContainer" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+            <!-- __renderRichPhotoStage를 통해 대형 스와이프 트랙 렌더링 -->
           </div>
           <input type="file" id="richMultiPhotoInput" accept="image/*" multiple style="display:none;" onchange="window.__handleRichMultiPhotoUpload(event)" />
         </div>
 
-        <!-- ✍️ 딱 120자 실전 팁 & 후기 작성 영역 (풀스크린 에디터) -->
+        <!-- 하단 배치: 현재 활성 사진 전용 120자 팁 & 후기 작성 영역 -->
         <div style="display:flex; flex-direction:column; gap:6px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:0.82rem; color:#ffffff; font-weight:900;">📖 120자 힐링 팁 & 후기</span>
-            <span id="richMemoCharCounter" style="font-size:0.70rem; color:#38bdf8; font-family:'Space Grotesk', sans-serif; font-weight:800;">${initialMemo.length}/120자</span>
+            <div style="display:flex; align-items:center; gap:5px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              <span style="font-size:0.82rem; color:#ffffff; font-weight:900;">사진별 120자 현장 기록</span>
+            </div>
+            <span id="richMemoCharCounter" style="font-size:0.70rem; color:#38bdf8; font-family:'Space Grotesk', sans-serif; font-weight:800;">0/120자</span>
           </div>
-          <textarea id="richFormMemoInput" maxlength="120" placeholder="바람 세기, 지형 상태, 실전 꿀팁 등 자유로운 기록을 120자 이내로 남겨보세요." oninput="document.getElementById('richMemoCharCounter').innerText = this.value.length + '/120자';" style="width:100%; height:110px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.15); color:#fff; border-radius:12px; padding:12px 14px; font-size:0.85rem; line-height:1.6; box-sizing:border-box; outline:none; resize:none; font-family:'Pretendard Variable', -apple-system, sans-serif; letter-spacing:-0.02em;">${escapeHtml(initialMemo)}</textarea>
+          <textarea id="richFormMemoInput" maxlength="120" placeholder="해당 사진에 대한 지형 상태, 실전 팁 등 현장 기록을 120자 이내로 남겨보세요. (사진 스와이프 시 사진별로 자동 전환됩니다)" oninput="window.__handleRichMemoInput(this.value);" style="width:100%; height:95px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.15); color:#fff; border-radius:12px; padding:12px 14px; font-size:0.84rem; line-height:1.55; box-sizing:border-box; outline:none; resize:none; font-family:'Pretendard Variable', -apple-system, sans-serif; letter-spacing:-0.02em;"></textarea>
         </div>
 
-        <!-- 📸 인스타그램 계정 (선택 홍보) -->
+        <!-- 하단 배치: 인스타그램 계정 연동 영역 -->
         <div style="display:flex; flex-direction:column; gap:4px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:0.75rem; color:#fda4af; font-weight:800;">📸 내 인스타그램 계정 (선택)</span>
-            <span style="font-size:0.60rem; color:#94a3b8;">피드에 링크가 함께 노출됩니다</span>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:#fda4af;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+              <span style="font-size:0.75rem; color:#fda4af; font-weight:800;">인스타그램 계정 (선택)</span>
+            </div>
+            <span style="font-size:0.60rem; color:#64748b;">피드 상세에 프로필 링크 노출</span>
           </div>
-          <input type="text" id="richInputInstagram" value="${escapeHtml(savedInsta)}" placeholder="@인스타아이디 (예: @romantic_route)" style="width:100%; height:38px; background:rgba(225,48,108,0.06); border:1px solid rgba(225,48,108,0.3); color:#ffffff; border-radius:8px; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />
+          <input type="text" id="richInputInstagram" value="${escapeHtml(savedInsta)}" placeholder="@인스타아이디 (예: @romantic_route)" style="width:100%; height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); color:#ffffff; border-radius:8px; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />
         </div>
 
       </div>
     `;
 
     document.body.appendChild(formModal);
-    window.__renderRichPhotoThumbnails();
+    window.__renderRichPhotoStage();
   };
 
-  // 💾 [박지 후기 저장 및 120자 압축 / 닉네임 영구 각인 엔진]
+  // [박지 후기 및 사진별 120자 영구 각인 단일 저장 엔진]
   window.__saveRichAfterTrip = function(recordId) {
     var target = (window.interactiveHistory || []).find(function(r) { return String(r.id).trim() === String(recordId).trim(); });
     if (!target) return;
 
-    var spotInput = document.getElementById('richInputSpotName');
-    var dateInput = document.getElementById('richInputTripDate');
-    var instaInput = document.getElementById('richInputInstagram');
-    var memoInput = document.getElementById('richFormMemoInput');
+    window.__commitCurrentMemoInput();
 
-    if (spotInput && spotInput.value.trim()) target.spot = spotInput.value.trim();
-    if (dateInput && dateInput.value.trim()) target.date = dateInput.value.trim();
-    
-    // 👤 현재 로그인된 카카오 닉네임 1순위 확정 각인
+    var instaInput = document.getElementById('richInputInstagram');
+
     var profile = safeGetJSON('user_profile', null);
     target.author = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만루터');
 
-    // 📸 인스타 아이디 저장
     if (instaInput) {
       var cleanInsta = instaInput.value.replace(/[@\s]/g, '').trim();
       target.instagram = cleanInsta ? ('@' + cleanInsta) : '';
       if (cleanInsta) localStorage.setItem('okbm_user_instagram', '@' + cleanInsta);
     }
 
-    // ✂️ 딱 120자 제한 적용
-    var rawMemo = memoInput ? memoInput.value.trim() : '';
-    target.memo = rawMemo.slice(0, 120);
-    target.oneLineMemo = target.memo;
+    var photosToProcess = Array.isArray(window.__tempUploadedPhotos) ? window.__tempUploadedPhotos.slice(0, 10) : [];
+    var memosToProcess = Array.isArray(window.__tempPhotoMemos) ? window.__tempPhotoMemos.slice(0, Math.max(1, photosToProcess.length)) : [];
+
+    target.photoMemos = memosToProcess;
+    target.memo = memosToProcess[0] || (memosToProcess.filter(Boolean).join(' ') || '');
+    target.oneLineMemo = target.memo.slice(0, 120);
     target.isPublished = true;
     target.isDraft = false;
 
-    var photosToProcess = Array.isArray(window.__tempUploadedPhotos) ? window.__tempUploadedPhotos.slice(0, 10) : [];
     if (photosToProcess.length > 0) {
       target.photos = photosToProcess;
       target.fieldPhoto = photosToProcess[0] || '';
@@ -2277,23 +2397,19 @@ window.safeSetStorage = function(key, value) {
       window.saveToIndexedDB('okbm_phone_photos_map', savedPhotosMap);
     }
 
-    // 1. 단일 저장 코어 엔진을 통해 로컬/IndexedDB/메모리 100% 안전 저장
     if (typeof window.savePackingHistoryRecord === 'function') {
       window.savePackingHistoryRecord(target);
     } else {
       window.safeSetStorage('okbm_packing_history', window.interactiveHistory);
     }
 
-    // 2. 모달 즉시 닫기
     var m = document.getElementById('modalRichAfterTrip');
     if (m) m.remove();
 
     window.renderHistoryStage();
-
     triggerHaptic(15);
-    if (typeof showToast === 'function') showToast('🏕️ 후기가 성공적으로 저장되었습니다!', 'success', 2000);
+    if (typeof showToast === 'function') showToast('기록이 성공적으로 저장되었습니다.', 'success', 2000);
 
-    // 3. 백그라운드 클라우드 전파 (구글 시트 & R2)
     (async function runBackgroundUpload() {
       var hasBase64 = photosToProcess.some(function(p) { return typeof p === 'string' && p.startsWith('data:'); });
       if (hasBase64) {
@@ -2323,7 +2439,6 @@ window.safeSetStorage = function(key, value) {
 
       if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(true);
       
-      // 🛡️ [이중 발송 원천 차단]: 1.5초 내 동일 피드 중복 전송 방어 락
       var nowTime = Date.now();
       window.__lastSharedFeedTimeMap = window.__lastSharedFeedTimeMap || {};
       var lastSharedTime = window.__lastSharedFeedTimeMap[String(target.id)] || 0;
