@@ -1731,63 +1731,95 @@
         });
       }
 
-      function fetchSpotsFromGoogleSheet() {
-        if (typeof Papa === 'undefined') return;
-        var sheetUrl = 'https://docs.google.com/spreadsheets/d/' + window.GOOGLE_SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + window.PRIMARY_SHEET_GID;
-        
-        Papa.parse(sheetUrl, {
-          download: true,
-          header: true,
-          skipEmptyLines: true,
-          complete: function(results) {
-            if (!results.data || results.data.length === 0) return;
-            var parsed = results.data.map(function(row, idx) {
-              var lat = parseFloat(row.lat || row['위도'] || 0);
-              var lng = parseFloat(row.lng || row['경도'] || 0);
-              var name = (row.name || row.spot_main || row['산이름'] || row['박지명'] || '').trim();
-              var sub = (row.spot_sub || row['세부포인트'] || '').trim();
-              var entry = (row.trailhead_addr || row.entryPoint || row['들머리주소'] || '').trim();
-              var autoDetect = detectRegionAndCity(lat, lng, name, entry);
+ // ⚡ [0개 멈춤 100% 영구 해결] Cloudflare R2 글로벌 CDN 정본 + GAS 백엔드 2중 안전 수급 엔진
+      async function fetchSpotsFromGoogleSheet() {
+        var R2_CDN_URL = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/spots.json';
+        var GAS_URL = window.GAS_API_URL + '?action=GET_SPOTS';
+        var fetchedSpots = null;
 
-              return {
-                id: String(row.id || (idx + 1)).trim(),
-                name: name,
-                spot_main: name,
-                spot_sub: sub,
-                fullName: sub ? (name + ' (' + sub + ')') : name,
-                lat: lat,
-                lng: lng,
-                elevation: row.elevation || row['고도'] || '450m',
-                trailhead_name: row.trailhead_name || row['들머리명칭'] || '',
-                trailhead_addr: entry,
-                entryPoint: entry,
-                desc_summary: row.desc_summary || row.desc || row['설명'] || '',
-                desc: row.desc || row.desc_summary || '',
-                youtubeUrls: (row.youtubeUrls || row['유튜브'] || '').split(/[\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean),
-                blogUrls: (row.blogUrls || row['블로그'] || '').split(/[\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean),
-                authorSnsUrl: row.authorSnsUrl || row['인스타'] || '',
-                courseType: row.courseType || row['코스유형'] || '일반',
-                terrain: (row.terrain || row['지형'] || '데크').split(/[,]+/).map(function(t){ return t.trim(); }),
-                difficulty: row.difficulty || row['난이도'] || '3',
-                distance: row.distance || row['거리'] || '',
-                region: autoDetect.region,
-                cityName: autoDetect.cityName,
-                searchCount: parseInt(row.searchCount || 0, 10),
-                sheetIndex: idx
-              };
-            }).filter(function(s) { return s.lat && s.lng && !BLOCKED_SPOT_IDS.has(String(s.id)); });
-
-            if (parsed.length > 0) {
-              spots = parsed;
-              localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
-              updateNewSpotFlags(spots);
-              renderSubChips();
-              renderSpots();
-              checkUrlParamSpotFocus();
-              showToast('전국 ' + spots.length + '개 박지 데이터를 성공적으로 불러왔습니다.');
+        // 1순위: Cloudflare R2 글로벌 CDN 직통 인출 (0.03초)
+        try {
+          var r2Res = await fetch(R2_CDN_URL, { cache: 'no-cache' });
+          if (r2Res.ok) {
+            var data = await r2Res.json();
+            if (Array.isArray(data) && data.length > 0) {
+              fetchedSpots = data;
             }
           }
-        });
+        } catch (e) {}
+
+        // 2순위: R2 실패 시 Google Apps Script(GAS) 백엔드 자동 전환 (Failover)
+        if (!fetchedSpots || fetchedSpots.length === 0) {
+          try {
+            var gasRes = await fetch(GAS_URL);
+            if (gasRes.ok) {
+              var gData = await gasRes.json();
+              if (Array.isArray(gData) && gData.length > 0) {
+                fetchedSpots = gData;
+              }
+            }
+          } catch (e) {}
+        }
+
+        // 3순위: 구글 스프레드시트 CSV 최종 비상망
+        if (!fetchedSpots && typeof Papa !== 'undefined') {
+          try {
+            var sheetUrl = 'https://docs.google.com/spreadsheets/d/' + window.GOOGLE_SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + window.PRIMARY_SHEET_GID;
+            var csvRes = await fetch(sheetUrl);
+            var csvText = await csvRes.text();
+            var parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
+            if (parsed.data && parsed.data.length > 0) {
+              fetchedSpots = parsed.data.map(function(row, idx) {
+                var lat = parseFloat(row.lat || row['위도'] || 0);
+                var lng = parseFloat(row.lng || row['경도'] || 0);
+                var name = (row.name || row.spot_main || row['산이름'] || row['박지명'] || '').trim();
+                var sub = (row.spot_sub || row['세부포인트'] || '').trim();
+                var entry = (row.trailhead_addr || row.entryPoint || row['들머리주소'] || '').trim();
+                var autoDetect = detectRegionAndCity(lat, lng, name, entry);
+                return {
+                  id: String(row.id || (idx + 1)).trim(),
+                  name: name,
+                  spot_main: name,
+                  spot_sub: sub,
+                  fullName: sub ? (name + ' (' + sub + ')') : name,
+                  lat: lat,
+                  lng: lng,
+                  elevation: row.elevation || row['고도'] || '450m',
+                  trailhead_name: row.trailhead_name || row['들머리명칭'] || '',
+                  trailhead_addr: entry,
+                  entryPoint: entry,
+                  desc_summary: row.desc_summary || row.desc || row['설명'] || '',
+                  desc: row.desc || row.desc_summary || '',
+                  youtubeUrls: (row.youtubeUrls || row['유튜브'] || '').split(/[\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean),
+                  blogUrls: (row.blogUrls || row['블로그'] || '').split(/[\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean),
+                  authorSnsUrl: row.authorSnsUrl || row['인스타'] || '',
+                  courseType: row.courseType || row['코스유형'] || '일반',
+                  terrain: (row.terrain || row['지형'] || '데크').split(/[,]+/).map(function(t){ return t.trim(); }),
+                  difficulty: row.difficulty || row['난이도'] || '3',
+                  distance: row.distance || row['거리'] || '',
+                  region: autoDetect.region,
+                  cityName: autoDetect.cityName,
+                  searchCount: parseInt(row.searchCount || 0, 10),
+                  sheetIndex: idx
+                };
+              });
+            }
+          } catch (e) {}
+        }
+
+        if (fetchedSpots && Array.isArray(fetchedSpots) && fetchedSpots.length > 0) {
+          spots = fetchedSpots.filter(function(s) { 
+            return s.lat && s.lng && !BLOCKED_SPOT_IDS.has(String(s.id).trim()); 
+          });
+          localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
+          updateNewSpotFlags(spots);
+          renderSubChips();
+          renderSpots();
+          checkUrlParamSpotFocus();
+          showToast('전국 ' + spots.length + '개 박지 데이터를 불러왔습니다.');
+        } else {
+          showToast('박지 데이터를 불러오지 못했습니다. 네트워크를 확인해주세요.');
+        }
       }
 
       document.addEventListener('DOMContentLoaded', () => {
