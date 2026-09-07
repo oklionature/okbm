@@ -557,7 +557,7 @@ function ensurePackShareModalDOM() {
           <div id="spotSearchDropdown" style="display:none; position:absolute; bottom:42px; left:0; right:0; max-height:180px; overflow-y:auto; background:#0f172a; border:1px solid rgba(56,189,248,0.4); border-radius:8px; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.8);"></div>
         </div>
 
-        <input type="text" id="shareCardMemoInput" placeholder="💬 출정 각오 또는 한줄 메모 (선택사항)" oninput="if(typeof updateShareCardLive==='function') updateShareCardLive();" style="width:100%; height:36px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:0.78rem; padding:0 10px; outline:none; box-sizing:border-box;" />
+        <input type="text" id="shareCardMemoInput" placeholder="💬 출발 각오 또는 한줄 메모 (선택사항)" oninput="if(typeof updateShareCardLive==='function') updateShareCardLive();" style="width:100%; height:36px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:0.78rem; padding:0 10px; outline:none; box-sizing:border-box;" />
       </div>
 
       <div style="display:flex; gap:8px; width:100%; flex-shrink:0; margin-top:8px; box-sizing:border-box;">
@@ -565,7 +565,7 @@ function ensurePackShareModalDOM() {
           닫기
         </button>
         <button type="button" onclick="window.saveCardToVaultAndOpenBasecamp();" style="flex:2; height:42px; background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border:1px solid #38bdf8; color:#ffffff; font-size:0.85rem; font-weight:900; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(2,132,199,0.4);">
-          <span>🎒 보관함에 출정 등록 ✓</span>
+          <span>🎒 보관함에 출발 등록 ✓</span>
         </button>
       </div>
 

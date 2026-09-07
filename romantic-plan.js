@@ -1,10 +1,10 @@
 
 /**
- * 🎒 낭만루트 낭만계획(Plan) 전담 코어 엔진 (romantic-plan.js)
- * 1. [달력 첫 화면]: 낭만보관함 연동 달력(완료 ★금색 / 계획 ⚑초록색) + 날짜별 출정 계획 메모장 + 낭만계획세우기 카드
+ * 🎒 낭만루트 낭만플랜(Plan) 전담 코어 엔진 (romantic-plan.js)
+ * 1. [달력 첫 화면]: 낭만보관함 연동 달력(완료 ★금색 / 계획 ⚑초록색) + 날짜별 출발 계획 메모장 + 낭만플랜세우기 카드
  * 2. [실전 체크리스트]: 음식/소모품 즉시 추가 입력창 + 최하단 고정 [✓ 패킹 체크 완료] 독
  * 3. [10대 슬롯 배낭계산기]: 2x5 그리드 + 28px 라인아트 + [20종 템플릿 카드 생성 ➔] 연동
- * 4. [가고 싶은 찜박지]: 찜 목록 열람 & 원클릭 출정지 지정
+ * 4. [가고 싶은 찜박지]: 찜 목록 열람 & 원클릭 출발지 지정
  * 5. [내 장비관리]: 즐겨찾기(⭐) 관리 + 구매일/사용일/메모 + 원클릭 패킹 세트(프리셋) 관리 + 직접 등록
  * 6. [제스처 듀얼 하단독]: 아래/옆 스와이프 시 기본 5대 독 전환
  */
@@ -488,7 +488,7 @@ var totalKg = (totalGrams / 1000).toFixed(2);
               <span style="font-size:0.60rem; color:#94a3b8;">${lastItem.weight}g</span>
             </div>
           </div>
-          <div style="font-size:0.56rem; color:#38bdf8; font-weight:700; text-align:right;">터치 시 담긴 목록 열기 ➔</div>
+          <div style="font-size:0.56rem; color:#38bdf8; font-weight:700; text-align:right;">목록 열기</div>
         `;
       }
     }
@@ -682,7 +682,7 @@ var totalKg = (totalGrams / 1000).toFixed(2);
           </div>
 
           <div style="position:relative; width:100%; display:flex; align-items:center;">
-            <input type="text" id="gearSearchFixedInput" class="modal-input" placeholder="🔍 브랜드, 장비명, 스펙 검색..." oninput="window.handleGearSearchInput(this.value)" style="border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.035); color:#ffffff; font-size:0.85rem; padding:0 32px 0 12px; height:42px; border-radius:8px; width:100%; box-sizing:border-box; outline:none;" />
+            <input type="text" id="gearSearchFixedInput" class="modal-input" placeholder="🔍 브랜드, 장비명,검색..." oninput="window.handleGearSearchInput(this.value)" style="border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.035); color:#ffffff; font-size:0.85rem; padding:0 32px 0 12px; height:42px; border-radius:8px; width:100%; box-sizing:border-box; outline:none;" />
             <button type="button" id="btnGearSearchClear" style="display:none; position:absolute; right:8px; background:rgba(255,255,255,0.15); border:none; color:#cbd5e1; width:17px; height:17px; border-radius:50%; font-size:0.6rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0;" onclick="window.clearGearSearchInput()">✕</button>
           </div>
         </div>
@@ -1407,7 +1407,7 @@ window.saveCurrentPackingRecord = function() {
     window.renderPlanStage();
   };
 
- // 🏛️ [낭만계획 메인 렌더러 함수 - 100% 정상 선언]
+ // 🏛️ [낭만플랜 메인 렌더러 함수 - 100% 정상 선언]
   window.renderPlanStage = function() {
     var modal = document.getElementById('romanticPlanModal');
     if (!modal) return;
@@ -1945,7 +1945,7 @@ window.saveCurrentPackingRecord = function() {
         <!-- 5. 화면 풀 장비 선반 -->
         <div id="calcGearShelfList" style="flex:1 1 0% !important; min-height:0 !important; overflow-y:auto !important; display:flex; flex-direction:column; gap:4px; padding-right:1px; margin-top:2px; margin-bottom:0 !important;"></div>
 
-        <!-- 6. 하단 3분할 액션 독 ([초기화] + [내 장비 세트] + [카드로 저장 ➔]) -->
+        <!-- 6. 하단 3분할 액션 독 ([초기화] + [내 장비 세트] + [카드로 저장]) -->
         <div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-top:1px solid rgba(255,255,255,0.08); padding:6px 0 2px 0; margin:0 !important; display:grid; grid-template-columns:1fr 1.1fr 1.3fr; gap:5px; align-items:center; box-sizing:border-box;">
           <button type="button" onclick="window.resetPlanCalculatorGears();" style="height:38px; background:rgba(244,63,94,0.06); border:1px solid rgba(244,63,94,0.2); color:#fda4af; font-size:0.72rem; font-weight:800; border-radius:7px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; white-space:nowrap; padding:0 2px;">
             ${PLAN_SVG.reset}
@@ -2031,9 +2031,9 @@ window.saveCurrentPackingRecord = function() {
           <div style="padding:2px 2px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
             <div style="display:flex; align-items:center; gap:4px; font-size:0.84rem; font-weight:900; color:#fde047;">
               ${UI_ICONS.starGold}
-              <span>가보고 싶은 곳 (${bookmarkedSpots.length}곳)</span>
+              <span>찜목록 (${bookmarkedSpots.length}곳)</span>
             </div>
-            <span style="font-size:0.56rem; color:#94a3b8;">날짜 선택 후 [목적지로 설정] 터치</span>
+           
           </div>
 
           <div style="flex:1 1 0% !important; min-height:0 !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; overscroll-behavior-y:contain !important; touch-action:pan-y !important; display:flex; flex-direction:column; gap:4px; padding-right:1px;">
@@ -2266,7 +2266,7 @@ window.saveCurrentPackingRecord = function() {
               <line x1="3" y1="10" x2="21" y2="10"/>
               <path d="M9 16l2 2 4-4"/>
             </svg>
-            <span>낭만계획</span>
+            <span>낭만플랜</span>
           </button>
           <button type="button" class="dock-item" onclick="if(typeof window.openHistoryModal==='function') window.openHistoryModal(); else window.closePlanModal(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
@@ -2278,7 +2278,7 @@ window.saveCurrentPackingRecord = function() {
           </button>
           <button type="button" class="dock-item" onclick="window.closePlanModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
             <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            <span>내정보</span>
+            <span>마이리포트</span>
           </button>
         </div>
       </div>
@@ -2535,7 +2535,7 @@ window.saveCurrentPackingRecord = function() {
     window.renderPlanStage();
   };
 
-  // 📝 [낭만계획 날짜별 메모 저장 헬퍼]
+  // 📝 [낭만플랜 날짜별 메모 저장 헬퍼]
   window.autoSavePlanMemo = function(dateStr, val) {
     var planMemosObj = safeGetJSON('okbm_plan_memos', {});
     planMemosObj[dateStr] = val;
@@ -2921,7 +2921,7 @@ window.saveCurrentPackingRecord = function() {
     }, { passive: true });
   };
 
- // 🚀 [낭만계획 모달 오픈 / 클로즈 - 진입 시 타 모달 차단 및 최상위 레이어 보장]
+ // 🚀 [낭만플랜 모달 오픈 / 클로즈 - 진입 시 타 모달 차단 및 최상위 레이어 보장]
   window.openPlanModal = function(subMode) {
     window.activePlanSubMode = subMode || 'calendar';
 

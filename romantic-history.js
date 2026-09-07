@@ -745,7 +745,7 @@ window.safeSetStorage = function(key, value) {
     if (selectedCount === 0) return;
 
     triggerHaptic(20);
-    var confirmMsg = '선택한 ' + selectedCount + '개의 출정 기록을 삭제하시겠습니까?\n' +
+    var confirmMsg = '선택한 ' + selectedCount + '개의 출발 기록을 삭제하시겠습니까?\n' +
       '• 모든 기기에서 즉시 삭제되며 부활하지 않습니다.\n' +
       '• 공용 피드 및 구글 클라우드에서 안전하게 정리됩니다.';
     
@@ -945,404 +945,46 @@ window.safeSetStorage = function(key, value) {
         '</div>'
       );
 
-      modalEl.innerHTML = `
+     modalEl.innerHTML = `
         <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <button onclick="window.closePastTripsListModal();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
-            <span style="font-size:0.95rem; font-weight:900; color:#fff;">📱 지난 피드 목록</span>
-          </div>
-          ${headerRightHtml}
-        </div>
-
-        <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(85px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
-          ${cardsHtml}
-        </div>
-
-        <!-- 🗑️ 다중 선택 삭제 전용 플로팅 액션 바 -->
-        <div id="pastTripsBatchDeleteBar" style="display:none; position:fixed; bottom:calc(64px + env(safe-area-inset-bottom, 0px)); left:50%; transform:translateX(-50%); width:calc(100% - 28px); max-width:420px; z-index:1000005; box-sizing:border-box;">
-          <button type="button" onclick="window.executeBatchDeletePastTrips()" style="width:100%; height:46px; background:linear-gradient(135deg, #e11d48, #be123c); border:1.5px solid #f43f5e; border-radius:12px; color:#ffffff; font-size:0.86rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 8px 24px rgba(225,29,72,0.65);">
-            <svg viewBox="0 0 24 24" style="width:17px; height:17px; stroke:currentColor; fill:none; stroke-width:2.2;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            <span id="pastTripsBatchDeleteCountText">선택한 기록 영구 삭제 🗑️</span>
+          <!-- 뒤로가기 버튼 삼각형 하나만 배치 (마이리포트 텍스트 완전 삭제) -->
+          <button type="button" onclick="document.getElementById('myReportModal').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
+          
+          <!-- 인스타그램 스타일 단일 원형 프로필 버튼 -->
+          <button type="button" onclick="triggerHaptic(12); var p=document.getElementById('myReportQuickAccountPanel'); if(p){ var isShow=p.style.display==='flex'; p.style.display=isShow?'none':'flex'; if(!isShow){ var inp=document.getElementById('myReportQuickNickInput'); if(inp){ inp.focus(); inp.select(); } } }" title="개인정보 및 아이디 변경" style="position:relative; width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, #38bdf8, #818cf8, #f43f5e); padding:2px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 12px rgba(56,189,248,0.35); flex-shrink:0;">
+            <div style="width:100%; height:100%; border-radius:50%; background:#090d14; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+              <svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div style="position:absolute; bottom:-1px; right:-1px; width:12px; height:12px; border-radius:50%; background:#38bdf8; border:1.5px solid #000; display:flex; align-items:center; justify-content:center;">
+              <svg viewBox="0 0 24 24" style="width:7px; height:7px;" fill="none" stroke="#000" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
           </button>
-        </div>
-
-  <div id="pastTripsDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000002 !important; user-select:none !important; box-sizing:border-box;">
-          <div id="pastTripsMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-            <a href="index.html" class="dock-item" onclick="window.closePastTripsListModal(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">
-              <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-              <span>낭만루터</span>
-            </a>
-            <a href="map.html" class="dock-item" onclick="window.closePastTripsListModal(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">
-              <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
-              <span>전국지도</span>
-            </a>
-            <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
-                <rect x="3" y="4" width="18" height="18" rx="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/>
-                <line x1="3" y1="10" x2="21" y2="10"/>
-                <path d="M9 16l2 2 4-4"/>
-              </svg>
-              <span>낭만계획</span>
-            </button>
-            <button type="button" class="dock-item active" onclick="window.closePastTripsListModal(); window.renderHistoryStage(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#ffffff !important; font-size:0.67rem; font-weight:900; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
-                <path d="M21 8v13H3V8"/>
-                <path d="M1 3h22v5H1z"/>
-                <path d="M10 12h4"/>
-              </svg>
-              <span>낭만보관함</span>
-            </button>
-            <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
-              <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-              <span>내정보</span>
-            </button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modalEl);
-
-      // 🔔 안드로이드 물리 백버튼 & ESC 탈출 스택 등록
-      if (typeof window.registerModalOpen === 'function') {
-        window.registerModalOpen('pastTripsListModal', window.closePastTripsListModal);
-      }
-
-      window.__pastTripsDockMode = 'tools';
-      window.togglePastTripsDockDeck = function(forceMode) {
-        if (forceMode) window.__pastTripsDockMode = forceMode;
-        else window.__pastTripsDockMode = (window.__pastTripsDockMode === 'tools') ? 'main' : 'tools';
-        var sub = document.getElementById('pastTripsSubToolsDeck');
-        var main = document.getElementById('pastTripsMainNavDeck');
-        if (!sub || !main) return;
-        if (window.__pastTripsDockMode === 'tools') {
-          sub.style.transform = 'translateY(0)';
-          main.style.transform = 'translateY(100%)';
-        } else {
-          sub.style.transform = 'translateY(100%)';
-          main.style.transform = 'translateY(0)';
-        }
-      };
-
-      var dock = document.getElementById('pastTripsDualDockContainer');
-      if (dock) {
-        var startX = 0, startY = 0;
-        dock.addEventListener('touchstart', function(e) {
-          if (!e.touches || e.touches.length !== 1) return;
-          startX = e.touches[0].clientX;
-          startY = e.touches[0].clientY;
-        }, { passive: true });
-        dock.addEventListener('touchend', function(e) {
-          if (!e.changedTouches || e.changedTouches.length !== 1) return;
-          var diffX = e.changedTouches[0].clientX - startX;
-          var diffY = e.changedTouches[0].clientY - startY;
-          if (diffY > 18 && Math.abs(diffY) > Math.abs(diffX)) {
-            triggerHaptic(10);
-            window.togglePastTripsDockDeck('main');
-          } else if (diffY < -18 && Math.abs(diffY) > Math.abs(diffX)) {
-            triggerHaptic(10);
-            window.togglePastTripsDockDeck('tools');
-          } else if (Math.abs(diffX) > 28) {
-            triggerHaptic(10);
-            window.togglePastTripsDockDeck();
-          }
-        }, { passive: true });
-      }
-
-      if (isSelectMode) {
-        window.updatePastTripsSelectionUI();
-      }
-
-      triggerHaptic(12);
-    } catch (err) {
-      console.error('[OpenPastTripsModal Error]', err);
-      if (typeof showToast === 'function') showToast('피드 목록을 여는 중 오류가 발생했습니다: ' + err.message, 'warn');
-    }
-  };
-
-// [3번 스튜디오: 20종 감성 템플릿 인출 스튜디오 연결]
-  window.openHistoryStudioModal = function(targetRecord) {
-    var cur = targetRecord || (window.interactiveHistory && window.interactiveHistory[window.currentCardIndex]) || (window.interactiveHistory && window.interactiveHistory[0]);
-    if (!cur) {
-      if (typeof showToast === 'function') showToast('스튜디오로 인출할 기록이 없습니다.', 'warn');
-      return;
-    }
-    triggerHaptic(12);
-
-    ['pastTripsListModal', 'singleTripFeedModal', 'clearMapModal', 'myReportModal'].forEach(function(mId) {
-      var el = document.getElementById(mId);
-      if (el) el.remove();
-    });
-
-    if (typeof window.closeHistoryModal === 'function') {
-      window.closeHistoryModal();
-    }
-
-    if (typeof openPackShareModal === 'function') {
-      openPackShareModal(cur, cur.items || [], false);
-    } else {
-      if (typeof showToast === 'function') showToast('템플릿 스튜디오 엔진을 불러오는 중입니다.', 'info');
-    }
-  };
-
-  // 🗺️ [4번 클리어맵: 블랙야크 완등 지도 스타일 - 전국 8도 도장깨기 컬러링 지도 뷰]
-  window.openClearMapModal = function() {
-    try {
-      var old = document.getElementById('clearMapModal');
-      if (old) old.remove();
-
-      var planModal = document.getElementById('romanticPlanModal');
-      if (planModal) planModal.style.setProperty('display', 'none', 'important');
-
-      var pastList = document.getElementById('pastTripsListModal');
-      if (pastList) pastList.remove();
-
-      var singleModal = document.getElementById('singleTripFeedModal');
-      if (singleModal) singleModal.remove();
-
-      var reportModal = document.getElementById('myReportModal');
-      if (reportModal) reportModal.remove();
-
-      var visitedIds = new Set(safeGetJSON('okbm_visited', []));
-      var spotList = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots)) ? registeredSpots : safeGetJSON('okbm_spots_cache', []);
-
-      var clearedSpots = Array.from(visitedIds).map(function(sId) {
-        var found = spotList.find(function(s) { return String(s.id).trim() === String(sId).trim(); });
-        var cleanRegion = found ? String(found.cityName || found.region || '기타').trim() : '기타';
-        return {
-          id: sId,
-          name: found ? String(found.fullName || found.name || ('스팟 #' + sId)).trim() : ('스팟 #' + sId),
-          region: cleanRegion || '기타',
-          elevation: found && found.elevation ? (found.elevation + 'm') : ''
-        };
-      });
-
-      var regions = ['서울/인천', '경기', '강원', '충청', '전라', '경상', '제주'];
-      var regionStats = {};
-      regions.forEach(function(reg) { regionStats[reg] = 0; });
-      clearedSpots.forEach(function(sp) {
-        var reg = String(sp.region || '');
-        if (reg.includes('서울') || reg.includes('인천')) regionStats['서울/인천'] = (regionStats['서울/인천'] || 0) + 1;
-        else if (reg.includes('경기')) regionStats['경기'] = (regionStats['경기'] || 0) + 1;
-        else if (reg.includes('강원')) regionStats['강원'] = (regionStats['강원'] || 0) + 1;
-        else if (reg.includes('충')) regionStats['충청'] = (regionStats['충청'] || 0) + 1;
-        else if (reg.includes('전')) regionStats['전라'] = (regionStats['전라'] || 0) + 1;
-        else if (reg.includes('경')) regionStats['경상'] = (regionStats['경상'] || 0) + 1;
-        else if (reg.includes('제주')) regionStats['제주'] = (regionStats['제주'] || 0) + 1;
-      });
-
-      var modalEl = document.createElement('div');
-      modalEl.id = 'clearMapModal';
-      modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000020 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
-
-      modalEl.innerHTML = `
-        <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <button type="button" onclick="document.getElementById('clearMapModal').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
-            <span style="font-size:0.95rem; font-weight:900; color:#fff; display:flex; align-items:center; gap:5px;">
-              <svg viewBox="0 0 24 24" style="width:17px; height:17px; fill:none; stroke:#34d399; stroke-width:2.2;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-              <span>클리어맵 (완등 도감)</span>
-            </span>
-          </div>
-          <span style="font-size:0.65rem; color:#34d399; font-weight:900; background:rgba(52,211,153,0.15); border:1px solid rgba(52,211,153,0.3); padding:2px 8px; border-radius:12px;">정복 ${clearedSpots.length}곳</span>
-        </div>
-
-        <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(70px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box;">
-          <div style="background:linear-gradient(135deg, rgba(52,211,153,0.15), rgba(6,182,212,0.08)); border:1.5px solid rgba(52,211,153,0.35); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:0.75rem; font-weight:900; color:#34d399;">전국 8도 완등 컬러링 현황</span>
-              <span style="font-size:0.62rem; color:#94a3b8; font-weight:700;">방문 시 색상이 채워집니다</span>
-            </div>
-            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px;">
-              ${regions.map(function(reg) {
-                var cnt = regionStats[reg] || 0;
-                var isUnlocked = cnt > 0;
-                return `
-                  <div style="background:${isUnlocked ? 'rgba(52,211,153,0.18)' : 'rgba(255,255,255,0.03)'}; border:1px solid ${isUnlocked ? '#34d399' : 'rgba(255,255,255,0.08)'}; border-radius:8px; padding:6px 4px; text-align:center;">
-                    <div style="font-size:0.65rem; font-weight:800; color:${isUnlocked ? '#6ee7b7' : '#64748b'};">${reg}</div>
-                    <div style="font-size:0.82rem; font-weight:900; color:${isUnlocked ? '#ffffff' : '#475569'}; font-family:'Space Grotesk', sans-serif; margin-top:2px;">${cnt}곳</div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
-
-          <div style="display:flex; flex-direction:column; gap:6px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:0 2px;">
-              <span style="font-size:0.75rem; font-weight:900; color:#ffffff;">정복된 스팟 도감 (${clearedSpots.length}곳)</span>
-              <span style="font-size:0.60rem; color:#94a3b8;">터치 시 전국지도로 바로 이동</span>
-            </div>
-            ${clearedSpots.length === 0 ? `
-              <div style="text-align:center; padding:50px 10px; color:#94a3b8; font-size:0.76rem; line-height:1.5;">
-                아직 정복된 스팟이 없습니다.<br>전국지도에서 다녀온 곳에 클리어 깃발을 꽂아보세요!
-              </div>
-            ` : clearedSpots.map(function(sp) {
-              return `
-                <div onclick="location.href='map.html?spot=' + encodeURIComponent('${escapeHtml(sp.name)}');" style="background:rgba(255,255,255,0.035); border:1px solid rgba(52,211,153,0.25); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
-                  <div style="min-width:0; flex:1; padding-right:8px;">
-                    <div style="font-size:0.84rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                      <svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:#34d399; stroke:#34d399; flex-shrink:0;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-                      <span>${escapeHtml(sp.name)}</span>
-                    </div>
-                    <div style="font-size:0.62rem; color:#94a3b8; margin-top:2px;">${escapeHtml(sp.region)} ${sp.elevation ? ' · ' + escapeHtml(sp.elevation) : ''}</div>
-                  </div>
-                  <span style="font-size:0.60rem; color:#34d399; font-weight:800; background:rgba(52,211,153,0.12); padding:3px 7px; border-radius:5px; border:1px solid rgba(52,211,153,0.3); flex-shrink:0;">지도로 보기 ➔</span>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
-
-  <div id="clearMapDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000025 !important; user-select:none !important; box-sizing:border-box;">
-          <div id="clearMapMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-            <a href="index.html" class="dock-item" onclick="document.getElementById('clearMapModal').remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">
-              <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-              <span>낭만루터</span>
-            </a>
-            <a href="map.html" class="dock-item" onclick="document.getElementById('clearMapModal').remove(); window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">
-              <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
-              <span>전국지도</span>
-            </a>
-            <button type="button" class="dock-item" onclick="document.getElementById('clearMapModal').remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
-                <rect x="3" y="4" width="18" height="18" rx="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/>
-                <line x1="3" y1="10" x2="21" y2="10"/>
-                <path d="M9 16l2 2 4-4"/>
-              </svg>
-              <span>낭만계획</span>
-            </button>
-            <button type="button" class="dock-item active" onclick="document.getElementById('clearMapModal').remove(); window.renderHistoryStage(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#ffffff !important; font-size:0.67rem; font-weight:900; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
-                <path d="M21 8v13H3V8"/>
-                <path d="M1 3h22v5H1z"/>
-                <path d="M10 12h4"/>
-              </svg>
-              <span>낭만보관함</span>
-            </button>
-            <button type="button" class="dock-item" onclick="document.getElementById('clearMapModal').remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
-              <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-              <span>내정보</span>
-            </button>
-          </div>
-        </div>
-      `;
-
-      document.body.appendChild(modalEl);
-
-      window.__clearMapDockMode = 'tools';
-      window.toggleClearMapDockDeck = function(forceMode) {
-        if (forceMode) window.__clearMapDockMode = forceMode;
-        else window.__clearMapDockMode = (window.__clearMapDockMode === 'tools') ? 'main' : 'tools';
-        var sub = document.getElementById('clearMapSubToolsDeck');
-        var main = document.getElementById('clearMapMainNavDeck');
-        if (!sub || !main) return;
-        var isTools = (window.__clearMapDockMode === 'tools');
-        sub.style.opacity = isTools ? '1' : '0';
-        sub.style.pointerEvents = isTools ? 'auto' : 'none';
-        sub.style.zIndex = isTools ? '105' : '100';
-
-        main.style.opacity = isTools ? '0' : '1';
-        main.style.pointerEvents = isTools ? 'none' : 'auto';
-        main.style.zIndex = isTools ? '100' : '105';
-      };
-
-      var cDock = document.getElementById('clearMapDualDockContainer');
-      if (cDock) {
-        var cStartX = 0, cStartY = 0;
-        cDock.addEventListener('touchstart', function(e) {
-          if (!e.touches || e.touches.length !== 1) return;
-          cStartX = e.touches[0].clientX;
-          cStartY = e.touches[0].clientY;
-        }, { passive: true });
-        cDock.addEventListener('touchmove', function(e) {
-          if (!e.touches || e.touches.length !== 1) return;
-          var diffX = Math.abs(e.touches[0].clientX - cStartX);
-          var diffY = Math.abs(e.touches[0].clientY - cStartY);
-          if (diffX > diffY && e.cancelable) e.preventDefault();
-        }, { passive: false });
-        cDock.addEventListener('touchend', function(e) {
-          if (!e.changedTouches || e.changedTouches.length !== 1) return;
-          var diffX = e.changedTouches[0].clientX - cStartX;
-          var diffY = e.changedTouches[0].clientY - cStartY;
-          if (Math.abs(diffX) > 24 && Math.abs(diffX) > Math.abs(diffY)) {
-            triggerHaptic(10);
-            window.toggleClearMapDockDeck();
-          }
-        }, { passive: true });
-      }
-      triggerHaptic(12);
-    } catch (err) {
-      console.error('[OpenClearMapModal Error]', err);
-      if (typeof showToast === 'function') showToast('클리어맵을 여는 중 오류가 발생했습니다: ' + err.message, 'warn');
-    }
-  };
-
-  // 📈 [5번 마이리포트: 내 아웃도어 라이프 성취와 총결산 리포트]
-  window.openMyReportModal = function() {
-    try {
-      var old = document.getElementById('myReportModal');
-      if (old) old.remove();
-
-      var planModal = document.getElementById('romanticPlanModal');
-      if (planModal) planModal.style.setProperty('display', 'none', 'important');
-
-      var clearModal = document.getElementById('clearMapModal');
-      if (clearModal) clearModal.remove();
-
-      var pastList = document.getElementById('pastTripsListModal');
-      if (pastList) pastList.remove();
-
-      var singleModal = document.getElementById('singleTripFeedModal');
-      if (singleModal) singleModal.remove();
-
-      var logs = (window.interactiveHistory || []).filter(Boolean);
-      var count = logs.length;
-      var totalGrams = logs.reduce(function(sum, r) { return sum + (r.weightGrams || Math.round((parseFloat(r.weightKg) || 0) * 1000)); }, 0);
-      var avgWeightStr = count > 0 ? (totalGrams / count / 1000).toFixed(2) : '0.00';
-      var avgTier = parseFloat(avgWeightStr) <= 6.0 ? 'UL 초경량' : (parseFloat(avgWeightStr) <= 12.0 ? '스탠다드' : '헤비');
-
-      var totalElev = 0, maxElev = 0, maxSpot = '-', minWeight = 999, maxWeight = 0, gearCounts = {};
-      logs.forEach(function(r) {
-        var el = parseInt(String(r.elevation || '0').replace(/\D/g, ''), 10) || 0;
-        totalElev += el;
-        if (el > maxElev) { maxElev = el; maxSpot = r.spot || '-'; }
-        var w = parseFloat(r.weightKg) || 0;
-        if (w > 0 && w < minWeight) minWeight = w;
-        if (w > maxWeight) maxWeight = w;
-        (r.items || []).forEach(function(it) {
-          var gName = (it && (it.name || it.itemName)) ? String(it.name || it.itemName).replace(/\s*\(.*?\)/, '').trim() : '';
-          if (gName) gearCounts[gName] = (gearCounts[gName] || 0) + 1;
-        });
-      });
-      if (minWeight === 999) minWeight = 0;
-
-      var topGear = '-', topGearCount = 0;
-      Object.keys(gearCounts).forEach(function(k) {
-        if (gearCounts[k] > topGearCount) { topGearCount = gearCounts[k]; topGear = k; }
-      });
-
-      var everestPercent = Math.min(100, Math.round((totalElev / 8848) * 100));
-
-      var modalEl = document.createElement('div');
-      modalEl.id = 'myReportModal';
-      modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000020 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
-
-      modalEl.innerHTML = `
-        <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <button type="button" onclick="document.getElementById('myReportModal').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
-            <span style="font-size:0.95rem; font-weight:900; color:#fff; display:flex; align-items:center; gap:5px;">
-              <svg viewBox="0 0 24 24" style="width:17px; height:17px; stroke:#38bdf8; fill:none; stroke-width:2.2;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-              <span>마이리포트 (총결산)</span>
-            </span>
-          </div>
-          <button type="button" onclick="document.getElementById('myReportModal').remove(); triggerHaptic(10);" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
         </div>
 
         <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(70px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box;">
           
+          <!-- 미니멀 개인정보 창 (닉네임 변경 + 가입날짜 + 로그아웃 전용, 낭만클라우드 저장 100% 보존) -->
+          <div id="myReportQuickAccountPanel" style="display:none; flex-direction:column; gap:8px; background:#0a0e17; border:1.5px solid rgba(56,189,248,0.35); border-radius:14px; padding:12px 14px; box-shadow:0 12px 30px rgba(0,0,0,0.9); box-sizing:border-box;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px;">
+              <span style="font-size:0.74rem; font-weight:800; color:#cbd5e1;">활동 닉네임 변경</span>
+              <button type="button" onclick="document.getElementById('myReportQuickAccountPanel').style.display='none';" style="background:none; border:none; color:#94a3b8; font-size:0.85rem; font-weight:900; cursor:pointer;">✕</button>
+            </div>
+
+            <div style="display:flex; gap:6px;">
+              <input type="text" id="myReportQuickNickInput" value="${escapeHtml((safeGetJSON('user_profile', null) && safeGetJSON('user_profile', null).nickname) || localStorage.getItem('okbm_user_nick') || '낭만백패커')}" placeholder="새 닉네임 입력" style="flex:1; height:38px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#ffffff; font-size:0.82rem; font-weight:800; padding:0 10px; outline:none; box-sizing:border-box;" />
+              <button type="button" onclick="var v=document.getElementById('myReportQuickNickInput').value.trim(); if(v){ localStorage.setItem('okbm_user_nick', v); var p=safeGetJSON('user_profile',{}); p.nickname=v; localStorage.setItem('user_profile', JSON.stringify(p)); if(p.id) localStorage.setItem('okbm_custom_nickname_' + p.id, v); if(typeof syncUserDataToCloud==='function') syncUserDataToCloud(true); triggerHaptic(12); if(typeof showToast==='function') showToast('닉네임이 변경되었습니다.', 1800); } else { if(typeof showToast==='function') showToast('닉네임을 입력하세요.', 'warn'); }" style="height:38px; background:#ffffff; border:none; border-radius:8px; color:#000000; font-size:0.78rem; font-weight:900; padding:0 14px; cursor:pointer; flex-shrink:0;">변경</button>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:3px 2px; font-size:0.72rem;">
+              <span style="color:#94a3b8;">가입날짜</span>
+              <span style="color:#e2e8f0; font-family:var(--font-mono); font-weight:700;">${escapeHtml((safeGetJSON('user_profile', null) && safeGetJSON('user_profile', null).createdAt) || '2026.01.01')}</span>
+            </div>
+
+            <button type="button" onclick="if(confirm('로그아웃 하시겠습니까?')){ if(typeof logoutUser==='function') logoutUser(); else { localStorage.removeItem('user_auth_token'); localStorage.removeItem('user_profile'); location.reload(); } }" style="height:36px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.3); border-radius:8px; color:#fda4af; font-size:0.76rem; font-weight:800; cursor:pointer; margin-top:2px;">
+              로그아웃
+            </button>
+          </div>
+
           <div style="background:linear-gradient(135deg, rgba(56,189,248,0.14), rgba(16,185,129,0.08)); border:1.5px solid rgba(56,189,248,0.35); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:10px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <span style="font-size:0.80rem; font-weight:900; color:#38bdf8;">나의 아웃도어 라이프 마일스톤</span>
@@ -1378,11 +1020,12 @@ window.safeSetStorage = function(key, value) {
             </div>
           </div>
 
-          <button type="button" onclick="window.openHistoryStudioModal();" style="width:100%; height:46px; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; border-radius:12px; color:#ffffff; font-size:0.86rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(2,132,199,0.35);">
+          <button type="button" onclick="window.openHistoryStudioModal();" style="width:100%; height:44px; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; border-radius:12px; color:#ffffff; font-size:0.84rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(2,132,199,0.35);">
             <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
             <span>나의 아웃도어 결산 카드 만들기 (스튜디오 ➔)</span>
           </button>
         </div>
+  
 
         <!-- 🏛️ [하단독 공식 5대 메인 독 단일화]: 이상한 서브독 영구 제거 -->
         <div style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; z-index:1000005 !important; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
@@ -1396,7 +1039,7 @@ window.safeSetStorage = function(key, value) {
           </a>
           <button type="button" class="dock-item" onclick="var m=document.getElementById('myReportModal'); if(m) m.remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
-            <span>낭만계획</span>
+            <span>낭만플랜</span>
           </button>
           <button type="button" class="dock-item active" onclick="var m=document.getElementById('myReportModal'); if(m) m.remove(); window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff !important; font-size:0.67rem; font-weight:900; min-height:48px; gap:3px; cursor:pointer;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
@@ -1404,7 +1047,7 @@ window.safeSetStorage = function(key, value) {
           </button>
           <button type="button" class="dock-item" onclick="var m=document.getElementById('myReportModal'); if(m) m.remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
             <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            <span>내정보</span>
+            <span>마이리포트</span>
           </button>
         </div>
       `;
@@ -1662,7 +1305,7 @@ window.safeSetStorage = function(key, value) {
         <button type="button" onclick="document.getElementById('tripActionActionSheet').remove(); window.toggleFeedPublishStatus('${log.id}');" style="width:100%; height:42px; background:${isPub ? 'rgba(56,189,248,0.14)' : 'rgba(255,255,255,0.06)'}; border:1px solid ${isPub ? '#38bdf8' : 'rgba(255,255,255,0.15)'}; border-radius:10px; color:${isPub ? '#38bdf8' : '#cbd5e1'}; font-size:0.80rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:space-between; padding:0 14px;">
           <div style="display:flex; align-items:center; gap:8px;">
             <span>${isPub ? '🌐' : '🔒'}</span>
-            <span>${isPub ? '전국 피드에 공개 중' : '현재 나만보기 (비공개)'}</span>
+            <span>${isPub ? '전체 피드에 공개 중' : '현재 나만보기 (비공개)'}</span>
           </div>
           <span style="font-size:0.68rem; color:${isPub ? '#38bdf8' : '#fde047'}; background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">
             ${isPub ? '비공개 전환 ➔' : '전체 공개하기 ➔'}
@@ -1749,10 +1392,598 @@ window.safeSetStorage = function(key, value) {
     triggerHaptic(15);
     if (typeof showToast === 'function') showToast('기록이 삭제되었습니다.', 'info');
   };
+// 👤 [특정 작성자 피드 모아보기 전담 모달 엔진]
+  window.openUserFeedCollectionModal = function(authorName, userId) {
+    if (!authorName && !userId) return;
+    triggerHaptic(12);
 
+    var old = document.getElementById('userFeedCollectionModal');
+    if (old) old.remove();
+
+    var targetAuthor = String(authorName || '').trim();
+    var targetUserId = String(userId || '').trim();
+
+    // 전체 피드 소스 풀 수집 (공용 피드 + 로컬 보관함)
+    var feedPool = [];
+    if (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0) {
+      feedPool = window.__allLoadedFeeds;
+    } else {
+      feedPool = safeGetJSON('okbm_cached_community_feeds', []) || [];
+    }
+
+    if (Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0) {
+      window.interactiveHistory.forEach(function(myRec) {
+        if (!feedPool.some(function(f) { return String(f.id).trim() === String(myRec.id).trim(); })) {
+          feedPool.push(myRec);
+        }
+      });
+    }
+
+    // 대상 작성자의 피드만 정밀 필터링
+    var matchedFeeds = feedPool.filter(function(f) {
+      if (!f) return false;
+      var fUserId = String(f.userId || '').trim();
+      var fAuthor = String(f.author || f.nick || '').trim();
+      if (targetUserId && fUserId && targetUserId === fUserId) return true;
+      if (targetAuthor && fAuthor && targetAuthor === fAuthor) return true;
+      return false;
+    });
+
+    matchedFeeds.sort(function(a, b) {
+      return String(b.date || '').localeCompare(String(a.date || ''));
+    });
+
+    var totalCount = matchedFeeds.length;
+    var repInsta = '';
+    matchedFeeds.forEach(function(f) {
+      if (!repInsta && f.instagram) repInsta = String(f.instagram).replace(/[@\s]/g, '').trim();
+    });
+
+   window.__currentUserScopedFeeds = matchedFeeds;
+    window.__currentUserScopedAuthor = targetAuthor;
+
+    var modalEl = document.createElement('div');
+    modalEl.id = 'userFeedCollectionModal';
+    modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000015; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+
+    var cardsHtml = '';
+    if (totalCount === 0) {
+      cardsHtml = `
+        <div style="width:100%; padding:60px 20px; text-align:center; color:#94a3b8; font-size:0.80rem;">
+          공개된 피드가 없습니다.
+        </div>
+      `;
+    } else {
+      cardsHtml = matchedFeeds.map(function(f) {
+        var photos = (typeof getRecordPhotos === 'function') ? getRecordPhotos(f) : (f.photos || []);
+        var thumb = (photos && photos.length > 0 && photos[0]) ? photos[0] : (f.photo || f.fieldPhoto || 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80');
+        var fSpot = escapeHtml(f.spot || '나의 힐링 스팟');
+        var fDate = escapeHtml(f.date || '');
+        var fWeight = escapeHtml(String(f.weightKg || '0.00'));
+        var fMemo = escapeHtml((f.memo || f.oneLineMemo || '').slice(0, 60));
+        var safeId = escapeHtml(String(f.id || ''));
+
+        return `
+          <div data-feed-id="${safeId}" onclick="document.getElementById('userFeedCollectionModal').remove(); window.openSingleTripDualFeedModal(this.dataset.feedId, window.__currentUserScopedFeeds, window.__currentUserScopedAuthor);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; display:flex; gap:12px; align-items:center; cursor:pointer; flex-shrink:0; transition:all 0.15s ease;">
+            <div style="width:58px; height:58px; border-radius:8px; overflow:hidden; background:#0f172a; flex-shrink:0; border:1px solid rgba(255,255,255,0.14);">
+              <img src="${thumb}" style="width:100%; height:100%; object-fit:cover; display:block;" />
+            </div>
+            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.86rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  ${fSpot}
+                </span>
+                <span style="font-size:0.75rem; font-weight:900; color:#34d399; font-family:'Space Grotesk', sans-serif;">
+                  ${fWeight}kg
+                </span>
+              </div>
+              <span style="font-size:0.62rem; color:#64748b; font-family:'JetBrains Mono', monospace;">
+                ${fDate}
+              </span>
+              ${fMemo ? `
+                <span style="font-size:0.68rem; color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">
+                  “${fMemo}”
+                </span>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    modalEl.innerHTML = `
+      <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" onclick="document.getElementById('userFeedCollectionModal').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
+          <div style="display:flex; flex-direction:column;">
+            <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">
+              [${escapeHtml(targetAuthor)}] 님의 피드
+            </span>
+            <span style="font-size:0.60rem; color:#38bdf8; font-weight:700;">
+              전체 발행 기록 (${totalCount}개)
+            </span>
+          </div>
+        </div>
+        ${repInsta ? `
+          <a href="https://instagram.com/${repInsta}" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:3px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#fda4af; padding:3px 7px; border-radius:12px; font-size:0.62rem; font-weight:800; text-decoration:none;">
+            <span>@${escapeHtml(repInsta)}</span>
+            <span style="font-size:0.55rem; color:#94a3b8;">↗</span>
+          </a>
+        ` : ''}
+      </div>
+
+      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:14px 12px calc(80px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
+        ${cardsHtml}
+      </div>
+
+      <div style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; z-index:1000016 !important; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
+        <a href="index.html" class="dock-item" onclick="document.getElementById('userFeedCollectionModal').remove(); window.closeHistoryModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px;">
+          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          <span>낭만루터</span>
+        </a>
+        <a href="map.html" class="dock-item" onclick="document.getElementById('userFeedCollectionModal').remove(); window.closeHistoryModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px;">
+          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
+          <span>전국지도</span>
+        </a>
+        <button type="button" class="dock-item" onclick="document.getElementById('userFeedCollectionModal').remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
+          <span>낭만플랜</span>
+        </button>
+        <button type="button" class="dock-item active" onclick="document.getElementById('userFeedCollectionModal').remove(); window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff !important; font-size:0.67rem; font-weight:900; min-height:48px; gap:3px; cursor:pointer;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+          <span>낭만보관함</span>
+        </button>
+        <button type="button" class="dock-item" onclick="document.getElementById('userFeedCollectionModal').remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
+          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          <span>마이리포트</span>
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(modalEl);
+  };
+// 📖 [단일 피드 카드 마크업 생성기]
+  window.buildSingleFeedCardHtml = function(log) {
+    if (!log) return '';
+    var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
+    var tmplId = log.templateId || savedTmplId;
+    var items = Array.isArray(log.items) ? log.items : [];
+    var borderGrad = (typeof window.getCardStableBorderGradient === 'function') ? window.getCardStableBorderGradient(log, 0) : 'linear-gradient(135deg, #10b981, #047857)';
+
+    var photosList = (typeof getRecordPhotos === 'function') ? getRecordPhotos(log) : (log.photos || []);
+    if (!photosList || photosList.length === 0) {
+      photosList = ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80'];
+    }
+
+    var memo100 = (log.memo || log.oneLineMemo || '').slice(0, 100);
+    var cleanInsta = String(log.instagram || '').replace(/[@\s]/g, '').trim();
+
+    var packingSheetMarkup = '';
+    var genFn = (typeof window.generateCardMarkup === 'function') ? window.generateCardMarkup : (typeof generateCardMarkup === 'function' ? generateCardMarkup : null);
+
+    if (genFn) {
+      packingSheetMarkup = genFn(tmplId, log, items, log.spot, memo100 || (log.spot + ' 패킹'), photosList[0]);
+    } else {
+      packingSheetMarkup = '<div style="height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#f4f1ea; color:#1c1917; padding:12px; border-radius:13px;">' +
+        '<div>' +
+          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px dashed #000; padding-bottom:3px;">' +
+            '<span style="font-family:\'Space Grotesk\', sans-serif; font-size:0.75rem; font-weight:900;">ROMANTIC PACK</span>' +
+            '<span style="font-size:0.52rem; background:#0284c7; color:#fff; font-weight:900; padding:1px 5px; border-radius:3px;">#0' + tmplId + '</span>' +
+          '</div>' +
+          '<div style="margin-top:6px; font-size:0.95rem; font-weight:900; color:#0f172a;">' + escapeHtml(log.spot || '낭만 스팟') + '</div>' +
+        '</div>' +
+        '<div style="border-top:1.5px dashed #000; padding-top:5px; display:flex; justify-content:space-between; align-items:baseline;">' +
+          '<span style="font-size:0.68rem; font-weight:900; color:#64748b;">TOTAL</span>' +
+          '<span style="font-size:1.35rem; font-weight:900; color:#000; font-family:\'Space Grotesk\', sans-serif;">' + (log.weightKg || '0.00') + ' KG</span>' +
+        '</div>' +
+      '</div>';
+    }
+
+    return '<div class="single-feed-block" data-record-id="' + escapeHtml(String(log.id)) + '" style="background:#0b0f17; border:1px solid rgba(255,255,255,0.12); border-radius:18px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 16px 45px rgba(0,0,0,0.95); flex-shrink:0; margin-bottom:24px; box-sizing:border-box;">' +
+      '<div style="padding:12px 14px; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">' +
+        '<div style="display:flex; align-items:center; gap:6px;">' +
+          '<span style="font-size:0.92rem; font-weight:900; color:#ffffff;">' + escapeHtml(log.spot || '낭만 스팟') + '</span>' +
+          (cleanInsta ? ('<a href="https://instagram.com/' + cleanInsta + '" target="_blank" rel="noopener noreferrer" style="color:#fda4af; font-size:0.58rem; font-weight:800; text-decoration:none;">@' + escapeHtml(cleanInsta) + '</a>') : '') +
+        '</div>' +
+        '<span style="font-size:0.68rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;">' + escapeHtml(log.date || '') + '</span>' +
+      '</div>' +
+      (memo100 ? ('<div style="padding:10px 14px; background:rgba(255,255,255,0.025); font-size:0.78rem; color:#f1f5f9; line-height:1.5;">“' + escapeHtml(memo100) + '”</div>') : '') +
+      '<div style="display:flex; flex-direction:column; padding:8px 8px 0 8px; background:#000;">' +
+        photosList.map(function(pUrl) {
+          return '<div style="width:100%; aspect-ratio:4/5; overflow:hidden; border-radius:12px; margin-bottom:8px; background:#05070a;"><img src="' + pUrl + '" style="width:100%; height:100%; object-fit:cover; display:block;" /></div>';
+        }).join('') +
+      '</div>' +
+      '<div style="padding:10px 14px 14px 14px; background:#07090e; border-top:1px solid rgba(255,255,255,0.08);">' +
+        '<div style="width:100%; aspect-ratio:3/4; border-radius:14px; padding:2px; background:' + borderGrad + ';"><div style="width:100%; height:100%; border-radius:12px; overflow:hidden;">' + packingSheetMarkup + '</div></div>' +
+      '</div>' +
+    '</div>';
+  };
+// 🔖 [관심피드 북마크 저장/해제 토글 엔진]
+  window.toggleSaveFeed = function(feedId, e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    triggerHaptic(12);
+
+    var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
+    if (!isLogged) {
+      if (typeof showToast === 'function') showToast('관심피드 저장은 로그인 후 이용하실 수 있습니다.', 'info', 2200);
+      if (typeof openLoginModal === 'function') openLoginModal();
+      return;
+    }
+
+    var sId = String(feedId || '').trim();
+    if (!sId) return;
+
+    var savedFeeds = safeGetJSON('okbm_saved_feeds', []);
+    var isSaved = savedFeeds.includes(sId);
+
+    if (isSaved) {
+      savedFeeds = savedFeeds.filter(function(id) { return id !== sId; });
+      localStorage.setItem('okbm_saved_feeds', JSON.stringify(savedFeeds));
+      if (typeof showToast === 'function') showToast('관심피드 저장 목록에서 삭제되었습니다.', 'info', 1800);
+    } else {
+      savedFeeds.unshift(sId);
+      localStorage.setItem('okbm_saved_feeds', JSON.stringify(savedFeeds));
+      if (typeof showToast === 'function') showToast('관심피드로 저장되었습니다.', 'success', 2000);
+    }
+
+    if (typeof window.renderHistoryStage === 'function') {
+      window.renderHistoryStage();
+    }
+  };
+
+ // 👥 [관심루터 & 관심피드 통합 모아보기 모달 엔진]
+  window.openRomanticInterestModal = function(initialTab) {
+    triggerHaptic(12);
+    var old = document.getElementById('romanticInterestModal');
+    if (old) old.remove();
+
+    var activeTab = (initialTab === 'feeds') ? 'feeds' : 'routers';
+
+    var followingList = safeGetJSON('okbm_following_users', []);
+    var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
+
+    var allFeeds = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
+      ? window.__allLoadedFeeds
+      : (window.safeGetStorage('okbm_cached_community_feeds', []) || []);
+
+    if (Array.isArray(window.interactiveHistory)) {
+      window.interactiveHistory.forEach(function(myRec) {
+        if (!allFeeds.some(function(f) { return String(f.id).trim() === String(myRec.id).trim(); })) {
+          allFeeds.push(myRec);
+        }
+      });
+    }
+
+    var modalEl = document.createElement('div');
+    modalEl.id = 'romanticInterestModal';
+    modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:1000030; display:flex; justify-content:center; align-items:flex-end; box-sizing:border-box;';
+
+    window.__renderInterestModalContent = function(tabName) {
+      activeTab = tabName;
+      var tabRoutersBtn = document.getElementById('interestTabBtnRouters');
+      var tabFeedsBtn = document.getElementById('interestTabBtnFeeds');
+      var bodyContainer = document.getElementById('interestModalBodyContent');
+      if (!bodyContainer) return;
+
+      if (tabRoutersBtn && tabFeedsBtn) {
+        if (activeTab === 'routers') {
+          tabRoutersBtn.style.background = 'rgba(52,211,153,0.18)';
+          tabRoutersBtn.style.borderColor = '#34d399';
+          tabRoutersBtn.style.color = '#34d399';
+          tabFeedsBtn.style.background = 'rgba(255,255,255,0.04)';
+          tabFeedsBtn.style.borderColor = 'rgba(255,255,255,0.1)';
+          tabFeedsBtn.style.color = '#94a3b8';
+        } else {
+          tabFeedsBtn.style.background = 'rgba(192,132,252,0.18)';
+          tabFeedsBtn.style.borderColor = '#c084fc';
+          tabFeedsBtn.style.color = '#c084fc';
+          tabRoutersBtn.style.background = 'rgba(255,255,255,0.04)';
+          tabRoutersBtn.style.borderColor = 'rgba(255,255,255,0.1)';
+          tabRoutersBtn.style.color = '#94a3b8';
+        }
+      }
+
+      if (activeTab === 'routers') {
+        if (followingList.length === 0) {
+          bodyContainer.innerHTML = '<div style="text-align:center; padding:50px 14px; color:#94a3b8; font-size:0.80rem; line-height:1.6;">' +
+            '등록된 관심루터가 없습니다.<br>피드 상단의 [+관심] 버튼을 눌러 관심루터를 등록해보세요.' +
+          '</div>';
+          return;
+        }
+
+        bodyContainer.innerHTML = followingList.map(function(authorKey) {
+          var cleanKey = String(authorKey).trim();
+          var userFeeds = allFeeds.filter(function(f) {
+            return f && (String(f.userId || '').trim() === cleanKey || String(f.author || f.nick || '').trim() === cleanKey);
+          });
+          var latestFeed = userFeeds[0] || null;
+          var thumbPhoto = (latestFeed && latestFeed.photos && latestFeed.photos[0]) ? latestFeed.photos[0] : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';
+          var latestSpot = latestFeed ? (latestFeed.spot || '활동 기록') : '기록 없음';
+          var latestDate = latestFeed ? (latestFeed.date || '') : '';
+          var safeKey = escapeHtml(cleanKey);
+
+          return '<div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">' +
+            '<div data-author="' + safeKey + '" onclick="document.getElementById(\'romanticInterestModal\').remove(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.author);" style="display:flex; align-items:center; gap:10px; cursor:pointer; min-width:0; flex:1;">' +
+              '<div style="width:44px; height:44px; border-radius:10px; overflow:hidden; background:#0f172a; flex-shrink:0; border:1px solid rgba(255,255,255,0.15);">' +
+                '<img src="' + thumbPhoto + '" style="width:100%; height:100%; object-fit:cover;" />' +
+              '</div>' +
+              '<div style="min-width:0; flex:1;">' +
+                '<div style="font-size:0.86rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + safeKey + '</div>' +
+                '<div style="font-size:0.64rem; color:#94a3b8; margin-top:2px;">' + escapeHtml(latestSpot) + (latestDate ? ' · ' + escapeHtml(latestDate) : '') + '</div>' +
+              '</div>' +
+            '</div>' +
+            '<button type="button" data-author="' + safeKey + '" onclick="window.toggleFollowUser(this.dataset.author, this.dataset.author, event); window.openRomanticInterestModal(\'routers\');" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.3); color:#fda4af; font-size:0.64rem; font-weight:800; padding:4px 9px; border-radius:8px; cursor:pointer; flex-shrink:0; margin-left:8px;">해제</button>' +
+          '</div>';
+        }).join('');
+      } else {
+        var matchedSavedFeeds = allFeeds.filter(function(f) {
+          return f && f.id && savedFeedsList.includes(String(f.id).trim());
+        });
+
+        if (matchedSavedFeeds.length === 0) {
+          bodyContainer.innerHTML = '<div style="text-align:center; padding:50px 14px; color:#94a3b8; font-size:0.80rem; line-height:1.6;">' +
+            '저장된 관심피드가 없습니다.<br>마음에 드는 피드 하단의 북마크 아이콘을 눌러 저장해보세요.' +
+          '</div>';
+          return;
+        }
+
+        bodyContainer.innerHTML = '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">' +
+          matchedSavedFeeds.map(function(f) {
+            var fId = escapeHtml(String(f.id));
+            var photos = (typeof getRecordPhotos === 'function') ? getRecordPhotos(f) : (f.photos || []);
+            var thumb = (photos && photos[0]) ? photos[0] : (f.photo || f.fieldPhoto || 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80');
+            var fSpot = escapeHtml(f.spot || '나의 힐링 스팟');
+            var fWeight = escapeHtml(String(f.weightKg || '0.00'));
+            var fAuthor = escapeHtml(f.author || f.nick || '루터');
+
+            return '<div style="position:relative; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; overflow:hidden; display:flex; flex-direction:column;">' +
+              '<div data-feed-id="' + fId + '" onclick="document.getElementById(\'romanticInterestModal\').remove(); window.openSingleTripDualFeedModal(this.dataset.feedId);" style="width:100%; aspect-ratio:4/3; position:relative; cursor:pointer; background:#05070a;">' +
+                '<img src="' + thumb + '" style="width:100%; height:100%; object-fit:cover;" />' +
+                '<span style="position:absolute; top:6px; left:6px; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); font-size:0.55rem; color:#fff; font-weight:800; padding:2px 5px; border-radius:4px;">' + fAuthor + '</span>' +
+              '</div>' +
+              '<div style="padding:8px 10px; display:flex; justify-content:space-between; align-items:center;">' +
+                '<div style="min-width:0; flex:1; padding-right:4px;">' +
+                  '<div style="font-size:0.75rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + fSpot + '</div>' +
+                  '<div style="font-size:0.62rem; color:#34d399; font-family:\'Space Grotesk\', sans-serif; font-weight:900; margin-top:1px;">' + fWeight + 'kg</div>' +
+                '</div>' +
+                '<button type="button" data-feed-id="' + fId + '" onclick="window.toggleSaveFeed(this.dataset.feedId, event); window.openRomanticInterestModal(\'feeds\');" style="background:none; border:none; padding:2px; cursor:pointer; color:#c084fc;" title="저장 취소">' +
+                  '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="currentColor"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
+                '</button>' +
+              '</div>' +
+            '</div>';
+          }).join('') +
+        '</div>';
+      }
+    };
+
+    modalEl.innerHTML = '<div style="width:100%; max-width:440px; max-height:82vh; background:#0c1017; border-top:1.5px solid rgba(56,189,248,0.35); border-radius:20px 20px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; overflow:hidden;">' +
+      '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">' +
+        '<div style="display:flex; align-items:center; gap:6px;">' +
+          '<button type="button" id="interestTabBtnRouters" onclick="window.__renderInterestModalContent(\'routers\'); triggerHaptic(8);" style="border:1px solid #34d399; background:rgba(52,211,153,0.18); color:#34d399; font-size:0.75rem; font-weight:900; padding:5px 10px; border-radius:10px; cursor:pointer; transition:all 0.15s ease;">' +
+            '관심루터 (' + followingList.length + ')' +
+          '</button>' +
+          '<button type="button" id="interestTabBtnFeeds" onclick="window.__renderInterestModalContent(\'feeds\'); triggerHaptic(8);" style="border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); color:#94a3b8; font-size:0.75rem; font-weight:900; padding:5px 10px; border-radius:10px; cursor:pointer; transition:all 0.15s ease;">' +
+            '관심피드 (' + savedFeedsList.length + ')' +
+          '</button>' +
+        '</div>' +
+        '<button type="button" onclick="document.getElementById(\'romanticInterestModal\').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>' +
+      '</div>' +
+      '<div id="interestModalBodyContent" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding-bottom:10px;">' +
+      '</div>' +
+    '</div>';
+
+    document.body.appendChild(modalEl);
+    window.__renderInterestModalContent(activeTab);
+  };
+
+  // 하위 호환
+  window.openFollowedRoutersModal = function() {
+    window.openRomanticInterestModal('routers');
+  };
+  window.openSavedFeedsModal = function() {
+    window.openRomanticInterestModal('feeds');
+  };
+ // 👥 [단방향 관심루터/크루 팔로우 토글 엔진]
+  window.toggleFollowUser = function(targetUserId, targetAuthor, e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    triggerHaptic(12);
+
+    var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
+    if (!isLogged) {
+      if (typeof showToast === 'function') showToast('이웃 추가는 로그인 후 이용하실 수 있습니다.', 'info', 2200);
+      if (typeof openLoginModal === 'function') openLoginModal();
+      return;
+    }
+
+    var profile = safeGetJSON('user_profile', null);
+    var myUserId = (profile && profile.id) ? String(profile.id).trim() : '';
+    var sTargetId = String(targetUserId || '').trim();
+    var sTargetAuthor = String(targetAuthor || '').trim();
+
+    if (!sTargetId && !sTargetAuthor) return;
+    if (myUserId && sTargetId && myUserId === sTargetId) {
+      if (typeof showToast === 'function') showToast('본인 계정은 이웃으로 등록할 수 없습니다.', 'warn');
+      return;
+    }
+
+    var followKey = sTargetId || sTargetAuthor;
+    var followingList = safeGetJSON('okbm_following_users', []);
+    var isFollowing = followingList.includes(followKey);
+
+    if (isFollowing) {
+      followingList = followingList.filter(function(id) { return id !== followKey; });
+      localStorage.setItem('okbm_following_users', JSON.stringify(followingList));
+      if (typeof showToast === 'function') showToast('[' + sTargetAuthor + '] 님과 이웃을 취소했습니다.', 'info', 1800);
+    } else {
+      followingList.push(followKey);
+      localStorage.setItem('okbm_following_users', JSON.stringify(followingList));
+      if (typeof showToast === 'function') showToast('[' + sTargetAuthor + '] 님을 이웃으로 등록했습니다.', 'success', 2000);
+    }
+
+    // 화면 갱신
+    if (typeof window.renderHistoryStage === 'function') window.renderHistoryStage();
+    var modalEl = document.getElementById('userFeedCollectionModal');
+    if (modalEl && typeof window.openUserFeedCollectionModal === 'function') {
+      window.openUserFeedCollectionModal(sTargetAuthor, sTargetId);
+    }
+
+    if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(false);
+  };
+
+  // 👤 [작성자 피드 전체 한눈에 모아보기 모달 엔진]
+  window.openUserFeedCollectionModal = function(authorName, userId) {
+    if (!authorName && !userId) return;
+    triggerHaptic(12);
+
+    var old = document.getElementById('userFeedCollectionModal');
+    if (old) old.remove();
+
+    var targetAuthor = String(authorName || '').trim();
+    var targetUserId = String(userId || '').trim();
+
+    var feedPool = [];
+    if (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0) {
+      feedPool = window.__allLoadedFeeds;
+    } else {
+      feedPool = safeGetJSON('okbm_cached_community_feeds', []) || [];
+    }
+
+    if (Array.isArray(window.interactiveHistory)) {
+      window.interactiveHistory.forEach(function(myRec) {
+        if (!feedPool.some(function(f) { return String(f.id).trim() === String(myRec.id).trim(); })) {
+          feedPool.push(myRec);
+        }
+      });
+    }
+
+    // 해당 유저의 피드만 엄격 필터링
+    var matchedFeeds = feedPool.filter(function(f) {
+      if (!f) return false;
+      var fUserId = String(f.userId || '').trim();
+      var fAuthor = String(f.author || f.nick || '').trim();
+      if (targetUserId && fUserId && targetUserId === fUserId) return true;
+      if (targetAuthor && fAuthor && targetAuthor === fAuthor) return true;
+      return false;
+    });
+
+    matchedFeeds.sort(function(a, b) {
+      return String(b.date || '').localeCompare(String(a.date || ''));
+    });
+
+    window.__scopedUserFeedsMap = window.__scopedUserFeedsMap || {};
+    window.__scopedUserFeedsMap[targetAuthor] = matchedFeeds;
+
+    var totalCount = matchedFeeds.length;
+    var repInsta = '';
+    matchedFeeds.forEach(function(f) {
+      if (!repInsta && f.instagram) repInsta = String(f.instagram).replace(/[@\s]/g, '').trim();
+    });
+
+    // 이웃 여부 판별
+    var profile = safeGetJSON('user_profile', null);
+    var myUserId = (profile && profile.id) ? String(profile.id).trim() : '';
+    var followKey = targetUserId || targetAuthor;
+    var followingList = safeGetJSON('okbm_following_users', []);
+    var isFollowing = followingList.includes(followKey);
+    var isSelf = (myUserId && targetUserId && myUserId === targetUserId);
+
+    var followBtnHtml = '';
+    if (!isSelf) {
+      followBtnHtml = isFollowing
+        ? '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(52,211,153,0.15); border:1px solid #34d399; color:#34d399; padding:4px 9px; border-radius:14px; font-size:0.65rem; font-weight:900; cursor:pointer; display:inline-flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>이웃</span></button>'
+        : '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22); color:#ffffff; padding:4px 9px; border-radius:14px; font-size:0.65rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>이웃추가</span></button>';
+    }
+
+    var modalEl = document.createElement('div');
+    modalEl.id = 'userFeedCollectionModal';
+    modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000015; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+
+    var cardsHtml = '';
+    if (totalCount === 0) {
+      cardsHtml = '<div style="width:100%; padding:60px 20px; text-align:center; color:#94a3b8; font-size:0.80rem;">공개된 피드가 없습니다.</div>';
+    } else {
+      cardsHtml = matchedFeeds.map(function(f) {
+        var photos = (typeof getRecordPhotos === 'function') ? getRecordPhotos(f) : (f.photos || []);
+        var thumb = (photos && photos.length > 0 && photos[0]) ? photos[0] : (f.photo || f.fieldPhoto || 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80');
+        var fSpot = escapeHtml(f.spot || '나의 힐링 스팟');
+        var fDate = escapeHtml(f.date || '');
+        var fWeight = escapeHtml(String(f.weightKg || '0.00'));
+        var fMemo = escapeHtml((f.memo || f.oneLineMemo || '').slice(0, 60));
+        var safeId = escapeHtml(String(f.id || ''));
+
+        return '<div data-feed-id="' + safeId + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.openSingleTripDualFeedModal(this.dataset.feedId, window.__scopedUserFeedsMap[this.dataset.author], this.dataset.author);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; display:flex; gap:12px; align-items:center; cursor:pointer; flex-shrink:0; transition:all 0.15s ease;">' +
+          '<div style="width:58px; height:58px; border-radius:8px; overflow:hidden; background:#0f172a; flex-shrink:0; border:1px solid rgba(255,255,255,0.14);">' +
+            '<img src="' + thumb + '" style="width:100%; height:100%; object-fit:cover; display:block;" />' +
+          '</div>' +
+          '<div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">' +
+            '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+              '<span style="font-size:0.86rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + fSpot + '</span>' +
+              '<span style="font-size:0.75rem; font-weight:900; color:#34d399; font-family:\'Space Grotesk\', sans-serif;">' + fWeight + 'kg</span>' +
+            '</div>' +
+            '<span style="font-size:0.62rem; color:#64748b; font-family:\'JetBrains Mono\', monospace;">' + fDate + '</span>' +
+            (fMemo ? ('<span style="font-size:0.68rem; color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">“' + fMemo + '”</span>') : '') +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    modalEl.innerHTML = `
+      <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" onclick="document.getElementById('userFeedCollectionModal').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
+          <div style="display:flex; flex-direction:column;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">[${escapeHtml(targetAuthor)}]</span>
+              ${followBtnHtml}
+            </div>
+            <span style="font-size:0.60rem; color:#38bdf8; font-weight:700;">전체 발행 기록 (${totalCount}개)</span>
+          </div>
+        </div>
+        ${repInsta ? `
+          <a href="https://instagram.com/${repInsta}" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:3px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#fda4af; padding:3px 7px; border-radius:12px; font-size:0.62rem; font-weight:800; text-decoration:none;">
+            <span>@${escapeHtml(repInsta)}</span>
+            <span style="font-size:0.55rem; color:#94a3b8;">↗</span>
+          </a>
+        ` : ''}
+      </div>
+
+      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:14px 12px calc(80px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
+        ${cardsHtml}
+      </div>
+
+      <div style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; z-index:1000016 !important; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
+        <a href="index.html" class="dock-item" onclick="document.getElementById('userFeedCollectionModal').remove(); window.closeHistoryModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px;">
+          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          <span>낭만루터</span>
+        </a>
+        <a href="map.html" class="dock-item" onclick="document.getElementById('userFeedCollectionModal').remove(); window.closeHistoryModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px;">
+          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
+          <span>전국지도</span>
+        </a>
+        <button type="button" class="dock-item" onclick="document.getElementById('userFeedCollectionModal').remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
+          <span>낭만플랜</span>
+        </button>
+        <button type="button" class="dock-item active" onclick="document.getElementById('userFeedCollectionModal').remove(); window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff !important; font-size:0.67rem; font-weight:900; min-height:48px; gap:3px; cursor:pointer;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/>
+          <path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+          <span>낭만보관함</span>
+        </button>
+        <button type="button" class="dock-item" onclick="document.getElementById('userFeedCollectionModal').remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
+          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          <span>마이리포트</span>
+        </button>
+      </div>
+    `;
+
+    document.body.appendChild(modalEl);
+  };
   // 📖 [백패킹/캠핑 피드 상세 듀얼 뷰 - 아웃도어 매거진 규격 동기화]
-  window.openSingleTripDualFeedModal = function(recordId) {
-    var logs = window.interactiveHistory || [];
+  window.openSingleTripDualFeedModal = function(recordId, scopedFeedList, contextTitle) {
+    var logs = (Array.isArray(scopedFeedList) && scopedFeedList.length > 0)
+      ? scopedFeedList
+      : (window.interactiveHistory || []);
+
     if (logs.length === 0) {
       if (typeof showToast === 'function') showToast('선택한 기록을 찾을 수 없습니다.', 'warn');
       return;
@@ -1764,134 +1995,33 @@ window.safeSetStorage = function(key, value) {
     var old = document.getElementById('singleTripFeedModal');
     if (old) old.remove();
 
-    window.__currentFeedLoadedIndices = new Set([startIdx]);
-    window.__currentVisibleFeedId = String(logs[startIdx].id);
+    var headerTitleText = contextTitle ? ('[' + escapeHtml(contextTitle) + '] 님의 피드 (' + logs.length + '개)') : '필드 상세 피드';
 
-    window.buildSingleFeedCardHtml = function(log) {
-      var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
-      var tmplId = log.templateId || savedTmplId;
-      var items = Array.isArray(log.items) ? log.items : [];
-      var borderGrad = window.getCardStableBorderGradient(log, 0);
-
-      var photosList = getRecordPhotos(log);
-      if (photosList.length === 0) {
-        photosList = ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80'];
-      }
-
-      var memo100 = (log.memo || log.oneLineMemo || '').slice(0, 100);
-      var cleanInsta = String(log.instagram || localStorage.getItem('okbm_user_instagram') || '').replace(/[@\s]/g, '').trim();
-
-      var packingSheetMarkup = '';
-      var genFn = (typeof window.generateCardMarkup === 'function') ? window.generateCardMarkup : (typeof generateCardMarkup === 'function' ? generateCardMarkup : null);
-
-      if (genFn) {
-        packingSheetMarkup = genFn(tmplId, log, items, log.spot, memo100 || (log.spot + ' 패킹'), photosList[0]);
-      } else {
-        packingSheetMarkup = `
-          <div style="height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#f4f1ea; color:#1c1917; padding:12px; border-radius:13px;">
-            <div>
-              <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px dashed #000; padding-bottom:3px;">
-                <span style="font-family:'Space Grotesk', sans-serif; font-size:0.75rem; font-weight:900;">ROMANTIC PACK</span>
-                <span style="font-size:0.52rem; background:#0284c7; color:#fff; font-weight:900; padding:1px 5px; border-radius:3px;">#0${tmplId} 패킹지</span>
-              </div>
-              <div style="margin-top:6px; font-size:0.95rem; font-weight:900; display:flex; align-items:center; gap:3px;">
-                ${HISTORY_VEC_ICONS.pin} <span>${escapeHtml(log.spot)} (${escapeHtml(log.elevation || '')})</span>
-              </div>
-              <div style="font-size:0.60rem; color:#64748b; font-family:'JetBrains Mono', monospace; margin-top:2px;">${log.date} · 장비 ${items.length}개 세팅</div>
-              <div style="margin-top:8px; border-top:1px dashed #cbd5e1; padding-top:5px; font-size:0.65rem; display:flex; flex-direction:column; gap:2.5px; max-height:160px; overflow-y:auto;">
-                ${items.map(function(it) { return '<div style="display:flex; justify-content:space-between;"><span>• ' + escapeHtml(it.name) + '</span><span style="font-weight:700;">' + ((it.weight||0)/1000).toFixed(2) + 'kg</span></div>'; }).join('')}
-              </div>
-            </div>
-            <div style="border-top:1.5px dashed #000; padding-top:5px; display:flex; justify-content:space-between; align-items:baseline;">
-              <span style="font-size:0.68rem; font-weight:900; color:#64748b;">TOTAL WEIGHT</span>
-              <span style="font-size:1.4rem; font-weight:900; color:#000; font-family:'Space Grotesk', sans-serif;">${log.weightKg} KG</span>
-            </div>
-          </div>
-        `;
-      }
-
-      return `
-        <div class="single-feed-block" data-record-id="${escapeHtml(String(log.id))}" style="background:#0b0f17; border:1px solid rgba(255,255,255,0.12); border-radius:18px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 16px 45px rgba(0,0,0,0.95); flex-shrink:0; margin-bottom:24px; box-sizing:border-box;">
-          
-          <!-- 상단 헤더 & 개척자 인스타 배지 -->
-          <div style="padding:12px 14px; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
-            <div style="min-width:0; flex:1; padding-right:8px;">
-              <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-size:0.92rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                  ${escapeHtml(log.spot)}
-                </span>
-                <button type="button" onclick="window.openSpotInMap('${escapeHtml(log.spot)}', event);" style="background:rgba(56,189,248,0.14); border:1px solid rgba(56,189,248,0.35); color:#38bdf8; font-size:0.60rem; font-weight:800; padding:2px 6px; border-radius:5px; cursor:pointer; flex-shrink:0;">
-                  🗺️ 지도
-                </button>
-              </div>
-
-              ${cleanInsta ? `
-                <a href="https://instagram.com/${cleanInsta}" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:3px; background:linear-gradient(135deg, rgba(225,48,108,0.18), rgba(245,96,64,0.18)); border:1px solid rgba(225,48,108,0.4); color:#fda4af; padding:1.5px 6px; border-radius:4px; font-size:0.58rem; font-weight:800; text-decoration:none; margin-top:3px;">
-                  <span>📸 @${escapeHtml(cleanInsta)}</span>
-                  <span style="font-size:0.52rem; opacity:0.8;">↗</span>
-                </a>
-              ` : ''}
-            </div>
-
-            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-              <span style="font-size:0.68rem; color:#94a3b8; font-weight:700; font-family:'JetBrains Mono', monospace;">${escapeHtml(log.date)}</span>
-              <button onclick="window.openTripActionMenu('${escapeHtml(String(log.id))}', event)" style="background:rgba(255,255,255,0.08); border:none; color:#38bdf8; font-size:0.85rem; font-weight:900; padding:2px 8px; border-radius:4px; cursor:pointer;">···</button>
-            </div>
-          </div>
-
-          <!-- 100자 핵심 팁 -->
-          ${memo100 ? `
-            <div style="padding:12px 16px; background:rgba(255,255,255,0.025); border-bottom:1px solid rgba(226,232,240,0.1); border-left:3px solid #38bdf8;">
-              <div style="font-size:0.78rem; font-weight:600; color:#f1f5f9; line-height:1.55; word-break:keep-all;">
-                “${escapeHtml(memo100)}”
-              </div>
-            </div>
-          ` : ''}
-
-          <!-- 고화질 현장 사진 리스트 -->
-          <div style="display:flex; flex-direction:column; padding:8px 8px 0 8px; background:#000;">
-            ${photosList.map(function(pUrl) {
-              return `
-                <div style="width:100%; aspect-ratio:4/5; overflow:hidden; position:relative; background:#05070a; border:1px solid rgba(255,255,255,0.12); border-radius:12px; margin-bottom:8px; box-sizing:border-box;">
-                  <img src="${pUrl}" style="width:100%; height:100%; object-fit:cover; display:block;" />
-                </div>
-              `;
-            }).join('')}
-          </div>
-
-          <!-- 배낭 패킹 명세서 엽서 -->
-          <div style="padding:10px 14px 14px 14px; background:#07090e; border-top:1px solid rgba(255,255,255,0.08);">
-            <div style="font-size:0.75rem; font-weight:900; color:#38bdf8; margin-bottom:8px; display:flex; align-items:center; gap:5px;">
-              ${HISTORY_VEC_ICONS.backpack}
-              <span>이날의 배낭 패킹 명세서</span>
-            </div>
-            <div style="width:100%; aspect-ratio:3/4; border-radius:14px; padding:2px; background:${borderGrad}; box-shadow:0 8px 24px rgba(0,0,0,0.8); box-sizing:border-box;">
-              <div style="width:100%; height:100%; border-radius:12px; overflow:hidden; background:#0b0f19;">
-                ${packingSheetMarkup}
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    };
+    // 해당 작성자의 피드들만 트랙에 순차 렌더링 (타인 피드 원천 차단)
+    var allCardsHtml = logs.map(function(item) {
+      return window.buildSingleFeedCardHtml(item);
+    }).join('');
 
     var feedModal = document.createElement('div');
     feedModal.id = 'singleTripFeedModal';
-    feedModal.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000002; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    feedModal.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000020; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     feedModal.innerHTML = `
       <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
-        <span style="font-size:0.95rem; font-weight:900; color:#fff;">📖 필드 상세 피드</span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" onclick="document.getElementById('singleTripFeedModal').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
+          <span style="font-size:0.92rem; font-weight:900; color:#fff;">${headerTitleText}</span>
+        </div>
         <button onclick="document.getElementById('singleTripFeedModal').remove(); triggerHaptic(10);" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
       </div>
 
       <div id="dualFeedScrollContainer" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(70px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; box-sizing:border-box;">
         <div id="dualFeedCardsWrapper">
-          ${window.buildSingleFeedCardHtml(logs[startIdx])}
+          ${allCardsHtml}
         </div>
       </div>
 
-      <div style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; z-index:1000003 !important; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
+      <div style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; z-index:1000021 !important; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
         <a href="index.html" class="dock-item" onclick="var s=document.getElementById('singleTripFeedModal'); if(s) s.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px;">
           <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
           <span>낭만루터</span>
@@ -1902,7 +2032,7 @@ window.safeSetStorage = function(key, value) {
         </a>
         <button type="button" class="dock-item" onclick="var s=document.getElementById('singleTripFeedModal'); if(s) s.remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
-          <span>낭만계획</span>
+          <span>낭만플랜</span>
         </button>
         <button type="button" class="dock-item active" onclick="var s=document.getElementById('singleTripFeedModal'); if(s) s.remove(); window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff !important; font-size:0.67rem; font-weight:900; min-height:48px; gap:3px; cursor:pointer;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
@@ -1910,11 +2040,20 @@ window.safeSetStorage = function(key, value) {
         </button>
         <button type="button" class="dock-item" onclick="var s=document.getElementById('singleTripFeedModal'); if(s) s.remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
           <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-          <span>내정보</span>
+          <span>마이리포트</span>
         </button>
       </div>
     `;
     document.body.appendChild(feedModal);
+
+    // 선택된 해당 피드로 즉시 스크롤 이동
+    setTimeout(function() {
+      var targetCard = feedModal.querySelector('[data-record-id="' + recordId + '"]');
+      if (targetCard) {
+        targetCard.scrollIntoView({ behavior: 'auto', block: 'start' });
+      }
+    }, 40);
+
     triggerHaptic(12);
   };
 
@@ -2499,8 +2638,7 @@ window.safeSetStorage = function(key, value) {
       }
     }
   };
-
-  window.renderHistoryStage = function(isLoading) {
+window.renderHistoryStage = function(isLoading) {
     var modal = document.getElementById('romanticHistoryModal');
     if (!modal) return;
 
@@ -2508,18 +2646,50 @@ window.safeSetStorage = function(key, value) {
     if (!content) return;
 
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
-    
-    // 비회원은 항상 explore(전국 둘러보기) 탭을 최우선 적용
+    window.interactiveHistory = window.sortHistoryByDateAsc(window.interactiveHistory || []).reverse();
+
+    // 초기 진입 시 기본 탭을 'explore'(전체 피드)로 보장하며, 비회원이거나 내 기록이 0개인 경우 전체 피드로 자동 안내
+    if (!window.activeHistoryFeedTab) {
+      window.activeHistoryFeedTab = (isLogged && window.interactiveHistory.length > 0) ? 'my' : 'explore';
+    }
     if (!isLogged && window.activeHistoryFeedTab === 'my') {
       window.activeHistoryFeedTab = 'explore';
     }
 
-    window.interactiveHistory = window.sortHistoryByDateAsc(window.interactiveHistory || []).reverse();
-    var isMyTab = (window.activeHistoryFeedTab === 'my');
+   var isMyTab = (window.activeHistoryFeedTab === 'my');
+    var isFollowingTab = (window.activeHistoryFeedTab === 'following');
+    var isSavedTab = (window.activeHistoryFeedTab === 'saved');
+
+    var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
 
     var currentList = [];
     if (isMyTab) {
       currentList = window.interactiveHistory || [];
+    } else if (isFollowingTab) {
+      var allFeedSource = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
+        ? window.__allLoadedFeeds
+        : (window.safeGetStorage('okbm_cached_community_feeds', []) || []);
+      var followList = safeGetJSON('okbm_following_users', []);
+      currentList = allFeedSource.filter(function(f) {
+        if (!f) return false;
+        var fId = String(f.userId || '').trim();
+        var fNick = String(f.author || f.nick || '').trim();
+        return followList.includes(fId) || followList.includes(fNick);
+      });
+    } else if (isSavedTab) {
+      var allFeedPool = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
+        ? window.__allLoadedFeeds
+        : (window.safeGetStorage('okbm_cached_community_feeds', []) || []);
+      if (Array.isArray(window.interactiveHistory)) {
+        window.interactiveHistory.forEach(function(myRec) {
+          if (!allFeedPool.some(function(f) { return String(f.id).trim() === String(myRec.id).trim(); })) {
+            allFeedPool.push(myRec);
+          }
+        });
+      }
+      currentList = allFeedPool.filter(function(f) {
+        return f && f.id && savedFeedsList.includes(String(f.id).trim());
+      });
     } else {
       currentList = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
         ? window.__allLoadedFeeds
@@ -2533,26 +2703,51 @@ window.safeSetStorage = function(key, value) {
     var starsMap = safeGetJSON('okbm_feed_stars_map', {});
     var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
 
+   var streamToggleBtnHtml = '';
+    if (window.activeHistoryFeedTab === 'explore') {
+      streamToggleBtnHtml = '<button type="button" onclick="window.activeHistoryFeedTab=\'following\'; window.renderHistoryStage(); triggerHaptic(10);" style="background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.3); color:#34d399; font-size:0.65rem; font-weight:800; padding:3px 8px; border-radius:12px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg><span>전체피드</span><svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>';
+    } else if (window.activeHistoryFeedTab === 'following') {
+      streamToggleBtnHtml = '<div style="display:inline-flex; align-items:center; gap:5px;">' +
+        '<button type="button" onclick="window.openRomanticInterestModal(\'routers\');" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22); color:#f8fafc; font-size:0.70rem; font-weight:900; padding:4px 8px; border-radius:8px; cursor:pointer;" title="관심루터 목록">목록</button>' +
+        '<button type="button" onclick="window.activeHistoryFeedTab=\'saved\'; window.renderHistoryStage(); triggerHaptic(10);" style="background:rgba(253,224,71,0.12); border:1px solid rgba(253,224,71,0.35); color:#fde047; font-size:0.65rem; font-weight:800; padding:3px 8px; border-radius:12px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>관심루터</span><svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>' +
+      '</div>';
+    } else if (window.activeHistoryFeedTab === 'saved') {
+      streamToggleBtnHtml = '<div style="display:inline-flex; align-items:center; gap:5px;">' +
+        '<button type="button" onclick="window.openRomanticInterestModal(\'feeds\');" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22); color:#f8fafc; font-size:0.70rem; font-weight:900; padding:4px 8px; border-radius:8px; cursor:pointer;" title="관심피드 목록">목록</button>' +
+        '<button type="button" onclick="window.activeHistoryFeedTab=\'my\'; window.renderHistoryStage(); triggerHaptic(10);" style="background:rgba(192,132,252,0.15); border:1px solid rgba(192,132,252,0.35); color:#c084fc; font-size:0.65rem; font-weight:800; padding:3px 8px; border-radius:12px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="currentColor"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><span>관심피드</span><svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>' +
+      '</div>';
+    } else {
+      streamToggleBtnHtml = '<button type="button" onclick="window.activeHistoryFeedTab=\'explore\'; window.renderHistoryStage(); triggerHaptic(10);" style="background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; font-size:0.65rem; font-weight:800; padding:3px 8px; border-radius:12px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>보 관 함</span><svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>';
+    }
+
     var reelSlidesHtml = '';
     if (isLoading) {
-      reelSlidesHtml = `
-        <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; color:#38bdf8;">
-          <div style="font-size:2.2rem; animation:spin 1s linear infinite;">⏳</div>
-          <div style="font-size:0.90rem; font-weight:900; color:#e2e8f0; text-shadow:0 0 10px rgba(255,255,255,0.4);">전국 최신 피드 동기화 중...</div>
-        </div>
-      `;
+      reelSlidesHtml = '<div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; color:#38bdf8;">' +
+        '<svg viewBox="0 0 24 24" style="width:36px; height:36px; animation:spin 1s linear infinite;" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12"/></svg>' +
+        '<div style="font-size:0.86rem; font-weight:800; color:#e2e8f0; letter-spacing:-0.02em;">최신 피드 동기화 중...</div>' +
+      '</div>';
     } else if (currentList.length === 0) {
-      reelSlidesHtml = `
-        <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; padding:30px; text-align:center; box-sizing:border-box;">
-          <div style="font-size:3rem; line-height:1;">🏕️</div>
-          <div style="font-size:1.05rem; font-weight:900; color:#ffffff; text-shadow:0 0 10px rgba(255,255,255,0.4);">
-            ${isMyTab ? '아직 등록된 내 기록이 없습니다.' : '둘러볼 수 있는 피드가 없습니다.'}
-          </div>
-          <div style="font-size:0.75rem; color:#94a3b8; line-height:1.5;">
-            ${isMyTab ? '다녀온 장소의 사진과 팁을 남겨 첫 번째 기록을 완성해보세요!' : '새로운 기록을 불러오는 중입니다.'}
-          </div>
-        </div>
-      `;
+      var emptyMsg = isMyTab ? '아직 등록된 내 기록이 없습니다.' : (isFollowingTab ? '등록된 관심루터의 소식이 없습니다.' : (isSavedTab ? '아직 저장한 관심피드가 없습니다.' : '둘러볼 수 있는 피드가 없습니다.'));
+      var emptySubMsg = isMyTab ? '다녀온 장소의 사진과 팁을 남겨 첫 번째 기록을 완성해보세요.' : (isFollowingTab ? '마음에 드는 캠퍼를 관심루터로 추가해보세요.' : (isSavedTab ? '마음에 드는 피드 하단의 저장(북마크)을 눌러 보관해보세요.' : '전국 캠퍼들의 최신 피드를 준비 중입니다.'));
+
+      reelSlidesHtml = '<div class="reel-page-snap" style="width:100% !important; height:100% !important; height:100dvh !important; display:flex !important; flex-direction:column !important; justify-content:flex-start !important; align-items:stretch !important; padding-top:calc(env(safe-area-inset-top, 0px)) !important; padding-bottom:calc(56px + env(safe-area-inset-bottom, 0px)) !important; box-sizing:border-box !important; background:#000000;">' +
+        '<div style="height:48px; padding:0 12px; display:flex; justify-content:space-between; align-items:center; background:#000000; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,0.06);">' +
+          '<div style="display:flex; align-items:center; gap:6px;">' +
+            '<span style="font-size:0.84rem; color:#ffffff; font-weight:900;">' + escapeHtml(savedNick) + '</span>' +
+          '</div>' +
+          '<div style="flex-shrink:0;">' +
+            streamToggleBtnHtml +
+          '</div>' +
+        '</div>' +
+        '<div style="flex:1 1 auto; width:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:30px; text-align:center; box-sizing:border-box;">' +
+          '<div style="width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; color:#64748b;">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:24px; height:24px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
+          '</div>' +
+          '<div style="font-size:0.95rem; font-weight:800; color:#ffffff;">' + emptyMsg + '</div>' +
+          '<div style="font-size:0.75rem; color:#94a3b8; line-height:1.5;">' + emptySubMsg + '</div>' +
+          '<button type="button" onclick="window.activeHistoryFeedTab=\'explore\'; window.renderHistoryStage(); triggerHaptic(10);" style="margin-top:6px; background:linear-gradient(135deg, #0284c7, #0369a1); border:none; border-radius:10px; color:#ffffff; font-size:0.78rem; font-weight:900; padding:9px 16px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(2,132,199,0.35);"><svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span>전체 피드 둘러보기</span></button>' +
+        '</div>' +
+      '</div>';
     } else {
       reelSlidesHtml = currentList.map(function(item, idx) {
         var record = isMyTab ? item : window.normalizeHistoryRecord(item, idx);
@@ -2573,39 +2768,37 @@ window.safeSetStorage = function(key, value) {
         var mediaItems = (photos && photos.length > 0) ? photos : [];
         var totalPhotosCount = mediaItems.length;
 
-        // 🛡️ [내 게시물 판별]: 현재 유저가 작성한 게시물인 경우에만 자물쇠 토글 노출
         var recordUserId = String(record.userId || '').trim();
         var isMyRecord = isMyTab || (myUserId && recordUserId && myUserId === recordUserId);
 
         var horizontalSlidesHtml = '';
         if (totalPhotosCount === 0) {
-          horizontalSlidesHtml = `
-            <div style="flex:0 0 100% !important; width:100% !important; height:100% !important; background:radial-gradient(circle at 50% 40%, #1e293b 0%, #090d16 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:20px; box-sizing:border-box; text-align:center;">
-              <div style="width:48px; height:48px; border-radius:50%; background:rgba(255,255,255,0.06); border:1.5px dashed rgba(56,189,248,0.4); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px; height:24px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              </div>
-              <div style="font-size:0.86rem; font-weight:900; color:#e2e8f0;">등록된 현장 사진이 없습니다.</div>
-              <div style="font-size:0.68rem; color:#94a3b8; line-height:1.4;">관리 메뉴에서<br>현장 사진을 추가해보세요!</div>
-            </div>
-          `;
+          horizontalSlidesHtml = '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; background:radial-gradient(circle at 50% 40%, #1e293b 0%, #090d16 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:20px; box-sizing:border-box; text-align:center;">' +
+            '<div style="width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.04); border:1.5px dashed rgba(56,189,248,0.3); display:flex; align-items:center; justify-content:center; color:#38bdf8;">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:22px; height:22px;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>' +
+            '</div>' +
+            '<div style="font-size:0.82rem; font-weight:800; color:#cbd5e1;">등록된 현장 사진이 없습니다</div>' +
+            '<div style="font-size:0.65rem; color:#64748b; line-height:1.4;">관리 메뉴에서 현장 사진을 추가해보세요</div>' +
+          '</div>';
         } else {
           horizontalSlidesHtml = mediaItems.map(function(pUrl) {
-            return `
-              <div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center;">
-                <img src="${pUrl}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(24px) brightness(0.4); transform:scale(1.2); pointer-events:none;" />
-                <img src="${pUrl}" style="position:relative; z-index:2; width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />
-              </div>
-            `;
+            return '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center;">' +
+              '<img src="' + pUrl + '" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(24px) brightness(0.35); transform:scale(1.2); pointer-events:none;" />' +
+              '<img src="' + pUrl + '" style="position:relative; z-index:2; width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />' +
+            '</div>';
           }).join('');
         }
 
-        var dotsHtml = (totalPhotosCount > 1) ? `
-          <div id="dotsWrap_${cardId}" style="display:flex; justify-content:center; align-items:center; gap:5px; height:12px; pointer-events:none;">
-            ${Array.from({ length: totalPhotosCount }).map(function(_, dIdx) {
-              return `<div class="carousel-dot-item" style="width:${dIdx === 0 ? '14px' : '5px'}; height:4px; border-radius:2px; background:${dIdx === 0 ? '#ffffff' : 'rgba(255,255,255,0.35)'}; ${dIdx === 0 ? 'box-shadow:0 0 8px rgba(255,255,255,0.9);' : ''} transition:all 0.2s ease;"></div>`;
-            }).join('')}
-          </div>
-        ` : '';
+        var dotsHtml = '';
+        if (totalPhotosCount > 1) {
+          var dotsItemsHtml = Array.from({ length: totalPhotosCount }).map(function(_, dIdx) {
+            var dotW = (dIdx === 0) ? '12px' : '4px';
+            var dotBg = (dIdx === 0) ? '#ffffff' : 'rgba(255,255,255,0.3)';
+            var dotShadow = (dIdx === 0) ? 'box-shadow:0 0 6px rgba(255,255,255,0.8);' : '';
+            return '<div class="carousel-dot-item" style="width:' + dotW + '; height:3.5px; border-radius:2px; background:' + dotBg + '; ' + dotShadow + ' transition:all 0.2s ease;"></div>';
+          }).join('');
+          dotsHtml = '<div id="dotsWrap_' + cardId + '" style="display:flex; justify-content:center; align-items:center; gap:4px; height:10px; pointer-events:none;">' + dotsItemsHtml + '</div>';
+        }
 
         var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
         var tmplId = record.templateId || savedTmplId;
@@ -2617,176 +2810,172 @@ window.safeSetStorage = function(key, value) {
         if (genFn) {
           backTemplateCardHtml = genFn(tmplId, record, record.items || [], spotName, memo120 || spotName, rawPhoto);
         } else {
-          backTemplateCardHtml = `
-            <div style="width:100%; height:100%; background:#090d15; padding:20px 18px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; position:relative;">
-              <div>
-                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px dashed rgba(255,255,255,0.2); padding-bottom:8px;">
-                  <span style="font-size:0.95rem; font-weight:900; color:#38bdf8; text-shadow:0 0 8px rgba(56,189,248,0.5);">🎒 ${escapeHtml(spotName)}</span>
-                  <span style="font-size:0.68rem; color:#94a3b8; font-family:'JetBrains Mono', monospace;">${escapeHtml(tripDate)}</span>
-                </div>
-                <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:baseline; background:rgba(255,255,255,0.03); padding:12px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.08);">
-                  <span style="font-size:0.78rem; color:#94a3b8; font-weight:700;">총 패킹 무게</span>
-                  <span style="font-size:1.6rem; font-weight:900; color:#34d399; font-family:'Space Grotesk', sans-serif; text-shadow:0 0 10px rgba(52,211,153,0.5);">${weightKg} KG</span>
-                </div>
-                <div style="font-size:0.78rem; color:#cbd5e1; margin-top:14px; line-height:1.6;">
-                  장비 <strong style="color:#38bdf8;">${itemsCount}개</strong> 세팅 완료<br>
-                  고도: <span style="color:#fde047;">${escapeHtml(record.elevation || '정보 없음')}</span>
-                </div>
-              </div>
-              <div>
-                <button type="button" onclick="event.stopPropagation(); window.openHistoryStudioModal(window.interactiveHistory.find(function(r){return String(r.id)==='${cardId}';})); triggerHaptic(10);" style="width:100%; height:42px; background:linear-gradient(135deg, #0284c7, #0369a1); border:none; border-radius:8px; color:#fff; font-size:0.82rem; font-weight:900; cursor:pointer; box-shadow:0 4px 14px rgba(2,132,199,0.4);">
-                  🎨 20종 감성 엽서로 인출하기 ➔
-                </button>
-                <div style="font-size:0.60rem; color:#64748b; text-align:center; margin-top:6px;">
-                  🔄 다시 터치하면 사진으로 돌아갑니다
-                </div>
-              </div>
-            </div>
-          `;
+          backTemplateCardHtml = '<div style="width:100%; height:100%; background:#090d15; padding:16px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; position:relative;">' +
+            '<div>' +
+              '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed rgba(255,255,255,0.18); padding-bottom:6px;">' +
+                '<span style="font-size:0.90rem; font-weight:800; color:#38bdf8; display:flex; align-items:center; gap:4px;">' +
+                  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:14px; height:14px;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>' +
+                  '<span>' + escapeHtml(spotName) + '</span>' +
+                '</span>' +
+                '<span style="font-size:0.65rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;">' + escapeHtml(tripDate) + '</span>' +
+              '</div>' +
+              '<div style="margin-top:12px; display:flex; justify-content:space-between; align-items:baseline; background:rgba(255,255,255,0.03); padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">' +
+                '<span style="font-size:0.72rem; color:#94a3b8; font-weight:700;">총 패킹 무게</span>' +
+                '<span style="font-size:1.45rem; font-weight:900; color:#34d399; font-family:\'Space Grotesk\', sans-serif;">' + weightKg + ' KG</span>' +
+              '</div>' +
+              '<div style="font-size:0.72rem; color:#cbd5e1; margin-top:10px; line-height:1.5;">' +
+                '장비 <strong style="color:#38bdf8;">' + itemsCount + '개</strong> 세팅 · 고도 <span style="color:#fde047;">' + escapeHtml(record.elevation || '-') + '</span>' +
+              '</div>' +
+            '</div>' +
+            '<div>' +
+              '<button type="button" onclick="event.stopPropagation(); window.openHistoryStudioModal(window.interactiveHistory.find(function(r){return String(r.id)===\'' + cardId + '\';})); triggerHaptic(10);" style="width:100%; height:38px; background:linear-gradient(135deg, #0284c7, #0369a1); border:none; border-radius:8px; color:#fff; font-size:0.78rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px;">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px; height:14px;"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 8 6 4-6 4Z"/></svg>' +
+                '<span>20종 감성 엽서 인출</span>' +
+              '</button>' +
+              '<div style="font-size:0.58rem; color:#64748b; text-align:center; margin-top:5px;">터치 시 사진으로 복귀</div>' +
+            '</div>' +
+          '</div>';
         }
 
         var isPublished = Boolean(record.isPublished === true);
-        var instaOfficialSvg = '<svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:url(#instaGrad); flex-shrink:0;"><defs><linearGradient id="instaGrad" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="25%" stop-color="#e6683c"/><stop offset="50%" stop-color="#dc2743"/><stop offset="75%" stop-color="#cc2366"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>';
+        var instaOfficialSvg = '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:currentColor; flex-shrink:0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>';
 
-        // 🎯 [최상단 우측 토글 버튼]: 지금 보고 있는 피드 모드를 실시간 표출하고 누르면 1초 만에 즉시 전환
-        var streamToggleBtnHtml = (window.activeHistoryFeedTab === 'explore')
-          ? `<button type="button" onclick="window.toggleFeedStreamMode(event);" style="background:rgba(52,211,153,0.14); border:1px solid rgba(52,211,153,0.35); color:#34d399; font-size:0.62rem; font-weight:900; padding:2.5px 8px; border-radius:12px; cursor:pointer; display:inline-flex; align-items:center; gap:3px;">
-              <svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-              <span>전체보기 ▾</span>
-            </button>`
-          : `<button type="button" onclick="window.toggleFeedStreamMode(event);" style="background:rgba(56,189,248,0.14); border:1px solid rgba(56,189,248,0.35); color:#38bdf8; font-size:0.62rem; font-weight:900; padding:2.5px 8px; border-radius:12px; cursor:pointer; display:inline-flex; align-items:center; gap:3px;">
-              <svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <span>나만보기 ▾</span>
-            </button>`;
+        var instaBadgeHtml = '';
+        if (isPublished && cleanInsta) {
+          instaBadgeHtml = '<a href="https://instagram.com/' + cleanInsta + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="display:inline-flex; align-items:center; gap:2.5px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#cbd5e1; padding:1px 5px; border-radius:10px; font-size:0.58rem; font-weight:600; text-decoration:none;">' +
+            instaOfficialSvg +
+            '<span>@' + escapeHtml(cleanInsta) + '</span>' +
+          '</a>';
+        }
 
-        return `
-          <div class="reel-page-snap" style="width:100% !important; min-height:100% !important; height:100dvh !important; scroll-snap-align:start !important; position:relative; overflow:hidden !important; display:flex !important; flex-direction:column !important; justify-content:flex-start !important; align-items:stretch !important; padding-top:calc(env(safe-area-inset-top, 0px)) !important; padding-bottom:calc(56px + env(safe-area-inset-bottom, 0px) + 12px) !important; box-sizing:border-box !important; flex-shrink:0 !important; contain:strict !important; touch-action:pan-y !important;">
-            
-            <!-- 1. 상단 프로필 헤더 + 우측 최상단 [전체보기 ▾ / 나만보기 ▾] 원터치 토글 -->
-            <div style="padding:10px 14px; display:flex; justify-content:space-between; align-items:center; background:#000; flex-shrink:0;">
-              <div style="display:flex; flex-direction:column; gap:2px; min-width:0; flex:1; padding-right:8px;">
-                <div style="display:flex; align-items:center; gap:6px;">
-                  <span style="font-size:0.86rem; color:#ffffff; font-weight:800; letter-spacing:-0.01em;">${escapeHtml(authorName)}</span>
-                  ${(isPublished && cleanInsta) ? `
-                    <a href="https://instagram.com/${cleanInsta}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="display:inline-flex; align-items:center; gap:3px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#f8fafc; padding:1.5px 6px; border-radius:12px; font-size:0.62rem; font-weight:700; text-decoration:none;">
-                      ${instaOfficialSvg}
-                      <span>@${escapeHtml(cleanInsta)}</span>
-                    </a>
-                  ` : ''}
-                </div>
-                <span style="font-size:0.65rem; color:#94a3b8; font-family:'JetBrains Mono', monospace;">${escapeHtml(tripDate)} · ${escapeHtml(spotName)}</span>
-              </div>
+    var followingList = safeGetJSON('okbm_following_users', []);
+        var followKey = recordUserId || authorName;
+        var isFollowingThisAuthor = followingList.includes(followKey);
 
-              <!-- 우측 최상단: 현재 피드 상태 확인 및 누르면 바로 전환되는 스마트 토글 버튼 -->
-              <div style="flex-shrink:0;">
-                ${streamToggleBtnHtml}
-              </div>
-            </div>
+        var followHeaderBtn = '';
+        if (!isMyRecord) {
+          followHeaderBtn = isFollowingThisAuthor
+            ? '<button type="button" data-user-id="' + escapeHtml(recordUserId) + '" data-author="' + escapeHtml(authorName) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(52,211,153,0.14); border:1px solid #34d399; color:#34d399; font-size:0.64rem; font-weight:900; padding:2px 7px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>관심루터</span></button>'
+            : '<button type="button" data-user-id="' + escapeHtml(recordUserId) + '" data-author="' + escapeHtml(authorName) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#cbd5e1; font-size:0.64rem; font-weight:800; padding:2px 7px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>관심</span></button>';
+        }
 
-            <!-- 2. 중단 3:4 대형 사진 프레임 -->
-            <div style="width:100% !important; aspect-ratio:3 / 4 !important; max-height:58vh !important; flex-shrink:0 !important; position:relative; background:#000; touch-action:pan-y !important;">
-              <div class="postcard-3d-wrapper" onclick="this.classList.toggle('flipped'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000; touch-action:pan-y !important;">
-                <div class="postcard-face-front" style="width:100%; height:100%; position:absolute; inset:0; overflow:hidden; background:#000;">
-                  <div class="reel-horizontal-track" onscroll="window.updateCarouselDots(this, '${cardId}');" style="display:flex !important; width:100% !important; height:100% !important; overflow-x:auto !important; overflow-y:hidden !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; touch-action:pan-x pan-y !important;">
-                    ${horizontalSlidesHtml}
-                  </div>
-                </div>
+        var lockButtonHtml = '';
+        if (isMyRecord) {
+          if (isPublished) {
+            lockButtonHtml = '<button type="button" data-record-id="' + cardId + '" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center;" title="공개 중"><svg viewBox="0 0 24 24" style="width:18px; height:18px; color:#34d399;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg></button>';
+          } else {
+            lockButtonHtml = '<button type="button" data-record-id="' + cardId + '" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center;" title="비공개"><svg viewBox="0 0 24 24" style="width:18px; height:18px; color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>';
+          }
+        }
 
-                <div class="postcard-face-back" style="width:100%; height:100%; position:absolute; inset:0; overflow:hidden; background:#000;">
-                  ${backTemplateCardHtml}
-                </div>
-              </div>
-            </div>
+        var cleanMemoContentHtml = memo120.trim()
+          ? escapeHtml(memo120.trim())
+          : '<span style="color:#475569;">등록된 일지 메모가 없습니다.</span>';
 
-            <!-- 3. 하단 리액션 바: 내 게시물일 때만 자물쇠 렌더링 -->
-            <div style="padding:8px 14px; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; flex-shrink:0; background:#000;">
-              <div style="display:flex; justify-content:space-between; align-items:center; position:relative;">
-                
-                <!-- 좌측: 별점 + 공유하기 -->
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <button type="button" onclick="window.toggleFeedStar('${cardId}', event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:4px;">
-                    <svg id="feedStarIcon_${cardId}" viewBox="0 0 24 24" style="width:22px; height:22px; filter:${isStarred ? 'drop-shadow(0 0 8px rgba(253,224,71,0.8))' : 'none'}; transition:transform 0.2s ease;" fill="${isStarred ? '#fde047' : 'none'}" stroke="${isStarred ? '#fde047' : '#ffffff'}" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    <span id="feedStarCountText_${cardId}" style="font-size:0.78rem; font-weight:900; color:#fde047; font-family:'Space Grotesk', sans-serif; text-shadow:0 0 8px rgba(253,224,71,0.6);">${starCount}</span>
-                  </button>
+      var isSavedFeed = savedFeedsList.includes(String(record.id || '').trim());
 
-                  <button type="button" onclick="if(navigator.share){navigator.share({title:'${escapeHtml(spotName)}',text:'${escapeHtml(memo120)}',url:location.href});}else{navigator.clipboard.writeText(location.href);if(typeof showToast==='function')showToast('🔗 피드 링크가 복사되었습니다!','info');}triggerHaptic(10);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#ffffff;" title="공유하기">
-                    <svg viewBox="0 0 24 24" style="width:20px; height:20px; color:#ffffff;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                  </button>
-                </div>
+          return '<div class="reel-page-snap" style="width:100% !important; height:100% !important; height:100dvh !important; scroll-snap-align:start !important; position:relative; overflow:hidden !important; display:flex !important; flex-direction:column !important; justify-content:flex-start !important; align-items:stretch !important; padding-top:calc(env(safe-area-inset-top, 0px)) !important; padding-bottom:calc(56px + env(safe-area-inset-bottom, 0px)) !important; box-sizing:border-box !important; flex-shrink:0 !important; contain:strict !important; touch-action:pan-y !important; background:#000000;">' +
+          '<div style="height:48px; padding:0 12px; display:flex; justify-content:space-between; align-items:center; background:#000000; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,0.06);">' +
+            '<div style="display:flex; flex-direction:column; justify-content:center; min-width:0; flex:1; padding-right:6px;">' +
+              '<div style="display:flex; align-items:center; gap:6px;">' +
+                '<button type="button" data-author="' + escapeHtml(authorName) + '" data-user-id="' + escapeHtml(recordUserId) + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId);" style="background:none; border:none; padding:0; font-size:0.92rem; color:#ffffff; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; text-align:left; display:inline-flex; align-items:center; gap:4px;">' +
+                  '<span>' + escapeHtml(authorName) + '</span>' +
+                  '<svg viewBox="0 0 24 24" style="width:11px; height:11px; stroke:#38bdf8; fill:none; stroke-width:2.5;"><polyline points="9 18 15 12 9 6"/></svg>' +
+                '</button>' +
+                followHeaderBtn +
+                instaBadgeHtml +
+              '</div>' +
+              '<span style="font-size:0.72rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">' + escapeHtml(tripDate) + ' · ' + escapeHtml(spotName) + '</span>' +
+            '</div>' +
+            '<div style="flex-shrink:0;">' +
+              streamToggleBtnHtml +
+            '</div>' +
+          '</div>' +
 
-                <!-- 중앙: 도트 인디케이터 -->
-                <div style="position:absolute; left:50%; transform:translateX(-50%);">
-                  ${dotsHtml}
-                </div>
+          '<div style="flex:1 1 auto; width:100%; min-height:0; display:flex; align-items:center; justify-content:center; background:#000000; overflow:hidden; padding:4px 0; box-sizing:border-box;">' +
+            '<div style="height:100%; max-height:100%; aspect-ratio:3/4; position:relative; overflow:hidden; border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.85); background:#05070a;">' +
+              '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000;">' +
+                '<div class="postcard-face-front" style="width:100%; height:100%; position:absolute; inset:0; overflow:hidden; background:#000;">' +
+                  '<div class="reel-horizontal-track" onscroll="window.updateCarouselDots(this, \'' + cardId + '\');" style="display:flex !important; width:100% !important; height:100% !important; overflow-x:auto !important; overflow-y:hidden !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; touch-action:pan-x pan-y !important;">' +
+                    horizontalSlidesHtml +
+                  '</div>' +
+                '</div>' +
+                '<div class="postcard-face-back" style="width:100%; height:100%; position:absolute; inset:0; overflow:hidden; background:#000;">' +
+                  backTemplateCardHtml +
+                '</div>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
 
-                <!-- 우측: [내 게시물일 때만 자물쇠 표시] + ··· 관리 메뉴 -->
-                <div style="display:flex; align-items:center; gap:12px;">
-                  ${isMyRecord ? `
-                    <button type="button" data-record-id="${cardId}" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center;" title="${isPublished ? '함께보기(전체 공개 중)' : '나만보기(비공개)'}">
-                      ${isPublished ? `
-                        <svg viewBox="0 0 24 24" style="width:21px; height:21px; color:#34d399; filter:drop-shadow(0 0 6px rgba(52,211,153,0.7));" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                        </svg>
-                      ` : `
-                        <svg viewBox="0 0 24 24" style="width:21px; height:21px; color:#38bdf8; filter:drop-shadow(0 0 6px rgba(56,189,248,0.7));" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                        </svg>
-                      `}
-                    </button>
-                  ` : ''}
+          '<div style="padding:6px 14px 10px 14px; box-sizing:border-box; display:flex; flex-direction:column; gap:4px; flex-shrink:0; background:#000000; border-top:1px solid rgba(255,255,255,0.04);">' +
+            '<div style="display:flex; justify-content:space-between; align-items:center; position:relative; height:28px;">' +
+              '<div style="display:flex; align-items:center; gap:12px;">' +
+                '<button type="button" onclick="window.toggleFeedStar(\'' + cardId + '\', event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:4px;">' +
+                  '<svg id="feedStarIcon_' + cardId + '" viewBox="0 0 24 24" style="width:19px; height:19px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
+                  '<span id="feedStarCountText_' + cardId + '" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif;">' + starCount + '</span>' +
+                '</button>' +
+                '<button type="button" onclick="if(navigator.share){navigator.share({title:\'' + escapeHtml(spotName) + '\',text:\'' + escapeHtml(memo120) + '\',url:location.href});}else{navigator.clipboard.writeText(location.href);if(typeof showToast===\'function\')showToast(\'피드 링크가 복사되었습니다.\',\'info\');}triggerHaptic(10);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">' +
+                  '<svg viewBox="0 0 24 24" style="width:17px; height:17px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
+                '</button>' +
+                '<button type="button" data-feed-id="' + cardId + '" onclick="window.toggleSaveFeed(this.dataset.feedId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:' + (isSavedFeed ? '#c084fc' : '#cbd5e1') + ';" title="관심피드 저장">' +
+                  '<svg viewBox="0 0 24 24" style="width:17px; height:17px; filter:' + (isSavedFeed ? 'drop-shadow(0 0 6px rgba(192,132,252,0.8))' : 'none') + ';" fill="' + (isSavedFeed ? '#c084fc' : 'none') + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
+                '</button>' +
+              '</div>' +
+              '<div style="position:absolute; left:50%; transform:translateX(-50%);">' +
+                dotsHtml +
+              '</div>' +
+              '<div style="display:flex; align-items:center; gap:10px;">' +
+                lockButtonHtml +
+                '<button type="button" data-record-id="' + cardId + '" onclick="window.openTripActionMenu(this.dataset.recordId, event);" style="background:none; border:none; padding:0; cursor:pointer; color:#94a3b8; display:flex; align-items:center;">' +
+                  '<svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="currentColor"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>' +
+                '</button>' +
+              '</div>' +
+            '</div>' +
 
-                  <button type="button" data-record-id="${cardId}" onclick="window.openTripActionMenu(this.dataset.recordId, event);" style="background:none; border:none; padding:0; cursor:pointer; color:#cbd5e1; font-size:1.15rem; line-height:1; letter-spacing:1px;">
-                    ···
-                  </button>
-                </div>
-              </div>
-
-              <div style="font-family:'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; font-size:0.84rem; font-weight:450; color:#f1f5f9; line-height:1.55; word-break:break-all; margin-top:3px; text-shadow:0 0 10px rgba(226,232,240,0.3); letter-spacing:-0.02em;">${memo120.trim() ? `“${escapeHtml(memo120.trim())}”` : '<span style="color:#64748b; font-style:italic;">등록된 팁이 없습니다.</span>'}</div>
-            </div>
-          </div>
-        `;
+            '<div style="font-family:\'Pretendard Variable\', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size:0.78rem; font-weight:450; color:#e2e8f0; line-height:1.45; word-break:break-all; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; min-height:1.45em; letter-spacing:-0.01em;">' +
+              cleanMemoContentHtml +
+            '</div>' +
+          '</div>' +
+        '</div>';
       }).join('');
     }
 
-    content.innerHTML = `
-      <div id="reelsVerticalContainer" style="flex:1 1 0% !important; width:100% !important; height:100% !important; height:100dvh !important; overflow-y:auto !important; overflow-x:hidden !important; scroll-snap-type:y mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; position:relative; z-index:10; overscroll-behavior-y:none !important; overscroll-behavior-x:none !important; touch-action:pan-y !important;">
-        ${reelSlidesHtml}
-      </div>
+    content.innerHTML = '<div id="reelsVerticalContainer" style="flex:1 1 0% !important; width:100% !important; height:100% !important; height:100dvh !important; overflow-y:auto !important; overflow-x:hidden !important; scroll-snap-type:y mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; position:relative; z-index:10; overscroll-behavior-y:none !important; overscroll-behavior-x:none !important; touch-action:pan-y !important;">' +
+      reelSlidesHtml +
+    '</div>' +
 
-      <div style="position:absolute !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.95) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; z-index:30 !important; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-        <a href="index.html" class="dock-item" onclick="window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">
-          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-          <span>낭만루터</span>
-        </a>
-        <a href="map.html" class="dock-item" onclick="window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">
-          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
-          <span>전국지도</span>
-        </a>
-        <button type="button" class="dock-item" onclick="window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
-            <rect x="3" y="4" width="18" height="18" rx="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-            <path d="M9 16l2 2 4-4"/>
-          </svg>
-          <span>낭만계획</span>
-        </button>
-        <button type="button" class="dock-item active" onclick="if(typeof window.renderHistoryStage==='function') window.renderHistoryStage(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#ffffff !important; font-size:0.67rem; font-weight:900; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
-            <path d="M21 8v13H3V8"/>
-            <path d="M1 3h22v5H1z"/>
-            <path d="M10 12h4"/>
-          </svg>
-          <span>낭만보관함</span>
-        </button>
-        <button type="button" class="dock-item" onclick="window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
-          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-          <span>내정보</span>
-        </button>
-      </div>
-    `;
+    '<div style="position:absolute !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.95) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; z-index:30 !important; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">' +
+      '<a href="index.html" class="dock-item" onclick="window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">' +
+        '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>' +
+        '<span>낭만루터</span>' +
+      '</a>' +
+      '<a href="map.html" class="dock-item" onclick="window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">' +
+        '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>' +
+        '<span>전국지도</span>' +
+      '</a>' +
+      '<button type="button" class="dock-item" onclick="window.closeHistoryModal(); if(typeof openPlanModal===\'function\') openPlanModal(\'calendar\'); triggerHaptic(12);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">' +
+          '<rect x="3" y="4" width="18" height="18" rx="2"/>' +
+          '<line x1="16" y1="2" x2="16" y2="6"/>' +
+          '<line x1="8" y1="2" x2="8" y2="6"/>' +
+          '<line x1="3" y1="10" x2="21" y2="10"/>' +
+          '<path d="M9 16l2 2 4-4"/>' +
+        '</svg>' +
+        '<span>낭만플랜</span>' +
+      '</button>' +
+      '<button type="button" class="dock-item active" onclick="if(typeof window.renderHistoryStage===\'function\') window.renderHistoryStage(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#ffffff !important; font-size:0.67rem; font-weight:900; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">' +
+          '<path d="M21 8v13H3V8"/>' +
+          '<path d="M1 3h22v5H1z"/>' +
+          '<path d="M10 12h4"/>' +
+        '</svg>' +
+        '<span>낭만보관함</span>' +
+      '</button>' +
+      '<button type="button" class="dock-item" onclick="window.closeHistoryModal(); if(typeof handleAuthBtnClick===\'function\') handleAuthBtnClick(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">' +
+        '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>' +
+        '<span>마이리포트</span>' +
+      '</button>' +
+    '</div>';
   };
 
   // 🚀 [낭만보관함 모달 오픈 / 클로즈 - 100% 에러 방어]

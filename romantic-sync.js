@@ -6,7 +6,7 @@
  * - [동기화 락(Lock) 안전망]: 클라우드 데이터 수신 완료 전 빈 배열([]) 전송에 의한 시트 삭제 원천 방어
  * - [지도(fromMap) & 홈(fromIndex) 선택적 격리 갱신]: 상호 간섭 없는 안전한 클라우드 백업
  * - [커스텀 장비 메모리 복원]: 로그인 시 사용자가 직접 등록한 장비 CATEGORIES DB 자동 주입
- * - [로그아웃 롤백]: 배낭 슬롯 0.00kg 초기화 및 낭만계획/보관함/지도 UI 일괄 원상 복구
+ * - [로그아웃 롤백]: 배낭 슬롯 0.00kg 초기화 및 낭만플랜/보관함/지도 UI 일괄 원상 복구
  */
 
 var GAS_API_URL = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
@@ -84,7 +84,7 @@ window.UtilitiesFormattedNow = UtilitiesFormattedNow;
 
 // 🧰 [비상 초기화 엔진] 전 기종 로컬 캐시 & IndexedDB & 클라우드 피드 완전 무결 포맷
 window.executeCleanSlateMasterReset = async function(isSilent) {
-  if (!isSilent && !confirm('⚠️ 주의: 모든 출정 기록과 사진 맵이 영구 포맷됩니다.\n(회원 계정 및 찜/클리어 목록은 보존됩니다)\n정말 초기화하시겠습니까?')) {
+  if (!isSilent && !confirm('⚠️ 주의: 모든 출발 기록과 사진 맵이 영구 포맷됩니다.\n(회원 계정 및 찜/클리어 목록은 보존됩니다)\n정말 초기화하시겠습니까?')) {
     return;
   }
 
@@ -192,11 +192,30 @@ async function loadUserDataFromCloud(userId) {
   return null;
 }
 
-// 🔑 2. 로그인 상태 검증 및 세션 체크
+// 🔑 2. 로그인 상태 검증 및 세션 체크 (하위 호환 ID 자동 보정)
 function isUserLoggedIn() {
   var token = localStorage.getItem('user_auth_token');
   var profile = safeGetJSON('user_profile', null);
-  var hasValid = !!(token && token.trim().length > 0 && profile && profile.id && String(profile.id).startsWith('kakao_'));
+  if (!token || !token.trim() || !profile || !profile.id) {
+    if (typeof authState !== 'undefined') {
+      authState.isLoggedIn = false;
+      authState.userProfile = null;
+    }
+    return false;
+  }
+
+  // 접두사 누락 ID 자동 정규화 보정
+  var idStr = String(profile.id).trim();
+  if (!idStr.startsWith('kakao_')) {
+    idStr = 'kakao_' + idStr;
+    profile.id = idStr;
+    profile.isMember = true;
+    localStorage.setItem('user_profile', JSON.stringify(profile));
+    localStorage.setItem('user_profile_' + idStr, JSON.stringify(profile));
+    localStorage.setItem('okbm_user_id', idStr);
+  }
+
+  var hasValid = !!(profile.id && String(profile.id).startsWith('kakao_'));
   if (typeof authState !== 'undefined') {
     authState.isLoggedIn = hasValid;
     authState.userProfile = profile;
@@ -305,11 +324,12 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
     fromMap: isMapPage && !isIndexPage, // 패킹 기록이 있으면 지도 락 해제
     fromIndex: isIndexPage,
     forcePackSync: true, // 구글 시트 백엔드 강제 동기화 플래그
-   createdAt: (profile && profile.createdAt) ? profile.createdAt : getFormattedNow(),
+    createdAt: (profile && profile.createdAt) ? profile.createdAt : getFormattedNow(),
     lastNicknameChangedAt: profile ? (Number(profile.lastNicknameChangedAt) || 0) : 0,
     bookmarks: safeGetJSON('okbm_bookmarks', []),
     visited: safeGetJSON('okbm_visited', []),
     memos: safeGetJSON('okbm_memos', {}),
+    following: safeGetJSON('okbm_following_users', []),
     packHistory: lightweightPackHistory,
     myGears: myGearsPayload
   };
@@ -485,16 +505,26 @@ function logoutUser() {
     } catch (e) {}
   }
 
-  // 1. 회원 인증 세션 파기
+ // 1. 회원 인증 세션 영구 파기
   localStorage.removeItem('user_auth_token');
   localStorage.removeItem('user_profile');
+  localStorage.removeItem('okbm_user_id');
+  localStorage.removeItem('okbm_user_nick');
+  localStorage.removeItem('okbm_following_users');
+
+  // 2. 계정별 커스텀 닉네임 캐시 제거
+  for (var k in localStorage) {
+    if (k.startsWith('user_profile_') || k.startsWith('okbm_custom_nickname_')) {
+      localStorage.removeItem(k);
+    }
+  }
 
   if (typeof authState !== 'undefined') {
     authState.isLoggedIn = false;
     authState.userProfile = null;
   }
 
-  // 2. 🛡️ [11대 사생활 개인정보 localStorage 완전 파기]
+  // 3. 사생활 개인정보 및 피드 캐시 완전 파기
   localStorage.removeItem('okbm_bookmarks');
   localStorage.removeItem('okbm_visited');
   localStorage.removeItem('okbm_memos');
@@ -511,9 +541,10 @@ function logoutUser() {
   localStorage.removeItem('okbm_phone_photos_map');
   localStorage.removeItem('okbm_trip_photos_map');
   localStorage.removeItem('okbm_user_instagram');
-  localStorage.removeItem('okbm_user_nick');
+  localStorage.removeItem('okbm_cached_community_feeds');
+  localStorage.removeItem('okbm_hero_cover_url');
 
-  // 3. 🧠 [전역 메모리 변수 및 Set/Map 완전 초기화]
+  // 4. 전역 메모리 스토어 초기화
   if (typeof window.userBookmarks !== 'undefined') window.userBookmarks = new Set();
   if (typeof window.userVisited !== 'undefined') window.userVisited = new Set();
   if (typeof window.userMemos !== 'undefined') window.userMemos = {};
@@ -530,37 +561,30 @@ function logoutUser() {
   window.__memoryStore['okbm_phone_photos_map'] = {};
   window.__memoryStore['okbm_trip_photos_map'] = {};
 
-  // 4. 📱 [스마트폰 내장 IndexedDB 사진/기록 금고 완전 소멸]
+  // 5. 스마트폰 내장 IndexedDB 사진 금고 비우기
   if (typeof window.saveToIndexedDB === 'function') {
     window.saveToIndexedDB('okbm_packing_history', []);
     window.saveToIndexedDB('okbm_phone_photos_map', {});
     window.saveToIndexedDB('okbm_trip_photos_map', {});
   }
 
-  // 5. 🎒 [홈 화면 배낭 게이지 즉시 0.00kg 초기화]
-  var bannerKg = document.getElementById('mainBannerKgText');
-  var bannerCount = document.getElementById('mainBannerItemCount');
-  var bannerBadge = document.getElementById('mainBannerBadge');
-  if (bannerKg) bannerKg.innerText = '0.00 kg';
-  if (bannerCount) bannerCount.innerText = '장비 0개 세팅됨';
-  if (bannerBadge) {
-    bannerBadge.className = 'weight-bpl-badge bpl-ul';
-    bannerBadge.innerText = '울트라라이트 (UL)';
+  // 6. 모든 모달 DOM 즉시 파기
+  var modals = ['loginModalOverlay', 'userProfileModalOverlay', 'myReportModal', 'clearMapModal', 'pastTripsListModal', 'singleTripFeedModal', 'romanticPlanModal', 'romanticHistoryModal'];
+  modals.forEach(function(mId) {
+    var el = document.getElementById(mId);
+    if (el) el.remove();
+  });
+
+  if (typeof showToast === 'function') {
+    showToast('로그아웃되었습니다. 초기 화면으로 이동합니다.', 'info', 1200);
   }
 
-  // 6. 🧭 [헤더 및 4대 뷰 렌더러 순수 게스트 상태 일괄 동기화]
-  updateHeaderAuthUI();
-
-  if (typeof renderCategorySlots === 'function') renderCategorySlots();
-  if (typeof renderPlanStage === 'function') renderPlanStage();
-  if (typeof renderPlanCategorySlots === 'function') renderPlanCategorySlots();
-  if (typeof renderHistoryStage === 'function') renderHistoryStage();
-  if (typeof renderSpots === 'function') renderSpots();
-  if (typeof renderSubChips === 'function') renderSubChips();
-  if (typeof refreshCurrentSpotPopup === 'function') refreshCurrentSpotPopup();
-
-  showToast('로그아웃되었습니다. 모든 개인정보가 기기에서 안전하게 정리되었습니다.', 'info', 2500);
+  // 7. 화면 강제 새로고침 (게스트 상태 완전 복원)
+  setTimeout(function() {
+    window.location.reload();
+  }, 200);
 }
+window.logoutUser = logoutUser;
 
 // ⏱️ 7. 닉네임 변경 및 14일 쿨다운 체크
 function saveNewNicknameFromModal() {
@@ -619,17 +643,21 @@ function saveNewNicknameFromModal() {
 
 // 🔑 8. 카카오 로그인 및 클라우드 데이터 동기화
 function loginWithKakao() {
+  triggerHaptic(12);
   if (typeof Kakao === 'undefined') {
     showToast('카카오 SDK를 불러오지 못했습니다.', 'warn');
     return;
   }
-  if (!Kakao.isInitialized()) Kakao.init(window.KAKAO_APP_KEY || "557f5de0f6391a2419bc5592e6a9c9c1");
+  var appKey = window.KAKAO_APP_KEY || "557f5de0f6391a2419bc5592e6a9c9c1";
+  if (!Kakao.isInitialized()) {
+    Kakao.init(appKey);
+  }
 
   var loginBtn = document.querySelector('.btn-social-kakao');
   if (loginBtn) {
     loginBtn.style.pointerEvents = 'none';
     loginBtn.style.opacity = '0.75';
-    loginBtn.innerHTML = '<span>로그인 인증 중...</span>';
+    loginBtn.innerHTML = '<span>카카오 로그인 인증 중...</span>';
   }
 
   Kakao.Auth.login({
@@ -638,227 +666,107 @@ function loginWithKakao() {
     success: function(authObj) {
       Kakao.API.request({
         url: '/v2/user/me',
-        success: async function(res) {
-          var kakaoId = 'kakao_' + res.id;
-          var kakaoNick = '낭만백패커';
-          if (res.properties && res.properties.nickname) kakaoNick = res.properties.nickname;
-          else if (res.kakao_account && res.kakao_account.profile && res.kakao_account.profile.nickname) kakaoNick = res.kakao_account.profile.nickname;
+        success: function(res) {
+          var kakaoId = 'kakao_' + String(res.id).trim();
+          var kakaoNick = '';
+          if (res.kakao_account && res.kakao_account.profile && res.kakao_account.profile.nickname) {
+            kakaoNick = res.kakao_account.profile.nickname.trim();
+          } else if (res.properties && res.properties.nickname) {
+            kakaoNick = res.properties.nickname.trim();
+          }
 
-          var savedCustomNick = localStorage.getItem('okbm_custom_nickname_' + kakaoId);
-          var accountLocalProfile = safeGetJSON('user_profile_' + kakaoId, null);
-          var tempNick = savedCustomNick || (accountLocalProfile && accountLocalProfile.nickname) || kakaoNick;
+          var customSaved = (localStorage.getItem('okbm_custom_nickname_' + kakaoId) || '').trim();
+          var finalNick = (customSaved && customSaved !== '낭만루터' && customSaved !== '낭만백패커') ? customSaved : (kakaoNick || '낭만백패커');
 
           var profile = {
             id: kakaoId,
-            nickname: tempNick,
+            nickname: finalNick,
             isMember: true,
             createdAt: getFormattedNow(),
-            lastNicknameChangedAt: (accountLocalProfile && accountLocalProfile.lastNicknameChangedAt) ? Number(accountLocalProfile.lastNicknameChangedAt) : 0
+            lastNicknameChangedAt: 0,
+            loggedInAt: Date.now()
           };
 
-          localStorage.setItem('user_auth_token', authObj.access_token || ('token_' + Date.now()));
+          localStorage.setItem('user_auth_token', authObj.access_token || ('token_' + kakaoId));
           localStorage.setItem('user_profile', JSON.stringify(profile));
           localStorage.setItem('user_profile_' + kakaoId, JSON.stringify(profile));
+          localStorage.setItem('okbm_user_id', kakaoId);
+          localStorage.setItem('okbm_user_nick', finalNick);
+
           if (typeof authState !== 'undefined') {
             authState.isLoggedIn = true;
             authState.userProfile = profile;
           }
 
           closeLoginModal();
-          updateHeaderAuthUI();
-          triggerHaptic(15);
-          showToast('<span>[' + profile.nickname + ']님 환영합니다!</span>', 'success', 2200);
+          if (typeof showToast === 'function') {
+            showToast('[' + finalNick + ']님 로그인 완료! 클라우드 동기화 중...', 'success', 2000);
+          }
 
-          // ☁️ 백그라운드 클라우드 데이터 수신 및 반영
-         loadUserDataFromCloud(kakaoId).then(function(cloudData) {
+          loadUserDataFromCloud(kakaoId).then(function(cloudData) {
             if (cloudData) {
-              if (cloudData.nickname && !cloudData.nickname.includes('ENGINE')) {
-                profile.nickname = cloudData.nickname;
+              var sNick = (cloudData.nickname || '').trim();
+              if (sNick && sNick !== '낭만루터' && !sNick.includes('ENGINE')) {
+                profile.nickname = sNick;
+                localStorage.setItem('user_profile', JSON.stringify(profile));
+                localStorage.setItem('user_profile_' + kakaoId, JSON.stringify(profile));
+                localStorage.setItem('okbm_user_nick', sNick);
               }
-              if (cloudData.lastNicknameChangedAt !== undefined) {
-                profile.lastNicknameChangedAt = Number(cloudData.lastNicknameChangedAt);
-              }
-              localStorage.setItem('user_profile', JSON.stringify(profile));
-              localStorage.setItem('user_profile_' + kakaoId, JSON.stringify(profile));
-              if (typeof authState !== 'undefined') authState.userProfile = profile;
-              updateHeaderAuthUI();
-
               if (cloudData.bookmarks && Array.isArray(cloudData.bookmarks)) {
                 localStorage.setItem('okbm_bookmarks', JSON.stringify(cloudData.bookmarks));
-                if (typeof window.userBookmarks !== 'undefined') window.userBookmarks = new Set(cloudData.bookmarks.map(function(s) { return String(s).trim(); }));
               }
               if (cloudData.visited && Array.isArray(cloudData.visited)) {
                 localStorage.setItem('okbm_visited', JSON.stringify(cloudData.visited));
-                if (typeof window.userVisited !== 'undefined') window.userVisited = new Set(cloudData.visited.map(function(s) { return String(s).trim(); }));
               }
               if (cloudData.memos && typeof cloudData.memos === 'object') {
                 localStorage.setItem('okbm_memos', JSON.stringify(cloudData.memos));
-                if (typeof window.userMemos !== 'undefined') window.userMemos = cloudData.memos;
               }
-        if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
-                var localSavedPhotos = safeGetJSON('okbm_phone_photos_map', {});
-                if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
-                  localSavedPhotos = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], localSavedPhotos);
-                }
-
-                var currentLocalHistory = (window.interactiveHistory && Array.isArray(window.interactiveHistory))
-                  ? window.interactiveHistory
-                  : safeGetJSON('okbm_packing_history', []);
-
-                // 1. 클라우드의 삭제 툼스톤과 정본 활성 기록 매핑
-                var cloudDeletedIds = new Set();
-                var cloudDeletedDates = new Set();
-                var reconciledMap = new Map();
-
-                cloudData.packHistory.filter(Boolean).forEach(function(cItem) {
-                  var cId = String(cItem.id || '').trim();
-                  var cDate = String(cItem.date || '').replace(/[-/]/g, '.').trim();
-                  
-                  if (cItem.isDeleted === true) {
-                    if (cId) cloudDeletedIds.add(cId);
-                    if (cDate) cloudDeletedDates.add(cDate);
-                  } else {
-                    var validPhotos = [];
-                    if (Array.isArray(cItem.photos) && cItem.photos.length > 0) {
-                      validPhotos = cItem.photos.filter(function(p) { return typeof p === 'string' && p.startsWith('http'); });
-                    } else if (typeof cItem.photo === 'string' && cItem.photo.startsWith('http')) {
-                      validPhotos = [cItem.photo];
-                    } else if (typeof cItem.photo_url === 'string' && cItem.photo_url.startsWith('http')) {
-                      validPhotos = [cItem.photo_url];
-                    }
-
-                    if (validPhotos.length > 0) {
-                      cItem.photos = validPhotos;
-                      cItem.photo = validPhotos[0];
-                      cItem.fieldPhoto = validPhotos[0];
-                      cItem.photo_url = validPhotos[0];
-                      localSavedPhotos[cId] = validPhotos;
-                      if (cDate) localSavedPhotos[cDate] = validPhotos;
-                    }
-
-                    reconciledMap.set(cId, cItem);
-                  }
-                });
-
-                // 2. 🛡️ [게스트 작업물 안전 승격]: 로그인 직전 1시간 이내에 작성된 신규 작업물만 선별 보존
-                var hasFreshGuestDraft = false;
-                var ONE_HOUR_MS = 60 * 60 * 1000;
-                var nowTime = Date.now();
-
-                currentLocalHistory.forEach(function(loc) {
-                  if (!loc) return;
-                  var locId = String(loc.id || '').trim();
-                  var locDate = String(loc.date || '').replace(/[-/]/g, '.').trim();
-
-                  // 삭제 증표가 걸린 항목은 타 기기 부활 원천 차단
-                  if (cloudDeletedIds.has(locId) || cloudDeletedDates.has(locDate) || loc.isDeleted === true) {
-                    if (localSavedPhotos) {
-                      delete localSavedPhotos[locId];
-                      delete localSavedPhotos[locDate];
-                    }
-                    return;
-                  }
-
-                  // 서버에 아직 없지만, 1시간 이내에 비로그인으로 작성된 따끈따끈한 새 글인 경우 안전 보존
-                  if (!reconciledMap.has(locId)) {
-                    var idTimestamp = parseInt(locId.replace(/\D/g, ''), 10) || 0;
-                    var isRecentCreated = (idTimestamp > 0 && (nowTime - idTimestamp < ONE_HOUR_MS));
-                    
-                    if (isRecentCreated) {
-                      reconciledMap.set(locId, loc);
-                      hasFreshGuestDraft = true;
-                    }
-                  }
-                });
-
-                if (window.__memoryStore) {
-                  window.__memoryStore['okbm_phone_photos_map'] = localSavedPhotos;
-                }
+              if (cloudData.following && Array.isArray(cloudData.following)) {
+                localStorage.setItem('okbm_following_users', JSON.stringify(cloudData.following));
+              }
+           
+              if (cloudData.myGears && typeof cloudData.myGears === 'object') {
+                var mg = cloudData.myGears;
+                if (mg.selectedGears) localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(mg.selectedGears));
+                if (mg.favoriteGears) localStorage.setItem('okbm_favorite_gears', JSON.stringify(mg.favoriteGears));
+                if (mg.customGears) localStorage.setItem('okbm_custom_gears', JSON.stringify(mg.customGears));
+                if (mg.gearPresets) localStorage.setItem('okbm_gear_presets', JSON.stringify(mg.gearPresets));
+                if (mg.gearMeta) localStorage.setItem('okbm_gear_meta', JSON.stringify(mg.gearMeta));
+              }
+              if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
+                var cleanHist = cloudData.packHistory.filter(function(h) { return h && !h.isDeleted; });
+                localStorage.setItem('okbm_packing_history', JSON.stringify(cleanHist));
                 if (typeof window.saveToIndexedDB === 'function') {
-                  window.saveToIndexedDB('okbm_phone_photos_map', localSavedPhotos);
-                }
-
-                var safePackHistory = Array.from(reconciledMap.values());
-                window.packingHistoryList = safePackHistory;
-                window.interactiveHistory = safePackHistory;
-                window.__memoryStore = window.__memoryStore || {};
-                window.__memoryStore['okbm_packing_history'] = safePackHistory;
-
-                if (typeof window.safeSetStorage === 'function') {
-                  window.safeSetStorage('okbm_packing_history', safePackHistory);
-                } else {
-                  var cleanForLocal = safePackHistory.map(function(item) {
-                    var clone = Object.assign({}, item);
-                    delete clone.photos;
-                    delete clone.photo;
-                    delete clone.fieldPhoto;
-                    return clone;
-                  });
-                  localStorage.setItem('okbm_packing_history', JSON.stringify(cleanForLocal));
-                  if (typeof window.saveToIndexedDB === 'function') {
-                    window.saveToIndexedDB('okbm_packing_history', safePackHistory);
-                  }
-                }
-
-                // 방금 비로그인으로 작성한 새 글이 합쳐졌다면 클라우드로 조용히 1회 백업
-                if (hasFreshGuestDraft) {
-                  syncUserDataToCloud(true);
+                  window.saveToIndexedDB('okbm_packing_history', cleanHist);
                 }
               }
-
-              var myGears = cloudData.myGears || null;
-              if (myGears) {
-                if (myGears.selectedGears && typeof myGears.selectedGears === 'object' && Object.keys(myGears.selectedGears).length > 0) {
-                  window.selectedGearMap = myGears.selectedGears;
-                  localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
-                }
-                if (myGears.favoriteGears && Array.isArray(myGears.favoriteGears)) {
-                  window.favoriteGearSet = new Set(myGears.favoriteGears);
-                  localStorage.setItem('okbm_favorite_gears', JSON.stringify(myGears.favoriteGears));
-                }
-                if (myGears.customGears && Array.isArray(myGears.customGears)) {
-                  localStorage.setItem('okbm_custom_gears', JSON.stringify(myGears.customGears));
-                  var currentCats = window.CATEGORIES || (typeof CATEGORIES !== 'undefined' ? CATEGORIES : null);
-                  if (currentCats && Array.isArray(currentCats)) {
-                    myGears.customGears.forEach(function(cg) {
-                      var targetCat = currentCats.find(function(c) { return c.id === cg.category_id; });
-                      if (targetCat && !targetCat.db.some(function(d) { return d.name === cg.name; })) {
-                        targetCat.db.unshift(cg);
-                      }
-                    });
-                  }
-                }
-                if (myGears.gearPresets && Array.isArray(myGears.gearPresets)) {
-                  localStorage.setItem('okbm_gear_presets', JSON.stringify(myGears.gearPresets));
-                }
-                if (myGears.gearMeta && typeof myGears.gearMeta === 'object') {
-                  localStorage.setItem('okbm_gear_meta', JSON.stringify(myGears.gearMeta));
-                }
-              }
-
-              if (typeof renderPlanStage === 'function') renderPlanStage();
-              if (typeof renderPlanCategorySlots === 'function') renderPlanCategorySlots();
-              if (typeof renderHistoryStage === 'function') renderHistoryStage();
-              if (typeof renderCategorySlots === 'function') renderCategorySlots();
-              if (typeof renderSpots === 'function') renderSpots();
-              if (typeof renderSubChips === 'function') renderSubChips();
-              if (typeof refreshCurrentSpotPopup === 'function') refreshCurrentSpotPopup();
-              window.isCloudDataLoaded = true;
             }
+            setTimeout(function() { window.location.reload(); }, 250);
+          }).catch(function() {
+            setTimeout(function() { window.location.reload(); }, 250);
           });
         },
-        fail: function(err) {
-          console.warn('[Kakao] User me request failed:', err);
-          window.isCloudDataLoaded = true;
+        fail: function() {
+          if (loginBtn) {
+            loginBtn.style.pointerEvents = 'auto';
+            loginBtn.style.opacity = '1';
+            loginBtn.innerHTML = '카카오 1초 간편 로그인';
+          }
+          if (typeof showToast === 'function') showToast('사용자 정보 수신 실패', 'warn');
         }
       });
     },
-   fail: function(err) {
-      console.warn('[Kakao] Login failed:', err);
-      window.isCloudDataLoaded = true;
+    fail: function() {
+      if (loginBtn) {
+        loginBtn.style.pointerEvents = 'auto';
+        loginBtn.style.opacity = '1';
+        loginBtn.innerHTML = '카카오 1초 간편 로그인';
+      }
+      if (typeof showToast === 'function') showToast('로그인이 취소되었습니다.', 'warn');
     }
   });
 }
+window.loginWithKakao = loginWithKakao;
 
 window.shareFeedToCommunity = async function(feedRecord) {
   if (!feedRecord) return;

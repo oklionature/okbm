@@ -795,8 +795,8 @@
 
   <div id="globalAppMilkyWayLayer" class="global-app-starlight-canvas"></div>
 
-  <header class="netflix-integrated-header notranslate">
-    <div class="header-top-row">
+ <header class="netflix-integrated-header notranslate">
+    <div class="header-top-row" style="justify-content:center !important;">
       <a href="index.html" class="brand-line" onclick="triggerHaptic(10)" title="낭만루트 홈">
         <div class="brand-sym-box">
           <svg viewBox="0 0 32 32" fill="none">
@@ -817,13 +817,6 @@
         </div>
         <span class="brand-title">낭만루트</span>
       </a>
-
-      <button type="button" class="header-auth-btn" id="headerAuthBtn" onclick="handleAuthBtnClick()">
-        <span id="headerAuthIcon" style="display:inline-flex; align-items:center; justify-content:center;">
-          <svg viewBox="0 0 24 24" style="width:13px; height:13px; margin-right:2px; fill:#ffffff; color:#ffffff; flex-shrink:0;"><path d="M12,1 Q12,12 1,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,1 Z"/><circle cx="12" cy="12" r="1.5" fill="#000000"/></svg>
-        </span>
-        <span id="headerAuthText">로그인</span>
-      </button>
     </div>
   </header>
 
@@ -1008,9 +1001,9 @@
           <span class="icon-svg" style="width:16px; height:16px; color:#38bdf8; display:flex; align-items:center;">
             <svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10v.01M14 10v.01M12 18v-8M4.93 19h14.14M12 2l8 10h-5v8H9v-8H4l8-10z"/></svg>
           </span>
-          <span>백패커들이 아껴둔 숨은 박지</span>
+          <span>테마 스팟</span>
         </h2>
-        <span style="font-size:0.62rem; color:#38bdf8; font-weight:800; cursor:pointer;" onclick="location.href='map.html';">전체 박지 ➔</span>
+        <span style="font-size:0.62rem; color:#38bdf8; font-weight:800; cursor:pointer;" onclick="location.href='map.html';">전체 보기 ➔</span>
       </div>
 
       <!-- 순수 SVG 벡터 기반 5대 테마 필터 바 (이모지 0%) -->
@@ -1146,7 +1139,7 @@
     <section style="padding:0 14px;">
       <div onclick="if(typeof openPlanModal==='function') openPlanModal('calculator');" style="background:#0c1018; border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
         <div>
-          <div style="font-size:0.68rem; color:#94a3b8; font-weight:800;">출발 전 짐 싸기 점검</div>
+          <div style="font-size:0.68rem; color:#94a3b8; font-weight:800;">출발 전 무게확인</div>
           <div style="font-size:0.95rem; font-weight:900; color:#fff; margin-top:2px;">오늘 나의 배낭 무게는?</div>
         </div>
         <div style="text-align:right;">
@@ -1174,7 +1167,7 @@
         <span>전국지도</span>
       </a>
 
-      <button type="button" class="dock-item" title="낭만계획" onclick="triggerHaptic(12); if(window.closeHistoryModal) window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar');">
+      <button type="button" class="dock-item" title="낭만플랜" onclick="triggerHaptic(12); if(window.closeHistoryModal) window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar');">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2"/>
           <line x1="16" y1="2" x2="16" y2="6"/>
@@ -1182,7 +1175,7 @@
           <line x1="3" y1="10" x2="21" y2="10"/>
           <path d="M9 16l2 2 4-4"/>
         </svg>
-        <span>낭만계획</span>
+        <span>낭만플랜</span>
       </button>
 
       <button type="button" class="dock-item" title="낭만보관함" onclick="triggerHaptic(12); if(typeof openHistoryModal==='function') openHistoryModal();">
@@ -1194,9 +1187,9 @@
         <span>낭만보관함</span>
       </button>
 
-      <button type="button" class="dock-item" title="내정보" onclick="triggerHaptic(12); handleAuthBtnClick();">
+      <button type="button" class="dock-item" title="마이리포트" onclick="triggerHaptic(12); handleAuthBtnClick();">
         <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-        <span>내정보</span>
+        <span>마이리포트</span>
       </button>
     </div>
 
@@ -1261,7 +1254,7 @@
         </a>
         <button type="button" class="dock-item" onclick="closeVideoDetailModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
-          <span>낭만계획</span>
+          <span>낭만플랜</span>
         </button>
         <button type="button" class="dock-item" onclick="closeVideoDetailModal(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/>
@@ -1270,17 +1263,17 @@
         </button>
         <button type="button" class="dock-item" onclick="closeVideoDetailModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
           <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-          <span>내정보</span>
+          <span>마이리포트</span>
         </button>
       </div>
 
     </div>
   </div>
 
-  <div class="custom-modal-overlay" id="loginModalOverlay" onclick="if(event.target===this) closeLoginModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100dvh; padding:0; overflow:hidden;">
-    <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
-      <div style="flex:1; overflow:hidden; padding:calc(20px + env(safe-area-inset-top, 0px)) 16px 16px 16px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:12px; text-align:center;">
-        <div style="width:54px; height:54px; border-radius:50%; background:rgba(255,255,255,0.08); border:1.5px solid #ffffff; display:flex; align-items:center; justify-content:center; font-size:1.6rem;">
+ <div class="custom-modal-overlay" id="loginModalOverlay" onclick="if(event.target===this) closeLoginModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100dvh; padding:0; overflow:hidden;">
+    <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; position:relative;">
+      <div style="flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:calc(20px + env(safe-area-inset-top, 0px)) 16px calc(76px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:12px; text-align:center; box-sizing:border-box;">
+        <div style="width:54px; height:54px; border-radius:50%; background:rgba(255,255,255,0.08); border:1.5px solid #ffffff; display:flex; align-items:center; justify-content:center;">
           <svg viewBox="0 0 24 24" style="width:26px; height:26px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
         </div>
         <div>
@@ -1299,7 +1292,7 @@
         </div>
       </div>
 
-      <div class="mobile-bottom-dock notranslate" style="position:static !important; flex-shrink:0 !important; width:100% !important;">
+      <div class="mobile-bottom-dock notranslate" style="position:absolute !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:100 !important; box-sizing:border-box;">
         <a href="index.html" class="dock-item" onclick="closeLoginModal(); triggerHaptic(10);">
           <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
           <span>낭만루터</span>
@@ -1310,7 +1303,7 @@
         </a>
         <button type="button" class="dock-item" onclick="closeLoginModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
-          <span>낭만계획</span>
+          <span>낭만플랜</span>
         </button>
         <button type="button" class="dock-item" onclick="closeLoginModal(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
@@ -1318,45 +1311,167 @@
         </button>
         <button type="button" class="dock-item active" onclick="triggerHaptic(10);">
           <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-          <span>내정보</span>
+          <span>마이리포트</span>
         </button>
       </div>
     </div>
   </div>
 
-  <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="if(event.target===this) closeUserProfileModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100dvh; padding:0; overflow:hidden;">
-    <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
-      <div style="flex:1; padding:calc(16px + env(safe-area-inset-top, 0px)) 16px 16px 16px; display:flex; flex-direction:column; gap:12px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:1.3rem;"><svg viewBox="0 0 24 24" style="width:20px; height:20px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-            <div>
-              <div style="font-size:1.05rem; font-weight:900; color:#ffffff;">내 계정 관리</div>
-              <div style="font-size:0.68rem; color:#94a3b8; font-weight:700;">낭만 백패커 회원 프로필</div>
+ <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="if(event.target===this) closeUserProfileModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100dvh; padding:0; overflow:hidden;">
+    <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; position:relative;">
+      
+  <!-- 1. 헤더: 좌측 [마이리포트] ↔ 우측 [원형 프로필 + 0.001초 즉시 닉네임 인출] -->
+      <div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box;">
+        <span style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.03em;">마이리포트</span>
+        
+        <div onclick="triggerHaptic(12); window.openAccountSettingsModal();" title="개인정보 및 아이디 변경" style="display:flex; align-items:center; gap:8px; cursor:pointer; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); padding:3px 10px 3px 4px; border-radius:20px; transition:background 0.15s ease;">
+          <div style="position:relative; width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg, #38bdf8, #818cf8, #f43f5e); padding:1.8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <div style="width:100%; height:100%; border-radius:50%; background:#090d14; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+              <svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div style="position:absolute; bottom:-1px; right:-1px; width:10px; height:10px; border-radius:50%; background:#38bdf8; border:1px solid #000; display:flex; align-items:center; justify-content:center;">
+              <svg viewBox="0 0 24 24" style="width:6px; height:6px;" fill="none" stroke="#000" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
             </div>
           </div>
-          <button type="button" onclick="closeUserProfileModal()" style="background:none; border:none; color:#94a3b8; font-size:1.3rem; cursor:pointer;">✕</button>
-        </div>
-
-        <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:6px;">
-          <label style="color:#94a3b8; font-size:0.75rem; font-weight:800;">활동 닉네임 변경</label>
-          <div style="display:flex; gap:6px;">
-            <input type="text" id="profileModalNicknameInput" class="modal-input" placeholder="새 닉네임 입력" style="flex:1; height:42px; font-size:0.86rem;" />
-            <button type="button" class="modal-btn" style="background:#ffffff; color:#000; font-weight:900; padding:0 16px; height:42px; border-radius:8px;" onclick="saveNewNicknameFromModal()">변경</button>
-          </div>
-          <div id="profileModalCooldownNotice" style="font-size:0.68rem; margin-top:5px; font-weight:800; display:flex; align-items:center; gap:4px;"></div>
-        </div>
-
-        <div style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:8px;">
-          <div style="font-size:0.78rem; font-weight:800; color:#ffffff;">☁️ 낭만 클라우드 실시간 동기화 중</div>
-          <div style="font-size:0.70rem; color:#94a3b8; line-height:1.5;">내 장비, 패킹 기록, 찜/클리어 박지 및 비밀 메모가 구글 클라우드에 영구 안전 보관됩니다.</div>
-          <button type="button" class="modal-btn" style="background:rgba(244,63,94,0.15); border:1px solid #f43f5e; color:#fda4af; font-weight:800; height:42px; border-radius:8px; margin-top:6px; font-size:0.82rem;" onclick="closeUserProfileModal(); logoutUser();">
-            로그아웃
-          </button>
+          <span id="reportHeaderCurrentNick" style="font-size:0.78rem; font-weight:800; color:#ffffff; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+          <script>
+            (function inlineInjectUserNick() {
+              try {
+                var p = JSON.parse(localStorage.getItem('user_profile') || '{}');
+                var n = p.nickname || localStorage.getItem('okbm_user_nick') || '낭만루터';
+                var el = document.getElementById('reportHeaderCurrentNick');
+                if (el) el.innerText = n;
+              } catch(e) {}
+            })();
+          </script>
         </div>
       </div>
 
-      <div class="mobile-bottom-dock notranslate" style="position:static !important; flex-shrink:0 !important; width:100% !important;">
+      <!-- 2. 본문: 한 화면 직관 통계 & 필터별 전환 모듈 -->
+      <div style="flex:1 1 0%; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:12px 14px calc(76px + env(safe-area-inset-bottom, 0px)) 14px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box;">
+        
+        <!-- 🌟 [핵심 1] 해당연도 vs 역대 누적 활동 횟수 초대형 듀얼 카운터 -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <div style="background:linear-gradient(135deg, rgba(56,189,248,0.18), rgba(2,132,199,0.06)); border:1.5px solid rgba(56,189,248,0.4); border-radius:14px; padding:12px; display:flex; flex-direction:column; justify-content:space-between;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:0.68rem; color:#94a3b8; font-weight:800;">올해 활동</span>
+              <span id="reportYearBadge" style="font-size:0.58rem; color:#38bdf8; font-family:var(--font-en); font-weight:900; background:rgba(56,189,248,0.12); padding:1.5px 5px; border-radius:4px;">2026</span>
+            </div>
+            <div style="margin-top:6px;">
+              <span id="reportYearCountNumber" style="font-size:1.75rem; font-weight:900; color:#ffffff; font-family:var(--font-en); line-height:1;">0</span>
+              <span style="font-size:0.82rem; font-weight:900; color:#38bdf8; margin-left:2px;">회</span>
+            </div>
+            <div style="font-size:0.58rem; color:#64748b; margin-top:4px;">올해 필드 방문 기록</div>
+          </div>
+
+          <div style="background:linear-gradient(135deg, rgba(251,191,36,0.16), rgba(217,119,6,0.06)); border:1.5px solid rgba(251,191,36,0.4); border-radius:14px; padding:12px; display:flex; flex-direction:column; justify-content:space-between;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:0.68rem; color:#94a3b8; font-weight:800;">누적 총 활동</span>
+              <span style="font-size:0.58rem; color:#fde047; font-weight:900; background:rgba(251,191,36,0.12); padding:1.5px 5px; border-radius:4px;">역대 전체</span>
+            </div>
+            <div style="margin-top:6px;">
+              <span id="reportTotalCountNumber" style="font-size:1.75rem; font-weight:900; color:#ffffff; font-family:var(--font-en); line-height:1;">0</span>
+              <span style="font-size:0.82rem; font-weight:900; color:#fde047; margin-left:2px;">회</span>
+            </div>
+            <div style="font-size:0.58rem; color:#64748b; margin-top:4px;">텐트 밖에서 보낸 밤</div>
+          </div>
+        </div>
+
+        <!-- 🎚️ 4대 필터 탭 바 (전체 / 장비·무게 / 고도·시즌 / 지역분포) -->
+        <div style="display:flex; gap:5px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px;">
+          <button type="button" id="tabBtnReportAll" class="n-cat-chip active" onclick="window.switchReportTab('all', this)" style="height:29px; font-size:0.70rem; padding:0 10px;">전체 요약</button>
+          <button type="button" id="tabBtnReportGear" class="n-cat-chip" onclick="window.switchReportTab('gear', this)" style="height:29px; font-size:0.70rem; padding:0 10px;">장비 & 무게</button>
+          <button type="button" id="tabBtnReportTerrain" class="n-cat-chip" onclick="window.switchReportTab('terrain', this)" style="height:29px; font-size:0.70rem; padding:0 10px;">고도 & 시즌</button>
+          <button type="button" id="tabBtnReportRegion" class="n-cat-chip" onclick="window.switchReportTab('region', this)" style="height:29px; font-size:0.70rem; padding:0 10px;">지역별 방문</button>
+        </div>
+
+        <!-- [모듈 A: 장비 & 무게 분석] -->
+        <div id="reportSectionGear" class="report-filter-section" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.76rem; font-weight:900; color:#34d399; display:flex; align-items:center; gap:4px;">
+              <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2h12v6H6zM4 8h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/></svg>
+              <span>장비 세팅 & 무게 분석</span>
+            </span>
+            <span id="reportAvgTierBadge" style="font-size:0.60rem; color:#34d399; font-weight:900; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.3); padding:1.5px 6px; border-radius:4px;">스탠다드</span>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+            <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px;">
+              <div style="font-size:0.60rem; color:#94a3b8;">평균 패킹 무게</div>
+              <div id="reportMilestoneAvgWeight" style="font-size:1.15rem; font-weight:900; color:#34d399; font-family:var(--font-en); margin-top:2px;">0.00kg</div>
+            </div>
+            <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px;">
+              <div style="font-size:0.60rem; color:#94a3b8;">최다 동행 장비</div>
+              <div id="reportTopGear" style="font-size:0.75rem; font-weight:900; color:#ffffff; margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">-</div>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.64rem; color:#cbd5e1; border-top:1px dashed rgba(255,255,255,0.1); padding-top:6px;">
+            <div>최경량 패킹: <strong id="reportMinWeight" style="color:#38bdf8;">-</strong></div>
+            <div>최대 중량: <strong id="reportMaxWeight" style="color:#f43f5e;">-</strong></div>
+          </div>
+        </div>
+
+        <!-- [모듈 B: 고도 & 사계절 활동 분포] -->
+        <div id="reportSectionTerrain" class="report-filter-section" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.76rem; font-weight:900; color:#38bdf8; display:flex; align-items:center; gap:4px;">
+              <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
+              <span>누적 고도 & 시즌 밸런스</span>
+            </span>
+            <span id="reportMilestoneElevText" style="font-size:0.62rem; color:#fde047; font-weight:900; font-family:var(--font-en);">+0m (0%)</span>
+          </div>
+          
+          <div>
+            <div style="width:100%; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden;">
+              <div id="reportMilestoneElevBar" style="width:0%; height:100%; background:linear-gradient(90deg, #38bdf8, #fde047); transition:width 0.3s ease;"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:0.56rem; color:#64748b; margin-top:3px;">
+              <span>0m</span>
+              <span>에베레스트 기준 (8,848m)</span>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; text-align:center; border-top:1px dashed rgba(255,255,255,0.1); padding-top:6px;">
+            <div style="background:rgba(255,255,255,0.02); border-radius:6px; padding:4px;">
+              <div style="font-size:0.56rem; color:#94a3b8;">봄(3-5월)</div>
+              <div id="reportSeasonSpring" style="font-size:0.75rem; font-weight:900; color:#34d399; font-family:var(--font-en);">0%</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.02); border-radius:6px; padding:4px;">
+              <div style="font-size:0.56rem; color:#94a3b8;">여름(6-8월)</div>
+              <div id="reportSeasonSummer" style="font-size:0.75rem; font-weight:900; color:#38bdf8; font-family:var(--font-en);">0%</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.02); border-radius:6px; padding:4px;">
+              <div style="font-size:0.56rem; color:#94a3b8;">가을(9-11월)</div>
+              <div id="reportSeasonAutumn" style="font-size:0.75rem; font-weight:900; color:#fde047; font-family:var(--font-en);">0%</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.02); border-radius:6px; padding:4px;">
+              <div style="font-size:0.56rem; color:#94a3b8;">동계(12-2월)</div>
+              <div id="reportSeasonWinter" style="font-size:0.75rem; font-weight:900; color:#c084fc; font-family:var(--font-en);">0%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- [모듈 C: 가장 많이 찾는 지역 (지역별 방문 분포)] -->
+        <div id="reportSectionRegion" class="report-filter-section" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size:0.76rem; font-weight:900; color:#e2e8f0; display:flex; align-items:center; gap:4px;">
+              <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span>가장 많이 찾는 지역 (지역별 방문 분포)</span>
+            </span>
+            <span id="reportTopRegionBadge" style="font-size:0.60rem; color:#38bdf8; font-weight:800; background:rgba(56,189,248,0.12); padding:1.5px 6px; border-radius:4px;">전국</span>
+          </div>
+          <div id="reportRegionDistributionGrid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:5px; text-align:center;">
+            <!-- 실시간 수화 -->
+          </div>
+        </div>
+
+        <button type="button" onclick="if(typeof openHistoryStudioModal==='function') openHistoryStudioModal(); else showToast('스튜디오 엔진 준비 중입니다.', 'info');" style="width:100%; height:44px; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; border-radius:12px; color:#ffffff; font-size:0.84rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(2,132,199,0.35); flex-shrink:0;">
+          <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span>나의 아웃도어 결산 카드 만들기 (스튜디오 ➔)</span>
+        </button>
+      </div>
+
+      <!-- 하단 5대 고정 독 바 -->
+      <div class="mobile-bottom-dock notranslate" style="position:absolute !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:100 !important; box-sizing:border-box;">
         <a href="index.html" class="dock-item" onclick="closeUserProfileModal(); triggerHaptic(10);">
           <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
           <span>낭만루터</span>
@@ -1367,7 +1482,7 @@
         </a>
         <button type="button" class="dock-item" onclick="closeUserProfileModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
-          <span>낭만계획</span>
+          <span>낭만플랜</span>
         </button>
         <button type="button" class="dock-item" onclick="closeUserProfileModal(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
@@ -1375,11 +1490,258 @@
         </button>
         <button type="button" class="dock-item active" onclick="triggerHaptic(10);">
           <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-          <span>내정보</span>
+          <span>마이리포트</span>
         </button>
       </div>
     </div>
   </div>
+
+  <!-- 3. [새 창 오버레이] 계정 관리 및 14일 쿨다운 닉네임 변경 모달 (뒤로가기 ◀ 탑재) -->
+  <div class="custom-modal-overlay" id="userAccountSettingsModal" style="display:none; position:fixed; inset:0; background:#000000; z-index:100005; justify-content:center; align-items:stretch; width:100%; height:100dvh; padding:0; overflow:hidden;">
+    <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
+      
+      <div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box;">
+        <button type="button" onclick="triggerHaptic(10); document.getElementById('userAccountSettingsModal').style.display='none';" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
+        <span style="font-size:0.95rem; font-weight:900; color:#ffffff;">계정 관리</span>
+        <div style="width:30px;"></div>
+      </div>
+
+      <div style="flex:1 1 0%; min-height:0; overflow-y:auto; padding:20px 16px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box;">
+        
+        <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:6px;">
+          <label style="color:#94a3b8; font-size:0.75rem; font-weight:800;">활동 닉네임 변경 (14일 쿨다운)</label>
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="settingsModalNicknameInput" class="modal-input" placeholder="새 닉네임 입력" style="flex:1; height:42px; font-size:0.86rem;" />
+            <button type="button" class="modal-btn" style="background:#ffffff; color:#000000; font-weight:900; padding:0 16px; height:42px; border-radius:8px;" onclick="saveNicknameFromSettingsModal()">변경</button>
+          </div>
+          <div id="settingsModalCooldownNotice" style="font-size:0.68rem; margin-top:4px; font-weight:800; display:flex; align-items:center; gap:4px;"></div>
+        </div>
+
+        <div style="background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.12); border-radius:12px; padding:12px 14px; display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#94a3b8; font-size:0.75rem; font-weight:700;">가입날짜</span>
+          <span id="settingsModalJoinDate" style="color:#e2e8f0; font-family:var(--font-mono); font-size:0.80rem; font-weight:800;">2026.01.01</span>
+        </div>
+
+        <button type="button" class="modal-btn" style="background:rgba(244,63,94,0.15); border:1px solid #f43f5e; color:#fda4af; font-weight:800; height:42px; border-radius:10px; margin-top:6px; font-size:0.82rem;" onclick="document.getElementById('userAccountSettingsModal').style.display='none'; closeUserProfileModal(); logoutUser();">
+          로그아웃
+        </button>
+      </div>
+      <div></div>
+    </div>
+  </div>
+
+  <script>
+    // 🎚️ [필터별 탭 전환 엔진]
+    window.switchReportTab = function(tabKey, btnEl) {
+      triggerHaptic(8);
+      document.querySelectorAll('#userProfileModalOverlay .n-cat-chip').forEach(function(b) { b.classList.remove('active'); });
+      if (btnEl) btnEl.classList.add('active');
+
+      var sGear = document.getElementById('reportSectionGear');
+      var sTerrain = document.getElementById('reportSectionTerrain');
+      var sRegion = document.getElementById('reportSectionRegion');
+
+      if (tabKey === 'all') {
+        if (sGear) sGear.style.display = 'flex';
+        if (sTerrain) sTerrain.style.display = 'flex';
+        if (sRegion) sRegion.style.display = 'flex';
+      } else {
+        if (sGear) sGear.style.display = (tabKey === 'gear') ? 'flex' : 'none';
+        if (sTerrain) sTerrain.style.display = (tabKey === 'terrain') ? 'flex' : 'none';
+        if (sRegion) sRegion.style.display = (tabKey === 'region') ? 'flex' : 'none';
+      }
+    };
+
+    window.openAccountSettingsModal = function() {
+      var modal = document.getElementById('userAccountSettingsModal');
+      var profile = safeGetJSON('user_profile', null);
+      var nickInput = document.getElementById('settingsModalNicknameInput');
+      var joinDateEl = document.getElementById('settingsModalJoinDate');
+      var noticeEl = document.getElementById('settingsModalCooldownNotice');
+
+      if (profile) {
+        if (nickInput) nickInput.value = profile.nickname || '';
+        if (joinDateEl) joinDateEl.innerText = profile.createdAt || '2026.01.01';
+
+        var COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
+        var lastChanged = Number(profile.lastNicknameChangedAt) || 0;
+        var now = Date.now();
+
+        if (noticeEl) {
+          if (lastChanged > 0 && (now - lastChanged < COOLDOWN_MS)) {
+            var remainingDays = Math.ceil((COOLDOWN_MS - (now - lastChanged)) / (1000 * 60 * 60 * 24));
+            noticeEl.style.color = '#f59e0b';
+            noticeEl.innerText = '⏳ 닉네임 변경 쿨다운 중 [' + remainingDays + '일 후 변경 가능]';
+          } else {
+            noticeEl.style.color = '#34d399';
+            noticeEl.innerText = '✓ 현재 닉네임 변경이 가능합니다 (변경 후 14일 쿨다운)';
+          }
+        }
+      }
+      if (modal) modal.style.display = 'flex';
+    };
+
+    window.saveNicknameFromSettingsModal = function() {
+      var input = document.getElementById('settingsModalNicknameInput');
+      if (!input || !input.value.trim()) return showToast('새 닉네임을 입력해주세요.', 'warn');
+
+      var newNick = input.value.trim();
+      var profile = safeGetJSON('user_profile', {});
+      var COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
+      var lastChanged = Number(profile.lastNicknameChangedAt) || 0;
+      var now = Date.now();
+
+      if (lastChanged > 0 && (now - lastChanged < COOLDOWN_MS)) {
+        var remainingDays = Math.ceil((COOLDOWN_MS - (now - lastChanged)) / (1000 * 60 * 60 * 24));
+        triggerHaptic(20);
+        return showToast('닉네임은 14일마다 1회 변경 가능합니다. [' + remainingDays + '일 후 가능]', 'warn', 3500);
+      }
+
+      if (profile.nickname === newNick) {
+        return showToast('현재 사용 중인 닉네임과 동일합니다.', 'info');
+      }
+
+      profile.nickname = newNick;
+      profile.lastNicknameChangedAt = now;
+      localStorage.setItem('user_profile', JSON.stringify(profile));
+      localStorage.setItem('okbm_user_nick', newNick);
+      if (profile.id) {
+        localStorage.setItem('user_profile_' + profile.id, JSON.stringify(profile));
+        localStorage.setItem('okbm_custom_nickname_' + profile.id, newNick);
+      }
+
+      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(true);
+      triggerHaptic(15);
+      showToast('닉네임이 [' + newNick + '](으)로 변경되었습니다!', 'success');
+
+      var headerNick = document.getElementById('reportHeaderCurrentNick');
+      if (headerNick) headerNick.innerText = newNick;
+
+      document.getElementById('userAccountSettingsModal').style.display = 'none';
+      if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
+    };
+
+ // 🌟 [통계 & 실제 로그인 닉네임 0.001초 실시간 수화 엔진]
+    window.refreshMyReportFullStats = function() {
+      var profile = safeGetJSON('user_profile', null);
+      var userNick = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만루터');
+      var headerNick = document.getElementById('reportHeaderCurrentNick');
+      if (headerNick) headerNick.innerText = userNick;
+
+      var logs = window.interactiveHistory || safeGetJSON('okbm_packing_history', []) || [];
+      var validLogs = logs.filter(function(r) { return r && !r.isDeleted; });
+      var totalCount = validLogs.length;
+
+      var currentYear = new Date().getFullYear();
+      var yearCount = 0;
+      var totalElev = 0;
+      var minWeight = 999, maxWeight = 0;
+      var totalGrams = 0;
+      var gearCounts = {};
+      var seasons = { spring: 0, summer: 0, autumn: 0, winter: 0 };
+      var regions = { '강원': 0, '경기': 0, '충청': 0, '전라': 0, '경상': 0, '제주': 0, '섬': 0, '기타': 0 };
+
+      validLogs.forEach(function(r) {
+        var dateStr = String(r.date || '');
+        if (dateStr.includes(String(currentYear))) yearCount++;
+
+        var month = parseInt((dateStr.match(/\d+/g) || [])[1] || '0', 10);
+        if (month >= 3 && month <= 5) seasons.spring++;
+        else if (month >= 6 && month <= 8) seasons.summer++;
+        else if (month >= 9 && month <= 11) seasons.autumn++;
+        else if (month === 12 || month === 1 || month === 2) seasons.winter++;
+
+        var spot = String(r.spot || '');
+        if (spot.includes('강원')) regions['강원']++;
+        else if (spot.includes('경기') || spot.includes('서울') || spot.includes('인천')) regions['경기']++;
+        else if (spot.includes('충')) regions['충청']++;
+        else if (spot.includes('전')) regions['전라']++;
+        else if (spot.includes('경')) regions['경상']++;
+        else if (spot.includes('제주')) regions['제주']++;
+        else if (spot.includes('도') || spot.includes('섬')) regions['섬']++;
+        else regions['기타']++;
+
+        var el = parseInt(String(r.elevation || '0').replace(/\D/g, ''), 10) || 0;
+        totalElev += el;
+
+        var w = parseFloat(r.weightKg) || 0;
+        if (w > 0 && w < minWeight) minWeight = w;
+        if (w > maxWeight) maxWeight = w;
+        totalGrams += (r.weightGrams || Math.round(w * 1000));
+
+        (r.items || []).forEach(function(it) {
+          var gName = String(it.name || it.itemName || '').replace(/\s*\(.*?\)/, '').trim();
+          if (gName) gearCounts[gName] = (gearCounts[gName] || 0) + 1;
+        });
+      });
+      if (minWeight === 999) minWeight = 0;
+
+      var avgWeight = totalCount > 0 ? (totalGrams / totalCount / 1000).toFixed(2) : '0.00';
+      var avgTier = parseFloat(avgWeight) <= 6.0 ? 'UL 초경량' : (parseFloat(avgWeight) <= 12.0 ? '스탠다드' : '헤비');
+
+      var topGear = '-', topGearCount = 0;
+      Object.keys(gearCounts).forEach(function(k) {
+        if (gearCounts[k] > topGearCount) { topGearCount = gearCounts[k]; topGear = k; }
+      });
+      var everestPct = Math.min(100, Math.round((totalElev / 8848) * 100));
+
+      // DOM 안전 주입
+      var yearBadge = document.getElementById('reportYearBadge');
+      var yearCountEl = document.getElementById('reportYearCountNumber');
+      var totalCountEl = document.getElementById('reportTotalCountNumber');
+      if (yearBadge) yearBadge.innerText = currentYear;
+      if (yearCountEl) yearCountEl.innerText = yearCount;
+      if (totalCountEl) totalCountEl.innerText = totalCount;
+
+      var avgWeightEl = document.getElementById('reportMilestoneAvgWeight');
+      var tierEl = document.getElementById('reportAvgTierBadge');
+      var minWeightEl = document.getElementById('reportMinWeight');
+      var maxWeightEl = document.getElementById('reportMaxWeight');
+      var topGearEl = document.getElementById('reportTopGear');
+
+      if (avgWeightEl) avgWeightEl.innerText = avgWeight + 'kg';
+      if (tierEl) tierEl.innerText = avgTier;
+      if (minWeightEl) minWeightEl.innerText = minWeight > 0 ? minWeight.toFixed(2) + 'kg' : '-';
+      if (maxWeightEl) maxWeightEl.innerText = maxWeight > 0 ? maxWeight.toFixed(2) + 'kg' : '-';
+      if (topGearEl) topGearEl.innerText = topGear + (topGearCount ? ' (' + topGearCount + '회)' : '');
+
+      var elevTextEl = document.getElementById('reportMilestoneElevText');
+      var elevBarEl = document.getElementById('reportMilestoneElevBar');
+      if (elevTextEl) elevTextEl.innerText = '+' + totalElev.toLocaleString() + 'm (' + everestPct + '%)';
+      if (elevBarEl) elevBarEl.style.width = everestPct + '%';
+
+      var calcPct = function(cnt) { return totalCount > 0 ? Math.round((cnt / totalCount) * 100) + '%' : '0%'; };
+      var sSp = document.getElementById('reportSeasonSpring');
+      var sSu = document.getElementById('reportSeasonSummer');
+      var sAu = document.getElementById('reportSeasonAutumn');
+      var sWi = document.getElementById('reportSeasonWinter');
+      if (sSp) sSp.innerText = calcPct(seasons.spring);
+      if (sSu) sSu.innerText = calcPct(seasons.summer);
+      if (sAu) sAu.innerText = calcPct(seasons.autumn);
+      if (sWi) sWi.innerText = calcPct(seasons.winter);
+
+      var regGrid = document.getElementById('reportRegionDistributionGrid');
+      if (regGrid) {
+        regGrid.innerHTML = Object.keys(regions).slice(0, 7).map(function(regName) {
+          var rCount = regions[regName] || 0;
+          return '<div style="background:rgba(255,255,255,0.02); border:1px solid ' + (rCount > 0 ? 'rgba(56,189,248,0.3)' : 'rgba(255,255,255,0.06)') + '; border-radius:6px; padding:4px 2px;">' +
+            '<div style="font-size:0.56rem; color:' + (rCount > 0 ? '#38bdf8' : '#64748b') + ';">' + regName + '</div>' +
+            '<div style="font-size:0.75rem; font-weight:900; color:' + (rCount > 0 ? '#fff' : '#475569') + '; font-family:var(--font-en); margin-top:2px;">' + rCount + '곳</div>' +
+          '</div>';
+        }).join('');
+      }
+    };
+
+    // 모달 오픈 전역 리스너 보강
+    window.openUserProfileModal = function() {
+      if (typeof window.refreshMyReportFullStats === 'function') {
+        window.refreshMyReportFullStats();
+      }
+      var modal = document.getElementById('userProfileModalOverlay');
+      if (modal) modal.style.setProperty('display', 'flex', 'important');
+      triggerHaptic(12);
+    };
+  </script>
 
   <div class="custom-modal-overlay" id="gearPresetModal" onclick="if(event.target===this) closeGearPresetModal()" style="display:none; position:fixed; inset:0; background:#000000; z-index:9999999; justify-content:center; align-items:stretch; padding:0;">
     <div style="width:100%; max-width:480px; margin:0 auto; height:100dvh; display:flex; flex-direction:column; padding:calc(12px + env(safe-area-inset-top, 0px)) 14px calc(64px + env(safe-area-inset-bottom, 0px)) 14px; box-sizing:border-box;">
@@ -1479,7 +1841,7 @@
         </a>
         <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; gap:2px; padding:0; cursor:pointer;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:clamp(17px, 4.5vw, 19px); height:clamp(17px, 4.5vw, 19px);"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
-          <span>낭만계획</span>
+          <span>낭만플랜</span>
         </button>
         <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; gap:2px; padding:0; cursor:pointer;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:clamp(17px, 4.5vw, 19px); height:clamp(17px, 4.5vw, 19px);"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
@@ -1487,7 +1849,7 @@
         </button>
         <button type="button" class="dock-item" onclick="closePackShareModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; gap:2px; padding:0; cursor:pointer;">
           <svg viewBox="0 0 24 24" style="width:clamp(17px, 4.5vw, 19px); height:clamp(17px, 4.5vw, 19px); fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-          <span>내정보</span>
+          <span>마이리포트</span>
         </button>
       </div>
 
@@ -1497,7 +1859,7 @@
   <div id="packCardShareActionSheet" onclick="if(event.target===this) closePackCardShareActionSheet();" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:2000030 !important; justify-content:center; align-items:flex-end; box-sizing:border-box;">
     <div style="width:100%; max-width:440px; background:#0e131f; border-top:1.5px solid rgba(255,255,255,0.16); border-radius:18px 18px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:10px; box-shadow:0 -12px 40px rgba(0,0,0,0.95); box-sizing:border-box;" onclick="event.stopPropagation();">
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
-        <span style="font-size:0.88rem; font-weight:900; color:#ffffff;">출정 패킹 카드 공유</span>
+        <span style="font-size:0.88rem; font-weight:900; color:#ffffff;">출발 패킹 카드 공유</span>
         <button type="button" onclick="closePackCardShareActionSheet();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer;">✕</button>
       </div>
       <div style="display:flex; flex-direction:column; gap:6px;">
@@ -1559,6 +1921,27 @@
   대상 파일: index.html (3/3 파트)
 
   <script>
+ window.loginWithKakao = function() {
+      if (typeof loginWithKakao === 'function' && loginWithKakao !== window.loginWithKakao) {
+        loginWithKakao();
+        return;
+      }
+      triggerHaptic(12);
+    };
+
+    window.logoutUser = function() {
+      if (typeof logoutUser === 'function' && logoutUser !== window.logoutUser) {
+        logoutUser();
+        return;
+      }
+      triggerHaptic(15);
+      localStorage.removeItem('user_auth_token');
+      localStorage.removeItem('user_profile');
+      localStorage.removeItem('okbm_user_id');
+      localStorage.removeItem('okbm_user_nick');
+      window.location.reload();
+    };
+
     function safeGetJSON(key, defaultVal) {
       try {
         var item = localStorage.getItem(key);
@@ -2718,7 +3101,7 @@ var adBannersHtml = `
 <div style="font-size:0.58rem; color:#94a3b8;">텐트 · 침낭 · 에어매트 · 경량 기어 스펙</div>
 </div>
 </div>
-<span style="font-size:0.65rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); padding:3.5px 8px; border-radius:6px; flex-shrink:0;">장비보기 ➔</span>
+<span style="font-size:0.65rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); padding:3.5px 8px; border-radius:6px; flex-shrink:0;">장비보기</span>
 </a>
 <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; text-decoration:none;">
           <div style="display:flex; align-items:center; gap:8px;">
@@ -2762,7 +3145,7 @@ var adBannersHtml = `
               ${subPoint ? `<div style="font-size:0.68rem; color:#cbd5e1; font-weight:700; margin-top:2px;">📍 ${escapeHtml(subPoint)}</div>` : ''}
             </div>
             <button type="button" onclick="closeVideoDetailModal(); location.href='map.html?spot=${navTargetParam}';" style="background:#ffffff; color:#000000; border:none; border-radius:8px; padding:6px 12px; font-size:0.75rem; font-weight:900; cursor:pointer; flex-shrink:0; display:flex; align-items:center; gap:4px;">
-              <span>장소확인 ➔</span>
+              <span>장소확인</span>
             </button>
           </div>
 
@@ -3320,7 +3703,7 @@ var adBannersHtml = `
                 ${subPoint ? `<div style="font-size:0.66rem; color:#cbd5e1; margin-top:2px;">📍 ${escapeHtml(subPoint)}</div>` : ''}
               </div>
               <button type="button" onclick="document.getElementById('tripDetailSheetModal').remove(); location.href='map.html?spot=${navTargetParam}';" style="background:#ffffff; color:#000000; border:none; border-radius:8px; padding:6px 12px; font-size:0.75rem; font-weight:900; cursor:pointer; flex-shrink:0; box-shadow:0 2px 8px rgba(255,255,255,0.2);">
-                <span>장소확인 ➔</span>
+                <span>장소확인</span>
               </button>
             </div>
 
@@ -3419,7 +3802,7 @@ var adBannersHtml = `
             </button>
             <button type="button" class="dock-item" onclick="document.getElementById('tripDetailSheetModal').remove(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px);"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
-              <span>낭만계획</span>
+              <span>낭만플랜</span>
             </button>
             <button type="button" class="dock-item" onclick="document.getElementById('tripDetailSheetModal').remove(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px);"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
@@ -3427,7 +3810,7 @@ var adBannersHtml = `
             </button>
             <button type="button" class="dock-item" onclick="document.getElementById('tripDetailSheetModal').remove(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
               <svg viewBox="0 0 24 24" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px); fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-              <span>내정보</span>
+              <span>마이리포트</span>
             </button>
           </div>
         </div>
@@ -3585,7 +3968,7 @@ var adBannersHtml = `
             </button>
             <button type="button" class="dock-item" onclick="document.getElementById('tripCreateModal').remove(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px);"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
-              <span>낭만계획</span>
+              <span>낭만플랜</span>
             </button>
             <button type="button" class="dock-item" onclick="document.getElementById('tripCreateModal').remove(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px);"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
@@ -3593,7 +3976,7 @@ var adBannersHtml = `
             </button>
             <button type="button" class="dock-item" onclick="document.getElementById('tripCreateModal').remove(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
               <svg viewBox="0 0 24 24" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px); fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-              <span>내정보</span>
+              <span>마이리포트</span>
             </button>
           </div>
         </div>
@@ -3903,7 +4286,7 @@ var adBannersHtml = `
         var foundMemo = planMemosObj[sDate] || '';
 
         if (foundRec) {
-          hintEl.innerHTML = '<span style="color:#fde047; font-weight:800;">★ [' + sDate + '] 이미 다녀온 출정: ' + escapeHtml(foundRec.spot || '백패킹') + ' (' + (foundRec.weightKg || '0.00') + 'kg)</span>';
+          hintEl.innerHTML = '<span style="color:#fde047; font-weight:800;">★ [' + sDate + '] 이미 다녀온 출발: ' + escapeHtml(foundRec.spot || '백패킹') + ' (' + (foundRec.weightKg || '0.00') + 'kg)</span>';
         } else if (foundMemo) {
           hintEl.innerHTML = '<span style="color:#34d399; font-weight:800;">⚑ [' + sDate + '] 기존 계획: ' + escapeHtml(foundMemo.slice(0, 38)) + '...</span>';
         } else {
@@ -4074,7 +4457,7 @@ var adBannersHtml = `
       if (modal) modal.remove();
 
       triggerHaptic(15);
-      showToast('참가 완료! 낭만계획 달력에 일정이 등록되었습니다.', 'success');
+      showToast('참가 완료! 낭만플랜 달력에 일정이 등록되었습니다.', 'success');
       renderHomeTripJoinSlider();
 
       if (typeof window.syncTripToCloudSheet === 'function') {
@@ -4493,7 +4876,7 @@ var adBannersHtml = `
       var spotName = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '대관령 선자령';
       var rec = window.currentShareRecord || {};
       var weight = rec.weightKg || '0.00';
-      var shareTitle = `[낭만루트] ${spotName} 출정 패킹 (${weight}kg)`;
+      var shareTitle = `[낭만루트] ${spotName} 출발 패킹 (${weight}kg)`;
       var shareText = `흔적 없는 클린 백패킹 LNT 실천\n${spotName} 배낭 패킹 명세 확인하기`;
       var shareUrl = window.location.origin + window.location.pathname;
 
@@ -4517,7 +4900,7 @@ var adBannersHtml = `
 
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(`${shareTitle}\n${shareUrl}`).then(function() {
-          showToast('출정 정보가 클립보드에 복사되었습니다!', 'success');
+          showToast('출발 정보가 클립보드에 복사되었습니다!', 'success');
         }).catch(function() {
           showToast('공유 기능을 지원하지 않는 브라우저입니다.', 'warn');
         });
@@ -4550,11 +4933,11 @@ var adBannersHtml = `
       var spotName = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : '선자령 백패킹';
       var rec = window.currentShareRecord || {};
       var weight = rec.weightKg || '0.00';
-      var shareText = `[낭만루트] ${spotName} 출정 패킹 완료 (${weight}kg)\n` + window.location.href;
+      var shareText = `[낭만루트] ${spotName} 출발 패킹 완료 (${weight}kg)\n` + window.location.href;
 
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(shareText).then(function() {
-          showToast('출정 링크가 클립보드에 복사되었습니다!', 'success');
+          showToast('출발 링크가 클립보드에 복사되었습니다!', 'success');
         }).catch(function() {
           showToast('링크 복사에 실패했습니다.', 'warn');
         });
@@ -4793,8 +5176,30 @@ var adBannersHtml = `
       wrapModal('openPackShareModal', 'closePackShareModal', 'packShareModalOverlay');
       wrapModal('openPhotoStudio', 'closePhotoStudio', 'photoStudioOverlay');
       wrapModal('openLoginModal', 'closeLoginModal', 'loginModalOverlay');
-      wrapModal('openUserProfileModal', 'closeUserProfileModal', 'userProfileModalOverlay');
+   wrapModal('openUserProfileModal', 'closeUserProfileModal', 'userProfileModalOverlay');
       wrapModal('openVideoDetailModal', 'closeVideoDetailModal', 'videoDetailModal');
+
+      // 🧭 [마이리포트 마스터 컨트롤러]: 비로그인 ➔ 로그인창 / 로그인 ➔ 통계 대시보드 직통 라우팅
+     // 🧭 [마이리포트 마스터 컨트롤러]: 비로그인 ➔ 로그인창 / 로그인 ➔ 정통 마이리포트 대시보드 직통 라우팅
+      window.handleAuthBtnClick = function() {
+        triggerHaptic(10);
+        var token = localStorage.getItem('user_auth_token');
+        var rawProfile = localStorage.getItem('user_profile');
+        var profile = rawProfile ? JSON.parse(rawProfile) : null;
+        var isLogged = !!(token && token.trim().length > 0 && profile && profile.id);
+
+        if (isLogged) {
+          if (typeof window.openMyReportModal === 'function') {
+            window.openMyReportModal();
+          } else if (typeof openUserProfileModal === 'function') {
+            openUserProfileModal();
+          }
+        } else {
+          if (typeof openLoginModal === 'function') {
+            openLoginModal();
+          }
+        }
+      };
 
       if (window.Capacitor && window.Capacitor.Plugins) {
         var App = window.Capacitor.Plugins.App;
