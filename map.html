@@ -265,6 +265,95 @@
         border: 1.5px solid var(--border-titanium); 
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
+        padding: 4px 0;
+        box-sizing: border-box;
+      }
+
+      .dropdown-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        font-size: 0.74rem;
+        font-weight: 800;
+        color: var(--accent-blue);
+        border-bottom: 1px solid var(--border-hairline);
+        background: var(--bg-card);
+      }
+
+      .btn-close-dropdown {
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        font-size: 0.70rem;
+        font-weight: 700;
+        cursor: pointer;
+        padding: 2px 4px;
+      }
+
+      .dropdown-item {
+        padding: 9px 12px;
+        border-bottom: 1px solid var(--border-subtle);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: background 0.15s ease;
+      }
+      .dropdown-item:last-child { border-bottom: none; }
+      .dropdown-item:hover, .dropdown-item:active { background: var(--bg-card-hover); }
+
+      .top-rank-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        gap: 6px;
+      }
+      .top-rank-left {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 1;
+        min-width: 0;
+      }
+      .rank-badge {
+        width: 17px;
+        height: 17px;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.65rem;
+        font-weight: 900;
+        flex-shrink: 0;
+        color: #fff;
+      }
+      .rank-1 { background: #f43f5e; }
+      .rank-2 { background: #f97316; }
+      .rank-3 { background: #f59e0b; }
+      .rank-etc { background: #64748b; }
+
+      .top-spot-title {
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .top-spot-city {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: var(--accent-teal);
+        flex-shrink: 0;
+      }
+      .top-spot-views {
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: var(--text-muted);
+        flex-shrink: 0;
+        white-space: nowrap;
       }
 
       /* 🗺️ 사이드바 & 슬라이딩 드로어 */
@@ -1560,7 +1649,7 @@
         return markerImg;
       }
 
-      // ⚡ [저사양 기기 최적화 1] 싱글톤 6대 마커 이미지 캐시 풀 (GC 부하 및 GPU VRAM 고갈 완벽 차단)
+     // ⚡ [저사양 기기 최적화] 기종 편차 없는 W3C 표준 Canvas 마커 래퍼 풀
       var markerImageCache = new Map();
 
       function getCachedMarkerImage(difficulty = 3) {
@@ -1574,29 +1663,64 @@
         }
 
         var color = diffKey === 'EASY' ? '#10b981' : (diffKey === 'HARD' ? '#f43f5e' : '#f59e0b');
-        var width = isMobile ? 30 : 34, height = isMobile ? 38 : 42;
+        var width = isMobile ? 30 : 34;
+        var height = isMobile ? 38 : 42;
 
-        var svgString = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="' + width + '" height="' + height + '">' +
-          '<ellipse cx="14" cy="34" rx="7" ry="2" fill="rgba(0,0,0,0.4)"/>' +
-          '<path fill="' + color + '" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round" d="M14 1 C6.82 1 1 6.82 1 14 C1 19.8 4.8 24.7 10 26.3 L14 32.5 L18 26.3 C23.2 24.7 27 19.8 27 14 C27 6.82 21.18 1 14 1 Z"/>' +
-          '<path fill="#ffffff" d="M14 7 L7.5 18 H20.5 Z"/>' +
-          '<polygon fill="' + color + '" points="14,10.5 10.5,18 17.5,18"/>' +
-        '</svg>';
+        try {
+          var canvas = document.createElement('canvas');
+          canvas.width = width * 2;
+          canvas.height = height * 2;
+          var ctx = canvas.getContext('2d');
+          ctx.scale(2, 2);
 
-        var markerImg = new kakao.maps.MarkerImage(
-          'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString),
-          new kakao.maps.Size(width, height),
-          { offset: new kakao.maps.Point(width / 2, height) }
-        );
+          // 하단 그림자
+          ctx.beginPath();
+          ctx.ellipse(width / 2, height - 3, width * 0.28, 3, 0, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(0,0,0,0.35)';
+          ctx.fill();
 
-        markerImageCache.set(cacheKey, markerImg);
-        return markerImg;
+          // 핀 본체
+          var r = (width - 4) / 2;
+          var cx = width / 2;
+          var cy = r + 2;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, Math.PI, 0, false);
+          ctx.lineTo(cx, height - 6);
+          ctx.closePath();
+          ctx.fillStyle = color;
+          ctx.fill();
+          ctx.lineWidth = 1.8;
+          ctx.strokeStyle = '#ffffff';
+          ctx.stroke();
+
+          // 중앙 텐트 실루엣
+          ctx.beginPath();
+          ctx.moveTo(cx, cy - r * 0.45);
+          ctx.lineTo(cx - r * 0.55, cy + r * 0.5);
+          ctx.lineTo(cx + r * 0.55, cy + r * 0.5);
+          ctx.closePath();
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+
+          var markerImg = new kakao.maps.MarkerImage(
+            canvas.toDataURL('image/png'),
+            new kakao.maps.Size(width, height),
+            { offset: new kakao.maps.Point(width / 2, height) }
+          );
+
+          markerImageCache.set(cacheKey, markerImg);
+          return markerImg;
+        } catch (e) {
+          return new kakao.maps.MarkerImage(
+            'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
+            new kakao.maps.Size(24, 35)
+          );
+        }
       }
 
       function createPureSvgMarkerImage(difficulty = 3) {
         return getCachedMarkerImage(difficulty);
       }
-
       // ⚡ [저사양 기기 최적화 2] 캐시 부재 첫 방문자 0초 대응: Stale-While-Revalidate 원격 박지 자동 수급 엔진
       var isSpotsFetching = false;
       async function fetchLatestSpotsFromRemote() {
@@ -3156,17 +3280,16 @@ function updateSmartResetButtons() {
           });
         }
 
-        const targetOrder = ["서울/인천", "경기", "강원", "충청", "전라", "경상", "제주"];
-        // ⚡ [구형 브라우저 완벽 호환] Object.fromEntries ES2019 크래시 원천 차단
+       const targetOrder = ["서울/인천", "경기", "강원", "충청", "전라", "경상", "제주"];
         const grouped = {};
-        targetOrder.forEach(r => { grouped[r] = []; });
+        targetOrder.forEach(function(r) { grouped[r] = []; });
 
-        displaySpots.forEach(spot => {
+        displaySpots.forEach(function(spot) {
           const lat = parseFloat(spot.lat), lng = parseFloat(spot.lng);
           if (isNaN(lat) || isNaN(lng)) return;
           const sId = String(spot.id).trim(), latlng = new kakao.maps.LatLng(lat, lng);
 
-         if (!spotNativeMarkerMap.has(sId) && map) {
+          if (!spotNativeMarkerMap.has(sId) && map) {
             const marker = new kakao.maps.Marker({
               map: map,
               position: latlng, 
@@ -3174,7 +3297,7 @@ function updateSmartResetButtons() {
               clickable: true, 
               zIndex: 9999
             });
-            kakao.maps.event.addListener(marker, 'click', () => focusSpotOnMap(spot));
+            kakao.maps.event.addListener(marker, 'click', function() { focusSpotOnMap(spot); });
             marker.spotData = spot;
             spotNativeMarkerMap.set(sId, marker);
           } else {
@@ -3199,11 +3322,11 @@ function updateSmartResetButtons() {
           const row3Elev = spot.elevation ? `${String(spot.elevation).replace(/m$/i,'')}m` : '';
           const diffClass = getSpotDiffColorClass(spot.difficulty);
 
-         const labelDiv = document.createElement('div');
+          const labelDiv = document.createElement('div');
           labelDiv.className = 'lod-marker-container';
           labelDiv.style.pointerEvents = 'auto';
           labelDiv.style.cursor = 'pointer';
-          labelDiv.onclick = (e) => {
+          labelDiv.onclick = function(e) {
             e.stopPropagation();
             focusSpotOnMap(spot);
           };
@@ -3234,7 +3357,7 @@ function updateSmartResetButtons() {
         const spotListEl = document.getElementById('spotList');
         spotListEl.innerHTML = '';
 
-        displaySpots.forEach(spot => {
+        displaySpots.forEach(function(spot) {
           const sId = String(spot.id).trim(), marker = spotNativeMarkerMap.get(sId), labelOverlay = spotLabelOverlayMap.get(sId);
           let match = true;
           const diffNum = parseInt(spot.difficulty, 10) || 3;
@@ -3260,16 +3383,25 @@ function updateSmartResetButtons() {
             if (currentHudFilterTerrain === '동굴') {
               if (!tList.includes('동굴') && !combinedDesc.includes('동굴') && !combinedDesc.includes('굴')) match = false;
             } else {
-              if (!tList.some(t => t.includes(currentHudFilterTerrain))) match = false;
+              if (!tList.some(function(t) { return t.includes(currentHudFilterTerrain); })) match = false;
             }
           }
 
-          const regKey = (spot.region === '서울인천' || spot.region === '서울/인천') ? '서울/인천' : spot.region;
+          let regKey = (spot.region || '').trim();
+          if (regKey === '서울' || regKey === '인천' || regKey === '서울인천' || regKey === '서울/인천') {
+            regKey = '서울/인천';
+          }
+          if (!grouped[regKey]) {
+            regKey = '경기';
+          }
 
           if (currentMasterTab === 'REGION') { 
-            if (currentRegionFilter !== 'ALL' && regKey !== (currentRegionFilter === '서울인천' ? '서울/인천' : currentRegionFilter)) match = false; 
+            if (currentRegionFilter !== 'ALL') {
+              const fKey = currentRegionFilter === '서울인천' ? '서울/인천' : currentRegionFilter;
+              if (regKey !== fKey) match = false;
+            }
           } else if (currentMasterTab === 'TERRAIN') { 
-            if (currentTerrainFilter !== 'ALL' && !(spot.terrain || []).some(t => t.includes(currentTerrainFilter))) match = false; 
+            if (currentTerrainFilter !== 'ALL' && !(spot.terrain || []).some(function(t) { return t.includes(currentTerrainFilter); })) match = false; 
           } else if (currentMasterTab === 'COURSE') {
             if (currentCourseFilter === 'SHORTEST' && spot.courseType !== '최단') match = false;
             else if (currentCourseFilter === 'TRAVERSE' && spot.courseType !== '종주') match = false;
@@ -3281,10 +3413,10 @@ function updateSmartResetButtons() {
             else if (currentMyFilter === 'VISITED' && !userVisited.has(sId)) match = false;
           }
 
-        if (match) {
+          if (match) {
             if (marker && !marker.getMap()) marker.setMap(map);
-            activeMarkers.push(marker);
-            if (grouped[regKey]) grouped[regKey].push(spot);
+            if (marker) activeMarkers.push(marker);
+            grouped[regKey].push(spot);
             visibleCount++;
           } else {
             if (marker) marker.setMap(null);
