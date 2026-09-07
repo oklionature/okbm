@@ -945,107 +945,44 @@ window.safeSetStorage = function(key, value) {
         '</div>'
       );
 
-     modalEl.innerHTML = `
+    modalEl.innerHTML = `
         <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
-          <!-- 뒤로가기 버튼 삼각형 하나만 배치 (마이리포트 텍스트 완전 삭제) -->
-          <button type="button" onclick="document.getElementById('myReportModal').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
-          
-          <!-- 인스타그램 스타일 단일 원형 프로필 버튼 -->
-          <button type="button" onclick="triggerHaptic(12); var p=document.getElementById('myReportQuickAccountPanel'); if(p){ var isShow=p.style.display==='flex'; p.style.display=isShow?'none':'flex'; if(!isShow){ var inp=document.getElementById('myReportQuickNickInput'); if(inp){ inp.focus(); inp.select(); } } }" title="개인정보 및 아이디 변경" style="position:relative; width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg, #38bdf8, #818cf8, #f43f5e); padding:2px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 0 12px rgba(56,189,248,0.35); flex-shrink:0;">
-            <div style="width:100%; height:100%; border-radius:50%; background:#090d14; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-              <svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </div>
-            <div style="position:absolute; bottom:-1px; right:-1px; width:12px; height:12px; border-radius:50%; background:#38bdf8; border:1.5px solid #000; display:flex; align-items:center; justify-content:center;">
-              <svg viewBox="0 0 24 24" style="width:7px; height:7px;" fill="none" stroke="#000" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
-            </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button type="button" onclick="window.closePastTripsListModal(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
+            <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">기록된 활동 목록</span>
+          </div>
+          ${headerRightHtml}
+        </div>
+
+        <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(80px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
+          ${cardsHtml}
+        </div>
+
+        <div id="pastTripsBatchDeleteBar" style="display:none; position:fixed; bottom:calc(56px + env(safe-area-inset-bottom, 0px)); left:0; right:0; max-width:440px; margin:0 auto; padding:10px 14px; background:rgba(15,23,42,0.95); backdrop-filter:blur(10px); border-top:1.5px solid #f43f5e; box-sizing:border-box; z-index:1000004;">
+          <button type="button" onclick="window.executeBatchDeletePastTrips();" style="width:100%; height:44px; background:linear-gradient(135deg, #f43f5e, #be123c); border:none; border-radius:10px; color:#fff; font-size:0.84rem; font-weight:900; cursor:pointer; box-shadow:0 4px 14px rgba(244,63,94,0.4); display:flex; align-items:center; justify-content:center; gap:6px;">
+            <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:#ffffff; fill:none; stroke-width:2.2;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span id="pastTripsBatchDeleteCountText">선택한 기록 영구 삭제</span>
           </button>
         </div>
 
-        <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(70px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box;">
-          
-          <!-- 미니멀 개인정보 창 (닉네임 변경 + 가입날짜 + 로그아웃 전용, 낭만클라우드 저장 100% 보존) -->
-          <div id="myReportQuickAccountPanel" style="display:none; flex-direction:column; gap:8px; background:#0a0e17; border:1.5px solid rgba(56,189,248,0.35); border-radius:14px; padding:12px 14px; box-shadow:0 12px 30px rgba(0,0,0,0.9); box-sizing:border-box;">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px;">
-              <span style="font-size:0.74rem; font-weight:800; color:#cbd5e1;">활동 닉네임 변경</span>
-              <button type="button" onclick="document.getElementById('myReportQuickAccountPanel').style.display='none';" style="background:none; border:none; color:#94a3b8; font-size:0.85rem; font-weight:900; cursor:pointer;">✕</button>
-            </div>
-
-            <div style="display:flex; gap:6px;">
-              <input type="text" id="myReportQuickNickInput" value="${escapeHtml((safeGetJSON('user_profile', null) && safeGetJSON('user_profile', null).nickname) || localStorage.getItem('okbm_user_nick') || '낭만백패커')}" placeholder="새 닉네임 입력" style="flex:1; height:38px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#ffffff; font-size:0.82rem; font-weight:800; padding:0 10px; outline:none; box-sizing:border-box;" />
-              <button type="button" onclick="var v=document.getElementById('myReportQuickNickInput').value.trim(); if(v){ localStorage.setItem('okbm_user_nick', v); var p=safeGetJSON('user_profile',{}); p.nickname=v; localStorage.setItem('user_profile', JSON.stringify(p)); if(p.id) localStorage.setItem('okbm_custom_nickname_' + p.id, v); if(typeof syncUserDataToCloud==='function') syncUserDataToCloud(true); triggerHaptic(12); if(typeof showToast==='function') showToast('닉네임이 변경되었습니다.', 1800); } else { if(typeof showToast==='function') showToast('닉네임을 입력하세요.', 'warn'); }" style="height:38px; background:#ffffff; border:none; border-radius:8px; color:#000000; font-size:0.78rem; font-weight:900; padding:0 14px; cursor:pointer; flex-shrink:0;">변경</button>
-            </div>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:3px 2px; font-size:0.72rem;">
-              <span style="color:#94a3b8;">가입날짜</span>
-              <span style="color:#e2e8f0; font-family:var(--font-mono); font-weight:700;">${escapeHtml((safeGetJSON('user_profile', null) && safeGetJSON('user_profile', null).createdAt) || '2026.01.01')}</span>
-            </div>
-
-            <button type="button" onclick="if(confirm('로그아웃 하시겠습니까?')){ if(typeof logoutUser==='function') logoutUser(); else { localStorage.removeItem('user_auth_token'); localStorage.removeItem('user_profile'); location.reload(); } }" style="height:36px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.3); border-radius:8px; color:#fda4af; font-size:0.76rem; font-weight:800; cursor:pointer; margin-top:2px;">
-              로그아웃
-            </button>
-          </div>
-
-          <div style="background:linear-gradient(135deg, rgba(56,189,248,0.14), rgba(16,185,129,0.08)); border:1.5px solid rgba(56,189,248,0.35); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:10px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:0.80rem; font-weight:900; color:#38bdf8;">나의 아웃도어 라이프 마일스톤</span>
-              <span style="font-size:0.62rem; color:#fde047; font-weight:800; background:rgba(253,224,71,0.15); padding:2px 6px; border-radius:4px;">${avgTier}</span>
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-              <div style="background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px;">
-                <div style="font-size:0.62rem; color:#94a3b8; font-weight:700;">텐트 밖에서 보낸 밤</div>
-                <div style="font-size:1.35rem; font-weight:900; color:#ffffff; font-family:'Space Grotesk', sans-serif; margin-top:2px;">총 ${count}회</div>
-              </div>
-              <div style="background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px;">
-                <div style="font-size:0.62rem; color:#94a3b8; font-weight:700;">평균 패킹 무게</div>
-                <div style="font-size:1.35rem; font-weight:900; color:#34d399; font-family:'Space Grotesk', sans-serif; margin-top:2px;">${avgWeightStr}kg</div>
-              </div>
-            </div>
-
-            <div style="background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px; display:flex; flex-direction:column; gap:6px;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size:0.65rem; color:#94a3b8; font-weight:800;">누적 오른 고도 (에베레스트 8,848m 기준)</span>
-                <span style="font-size:0.75rem; color:#fde047; font-weight:900; font-family:'Space Grotesk', sans-serif;">+${totalElev.toLocaleString()}m (${everestPercent}%)</span>
-              </div>
-              <div style="width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden;">
-                <div style="width:${everestPercent}%; height:100%; background:linear-gradient(90deg, #38bdf8, #fde047);"></div>
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.65rem; color:#cbd5e1; border-top:1px dashed rgba(255,255,255,0.12); padding-top:8px;">
-              <div>미니멀 패킹: <strong style="color:#34d399;">${minWeight > 0 ? minWeight.toFixed(2) + 'kg' : '-'}</strong></div>
-              <div>맥스 패킹: <strong style="color:#f43f5e;">${maxWeight > 0 ? maxWeight.toFixed(2) + 'kg' : '-'}</strong></div>
-              <div style="grid-column:1 / -1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">최고도 스팟: <strong style="color:#38bdf8;">${escapeHtml(maxSpot)} (${maxElev}m)</strong></div>
-              <div style="grid-column:1 / -1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">원픽 기어: <strong style="color:#fde047;">${escapeHtml(topGear)} (${topGearCount}회)</strong></div>
-            </div>
-          </div>
-
-          <button type="button" onclick="window.openHistoryStudioModal();" style="width:100%; height:44px; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; border-radius:12px; color:#ffffff; font-size:0.84rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(2,132,199,0.35);">
-            <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            <span>나의 아웃도어 결산 카드 만들기 (스튜디오 ➔)</span>
-          </button>
-        </div>
-  
-
-        <!-- 🏛️ [하단독 공식 5대 메인 독 단일화]: 이상한 서브독 영구 제거 -->
         <div style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; z-index:1000005 !important; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-          <a href="index.html" class="dock-item" onclick="var m=document.getElementById('myReportModal'); if(m) m.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px;">
+          <a href="index.html" class="dock-item" onclick="window.closePastTripsListModal(); window.closeHistoryModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px;">
             <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
             <span>낭만루터</span>
           </a>
-          <a href="map.html" class="dock-item" onclick="var m=document.getElementById('myReportModal'); if(m) m.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px;">
+          <a href="map.html" class="dock-item" onclick="window.closePastTripsListModal(); window.closeHistoryModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px;">
             <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
             <span>전국지도</span>
           </a>
-          <button type="button" class="dock-item" onclick="var m=document.getElementById('myReportModal'); if(m) m.remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
+          <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
             <span>낭만플랜</span>
           </button>
-          <button type="button" class="dock-item active" onclick="var m=document.getElementById('myReportModal'); if(m) m.remove(); window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff !important; font-size:0.67rem; font-weight:900; min-height:48px; gap:3px; cursor:pointer;">
+          <button type="button" class="dock-item active" onclick="window.closePastTripsListModal(); window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff !important; font-size:0.67rem; font-weight:900; min-height:48px; gap:3px; cursor:pointer;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
             <span>낭만보관함</span>
           </button>
-          <button type="button" class="dock-item" onclick="var m=document.getElementById('myReportModal'); if(m) m.remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
+          <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
             <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
             <span>마이리포트</span>
           </button>
@@ -1053,26 +990,9 @@ window.safeSetStorage = function(key, value) {
       `;
 
       document.body.appendChild(modalEl);
-
-      window.__myReportDockMode = 'tools';
-      window.toggleMyReportDockDeck = function(forceMode) {
-        if (forceMode) window.__myReportDockMode = forceMode;
-        else window.__myReportDockMode = (window.__myReportDockMode === 'tools') ? 'main' : 'tools';
-        var sub = document.getElementById('myReportSubToolsDeck');
-        var main = document.getElementById('myReportMainNavDeck');
-        if (!sub || !main) return;
-        if (window.__myReportDockMode === 'tools') {
-          sub.style.transform = 'translateY(0)';
-          main.style.transform = 'translateY(100%)';
-        } else {
-          sub.style.transform = 'translateY(100%)';
-          main.style.transform = 'translateY(0)';
-        }
-      };
       triggerHaptic(12);
     } catch (err) {
-      console.error('[OpenMyReportModal Error]', err);
-      if (typeof showToast === 'function') showToast('마이리포트를 여는 중 오류가 발생했습니다: ' + err.message, 'warn');
+      console.error('[OpenPastTripsListModal Error]', err);
     }
   };
 
@@ -1176,7 +1096,9 @@ window.safeSetStorage = function(key, value) {
     }
   }
 
- // ⚙️ [3. 피드 공개 / 비공개 원터치 실시간 토글 & 4중 캐시 동기화 엔진]
+ // ⚙️ [방탄 디바운스 락 & 스크롤 튕김 0% 엔진]: 공개/비공개 다중 클릭 충돌 원천 차단
+  window.__publishDebounceTimers = window.__publishDebounceTimers || {};
+
   window.toggleFeedPublishStatus = function(recordId, e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
     if (!recordId) return;
@@ -1196,10 +1118,7 @@ window.safeSetStorage = function(key, value) {
       rawList = window.interactiveHistory;
     }
 
-    var target = rawList.find(function(r) { 
-      return String(r.id).trim() === sId; 
-    });
-
+    var target = rawList.find(function(r) { return String(r.id).trim() === sId; });
     if (!target) {
       target = rawList.find(function(r, idx) {
         return String(idx) === sId || (r.date && String(r.date).replace(/[-/]/g, '') === sId);
@@ -1211,10 +1130,11 @@ window.safeSetStorage = function(key, value) {
       return;
     }
 
+    // 1. 상태 즉시 반전 (0.001초 로컬 확정)
     var nextStatus = !(target.isPublished === true);
     target.isPublished = nextStatus;
 
-    // 1. 내 보관함 기록 즉시 갱신
+    // 2. 4대 로컬 캐시 즉각 동기화
     window.interactiveHistory = rawList.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
     window.packingHistoryList = window.interactiveHistory;
     if (window.__memoryStore) {
@@ -1222,54 +1142,48 @@ window.safeSetStorage = function(key, value) {
     }
     window.safeSetStorage('okbm_packing_history', rawList);
 
-    // 2. ⚡ [핵심 방어]: 나만보기(비공개)로 전환 시 홈 히어로 피드 및 공용 피드 캐시에서 0.001초 즉시 영구 말소
-    if (!nextStatus) {
-      if (Array.isArray(window.__allLoadedFeeds)) {
-        window.__allLoadedFeeds = window.__allLoadedFeeds.filter(function(f) { 
-          return String(f.id).trim() !== sId; 
-        });
-        localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(window.__allLoadedFeeds));
-      }
-
-      if (Array.isArray(window.heroTopRecords)) {
-        window.heroTopRecords = window.heroTopRecords.filter(function(f) { 
-          return String(f.id).trim() !== sId; 
-        });
-        window.currentHeroCardIndex = 0;
-        if (typeof window.renderCurrentHeroCard === 'function') {
-          window.renderCurrentHeroCard();
+    // 공용 피드 캐시 즉시 반영 (비공개 시 제거, 공개 시 등록)
+    if (Array.isArray(window.__allLoadedFeeds)) {
+      if (!nextStatus) {
+        window.__allLoadedFeeds = window.__allLoadedFeeds.filter(function(f) { return String(f.id).trim() !== sId; });
+      } else {
+        if (!window.__allLoadedFeeds.some(function(f) { return String(f.id).trim() === sId; })) {
+          window.__allLoadedFeeds.unshift(target);
         }
       }
+      localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(window.__allLoadedFeeds));
+    }
 
-      // 최신 히어로 대표 이미지 캐시가 본인 글이었다면 다음 피드로 즉시 갱신
-      var cachedHeroCover = localStorage.getItem('okbm_hero_cover_url');
-      if (cachedHeroCover && (cachedHeroCover === target.photo || cachedHeroCover === target.fieldPhoto)) {
-        var nextCover = (window.heroTopRecords && window.heroTopRecords[0]) ? (window.heroTopRecords[0].photo || window.heroTopRecords[0].photo_url || '') : '';
-        if (nextCover) localStorage.setItem('okbm_hero_cover_url', nextCover);
-        else localStorage.removeItem('okbm_hero_cover_url');
+    // 3. 🎯 [스크롤 튕김 제로]: 전체 화면을 다시 그리지 않고 해당 카드의 아이콘만 그 자리에서 교체
+    var lockBtn = document.querySelector('[data-lock-btn-id="' + sId + '"]');
+    if (lockBtn) {
+      if (nextStatus) {
+        lockBtn.setAttribute('title', '공개 중');
+        lockBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px; height:18px; color:#34d399;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>';
+      } else {
+        lockBtn.setAttribute('title', '비공개 (나만보기)');
+        lockBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px; height:18px; color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
       }
-    } else {
-      // 공개로 전환된 경우 전체 피드 스트림에 즉각 주입
-      if (Array.isArray(window.__allLoadedFeeds) && !window.__allLoadedFeeds.some(function(f) { return String(f.id).trim() === sId; })) {
-        window.__allLoadedFeeds.unshift(target);
-        localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(window.__allLoadedFeeds));
-      }
+      lockBtn.style.transform = 'scale(1.25)';
+      setTimeout(function() { if (lockBtn) lockBtn.style.transform = 'scale(1)'; }, 150);
     }
 
-    triggerHaptic(14);
-    if (typeof window.renderHistoryStage === 'function') {
-      window.renderHistoryStage();
+    // 점점점 액션시트가 열려있다면 내부 버튼 UI도 즉시 교체
+    var actionSheetBtn = document.getElementById('sheetTogglePublishBtn_' + sId);
+    if (actionSheetBtn) {
+      actionSheetBtn.style.color = nextStatus ? '#38bdf8' : '#cbd5e1';
+      actionSheetBtn.style.borderColor = nextStatus ? '#38bdf8' : 'rgba(255,255,255,0.15)';
+      actionSheetBtn.innerHTML = '<div style="display:flex; align-items:center; gap:8px;"><span>' + (nextStatus ? '🌐' : '🔒') + '</span><span>' + (nextStatus ? '전체 피드에 공개 중' : '현재 나만보기 (비공개)') + '</span></div><span style="font-size:0.68rem; color:' + (nextStatus ? '#38bdf8' : '#fde047') + '; background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">' + (nextStatus ? '비공개 전환 ➔' : '전체 공개하기 ➔') + '</span>';
     }
 
-    if (nextStatus) {
-      if (typeof showToast === 'function') showToast('🌐 함께보기(전체 공개)로 전환되었습니다!', 'success', 2000);
-    } else {
-      if (typeof showToast === 'function') showToast('🔒 나만보기(비공개)로 전환되었습니다.', 'info', 2000);
+    triggerHaptic(12);
+    if (typeof showToast === 'function') {
+      showToast(nextStatus ? '🌐 [전체공개]로 전환되었습니다.' : '🔒 [나만보기]로 전환되었습니다.', 'info', 1600);
     }
 
-    // 3. 백그라운드 클라우드 전파 (디바운스 600ms)
-    clearTimeout(window.__cloudPublishDebounceTimer);
-    window.__cloudPublishDebounceTimer = setTimeout(function() {
+    // 4. 🛡️ [디바운스 락 600ms]: 사용자가 10번 연타해도 마지막 최종 1회만 서버로 전송
+    clearTimeout(window.__publishDebounceTimers[sId]);
+    window.__publishDebounceTimers[sId] = setTimeout(function() {
       if (nextStatus) {
         if (typeof window.shareFeedToCommunity === 'function') window.shareFeedToCommunity(target);
       } else {
@@ -1302,7 +1216,7 @@ window.safeSetStorage = function(key, value) {
         </div>
 
         <!-- 🌐 공개 / 🔒 비공개 전환 버튼 -->
-        <button type="button" onclick="document.getElementById('tripActionActionSheet').remove(); window.toggleFeedPublishStatus('${log.id}');" style="width:100%; height:42px; background:${isPub ? 'rgba(56,189,248,0.14)' : 'rgba(255,255,255,0.06)'}; border:1px solid ${isPub ? '#38bdf8' : 'rgba(255,255,255,0.15)'}; border-radius:10px; color:${isPub ? '#38bdf8' : '#cbd5e1'}; font-size:0.80rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:space-between; padding:0 14px;">
+        <button type="button" id="sheetTogglePublishBtn_${log.id}" onclick="document.getElementById('tripActionActionSheet').remove(); window.toggleFeedPublishStatus('${log.id}', event);" style="width:100%; height:42px; background:${isPub ? 'rgba(56,189,248,0.14)' : 'rgba(255,255,255,0.06)'}; border:1px solid ${isPub ? '#38bdf8' : 'rgba(255,255,255,0.15)'}; border-radius:10px; color:${isPub ? '#38bdf8' : '#cbd5e1'}; font-size:0.80rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:space-between; padding:0 14px;">
           <div style="display:flex; align-items:center; gap:8px;">
             <span>${isPub ? '🌐' : '🔒'}</span>
             <span>${isPub ? '전체 피드에 공개 중' : '현재 나만보기 (비공개)'}</span>
@@ -2587,10 +2501,7 @@ window.safeSetStorage = function(key, value) {
 
     if (typeof window.renderHistoryStage === 'function') window.renderHistoryStage();
   };
-// =========================================================================
-  // 🏕️ [증명사진 화이트 프레임 & 3D 템플릿 플립] 군더더기 제로 펄 릴스 뷰어
-  // =========================================================================
- // 🔄 [피드 스트림 모드 전환 토글]: 전체보기 ⇄ 나만보기 원터치 스위칭
+// 🔄 [피드 스트림 2단 직통 토글]: 전체피드 ⇄ 내 보관함 1:1 스위치 (뺑뺑이 영구 제거)
   window.toggleFeedStreamMode = function(e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
     triggerHaptic(10);
@@ -2600,20 +2511,20 @@ window.safeSetStorage = function(key, value) {
 
     if (currentMode === 'explore') {
       if (!isLogged) {
-        if (typeof showToast === 'function') showToast('🔒 나만보기(내 보관함)는 로그인 후 이용하실 수 있습니다.', 'info', 2500);
+        if (typeof showToast === 'function') showToast('🔒 내 보관함은 로그인 후 이용하실 수 있습니다.', 'info', 2200);
         if (typeof openLoginModal === 'function') openLoginModal();
         return;
       }
       window.switchHistoryFeedTab('my');
-      if (typeof showToast === 'function') showToast('🔒 내 보관함 피드로 전환되었습니다.', 'info', 1800);
+      if (typeof showToast === 'function') showToast('🔒 [내 보관함] 기록을 봅니다.', 'info', 1600);
     } else {
       window.switchHistoryFeedTab('explore');
-      if (typeof showToast === 'function') showToast('🌐 전국 전체 피드로 전환되었습니다.', 'info', 1800);
+      if (typeof showToast === 'function') showToast('🌐 [전체 피드]를 둘러봅니다.', 'info', 1600);
     }
   };
 
-  window.toggleFeedMode = function() {
-    window.toggleFeedStreamMode();
+  window.toggleFeedMode = function(e) {
+    window.toggleFeedStreamMode(e);
   };
 
   // 🔘 [인스타그램 가로 슬라이더 도트 인디케이터 실시간 동기화]
@@ -2657,44 +2568,7 @@ window.renderHistoryStage = function(isLoading) {
     }
 
    var isMyTab = (window.activeHistoryFeedTab === 'my');
-    var isFollowingTab = (window.activeHistoryFeedTab === 'following');
-    var isSavedTab = (window.activeHistoryFeedTab === 'saved');
-
-    var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
-
-    var currentList = [];
-    if (isMyTab) {
-      currentList = window.interactiveHistory || [];
-    } else if (isFollowingTab) {
-      var allFeedSource = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
-        ? window.__allLoadedFeeds
-        : (window.safeGetStorage('okbm_cached_community_feeds', []) || []);
-      var followList = safeGetJSON('okbm_following_users', []);
-      currentList = allFeedSource.filter(function(f) {
-        if (!f) return false;
-        var fId = String(f.userId || '').trim();
-        var fNick = String(f.author || f.nick || '').trim();
-        return followList.includes(fId) || followList.includes(fNick);
-      });
-    } else if (isSavedTab) {
-      var allFeedPool = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
-        ? window.__allLoadedFeeds
-        : (window.safeGetStorage('okbm_cached_community_feeds', []) || []);
-      if (Array.isArray(window.interactiveHistory)) {
-        window.interactiveHistory.forEach(function(myRec) {
-          if (!allFeedPool.some(function(f) { return String(f.id).trim() === String(myRec.id).trim(); })) {
-            allFeedPool.push(myRec);
-          }
-        });
-      }
-      currentList = allFeedPool.filter(function(f) {
-        return f && f.id && savedFeedsList.includes(String(f.id).trim());
-      });
-    } else {
-      currentList = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
-        ? window.__allLoadedFeeds
-        : (window.safeGetStorage('okbm_cached_community_feeds', []) || []);
-    }
+    var currentList = isMyTab ? (window.interactiveHistory || []) : ((Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0) ? window.__allLoadedFeeds : (window.safeGetStorage('okbm_cached_community_feeds', []) || []));
 
     var profile = safeGetJSON('user_profile', null);
     var myUserId = (profile && profile.id) ? String(profile.id).trim() : '';
@@ -2702,23 +2576,12 @@ window.renderHistoryStage = function(isLoading) {
     var savedInsta = localStorage.getItem('okbm_user_instagram') || '';
     var starsMap = safeGetJSON('okbm_feed_stars_map', {});
     var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
+    var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
 
-   var streamToggleBtnHtml = '';
-    if (window.activeHistoryFeedTab === 'explore') {
-      streamToggleBtnHtml = '<button type="button" onclick="window.activeHistoryFeedTab=\'following\'; window.renderHistoryStage(); triggerHaptic(10);" style="background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.3); color:#34d399; font-size:0.65rem; font-weight:800; padding:3px 8px; border-radius:12px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg><span>전체피드</span><svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>';
-    } else if (window.activeHistoryFeedTab === 'following') {
-      streamToggleBtnHtml = '<div style="display:inline-flex; align-items:center; gap:5px;">' +
-        '<button type="button" onclick="window.openRomanticInterestModal(\'routers\');" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22); color:#f8fafc; font-size:0.70rem; font-weight:900; padding:4px 8px; border-radius:8px; cursor:pointer;" title="관심루터 목록">목록</button>' +
-        '<button type="button" onclick="window.activeHistoryFeedTab=\'saved\'; window.renderHistoryStage(); triggerHaptic(10);" style="background:rgba(253,224,71,0.12); border:1px solid rgba(253,224,71,0.35); color:#fde047; font-size:0.65rem; font-weight:800; padding:3px 8px; border-radius:12px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>관심루터</span><svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>' +
-      '</div>';
-    } else if (window.activeHistoryFeedTab === 'saved') {
-      streamToggleBtnHtml = '<div style="display:inline-flex; align-items:center; gap:5px;">' +
-        '<button type="button" onclick="window.openRomanticInterestModal(\'feeds\');" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22); color:#f8fafc; font-size:0.70rem; font-weight:900; padding:4px 8px; border-radius:8px; cursor:pointer;" title="관심피드 목록">목록</button>' +
-        '<button type="button" onclick="window.activeHistoryFeedTab=\'my\'; window.renderHistoryStage(); triggerHaptic(10);" style="background:rgba(192,132,252,0.15); border:1px solid rgba(192,132,252,0.35); color:#c084fc; font-size:0.65rem; font-weight:800; padding:3px 8px; border-radius:12px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="currentColor"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><span>관심피드</span><svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>' +
-      '</div>';
-    } else {
-      streamToggleBtnHtml = '<button type="button" onclick="window.activeHistoryFeedTab=\'explore\'; window.renderHistoryStage(); triggerHaptic(10);" style="background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); color:#38bdf8; font-size:0.65rem; font-weight:800; padding:3px 8px; border-radius:12px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>보 관 함</span><svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></button>';
-    }
+    // 🌐 [상단 2단 직통 버튼]: 전체피드 ⇄ 내 보관함 원터치 전환
+    var streamToggleBtnHtml = isMyTab
+      ? '<button type="button" onclick="window.toggleFeedStreamMode(event);" style="background:rgba(56,189,248,0.14); border:1px solid rgba(56,189,248,0.35); color:#38bdf8; font-size:0.67rem; font-weight:900; padding:4px 9px; border-radius:12px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>내 보관함</span><svg viewBox="0 0 24 24" style="width:8px; height:8px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>'
+      : '<button type="button" onclick="window.toggleFeedStreamMode(event);" style="background:rgba(52,211,153,0.14); border:1px solid rgba(52,211,153,0.35); color:#34d399; font-size:0.67rem; font-weight:900; padding:4px 9px; border-radius:12px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg><span>전체피드</span><svg viewBox="0 0 24 24" style="width:8px; height:8px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>';
 
     var reelSlidesHtml = '';
     if (isLoading) {
@@ -2727,8 +2590,8 @@ window.renderHistoryStage = function(isLoading) {
         '<div style="font-size:0.86rem; font-weight:800; color:#e2e8f0; letter-spacing:-0.02em;">최신 피드 동기화 중...</div>' +
       '</div>';
     } else if (currentList.length === 0) {
-      var emptyMsg = isMyTab ? '아직 등록된 내 기록이 없습니다.' : (isFollowingTab ? '등록된 관심루터의 소식이 없습니다.' : (isSavedTab ? '아직 저장한 관심피드가 없습니다.' : '둘러볼 수 있는 피드가 없습니다.'));
-      var emptySubMsg = isMyTab ? '다녀온 장소의 사진과 팁을 남겨 첫 번째 기록을 완성해보세요.' : (isFollowingTab ? '마음에 드는 캠퍼를 관심루터로 추가해보세요.' : (isSavedTab ? '마음에 드는 피드 하단의 저장(북마크)을 눌러 보관해보세요.' : '전국 캠퍼들의 최신 피드를 준비 중입니다.'));
+      var emptyMsg = isMyTab ? '아직 등록된 내 기록이 없습니다.' : '둘러볼 수 있는 피드가 없습니다.';
+      var emptySubMsg = isMyTab ? '다녀온 장소의 사진과 팁을 남겨 첫 번째 기록을 완성해보세요.' : '전국 캠퍼들의 최신 피드를 준비 중입니다.';
 
       reelSlidesHtml = '<div class="reel-page-snap" style="width:100% !important; height:100% !important; height:100dvh !important; display:flex !important; flex-direction:column !important; justify-content:flex-start !important; align-items:stretch !important; padding-top:calc(env(safe-area-inset-top, 0px)) !important; padding-bottom:calc(56px + env(safe-area-inset-bottom, 0px)) !important; box-sizing:border-box !important; background:#000000;">' +
         '<div style="height:48px; padding:0 12px; display:flex; justify-content:space-between; align-items:center; background:#000000; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,0.06);">' +
@@ -2745,7 +2608,7 @@ window.renderHistoryStage = function(isLoading) {
           '</div>' +
           '<div style="font-size:0.95rem; font-weight:800; color:#ffffff;">' + emptyMsg + '</div>' +
           '<div style="font-size:0.75rem; color:#94a3b8; line-height:1.5;">' + emptySubMsg + '</div>' +
-          '<button type="button" onclick="window.activeHistoryFeedTab=\'explore\'; window.renderHistoryStage(); triggerHaptic(10);" style="margin-top:6px; background:linear-gradient(135deg, #0284c7, #0369a1); border:none; border-radius:10px; color:#ffffff; font-size:0.78rem; font-weight:900; padding:9px 16px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(2,132,199,0.35);"><svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span>전체 피드 둘러보기</span></button>' +
+          '<button type="button" onclick="window.activeHistoryFeedTab=\'explore\'; window.renderHistoryStage(); triggerHaptic(10);" style="margin-top:6px; background:linear-gradient(135deg, #0284c7, #0369a1); border:none; border-radius:10px; color:#ffffff; font-size:0.78rem; font-weight:900; padding:9px 16px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(2,132,199,0.35);"><svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg><span>전체 피드 둘러보기</span></button>' +
         '</div>' +
       '</div>';
     } else {
@@ -2769,7 +2632,10 @@ window.renderHistoryStage = function(isLoading) {
         var totalPhotosCount = mediaItems.length;
 
         var recordUserId = String(record.userId || '').trim();
-        var isMyRecord = isMyTab || (myUserId && recordUserId && myUserId === recordUserId);
+        var recordAuthor = String(record.author || record.nick || '').trim();
+
+        // 🛡️ [내 글 판정 100% 보장]: userId 일치 OR 로그인 닉네임 일치
+        var isMyRecord = isMyTab || (myUserId && recordUserId && myUserId === recordUserId) || (savedNick && recordAuthor && savedNick === recordAuthor);
 
         var horizontalSlidesHtml = '';
         if (totalPhotosCount === 0) {
@@ -2848,7 +2714,10 @@ window.renderHistoryStage = function(isLoading) {
           '</a>';
         }
 
-    var followingList = safeGetJSON('okbm_following_users', []);
+   var followingList = safeGetJSON('okbm_following_users', []);
+        var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
+        var totalInterestsCount = (followingList ? followingList.length : 0) + (savedFeedsList ? savedFeedsList.length : 0);
+
         var followKey = recordUserId || authorName;
         var isFollowingThisAuthor = followingList.includes(followKey);
 
@@ -2862,9 +2731,9 @@ window.renderHistoryStage = function(isLoading) {
         var lockButtonHtml = '';
         if (isMyRecord) {
           if (isPublished) {
-            lockButtonHtml = '<button type="button" data-record-id="' + cardId + '" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center;" title="공개 중"><svg viewBox="0 0 24 24" style="width:18px; height:18px; color:#34d399;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg></button>';
+            lockButtonHtml = '<button type="button" data-record-id="' + cardId + '" data-lock-btn-id="' + cardId + '" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:none; border:none; padding:4px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform 0.15s ease;" title="전체 공개 중"><svg viewBox="0 0 24 24" style="width:18px; height:18px; color:#34d399;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg></button>';
           } else {
-            lockButtonHtml = '<button type="button" data-record-id="' + cardId + '" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center;" title="비공개"><svg viewBox="0 0 24 24" style="width:18px; height:18px; color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>';
+            lockButtonHtml = '<button type="button" data-record-id="' + cardId + '" data-lock-btn-id="' + cardId + '" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:none; border:none; padding:4px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:transform 0.15s ease;" title="비공개 (나만보기)"><svg viewBox="0 0 24 24" style="width:18px; height:18px; color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></button>';
           }
         }
 
@@ -2872,11 +2741,12 @@ window.renderHistoryStage = function(isLoading) {
           ? escapeHtml(memo120.trim())
           : '<span style="color:#475569;">등록된 일지 메모가 없습니다.</span>';
 
-      var isSavedFeed = savedFeedsList.includes(String(record.id || '').trim());
+        var isSavedFeed = savedFeedsList.includes(String(record.id || '').trim());
 
-          return '<div class="reel-page-snap" style="width:100% !important; height:100% !important; height:100dvh !important; scroll-snap-align:start !important; position:relative; overflow:hidden !important; display:flex !important; flex-direction:column !important; justify-content:flex-start !important; align-items:stretch !important; padding-top:calc(env(safe-area-inset-top, 0px)) !important; padding-bottom:calc(56px + env(safe-area-inset-bottom, 0px)) !important; box-sizing:border-box !important; flex-shrink:0 !important; contain:strict !important; touch-action:pan-y !important; background:#000000;">' +
+        return '<div class="reel-page-snap" style="width:100% !important; height:100% !important; height:100dvh !important; scroll-snap-align:start !important; position:relative; overflow:hidden !important; display:flex !important; flex-direction:column !important; justify-content:flex-start !important; align-items:stretch !important; padding-top:calc(env(safe-area-inset-top, 0px)) !important; padding-bottom:calc(56px + env(safe-area-inset-bottom, 0px)) !important; box-sizing:border-box !important; flex-shrink:0 !important; contain:strict !important; touch-action:pan-y !important; background:#000000;">' +
+          '<!-- 상단 헤더: 작성자 정보 ──── [자물쇠 + 점점점] -->' +
           '<div style="height:48px; padding:0 12px; display:flex; justify-content:space-between; align-items:center; background:#000000; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,0.06);">' +
-            '<div style="display:flex; flex-direction:column; justify-content:center; min-width:0; flex:1; padding-right:6px;">' +
+            '<div style="display:flex; flex-direction:column; justify-content:center; min-width:0; flex:1; padding-right:8px;">' +
               '<div style="display:flex; align-items:center; gap:6px;">' +
                 '<button type="button" data-author="' + escapeHtml(authorName) + '" data-user-id="' + escapeHtml(recordUserId) + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId);" style="background:none; border:none; padding:0; font-size:0.92rem; color:#ffffff; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; text-align:left; display:inline-flex; align-items:center; gap:4px;">' +
                   '<span>' + escapeHtml(authorName) + '</span>' +
@@ -2887,11 +2757,15 @@ window.renderHistoryStage = function(isLoading) {
               '</div>' +
               '<span style="font-size:0.72rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">' + escapeHtml(tripDate) + ' · ' + escapeHtml(spotName) + '</span>' +
             '</div>' +
-            '<div style="flex-shrink:0;">' +
-              streamToggleBtnHtml +
+            '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
+              lockButtonHtml +
+              '<button type="button" data-record-id="' + cardId + '" onclick="window.openTripActionMenu(this.dataset.recordId, event);" style="background:none; border:none; padding:4px; cursor:pointer; color:#cbd5e1; display:flex; align-items:center; justify-content:center; min-width:32px; min-height:32px;" title="메뉴">' +
+                '<svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="currentColor"><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/><circle cx="5" cy="12" r="1.8"/></svg>' +
+              '</button>' +
             '</div>' +
           '</div>' +
 
+          '<!-- 중앙 미디어 스테이지 -->' +
           '<div style="flex:1 1 auto; width:100%; min-height:0; display:flex; align-items:center; justify-content:center; background:#000000; overflow:hidden; padding:4px 0; box-sizing:border-box;">' +
             '<div style="height:100%; max-height:100%; aspect-ratio:3/4; position:relative; overflow:hidden; border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.85); background:#05070a;">' +
               '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000;">' +
@@ -2907,9 +2781,10 @@ window.renderHistoryStage = function(isLoading) {
             '</div>' +
           '</div>' +
 
+          '<!-- 하단 인터랙션바: [별/공유/북마크] ── [도트] ── [관심모아보기 + 보관함/피드 전환] -->' +
           '<div style="padding:6px 14px 10px 14px; box-sizing:border-box; display:flex; flex-direction:column; gap:4px; flex-shrink:0; background:#000000; border-top:1px solid rgba(255,255,255,0.04);">' +
-            '<div style="display:flex; justify-content:space-between; align-items:center; position:relative; height:28px;">' +
-              '<div style="display:flex; align-items:center; gap:12px;">' +
+            '<div style="display:flex; justify-content:space-between; align-items:center; position:relative; min-height:28px;">' +
+              '<div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">' +
                 '<button type="button" onclick="window.toggleFeedStar(\'' + cardId + '\', event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:4px;">' +
                   '<svg id="feedStarIcon_' + cardId + '" viewBox="0 0 24 24" style="width:19px; height:19px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
                   '<span id="feedStarCountText_' + cardId + '" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif;">' + starCount + '</span>' +
@@ -2921,14 +2796,18 @@ window.renderHistoryStage = function(isLoading) {
                   '<svg viewBox="0 0 24 24" style="width:17px; height:17px; filter:' + (isSavedFeed ? 'drop-shadow(0 0 6px rgba(192,132,252,0.8))' : 'none') + ';" fill="' + (isSavedFeed ? '#c084fc' : 'none') + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
                 '</button>' +
               '</div>' +
-              '<div style="position:absolute; left:50%; transform:translateX(-50%);">' +
+
+              '<div style="position:absolute; left:50%; transform:translateX(-50%); pointer-events:none;">' +
                 dotsHtml +
               '</div>' +
-              '<div style="display:flex; align-items:center; gap:10px;">' +
-                lockButtonHtml +
-                '<button type="button" data-record-id="' + cardId + '" onclick="window.openTripActionMenu(this.dataset.recordId, event);" style="background:none; border:none; padding:0; cursor:pointer; color:#94a3b8; display:flex; align-items:center;">' +
-                  '<svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="currentColor"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>' +
+
+              '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
+                '<button type="button" onclick="window.openRomanticInterestModal(\'routers\'); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.18); color:#e2e8f0; font-size:0.64rem; font-weight:800; padding:3px 7px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:3px;" title="관심루터 및 관심피드 모아보기">' +
+                  '<svg viewBox="0 0 24 24" style="width:11px; height:11px; color:#c084fc;" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
+                  '<span>관심</span>' +
+                  (totalInterestsCount > 0 ? '<span style="font-size:0.58rem; color:#c084fc; font-weight:900; font-family:\'Space Grotesk\', sans-serif;">' + totalInterestsCount + '</span>' : '') +
                 '</button>' +
+                streamToggleBtnHtml +
               '</div>' +
             '</div>' +
 
