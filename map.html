@@ -2926,11 +2926,12 @@ function updateSmartResetButtons() {
         else if (!e.target.value.trim()) showTopRankings(mode);
       }
 
-      function renderSpots() {
+  function renderSpots() {
         const currentlyOpenRegions = new Set();
         document.querySelectorAll('.region-group').forEach(group => {
           const container = group.querySelector('.region-items-container');
-          const titleText = group.querySelector('.region-group-title span:first-child')?.innerText?.trim();
+          const titleSpan = group.querySelector('.region-group-title span:first-child');
+          const titleText = (titleSpan && titleSpan.innerText) ? titleSpan.innerText.trim() : '';
           if (container && container.style.display !== 'none' && titleText) {
             currentlyOpenRegions.add(titleText);
           }
@@ -2965,7 +2966,9 @@ function updateSmartResetButtons() {
         }
 
         const targetOrder = ["서울/인천", "경기", "강원", "충청", "전라", "경상", "제주"];
-        const grouped = Object.fromEntries(targetOrder.map(r => [r, []]));
+        // ⚡ [구형 브라우저 완벽 호환] Object.fromEntries ES2019 크래시 원천 차단
+        const grouped = {};
+        targetOrder.forEach(r => { grouped[r] = []; });
 
         displaySpots.forEach(spot => {
           const lat = parseFloat(spot.lat), lng = parseFloat(spot.lng);
