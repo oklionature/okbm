@@ -3317,7 +3317,7 @@ function updateSmartResetButtons() {
         updateSmartResetButtons();
       }
 
-      function createSpotCardElement(spot) {
+function createSpotCardElement(spot) {
         const sId = String(spot.id).trim();
         const isFav = userBookmarks.has(sId), isDone = userVisited.has(sId);
         const diffClass = getSpotDiffColorClass(spot.difficulty);
@@ -3358,6 +3358,7 @@ function updateSmartResetButtons() {
 
         const mainTerrainHtml = uniqueTerrains.length > 0 ? getTerrainTagHtml(uniqueTerrains[0]) : '';
         const subTerrainsHtml = uniqueTerrains.slice(1).map(t => getTerrainTagHtml(t)).join('');
+        const distanceStr = (spot.distance && String(spot.distance).trim()) ? `<span class="meta-tag tag-dist">${ICONS.DIST} ${escapeHtml(String(spot.distance).trim())}</span>` : '';
 
         const li = document.createElement('div');
         li.className = 'spot-item'; 
@@ -3386,7 +3387,7 @@ function updateSmartResetButtons() {
           <div style="display:flex; align-items:center; gap:3px; flex-wrap:wrap; width:100%;">
             ${subTerrainsHtml}
             <span class="meta-tag tag-diff">난이도 ${'★'.repeat(Math.min(5, Math.max(1, parseInt(spot.difficulty, 10) || 3)))}</span>
-            ${spot.distance?.trim() ? `<span class="meta-tag tag-dist">${ICONS.DIST} ${escapeHtml(spot.distance.trim())}</span>` : ''}
+            ${distanceStr}
           </div>
 
           <div class="spot-desc-multi" title="${escapeHtml(descText)}" style="display:flex; align-items:flex-start; gap:4px; margin-top:3px;">
