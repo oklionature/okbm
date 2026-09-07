@@ -348,18 +348,19 @@ window.clearSpotSearchInput = function() {
 };
 
 window.saveCardToVaultAndOpenBasecamp = async function() {
+  if (window.__isSavingCardLock) return;
+  
   var token = localStorage.getItem('user_auth_token');
   var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
   var isLogged = !!(token && token.trim().length > 0 && profile && profile.id && String(profile.id).startsWith('kakao_'));
 
-  // 🔒 [비회원 감지 시]: 안내 토스트 출력 + 공유 모달 닫기 + 로그인/회원가입 창 전면 노출
+  // 🔒 [비회원 감지 시]: 안내 토스트 출력 + 모달 닫기 + 로그인 창 표출
   if (!isLogged) {
     if (typeof triggerHaptic === 'function') triggerHaptic(12);
     if (typeof showToast === 'function') {
-      showToast('🔒 출정 보관함 저장은 카카오 1초 로그인 후 이용하실 수 있습니다.', 'info', 3000);
+      showToast('🔒 보관함 등록 및 피드 공유는 카카오 1초 로그인 후 이용하실 수 있습니다.', 'info', 3000);
     }
     
-    // 현재 작성 중이던 spot과 memo를 임시 보존하여 로그인 후 복원 지원
     var currentSpot = document.getElementById('shareCardSpotInput')?.value || '';
     var currentMemo = document.getElementById('shareCardMemoInput')?.value || '';
     if (currentSpot) localStorage.setItem('okbm_pending_vault_spot', currentSpot);
@@ -378,6 +379,8 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
     }, 150);
     return;
   }
+
+  window.__isSavingCardLock = true;
 
   try {
     var spotInput = document.getElementById('shareCardSpotInput');
@@ -424,7 +427,7 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       photosToSave = [rec.photo];
     }
 
-    // 🚀 Base64 사진이 있으면 R2 영구 링크로 승격 (최대 3초 타임아웃 안전망)
+    // 🚀 Base64 사진이 있으면 R2 영구 링크로 승격
     var finalCloudPhotos = [];
     var hasBase64 = photosToSave.some(function(p) { return typeof p === 'string' && p.startsWith('data:'); });
 
@@ -463,7 +466,7 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       date: rec.date || cleanDateStr,
       spot: liveSpot,
       memo: '',
-      oneLineMemo: liveMemo || (liveSpot ? (liveSpot + ' 패킹') : '출정 준비 완료'),
+      oneLineMemo: liveMemo || (liveSpot ? (liveSpot + ' 패킹') : '기록 준비 완료'),
       elevation: rec.elevation || '',
       weightKg: weightKg,
       weightGrams: totalGrams || rec.weightGrams || 0,
@@ -474,11 +477,17 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       fieldPhoto: mainCloudPhoto,
       photo_url: mainCloudPhoto,
       photos_json: JSON.stringify(finalCloudPhotos),
-      templateId: window.selectedTemplateId || rec.templateId || 1
+      templateId: window.selectedTemplateId || rec.templateId || 1,
+      isPublished: true
     };
 
     if (typeof window.savePackingHistoryRecord === 'function') {
       window.savePackingHistoryRecord(newRecord);
+    }
+
+    // ⚡ 일반 유저가 작성한 전체 공개 카드 즉시 Cloudflare R2 및 공용 피드로 직통 발행
+    if (typeof window.shareFeedToCommunity === 'function') {
+      window.shareFeedToCommunity(newRecord);
     }
 
     window.__studioMultiPhotos = null;
@@ -489,12 +498,14 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       if (typeof window.openHistoryModal === 'function') window.openHistoryModal();
     }, 60);
 
-    if (typeof showToast === 'function') showToast('🎒 출정이 보관함 및 피드에 완벽 등록되었습니다!', 'success', 2500);
+    if (typeof showToast === 'function') showToast('🎒 보관함 및 전국 피드에 완벽 등록되었습니다!', 'success', 2500);
     if (typeof triggerHaptic === 'function') triggerHaptic(15);
   } catch (err) {
     console.error('[SaveCard Error]', err);
     if (typeof closePackShareModal === 'function') closePackShareModal();
     if (typeof window.openHistoryModal === 'function') window.openHistoryModal();
+  } finally {
+    setTimeout(function() { window.__isSavingCardLock = false; }, 1200);
   }
 };
 

@@ -841,16 +841,18 @@
   <div class="insta-card" id="instaMainCard">
     <img id="heroCoverImg" class="insta-photo-img" fetchpriority="high" loading="eager" decoding="async" src="data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='400' fill='transparent'%3E%3Crect width='100%25' height='100%25' fill='transparent'/%3E%3C/svg%3E" alt="박지 텐풍" style="opacity:0; transition:opacity 0.25s ease;" />
     <div class="insta-photo-scrim"></div>
-    <div class="insta-top-hud">
-      <div class="insta-story-bars" id="heroStoryBarsContainer"></div>
-      <div class="insta-top-row">
-        <span class="insta-spot-tag" id="heroBadgeTag">SECRET SPOT</span>
-        <button type="button" class="insta-like-btn" id="btnHeroLike" onclick="handleHeroLikeClick(event)" title="좋아요">
-          <span id="heroLikeIcon"><svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
-          <span id="heroLikeCount">0</span>
-        </button>
+  <div class="insta-top-hud">
+        <div class="insta-story-bars" id="heroStoryBarsContainer"></div>
+        <div class="insta-top-row" style="display:flex; justify-content:flex-start; align-items:center;">
+          <!-- 🧭 [글자 제로 · 순수 플래티넘 실버 아웃도어 컴퍼스 SVG 벡터] -->
+          <div style="width:28px; height:28px; border-radius:50%; background:rgba(0,0,0,0.55); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(0,0,0,0.6);">
+            <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#e2e8f0; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;">
+              <circle cx="12" cy="12" r="10"/>
+              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+            </svg>
+          </div>
+        </div>
       </div>
-    </div>
   </div>
 
   <div class="insta-glass-memo">
@@ -879,7 +881,7 @@
 </section>
 
 <script>
-  (function inlineHydrateCriticalUI() {
+(function inlineHydrateCriticalUI() {
     try {
       var cachedHeroCover = localStorage.getItem('okbm_hero_cover_url');
       if (cachedHeroCover && cachedHeroCover.startsWith('http')) {
@@ -903,19 +905,29 @@
         if (headerBtn) headerBtn.classList.add('logged-in');
         if (headerText) headerText.innerText = profile.nickname;
         if (headerIcon) {
-          headerIcon.innerHTML = '<svg viewBox="0 0 24 24" style="width:13px; height:13px; margin-right:2px; fill:#fde047; color:#fde047; flex-shrink:0; display:inline-block; vertical-align:-1px;"><path d="M12,1 Q12,12 1,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,1 Z"/><circle cx="12" cy="12" r="1.5" fill="#ffffff"/></svg>';
+          headerIcon.innerHTML = '<svg viewBox="0 0 24 24" style="width:13px; height:13px; margin-right:2px; fill:#fde047; color:#fde047; flex-shrink:0; display:inline-block; vertical-align:-1px;"><path d="M12,1 Q12,12 1,12 Q12,12 12,23 Q12,12 23,12 Q12,12 12,23 Q12,12 12,1 Z"/><circle cx="12" cy="12" r="1.5" fill="#ffffff"/></svg>';
         }
       }
 
-      var rawHistory = localStorage.getItem('okbm_packing_history');
       var rawFeeds = localStorage.getItem('okbm_cached_community_feeds');
       var rawPhotosMap = localStorage.getItem('okbm_phone_photos_map');
+      var rawStarCounts = localStorage.getItem('okbm_feed_stars_counts');
 
-      var parsedHistory = rawHistory ? JSON.parse(rawHistory) : null;
-      var parsedFeeds = rawFeeds ? JSON.parse(rawFeeds) : null;
+      var parsedFeeds = rawFeeds ? JSON.parse(rawFeeds) : [];
       var photosMap = rawPhotosMap ? JSON.parse(rawPhotosMap) : {};
+      var starCounts = rawStarCounts ? JSON.parse(rawStarCounts) : {};
 
-      var candidate = (Array.isArray(parsedHistory) && parsedHistory.length > 0) ? parsedHistory[0] : ((Array.isArray(parsedFeeds) && parsedFeeds.length > 0) ? parsedFeeds[0] : null);
+      // 🌟 [명예의 전당 인라인 수화]: 전국 별점을 가장 많이 받은 1위 피드를 최우선 히어로 후보로 채택
+      var candidate = null;
+      if (Array.isArray(parsedFeeds) && parsedFeeds.length > 0) {
+        var sortedFeeds = parsedFeeds.slice().filter(function(f) { return f && f.isPublished !== false; }).sort(function(a, b) {
+          var sA = Number(starCounts[a.id] || a.likes || 0);
+          var sB = Number(starCounts[b.id] || b.likes || 0);
+          if (sB !== sA) return sB - sA;
+          return String(b.date || '').localeCompare(String(a.date || ''));
+        });
+        candidate = sortedFeeds[0];
+      }
 
       if (!candidate) return;
 
@@ -935,9 +947,6 @@
         photoUrl = candidate.photos[0];
       } else if (candidate.photo_url && String(candidate.photo_url).trim().length > 10) {
         photoUrl = candidate.photo_url;
-      } else if (candidate.photos_json && String(candidate.photos_json).includes('http')) {
-        var mUrls = String(candidate.photos_json).match(/https?:\/\/[^\s"',\]\)]+/g);
-        if (mUrls && mUrls.length > 0) photoUrl = mUrls[0];
       } else if (candidate.photo) {
         photoUrl = candidate.photo;
       } else if (candidate.fieldPhoto) {
@@ -956,7 +965,7 @@
 
       var title = candidate.spot || candidate.spotName || '';
       var memo = candidate.memo || candidate.oneLineMemo || '';
-      var author = (isLogged && profile && profile.nickname) ? profile.nickname : (candidate.author || '낭만백패커');
+      var author = candidate.author || '낭만백패커';
       var weight = candidate.weightKg ? (candidate.weightKg + 'kg') : '';
       var elev = candidate.elevation ? (String(candidate.elevation).includes('m') ? candidate.elevation : candidate.elevation + 'm') : '';
 
@@ -983,11 +992,11 @@
       }
       if (weight) {
         var wEl = document.getElementById('heroWeightBadge');
-        if (wEl) wEl.innerText = '🎒 ' + weight;
+        if (wEl) wEl.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2h12v6H6zM4 8h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/></svg> ' + weight;
       }
       if (elev) {
         var eEl = document.getElementById('heroElevBadge');
-        if (eEl) eEl.innerText = '⛰️ ' + elev;
+        if (eEl) eEl.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg> ' + elev;
       }
     } catch (e) {}
   })();
@@ -995,30 +1004,100 @@
 
     <section class="n-rail-section" id="heroTrailerSectionWrap" style="margin-top: 4px;">
       <div style="display:flex; justify-content:space-between; align-items:center; padding-right:14px;">
-        <h2 class="n-rail-title" style="font-size:0.90rem; color:#e2e8f0; display:flex; align-items:center; gap:5px;">
-          <span class="icon-svg"><svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 10v.01M14 10v.01M12 18v-8M4.93 19h14.14M12 2l8 10h-5v8H9v-8H4l8-10z"/></svg></span>
+        <h2 class="n-rail-title" style="font-size:0.92rem; color:#e2e8f0; display:flex; align-items:center; gap:5px;">
+          <span class="icon-svg" style="width:16px; height:16px; color:#38bdf8; display:flex; align-items:center;">
+            <svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10v.01M14 10v.01M12 18v-8M4.93 19h14.14M12 2l8 10h-5v8H9v-8H4l8-10z"/></svg>
+          </span>
           <span>백패커들이 아껴둔 숨은 박지</span>
         </h2>
-        <span style="font-size:0.62rem; color:#38bdf8; font-weight:800;">터치해서 확인 ➔</span>
+        <span style="font-size:0.62rem; color:#38bdf8; font-weight:800; cursor:pointer;" onclick="location.href='map.html';">전체 박지 ➔</span>
       </div>
 
+      <!-- 순수 SVG 벡터 기반 5대 테마 필터 바 (이모지 0%) -->
       <nav class="netflix-category-bar" style="padding:4px 0 6px 0;">
-        <button type="button" class="n-cat-chip active" onclick="filterHeroCategory('all', this)">전체</button>
-        <button type="button" class="n-cat-chip" onclick="filterHeroCategory('easy', this)"><svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> 퇴근박/초보</button>
-        <button type="button" class="n-cat-chip" onclick="filterHeroCategory('island', this)"><svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 10v.01M14 10v.01M12 18v-8M4.93 19h14.14M12 2l8 10h-5v8H9v-8H4l8-10z"/></svg> 감성/섬</button>
-        <button type="button" class="n-cat-chip" onclick="filterHeroCategory('alpine', this)"><svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg> 능선/알파인</button>
-        <button type="button" class="n-cat-chip" onclick="filterHeroCategory('gear', this)"><svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2h12v6H6zM4 8h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/></svg> 경량 기어</button>
+        <button type="button" class="n-cat-chip active" onclick="filterSecretSpotTheme('all', this)">전체</button>
+        <button type="button" class="n-cat-chip" onclick="filterSecretSpotTheme('easy', this)">
+          <svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2L2 22h20L12 2z"/></svg>
+          <span>초보/퇴근박</span>
+        </button>
+        <button type="button" class="n-cat-chip" onclick="filterSecretSpotTheme('island', this)">
+          <svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 19c4 0 5-2 10-2s6 2 10 2"/><path d="M12 4v10"/></svg>
+          <span>오션/섬</span>
+        </button>
+        <button type="button" class="n-cat-chip" onclick="filterSecretSpotTheme('alpine', this)">
+          <svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
+          <span>알파인/고산</span>
+        </button>
+        <button type="button" class="n-cat-chip" onclick="filterSecretSpotTheme('deck', this)">
+          <svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 7h18M3 12h18M3 17h18M7 3v18M17 3v18"/></svg>
+          <span>데크명당</span>
+        </button>
       </nav>
 
-      <div class="n-rail-slider" id="heroTrailerRailContainer" style="gap:8px; padding-top:2px;"></div>
+      <!-- 홈 화면 기본 노출 가로 슬라이더 레일 -->
+      <div class="n-rail-slider" id="secretSpotTrailerRailContainer" style="gap:8px; padding-top:2px; min-height:148px;"></div>
     </section>
 
-    <div class="template-card-modal-overlay" id="templateCardModalOverlay" onclick="if(event.target===this) closeTemplateCardModal();">
-      <div class="template-card-modal-body">
-        <button type="button" class="template-modal-close-btn" onclick="closeTemplateCardModal()">✕</button>
-        <div id="modalTemplateRenderSlot" style="width:100%; display:flex; justify-content:center;"></div>
-      </div>
-    </div>
+    <style>
+    /* 🎬 [넷플릭스 시네마틱 감속 모션 엔진 - 60fps 하드웨어 가속] */
+    @keyframes netflixBackdropEnter {
+      from { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
+      to { opacity: 1; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+    }
+    @keyframes netflixBackdropExit {
+      from { opacity: 1; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+      to { opacity: 0; backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px); }
+    }
+    @keyframes netflixCardEnter {
+      0% {
+        opacity: 0;
+        transform: scale(0.91) translateY(24px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+    @keyframes netflixCardExit {
+      0% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(0.93) translateY(18px);
+      }
+    }
+
+    .netflix-backdrop-in {
+      animation: netflixBackdropEnter 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    }
+    .netflix-backdrop-out {
+      animation: netflixBackdropExit 0.22s cubic-bezier(0.4, 0, 1, 1) forwards !important;
+    }
+    .netflix-card-motion {
+      will-change: transform, opacity !important;
+      animation: netflixCardEnter 0.36s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    }
+    .netflix-card-exit {
+      will-change: transform, opacity !important;
+      animation: netflixCardExit 0.22s cubic-bezier(0.4, 0, 1, 1) forwards !important;
+    }
+
+    .insta-photo-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(0.95) contrast(1.04);
+      pointer-events: none;
+      transition: opacity 0.26s cubic-bezier(0.16, 1, 0.3, 1), transform 0.32s cubic-bezier(0.16, 1, 0.3, 1) !important;
+      will-change: opacity, transform;
+      z-index: 1;
+    }
+    
+  </style>
 
     <section class="n-rail-section">
   <h2 class="n-rail-title">영상 속 그 장소 & 기어 랩</h2>
@@ -1672,59 +1751,66 @@
       return (list || []).filter(Boolean);
     }
 
+   // 🌟 [별점 단일화 & 최다 별점 히어로 자동 승격 엔진]
     function getCardLikesCount(cardId) {
-      var likesMap = safeGetJSON('okbm_card_likes_count', {});
-      return Number(likesMap[cardId]) || 0;
+      var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
+      return Number(starCounts[cardId]) || 0;
     }
 
     function isUserLikedCard(cardId) {
-      var profile = safeGetJSON('user_profile', null);
-      var userId = profile ? profile.id : localStorage.getItem('user_auth_token');
-      if (!userId) return false;
-      var userLikes = safeGetJSON('okbm_user_liked_' + userId, []);
-      return userLikes.includes(String(cardId));
+      var starsMap = safeGetJSON('okbm_feed_stars_map', {});
+      return Boolean(starsMap[cardId]);
     }
 
     function toggleCardLike(cardId, e) {
       if (e) e.stopPropagation();
+      var token = localStorage.getItem('user_auth_token');
       var profile = safeGetJSON('user_profile', null);
-      var userId = profile ? profile.id : localStorage.getItem('user_auth_token');
-      if (!userId) {
+      if (!token || !profile || !profile.id) {
         triggerHaptic(10);
         openLoginModal();
-        showToast('좋아요는 로그인 후 누르실 수 있습니다.', 'info');
+        showToast('🔒 낭만별은 로그인 후 누르실 수 있습니다.', 'info');
         return;
       }
 
-      var userLikes = safeGetJSON('okbm_user_liked_' + userId, []);
-      var likesMap = safeGetJSON('okbm_card_likes_count', {});
-      var curCount = Number(likesMap[cardId]) || 0;
-      var sId = String(cardId);
+      var sId = String(cardId).trim();
+      var starsMap = safeGetJSON('okbm_feed_stars_map', {});
+      var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
 
-      if (userLikes.includes(sId)) {
-        userLikes = userLikes.filter(function(id) { return id !== sId; });
+      var isStarred = Boolean(starsMap[sId]);
+      var curCount = Number(starCounts[sId] || 0);
+
+      if (isStarred) {
+        delete starsMap[sId];
         curCount = Math.max(0, curCount - 1);
         triggerHaptic(8);
-        showToast('좋아요가 취소되었습니다.', 'info', 1500);
+        showToast('낭만별을 취소했습니다.', 'info', 1500);
       } else {
-        userLikes.push(sId);
+        starsMap[sId] = true;
         curCount++;
         triggerHaptic(15);
-        showToast('좋아요를 눌렀습니다!', 'success', 1800);
+        showToast('⭐ 낭만별을 보냈습니다!', 'success', 1800);
       }
 
-      likesMap[cardId] = curCount;
-      localStorage.setItem('okbm_user_liked_' + userId, JSON.stringify(userLikes));
-      localStorage.setItem('okbm_card_likes_count', JSON.stringify(likesMap));
+      starCounts[sId] = curCount;
+      localStorage.setItem('okbm_feed_stars_map', JSON.stringify(starsMap));
+      localStorage.setItem('okbm_feed_stars_counts', JSON.stringify(starCounts));
 
       updateAllLikeUI();
-    }
 
-    function handleHeroLikeClick(e) {
-      if (e) e.stopPropagation();
-      var record = window.currentHeroRecord;
-      if (record && record.id) {
-        toggleCardLike(record.id, e);
+      // 백그라운드 클라우드 전파 (GAS / R2)
+      if (typeof fetch !== 'undefined') {
+        var gasUrl = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
+        fetch(gasUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'TOGGLE_FEED_STAR',
+            feedId: sId,
+            isStarred: !isStarred,
+            userId: profile.id
+          })
+        }).catch(function() {});
       }
     }
 
@@ -1737,10 +1823,349 @@
         var iconLike = document.getElementById('heroLikeIcon');
         var textLike = document.getElementById('heroLikeCount');
         if (textLike) textLike.innerText = hCount;
-        if (iconLike) iconLike.innerHTML = hLiked ? '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="currentColor" stroke="none"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' : '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
+        if (iconLike) {
+          iconLike.innerHTML = hLiked 
+            ? '<svg viewBox="0 0 24 24" style="width:14px; height:14px; filter:drop-shadow(0 0 6px rgba(253,224,71,0.8));" fill="#fde047" stroke="#fde047" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
+            : '<svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="#ffffff" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+        }
         if (btnLike) btnLike.classList.toggle('liked', hLiked);
       }
-    } 
+    }
+
+    // 🚀 [인출 엔진]: 별점을 가장 많이 받은 인기 피드를 1위로 자동 승격
+    async function initDynamicHeroAndFeeds() {
+      initHeroGestureEngine();
+      
+      var r2Domain = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
+      window.R2_PUBLIC_DOMAIN = r2Domain;
+      var R2_FEEDS_URL = r2Domain + '/feeds.json';
+      initSmartHeaderScrollEngine();
+
+      var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
+
+      var sortFeedsByStars = function(feedList) {
+        return feedList.filter(function(f) { return f && f.isPublished !== false; }).sort(function(a, b) {
+          var sA = Number(starCounts[a.id] || a.likes || 0);
+          var sB = Number(starCounts[b.id] || b.likes || 0);
+          if (sB !== sA) return sB - sA; // 1순위: 낭만별 개수 많은 순
+          return String(b.date || '').localeCompare(String(a.date || '')); // 2순위: 최신순
+        });
+      };
+
+      try {
+        var r2Res = await fetch(R2_FEEDS_URL + '?_t=' + Date.now(), { cache: 'no-store' });
+        if (r2Res.ok) {
+          var r2Feeds = await r2Res.json();
+          if (Array.isArray(r2Feeds) && r2Feeds.length > 0) {
+            var uniqueFeedMap = new Map();
+            r2Feeds.filter(Boolean).forEach(function(f) {
+              var uKey = String(f.id || '').trim();
+              if (!uniqueFeedMap.has(uKey)) uniqueFeedMap.set(uKey, f);
+            });
+
+            var cleanFeeds = sortFeedsByStars(Array.from(uniqueFeedMap.values()));
+            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(cleanFeeds));
+            
+            if (cleanFeeds[0] && (cleanFeeds[0].photo || cleanFeeds[0].photo_url)) {
+              localStorage.setItem('okbm_hero_cover_url', cleanFeeds[0].photo || cleanFeeds[0].photo_url);
+            }
+            window.__allLoadedFeeds = cleanFeeds;
+            window.heroTopRecords = cleanFeeds;
+            window.currentHeroCardIndex = 0;
+            renderCurrentHeroCard();
+            renderSecretSpotTrailerRail();
+            return;
+          }
+        }
+      } catch (r2Err) {}
+
+      var fallbackFeeds = safeGetJSON('okbm_cached_community_feeds', []);
+      if (!Array.isArray(fallbackFeeds) || fallbackFeeds.length === 0) {
+        fallbackFeeds = [Object.assign({}, FALLBACK_HERO_PRESET)];
+      }
+      var sortedFallback = sortFeedsByStars(fallbackFeeds);
+      window.__allLoadedFeeds = sortedFallback;
+      window.heroTopRecords = sortedFallback;
+      window.currentHeroCardIndex = 0;
+      renderCurrentHeroCard();
+      renderSecretSpotTrailerRail();
+    }
+
+   // =========================================================================
+    // 🏕️ [숨은 박지 독립 테마 큐레이션 & 히어로 1:1 대형 3:4 화보 뷰어 엔진]
+    // =========================================================================
+    window.currentSecretSpotTheme = 'all';
+
+    function filterSecretSpotTheme(themeKey, btnEl) {
+      window.currentSecretSpotTheme = themeKey;
+      document.querySelectorAll('#heroTrailerSectionWrap .n-cat-chip').forEach(function(b) { b.classList.remove('active'); });
+      if (btnEl) btnEl.classList.add('active');
+      triggerHaptic(10);
+      renderSecretSpotTrailerRail();
+    }
+
+    function renderSecretSpotTrailerRail() {
+      var railContainer = document.getElementById('secretSpotTrailerRailContainer');
+      if (!railContainer) return;
+
+      var spotPool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
+        ? registeredSpots 
+        : (safeGetJSON('okbm_spots_cache', []) || []);
+
+      if (spotPool.length === 0) {
+        railContainer.innerHTML = '<div style="padding:20px 10px; font-size:0.75rem; color:#64748b;">박지 데이터를 동기화하고 있습니다...</div>';
+        return;
+      }
+
+      var themeKey = window.currentSecretSpotTheme || 'all';
+
+      var filteredSpots = spotPool.filter(function(s) {
+        if (!s) return false;
+        var diff = parseInt(s.difficulty, 10) || 3;
+        var elev = parseInt(String(s.elevation || '0').replace(/\D/g, ''), 10) || 0;
+        var tStr = (Array.isArray(s.terrain) ? s.terrain.join(' ') : String(s.terrain || '')).toLowerCase();
+        var sName = String(s.name || s.spot_main || '').toLowerCase();
+
+        if (themeKey === 'easy') {
+          return diff <= 2 || elev <= 400 || tStr.includes('초보') || tStr.includes('공원') || tStr.includes('노지');
+        } else if (themeKey === 'island') {
+          return tStr.includes('섬') || tStr.includes('해변') || tStr.includes('바다') || sName.includes('도') || sName.includes('섬');
+        } else if (themeKey === 'alpine') {
+          return elev >= 750 || tStr.includes('암릉') || sName.includes('봉') || sName.includes('령') || sName.includes('산');
+        } else if (themeKey === 'deck') {
+          return tStr.includes('데크') || tStr.includes('전망');
+        }
+        return true;
+      });
+
+      if (filteredSpots.length === 0) filteredSpots = spotPool.slice(0, 15);
+
+      var cachedFeeds = window.__allLoadedFeeds || safeGetJSON('okbm_cached_community_feeds', []) || [];
+
+      railContainer.innerHTML = filteredSpots.slice(0, 24).map(function(sp) {
+        var sName = sp.name || sp.spot_main || '박지';
+        var sRegion = sp.region || sp.cityName || '전국';
+        var sElev = sp.elevation ? (String(sp.elevation).includes('m') ? sp.elevation : sp.elevation + 'm') : 'FIELD';
+        var sId = escapeHtml(String(sp.id || ''));
+
+        var feedItem = cachedFeeds.find(function(f) { return f && f.spot && f.spot.includes(sName); });
+        var matchedPhoto = (feedItem && Array.isArray(feedItem.photos) && feedItem.photos[0]) ? feedItem.photos[0] : ((feedItem && feedItem.photo) ? feedItem.photo : '');
+        if (!matchedPhoto) {
+          matchedPhoto = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=400&q=80';
+        }
+
+        return `
+          <div class="n-trailer-card" onclick="openSecretSpotHeroViewer('${sId}')" style="width:118px !important; flex-shrink:0; cursor:pointer;">
+            <div class="n-trailer-thumb">
+              <img src="${matchedPhoto}" alt="${escapeHtml(sName)}" loading="lazy" />
+              <div class="n-trailer-weight-chip" style="color:#fde047; border-color:rgba(253,224,71,0.4);">${escapeHtml(sElev)}</div>
+            </div>
+            <div class="n-trailer-info">
+              <span class="n-trailer-spot-name" style="font-size:0.72rem;">${escapeHtml(sName)}</span>
+              <span class="n-trailer-author-date" style="color:#38bdf8; font-weight:700; display:flex; align-items:center; gap:2px;">
+                <svg viewBox="0 0 24 24" style="width:10px; height:10px; fill:none; stroke:currentColor; stroke-width:2.2;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>${escapeHtml(sRegion)}</span>
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 🎯 [히어로 규격 1:1 대형 3:4 넷플릭스 시네마틱 뷰어 엔진]
+    window.closeSecretSpotHeroModal = function() {
+      var modalEl = document.getElementById('secretSpotHeroModal');
+      if (!modalEl) return;
+      triggerHaptic(8);
+
+      var cardEl = modalEl.querySelector('.netflix-card-motion');
+      modalEl.classList.remove('netflix-backdrop-in');
+      modalEl.classList.add('netflix-backdrop-out');
+
+      if (cardEl) {
+        cardEl.classList.remove('netflix-card-motion');
+        cardEl.classList.add('netflix-card-exit');
+      }
+
+      setTimeout(function() {
+        if (modalEl) modalEl.remove();
+      }, 210);
+    };
+
+    window.openSecretSpotHeroViewer = function(spotId) {
+      triggerHaptic(12);
+      var old = document.getElementById('secretSpotHeroModal');
+      if (old) old.remove();
+
+      var spotPool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
+        ? registeredSpots 
+        : (safeGetJSON('okbm_spots_cache', []) || []);
+
+      var spot = spotPool.find(function(s) { return String(s.id).trim() === String(spotId).trim(); });
+      if (!spot) return;
+
+      var spotName = spot.name || spot.spot_main || '박지';
+      var region = spot.region || spot.cityName || '전국';
+      var elev = spot.elevation ? (String(spot.elevation).includes('m') ? spot.elevation : spot.elevation + 'm') : '-';
+      var desc = spot.desc || spot.desc_summary || '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.';
+      var diffStr = '난이도 ' + '★'.repeat(Math.min(5, Math.max(1, parseInt(spot.difficulty, 10) || 3)));
+      var distanceStr = spot.distance ? spot.distance : '코스 정보 확인';
+
+      var cachedFeeds = window.__allLoadedFeeds || safeGetJSON('okbm_cached_community_feeds', []) || [];
+      var matchedFeed = cachedFeeds.find(function(f) {
+        return f && f.spot && (f.spot.includes(spotName) || spotName.includes(f.spot));
+      });
+
+      var photosList = [];
+      if (matchedFeed && Array.isArray(matchedFeed.photos) && matchedFeed.photos.length > 0) {
+        photosList = matchedFeed.photos;
+      } else if (matchedFeed && matchedFeed.photo) {
+        photosList = [matchedFeed.photo];
+      } else {
+        photosList = ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80'];
+      }
+
+      var mainPhoto = photosList[0];
+      var fakeRecord = {
+        id: 'secret_' + spot.id,
+        spot: spotName,
+        elevation: elev,
+        date: 'VERIFIED',
+        weightKg: (matchedFeed && matchedFeed.weightKg) ? matchedFeed.weightKg : '5.50',
+        items: (matchedFeed && matchedFeed.items) ? matchedFeed.items : [
+          { name: '초경량 2인용 더블월 텐트', weight: 1250 },
+          { name: '사계절 R4.5 에어매트', weight: 430 },
+          { name: '800FP 3계절 구스침낭', weight: 850 },
+          { name: 'BPL 롤탑 배낭 50L', weight: 910 }
+        ]
+      };
+
+      var genFn = (typeof generateCardMarkup === 'function') ? generateCardMarkup : (typeof window.generateCardMarkup === 'function' ? window.generateCardMarkup : null);
+      var backTemplateHtml = '';
+      if (genFn) {
+        backTemplateHtml = genFn(1, fakeRecord, fakeRecord.items, spotName, desc, mainPhoto);
+      } else {
+        backTemplateHtml = `
+          <div style="height:100%; display:flex; flex-direction:column; justify-content:space-between; background:#090d16; color:#ffffff; padding:16px; box-sizing:border-box;">
+            <div>
+              <div style="font-size:0.92rem; font-weight:900; color:#38bdf8;">${escapeHtml(spotName)} (${escapeHtml(elev)})</div>
+              <div style="font-size:0.72rem; color:#94a3b8; margin-top:4px;">${escapeHtml(desc)}</div>
+            </div>
+            <div style="font-size:0.65rem; color:#34d399; text-align:center;">터치 시 사진으로 회전합니다</div>
+          </div>
+        `;
+      }
+
+      var modalEl = document.createElement('div');
+      modalEl.id = 'secretSpotHeroModal';
+      modalEl.className = 'netflix-backdrop-in';
+      modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:rgba(0,0,0,0.92); z-index:1000045; display:flex; justify-content:center; align-items:center; padding:calc(10px + env(safe-area-inset-top, 0px)) 14px calc(14px + env(safe-area-inset-bottom, 0px)) 14px; box-sizing:border-box; overflow-y:auto;';
+
+      modalEl.innerHTML = `
+        <div class="netflix-card-motion" style="width:100%; max-width:440px; display:flex; flex-direction:column; gap:8px; margin:auto 0; box-sizing:border-box;">
+          
+          <!-- 상단 3:4 대형 인스타 카드 (터치 시 3D 회전 플립) -->
+          <div class="insta-card" onclick="this.classList.toggle('flipped'); triggerHaptic(10);" style="position:relative; width:100%; aspect-ratio:3/4; border-radius:16px; overflow:hidden; background:#000; border:1px solid rgba(255,255,255,0.18); box-shadow:0 24px 60px rgba(0,0,0,0.95); cursor:pointer; perspective:1200px; transform-style:preserve-3d; transition:transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);">
+            
+            <!-- 앞면 화보 사진 레이어 -->
+            <div class="postcard-face-front" style="position:absolute; inset:0; width:100%; height:100%; backface-visibility:hidden; -webkit-backface-visibility:hidden;">
+              <img src="${mainPhoto}" style="width:100%; height:100%; object-fit:cover; display:block;" />
+              <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.45) 0%, transparent 25%, transparent 75%, rgba(0,0,0,0.7) 100%);"></div>
+
+              <div style="position:absolute; top:12px; left:12px; right:12px; display:flex; justify-content:space-between; align-items:center; z-index:10;">
+                <span style="font-size:0.62rem; font-weight:800; color:#ffffff; font-family:var(--font-en); background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); padding:3px 8px; border-radius:5px; border:1px solid rgba(255,255,255,0.2);">
+                  THEME SPOT
+                </span>
+                <button type="button" onclick="event.stopPropagation(); window.closeSecretSpotHeroModal();" style="width:32px; height:32px; border-radius:50%; background:rgba(0,0,0,0.65); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.25); color:#ffffff; font-size:1.1rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
+              </div>
+
+              <div style="position:absolute; bottom:12px; left:12px; right:12px; z-index:10; display:flex; justify-content:space-between; align-items:flex-end;">
+                <div>
+                  <div style="font-size:0.68rem; color:#38bdf8; font-weight:800; display:flex; align-items:center; gap:2px;">
+                    <svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span>${escapeHtml(region)}</span>
+                  </div>
+                  <div style="font-size:1.2rem; font-weight:900; color:#ffffff; text-shadow:0 2px 6px #000;">${escapeHtml(spotName)}</div>
+                </div>
+                <div style="background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.2); border-radius:6px; padding:3px 6px; font-size:0.58rem; color:#cbd5e1; font-weight:800;">
+                  회전하여 템플릿 보기 ➔
+                </div>
+              </div>
+            </div>
+
+            <!-- 뒷면 20종 감성 템플릿 레이어 -->
+            <div class="postcard-face-back" style="position:absolute; inset:0; width:100%; height:100%; transform:rotateY(180deg); backface-visibility:hidden; -webkit-backface-visibility:hidden; overflow:hidden; background:#0b0f19;">
+              ${backTemplateHtml}
+            </div>
+
+          </div>
+
+          <!-- 하단 히어로 규격 글래스 메모 -->
+          <div class="insta-glass-memo">
+            <div class="insta-memo-title-line">
+              <div class="insta-memo-spot-title">${escapeHtml(spotName)}</div>
+              <span class="insta-memo-author" style="color:#38bdf8;">${escapeHtml(region)}</span>
+            </div>
+
+            <div class="insta-memo-quote">“${escapeHtml(desc)}”</div>
+
+            <div class="insta-memo-facts-row">
+              <span class="insta-fact-badge">
+                <svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
+                <span>${escapeHtml(elev)}</span>
+              </span>
+              <span class="insta-fact-badge">
+                <svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="5" r="3"/><path d="M12 22v-7l-3-3m3 3l3-3"/></svg>
+                <span>${escapeHtml(diffStr)}</span>
+              </span>
+              <span class="insta-fact-badge badge-weight">
+                <svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 19L19 4M4 19h6M4 19v-6M19 4h-6M19 4v6"/></svg>
+                <span>${escapeHtml(distanceStr)}</span>
+              </span>
+            </div>
+
+            <div class="insta-memo-actions-row">
+              <button type="button" class="btn-insta-action btn-action-map" onclick="window.closeSecretSpotHeroModal(); location.href='map.html?spot=' + encodeURIComponent('${escapeHtml(spotName)}');">
+                <svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span>자세히보기 (전국지도)</span>
+              </button>
+              <button type="button" class="btn-insta-action btn-action-template" onclick="var c=document.querySelector('#secretSpotHeroModal .insta-card'); if(c) c.classList.toggle('flipped'); triggerHaptic(10);">
+                <svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span>장비 세팅보기</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      `;
+
+      document.body.appendChild(modalEl);
+    };
+
+    // 📖 [특정 박지 피드로 다이렉트 점프 엔진]
+    window.openSpotFeedArchive = function(spotName) {
+      triggerHaptic(12);
+      if (typeof window.openHistoryModal === 'function') {
+        window.openHistoryModal();
+        setTimeout(function() {
+          if (typeof window.switchHistoryFeedTab === 'function') {
+            window.switchHistoryFeedTab('explore');
+          }
+          setTimeout(function() {
+            var allCards = Array.from(document.querySelectorAll('.reel-page-snap, [data-record-id]'));
+            var target = allCards.find(function(el) {
+              return el.innerText && el.innerText.includes(spotName);
+            });
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              showToast(`📖 [${spotName}] 피드로 이동했습니다!`, 'success');
+            } else {
+              showToast(`📖 [${spotName}]에 등록된 피드를 둘러보세요!`, 'info');
+            }
+          }, 350);
+        }, 150);
+      }
+    };
 
     function handleHeroNavClick(e) {
       if (e) e.stopPropagation();
@@ -1800,7 +2225,7 @@
       });
     }
 
-    function renderCurrentHeroCard() {
+   function renderCurrentHeroCard() {
       var records = window.heroTopRecords || [];
       if (records.length === 0) return;
 
@@ -1818,7 +2243,6 @@
       }
 
       var titleEl = document.getElementById('heroMainTitle');
-      var tagEl = document.getElementById('heroBadgeTag');
       var authorEl = document.getElementById('heroAuthorText');
       var quoteEl = document.getElementById('heroQuoteText');
       var elevBadge = document.getElementById('heroElevBadge');
@@ -1828,8 +2252,7 @@
       var spotTitle = record.spot || record.spotName || '낭만 필드 박지';
       var elevStr = record.elevation ? (String(record.elevation).includes('m') ? record.elevation : record.elevation + 'm') : 'FIELD';
 
-      var profile = safeGetJSON('user_profile', null);
-      var authorName = (profile && profile.nickname) ? profile.nickname : (record.author || '낭만백패커');
+      var authorName = record.author || '낭만백패커';
       var memoText = record.memo || record.oneLineMemo || '자연 속에서 비화식으로 즐기는 조용한 하룻밤.';
 
       var items = extractCleanGearsFromRecord(record);
@@ -1837,7 +2260,6 @@
       var weightStr = (totalGrams > 0) ? (totalGrams / 1000).toFixed(2) : (record.weightKg ? String(record.weightKg) : '0.00');
 
       if (titleEl) titleEl.innerText = spotTitle;
-      if (tagEl) tagEl.innerText = 'SECRET SPOT';
       if (authorEl) authorEl.innerText = authorName;
       if (quoteEl) quoteEl.innerText = '“' + memoText + '”';
       if (elevBadge) elevBadge.innerHTML = '<svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg> ' + elevStr;
@@ -1845,10 +2267,9 @@
       if (indicatorEl) indicatorEl.innerText = (window.currentHeroCardIndex + 1) + ' / ' + records.length;
 
       updateHeroPhotoDisplay();
-      updateAllLikeUI();
-      renderHeroTrailerRail();
     }
 
+    // 🎬 [누락 복원] 히어로 고화질 사진 교체 및 넷플릭스 크로스페이드 렌더러
     function updateHeroPhotoDisplay() {
       var photos = window.currentHeroPhotosList || [];
       var curIdx = window.currentHeroPhotoIndex || 0;
@@ -1857,13 +2278,24 @@
       if (imgEl) {
         if (photos.length > 0 && photos[curIdx]) {
           var targetUrl = photos[curIdx];
-          imgEl.decoding = 'async';
-          imgEl.src = targetUrl;
-          imgEl.onload = function() {
-            imgEl.style.opacity = '1';
+
+          imgEl.style.opacity = '0.35';
+          imgEl.style.transform = 'scale(1.015)';
+
+          var preloader = new Image();
+          preloader.decoding = 'async';
+          preloader.src = targetUrl;
+          preloader.onload = function() {
+            imgEl.src = targetUrl;
+            requestAnimationFrame(function() {
+              imgEl.style.opacity = '1';
+              imgEl.style.transform = 'scale(1)';
+            });
           };
-          if (imgEl.complete) {
+          if (preloader.complete) {
+            imgEl.src = targetUrl;
             imgEl.style.opacity = '1';
+            imgEl.style.transform = 'scale(1)';
           }
         } else {
           imgEl.style.opacity = '0';
@@ -1877,7 +2309,7 @@
         } else {
           barsContainer.style.display = 'flex';
           barsContainer.innerHTML = photos.map(function(p, i) {
-            return `<div style="flex:1; height:100%; border-radius:2px; background:rgba(255,255,255,${i === curIdx ? '0.95' : '0.3'}); transition:background 0.15s ease;"></div>`;
+            return `<div style="flex:1; height:100%; border-radius:2px; background:rgba(255,255,255,${i === curIdx ? '0.95' : '0.3'}); transition:background 0.2s ease;"></div>`;
           }).join('');
         }
       }
@@ -4224,9 +4656,17 @@ var adBannersHtml = `
                   fullName: row.fullName || row.name || row.spot_main || '',
                   region: row.cityName || row.region || '전국',
                   elevation: row.elevation || '',
+                  difficulty: row.difficulty || '3',
+                  distance: row.distance_km ? (row.distance_km + 'km') : (row.distance || ''),
+                  terrain: row.terrain ? String(row.terrain).split(',').map(function(t) { return t.trim(); }) : [],
                   desc: row.desc_summary || row.desc || '자연 속에서 즐기는 조용한 하룻밤.'
                 };
               }).filter(function(s) { return s.name.trim() !== ''; });
+
+              // ⚡ 박지 DB 수신 완료 즉시 숨은 박지 레일 자동 렌더링
+              if (typeof renderSecretSpotTrailerRail === 'function') {
+                renderSecretSpotTrailerRail();
+              }
             }
           }
         });

@@ -475,7 +475,7 @@ function closeUserProfileModal() {
   } catch (e) {}
 }
 
-// 🚪 [로그아웃 및 기기 세션/배낭 롤백 처리]
+// 🚪 [로그아웃 및 기기 세션/11대 사생활 스토리지 완전 무결 롤백]
 function logoutUser() {
   triggerHaptic(15);
 
@@ -485,6 +485,7 @@ function logoutUser() {
     } catch (e) {}
   }
 
+  // 1. 회원 인증 세션 파기
   localStorage.removeItem('user_auth_token');
   localStorage.removeItem('user_profile');
 
@@ -493,9 +494,50 @@ function logoutUser() {
     authState.userProfile = null;
   }
 
-  window.selectedGearMap = {};
+  // 2. 🛡️ [11대 사생활 개인정보 localStorage 완전 파기]
+  localStorage.removeItem('okbm_bookmarks');
+  localStorage.removeItem('okbm_visited');
+  localStorage.removeItem('okbm_memos');
+  localStorage.removeItem('okbm_plan_memos');
+  localStorage.removeItem('okbm_plan_spots');
+  localStorage.removeItem('okbm_packing_history');
   localStorage.removeItem('okbm_selected_gears_multi');
+  localStorage.removeItem('okbm_favorite_gears');
+  localStorage.removeItem('okbm_custom_gears');
+  localStorage.removeItem('okbm_gear_presets');
+  localStorage.removeItem('okbm_gear_meta');
+  localStorage.removeItem('okbm_trip_consumables');
+  localStorage.removeItem('okbm_packed_checks');
+  localStorage.removeItem('okbm_phone_photos_map');
+  localStorage.removeItem('okbm_trip_photos_map');
+  localStorage.removeItem('okbm_user_instagram');
+  localStorage.removeItem('okbm_user_nick');
 
+  // 3. 🧠 [전역 메모리 변수 및 Set/Map 완전 초기화]
+  if (typeof window.userBookmarks !== 'undefined') window.userBookmarks = new Set();
+  if (typeof window.userVisited !== 'undefined') window.userVisited = new Set();
+  if (typeof window.userMemos !== 'undefined') window.userMemos = {};
+  window.selectedGearMap = {};
+  window.favoriteGearSet = new Set();
+  window.packedCheckSet = new Set();
+  window.interactiveHistory = [];
+  window.packingHistoryList = [];
+  window.currentShareRecord = null;
+  window.currentShareItems = [];
+
+  window.__memoryStore = window.__memoryStore || {};
+  window.__memoryStore['okbm_packing_history'] = [];
+  window.__memoryStore['okbm_phone_photos_map'] = {};
+  window.__memoryStore['okbm_trip_photos_map'] = {};
+
+  // 4. 📱 [스마트폰 내장 IndexedDB 사진/기록 금고 완전 소멸]
+  if (typeof window.saveToIndexedDB === 'function') {
+    window.saveToIndexedDB('okbm_packing_history', []);
+    window.saveToIndexedDB('okbm_phone_photos_map', {});
+    window.saveToIndexedDB('okbm_trip_photos_map', {});
+  }
+
+  // 5. 🎒 [홈 화면 배낭 게이지 즉시 0.00kg 초기화]
   var bannerKg = document.getElementById('mainBannerKgText');
   var bannerCount = document.getElementById('mainBannerItemCount');
   var bannerBadge = document.getElementById('mainBannerBadge');
@@ -506,6 +548,7 @@ function logoutUser() {
     bannerBadge.innerText = '울트라라이트 (UL)';
   }
 
+  // 6. 🧭 [헤더 및 4대 뷰 렌더러 순수 게스트 상태 일괄 동기화]
   updateHeaderAuthUI();
 
   if (typeof renderCategorySlots === 'function') renderCategorySlots();
@@ -513,9 +556,10 @@ function logoutUser() {
   if (typeof renderPlanCategorySlots === 'function') renderPlanCategorySlots();
   if (typeof renderHistoryStage === 'function') renderHistoryStage();
   if (typeof renderSpots === 'function') renderSpots();
+  if (typeof renderSubChips === 'function') renderSubChips();
   if (typeof refreshCurrentSpotPopup === 'function') refreshCurrentSpotPopup();
 
-  showToast('로그아웃되었습니다.', 'info', 2200);
+  showToast('로그아웃되었습니다. 모든 개인정보가 기기에서 안전하게 정리되었습니다.', 'info', 2500);
 }
 
 // ⏱️ 7. 닉네임 변경 및 14일 쿨다운 체크
@@ -818,10 +862,20 @@ function loginWithKakao() {
 
 window.shareFeedToCommunity = async function(feedRecord) {
   if (!feedRecord) return;
+  
   var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : null);
   var userId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('user_auth_token') || 'anonymous');
   var nickname = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만백패커');
   var userInsta = (feedRecord.instagram || localStorage.getItem('okbm_user_instagram') || '').replace(/[@\s]/g, '').trim();
+
+  // 🛡️ 디바운스 락: 1.5초 내 동일 피드 재전송 원천 차단
+  var nowTime = Date.now();
+  window.__lastSharedFeedTimeMap = window.__lastSharedFeedTimeMap || {};
+  var lastSharedTime = window.__lastSharedFeedTimeMap[String(feedRecord.id)] || 0;
+  if (nowTime - lastSharedTime < 1500) {
+    return;
+  }
+  window.__lastSharedFeedTimeMap[String(feedRecord.id)] = nowTime;
 
   var targetGasUrl = window.GAS_API_URL || GAS_API_URL;
   if (!targetGasUrl || targetGasUrl.includes('구글시트_배포_URL')) return;
@@ -883,7 +937,7 @@ window.shareFeedToCommunity = async function(feedRecord) {
     return res.json();
   }).then(function(data) {
     if (data && data.status === 'SUCCESS') {
-      console.log('✅ [RomanticSync] 인스타그램 계정 및 120자 팁 포함 공용 피드 전송 성공');
+      console.log('✅ [RomanticSync] 공용 피드 전송 및 R2 동기화 성공');
     }
   }).catch(function(err) {
     console.warn('[RomanticSync] 커뮤니티 피드 전송 실패:', err);
