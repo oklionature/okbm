@@ -265,95 +265,6 @@
         border: 1.5px solid var(--border-titanium); 
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        padding: 4px 0;
-        box-sizing: border-box;
-      }
-
-      .dropdown-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 8px 12px;
-        font-size: 0.74rem;
-        font-weight: 800;
-        color: var(--accent-blue);
-        border-bottom: 1px solid var(--border-hairline);
-        background: var(--bg-card);
-      }
-
-      .btn-close-dropdown {
-        background: transparent;
-        border: none;
-        color: var(--text-muted);
-        font-size: 0.70rem;
-        font-weight: 700;
-        cursor: pointer;
-        padding: 2px 4px;
-      }
-
-      .dropdown-item {
-        padding: 9px 12px;
-        border-bottom: 1px solid var(--border-subtle);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        transition: background 0.15s ease;
-      }
-      .dropdown-item:last-child { border-bottom: none; }
-      .dropdown-item:hover, .dropdown-item:active { background: var(--bg-card-hover); }
-
-      .top-rank-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        gap: 6px;
-      }
-      .top-rank-left {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex: 1;
-        min-width: 0;
-      }
-      .rank-badge {
-        width: 17px;
-        height: 17px;
-        border-radius: 4px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.65rem;
-        font-weight: 900;
-        flex-shrink: 0;
-        color: #fff;
-      }
-      .rank-1 { background: #f43f5e; }
-      .rank-2 { background: #f97316; }
-      .rank-3 { background: #f59e0b; }
-      .rank-etc { background: #64748b; }
-
-      .top-spot-title {
-        font-size: 0.78rem;
-        font-weight: 800;
-        color: var(--text-primary);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .top-spot-city {
-        font-size: 0.68rem;
-        font-weight: 700;
-        color: var(--accent-teal);
-        flex-shrink: 0;
-      }
-      .top-spot-views {
-        font-size: 0.68rem;
-        font-weight: 800;
-        color: var(--text-muted);
-        flex-shrink: 0;
-        white-space: nowrap;
       }
 
       /* 🗺️ 사이드바 & 슬라이딩 드로어 */
@@ -454,19 +365,8 @@
       .btn-quick-add { background: #0f766e; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; font-weight: 800; cursor: pointer; }
       .sheet-close-btn { background: var(--bg-card); border: 1px solid var(--border-titanium); color: var(--text-secondary); width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; font-weight: 800; }
 
-      /* ⚡ [터치 먹통 & 맵 렌더링 깨짐 원천 차단]: 하드웨어 가속 레이어 분리 및 카카오맵 제어권 보장 */
-      #map { 
-        flex: 1; 
-        width: 100%; 
-        height: 100%; 
-        position: relative; 
-        background: var(--bg-base); 
-        touch-action: none !important; 
-        -webkit-touch-callout: none;
-        transform: translateZ(0);
-        -webkit-transform: translateZ(0);
-        will-change: transform;
-      }
+      /* ⚡ [터치 먹통 원천 차단]: 터치 제어권을 카카오맵 엔진에 100% 온전히 위임 */
+      #map { flex: 1; width: 100%; height: 100%; position: relative; background: var(--bg-base); touch-action: none !important; -webkit-touch-callout: none; }
 
       /* 🧭 HUD 타워 시스템 (상단 검색바 바로 아래로 최적 정렬) */
       .top-right-hud-group { 
@@ -1221,33 +1121,35 @@
       var NATIONWIDE_LEVEL = 13;
       var map = null, geocoder = null, globalClusterer = null;
 
-      // 📦 [데이터 배열 안전 초기화 & 신규 유입자 즉시 수급 파이프라인]
-      var spots = safeGetJSON('okbm_spots_cache', []) || [];
+     // 📦 [데이터 배열 안전 초기화 & 구글 시트 마스터 자동 수급 엔진]
+      var rawCachedSpots = safeGetJSON('okbm_spots_cache', []);
+      var isCacheValid = Array.isArray(rawCachedSpots) && rawCachedSpots.length > 0 && rawCachedSpots[0].lat && rawCachedSpots[0].lng;
+      var spots = isCacheValid ? rawCachedSpots : [];
       var spotComments = safeGetJSON('okbm_comments', {}) || {};
       var userBookmarks = new Set((safeGetJSON('okbm_bookmarks', []) || []).map(function(s) { return String(s).trim(); }));
       var userVisited = new Set((safeGetJSON('okbm_visited', []) || []).map(function(s) { return String(s).trim(); }));
       var userMemos = safeGetJSON('okbm_memos', {}) || {};
 
-      // ⚡ [신규 유입자 0개 멈춤 100% 영구 차단] 스크립트 로드 즉시 마스터 DB 다이렉트 패치 기동
-      (function ensureMasterSpotsImmediately() {
-        if (spots && spots.length > 0) return;
-
+      async function loadSpotsMasterEngine() {
         var sheetUrl = 'https://docs.google.com/spreadsheets/d/' + window.GOOGLE_SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + window.PRIMARY_SHEET_GID + '&_t=' + Date.now();
-        fetch(sheetUrl).then(function(res) {
-          return res.text();
-        }).then(function(csvText) {
+        try {
+          var res = await fetch(sheetUrl);
+          if (!res.ok) return;
+          var csvText = await res.text();
           if (!csvText || typeof Papa === 'undefined') return;
+
           Papa.parse(csvText, {
             header: true,
             skipEmptyLines: true,
             complete: function(results) {
               if (!results.data || results.data.length === 0) return;
               var parsed = results.data.map(function(row, idx) {
-                var lat = parseFloat(row.lat || row['위도'] || 0);
-                var lng = parseFloat(row.lng || row['경도'] || 0);
-                var name = (row.fullName || row.name || row.spot_main || row['산이름'] || row['박지명'] || '').trim();
+                var lat = parseFloat(row.campsite_lat || row.lat || row['위도'] || 0);
+                var lng = parseFloat(row.campsite_lng || row.lng || row['경도'] || 0);
+                var name = (row.spot_main || row.name || row.fullName || row['산이름'] || row['박지명'] || '').trim();
                 var sub = (row.spot_sub || row['세부포인트'] || '').trim();
                 var entry = (row.trailhead_addr || row.entryPoint || row['들머리주소'] || '').trim();
+                var rawMedia = (row.mediaUrls || row.youtubeUrls || row['유튜브'] || '').trim();
                 var autoDetect = detectRegionAndCity(lat, lng, name, entry);
 
                 return {
@@ -1255,24 +1157,25 @@
                   name: name,
                   spot_main: name,
                   spot_sub: sub,
-                  fullName: sub ? (name + ' (' + sub + ')') : name,
+                  fullName: row.fullName || (sub ? (name + ' (' + sub + ')') : name),
                   lat: lat,
                   lng: lng,
                   elevation: row.elevation || row['고도'] || '450m',
-                  trailhead_name: row.trailhead_name || row['들머리명칭'] || '',
+                  trailhead_name: (row.trailhead_name || row['들머리명칭'] || '').trim(),
                   trailhead_addr: entry,
                   entryPoint: entry,
                   desc_summary: row.desc_summary || row.desc || row['설명'] || '',
                   desc: row.desc || row.desc_summary || '',
-                  youtubeUrls: (row.youtubeUrls || row['유튜브'] || '').split(/[\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean),
+                  youtubeUrls: rawMedia.split(/[\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean),
                   blogUrls: (row.blogUrls || row['블로그'] || '').split(/[\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean),
                   authorSnsUrl: row.authorSnsUrl || row['인스타'] || '',
                   courseType: row.courseType || row['코스유형'] || '일반',
                   terrain: (row.terrain || row['지형'] || '데크').split(/[,]+/).map(function(t){ return t.trim(); }),
                   difficulty: row.difficulty || row['난이도'] || '3',
                   distance: row.distance_km ? (row.distance_km + 'km') : (row.distance || ''),
-                  region: autoDetect.region,
-                  cityName: autoDetect.cityName,
+                  droneStatus: row.droneStatus || '',
+                  region: row.region || autoDetect.region,
+                  cityName: row.cityName || autoDetect.cityName,
                   searchCount: parseInt(row.searchCount || 0, 10),
                   sheetIndex: idx
                 };
@@ -1290,9 +1193,12 @@
               }
             }
           });
-        }).catch(function(e) {});
-      })();
+        } catch (e) {}
+      }
 
+      if (!isCacheValid) {
+        loadSpotsMasterEngine();
+      }
       // 🗺️ 지도 마커 / 오버레이 / UI 상태 전역 변수
       var spotNativeMarkerMap = new Map();
       var spotLabelOverlayMap = new Map();
@@ -1562,10 +1468,7 @@
         sheet.classList.add('open');
         
         loadLiveWeatherForSpot(spot.id, spot.lat, spot.lng);
-        requestAnimationFrame(() => { 
-          content.scrollTop = 0;
-          if (map && typeof map.relayout === 'function') map.relayout();
-        });
+        requestAnimationFrame(() => { content.scrollTop = 0; });
       }
 
       function closeMobileBottomSheet() {
@@ -1598,10 +1501,7 @@
         if (closeTab) closeTab.classList.add('visible');
         
         loadLiveWeatherForSpot(spot.id, spot.lat, spot.lng);
-        requestAnimationFrame(() => { 
-          drawer.scrollTop = 0;
-          if (map && typeof map.relayout === 'function') map.relayout();
-        });
+        requestAnimationFrame(() => { drawer.scrollTop = 0; });
       }
 
       function closePcSlidingDrawer() {
@@ -1616,195 +1516,26 @@
         updateLODLabels();
       }
 
-      // ⚡ [저사양 기기 최적화] 마커 이미지 캐시 풀 (해상도 2종 × 난이도 3종)
-      var markerImageCache = new Map();
+      function createPureSvgMarkerImage(difficulty = 3) {
+        const d = parseInt(difficulty, 10) || 3;
+        const color = d <= 2 ? '#10b981' : (d >= 4 ? '#f43f5e' : '#f59e0b');
+        const isMobile = window.innerWidth <= 768;
+        const width = isMobile ? 30 : 34, height = isMobile ? 38 : 42;
 
-      function getCachedMarkerImage(difficulty = 3) {
-        var d = parseInt(difficulty, 10) || 3;
-        var diffKey = d <= 2 ? 'EASY' : (d >= 4 ? 'HARD' : 'MID');
-        var isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
-        var cacheKey = `${isMobile ? 'M' : 'P'}_${diffKey}`;
-
-        if (markerImageCache.has(cacheKey)) {
-          return markerImageCache.get(cacheKey);
-        }
-
-        var color = diffKey === 'EASY' ? '#10b981' : (diffKey === 'HARD' ? '#f43f5e' : '#f59e0b');
-        var width = isMobile ? 30 : 34, height = isMobile ? 38 : 42;
-
-        var svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="${width}" height="${height}">
+        const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="${width}" height="${height}">
           <ellipse cx="14" cy="34" rx="7" ry="2" fill="rgba(0,0,0,0.4)"/>
           <path fill="${color}" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round" d="M14 1 C6.82 1 1 6.82 1 14 C1 19.8 4.8 24.7 10 26.3 L14 32.5 L18 26.3 C23.2 24.7 27 19.8 27 14 C27 6.82 21.18 1 14 1 Z"/>
           <path fill="#ffffff" d="M14 7 L7.5 18 H20.5 Z"/>
           <polygon fill="${color}" points="14,10.5 10.5,18 17.5,18"/>
         </svg>`;
 
-        var markerImg = new kakao.maps.MarkerImage(
+        return new kakao.maps.MarkerImage(
           'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString),
           new kakao.maps.Size(width, height),
           { offset: new kakao.maps.Point(width / 2, height) }
         );
-
-        markerImageCache.set(cacheKey, markerImg);
-        return markerImg;
       }
 
-     // ⚡ [저사양 기기 최적화] 기종 편차 없는 W3C 표준 Canvas 마커 래퍼 풀
-      var markerImageCache = new Map();
-
-      function getCachedMarkerImage(difficulty = 3) {
-        var d = parseInt(difficulty, 10) || 3;
-        var diffKey = d <= 2 ? 'EASY' : (d >= 4 ? 'HARD' : 'MID');
-        var isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
-        var cacheKey = (isMobile ? 'M_' : 'P_') + diffKey;
-
-        if (markerImageCache.has(cacheKey)) {
-          return markerImageCache.get(cacheKey);
-        }
-
-        var color = diffKey === 'EASY' ? '#10b981' : (diffKey === 'HARD' ? '#f43f5e' : '#f59e0b');
-        var width = isMobile ? 30 : 34;
-        var height = isMobile ? 38 : 42;
-
-        try {
-          var canvas = document.createElement('canvas');
-          canvas.width = width * 2;
-          canvas.height = height * 2;
-          var ctx = canvas.getContext('2d');
-          ctx.scale(2, 2);
-
-          // 하단 그림자
-          ctx.beginPath();
-          ctx.ellipse(width / 2, height - 3, width * 0.28, 3, 0, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(0,0,0,0.35)';
-          ctx.fill();
-
-          // 핀 본체
-          var r = (width - 4) / 2;
-          var cx = width / 2;
-          var cy = r + 2;
-          ctx.beginPath();
-          ctx.arc(cx, cy, r, Math.PI, 0, false);
-          ctx.lineTo(cx, height - 6);
-          ctx.closePath();
-          ctx.fillStyle = color;
-          ctx.fill();
-          ctx.lineWidth = 1.8;
-          ctx.strokeStyle = '#ffffff';
-          ctx.stroke();
-
-          // 중앙 텐트 실루엣
-          ctx.beginPath();
-          ctx.moveTo(cx, cy - r * 0.45);
-          ctx.lineTo(cx - r * 0.55, cy + r * 0.5);
-          ctx.lineTo(cx + r * 0.55, cy + r * 0.5);
-          ctx.closePath();
-          ctx.fillStyle = '#ffffff';
-          ctx.fill();
-
-          var markerImg = new kakao.maps.MarkerImage(
-            canvas.toDataURL('image/png'),
-            new kakao.maps.Size(width, height),
-            { offset: new kakao.maps.Point(width / 2, height) }
-          );
-
-          markerImageCache.set(cacheKey, markerImg);
-          return markerImg;
-        } catch (e) {
-          return new kakao.maps.MarkerImage(
-            'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png',
-            new kakao.maps.Size(24, 35)
-          );
-        }
-      }
-
-      function createPureSvgMarkerImage(difficulty = 3) {
-        return getCachedMarkerImage(difficulty);
-      }
-      // ⚡ [저사양 기기 최적화 2] 캐시 부재 첫 방문자 0초 대응: Stale-While-Revalidate 원격 박지 자동 수급 엔진
-      var isSpotsFetching = false;
-      async function fetchLatestSpotsFromRemote() {
-        if (isSpotsFetching) return;
-        isSpotsFetching = true;
-
-        var R2_SPOTS_URL = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/spots.json';
-        var fallbackSheetUrl = 'https://docs.google.com/spreadsheets/d/' + window.GOOGLE_SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + window.PRIMARY_SHEET_GID;
-
-        try {
-          var res = await fetch(R2_SPOTS_URL, { cache: 'no-cache' });
-          if (res.ok) {
-            var r2Data = await res.json();
-            if (Array.isArray(r2Data) && r2Data.length > 0) {
-              applyFetchedSpots(r2Data);
-              return;
-            }
-          }
-        } catch (e) {}
-
-        // R2 미생성 시 구글 시트 직통 안전망 (Failover)
-        if (typeof Papa !== 'undefined') {
-          try {
-            Papa.parse(fallbackSheetUrl, {
-              download: true,
-              header: true,
-              skipEmptyLines: true,
-              complete: function(results) {
-                if (results.data && results.data.length > 0) {
-                  var parsedSpots = results.data.map(function(row, idx) {
-                    var lat = parseFloat(row.lat || row['위도'] || 0);
-                    var lng = parseFloat(row.lng || row['경도'] || 0);
-                    var name = (row.name || row.spot_main || row['산이름'] || row['박지명'] || '').trim();
-                    var sub = (row.spot_sub || row['세부포인트'] || '').trim();
-                    var entry = (row.trailhead_addr || row.entryPoint || row['들머리주소'] || '').trim();
-                    var autoDetect = detectRegionAndCity(lat, lng, name, entry);
-
-                    return {
-                      id: String(row.id || (idx + 1)).trim(),
-                      name: name,
-                      spot_main: name,
-                      spot_sub: sub,
-                      fullName: sub ? (name + ' (' + sub + ')') : name,
-                      lat: lat,
-                      lng: lng,
-                      elevation: row.elevation || row['고도'] || '450m',
-                      trailhead_name: row.trailhead_name || row['들머리명칭'] || '',
-                      trailhead_addr: entry,
-                      entryPoint: entry,
-                      desc_summary: row.desc_summary || row.desc || row['설명'] || '',
-                      desc: row.desc || row.desc_summary || '',
-                      youtubeUrls: (row.youtubeUrls || row['유튜브'] || '').split(/[\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean),
-                      blogUrls: (row.blogUrls || row['블로그'] || '').split(/[\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean),
-                      authorSnsUrl: row.authorSnsUrl || row['인스타'] || '',
-                      courseType: row.courseType || row['코스유형'] || '일반',
-                      terrain: (row.terrain || row['지형'] || '데크').split(/[,]+/).map(function(t){ return t.trim(); }),
-                      difficulty: row.difficulty || row['난이도'] || '3',
-                      distance: row.distance || row['거리'] || '',
-                      region: autoDetect.region,
-                      cityName: autoDetect.cityName,
-                      searchCount: parseInt(row.searchCount || 0, 10),
-                      sheetIndex: idx
-                    };
-                  }).filter(function(s) { return s.lat && s.lng && !BLOCKED_SPOT_IDS.has(String(s.id)); });
-
-                  applyFetchedSpots(parsedSpots);
-                }
-              }
-            });
-          } catch (err) {}
-        }
-      }
-
-      function applyFetchedSpots(newSpots) {
-        if (!Array.isArray(newSpots) || newSpots.length === 0) return;
-        spots = newSpots.filter(function(s) { return !BLOCKED_SPOT_IDS.has(String(s.id).trim()); });
-        localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
-        updateNewSpotFlags(spots);
-        if (map) {
-          renderSpots();
-          checkUrlParamSpotFocus();
-        }
-        isSpotsFetching = false;
-      }
       const CYCLE_DIFF_LIST = [
         { key: 'ALL', label: '난이도', icon: ICONS.ROCK, cls: '' },
         { key: 'EASY', label: '쉬움', icon: `<svg viewBox="0 0 24 24" class="ui-icon" style="color:#10b981; width:14px; height:14px; margin:0;"><polygon points="4 20 2 12 8 4 17 6 22 14 19 20 4 20" stroke="#10b981" stroke-width="2" fill="none"/></svg>`, cls: 'active-diff-easy' },
@@ -1925,107 +1656,16 @@
           kakao.maps.event.addListener(map, 'idle', () => debouncedUpdateLODLabels());
           kakao.maps.event.addListener(map, 'click', handleMapClick);
 
-       if (spots && spots.length > 0) {
-            spots = spots.filter(s => !BLOCKED_SPOT_IDS.has(String(s.id).trim()));
+         if (spots && spots.length > 0) {
+            spots = spots.filter(s => s && s.lat && s.lng && !BLOCKED_SPOT_IDS.has(String(s.id).trim()));
             updateNewSpotFlags(spots); 
+            renderSubChips();
             renderSpots(); 
             checkUrlParamSpotFocus(); 
           } else {
-            // ⚡ [0개 멈춤 영구 차단] 캐시 부재 기기 실시간 구글 시트 긴급 동기화 엔진
-            fetchSpotsFromGoogleSheet();
+            loadSpotsMasterEngine();
           }
         });
-      }
-
- // ⚡ [0개 멈춤 100% 영구 해결] Cloudflare R2 글로벌 CDN 정본 + GAS 백엔드 2중 안전 수급 엔진
-      async function fetchSpotsFromGoogleSheet() {
-        var R2_CDN_URL = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev/spots.json';
-        var GAS_URL = window.GAS_API_URL + '?action=GET_SPOTS';
-        var fetchedSpots = null;
-
-        // 1순위: Cloudflare R2 글로벌 CDN 직통 인출 (0.03초)
-        try {
-          var r2Res = await fetch(R2_CDN_URL, { cache: 'no-cache' });
-          if (r2Res.ok) {
-            var data = await r2Res.json();
-            if (Array.isArray(data) && data.length > 0) {
-              fetchedSpots = data;
-            }
-          }
-        } catch (e) {}
-
-        // 2순위: R2 실패 시 Google Apps Script(GAS) 백엔드 자동 전환 (Failover)
-        if (!fetchedSpots || fetchedSpots.length === 0) {
-          try {
-            var gasRes = await fetch(GAS_URL);
-            if (gasRes.ok) {
-              var gData = await gasRes.json();
-              if (Array.isArray(gData) && gData.length > 0) {
-                fetchedSpots = gData;
-              }
-            }
-          } catch (e) {}
-        }
-
-        // 3순위: 구글 스프레드시트 CSV 최종 비상망
-        if (!fetchedSpots && typeof Papa !== 'undefined') {
-          try {
-            var sheetUrl = 'https://docs.google.com/spreadsheets/d/' + window.GOOGLE_SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + window.PRIMARY_SHEET_GID;
-            var csvRes = await fetch(sheetUrl);
-            var csvText = await csvRes.text();
-            var parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true });
-            if (parsed.data && parsed.data.length > 0) {
-              fetchedSpots = parsed.data.map(function(row, idx) {
-                var lat = parseFloat(row.lat || row['위도'] || 0);
-                var lng = parseFloat(row.lng || row['경도'] || 0);
-                var name = (row.name || row.spot_main || row['산이름'] || row['박지명'] || '').trim();
-                var sub = (row.spot_sub || row['세부포인트'] || '').trim();
-                var entry = (row.trailhead_addr || row.entryPoint || row['들머리주소'] || '').trim();
-                var autoDetect = detectRegionAndCity(lat, lng, name, entry);
-                return {
-                  id: String(row.id || (idx + 1)).trim(),
-                  name: name,
-                  spot_main: name,
-                  spot_sub: sub,
-                  fullName: sub ? (name + ' (' + sub + ')') : name,
-                  lat: lat,
-                  lng: lng,
-                  elevation: row.elevation || row['고도'] || '450m',
-                  trailhead_name: row.trailhead_name || row['들머리명칭'] || '',
-                  trailhead_addr: entry,
-                  entryPoint: entry,
-                  desc_summary: row.desc_summary || row.desc || row['설명'] || '',
-                  desc: row.desc || row.desc_summary || '',
-                  youtubeUrls: (row.youtubeUrls || row['유튜브'] || '').split(/[\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean),
-                  blogUrls: (row.blogUrls || row['블로그'] || '').split(/[\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean),
-                  authorSnsUrl: row.authorSnsUrl || row['인스타'] || '',
-                  courseType: row.courseType || row['코스유형'] || '일반',
-                  terrain: (row.terrain || row['지형'] || '데크').split(/[,]+/).map(function(t){ return t.trim(); }),
-                  difficulty: row.difficulty || row['난이도'] || '3',
-                  distance: row.distance || row['거리'] || '',
-                  region: autoDetect.region,
-                  cityName: autoDetect.cityName,
-                  searchCount: parseInt(row.searchCount || 0, 10),
-                  sheetIndex: idx
-                };
-              });
-            }
-          } catch (e) {}
-        }
-
-        if (fetchedSpots && Array.isArray(fetchedSpots) && fetchedSpots.length > 0) {
-          spots = fetchedSpots.filter(function(s) { 
-            return s.lat && s.lng && !BLOCKED_SPOT_IDS.has(String(s.id).trim()); 
-          });
-          localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
-          updateNewSpotFlags(spots);
-          renderSubChips();
-          renderSpots();
-          checkUrlParamSpotFocus();
-          showToast('전국 ' + spots.length + '개 박지 데이터를 불러왔습니다.');
-        } else {
-          showToast('박지 데이터를 불러오지 못했습니다. 네트워크를 확인해주세요.');
-        }
       }
 
       document.addEventListener('DOMContentLoaded', () => {
@@ -2483,40 +2123,22 @@ function updateSmartResetButtons() {
       function smoothCenterMapOnSpot(lat, lng) {
         if (!map) return;
         const isMobile = window.innerWidth <= 768;
-
-        if (typeof map.relayout === 'function') {
-          map.relayout();
-        }
-
         if (map.getLevel() > 7) map.setLevel(7, { animate: false }); 
         
-        const executeCentering = () => {
-          if (!map) return;
-          const proj = map.getProjection();
-          const rawLatLng = new kakao.maps.LatLng(lat, lng);
-          
-          if (proj) {
-            const centerPoint = proj.pointFromCoords(rawLatLng);
-            if (centerPoint) {
-              const offsetX = isMobile ? 0 : -Math.round(window.innerWidth * 0.10);
-              const offsetY = isMobile ? Math.round(window.innerHeight * 0.22) : 0;
-              const adjustedPoint = new kakao.maps.Point(centerPoint.x + offsetX, centerPoint.y + offsetY);
-              map.panTo(proj.coordsFromPoint(adjustedPoint));
-            } else { map.panTo(rawLatLng); }
+        const proj = map.getProjection();
+        const rawLatLng = new kakao.maps.LatLng(lat, lng);
+        
+        if (proj) {
+          const centerPoint = proj.pointFromCoords(rawLatLng);
+          if (centerPoint) {
+            const offsetX = isMobile ? 0 : -Math.round(window.innerWidth * 0.10);
+            const offsetY = isMobile ? Math.round(window.innerHeight * 0.22) : 0;
+            const adjustedPoint = new kakao.maps.Point(centerPoint.x + offsetX, centerPoint.y + offsetY);
+            map.panTo(proj.coordsFromPoint(adjustedPoint));
           } else { map.panTo(rawLatLng); }
+        } else { map.panTo(rawLatLng); }
 
-          debouncedUpdateLODLabels();
-        };
-
-        executeCentering();
-
-        // ⚡ 저사양 디바이스 뷰포트 재계산 레이턴시 대응 (2단계 안전 보정)
-        setTimeout(() => {
-          if (map && typeof map.relayout === 'function') {
-            map.relayout();
-            executeCentering();
-          }
-        }, 60);
+        debouncedUpdateLODLabels();
       }
 
       // ⚡ [고성능 디바운스 엔진]: 지도 이동 완료 후 120ms 동안 추가 조작이 없을 때만 1회 정밀 연산
@@ -3241,12 +2863,11 @@ function updateSmartResetButtons() {
         else if (!e.target.value.trim()) showTopRankings(mode);
       }
 
-  function renderSpots() {
+      function renderSpots() {
         const currentlyOpenRegions = new Set();
         document.querySelectorAll('.region-group').forEach(group => {
           const container = group.querySelector('.region-items-container');
-          const titleSpan = group.querySelector('.region-group-title span:first-child');
-          const titleText = (titleSpan && titleSpan.innerText) ? titleSpan.innerText.trim() : '';
+          const titleText = group.querySelector('.region-group-title span:first-child')?.innerText?.trim();
           if (container && container.style.display !== 'none' && titleText) {
             currentlyOpenRegions.add(titleText);
           }
@@ -3280,31 +2901,24 @@ function updateSmartResetButtons() {
           });
         }
 
-       const targetOrder = ["서울/인천", "경기", "강원", "충청", "전라", "경상", "제주"];
-        const grouped = {};
-        targetOrder.forEach(function(r) { grouped[r] = []; });
+        const targetOrder = ["서울/인천", "경기", "강원", "충청", "전라", "경상", "제주"];
+        const grouped = Object.fromEntries(targetOrder.map(r => [r, []]));
 
-        displaySpots.forEach(function(spot) {
+        displaySpots.forEach(spot => {
           const lat = parseFloat(spot.lat), lng = parseFloat(spot.lng);
           if (isNaN(lat) || isNaN(lng)) return;
           const sId = String(spot.id).trim(), latlng = new kakao.maps.LatLng(lat, lng);
 
           if (!spotNativeMarkerMap.has(sId) && map) {
             const marker = new kakao.maps.Marker({
-              map: map,
               position: latlng, 
               image: createPureSvgMarkerImage(spot.difficulty), 
               clickable: true, 
               zIndex: 9999
             });
-            kakao.maps.event.addListener(marker, 'click', function() { focusSpotOnMap(spot); });
+            kakao.maps.event.addListener(marker, 'click', () => focusSpotOnMap(spot));
             marker.spotData = spot;
             spotNativeMarkerMap.set(sId, marker);
-          } else {
-            const existMarker = spotNativeMarkerMap.get(sId);
-            if (existMarker && !existMarker.getMap()) {
-              existMarker.setMap(map);
-            }
           }
 
           const isFav = userBookmarks.has(sId);
@@ -3322,11 +2936,11 @@ function updateSmartResetButtons() {
           const row3Elev = spot.elevation ? `${String(spot.elevation).replace(/m$/i,'')}m` : '';
           const diffClass = getSpotDiffColorClass(spot.difficulty);
 
-          const labelDiv = document.createElement('div');
+         const labelDiv = document.createElement('div');
           labelDiv.className = 'lod-marker-container';
           labelDiv.style.pointerEvents = 'auto';
           labelDiv.style.cursor = 'pointer';
-          labelDiv.onclick = function(e) {
+          labelDiv.onclick = (e) => {
             e.stopPropagation();
             focusSpotOnMap(spot);
           };
@@ -3357,7 +2971,7 @@ function updateSmartResetButtons() {
         const spotListEl = document.getElementById('spotList');
         spotListEl.innerHTML = '';
 
-        displaySpots.forEach(function(spot) {
+        displaySpots.forEach(spot => {
           const sId = String(spot.id).trim(), marker = spotNativeMarkerMap.get(sId), labelOverlay = spotLabelOverlayMap.get(sId);
           let match = true;
           const diffNum = parseInt(spot.difficulty, 10) || 3;
@@ -3383,25 +2997,16 @@ function updateSmartResetButtons() {
             if (currentHudFilterTerrain === '동굴') {
               if (!tList.includes('동굴') && !combinedDesc.includes('동굴') && !combinedDesc.includes('굴')) match = false;
             } else {
-              if (!tList.some(function(t) { return t.includes(currentHudFilterTerrain); })) match = false;
+              if (!tList.some(t => t.includes(currentHudFilterTerrain))) match = false;
             }
           }
 
-          let regKey = (spot.region || '').trim();
-          if (regKey === '서울' || regKey === '인천' || regKey === '서울인천' || regKey === '서울/인천') {
-            regKey = '서울/인천';
-          }
-          if (!grouped[regKey]) {
-            regKey = '경기';
-          }
+          const regKey = (spot.region === '서울인천' || spot.region === '서울/인천') ? '서울/인천' : spot.region;
 
           if (currentMasterTab === 'REGION') { 
-            if (currentRegionFilter !== 'ALL') {
-              const fKey = currentRegionFilter === '서울인천' ? '서울/인천' : currentRegionFilter;
-              if (regKey !== fKey) match = false;
-            }
+            if (currentRegionFilter !== 'ALL' && regKey !== (currentRegionFilter === '서울인천' ? '서울/인천' : currentRegionFilter)) match = false; 
           } else if (currentMasterTab === 'TERRAIN') { 
-            if (currentTerrainFilter !== 'ALL' && !(spot.terrain || []).some(function(t) { return t.includes(currentTerrainFilter); })) match = false; 
+            if (currentTerrainFilter !== 'ALL' && !(spot.terrain || []).some(t => t.includes(currentTerrainFilter))) match = false; 
           } else if (currentMasterTab === 'COURSE') {
             if (currentCourseFilter === 'SHORTEST' && spot.courseType !== '최단') match = false;
             else if (currentCourseFilter === 'TRAVERSE' && spot.courseType !== '종주') match = false;
@@ -3413,10 +3018,9 @@ function updateSmartResetButtons() {
             else if (currentMyFilter === 'VISITED' && !userVisited.has(sId)) match = false;
           }
 
-          if (match) {
-            if (marker && !marker.getMap()) marker.setMap(map);
-            if (marker) activeMarkers.push(marker);
-            grouped[regKey].push(spot);
+         if (match) {
+            activeMarkers.push(marker);
+            if (grouped[regKey]) grouped[regKey].push(spot);
             visibleCount++;
           } else {
             if (marker) marker.setMap(null);
@@ -3424,12 +3028,7 @@ function updateSmartResetButtons() {
           }
         });
 
-        if (globalClusterer) {
-          globalClusterer.clear();
-          if (activeMarkers.length > 0) {
-            globalClusterer.addMarkers(activeMarkers);
-          }
-        }
+        if (globalClusterer && activeMarkers.length > 0) globalClusterer.addMarkers(activeMarkers);
         updateLODLabels();
         
         const spotCountEl = document.getElementById('spotCount');
@@ -3484,7 +3083,7 @@ function updateSmartResetButtons() {
         updateSmartResetButtons();
       }
 
-function createSpotCardElement(spot) {
+      function createSpotCardElement(spot) {
         const sId = String(spot.id).trim();
         const isFav = userBookmarks.has(sId), isDone = userVisited.has(sId);
         const diffClass = getSpotDiffColorClass(spot.difficulty);
@@ -3525,7 +3124,6 @@ function createSpotCardElement(spot) {
 
         const mainTerrainHtml = uniqueTerrains.length > 0 ? getTerrainTagHtml(uniqueTerrains[0]) : '';
         const subTerrainsHtml = uniqueTerrains.slice(1).map(t => getTerrainTagHtml(t)).join('');
-        const distanceStr = (spot.distance && String(spot.distance).trim()) ? `<span class="meta-tag tag-dist">${ICONS.DIST} ${escapeHtml(String(spot.distance).trim())}</span>` : '';
 
         const li = document.createElement('div');
         li.className = 'spot-item'; 
@@ -3554,7 +3152,7 @@ function createSpotCardElement(spot) {
           <div style="display:flex; align-items:center; gap:3px; flex-wrap:wrap; width:100%;">
             ${subTerrainsHtml}
             <span class="meta-tag tag-diff">난이도 ${'★'.repeat(Math.min(5, Math.max(1, parseInt(spot.difficulty, 10) || 3)))}</span>
-            ${distanceStr}
+            ${spot.distance?.trim() ? `<span class="meta-tag tag-dist">${ICONS.DIST} ${escapeHtml(spot.distance.trim())}</span>` : ''}
           </div>
 
           <div class="spot-desc-multi" title="${escapeHtml(descText)}" style="display:flex; align-items:flex-start; gap:4px; margin-top:3px;">

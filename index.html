@@ -2853,7 +2853,6 @@
       ]
     };
 
-  // 🚀 [마스터 피드 인출 엔진]: 고유 ID 100% 보존, 중복 증발 원천 차단 & 최대 10개 히어로 피드 확장
    async function initDynamicHeroAndFeeds() {
       initHeroGestureEngine();
       
@@ -2862,84 +2861,80 @@
       var R2_FEEDS_URL = r2Domain + '/feeds.json';
       initSmartHeaderScrollEngine();
 
-      var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
+      var profile = safeGetJSON('user_profile', null);
 
-      // 🌟 별점 많은 순(1순위) > 최신 날짜순(2순위) 정렬
-      var sortFeedsByStars = function(feedList) {
-        return feedList.filter(function(f) { return f && f.isPublished !== false; }).sort(function(a, b) {
-          var sA = Number(starCounts[a.id] || a.likes || 0);
-          var sB = Number(starCounts[b.id] || b.likes || 0);
-          if (sB !== sA) return sB - sA;
-          return String(b.date || '').localeCompare(String(a.date || ''));
-        });
-      };
-
-      var rawSourceFeeds = [];
-
-      // ⚡ [1순위 0.03초]: Cloudflare R2 글로벌 CDN 직통 조회
+    // ⚡ [1순위 0.03초]: Cloudflare R2 글로벌 CDN 단일 진실 공급원(SSOT) 직통 조회
       try {
         var r2Res = await fetch(R2_FEEDS_URL + '?_t=' + Date.now(), { cache: 'no-store' });
         if (r2Res.ok) {
           var r2Feeds = await r2Res.json();
           if (Array.isArray(r2Feeds) && r2Feeds.length > 0) {
-            rawSourceFeeds = r2Feeds;
+            
+            // 🛡️ [고유 ID 기준 100% 중복 박멸 필터]: 쌍둥이 카드 1개로 완전 압축
+            var uniqueFeedMap = new Map();
+            r2Feeds.filter(Boolean).forEach(function(f) {
+              var uKey = String(f.id || '').trim();
+              if (!uKey || uKey.startsWith('feed_') || uKey.startsWith('pack_')) {
+                uKey = String(f.userId || '') + '_' + String(f.date || '').replace(/\D/g, '') + '_' + String(f.spot || '').trim();
+              }
+              if (!uniqueFeedMap.has(uKey)) {
+                uniqueFeedMap.set(uKey, f);
+              }
+            });
+
+            var cleanFeeds = Array.from(uniqueFeedMap.values());
+            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(cleanFeeds));
+            
+            if (cleanFeeds[0] && (cleanFeeds[0].photo || cleanFeeds[0].photo_url)) {
+              localStorage.setItem('okbm_hero_cover_url', cleanFeeds[0].photo || cleanFeeds[0].photo_url);
+            }
+            window.__allLoadedFeeds = cleanFeeds;
+            window.heroTopRecords = cleanFeeds;
+            window.currentHeroCardIndex = 0;
+            renderCurrentHeroCard();
+            return; // R2 인출 및 중복 제거 렌더링 완료 후 종료
           }
         }
       } catch (r2Err) {
-        console.warn('📡 [Index] R2 조회 대기, 백업망 전환:', r2Err.message);
+        console.warn('📡 [Index] R2 최초 조회 대기, 백업망으로 전환:', r2Err.message);
       }
 
-      // 📁 [2순위 폴백]: 구글 시트 백엔드 조회
-      if (rawSourceFeeds.length === 0) {
-        try {
-          var gasUrl = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
-          var res = await fetch(gasUrl + '?action=GET_COMMUNITY_FEEDS&_t=' + Date.now());
-          if (res.ok) {
-            var cloudFeeds = await res.json();
-            if (Array.isArray(cloudFeeds) && cloudFeeds.length > 0) {
-              rawSourceFeeds = cloudFeeds;
-            }
+      // 📁 [2순위: 구글 시트 백업 폴백 중복 정제]
+      try {
+        var gasUrl = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
+        var res = await fetch(gasUrl + '?action=GET_COMMUNITY_FEEDS&_t=' + Date.now());
+        if (res.ok) {
+          var cloudFeeds = await res.json();
+          if (Array.isArray(cloudFeeds) && cloudFeeds.length > 0) {
+            var sheetUniqueMap = new Map();
+            cloudFeeds.filter(Boolean).forEach(function(f) {
+              var sKey = String(f.id || (String(f.userId || '') + '_' + String(f.date || '') + '_' + String(f.spot || ''))).trim();
+              if (!sheetUniqueMap.has(sKey)) sheetUniqueMap.set(sKey, f);
+            });
+            var cleanSheetFeeds = Array.from(sheetUniqueMap.values());
+            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(cleanSheetFeeds));
+            window.__allLoadedFeeds = cleanSheetFeeds;
+            window.heroTopRecords = cleanSheetFeeds;
+            window.currentHeroCardIndex = 0;
+            renderCurrentHeroCard();
+            return;
           }
-        } catch (err) {}
-      }
-
-      // 📱 [3순위 로컬 백업]: 내 보관함의 공개 피드 병합 (내 최신 피드 즉각 반영)
-      var myLocalList = window.interactiveHistory || safeGetJSON('okbm_packing_history', []) || [];
-      var myPublished = myLocalList.filter(function(h) { return h && h.isPublished === true && !h.isDeleted; });
-
-      var combinedPool = myPublished.concat(rawSourceFeeds);
-
-      // 🛡️ [순수 고유 ID 기준 단일 진실 공급원 중복 제거 - 정상 피드 증발 원천 차단]
-      var uniqueFeedMap = new Map();
-      combinedPool.filter(Boolean).forEach(function(f) {
-        var uKey = String(f.id || '').trim();
-        if (!uKey) uKey = String(f.date || '') + '_' + String(f.spot || '');
-        if (!uniqueFeedMap.has(uKey)) {
-          uniqueFeedMap.set(uKey, f);
         }
-      });
+      } catch (err) {}
 
-      var cleanFeeds = sortFeedsByStars(Array.from(uniqueFeedMap.values()));
-
-      if (cleanFeeds.length === 0) {
-        cleanFeeds = [Object.assign({}, FALLBACK_HERO_PRESET)];
+      // 🛡️ [3순위 오프라인 비상 폴백]: 네트워크 단절 시에만 기기 로컬 캐시 사용
+      var fallbackFeeds = safeGetJSON('okbm_cached_community_feeds', []);
+      if (!Array.isArray(fallbackFeeds) || fallbackFeeds.length === 0) {
+        var presetCopy = Object.assign({}, FALLBACK_HERO_PRESET);
+        if (isUserLoggedIn() && profile && profile.nickname) {
+          presetCopy.author = profile.nickname;
+        }
+        fallbackFeeds = [presetCopy];
       }
-
-      localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(cleanFeeds));
-
-      if (cleanFeeds[0] && (cleanFeeds[0].photo || cleanFeeds[0].photo_url)) {
-        localStorage.setItem('okbm_hero_cover_url', cleanFeeds[0].photo || cleanFeeds[0].photo_url);
-      }
-
-      window.__allLoadedFeeds = cleanFeeds;
-      // 🌟 [최대 10개 확정 확장]: 최대 10개까지 시원하게 슬라이드 탐색 보장
-      window.heroTopRecords = cleanFeeds.slice(0, 10);
+      window.__allLoadedFeeds = fallbackFeeds;
+      window.heroTopRecords = fallbackFeeds;
       window.currentHeroCardIndex = 0;
-
       renderCurrentHeroCard();
-      if (typeof renderSecretSpotTrailerRail === 'function') {
-        renderSecretSpotTrailerRail();
-      }
     }
 
     function filterHeroCategory(catKey, btnEl) {
@@ -5051,10 +5046,7 @@ var adBannersHtml = `
                 };
               }).filter(function(s) { return s.name.trim() !== ''; });
 
-              // ⚡ [신규 유저 필수 패치] 전국지도(map.html)용 영구 로컬 캐시 즉각 동기화
-              localStorage.setItem('okbm_spots_cache', JSON.stringify(registeredSpots));
-
-     // ⚡ 박지 DB 수신 완료 즉시 숨은 박지 레일 자동 렌더링
+              // ⚡ 박지 DB 수신 완료 즉시 숨은 박지 레일 자동 렌더링
               if (typeof renderSecretSpotTrailerRail === 'function') {
                 renderSecretSpotTrailerRail();
               }
