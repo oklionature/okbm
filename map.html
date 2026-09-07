@@ -2972,8 +2972,9 @@ function updateSmartResetButtons() {
           if (isNaN(lat) || isNaN(lng)) return;
           const sId = String(spot.id).trim(), latlng = new kakao.maps.LatLng(lat, lng);
 
-          if (!spotNativeMarkerMap.has(sId) && map) {
+         if (!spotNativeMarkerMap.has(sId) && map) {
             const marker = new kakao.maps.Marker({
+              map: map,
               position: latlng, 
               image: createPureSvgMarkerImage(spot.difficulty), 
               clickable: true, 
@@ -2982,6 +2983,11 @@ function updateSmartResetButtons() {
             kakao.maps.event.addListener(marker, 'click', () => focusSpotOnMap(spot));
             marker.spotData = spot;
             spotNativeMarkerMap.set(sId, marker);
+          } else {
+            const existMarker = spotNativeMarkerMap.get(sId);
+            if (existMarker && !existMarker.getMap()) {
+              existMarker.setMap(map);
+            }
           }
 
           const isFav = userBookmarks.has(sId);
@@ -3081,7 +3087,8 @@ function updateSmartResetButtons() {
             else if (currentMyFilter === 'VISITED' && !userVisited.has(sId)) match = false;
           }
 
-         if (match) {
+        if (match) {
+            if (marker && !marker.getMap()) marker.setMap(map);
             activeMarkers.push(marker);
             if (grouped[regKey]) grouped[regKey].push(spot);
             visibleCount++;
@@ -3091,7 +3098,12 @@ function updateSmartResetButtons() {
           }
         });
 
-        if (globalClusterer && activeMarkers.length > 0) globalClusterer.addMarkers(activeMarkers);
+        if (globalClusterer) {
+          globalClusterer.clear();
+          if (activeMarkers.length > 0) {
+            globalClusterer.addMarkers(activeMarkers);
+          }
+        }
         updateLODLabels();
         
         const spotCountEl = document.getElementById('spotCount');
