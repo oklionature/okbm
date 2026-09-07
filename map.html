@@ -1665,6 +1665,13 @@
           } else {
             loadSpotsMasterEngine();
           }
+
+          // ⚡ [제9헌법 Server-Authoritative SSOT]: 스마트폰 묵은 피드 캐시 무효화 및 R2/시트 최신 피드 0.03초 강제 동기화
+          if (typeof window.fetchCommunityFeeds === 'function') {
+            window.fetchCommunityFeeds(true).then(function() {
+              if (currentActiveSpot) refreshCurrentSpotPopup();
+            });
+          }
         });
       }
 
@@ -2586,11 +2593,13 @@ function updateSmartResetButtons() {
               ${spot.droneStatus ? getDroneStatusBadge(spot.droneStatus) : ''}
             </div>
 
-            <div class="spot-live-weather-bar" style="margin: 2px 0 4px 0; display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+ <div class="spot-live-weather-bar" style="margin: 2px 0 4px 0; display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
               ${sunset ? `<span class="weather-chip" style="color:#f59e0b; font-weight:800; background:rgba(245,158,11,0.15); border:1.2px solid rgba(245,158,11,0.5);">${ICONS.SUNSET} 일몰 ${sunset}</span>` : ''}
               <div id="liveWeatherBox_${spot.id}" style="display:inline-flex; gap:4px;"><span class="weather-chip">${ICONS.TEMP} 기상 연동 완료</span></div>
               <div class="spot-coords-text" style="font-size:0.65rem; padding:1px 5px;">${ICONS.PIN} ${spot.lat}, ${spot.lng}</div>
             </div>
+
+            ${renderSpotFieldFeedsTrackHtml(spot)}
 
             <div class="summary-block-wrap" style="margin-top:2px;">
               <div class="summary-card summary-card-view">
@@ -2688,9 +2697,6 @@ function updateSmartResetButtons() {
                 <li><span style="color: #38bdf8; font-weight: 800;">•</span> 쓰레기 무단 투기 및 사유지 침입 금지 <span style="color: #38bdf8; font-weight: 800;">(소중한 박지 보존)</span></li>
               </ul>
             </div>
-
-       <!-- 🏕️ 캠퍼들의 실시간 100자 현장 팁 & 개척자 인스타 링크 섹션 -->
-            ${getFieldReviewsHtml(spot)}
           </div>`;
       }
 
@@ -2712,63 +2718,117 @@ function updateSmartResetButtons() {
         return html;
       }
 
-      // 🏕️ [박지별 실전 100자 필드 팁 & 개척자 인스타 연동 엔진]
-      function getFieldReviewsHtml(spot) {
+    // 🏕️ [박지 전용 순수 피드 트랙 렌더러 - 제9헌법 Server-Authoritative SSOT 정본 우선 매칭]
+      function renderSpotFieldFeedsTrackHtml(spot) {
         var cleanSpotName = (spot.spot_main || spot.name || '').trim().toLowerCase();
+        var starsMap = safeGetJSON('okbm_feed_stars_counts', {}) || {};
+        var communityFeeds = [];
+        if (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0) {
+          communityFeeds = communityFeeds.concat(window.__allLoadedFeeds);
+        }
+        var cachedFeeds = safeGetJSON('okbm_cached_community_feeds', []) || [];
+        if (Array.isArray(cachedFeeds) && cachedFeeds.length > 0) {
+          communityFeeds = communityFeeds.concat(cachedFeeds);
+        }
         var myHistory = safeGetJSON('okbm_packing_history', []) || [];
-        var communityFeeds = safeGetJSON('okbm_cached_community_feeds', []) || [];
-        var allFeeds = myHistory.concat(communityFeeds);
 
-        var matchedFeeds = allFeeds.filter(function(f) {
-          if (!f || !f.spot) return false;
+        // ⚡ [핵심 교정]: 옛날 로컬 기록보다 R2/시트 최신 정본 피드를 1순위(SSOT)로 탐색
+        var feedMap = new Map();
+        communityFeeds.concat(myHistory).forEach(function(f) {
+          if (!f || !f.spot) return;
           var fSpot = String(f.spot).trim().toLowerCase();
-          return fSpot.includes(cleanSpotName) || cleanSpotName.includes(fSpot);
+          if (fSpot.includes(cleanSpotName) || cleanSpotName.includes(fSpot)) {
+            var fId = String(f.id || '').replace(/^["']|["']$/g, '').trim();
+            if (fId) {
+              if (!feedMap.has(fId)) {
+                feedMap.set(fId, f);
+              } else {
+                var current = feedMap.get(fId);
+                if (!current.photo_url && f.photo_url) feedMap.set(fId, f);
+              }
+            }
+          }
         });
 
-        if (matchedFeeds.length === 0) {
-          return `
-            <div style="margin-top:8px; background:rgba(255,255,255,0.03); border:1.5px dashed rgba(56,189,248,0.3); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px;">
-              <div style="font-size:0.75rem; font-weight:800; color:#e2e8f0;">아직 등록된 실전 필드 팁이 없습니다</div>
-              <div style="font-size:0.65rem; color:#94a3b8; line-height:1.4;">
-                이 박지를 다녀오셨나요?<br>첫 번째 개척자로 실전 팁과 인스타를 알려보세요!
-              </div>
-              <button type="button" onclick="location.href='index.html?open=history&spot=' + encodeURIComponent('${escapeHtml(spot.spot_main || spot.name)}');" style="background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#fff; border-radius:6px; font-size:0.70rem; font-weight:900; padding:6px 12px; cursor:pointer; margin-top:2px;">
-                ✍️ 최초 개척 팁 & 인스타 남기기
-              </button>
-            </div>
-          `;
-        }
+        var matchedFeeds = Array.from(feedMap.values());
+        if (matchedFeeds.length === 0) return '';
 
-        var reviewsCardsHtml = matchedFeeds.slice(0, 3).map(function(f) {
-          var memo100 = (f.memo || f.oneLineMemo || '').slice(0, 100);
-          var authorNick = f.author || f.nick || localStorage.getItem('okbm_user_nick') || '개척 캠퍼';
-          var rawInsta = f.instagram || localStorage.getItem('okbm_user_instagram') || '';
-          var cleanInsta = String(rawInsta).replace(/[@\s]/g, '').trim();
+        var matchedFeeds = Array.from(feedMap.values());
+        if (matchedFeeds.length === 0) return '';
+
+        matchedFeeds.sort(function(a, b) {
+          var starA = Number(starsMap[String(a.id).trim()]) || Number(a.likes) || 0;
+          var starB = Number(starsMap[String(b.id).trim()]) || Number(b.likes) || 0;
+          if (starB !== starA) return starB - starA;
+          return String(b.date || '').localeCompare(String(a.date || ''));
+        });
+
+        window.__cachedMapSpotFeeds = window.__cachedMapSpotFeeds || {};
+        window.__cachedMapSpotFeeds[String(spot.id).trim()] = matchedFeeds;
+
+        var backpackSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:11px; height:11px; display:inline-block; vertical-align:-1.5px; flex-shrink:0;"><rect x="4" y="2" width="16" height="5" rx="2.5"/><path d="M8 2v5M16 2v5M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M12 7l-4 4M12 7l4 4M8 15h8v4H8z"/></svg>`;
+        var starSvg = `<svg viewBox="0 0 24 24" fill="currentColor" style="width:10px; height:10px; display:inline-block; vertical-align:-1px; flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+
+       var feedCardsHtml = matchedFeeds.slice(0, 6).map(function(f) {
+          var fId = escapeHtml(String(f.id));
+
+          // 🌐 [1순위: 시트/R2 photo_url 및 photos_json 절대 우선 인출]
+          var photos = [];
+          if (f.photos_json && typeof f.photos_json === 'string' && f.photos_json.trim().startsWith('[')) {
+            try {
+              var parsed = JSON.parse(f.photos_json);
+              if (Array.isArray(parsed) && parsed.length > 0) photos = parsed.filter(Boolean);
+            } catch(e) {}
+          }
+          if (photos.length === 0 && f.photo_url && String(f.photo_url).trim().length > 10) {
+            photos = [String(f.photo_url).trim()];
+          }
+          if (photos.length === 0 && Array.isArray(f.photos) && f.photos.length > 0) {
+            photos = f.photos.filter(Boolean);
+          }
+          if (photos.length === 0 && (f.photo || f.fieldPhoto)) {
+            photos = [f.photo || f.fieldPhoto];
+          }
+
+         var thumbUrl = '';
+          for (var pIdx = 0; pIdx < photos.length; pIdx++) {
+            var rawU = photos[pIdx];
+            if (typeof rawU === 'string') {
+              var cleanU = rawU.trim();
+              if (cleanU.indexOf('http') === 0 && cleanU.length > 15) {
+                thumbUrl = cleanU;
+                break;
+              }
+            }
+          }
+          if (!thumbUrl) {
+            thumbUrl = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';
+          }
+
+          var authorNick = f.author || f.nickname || f.nick || '개척 캠퍼';
+          var memo100 = (f.memo || f.oneLineMemo || '').trim();
           var weightStr = f.weightKg ? (f.weightKg + 'kg') : '';
-          var photoUrl = (Array.isArray(f.photos) && f.photos[0]) ? f.photos[0] : (f.photo || '');
+          var likesCount = Number(starsMap[String(f.id).trim()]) || Number(f.likes) || 0;
 
           return `
-            <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:8px 10px; display:flex; flex-direction:column; gap:5px;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div style="display:flex; align-items:center; gap:6px; min-width:0;">
-                  <span style="font-size:0.72rem; font-weight:900; color:#ffffff;">${escapeHtml(authorNick)}</span>
-                  ${cleanInsta ? `
-                    <a href="https://instagram.com/${cleanInsta}" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:2px; background:linear-gradient(135deg, rgba(225,48,108,0.2), rgba(245,96,64,0.2)); border:1px solid rgba(225,48,108,0.4); color:#fda4af; padding:1px 5px; border-radius:4px; font-size:0.56rem; font-weight:800; text-decoration:none;">
-                      <span>📸 @${escapeHtml(cleanInsta)}</span>
-                      <span style="font-size:0.50rem; opacity:0.8;">↗</span>
-                    </a>
-                  ` : ''}
+            <div onclick="openMapSpotFeedDetailModal('${fId}', '${escapeHtml(String(spot.id).trim())}')" style="flex:0 0 145px; width:145px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; flex-shrink:0; box-sizing:border-box;">
+              <div style="width:100%; aspect-ratio:3/4; position:relative; background:#000; overflow:hidden;">
+                <img src="${thumbUrl}" style="width:100%; height:100%; object-fit:cover; display:block;" loading="lazy" />
+                <div style="position:absolute; top:5px; left:5px; background:rgba(0,0,0,0.72); backdrop-filter:blur(4px); padding:2px 6px; border-radius:4px; font-size:0.56rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:85px;">
+                  ${escapeHtml(authorNick)}
                 </div>
-                ${weightStr ? `<span style="font-size:0.62rem; color:#34d399; font-weight:900; font-family:'Space Grotesk', sans-serif;">🎒 ${weightStr}</span>` : ''}
               </div>
-
-              <div style="display:flex; gap:8px; align-items:center;">
-                ${photoUrl ? `
-                  <div style="width:40px; height:40px; border-radius:6px; overflow:hidden; background:#000; flex-shrink:0; border:1px solid rgba(255,255,255,0.15);">
-                    <img src="${photoUrl}" style="width:100%; height:100%; object-fit:cover;" />
-                  </div>
-                ` : ''}
-                <div style="font-size:0.72rem; color:#cbd5e1; line-height:1.45; word-break:keep-all; flex:1;">
+              <div style="padding:6px 7px; display:flex; flex-direction:column; gap:3px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.58rem; color:#fde047; font-weight:800; font-family:'Space Grotesk', sans-serif; display:inline-flex; align-items:center; gap:2px;">
+                    ${starSvg} <span>${likesCount}</span>
+                  </span>
+                  ${weightStr ? `
+                    <span style="font-size:0.56rem; color:#cbd5e1; font-weight:800; font-family:'Space Grotesk',sans-serif; display:inline-flex; align-items:center; gap:2px;">
+                      ${backpackSvg} <span>${escapeHtml(weightStr)}</span>
+                    </span>` : ''}
+                </div>
+                <div style="font-size:0.65rem; color:#cbd5e1; line-height:1.35; height:2.7em; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; text-overflow:ellipsis; word-break:break-all;">
                   “${escapeHtml(memo100 || '추천 박지입니다.')}”
                 </div>
               </div>
@@ -2777,37 +2837,228 @@ function updateSmartResetButtons() {
         }).join('');
 
         return `
-          <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px;" onclick="event.stopPropagation();">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:0.74rem; font-weight:900; color:#38bdf8; display:flex; align-items:center; gap:4px;">
-                ${ICONS.VIEW_CARD} 다녀간 캠퍼들의 실전 팁 (${matchedFeeds.length}개)
-              </span>
-              <button type="button" onclick="location.href='index.html?open=history&spot=' + encodeURIComponent('${escapeHtml(spot.spot_main || spot.name)}');" style="background:none; border:none; color:#94a3b8; font-size:0.65rem; font-weight:800; cursor:pointer;">
-                + 내 팁 추가
-              </button>
+          <div style="margin:4px 0 2px 0; width:100%; display:flex; flex-direction:column; gap:4px;" onclick="event.stopPropagation();">
+            <div style="display:flex; overflow-x:auto; gap:6px; padding:2px 0; scrollbar-width:none; -webkit-overflow-scrolling:touch;">
+              ${feedCardsHtml}
             </div>
-            ${reviewsCardsHtml}
           </div>
         `;
       }
 
-      // 📱 [누락 복원] 모바일 바텀시트 터치 스와이프 제스처 핸들러
+    // 📱 [글래스모피즘 순수 피드 히어로 모달 - 피드 주소 1:1 직통 정밀 매칭 엔진]
+      window.openMapSpotFeedDetailModal = function(feedId, spotId) {
+        triggerHaptic(12);
+        var old = document.getElementById('mapSpotFeedDetailModal');
+        if (old) old.remove();
+
+        var targetFeedId = String(feedId || '').replace(/^["']|["']$/g, '').trim();
+        if (!targetFeedId) return;
+
+        // 🌐 [100% 직통 탐색]: 분산된 캐시 대신 전체 로드 피드 풀에서 고유 ID 단일 매칭
+        var feedPool = [];
+        if (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0) {
+          feedPool = feedPool.concat(window.__allLoadedFeeds);
+        }
+        var cachedFeeds = safeGetJSON('okbm_cached_community_feeds', []) || [];
+        if (Array.isArray(cachedFeeds) && cachedFeeds.length > 0) {
+          feedPool = feedPool.concat(cachedFeeds);
+        }
+        var myHistory = safeGetJSON('okbm_packing_history', []) || [];
+        if (Array.isArray(myHistory) && myHistory.length > 0) {
+          feedPool = feedPool.concat(myHistory);
+        }
+
+        var targetFeed = feedPool.find(function(f) {
+          if (!f || !f.id) return false;
+          var fId = String(f.id).replace(/^["']|["']$/g, '').trim();
+          return fId === targetFeedId;
+        });
+
+        if (!targetFeed) {
+          if (typeof showToast === 'function') showToast('피드 데이터를 불러오는 중입니다...', 'info');
+          return;
+        }
+
+        var cardId = escapeHtml(String(targetFeed.id));
+
+        // 🌐 [Cloudflare R2 정본 사진 1순위 인출 엔진 - 구글 시트 photo_url / photos_json 100% 흡수]
+        var photos = [];
+        if (targetFeed.photos_json && typeof targetFeed.photos_json === 'string' && targetFeed.photos_json.trim().startsWith('[')) {
+          try {
+            var parsed = JSON.parse(targetFeed.photos_json);
+            if (Array.isArray(parsed) && parsed.length > 0) photos = parsed.filter(Boolean);
+          } catch(e) {}
+        }
+        if (photos.length === 0 && targetFeed.photo_url && String(targetFeed.photo_url).trim().length > 10) {
+          photos = [String(targetFeed.photo_url).trim()];
+        }
+        if (photos.length === 0 && Array.isArray(targetFeed.photos) && targetFeed.photos.length > 0) {
+          photos = targetFeed.photos.filter(Boolean);
+        }
+        if (photos.length === 0 && (targetFeed.photo || targetFeed.fieldPhoto)) {
+          photos = [targetFeed.photo || targetFeed.fieldPhoto];
+        }
+
+       // 🌟 [R2 글로벌 CDN 링크 정규화 & 빈 주소/따옴표 노이즈 100% 원천 차단]
+        photos = photos.map(function(u) {
+          if (!u || typeof u !== 'string') return '';
+          var clean = u.replace(/^["'\[\]\s]+|["'\[\]\s]+$/g, '').trim();
+          if (clean.includes('drive.google.com')) {
+            var idMatch = clean.match(/[?&]id=([a-zA-Z0-9_-]+)/) || clean.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if (idMatch && idMatch[1]) return 'https://lh3.googleusercontent.com/d/' + idMatch[1] + '=w1200';
+          }
+          return clean;
+        }).filter(function(u) { return u.startsWith('http') && u.length > 15; });
+
+        if (photos.length === 0) {
+          photos = ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80'];
+        }
+
+        var authorNick = targetFeed.author || targetFeed.nickname || targetFeed.nick || '개척 캠퍼';
+        var tripDate = targetFeed.date || '';
+        var spotTitle = targetFeed.spot || '';
+        var weightStr = targetFeed.weightKg ? (targetFeed.weightKg + 'kg') : '';
+        var memoText = (targetFeed.memo || targetFeed.oneLineMemo || '').trim();
+        var rawInsta = targetFeed.instagram || '';
+        var cleanInsta = String(rawInsta).replace(/[@\s]/g, '').trim();
+        var recordUserId = String(targetFeed.userId || '').trim();
+
+        var starsMap = safeGetJSON('okbm_feed_stars_counts', {}) || {};
+        var userStarsMap = safeGetJSON('okbm_feed_stars_map', {}) || {};
+        var isStarred = Boolean(userStarsMap[cardId]);
+        var likesCount = Number(starsMap[cardId]) || Number(targetFeed.likes) || 0;
+
+        var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
+        var isSavedFeed = savedFeedsList.includes(cardId);
+
+        var followingList = safeGetJSON('okbm_following_users', []);
+        var profile = safeGetJSON('user_profile', null);
+        var myUserId = (profile && profile.id) ? String(profile.id).trim() : '';
+        var followKey = recordUserId || authorNick;
+        var isFollowing = followingList.includes(followKey);
+        var isSelf = (myUserId && recordUserId && myUserId === recordUserId);
+
+        var followBtnHtml = '';
+        if (!isSelf) {
+          followBtnHtml = isFollowing
+            ? '<button type="button" data-user-id="' + escapeHtml(recordUserId) + '" data-author="' + escapeHtml(authorNick) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(52,211,153,0.14); border:1px solid #34d399; color:#34d399; font-size:0.62rem; font-weight:900; padding:2px 7px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>관심루터</span></button>'
+            : '<button type="button" data-user-id="' + escapeHtml(recordUserId) + '" data-author="' + escapeHtml(authorNick) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#cbd5e1; font-size:0.62rem; font-weight:800; padding:2px 7px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ 관심</span></button>';
+        }
+
+        // 📱 [모바일 렌더링 붕괴 0% 방탄 이미지 트랙]: 3:4 규격 고정 및 CSS 이중 렌더러
+        var slidesHtml = photos.map(function(pUrl) {
+          return `
+            <div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex; align-items:center; justify-content:center;">
+              <img src="${pUrl}" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
+            </div>
+          `;
+        }).join('');
+
+        var dotsHtml = '';
+        if (photos.length > 1) {
+          var dotsItems = photos.map(function(_, i) {
+            var dotW = (i === 0) ? '12px' : '4px';
+            var dotBg = (i === 0) ? '#ffffff' : 'rgba(255,255,255,0.28)';
+            return `<div class="feed-hero-dot" style="width:${dotW}; height:3px; border-radius:2px; background:${dotBg}; transition:all 0.2s ease;"></div>`;
+          }).join('');
+          dotsHtml = `<div id="mapHeroDotsWrap" style="display:flex; justify-content:center; align-items:center; gap:4px; height:10px;">${dotsItems}</div>`;
+        }
+
+        var modalEl = document.createElement('div');
+        modalEl.id = 'mapSpotFeedDetailModal';
+        modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; background:rgba(0,0,0,0.65); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); z-index:1000050; display:flex; justify-content:center; align-items:center; padding:12px; box-sizing:border-box;';
+        modalEl.onclick = function(e) { if (e.target === modalEl) modalEl.remove(); };
+
+        modalEl.innerHTML = `
+          <div style="width:min(94vw, 440px); max-height:92dvh; background:#07090e; border:1px solid rgba(255,255,255,0.12); border-radius:18px; box-shadow:0 30px 80px rgba(0,0,0,0.95); display:flex; flex-direction:column; overflow:hidden; box-sizing:border-box;" onclick="event.stopPropagation();">
+            
+            <!-- 상단 바: 작성자 · 이웃추가 · 인스타 ── 날짜 및 닫기 -->
+            <div style="padding:11px 14px; background:rgba(0,0,0,0.5); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+              <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+                <button type="button" data-author="${escapeHtml(authorNick)}" data-user-id="${escapeHtml(recordUserId)}" onclick="document.getElementById('mapSpotFeedDetailModal').remove(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId);" style="background:none; border:none; padding:0; font-size:0.88rem; color:#ffffff; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; text-align:left;">
+                  ${escapeHtml(authorNick)}
+                </button>
+                ${followBtnHtml}
+                ${cleanInsta ? `
+                  <a href="https://instagram.com/${cleanInsta}" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:3px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1; padding:1.5px 6px; border-radius:6px; font-size:0.56rem; font-weight:700; text-decoration:none;">
+                    <span>@${escapeHtml(cleanInsta)}</span>
+                  </a>
+                ` : ''}
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:0.65rem; color:#64748b; font-family:'JetBrains Mono', monospace;">${escapeHtml(tripDate)}</span>
+                <button type="button" onclick="document.getElementById('mapSpotFeedDetailModal').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 2px; line-height:1;">✕</button>
+              </div>
+            </div>
+
+            <!-- 중앙: 시원한 정본 3:4 고화질 사진 슬라이더 -->
+            <div style="width:100%; aspect-ratio:3/4; position:relative; background:#000; overflow:hidden; flex-shrink:0;">
+              <div id="mapHeroPhotoTrack" onscroll="window.updateMapHeroDots(this);" style="display:flex; width:100%; height:100%; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none;">
+                ${slidesHtml}
+              </div>
+            </div>
+
+            <!-- 하단 인터랙션바: [별/공유/북마크] ── [도트] ── [배낭무게] -->
+            <div style="padding:10px 14px 14px 14px; background:#07090e; display:flex; flex-direction:column; gap:8px; overflow-y:auto;">
+              <div style="display:flex; justify-content:space-between; align-items:center; position:relative; min-height:28px;">
+                <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
+                  <button type="button" onclick="window.toggleFeedStar('${cardId}', event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                    <svg id="feedStarIcon_${cardId}" viewBox="0 0 24 24" style="width:18px; height:18px; filter:${isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none'};" fill="${isStarred ? '#fde047' : 'none'}" stroke="${isStarred ? '#fde047' : '#ffffff'}" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <span id="feedStarCountText_${cardId}" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:'Space Grotesk', sans-serif;">${likesCount}</span>
+                  </button>
+                <button type="button" data-feed-id="${cardId}" data-spot="${escapeHtml(spotTitle)}" data-memo="${escapeHtml(memoText)}" onclick="if(typeof window.shareCurrentFeed==='function'){ window.shareCurrentFeed(this.dataset.feedId, this.dataset.spot, this.dataset.memo); } else { triggerHaptic(10); if(navigator.clipboard){ navigator.clipboard.writeText(location.href); if(typeof showToast==='function') showToast('🔗 피드 링크가 복사되었습니다!','success'); } }" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">
+                    <svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  </button>
+                  <button type="button" data-feed-id="${cardId}" onclick="window.toggleSaveFeed(this.dataset.feedId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:${isSavedFeed ? '#c084fc' : '#cbd5e1'};" title="관심피드 저장">
+                    <svg viewBox="0 0 24 24" style="width:16px; height:16px; filter:${isSavedFeed ? 'drop-shadow(0 0 6px rgba(192,132,252,0.8))' : 'none'};" fill="${isSavedFeed ? '#c084fc' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+                  </button>
+                </div>
+
+                <div style="position:absolute; left:50%; transform:translateX(-50%); pointer-events:none;">
+                  ${dotsHtml}
+                </div>
+
+                <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                  ${weightStr ? `
+                    <span style="font-size:0.68rem; color:#cbd5e1; font-weight:800; font-family:'Space Grotesk',sans-serif; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); padding:2px 6px; border-radius:4px; display:inline-flex; align-items:center; gap:3px;">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px; display:inline-block; vertical-align:-1.5px; flex-shrink:0;"><rect x="4" y="2" width="16" height="5" rx="2.5"/><path d="M8 2v5M16 2v5M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M12 7l-4 4M12 7l4 4M8 15h8v4H8z"/></svg>
+                      <span>${escapeHtml(weightStr)}</span>
+                    </span>` : ''}
+                </div>
+              </div>
+
+              <!-- 캠퍼의 120자 실제 일지 메모장 본문 -->
+              <div style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.07); border-radius:8px; padding:10px 12px; font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.80rem; font-weight:450; color:#e2e8f0; line-height:1.6; word-break:break-all; max-height:130px; overflow-y:auto;">
+                ${memoText ? escapeHtml(memoText) : '<span style="color:#64748b;">등록된 일지 메모가 없습니다.</span>'}
+              </div>
+            </div>
+
+          </div>
+        `;
+
+        document.body.appendChild(modalEl);
+      };
+      window.updateMapHeroDots = function(container) {
+        var wrap = document.getElementById('mapHeroDotsWrap');
+        if (!wrap || !container) return;
+        var idx = Math.round(container.scrollLeft / container.offsetWidth);
+        var dots = wrap.children;
+        for (var i = 0; i < dots.length; i++) {
+          if (i === idx) {
+            dots[i].style.width = '12px';
+            dots[i].style.background = '#ffffff';
+          } else {
+            dots[i].style.width = '4px';
+            dots[i].style.background = 'rgba(255,255,255,0.28)';
+          }
+        }
+      };
+
+      // 📱 [모바일 바텀시트 제스처]: 하단 슬라이드 닫기 제스처를 무효화하여 실수로 사라지는 현상 원천 차단 (닫기 버튼 전담)
       function initBottomSheetSwipeGesture() {
         var sheet = document.getElementById('mobileBottomSheet');
         if (!sheet) return;
-        var startY = 0, currentY = 0;
-        sheet.addEventListener('touchstart', function(e) {
-          if (e.touches && e.touches.length === 1) startY = e.touches[0].clientY;
-        }, { passive: true });
-        sheet.addEventListener('touchmove', function(e) {
-          if (e.touches && e.touches.length === 1) currentY = e.touches[0].clientY;
-        }, { passive: true });
-        sheet.addEventListener('touchend', function() {
-          if (currentY && startY && (currentY - startY > 70)) {
-            closeMobileBottomSheet();
-          }
-          startY = 0; currentY = 0;
-        }, { passive: true });
+        // 정보창이 스크롤 중 제스처 오작동으로 사라지지 않도록 슬라이드 닫기 이벤트 제거
       }
 
       function incrementSpotCount(spotId) {
@@ -2835,24 +3086,55 @@ function updateSmartResetButtons() {
         const inputEl = document.getElementById('pcSearchInput');
         const dropdown = document.getElementById('pcSearchDropdown');
         handleSearchInputChange(mode);
-        if (inputEl.value.trim()) return;
+        if (inputEl && inputEl.value.trim()) return;
+
         dropdown.innerHTML = `
-          <div class="dropdown-header">
-            <span>인기 박지 TOP 5</span>
-            <button type="button" class="btn-close-dropdown" onclick="document.getElementById('pcSearchDropdown').style.display='none';">✕ 닫기</button>
+          <div style="padding:6px 12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-hairline); background:var(--bg-card);">
+            <div style="display:flex; align-items:center; gap:4px;">
+              <span style="color:#f59e0b; font-size:0.70rem;">★</span>
+              <span style="font-size:0.72rem; font-weight:800; color:var(--text-primary);">인기 박지 TOP 5</span>
+            </div>
+            <button type="button" onclick="document.getElementById('pcSearchDropdown').style.display='none';" style="background:none; border:none; color:var(--text-muted); font-size:0.68rem; font-weight:700; cursor:pointer; padding:2px 4px;">✕ 닫기</button>
           </div>`;
         dropdown.style.display = 'block';
+
         const sorted = [...spots].sort((a, b) => getSpotViews(b) - getSpotViews(a)).slice(0, 5);
         sorted.forEach((item, idx) => {
-          const rankClass = idx === 0 ? 'rank-1' : (idx === 1 ? 'rank-2' : (idx === 2 ? 'rank-3' : 'rank-etc'));
+          const rankColors = [
+            'background:linear-gradient(135deg, #f59e0b, #d97706); color:#fff;',
+            'background:linear-gradient(135deg, #94a3b8, #64748b); color:#fff;',
+            'background:linear-gradient(135deg, #b45309, #78350f); color:#fff;',
+            'background:rgba(255,255,255,0.08); color:var(--text-secondary);',
+            'background:rgba(255,255,255,0.08); color:var(--text-secondary);'
+          ];
+          const rankBadgeStyle = rankColors[idx] || rankColors[3];
+
           const li = document.createElement('li');
-          li.className = 'dropdown-item';
+          li.style.cssText = 'padding:6px 12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-hairline); cursor:pointer; min-height:36px; box-sizing:border-box;';
+          li.onmouseover = () => { li.style.background = 'var(--bg-card-hover)'; };
+          li.onmouseout = () => { li.style.background = 'transparent'; };
+
           li.innerHTML = `
-            <div class="top-rank-row">
-              <div class="top-rank-left"><span class="rank-badge ${rankClass}">${idx + 1}</span><span class="top-spot-title">${escapeHtml(item.spot_main || item.name)}</span><span class="top-spot-city">${escapeHtml(item.cityName || item.region)}</span></div>
-              <div class="top-spot-views">👁️ ${getSpotViews(item)}회</div>
+            <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">
+              <div style="width:16px; height:16px; border-radius:4px; font-size:0.62rem; font-weight:900; display:flex; align-items:center; justify-content:center; flex-shrink:0; ${rankBadgeStyle}">
+                ${idx + 1}
+              </div>
+              <span style="font-size:0.78rem; font-weight:800; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                ${escapeHtml(item.spot_main || item.name)}
+              </span>
+              <span style="font-size:0.62rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                ${escapeHtml(item.cityName || item.region || '')}
+              </span>
+            </div>
+            <div style="font-size:0.60rem; color:#38bdf8; font-weight:800; font-family:'Space Grotesk', sans-serif; background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.25); padding:1px 6px; border-radius:8px; flex-shrink:0; margin-left:6px;">
+              ${getSpotViews(item)}회
             </div>`;
-          li.addEventListener('click', () => { triggerHaptic(10); dropdown.style.display = 'none'; focusSpotOnMap(item); });
+
+          li.addEventListener('click', () => {
+            triggerHaptic(10);
+            dropdown.style.display = 'none';
+            focusSpotOnMap(item);
+          });
           dropdown.appendChild(li);
         });
       }
@@ -3650,25 +3932,52 @@ function updateSmartResetButtons() {
               });
             }
 
-            dropdown.innerHTML = `<div class="dropdown-header"><span>검색 결과 (${results.length})</span><button type="button" class="btn-close-dropdown" onclick="document.getElementById('pcSearchDropdown').style.display='none';">✕ 닫기</button></div>`;
-            if (results.length === 0) { dropdown.innerHTML += '<li class="dropdown-item" style="color:var(--text-muted);">검색 결과가 없습니다.</li>'; return; }
+           dropdown.innerHTML = `
+              <div style="padding:6px 12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-hairline); background:var(--bg-card);">
+                <span style="font-size:0.72rem; font-weight:800; color:var(--text-primary);">검색 결과 (${results.length}건)</span>
+                <button type="button" onclick="document.getElementById('pcSearchDropdown').style.display='none';" style="background:none; border:none; color:var(--text-muted); font-size:0.68rem; font-weight:700; cursor:pointer; padding:2px 4px;">✕ 닫기</button>
+              </div>`;
+
+            if (results.length === 0) {
+              dropdown.innerHTML += '<li style="padding:14px; text-align:center; color:var(--text-muted); font-size:0.75rem;">일치하는 검색 결과가 없습니다.</li>';
+              return;
+            }
 
             results.forEach(res => {
               const li = document.createElement('li');
-              li.className = 'dropdown-item';
+              li.style.cssText = 'padding:8px 12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-hairline); cursor:pointer; min-height:40px; box-sizing:border-box; transition:background 0.15s ease;';
+              li.onmouseover = () => { li.style.background = 'var(--bg-card-hover)'; };
+              li.onmouseout = () => { li.style.background = 'transparent'; };
+
+              const badgeHtml = res.isInternal 
+                ? '<span style="font-size:0.56rem; font-weight:900; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">박지</span>'
+                : '<span style="font-size:0.56rem; font-weight:700; background:rgba(255,255,255,0.06); color:#94a3b8; border:1px solid rgba(255,255,255,0.12); padding:1px 5px; border-radius:4px; flex-shrink:0;">장소</span>';
+
               li.innerHTML = `
-                <div style="flex:1; padding-right:8px;">
-                  <div style="font-weight:700; color:${res.isInternal ? 'var(--accent-blue)' : 'var(--text-primary)'}; font-size:0.84rem;">${escapeHtml(res.title)}</div>
-                  <div style="font-size:0.72rem; color:var(--text-muted);">${escapeHtml(res.sub)}</div>
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
+                  <div style="display:flex; align-items:center; gap:5px;">
+                    ${badgeHtml}
+                    <span style="font-size:0.80rem; font-weight:800; color:${res.isInternal ? '#ffffff' : 'var(--text-primary)'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                      ${escapeHtml(res.title.replace(/^\[등록박지\]\s*/, ''))}
+                    </span>
+                  </div>
+                  <span style="font-size:0.63rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                    ${escapeHtml(res.sub)}
+                  </span>
                 </div>
-                ${(isAdminMode && !res.isInternal) ? `<button class="btn-quick-add" style="display:inline-block;" onclick="event.stopPropagation(); quickAddFromSearch('${escapeHtml(res.title)}', ${res.lat}, ${res.lng}, '${escapeHtml(res.sub)}')">➕ 등록</button>` : ''}`;
+                ${(isAdminMode && !res.isInternal) ? `<button type="button" class="btn-quick-add" style="display:inline-block; padding:3px 7px; font-size:0.65rem;" onclick="event.stopPropagation(); quickAddFromSearch('${escapeHtml(res.title)}', ${res.lat}, ${res.lng}, '${escapeHtml(res.sub)}')">➕ 등록</button>` : ''}`;
 
               li.addEventListener('click', () => {
                 triggerHaptic(10);
                 dropdown.style.display = 'none';
-                if (window.innerWidth <= 768) { isSidebarCollapsed = true; document.getElementById('sidebar').classList.add('collapsed'); updateDockSidebarText(false); }
-                if (res.isInternal && res.spotObj) { focusSpotOnMap(res.spotObj); }
-                else {
+                if (window.innerWidth <= 768) { 
+                  isSidebarCollapsed = true; 
+                  document.getElementById('sidebar').classList.add('collapsed'); 
+                  updateDockSidebarText(false); 
+                }
+                if (res.isInternal && res.spotObj) { 
+                  focusSpotOnMap(res.spotObj); 
+                } else {
                   smoothCenterMapOnSpot(res.lat, res.lng);
                   if (tempSearchMarker) tempSearchMarker.setMap(null);
                   tempSearchMarker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(res.lat, res.lng), map: map });
@@ -3753,6 +4062,8 @@ function updateSmartResetButtons() {
       }
     </script>
  <!-- ⚡ 지도 최적화: 필수 동기화 엔진만 유지하고 불필요한 3대 스크립트 제거 완료 -->
+   <!-- ⚡ 지도 최적화: 필수 동기화 엔진만 유지하고 불필요한 3대 스크립트 제거 완료 -->
+    <script src="romantic-history.js?v=2.5.0"></script>
     <script src="romantic-sync.js?v=2.5.0"></script>
   </body>
 </html>

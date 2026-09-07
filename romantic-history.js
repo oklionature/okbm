@@ -1062,25 +1062,102 @@ window.safeSetStorage = function(key, value) {
     })();
   };
 
-  // 🔗 [2. 스마트 멀티 공유하기 엔진 (카톡 / 인스타 / Web Share / 클립보드)]
+// 🔗 [2. 스마트 멀티 공유 모달 엔진 - 카카오톡 / 인스타그램 / 링크 복사 / 기타 앱 공유 선택지 제공]
   window.shareCurrentFeed = function(recordId, spotName, memoText) {
     triggerHaptic(10);
-    var shareUrl = location.origin + location.pathname + '?feed=' + encodeURIComponent(recordId);
+    var cleanId = String(recordId || '').trim();
+    var shareUrl = location.origin + location.pathname + '?feed=' + encodeURIComponent(cleanId);
     var shareTitle = '🏕️ 낭만루트 - ' + (spotName || '자연 속 힐링 기록');
-    var shareDesc = memoText || '배낭을 메고 자연으로 떠난 낭만 기록을 확인해보세요.';
+    var shareDesc = (memoText && memoText.trim().length > 0) ? memoText.trim().slice(0, 100) : '배낭을 메고 자연으로 떠난 낭만 기록을 확인해보세요.';
 
+    var old = document.getElementById('feedCustomShareModal');
+    if (old) old.remove();
+
+    var modal = document.createElement('div');
+    modal.id = 'feedCustomShareModal';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:1000080; display:flex; justify-content:center; align-items:flex-end; box-sizing:border-box;';
+    modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+    modal.innerHTML = `
+      <div style="width:100%; max-width:440px; background:#0c1017; border-top:1.5px solid rgba(56,189,248,0.35); border-radius:20px 20px 0 0; padding:18px 16px calc(18px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 -15px 40px rgba(0,0,0,0.85);" onclick="event.stopPropagation();">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
+          <div style="display:flex; flex-direction:column;">
+            <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">피드 공유하기</span>
+            <span style="font-size:0.64rem; color:#94a3b8; margin-top:2px;">[${escapeHtml(spotName || '자연 속 힐링')} - ${escapeHtml(cleanId)}]</span>
+          </div>
+          <button type="button" onclick="document.getElementById('feedCustomShareModal').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; padding:6px 0;">
+          <!-- 1. 카카오톡 -->
+          <button type="button" onclick="window.sendFeedToKakaoTalk('${escapeHtml(shareTitle)}', '${escapeHtml(shareDesc)}', '${shareUrl}'); document.getElementById('feedCustomShareModal').remove();" style="background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; padding:4px 0;">
+            <div style="width:48px; height:48px; border-radius:14px; background:#fee500; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(254,229,0,0.25);">
+              <svg viewBox="0 0 24 24" style="width:24px; height:24px; fill:#191919;"><path d="M12 3c-5.52 0-10 3.48-10 7.78 0 2.76 1.84 5.18 4.62 6.55l-1.18 4.34c-.11.4.34.73.69.5l5.06-3.34c.27.03.54.04.81.04 5.52 0 10-3.48 10-7.78 0-4.3-4.48-7.78-10-7.78z"/></svg>
+            </div>
+            <span style="font-size:0.68rem; font-weight:800; color:#e2e8f0;">카카오톡</span>
+          </button>
+
+          <!-- 2. 인스타그램 DM -->
+          <button type="button" onclick="window.sendFeedToInstagram('${shareUrl}'); document.getElementById('feedCustomShareModal').remove();" style="background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; padding:4px 0;">
+            <div style="width:48px; height:48px; border-radius:14px; background:linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(220,39,67,0.3);">
+              <svg viewBox="0 0 24 24" style="width:22px; height:22px; fill:#ffffff;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+            </div>
+            <span style="font-size:0.68rem; font-weight:800; color:#e2e8f0;">인스타그램</span>
+          </button>
+
+          <!-- 3. 링크 복사 -->
+          <button type="button" onclick="copyShareLinkFallback('${shareUrl}'); document.getElementById('feedCustomShareModal').remove();" style="background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; padding:4px 0;">
+            <div style="width:48px; height:48px; border-radius:14px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center;">
+              <svg viewBox="0 0 24 24" style="width:20px; height:20px; stroke:#38bdf8; fill:none; stroke-width:2.2;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </div>
+            <span style="font-size:0.68rem; font-weight:800; color:#e2e8f0;">링크 복사</span>
+          </button>
+
+          <!-- 4. 기타 시스템 공유 -->
+          <button type="button" onclick="window.triggerNativeShare('${escapeHtml(shareTitle)}', '${escapeHtml(shareDesc)}', '${shareUrl}'); document.getElementById('feedCustomShareModal').remove();" style="background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; padding:4px 0;">
+            <div style="width:48px; height:48px; border-radius:14px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center;">
+              <svg viewBox="0 0 24 24" style="width:20px; height:20px; stroke:#cbd5e1; fill:none; stroke-width:2.2;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </div>
+            <span style="font-size:0.68rem; font-weight:800; color:#e2e8f0;">더보기</span>
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  };
+
+  window.sendFeedToKakaoTalk = function(title, desc, url) {
+    triggerHaptic(12);
+    if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized() && Kakao.Share) {
+      try {
+        Kakao.Share.sendDefault({
+          objectType: 'text',
+          text: title + '\n\n“' + desc + '”\n\n낭만루트에서 확인하기 ➔',
+          link: { mobileWebUrl: url, webUrl: url }
+        });
+        return;
+      } catch (e) {}
+    }
+    copyShareLinkFallback(url);
+  };
+
+  window.sendFeedToInstagram = function(url) {
+    triggerHaptic(12);
+    copyShareLinkFallback(url);
+    if (typeof showToast === 'function') {
+      showToast('📸 링크가 복사되었습니다! 인스타그램 DM이나 스토리에 붙여넣기 하세요.', 'success', 2600);
+    }
+    setTimeout(function() {
+      window.location.href = 'instagram://';
+    }, 400);
+  };
+
+  window.triggerNativeShare = function(title, desc, url) {
+    triggerHaptic(10);
     if (navigator.share) {
-      navigator.share({
-        title: shareTitle,
-        text: shareDesc + '\n\n',
-        url: shareUrl
-      }).catch(function(err) {
-        if (err.name !== 'AbortError') {
-          copyShareLinkFallback(shareUrl);
-        }
-      });
+      navigator.share({ title: title, text: desc, url: url }).catch(function() {});
     } else {
-      copyShareLinkFallback(shareUrl);
+      copyShareLinkFallback(url);
     }
   };
 
@@ -2789,7 +2866,7 @@ window.renderHistoryStage = function(isLoading) {
                   '<svg id="feedStarIcon_' + cardId + '" viewBox="0 0 24 24" style="width:19px; height:19px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
                   '<span id="feedStarCountText_' + cardId + '" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif;">' + starCount + '</span>' +
                 '</button>' +
-                '<button type="button" onclick="if(navigator.share){navigator.share({title:\'' + escapeHtml(spotName) + '\',text:\'' + escapeHtml(memo120) + '\',url:location.href});}else{navigator.clipboard.writeText(location.href);if(typeof showToast===\'function\')showToast(\'피드 링크가 복사되었습니다.\',\'info\');}triggerHaptic(10);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">' +
+               '<button type="button" data-feed-id="' + cardId + '" data-spot="' + escapeHtml(spotName) + '" data-memo="' + escapeHtml(memo120) + '" onclick="if(typeof window.shareCurrentFeed===\'function\'){ window.shareCurrentFeed(this.dataset.feedId, this.dataset.spot, this.dataset.memo); } else { triggerHaptic(10); if(navigator.clipboard){ navigator.clipboard.writeText(location.href); if(typeof showToast===\'function\') showToast(\'🔗 피드 링크가 복사되었습니다!\',\'success\'); } }" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">' +
                   '<svg viewBox="0 0 24 24" style="width:17px; height:17px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
                 '</button>' +
                 '<button type="button" data-feed-id="' + cardId + '" onclick="window.toggleSaveFeed(this.dataset.feedId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:' + (isSavedFeed ? '#c084fc' : '#cbd5e1') + ';" title="관심피드 저장">' +
@@ -2801,11 +2878,10 @@ window.renderHistoryStage = function(isLoading) {
                 dotsHtml +
               '</div>' +
 
-              '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
-                '<button type="button" onclick="window.openRomanticInterestModal(\'routers\'); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.18); color:#e2e8f0; font-size:0.64rem; font-weight:800; padding:3px 7px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:3px;" title="관심루터 및 관심피드 모아보기">' +
-                  '<svg viewBox="0 0 24 24" style="width:11px; height:11px; color:#c084fc;" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
+             '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
+                '<button type="button" onclick="window.openRomanticInterestModal(\'routers\'); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.18); color:#e2e8f0; font-size:0.76rem; font-weight:800; padding:4px 9px; border-radius:12px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;" title="관심루터 및 관심피드 모아보기">' +
+                  '<svg viewBox="0 0 24 24" style="width:13px; height:13px; color:#c084fc;" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
                   '<span>관심</span>' +
-                  (totalInterestsCount > 0 ? '<span style="font-size:0.58rem; color:#c084fc; font-weight:900; font-family:\'Space Grotesk\', sans-serif;">' + totalInterestsCount + '</span>' : '') +
                 '</button>' +
                 streamToggleBtnHtml +
               '</div>' +
