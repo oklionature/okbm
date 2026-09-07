@@ -651,7 +651,7 @@ function loginWithKakao() {
                 localStorage.setItem('okbm_memos', JSON.stringify(cloudData.memos));
                 if (typeof window.userMemos !== 'undefined') window.userMemos = cloudData.memos;
               }
-             if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
+        if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
                 var localSavedPhotos = safeGetJSON('okbm_phone_photos_map', {});
                 if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
                   localSavedPhotos = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], localSavedPhotos);
@@ -661,62 +661,70 @@ function loginWithKakao() {
                   ? window.interactiveHistory
                   : safeGetJSON('okbm_packing_history', []);
 
-               // 1. 클라우드의 삭제 툼스톤 맵과 활성 기록 맵 분리
+                // 1. 클라우드의 삭제 툼스톤과 정본 활성 기록 매핑
                 var cloudDeletedIds = new Set();
                 var cloudDeletedDates = new Set();
-                var cloudActiveMap = new Map();
+                var reconciledMap = new Map();
 
                 cloudData.packHistory.filter(Boolean).forEach(function(cItem) {
                   var cId = String(cItem.id || '').trim();
                   var cDate = String(cItem.date || '').replace(/[-/]/g, '.').trim();
+                  
                   if (cItem.isDeleted === true) {
                     if (cId) cloudDeletedIds.add(cId);
                     if (cDate) cloudDeletedDates.add(cDate);
                   } else {
-                    if (cId) cloudActiveMap.set(cId, cItem);
+                    var validPhotos = [];
+                    if (Array.isArray(cItem.photos) && cItem.photos.length > 0) {
+                      validPhotos = cItem.photos.filter(function(p) { return typeof p === 'string' && p.startsWith('http'); });
+                    } else if (typeof cItem.photo === 'string' && cItem.photo.startsWith('http')) {
+                      validPhotos = [cItem.photo];
+                    } else if (typeof cItem.photo_url === 'string' && cItem.photo_url.startsWith('http')) {
+                      validPhotos = [cItem.photo_url];
+                    }
+
+                    if (validPhotos.length > 0) {
+                      cItem.photos = validPhotos;
+                      cItem.photo = validPhotos[0];
+                      cItem.fieldPhoto = validPhotos[0];
+                      cItem.photo_url = validPhotos[0];
+                      localSavedPhotos[cId] = validPhotos;
+                      if (cDate) localSavedPhotos[cDate] = validPhotos;
+                    }
+
+                    reconciledMap.set(cId, cItem);
                   }
                 });
 
-                // 2. 스마트 조율: 클라우드 활성 기록 매핑 및 글로벌 CDN 사진 1순위 복원
-                var reconciledMap = new Map();
+                // 2. 🛡️ [게스트 작업물 안전 승격]: 로그인 직전 1시간 이내에 작성된 신규 작업물만 선별 보존
+                var hasFreshGuestDraft = false;
+                var ONE_HOUR_MS = 60 * 60 * 1000;
+                var nowTime = Date.now();
 
-                cloudActiveMap.forEach(function(cloudItem, cId) {
-                  var cDate = String(cloudItem.date || '').trim();
-                  var matchedLocal = currentLocalHistory.find(function(loc) {
-                    return loc && ((cId && String(loc.id).trim() === cId) || (cDate && String(loc.date).trim() === cDate));
-                  });
+                currentLocalHistory.forEach(function(loc) {
+                  if (!loc) return;
+                  var locId = String(loc.id || '').trim();
+                  var locDate = String(loc.date || '').replace(/[-/]/g, '.').trim();
 
-                  var preservedPhotos = [];
-                  if (Array.isArray(cloudItem.photos) && cloudItem.photos.length > 0) {
-                    preservedPhotos = cloudItem.photos.filter(function(p) { return typeof p === 'string' && p.startsWith('http'); });
-                  } else if (typeof cloudItem.photo === 'string' && cloudItem.photo.startsWith('http')) {
-                    preservedPhotos = [cloudItem.photo];
-                  } else if (typeof cloudItem.photo_url === 'string' && cloudItem.photo_url.startsWith('http')) {
-                    preservedPhotos = [cloudItem.photo_url];
+                  // 삭제 증표가 걸린 항목은 타 기기 부활 원천 차단
+                  if (cloudDeletedIds.has(locId) || cloudDeletedDates.has(locDate) || loc.isDeleted === true) {
+                    if (localSavedPhotos) {
+                      delete localSavedPhotos[locId];
+                      delete localSavedPhotos[locDate];
+                    }
+                    return;
                   }
 
-                  if (preservedPhotos.length === 0 && matchedLocal) {
-                    if (Array.isArray(matchedLocal.photos) && matchedLocal.photos.length > 0) preservedPhotos = matchedLocal.photos;
-                    else if (matchedLocal.photo) preservedPhotos = [matchedLocal.photo];
-                    else if (matchedLocal.fieldPhoto) preservedPhotos = [matchedLocal.fieldPhoto];
+                  // 서버에 아직 없지만, 1시간 이내에 비로그인으로 작성된 따끈따끈한 새 글인 경우 안전 보존
+                  if (!reconciledMap.has(locId)) {
+                    var idTimestamp = parseInt(locId.replace(/\D/g, ''), 10) || 0;
+                    var isRecentCreated = (idTimestamp > 0 && (nowTime - idTimestamp < ONE_HOUR_MS));
+                    
+                    if (isRecentCreated) {
+                      reconciledMap.set(locId, loc);
+                      hasFreshGuestDraft = true;
+                    }
                   }
-
-                  if (preservedPhotos.length === 0 && localSavedPhotos) {
-                    var fromMap = localSavedPhotos[cId] || localSavedPhotos[cDate] || localSavedPhotos[cDate.replace(/[-/]/g, '.')];
-                    if (Array.isArray(fromMap) && fromMap.length > 0) preservedPhotos = fromMap;
-                    else if (typeof fromMap === 'string' && fromMap.trim().length > 10) preservedPhotos = [fromMap.trim()];
-                  }
-
-                  var mergedItem = Object.assign({}, matchedLocal || {}, cloudItem);
-                  if (preservedPhotos.length > 0) {
-                    mergedItem.photos = preservedPhotos;
-                    mergedItem.photo = preservedPhotos[0];
-                    mergedItem.fieldPhoto = preservedPhotos[0];
-                    mergedItem.photo_url = preservedPhotos[0];
-                    localSavedPhotos[cId] = preservedPhotos;
-                    if (cDate) localSavedPhotos[cDate] = preservedPhotos;
-                  }
-                  reconciledMap.set(cId, mergedItem);
                 });
 
                 if (window.__memoryStore) {
@@ -724,35 +732,6 @@ function loginWithKakao() {
                 }
                 if (typeof window.saveToIndexedDB === 'function') {
                   window.saveToIndexedDB('okbm_phone_photos_map', localSavedPhotos);
-                }
-
-               // 3. [부활 방지 필터]: 타 기기에서 삭제되거나 서버가 초기화된 경우 로컬 캐시 즉시 비우기
-                var hasLocalDraftsToUpload = false;
-                if (cloudData.packHistory.length === 0) {
-                  // 서버가 비어있다면 로컬 캐시 전체를 함께 깨끗이 비움
-                  reconciledMap.clear();
-                  localSavedPhotos = {};
-                } else {
-                  currentLocalHistory.forEach(function(loc) {
-                    if (!loc) return;
-                    var locId = String(loc.id || '').trim();
-                    var locDate = String(loc.date || '').replace(/[-/]/g, '.').trim();
-
-                    // 삭제 툼스톤이 걸린 항목은 절대 복원하지 않고 로컬에서도 영구 파기
-                    if (cloudDeletedIds.has(locId) || cloudDeletedDates.has(locDate) || loc.isDeleted === true) {
-                      if (localSavedPhotos) {
-                        delete localSavedPhotos[locId];
-                        delete localSavedPhotos[locDate];
-                      }
-                      return;
-                    }
-
-                    // 서버에 없는 순수 신규 로컬 글만 보존하여 클라우드로 상향 동기화
-                    if (!cloudActiveMap.has(locId)) {
-                      reconciledMap.set(locId, loc);
-                      hasLocalDraftsToUpload = true;
-                    }
-                  });
                 }
 
                 var safePackHistory = Array.from(reconciledMap.values());
@@ -777,8 +756,8 @@ function loginWithKakao() {
                   }
                 }
 
-                // 오프라인 작성본이 합쳐졌다면 조용히 클라우드로 백업 전송
-                if (hasLocalDraftsToUpload) {
+                // 방금 비로그인으로 작성한 새 글이 합쳐졌다면 클라우드로 조용히 1회 백업
+                if (hasFreshGuestDraft) {
                   syncUserDataToCloud(true);
                 }
               }

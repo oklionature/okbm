@@ -347,124 +347,155 @@ window.clearSpotSearchInput = function() {
   if (typeof triggerHaptic === 'function') triggerHaptic(10);
 };
 
-// =========================================================================
-// [수정 코드 1-1] templates.js : 출발 전 패킹 카드 즉시 보관함 등록 파이프라인
-// =========================================================================
 window.saveCardToVaultAndOpenBasecamp = async function() {
   var token = localStorage.getItem('user_auth_token');
   var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
   var isLogged = !!(token && token.trim().length > 0 && profile && profile.id && String(profile.id).startsWith('kakao_'));
+
+  // 🔒 [비회원 감지 시]: 안내 토스트 출력 + 공유 모달 닫기 + 로그인/회원가입 창 전면 노출
   if (!isLogged) {
-    if (typeof triggerHaptic === 'function') triggerHaptic(10);
-    if (typeof showToast === 'function') showToast('🔒 낭만보관함 저장은 로그인 후 이용하실 수 있습니다.');
-    if (typeof openLoginModal === 'function') openLoginModal();
+    if (typeof triggerHaptic === 'function') triggerHaptic(12);
+    if (typeof showToast === 'function') {
+      showToast('🔒 출정 보관함 저장은 카카오 1초 로그인 후 이용하실 수 있습니다.', 'info', 3000);
+    }
+    
+    // 현재 작성 중이던 spot과 memo를 임시 보존하여 로그인 후 복원 지원
+    var currentSpot = document.getElementById('shareCardSpotInput')?.value || '';
+    var currentMemo = document.getElementById('shareCardMemoInput')?.value || '';
+    if (currentSpot) localStorage.setItem('okbm_pending_vault_spot', currentSpot);
+    if (currentMemo) localStorage.setItem('okbm_pending_vault_memo', currentMemo);
+
+    if (typeof closePackShareModal === 'function') closePackShareModal();
+
+    setTimeout(function() {
+      if (typeof openLoginModal === 'function') {
+        openLoginModal();
+        var loginModal = document.getElementById('loginModalOverlay');
+        if (loginModal) {
+          loginModal.style.setProperty('z-index', '2000050', 'important');
+        }
+      }
+    }, 150);
     return;
   }
 
-  var spotInput = document.getElementById('shareCardSpotInput');
-  var memoInput = document.getElementById('shareCardMemoInput');
-  
-  var liveSpot = (spotInput && spotInput.value.trim().length > 0) 
-    ? spotInput.value.trim() 
-    : (window.currentShareRecord && window.currentShareRecord.spot ? window.currentShareRecord.spot : '');
+  try {
+    var spotInput = document.getElementById('shareCardSpotInput');
+    var memoInput = document.getElementById('shareCardMemoInput');
     
-  var liveMemo = (memoInput && memoInput.value.trim().length > 0) 
-    ? memoInput.value.trim() 
-    : (window.currentShareRecord && window.currentShareRecord.oneLineMemo ? window.currentShareRecord.oneLineMemo : '');
+    var liveSpot = (spotInput && spotInput.value.trim().length > 0) 
+      ? spotInput.value.trim() 
+      : (window.currentShareRecord && window.currentShareRecord.spot ? window.currentShareRecord.spot : '');
+      
+    var liveMemo = (memoInput && memoInput.value.trim().length > 0) 
+      ? memoInput.value.trim() 
+      : (window.currentShareRecord && window.currentShareRecord.oneLineMemo ? window.currentShareRecord.oneLineMemo : '');
 
-  var now = new Date();
-  var cleanDateStr = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
+    var now = new Date();
+    var cleanDateStr = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
 
-  var rec = window.currentShareRecord || {};
-  var items = (Array.isArray(window.currentShareItems) && window.currentShareItems.length > 0) ? window.currentShareItems : (rec.items || []);
+    var rec = window.currentShareRecord || {};
+    var items = (Array.isArray(window.currentShareItems) && window.currentShareItems.length > 0) ? window.currentShareItems : (rec.items || []);
 
-  if (items.length === 0 && window.selectedGearMap) {
-    Object.keys(window.selectedGearMap).forEach(function(catId) {
-      (window.selectedGearMap[catId] || []).forEach(function(it) {
-        if (it && (it.name || it.itemName)) {
-          items.push({
-            name: it.name || it.itemName,
-            weight: Number(it.weight || it.weight_g || 0)
-          });
-        }
+    if (items.length === 0 && window.selectedGearMap) {
+      Object.keys(window.selectedGearMap).forEach(function(catId) {
+        (window.selectedGearMap[catId] || []).forEach(function(it) {
+          if (it && (it.name || it.itemName)) {
+            items.push({
+              name: it.name || it.itemName,
+              weight: Number(it.weight || it.weight_g || 0)
+            });
+          }
+        });
       });
-    });
-  }
-
- var totalGrams = items.reduce(function(sum, g) { return sum + Number(g.weight || 0); }, 0);
-  var weightKg = (totalGrams > 0) ? (totalGrams / 1000).toFixed(2) : (rec.weightKg || '0.00');
-
-  // 📸 [다중 사진 완벽 보존]: 스튜디오 다중 사진 배열을 1순위로 채용하여 유실 원천 차단
-  var photosToSave = [];
-  if (Array.isArray(window.__studioMultiPhotos) && window.__studioMultiPhotos.length > 0) {
-    photosToSave = window.__studioMultiPhotos.slice(0, 10);
-  } else if (window.currentSharePhoto && typeof window.currentSharePhoto === 'string' && window.currentSharePhoto.length > 10) {
-    photosToSave = [window.currentSharePhoto];
-  } else if (Array.isArray(rec.photos) && rec.photos.length > 0) {
-    photosToSave = rec.photos.slice(0, 10);
-  } else if (rec.photo && typeof rec.photo === 'string' && rec.photo.length > 10) {
-    photosToSave = [rec.photo];
-  }
-
-  // 🚀 [인스타그램 방식 1단계]: Base64 사진이 있으면 클라우드 영구 CDN URL로 먼저 완벽 변환
-  var finalCloudPhotos = [];
-  var hasBase64 = photosToSave.some(function(p) { return typeof p === 'string' && p.startsWith('data:'); });
-
-  if (hasBase64 && typeof window.uploadSinglePhotoToDrive === 'function') {
-    if (typeof window.showPhotoLoadingModal === 'function') {
-      window.showPhotoLoadingModal(1, photosToSave.length);
     }
 
-    for (var i = 0; i < photosToSave.length; i++) {
-      var pItem = photosToSave[i];
-      if (typeof pItem === 'string' && pItem.startsWith('data:')) {
-        var cloudUrl = await window.uploadSinglePhotoToDrive(pItem, 'pack_' + (rec.id || Date.now()) + '_' + i + '.jpg');
-        finalCloudPhotos.push((cloudUrl && cloudUrl.startsWith('http')) ? cloudUrl : pItem);
-      } else {
-        finalCloudPhotos.push(pItem);
+    var totalGrams = items.reduce(function(sum, g) { return sum + Number(g.weight || 0); }, 0);
+    var weightKg = (totalGrams > 0) ? (totalGrams / 1000).toFixed(2) : (rec.weightKg || '0.00');
+
+    var photosToSave = [];
+    if (Array.isArray(window.__studioMultiPhotos) && window.__studioMultiPhotos.length > 0) {
+      photosToSave = window.__studioMultiPhotos.slice(0, 10);
+    } else if (window.currentSharePhoto && typeof window.currentSharePhoto === 'string' && window.currentSharePhoto.length > 10) {
+      photosToSave = [window.currentSharePhoto];
+    } else if (Array.isArray(rec.photos) && rec.photos.length > 0) {
+      photosToSave = rec.photos.slice(0, 10);
+    } else if (rec.photo && typeof rec.photo === 'string' && rec.photo.length > 10) {
+      photosToSave = [rec.photo];
+    }
+
+    // 🚀 Base64 사진이 있으면 R2 영구 링크로 승격 (최대 3초 타임아웃 안전망)
+    var finalCloudPhotos = [];
+    var hasBase64 = photosToSave.some(function(p) { return typeof p === 'string' && p.startsWith('data:'); });
+
+    if (hasBase64 && typeof window.uploadSinglePhotoToDrive === 'function') {
+      if (typeof window.showPhotoLoadingModal === 'function') {
+        window.showPhotoLoadingModal(1, photosToSave.length);
       }
+
+      for (var i = 0; i < photosToSave.length; i++) {
+        var pItem = photosToSave[i];
+        if (typeof pItem === 'string' && pItem.startsWith('data:')) {
+          try {
+            var uploadPromise = window.uploadSinglePhotoToDrive(pItem, 'pack_' + (rec.id || Date.now()) + '_' + i + '.jpg');
+            var timeoutPromise = new Promise(function(res) { setTimeout(function() { res(pItem); }, 3500); });
+            var cloudUrl = await Promise.race([uploadPromise, timeoutPromise]);
+            finalCloudPhotos.push((cloudUrl && cloudUrl.startsWith('http')) ? cloudUrl : pItem);
+          } catch (upErr) {
+            finalCloudPhotos.push(pItem);
+          }
+        } else {
+          finalCloudPhotos.push(pItem);
+        }
+      }
+
+      if (typeof window.hidePhotoLoadingModal === 'function') {
+        window.hidePhotoLoadingModal();
+      }
+    } else {
+      finalCloudPhotos = photosToSave;
     }
 
-    if (typeof window.hidePhotoLoadingModal === 'function') {
-      window.hidePhotoLoadingModal();
+    var mainCloudPhoto = finalCloudPhotos[0] || '';
+
+    var newRecord = {
+      id: rec.id || ('pack_' + Date.now()),
+      date: rec.date || cleanDateStr,
+      spot: liveSpot,
+      memo: '',
+      oneLineMemo: liveMemo || (liveSpot ? (liveSpot + ' 패킹') : '출정 준비 완료'),
+      elevation: rec.elevation || '',
+      weightKg: weightKg,
+      weightGrams: totalGrams || rec.weightGrams || 0,
+      itemCount: items.length,
+      items: items,
+      photo: mainCloudPhoto,
+      photos: finalCloudPhotos,
+      fieldPhoto: mainCloudPhoto,
+      photo_url: mainCloudPhoto,
+      photos_json: JSON.stringify(finalCloudPhotos),
+      templateId: window.selectedTemplateId || rec.templateId || 1
+    };
+
+    if (typeof window.savePackingHistoryRecord === 'function') {
+      window.savePackingHistoryRecord(newRecord);
     }
-  } else {
-    finalCloudPhotos = photosToSave;
+
+    window.__studioMultiPhotos = null;
+
+    if (typeof closePackShareModal === 'function') closePackShareModal();
+    
+    setTimeout(function() {
+      if (typeof window.openHistoryModal === 'function') window.openHistoryModal();
+    }, 60);
+
+    if (typeof showToast === 'function') showToast('🎒 출정이 보관함 및 피드에 완벽 등록되었습니다!', 'success', 2500);
+    if (typeof triggerHaptic === 'function') triggerHaptic(15);
+  } catch (err) {
+    console.error('[SaveCard Error]', err);
+    if (typeof closePackShareModal === 'function') closePackShareModal();
+    if (typeof window.openHistoryModal === 'function') window.openHistoryModal();
   }
-
-  var mainCloudPhoto = finalCloudPhotos[0] || '';
-
-  // 🚀 [인스타그램 방식 2단계]: 100% 영구 URL이 탑재된 완전 무결 레코드 생성
-  var newRecord = {
-    id: rec.id || ('pack_' + Date.now()),
-    date: rec.date || cleanDateStr,
-    spot: liveSpot,
-    memo: '',
-    oneLineMemo: liveMemo || (liveSpot ? (liveSpot + ' 패킹') : '출정 준비 완료'),
-    elevation: rec.elevation || '',
-    weightKg: weightKg,
-    weightGrams: totalGrams || rec.weightGrams || 0,
-    itemCount: items.length,
-    items: items,
-    photo: mainCloudPhoto,
-    photos: finalCloudPhotos,
-    fieldPhoto: mainCloudPhoto,
-    photo_url: mainCloudPhoto,
-    photos_json: JSON.stringify(finalCloudPhotos),
-    templateId: window.selectedTemplateId || rec.templateId || 1
-  };
-
-  // 🚀 [인스타그램 방식 3단계]: 영구 URL로 보관함 저장 + 구글 시트 feeds 탭 및 R2 동시 발행
-  if (typeof window.savePackingHistoryRecord === 'function') {
-    window.savePackingHistoryRecord(newRecord);
-  }
-
-  window.__studioMultiPhotos = null;
-
-  if (typeof closePackShareModal === 'function') closePackShareModal();
-  if (typeof window.openHistoryModal === 'function') window.openHistoryModal();
-  if (typeof showToast === 'function') showToast('🎒 출정이 보관함 및 피드에 완벽 등록되었습니다!', 'success', 2500);
-  if (typeof triggerHaptic === 'function') triggerHaptic(15);
 };
 
 function safeGetJSON(key, defaultVal) {
@@ -593,9 +624,38 @@ window.openPackShareModal = function(record, items, forceStudio) {
   var memoInput = document.getElementById('shareCardMemoInput');
   var clearBtn = document.getElementById('btnSpotInputClear');
 
+  // 🎯 [3중 목적지 자동 주입 엔진]: 달력/찜목록 목적지를 1초 만에 자동 채움
+  var autoSpot = currentShareRecord.spot || '';
+  var targetDateStr = currentShareRecord.date || window.activeSelectedDateKey || '';
+
+  if (!autoSpot && window.currentLuckySpot && window.currentLuckySpot.name) {
+    autoSpot = window.currentLuckySpot.name;
+    if (window.currentLuckySpot.elevation) currentShareRecord.elevation = window.currentLuckySpot.elevation;
+  }
+  if (!autoSpot && targetDateStr) {
+    var pSpots = (typeof safeGetJSON === 'function') ? safeGetJSON('okbm_plan_spots', {}) : {};
+    if (pSpots[targetDateStr] && pSpots[targetDateStr].name) {
+      autoSpot = pSpots[targetDateStr].name;
+      if (pSpots[targetDateStr].elevation) currentShareRecord.elevation = pSpots[targetDateStr].elevation;
+    }
+  }
+  if (!autoSpot && targetDateStr) {
+    var pMemos = (typeof safeGetJSON === 'function') ? safeGetJSON('okbm_plan_memos', {}) : {};
+    var rawM = String(pMemos[targetDateStr] || '').trim();
+    if (rawM) {
+      var mMatch = rawM.match(/(?:📍|\[목적지\]|목적지:\s*|장소:\s*)?([^\n\r()]+)(?:\(([^)]+)\))?/);
+      if (mMatch && mMatch[1] && mMatch[1].trim().length > 1) {
+        autoSpot = mMatch[1].trim();
+        if (mMatch[2]) currentShareRecord.elevation = mMatch[2].trim();
+      }
+    }
+  }
+
+  currentShareRecord.spot = autoSpot;
+
   if (spotInput) {
-    spotInput.value = currentShareRecord.spot || '';
-    if (clearBtn) clearBtn.style.display = spotInput.value ? 'flex' : 'none';
+    spotInput.value = autoSpot;
+    if (clearBtn) clearBtn.style.display = autoSpot ? 'flex' : 'none';
   }
   if (memoInput) {
     memoInput.value = currentShareRecord.oneLineMemo || '';

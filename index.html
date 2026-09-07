@@ -2038,7 +2038,7 @@
       ]
     };
 
-    async function initDynamicHeroAndFeeds() {
+   async function initDynamicHeroAndFeeds() {
       initHeroGestureEngine();
       
       var r2Domain = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
@@ -2047,71 +2047,79 @@
       initSmartHeaderScrollEngine();
 
       var profile = safeGetJSON('user_profile', null);
-      var cachedFeeds = safeGetJSON('okbm_cached_community_feeds', []);
-      var initialFeeds = [];
 
-      if (Array.isArray(cachedFeeds) && cachedFeeds.length > 0) {
-        initialFeeds = cachedFeeds.slice();
-      } else {
-        var presetCopy = Object.assign({}, FALLBACK_HERO_PRESET);
-        if (isUserLoggedIn() && profile && profile.nickname) {
-          presetCopy.author = profile.nickname;
-        }
-        initialFeeds = [presetCopy];
-      }
-
-      window.__allLoadedFeeds = initialFeeds;
-      window.heroTopRecords = initialFeeds;
-      window.currentHeroCardIndex = 0;
-      renderCurrentHeroCard();
-
-      try {
-        var idbPhotos = await fetchFromIndexedDBDirect('okbm_phone_photos_map');
-        if (idbPhotos && typeof idbPhotos === 'object') {
-          window.__memoryStore = window.__memoryStore || {};
-          window.__memoryStore['okbm_phone_photos_map'] = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'] || {}, idbPhotos);
-          updateHeroPhotoDisplay();
-          renderHeroTrailerRail();
-        }
-      } catch (e) {}
-
+    // ⚡ [1순위 0.03초]: Cloudflare R2 글로벌 CDN 단일 진실 공급원(SSOT) 직통 조회
       try {
         var r2Res = await fetch(R2_FEEDS_URL + '?_t=' + Date.now(), { cache: 'no-store' });
         if (r2Res.ok) {
           var r2Feeds = await r2Res.json();
-          if (Array.isArray(r2Feeds)) {
-            var effectiveFeeds = r2Feeds.length > 0 ? r2Feeds : [Object.assign({}, FALLBACK_HERO_PRESET)];
-            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(r2Feeds));
-            if (effectiveFeeds[0] && (effectiveFeeds[0].photo || effectiveFeeds[0].photo_url)) {
-              localStorage.setItem('okbm_hero_cover_url', effectiveFeeds[0].photo || effectiveFeeds[0].photo_url);
+          if (Array.isArray(r2Feeds) && r2Feeds.length > 0) {
+            
+            // 🛡️ [고유 ID 기준 100% 중복 박멸 필터]: 쌍둥이 카드 1개로 완전 압축
+            var uniqueFeedMap = new Map();
+            r2Feeds.filter(Boolean).forEach(function(f) {
+              var uKey = String(f.id || '').trim();
+              if (!uKey || uKey.startsWith('feed_') || uKey.startsWith('pack_')) {
+                uKey = String(f.userId || '') + '_' + String(f.date || '').replace(/\D/g, '') + '_' + String(f.spot || '').trim();
+              }
+              if (!uniqueFeedMap.has(uKey)) {
+                uniqueFeedMap.set(uKey, f);
+              }
+            });
+
+            var cleanFeeds = Array.from(uniqueFeedMap.values());
+            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(cleanFeeds));
+            
+            if (cleanFeeds[0] && (cleanFeeds[0].photo || cleanFeeds[0].photo_url)) {
+              localStorage.setItem('okbm_hero_cover_url', cleanFeeds[0].photo || cleanFeeds[0].photo_url);
             }
-            window.__allLoadedFeeds = effectiveFeeds;
-            window.heroTopRecords = effectiveFeeds;
+            window.__allLoadedFeeds = cleanFeeds;
+            window.heroTopRecords = cleanFeeds;
             window.currentHeroCardIndex = 0;
             renderCurrentHeroCard();
+            return; // R2 인출 및 중복 제거 렌더링 완료 후 종료
           }
         }
-      } catch (r2Err) {}
+      } catch (r2Err) {
+        console.warn('📡 [Index] R2 최초 조회 대기, 백업망으로 전환:', r2Err.message);
+      }
 
+      // 📁 [2순위: 구글 시트 백업 폴백 중복 정제]
       try {
         var gasUrl = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
         var res = await fetch(gasUrl + '?action=GET_COMMUNITY_FEEDS&_t=' + Date.now());
         if (res.ok) {
           var cloudFeeds = await res.json();
-          if (Array.isArray(cloudFeeds)) {
-            var masterFeeds = cloudFeeds.length > 0 ? cloudFeeds : [Object.assign({}, FALLBACK_HERO_PRESET)];
-            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(cloudFeeds));
-            window.__allLoadedFeeds = masterFeeds;
-            window.heroTopRecords = masterFeeds;
+          if (Array.isArray(cloudFeeds) && cloudFeeds.length > 0) {
+            var sheetUniqueMap = new Map();
+            cloudFeeds.filter(Boolean).forEach(function(f) {
+              var sKey = String(f.id || (String(f.userId || '') + '_' + String(f.date || '') + '_' + String(f.spot || ''))).trim();
+              if (!sheetUniqueMap.has(sKey)) sheetUniqueMap.set(sKey, f);
+            });
+            var cleanSheetFeeds = Array.from(sheetUniqueMap.values());
+            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(cleanSheetFeeds));
+            window.__allLoadedFeeds = cleanSheetFeeds;
+            window.heroTopRecords = cleanSheetFeeds;
             window.currentHeroCardIndex = 0;
             renderCurrentHeroCard();
+            return;
           }
         }
       } catch (err) {}
 
-      if (typeof window.syncAllLocalFeedsToCommunity === 'function') {
-        window.syncAllLocalFeedsToCommunity();
+      // 🛡️ [3순위 오프라인 비상 폴백]: 네트워크 단절 시에만 기기 로컬 캐시 사용
+      var fallbackFeeds = safeGetJSON('okbm_cached_community_feeds', []);
+      if (!Array.isArray(fallbackFeeds) || fallbackFeeds.length === 0) {
+        var presetCopy = Object.assign({}, FALLBACK_HERO_PRESET);
+        if (isUserLoggedIn() && profile && profile.nickname) {
+          presetCopy.author = profile.nickname;
+        }
+        fallbackFeeds = [presetCopy];
       }
+      window.__allLoadedFeeds = fallbackFeeds;
+      window.heroTopRecords = fallbackFeeds;
+      window.currentHeroCardIndex = 0;
+      renderCurrentHeroCard();
     }
 
     function filterHeroCategory(catKey, btnEl) {
@@ -2267,6 +2275,7 @@
       var onlyViewText = viewMatch ? viewMatch[1].trim() : cleanSummary.split(/\n\s*\n|\n(?=\[)/)[0].replace(/^\[.*?\]\s*/, '').trim();
 
      if (bodySlot) {
+      
 var adBannersHtml = `
 <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
 <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; text-decoration:none;">

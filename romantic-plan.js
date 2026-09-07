@@ -1108,8 +1108,50 @@ window.saveCurrentPackingRecord = function() {
     var totalKg = (totalGrams / 1000).toFixed(2);
     var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
     var recordId = 'pack_' + Date.now();
-    var spotTitle = (window.currentLuckySpot && window.currentLuckySpot.name) ? window.currentLuckySpot.name : '';
-    var spotElev = (window.currentLuckySpot && window.currentLuckySpot.elevation) ? `${window.currentLuckySpot.elevation}m` : '';
+
+    // 🎯 [3중 스마트 목적지 자동 발굴 엔진 - 이모지 100% 독립]:
+    var spotTitle = '';
+    var spotElev = '';
+
+    // 1순위: 직전 세션 전역 변수
+    if (window.currentLuckySpot && window.currentLuckySpot.name) {
+      spotTitle = window.currentLuckySpot.name;
+      spotElev = window.currentLuckySpot.elevation || '';
+    }
+
+    // 2순위: 날짜별 독립 목적지 DB (okbm_plan_spots)
+    if (!spotTitle) {
+      var planSpots = safeGetJSON('okbm_plan_spots', {});
+      var savedSpotObj = planSpots[targetDateStr];
+      if (savedSpotObj && savedSpotObj.name) {
+        spotTitle = savedSpotObj.name;
+        spotElev = savedSpotObj.elevation || '';
+      }
+    }
+
+    // 3순위: 달력 메모 텍스트 지능형 관용 파싱 (이모지, 한글 태그, 일반 텍스트 모두 대응)
+    if (!spotTitle) {
+      var planMemos = safeGetJSON('okbm_plan_memos', {});
+      var rawMemo = String(planMemos[targetDateStr] || '').trim();
+      if (rawMemo) {
+        var match = rawMemo.match(/(?:📍|\[목적지\]|목적지:\s*|장소:\s*)?([^\n\r()]+)(?:\(([^)]+)\))?/);
+        if (match && match[1] && match[1].trim().length > 1) {
+          spotTitle = match[1].trim();
+          if (match[2]) spotElev = match[2].trim();
+        } else {
+          spotTitle = rawMemo.split('\n')[0].slice(0, 20).trim();
+        }
+      }
+    }
+
+    if (spotElev && !String(spotElev).includes('m') && !isNaN(parseInt(spotElev, 10))) {
+      spotElev = parseInt(spotElev, 10) + 'm';
+    }
+
+    // 전역 캐시 동기화 (다음 모달 자동완성 보장)
+    if (spotTitle) {
+      window.currentLuckySpot = { name: spotTitle, elevation: spotElev };
+    }
 
     var newRecord = {
       id: recordId,
@@ -1123,8 +1165,8 @@ window.saveCurrentPackingRecord = function() {
       weightKg: totalKg,
       weightGrams: totalGrams,
       itemCount: packedItems.length,
-     memo: '',
-      oneLineMemo: spotTitle ? `${spotTitle} 힐링` : ' 준비 완료',
+      memo: '',
+      oneLineMemo: spotTitle ? (spotTitle + ' 힐링') : '출정 준비 완료',
       isDraft: true,
       isPublished: false,
       items: packedItems,
@@ -2768,18 +2810,19 @@ window.saveCurrentPackingRecord = function() {
   };
 
 
- // ✅ [확인을 눌러야만 비로소 메모장에 최종 저장]
+ // ✅ [확인을 눌러야만 비로소 메모장에 최종 저장 & 순수 목적지 독립 보존]
   window.commitPlanDestination = function(dateKey) {
     var dest = window.__pendingPlanDestination;
     window.__pendingPlanDestination = null;
 
-  var hud = document.getElementById('datePickGuideHud');
+    var hud = document.getElementById('datePickGuideHud');
     if (hud) hud.remove();
     var modal = document.getElementById('confirmDestinationDateModal') || document.getElementById('datePickGuideModal');
     if (modal) modal.remove();
 
     if (!dest) return;
 
+    // 1. 메모 텍스트 저장
     var planMemos = safeGetJSON('okbm_plan_memos', {});
     var existingMemo = planMemos[dateKey] || '';
     var spotLine = '📍 목적지: ' + dest.name + (dest.elevation ? (' (' + dest.elevation + ')') : '');
@@ -2789,7 +2832,17 @@ window.saveCurrentPackingRecord = function() {
       localStorage.setItem('okbm_plan_memos', JSON.stringify(planMemos));
     }
 
+    // 2. 🛡️ [이모지 무관 순수 목적지 독립 보관]: SVG 벡터 교체 시에도 100% 안전
+    var planSpots = safeGetJSON('okbm_plan_spots', {});
+    planSpots[dateKey] = {
+      name: dest.name,
+      elevation: dest.elevation || ''
+    };
+    localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots));
+
     window.activeSelectedDateKey = dateKey;
+    window.currentLuckySpot = { name: dest.name, elevation: dest.elevation || '' };
+
     window.activePlanSubMode = 'calendar';
     window.renderPlanStage();
     triggerHaptic(15);

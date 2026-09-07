@@ -252,9 +252,7 @@ window.safeSetStorage = function(key, value) {
     `;
     document.body.appendChild(el);
   };
-
-  // 💾 [피드 목록 & 보관함 완벽 동기화 단일 저장 엔진]
-  // 💾 [피드 목록 & 보관함 완벽 동기화 단일 저장 엔진]
+// 💾 [피드 목록 & 보관함 완벽 동기화 단일 저장 엔진]
   window.savePackingHistoryRecord = function(record) {
     if (!record) return null;
 
@@ -283,33 +281,45 @@ window.safeSetStorage = function(key, value) {
       });
     }
 
-    // 🛡️ 같은 날, 같은 장소의 기록이 이미 있으면 새 카드를 복제하지 않고 기존 카드를 업데이트
     if (existIdx !== -1) {
       normalized.id = list[existIdx].id; // 기존 고유 ID 보존 (새 카드로 증식 방지)
       list[existIdx] = Object.assign({}, list[existIdx], normalized);
     } else {
-      // 🚀 [등록순서 변경]: 최근 등록은 제일 뒤로 등록 (push)
       list.push(normalized);
     }
 
+    // 🌐 R2 영구 CDN 사진 URL 1순위 확정 수집
     var rawPhotos = [];
-    if (Array.isArray(record.photos) && record.photos.length > 0) rawPhotos = record.photos;
+    if (Array.isArray(record.photos) && record.photos.length > 0) rawPhotos = record.photos.filter(Boolean);
+    else if (record.photo_url) rawPhotos = [record.photo_url];
     else if (record.photo) rawPhotos = [record.photo];
     else if (record.fieldPhoto) rawPhotos = [record.fieldPhoto];
-    else if (normalized.photos && normalized.photos.length > 0) rawPhotos = normalized.photos;
+    else if (normalized.photos && normalized.photos.length > 0) rawPhotos = normalized.photos.filter(Boolean);
 
-    if (rawPhotos.length > 0) {
-      normalized.photos = rawPhotos;
-      normalized.photo = rawPhotos[0];
-      normalized.fieldPhoto = rawPhotos[0];
+    // CDN 주소 정규화
+    var cleanCloudUrls = rawPhotos.map(function(u) {
+      if (typeof u !== 'string') return '';
+      var clean = u.replace(/^["']|["']$/g, '').trim();
+      if (clean.includes('drive.google.com')) {
+        var idMatch = clean.match(/[?&]id=([a-zA-Z0-9_-]+)/) || clean.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (idMatch && idMatch[1]) return 'https://lh3.googleusercontent.com/d/' + idMatch[1] + '=w1200';
+      }
+      return clean;
+    }).filter(function(u) { return u.length > 10; });
+
+    if (cleanCloudUrls.length > 0) {
+      normalized.photos = cleanCloudUrls;
+      normalized.photo = cleanCloudUrls[0];
+      normalized.fieldPhoto = cleanCloudUrls[0];
+      normalized.photo_url = cleanCloudUrls[0];
 
       var savedPhotosMap = window.safeGetStorage('okbm_phone_photos_map', {}) || {};
       if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
         savedPhotosMap = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], savedPhotosMap);
       }
-      savedPhotosMap[String(normalized.id)] = rawPhotos;
-      savedPhotosMap[String(normalized.date)] = rawPhotos;
-      savedPhotosMap[String(normalized.date).replace(/[-/]/g, '.')] = rawPhotos;
+      savedPhotosMap[String(normalized.id)] = cleanCloudUrls;
+      savedPhotosMap[String(normalized.date)] = cleanCloudUrls;
+      savedPhotosMap[normDate] = cleanCloudUrls;
 
       window.__memoryStore['okbm_phone_photos_map'] = savedPhotosMap;
       window.safeSetStorage('okbm_phone_photos_map', savedPhotosMap);
@@ -320,44 +330,12 @@ window.safeSetStorage = function(key, value) {
     window.__memoryStore['okbm_packing_history'] = window.interactiveHistory;
     window.safeSetStorage('okbm_packing_history', list);
 
-   // 🚀 [클라우드 일원화]: 영구 URL 보존 및 구글 시트/R2 피드 100% 직통 동기화
-    var hasBase64Photo = rawPhotos.some(function(p) { return typeof p === 'string' && p.startsWith('data:'); });
-    if (hasBase64Photo && typeof window.uploadSinglePhotoToDrive === 'function') {
-      (async function elevatePhotosToCloud() {
-        var finalCloudUrls = [];
-        for (var i = 0; i < rawPhotos.length; i++) {
-          var pItem = rawPhotos[i];
-          if (typeof pItem === 'string' && pItem.startsWith('data:')) {
-            var cUrl = await window.uploadSinglePhotoToDrive(pItem, 'pack_' + normalized.id + '_' + i + '.jpg');
-            finalCloudUrls.push(cUrl || pItem);
-            await new Promise(function(res) { setTimeout(res, 200); });
-          } else {
-            finalCloudUrls.push(pItem);
-          }
-        }
-
-        normalized.photos = finalCloudUrls;
-        normalized.photo = finalCloudUrls[0] || '';
-        normalized.fieldPhoto = finalCloudUrls[0] || '';
-        normalized.photo_url = finalCloudUrls[0] || '';
-
-        var pMap = window.safeGetStorage('okbm_phone_photos_map', {}) || {};
-        pMap[String(normalized.id)] = finalCloudUrls;
-        pMap[String(normalized.date)] = finalCloudUrls;
-        window.__memoryStore['okbm_phone_photos_map'] = pMap;
-        window.safeSetStorage('okbm_phone_photos_map', pMap);
-        window.safeSetStorage('okbm_packing_history', window.interactiveHistory);
-
-        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(true);
-        if (normalized.isPublished === true && typeof window.shareFeedToCommunity === 'function') {
-          window.shareFeedToCommunity(normalized);
-        }
-      })();
-    } else {
-      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(true);
-      if (normalized.isPublished === true && typeof window.shareFeedToCommunity === 'function') {
-        window.shareFeedToCommunity(normalized);
-      }
+    // 🚀 [Server-Authoritative 배포]: 즉시 클라우드 및 공용 피드(R2/시트)로 100% 동기화 전송
+    if (typeof syncUserDataToCloud === 'function') {
+      syncUserDataToCloud(true);
+    }
+    if (normalized.isPublished === true && typeof window.shareFeedToCommunity === 'function') {
+      window.shareFeedToCommunity(normalized);
     }
     return normalized;
   };
@@ -400,27 +378,43 @@ window.safeSetStorage = function(key, value) {
       console.warn('[RomanticHistory] 사진 사전 복원 경고:', e);
     }
   })();
-
-// 📷 [폰 내장 DB(IndexedDB)에서 사진을 100% 안전하게 꺼내오는 탐색기 & 1200px 화질 승격]
+// 📷 [폰 내장 DB(IndexedDB)에서 사진을 100% 안전하게 꺼내오는 탐색기 & R2 글로벌 CDN 1순위 보장]
   function getRecordPhotos(record) {
     if (!record) return [];
-    var rId = String(record.id || '').trim();
-    var cleanPureId = rId.split(';')[0].trim();
-    var rDate = String(record.date || '').trim();
-    var altDate = rDate.replace(/[-/]/g, '.');
-    var savedPhotosMap = window.safeGetStorage('okbm_phone_photos_map', {}) || {};
-    if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
-      savedPhotosMap = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], savedPhotosMap);
+    var rawList = [];
+
+    // ⚡ [1순위 확정]: 클라우드/R2 글로벌 CDN 고화질 웹 주소를 절대 우선 인출
+    if (Array.isArray(record.photos) && record.photos.length > 0) {
+      rawList = record.photos.filter(function(u) { return typeof u === 'string' && u.trim().length > 10; });
+    } else if (record.photo_url && String(record.photo_url).trim().length > 10) {
+      rawList = [String(record.photo_url).trim()];
+    } else if (record.photo && String(record.photo).trim().length > 10 && !record.photo.startsWith('data:')) {
+      rawList = [String(record.photo).trim()];
+    } else if (record.fieldPhoto && String(record.fieldPhoto).trim().length > 10 && !record.fieldPhoto.startsWith('data:')) {
+      rawList = [String(record.fieldPhoto).trim()];
     }
 
-    var localPhotos = (cleanPureId && savedPhotosMap[cleanPureId]) || (rId && savedPhotosMap[rId]) || (rDate && savedPhotosMap[rDate]) || (altDate && savedPhotosMap[altDate]);
-    var rawList = [];
-    if (Array.isArray(localPhotos) && localPhotos.length > 0) rawList = localPhotos.filter(Boolean);
-    else if (typeof localPhotos === 'string' && localPhotos.trim().length > 10) rawList = [localPhotos.trim()];
-    else if (Array.isArray(record.photos) && record.photos.length > 0) rawList = record.photos.filter(Boolean);
-    else if (record.photo_url && String(record.photo_url).trim().length > 10) rawList = [String(record.photo_url).trim()];
-    else if (record.fieldPhoto && String(record.fieldPhoto).trim().length > 10) rawList = [String(record.fieldPhoto).trim()];
-    else if (record.photo && String(record.photo).trim().length > 10) rawList = [String(record.photo).trim()];
+    // 📡 [2순위 폴백]: 서버에 사진이 없고 오프라인 기기 로컬에만 사진이 남아있을 때만 제한적 인출
+    if (rawList.length === 0) {
+      var rId = String(record.id || '').trim();
+      var cleanPureId = rId.split(';')[0].trim();
+      var rDate = String(record.date || '').trim();
+      var altDate = rDate.replace(/[-/]/g, '.');
+      var savedPhotosMap = window.safeGetStorage('okbm_phone_photos_map', {}) || {};
+      if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
+        savedPhotosMap = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], savedPhotosMap);
+      }
+
+      var localPhotos = (cleanPureId && savedPhotosMap[cleanPureId]) || 
+                        (rId && savedPhotosMap[rId]) || 
+                        (rDate && savedPhotosMap[rDate]) || 
+                        (altDate && savedPhotosMap[altDate]);
+
+      if (Array.isArray(localPhotos) && localPhotos.length > 0) rawList = localPhotos.filter(Boolean);
+      else if (typeof localPhotos === 'string' && localPhotos.trim().length > 10) rawList = [localPhotos.trim()];
+      else if (record.photo && String(record.photo).trim().length > 10) rawList = [String(record.photo).trim()];
+      else if (record.fieldPhoto && String(record.fieldPhoto).trim().length > 10) rawList = [String(record.fieldPhoto).trim()];
+    }
 
     // 🌟 [전 브라우저 엑박 원천 차단 & 1200px 고화질 링크 정규화]
     return rawList.map(function(url) {
@@ -1875,8 +1869,8 @@ window.safeSetStorage = function(key, value) {
     triggerHaptic(12);
   };
 
-// 📸 [사진 업로드 파일 핸들러 엔진]
-  window.__handleRichMultiPhotoUpload = function(event) {
+// 📸 [사진 업로드 파일 핸들러 엔진 - 1200px 150KB 규격 압축 파이프라인]
+  window.__handleRichMultiPhotoUpload = async function(event) {
     var files = event.target.files;
     if (!files || files.length === 0) return;
 
@@ -1889,27 +1883,42 @@ window.safeSetStorage = function(key, value) {
     var filesToProcess = Array.from(files).slice(0, maxSlots);
     triggerHaptic(10);
 
-    filesToProcess.forEach(function(file) {
-      var reader = new FileReader();
-      reader.onload = function(e) {
-        var img = new Image();
-        img.onload = function() {
-          var canvas = document.createElement('canvas');
-          var ctx = canvas.getContext('2d');
-          var MAX_WIDTH = 1200;
-          var scale = img.width > MAX_WIDTH ? (MAX_WIDTH / img.width) : 1;
-          canvas.width = img.width * scale;
-          canvas.height = img.height * scale;
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          var compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+    for (var i = 0; i < filesToProcess.length; i++) {
+      var file = filesToProcess[i];
+      var base64 = '';
 
-          window.__tempUploadedPhotos.push(compressedBase64);
-          window.__renderRichPhotoThumbnails();
-        };
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
+      if (typeof window.processSinglePhotoSmart === 'function') {
+        base64 = await window.processSinglePhotoSmart(file);
+      } else {
+        base64 = await new Promise(function(resolve) {
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            var img = new Image();
+            img.onload = function() {
+              var canvas = document.createElement('canvas');
+              var ctx = canvas.getContext('2d');
+              var MAX_WIDTH = 1200;
+              var scale = img.width > MAX_WIDTH ? (MAX_WIDTH / img.width) : 1;
+              canvas.width = Math.round(img.width * scale);
+              canvas.height = Math.round(img.height * scale);
+              ctx.imageSmoothingEnabled = true;
+              ctx.imageSmoothingQuality = 'high';
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              resolve(canvas.toDataURL('image/jpeg', 0.82));
+            };
+            img.onerror = function() { resolve(''); };
+            img.src = e.target.result;
+          };
+          reader.onerror = function() { resolve(''); };
+          reader.readAsDataURL(file);
+        });
+      }
+
+      if (base64 && base64.length > 50) {
+        window.__tempUploadedPhotos.push(base64);
+        window.__renderRichPhotoThumbnails();
+      }
+    }
   };
 
   window.__removeRichSinglePhoto = function(index) {
@@ -2134,7 +2143,16 @@ window.safeSetStorage = function(key, value) {
       }
 
       if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(true);
-      if (typeof window.shareFeedToCommunity === 'function') window.shareFeedToCommunity(target);
+      
+      // 🛡️ [이중 발송 원천 차단]: 1.5초 내 동일 피드 중복 전송 방어 락
+      var nowTime = Date.now();
+      window.__lastSharedFeedTimeMap = window.__lastSharedFeedTimeMap || {};
+      var lastSharedTime = window.__lastSharedFeedTimeMap[String(target.id)] || 0;
+
+      if (nowTime - lastSharedTime > 1500 && target.isPublished === true && typeof window.shareFeedToCommunity === 'function') {
+        window.__lastSharedFeedTimeMap[String(target.id)] = nowTime;
+        window.shareFeedToCommunity(target);
+      }
     })();
   };
 
@@ -2312,18 +2330,55 @@ window.safeSetStorage = function(key, value) {
     triggerHaptic(10);
   };
 
-  // =========================================================================
-  // 🏕️ [핵심 복원] 아웃도어 필드 매거진 렌더러 & 낭만보관함 모달 엔진
+// =========================================================================
+  // 🏕️ [핵심 복원] 아웃도어 필드 매거진 렌더러 & R2 0.03초 실시간 피드 인출기
   // =========================================================================
   window.activeHistoryFeedTab = window.activeHistoryFeedTab || 'my';
+
+  // ⚡ [0.03초 단일 진실 공급원]: Cloudflare R2 feeds.json 전용 초고속 인출 엔진
+  window.fetchCommunityFeeds = async function(isForce) {
+    var r2Domain = window.R2_PUBLIC_DOMAIN || 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
+    var r2Url = r2Domain.replace(/\/+$/, '') + '/feeds.json?_t=' + Date.now();
+
+    // 1순위: Cloudflare 글로벌 엣지 CDN 번개 인출 (30ms)
+    try {
+      var r2Res = await fetch(r2Url, { cache: 'no-store' });
+      if (r2Res.ok) {
+        var r2Feeds = await r2Res.json();
+        if (Array.isArray(r2Feeds)) {
+          window.__allLoadedFeeds = r2Feeds;
+          localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(r2Feeds));
+          return r2Feeds;
+        }
+      }
+    } catch (r2Err) {
+      console.warn('📡 [History] R2 피드 조회 대기, 구글 시트 백업망 전환:', r2Err.message);
+    }
+
+    // 2순위: 구글 시트 백업망 폴백
+    try {
+      var gasUrl = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
+      var res = await fetch(gasUrl + '?action=GET_COMMUNITY_FEEDS&_t=' + Date.now());
+      if (res.ok) {
+        var cloudFeeds = await res.json();
+        if (Array.isArray(cloudFeeds)) {
+          window.__allLoadedFeeds = cloudFeeds;
+          localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(cloudFeeds));
+          return cloudFeeds;
+        }
+      }
+    } catch (e) {}
+
+    return window.__allLoadedFeeds || [];
+  };
 
   window.switchHistoryFeedTab = async function(tab) {
     window.activeHistoryFeedTab = tab;
     triggerHaptic(10);
 
-    if (tab === 'explore' && (!window.__allLoadedFeeds || window.__allLoadedFeeds.length === 0)) {
+    if (tab === 'explore') {
       if (typeof window.renderHistoryStage === 'function') window.renderHistoryStage(true);
-      if (typeof window.fetchCommunityFeeds === 'function') await window.fetchCommunityFeeds(true);
+      await window.fetchCommunityFeeds(true);
     }
 
     if (typeof window.renderHistoryStage === 'function') window.renderHistoryStage();
