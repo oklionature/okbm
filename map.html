@@ -1719,14 +1719,73 @@
           kakao.maps.event.addListener(map, 'idle', () => debouncedUpdateLODLabels());
           kakao.maps.event.addListener(map, 'click', handleMapClick);
 
-         if (spots && spots.length > 0) {
+       if (spots && spots.length > 0) {
             spots = spots.filter(s => !BLOCKED_SPOT_IDS.has(String(s.id).trim()));
             updateNewSpotFlags(spots); 
             renderSpots(); 
             checkUrlParamSpotFocus(); 
           } else {
-            // 캐시가 비어있는 저사양/신규 기기 즉시 긴급 원격 동기화
-            fetchLatestSpotsFromRemote();
+            // ⚡ [0개 멈춤 영구 차단] 캐시 부재 기기 실시간 구글 시트 긴급 동기화 엔진
+            fetchSpotsFromGoogleSheet();
+          }
+        });
+      }
+
+      function fetchSpotsFromGoogleSheet() {
+        if (typeof Papa === 'undefined') return;
+        var sheetUrl = 'https://docs.google.com/spreadsheets/d/' + window.GOOGLE_SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + window.PRIMARY_SHEET_GID;
+        
+        Papa.parse(sheetUrl, {
+          download: true,
+          header: true,
+          skipEmptyLines: true,
+          complete: function(results) {
+            if (!results.data || results.data.length === 0) return;
+            var parsed = results.data.map(function(row, idx) {
+              var lat = parseFloat(row.lat || row['위도'] || 0);
+              var lng = parseFloat(row.lng || row['경도'] || 0);
+              var name = (row.name || row.spot_main || row['산이름'] || row['박지명'] || '').trim();
+              var sub = (row.spot_sub || row['세부포인트'] || '').trim();
+              var entry = (row.trailhead_addr || row.entryPoint || row['들머리주소'] || '').trim();
+              var autoDetect = detectRegionAndCity(lat, lng, name, entry);
+
+              return {
+                id: String(row.id || (idx + 1)).trim(),
+                name: name,
+                spot_main: name,
+                spot_sub: sub,
+                fullName: sub ? (name + ' (' + sub + ')') : name,
+                lat: lat,
+                lng: lng,
+                elevation: row.elevation || row['고도'] || '450m',
+                trailhead_name: row.trailhead_name || row['들머리명칭'] || '',
+                trailhead_addr: entry,
+                entryPoint: entry,
+                desc_summary: row.desc_summary || row.desc || row['설명'] || '',
+                desc: row.desc || row.desc_summary || '',
+                youtubeUrls: (row.youtubeUrls || row['유튜브'] || '').split(/[\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean),
+                blogUrls: (row.blogUrls || row['블로그'] || '').split(/[\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean),
+                authorSnsUrl: row.authorSnsUrl || row['인스타'] || '',
+                courseType: row.courseType || row['코스유형'] || '일반',
+                terrain: (row.terrain || row['지형'] || '데크').split(/[,]+/).map(function(t){ return t.trim(); }),
+                difficulty: row.difficulty || row['난이도'] || '3',
+                distance: row.distance || row['거리'] || '',
+                region: autoDetect.region,
+                cityName: autoDetect.cityName,
+                searchCount: parseInt(row.searchCount || 0, 10),
+                sheetIndex: idx
+              };
+            }).filter(function(s) { return s.lat && s.lng && !BLOCKED_SPOT_IDS.has(String(s.id)); });
+
+            if (parsed.length > 0) {
+              spots = parsed;
+              localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
+              updateNewSpotFlags(spots);
+              renderSubChips();
+              renderSpots();
+              checkUrlParamSpotFocus();
+              showToast('전국 ' + spots.length + '개 박지 데이터를 성공적으로 불러왔습니다.');
+            }
           }
         });
       }
