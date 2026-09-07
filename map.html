@@ -1121,12 +1121,77 @@
       var NATIONWIDE_LEVEL = 13;
       var map = null, geocoder = null, globalClusterer = null;
 
-      // 📦 [데이터 배열 안전 초기화]
+      // 📦 [데이터 배열 안전 초기화 & 신규 유입자 즉시 수급 파이프라인]
       var spots = safeGetJSON('okbm_spots_cache', []) || [];
       var spotComments = safeGetJSON('okbm_comments', {}) || {};
       var userBookmarks = new Set((safeGetJSON('okbm_bookmarks', []) || []).map(function(s) { return String(s).trim(); }));
       var userVisited = new Set((safeGetJSON('okbm_visited', []) || []).map(function(s) { return String(s).trim(); }));
       var userMemos = safeGetJSON('okbm_memos', {}) || {};
+
+      // ⚡ [신규 유입자 0개 멈춤 100% 영구 차단] 스크립트 로드 즉시 마스터 DB 다이렉트 패치 기동
+      (function ensureMasterSpotsImmediately() {
+        if (spots && spots.length > 0) return;
+
+        var sheetUrl = 'https://docs.google.com/spreadsheets/d/' + window.GOOGLE_SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + window.PRIMARY_SHEET_GID + '&_t=' + Date.now();
+        fetch(sheetUrl).then(function(res) {
+          return res.text();
+        }).then(function(csvText) {
+          if (!csvText || typeof Papa === 'undefined') return;
+          Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+              if (!results.data || results.data.length === 0) return;
+              var parsed = results.data.map(function(row, idx) {
+                var lat = parseFloat(row.lat || row['위도'] || 0);
+                var lng = parseFloat(row.lng || row['경도'] || 0);
+                var name = (row.fullName || row.name || row.spot_main || row['산이름'] || row['박지명'] || '').trim();
+                var sub = (row.spot_sub || row['세부포인트'] || '').trim();
+                var entry = (row.trailhead_addr || row.entryPoint || row['들머리주소'] || '').trim();
+                var autoDetect = detectRegionAndCity(lat, lng, name, entry);
+
+                return {
+                  id: String(row.id || (idx + 1)).trim(),
+                  name: name,
+                  spot_main: name,
+                  spot_sub: sub,
+                  fullName: sub ? (name + ' (' + sub + ')') : name,
+                  lat: lat,
+                  lng: lng,
+                  elevation: row.elevation || row['고도'] || '450m',
+                  trailhead_name: row.trailhead_name || row['들머리명칭'] || '',
+                  trailhead_addr: entry,
+                  entryPoint: entry,
+                  desc_summary: row.desc_summary || row.desc || row['설명'] || '',
+                  desc: row.desc || row.desc_summary || '',
+                  youtubeUrls: (row.youtubeUrls || row['유튜브'] || '').split(/[\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean),
+                  blogUrls: (row.blogUrls || row['블로그'] || '').split(/[\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean),
+                  authorSnsUrl: row.authorSnsUrl || row['인스타'] || '',
+                  courseType: row.courseType || row['코스유형'] || '일반',
+                  terrain: (row.terrain || row['지형'] || '데크').split(/[,]+/).map(function(t){ return t.trim(); }),
+                  difficulty: row.difficulty || row['난이도'] || '3',
+                  distance: row.distance_km ? (row.distance_km + 'km') : (row.distance || ''),
+                  region: autoDetect.region,
+                  cityName: autoDetect.cityName,
+                  searchCount: parseInt(row.searchCount || 0, 10),
+                  sheetIndex: idx
+                };
+              }).filter(function(s) { return s.lat && s.lng && !BLOCKED_SPOT_IDS.has(String(s.id)); });
+
+              if (parsed.length > 0) {
+                spots = parsed;
+                localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
+                updateNewSpotFlags(spots);
+                renderSubChips();
+                if (map) {
+                  renderSpots();
+                  checkUrlParamSpotFocus();
+                }
+              }
+            }
+          });
+        }).catch(function(e) {});
+      })();
 
       // 🗺️ 지도 마커 / 오버레이 / UI 상태 전역 변수
       var spotNativeMarkerMap = new Map();

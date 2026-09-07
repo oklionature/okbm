@@ -5051,7 +5051,10 @@ var adBannersHtml = `
                 };
               }).filter(function(s) { return s.name.trim() !== ''; });
 
-              // ⚡ 박지 DB 수신 완료 즉시 숨은 박지 레일 자동 렌더링
+              // ⚡ [신규 유저 필수 패치] 전국지도(map.html)용 영구 로컬 캐시 즉각 동기화
+              localStorage.setItem('okbm_spots_cache', JSON.stringify(registeredSpots));
+
+     // ⚡ 박지 DB 수신 완료 즉시 숨은 박지 레일 자동 렌더링
               if (typeof renderSecretSpotTrailerRail === 'function') {
                 renderSecretSpotTrailerRail();
               }
