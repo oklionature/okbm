@@ -427,7 +427,7 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       photosToSave = [rec.photo];
     }
 
-    // 🚀 Base64 사진이 있으면 R2 영구 링크로 승격
+    // 🚀 Base64 사진이 있으면 R2/드라이브 영구 링크로 승격
     var finalCloudPhotos = [];
     var hasBase64 = photosToSave.some(function(p) { return typeof p === 'string' && p.startsWith('data:'); });
 
@@ -460,13 +460,17 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
     }
 
     var mainCloudPhoto = finalCloudPhotos[0] || '';
+// 🛡️ [메모 분리 보존]: 템플릿의 한줄 각오만 갱신하고, 히스토리의 사진별 120자 일지는 100% 계승
+    var existingPhotoMemos = Array.isArray(rec.photoMemos) && rec.photoMemos.length > 0 ? rec.photoMemos : [];
+    var existingFullMemo = rec.memo || (existingPhotoMemos[0] || '');
 
     var newRecord = {
       id: rec.id || ('pack_' + Date.now()),
       date: rec.date || cleanDateStr,
       spot: liveSpot,
-      memo: '',
+      memo: existingFullMemo, // 기존 장문 일지 100% 보존 (빈칸 덮어쓰기 원천 차단)
       oneLineMemo: liveMemo || (liveSpot ? (liveSpot + ' 패킹') : '기록 준비 완료'),
+      photoMemos: existingPhotoMemos, // 사진별 120자 메모 100% 계승
       elevation: rec.elevation || '',
       weightKg: weightKg,
       weightGrams: totalGrams || rec.weightGrams || 0,
@@ -481,13 +485,9 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       isPublished: true
     };
 
+    // 🏛️ [단일 파이프라인 전담 위임]: savePackingHistoryRecord 내부에서 로컬 및 클라우드 업서트를 완벽히 단 1회만 처리
     if (typeof window.savePackingHistoryRecord === 'function') {
       window.savePackingHistoryRecord(newRecord);
-    }
-
-    // ⚡ 일반 유저가 작성한 전체 공개 카드 즉시 Cloudflare R2 및 공용 피드로 직통 발행
-    if (typeof window.shareFeedToCommunity === 'function') {
-      window.shareFeedToCommunity(newRecord);
     }
 
     window.__studioMultiPhotos = null;

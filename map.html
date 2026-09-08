@@ -592,7 +592,7 @@
       .comment-input-author, .comment-input-text { flex: 1; padding: 4px 6px; border: 1px solid var(--border-hairline); border-radius: 5px; font-size: 0.7rem; outline: none; background: var(--bg-base); color: var(--text-primary); }
       .comment-btn-submit { background: #0f766e; color: #fff; border: none; border-radius: 5px; padding: 4px 9px; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
 
-      /* 하단 네비 독 고정 렌더링 */
+   /* 하단 네비 독 고정 렌더링 */
       .mobile-bottom-dock {
         display: flex !important; 
         position: fixed; 
@@ -606,11 +606,21 @@
         align-items: center; 
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
-        transform: translateZ(0);
-        -webkit-transform: translateZ(0);
+        transform: translate3d(0, 0, 0) !important;
+        -webkit-transform: translate3d(0, 0, 0) !important;
+        will-change: transform;
         contain: layout size style;
+        overflow: visible !important;
       }
-      .dock-item { 
+      .mobile-bottom-dock::after {
+        content: '';
+        position: absolute;
+        left: 0; right: 0; top: 100%;
+        height: 60px;
+        background: rgba(0, 0, 0, 0.98);
+        pointer-events: none;
+      }
+      .dock-item {
         display: flex; 
         flex-direction: column; 
         align-items: center; 
@@ -900,16 +910,17 @@
     <!-- 📱 하단 네비 독 (인덱스와 동일한 낭만루트 5대 메인 탭) -->
     <div class="mobile-bottom-dock notranslate">
       <!-- 1. 낭만루터 -->
-      <a href="index.html" class="dock-item" title="낭만루터" onclick="triggerHaptic(10);">
+      <a href="index.html" class="dock-item" title="낭만루터" onclick="window.smoothNavigate('index.html', event);">
         <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
         <span>낭만루터</span>
       </a>
 
       <!-- 2. 전국지도 (현재 활성화) -->
-      <a href="map.html" class="dock-item active" title="전국지도" onclick="triggerHaptic(10);">
+      <a href="map.html" class="dock-item active" title="전국지도" onclick="window.smoothNavigate('map.html', event);">
         <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
         <span>전국지도</span>
       </a>
+
 
      <!-- 3. 낭만플랜 (지도 위 모달 겹침 방지: 홈 직통 안전 라우팅) -->
       <a href="index.html?open=plan" class="dock-item" title="낭만플랜" onclick="triggerHaptic(12);">
@@ -933,56 +944,11 @@
         <span>낭만보관함</span>
       </a>
 
-      <!-- 5. 마이리포트 -->
+     <!-- 5. 마이리포트 -->
       <button type="button" class="dock-item" title="마이리포트" onclick="triggerHaptic(12); handleAuthBtnClick();">
         <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-        <span>내정보</span>
+        <span>마이리포트</span>
       </button>
-    </div>
-
-    <!-- 🔑 간편 로그인 모달 (배경 터치 시 즉시 닫힘 & 투명 장벽 해제) -->
-    <div class="custom-modal-overlay" id="loginModalOverlay" onclick="if(event.target===this) closeLoginModal();">
-      <div class="custom-modal login-box-card" onclick="event.stopPropagation();">
-        <h3 style="color:var(--accent-blue); display:flex; align-items:center; justify-content:center; gap:6px;">
-          <span id="loginModalCampIcon"></span>
-          <span>낭만 백패커 로그인</span>
-        </h3>
-        <p style="font-size:0.72rem; color:var(--text-secondary); line-height:1.4;">
-          소중한 박지 보존과 클린 백패킹 문화를 위해<br><strong>로그인 시 상세 들머리 주소와 4단계 실전 팁</strong>이 100% 해금됩니다.
-        </p>
-        <div class="login-btn-social-group">
-          <button type="button" class="btn-social-kakao" onclick="loginWithKakao()">
-            <span id="kakaoLoginIcon" style="display:inline-flex;"></span>
-            <span>카카오 1초 간편 로그인</span>
-          </button>
-        </div>
-        <div class="modal-btn-row" style="justify-content:center; margin-top:6px;">
-          <button type="button" class="modal-btn modal-btn-cancel" onclick="closeLoginModal()">닫기</button>
-        </div>
-      </div>
-    </div>
-
-   <!-- 👤 닉네임 변경 및 회원 관리 모달 (배경 터치 시 즉시 닫힘 & 투명 장벽 해제) -->
-    <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="if(event.target===this) closeUserProfileModal();">
-      <div class="custom-modal login-box-card" onclick="event.stopPropagation();">
-        <h3 style="color:var(--accent-blue); display:flex; align-items:center; justify-content:center; gap:6px;">
-          <svg viewBox="0 0 24 24" class="ui-icon" style="width:18px; height:18px; color:var(--accent-emerald);"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
-          <span>내 계정 관리</span>
-        </h3>
-        <div class="modal-field" style="text-align:left; margin-top:6px;">
-          <label style="color:var(--text-secondary); font-size:0.72rem; font-weight:700;">활동 닉네임 변경</label>
-          <div style="display:flex; gap:6px; margin-top:4px;">
-            <input type="text" id="profileModalNicknameInput" class="modal-input" placeholder="새 닉네임 입력" style="flex:1; font-size:0.78rem; padding:6px 8px;" />
-            <button type="button" class="modal-btn" style="background:#0284c7; color:#fff; font-weight:800; padding:6px 12px; font-size:0.72rem;" onclick="saveNewNicknameFromModal()">변경</button>
-          </div>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:8px; width:100%; margin-top:10px; border-top:1px dashed var(--border-hairline); padding-top:10px;">
-          <button type="button" class="modal-btn" style="background:rgba(244,63,94,0.15); border:1px solid #f43f5e; color:#fda4af; font-weight:800; padding:8px; font-size:0.72rem;" onclick="closeUserProfileModal(); logoutUser();">
-            로그아웃
-          </button>
-          <button type="button" class="modal-btn modal-btn-cancel" onclick="closeUserProfileModal()">닫기</button>
-        </div>
-      </div>
     </div>
 
     <!-- K-LNT 7원칙 모달 -->
@@ -1074,7 +1040,27 @@
       </div>
     </div>
        <script>
-        // 🧰 [공통 유틸 1순위 선언 - ReferenceError 100% 영구 방어]
+       // 🧰 [공통 유틸 1순위 선언 - ReferenceError 100% 영구 방어]
+      window.smoothNavigate = function(url, e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        triggerHaptic(10);
+        var currentPath = window.location.pathname;
+        var targetPath = url.split('?')[0];
+
+        // 동일 지도 페이지 클릭 시 리로드 없이 스마트 초기화만 작동
+        if (targetPath.includes('map.html') && currentPath.includes('map.html')) {
+          if (typeof handleSmartResetClick === 'function') handleSmartResetClick();
+          return;
+        }
+
+        // 브라우저 툴바 팝업 억제 텔레포트 전환 (뒤로가기 완벽 보존)
+        document.body.style.pointerEvents = 'none';
+        document.body.style.opacity = '0.92';
+        setTimeout(function() {
+          window.location.assign(url);
+        }, 30);
+      };
+
       function safeGetJSON(key, defaultVal) {
         try {
           var item = localStorage.getItem(key);
@@ -1601,31 +1587,32 @@
       }
 
       function initStaticVectors() {
-        document.getElementById('sidebarCampIcon').innerHTML = ICONS.CAMP;
-        document.getElementById('btnSidebarSubmit').innerHTML = `${ICONS.BACKPACK}<span>제보</span>`;
-        document.getElementById('iconToolBackup').innerHTML = ICONS.BACKUP;
-        document.getElementById('iconToolRestore').innerHTML = ICONS.RESTORE;
+        const setHtml = (id, html) => { const el = document.getElementById(id); if (el) el.innerHTML = html; };
+        setHtml('sidebarCampIcon', ICONS.CAMP);
+        setHtml('btnSidebarSubmit', `${ICONS.BACKPACK}<span>제보</span>`);
+        setHtml('iconToolBackup', ICONS.BACKUP);
+        setHtml('iconToolRestore', ICONS.RESTORE);
         
-        document.getElementById('tabIconRegion').innerHTML = ICONS.PIN;
-        document.getElementById('tabIconTerrain').innerHTML = ICONS.ROCK;
-        document.getElementById('tabIconCourse').innerHTML = ICONS.FAST;
-        document.getElementById('tabIconMy').innerHTML = ICONS.HEART;
+        setHtml('tabIconRegion', ICONS.PIN);
+        setHtml('tabIconTerrain', ICONS.ROCK);
+        setHtml('tabIconCourse', ICONS.FAST);
+        setHtml('tabIconMy', ICONS.HEART);
 
-        document.getElementById('iconCycleDifficulty').innerHTML = ICONS.ROCK;
-        document.getElementById('iconCycleStatus').innerHTML = ICONS.FAST;
-        document.getElementById('iconCycleTerrain').innerHTML = ICONS.DECK;
+        setHtml('iconCycleDifficulty', ICONS.ROCK);
+        setHtml('iconCycleStatus', ICONS.FAST);
+        setHtml('iconCycleTerrain', ICONS.DECK);
 
-        document.getElementById('bannerPinIcon').innerHTML = ICONS.PIN;
-        document.getElementById('loginModalCampIcon').innerHTML = ICONS.CAMP;
-        document.getElementById('kakaoLoginIcon').innerHTML = ICONS.TALK;
-        document.getElementById('lntAlertTopIcon').innerHTML = ICONS.ALERT_CARD;
-        document.getElementById('lntProhibitIcon').innerHTML = ICONS.BAN_LNT;
+        setHtml('bannerPinIcon', ICONS.PIN);
+        setHtml('loginModalCampIcon', ICONS.CAMP);
+        setHtml('kakaoLoginIcon', ICONS.TALK);
+        setHtml('lntAlertTopIcon', ICONS.ALERT_CARD);
+        setHtml('lntProhibitIcon', ICONS.BAN_LNT);
 
-        document.getElementById('btnModalPinPickIcon').innerHTML = ICONS.PIN;
-        document.getElementById('btnModalElevIcon').innerHTML = ICONS.MOUNTAIN;
-        document.getElementById('radioFastIcon').innerHTML = ICONS.FAST;
-        document.getElementById('radioTraverseIcon').innerHTML = ICONS.HIKING;
-        document.getElementById('radioCampIcon').innerHTML = ICONS.CAMP;
+        setHtml('btnModalPinPickIcon', ICONS.PIN);
+        setHtml('btnModalElevIcon', ICONS.MOUNTAIN);
+        setHtml('radioFastIcon', ICONS.FAST);
+        setHtml('radioTraverseIcon', ICONS.HIKING);
+        setHtml('radioCampIcon', ICONS.CAMP);
       }
 
       function initMapEngine() {
@@ -1694,42 +1681,27 @@
 
         // ☁️ [클라우드 100% 동기화]: 회원 찜, 클리어, 메모 마커 안전 복원
         try {
-          if (isUserLoggedIn() && typeof loadUserDataFromCloud === 'function') {
+          if (isUserLoggedIn()) {
             var profile = safeGetJSON('user_profile', null);
             var userId = (profile && profile.id) ? String(profile.id).trim() : localStorage.getItem('user_auth_token');
-            if (userId) {
-              loadUserDataFromCloud(userId).then(function(cloudData) {
-                if (!cloudData) return;
-                var isUpdated = false;
-                if (cloudData.bookmarks && Array.isArray(cloudData.bookmarks)) {
-                  localStorage.setItem('okbm_bookmarks', JSON.stringify(cloudData.bookmarks));
-                  userBookmarks = new Set(cloudData.bookmarks.map(function(s) { return String(s).trim(); }));
-                  isUpdated = true;
+            if (userId && window.RomanticVault && typeof window.RomanticVault.hydrateFromServer === 'function') {
+              window.RomanticVault.hydrateFromServer(userId).then(function(cloudData) {
+                if (cloudData) {
+                  userBookmarks = new Set((safeGetJSON('okbm_bookmarks', [])).map(String));
+                  userVisited = new Set((safeGetJSON('okbm_visited', [])).map(String));
+                  userMemos = safeGetJSON('okbm_memos', {});
+                  renderSubChips();
+                  if (window.requestAnimationFrame) {
+                    window.requestAnimationFrame(function() {
+                      renderSpots();
+                      refreshCurrentSpotPopup();
+                    });
+                  } else {
+                    renderSpots();
+                    refreshCurrentSpotPopup();
+                  }
                 }
-                if (cloudData.visited && Array.isArray(cloudData.visited)) {
-                  localStorage.setItem('okbm_visited', JSON.stringify(cloudData.visited));
-                  userVisited = new Set(cloudData.visited.map(function(s) { return String(s).trim(); }));
-                  isUpdated = true;
-                }
-                if (cloudData.memos && typeof cloudData.memos === 'object') {
-            localStorage.setItem('okbm_memos', JSON.stringify(cloudData.memos));
-            userMemos = cloudData.memos;
-            isUpdated = true;
-          }
-          if (isUpdated) {
-            renderSubChips();
-            // 🛡️ 3중 연속 렌더링 충돌 차단: 프레임 버퍼를 비우고 1회만 정밀 렌더링
-            if (window.requestAnimationFrame) {
-              window.requestAnimationFrame(function() {
-                renderSpots();
-                refreshCurrentSpotPopup();
-              });
-            } else {
-              renderSpots();
-              refreshCurrentSpotPopup();
-            }
-          }
-        }).catch(function() {});
+              }).catch(function() {});
             }
           }
         } catch (syncErr) {}
@@ -2323,23 +2295,25 @@ function updateSmartResetButtons() {
         const sId = String(spotId || (currentActiveSpot ? currentActiveSpot.id : '')).trim();
         if (!sId) return;
 
-        let bList = new Set(JSON.parse(localStorage.getItem('okbm_bookmarks') || '[]').map(s => String(s).trim()));
         let isNowBookmarked = false;
-
-        if (bList.has(sId)) {
-          bList.delete(sId); userBookmarks.delete(sId); isNowBookmarked = false;
-          triggerHaptic(10); showToast(`${ICONS.HEART} <span>찜 목록에서 해제되었습니다.</span>`);
+        if (window.RomanticVault && typeof window.RomanticVault.toggleBookmark === 'function') {
+          isNowBookmarked = window.RomanticVault.toggleBookmark(sId);
         } else {
-          bList.add(sId); userBookmarks.add(sId); isNowBookmarked = true;
-          triggerHaptic(15); showToast(`${ICONS.HEART} <span>찜 목록에 추가되었습니다!</span>`);
+          let bList = new Set(JSON.parse(localStorage.getItem('okbm_bookmarks') || '[]').map(s => String(s).trim()));
+          if (bList.has(sId)) {
+            bList.delete(sId);
+            isNowBookmarked = false;
+          } else {
+            bList.add(sId);
+            isNowBookmarked = true;
+          }
+          localStorage.setItem('okbm_bookmarks', JSON.stringify([...bList]));
+          if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
         }
 
-        localStorage.setItem('okbm_bookmarks', JSON.stringify([...bList]));
-        const profile = safeGetJSON('user_profile', null);
-        if (profile && profile.id) {
-          localStorage.setItem(`okbm_bookmarks_${profile.id}`, JSON.stringify([...bList]));
-        }
-        syncUserDataToCloud();
+        userBookmarks = new Set(JSON.parse(localStorage.getItem('okbm_bookmarks') || '[]').map(s => String(s).trim()));
+        triggerHaptic(isNowBookmarked ? 15 : 10);
+        showToast(isNowBookmarked ? `${ICONS.HEART} <span>찜 목록에 추가되었습니다!</span>` : `${ICONS.HEART} <span>찜 목록에서 해제되었습니다.</span>`);
 
         document.querySelectorAll('.btn-action-fav').forEach(btn => {
           if (isNowBookmarked) { btn.classList.add('bookmarked'); btn.innerHTML = `${ICONS.HEART} 찜됨`; }
@@ -2371,26 +2345,26 @@ function updateSmartResetButtons() {
         const sId = String(spotId || (currentActiveSpot ? currentActiveSpot.id : '')).trim();
         if (!sId) return;
 
-        let vList = new Set(JSON.parse(localStorage.getItem('okbm_visited') || '[]').map(s => String(s).trim()));
-        let bList = new Set(JSON.parse(localStorage.getItem('okbm_bookmarks') || '[]').map(s => String(s).trim()));
         let isNowVisited = false;
-
-        if (vList.has(sId)) {
-          vList.delete(sId); userVisited.delete(sId); isNowVisited = false;
-          triggerHaptic(10); showToast(`${ICONS.FLAG} <span>클리어 목록에서 제외되었습니다.</span>`);
+        if (window.RomanticVault && typeof window.RomanticVault.toggleVisited === 'function') {
+          isNowVisited = window.RomanticVault.toggleVisited(sId);
         } else {
-          vList.add(sId); bList.delete(sId); userVisited.add(sId); userBookmarks.delete(sId); isNowVisited = true;
-          triggerHaptic(15); showToast(`${ICONS.FLAG} <span>박지 정복 클리어!</span>`);
+          let vList = new Set(JSON.parse(localStorage.getItem('okbm_visited') || '[]').map(s => String(s).trim()));
+          let bList = new Set(JSON.parse(localStorage.getItem('okbm_bookmarks') || '[]').map(s => String(s).trim()));
+          if (vList.has(sId)) {
+            vList.delete(sId);
+            isNowVisited = false;
+          } else {
+            vList.add(sId);
+            bList.delete(sId);
+            isNowVisited = true;
+          }
+          localStorage.setItem('okbm_visited', JSON.stringify([...vList]));
+          localStorage.setItem('okbm_bookmarks', JSON.stringify([...bList]));
         }
 
-        localStorage.setItem('okbm_visited', JSON.stringify([...vList]));
-        localStorage.setItem('okbm_bookmarks', JSON.stringify([...bList]));
-        const profile = safeGetJSON('user_profile', null);
-        if (profile && profile.id) {
-          localStorage.setItem(`okbm_visited_${profile.id}`, JSON.stringify([...vList]));
-          localStorage.setItem(`okbm_bookmarks_${profile.id}`, JSON.stringify([...bList]));
-        }
-        syncUserDataToCloud();
+        triggerHaptic(isNowVisited ? 15 : 10);
+        showToast(isNowVisited ? `${ICONS.FLAG} <span>박지 정복 클리어!</span>` : `${ICONS.FLAG} <span>클리어 목록에서 제외되었습니다.</span>`);
 
         document.querySelectorAll('.btn-action-visited').forEach(btn => {
           if (isNowVisited) { btn.classList.add('visited'); btn.innerHTML = `${ICONS.FLAG} 클리어`; }
@@ -2416,13 +2390,17 @@ function updateSmartResetButtons() {
       function saveUserPrivateMemo(spotId, text) {
         if (!isUserLoggedIn()) return openLoginModal();
         triggerHaptic(10);
-        userMemos[String(spotId).trim()] = text.trim();
-        localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
-        const profile = safeGetJSON('user_profile', null);
-        if (profile && profile.id) {
-          localStorage.setItem(`okbm_memos_${profile.id}`, JSON.stringify(userMemos));
+        const sId = String(spotId).trim();
+        const cleanText = String(text || '').trim();
+
+        if (window.RomanticVault && typeof window.RomanticVault.saveMemo === 'function') {
+          window.RomanticVault.saveMemo(sId, cleanText);
+        } else {
+          userMemos[sId] = cleanText;
+          localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
+          syncUserDataToCloud();
         }
-        syncUserDataToCloud();
+
         showToast(`${ICONS.MEMO} <span>나만의 메모가 안전하게 저장되었습니다.</span>`);
       }
 
@@ -3061,30 +3039,82 @@ function updateSmartResetButtons() {
         // 정보창이 스크롤 중 제스처 오작동으로 사라지지 않도록 슬라이드 닫기 이벤트 제거
       }
 
+      // 🌐 [전국 실시간 통합 조회수 집계 엔진]
+      window.__globalSpotViewsMap = safeGetJSON('okbm_global_spot_views', {});
+
+      function fetchGlobalSpotRankings() {
+        if (!window.GAS_API_URL || window.GAS_API_URL.includes('구글시트_배포_URL')) return;
+        fetch(window.GAS_API_URL + '?action=GET_TOP_RANKINGS&_t=' + Date.now())
+          .then(res => res.json())
+          .then(data => {
+            if (data && typeof data === 'object') {
+              window.__globalSpotViewsMap = Object.assign({}, window.__globalSpotViewsMap, data);
+              localStorage.setItem('okbm_global_spot_views', JSON.stringify(window.__globalSpotViewsMap));
+            }
+          })
+          .catch(() => {});
+      }
+      setTimeout(fetchGlobalSpotRankings, 800);
+
+      function getSpotViews(spot) {
+        if (!spot) return 0;
+        const nameKey = String(spot.spot_main || spot.name || '').trim();
+        const globalCount = Number(window.__globalSpotViewsMap[nameKey]) || 0;
+        const localCount = Number(spot.searchCount) || Number(localStorage.getItem(`okbm_views_${spot.id}`)) || 0;
+        return Math.max(globalCount, localCount);
+      }
+
       function incrementSpotCount(spotId) {
         const target = spots.find(s => String(s.id).trim() === String(spotId).trim());
         if (!target) return;
-        const key = `okbm_views_${spotId}`, views = (parseInt(localStorage.getItem(key), 10) || target.searchCount || 0) + 1;
-        localStorage.setItem(key, views); target.searchCount = views;
+        
+        const nameKey = String(target.spot_main || target.name || '').trim();
+        const currentViews = getSpotViews(target) + 1;
+
+        window.__globalSpotViewsMap[nameKey] = currentViews;
+        localStorage.setItem('okbm_global_spot_views', JSON.stringify(window.__globalSpotViewsMap));
+        localStorage.setItem(`okbm_views_${spotId}`, currentViews);
+        target.searchCount = currentViews;
+
+        // 🚀 구글 시트 ranking_stats 시트로 비동기 실시간 +1 누적
+        if (window.GAS_API_URL && !window.GAS_API_URL.includes('구글시트_배포_URL')) {
+          fetch(window.GAS_API_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: 'INCREMENT_SPOT_VIEW',
+              spotName: nameKey
+            })
+          }).catch(() => {});
+        }
       }
 
       function handleSearchInputChange(mode = 'pc') {
         const inputEl = document.getElementById('pcSearchInput');
         const clearBtn = document.getElementById('pcSearchClearBtn');
-        if (inputEl && clearBtn) clearBtn.style.display = inputEl.value.trim().length > 0 ? 'flex' : 'none';
+        if (inputEl && clearBtn) {
+          clearBtn.style.display = inputEl.value.trim().length > 0 ? 'inline-flex' : 'none';
+        }
       }
 
-      function clearSearchInput(mode = 'pc', shouldFocus = false) {
+      function clearSearchInput(mode = 'pc', shouldFocus = true) {
         const inputEl = document.getElementById('pcSearchInput');
         const clearBtn = document.getElementById('pcSearchClearBtn');
-        if (inputEl) { inputEl.value = ''; if (shouldFocus) inputEl.focus(); else inputEl.blur(); }
+        const dropdown = document.getElementById('pcSearchDropdown');
+        if (inputEl) {
+          inputEl.value = '';
+          if (shouldFocus) inputEl.focus();
+        }
         if (clearBtn) clearBtn.style.display = 'none';
-        if (shouldFocus) showTopRankings(mode);
+        if (dropdown) dropdown.style.display = 'none';
+        triggerHaptic(10);
       }
 
       function showTopRankings(mode = 'pc') {
         const inputEl = document.getElementById('pcSearchInput');
         const dropdown = document.getElementById('pcSearchDropdown');
+        if (!dropdown) return;
         handleSearchInputChange(mode);
         if (inputEl && inputEl.value.trim()) return;
 
@@ -3092,13 +3122,14 @@ function updateSmartResetButtons() {
           <div style="padding:6px 12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-hairline); background:var(--bg-card);">
             <div style="display:flex; align-items:center; gap:4px;">
               <span style="color:#f59e0b; font-size:0.70rem;">★</span>
-              <span style="font-size:0.72rem; font-weight:800; color:var(--text-primary);">인기 박지 TOP 5</span>
+              <span style="font-size:0.72rem; font-weight:800; color:var(--text-primary);">전국 실시간 인기 박지 TOP 5</span>
             </div>
             <button type="button" onclick="document.getElementById('pcSearchDropdown').style.display='none';" style="background:none; border:none; color:var(--text-muted); font-size:0.68rem; font-weight:700; cursor:pointer; padding:2px 4px;">✕ 닫기</button>
           </div>`;
         dropdown.style.display = 'block';
 
-        const sorted = [...spots].sort((a, b) => getSpotViews(b) - getSpotViews(a)).slice(0, 5);
+        const spotPool = (spots && spots.length > 0) ? spots : (safeGetJSON('okbm_spots_cache', []) || []);
+        const sorted = [...spotPool].sort((a, b) => getSpotViews(b) - getSpotViews(a)).slice(0, 5);
         sorted.forEach((item, idx) => {
           const rankColors = [
             'background:linear-gradient(135deg, #f59e0b, #d97706); color:#fff;',
@@ -3878,7 +3909,7 @@ function updateSmartResetButtons() {
         openAddModal(title, lat, lng, sub);
       }
 
-      async function executeSearch(mode = 'pc') {
+   async function executeSearch(mode = 'pc') {
         const inputEl = document.getElementById('pcSearchInput');
         const dropdown = document.getElementById('pcSearchDropdown');
         const rawQuery = inputEl ? inputEl.value.trim() : '';
@@ -3890,9 +3921,6 @@ function updateSmartResetButtons() {
           document.getElementById('sidebar').classList.add('collapsed');
           updateDockSidebarText(false);
         }
-        
-        dropdown.innerHTML = `<div class="dropdown-header"><span>검색 중...</span><button type="button" class="btn-close-dropdown" onclick="document.getElementById('pcSearchDropdown').style.display='none';">✕ 닫기</button></div>`;
-        dropdown.style.display = 'block';
 
         const results = [], seenCoords = new Set(), lowerQ = rawQuery.toLowerCase();
         spots.forEach(spot => {
@@ -3914,6 +3942,67 @@ function updateSmartResetButtons() {
           }
         });
 
+        const renderItems = (items) => {
+          if (!dropdown) return;
+          dropdown.style.display = 'block';
+
+          if (items.length === 0) {
+            dropdown.innerHTML = '<li style="padding:14px; text-align:center; color:var(--text-muted); font-size:0.75rem;">일치하는 검색 결과가 없습니다.</li>';
+            return;
+          }
+
+          dropdown.innerHTML = '';
+          items.forEach(res => {
+            const li = document.createElement('li');
+            li.style.cssText = 'padding:8px 12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-hairline); cursor:pointer; min-height:40px; box-sizing:border-box; transition:background 0.15s ease;';
+            li.onmouseover = () => { li.style.background = 'var(--bg-card-hover)'; };
+            li.onmouseout = () => { li.style.background = 'transparent'; };
+
+            const badgeHtml = res.isInternal 
+              ? '<span style="font-size:0.56rem; font-weight:900; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">박지</span>'
+              : '<span style="font-size:0.56rem; font-weight:700; background:rgba(255,255,255,0.06); color:#94a3b8; border:1px solid rgba(255,255,255,0.12); padding:1px 5px; border-radius:4px; flex-shrink:0;">장소</span>';
+
+            li.innerHTML = `
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
+                <div style="display:flex; align-items:center; gap:5px;">
+                  ${badgeHtml}
+                  <span style="font-size:0.80rem; font-weight:800; color:${res.isInternal ? '#ffffff' : 'var(--text-primary)'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                    ${escapeHtml(res.title.replace(/^\[등록박지\]\s*/, ''))}
+                  </span>
+                </div>
+                <span style="font-size:0.63rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  ${escapeHtml(res.sub)}
+                </span>
+              </div>
+              ${(isAdminMode && !res.isInternal) ? `<button type="button" class="btn-quick-add" style="display:inline-block; padding:3px 7px; font-size:0.65rem;" onclick="event.stopPropagation(); quickAddFromSearch('${escapeHtml(res.title)}', ${res.lat}, ${res.lng}, '${escapeHtml(res.sub)}')">➕ 등록</button>` : ''}`;
+
+            li.addEventListener('click', () => {
+              triggerHaptic(10);
+              dropdown.style.display = 'none';
+              if (window.innerWidth <= 768) { 
+                isSidebarCollapsed = true; 
+                document.getElementById('sidebar').classList.add('collapsed'); 
+                updateDockSidebarText(false); 
+              }
+              if (res.isInternal && res.spotObj) { 
+                focusSpotOnMap(res.spotObj); 
+              } else {
+                smoothCenterMapOnSpot(res.lat, res.lng);
+                if (tempSearchMarker) tempSearchMarker.setMap(null);
+                tempSearchMarker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(res.lat, res.lng), map: map });
+                setTimeout(() => { if (tempSearchMarker) tempSearchMarker.setMap(null); }, 3500);
+              }
+            });
+            dropdown.appendChild(li);
+          });
+        };
+
+        // ⚡ 1단계: 우리 자체 박지 결과는 0.001초 만에 즉시 화면에 렌더링
+        if (results.length > 0) {
+          renderItems(results);
+        }
+
+        // 📡 2단계: 카카오 장소 검색 비동기 추가 병합
         if (typeof kakao !== 'undefined' && kakao.maps && kakao.maps.services) {
           const places = new kakao.maps.services.Places();
           places.keywordSearch(rawQuery, (data, status) => {
@@ -3931,61 +4020,7 @@ function updateSmartResetButtons() {
                 }
               });
             }
-
-           dropdown.innerHTML = `
-              <div style="padding:6px 12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-hairline); background:var(--bg-card);">
-                <span style="font-size:0.72rem; font-weight:800; color:var(--text-primary);">검색 결과 (${results.length}건)</span>
-                <button type="button" onclick="document.getElementById('pcSearchDropdown').style.display='none';" style="background:none; border:none; color:var(--text-muted); font-size:0.68rem; font-weight:700; cursor:pointer; padding:2px 4px;">✕ 닫기</button>
-              </div>`;
-
-            if (results.length === 0) {
-              dropdown.innerHTML += '<li style="padding:14px; text-align:center; color:var(--text-muted); font-size:0.75rem;">일치하는 검색 결과가 없습니다.</li>';
-              return;
-            }
-
-            results.forEach(res => {
-              const li = document.createElement('li');
-              li.style.cssText = 'padding:8px 12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-hairline); cursor:pointer; min-height:40px; box-sizing:border-box; transition:background 0.15s ease;';
-              li.onmouseover = () => { li.style.background = 'var(--bg-card-hover)'; };
-              li.onmouseout = () => { li.style.background = 'transparent'; };
-
-              const badgeHtml = res.isInternal 
-                ? '<span style="font-size:0.56rem; font-weight:900; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">박지</span>'
-                : '<span style="font-size:0.56rem; font-weight:700; background:rgba(255,255,255,0.06); color:#94a3b8; border:1px solid rgba(255,255,255,0.12); padding:1px 5px; border-radius:4px; flex-shrink:0;">장소</span>';
-
-              li.innerHTML = `
-                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
-                  <div style="display:flex; align-items:center; gap:5px;">
-                    ${badgeHtml}
-                    <span style="font-size:0.80rem; font-weight:800; color:${res.isInternal ? '#ffffff' : 'var(--text-primary)'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                      ${escapeHtml(res.title.replace(/^\[등록박지\]\s*/, ''))}
-                    </span>
-                  </div>
-                  <span style="font-size:0.63rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                    ${escapeHtml(res.sub)}
-                  </span>
-                </div>
-                ${(isAdminMode && !res.isInternal) ? `<button type="button" class="btn-quick-add" style="display:inline-block; padding:3px 7px; font-size:0.65rem;" onclick="event.stopPropagation(); quickAddFromSearch('${escapeHtml(res.title)}', ${res.lat}, ${res.lng}, '${escapeHtml(res.sub)}')">➕ 등록</button>` : ''}`;
-
-              li.addEventListener('click', () => {
-                triggerHaptic(10);
-                dropdown.style.display = 'none';
-                if (window.innerWidth <= 768) { 
-                  isSidebarCollapsed = true; 
-                  document.getElementById('sidebar').classList.add('collapsed'); 
-                  updateDockSidebarText(false); 
-                }
-                if (res.isInternal && res.spotObj) { 
-                  focusSpotOnMap(res.spotObj); 
-                } else {
-                  smoothCenterMapOnSpot(res.lat, res.lng);
-                  if (tempSearchMarker) tempSearchMarker.setMap(null);
-                  tempSearchMarker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(res.lat, res.lng), map: map });
-                  setTimeout(() => { if (tempSearchMarker) tempSearchMarker.setMap(null); }, 3500);
-                }
-              });
-              dropdown.appendChild(li);
-            });
+            renderItems(results);
           });
         }
       }
