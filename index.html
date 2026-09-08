@@ -1176,7 +1176,7 @@
           <span style="font-size:0.65rem; color:#94a3b8; font-weight:800;">점검하기 ➔</span>
         </div>
       </div>
-    </section>
+   </section>
 
   <!-- 🎨 [장비 세팅보기] 20종 감성 엽서 패킹 시트 팝업 모달 -->
   <div class="template-card-modal-overlay" id="templateCardModalOverlay" onclick="if(event.target===this) closeTemplateCardModal();" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); z-index:2000090 !important; justify-content:center; align-items:center; padding:16px; box-sizing:border-box;">
@@ -1192,13 +1192,13 @@
       <div style="width:28px; height:3.5px; border-radius:2px; background:rgba(255,255,255,0.35);"></div>
     </div>
 
-    <div id="indexMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:opacity 0.18s ease; opacity:1; pointer-events:auto; z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
+  <div id="indexMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; transition:opacity 0.18s ease; opacity:1; pointer-events:auto; z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
       <button type="button" class="dock-item active" title="낭만루터" onclick="window.handleIndexHomeTabClick(event);">
         <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
         <span>낭만루터</span>
       </button>
 
-      <a href="map.html" class="dock-item" title="전국지도" onclick="window.smoothNavigate('map.html', event);">
+      <a href="map.html" class="dock-item" title="전국지도" onclick="triggerHaptic(10);">
         <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
         <span>전국지도</span>
       </a>
@@ -1503,7 +1503,7 @@
       }, 30);
     };
 
-    function safeGetJSON(key, defaultVal) {
+   function safeGetJSON(key, defaultVal) {
       try {
         var item = localStorage.getItem(key);
         return item ? JSON.parse(item) : defaultVal;

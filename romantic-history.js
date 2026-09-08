@@ -1335,7 +1335,20 @@
     document.body.appendChild(sheet);
   };
 
-  window.deleteTripRecord = function(recordId) {
+ window.deleteTripRecord = function(recordId) {
+    // 🎯 [끝낸 자리 스크롤 유지]: 삭제 전 현재 보고 있던 카드의 다음 또는 이전 카드 ID 확보
+    var container = document.getElementById('reelsVerticalContainer');
+    var targetScrollId = null;
+    if (container) {
+      var allSnapCards = Array.from(container.querySelectorAll('.reel-page-snap'));
+      var sTargetId = 'feedSnapCard_' + String(recordId).trim();
+      var curIdx = allSnapCards.findIndex(function(el) { return el.id === sTargetId; });
+      if (curIdx !== -1) {
+        var nextEl = allSnapCards[curIdx + 1] || allSnapCards[curIdx - 1];
+        if (nextEl) targetScrollId = nextEl.id;
+      }
+    }
+
     var rawList = window.safeGetStorage('okbm_packing_history', []) || [];
     var target = rawList.find(function(r) { return String(r.id).trim() === String(recordId).trim(); });
     var targetDate = target ? target.date : '';
@@ -1389,6 +1402,17 @@
     if (past) past.remove();
 
     window.renderHistoryStage();
+
+    // 🚀 삭제 직후 끝낸 자리(다음 카드)로 뷰포트 즉시 복원
+    if (targetScrollId) {
+      setTimeout(function() {
+        var targetCardEl = document.getElementById(targetScrollId);
+        if (targetCardEl) {
+          targetCardEl.scrollIntoView({ behavior: 'auto', block: 'start' });
+        }
+      }, 40);
+    }
+
     triggerHaptic(15);
     if (typeof showToast === 'function') showToast('기록이 삭제되었습니다.', 'info');
   };
@@ -2685,7 +2709,7 @@
   window.activeHistoryFeedTab = window.activeHistoryFeedTab || 'my';
 
  // ⚡ [0.03초 단일 진실 공급원]: Cloudflare R2 feeds.json 전용 초고속 인출 엔진
-  window.fetchCommunityFeeds = async function(isForce) {
+ window.fetchCommunityFeeds = async function(isForce) {
     var r2Domain = window.R2_PUBLIC_DOMAIN || 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
     var r2Url = r2Domain.replace(/\/+$/, '') + '/feeds.json?_t=' + Date.now();
 
@@ -2701,6 +2725,29 @@
         }
       });
       localStorage.setItem('okbm_feed_stars_counts', JSON.stringify(starCounts));
+
+      // 🚀 [스마트폰 자동 내 글 복구]: 시트/R2 피드 중 '오라네' 글을 로컬 보관함에 전체공개로 자동 등록
+      var profile = safeGetJSON('user_profile', null);
+      var myNick = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '오라네');
+      var myId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || 'kakao_5060259862');
+
+      var myFeeds = feedList.filter(function(f) {
+        var fNick = String(f.author || f.nick || f.nickname || '').trim();
+        var fId = String(f.user_id || f.userId || '').trim();
+        return fNick === myNick || fNick === '오라네' || fId.includes('5060259862');
+      }).map(function(f, idx) {
+        var norm = window.normalizeHistoryRecord(f, idx);
+        norm.userId = myId;
+        norm.author = myNick;
+        norm.isPublished = true; // 🌐 전체공개 유지!
+        return norm;
+      });
+
+      if (myFeeds.length > 0) {
+        window.safeSetStorage('okbm_packing_history', myFeeds);
+        window.interactiveHistory = myFeeds;
+        window.packingHistoryList = myFeeds;
+      }
     };
 
     // 1순위: Cloudflare 글로벌 엣지 CDN 번개 인출 (30ms)
@@ -2820,7 +2867,7 @@
   // 하위 호환성 유지 알리아스
   window.updateCarouselDots = window.updateCarouselFeedState;
 
-  window.renderHistoryStage = function(isLoading) {
+ window.renderHistoryStage = function(isLoading) {
     var modal = document.getElementById('romanticHistoryModal');
     if (!modal) return;
 
@@ -2828,7 +2875,16 @@
     if (!content) return;
 
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
-    window.interactiveHistory = window.sortHistoryByDateAsc(window.interactiveHistory || []).reverse();
+
+    // 🌟 [최신순 내림차순 정렬]: 최신 날짜가 맨 위, 오래된 날짜는 맨 마지막으로 이동
+    var sortDescFn = function(list) {
+      if (!Array.isArray(list)) return [];
+      return list.slice().sort(function(a, b) {
+        return window.getRecordDateNum(b) - window.getRecordDateNum(a);
+      });
+    };
+
+    window.interactiveHistory = sortDescFn(window.interactiveHistory || []);
 
     if (!window.activeHistoryFeedTab) {
       window.activeHistoryFeedTab = (isLogged && window.interactiveHistory.length > 0) ? 'my' : 'explore';
@@ -2838,7 +2894,14 @@
     }
 
     var isMyTab = (window.activeHistoryFeedTab === 'my');
-    var currentList = isMyTab ? (window.interactiveHistory || []) : ((Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0) ? window.__allLoadedFeeds : (window.safeGetStorage('okbm_cached_community_feeds', []) || []));
+    var rawListSource = isMyTab
+      ? (window.interactiveHistory || [])
+      : ((Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
+          ? window.__allLoadedFeeds
+          : (window.safeGetStorage('okbm_cached_community_feeds', []) || []));
+
+    // 🌟 전체피드/내보관함 모두 최신순 강제 정렬
+    var currentList = sortDescFn(rawListSource);
 
     var profile = safeGetJSON('user_profile', null);
     var myUserId = (profile && profile.id) ? String(profile.id).trim() : '';
