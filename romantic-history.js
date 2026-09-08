@@ -2299,7 +2299,343 @@
   };
 
   // 하위 호환성 영구 보존 알리아스
-  window.__renderRichPhotoThumbnails = window.__renderRichPhotoStage;
+// 🔍 [기록 작성 모달 전용 박지 검색 & 실시간 연관검색어 엔진]
+  window.openSpotSearchModalForRichTrip = function() {
+    triggerHaptic(10);
+    var old = document.getElementById('richTripSpotSearchModal');
+    if (old) old.remove();
+
+    // 🎯 [스크롤 튕김 0%]: 수정 전 부모 모달의 뷰포트 스크롤 좌표 즉시 백업
+    var parentScrollContainer = document.querySelector('#modalRichAfterTrip > div:nth-child(2)');
+    var savedParentScrollTop = parentScrollContainer ? parentScrollContainer.scrollTop : 0;
+
+    // 🌐 [3중 하이브리드 박지 풀 엔진]: 전역 변수 + 로컬 캐시 + 피드 풀 전방위 통합 수집
+    var rawPool = [];
+    if (Array.isArray(window.campingSpots)) rawPool = rawPool.concat(window.campingSpots);
+    if (Array.isArray(window.spotsData)) rawPool = rawPool.concat(window.spotsData);
+    if (Array.isArray(window.allSpots)) rawPool = rawPool.concat(window.allSpots);
+    if (Array.isArray(window.masterSpots)) rawPool = rawPool.concat(window.masterSpots);
+    if (Array.isArray(window.CAMPING_SPOTS)) rawPool = rawPool.concat(window.CAMPING_SPOTS);
+    if (Array.isArray(window.SPOTS_DB)) rawPool = rawPool.concat(window.SPOTS_DB);
+
+    ['okbm_spots_cache', 'okbm_master_spots', 'camping_spots', 'okbm_spots', 'okbm_bookmarks'].forEach(function(k) {
+      try {
+        var item = localStorage.getItem(k);
+        if (item) {
+          var parsed = JSON.parse(item);
+          if (Array.isArray(parsed)) rawPool = rawPool.concat(parsed);
+        }
+      } catch (e) {}
+    });
+
+    if (Array.isArray(window.__allLoadedFeeds)) {
+      window.__allLoadedFeeds.forEach(function(f) {
+        if (f && f.spot) rawPool.push({ name: f.spot, elevation: f.elevation || '', address: f.address || f.region || '' });
+      });
+    }
+    if (Array.isArray(window.interactiveHistory)) {
+      window.interactiveHistory.forEach(function(h) {
+        if (h && h.spot) rawPool.push({ name: h.spot, elevation: h.elevation || '', address: h.address || h.region || '' });
+      });
+    }
+
+    // 🏙️ [지능형 2단계 도시 파서]: 시/군 도시명 1순위 추출 ➔ 미분류 시 도 단위(충청 등) 안전 폴백
+    function extractSmartCityName(item) {
+      if (!item) return '';
+      if (item.city && typeof item.city === 'string' && item.city.trim().length > 0) {
+        return item.city.replace(/(시|군|구)$/, '').trim();
+      }
+      if (item.district && typeof item.district === 'string' && item.district.trim().length > 0) {
+        return item.district.replace(/(시|군|구)$/, '').trim();
+      }
+
+      var fullAddr = String(item.address || item.addr || item.roadAddress || item.location || '').trim();
+      var regText = String(item.region || '').trim();
+
+      // 1순위: 주소 내 전국 대표 시/군 직접 매칭
+      var cityMatch = fullAddr.match(/(단양|충주|제천|가평|양평|춘천|원주|영월|정선|인제|화천|양구|평창|태백|삼척|강릉|동해|속초|고성|양양|포천|연천|동두천|파주|남양주|광주|용인|안성|이천|여주|평택|화성|오산|시흥|안산|수원|성남|하남|구리|의정부|고양|김포|부천|광명|과천|안양|군포|의왕|보은|옥천|영동|증평|진천|괴산|음성|천안|공주|보령|아산|서산|논산|계룡|당진|금산|부여|서천|청양|홍성|예산|태안|전주|군산|익산|정읍|남원|김제|완주|진안|무주|장수|임실|순창|고창|부안|목포|여수|순천|나주|광양|담양|곡성|구례|고흥|보성|화순|장흥|강진|해남|영암|무안|함평|영광|장성|완도|진도|신안|포항|경주|김천|안동|구미|영주|영천|상주|문경|경산|군위|의성|청송|영양|영덕|청도|고령|성주|칠곡|예천|봉화|울진|울릉|창원|진주|통영|사천|김해|밀양|거제|양산|의령|함안|창녕|남해|하동|산청|함양|거창|합천|제주|서귀포)(?:시|군)?/);
+      if (cityMatch && cityMatch[1]) {
+        return cityMatch[1];
+      }
+
+      // 2순위: 일반 주소 어절 내 OO시/OO군 파싱
+      var parts = fullAddr.split(/\s+/).filter(Boolean);
+      for (var i = 0; i < parts.length; i++) {
+        var p = parts[i];
+        if (/(시|군)$/.test(p) && p.length <= 5) {
+          return p.replace(/(시|군)$/, '');
+        }
+      }
+
+      // 3순위 (폴백): 세부 도시가 없는 경우 광역 도/지역명(충청, 경기, 강원 등) 사용
+      if (regText) {
+        return regText.slice(0, 4);
+      }
+      if (parts[0]) {
+        return parts[0].slice(0, 4);
+      }
+      return '';
+    }
+
+    // 중복 제거 및 [도시명 + 박지명] 정규화
+    var spotsMap = new Map();
+    rawPool.forEach(function(s) {
+      if (!s) return;
+      var rawName = String(s.name || s.spotName || s.spot || s.title || '').trim();
+      if (!rawName || rawName === '나의 힐링 스팟' || rawName === '힐링 박지') return;
+
+      var cityName = extractSmartCityName(s);
+
+      // 이미 이름 앞에 도시명이 붙어있지 않다면 결합 (예: 단양 올산, 충주 고봉)
+      var combinedName = rawName;
+      if (cityName && !rawName.includes(cityName)) {
+        combinedName = cityName + ' ' + rawName;
+      }
+
+      var cleanKey = combinedName.replace(/\s+/g, '').toLowerCase();
+      if (!spotsMap.has(cleanKey)) {
+        spotsMap.set(cleanKey, {
+          name: combinedName,
+          rawName: rawName,
+          cityName: cityName,
+          elevation: s.elevation || s.alt || s.height || '',
+          address: s.address || s.addr || s.region || ''
+        });
+      }
+    });
+
+    var spotsSource = Array.from(spotsMap.values());
+
+    var searchModal = document.createElement('div');
+    searchModal.id = 'richTripSpotSearchModal';
+    searchModal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.82); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:1000025; display:flex; justify-content:center; align-items:flex-end; box-sizing:border-box;';
+    searchModal.onclick = function(e) { if (e.target === searchModal) window.__closeRichSpotSearch(); };
+
+    searchModal.innerHTML = `
+      <div style="width:100%; max-width:440px; height:78vh; max-height:640px; background:#0c1017; border-top:1.5px solid rgba(56,189,248,0.4); border-radius:20px 20px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 -12px 35px rgba(0,0,0,0.9);" onclick="event.stopPropagation();">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" style="width:16px; height:16px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">방문 박지 검색 및 변경</span>
+          </div>
+          <button type="button" onclick="window.__closeRichSpotSearch();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
+        </div>
+
+        <div style="position:relative; width:100%;">
+          <input type="text" id="richSpotSearchInput" placeholder="도시명 또는 박지명 입력 (예: 천마산 관음봉, 단양 올산)" oninput="window.__handleRichSpotFilter(this.value);" style="width:100%; height:44px; background:rgba(255,255,255,0.06); border:1px solid rgba(56,189,248,0.4); border-radius:10px; color:#ffffff; padding:0 38px 0 14px; font-size:0.86rem; outline:none; box-sizing:border-box;" />
+          <button type="button" onclick="document.getElementById('richSpotSearchInput').value=''; window.__handleRichSpotFilter('');" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#94a3b8; font-size:0.9rem; cursor:pointer;">✕</button>
+        </div>
+
+        <div id="richSpotCustomApplyWrap" style="display:none; padding:8px 12px; background:rgba(56,189,248,0.12); border:1px dashed rgba(56,189,248,0.4); border-radius:8px; justify-content:space-between; align-items:center;">
+          <span id="richSpotCustomTargetText" style="font-size:0.75rem; color:#e2e8f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px;"></span>
+          <button type="button" id="richSpotCustomApplyBtn" style="background:#38bdf8; border:none; color:#000; font-size:0.72rem; font-weight:900; padding:5px 10px; border-radius:6px; cursor:pointer; flex-shrink:0;">직접 입력 적용</button>
+        </div>
+
+        <div id="richSpotSearchResultsList" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; display:flex; flex-direction:column; gap:6px; padding-right:2px;">
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(searchModal);
+
+    window.__closeRichSpotSearch = function() {
+      var input = document.getElementById('richSpotSearchInput');
+      if (input) input.blur();
+      var modal = document.getElementById('richTripSpotSearchModal');
+      if (modal) modal.remove();
+
+      // 🎯 [스크롤 복원]: 닫을 때도 부모 컨테이너 위치 100% 보존
+      if (parentScrollContainer) {
+        parentScrollContainer.scrollTop = savedParentScrollTop;
+      }
+    };
+
+    // ⚡ [유사 단어 다중 토큰 매칭 & 가중치(Score) 정렬 엔진]
+    window.__handleRichSpotFilter = function(query) {
+      var listEl = document.getElementById('richSpotSearchResultsList');
+      var customWrap = document.getElementById('richSpotCustomApplyWrap');
+      var customText = document.getElementById('richSpotCustomTargetText');
+      var customBtn = document.getElementById('richSpotCustomApplyBtn');
+      if (!listEl) return;
+
+      var rawQ = String(query || '').trim();
+      var tokens = rawQ.toLowerCase().split(/\s+/).filter(Boolean);
+
+      if (rawQ.length > 0) {
+        if (customWrap && customText && customBtn) {
+          customWrap.style.display = 'flex';
+          customText.innerText = '“' + rawQ + '” (으)로 직접 설정';
+          customBtn.onclick = function() {
+            window.__selectSpotForRichTrip(rawQ, '');
+          };
+        }
+      } else if (customWrap) {
+        customWrap.style.display = 'none';
+      }
+
+      var matchedList = [];
+
+      if (tokens.length === 0) {
+        // 검색어 없을 때는 기본 40개 제공
+        matchedList = spotsSource.slice(0, 40);
+      } else {
+        var lastToken = tokens[tokens.length - 1]; // 사용자가 핵심으로 지목한 마지막 키워드 (예: '관음봉')
+        var scoredItems = [];
+
+        spotsSource.forEach(function(s) {
+          var sName = String(s.name || '').toLowerCase();
+          var rawName = String(s.rawName || '').toLowerCase();
+          var sAddr = String(s.address || '').toLowerCase();
+          var sCity = String(s.cityName || '').toLowerCase();
+
+          var score = 0;
+          var matchedTokenCount = 0;
+
+          // 1. 전체 검색어 완전/부분 일치 (최우선)
+          var wholeSearch = rawQ.replace(/\s+/g, '').toLowerCase();
+          var cleanSName = sName.replace(/\s+/g, '');
+          if (cleanSName === wholeSearch) {
+            score += 2000;
+          } else if (cleanSName.includes(wholeSearch)) {
+            score += 1000;
+          }
+
+          // 2. 사용자가 노린 마지막 핵심 단어(예: '관음봉') 일치 가중치
+          if (lastToken) {
+            if (rawName === lastToken || rawName.includes(lastToken)) {
+              score += 600; // '관음봉'이 박지 순수 명칭에 직접 포함 시 최상단 우선권
+            } else if (sName.includes(lastToken)) {
+              score += 400;
+            } else if (sAddr.includes(lastToken)) {
+              score += 100;
+            }
+          }
+
+          // 3. 각 토큰별 포용적(OR) 매칭 스코어링 (천마산, 관음봉 각각 일치해도 일단 등장)
+          tokens.forEach(function(t) {
+            var tokenMatched = false;
+            if (rawName.includes(t)) {
+              score += 250;
+              tokenMatched = true;
+            } else if (sName.includes(t)) {
+              score += 180;
+              tokenMatched = true;
+            } else if (sCity.includes(t) || sAddr.includes(t)) {
+              score += 80;
+              tokenMatched = true;
+            }
+            if (tokenMatched) matchedTokenCount++;
+          });
+
+          // 다중 토큰을 모두 포함하고 있을수록 보너스 가산
+          if (matchedTokenCount > 1) {
+            score += (matchedTokenCount * 150);
+          }
+
+          // 단 하나라도 일치하여 score가 있는 항목은 모두 살려서 수집
+          if (score > 0) {
+            scoredItems.push({
+              item: s,
+              score: score
+            });
+          }
+        });
+
+        // 🌟 가중치 점수(Score) 내림차순 정렬: '관음봉' 일치 항목이 최상단, 그 외 연관 항목이 하단 순차 정렬
+        scoredItems.sort(function(a, b) {
+          return b.score - a.score;
+        });
+
+        matchedList = scoredItems.map(function(wrapper) {
+          return wrapper.item;
+        }).slice(0, 45);
+      }
+
+      if (matchedList.length === 0) {
+        listEl.innerHTML = '<div style="text-align:center; padding:40px 10px; color:#64748b; font-size:0.76rem;">일치하는 등록 박지가 없습니다.<br>상단 "직접 입력 적용"을 눌러 원하는 이름을 설정하세요.</div>';
+        return;
+      }
+
+      listEl.innerHTML = matchedList.map(function(s) {
+        var sName = s.name || '힐링 박지';
+        var rawElev = String(s.elevation || '').trim();
+        // 📐 [고도 단위(m) 표준화 부착]
+        var elevFormatted = '';
+        if (rawElev) {
+          var cleanNum = rawElev.replace(/[^\d.]/g, '');
+          if (cleanNum) elevFormatted = '(' + cleanNum + 'm)';
+        }
+        var sRegion = s.address || s.cityName || '';
+        var safeName = escapeHtml(sName);
+        var safeElev = escapeHtml(elevFormatted);
+
+        return `
+          <div data-name="${safeName}" data-elev="${safeElev}" onclick="window.__selectSpotForRichTrip(this.dataset.name, this.dataset.elev);" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:background 0.15s ease;">
+            <div style="display:flex; flex-direction:column; gap:2px; min-width:0; flex:1;">
+              <div style="font-size:0.86rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:5px;">
+                ${HISTORY_VEC_ICONS.pin}
+                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeName}</span>
+                ${safeElev ? `<span style="font-size:0.65rem; color:#fde047; font-weight:800; font-family:'Space Grotesk', sans-serif;">${safeElev}</span>` : ''}
+              </div>
+              ${sRegion ? `<span style="font-size:0.65rem; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(sRegion)}</span>` : ''}
+            </div>
+            <span style="font-size:0.70rem; color:#38bdf8; font-weight:800; flex-shrink:0; margin-left:8px;">선택 ➔</span>
+          </div>
+        `;
+      }).join('');
+    };
+
+    window.__selectSpotForRichTrip = function(spotName, elevation) {
+      if (!spotName) return;
+      triggerHaptic(12);
+
+      // 인풋 포커스 먼저 해제하여 브라우저 강제 스크롤 차단
+      var input = document.getElementById('richSpotSearchInput');
+      if (input) input.blur();
+
+      if (window.__richCurrentRecord) {
+        window.__richCurrentRecord.spot = spotName;
+        if (elevation) {
+          window.__richCurrentRecord.elevation = elevation.replace(/[()]/g, '');
+        }
+      }
+
+      // 메모리 캐시 원본 객체도 즉시 동기화 (발행 시 영구 반영)
+      var targetInHistory = (window.interactiveHistory || []).find(function(r) {
+        return window.__richCurrentRecord && String(r.id).trim() === String(window.__richCurrentRecord.id).trim();
+      });
+      if (targetInHistory) {
+        targetInHistory.spot = spotName;
+        if (elevation) targetInHistory.elevation = elevation.replace(/[()]/g, '');
+      }
+
+      var badgeTextEl = document.getElementById('richHeaderSpotNameText');
+      if (badgeTextEl) {
+        badgeTextEl.innerText = spotName;
+      }
+
+      var modal = document.getElementById('richTripSpotSearchModal');
+      if (modal) modal.remove();
+
+      // 🎯 [카메라/작업 자리 100% 고정]: 선택 직후 스크롤 좌표 완벽 복원
+      if (parentScrollContainer) {
+        parentScrollContainer.scrollTop = savedParentScrollTop;
+        setTimeout(function() {
+          if (parentScrollContainer) parentScrollContainer.scrollTop = savedParentScrollTop;
+        }, 30);
+      }
+
+      if (typeof showToast === 'function') {
+        showToast('📍 박지가 [' + spotName + '](으)로 변경되었습니다.', 'success', 1800);
+      }
+    };
+
+    window.__handleRichSpotFilter('');
+    setTimeout(function() {
+      var input = document.getElementById('richSpotSearchInput');
+      if (input) input.focus();
+    }, 150);
+  };
 
   // [모바일 풀스크린 힐링 기록 & 대형 스와이프 에디터]
   window.openRichAfterTripModal = function(record) {
@@ -2334,17 +2670,18 @@
     formModal.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000010; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     formModal.innerHTML = `
-      <!-- 1. 상단 고정 헤더: 닫기 + [정밀 벡터 핀 장소·날짜 뱃지] + 발행 버튼 -->
+      <!-- 1. 상단 고정 헤더: 닫기 + [터치 시 검색 변경 가능한 장소·날짜 뱃지] + 발행 버튼 -->
       <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
-        <button type="button" onclick="document.getElementById('modalRichAfterTrip').remove(); triggerHaptic(10);" style="background:none; border:none; color:#cbd5e1; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
+        <button type="button" onclick="document.getElementById('modalRichAfterTrip').remove(); triggerHaptic(10);" style="background:none; border:none; color:#cbd5e1; font-size:1.1rem; cursor:pointer; padding:0 4px; min-width:32px; min-height:32px;">✕</button>
         
-        <div style="display:flex; align-items:center; gap:5px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); padding:4px 10px; border-radius:20px;">
+        <button type="button" onclick="window.openSpotSearchModalForRichTrip();" style="display:flex; align-items:center; gap:5px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); padding:4px 10px; border-radius:20px; cursor:pointer; min-height:32px; transition:background 0.15s ease;" title="터치하여 박지 검색 및 변경">
           <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          <span style="font-size:0.80rem; font-weight:900; color:#38bdf8;">${escapeHtml(record.spot)}</span>
+          <span id="richHeaderSpotNameText" style="font-size:0.80rem; font-weight:900; color:#38bdf8; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(record.spot)}</span>
           <span style="font-size:0.65rem; color:#94a3b8; font-family:'JetBrains Mono', monospace;">· ${escapeHtml(record.date)}</span>
-        </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" style="width:10px; height:10px; flex-shrink:0; margin-left:1px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
 
-        <button type="button" onclick="window.__saveRichAfterTrip('${record.id}')" style="background:linear-gradient(135deg, #0284c7, #0369a1); border:none; color:#fff; font-size:0.80rem; font-weight:900; padding:6px 14px; border-radius:8px; cursor:pointer; box-shadow:0 2px 10px rgba(2,132,199,0.4); display:flex; align-items:center; gap:3px;">
+        <button type="button" onclick="window.__saveRichAfterTrip('${record.id}')" style="background:linear-gradient(135deg, #0284c7, #0369a1); border:none; color:#fff; font-size:0.80rem; font-weight:900; padding:6px 14px; border-radius:8px; cursor:pointer; box-shadow:0 2px 10px rgba(2,132,199,0.4); display:flex; align-items:center; gap:3px; min-height:32px;">
           <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="#ffffff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           <span>발행</span>
         </button>
@@ -2967,7 +3304,7 @@
         var recordAuthor = String(record.author || record.nick || '').trim();
         var isMyRecord = isMyTab || (myUserId && recordUserId && myUserId === recordUserId) || (savedNick && recordAuthor && savedNick === recordAuthor);
 
-       // 📷 [낭만보관함 피드]: 사진을 3:4 프레임 전면에 빈틈없이 100% 꽉 채워 렌더링
+       /// 📷 [낭만보관함 피드]: 가로/세로 원본 비율 100% 무손실 보존 렌더러
         var horizontalSlidesHtml = '';
         if (totalPhotosCount === 0) {
           horizontalSlidesHtml = '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; background:radial-gradient(circle at 50% 40%, #1e293b 0%, #090d16 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:20px; box-sizing:border-box; text-align:center;">' +
@@ -2979,8 +3316,11 @@
           '</div>';
         } else {
           horizontalSlidesHtml = mediaItems.map(function(pUrl) {
-            return '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000;">' +
-              '<img src="' + pUrl + '" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />' +
+            return '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center;">' +
+              '<!-- 배경 앰비언트 블러 (가로 사진 여백을 자연스럽게 채움) -->' +
+              '<img src="' + pUrl + '" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(22px) brightness(0.38); transform:scale(1.15); pointer-events:none;" />' +
+              '<!-- 전면 원본 무손실 뷰 (가로/세로 잘림 0% 보존) -->' +
+              '<img src="' + pUrl + '" style="position:relative; z-index:2; width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;" />' +
             '</div>';
           }).join('');
         }

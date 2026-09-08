@@ -1048,7 +1048,7 @@
         </button>
         <button type="button" class="n-cat-chip" onclick="filterSecretSpotTheme('alpine', this)">
           <svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
-          <span>알파인/고산</span>
+          <span>오지/돌박지</span>
         </button>
         <button type="button" class="n-cat-chip" onclick="filterSecretSpotTheme('deck', this)">
           <svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 7h18M3 12h18M3 17h18M7 3v18M17 3v18"/></svg>
@@ -1121,7 +1121,7 @@
     
   </style>
 
-    <section class="n-rail-section">
+   <section class="n-rail-section">
   <h2 class="n-rail-title">영상 속 그 장소 & 기어 랩</h2>
   <div class="n-rail-slider" id="homeVideoRailSlider">
     <div class="n-video-single-card" onclick="openVideoDetailModal(0)">
@@ -1129,10 +1129,6 @@
         <img src="https://img.youtube.com/vi/4JQHNctHibg/hqdefault.jpg" alt="영상 썸네일 1" />
         <div class="n-video-play-icon">
           <div class="n-video-play-btn-circle">▶</div>
-        </div>
-        <div class="n-video-info-hint-bar">
-          <span>📍 충주 고봉 (우중 비박)</span>
-          <span>더보기 ➔</span>
         </div>
       </div>
     </div>
@@ -1142,10 +1138,6 @@
         <img src="https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=600&q=80" alt="영상 썸네일 2" />
         <div class="n-video-play-icon">
           <div class="n-video-play-btn-circle">▶</div>
-        </div>
-        <div class="n-video-info-hint-bar">
-          <span>📍 50만원대 가성비 3계절 패킹</span>
-          <span>더보기 ➔</span>
         </div>
       </div>
     </div>
@@ -1886,20 +1878,45 @@
 
       var cachedFeeds = window.__allLoadedFeeds || safeGetJSON('okbm_cached_community_feeds', []) || [];
 
+      var themeFallbackPhotos = {
+        all: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=400&q=80',
+        easy: 'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?auto=format&fit=crop&w=400&q=80',
+        island: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
+        alpine: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=400&q=80',
+        deck: 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=400&q=80'
+      };
+
       railContainer.innerHTML = filteredSpots.slice(0, 24).map(function(sp) {
-        var sName = sp.name || sp.spot_main || '박지';
+        var sName = String(sp.name || sp.spot_main || '박지').trim();
+        var cleanPureName = sName.replace(/\s*\(.*?\)/g, '').trim();
         var sRegion = sp.region || sp.cityName || '전국';
         var sElev = sp.elevation ? (String(sp.elevation).includes('m') ? sp.elevation : sp.elevation + 'm') : 'FIELD';
-        var sId = escapeHtml(String(sp.id || ''));
+        var sId = escapeHtml(String(sp.id || cleanPureName));
 
-        var feedItem = cachedFeeds.find(function(f) { return f && f.spot && f.spot.includes(sName); });
-        var matchedPhoto = (feedItem && Array.isArray(feedItem.photos) && feedItem.photos[0]) ? feedItem.photos[0] : ((feedItem && feedItem.photo) ? feedItem.photo : '');
-        if (!matchedPhoto) {
-          matchedPhoto = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=400&q=80';
+        // 📷 1:1 정밀 썸네일 매칭
+        var matchedPhoto = '';
+        if (sp.photo && typeof sp.photo === 'string' && sp.photo.startsWith('http')) {
+          matchedPhoto = sp.photo;
+        } else if (sp.photo_url && typeof sp.photo_url === 'string' && sp.photo_url.startsWith('http')) {
+          matchedPhoto = sp.photo_url;
+        } else {
+          var exactFeed = cachedFeeds.find(function(f) {
+            if (!f || !f.spot) return false;
+            var fSpot = String(f.spot).replace(/\s*\(.*?\)/g, '').trim();
+            return fSpot === cleanPureName;
+          });
+          if (exactFeed) {
+            var fPhotos = (typeof getArchivePhotosList === 'function') ? getArchivePhotosList(exactFeed) : (exactFeed.photos || []);
+            matchedPhoto = (Array.isArray(fPhotos) && fPhotos[0]) ? fPhotos[0] : (exactFeed.photo || '');
+          }
+        }
+
+        if (!matchedPhoto || matchedPhoto.length < 10) {
+          matchedPhoto = themeFallbackPhotos[themeKey] || themeFallbackPhotos.all;
         }
 
         return `
-          <div class="n-trailer-card" onclick="openSecretSpotHeroViewer('${sId}')" style="width:118px !important; flex-shrink:0; cursor:pointer;">
+          <div class="n-trailer-card" data-spot-id="${sId}" onclick="openSecretSpotHeroViewer(this.dataset.spotId)" style="width:118px !important; flex-shrink:0; cursor:pointer;">
             <div class="n-trailer-thumb">
               <img src="${matchedPhoto}" alt="${escapeHtml(sName)}" loading="lazy" />
               <div class="n-trailer-weight-chip" style="color:#fde047; border-color:rgba(253,224,71,0.4);">${escapeHtml(sElev)}</div>
@@ -1907,7 +1924,7 @@
             <div class="n-trailer-info">
               <span class="n-trailer-spot-name" style="font-size:0.72rem;">${escapeHtml(sName)}</span>
               <span class="n-trailer-author-date" style="color:#38bdf8; font-weight:700; display:flex; align-items:center; gap:2px;">
-                <svg viewBox="0 0 24 24" style="width:10px; height:10px; fill:none; stroke:currentColor; stroke-width:2.2;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <svg viewBox="0 0 24 24" style="width:10px; height:10px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 <span>${escapeHtml(sRegion)}</span>
               </span>
             </div>
@@ -1916,7 +1933,7 @@
       }).join('');
     }
 
-  // 🎯 [테마스팟 대형 3:4 다중 화보 뷰어 & 독립 엽서 모달 엔진]
+    // 🚪 [필수 모달 닫기 엔진 복원]
     window.closeSecretSpotHeroModal = function() {
       var modalEl = document.getElementById('secretSpotHeroModal');
       if (!modalEl) return;
@@ -1936,6 +1953,7 @@
       }, 210);
     };
 
+    // 🎚️ [스토리 바 인디케이터 복원]
     window.updateSecretSpotStoryBars = function(trackEl) {
       if (!trackEl) return;
       var curIdx = Math.round(trackEl.scrollLeft / trackEl.offsetWidth);
@@ -1948,11 +1966,15 @@
       }
     };
 
+    // 🎒 [장비 세팅보기 팝업 엔진 복원]
     window.openSecretSpotTemplateModal = function(spotId) {
       triggerHaptic(12);
       var spotPool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
         ? registeredSpots : (safeGetJSON('okbm_spots_cache', []) || []);
-      var spot = spotPool.find(function(s) { return String(s.id).trim() === String(spotId).trim(); });
+      var targetId = String(spotId || '').trim();
+      var spot = spotPool.find(function(s) { 
+        return String(s.id).trim() === targetId || String(s.name || s.spot_main || '').trim() === targetId; 
+      });
       if (!spot) return;
 
       var spotName = spot.name || spot.spot_main || '박지';
@@ -1965,7 +1987,7 @@
       });
 
       var fakeRecord = {
-        id: 'secret_' + spot.id,
+        id: 'secret_' + (spot.id || Date.now()),
         spot: spotName,
         elevation: elev,
         date: 'VERIFIED',
@@ -1992,7 +2014,6 @@
         slot.innerHTML = `<div style="background:#f4f1ea; color:#1c1917; padding:16px; border-radius:14px; width:100%; max-width:320px;"><h3>${escapeHtml(spotName)}</h3><p>${escapeHtml(desc)}</p></div>`;
       }
 
-      // 🚀 [핵심]: 테마스팟 사진 창보다 위로 오도록 DOM 최하단으로 즉시 이동 & 최상위 노출 확정
       document.body.appendChild(modal);
       modal.style.setProperty('z-index', '2000090', 'important');
       modal.style.setProperty('display', 'flex', 'important');
@@ -2004,6 +2025,7 @@
       triggerHaptic(10);
     }
 
+    // 🖼️ [3:4 대형 화보 뷰어 엔진]
     window.openSecretSpotHeroViewer = function(spotId) {
       triggerHaptic(12);
       var old = document.getElementById('secretSpotHeroModal');
@@ -2011,22 +2033,42 @@
 
       var spotPool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
         ? registeredSpots : (safeGetJSON('okbm_spots_cache', []) || []);
-      var spot = spotPool.find(function(s) { return String(s.id).trim() === String(spotId).trim(); });
+      
+      var targetId = String(spotId || '').trim();
+      var spot = spotPool.find(function(s) { 
+        return String(s.id).trim() === targetId || String(s.name || s.spot_main || '').trim() === targetId; 
+      });
+
+      if (!spot) {
+        spot = spotPool.find(function(s) {
+          var cleanName = String(s.name || s.spot_main || '').replace(/\s*\(.*?\)/g, '').trim();
+          return cleanName === targetId.replace(/\s*\(.*?\)/g, '').trim();
+        });
+      }
       if (!spot) return;
 
       var spotName = spot.name || spot.spot_main || '박지';
+      var cleanMapSpotName = String(spotName).replace(/\s*\(.*?\)/g, '').trim();
       var region = spot.region || spot.cityName || '전국';
       var elev = spot.elevation ? (String(spot.elevation).includes('m') ? spot.elevation : spot.elevation + 'm') : '-';
       var desc = spot.desc || spot.desc_summary || '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.';
-      var sId = escapeHtml(String(spot.id || ''));
+      var sId = escapeHtml(String(spot.id || cleanMapSpotName));
 
-      // 📷 [등록 사진 전수 수집]: 해당 박지의 모든 사진 배열 확보
       var cachedFeeds = window.__allLoadedFeeds || safeGetJSON('okbm_cached_community_feeds', []) || [];
       var matchedFeeds = cachedFeeds.filter(function(f) {
-        return f && f.spot && (f.spot.includes(spotName) || spotName.includes(f.spot));
+        if (!f || !f.spot) return false;
+        var fSpot = String(f.spot).replace(/\s*\(.*?\)/g, '').trim();
+        return fSpot === cleanMapSpotName;
       });
 
       var photosList = [];
+      if (spot.photo && typeof spot.photo === 'string' && spot.photo.startsWith('http')) {
+        photosList.push(spot.photo);
+      }
+      if (spot.photo_url && typeof spot.photo_url === 'string' && spot.photo_url.startsWith('http') && !photosList.includes(spot.photo_url)) {
+        photosList.push(spot.photo_url);
+      }
+
       matchedFeeds.forEach(function(f) {
         var fPhotos = (typeof getArchivePhotosList === 'function') ? getArchivePhotosList(f) : (f.photos || []);
         fPhotos.forEach(function(u) {
@@ -2060,23 +2102,25 @@
       modalEl.className = 'netflix-backdrop-in';
       modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:rgba(0,0,0,0.92); z-index:1000045; display:flex; justify-content:center; align-items:center; padding:calc(10px + env(safe-area-inset-top, 0px)) 14px calc(14px + env(safe-area-inset-bottom, 0px)) 14px; box-sizing:border-box; overflow-y:auto;';
 
+      // 오버레이 클릭 시 닫힘 대응
+      modalEl.onclick = function(e) {
+        if (e.target === modalEl) window.closeSecretSpotHeroModal();
+      };
+
       modalEl.innerHTML = `
-        <div class="netflix-card-motion" style="width:100%; max-width:440px; display:flex; flex-direction:column; gap:8px; margin:auto 0; box-sizing:border-box;">
+        <div class="netflix-card-motion" style="width:100%; max-width:440px; display:flex; flex-direction:column; gap:8px; margin:auto 0; box-sizing:border-box;" onclick="event.stopPropagation();">
           
-          <!-- 3:4 다중 사진 스와이프 화보 카드 (부연설명 전면 삭제) -->
           <div class="insta-card" style="position:relative; width:100%; aspect-ratio:3/4; border-radius:16px; overflow:hidden; background:#000; border:1px solid rgba(255,255,255,0.18); box-shadow:0 24px 60px rgba(0,0,0,0.95); box-sizing:border-box;">
             
             ${storyBarsHtml}
 
-            <!-- 우측 상단 닫기(✕) 버튼 -->
+            <!-- ✕ 닫기 버튼 확실한 핸들러 바인딩 -->
             <button type="button" onclick="window.closeSecretSpotHeroModal();" style="position:absolute; top:8px; right:10px; z-index:30; width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,0.65); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.25); color:#ffffff; font-size:1.05rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
 
-            <!-- 다중 사진 가로 스냅 트랙 -->
             <div onscroll="window.updateSecretSpotStoryBars(this);" style="display:flex !important; width:100% !important; height:100% !important; overflow-x:auto !important; overflow-y:hidden !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; touch-action:pan-x pan-y !important;">
               ${slidesHtml}
             </div>
 
-            <!-- 하단 그라데이션 및 순수 [지역] + [박지명] -->
             <div style="position:absolute; bottom:0; left:0; right:0; padding:18px 14px 12px 14px; background:linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%); z-index:20; pointer-events:none; display:flex; flex-direction:column; gap:2px;">
               <span style="font-size:0.68rem; color:#38bdf8; font-weight:800; display:flex; align-items:center; gap:3px;">
                 <svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -2086,18 +2130,17 @@
             </div>
           </div>
 
-          <!-- 하단 글래스 메모 및 [장비 세팅보기] 연동 버튼 -->
           <div class="insta-glass-memo">
             <div class="insta-memo-quote" style="font-size:0.75rem; line-height:1.45; color:#cbd5e1; height:auto; min-height:0; max-height:none; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
               “${escapeHtml(desc)}”
             </div>
 
             <div class="insta-memo-actions-row" style="margin-top:2px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.12); display:flex; gap:6px;">
-              <button type="button" class="btn-insta-action btn-action-map" onclick="window.closeSecretSpotHeroModal(); location.href='map.html?spot=' + encodeURIComponent('${escapeHtml(spotName)}');" style="flex:1;">
+              <button type="button" class="btn-insta-action btn-action-map" data-spot="${escapeHtml(cleanMapSpotName)}" onclick="window.closeSecretSpotHeroModal(); location.href='map.html?spot=' + encodeURIComponent(this.dataset.spot);" style="flex:1;">
                 <svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 <span>자세히보기</span>
               </button>
-              <button type="button" class="btn-insta-action btn-action-template" onclick="window.openSecretSpotTemplateModal('${sId}');" style="flex:1;">
+              <button type="button" class="btn-insta-action btn-action-template" data-spot-id="${sId}" onclick="window.openSecretSpotTemplateModal(this.dataset.spotId);" style="flex:1;">
                 <svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 <span>장비 세팅보기</span>
               </button>
@@ -2395,14 +2438,45 @@
 
       var profile = safeGetJSON('user_profile', null);
 
-    // ⚡ [1순위 0.03초]: Cloudflare R2 글로벌 CDN 단일 진실 공급원(SSOT) 직통 조회
+      // ⏱️ [정밀 타임스탬프 파서]: 문자열 역전 방지 및 실제 등록시각 추출
+      var getFeedTimeValue = function(f) {
+        if (!f) return 0;
+        if (f.timestamp && !isNaN(f.timestamp)) return Number(f.timestamp);
+        if (f.createdAt) {
+          var t = new Date(String(f.createdAt).replace(/\./g, '/')).getTime();
+          if (!isNaN(t)) return t;
+        }
+        if (f.date) {
+          var p = String(f.date).match(/\d+/g);
+          if (p && p.length >= 3) {
+            return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).getTime();
+          }
+        }
+        if (f.id && String(f.id).includes('_')) {
+          var sub = String(f.id).split('_')[1];
+          if (sub && !isNaN(sub) && sub.length >= 10) return Number(sub);
+        }
+        return 0;
+      };
+
+      // ⭐ [히어로 랭킹 정렬 SSOT]: 1순위 낭만별 최다 득표순 ➔ 2순위 정밀 최신 등록순 ➔ 최대 10개 한정
+      var sortFeedsByStarsAndDate = function(feedList) {
+        var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
+        return feedList.filter(function(f) { return f && f.isPublished !== false; }).sort(function(a, b) {
+          var sA = Number(starCounts[a.id] != null ? starCounts[a.id] : (a.likes || 0));
+          var sB = Number(starCounts[b.id] != null ? starCounts[b.id] : (b.likes || 0));
+          if (sB !== sA) return sB - sA; // 1순위: 별 많은 순
+          return getFeedTimeValue(b) - getFeedTimeValue(a); // 2순위: 정밀 최신순
+        }).slice(0, 10); // 🔟 최대 10개 한정 노출 확정
+      };
+
+      // ⚡ [1순위 0.03초]: Cloudflare R2 글로벌 CDN 단일 진실 공급원(SSOT) 직통 조회
       try {
         var r2Res = await fetch(R2_FEEDS_URL + '?_t=' + Date.now(), { cache: 'no-store' });
         if (r2Res.ok) {
           var r2Feeds = await r2Res.json();
           if (Array.isArray(r2Feeds) && r2Feeds.length > 0) {
             
-            // 🛡️ [고유 ID 기준 100% 중복 박멸 필터]: 쌍둥이 카드 1개로 완전 압축
             var uniqueFeedMap = new Map();
             r2Feeds.filter(Boolean).forEach(function(f) {
               var uKey = String(f.id || '').trim();
@@ -2414,7 +2488,7 @@
               }
             });
 
-            var cleanFeeds = Array.from(uniqueFeedMap.values());
+            var cleanFeeds = sortFeedsByStarsAndDate(Array.from(uniqueFeedMap.values()));
             localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(cleanFeeds));
             
             if (cleanFeeds[0] && (cleanFeeds[0].photo || cleanFeeds[0].photo_url)) {
@@ -2424,14 +2498,15 @@
             window.heroTopRecords = cleanFeeds;
             window.currentHeroCardIndex = 0;
             renderCurrentHeroCard();
-            return; // R2 인출 및 중복 제거 렌더링 완료 후 종료
+            if (typeof renderSecretSpotTrailerRail === 'function') renderSecretSpotTrailerRail();
+            return;
           }
         }
       } catch (r2Err) {
         console.warn('📡 [Index] R2 최초 조회 대기, 백업망으로 전환:', r2Err.message);
       }
 
-      // 📁 [2순위: 구글 시트 백업 폴백 중복 정제]
+      // 📁 [2순위: 구글 시트 백업 폴백 정제]
       try {
         var gasUrl = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
         var res = await fetch(gasUrl + '?action=GET_COMMUNITY_FEEDS&_t=' + Date.now());
@@ -2443,30 +2518,33 @@
               var sKey = String(f.id || (String(f.userId || '') + '_' + String(f.date || '') + '_' + String(f.spot || ''))).trim();
               if (!sheetUniqueMap.has(sKey)) sheetUniqueMap.set(sKey, f);
             });
-            var cleanSheetFeeds = Array.from(sheetUniqueMap.values());
+            var cleanSheetFeeds = sortFeedsByStarsAndDate(Array.from(sheetUniqueMap.values()));
             localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(cleanSheetFeeds));
             window.__allLoadedFeeds = cleanSheetFeeds;
             window.heroTopRecords = cleanSheetFeeds;
             window.currentHeroCardIndex = 0;
             renderCurrentHeroCard();
+            if (typeof renderSecretSpotTrailerRail === 'function') renderSecretSpotTrailerRail();
             return;
           }
         }
       } catch (err) {}
 
-      // 🛡️ [3순위 오프라인 비상 폴백]: 네트워크 단절 시에만 기기 로컬 캐시 사용
+      // 🛡️ [3순위 오프라인 비상 폴백]
       var fallbackFeeds = safeGetJSON('okbm_cached_community_feeds', []);
       if (!Array.isArray(fallbackFeeds) || fallbackFeeds.length === 0) {
         var presetCopy = Object.assign({}, FALLBACK_HERO_PRESET);
-        if (isUserLoggedIn() && profile && profile.nickname) {
+        if (typeof isUserLoggedIn === 'function' && isUserLoggedIn() && profile && profile.nickname) {
           presetCopy.author = profile.nickname;
         }
         fallbackFeeds = [presetCopy];
       }
-      window.__allLoadedFeeds = fallbackFeeds;
-      window.heroTopRecords = fallbackFeeds;
+      var sortedFallback = sortFeedsByStarsAndDate(fallbackFeeds);
+      window.__allLoadedFeeds = sortedFallback;
+      window.heroTopRecords = sortedFallback;
       window.currentHeroCardIndex = 0;
       renderCurrentHeroCard();
+      if (typeof renderSecretSpotTrailerRail === 'function') renderSecretSpotTrailerRail();
     }
 
     function filterHeroCategory(catKey, btnEl) {
@@ -2554,7 +2632,7 @@
 
     window.VIDEO_DATABASE = window.VIDEO_DATABASE || DEFAULT_VIDEO_DATABASE.slice();
 
-    function renderVideoCurationSlider() {
+   function renderVideoCurationSlider() {
       var slider = document.getElementById('homeVideoRailSlider');
       if (!slider) return;
       var db = (window.VIDEO_DATABASE && window.VIDEO_DATABASE.length > 0) ? window.VIDEO_DATABASE : DEFAULT_VIDEO_DATABASE;
@@ -2569,10 +2647,6 @@
               <img src="${thumb}" alt="${escapeHtml(spotTitle)}" loading="lazy" />
               <div class="n-video-play-icon">
                 <div class="n-video-play-btn-circle">▶</div>
-              </div>
-              <div class="n-video-info-hint-bar">
-                <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:65%;">📍 ${escapeHtml(spotTitle)}</span>
-                <span style="color:#38bdf8; font-weight:900;">➔</span>
               </div>
             </div>
           </div>
@@ -2633,7 +2707,7 @@ var adBannersHtml = `
 <div style="font-size:0.58rem; color:#94a3b8;">텐트 · 침낭 · 에어매트 · 경량 기어 스펙</div>
 </div>
 </div>
-<span style="font-size:0.65rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); padding:3.5px 8px; border-radius:6px; flex-shrink:0;">장비보기</span>
+<span style="font-size:0.65rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); padding:3.5px 8px; border-radius:6px; flex-shrink:0;"> 장비보기</span>
 </a>
 <a href="https://instagram.com/oklionnature" target="_blank" rel="noopener noreferrer" style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; text-decoration:none;">
           <div style="display:flex; align-items:center; gap:8px;">
@@ -2674,7 +2748,7 @@ var adBannersHtml = `
                 <span style="font-size:1.05rem; font-weight:900; color:#ffffff;">${escapeHtml(mainName)}</span>
                 ${elevStr ? `<span style="font-size:0.78rem; color:#94a3b8; font-weight:800;">(${escapeHtml(elevStr)})</span>` : ''}
               </div>
-              ${subPoint ? `<div style="font-size:0.68rem; color:#cbd5e1; font-weight:700; margin-top:2px;">📍 ${escapeHtml(subPoint)}</div>` : ''}
+              ${subPoint ? `<div style="font-size:0.68rem; color:#cbd5e1; font-weight:700; margin-top:2px;">  <svg viewBox="0 0 24 24" style="width:12px; height:12px; stroke:#38bdf8; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; vertical-align:-1.5px; margin-right:3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${escapeHtml(subPoint)}</div>` : ''}
             </div>
             <button type="button" onclick="closeVideoDetailModal(); location.href='map.html?spot=${navTargetParam}';" style="background:#ffffff; color:#000000; border:none; border-radius:8px; padding:6px 12px; font-size:0.75rem; font-weight:900; cursor:pointer; flex-shrink:0; display:flex; align-items:center; gap:4px;">
               <span>장소확인</span>
@@ -3232,7 +3306,7 @@ var adBannersHtml = `
                   <span style="font-size:1.02rem; font-weight:900; color:#ffffff;">${escapeHtml(mainName)}</span>
                   ${elevStr ? `<span style="font-size:0.75rem; color:#94a3b8;">(${escapeHtml(elevStr)})</span>` : ''}
                 </div>
-                ${subPoint ? `<div style="font-size:0.66rem; color:#cbd5e1; margin-top:2px;">📍 ${escapeHtml(subPoint)}</div>` : ''}
+                ${subPoint ? `<div style="font-size:0.66rem; color:#cbd5e1; margin-top:2px;">  <svg viewBox="0 0 24 24" style="width:12px; height:12px; stroke:#38bdf8; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; vertical-align:-1.5px; margin-right:3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${escapeHtml(subPoint)}</div>` : ''}
               </div>
               <button type="button" onclick="document.getElementById('tripDetailSheetModal').remove(); location.href='map.html?spot=${navTargetParam}';" style="background:#ffffff; color:#000000; border:none; border-radius:8px; padding:6px 12px; font-size:0.75rem; font-weight:900; cursor:pointer; flex-shrink:0; box-shadow:0 2px 8px rgba(255,255,255,0.2);">
                 <span>장소확인</span>
@@ -3441,7 +3515,7 @@ var adBannersHtml = `
             </div>
 
             <div style="position:relative; display:flex; flex-direction:column; gap:2px; z-index:1000060;">
-              <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800;">📍 목적지 박지 (검색) *</label>
+              <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800;">  <svg viewBox="0 0 24 24" style="width:12px; height:12px; stroke:#38bdf8; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; vertical-align:-1.5px; margin-right:3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> 목적지 박지 (검색) *</label>
               <input type="text" id="tripInputSpot" placeholder="박지명 검색 (터치 시 목록 노출)" onfocus="handleTripSpotSearch(this.value)" oninput="handleTripSpotSearch(this.value)" autocomplete="off" style="width:100%; height:clamp(33px, 4.3vh, 37px); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:clamp(0.76rem, 2.2vw, 0.82rem); padding:0 10px; outline:none; box-sizing:border-box;" />
               <div id="tripSpotDropdown" class="spot-search-dropdown-list" style="top:clamp(52px, 6.8vh, 58px); z-index:1000070; background:#0e121a; border:1px solid rgba(56,189,248,0.4); max-height:180px;"></div>
             </div>
@@ -3940,7 +4014,7 @@ var adBannersHtml = `
       renderHomeTripJoinSlider();
 
       var planMemos = safeGetJSON('okbm_plan_memos', {});
-      var memoText = '📍 목적지: ' + spot + '\n[낭만 원정대 주최] 정원 ' + maxCap + '명 (1명 확정) · ' + (carpool || '집결') + (desc ? ('\n“' + desc + '”') : '');
+      var memoText = '<svg viewBox="0 0 24 24" style="width:12px; height:12px; stroke:#38bdf8; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; vertical-align:-1.5px; margin-right:3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> 목적지: ' + spot + '\n[낭만 원정대 주최] 정원 ' + maxCap + '명 (1명 확정) · ' + (carpool || '집결') + (desc ? ('\n“' + desc + '”') : '');
       planMemos[date] = planMemos[date] ? (memoText + '\n---\n' + planMemos[date]) : memoText;
       localStorage.setItem('okbm_plan_memos', JSON.stringify(planMemos));
 
@@ -4237,7 +4311,7 @@ var adBannersHtml = `
           <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.85) 100%); pointer-events:none; z-index:2;"></div>
           <div style="position:relative; z-index:3; width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-between; padding:14px 12px; box-sizing:border-box;">
             <div style="background:${glassBg}; backdrop-filter:blur(10px); border:1px solid ${glassBorder}; border-radius:8px; padding:6px 8px;">
-              <div style="font-size:0.92rem; font-weight:900; color:${colorPrimary};">📍 ${escapeHtml(spotVal)}</div>
+              <div style="font-size:0.92rem; font-weight:900; color:${colorPrimary};"><svg viewBox="0 0 24 24" style="width:12px; height:12px; stroke:#38bdf8; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; vertical-align:-1.5px; margin-right:3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${escapeHtml(spotVal)}</div>
               <div style="font-size:0.58rem; color:${colorPrimary}; font-style:italic; margin-top:2px;">“${escapeHtml(memoVal)}”</div>
             </div>
             <div style="background:${glassBg}; border:1px solid ${glassBorder}; border-radius:6px; padding:4px 6px; text-align:center;">
