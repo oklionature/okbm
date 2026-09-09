@@ -158,7 +158,7 @@ window.applyStudioCardToTemplate = async function() {
 
     window.currentSharePhoto = finalPhotoUrl;
     if (window.currentShareRecord) {
-      window.currentShareRecord.photo = finalPhotoUrl;
+      window.currentShareRecord.customTemplatePhoto = finalPhotoUrl; // 🌟 뒷면 템플릿 대체 키로 직통 바인딩
       window.currentShareRecord.isPhotoCardMode = true;
     }
 
@@ -176,12 +176,11 @@ window.applyStudioCardToTemplate = async function() {
     var shareModal = document.getElementById('packShareModalOverlay');
     if (shareModal) shareModal.style.setProperty('display', 'flex', 'important');
 
-    if (typeof showToast === 'function') showToast('포토 카드가 템플릿에 적용되었습니다!', 'info', 2000);
+    if (typeof showToast === 'function') showToast('포토 카드가 템플릿 뒷면으로 장착되었습니다!', 'info', 2000);
   } catch (err) {
     if (typeof showToast === 'function') showToast('적용 중 오류가 발생했습니다.', 'warn');
   }
 };
-
 window.updateStudioCardLive = function() {
   var container = document.getElementById('photoStudioCardTarget');
   if (!container || !window.currentSharePhoto) return;
@@ -664,20 +663,27 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       });
     }
 
-    var totalGrams = items.reduce(function(sum, g) { return sum + Number(g.weight || 0); }, 0);
+   var totalGrams = items.reduce(function(sum, g) { return sum + Number(g.weight || 0); }, 0);
     var weightKg = (totalGrams > 0) ? (totalGrams / 1000).toFixed(2) : (rec.weightKg || '0.00');
 
+    // 🌟 [스튜디오 포토 카드 vs 일반 현장 사진 분리 엔진]
+    var studioTmplPhoto = rec.customTemplatePhoto || (rec.isPhotoCardMode ? window.currentSharePhoto : '');
     var photosToSave = [];
-    if (Array.isArray(window.__studioMultiPhotos) && window.__studioMultiPhotos.length > 0) {
-      photosToSave = window.__studioMultiPhotos.slice(0, 10);
-    } else if (window.currentSharePhoto && typeof window.currentSharePhoto === 'string' && window.currentSharePhoto.length > 10) {
-      photosToSave = [window.currentSharePhoto];
-    } else if (Array.isArray(rec.photos) && rec.photos.length > 0) {
-      photosToSave = rec.photos.slice(0, 10);
-    } else if (rec.photo && typeof rec.photo === 'string' && rec.photo.length > 10) {
-      photosToSave = [rec.photo];
+
+    if (studioTmplPhoto) {
+      // 🛡️ 스튜디오 완성 카드는 오직 뒷면에만 장착되며, 앞면은 향후 출정 현장 사진 등록을 위해 100% 비워둠
+      photosToSave = [];
+    } else {
+      if (Array.isArray(window.__studioMultiPhotos) && window.__studioMultiPhotos.length > 0) {
+        photosToSave = window.__studioMultiPhotos.slice(0, 10);
+      } else if (Array.isArray(rec.photos) && rec.photos.length > 0) {
+        photosToSave = rec.photos.slice(0, 10);
+      } else if (rec.photo && typeof rec.photo === 'string' && rec.photo.length > 10) {
+        photosToSave = [rec.photo];
+      }
     }
 
+    // 🚀 Base64 사진이 있으면 R2/드라이브 영구 링크로 승격
     // 🚀 Base64 사진이 있으면 R2/드라이브 영구 링크로 승격
     var finalCloudPhotos = [];
     var hasBase64 = photosToSave.some(function(p) { return typeof p === 'string' && p.startsWith('data:'); });
@@ -711,7 +717,7 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
     }
 
     var mainCloudPhoto = finalCloudPhotos[0] || '';
-// 🛡️ [메모 분리 보존]: 템플릿의 한줄 각오만 갱신하고, 히스토리의 사진별 120자 일지는 100% 계승
+    // 🛡️ [메모 분리 보존]: 템플릿의 한줄 각오만 갱신하고, 히스토리의 사진별 120자 일지는 100% 계승
     var existingPhotoMemos = Array.isArray(rec.photoMemos) && rec.photoMemos.length > 0 ? rec.photoMemos : [];
     var existingFullMemo = rec.memo || (existingPhotoMemos[0] || '');
 
@@ -727,6 +733,7 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       weightGrams: totalGrams || rec.weightGrams || 0,
       itemCount: items.length,
       items: items,
+      customTemplatePhoto: studioTmplPhoto, // 🌟 뒷면 템플릿 전용 포토로 영구 주입
       photo: mainCloudPhoto,
       photos: finalCloudPhotos,
       fieldPhoto: mainCloudPhoto,
@@ -787,13 +794,13 @@ function ensurePackShareModalDOM() {
   modal.innerHTML = `
     <div style="width:100%; max-width:440px; margin:0 auto; height:100dvh; display:flex; flex-direction:column; justify-content:space-between; padding:calc(8px + env(safe-area-inset-top, 0px)) 12px calc(12px + env(safe-area-inset-bottom, 0px)) 12px; box-sizing:border-box; position:relative;">
       
-   <!-- 1. 상단 고정 제어 영역: 헤더 + 박지/메모 폼 + 스튜디오 버튼 + 템플릿 바 -->
+  <!-- 1. 상단 고정 제어 영역: 헤더 + 박지/메모 폼 + 스튜디오 버튼 + 템플릿 바 -->
       <div style="flex-shrink:0; display:flex; flex-direction:column; gap:5px; width:100%; box-sizing:border-box;">
         <div style="display:flex; justify-content:space-between; align-items:center; height:32px;">
           <div style="display:flex; align-items:center; gap:6px;">
-            <!-- 📷 순수 SVG 렌즈/셔터 프레임 벡터 아이콘 (이모티콘 0%) -->
+            <!-- 📷 순수 SVG 렌즈/셔터 프레임 벡터 아이콘 -->
             <svg viewBox="0 0 24 24" fill="none" stroke="#e2e8f0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; display:block; flex-shrink:0;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="12" cy="12" r="3"/><line x1="3" x2="21" y1="9" y2="9"/></svg>
-            <span id="currentTmplNameTitle" style="font-size:0.92rem; font-weight:900; color:#ffffff; font-family:'Space Grotesk', -apple-system, sans-serif; letter-spacing:0.5px;">READY SHOT</span>
+            <span style="font-size:0.92rem; font-weight:900; color:#ffffff; font-family:'Space Grotesk', -apple-system, sans-serif; letter-spacing:0.5px;">READY SHOT</span>
           </div>
           <button type="button" onclick="window.closePackShareModal();" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
         </div>
@@ -1015,10 +1022,7 @@ function switchShareCardTemplate(tmplId, isSwipe) {
     }
   });
 
-  var nameDisplay = document.getElementById('currentTmplNameTitle') || document.querySelector('.share-card-tmpl-title');
-  if (nameDisplay) {
-    nameDisplay.textContent = TEMPLATE_NAMES[selectedTemplateId] || '';
-  }
+  // 🛡️ 헤더 타이틀은 항상 READY SHOT으로 고정 (템플릿 이름 덮어쓰기 완전 제거)
 
   updateShareCardLive();
   if (typeof triggerHaptic === 'function') triggerHaptic(12);
