@@ -1281,7 +1281,7 @@ window.saveCurrentPackingRecord = function() {
       weightGrams: totalGrams,
       itemCount: packedItems.length,
       memo: '',
-      oneLineMemo: spotTitle ? (spotTitle + ' 힐링') : '출정 준비 완료',
+      oneLineMemo: spotTitle ? (spotTitle + ' 힐링') : '출발 준비 완료!',
       isDraft: true,
       isPublished: false,
       items: packedItems,

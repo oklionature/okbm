@@ -1,6 +1,259 @@
 // =========================================================================
-// 🚀 [templates.js] 20종 템플릿 엔진 & 스와이프 제스처 시스템 (v2.0.6 Auto-Sync Master)
+// 🚀 [templates.js] 19종 템플릿 엔진 & 포토 카드 스튜디오 마스터 (v2.6.0)
 // =========================================================================
+window.currentSharePhoto = window.currentSharePhoto || '';
+window.currentPhotoTextColor = window.currentPhotoTextColor || 'white';
+window.currentCardRatio = window.currentCardRatio || '9/16';
+var currentCustomRatioVal = 0.75;
+var currentPhotoScaleVal = 1.0;
+
+function ensurePhotoStudioDOM() {
+  var studio = document.getElementById('photoStudioOverlay');
+  if (studio) return studio;
+
+  studio = document.createElement('div');
+  studio.id = 'photoStudioOverlay';
+  studio.style.cssText = 'display:none; position:fixed; inset:0; z-index:2000085 !important; background:#000000; justify-content:center; align-items:center; overflow:hidden; box-sizing:border-box;';
+  
+  studio.innerHTML = `
+    <div id="photoStudioStage" style="position:relative; width:100%; height:100%; max-width:440px; display:flex; justify-content:center; align-items:center; padding:env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0; box-sizing:border-box;">
+      <div id="photoStudioCardTarget" style="width:100%; max-height:100%; overflow:hidden; position:relative; display:flex; justify-content:center; align-items:center;"></div>
+      
+      <div style="position:absolute; top:calc(12px + env(safe-area-inset-top, 0px)); left:14px; right:14px; display:flex; justify-content:space-between; align-items:center; z-index:100;">
+        <button type="button" style="background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.25); color:#fff; font-size:0.75rem; font-weight:800; padding:6px 12px; border-radius:20px; cursor:pointer;" onclick="window.closePhotoStudio()">◀ 뒤로</button>
+        <div style="display:flex; gap:5px; align-items:center;">
+          <div style="display:flex; background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.25); border-radius:20px; padding:3px 4px; gap:3px;">
+            <button type="button" id="btnStudioColorWhite" style="background:#ffffff; color:#000; border:none; width:22px; height:22px; border-radius:50%; font-size:0.65rem; font-weight:900; cursor:pointer;" onclick="window.setStudioTextColor('white')">W</button>
+            <button type="button" id="btnStudioColorBlack" style="background:#111111; color:#fff; border:1px solid rgba(255,255,255,0.3); width:22px; height:22px; border-radius:50%; font-size:0.65rem; font-weight:900; cursor:pointer;" onclick="window.setStudioTextColor('black')">B</button>
+          </div>
+          <!-- 📥 고품질 SVG 벡터 다운로드 [저장] 버튼 -->
+          <button type="button" style="background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.25); color:#ffffff; font-size:0.75rem; font-weight:800; padding:6px 10px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;" onclick="window.saveStudioCardToPhone()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px; height:13px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>저장</span>
+          </button>
+          <!-- 템플릿 화면으로 적용 복귀 [확인] 버튼 -->
+          <button type="button" style="background:#ffffff; color:#000000; font-size:0.76rem; font-weight:900; padding:6px 13px; border-radius:20px; border:none; cursor:pointer; box-shadow:0 2px 10px rgba(255,255,255,0.2);" onclick="window.applyStudioCardToTemplate()">확인 ✓</button>
+        </div>
+      </div>
+
+      <div id="studioFreeRatioSliderContainer" style="display:none; position:absolute; bottom:calc(58px + env(safe-area-inset-bottom, 0px)); left:20px; right:20px; background:rgba(0,0,0,0.75); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.2); border-radius:14px; padding:8px 12px; z-index:100; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.65rem; color:#94a3b8; font-weight:700;">
+          <span>비율 조절</span>
+          <span id="freeRatioValLabel" style="color:#ffffff; font-family:'Space Grotesk', sans-serif; font-weight:900;">3 : 4</span>
+        </div>
+        <input type="range" id="studioFreeRatioSlider" min="0.52" max="1.0" step="0.01" value="0.75" style="width:100%; accent-color:#ffffff; cursor:pointer;" oninput="window.handleFreeRatioChange(this.value)" />
+
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.65rem; color:#94a3b8; font-weight:700; border-top:1px dashed rgba(255,255,255,0.15); padding-top:4px;">
+          <span>사진 확대</span>
+          <span id="freePhotoScaleLabel" style="color:#34d399; font-family:'Space Grotesk', sans-serif; font-weight:900;">100%</span>
+        </div>
+        <input type="range" id="studioPhotoScaleSlider" min="1.0" max="1.6" step="0.02" value="1.0" style="width:100%; accent-color:#34d399; cursor:pointer;" oninput="window.handlePhotoScaleChange(this.value)" />
+      </div>
+
+      <div style="position:absolute; bottom:calc(12px + env(safe-area-inset-bottom, 0px)); display:flex; background:rgba(0,0,0,0.65); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.2); border-radius:24px; padding:4px 6px; gap:3px; z-index:100; overflow-x:auto; max-width:92%;">
+        <button type="button" id="btnStudioRatioAuto" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:transparent; color:#cbd5e1; white-space:nowrap;" onclick="window.setStudioRatio('auto')">자동</button>
+        <button type="button" id="btnStudioRatio11" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:transparent; color:#cbd5e1; white-space:nowrap;" onclick="window.setStudioRatio('1/1')">1:1</button>
+        <button type="button" id="btnStudioRatio45" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:transparent; color:#cbd5e1; white-space:nowrap;" onclick="window.setStudioRatio('4/5')">4:5</button>
+        <button type="button" id="btnStudioRatio34" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:transparent; color:#cbd5e1; white-space:nowrap;" onclick="window.setStudioRatio('3/4')">3:4</button>
+        <button type="button" id="btnStudioRatio916" class="modal-btn" style="font-size:0.65rem; font-weight:900; padding:4px 8px; border-radius:14px; background:#ffffff; color:#000; white-space:nowrap;" onclick="window.setStudioRatio('9/16')">9:16</button>
+        <button type="button" id="btnStudioRatioFree" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:transparent; color:#ffffff; border:1px dashed rgba(255,255,255,0.4); white-space:nowrap;" onclick="window.setStudioRatio('free')">자유 🎚️</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(studio);
+  return studio;
+}
+
+window.openPhotoStudio = function() {
+  document.body.classList.add('pack-share-open');
+  if (typeof window.closePackShareModal === 'function') window.closePackShareModal();
+  var studio = ensurePhotoStudioDOM();
+  if (studio) studio.style.setProperty('display', 'flex', 'important');
+  window.updateStudioUI();
+  window.updateStudioCardLive();
+  if (typeof triggerHaptic === 'function') triggerHaptic(15);
+};
+
+window.closePhotoStudio = function() {
+  var studio = document.getElementById('photoStudioOverlay');
+  if (studio) studio.style.setProperty('display', 'none', 'important');
+  var modal = document.getElementById('packShareModalOverlay');
+  if (modal) modal.style.setProperty('display', 'flex', 'important');
+  if (typeof window.updateShareCardLive === 'function') window.updateShareCardLive();
+  if (typeof triggerHaptic === 'function') triggerHaptic(10);
+};
+
+window.setStudioRatio = function(ratio) {
+  window.currentCardRatio = ratio;
+  var sliderContainer = document.getElementById('studioFreeRatioSliderContainer');
+  if (sliderContainer) sliderContainer.style.display = (ratio === 'free') ? 'flex' : 'none';
+  window.updateStudioUI();
+  window.updateStudioCardLive();
+  if (typeof triggerHaptic === 'function') triggerHaptic(10);
+};
+
+window.handleFreeRatioChange = function(val) {
+  currentCustomRatioVal = parseFloat(val);
+  var label = document.getElementById('freeRatioValLabel');
+  if (label) label.innerText = '1 : ' + (1 / currentCustomRatioVal).toFixed(2);
+  window.updateStudioCardLive();
+};
+
+window.handlePhotoScaleChange = function(val) {
+  currentPhotoScaleVal = parseFloat(val);
+  var label = document.getElementById('freePhotoScaleLabel');
+  if (label) label.innerText = Math.round(currentPhotoScaleVal * 100) + '%';
+  var img = document.getElementById('photoStudioBgImage');
+  if (img) img.style.transform = 'scale(' + currentPhotoScaleVal + ')';
+};
+
+window.setStudioTextColor = function(color) {
+  window.currentPhotoTextColor = color;
+  window.updateStudioUI();
+  window.updateStudioCardLive();
+  if (typeof triggerHaptic === 'function') triggerHaptic(10);
+};
+
+window.updateStudioUI = function() {
+  var mapBtns = { 'auto': 'btnStudioRatioAuto', '1/1': 'btnStudioRatio11', '4/5': 'btnStudioRatio45', '3/4': 'btnStudioRatio34', '9/16': 'btnStudioRatio916', 'free': 'btnStudioRatioFree' };
+  Object.keys(mapBtns).forEach(function(r) {
+    var btn = document.getElementById(mapBtns[r]);
+    if (!btn) return;
+    if (r === window.currentCardRatio) { btn.style.background = '#ffffff'; btn.style.color = '#000000'; btn.style.fontWeight = '900'; }
+    else { btn.style.background = 'transparent'; btn.style.color = '#cbd5e1'; btn.style.fontWeight = '800'; }
+  });
+  var btnW = document.getElementById('btnStudioColorWhite');
+  var btnB = document.getElementById('btnStudioColorBlack');
+  if (btnW && btnB) {
+    btnW.style.boxShadow = (window.currentPhotoTextColor === 'white') ? '0 0 0 2px #ffffff' : 'none';
+    btnB.style.boxShadow = (window.currentPhotoTextColor === 'black') ? '0 0 0 2px #ffffff' : 'none';
+  }
+};
+
+window.saveStudioCardToPhone = async function() {
+  var card = document.getElementById('photoStudioCardTarget');
+  if (!card || typeof html2canvas === 'undefined') return;
+  if (typeof triggerHaptic === 'function') triggerHaptic(15);
+
+  try {
+    var canvas = await html2canvas(card, { backgroundColor: '#000000', scale: 2.5, useCORS: true, allowTaint: true, logging: false });
+    var link = document.createElement('a');
+    link.download = '낭만루트_포토카드_' + Date.now() + '.jpg';
+    link.href = canvas.toDataURL('image/jpeg', 0.88);
+    link.click();
+    if (typeof showToast === 'function') showToast('포토 카드가 폰 갤러리에 저장되었습니다!', 'success', 2200);
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('저장 중 오류가 발생했습니다.', 'warn');
+  }
+};
+
+window.applyStudioCardToTemplate = async function() {
+  var card = document.getElementById('photoStudioCardTarget');
+  if (!card || typeof html2canvas === 'undefined') return;
+  if (typeof triggerHaptic === 'function') triggerHaptic(12);
+
+  try {
+    var canvas = await html2canvas(card, { backgroundColor: '#000000', scale: 2.5, useCORS: true, allowTaint: true, logging: false });
+    var finalPhotoUrl = canvas.toDataURL('image/jpeg', 0.88);
+
+    window.currentSharePhoto = finalPhotoUrl;
+    if (window.currentShareRecord) {
+      window.currentShareRecord.photo = finalPhotoUrl;
+      window.currentShareRecord.isPhotoCardMode = true;
+    }
+
+    var captureArea = document.getElementById('packShareCaptureArea');
+    if (captureArea) {
+      captureArea.innerHTML = `
+        <div style="width:100%; aspect-ratio:3/4; border-radius:14px; overflow:hidden; position:relative; background:#000;">
+          <img src="${finalPhotoUrl}" style="width:100%; height:100%; object-fit:cover; display:block;" />
+        </div>
+      `;
+    }
+
+    var studio = document.getElementById('photoStudioOverlay');
+    if (studio) studio.style.setProperty('display', 'none', 'important');
+    var shareModal = document.getElementById('packShareModalOverlay');
+    if (shareModal) shareModal.style.setProperty('display', 'flex', 'important');
+
+    if (typeof showToast === 'function') showToast('포토 카드가 템플릿에 적용되었습니다!', 'info', 2000);
+  } catch (err) {
+    if (typeof showToast === 'function') showToast('적용 중 오류가 발생했습니다.', 'warn');
+  }
+};
+
+window.updateStudioCardLive = function() {
+  var container = document.getElementById('photoStudioCardTarget');
+  if (!container || !window.currentSharePhoto) return;
+
+  var spotInput = document.getElementById('shareCardSpotInput');
+  var memoInput = document.getElementById('shareCardMemoInput');
+  
+  var spotVal = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : (window.currentShareRecord && window.currentShareRecord.spot ? window.currentShareRecord.spot : '나의 힐링 스팟');
+  var memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : (window.currentShareRecord && window.currentShareRecord.oneLineMemo ? window.currentShareRecord.oneLineMemo : '');
+
+  var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
+  var nick = (profile && profile.nickname) ? profile.nickname : '낭만백패커';
+  var isDarkText = (window.currentPhotoTextColor === 'black');
+  
+  var colorPrimary = isDarkText ? '#0f172a' : '#ffffff';
+  var colorSub = isDarkText ? '#334155' : '#e2e8f0';
+  var glassBg = isDarkText ? 'rgba(255, 255, 255, 0.28)' : 'rgba(0, 0, 0, 0.28)';
+  var glassBorder = isDarkText ? 'rgba(0, 0, 0, 0.18)' : 'rgba(255, 255, 255, 0.22)';
+  var textShadow = isDarkText ? 'text-shadow: 0 1px 2px rgba(255,255,255,0.6);' : 'text-shadow: 0 1px 3px rgba(0,0,0,0.85);';
+
+  var items = (Array.isArray(window.currentShareItems) && window.currentShareItems.length > 0) ? window.currentShareItems : (window.currentShareRecord ? (window.currentShareRecord.items || []) : []);
+  var totalGrams = items.reduce(function(sum, g) { return sum + Number(g.weight || 0); }, 0);
+  var weightKg = (totalGrams > 0) ? (totalGrams / 1000).toFixed(2) : (window.currentShareRecord ? (window.currentShareRecord.weightKg || '0.00') : '0.00');
+
+  var gearListHtml = renderAdaptiveGearList(items, {
+    nameColor: colorPrimary,
+    wtColor: isDarkText ? '#0284c7' : '#38bdf8',
+    bullet: '· ',
+    fontSize: '0.55rem'
+  });
+
+  var ratioVal = (window.currentCardRatio === 'free') 
+    ? currentCustomRatioVal 
+    : (window.currentCardRatio === '1/1' ? '1/1' : (window.currentCardRatio === '4/5' ? '4/5' : (window.currentCardRatio === '3/4' ? '3/4' : '9/16')));
+
+  container.innerHTML = `
+    <div style="position:relative; width:100%; max-width:370px; aspect-ratio:${ratioVal}; max-height:84vh; margin:0 auto; border-radius:16px; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
+      <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scale(${currentPhotoScaleVal}); pointer-events:none; z-index:1;" />
+      <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.5) 0%, transparent 35%, transparent 65%, rgba(0,0,0,0.65) 100%); pointer-events:none; z-index:2;"></div>
+      
+      <div style="position:relative; z-index:3; width:100%; height:100%; display:flex; flex-direction:column; justify-content:space-between; padding:12px 10px; box-sizing:border-box;">
+        
+        <div style="background:${glassBg}; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid ${glassBorder}; border-radius:10px; padding:7px 10px; box-sizing:border-box;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:0.88rem; font-weight:900; color:${colorPrimary}; ${textShadow} overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">
+              ${SVG_ICONS.pin} ${escapeHtml(spotVal)}
+            </div>
+            <span style="font-family:'Space Grotesk', sans-serif; font-size:0.88rem; font-weight:900; color:#34d399; ${textShadow} flex-shrink:0; margin-left:6px;">${weightKg}kg</span>
+          </div>
+          ${memoVal ? `<div style="font-size:0.56rem; color:${colorSub}; ${textShadow} font-style:italic; margin-top:2px;">“${escapeHtml(memoVal)}”</div>` : ''}
+        </div>
+
+        <div style="background:${glassBg}; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid ${glassBorder}; border-radius:10px; padding:6px 10px; max-height:48%; overflow:hidden; display:flex; flex-direction:column; justify-content:space-between; margin:auto 0 6px 0; box-sizing:border-box;">
+          <div style="font-size:0.54rem; font-weight:900; color:${colorPrimary}; ${textShadow} letter-spacing:1px; margin-bottom:3px; border-bottom:1px solid ${glassBorder}; padding-bottom:2px; display:flex; justify-content:space-between;">
+            <span>PACKING LIST</span>
+            <span>${items.length} ITEMS</span>
+          </div>
+          <div style="flex:1; overflow:hidden; ${textShadow}">
+            ${gearListHtml}
+          </div>
+        </div>
+
+        <div style="background:${glassBg}; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid ${glassBorder}; border-radius:8px; padding:4px 8px; text-align:center; box-sizing:border-box;">
+          <span style="font-size:0.60rem; font-weight:900; color:#34d399; ${textShadow} display:inline-flex; align-items:center; gap:3px;">
+            ${SVG_ICONS.lntShield} <span>[${escapeHtml(nick)}]님은 LNT를 준수합니다</span>
+          </span>
+        </div>
+
+      </div>
+    </div>
+  `;
+};
 
 // 🎨 [템플릿 칩 바 전용 스타일시트 자동 주입 - map.html 등 외부 화면 깨짐 100% 방어]
 if (!document.getElementById('template-chips-core-style')) {
@@ -532,38 +785,57 @@ function ensurePackShareModalDOM() {
   modal.style.cssText = 'display:none; position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#07090e; z-index:2000010 !important; justify-content:center; align-items:stretch; padding:0 !important; margin:0 !important; overflow:hidden; box-sizing:border-box; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
   modal.innerHTML = `
-    <div style="width:100%; max-width:440px; margin:0 auto; height:100dvh; display:flex; flex-direction:column; justify-content:space-between; padding:calc(10px + env(safe-area-inset-top, 0px)) 14px calc(14px + env(safe-area-inset-bottom, 0px)) 14px; box-sizing:border-box; position:relative;">
+    <div style="width:100%; max-width:440px; margin:0 auto; height:100dvh; display:flex; flex-direction:column; justify-content:space-between; padding:calc(8px + env(safe-area-inset-top, 0px)) 12px calc(12px + env(safe-area-inset-bottom, 0px)) 12px; box-sizing:border-box; position:relative;">
       
-      <div style="display:flex; justify-content:space-between; align-items:center; height:36px; flex-shrink:0;">
-        <div style="display:flex; align-items:center; gap:6px;">
-          <span style="font-size:1.05rem;">📸</span>
-          <span id="currentTmplNameTitle" style="font-size:0.92rem; font-weight:900; color:#ffffff; font-family:'Pretendard Variable', sans-serif;">공유 카드 스튜디오</span>
+   <!-- 1. 상단 고정 제어 영역: 헤더 + 박지/메모 폼 + 스튜디오 버튼 + 템플릿 바 -->
+      <div style="flex-shrink:0; display:flex; flex-direction:column; gap:5px; width:100%; box-sizing:border-box;">
+        <div style="display:flex; justify-content:space-between; align-items:center; height:32px;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <!-- 📷 순수 SVG 렌즈/셔터 프레임 벡터 아이콘 (이모티콘 0%) -->
+            <svg viewBox="0 0 24 24" fill="none" stroke="#e2e8f0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; display:block; flex-shrink:0;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="12" cy="12" r="3"/><line x1="3" x2="21" y1="9" y2="9"/></svg>
+            <span id="currentTmplNameTitle" style="font-size:0.92rem; font-weight:900; color:#ffffff; font-family:'Space Grotesk', -apple-system, sans-serif; letter-spacing:0.5px;">READY SHOT</span>
+          </div>
+          <button type="button" onclick="window.closePackShareModal();" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
         </div>
-        <button type="button" onclick="window.closePackShareModal();" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:1.0rem; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
+
+       <div style="position:relative; width:100%; display:flex; align-items:center;">
+          <div style="position:absolute; left:9px; pointer-events:none; display:flex; align-items:center; justify-content:center; z-index:2;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; display:block;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div>
+          <input type="text" id="shareCardSpotInput" placeholder="장소명 입력 (자동완성)" oninput="window.handleSpotSearchInput(this.value); if(typeof updateShareCardLive==='function') updateShareCardLive();" style="width:100%; height:32px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; font-size:0.75rem; padding:0 30px 0 26px; outline:none; box-sizing:border-box;" />
+          <button type="button" id="btnSpotInputClear" onclick="window.clearSpotSearchInput();" style="display:none; position:absolute; right:8px; background:rgba(255,255,255,0.15); border:none; color:#cbd5e1; width:18px; height:18px; border-radius:50%; font-size:0.65rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0;">✕</button>
+          <div id="spotSearchDropdown" style="display:none; position:absolute; top:36px; left:0; right:0; max-height:180px; overflow-y:auto; background:#0f172a; border:1px solid rgba(56,189,248,0.4); border-radius:8px; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.8);"></div>
+        </div>
+
+        <div style="display:flex; gap:5px; width:100%; align-items:center;">
+          <input type="text" id="shareCardMemoInput" placeholder="💬 출발 각오 또는 한줄 메모 (선택사항)" oninput="if(typeof updateShareCardLive==='function') updateShareCardLive();" style="flex:1; height:32px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; font-size:0.75rem; padding:0 10px; outline:none; box-sizing:border-box;" />
+          
+          <input type="file" id="shareCardPhotoInput" accept="image/*" multiple style="display:none;" onchange="window.handleShareCardPhotoUpload(event)" />
+          <button type="button" onclick="document.getElementById('shareCardPhotoInput').click()" style="height:32px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); color:#38bdf8; font-size:0.72rem; font-weight:900; padding:0 10px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; gap:4px; flex-shrink:0; white-space:nowrap; cursor:pointer;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px; height:13px; flex-shrink:0;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>스튜디오 ➔</span>
+          </button>
+        </div>
+
+        <div id="templateSelectorBar" class="template-selector-bar"></div>
       </div>
 
-      <div id="templateSelectorBar" class="template-selector-bar"></div>
-
+      <!-- 2. 중앙 엽서 카드 렌더링 영역 (시원하게 확장) -->
       <div style="flex:1 1 0%; min-height:0; display:flex; align-items:center; justify-content:center; width:100%; padding:4px 0; overflow:hidden; box-sizing:border-box;">
         <div id="packShareCaptureArea" style="width:100%; max-width:320px; transition:transform 0.2s ease, opacity 0.2s ease;"></div>
       </div>
 
-      <div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0; width:100%; box-sizing:border-box; margin-top:4px;">
-        <div style="position:relative; width:100%; display:flex; align-items:center;">
-          <input type="text" id="shareCardSpotInput" placeholder="📍 박지/장소명 입력 (자동완성)" oninput="window.handleSpotSearchInput(this.value); if(typeof updateShareCardLive==='function') updateShareCardLive();" style="width:100%; height:36px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:0.78rem; padding:0 30px 0 10px; outline:none; box-sizing:border-box;" />
-          <button type="button" id="btnSpotInputClear" onclick="window.clearSpotSearchInput();" style="display:none; position:absolute; right:8px; background:rgba(255,255,255,0.15); border:none; color:#cbd5e1; width:18px; height:18px; border-radius:50%; font-size:0.65rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0;">✕</button>
-          <div id="spotSearchDropdown" style="display:none; position:absolute; bottom:42px; left:0; right:0; max-height:180px; overflow-y:auto; background:#0f172a; border:1px solid rgba(56,189,248,0.4); border-radius:8px; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.8);"></div>
-        </div>
-
-        <input type="text" id="shareCardMemoInput" placeholder="💬 출발 각오 또는 한줄 메모 (선택사항)" oninput="if(typeof updateShareCardLive==='function') updateShareCardLive();" style="width:100%; height:36px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:0.78rem; padding:0 10px; outline:none; box-sizing:border-box;" />
-      </div>
-
-      <div style="display:flex; gap:8px; width:100%; flex-shrink:0; margin-top:8px; box-sizing:border-box;">
-        <button type="button" onclick="window.closePackShareModal();" style="flex:0.8; height:42px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; font-size:0.78rem; font-weight:800; border-radius:10px; cursor:pointer;">
+   <!-- 3. 하단 액션 버튼 바 (3분할 균형 배치: 닫기 / 공유하기 / 보관함 등록) -->
+      <div style="display:flex; gap:6px; width:100%; flex-shrink:0; box-sizing:border-box;">
+        <button type="button" onclick="window.closePackShareModal();" style="flex:0.8; height:42px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; font-size:0.76rem; font-weight:800; border-radius:10px; cursor:pointer;">
           닫기
         </button>
-        <button type="button" onclick="window.saveCardToVaultAndOpenBasecamp();" style="flex:2; height:42px; background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border:1px solid #38bdf8; color:#ffffff; font-size:0.85rem; font-weight:900; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(2,132,199,0.4);">
-          <span>🎒 보관함에 출발 등록 ✓</span>
+        <button type="button" onclick="window.sharePackCardDirect();" style="flex:1.1; height:42px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); color:#38bdf8; font-size:0.78rem; font-weight:900; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px; height:13px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          <span>공유하기</span>
+        </button>
+        <button type="button" onclick="window.saveCardToVaultAndOpenBasecamp();" style="flex:1.8; height:42px; background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border:1px solid #38bdf8; color:#ffffff; font-size:0.82rem; font-weight:900; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 4px 14px rgba(2,132,199,0.4);">
+          <span>보관함에 출발 등록 ✓</span>
         </button>
       </div>
 
@@ -572,6 +844,41 @@ function ensurePackShareModalDOM() {
 
   return modal;
 }
+
+// 📷 [출발 패킹 포토 스튜디오 사진 업로드 핸들러 - templates.js 단독 관리]
+window.handleShareCardPhotoUpload = async function(e) {
+  var files = Array.from(e.target.files || []);
+  if (files.length === 0) return;
+
+  var filesToProcess = files.slice(0, 10);
+  if (typeof window.showPhotoLoadingModal === 'function') {
+    window.showPhotoLoadingModal(1, filesToProcess.length);
+  }
+
+  var validList = [];
+  for (var i = 0; i < filesToProcess.length; i++) {
+    if (typeof window.showPhotoLoadingModal === 'function') {
+      window.showPhotoLoadingModal(i + 1, filesToProcess.length);
+    }
+    var b64 = (typeof window.processSinglePhotoSmart === 'function') 
+      ? await window.processSinglePhotoSmart(filesToProcess[i])
+      : '';
+    if (b64 && b64.length > 50) validList.push(b64);
+  }
+
+  if (typeof window.hidePhotoLoadingModal === 'function') {
+    window.hidePhotoLoadingModal();
+  }
+
+  if (validList.length > 0) {
+    window.__studioMultiPhotos = validList;
+    window.currentSharePhoto = validList[0];
+    window.openPhotoStudio();
+  } else {
+    if (typeof showToast === 'function') showToast('사진을 변환하지 못했습니다. 다른 사진으로 시도해주세요.', 'warn');
+  }
+  e.target.value = '';
+};
 
 window.closePackShareModal = function() {
   var modal = document.getElementById('packShareModalOverlay');
@@ -633,7 +940,7 @@ window.openPackShareModal = function(record, items, forceStudio) {
   var memoInput = document.getElementById('shareCardMemoInput');
   var clearBtn = document.getElementById('btnSpotInputClear');
 
-  // 🎯 [3중 목적지 자동 주입 엔진]: 달력/찜목록 목적지를 1초 만에 자동 채움
+ // 🛡️ [하드코딩 박멸]: 박지 미입력 시 '나의 힐링 스팟', 각오/메모 미입력 시 완전 공백('')
   var autoSpot = currentShareRecord.spot || '';
   var targetDateStr = currentShareRecord.date || window.activeSelectedDateKey || '';
 
@@ -660,14 +967,15 @@ window.openPackShareModal = function(record, items, forceStudio) {
     }
   }
 
-  currentShareRecord.spot = autoSpot;
+  currentShareRecord.spot = autoSpot || '나의 힐링 스팟';
+  currentShareRecord.oneLineMemo = currentShareRecord.oneLineMemo || ''; // 출정 준비 완료 영구 삭제
 
   if (spotInput) {
-    spotInput.value = autoSpot;
+    spotInput.value = autoSpot; // 인풋창은 힌트를 위해 빈칸 유지 또는 자동박지
     if (clearBtn) clearBtn.style.display = autoSpot ? 'flex' : 'none';
   }
   if (memoInput) {
-    memoInput.value = currentShareRecord.oneLineMemo || '';
+    memoInput.value = currentShareRecord.oneLineMemo || ''; // 인풋창도 완전한 공백 유지
   }
 
   var savedTmpl = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);

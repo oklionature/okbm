@@ -100,28 +100,59 @@
         box-sizing: border-box !important;
       }
 
-      .reel-media-stage {
+    .reel-media-stage {
         flex: 1 1 0% !important;
         min-height: 0 !important;
         width: 100% !important;
         display: flex !important;
+        flex-direction: column !important;
         align-items: center !important;
-        justify-content: center !important;
+        justify-content: flex-end !important; /* 사진이 하단 액션바에 바짝 붙도록 하단 정렬 */
         background: #000000 !important;
         overflow: hidden !important;
-        padding: 2px 0 !important;
+        padding: 0 !important; /* 상하 여백 제거 */
+        box-sizing: border-box !important;
+      }
+
+      /* 📷 [가로 슬라이더 사진 규격] */
+      .reel-horizontal-track {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        width: 100% !important;
+        height: 100% !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        scroll-snap-type: x mandatory !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        box-sizing: border-box !important;
+      }
+      .reel-horizontal-track::-webkit-scrollbar { display: none !important; }
+
+      .reel-horizontal-track > div {
+        flex: 0 0 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        height: 100% !important;
+        scroll-snap-align: start !important;
+        scroll-snap-stop: always !important;
+        position: relative !important;
+        overflow: hidden !important;
+        display: block !important;
         box-sizing: border-box !important;
       }
 
       .reel-bottom-interactive-bar {
-        padding: 6px 14px 8px 14px !important;
+        padding: 4px 16px 8px 16px !important; /* 상하는 4px로 초밀착, 좌우 프레임만 16px 여백 확보 */
         box-sizing: border-box !important;
         display: flex !important;
         flex-direction: column !important;
-        gap: 5px !important;
+        gap: 3px !important; /* 별점과 메모 간격 콤팩트화 */
         flex-shrink: 0 !important;
         background: #000000 !important;
-        border-top: 1px solid rgba(255, 255, 255, 0.04) !important;
+        border-top: none !important;
       }
 
       .reel-memo-fixed-box {
