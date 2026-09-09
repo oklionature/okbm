@@ -4690,12 +4690,13 @@ var adBannersHtml = `
     });
   </script>
 
-  <script src="romantic-sync.js?v=2.5.0"></script>
+  <script src="romantic-sync.js?v=2.5.1"></script>
   <script src="templates.js?v=2.5.0"></script>
   <script src="romantic-history.js?v=2.5.0"></script>
   <script src="romantic-plan.js?v=2.5.0"></script>
 
   <script>
+
     window.modalCloseStack = [];
 
     window.registerModalOpen = function(modalId, closeFn) {
@@ -4777,8 +4778,9 @@ var adBannersHtml = `
         }
       };
 
-      wrapModal('openPlanModal', 'closePlanModal', 'romanticPlanModal');
+    wrapModal('openPlanModal', 'closePlanModal', 'romanticPlanModal');
       wrapModal('openHistoryModal', 'closeHistoryModal', 'romanticHistoryModal');
+      wrapModal('openUserProfileModal', 'closeUserProfileModal', 'userProfileModalOverlay');
       wrapModal('openGearPresetModal', 'closeGearPresetModal', 'gearPresetModal');
       wrapModal('openPackShareModal', 'closePackShareModal', 'packShareModalOverlay');
       wrapModal('openPhotoStudio', 'closePhotoStudio', 'photoStudioOverlay');

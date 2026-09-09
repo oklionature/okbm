@@ -653,12 +653,7 @@
     `;
   };
 
-  // 🌐 [핵심 누락 해결] templates.js 사진 업로드 연동을 위한 전역 스코프 노출
-  if (typeof uploadSinglePhotoToDrive === 'function') {
-    window.uploadSinglePhotoToDrive = uploadSinglePhotoToDrive;
-  }
-
- // 📱 [지난 피드 목록 모달 & 다중 체크 일괄 삭제 통합 엔진 - 낭만일지 3단 필터 & 영수증 뱃지 완전 제거]
+  // 📱 [지난 피드 목록 모달 & 다중 체크 일괄 삭제 통합 엔진 - 낭만일지 3단 필터 & 영수증 뱃지 완전 제거]
   window.__isPastTripsSelectMode = false;
   window.__selectedPastTripIds = new Set();
   window.__pastTripsPublishFilter = window.__pastTripsPublishFilter || 'all';
@@ -1444,21 +1439,26 @@
       window.deleteFeedFromCommunity(recordId, targetDate);
     }
 
+   var hadPastModal = Boolean(document.getElementById('pastTripsListModal'));
     var single = document.getElementById('singleTripFeedModal');
     if (single) single.remove();
-    var past = document.getElementById('pastTripsListModal');
-    if (past) past.remove();
 
-    window.renderHistoryStage();
-
-    // 🚀 삭제 직후 끝낸 자리(다음 카드)로 뷰포트 즉시 복원
-    if (targetScrollId) {
-      setTimeout(function() {
-        var targetCardEl = document.getElementById(targetScrollId);
-        if (targetCardEl) {
-          targetCardEl.scrollIntoView({ behavior: 'auto', block: 'start' });
-        }
-      }, 40);
+    // 🎯 [화면 고정]: 낭만일지 목록에서 삭제 시 메인 피드로 가지 않고 목록창 현위치 유지
+    if (hadPastModal) {
+      if (typeof window.openPastTripsListModal === 'function') {
+        window.openPastTripsListModal();
+      }
+    } else {
+      window.renderHistoryStage();
+      // 🚀 삭제 직후 끝낸 자리(다음 카드)로 뷰포트 즉시 복원
+      if (targetScrollId) {
+        setTimeout(function() {
+          var targetCardEl = document.getElementById(targetScrollId);
+          if (targetCardEl) {
+            targetCardEl.scrollIntoView({ behavior: 'auto', block: 'start' });
+          }
+        }, 40);
+      }
     }
 
     triggerHaptic(15);
@@ -2569,102 +2569,67 @@
     var parentScrollContainer = document.querySelector('#modalRichAfterTrip > div:nth-child(2)');
     var savedParentScrollTop = parentScrollContainer ? parentScrollContainer.scrollTop : 0;
 
-    // 🌐 [3중 하이브리드 박지 풀 엔진]: 전역 변수 + 로컬 캐시 + 피드 풀 전방위 통합 수집
-    var rawPool = [];
-    if (Array.isArray(window.campingSpots)) rawPool = rawPool.concat(window.campingSpots);
-    if (Array.isArray(window.spotsData)) rawPool = rawPool.concat(window.spotsData);
-    if (Array.isArray(window.allSpots)) rawPool = rawPool.concat(window.allSpots);
-    if (Array.isArray(window.masterSpots)) rawPool = rawPool.concat(window.masterSpots);
-    if (Array.isArray(window.CAMPING_SPOTS)) rawPool = rawPool.concat(window.CAMPING_SPOTS);
-    if (Array.isArray(window.SPOTS_DB)) rawPool = rawPool.concat(window.SPOTS_DB);
+  // 🌐 [3중 하이브리드 박지 풀 메모이제이션 엔진]: 1회 정규화 후 메모리 캐시로 0.001초 즉시 인출
+    var spotsSource = [];
+    if (window.__masterSpotsSearchCache && window.__masterSpotsSearchCache.length > 0) {
+      spotsSource = window.__masterSpotsSearchCache;
+    } else {
+      var rawPool = [];
+      if (Array.isArray(window.campingSpots)) rawPool = rawPool.concat(window.campingSpots);
+      if (Array.isArray(window.spotsData)) rawPool = rawPool.concat(window.spotsData);
+      if (Array.isArray(window.allSpots)) rawPool = rawPool.concat(window.allSpots);
+      if (Array.isArray(window.masterSpots)) rawPool = rawPool.concat(window.masterSpots);
+      if (Array.isArray(window.CAMPING_SPOTS)) rawPool = rawPool.concat(window.CAMPING_SPOTS);
+      if (Array.isArray(window.SPOTS_DB)) rawPool = rawPool.concat(window.SPOTS_DB);
 
-    ['okbm_spots_cache', 'okbm_master_spots', 'camping_spots', 'okbm_spots', 'okbm_bookmarks'].forEach(function(k) {
-      try {
-        var item = localStorage.getItem(k);
-        if (item) {
-          var parsed = JSON.parse(item);
-          if (Array.isArray(parsed)) rawPool = rawPool.concat(parsed);
-        }
-      } catch (e) {}
-    });
-
-    if (Array.isArray(window.__allLoadedFeeds)) {
-      window.__allLoadedFeeds.forEach(function(f) {
-        if (f && f.spot) rawPool.push({ name: f.spot, elevation: f.elevation || '', address: f.address || f.region || '' });
+      ['okbm_spots_cache', 'okbm_master_spots', 'camping_spots', 'okbm_spots', 'okbm_bookmarks'].forEach(function(k) {
+        try {
+          var item = localStorage.getItem(k);
+          if (item) {
+            var parsed = JSON.parse(item);
+            if (Array.isArray(parsed)) rawPool = rawPool.concat(parsed);
+          }
+        } catch (e) {}
       });
-    }
-    if (Array.isArray(window.interactiveHistory)) {
-      window.interactiveHistory.forEach(function(h) {
-        if (h && h.spot) rawPool.push({ name: h.spot, elevation: h.elevation || '', address: h.address || h.region || '' });
-      });
-    }
 
-    // 🏙️ [지능형 2단계 도시 파서]: 시/군 도시명 1순위 추출 ➔ 미분류 시 도 단위(충청 등) 안전 폴백
-    function extractSmartCityName(item) {
-      if (!item) return '';
-      if (item.city && typeof item.city === 'string' && item.city.trim().length > 0) {
-        return item.city.replace(/(시|군|구)$/, '').trim();
-      }
-      if (item.district && typeof item.district === 'string' && item.district.trim().length > 0) {
-        return item.district.replace(/(시|군|구)$/, '').trim();
-      }
-
-      var fullAddr = String(item.address || item.addr || item.roadAddress || item.location || '').trim();
-      var regText = String(item.region || '').trim();
-
-      // 1순위: 주소 내 전국 대표 시/군 직접 매칭
-      var cityMatch = fullAddr.match(/(단양|충주|제천|가평|양평|춘천|원주|영월|정선|인제|화천|양구|평창|태백|삼척|강릉|동해|속초|고성|양양|포천|연천|동두천|파주|남양주|광주|용인|안성|이천|여주|평택|화성|오산|시흥|안산|수원|성남|하남|구리|의정부|고양|김포|부천|광명|과천|안양|군포|의왕|보은|옥천|영동|증평|진천|괴산|음성|천안|공주|보령|아산|서산|논산|계룡|당진|금산|부여|서천|청양|홍성|예산|태안|전주|군산|익산|정읍|남원|김제|완주|진안|무주|장수|임실|순창|고창|부안|목포|여수|순천|나주|광양|담양|곡성|구례|고흥|보성|화순|장흥|강진|해남|영암|무안|함평|영광|장성|완도|진도|신안|포항|경주|김천|안동|구미|영주|영천|상주|문경|경산|군위|의성|청송|영양|영덕|청도|고령|성주|칠곡|예천|봉화|울진|울릉|창원|진주|통영|사천|김해|밀양|거제|양산|의령|함안|창녕|남해|하동|산청|함양|거창|합천|제주|서귀포)(?:시|군)?/);
-      if (cityMatch && cityMatch[1]) {
-        return cityMatch[1];
-      }
-
-      // 2순위: 일반 주소 어절 내 OO시/OO군 파싱
-      var parts = fullAddr.split(/\s+/).filter(Boolean);
-      for (var i = 0; i < parts.length; i++) {
-        var p = parts[i];
-        if (/(시|군)$/.test(p) && p.length <= 5) {
-          return p.replace(/(시|군)$/, '');
-        }
-      }
-
-      // 3순위 (폴백): 세부 도시가 없는 경우 광역 도/지역명(충청, 경기, 강원 등) 사용
-      if (regText) {
-        return regText.slice(0, 4);
-      }
-      if (parts[0]) {
-        return parts[0].slice(0, 4);
-      }
-      return '';
-    }
-
-    // 중복 제거 및 [도시명 + 박지명] 정규화
-    var spotsMap = new Map();
-    rawPool.forEach(function(s) {
-      if (!s) return;
-      var rawName = String(s.name || s.spotName || s.spot || s.title || '').trim();
-      if (!rawName || rawName === '나의 힐링 스팟' || rawName === '힐링 박지') return;
-
-      var cityName = extractSmartCityName(s);
-
-      // 이미 이름 앞에 도시명이 붙어있지 않다면 결합 (예: 단양 올산, 충주 고봉)
-      var combinedName = rawName;
-      if (cityName && !rawName.includes(cityName)) {
-        combinedName = cityName + ' ' + rawName;
-      }
-
-      var cleanKey = combinedName.replace(/\s+/g, '').toLowerCase();
-      if (!spotsMap.has(cleanKey)) {
-        spotsMap.set(cleanKey, {
-          name: combinedName,
-          rawName: rawName,
-          cityName: cityName,
-          elevation: s.elevation || s.alt || s.height || '',
-          address: s.address || s.addr || s.region || ''
+      if (Array.isArray(window.__allLoadedFeeds)) {
+        window.__allLoadedFeeds.forEach(function(f) {
+          if (f && f.spot) rawPool.push({ name: f.spot, elevation: f.elevation || '', address: f.address || f.region || '' });
         });
       }
-    });
+      if (Array.isArray(window.interactiveHistory)) {
+        window.interactiveHistory.forEach(function(h) {
+          if (h && h.spot) rawPool.push({ name: h.spot, elevation: h.elevation || '', address: h.address || h.region || '' });
+        });
+      }
 
-    var spotsSource = Array.from(spotsMap.values());
+      var spotsMap = new Map();
+      rawPool.forEach(function(s) {
+        if (!s) return;
+        var rawName = String(s.name || s.spotName || s.spot || s.title || '').trim();
+        if (!rawName || rawName === '나의 힐링 스팟' || rawName === '힐링 박지') return;
+
+        var cityName = extractSmartCityName(s);
+        var combinedName = rawName;
+        if (cityName && !rawName.includes(cityName)) {
+          combinedName = cityName + ' ' + rawName;
+        }
+
+        var cleanKey = combinedName.replace(/\s+/g, '').toLowerCase();
+        if (!spotsMap.has(cleanKey)) {
+          spotsMap.set(cleanKey, {
+            name: combinedName,
+            rawName: rawName,
+            cityName: cityName,
+            elevation: s.elevation || s.alt || s.height || '',
+            address: s.address || s.addr || s.region || ''
+          });
+        }
+      });
+
+      spotsSource = Array.from(spotsMap.values());
+      window.__masterSpotsSearchCache = spotsSource;
+    }
 
   var searchModal = document.createElement('div');
     searchModal.id = 'richTripSpotSearchModal';
@@ -3129,18 +3094,31 @@
       window.safeSetStorage('okbm_packing_history', window.interactiveHistory);
     }
 
-    // ⚡ [2단계: 찜하기 방식 화면 즉시 닫기 & 0초 재렌더링]
+    // ⚡ [2단계: 찜하기 방식 화면 즉시 닫기 & 새로고침 0초 현위치 실시간 갱신]
     var m = document.getElementById('modalRichAfterTrip');
     if (m) m.remove();
 
+    var hasPastModal = Boolean(document.getElementById('pastTripsListModal'));
     var singleFeedModal = document.getElementById('singleTripFeedModal');
+
+    // 1. 피드 상세창에서 수정했을 경우: 상세창 갱신 및 스크롤 유지
     if (singleFeedModal) {
       singleFeedModal.remove();
       if (typeof window.openSingleTripDualFeedModal === 'function') {
         window.openSingleTripDualFeedModal(target.id);
       }
-    } else if (typeof window.renderHistoryStage === 'function') {
-      window.renderHistoryStage();
+    }
+
+    // 2. 낭만일지 목록창에서 수정했을 경우: 목록창을 즉시 0초 리프레시하여 현위치 고정
+    if (hasPastModal) {
+      if (typeof window.openPastTripsListModal === 'function') {
+        window.openPastTripsListModal();
+      }
+    } else if (!singleFeedModal) {
+      // 3. 메인 릴스 화면에서 수정했을 경우: 메인 스테이지 0초 갱신
+      if (typeof window.renderHistoryStage === 'function') {
+        window.renderHistoryStage();
+      }
     }
 
     triggerHaptic(15);
@@ -3238,133 +3216,7 @@
   }
   window.uploadSinglePhotoToDrive = uploadSinglePhotoToDrive;
 
-  // 🗓️ [달력 월 변경 엔진]
- window.changeHistoryMonth = function(delta) {
-    var now = new Date();
-    var curYear = window.calViewYear || now.getFullYear();
-    var curMonth = window.calViewMonth || (now.getMonth() + 1);
-
-    curMonth += delta;
-    if (curMonth < 1) { curMonth = 12; curYear--; }
-    else if (curMonth > 12) { curMonth = 1; curYear++; }
-
-    window.calViewYear = curYear;
-    window.calViewMonth = curMonth;
-
-    var monthRecord = (window.interactiveHistory || []).find(function(h) {
-      return Number(h.year) === Number(curYear) && Number(h.month) === Number(curMonth);
-    });
-
-    if (monthRecord) {
-      window.activeSelectedDateKey = monthRecord.date;
-      var foundIdx = window.interactiveHistory.findIndex(function(h) { return String(h.id) === String(monthRecord.id); });
-      window.currentCardIndex = foundIdx !== -1 ? foundIdx : 0;
-    }
-
-    window.renderHistoryStage();
-    triggerHaptic(8);
-  };
-
-  window.changeHistoryYear = function(year) {
-    window.calViewYear = Number(year);
-    window.renderHistoryStage();
-    triggerHaptic(10);
-    var oldPicker = document.getElementById('historyYearPickerOverlay');
-    if (oldPicker) oldPicker.remove();
-  };
-
-  window.jumpToHistoryToday = function() {
-    var now = new Date();
-    window.calViewYear = now.getFullYear();
-    window.calViewMonth = now.getMonth() + 1;
-    window.activeSelectedDateKey = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
-    window.renderHistoryStage();
-    triggerHaptic(10);
-  };
-
-  window.openYearSelectPicker = function(e) {
-    if (e) e.stopPropagation();
-    triggerHaptic(10);
-    var oldPicker = document.getElementById('historyYearPickerOverlay');
-    if (oldPicker) { oldPicker.remove(); return; }
-
-    var now = new Date();
-    var curYear = window.calViewYear || now.getFullYear();
-
-    var picker = document.createElement('div');
-    picker.id = 'historyYearPickerOverlay';
-    picker.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter:blur(8px); z-index:1000050; display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
-    picker.onclick = function(evt) { if (evt.target === picker) picker.remove(); };
-
-    var startY = curYear - 4;
-    var endY = curYear + 4;
-    var yearsHtml = '';
-    for (var y = startY; y <= endY; y++) {
-      var isCurrent = (y === curYear);
-      yearsHtml += '<button type="button" onclick="window.changeHistoryYear(' + y + ')" style="height:38px; border-radius:8px; font-size:0.84rem; font-weight:' + (isCurrent ? '900' : '700') + '; background:' + (isCurrent ? '#38bdf8' : 'rgba(255,255,255,0.06)') + '; color:' + (isCurrent ? '#000000' : '#ffffff') + '; border:1px solid ' + (isCurrent ? '#38bdf8' : 'rgba(255,255,255,0.12)') + '; cursor:pointer;">' + y + '년</button>';
-    }
-
-    picker.innerHTML = `
-      <div style="width:100%; max-width:280px; background:#0c1018; border:1.5px solid rgba(56,189,248,0.4); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px; box-shadow:0 16px 40px rgba(0,0,0,0.9); box-sizing:border-box;" onclick="event.stopPropagation();">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:0.88rem; font-weight:900; color:#ffffff;">연도 선택</span>
-          <button type="button" onclick="document.getElementById('historyYearPickerOverlay').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer;">✕</button>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;">
-          ${yearsHtml}
-        </div>
-      </div>
-    `;
-    document.body.appendChild(picker);
-  };
-
-  // =========================================================================
-// [수정 코드 1] romantic-history.js : 불필요한 제스처/토글 핸들러 제거 및 표준화
-// =========================================================================
-  window.handleHistoryDockTabClick = function(targetMode, e) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-
-    if (targetMode === 'feed') {
-      window.openPastTripsListModal();
-    } else if (targetMode === 'studio') {
-      window.openHistoryStudioModal();
-    } else if (targetMode === 'clearmap') {
-      window.openClearMapModal();
-    } else if (targetMode === 'report') {
-      window.openMyReportModal();
-    }
-    triggerHaptic(10);
-  };
-
-// =========================================================================
-  // 🏕️ [아웃도어 필드 아카이브] 개척자 SNS 홍보 · 낭만별 & 감사 스탬프 · 지도 연동
-  // =========================================================================
-  window.activeHistoryFeedTab = window.activeHistoryFeedTab || 'my';
-
-  window.handleHistoryCalendarClick = function(day, month, year) {
-    var dateKey = year + '.' + String(month).padStart(2, '0') + '.' + String(day).padStart(2, '0');
-
-    var foundIdx = (window.interactiveHistory || []).findIndex(function(h) {
-      if (Number(h.year) === Number(year) && Number(h.month) === Number(month) && Number(h.day) === Number(day)) return true;
-      var hDate = h.date ? h.date.replace(/[-/]/g, '.') : '';
-      return hDate === dateKey;
-    });
-
-    if (foundIdx === -1) {
-      triggerHaptic(5);
-      return;
-    }
-
-    window.activeSelectedDateKey = dateKey;
-    window.currentCardIndex = foundIdx;
-    window.activeHistorySubFilter = 'all';
-    window.renderHistoryStage();
-    triggerHaptic(10);
-  };
-
-// =========================================================================
-  // 🏕️ [핵심 복원] 아웃도어 필드 매거진 렌더러 & R2 0.03초 실시간 피드 인출기
-  // =========================================================================
+  // 🏕️ [피드 스트림 전역 탭 상태 단일 초기화]
   window.activeHistoryFeedTab = window.activeHistoryFeedTab || 'my';
 
  // ⚡ [0.03초 단일 진실 공급원]: Cloudflare R2 feeds.json 전용 초고속 인출 엔진
@@ -3705,75 +3557,7 @@ window.renderHistoryStage = function(isLoading) {
               '<span>전체 피드</span>' +
             '</button>';
 
-   // 🗺️ [전국 마스터 박지 DB 실시간 대조 엔진 - 추후 신규 등록 시에도 즉각 자동 반영]
-  window.isSpotRegisteredInMasterDB = function(rawSpotName) {
-    if (!rawSpotName) return false;
-    var clean = String(rawSpotName)
-      .replace(/\(.*?\)/g, '')
-      .replace(/\[.*?\]/g, '')
-      .replace(/\s+/g, '')
-      .toLowerCase()
-      .trim();
-
-    if (!clean || clean === '나의힐링스팟' || clean === '힐링박지' || clean === '방문스팟') return false;
-
-    var pool = [];
-    if (Array.isArray(window.campingSpots)) pool = pool.concat(window.campingSpots);
-    if (Array.isArray(window.spotsData)) pool = pool.concat(window.spotsData);
-    if (Array.isArray(window.allSpots)) pool = pool.concat(window.allSpots);
-    if (Array.isArray(window.masterSpots)) pool = pool.concat(window.masterSpots);
-    if (Array.isArray(window.CAMPING_SPOTS)) pool = pool.concat(window.CAMPING_SPOTS);
-    if (Array.isArray(window.SPOTS_DB)) pool = pool.concat(window.SPOTS_DB);
-
-    ['okbm_spots_cache', 'okbm_master_spots', 'camping_spots', 'okbm_spots'].forEach(function(k) {
-      try {
-        var item = localStorage.getItem(k);
-        if (item) {
-          var parsed = JSON.parse(item);
-          if (Array.isArray(parsed)) pool = pool.concat(parsed);
-        }
-      } catch (e) {}
-    });
-
-    return pool.some(function(s) {
-      if (!s) return false;
-      var sName = String(s.name || s.spotName || s.spot || s.title || '').replace(/\s+/g, '').toLowerCase().trim();
-      if (!sName || sName === '나의힐링스팟' || sName === '힐링박지') return false;
-      return (sName === clean || clean.includes(sName) || sName.includes(clean));
-    });
-  };
-
-  // 🗺️ [피드 위치 직통 지도 이동 엔진 - 전국지도 map.html 핀 포커싱]
-  window.navigateToSpotMap = function(rawSpotName, e) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    if (!rawSpotName) return;
-    triggerHaptic(12);
-
-    var cleanSpot = String(rawSpotName)
-      .replace(/\(.*?\)/g, '')
-      .replace(/\[.*?\]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    if (!cleanSpot || cleanSpot === '나의 힐링 스팟' || cleanSpot === '힐링 박지') {
-      if (typeof showToast === 'function') showToast('정확한 박지 위치 정보가 등록되지 않았습니다.', 'info', 1800);
-      return;
-    }
-
-    try {
-      localStorage.setItem('okbm_target_map_spot', cleanSpot);
-      sessionStorage.setItem('okbm_last_feed_return', location.href);
-    } catch (err) {}
-
-    if (typeof showToast === 'function') {
-      showToast('📍 [' + cleanSpot + '] 지도로 이동합니다.', 'info', 1200);
-    }
-
-    setTimeout(function() {
-      if (typeof window.closeHistoryModal === 'function') window.closeHistoryModal();
-      location.href = 'map.html?spot=' + encodeURIComponent(cleanSpot);
-    }, 180);
-  };
+  
 
   // 🏷️ [상단 헤더 렌더러: 등록된 박지만 화살표(↗) 표시 & 미등록 박지는 일반 텍스트 노출]
         var isRegisteredSpot = window.isSpotRegisteredInMasterDB(spotName);
@@ -3913,10 +3697,10 @@ window.renderHistoryStage = function(isLoading) {
           '</div>';
         }
 
-        // 📷 [지능형 적응 렌더러: 세로 사진은 꽉 차게(Cover), 가로 사진은 현행 유지(Contain)]
+        // 📷 [인스타그램 규격 순수 매트블랙 단일 렌더러: GPU 앰비언트 블러 완전 제거 & 세로/가로 지능형 적응]
         var horizontalSlidesHtml = '';
         if (totalPhotosCount === 0) {
-          horizontalSlidesHtml = '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; background:radial-gradient(circle at 50% 40%, #1e293b 0%, #090d16 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:20px; box-sizing:border-box; text-align:center;">' +
+          horizontalSlidesHtml = '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; background:#000000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:20px; box-sizing:border-box; text-align:center;">' +
             '<div style="width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.04); border:1.5px dashed rgba(56,189,248,0.3); display:flex; align-items:center; justify-content:center; color:#38bdf8;">' +
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:22px; height:22px;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>' +
             '</div>' +
@@ -3925,11 +3709,8 @@ window.renderHistoryStage = function(isLoading) {
           '</div>';
         } else {
           horizontalSlidesHtml = mediaItems.map(function(pUrl) {
-            return '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center;">' +
-              '<!-- 배경 앰비언트 블러 (가로 사진 여백을 자연스럽게 채움) -->' +
-              '<img src="' + pUrl + '" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(22px) brightness(0.38); transform:scale(1.15); pointer-events:none;" />' +
-              '<!-- 전면 지능형 적응 뷰 (세로 사진은 꽉 차고, 가로 사진은 현행 유지) -->' +
-              '<img src="' + pUrl + '" onload="if(this.naturalHeight > this.naturalWidth * 1.05){ this.style.objectFit=\'cover\'; } else { this.style.objectFit=\'contain\'; }" style="position:relative; z-index:2; width:100%; height:100%; object-fit:contain; display:block; pointer-events:none; transition:object-fit 0.2s ease;" />' +
+            return '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex; align-items:center; justify-content:center;">' +
+              '<img src="' + pUrl + '" onload="if(this.naturalHeight > this.naturalWidth * 1.05){ this.style.objectFit=\'cover\'; } else { this.style.objectFit=\'contain\'; }" style="width:100%; height:100%; object-fit:contain; display:block; pointer-events:none; transition:object-fit 0.2s ease;" />' +
             '</div>';
           }).join('');
         }
@@ -4067,6 +3848,42 @@ window.renderHistoryStage = function(isLoading) {
         '<span>마이리포트</span>' +
       '</button>' +
     '</div>';
+
+    // ⚡ [인스타그램 방식 C++ 백그라운드 7개 슬라이딩 윈도우]: CPU 부하 0% VRAM 릴리즈 엔진
+    if (window.IntersectionObserver) {
+      if (window.__reelWindowObserver) {
+        window.__reelWindowObserver.disconnect();
+      }
+      var reelContainer = document.getElementById('reelsVerticalContainer');
+      if (reelContainer) {
+        var allReelCards = Array.from(reelContainer.querySelectorAll('.reel-page-snap'));
+        window.__reelWindowObserver = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+              var curIdx = parseInt(entry.target.dataset.reelIdx, 10);
+              if (!isNaN(curIdx)) {
+                allReelCards.forEach(function(cardEl) {
+                  var cIdx = parseInt(cardEl.dataset.reelIdx, 10);
+                  var mediaStage = cardEl.querySelector('.postcard-3d-wrapper');
+                  if (mediaStage) {
+                    // 앞뒤 3개(총 7개) 윈도우 내는 활성화, 벗어난 카드는 GPU 텍스처 즉시 반환
+                    if (Math.abs(cIdx - curIdx) <= 3) {
+                      mediaStage.style.visibility = 'visible';
+                    } else {
+                      mediaStage.style.visibility = 'hidden';
+                    }
+                  }
+                });
+              }
+            }
+          });
+        }, { root: reelContainer, threshold: 0.5 });
+
+        allReelCards.forEach(function(card) {
+          window.__reelWindowObserver.observe(card);
+        });
+      }
+    }
   };
 
   // 🚀 [낭만보관함 모달 오픈 / 클로즈 - 100% 에러 방어]

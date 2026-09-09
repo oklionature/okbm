@@ -1,22 +1,14 @@
-/**
- * 🏕️ 낭만루트 구글 시트 실시간 동기화 & 낭만보관함 복원 코어 엔진 (v2.2.0 Master)
- * - [RomanticVault 금고 엔진]: 전 기종·브라우저 일원화 마스터 트랜잭션 (찜/클리어/메모 새로고침 0% 즉시 반영)
- * - [9열 표준 스키마 1:1 완벽 직통]: G열(my_gears: 슬롯/⭐찜/커스텀) 및 I열(14일 쿨다운 타임스탬프) 보존
- * - [동기화 락 & 역전 덮어쓰기 원천 차단]: 서버 수화(Hydration) 중 역전송 차단 및 지도/홈 선택적 백업 격리
- * - [P열 photoMemos 완벽 보존]: 커뮤니티 피드 공유 시 사진 메모 유실 원천 방어
- * - [회원 관리 직통 복원]: 프로필 버튼 터치 시 계정/닉네임 관리 모달(openUserProfileModal) 직통 연결
- */
 
 var GAS_API_URL = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
 var R2_PUBLIC_DOMAIN = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
 window.R2_PUBLIC_DOMAIN = R2_PUBLIC_DOMAIN;
 
-// 🛡️ 글로벌 클라우드 안전 로드 플래그 초기화
+// 글로벌 클라우드 안전 로드 플래그 초기화
 if (typeof window.isCloudDataLoaded === 'undefined') {
   window.isCloudDataLoaded = false;
 }
 
-// 🧰 [공통 유틸] 안전한 로컬스토리지 JSON 파싱 헬퍼
+// [공통 유틸] 안전한 로컬스토리지 JSON 파싱 헬퍼
 function safeGetJSON(key, defaultVal) {
   try {
     var item = localStorage.getItem(key);
@@ -26,7 +18,7 @@ function safeGetJSON(key, defaultVal) {
   }
 }
 
-// 🧰 [공통 유틸] 안전한 햅틱 피드백 트리거
+// [공통 유틸] 안전한 햅틱 피드백 트리거
 function triggerHaptic(duration) {
   if (typeof window !== 'undefined' && 'navigator' in window && typeof navigator.vibrate === 'function') {
     try {
@@ -37,7 +29,7 @@ function triggerHaptic(duration) {
   }
 }
 
-// 🧰 [공통 유틸] 안전한 토스트 메시지 출력 (매개변수 타입 자동 감지 보정)
+// [공통 유틸] 안전한 토스트 메시지 출력 (매개변수 타입 자동 감지 보정)
 function showToast(msg, typeOrDuration, maybeDuration) {
   var dur = 2500;
   if (typeof typeOrDuration === 'number') {
@@ -67,7 +59,7 @@ function showToast(msg, typeOrDuration, maybeDuration) {
   }
 }
 
-// 🧰 [공통 유틸] 브라우저 표준 한국 시간 타임스탬프 생성기
+// [공통 유틸] 브라우저 표준 한국 시간 타임스탬프 생성기
 function getFormattedNow() {
   var d = new Date();
   var pad = function(n) { return String(n).padStart(2, '0'); };
@@ -80,9 +72,9 @@ function UtilitiesFormattedNow() {
 }
 window.UtilitiesFormattedNow = UtilitiesFormattedNow;
 
-// 🧰 [비상 초기화 엔진] 전 기종 로컬 캐시 & IndexedDB & 클라우드 피드 완전 무결 포맷
+// [비상 초기화 엔진] 전 기종 로컬 캐시 & IndexedDB & 클라우드 피드 완전 무결 포맷
 window.executeCleanSlateMasterReset = async function(isSilent) {
-  if (!isSilent && !confirm('⚠️ 주의: 모든 출발 기록과 사진 맵이 영구 포맷됩니다.\n(회원 계정 및 찜/클리어 목록은 보존됩니다)\n정말 초기화하시겠습니까?')) {
+  if (!isSilent && !confirm('주의: 모든 활동 기록과 사진 맵이 영구 포맷됩니다.\n(회원 계정 및 찜/클리어 목록은 보존됩니다)\n정말 초기화하시겠습니까?')) {
     return;
   }
 
@@ -127,7 +119,7 @@ window.executeCleanSlateMasterReset = async function(isSilent) {
   }
 
   triggerHaptic(20);
-  showToast('🧹 모든 피드와 사진이 초기화되었습니다. 새로고침합니다.', 2000);
+  showToast('모든 피드와 사진이 초기화되었습니다. 새로고침합니다.', 2000);
 
   setTimeout(function() {
     var url = new URL(window.location.href);
@@ -142,11 +134,11 @@ if (typeof window !== 'undefined' && window.location.search.includes('clean_slat
   }, 300);
 }
 
-// ☁️ 1. Cloudflare R2 글로벌 CDN (0.03초 1순위) ➔ 구글 시트(2순위 백업망) 직통 조회
+// 1. Cloudflare R2 글로벌 CDN (0.03초 1순위) -> 구글 시트(2순위 백업망) 직통 조회
 async function loadUserDataFromCloud(userId) {
   if (!userId) return null;
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
-    console.log('📡 [RomanticSync] 오프라인 감지: 로컬 캐시로 즉시 전환합니다.');
+    console.log('[RomanticSync] 오프라인 감지: 로컬 캐시로 즉시 전환합니다.');
     return null;
   }
 
@@ -156,12 +148,12 @@ async function loadUserDataFromCloud(userId) {
     if (r2Res.ok) {
       var r2Data = await r2Res.json();
       if (r2Data && (r2Data.status === 'SUCCESS' || r2Data.bookmarks || r2Data.packHistory || r2Data.myGears || r2Data.nickname)) {
-        console.log('⚡ [RomanticSync] Cloudflare R2 CDN에서 유저 데이터 0.03초 번개 인출 성공!');
+        console.log('[RomanticSync] Cloudflare R2 CDN에서 유저 데이터 0.03초 번개 인출 성공!');
         return r2Data.userData || r2Data;
       }
     }
   } catch (r2Err) {
-    console.log('📡 [RomanticSync] R2 최초 조회 대기, 구글 클라우드로 전환:', r2Err.message);
+    console.log('[RomanticSync] R2 최초 조회 대기, 구글 클라우드로 전환:', r2Err.message);
   }
 
   try {
@@ -183,7 +175,7 @@ async function loadUserDataFromCloud(userId) {
   return null;
 }
 
-// 🔑 2. 로그인 상태 검증 및 세션 체크
+// 2. 로그인 상태 검증 및 세션 체크
 function isUserLoggedIn() {
   var token = localStorage.getItem('user_auth_token');
   var profile = safeGetJSON('user_profile', null);
@@ -213,7 +205,7 @@ function isUserLoggedIn() {
   return hasValid;
 }
 
-// 📊 3. 일일 방문자 통계 기록 전송
+// 3. 일일 방문자 통계 기록 전송
 function trackDailyVisit() {
   var sessionKey = 'okbm_visit_recorded_' + new Date().toISOString().slice(0, 10);
   if (!sessionStorage.getItem(sessionKey)) {
@@ -230,7 +222,7 @@ function trackDailyVisit() {
   }
 }
 
-// 🏛️ [RomanticVault] 전 기종·브라우저 일원화 마스터 트랜잭션 금고 매니저
+// [RomanticVault] 전 기종·브라우저 일원화 마스터 트랜잭션 금고 매니저
 window.RomanticVault = window.RomanticVault || {
   isHydrated: false,
   isHydrating: false,
@@ -279,7 +271,7 @@ window.RomanticVault = window.RomanticVault || {
     }
   },
 
-  // ⭐ [찜 토글 일원화 API - 새로고침 0% 즉시 반영]
+  // [찜 토글 일원화 API - 새로고침 0% 즉시 반영]
   toggleBookmark: function(spotId) {
     var sId = String(spotId).trim();
     if (!sId) return false;
@@ -311,7 +303,7 @@ window.RomanticVault = window.RomanticVault || {
     return isNowBookmarked;
   },
 
-  // 🚩 [클리어 토글 일원화 API - 새로고침 0% 즉시 반영]
+  // [클리어 토글 일원화 API - 새로고침 0% 즉시 반영]
   toggleVisited: function(spotId) {
     var sId = String(spotId).trim();
     if (!sId) return false;
@@ -343,7 +335,7 @@ window.RomanticVault = window.RomanticVault || {
     return isNowVisited;
   },
 
-  // 📝 [비밀 메모 저장 일원화 API]
+  // [비밀 메모 저장 일원화 API]
   saveMemo: function(spotId, memoText) {
     var sId = String(spotId).trim();
     if (!sId) return;
@@ -353,7 +345,7 @@ window.RomanticVault = window.RomanticVault || {
     if (window.userMemos) window.userMemos = memos;
   },
 
-  // 🔄 [서버 정본 자동 수화(Hydration) 마스터 스위치]
+  // [서버 정본 자동 수화(Hydration) 마스터 스위치]
   hydrateFromServer: async function(userId) {
     if (!userId || this.isHydrating) return null;
     this.isHydrating = true;
@@ -387,7 +379,7 @@ window.RomanticVault = window.RomanticVault || {
           if (mg.gearMeta) this.write('okbm_gear_meta', mg.gearMeta, false);
         }
         this.isHydrated = true;
-        console.log('✅ [RomanticVault] 서버 정본 로컬 수화(Hydration) 완결');
+        console.log('[RomanticVault] 서버 정본 로컬 수화(Hydration) 완결');
 
         try {
           if (typeof window.renderPlanStage === 'function') window.renderPlanStage();
@@ -406,7 +398,7 @@ window.RomanticVault = window.RomanticVault || {
   }
 };
 
-// 🚀 앱 접속 즉시 로그인 회원 데이터 백그라운드 자동 수화
+// 앱 접속 즉시 로그인 회원 데이터 백그라운드 자동 수화
 if (typeof window !== 'undefined') {
   setTimeout(function() {
     if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
@@ -419,14 +411,14 @@ if (typeof window !== 'undefined') {
   }, 100);
 }
 
-// ☁️ 4. 클라우드 단일 트랜잭션 동기화
+// 4. 클라우드 단일 트랜잭션 동기화
 function syncUserDataToCloud(isPackHistoryUpdated) {
   var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : null);
   var userId = profile && profile.id ? String(profile.id).trim() : localStorage.getItem('user_auth_token');
   if (!userId) return;
 
   if (window.RomanticVault && window.RomanticVault.isHydrating === true) {
-    console.log('⏳ [RomanticSync] 서버 수화 진행 중: 클라우드 역전송 일시 보류.');
+    console.log('[RomanticSync] 서버 수화 진행 중: 클라우드 역전송 일시 보류.');
     return;
   }
 
@@ -524,7 +516,7 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
 
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     localStorage.setItem('okbm_pending_cloud_sync', 'true');
-    console.log('📡 [RomanticSync] 네트워크 차단: 변경사항 기기 보존 및 재연결 대기열 등록.');
+    console.log('[RomanticSync] 네트워크 차단: 변경사항 기기 보존 및 재연결 대기열 등록.');
     updateHeaderAuthUI();
     return;
   }
@@ -540,7 +532,7 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
     .then(function(data) {
       if (data && data.status === 'SUCCESS') {
         localStorage.removeItem('okbm_pending_cloud_sync');
-        console.log('✅ [RomanticSync] 단일 트랜잭션 동기화 성공!');
+        console.log('[RomanticSync] 단일 트랜잭션 동기화 성공!');
         updateHeaderAuthUI();
       } else {
         localStorage.setItem('okbm_pending_cloud_sync', 'true');
@@ -554,12 +546,12 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
   }, 300);
 }
 
-// 🌐 네트워크 복구 리스너
+// 네트워크 복구 리스너
 if (typeof window !== 'undefined') {
   window.addEventListener('online', function() {
     updateHeaderAuthUI();
     if (localStorage.getItem('okbm_pending_cloud_sync') === 'true' && isUserLoggedIn()) {
-      showToast('🟢 네트워크 복구: 클라우드 자동 동기화 중...', 2000);
+      showToast('네트워크 복구: 클라우드 자동 동기화 중...', 2000);
       syncUserDataToCloud(true);
     }
   });
@@ -568,7 +560,7 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// 🧭 5. 상단 헤더 및 보관함 로그인 상태 UI 업데이트
+// 5. 상단 헤더 및 보관함 로그인 상태 UI 업데이트
 function updateHeaderAuthUI() {
   var btn = document.getElementById('headerAuthBtn');
   var text = document.getElementById('headerAuthText');
@@ -597,23 +589,236 @@ function updateHeaderAuthUI() {
   if (statusBanner && statusText && statusAction) {
     if (!isOnline || hasPending) {
       statusBanner.className = 'cloud-status-banner cloud-status-guest';
-      statusText.innerText = '📡 기기 로컬 보관 중 (통신 연결 시 자동 백업)';
-      statusAction.innerText = hasPending ? '대기 중 ⏳' : '오프라인';
+      statusText.innerText = '기기 로컬 보관 중 (통신 연결 시 자동 백업)';
+      statusAction.innerText = hasPending ? '대기 중' : '오프라인';
     } else if (isLogged) {
       statusBanner.className = 'cloud-status-banner cloud-status-member';
-      statusText.innerText = '🟢 낭만 클라우드 실시간 안전 백업 중';
-      statusAction.innerText = '동기화됨 ✓';
+      statusText.innerText = '낭만 클라우드 실시간 안전 백업 중';
+      statusAction.innerText = '동기화됨';
     } else {
       statusBanner.className = 'cloud-status-banner cloud-status-guest';
       statusText.innerText = '기기 임시 보관 중 (캐시 삭제 시 초기화 주의)';
-      statusAction.innerText = '카카오 1초 연동 ➔';
+      statusAction.innerText = '카카오 1초 연동';
     }
   }
 }
 
-/// 🏛️ [마이데이터 & 인증 모달 일원화 DOM 마운터]
+// 마이데이터 연도 전역 상태
+window._selectedReportYear = String(new Date().getFullYear());
+
+// [상단 듀얼 카운터] 연도 선택 팝오버 토글러
+window.toggleReportYearDropdown = function(e) {
+  if (e) e.stopPropagation();
+  triggerHaptic(8);
+  var menu = document.getElementById('reportYearDropdownMenu');
+  if (!menu) return;
+  var isOpen = menu.style.display === 'flex';
+  if (isOpen) {
+    menu.style.display = 'none';
+    return;
+  }
+
+  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_packing_history', [])
+    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
+  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+
+  var curYearNum = new Date().getFullYear();
+  var yearSet = new Set([String(curYearNum)]);
+  validLogs.forEach(function(r) {
+    var y = String(r.date || '').slice(0, 4);
+    if (y.length === 4 && !isNaN(parseInt(y, 10))) yearSet.add(y);
+  });
+  var sortedYears = Array.from(yearSet).sort().reverse();
+
+  menu.innerHTML = sortedYears.map(function(y) {
+    var isSel = (window._selectedReportYear === y);
+    return '<button type="button" onclick="window.selectReportYear(\'' + y + '\', event)" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(186,230,253,0.12)' : 'transparent') + '; color:' + (isSel ? '#bae6fd' : '#cbd5e1') + '; border:none; padding:6px 8px; font-size:0.62rem; font-weight:800; font-family:var(--font-en); border-radius:4px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">' +
+      '<span>' + y + '년</span>' +
+      (isSel ? '<span style="color:#bae6fd; font-size:0.55rem;">✓</span>' : '') +
+    '</button>';
+  }).join('');
+
+  menu.style.display = 'flex';
+
+  var closeHandler = function(ev) {
+    if (!menu.contains(ev.target)) {
+      menu.style.display = 'none';
+      document.removeEventListener('click', closeHandler);
+    }
+  };
+  setTimeout(function() {
+    document.addEventListener('click', closeHandler);
+  }, 10);
+};
+
+// [선택 연도 활동 메모 인라인 인출 & 토글 엔진]
+window.toggleReportYearActivities = function(e) {
+  if (e) e.stopPropagation();
+  triggerHaptic(8);
+  var container = document.getElementById('reportYearActivityContainer');
+  var arrow = document.getElementById('reportYearListArrow');
+  if (!container) return;
+
+  var isOpen = container.style.display === 'flex';
+  if (isOpen) {
+    container.style.display = 'none';
+    if (arrow) arrow.innerText = '기록보기 ▼';
+    return;
+  }
+
+  container.style.display = 'flex';
+  if (arrow) arrow.innerText = '접기 ▲';
+  window.renderReportYearActivityList();
+};
+
+window.renderReportYearActivityList = function() {
+  var listEl = document.getElementById('reportYearActivityList');
+  var titleEl = document.getElementById('reportYearActivityTitle');
+  if (!listEl) return;
+
+  var curYear = window._selectedReportYear || String(new Date().getFullYear());
+
+  // 1. 개인 보관함 기록 인출
+  var localLogs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_packing_history', [])
+    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
+
+  // 2. 공용 피드 캐시 인출 (내 작성 피드)
+  var profile = safeGetJSON('user_profile', null);
+  var myUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('user_auth_token') || '');
+  var myNick = (profile && profile.nickname) ? profile.nickname.trim() : (localStorage.getItem('okbm_user_nick') || '');
+
+  var cachedFeeds = safeGetJSON('okbm_cached_community_feeds', []) || [];
+  var memoryFeeds = window.__allLoadedFeeds || [];
+  var combinedFeeds = cachedFeeds.concat(memoryFeeds);
+
+  var myFeeds = combinedFeeds.filter(function(f) {
+    if (!f || f.isDeleted) return false;
+    var fUid = String(f.userId || f.authorId || '').trim();
+    var fAuthor = String(f.author || f.nickname || '').trim();
+    return (myUserId && fUid === myUserId) || (myNick && fAuthor === myNick);
+  });
+
+  // 3. ID 기준 중복 제거 및 데이터 병합
+  var recordMap = new Map();
+
+  (localLogs || []).forEach(function(r) {
+    if (!r || r.isDeleted) return;
+    var rId = String(r.id || (r.date + '_' + (r.spot || '')));
+    recordMap.set(rId, r);
+  });
+
+  myFeeds.forEach(function(f) {
+    var fId = String(f.id || (f.date + '_' + (f.spot || '')));
+    if (!recordMap.has(fId)) {
+      recordMap.set(fId, f);
+    }
+  });
+
+  var allLogs = Array.from(recordMap.values());
+
+  // 4. 선택 연도 필터링 및 최신 날짜순 정렬
+  var yearLogs = allLogs.filter(function(r) {
+    return String(r.date || '').includes(curYear);
+  }).sort(function(a, b) {
+    var ta = new Date(String(a.date || '').replace(/\./g, '-')).getTime() || 0;
+    var tb = new Date(String(b.date || '').replace(/\./g, '-')).getTime() || 0;
+    return tb - ta;
+  });
+
+  if (titleEl) {
+    titleEl.innerText = curYear + '년 활동 (' + yearLogs.length + ')';
+  }
+
+  if (yearLogs.length === 0) {
+    listEl.innerHTML = '<div style="font-size:0.54rem; color:#64748b; text-align:center; padding:10px 0;">기록이 없습니다.</div>';
+    return;
+  }
+
+  listEl.innerHTML = yearLogs.map(function(r, idx) {
+    var spotName = r.spot || r.spotName || '-';
+    var dStr = String(r.date || '').slice(0, 10);
+
+    return '<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 6px; border-radius:4px; background:rgba(255,255,255,0.02);">' +
+      '<div style="display:flex; align-items:center; gap:5px; max-width:75%; overflow:hidden;">' +
+        '<span style="font-size:0.52rem; color:#bae6fd; font-family:var(--font-en); font-weight:800; flex-shrink:0;">' + (idx + 1) + '.</span>' +
+        '<span style="font-size:0.60rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + spotName + '</span>' +
+      '</div>' +
+      '<span style="font-size:0.52rem; color:#64748b; font-family:var(--font-en); flex-shrink:0;">' + dStr + '</span>' +
+    '</div>';
+  }).join('');
+};
+
+window.selectReportYear = function(yearStr, e) {
+  if (e) e.stopPropagation();
+  triggerHaptic(10);
+  window._selectedReportYear = yearStr;
+
+  var menu = document.getElementById('reportYearDropdownMenu');
+  if (menu) menu.style.display = 'none';
+
+  var badgeText = document.getElementById('reportYearBadge');
+  if (badgeText) badgeText.innerText = yearStr;
+
+  var labelText = document.getElementById('reportYearCardLabel');
+  var curYearStr = String(new Date().getFullYear());
+  if (labelText) labelText.innerText = (yearStr === curYearStr) ? '올해 활동' : yearStr + '년 활동';
+
+  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_packing_history', [])
+    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
+  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+
+  var yCount = 0;
+  validLogs.forEach(function(r) {
+    if (String(r.date || '').includes(yearStr)) yCount++;
+  });
+  var yEl = document.getElementById('reportYearCountNumber');
+  if (yEl) yEl.innerText = yCount;
+
+  var container = document.getElementById('reportYearActivityContainer');
+  if (container && container.style.display === 'flex') {
+    window.renderReportYearActivityList();
+  }
+};
+
+// [지형/시즌/지역 커스텀 다크 팝오버 셀렉터 토글러]
+window.toggleModuleCustomDropdown = function(moduleKey, e) {
+  if (e) e.stopPropagation();
+  triggerHaptic(8);
+  var menu = document.getElementById('customDropdownMenu_' + moduleKey);
+  if (!menu) return;
+  var isOpen = menu.style.display === 'flex';
+  if (isOpen) {
+    menu.style.display = 'none';
+    return;
+  }
+
+  document.querySelectorAll('[id^="customDropdownMenu_"]').forEach(function(m) {
+    m.style.display = 'none';
+  });
+
+  menu.style.display = 'flex';
+  var closeHandler = function(ev) {
+    if (!menu.contains(ev.target)) {
+      menu.style.display = 'none';
+      document.removeEventListener('click', closeHandler);
+    }
+  };
+  setTimeout(function() {
+    document.addEventListener('click', closeHandler);
+  }, 10);
+};
+
+// 마이데이터 & 인증 모달 일원화 DOM 마운터
 function ensureMyReportAndAuthModalsInDOM() {
-  if (document.getElementById('userProfileModalOverlay')) return;
+  var oldBundle = document.getElementById('romanticAuthDomBundle');
+  if (oldBundle) oldBundle.remove();
+  var oldOverlay = document.getElementById('userProfileModalOverlay');
+  if (oldOverlay) oldOverlay.remove();
+  var oldLogin = document.getElementById('loginModalOverlay');
+  if (oldLogin) oldLogin.remove();
 
   var container = document.createElement('div');
   container.id = 'romanticAuthDomBundle';
@@ -643,151 +848,145 @@ function ensureMyReportAndAuthModalsInDOM() {
       </div>
     </div>
 
-    <!-- 2. 정통 마이데이터(마이리포트) 대시보드 모달 -->
-    <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="if(event.target===this) closeUserProfileModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100dvh; padding:0; overflow:hidden;">
-      <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; position:relative;">
+    <!-- 2. 마이데이터(마이리포트) 대시보드 모달 -->
+    <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="if(event.target===this) closeUserProfileModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100%; height:100dvh; padding:0; margin:0; overflow:hidden;">
+      <div style="position:relative; width:100%; max-width:480px; height:100%; height:100dvh; margin:0 auto; background:#000000; overflow:hidden; box-sizing:border-box;">
         
-        <!-- 헤더: 좌측 [마이리포트] ↔ 우측 [원형 프로필 + 닉네임 인출] -->
-        <div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box;">
+        <!-- 1단 헤더 (상단 0~56px 고정) -->
+        <div style="position:absolute; top:0; left:0; right:0; height:56px; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:0 16px; padding-top:env(safe-area-inset-top, 0px); box-sizing:border-box; z-index:30;">
           <span style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.03em;">마이리포트</span>
           
           <div onclick="triggerHaptic(12); window.openAccountSettingsModal();" title="개인정보 및 아이디 변경" style="display:flex; align-items:center; gap:8px; cursor:pointer; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); padding:3px 10px 3px 4px; border-radius:20px;">
-            <div style="position:relative; width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg, #38bdf8, #818cf8, #f43f5e); padding:1.8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <div style="position:relative; width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg, #38bdf8, #818cf8, #f43f5e); padding:1.8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
               <div style="width:100%; height:100%; border-radius:50%; background:#090d14; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                <svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              </div>
-              <div style="position:absolute; bottom:-1px; right:-1px; width:10px; height:10px; border-radius:50%; background:#38bdf8; border:1px solid #000; display:flex; align-items:center; justify-content:center;">
-                <svg viewBox="0 0 24 24" style="width:6px; height:6px;" fill="none" stroke="#000" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
+                <svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </div>
             </div>
-            <span id="reportHeaderCurrentNick" style="font-size:0.78rem; font-weight:800; color:#ffffff; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">오라네</span>
+            <span id="reportHeaderCurrentNick" style="font-size:0.78rem; font-weight:800; color:#ffffff; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">낭만백패커</span>
           </div>
         </div>
 
-        <!-- 본문: 한 화면 직관 통계 & 필터별 전환 모듈 -->
-        <div style="flex:1 1 0%; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:12px 14px calc(76px + env(safe-area-inset-bottom, 0px)) 14px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box;">
+        <!-- 2단 본문 (스크롤) -->
+        <div id="userProfileScrollBody" style="position:absolute !important; top:56px !important; bottom:calc(64px + env(safe-area-inset-bottom, 0px)) !important; left:0 !important; right:0 !important; width:100% !important; overflow-y:scroll !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain !important; padding:12px 12px 24px 12px !important; display:flex !important; flex-direction:column !important; gap:8px !important; box-sizing:border-box !important; z-index:10 !important;">
           
-          <!-- 해당연도 vs 역대 누적 활동 횟수 듀얼 카운터 -->
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-            <div style="background:linear-gradient(135deg, rgba(56,189,248,0.18), rgba(2,132,199,0.06)); border:1.5px solid rgba(56,189,248,0.4); border-radius:14px; padding:12px; display:flex; flex-direction:column; justify-content:space-between;">
+          <!-- 올해 vs 누적 활동 듀얼 카운터 (파스텔 포인트 & 연도 선택 드롭다운 & 터치 시 인라인 활동 메모 펼침) -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; flex-shrink:0;">
+            <div role="button" onclick="window.toggleReportYearActivities(event)" style="cursor:pointer; position:relative; background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; user-select:none;">
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size:0.68rem; color:#94a3b8; font-weight:800;">올해 활동</span>
-                <span id="reportYearBadge" style="font-size:0.58rem; color:#38bdf8; font-family:var(--font-en); font-weight:900; background:rgba(56,189,248,0.12); padding:1.5px 5px; border-radius:4px;">2026</span>
+                <span id="reportYearCardLabel" style="font-size:0.65rem; color:#64748b; font-weight:700;">올해 활동</span>
+                <button type="button" id="reportYearBadgeBtn" onclick="event.stopPropagation(); window.toggleReportYearDropdown(event);" style="font-size:0.58rem; color:#bae6fd; font-family:var(--font-en); font-weight:800; background:rgba(186,230,253,0.08); border:1px solid rgba(186,230,253,0.25); padding:2px 7px; border-radius:5px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; outline:none;">
+                  <span id="reportYearBadge">2026</span>
+                  <svg viewBox="0 0 24 24" style="width:9px; height:9px; stroke:#bae6fd; fill:none; stroke-width:2.5;"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
               </div>
-              <div style="margin-top:6px;">
-                <span id="reportYearCountNumber" style="font-size:1.75rem; font-weight:900; color:#ffffff; font-family:var(--font-en); line-height:1;">0</span>
-                <span style="font-size:0.82rem; font-weight:900; color:#38bdf8; margin-left:2px;">회</span>
+              <div style="margin-top:4px; display:flex; justify-content:space-between; align-items:flex-end;">
+                <div>
+                  <span id="reportYearCountNumber" style="font-size:1.6rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); line-height:1;">0</span>
+                  <span style="font-size:0.75rem; font-weight:700; color:#7dd3fc; margin-left:2px;">회</span>
+                </div>
+                <span id="reportYearListArrow" style="font-size:0.52rem; color:#64748b; font-weight:800; margin-bottom:2px;">기록보기 ▼</span>
               </div>
-              <div style="font-size:0.58rem; color:#64748b; margin-top:4px;">올해 필드 방문 기록</div>
+              <div id="reportYearDropdownMenu" style="display:none; position:absolute; top:36px; right:10px; min-width:86px; max-height:180px; overflow-y:auto; background:#0d121d; border:1px solid rgba(186,230,253,0.25); border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.85); z-index:100; padding:4px; box-sizing:border-box; flex-direction:column; gap:2px;"></div>
             </div>
 
-            <div style="background:linear-gradient(135deg, rgba(251,191,36,0.16), rgba(217,119,6,0.06)); border:1.5px solid rgba(251,191,36,0.4); border-radius:14px; padding:12px; display:flex; flex-direction:column; justify-content:space-between;">
+            <div style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px;">
               <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size:0.68rem; color:#94a3b8; font-weight:800;">누적 총 활동</span>
-                <span style="font-size:0.58rem; color:#fde047; font-weight:900; background:rgba(251,191,36,0.12); padding:1.5px 5px; border-radius:4px;">역대 전체</span>
+                <span style="font-size:0.65rem; color:#64748b; font-weight:700;">누적 총 활동</span>
+                <span style="font-size:0.56rem; color:#fde68a; font-weight:700; background:rgba(253,230,138,0.08); border:1px solid rgba(253,230,138,0.2); padding:1px 5px; border-radius:4px;">전체</span>
               </div>
-              <div style="margin-top:6px;">
-                <span id="reportTotalCountNumber" style="font-size:1.75rem; font-weight:900; color:#ffffff; font-family:var(--font-en); line-height:1;">0</span>
-                <span style="font-size:0.82rem; font-weight:900; color:#fde047; margin-left:2px;">회</span>
-              </div>
-              <div style="font-size:0.58rem; color:#64748b; margin-top:4px;">텐트 밖에서 보낸 밤</div>
-            </div>
-          </div>
-
-          <!-- 4대 필터 탭 바 (모바일 수직 찌그러짐 원천 차단: flex-shrink:0 및 여유 높이 확보) -->
-          <div style="display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; flex-shrink:0 !important; min-height:36px; padding:4px 2px 6px 2px; align-items:center; box-sizing:border-box;">
-            <button type="button" id="tabBtnReportAll" class="n-cat-chip active" onclick="window.switchReportTab('all', this)" style="height:28px; font-size:0.72rem; padding:0 11px; flex-shrink:0;">전체 요약</button>
-            <button type="button" id="tabBtnReportGear" class="n-cat-chip" onclick="window.switchReportTab('gear', this)" style="height:28px; font-size:0.72rem; padding:0 11px; flex-shrink:0;">장비 & 무게</button>
-            <button type="button" id="tabBtnReportTerrain" class="n-cat-chip" onclick="window.switchReportTab('terrain', this)" style="height:28px; font-size:0.72rem; padding:0 11px; flex-shrink:0;">고도 & 시즌</button>
-            <button type="button" id="tabBtnReportRegion" class="n-cat-chip" onclick="window.switchReportTab('region', this)" style="height:28px; font-size:0.72rem; padding:0 11px; flex-shrink:0;">지역별 방문</button>
-          </div>
-
-          <!-- [모듈 A: 장비 & 무게 분석] -->
-          <div id="reportSectionGear" class="report-filter-section" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:0.76rem; font-weight:900; color:#34d399; display:flex; align-items:center; gap:4px;">
-                <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 2h12v6H6zM4 8h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/></svg>
-                <span>장비 세팅 & 무게 분석</span>
-              </span>
-              <span id="reportAvgTierBadge" style="font-size:0.60rem; color:#34d399; font-weight:900; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.3); padding:1.5px 6px; border-radius:4px;">스탠다드</span>
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-              <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px;">
-                <div style="font-size:0.60rem; color:#94a3b8;">평균 패킹 무게</div>
-                <div id="reportMilestoneAvgWeight" style="font-size:1.15rem; font-weight:900; color:#34d399; font-family:var(--font-en); margin-top:2px;">0.00kg</div>
-              </div>
-              <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px;">
-                <div style="font-size:0.60rem; color:#94a3b8;">최다 동행 장비</div>
-                <div id="reportTopGear" style="font-size:0.75rem; font-weight:900; color:#ffffff; margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">-</div>
-              </div>
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.64rem; color:#cbd5e1; border-top:1px dashed rgba(255,255,255,0.1); padding-top:6px;">
-              <div>최경량 패킹: <strong id="reportMinWeight" style="color:#38bdf8;">-</strong></div>
-              <div>최대 중량: <strong id="reportMaxWeight" style="color:#f43f5e;">-</strong></div>
-            </div>
-          </div>
-
-          <!-- [모듈 B: 고도 & 사계절 활동 분포] -->
-          <div id="reportSectionTerrain" class="report-filter-section" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:0.76rem; font-weight:900; color:#38bdf8; display:flex; align-items:center; gap:4px;">
-                <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
-                <span>누적 고도 & 시즌 밸런스</span>
-              </span>
-              <span id="reportMilestoneElevText" style="font-size:0.62rem; color:#fde047; font-weight:900; font-family:var(--font-en);">+0m (0%)</span>
-            </div>
-            
-            <div>
-              <div style="width:100%; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden;">
-                <div id="reportMilestoneElevBar" style="width:0%; height:100%; background:linear-gradient(90deg, #38bdf8, #fde047); transition:width 0.3s ease;"></div>
-              </div>
-              <div style="display:flex; justify-content:space-between; font-size:0.56rem; color:#64748b; margin-top:3px;">
-                <span>0m</span>
-                <span>에베레스트 기준 (8,848m)</span>
-              </div>
-            </div>
-
-            <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; text-align:center; border-top:1px dashed rgba(255,255,255,0.1); padding-top:6px;">
-              <div style="background:rgba(255,255,255,0.02); border-radius:6px; padding:4px;">
-                <div style="font-size:0.56rem; color:#94a3b8;">봄(3-5월)</div>
-                <div id="reportSeasonSpring" style="font-size:0.75rem; font-weight:900; color:#34d399; font-family:var(--font-en);">0%</div>
-              </div>
-              <div style="background:rgba(255,255,255,0.02); border-radius:6px; padding:4px;">
-                <div style="font-size:0.56rem; color:#94a3b8;">여름(6-8월)</div>
-                <div id="reportSeasonSummer" style="font-size:0.75rem; font-weight:900; color:#38bdf8; font-family:var(--font-en);">0%</div>
-              </div>
-              <div style="background:rgba(255,255,255,0.02); border-radius:6px; padding:4px;">
-                <div style="font-size:0.56rem; color:#94a3b8;">가을(9-11월)</div>
-                <div id="reportSeasonAutumn" style="font-size:0.75rem; font-weight:900; color:#fde047; font-family:var(--font-en);">0%</div>
-              </div>
-              <div style="background:rgba(255,255,255,0.02); border-radius:6px; padding:4px;">
-                <div style="font-size:0.56rem; color:#94a3b8;">동계(12-2월)</div>
-                <div id="reportSeasonWinter" style="font-size:0.75rem; font-weight:900; color:#c084fc; font-family:var(--font-en);">0%</div>
+              <div style="margin-top:4px;">
+                <span id="reportTotalCountNumber" style="font-size:1.6rem; font-weight:900; color:#fde68a; font-family:var(--font-en); line-height:1;">0</span>
+                <span style="font-size:0.75rem; font-weight:700; color:#fef08a; margin-left:2px;">회</span>
               </div>
             </div>
           </div>
 
-          <!-- [모듈 C: 가장 많이 찾는 지역] -->
-          <div id="reportSectionRegion" class="report-filter-section" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:0.76rem; font-weight:900; color:#e2e8f0; display:flex; align-items:center; gap:4px;">
-                <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                <span>가장 많이 찾는 지역 (지역별 방문 분포)</span>
-              </span>
-              <span id="reportTopRegionBadge" style="font-size:0.60rem; color:#38bdf8; font-weight:800; background:rgba(56,189,248,0.12); padding:1.5px 6px; border-radius:4px;">전국</span>
+         <!-- 선택 연도 활동 인라인 아코디언 패널 (부연설명 배제 / 극미니멀 규격) -->
+          <div id="reportYearActivityContainer" style="display:none; flex-direction:column; gap:4px; background:#080b11; border:1px solid rgba(186,230,253,0.15); border-radius:10px; padding:8px 10px; box-sizing:border-box; flex-shrink:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:4px; border-bottom:1px solid rgba(255,255,255,0.06);">
+              <span id="reportYearActivityTitle" style="font-size:0.58rem; color:#bae6fd; font-weight:800; font-family:var(--font-en);">활동 기록</span>
             </div>
-            <div id="reportRegionDistributionGrid" style="display:grid; grid-template-columns:repeat(4, 1fr); gap:5px; text-align:center;"></div>
+            <div id="reportYearActivityList" style="display:flex; flex-direction:column; gap:2px; max-height:200px; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-right:2px;"></div>
           </div>
 
-          <!-- 결산 카드 만들기 버튼 -->
-          <button type="button" onclick="if(typeof openHistoryStudioModal==='function') openHistoryStudioModal(); else showToast('스튜디오 엔진 준비 중입니다.', 'info');" style="width:100%; height:44px; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; border-radius:12px; color:#ffffff; font-size:0.84rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(2,132,199,0.35); flex-shrink:0;">
-            <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            <span>나의 아웃도어 결산 카드 만들기 (스튜디오 ➔)</span>
+          <!-- 1. 장비 & 세팅 무게 (파스텔 세이지) -->
+          <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0;">
+            <div role="button" data-sec="gear" onclick="window.handleReportSecClick('gear')" style="padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:24px; height:24px; border-radius:6px; background:rgba(167,243,208,0.08); display:flex; align-items:center; justify-content:center; color:#a7f3d0; flex-shrink:0;">
+                  <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h12v6H6zM4 8h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/></svg>
+                </div>
+                <span style="font-size:0.78rem; font-weight:700; color:#e2e8f0;">장비 & 세팅 무게</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span id="reportHeaderGearStat" style="font-size:0.64rem; color:#a7f3d0; font-weight:700; font-family:var(--font-en);"></span>
+                <span id="accArrow_gear" style="font-size:0.58rem; color:#475569; display:inline-block; transition:transform 0.2s;">▼</span>
+              </div>
+            </div>
+            <div id="accBody_gear" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px;"></div>
+          </div>
+
+          <!-- 2. 고도 & 필드 지형 (파스텔 스카이블루) -->
+          <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0;">
+            <div role="button" data-sec="terrain" onclick="window.handleReportSecClick('terrain')" style="padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:24px; height:24px; border-radius:6px; background:rgba(186,230,253,0.08); display:flex; align-items:center; justify-content:center; color:#bae6fd; flex-shrink:0;">
+                  <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
+                </div>
+                <span style="font-size:0.78rem; font-weight:700; color:#e2e8f0;">고도 & 필드 지형</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span id="reportHeaderTerrainStat" style="font-size:0.64rem; color:#bae6fd; font-weight:700; font-family:var(--font-en);"></span>
+                <span id="accArrow_terrain" style="font-size:0.58rem; color:#475569; display:inline-block; transition:transform 0.2s;">▼</span>
+              </div>
+            </div>
+            <div id="accBody_terrain" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px;"></div>
+          </div>
+
+          <!-- 3. 시즌 밸런스 (파스텔 바닐라골드) -->
+          <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0;">
+            <div role="button" data-sec="season" onclick="window.handleReportSecClick('season')" style="padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:24px; height:24px; border-radius:6px; background:rgba(253,230,138,0.08); display:flex; align-items:center; justify-content:center; color:#fde68a; flex-shrink:0;">
+                  <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2"/></svg>
+                </div>
+                <span style="font-size:0.78rem; font-weight:700; color:#e2e8f0;">시즌 밸런스</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span id="reportHeaderSeasonStat" style="font-size:0.64rem; color:#fde68a; font-weight:700; font-family:var(--font-en);"></span>
+                <span id="accArrow_season" style="font-size:0.58rem; color:#475569; display:inline-block; transition:transform 0.2s;">▼</span>
+              </div>
+            </div>
+            <div id="accBody_season" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px;"></div>
+          </div>
+
+          <!-- 4. 지역 분포 (파스텔 라벤더) -->
+          <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0;">
+            <div role="button" data-sec="region" onclick="window.handleReportSecClick('region')" style="padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:24px; height:24px; border-radius:6px; background:rgba(233,213,255,0.08); display:flex; align-items:center; justify-content:center; color:#e9d5ff; flex-shrink:0;">
+                  <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                </div>
+                <span style="font-size:0.78rem; font-weight:700; color:#e2e8f0;">지역 분포</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span id="reportHeaderRegionStat" style="font-size:0.64rem; color:#e9d5ff; font-weight:700; font-family:var(--font-en);"></span>
+                <span id="accArrow_region" style="font-size:0.58rem; color:#475569; display:inline-block; transition:transform 0.2s;">▼</span>
+              </div>
+            </div>
+            <div id="accBody_region" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px;"></div>
+          </div>
+
+          <!-- 결산 카드 버튼 -->
+          <button type="button" onclick="if(typeof openHistoryStudioModal==='function') openHistoryStudioModal(); else showToast('스튜디오 엔진 준비 중입니다.', 'info');" style="width:100%; height:44px; background:#080b11; border:1.5px solid rgba(186,230,253,0.3); border-radius:10px; color:#f1f5f9; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; margin-top:4px; margin-bottom:20px; flex-shrink:0; box-shadow:0 4px 15px rgba(0,0,0,0.8);">
+            <svg viewBox="0 0 24 24" style="width:15px; height:15px; stroke:#bae6fd; fill:none; stroke-width:2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>결산 카드 만들기</span>
           </button>
+
         </div>
 
-        <!-- 하단 5대 고정 독 바 -->
-        <div class="mobile-bottom-dock notranslate" style="position:absolute !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:100 !important; box-sizing:border-box;">
+        <!-- 3단 독 바 (하단 0~64px 절대 고정) -->
+        <div class="mobile-bottom-dock notranslate" style="position:absolute !important; bottom:0 !important; left:0 !important; right:0 !important; height:calc(64px + env(safe-area-inset-bottom, 0px)) !important; width:100% !important; background:rgba(0,0,0,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:30 !important; box-sizing:border-box; padding-bottom:env(safe-area-inset-bottom, 0px) !important;">
           <a href="index.html" class="dock-item" onclick="closeUserProfileModal(); triggerHaptic(10);">
             <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
             <span>낭만루터</span>
@@ -809,10 +1008,11 @@ function ensureMyReportAndAuthModalsInDOM() {
             <span>마이리포트</span>
           </button>
         </div>
+
       </div>
     </div>
 
-    <!-- 3. 계정 관리 및 14일 쿨다운 닉네임 변경 모달 (뒤로가기 ◀) -->
+    <!-- 3. 계정 관리 모달 -->
     <div class="custom-modal-overlay" id="userAccountSettingsModal" style="display:none; position:fixed; inset:0; background:#000000; z-index:100005; justify-content:center; align-items:stretch; width:100%; height:100dvh; padding:0; overflow:hidden;">
       <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
         <div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box;">
@@ -847,104 +1047,1077 @@ function ensureMyReportAndAuthModalsInDOM() {
   document.body.appendChild(container);
 }
 
-// 🎚️ [마이데이터 4대 필터 탭 전환 엔진]
-window.switchReportTab = function(tabKey, btnEl) {
+// 마이데이터 온디맨드 즉시 연산 직통 클릭 엔진
+window.__reportRenderCache = {};
+
+window.handleReportSecClick = function(secKey) {
   triggerHaptic(8);
-  document.querySelectorAll('#userProfileModalOverlay .n-cat-chip').forEach(function(b) { b.classList.remove('active'); });
-  if (btnEl) btnEl.classList.add('active');
+  var body = document.getElementById('accBody_' + secKey);
+  var arrow = document.getElementById('accArrow_' + secKey);
+  if (!body) return;
 
-  var sGear = document.getElementById('reportSectionGear');
-  var sTerrain = document.getElementById('reportSectionTerrain');
-  var sRegion = document.getElementById('reportSectionRegion');
+  var isCurrentlyOpen = (body.style.display === 'flex');
 
-  if (tabKey === 'all') {
-    if (sGear) sGear.style.display = 'flex';
-    if (sTerrain) sTerrain.style.display = 'flex';
-    if (sRegion) sRegion.style.display = 'flex';
-  } else {
-    if (sGear) sGear.style.display = (tabKey === 'gear') ? 'flex' : 'none';
-    if (sTerrain) sTerrain.style.display = (tabKey === 'terrain') ? 'flex' : 'none';
-    if (sRegion) sRegion.style.display = (tabKey === 'region') ? 'flex' : 'none';
+  if (isCurrentlyOpen) {
+    body.style.display = 'none';
+    if (arrow) arrow.innerText = '▼';
+    return;
   }
+
+  body.style.display = 'flex';
+  if (arrow) arrow.innerText = '▲';
+
+  if (window.__reportRenderCache[secKey]) return;
+
+  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_packing_history', [])
+    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
+  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+
+  if (secKey === 'gear') {
+    window._renderGearModule(validLogs, body);
+  } else if (secKey === 'terrain') {
+    window._renderTerrainModule(validLogs, body);
+  } else if (secKey === 'season') {
+    window._renderSeasonModule(validLogs, body);
+  } else if (secKey === 'region') {
+    window._renderRegionModule(validLogs, body);
+  }
+
+  window.__reportRenderCache[secKey] = true;
 };
 
-// ⚙️ [계정 관리 모달 오픈]
-window.openAccountSettingsModal = function() {
-  ensureMyReportAndAuthModalsInDOM();
-  var modal = document.getElementById('userAccountSettingsModal');
-  var profile = safeGetJSON('user_profile', null);
-  var nickInput = document.getElementById('settingsModalNicknameInput');
-  var joinDateEl = document.getElementById('settingsModalJoinDate');
-  var noticeEl = document.getElementById('settingsModalCooldownNotice');
+// 1. 장비 & 세팅 무게 연산 모듈
+window._gearModuleState = window._gearModuleState || {
+  season: 'all',
+  dietMode: 'month',
+  activeSlot: null
+};
 
-  if (profile) {
-    if (nickInput) nickInput.value = profile.nickname || '';
-    if (joinDateEl) joinDateEl.innerText = profile.createdAt || '2026.01.01';
+window._setGearSeasonFilter = function(seasonKey) {
+  triggerHaptic(8);
+  window._gearModuleState.season = seasonKey;
+  var body = document.getElementById('accBody_gear');
+  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_packing_history', [])
+    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
+  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  if (body) window._renderGearModule(validLogs, body);
+};
 
-    var COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
-    var lastChanged = Number(profile.lastNicknameChangedAt) || 0;
-    var now = Date.now();
+window._setGearDietMode = function(modeKey) {
+  triggerHaptic(8);
+  window._gearModuleState.dietMode = modeKey;
+  var body = document.getElementById('accBody_gear');
+  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_packing_history', [])
+    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
+  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  if (body) window._renderGearModule(validLogs, body);
+};
 
-    if (noticeEl) {
-      if (lastChanged > 0 && (now - lastChanged < COOLDOWN_MS)) {
-        var remainingDays = Math.ceil((COOLDOWN_MS - (now - lastChanged)) / (1000 * 60 * 60 * 24));
-        noticeEl.style.color = '#f59e0b';
-        noticeEl.innerText = '⏳ 닉네임 변경 쿨다운 중 [' + remainingDays + '일 후 변경 가능]';
-      } else {
-        noticeEl.style.color = '#34d399';
-        noticeEl.innerText = '✓ 현재 닉네임 변경이 가능합니다 (변경 후 14일 쿨다운)';
+window._toggleGearSlotTop5 = function(slotName) {
+  triggerHaptic(10);
+  window._gearModuleState.activeSlot = (window._gearModuleState.activeSlot === slotName) ? null : slotName;
+  var body = document.getElementById('accBody_gear');
+  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_packing_history', [])
+    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
+  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  if (body) window._renderGearModule(validLogs, body);
+};
+
+window._renderGearModule = function(validLogs, el) {
+  var state = window._gearModuleState;
+  var now = Date.now();
+  var MS_30D = 30 * 24 * 60 * 60 * 1000;
+  var curYear = String(new Date().getFullYear());
+  var curMonthStr = curYear + '.' + String(new Date().getMonth() + 1).padStart(2, '0');
+
+  var isConsumable = function(name) {
+    return /생수|삼다수|스파클|아이시스|백산수|에비앙|물|water|이소가스|부탄|가스|연료|fuel|gas|핫팩|라면|햇반|음식|food|김치|얼음|ice|커피|티백|맥주|소주|음료|장작|숯|연탄/i.test(name);
+  };
+
+  var absoluteMonthWeight = 0;
+  var absoluteYearWeight = 0;
+  var absoluteTotalWeight = 0;
+
+  validLogs.forEach(function(r) {
+    var dStr = String(r.date || '');
+    var pTime = new Date(dStr.replace(/\./g, '-')).getTime();
+    var isThisYear = dStr.includes(curYear);
+    var isThisMonth = dStr.replace(/\s+/g, '').includes(curMonthStr.replace(/\s+/g, '')) || (!isNaN(pTime) && (now - pTime <= MS_30D));
+    var w = parseFloat(r.weightKg) || 0;
+
+    if (w > 0) {
+      absoluteTotalWeight += w;
+      if (isThisYear) absoluteYearWeight += w;
+      if (isThisMonth) absoluteMonthWeight += w;
+    }
+  });
+
+  var filteredLogs = validLogs.filter(function(r) {
+    if (state.season === 'all') return true;
+    var m = parseInt((String(r.date || '').match(/\d+/g) || [])[1] || '0', 10);
+    var isWinter = (m === 12 || m === 1 || m === 2);
+    return state.season === 'winter' ? isWinter : !isWinter;
+  });
+
+  var allW = [];
+  var sumM = 0, cM = 0;
+  var sumY = 0, cY = 0;
+  var sumFiltered = 0, cFiltered = 0;
+  var minC = 0, stdC = 0, hvyC = 0;
+
+  var allHardwareCounts = {};
+  var slotDataMap = {};
+
+  var STANDARD_SLOTS = [
+    { key: '텐트/쉘터', regex: /텐트|쉘터|타프|비비|폴대|그라운드시트|tent|shelter|tarp/i, color: '#bae6fd' },
+    { key: '침낭/매트', regex: /침낭|매트|필로우|베개|에어매트|우경|quilt|mat|sleeping/i, color: '#a7f3d0' },
+    { key: '배낭/패킹', regex: /배낭|백팩|디팩|패킹|배낭커버|스탭색|사이드백|pack|backpack/i, color: '#fde68a' },
+    { key: '취사/스토브', regex: /버너|스토브|코펠|그리들|쿠커|팬|시에라|주전자|칼|수저|stove|burner|pot/i, color: '#fed7aa' },
+    { key: '체어/테이블', regex: /체어|테이블|의자|체어원|롤테이블|체어제로|chair|table/i, color: '#e9d5ff' },
+    { key: '조명/전자', regex: /조명|랜턴|헤드랜턴|파워뱅크|보조배터리|크레모아|골제로|lantern|light/i, color: '#fef08a' },
+    { key: '의류/방한', regex: /패딩|자켓|우의|장갑|모자|넥워머|바지|jacket|down/i, color: '#cbd5e1' },
+    { key: '소품/안전', regex: /구급함|정수기|스틱|나침반|타이벡|비너|소품|firstaid/i, color: '#fecdd3' }
+  ];
+
+  STANDARD_SLOTS.forEach(function(s) {
+    slotDataMap[s.key] = { color: s.color, counts: {} };
+  });
+
+  filteredLogs.forEach(function(r) {
+    var dStr = String(r.date || '');
+    var pTime = new Date(dStr.replace(/\./g, '-')).getTime();
+    var isThisYear = dStr.includes(curYear);
+    var isThisMonth = dStr.replace(/\s+/g, '').includes(curMonthStr.replace(/\s+/g, '')) || (!isNaN(pTime) && (now - pTime <= MS_30D));
+
+    var w = parseFloat(r.weightKg) || 0;
+    if (w > 0) {
+      allW.push({ weight: w, date: dStr });
+      sumFiltered += w;
+      cFiltered++;
+
+      if (w <= 7.0) minC++;
+      else if (w <= 14.0) stdC++;
+      else hvyC++;
+
+      if (isThisMonth) { sumM += w; cM++; }
+      if (isThisYear) { sumY += w; cY++; }
+    }
+
+    var items = Array.isArray(r.items) ? r.items : [];
+    items.forEach(function(it) {
+      var rawName = String(it.name || it.itemName || '').trim();
+      var cleanName = rawName.replace(/\s*\(.*?\)/g, '').trim();
+      if (!cleanName || isConsumable(cleanName)) return;
+
+      allHardwareCounts[cleanName] = (allHardwareCounts[cleanName] || 0) + 1;
+
+      var itCat = String(it.category || '').trim();
+      var matchedSlot = null;
+
+      for (var i = 0; i < STANDARD_SLOTS.length; i++) {
+        var slotDef = STANDARD_SLOTS[i];
+        if (itCat && (itCat.includes(slotDef.key) || slotDef.key.includes(itCat))) {
+          matchedSlot = slotDef.key;
+          break;
+        }
+      }
+
+      if (!matchedSlot) {
+        var textForCheck = cleanName + ' ' + itCat;
+        for (var j = 0; j < STANDARD_SLOTS.length; j++) {
+          if (STANDARD_SLOTS[j].regex.test(textForCheck)) {
+            matchedSlot = STANDARD_SLOTS[j].key;
+            break;
+          }
+        }
+      }
+
+      if (matchedSlot && slotDataMap[matchedSlot]) {
+        var sObj = slotDataMap[matchedSlot].counts;
+        sObj[cleanName] = (sObj[cleanName] || 0) + 1;
+      }
+    });
+  });
+
+  allW.sort(function(a, b) { return a.weight - b.weight; });
+  var topMin = allW.slice(0, 3);
+  var topMax = allW.slice().reverse().slice(0, 3);
+
+  var sortedHardwareTop5 = Object.keys(allHardwareCounts).map(function(k) {
+    return { name: k, count: allHardwareCounts[k] };
+  }).sort(function(a, b) { return b.count - a.count; }).slice(0, 5);
+
+  var pMin = cFiltered > 0 ? Math.round((minC / cFiltered) * 100) : 0;
+  var pStd = cFiltered > 0 ? Math.round((stdC / cFiltered) * 100) : 0;
+  var pHvy = Math.max(0, 100 - pMin - pStd);
+
+  var hStat = document.getElementById('reportHeaderGearStat');
+  if (hStat) hStat.innerText = cFiltered > 0 ? (sumFiltered / cFiltered).toFixed(2) + 'kg' : '0kg';
+
+  var chronoLogs = validLogs.slice().sort(function(a, b) {
+    return (new Date(String(a.date || '').replace(/\./g, '-')).getTime() || 0) - (new Date(String(b.date || '').replace(/\./g, '-')).getTime() || 0);
+  });
+
+  var dietHtml = '';
+  if (state.dietMode === 'year') {
+    var yearMap = {};
+    chronoLogs.forEach(function(r) {
+      var y = String(r.date || '').slice(0, 4);
+      var w = parseFloat(r.weightKg) || 0;
+      if (y.length === 4 && w > 0) {
+        yearMap[y] = yearMap[y] || { sum: 0, count: 0 };
+        yearMap[y].sum += w;
+        yearMap[y].count++;
+      }
+    });
+    dietHtml = Object.keys(yearMap).sort().map(function(yk) {
+      var avgY = (yearMap[yk].sum / yearMap[yk].count).toFixed(2);
+      return '<div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding:3px 6px; border-radius:4px; font-size:0.58rem;"><span style="color:#94a3b8; font-family:var(--font-en);">' + yk + '년</span><span style="font-weight:800; color:#bae6fd; font-family:var(--font-en);">' + avgY + 'kg <span style="font-size:0.50rem; color:#64748b; font-weight:normal;">(' + yearMap[yk].count + '회)</span></span></div>';
+    }).join('') || '<div style="color:#475569; font-size:0.54rem;">연도별 기록이 없습니다.</div>';
+  } else {
+    var monthMap = {};
+    chronoLogs.forEach(function(r) {
+      var ym = String(r.date || '').slice(0, 7).replace(/\.\s*/g, '-');
+      var w = parseFloat(r.weightKg) || 0;
+      if (ym.length >= 6 && w > 0) {
+        monthMap[ym] = monthMap[ym] || { sum: 0, count: 0 };
+        monthMap[ym].sum += w;
+        monthMap[ym].count++;
+      }
+    });
+    var mKeys = Object.keys(monthMap).sort().slice(-6);
+    dietHtml = '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(68px, 1fr)); gap:4px;">' +
+      mKeys.map(function(mk) {
+        var avgM = (monthMap[mk].sum / monthMap[mk].count).toFixed(1);
+        return '<div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:3px; text-align:center;"><div style="font-size:0.50rem; color:#64748b; font-family:var(--font-en);">' + mk.slice(2) + '</div><div style="font-size:0.68rem; font-weight:800; color:#a7f3d0; font-family:var(--font-en); margin-top:1px;">' + avgM + 'kg</div></div>';
+      }).join('') + '</div>';
+  }
+
+  var activeSlotCardsHtml = '';
+  var activeSlotDetailHtml = '';
+
+  var availableSlots = STANDARD_SLOTS.filter(function(s) {
+    return Object.keys(slotDataMap[s.key].counts).length > 0;
+  });
+
+  if (availableSlots.length > 0) {
+    activeSlotCardsHtml = availableSlots.map(function(s) {
+      var counts = slotDataMap[s.key].counts;
+      var sortedKeys = Object.keys(counts).sort(function(a, b) { return counts[b] - counts[a]; });
+      var top1Name = sortedKeys[0] || '-';
+      var top1Count = counts[top1Name] || 0;
+      var isActive = (state.activeSlot === s.key);
+
+      return '<div onclick="window._toggleGearSlotTop5(\'' + s.key + '\')" style="cursor:pointer; background:' + (isActive ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)') + '; border:1px solid ' + (isActive ? s.color : 'rgba(255,255,255,0.06)') + '; border-radius:6px; padding:5px 6px; box-sizing:border-box;">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+          '<span style="font-size:0.52rem; color:#94a3b8; font-weight:800;">' + s.key + '</span>' +
+          '<span style="font-size:0.48rem; color:' + s.color + ';">' + (isActive ? '닫기 ▲' : 'Top 5 ▼') + '</span>' +
+        '</div>' +
+        '<div style="font-size:0.60rem; font-weight:800; color:' + s.color + '; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">' + top1Name + ' <span style="font-size:0.50rem; color:#64748b; font-weight:normal;">(' + top1Count + '회)</span></div>' +
+      '</div>';
+    }).join('');
+
+    if (state.activeSlot && slotDataMap[state.activeSlot]) {
+      var curSlotDef = availableSlots.find(function(s) { return s.key === state.activeSlot; }) || { key: state.activeSlot, color: '#bae6fd' };
+      var curCounts = slotDataMap[state.activeSlot].counts;
+      var curSorted = Object.keys(curCounts).map(function(k) { return { name: k, count: curCounts[k] }; }).sort(function(a, b) { return b.count - a.count; }).slice(0, 5);
+
+      activeSlotDetailHtml = '<div style="background:#000000; border:1px dashed ' + curSlotDef.color + '; border-radius:6px; padding:6px 8px; margin-top:4px;">' +
+        '<div style="font-size:0.54rem; color:' + curSlotDef.color + '; font-weight:800; margin-bottom:4px;">[' + curSlotDef.key + '] 슬롯 최다 동행 Top 5</div>' +
+        curSorted.map(function(item, idx) {
+          return '<div style="display:flex; justify-content:space-between; font-size:0.58rem; padding:1.5px 0;"><span style="color:#cbd5e1; max-width:80%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><strong style="color:' + curSlotDef.color + '; margin-right:4px;">' + (idx + 1) + '.</strong>' + item.name + '</span><span style="color:#64748b; font-family:var(--font-en);">' + item.count + '회</span></div>';
+        }).join('') +
+      '</div>';
+    }
+  } else {
+    activeSlotCardsHtml = '<div style="color:#475569; font-size:0.54rem; padding:4px;">등록된 하드웨어 장비 데이터가 없습니다.</div>';
+  }
+
+  var topMinListHtml = topMin.map(function(m, i) {
+    return '<div style="display:flex; justify-content:space-between; font-size:0.58rem; color:#cbd5e1; line-height:1.3;"><span>' + (i + 1) + '. <strong style="color:#bae6fd;">' + m.weight.toFixed(2) + 'kg</strong></span><span style="color:#64748b;">' + m.date.slice(2, 10) + '</span></div>';
+  }).join('') || '<div style="color:#475569; font-size:0.54rem;">-</div>';
+
+  var topMaxListHtml = topMax.map(function(m, i) {
+    return '<div style="display:flex; justify-content:space-between; font-size:0.58rem; color:#cbd5e1; line-height:1.3;"><span>' + (i + 1) + '. <strong style="color:#fecdd3;">' + m.weight.toFixed(2) + 'kg</strong></span><span style="color:#64748b;">' + m.date.slice(2, 10) + '</span></div>';
+  }).join('') || '<div style="color:#475569; font-size:0.54rem;">-</div>';
+
+  var sortedGearsListHtml = sortedHardwareTop5.map(function(g, i) {
+    return '<div style="display:flex; justify-content:space-between; font-size:0.60rem; padding:1.5px 0;"><span style="color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:75%;"><strong style="color:#a7f3d0; margin-right:4px;">' + (i + 1) + '</strong>' + g.name + '</span><span style="color:#64748b; font-family:var(--font-en);">' + g.count + '회</span></div>';
+  }).join('') || '<div style="color:#475569; font-size:0.54rem;">하드웨어 장비 기록이 없습니다.</div>';
+
+  el.innerHTML = `
+    <!-- 1. 총 누적 적재 무게 -->
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px; margin-top:6px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="font-size:0.60rem; color:#94a3b8; font-weight:800;">총 누적 적재 무게</span>
+        <span style="font-size:0.50rem; color:#64748b;">누적 통계</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1.2fr; gap:6px; align-items:center; text-align:center;">
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:6px 2px;">
+          <div style="font-size:0.50rem; color:#64748b; font-weight:700;">이번 달</div>
+          <div style="font-size:0.85rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); margin-top:2px;">${Math.round(absoluteMonthWeight)}<span style="font-size:0.55rem; color:#7dd3fc; margin-left:1px;">kg</span></div>
+        </div>
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:6px 2px;">
+          <div style="font-size:0.50rem; color:#64748b; font-weight:700;">올해 누적</div>
+          <div style="font-size:0.85rem; font-weight:900; color:#fde68a; font-family:var(--font-en); margin-top:2px;">${Math.round(absoluteYearWeight)}<span style="font-size:0.55rem; color:#fef08a; margin-left:1px;">kg</span></div>
+        </div>
+        <div style="background:rgba(167,243,208,0.04); border:1px solid rgba(167,243,208,0.2); border-radius:6px; padding:6px 2px;">
+          <div style="font-size:0.52rem; color:#a7f3d0; font-weight:800;">역대 총 누적</div>
+          <div style="font-size:1.15rem; font-weight:900; color:#a7f3d0; font-family:var(--font-en); line-height:1; margin-top:2px;">${Math.round(absoluteTotalWeight)}<span style="font-size:0.62rem; color:#6ee7b7; margin-left:1px;">kg</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 평균 세팅 무게 -->
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="font-size:0.58rem; color:#64748b; font-weight:700;">평균 1회 세팅 무게</span>
+        <div style="display:flex; gap:2px; background:rgba(255,255,255,0.04); padding:2px; border-radius:4px;">
+          <button type="button" onclick="window._setGearSeasonFilter('all')" style="border:none; cursor:pointer; font-size:0.46rem; padding:2px 5px; border-radius:3px; background:${state.season==='all'?'#ffffff':'transparent'}; color:${state.season==='all'?'#000':'#64748b'}; font-weight:800;">전체</button>
+          <button type="button" onclick="window._setGearSeasonFilter('winter')" style="border:none; cursor:pointer; font-size:0.46rem; padding:2px 5px; border-radius:3px; background:${state.season==='winter'?'#bae6fd':'transparent'}; color:${state.season==='winter'?'#000':'#64748b'}; font-weight:800;">동계</button>
+          <button type="button" onclick="window._setGearSeasonFilter('three')" style="border:none; cursor:pointer; font-size:0.46rem; padding:2px 5px; border-radius:3px; background:${state.season==='three'?'#fde68a':'transparent'}; color:${state.season==='three'?'#000':'#64748b'}; font-weight:800;">3계절</button>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:4px; text-align:center;">
+        <div>
+          <div style="font-size:0.52rem; color:#64748b;">30일 평균</div>
+          <div style="font-size:0.75rem; font-weight:800; color:#bae6fd; font-family:var(--font-en);">${cM > 0 ? (sumM / cM).toFixed(2) + 'kg' : '-'}</div>
+        </div>
+        <div>
+          <div style="font-size:0.52rem; color:#64748b;">올해 평균</div>
+          <div style="font-size:0.75rem; font-weight:800; color:#fde68a; font-family:var(--font-en);">${cY > 0 ? (sumY / cY).toFixed(2) + 'kg' : '-'}</div>
+        </div>
+        <div>
+          <div style="font-size:0.52rem; color:#64748b;">선택구간 평균</div>
+          <div style="font-size:0.75rem; font-weight:800; color:#a7f3d0; font-family:var(--font-en);">${cFiltered > 0 ? (sumFiltered / cFiltered).toFixed(2) + 'kg' : '0kg'}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. 무게 다이어트 추이 -->
+    <div style="background:#000000; border:1px solid rgba(186,230,253,0.12); border-radius:6px; padding:6px 8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span style="font-size:0.58rem; color:#94a3b8; font-weight:700;">무게 다이어트 추이</span>
+        <div style="display:flex; gap:3px;">
+          <button type="button" onclick="window._setGearDietMode('month')" style="border:none; cursor:pointer; font-size:0.48rem; padding:2px 5px; border-radius:3px; background:${state.dietMode==='month'?'#bae6fd':'rgba(255,255,255,0.06)'}; color:${state.dietMode==='month'?'#000':'#94a3b8'}; font-weight:800;">월단위</button>
+          <button type="button" onclick="window._setGearDietMode('year')" style="border:none; cursor:pointer; font-size:0.48rem; padding:2px 5px; border-radius:3px; background:${state.dietMode==='year'?'#bae6fd':'rgba(255,255,255,0.06)'}; color:${state.dietMode==='year'?'#000':'#94a3b8'}; font-weight:800;">연단위</button>
+        </div>
+      </div>
+      ${dietHtml}
+    </div>
+
+    <!-- 4. 슬롯별 최다 사용 장비 -->
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:6px 8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span style="font-size:0.58rem; color:#64748b; font-weight:700;">슬롯별 최다 장비 (터치 시 Top 5)</span>
+        <span style="font-size:0.50rem; color:#94a3b8;">소모품 제외</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+        ${activeSlotCardsHtml}
+      </div>
+      ${activeSlotDetailHtml}
+    </div>
+
+    <!-- 5. 세팅 비율 -->
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:6px 8px;">
+      <div style="display:flex; justify-content:space-between; font-size:0.56rem; color:#64748b; margin-bottom:3px;">
+        <span>세팅 비율 (경량/스탠다드/헤비)</span>
+        <span style="color:#94a3b8; font-weight:700;">${pMin}% / ${pStd}% / ${pHvy}%</span>
+      </div>
+      <div style="display:flex; width:100%; height:3px; border-radius:2px; overflow:hidden; background:rgba(255,255,255,0.04);">
+        <div style="width:${pMin}%; background:#bae6fd;"></div>
+        <div style="width:${pStd}%; background:#a7f3d0;"></div>
+        <div style="width:${pHvy}%; background:#fecdd3;"></div>
+      </div>
+    </div>
+
+    <!-- 6. 최경량 Top 3 vs 최대 중량 Top 3 -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+      <div style="background:#000000; border:1px solid rgba(186,230,253,0.12); border-radius:6px; padding:6px 8px;">
+        <div style="font-size:0.56rem; color:#bae6fd; font-weight:700; margin-bottom:3px;">최경량 Top 3</div>
+        ${topMinListHtml}
+      </div>
+      <div style="background:#000000; border:1px solid rgba(254,205,211,0.12); border-radius:6px; padding:6px 8px;">
+        <div style="font-size:0.56rem; color:#fecdd3; font-weight:700; margin-bottom:3px;">최대 중량 Top 3</div>
+        ${topMaxListHtml}
+      </div>
+    </div>
+
+    <!-- 7. 최다 동행 하드웨어 Top 5 -->
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:6px 8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+        <span style="font-size:0.56rem; color:#64748b; font-weight:700;">최다 동행 하드웨어 Top 5</span>
+        <span style="font-size:0.50rem; color:#64748b;">순수 장비</span>
+      </div>
+      ${sortedGearsListHtml}
+    </div>
+  `;
+};
+
+// 2. 고도 & 필드 지형 연산 모듈
+window._terrainModuleState = window._terrainModuleState || {
+  selectedYear: 'all',
+  elevDetailMode: null,
+  expandedTheme: null,
+  showTopElevation: false
+};
+
+window._setTerrainYearSelect = function(yearVal) {
+  triggerHaptic(8);
+  window._terrainModuleState.selectedYear = yearVal;
+  var body = document.getElementById('accBody_terrain');
+  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_packing_history', [])
+    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
+  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  if (body) window._renderTerrainModule(validLogs, body);
+};
+
+window._toggleTerrainElevDetail = function(mode) {
+  triggerHaptic(8);
+  var st = window._terrainModuleState;
+  st.elevDetailMode = (st.elevDetailMode === mode) ? null : mode;
+  var body = document.getElementById('accBody_terrain');
+  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_packing_history', [])
+    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
+  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  if (body) window._renderTerrainModule(validLogs, body);
+};
+
+window._toggleTerrainThemeTop5 = function(themeKey) {
+  triggerHaptic(10);
+  var st = window._terrainModuleState;
+  st.expandedTheme = (st.expandedTheme === themeKey) ? null : themeKey;
+  var body = document.getElementById('accBody_terrain');
+  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_packing_history', [])
+    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
+  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  if (body) window._renderTerrainModule(validLogs, body);
+};
+
+window._toggleTopElevationRank = function() {
+  triggerHaptic(10);
+  var st = window._terrainModuleState;
+  st.showTopElevation = !st.showTopElevation;
+  var body = document.getElementById('accBody_terrain');
+  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_packing_history', [])
+    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
+  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  if (body) window._renderTerrainModule(validLogs, body);
+};
+
+window._renderTerrainModule = function(validLogs, el) {
+  var state = window._terrainModuleState;
+  var now = Date.now();
+  var MS_30D = 30 * 24 * 60 * 60 * 1000;
+  var curYear = String(new Date().getFullYear());
+  var curMonthStr = curYear + '.' + String(new Date().getMonth() + 1).padStart(2, '0');
+
+  var isIsland = function(s) { return /섬|도$|도\s|비양도|굴업도|자월도|승봉도|덕적도|대마도|제주|울릉/i.test(s); };
+  var isBeach = function(s) { return /해변|해수욕장|비치|해안|바다|모래|포구|항$|항\s|갯벌/i.test(s); };
+  var isMountain = function(s) { return /산$|산\s|봉$|봉\s|령$|령\s|대$|고개|능선|정상|고지|악$|악\s/i.test(s); };
+
+  var parseElevation = function(elev) {
+    if (!elev) return 0;
+    var num = parseInt(String(elev).replace(/\D/g, ''), 10);
+    return isNaN(num) ? 0 : num;
+  };
+
+  var monthElevation = 0;
+  var yearElevation = 0;
+  var totalElevation = 0;
+
+  var monthElevMap = {};
+  var yearElevMap = {};
+  var allElevationRank = [];
+
+  var elevTier = { high: 0, mid: 0, low: 0 };
+  var yearSet = new Set();
+
+  validLogs.forEach(function(r) {
+    var dStr = String(r.date || '');
+    var pTime = new Date(dStr.replace(/\./g, '-')).getTime();
+    var y = dStr.slice(0, 4);
+    var ym = dStr.slice(0, 7).replace(/\.\s*/g, '-');
+    if (y.length === 4 && !isNaN(parseInt(y, 10))) yearSet.add(y);
+
+    var isThisYear = dStr.includes(curYear);
+    var isThisMonth = dStr.replace(/\s+/g, '').includes(curMonthStr.replace(/\s+/g, '')) || (!isNaN(pTime) && (now - pTime <= MS_30D));
+
+    var elev = parseElevation(r.elevation);
+    if (elev > 0) {
+      totalElevation += elev;
+      if (isThisYear) yearElevation += elev;
+      if (isThisMonth) monthElevation += elev;
+
+      if (ym.length >= 6) {
+        monthElevMap[ym] = (monthElevMap[ym] || 0) + elev;
+      }
+      if (y.length === 4) {
+        yearElevMap[y] = (yearElevMap[y] || 0) + elev;
+      }
+
+      allElevationRank.push({
+        spot: r.spot || '-',
+        elevation: elev,
+        date: dStr.slice(0, 10)
+      });
+    }
+
+    if (elev >= 800) elevTier.high++;
+    else if (elev >= 300) elevTier.mid++;
+    else elevTier.low++;
+  });
+
+  allElevationRank.sort(function(a, b) { return b.elevation - a.elevation; });
+  var top5Elevations = allElevationRank.slice(0, 5);
+  var maxElevItem = top5Elevations[0] || { spot: '-', elevation: 0, date: '-' };
+
+  var hStat = document.getElementById('reportHeaderTerrainStat');
+  if (hStat) hStat.innerText = '+' + totalElevation.toLocaleString() + 'm';
+
+  var hallasanMultiple = (totalElevation / 1947).toFixed(1);
+
+  var elevDetailHtml = '';
+  if (state.elevDetailMode === 'month') {
+    var mKeys = Object.keys(monthElevMap).sort().slice(-6);
+    elevDetailHtml = '<div style="background:#000000; border:1px dashed #bae6fd; border-radius:6px; padding:6px 8px; margin-top:4px;">' +
+      '<div style="font-size:0.52rem; color:#bae6fd; font-weight:800; margin-bottom:4px;">최근 월별 획득 고도</div>' +
+      '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(64px, 1fr)); gap:4px;">' +
+      mKeys.map(function(mk) {
+        return '<div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:3px; text-align:center;"><div style="font-size:0.48rem; color:#64748b; font-family:var(--font-en);">' + mk.slice(2) + '</div><div style="font-size:0.65rem; font-weight:800; color:#bae6fd; font-family:var(--font-en); margin-top:1px;">+' + monthElevMap[mk].toLocaleString() + 'm</div></div>';
+      }).join('') + '</div></div>';
+  } else if (state.elevDetailMode === 'year') {
+    var yKeys = Object.keys(yearElevMap).sort();
+    elevDetailHtml = '<div style="background:#000000; border:1px dashed #fde68a; border-radius:6px; padding:6px 8px; margin-top:4px;">' +
+      '<div style="font-size:0.52rem; color:#fde68a; font-weight:800; margin-bottom:4px;">연도별 획득 고도 합계</div>' +
+      '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(70px, 1fr)); gap:4px;">' +
+      yKeys.map(function(yk) {
+        return '<div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:3px; text-align:center;"><div style="font-size:0.48rem; color:#64748b; font-family:var(--font-en);">' + yk + '년</div><div style="font-size:0.65rem; font-weight:800; color:#fde68a; font-family:var(--font-en); margin-top:1px;">+' + yearElevMap[yk].toLocaleString() + 'm</div></div>';
+      }).join('') + '</div></div>';
+  }
+
+  var sortedYears = Array.from(yearSet).sort().reverse();
+  var filteredLogs = validLogs.filter(function(r) {
+    if (state.selectedYear === 'all') return true;
+    return String(r.date || '').startsWith(state.selectedYear);
+  });
+
+  var themeCounts = { mountain: 0, island: 0, beach: 0, forest: 0 };
+  var themeSpotMap = { mountain: {}, island: {}, beach: {}, forest: {} };
+  var spotVisitMap = {};
+
+  filteredLogs.forEach(function(r) {
+    var spotName = String(r.spot || '').trim();
+    if (!spotName) return;
+
+    spotVisitMap[spotName] = (spotVisitMap[spotName] || 0) + 1;
+
+    var tKey = 'forest';
+    if (isIsland(spotName)) tKey = 'island';
+    else if (isBeach(spotName)) tKey = 'beach';
+    else if (isMountain(spotName)) tKey = 'mountain';
+
+    themeCounts[tKey]++;
+    themeSpotMap[tKey][spotName] = (themeSpotMap[tKey][spotName] || 0) + 1;
+  });
+
+  var totalThemeLogs = themeCounts.mountain + themeCounts.island + themeCounts.beach + themeCounts.forest;
+  var pMountain = totalThemeLogs > 0 ? Math.round((themeCounts.mountain / totalThemeLogs) * 100) : 0;
+  var pIsland = totalThemeLogs > 0 ? Math.round((themeCounts.island / totalThemeLogs) * 100) : 0;
+  var pBeach = totalThemeLogs > 0 ? Math.round((themeCounts.beach / totalThemeLogs) * 100) : 0;
+  var pForest = Math.max(0, 100 - pMountain - pIsland - pBeach);
+
+  var totalVisitedSpots = Object.keys(spotVisitMap).length;
+  var totalTripCount = filteredLogs.length;
+  var reVisitCount = 0;
+  Object.keys(spotVisitMap).forEach(function(sName) {
+    if (spotVisitMap[sName] > 1) {
+      reVisitCount += (spotVisitMap[sName] - 1);
+    }
+  });
+
+  var newExploreRate = totalTripCount > 0 ? Math.round((totalVisitedSpots / totalTripCount) * 100) : 0;
+  var reVisitRate = Math.max(0, 100 - newExploreRate);
+  var exploreTypeTitle = newExploreRate >= 65 ? '새로운 박지를 찾는 [탐험가형]' : '검증된 아지트를 즐기는 [정착형]';
+
+  var getTopSpotList = function(themeObj) {
+    return Object.keys(themeObj).map(function(k) {
+      return { name: k, count: themeObj[k] };
+    }).sort(function(a, b) { return b.count - a.count; }).slice(0, 5);
+  };
+
+  var themeData = {
+    mountain: { label: '산 원픽', list: getTopSpotList(themeSpotMap.mountain), color: '#bae6fd' },
+    island: { label: '섬 원픽', list: getTopSpotList(themeSpotMap.island), color: '#a7f3d0' },
+    beach: { label: '바다 원픽', list: getTopSpotList(themeSpotMap.beach), color: '#fde68a' },
+    forest: { label: '숲·계곡 원픽', list: getTopSpotList(themeSpotMap.forest), color: '#e9d5ff' }
+  };
+
+  var themeCardsHtml = Object.keys(themeData).map(function(tKey) {
+    var item = themeData[tKey];
+    var top1 = item.list[0] || { name: '-', count: 0 };
+    var isExp = (state.expandedTheme === tKey);
+    return '<div onclick="window._toggleTerrainThemeTop5(\'' + tKey + '\')" style="cursor:pointer; background:' + (isExp ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)') + '; border:1px solid ' + (isExp ? item.color : 'rgba(255,255,255,0.04)') + '; border-radius:6px; padding:4px 5px; box-sizing:border-box;">' +
+      '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+        '<span style="font-size:0.50rem; color:#64748b; font-weight:700;">' + item.label + '</span>' +
+        '<span style="font-size:0.46rem; color:' + item.color + ';">' + (isExp ? '닫기 ▲' : 'Top 5 ▼') + '</span>' +
+      '</div>' +
+      '<div style="font-size:0.58rem; font-weight:800; color:' + item.color + '; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">' + top1.name + ' <span style="font-size:0.50rem; color:#64748b; font-weight:normal;">(' + top1.count + '회)</span></div>' +
+    '</div>';
+  }).join('');
+
+  var themeDetailHtml = '';
+  if (state.expandedTheme && themeData[state.expandedTheme]) {
+    var curT = themeData[state.expandedTheme];
+    themeDetailHtml = '<div style="background:#000000; border:1px dashed ' + curT.color + '; border-radius:6px; padding:6px 8px; margin-top:4px;">' +
+      '<div style="font-size:0.52rem; color:' + curT.color + '; font-weight:800; margin-bottom:4px;">[' + curT.label + '] 방문 랭킹 Top 5</div>' +
+      (curT.list.map(function(it, idx) {
+        return '<div style="display:flex; justify-content:space-between; font-size:0.58rem; padding:1.5px 0;"><span style="color:#cbd5e1; max-width:80%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><strong style="color:' + curT.color + '; margin-right:4px;">' + (idx + 1) + '.</strong>' + it.name + '</span><span style="color:#64748b; font-family:var(--font-en);">' + it.count + '회</span></div>';
+      }).join('') || '<div style="color:#475569; font-size:0.52rem;">해당 지형의 기록이 없습니다.</div>') +
+    '</div>';
+  }
+
+  var topElevDetailHtml = '';
+  if (state.showTopElevation) {
+    topElevDetailHtml = '<div style="background:#000000; border:1px dashed #bae6fd; border-radius:6px; padding:6px 8px; margin-top:4px;">' +
+      '<div style="font-size:0.52rem; color:#bae6fd; font-weight:800; margin-bottom:4px;">역대 등정 최고봉 랭킹 Top 5</div>' +
+      top5Elevations.map(function(it, idx) {
+        return '<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.58rem; padding:2px 0;">' +
+          '<span style="color:#cbd5e1; max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><strong style="color:#bae6fd; margin-right:4px;">' + (idx + 1) + '.</strong>' + it.spot + ' <span style="font-size:0.50rem; color:#64748b;">(' + it.date + ')</span></span>' +
+          '<span style="color:#bae6fd; font-weight:800; font-family:var(--font-en);">' + it.elevation.toLocaleString() + 'm</span>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+  }
+
+  var selectedYearLabel = state.selectedYear === 'all' ? '전체 활동 기간' : state.selectedYear + '년 활동 기준';
+  var customDropdownItemsHtml = '<button type="button" onclick="window._setTerrainYearSelect(\'all\'); document.getElementById(\'customDropdownMenu_terrain\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (state.selectedYear === 'all' ? 'rgba(186,230,253,0.1)' : 'transparent') + '; color:' + (state.selectedYear === 'all' ? '#bae6fd' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.58rem; font-weight:800; border-radius:4px; cursor:pointer;">전체 활동 기간</button>' +
+    sortedYears.map(function(yk) {
+      var isSel = (state.selectedYear === yk);
+      return '<button type="button" onclick="window._setTerrainYearSelect(\'' + yk + '\'); document.getElementById(\'customDropdownMenu_terrain\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(186,230,253,0.1)' : 'transparent') + '; color:' + (isSel ? '#bae6fd' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.58rem; font-weight:800; border-radius:4px; cursor:pointer;">' + yk + '년 활동 기준</button>';
+    }).join('');
+
+  el.innerHTML = `
+    <!-- 1. 총 누적 획득 고도 -->
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px; margin-top:6px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="font-size:0.60rem; color:#94a3b8; font-weight:800;">총 누적 획득 고도</span>
+        <span style="font-size:0.50rem; color:#bae6fd; font-weight:700;">한라산 ${hallasanMultiple}회 등정 높이</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1.2fr; gap:6px; align-items:center; text-align:center;">
+        <div onclick="window._toggleTerrainElevDetail('month')" style="cursor:pointer; background:${state.elevDetailMode==='month'?'rgba(186,230,253,0.08)':'rgba(255,255,255,0.02)'}; border:1px solid ${state.elevDetailMode==='month'?'#bae6fd':'rgba(255,255,255,0.04)'}; border-radius:6px; padding:6px 2px;">
+          <div style="font-size:0.50rem; color:#64748b; font-weight:700;">이번 달 <span style="font-size:0.44rem; color:#bae6fd;">월별▼</span></div>
+          <div style="font-size:0.85rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); margin-top:2px;">+${monthElevation.toLocaleString()}<span style="font-size:0.55rem; color:#7dd3fc; margin-left:1px;">m</span></div>
+        </div>
+        <div onclick="window._toggleTerrainElevDetail('year')" style="cursor:pointer; background:${state.elevDetailMode==='year'?'rgba(253,230,138,0.08)':'rgba(255,255,255,0.02)'}; border:1px solid ${state.elevDetailMode==='year'?'#fde68a':'rgba(255,255,255,0.04)'}; border-radius:6px; padding:6px 2px;">
+          <div style="font-size:0.50rem; color:#64748b; font-weight:700;">올해 누적 <span style="font-size:0.44rem; color:#fde68a;">연별▼</span></div>
+          <div style="font-size:0.85rem; font-weight:900; color:#fde68a; font-family:var(--font-en); margin-top:2px;">+${yearElevation.toLocaleString()}<span style="font-size:0.55rem; color:#fef08a; margin-left:1px;">m</span></div>
+        </div>
+        <div style="background:rgba(186,230,253,0.04); border:1px solid rgba(186,230,253,0.2); border-radius:6px; padding:6px 2px;">
+          <div style="font-size:0.52rem; color:#bae6fd; font-weight:800;">역대 총 누적</div>
+          <div style="font-size:1.15rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); line-height:1; margin-top:2px;">+${totalElevation.toLocaleString()}<span style="font-size:0.62rem; color:#7dd3fc; margin-left:1px;">m</span></div>
+        </div>
+      </div>
+      ${elevDetailHtml}
+    </div>
+
+    <!-- 2. 인터랙티브 연도 선택 커스텀 드롭다운 -->
+    <div style="position:relative; display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:4px 8px;">
+      <span style="font-size:0.54rem; color:#94a3b8; font-weight:700;">지형 분석 기준 기간</span>
+      <button type="button" onclick="window.toggleModuleCustomDropdown('terrain', event)" style="background:#0b0f17; border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:0.54rem; font-weight:800; border-radius:4px; padding:3px 8px; cursor:pointer; display:flex; align-items:center; gap:4px; outline:none;">
+        <span>${selectedYearLabel}</span>
+        <span style="font-size:0.44rem; color:#64748b;">▼</span>
+      </button>
+      <div id="customDropdownMenu_terrain" style="display:none; position:absolute; top:28px; right:8px; background:#0b0f17; border:1px solid rgba(255,255,255,0.15); border-radius:6px; padding:4px; box-shadow:0 8px 25px rgba(0,0,0,0.85); z-index:50; min-width:115px; flex-direction:column; gap:2px;">
+        ${customDropdownItemsHtml}
+      </div>
+    </div>
+
+    <!-- 3. 필드 지형 테마 점유율 -->
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span style="font-size:0.58rem; color:#64748b; font-weight:700;">필드 지형 테마 비중</span>
+        <span style="font-size:0.50rem; color:#94a3b8;">${state.selectedYear==='all'?'전체 기간':state.selectedYear+'년'} 기준</span>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; text-align:center;">
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:4px 2px;">
+          <div style="font-size:0.50rem; color:#64748b;">산·능선</div>
+          <div style="font-size:0.75rem; font-weight:800; color:#bae6fd; font-family:var(--font-en); margin-top:1px;">${pMountain}%</div>
+          <div style="font-size:0.48rem; color:#64748b;">${themeCounts.mountain}회</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:4px 2px;">
+          <div style="font-size:0.50rem; color:#64748b;">섬(Island)</div>
+          <div style="font-size:0.75rem; font-weight:800; color:#a7f3d0; font-family:var(--font-en); margin-top:1px;">${pIsland}%</div>
+          <div style="font-size:0.48rem; color:#64748b;">${themeCounts.island}회</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:4px 2px;">
+          <div style="font-size:0.50rem; color:#64748b;">바다·해변</div>
+          <div style="font-size:0.75rem; font-weight:800; color:#fde68a; font-family:var(--font-en); margin-top:1px;">${pBeach}%</div>
+          <div style="font-size:0.48rem; color:#64748b;">${themeCounts.beach}회</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:4px 2px;">
+          <div style="font-size:0.50rem; color:#64748b;">숲·계곡</div>
+          <div style="font-size:0.75rem; font-weight:800; color:#e9d5ff; font-family:var(--font-en); margin-top:1px;">${pForest}%</div>
+          <div style="font-size:0.48rem; color:#64748b;">${themeCounts.forest}회</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. 박지 개척 성향 -->
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span style="font-size:0.58rem; color:#64748b; font-weight:700;">박지 개척 성향</span>
+        <span style="font-size:0.52rem; color:#a7f3d0; font-weight:800;">${exploreTypeTitle}</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; text-align:center;">
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:5px 2px;">
+          <div style="font-size:0.50rem; color:#64748b;">미지 개척 확률</div>
+          <div style="font-size:0.85rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); margin-top:2px;">${newExploreRate}%</div>
+          <div style="font-size:0.48rem; color:#64748b;">고유 박지 ${totalVisitedSpots}곳</div>
+        </div>
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:5px 2px;">
+          <div style="font-size:0.50rem; color:#64748b;">단골 재방문 확률</div>
+          <div style="font-size:0.85rem; font-weight:900; color:#fde68a; font-family:var(--font-en); margin-top:2px;">${reVisitRate}%</div>
+          <div style="font-size:0.48rem; color:#64748b;">재방문 ${reVisitCount}회</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. 지형별 부동의 1위 아지트 -->
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:6px 8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span style="font-size:0.58rem; color:#64748b; font-weight:700;">지형별 최다 방문 아지트 (터치 시 Top 5)</span>
+        <span style="font-size:0.48rem; color:#64748b;">단골 랭킹</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+        ${themeCardsHtml}
+      </div>
+      ${themeDetailHtml}
+    </div>
+
+    <!-- 6. 내가 밟은 가장 높은 곳 -->
+    <div onclick="window._toggleTopElevationRank()" style="cursor:pointer; background:#000000; border:1px solid rgba(186,230,253,0.25); border-radius:6px; padding:8px 10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="display:flex; align-items:center; gap:4px;">
+            <span style="font-size:0.52rem; color:#64748b; font-weight:700;">내가 밟은 가장 높은 곳</span>
+            <span style="font-size:0.46rem; color:#bae6fd; font-weight:800;">${state.showTopElevation?'Top 5 닫기 ▲':'Top 5 순위 ▼'}</span>
+          </div>
+          <div style="font-size:0.75rem; font-weight:800; color:#ffffff; margin-top:2px;">${maxElevItem.spot}</div>
+          <div style="font-size:0.50rem; color:#64748b; margin-top:1px;">${maxElevItem.date}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:1.15rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); line-height:1;">${maxElevItem.elevation.toLocaleString()}m</div>
+        </div>
+      </div>
+    </div>
+    ${topElevDetailHtml}
+  `;
+};
+
+// 3. 시즌 밸런스 연산 모듈
+window._seasonModuleState = window._seasonModuleState || {
+  selectedYear: 'all',
+  expandedSeason: null
+};
+
+window._setSeasonYearSelect = function(yearVal) {
+  triggerHaptic(8);
+  window._seasonModuleState.selectedYear = yearVal;
+  var body = document.getElementById('accBody_season');
+  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_packing_history', [])
+    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
+  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  if (body) window._renderSeasonModule(validLogs, body);
+};
+
+window._toggleSeasonDetail = function(seasonKey) {
+  triggerHaptic(10);
+  var st = window._seasonModuleState;
+  st.expandedSeason = (st.expandedSeason === seasonKey) ? null : seasonKey;
+  var body = document.getElementById('accBody_season');
+  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_packing_history', [])
+    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
+  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  if (body) window._renderSeasonModule(validLogs, body);
+};
+
+window._renderSeasonModule = function(validLogs, el) {
+  var state = window._seasonModuleState;
+  var yearSet = new Set();
+
+  validLogs.forEach(function(r) {
+    var y = String(r.date || '').slice(0, 4);
+    if (y.length === 4 && !isNaN(parseInt(y, 10))) yearSet.add(y);
+  });
+  var sortedYears = Array.from(yearSet).sort().reverse();
+
+  var filteredLogs = validLogs.filter(function(r) {
+    if (state.selectedYear === 'all') return true;
+    return String(r.date || '').startsWith(state.selectedYear);
+  });
+
+  var s = {
+    spring: { label: '봄 (3-5월)', count: 0, spots: {}, color: '#a7f3d0' },
+    summer: { label: '여름 (6-8월)', count: 0, spots: {}, color: '#bae6fd' },
+    autumn: { label: '가을 (9-11월)', count: 0, spots: {}, color: '#fde68a' },
+    winter: { label: '동계 (12-2월)', count: 0, spots: {}, color: '#e2e8f0' }
+  };
+
+  filteredLogs.forEach(function(r) {
+    var m = parseInt((String(r.date || '').match(/\d+/g) || [])[1] || '0', 10);
+    var spotName = String(r.spot || '').trim();
+    var target = null;
+
+    if (m >= 3 && m <= 5) target = s.spring;
+    else if (m >= 6 && m <= 8) target = s.summer;
+    else if (m >= 9 && m <= 11) target = s.autumn;
+    else if (m === 12 || m === 1 || m === 2) target = s.winter;
+
+    if (target) {
+      target.count++;
+      if (spotName) {
+        target.spots[spotName] = (target.spots[spotName] || 0) + 1;
       }
     }
+  });
+
+  var total = filteredLogs.length;
+  var pct = function(c) { return total > 0 ? Math.round((c / total) * 100) : 0; };
+
+  var topSeasonKey = 'autumn';
+  var maxCount = -1;
+  ['spring', 'summer', 'autumn', 'winter'].forEach(function(k) {
+    if (s[k].count > maxCount) {
+      maxCount = s[k].count;
+      topSeasonKey = k;
+    }
+  });
+
+  var hStat = document.getElementById('reportHeaderSeasonStat');
+  if (hStat) {
+    hStat.innerText = s[topSeasonKey].label.split(' ')[0] + ' ' + pct(s[topSeasonKey].count) + '%';
   }
-  if (modal) modal.style.display = 'flex';
+
+  var selectedYearLabel = state.selectedYear === 'all' ? '전체 활동 기간' : state.selectedYear + '년 시즌 기준';
+  var customDropdownItemsHtml = '<button type="button" onclick="window._setSeasonYearSelect(\'all\'); document.getElementById(\'customDropdownMenu_season\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (state.selectedYear === 'all' ? 'rgba(253,230,138,0.1)' : 'transparent') + '; color:' + (state.selectedYear === 'all' ? '#fde68a' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.58rem; font-weight:800; border-radius:4px; cursor:pointer;">전체 활동 기간</button>' +
+    sortedYears.map(function(yk) {
+      var isSel = (state.selectedYear === yk);
+      return '<button type="button" onclick="window._setSeasonYearSelect(\'' + yk + '\'); document.getElementById(\'customDropdownMenu_season\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(253,230,138,0.1)' : 'transparent') + '; color:' + (isSel ? '#fde68a' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.58rem; font-weight:800; border-radius:4px; cursor:pointer;">' + yk + '년 시즌 기준</button>';
+    }).join('');
+
+  var seasonCardsHtml = ['spring', 'summer', 'autumn', 'winter'].map(function(k) {
+    var item = s[k];
+    var p = pct(item.count);
+    var isExp = (state.expandedSeason === k);
+    return '<div onclick="window._toggleSeasonDetail(\'' + k + '\')" style="cursor:pointer; background:' + (isExp ? 'rgba(255,255,255,0.06)' : '#000000') + '; border:1px solid ' + (isExp ? item.color : 'rgba(255,255,255,0.06)') + '; border-radius:6px; padding:6px 2px; text-align:center; box-sizing:border-box;">' +
+      '<div style="font-size:0.50rem; color:#64748b;">' + item.label.split(' ')[0] + '</div>' +
+      '<div style="font-size:0.75rem; font-weight:800; color:' + item.color + '; font-family:var(--font-en); margin-top:1px;">' + p + '%</div>' +
+      '<div style="font-size:0.46rem; color:#64748b; margin-top:1px;">' + item.count + '회 ' + (isExp ? '▲' : '▼') + '</div>' +
+    '</div>';
+  }).join('');
+
+  var seasonDetailHtml = '';
+  if (state.expandedSeason && s[state.expandedSeason]) {
+    var curS = s[state.expandedSeason];
+    var sortedSpots = Object.keys(curS.spots).map(function(k) {
+      return { name: k, count: curS.spots[k] };
+    }).sort(function(a, b) { return b.count - a.count; }).slice(0, 5);
+
+    seasonDetailHtml = '<div style="background:#000000; border:1px dashed ' + curS.color + '; border-radius:6px; padding:6px 8px; margin-top:4px;">' +
+      '<div style="font-size:0.52rem; color:' + curS.color + '; font-weight:800; margin-bottom:4px;">[' + curS.label + '] 방문 박지 Top 5</div>' +
+      (sortedSpots.map(function(it, idx) {
+        return '<div style="display:flex; justify-content:space-between; font-size:0.58rem; padding:1.5px 0;"><span style="color:#cbd5e1; max-width:80%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><strong style="color:' + curS.color + '; margin-right:4px;">' + (idx + 1) + '.</strong>' + it.name + '</span><span style="color:#64748b; font-family:var(--font-en);">' + it.count + '회</span></div>';
+      }).join('') || '<div style="color:#475569; font-size:0.52rem;">해당 시즌 기록이 없습니다.</div>') +
+    '</div>';
+  }
+
+  el.innerHTML = `
+    <!-- 시즌 연도 커스텀 드롭다운 -->
+    <div style="position:relative; display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:4px 8px; margin-top:6px;">
+      <span style="font-size:0.54rem; color:#94a3b8; font-weight:700;">시즌 분석 기준</span>
+      <button type="button" onclick="window.toggleModuleCustomDropdown('season', event)" style="background:#0b0f17; border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:0.54rem; font-weight:800; border-radius:4px; padding:3px 8px; cursor:pointer; display:flex; align-items:center; gap:4px; outline:none;">
+        <span>${selectedYearLabel}</span>
+        <span style="font-size:0.44rem; color:#64748b;">▼</span>
+      </button>
+      <div id="customDropdownMenu_season" style="display:none; position:absolute; top:28px; right:8px; background:#0b0f17; border:1px solid rgba(255,255,255,0.15); border-radius:6px; padding:4px; box-shadow:0 8px 25px rgba(0,0,0,0.85); z-index:50; min-width:115px; flex-direction:column; gap:2px;">
+        ${customDropdownItemsHtml}
+      </div>
+    </div>
+
+    <!-- 4계절 밸런스 그리드 (터치 시 Top 5 확장) -->
+    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; margin-top:4px;">
+      ${seasonCardsHtml}
+    </div>
+    ${seasonDetailHtml}
+  `;
 };
 
-// 💾 [계정 관리 닉네임 변경 저장]
-window.saveNicknameFromSettingsModal = function() {
-  var input = document.getElementById('settingsModalNicknameInput');
-  if (!input || !input.value.trim()) return showToast('새 닉네임을 입력해주세요.', 'warn');
-
-  var newNick = input.value.trim();
-  var profile = safeGetJSON('user_profile', {});
-  var COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
-  var lastChanged = Number(profile.lastNicknameChangedAt) || 0;
-  var now = Date.now();
-
-  if (lastChanged > 0 && (now - lastChanged < COOLDOWN_MS)) {
-    var remainingDays = Math.ceil((COOLDOWN_MS - (now - lastChanged)) / (1000 * 60 * 60 * 24));
-    triggerHaptic(20);
-    return showToast('닉네임은 14일마다 1회 변경 가능합니다. [' + remainingDays + '일 후 가능]', 'warn', 3500);
-  }
-
-  if (profile.nickname === newNick) {
-    return showToast('현재 사용 중인 닉네임과 동일합니다.', 'info');
-  }
-
-  profile.nickname = newNick;
-  profile.lastNicknameChangedAt = now;
-  localStorage.setItem('user_profile', JSON.stringify(profile));
-  localStorage.setItem('okbm_user_nick', newNick);
-  if (profile.id) {
-    localStorage.setItem('user_profile_' + profile.id, JSON.stringify(profile));
-    localStorage.setItem('okbm_custom_nickname_' + profile.id, newNick);
-  }
-
-  if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(true);
-  triggerHaptic(15);
-  showToast('닉네임이 [' + newNick + '](으)로 변경되었습니다!', 'success');
-
-  var headerNick = document.getElementById('reportHeaderCurrentNick');
-  if (headerNick) headerNick.innerText = newNick;
-
-  document.getElementById('userAccountSettingsModal').style.display = 'none';
-  if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
+// 4. 지역 분포 연산 모듈
+window._regionModuleState = window._regionModuleState || {
+  selectedYear: 'all',
+  expandedRegion: null
 };
 
-// 📊 [마이데이터 실시간 정밀 통계 수화 엔진]
+window._setRegionYearSelect = function(yearVal) {
+  triggerHaptic(8);
+  window._regionModuleState.selectedYear = yearVal;
+  var body = document.getElementById('accBody_region');
+  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_packing_history', [])
+    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
+  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  if (body) window._renderRegionModule(validLogs, body);
+};
+
+window._toggleRegionDetail = function(regionKey) {
+  triggerHaptic(10);
+  var st = window._regionModuleState;
+  st.expandedRegion = (st.expandedRegion === regionKey) ? null : regionKey;
+  var body = document.getElementById('accBody_region');
+  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_packing_history', [])
+    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
+  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  if (body) window._renderRegionModule(validLogs, body);
+};
+
+window._renderRegionModule = function(validLogs, el) {
+  var state = window._regionModuleState;
+  var yearSet = new Set();
+
+  validLogs.forEach(function(r) {
+    var y = String(r.date || '').slice(0, 4);
+    if (y.length === 4 && !isNaN(parseInt(y, 10))) yearSet.add(y);
+  });
+  var sortedYears = Array.from(yearSet).sort().reverse();
+
+  var filteredLogs = validLogs.filter(function(r) {
+    if (state.selectedYear === 'all') return true;
+    return String(r.date || '').startsWith(state.selectedYear);
+  });
+
+  var regMap = {
+    '강원': { count: 0, spots: {}, color: '#bae6fd' },
+    '경기/수도권': { count: 0, spots: {}, color: '#a7f3d0' },
+    '충청': { count: 0, spots: {}, color: '#fde68a' },
+    '전라': { count: 0, spots: {}, color: '#fed7aa' },
+    '경상': { count: 0, spots: {}, color: '#e9d5ff' },
+    '제주': { count: 0, spots: {}, color: '#fecdd3' },
+    '섬/해안': { count: 0, spots: {}, color: '#7dd3fc' },
+    '기타': { count: 0, spots: {}, color: '#94a3b8' }
+  };
+
+  filteredLogs.forEach(function(r) {
+    var spot = String(r.spot || '').trim();
+    if (!spot) return;
+
+    var matchedKey = '기타';
+    if (/강원|태백|정선|삼척|강릉|동해|속초|고성|양양|인제|원주|평창|홍천|춘천|화천|양구|영월/i.test(spot)) {
+      matchedKey = '강원';
+    } else if (/경기|서울|인천|이천|가평|양평|포천|연천|파주|남양주|수원|용인|안성/i.test(spot)) {
+      matchedKey = '경기/수도권';
+    } else if (/충청|충남|충북|천안|공주|보령|아산|서산|논산|당진|부여|청양|홍성|예산|태안|청주|충주|제천|보은|옥천|영동|증평|진천|괴산|단양/i.test(spot)) {
+      matchedKey = '충청';
+    } else if (/전라|전남|전북|군산|익산|정읍|남원|김제|완주|진안|무주|장수|임실|순창|고창|부안|목포|여수|순천|나주|광양|담양|곡성|구례|고흥|보성|화순|장흥|강진|해남|영암|무안|함평|영광|장성|완도|진도|신안/i.test(spot)) {
+      matchedKey = '전라';
+    } else if (/경상|경북|경남|포항|경주|김천|안동|구미|영주|영천|상주|문경|경산|의성|청송|영양|영덕|청도|고령|성주|칠곡|예천|봉화|울진|울릉|창원|진주|통영|사천|김해|밀양|거제|양산|의령|함안|창녕|고성|남해|하동|산청|함양|거창|합천|부산|울산|대구/i.test(spot)) {
+      matchedKey = '경상';
+    } else if (/제주|서귀포|한라|우도|성산/i.test(spot)) {
+      matchedKey = '제주';
+    } else if (/섬|도$|도\s|비양도|굴업도|자월도|승봉도|덕적도|대마도/i.test(spot)) {
+      matchedKey = '섬/해안';
+    }
+
+    regMap[matchedKey].count++;
+    regMap[matchedKey].spots[spot] = (regMap[matchedKey].spots[spot] || 0) + 1;
+  });
+
+  var total = filteredLogs.length;
+  var topRegKey = '강원';
+  var maxRegCount = -1;
+  Object.keys(regMap).forEach(function(k) {
+    if (regMap[k].count > maxRegCount) {
+      maxRegCount = regMap[k].count;
+      topRegKey = k;
+    }
+  });
+
+  var hStat = document.getElementById('reportHeaderRegionStat');
+  if (hStat) {
+    var pTop = total > 0 ? Math.round((maxRegCount / total) * 100) : 0;
+    hStat.innerText = topRegKey + ' (' + pTop + '%)';
+  }
+
+  var selectedYearLabel = state.selectedYear === 'all' ? '전체 활동 기간' : state.selectedYear + '년 지역 기준';
+  var customDropdownItemsHtml = '<button type="button" onclick="window._setRegionYearSelect(\'all\'); document.getElementById(\'customDropdownMenu_region\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (state.selectedYear === 'all' ? 'rgba(233,213,255,0.1)' : 'transparent') + '; color:' + (state.selectedYear === 'all' ? '#e9d5ff' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.58rem; font-weight:800; border-radius:4px; cursor:pointer;">전체 활동 기간</button>' +
+    sortedYears.map(function(yk) {
+      var isSel = (state.selectedYear === yk);
+      return '<button type="button" onclick="window._setRegionYearSelect(\'' + yk + '\'); document.getElementById(\'customDropdownMenu_region\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(233,213,255,0.1)' : 'transparent') + '; color:' + (isSel ? '#e9d5ff' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.58rem; font-weight:800; border-radius:4px; cursor:pointer;">' + yk + '년 지역 기준</button>';
+    }).join('');
+
+  var regionCardsHtml = Object.keys(regMap).map(function(k) {
+    var item = regMap[k];
+    var isExp = (state.expandedRegion === k);
+    return '<div onclick="window._toggleRegionDetail(\'' + k + '\')" style="cursor:pointer; background:' + (isExp ? 'rgba(255,255,255,0.06)' : '#000000') + '; border:1px solid ' + (isExp ? item.color : 'rgba(255,255,255,0.06)') + '; border-radius:6px; min-height:42px; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:3px 2px; box-sizing:border-box;">' +
+      '<div style="font-size:0.52rem; color:#64748b; line-height:1.1;">' + k + '</div>' +
+      '<div style="font-size:0.75rem; font-weight:800; color:' + item.color + '; font-family:var(--font-en); margin-top:2px; line-height:1;">' + item.count + '<span style="font-size:0.46rem; color:#64748b; margin-left:1px;">회</span></div>' +
+    '</div>';
+  }).join('');
+
+  var regionDetailHtml = '';
+  if (state.expandedRegion && regMap[state.expandedRegion]) {
+    var curR = regMap[state.expandedRegion];
+    var sortedSpots = Object.keys(curR.spots).map(function(k) {
+      return { name: k, count: curR.spots[k] };
+    }).sort(function(a, b) { return b.count - a.count; }).slice(0, 5);
+
+    regionDetailHtml = '<div style="background:#000000; border:1px dashed ' + curR.color + '; border-radius:6px; padding:6px 8px; margin-top:4px;">' +
+      '<div style="font-size:0.52rem; color:' + curR.color + '; font-weight:800; margin-bottom:4px;">[' + state.expandedRegion + '] 권역 방문 박지 Top 5</div>' +
+      (sortedSpots.map(function(it, idx) {
+        return '<div style="display:flex; justify-content:space-between; font-size:0.58rem; padding:1.5px 0;"><span style="color:#cbd5e1; max-width:80%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><strong style="color:' + curR.color + '; margin-right:4px;">' + (idx + 1) + '.</strong>' + it.name + '</span><span style="color:#64748b; font-family:var(--font-en);">' + it.count + '회</span></div>';
+      }).join('') || '<div style="color:#475569; font-size:0.52rem;">해당 권역 기록이 없습니다.</div>') +
+    '</div>';
+  }
+
+  el.innerHTML = `
+    <!-- 지역 연도 커스텀 드롭다운 -->
+    <div style="position:relative; display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:4px 8px; margin-top:6px;">
+      <span style="font-size:0.54rem; color:#94a3b8; font-weight:700;">지역 분석 기준</span>
+      <button type="button" onclick="window.toggleModuleCustomDropdown('region', event)" style="background:#0b0f17; border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:0.54rem; font-weight:800; border-radius:4px; padding:3px 8px; cursor:pointer; display:flex; align-items:center; gap:4px; outline:none;">
+        <span>${selectedYearLabel}</span>
+        <span style="font-size:0.44rem; color:#64748b;">▼</span>
+      </button>
+      <div id="customDropdownMenu_region" style="display:none; position:absolute; top:28px; right:8px; background:#0b0f17; border:1px solid rgba(255,255,255,0.15); border-radius:6px; padding:4px; box-shadow:0 8px 25px rgba(0,0,0,0.85); z-index:50; min-width:115px; flex-direction:column; gap:2px;">
+        ${customDropdownItemsHtml}
+      </div>
+    </div>
+
+    <!-- 8대 권역 분포 그리드 (터치 시 Top 5 확장) -->
+    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; margin-top:4px;">
+      ${regionCardsHtml}
+    </div>
+    ${regionDetailHtml}
+  `;
+};
+
+// 마이리포트 경량 초기 진입
 window.refreshMyReportFullStats = function() {
   ensureMyReportAndAuthModalsInDOM();
+  window.__reportRenderCache = {};
+
   var profile = safeGetJSON('user_profile', null);
-  var userNick = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '오라네');
+  var userNick = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만백패커');
   var headerNick = document.getElementById('reportHeaderCurrentNick');
   if (headerNick) headerNick.innerText = userNick;
 
@@ -952,108 +2125,35 @@ window.refreshMyReportFullStats = function() {
     ? window.RomanticVault.read('okbm_packing_history', [])
     : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
   var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
-  var totalCount = validLogs.length;
 
-  var currentYear = new Date().getFullYear();
-  var yearCount = 0;
-  var totalElev = 0;
-  var minWeight = 999, maxWeight = 0;
-  var totalGrams = 0;
-  var gearCounts = {};
-  var seasons = { spring: 0, summer: 0, autumn: 0, winter: 0 };
-  var regions = { '강원': 0, '경기': 0, '충청': 0, '전라': 0, '경상': 0, '제주': 0, '섬': 0, '기타': 0 };
+  var curYear = String(new Date().getFullYear());
+  window._selectedReportYear = curYear;
 
+  var badgeText = document.getElementById('reportYearBadge');
+  if (badgeText) badgeText.innerText = curYear;
+
+  var labelText = document.getElementById('reportYearCardLabel');
+  if (labelText) labelText.innerText = '올해 활동';
+
+  var yCount = 0;
   validLogs.forEach(function(r) {
-    var dateStr = String(r.date || '');
-    if (dateStr.includes(String(currentYear))) yearCount++;
-
-    var month = parseInt((dateStr.match(/\d+/g) || [])[1] || '0', 10);
-    if (month >= 3 && month <= 5) seasons.spring++;
-    else if (month >= 6 && month <= 8) seasons.summer++;
-    else if (month >= 9 && month <= 11) seasons.autumn++;
-    else if (month === 12 || month === 1 || month === 2) seasons.winter++;
-
-    var spot = String(r.spot || '');
-    if (spot.includes('강원')) regions['강원']++;
-    else if (spot.includes('경기') || spot.includes('서울') || spot.includes('인천')) regions['경기']++;
-    else if (spot.includes('충')) regions['충청']++;
-    else if (spot.includes('전')) regions['전라']++;
-    else if (spot.includes('경')) regions['경상']++;
-    else if (spot.includes('제주')) regions['제주']++;
-    else if (spot.includes('도') || spot.includes('섬')) regions['섬']++;
-    else regions['기타']++;
-
-    var el = parseInt(String(r.elevation || '0').replace(/\D/g, ''), 10) || 0;
-    totalElev += el;
-
-    var w = parseFloat(r.weightKg) || 0;
-    if (w > 0 && w < minWeight) minWeight = w;
-    if (w > maxWeight) maxWeight = w;
-    totalGrams += (r.weightGrams || Math.round(w * 1000));
-
-    (r.items || []).forEach(function(it) {
-      var gName = String(it.name || it.itemName || '').replace(/\s*\(.*?\)/, '').trim();
-      if (gName) gearCounts[gName] = (gearCounts[gName] || 0) + 1;
-    });
+    if (String(r.date || '').includes(curYear)) yCount++;
   });
-  if (minWeight === 999) minWeight = 0;
 
-  var avgWeight = totalCount > 0 ? (totalGrams / totalCount / 1000).toFixed(2) : '0.00';
-  var avgTier = parseFloat(avgWeight) <= 6.0 ? 'UL 초경량' : (parseFloat(avgWeight) <= 12.0 ? '스탠다드' : '헤비');
+  var yEl = document.getElementById('reportYearCountNumber');
+  var tEl = document.getElementById('reportTotalCountNumber');
+  if (yEl) yEl.innerText = yCount;
+  if (tEl) tEl.innerText = validLogs.length;
 
-  var topGear = '-', topGearCount = 0;
-  Object.keys(gearCounts).forEach(function(k) {
-    if (gearCounts[k] > topGearCount) { topGearCount = gearCounts[k]; topGear = k; }
+  ['gear', 'terrain', 'season', 'region'].forEach(function(k) {
+    var b = document.getElementById('accBody_' + k);
+    var a = document.getElementById('accArrow_' + k);
+    if (b) { b.style.display = 'none'; b.innerHTML = ''; }
+    if (a) a.innerText = '▼';
   });
-  var everestPct = Math.min(100, Math.round((totalElev / 8848) * 100));
-
-  var yearBadge = document.getElementById('reportYearBadge');
-  var yearCountEl = document.getElementById('reportYearCountNumber');
-  var totalCountEl = document.getElementById('reportTotalCountNumber');
-  if (yearBadge) yearBadge.innerText = currentYear;
-  if (yearCountEl) yearCountEl.innerText = yearCount;
-  if (totalCountEl) totalCountEl.innerText = totalCount;
-
-  var avgWeightEl = document.getElementById('reportMilestoneAvgWeight');
-  var tierEl = document.getElementById('reportAvgTierBadge');
-  var minWeightEl = document.getElementById('reportMinWeight');
-  var maxWeightEl = document.getElementById('reportMaxWeight');
-  var topGearEl = document.getElementById('reportTopGear');
-
-  if (avgWeightEl) avgWeightEl.innerText = avgWeight + 'kg';
-  if (tierEl) tierEl.innerText = avgTier;
-  if (minWeightEl) minWeightEl.innerText = minWeight > 0 ? minWeight.toFixed(2) + 'kg' : '-';
-  if (maxWeightEl) maxWeightEl.innerText = maxWeight > 0 ? maxWeight.toFixed(2) + 'kg' : '-';
-  if (topGearEl) topGearEl.innerText = topGear + (topGearCount ? ' (' + topGearCount + '회)' : '');
-
-  var elevTextEl = document.getElementById('reportMilestoneElevText');
-  var elevBarEl = document.getElementById('reportMilestoneElevBar');
-  if (elevTextEl) elevTextEl.innerText = '+' + totalElev.toLocaleString() + 'm (' + everestPct + '%)';
-  if (elevBarEl) elevBarEl.style.width = everestPct + '%';
-
-  var calcPct = function(cnt) { return totalCount > 0 ? Math.round((cnt / totalCount) * 100) + '%' : '0%'; };
-  var sSp = document.getElementById('reportSeasonSpring');
-  var sSu = document.getElementById('reportSeasonSummer');
-  var sAu = document.getElementById('reportSeasonAutumn');
-  var sWi = document.getElementById('reportSeasonWinter');
-  if (sSp) sSp.innerText = calcPct(seasons.spring);
-  if (sSu) sSu.innerText = calcPct(seasons.summer);
-  if (sAu) sAu.innerText = calcPct(seasons.autumn);
-  if (sWi) sWi.innerText = calcPct(seasons.winter);
-
-  var regGrid = document.getElementById('reportRegionDistributionGrid');
-  if (regGrid) {
-    regGrid.innerHTML = Object.keys(regions).slice(0, 7).map(function(regName) {
-      var rCount = regions[regName] || 0;
-      return '<div style="background:rgba(255,255,255,0.02); border:1px solid ' + (rCount > 0 ? 'rgba(56,189,248,0.3)' : 'rgba(255,255,255,0.06)') + '; border-radius:6px; padding:4px 2px;">' +
-        '<div style="font-size:0.56rem; color:' + (rCount > 0 ? '#38bdf8' : '#64748b') + ';">' + regName + '</div>' +
-        '<div style="font-size:0.75rem; font-weight:900; color:' + (rCount > 0 ? '#fff' : '#475569') + '; font-family:var(--font-en); margin-top:2px;">' + rCount + '곳</div>' +
-      '</div>';
-    }).join('');
-  }
 };
 
-// 🚪 6. 마이데이터(마이리포트) & 로그인 모달 제어
+// 6. 마이데이터(마이리포트) & 로그인 모달 제어
 function handleAuthBtnClick() {
   triggerHaptic(12);
   ensureMyReportAndAuthModalsInDOM();
@@ -1107,7 +2207,125 @@ function closeUserProfileModal() {
 }
 window.closeUserProfileModal = closeUserProfileModal;
 
-// 🚪 [로그아웃 및 세션 완전 롤백]
+// 계정 설정 모달 제어 (가입날짜 완전 보존 & 14일 쿨다운 정밀 잠금)
+window.openAccountSettingsModal = function() {
+  triggerHaptic(10);
+  ensureMyReportAndAuthModalsInDOM();
+  var modal = document.getElementById('userAccountSettingsModal');
+  if (!modal) return;
+
+  var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : null);
+  var currentNick = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만백패커');
+  
+  // 가입날짜 슬라이스 절단 금지 (원본 전체 보존)
+  var joinDate = (profile && profile.createdAt) ? String(profile.createdAt).trim() : '2026. 01. 01. 00:00:00';
+
+  var nickInput = document.getElementById('settingsModalNicknameInput');
+  var dateEl = document.getElementById('settingsModalJoinDate');
+  var noticeEl = document.getElementById('settingsModalCooldownNotice');
+  var submitBtn = modal.querySelector('button[onclick="saveNicknameFromSettingsModal()"]');
+
+  if (nickInput) {
+    nickInput.value = currentNick;
+    nickInput.disabled = false;
+  }
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.style.opacity = '1';
+    submitBtn.style.cursor = 'pointer';
+  }
+  if (dateEl) dateEl.innerText = joinDate;
+
+  if (noticeEl) {
+    var COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
+    var lastChanged = profile ? (Number(profile.lastNicknameChangedAt) || 0) : 0;
+    var now = Date.now();
+    var elapsed = now - lastChanged;
+
+    if (lastChanged > 0 && elapsed < COOLDOWN_MS) {
+      var remainingMs = COOLDOWN_MS - elapsed;
+      var remDays = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
+      var remHours = Math.ceil((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      var remainText = remDays > 0 ? (remDays + '일 ' + remHours + '시간') : (remHours + '시간');
+
+      noticeEl.innerHTML = '<span style="color:#fda4af; font-size:0.68rem; font-weight:800;">🔒 닉네임 변경 쿨다운 중 (' + remainText + ' 후 변경 가능)</span>';
+      if (nickInput) nickInput.disabled = true;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.4';
+        submitBtn.style.cursor = 'not-allowed';
+      }
+    } else {
+      noticeEl.innerHTML = '<span style="color:#a7f3d0; font-size:0.68rem; font-weight:800;">✓ 지금 바로 닉네임 변경 가능 (변경 후 14일간 유지)</span>';
+    }
+  }
+
+  modal.style.display = 'flex';
+};
+
+window.saveNicknameFromSettingsModal = function() {
+  var input = document.getElementById('settingsModalNicknameInput');
+  if (!input || !input.value.trim()) {
+    showToast('새 닉네임을 입력해주세요.', 'warn');
+    return;
+  }
+  var clean = input.value.trim();
+
+  var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : { isMember: true });
+  var COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
+  var lastChanged = profile ? (Number(profile.lastNicknameChangedAt) || 0) : 0;
+  var now = Date.now();
+  var elapsed = now - lastChanged;
+
+  if (lastChanged > 0 && elapsed < COOLDOWN_MS) {
+    var remainingDays = Math.ceil((COOLDOWN_MS - elapsed) / (1000 * 60 * 60 * 24));
+    triggerHaptic(20);
+    showToast('닉네임은 14일마다 1회 변경 가능합니다. [' + remainingDays + '일 후 가능]', 3500);
+    return;
+  }
+
+  if (profile && profile.nickname === clean) {
+    showToast('현재 사용 중인 닉네임과 동일합니다.', 'info');
+    return;
+  }
+
+  profile.nickname = clean;
+  profile.lastNicknameChangedAt = now;
+  if (!profile.createdAt) {
+    profile.createdAt = getFormattedNow();
+  }
+
+  localStorage.setItem('user_profile', JSON.stringify(profile));
+  if (profile.id) {
+    localStorage.setItem('user_profile_' + profile.id, JSON.stringify(profile));
+    localStorage.setItem('okbm_custom_nickname_' + profile.id, clean);
+  }
+  localStorage.setItem('okbm_user_nick', clean);
+
+  if (typeof authState !== 'undefined') {
+    authState.userProfile = profile;
+    authState.isLoggedIn = true;
+  }
+
+  var headerNick = document.getElementById('reportHeaderCurrentNick');
+  if (headerNick) headerNick.innerText = clean;
+
+  updateHeaderAuthUI();
+  syncUserDataToCloud();
+  triggerHaptic(15);
+  showToast('닉네임이 [' + clean + '] (으)로 변경되었습니다!', 'success', 2500);
+
+  var modal = document.getElementById('userAccountSettingsModal');
+  if (modal) modal.style.display = 'none';
+
+  if (typeof renderSpots === 'function') renderSpots();
+  if (typeof refreshCurrentSpotPopup === 'function') refreshCurrentSpotPopup();
+  if (typeof updateShareCardLive === 'function') updateShareCardLive();
+  if (typeof renderPlanStage === 'function') renderPlanStage();
+  if (typeof renderHistoryStage === 'function') renderHistoryStage();
+};
+
+// 로그아웃 및 세션 완전 롤백
 function logoutUser() {
   triggerHaptic(15);
 
@@ -1191,61 +2409,7 @@ function logoutUser() {
 }
 window.logoutUser = logoutUser;
 
-// ⏱️ 7. 닉네임 변경 및 14일 쿨다운 체크
-function saveNewNicknameFromModal() {
-  var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : { isMember: true });
-  var COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
-  var lastChanged = profile ? (Number(profile.lastNicknameChangedAt) || 0) : 0;
-  var now = Date.now();
-
-  var clockVectorSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; margin-right:4px; vertical-align:-2px; flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
-
-  if (lastChanged > 0 && (now - lastChanged < COOLDOWN_MS)) {
-    var remainingDays = Math.ceil((COOLDOWN_MS - (now - lastChanged)) / (1000 * 60 * 60 * 24));
-    triggerHaptic(20);
-    showToast(clockVectorSvg + ' <span>닉네임은 14일마다 1회 변경 가능합니다. [' + remainingDays + '일 후 가능]</span>', 3500);
-    return;
-  }
-
-  var input = document.getElementById('profileModalNicknameInput');
-  if (!input || !input.value.trim()) {
-    showToast('새 닉네임을 입력해주세요.', 'warn', 2500);
-    return;
-  }
-
-  var clean = input.value.trim();
-  if (profile && profile.nickname === clean) {
-    showToast('현재 사용 중인 닉네임과 동일합니다.', 'info', 2500);
-    return;
-  }
-
-  profile.nickname = clean;
-  profile.lastNicknameChangedAt = now;
-  localStorage.setItem('user_profile', JSON.stringify(profile));
-  if (profile.id) {
-    localStorage.setItem('user_profile_' + profile.id, JSON.stringify(profile));
-    localStorage.setItem('okbm_custom_nickname_' + profile.id, clean);
-  }
-  if (typeof authState !== 'undefined') {
-    authState.userProfile = profile;
-    authState.isLoggedIn = true;
-  }
-
-  updateHeaderAuthUI();
-  syncUserDataToCloud();
-  closeUserProfileModal();
-  triggerHaptic(15);
-
-  showToast('<span>닉네임이 [' + clean + '] (으)로 변경되었습니다!</span>', 'success', 2500);
-
-  if (typeof renderSpots === 'function') renderSpots();
-  if (typeof refreshCurrentSpotPopup === 'function') refreshCurrentSpotPopup();
-  if (typeof updateShareCardLive === 'function') updateShareCardLive();
-  if (typeof renderPlanStage === 'function') renderPlanStage();
-  if (typeof renderHistoryStage === 'function') renderHistoryStage();
-}
-
-// 🔑 8. 카카오 로그인 및 클라우드 데이터 동기화
+// 8. 카카오 로그인 및 클라우드 데이터 동기화
 function loginWithKakao() {
   triggerHaptic(12);
   if (typeof Kakao === 'undefined') {
@@ -1306,16 +2470,21 @@ function loginWithKakao() {
           if (typeof showToast === 'function') {
             showToast('[' + finalNick + ']님 로그인 완료! 클라우드 동기화 중...', 'success', 2000);
           }
-
-          loadUserDataFromCloud(kakaoId).then(function(cloudData) {
+loadUserDataFromCloud(kakaoId).then(function(cloudData) {
             if (cloudData) {
               var sNick = (cloudData.nickname || '').trim();
               if (sNick && sNick !== '낭만루터' && !sNick.includes('ENGINE')) {
                 profile.nickname = sNick;
-                localStorage.setItem('user_profile', JSON.stringify(profile));
-                localStorage.setItem('user_profile_' + kakaoId, JSON.stringify(profile));
-                localStorage.setItem('okbm_user_nick', sNick);
               }
+              if (cloudData.createdAt) {
+                profile.createdAt = cloudData.createdAt;
+              }
+              if (cloudData.lastNicknameChangedAt) {
+                profile.lastNicknameChangedAt = Number(cloudData.lastNicknameChangedAt) || 0;
+              }
+              localStorage.setItem('user_profile', JSON.stringify(profile));
+              localStorage.setItem('user_profile_' + kakaoId, JSON.stringify(profile));
+              localStorage.setItem('okbm_user_nick', profile.nickname);
               if (cloudData.bookmarks && Array.isArray(cloudData.bookmarks)) {
                 localStorage.setItem('okbm_bookmarks', JSON.stringify(cloudData.bookmarks));
               }
@@ -1372,7 +2541,7 @@ function loginWithKakao() {
 }
 window.loginWithKakao = loginWithKakao;
 
-// 📤 9. 커뮤니티 피드 공유 (P열 photoMemos 누락 방지 포함)
+// 9. 커뮤니티 피드 공유
 window.shareFeedToCommunity = async function(feedRecord) {
   if (!feedRecord) return;
   
@@ -1417,7 +2586,6 @@ window.shareFeedToCommunity = async function(feedRecord) {
 
   var mainPhoto = allPhotos.length > 0 ? allPhotos[0] : (feedRecord.photo || feedRecord.fieldPhoto || '');
 
-  // 🛡️ [시트 P열 유실 방어]: photoMemos가 누락되었을 경우 로컬 원본 보관함에서 정밀 복원
   var safePhotoMemos = [];
   if (Array.isArray(feedRecord.photoMemos) && feedRecord.photoMemos.length > 0) {
     safePhotoMemos = feedRecord.photoMemos;
@@ -1466,14 +2634,14 @@ window.shareFeedToCommunity = async function(feedRecord) {
     return res.json();
   }).then(function(data) {
     if (data && data.status === 'SUCCESS') {
-      console.log('✅ [RomanticSync] 공용 피드 전송 및 R2 동기화 성공');
+      console.log('[RomanticSync] 공용 피드 전송 및 R2 동기화 성공');
     }
   }).catch(function(err) {
     console.warn('[RomanticSync] 커뮤니티 피드 전송 실패:', err);
   });
 };
 
-// 🗑️ 10. 커뮤니티 피드 삭제
+// 10. 커뮤니티 피드 삭제
 window.deleteFeedFromCommunity = function(feedId, dateStr) {
   var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : null);
   var userId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('user_auth_token') || '');
@@ -1496,7 +2664,7 @@ window.deleteFeedFromCommunity = function(feedId, dateStr) {
     return res.json();
   }).then(function(data) {
     if (data && data.status === 'SUCCESS') {
-      console.log('✅ [RomanticSync] 공용 피드 서버 영구 삭제 완료');
+      console.log('[RomanticSync] 공용 피드 서버 영구 삭제 완료');
     }
   }).catch(function(err) {
     console.warn('[RomanticSync] 피드 삭제 요청 실패:', err);
