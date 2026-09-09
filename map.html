@@ -1132,11 +1132,27 @@
               var parsed = results.data.map(function(row, idx) {
                 var lat = parseFloat(row.campsite_lat || row.lat || row['위도'] || 0);
                 var lng = parseFloat(row.campsite_lng || row.lng || row['경도'] || 0);
-                var name = (row.spot_main || row.name || row.fullName || row['산이름'] || row['박지명'] || '').trim();
+               var name = (row.spot_main || row.name || row.fullName || row['산이름'] || row['박지명'] || '').trim();
                 var sub = (row.spot_sub || row['세부포인트'] || '').trim();
                 var entry = (row.trailhead_addr || row.entryPoint || row['들머리주소'] || '').trim();
                 var rawMedia = (row.mediaUrls || row.youtubeUrls || row['유튜브'] || '').trim();
+                var rawBlogs = (row.blogUrls || row['블로그'] || '').trim();
                 var autoDetect = detectRegionAndCity(lat, lng, name, entry);
+
+               // 🌐 [스마트 미디어 자동 분류기]: 파이프(|), 슬래시(/), 쉼표(,) 등 어떤 구분자도 실제 URL만 100% 정밀 추출
+                var combinedMediaText = rawMedia + ' ' + rawBlogs;
+                var allLinks = combinedMediaText.match(/https?:\/\/[^\s,|<>"'\]]+/g) || [];
+                var parsedYt = [];
+                var parsedBlog = [];
+
+                allLinks.forEach(function(u) {
+                  var cleanUrl = u.trim().replace(/[,\s|]+$/, '');
+                  if (cleanUrl.includes('youtu.be') || cleanUrl.includes('youtube.com')) {
+                    if (!parsedYt.includes(cleanUrl)) parsedYt.push(cleanUrl);
+                  } else if (cleanUrl.includes('blog.naver.com') || cleanUrl.includes('blog.me') || cleanUrl.includes('tistory.com') || cleanUrl.includes('brunch.co.kr')) {
+                    if (!parsedBlog.includes(cleanUrl)) parsedBlog.push(cleanUrl);
+                  }
+                });
 
                 return {
                   id: String(row.id || (idx + 1)).trim(),
@@ -1152,8 +1168,8 @@
                   entryPoint: entry,
                   desc_summary: row.desc_summary || row.desc || row['설명'] || '',
                   desc: row.desc || row.desc_summary || '',
-                  youtubeUrls: rawMedia.split(/[\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean),
-                  blogUrls: (row.blogUrls || row['블로그'] || '').split(/[\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean),
+                  youtubeUrls: parsedYt,
+                  blogUrls: parsedBlog,
                   authorSnsUrl: row.authorSnsUrl || row['인스타'] || '',
                   courseType: row.courseType || row['코스유형'] || '일반',
                   terrain: (row.terrain || row['지형'] || '데크').split(/[,]+/).map(function(t){ return t.trim(); }),
@@ -1182,9 +1198,8 @@
         } catch (e) {}
       }
 
-      if (!isCacheValid) {
-        loadSpotsMasterEngine();
-      }
+    // 🚀 [시트 변경사항 100% 즉시 반영]: 캐시 여부와 무관하게 항상 최신 시트 데이터를 백그라운드 동기화
+      loadSpotsMasterEngine();
       // 🗺️ 지도 마커 / 오버레이 / UI 상태 전역 변수
       var spotNativeMarkerMap = new Map();
       var spotLabelOverlayMap = new Map();
@@ -2560,11 +2575,47 @@ function updateSmartResetButtons() {
               <div style="display:flex; align-items:center; gap:6px;" onclick="event.stopPropagation();">${adminTopActions}${closeBtn}</div>
             </div>
 
-            ${cleanSubName ? `
-              <div style="display:flex; align-items:center; margin: 4px 0 2px 0; width:100%;">
-                <span class="badge-sub-point" style="margin:0;">${ICONS.PIN} ${escapeHtml(cleanSubName)}</span>
+          <!-- 2행: 좌측 세부 포인트 ── 우측 등록자(구형: 오라네) + SNS 미니 아이콘 -->
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin:4px 0 3px 0; width:100%; min-height:24px;">
+              <div style="display:flex; align-items:center; min-width:0; flex:1;">
+                ${cleanSubName ? `<span class="badge-sub-point" style="margin:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${ICONS.PIN} ${escapeHtml(cleanSubName)}</span>` : ''}
               </div>
-            ` : ''}
+
+              ${(function() {
+                var rawAuthor = String(spot.author || spot.authorNick || spot.nickname || '').trim();
+                var authorUrl = String(spot.authorSnsUrl || '').trim();
+
+                var authorName = rawAuthor;
+                if (!authorName && authorUrl) {
+                  var m = authorUrl.replace(/[@\s]/g, '').match(/(?:instagram\.com\/|youtube\.com\/(?:@)?)([\w\-_\.]+)/i);
+                  if (m && m[1]) authorName = m[1];
+                }
+                if (!authorName) authorName = '오라네';
+
+                var targetLink = authorUrl;
+                if (!targetLink) {
+                  targetLink = 'https://instagram.com/oklionnature';
+                }
+
+                var isYt = targetLink.includes('youtube.com') || targetLink.includes('youtu.be');
+                var isInsta = targetLink.includes('instagram.com') || (!isYt && targetLink.startsWith('@'));
+
+                var snsIconSvg = '';
+                if (isYt) {
+                  snsIconSvg = '<svg viewBox="0 0 24 24" style="width:12px; height:12px; flex-shrink:0;" fill="#f43f5e"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.4 31.4 0 0 0 0 12a31.4 31.4 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1 31.4 31.4 0 0 0 .5-5.8 31.4 31.4 0 0 0-.5-5.8z"/><polygon points="9.6 15.6 15.8 12 9.6 8.4 9.6 15.6" fill="#ffffff"/></svg>';
+                } else {
+                  snsIconSvg = '<svg viewBox="0 0 24 24" style="width:11px; height:11px; flex-shrink:0;" fill="#cbd5e1"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>';
+                }
+
+                return `
+                  <a href="${escapeHtml(targetLink)}" target="_blank" rel="noopener noreferrer" onclick="triggerHaptic(8); event.stopPropagation();" style="display:inline-flex; align-items:center; gap:4px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); padding:2px 7px; border-radius:12px; text-decoration:none; flex-shrink:0;" title="등록자 프로필 바로가기">
+                    <span style="font-size:0.63rem; color:#94a3b8; font-weight:700;">제보</span>
+                    <span style="font-size:0.68rem; color:#38bdf8; font-weight:900;">${escapeHtml(authorName)}</span>
+                    ${snsIconSvg}
+                  </a>
+                `;
+              })()}
+            </div>
 
             <div style="display:flex; align-items:center; gap:4px; margin: 2px 0 3px 0; width:100%; overflow-x:auto; white-space:nowrap; scrollbar-width:none; flex-wrap:nowrap;">
               ${getMetaBadgesHtml(spot)}
@@ -2574,7 +2625,6 @@ function updateSmartResetButtons() {
  <div class="spot-live-weather-bar" style="margin: 2px 0 4px 0; display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
               ${sunset ? `<span class="weather-chip" style="color:#f59e0b; font-weight:800; background:rgba(245,158,11,0.15); border:1.2px solid rgba(245,158,11,0.5);">${ICONS.SUNSET} 일몰 ${sunset}</span>` : ''}
               <div id="liveWeatherBox_${spot.id}" style="display:inline-flex; gap:4px;"><span class="weather-chip">${ICONS.TEMP} 기상 연동 완료</span></div>
-              <div class="spot-coords-text" style="font-size:0.65rem; padding:1px 5px;">${ICONS.PIN} ${spot.lat}, ${spot.lng}</div>
             </div>
 
             ${renderSpotFieldFeedsTrackHtml(spot)}
@@ -2609,7 +2659,7 @@ function updateSmartResetButtons() {
                 </button>
               </div>
             ` : `
-             <div class="entry-module-container">
+             <div class="entry-module-container" style="position:relative; width:100%; display:flex; flex-direction:column; gap:4px; margin:4px 0;">
                 <div class="entry-row-1">
                   <a href="javascript:void(0)" onclick="navigateToNaviApp('kakao', this.dataset.name, this.dataset.addr, ${spot.lat}, ${spot.lng})" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}" class="entry-address-2line">${ICONS.NAV} ${escapeHtml(tName)}: ${cleanAddress} ↗</a>
                   <button type="button" class="btn-copy-entry" onclick="copyTextToClipboard(this.dataset.addr)" data-addr="${cleanAddress}">${ICONS.COPY} 복사</button>
@@ -2621,10 +2671,17 @@ function updateSmartResetButtons() {
                   <button type="button" class="navi-btn-cell cell-naver" onclick="navigateToNaviApp('naver', this.dataset.name, this.dataset.addr, ${spot.lat}, ${spot.lng})" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}">네이버</button>
                   <button type="button" class="navi-btn-cell cell-reserve" onclick="navigateToNaviApp('roadview', this.dataset.name, this.dataset.addr, ${spot.lat}, ${spot.lng})" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}">${ICONS.ROADVIEW} 로드뷰</button>
                 </div>
+
+                ${summary.access ? `
+                  <div class="summary-card summary-card-access" style="margin-top:2px;">
+                    <div class="summary-card-title" style="color:#2dd4bf;">${ICONS.TRAIL_CARD} [접근/코스]</div>
+                    <div>${escapeHtml(summary.access)}</div>
+                  </div>` : ''}
+
                 ${!isUnlocked ? `
                   <div class="entry-lock-overlay-tight" id="entryLockOverlay_${sId}" onclick="triggerSpotUnlock('${sId}', '${escapeHtml(targetUnlockLink)}')">
-                    <span class="lock-main-text">${ICONS.LOCK} 클릭 시 들머리 주소 및 4대 내비 공개</span>
-                    <span class="lock-sub-text">K-LNT 서약 후 상세 목적지와 길안내가 열립니다</span>
+                    <span class="lock-main-text">${ICONS.LOCK} 클릭 시 들머리 주소, 4대 내비 & 실전 코스 공개</span>
+                    <span class="lock-sub-text">K-LNT 서약 후 상세 목적지와 코스 안내가 열립니다</span>
                   </div>` : ''}
 
                 ${spot.gpxUrl ? `
@@ -2635,11 +2692,6 @@ function updateSmartResetButtons() {
               </div>
 
               <div class="summary-block-wrap">
-                ${summary.access ? `
-                  <div class="summary-card summary-card-access">
-                    <div class="summary-card-title" style="color:#2dd4bf;">${ICONS.TRAIL_CARD} [접근/코스]</div>
-                    <div>${escapeHtml(summary.access)}</div>
-                  </div>` : ''}
                 ${summary.pitch ? `
                   <div class="summary-card summary-card-pitch">
                     <div class="summary-card-title" style="color:#10b981;">${ICONS.PITCH_CARD} [박지/피칭]</div>
@@ -2653,19 +2705,34 @@ function updateSmartResetButtons() {
               </div>
             `}
 
-            <div class="spot-action-line">
-              ${(spot.youtubeUrls || []).slice(0, 2).map((url, i) => `<a href="${escapeHtml(cleanYouTubeUrl(url))}" target="_blank" rel="noopener noreferrer" class="link-btn btn-yt" onclick="triggerHaptic(10);">▶ YouTube 영상${(spot.youtubeUrls.length > 1 ? ` (${i + 1})` : '')}</a>`).join('')}
-              ${(spot.blogUrls || []).slice(0, 2).map((url, i) => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="link-btn btn-blog" onclick="triggerHaptic(10);">${ICONS.MEMO} 블로그 후기${(spot.blogUrls.length > 1 ? ` (${i + 1})` : '')}</a>`).join('')}
-              <a href="${escapeHtml(spot.authorSnsUrl || 'https://instagram.com/oklionnature')}" target="_blank" rel="noopener noreferrer" class="link-btn btn-insta" title="등록자 프로필 / SNS" onclick="triggerHaptic(10);"><span>${ICONS.ROADVIEW} 등록자 프로필</span></a>
-            </div>
+    <!-- 실전 미디어 허브: [토스형 듀얼 탭 ➔ 화면 어두움 0% 인라인 서랍 전개] -->
+            ${(function() {
+              var cleanSpot = escapeHtml(spot.spot_main || spot.name || '박지');
+              var ytCount = (spot.youtubeUrls && spot.youtubeUrls.length > 0) ? spot.youtubeUrls.length : 1;
+              var blogCount = (spot.blogUrls && spot.blogUrls.length > 0) ? spot.blogUrls.length : 1;
 
-            <div class="user-private-memo-box">
-              <div class="user-private-memo-header">
-                <span style="display:flex; align-items:center; gap:3px;">${ICONS.MEMO} 나만의 비밀 메모 (회원 전용)</span>
-                <button type="button" style="background:none; border:none; color:var(--accent-blue); font-size:0.72rem; font-weight:700; cursor:pointer;" onclick="saveUserPrivateMemo('${sId}', document.getElementById('privateMemoInput_${sId}').value)">저장</button>
-              </div>
-              <textarea id="privateMemoInput_${sId}" class="user-private-memo-input" placeholder="${isMember ? '예: 2번 데크 명당, 모기향 필수...' : '로그인 후 작성하실 수 있습니다.'}" rows="1" ${!isMember ? 'disabled' : ''}>${escapeHtml(memoText)}</textarea>
-            </div>
+              return `
+                <div style="display:flex; flex-direction:column; width:100%; margin-top:6px; box-sizing:border-box;">
+                  <!-- 상단 듀얼 버튼 -->
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; width:100%;">
+                    <button type="button" id="btnMediaTab_yt_${sId}" data-type="yt" data-id="${sId}" onclick="window.handleSpotMediaTabClick(this);" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:10px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; color:#ffffff; transition:all 0.15s ease;">
+                      <svg viewBox="0 0 24 24" style="width:14px; height:14px; flex-shrink:0;" fill="#f43f5e"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31.4 31.4 0 0 0 0 12a31.4 31.4 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1 31.4 31.4 0 0 0 .5-5.8 31.4 31.4 0 0 0-.5-5.8z"/><polygon points="9.6 15.6 15.8 12 9.6 8.4 9.6 15.6" fill="#ffffff"/></svg>
+                      <span style="font-size:0.75rem; font-weight:800;">YouTube</span>
+                      <span style="font-size:0.65rem; color:#f43f5e; font-weight:900; font-family:'Space Grotesk',sans-serif;">${ytCount}</span>
+                    </button>
+
+                    <button type="button" id="btnMediaTab_blog_${sId}" data-type="blog" data-id="${sId}" onclick="window.handleSpotMediaTabClick(this);" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:10px; display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; color:#ffffff; transition:all 0.15s ease;">
+                      <div style="width:14px; height:14px; border-radius:3px; background:#03c75a; display:flex; align-items:center; justify-content:center; font-family:'Space Grotesk',sans-serif; font-size:0.62rem; font-weight:900; color:#fff; flex-shrink:0;">N</div>
+                      <span style="font-size:0.75rem; font-weight:800;">블로그</span>
+                      <span style="font-size:0.65rem; color:#34d399; font-weight:900; font-family:'Space Grotesk',sans-serif;">${blogCount}</span>
+                    </button>
+                  </div>
+
+                  <!-- 딤드 없이 바로 밑에서 스르륵 열리는 인라인 서랍 -->
+                  <div id="spotMediaDrawerBox_${sId}" data-opened="none" style="display:none; flex-direction:column; gap:6px; margin-top:6px; width:100%; box-sizing:border-box;"></div>
+                </div>
+              `;
+            })()}
 
             <div class="app-disclaimer-box">
               <ul>
@@ -2677,7 +2744,237 @@ function updateSmartResetButtons() {
             </div>
           </div>`;
       }
+// 🌐 [유튜브 & 네이버 블로그 실제 메타데이터 비동기 파서 및 캐시 엔진]
+      window.__ytMetaCache = window.__ytMetaCache || {};
+      window.__blogMetaCache = window.__blogMetaCache || {};
 
+      window.fetchYouTubeRealTitle = async function(url, domId, fallbackTitle) {
+        if (!url) return;
+        var cleanUrl = cleanYouTubeUrl(url);
+        if (window.__ytMetaCache[cleanUrl]) {
+          var el = document.getElementById(domId);
+          if (el) el.innerText = window.__ytMetaCache[cleanUrl];
+          return;
+        }
+
+        try {
+          var res = await fetch('https://noembed.com/embed?url=' + encodeURIComponent(cleanUrl));
+          if (res.ok) {
+            var data = await res.json();
+            if (data && data.title) {
+              window.__ytMetaCache[cleanUrl] = data.title;
+              var targetEl = document.getElementById(domId);
+              if (targetEl) targetEl.innerText = data.title;
+              return;
+            }
+          }
+        } catch (e) {}
+
+        var finalEl = document.getElementById(domId);
+        if (finalEl && fallbackTitle) finalEl.innerText = fallbackTitle;
+      };
+
+      window.handleSpotMediaTabClick = function(btn) {
+        if (!btn || !btn.dataset) return;
+        var type = btn.dataset.type;
+        var sId = btn.dataset.id;
+        var targetSpot = (spots || []).find(function(s) { return String(s.id).trim() === String(sId).trim(); });
+        var spotName = targetSpot ? (targetSpot.spot_main || targetSpot.name || '박지') : '박지';
+        var list = [];
+        if (targetSpot) {
+          list = (type === 'yt') ? (targetSpot.youtubeUrls || []) : (targetSpot.blogUrls || []);
+        }
+        window.toggleSpotMediaDrawer(type, sId, spotName, list);
+      };
+
+window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallbackTitle) {
+        if (!url) return;
+        var cleanUrl = String(url).trim();
+        
+        // 메모리 캐시 최우선 인출 (0.001초 인출)
+        if (window.__blogMetaCache[cleanUrl]) {
+          var cached = window.__blogMetaCache[cleanUrl];
+          var tEl = document.getElementById(titleDomId);
+          var bEl = document.getElementById(titleDomId + '_blogName');
+          if (tEl && cached.title) tEl.innerText = cached.title;
+          if (bEl && cached.blogName) bEl.innerText = cached.blogName;
+          return;
+        }
+
+        try {
+          var blogId = '';
+          var naverMatch = cleanUrl.match(/blog\.naver\.com\/([a-zA-Z0-9_-]+)\/([0-9]+)/);
+          if (naverMatch) {
+            blogId = naverMatch[1];
+          }
+
+          // 본문 직통 PostView 주소로 실제 글제목 및 닉네임 수급
+          var targetFetchUrl = cleanUrl;
+          if (naverMatch) {
+            targetFetchUrl = 'https://blog.naver.com/PostView.naver?blogId=' + blogId + '&logNo=' + naverMatch[2];
+          }
+
+          var apiUrl = 'https://api.microlink.io/?url=' + encodeURIComponent(targetFetchUrl);
+          var res = await fetch(apiUrl);
+          if (res.ok) {
+            var json = await res.json();
+            if (json && json.status === 'success' && json.data) {
+              var realTitle = json.data.title || '';
+              
+              // 🌟 [한글 블로그 닉네임(삶에 기록) 1순위 추출 엔진]
+              var rawNick = json.data.author || json.data.publisher || '';
+              rawNick = rawNick.replace(/\s*[:\-]\s*네이버\s*블로그\s*$/i, '').trim();
+              if (rawNick === 'Naver' || rawNick === '네이버 블로그' || rawNick === '네이버') {
+                rawNick = '';
+              }
+
+              // 네이버 블로그 특유의 사족 후미 문구 정돈
+              realTitle = realTitle.replace(/\s*[:\-]\s*네이버\s*블로그\s*$/i, '').trim();
+
+              // 한글 닉네임 1순위 적용 (없을 경우에만 보조 텍스트 활용)
+              var displayBlogName = rawNick || (blogId ? '@' + blogId : '실전 캠퍼');
+
+              if (realTitle) {
+                window.__blogMetaCache[cleanUrl] = { title: realTitle, blogName: displayBlogName };
+                
+                var targetTitleEl = document.getElementById(titleDomId);
+                var targetBlogEl = document.getElementById(titleDomId + '_blogName');
+
+                if (targetTitleEl && realTitle) targetTitleEl.innerText = realTitle;
+                if (targetBlogEl && displayBlogName) targetBlogEl.innerText = displayBlogName;
+                return;
+              }
+            }
+          }
+        } catch (e) {}
+
+        // 최종 폴백 바인딩
+        var finalTitleEl = document.getElementById(titleDomId);
+        if (finalTitleEl && fallbackTitle) finalTitleEl.innerText = fallbackTitle;
+      };
+
+      // 📱 [유튜브 실제 제목 자동 바인딩 & 메인 16:9 대형 썸네일 + 추가 영상 순차 서랍 엔진]
+      window.toggleSpotMediaDrawer = function(type, spotId, spotName, rawList) {
+        triggerHaptic(8);
+        var drawer = document.getElementById('spotMediaDrawerBox_' + spotId);
+        var btnYt = document.getElementById('btnMediaTab_yt_' + spotId);
+        var btnBlog = document.getElementById('btnMediaTab_blog_' + spotId);
+        if (!drawer) return;
+
+        var currentOpened = drawer.dataset.opened || 'none';
+        var list = Array.isArray(rawList) ? rawList.filter(Boolean) : [];
+        var isYt = (type === 'yt');
+
+        if (list.length === 0) {
+          list = [isYt 
+            ? ('https://www.youtube.com/results?search_query=' + encodeURIComponent(spotName + ' 백패킹'))
+            : ('https://search.naver.com/search.naver?where=view&query=' + encodeURIComponent(spotName + ' 백패킹'))
+          ];
+        }
+
+        if (currentOpened === type && drawer.style.display !== 'none') {
+          drawer.style.display = 'none';
+          drawer.dataset.opened = 'none';
+          if (btnYt) { btnYt.style.borderColor = 'rgba(255,255,255,0.12)'; btnYt.style.background = 'rgba(255,255,255,0.04)'; }
+          if (btnBlog) { btnBlog.style.borderColor = 'rgba(255,255,255,0.12)'; btnBlog.style.background = 'rgba(255,255,255,0.04)'; }
+          return;
+        }
+
+        if (isYt) {
+          if (btnYt) { btnYt.style.borderColor = '#f43f5e'; btnYt.style.background = 'rgba(244,63,94,0.12)'; }
+          if (btnBlog) { btnBlog.style.borderColor = 'rgba(255,255,255,0.12)'; btnBlog.style.background = 'rgba(255,255,255,0.04)'; }
+        } else {
+          if (btnBlog) { btnBlog.style.borderColor = '#10b981'; btnBlog.style.background = 'rgba(16,185,129,0.12)'; }
+          if (btnYt) { btnYt.style.borderColor = 'rgba(255,255,255,0.12)'; btnYt.style.background = 'rgba(255,255,255,0.04)'; }
+        }
+
+       if (isYt) {
+          // 🎬 유튜브: 영상 미디어 본연의 시원한 [50% 16:9 와이드 썸네일 : 50% 실제 영상 제목] 복원
+          var ytCardsHtml = list.map(function(u, idx) {
+            var ytId = '';
+            var m = u.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/)?)([\w\-]{11})/i);
+            if (m && m[1]) ytId = m[1];
+            var thumb = ytId ? ('https://img.youtube.com/vi/' + ytId + '/mqdefault.jpg') : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';
+            var targetUrl = cleanYouTubeUrl(u);
+            var titleDomId = 'ytRealTitle_' + spotId + '_' + idx;
+            var cachedTitle = window.__ytMetaCache[cleanYouTubeUrl(u)];
+
+            if (!cachedTitle) {
+              setTimeout(function() {
+                window.fetchYouTubeRealTitle(u, titleDomId, spotName);
+              }, 10);
+            }
+
+            return `
+              <a href="${escapeHtml(targetUrl)}" target="_blank" rel="noopener noreferrer" onclick="triggerHaptic(10);" style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:5px; text-decoration:none; box-sizing:border-box; width:100%;">
+                <!-- 좌측 50%: 시원한 16:9 영상 썸네일 -->
+                <div style="flex:0 0 calc(50% - 4px); width:calc(50% - 4px); aspect-ratio:16/9; border-radius:6px; overflow:hidden; background:#000; position:relative; box-sizing:border-box;">
+                  <img src="${thumb}" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';" />
+                  <div style="position:absolute; inset:0; background:rgba(0,0,0,0.18); display:flex; align-items:center; justify-content:center;">
+                    <div style="width:24px; height:24px; border-radius:50%; background:rgba(0,0,0,0.65); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(2px);">
+                      <svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-left:1px;" fill="#ffffff"><polygon points="9.6 15.6 15.8 12 9.6 8.4 9.6 15.6"/></svg>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 우측 50%: 실제 유튜브 원본 제목 2줄 칼정렬 -->
+                <div style="flex:0 0 calc(50% - 4px); width:calc(50% - 4px); padding:0 4px 0 2px; box-sizing:border-box;">
+                  <div id="${titleDomId}" style="font-size:0.79rem; font-weight:800; color:#ffffff; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; word-break:break-all;">
+                    ${escapeHtml(cachedTitle || spotName)}
+                  </div>
+                </div>
+              </a>
+            `;
+          }).join('');
+
+          drawer.innerHTML = ytCardsHtml;
+        } else {
+          // 🌟 네이버 블로그: 깨지는 엑박 썸네일 완전 철거 ➔ [1행: N 블로그명(@아이디)] + [2행: 실제 글제목] 100% 클린 카드
+          var blogCardsHtml = list.map(function(u, idx) {
+            var titleDomId = 'blogRealTitle_' + spotId + '_' + idx;
+            var cachedMeta = window.__blogMetaCache[String(u).trim()];
+
+           // 초기 블로그 닉네임 로딩 라벨
+            var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName : '블로그 후기 ';
+
+            if (!cachedMeta) {
+              setTimeout(function() {
+                window.fetchNaverBlogRealMeta(u, titleDomId, null, spotName + ' 후기');
+              }, 10);
+            }
+
+            var initialTitle = (cachedMeta && cachedMeta.title) ? cachedMeta.title : (spotName + ' 후기');
+            var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName : (rawId || '블로그');
+
+            return `
+              <a href="${escapeHtml(u)}" target="_blank" rel="noopener noreferrer" onclick="triggerHaptic(10);" style="display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:46px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:6px 10px; text-decoration:none; box-sizing:border-box; width:100%; transition:background 0.15s ease;">
+                <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
+                  <!-- 1행: [N] 네이버 뱃지 + 블로그 주인 이름/아이디 -->
+                  <div style="display:flex; align-items:center; gap:5px;">
+                    <span style="display:inline-flex; align-items:center; justify-content:center; background:#03c75a; color:#ffffff; font-size:0.55rem; font-weight:900; padding:0 3px; height:13px; border-radius:2px; font-family:'Space Grotesk',sans-serif; flex-shrink:0;">N</span>
+                    <span id="${titleDomId}_blogName" style="font-size:0.64rem; font-weight:800; color:#34d399; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                      ${escapeHtml(initialBlogName)}
+                    </span>
+                  </div>
+
+                  <!-- 2행: 실제 블로그 포스팅 제목 원본 -->
+                  <div id="${titleDomId}" style="font-size:0.76rem; font-weight:700; color:#f1f5f9; line-height:1.35; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; word-break:break-all;">
+                    ${escapeHtml(initialTitle)}
+                  </div>
+                </div>
+
+                <!-- 우측 링크 이동 앵글 아이콘 -->
+                <div style="color:#64748b; font-size:0.85rem; font-weight:800; flex-shrink:0; padding-left:4px;">›</div>
+              </a>
+            `;
+          }).join('');
+
+          drawer.innerHTML = blogCardsHtml;
+        }
+
+        drawer.style.display = 'flex';
+        drawer.dataset.opened = type;
+      };
       // 🏷️ [누락 복원] 지형 & 난이도 메타 배지 생성 엔진
       function getMetaBadgesHtml(spot) {
         var html = '<div style="display:inline-flex; align-items:center; gap:3px; flex-wrap:nowrap; white-space:nowrap;">';
@@ -2685,7 +2982,7 @@ function updateSmartResetButtons() {
           if (t.includes('데크')) html += `<span class="meta-tag tag-terrain-deck">${ICONS.DECK}데크</span>`;
           else if (t.includes('암릉') || t.includes('바위') || t.includes('돌')) html += `<span class="meta-tag tag-terrain-rock">${ICONS.ROCK}암릉</span>`;
           else if (t.includes('노지')) html += `<span class="meta-tag tag-terrain-soil">${ICONS.SOIL}노지</span>`;
-          else if (t.includes('해변') || t.includes('모래')) html += `<span class="meta-tag tag-terrain-beach">${ICONS.BEACH}해변</span>`;
+          else if (t.includes('해변')) html += `<span class="meta-tag tag-terrain-beach">${ICONS.BEACH}해변</span>`;
           else if (t.includes('섬')) html += `<span class="meta-tag tag-terrain-island">${ICONS.ISLAND}섬</span>`;
           else if (t.includes('계곡')) html += `<span class="meta-tag tag-terrain-valley">${ICONS.VALLEY}계곡</span>`;
           else if (t.includes('동굴')) html += `<span class="meta-tag tag-terrain-rock">${ICONS.CAVE}동굴</span>`;
@@ -2897,9 +3194,30 @@ function updateSmartResetButtons() {
         var spotTitle = targetFeed.spot || '';
         var weightStr = targetFeed.weightKg ? (targetFeed.weightKg + 'kg') : '';
         var memoText = (targetFeed.memo || targetFeed.oneLineMemo || '').trim();
-        var rawInsta = targetFeed.instagram || '';
+     var rawInsta = targetFeed.instagram || '';
         var cleanInsta = String(rawInsta).replace(/[@\s]/g, '').trim();
         var recordUserId = String(targetFeed.userId || '').trim();
+
+        // 🛡️ [사진별 메모 정밀 역직렬화]: 1번, 2번, 3번 사진 매핑 복원
+        var photoMemosArr = [];
+        if (Array.isArray(targetFeed.photoMemos)) {
+          photoMemosArr = targetFeed.photoMemos.map(function(m) { return String(m || '').trim(); });
+        } else if (targetFeed.photoMemos && typeof targetFeed.photoMemos === 'string' && targetFeed.photoMemos.trim().startsWith('[')) {
+          try { photoMemosArr = JSON.parse(targetFeed.photoMemos); } catch(e) { photoMemosArr = []; }
+        } else if (targetFeed.photo_memos_json && typeof targetFeed.photo_memos_json === 'string' && targetFeed.photo_memos_json.trim().startsWith('[')) {
+          try { photoMemosArr = JSON.parse(targetFeed.photo_memos_json); } catch(e) { photoMemosArr = []; }
+        }
+        if (!Array.isArray(photoMemosArr)) photoMemosArr = [];
+        photoMemosArr = photoMemosArr.map(function(m) { return String(m || '').trim(); });
+
+        while (photoMemosArr.length < Math.max(1, photos.length)) {
+          photoMemosArr.push('');
+        }
+        if (!photoMemosArr[0] && memoText) {
+          photoMemosArr[0] = memoText;
+        }
+
+        var initialMemo = photoMemosArr[0] || memoText || '';
 
         var starsMap = safeGetJSON('okbm_feed_stars_counts', {}) || {};
         var userStarsMap = safeGetJSON('okbm_feed_stars_map', {}) || {};
@@ -2971,7 +3289,7 @@ function updateSmartResetButtons() {
 
             <!-- 중앙: 시원한 정본 3:4 고화질 사진 슬라이더 -->
             <div style="width:100%; aspect-ratio:3/4; position:relative; background:#000; overflow:hidden; flex-shrink:0;">
-              <div id="mapHeroPhotoTrack" onscroll="window.updateMapHeroDots(this);" style="display:flex; width:100%; height:100%; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none;">
+              <div id="mapHeroPhotoTrack" data-default-memo="${escapeHtml(memoText)}" data-memos="${escapeHtml(JSON.stringify(photoMemosArr))}" onscroll="window.updateMapHeroDots(this);" style="display:flex; width:100%; height:100%; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none;">
                 ${slidesHtml}
               </div>
             </div>
@@ -2984,7 +3302,7 @@ function updateSmartResetButtons() {
                     <svg id="feedStarIcon_${cardId}" viewBox="0 0 24 24" style="width:18px; height:18px; filter:${isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none'};" fill="${isStarred ? '#fde047' : 'none'}" stroke="${isStarred ? '#fde047' : '#ffffff'}" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                     <span id="feedStarCountText_${cardId}" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:'Space Grotesk', sans-serif;">${likesCount}</span>
                   </button>
-                <button type="button" data-feed-id="${cardId}" data-spot="${escapeHtml(spotTitle)}" data-memo="${escapeHtml(memoText)}" onclick="if(typeof window.shareCurrentFeed==='function'){ window.shareCurrentFeed(this.dataset.feedId, this.dataset.spot, this.dataset.memo); } else { triggerHaptic(10); if(navigator.clipboard){ navigator.clipboard.writeText(location.href); if(typeof showToast==='function') showToast('🔗 피드 링크가 복사되었습니다!','success'); } }" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">
+                  <button type="button" data-feed-id="${cardId}" data-spot="${escapeHtml(spotTitle)}" data-memo="${escapeHtml(memoText)}" onclick="if(typeof window.shareCurrentFeed==='function'){ window.shareCurrentFeed(this.dataset.feedId, this.dataset.spot, this.dataset.memo); } else { triggerHaptic(10); if(navigator.clipboard){ navigator.clipboard.writeText(location.href); if(typeof showToast==='function') showToast('🔗 피드 링크가 복사되었습니다!','success'); } }" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">
                     <svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                   </button>
                   <button type="button" data-feed-id="${cardId}" onclick="window.toggleSaveFeed(this.dataset.feedId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:${isSavedFeed ? '#c084fc' : '#cbd5e1'};" title="관심피드 저장">
@@ -3005,9 +3323,9 @@ function updateSmartResetButtons() {
                 </div>
               </div>
 
-              <!-- 캠퍼의 120자 실제 일지 메모장 본문 -->
-              <div style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.07); border-radius:8px; padding:10px 12px; font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.80rem; font-weight:450; color:#e2e8f0; line-height:1.6; word-break:break-all; max-height:130px; overflow-y:auto;">
-                ${memoText ? escapeHtml(memoText) : '<span style="color:#64748b;">등록된 일지 메모가 없습니다.</span>'}
+             <!-- 캠퍼의 사진별 120자 실시간 연동 일지 메모장 (세 줄 높이 완벽 고정 & 이중 외곽선 제거) -->
+              <div id="mapFeedPhotoMemoText" style="width:100%; height:4.2em !important; min-height:4.2em !important; max-height:4.2em !important; line-height:1.4em !important; font-family:'Pretendard Variable', -apple-system, BlinkMacSystemFont, sans-serif !important; font-size:0.78rem !important; font-weight:450 !important; color:#e2e8f0 !important; word-break:break-all !important; display:-webkit-box !important; -webkit-line-clamp:3 !important; -webkit-box-orient:vertical !important; overflow:hidden !important; text-overflow:ellipsis !important; letter-spacing:-0.01em !important; padding:2px 2px 0 2px !important; margin:0 !important; background:transparent !important; border:none !important; box-sizing:border-box !important;">
+                ${initialMemo ? escapeHtml(initialMemo) : '<span style="color:#64748b;">등록된 일지 메모가 없습니다.</span>'}
               </div>
             </div>
 
@@ -3016,19 +3334,41 @@ function updateSmartResetButtons() {
 
         document.body.appendChild(modalEl);
       };
+
       window.updateMapHeroDots = function(container) {
+        if (!container) return;
+        var width = container.offsetWidth;
+        if (!width) return;
+        var idx = Math.round(container.scrollLeft / width);
+
+        // 1. 도트 인디케이터 동기화
         var wrap = document.getElementById('mapHeroDotsWrap');
-        if (!wrap || !container) return;
-        var idx = Math.round(container.scrollLeft / container.offsetWidth);
-        var dots = wrap.children;
-        for (var i = 0; i < dots.length; i++) {
-          if (i === idx) {
-            dots[i].style.width = '12px';
-            dots[i].style.background = '#ffffff';
-          } else {
-            dots[i].style.width = '4px';
-            dots[i].style.background = 'rgba(255,255,255,0.28)';
+        if (wrap) {
+          var dots = wrap.children;
+          for (var i = 0; i < dots.length; i++) {
+            if (i === idx) {
+              dots[i].style.width = '12px';
+              dots[i].style.background = '#ffffff';
+            } else {
+              dots[i].style.width = '4px';
+              dots[i].style.background = 'rgba(255,255,255,0.28)';
+            }
           }
+        }
+
+        // 2. 1번 사진 ➔ 1번 메모, 2번 사진 ➔ 2번 메모 실시간 교체
+        var memoEl = document.getElementById('mapFeedPhotoMemoText');
+        if (memoEl && container.dataset.memos) {
+          try {
+            var memos = JSON.parse(container.dataset.memos);
+            var curText = (Array.isArray(memos) && memos[idx] !== undefined) ? String(memos[idx] || '').trim() : '';
+            if (!curText && idx === 0 && container.dataset.defaultMemo) {
+              curText = String(container.dataset.defaultMemo || '').trim();
+            }
+            memoEl.innerHTML = (curText && curText.length > 0)
+              ? escapeHtml(curText)
+              : '<span style="color:#64748b;">이 사진에 등록된 현장 메모가 없습니다.</span>';
+          } catch(e) {}
         }
       };
 
