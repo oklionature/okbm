@@ -255,9 +255,34 @@
       border-radius: 12px;
     }
 
-    @keyframes heroCardShimmerGlow {
-      0% { background-position: -200% 0; }
-      100% { background-position: 200% 0; }
+    /* 🚀 [앱 전역 가로 스와이프 하드웨어 감속 엔진 - 저사양 관성 이탈 방지] */
+    #heroPhotoSwipeTrack,
+    .n-rail-slider,
+    .reel-slider-track,
+    .story-swipe-track,
+    [data-swipe-track],
+    [style*="scroll-snap-type: x mandatory"],
+    [style*="scroll-snap-type:x mandatory"] {
+      scroll-snap-type: x mandatory !important;
+      -webkit-overflow-scrolling: touch !important;
+      overscroll-behavior-x: contain !important;
+      touch-action: pan-x pan-y !important;
+    }
+
+    #heroPhotoSwipeTrack > *,
+    .n-rail-slider > *,
+    .reel-slider-track > *,
+    .story-swipe-track > *,
+    [data-swipe-track] > *,
+    [style*="scroll-snap-type: x mandatory"] > *,
+    [style*="scroll-snap-type:x mandatory"] > * {
+      scroll-snap-align: center !important;
+      scroll-snap-stop: always !important;
+      will-change: transform !important;
+      transform: translateZ(0) !important;
+      -webkit-transform: translateZ(0) !important;
+      backface-visibility: hidden !important;
+      -webkit-backface-visibility: hidden !important;
     }
     .insta-card {
       position: relative;
@@ -1990,33 +2015,49 @@
       }
     };
 
-    // 🎒 [장비 세팅보기 팝업 엔진 복원]
-    window.openSecretSpotTemplateModal = function(spotId) {
+   // 🎒 [장비 세팅보기 팝업 엔진 - 실제 피드 장비 데이터 직통 연동]
+    window.openSecretSpotTemplateModal = function(spotOrFeedId) {
       triggerHaptic(12);
-      var spotPool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
-        ? registeredSpots : (safeGetJSON('okbm_spots_cache', []) || []);
-      var targetId = String(spotId || '').trim();
-      var spot = spotPool.find(function(s) { 
-        return String(s.id).trim() === targetId || String(s.name || s.spot_main || '').trim() === targetId; 
-      });
-      if (!spot) return;
-
-      var spotName = spot.name || spot.spot_main || '박지';
-      var elev = spot.elevation ? (String(spot.elevation).includes('m') ? spot.elevation : spot.elevation + 'm') : '-';
-      var desc = spot.desc || spot.desc_summary || '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.';
+      var targetKey = String(spotOrFeedId || '').trim();
+      var cleanTargetKey = targetKey.replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
 
       var cachedFeeds = window.__allLoadedFeeds || safeGetJSON('okbm_cached_community_feeds', []) || [];
+      var spotPool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
+        ? registeredSpots : (safeGetJSON('okbm_spots_cache', []) || []);
+
+      // 1. 실제 피드 목록에서 ID 또는 박지명으로 1순위 매칭
       var matchedFeed = cachedFeeds.find(function(f) {
-        return f && f.spot && (f.spot.includes(spotName) || spotName.includes(f.spot));
+        if (!f) return false;
+        if (String(f.id).trim() === targetKey) return true;
+        var fSpot = String(f.spot || f.spotName || '').replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
+        return fSpot === cleanTargetKey;
       });
 
-      var fakeRecord = {
-        id: 'secret_' + (spot.id || Date.now()),
+      // 2. 피드가 없을 경우 박지 DB에서 탐색
+      var matchedSpot = spotPool.find(function(s) {
+        if (!s) return false;
+        if (String(s.id).trim() === targetKey) return true;
+        var sName = String(s.name || s.spot_main || '').replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
+        return sName === cleanTargetKey;
+      });
+
+      if (!matchedFeed && !matchedSpot) {
+        showToast('장비 세팅 정보를 불러올 수 없습니다.', 'warn');
+        return;
+      }
+
+      var spotName = matchedFeed ? (matchedFeed.spot || matchedFeed.spotName) : (matchedSpot.name || matchedSpot.spot_main || '박지');
+      var desc = (matchedFeed && (matchedFeed.memo || matchedFeed.oneLineMemo))
+        ? (matchedFeed.memo || matchedFeed.oneLineMemo)
+        : (matchedSpot ? (matchedSpot.desc || matchedSpot.desc_summary || '흔적 없는 클린 백패킹을 실천합니다.') : '흔적 없는 클린 백패킹을 실천합니다.');
+
+      // 3. 실제 피드 등록 장비 목록 우선 인출 (없을 경우 기본 장비셋)
+      var targetRecord = matchedFeed || {
+        id: 'spot_' + (matchedSpot.id || Date.now()),
         spot: spotName,
-        elevation: elev,
+        weightKg: '5.50',
         date: 'VERIFIED',
-        weightKg: (matchedFeed && matchedFeed.weightKg) ? matchedFeed.weightKg : '5.50',
-        items: (matchedFeed && matchedFeed.items && matchedFeed.items.length > 0) ? matchedFeed.items : [
+        items: [
           { name: '초경량 2인용 더블월 텐트', weight: 1250 },
           { name: '사계절 R4.5 에어매트', weight: 430 },
           { name: '800FP 3계절 구스침낭', weight: 850 },
@@ -2025,21 +2066,34 @@
         ]
       };
 
+      var items = (typeof extractCleanGearsFromRecord === 'function') 
+        ? extractCleanGearsFromRecord(targetRecord) 
+        : (targetRecord.items || []);
+
+      if (!items || items.length === 0) {
+        items = [
+          { name: '초경량 2인용 더블월 텐트', weight: 1250 },
+          { name: '사계절 R4.5 에어매트', weight: 430 },
+          { name: '800FP 3계절 구스침낭', weight: 850 },
+          { name: 'BPL 롤탑 배낭 50L', weight: 910 }
+        ];
+      }
+
       var modal = document.getElementById('templateCardModalOverlay');
       var slot = document.getElementById('modalTemplateRenderSlot');
       if (!modal || !slot) return;
 
-      var tmplId = (matchedFeed && matchedFeed.templateId) ? matchedFeed.templateId : parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
+      var tmplId = targetRecord.templateId || parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
       var genFn = (typeof generateCardMarkup === 'function') ? generateCardMarkup : (typeof window.generateCardMarkup === 'function' ? window.generateCardMarkup : null);
 
       if (genFn) {
-        slot.innerHTML = genFn(tmplId, fakeRecord, fakeRecord.items, spotName, desc);
+        slot.innerHTML = genFn(tmplId, targetRecord, items, spotName, desc);
       } else {
-        slot.innerHTML = `<div style="background:#f4f1ea; color:#1c1917; padding:16px; border-radius:14px; width:100%; max-width:320px;"><h3>${escapeHtml(spotName)}</h3><p>${escapeHtml(desc)}</p></div>`;
+        slot.innerHTML = `<div style="background:#0f172a; color:#fff; padding:20px; border-radius:14px; width:100%; max-width:320px; border:1px solid rgba(255,255,255,0.15);"><h3 style="font-size:1.1rem; font-weight:900;">${escapeHtml(spotName)}</h3><p style="font-size:0.75rem; color:#cbd5e1; margin-top:8px;">${escapeHtml(desc)}</p></div>`;
       }
 
       document.body.appendChild(modal);
-      modal.style.setProperty('z-index', '2000090', 'important');
+      modal.style.setProperty('z-index', '2000095', 'important');
       modal.style.setProperty('display', 'flex', 'important');
     };
 
@@ -2286,41 +2340,49 @@
       }
     };
 
-    // 🔘 [히어로 물리적 가로 슬라이더 도트 & 120자 메모 실시간 동기화] (진동 없음)
+    // 🔘 [히어로 물리적 가로 슬라이더 도트 & 120자 메모 실시간 동기화 - 60fps 하드웨어 가속]
+    var heroCarouselTicking = false;
     window.updateHeroCarouselState = function(trackEl) {
-      if (!trackEl) return;
-      var scrollLeft = trackEl.scrollLeft;
-      var width = trackEl.offsetWidth;
-      if (!width) return;
-      var curIdx = Math.round(scrollLeft / width);
+      if (!trackEl || heroCarouselTicking) return;
+      heroCarouselTicking = true;
 
-      window.currentHeroPhotoIndex = curIdx;
+      window.requestAnimationFrame(function() {
+        var scrollLeft = trackEl.scrollLeft;
+        var width = trackEl.offsetWidth;
+        if (!width) { heroCarouselTicking = false; return; }
 
-      // 1. 하단 중앙 도트 인디케이터 부드러운 애니메이션
-      var dotsWrap = document.getElementById('heroDotsWrapper');
-      if (dotsWrap) {
-        var dots = dotsWrap.children;
-        for (var i = 0; i < dots.length; i++) {
-          if (i === curIdx) {
-            dots[i].style.width = '14px';
-            dots[i].style.background = '#ffffff';
-            dots[i].style.boxShadow = '0 0 8px rgba(255,255,255,0.9)';
-          } else {
-            dots[i].style.width = '5px';
-            dots[i].style.background = 'rgba(255,255,255,0.35)';
-            dots[i].style.boxShadow = 'none';
+        var curIdx = Math.round(scrollLeft / width);
+        if (window.currentHeroPhotoIndex !== curIdx) {
+          window.currentHeroPhotoIndex = curIdx;
+
+          // 1. 하단 중앙 도트 인디케이터 동기화
+          var dotsWrap = document.getElementById('heroDotsWrapper');
+          if (dotsWrap) {
+            var dots = dotsWrap.children;
+            for (var i = 0; i < dots.length; i++) {
+              if (i === curIdx) {
+                dots[i].style.width = '14px';
+                dots[i].style.background = '#ffffff';
+                dots[i].style.boxShadow = '0 0 8px rgba(255,255,255,0.9)';
+              } else {
+                dots[i].style.width = '5px';
+                dots[i].style.background = 'rgba(255,255,255,0.35)';
+                dots[i].style.boxShadow = 'none';
+              }
+            }
+          }
+
+          // 2. 사진 전환 시 하단 120자 인용구 즉시 동기화
+          var quoteEl = document.getElementById('heroQuoteText');
+          var rec = window.currentHeroRecord;
+          if (quoteEl && rec) {
+            var pMemos = Array.isArray(rec.photoMemos) ? rec.photoMemos : [];
+            var curMemo = pMemos[curIdx] || rec.memo || rec.oneLineMemo || '자연 속에서 비화식으로 즐기는 조용한 하룻밤.';
+            quoteEl.innerText = '“' + curMemo.trim() + '”';
           }
         }
-      }
-
-      // 2. 사진 전환 시 하단 120자 인용구 즉시 동기화
-      var quoteEl = document.getElementById('heroQuoteText');
-      var rec = window.currentHeroRecord;
-      if (quoteEl && rec) {
-        var pMemos = Array.isArray(rec.photoMemos) ? rec.photoMemos : [];
-        var curMemo = pMemos[curIdx] || rec.memo || rec.oneLineMemo || '자연 속에서 비화식으로 즐기는 조용한 하룻밤.';
-        quoteEl.innerText = '“' + curMemo.trim() + '”';
-      }
+        heroCarouselTicking = false;
+      });
     };
 
     function renderCurrentHeroCard() {
@@ -2349,7 +2411,7 @@
       if (quoteEl) quoteEl.innerText = '“' + memoText.trim() + '”';
       if (indicatorEl) indicatorEl.innerText = '(' + (window.currentHeroCardIndex + 1) + '/' + records.length + ')';
 
-     // 📷 네이티브 가로 스와이프 슬라이드 렌더링 (화면에 빈틈없이 꽉 채움)
+      // 📷 상단 글로벌 CSS 엔진(#heroPhotoSwipeTrack)에 위임하여 중복 인라인 스타일 완전 제거
       var photos = window.currentHeroPhotosList || [];
       if (photos.length === 0) {
         photos = ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80'];
@@ -2357,7 +2419,7 @@
 
       if (trackEl) {
         trackEl.innerHTML = photos.map(function(pUrl) {
-          return '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000;">' +
+          return '<div style="flex:0 0 100%; width:100%; height:100%; position:relative; overflow:hidden; background:#000000;">' +
             '<img src="' + pUrl + '" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.95) contrast(1.04); display:block; pointer-events:none;" />' +
             '<div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 28%, transparent 80%, rgba(0,0,0,0.35) 100%); pointer-events:none; z-index:2;"></div>' +
           '</div>';
