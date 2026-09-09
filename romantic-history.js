@@ -1614,7 +1614,7 @@
 
     document.body.appendChild(modalEl);
   };
-// 📖 [단일 피드 카드 마크업 생성기 - 빨간 인스타 배제 & 풀스크린 시원한 사진 스트립]
+// 📖 [단일 피드 카드 마크업 생성기 - 각 사진별 120자 캡션 1:1 결합 렌더러]
   window.buildSingleFeedCardHtml = function(log) {
     if (!log) return '';
     var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
@@ -1627,13 +1627,14 @@
       photosList = ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80'];
     }
 
-    var memo100 = (log.memo || log.oneLineMemo || '').slice(0, 100);
+    var photoMemos = Array.isArray(log.photoMemos) ? log.photoMemos : [];
+    var fallbackMemo = (log.memo || log.oneLineMemo || '').trim();
 
     var packingSheetMarkup = '';
     var genFn = (typeof window.generateCardMarkup === 'function') ? window.generateCardMarkup : (typeof generateCardMarkup === 'function' ? generateCardMarkup : null);
 
     if (genFn) {
-      packingSheetMarkup = genFn(tmplId, log, items, log.spot, memo100 || (log.spot + ' 패킹'), photosList[0]);
+      packingSheetMarkup = genFn(tmplId, log, items, log.spot, fallbackMemo || (log.spot + ' 패킹'), photosList[0]);
     } else {
       packingSheetMarkup = '<div style="height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#f4f1ea; color:#1c1917; padding:12px; border-radius:13px;">' +
         '<div>' +
@@ -1650,16 +1651,38 @@
       '</div>';
     }
 
-    return '<div class="single-feed-block" data-record-id="' + escapeHtml(String(log.id)) + '" style="background:#000000; border-bottom:1px solid rgba(255,255,255,0.08); overflow:hidden; display:flex; flex-direction:column; flex-shrink:0; margin-bottom:32px; box-sizing:border-box;">' +
-      '<div style="padding:14px 16px 8px 16px; background:#000000; display:flex; justify-content:space-between; align-items:baseline;">' +
+    var photoSectionsHtml = photosList.map(function(pUrl, pIdx) {
+      var curMemo = (photoMemos[pIdx] !== undefined && photoMemos[pIdx] !== null) ? String(photoMemos[pIdx]).trim() : '';
+      if (!curMemo && pIdx === 0 && fallbackMemo) {
+        curMemo = fallbackMemo;
+      }
+
+      var memoMarkup = curMemo ? (
+        '<div style="padding:10px 14px 14px 14px; background:#080b11; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; gap:4px;">' +
+          '<div style="display:flex; align-items:center; gap:5px;">' +
+            '<span style="font-size:0.58rem; color:#38bdf8; background:rgba(56,189,248,0.12); padding:1px 5px; border-radius:4px; font-weight:900; font-family:\'Space Grotesk\', sans-serif;">#' + String(pIdx + 1).padStart(2, '0') + '</span>' +
+            '<span style="font-size:0.62rem; color:#64748b; font-weight:700;"></span>' +
+          '</div>' +
+          '<div style="font-size:0.82rem; color:#e2e8f0; line-height:1.55; word-break:break-all; font-family:\'Pretendard Variable\', -apple-system, sans-serif; letter-spacing:-0.01em;">“' + escapeHtml(curMemo) + '”</div>' +
+        '</div>'
+      ) : '';
+
+      return '<div style="width:100%; display:flex; flex-direction:column; background:#000000;">' +
+        '<div style="width:100%; aspect-ratio:4/5; overflow:hidden; background:#05070a; position:relative;">' +
+          '<img src="' + pUrl + '" style="width:100%; height:100%; object-fit:cover; display:block;" />' +
+          (photosList.length > 1 ? '<span style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); color:#ffffff; font-size:0.62rem; font-weight:800; font-family:\'Space Grotesk\', sans-serif; padding:2px 7px; border-radius:10px; border:1px solid rgba(255,255,255,0.15);">' + (pIdx + 1) + ' / ' + photosList.length + '</span>' : '') +
+        '</div>' +
+        memoMarkup +
+      '</div>';
+    }).join('');
+
+    return '<div class="single-feed-block" data-record-id="' + escapeHtml(String(log.id)) + '" style="background:#000000; border-bottom:2px solid rgba(255,255,255,0.12); overflow:hidden; display:flex; flex-direction:column; flex-shrink:0; margin-bottom:28px; box-sizing:border-box;">' +
+      '<div style="padding:14px 16px 10px 16px; background:#000000; display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid rgba(255,255,255,0.06);">' +
         '<div style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">' + escapeHtml(log.spot || '낭만 스팟') + (log.elevation ? (' <span style="font-size:0.75rem; color:#fde047; font-weight:800;">(' + escapeHtml(log.elevation) + ')</span>') : '') + '</div>' +
         '<span style="font-size:0.72rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;">' + escapeHtml(log.date || '') + '</span>' +
       '</div>' +
-      (memo100 ? ('<div style="padding:4px 16px 14px 16px; background:#000000; font-size:0.84rem; color:#cbd5e1; line-height:1.55; word-break:break-all;">“' + escapeHtml(memo100) + '”</div>') : '') +
-      '<div style="display:flex; flex-direction:column; gap:6px; background:#000000; width:100%;">' +
-        photosList.map(function(pUrl) {
-          return '<div style="width:100%; aspect-ratio:4/5; overflow:hidden; background:#05070a;"><img src="' + pUrl + '" style="width:100%; height:100%; object-fit:cover; display:block;" /></div>';
-        }).join('') +
+      '<div style="display:flex; flex-direction:column; width:100%;">' +
+        photoSectionsHtml +
       '</div>' +
       '<div style="padding:18px 16px 20px 16px; background:#000000;">' +
         '<div style="width:100%; aspect-ratio:3/4; border-radius:14px; padding:2px; background:' + borderGrad + ';"><div style="width:100%; height:100%; border-radius:12px; overflow:hidden;">' + packingSheetMarkup + '</div></div>' +
@@ -2302,8 +2325,7 @@
     if (charCounter) charCounter.innerText = window.__tempPhotoMemos[curIdx].length + '/120자';
   };
 
- // 🔄 [스마트 사진 순서 드래그 앤 드롭 & 원터치 교체 하이브리드 엔진]
-  window.__selectedSwapThumbIdx = null;
+ // 🔄 [모바일 터치 & PC 마우스 듀얼 드래그 순서 재배치 엔진]
   window.__draggedThumbIdx = null;
 
   window.__handleThumbDragStart = function(e, idx) {
@@ -2312,7 +2334,7 @@
       e.dataTransfer.effectAllowed = 'move';
       e.dataTransfer.setData('text/plain', String(idx));
     }
-    triggerHaptic(8);
+    triggerHaptic(10);
   };
 
   window.__handleThumbDragOver = function(e) {
@@ -2337,7 +2359,6 @@
         window.__tempPhotoMemos.splice(dropIdx, 0, movedMemo);
       }
 
-      window.__selectedSwapThumbIdx = null;
       window.__currentSwipePhotoIndex = dropIdx;
       window.__renderRichPhotoStage();
       triggerHaptic(14);
@@ -2350,36 +2371,124 @@
     window.__draggedThumbIdx = null;
   };
 
-  window.__handleThumbClickForSwap = function(clickedIdx) {
-    triggerHaptic(10);
-    window.__commitCurrentMemoInput();
+  // 📱 [300ms 롱프레스 안전 락 모바일 터치 드래그 엔진]
+  window.__touchStartThumbIdx = null;
+  window.__isLongPressActive = false;
+  window.__thumbLongPressTimer = null;
+  window.__touchTargetThumbEl = null;
 
-    if (window.__selectedSwapThumbIdx === null) {
-      window.__selectedSwapThumbIdx = clickedIdx;
-      window.__currentSwipePhotoIndex = clickedIdx;
-      window.__renderRichPhotoStage();
-    } else if (window.__selectedSwapThumbIdx === clickedIdx) {
-      window.__selectedSwapThumbIdx = null;
-      window.__renderRichPhotoStage();
-    } else {
-      var fromIdx = window.__selectedSwapThumbIdx;
-      var toIdx = clickedIdx;
+  window.__handleTouchThumbStart = function(e, idx) {
+    window.__touchStartThumbIdx = idx;
+    window.__isLongPressActive = false;
+    window.__touchTargetThumbEl = e.currentTarget;
 
-      var tempPhoto = window.__tempUploadedPhotos[fromIdx];
-      window.__tempUploadedPhotos[fromIdx] = window.__tempUploadedPhotos[toIdx];
-      window.__tempUploadedPhotos[toIdx] = tempPhoto;
+    var touch = e.touches[0];
+    window.__touchStartX = touch.clientX;
+    window.__touchStartY = touch.clientY;
 
-      if (window.__tempPhotoMemos) {
-        var tempMemo = window.__tempPhotoMemos[fromIdx];
-        window.__tempPhotoMemos[fromIdx] = window.__tempPhotoMemos[toIdx];
-        window.__tempPhotoMemos[toIdx] = tempMemo;
+    clearTimeout(window.__thumbLongPressTimer);
+    window.__thumbLongPressTimer = setTimeout(function() {
+      window.__isLongPressActive = true;
+      triggerHaptic(25);
+
+      if (window.__touchTargetThumbEl) {
+        window.__touchTargetThumbEl.style.transform = 'scale(1.15)';
+        window.__touchTargetThumbEl.style.borderColor = '#38bdf8';
+        window.__touchTargetThumbEl.style.boxShadow = '0 0 16px rgba(56,189,248,0.9)';
+        window.__touchTargetThumbEl.style.zIndex = '99';
       }
+    }, 300);
+  };
 
-      window.__selectedSwapThumbIdx = null;
-      window.__currentSwipePhotoIndex = toIdx;
-      window.__renderRichPhotoStage();
-      triggerHaptic(14);
+  window.__handleTouchThumbMove = function(e) {
+    var touch = e.touches[0];
+    var deltaX = Math.abs(touch.clientX - window.__touchStartX);
+    var deltaY = Math.abs(touch.clientY - window.__touchStartY);
+
+    if (!window.__isLongPressActive) {
+      if (deltaX > 8 || deltaY > 8) {
+        clearTimeout(window.__thumbLongPressTimer);
+      }
+      return;
     }
+
+    if (e.cancelable) e.preventDefault();
+  };
+
+ // 🌊 [실크처럼 부드러운 스무스 사진 전환 & 깜빡임 0% 엔진]
+  window.__switchToPhotoSmooth = function(targetIdx) {
+    if (window.__currentSwipePhotoIndex === targetIdx) return;
+    window.__commitCurrentMemoInput();
+    window.__currentSwipePhotoIndex = targetIdx;
+
+    var track = document.getElementById('richPhotoSwipeTrack');
+    if (track) {
+      var targetLeft = targetIdx * track.offsetWidth;
+      track.scrollTo({ left: targetLeft, behavior: 'smooth' });
+    }
+
+    var thumbNodes = document.querySelectorAll('[data-thumb-idx]');
+    thumbNodes.forEach(function(node) {
+      var nIdx = parseInt(node.dataset.thumbIdx, 10);
+      var isCur = (nIdx === targetIdx);
+      node.style.border = isCur ? '2.5px solid #38bdf8' : '1px solid rgba(255,255,255,0.18)';
+      node.style.boxShadow = isCur ? '0 0 12px rgba(56,189,248,0.85)' : 'none';
+      node.style.transform = isCur ? 'scale(1.08)' : 'scale(1)';
+      node.style.opacity = isCur ? '1' : '0.65';
+      node.style.zIndex = isCur ? '3' : '1';
+    });
+
+    window.__syncActivePhotoMemoUI();
+    triggerHaptic(8);
+  };
+
+  window.__handleTouchThumbEnd = function(e) {
+    clearTimeout(window.__thumbLongPressTimer);
+
+    var fromIdx = window.__touchStartThumbIdx;
+    var wasLongPress = window.__isLongPressActive;
+
+    if (window.__touchTargetThumbEl) {
+      window.__touchTargetThumbEl.style.transform = '';
+      window.__touchTargetThumbEl.style.boxShadow = '';
+      window.__touchTargetThumbEl.style.zIndex = '';
+    }
+
+    if (wasLongPress && fromIdx !== null && fromIdx !== undefined) {
+      var touch = e.changedTouches[0];
+      var elem = document.elementFromPoint(touch.clientX, touch.clientY);
+      var thumbCard = elem ? elem.closest('[data-thumb-idx]') : null;
+
+      if (thumbCard && thumbCard.dataset.thumbIdx !== undefined) {
+        var toIdx = parseInt(thumbCard.dataset.thumbIdx, 10);
+        if (fromIdx !== toIdx) {
+          window.__commitCurrentMemoInput();
+
+          var movedPhoto = window.__tempUploadedPhotos.splice(fromIdx, 1)[0];
+          window.__tempUploadedPhotos.splice(toIdx, 0, movedPhoto);
+
+          if (window.__tempPhotoMemos) {
+            var movedMemo = window.__tempPhotoMemos.splice(fromIdx, 1)[0] || '';
+            window.__tempPhotoMemos.splice(toIdx, 0, movedMemo);
+          }
+
+          window.__currentSwipePhotoIndex = toIdx;
+          window.__renderRichPhotoStage();
+          triggerHaptic(16);
+          window.__touchStartThumbIdx = null;
+          window.__isLongPressActive = false;
+          window.__touchTargetThumbEl = null;
+          return;
+        }
+      }
+      window.__renderRichPhotoStage();
+    } else if (fromIdx !== null && fromIdx !== undefined) {
+      window.__switchToPhotoSmooth(fromIdx);
+    }
+
+    window.__touchStartThumbIdx = null;
+    window.__isLongPressActive = false;
+    window.__touchTargetThumbEl = null;
   };
 
   // 🗑️ [수정 화면 내부 직통 일지 & 피드 영구 삭제 파이프라인]
@@ -2429,23 +2538,27 @@
         `;
       }).join('');
 
-      // 📸 [드래그 앤 드롭 & 클릭 스왑 완벽 지원 썸네일 스트립]
+      // 📸 [선택 사진 명확한 고대비 외곽선 & 터치/마우스 드래그 썸네일 스트립]
       var dragThumbsHtml = photos.map(function(tUrl, tIdx) {
-        var isSwapSelected = (window.__selectedSwapThumbIdx === tIdx);
-        var isCurrentView = (window.__currentSwipePhotoIndex === tIdx && window.__selectedSwapThumbIdx === null);
-        var borderStyle = isSwapSelected
-          ? '2px solid #38bdf8; box-shadow:0 0 10px rgba(56,189,248,0.8); transform:scale(1.06);'
-          : (isCurrentView ? '2px solid #ffffff;' : '1px solid rgba(255,255,255,0.15);');
+        var isCurrentView = (window.__currentSwipePhotoIndex === tIdx);
+        var activeBorderStyle = isCurrentView
+          ? 'border:2.5px solid #38bdf8; box-shadow:0 0 12px rgba(56,189,248,0.85); transform:scale(1.08); z-index:3;'
+          : 'border:1px solid rgba(255,255,255,0.18); opacity:0.65;';
 
         return `
-          <div draggable="true"
+          <div data-thumb-idx="${tIdx}"
+               draggable="true"
                ondragstart="window.__handleThumbDragStart(event, ${tIdx});"
                ondragover="window.__handleThumbDragOver(event);"
                ondrop="window.__handleThumbDrop(event, ${tIdx});"
                ondragend="window.__handleThumbDragEnd(event);"
-               onclick="window.__handleThumbClickForSwap(${tIdx});" 
-               style="width:52px; height:52px; border-radius:8px; overflow:hidden; position:relative; flex-shrink:0; cursor:grab; background:#000; box-sizing:border-box; transition:all 0.15s ease; ${borderStyle}">
+               ontouchstart="window.__handleTouchThumbStart(event, ${tIdx});"
+               ontouchmove="window.__handleTouchThumbMove(event);"
+               ontouchend="window.__handleTouchThumbEnd(event);"
+               onclick="window.__commitCurrentMemoInput(); window.__currentSwipePhotoIndex = ${tIdx}; window.__renderRichPhotoStage(); triggerHaptic(8);" 
+               style="width:54px; height:54px; border-radius:9px; overflow:hidden; position:relative; flex-shrink:0; cursor:grab; background:#000; box-sizing:border-box; transition:all 0.18s cubic-bezier(0.16, 1, 0.3, 1); user-select:none; -webkit-user-select:none; touch-action:none; ${activeBorderStyle}">
             <img src="${tUrl}" style="width:100%; height:100%; object-fit:cover; pointer-events:none; display:block;" />
+            ${isCurrentView ? '<div style="position:absolute; inset:0; border:1px solid rgba(255,255,255,0.4); pointer-events:none; border-radius:7px;"></div>' : ''}
           </div>
         `;
       }).join('');
@@ -2463,7 +2576,7 @@
           ` : ''}
         </div>
 
-        <div style="width:100%; display:flex; gap:8px; overflow-x:auto; padding:8px 0 4px 0; -webkit-overflow-scrolling:touch; scrollbar-width:none;">
+        <div style="width:100%; display:flex; gap:9px; overflow-x:auto; padding:10px 4px 6px 4px; -webkit-overflow-scrolling:touch; scrollbar-width:none; box-sizing:border-box;">
           ${dragThumbsHtml}
         </div>
       `;
@@ -2897,7 +3010,8 @@
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:5px;">
               <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-              <span style="font-size:0.82rem; color:#ffffff; font-weight:900;">사진별 120자 현장 기록</span>
+              <span style="font-size:0.82rem; color:#ffffff; font-weight:900;">사진별 120자 현장 기록
+            </span>
             </div>
             <span id="richMemoCharCounter" style="font-size:0.70rem; color:#38bdf8; font-family:'Space Grotesk', sans-serif; font-weight:800;">0/120자</span>
           </div>
@@ -2937,9 +3051,30 @@
     target.userId = userId;
 
     if (instaInput) {
-      var cleanInsta = instaInput.value.replace(/[@\s]/g, '').trim();
-      target.instagram = cleanInsta ? ('@' + cleanInsta) : '';
-      if (cleanInsta) localStorage.setItem('okbm_user_instagram', '@' + cleanInsta);
+      var rawSnsVal = instaInput.value.trim();
+
+      if (rawSnsVal) {
+        // 영구 사용자 프로필 캐시에 원본 주소 각인 (다음 작성 시 자동 프리필)
+        localStorage.setItem('okbm_user_sns_channel', rawSnsVal);
+
+        if (rawSnsVal.includes('youtube.com') || rawSnsVal.includes('youtu.be')) {
+          var cleanYt = rawSnsVal.replace(/^@+/, '').split('?')[0].trim();
+          var channelMatch = cleanYt.match(/(?:youtube\.com\/(?:@|c\/|channel\/)?|youtu\.be\/)([\w\-\_\.]+)/i);
+          target.youtube = (channelMatch && channelMatch[1]) ? ('https://www.youtube.com/@' + channelMatch[1].replace(/^@/, '')) : (cleanYt.startsWith('http') ? cleanYt : ('https://' + cleanYt));
+          target.instagram = '';
+        } else {
+          var cleanInsta = rawSnsVal.replace(/^@+/, '').trim();
+          target.instagram = cleanInsta ? ('@' + cleanInsta) : '';
+          target.youtube = '';
+          if (cleanInsta) localStorage.setItem('okbm_user_instagram', '@' + cleanInsta);
+        }
+      } else {
+        // 유저가 비우고 저장했을 때는 삭제 동기화
+        localStorage.removeItem('okbm_user_sns_channel');
+        localStorage.removeItem('okbm_user_instagram');
+        target.instagram = '';
+        target.youtube = '';
+      }
     }
 
     var photosToProcess = Array.isArray(window.__tempUploadedPhotos) ? window.__tempUploadedPhotos.slice(0, 10) : [];
@@ -3431,10 +3566,10 @@ window.renderHistoryStage = function(isLoading) {
     var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
     var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
 
-    // 🎨 [극명한 배경 테마]: 내 보관함(딥 매트블랙) vs 전체 피드(미드나잇 딥네이비)
-    var stageBg = isMyTab ? '#000000' : '#07101e';
-    var headerBg = isMyTab ? '#000000' : 'rgba(7,16,30,0.98)';
-    var headerBorder = isMyTab ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(56,189,248,0.15)';
+    // 🎨 [낭만루트 헌법 준수: 눈부심 0% 순수 매트블랙 단일 테마 통일]
+    var stageBg = '#000000';
+    var headerBg = '#000000';
+    var headerBorder = '1px solid rgba(255,255,255,0.06)';
 
     var reelSlidesHtml = '';
     if (isLoading) {
@@ -3482,24 +3617,53 @@ window.renderHistoryStage = function(isLoading) {
         var followKey = recordUserId || authorName;
         var isFollowingThisAuthor = followingList.includes(followKey);
 
-        // 🎨 [소셜 벡터 아이콘: 빨간색 전면 배제, 은은한 공식 컬러]
-        var instaOfficialSvg = '<svg viewBox="0 0 24 24" style="width:11px; height:11px; fill:#ffffff; flex-shrink:0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>';
-        var ytOfficialSvg = '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:#e2e8f0; flex-shrink:0;"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>';
+ // 🌐 [지능형 SNS/채널 자동 감지기 & 눈부심 제로(0%) 매트 미니 뱃지 렌더러]
+        var rawSnsText = String(record.instagram || record.youtube || record.youtubeUrl || '').trim();
+        var instaTargetUrl = '';
+        var youtubeTargetUrl = '';
 
-        var rawYoutube = String(record.youtube || record.youtubeUrl || '').trim();
-        var ytCleanUrl = rawYoutube ? (rawYoutube.startsWith('http') ? rawYoutube : ('https://www.youtube.com/' + rawYoutube.replace(/^@/, ''))) : '';
+        // 1. 유튜브 스마트 파서: 풀URL, 영상공유, @핸들 등 어떤 형태든 공식 채널 주소로 정규화
+        if (rawSnsText.includes('youtube.com') || rawSnsText.includes('youtu.be')) {
+          var cleanYt = rawSnsText.replace(/^@+/, '').split('?')[0].trim();
+          var channelMatch = cleanYt.match(/(?:youtube\.com\/(?:@|c\/|channel\/)?|youtu\.be\/)([\w\-\_\.]+)/i);
+          if (channelMatch && channelMatch[1]) {
+            var handle = channelMatch[1].replace(/^@/, '');
+            youtubeTargetUrl = 'https://www.youtube.com/@' + handle;
+          } else {
+            youtubeTargetUrl = cleanYt.startsWith('http') ? cleanYt : ('https://' + cleanYt);
+          }
+        } else if (rawSnsText) {
+          // 2. 인스타그램 스마트 파서
+          if (rawSnsText.includes('instagram.com')) {
+            var cleanInstaUrl = rawSnsText.replace(/^@+/, '').split('?')[0].trim();
+            instaTargetUrl = cleanInstaUrl.startsWith('http') ? cleanInstaUrl : ('https://' + cleanInstaUrl);
+          } else {
+            var pureInstaId = rawSnsText.replace(/[@\s]/g, '').trim();
+            if (pureInstaId) instaTargetUrl = 'https://instagram.com/' + pureInstaId;
+          }
+        }
 
-        var socialBadgesHtml = '';
-        if (cleanInsta) {
-          socialBadgesHtml += '<a href="https://instagram.com/' + cleanInsta + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="display:inline-flex; align-items:center; gap:2.5px; background:linear-gradient(45deg, rgba(240,148,51,0.22) 0%, rgba(204,35,102,0.22) 75%); border:1px solid rgba(220,39,67,0.35); color:#ffffff; padding:1.5px 6px; border-radius:10px; font-size:0.58rem; font-weight:700; text-decoration:none;">' +
-            instaOfficialSvg +
-            '<span>@' + escapeHtml(cleanInsta) + '</span>' +
+        // 별도 youtube 필드가 남아있을 때의 보정
+        if (!youtubeTargetUrl && record.youtube) {
+          var yStr = String(record.youtube).replace(/^@+/, '').split('?')[0].trim();
+          var m = yStr.match(/(?:youtube\.com\/(?:@|c\/|channel\/)?|youtu\.be\/)?([\w\-\_\.]+)/i);
+          if (m && m[1]) {
+            youtubeTargetUrl = 'https://www.youtube.com/@' + m[1].replace(/^@/, '');
+          }
+        }
+
+ var socialBadgesHtml = '';
+        if (instaTargetUrl) {
+          socialBadgesHtml += '<a href="' + instaTargetUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="인스타그램 프로필">' +
+            '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:#e2e8f0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>' +
           '</a>';
         }
-        if (ytCleanUrl) {
-          socialBadgesHtml += '<a href="' + ytCleanUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="display:inline-flex; align-items:center; gap:2.5px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.2); color:#e2e8f0; padding:1.5px 6px; border-radius:10px; font-size:0.58rem; font-weight:700; text-decoration:none;">' +
-            ytOfficialSvg +
-            '<span>채널</span>' +
+        if (youtubeTargetUrl) {
+          socialBadgesHtml += '<a href="' + youtubeTargetUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="유튜브 채널">' +
+            '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none">' +
+              '<path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z" fill="#f43f5e"/>' +
+              '<path d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z" fill="#ffffff"/>' +
+            '</svg>' +
           '</a>';
         }
 
@@ -3521,14 +3685,93 @@ window.renderHistoryStage = function(isLoading) {
               '<span>전체 피드</span>' +
             '</button>';
 
-        // 🏷️ [상단 헤더 렌더러: 지역명과 날짜가 절대 잘리지 않도록 좌측 공간 100% 확보]
+   // 🗺️ [전국 마스터 박지 DB 실시간 대조 엔진 - 추후 신규 등록 시에도 즉각 자동 반영]
+  window.isSpotRegisteredInMasterDB = function(rawSpotName) {
+    if (!rawSpotName) return false;
+    var clean = String(rawSpotName)
+      .replace(/\(.*?\)/g, '')
+      .replace(/\[.*?\]/g, '')
+      .replace(/\s+/g, '')
+      .toLowerCase()
+      .trim();
+
+    if (!clean || clean === '나의힐링스팟' || clean === '힐링박지' || clean === '방문스팟') return false;
+
+    var pool = [];
+    if (Array.isArray(window.campingSpots)) pool = pool.concat(window.campingSpots);
+    if (Array.isArray(window.spotsData)) pool = pool.concat(window.spotsData);
+    if (Array.isArray(window.allSpots)) pool = pool.concat(window.allSpots);
+    if (Array.isArray(window.masterSpots)) pool = pool.concat(window.masterSpots);
+    if (Array.isArray(window.CAMPING_SPOTS)) pool = pool.concat(window.CAMPING_SPOTS);
+    if (Array.isArray(window.SPOTS_DB)) pool = pool.concat(window.SPOTS_DB);
+
+    ['okbm_spots_cache', 'okbm_master_spots', 'camping_spots', 'okbm_spots'].forEach(function(k) {
+      try {
+        var item = localStorage.getItem(k);
+        if (item) {
+          var parsed = JSON.parse(item);
+          if (Array.isArray(parsed)) pool = pool.concat(parsed);
+        }
+      } catch (e) {}
+    });
+
+    return pool.some(function(s) {
+      if (!s) return false;
+      var sName = String(s.name || s.spotName || s.spot || s.title || '').replace(/\s+/g, '').toLowerCase().trim();
+      if (!sName || sName === '나의힐링스팟' || sName === '힐링박지') return false;
+      return (sName === clean || clean.includes(sName) || sName.includes(clean));
+    });
+  };
+
+  // 🗺️ [피드 위치 직통 지도 이동 엔진 - 전국지도 map.html 핀 포커싱]
+  window.navigateToSpotMap = function(rawSpotName, e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    if (!rawSpotName) return;
+    triggerHaptic(12);
+
+    var cleanSpot = String(rawSpotName)
+      .replace(/\(.*?\)/g, '')
+      .replace(/\[.*?\]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!cleanSpot || cleanSpot === '나의 힐링 스팟' || cleanSpot === '힐링 박지') {
+      if (typeof showToast === 'function') showToast('정확한 박지 위치 정보가 등록되지 않았습니다.', 'info', 1800);
+      return;
+    }
+
+    try {
+      localStorage.setItem('okbm_target_map_spot', cleanSpot);
+      sessionStorage.setItem('okbm_last_feed_return', location.href);
+    } catch (err) {}
+
+    if (typeof showToast === 'function') {
+      showToast('📍 [' + cleanSpot + '] 지도로 이동합니다.', 'info', 1200);
+    }
+
+    setTimeout(function() {
+      if (typeof window.closeHistoryModal === 'function') window.closeHistoryModal();
+      location.href = 'map.html?spot=' + encodeURIComponent(cleanSpot);
+    }, 180);
+  };
+
+  // 🏷️ [상단 헤더 렌더러: 등록된 박지만 화살표(↗) 표시 & 미등록 박지는 일반 텍스트 노출]
+        var isRegisteredSpot = window.isSpotRegisteredInMasterDB(spotName);
         var topHeaderHtml = '';
+
         if (isMyTab) {
-          // 🔒 [내 보관함]: 4대 도구가 밑으로 내려가서, 상단 좌측 지역·날짜가 시원하게 살아남!
+          // 🔒 [내 보관함]: DB 등록 박지만 화살표와 지도 이동 버튼 활성화
           topHeaderHtml = '<div style="display:flex; align-items:center; min-width:0; flex:1; padding-right:8px;">' +
-            '<div style="display:flex; align-items:center; gap:4px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
+            '<div style="display:flex; align-items:center; gap:4px; min-width:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
               HISTORY_VEC_ICONS.pin +
-              '<span style="font-size:0.90rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(spotName) + '</span>' +
+              (isRegisteredSpot ? (
+                '<button type="button" data-spot="' + escapeHtml(spotName) + '" onclick="window.navigateToSpotMap(this.dataset.spot, event);" style="background:none; border:none; padding:0; display:inline-flex; align-items:center; gap:2px; cursor:pointer; text-align:left; min-width:0; overflow:hidden;" title="지도에서 박지 위치 확인">' +
+                  '<span style="font-size:0.90rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-decoration:underline; text-decoration-color:rgba(56,189,248,0.45); text-underline-offset:3px;">' + escapeHtml(spotName) + '</span>' +
+                  '<span style="font-size:0.62rem; color:#38bdf8; font-weight:900; flex-shrink:0;">↗</span>' +
+                '</button>'
+              ) : (
+                '<span style="font-size:0.90rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(spotName) + '</span>'
+              )) +
               '<span style="font-size:0.70rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace; flex-shrink:0; margin-left:2px;">· ' + escapeHtml(tripDate) + '</span>' +
             '</div>' +
           '</div>' +
@@ -3536,7 +3779,7 @@ window.renderHistoryStage = function(isLoading) {
             singleStreamToggleBtnHtml +
           '</div>';
         } else {
-          // 🌐 [전체 피드]: 작성자 닉네임 + 소셜 링크 + 지역·날짜 + 우측 단일 토글 버튼
+          // 🌐 [전체 피드]: 상단 우측 불필요한 ··· 제거 & 단일 전환 버튼만 깔끔하게 유지
           topHeaderHtml = '<div style="display:flex; flex-direction:column; justify-content:center; min-width:0; flex:1; padding-right:8px;">' +
             '<div style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap;">' +
               '<button type="button" data-author="' + escapeHtml(authorName) + '" data-user-id="' + escapeHtml(recordUserId) + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId);" style="background:none; border:none; padding:0; font-size:0.88rem; color:#ffffff; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; text-align:left; display:inline-flex; align-items:center; gap:3px;">' +
@@ -3546,40 +3789,103 @@ window.renderHistoryStage = function(isLoading) {
               followHeaderBtn +
               socialBadgesHtml +
             '</div>' +
-            '<span style="font-size:0.68rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">' + escapeHtml(tripDate) + ' · ' + escapeHtml(spotName) + '</span>' +
+            '<div style="display:flex; align-items:center; gap:3px; margin-top:2px; min-width:0;">' +
+              '<span style="font-size:0.68rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace; flex-shrink:0;">' + escapeHtml(tripDate) + ' ·</span>' +
+              (isRegisteredSpot ? (
+                '<button type="button" data-spot="' + escapeHtml(spotName) + '" onclick="window.navigateToSpotMap(this.dataset.spot, event);" style="background:none; border:none; padding:0; display:inline-flex; align-items:center; gap:2px; min-width:0; cursor:pointer; color:#e2e8f0; font-size:0.68rem; font-weight:800; text-decoration:underline; text-decoration-color:rgba(56,189,248,0.45); text-underline-offset:2px;" title="지도에서 박지 위치 확인">' +
+                  '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(spotName) + '</span>' +
+                  '<span style="font-size:0.58rem; color:#38bdf8; font-weight:900; flex-shrink:0;">↗</span>' +
+                '</button>'
+              ) : (
+                '<span style="font-size:0.68rem; color:#cbd5e1; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(spotName) + '</span>'
+              )) +
+            '</div>' +
           '</div>' +
-          '<div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">' +
+          '<div style="display:flex; align-items:center; flex-shrink:0;">' +
             singleStreamToggleBtnHtml +
-            '<button type="button" data-record-id="' + cardId + '" onclick="window.openTripActionMenu(this.dataset.recordId, event);" style="background:none; border:none; padding:2px; cursor:pointer; color:#94a3b8; display:flex; align-items:center; justify-content:center;" title="옵션">' +
-              '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="currentColor"><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/><circle cx="5" cy="12" r="1.8"/></svg>' +
-            '</button>' +
           '</div>';
         }
 
-   // 🛠️ [상단에서 하단 우측으로 이동한 4대 도구 렌더러 - 1pt 업스케일 & 자물쇠 타깃 키 바인딩]
+   // 🧰 [하단 4대 도구 인라인 부드러운 슬라이드 서랍 토글 엔진]
+   window.toggleFeedBottomTools = function(cardId, e) {
+     if (e) { e.preventDefault(); e.stopPropagation(); }
+     triggerHaptic(10);
+
+     var drawer = document.getElementById('bottomToolsDrawer_' + cardId);
+     var triggerBtn = document.getElementById('btnToggleBottomTools_' + cardId);
+     if (!drawer || !triggerBtn) return;
+
+     var isOpen = drawer.dataset.opened === 'true';
+
+     // 다른 열려있는 서랍들 모두 안전하게 닫기
+     document.querySelectorAll('[id^="bottomToolsDrawer_"]').forEach(function(d) {
+       if (d !== drawer) {
+         d.style.maxWidth = '0px';
+         d.style.opacity = '0';
+         d.style.transform = 'scale(0.85) translateX(12px)';
+         d.style.pointerEvents = 'none';
+         d.dataset.opened = 'false';
+         var bId = d.id.replace('bottomToolsDrawer_', 'btnToggleBottomTools_');
+         var btn = document.getElementById(bId);
+         if (btn) {
+           btn.style.transform = 'rotate(0deg)';
+           btn.style.color = '#94a3b8';
+           btn.style.borderColor = 'rgba(255,255,255,0.15)';
+         }
+       }
+     });
+
+     if (isOpen) {
+       drawer.style.maxWidth = '0px';
+       drawer.style.opacity = '0';
+       drawer.style.transform = 'scale(0.85) translateX(12px)';
+       drawer.style.pointerEvents = 'none';
+       drawer.dataset.opened = 'false';
+       triggerBtn.style.transform = 'rotate(0deg)';
+       triggerBtn.style.color = '#94a3b8';
+       triggerBtn.style.borderColor = 'rgba(255,255,255,0.15)';
+     } else {
+       drawer.style.maxWidth = '210px';
+       drawer.style.opacity = '1';
+       drawer.style.transform = 'scale(1) translateX(0px)';
+       drawer.style.pointerEvents = 'auto';
+       drawer.dataset.opened = 'true';
+       triggerBtn.style.transform = 'rotate(90deg)';
+       triggerBtn.style.color = '#38bdf8';
+       triggerBtn.style.borderColor = '#38bdf8';
+     }
+   };
+
+   // 🛠️ [하단 우측 슬라이딩 도구 서랍: 평소엔 미니멀 ··· ➔ 누르면 좌측으로 쫙 확장]
         var isPub = Boolean(record.isPublished === true);
         var bottomToolsHtml = '';
+
         if (isMyTab) {
-          // 🔒 [내 보관함]: 그리드 + 관심 + 자물쇠 + 편집 (32px 박스 & 15~16px 아이콘 규격)
-          bottomToolsHtml = '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
-            '<button type="button" onclick="window.openPastTripsListModal(); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#38bdf8;" title="격자 모아보기">' +
-              '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' +
-            '</button>' +
-            '<button type="button" onclick="window.openRomanticInterestModal(\'routers\'); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#c084fc;" title="관심 모아보기">' +
-              '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
-            '</button>' +
-            '<button type="button" data-record-id="' + cardId + '" data-lock-btn-id="' + cardId + '" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:' + (isPub ? '#34d399' : '#38bdf8') + '; transition:transform 0.15s ease;" title="' + (isPub ? '전체 공개 중' : '비공개 (나만보기)') + '">' +
-              (isPub
-                ? '<svg viewBox="0 0 24 24" style="width:16px; height:16px; color:#34d399;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>'
-                : '<svg viewBox="0 0 24 24" style="width:16px; height:16px; color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
-              ) +
-            '</button>' +
-            '<button type="button" data-record-id="' + cardId + '" onclick="window.openRichAfterTripModal(window.interactiveHistory.find(function(r){return String(r.id)===\'' + cardId + '\';})); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fde047;" title="일지 및 사진 수정">' +
-              '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
+          bottomToolsHtml = '<div style="display:flex; align-items:center; justify-content:flex-end; position:relative; flex-shrink:0;">' +
+            '<!-- 좌측으로 부드럽게 펼쳐지는 4대 도구 서랍 -->' +
+            '<div id="bottomToolsDrawer_' + cardId + '" data-opened="false" style="display:flex; align-items:center; gap:6px; max-width:0px; opacity:0; transform:scale(0.85) translateX(12px); transform-origin:right center; overflow:hidden; transition:all 0.25s cubic-bezier(0.16, 1, 0.3, 1); pointer-events:none; margin-right:6px; box-sizing:border-box;">' +
+              '<button type="button" onclick="window.openPastTripsListModal(); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#38bdf8; flex-shrink:0;" title="격자 모아보기">' +
+                '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' +
+              '</button>' +
+              '<button type="button" onclick="window.openRomanticInterestModal(\'routers\'); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#c084fc; flex-shrink:0;" title="관심 모아보기">' +
+                '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
+              '</button>' +
+              '<button type="button" data-record-id="' + cardId + '" data-lock-btn-id="' + cardId + '" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:' + (isPub ? '#34d399' : '#38bdf8') + '; flex-shrink:0;" title="' + (isPub ? '전체 공개 중' : '비공개 (나만보기)') + '">' +
+                (isPub
+                  ? '<svg viewBox="0 0 24 24" style="width:16px; height:16px; color:#34d399;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>'
+                  : '<svg viewBox="0 0 24 24" style="width:16px; height:16px; color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+                ) +
+              '</button>' +
+              '<button type="button" data-record-id="' + cardId + '" onclick="window.openRichAfterTripModal(window.interactiveHistory.find(function(r){return String(r.id)===\'' + cardId + '\';})); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fde047; flex-shrink:0;" title="일지 및 사진 수정">' +
+                '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
+              '</button>' +
+            '</div>' +
+            '<!-- 고정 더보기 (···) 버튼 -->' +
+            '<button type="button" id="btnToggleBottomTools_' + cardId + '" data-card-id="' + cardId + '" onclick="window.toggleFeedBottomTools(this.dataset.cardId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#94a3b8; transition:all 0.2s ease; flex-shrink:0;" title="관리 도구 열기">' +
+              '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>' +
             '</button>' +
           '</div>';
         } else {
-          // 🌐 [전체 피드]: 관심 도구 규격 동일 업스케일
           bottomToolsHtml = '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
             '<button type="button" onclick="window.openRomanticInterestModal(\'routers\'); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#c084fc;" title="관심 모아보기">' +
               '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
@@ -3608,7 +3914,7 @@ window.renderHistoryStage = function(isLoading) {
           }).join('');
         }
 
-        var dotsHtml = '';
+       var dotsHtml = '';
         if (totalPhotosCount > 1) {
           var dotsItemsHtml = Array.from({ length: totalPhotosCount }).map(function(_, dIdx) {
             var dotW = (dIdx === 0) ? '12px' : '4px';
@@ -3616,7 +3922,7 @@ window.renderHistoryStage = function(isLoading) {
             var dotShadow = (dIdx === 0) ? 'box-shadow:0 0 6px rgba(255,255,255,0.8);' : '';
             return '<div class="carousel-dot-item" style="width:' + dotW + '; height:3.5px; border-radius:2px; background:' + dotBg + '; ' + dotShadow + ' transition:all 0.2s ease;"></div>';
           }).join('');
-          dotsHtml = '<div id="dotsWrap_' + cardId + '" style="display:flex; justify-content:center; align-items:center; gap:4px; height:8px; pointer-events:none;">' + dotsItemsHtml + '</div>';
+          dotsHtml = '<div id="dotsWrap_' + cardId + '" style="position:absolute; bottom:8px; left:50%; transform:translateX(-50%); z-index:5; display:flex; justify-content:center; align-items:center; gap:4px; height:14px; padding:0 8px; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border-radius:10px; border:1px solid rgba(255,255,255,0.15); pointer-events:none;">' + dotsItemsHtml + '</div>';
         }
 
         var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
@@ -3668,6 +3974,7 @@ window.renderHistoryStage = function(isLoading) {
                   '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \'' + cardId + '\');" style="display:flex !important; width:100% !important; height:100% !important; overflow-x:auto !important; overflow-y:hidden !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; touch-action:pan-x pan-y !important;">' +
                     horizontalSlidesHtml +
                   '</div>' +
+                  dotsHtml +
                 '</div>' +
                 '<div class="postcard-face-back" style="width:100%; height:100%; position:absolute; inset:0; overflow:hidden; background:#000;">' +
                   backTemplateCardHtml +
@@ -3676,9 +3983,9 @@ window.renderHistoryStage = function(isLoading) {
             '</div>' +
           '</div>' +
 
-          '<!-- 하단 인터랙션바 (좌측 3대 도구 + 우측 4대 도구 완벽 배치) -->' +
+          '<!-- 하단 인터랙션바 (좌측 3대 도구 + 우측 4대 도구 완벽 배치, 중앙 겹침 원천 차단) -->' +
           '<div style="padding:6px 14px 8px 14px; box-sizing:border-box; display:flex; flex-direction:column; gap:5px; flex-shrink:0 !important; background:' + stageBg + '; border-top:1px solid rgba(255,255,255,0.04);">' +
-            '<div style="display:flex; justify-content:space-between; align-items:center; position:relative; min-height:28px;">' +
+            '<div style="display:flex; justify-content:space-between; align-items:center; min-height:32px;">' +
               '<div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">' +
                 '<button type="button" onclick="window.toggleFeedStar(\'' + cardId + '\', event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:4px;">' +
                   '<svg id="feedStarIcon_' + cardId + '" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
@@ -3690,10 +3997,6 @@ window.renderHistoryStage = function(isLoading) {
                 '<button type="button" data-feed-id="' + cardId + '" onclick="window.toggleSaveFeed(this.dataset.feedId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:' + (isSavedFeed ? '#c084fc' : '#cbd5e1') + ';" title="관심피드 즐겨찾기 저장">' +
                   '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="' + (isSavedFeed ? '#c084fc' : 'none') + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
                 '</button>' +
-              '</div>' +
-
-              '<div style="position:absolute; left:50%; transform:translateX(-50%); pointer-events:none;">' +
-                dotsHtml +
               '</div>' +
 
               bottomToolsHtml +
