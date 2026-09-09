@@ -168,9 +168,9 @@
       -webkit-font-smoothing: antialiased;
     }
 
-   body {
+  body {
       background: #000000 !important;
-      padding-top: calc(54px + env(safe-area-inset-top, 0px)) !important;
+      padding-top: calc(47px + env(safe-area-inset-top, 0px)) !important;
       padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px));
     }
 
@@ -201,67 +201,91 @@
     }
     .icon-svg svg { width: 100%; height: 100%; }
 
+ /* ✨ 개별 별빛 비동기 트윙클 엔진 (제각각 독립 점멸) */
+    @keyframes headerIndieTwinkle {
+      0%, 100% { opacity: 0.15; transform: scale(0.7) translateZ(0); }
+      50% { opacity: 0.85; transform: scale(1.15) translateZ(0); }
+    }
+
     .netflix-integrated-header {
       position: fixed !important;
       top: 0 !important; left: 0 !important; right: 0 !important;
       z-index: var(--z-header) !important;
       width: 100% !important;
-      background: rgba(0, 0, 0, 0.96) !important;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+      background: rgba(3, 4, 7, 0.94) !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
+      border-bottom: none !important;
       padding: 0 16px !important;
       padding-top: env(safe-area-inset-top, 0px) !important;
       user-select: none !important;
       transition: transform 0.28s ease !important;
       will-change: transform;
-      transform: translate3d(0, 0, 0) !important;
-      -webkit-transform: translate3d(0, 0, 0) !important;
+      box-sizing: border-box;
+      overflow: hidden !important;
     }
-    .netflix-integrated-header.header-hidden {
-      transform: translate3d(0, -100%, 0) !important;
-      -webkit-transform: translate3d(0, -100%, 0) !important;
+
+    .header-starlight-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 1;
     }
 
     .header-top-row {
-      height: 52px !important;
+      height: 47px !important;
       display: flex !important;
       align-items: center !important;
       justify-content: space-between !important;
       max-width: 480px !important;
       margin: 0 auto !important;
+      position: relative !important;
+      z-index: 2 !important;
     }
 
     .brand-line {
-      height: 52px !important;
+      height: 47px !important;
       display: inline-flex !important;
       align-items: center !important;
-      gap: 7px !important;
+      gap: 8px !important;
       text-decoration: none !important;
-      transition: transform 0.15s ease !important;
+      transition: opacity 0.15s ease !important;
     }
-    .brand-line:active { transform: scale(0.98); }
+    .brand-line:active {
+      opacity: 0.75;
+    }
 
     .brand-sym-box {
-      width: 32px !important;
-      height: 32px !important;
+      width: 30px !important;
+      height: 30px !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
-      position: relative !important;
+      background: none !important;
+      border: none !important;
+      box-shadow: none !important;
       flex-shrink: 0 !important;
+      position: relative !important;
     }
     .brand-sym-box svg { 
-      width: 26px !important; height: 26px !important; display: block !important; 
+      width: 28px !important; 
+      height: 28px !important; 
+      display: block !important; 
     }
-    
+
+    /* 💎 플래티넘/티타늄 매트 메탈릭 타이포그래피 */
     .brand-title {
       font-family: var(--font-display) !important;
-      font-size: 1.08rem !important;
+      font-size: 1.2rem !important;
       font-weight: 900 !important;
-      color: #ffffff !important;
-      letter-spacing: -0.03em !important;
+      letter-spacing: -0.035em !important;
       line-height: 1 !important;
-      display: inline-flex !important;
-      align-items: center !important;
+      color: #ffffff !important;
+      background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 30%, #94a3b8 52%, #ffffff 78%, #cbd5e1 100%) !important;
+      -webkit-background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 8px rgba(255, 255, 255, 0.15));
     }
 
     .header-auth-btn { 
@@ -480,12 +504,13 @@
       align-items: baseline;
       gap: 6px;
     }
-    .insta-memo-spot-title {
-      font-family: var(--font-serif);
-      font-size: 1.05rem;
-      font-weight: 900;
-      color: #ffffff;
-      line-height: 1.2;
+   .insta-memo-spot-title {
+      font-family: var(--font-display) !important;
+      font-size: 0.95rem !important;
+      font-weight: 900 !important;
+      letter-spacing: -0.03em !important;
+      color: #ffffff !important;
+      line-height: 1.25 !important;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -499,20 +524,22 @@
       flex-shrink: 0;
     }
     .insta-memo-quote {
-      font-family: var(--font-body);
-      font-size: 0.74rem;
-      color: #cbd5e1;
-      line-height: 1.4;
-      height: 4.2em;
-      min-height: 4.2em;
-      max-height: 4.2em;
-      font-style: italic;
+      font-family: var(--font-body) !important;
+      font-size: 0.76rem !important;
+      font-weight: 500 !important;
+      color: #94a3b8 !important;
+      line-height: 1.45 !important;
+      height: auto !important;
+      min-height: 0 !important;
+      max-height: 2.9em !important;
+      font-style: normal !important;
       display: -webkit-box;
-      -webkit-line-clamp: 3;
+      -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
       text-overflow: ellipsis;
       box-sizing: border-box;
+      letter-spacing: -0.015em !important;
     }
     .insta-memo-facts-row {
       display: flex;
@@ -917,7 +944,22 @@
   <div id="globalAppMilkyWayLayer" class="global-app-starlight-canvas"></div>
 
 <header class="netflix-integrated-header notranslate">
-    <div class="header-top-row" style="justify-content:center !important;">
+   <!-- 🌌 서정적 딥 슬로우: 마이크로 십자성(5.5~6px) + 초미세 도트(1~1.6px) -->
+    <div class="header-starlight-layer">
+      <!-- 십자성 1 (파스텔 골드 마이크로 5.5px, 5.4초 주기) -->
+      <svg viewBox="0 0 24 24" style="position:absolute; top:30%; left:26%; width:5.5px; height:5.5px; fill:#fde047; animation:headerIndieTwinkle 5.4s infinite ease-in-out 0.8s;"><path d="M12,2 Q12,12 2,12 Q12,12 12,22 Q12,12 22,12 Q12,12 12,2 Z"/><circle cx="12" cy="12" r="1.5" fill="#ffffff"/></svg>
+      <!-- 십자성 2 (플래티넘 실버 마이크로 6.0px, 6.6초 주기) -->
+      <svg viewBox="0 0 24 24" style="position:absolute; top:42%; left:67%; width:6.0px; height:6.0px; fill:#e2e8f0; animation:headerIndieTwinkle 6.6s infinite ease-in-out 2.6s;"><path d="M12,2 Q12,12 2,12 Q12,12 12,22 Q12,12 22,12 Q12,12 12,2 Z"/><circle cx="12" cy="12" r="1.5" fill="#ffffff"/></svg>
+      
+      <!-- 초미세 원형 도트 별빛 (각각 4.8s~6.2s 잔잔한 점등) -->
+      <div style="position:absolute; top:65%; left:14%; width:1.2px; height:1.2px; border-radius:50%; background:#ffffff; animation:headerIndieTwinkle 4.8s infinite ease-in-out 0s;"></div>
+      <div style="position:absolute; top:24%; left:45%; width:1.0px; height:1.0px; border-radius:50%; background:#fde047; animation:headerIndieTwinkle 5.8s infinite ease-in-out 1.6s;"></div>
+      <div style="position:absolute; top:70%; left:53%; width:1.6px; height:1.6px; border-radius:50%; background:#cbd5e1; animation:headerIndieTwinkle 5.2s infinite ease-in-out 3.2s;"></div>
+      <div style="position:absolute; top:25%; left:82%; width:1.2px; height:1.2px; border-radius:50%; background:#ffffff; animation:headerIndieTwinkle 6.2s infinite ease-in-out 1.2s;"></div>
+      <div style="position:absolute; top:68%; left:93%; width:1.0px; height:1.0px; border-radius:50%; background:#fde047; animation:headerIndieTwinkle 5.0s infinite ease-in-out 2.2s;"></div>
+    </div>
+
+    <div class="header-top-row">
       <a href="index.html" class="brand-line" onclick="triggerHaptic(10)" title="낭만루트 홈">
         <div class="brand-sym-box">
           <svg viewBox="0 0 32 32" fill="none">
@@ -940,57 +982,42 @@
       </a>
     </div>
   </header>
-  <main class="netflix-feed-container notranslate">
+ <main class="netflix-feed-container notranslate">
 
- <section class="insta-stage-wrap">
-  <div class="insta-stage-header">
-    <div class="insta-stage-title">
-      <span class="icon-svg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg></span>
-      <span>지금, 이 풍경 어디일까?</span>
-    </div>
+ <section class="insta-stage-wrap" style="padding-top:6px !important; margin-top:0 !important; gap:4px !important;">
+  <!-- 🌟 우측 밀착 타이틀: 골드 낭만별 + 오늘의 낭만 스팟 + (순번) -->
+  <div style="width:100%; display:flex; justify-content:flex-end; align-items:center; gap:5px; margin-bottom:2px; padding-right:4px; box-sizing:border-box; line-height:1;">
+    <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:#fde047; stroke:#fde047; filter:drop-shadow(0 0 5px rgba(253,224,71,0.8)); flex-shrink:0;">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </svg>
+    <span style="font-size:0.82rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">오늘의 낭만 스팟</span>
+    <span id="heroCardIndexIndicator" style="font-family:var(--font-mono), var(--font-en); font-size:0.72rem; font-weight:800; color:#94a3b8; margin-left:2px;">(1/10)</span>
   </div>
 
-  <div class="insta-card" id="instaMainCard" style="position:relative; width:100%; aspect-ratio:3/4 !important; max-height:60svh; border-radius:16px; overflow:hidden; background:#000000; border:1px solid rgba(255,255,255,0.14); box-shadow:0 14px 38px rgba(0,0,0,0.85); box-sizing:border-box;">
+  <!-- 📷 최대 66svh 하이브리드 히어로 카드 (스와이프 100% 보장 + 좌우 탭 피드 전환) -->
+  <div class="insta-card" id="instaMainCard" 
+       ontouchstart="window.handleHeroTouchStart(event)" 
+       ontouchend="window.handleHeroTouchEnd(event)" 
+       style="position:relative; width:100%; aspect-ratio:3/4 !important; max-height:66svh !important; border-radius:16px; overflow:hidden; background:#000000; border:1px solid rgba(255,255,255,0.14); box-shadow:0 14px 38px rgba(0,0,0,0.85); box-sizing:border-box;">
     
-    <!-- 🌟 좌측 상단: 골드 옐로우 낭만별 뱃지 -->
-    <div style="position:absolute; top:12px; left:12px; z-index:25; width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,0.6); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.22); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(0,0,0,0.6);">
-      <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:#fde047; stroke:#fde047; filter:drop-shadow(0 0 6px rgba(253,224,71,0.8));">
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-      </svg>
-    </div>
-
-    <!-- 📷 물리적 네이티브 가로 스와이프 트랙 -->
+    <!-- 📷 물리적 네이티브 가로 스와이프 트랙 (손가락 드래그 100% 작동) -->
     <div id="heroPhotoSwipeTrack" onscroll="window.updateHeroCarouselState(this);" style="display:flex !important; width:100% !important; height:100% !important; overflow-x:auto !important; overflow-y:hidden !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; touch-action:pan-x pan-y !important;">
       <!-- renderCurrentHeroCard()에서 슬라이드 자동 수화 -->
     </div>
-  </div>
 
-  <!-- 🎚️ [사진과 메모장 사이] 독립 인터랙션 바: [이전 피드] ── [사진 도트] ── [다음 피드] -->
-  <div style="display:flex; justify-content:space-between; align-items:center; width:100%; padding:2px 4px; box-sizing:border-box; flex-shrink:0;">
-    <button type="button" onclick="window.navigateHeroFeed(-1, event)" title="이전 피드 보기" style="height:28px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#e2e8f0; font-size:0.68rem; font-weight:800; border-radius:14px; padding:0 10px; cursor:pointer; display:inline-flex; align-items:center; gap:3px;">
-      <span>◀ 이전</span>
-    </button>
-
-    <!-- 중앙 도트 인디케이터 (현재 사진 위치) -->
-    <div id="heroDotsWrapper" style="display:flex; justify-content:center; align-items:center; gap:4px; height:10px;"></div>
-
-    <button type="button" onclick="window.navigateHeroFeed(1, event)" title="다음 피드 보기" style="height:28px; background:rgba(56,189,248,0.14); border:1px solid rgba(56,189,248,0.35); color:#38bdf8; font-size:0.68rem; font-weight:900; border-radius:14px; padding:0 10px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
-      <span>다음 ▶</span>
-      <span id="heroCardIndexIndicator" style="font-family:var(--font-en); font-size:0.64rem;">(1/1)</span>
-    </button>
+    <!-- 🔘 사진 속 마이크로 도트 인디케이터 (터치 간섭 0%, 터치 통과) -->
+    <div id="heroDotsWrapper" style="position:absolute; bottom:12px; left:0; right:0; display:flex; justify-content:center; align-items:center; gap:4px; height:8px; z-index:12; pointer-events:none;"></div>
   </div>
 
 <!-- 하단 글래스 메모 -->
   <div class="insta-glass-memo">
-    <div class="insta-memo-title-line" style="display:flex; justify-content:space-between; align-items:center;">
-      <h1 class="insta-memo-spot-title" id="heroMainTitle" style="font-size:1.02rem; font-weight:900; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; padding-right:8px;">박지 로딩 중...</h1>
+   <div class="insta-memo-title-line" style="display:flex; justify-content:space-between; align-items:center;">
+      <h1 class="insta-memo-spot-title" id="heroMainTitle">박지 로딩 중...</h1>
 
-     <!-- ⭐ 전국 1위 골드 낭만별 등록자 뱃지 -->
-      <button type="button" id="btnHeroAuthorFeed" onclick="window.openHeroAuthorCollection(event)" style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); border-radius:12px; padding:2.5px 8px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">
-        <span style="font-size:0.68rem; line-height:1; color:#fde047;">⭐</span>
-       
-    
-        <span id="heroAuthorText" style="font-size:0.68rem; font-weight:900; color:#fde047; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">낭만백패커</span>
+      <!-- ⭐ 은은한 플래티넘 글래스 캡슐 뱃지 -->
+      <button type="button" id="btnHeroAuthorFeed" onclick="window.openHeroAuthorCollection(event)" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:12px; padding:3px 8px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">
+        <span style="font-size:0.64rem; color:#fde047; line-height:1;">★</span>
+        <span id="heroAuthorText" style="font-size:0.68rem; font-weight:800; color:#e2e8f0; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">낭만백패커</span>
       </button>
     </div>
 
@@ -2408,6 +2435,43 @@
       } else {
         renderCurrentHeroCard();
       }
+    };
+
+   // 🚀 [스마트 하이브리드 제스처 엔진]: 스와이프 드래그는 부드럽게 통과, 제자리 탭만 피드 전환
+    var heroTouchStartX = 0;
+    var heroTouchStartY = 0;
+    var heroTouchStartTime = 0;
+
+    window.handleHeroTouchStart = function(e) {
+      if (!e.touches || e.touches.length !== 1) return;
+      heroTouchStartX = e.touches[0].clientX;
+      heroTouchStartY = e.touches[0].clientY;
+      heroTouchStartTime = Date.now();
+    };
+
+    window.handleHeroTouchEnd = function(e) {
+      if (!e.changedTouches || e.changedTouches.length !== 1) return;
+      var diffX = Math.abs(e.changedTouches[0].clientX - heroTouchStartX);
+      var diffY = Math.abs(e.changedTouches[0].clientY - heroTouchStartY);
+      var elapsed = Date.now() - heroTouchStartTime;
+
+      // 👆 손가락 이동이 12px 미만이고 350ms 이내 터치일 때만 순수 '탭(Tap)'으로 판정
+      if (diffX < 12 && diffY < 12 && elapsed < 350) {
+        var card = document.getElementById('instaMainCard');
+        if (!card) return;
+        var rect = card.getBoundingClientRect();
+        var tapX = e.changedTouches[0].clientX - rect.left;
+        var width = rect.width;
+
+        if (tapX < width * 0.38) {
+          // 좌측 38% 탭 ➔ 이전 피드
+          window.navigateHeroFeed(-1);
+        } else if (tapX > width * 0.62) {
+          // 우측 38% 탭 ➔ 다음 피드
+          window.navigateHeroFeed(1);
+        }
+      }
+      // 손가락을 12px 이상 움직인 스와이프 동작은 가로 스크롤 트랙이 100% 매끄럽게 처리함
     };
 
     function initHeroGestureEngine() {}
