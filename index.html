@@ -1844,88 +1844,112 @@
       var railContainer = document.getElementById('secretSpotTrailerRailContainer');
       if (!railContainer) return;
 
-      var spotPool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
-        ? registeredSpots 
-        : (safeGetJSON('okbm_spots_cache', []) || []);
+      var feedPool = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
+        ? window.__allLoadedFeeds
+        : (safeGetJSON('okbm_cached_community_feeds', []) || []);
 
-      if (spotPool.length === 0) {
-        railContainer.innerHTML = '<div style="padding:20px 10px; font-size:0.75rem; color:#64748b;">박지 데이터를 동기화하고 있습니다...</div>';
+      if (feedPool.length === 0) {
+        railContainer.innerHTML = '<div style="padding:24px 10px; font-size:0.72rem; color:#64748b;">등록된 피드를 불러오는 중입니다...</div>';
         return;
       }
 
       var themeKey = window.currentSecretSpotTheme || 'all';
 
-      var filteredSpots = spotPool.filter(function(s) {
-        if (!s) return false;
-        var diff = parseInt(s.difficulty, 10) || 3;
-        var elev = parseInt(String(s.elevation || '0').replace(/\D/g, ''), 10) || 0;
-        var tStr = (Array.isArray(s.terrain) ? s.terrain.join(' ') : String(s.terrain || '')).toLowerCase();
-        var sName = String(s.name || s.spot_main || '').toLowerCase();
+      // 📷 유효한 실제 사진이 존재하는 피드만 선별 & 박지 기준 중복 제거
+      var validPhotoFeeds = [];
+      var seenSpots = new Set();
+
+      feedPool.filter(function(f) { return f && f.isPublished !== false; }).forEach(function(f) {
+        var spotName = String(f.spot || f.spotName || '').trim();
+        var cleanSpotName = spotName.replace(/\s*\(.*?\)/g, '').trim();
+        if (!cleanSpotName || seenSpots.has(cleanSpotName)) return;
+
+        var photos = (typeof getArchivePhotosList === 'function') ? getArchivePhotosList(f) : (f.photos || []);
+        var photoUrl = (Array.isArray(photos) && photos[0]) ? photos[0] : (f.photo || f.photo_url || f.fieldPhoto || '');
+
+        if (typeof photoUrl === 'string' && photoUrl.trim().length > 10) {
+          seenSpots.add(cleanSpotName);
+          validPhotoFeeds.push({
+            feed: f,
+            spotName: spotName,
+            cleanSpotName: cleanSpotName,
+            photoUrl: photoUrl.trim()
+          });
+        }
+      });
+
+     // 🏷️ 박지 마스터 DB 정식 지형 태그(terrain) & 도메인 팩트 기반 정밀 필터링
+      var spotPool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
+        ? registeredSpots : (safeGetJSON('okbm_spots_cache', []) || []);
+
+      var filteredFeeds = validPhotoFeeds.filter(function(item) {
+        if (themeKey === 'all') return true;
+
+        var f = item.feed;
+        var rawName = String(item.spotName || f.spot || '').trim();
+        var cleanName = item.cleanSpotName.toLowerCase();
+        var pureKeyword = cleanName.replace(/^(강원|경기|인천|충북|충남|전북|전남|경북|경남|제주|서울|세종|울산|부산|대구|광주|대전)\s*/, '').trim();
+
+        // 1. 박지 마스터 DB에서 1:1 정식 레코드 인출
+        var mSpot = spotPool.find(function(s) {
+          if (!s) return false;
+          var sName = String(s.name || s.spot_main || '').replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
+          return sName && (sName === cleanName || sName === pureKeyword || cleanName.includes(sName) || sName.includes(pureKeyword));
+        });
+
+        // 2. 마스터 DB의 정식 지형(terrain), 난이도 인출
+        var terrainList = [];
+        if (mSpot && mSpot.terrain) {
+          terrainList = Array.isArray(mSpot.terrain) ? mSpot.terrain : String(mSpot.terrain).split(',').map(function(t) { return t.trim(); });
+        }
+        var terrainStr = terrainList.join(' ').toLowerCase();
+        var difficulty = mSpot ? (parseInt(mSpot.difficulty, 10) || 3) : 3;
+
+        // 3. 지형 속성 플래그 (중복 분류 방지용)
+        var isDeck = terrainStr.includes('데크') || cleanName.includes('데크') || rawName.includes('데크');
+        var isEasyAccess = terrainStr.includes('임도') || terrainStr.includes('차박') || terrainStr.includes('주차장') || cleanName.includes('육백마지기');
 
         if (themeKey === 'easy') {
-          return diff <= 2 || elev <= 400 || tStr.includes('초보') || tStr.includes('공원') || tStr.includes('노지');
+          // 초보/퇴근박: 난이도 1~2급, 육백마지기 등 차박/임도 명소, 노지, 잔디, 활공장, 헬기장
+          return difficulty <= 2 || isEasyAccess || terrainStr.includes('노지') || terrainStr.includes('잔디') || terrainStr.includes('활공장') || terrainStr.includes('헬기장');
         } else if (themeKey === 'island') {
-          return tStr.includes('섬') || tStr.includes('해변') || tStr.includes('바다') || sName.includes('도') || sName.includes('섬');
+          // 오션/섬: 섬, 해변, 모래, 바다 지형 및 굴업도/자월도 등 ~도 단위 섬 완벽 수용
+          var hasIslandWord = terrainStr.includes('섬') || terrainStr.includes('해변') || terrainStr.includes('모래') || terrainStr.includes('바다') || terrainStr.includes('해수욕장') || terrainStr.includes('해안');
+          var isIslandName = /(굴업|자월|덕적|승봉|대이작|소이작|백령|대청|소청|연평|선재|영흥|교동|석모|강화|신도|시도|모도|장봉|울릉|독도|제주|비양|우도|추자|가파|마라|보길|완도|청산|흑산|홍도|거문|금오|안도|연도|돌산|백야|하화|상화|개도|사도|초도|손죽|거제|남해|욕지|연화|매물|소매물|비진|한산|사량|수우|두미|조도|관매|선유|무녀|장자|관리|방축|말도|야미|신시|어청|위도|삽시|원산|고대|장고|효자|외연|호도|녹도|풍도|육도)도/.test(cleanName) || cleanName.includes('섬');
+          return hasIslandWord || isIslandName;
         } else if (themeKey === 'alpine') {
-          return elev >= 750 || tStr.includes('암릉') || sName.includes('봉') || sName.includes('령') || sName.includes('산');
+          // 오지/돌박지: 데크/차박지는 절대 제외. 오직 팩 안 박히는 암릉, 바위, 너덜, 돌박지 지형만 합격
+          if (isDeck || isEasyAccess) return false;
+          return terrainStr.includes('암릉') || terrainStr.includes('너덜') || terrainStr.includes('돌박지') || terrainStr.includes('바위') || terrainStr.includes('마당바위') || terrainStr.includes('슬랩');
         } else if (themeKey === 'deck') {
-          return tStr.includes('데크') || tStr.includes('전망');
+          // 데크명당: 정식 데크 지형 또는 박지명에 데크 명시
+          return isDeck;
         }
         return true;
       });
+      if (filteredFeeds.length === 0) {
+        railContainer.innerHTML = '<div style="padding:24px 10px; font-size:0.72rem; color:#64748b;">해당 테마에 등록된 사진 피드가 아직 없습니다.</div>';
+        return;
+      }
 
-      if (filteredSpots.length === 0) filteredSpots = spotPool.slice(0, 15);
-
-      var cachedFeeds = window.__allLoadedFeeds || safeGetJSON('okbm_cached_community_feeds', []) || [];
-
-      var themeFallbackPhotos = {
-        all: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=400&q=80',
-        easy: 'https://images.unsplash.com/photo-1478131143081-80f7f84ca84d?auto=format&fit=crop&w=400&q=80',
-        island: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=80',
-        alpine: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=400&q=80',
-        deck: 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=400&q=80'
-      };
-
-      railContainer.innerHTML = filteredSpots.slice(0, 24).map(function(sp) {
-        var sName = String(sp.name || sp.spot_main || '박지').trim();
-        var cleanPureName = sName.replace(/\s*\(.*?\)/g, '').trim();
-        var sRegion = sp.region || sp.cityName || '전국';
-        var sElev = sp.elevation ? (String(sp.elevation).includes('m') ? sp.elevation : sp.elevation + 'm') : 'FIELD';
-        var sId = escapeHtml(String(sp.id || cleanPureName));
-
-        // 📷 1:1 정밀 썸네일 매칭
-        var matchedPhoto = '';
-        if (sp.photo && typeof sp.photo === 'string' && sp.photo.startsWith('http')) {
-          matchedPhoto = sp.photo;
-        } else if (sp.photo_url && typeof sp.photo_url === 'string' && sp.photo_url.startsWith('http')) {
-          matchedPhoto = sp.photo_url;
-        } else {
-          var exactFeed = cachedFeeds.find(function(f) {
-            if (!f || !f.spot) return false;
-            var fSpot = String(f.spot).replace(/\s*\(.*?\)/g, '').trim();
-            return fSpot === cleanPureName;
-          });
-          if (exactFeed) {
-            var fPhotos = (typeof getArchivePhotosList === 'function') ? getArchivePhotosList(exactFeed) : (exactFeed.photos || []);
-            matchedPhoto = (Array.isArray(fPhotos) && fPhotos[0]) ? fPhotos[0] : (exactFeed.photo || '');
-          }
-        }
-
-        if (!matchedPhoto || matchedPhoto.length < 10) {
-          matchedPhoto = themeFallbackPhotos[themeKey] || themeFallbackPhotos.all;
-        }
+      railContainer.innerHTML = filteredFeeds.slice(0, 24).map(function(item) {
+        var f = item.feed;
+        var sName = item.cleanSpotName;
+        var author = f.author || f.nick || '낭만루터';
+        var badgeText = f.elevation ? (String(f.elevation).includes('m') ? f.elevation : f.elevation + 'm') : (f.weightKg ? (f.weightKg + 'kg') : 'FIELD');
+        var sId = escapeHtml(String(f.id || sName));
 
         return `
           <div class="n-trailer-card" data-spot-id="${sId}" onclick="openSecretSpotHeroViewer(this.dataset.spotId)" style="width:118px !important; flex-shrink:0; cursor:pointer;">
             <div class="n-trailer-thumb">
-              <img src="${matchedPhoto}" alt="${escapeHtml(sName)}" loading="lazy" />
-              <div class="n-trailer-weight-chip" style="color:#fde047; border-color:rgba(253,224,71,0.4);">${escapeHtml(sElev)}</div>
+              <img src="${item.photoUrl}" alt="${escapeHtml(sName)}" loading="lazy" />
+              <div class="n-trailer-weight-chip" style="color:#fde047; border-color:rgba(253,224,71,0.4);">${escapeHtml(badgeText)}</div>
             </div>
             <div class="n-trailer-info">
               <span class="n-trailer-spot-name" style="font-size:0.72rem;">${escapeHtml(sName)}</span>
               <span class="n-trailer-author-date" style="color:#38bdf8; font-weight:700; display:flex; align-items:center; gap:2px;">
-                <svg viewBox="0 0 24 24" style="width:10px; height:10px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                <span>${escapeHtml(sRegion)}</span>
+                <svg viewBox="0 0 24 24" style="width:10px; height:10px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span>${escapeHtml(author)}</span>
               </span>
             </div>
           </div>
@@ -2025,56 +2049,61 @@
       triggerHaptic(10);
     }
 
-    // 🖼️ [3:4 대형 화보 뷰어 엔진]
-    window.openSecretSpotHeroViewer = function(spotId) {
+  // 🖼️ [3:4 대형 화보 뷰어 엔진 - 피드 & 박지 DB 통합 연동]
+    window.openSecretSpotHeroViewer = function(spotOrFeedId) {
       triggerHaptic(12);
       var old = document.getElementById('secretSpotHeroModal');
       if (old) old.remove();
 
-      var spotPool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
-        ? registeredSpots : (safeGetJSON('okbm_spots_cache', []) || []);
-      
-      var targetId = String(spotId || '').trim();
-      var spot = spotPool.find(function(s) { 
-        return String(s.id).trim() === targetId || String(s.name || s.spot_main || '').trim() === targetId; 
-      });
-
-      if (!spot) {
-        spot = spotPool.find(function(s) {
-          var cleanName = String(s.name || s.spot_main || '').replace(/\s*\(.*?\)/g, '').trim();
-          return cleanName === targetId.replace(/\s*\(.*?\)/g, '').trim();
-        });
-      }
-      if (!spot) return;
-
-      var spotName = spot.name || spot.spot_main || '박지';
-      var cleanMapSpotName = String(spotName).replace(/\s*\(.*?\)/g, '').trim();
-      var region = spot.region || spot.cityName || '전국';
-      var elev = spot.elevation ? (String(spot.elevation).includes('m') ? spot.elevation : spot.elevation + 'm') : '-';
-      var desc = spot.desc || spot.desc_summary || '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.';
-      var sId = escapeHtml(String(spot.id || cleanMapSpotName));
+      var targetKey = String(spotOrFeedId || '').trim();
+      var cleanTargetKey = targetKey.replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
 
       var cachedFeeds = window.__allLoadedFeeds || safeGetJSON('okbm_cached_community_feeds', []) || [];
-      var matchedFeeds = cachedFeeds.filter(function(f) {
-        if (!f || !f.spot) return false;
-        var fSpot = String(f.spot).replace(/\s*\(.*?\)/g, '').trim();
-        return fSpot === cleanMapSpotName;
+      var spotPool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
+        ? registeredSpots : (safeGetJSON('okbm_spots_cache', []) || []);
+
+      // 1. 실제 피드 목록에서 ID 또는 박지명으로 1순위 매칭
+      var matchedFeed = cachedFeeds.find(function(f) {
+        if (!f) return false;
+        if (String(f.id).trim() === targetKey) return true;
+        var fSpot = String(f.spot || f.spotName || '').replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
+        return fSpot === cleanTargetKey;
       });
 
+      // 2. 피드가 없을 경우 박지 DB에서 탐색
+      var matchedSpot = spotPool.find(function(s) {
+        if (!s) return false;
+        if (String(s.id).trim() === targetKey) return true;
+        var sName = String(s.name || s.spot_main || '').replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
+        return sName === cleanTargetKey;
+      });
+
+      if (!matchedFeed && !matchedSpot) return;
+
+      var spotName = matchedFeed ? (matchedFeed.spot || matchedFeed.spotName) : (matchedSpot.name || matchedSpot.spot_main || '박지');
+      var cleanMapSpotName = String(spotName).replace(/\s*\(.*?\)/g, '').trim();
+      var region = matchedSpot ? (matchedSpot.region || matchedSpot.cityName || '전국') : '전국';
+      var elev = (matchedFeed && matchedFeed.elevation) 
+        ? (String(matchedFeed.elevation).includes('m') ? matchedFeed.elevation : matchedFeed.elevation + 'm')
+        : (matchedSpot && matchedSpot.elevation ? (String(matchedSpot.elevation).includes('m') ? matchedSpot.elevation : matchedSpot.elevation + 'm') : 'FIELD');
+      var desc = (matchedFeed && (matchedFeed.memo || matchedFeed.oneLineMemo))
+        ? (matchedFeed.memo || matchedFeed.oneLineMemo)
+        : (matchedSpot ? (matchedSpot.desc || matchedSpot.desc_summary || '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.') : '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.');
+      var author = (matchedFeed && (matchedFeed.author || matchedFeed.nick)) ? (matchedFeed.author || matchedFeed.nick) : '낭만루터';
+      var feedOrSpotId = escapeHtml(String((matchedFeed && matchedFeed.id) || (matchedSpot && matchedSpot.id) || cleanMapSpotName));
+
+      // 📷 사진 목록 추출
       var photosList = [];
-      if (spot.photo && typeof spot.photo === 'string' && spot.photo.startsWith('http')) {
-        photosList.push(spot.photo);
-      }
-      if (spot.photo_url && typeof spot.photo_url === 'string' && spot.photo_url.startsWith('http') && !photosList.includes(spot.photo_url)) {
-        photosList.push(spot.photo_url);
+      if (matchedFeed) {
+        photosList = (typeof getArchivePhotosList === 'function') ? getArchivePhotosList(matchedFeed) : (matchedFeed.photos || []);
+        if (photosList.length === 0 && matchedFeed.photo) photosList.push(matchedFeed.photo);
+        if (photosList.length === 0 && matchedFeed.photo_url) photosList.push(matchedFeed.photo_url);
       }
 
-      matchedFeeds.forEach(function(f) {
-        var fPhotos = (typeof getArchivePhotosList === 'function') ? getArchivePhotosList(f) : (f.photos || []);
-        fPhotos.forEach(function(u) {
-          if (u && !photosList.includes(u)) photosList.push(u);
-        });
-      });
+      if (photosList.length === 0 && matchedSpot) {
+        if (matchedSpot.photo) photosList.push(matchedSpot.photo);
+        if (matchedSpot.photo_url && !photosList.includes(matchedSpot.photo_url)) photosList.push(matchedSpot.photo_url);
+      }
 
       if (photosList.length === 0) {
         photosList = ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80'];
@@ -2102,7 +2131,6 @@
       modalEl.className = 'netflix-backdrop-in';
       modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:rgba(0,0,0,0.92); z-index:1000045; display:flex; justify-content:center; align-items:center; padding:calc(10px + env(safe-area-inset-top, 0px)) 14px calc(14px + env(safe-area-inset-bottom, 0px)) 14px; box-sizing:border-box; overflow-y:auto;';
 
-      // 오버레이 클릭 시 닫힘 대응
       modalEl.onclick = function(e) {
         if (e.target === modalEl) window.closeSecretSpotHeroModal();
       };
@@ -2114,7 +2142,6 @@
             
             ${storyBarsHtml}
 
-            <!-- ✕ 닫기 버튼 확실한 핸들러 바인딩 -->
             <button type="button" onclick="window.closeSecretSpotHeroModal();" style="position:absolute; top:8px; right:10px; z-index:30; width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,0.65); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.25); color:#ffffff; font-size:1.05rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
 
             <div onscroll="window.updateSecretSpotStoryBars(this);" style="display:flex !important; width:100% !important; height:100% !important; overflow-x:auto !important; overflow-y:hidden !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; touch-action:pan-x pan-y !important;">
@@ -2124,7 +2151,7 @@
             <div style="position:absolute; bottom:0; left:0; right:0; padding:18px 14px 12px 14px; background:linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%); z-index:20; pointer-events:none; display:flex; flex-direction:column; gap:2px;">
               <span style="font-size:0.68rem; color:#38bdf8; font-weight:800; display:flex; align-items:center; gap:3px;">
                 <svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                <span>${escapeHtml(region)} · ${escapeHtml(elev)}</span>
+                <span>${escapeHtml(region)} · ${escapeHtml(elev)} · ${escapeHtml(author)}</span>
               </span>
               <div style="font-size:1.18rem; font-weight:900; color:#ffffff; text-shadow:0 2px 8px rgba(0,0,0,0.9);">${escapeHtml(spotName)}</div>
             </div>
@@ -2140,7 +2167,7 @@
                 <svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 <span>자세히보기</span>
               </button>
-              <button type="button" class="btn-insta-action btn-action-template" data-spot-id="${sId}" onclick="window.openSecretSpotTemplateModal(this.dataset.spotId);" style="flex:1;">
+              <button type="button" class="btn-insta-action btn-action-template" data-spot-id="${feedOrSpotId}" onclick="window.openSecretSpotTemplateModal(this.dataset.spotId);" style="flex:1;">
                 <svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 <span>장비 세팅보기</span>
               </button>
@@ -2459,7 +2486,7 @@
         return 0;
       };
 
-      // ⭐ [히어로 랭킹 정렬 SSOT]: 1순위 낭만별 최다 득표순 ➔ 2순위 정밀 최신 등록순 ➔ 최대 10개 한정
+      // ⭐ [전체 피드 온전 보존 & 히어로 랭킹 분리 SSOT]
       var sortFeedsByStarsAndDate = function(feedList) {
         var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
         return feedList.filter(function(f) { return f && f.isPublished !== false; }).sort(function(a, b) {
@@ -2467,7 +2494,7 @@
           var sB = Number(starCounts[b.id] != null ? starCounts[b.id] : (b.likes || 0));
           if (sB !== sA) return sB - sA; // 1순위: 별 많은 순
           return getFeedTimeValue(b) - getFeedTimeValue(a); // 2순위: 정밀 최신순
-        }).slice(0, 10); // 🔟 최대 10개 한정 노출 확정
+        });
       };
 
       // ⚡ [1순위 0.03초]: Cloudflare R2 글로벌 CDN 단일 진실 공급원(SSOT) 직통 조회
@@ -2488,14 +2515,14 @@
               }
             });
 
-            var cleanFeeds = sortFeedsByStarsAndDate(Array.from(uniqueFeedMap.values()));
-            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(cleanFeeds));
+            var allCleanFeeds = sortFeedsByStarsAndDate(Array.from(uniqueFeedMap.values()));
+            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(allCleanFeeds));
             
-            if (cleanFeeds[0] && (cleanFeeds[0].photo || cleanFeeds[0].photo_url)) {
-              localStorage.setItem('okbm_hero_cover_url', cleanFeeds[0].photo || cleanFeeds[0].photo_url);
+            if (allCleanFeeds[0] && (allCleanFeeds[0].photo || allCleanFeeds[0].photo_url)) {
+              localStorage.setItem('okbm_hero_cover_url', allCleanFeeds[0].photo || allCleanFeeds[0].photo_url);
             }
-            window.__allLoadedFeeds = cleanFeeds;
-            window.heroTopRecords = cleanFeeds;
+            window.__allLoadedFeeds = allCleanFeeds; // 🌟 전체 피드 100% 보존
+            window.heroTopRecords = allCleanFeeds.slice(0, 10); // 🔟 히어로만 상위 10개 한정
             window.currentHeroCardIndex = 0;
             renderCurrentHeroCard();
             if (typeof renderSecretSpotTrailerRail === 'function') renderSecretSpotTrailerRail();
@@ -2518,10 +2545,10 @@
               var sKey = String(f.id || (String(f.userId || '') + '_' + String(f.date || '') + '_' + String(f.spot || ''))).trim();
               if (!sheetUniqueMap.has(sKey)) sheetUniqueMap.set(sKey, f);
             });
-            var cleanSheetFeeds = sortFeedsByStarsAndDate(Array.from(sheetUniqueMap.values()));
-            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(cleanSheetFeeds));
-            window.__allLoadedFeeds = cleanSheetFeeds;
-            window.heroTopRecords = cleanSheetFeeds;
+            var allSheetFeeds = sortFeedsByStarsAndDate(Array.from(sheetUniqueMap.values()));
+            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(allSheetFeeds));
+            window.__allLoadedFeeds = allSheetFeeds; // 🌟 전체 피드 100% 보존
+            window.heroTopRecords = allSheetFeeds.slice(0, 10); // 🔟 히어로만 상위 10개 한정
             window.currentHeroCardIndex = 0;
             renderCurrentHeroCard();
             if (typeof renderSecretSpotTrailerRail === 'function') renderSecretSpotTrailerRail();
@@ -2541,7 +2568,7 @@
       }
       var sortedFallback = sortFeedsByStarsAndDate(fallbackFeeds);
       window.__allLoadedFeeds = sortedFallback;
-      window.heroTopRecords = sortedFallback;
+      window.heroTopRecords = sortedFallback.slice(0, 10);
       window.currentHeroCardIndex = 0;
       renderCurrentHeroCard();
       if (typeof renderSecretSpotTrailerRail === 'function') renderSecretSpotTrailerRail();
@@ -4629,40 +4656,64 @@ var adBannersHtml = `
       if (bannerKg) bannerKg.innerText = totalKg + ' kg';
     }
 
-    async function loadPortalSpotData() {
+  async function loadPortalSpotData() {
+      // ⚡ 로컬 캐시 즉시 인출 (0.001초 지연 없는 렌더링)
+      var cachedSpots = safeGetJSON('okbm_spots_cache', []);
+      if (Array.isArray(cachedSpots) && cachedSpots.length > 0) {
+        registeredSpots = cachedSpots;
+        if (typeof renderSecretSpotTrailerRail === 'function') {
+          renderSecretSpotTrailerRail();
+        }
+      }
+
+      // 📁 구글 스프레드시트 정본 시트1 (gid=0) 인출
       var url = 'https://docs.google.com/spreadsheets/d/' + window.GOOGLE_SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + window.GOOGLE_SHEET_MAIN_GID + '&_t=' + Date.now();
       try {
         var res = await fetch(url);
         if (!res.ok) return;
         var csvText = await res.text();
+        if (typeof Papa === 'undefined') return;
+
         Papa.parse(csvText, {
           header: true, skipEmptyLines: true,
           complete: function(results) {
             if (results.data && results.data.length > 0) {
               registeredSpots = results.data.map(function(row) {
-                return {
-                  id: row.id || row.spotId || '',
-                  name: row.fullName || row.name || row.spot_main || '',
-                  fullName: row.fullName || row.name || row.spot_main || '',
-                  region: row.cityName || row.region || '전국',
-                  elevation: row.elevation || '',
-                  difficulty: row.difficulty || '3',
-                  distance: row.distance_km ? (row.distance_km + 'km') : (row.distance || ''),
-                  terrain: row.terrain ? String(row.terrain).split(',').map(function(t) { return t.trim(); }) : [],
-                  desc: row.desc_summary || row.desc || '자연 속에서 즐기는 조용한 하룻밤.'
-                };
-              }).filter(function(s) { return s.name.trim() !== ''; });
+                var sMain = (row.spot_main || row.name || row.fullName || row['박지명'] || '').trim();
+                var sCity = (row.cityName || row.region || row['지역'] || '전국').trim();
+                var sTerrainRaw = row.terrain || row['지형'] || row['지형태그'] || '';
+                var tArr = Array.isArray(sTerrainRaw) ? sTerrainRaw : String(sTerrainRaw).split(',').map(function(t) { return t.trim(); }).filter(Boolean);
 
-              // ⚡ 박지 DB 수신 완료 즉시 숨은 박지 레일 자동 렌더링
-              if (typeof renderSecretSpotTrailerRail === 'function') {
-                renderSecretSpotTrailerRail();
+                return {
+                  id: String(row.id || row.spotId || sMain).trim(),
+                  name: sMain,
+                  spot_main: sMain,
+                  fullName: sMain,
+                  cityName: sCity,
+                  region: sCity,
+                  elevation: String(row.elevation || row['고도'] || '').trim(),
+                  difficulty: String(row.difficulty || row['난이도'] || '3').trim(),
+                  distance: row.distance_km ? (row.distance_km + 'km') : (row.distance || ''),
+                  terrain: tArr,
+                  desc: (row.desc_summary || row.desc || row['설명'] || '자연 속에서 즐기는 조용한 하룻밤.').trim(),
+                  desc_summary: (row.desc_summary || row.desc || row['설명'] || '자연 속에서 즐기는 조용한 하룻밤.').trim(),
+                  lat: row.lat || '',
+                  lng: row.lng || ''
+                };
+              }).filter(function(s) { return s.name.length > 0; });
+
+              // 💾 로컬 캐시 즉시 업데이트 & 테마 스팟 레일 자동 갱신
+              if (registeredSpots.length > 0) {
+                localStorage.setItem('okbm_spots_cache', JSON.stringify(registeredSpots));
+                if (typeof renderSecretSpotTrailerRail === 'function') {
+                  renderSecretSpotTrailerRail();
+                }
               }
             }
           }
         });
       } catch (e) {}
     }
-
     document.addEventListener('DOMContentLoaded', function() {
       if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
         Kakao.init(window.KAKAO_APP_KEY);
