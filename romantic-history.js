@@ -3155,9 +3155,46 @@
     while (window.__tempPhotoMemos.length < Math.max(1, window.__tempUploadedPhotos.length)) {
       window.__tempPhotoMemos.push('');
     }
-
-    window.__currentSwipePhotoIndex = 0;
+window.__currentSwipePhotoIndex = 0;
     var savedSns = localStorage.getItem('okbm_user_instagram') || record.instagram || record.youtube || '';
+
+    // 🌟 [메모 모드 판별: 한 번에 쓰기(single) vs 사진별 쓰기(per_photo)]
+    var hasMultiMemos = Array.isArray(record.photoMemos) && record.photoMemos.filter(function(m) { return m && m.trim().length > 0; }).length > 1;
+    window.__tempMemoMode = record.memoMode || (hasMultiMemos ? 'per_photo' : 'single');
+    window.__tempSingleMemo = (record.memo || record.oneLineMemo || (record.photoMemos && record.photoMemos[0]) || '').slice(0, 120);
+
+    window.__switchMemoMode = function(mode) {
+      triggerHaptic(8);
+      window.__commitCurrentMemoInput();
+      window.__tempMemoMode = mode;
+
+      var btnSingle = document.getElementById('btnMemoModeSingle');
+      var btnPerPhoto = document.getElementById('btnMemoModePerPhoto');
+      var helperLabel = document.getElementById('richMemoModeHelperLabel');
+      var memoInput = document.getElementById('richFormMemoInput');
+
+      if (btnSingle && btnPerPhoto) {
+        if (mode === 'single') {
+          btnSingle.style.background = '#38bdf8';
+          btnSingle.style.color = '#000000';
+          btnSingle.style.fontWeight = '900';
+          btnPerPhoto.style.background = 'transparent';
+          btnPerPhoto.style.color = '#94a3b8';
+          btnPerPhoto.style.fontWeight = '700';
+          if (helperLabel) helperLabel.innerText = '모든 사진에 공통으로 표시되는 대표 일지입니다.';
+          if (memoInput) memoInput.value = window.__tempSingleMemo;
+        } else {
+          btnPerPhoto.style.background = '#38bdf8';
+          btnPerPhoto.style.color = '#000000';
+          btnPerPhoto.style.fontWeight = '900';
+          btnSingle.style.background = 'transparent';
+          btnSingle.style.color = '#94a3b8';
+          btnSingle.style.fontWeight = '700';
+          if (helperLabel) helperLabel.innerText = '사진을 넘길 때마다 해당 사진의 메모가 바뀝니다.';
+          window.__syncActivePhotoMemoUI();
+        }
+      }
+    };
 
     var formModal = document.createElement('div');
     formModal.id = 'modalRichAfterTrip';
@@ -3205,17 +3242,19 @@
           <input type="file" id="richMultiPhotoInput" accept="image/*" multiple style="display:none;" onchange="window.__handleRichMultiPhotoUpload(event)" />
         </div>
 
-        <!-- 하단 배치: 현재 활성 사진 전용 120자 팁 & 후기 작성 영역 -->
+       <!-- 하단 배치: 한 번에 작성 vs 사진별 작성 듀얼 모드 토글 & 메모 작성 영역 -->
         <div style="display:flex; flex-direction:column; gap:6px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div style="display:flex; align-items:center; gap:5px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-              <span style="font-size:0.82rem; color:#ffffff; font-weight:900;">사진별 120자 현장 기록
-            </span>
+            <div style="display:flex; gap:3px; background:rgba(255,255,255,0.06); padding:2px; border-radius:8px; border:1px solid rgba(255,255,255,0.12);">
+              <button type="button" id="btnMemoModeSingle" onclick="window.__switchMemoMode('single');" style="border:none; cursor:pointer; font-size:0.68rem; padding:4px 9px; border-radius:6px; background:${window.__tempMemoMode==='single'?'#38bdf8':'transparent'}; color:${window.__tempMemoMode==='single'?'#000000':'#94a3b8'}; font-weight:${window.__tempMemoMode==='single'?'900':'700'}; transition:all 0.15s ease;">한 번에 쓰기</button>
+              <button type="button" id="btnMemoModePerPhoto" onclick="window.__switchMemoMode('per_photo');" style="border:none; cursor:pointer; font-size:0.68rem; padding:4px 9px; border-radius:6px; background:${window.__tempMemoMode==='per_photo'?'#38bdf8':'transparent'}; color:${window.__tempMemoMode==='per_photo'?'#000000':'#94a3b8'}; font-weight:${window.__tempMemoMode==='per_photo'?'900':'700'}; transition:all 0.15s ease;">사진별 쓰기</button>
             </div>
             <span id="richMemoCharCounter" style="font-size:0.70rem; color:#38bdf8; font-family:'Space Grotesk', sans-serif; font-weight:800;">0/120자</span>
           </div>
-          <textarea id="richFormMemoInput" maxlength="120" placeholder="해당 사진에 대한 지형 상태, 실전 팁 등 현장 기록을 120자 이내로 남겨보세요. (사진 스와이프 시 사진별로 자동 전환됩니다)" oninput="window.__handleRichMemoInput(this.value);" style="width:100%; height:95px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.15); color:#fff; border-radius:12px; padding:12px 14px; font-size:0.84rem; line-height:1.55; box-sizing:border-box; outline:none; resize:none; font-family:'Pretendard Variable', -apple-system, sans-serif; letter-spacing:-0.02em;"></textarea>
+          <div id="richMemoModeHelperLabel" style="font-size:0.62rem; color:#64748b; margin-top:-2px;">
+            ${window.__tempMemoMode==='single' ? '모든 사진에 공통으로 표시되는 대표 일지입니다.' : '사진을 넘길 때마다 해당 사진의 메모가 바뀝니다.'}
+          </div>
+          <textarea id="richFormMemoInput" maxlength="120" placeholder="지형 상태, 뷰, 실전 팁 등 현장 기록을 120자 이내로 남겨보세요." oninput="window.__handleRichMemoInput(this.value);" style="width:100%; height:95px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.15); color:#fff; border-radius:12px; padding:12px 14px; font-size:0.84rem; line-height:1.55; box-sizing:border-box; outline:none; resize:none; font-family:'Pretendard Variable', -apple-system, sans-serif; letter-spacing:-0.02em;"></textarea>
         </div>
 
         <!-- 하단 배치: 화이트 모노톤 SNS / 채널 링크 입력 영역 -->
@@ -3294,12 +3333,22 @@
         }
       }
 
-      var photosToProcess = Array.isArray(window.__tempUploadedPhotos) ? window.__tempUploadedPhotos.slice(0, 10) : [];
-      var memosToProcess = Array.isArray(window.__tempPhotoMemos) ? window.__tempPhotoMemos.slice(0, Math.max(1, photosToProcess.length)) : [];
+     var photosToProcess = Array.isArray(window.__tempUploadedPhotos) ? window.__tempUploadedPhotos.slice(0, 10) : [];
+      var isSingle = (window.__tempMemoMode === 'single');
+      target.memoMode = isSingle ? 'single' : 'per_photo';
 
-      target.photoMemos = memosToProcess;
-      target.memo = memosToProcess[0] || (memosToProcess.filter(Boolean).join(' ') || '');
-      target.oneLineMemo = target.memo.slice(0, 120);
+      if (isSingle) {
+        var sMemo = (window.__tempSingleMemo || '').trim();
+        target.memo = sMemo;
+        target.oneLineMemo = sMemo;
+        target.photoMemos = [sMemo];
+      } else {
+        var memosToProcess = Array.isArray(window.__tempPhotoMemos) ? window.__tempPhotoMemos.slice(0, Math.max(1, photosToProcess.length)) : [];
+        target.photoMemos = memosToProcess;
+        target.memo = memosToProcess[0] || (memosToProcess.filter(Boolean).join(' ') || '');
+        target.oneLineMemo = target.memo.slice(0, 120);
+      }
+
       target.isPublished = true;
       target.isDraft = false;
 

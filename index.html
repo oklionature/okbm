@@ -2152,10 +2152,14 @@
       modalEl.remove();
     };
 
-    // 🔘 [사진 속 마이크로 닷 인디케이터 실시간 동기화]
+    // 🔘 [테마 스팟 화보 뷰어: 도트 & 사진별 메모 실시간 직통 동기화]
     window.updateSecretSpotStoryBars = function(trackEl) {
       if (!trackEl) return;
-      var curIdx = Math.round(trackEl.scrollLeft / trackEl.offsetWidth);
+      var width = trackEl.offsetWidth;
+      if (!width) return;
+      var curIdx = Math.round(trackEl.scrollLeft / width);
+
+      // 1. 도트 인디케이터 실시간 점멸
       var container = document.getElementById('secretSpotDotsWrap');
       if (container) {
         var dots = container.children;
@@ -2168,6 +2172,31 @@
             dots[b].style.width = '4px';
             dots[b].style.background = 'rgba(255,255,255,0.35)';
             dots[b].style.boxShadow = 'none';
+          }
+        }
+      }
+
+      // 2. 사진별 메모 실시간 교체 (작성 모드 분기 및 빈 사진 방어)
+      var modalEl = document.getElementById('secretSpotHeroModal');
+      var quoteEl = document.getElementById('secretSpotQuoteText');
+      if (modalEl && quoteEl) {
+        var memoMode = modalEl.dataset.memoMode || 'per_photo';
+        var defaultMemo = modalEl.dataset.defaultMemo || '';
+        if (memoMode === 'single') {
+          quoteEl.innerText = '“' + defaultMemo + '”';
+        } else {
+          try {
+            var memos = JSON.parse(modalEl.dataset.photoMemos || '[]');
+            var curText = (Array.isArray(memos) && memos[curIdx] !== undefined) ? memos[curIdx] : '';
+            if (curText && curText.trim().length > 0) {
+              quoteEl.innerText = '“' + curText.trim() + '”';
+            } else if (curIdx === 0 && defaultMemo) {
+              quoteEl.innerText = '“' + defaultMemo + '”';
+            } else {
+              quoteEl.innerText = '“등록된 글이 없습니다.”';
+            }
+          } catch (err) {
+            quoteEl.innerText = '“' + defaultMemo + '”';
           }
         }
       }
@@ -2231,6 +2260,19 @@
         photosList = ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80'];
       }
 
+      // 📦 사진별 메모 및 작성 모드 추출
+      var photoMemosArr = [];
+      if (matchedFeed) {
+        var rawM = matchedFeed.photoMemos || matchedFeed.photo_memos || matchedFeed.photo_memos_json;
+        if (Array.isArray(rawM)) photoMemosArr = rawM;
+        else if (typeof rawM === 'string' && rawM.trim().startsWith('[')) {
+          try { photoMemosArr = JSON.parse(rawM); } catch(e) {}
+        }
+      }
+      var defaultDesc = String(desc || '').trim();
+      var hasMulti = photoMemosArr.filter(function(m) { return m && m.trim().length > 0; }).length > 1;
+      var activeMode = (matchedFeed && matchedFeed.memoMode) || (hasMulti ? 'per_photo' : 'single');
+
       // 🖼️ 3:4 풀커버 슬라이드
       var slidesHtml = photosList.map(function(u) {
         return `
@@ -2254,21 +2296,26 @@
 
       var modalEl = document.createElement('div');
       modalEl.id = 'secretSpotHeroModal';
+      modalEl.dataset.photoMemos = JSON.stringify(photoMemosArr);
+      modalEl.dataset.defaultMemo = defaultDesc;
+      modalEl.dataset.memoMode = activeMode;
       modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:rgba(0,0,0,0.96); z-index:1000045; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;';
+
+      var firstMemoText = (activeMode === 'single' || !photoMemosArr[0] || photoMemosArr[0].trim().length === 0)
+        ? defaultDesc
+        : photoMemosArr[0].trim();
 
       modalEl.innerHTML = `
         <!-- 상단 스크롤 본문 -->
         <div style="flex:1 1 0%; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:calc(10px + env(safe-area-inset-top, 0px)) 14px 14px 14px; display:flex; justify-content:center; align-items:flex-start; box-sizing:border-box;">
           <div style="width:100%; max-width:440px; display:flex; flex-direction:column; gap:8px; margin:auto 0; box-sizing:border-box;">
             
-          <div class="insta-card" style="position:relative; width:100%; aspect-ratio:3/4; border-radius:16px; overflow:hidden; background:#000; border:1px solid rgba(255,255,255,0.18); box-shadow:0 24px 60px rgba(0,0,0,0.95); box-sizing:border-box;">
+            <div class="insta-card" style="position:relative; width:100%; aspect-ratio:3/4; border-radius:16px; overflow:hidden; background:#000; border:1px solid rgba(255,255,255,0.18); box-shadow:0 24px 60px rgba(0,0,0,0.95); box-sizing:border-box;">
               
-              <!-- ✕ 초슬림 투명 글래스 닫기 앵커 (24px 톤앤매너 완결) -->
+              <!-- ✕ 초슬림 투명 글래스 닫기 앵커 -->
               <button type="button" onclick="window.closeSecretSpotHeroModal();" style="position:absolute; top:10px; right:10px; z-index:30; width:24px; height:24px; border-radius:50%; background:rgba(0,0,0,0.35); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.18); color:#cbd5e1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; transition:all 0.15s ease;">
                 <svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
-
-           
 
               <!-- 📷 가로 스와이프 트랙 -->
               <div onscroll="window.updateSecretSpotStoryBars(this);" style="display:flex !important; width:100% !important; height:100% !important; overflow-x:auto !important; overflow-y:hidden !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; touch-action:pan-x pan-y !important;">
@@ -2287,9 +2334,10 @@
               </div>
             </div>
 
+            <!-- 하단 글래스 메모 (가변 자연스러운 높이 유지) -->
             <div class="insta-glass-memo">
-              <div class="insta-memo-quote" style="font-size:0.75rem; line-height:1.45; color:#cbd5e1; height:auto; min-height:0; max-height:none; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
-                “${escapeHtml(desc)}”
+              <div class="insta-memo-quote" id="secretSpotQuoteText" style="font-size:0.75rem; line-height:1.45; color:#cbd5e1; height:auto; min-height:0; max-height:none; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+                “${escapeHtml(firstMemoText)}”
               </div>
 
               <div class="insta-memo-actions-row" style="margin-top:2px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.12); display:flex; gap:6px;">
@@ -2307,7 +2355,7 @@
           </div>
         </div>
 
-        <!-- 🏛️ 하단 고정형 5대 메인 독 (어디서든 즉시 이동 보장) -->
+        <!-- 🏛️ 하단 고정형 5대 메인 독 -->
         <div style="width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; flex-direction:row !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; box-sizing:border-box; padding-bottom:env(safe-area-inset-bottom, 0px); z-index:100 !important;">
           <button type="button" class="dock-item active" onclick="window.closeSecretSpotHeroModal(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
             <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -2322,7 +2370,8 @@
             <span>낭만플랜</span>
           </button>
           <button type="button" class="dock-item" onclick="window.closeSecretSpotHeroModal(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/>
+            <path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
             <span>낭만보관함</span>
           </button>
           <button type="button" class="dock-item" onclick="window.closeSecretSpotHeroModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
@@ -2500,7 +2549,7 @@
     }
 
     // 🔘 [히어로 물리적 가로 슬라이더 도트 & 사진별 메모 실시간 동기화 - 60fps 하드웨어 가속]
-   // 🔘 [히어로 가로 슬라이더 도트 & 사진별 메모 실시간 직통 동기화 (map.html 규격 100% 일치)]
+ // 🔘 [히어로 가로 슬라이더 도트 & 사진별/통합 메모 실시간 직통 동기화]
     window.updateHeroCarouselState = function(trackEl) {
       if (!trackEl) return;
       var scrollLeft = trackEl.scrollLeft;
@@ -2525,22 +2574,32 @@
         }
       }
 
-      // 2. DOM dataset에서 사진별 메모 0.001초 직통 인출 (map.html과 동일 메커니즘)
+      // 2. 통합 메모 모드 vs 사진별 개별 메모 모드 실시간 분기
       var cardRoot = document.getElementById('instaMainCard');
       var quoteEl = document.getElementById('heroQuoteText');
-      if (cardRoot && quoteEl && cardRoot.dataset.photoMemos) {
-        try {
-          var memos = JSON.parse(cardRoot.dataset.photoMemos);
-          var curText = (Array.isArray(memos) && memos[curIdx] !== undefined) ? memos[curIdx] : '';
-          if (!curText && curIdx === 0 && cardRoot.dataset.defaultMemo) {
-            curText = cardRoot.dataset.defaultMemo;
+      if (cardRoot && quoteEl) {
+        var memoMode = cardRoot.dataset.memoMode || 'per_photo';
+        var defaultMemo = cardRoot.dataset.defaultMemo || '자연 속에서 비화식으로 즐기는 조용한 하룻밤.';
+
+        if (memoMode === 'single') {
+          // 🌟 한 번에 쓰기(통합 모드): 사진이 넘어가도 대표 메모 영구 유지
+          quoteEl.innerText = '“' + defaultMemo + '”';
+        } else {
+          // 📸 사진별 쓰기 모드: 사진별 메모 출력 (없으면 등록된 글 없음)
+          try {
+            var memos = JSON.parse(cardRoot.dataset.photoMemos || '[]');
+            var curText = (Array.isArray(memos) && memos[curIdx] !== undefined) ? memos[curIdx] : '';
+            if (curText && curText.trim().length > 0) {
+              quoteEl.innerText = '“' + curText.trim() + '”';
+            } else if (curIdx === 0 && defaultMemo) {
+              quoteEl.innerText = '“' + defaultMemo + '”';
+            } else {
+              quoteEl.innerText = '“등록된 글이 없습니다.”';
+            }
+          } catch (err) {
+            quoteEl.innerText = '“' + defaultMemo + '”';
           }
-         if (curText && curText.trim().length > 0) {
-            quoteEl.innerText = '“' + curText.trim() + '”';
-          } else {
-            quoteEl.innerText = '“등록된 글이 없습니다.”';
-          }
-        } catch (err) {}
+        }
       }
     };
 
@@ -2564,7 +2623,7 @@
       var spotTitle = record.spot || record.spotName || '낭만 필드 박지';
       var authorName = record.author || '낭만백패커';
 
-      // 📦 [map.html 동일 규격] 사진별 메모 배열을 DOM 데이터셋에 100% 각인
+      // 📦 사진별 메모 및 모드(single vs per_photo) 각인
       var photoMemosArr = [];
       var rawM = record.photoMemos || record.photo_memos || record.photo_memos_json;
       if (Array.isArray(rawM)) {
@@ -2574,18 +2633,18 @@
       }
 
       var defaultMemoText = (record.memo || record.oneLineMemo || '').trim();
-      if (!Array.isArray(photoMemosArr) || photoMemosArr.length === 0) {
-        photoMemosArr = defaultMemoText ? [defaultMemoText] : [];
-      }
+      var hasMulti = photoMemosArr.filter(function(m) { return m && m.trim().length > 0; }).length > 1;
+      var activeMode = record.memoMode || (hasMulti ? 'per_photo' : 'single');
 
       if (cardRoot) {
         cardRoot.dataset.photoMemos = JSON.stringify(photoMemosArr);
-        cardRoot.dataset.defaultMemo = defaultMemoText;
+        cardRoot.dataset.defaultMemo = defaultMemoText || '자연 속에서 비화식으로 즐기는 조용한 하룻밤.';
+        cardRoot.dataset.memoMode = activeMode;
       }
 
-      var firstMemoText = (photoMemosArr[0] && photoMemosArr[0].trim().length > 0)
-        ? photoMemosArr[0].trim()
-        : (defaultMemoText || '자연 속에서 비화식으로 즐기는 조용한 하룻밤.');
+      var firstMemoText = (activeMode === 'single' || !photoMemosArr[0])
+        ? (defaultMemoText || '자연 속에서 비화식으로 즐기는 조용한 하룻밤.')
+        : photoMemosArr[0].trim();
 
       if (titleEl) titleEl.innerText = spotTitle;
       if (authorEl) authorEl.innerText = authorName;
