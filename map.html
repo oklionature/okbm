@@ -3090,15 +3090,30 @@ function updateSmartResetButtons() {
         }
       }
 
+      var liveSearchTimer = null;
+   var liveSearchTimer = null;
+
       function handleSearchInputChange(mode = 'pc') {
         const inputEl = document.getElementById('pcSearchInput');
         const clearBtn = document.getElementById('pcSearchClearBtn');
-        if (inputEl && clearBtn) {
-          clearBtn.style.display = inputEl.value.trim().length > 0 ? 'inline-flex' : 'none';
+        const q = inputEl ? inputEl.value.trim() : '';
+
+        if (clearBtn) {
+          clearBtn.style.display = q.length > 0 ? 'inline-flex' : 'none';
+        }
+
+        clearTimeout(liveSearchTimer);
+        if (!q) {
+          showTopRankings(mode);
+        } else {
+          liveSearchTimer = setTimeout(() => {
+            executeSearch(mode);
+          }, 120);
         }
       }
 
       function clearSearchInput(mode = 'pc', shouldFocus = true) {
+        clearTimeout(liveSearchTimer);
         const inputEl = document.getElementById('pcSearchInput');
         const clearBtn = document.getElementById('pcSearchClearBtn');
         const dropdown = document.getElementById('pcSearchDropdown');
@@ -3115,8 +3130,7 @@ function updateSmartResetButtons() {
         const inputEl = document.getElementById('pcSearchInput');
         const dropdown = document.getElementById('pcSearchDropdown');
         if (!dropdown) return;
-        handleSearchInputChange(mode);
-        if (inputEl && inputEl.value.trim()) return;
+        if (inputEl && inputEl.value.trim().length > 0) return;
 
         dropdown.innerHTML = `
           <div style="padding:6px 12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-hairline); background:var(--bg-card);">
@@ -3129,7 +3143,17 @@ function updateSmartResetButtons() {
         dropdown.style.display = 'block';
 
         const spotPool = (spots && spots.length > 0) ? spots : (safeGetJSON('okbm_spots_cache', []) || []);
-        const sorted = [...spotPool].sort((a, b) => getSpotViews(b) - getSpotViews(a)).slice(0, 5);
+        const seenNames = new Set();
+        const uniqueSpots = [];
+        for (const item of spotPool) {
+          const key = String(item.spot_main || item.name || '').trim();
+          if (key && !seenNames.has(key)) {
+            seenNames.add(key);
+            uniqueSpots.push(item);
+          }
+        }
+
+        const sorted = uniqueSpots.sort((a, b) => getSpotViews(b) - getSpotViews(a)).slice(0, 5);
         sorted.forEach((item, idx) => {
           const rankColors = [
             'background:linear-gradient(135deg, #f59e0b, #d97706); color:#fff;',
@@ -3138,8 +3162,6 @@ function updateSmartResetButtons() {
             'background:rgba(255,255,255,0.08); color:var(--text-secondary);',
             'background:rgba(255,255,255,0.08); color:var(--text-secondary);'
           ];
-          const rankBadgeStyle = rankColors[idx] || rankColors[3];
-
           const li = document.createElement('li');
           li.style.cssText = 'padding:6px 12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-hairline); cursor:pointer; min-height:36px; box-sizing:border-box;';
           li.onmouseover = () => { li.style.background = 'var(--bg-card-hover)'; };
@@ -3147,7 +3169,7 @@ function updateSmartResetButtons() {
 
           li.innerHTML = `
             <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">
-              <div style="width:16px; height:16px; border-radius:4px; font-size:0.62rem; font-weight:900; display:flex; align-items:center; justify-content:center; flex-shrink:0; ${rankBadgeStyle}">
+              <div style="width:16px; height:16px; border-radius:4px; font-size:0.62rem; font-weight:900; display:flex; align-items:center; justify-content:center; flex-shrink:0; ${rankColors[idx] || rankColors[3]}">
                 ${idx + 1}
               </div>
               <span style="font-size:0.78rem; font-weight:800; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
@@ -3171,9 +3193,10 @@ function updateSmartResetButtons() {
       }
 
       function handleSearchInput(e, mode = 'pc') {
-        handleSearchInputChange(mode);
-        if (e.keyCode === 13) executeSearch(mode);
-        else if (!e.target.value.trim()) showTopRankings(mode);
+        if (e.keyCode === 13) {
+          clearTimeout(liveSearchTimer);
+          executeSearch(mode);
+        }
       }
 
       function renderSpots() {
@@ -3909,37 +3932,48 @@ function updateSmartResetButtons() {
         openAddModal(title, lat, lng, sub);
       }
 
-   async function executeSearch(mode = 'pc') {
+  async function executeSearch(mode = 'pc') {
         const inputEl = document.getElementById('pcSearchInput');
         const dropdown = document.getElementById('pcSearchDropdown');
         const rawQuery = inputEl ? inputEl.value.trim() : '';
-        if (!rawQuery) return;
-        triggerHaptic(12);
-
-        if (window.innerWidth <= 768) {
-          isSidebarCollapsed = true;
-          document.getElementById('sidebar').classList.add('collapsed');
-          updateDockSidebarText(false);
+        if (!rawQuery) {
+          showTopRankings(mode);
+          return;
         }
 
-        const results = [], seenCoords = new Set(), lowerQ = rawQuery.toLowerCase();
-        spots.forEach(spot => {
-          const matchMain = spot.spot_main?.toLowerCase().includes(lowerQ);
-          const matchSub = spot.spot_sub?.toLowerCase().includes(lowerQ);
-          const matchFull = spot.fullName?.toLowerCase().includes(lowerQ);
-          const matchDesc = spot.desc_summary?.toLowerCase().includes(lowerQ);
-          const matchTrailhead = (spot.trailhead_name + ' ' + spot.trailhead_addr).toLowerCase().includes(lowerQ);
-          const matchTerrain = (spot.terrain || []).some(t => t.toLowerCase().includes(lowerQ));
-          const matchCourse = spot.courseType?.toLowerCase().includes(lowerQ);
+        const results = [];
+        const seenCoords = new Set();
+        const lowerQ = rawQuery.toLowerCase();
 
-          if (matchMain || matchSub || matchFull || matchDesc || matchTrailhead || matchTerrain || matchCourse) {
-            seenCoords.add(`${spot.lat.toFixed(4)},${spot.lng.toFixed(4)}`);
-            results.push({ 
-              title: `[등록박지] ${spot.spot_main || spot.name} ${spot.spot_sub ? `(${spot.spot_sub})` : ''}`, 
-              sub: `${spot.cityName ? `[${spot.cityName}] ` : ''}${spot.trailhead_name || spot.trailhead_addr} (${spot.courseType || '일반'} / ${(spot.terrain || []).join(',')})`, 
-              lat: spot.lat, lng: spot.lng, isInternal: true, spotObj: spot 
-            });
+        // 🎯 1. 산 이름 및 세부 포인트 중심 엄격 매칭 (설명/주소 속 무관한 한 글자 매칭 원천 차단)
+        const matchedList = [];
+        spots.forEach(spot => {
+          const mainName = (spot.spot_main || spot.name || '').toLowerCase();
+          const subName = (spot.spot_sub || '').toLowerCase();
+
+          let score = 0;
+          if (mainName === lowerQ) score += 100;
+          else if (mainName.startsWith(lowerQ)) score += 80;
+          else if (mainName.includes(lowerQ)) score += 60;
+          else if (subName.includes(lowerQ)) score += 40;
+
+          if (score > 0) {
+            matchedList.push({ spot, score });
           }
+        });
+
+        matchedList.sort((a, b) => b.score - a.score);
+
+        matchedList.forEach(({ spot }) => {
+          seenCoords.add(`${spot.lat.toFixed(4)},${spot.lng.toFixed(4)}`);
+          results.push({ 
+            title: `[등록박지] ${spot.spot_main || spot.name} ${spot.spot_sub ? `(${spot.spot_sub})` : ''}`, 
+            sub: `${spot.cityName ? `[${spot.cityName}] ` : ''}${spot.trailhead_name || spot.trailhead_addr || ''}`, 
+            lat: spot.lat, 
+            lng: spot.lng, 
+            isInternal: true, 
+            spotObj: spot 
+          });
         });
 
         const renderItems = (items) => {
@@ -3947,7 +3981,7 @@ function updateSmartResetButtons() {
           dropdown.style.display = 'block';
 
           if (items.length === 0) {
-            dropdown.innerHTML = '<li style="padding:14px; text-align:center; color:var(--text-muted); font-size:0.75rem;">일치하는 검색 결과가 없습니다.</li>';
+            dropdown.innerHTML = '<li style="padding:14px; text-align:center; color:var(--text-muted); font-size:0.75rem;">일치하는 산이나 박지가 없습니다.</li>';
             return;
           }
 
@@ -3960,13 +3994,13 @@ function updateSmartResetButtons() {
 
             const badgeHtml = res.isInternal 
               ? '<span style="font-size:0.56rem; font-weight:900; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">박지</span>'
-              : '<span style="font-size:0.56rem; font-weight:700; background:rgba(255,255,255,0.06); color:#94a3b8; border:1px solid rgba(255,255,255,0.12); padding:1px 5px; border-radius:4px; flex-shrink:0;">장소</span>';
+              : '<span style="font-size:0.56rem; font-weight:700; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">자연</span>';
 
             li.innerHTML = `
               <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
                 <div style="display:flex; align-items:center; gap:5px;">
                   ${badgeHtml}
-                  <span style="font-size:0.80rem; font-weight:800; color:${res.isInternal ? '#ffffff' : 'var(--text-primary)'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  <span style="font-size:0.80rem; font-weight:800; color:${res.isInternal ? '#38bdf8' : 'var(--text-primary)'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                     ${escapeHtml(res.title.replace(/^\[등록박지\]\s*/, ''))}
                   </span>
                 </div>
@@ -3997,30 +4031,40 @@ function updateSmartResetButtons() {
           });
         };
 
-        // ⚡ 1단계: 우리 자체 박지 결과는 0.001초 만에 즉시 화면에 렌더링
-        if (results.length > 0) {
-          renderItems(results);
-        }
+        renderItems(results);
 
-        // 📡 2단계: 카카오 장소 검색 비동기 추가 병합
+        // 🌲 2. 카카오 장소 검색 시 주유소/상가 노이즈 100% 차단 (자연/산림/캠핑만 허용)
         if (typeof kakao !== 'undefined' && kakao.maps && kakao.maps.services) {
           const places = new kakao.maps.services.Places();
           places.keywordSearch(rawQuery, (data, status) => {
             if (status === kakao.maps.services.Status.OK) {
+              const blockedCategories = ['주유소', '충전소', '음식점', '카페', '마트', '편의점', '숙박', '병원', '약국', '은행', '학원', '부동산'];
+
               data.forEach(item => {
+                const cat = (item.category_name || '') + ' ' + (item.category_group_name || '');
+                const placeName = item.place_name || '';
+
+                const isBlocked = blockedCategories.some(b => cat.includes(b) || placeName.includes(b));
+                if (isBlocked) return;
+
+                const isOutdoorRelated = cat.includes('여행') || cat.includes('관광') || cat.includes('명소') ||
+                                         placeName.includes('산') || placeName.includes('봉') || placeName.includes('계곡') ||
+                                         placeName.includes('자연') || placeName.includes('캠핑') || placeName.includes('공원') || placeName.includes('고개');
+                if (!isOutdoorRelated) return;
+
                 const lat = parseFloat(item.y), lng = parseFloat(item.x);
                 const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
                 if (!seenCoords.has(key)) {
                   seenCoords.add(key);
                   results.push({ 
                     title: item.place_name, 
-                    sub: `[${item.category_group_name || '장소'}] ${item.road_address_name || item.address_name || ''}`, 
+                    sub: `[${item.category_group_name || '자연명소'}] ${item.road_address_name || item.address_name || ''}`, 
                     lat, lng, isInternal: false 
                   });
                 }
               });
+              renderItems(results);
             }
-            renderItems(results);
           });
         }
       }

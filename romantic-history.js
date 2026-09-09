@@ -435,22 +435,41 @@
     return window.NATURAL_BORDER_PALETTES[paletteIdx];
   };
 
-  // 🔄 [히스토리 레코드 정규화 엔진 - 장비명 강제 제목 치환 원천 차단 & 힐링 스팟 표준화]
+ // 🔄 [히스토리 레코드 정규화 엔진 - 한국 표준시/GMT/ISO 정밀 파서 및 스팟 표준화]
   window.normalizeHistoryRecord = function(r, idx) {
     var now = new Date();
     var y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
+
     if (r && r.date) {
-      var parts = String(r.date).match(/\d+/g);
-      if (parts && parts.length >= 3) {
-        y = parseInt(parts[0], 10);
-        m = parseInt(parts[1], 10);
-        d = parseInt(parts[2], 10);
+      var dateStr = String(r.date).trim();
+      var parsedDate = new Date(dateStr);
+
+      if (!isNaN(parsedDate.getTime()) && (dateStr.includes('GMT') || dateStr.includes('T') || dateStr.includes('-') || /[a-zA-Z]/.test(dateStr))) {
+        y = parsedDate.getFullYear();
+        m = parsedDate.getMonth() + 1;
+        d = parsedDate.getDate();
+      } else {
+        var parts = dateStr.match(/\d+/g);
+        if (parts && parts.length >= 3) {
+          if (parts[0].length === 4) {
+            y = parseInt(parts[0], 10);
+            m = parseInt(parts[1], 10);
+            d = parseInt(parts[2], 10);
+          } else if (parts[2].length === 4) {
+            y = parseInt(parts[2], 10);
+            m = parseInt(parts[0], 10);
+            d = parseInt(parts[1], 10);
+          }
+        }
       }
     } else if (r && r.year && r.month && r.day) {
-      y = r.year; m = r.month; d = r.day;
+      y = parseInt(r.year, 10);
+      m = parseInt(r.month, 10);
+      d = parseInt(r.day, 10);
     }
 
-    var recordId = (r && r.id) ? String(r.id) : ('pack_' + (r && r.date ? String(r.date).replace(/\D/g, '') : Date.now()) + '_' + idx);
+    var cleanDate = y + '.' + String(m).padStart(2, '0') + '.' + String(d).padStart(2, '0');
+    var recordId = (r && r.id) ? String(r.id) : ('pack_' + cleanDate.replace(/\D/g, '') + '_' + idx);
     var rawPhotos = getRecordPhotos(r);
 
     var rawList = Array.isArray(r.items) ? r.items : (Array.isArray(r.gears) ? r.gears : []);
@@ -480,7 +499,7 @@
       id: recordId,
       author: currentAuthor,
       templateId: (r && r.templateId !== undefined && r.templateId !== null) ? parseInt(r.templateId, 10) : savedTmplId,
-      date: (r && r.date) || (y + '.' + String(m).padStart(2, '0') + '.' + String(d).padStart(2, '0')),
+      date: cleanDate,
       year: y,
       month: m,
       day: d,
@@ -492,7 +511,7 @@
       hardText: (r && r.hardText) ? r.hardText : '',
       goodText: (r && r.goodText) ? r.goodText : '',
       memoryText: (r && r.memoryText) ? r.memoryText : '',
-     memo: userMemo,
+      memo: userMemo,
       oneLineMemo: (r && r.oneLineMemo) ? r.oneLineMemo : '',
       photoMemos: (r && Array.isArray(r.photoMemos)) ? r.photoMemos : [],
       isPublished: Boolean(r && r.isPublished === true),
@@ -639,9 +658,20 @@
     window.uploadSinglePhotoToDrive = uploadSinglePhotoToDrive;
   }
 
-  // 📱 [지난 피드 목록 모달 & 다중 체크 일괄 삭제 통합 엔진]
+ // 📱 [지난 피드 목록 모달 & 다중 체크 일괄 삭제 통합 엔진 - 낭만일지 3단 필터 & 영수증 뱃지 완전 제거]
   window.__isPastTripsSelectMode = false;
   window.__selectedPastTripIds = new Set();
+  window.__pastTripsPublishFilter = window.__pastTripsPublishFilter || 'all';
+
+  window.togglePastTripsPublishFilter = function(targetFilter) {
+    if (window.__pastTripsPublishFilter === targetFilter) {
+      window.__pastTripsPublishFilter = 'all';
+    } else {
+      window.__pastTripsPublishFilter = targetFilter;
+    }
+    triggerHaptic(10);
+    window.openPastTripsListModal();
+  };
 
   window.togglePastTripsSelectMode = function() {
     window.__isPastTripsSelectMode = !window.__isPastTripsSelectMode;
@@ -720,7 +750,7 @@
     });
   };
 
- window.executeBatchDeletePastTrips = function() {
+  window.executeBatchDeletePastTrips = function() {
     var selectedCount = window.__selectedPastTripIds.size;
     if (selectedCount === 0) return;
 
@@ -773,14 +803,12 @@
     window.__memoryStore['okbm_phone_photos_map'] = savedPhotosMap;
     window.safeSetStorage('okbm_phone_photos_map', savedPhotosMap);
 
-   // 🪦 툼스톤을 포함한 전체 큐를 클라우드 전송용으로 등록
     window.__tombstoneHistoryQueue = remainingList.concat(tombstones);
 
     window.interactiveHistory = remainingList.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
     window.packingHistoryList = window.interactiveHistory;
     window.safeSetStorage('okbm_packing_history', remainingList);
 
-    // 홈 피드 캐시에서도 즉시 말소
     if (Array.isArray(window.__allLoadedFeeds)) {
       window.__allLoadedFeeds = window.__allLoadedFeeds.filter(function(f) { return !idsToDelete.has(String(f.id).trim()); });
     }
@@ -792,7 +820,6 @@
       }
     }
 
-    // 🚀 툼스톤을 클라우드(R2/드라이브)로 전송하여 타 기기 부활을 영구 차단
     if (typeof syncUserDataToCloud === 'function') {
       syncUserDataToCloud(true);
     }
@@ -861,6 +888,15 @@
         });
       }
       var logs = (window.interactiveHistory || []).filter(Boolean);
+
+      // 🔍 [나만보기 / 함께보기 / 전체보기 필터링]
+      var currentFilter = window.__pastTripsPublishFilter || 'all';
+      if (currentFilter === 'private') {
+        logs = logs.filter(function(r) { return r && r.isPublished !== true; });
+      } else if (currentFilter === 'public') {
+        logs = logs.filter(function(r) { return r && r.isPublished === true; });
+      }
+
       var isSelectMode = Boolean(window.__isPastTripsSelectMode);
 
       var modalEl = document.createElement('div');
@@ -869,12 +905,10 @@
 
       var cardsHtml = '';
       if (logs.length === 0) {
-        cardsHtml = '<div style="text-align:center; padding:50px 10px; color:#94a3b8; font-size:0.78rem;">기록된 출정이 없습니다.<br>배낭을 패킹하고 보관함에 저장해보세요!</div>';
+        cardsHtml = '<div style="text-align:center; padding:50px 10px; color:#94a3b8; font-size:0.78rem;">기록이 없습니다.</div>';
       } else {
         cardsHtml = logs.map(function(r) {
           if (!r) return '';
-          var tId = r.templateId || 1;
-          var tName = (typeof TEMPLATE_NAMES !== 'undefined' && TEMPLATE_NAMES[tId]) ? TEMPLATE_NAMES[tId] : ('테마 ' + tId);
           var photos = getRecordPhotos(r);
           var thumbPhoto = (photos && photos.length > 0 && photos[0]) ? photos[0] : 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';
           var safeId = escapeHtml(String(r.id || ''));
@@ -884,7 +918,7 @@
           var weightStr = escapeHtml(String(r.weightKg || '0.00'));
           var isChecked = window.__selectedPastTripIds.has(String(r.id).trim());
 
-         return '<div id="pastTripRowCard_' + safeId + '" data-record-id="' + safeId + '" onclick="window.__isPastTripsSelectMode ? window.togglePastTripItemSelection(this.dataset.recordId, event) : window.openSingleTripDualFeedModal(this.dataset.recordId)" style="background:' + (isChecked ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.04)') + '; border:1px solid ' + (isChecked ? '#38bdf8' : 'rgba(255,255,255,0.12)') + '; border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:all 0.15s ease; flex-shrink:0; user-select:none;">' +
+          return '<div id="pastTripRowCard_' + safeId + '" data-record-id="' + safeId + '" onclick="window.__isPastTripsSelectMode ? window.togglePastTripItemSelection(this.dataset.recordId, event) : window.openSingleTripDualFeedModal(this.dataset.recordId)" style="background:' + (isChecked ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.04)') + '; border:1px solid ' + (isChecked ? '#38bdf8' : 'rgba(255,255,255,0.12)') + '; border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:all 0.15s ease; flex-shrink:0; user-select:none;">' +
             '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
               (isSelectMode ? (
                 '<div id="pastTripCheckbox_' + safeId + '" style="width:22px; height:22px; border-radius:6px; border:1.8px solid ' + (isChecked ? '#38bdf8' : 'rgba(255,255,255,0.35)') + '; background:' + (isChecked ? '#38bdf8' : 'transparent') + '; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s ease;">' +
@@ -897,14 +931,13 @@
               '<div style="min-width:0; flex:1;">' +
                 '<div style="font-size:0.86rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
                   HISTORY_VEC_ICONS.pin + ' <span>' + spotTitle + '</span>' +
-                  '<span style="font-size:0.55rem; color:#fde047; font-weight:800; background:rgba(253,224,71,0.15); border:1px solid rgba(253,224,71,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">' + escapeHtml(tName) + '</span>' +
                 '</div>' +
                 '<div style="font-size:0.62rem; color:#94a3b8; margin-top:2px;">' + dateText + (elevText ? ' · ' + elevText : '') + '</div>' +
               '</div>' +
             '</div>' +
             '<div style="text-align:right; flex-shrink:0; margin-left:8px;">' +
               '<span style="font-size:0.86rem; font-weight:900; color:#34d399; font-family:\'Space Grotesk\', sans-serif;">' + weightStr + 'kg</span>' +
-              (!isSelectMode ? '<span style="font-size:0.60rem; color:#38bdf8; font-weight:800; display:block; margin-top:2px;">피드 보기 ➔</span>' : '') +
+              (!isSelectMode ? '<span style="font-size:0.60rem; color:#38bdf8; font-weight:800; display:block; margin-top:2px;">' : '') +
             '</div>' +
           '</div>';
         }).join('');
@@ -925,13 +958,28 @@
         '</div>'
       );
 
-    modalEl.innerHTML = `
+      var isPrivateActive = (currentFilter === 'private');
+      var isPublicActive = (currentFilter === 'public');
+
+      modalEl.innerHTML = `
         <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
           <div style="display:flex; align-items:center; gap:8px;">
             <button type="button" onclick="window.closePastTripsListModal(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
-            <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">기록된 활동 목록</span>
+            <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">낭만일지</span>
           </div>
           ${headerRightHtml}
+        </div>
+
+        <!-- 🔒 나만보기 / 🌐 함께보기 토글 바 (둘 다 끄면 전체보기) -->
+        <div style="flex-shrink:0; padding:8px 14px; background:#000000; display:flex; gap:8px; border-bottom:1px solid rgba(255,255,255,0.06);">
+          <button type="button" onclick="window.togglePastTripsPublishFilter('private');" style="flex:1; height:32px; border-radius:8px; font-size:0.74rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; transition:all 0.15s ease; background:${isPrivateActive ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${isPrivateActive ? '#38bdf8' : 'rgba(255,255,255,0.12)'}; color:${isPrivateActive ? '#38bdf8' : '#94a3b8'};">
+            <svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>나만보기</span>
+          </button>
+          <button type="button" onclick="window.togglePastTripsPublishFilter('public');" style="flex:1; height:32px; border-radius:8px; font-size:0.74rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; transition:all 0.15s ease; background:${isPublicActive ? 'rgba(52,211,153,0.2)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${isPublicActive ? '#34d399' : 'rgba(255,255,255,0.12)'}; color:${isPublicActive ? '#34d399' : '#94a3b8'};">
+            <svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <span>함께보기</span>
+          </button>
         </div>
 
         <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(80px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
@@ -1566,7 +1614,7 @@
 
     document.body.appendChild(modalEl);
   };
-// 📖 [단일 피드 카드 마크업 생성기]
+// 📖 [단일 피드 카드 마크업 생성기 - 빨간 인스타 배제 & 풀스크린 시원한 사진 스트립]
   window.buildSingleFeedCardHtml = function(log) {
     if (!log) return '';
     var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
@@ -1580,7 +1628,6 @@
     }
 
     var memo100 = (log.memo || log.oneLineMemo || '').slice(0, 100);
-    var cleanInsta = String(log.instagram || '').replace(/[@\s]/g, '').trim();
 
     var packingSheetMarkup = '';
     var genFn = (typeof window.generateCardMarkup === 'function') ? window.generateCardMarkup : (typeof generateCardMarkup === 'function' ? generateCardMarkup : null);
@@ -1603,21 +1650,18 @@
       '</div>';
     }
 
-    return '<div class="single-feed-block" data-record-id="' + escapeHtml(String(log.id)) + '" style="background:#0b0f17; border:1px solid rgba(255,255,255,0.12); border-radius:18px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 16px 45px rgba(0,0,0,0.95); flex-shrink:0; margin-bottom:24px; box-sizing:border-box;">' +
-      '<div style="padding:12px 14px; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">' +
-        '<div style="display:flex; align-items:center; gap:6px;">' +
-          '<span style="font-size:0.92rem; font-weight:900; color:#ffffff;">' + escapeHtml(log.spot || '낭만 스팟') + '</span>' +
-          (cleanInsta ? ('<a href="https://instagram.com/' + cleanInsta + '" target="_blank" rel="noopener noreferrer" style="color:#fda4af; font-size:0.58rem; font-weight:800; text-decoration:none;">@' + escapeHtml(cleanInsta) + '</a>') : '') +
-        '</div>' +
-        '<span style="font-size:0.68rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;">' + escapeHtml(log.date || '') + '</span>' +
+    return '<div class="single-feed-block" data-record-id="' + escapeHtml(String(log.id)) + '" style="background:#000000; border-bottom:1px solid rgba(255,255,255,0.08); overflow:hidden; display:flex; flex-direction:column; flex-shrink:0; margin-bottom:32px; box-sizing:border-box;">' +
+      '<div style="padding:14px 16px 8px 16px; background:#000000; display:flex; justify-content:space-between; align-items:baseline;">' +
+        '<div style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">' + escapeHtml(log.spot || '낭만 스팟') + (log.elevation ? (' <span style="font-size:0.75rem; color:#fde047; font-weight:800;">(' + escapeHtml(log.elevation) + ')</span>') : '') + '</div>' +
+        '<span style="font-size:0.72rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;">' + escapeHtml(log.date || '') + '</span>' +
       '</div>' +
-      (memo100 ? ('<div style="padding:10px 14px; background:rgba(255,255,255,0.025); font-size:0.78rem; color:#f1f5f9; line-height:1.5;">“' + escapeHtml(memo100) + '”</div>') : '') +
-      '<div style="display:flex; flex-direction:column; padding:8px 8px 0 8px; background:#000;">' +
+      (memo100 ? ('<div style="padding:4px 16px 14px 16px; background:#000000; font-size:0.84rem; color:#cbd5e1; line-height:1.55; word-break:break-all;">“' + escapeHtml(memo100) + '”</div>') : '') +
+      '<div style="display:flex; flex-direction:column; gap:6px; background:#000000; width:100%;">' +
         photosList.map(function(pUrl) {
-          return '<div style="width:100%; aspect-ratio:4/5; overflow:hidden; border-radius:12px; margin-bottom:8px; background:#05070a;"><img src="' + pUrl + '" style="width:100%; height:100%; object-fit:cover; display:block;" /></div>';
+          return '<div style="width:100%; aspect-ratio:4/5; overflow:hidden; background:#05070a;"><img src="' + pUrl + '" style="width:100%; height:100%; object-fit:cover; display:block;" /></div>';
         }).join('') +
       '</div>' +
-      '<div style="padding:10px 14px 14px 14px; background:#07090e; border-top:1px solid rgba(255,255,255,0.08);">' +
+      '<div style="padding:18px 16px 20px 16px; background:#000000;">' +
         '<div style="width:100%; aspect-ratio:3/4; border-radius:14px; padding:2px; background:' + borderGrad + ';"><div style="width:100%; height:100%; border-radius:12px; overflow:hidden;">' + packingSheetMarkup + '</div></div>' +
       '</div>' +
     '</div>';
@@ -2014,7 +2058,7 @@
 
     document.body.appendChild(modalEl);
   };
-  // 📖 [백패킹/캠핑 피드 상세 듀얼 뷰 - 아웃도어 매거진 규격 동기화]
+// 📖 [백패킹/캠핑 피드 상세 듀얼 뷰 - 현재 스크롤 피드 실시간 추적 & 수정 100% 바인딩]
   window.openSingleTripDualFeedModal = function(recordId, scopedFeedList, contextTitle) {
     var logs = (Array.isArray(scopedFeedList) && scopedFeedList.length > 0)
       ? scopedFeedList
@@ -2028,12 +2072,11 @@
     var startIdx = logs.findIndex(function(r) { return String(r.id).trim() === String(recordId).trim(); });
     if (startIdx === -1) startIdx = 0;
 
+    window.__currentActiveDualFeedId = String(logs[startIdx].id);
+
     var old = document.getElementById('singleTripFeedModal');
     if (old) old.remove();
 
-    var headerTitleText = contextTitle ? ('[' + escapeHtml(contextTitle) + '] 님의 피드 (' + logs.length + '개)') : '필드 상세 피드';
-
-    // 해당 작성자의 피드들만 트랙에 순차 렌더링 (타인 피드 원천 차단)
     var allCardsHtml = logs.map(function(item) {
       return window.buildSingleFeedCardHtml(item);
     }).join('');
@@ -2043,15 +2086,16 @@
     feedModal.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000020; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     feedModal.innerHTML = `
-      <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <button type="button" onclick="document.getElementById('singleTripFeedModal').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
-          <span style="font-size:0.92rem; font-weight:900; color:#fff;">${headerTitleText}</span>
-        </div>
-        <button onclick="document.getElementById('singleTripFeedModal').remove(); triggerHaptic(10);" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
+      <!-- 극투명 미니멀 플로팅 네비게이션: 본문을 가리지 않는 초경량 글래스모피즘 -->
+      <div style="position:fixed; top:calc(10px + env(safe-area-inset-top, 0px)); left:0; right:0; max-width:440px; margin:0 auto; padding:0 12px; display:flex; justify-content:space-between; align-items:center; z-index:1000025; pointer-events:none;">
+        <button type="button" onclick="document.getElementById('singleTripFeedModal').remove(); triggerHaptic(10);" style="pointer-events:auto; background:rgba(0,0,0,0.22); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.12); color:#ffffff; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0;">◀</button>
+        
+        <button type="button" id="btnFloatEditTripLog" onclick="window.__triggerEditCurrentActiveFeed();" style="pointer-events:auto; background:rgba(0,0,0,0.22); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.12); color:#fde047; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0;" title="현재 피드 수정">
+          <svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </button>
       </div>
 
-      <div id="dualFeedScrollContainer" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(70px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; box-sizing:border-box;">
+      <div id="dualFeedScrollContainer" onscroll="window.__onDualFeedContainerScroll(this);" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:calc(env(safe-area-inset-top, 0px)) 0 calc(70px + env(safe-area-inset-bottom, 0px)) 0; display:flex; flex-direction:column; box-sizing:border-box;">
         <div id="dualFeedCardsWrapper">
           ${allCardsHtml}
         </div>
@@ -2082,7 +2126,34 @@
     `;
     document.body.appendChild(feedModal);
 
-    // 선택된 해당 피드로 즉시 스크롤 이동
+    window.__onDualFeedContainerScroll = function(container) {
+      if (!container) return;
+      var cards = container.querySelectorAll('.single-feed-block');
+      var containerCenter = container.scrollTop + (container.clientHeight / 2);
+      for (var i = 0; i < cards.length; i++) {
+        var c = cards[i];
+        if (containerCenter >= c.offsetTop && containerCenter <= (c.offsetTop + c.offsetHeight)) {
+          var fId = c.dataset.recordId;
+          if (fId) window.__currentActiveDualFeedId = String(fId);
+          break;
+        }
+      }
+    };
+
+    window.__triggerEditCurrentActiveFeed = function() {
+      triggerHaptic(10);
+      var curId = window.__currentActiveDualFeedId;
+      var targetLog = (window.interactiveHistory || []).find(function(r) { return String(r.id).trim() === String(curId).trim(); });
+      if (!targetLog && Array.isArray(scopedFeedList)) {
+        targetLog = scopedFeedList.find(function(r) { return String(r.id).trim() === String(curId).trim(); });
+      }
+      if (targetLog) {
+        window.openRichAfterTripModal(targetLog);
+      } else {
+        if (typeof showToast === 'function') showToast('수정할 대상을 찾을 수 없습니다.', 'warn');
+      }
+    };
+
     setTimeout(function() {
       var targetCard = feedModal.querySelector('[data-record-id="' + recordId + '"]');
       if (targetCard) {
@@ -2231,6 +2302,105 @@
     if (charCounter) charCounter.innerText = window.__tempPhotoMemos[curIdx].length + '/120자';
   };
 
+ // 🔄 [스마트 사진 순서 드래그 앤 드롭 & 원터치 교체 하이브리드 엔진]
+  window.__selectedSwapThumbIdx = null;
+  window.__draggedThumbIdx = null;
+
+  window.__handleThumbDragStart = function(e, idx) {
+    window.__draggedThumbIdx = idx;
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', String(idx));
+    }
+    triggerHaptic(8);
+  };
+
+  window.__handleThumbDragOver = function(e) {
+    if (e.preventDefault) e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    return false;
+  };
+
+  window.__handleThumbDrop = function(e, dropIdx) {
+    if (e.stopPropagation) e.stopPropagation();
+    if (e.preventDefault) e.preventDefault();
+
+    var fromIdx = window.__draggedThumbIdx;
+    if (fromIdx !== null && fromIdx !== undefined && fromIdx !== dropIdx) {
+      window.__commitCurrentMemoInput();
+
+      var movedPhoto = window.__tempUploadedPhotos.splice(fromIdx, 1)[0];
+      window.__tempUploadedPhotos.splice(dropIdx, 0, movedPhoto);
+
+      if (window.__tempPhotoMemos) {
+        var movedMemo = window.__tempPhotoMemos.splice(fromIdx, 1)[0] || '';
+        window.__tempPhotoMemos.splice(dropIdx, 0, movedMemo);
+      }
+
+      window.__selectedSwapThumbIdx = null;
+      window.__currentSwipePhotoIndex = dropIdx;
+      window.__renderRichPhotoStage();
+      triggerHaptic(14);
+    }
+    window.__draggedThumbIdx = null;
+    return false;
+  };
+
+  window.__handleThumbDragEnd = function() {
+    window.__draggedThumbIdx = null;
+  };
+
+  window.__handleThumbClickForSwap = function(clickedIdx) {
+    triggerHaptic(10);
+    window.__commitCurrentMemoInput();
+
+    if (window.__selectedSwapThumbIdx === null) {
+      window.__selectedSwapThumbIdx = clickedIdx;
+      window.__currentSwipePhotoIndex = clickedIdx;
+      window.__renderRichPhotoStage();
+    } else if (window.__selectedSwapThumbIdx === clickedIdx) {
+      window.__selectedSwapThumbIdx = null;
+      window.__renderRichPhotoStage();
+    } else {
+      var fromIdx = window.__selectedSwapThumbIdx;
+      var toIdx = clickedIdx;
+
+      var tempPhoto = window.__tempUploadedPhotos[fromIdx];
+      window.__tempUploadedPhotos[fromIdx] = window.__tempUploadedPhotos[toIdx];
+      window.__tempUploadedPhotos[toIdx] = tempPhoto;
+
+      if (window.__tempPhotoMemos) {
+        var tempMemo = window.__tempPhotoMemos[fromIdx];
+        window.__tempPhotoMemos[fromIdx] = window.__tempPhotoMemos[toIdx];
+        window.__tempPhotoMemos[toIdx] = tempMemo;
+      }
+
+      window.__selectedSwapThumbIdx = null;
+      window.__currentSwipePhotoIndex = toIdx;
+      window.__renderRichPhotoStage();
+      triggerHaptic(14);
+    }
+  };
+
+  // 🗑️ [수정 화면 내부 직통 일지 & 피드 영구 삭제 파이프라인]
+  window.__deleteCurrentRichTrip = function(recordId) {
+    if (!recordId) return;
+    triggerHaptic(14);
+
+    var confirmMsg = '정말로 이 일지(기록)를 삭제하시겠습니까?\n' +
+      '• 공용 피드 및 모든 저장소에서 즉시 영구 삭제됩니다.\n' +
+      '• 삭제된 기록은 다시 복구되지 않습니다.';
+
+    if (!confirm(confirmMsg)) return;
+
+    var editModal = document.getElementById('modalRichAfterTrip');
+    if (editModal) editModal.remove();
+
+    if (typeof window.deleteTripRecord === 'function') {
+      window.deleteTripRecord(recordId);
+    }
+  };
+
   window.__renderRichPhotoStage = function() {
     var stageContainer = document.getElementById('richLargePhotoStageContainer');
     if (!stageContainer) return;
@@ -2244,8 +2414,7 @@
           <div style="width:52px; height:52px; border-radius:50%; background:rgba(56,189,248,0.12); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px; height:26px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </div>
-          <span style="font-size:0.90rem; font-weight:900; color:#38bdf8; letter-spacing:-0.02em;">현장 사진 추가하기 (최대 10장)</span>
-          <span style="font-size:0.68rem; color:#64748b;">터치하여 사진을 등록하세요</span>
+          <span style="font-size:0.90rem; font-weight:900; color:#38bdf8; letter-spacing:-0.02em;">현장 사진 추가하기</span>
         </div>
       `;
     } else {
@@ -2254,22 +2423,32 @@
           <div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center;">
             <img src="${url}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(22px) brightness(0.32); transform:scale(1.15); pointer-events:none;" />
             <img src="${url}" style="position:relative; z-index:2; width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;" />
-            <button type="button" onclick="event.stopPropagation(); window.__removeRichSinglePhoto(${pIdx});" style="position:absolute; top:10px; right:10px; z-index:10; width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,0.75); color:#ffffff; border:1.5px solid rgba(255,255,255,0.3); font-size:14px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(6px);">✕</button>
+            
+            <button type="button" onclick="event.stopPropagation(); window.__removeRichSinglePhoto(${pIdx});" style="position:absolute; top:10px; right:10px; z-index:10; width:28px; height:28px; border-radius:50%; background:rgba(0,0,0,0.7); color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); font-size:13px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);">✕</button>
           </div>
         `;
       }).join('');
 
-      var dotsHtml = '';
-      if (count > 1) {
-        var dotsItems = Array.from({ length: count }).map(function(_, dIdx) {
-          var isCur = (dIdx === (window.__currentSwipePhotoIndex || 0));
-          var dotW = isCur ? '14px' : '5px';
-          var dotBg = isCur ? '#38bdf8' : 'rgba(255,255,255,0.3)';
-          var dotShadow = isCur ? 'box-shadow:0 0 8px rgba(56,189,248,0.8);' : '';
-          return '<div style="width:' + dotW + '; height:4px; border-radius:2px; background:' + dotBg + '; ' + dotShadow + ' transition:all 0.2s ease;"></div>';
-        }).join('');
-        dotsHtml = '<div id="richSwipeDotsWrapper" style="display:flex; justify-content:center; align-items:center; gap:4px; height:10px; margin-top:8px;">' + dotsItems + '</div>';
-      }
+      // 📸 [드래그 앤 드롭 & 클릭 스왑 완벽 지원 썸네일 스트립]
+      var dragThumbsHtml = photos.map(function(tUrl, tIdx) {
+        var isSwapSelected = (window.__selectedSwapThumbIdx === tIdx);
+        var isCurrentView = (window.__currentSwipePhotoIndex === tIdx && window.__selectedSwapThumbIdx === null);
+        var borderStyle = isSwapSelected
+          ? '2px solid #38bdf8; box-shadow:0 0 10px rgba(56,189,248,0.8); transform:scale(1.06);'
+          : (isCurrentView ? '2px solid #ffffff;' : '1px solid rgba(255,255,255,0.15);');
+
+        return `
+          <div draggable="true"
+               ondragstart="window.__handleThumbDragStart(event, ${tIdx});"
+               ondragover="window.__handleThumbDragOver(event);"
+               ondrop="window.__handleThumbDrop(event, ${tIdx});"
+               ondragend="window.__handleThumbDragEnd(event);"
+               onclick="window.__handleThumbClickForSwap(${tIdx});" 
+               style="width:52px; height:52px; border-radius:8px; overflow:hidden; position:relative; flex-shrink:0; cursor:grab; background:#000; box-sizing:border-box; transition:all 0.15s ease; ${borderStyle}">
+            <img src="${tUrl}" style="width:100%; height:100%; object-fit:cover; pointer-events:none; display:block;" />
+          </div>
+        `;
+      }).join('');
 
       stageContainer.innerHTML = `
         <div style="width:100%; aspect-ratio:3/4; max-height:420px; position:relative; overflow:hidden; border-radius:14px; background:#000000; border:1px solid rgba(255,255,255,0.12); box-shadow:0 12px 30px rgba(0,0,0,0.9);">
@@ -2283,7 +2462,10 @@
             </button>
           ` : ''}
         </div>
-        ${dotsHtml}
+
+        <div style="width:100%; display:flex; gap:8px; overflow-x:auto; padding:8px 0 4px 0; -webkit-overflow-scrolling:touch; scrollbar-width:none;">
+          ${dragThumbsHtml}
+        </div>
       `;
 
       setTimeout(function() {
@@ -2406,14 +2588,14 @@
 
     var spotsSource = Array.from(spotsMap.values());
 
-    var searchModal = document.createElement('div');
+  var searchModal = document.createElement('div');
     searchModal.id = 'richTripSpotSearchModal';
-    searchModal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.82); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:1000025; display:flex; justify-content:center; align-items:flex-end; box-sizing:border-box;';
+    searchModal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.92); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); z-index:1000090 !important; display:flex; justify-content:center; align-items:flex-start; box-sizing:border-box; overflow:hidden;';
     searchModal.onclick = function(e) { if (e.target === searchModal) window.__closeRichSpotSearch(); };
 
     searchModal.innerHTML = `
-      <div style="width:100%; max-width:440px; height:78vh; max-height:640px; background:#0c1017; border-top:1.5px solid rgba(56,189,248,0.4); border-radius:20px 20px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 -12px 35px rgba(0,0,0,0.9);" onclick="event.stopPropagation();">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
+      <div style="width:100%; max-width:440px; height:100%; height:100dvh; max-height:100dvh; background:#0c1017; border-bottom:1px solid rgba(255,255,255,0.08); padding:calc(12px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box;" onclick="event.stopPropagation();">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px; flex-shrink:0;">
           <div style="display:flex; align-items:center; gap:6px;">
             <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" style="width:16px; height:16px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">방문 박지 검색 및 변경</span>
@@ -2421,17 +2603,17 @@
           <button type="button" onclick="window.__closeRichSpotSearch();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
         </div>
 
-        <div style="position:relative; width:100%;">
+        <div style="position:relative; width:100%; flex-shrink:0;">
           <input type="text" id="richSpotSearchInput" placeholder="도시명 또는 박지명 입력 (예: 천마산 관음봉, 단양 올산)" oninput="window.__handleRichSpotFilter(this.value);" style="width:100%; height:44px; background:rgba(255,255,255,0.06); border:1px solid rgba(56,189,248,0.4); border-radius:10px; color:#ffffff; padding:0 38px 0 14px; font-size:0.86rem; outline:none; box-sizing:border-box;" />
           <button type="button" onclick="document.getElementById('richSpotSearchInput').value=''; window.__handleRichSpotFilter('');" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#94a3b8; font-size:0.9rem; cursor:pointer;">✕</button>
         </div>
 
-        <div id="richSpotCustomApplyWrap" style="display:none; padding:8px 12px; background:rgba(56,189,248,0.12); border:1px dashed rgba(56,189,248,0.4); border-radius:8px; justify-content:space-between; align-items:center;">
+        <div id="richSpotCustomApplyWrap" style="display:none; padding:8px 12px; background:rgba(56,189,248,0.12); border:1px dashed rgba(56,189,248,0.4); border-radius:8px; justify-content:space-between; align-items:center; flex-shrink:0;">
           <span id="richSpotCustomTargetText" style="font-size:0.75rem; color:#e2e8f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px;"></span>
           <button type="button" id="richSpotCustomApplyBtn" style="background:#38bdf8; border:none; color:#000; font-size:0.72rem; font-weight:900; padding:5px 10px; border-radius:6px; cursor:pointer; flex-shrink:0;">직접 입력 적용</button>
         </div>
 
-        <div id="richSpotSearchResultsList" style="flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; display:flex; flex-direction:column; gap:6px; padding-right:2px;">
+        <div id="richSpotSearchResultsList" style="flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; display:flex; flex-direction:column; gap:6px; padding-right:2px; overscroll-behavior-y:contain;">
         </div>
       </div>
     `;
@@ -2637,7 +2819,7 @@
     }, 150);
   };
 
-  // [모바일 풀스크린 힐링 기록 & 대형 스와이프 에디터]
+ // [모바일 풀스크린 힐링 기록 & 대형 스와이프 에디터 - 좌측 뒤로가기 삼각형(◀) + 우측 [수정] 버튼 + 무채색 전체삭제]
   window.openRichAfterTripModal = function(record) {
     if (!record) return;
     var old = document.getElementById('modalRichAfterTrip');
@@ -2649,7 +2831,6 @@
       return url && !url.includes('images.unsplash.com');
     });
 
-    // 사진별 120자 메모 맵 정밀 복원 및 길이 동기화 패딩
     window.__tempPhotoMemos = [];
     if (Array.isArray(record.photoMemos) && record.photoMemos.length > 0) {
       window.__tempPhotoMemos = record.photoMemos.slice();
@@ -2663,34 +2844,34 @@
     }
 
     window.__currentSwipePhotoIndex = 0;
-    var savedInsta = localStorage.getItem('okbm_user_instagram') || record.instagram || '';
+    var savedSns = localStorage.getItem('okbm_user_instagram') || record.instagram || record.youtube || '';
 
     var formModal = document.createElement('div');
     formModal.id = 'modalRichAfterTrip';
-    formModal.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000010; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    formModal.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000050; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     formModal.innerHTML = `
-      <!-- 1. 상단 고정 헤더: 닫기 + [터치 시 검색 변경 가능한 장소·날짜 뱃지] + 발행 버튼 -->
-      <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
-        <button type="button" onclick="document.getElementById('modalRichAfterTrip').remove(); triggerHaptic(10);" style="background:none; border:none; color:#cbd5e1; font-size:1.1rem; cursor:pointer; padding:0 4px; min-width:32px; min-height:32px;">✕</button>
+      <!-- 1. 상단 고정 헤더: 뒤로가기 삼각형(◀) + 검색변경 뱃지 + 단일행 [수정] 버튼 -->
+      <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:10px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10; gap:8px;">
+        <button type="button" onclick="document.getElementById('modalRichAfterTrip').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">◀</button>
         
-        <button type="button" onclick="window.openSpotSearchModalForRichTrip();" style="display:flex; align-items:center; gap:5px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); padding:4px 10px; border-radius:20px; cursor:pointer; min-height:32px; transition:background 0.15s ease;" title="터치하여 박지 검색 및 변경">
+        <button type="button" onclick="window.openSpotSearchModalForRichTrip();" style="display:flex; align-items:center; gap:5px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); padding:4px 10px; border-radius:20px; cursor:pointer; min-height:32px; transition:background 0.15s ease; min-width:0; flex:1; justify-content:center;" title="터치하여 박지 검색 및 변경">
           <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          <span id="richHeaderSpotNameText" style="font-size:0.80rem; font-weight:900; color:#38bdf8; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(record.spot)}</span>
-          <span style="font-size:0.65rem; color:#94a3b8; font-family:'JetBrains Mono', monospace;">· ${escapeHtml(record.date)}</span>
+          <span id="richHeaderSpotNameText" style="font-size:0.80rem; font-weight:900; color:#38bdf8; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(record.spot)}</span>
+          <span style="font-size:0.65rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; flex-shrink:0;">· ${escapeHtml(record.date)}</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" style="width:10px; height:10px; flex-shrink:0; margin-left:1px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         </button>
 
-        <button type="button" onclick="window.__saveRichAfterTrip('${record.id}')" style="background:linear-gradient(135deg, #0284c7, #0369a1); border:none; color:#fff; font-size:0.80rem; font-weight:900; padding:6px 14px; border-radius:8px; cursor:pointer; box-shadow:0 2px 10px rgba(2,132,199,0.4); display:flex; align-items:center; gap:3px; min-height:32px;">
-          <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="#ffffff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-          <span>발행</span>
+        <button type="button" onclick="window.__saveRichAfterTrip('${record.id}')" style="white-space:nowrap !important; flex-shrink:0 !important; background:linear-gradient(135deg, #0284c7, #0369a1); border:none; color:#ffffff; font-size:0.78rem; font-weight:900; height:32px; padding:0 12px; border-radius:8px; cursor:pointer; box-shadow:0 2px 8px rgba(2,132,199,0.4); display:inline-flex; align-items:center; justify-content:center; gap:3px;">
+          <svg viewBox="0 0 24 24" style="width:13px; height:13px; flex-shrink:0;" fill="none" stroke="#ffffff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>수정</span>
         </button>
       </div>
 
-      <!-- 2. 중앙 스크롤 뷰포트 (대형 사진 스와이프 뷰어 ➔ 하단 메모창 ➔ SNS창) -->
+      <!-- 2. 중앙 스크롤 뷰포트 (대형 사진 스와이프 뷰어 ➔ 하단 메모창 ➔ 무채색 전체삭제 & SNS 링크) -->
       <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:14px 14px calc(40px + env(safe-area-inset-bottom, 0px)) 14px; display:flex; flex-direction:column; gap:16px; box-sizing:border-box;">
         
-        <!-- 대형 사진 스와이프 무대 섹션 -->
+      <!-- 대형 사진 스와이프 무대 섹션 -->
         <div style="display:flex; flex-direction:column; gap:6px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:6px;">
@@ -2699,7 +2880,10 @@
               </span>
               <span id="richPhotoActiveIndexBadge" style="font-size:0.62rem; color:#38bdf8; background:rgba(56,189,248,0.14); padding:1px 6px; border-radius:10px; font-weight:900; font-family:'Space Grotesk', sans-serif;">1 / 1</span>
             </div>
-            <button type="button" onclick="window.__clearAllRichPhotos();" style="background:none; border:none; color:#fda4af; font-size:0.68rem; font-weight:800; cursor:pointer;">전체삭제</button>
+            <button type="button" data-record-id="${escapeHtml(String(record.id))}" onclick="window.__deleteCurrentRichTrip(this.dataset.recordId);" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); color:#fda4af; font-size:0.68rem; font-weight:800; padding:3px 8px; border-radius:5px; cursor:pointer; display:inline-flex; align-items:center; gap:3px;">
+              <svg viewBox="0 0 24 24" style="width:11px; height:11px; stroke:currentColor; fill:none; stroke-width:2.2;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              <span>일지삭제</span>
+            </button>
           </div>
 
           <div id="richLargePhotoStageContainer" style="width:100%; display:flex; flex-direction:column; align-items:center;">
@@ -2720,16 +2904,16 @@
           <textarea id="richFormMemoInput" maxlength="120" placeholder="해당 사진에 대한 지형 상태, 실전 팁 등 현장 기록을 120자 이내로 남겨보세요. (사진 스와이프 시 사진별로 자동 전환됩니다)" oninput="window.__handleRichMemoInput(this.value);" style="width:100%; height:95px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.15); color:#fff; border-radius:12px; padding:12px 14px; font-size:0.84rem; line-height:1.55; box-sizing:border-box; outline:none; resize:none; font-family:'Pretendard Variable', -apple-system, sans-serif; letter-spacing:-0.02em;"></textarea>
         </div>
 
-        <!-- 하단 배치: 인스타그램 계정 연동 영역 -->
+        <!-- 하단 배치: 화이트 모노톤 SNS / 채널 링크 입력 영역 -->
         <div style="display:flex; flex-direction:column; gap:4px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:4px;">
-              <svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:#fda4af;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-              <span style="font-size:0.75rem; color:#fda4af; font-weight:800;">인스타그램 계정 (선택)</span>
+              <svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:#e2e8f0; fill:none; stroke-width:2.2;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <span style="font-size:0.75rem; color:#e2e8f0; font-weight:800;">SNS / 채널 링크 (선택)</span>
             </div>
-            <span style="font-size:0.60rem; color:#64748b;">피드 상세에 프로필 링크 노출</span>
+            <span style="font-size:0.60rem; color:#64748b;">인스타 ID 또는 유튜브 채널 링크</span>
           </div>
-          <input type="text" id="richInputInstagram" value="${escapeHtml(savedInsta)}" placeholder="@인스타아이디 (예: @romantic_route)" style="width:100%; height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); color:#ffffff; border-radius:8px; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />
+          <input type="text" id="richInputInstagram" value="${escapeHtml(savedSns)}" placeholder="@아이디 또는 채널 주소 (예: @user 또는 youtube.com/@ch)" style="width:100%; height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); color:#ffffff; border-radius:8px; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />
         </div>
 
       </div>
@@ -2739,7 +2923,7 @@
     window.__renderRichPhotoStage();
   };
 
-  // [박지 후기 및 사진별 120자 영구 각인 단일 저장 엔진]
+  // [박지 후기 및 사진별 120자 영구 각인 단일 저장 엔진 - 찜하기급 0.001초 낙관적 즉시 반영 & 백그라운드 전송]
   window.__saveRichAfterTrip = async function(recordId) {
     var target = (window.interactiveHistory || []).find(function(r) { return String(r.id).trim() === String(recordId).trim(); });
     if (!target) return;
@@ -2767,32 +2951,21 @@
     target.isPublished = true;
     target.isDraft = false;
 
-    // 🚀 Base64 사진의 클라우드 영구 URL 승격 파이프라인
+    // 🚀 Base64 사진이 있을 때만 드라이브 업로드 처리, 일반 링크는 즉시 통과
     var finalCloudPhotos = [];
     if (photosToProcess.length > 0) {
-      if (typeof window.showPhotoLoadingModal === 'function') {
-        window.showPhotoLoadingModal(1, photosToProcess.length);
-      }
-
       for (var i = 0; i < photosToProcess.length; i++) {
         var pItem = photosToProcess[i];
         if (typeof pItem === 'string' && pItem.startsWith('data:') && typeof window.uploadSinglePhotoToDrive === 'function') {
           try {
-            if (typeof window.showPhotoLoadingModal === 'function') {
-              window.showPhotoLoadingModal(i + 1, photosToProcess.length);
-            }
             var dUrl = await window.uploadSinglePhotoToDrive(pItem, 'trip_' + target.id + '_' + i + '.jpg');
             finalCloudPhotos.push((dUrl && dUrl.startsWith('http')) ? dUrl : pItem);
           } catch (upErr) {
             finalCloudPhotos.push(pItem);
           }
-        } else if (typeof pItem === 'string' && pItem.startsWith('http')) {
+        } else if (typeof pItem === 'string') {
           finalCloudPhotos.push(pItem);
         }
-      }
-
-      if (typeof window.hidePhotoLoadingModal === 'function') {
-        window.hidePhotoLoadingModal();
       }
     }
 
@@ -2811,60 +2984,71 @@
       window.saveToIndexedDB('okbm_phone_photos_map', savedPhotosMap);
     }
 
-    // 🏛️ [1단계]: 로컬 보관함 원자적 영구 저장
+    // 🏛️ [1단계: 로컬 금고 원자적 즉시 저장 (0.0001초 완료)]
     if (typeof window.savePackingHistoryRecord === 'function') {
       window.savePackingHistoryRecord(target);
     } else {
       window.safeSetStorage('okbm_packing_history', window.interactiveHistory);
     }
 
-    // 🌐 [2단계]: 구글 스프레드시트(feeds 시트) 직통 갱신 & R2 feeds.json 전파
-    (async function syncFeedDirectToSheet() {
-      try {
-        var gasUrl = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
-        await fetch(gasUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'SHARE_PUBLIC_FEED',
-            feed: {
-              id: target.id,
-              userId: target.userId || userId,
-              author: target.author,
-              instagram: target.instagram || '',
-              spot: target.spot,
-              elevation: target.elevation || '',
-              weightKg: target.weightKg || '0.00',
-              date: target.date,
-              memo: target.memo,
-              photoMemos: target.photoMemos || [],
-              photo_memos_json: JSON.stringify(target.photoMemos || []),
-              photo: mainPhotoUrl,
-              photo_url: mainPhotoUrl,
-              photos: finalCloudPhotos,
-              photos_json: JSON.stringify(finalCloudPhotos),
-              items: target.items || [],
-              items_json: JSON.stringify(target.items || []),
-              templateId: target.templateId || 1
-            }
-          })
-        });
-      } catch (err) {
-        console.warn('[RomanticHistory] 시트 직통 갱신 대기:', err);
-      }
-    })();
-
-    // ☁️ [3단계]: 유저 개인 금고 전체 백업
-    if (typeof syncUserDataToCloud === 'function') {
-      syncUserDataToCloud(true);
-    }
-
+    // ⚡ [2단계: 찜하기 방식 화면 즉시 닫기 & 0초 재렌더링]
     var m = document.getElementById('modalRichAfterTrip');
     if (m) m.remove();
 
-    window.renderHistoryStage();
+    var singleFeedModal = document.getElementById('singleTripFeedModal');
+    if (singleFeedModal) {
+      singleFeedModal.remove();
+      if (typeof window.openSingleTripDualFeedModal === 'function') {
+        window.openSingleTripDualFeedModal(target.id);
+      }
+    } else if (typeof window.renderHistoryStage === 'function') {
+      window.renderHistoryStage();
+    }
+
     triggerHaptic(15);
-    if (typeof showToast === 'function') showToast('🎒 사진과 일지가 피드 및 시트에 완벽히 저장되었습니다!', 'success', 2200);
+    if (typeof showToast === 'function') {
+      showToast('✓ 수정사항이 반영되었습니다.', 'success', 1800);
+    }
+
+    // 🌐 [3단계: 구글 시트 직통 갱신 & 클라우드 백업을 백그라운드로 완전 분리 (대기 0초)]
+    var feedPayload = {
+      id: target.id,
+      userId: target.userId || userId,
+      author: target.author,
+      instagram: target.instagram || '',
+      spot: target.spot,
+      elevation: target.elevation || '',
+      weightKg: target.weightKg || '0.00',
+      date: target.date,
+      memo: target.memo,
+      photoMemos: target.photoMemos || [],
+      photo_memos_json: JSON.stringify(target.photoMemos || []),
+      photo: mainPhotoUrl,
+      photo_url: mainPhotoUrl,
+      photos: finalCloudPhotos,
+      photos_json: JSON.stringify(finalCloudPhotos),
+      items: target.items || [],
+      items_json: JSON.stringify(target.items || []),
+      templateId: target.templateId || 1
+    };
+
+    setTimeout(function() {
+      var gasUrl = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
+      fetch(gasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'SHARE_PUBLIC_FEED',
+          feed: feedPayload
+        })
+      }).catch(function(err) {
+        console.warn('[RomanticHistory] 백그라운드 시트 갱신 지연:', err);
+      });
+
+      if (typeof syncUserDataToCloud === 'function') {
+        syncUserDataToCloud(true);
+      }
+    }, 50);
   };
   // 🔗 [공유 링크 딥링크 다이렉트 자동 오픈 엔진]
   document.addEventListener('DOMContentLoaded', function() {
@@ -3372,33 +3556,33 @@ window.renderHistoryStage = function(isLoading) {
           '</div>';
         }
 
-        // 🛠️ [상단에서 하단 우측으로 이동한 4대 도구 렌더러]
+   // 🛠️ [상단에서 하단 우측으로 이동한 4대 도구 렌더러 - 1pt 업스케일 & 자물쇠 타깃 키 바인딩]
         var isPub = Boolean(record.isPublished === true);
         var bottomToolsHtml = '';
         if (isMyTab) {
-          // 🔒 [내 보관함]: 그리드 + 관심 + 자물쇠 + 편집이 하단에 여유롭게 안착!
+          // 🔒 [내 보관함]: 그리드 + 관심 + 자물쇠 + 편집 (32px 박스 & 15~16px 아이콘 규격)
           bottomToolsHtml = '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
-            '<button type="button" onclick="window.openPastTripsListModal(); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:7px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#38bdf8;" title="격자 모아보기">' +
-              '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' +
+            '<button type="button" onclick="window.openPastTripsListModal(); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#38bdf8;" title="격자 모아보기">' +
+              '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' +
             '</button>' +
-            '<button type="button" onclick="window.openRomanticInterestModal(\'routers\'); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:7px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#c084fc;" title="관심 모아보기">' +
-              '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
+            '<button type="button" onclick="window.openRomanticInterestModal(\'routers\'); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#c084fc;" title="관심 모아보기">' +
+              '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
             '</button>' +
-            '<button type="button" data-record-id="' + cardId + '" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:7px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:' + (isPub ? '#34d399' : '#38bdf8') + ';" title="' + (isPub ? '전체 공개 중' : '비공개') + '">' +
+            '<button type="button" data-record-id="' + cardId + '" data-lock-btn-id="' + cardId + '" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:' + (isPub ? '#34d399' : '#38bdf8') + '; transition:transform 0.15s ease;" title="' + (isPub ? '전체 공개 중' : '비공개 (나만보기)') + '">' +
               (isPub
-                ? '<svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>'
-                : '<svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+                ? '<svg viewBox="0 0 24 24" style="width:16px; height:16px; color:#34d399;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>'
+                : '<svg viewBox="0 0 24 24" style="width:16px; height:16px; color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
               ) +
             '</button>' +
-            '<button type="button" data-record-id="' + cardId + '" onclick="window.openRichAfterTripModal(window.interactiveHistory.find(function(r){return String(r.id)===\'' + cardId + '\';})); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:7px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fde047;" title="일지 및 사진 수정">' +
-              '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
+            '<button type="button" data-record-id="' + cardId + '" onclick="window.openRichAfterTripModal(window.interactiveHistory.find(function(r){return String(r.id)===\'' + cardId + '\';})); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fde047;" title="일지 및 사진 수정">' +
+              '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
             '</button>' +
           '</div>';
         } else {
-          // 🌐 [전체 피드]: 타인 글이므로 자물쇠·편집은 소멸하고, 모아보기/관심 도구만 미니멀 유지
+          // 🌐 [전체 피드]: 관심 도구 규격 동일 업스케일
           bottomToolsHtml = '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
-            '<button type="button" onclick="window.openRomanticInterestModal(\'routers\'); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:7px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#c084fc;" title="관심 모아보기">' +
-              '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
+            '<button type="button" onclick="window.openRomanticInterestModal(\'routers\'); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#c084fc;" title="관심 모아보기">' +
+              '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
             '</button>' +
           '</div>';
         }
