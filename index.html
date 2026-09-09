@@ -33,6 +33,75 @@
       visibility: hidden !important;
       pointer-events: none !important;
     }
+
+    /* 🏛️ [공통 최적화 레이아웃 클래스군] */
+    .modal-fullscreen-container {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      height: 100dvh !important;
+      max-height: 100dvh !important;
+      background: #000000 !important;
+      z-index: 1000000 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      box-sizing: border-box !important;
+      overflow: hidden !important;
+      transform: translateZ(0) !important;
+      -webkit-transform: translateZ(0) !important;
+      overscroll-behavior: none !important;
+    }
+
+    .modal-app-header {
+      flex-shrink: 0 !important;
+      background: rgba(7, 9, 14, 0.98) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      height: 48px !important;
+      padding: 0 14px !important;
+      padding-top: env(safe-area-inset-top, 0px) !important;
+      box-sizing: border-box !important;
+      z-index: 10 !important;
+    }
+
+    .modal-scroll-body {
+      flex: 1 1 0% !important;
+      min-height: 0 !important;
+      width: 100% !important;
+      max-width: 440px !important;
+      margin: 0 auto !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      touch-action: pan-y !important;
+      overscroll-behavior-y: contain !important;
+      box-sizing: border-box !important;
+    }
+
+    .circle-icon-btn {
+      background: rgba(255, 255, 255, 0.08) !important;
+      border: 1px solid rgba(255, 255, 255, 0.16) !important;
+      color: #cbd5e1 !important;
+      width: 30px !important;
+      height: 30px !important;
+      border-radius: 50% !important;
+      font-size: 0.85rem !important;
+      font-weight: 800 !important;
+      cursor: pointer !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 0 !important;
+      flex-shrink: 0 !important;
+      transition: background 0.15s ease, transform 0.15s ease !important;
+    }
+    .circle-icon-btn:active {
+      transform: scale(0.93) !important;
+      background: rgba(255, 255, 255, 0.18) !important;
+    }
   </style>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />

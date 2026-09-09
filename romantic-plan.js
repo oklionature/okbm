@@ -106,6 +106,50 @@
         transform: translate(-50%, 0%) !important;
         display: flex !important;
       }
+
+      /* 🎒 [체크리스트 & 장비 선반 최적화 클래스군] */
+      .checklist-item-row {
+        border-radius: 9px !important;
+        padding: 10px 12px !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        cursor: pointer !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+        touch-action: manipulation !important;
+        transition: all 0.12s ease !important;
+        flex-shrink: 0 !important;
+        min-height: 44px !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+        box-sizing: border-box !important;
+      }
+
+      .checklist-checkbox-box {
+        width: 20px !important;
+        height: 20px !important;
+        border-radius: 6px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        color: #0f172a !important;
+        font-size: 12.5px !important;
+        font-weight: 900 !important;
+        flex-shrink: 0 !important;
+        transition: all 0.12s ease !important;
+      }
+
+      .gear-shelf-item-row {
+        border-radius: 8px !important;
+        padding: 7px 10px !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        flex-shrink: 0 !important;
+        box-sizing: border-box !important;
+        transition: all 0.15s ease !important;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -614,7 +658,7 @@ var totalKg = (totalGrams / 1000).toFixed(2);
       if (filtered.length === 0) {
         shelfContainer.innerHTML = `<div style="text-align:center; padding:60px 0; color:#64748b; font-size:0.75rem;">일치하는 장비가 없습니다.<br>상단 검색어를 변경하거나 직접 등록해보세요.</div>`;
       } else {
-       shelfContainer.innerHTML = filtered.map(function(g) {
+      shelfContainer.innerHTML = filtered.map(function(g) {
           var targetCatId = g.category_id || 'shelter';
           var currentCatItems = gearMap[targetCatId] || [];
           var count = currentCatItems.filter(function(it) { return it.name === g.name; }).length;
@@ -627,7 +671,7 @@ var totalKg = (totalGrams / 1000).toFixed(2);
           var cardBg = isAdded ? 'background:rgba(255,255,255,0.055);' : 'background:rgba(255,255,255,0.02);';
 
           return `
-            <div style="${cardBg} ${cardBorder} border-radius:8px; padding:7px 10px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; box-sizing:border-box; transition:all 0.15s ease;">
+            <div class="gear-shelf-item-row" style="${cardBg} ${cardBorder}">
               <div style="min-width:0; flex:1; padding-right:8px; display:flex; align-items:center; gap:6px;">
                 <button type="button" data-gear="${safeGearName}" onclick="window.toggleFavoriteGear(this.dataset.gear, event);" style="background:none; border:none; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center;">
                   ${isFav ? PLAN_SVG.starFilled : PLAN_SVG.starOutline}
@@ -1904,19 +1948,23 @@ window.saveCurrentPackingRecord = function() {
 
         <!-- 📋 2. 체크리스트 목록 영역 (1.5px 소프트 라인 & 샴페인 선셋 골드) -->
         <div id="checklistItemsScrollContainer" style="flex:1 1 0% !important; min-height:0 !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; overscroll-behavior-y:contain !important; overscroll-behavior:contain !important; touch-action:pan-y !important; display:flex; flex-direction:column; gap:5px; padding-right:2px;">
-          ${planItems.map(function(it, idx) {
+        ${planItems.map(function(it, idx) {
             var checkKey = activeDateStr + '__' + it.name;
             var isChecked = window.packedCheckSet && window.packedCheckSet.has(checkKey);
             var gWeightKg = (it.weight / 1000).toFixed(2);
             var isFood = it.isConsumable === true;
             var theme = SOFT_THEMES[it.categoryId] || { color: '#cbd5e1', bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.14)' };
 
+            var rowBg = isChecked ? 'rgba(253,224,71,0.05)' : 'rgba(15,23,42,0.5)';
+            var rowBorder = isChecked ? 'rgba(253,224,71,0.3)' : 'rgba(255,255,255,0.08)';
+            var rowBorderLeft = isChecked ? '2px solid rgba(253,224,71,0.85)' : ('2px solid ' + theme.border);
+            var chkBoxBorder = isChecked ? '#fde047' : 'rgba(255,255,255,0.3)';
+            var chkBoxBg = isChecked ? 'linear-gradient(135deg, #fde047 0%, #f59e0b 100%)' : 'rgba(0,0,0,0.35)';
+
             return `
-              <div onclick="window.togglePackCheckByIndex(${idx})" style="background:${isChecked ? 'rgba(253,224,71,0.05)' : 'rgba(15,23,42,0.5)'}; border:1px solid ${isChecked ? 'rgba(253,224,71,0.3)' : 'rgba(255,255,255,0.08)'}; border-left:${isChecked ? '2px solid rgba(253,224,71,0.85)' : '2px solid ' + theme.border}; border-radius:9px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; touch-action:manipulation; transition:all 0.12s ease; flex-shrink:0; min-height:44px; box-shadow:0 2px 6px rgba(0,0,0,0.25); box-sizing:border-box;">
+              <div onclick="window.togglePackCheckByIndex(${idx})" class="checklist-item-row" style="background:${rowBg}; border:1px solid ${rowBorder}; border-left:${rowBorderLeft};">
                 <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-                  
-                  <!-- 🌟 맑고 얇은 1.2px 샴페인 선셋 골드 체크박스 -->
-                  <div style="width:20px; height:20px; border-radius:6px; border:1.2px solid ${isChecked ? '#fde047' : 'rgba(255,255,255,0.3)'}; background:${isChecked ? 'linear-gradient(135deg, #fde047 0%, #f59e0b 100%)' : 'rgba(0,0,0,0.35)'}; display:flex; align-items:center; justify-content:center; color:#0f172a; font-size:12.5px; font-weight:900; flex-shrink:0; transition:all 0.12s ease;">
+                  <div class="checklist-checkbox-box" style="border:1.2px solid ${chkBoxBorder}; background:${chkBoxBg};">
                     ${isChecked ? '✓' : ''}
                   </div>
 

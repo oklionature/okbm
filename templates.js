@@ -56,8 +56,8 @@ if (!document.getElementById('template-chips-core-style')) {
   document.head.appendChild(chipStyle);
 }
 
-// 🔀 [템플릿 확정 정렬 순서 및 명칭 정의 (영수증-솜사탕 선두 / 살구↔블러썸 / 스카이↔레몬 교체)]
-var TEMPLATE_ORDER = [1, 8, 15, 2, 12, 3, 18, 4, 14, 5, 11, 6, 16, 7, 17, 13, 9, 19, 10, 20];
+// 🔀 [템플릿 확정 정렬 순서 및 명칭 정의 (19종 체제 - 젠 제거)]
+var TEMPLATE_ORDER = [1, 8, 15, 2, 12, 3, 18, 4, 14, 5, 11, 6, 16, 7, 17, 13, 9, 19, 10];
 var TEMPLATE_NAMES = {
   1: '🧾 영수증',
   8: '☁️ 솜사탕',
@@ -77,10 +77,8 @@ var TEMPLATE_NAMES = {
   13: '☁️ 스카이블루',
   9: '🧈 버터',
   19: '✨ 럭셔리',
-  10: '🌿 세이지',
-  20: '🎋 젠(Zen)'
+  10: '🌿 세이지'
 };
-
 // 🎨 [내장 SVG 아이콘 팩 - 참조 에러 원천 방지]
 var SVG_ICONS = window.SVG_ICONS || {
   brandLogo: function(color, stroke) {
@@ -841,6 +839,63 @@ function initCardSwipeGesture() {
   });
 }
 
+// 🎨 [엽서 카드 공통 뼈대 전용 스타일시트 자동 주입 - map.html 등 외부 화면 및 캡처 깨짐 100% 방어]
+if (!document.getElementById('template-cards-core-style')) {
+  var cardCoreStyle = document.createElement('style');
+  cardCoreStyle.id = 'template-cards-core-style';
+  cardCoreStyle.innerHTML = `
+    .tmpl-card-base {
+      width: 100% !important;
+      aspect-ratio: 3 / 4 !important;
+      max-width: 330px !important;
+      margin: 0 auto !important;
+      box-sizing: border-box !important;
+      border-radius: 14px !important;
+      box-shadow: none !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      overflow: hidden !important;
+      position: relative !important;
+      touch-action: pan-y !important;
+    }
+    .tmpl-pledge-wrap {
+      margin-top: 4px !important;
+      padding: 4px 6px !important;
+      border-radius: 6px !important;
+      border-style: dashed !important;
+      border-width: 1px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 1px !important;
+      text-align: center !important;
+      box-sizing: border-box !important;
+    }
+    .tmpl-pledge-title {
+      font-size: 0.65rem !important;
+      font-weight: 900 !important;
+      letter-spacing: 0.5px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 3px !important;
+      line-height: 1.2 !important;
+    }
+    .tmpl-pledge-sub {
+      font-size: 0.46rem !important;
+      line-height: 1.2 !important;
+    }
+    .tmpl-row-between {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      box-sizing: border-box !important;
+    }
+  `;
+  document.head.appendChild(cardCoreStyle);
+}
+
 function generateCardMarkup(tmplId, record, items, spot, memo) {
   var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
   var nick = profile ? profile.nickname : '낭만탐험가';
@@ -867,20 +922,18 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
   var logoSage = SVG_ICONS.brandLogo('#15803d', '#86efac');
   var logoTeal = SVG_ICONS.brandLogo('#0d9488', '#5eead4');
 
-  var baseStyle = 'width:100%; aspect-ratio:3/4; max-width:330px; margin:0 auto; box-sizing:border-box; border-radius:14px; box-shadow:none; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; position:relative; touch-action:pan-y;';
-
   var makePledge = function(color, bg, border, sub) {
-    return '<div style="margin-top:4px; padding:4px 6px; border:1px dashed ' + border + '; background:' + bg + '; border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; text-align:center;">' +
-      '<span style="font-size:0.65rem; font-weight:900; color:' + color + '; letter-spacing:0.5px; display:inline-flex; align-items:center; gap:3px;">' +
+    return '<div class="tmpl-pledge-wrap" style="background:' + bg + '; border-color:' + border + ';">' +
+      '<span class="tmpl-pledge-title" style="color:' + color + ';">' +
         SVG_ICONS.lntShield + ' <span>[' + escapeHtml(nick) + ']님은 LNT를 준수합니다</span>' +
       '</span>' +
-      '<span style="font-size:0.46rem; color:' + sub + ';">머문 자리는 처음처럼 · 비화식 실천 · 흔적 없는 여정</span>' +
+      '<span class="tmpl-pledge-sub" style="color:' + sub + ';">머문 자리는 처음처럼 · 비화식 실천 · 흔적 없는 여정</span>' +
     '</div>';
   };
 
   switch (Number(tmplId)) {
     case 1: // 🧾 영수증
-      return '<div style="' + baseStyle + ' background:#f4f1ea; color:#1c1917; padding:12px 11px; font-family:\'JetBrains Mono\', monospace; border:1.5px solid #78716c; border-top:3px dashed #78716c; border-bottom:3px dashed #78716c;">' +
+      return '<div class="tmpl-card-base" style="background:#f4f1ea; color:#1c1917; padding:12px 11px; font-family:\'JetBrains Mono\', monospace; border:1.5px solid #78716c; border-top:3px dashed #78716c; border-bottom:3px dashed #78716c;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="text-align:center; border-bottom:1.2px dashed #78716c; padding-bottom:3px;">' +
             '<div style="font-size:0.85rem; font-weight:900; letter-spacing:1px;">* ROMANTIC ROUTE POS *</div>' +
@@ -891,7 +944,7 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '<div>DATE : ' + escapeHtml(dateStr) + ' | ID: <strong style="color:#000;">' + escapeHtml(nick) + '</strong></div>' +
             (targetMemo ? '<div style="font-style:italic; margin-top:1px; color:#000;">MEMO : "' + escapeHtml(targetMemo) + '"</div>' : '') +
           '</div>' +
-          '<div style="border-top:1px dashed #78716c; border-bottom:1px dashed #78716c; padding:2px 0; font-size:0.50rem; font-weight:900; display:flex; justify-content:space-between;">' +
+          '<div class="tmpl-row-between" style="border-top:1px dashed #78716c; border-bottom:1px dashed #78716c; padding:2px 0; font-size:0.50rem; font-weight:900;">' +
             '<span>[ITEM NAME]</span><span>[WEIGHT]</span>' +
           '</div>' +
           '<div style="flex:1; overflow:hidden;">' +
@@ -903,7 +956,7 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
             '<span style="font-weight:900; font-size:0.70rem;">TOTAL WEIGHT</span>' +
             '<span style="font-weight:900; font-size:1.38rem; font-family:\'Space Grotesk\', sans-serif;">' + weight + ' KG</span>' +
           '</div>' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; margin-top:3px; background:#e7e2d7; padding:3px 5px; border-radius:4px; border:1px solid #d6cfc4;">' +
+          '<div class="tmpl-row-between" style="margin-top:3px; background:#e7e2d7; padding:3px 5px; border-radius:4px; border:1px solid #d6cfc4;">' +
             '<div style="height:15px; width:75px; background:repeating-linear-gradient(90deg, #000 0px, #000 2px, transparent 2px, transparent 4px, #000 4px, #000 7px, transparent 7px, transparent 8px);"></div>' +
             '<div style="border:1.2px solid #1e3a8a; color:#1e3a8a; padding:2px 5px; border-radius:3px; font-size:0.55rem; font-weight:900;">' +
               '★ [' + escapeHtml(nick) + ']님은 LNT를 준수합니다 ★' +
@@ -913,9 +966,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       '</div>';
 
     case 2: // 🎫 보딩패스
-      return '<div style="' + baseStyle + ' background:#0f172a; border:1.5px solid #334155; padding:12px 11px; font-family:\'Space Grotesk\', sans-serif; color:#ffffff;">' +
+      return '<div class="tmpl-card-base" style="background:#0f172a; border:1.5px solid #334155; padding:12px 11px; font-family:\'Space Grotesk\', sans-serif; color:#ffffff;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.2px dashed #38bdf8; padding-bottom:3px;">' +
+          '<div class="tmpl-row-between" style="border-bottom:1.2px dashed #38bdf8; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:4px;">' + logoWhite + '<span style="font-size:0.75rem; font-weight:900; letter-spacing:1px;">ROMANTIC AIRWAYS</span></div>' +
             '<span style="background:#0284c7; color:#fff; font-size:0.46rem; font-weight:900; padding:1px 5px; border-radius:3px;">FIRST CLASS</span>' +
           '</div>' +
@@ -946,7 +999,7 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       '</div>';
 
     case 3: // 📮 에어메일
-      return '<div style="' + baseStyle + ' background:#fcfbf7; color:#1e293b; padding:12px 10px; font-family:\'Noto Serif KR\', serif; border:4px solid #1e3a8a;">' +
+      return '<div class="tmpl-card-base" style="background:#fcfbf7; color:#1e293b; padding:12px 10px; font-family:\'Noto Serif KR\', serif; border:4px solid #1e3a8a;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1.2px solid #cbd5e1; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:4px;">' +
@@ -987,9 +1040,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       '</div>';
 
     case 4: // 🏛️ 뮤지엄
-      return '<div style="' + baseStyle + ' background:#f4f6f4; color:#1c1917; padding:12px 11px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #1c1917;">' +
+      return '<div class="tmpl-card-base" style="background:#f4f6f4; color:#1c1917; padding:12px 11px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #1c1917;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #1c1917; padding-bottom:3px;">' +
+          '<div class="tmpl-row-between" style="border-bottom:1.5px solid #1c1917; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:4px;">' +
               logoDark +
               '<span style="font-family:\'SUIT\', sans-serif; font-size:0.85rem; font-weight:900; letter-spacing:-0.02em;">낭만루트 // EXHIBITION</span>' +
@@ -1019,7 +1072,7 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       '</div>';
 
     case 5: // ⚡ CAD 도면
-      return '<div style="' + baseStyle + ' background:#0a0d14; border:1.5px solid #d4ff00; padding:12px 11px; font-family:\'JetBrains Mono\', monospace; color:#f8fafc; position:relative;">' +
+      return '<div class="tmpl-card-base" style="background:#0a0d14; border:1.5px solid #d4ff00; padding:12px 11px; font-family:\'JetBrains Mono\', monospace; color:#f8fafc; position:relative;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
           '<div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1.2px solid #334155; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:4px;">' +
@@ -1051,10 +1104,10 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       '</div>';
 
     case 6: // 📸 코닥 슬라이드
-      return '<div style="' + baseStyle + ' background:#f5f4ef; color:#18181b; padding:9px 8px 10px 8px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #a1a1aa;">' +
+      return '<div class="tmpl-card-base" style="background:#f5f4ef; color:#18181b; padding:9px 8px 10px 8px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #a1a1aa;">' +
         '<div style="background:#030303; color:#ffffff; padding:5px 6px 4px 6px; border-radius:5px; border:1.2px solid #27272a; flex:1; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden;">' +
           '<div>' +
-            '<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.40rem; color:#a1a1aa; font-family:\'JetBrains Mono\', monospace; border-bottom:1px solid #27272a; padding-bottom:1px; margin-bottom:2px;">' +
+            '<div class="tmpl-row-between" style="font-size:0.40rem; color:#a1a1aa; font-family:\'JetBrains Mono\', monospace; border-bottom:1px solid #27272a; padding-bottom:1px; margin-bottom:2px;">' +
               '<span>■ ■ 낭만루트 EKT 100</span><span>▶ 24A ■ ■</span>' +
             '</div>' +
             '<div style="font-size:0.90rem; font-weight:900; color:#ffffff; font-family:\'SUIT\', sans-serif; line-height:1.2; min-height:1.2em;">' +
@@ -1078,9 +1131,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       '</div>';
 
     case 7: // 📖 매거진
-      return '<div style="' + baseStyle + ' background:#f4f1ea; color:#1a1918; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #1a1918;">' +
+      return '<div class="tmpl-card-base" style="background:#f4f1ea; color:#1a1918; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #1a1918;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid #1a1918; padding-bottom:2px;">' +
+          '<div class="tmpl-row-between" style="border-bottom:1.5px solid #1a1918; padding-bottom:2px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
               logoDark +
               '<span style="font-family:\'SUIT\', sans-serif; font-size:0.82rem; font-weight:900;">낭만루트 MAGAZINE</span>' +
@@ -1109,9 +1162,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       '</div>';
 
     case 8: // ☁️ 솜사탕
-      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #fff0f5 0%, #f0f9ff 100%); color:#334155; padding:11px 10px; font-family:\'Gaegu\', cursive; border:1.5px solid #fbcfe8;">' +
+      return '<div class="tmpl-card-base" style="background:linear-gradient(180deg, #fff0f5 0%, #f0f9ff 100%); color:#334155; padding:11px 10px; font-family:\'Gaegu\', cursive; border:1.5px solid #fbcfe8;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px dashed #f472b6; padding-bottom:2px;">' +
+          '<div class="tmpl-row-between" style="border-bottom:1.5px dashed #f472b6; padding-bottom:2px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
               logoPink +
               '<span style="font-size:0.90rem; font-weight:700; color:#db2777;">낭만루트 구름다이어리 ☁️</span>' +
@@ -1127,7 +1180,7 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
           '</div>' +
         '</div>' +
         '<div style="margin-top:auto;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; border-radius:5px; padding:2px 6px; border:1px solid #fbcfe8; margin-bottom:2px;">' +
+          '<div class="tmpl-row-between" style="background:#ffffff; border-radius:5px; padding:2px 6px; border:1px solid #fbcfe8; margin-bottom:2px;">' +
             '<span style="font-size:0.70rem; font-weight:700; color:#be185d;">배낭 무게</span>' +
             '<span style="font-size:1.25rem; font-weight:700; color:#ec4899;">' + weight + ' kg</span>' +
           '</div>' +
@@ -1136,9 +1189,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       '</div>';
 
     case 9: // 🧈 버터
-      return '<div style="' + baseStyle + ' background:#fffdf5; color:#292524; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #fed7aa;">' +
+      return '<div class="tmpl-card-base" style="background:#fffdf5; color:#292524; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #fed7aa;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f5eedc; padding-bottom:3px;">' +
+          '<div class="tmpl-row-between" style="border-bottom:1px solid #f5eedc; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
               logoSunset +
               '<span style="font-weight:900; font-size:0.75rem; color:#ea580c; font-family:\'SUIT\', sans-serif;">낭만루트 🧈 BUTTER</span>' +
@@ -1163,9 +1216,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       '</div>';
 
     case 10: // 🌿 세이지
-      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #f0fdf4 0%, #e6f4ea 100%); color:#14532d; padding:11px 10px; font-family:\'Playfair Display\', serif; border:1.5px solid #86efac;">' +
+      return '<div class="tmpl-card-base" style="background:linear-gradient(180deg, #f0fdf4 0%, #e6f4ea 100%); color:#14532d; padding:11px 10px; font-family:\'Playfair Display\', serif; border:1.5px solid #86efac;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.2px solid #bbf7d0; padding-bottom:3px;">' +
+          '<div class="tmpl-row-between" style="border-bottom:1.2px solid #bbf7d0; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
               logoSage +
               '<span style="font-size:0.75rem; font-weight:900; color:#15803d; font-style:italic;">낭만 Botanical</span>' +
@@ -1187,9 +1240,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       '</div>';
 
     case 11: // 💖 블러썸
-      return '<div style="' + baseStyle + ' background:#ffffff; color:#1c1917; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #fda4af;">' +
+      return '<div class="tmpl-card-base" style="background:#ffffff; color:#1c1917; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #fda4af;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ffe4e6; padding-bottom:3px;">' +
+          '<div class="tmpl-row-between" style="border-bottom:1px solid #ffe4e6; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
               logoPink +
               '<span style="font-family:\'Playfair Display\', serif; font-size:0.75rem; font-weight:900; color:#be185d;">낭만 Blossom</span>' +
@@ -1214,9 +1267,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       '</div>';
 
     case 12: // 🌸 라벤더
-      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #faf5ff 0%, #f3e8ff 100%); color:#581c87; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #d8b4fe;">' +
+      return '<div class="tmpl-card-base" style="background:linear-gradient(180deg, #faf5ff 0%, #f3e8ff 100%); color:#581c87; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #d8b4fe;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.2px solid #e9d5ff; padding-bottom:3px;">' +
+          '<div class="tmpl-row-between" style="border-bottom:1.2px solid #e9d5ff; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
               SVG_ICONS.brandLogo('#9333ea', '#c084fc') +
               '<span style="font-family:\'Dancing Script\', cursive; font-size:0.90rem; font-weight:700; color:#7e22ce;">Twilight 🌸</span>' +
@@ -1238,9 +1291,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       '</div>';
 
     case 13: // ☁️ 스카이
-      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%); color:#0c4a6e; padding:11px 10px; font-family:\'Space Grotesk\', sans-serif; border:1.5px solid #7dd3fc;">' +
+      return '<div class="tmpl-card-base" style="background:linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 100%); color:#0c4a6e; padding:11px 10px; font-family:\'Space Grotesk\', sans-serif; border:1.5px solid #7dd3fc;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.2px solid #bae6fd; padding-bottom:3px;">' +
+          '<div class="tmpl-row-between" style="border-bottom:1.2px solid #bae6fd; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
               logoDark +
               '<span style="font-weight:900; font-size:0.70rem; color:#0284c7;">AZURE TRAIL</span>' +
@@ -1262,9 +1315,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       '</div>';
 
     case 14: // 🏷️ 다꾸
-      return '<div style="' + baseStyle + ' background:#faf7f2; color:#292524; padding:11px 10px; font-family:\'Gaegu\', cursive; border:1.5px solid #fed7aa;">' +
+      return '<div class="tmpl-card-base" style="background:#faf7f2; color:#292524; padding:11px 10px; font-family:\'Gaegu\', cursive; border:1.5px solid #fed7aa;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px dashed #d6cfc4; padding-bottom:2px;">' +
+          '<div class="tmpl-row-between" style="border-bottom:1.5px dashed #d6cfc4; padding-bottom:2px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
               logoSunset +
               '<span style="font-size:0.90rem; font-weight:700; color:#c2410c;">다꾸스티커 🏷️</span>' +
@@ -1279,7 +1332,7 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
           '</div>' +
         '</div>' +
         '<div style="margin-top:auto;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; border-radius:5px; padding:2px 6px; border:1px solid #e7e2d7; margin-bottom:2px;">' +
+          '<div class="tmpl-row-between" style="background:#ffffff; border-radius:5px; padding:2px 6px; border:1px solid #e7e2d7; margin-bottom:2px;">' +
             '<span style="font-size:0.70rem; font-weight:700; color:#854d0e;">배낭 무게:</span>' +
             '<span style="font-size:1.25rem; font-weight:700; color:#ca8a04;">' + weight + ' kg</span>' +
           '</div>' +
@@ -1288,9 +1341,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       '</div>';
 
     case 15: // 🍑 살구노을
-      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%); color:#431407; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #fdba74;">' +
+      return '<div class="tmpl-card-base" style="background:linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%); color:#431407; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #fdba74;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.2px solid #fed7aa; padding-bottom:3px;">' +
+          '<div class="tmpl-row-between" style="border-bottom:1.2px solid #fed7aa; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
               logoSunset +
               '<span style="font-family:\'Caveat\', cursive; font-size:1.0rem; font-weight:700; color:#c2410c;">Sunset 🍑</span>' +
@@ -1312,9 +1365,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       '</div>';
 
     case 16: // 🌙 핑크문
-      return '<div style="' + baseStyle + ' background:radial-gradient(circle at 80% 20%, #2e0825 0%, #0d020f 70%, #000000 100%); color:#ffffff; padding:11px 10px; font-family:\'Cinzel\', serif; border:1.5px solid rgba(244,114,182,0.6);">' +
+      return '<div class="tmpl-card-base" style="background:radial-gradient(circle at 80% 20%, #2e0825 0%, #0d020f 70%, #000000 100%); color:#ffffff; padding:11px 10px; font-family:\'Cinzel\', serif; border:1.5px solid rgba(244,114,182,0.6);">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(244,114,182,0.25); padding-bottom:3px;">' +
+          '<div class="tmpl-row-between" style="border-bottom:1px solid rgba(244,114,182,0.25); padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
               logoPink +
               '<span style="font-size:0.72rem; font-weight:900; color:#fb7185;">ROMANTIC ROUTE</span>' +
@@ -1336,9 +1389,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       '</div>';
 
     case 17: // 🍦 민트
-      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%); color:#064e3b; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #6ee7b7;">' +
+      return '<div class="tmpl-card-base" style="background:linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%); color:#064e3b; padding:11px 10px; font-family:\'Pretendard Variable\', sans-serif; border:1.5px solid #6ee7b7;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.2px solid #a7f3d0; padding-bottom:3px;">' +
+          '<div class="tmpl-row-between" style="border-bottom:1.2px solid #a7f3d0; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
               logoTeal +
               '<span style="font-family:\'Caveat\', cursive; font-size:0.90rem; font-weight:700; color:#0d9488;">Mint Gelato 🍦</span>' +
@@ -1360,9 +1413,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       '</div>';
 
     case 18: // 🍋 레몬
-      return '<div style="' + baseStyle + ' background:linear-gradient(180deg, #fefce8 0%, #fef9c3 100%); color:#713f12; padding:11px 10px; font-family:\'Gaegu\', cursive; border:1.5px solid #fde047;">' +
+      return '<div class="tmpl-card-base" style="background:linear-gradient(180deg, #fefce8 0%, #fef9c3 100%); color:#713f12; padding:11px 10px; font-family:\'Gaegu\', cursive; border:1.5px solid #fde047;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px dashed #fde047; padding-bottom:2px;">' +
+          '<div class="tmpl-row-between" style="border-bottom:1.5px dashed #fde047; padding-bottom:2px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
               logoSunset +
               '<span style="font-size:0.90rem; font-weight:700; color:#ca8a04;">레몬버터 🍋</span>' +
@@ -1377,7 +1430,7 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
           '</div>' +
         '</div>' +
         '<div style="margin-top:auto;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; border-radius:5px; padding:2px 6px; border:1px solid #fef08a; margin-bottom:2px;">' +
+          '<div class="tmpl-row-between" style="background:#ffffff; border-radius:5px; padding:2px 6px; border:1px solid #fef08a; margin-bottom:2px;">' +
             '<span style="font-size:0.70rem; font-weight:700; color:#854d0e;">배낭 무게:</span>' +
             '<span style="font-size:1.25rem; font-weight:700; color:#ca8a04;">' + weight + ' kg</span>' +
           '</div>' +
@@ -1385,10 +1438,10 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 19: // ✨ 럭셔리
-      return '<div style="' + baseStyle + ' background:#121214; color:#f4f4f5; padding:11px 10px; font-family:\'Noto Serif KR\', serif; border:1.5px solid #eab308;">' +
+   case 19: // ✨ 럭셔리
+      return '<div class="tmpl-card-base" style="background:#121214; color:#f4f4f5; padding:11px 10px; font-family:\'Noto Serif KR\', serif; border:1.5px solid #eab308;">' +
         '<div style="display:flex; flex-direction:column; gap:4px; flex:1;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #27272a; padding-bottom:3px;">' +
+          '<div class="tmpl-row-between" style="border-bottom:1px solid #27272a; padding-bottom:3px;">' +
             '<div style="display:flex; align-items:center; gap:3px;">' +
               logoWhite +
               '<span style="font-family:\'Space Grotesk\', sans-serif; font-size:0.60rem; font-weight:900; color:#fde047;">ARCHIVE</span>' +
@@ -1413,33 +1466,7 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
         '</div>' +
       '</div>';
 
-    case 20: // 🎋 젠 (Zen)
     default:
-      return '<div style="' + baseStyle + ' background:#18181b; padding:11px 10px; border:1.5px solid #3f3f46; display:flex; flex-direction:row; gap:6px; font-family:\'Noto Serif KR\', serif; color:#ffffff;">' +
-        '<div style="writing-mode:vertical-rl; font-size:0.46rem; color:#71717a; letter-spacing:1px; border-left:1px solid #27272a; padding-left:2px; flex-shrink:0;">' +
-          'LNT 머문 자리는 처음처럼 — 흔적 없는 클린 백패킹' +
-        '</div>' +
-        '<div style="flex:1; min-width:0; display:flex; flex-direction:column; justify-content:space-between;">' +
-          '<div>' +
-            '<div style="display:flex; align-items:center; gap:3px; margin-bottom:2px;">' +
-              logoWhite +
-              '<span style="font-size:0.62rem; font-weight:900; color:#fff; font-family:\'Space Grotesk\', sans-serif;">ROMANTIC ROUTE</span>' +
-            '</div>' +
-            '<div style="font-size:0.78rem; font-weight:900; color:#e4e4e7; line-height:1.2; word-break:keep-all; min-height:1.2em;">' +
-              spotText +
-            '</div>' +
-            '<div style="font-size:0.68rem; font-weight:900; color:#38bdf8; margin:1px 0;">' +
-              escapeHtml(nick) +
-            '</div>' +
-            '<div style="height:1px; background:#27272a; margin:2px 0;"></div>' +
-            '<div style="flex:1; overflow:hidden;">' +
-              renderAdaptiveGearList(list, { nameColor: '#d4d4d8', wtColor: '#a1a1aa', subColor: '#71717a' }) +
-            '</div>' +
-          '</div>' +
-          '<div style="margin-top:auto;">' +
-            makePledge('#34d399', 'rgba(52,211,153,0.08)', 'rgba(52,211,153,0.3)', '#71717a') +
-          '</div>' +
-        '</div>' +
-      '</div>';
+      return generateCardMarkup(1, record, items, spot, memo);
   }
 }

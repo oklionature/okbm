@@ -48,6 +48,100 @@
         transform: rotateY(180deg) !important;
         z-index: 1 !important;
       }
+
+      /* 🎬 [릴스 피드 최적화 고속 렌더링 클래스군] */
+      .reel-vertical-container {
+        flex: 1 1 0% !important;
+        width: 100% !important;
+        height: 100% !important;
+        height: 100dvh !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        scroll-snap-type: y mandatory !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        position: relative !important;
+        z-index: 10 !important;
+        overscroll-behavior: none !important;
+        touch-action: pan-y !important;
+      }
+      .reel-vertical-container::-webkit-scrollbar { display: none !important; }
+
+      .reel-page-snap {
+        width: 100% !important;
+        height: 100% !important;
+        height: 100dvh !important;
+        scroll-snap-align: start !important;
+        scroll-snap-stop: always !important;
+        position: relative !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: space-between !important;
+        align-items: stretch !important;
+        padding-top: calc(env(safe-area-inset-top, 0px)) !important;
+        padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+        box-sizing: border-box !important;
+        flex-shrink: 0 !important;
+        contain: strict !important;
+        touch-action: pan-y !important;
+        background: #000000 !important;
+      }
+
+      .reel-header-row {
+        height: 48px !important;
+        padding: 0 12px !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        background: #000000 !important;
+        flex-shrink: 0 !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+        box-sizing: border-box !important;
+      }
+
+      .reel-media-stage {
+        flex: 1 1 0% !important;
+        min-height: 0 !important;
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: #000000 !important;
+        overflow: hidden !important;
+        padding: 2px 0 !important;
+        box-sizing: border-box !important;
+      }
+
+      .reel-bottom-interactive-bar {
+        padding: 6px 14px 8px 14px !important;
+        box-sizing: border-box !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 5px !important;
+        flex-shrink: 0 !important;
+        background: #000000 !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.04) !important;
+      }
+
+      .reel-memo-fixed-box {
+        height: 4.1em !important;
+        min-height: 4.1em !important;
+        max-height: 4.1em !important;
+        line-height: 1.4em !important;
+        font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        font-size: 0.78rem !important;
+        font-weight: 450 !important;
+        color: #e2e8f0 !important;
+        word-break: break-all !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 3 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        letter-spacing: -0.01em !important;
+        box-sizing: border-box !important;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -3761,18 +3855,18 @@ window.renderHistoryStage = function(isLoading) {
 
         var isSavedFeed = savedFeedsList.includes(String(record.id || '').trim());
 
-        return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '" data-default-memo="' + escapeHtml(memo120) + '" style="width:100% !important; height:100% !important; height:100dvh !important; scroll-snap-align:start !important; position:relative; overflow:hidden !important; display:flex !important; flex-direction:column !important; justify-content:space-between !important; align-items:stretch !important; padding-top:calc(env(safe-area-inset-top, 0px)) !important; padding-bottom:calc(56px + env(safe-area-inset-bottom, 0px)) !important; box-sizing:border-box !important; flex-shrink:0 !important; contain:strict !important; touch-action:pan-y !important; background:' + stageBg + ';">' +
+       return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '" data-default-memo="' + escapeHtml(memo120) + '">' +
           '<!-- 상단 헤더 (48px 고정: 지역·날짜 100% 안 잘림 + 단일 콤팩트 토글) -->' +
-          '<div style="height:48px; padding:0 12px; display:flex; justify-content:space-between; align-items:center; background:' + headerBg + '; flex-shrink:0; border-bottom:' + headerBorder + '; box-sizing:border-box;">' +
+          '<div class="reel-header-row">' +
             topHeaderHtml +
           '</div>' +
 
-          '<!-- 중앙 세로 전면 개방 미디어 스테이지 (가로 비율 유지 + 세로는 시원하게 100%) -->' +
-          '<div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; align-items:center; justify-content:center; background:' + stageBg + '; overflow:hidden; padding:2px 0; box-sizing:border-box;">' +
+          '<!-- 중앙 세로 전면 개방 미디어 스테이지 -->' +
+          '<div class="reel-media-stage">' +
             '<div style="width:100%; height:100%; max-height:100%; position:relative; overflow:hidden; background:#05070a; display:flex; align-items:center; justify-content:center;">' +
               '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000;">' +
                 '<div class="postcard-face-front" style="width:100%; height:100%; position:absolute; inset:0; overflow:hidden; background:#000;">' +
-                  '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \'' + cardId + '\');" style="display:flex !important; width:100% !important; height:100% !important; overflow-x:auto !important; overflow-y:hidden !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; touch-action:pan-x pan-y !important;">' +
+                  '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \'' + cardId + '\');">' +
                     horizontalSlidesHtml +
                   '</div>' +
                   dotsHtml +
@@ -3784,8 +3878,8 @@ window.renderHistoryStage = function(isLoading) {
             '</div>' +
           '</div>' +
 
-          '<!-- 하단 인터랙션바 (좌측 3대 도구 + 우측 4대 도구 완벽 배치, 중앙 겹침 원천 차단) -->' +
-          '<div style="padding:6px 14px 8px 14px; box-sizing:border-box; display:flex; flex-direction:column; gap:5px; flex-shrink:0 !important; background:' + stageBg + '; border-top:1px solid rgba(255,255,255,0.04);">' +
+          '<!-- 하단 인터랙션바 (좌측 3대 도구 + 우측 4대 도구 완벽 배치) -->' +
+          '<div class="reel-bottom-interactive-bar">' +
             '<div style="display:flex; justify-content:space-between; align-items:center; min-height:32px;">' +
               '<div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">' +
                 '<button type="button" onclick="window.toggleFeedStar(\'' + cardId + '\', event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:4px;">' +
@@ -3804,7 +3898,7 @@ window.renderHistoryStage = function(isLoading) {
             '</div>' +
 
             '<!-- 📐 고정 3줄 메모장 (CLS 0% 보장) -->' +
-            '<div id="feedPhotoMemoText_' + cardId + '" style="height:4.1em; min-height:4.1em; max-height:4.1em; line-height:1.4em; font-family:\'Pretendard Variable\', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size:0.78rem; font-weight:450; color:#e2e8f0; word-break:break-all; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; letter-spacing:-0.01em; box-sizing:border-box;">' +
+            '<div id="feedPhotoMemoText_' + cardId + '" class="reel-memo-fixed-box">' +
               cleanMemoContentHtml +
             '</div>' +
           '</div>' +
@@ -3812,7 +3906,7 @@ window.renderHistoryStage = function(isLoading) {
       }).join('');
     }
 
-    content.innerHTML = '<div id="reelsVerticalContainer" style="flex:1 1 0% !important; width:100% !important; height:100% !important; height:100dvh !important; overflow-y:auto !important; overflow-x:hidden !important; scroll-snap-type:y mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; position:relative; z-index:10; overscroll-behavior-y:none !important; overscroll-behavior-x:none !important; touch-action:pan-y !important;">' +
+    content.innerHTML = '<div id="reelsVerticalContainer" class="reel-vertical-container">' +
       reelSlidesHtml +
     '</div>' +
 
