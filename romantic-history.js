@@ -1464,156 +1464,76 @@
     triggerHaptic(15);
     if (typeof showToast === 'function') showToast('기록이 삭제되었습니다.', 'info');
   };
-// 👤 [특정 작성자 피드 모아보기 전담 모달 엔진]
-  window.openUserFeedCollectionModal = function(authorName, userId) {
-    if (!authorName && !userId) return;
+// 🗺️ [전국 마스터 박지 DB 실시간 대조 & 지도 직통 이동 엔진]
+  window.isSpotRegisteredInMasterDB = function(rawSpotName) {
+    if (!rawSpotName) return false;
+    var clean = String(rawSpotName)
+      .replace(/\(.*?\)/g, '')
+      .replace(/\[.*?\]/g, '')
+      .replace(/\s+/g, '')
+      .toLowerCase()
+      .trim();
+
+    if (!clean || clean === '나의힐링스팟' || clean === '힐링박지' || clean === '방문스팟') return false;
+
+    var pool = [];
+    if (Array.isArray(window.campingSpots)) pool = pool.concat(window.campingSpots);
+    if (Array.isArray(window.spotsData)) pool = pool.concat(window.spotsData);
+    if (Array.isArray(window.allSpots)) pool = pool.concat(window.allSpots);
+    if (Array.isArray(window.masterSpots)) pool = pool.concat(window.masterSpots);
+    if (Array.isArray(window.CAMPING_SPOTS)) pool = pool.concat(window.CAMPING_SPOTS);
+    if (Array.isArray(window.SPOTS_DB)) pool = pool.concat(window.SPOTS_DB);
+
+    ['okbm_spots_cache', 'okbm_master_spots', 'camping_spots', 'okbm_spots'].forEach(function(k) {
+      try {
+        var item = localStorage.getItem(k);
+        if (item) {
+          var parsed = JSON.parse(item);
+          if (Array.isArray(parsed)) pool = pool.concat(parsed);
+        }
+      } catch (e) {}
+    });
+
+    return pool.some(function(s) {
+      if (!s) return false;
+      var sName = String(s.name || s.spotName || s.spot || s.title || '').replace(/\s+/g, '').toLowerCase().trim();
+      if (!sName || sName === '나의힐링스팟' || sName === '힐링박지') return false;
+      return (sName === clean || clean.includes(sName) || sName.includes(clean));
+    });
+  };
+
+  window.navigateToSpotMap = function(rawSpotName, e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    if (!rawSpotName) return;
     triggerHaptic(12);
 
-    var old = document.getElementById('userFeedCollectionModal');
-    if (old) old.remove();
+    var cleanSpot = String(rawSpotName)
+      .replace(/\(.*?\)/g, '')
+      .replace(/\[.*?\]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
 
-    var targetAuthor = String(authorName || '').trim();
-    var targetUserId = String(userId || '').trim();
-
-    // 전체 피드 소스 풀 수집 (공용 피드 + 로컬 보관함)
-    var feedPool = [];
-    if (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0) {
-      feedPool = window.__allLoadedFeeds;
-    } else {
-      feedPool = safeGetJSON('okbm_cached_community_feeds', []) || [];
+    if (!cleanSpot || cleanSpot === '나의 힐링 스팟' || cleanSpot === '힐링 박지') {
+      if (typeof showToast === 'function') showToast('정확한 박지 위치 정보가 등록되지 않았습니다.', 'info', 1800);
+      return;
     }
 
-    if (Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0) {
-      window.interactiveHistory.forEach(function(myRec) {
-        if (!feedPool.some(function(f) { return String(f.id).trim() === String(myRec.id).trim(); })) {
-          feedPool.push(myRec);
-        }
-      });
+    try {
+      localStorage.setItem('okbm_target_map_spot', cleanSpot);
+      sessionStorage.setItem('okbm_last_feed_return', location.href);
+    } catch (err) {}
+
+    if (typeof showToast === 'function') {
+      showToast('📍 [' + cleanSpot + '] 지도로 이동합니다.', 'info', 1200);
     }
 
-    // 대상 작성자의 피드만 정밀 필터링
-    var matchedFeeds = feedPool.filter(function(f) {
-      if (!f) return false;
-      var fUserId = String(f.userId || '').trim();
-      var fAuthor = String(f.author || f.nick || '').trim();
-      if (targetUserId && fUserId && targetUserId === fUserId) return true;
-      if (targetAuthor && fAuthor && targetAuthor === fAuthor) return true;
-      return false;
-    });
-
-    matchedFeeds.sort(function(a, b) {
-      return String(b.date || '').localeCompare(String(a.date || ''));
-    });
-
-    var totalCount = matchedFeeds.length;
-    var repInsta = '';
-    matchedFeeds.forEach(function(f) {
-      if (!repInsta && f.instagram) repInsta = String(f.instagram).replace(/[@\s]/g, '').trim();
-    });
-
-   window.__currentUserScopedFeeds = matchedFeeds;
-    window.__currentUserScopedAuthor = targetAuthor;
-
-    var modalEl = document.createElement('div');
-    modalEl.id = 'userFeedCollectionModal';
-    modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000015; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
-
-    var cardsHtml = '';
-    if (totalCount === 0) {
-      cardsHtml = `
-        <div style="width:100%; padding:60px 20px; text-align:center; color:#94a3b8; font-size:0.80rem;">
-          공개된 피드가 없습니다.
-        </div>
-      `;
-    } else {
-      cardsHtml = matchedFeeds.map(function(f) {
-        var photos = (typeof getRecordPhotos === 'function') ? getRecordPhotos(f) : (f.photos || []);
-        var thumb = (photos && photos.length > 0 && photos[0]) ? photos[0] : (f.photo || f.fieldPhoto || 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80');
-        var fSpot = escapeHtml(f.spot || '나의 힐링 스팟');
-        var fDate = escapeHtml(f.date || '');
-        var fWeight = escapeHtml(String(f.weightKg || '0.00'));
-        var fMemo = escapeHtml((f.memo || f.oneLineMemo || '').slice(0, 60));
-        var safeId = escapeHtml(String(f.id || ''));
-
-        return `
-          <div data-feed-id="${safeId}" onclick="document.getElementById('userFeedCollectionModal').remove(); window.openSingleTripDualFeedModal(this.dataset.feedId, window.__currentUserScopedFeeds, window.__currentUserScopedAuthor);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; display:flex; gap:12px; align-items:center; cursor:pointer; flex-shrink:0; transition:all 0.15s ease;">
-            <div style="width:58px; height:58px; border-radius:8px; overflow:hidden; background:#0f172a; flex-shrink:0; border:1px solid rgba(255,255,255,0.14);">
-              <img src="${thumb}" style="width:100%; height:100%; object-fit:cover; display:block;" />
-            </div>
-            <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size:0.86rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                  ${fSpot}
-                </span>
-                <span style="font-size:0.75rem; font-weight:900; color:#34d399; font-family:'Space Grotesk', sans-serif;">
-                  ${fWeight}kg
-                </span>
-              </div>
-              <span style="font-size:0.62rem; color:#64748b; font-family:'JetBrains Mono', monospace;">
-                ${fDate}
-              </span>
-              ${fMemo ? `
-                <span style="font-size:0.68rem; color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">
-                  “${fMemo}”
-                </span>
-              ` : ''}
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    modalEl.innerHTML = `
-      <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <button type="button" onclick="document.getElementById('userFeedCollectionModal').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
-          <div style="display:flex; flex-direction:column;">
-            <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">
-              [${escapeHtml(targetAuthor)}] 님의 피드
-            </span>
-            <span style="font-size:0.60rem; color:#38bdf8; font-weight:700;">
-              전체 발행 기록 (${totalCount}개)
-            </span>
-          </div>
-        </div>
-        ${repInsta ? `
-          <a href="https://instagram.com/${repInsta}" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:3px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#fda4af; padding:3px 7px; border-radius:12px; font-size:0.62rem; font-weight:800; text-decoration:none;">
-            <span>@${escapeHtml(repInsta)}</span>
-            <span style="font-size:0.55rem; color:#94a3b8;">↗</span>
-          </a>
-        ` : ''}
-      </div>
-
-      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:14px 12px calc(80px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
-        ${cardsHtml}
-      </div>
-
-      <div style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; z-index:1000016 !important; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-        <a href="index.html" class="dock-item" onclick="document.getElementById('userFeedCollectionModal').remove(); window.closeHistoryModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px;">
-          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-          <span>낭만루터</span>
-        </a>
-        <a href="map.html" class="dock-item" onclick="document.getElementById('userFeedCollectionModal').remove(); window.closeHistoryModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px;">
-          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
-          <span>전국지도</span>
-        </a>
-        <button type="button" class="dock-item" onclick="document.getElementById('userFeedCollectionModal').remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
-          <span>낭만플랜</span>
-        </button>
-        <button type="button" class="dock-item active" onclick="document.getElementById('userFeedCollectionModal').remove(); window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff !important; font-size:0.67rem; font-weight:900; min-height:48px; gap:3px; cursor:pointer;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
-          <span>낭만보관함</span>
-        </button>
-        <button type="button" class="dock-item" onclick="document.getElementById('userFeedCollectionModal').remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
-          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-          <span>마이리포트</span>
-        </button>
-      </div>
-    `;
-
-    document.body.appendChild(modalEl);
+    setTimeout(function() {
+      if (typeof window.closeHistoryModal === 'function') window.closeHistoryModal();
+      location.href = 'map.html?spot=' + encodeURIComponent(cleanSpot);
+    }, 120);
   };
+
+ // 👤 [특정 작성자 피드 모아보기 전담 모달 엔진 - 하단 단일 진실 공급원(SSOT) 통합 완료]
 // 📖 [단일 피드 카드 마크업 생성기 - 각 사진별 120자 캡션 1:1 결합 렌더러]
   window.buildSingleFeedCardHtml = function(log) {
     if (!log) return '';
@@ -1744,10 +1664,13 @@
       ? window.__allLoadedFeeds
       : (window.safeGetStorage('okbm_cached_community_feeds', []) || []);
 
-    if (Array.isArray(window.interactiveHistory)) {
+   if (Array.isArray(window.interactiveHistory)) {
       window.interactiveHistory.forEach(function(myRec) {
-        if (!allFeeds.some(function(f) { return String(f.id).trim() === String(myRec.id).trim(); })) {
-          allFeeds.push(myRec);
+        // 🔒 공개(isPublished === true)된 기록만 공용 모아보기 풀에 안전하게 병합
+        if (myRec && myRec.isPublished === true) {
+          if (!allFeeds.some(function(f) { return String(f.id).trim() === String(myRec.id).trim(); })) {
+            allFeeds.push(myRec);
+          }
         }
       });
     }
@@ -1933,7 +1856,7 @@
     }
   };
 
-  // 👤 [작성자 피드 전체 한눈에 모아보기 모달 엔진]
+  // 👤 [작성자 피드 전체 한눈에 모아보기 단일 통합 코어 엔진 (유튜브/인스타/이웃 100% 보존)]
   window.openUserFeedCollectionModal = function(authorName, userId) {
     if (!authorName && !userId) return;
     triggerHaptic(12);
@@ -1953,17 +1876,18 @@
 
     if (Array.isArray(window.interactiveHistory)) {
       window.interactiveHistory.forEach(function(myRec) {
-        if (!feedPool.some(function(f) { return String(f.id).trim() === String(myRec.id).trim(); })) {
-          feedPool.push(myRec);
+        if (myRec && myRec.isPublished === true) {
+          if (!feedPool.some(function(f) { return String(f.id).trim() === String(myRec.id).trim(); })) {
+            feedPool.push(myRec);
+          }
         }
       });
     }
 
-    // 해당 유저의 피드만 엄격 필터링
     var matchedFeeds = feedPool.filter(function(f) {
       if (!f) return false;
-      var fUserId = String(f.userId || '').trim();
-      var fAuthor = String(f.author || f.nick || '').trim();
+      var fUserId = String(f.userId || f.user_id || '').trim();
+      var fAuthor = String(f.author || f.nick || f.nickname || '').trim();
       if (targetUserId && fUserId && targetUserId === fUserId) return true;
       if (targetAuthor && fAuthor && targetAuthor === fAuthor) return true;
       return false;
@@ -1973,16 +1897,48 @@
       return String(b.date || '').localeCompare(String(a.date || ''));
     });
 
+    var totalCount = matchedFeeds.length;
+
     window.__scopedUserFeedsMap = window.__scopedUserFeedsMap || {};
     window.__scopedUserFeedsMap[targetAuthor] = matchedFeeds;
 
-    var totalCount = matchedFeeds.length;
-    var repInsta = '';
+    var repSnsUrl = '';
+    var repSnsType = '';
+
     matchedFeeds.forEach(function(f) {
-      if (!repInsta && f.instagram) repInsta = String(f.instagram).replace(/[@\s]/g, '').trim();
+      if (!repSnsUrl) {
+        var raw = String(f.instagram || f.youtube || f.youtubeUrl || '').trim();
+        if (raw.includes('youtube.com') || raw.includes('youtu.be')) {
+          var cleanYt = raw.replace(/^@+/, '').split('?')[0].trim();
+          var m = cleanYt.match(/(?:youtube\.com\/(?:@|c\/|channel\/)?|youtu\.be\/)([\w\-\_\.]+)/i);
+          repSnsUrl = (m && m[1]) ? ('https://www.youtube.com/@' + m[1].replace(/^@/, '')) : (cleanYt.startsWith('http') ? cleanYt : ('https://' + cleanYt));
+          repSnsType = 'youtube';
+        } else if (raw) {
+          var pureId = raw.replace(/^@+/, '').replace(/instagram\.com\//, '').replace(/[@\s]/g, '').split('?')[0].trim();
+          if (pureId) {
+            repSnsUrl = 'https://instagram.com/' + pureId;
+            repSnsType = 'instagram';
+          }
+        }
+      }
     });
 
-    // 이웃 여부 판별
+    var repSnsBadgeHtml = '';
+    if (repSnsUrl) {
+      if (repSnsType === 'youtube') {
+        repSnsBadgeHtml = '<a href="' + repSnsUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;" title="유튜브 채널">' +
+          '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none">' +
+            '<path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z" fill="#f43f5e"/>' +
+            '<path d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z" fill="#ffffff"/>' +
+          '</svg>' +
+        '</a>';
+      } else {
+        repSnsBadgeHtml = '<a href="' + repSnsUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;" title="인스타그램 프로필">' +
+          '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:#e2e8f0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>' +
+        '</a>';
+      }
+    }
+
     var profile = safeGetJSON('user_profile', null);
     var myUserId = (profile && profile.id) ? String(profile.id).trim() : '';
     var followKey = targetUserId || targetAuthor;
@@ -2014,7 +1970,7 @@
         var fMemo = escapeHtml((f.memo || f.oneLineMemo || '').slice(0, 60));
         var safeId = escapeHtml(String(f.id || ''));
 
-        return '<div data-feed-id="' + safeId + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.openSingleTripDualFeedModal(this.dataset.feedId, window.__scopedUserFeedsMap[this.dataset.author], this.dataset.author);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; display:flex; gap:12px; align-items:center; cursor:pointer; flex-shrink:0; transition:all 0.15s ease;">' +
+        return '<div data-feed-id="' + safeId + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="document.getElementById(\'userFeedCollectionModal\').remove(); window.openSingleTripDualFeedModal(this.dataset.feedId, window.__scopedUserFeedsMap[this.dataset.author], this.dataset.author);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; display:flex; gap:12px; align-items:center; cursor:pointer; flex-shrink:0; transition:all 0.15s ease;">' +
           '<div style="width:58px; height:58px; border-radius:8px; overflow:hidden; background:#0f172a; flex-shrink:0; border:1px solid rgba(255,255,255,0.14);">' +
             '<img src="' + thumb + '" style="width:100%; height:100%; object-fit:cover; display:block;" />' +
           '</div>' +
@@ -2042,12 +1998,7 @@
             <span style="font-size:0.60rem; color:#38bdf8; font-weight:700;">전체 발행 기록 (${totalCount}개)</span>
           </div>
         </div>
-        ${repInsta ? `
-          <a href="https://instagram.com/${repInsta}" target="_blank" rel="noopener noreferrer" style="display:inline-flex; align-items:center; gap:3px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#fda4af; padding:3px 7px; border-radius:12px; font-size:0.62rem; font-weight:800; text-decoration:none;">
-            <span>@${escapeHtml(repInsta)}</span>
-            <span style="font-size:0.55rem; color:#94a3b8;">↗</span>
-          </a>
-        ` : ''}
+        ${repSnsBadgeHtml}
       </div>
 
       <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:14px 12px calc(80px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
@@ -2068,8 +2019,7 @@
           <span>낭만플랜</span>
         </button>
         <button type="button" class="dock-item active" onclick="document.getElementById('userFeedCollectionModal').remove(); window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff !important; font-size:0.67rem; font-weight:900; min-height:48px; gap:3px; cursor:pointer;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/>
-          <path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
           <span>낭만보관함</span>
         </button>
         <button type="button" class="dock-item" onclick="document.getElementById('userFeedCollectionModal').remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
@@ -2149,7 +2099,7 @@
     `;
     document.body.appendChild(feedModal);
 
-    window.__onDualFeedContainerScroll = function(container) {
+   window.__onDualFeedContainerScroll = function(container) {
       if (!container) return;
       var cards = container.querySelectorAll('.single-feed-block');
       var containerCenter = container.scrollTop + (container.clientHeight / 2);
@@ -2157,7 +2107,18 @@
         var c = cards[i];
         if (containerCenter >= c.offsetTop && containerCenter <= (c.offsetTop + c.offsetHeight)) {
           var fId = c.dataset.recordId;
-          if (fId) window.__currentActiveDualFeedId = String(fId);
+          if (fId) {
+            window.__currentActiveDualFeedId = String(fId);
+            // 🛡️ [보안 가드 2]: 스크롤 중인 카드가 내 글일 때만 수정 버튼 노출
+            var curRecord = (window.interactiveHistory || []).find(function(r) { return String(r.id).trim() === String(fId).trim(); });
+            if (!curRecord && Array.isArray(scopedFeedList)) {
+              curRecord = scopedFeedList.find(function(r) { return String(r.id).trim() === String(fId).trim(); });
+            }
+            var editBtn = document.getElementById('btnFloatEditTripLog');
+            if (editBtn) {
+              editBtn.style.display = (curRecord && window.isRecordOwner(curRecord)) ? 'flex' : 'none';
+            }
+          }
           break;
         }
       }
@@ -2171,6 +2132,10 @@
         targetLog = scopedFeedList.find(function(r) { return String(r.id).trim() === String(curId).trim(); });
       }
       if (targetLog) {
+        if (!window.isRecordOwner(targetLog)) {
+          if (typeof showToast === 'function') showToast('🔒 본인이 작성한 기록만 수정할 수 있습니다.', 'warn', 2200);
+          return;
+        }
         window.openRichAfterTripModal(targetLog);
       } else {
         if (typeof showToast === 'function') showToast('수정할 대상을 찾을 수 없습니다.', 'warn');
@@ -2932,9 +2897,47 @@
     }, 150);
   };
 
- // [모바일 풀스크린 힐링 기록 & 대형 스와이프 에디터 - 좌측 뒤로가기 삼각형(◀) + 우측 [수정] 버튼 + 무채색 전체삭제]
+ // 🛡️ [소유권 3중 보안 검증 엔진: 본인 계정 작성 기록인지 정밀 판별]
+  window.isRecordOwner = function(record) {
+    if (!record) return false;
+    var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
+    if (!isLogged) return false;
+
+    var profile = safeGetJSON('user_profile', null);
+    var myUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+    var myNick = (profile && profile.nickname) ? String(profile.nickname).trim() : (localStorage.getItem('okbm_user_nick') || '');
+
+    if (!myUserId && !myNick) return false;
+
+    var rUserId = String(record.userId || record.user_id || '').trim();
+    var rAuthor = String(record.author || record.nick || record.nickname || '').trim();
+
+    // 1. 유저 ID 일치 여부 (최우선 확정)
+    if (myUserId && rUserId && myUserId === rUserId) return true;
+
+    // 2. 기본 닉네임('낭만루터', '낭만백패커')이 아닌 실제 고유 닉네임 일치 여부
+    var defaultNicks = ['낭만루터', '낭만백패커', '오라네'];
+    if (myNick && rAuthor && myNick === rAuthor) {
+      if (myNick === '오라네') return true;
+      if (!defaultNicks.includes(myNick)) return true;
+    }
+
+    return false;
+  };
+
+  // [모바일 풀스크린 힐링 기록 & 대형 스와이프 에디터 - 본인 소유권 100% 검증 가드 탑재]
   window.openRichAfterTripModal = function(record) {
     if (!record) return;
+
+    // 🛡️ [보안 가드 1]: 타인의 글 수정 원천 차단
+    if (!window.isRecordOwner(record)) {
+      triggerHaptic(15);
+      if (typeof showToast === 'function') {
+        showToast('🔒 본인이 작성한 기록만 수정할 수 있습니다.', 'warn', 2200);
+      }
+      return;
+    }
+
     var old = document.getElementById('modalRichAfterTrip');
     if (old) old.remove();
 
@@ -3549,12 +3552,29 @@ window.renderHistoryStage = function(isLoading) {
       window.activeHistoryFeedTab = 'explore';
     }
 
-    var isMyTab = (window.activeHistoryFeedTab === 'my');
+   var isMyTab = (window.activeHistoryFeedTab === 'my');
+    
+    // 🛡️ [나만보기 단두대 필터]: 내 보관함에서 비공개(isPublished !== true)로 설정된 글의 고유 ID 목록 추출
+    var privateRecordIdSet = new Set();
+    (window.interactiveHistory || []).forEach(function(rec) {
+      if (rec && rec.isPublished !== true && rec.id) {
+        privateRecordIdSet.add(String(rec.id).trim());
+      }
+    });
+
     var rawListSource = isMyTab
       ? (window.interactiveHistory || [])
       : ((Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
           ? window.__allLoadedFeeds
           : (window.safeGetStorage('okbm_cached_community_feeds', []) || []));
+
+    // 🔒 [전체 피드 검역]: 서버 feeds.json에 구 데이터가 남아있더라도 내 나만보기 글은 100% 즉시 강제 파기
+    if (!isMyTab && privateRecordIdSet.size > 0) {
+      rawListSource = rawListSource.filter(function(item) {
+        if (!item || !item.id) return true;
+        return !privateRecordIdSet.has(String(item.id).trim());
+      });
+    }
 
     var currentList = sortDescFn(rawListSource);
 
