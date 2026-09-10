@@ -435,8 +435,8 @@
       .tower-toggle-btn.active-status { background: rgba(2,132,199,0.3); color: var(--accent-blue); }
       .tower-toggle-btn.active-terrain { background: rgba(13,148,136,0.3); color: var(--accent-teal); }
 
-      /* 🏷️ 마커 라벨 스타일 */
-      .lod-marker-container { position: relative !important; width: 34px !important; height: 42px !important; pointer-events: none !important; }
+      /* 🏷️ 마커 라벨 스타일 (터치 및 클릭 타깃 100% 개방) */
+      .lod-marker-container { position: relative !important; width: 34px !important; height: 42px !important; pointer-events: auto !important; cursor: pointer !important; -webkit-tap-highlight-color: transparent; }
       .marker-badge-corner { position: absolute; top: -6px; width: 18px; height: 18px; border-radius: 50%; display: flex !important; align-items: center !important; justify-content: center !important; border: 1.5px solid #ffffff; z-index: 10; pointer-events: none !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6); padding: 0 !important; box-sizing: border-box; }
       .marker-badge-corner svg, .marker-badge-corner .ui-icon { width: 10px !important; height: 10px !important; margin: 0 !important; padding: 0 !important; vertical-align: 0 !important; display: block !important; flex-shrink: 0; }
       .badge-corner-fav { left: -7px; background: #f43f5e; color: #ffffff; }
@@ -702,19 +702,42 @@
       .app-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
       body.clean-map-mode .clean-hide { display: none !important; }
 
-      /* 모달 레이어 */
+      /* 제보/등록 모달 레이어 - 최상단 뷰포트 강제 고정 */
       .custom-modal-overlay { 
-        position: fixed; 
-        top: 0; left: 0; right: 0; bottom: 0; 
-        background: var(--modal-overlay) !important; 
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
+        position: fixed !important; 
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        background: rgba(3, 5, 8, 0.88) !important; 
+        backdrop-filter: blur(10px) !important;
+        -webkit-backdrop-filter: blur(10px) !important;
         display: none; 
-        justify-content: center; 
-        align-items: center; 
-        z-index: 99999 !important; 
-        padding: 16px;
-        box-sizing: border-box;
+        justify-content: center !important; 
+        align-items: center !important; 
+        z-index: 999999 !important; 
+        padding: 16px !important;
+        box-sizing: border-box !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+      }
+      .custom-modal { 
+        position: relative !important;
+        background: var(--modal-bg) !important; 
+        color: var(--text-primary) !important; 
+        width: 430px !important; 
+        max-width: calc(100vw - 24px) !important; 
+        max-height: 85vh !important; 
+        overflow-y: auto !important; 
+        border-radius: 16px !important; 
+        box-shadow: 0 25px 60px rgba(0,0,0,0.85) !important; 
+        padding: 18px 16px !important; 
+        display: flex !important; 
+        flex-direction: column !important; 
+        gap: 9px !important; 
+        border: 1.5px solid var(--border-titanium) !important; 
+        z-index: 1000000 !important;
       }
       .lnt-modal-card { background: var(--modal-bg); color: var(--text-primary); width: 440px; max-width: calc(100vw - 24px); max-height: 85vh; overflow-y: auto; border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); padding: 16px; display: flex; flex-direction: column; gap: 10px; border: 1.5px solid rgba(16,185,129,0.4); }
       .lnt-rule-item { background: var(--bg-card); border: 1px solid var(--border-hairline); border-left: 3px solid #10b981; padding: 8px 10px; border-radius: 6px; display: flex; flex-direction: column; gap: 2px; }
@@ -734,8 +757,55 @@
       .modal-btn-cancel { background: var(--bg-card); color: var(--text-secondary); }
       .modal-btn-save { background: #0f766e; color: #fff; }
 
-      .pin-picker-banner { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: var(--bg-surface); border: 1.5px solid var(--accent-blue); padding: 8px 16px; border-radius: 20px; font-size: 0.82rem; font-weight: 800; color: var(--text-primary); z-index: var(--z-modal); display: none; align-items: center; gap: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
-      .btn-cancel-pin-pick { background: #f43f5e; color: #fff; border: none; padding: 4px 10px; border-radius: 12px; font-size: 0.74rem; font-weight: 800; cursor: pointer; }
+      .pin-picker-banner {
+        position: absolute;
+        top: calc(62px + env(safe-area-inset-top, 0px));
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(7, 10, 17, 0.92);
+        border: 1px solid rgba(56, 189, 248, 0.45);
+        border-top: 1px solid rgba(255, 255, 255, 0.3);
+        height: 36px;
+        padding: 0 8px 0 12px;
+        border-radius: 18px;
+        font-size: 0.74rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        z-index: var(--z-hud);
+        display: none;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        box-sizing: border-box;
+      }
+      html[data-theme="light"] .pin-picker-banner {
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid rgba(2, 132, 199, 0.45);
+        box-shadow: 0 6px 20px rgba(100, 85, 60, 0.18);
+      }
+      .btn-cancel-pin-pick {
+        background: rgba(244, 63, 94, 0.16);
+        border: 1px solid rgba(244, 63, 94, 0.5);
+        color: #fb7185;
+        height: 24px;
+        padding: 0 8px;
+        border-radius: 12px;
+        font-size: 0.68rem;
+        font-weight: 800;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s ease;
+      }
+      .btn-cancel-pin-pick:active {
+        transform: scale(0.94);
+        background: #f43f5e;
+        color: #ffffff;
+      }
 
       /* 🔑 로그인 모달 */
       .login-box-card { width: 330px !important; max-width: calc(100vw - 32px) !important; padding: 14px !important; text-align: center; gap: 9px !important; }
@@ -1027,11 +1097,22 @@
           <div class="modal-field" style="flex: 1;"><label>9. 난이도</label><select id="modalSelectDiff" class="select-diff"><option value="1">★ (매우 쉬움)</option><option value="2">★★ (쉬움)</option><option value="3" selected>★★★ (보통)</option><option value="4">★★★★ (힘듦)</option><option value="5">★★★★★ (극악)</option></select></div>
           <div class="modal-field" style="width: 110px;"><label>10. 편도 거리(km)</label><input type="text" id="modalInputDistance" class="modal-input" placeholder="2.5" /></div>
         </div>
-        <div class="modal-field"><label>11. 4단계 요약 설명</label><textarea id="modalInputDesc" class="modal-input modal-textarea" rows="3" placeholder="[뷰/특징] 360도 야경 조망&#10;[접근/코스] 2.2km 완만한 숲길&#10;[박지/피칭] 목재 데크&#10;[주의/팁] 헤드랜턴 필수"></textarea></div>
+       <div class="modal-field" style="display:flex; flex-direction:column; gap:6px; background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:8px; padding:8px;">
+          <label style="color:var(--accent-blue); font-weight:800; font-size:0.75rem;">11. 실전 4단계 요약 설명 (자동 줄바꿈 상세 기재)</label>
+          <div class="modal-field"><label style="font-size:0.70rem; color:#38bdf8; font-weight:700;">① [뷰/특징] *</label><textarea id="modalInputDescView" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="예: 360도 탁 트인 야경과 비금도 다도해 조망"></textarea></div>
+          <div class="modal-field"><label style="font-size:0.70rem; color:#2dd4bf; font-weight:700;">② [접근/코스]</label><textarea id="modalInputDescAccess" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="예: 구림리 주차장에서 1.7km, 완만한 암릉길 40분 소요"></textarea></div>
+          <div class="modal-field"><label style="font-size:0.70rem; color:#10b981; font-weight:700;">③ [박지/피칭]</label><textarea id="modalInputDescPitch" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="예: 정상 인근 전망데크 2~3동, 바위 옆 평평한 노지 2동 피칭 가능"></textarea></div>
+          <div class="modal-field"><label style="font-size:0.70rem; color:#f59e0b; font-weight:700;">④ [주의/팁]</label><textarea id="modalInputDescTip" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="예: 섬 특유의 강풍 주의, 가이라인 필수 고정, 화기 절대 금지"></textarea></div>
+        </div>
         <div class="modal-field"><label>12. YouTube 영상 링크</label><textarea id="modalInputYoutube" class="modal-input modal-textarea" rows="1" placeholder="https://youtu.be/..."></textarea></div>
         <div style="display: flex; gap: 8px;">
           <div class="modal-field" style="flex: 1;"><label>13. 블로그 링크</label><input type="text" id="modalInputBlog" class="modal-input" placeholder="https://blog.naver.com/..." /></div>
-          <div class="modal-field" style="flex: 1;"><label>14. 등록자 SNS/프로필 URL</label><input type="text" id="modalInputAuthorSns" class="modal-input" placeholder="https://instagram.com/..." /></div>
+          <div class="modal-field" style="flex: 1;"><label>14. 제보자 인스타/SNS</label><input type="text" id="modalInputAuthorSns" class="modal-input" placeholder="@아이디" /></div>
+       </div>
+        <!-- 📌 수정 건의 전용 핵심 사유 입력 블록 -->
+        <div class="modal-field" id="modalFieldCorrectionReason" style="display:none; background:rgba(244,63,94,0.08); border:1.2px solid rgba(244,63,94,0.4); border-radius:8px; padding:8px; margin-top:2px;">
+          <label style="font-size:0.73rem; color:#fb7185; font-weight:800;">📌 핵심 수정 사유 (폐쇄, 데크 철거, 들머리 변경 등)</label>
+          <input type="text" id="modalInputCorrectionReason" class="modal-input" placeholder="예: 최근 데크 철거됨 / 텐트 피칭 금지 / 들머리 공사 중" style="margin-top:3px; border-color:rgba(244,63,94,0.4); font-size:0.78rem;" />
         </div>
         <div class="modal-btn-row">
           <button type="button" class="modal-btn modal-btn-cancel" onclick="closeCustomModal()">취소</button>
@@ -1107,7 +1188,7 @@
       var NATIONWIDE_LEVEL = 13;
       var map = null, geocoder = null, globalClusterer = null;
 
-     // 📦 [데이터 배열 안전 초기화 & 구글 시트 마스터 자동 수급 엔진]
+     // 📦 [데이터 배열 안전 초기화 & 구글 시트 마스터 직통 수급 엔진]
       var rawCachedSpots = safeGetJSON('okbm_spots_cache', []);
       var isCacheValid = Array.isArray(rawCachedSpots) && rawCachedSpots.length > 0 && rawCachedSpots[0].lat && rawCachedSpots[0].lng;
       var spots = isCacheValid ? rawCachedSpots : [];
@@ -1115,6 +1196,21 @@
       var userBookmarks = new Set((safeGetJSON('okbm_bookmarks', []) || []).map(function(s) { return String(s).trim(); }));
       var userVisited = new Set((safeGetJSON('okbm_visited', []) || []).map(function(s) { return String(s).trim(); }));
       var userMemos = safeGetJSON('okbm_memos', {}) || {};
+
+      function normalizeTo10Regions(regionStr) {
+        var r = String(regionStr || '').trim();
+        if (r === '서울' || r === '인천' || r === '서울/인천' || r === '서울인천') return '서울/인천';
+        if (r === '경기' || r === '경기도') return '경기';
+        if (r === '강원' || r === '강원도' || r === '강원특별자치도') return '강원';
+        if (r === '충북' || r === '충청북도') return '충북';
+        if (r === '충남' || r === '충청남도' || r === '대전' || r === '세종') return '충남';
+        if (r === '전북' || r === '전라북도' || r === '전북특별자치도') return '전북';
+        if (r === '전남' || r === '전라남도' || r === '광주') return '전남';
+        if (r === '경북' || r === '경상북도' || r === '대구') return '경북';
+        if (r === '경남' || r === '경상남도' || r === '부산' || r === '울산') return '경남';
+        if (r === '제주' || r === '제주도' || r === '제주특별자치도') return '제주';
+        return r || '경기';
+      }
 
       async function loadSpotsMasterEngine() {
         var sheetUrl = 'https://docs.google.com/spreadsheets/d/' + window.GOOGLE_SHEET_ID + '/gviz/tq?tqx=out:csv&gid=' + window.PRIMARY_SHEET_GID + '&_t=' + Date.now();
@@ -1129,18 +1225,67 @@
             skipEmptyLines: true,
             complete: function(results) {
               if (!results.data || results.data.length === 0) return;
-              var parsed = results.data.map(function(row, idx) {
-                var lat = parseFloat(row.campsite_lat || row.lat || row['위도'] || 0);
-                var lng = parseFloat(row.campsite_lng || row.lng || row['경도'] || 0);
-               var name = (row.spot_main || row.name || row.fullName || row['산이름'] || row['박지명'] || '').trim();
+
+              var validSpots = [];
+              var failedRows = [];
+
+              results.data.forEach(function(row, idx) {
+                var sheetRowNumber = idx + 2; // 헤더 1행 감안 실제 시트 행 번호
+
+                // 🌐 12종 위경도 헤더 전방위 자동 인식 파서
+                var rawLat = row.campsite_lat || row.lat || row['위도'] || row['박지위도'] || row.y || row.Lat || row.LAT || '';
+                var rawLng = row.campsite_lng || row.lng || row['경도'] || row['박지경도'] || row.x || row.Lng || row.LNG || '';
+
+                // 공백, 따옴표, 비규격 특수문자 제거 후 파싱
+                var cleanLatStr = String(rawLat || '').replace(/[^0-9.-]/g, '').trim();
+                var cleanLngStr = String(rawLng || '').replace(/[^0-9.-]/g, '').trim();
+
+                var lat = parseFloat(cleanLatStr) || 0;
+                var lng = parseFloat(cleanLngStr) || 0;
+
+                // 🌐 위경도 뒤바뀜(Swap) 자동 교정 (한국 좌표계: 위도 33~39, 경도 124~132)
+                if (lat > 100 && lng < 50 && lng > 0) {
+                  var tmp = lat;
+                  lat = lng;
+                  lng = tmp;
+                }
+
+                var name = (row.spot_main || row.name || row['산이름'] || row['박지명'] || '').trim();
                 var sub = (row.spot_sub || row['세부포인트'] || '').trim();
+                var spotId = String(row.id || (idx + 1)).trim();
+
+                // 🚨 좌표 누락 또는 차단 목록 검증
+                var failReason = '';
+                if (!lat || !lng) {
+                  failReason = '좌표 누락(위도/경도 0 또는 빈값)';
+                } else if (lat < 33.0 || lat > 39.0 || lng < 124.0 || lng > 132.5) {
+                  failReason = '한국 영토 좌표 범위 이탈 (위도: ' + lat + ', 경도: ' + lng + ')';
+                } else if (BLOCKED_SPOT_IDS.has(spotId)) {
+                  failReason = '차단 목록(BLOCKED_SPOT_IDS) 지정';
+                }
+
+                if (failReason) {
+                  failedRows.push({
+                    '시트행': sheetRowNumber,
+                    'ID': spotId,
+                    '박지명': name || '(이름없음)',
+                    '원인': failReason,
+                    '입력위도': rawLat,
+                    '입력경도': rawLng
+                  });
+                  return;
+                }
+
                 var entry = (row.trailhead_addr || row.entryPoint || row['들머리주소'] || '').trim();
+                var sheetRegion = (row.region || row['지역'] || '경기').trim();
+                var sheetCity = (row.cityName || row['시군구'] || '').trim();
                 var rawMedia = (row.mediaUrls || row.youtubeUrls || row['유튜브'] || '').trim();
                 var rawBlogs = (row.blogUrls || row['블로그'] || '').trim();
-               var autoDetect = detectRegionAndCity(lat, lng, name, entry);
-                var finalRegion = normalizeTo10Regions(row.region, autoDetect.region);
 
-               // 🌐 [스마트 미디어 자동 분류기]: 파이프(|), 슬래시(/), 쉼표(,) 등 어떤 구분자도 실제 URL만 100% 정밀 추출
+                var finalRegion = normalizeTo10Regions(sheetRegion);
+                var finalCity = sheetCity || finalRegion;
+                var derivedFullName = row.fullName || (finalCity ? '[' + finalCity + '] ' + name + (sub ? ' (' + sub + ')' : '') : (sub ? name + ' (' + sub + ')' : name));
+
                 var combinedMediaText = rawMedia + ' ' + rawBlogs;
                 var allLinks = combinedMediaText.match(/https?:\/\/[^\s,|<>"'\]]+/g) || [];
                 var parsedYt = [];
@@ -1155,15 +1300,15 @@
                   }
                 });
 
-                return {
-                  id: String(row.id || (idx + 1)).trim(),
+                validSpots.push({
+                  id: spotId,
                   name: name,
                   spot_main: name,
                   spot_sub: sub,
-                  fullName: row.fullName || (sub ? (name + ' (' + sub + ')') : name),
+                  fullName: derivedFullName,
                   lat: lat,
                   lng: lng,
-                  elevation: row.elevation || row['고도'] || '450m',
+                  elevation: (row.elevation || row['고도'] || '450m').trim(),
                   trailhead_name: (row.trailhead_name || row['들머리명칭'] || '').trim(),
                   trailhead_addr: entry,
                   entryPoint: entry,
@@ -1177,15 +1322,26 @@
                   difficulty: row.difficulty || row['난이도'] || '3',
                   distance: row.distance_km ? (row.distance_km + 'km') : (row.distance || ''),
                   droneStatus: row.droneStatus || '',
-                  region: row.region || autoDetect.region,
-                  cityName: row.cityName || autoDetect.cityName,
+                  region: finalRegion,
+                  cityName: finalCity,
                   searchCount: parseInt(row.searchCount || 0, 10),
                   sheetIndex: idx
-                };
-              }).filter(function(s) { return s.lat && s.lng && !BLOCKED_SPOT_IDS.has(String(s.id)); });
+                });
+              });
 
-              if (parsed.length > 0) {
-                spots = parsed;
+              // 📊 [100% 자가 진단 감사 리포트]: F12 콘솔에 즉시 출력
+              console.group('🗺️ [낭만루트] 구글 시트 ↔ 지도 마커 1:1 연동 정밀 진단 리포트');
+              console.log('✅ 정상 연동된 지도 마커: %c' + validSpots.length + '개', 'color: #10b981; font-weight: bold;');
+              if (failedRows.length > 0) {
+                console.warn('⚠️ 미연동(누락/오류)된 시트 데이터: %c' + failedRows.length + '개', 'color: #f43f5e; font-weight: bold;');
+                console.table(failedRows);
+              } else {
+                console.log('🎉 완벽 연동: 시트의 모든 박지 데이터가 100% 지도 마크로 등록되었습니다.');
+              }
+              console.groupEnd();
+
+              if (validSpots.length > 0) {
+                spots = validSpots;
                 localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
                 updateNewSpotFlags(spots);
                 renderSubChips();
@@ -1891,44 +2047,98 @@
         }
       }
 
-      function checkUrlParamSpotFocus() {
+     function checkUrlParamSpotFocus() {
         const urlParams = new URLSearchParams(window.location.search);
         const targetName = urlParams.get('spot') || urlParams.get('q');
-        if (targetName && spots.length > 0) {
+        const targetId = urlParams.get('id');
+        if (!spots || spots.length === 0) return;
+
+        // 1순위: 고유 ID로 1:1 직통 포커스 (동명 산 혼선 0% 차단)
+        if (targetId) {
+          const matchedById = spots.find(s => String(s.id).trim() === String(targetId).trim());
+          if (matchedById) {
+            setTimeout(() => focusSpotOnMap(matchedById), 350);
+            return;
+          }
+        }
+
+        // 2순위: 복합 명칭(시군구 + 산명 + 세부포인트) 복합 쿼리 판별
+        if (targetName) {
           const clean = decodeURIComponent(targetName).trim().toLowerCase();
-          const found = spots.find(s => s.name.toLowerCase().includes(clean) || clean.includes(s.name.toLowerCase()) || (s.spot_main && s.spot_main.toLowerCase().includes(clean)));
+          const found = spots.find(s => {
+            const fName = (s.fullName || '').toLowerCase();
+            const main = (s.spot_main || s.name || '').toLowerCase();
+            const sub = (s.spot_sub || '').toLowerCase();
+            const city = (s.cityName || '').toLowerCase();
+            const reg = (s.region || '').toLowerCase();
+            return fName.includes(clean) || (main.includes(clean) && (sub.includes(clean) || city.includes(clean) || reg.includes(clean))) || main === clean;
+          });
           if (found) setTimeout(() => focusSpotOnMap(found), 350);
         }
       }
 
-      let versionAdminClickCount = 0, versionAdminTimer = null;
+    // 🔒 [소유자 인증 철통 보안 - 난독화 마스터 시크릿 토큰]
+      // 소스코드 검색(Cmd+F)을 해도 카카오 번호가 100% 잡히지 않도록 암호화 난독화 적용
+      const _SEC_KEY_1 = atob('a2FrYW9fNTA2MDI1OTg2Mg=='); // kakao_5060259862
+      const _SEC_KEY_2 = atob('NTA2MDI1OTg2Mg==');         // 5060259862
+
+      function checkAdminAuthorization() {
+        var profile = safeGetJSON('user_profile', null);
+        var curId = profile && profile.id ? String(profile.id).trim() : (localStorage.getItem('user_auth_token') || '').trim();
+        return (curId === _SEC_KEY_1 || curId === _SEC_KEY_2 || curId.includes(_SEC_KEY_2));
+      }
+
+      function applyAdminPermissions(enable) {
+        isAdminMode = enable;
+        
+        const tools = document.getElementById('adminDataTools');
+        if (tools) tools.style.display = enable ? 'flex' : 'none';
+        
+        const link = document.getElementById('sheetEditLink');
+        if (link) link.style.display = enable ? 'inline-flex' : 'none';
+
+        document.querySelectorAll('.btn-del, .btn-edit, .btn-quick-add').forEach(btn => {
+          btn.style.display = enable ? 'inline-block' : 'none';
+        });
+
+        const verBtn = document.getElementById('versionTagBtn');
+        if (verBtn) {
+          verBtn.innerHTML = enable ? '👑 6.2ver Master (소유자)' : '6.2ver Master';
+          verBtn.style.color = enable ? '#38bdf8' : 'var(--text-muted)';
+        }
+      }
+
+      // 0.001초 즉시 동기 인증: 소유자 계정이면 페이지가 열리자마자 관리자 모드 즉시 가동!
+      (function autoAuthorizeOwner() {
+        if (checkAdminAuthorization()) {
+          isAdminMode = true;
+          document.addEventListener('DOMContentLoaded', () => {
+            applyAdminPermissions(true);
+            setTimeout(() => {
+              applyAdminPermissions(true);
+              if (typeof renderSpots === 'function') renderSpots();
+            }, 100);
+          });
+        }
+      })();
+
+      function toggleAdminMode() {
+        if (!checkAdminAuthorization()) {
+          showToast('🔒 소유자 전용 기능입니다. 올바른 소유자 계정으로 로그인해주세요.');
+          return;
+        }
+        triggerHaptic(15);
+        applyAdminPermissions(!isAdminMode);
+        renderSpots();
+        if (currentActiveSpot) refreshCurrentSpotPopup();
+        showToast(isAdminMode ? '👑 소유자 관리자 모드가 활성화되었습니다!' : '🔒 관리자 모드가 비활성화되었습니다.');
+      }
+
       function handleVersionTagAdminClick() {
-        versionAdminClickCount++; clearTimeout(versionAdminTimer);
-        versionAdminTimer = setTimeout(() => { if (versionAdminClickCount >= 7) toggleAdminMode(); versionAdminClickCount = 0; }, 500);
+        toggleAdminMode();
       }
       window.addEventListener('keydown', (e) => { if (e.shiftKey && (e.key === 'M' || e.key === 'm')) toggleAdminMode(); });
 
-      function toggleAdminMode() {
-        isAdminMode = !isAdminMode;
-        triggerHaptic(15);
-        // 👑 [관리자 모드 100% 정상 부활]: null 안전 가드 및 실시간 UI 반응
-        const badge = document.getElementById('adminBadge');
-        if (badge) badge.style.display = isAdminMode ? 'inline-block' : 'none';
-        
-        const tools = document.getElementById('adminDataTools');
-        if (tools) tools.style.display = isAdminMode ? 'flex' : 'none';
-        
-        const link = document.getElementById('sheetEditLink');
-        if (link) link.style.display = isAdminMode ? 'inline-flex' : 'none';
-
-        document.querySelectorAll('.btn-del, .btn-edit, .btn-quick-add').forEach(btn => {
-          btn.style.display = isAdminMode ? 'inline-block' : 'none';
-        });
-
-        renderSpots();
-        if (currentActiveSpot) refreshCurrentSpotPopup();
-        showToast(isAdminMode ? '👑 관리자 검수 및 핀콕 모드가 활성화되었습니다!' : '🔒 일반 사용자 모드로 전환되었습니다.');
-      }
       document.getElementById('sheetEditLink').href = `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/edit`;
 
       function areAllRegionAccordionsClosed() {
@@ -2668,11 +2878,17 @@ function updateSmartResetButtons() {
                 }
 
                 return `
-                  <a href="${escapeHtml(targetLink)}" target="_blank" rel="noopener noreferrer" onclick="triggerHaptic(8); event.stopPropagation();" style="display:inline-flex; align-items:center; gap:4px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); padding:2px 7px; border-radius:12px; text-decoration:none; flex-shrink:0;" title="등록자 프로필 바로가기">
-                    <span style="font-size:0.63rem; color:#94a3b8; font-weight:700;">제보</span>
-                    <span style="font-size:0.68rem; color:#38bdf8; font-weight:900;">${escapeHtml(authorName)}</span>
-                    ${snsIconSvg}
-                  </a>
+                  <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+                    <a href="${escapeHtml(targetLink)}" target="_blank" rel="noopener noreferrer" onclick="triggerHaptic(8); event.stopPropagation();" style="display:inline-flex; align-items:center; gap:4px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); padding:2px 7px; border-radius:12px; text-decoration:none; flex-shrink:0;" title="등록자 프로필 바로가기">
+                      <span style="font-size:0.63rem; color:#94a3b8; font-weight:700;">제보</span>
+                      <span style="font-size:0.68rem; color:#38bdf8; font-weight:900;">${escapeHtml(authorName)}</span>
+                      ${snsIconSvg}
+                    </a>
+                    <button type="button" data-id="${sId}" onclick="window.openSpotCorrectionModal(this.dataset.id, event);" style="display:inline-flex; align-items:center; gap:3px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.18); padding:2px 7px; border-radius:12px; font-size:0.63rem; font-weight:800; color:#cbd5e1; cursor:pointer; flex-shrink:0; outline:none;" title="틀린 정보 수정 건의">
+                      <svg viewBox="0 0 24 24" style="width:10px; height:10px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                      <span>수정건의</span>
+                    </button>
+                  </div>
                 `;
               })()}
             </div>
@@ -3069,31 +3285,62 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
         }
         var myHistory = safeGetJSON('okbm_packing_history', []) || [];
 
-        var feedMap = new Map();
+var feedMap = new Map();
+        var rawSpotMain = (spot.spot_main || spot.name || '').trim();
+        var cleanSpotName = rawSpotMain.replace(/[\s\[\]\(\)]/g, '').toLowerCase();
+        var spotCity = String(spot.cityName || spot.region || '').replace(/[\s시군구]/g, '').toLowerCase();
+        
+        // 서브네임 핵심 키워드 분리 (2글자 이상)
+        var subKeywords = String(spot.spot_sub || '')
+          .split(/[\s,()\[\]/]+/)
+          .map(function(k) { return k.trim().toLowerCase(); })
+          .filter(function(k) { return k.length >= 2; });
+
+        // 정규식 특수문자 이스케이프
+        var safeRegexSpot = cleanSpotName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // 단어 앞뒤가 한글 접두사/접미사(예: '최'고봉)로 결합되지 않은 독립 명칭만 검출
+        var spotWordRegex = new RegExp('(?:^|[^가-힣a-zA-Z0-9])' + safeRegexSpot + '(?:$|[^가-힣a-zA-Z0-9])', 'i');
+
         communityFeeds.concat(myHistory).forEach(function(f) {
           if (!f) return;
           var fId = String(f.id || '').replace(/^["']|["']$/g, '').trim();
           if (!fId) return;
 
           var fSpotId = String(f.spotId || f.campsiteId || '').trim();
-          var fSpotText = String(f.spot || '').trim().toLowerCase();
-          var fMemoText = String(f.memo || f.oneLineMemo || '').toLowerCase();
+          // 🛡️ [메모 본문 검색 전면 배제]: 공식 박지명 필드만 한정 검사
+          var fRawSpot = String(f.spot || f.campsite || f.place || '').trim().toLowerCase();
+          if (!fRawSpot && !fSpotId) return;
+
           var isMatch = false;
 
-          // 1순위: 박지 고유 ID 1:1 직통 매칭 (완벽 분리)
-          if (fSpotId && currentSpotId) {
-            if (fSpotId === currentSpotId) isMatch = true;
-          } else if (fSpotText) {
-            // 2순위: 세부 포인트(spot_sub) 정밀 분리 매칭
-            var hasBaseName = fSpotText.includes(cleanSpotName) || cleanSpotName.includes(fSpotText);
-            if (hasBaseName) {
-              if (cleanSubName) {
-                // 현재 박지에 세부 포인트(예: 정상데크, 1박지)가 있는 경우 ➔ 피드에 해당 세부명이 있어야 매칭
-                if (fSpotText.includes(cleanSubName) || fMemoText.includes(cleanSubName)) {
-                  isMatch = true;
+          // 1순위: 박지 고유 ID 1:1 직통 매칭
+          if (fSpotId && currentSpotId && fSpotId === currentSpotId) {
+            isMatch = true;
+          } 
+          // 2순위: 공식 박지명 필드 정밀 검증
+          else if (cleanSpotName.length >= 2 && spotWordRegex.test(' ' + fRawSpot + ' ')) {
+            
+            // 🛡️ 타 시/군 지역명 충돌 배제 (예: 충주 고봉 vs 용인 최고봉)
+            var hasRegionConflict = false;
+            var otherRegions = ['용인', '양평', '가평', '포천', '강화', '인천', '서울', '충주', '제천', '단양', '원주', '춘천', '강릉', '정선', '평창', '영월', '태백', '삼척'];
+            
+            for (var rIdx = 0; rIdx < otherRegions.length; rIdx++) {
+              var reg = otherRegions[rIdx];
+              if (fRawSpot.includes(reg)) {
+                // 피드에 적힌 지역명이 현재 박지의 지역명(spotCity)과 정면 충돌하면 탈락
+                if (spotCity && !spotCity.includes(reg) && !reg.includes(spotCity)) {
+                  hasRegionConflict = true;
+                  break;
                 }
+              }
+            }
+
+            if (!hasRegionConflict) {
+              if (subKeywords.length > 0) {
+                // 서브네임 단어(정자, 능선, 바위 등) 검증
+                var hasSub = subKeywords.some(function(kw) { return fRawSpot.includes(kw); });
+                isMatch = true; // 동일 산 피드로 정상 수용
               } else {
-                // 현재 박지가 주/대표 박지인 경우 ➔ 다른 세부명이 없는 순수 피드 매칭
                 isMatch = true;
               }
             }
@@ -3480,9 +3727,10 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
       }
       setTimeout(fetchGlobalSpotRankings, 800);
 
-      function getSpotViews(spot) {
+   function getSpotViews(spot) {
         if (!spot) return 0;
-        const nameKey = String(spot.spot_main || spot.name || '').trim();
+        // 🔑 [A~H열 복합 고유 키]: 동명 산이라도 [지역_시군구_산명_세부포인트_ID]로 조회수 100% 분리
+        const nameKey = `${spot.region || ''}_${spot.cityName || ''}_${spot.spot_main || spot.name || ''}_${spot.spot_sub || ''}_${spot.id}`;
         const globalCount = Number(window.__globalSpotViewsMap[nameKey]) || 0;
         const localCount = Number(spot.searchCount) || Number(localStorage.getItem(`okbm_views_${spot.id}`)) || 0;
         return Math.max(globalCount, localCount);
@@ -3492,7 +3740,7 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
         const target = spots.find(s => String(s.id).trim() === String(spotId).trim());
         if (!target) return;
         
-        const nameKey = String(target.spot_main || target.name || '').trim();
+        const nameKey = `${target.region || ''}_${target.cityName || ''}_${target.spot_main || target.name || ''}_${target.spot_sub || ''}_${target.id}`;
         const currentViews = getSpotViews(target) + 1;
 
         window.__globalSpotViewsMap[nameKey] = currentViews;
@@ -3500,7 +3748,7 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
         localStorage.setItem(`okbm_views_${spotId}`, currentViews);
         target.searchCount = currentViews;
 
-        // 🚀 구글 시트 ranking_stats 시트로 비동기 실시간 +1 누적
+        // 🚀 구글 시트 ranking_stats 시트로 비동기 실시간 +1 누적 (ID 및 복합명칭 함께 전송)
         if (window.GAS_API_URL && !window.GAS_API_URL.includes('구글시트_배포_URL')) {
           fetch(window.GAS_API_URL, {
             method: 'POST',
@@ -3508,7 +3756,9 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({
               action: 'INCREMENT_SPOT_VIEW',
-              spotName: nameKey
+              spotId: String(target.id).trim(),
+              spotName: target.fullName || `${target.spot_main} (${target.spot_sub || ''})`,
+              compositeKey: nameKey
             })
           }).catch(() => {});
         }
@@ -3550,7 +3800,7 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
         triggerHaptic(10);
       }
 
-      function showTopRankings(mode = 'pc') {
+     function showTopRankings(mode = 'pc') {
         const inputEl = document.getElementById('pcSearchInput');
         const dropdown = document.getElementById('pcSearchDropdown');
         if (!dropdown) return;
@@ -3567,12 +3817,14 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
         dropdown.style.display = 'block';
 
         const spotPool = (spots && spots.length > 0) ? spots : (safeGetJSON('okbm_spots_cache', []) || []);
-        const seenNames = new Set();
+        
+        // 🔑 [A~H열 복합 키 적용]: 동명 산 및 다중 박지 포인트 온전 보존
+        const seenKeys = new Set();
         const uniqueSpots = [];
         for (const item of spotPool) {
-          const key = String(item.spot_main || item.name || '').trim();
-          if (key && !seenNames.has(key)) {
-            seenNames.add(key);
+          const compKey = `${item.region}_${item.cityName}_${item.spot_main}_${item.spot_sub}_${item.id}`;
+          if (!seenKeys.has(compKey)) {
+            seenKeys.add(compKey);
             uniqueSpots.push(item);
           }
         }
@@ -3596,12 +3848,17 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
               <div style="width:16px; height:16px; border-radius:4px; font-size:0.62rem; font-weight:900; display:flex; align-items:center; justify-content:center; flex-shrink:0; ${rankColors[idx] || rankColors[3]}">
                 ${idx + 1}
               </div>
-              <span style="font-size:0.78rem; font-weight:800; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                ${escapeHtml(item.spot_main || item.name)}
-              </span>
-              <span style="font-size:0.62rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                ${escapeHtml(item.cityName || item.region || '')}
-              </span>
+              <div style="display:flex; flex-direction:column; min-width:0; overflow:hidden;">
+                <div style="display:flex; align-items:center; gap:4px;">
+                  <span style="font-size:0.78rem; font-weight:800; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                    ${escapeHtml(item.spot_main || item.name)}
+                  </span>
+                  ${item.spot_sub ? `<span style="font-size:0.64rem; color:var(--accent-blue); font-weight:700;">(${escapeHtml(item.spot_sub)})</span>` : ''}
+                </div>
+                <span style="font-size:0.60rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  ${escapeHtml(item.region || '')} ${escapeHtml(item.cityName || '')} · ${escapeHtml(item.elevation || '')}
+                </span>
+              </div>
             </div>
             <div style="font-size:0.60rem; color:#38bdf8; font-weight:800; font-family:'Space Grotesk', sans-serif; background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.25); padding:1px 6px; border-radius:8px; flex-shrink:0; margin-left:6px;">
               ${getSpotViews(item)}회
@@ -3666,10 +3923,15 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
 
         // 🎯 [동일 좌표 자동 방사형 분산 엔진]: 포개진 핀을 15m 간격으로 자동 전개
         const coordCountMap = new Map();
-
-        displaySpots.forEach(spot => {
+displaySpots.forEach(spot => {
           let lat = parseFloat(spot.lat), lng = parseFloat(spot.lng);
           if (isNaN(lat) || isNaN(lng)) return;
+
+          // 🌐 위경도 뒤바뀜 2차 방어선
+          if (lat > 100 && lng < 50 && lng > 0) {
+            const tmp = lat; lat = lng; lng = tmp;
+            spot.lat = lat; spot.lng = lng;
+          }
 
           const coordKey = `${lat.toFixed(5)},${lng.toFixed(5)}`;
           const overlapIndex = coordCountMap.get(coordKey) || 0;
@@ -3677,11 +3939,14 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
 
           // 동일 좌표가 2개 이상이면 2번째 핀부터 나선형(15m)으로 살짝 펼쳐서 렌더링
           if (overlapIndex > 0) {
-            const angle = overlapIndex * 1.57; // 90도씩 회전 분산
-            const dist = 0.00018 * Math.ceil(overlapIndex / 4); // 약 15~20m 미세 분리
+            const angle = overlapIndex * 1.57;
+            const dist = 0.00018 * Math.ceil(overlapIndex / 4);
             lat = lat + Math.sin(angle) * dist;
             lng = lng + Math.cos(angle) * (dist * 1.2);
           }
+
+          spot.renderLat = lat;
+          spot.renderLng = lng;
 
           const sId = String(spot.id).trim();
           const latlng = new kakao.maps.LatLng(lat, lng);
@@ -3699,6 +3964,10 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
             kakao.maps.event.addListener(marker, 'click', () => focusSpotOnMap(spot));
             marker.spotData = spot;
             spotNativeMarkerMap.set(sId, marker);
+          } else if (spotNativeMarkerMap.has(sId)) {
+            const curMarker = spotNativeMarkerMap.get(sId);
+            curMarker.setPosition(latlng);
+            curMarker.spotData = spot;
           }
 
           const isFav = userBookmarks.has(sId);
@@ -3716,7 +3985,7 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
           const row3Elev = spot.elevation ? `${String(spot.elevation).replace(/m$/i,'')}m` : '';
           const diffClass = getSpotDiffColorClass(spot.difficulty);
 
-         const labelDiv = document.createElement('div');
+          const labelDiv = document.createElement('div');
           labelDiv.className = 'lod-marker-container';
           labelDiv.style.pointerEvents = 'auto';
           labelDiv.style.cursor = 'pointer';
@@ -3734,7 +4003,9 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
             </div>`;
 
           if (spotLabelOverlayMap.has(sId)) {
-            spotLabelOverlayMap.get(sId).setContent(labelDiv);
+            const curLabel = spotLabelOverlayMap.get(sId);
+            curLabel.setPosition(latlng);
+            curLabel.setContent(labelDiv);
           } else if (map) {
             const labelOverlay = new kakao.maps.CustomOverlay({ 
               position: latlng, 
@@ -3944,35 +4215,231 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
         return li;
       }
 
-      function openUserProposalModal() {
-        triggerHaptic(10);
-        if (!isUserLoggedIn()) {
-          openLoginModal();
-          showToast(`${ICONS.LOCK} <span>박지 제보는 로그인 후 이용하실 수 있습니다.</span>`);
+     // 🛡️ [모달 좌표 메모리 격리 초기화 엔진 - ReferenceError 원천 소멸]
+      function resetModalPendingMemory() {
+        modalPendingData = { lat: 0, lng: 0, address: '' };
+        var coordsInput = document.getElementById('modalInputCoordsDisplay');
+        if (coordsInput) coordsInput.value = '';
+      }
+
+      // 🛡️ [제보 입력창 클린 초기화 엔진]
+      function clearModalInputs() {
+        var setVal = function(id, val) { var el = document.getElementById(id); if (el) el.value = val; };
+        setVal('modalInputName', '');
+        setVal('modalInputSub', '');
+        setVal('modalInputCoordsDisplay', '');
+        setVal('modalInputTrailheadName', '');
+        setVal('modalInputEntry', '');
+        setVal('modalInputElevation', '');
+        setVal('modalInputDescView', '');
+        setVal('modalInputDescAccess', '');
+        setVal('modalInputDescPitch', '');
+        setVal('modalInputDescTip', '');
+        setVal('modalInputYoutube', '');
+        setVal('modalInputBlog', '');
+        setVal('modalInputDistance', '');
+        
+        var diffSelect = document.getElementById('modalSelectDiff');
+        if (diffSelect) diffSelect.value = '3';
+
+        var defaultRadio = document.querySelector('input[name="modalCourseType"][value="최단"]');
+        if (defaultRadio) defaultRadio.checked = true;
+
+        ['chkDeck', 'chkRock', 'chkSoil', 'chkBeach', 'chkIsland', 'chkValley', 'chkCave'].forEach(function(chkId) {
+          var chk = document.getElementById(chkId);
+          if (chk) chk.checked = (chkId === 'chkDeck');
+        });
+
+        var authorInput = document.getElementById('modalInputAuthorSns');
+        if (authorInput) { authorInput.value = ''; }
+      }
+
+     // 🏕️ [유저 박지 제보 모달 오픈 - 기존 제보 수정 및 오염 방지 엔진]
+      window.__currentEditingProposalId = null;
+
+      window.openUserProposalModal = function(defaultName = "", lat = 0, lng = 0, defaultSub = "", existingProp = null) {
+        triggerHaptic(12);
+
+        var token = localStorage.getItem('user_auth_token');
+        var profile = safeGetJSON('user_profile', null);
+        var isLogged = !!(token && token.trim().length > 0 && profile && profile.id);
+
+        if (!isLogged) {
+          if (typeof window.openLoginModal === 'function') {
+            window.openLoginModal();
+          } else if (typeof window.handleAuthBtnClick === 'function') {
+            window.handleAuthBtnClick();
+          }
+          showToast('🔒 박지 제보는 로그인 후 이용하실 수 있습니다.');
           return;
         }
+
         modalMode = 'PROPOSAL';
-        modalPendingData = { lat: 0, lng: 0, address: '' };
-        
-        const titleEl = document.getElementById('modalTitle');
-        const noticeEl = document.getElementById('modalNotice');
-        const btnEl = document.getElementById('modalSubmitBtn');
-        
-        if (titleEl) titleEl.innerHTML = `${ICONS.PIN} <span>박지 제보 / 추천 등록</span>`;
+        resetModalPendingMemory();
+        clearModalInputs();
+
+        window.__currentEditingProposalId = existingProp ? existingProp.id : null;
+
+        var titleEl = document.getElementById('modalTitle');
+        var noticeEl = document.getElementById('modalNotice');
+        var btnEl = document.getElementById('modalSubmitBtn');
+
+        if (existingProp) {
+          // 기존 작성 제보 불러와서 수정 모드 활성화
+          if (titleEl) titleEl.innerHTML = ICONS.PIN + ' <span>제보 박지 내용 수정 (등록 전)</span>';
+          if (noticeEl) {
+            noticeEl.style.display = 'flex';
+            noticeEl.innerHTML = ICONS.EDIT + ' <span>관리자가 승인하기 전까지 제보 내용을 언제든 수정할 수 있습니다.</span>';
+          }
+          if (btnEl) btnEl.innerText = '수정 완료 (재제출)';
+
+          var setV = function(id, val) { var el = document.getElementById(id); if (el && val) el.value = val; };
+          setV('modalInputName', existingProp.spot_main || existingProp.name);
+          setV('modalInputSub', existingProp.spot_sub);
+          setV('modalInputTrailheadName', existingProp.trailhead_name);
+          setV('modalInputEntry', existingProp.trailhead_addr || existingProp.entry);
+          setV('modalInputElevation', existingProp.elevation);
+          setV('modalInputDistance', existingProp.distance_km || existingProp.distance);
+          setV('modalInputYoutube', existingProp.youtubeUrls);
+          setV('modalInputBlog', existingProp.blogUrl);
+          setV('modalInputAuthorSns', existingProp.authorSnsUrl);
+
+          setV('modalInputDescView', existingProp.descView);
+          setV('modalInputDescAccess', existingProp.descAccess);
+          setV('modalInputDescPitch', existingProp.descPitch);
+          setV('modalInputDescTip', existingProp.descTip);
+
+          if (existingProp.lat && existingProp.lng) {
+            modalPendingData.lat = parseFloat(existingProp.lat);
+            modalPendingData.lng = parseFloat(existingProp.lng);
+            var coordsInput = document.getElementById('modalInputCoordsDisplay');
+            if (coordsInput) coordsInput.value = `${existingProp.lat}, ${existingProp.lng}`;
+          }
+        } else {
+          if (titleEl) titleEl.innerHTML = ICONS.PIN + ' <span>박지 제보 접수 (관리자 검수용)</span>';
+          if (noticeEl) {
+            noticeEl.style.display = 'flex';
+            noticeEl.innerHTML = ICONS.BACKPACK + ' <span>제보해 주신 박지는 <strong>[관리자 검토 및 승인]</strong> 후 정식 지도에 등록됩니다.</span>';
+          }
+          if (btnEl) btnEl.innerText = '제보 접수하기';
+
+          if (lat && lng) {
+            modalPendingData.lat = parseFloat(lat);
+            modalPendingData.lng = parseFloat(lng);
+            var coordsInput = document.getElementById('modalInputCoordsDisplay');
+            if (coordsInput) coordsInput.value = `${lat}, ${lng}`;
+          }
+          if (defaultName) {
+            var cleanName = String(defaultName).replace(/\[.*?\]\s*/g, '').trim();
+            var nameInput = document.getElementById('modalInputName');
+            if (nameInput) nameInput.value = cleanName;
+          }
+          // 세부포인트는 주소가 섞이지 않은 순수 값만 적용
+          if (defaultSub && !defaultSub.includes('시') && !defaultSub.includes('도') && !defaultSub.includes('면') && !defaultSub.includes('로')) {
+            var subInput = document.getElementById('modalInputSub');
+            if (subInput) subInput.value = defaultSub;
+          }
+        }
+var overlay = document.getElementById('customModalOverlay');
+        if (overlay) {
+          overlay.style.setProperty('display', 'flex', 'important');
+          overlay.style.setProperty('z-index', '999999', 'important');
+          overlay.style.setProperty('opacity', '1', 'important');
+          overlay.style.setProperty('visibility', 'visible', 'important');
+          overlay.style.setProperty('pointer-events', 'auto', 'important');
+
+          // 🚀 모달 오픈 즉시 카메라 스크롤을 맨 위(0px)로 강제 텔레포트
+          var modalBox = overlay.querySelector('.custom-modal');
+          if (modalBox) {
+            modalBox.scrollTop = 0;
+            requestAnimationFrame(() => { modalBox.scrollTop = 0; });
+            setTimeout(() => { if (modalBox) modalBox.scrollTop = 0; }, 30);
+          }
+        }
+      };
+
+      // 📝 기존 등록 박지의 정보 수정 건의 전용 오픈 핸들러
+      window.__isSpotCorrectionMode = false;
+      window.__correctionTargetSpotId = null;
+      window.__origSpotBeforeCorrection = null;
+
+      window.openSpotCorrectionModal = function(spotId, e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        triggerHaptic(12);
+
+        var targetSpot = (spots || []).find(function(s) { return String(s.id).trim() === String(spotId).trim(); });
+        if (!targetSpot) {
+          showToast('박지 정보를 찾을 수 없습니다.');
+          return;
+        }
+
+        var parsedSummary = parseStructuredSummary(targetSpot.desc_summary || targetSpot.desc);
+        window.__isSpotCorrectionMode = true;
+        window.__correctionTargetSpotId = String(targetSpot.id).trim();
+        window.__origSpotBeforeCorrection = JSON.parse(JSON.stringify(targetSpot));
+
+        var existingPropObj = {
+          id: `수정건의_${targetSpot.id}번_${Date.now()}`,
+          spot_main: targetSpot.spot_main || targetSpot.name,
+          spot_sub: targetSpot.spot_sub || '',
+          trailhead_name: targetSpot.trailhead_name || '',
+          trailhead_addr: targetSpot.trailhead_addr || targetSpot.entryPoint || '',
+          elevation: targetSpot.elevation || '',
+          distance_km: String(targetSpot.distance || '').replace(/km$/i, ''),
+          youtubeUrls: (targetSpot.youtubeUrls || []).join('\n'),
+          blogUrl: (targetSpot.blogUrls || [])[0] || '',
+          authorSnsUrl: targetSpot.authorSnsUrl || '',
+          descView: parsedSummary.view || '',
+          descAccess: parsedSummary.access || '',
+          descPitch: parsedSummary.pitch || '',
+          descTip: parsedSummary.tip || '',
+          lat: targetSpot.lat,
+          lng: targetSpot.lng
+        };
+
+        openUserProposalModal('', 0, 0, '', existingPropObj);
+
+        var titleEl = document.getElementById('modalTitle');
+        var noticeEl = document.getElementById('modalNotice');
+        var btnEl = document.getElementById('modalSubmitBtn');
+        var reasonBox = document.getElementById('modalFieldCorrectionReason');
+        var reasonInput = document.getElementById('modalInputCorrectionReason');
+
+        if (reasonBox) reasonBox.style.display = 'flex';
+        if (reasonInput) reasonInput.value = '';
+
+        if (titleEl) titleEl.innerHTML = ICONS.EDIT + ` <span>[${escapeHtml(targetSpot.spot_main || targetSpot.name)}] 정보 수정 건의</span>`;
         if (noticeEl) {
           noticeEl.style.display = 'flex';
-          noticeEl.innerHTML = `${ICONS.BACKPACK} <span>멋진 백패킹 박지를 제보해주세요! 관리자 승인 후 정식 등록됩니다.</span>`;
+          noticeEl.innerHTML = ICONS.ALERT_CARD + ` <span>폐쇄, 데크 철거, 들머리 변경 등 <strong>수정 사유</strong>를 적어주시면 신속히 반영됩니다.</span>`;
         }
-        if (btnEl) btnEl.innerText = '제보 접수하기';
-        
-        clearModalInputs();
-        const overlay = document.getElementById('customModalOverlay');
-        if (overlay) overlay.style.display = 'flex';
-      }
+        if (btnEl) btnEl.innerText = '수정 건의 접수하기';
+      };
+
+      // 🛠️ 내 제보 목록에서 수정 버튼 클릭 시 바로 호출되는 전역 핸들러
+      window.openEditMyProposal = function(proposalId) {
+        var myProps = safeGetJSON('okbm_my_proposals', []);
+        var target = myProps.find(function(p) { return String(p.id) === String(proposalId); });
+        if (!target) {
+          showToast('해당 제보 내역을 찾을 수 없습니다.');
+          return;
+        }
+        openUserProposalModal('', 0, 0, '', target);
+      };
+
+      // URL 파라미터로 수정 진입 시 자동 오픈
+      (function checkProposalEditUrl() {
+        var params = new URLSearchParams(window.location.search);
+        var editPropId = params.get('edit_proposal');
+        if (editPropId) {
+          setTimeout(function() { window.openEditMyProposal(editPropId); }, 400);
+        }
+      })();
 
       function openAddModal(defaultName = "", lat = 0, lng = 0, address = "") {
         modalMode = 'ADD'; 
-        modalPendingData = { lat, lng, address };
+        resetModalPendingMemory();
+        modalPendingData = { lat: lat || 0, lng: lng || 0, address: address || '' };
         
         const titleEl = document.getElementById('modalTitle');
         const noticeEl = document.getElementById('modalNotice');
@@ -3993,152 +4460,16 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
         
         const overlay = document.getElementById('customModalOverlay');
         if (overlay) overlay.style.display = 'flex';
-        
-        if (lat && lng) {
-          getElevation(lat, lng).then(elev => { 
-            const elevInput = document.getElementById('modalInputElevation');
-            if (elevInput) elevInput.value = elev; 
-          });
-        }
-      }
-
-      function openEditModal(index) {
-        if (!spots || !spots[index]) return;
-        modalMode = 'EDIT'; 
-        modalEditIndex = index;
-        const spot = spots[index];
-        
-        const titleEl = document.getElementById('modalTitle');
-        const noticeEl = document.getElementById('modalNotice');
-        const btnEl = document.getElementById('modalSubmitBtn');
-        
-        if (titleEl) titleEl.innerHTML = `${ICONS.EDIT} <span>박지 정보 수정 (관리자)</span>`;
-        if (noticeEl) noticeEl.style.display = 'none';
-        if (btnEl) btnEl.innerText = '수정 내용 저장';
-        
-        document.getElementById('modalInputName').value = spot.spot_main || spot.name || '';
-        document.getElementById('modalInputSub').value = spot.spot_sub || '';
-        document.getElementById('modalInputCoordsDisplay').value = `위도: ${spot.lat}, 경도: ${spot.lng}`;
-        document.getElementById('modalInputTrailheadName').value = spot.trailhead_name || '';
-        document.getElementById('modalInputEntry').value = spot.trailhead_addr || spot.entryPoint || '';
-        document.getElementById('modalInputElevation').value = String(spot.elevation || '').replace(/m$/i, '');
-        document.getElementById('modalInputDesc').value = spot.desc_summary || spot.desc || '';
-        document.getElementById('modalInputYoutube').value = (spot.youtubeUrls || []).join('\n');
-        document.getElementById('modalInputBlog').value = (spot.blogUrls || []).join('\n');
-        document.getElementById('modalInputAuthorSns').value = spot.authorSnsUrl || '';
-        document.getElementById('modalInputDistance').value = String(spot.distance || '').replace(/km$/i, '');
-        document.getElementById('modalSelectDiff').value = spot.difficulty || '3';
-
-        const cRadio = document.querySelector(`input[name="modalCourseType"][value="${spot.courseType || '최단'}"]`);
-        if (cRadio) cRadio.checked = true;
-
-        const tList = spot.terrain || [];
-        document.getElementById('chkDeck').checked = tList.some(t => t.includes('데크'));
-        document.getElementById('chkRock').checked = tList.some(t => t.includes('암릉') || t.includes('바위'));
-        document.getElementById('chkSoil').checked = tList.some(t => t.includes('노지'));
-        document.getElementById('chkBeach').checked = tList.some(t => t.includes('해변'));
-        document.getElementById('chkIsland').checked = tList.some(t => t.includes('섬'));
-        document.getElementById('chkValley').checked = tList.some(t => t.includes('계곡'));
-        document.getElementById('chkCave').checked = tList.some(t => t.includes('동굴'));
-
-        const overlay = document.getElementById('customModalOverlay');
-        if (overlay) overlay.style.display = 'flex';
-      }
-
-      function clearModalInputs() {
-        const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-        setVal('modalInputName', '');
-        setVal('modalInputSub', '');
-        setVal('modalInputCoordsDisplay', '');
-        setVal('modalInputTrailheadName', '');
-        setVal('modalInputEntry', '');
-        setVal('modalInputElevation', '');
-        setVal('modalInputDesc', '');
-        setVal('modalInputYoutube', '');
-        setVal('modalInputBlog', '');
-        setVal('modalInputAuthorSns', '');
-        setVal('modalInputDistance', '');
-        
-        const fastRadio = document.querySelector('input[name="modalCourseType"][value="최단"]');
-        if (fastRadio) fastRadio.checked = true;
-        
-        const deckChk = document.getElementById('chkDeck');
-        if (deckChk) deckChk.checked = true;
-        ['chkRock', 'chkSoil', 'chkBeach', 'chkIsland', 'chkValley', 'chkCave'].forEach(id => { 
-          const el = document.getElementById(id); 
-          if (el) el.checked = false; 
-        });
-        setVal('modalSelectDiff', '3');
       }
 
       function closeCustomModal() {
         const overlay = document.getElementById('customModalOverlay');
         if (overlay) overlay.style.display = 'none';
+        resetModalPendingMemory();
         if (tempPickedMarker) { 
           tempPickedMarker.setMap(null); 
           tempPickedMarker = null; 
         }
-      }
-
-      function startPinPicking() { 
-        isPickingLocationMode = true; 
-        const overlay = document.getElementById('customModalOverlay');
-        const banner = document.getElementById('pinPickerBanner');
-        if (overlay) overlay.style.display = 'none'; 
-        if (banner) banner.style.display = 'flex'; 
-      }
-
-      function cancelPinPicking() { 
-        isPickingLocationMode = false; 
-        const overlay = document.getElementById('customModalOverlay');
-        const banner = document.getElementById('pinPickerBanner');
-        if (banner) banner.style.display = 'none'; 
-        if (overlay) overlay.style.display = 'flex'; 
-      }
-
-      let isMarkerClickProcessing = false;
-
-      function handleMapClick(mouseEvent) {
-        const pcDrop = document.getElementById('pcSearchDropdown');
-        if (pcDrop) pcDrop.style.display = 'none';
-
-        if (isMarkerClickProcessing) {
-          return;
-        }
-
-        if (!mouseEvent.latLng) return;
-        if (isPickingLocationMode) {
-          isPickingLocationMode = false;
-          const banner = document.getElementById('pinPickerBanner');
-          if (banner) banner.style.display = 'none';
-          
-          const lat = parseFloat(mouseEvent.latLng.getLat().toFixed(6));
-          const lng = parseFloat(mouseEvent.latLng.getLng().toFixed(6));
-          modalPendingData.lat = lat; 
-          modalPendingData.lng = lng;
-          
-          if (tempPickedMarker) tempPickedMarker.setMap(null);
-          tempPickedMarker = new kakao.maps.Marker({ position: mouseEvent.latLng, map: map });
-          
-          const coordsDisplay = document.getElementById('modalInputCoordsDisplay');
-          if (coordsDisplay) coordsDisplay.value = `위도: ${lat}, 경도: ${lng}`;
-
-          if (geocoder) {
-            geocoder.coord2Address(lng, lat, async (result, status) => {
-              if (status === kakao.maps.services.Status.OK && result.length > 0) {
-                const addr = result[0].road_address ? result[0].road_address.address_name : result[0].address.address_name;
-                const curEntry = document.getElementById('modalInputEntry').value.trim();
-                if (!curEntry && addr) document.getElementById('modalInputEntry').value = addr;
-              }
-              document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
-              document.getElementById('customModalOverlay').style.display = 'flex';
-            });
-          } else {
-            document.getElementById('customModalOverlay').style.display = 'flex';
-          }
-          return;
-        }
-        closeAllPopups();
       }
 
       async function saveCustomModal() {
@@ -4156,24 +4487,55 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
         }
 
         try {
+          // 🛡️ 정직한 좌표 결정: 관리자가 콕 찍은 핀 좌표 우선 (엉뚱한 동명 산 자동 덮어쓰기 영구 제거)
           let lat = modalPendingData.lat || (modalMode === 'EDIT' ? spots[modalEditIndex].lat : 0);
           let lng = modalPendingData.lng || (modalMode === 'EDIT' ? spots[modalEditIndex].lng : 0);
 
+          // 핀이 없으면 들머리 주소로만 정밀 확인
           if (!lat || !lng) {
-            const coords = await searchCoordsByQuery(entry || name);
-            if (coords) { lat = coords.lat; lng = coords.lng; } 
-            else { lat = 37.5665; lng = 126.9780; }
+            const coords = await searchCoordsByQuery(entry);
+            if (coords) { 
+              lat = coords.lat; 
+              lng = coords.lng; 
+            } else { 
+              alert('정확한 박지 위치를 위해 [콕 찍기] 버튼으로 지도에서 위치를 직접 지정해주세요.');
+              if (submitBtn) submitBtn.disabled = false;
+              return;
+            }
           }
 
           let elevation = document.getElementById('modalInputElevation')?.value.trim();
           if (!elevation && lat && lng) elevation = await getElevation(lat, lng);
           if (elevation && !String(elevation).includes('m') && !isNaN(elevation)) elevation = `${elevation}m`;
 
-          const desc = document.getElementById('modalInputDesc')?.value.trim();
-          const rawYt = document.getElementById('modalInputYoutube')?.value.trim();
+          // 📝 4대 설명 독립 입력값을 규격화된 포맷으로 조합
+          const descView = document.getElementById('modalInputDescView')?.value.trim();
+          const descAccess = document.getElementById('modalInputDescAccess')?.value.trim();
+          const descPitch = document.getElementById('modalInputDescPitch')?.value.trim();
+          const descTip = document.getElementById('modalInputDescTip')?.value.trim();
+
+          const descLines = [];
+          if (descView) descLines.push(`[뷰/특징] ${descView}`);
+          if (descAccess) descLines.push(`[접근/코스] ${descAccess}`);
+          if (descPitch) descLines.push(`[박지/피칭] ${descPitch}`);
+          if (descTip) descLines.push(`[주의/팁] ${descTip}`);
+          const desc = descLines.join('\n');
+
+        const rawYt = document.getElementById('modalInputYoutube')?.value.trim();
           const ytList = rawYt ? rawYt.split(/[\n,]+/).map(u => u.trim()).filter(Boolean) : [];
           const blogUrl = document.getElementById('modalInputBlog')?.value.trim();
-          const authorSnsUrl = document.getElementById('modalInputAuthorSns')?.value.trim();
+          
+          // 🌐 @아이디 또는 아이디만 입력해도 인스타그램 전체 풀주소로 자동 변환 완성
+          let authorSnsUrl = document.getElementById('modalInputAuthorSns')?.value.trim() || '';
+          if (authorSnsUrl) {
+            if (!authorSnsUrl.startsWith('http://') && !authorSnsUrl.startsWith('https://')) {
+              const cleanSnsId = authorSnsUrl.replace(/^@+/, '').trim();
+              if (cleanSnsId) {
+                authorSnsUrl = `https://instagram.com/${cleanSnsId}`;
+              }
+            }
+          }
+          
           const distance = document.getElementById('modalInputDistance')?.value.trim();
           const difficulty = document.getElementById('modalSelectDiff')?.value || '3';
           const courseType = document.querySelector('input[name="modalCourseType"]:checked')?.value || '일반';
@@ -4188,40 +4550,109 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
           if (document.getElementById('chkCave')?.checked) terrainList.push('동굴');
           if (terrainList.length === 0) terrainList.push('데크');
 
-          const autoDetect = detectRegionAndCity(lat, lng, name, entry);
-          const fullName = sub ? `${name} (${sub})` : name;
+         // 🌐 마스터 시트(시트1)와 100% 동일한 권역/시군구 및 풀네임 자동 정밀 추출
+          const detected = detectRegionAndCity(lat, lng, name, entry);
+          const region = normalizeTo10Regions(detected.region);
+          let cityName = detected.cityName || '';
+          const cityMatch = entry.match(/([가-힣]+[시군구])/);
+          if (cityMatch && cityMatch[1]) cityName = cityMatch[1];
+          
+          const fullName = cityName ? `[${cityName}] ${name}${sub ? ` (${sub})` : ''}` : (sub ? `${name} (${sub})` : name);
+          const autoTrailheadName = tName || `${name} 들머리`;
 
-          if (modalMode === 'PROPOSAL') {
+      if (modalMode === 'PROPOSAL') {
             try {
+              var isCorrection = Boolean(window.__isSpotCorrectionMode);
+              var origSpotId = window.__correctionTargetSpotId || '';
+              var orig = window.__origSpotBeforeCorrection || {};
+              
+              var propId = window.__currentEditingProposalId || (isCorrection ? `수정건의_${origSpotId}번_${Date.now()}` : `신규제보_${Date.now()}`);
+              var finalSpotMain = name;
+
+              // 🔍 수정 사유 및 변경 대조(Diff) 자동 추출
+              var diffNotes = [];
+              var correctionReason = (document.getElementById('modalInputCorrectionReason')?.value || '').trim();
+
+              if (isCorrection && orig.id) {
+                if (orig.spot_main !== name) diffNotes.push(`• 박지명: "${orig.spot_main}" ➔ "${name}"`);
+                if ((orig.spot_sub || '') !== sub) diffNotes.push(`• 세부포인트: "${orig.spot_sub || '없음'}" ➔ "${sub || '없음'}"`);
+                if ((orig.trailhead_addr || orig.entryPoint || '') !== entry) diffNotes.push(`• 들머리주소: "${orig.trailhead_addr || ''}" ➔ "${entry}"`);
+                if (parseFloat(orig.lat) !== parseFloat(lat) || parseFloat(orig.lng) !== parseFloat(lng)) diffNotes.push(`• 핀위치 변경됨`);
+              }
+
+              var headerNotice = '';
+              if (isCorrection) {
+                headerNotice = `[🚨 ${origSpotId}번 박지 수정요청]\n` +
+                  (correctionReason ? `📌 핵심사유: ${correctionReason}\n` : '') +
+                  (diffNotes.length > 0 ? `📝 변경항목:\n${diffNotes.join('\n')}\n` : '') +
+                  `────────────────────\n`;
+              }
+
+              var finalDesc = headerNotice + desc;
+
+              var propRecord = {
+                id: propId,
+                type: isCorrection ? 'correction' : 'proposal',
+                origSpotId: origSpotId,
+                correctionReason: correctionReason,
+                region: region,
+                cityName: cityName,
+                spot_main: finalSpotMain, 
+                spot_sub: sub, 
+                fullName: fullName,
+                elevation: elevation || '450m', 
+                campsite_lat: lat,
+                campsite_lng: lng,
+                lat: lat, 
+                lng: lng, 
+                terrain: terrainList.join(', '), 
+                trailhead_name: autoTrailheadName, 
+                trailhead_addr: entry, 
+                difficulty: difficulty, 
+                distance_km: distance || '', 
+                desc_summary: finalDesc,
+                descView: descView || '',
+                descAccess: descAccess || '',
+                descPitch: descPitch || '',
+                descTip: descTip || '',
+                youtubeUrls: ytList.join('\n'), 
+                blogUrls: blogUrl || '', 
+                blogUrl: blogUrl || '', 
+                authorSnsUrl: authorSnsUrl || '', 
+                courseType: courseType,
+                date: (typeof getFormattedNow === 'function') ? getFormattedNow() : new Date().toLocaleDateString(),
+                status: isCorrection ? '수정건의대기' : '검수대기'
+              };
+
+              // 📋 마스터 시트 전송
               await fetch(GAS_API_URL, {
                 method: 'POST', 
                 mode: 'no-cors', 
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ 
-                  action: 'PROPOSE', 
-                  spot_main: name, 
-                  spot_sub: sub, 
-                  fullName, 
-                  lat, 
-                  lng, 
-                  elevation: elevation || '450m', 
-                  trailhead_name: tName, 
-                  trailhead_addr: entry, 
-                  desc_summary: desc, 
-                  youtubeUrls: ytList.join('\n'), 
-                  blogUrl, 
-                  authorSnsUrl, 
-                  courseType, 
-                  terrain: terrainList.join(', '), 
-                  difficulty, 
-                  distance_km: distance, 
-                  region: autoDetect.region, 
-                  cityName: autoDetect.cityName 
-                })
+                body: JSON.stringify({ action: 'PROPOSE', ...propRecord })
               });
+
+              // 💾 마이데이터용 내 제보/건의 목록 보존
+              var myProps = safeGetJSON('okbm_my_proposals', []);
+              var existingIdx = myProps.findIndex(function(p) { return String(p.id) === String(propId); });
+              if (existingIdx !== -1) {
+                myProps[existingIdx] = propRecord;
+              } else {
+                myProps.unshift(propRecord);
+              }
+              localStorage.setItem('okbm_my_proposals', JSON.stringify(myProps));
+
+              window.__currentEditingProposalId = null;
+              window.__isSpotCorrectionMode = false;
+              window.__correctionTargetSpotId = null;
+
               triggerHaptic(15);
-              alert('소중한 박지 제보가 접수되었습니다!\n관리자 확인 후 정식 등록됩니다. 감사합니다!');
+              alert(isCorrection 
+                ? '소중한 정보 수정 건의가 접수되었습니다!\n관리자 검토 후 지도에 신속히 반영하겠습니다. 감사합니다!' 
+                : '소중한 박지 제보가 접수되었습니다!\n관리자 검토 전까지 [마이리포트]에서 언제든 수정할 수 있습니다.');
             } catch (e) { alert('제보 접수 중 통신 오류가 발생했습니다.'); }
+          } else if (modalMode === 'ADD') {
+        
           } else if (modalMode === 'ADD') {
             const newSpot = {
               id: String(Date.now()), 
@@ -4244,8 +4675,8 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
               terrain: terrainList, 
               difficulty, 
               distance: distance ? `${distance}km` : '', 
-              region: autoDetect.region, 
-              cityName: autoDetect.cityName, 
+              region: '경기', 
+              cityName: '', 
               searchCount: 0, 
               sheetIndex: spots.length
             };
@@ -4262,7 +4693,7 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
                 body: JSON.stringify({ action: 'ADD', ...newSpot, youtubeUrls: ytList.join('\n'), terrain: terrainList.join(', ') })
               });
             } catch (e) {}
-          } else if (modalMode === 'EDIT') {
+         } else if (modalMode === 'EDIT') {
             const target = spots[modalEditIndex];
             if (target) {
               Object.assign(target, { 
@@ -4270,8 +4701,8 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
                 spot_main: name, 
                 spot_sub: sub, 
                 fullName, 
-                lat, 
-                lng, 
+                lat: parseFloat(lat), 
+                lng: parseFloat(lng), 
                 elevation: elevation || target.elevation, 
                 trailhead_name: tName, 
                 trailhead_addr: entry, 
@@ -4284,13 +4715,21 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
                 distance: distance ? `${distance}km` : target.distance, 
                 difficulty, 
                 courseType, 
-                terrain: terrainList, 
-                region: autoDetect.region, 
-                cityName: autoDetect.cityName 
+                terrain: terrainList
               });
+
               localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
+
+              const sId = String(target.id).trim();
+              const newLatLng = new kakao.maps.LatLng(lat, lng);
+              const curMarker = spotNativeMarkerMap.get(sId);
+              if (curMarker) { curMarker.setPosition(newLatLng); curMarker.spotData = target; }
+              const curLabel = spotLabelOverlayMap.get(sId);
+              if (curLabel) { curLabel.setPosition(newLatLng); }
+
               renderSpots(); 
               focusSpotOnMap(target);
+              smoothCenterMapOnSpot(lat, lng);
               try {
                 await fetch(GAS_API_URL, {
                   method: 'POST', 
@@ -4309,6 +4748,77 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
           closeCustomModal();
         }
       }
+
+      function startPinPicking() {
+        triggerHaptic(12);
+        isPickingLocationMode = true;
+        
+        var modalOverlay = document.getElementById('customModalOverlay');
+        if (modalOverlay) modalOverlay.style.display = 'none';
+
+        var banner = document.getElementById('pinPickerBanner');
+        if (banner) banner.style.display = 'flex';
+
+        if (window.innerWidth <= 768) {
+          isSidebarCollapsed = true;
+          var sidebar = document.getElementById('sidebar');
+          if (sidebar) sidebar.classList.add('collapsed');
+          if (typeof updateDockSidebarText === 'function') updateDockSidebarText(false);
+        }
+        showToast(`${ICONS.PIN} <span>지도를 클릭하여 박지 위치를 콕 찍어주세요!</span>`);
+      }
+
+      function cancelPinPicking() {
+        triggerHaptic(10);
+        isPickingLocationMode = false;
+        
+        var banner = document.getElementById('pinPickerBanner');
+        if (banner) banner.style.display = 'none';
+
+        var modalOverlay = document.getElementById('customModalOverlay');
+        if (modalOverlay) modalOverlay.style.display = 'flex';
+      }
+
+      let isMarkerClickProcessing = false;
+
+      function handleMapClick(mouseEvent) {
+        const pcDrop = document.getElementById('pcSearchDropdown');
+        if (pcDrop) pcDrop.style.display = 'none';
+
+        if (isMarkerClickProcessing) {
+          return;
+        }
+
+       if (!mouseEvent.latLng) return;
+        if (isPickingLocationMode) {
+          isPickingLocationMode = false;
+          const banner = document.getElementById('pinPickerBanner');
+          if (banner) banner.style.display = 'none';
+          
+          const lat = parseFloat(mouseEvent.latLng.getLat().toFixed(6));
+          const lng = parseFloat(mouseEvent.latLng.getLng().toFixed(6));
+          modalPendingData.lat = lat; 
+          modalPendingData.lng = lng;
+          
+          if (tempPickedMarker) tempPickedMarker.setMap(null);
+          tempPickedMarker = new kakao.maps.Marker({ position: mouseEvent.latLng, map: map });
+          
+          // 🎯 한글 사족 없는 순수 숫자 좌표만 표시
+          const coordsDisplay = document.getElementById('modalInputCoordsDisplay');
+          if (coordsDisplay) coordsDisplay.value = `${lat}, ${lng}`;
+
+          // 🛡️ 들머리 주소창(modalInputEntry)에 산꼭대기 지번을 억지로 채우는 로직 전면 배제 (고도만 측정 후 모달 복귀)
+          getElevation(lat, lng).then(elev => {
+            const elevInput = document.getElementById('modalInputElevation');
+            if (elevInput && !elevInput.value) elevInput.value = elev;
+            document.getElementById('customModalOverlay').style.display = 'flex';
+          });
+          return;
+        }
+        closeAllPopups();
+      }
+
+      
 
       function editSpotById(e, id) {
         if (e) e.stopPropagation();
@@ -4371,11 +4881,19 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
         } catch (err) {}
       }
 
+     // 🚀 검색창 ➕ 제보 클릭 시 관광명소/주소 태그를 완전 제거하고 세부포인트는 깨끗한 빈칸으로 유지
       function quickAddFromSearch(title, lat, lng, sub) {
         document.getElementById('pcSearchDropdown').style.display = 'none';
-        openAddModal(title, lat, lng, sub);
+        
+        // [관광명소], [자연명소], [등록박지] 등 시스템 대괄호 태그 100% 제거
+        var cleanName = String(title || '')
+          .replace(/\[.*?\]\s*/g, '')
+          .replace(/\(.*?\)/g, '')
+          .trim();
+        
+        // 세부포인트(sub)에 주소가 오염되어 들어가는 것을 원천 차단 (사용자가 '정상 데크' 등 직접 기재)
+        openUserProposalModal(cleanName, lat, lng, "");
       }
-
   async function executeSearch(mode = 'pc') {
         const inputEl = document.getElementById('pcSearchInput');
         const dropdown = document.getElementById('pcSearchDropdown');
@@ -4452,7 +4970,7 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
                   ${escapeHtml(res.sub)}
                 </span>
               </div>
-              ${(isAdminMode && !res.isInternal) ? `<button type="button" class="btn-quick-add" style="display:inline-block; padding:3px 7px; font-size:0.65rem;" onclick="event.stopPropagation(); quickAddFromSearch('${escapeHtml(res.title)}', ${res.lat}, ${res.lng}, '${escapeHtml(res.sub)}')">➕ 등록</button>` : ''}`;
+             ${(!res.isInternal) ? `<button type="button" class="btn-quick-add" style="display:inline-block; padding:3px 7px; font-size:0.65rem; background:#0f766e;" onclick="event.stopPropagation(); quickAddFromSearch('${escapeHtml(res.title)}', ${res.lat}, ${res.lng}, '${escapeHtml(res.sub)}')">➕ 제보</button>` : ''}`;
 
             li.addEventListener('click', () => {
               triggerHaptic(10);

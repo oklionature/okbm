@@ -848,12 +848,12 @@ function ensureMyReportAndAuthModalsInDOM() {
       </div>
     </div>
 
-    <!-- 2. 마이데이터(마이리포트) 대시보드 모달 -->
+  <!-- 2. 마이데이터(마이리포트) 대시보드 모달 (완벽한 태그 정합성 3단 분리) -->
     <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="if(event.target===this) closeUserProfileModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100%; height:100dvh; padding:0; margin:0; overflow:hidden;">
       <div style="position:relative; width:100%; max-width:480px; height:100%; height:100dvh; margin:0 auto; background:#000000; overflow:hidden; box-sizing:border-box;">
         
-        <!-- 1단 헤더 (상단 0~56px 고정) -->
-        <div style="position:absolute; top:0; left:0; right:0; height:56px; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:0 16px; padding-top:env(safe-area-inset-top, 0px); box-sizing:border-box; z-index:30;">
+        <!-- 1단 헤더 (완전 차광 상단 고정 바) -->
+        <div style="position:absolute; top:0; left:0; right:0; height:calc(54px + env(safe-area-inset-top, 0px)); background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:flex-end; padding:0 16px 10px 16px; box-sizing:border-box; z-index:50;">
           <span style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.03em;">마이리포트</span>
           
           <div onclick="triggerHaptic(12); window.openAccountSettingsModal();" title="개인정보 및 아이디 변경" style="display:flex; align-items:center; gap:8px; cursor:pointer; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); padding:3px 10px 3px 4px; border-radius:20px;">
@@ -866,10 +866,10 @@ function ensureMyReportAndAuthModalsInDOM() {
           </div>
         </div>
 
-        <!-- 2단 본문 (스크롤) -->
-        <div id="userProfileScrollBody" style="position:absolute !important; top:56px !important; bottom:calc(64px + env(safe-area-inset-bottom, 0px)) !important; left:0 !important; right:0 !important; width:100% !important; overflow-y:scroll !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain !important; padding:12px 12px 24px 12px !important; display:flex !important; flex-direction:column !important; gap:8px !important; box-sizing:border-box !important; z-index:10 !important;">
+        <!-- 2단 본문 (모든 카드가 빈틈없이 위에서부터 차곡차곡 담기는 스크롤 바디) -->
+        <div id="userProfileScrollBody" style="position:absolute; top:calc(54px + env(safe-area-inset-top, 0px)); bottom:calc(64px + env(safe-area-inset-bottom, 0px)); left:0; right:0; width:100%; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior-y:contain; padding:12px 12px 24px 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box; z-index:10;">
           
-          <!-- 올해 vs 누적 활동 듀얼 카운터 (파스텔 포인트 & 연도 선택 드롭다운 & 터치 시 인라인 활동 메모 펼침) -->
+          <!-- 올해 vs 누적 활동 듀얼 카운터 -->
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; flex-shrink:0;">
             <div role="button" onclick="window.toggleReportYearActivities(event)" style="cursor:pointer; position:relative; background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; user-select:none;">
               <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -901,7 +901,7 @@ function ensureMyReportAndAuthModalsInDOM() {
             </div>
           </div>
 
-         <!-- 선택 연도 활동 인라인 아코디언 패널 (부연설명 배제 / 극미니멀 규격) -->
+          <!-- 선택 연도 활동 인라인 아코디언 패널 -->
           <div id="reportYearActivityContainer" style="display:none; flex-direction:column; gap:4px; background:#080b11; border:1px solid rgba(186,230,253,0.15); border-radius:10px; padding:8px 10px; box-sizing:border-box; flex-shrink:0;">
             <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:4px; border-bottom:1px solid rgba(255,255,255,0.06);">
               <span id="reportYearActivityTitle" style="font-size:0.58rem; color:#bae6fd; font-weight:800; font-family:var(--font-en);">활동 기록</span>
@@ -909,7 +909,24 @@ function ensureMyReportAndAuthModalsInDOM() {
             <div id="reportYearActivityList" style="display:flex; flex-direction:column; gap:2px; max-height:200px; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-right:2px;"></div>
           </div>
 
-          <!-- 1. 장비 & 세팅 무게 (파스텔 세이지) -->
+          <!-- 0. 내가 제보한 박지 (등록 전 수정 기능) -->
+          <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0;">
+            <div role="button" data-sec="myprops" onclick="window.handleReportSecClick('myprops')" style="padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:24px; height:24px; border-radius:6px; background:rgba(56,189,248,0.1); display:flex; align-items:center; justify-content:center; color:#38bdf8; flex-shrink:0;">
+                  <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                </div>
+                <span style="font-size:0.78rem; font-weight:700; color:#e2e8f0;">내가 제보한 박지</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span id="reportHeaderMyPropsStat" style="font-size:0.64rem; color:#38bdf8; font-weight:700; font-family:var(--font-en);">0곳</span>
+                <span id="accArrow_myprops" style="font-size:0.58rem; color:#475569; display:inline-block; transition:transform 0.2s;">▼</span>
+              </div>
+            </div>
+            <div id="accBody_myprops" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px;"></div>
+          </div>
+
+          <!-- 1. 장비 & 세팅 무게 -->
           <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0;">
             <div role="button" data-sec="gear" onclick="window.handleReportSecClick('gear')" style="padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
               <div style="display:flex; align-items:center; gap:8px;">
@@ -926,7 +943,7 @@ function ensureMyReportAndAuthModalsInDOM() {
             <div id="accBody_gear" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px;"></div>
           </div>
 
-          <!-- 2. 고도 & 필드 지형 (파스텔 스카이블루) -->
+          <!-- 2. 고도 & 필드 지형 -->
           <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0;">
             <div role="button" data-sec="terrain" onclick="window.handleReportSecClick('terrain')" style="padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
               <div style="display:flex; align-items:center; gap:8px;">
@@ -943,7 +960,7 @@ function ensureMyReportAndAuthModalsInDOM() {
             <div id="accBody_terrain" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px;"></div>
           </div>
 
-          <!-- 3. 시즌 밸런스 (파스텔 바닐라골드) -->
+          <!-- 3. 시즌 밸런스 -->
           <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0;">
             <div role="button" data-sec="season" onclick="window.handleReportSecClick('season')" style="padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
               <div style="display:flex; align-items:center; gap:8px;">
@@ -960,7 +977,7 @@ function ensureMyReportAndAuthModalsInDOM() {
             <div id="accBody_season" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px;"></div>
           </div>
 
-          <!-- 4. 지역 분포 (파스텔 라벤더) -->
+          <!-- 4. 지역 분포 -->
           <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0;">
             <div role="button" data-sec="region" onclick="window.handleReportSecClick('region')" style="padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
               <div style="display:flex; align-items:center; gap:8px;">
@@ -978,14 +995,14 @@ function ensureMyReportAndAuthModalsInDOM() {
           </div>
 
           <!-- 결산 카드 버튼 -->
-          <button type="button" onclick="if(typeof openHistoryStudioModal==='function') openHistoryStudioModal(); else showToast('스튜디오 엔진 준비 중입니다.', 'info');" style="width:100%; height:44px; background:#080b11; border:1.5px solid rgba(186,230,253,0.3); border-radius:10px; color:#f1f5f9; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; margin-top:4px; margin-bottom:20px; flex-shrink:0; box-shadow:0 4px 15px rgba(0,0,0,0.8);">
+          <button type="button" onclick="if(typeof openHistoryStudioModal==='function') openHistoryStudioModal(); else showToast('스튜디오 엔진 준비 중입니다.', 'info');" style="width:100%; height:44px; background:#080b11; border:1.5px solid rgba(186,230,253,0.3); border-radius:10px; color:#f1f5f9; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; margin-top:4px; margin-bottom:12px; flex-shrink:0; box-shadow:0 4px 15px rgba(0,0,0,0.8);">
             <svg viewBox="0 0 24 24" style="width:15px; height:15px; stroke:#bae6fd; fill:none; stroke-width:2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
             <span>결산 카드 만들기</span>
           </button>
 
         </div>
 
-        <!-- 3단 독 바 (하단 0~64px 절대 고정) -->
+        <!-- 3단 독 바 (하단 완벽 고정) -->
         <div class="mobile-bottom-dock notranslate" style="position:absolute !important; bottom:0 !important; left:0 !important; right:0 !important; height:calc(64px + env(safe-area-inset-bottom, 0px)) !important; width:100% !important; background:rgba(0,0,0,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:30 !important; box-sizing:border-box; padding-bottom:env(safe-area-inset-bottom, 0px) !important;">
           <a href="index.html" class="dock-item" onclick="closeUserProfileModal(); triggerHaptic(10);">
             <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
@@ -1047,7 +1064,6 @@ function ensureMyReportAndAuthModalsInDOM() {
   document.body.appendChild(container);
 }
 
-// 마이데이터 온디맨드 즉시 연산 직통 클릭 엔진
 window.__reportRenderCache = {};
 
 window.handleReportSecClick = function(secKey) {
@@ -1074,7 +1090,9 @@ window.handleReportSecClick = function(secKey) {
     : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
   var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
 
-  if (secKey === 'gear') {
+  if (secKey === 'myprops') {
+    window._renderMyPropsModule(body);
+  } else if (secKey === 'gear') {
     window._renderGearModule(validLogs, body);
   } else if (secKey === 'terrain') {
     window._renderTerrainModule(validLogs, body);
@@ -1087,6 +1105,54 @@ window.handleReportSecClick = function(secKey) {
   window.__reportRenderCache[secKey] = true;
 };
 
+// 0. 내가 제보한 박지 목록 렌더러 및 등록 전 수정 모듈
+window._renderMyPropsModule = function(el) {
+  var myProps = safeGetJSON('okbm_my_proposals', []);
+  var hStat = document.getElementById('reportHeaderMyPropsStat');
+  if (hStat) hStat.innerText = myProps.length + '곳';
+
+  if (!myProps || myProps.length === 0) {
+    el.innerHTML = '<div style="font-size:0.62rem; color:#64748b; text-align:center; padding:12px 0;">아직 제보한 박지가 없습니다. 소중한 박지를 제보해주세요!</div>';
+    return;
+  }
+
+  var listHtml = myProps.map(function(p, idx) {
+    var mainName = p.spot_main || p.name || '무명 박지';
+    var subName = p.spot_sub ? ('(' + p.spot_sub + ')') : '';
+    var dateStr = String(p.date || '').slice(0, 10);
+    var entryStr = p.trailhead_addr || p.entry || '들머리 미기재';
+
+    return '<div style="display:flex; justify-content:space-between; align-items:center; background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:6px 8px;">' +
+      '<div style="display:flex; flex-direction:column; min-width:0; flex:1; padding-right:8px;">' +
+        '<div style="display:flex; align-items:center; gap:4px;">' +
+          '<span style="font-size:0.58rem; color:#38bdf8; font-weight:900;">' + (idx + 1) + '.</span>' +
+          '<span style="font-size:0.72rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + mainName + ' ' + subName + '</span>' +
+          (isCorr
+            ? '<span style="font-size:0.50rem; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:3px; padding:1px 4px; font-weight:800;">수정건의</span>'
+            : '<span style="font-size:0.50rem; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); border-radius:3px; padding:1px 4px; font-weight:800;">신규제보</span>') +
+        '</div>' +
+        '<span style="font-size:0.54rem; color:#64748b; margin-top:2px;">' + entryStr + ' · ' + dateStr + '</span>' +
+      '</div>' +
+      '<button type="button" onclick="window.triggerEditProposalFromReport(\'' + p.id + '\')" style="background:rgba(56,189,248,0.12); border:1px solid #38bdf8; color:#38bdf8; font-size:0.62rem; font-weight:800; border-radius:5px; padding:3px 8px; cursor:pointer; flex-shrink:0;">수정</button>' +
+    '</div>';
+  }).join('');
+
+  el.innerHTML = '<div style="font-size:0.56rem; color:#94a3b8; margin:4px 0 2px 2px;">관리자 승인 전까지 [수정]을 눌러 내용을 고칠 수 있습니다.</div>' +
+    '<div style="display:flex; flex-direction:column; gap:4px; max-height:220px; overflow-y:auto; -webkit-overflow-scrolling:touch;">' +
+      listHtml +
+    '</div>';
+};
+
+window.triggerEditProposalFromReport = function(propId) {
+  triggerHaptic(12);
+  closeUserProfileModal();
+  var isMapPage = (typeof window.location !== 'undefined' && window.location.pathname.includes('map.html'));
+  if (isMapPage && typeof window.openEditMyProposal === 'function') {
+    window.openEditMyProposal(propId);
+  } else {
+    window.location.assign('map.html?edit_proposal=' + encodeURIComponent(propId));
+  }
+};
 // 1. 장비 & 세팅 무게 연산 모듈
 window._gearModuleState = window._gearModuleState || {
   season: 'all',
