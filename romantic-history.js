@@ -452,11 +452,25 @@
     window.packingHistoryList = window.interactiveHistory;
 
    // 🏛️ 단일 금고 매니저를 통해 로컬스토리지, IndexedDB, 메모리에 완벽 원자적 저장
-    // 🛡️ [5MB 한도 초과 원천 방어]: localStorage용 리스트에서는 대용량 Base64 필드를 제거하고 원본은 IndexedDB/메모리에 영구 보존
+    // 🛡️ [제1헌법 준수: 5MB 한도 초과 원천 방어]: localStorage용 복제본에서는 모든 대용량 Base64 사진을 소거하고 정본은 IndexedDB에만 보존
     var safeStorageList = list.map(function(item) {
       var cloned = Object.assign({}, item);
-      if (cloned.customTemplatePhoto && cloned.customTemplatePhoto.startsWith('data:')) {
-        cloned.customTemplatePhoto = ''; // localStorage 저장 시 Base64 누출 차단
+      if (cloned.customTemplatePhoto && typeof cloned.customTemplatePhoto === 'string' && cloned.customTemplatePhoto.startsWith('data:')) {
+        cloned.customTemplatePhoto = '';
+      }
+      if (cloned.photo && typeof cloned.photo === 'string' && cloned.photo.startsWith('data:')) {
+        cloned.photo = '';
+      }
+      if (cloned.fieldPhoto && typeof cloned.fieldPhoto === 'string' && cloned.fieldPhoto.startsWith('data:')) {
+        cloned.fieldPhoto = '';
+      }
+      if (cloned.photo_url && typeof cloned.photo_url === 'string' && cloned.photo_url.startsWith('data:')) {
+        cloned.photo_url = '';
+      }
+      if (Array.isArray(cloned.photos)) {
+        cloned.photos = cloned.photos.filter(function(u) {
+          return typeof u === 'string' && !u.startsWith('data:');
+        });
       }
       return cloned;
     });
@@ -2839,13 +2853,21 @@
         });
       }
 
-      var spotsMap = new Map();
+ var spotsMap = new Map();
       rawPool.forEach(function(s) {
         if (!s) return;
         var rawName = String(s.name || s.spotName || s.spot || s.title || '').trim();
         if (!rawName || rawName === '나의 힐링 스팟' || rawName === '힐링 박지') return;
 
-        var cityName = extractSmartCityName(s);
+        var cityName = '';
+        if (typeof window.extractSmartCityName === 'function') {
+          cityName = window.extractSmartCityName(s);
+        } else {
+          var addrStr = String(s.address || s.addr || s.region || '').trim();
+          var match = addrStr.match(/([가-힣]+(?:시|군|구))/);
+          cityName = match ? match[1] : '';
+        }
+
         var combinedName = rawName;
         if (cityName && !rawName.includes(cityName)) {
           combinedName = cityName + ' ' + rawName;
@@ -4046,7 +4068,7 @@ window.renderHistoryStage = function(isLoading) {
       } else {
           horizontalSlidesHtml = mediaItems.map(function(pUrl) {
             return '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex; align-items:center; justify-content:center;">' +
-              '<img class="reel-photo-target" src="' + pUrl + '" onload="if(this.naturalWidth > this.naturalHeight){ this.style.objectFit=\'contain\'; } else { this.style.objectFit=\'cover\'; }" onerror="this.style.objectFit=\'cover\';" style="width:100%; height:100%; object-fit:cover; object-position:center; display:block; pointer-events:none;" />' +
+              '<img class="reel-photo-target" src="' + pUrl + '" loading="lazy" decoding="async" onload="if(this.naturalWidth > this.naturalHeight){ this.style.objectFit=\'contain\'; } else { this.style.objectFit=\'cover\'; }" onerror="this.style.objectFit=\'cover\';" style="width:100%; height:100%; object-fit:cover; object-position:center; display:block; pointer-events:none;" />' +
             '</div>';
           }).join('');
         }
@@ -4104,7 +4126,7 @@ window.renderHistoryStage = function(isLoading) {
         '</div>';
       }
 
-      return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '" style="position:relative;">' +
+    return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap" data-reel-idx="' + idx + '" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '" style="position:relative;">' +
       '<!-- 상단 헤더 (48px 고정: 지역·날짜 100% 안 잘림 + 단일 콤팩트 토글) -->' +
       '<div class="reel-header-row">' +
         topHeaderHtml +
