@@ -1002,25 +1002,44 @@ function ensureMyReportAndAuthModalsInDOM() {
 
         </div>
 
-        <!-- 3단 독 바 (하단 완벽 고정) -->
-        <div class="mobile-bottom-dock notranslate" style="position:absolute !important; bottom:0 !important; left:0 !important; right:0 !important; height:calc(64px + env(safe-area-inset-bottom, 0px)) !important; width:100% !important; background:rgba(0,0,0,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:30 !important; box-sizing:border-box; padding-bottom:env(safe-area-inset-bottom, 0px) !important;">
-          <a href="index.html" class="dock-item" onclick="closeUserProfileModal(); triggerHaptic(10);">
+       <!-- 3단 독 바 (지도 하단 독과 100% 동일 규격: 56px, 아이콘, 폰트, 라우팅 완전 일치) -->
+        <div class="mobile-bottom-dock notranslate" style="position:absolute !important; bottom:0 !important; left:0 !important; right:0 !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; width:100% !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid var(--border-hairline) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:50 !important; box-sizing:border-box; padding-bottom:env(safe-area-inset-bottom, 0px) !important; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);">
+          <!-- 1. 낭만루터 -->
+          <a href="index.html" class="dock-item" title="낭만루터" onclick="closeUserProfileModal(); window.smoothNavigate('index.html', event);">
             <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
             <span>낭만루터</span>
           </a>
-          <a href="map.html" class="dock-item" onclick="closeUserProfileModal(); triggerHaptic(10);">
+
+          <!-- 2. 전국지도 -->
+          <a href="map.html" class="dock-item" title="전국지도" onclick="closeUserProfileModal(); window.smoothNavigate('map.html', event);">
             <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
             <span>전국지도</span>
           </a>
-          <button type="button" class="dock-item" onclick="closeUserProfileModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
+
+          <!-- 3. 낭만플랜 -->
+          <a href="index.html?open=plan" class="dock-item" title="낭만플랜" onclick="closeUserProfileModal(); triggerHaptic(12);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+              <path d="M9 16l2 2 4-4"/>
+            </svg>
             <span>낭만플랜</span>
-          </button>
-          <button type="button" class="dock-item" onclick="closeUserProfileModal(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+          </a>
+
+          <!-- 4. 낭만보관함 -->
+          <a href="index.html?open=history" class="dock-item" title="낭만보관함" onclick="closeUserProfileModal(); triggerHaptic(12);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 8v13H3V8"/>
+              <path d="M1 3h22v5H1z"/>
+              <path d="M10 12h4"/>
+            </svg>
             <span>낭만보관함</span>
-          </button>
-          <button type="button" class="dock-item active" onclick="triggerHaptic(10);">
+          </a>
+
+          <!-- 5. 마이리포트 (현재 활성화) -->
+          <button type="button" class="dock-item active" title="마이리포트" onclick="triggerHaptic(10);">
             <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
             <span>마이리포트</span>
           </button>
