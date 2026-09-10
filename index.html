@@ -116,8 +116,8 @@
   
   <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js" defer></script>
 
   <style>
   @font-face {
@@ -174,13 +174,13 @@
       padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px));
     }
 
-    @keyframes slowCelestialTwinkle {
-      0%, 100% { opacity: 0.15; transform: scale(0.7) rotate(0deg); }
-      50% { opacity: 0.85; transform: scale(1.1) rotate(45deg); }
+   @keyframes slowCelestialTwinkle {
+      0%, 100% { opacity: 0.15; }
+      50% { opacity: 0.75; }
     }
     @keyframes slowCelestialPulse {
-      0%, 100% { opacity: 0.35; transform: scale(1); }
-      50% { opacity: 0.1; transform: scale(0.6); }
+      0%, 100% { opacity: 0.30; }
+      50% { opacity: 0.08; }
     }
     .global-app-starlight-canvas {
       position: fixed;
@@ -188,6 +188,8 @@
       pointer-events: none;
       z-index: 0;
       overflow: hidden;
+      contain: strict !important;
+      will-change: opacity;
     }
 
     .icon-svg {
@@ -207,14 +209,12 @@
       50% { opacity: 0.85; transform: scale(1.15) translateZ(0); }
     }
 
-    .netflix-integrated-header {
+   .netflix-integrated-header {
       position: fixed !important;
       top: 0 !important; left: 0 !important; right: 0 !important;
       z-index: var(--z-header) !important;
       width: 100% !important;
-      background: rgba(3, 4, 7, 0.94) !important;
-      backdrop-filter: blur(20px) !important;
-      -webkit-backdrop-filter: blur(20px) !important;
+      background: #000000 !important;
       border-bottom: none !important;
       padding: 0 16px !important;
       padding-top: env(safe-area-inset-top, 0px) !important;
@@ -446,24 +446,20 @@
       justify-content: space-between;
       align-items: center;
     }
-    .insta-spot-tag {
+   .insta-spot-tag {
       font-size: 0.60rem;
       font-weight: 800;
       color: #e2e8f0;
       font-family: var(--font-en);
       letter-spacing: 1.5px;
       text-transform: uppercase;
-      background: rgba(0,0,0,0.55);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: rgba(7, 10, 16, 0.88);
       padding: 2.5px 7px;
       border-radius: 5px;
       border: 1px solid rgba(255,255,255,0.18);
     }
     .insta-like-btn {
-      background: rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: rgba(7, 10, 16, 0.88);
       border: 1px solid rgba(255, 255, 255, 0.22);
       border-radius: 16px;
       padding: 2.5px 7px;
@@ -647,6 +643,9 @@
       flex-direction: column;
       gap: 10px;
       padding-left: 14px;
+      content-visibility: auto !important;
+      contain-intrinsic-size: auto 180px !important;
+      contain: layout style;
     }
     .n-rail-title {
       font-size: 0.96rem;
@@ -838,18 +837,16 @@
       color: #e2e8f0;
     }
 
-    .mobile-bottom-dock {
+   .mobile-bottom-dock {
       position: fixed !important;
       bottom: 0 !important; left: 0 !important; right: 0 !important;
       width: 100% !important;
-      background: rgba(0, 0, 0, 0.96) !important;
+      background: rgba(0, 0, 0, 0.98) !important;
       border-top: 1px solid var(--border-hairline) !important;
       height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
       padding-bottom: env(safe-area-inset-bottom, 0px) !important;
       z-index: var(--z-dock) !important;
       user-select: none !important;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
       overflow: visible !important;
       box-sizing: border-box;
       touch-action: none !important;
@@ -2514,59 +2511,66 @@
       return [];
     }
 
-    // 🔘 [히어로 물리적 가로 슬라이더 도트 & 사진별 메모 실시간 동기화 - 60fps 하드웨어 가속]
- // 🔘 [히어로 가로 슬라이더 도트 & 사진별/통합 메모 실시간 직통 동기화]
+ // 🔘 [히어로 가로 슬라이더 도트 & 사진별/통합 메모 실시간 직통 동기화 (rAF 쓰로틀링 최적화)]
+    var _heroCarouselTicking = false;
     window.updateHeroCarouselState = function(trackEl) {
-      if (!trackEl) return;
-      var scrollLeft = trackEl.scrollLeft;
-      var width = trackEl.offsetWidth;
-      if (!width) return;
-      var curIdx = Math.round(scrollLeft / width);
+      if (!trackEl || _heroCarouselTicking) return;
+      _heroCarouselTicking = true;
 
-      // 1. 도트 인디케이터 실시간 동기화
-      var dotsWrap = document.getElementById('heroDotsWrapper');
-      if (dotsWrap && dotsWrap.children.length > 0) {
-        var dots = dotsWrap.children;
-        for (var i = 0; i < dots.length; i++) {
-          if (i === curIdx) {
-            dots[i].style.width = '14px';
-            dots[i].style.background = '#ffffff';
-            dots[i].style.boxShadow = '0 0 8px rgba(255,255,255,0.9)';
-          } else {
-            dots[i].style.width = '5px';
-            dots[i].style.background = 'rgba(255,255,255,0.35)';
-            dots[i].style.boxShadow = 'none';
-          }
-        }
-      }
+      window.requestAnimationFrame(function() {
+        _heroCarouselTicking = false;
+        var scrollLeft = trackEl.scrollLeft;
+        var width = trackEl.offsetWidth;
+        if (!width) return;
+        var curIdx = Math.round(scrollLeft / width);
 
-      // 2. 통합 메모 모드 vs 사진별 개별 메모 모드 실시간 분기
-      var cardRoot = document.getElementById('instaMainCard');
-      var quoteEl = document.getElementById('heroQuoteText');
-      if (cardRoot && quoteEl) {
-        var memoMode = cardRoot.dataset.memoMode || 'per_photo';
-        var defaultMemo = cardRoot.dataset.defaultMemo || '자연 속에서 비화식으로 즐기는 조용한 하룻밤.';
+        // 사진 번호가 바뀌지 않았으면 불필요한 DOM 조작 및 JSON 파싱 즉시 건너뜀
+        if (trackEl._lastHeroIdx === curIdx) return;
+        trackEl._lastHeroIdx = curIdx;
 
-        if (memoMode === 'single') {
-          // 🌟 한 번에 쓰기(통합 모드): 사진이 넘어가도 대표 메모 영구 유지
-          quoteEl.innerText = '“' + defaultMemo + '”';
-        } else {
-          // 📸 사진별 쓰기 모드: 사진별 메모 출력 (없으면 등록된 글 없음)
-          try {
-            var memos = JSON.parse(cardRoot.dataset.photoMemos || '[]');
-            var curText = (Array.isArray(memos) && memos[curIdx] !== undefined) ? memos[curIdx] : '';
-            if (curText && curText.trim().length > 0) {
-              quoteEl.innerText = '“' + curText.trim() + '”';
-            } else if (curIdx === 0 && defaultMemo) {
-              quoteEl.innerText = '“' + defaultMemo + '”';
+        // 1. 도트 인디케이터 실시간 동기화
+        var dotsWrap = document.getElementById('heroDotsWrapper');
+        if (dotsWrap && dotsWrap.children.length > 0) {
+          var dots = dotsWrap.children;
+          for (var i = 0; i < dots.length; i++) {
+            if (i === curIdx) {
+              dots[i].style.width = '14px';
+              dots[i].style.background = '#ffffff';
+              dots[i].style.boxShadow = '0 0 8px rgba(255,255,255,0.9)';
             } else {
-              quoteEl.innerText = '“등록된 글이 없습니다.”';
+              dots[i].style.width = '5px';
+              dots[i].style.background = 'rgba(255,255,255,0.35)';
+              dots[i].style.boxShadow = 'none';
             }
-          } catch (err) {
-            quoteEl.innerText = '“' + defaultMemo + '”';
           }
         }
-      }
+
+        // 2. 통합 메모 모드 vs 사진별 개별 메모 모드 실시간 분기
+        var cardRoot = document.getElementById('instaMainCard');
+        var quoteEl = document.getElementById('heroQuoteText');
+        if (cardRoot && quoteEl) {
+          var memoMode = cardRoot.dataset.memoMode || 'per_photo';
+          var defaultMemo = cardRoot.dataset.defaultMemo || '자연 속에서 비화식으로 즐기는 조용한 하룻밤.';
+
+          if (memoMode === 'single') {
+            quoteEl.innerText = '“' + defaultMemo + '”';
+          } else {
+            try {
+              var memos = JSON.parse(cardRoot.dataset.photoMemos || '[]');
+              var curText = (Array.isArray(memos) && memos[curIdx] !== undefined) ? memos[curIdx] : '';
+              if (curText && curText.trim().length > 0) {
+                quoteEl.innerText = '“' + curText.trim() + '”';
+              } else if (curIdx === 0 && defaultMemo) {
+                quoteEl.innerText = '“' + defaultMemo + '”';
+              } else {
+                quoteEl.innerText = '“등록된 글이 없습니다.”';
+              }
+            } catch (err) {
+              quoteEl.innerText = '“' + defaultMemo + '”';
+            }
+          }
+        }
+      });
     };
 
     function renderCurrentHeroCard() {
@@ -2775,7 +2779,6 @@
 
       var profile = safeGetJSON('user_profile', null);
 
-      // ⏱️ [정밀 타임스탬프 파서]: 문자열 역전 방지 및 실제 등록시각 추출
       var getFeedTimeValue = function(f) {
         if (!f) return 0;
         if (f.timestamp && !isNaN(f.timestamp)) return Number(f.timestamp);
@@ -2796,24 +2799,22 @@
         return 0;
       };
 
-      // ⭐ [전체 피드 온전 보존 & 히어로 랭킹 분리 SSOT]
       var sortFeedsByStarsAndDate = function(feedList) {
         var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
         return feedList.filter(function(f) { return f && f.isPublished !== false; }).sort(function(a, b) {
           var sA = Number(starCounts[a.id] != null ? starCounts[a.id] : (a.likes || 0));
           var sB = Number(starCounts[b.id] != null ? starCounts[b.id] : (b.likes || 0));
-          if (sB !== sA) return sB - sA; // 1순위: 별 많은 순
-          return getFeedTimeValue(b) - getFeedTimeValue(a); // 2순위: 정밀 최신순
+          if (sB !== sA) return sB - sA;
+          return getFeedTimeValue(b) - getFeedTimeValue(a);
         });
       };
 
-      // ⚡ [1순위 0.03초]: Cloudflare R2 글로벌 CDN 단일 진실 공급원(SSOT) 직통 조회
+     // ⚡ [1순위 0.03초]: Cloudflare R2 글로벌 CDN 단일 진실 공급원(SSOT) 정밀 인출
       try {
         var r2Res = await fetch(R2_FEEDS_URL + '?_t=' + Date.now(), { cache: 'no-store' });
         if (r2Res.ok) {
           var r2Feeds = await r2Res.json();
           if (Array.isArray(r2Feeds) && r2Feeds.length > 0) {
-            
             var uniqueFeedMap = new Map();
             r2Feeds.filter(Boolean).forEach(function(f) {
               var uKey = String(f.id || '').trim();
@@ -2825,14 +2826,16 @@
               }
             });
 
+            // 전체 피드 중 낭만별 득표 1위 피드를 최우선으로 정렬
             var allCleanFeeds = sortFeedsByStarsAndDate(Array.from(uniqueFeedMap.values()));
             localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(allCleanFeeds));
-            
+
             if (allCleanFeeds[0] && (allCleanFeeds[0].photo || allCleanFeeds[0].photo_url)) {
               localStorage.setItem('okbm_hero_cover_url', allCleanFeeds[0].photo || allCleanFeeds[0].photo_url);
             }
-            window.__allLoadedFeeds = allCleanFeeds; // 🌟 전체 피드 100% 보존
-            window.heroTopRecords = allCleanFeeds.slice(0, 10); // 🔟 히어로만 상위 10개 한정
+
+            window.__allLoadedFeeds = allCleanFeeds;
+            window.heroTopRecords = allCleanFeeds.slice(0, 10);
             window.currentHeroCardIndex = 0;
             renderCurrentHeroCard();
             if (typeof renderSecretSpotTrailerRail === 'function') renderSecretSpotTrailerRail();
@@ -2840,34 +2843,10 @@
           }
         }
       } catch (r2Err) {
-        console.warn('📡 [Index] R2 최초 조회 대기, 백업망으로 전환:', r2Err.message);
+        console.warn('📡 [Index] R2 조회 대기:', r2Err.message);
       }
 
-      // 📁 [2순위: 구글 시트 백업 폴백 정제]
-      try {
-        var gasUrl = window.GAS_API_URL || 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
-        var res = await fetch(gasUrl + '?action=GET_COMMUNITY_FEEDS&_t=' + Date.now());
-        if (res.ok) {
-          var cloudFeeds = await res.json();
-          if (Array.isArray(cloudFeeds) && cloudFeeds.length > 0) {
-            var sheetUniqueMap = new Map();
-            cloudFeeds.filter(Boolean).forEach(function(f) {
-              var sKey = String(f.id || (String(f.userId || '') + '_' + String(f.date || '') + '_' + String(f.spot || ''))).trim();
-              if (!sheetUniqueMap.has(sKey)) sheetUniqueMap.set(sKey, f);
-            });
-            var allSheetFeeds = sortFeedsByStarsAndDate(Array.from(sheetUniqueMap.values()));
-            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(allSheetFeeds));
-            window.__allLoadedFeeds = allSheetFeeds; // 🌟 전체 피드 100% 보존
-            window.heroTopRecords = allSheetFeeds.slice(0, 10); // 🔟 히어로만 상위 10개 한정
-            window.currentHeroCardIndex = 0;
-            renderCurrentHeroCard();
-            if (typeof renderSecretSpotTrailerRail === 'function') renderSecretSpotTrailerRail();
-            return;
-          }
-        }
-      } catch (err) {}
-
-      // 🛡️ [3순위 오프라인 비상 폴백]
+      // 🛡️ 오프라인 캐시 폴백 (캐시에서도 10개 우선 인출)
       var fallbackFeeds = safeGetJSON('okbm_cached_community_feeds', []);
       if (!Array.isArray(fallbackFeeds) || fallbackFeeds.length === 0) {
         var presetCopy = Object.assign({}, FALLBACK_HERO_PRESET);
@@ -4594,22 +4573,22 @@ var adBannersHtml = `
 
   
 
-    function initStarlightEngines() {
+  function initStarlightEngines() {
       var metallicColors = ['#ffffff', '#f8fafc', '#cbd5e1'];
       var makeSubtleDotStar = function(top, left, size, opacity, dur, delay) {
-        return '<div style="position:absolute; top:' + top + '%; left:' + left + '%; width:' + size + 'px; height:' + size + 'px; border-radius:50%; background:#ffffff; opacity:' + opacity + '; transform:translateZ(0); animation:slowCelestialPulse ' + dur + 's infinite ease-in-out ' + delay + 's;"></div>';
+        return '<div style="position:absolute; top:' + top + '%; left:' + left + '%; width:' + size + 'px; height:' + size + 'px; border-radius:50%; background:#ffffff; opacity:' + opacity + '; transform:translateZ(0); will-change:opacity; animation:slowCelestialPulse ' + dur + 's infinite ease-in-out ' + delay + 's;"></div>';
       };
       var makeCrossStar = function(top, left, size, color, dur, delay) {
-        return '<svg viewBox="0 0 24 24" style="position:absolute; top:' + top + '%; left:' + left + '%; width:' + size + 'px; height:' + size + 'px; color:' + color + '; fill:currentColor; transform:translateZ(0); animation:slowCelestialTwinkle ' + dur + 's infinite ease-in-out ' + delay + 's;"><path d="M12,2 Q12,12 2,12 Q12,12 12,22 Q12,12 22,12 Q12,12 12,23 Q12,12 12,2 Z"/><circle cx="12" cy="12" r="1.2" fill="#ffffff"/></svg>';
+        return '<svg viewBox="0 0 24 24" style="position:absolute; top:' + top + '%; left:' + left + '%; width:' + size + 'px; height:' + size + 'px; color:' + color + '; fill:currentColor; transform:translateZ(0); will-change:opacity; animation:slowCelestialTwinkle ' + dur + 's infinite ease-in-out ' + delay + 's;"><path d="M12,2 Q12,12 2,12 Q12,12 12,22 Q12,12 22,12 Q12,12 12,2 Z"/><circle cx="12" cy="12" r="1.2" fill="#ffffff"/></svg>';
       };
 
       var globalLayer = document.getElementById('globalAppMilkyWayLayer');
       if (globalLayer) {
         var html = '';
-        for (var i = 0; i < 16; i++) {
+        for (var i = 0; i < 10; i++) {
           var top = Math.floor(Math.random() * 94) + 3, left = Math.floor(Math.random() * 94) + 3;
-          var dur = (Math.random() * 2.0 + 4.0).toFixed(1), delay = (Math.random() * 4).toFixed(1);
-          if (i % 5 === 0) html += makeCrossStar(top, left, 3, metallicColors[i % metallicColors.length], dur, delay);
+          var dur = (Math.random() * 2.0 + 4.5).toFixed(1), delay = (Math.random() * 4).toFixed(1);
+          if (i % 4 === 0) html += makeCrossStar(top, left, 3, metallicColors[i % metallicColors.length], dur, delay);
           else html += makeSubtleDotStar(top, left, 1.5, 0.25, dur, delay);
         }
         globalLayer.innerHTML = html;
@@ -4738,15 +4717,13 @@ var adBannersHtml = `
       }
 
       initDynamicHeroAndFeeds();
-      initIndexDockGestures();
       checkIncomingDirectTab();
       refreshMainBannerWeight();
       renderVideoCurationSlider();
       renderHomeTripJoinSlider();
 
-      var scheduleHeavyTasks = window.requestIdleCallback || function(cb) { setTimeout(cb, 60); };
+    var scheduleHeavyTasks = window.requestIdleCallback || function(cb) { setTimeout(cb, 60); };
       scheduleHeavyTasks(function() {
-        initStarlightEngines();
         loadPortalSpotData();
         loadFeaturedVideosFromSettingsSheet();
         loadTripsFromGoogleSheet();
@@ -4791,15 +4768,13 @@ var adBannersHtml = `
       var touchStartX = 0, touchStartY = 0, isEdgeTracking = false;
 
       document.addEventListener('touchstart', function(e) {
+        if (!window.modalCloseStack || window.modalCloseStack.length === 0) return;
         if (!e.touches || e.touches.length !== 1) return;
         var x = e.touches[0].clientX;
-        var y = e.touches[0].clientY;
-        if (x <= 35 && window.modalCloseStack.length > 0) {
+        if (x <= 30) {
           touchStartX = x;
-          touchStartY = y;
+          touchStartY = e.touches[0].clientY;
           isEdgeTracking = true;
-        } else {
-          isEdgeTracking = false;
         }
       }, { passive: true });
 
@@ -4807,7 +4782,7 @@ var adBannersHtml = `
         if (!isEdgeTracking || !e.touches || e.touches.length !== 1) return;
         var diffX = e.touches[0].clientX - touchStartX;
         var diffY = Math.abs(e.touches[0].clientY - touchStartY);
-        if (diffX > 65 && diffX > diffY * 1.5) {
+        if (diffX > 60 && diffX > diffY * 1.5) {
           isEdgeTracking = false;
           triggerHaptic(12);
           window.closeTopmostModal();
