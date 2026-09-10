@@ -366,7 +366,22 @@
       .sheet-close-btn { background: var(--bg-card); border: 1px solid var(--border-titanium); color: var(--text-secondary); width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; font-weight: 800; }
 
       /* ⚡ [터치 먹통 원천 차단]: 터치 제어권을 카카오맵 엔진에 100% 온전히 위임 */
-      #map { flex: 1; width: 100%; height: 100%; position: relative; background: var(--bg-base); touch-action: none !important; -webkit-touch-callout: none; }
+      #map { 
+        flex: 1; 
+        width: 100%; 
+        height: 100%; 
+        position: relative; 
+        background: var(--bg-base); 
+        touch-action: none !important; 
+        -webkit-touch-callout: none;
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+      }
+      #map * {
+        -webkit-tap-highlight-color: transparent;
+      }
 
       /* 🧭 HUD 타워 시스템 (상단 검색바 바로 아래로 최적 정렬) */
       .top-right-hud-group { 
@@ -1481,26 +1496,13 @@
         return { navAddress: parts[0].trim(), guide: parts.slice(1).map(p => p.trim()).filter(Boolean).join(', ') };
       }
 
-      function cleanYouTubeUrl(url) {
+     function cleanYouTubeUrl(url) {
         if (!url) return '';
         const match = url.match(/^.*(?:youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|shorts\/|\&v=)([^#\&\?]*).*/);
         return (match && match[1].length === 11) ? `https://www.youtube.com/watch?v=${match[1]}` : url;
       }
 
-      function normalizeTo10Regions(regionStr, autoRegion) {
-        var r = String(regionStr || '').trim();
-        if (r === '서울' || r === '인천' || r === '서울/인천' || r === '서울인천') return '서울/인천';
-        if (r === '경기' || r === '경기도') return '경기';
-        if (r === '강원' || r === '강원도' || r === '강원특별자치도') return '강원';
-        if (r === '충북' || r === '충청북도') return '충북';
-        if (r === '충남' || r === '충청남도' || r === '대전' || r === '세종') return '충남';
-        if (r === '전북' || r === '전라북도' || r === '전북특별자치도') return '전북';
-        if (r === '전남' || r === '전라남도' || r === '광주') return '전남';
-        if (r === '경북' || r === '경상북도' || r === '대구') return '경북';
-        if (r === '경남' || r === '경상남도' || r === '부산' || r === '울산') return '경남';
-        if (r === '제주' || r === '제주도' || r === '제주특별자치도') return '제주';
-        return autoRegion || '경기';
-      }
+  
 
       function detectRegionAndCity(lat, lng, name = '', entryPoint = '') {
         const t = (name + ' ' + entryPoint).toLowerCase();
@@ -1561,14 +1563,8 @@
         if (lat < 35.8 && lng <= 127.8) {
           return lat >= 35.5 ? { region: '전북', cityName: '전북' } : { region: '전남', cityName: '전남' };
         }
-        return { region: '경기', cityName: '경기' };
+      return { region: '경기', cityName: '경기' };
       }
-
-      var spots = safeGetJSON('okbm_spots_cache', []);
-      var spotComments = safeGetJSON('okbm_comments', {});
-      var userBookmarks = new Set((safeGetJSON('okbm_bookmarks', [])).map(s => String(s).trim()));
-      var userVisited = new Set((safeGetJSON('okbm_visited', [])).map(s => String(s).trim()));
-      var userMemos = safeGetJSON('okbm_memos', {});
 
       // ☀️/🌙 테마 전환 엔진 (우측 상단 HUD 연동)
       var currentAppTheme = localStorage.getItem('okbm_theme') || 'light';
@@ -1732,24 +1728,35 @@
         updateLODLabels();
       }
 
+    var markerImageCache = new Map();
       function createPureSvgMarkerImage(difficulty = 3) {
         const d = parseInt(difficulty, 10) || 3;
-        const color = d <= 2 ? '#10b981' : (d >= 4 ? '#f43f5e' : '#f59e0b');
+        const colorKey = d <= 2 ? 'easy' : (d >= 4 ? 'hard' : 'mid');
         const isMobile = window.innerWidth <= 768;
+        const cacheKey = colorKey + '_' + (isMobile ? 'm' : 'p');
+
+        if (markerImageCache.has(cacheKey)) {
+          return markerImageCache.get(cacheKey);
+        }
+
+        const color = colorKey === 'easy' ? '#10b981' : (colorKey === 'hard' ? '#f43f5e' : '#f59e0b');
         const width = isMobile ? 30 : 34, height = isMobile ? 38 : 42;
 
-        const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="${width}" height="${height}">
-          <ellipse cx="14" cy="34" rx="7" ry="2" fill="rgba(0,0,0,0.4)"/>
-          <path fill="${color}" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round" d="M14 1 C6.82 1 1 6.82 1 14 C1 19.8 4.8 24.7 10 26.3 L14 32.5 L18 26.3 C23.2 24.7 27 19.8 27 14 C27 6.82 21.18 1 14 1 Z"/>
-          <path fill="#ffffff" d="M14 7 L7.5 18 H20.5 Z"/>
-          <polygon fill="${color}" points="14,10.5 10.5,18 17.5,18"/>
-        </svg>`;
+        const svgString = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="' + width + '" height="' + height + '">' +
+          '<ellipse cx="14" cy="34" rx="7" ry="2" fill="rgba(0,0,0,0.4)"/>' +
+          '<path fill="' + color + '" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round" d="M14 1 C6.82 1 1 6.82 1 14 C1 19.8 4.8 24.7 10 26.3 L14 32.5 L18 26.3 C23.2 24.7 27 19.8 27 14 C27 6.82 21.18 1 14 1 Z"/>' +
+          '<path fill="#ffffff" d="M14 7 L7.5 18 H20.5 Z"/>' +
+          '<polygon fill="' + color + '" points="14,10.5 10.5,18 17.5,18"/>' +
+        '</svg>';
 
-        return new kakao.maps.MarkerImage(
+        const markerImg = new kakao.maps.MarkerImage(
           'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString),
           new kakao.maps.Size(width, height),
           { offset: new kakao.maps.Point(width / 2, height) }
         );
+
+        markerImageCache.set(cacheKey, markerImg);
+        return markerImg;
       }
 
       const CYCLE_DIFF_LIST = [
@@ -1850,7 +1857,11 @@
         kakao.maps.load(() => {
           const container = document.getElementById('map');
           if (!container) return;
-          map = new kakao.maps.Map(container, { center: new kakao.maps.LatLng(NATIONWIDE_CENTER.lat, NATIONWIDE_CENTER.lng), level: NATIONWIDE_LEVEL });
+          map = new kakao.maps.Map(container, { 
+            center: new kakao.maps.LatLng(NATIONWIDE_CENTER.lat, NATIONWIDE_CENTER.lng), 
+            level: NATIONWIDE_LEVEL,
+            tileAnimation: false
+          });
           geocoder = new kakao.maps.services.Geocoder();
 
           globalClusterer = new kakao.maps.MarkerClusterer({
@@ -1863,13 +1874,13 @@
             ]
           });
 
-          kakao.maps.event.addListener(globalClusterer, 'clusterclick', (cluster) => {
+         kakao.maps.event.addListener(globalClusterer, 'clusterclick', (cluster) => {
             triggerHaptic(10);
-            map.setLevel(Math.max(1, map.getLevel() - 2), { anchor: cluster.getCenter(), animate: true });
+            map.setLevel(Math.max(1, map.getLevel() - 1), { anchor: cluster.getCenter(), animate: { duration: 300 } });
           });
 
-          kakao.maps.event.addListener(map, 'zoom_changed', () => debouncedUpdateLODLabels());
-          kakao.maps.event.addListener(map, 'dragend', () => debouncedUpdateLODLabels());
+          kakao.maps.event.addListener(map, 'zoom_start', () => { clearTimeout(lodDebounceTimer); });
+          kakao.maps.event.addListener(map, 'dragstart', () => { clearTimeout(lodDebounceTimer); });
           kakao.maps.event.addListener(map, 'idle', () => debouncedUpdateLODLabels());
           kakao.maps.event.addListener(map, 'click', handleMapClick);
 
@@ -1943,15 +1954,21 @@
         });
       });
 
-      function zoomInMap(e) { 
+    function zoomInMap(e) { 
         if (e) e.stopPropagation(); 
         triggerHaptic(10);
-        if (map) map.setLevel(Math.max(1, map.getLevel() - 1), { animate: true }); 
+        if (map) {
+          clearTimeout(lodDebounceTimer);
+          map.setLevel(Math.max(1, map.getLevel() - 1), { animate: { duration: 250 } }); 
+        }
       }
       function zoomOutMap(e) { 
         if (e) e.stopPropagation(); 
         triggerHaptic(10);
-        if (map) map.setLevel(Math.min(14, map.getLevel() + 1), { animate: true }); 
+        if (map) {
+          clearTimeout(lodDebounceTimer);
+          map.setLevel(Math.min(14, map.getLevel() + 1), { animate: { duration: 250 } }); 
+        }
       }
 
       function toggleMapTypeMode() {
@@ -2200,6 +2217,9 @@ function updateSmartResetButtons() {
 
         clearSearchInput('pc', false);
         closeAllPopups();
+        spotLabelOverlayMap.forEach((overlay) => {
+          if (overlay && overlay.getMap()) overlay.setMap(null);
+        });
         switchMasterTab('REGION');
         renderSubChips(); renderSpots();
         if (map) { map.setLevel(NATIONWIDE_LEVEL, { animate: true }); map.panTo(new kakao.maps.LatLng(NATIONWIDE_CENTER.lat, NATIONWIDE_CENTER.lng)); }
@@ -2218,7 +2238,6 @@ function updateSmartResetButtons() {
         updateSmartResetButtons();
       }
 
-      function getSpotViews(spot) { return spot.searchCount || parseInt(localStorage.getItem(`okbm_views_${spot.id}`), 10) || 0; }
       function updateNewSpotFlags(spotList) {
         if (!spotList || spotList.length === 0) return;
         const sorted = [...spotList].sort((a, b) => (b.sheetIndex || 0) - (a.sheetIndex || 0));
@@ -2421,18 +2440,27 @@ function updateSmartResetButtons() {
       function updateLODLabels() {
         if (!map) return;
         const currentLevel = map.getLevel();
+
+        // 🌟 전국 레벨(11 이상)에서는 개별 글자 라벨을 지도에서 즉시 전면 소멸
+        if (currentLevel >= 11) {
+          spotLabelOverlayMap.forEach((overlay) => {
+            if (overlay && overlay.getMap()) overlay.setMap(null);
+          });
+          return;
+        }
+
         const proj = map.getProjection();
         const bounds = map.getBounds();
         const occupiedBoxes = [];
         const activeId = currentActiveSpot ? String(currentActiveSpot.id).trim() : (window.__MANUAL_ACTIVE_ID__ || null);
 
-        const candidateSpots = [];
+       const candidateSpots = [];
         spotNativeMarkerMap.forEach((marker, id) => {
           if (marker && marker.getMap()) {
             const spot = marker.spotData;
             const sId = String(spot.id).trim();
             const isSelected = (activeId === sId);
-            const latlng = new kakao.maps.LatLng(spot.lat, spot.lng);
+            const latlng = spot._latlng || (spot._latlng = new kakao.maps.LatLng(spot.lat, spot.lng));
 
             if (bounds && !bounds.contain(latlng) && !isSelected) {
               const overlay = spotLabelOverlayMap.get(sId);
@@ -2495,7 +2523,9 @@ function updateSmartResetButtons() {
             if (parenMatch) { row1Name = parenMatch[1].trim(); if (!row2Sub) row2Sub = parenMatch[2].trim(); }
             const row3Elev = spot.elevation ? `${String(spot.elevation).replace(/m$/i,'')}m` : '';
 
-            const labelKey = `${id}_${isFullMode ? 'full' : 'mini'}_${isSelected ? 'sel' : 'nor'}`;
+            const isFav = userBookmarks.has(id);
+            const isDone = userVisited.has(id);
+            const labelKey = `${id}_${isFullMode ? 'full' : 'mini'}_${isSelected ? 'sel' : 'nor'}_${isFav ? 'f' : 'nf'}_${isDone ? 'd' : 'nd'}`;
             if (overlay._cachedLabelKey !== labelKey) {
               const labelDiv = document.createElement('div');
               labelDiv.className = 'lod-marker-container';
@@ -3763,9 +3793,7 @@ var feedMap = new Map();
           }).catch(() => {});
         }
       }
-
-      var liveSearchTimer = null;
-   var liveSearchTimer = null;
+var liveSearchTimer = null;
 
       function handleSearchInputChange(mode = 'pc') {
         const inputEl = document.getElementById('pcSearchInput');
@@ -3949,10 +3977,13 @@ displaySpots.forEach(spot => {
           spot.renderLng = lng;
 
           const sId = String(spot.id).trim();
-          const latlng = new kakao.maps.LatLng(lat, lng);
+          const latlng = spot._renderLatLng || (spot._renderLatLng = new kakao.maps.LatLng(lat, lng));
 
           // 10대 권역 정규화 보장
-          spot.region = normalizeTo10Regions(spot.region, detectRegionAndCity(lat, lng, spot.spot_main || spot.name, spot.trailhead_addr || spot.entryPoint).region);
+          if (!spot._regionNormalized) {
+            spot.region = normalizeTo10Regions(spot.region, detectRegionAndCity(lat, lng, spot.spot_main || spot.name, spot.trailhead_addr || spot.entryPoint).region);
+            spot._regionNormalized = true;
+          }
 
           if (!spotNativeMarkerMap.has(sId) && map) {
             const marker = new kakao.maps.Marker({
@@ -3964,49 +3995,41 @@ displaySpots.forEach(spot => {
             kakao.maps.event.addListener(marker, 'click', () => focusSpotOnMap(spot));
             marker.spotData = spot;
             spotNativeMarkerMap.set(sId, marker);
-          } else if (spotNativeMarkerMap.has(sId)) {
-            const curMarker = spotNativeMarkerMap.get(sId);
-            curMarker.setPosition(latlng);
-            curMarker.spotData = spot;
           }
 
-          const isFav = userBookmarks.has(sId);
-          const isDone = userVisited.has(sId);
+          if (!spotLabelOverlayMap.has(sId) && map) {
+            const isFav = userBookmarks.has(sId);
+            const isDone = userVisited.has(sId);
 
-          let row1Name = (spot.spot_main || spot.name || '무명박지').trim();
-          let row2Sub = (spot.spot_sub || '').trim();
-          
-          const parenMatch = row1Name.match(/^(.*?)\s*[\(\[（](.*?)[\)\]）]/);
-          if (parenMatch) {
-            row1Name = parenMatch[1].trim();
-            if (!row2Sub) row2Sub = parenMatch[2].trim();
-          }
+            let row1Name = (spot.spot_main || spot.name || '무명박지').trim();
+            let row2Sub = (spot.spot_sub || '').trim();
+            
+            const parenMatch = row1Name.match(/^(.*?)\s*[\(\[（](.*?)[\)\]）]/);
+            if (parenMatch) {
+              row1Name = parenMatch[1].trim();
+              if (!row2Sub) row2Sub = parenMatch[2].trim();
+            }
 
-          const row3Elev = spot.elevation ? `${String(spot.elevation).replace(/m$/i,'')}m` : '';
-          const diffClass = getSpotDiffColorClass(spot.difficulty);
+            const row3Elev = spot.elevation ? `${String(spot.elevation).replace(/m$/i,'')}m` : '';
+            const diffClass = getSpotDiffColorClass(spot.difficulty);
 
-          const labelDiv = document.createElement('div');
-          labelDiv.className = 'lod-marker-container';
-          labelDiv.style.pointerEvents = 'auto';
-          labelDiv.style.cursor = 'pointer';
-          labelDiv.onclick = (e) => {
-            e.stopPropagation();
-            focusSpotOnMap(spot);
-          };
-          labelDiv.innerHTML = `
-            ${isFav ? `<div class="marker-badge-corner badge-corner-fav" title="찜한 박지">${ICONS.HEART}</div>` : ''}
-            ${isDone ? `<div class="marker-badge-corner badge-corner-visited" title="클리어 박지">${ICONS.FLAG}</div>` : ''}
-            <div class="lod-marker-label" style="pointer-events: auto;">
-              <div class="lod-label-row-1 ${diffClass}">${escapeHtml(row1Name)}</div>
-              ${row2Sub ? `<div class="lod-label-row-2">${ICONS.PIN}${escapeHtml(row2Sub)}</div>` : ''}
-              ${row3Elev ? `<div class="lod-label-row-3">${ICONS.MOUNTAIN}${row3Elev}</div>` : ''}
-            </div>`;
+            const labelDiv = document.createElement('div');
+            labelDiv.className = 'lod-marker-container';
+            labelDiv.style.pointerEvents = 'auto';
+            labelDiv.style.cursor = 'pointer';
+            labelDiv.onclick = (e) => {
+              e.stopPropagation();
+              focusSpotOnMap(spot);
+            };
+            labelDiv.innerHTML = `
+              ${isFav ? `<div class="marker-badge-corner badge-corner-fav" title="찜한 박지">${ICONS.HEART}</div>` : ''}
+              ${isDone ? `<div class="marker-badge-corner badge-corner-visited" title="클리어 박지">${ICONS.FLAG}</div>` : ''}
+              <div class="lod-marker-label" style="pointer-events: auto;">
+                <div class="lod-label-row-1 ${diffClass}">${escapeHtml(row1Name)}</div>
+                ${row2Sub ? `<div class="lod-label-row-2">${ICONS.PIN}${escapeHtml(row2Sub)}</div>` : ''}
+                ${row3Elev ? `<div class="lod-label-row-3">${ICONS.MOUNTAIN}${row3Elev}</div>` : ''}
+              </div>`;
 
-          if (spotLabelOverlayMap.has(sId)) {
-            const curLabel = spotLabelOverlayMap.get(sId);
-            curLabel.setPosition(latlng);
-            curLabel.setContent(labelDiv);
-          } else if (map) {
             const labelOverlay = new kakao.maps.CustomOverlay({ 
               position: latlng, 
               content: labelDiv, 
@@ -5101,9 +5124,8 @@ var overlay = document.getElementById('customModalOverlay');
         };
         reader.readAsText(file);
       }
-    </script>
- <!-- ⚡ 지도 최적화: 필수 동기화 엔진만 유지하고 불필요한 3대 스크립트 제거 완료 -->
-   <!-- ⚡ 지도 최적화: 필수 동기화 엔진만 유지하고 불필요한 3대 스크립트 제거 완료 -->
+   </script>
+    <!-- ⚡ 지도 최적화: 필수 동기화 엔진만 유지하고 불필요한 3대 스크립트 제거 완료 -->
     <script src="romantic-history.js?v=2.5.0"></script>
     <script src="romantic-sync.js?v=2.5.0"></script>
   </body>

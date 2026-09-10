@@ -27,7 +27,7 @@
       .postcard-3d-wrapper.flipped {
         transform: rotateY(180deg) translateZ(0) !important;
       }
-      .postcard-face-front, .postcard-face-back {
+     .postcard-face-front, .postcard-face-back {
         position: absolute !important;
         inset: 0 !important;
         width: 100% !important;
@@ -39,6 +39,9 @@
         transform-style: preserve-3d !important;
         box-sizing: border-box !important;
         contain: layout paint;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
       }
       .postcard-face-front {
         transform: rotateY(0deg) !important;
@@ -100,17 +103,18 @@
         box-sizing: border-box !important;
       }
 
-    .reel-media-stage {
+   .reel-media-stage {
         flex: 1 1 0% !important;
         min-height: 0 !important;
         width: 100% !important;
+        height: 100% !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        justify-content: flex-end !important; /* 사진이 하단 액션바에 바짝 붙도록 하단 정렬 */
+        justify-content: center !important;
         background: #000000 !important;
         overflow: hidden !important;
-        padding: 0 !important; /* 상하 여백 제거 */
+        padding: 0 !important;
         box-sizing: border-box !important;
       }
 
@@ -807,12 +811,12 @@
       backTemplateContentHtml = hasValidPhoto
         ? `<img src="${rawPhoto}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.88);" />
            <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.85) 100%);"></div>`
-        : `<div style="position:absolute; inset:0; background:radial-gradient(circle at 50% 40%, #1e293b 0%, #090d16 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:20px; box-sizing:border-box; text-align:center;">
+      : `<div style="position:absolute; inset:0; background:radial-gradient(circle at 50% 40%, #1e293b 0%, #090d16 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:20px; box-sizing:border-box; text-align:center;">
             <div style="width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.06); border:1.5px dashed rgba(56,189,248,0.4); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:22px; height:22px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
             </div>
             <div style="font-size:0.80rem; font-weight:900; color:#e2e8f0;">등록된 현장 사진이 없습니다.</div>
-            <div style="font-size:0.60rem; color:#94a3b8; line-height:1.4;">상단 [···] 메뉴에서<br>현장 사진을 추가해보세요!</div>
+            <div style="font-size:0.60rem; color:#94a3b8; line-height:1.4;">하단 [···] 메뉴에서<br>현장 사진을 추가해보세요!</div>
           </div>`;
     }
 
@@ -3682,8 +3686,16 @@ window.__currentSwipePhotoIndex = 0;
     }
   };
 
-  // 하위 호환성 유지 알리아스
+ // 하위 호환성 유지 알리아스
   window.updateCarouselDots = window.updateCarouselFeedState;
+
+  // 📐 [가로/세로 스마트 자동 판별]: 세로는 꽉 채우고(Cover), 가로는 100% 비율 보존(Contain + 위아래 블랙)
+  window.applySmartPhotoFit = function(img) {
+    if (!img) return;
+    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+      img.style.objectFit = (img.naturalWidth > img.naturalHeight) ? 'contain' : 'cover';
+    }
+  };
 
 window.renderHistoryStage = function(isLoading) {
     var modal = document.getElementById('romanticHistoryModal');
@@ -4021,20 +4033,20 @@ window.renderHistoryStage = function(isLoading) {
           '</div>';
         }
 
-        // 📷 [인스타그램 규격 순수 매트블랙 단일 렌더러: GPU 앰비언트 블러 완전 제거 & 세로/가로 지능형 적응]
+      // 📷 [인스타그램 규격 순수 매트블랙 단일 렌더러: 세로는 꽉 차게 가로는 다 보이게 복원]
         var horizontalSlidesHtml = '';
         if (totalPhotosCount === 0) {
-          horizontalSlidesHtml = '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; background:#000000; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:20px; box-sizing:border-box; text-align:center;">' +
-            '<div style="width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.04); border:1.5px dashed rgba(56,189,248,0.3); display:flex; align-items:center; justify-content:center; color:#38bdf8;">' +
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:22px; height:22px;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>' +
+          horizontalSlidesHtml = '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; background:#000000; display:flex !important; flex-direction:column !important; align-items:center !important; justify-content:center !important; gap:10px; padding:24px; box-sizing:border-box; text-align:center;">' +
+            '<div style="width:48px; height:48px; border-radius:50%; background:rgba(255,255,255,0.04); border:1.5px dashed rgba(56,189,248,0.35); display:flex; align-items:center; justify-content:center; color:#38bdf8;">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px; height:24px;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>' +
             '</div>' +
-            '<div style="font-size:0.82rem; font-weight:800; color:#cbd5e1;">등록된 현장 사진이 없습니다</div>' +
-            '<div style="font-size:0.65rem; color:#64748b; line-height:1.4;">상단 편집 도구에서 사진을 추가해보세요</div>' +
+            '<div style="font-size:0.86rem; font-weight:800; color:#cbd5e1;">등록된 현장 사진이 없습니다</div>' +
+            '<div style="font-size:0.68rem; color:#64748b; line-height:1.4;">하단 [···] 도구에서 사진을 추가해보세요</div>' +
           '</div>';
-        } else {
+      } else {
           horizontalSlidesHtml = mediaItems.map(function(pUrl) {
             return '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex; align-items:center; justify-content:center;">' +
-              '<img src="' + pUrl + '" onload="if(this.naturalHeight > this.naturalWidth * 1.05){ this.style.objectFit=\'cover\'; } else { this.style.objectFit=\'contain\'; }" style="width:100%; height:100%; object-fit:contain; display:block; pointer-events:none; transition:object-fit 0.2s ease;" />' +
+              '<img class="reel-photo-target" src="' + pUrl + '" onload="if(this.naturalWidth > this.naturalHeight){ this.style.objectFit=\'contain\'; } else { this.style.objectFit=\'cover\'; }" onerror="this.style.objectFit=\'cover\';" style="width:100%; height:100%; object-fit:cover; object-position:center; display:block; pointer-events:none;" />' +
             '</div>';
           }).join('');
         }
@@ -4098,17 +4110,17 @@ window.renderHistoryStage = function(isLoading) {
         topHeaderHtml +
       '</div>' +
 
-      '<!-- 중앙 세로 전면 개방 미디어 스테이지 -->' +
+     '<!-- 중앙 세로 전면 개방 미디어 스테이지 -->' +
       '<div class="reel-media-stage">' +
-            '<div style="width:100%; height:100%; max-height:100%; position:relative; overflow:hidden; background:#05070a; display:flex; align-items:center; justify-content:center;">' +
-              '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000;">' +
-                '<div class="postcard-face-front" style="width:100%; height:100%; position:absolute; inset:0; overflow:hidden; background:#000;">' +
+            '<div style="width:100%; height:100%; max-height:100%; position:relative; overflow:hidden; background:#000000; display:flex; align-items:center; justify-content:center;">' +
+              '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000;">' +
+                '<div class="postcard-face-front" style="width:100%; height:100%; position:absolute; inset:0; overflow:hidden; background:#000000;">' +
                   '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \'' + cardId + '\');">' +
                     horizontalSlidesHtml +
                   '</div>' +
                   dotsHtml +
                 '</div>' +
-                '<div class="postcard-face-back" style="width:100%; height:100%; position:absolute; inset:0; overflow:hidden; background:#000;">' +
+                '<div class="postcard-face-back" style="width:100%; height:100%; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:12px; box-sizing:border-box;">' +
                   backTemplateCardHtml +
                 '</div>' +
               '</div>' +
@@ -4179,6 +4191,14 @@ window.renderHistoryStage = function(isLoading) {
         '<span>마이리포트</span>' +
       '</button>' +
     '</div>';
+
+    // ⚡ [캐시 이미지 즉각 판별 보완]: 렌더 즉시 가로 사진은 contain, 세로 사진은 cover로 확정
+    var allReelImgs = content.querySelectorAll('.reel-photo-target');
+    allReelImgs.forEach(function(img) {
+      if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
+        img.style.objectFit = (img.naturalWidth > img.naturalHeight) ? 'contain' : 'cover';
+      }
+    });
 
     // ⚡ [인스타그램 방식 C++ 백그라운드 7개 슬라이딩 윈도우]: CPU 부하 0% VRAM 릴리즈 엔진
     if (window.IntersectionObserver) {

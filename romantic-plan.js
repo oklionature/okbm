@@ -346,7 +346,7 @@
     window.handleCalcShelfSearch('');
   };
 
-  // 🗓️ [최상단 "변경 ▾" 인라인 아코디언 드롭다운 전담 엔진]
+ // 🗓️ [최상단 인라인 드롭다운 전담 엔진 (과거 일자 전면 배제 & 다가오는 일정 전담)]
   window.togglePlanTripDateInlineDropdown = function(e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
     triggerHaptic(8);
@@ -359,60 +359,119 @@
       return;
     }
 
-  var planMemosObj = safeGetJSON('okbm_plan_memos', {}) || {};
+    var planMemosObj = safeGetJSON('okbm_plan_memos', {}) || {};
+    var planSpotsObj = safeGetJSON('okbm_plan_spots', {}) || {};
     var historyList = safeGetJSON('okbm_packing_history', []) || [];
     var now = new Date();
     var todayKey = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
     var todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     var tripList = [];
+    var seenKeyMap = {};
 
-    // 🗓️ 오늘(현재 시점) 및 미래 일정만 선별 (지난 과거 일정 전면 배제)
+    function cleanSpotName(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/^(?:📍|⚲|\[목적지\]|목적지:\s*|장소:\s*)/, '')
+        .split('(')[0]
+        .trim();
+    }
+
+    function parseDateTime(dStr) {
+      var p = String(dStr).match(/\d+/g);
+      if (p && p.length >= 3) {
+        return new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)).getTime();
+      }
+      return 0;
+    }
+
+    // 1. okbm_plan_spots에서 목적지 수집 (오늘 및 미래 일정만 수집)
+    Object.keys(planSpotsObj).forEach(function(k) {
+      var targetTime = parseDateTime(k);
+      if (targetTime >= todayMidnight) {
+        var rawSpots = planSpotsObj[k];
+        var spotsArr = Array.isArray(rawSpots) ? rawSpots : (rawSpots && rawSpots.name ? [rawSpots] : []);
+        spotsArr.forEach(function(sp) {
+          if (sp && sp.name) {
+            var pure = cleanSpotName(sp.name);
+            var hash = k + '__' + pure;
+            if (pure && !seenKeyMap[hash]) {
+              seenKeyMap[hash] = true;
+              var dispElev = sp.elevation ? (' (' + sp.elevation + ')') : '';
+              tripList.push({
+                dateKey: k,
+                spot: pure + dispElev,
+                rawName: pure,
+                elevation: sp.elevation || '',
+                time: targetTime
+              });
+            }
+          }
+        });
+      }
+    });
+
+    // 2. 메모장에만 존재하는 일정 보강 (오늘 및 미래 일정만 수집)
     Object.keys(planMemosObj).forEach(function(k) {
       var memo = String(planMemosObj[k] || '').trim();
       if (memo) {
-        var p = k.match(/\d+/g);
-        if (p && p.length >= 3) {
-          var targetTime = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)).getTime();
-          if (targetTime >= todayMidnight) {
-            var spotMatch = memo.match(/📍\s*(?:목적지:\s*)?([^\n\r(]+)/);
-            var spot = spotMatch ? spotMatch[1].trim() : memo.split('\n')[0].slice(0, 18);
-            tripList.push({ dateKey: k, spot: spot || '일정 메모', time: targetTime });
-          }
+        var targetTime = parseDateTime(k);
+        if (targetTime >= todayMidnight) {
+          var lines = memo.split('\n').map(function(l) { return l.trim(); }).filter(Boolean);
+          lines.forEach(function(line) {
+            var pure = cleanSpotName(line);
+            var hash = k + '__' + pure;
+            if (pure && pure.length >= 2 && !seenKeyMap[hash]) {
+              seenKeyMap[hash] = true;
+              tripList.push({
+                dateKey: k,
+                spot: line.slice(0, 24),
+                rawName: pure,
+                elevation: '',
+                time: targetTime
+              });
+            }
+          });
         }
       }
     });
 
+    // 3. 방문 기록 보강 (오늘 및 미래 일정만 수집)
     historyList.forEach(function(h) {
-      if (h && h.date && !tripList.some(function(t) { return t.dateKey === h.date; })) {
-        var p = String(h.date).match(/\d+/g);
-        if (p && p.length >= 3) {
-          var targetTime = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)).getTime();
-          if (targetTime >= todayMidnight) {
-            tripList.push({ dateKey: h.date, spot: h.spot || '출정 기록', time: targetTime });
+      if (h && h.date) {
+        var targetTime = parseDateTime(h.date);
+        if (targetTime >= todayMidnight) {
+          var pure = cleanSpotName(h.spot);
+          var hash = h.date + '__' + (pure || '기록');
+          if (!seenKeyMap[hash]) {
+            seenKeyMap[hash] = true;
+            tripList.push({
+              dateKey: h.date,
+              spot: h.spot || '방문 일정',
+              rawName: pure || h.spot || '방문 일정',
+              elevation: h.elevation || '',
+              time: targetTime
+            });
           }
         }
       }
     });
 
-    // 다가오는 날짜 순(오름차순: 오늘 -> 내일 -> 모레)으로 정렬
-    tripList.sort(function(a, b) {
-      return a.time - b.time;
-    });
+    tripList.sort(function(a, b) { return a.time - b.time; });
 
     if (tripList.length === 0) {
-      tripList.push({ dateKey: todayKey, spot: '새 출정 일정', time: todayMidnight });
+      tripList.push({ dateKey: todayKey, spot: '새 방문 일정', rawName: '새 방문 일정', elevation: '', time: todayMidnight });
     }
 
     dropdown.innerHTML = `
       <div style="font-size:0.72rem; color:#94a3b8; font-weight:800; padding:2px 4px; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
-        <span>🗓️ 다가오는 출정 일정</span>
+        <span>다가오는 방문 계획 (${tripList.length}건)</span>
         <button type="button" onclick="document.getElementById('calcTripDateDropdown').style.display='none';" style="background:none; border:none; color:#94a3b8; font-size:0.9rem; cursor:pointer; padding:0 4px;">✕</button>
       </div>
-      <div style="display:flex; flex-direction:column; gap:4px; max-height:160px; overflow-y:auto; overscroll-behavior:contain; margin-top:2px;">
+      <div style="display:flex; flex-direction:column; gap:4px; max-height:170px; overflow-y:auto; overscroll-behavior:contain; margin-top:2px;">
         ${tripList.map(function(t) {
-          var isCur = (t.dateKey === window.activeSelectedDateKey);
+          var isCur = (t.dateKey === window.activeSelectedDateKey && (window.currentLuckySpot && window.currentLuckySpot.name === t.rawName));
           return `
-            <div data-date="${escapeHtml(t.dateKey)}" data-spot="${escapeHtml(t.spot)}" onclick="window.selectInlineTripDate(this.dataset.date, this.dataset.spot);" style="padding:7px 10px; border-radius:6px; background:${isCur ? 'rgba(56,189,248,0.14)' : 'rgba(255,255,255,0.03)'}; border:1px solid ${isCur ? 'rgba(56,189,248,0.35)' : 'rgba(255,255,255,0.06)'}; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+            <div data-date="${escapeHtml(t.dateKey)}" data-spot="${escapeHtml(t.rawName)}" data-elevation="${escapeHtml(t.elevation)}" onclick="window.selectInlineTripDate(this.dataset.date, this.dataset.spot, this.dataset.elevation);" style="padding:7px 10px; border-radius:6px; background:${isCur ? 'rgba(56,189,248,0.14)' : 'rgba(255,255,255,0.03)'}; border:1px solid ${isCur ? 'rgba(56,189,248,0.35)' : 'rgba(255,255,255,0.06)'}; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
               <span style="font-size:0.78rem; font-family:'Space Grotesk', sans-serif; font-weight:800; color:${isCur ? '#38bdf8' : '#cbd5e1'};">${escapeHtml(t.dateKey)}</span>
               <span style="font-size:0.74rem; font-weight:700; color:${isCur ? '#ffffff' : '#94a3b8'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;">${escapeHtml(t.spot)}</span>
             </div>
@@ -423,10 +482,10 @@
     dropdown.style.display = 'flex';
   };
 
-  window.selectInlineTripDate = function(dateKey, spot) {
+  window.selectInlineTripDate = function(dateKey, spot, elev) {
     window.activeSelectedDateKey = dateKey;
-    if (spot && spot !== '일정 메모' && spot !== '출정 기록') {
-      window.currentLuckySpot = { name: spot, elevation: '' };
+    if (spot && spot !== '일정 메모' && spot !== '방문 일정' && spot !== '출정 기록') {
+      window.currentLuckySpot = { name: spot, elevation: elev || '' };
     }
     var dropdown = document.getElementById('calcTripDateDropdown');
     if (dropdown) dropdown.style.display = 'none';
@@ -1542,13 +1601,54 @@ window.saveCurrentPackingRecord = function() {
 
   window.completeChecklist = function(dateStr) {
     triggerHaptic(20);
-    if (typeof showToast === 'function') {
-      showToast('🎉 [' + dateStr + '] 패킹 체크를 완료했습니다! 안산 즐캠 되세요!', 'success', 3000);
+
+    // 1. 현재 화면에 작성 중이던 메모 즉시 동기화 보존
+    var memoInput = document.getElementById('planDailyMemoInput');
+    var curVal = memoInput ? memoInput.value.trim() : '';
+
+    var planMemosMap = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_plan_memos', {})
+      : safeGetJSON('okbm_plan_memos', {});
+
+    if (curVal) {
+      planMemosMap[dateStr] = curVal;
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_plan_memos', planMemosMap, true);
+      } else {
+        localStorage.setItem('okbm_plan_memos', JSON.stringify(planMemosMap));
+      }
     }
+
+    // 2. 보관함 완료 히스토리 객체에도 메모 상호 각인 (메모 소실 원천 방지)
+    var historyList = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_packing_history', [])
+      : safeGetJSON('okbm_packing_history', []);
+
+    if (Array.isArray(historyList)) {
+      var targetHistory = historyList.find(function(h) {
+        var hDate = h.date ? h.date.replace(/[-/]/g, '.') : '';
+        return hDate === dateStr || String(h.date) === String(dateStr);
+      });
+      if (targetHistory) {
+        if (curVal && !targetHistory.memo) {
+          targetHistory.memo = curVal;
+        }
+        if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+          window.RomanticVault.write('okbm_packing_history', historyList, true);
+        } else {
+          localStorage.setItem('okbm_packing_history', JSON.stringify(historyList));
+        }
+      }
+    }
+
+    if (typeof showToast === 'function') {
+      showToast('[' + dateStr + '] 패킹 체크가 완료되었습니다.', 'success', 2500);
+    }
+
     window.activePlanSubMode = 'calendar';
     window.renderPlanStage();
+    if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
   };
-
  // 🏛️ [낭만플랜 메인 렌더러 함수 - 100% 정상 선언]
   window.renderPlanStage = function() {
     var modal = document.getElementById('romanticPlanModal');
@@ -1580,8 +1680,19 @@ window.saveCurrentPackingRecord = function() {
       return h && Number(h.year) === Number(viewYear) && Number(h.month) === Number(viewMonth);
     });
 
-   var planMemosObj = safeGetJSON('okbm_plan_memos', {}) || {};
+  var planMemosObj = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_plan_memos', {})
+      : safeGetJSON('okbm_plan_memos', {}) || {};
+    
     var currentDayMemo = (planMemosObj && planMemosObj[activeDateStr]) ? String(planMemosObj[activeDateStr]) : '';
+
+    // 완료 기록에만 메모가 남아 있는 경우 자동 복원
+    if (!currentDayMemo) {
+      var matchedRecord = monthHistory.find(function(h) { return h && Number(h.day) === Number(activeDay); });
+      if (matchedRecord && (matchedRecord.memo || matchedRecord.oneLineMemo)) {
+        currentDayMemo = String(matchedRecord.memo || matchedRecord.oneLineMemo).trim();
+      }
+    }
 
     // 🎒 [계산기/체크리스트 공용 무게 및 아이템 데이터 사전 집계]
     var totalGrams = 0;
@@ -1672,14 +1783,14 @@ window.saveCurrentPackingRecord = function() {
       var spotMatch = nearestTrip.memo.match(/📍\s*(?:목적지:\s*)?([^\n\r(]+)/);
       var tripTitle = spotMatch ? spotMatch[1].trim() : nearestTrip.memo.split('\n')[0].slice(0, 24);
 
-      dDayBadgeHtml = `
+     dDayBadgeHtml = `
         <div onclick="window.startPackingForDate('${nearestTrip.dateKey}', '${escapeHtml(tripTitle)}');" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0; box-sizing:border-box;">
           <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">
             <span style="font-size:0.72rem; font-family:'Space Grotesk', sans-serif; font-weight:900; color:#000000; background:#ffffff; padding:2px 7px; border-radius:4px; flex-shrink:0;">
               ${dText}
             </span>
-            <div style="font-size:0.80rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-              <span>${nearestTrip.dateKey}</span> · 📍 <span>${escapeHtml(tripTitle)}</span>
+            <div style="font-size:0.80rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:4px;">
+              <span>${nearestTrip.dateKey}</span> · <span style="display:inline-flex; align-items:center; vertical-align:-1.5px; flex-shrink:0;">${UI_ICONS.pin}</span> <span>${escapeHtml(tripTitle)}</span>
             </div>
           </div>
           <span style="font-size:0.65rem; color:#cbd5e1; font-weight:800; flex-shrink:0;">패킹하기 ➔</span>
@@ -1702,7 +1813,7 @@ window.saveCurrentPackingRecord = function() {
       calendarDaysHtml += '<div style="height:100% !important;"></div>';
     }
 
-    for (var d = 1; d <= lastDayOfMonth; d++) {
+ for (var d = 1; d <= lastDayOfMonth; d++) {
       var isSelected = (d === activeDay);
       var isToday = (Number(viewYear) === todayYear && Number(viewMonth) === todayMonth && Number(d) === todayDate);
       var thisDateKey = viewYear + '.' + String(viewMonth).padStart(2, '0') + '.' + String(d).padStart(2, '0');
@@ -1712,31 +1823,23 @@ window.saveCurrentPackingRecord = function() {
       var isRecorded = !!dayRecord;
       var hasPlanMemo = Boolean(planMemosObj[thisDateKey] && String(planMemosObj[thisDateKey]).trim().length > 0);
 
-      var dayStyle = 'position:relative; height:100% !important; width:100% !important; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:\'Space Grotesk\', sans-serif; font-size:0.80rem; font-weight:800; border-radius:8px; cursor:pointer; user-select:none; transition:all 0.15s ease; box-sizing:border-box;';
-      var markerSymbol = '';
-      var todayBadge = isToday ? '<span style="position:absolute; top:2px; font-size:7px; font-weight:900; color:#38bdf8; line-height:1;">●</span>' : '';
-
-      if (isCompleted) {
-        markerSymbol = '<span style="position:absolute; bottom:1.5px; line-height:1; display:flex; align-items:center; justify-content:center;">' + UI_ICONS.starGold + '</span>';
-      } else if (hasPlanMemo) {
-        markerSymbol = '<span style="position:absolute; bottom:1.5px; line-height:1; display:flex; align-items:center; justify-content:center;">' + UI_ICONS.flagGreen + '</span>';
-      } else if (isRecorded) {
-        markerSymbol = '<span style="position:absolute; bottom:3px; width:5.5px; height:5.5px; background:#ffffff; border-radius:50%; box-shadow:0 1px 2px rgba(0,0,0,0.8);"></span>';
-      }
+      var circleStyle = 'width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:\'Space Grotesk\', sans-serif; font-size:0.78rem; font-weight:800; transition:all 0.15s ease;';
 
       if (isSelected) {
-        dayStyle += 'background:rgba(255,255,255,0.22) !important; border:1.5px solid #ffffff !important; color:#ffffff !important; font-weight:900 !important; box-shadow:0 0 14px rgba(255,255,255,0.35); transform:scale(1.04); z-index:2;';
+        circleStyle += 'background:rgba(255,255,255,0.22); border:1.5px solid #ffffff; color:#ffffff; font-weight:900; box-shadow:0 0 10px rgba(255,255,255,0.3);';
+      } else if (isCompleted) {
+        circleStyle += 'background:rgba(245,158,11,0.22); border:1.5px solid #f59e0b; color:#fef08a; font-weight:900; box-shadow:0 0 8px rgba(245,158,11,0.35);';
+      } else if (hasPlanMemo) {
+        circleStyle += 'background:rgba(52,211,153,0.18); border:1px solid rgba(52,211,153,0.45); color:#ffffff; font-weight:900;';
       } else if (isToday) {
-        dayStyle += 'border:1.2px solid rgba(255,255,255,0.3) !important; color:#ffffff !important; font-weight:800 !important; background:rgba(255,255,255,0.06) !important;';
-      } else if (isCompleted || hasPlanMemo) {
-        dayStyle += 'color:#f8fafc; font-weight:800; background:rgba(255,255,255,0.035);';
+        circleStyle += 'border:1px solid rgba(255,255,255,0.35); color:#ffffff; font-weight:800; background:rgba(255,255,255,0.04);';
       } else if (isRecorded) {
-        dayStyle += 'color:#f8fafc; font-weight:800;';
+        circleStyle += 'color:#f8fafc; font-weight:800;';
       } else {
-        dayStyle += 'color:#94a3b8;';
+        circleStyle += 'color:#94a3b8;';
       }
 
-      calendarDaysHtml += '<div style="' + dayStyle + '" onclick="window.handlePlanCalendarClick(' + d + ', ' + viewMonth + ', ' + viewYear + ')">' + d + todayBadge + markerSymbol + '</div>';
+      calendarDaysHtml += '<div style="height:100% !important; width:100% !important; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none;" onclick="window.handlePlanCalendarClick(' + d + ', ' + viewMonth + ', ' + viewYear + ')"><div style="' + circleStyle + '">' + d + '</div></div>';
     }
 
     for (var te = 0; te < (42 - (firstDayIndex + lastDayOfMonth)); te++) {
@@ -1755,21 +1858,20 @@ window.saveCurrentPackingRecord = function() {
         
        <!-- 1. 달력 카드 (전체 뷰포트 대비 31% 정밀 적응형 뷰) -->
         <div id="planCalendarCardWrap" style="height:31% !important; min-height:236px !important; flex-shrink:0 !important; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:6px 10px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
-          <div style="display:flex; justify-content:space-between; align-items:center; height:34px; flex-shrink:0;">
+      <div style="display:flex; justify-content:space-between; align-items:center; height:34px; flex-shrink:0;">
             <div style="display:flex; align-items:center; gap:5px;">
               <button type="button" onclick="window.changePlanMonth(-1)" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); color:#ffffff; width:28px; height:28px; border-radius:7px; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;">◀</button>
-              <button type="button" onclick="window.openPlanYearPicker(event)" style="height:28px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#ffffff; padding:0 10px; border-radius:7px; font-size:0.92rem; font-weight:900; cursor:pointer; font-family:'Space Grotesk', sans-serif; display:flex; align-items:center; gap:3px;">
+              <button type="button" onclick="window.openPlanYearPicker(event)" style="height:28px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#ffffff; padding:0 10px; border-radius:7px; font-size:0.92rem; font-weight:900; cursor:pointer; font-family:'Space Grotesk', sans-serif; display:flex; align-items:center;">
                 <span>${viewYear}년</span>
-                <span style="font-size:0.75rem; color:#94a3b8;">▾</span>
               </button>
               <span style="font-size:0.95rem; font-weight:900; color:#ffffff; margin:0 3px; font-family:'Space Grotesk', sans-serif;">${viewMonth}월</span>
               <button type="button" onclick="window.changePlanMonth(1)" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.14); color:#ffffff; width:28px; height:28px; border-radius:7px; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;">▶</button>
             </div>
             
            <div style="display:flex; align-items:center; gap:8px;">
-              <button type="button" onclick="window.jumpToPlanToday()" style="height:26px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#ffffff; font-size:0.72rem; font-weight:800; padding:0 8px; border-radius:6px; cursor:pointer;">오늘</button>
-              <span style="font-size:0.74rem; color:#fbbf24; font-weight:900; display:flex; align-items:center; gap:3px;">${UI_ICONS.starGold}<span>완료</span></span>
-              <span style="font-size:0.74rem; color:#34d399; font-weight:900; display:flex; align-items:center; gap:3px;">${UI_ICONS.flagGreen}<span>계획</span></span>
+              <button type="button" onclick="window.jumpToPlanToday()" style="height:24px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:0.70rem; font-weight:800; padding:0 8px; border-radius:5px; cursor:pointer;">오늘</button>
+              <span style="font-size:0.70rem; color:#fbbf24; font-weight:900; display:flex; align-items:center; gap:4px;"><span style="width:7px; height:7px; background:rgba(245,158,11,0.35); border:1.5px solid #f59e0b; border-radius:50%; box-shadow:0 0 6px rgba(245,158,11,0.4); display:inline-block;"></span><span>완료</span></span>
+              <span style="font-size:0.70rem; color:#34d399; font-weight:800; display:flex; align-items:center; gap:4px;"><span style="width:7px; height:7px; background:rgba(52,211,153,0.3); border:1px solid #34d399; border-radius:50%; display:inline-block;"></span><span>계획</span></span>
             </div>
           </div>
 
@@ -1803,42 +1905,66 @@ window.saveCurrentPackingRecord = function() {
               </button>
             </div>
           </div>
-          <textarea id="planDailyMemoInput" placeholder="이 날짜의 일정과 챙길 것들을 메모해보세요..." oninput="window.autoSavePlanMemo('${activeDateStr}', this.value)" style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:rgba(0,0,0,0.55); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:5px 8px; font-size:0.82rem; color:#fff; line-height:1.4; outline:none; resize:none; font-family:'Pretendard Variable', sans-serif; box-sizing:border-box;">${currentDayMemo}</textarea>
+        <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:rgba(0,0,0,0.55); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:6px 8px; display:flex; flex-direction:column; gap:5px; box-sizing:border-box;">
+            ${(function() {
+              var planSpotsObj = safeGetJSON('okbm_plan_spots', {});
+              var rawSpotData = planSpotsObj[activeDateStr];
+              var spotArray = [];
+              if (Array.isArray(rawSpotData)) {
+                spotArray = rawSpotData;
+              } else if (rawSpotData && rawSpotData.name) {
+                spotArray = [rawSpotData];
+              }
+
+              if (spotArray.length === 0) return '';
+
+              return `
+                <div style="display:flex; flex-wrap:wrap; gap:5px; padding-bottom:5px; border-bottom:1px solid rgba(255,255,255,0.08); flex-shrink:0;">
+                  ${spotArray.map(function(s) {
+                    var dispElev = s.elevation ? (' (' + s.elevation + ')') : '';
+                    return `
+                      <div style="display:inline-flex; align-items:center; gap:4px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); padding:2px 8px; border-radius:12px; font-size:0.80rem; font-weight:800; color:#ffffff;">
+                        <span style="display:inline-flex; align-items:center; color:#38bdf8; flex-shrink:0;">${UI_ICONS.pin}</span>
+                        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;">${escapeHtml(s.name + dispElev)}</span>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              `;
+            })()}
+            <textarea id="planDailyMemoInput" placeholder="이 날짜의 일정과 챙길 것들을 메모해보세요..." oninput="window.autoSavePlanMemo('${activeDateStr}', this.value)" style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:none; border:none; color:#ffffff; font-size:0.90rem; line-height:1.45; outline:none; resize:none; font-family:'Pretendard Variable', -apple-system, sans-serif; padding:0; margin:0; box-sizing:border-box;">${currentDayMemo}</textarea>
+          </div>
         </div>
 
-     <!-- 4. 하단 2x2 모던 큐브 그리드 (모노크롬 & 원클릭 즉시 전환) -->
+     <!-- 4. 하단 2x2 모던 큐브 그리드 (모노크롬 & 정중앙 정렬) -->
         <div style="flex:26 1 0% !important; min-height:0 !important; display:grid; grid-template-columns:1fr 1fr; gap:6px; box-sizing:border-box;">
           
-          <div onclick="window.activePlanSubMode='calculator'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; box-sizing:border-box;">
-            <div style="display:flex; align-items:center; gap:8px;">
+          <div onclick="window.activePlanSubMode='calculator'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 10px; display:flex; justify-content:center; align-items:center; cursor:pointer; box-sizing:border-box;">
+            <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
               ${VECTOR_ICONS.calculator}
               <span style="font-size:0.86rem; font-weight:900; color:#ffffff;">패킹 계획하기</span>
             </div>
-            <span style="font-size:0.75rem; color:#94a3b8; font-weight:900;">➔</span>
           </div>
 
-          <div onclick="window.activePlanSubMode='checklist'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; box-sizing:border-box;">
-            <div style="display:flex; align-items:center; gap:8px;">
+          <div onclick="window.activePlanSubMode='checklist'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 10px; display:flex; justify-content:center; align-items:center; cursor:pointer; box-sizing:border-box;">
+            <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
               ${VECTOR_ICONS.checklist}
               <span style="font-size:0.86rem; font-weight:900; color:#ffffff;">체크리스트</span>
             </div>
-            <span style="font-size:0.75rem; color:#94a3b8; font-weight:900;">➔</span>
           </div>
 
-          <div onclick="window.activePlanSubMode='bookmarks'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; box-sizing:border-box;">
-            <div style="display:flex; align-items:center; gap:8px;">
+          <div onclick="window.activePlanSubMode='bookmarks'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 10px; display:flex; justify-content:center; align-items:center; cursor:pointer; box-sizing:border-box;">
+            <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
               ${VECTOR_ICONS.bookmarks}
               <span style="font-size:0.86rem; font-weight:900; color:#ffffff;">찜 목록</span>
             </div>
-            <span style="font-size:0.75rem; color:#94a3b8; font-weight:900;">➔</span>
           </div>
 
-          <div onclick="window.activePlanSubMode='gears'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 14px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; box-sizing:border-box;">
-            <div style="display:flex; align-items:center; gap:8px;">
+          <div onclick="window.activePlanSubMode='gears'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 10px; display:flex; justify-content:center; align-items:center; cursor:pointer; box-sizing:border-box;">
+            <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
               ${VECTOR_ICONS.gears}
               <span style="font-size:0.86rem; font-weight:900; color:#ffffff;">장비관리</span>
             </div>
-            <span style="font-size:0.75rem; color:#94a3b8; font-weight:900;">➔</span>
           </div>
         </div>
 
@@ -1917,13 +2043,14 @@ window.saveCurrentPackingRecord = function() {
       camp:        { color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.09)', border: 'rgba(56, 189, 248, 0.28)' }
     };
 
-   var spotTitle = spotMatch ? spotMatch[1].trim() : (currentDayMemo ? currentDayMemo.split('\n')[0].slice(0, 20) : '자유 일정');
+   var currentDaySpotMatch = currentDayMemo.match(/📍\s*(?:목적지:\s*)?([^\n\r(]+)/);
+    var spotTitle = currentDaySpotMatch ? currentDaySpotMatch[1].trim() : (currentDayMemo ? currentDayMemo.split('\n')[0].slice(0, 20) : '자유 일정');
     var isAllComplete = planItems.length > 0 && packedCount === planItems.length;
 
     var checklistViewHtml = `
       <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; justify-content:space-between; gap:6px; padding:2px 0 0 0; overflow:hidden; box-sizing:border-box;">
         
-        <!-- 🏛️ 1. 상단 요약 헤더 (원터치 일정 변경 통합 & 시원한 타이틀 배치) -->
+        <!-- 🏛️ 1. 상단 요약 헤더 -->
         <div onclick="window.togglePlanTripDateInlineDropdown(event);" style="position:relative; background:linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(15,23,42,0.7) 100%); border:1px solid rgba(255,255,255,0.12); border-top:1px solid rgba(255,255,255,0.22); border-radius:12px; padding:10px 14px; flex-shrink:0; display:flex; justify-content:space-between; align-items:center; box-sizing:border-box; box-shadow:0 4px 16px rgba(0,0,0,0.5); z-index:50; cursor:pointer;">
           <div style="display:flex; flex-direction:column; gap:3px; min-width:0; flex:1; padding-right:12px;">
             <div style="font-size:0.74rem; color:#38bdf8; font-family:'Space Grotesk', sans-serif; font-weight:800; letter-spacing:0.3px; display:flex; align-items:center; gap:4px;">
@@ -1946,7 +2073,7 @@ window.saveCurrentPackingRecord = function() {
           <div id="calcTripDateDropdown" style="display:none; position:absolute; top:54px; left:0; right:0; z-index:700; background:#0d121d; border:1.5px solid rgba(56,189,248,0.4); border-radius:8px; padding:8px; flex-direction:column; gap:6px; box-shadow:0 16px 40px rgba(0,0,0,0.95); box-sizing:border-box;"></div>
         </div>
 
-        <!-- 📋 2. 체크리스트 목록 영역 (1.5px 소프트 라인 & 샴페인 선셋 골드) -->
+        <!-- 📋 2. 체크리스트 목록 영역 -->
         <div id="checklistItemsScrollContainer" style="flex:1 1 0% !important; min-height:0 !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; overscroll-behavior-y:contain !important; overscroll-behavior:contain !important; touch-action:pan-y !important; display:flex; flex-direction:column; gap:5px; padding-right:2px;">
         ${planItems.map(function(it, idx) {
             var checkKey = activeDateStr + '__' + it.name;
@@ -1969,8 +2096,8 @@ window.saveCurrentPackingRecord = function() {
                   </div>
 
                   <span style="font-size:0.83rem; font-weight:800; color:${isChecked ? '#94a3b8' : '#ffffff'}; text-decoration:${isChecked ? 'line-through' : 'none'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:5px;">
-                    ${isFood ? '<span style="color:#fb923c; font-size:0.8rem;">🍖</span>' : ''}
-                    <span>${(it.name || '')}</span>
+                    ${isFood ? '<span style="display:inline-flex; align-items:center; width:13px; height:13px; color:#fb923c;">' + UI_ICONS.foodUtensils + '</span>' : ''}
+                    <span>${escapeHtml(it.name || '')}</span>
                   </span>
                 </div>
 
@@ -1987,22 +2114,22 @@ window.saveCurrentPackingRecord = function() {
           }).join('')}
         </div>
 
-        <!-- 🍖 3. 하단 음식/소모품 즉시 추가 바 -->
+        <!-- 3. 하단 음식/소모품 즉시 추가 바 -->
         <div style="background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.12); border-radius:9px; padding:6px 8px; display:flex; gap:5px; align-items:center; flex-shrink:0; box-sizing:border-box;">
-          <span style="font-size:0.85rem; flex-shrink:0;">🍖</span>
-          <input type="text" id="inputChecklistFoodName" placeholder="음식·간식·소모품 추가 (예: 삼겹살, 라면)" onkeydown="if(event.key==='Enter') window.addChecklistConsumableItem();" style="flex:1; min-width:0; height:32px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#fff; font-size:0.74rem; padding:0 8px; outline:none;" />
+          <span style="display:inline-flex; align-items:center; width:14px; height:14px; color:#fb923c; flex-shrink:0;">${UI_ICONS.foodUtensils}</span>
+          <input type="text" id="inputChecklistFoodName" placeholder="음식·간식·소모품 추가 (예: 전투식량, 간식)" onkeydown="if(event.key==='Enter') window.addChecklistConsumableItem();" style="flex:1; min-width:0; height:32px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#fff; font-size:0.74rem; padding:0 8px; outline:none;" />
           <input type="number" id="inputChecklistFoodWeight" placeholder="무게g" onkeydown="if(event.key==='Enter') window.addChecklistConsumableItem();" style="width:58px; height:32px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.14); border-radius:6px; color:#fff; font-size:0.74rem; padding:0 5px; outline:none; font-family:'JetBrains Mono', monospace;" />
           <button type="button" onclick="window.addChecklistConsumableItem();" style="height:32px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#f8fafc; font-size:0.72rem; font-weight:900; padding:0 10px; border-radius:6px; cursor:pointer; flex-shrink:0; white-space:nowrap;">
             + 추가
           </button>
         </div>
 
-        <!-- 4. 최하단 스마트 프로그레스 게이지 일체형 완료 독 -->
+        <!-- 4. 최하단 프로그레스 게이지 완료 독 -->
         <div style="position:relative; width:100%; height:44px; border-radius:10px; overflow:hidden; border:1px solid ${isAllComplete ? 'rgba(253,224,71,0.6)' : 'rgba(255,255,255,0.2)'}; background:rgba(15,23,42,0.7); flex-shrink:0; box-shadow:${isAllComplete ? '0 4px 16px rgba(253,224,71,0.3)' : '0 4px 14px rgba(0,0,0,0.5)'}; transition:all 0.25s ease;">
           <div style="position:absolute; top:0; left:0; bottom:0; width:${planProgressPct}%; background:linear-gradient(90deg, rgba(253,224,71,0.2) 0%, rgba(245,158,11,0.55) 100%); transition:width 0.25s ease; pointer-events:none;"></div>
           <button type="button" onclick="window.completeChecklist('${activeDateStr}');" style="position:relative; z-index:2; width:100%; height:100%; background:none; border:none; color:#ffffff; font-size:0.84rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap;">
             <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:${isAllComplete ? '#fde047' : '#ffffff'}; fill:none; stroke-width:2.5;"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>${isAllComplete ? '🎉 패킹 체크 100% 완료! 안산 즐캠!' : ('패킹 체크 완료 (' + packedCount + '/' + planItems.length + ' · ' + planProgressPct + '%)')}</span>
+            <span>${isAllComplete ? '패킹 체크 100% 완료' : ('패킹 체크 완료 (' + packedCount + '/' + planItems.length + ' · ' + planProgressPct + '%)')}</span>
           </button>
         </div>
       </div>
@@ -2136,17 +2263,40 @@ window.saveCurrentPackingRecord = function() {
 
     var bookmarkedSpots = bookmarks.map(function(sId) {
       var found = spotList.find(function(s) { return String(s.id).trim() === String(sId).trim(); });
+      var spotName = found ? (found.fullName || found.name) : ('장소 #' + sId);
+      
+      var elevStr = '';
+      if (found && found.elevation) {
+        var rawElev = String(found.elevation).replace(/m$/i, '').trim();
+        if (rawElev) elevStr = rawElev + 'm';
+      }
+
+      var addrStr = '';
+      if (found) {
+        var rawAddr = String(found.address || found.roadAddress || '').trim();
+        if (rawAddr) {
+          var addrParts = rawAddr.split(/\s+/);
+          addrStr = addrParts.slice(0, 2).join(' ');
+        }
+        if (!addrStr) {
+          addrStr = String(found.region || '').trim();
+        }
+      }
+
+      var metaLine = [elevStr, addrStr].filter(Boolean).join(' · ') || '위치 정보 없음';
+
       return {
         id: sId,
-        name: found ? (found.fullName || found.name) : ('장소 #' + sId),
-    elevation: found && found.elevation ? (found.elevation + 'm') : (found ? found.region : '전국')
+        name: spotName,
+        elevation: elevStr,
+        metaLine: metaLine
       };
     });
-   
 
     var bookmarksViewHtml = `
       <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:6px; padding:2px 0 4px 0; overflow:hidden; box-sizing:border-box;">
         
+        <!-- 1. 상단 달력 카드 (전체 뷰포트 31% 정밀 적응형) -->
         <div id="planCalendarCardWrap" style="height:31% !important; min-height:236px !important; flex-shrink:0 !important; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:6px 10px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
           <div style="display:flex; justify-content:space-between; align-items:center; height:34px; flex-shrink:0;">
             <div style="display:flex; align-items:center; gap:5px;">
@@ -2161,7 +2311,7 @@ window.saveCurrentPackingRecord = function() {
             
             <div style="display:flex; align-items:center; gap:8px;">
               <button type="button" onclick="window.jumpToPlanToday()" style="height:26px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#ffffff; font-size:0.72rem; font-weight:800; padding:0 8px; border-radius:6px; cursor:pointer;">오늘</button>
-              <span style="font-size:0.74rem; color:#fbbf24; font-weight:900; display:flex; align-items:center; gap:3px;">${UI_ICONS.starGold}<span>완료</span></span>
+              <span style="font-size:0.74rem; color:rgba(217,180,99,0.9); font-weight:900; display:flex; align-items:center; gap:3px;">${UI_ICONS.starGold}<span>완료</span></span>
               <span style="font-size:0.74rem; color:#34d399; font-weight:900; display:flex; align-items:center; gap:3px;">${UI_ICONS.flagGreen}<span>계획</span></span>
             </div>
           </div>
@@ -2175,34 +2325,37 @@ window.saveCurrentPackingRecord = function() {
           </div>
         </div>
 
-       <div style="flex:1 1 0% !important; min-height:0 !important; display:flex; flex-direction:column; gap:5px; overflow:hidden; box-sizing:border-box;">
-          <div style="padding:2px 2px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
-            <div style="display:flex; align-items:center; gap:4px; font-size:0.84rem; font-weight:900; color:#fde047;">
+        <!-- 2. 하단 찜 목록 박스 -->
+        <div style="flex:1 1 0% !important; min-height:0 !important; display:flex; flex-direction:column; gap:5px; overflow:hidden; box-sizing:border-box;">
+          <div style="padding:2px 4px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+            <div style="display:flex; align-items:center; gap:5px; font-size:0.82rem; font-weight:900; color:rgba(217,180,99,0.95);">
               ${UI_ICONS.starGold}
-              <span>찜목록 (${bookmarkedSpots.length}곳)</span>
+              <span>가보고 싶은 곳 (${bookmarkedSpots.length}곳)</span>
             </div>
-           
+            <span style="font-size:0.65rem; color:#94a3b8; font-weight:700;">목적지 설정 후 날짜를 터치하세요</span>
           </div>
 
           <div style="flex:1 1 0% !important; min-height:0 !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; overscroll-behavior-y:contain !important; touch-action:pan-y !important; display:flex; flex-direction:column; gap:4px; padding-right:1px;">
             ${bookmarkedSpots.length === 0 ? `
               <div style="text-align:center; padding:35px 0; color:#94a3b8; font-size:0.75rem; line-height:1.6;">
                 찜해둔 장소가 없습니다.<br>
-                전국지도에서 가보고 싶은 곳을 찜해보세요!
+                전국지도에서 가보고 싶은 곳을 찜해보세요.
               </div>
             ` : bookmarkedSpots.map(function(s) {
                 var safeName = escapeHtml(s.name);
                 var safeElev = escapeHtml(s.elevation);
+                var safeMeta = escapeHtml(s.metaLine);
                 return `
-                  <div data-spot="${safeName}" onclick="location.href='map.html?spot=' + encodeURIComponent(this.dataset.spot);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(253,224,71,0.2); border-radius:8px; padding:7px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0;">
-                    <div style="flex:1; min-width:0; padding-right:8px;">
-                      <div style="font-size:0.80rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:5px;">
-                        ${UI_ICONS.starGold}
-                        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeName}</span>
+                  <div data-spot="${safeName}" onclick="location.href='map.html?spot=' + encodeURIComponent(this.dataset.spot);" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-left:3.5px solid rgba(217,180,99,0.8); border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0;">
+                    <div style="flex:1; min-width:0; padding-right:10px;">
+                      <div style="font-size:0.82rem; font-weight:900; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        ${safeName}
                       </div>
-                      <div style="font-size:0.60rem; color:#94a3b8; margin-top:2px;">고도/위치: ${safeElev}</div>
+                      <div style="font-size:0.63rem; color:#94a3b8; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-family:'Pretendard Variable', sans-serif;">
+                        ${safeMeta}
+                      </div>
                     </div>
-                    <button type="button" data-spot="${safeName}" data-elevation="${safeElev}" onclick="event.stopPropagation(); window.selectPlanDestination(this.dataset.spot, this.dataset.elevation);" style="background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#ffffff; font-size:0.66rem; font-weight:900; padding:5px 9px; border-radius:6px; cursor:pointer; flex-shrink:0; white-space:nowrap; box-shadow:0 2px 8px rgba(2,132,199,0.3);">
+                    <button type="button" data-spot="${safeName}" data-elevation="${safeElev}" onclick="event.stopPropagation(); window.selectPlanDestination(this.dataset.spot, this.dataset.elevation);" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.18); color:#e2e8f0; font-size:0.68rem; font-weight:800; padding:5px 10px; border-radius:6px; cursor:pointer; flex-shrink:0; white-space:nowrap; transition:all 0.15s ease;">
                       목적지로 설정
                     </button>
                   </div>
@@ -2383,12 +2536,7 @@ window.saveCurrentPackingRecord = function() {
       </div>
     `;
 
-    var currentViewHtml = calendarMemoViewHtml;
-    if (window.activePlanSubMode === 'checklist') currentViewHtml = checklistViewHtml;
-    else if (window.activePlanSubMode === 'calculator') currentViewHtml = calculatorViewHtml;
-    else if (window.activePlanSubMode === 'bookmarks') currentViewHtml = bookmarksViewHtml;
-    else if (window.activePlanSubMode === 'gears') currentViewHtml = gearsViewHtml;
-   var currentViewHtml = calendarMemoViewHtml;
+  var currentViewHtml = calendarMemoViewHtml;
     if (window.activePlanSubMode === 'checklist') currentViewHtml = checklistViewHtml;
     else if (window.activePlanSubMode === 'calculator') currentViewHtml = calculatorViewHtml;
     else if (window.activePlanSubMode === 'bookmarks') currentViewHtml = bookmarksViewHtml;
@@ -2879,10 +3027,14 @@ window.saveCurrentPackingRecord = function() {
     }, 50);
   };
 
- window.clearEntireDaySchedule = function(dateKey) {
-    if (!confirm('[' + dateKey + '] 일정을 완전히 지우시겠습니까?\n달력의 표시, 메모, 공용 피드가 모두 함께 삭제됩니다.')) return;
+// 🗑️ [날짜 전체 일정 삭제 엔진 - okbm_plan_spots 박제 원천 차단]
+  window.clearEntireDaySchedule = function(dateKey) {
+    if (!confirm('[' + dateKey + '] 일정을 완전히 지우시겠습니까?\n달력의 표시, 메모, 등록된 목적지가 모두 함께 삭제됩니다.')) return;
 
-    var planMemos = safeGetJSON('okbm_plan_memos', {});
+    // 1. 계획 메모 삭제
+    var planMemos = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_plan_memos', {})
+      : safeGetJSON('okbm_plan_memos', {});
     delete planMemos[dateKey];
     if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
       window.RomanticVault.write('okbm_plan_memos', planMemos, false);
@@ -2890,6 +3042,18 @@ window.saveCurrentPackingRecord = function() {
       localStorage.setItem('okbm_plan_memos', JSON.stringify(planMemos));
     }
 
+    // 2. 🛡️ [박제 원천 차단] 독립 목적지 데이터 완전 파기
+    var planSpots = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_plan_spots', {})
+      : safeGetJSON('okbm_plan_spots', {});
+    delete planSpots[dateKey];
+    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+      window.RomanticVault.write('okbm_plan_spots', planSpots, false);
+    } else {
+      localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots));
+    }
+
+    // 3. 보관함 패킹 기록 삭제
     var historyList = (window.interactiveHistory && Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0)
       ? window.interactiveHistory
       : (typeof window.safeGetStorage === 'function' ? window.safeGetStorage('okbm_packing_history', []) : safeGetJSON('okbm_packing_history', []));
@@ -2908,6 +3072,7 @@ window.saveCurrentPackingRecord = function() {
       window.safeSetStorage('okbm_packing_history', historyList);
     }
 
+    // 4. 소모품 및 체크리스트 정리
     var consumablesMap = safeGetJSON('okbm_trip_consumables', {});
     delete consumablesMap[dateKey];
     if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
@@ -2935,11 +3100,12 @@ window.saveCurrentPackingRecord = function() {
     }
 
     window.__pendingPlanDestination = null;
+    window.currentLuckySpot = null;
     var memoInput = document.getElementById('planDailyMemoInput');
     if (memoInput) memoInput.value = '';
 
     triggerHaptic(20);
-    if (typeof showToast === 'function') showToast('🗑️ [' + dateKey + '] 일정이 완전히 삭제되었습니다.', 'info');
+    if (typeof showToast === 'function') showToast('[' + dateKey + '] 일정이 완전히 삭제되었습니다.', 'info');
     window.renderPlanStage();
     if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(true);
   };
@@ -3022,8 +3188,7 @@ window.saveCurrentPackingRecord = function() {
   };
 
 
- // ✅ [확인을 눌러야만 비로소 메모장에 최종 저장 & 순수 목적지 독립 보존]
-  window.commitPlanDestination = function(dateKey) {
+window.commitPlanDestination = function(dateKey) {
     var dest = window.__pendingPlanDestination;
     window.__pendingPlanDestination = null;
 
@@ -3034,17 +3199,15 @@ window.saveCurrentPackingRecord = function() {
 
     if (!dest) return;
 
-   
-  
-    // 1. 메모 텍스트 저장
+    // 1. 메모장 내용 누적 보존 (앞선 메모 유실 방지)
     var planMemos = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
       ? window.RomanticVault.read('okbm_plan_memos', {})
       : safeGetJSON('okbm_plan_memos', {});
-    var existingMemo = planMemos[dateKey] || '';
-    var spotLine = '📍 목적지: ' + dest.name + (dest.elevation ? (' (' + dest.elevation + ')') : '');
+    var existingMemo = String(planMemos[dateKey] || '').trim();
+    var cleanSpotText = dest.name + (dest.elevation ? (' (' + dest.elevation + ')') : '');
 
     if (!existingMemo.includes(dest.name)) {
-      planMemos[dateKey] = existingMemo ? (spotLine + '\n' + existingMemo) : spotLine;
+      planMemos[dateKey] = existingMemo ? (existingMemo + '\n' + cleanSpotText) : cleanSpotText;
       if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
         window.RomanticVault.write('okbm_plan_memos', planMemos, false);
       } else {
@@ -3052,14 +3215,28 @@ window.saveCurrentPackingRecord = function() {
       }
     }
 
-    // 2. 🛡️ [이모지 무관 순수 목적지 독립 보관]: SVG 벡터 교체 시에도 100% 안전
+    // 2. 목적지 멀티 배열 누적 저장 (동일 날짜 복수 일정 완벽 보존)
     var planSpots = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
       ? window.RomanticVault.read('okbm_plan_spots', {})
       : safeGetJSON('okbm_plan_spots', {});
-    planSpots[dateKey] = {
-      name: dest.name,
-      elevation: dest.elevation || ''
-    };
+    
+    var curSpots = planSpots[dateKey];
+    var spotList = [];
+    if (Array.isArray(curSpots)) {
+      spotList = curSpots.slice();
+    } else if (curSpots && curSpots.name) {
+      spotList = [curSpots];
+    }
+
+    if (!spotList.some(function(s) { return s.name === dest.name; })) {
+      spotList.push({
+        name: dest.name,
+        elevation: dest.elevation || ''
+      });
+    }
+
+    planSpots[dateKey] = spotList;
+
     if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
       window.RomanticVault.write('okbm_plan_spots', planSpots, true);
     } else {
@@ -3082,7 +3259,7 @@ window.saveCurrentPackingRecord = function() {
     }, 100);
 
     if (typeof showToast === 'function') {
-      showToast('✅ [' + dateKey + '] 목적지가 등록되었습니다!', 'success');
+      showToast('목적지가 등록되었습니다.', 'success');
     }
     if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
   };
