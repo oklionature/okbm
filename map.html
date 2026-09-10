@@ -1137,7 +1137,8 @@
                 var entry = (row.trailhead_addr || row.entryPoint || row['들머리주소'] || '').trim();
                 var rawMedia = (row.mediaUrls || row.youtubeUrls || row['유튜브'] || '').trim();
                 var rawBlogs = (row.blogUrls || row['블로그'] || '').trim();
-                var autoDetect = detectRegionAndCity(lat, lng, name, entry);
+               var autoDetect = detectRegionAndCity(lat, lng, name, entry);
+                var finalRegion = normalizeTo10Regions(row.region, autoDetect.region);
 
                // 🌐 [스마트 미디어 자동 분류기]: 파이프(|), 슬래시(/), 쉼표(,) 등 어떤 구분자도 실제 URL만 100% 정밀 추출
                 var combinedMediaText = rawMedia + ' ' + rawBlogs;
@@ -1330,22 +1331,80 @@
         return (match && match[1].length === 11) ? `https://www.youtube.com/watch?v=${match[1]}` : url;
       }
 
+      function normalizeTo10Regions(regionStr, autoRegion) {
+        var r = String(regionStr || '').trim();
+        if (r === '서울' || r === '인천' || r === '서울/인천' || r === '서울인천') return '서울/인천';
+        if (r === '경기' || r === '경기도') return '경기';
+        if (r === '강원' || r === '강원도' || r === '강원특별자치도') return '강원';
+        if (r === '충북' || r === '충청북도') return '충북';
+        if (r === '충남' || r === '충청남도' || r === '대전' || r === '세종') return '충남';
+        if (r === '전북' || r === '전라북도' || r === '전북특별자치도') return '전북';
+        if (r === '전남' || r === '전라남도' || r === '광주') return '전남';
+        if (r === '경북' || r === '경상북도' || r === '대구') return '경북';
+        if (r === '경남' || r === '경상남도' || r === '부산' || r === '울산') return '경남';
+        if (r === '제주' || r === '제주도' || r === '제주특별자치도') return '제주';
+        return autoRegion || '경기';
+      }
+
       function detectRegionAndCity(lat, lng, name = '', entryPoint = '') {
         const t = (name + ' ' + entryPoint).toLowerCase();
-        if (t.includes('통영') || t.includes('수우도') || t.includes('거제') || t.includes('남해') || t.includes('사천')) return { region: '경상', cityName: '경남' };
-        if (t.includes('제주') || t.includes('서귀포') || t.includes('우도') || t.includes('한라산') || t.includes('오름')) return { region: '제주', cityName: '제주' };
-        if (t.includes('서울') || t.includes('인천') || t.includes('옹진') || t.includes('강화') || t.includes('고려산') || t.includes('굴업도') || t.includes('자월도') || t.includes('덕적도')) return { region: '서울/인천', cityName: '서울/인천' };
-        if (t.includes('경기') || t.includes('이천') || t.includes('남양주') || t.includes('양평') || t.includes('가평') || t.includes('포천') || t.includes('용인')) return { region: '경기', cityName: '경기' };
-        if (t.includes('강원') || t.includes('정선') || t.includes('평창') || t.includes('영월') || t.includes('원주') || t.includes('춘천') || t.includes('홍천') || t.includes('강릉') || t.includes('인제')) return { region: '강원', cityName: '강원' };
-        if (t.includes('충북') || t.includes('충남') || t.includes('충청') || t.includes('충주') || t.includes('단양') || t.includes('태안')) return { region: '충청', cityName: '충청' };
-        if (t.includes('경북') || t.includes('경남') || t.includes('경상') || t.includes('울릉도') || t.includes('부산') || t.includes('대구')) return { region: '경상', cityName: '경상' };
-        if (t.includes('전북') || t.includes('전남') || t.includes('전라') || t.includes('신안') || t.includes('여수')) return { region: '전라', cityName: '전라' };
-        if (lat < 34.0) return { region: '제주', cityName: '제주' };
-        if (lat >= 36.95 && lat <= 38.3 && lng >= 126.5 && lng <= 127.8) return { region: '경기', cityName: '경기' };
-        if (lat >= 37.0 && lng > 127.8) return { region: '강원', cityName: '강원' };
-        if (lat >= 35.8 && lat < 37.0 && lng <= 127.9) return { region: '충청', cityName: '충청' };
-        if (lat < 36.0 && lng > 127.8) return { region: '경상', cityName: '경상' };
-        if (lat < 35.8 && lng <= 127.8) return { region: '전라', cityName: '전라' };
+        
+        // 1. 제주권
+        if (t.includes('제주') || t.includes('서귀포') || t.includes('우도') || t.includes('한라산') || t.includes('오름') || lat < 34.2) {
+          return { region: '제주', cityName: '제주' };
+        }
+        
+        // 2. 서울/인천
+        if (t.includes('서울') || t.includes('인천') || t.includes('옹진') || t.includes('강화') || t.includes('굴업도') || t.includes('덕적도') || t.includes('자월도')) {
+          return { region: '서울/인천', cityName: '서울/인천' };
+        }
+        
+        // 3. 강원권
+        if (t.includes('강원') || t.includes('정선') || t.includes('평창') || t.includes('영월') || t.includes('원주') || t.includes('춘천') || t.includes('홍천') || t.includes('강릉') || t.includes('인제') || t.includes('태백') || t.includes('속초') || t.includes('양양') || t.includes('고성') || t.includes('동해') || t.includes('삼척') || t.includes('화천') || t.includes('양구') || t.includes('철원')) {
+          return { region: '강원', cityName: '강원' };
+        }
+        
+        // 4. 경기권
+        if (t.includes('경기') || t.includes('남양주') || t.includes('양평') || t.includes('가평') || t.includes('포천') || t.includes('용인') || t.includes('이천') || t.includes('여주') || t.includes('파주') || t.includes('동두천') || t.includes('연천') || t.includes('안성') || t.includes('광주')) {
+          return { region: '경기', cityName: '경기' };
+        }
+
+        // 5. 충북 vs 충남 (대전/세종)
+        if (t.includes('충북') || t.includes('충주') || t.includes('제천') || t.includes('단양') || t.includes('보은') || t.includes('옥천') || t.includes('영동') || t.includes('진천') || t.includes('괴산') || t.includes('음성')) {
+          return { region: '충북', cityName: '충북' };
+        }
+        if (t.includes('충남') || t.includes('대전') || t.includes('세종') || t.includes('천안') || t.includes('공주') || t.includes('보령') || t.includes('아산') || t.includes('서산') || t.includes('논산') || t.includes('계룡') || t.includes('당진') || t.includes('금산') || t.includes('부여') || t.includes('서천') || t.includes('청양') || t.includes('홍성') || t.includes('예산') || t.includes('태안')) {
+          return { region: '충남', cityName: '충남' };
+        }
+
+        // 6. 전북 vs 전남 (광주)
+        if (t.includes('전북') || t.includes('전주') || t.includes('군산') || t.includes('익산') || t.includes('정읍') || t.includes('남원') || t.includes('김제') || t.includes('완주') || t.includes('진안') || t.includes('무주') || t.includes('장수') || t.includes('임실') || t.includes('순창') || t.includes('고창') || t.includes('부안')) {
+          return { region: '전북', cityName: '전북' };
+        }
+        if (t.includes('전남') || t.includes('광주') || t.includes('목포') || t.includes('여수') || t.includes('순천') || t.includes('나주') || t.includes('광양') || t.includes('담양') || t.includes('곡성') || t.includes('구례') || t.includes('고흥') || t.includes('보성') || t.includes('화순') || t.includes('장흥') || t.includes('강진') || t.includes('해남') || t.includes('영암') || t.includes('무안') || t.includes('함평') || t.includes('영광') || t.includes('장성') || t.includes('완도') || t.includes('진도') || t.includes('신안')) {
+          return { region: '전남', cityName: '전남' };
+        }
+
+        // 7. 경북 (대구) vs 경남 (부산/울산)
+        if (t.includes('경북') || t.includes('대구') || t.includes('포항') || t.includes('경주') || t.includes('김천') || t.includes('안동') || t.includes('구미') || t.includes('영주') || t.includes('영천') || t.includes('상주') || t.includes('문경') || t.includes('경산') || t.includes('의성') || t.includes('청송') || t.includes('영양') || t.includes('영덕') || t.includes('청도') || t.includes('고령') || t.includes('성주') || t.includes('칠곡') || t.includes('예천') || t.includes('봉화') || t.includes('울진') || t.includes('울릉')) {
+          return { region: '경북', cityName: '경북' };
+        }
+        if (t.includes('경남') || t.includes('부산') || t.includes('울산') || t.includes('창원') || t.includes('진주') || t.includes('통영') || t.includes('사천') || t.includes('김해') || t.includes('밀양') || t.includes('거제') || t.includes('양산') || t.includes('의령') || t.includes('함안') || t.includes('창녕') || t.includes('고성') || t.includes('남해') || t.includes('하동') || t.includes('산청') || t.includes('함양') || t.includes('거창') || t.includes('합천')) {
+          return { region: '경남', cityName: '경남' };
+        }
+
+        // 8. 위경도 Fallback
+        if (lat >= 37.0 && lng > 127.9) return { region: '강원', cityName: '강원' };
+        if (lat >= 36.95 && lng <= 127.8) return { region: '경기', cityName: '경기' };
+        if (lat >= 35.8 && lat < 37.0) {
+          return lng > 127.7 ? { region: '충북', cityName: '충북' } : { region: '충남', cityName: '충남' };
+        }
+        if (lat < 35.8 && lng > 127.8) {
+          return lat >= 35.6 ? { region: '경북', cityName: '경북' } : { region: '경남', cityName: '경남' };
+        }
+        if (lat < 35.8 && lng <= 127.8) {
+          return lat >= 35.5 ? { region: '전북', cityName: '전북' } : { region: '전남', cityName: '전남' };
+        }
         return { region: '경기', cityName: '경기' };
       }
 
@@ -1793,13 +1852,14 @@
         if (!container) return;
         container.innerHTML = '';
         if (currentMasterTab === 'REGION') {
-          ['ALL', '서울/인천', '경기', '강원', '충청', '전라', '경상', '제주'].forEach(r => {
+          ['ALL', '서울/인천', '경기', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주'].forEach(r => {
             const btn = document.createElement('button');
             btn.className = `filter-chip ${currentRegionFilter === r ? 'active' : ''}`;
             btn.innerHTML = `${r === 'ALL' ? '전체' : r}`;
             btn.onclick = () => { triggerHaptic(10); currentRegionFilter = r; renderSubChips(); renderSpots(); };
             container.appendChild(btn);
           });
+    
         } else if (currentMasterTab === 'TERRAIN') {
           [{ key: 'ALL', label: '전체' }, { key: '데크', label: `${ICONS.DECK}데크` }, { key: '암릉', label: `${ICONS.ROCK}암릉` }, { key: '노지', label: `${ICONS.SOIL}노지` }, { key: '해변', label: `${ICONS.BEACH}해변` }, { key: '섬', label: `${ICONS.ISLAND}섬` }, { key: '계곡', label: `${ICONS.VALLEY}계곡` }, { key: '동굴', label: `${ICONS.CAVE}동굴` }].forEach(t => {
             const btn = document.createElement('button');
@@ -2934,18 +2994,18 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
             var titleDomId = 'blogRealTitle_' + spotId + '_' + idx;
             var cachedMeta = window.__blogMetaCache[String(u).trim()];
 
-           // 초기 블로그 닉네임 로딩 라벨
-            var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName : '블로그 후기 ';
+           // ✅ 수정 후 안전한 코드
+var naverMatch = String(u).match(/blog\.naver\.com\/([a-zA-Z0-9_-]+)/);
+var rawId = naverMatch ? ('@' + naverMatch[1]) : '블로그';
 
-            if (!cachedMeta) {
-              setTimeout(function() {
-                window.fetchNaverBlogRealMeta(u, titleDomId, null, spotName + ' 후기');
-              }, 10);
-            }
+if (!cachedMeta) {
+  setTimeout(function() {
+    window.fetchNaverBlogRealMeta(u, titleDomId, null, spotName + ' 후기');
+  }, 10);
+}
 
-            var initialTitle = (cachedMeta && cachedMeta.title) ? cachedMeta.title : (spotName + ' 후기');
-            var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName : (rawId || '블로그');
-
+var initialTitle = (cachedMeta && cachedMeta.title) ? cachedMeta.title : (spotName + ' 후기');
+var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName : rawId;
             return `
               <a href="${escapeHtml(u)}" target="_blank" rel="noopener noreferrer" onclick="triggerHaptic(10);" style="display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:46px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:6px 10px; text-decoration:none; box-sizing:border-box; width:100%; transition:background 0.15s ease;">
                 <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
@@ -2993,9 +3053,11 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         return html;
       }
 
-    // 🏕️ [박지 전용 순수 피드 트랙 렌더러 - 제9헌법 Server-Authoritative SSOT 정본 우선 매칭]
+   // 🏕️ [박지 전용 순수 피드 트랙 렌더러 - 세부 포인트(spot_sub) 및 고유 ID 1:1 정밀 분리 매칭]
       function renderSpotFieldFeedsTrackHtml(spot) {
+        var currentSpotId = String(spot.id || '').trim();
         var cleanSpotName = (spot.spot_main || spot.name || '').trim().toLowerCase();
+        var cleanSubName = String(spot.spot_sub || '').trim().toLowerCase();
         var starsMap = safeGetJSON('okbm_feed_stars_counts', {}) || {};
         var communityFeeds = [];
         if (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0) {
@@ -3007,20 +3069,42 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         }
         var myHistory = safeGetJSON('okbm_packing_history', []) || [];
 
-        // ⚡ [핵심 교정]: 옛날 로컬 기록보다 R2/시트 최신 정본 피드를 1순위(SSOT)로 탐색
         var feedMap = new Map();
         communityFeeds.concat(myHistory).forEach(function(f) {
-          if (!f || !f.spot) return;
-          var fSpot = String(f.spot).trim().toLowerCase();
-          if (fSpot.includes(cleanSpotName) || cleanSpotName.includes(fSpot)) {
-            var fId = String(f.id || '').replace(/^["']|["']$/g, '').trim();
-            if (fId) {
-              if (!feedMap.has(fId)) {
-                feedMap.set(fId, f);
+          if (!f) return;
+          var fId = String(f.id || '').replace(/^["']|["']$/g, '').trim();
+          if (!fId) return;
+
+          var fSpotId = String(f.spotId || f.campsiteId || '').trim();
+          var fSpotText = String(f.spot || '').trim().toLowerCase();
+          var fMemoText = String(f.memo || f.oneLineMemo || '').toLowerCase();
+          var isMatch = false;
+
+          // 1순위: 박지 고유 ID 1:1 직통 매칭 (완벽 분리)
+          if (fSpotId && currentSpotId) {
+            if (fSpotId === currentSpotId) isMatch = true;
+          } else if (fSpotText) {
+            // 2순위: 세부 포인트(spot_sub) 정밀 분리 매칭
+            var hasBaseName = fSpotText.includes(cleanSpotName) || cleanSpotName.includes(fSpotText);
+            if (hasBaseName) {
+              if (cleanSubName) {
+                // 현재 박지에 세부 포인트(예: 정상데크, 1박지)가 있는 경우 ➔ 피드에 해당 세부명이 있어야 매칭
+                if (fSpotText.includes(cleanSubName) || fMemoText.includes(cleanSubName)) {
+                  isMatch = true;
+                }
               } else {
-                var current = feedMap.get(fId);
-                if (!current.photo_url && f.photo_url) feedMap.set(fId, f);
+                // 현재 박지가 주/대표 박지인 경우 ➔ 다른 세부명이 없는 순수 피드 매칭
+                isMatch = true;
               }
+            }
+          }
+
+          if (isMatch) {
+            if (!feedMap.has(fId)) {
+              feedMap.set(fId, f);
+            } else {
+              var current = feedMap.get(fId);
+              if (!current.photo_url && f.photo_url) feedMap.set(fId, f);
             }
           }
         });
@@ -3577,13 +3661,33 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           });
         }
 
-        const targetOrder = ["서울/인천", "경기", "강원", "충청", "전라", "경상", "제주"];
+       const targetOrder = ["서울/인천", "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
         const grouped = Object.fromEntries(targetOrder.map(r => [r, []]));
 
+        // 🎯 [동일 좌표 자동 방사형 분산 엔진]: 포개진 핀을 15m 간격으로 자동 전개
+        const coordCountMap = new Map();
+
         displaySpots.forEach(spot => {
-          const lat = parseFloat(spot.lat), lng = parseFloat(spot.lng);
+          let lat = parseFloat(spot.lat), lng = parseFloat(spot.lng);
           if (isNaN(lat) || isNaN(lng)) return;
-          const sId = String(spot.id).trim(), latlng = new kakao.maps.LatLng(lat, lng);
+
+          const coordKey = `${lat.toFixed(5)},${lng.toFixed(5)}`;
+          const overlapIndex = coordCountMap.get(coordKey) || 0;
+          coordCountMap.set(coordKey, overlapIndex + 1);
+
+          // 동일 좌표가 2개 이상이면 2번째 핀부터 나선형(15m)으로 살짝 펼쳐서 렌더링
+          if (overlapIndex > 0) {
+            const angle = overlapIndex * 1.57; // 90도씩 회전 분산
+            const dist = 0.00018 * Math.ceil(overlapIndex / 4); // 약 15~20m 미세 분리
+            lat = lat + Math.sin(angle) * dist;
+            lng = lng + Math.cos(angle) * (dist * 1.2);
+          }
+
+          const sId = String(spot.id).trim();
+          const latlng = new kakao.maps.LatLng(lat, lng);
+
+          // 10대 권역 정규화 보장
+          spot.region = normalizeTo10Regions(spot.region, detectRegionAndCity(lat, lng, spot.spot_main || spot.name, spot.trailhead_addr || spot.entryPoint).region);
 
           if (!spotNativeMarkerMap.has(sId) && map) {
             const marker = new kakao.maps.Marker({
