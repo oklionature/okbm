@@ -364,11 +364,15 @@ window.RomanticVault = window.RomanticVault || {
           this.write('okbm_memos', cloudData.memos, false);
           if (window.userMemos) window.userMemos = cloudData.memos;
         }
-        if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
+      if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
           var cleanHist = cloudData.packHistory.filter(function(h) { return h && !h.isDeleted; });
           this.write('okbm_packing_history', cleanHist, false);
           window.interactiveHistory = cleanHist;
           window.packingHistoryList = cleanHist;
+        }
+        if (cloudData.routerSnaps && Array.isArray(cloudData.routerSnaps)) {
+          var cleanSnaps = cloudData.routerSnaps.filter(function(s) { return s && !s.isDeleted; });
+          this.write('okbm_router_snaps', cleanSnaps, false);
         }
         if (cloudData.myGears && typeof cloudData.myGears === 'object') {
           var mg = cloudData.myGears;
@@ -504,10 +508,11 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
     createdAt: (profile && profile.createdAt) ? profile.createdAt : getFormattedNow(),
     lastNicknameChangedAt: profile ? (Number(profile.lastNicknameChangedAt) || 0) : 0,
     bookmarks: safeGetJSON('okbm_bookmarks', []),
-    visited: safeGetJSON('okbm_visited', []),
+  visited: safeGetJSON('okbm_visited', []),
     memos: safeGetJSON('okbm_memos', {}),
     following: safeGetJSON('okbm_following_users', []),
     packHistory: shouldSyncPackHistory ? lightweightPackHistory : undefined,
+    routerSnaps: safeGetJSON('okbm_router_snaps', []),
     myGears: myGearsPayload
   };
 
@@ -2443,6 +2448,7 @@ function logoutUser() {
   localStorage.removeItem('okbm_plan_memos');
   localStorage.removeItem('okbm_plan_spots');
   localStorage.removeItem('okbm_packing_history');
+  localStorage.removeItem('okbm_router_snaps');
   localStorage.removeItem('okbm_selected_gears_multi');
   localStorage.removeItem('okbm_favorite_gears');
   localStorage.removeItem('okbm_custom_gears');
@@ -2598,6 +2604,13 @@ loadUserDataFromCloud(kakaoId).then(function(cloudData) {
                   window.saveToIndexedDB('okbm_packing_history', cleanHist);
                 }
               }
+              if (cloudData.routerSnaps && Array.isArray(cloudData.routerSnaps)) {
+                var cleanSnaps = cloudData.routerSnaps.filter(function(s) { return s && !s.isDeleted; });
+                localStorage.setItem('okbm_router_snaps', JSON.stringify(cleanSnaps));
+                if (typeof window.saveToIndexedDB === 'function') {
+                  window.saveToIndexedDB('okbm_router_snaps', cleanSnaps);
+                }
+              }
             }
             setTimeout(function() { window.location.reload(); }, 250);
           }).catch(function() {
@@ -2690,8 +2703,9 @@ window.shareFeedToCommunity = async function(feedRecord) {
     action: 'SHARE_PUBLIC_FEED',
     userId: userId,
     nickname: nickname,
-    feed: {
+      feed: {
       id: feedRecord.id,
+      feedType: feedRecord.feedType || 'route',
       userId: userId,
       author: nickname,
       instagram: userInsta ? ('@' + userInsta) : '',

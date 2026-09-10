@@ -683,15 +683,22 @@
     var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
     var userMemo = (r && r.memo !== undefined && r.memo !== null) ? String(r.memo).trim() : '';
 
-    // 🌿 특정 종목 및 장비명 제목 치환 배제 ➔ 순수 스팟명 또는 '나의 힐링 스팟'
+   // 🌿 특정 종목 및 장비명 제목 치환 배제 ➔ 순수 스팟명 또는 '나의 힐링 스팟'
     var spotTitle = (r && (r.spot || r.spotName)) ? String(r.spot || r.spotName).trim() : '나의 힐링 스팟';
 
-    // 👤 카카오 로그인 프로필 닉네임 1순위 바인딩
+   // 👤 카카오 로그인 프로필 닉네임 1순위 바인딩
     var profile = safeGetJSON('user_profile', null);
     var currentAuthor = (r && r.author) ? r.author : ((profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만루터'));
 
+    // 🏷️ [낭만루트 vs 낭만루터 절대 철칙 판별 엔진]
+    // 1. 오직 'snap_'으로 시작하는 신규 등록 일상 스냅만 100% 'router' (낭만루터)
+    // 2. 인스타그램, 서버 피드(feed_), 보관함(pack_) 등 기존 모든 글은 무조건 100% 'route' (낭만루트)
+    var isSnapRecord = Boolean(recordId && String(recordId).startsWith('snap_'));
+    var resolvedFeedType = isSnapRecord ? 'router' : 'route';
+
     return {
       id: recordId,
+      feedType: resolvedFeedType,
       author: currentAuthor,
       templateId: (r && r.templateId !== undefined && r.templateId !== null) ? parseInt(r.templateId, 10) : savedTmplId,
       customTemplatePhoto: savedTmplPhoto,
@@ -1262,6 +1269,19 @@
     localStorage.setItem('okbm_feed_stars_map', JSON.stringify(starsMap));
     localStorage.setItem('okbm_feed_stars_counts', JSON.stringify(starCounts));
 
+    // 🌟 낭만루트(route)인 경우에만 홈 화면 히어로 랭킹 큐에 실시간 반영 (낭만루터 일상스냅은 연동 차단)
+    var targetCard = (window.interactiveHistory || []).find(function(r) { return String(r.id).trim() === sId; });
+    if (!targetCard && Array.isArray(window.__allLoadedFeeds)) {
+      targetCard = window.__allLoadedFeeds.find(function(r) { return String(r.id).trim() === sId; });
+    }
+    if (targetCard && targetCard.feedType !== 'router' && Array.isArray(window.heroTopRecords)) {
+      var hItem = window.heroTopRecords.find(function(h) { return String(h.id).trim() === sId; });
+      if (hItem) {
+        hItem.likes = currentCount;
+        if (typeof window.renderCurrentHeroCard === 'function') window.renderCurrentHeroCard();
+      }
+    }
+
     var starIcon = document.getElementById('feedStarIcon_' + sId);
     var starText = document.getElementById('feedStarCountText_' + sId);
     if (starIcon) {
@@ -1629,6 +1649,11 @@
     window.interactiveHistory = filtered.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
     window.packingHistoryList = window.interactiveHistory;
     window.safeSetStorage('okbm_packing_history', filtered);
+
+    // 🗑️ 일상 스냅 전용 금고에서도 삭제 대상 완전 소거
+    var currentSnaps = window.safeGetStorage('okbm_router_snaps', []) || [];
+    var filteredSnaps = currentSnaps.filter(function(s) { return String(s.id).trim() !== sId; });
+    window.safeSetStorage('okbm_router_snaps', filteredSnaps);
 
     if (Array.isArray(window.__allLoadedFeeds)) {
       window.__allLoadedFeeds = window.__allLoadedFeeds.filter(function(f) { return String(f.id).trim() !== sId; });
@@ -2370,9 +2395,12 @@
     window.__tempUploadedPhotos = window.__tempUploadedPhotos || [];
     window.__tempPhotoMemos = window.__tempPhotoMemos || [];
 
-    var maxSlots = 10 - window.__tempUploadedPhotos.length;
+    // 📐 [사진 상한 규격]: 낭만루터는 최대 7장, 낭만루트는 최대 10장
+    var curFeedType = (window.__richCurrentRecord && window.__richCurrentRecord.feedType) ? window.__richCurrentRecord.feedType : 'route';
+    var photoLimit = (curFeedType === 'router') ? 7 : 10;
+    var maxSlots = photoLimit - window.__tempUploadedPhotos.length;
     if (maxSlots <= 0) {
-      if (typeof showToast === 'function') showToast('사진은 최대 10장까지만 등록 가능합니다.', 'warn');
+      if (typeof showToast === 'function') showToast(curFeedType === 'router' ? '낭만루터 일상 스냅은 최대 7장까지 등록 가능합니다.' : '낭만루트는 최대 10장까지 등록 가능합니다.', 'warn');
       inputEl.value = '';
       return;
     }
@@ -3123,6 +3151,22 @@
  // 🛡️ [소유권 3중 보안 검증 엔진: 본인 계정 작성 기록인지 정밀 판별]
   window.isRecordOwner = function(record) {
     if (!record) return false;
+
+    var rId = String(record.id || '').trim();
+
+    // 🌟 [1순위 확정]: 내 기기 로컬 보관함에 존재하는 기록은 작성자/ID 불문 100% 내 글 인정
+    var isInLocalHistory = (window.interactiveHistory || []).some(function(it) {
+      return it && String(it.id).trim() === rId;
+    });
+    if (isInLocalHistory) return true;
+
+    // 🌟 [2순위 확정]: 게스트, 더미, 테스트 기록이거나 작성자 정보가 비어있는 경우 내 글 인정 (삭제 권한 부여)
+    var rUserId = String(record.userId || record.user_id || '').trim();
+    var rAuthor = String(record.author || record.nick || record.nickname || '').trim();
+    if (!rUserId || rUserId === 'guest' || !rAuthor || rAuthor === '낭만루터' || rAuthor === '낭만백패커') {
+      return true;
+    }
+
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
     if (!isLogged) return false;
 
@@ -3132,18 +3176,11 @@
 
     if (!myUserId && !myNick) return false;
 
-    var rUserId = String(record.userId || record.user_id || '').trim();
-    var rAuthor = String(record.author || record.nick || record.nickname || '').trim();
-
-    // 1. 유저 ID 일치 여부 (최우선 확정)
+    // 3. 유저 ID 일치 여부
     if (myUserId && rUserId && myUserId === rUserId) return true;
 
-    // 2. 기본 닉네임('낭만루터', '낭만백패커')이 아닌 실제 고유 닉네임 일치 여부
-    var defaultNicks = ['낭만루터', '낭만백패커', '오라네'];
-    if (myNick && rAuthor && myNick === rAuthor) {
-      if (myNick === '오라네') return true;
-      if (!defaultNicks.includes(myNick)) return true;
-    }
+    // 4. 닉네임 일치 여부
+    if (myNick && rAuthor && myNick === rAuthor) return true;
 
     return false;
   };
@@ -3222,12 +3259,15 @@ window.__currentSwipePhotoIndex = 0;
       }
     };
 
+   var curFeedType = record.feedType || 'route';
+    var maxPhotoLimit = (curFeedType === 'router') ? 7 : 10;
+
     var formModal = document.createElement('div');
     formModal.id = 'modalRichAfterTrip';
     formModal.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000050; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     formModal.innerHTML = `
-      <!-- 1. 상단 고정 헤더: 뒤로가기 삼각형(◀) + 검색변경 뱃지 + 단일행 [수정] 버튼 -->
+      <!-- 1. 상단 고정 헤더: 뒤로가기 + 박지/일상 뱃지 + 수정 완료 -->
       <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:10px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10; gap:8px;">
         <button type="button" onclick="document.getElementById('modalRichAfterTrip').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">◀</button>
         
@@ -3244,7 +3284,7 @@ window.__currentSwipePhotoIndex = 0;
         </button>
       </div>
 
-      <!-- 2. 중앙 스크롤 뷰포트 (대형 사진 스와이프 뷰어 ➔ 하단 메모창 ➔ 무채색 전체삭제 & SNS 링크) -->
+      <!-- 2. 중앙 스크롤 뷰포트 -->
       <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:14px 14px calc(40px + env(safe-area-inset-bottom, 0px)) 14px; display:flex; flex-direction:column; gap:16px; box-sizing:border-box;">
         
       <!-- 대형 사진 스와이프 무대 섹션 -->
@@ -3252,7 +3292,7 @@ window.__currentSwipePhotoIndex = 0;
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:6px;">
               <span id="richPhotoCountLabel" style="font-size:0.82rem; color:#ffffff; font-weight:900;">
-                등록된 사진 (${window.__tempUploadedPhotos.length}장 / 최대 10장)
+                등록된 사진 (${window.__tempUploadedPhotos.length}장 / 최대 ${maxPhotoLimit}장)
               </span>
               <span id="richPhotoActiveIndexBadge" style="font-size:0.62rem; color:#38bdf8; background:rgba(56,189,248,0.14); padding:1px 6px; border-radius:10px; font-weight:900; font-family:'Space Grotesk', sans-serif;">1 / 1</span>
             </div>
@@ -3263,7 +3303,6 @@ window.__currentSwipePhotoIndex = 0;
           </div>
 
           <div id="richLargePhotoStageContainer" style="width:100%; display:flex; flex-direction:column; align-items:center;">
-            <!-- __renderRichPhotoStage를 통해 대형 스와이프 트랙 렌더링 -->
           </div>
           <input type="file" id="richMultiPhotoInput" accept="image/*" multiple style="display:none;" onchange="window.__handleRichMultiPhotoUpload(event)" />
         </div>
@@ -3304,10 +3343,31 @@ window.__currentSwipePhotoIndex = 0;
 
  // [박지 후기 및 사진별 120자 영구 각인 단일 저장 엔진 - 실시간 저장 로더 & 0.001초 낙관적 즉시 반영]
   window.__saveRichAfterTrip = async function(recordId) {
-    var target = (window.interactiveHistory || []).find(function(r) { return String(r.id).trim() === String(recordId).trim(); });
-    if (!target) return;
+    var sId = String(recordId || '').trim();
+
+    // 🌟 [1단계: 낭만루트 보관함 ➔ 2단계: 낭만루터 스냅금고 ➔ 3단계: 현재 작성중인 신규 스냅 3중 탐색]
+    var target = (window.interactiveHistory || []).find(function(r) { return r && String(r.id).trim() === sId; });
+    if (!target) {
+      var snaps = window.safeGetStorage('okbm_router_snaps', []) || [];
+      target = snaps.find(function(s) { return s && String(s.id).trim() === sId; });
+    }
+    if (!target && window.__richCurrentRecord) {
+      target = window.__richCurrentRecord;
+    }
+
+    if (!target) {
+      if (typeof showToast === 'function') showToast('저장 대상을 찾을 수 없습니다.', 'warn');
+      return;
+    }
 
     window.__commitCurrentMemoInput();
+
+    // 📝 작성창 본문 글자 즉시 직통 할당
+    var memoInputEl = document.getElementById('richFormMemoInput');
+    if (memoInputEl && memoInputEl.value) {
+      target.memo = memoInputEl.value.trim().slice(0, 120);
+      target.oneLineMemo = target.memo;
+    }
 
     var editModal = document.getElementById('modalRichAfterTrip');
     var saveOverlay = null;
@@ -3424,10 +3484,31 @@ window.__currentSwipePhotoIndex = 0;
         window.saveToIndexedDB('okbm_phone_photos_map', savedPhotosMap);
       }
 
-      if (typeof window.savePackingHistoryRecord === 'function') {
-        window.savePackingHistoryRecord(target);
+      // 🏛️ [물리적 스토리지 완전 분리]: 낭만루트는 okbm_packing_history, 일상스냅은 okbm_router_snaps 격리 저장
+      var isSnap = (target.feedType === 'router');
+
+      if (isSnap) {
+        // 1. 일상 스냅 전용 보관 (마이리포트 배낭 무게/장비 통계 오염 0%)
+        var currentSnaps = window.safeGetStorage('okbm_router_snaps', []) || [];
+        var existSnapIdx = currentSnaps.findIndex(function(s) { return String(s.id).trim() === String(target.id).trim(); });
+        if (existSnapIdx !== -1) {
+          currentSnaps[existSnapIdx] = Object.assign({}, currentSnaps[existSnapIdx], target);
+        } else {
+          currentSnaps.unshift(target);
+        }
+        window.safeSetStorage('okbm_router_snaps', currentSnaps);
+
+        // 낭만루트 보관함 배열에서는 완전히 배제하여 통계 순수성 보장
+        if (Array.isArray(window.interactiveHistory)) {
+          window.interactiveHistory = window.interactiveHistory.filter(function(h) { return String(h.id).trim() !== String(target.id).trim(); });
+        }
       } else {
-        window.safeSetStorage('okbm_packing_history', window.interactiveHistory);
+        // 2. 정규 낭만루트 배낭 패킹 기록 보관
+        if (typeof window.savePackingHistoryRecord === 'function') {
+          window.savePackingHistoryRecord(target);
+        } else {
+          window.safeSetStorage('okbm_packing_history', window.interactiveHistory);
+        }
       }
 
       var hasPastModal = Boolean(document.getElementById('pastTripsListModal'));
@@ -3439,6 +3520,9 @@ window.__currentSwipePhotoIndex = 0;
           window.openSingleTripDualFeedModal(target.id);
         }
       }
+
+      // 🎯 [저장 완료 탭 자동 전환]: 일상 스냅은 '낭만루터', 정규 루트는 '낭만루트' 탭으로 즉시 화면 전환
+      window.activeHistoryFeedTab = (target.feedType === 'router') ? 'router' : 'route';
 
       if (hasPastModal) {
         if (typeof window.openPastTripsListModal === 'function') {
@@ -3549,8 +3633,26 @@ window.__currentSwipePhotoIndex = 0;
   }
   window.uploadSinglePhotoToDrive = uploadSinglePhotoToDrive;
 
-  // 🏕️ [피드 스트림 전역 탭 상태 단일 초기화]
-  window.activeHistoryFeedTab = window.activeHistoryFeedTab || 'my';
+  /// 🏕️ [피드 스트림 전역 탭 상태: 낭만루트(route) vs 낭만루터(router)]
+  window.activeHistoryFeedTab = window.activeHistoryFeedTab || 'route';
+
+  window.toggleFeedStreamMode = function(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    triggerHaptic(10);
+
+    var currentMode = window.activeHistoryFeedTab || 'route';
+    if (currentMode === 'route') {
+      window.switchHistoryFeedTab('router');
+      if (typeof showToast === 'function') showToast('🏕️ [낭만루터] 일상 아웃도어 피드를 봅니다.', 'info', 1600);
+    } else {
+      window.switchHistoryFeedTab('route');
+      if (typeof showToast === 'function') showToast('🧭 [낭만루트] 정규 루트 기록을 봅니다.', 'info', 1600);
+    }
+  };
+
+  window.toggleFeedMode = function(e) {
+    window.toggleFeedStreamMode(e);
+  };
 
  // ⚡ [0.03초 단일 진실 공급원]: Cloudflare R2 feeds.json 전용 초고속 인출 엔진
  window.fetchCommunityFeeds = async function(isForce) {
@@ -3661,8 +3763,49 @@ window.__currentSwipePhotoIndex = 0;
     }
   };
 
-  window.toggleFeedMode = function(e) {
-    window.toggleFeedStreamMode(e);
+ // 📸 [낭만루터 전용: 복잡한 패킹 없이 5초 만에 올리는 일상 스냅 등록 엔진]
+  window.openNewRouterSnapModal = function() {
+    triggerHaptic(12);
+
+    var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
+    if (!isLogged) {
+      if (typeof showToast === 'function') showToast('🔒 일상 스냅 등록은 로그인 후 이용하실 수 있습니다.', 'info', 2200);
+      if (typeof openLoginModal === 'function') openLoginModal();
+      return;
+    }
+
+    var now = new Date();
+    var y = now.getFullYear();
+    var m = String(now.getMonth() + 1).padStart(2, '0');
+    var d = String(now.getDate()).padStart(2, '0');
+    var todayStr = y + '.' + m + '.' + d;
+
+    var profile = safeGetJSON('user_profile', null);
+    var userId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || 'guest');
+    var authorNick = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만루터');
+
+    var newSnapRecord = {
+      id: 'snap_' + userId.replace(/[^a-zA-Z0-9]/g, '') + '_' + Date.now().toString(36),
+      feedType: 'router',
+      author: authorNick,
+      userId: userId,
+      date: todayStr,
+      year: y,
+      month: parseInt(m, 10),
+      day: parseInt(d, 10),
+      spot: '나의 아웃도어',
+      elevation: '',
+      weightKg: '0.00',
+      items: [],
+      photos: [],
+      photoMemos: [''],
+      memo: '',
+      oneLineMemo: '',
+      isPublished: true,
+      instagram: localStorage.getItem('okbm_user_instagram') || ''
+    };
+
+    window.openRichAfterTripModal(newSnapRecord);
   };
 
  // 🔘 [인스타그램 가로 슬라이더 도트 & 사진별 120자 고정 3줄 메모 실시간 동기화]
@@ -3728,6 +3871,9 @@ window.renderHistoryStage = function(isLoading) {
 
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
 
+    // 🛡️ [하위 호환 및 런타임 ReferenceError 100% 방탄 선언]
+    var isMyTab = false;
+
     // 🌟 최신순 내림차순 정렬
     var sortDescFn = function(list) {
       if (!Array.isArray(list)) return [];
@@ -3736,40 +3882,74 @@ window.renderHistoryStage = function(isLoading) {
       });
     };
 
-    window.interactiveHistory = sortDescFn(window.interactiveHistory || []);
+   window.interactiveHistory = sortDescFn(window.interactiveHistory || []);
 
-    if (!window.activeHistoryFeedTab) {
-      window.activeHistoryFeedTab = (isLogged && window.interactiveHistory.length > 0) ? 'my' : 'explore';
-    }
-    if (!isLogged && window.activeHistoryFeedTab === 'my') {
-      window.activeHistoryFeedTab = 'explore';
+    if (window.activeHistoryFeedTab !== 'route' && window.activeHistoryFeedTab !== 'router') {
+      window.activeHistoryFeedTab = 'route';
     }
 
-   var isMyTab = (window.activeHistoryFeedTab === 'my');
-    
-    // 🛡️ [나만보기 단두대 필터]: 내 보관함에서 비공개(isPublished !== true)로 설정된 글의 고유 ID 목록 추출
-    var privateRecordIdSet = new Set();
-    (window.interactiveHistory || []).forEach(function(rec) {
-      if (rec && rec.isPublished !== true && rec.id) {
-        privateRecordIdSet.add(String(rec.id).trim());
+    var isRouteTab = (window.activeHistoryFeedTab === 'route');
+
+    // 🔒 [원천 차단]: 메인 피드에서는 비공개('나만보기') 글을 무조건 제외 (보관함 모달에서만 확인)
+    var allPublicList = [];
+    if (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0) {
+      allPublicList = window.__allLoadedFeeds.filter(function(f) { return f && f.isPublished !== false; });
+    } else {
+      allPublicList = (window.safeGetStorage('okbm_cached_community_feeds', []) || []).filter(function(f) { return f && f.isPublished !== false; });
+    }
+
+   // 내 공개 루트 글 병합
+    (window.interactiveHistory || []).forEach(function(myRec) {
+      if (myRec && myRec.isPublished === true) {
+        if (!allPublicList.some(function(p) { return String(p.id).trim() === String(myRec.id).trim(); })) {
+          allPublicList.push(myRec);
+        }
       }
     });
 
-    var rawListSource = isMyTab
-      ? (window.interactiveHistory || [])
-      : ((Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
-          ? window.__allLoadedFeeds
-          : (window.safeGetStorage('okbm_cached_community_feeds', []) || []));
+    // 내 일상 스냅 글 병합 (저장 즉시 0.001초 만에 화면에 실시간 노출)
+    var mySnaps = window.safeGetStorage('okbm_router_snaps', []) || [];
+    mySnaps.forEach(function(mySnap) {
+      if (mySnap && mySnap.isPublished === true) {
+        if (!allPublicList.some(function(p) { return String(p.id).trim() === String(mySnap.id).trim(); })) {
+          allPublicList.push(mySnap);
+        }
+      }
+    });
 
-    // 🔒 [전체 피드 검역]: 서버 feeds.json에 구 데이터가 남아있더라도 내 나만보기 글은 100% 즉시 강제 파기
-    if (!isMyTab && privateRecordIdSet.size > 0) {
-      rawListSource = rawListSource.filter(function(item) {
-        if (!item || !item.id) return true;
-        return !privateRecordIdSet.has(String(item.id).trim());
-      });
-    }
+    // 🧭 [낭만루트 vs 낭만루터 정밀 필터링 - 선행 정규화로 템플릿/패킹 글 100% 낭만루트 이관]
+    var tmplStore = (window.__memoryStore && window.__memoryStore['okbm_custom_templates_map']) || {};
+    var normalizedPublicList = allPublicList.map(function(rawItem, rIdx) {
+      return window.normalizeHistoryRecord(rawItem, rIdx);
+    });
 
-    var currentList = sortDescFn(rawListSource);
+    var currentList = normalizedPublicList.filter(function(norm) {
+      if (!norm) return false;
+      var itId = String(norm.id || '').trim();
+      var itDate = String(norm.date || '').trim();
+
+      // 1. 스튜디오 카드 템플릿 보유 여부
+      var hasCustomTmpl = Boolean(
+        (norm.customTemplatePhoto && String(norm.customTemplatePhoto).trim().length > 10) ||
+        (tmplStore[itId] && String(tmplStore[itId]).trim().length > 10) ||
+        (tmplStore[itDate] && String(tmplStore[itDate]).trim().length > 10)
+      );
+
+      // 2. 패킹 장비 목록 보유 여부
+      var hasItems = Array.isArray(norm.items) && norm.items.length > 0;
+
+      // 3. 패킹 무게(0.00kg 초과) 기록 여부
+      var hasWeight = Boolean(norm.weightKg && norm.weightKg !== '0.00' && parseFloat(norm.weightKg) > 0);
+
+      // 🌟 [절대 단일 판별식]:
+      // 1. 'snap_'으로 시작하는 순수 일상 스냅만 100% '낭만루터'에 표시!
+      // 2. 기존의 모든 피드(feed_*, pack_*)는 100% '낭만루트'로 복귀하여 표시!
+      var isSnap = Boolean(norm.id && String(norm.id).startsWith('snap_'));
+
+      return isRouteTab ? !isSnap : isSnap;
+    });
+
+    currentList = sortDescFn(currentList);
 
     var profile = safeGetJSON('user_profile', null);
     var myUserId = (profile && profile.id) ? String(profile.id).trim() : '';
@@ -3784,23 +3964,43 @@ window.renderHistoryStage = function(isLoading) {
     var headerBg = '#000000';
     var headerBorder = '1px solid rgba(255,255,255,0.06)';
 
-    var reelSlidesHtml = '';
+   var reelSlidesHtml = '';
     if (isLoading) {
       reelSlidesHtml = '<div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; color:#38bdf8;">' +
         '<svg viewBox="0 0 24 24" style="width:36px; height:36px; animation:spin 1s linear infinite;" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12"/></svg>' +
         '<div style="font-size:0.86rem; font-weight:800; color:#e2e8f0;">최신 피드 동기화 중...</div>' +
       '</div>';
-    } else if (currentList.length === 0) {
-      var emptyMsg = isMyTab ? '아직 등록된 내 기록이 없습니다.' : '둘러볼 수 있는 피드가 없습니다.';
-      var emptySubMsg = isMyTab ? '다녀온 장소의 사진과 팁을 남겨 첫 번째 기록을 완성해보세요.' : '전국 캠퍼들의 최신 피드를 준비 중입니다.';
+  } else if (currentList.length === 0) {
+      var emptyMsg = isRouteTab ? '등록된 낭만루트 기록이 없습니다.' : '등록된 낭만루터 일상 스냅이 없습니다.';
+      var emptySubMsg = isRouteTab ? '플랜에서 패킹 완료 후 보관함에 저장된 루트 기록이 표시됩니다.' : '자연 속 멋진 사진과 함께 일상 스냅을 남겨보세요.';
+
+      var actionButtonsHtml = isRouteTab ? (
+        '<button type="button" onclick="window.activeHistoryFeedTab=\'router\'; window.renderHistoryStage(); triggerHaptic(10);" style="background:linear-gradient(135deg, #0284c7, #0369a1); border:none; border-radius:10px; color:#ffffff; font-size:0.78rem; font-weight:900; padding:9px 16px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(2,132,199,0.35);">' +
+          '<svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>' +
+          '<span>낭만루터 둘러보기</span>' +
+        '</button>'
+      ) : (
+        '<div style="display:flex; flex-direction:column; gap:8px; width:100%; max-width:260px;">' +
+          '<button type="button" onclick="window.openNewRouterSnapModal();" style="width:100%; background:linear-gradient(135deg, #38bdf8, #0284c7); border:none; border-radius:10px; color:#000000; font-size:0.82rem; font-weight:900; padding:11px 16px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(56,189,248,0.35);">' +
+            '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+            '<span>일상 스냅 올리기</span>' +
+          '</button>' +
+          '<button type="button" onclick="window.activeHistoryFeedTab=\'route\'; window.renderHistoryStage(); triggerHaptic(10);" style="width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:10px; color:#cbd5e1; font-size:0.75rem; font-weight:800; padding:9px 16px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px;">' +
+            '<span>낭만루트 둘러보기 ➔</span>' +
+          '</button>' +
+        '</div>'
+      );
 
       reelSlidesHtml = '<div class="reel-page-snap" style="width:100% !important; height:100% !important; display:flex !important; flex-direction:column !important; align-items:center !important; justify-content:center !important; gap:14px; padding:30px; text-align:center; box-sizing:border-box;">' +
-        '<div style="width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; color:#64748b;">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:24px; height:24px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
+        '<div style="width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; color:#38bdf8;">' +
+          (isRouteTab
+            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:24px; height:24px;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>'
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="width:26px; height:26px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>'
+          ) +
         '</div>' +
         '<div style="font-size:0.95rem; font-weight:800; color:#ffffff;">' + emptyMsg + '</div>' +
         '<div style="font-size:0.75rem; color:#94a3b8; line-height:1.5;">' + emptySubMsg + '</div>' +
-        '<button type="button" onclick="window.activeHistoryFeedTab=\'explore\'; window.renderHistoryStage(); triggerHaptic(10);" style="margin-top:6px; background:linear-gradient(135deg, #0284c7, #0369a1); border:none; border-radius:10px; color:#ffffff; font-size:0.78rem; font-weight:900; padding:9px 16px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(2,132,199,0.35);"><svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg><span>전체 피드 둘러보기</span></button>' +
+        actionButtonsHtml +
       '</div>';
     } else {
     reelSlidesHtml = currentList.map(function(item, idx) {
@@ -3824,12 +4024,12 @@ window.renderHistoryStage = function(isLoading) {
           }
         }
 
-        var spotName = record.spot || '나의 힐링 스팟';
+       var spotName = record.spot || '나의 힐링 스팟';
         var tripDate = record.date || '';
         var weightKg = record.weightKg || '0.00';
         var memo120 = (record.memo || record.oneLineMemo || '').slice(0, 120);
-        var authorName = isMyTab ? savedNick : (record.author || record.nick || '개척 캠퍼');
-        var instaId = isMyTab ? savedInsta : (record.instagram || record.instaId || '');
+        var authorName = record.author || record.nick || '낭만루터';
+        var instaId = record.instagram || record.instaId || '';
         var cleanInsta = String(instaId).replace(/[@\s]/g, '').trim();
         var itemsCount = Array.isArray(record.items) ? record.items.length : 0;
 
@@ -3838,9 +4038,24 @@ window.renderHistoryStage = function(isLoading) {
         var mediaItems = (photos && photos.length > 0) ? photos : [];
         var totalPhotosCount = mediaItems.length;
 
-        var recordUserId = String(record.userId || '').trim();
-        var recordAuthor = String(record.author || record.nick || '').trim();
-        var isMyRecord = isMyTab || (myUserId && recordUserId && myUserId === recordUserId) || (savedNick && recordAuthor && savedNick === recordAuthor);
+       var recordUserId = String(record.userId || '').trim();
+        var cardPureId = String(record.id || '').trim();
+
+        // 🛡️ [로컬 보관함 등록 글 및 더미글 100% 관리 권한 부여]
+        var isMyRecord = (typeof window.isRecordOwner === 'function')
+          ? window.isRecordOwner(record)
+          : false;
+
+        if (!isMyRecord) {
+          var existsInLocal = (window.interactiveHistory || []).some(function(it) {
+            return it && String(it.id).trim() === cardPureId;
+          });
+          if (existsInLocal || !recordUserId || recordUserId === 'guest' || authorName === '낭만루터' || authorName === savedNick) {
+            isMyRecord = true;
+          }
+        }
+
+        var followingList = safeGetJSON('okbm_following_users', []);
 
         var followingList = safeGetJSON('okbm_following_users', []);
         var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
@@ -3904,25 +4119,20 @@ window.renderHistoryStage = function(isLoading) {
             : '<button type="button" data-user-id="' + escapeHtml(recordUserId) + '" data-author="' + escapeHtml(authorName) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#cbd5e1; font-size:0.62rem; font-weight:800; padding:2px 7px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:8px; height:8px;" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>관심</span></button>';
         }
 
-        // 🔘 [상단 우측 전용: 겹침 없는 단 하나로 짧은 콤팩트 토글 버튼]
-        var singleStreamToggleBtnHtml = isMyTab
-          ? '<button type="button" onclick="window.toggleFeedStreamMode(event);" style="background:rgba(56,189,248,0.14); border:1px solid rgba(56,189,248,0.4); color:#38bdf8; font-size:0.67rem; font-weight:900; padding:4px 9px; border-radius:12px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; flex-shrink:0;">' +
-              '<svg viewBox="0 0 24 24" style="width:10px; height:10px;" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>' +
-              '<span>내 보관함</span>' +
-            '</button>'
-          : '<button type="button" onclick="window.toggleFeedStreamMode(event);" style="background:rgba(52,211,153,0.14); border:1px solid rgba(52,211,153,0.4); color:#34d399; font-size:0.67rem; font-weight:900; padding:4px 9px; border-radius:12px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; flex-shrink:0;">' +
-              '<svg viewBox="0 0 24 24" style="width:10px; height:10px;" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>' +
-              '<span>전체 피드</span>' +
-            '</button>';
+       // 🔘 [상단 우측 전용: 낭만루트 ⇄ 낭만루터 2단 세그먼트 전환 스위치]
+        var singleStreamToggleBtnHtml = '<div style="display:flex; align-items:center; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:2px; box-sizing:border-box;">' +
+          '<button type="button" onclick="window.activeHistoryFeedTab=\'route\'; window.renderHistoryStage(); triggerHaptic(8);" style="background:' + (isRouteTab ? '#38bdf8' : 'transparent') + '; border:none; color:' + (isRouteTab ? '#000000' : '#94a3b8') + '; font-size:0.65rem; font-weight:' + (isRouteTab ? '900' : '700') + '; padding:3px 8px; border-radius:12px; cursor:pointer; transition:all 0.15s ease;">낭만루트</button>' +
+          '<button type="button" onclick="window.activeHistoryFeedTab=\'router\'; window.renderHistoryStage(); triggerHaptic(8);" style="background:' + (!isRouteTab ? '#38bdf8' : 'transparent') + '; border:none; color:' + (!isRouteTab ? '#000000' : '#94a3b8') + '; font-size:0.65rem; font-weight:' + (!isRouteTab ? '900' : '700') + '; padding:3px 8px; border-radius:12px; cursor:pointer; transition:all 0.15s ease;">낭만루터</button>' +
+        '</div>';
 
   
 
-  // 🏷️ [상단 헤더 렌더러: 등록된 박지만 화살표(↗) 표시 & 미등록 박지는 일반 텍스트 노출]
+  // 🏷️ [상단 헤더 렌더러: 낭만루트 vs 낭만루터 최적화]
         var isRegisteredSpot = window.isSpotRegisteredInMasterDB(spotName);
         var topHeaderHtml = '';
 
-        if (isMyTab) {
-          // 🔒 [내 보관함]: DB 등록 박지만 화살표와 지도 이동 버튼 활성화
+        if (isRouteTab) {
+          // 🧭 [낭만루트]: 등록된 박지는 지도 이동 링크(↗) 활성화 + 방문 일자 표시
           topHeaderHtml = '<div style="display:flex; align-items:center; min-width:0; flex:1; padding-right:8px;">' +
             '<div style="display:flex; align-items:center; gap:4px; min-width:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
               HISTORY_VEC_ICONS.pin +
@@ -3930,7 +4140,8 @@ window.renderHistoryStage = function(isLoading) {
                 '<button type="button" data-spot="' + escapeHtml(spotName) + '" onclick="window.navigateToSpotMap(this.dataset.spot, event);" style="background:none; border:none; padding:0; display:inline-flex; align-items:center; gap:2px; cursor:pointer; text-align:left; min-width:0; overflow:hidden;" title="지도에서 박지 위치 확인">' +
                   '<span style="font-size:0.90rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-decoration:underline; text-decoration-color:rgba(56,189,248,0.45); text-underline-offset:3px;">' + escapeHtml(spotName) + '</span>' +
                   '<span style="font-size:0.62rem; color:#38bdf8; font-weight:900; flex-shrink:0;">↗</span>' +
-                '</button>'
+                '</button>' +
+                '<span style="font-size:0.68rem; color:#34d399; font-weight:900; font-family:\'Space Grotesk\', sans-serif; margin-left:2px; flex-shrink:0;">' + weightKg + 'kg</span>'
               ) : (
                 '<span style="font-size:0.90rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(spotName) + '</span>'
               )) +
@@ -3941,7 +4152,7 @@ window.renderHistoryStage = function(isLoading) {
             singleStreamToggleBtnHtml +
           '</div>';
         } else {
-          // 🌐 [전체 피드]: 상단 우측 불필요한 ··· 제거 & 단일 전환 버튼만 깔끔하게 유지
+          // 🏕️ [낭만루터]: 캠퍼 닉네임 + [＋ 스냅 등록] 직통 버튼 + SNS 채널 링크
           topHeaderHtml = '<div style="display:flex; flex-direction:column; justify-content:center; min-width:0; flex:1; padding-right:8px;">' +
             '<div style="display:flex; align-items:center; gap:5px; flex-wrap:nowrap;">' +
               '<button type="button" data-author="' + escapeHtml(authorName) + '" data-user-id="' + escapeHtml(recordUserId) + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId);" style="background:none; border:none; padding:0; font-size:0.88rem; color:#ffffff; font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; text-align:left; display:inline-flex; align-items:center; gap:3px;">' +
@@ -3950,17 +4161,14 @@ window.renderHistoryStage = function(isLoading) {
               '</button>' +
               followHeaderBtn +
               socialBadgesHtml +
+              '<button type="button" onclick="window.openNewRouterSnapModal();" style="background:rgba(56,189,248,0.15); border:1px solid rgba(56,189,248,0.4); color:#38bdf8; font-size:0.62rem; font-weight:900; padding:2px 7px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; flex-shrink:0; margin-left:2px;" title="새로운 일상 스냅 올리기">' +
+                '<svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+                '<span>스냅</span>' +
+              '</button>' +
             '</div>' +
             '<div style="display:flex; align-items:center; gap:3px; margin-top:2px; min-width:0;">' +
               '<span style="font-size:0.68rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace; flex-shrink:0;">' + escapeHtml(tripDate) + ' ·</span>' +
-              (isRegisteredSpot ? (
-                '<button type="button" data-spot="' + escapeHtml(spotName) + '" onclick="window.navigateToSpotMap(this.dataset.spot, event);" style="background:none; border:none; padding:0; display:inline-flex; align-items:center; gap:2px; min-width:0; cursor:pointer; color:#e2e8f0; font-size:0.68rem; font-weight:800; text-decoration:underline; text-decoration-color:rgba(56,189,248,0.45); text-underline-offset:2px;" title="지도에서 박지 위치 확인">' +
-                  '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(spotName) + '</span>' +
-                  '<span style="font-size:0.58rem; color:#38bdf8; font-weight:900; flex-shrink:0;">↗</span>' +
-                '</button>'
-              ) : (
-                '<span style="font-size:0.68rem; color:#cbd5e1; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(spotName) + '</span>'
-              )) +
+              '<span style="font-size:0.68rem; color:#cbd5e1; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(spotName) + '</span>' +
             '</div>' +
           '</div>' +
           '<div style="display:flex; align-items:center; flex-shrink:0;">' +
@@ -4018,19 +4226,16 @@ window.renderHistoryStage = function(isLoading) {
      }
    };
 
-   // 🛠️ [하단 우측 슬라이딩 도구 서랍: 평소엔 미니멀 ··· ➔ 누르면 좌측으로 쫙 확장]
+  // 🛠️ [하단 우측 슬라이딩 도구 서랍: 내 글일 때는 수정/삭제/관리 도구 노출, 타인 글일 때는 관심/북마크 노출]
         var isPub = Boolean(record.isPublished === true);
         var bottomToolsHtml = '';
 
-        if (isMyTab) {
+       if (isMyRecord) {
           bottomToolsHtml = '<div style="display:flex; align-items:center; justify-content:flex-end; position:relative; flex-shrink:0;">' +
-            '<!-- 좌측으로 부드럽게 펼쳐지는 4대 도구 서랍 -->' +
+            '<!-- 좌측으로 부드럽게 펼쳐지는 4대 관리 서랍 -->' +
             '<div id="bottomToolsDrawer_' + cardId + '" data-opened="false" style="display:flex; align-items:center; gap:6px; max-width:0px; opacity:0; transform:scale(0.85) translateX(12px); transform-origin:right center; overflow:hidden; transition:all 0.25s cubic-bezier(0.16, 1, 0.3, 1); pointer-events:none; margin-right:6px; box-sizing:border-box;">' +
-              '<button type="button" onclick="window.openPastTripsListModal(); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#38bdf8; flex-shrink:0;" title="격자 모아보기">' +
+              '<button type="button" onclick="window.openPastTripsListModal(); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#38bdf8; flex-shrink:0;" title="보관함 모아보기">' +
                 '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' +
-              '</button>' +
-              '<button type="button" onclick="window.openRomanticInterestModal(\'routers\'); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#c084fc; flex-shrink:0;" title="관심 모아보기">' +
-                '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
               '</button>' +
               '<button type="button" data-record-id="' + cardId + '" data-lock-btn-id="' + cardId + '" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:' + (isPub ? '#34d399' : '#38bdf8') + '; flex-shrink:0;" title="' + (isPub ? '전체 공개 중' : '비공개 (나만보기)') + '">' +
                 (isPub
@@ -4040,6 +4245,9 @@ window.renderHistoryStage = function(isLoading) {
               '</button>' +
               '<button type="button" data-record-id="' + cardId + '" onclick="window.openRichAfterTripModal(window.interactiveHistory.find(function(r){return String(r.id)===\'' + cardId + '\';})); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fde047; flex-shrink:0;" title="일지 및 사진 수정">' +
                 '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
+              '</button>' +
+              '<button type="button" data-record-id="' + cardId + '" onclick="if(confirm(\'이 기록을 영구 삭제하시겠습니까?\')){ window.deleteTripRecord(this.dataset.recordId); } triggerHaptic(14);" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#f43f5e; flex-shrink:0;" title="기록 삭제">' +
+                '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
               '</button>' +
             '</div>' +
             '<!-- 고정 더보기 (···) 버튼 -->' +
@@ -4132,20 +4340,31 @@ window.renderHistoryStage = function(isLoading) {
         topHeaderHtml +
       '</div>' +
 
-     '<!-- 중앙 세로 전면 개방 미디어 스테이지 -->' +
+     '<!-- 중앙 세로 전면 개방 미디어 스테이지 (낭만루터는 템플릿 0% 순수 사진만 출력) -->' +
       '<div class="reel-media-stage">' +
             '<div style="width:100%; height:100%; max-height:100%; position:relative; overflow:hidden; background:#000000; display:flex; align-items:center; justify-content:center;">' +
-              '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000;">' +
-                '<div class="postcard-face-front" style="width:100%; height:100%; position:absolute; inset:0; overflow:hidden; background:#000000;">' +
+              (isRouteTab ? (
+                '<!-- 🧭 낭만루트: 앞면 사진 ↔ 뒷면 템플릿 3D 플립 엽서 -->' +
+                '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000;">' +
+                  '<div class="postcard-face-front" style="width:100%; height:100%; position:absolute; inset:0; overflow:hidden; background:#000000;">' +
+                    '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \'' + cardId + '\');">' +
+                      horizontalSlidesHtml +
+                    '</div>' +
+                    dotsHtml +
+                  '</div>' +
+                  '<div class="postcard-face-back" style="width:100%; height:100%; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:12px; box-sizing:border-box;">' +
+                    backTemplateCardHtml +
+                  '</div>' +
+                '</div>'
+              ) : (
+                '<!-- 🏕️ 낭만루터: 템플릿 일체 없는 100% 순수 인스타그램형 사진 슬라이더 -->' +
+                '<div style="width:100% !important; height:100% !important; position:relative; background:#000000; overflow:hidden;">' +
                   '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \'' + cardId + '\');">' +
                     horizontalSlidesHtml +
                   '</div>' +
                   dotsHtml +
-                '</div>' +
-                '<div class="postcard-face-back" style="width:100%; height:100%; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:12px; box-sizing:border-box;">' +
-                  backTemplateCardHtml +
-                '</div>' +
-              '</div>' +
+                '</div>'
+              )) +
             '</div>' +
           '</div>' +
 
