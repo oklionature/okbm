@@ -927,7 +927,7 @@ function ensureMyReportAndAuthModalsInDOM() {
   container.id = 'romanticAuthDomBundle';
   container.innerHTML = `
     <!-- 1. 카카오 1초 간편 로그인 모달 (제8헌법 터치 44px 및 매트블랙 규격) -->
-    <div class="custom-modal-overlay" id="loginModalOverlay" onclick="if(event.target===this) closeLoginModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100dvh; padding:0; overflow:hidden;">
+    <div class="custom-modal-overlay" id="loginModalOverlay" onclick="if(event.target===this) closeLoginModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100%; overscroll-behavior:none !important; padding:0; overflow:hidden;">
       <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; position:relative;">
         <div style="flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:calc(20px + env(safe-area-inset-top, 0px)) 16px calc(76px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:14px; text-align:center; box-sizing:border-box;">
           <div style="width:54px; height:54px; border-radius:50%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; color:#e2e8f0;">
@@ -2395,7 +2395,7 @@ window.ensureMasterBottomDock = function(activeTabId) {
     }
   }
 
-  dock.style.cssText = 'position:fixed !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; max-width:480px !important; margin:0 auto !important; height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; min-height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; padding:0 0 env(safe-area-inset-bottom, 8px) 0 !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.1) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:2147483647 !important; box-sizing:border-box; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); pointer-events:auto !important;';
+  dock.style.cssText = 'position:fixed !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; max-width:480px !important; margin:0 auto !important; height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; min-height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; padding:0 0 env(safe-area-inset-bottom, 8px) 0 !important; background:rgba(0,0,0,0.98) !important; border-top:1px solid rgba(255,255,255,0.1) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:2147483647 !important; box-sizing:border-box !important; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); pointer-events:auto !important; transform:translateZ(0) !important; -webkit-transform:translateZ(0) !important; contain:paint !important; overscroll-behavior:none !important;';
 
   var tabs = [
     { id: 'router', name: '낭만루터', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>', action: "window.navigateToDockTab('router')" },
@@ -2560,11 +2560,13 @@ function openUserProfileModal() {
       modal.style.setProperty('left', '0', 'important');
       modal.style.setProperty('right', '0', 'important');
       modal.style.setProperty('bottom', 'calc(56px + env(safe-area-inset-bottom, 8px))', 'important');
-      modal.style.setProperty('width', '100vw', 'important');
-      modal.style.setProperty('height', 'calc(100dvh - 56px - env(safe-area-inset-bottom, 8px))', 'important');
+      modal.style.setProperty('width', '100%', 'important');
+      modal.style.setProperty('height', 'auto', 'important');
       modal.style.setProperty('z-index', '2147483640', 'important');
       modal.style.setProperty('background', '#000000', 'important');
       modal.style.setProperty('display', 'flex', 'important');
+      modal.style.setProperty('contain', 'paint layout', 'important');
+      modal.style.setProperty('overscroll-behavior', 'none', 'important');
     }
 
     window.ensureMasterBottomDock('report');

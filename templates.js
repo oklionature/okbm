@@ -13,7 +13,7 @@ function ensurePhotoStudioDOM() {
 
   studio = document.createElement('div');
   studio.id = 'photoStudioOverlay';
-  studio.style.cssText = 'display:none; position:fixed; inset:0; z-index:2000085 !important; background:#000000; justify-content:center; align-items:center; overflow:hidden; box-sizing:border-box;';
+  studio.style.cssText = 'display:none; position:fixed; inset:0; z-index:2000085 !important; background:#000000; justify-content:center; align-items:center; overflow:hidden; box-sizing:border-box; overscroll-behavior:none !important; touch-action:pan-y !important;';
   
   studio.innerHTML = `
     <div id="photoStudioStage" style="position:relative; width:100%; height:100%; max-width:440px; display:flex; justify-content:center; align-items:center; padding:env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0; box-sizing:border-box;">
@@ -814,10 +814,10 @@ function ensurePackShareModalDOM() {
     document.body.appendChild(modal);
   }
 
-  modal.style.cssText = 'display:none; position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#07090e; z-index:2000010 !important; justify-content:center; align-items:stretch; padding:0 !important; margin:0 !important; overflow:hidden; box-sizing:border-box; transform:translateZ(0); -webkit-transform:translateZ(0);';
+  modal.style.cssText = 'display:none; position:fixed; inset:0; width:100%; height:100% !important; background:#07090e; z-index:2000010 !important; justify-content:center; align-items:stretch; padding:0 !important; margin:0 !important; overflow:hidden; box-sizing:border-box; transform:translateZ(0); -webkit-transform:translateZ(0); overscroll-behavior:none !important;';
 
   modal.innerHTML = `
-    <div style="width:100%; max-width:440px; margin:0 auto; height:100dvh; display:flex; flex-direction:column; justify-content:space-between; padding:calc(8px + env(safe-area-inset-top, 0px)) 12px calc(12px + env(safe-area-inset-bottom, 0px)) 12px; box-sizing:border-box; position:relative;">
+    <div style="width:100%; max-width:440px; margin:0 auto; height:100% !important; display:flex; flex-direction:column; justify-content:space-between; padding:calc(8px + env(safe-area-inset-top, 0px)) 12px calc(12px + env(safe-area-inset-bottom, 0px)) 12px; box-sizing:border-box; position:relative; overscroll-behavior:none !important;">
       
   <!-- 1. 상단 고정 제어 영역: 헤더 + 박지/메모 폼 + 스튜디오 버튼 + 템플릿 바 -->
       <div style="flex-shrink:0; display:flex; flex-direction:column; gap:5px; width:100%; box-sizing:border-box;">

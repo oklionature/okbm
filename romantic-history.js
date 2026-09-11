@@ -4713,12 +4713,14 @@ if (isRouteTab) {
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'romanticHistoryModal';
-      modal.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:#000000; z-index:1000005 !important; justify-content:center; align-items:stretch; width:100vw !important; max-width:100vw !important; height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)) !important; transform:translateZ(0); -webkit-transform:translateZ(0); contain:strict; overscroll-behavior:contain;';
+      modal.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:#000000; z-index:1000005 !important; justify-content:center; align-items:stretch; width:100% !important; max-width:100% !important; height:auto !important; overflow:hidden !important; touch-action:pan-y !important; transform:translateZ(0); -webkit-transform:translateZ(0); contain:paint layout !important; box-sizing:border-box; overscroll-behavior:none !important;';
       modal.innerHTML = '<div class="romantic-history-content" style="width:100% !important; max-width:480px !important; margin:0 auto; height:100%; max-height:100%; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; box-sizing:border-box;"></div>';
       document.body.appendChild(modal);
     } else {
+      modal.style.setProperty('top', '0', 'important');
       modal.style.setProperty('bottom', 'calc(56px + env(safe-area-inset-bottom, 8px))', 'important');
-      modal.style.setProperty('height', 'calc(100dvh - 56px - env(safe-area-inset-bottom, 8px))', 'important');
+      modal.style.setProperty('height', 'auto', 'important');
+      modal.style.setProperty('overscroll-behavior', 'none', 'important');
     }
 
     modal.style.setProperty('display', 'flex', 'important');

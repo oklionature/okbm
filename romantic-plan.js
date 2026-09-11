@@ -2441,7 +2441,7 @@ window.saveCurrentPackingRecord = function() {
     }).join('');
 
     var gearsViewHtml = `
-      <div id="planGearsScrollArea" style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:8px; padding:2px 0; overflow-y:auto; overscroll-behavior-y:contain; touch-action:pan-y; box-sizing:border-box;">
+      <div id="planGearsScrollArea" style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:8px; padding:2px 0; overflow-y:auto !important; overscroll-behavior:none !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; box-sizing:border-box;">
         
         <!-- 새 장비 직접 등록 -->
         <div style="background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.18); border-radius:10px; padding:8px 10px; display:flex; flex-direction:column; gap:5px; flex-shrink:0; box-sizing:border-box;">
@@ -2554,7 +2554,7 @@ window.saveCurrentPackingRecord = function() {
     if (!content) return;
 
     content.innerHTML = `
-      <div id="planMainViewContainer" style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; padding:calc(8px + env(safe-area-inset-top, 0px)) 12px 4px 12px; margin:0 !important; box-sizing:border-box; overflow:hidden;">
+      <div id="planMainViewContainer" style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; padding:calc(8px + env(safe-area-inset-top, 0px)) 12px 4px 12px; margin:0 !important; box-sizing:border-box; overflow:hidden !important; overscroll-behavior:none !important;">
         ${currentViewHtml}
       </div>
     `;
@@ -3315,12 +3315,13 @@ window.commitPlanDestination = function(dateKey) {
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'romanticPlanModal';
-      modal.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:#000000; z-index:1000005 !important; justify-content:center; align-items:stretch; width:100vw !important; max-width:100vw !important; height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)) !important; overflow-x:hidden !important; touch-action:pan-y !important; transform:translateZ(0); -webkit-transform:translateZ(0);';
+      modal.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:#000000; z-index:1000005 !important; justify-content:center; align-items:stretch; width:100% !important; max-width:100% !important; height:auto !important; overflow:hidden !important; touch-action:pan-y !important; transform:translateZ(0); -webkit-transform:translateZ(0); contain:paint layout !important; box-sizing:border-box;';
       modal.innerHTML = '<div class="romantic-plan-content" style="width:100% !important; max-width:480px !important; margin:0 auto; height:100%; max-height:100%; display:flex; flex-direction:column; justify-content:space-between; overflow-x:hidden !important; overflow-y:hidden !important; box-sizing:border-box;"></div>';
       document.body.appendChild(modal);
     } else {
+      modal.style.setProperty('top', '0', 'important');
       modal.style.setProperty('bottom', 'calc(56px + env(safe-area-inset-bottom, 8px))', 'important');
-      modal.style.setProperty('height', 'calc(100dvh - 56px - env(safe-area-inset-bottom, 8px))', 'important');
+      modal.style.setProperty('height', 'auto', 'important');
     }
 
     modal.style.setProperty('display', 'flex', 'important');

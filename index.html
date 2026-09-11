@@ -176,10 +176,31 @@
       -webkit-font-smoothing: antialiased;
     }
 
-  body {
+  html, body {
       background: #000000 !important;
+      width: 100% !important;
+      height: 100% !important;
+      overscroll-behavior: none !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+
+  body {
       padding-top: calc(47px + env(safe-area-inset-top, 0px)) !important;
-      padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(75px + env(safe-area-inset-bottom, 0px)) !important;
+      touch-action: pan-x pan-y !important;
+    }
+
+  /* 🏛️ 인스타/당근 규격: 모든 모달 및 내부 스크롤 바디의 고무줄 튕김 전역 차단 */
+  .modal-fullscreen-container,
+  .modal-scroll-body,
+  .gear-db-list,
+  .custom-modal-overlay,
+  .romantic-plan-content,
+  #planMainViewContainer,
+  #planGearsScrollArea,
+  #checklistItemsScrollContainer {
+      overscroll-behavior: none !important;
+      -webkit-overflow-scrolling: touch !important;
     }
 
    @keyframes slowCelestialTwinkle {
@@ -858,12 +879,13 @@
       pointer-events: auto !important;
       user-select: none !important;
       overflow: visible !important;
-      box-sizing: border-box;
+      box-sizing: border-box !important;
       touch-action: manipulation !important;
-      transform: translate3d(0, 0, 0) !important;
-      -webkit-transform: translate3d(0, 0, 0) !important;
-      will-change: transform;
-      contain: layout size style;
+      transform: translateZ(0) !important;
+      -webkit-transform: translateZ(0) !important;
+      contain: paint !important;
+      visibility: visible !important;
+      opacity: 1 !important;
     }
     .mobile-bottom-dock::after {
       content: '';
@@ -1298,9 +1320,7 @@
   <!-- 🎨 엽서 모달은 templates.js SSOT 엔진이 동적 생성 관리 -->
 
  <!-- 📱 전역 유일 마스터 하단 독바 컨테이너 (romantic-sync.js SSOT 단일 관리) -->
-  <div id="romanticMasterBottomDock" class="mobile-bottom-dock notranslate"></div> <span>마이리포트</span>
-    </button>
-  </div>
+  <div id="romanticMasterBottomDock" class="mobile-bottom-dock notranslate"></div>
   <script>
     (function syncEarlyDockActive() {
       var s = window.location.search;
