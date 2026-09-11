@@ -1341,13 +1341,23 @@ window.saveCurrentPackingRecord = function() {
       itemCount: packedItems.length,
       memo: '',
       oneLineMemo: spotTitle ? (spotTitle + ' 힐링') : '출발 준비 완료!',
-      isDraft: true,
-      isPublished: false,
+      isDraft: false,
+      isPublished: true,
       items: packedItems,
       photos: [],
       photo: '',
       fieldPhoto: ''
     };
+
+    // 🏛️ 보관함(History) DB에 즉시 영구 각인 및 전역 캐시 갱신
+    if (typeof window.savePackingHistoryRecord === 'function') {
+      newRecord = window.savePackingHistoryRecord(newRecord) || newRecord;
+    }
+
+    // ⚡ 방금 저장한 최신 기록을 R2 클라우드로 즉각 전송 (서버 수화 덮어쓰기 방어)
+    if (typeof syncUserDataToCloud === 'function') {
+      syncUserDataToCloud(true);
+    }
 
     window.currentShareRecord = newRecord;
     window.currentShareItems = packedItems;

@@ -150,6 +150,19 @@
         box-sizing: border-box !important;
       }
 
+      /* 📐 기본값을 contain으로 확정하여 가로 사진 크롭 원천 차단 */
+      .reel-photo-target {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain !important;
+        object-position: center !important;
+        display: block !important;
+        pointer-events: none !important;
+      }
+      .reel-photo-target.is-portrait {
+        object-fit: cover !important;
+      }
+
       .reel-bottom-interactive-bar {
         padding: 4px 16px 8px 16px !important; /* 상하는 4px로 초밀착, 좌우 프레임만 16px 여백 확보 */
         box-sizing: border-box !important;
@@ -3838,10 +3851,21 @@ window.__currentSwipePhotoIndex = 0;
         return norm;
       });
 
-      if (myFeeds.length > 0) {
-        window.safeSetStorage('okbm_packing_history', myFeeds);
-        window.interactiveHistory = myFeeds;
-        window.packingHistoryList = myFeeds;
+      // 🛡️ [스마트 병합]: 서버 데이터로 로컬의 방금 저장한 신규 기록을 덮어써서 날리는 현상 원천 차단
+      var currentLocal = window.safeGetStorage('okbm_packing_history', []) || [];
+      var mergedList = myFeeds.slice();
+      currentLocal.forEach(function(loc) {
+        if (loc && loc.id && !deletedIds.includes(String(loc.id).trim())) {
+          if (!mergedList.some(function(m) { return String(m.id).trim() === String(loc.id).trim(); })) {
+            mergedList.unshift(loc);
+          }
+        }
+      });
+
+      if (mergedList.length > 0) {
+        window.safeSetStorage('okbm_packing_history', mergedList);
+        window.interactiveHistory = mergedList;
+        window.packingHistoryList = mergedList;
       }
     };
 
@@ -4021,8 +4045,16 @@ window.__currentSwipePhotoIndex = 0;
   // 📐 [가로/세로 스마트 자동 판별]: 세로는 꽉 채우고(Cover), 가로는 100% 비율 보존(Contain + 위아래 블랙)
   window.applySmartPhotoFit = function(img) {
     if (!img) return;
-    if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-      img.style.objectFit = (img.naturalWidth > img.naturalHeight) ? 'contain' : 'cover';
+    var nw = img.naturalWidth;
+    var nh = img.naturalHeight;
+    if (nw > 0 && nh > 0) {
+      if (nh >= nw) {
+        img.classList.add('is-portrait');
+        img.style.setProperty('object-fit', 'cover', 'important');
+      } else {
+        img.classList.remove('is-portrait');
+        img.style.setProperty('object-fit', 'contain', 'important');
+      }
     }
   };
 
@@ -4090,9 +4122,9 @@ window.renderHistoryStage = function(isLoading) {
     // 🛡️ [로그인/비로그인 공통]: R2 공용 피드 풀에서 낭만루트와 낭만루터를 각각 완벽 분리 인출
     var sourceList = [];
     if (isRouteTab) {
-      // 🧭 낭만루트: 내 로컬 보관함 + R2 공용 루트 피드
+      // 🧭 낭만루트: 내 로컬 보관함(비공개 포함 100% 노출) + R2 공용 루트 피드
       sourceList = (window.safeGetStorage('okbm_packing_history', []) || []).filter(function(r) {
-        return r && r.isPublished !== false && r.feedType !== 'router' && !String(r.id).startsWith('snap_');
+        return r && r.feedType !== 'router' && !String(r.id).startsWith('snap_');
       });
       allPublicList.forEach(function(p) {
         if (p && p.feedType !== 'router' && !String(p.id).startsWith('snap_')) {
@@ -4482,7 +4514,7 @@ if (isRouteTab) {
         } else {
           horizontalSlidesHtml = mediaItems.map(function(pUrl) {
             return '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex; align-items:center; justify-content:center;">' +
-              '<img class="reel-photo-target" src="' + pUrl + '" loading="lazy" decoding="async" onload="if(this.naturalWidth > this.naturalHeight){ this.style.objectFit=\'contain\'; } else { this.style.objectFit=\'cover\'; }" onerror="this.style.objectFit=\'cover\';" style="width:100%; height:100%; object-fit:cover; object-position:center; display:block; pointer-events:none;" />' +
+              '<img class="reel-photo-target" src="' + pUrl + '" loading="eager" decoding="async" onload="window.applySmartPhotoFit(this);" onerror="window.applySmartPhotoFit(this);" />' +
             '</div>';
           }).join('');
         }
