@@ -1918,19 +1918,26 @@ window.saveCurrentPackingRecord = function() {
 
               if (spotArray.length === 0) return '';
 
-              return `
-                <div style="display:flex; flex-wrap:wrap; gap:5px; padding-bottom:5px; border-bottom:1px solid rgba(255,255,255,0.08); flex-shrink:0;">
-                  ${spotArray.map(function(s) {
-                    var dispElev = s.elevation ? (' (' + s.elevation + ')') : '';
-                    return `
-                      <div style="display:inline-flex; align-items:center; gap:4px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); padding:2px 8px; border-radius:12px; font-size:0.80rem; font-weight:800; color:#ffffff;">
-                        <span style="display:inline-flex; align-items:center; color:#38bdf8; flex-shrink:0;">${UI_ICONS.pin}</span>
-                        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;">${escapeHtml(s.name + dispElev)}</span>
-                      </div>
-                    `;
-                  }).join('')}
-                </div>
-              `;
+              // 순수 SVG 원정대 벡터 심볼 (이모티콘 0%)
+              var tripSvgIcon = '<svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:#34d399; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0;"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>';
+              var pinSvgIcon = '<svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:none; stroke:#38bdf8; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+
+              var chipsHtml = spotArray.map(function(s) {
+                var dispElev = s.elevation ? (' (' + s.elevation + ')') : '';
+                var isExpedition = Boolean(s.isTrip || s.tripId);
+                var chipIcon = isExpedition ? tripSvgIcon : pinSvgIcon;
+                var chipBorder = isExpedition ? 'rgba(52,211,153,0.35)' : 'rgba(255,255,255,0.12)';
+                var chipBg = isExpedition ? 'rgba(52,211,153,0.08)' : 'rgba(255,255,255,0.05)';
+                var labelPrefix = isExpedition ? '<span style="font-size:0.62rem; color:#34d399; font-weight:800; margin-right:2px;">[원정대]</span>' : '';
+
+                return '<div style="display:inline-flex; align-items:center; gap:4px; background:' + chipBg + '; border:1px solid ' + chipBorder + '; padding:2px 8px; border-radius:12px; font-size:0.80rem; font-weight:800; color:#ffffff;">' +
+                  '<span style="display:inline-flex; align-items:center; flex-shrink:0;">' + chipIcon + '</span>' +
+                  labelPrefix +
+                  '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;">' + escapeHtml(s.name + dispElev) + '</span>' +
+                '</div>';
+              }).join('');
+
+              return '<div style="display:flex; flex-wrap:wrap; gap:5px; padding-bottom:5px; border-bottom:1px solid rgba(255,255,255,0.08); flex-shrink:0;">' + chipsHtml + '</div>';
             })()}
             <textarea id="planDailyMemoInput" placeholder="이 날짜의 일정과 챙길 것들을 메모해보세요..." oninput="window.autoSavePlanMemo('${activeDateStr}', this.value)" style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:none; border:none; color:#ffffff; font-size:0.90rem; line-height:1.45; outline:none; resize:none; font-family:'Pretendard Variable', -apple-system, sans-serif; padding:0; margin:0; box-sizing:border-box;">${currentDayMemo}</textarea>
           </div>

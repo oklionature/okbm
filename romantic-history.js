@@ -729,10 +729,12 @@
     var isSnapRecord = Boolean(recordId && String(recordId).startsWith('snap_'));
     var resolvedFeedType = isSnapRecord ? 'router' : 'route';
 
+    var resolvedAuthorPhoto = (r && (r.authorPhoto || r.author_photo || r.photoUrl || r.user_photo || r.userPhoto)) ? String(r.authorPhoto || r.author_photo || r.photoUrl || r.user_photo || r.userPhoto).trim() : '';
     return {
       id: recordId,
       feedType: resolvedFeedType,
       author: currentAuthor,
+      authorPhoto: resolvedAuthorPhoto,
       templateId: (r && r.templateId !== undefined && r.templateId !== null) ? parseInt(r.templateId, 10) : savedTmplId,
       customTemplatePhoto: savedTmplPhoto,
       date: cleanDate,
@@ -764,6 +766,51 @@
   window.currentViewMode = 'card';
   window.activeHistorySubFilter = 'all';
   window.isPostcardFlipped = false;
+
+  // 👤 [마이데이터 유저 프로필 SSOT 맵 & 실시간 백그라운드 인출기]
+  window.__userProfilePhotoMap = window.__userProfilePhotoMap || {};
+
+  window.resolveUserMasterPhoto = function(userId, authorName, fallbackPhoto) {
+    var uId = String(userId || '').trim();
+    if (!uId || uId === 'guest') return fallbackPhoto || '';
+
+    if (window.__userProfilePhotoMap[uId]) {
+      return window.__userProfilePhotoMap[uId];
+    }
+
+    var profile = safeGetJSON('user_profile', null);
+    var myId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+    if (myId && uId === myId) {
+      var myCover = localStorage.getItem('okbm_hero_cover_url') || ((profile && (profile.heroCoverUrl || profile.photoUrl)) ? (profile.heroCoverUrl || profile.photoUrl) : '');
+      if (myCover && String(myCover).startsWith('http')) {
+        window.__userProfilePhotoMap[uId] = myCover;
+        return myCover;
+      }
+    }
+
+    if (fallbackPhoto && String(fallbackPhoto).startsWith('http')) {
+      window.__userProfilePhotoMap[uId] = fallbackPhoto;
+    }
+
+    // 비로그인 상태: R2 유저 정본(users/user_{id}.json) 백그라운드 0.03초 인출 및 아바타 DOM 즉시 주입
+    var r2Domain = window.R2_PUBLIC_DOMAIN || 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
+    fetch(r2Domain + '/users/user_' + encodeURIComponent(uId) + '.json?_t=' + Date.now())
+      .then(function(res) { return res.ok ? res.json() : null; })
+      .then(function(uData) {
+        if (uData && (uData.heroCoverUrl || uData.photoUrl)) {
+          var remoteUrl = uData.heroCoverUrl || uData.photoUrl;
+          window.__userProfilePhotoMap[uId] = remoteUrl;
+          document.querySelectorAll('[data-user-avatar-id="' + uId + '"]').forEach(function(imgEl) {
+            imgEl.src = remoteUrl;
+            imgEl.style.display = 'block';
+            var placeholder = imgEl.parentElement ? imgEl.parentElement.querySelector('.avatar-placeholder-svg') : null;
+            if (placeholder) placeholder.style.display = 'none';
+          });
+        }
+      }).catch(function() {});
+
+    return window.__userProfilePhotoMap[uId] || fallbackPhoto || '';
+  };
 
   window.interactiveHistory = (window.safeGetStorage('okbm_packing_history', []) || []).map(function(r, i) {
     return window.normalizeHistoryRecord(r, i);
@@ -3536,6 +3583,10 @@ window.__currentSwipePhotoIndex = 0;
     target.author = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만루터');
     var userId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || 'guest');
     target.userId = userId;
+    var curMasterCover = localStorage.getItem('okbm_hero_cover_url') || ((profile && (profile.heroCoverUrl || profile.photoUrl)) ? (profile.heroCoverUrl || profile.photoUrl) : '');
+    if (curMasterCover && String(curMasterCover).startsWith('http')) {
+      target.authorPhoto = curMasterCover;
+    }
 
     if (instaInput) {
       var rawSnsVal = instaInput.value.trim();
@@ -4282,12 +4333,22 @@ window.renderHistoryStage = function(isLoading) {
         var routerBottomMetaHtml = '';
 
 if (isRouteTab) {
-          // 🧭 [낭만루트]: 동그란 아바타 클릭 시 작성자 피드 모아보기 창 연결
-          var authorAvatarUrl = (record.authorPhoto && record.authorPhoto.startsWith('http')) ? record.authorPhoto : ((photos && photos[0]) ? photos[0] : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80');
+          // 🧭 [낭만루트]: 등록자 프로필 사진(SSOT) 100% 범용 직통 바인딩
+          var myMasterCover = localStorage.getItem('okbm_hero_cover_url') || ((profile && (profile.heroCoverUrl || profile.photoUrl)) ? (profile.heroCoverUrl || profile.photoUrl) : '');
+          var authorAvatarUrl = isMyRecord
+            ? (myMasterCover || record.authorPhoto || '')
+            : (record.authorPhoto || '');
+
+          var hasValidImg = Boolean(authorAvatarUrl && String(authorAvatarUrl).startsWith('http'));
+
+          var avatarMarkup = hasValidImg
+            ? '<img src="' + escapeHtml(authorAvatarUrl) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />'
+            : '<div style="width:100%; height:100%; background:#090d14; display:flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
+
           routeOriginalHeaderHtml = '<div class="reel-header-row" style="height:56px !important; padding:0 14px !important;">' +
             '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
-              '<button type="button" data-author="' + escapeHtml(authorName) + '" data-user-id="' + escapeHtml(recordUserId) + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId);" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1px solid rgba(255,255,255,0.2); padding:0; cursor:pointer; flex-shrink:0;" title="' + escapeHtml(authorName) + '님의 피드 모아보기">' +
-                '<img src="' + authorAvatarUrl + '" style="width:100%; height:100%; object-fit:cover;" />' +
+              '<button type="button" data-author="' + escapeHtml(authorName) + '" data-user-id="' + escapeHtml(recordUserId) + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId);" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.6);" title="' + escapeHtml(authorName) + '님의 피드 모아보기">' +
+                avatarMarkup +
               '</button>' +
               '<div style="display:flex; flex-direction:column; justify-content:center; min-width:0; flex:1;">' +
                 '<span style="font-size:0.68rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace; line-height:1.2;">' + escapeHtml(tripDate) + '</span>' +
@@ -4693,4 +4754,11 @@ if (isRouteTab) {
     window.closeHistoryModal();
     if (typeof window.closePlanModal === 'function') window.closePlanModal();
   };
+
+  // 🔄 마이리포트 프로필 사진 변경 시 보관함 피드 아바타 실시간 리렌더링
+  window.addEventListener('okbm_profile_photo_changed', function() {
+    if (typeof window.renderHistoryStage === 'function') {
+      window.renderHistoryStage();
+    }
+  });
 })();

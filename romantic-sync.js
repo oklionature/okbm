@@ -457,6 +457,19 @@ window.RomanticVault = window.RomanticVault || {
           if (mg.gearPresets) this.write('okbm_gear_presets', mg.gearPresets, false);
           if (mg.gearMeta) this.write('okbm_gear_meta', mg.gearMeta, false);
         }
+        if (cloudData.heroCoverUrl || cloudData.photoUrl) {
+          var mainPhotoUrl = cloudData.heroCoverUrl || cloudData.photoUrl;
+          localStorage.setItem('okbm_hero_cover_url', mainPhotoUrl);
+          var curProf = safeGetJSON('user_profile', null);
+          if (curProf) {
+            curProf.heroCoverUrl = mainPhotoUrl;
+            curProf.photoUrl = mainPhotoUrl;
+            localStorage.setItem('user_profile', JSON.stringify(curProf));
+          }
+          if (typeof window.applyMasterCoverPhotoToAllUI === 'function') {
+            window.applyMasterCoverPhotoToAllUI(mainPhotoUrl);
+          }
+        }
         // 내가 제보한 박지 클라우드 정본 수화 (빈 배열 덮어쓰기 파괴 영구 차단)
         var localProps = (window.__memoryStore && window.__memoryStore['okbm_my_proposals']) || safeGetJSON('okbm_my_proposals', []);
         if (cloudData.myProposals && Array.isArray(cloudData.myProposals) && cloudData.myProposals.length > 0) {
@@ -601,6 +614,7 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
     forcePackSync: shouldSyncPackHistory,
     createdAt: (profile && profile.createdAt) ? profile.createdAt : getFormattedNow(),
     lastNicknameChangedAt: profile ? (Number(profile.lastNicknameChangedAt) || 0) : 0,
+    heroCoverUrl: localStorage.getItem('okbm_hero_cover_url') || ((profile && (profile.heroCoverUrl || profile.photoUrl)) ? (profile.heroCoverUrl || profile.photoUrl) : ''),
     bookmarks: safeGetJSON('okbm_bookmarks', []),
     visited: safeGetJSON('okbm_visited', []),
     memos: safeGetJSON('okbm_memos', {}),
@@ -941,17 +955,17 @@ function ensureMyReportAndAuthModalsInDOM() {
     <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="if(event.target===this) closeUserProfileModal();" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; width:100%; height:100%; background:#000000; z-index:3000000; margin:0; padding:0; overflow:hidden;">
       <div style="position:relative; width:100%; max-width:480px; height:100%; margin:0 auto; background:#000000; overflow:hidden; display:flex; flex-direction:column; box-sizing:border-box;">
         
-        <!-- 1단 헤더 (노치 안전 여백 확보 및 타이틀 상단 잘림 영구 해결) -->
-        <div style="flex-shrink:0; width:100%; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:calc(16px + env(safe-area-inset-top, 0px)) 16px 14px 16px; box-sizing:border-box; z-index:50;">
+        <!-- 1단 헤더 (노치 안전 여백 확보 및 유저 메인 사진 34px 와이드 규격) -->
+        <div style="flex-shrink:0; width:100%; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:calc(14px + env(safe-area-inset-top, 0px)) 16px 14px 16px; box-sizing:border-box; z-index:50;">
           <span style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.03em; line-height:1;">마이리포트</span>
           
-          <div onclick="triggerHaptic(12); window.openAccountSettingsModal();" title="개인정보 및 아이디 변경" style="display:flex; align-items:center; gap:8px; cursor:pointer; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); padding:3px 10px 3px 4px; border-radius:20px;">
-            <div style="position:relative; width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg, #38bdf8, #818cf8, #f43f5e); padding:1.5px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-              <div style="width:100%; height:100%; border-radius:50%; background:#090d14; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <div onclick="triggerHaptic(12); window.openAccountSettingsModal();" title="개인정보 및 메인 사진 변경" style="display:flex; align-items:center; gap:9px; cursor:pointer; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); padding:3px 12px 3px 4px; border-radius:24px;">
+            <div style="position:relative; width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg, rgba(186,230,253,0.8), rgba(167,243,208,0.5), rgba(253,230,138,0.5)); padding:1.5px; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.6);">
+              <div id="reportHeaderProfileImg" style="width:100%; height:100%; border-radius:50%; background:#090d14; background-size:cover; background-position:center; background-repeat:no-repeat; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                <svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </div>
             </div>
-            <span id="reportHeaderCurrentNick" style="font-size:0.76rem; font-weight:800; color:#ffffff; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">낭만백패커</span>
+            <span id="reportHeaderCurrentNick" style="font-size:0.78rem; font-weight:800; color:#ffffff; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">낭만백패커</span>
           </div>
         </div>
 
@@ -1103,7 +1117,31 @@ function ensureMyReportAndAuthModalsInDOM() {
           <div style="width:30px;"></div>
         </div>
 
-        <div style="flex:1 1 0%; min-height:0; overflow-y:auto; padding:20px 16px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box;">
+       <div style="flex:1 1 0%; min-height:0; overflow-y:auto; padding:20px 16px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box;">
+          <!-- 메인 대표 사진 설정 카드 (SSOT: 마이리포트 아바타 & 낭만보관함 배경 연동) -->
+          <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <span style="color:#ffffff; font-size:0.78rem; font-weight:900;">메인 대표 사진</span>
+                <p style="color:#64748b; font-size:0.62rem; margin-top:2px;">마이리포트 아바타 및 낭만보관함 배경에 즉시 반영됩니다.</p>
+              </div>
+              <div id="settingsModalCoverPreviewWrap" onclick="window.previewMasterUserCoverPhotoLarge();" title="터치하여 사진 크게 보기" style="width:48px; height:48px; border-radius:50%; border:1.5px solid rgba(186,230,253,0.4); background:#090d14; background-size:cover; background-position:center; background-repeat:no-repeat; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.6);">
+                <svg id="settingsModalCoverDefaultSvg" viewBox="0 0 24 24" style="width:20px; height:20px;" fill="none" stroke="#64748b" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+            </div>
+        
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:2px;">
+              <button type="button" id="btnTriggerUploadCover" onclick="document.getElementById('masterUserCoverFileInput').click();" style="height:38px; min-height:38px; background:rgba(186,230,253,0.12); border:1px solid rgba(186,230,253,0.35); color:#bae6fd; font-size:0.74rem; font-weight:800; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
+                <svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <span>사진 변경</span>
+              </button>
+              <button type="button" onclick="window.resetMasterUserCoverPhoto();" style="height:38px; min-height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#94a3b8; font-size:0.74rem; font-weight:800; border-radius:8px; cursor:pointer;">
+                기본값 복원
+              </button>
+            </div>
+            <input type="file" id="masterUserCoverFileInput" accept="image/*" style="display:none;" onchange="window.uploadMasterUserCoverPhoto(event);" />
+          </div>
+
           <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:6px;">
             <label style="color:#94a3b8; font-size:0.75rem; font-weight:800;">활동 닉네임 변경 (14일 쿨다운)</label>
             <div style="display:flex; gap:6px;">
@@ -2244,6 +2282,11 @@ window.refreshMyReportFullStats = function() {
   var headerNick = document.getElementById('reportHeaderCurrentNick');
   if (headerNick) headerNick.innerText = userNick;
 
+  var mainPhoto = localStorage.getItem('okbm_hero_cover_url') || (profile && (profile.heroCoverUrl || profile.photoUrl)) || '';
+  if (typeof window.applyMasterCoverPhotoToAllUI === 'function') {
+    window.applyMasterCoverPhotoToAllUI(mainPhoto);
+  }
+
   // 0. 내가 제보한 박지 건수 실시간 갱신
   var myProps = safeGetJSON('okbm_my_proposals', []);
   var hPropStat = document.getElementById('reportHeaderMyPropsStat');
@@ -2470,6 +2513,10 @@ window.navigateToDockTab = function(tabId) {
   } else if (tabId === 'report') {
     if (typeof closePlanModal === 'function') closePlanModal();
     if (typeof closeHistoryModal === 'function') closeHistoryModal();
+    if (!isUserLoggedIn()) {
+      openLoginModal();
+      return;
+    }
     if (typeof openUserProfileModal === 'function') {
       openUserProfileModal();
     }
@@ -2485,6 +2532,11 @@ if (typeof window !== 'undefined') {
 
 function openUserProfileModal() {
   try {
+    if (!isUserLoggedIn()) {
+      openLoginModal();
+      return;
+    }
+
     var shieldStyle = document.getElementById('romanticModalShieldCss');
     if (!shieldStyle) {
       shieldStyle = document.createElement('style');
@@ -2535,6 +2587,301 @@ function closeUserProfileModal() {
 }
 window.closeUserProfileModal = closeUserProfileModal;
 
+// [메인 대표 사진 엔진] 앱 전역(마이리포트 아바타 & 계정 관리 썸네일 & 낭만보관함 히어로 배경) 즉시 반영
+window.applyMasterCoverPhotoToAllUI = function(photoUrl) {
+  var cleanUrl = (typeof photoUrl === 'string' && photoUrl.startsWith('http')) ? photoUrl : '';
+
+  var headerAv = document.getElementById('reportHeaderProfileImg');
+  if (headerAv) {
+    if (cleanUrl) {
+      headerAv.style.backgroundImage = 'url("' + cleanUrl + '")';
+      headerAv.innerHTML = '';
+    } else {
+      headerAv.style.backgroundImage = 'none';
+      headerAv.innerHTML = '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+    }
+  }
+
+  var modalPreview = document.getElementById('settingsModalCoverPreviewWrap');
+  var defaultSvg = document.getElementById('settingsModalCoverDefaultSvg');
+  if (modalPreview) {
+    if (cleanUrl) {
+      modalPreview.style.backgroundImage = 'url("' + cleanUrl + '")';
+      if (defaultSvg) defaultSvg.style.display = 'none';
+    } else {
+      modalPreview.style.backgroundImage = 'none';
+      if (defaultSvg) defaultSvg.style.display = 'block';
+    }
+  }
+
+  var heroCoverImg = document.getElementById('historyHeroCoverImg') || document.querySelector('.history-hero-cover');
+  if (heroCoverImg) {
+    if (heroCoverImg.tagName === 'IMG') {
+      if (cleanUrl) heroCoverImg.src = cleanUrl;
+    } else if (cleanUrl) {
+      heroCoverImg.style.backgroundImage = 'url("' + cleanUrl + '")';
+    }
+  }
+
+  window.dispatchEvent(new CustomEvent('okbm_profile_photo_changed', { detail: { photoUrl: cleanUrl } }));
+};
+
+// 🔍 [메인 대표 사진 대형 확대 뷰어 라이트박스]
+window.previewMasterUserCoverPhotoLarge = function() {
+  triggerHaptic(10);
+  var profile = safeGetJSON('user_profile', null);
+  var photoUrl = localStorage.getItem('okbm_hero_cover_url') || (profile && (profile.heroCoverUrl || profile.photoUrl)) || '';
+
+  if (!photoUrl || !String(photoUrl).startsWith('http')) {
+    showToast('등록된 대표 사진이 없습니다. [사진 변경]을 눌러보세요.', 'info', 2200);
+    return;
+  }
+
+  var oldViewer = document.getElementById('masterCoverLargeViewerModal');
+  if (oldViewer) oldViewer.remove();
+
+  var viewer = document.createElement('div');
+  viewer.id = 'masterCoverLargeViewerModal';
+  viewer.style.cssText = 'position:fixed; inset:0; z-index:1000100; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:20px; box-sizing:border-box; cursor:pointer;';
+  viewer.onclick = function() { viewer.remove(); triggerHaptic(8); };
+
+  viewer.innerHTML = '<div style="position:relative; width:250px; height:250px; border-radius:50%; border:2px solid rgba(186,230,253,0.6); box-shadow:0 0 35px rgba(56,189,248,0.35); overflow:hidden; background:#07090e; flex-shrink:0;">' +
+      '<img src="' + photoUrl + '" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />' +
+    '</div>' +
+    '<div style="color:#94a3b8; font-size:0.72rem; font-weight:800; background:rgba(255,255,255,0.06); padding:5px 12px; border-radius:15px; border:1px solid rgba(255,255,255,0.12);">' +
+      '화면을 톡 터치하면 닫힙니다' +
+    '</div>';
+
+  document.body.appendChild(viewer);
+};
+
+// 🔍 [메인 대표 사진 대형 확대 뷰어 라이트박스]
+window.previewMasterUserCoverPhotoLarge = function() {
+  triggerHaptic(10);
+  var profile = safeGetJSON('user_profile', null);
+  var photoUrl = localStorage.getItem('okbm_hero_cover_url') || (profile && (profile.heroCoverUrl || profile.photoUrl)) || '';
+
+  if (!photoUrl || !String(photoUrl).startsWith('http')) {
+    showToast('등록된 대표 사진이 없습니다. [사진 변경]을 눌러보세요.', 'info', 2200);
+    return;
+  }
+
+  var oldViewer = document.getElementById('masterCoverLargeViewerModal');
+  if (oldViewer) oldViewer.remove();
+
+  var viewer = document.createElement('div');
+  viewer.id = 'masterCoverLargeViewerModal';
+  viewer.style.cssText = 'position:fixed; inset:0; z-index:1000100; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:20px; box-sizing:border-box; cursor:pointer;';
+  viewer.onclick = function() { viewer.remove(); triggerHaptic(8); };
+
+  viewer.innerHTML = '<div style="position:relative; width:250px; height:250px; border-radius:50%; border:2px solid rgba(186,230,253,0.6); box-shadow:0 0 35px rgba(56,189,248,0.35); overflow:hidden; background:#07090e; flex-shrink:0;">' +
+      '<img src="' + photoUrl + '" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />' +
+    '</div>' +
+    '<div style="color:#94a3b8; font-size:0.72rem; font-weight:800; background:rgba(255,255,255,0.06); padding:5px 12px; border-radius:15px; border:1px solid rgba(255,255,255,0.12);">' +
+      '화면을 톡 터치하면 닫힙니다' +
+    '</div>';
+
+  document.body.appendChild(viewer);
+};
+
+// 🔍 [메인 대표 사진 대형 확대 뷰어 라이트박스]
+window.previewMasterUserCoverPhotoLarge = function() {
+  triggerHaptic(10);
+  var profile = safeGetJSON('user_profile', null);
+  var photoUrl = localStorage.getItem('okbm_hero_cover_url') || (profile && (profile.heroCoverUrl || profile.photoUrl)) || '';
+
+  if (!photoUrl || !String(photoUrl).startsWith('http')) {
+    showToast('등록된 대표 사진이 없습니다. [사진 변경]을 눌러보세요.', 'info', 2200);
+    return;
+  }
+
+  var oldViewer = document.getElementById('masterCoverLargeViewerModal');
+  if (oldViewer) oldViewer.remove();
+
+  var viewer = document.createElement('div');
+  viewer.id = 'masterCoverLargeViewerModal';
+  viewer.style.cssText = 'position:fixed; inset:0; z-index:1000100; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:20px; box-sizing:border-box; cursor:pointer;';
+  viewer.onclick = function() { viewer.remove(); triggerHaptic(8); };
+
+  viewer.innerHTML = '<div style="position:relative; width:250px; height:250px; border-radius:50%; border:2px solid rgba(186,230,253,0.6); box-shadow:0 0 35px rgba(56,189,248,0.35); overflow:hidden; background:#07090e; flex-shrink:0;">' +
+      '<img src="' + photoUrl + '" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />' +
+    '</div>' +
+    '<div style="color:#94a3b8; font-size:0.72rem; font-weight:800; background:rgba(255,255,255,0.06); padding:5px 12px; border-radius:15px; border:1px solid rgba(255,255,255,0.12);">' +
+      '화면을 톡 터치하면 닫힙니다' +
+    '</div>';
+
+  document.body.appendChild(viewer);
+};
+
+// 🔍 [메인 대표 사진 대형 확대 뷰어 라이트박스]
+window.previewMasterUserCoverPhotoLarge = function() {
+  triggerHaptic(10);
+  var profile = safeGetJSON('user_profile', null);
+  var photoUrl = localStorage.getItem('okbm_hero_cover_url') || (profile && (profile.heroCoverUrl || profile.photoUrl)) || '';
+
+  if (!photoUrl || !String(photoUrl).startsWith('http')) {
+    showToast('등록된 대표 사진이 없습니다. [사진 변경]을 눌러보세요.', 'info', 2200);
+    return;
+  }
+
+  var oldViewer = document.getElementById('masterCoverLargeViewerModal');
+  if (oldViewer) oldViewer.remove();
+
+  var viewer = document.createElement('div');
+  viewer.id = 'masterCoverLargeViewerModal';
+  viewer.style.cssText = 'position:fixed; inset:0; z-index:1000100; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:20px; box-sizing:border-box; cursor:pointer;';
+  viewer.onclick = function() { viewer.remove(); triggerHaptic(8); };
+
+  viewer.innerHTML = '<div style="position:relative; width:250px; height:250px; border-radius:50%; border:2px solid rgba(186,230,253,0.6); box-shadow:0 0 35px rgba(56,189,248,0.35); overflow:hidden; background:#07090e; flex-shrink:0;">' +
+      '<img src="' + photoUrl + '" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />' +
+    '</div>' +
+    '<div style="color:#94a3b8; font-size:0.72rem; font-weight:800; background:rgba(255,255,255,0.06); padding:5px 12px; border-radius:15px; border:1px solid rgba(255,255,255,0.12);">' +
+      '화면을 톡 터치하면 닫힙니다' +
+    '</div>';
+
+  document.body.appendChild(viewer);
+};
+
+// [메인 대표 사진 초기화]
+window.resetMasterUserCoverPhoto = function() {
+  triggerHaptic(12);
+  localStorage.removeItem('okbm_hero_cover_url');
+  var profile = safeGetJSON('user_profile', null);
+  if (profile) {
+    delete profile.heroCoverUrl;
+    delete profile.photoUrl;
+    localStorage.setItem('user_profile', JSON.stringify(profile));
+    if (profile.id) localStorage.setItem('user_profile_' + profile.id, JSON.stringify(profile));
+  }
+  window.applyMasterCoverPhotoToAllUI('');
+  if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+  showToast('기본 프로필로 복원되었습니다.', 'info');
+};    
+
+// [메인 대표 사진 업로드] 제5·10헌법 Canvas 압축 및 Cloudflare R2 직통 전송 파이프라인
+window.uploadMasterUserCoverPhoto = async function(event) {
+  var file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  var btn = document.getElementById('btnTriggerUploadCover');
+  var originalBtnText = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.innerHTML = '<span>최적화 중...</span>';
+  }
+
+  try {
+    var base64 = await new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function(e) { resolve(e.target.result); };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    var compressedBase64 = await new Promise(function(resolve) {
+      var img = new Image();
+      img.onload = function() {
+        var maxWidth = 1200;
+        var w = img.width;
+        var h = img.height;
+        if (w > maxWidth) {
+          h = Math.round((h * maxWidth) / w);
+          w = maxWidth;
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = function() { resolve(base64); };
+      img.src = base64;
+    });
+
+    var uploadedUrl = '';
+    var safeFileName = 'master_cover_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7) + '.jpg';
+    var CF_WORKER_UPLOAD_URL = 'https://romantic-upload-worker.ggumfree.workers.dev';
+
+    try {
+      var base64Data = compressedBase64.includes(',') ? compressedBase64.split(',')[1] : compressedBase64;
+      var byteCharacters = atob(base64Data);
+      var byteNumbers = new Array(byteCharacters.length);
+      for (var b = 0; b < byteCharacters.length; b++) {
+        byteNumbers[b] = byteCharacters.charCodeAt(b);
+      }
+      var byteArray = new Uint8Array(byteNumbers);
+      var blob = new Blob([byteArray], { type: 'image/jpeg' });
+
+      var cfRes = await fetch(CF_WORKER_UPLOAD_URL + '?file=' + encodeURIComponent(safeFileName), {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/jpeg' },
+        body: blob
+      });
+      if (cfRes.ok) {
+        var cfData = await cfRes.json();
+        if (cfData && cfData.status === 'SUCCESS' && cfData.url) {
+          uploadedUrl = cfData.url;
+        }
+      }
+    } catch (cfErr) {}
+
+    if (!uploadedUrl || !uploadedUrl.startsWith('http')) {
+      var targetGasUrl = window.GAS_API_URL || GAS_API_URL;
+      var driveRes = await fetch(targetGasUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'UPLOAD_PHOTO',
+          base64: compressedBase64,
+          fileName: safeFileName
+        })
+      });
+      if (driveRes.ok) {
+        var dData = await driveRes.json();
+        if (dData && dData.status === 'SUCCESS' && dData.url) {
+          uploadedUrl = dData.url;
+        }
+      }
+    }
+
+    if (!uploadedUrl || !uploadedUrl.startsWith('http')) {
+      throw new Error('사진 업로드 실패');
+    }
+
+    localStorage.setItem('okbm_hero_cover_url', uploadedUrl);
+
+    var profile = safeGetJSON('user_profile', null);
+    if (profile) {
+      profile.heroCoverUrl = uploadedUrl;
+      profile.photoUrl = uploadedUrl;
+      localStorage.setItem('user_profile', JSON.stringify(profile));
+      if (profile.id) {
+        localStorage.setItem('user_profile_' + profile.id, JSON.stringify(profile));
+      }
+    }
+
+    window.applyMasterCoverPhotoToAllUI(uploadedUrl);
+
+    if (typeof syncUserDataToCloud === 'function') {
+      syncUserDataToCloud();
+    }
+
+    triggerHaptic(15);
+    showToast('메인 대표 사진이 전역 반영되었습니다!', 'success', 2500);
+  } catch (err) {
+    showToast('사진 등록 중 오류가 발생했습니다.', 'error', 3000);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.innerHTML = originalBtnText;
+    }
+    event.target.value = '';
+  }
+};
+
 // 계정 설정 모달 제어 (가입날짜 완전 보존 & 14일 쿨다운 정밀 잠금)
 window.openAccountSettingsModal = function() {
   triggerHaptic(10);
@@ -2543,24 +2890,49 @@ window.openAccountSettingsModal = function() {
   if (!modal) return;
 
   var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : null);
-  var currentNick = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만백패커');
+  var isLogged = isUserLoggedIn();
+  var currentNick = (isLogged && profile && profile.nickname) ? profile.nickname : '로그인이 필요합니다';
   
   // 가입날짜 슬라이스 절단 금지 (원본 전체 보존)
-  var joinDate = (profile && profile.createdAt) ? String(profile.createdAt).trim() : '2026. 01. 01. 00:00:00';
+  var joinDate = (isLogged && profile && profile.createdAt) ? String(profile.createdAt).trim() : '비로그인 게스트';
 
   var nickInput = document.getElementById('settingsModalNicknameInput');
   var dateEl = document.getElementById('settingsModalJoinDate');
   var noticeEl = document.getElementById('settingsModalCooldownNotice');
   var submitBtn = modal.querySelector('button[onclick="saveNicknameFromSettingsModal()"]');
+  var authActionBtn = document.getElementById('settingsModalAuthActionBtn');
+
+  if (authActionBtn) {
+    if (isLogged) {
+      authActionBtn.style.background = 'rgba(244,63,94,0.15)';
+      authActionBtn.style.border = '1px solid #f43f5e';
+      authActionBtn.style.color = '#fda4af';
+      authActionBtn.innerText = '로그아웃';
+      authActionBtn.onclick = function() {
+        modal.style.display = 'none';
+        closeUserProfileModal();
+        logoutUser();
+      };
+    } else {
+      authActionBtn.style.background = '#fee500';
+      authActionBtn.style.border = 'none';
+      authActionBtn.style.color = '#191919';
+      authActionBtn.innerText = '카카오 1초 간편 로그인';
+      authActionBtn.onclick = function() {
+        modal.style.display = 'none';
+        openLoginModal();
+      };
+    }
+  }
 
   if (nickInput) {
-    nickInput.value = currentNick;
-    nickInput.disabled = false;
+    nickInput.value = isLogged ? currentNick : '';
+    nickInput.disabled = !isLogged;
   }
   if (submitBtn) {
-    submitBtn.disabled = false;
-    submitBtn.style.opacity = '1';
-    submitBtn.style.cursor = 'pointer';
+    submitBtn.disabled = !isLogged;
+    submitBtn.style.opacity = isLogged ? '1' : '0.4';
+    submitBtn.style.cursor = isLogged ? 'pointer' : 'not-allowed';
   }
   if (dateEl) dateEl.innerText = joinDate;
 
@@ -3044,12 +3416,14 @@ window.shareFeedToCommunity = async function(feedRecord) {
 
   // 📡 [초경량 비동기 전송]: 루트(피드시트/feeds.json)와 루터(스냅시트/router_snaps.json) 물리적 저장 분기
   var isRouterSnap = (feedRecord.feedType === 'router' || String(feedRecord.id).startsWith('snap_'));
+  var currentMasterCover = localStorage.getItem('okbm_hero_cover_url') || ((profile && (profile.heroCoverUrl || profile.photoUrl)) ? (profile.heroCoverUrl || profile.photoUrl) : '');
   var feedPayload = {
     id: feedRecord.id,
     isNewPost: Boolean(feedRecord.isNewPost),
     feedType: isRouterSnap ? 'router' : 'route',
     userId: userId,
     author: nickname,
+    authorPhoto: currentMasterCover || feedRecord.authorPhoto || '',
     instagram: userInsta ? ('@' + userInsta) : '',
     youtube: feedRecord.youtube || '',
     spot: feedRecord.spot || feedRecord.spotName || (isRouterSnap ? '나의 아웃도어' : '낭만 스팟'),
