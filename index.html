@@ -5,6 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="google" content="notranslate" />
   <script>
+    // 📐 [이미지 인라인 onload 에러 428개 완벽 박멸 전역 안전 가드]
+    window.applySmartPhotoFit = window.applySmartPhotoFit || function(img) {
+      if (!img) return;
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        if (img.naturalHeight >= img.naturalWidth) {
+          img.classList.add('is-portrait');
+          img.style.setProperty('object-fit', 'cover', 'important');
+        } else {
+          img.classList.remove('is-portrait');
+          img.style.setProperty('object-fit', 'contain', 'important');
+        }
+      }
+    };
+
     (function() {
       var s = window.location.search;
       var isDirectTab = s.includes('open=plan') || s.includes('open=history') || s.includes('tab=plan') || s.includes('tab=history') || s.includes('open=basecamp');
@@ -1692,65 +1706,6 @@
         }
         if (btnLike) btnLike.classList.toggle('liked', hLiked);
       }
-    }
-
-    // 🚀 [인출 엔진]: 별점을 가장 많이 받은 인기 피드를 1위로 자동 승격
-    async function initDynamicHeroAndFeeds() {
-      initHeroGestureEngine();
-      
-      var r2Domain = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
-      window.R2_PUBLIC_DOMAIN = r2Domain;
-      var R2_FEEDS_URL = r2Domain + '/feeds.json';
-      initSmartHeaderScrollEngine();
-
-      var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
-
-      var sortFeedsByStars = function(feedList) {
-        return feedList.filter(function(f) { return f && f.isPublished !== false; }).sort(function(a, b) {
-          var sA = Number(starCounts[a.id] || a.likes || 0);
-          var sB = Number(starCounts[b.id] || b.likes || 0);
-          if (sB !== sA) return sB - sA; // 1순위: 낭만별 개수 많은 순
-          return String(b.date || '').localeCompare(String(a.date || '')); // 2순위: 최신순
-        });
-      };
-
-      try {
-        var r2Res = await fetch(R2_FEEDS_URL + '?_t=' + Date.now(), { cache: 'no-store' });
-        if (r2Res.ok) {
-          var r2Feeds = await r2Res.json();
-          if (Array.isArray(r2Feeds) && r2Feeds.length > 0) {
-            var uniqueFeedMap = new Map();
-            r2Feeds.filter(Boolean).forEach(function(f) {
-              var uKey = String(f.id || '').trim();
-              if (!uniqueFeedMap.has(uKey)) uniqueFeedMap.set(uKey, f);
-            });
-
-            var cleanFeeds = sortFeedsByStars(Array.from(uniqueFeedMap.values()));
-            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(cleanFeeds));
-            
-            if (cleanFeeds[0] && (cleanFeeds[0].photo || cleanFeeds[0].photo_url)) {
-              localStorage.setItem('okbm_hero_cover_url', cleanFeeds[0].photo || cleanFeeds[0].photo_url);
-            }
-            window.__allLoadedFeeds = cleanFeeds;
-            window.heroTopRecords = cleanFeeds;
-            window.currentHeroCardIndex = 0;
-            renderCurrentHeroCard();
-            renderSecretSpotTrailerRail();
-            return;
-          }
-        }
-      } catch (r2Err) {}
-
-      var fallbackFeeds = safeGetJSON('okbm_cached_community_feeds', []);
-      if (!Array.isArray(fallbackFeeds) || fallbackFeeds.length === 0) {
-        fallbackFeeds = [Object.assign({}, FALLBACK_HERO_PRESET)];
-      }
-      var sortedFallback = sortFeedsByStars(fallbackFeeds);
-      window.__allLoadedFeeds = sortedFallback;
-      window.heroTopRecords = sortedFallback;
-      window.currentHeroCardIndex = 0;
-      renderCurrentHeroCard();
-      renderSecretSpotTrailerRail();
     }
 
    // =========================================================================
@@ -4267,12 +4222,22 @@ var adBannersHtml = `
         elevation: ''
       });
       planSpots[date] = existingSpots;
-      localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots));
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_plan_spots', planSpots, false);
+      } else {
+        localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots));
+      }
 
-      var planMemos = safeGetJSON('okbm_plan_memos', {});
+      var planMemos = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+        ? window.RomanticVault.read('okbm_plan_memos', {})
+        : safeGetJSON('okbm_plan_memos', {});
       var cleanMemoText = '[낭만 원정대 주최] ' + spot + ' (정원 ' + maxCap + '명) · ' + (carpool || '집결') + (desc ? ('\n' + desc) : '');
       planMemos[date] = planMemos[date] ? (cleanMemoText + '\n---\n' + planMemos[date]) : cleanMemoText;
-      localStorage.setItem('okbm_plan_memos', JSON.stringify(planMemos));
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_plan_memos', planMemos, false);
+      } else {
+        localStorage.setItem('okbm_plan_memos', JSON.stringify(planMemos));
+      }
 
       triggerHaptic(15);
       var modal = document.getElementById('tripCreateModal');
@@ -4328,12 +4293,22 @@ var adBannersHtml = `
         elevation: ''
       });
       planSpots[trip.date] = existingSpots;
-      localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots));
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_plan_spots', planSpots, false);
+      } else {
+        localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots));
+      }
 
-      var planMemos = safeGetJSON('okbm_plan_memos', {});
+      var planMemos = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+        ? window.RomanticVault.read('okbm_plan_memos', {})
+        : safeGetJSON('okbm_plan_memos', {});
       var cleanJoinMemo = '[낭만 원정대 참가] ' + trip.spotName + ' (방장: ' + (trip.authorName || '방장') + ')';
       planMemos[trip.date] = planMemos[trip.date] ? (cleanJoinMemo + '\n---\n' + planMemos[trip.date]) : cleanJoinMemo;
-      localStorage.setItem('okbm_plan_memos', JSON.stringify(planMemos));
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_plan_memos', planMemos, false);
+      } else {
+        localStorage.setItem('okbm_plan_memos', JSON.stringify(planMemos));
+      }
 
       var modal = document.getElementById('tripDetailSheetModal');
       if (modal) modal.remove();

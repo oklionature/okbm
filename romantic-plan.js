@@ -759,10 +759,14 @@ var totalKg = (totalGrams / 1000).toFixed(2);
   window.removeGearFromPlanSlot = function(categoryId, itemIndex) {
     if (window.selectedGearMap && window.selectedGearMap[categoryId]) {
       window.selectedGearMap[categoryId].splice(itemIndex, 1);
-      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_selected_gears_multi', window.selectedGearMap, true);
+      } else {
+        localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
+        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+      }
       window.renderPlanCategorySlots();
       triggerHaptic(10);
-      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
     }
   };
 

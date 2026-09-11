@@ -3,8 +3,9 @@
 // =========================================================================
 window.currentSharePhoto = window.currentSharePhoto || '';
 window.currentPhotoTextColor = window.currentPhotoTextColor || 'white';
-window.currentCardRatio = window.currentCardRatio || '9/16';
+window.currentCardRatio = window.currentCardRatio || '3/4';
 var currentCustomRatioVal = 0.75;
+var currentAutoRatioVal = '3/4';
 var currentPhotoScaleVal = 1.0;
 
 function ensurePhotoStudioDOM() {
@@ -153,13 +154,13 @@ window.applyStudioCardToTemplate = async function() {
   if (typeof triggerHaptic === 'function') triggerHaptic(12);
 
   try {
-    var canvas = await html2canvas(card, { backgroundColor: '#000000', scale: 2.0, useCORS: true, allowTaint: true, logging: false });
+    var canvas = await html2canvas(card, { backgroundColor: '#000000', scale: 3.0, useCORS: true, allowTaint: true, logging: false });
     
-    // 📐 1200px 초과 방어 및 150KB 내외 레티나 최적 압축 (용량 폭탄 원천 차단)
+    // 📐 FHD 1080px 고화질 선명도 & 150KB 내외 초경량 황금 밸런스 안착
     var targetCanvas = canvas;
     var maxDim = Math.max(canvas.width, canvas.height);
-    if (maxDim > 1200) {
-      var s = 1200 / maxDim;
+    if (maxDim > 1080) {
+      var s = 1080 / maxDim;
       var rCanvas = document.createElement('canvas');
       rCanvas.width = Math.round(canvas.width * s);
       rCanvas.height = Math.round(canvas.height * s);
@@ -169,7 +170,7 @@ window.applyStudioCardToTemplate = async function() {
       ctx.drawImage(canvas, 0, 0, rCanvas.width, rCanvas.height);
       targetCanvas = rCanvas;
     }
-    var finalPhotoUrl = targetCanvas.toDataURL('image/jpeg', 0.78);
+    var finalPhotoUrl = targetCanvas.toDataURL('image/jpeg', 0.84);
 
     window.currentSharePhoto = finalPhotoUrl;
     if (window.currentShareRecord) {
@@ -179,9 +180,12 @@ window.applyStudioCardToTemplate = async function() {
 
     var captureArea = document.getElementById('packShareCaptureArea');
     if (captureArea) {
+      var currentRatioStyle = (window.currentCardRatio === 'free') 
+        ? currentCustomRatioVal 
+        : (window.currentCardRatio === 'auto' ? currentAutoRatioVal : window.currentCardRatio);
       captureArea.innerHTML = `
-        <div style="width:100%; aspect-ratio:3/4; border-radius:14px; overflow:hidden; position:relative; background:#000;">
-          <img src="${finalPhotoUrl}" style="width:100%; height:100%; object-fit:cover; display:block;" />
+        <div style="width:auto; height:100%; max-height:100%; aspect-ratio:${currentRatioStyle}; margin:0 auto; border-radius:14px; overflow:hidden; position:relative; background:#000; box-shadow:0 12px 32px rgba(0,0,0,0.7); display:flex;">
+          <img src="${finalPhotoUrl}" style="width:100%; height:100%; object-fit:cover; display:block; border-radius:14px;" />
         </div>
       `;
     }
@@ -227,9 +231,19 @@ window.updateStudioCardLive = function() {
     fontSize: '0.55rem'
   });
 
+  if (window.currentCardRatio === 'auto' && window.currentSharePhoto) {
+    var probeImg = new Image();
+    probeImg.src = window.currentSharePhoto;
+    if (probeImg.naturalWidth && probeImg.naturalHeight) {
+      currentAutoRatioVal = (probeImg.naturalWidth / probeImg.naturalHeight).toFixed(3);
+    }
+  }
+
   var ratioVal = (window.currentCardRatio === 'free') 
     ? currentCustomRatioVal 
-    : (window.currentCardRatio === '1/1' ? '1/1' : (window.currentCardRatio === '4/5' ? '4/5' : (window.currentCardRatio === '3/4' ? '3/4' : '9/16')));
+    : (window.currentCardRatio === 'auto' 
+      ? currentAutoRatioVal 
+      : (window.currentCardRatio === '1/1' ? '1/1' : (window.currentCardRatio === '4/5' ? '4/5' : (window.currentCardRatio === '9/16' ? '9/16' : '3/4'))));
 
   container.innerHTML = `
     <div style="position:relative; width:100%; max-width:370px; aspect-ratio:${ratioVal}; max-height:84vh; margin:0 auto; border-radius:16px; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
@@ -681,25 +695,23 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
    var totalGrams = items.reduce(function(sum, g) { return sum + Number(g.weight || 0); }, 0);
     var weightKg = (totalGrams > 0) ? (totalGrams / 1000).toFixed(2) : (rec.weightKg || '0.00');
 
-    // 🌟 [스튜디오 포토 카드 vs 일반 현장 사진 분리 엔진]
+    // 🌟 [템플릿 정본 캡처 & 고봉사진 침범 원천 차단 엔진]
     var studioTmplPhoto = rec.customTemplatePhoto || (rec.isPhotoCardMode ? window.currentSharePhoto : '');
-    var photosToSave = [];
 
-    if (studioTmplPhoto) {
-      // 🛡️ 스튜디오 완성 카드는 오직 뒷면에만 장착되며, 앞면은 향후 출정 현장 사진 등록을 위해 100% 비워둠
-      photosToSave = [];
-    } else {
-      if (Array.isArray(window.__studioMultiPhotos) && window.__studioMultiPhotos.length > 0) {
-        photosToSave = window.__studioMultiPhotos.slice(0, 10);
-      } else if (Array.isArray(rec.photos) && rec.photos.length > 0) {
-        photosToSave = rec.photos.slice(0, 10);
-      } else if (rec.photo && typeof rec.photo === 'string' && rec.photo.length > 10) {
-        photosToSave = [rec.photo];
+    // 일반 템플릿 상태일 경우 현재 화면의 템플릿 카드를 즉시 캡처하여 정본으로 확정
+    if (!studioTmplPhoto && typeof html2canvas !== 'undefined') {
+      var captureEl = document.getElementById('packShareCaptureArea');
+      if (captureEl) {
+        try {
+          var tCanvas = await html2canvas(captureEl, { backgroundColor: null, scale: 2.0, logging: false });
+          studioTmplPhoto = tCanvas.toDataURL('image/jpeg', 0.84);
+        } catch (e) {}
       }
     }
 
-   // ⚡ 1. 0.01초 낙관적 로컬 즉시 확정 (블로킹 없는 즉각 보관)
-    var localMainPhoto = photosToSave.length > 0 ? photosToSave[0] : '';
+    // 🛡️ 템플릿 그래픽이 가려지지 않도록 메인 사진의 템플릿 침범을 원천 차단
+    var photosToSave = [];
+    var localMainPhoto = '';
     var existingPhotoMemos = Array.isArray(rec.photoMemos) && rec.photoMemos.length > 0 ? rec.photoMemos : [];
     var existingFullMemo = rec.memo || (existingPhotoMemos[0] || '');
 
@@ -725,8 +737,21 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       isPublished: true
     };
 
+    // 🛡️ 최신 템플릿 기록이 무조건 1순위(최상단)로 오도록 로컬 배열 선두 배치
+    var curHist = JSON.parse(localStorage.getItem('okbm_packing_history') || '[]');
+    curHist = curHist.filter(function(h) { return h.id !== newRecord.id; });
+    curHist.unshift(newRecord);
+    localStorage.setItem('okbm_packing_history', JSON.stringify(curHist));
+    window.interactiveHistory = curHist;
+    window.packingHistoryList = curHist;
+
     if (typeof window.savePackingHistoryRecord === 'function') {
       window.savePackingHistoryRecord(newRecord);
+    }
+
+    // 🛡️ Cloudflare R2 서버 정본 즉시 동기화
+    if (typeof window.syncUserDataToCloud === 'function') {
+      window.syncUserDataToCloud(true);
     }
 
     window.__studioMultiPhotos = null;
@@ -852,9 +877,9 @@ function ensurePackShareModalDOM() {
         <div id="templateSelectorBar" class="template-selector-bar"></div>
       </div>
 
-      <!-- 2. 중앙 엽서 카드 렌더링 영역 (시원하게 확장) -->
-      <div style="flex:1 1 0%; min-height:0; display:flex; align-items:center; justify-content:center; width:100%; padding:4px 0; overflow:hidden; box-sizing:border-box;">
-        <div id="packShareCaptureArea" style="width:100%; max-width:320px; transition:transform 0.2s ease, opacity 0.2s ease;"></div>
+      <!-- 2. 중앙 엽서 카드 렌더링 영역 (가용 높이 100% 밀착 확장) -->
+      <div style="flex:1 1 0%; min-height:0; height:100%; display:flex; align-items:center; justify-content:center; width:100%; padding:2px 0; overflow:hidden; box-sizing:border-box;">
+        <div id="packShareCaptureArea" style="width:100%; height:100%; max-height:100%; display:flex; align-items:center; justify-content:center; transition:transform 0.2s ease, opacity 0.2s ease;"></div>
       </div>
 
    <!-- 3. 하단 액션 버튼 바 (3분할 균형 배치: 닫기 / 공유하기 / 보관함 등록) -->

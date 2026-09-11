@@ -57,7 +57,6 @@
         flex: 1 1 0% !important;
         width: 100% !important;
         height: 100% !important;
-        height: 100dvh !important;
         overflow-y: auto !important;
         overflow-x: hidden !important;
         scroll-snap-type: y mandatory !important;
@@ -73,7 +72,6 @@
       .reel-page-snap {
         width: 100% !important;
         height: 100% !important;
-        height: 100dvh !important;
         scroll-snap-align: start !important;
         scroll-snap-stop: always !important;
         position: relative !important;
@@ -83,10 +81,12 @@
         justify-content: space-between !important;
         align-items: stretch !important;
         padding-top: calc(env(safe-area-inset-top, 0px)) !important;
-        padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
+        padding-bottom: 2px !important; /* 🛡️ 이중 패딩 110px 완전 제거: 하단 독바 위 초밀착 */
         box-sizing: border-box !important;
         flex-shrink: 0 !important;
         contain: strict !important;
+        content-visibility: auto !important;
+        contain-intrinsic-size: 100% 100% !important;
         touch-action: pan-y !important;
         background: #000000 !important;
       }
@@ -114,8 +114,15 @@
         justify-content: center !important;
         background: #000000 !important;
         overflow: hidden !important;
-        padding: 0 !important;
+        padding: 0 !important; /* 🛡️ 공백 0%: 좌우 여백 없이 화면 폭 100% 풀밀착 */
         box-sizing: border-box !important;
+      }
+
+      .reel-media-stage > div,
+      .postcard-3d-wrapper,
+      .postcard-face-front,
+      .postcard-face-back {
+        border-radius: 14px !important; /* 부드러운 모서리 라운드 유지 */
       }
 
      /* 📷 [가로 슬라이더 사진 규격 - 세로 스크롤 간섭 0% 보장] */
@@ -150,17 +157,14 @@
         box-sizing: border-box !important;
       }
 
-      /* 📐 기본값을 contain으로 확정하여 가로 사진 크롭 원천 차단 */
+      /* 📐 검은 여백 0% 원천 박멸: 풀스크린 꽉 채우기(Cover) 표준 확정 */
       .reel-photo-target {
         width: 100% !important;
         height: 100% !important;
-        object-fit: contain !important;
+        object-fit: cover !important; /* 빈틈없이 100% 꽉 채움 */
         object-position: center !important;
         display: block !important;
         pointer-events: none !important;
-      }
-      .reel-photo-target.is-portrait {
-        object-fit: cover !important;
       }
 
       .reel-bottom-interactive-bar {
@@ -225,6 +229,22 @@
       } catch (e) {}
     }
   }
+
+  // 📐 [가로/세로 스마트 판별 안전 가드 - 214개 콘솔 에러 원천 차단]
+  window.applySmartPhotoFit = function(img) {
+    if (!img) return;
+    var nw = img.naturalWidth;
+    var nh = img.naturalHeight;
+    if (nw > 0 && nh > 0) {
+      if (nh >= nw) {
+        img.classList.add('is-portrait');
+        img.style.setProperty('object-fit', 'cover', 'important');
+      } else {
+        img.classList.remove('is-portrait');
+        img.style.setProperty('object-fit', 'contain', 'important');
+      }
+    }
+  };
 
   var HISTORY_VEC_ICONS = {
     stars: '<svg viewBox="0 0 24 24" fill="none" stroke="#fde047" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; vertical-align:-2px; margin-right:2.5px; flex-shrink:0;"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>',
@@ -523,10 +543,26 @@
 
     return normalized;
   };
-  // 🔄 [앱 구동 즉시 폰의 IndexedDB 사진 맵 및 히스토리 메모리로 사전 복원 & 사진 유실 방어]
+  // 🔄 [앱 구동 즉시 폰의 IndexedDB 사진 맵 및 R2 공용 스냅/피드 초고속 선제 장전]
   (async function preloadIndexedDbToMemory() {
+    // ⚡ [0.03초 선제 인출]: 비로그인 게스트 접속 즉시 R2 router_snaps.json 메모리 직통 장전
     try {
-    var idbPhotosMap = await window.loadFromIndexedDB('okbm_phone_photos_map');
+      var r2Base = window.R2_PUBLIC_DOMAIN || 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
+      fetch(r2Base.replace(/\/+$/, '') + '/router_snaps.json?_t=' + Date.now())
+        .then(function(res) { return res.ok ? res.json() : []; })
+        .then(function(snaps) {
+          if (Array.isArray(snaps) && snaps.length > 0) {
+            window.__allLoadedRouterSnaps = snaps;
+            localStorage.setItem('okbm_cached_router_snaps', JSON.stringify(snaps));
+            if (window.activeHistoryFeedTab === 'router' && typeof window.renderHistoryStage === 'function') {
+              window.renderHistoryStage();
+            }
+          }
+        }).catch(function() {});
+    } catch (e) {}
+
+    try {
+      var idbPhotosMap = await window.loadFromIndexedDB('okbm_phone_photos_map');
       if (idbPhotosMap && typeof idbPhotosMap === 'object') {
         window.__memoryStore['okbm_phone_photos_map'] = idbPhotosMap;
       }
@@ -694,6 +730,18 @@
       d = parseInt(r.day, 10);
     }
 
+    // 🛡️ [미래 날짜 작성 원천 차단 가드]: 오늘 자정을 초과하는 미래 날짜는 현재 오늘 날짜로 강제 정규화
+    var checkDateObj = new Date(y, m - 1, d);
+    var todayLimit = new Date();
+    todayLimit.setHours(23, 59, 59, 999);
+
+    if (checkDateObj.getTime() > todayLimit.getTime()) {
+      var realNow = new Date();
+      y = realNow.getFullYear();
+      m = realNow.getMonth() + 1;
+      d = realNow.getDate();
+    }
+
     var cleanDate = y + '.' + String(m).padStart(2, '0') + '.' + String(d).padStart(2, '0');
     var recordId = (r && r.id) ? String(r.id) : ('pack_' + cleanDate.replace(/\D/g, '') + '_' + idx);
     var savedTmplPhoto = (r && r.customTemplatePhoto) ? String(r.customTemplatePhoto).trim() : '';
@@ -736,10 +784,11 @@
     var profile = safeGetJSON('user_profile', null);
     var currentAuthor = (r && r.author) ? r.author : ((profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만루터'));
 
-    // 🏷️ [낭만루트 vs 낭만루터 절대 철칙 판별 엔진]
-    // 1. 오직 'snap_'으로 시작하는 신규 등록 일상 스냅만 100% 'router' (낭만루터)
-    // 2. 인스타그램, 서버 피드(feed_), 보관함(pack_) 등 기존 모든 글은 무조건 100% 'route' (낭만루트)
-    var isSnapRecord = Boolean(recordId && String(recordId).startsWith('snap_'));
+    // 🏷️ [낭만루트 vs 낭만루터 절대 철칙 판별 엔진 - R2 정본 완벽 포용]
+    var isSnapRecord = Boolean(
+      (recordId && String(recordId).startsWith('snap_')) ||
+      (r && (r.feedType === 'router' || r.isRouterSnap === true))
+    );
     var resolvedFeedType = isSnapRecord ? 'router' : 'route';
 
     var resolvedAuthorPhoto = (r && (r.authorPhoto || r.author_photo || r.photoUrl || r.user_photo || r.userPhoto)) ? String(r.authorPhoto || r.author_photo || r.photoUrl || r.user_photo || r.userPhoto).trim() : '';
@@ -1224,7 +1273,11 @@
 
       var modalEl = document.createElement('div');
       modalEl.id = 'pastTripsListModal';
-      modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000000; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+      modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); width:100%; max-width:100%; background:#000000; z-index:1000010 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+
+      if (typeof window.ensureMasterBottomDock === 'function') {
+        window.ensureMasterBottomDock('history');
+      }
 
       var cardsHtml = '';
       if (logs.length === 0) {
@@ -1564,17 +1617,26 @@
     }
 
     var sId = String(recordId).trim();
+    var isSnap = sId.startsWith('snap_');
 
-    var rawList = window.safeGetStorage('okbm_packing_history', []) || [];
-    if (window.interactiveHistory && window.interactiveHistory.length > 0) {
-      rawList = window.interactiveHistory;
-    }
+    var rawList = [];
+    var snapList = [];
+    var target = null;
 
-    var target = rawList.find(function(r) { return String(r.id).trim() === sId; });
-    if (!target) {
-      target = rawList.find(function(r, idx) {
-        return String(idx) === sId || (r.date && String(r.date).replace(/[-/]/g, '') === sId);
-      });
+    if (isSnap) {
+      snapList = window.safeGetStorage('okbm_router_snaps', []) || [];
+      target = snapList.find(function(r) { return r && String(r.id).trim() === sId; });
+    } else {
+      rawList = window.safeGetStorage('okbm_packing_history', []) || [];
+      if (window.interactiveHistory && window.interactiveHistory.length > 0) {
+        rawList = window.interactiveHistory;
+      }
+      target = rawList.find(function(r) { return r && String(r.id).trim() === sId; });
+      if (!target) {
+        target = rawList.find(function(r, idx) {
+          return String(idx) === sId || (r.date && String(r.date).replace(/[-/]/g, '') === sId);
+        });
+      }
     }
 
     if (!target) {
@@ -1586,13 +1648,19 @@
     var nextStatus = !(target.isPublished === true);
     target.isPublished = nextStatus;
 
-    // 2. 4대 로컬 캐시 즉각 동기화
-    window.interactiveHistory = rawList.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
-    window.packingHistoryList = window.interactiveHistory;
-    if (window.__memoryStore) {
-      window.__memoryStore['okbm_packing_history'] = window.interactiveHistory;
+    // 2. 해당 전용 저장소(스냅 vs 루트)에 즉시 격리 동기화
+    if (isSnap) {
+      if (window.__memoryStore) window.__memoryStore['okbm_router_snaps'] = snapList.slice();
+      window.safeSetStorage('okbm_router_snaps', snapList.slice());
+      try { localStorage.setItem('okbm_router_snaps', JSON.stringify(snapList)); } catch(e) {}
+    } else {
+      window.interactiveHistory = rawList.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
+      window.packingHistoryList = window.interactiveHistory;
+      if (window.__memoryStore) {
+        window.__memoryStore['okbm_packing_history'] = window.interactiveHistory;
+      }
+      window.safeSetStorage('okbm_packing_history', rawList);
     }
-    window.safeSetStorage('okbm_packing_history', rawList);
 
     // 공용 피드 캐시 즉시 반영 (비공개 시 제거, 공개 시 등록)
     if (Array.isArray(window.__allLoadedFeeds)) {
@@ -3588,6 +3656,24 @@ window.__currentSwipePhotoIndex = 0;
     var memoInputEl = document.getElementById('richFormMemoInput');
     var finalTypedMemo = memoInputEl ? memoInputEl.value.trim().slice(0, 120) : (window.__tempSingleMemo || '').trim();
 
+    // 🛡️ [저장 시점 미래 날짜 재검증]: 미래 일정이 보관함으로 넘어왔더라도 오늘 날짜로 확정
+    var chkDateParts = String(target.date || '').match(/\d+/g);
+    if (chkDateParts && chkDateParts.length >= 3) {
+      var tY = parseInt(chkDateParts[0], 10);
+      var tM = parseInt(chkDateParts[1], 10);
+      var tD = parseInt(chkDateParts[2], 10);
+      var tObj = new Date(tY, tM - 1, tD);
+      var nowLimit = new Date();
+      nowLimit.setHours(23, 59, 59, 999);
+      if (tObj.getTime() > nowLimit.getTime()) {
+        var nD = new Date();
+        target.year = nD.getFullYear();
+        target.month = nD.getMonth() + 1;
+        target.day = nD.getDate();
+        target.date = target.year + '.' + String(target.month).padStart(2, '0') + '.' + String(target.day).padStart(2, '0');
+      }
+    }
+
     target.memo = finalTypedMemo;
     target.oneLineMemo = finalTypedMemo;
 
@@ -3808,12 +3894,10 @@ window.__currentSwipePhotoIndex = 0;
     window.toggleFeedStreamMode(e);
   };
 
- // ⚡ [0.03초 단일 진실 공급원]: Cloudflare R2 feeds.json 전용 초고속 인출 엔진
+ // ⚡ [0.03초 듀얼 병렬 인출]: R2 feeds.json(루트) + router_snaps.json(루터) 동시 인출 (제5헌법 준수)
  window.fetchCommunityFeeds = async function(isForce) {
     var r2Domain = window.R2_PUBLIC_DOMAIN || 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
-    var isRouterMode = (window.activeHistoryFeedTab === 'router');
-    var targetFile = isRouterMode ? '/router_snaps.json' : '/feeds.json';
-    var r2Url = r2Domain.replace(/\/+$/, '') + targetFile + '?_t=' + Date.now();
+    var cleanDomain = r2Domain.replace(/\/+$/, '');
 
     var updateLocalStarsFromFeeds = function(feedList) {
       if (!Array.isArray(feedList)) return;
@@ -3822,27 +3906,25 @@ window.__currentSwipePhotoIndex = 0;
         if (f && f.id) {
           var sId = String(f.id).trim();
           var serverLikes = Number(f.likes) || 0;
-          // 서버의 공식 별점 카운트를 단일 진실 공급원(SSOT)으로 병합
           starCounts[sId] = Math.max(Number(starCounts[sId]) || 0, serverLikes);
         }
       });
       localStorage.setItem('okbm_feed_stars_counts', JSON.stringify(starCounts));
 
-     // 🚀 [스마트폰 자동 내 글 복구 방어]: 삭제된 블랙리스트(deletedIds)는 절대로 복구하지 않음
       var deletedIds = safeGetJSON('okbm_deleted_record_ids', []);
       var profile = safeGetJSON('user_profile', null);
-      var myNick = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '오라네');
-      var myId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || 'kakao_5060259862');
+      var myNick = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '');
+      var myId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+
+      if (!myId || myId === 'guest') return;
 
       var myFeeds = feedList.filter(function(f) {
         if (!f || !f.id) return false;
         var sFid = String(f.id).trim();
-        // 🛑 삭제된 기록은 부활 원천 차단
         if (deletedIds.includes(sFid)) return false;
-
         var fNick = String(f.author || f.nick || f.nickname || '').trim();
         var fId = String(f.user_id || f.userId || '').trim();
-        return fNick === myNick || fNick === '오라네' || fId.includes('5060259862');
+        return (fId && fId === myId) || (myNick && fNick === myNick);
       }).map(function(f, idx) {
         var norm = window.normalizeHistoryRecord(f, idx);
         norm.userId = myId;
@@ -3851,7 +3933,6 @@ window.__currentSwipePhotoIndex = 0;
         return norm;
       });
 
-      // 🛡️ [스마트 병합]: 서버 데이터로 로컬의 방금 저장한 신규 기록을 덮어써서 날리는 현상 원천 차단
       var currentLocal = window.safeGetStorage('okbm_packing_history', []) || [];
       var mergedList = myFeeds.slice();
       currentLocal.forEach(function(loc) {
@@ -3869,18 +3950,27 @@ window.__currentSwipePhotoIndex = 0;
       }
     };
 
-    // 1순위: Cloudflare 글로벌 엣지 CDN 번개 인출 (30ms)
+    // 🚀 [듀얼 병렬 인출]: feeds.json(루트)과 router_snaps.json(루터) 동시 호출 (30ms)
     try {
-      var r2Res = await fetch(r2Url, { cache: 'no-store' });
-      if (r2Res.ok) {
-        var r2Feeds = await r2Res.json();
-        if (Array.isArray(r2Feeds)) {
-          window.__allLoadedFeeds = r2Feeds;
-          localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(r2Feeds));
-          updateLocalStarsFromFeeds(r2Feeds);
-          return r2Feeds;
-        }
+      var reqFeeds = fetch(cleanDomain + '/feeds.json?_t=' + Date.now(), { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; });
+      var reqSnaps = fetch(cleanDomain + '/router_snaps.json?_t=' + Date.now(), { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; });
+
+      var results = await Promise.all([reqFeeds, reqSnaps]);
+      var r2Feeds = Array.isArray(results[0]) ? results[0] : [];
+      var r2Snaps = Array.isArray(results[1]) ? results[1] : [];
+
+      if (r2Feeds.length > 0) {
+        window.__allLoadedFeeds = r2Feeds;
+        localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(r2Feeds));
+        updateLocalStarsFromFeeds(r2Feeds);
       }
+      if (r2Snaps.length > 0) {
+        window.__allLoadedRouterSnaps = r2Snaps;
+        localStorage.setItem('okbm_cached_router_snaps', JSON.stringify(r2Snaps));
+        updateLocalStarsFromFeeds(r2Snaps);
+      }
+
+      return window.activeHistoryFeedTab === 'router' ? r2Snaps : r2Feeds;
     } catch (r2Err) {
       console.warn('📡 [History] R2 피드 조회 대기, 구글 시트 백업망 전환:', r2Err.message);
     }
@@ -3904,14 +3994,42 @@ window.__currentSwipePhotoIndex = 0;
   };
 
   window.switchHistoryFeedTab = async function(tab) {
+    if (window.activeHistoryFeedTab === tab) return;
     window.activeHistoryFeedTab = tab;
     triggerHaptic(10);
 
-    // 🌐 [비로그인/로그인 공통]: 탭 전환 시 각 탭에 맞는 R2 파일(feeds.json vs router_snaps.json) 번개 인출
-    if (typeof window.renderHistoryStage === 'function') window.renderHistoryStage(true);
-    await window.fetchCommunityFeeds(true);
+    // 🌊 [부드러운 크로스페이드 1단계]: 기존 화면을 80ms 동안 자연스럽게 페이드아웃
+    var container = document.getElementById('reelsVerticalContainer');
+    if (container) {
+      container.style.transition = 'opacity 0.1s ease-out, transform 0.1s ease-out';
+      container.style.opacity = '0.2';
+      container.style.transform = 'scale(0.99)';
+    }
 
-    if (typeof window.renderHistoryStage === 'function') window.renderHistoryStage();
+    // 깜빡이는 로딩 스피너를 띄우지 않고 메모리/로컬 캐시로 즉각 렌더링
+    setTimeout(function() {
+      if (typeof window.renderHistoryStage === 'function') {
+        window.renderHistoryStage();
+      }
+      // 🌊 [부드러운 크로스페이드 2단계]: 새 탭 화면을 실크처럼 스르륵 페이드인
+      var newContainer = document.getElementById('reelsVerticalContainer');
+      if (newContainer) {
+        newContainer.style.opacity = '0.2';
+        newContainer.style.transform = 'scale(0.99)';
+        newContainer.offsetHeight; // Reflow 강제하여 트랜지션 보장
+        newContainer.style.transition = 'opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1)';
+        newContainer.style.opacity = '1';
+        newContainer.style.transform = 'scale(1)';
+      }
+    }, 80);
+
+    // 백그라운드에서 최신 R2 피드를 조용히 동기화
+    window.fetchCommunityFeeds(true).then(function() {
+      // 추가 로드된 피드가 있을 때만 렌더러 부드럽게 갱신
+      if (typeof window.renderHistoryStage === 'function') {
+        window.renderHistoryStage();
+      }
+    }).catch(function() {});
   };
 // 🔄 [피드 스트림 2단 직통 토글]: 전체피드 ⇄ 내 보관함 1:1 스위치 (뺑뺑이 영구 제거)
   window.toggleFeedStreamMode = function(e) {
@@ -4119,47 +4237,76 @@ window.renderHistoryStage = function(isLoading) {
       savedPhotosMap = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], savedPhotosMap);
     }
 
-    // 🛡️ [로그인/비로그인 공통]: R2 공용 피드 풀에서 낭만루트와 낭만루터를 각각 완벽 분리 인출
+    // 🛡️ [공개 피드 단일 공급원]: 메인 릴스 피드에는 오직 공개(isPublished === true) 피드만 진입 (나만보기는 보관함 모아보기에서만 확인)
     var sourceList = [];
     if (isRouteTab) {
-      // 🧭 낭만루트: 내 로컬 보관함(비공개 포함 100% 노출) + R2 공용 루트 피드
+      // 🧭 낭만루트: 내 로컬 공개글 + R2 공용 루트 피드
       sourceList = (window.safeGetStorage('okbm_packing_history', []) || []).filter(function(r) {
-        return r && r.feedType !== 'router' && !String(r.id).startsWith('snap_');
+        return r && r.isPublished === true && r.feedType !== 'router' && !String(r.id).startsWith('snap_');
       });
       allPublicList.forEach(function(p) {
-        if (p && p.feedType !== 'router' && !String(p.id).startsWith('snap_')) {
+        if (p && p.isPublished === true && p.feedType !== 'router' && !String(p.id).startsWith('snap_')) {
           if (!sourceList.some(function(s) { return String(s.id).trim() === String(p.id).trim(); })) {
             sourceList.push(p);
           }
         }
       });
     } else {
-      // 🏕️ 낭만루터: 내 로컬 스냅 + R2 공용 루터 스냅 (비로그인 방문자도 전체 공개 사진 100% 감상)
+      // 🏕️ 낭만루터: 내 로컬 공개 스냅 + R2 공용 루터 스냅 (비로그인 방문자도 전체 공개 스냅 100% 감상)
       sourceList = (window.safeGetStorage('okbm_router_snaps', []) || []).filter(function(r) {
         return r && r.isPublished !== false;
       });
       allPublicList.forEach(function(p) {
-        if (p && (p.feedType === 'router' || String(p.id).startsWith('snap_'))) {
+        if (p && p.isPublished !== false && (p.feedType === 'router' || String(p.id).startsWith('snap_'))) {
           if (!sourceList.some(function(s) { return String(s.id).trim() === String(p.id).trim(); })) {
             sourceList.push(p);
           }
         }
       });
-      // 🌟 [비로그인 핵심 해결]: R2에서 직접 읽어온 router_snaps.json 원본 스냅 풀을 최우선 소스로 장착
-      var r2SnapsPool = (Array.isArray(window.__allLoadedRouterSnaps) && window.__allLoadedRouterSnaps.length > 0)
+   // 🌟 [비로그인/로그인 공통]: R2 router_snaps.json 정본 스냅 100% 최우선 직통 바인딩
+      var r2Snaps = Array.isArray(window.__allLoadedRouterSnaps) && window.__allLoadedRouterSnaps.length > 0
         ? window.__allLoadedRouterSnaps
-        : (Array.isArray(window.__allLoadedFeeds) ? window.__allLoadedFeeds : []);
+        : (safeGetJSON('okbm_cached_router_snaps', []) || []);
 
-      r2SnapsPool.forEach(function(af) {
-        if (af && (af.feedType === 'router' || String(af.id).startsWith('snap_'))) {
+      // 메모리가 비어있을 경우 R2 즉시 인출 비동기 백업 트리거
+      if (r2Snaps.length === 0 && !window.__isSnapsFetching) {
+        window.__isSnapsFetching = true;
+        var r2DomainStr = window.R2_PUBLIC_DOMAIN || 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
+        fetch(r2DomainStr.replace(/\/+$/, '') + '/router_snaps.json?_t=' + Date.now())
+          .then(function(r){ return r.ok ? r.json() : []; })
+          .then(function(liveSnaps){
+            window.__isSnapsFetching = false;
+            if (Array.isArray(liveSnaps) && liveSnaps.length > 0) {
+              window.__allLoadedRouterSnaps = liveSnaps;
+              localStorage.setItem('okbm_cached_router_snaps', JSON.stringify(liveSnaps));
+              if (window.activeHistoryFeedTab === 'router' && typeof window.renderHistoryStage === 'function') {
+                window.renderHistoryStage();
+              }
+            }
+          }).catch(function(){ window.__isSnapsFetching = false; });
+      }
+
+      r2Snaps.forEach(function(af) {
+        if (af && af.isPublished !== false) {
           if (!sourceList.some(function(s) { return String(s.id).trim() === String(af.id).trim(); })) {
+            sourceList.push(af);
+          }
+        }
+      });
+
+      // feeds.json 내 혹시 포함된 보조 스냅도 합집합 병합
+      var r2Pool = Array.isArray(window.__allLoadedFeeds) ? window.__allLoadedFeeds : [];
+      r2Pool.forEach(function(af) {
+        if (af && af.isPublished !== false) {
+          var isSnapItem = Boolean(af.feedType === 'router' || (af.id && String(af.id).startsWith('snap_')));
+          if (isSnapItem && !sourceList.some(function(s) { return String(s.id).trim() === String(af.id).trim(); })) {
             sourceList.push(af);
           }
         }
       });
     }
 
-    // 🛡️ [제6헌법 준수]: 서버/R2 캐시에서 가져온 피드라도 삭제 목록(okbm_deleted_record_ids)에 있으면 100% 원천 배제
+    // 🛡️ [제6헌법 준수]: 삭제 목록(okbm_deleted_record_ids) 배제 및 비로그인 게스트 뷰 100% 보장
     var deletedRecordIds = safeGetJSON('okbm_deleted_record_ids', []);
 
     var normalizedPublicList = sourceList.map(function(rawItem, rIdx) {
@@ -4174,23 +4321,46 @@ window.renderHistoryStage = function(isLoading) {
       }
       return norm;
     }).filter(function(norm) {
-      if (!norm || !norm.id) return false;
+      if (!norm || !norm.id || norm.isPublished === false) return false;
       return !deletedRecordIds.includes(String(norm.id).trim());
     });
 
     var currentList = normalizedPublicList.filter(function(norm) {
-      if (!norm) return false;
-      var isSnap = Boolean(norm.feedType === 'router' || (norm.id && String(norm.id).startsWith('snap_')));
+      if (!norm || !norm.id) return false;
+      // 비공개(isPublished === false) 명시 건만 배제하고 R2 공용 스냅은 100% 통과
+      if (norm.isPublished === false) return false;
 
-      if (isSnap) {
-        var pList = getRecordPhotos(norm);
-        if (!pList || pList.length === 0) {
-          return false;
-        }
+      var isSnap = Boolean(
+        norm.feedType === 'router' ||
+        (norm.id && String(norm.id).startsWith('snap_')) ||
+        norm.isRouterSnap === true
+      );
+
+      // 사진 0개 시 글을 증발시키던 가드 원천 삭제 ➔ 기본 사진으로 방어
+      if (isSnap && (!norm.photos || norm.photos.length === 0)) {
+        var fallbackPhoto = norm.photo || norm.fieldPhoto || norm.photo_url || 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';
+        norm.photos = [fallbackPhoto];
+        norm.photo = fallbackPhoto;
+        norm.fieldPhoto = fallbackPhoto;
       }
 
       return isRouteTab ? !isSnap : isSnap;
     });
+
+    // 🌟 [스마트폰 비로그인 구제]: R2에 스냅이 있는데 0개로 걸러졌을 경우 R2 원본 2개 무조건 직통 바인딩
+    if (!isRouteTab && currentList.length === 0 && Array.isArray(window.__allLoadedRouterSnaps) && window.__allLoadedRouterSnaps.length > 0) {
+      currentList = window.__allLoadedRouterSnaps.map(function(s, idx) {
+        var n = window.normalizeHistoryRecord(s, idx);
+        n.feedType = 'router';
+        if (!n.photos || n.photos.length === 0) {
+          var fb = n.photo || n.fieldPhoto || n.photo_url || 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';
+          n.photos = [fb];
+          n.photo = fb;
+          n.fieldPhoto = fb;
+        }
+        return n;
+      });
+    }
 
     currentList = sortDescFn(currentList);
 
@@ -4514,7 +4684,7 @@ if (isRouteTab) {
         } else {
           horizontalSlidesHtml = mediaItems.map(function(pUrl) {
             return '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex; align-items:center; justify-content:center;">' +
-              '<img class="reel-photo-target" src="' + pUrl + '" loading="eager" decoding="async" onload="window.applySmartPhotoFit(this);" onerror="window.applySmartPhotoFit(this);" />' +
+              '<img class="reel-photo-target" src="' + pUrl + '" loading="eager" decoding="async" />' +
             '</div>';
           }).join('');
         }
@@ -4557,6 +4727,13 @@ if (isRouteTab) {
           '</div>';
         }
 
+        // 스튜디오 합성 완성 카드가 있을 때는 해당 이미지를 템플릿 면에 풀프레임 매핑
+        var studioCardMarkup = (tmplPhoto && String(tmplPhoto).trim().length > 10)
+          ? '<div style="width:100%; height:100%; position:relative; background:#000; overflow:hidden; display:flex; align-items:center; justify-content:center;">' +
+              '<img class="reel-photo-target" src="' + escapeHtml(tmplPhoto) + '" style="width:100% !important; height:100% !important; object-fit:cover !important; display:block;" />' +
+            '</div>'
+          : backTemplateCardHtml;
+
         var photoMemosArr = (Array.isArray(record.photoMemos) && record.photoMemos.length > 0) ? record.photoMemos : [memo120];
         var initialPhotoMemo = photoMemosArr[0] || memo120 || '';
         var cleanMemoContentHtml = initialPhotoMemo.trim()
@@ -4565,15 +4742,9 @@ if (isRouteTab) {
 
         var isSavedFeed = savedFeedsList.includes(String(record.id || '').trim());
 
-        if (tmplPhoto && String(tmplPhoto).trim().length > 10) {
-          backTemplateCardHtml = '<div style="width:100%; height:100%; position:relative; background:#000; overflow:hidden; display:flex; align-items:center; justify-content:center;">' +
-            '<img src="' + escapeHtml(tmplPhoto) + '" style="width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;" />' +
-          '</div>';
-        }
-
         var cardSnapPaddingTop = isRouteTab
           ? 'calc(env(safe-area-inset-top, 0px))'
-          : 'calc(48px + env(safe-area-inset-top, 0px))';
+          : 'calc(56px + env(safe-area-inset-top, 0px))';
 
         return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap" data-reel-idx="' + idx + '" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '" style="position:relative; padding-top:' + cardSnapPaddingTop + ' !important;">' +
           (isRouteTab ? routeOriginalHeaderHtml : '') +
@@ -4581,17 +4752,25 @@ if (isRouteTab) {
           '<div class="reel-media-stage">' +
             '<div style="width:100%; height:100%; max-height:100%; position:relative; overflow:hidden; background:#000000; display:flex; align-items:center; justify-content:center;">' +
               (isRouteTab ? (
-                '<!-- 🧭 낭만루트: 앞면 사진 ↔ 뒷면 템플릿 3D 플립 엽서 -->' +
-                '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000;">' +
-                  '<div class="postcard-face-front" style="width:100%; height:100%; position:absolute; inset:0; overflow:hidden; background:#000000;">' +
-                    '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \'' + cardId + '\');">' +
-                      horizontalSlidesHtml +
+                '<!-- 🧭 낭만루트: 개인 사진이 있으면 사진 우선(앞면), 터치 시 템플릿 스펙 시트(뒷면) -->' +
+                '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000; border-radius:0 !important;">' +
+                  (totalPhotosCount > 0 ? (
+                    '<!-- 1. 개인 사진 있는 경우: 앞면(개인 사진 풀스크린) ⇄ 뒷면(패킹 템플릿) -->' +
+                    '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; border-radius:0 !important; box-sizing:border-box;">' +
+                      '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \'' + cardId + '\');">' + horizontalSlidesHtml + '</div>' + dotsHtml +
                     '</div>' +
-                    dotsHtml +
-                  '</div>' +
-                  '<div class="postcard-face-back" style="width:100%; height:100%; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:12px; box-sizing:border-box;">' +
-                    backTemplateCardHtml +
-                  '</div>' +
+                    '<div class="postcard-face-back" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:12px; border-radius:0 !important; box-sizing:border-box;">' +
+                      studioCardMarkup +
+                    '</div>'
+                  ) : (
+                    '<!-- 2. 개인 사진 없는 경우: 앞면(패킹 템플릿) ⇄ 뒷면(사진 등록 안내) -->' +
+                    '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:12px; border-radius:0 !important; box-sizing:border-box;">' +
+                      studioCardMarkup +
+                    '</div>' +
+                    '<div class="postcard-face-back" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; border-radius:0 !important; box-sizing:border-box;">' +
+                      '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \'' + cardId + '\');">' + horizontalSlidesHtml + '</div>' + dotsHtml +
+                    '</div>'
+                  )) +
                 '</div>'
               ) : (
                 '<!-- 🏕️ 낭만루터: 엽서 일체 없는 100% 순수 인스타그램형 사진 슬라이더 -->' +
@@ -4634,10 +4813,10 @@ if (isRouteTab) {
       }).join('');
     }
 
-    // 🌟 [낭만루터 전용 상단 고정 헤더: 좌측 큼직한 화이트 [+] 단독 버튼 ⇄ 우측 전환 스위치]
+    // 🌟 [낭만루터 전용 상단 고정 헤더: 56px 규격 통일로 전환 시 덜컹거림 0%]
     var routerFixedHeaderHtml = '';
     if (!isRouteTab) {
-      routerFixedHeaderHtml = '<div style="position:absolute !important; top:0 !important; left:0 !important; right:0 !important; height:calc(48px + env(safe-area-inset-top, 0px)) !important; padding-top:env(safe-area-inset-top, 0px) !important; background:rgba(0,0,0,0.92) !important; backdrop-filter:blur(8px) !important; -webkit-backdrop-filter:blur(8px) !important; border-bottom:1px solid rgba(255,255,255,0.06) !important; display:flex !important; justify-content:space-between !important; align-items:center !important; padding-left:14px !important; padding-right:14px !important; z-index:40 !important; box-sizing:border-box !important;">' +
+      routerFixedHeaderHtml = '<div style="position:absolute !important; top:0 !important; left:0 !important; right:0 !important; height:calc(56px + env(safe-area-inset-top, 0px)) !important; padding-top:env(safe-area-inset-top, 0px) !important; background:rgba(0,0,0,0.92) !important; backdrop-filter:blur(8px) !important; -webkit-backdrop-filter:blur(8px) !important; border-bottom:1px solid rgba(255,255,255,0.06) !important; display:flex !important; justify-content:space-between !important; align-items:center !important; padding-left:14px !important; padding-right:14px !important; z-index:40 !important; box-sizing:border-box !important;">' +
         '<!-- 좌측: 큼직하고 시인성 높은 순백색(+) 단독 버튼 -->' +
         '<button type="button" onclick="window.openNewRouterSnapModal(); triggerHaptic(12);" style="background:rgba(255,255,255,0.12); border:1.2px solid rgba(255,255,255,0.25); border-radius:50%; width:34px; height:34px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#ffffff; padding:0; flex-shrink:0; transition:all 0.15s ease; box-shadow:0 2px 8px rgba(0,0,0,0.4);" title="새 사진 올리기">' +
           '<svg viewBox="0 0 24 24" style="width:19px; height:19px; stroke:#ffffff; fill:none; stroke-width:2.4; stroke-linecap:round;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
@@ -4659,11 +4838,25 @@ if (isRouteTab) {
       window.ensureMasterBottomDock('history');
     }
 
-    // ⚡ [캐시 이미지 즉각 판별 보완]: 렌더 즉시 가로 사진은 contain, 세로 사진은 cover로 확정
+    // ⚡ [세로 사진 100% 꽉 채우기 복원]: 캐시/네트워크 로드 완벽 감지 엔진
     var allReelImgs = content.querySelectorAll('.reel-photo-target');
     allReelImgs.forEach(function(img) {
-      if (img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
-        img.style.objectFit = (img.naturalWidth > img.naturalHeight) ? 'contain' : 'cover';
+      var applyFit = function() {
+        if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+          if (img.naturalHeight >= img.naturalWidth) {
+            img.classList.add('is-portrait');
+            img.style.setProperty('object-fit', 'cover', 'important');
+          } else {
+            img.classList.remove('is-portrait');
+            img.style.setProperty('object-fit', 'contain', 'important');
+          }
+        }
+      };
+
+      if (img.complete) {
+        applyFit();
+      } else {
+        img.addEventListener('load', applyFit, { once: true });
       }
     });
 
@@ -4706,10 +4899,21 @@ if (isRouteTab) {
 
   // 🚀 [낭만보관함 모달 오픈 / 클로즈 - 마스터 독바와 1:1 결합 & 최상위 레이어 보장]
   window.openHistoryModal = function() {
+    var modal = document.getElementById('romanticHistoryModal');
+    var isAlreadyOpen = Boolean(modal && modal.style.display === 'flex');
+
+    // 🔄 [하단 독바 재터치 토글]: 이미 보관함이 열려 있으면 토스트 없이 낭만루트 ⇄ 낭만루터 즉각 전환
+    if (isAlreadyOpen) {
+      triggerHaptic(10);
+      var currentTab = window.activeHistoryFeedTab || 'route';
+      var nextTab = (currentTab === 'route') ? 'router' : 'route';
+      window.switchHistoryFeedTab(nextTab);
+      return;
+    }
+
     var planModal = document.getElementById('romanticPlanModal');
     if (planModal) planModal.style.setProperty('display', 'none', 'important');
 
-    var modal = document.getElementById('romanticHistoryModal');
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'romanticHistoryModal';
@@ -4732,24 +4936,7 @@ if (isRouteTab) {
       window.ensureMasterBottomDock('history');
     }
 
-    var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
-    if (!isLogged) {
-      window.activeHistoryFeedTab = 'explore';
-    }
-
-    // ⚡ [R2 동시 인출]: 로그인 여부와 무관하게 feeds.json 및 router_snaps.json을 초기화하여 사진 즉시 렌더링
-    var r2Domain = window.R2_PUBLIC_DOMAIN || 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
-    fetch(r2Domain + '/router_snaps.json?_t=' + Date.now()).then(function(res) {
-      return res.json();
-    }).then(function(snaps) {
-      if (Array.isArray(snaps)) {
-        window.__allLoadedRouterSnaps = snaps;
-        if (window.activeHistoryFeedTab === 'router' && typeof window.renderHistoryStage === 'function') {
-          window.renderHistoryStage();
-        }
-      }
-    }).catch(function() {});
-
+    // ⚡ [R2 공용 단일 진실 공급원 인출]: 로그인 여부와 무관하게 feeds.json을 인출하여 모바일/PC 즉시 렌더링
     window.fetchCommunityFeeds().then(function() {
       if (typeof window.renderHistoryStage === 'function') {
         window.renderHistoryStage();
