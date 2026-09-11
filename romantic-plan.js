@@ -2542,53 +2542,18 @@ window.saveCurrentPackingRecord = function() {
     else if (window.activePlanSubMode === 'bookmarks') currentViewHtml = bookmarksViewHtml;
     else if (window.activePlanSubMode === 'gears') currentViewHtml = gearsViewHtml;
 
-    // 🏛️ [하단 5대 메인 네비게이션 독 - 누락 복구 및 100% 정상화]
-    var bottomDualDockHtml = `
-      <div id="planDualDockContainer" style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; overflow:hidden !important; flex-shrink:0 !important; z-index:1000 !important; user-select:none !important; box-sizing:border-box;">
-        <div id="planMainNavDeck" style="position:absolute; inset:0; display:flex; justify-content:space-around; align-items:center; z-index:105; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-          <a href="index.html" class="dock-item" onclick="window.closePlanModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">
-            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-            <span>낭만루터</span>
-          </a>
-          <a href="map.html" class="dock-item" onclick="window.closePlanModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">
-            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
-            <span>전국지도</span>
-          </a>
-          <button type="button" class="dock-item active" onclick="window.activePlanSubMode='calendar'; window.renderPlanStage(); triggerHaptic(12);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#ffffff !important; font-size:0.67rem; font-weight:900; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
-              <rect x="3" y="4" width="18" height="18" rx="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/>
-              <line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-              <path d="M9 16l2 2 4-4"/>
-            </svg>
-            <span>낭만플랜</span>
-          </button>
-          <button type="button" class="dock-item" onclick="if(typeof window.openHistoryModal==='function') window.openHistoryModal(); else window.closePlanModal(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
-              <path d="M21 8v13H3V8"/>
-              <path d="M1 3h22v5H1z"/>
-              <path d="M10 12h4"/>
-            </svg>
-            <span>낭만보관함</span>
-          </button>
-          <button type="button" class="dock-item" onclick="window.closePlanModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">
-            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            <span>마이리포트</span>
-          </button>
-        </div>
-      </div>
-    `;
-
     var content = modal.querySelector('.romantic-plan-content');
     if (!content) return;
 
     content.innerHTML = `
-      <div id="planMainViewContainer" style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; padding:calc(10px + env(safe-area-inset-top, 0px)) 12px 0 12px; margin:0 !important; box-sizing:border-box; overflow:hidden;">
+      <div id="planMainViewContainer" style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; padding:calc(8px + env(safe-area-inset-top, 0px)) 12px 4px 12px; margin:0 !important; box-sizing:border-box; overflow:hidden;">
         ${currentViewHtml}
       </div>
-      ${bottomDualDockHtml}
     `;
+
+    if (typeof window.ensureMasterBottomDock === 'function') {
+      window.ensureMasterBottomDock('plan');
+    }
 
     if (window.activePlanSubMode === 'calculator') {
       window.renderPlanCategorySlots();
@@ -3324,11 +3289,10 @@ window.commitPlanDestination = function(dateKey) {
     }, { passive: true });
   };
 
- // 🚀 [낭만플랜 모달 오픈 / 클로즈 - 진입 시 타 모달 차단 및 최상위 레이어 보장]
+ // 🚀 [낭만플랜 모달 오픈 / 클로즈 - 마스터 독바와 1:1 결합 & 최상위 레이어 보장]
   window.openPlanModal = function(subMode) {
     window.activePlanSubMode = subMode || 'calendar';
 
-    // 1. 낭만보관함 및 기타 레이어 강제 은닉 (화면 가림 원천 차단)
     var historyModal = document.getElementById('romanticHistoryModal');
     if (historyModal) {
       historyModal.style.setProperty('display', 'none', 'important');
@@ -3343,15 +3307,22 @@ window.commitPlanDestination = function(dateKey) {
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'romanticPlanModal';
-      modal.style.cssText = 'display:none; position:fixed; inset:0; background:#000000; z-index:1000005 !important; justify-content:center; align-items:stretch; width:100vw !important; max-width:100vw !important; overflow-x:hidden !important; touch-action:pan-y !important; transform:translateZ(0); -webkit-transform:translateZ(0);';
-      modal.innerHTML = '<div class="romantic-plan-content" style="width:100% !important; max-width:480px !important; margin:0 auto; height:100dvh; max-height:100dvh; display:flex; flex-direction:column; justify-content:space-between; overflow-x:hidden !important; overflow-y:hidden !important; box-sizing:border-box;"></div>';
+      modal.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:#000000; z-index:1000005 !important; justify-content:center; align-items:stretch; width:100vw !important; max-width:100vw !important; height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)) !important; overflow-x:hidden !important; touch-action:pan-y !important; transform:translateZ(0); -webkit-transform:translateZ(0);';
+      modal.innerHTML = '<div class="romantic-plan-content" style="width:100% !important; max-width:480px !important; margin:0 auto; height:100%; max-height:100%; display:flex; flex-direction:column; justify-content:space-between; overflow-x:hidden !important; overflow-y:hidden !important; box-sizing:border-box;"></div>';
       document.body.appendChild(modal);
+    } else {
+      modal.style.setProperty('bottom', 'calc(56px + env(safe-area-inset-bottom, 8px))', 'important');
+      modal.style.setProperty('height', 'calc(100dvh - 56px - env(safe-area-inset-bottom, 8px))', 'important');
     }
 
     modal.style.setProperty('display', 'flex', 'important');
     modal.style.setProperty('z-index', '1000005', 'important');
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
+
+    if (typeof window.ensureMasterBottomDock === 'function') {
+      window.ensureMasterBottomDock('plan');
+    }
 
     if (typeof window.loadGearDbFromGoogleSheet === 'function') {
       window.loadGearDbFromGoogleSheet();
@@ -3370,6 +3341,11 @@ window.commitPlanDestination = function(dateKey) {
     if (modal) {
       modal.style.setProperty('display', 'none', 'important');
       document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+    var isMap = (typeof window.location !== 'undefined') && window.location.pathname.includes('map.html');
+    if (typeof window.ensureMasterBottomDock === 'function') {
+      window.ensureMasterBottomDock(isMap ? 'map' : 'router');
     }
     triggerHaptic(10);
   };

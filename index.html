@@ -7,11 +7,19 @@
   <script>
     (function() {
       var s = window.location.search;
-      if (s.includes('open=plan') || s.includes('open=history') || s.includes('tab=plan') || s.includes('tab=history') || s.includes('open=basecamp')) {
+      var isDirectTab = s.includes('open=plan') || s.includes('open=history') || s.includes('tab=plan') || s.includes('tab=history') || s.includes('open=basecamp');
+      if (isDirectTab) {
         document.documentElement.classList.add('direct-modal-pending');
+        var isPlan = s.includes('open=plan') || s.includes('tab=plan') || s.includes('open=basecamp');
+        var styleTag = document.createElement('style');
+        styleTag.id = 'earlyDockStateFix';
+        styleTag.innerHTML = isPlan
+          ? '#romanticMasterBottomDock .dock-item[title="낭만루터"] { color:#94a3b8 !important; font-weight:700 !important; } #romanticMasterBottomDock .dock-item[title="낭만플랜"] { color:#38bdf8 !important; font-weight:900 !important; }'
+          : '#romanticMasterBottomDock .dock-item[title="낭만루터"] { color:#94a3b8 !important; font-weight:700 !important; } #romanticMasterBottomDock .dock-item[title="낭만보관함"] { color:#38bdf8 !important; font-weight:900 !important; }';
+        document.head.appendChild(styleTag);
         setTimeout(function() {
           document.documentElement.classList.remove('direct-modal-pending');
-        }, 800);
+        }, 600);
       }
     })();
   </script>
@@ -147,7 +155,7 @@
       --font-body: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
 
       --z-header: 500;
-      --z-dock: 600;
+      --z-dock: 2147483647;
       --z-dropdown: 950;
       --z-modal: 1000;
     }
@@ -843,13 +851,15 @@
       width: 100% !important;
       background: rgba(0, 0, 0, 0.98) !important;
       border-top: 1px solid var(--border-hairline) !important;
-      height: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
-      padding-bottom: env(safe-area-inset-bottom, 0px) !important;
-      z-index: var(--z-dock) !important;
+      height: calc(56px + env(safe-area-inset-bottom, 8px)) !important;
+      min-height: calc(56px + env(safe-area-inset-bottom, 8px)) !important;
+      padding-bottom: env(safe-area-inset-bottom, 8px) !important;
+      z-index: 2147483647 !important;
+      pointer-events: auto !important;
       user-select: none !important;
       overflow: visible !important;
       box-sizing: border-box;
-      touch-action: none !important;
+      touch-action: manipulation !important;
       transform: translate3d(0, 0, 0) !important;
       -webkit-transform: translate3d(0, 0, 0) !important;
       will-change: transform;
@@ -1311,18 +1321,22 @@
     </div>
   </div>
 
-  <div id="mainDualDockContainer" class="mobile-bottom-dock notranslate" style="display:flex; justify-content:space-around; align-items:center; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px;">
-    <button type="button" class="dock-item active" title="낭만루터" onclick="window.handleIndexHomeTabClick(event);">
+  <!-- 📱 전역 유일 마스터 하단 독바 (SSOT 규격 통일) -->
+  <div id="romanticMasterBottomDock" class="mobile-bottom-dock notranslate">
+    <!-- 1. 낭만루터 -->
+    <button type="button" class="dock-item" title="낭만루터" onclick="window.navigateToDockTab('router');">
       <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
       <span>낭만루터</span>
     </button>
 
-    <a href="map.html" class="dock-item" title="전국지도" onclick="triggerHaptic(10);">
+    <!-- 2. 전국지도 -->
+    <button type="button" class="dock-item" title="전국지도" onclick="window.navigateToDockTab('map');">
       <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
       <span>전국지도</span>
-    </a>
+    </button>
 
-    <button type="button" class="dock-item" title="낭만플랜" onclick="triggerHaptic(12); if(window.closeHistoryModal) window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar');">
+    <!-- 3. 낭만플랜 -->
+    <button type="button" class="dock-item" title="낭만플랜" onclick="window.navigateToDockTab('plan');">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="2"/>
         <line x1="16" y1="2" x2="16" y2="6"/>
@@ -1333,7 +1347,8 @@
       <span>낭만플랜</span>
     </button>
 
-    <button type="button" class="dock-item" title="낭만보관함" onclick="triggerHaptic(12); if(typeof openHistoryModal==='function') openHistoryModal();">
+    <!-- 4. 낭만보관함 -->
+    <button type="button" class="dock-item" title="낭만보관함" onclick="window.navigateToDockTab('history');">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 8v13H3V8"/>
         <path d="M1 3h22v5H1z"/>
@@ -1342,14 +1357,28 @@
       <span>낭만보관함</span>
     </button>
 
-    <button type="button" class="dock-item" title="마이리포트" onclick="triggerHaptic(12); handleAuthBtnClick();">
+    <!-- 5. 마이리포트 -->
+    <button type="button" class="dock-item" title="마이리포트" onclick="window.navigateToDockTab('report');">
       <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
       <span>마이리포트</span>
     </button>
   </div>
+  <script>
+    (function syncEarlyDockActive() {
+      var s = window.location.search;
+      var activeTab = (s.includes('open=plan') || s.includes('tab=plan') || s.includes('open=basecamp'))
+        ? '낭만플랜'
+        : ((s.includes('open=history') || s.includes('tab=history')) ? '낭만보관함' : '낭만루터');
+      var btn = document.querySelector('#romanticMasterBottomDock .dock-item[title="' + activeTab + '"]');
+      if (btn) {
+        btn.classList.add('active');
+        btn.style.setProperty('color', '#38bdf8', 'important');
+      }
+    })();
+  </script>
 
-<div class="custom-modal-overlay" id="videoDetailModal" onclick="if(event.target===this) closeVideoDetailModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:1000050 !important; justify-content:center; align-items:stretch; padding:0 !important; margin:0 !important; box-sizing:border-box;">
-    <div id="videoDetailSheet" style="width:100% !important; max-width:480px !important; height:100vh !important; height:100dvh !important; height:100svh !important; max-height:100svh !important; background:#0a0e17; border-radius:0 !important; border:none !important; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; margin:0 auto; box-sizing:border-box; transform:translateZ(0);">
+<div class="custom-modal-overlay" id="videoDetailModal" onclick="if(event.target===this) closeVideoDetailModal();" style="display:none; position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); background:#000000; z-index:1000050 !important; justify-content:center; align-items:stretch; padding:0 !important; margin:0 !important; box-sizing:border-box;">
+    <div id="videoDetailSheet" style="width:100% !important; max-width:480px !important; height:100% !important; max-height:100% !important; background:#0a0e17; border-radius:0 !important; border:none !important; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; margin:0 auto; box-sizing:border-box; transform:translateZ(0);">
       
       <div style="width:100%; padding:10px 14px 8px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); box-sizing:border-box; z-index:60;" onclick="event.stopPropagation();">
         <div style="display:flex; align-items:center; gap:6px;">
@@ -1365,33 +1394,9 @@
           <iframe id="videoModalIframe" src="" style="width:100%; height:100%; border:none; display:block;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="eager"></iframe>
         </div>
 
-        <div id="videoModalBodyContentSlot" style="padding:14px 14px 20px 14px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box;">
+        <div id="videoModalBodyContentSlot" style="padding:14px 14px calc(76px + env(safe-area-inset-bottom, 8px)) 14px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box;">
         </div>
 
-      </div>
-
-      <div style="width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; flex-direction:row !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; box-sizing:border-box; padding-bottom:env(safe-area-inset-bottom, 0px); z-index:100 !important;" onclick="event.stopPropagation();">
-        <button type="button" class="dock-item active" onclick="closeVideoDetailModal(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-          <span>낭만루터</span>
-        </button>
-        <a href="map.html" class="dock-item" onclick="closeVideoDetailModal(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:2px; padding:0 1px;">
-          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
-          <span>전국지도</span>
-        </a>
-        <button type="button" class="dock-item" onclick="closeVideoDetailModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
-          <span>낭만플랜</span>
-        </button>
-        <button type="button" class="dock-item" onclick="closeVideoDetailModal(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/>
-          <path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
-          <span>낭만보관함</span>
-        </button>
-        <button type="button" class="dock-item" onclick="closeVideoDetailModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-          <span>마이리포트</span>
-        </button>
       </div>
 
     </div>
@@ -2262,7 +2267,10 @@
       modalEl.dataset.photoMemos = JSON.stringify(photoMemosArr);
       modalEl.dataset.defaultMemo = defaultDesc;
       modalEl.dataset.memoMode = activeMode;
-      modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:rgba(0,0,0,0.96); z-index:1000045; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;';
+      modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); width:100%; height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); background:rgba(0,0,0,0.96); z-index:1000045; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;';
+      if (typeof window.ensureMasterBottomDock === 'function') {
+        window.ensureMasterBottomDock('router');
+      }
 
       var firstMemoText = (activeMode === 'single' || !photoMemosArr[0] || photoMemosArr[0].trim().length === 0)
         ? defaultDesc
@@ -2318,31 +2326,7 @@
           </div>
         </div>
 
-        <!-- 🏛️ 하단 고정형 5대 메인 독 -->
-        <div style="width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.98) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; flex-direction:row !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; box-sizing:border-box; padding-bottom:env(safe-area-inset-bottom, 0px); z-index:100 !important;">
-          <button type="button" class="dock-item active" onclick="window.closeSecretSpotHeroModal(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff; font-size:0.67rem; font-weight:900; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-            <span>낭만루터</span>
-          </button>
-          <button type="button" class="dock-item" onclick="window.closeSecretSpotHeroModal(); location.href='map.html'; triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
-            <span>전국지도</span>
-          </button>
-          <button type="button" class="dock-item" onclick="window.closeSecretSpotHeroModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
-            <span>낭만플랜</span>
-          </button>
-          <button type="button" class="dock-item" onclick="window.closeSecretSpotHeroModal(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/>
-            <path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
-            <span>낭만보관함</span>
-          </button>
-          <button type="button" class="dock-item" onclick="window.closeSecretSpotHeroModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            <span>마이리포트</span>
-          </button>
-        </div>
-      `;
+        `;
 
       document.body.appendChild(modalEl);
     };
@@ -2975,6 +2959,32 @@
       var item = (typeof idxOrUrl === 'number') ? (db[idxOrUrl] || db[0]) : (db.find(function(v) { return v.videoUrl === idxOrUrl || v.videoId === idxOrUrl; }) || db[0]);
 
       var modal = document.getElementById('videoDetailModal');
+      if (!modal) {
+        modal = document.createElement('div');
+        modal.className = 'custom-modal-overlay';
+        modal.id = 'videoDetailModal';
+        modal.onclick = function(e) { if (e.target === modal) closeVideoDetailModal(); };
+        modal.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); background:#000000; z-index:1000050 !important; justify-content:center; align-items:stretch; padding:0 !important; margin:0 !important; box-sizing:border-box;';
+        modal.innerHTML = `
+          <div id="videoDetailSheet" style="width:100% !important; max-width:480px !important; height:100% !important; max-height:100% !important; background:#0a0e17; border-radius:0 !important; border:none !important; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; margin:0 auto; box-sizing:border-box; transform:translateZ(0);">
+            <div style="width:100%; padding:10px 14px 8px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); box-sizing:border-box; z-index:60;" onclick="event.stopPropagation();">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:1.0rem;"><svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></span>
+                <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">영상 속 그 장소</span>
+              </div>
+              <button type="button" onclick="closeVideoDetailModal()" style="background:rgba(255, 255, 255, 0.08); border:1px solid rgba(255, 255, 255, 0.15); color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.95rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">✕</button>
+            </div>
+            <div id="videoModalScrollBody" style="flex:1 1 0%; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior-y:contain; display:flex; flex-direction:column; box-sizing:border-box;" onclick="event.stopPropagation();">
+              <div id="videoModalPlayerBox" style="width:100% !important; aspect-ratio:16/9; background:#000000; overflow:hidden; flex-shrink:0; position:relative; margin:0; padding:0; border-bottom:1px solid rgba(255, 255, 255, 0.1); z-index:50;">
+                <iframe id="videoModalIframe" src="" style="width:100%; height:100%; border:none; display:block;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="eager"></iframe>
+              </div>
+              <div id="videoModalBodyContentSlot" style="padding:14px 14px calc(76px + env(safe-area-inset-bottom, 8px)) 14px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box;"></div>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+      }
+
       var iframe = document.getElementById('videoModalIframe');
       var bodySlot = document.getElementById('videoModalBodyContentSlot');
 
@@ -3578,10 +3588,10 @@ var adBannersHtml = `
 
       var modal = document.createElement('div');
       modal.id = 'tripDetailSheetModal';
-      modal.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000040; display:flex; justify-content:center; align-items:stretch; box-sizing:border-box; overflow:hidden;';
+      modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); width:100%; height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); background:#000000; z-index:1000040; display:flex; justify-content:center; align-items:stretch; box-sizing:border-box; overflow:hidden;';
 
       modal.innerHTML = `
-        <div id="tripDetailCardTarget" style="width:100%; max-width:480px; height:100%; height:100dvh; max-height:100dvh; background:#07090e; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;">
+        <div id="tripDetailCardTarget" style="width:100%; max-width:480px; height:100%; max-height:100%; background:#07090e; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;">
           
           <div id="tripDetailInnerScroll" style="flex:1 1 0%; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:calc(10px + env(safe-area-inset-top, 0px)) 12px calc(80px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
             
@@ -3713,29 +3723,7 @@ var adBannersHtml = `
 
           </div>
 
-          <div style="width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; flex-direction:row !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; box-sizing:border-box; padding-bottom:env(safe-area-inset-bottom, 0px); z-index:100 !important;">
-            <button type="button" class="dock-item active" onclick="document.getElementById('tripDetailSheetModal').remove(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:900; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-              <svg viewBox="0 0 24 24" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px); fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-              <span>낭만루터</span>
-            </button>
-            <button type="button" class="dock-item" onclick="document.getElementById('tripDetailSheetModal').remove(); location.href='map.html'; triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-              <svg viewBox="0 0 24 24" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px); fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
-              <span>전국지도</span>
-            </button>
-            <button type="button" class="dock-item" onclick="document.getElementById('tripDetailSheetModal').remove(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px);"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
-              <span>낭만플랜</span>
-            </button>
-            <button type="button" class="dock-item" onclick="document.getElementById('tripDetailSheetModal').remove(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px);"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
-              <span>낭만보관함</span>
-            </button>
-            <button type="button" class="dock-item" onclick="document.getElementById('tripDetailSheetModal').remove(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-              <svg viewBox="0 0 24 24" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px); fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-              <span>마이리포트</span>
-            </button>
           </div>
-        </div>
       `;
       document.body.appendChild(modal);
 
@@ -3815,10 +3803,10 @@ var adBannersHtml = `
 
       var modal = document.createElement('div');
       modal.id = 'tripCreateModal';
-      modal.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000050; display:flex; justify-content:center; align-items:stretch; box-sizing:border-box; overflow:hidden;';
+      modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); width:100%; height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); background:#000000; z-index:1000050; display:flex; justify-content:center; align-items:stretch; box-sizing:border-box; overflow:hidden;';
 
       modal.innerHTML = `
-        <div style="width:100%; max-width:480px; height:100%; height:100dvh; max-height:100dvh; background:#07090e; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;">
+        <div style="width:100%; max-width:480px; height:100%; max-height:100%; background:#07090e; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;">
           
           <div style="flex:1 1 0%; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:calc(10px + env(safe-area-inset-top, 0px)) clamp(12px, 3.5vw, 16px) 12px clamp(12px, 3.5vw, 16px); display:flex; flex-direction:column; gap:clamp(5px, 1.1vh, 8px); box-sizing:border-box;">
             
@@ -3876,29 +3864,6 @@ var adBannersHtml = `
 
             <button type="button" onclick="submitNewTripJoin()" style="width:100%; height:clamp(38px, 5.2vh, 44px); background:#ffffff; color:#000000; border:none; border-radius:10px; font-size:clamp(0.82rem, 2.4vw, 0.88rem); font-weight:900; cursor:pointer; margin-top:2px; flex-shrink:0; box-shadow:0 4px 14px rgba(255,255,255,0.2);">
               원정대 등록 완료 ✓
-            </button>
-          </div>
-
-          <div style="width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; flex-direction:row !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; box-sizing:border-box; padding-bottom:env(safe-area-inset-bottom, 0px); z-index:100 !important;">
-            <button type="button" class="dock-item active" onclick="document.getElementById('tripCreateModal').remove(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:900; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-              <svg viewBox="0 0 24 24" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px); fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-              <span>낭만루터</span>
-            </button>
-            <button type="button" class="dock-item" onclick="document.getElementById('tripCreateModal').remove(); location.href='map.html'; triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-              <svg viewBox="0 0 24 24" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px); fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
-              <span>전국지도</span>
-            </button>
-            <button type="button" class="dock-item" onclick="document.getElementById('tripCreateModal').remove(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px);"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
-              <span>낭만플랜</span>
-            </button>
-            <button type="button" class="dock-item" onclick="document.getElementById('tripCreateModal').remove(); if(typeof openHistoryModal==='function') openHistoryModal(); triggerHaptic(12);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px);"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
-              <span>낭만보관함</span>
-            </button>
-            <button type="button" class="dock-item" onclick="document.getElementById('tripCreateModal').remove(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:clamp(0.58rem, 1.8vw, 0.67rem); font-weight:700; cursor:pointer; min-height:48px; gap:2px; padding:0 1px;">
-              <svg viewBox="0 0 24 24" style="width:clamp(16px, 4.5vw, 19px); height:clamp(16px, 4.5vw, 19px); fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-              <span>마이리포트</span>
             </button>
           </div>
         </div>
@@ -4595,7 +4560,7 @@ var adBannersHtml = `
       }
     }
 
-    function checkIncomingDirectTab() {
+   function checkIncomingDirectTab() {
       var urlParams = new URLSearchParams(window.location.search);
       var openParam = urlParams.get('open');
       var tabParam = urlParams.get('tab');
@@ -4615,7 +4580,7 @@ var adBannersHtml = `
           setTimeout(function() { 
             if (typeof openHistoryModal === 'function') openHistoryModal(); 
             releaseGuard();
-          }, 60);
+          }, 10);
         }
       } else if (openParam === 'basecamp' || openParam === 'plan' || tabParam === 'plan') {
         if (window.history && window.history.replaceState) {
@@ -4628,7 +4593,7 @@ var adBannersHtml = `
           setTimeout(function() { 
             if (typeof openPlanModal === 'function') openPlanModal('calendar'); 
             releaseGuard();
-          }, 60);
+          }, 10);
         }
       } else {
         releaseGuard();

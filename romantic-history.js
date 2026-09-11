@@ -1249,33 +1249,10 @@
           ${cardsHtml}
         </div>
 
-        <div id="pastTripsBatchDeleteBar" style="display:none; position:fixed; bottom:calc(56px + env(safe-area-inset-bottom, 0px)); left:0; right:0; max-width:440px; margin:0 auto; padding:10px 14px; background:rgba(15,23,42,0.95); backdrop-filter:blur(10px); border-top:1.5px solid #f43f5e; box-sizing:border-box; z-index:1000004;">
+        <div id="pastTripsBatchDeleteBar" style="display:none; position:fixed; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); left:0; right:0; max-width:440px; margin:0 auto; padding:10px 14px; background:rgba(15,23,42,0.95); backdrop-filter:blur(10px); border-top:1.5px solid #f43f5e; box-sizing:border-box; z-index:1000004;">
           <button type="button" onclick="window.executeBatchDeletePastTrips();" style="width:100%; height:44px; background:linear-gradient(135deg, #f43f5e, #be123c); border:none; border-radius:10px; color:#fff; font-size:0.84rem; font-weight:900; cursor:pointer; box-shadow:0 4px 14px rgba(244,63,94,0.4); display:flex; align-items:center; justify-content:center; gap:6px;">
             <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:#ffffff; fill:none; stroke-width:2.2;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             <span id="pastTripsBatchDeleteCountText">선택한 기록 영구 삭제</span>
-          </button>
-        </div>
-
-        <div style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; z-index:1000005 !important; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-          <a href="index.html" class="dock-item" onclick="window.closePastTripsListModal(); window.closeHistoryModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px;">
-            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-            <span>낭만루터</span>
-          </a>
-          <a href="map.html" class="dock-item" onclick="window.closePastTripsListModal(); window.closeHistoryModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px;">
-            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
-            <span>전국지도</span>
-          </a>
-          <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
-            <span>낭만플랜</span>
-          </button>
-          <button type="button" class="dock-item active" onclick="window.closePastTripsListModal(); window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff !important; font-size:0.67rem; font-weight:900; min-height:48px; gap:3px; cursor:pointer;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
-            <span>낭만보관함</span>
-          </button>
-          <button type="button" class="dock-item" onclick="window.closePastTripsListModal(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
-            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            <span>마이리포트</span>
           </button>
         </div>
       `;
@@ -2398,30 +2375,7 @@
 
   
 
-      <div id="userModalCardsContainer" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:14px 12px calc(80px + env(safe-area-inset-bottom, 0px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
-      </div>
-
-      <div style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; z-index:1000016 !important; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-        <a href="index.html" class="dock-item" onclick="document.getElementById('userFeedCollectionModal').remove(); window.closeHistoryModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px;">
-          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-          <span>낭만루터</span>
-        </a>
-        <a href="map.html" class="dock-item" onclick="document.getElementById('userFeedCollectionModal').remove(); window.closeHistoryModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px;">
-          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
-          <span>전국지도</span>
-        </a>
-        <button type="button" class="dock-item" onclick="document.getElementById('userFeedCollectionModal').remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
-          <span>낭만플랜</span>
-        </button>
-        <button type="button" class="dock-item active" onclick="document.getElementById('userFeedCollectionModal').remove(); window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff !important; font-size:0.67rem; font-weight:900; min-height:48px; gap:3px; cursor:pointer;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
-          <span>낭만보관함</span>
-        </button>
-        <button type="button" class="dock-item" onclick="document.getElementById('userFeedCollectionModal').remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
-          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-          <span>마이리포트</span>
-        </button>
+      <div id="userModalCardsContainer" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:14px 12px calc(80px + env(safe-area-inset-bottom, 8px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
       </div>
     `;
 
@@ -2467,33 +2421,10 @@
         </button>
       </div>
 
-      <div id="dualFeedScrollContainer" onscroll="window.__onDualFeedContainerScroll(this);" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:calc(env(safe-area-inset-top, 0px)) 0 calc(70px + env(safe-area-inset-bottom, 0px)) 0; display:flex; flex-direction:column; box-sizing:border-box;">
+      <div id="dualFeedScrollContainer" onscroll="window.__onDualFeedContainerScroll(this);" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:calc(env(safe-area-inset-top, 0px)) 0 calc(76px + env(safe-area-inset-bottom, 8px)) 0; display:flex; flex-direction:column; box-sizing:border-box;">
         <div id="dualFeedCardsWrapper">
           ${allCardsHtml}
         </div>
-      </div>
-
-      <div style="position:relative !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; z-index:1000021 !important; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">
-        <a href="index.html" class="dock-item" onclick="var s=document.getElementById('singleTripFeedModal'); if(s) s.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px;">
-          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-          <span>낭만루터</span>
-        </a>
-        <a href="map.html" class="dock-item" onclick="var s=document.getElementById('singleTripFeedModal'); if(s) s.remove(); window.closeHistoryModal(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-decoration:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px;">
-          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
-          <span>전국지도</span>
-        </a>
-        <button type="button" class="dock-item" onclick="var s=document.getElementById('singleTripFeedModal'); if(s) s.remove(); window.closeHistoryModal(); if(typeof openPlanModal==='function') openPlanModal('calendar'); triggerHaptic(12);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>
-          <span>낭만플랜</span>
-        </button>
-        <button type="button" class="dock-item active" onclick="var s=document.getElementById('singleTripFeedModal'); if(s) s.remove(); window.renderHistoryStage(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#ffffff !important; font-size:0.67rem; font-weight:900; min-height:48px; gap:3px; cursor:pointer;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
-          <span>낭만보관함</span>
-        </button>
-        <button type="button" class="dock-item" onclick="var s=document.getElementById('singleTripFeedModal'); if(s) s.remove(); window.closeHistoryModal(); if(typeof handleAuthBtnClick==='function') handleAuthBtnClick(); triggerHaptic(10);" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; background:none; border:none; color:#94a3b8; font-size:0.67rem; font-weight:700; min-height:48px; gap:3px; cursor:pointer;">
-          <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-          <span>마이리포트</span>
-        </button>
       </div>
     `;
     document.body.appendChild(feedModal);
@@ -3496,8 +3427,8 @@ window.__currentSwipePhotoIndex = 0;
         </button>
       </div>
 
-      <!-- 2. 중앙 스크롤 뷰포트 -->
-      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:14px 14px calc(40px + env(safe-area-inset-bottom, 0px)) 14px; display:flex; flex-direction:column; gap:16px; box-sizing:border-box;">
+      <!-- 2. 중앙 스크롤 뷰포트 (독바 높이 완벽 대응 패딩 88px 확보) -->
+      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:14px 14px calc(88px + env(safe-area-inset-bottom, 8px)) 14px; display:flex; flex-direction:column; gap:16px; box-sizing:border-box;">
         
      <!-- 대형 사진 스와이프 무대 섹션 -->
         <div style="display:flex; flex-direction:column; gap:6px;">
@@ -4629,40 +4560,11 @@ if (isRouteTab) {
     content.innerHTML = routerFixedHeaderHtml +
     '<div id="reelsVerticalContainer" class="reel-vertical-container">' +
       reelSlidesHtml +
-    '</div>' +
-
-    '<div style="position:absolute !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; background:rgba(0,0,0,0.95) !important; border-top:1px solid rgba(255,255,255,0.12) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; flex-shrink:0 !important; z-index:30 !important; padding:0 2px calc(env(safe-area-inset-bottom, 0px)) 2px; box-sizing:border-box;">' +
-      '<a href="index.html" class="dock-item" onclick="window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">' +
-        '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>' +
-        '<span>낭만루터</span>' +
-      '</a>' +
-      '<a href="map.html" class="dock-item" onclick="window.closeHistoryModal(); triggerHaptic(10);" style="text-decoration:none; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; flex:1; min-height:48px;">' +
-        '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>' +
-        '<span>전국지도</span>' +
-      '</a>' +
-      '<button type="button" class="dock-item" onclick="window.closeHistoryModal(); if(typeof openPlanModal===\'function\') openPlanModal(\'calendar\'); triggerHaptic(12);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">' +
-          '<rect x="3" y="4" width="18" height="18" rx="2"/>' +
-          '<line x1="16" y1="2" x2="16" y2="6"/>' +
-          '<line x1="8" y1="2" x2="8" y2="6"/>' +
-          '<line x1="3" y1="10" x2="21" y2="10"/>' +
-          '<path d="M9 16l2 2 4-4"/>' +
-        '</svg>' +
-        '<span>낭만플랜</span>' +
-      '</button>' +
-      '<button type="button" class="dock-item active" onclick="if(typeof window.renderHistoryStage===\'function\') window.renderHistoryStage(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#ffffff !important; font-size:0.67rem; font-weight:900; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">' +
-          '<path d="M21 8v13H3V8"/>' +
-          '<path d="M1 3h22v5H1z"/>' +
-          '<path d="M10 12h4"/>' +
-        '</svg>' +
-        '<span>낭만보관함</span>' +
-      '</button>' +
-      '<button type="button" class="dock-item" onclick="window.closeHistoryModal(); if(typeof handleAuthBtnClick===\'function\') handleAuthBtnClick(); triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; font-size:0.67rem; font-weight:700; gap:3px; background:none; border:none; cursor:pointer; flex:1; min-height:48px;">' +
-        '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>' +
-        '<span>마이리포트</span>' +
-      '</button>' +
     '</div>';
+
+    if (typeof window.ensureMasterBottomDock === 'function') {
+      window.ensureMasterBottomDock('history');
+    }
 
     // ⚡ [캐시 이미지 즉각 판별 보완]: 렌더 즉시 가로 사진은 contain, 세로 사진은 cover로 확정
     var allReelImgs = content.querySelectorAll('.reel-photo-target');
@@ -4709,7 +4611,7 @@ if (isRouteTab) {
     }
   };
 
-  // 🚀 [낭만보관함 모달 오픈 / 클로즈 - 100% 에러 방어]
+  // 🚀 [낭만보관함 모달 오픈 / 클로즈 - 마스터 독바와 1:1 결합 & 최상위 레이어 보장]
   window.openHistoryModal = function() {
     var planModal = document.getElementById('romanticPlanModal');
     if (planModal) planModal.style.setProperty('display', 'none', 'important');
@@ -4718,14 +4620,22 @@ if (isRouteTab) {
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'romanticHistoryModal';
-      modal.style.cssText = 'display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; transform:translateZ(0); -webkit-transform:translateZ(0); contain:strict; overscroll-behavior:contain;';
-      modal.innerHTML = '<div class="romantic-history-content" style="width:100%; max-width:480px; margin:0 auto; height:100dvh; max-height:100dvh; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; box-sizing:border-box;"></div>';
+      modal.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:#000000; z-index:1000005 !important; justify-content:center; align-items:stretch; width:100vw !important; max-width:100vw !important; height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)) !important; transform:translateZ(0); -webkit-transform:translateZ(0); contain:strict; overscroll-behavior:contain;';
+      modal.innerHTML = '<div class="romantic-history-content" style="width:100% !important; max-width:480px !important; margin:0 auto; height:100%; max-height:100%; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; box-sizing:border-box;"></div>';
       document.body.appendChild(modal);
+    } else {
+      modal.style.setProperty('bottom', 'calc(56px + env(safe-area-inset-bottom, 8px))', 'important');
+      modal.style.setProperty('height', 'calc(100dvh - 56px - env(safe-area-inset-bottom, 8px))', 'important');
     }
 
     modal.style.setProperty('display', 'flex', 'important');
+    modal.style.setProperty('z-index', '1000005', 'important');
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
+
+    if (typeof window.ensureMasterBottomDock === 'function') {
+      window.ensureMasterBottomDock('history');
+    }
 
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
     if (!isLogged) {
@@ -4763,6 +4673,10 @@ if (isRouteTab) {
       modal.style.setProperty('display', 'none', 'important');
       document.documentElement.style.overflow = '';
       document.body.style.overflow = '';
+    }
+    var isMap = (typeof window.location !== 'undefined') && window.location.pathname.includes('map.html');
+    if (typeof window.ensureMasterBottomDock === 'function') {
+      window.ensureMasterBottomDock(isMap ? 'map' : 'router');
     }
     triggerHaptic(10);
   };

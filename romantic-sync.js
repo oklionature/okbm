@@ -1091,50 +1091,7 @@ function ensureMyReportAndAuthModalsInDOM() {
 
         </div>
 
-       <!-- 3단 독 바 (실제 모바일 기기 safe-area 완벽 대응 1:1 일체화 규격) -->
-        <div class="mobile-bottom-dock notranslate" style="position:fixed !important; bottom:0px !important; left:0 !important; right:0 !important; width:100% !important; max-width:480px !important; margin:0 auto !important; height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; min-height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; padding:0 0 env(safe-area-inset-bottom, 8px) 0 !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.08) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:50 !important; box-sizing:border-box; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);">
-          <!-- 1. 낭만루터 -->
-          <a href="index.html" class="dock-item" title="낭만루터" onclick="closeUserProfileModal(); window.smoothNavigate('index.html', event);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; text-decoration:none; font-size:0.67rem; font-weight:700; gap:3px; flex:1; height:56px;">
-            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-            <span>낭만루터</span>
-          </a>
-
-          <!-- 2. 전국지도 -->
-          <a href="map.html" class="dock-item" title="전국지도" onclick="closeUserProfileModal(); window.smoothNavigate('map.html', event);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; text-decoration:none; font-size:0.67rem; font-weight:700; gap:3px; flex:1; height:56px;">
-            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
-            <span>전국지도</span>
-          </a>
-
-          <!-- 3. 낭만플랜 -->
-          <a href="index.html?open=plan" class="dock-item" title="낭만플랜" onclick="closeUserProfileModal(); triggerHaptic(12);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; text-decoration:none; font-size:0.67rem; font-weight:700; gap:3px; flex:1; height:56px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
-              <rect x="3" y="4" width="18" height="18" rx="2"/>
-              <line x1="16" y1="2" x2="16" y2="6"/>
-              <line x1="8" y1="2" x2="8" y2="6"/>
-              <line x1="3" y1="10" x2="21" y2="10"/>
-              <path d="M9 16l2 2 4-4"/>
-            </svg>
-            <span>낭만플랜</span>
-          </a>
-
-          <!-- 4. 낭만보관함 -->
-          <a href="index.html?open=history" class="dock-item" title="낭만보관함" onclick="closeUserProfileModal(); triggerHaptic(12);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; text-decoration:none; font-size:0.67rem; font-weight:700; gap:3px; flex:1; height:56px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
-              <path d="M21 8v13H3V8"/>
-              <path d="M1 3h22v5H1z"/>
-              <path d="M10 12h4"/>
-            </svg>
-            <span>낭만보관함</span>
-          </a>
-
-          <!-- 5. 마이리포트 (현재 활성화: 파스텔 스카이블루 일체화) -->
-          <button type="button" class="dock-item active" title="마이리포트" onclick="triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#38bdf8 !important; text-decoration:none; font-size:0.67rem; font-weight:700; gap:3px; flex:1; height:56px; background:none; border:none; cursor:pointer;">
-            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            <span>마이리포트</span>
-          </button>
-        </div>
-
-      </div>
+       </div>
     </div>
 
     <!-- 3. 계정 관리 모달 -->
@@ -2363,9 +2320,171 @@ function closeLoginModal() {
 }
 window.closeLoginModal = closeLoginModal;
 
+// 🏛️ [전역 유일 마스터 하단 독바 엔진 - DOM 파괴 0% 초고속 스위칭]
+window.ensureMasterBottomDock = function(activeTabId) {
+  var curPage = (typeof window.location !== 'undefined') ? window.location.pathname : '';
+  var isMap = curPage.includes('map.html');
+  var s = (typeof window.location !== 'undefined') ? window.location.search : '';
+
+  // URL 파라미터 및 현재 상태를 완벽히 반영하여 기본 탭 결정
+  var autoTab = isMap ? 'map' : 'router';
+  if (s.includes('open=plan') || s.includes('tab=plan') || s.includes('open=basecamp') || document.getElementById('romanticPlanModal')) {
+    autoTab = 'plan';
+  } else if (s.includes('open=history') || s.includes('tab=history') || document.getElementById('romanticHistoryModal')) {
+    autoTab = 'history';
+  } else if (document.getElementById('userProfileModalOverlay') && document.getElementById('userProfileModalOverlay').style.display === 'flex') {
+    autoTab = 'report';
+  }
+
+  var activeTab = activeTabId || autoTab;
+  var dock = document.getElementById('romanticMasterBottomDock');
+
+  if (!dock) {
+    var existingDocks = document.querySelectorAll('.mobile-bottom-dock');
+    if (existingDocks.length > 0) {
+      dock = existingDocks[0];
+      dock.id = 'romanticMasterBottomDock';
+    } else {
+      dock = document.createElement('div');
+      dock.id = 'romanticMasterBottomDock';
+      dock.className = 'mobile-bottom-dock notranslate';
+      document.body.appendChild(dock);
+    }
+  }
+
+  dock.style.cssText = 'position:fixed !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; max-width:480px !important; margin:0 auto !important; height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; min-height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; padding:0 0 env(safe-area-inset-bottom, 8px) 0 !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.1) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:2147483647 !important; box-sizing:border-box; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); pointer-events:auto !important;';
+
+  var tabs = [
+    { id: 'router', name: '낭만루터', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>', action: "window.navigateToDockTab('router')" },
+    { id: 'map', name: '전국지도', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>', action: "window.navigateToDockTab('map')" },
+    { id: 'plan', name: '낭만플랜', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>', action: "window.navigateToDockTab('plan')" },
+    { id: 'history', name: '낭만보관함', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>', action: "window.navigateToDockTab('history')" },
+    { id: 'report', name: '마이리포트', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>', action: "window.navigateToDockTab('report')" }
+  ];
+
+  // ⚡ innerHTML 파괴 없이 오직 색상 및 폰트 두께만 0ms로 스위칭하여 깜빡임 원천 차단
+  var buttons = dock.querySelectorAll('button');
+  if (buttons.length === tabs.length) {
+    for (var i = 0; i < tabs.length; i++) {
+      var btn = buttons[i];
+      var isAct = (tabs[i].id === activeTab);
+      btn.classList.toggle('active', isAct);
+      btn.style.setProperty('color', isAct ? '#38bdf8' : '#94a3b8', 'important');
+      btn.style.fontWeight = isAct ? '900' : '700';
+    }
+  } else {
+    dock.innerHTML = tabs.map(function(t) {
+      var isAct = (t.id === activeTab);
+      var col = isAct ? '#38bdf8' : '#94a3b8';
+      var fw = isAct ? '900' : '700';
+      return '<button type="button" class="dock-item ' + (isAct ? 'active' : '') + '" title="' + t.name + '" onclick="' + t.action + '" style="background:none; border:none; padding:0; margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center; color:' + col + ' !important; font-size:0.67rem; font-weight:' + fw + '; gap:3px; flex:1; height:56px; cursor:pointer; outline:none; -webkit-tap-highlight-color:transparent;">' +
+        t.svg +
+        '<span>' + t.name + '</span>' +
+      '</button>';
+    }).join('');
+  }
+
+  dock.style.display = 'flex';
+};
+
+// 🧭 [5대 탭 전역 중앙 네비게이션 디스패처 - 선제적 탭 색상 고정 & DOM 파괴 없는 초고속 라우팅]
+window.navigateToDockTab = function(tabId) {
+  triggerHaptic(10);
+  var isMap = (typeof window.location !== 'undefined') && window.location.pathname.includes('map.html');
+
+  // 0. 누르자마자 0초 만에 해당 탭 색상 선제 고정 (핑퐁 점멸 완전 차단)
+  window.ensureMasterBottomDock(tabId);
+  // 1. 영상 재생 중단 및 안전 닫기
+  if (typeof closeVideoDetailModal === 'function') closeVideoDetailModal();
+  if (typeof closeSecretSpotHeroModal === 'function') closeSecretSpotHeroModal();
+  if (typeof closeThemeSpotAllModal === 'function') closeThemeSpotAllModal();
+
+  // 2. 화면을 가로막고 있는 모든 테마스팟, 영상, 원정대, 수정창 일괄 소거
+  [
+    'secretSpotHeroModal',
+    'themeSpotAllModal',
+    'videoDetailModal',
+    'tripDetailSheetModal',
+    'tripCreateModal',
+    'tripJoinListModal',
+    'templateCardModalOverlay',
+    'modalRichAfterTrip',
+    'pastTripsListModal',
+    'singleTripFeedModal',
+    'userFeedCollectionModal',
+    'clearMapModal',
+    'tripActionActionSheet',
+    'feedCustomShareModal',
+    'romanticInterestModal',
+    'richTripSpotSearchModal',
+    'gearPresetModal'
+  ].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.remove();
+  });
+
+  // 3. 5대 탭별 정밀 라우팅 (현 위치 스크롤 카메라 100% 유지)
+  if (tabId === 'router') {
+    if (typeof closePlanModal === 'function') closePlanModal();
+    if (typeof closeHistoryModal === 'function') closeHistoryModal();
+    if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
+    
+    if (isMap) {
+      if (typeof window.smoothNavigate === 'function') window.smoothNavigate('index.html');
+      else window.location.assign('index.html');
+      return;
+    }
+    // 🎯 홈 화면에서는 위로 튕기지 않고 내가 보던 그 자리 그대로 편안하게 유지
+  } else if (tabId === 'map') {
+    if (typeof closePlanModal === 'function') closePlanModal();
+    if (typeof closeHistoryModal === 'function') closeHistoryModal();
+    if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
+    if (!isMap) {
+      if (typeof window.smoothNavigate === 'function') window.smoothNavigate('map.html');
+      else window.location.assign('map.html');
+      return;
+    }
+  } else if (tabId === 'plan') {
+    if (typeof closeHistoryModal === 'function') closeHistoryModal();
+    if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
+
+    // 🗺️ 지도 화면에서 플랜을 누르면 파라미터를 들고 index.html로 즉시 이동
+    if (isMap) {
+      if (typeof window.smoothNavigate === 'function') window.smoothNavigate('index.html?open=plan');
+      else window.location.assign('index.html?open=plan');
+      return;
+    }
+    if (typeof openPlanModal === 'function') {
+      openPlanModal('calendar');
+    }
+  } else if (tabId === 'history') {
+    if (typeof closePlanModal === 'function') closePlanModal();
+    if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
+    if (typeof openHistoryModal === 'function') {
+      openHistoryModal();
+    } else if (isMap) {
+      if (typeof window.smoothNavigate === 'function') window.smoothNavigate('index.html?open=history');
+      else window.location.assign('index.html?open=history');
+      return;
+    }
+  } else if (tabId === 'report') {
+    if (typeof closePlanModal === 'function') closePlanModal();
+    if (typeof closeHistoryModal === 'function') closeHistoryModal();
+    if (typeof openUserProfileModal === 'function') {
+      openUserProfileModal();
+    }
+  }
+
+  window.ensureMasterBottomDock(tabId);
+};
+
+// 앱 초기 마운트 시 마스터 독 스마트 초기화 (상태 보존)
+if (typeof window !== 'undefined') {
+  window.ensureMasterBottomDock();
+}
+
 function openUserProfileModal() {
   try {
-    // 🛡️ 1. 지도의 렌더링 루프가 검색 바를 절대 되살리지 못하도록 CSS 엔진 차원에서 영구 차폐
     var shieldStyle = document.getElementById('romanticModalShieldCss');
     if (!shieldStyle) {
       shieldStyle = document.createElement('style');
@@ -2381,32 +2500,22 @@ function openUserProfileModal() {
 
     var modal = document.getElementById('userProfileModalOverlay');
     if (modal) {
-      // 🛡️ 2. 부모의 transform 틀(788px)을 탈출하여 브라우저 최상단 body(844px)에 직접 마운트
       if (modal.parentElement !== document.body) {
         document.body.appendChild(modal);
       }
-
       modal.style.setProperty('position', 'fixed', 'important');
       modal.style.setProperty('top', '0', 'important');
       modal.style.setProperty('left', '0', 'important');
       modal.style.setProperty('right', '0', 'important');
-      modal.style.setProperty('bottom', '0', 'important');
+      modal.style.setProperty('bottom', 'calc(56px + env(safe-area-inset-bottom, 8px))', 'important');
       modal.style.setProperty('width', '100vw', 'important');
-      modal.style.setProperty('height', '100dvh', 'important');
-      modal.style.setProperty('min-height', '100dvh', 'important');
-      modal.style.setProperty('z-index', '2147483647', 'important');
+      modal.style.setProperty('height', 'calc(100dvh - 56px - env(safe-area-inset-bottom, 8px))', 'important');
+      modal.style.setProperty('z-index', '2147483640', 'important');
       modal.style.setProperty('background', '#000000', 'important');
       modal.style.setProperty('display', 'flex', 'important');
     }
 
-    // 메인 화면 기본 독 바 숨김 처리
-    document.querySelectorAll('.mobile-bottom-dock').forEach(function(dock) {
-      if (!modal || !modal.contains(dock)) {
-        dock.setAttribute('data-report-prev-display', dock.style.display || '');
-        dock.style.setProperty('display', 'none', 'important');
-      }
-    });
-
+    window.ensureMasterBottomDock('report');
     triggerHaptic(12);
   } catch (e) {}
 }
@@ -2417,22 +2526,11 @@ function closeUserProfileModal() {
     var modal = document.getElementById('userProfileModalOverlay');
     if (modal) modal.style.setProperty('display', 'none', 'important');
 
-    // 🛡️ 모달 닫힐 때 차폐 스타일시트 제거하여 지도 검색 바 정상 복구
     var shieldStyle = document.getElementById('romanticModalShieldCss');
     if (shieldStyle) shieldStyle.remove();
 
-    // 메인 화면 기본 독 바 원상 복구
-    document.querySelectorAll('.mobile-bottom-dock').forEach(function(dock) {
-      if (!modal || !modal.contains(dock)) {
-        var prev = dock.getAttribute('data-report-prev-display');
-        dock.removeAttribute('data-report-prev-display');
-        if (prev !== null && prev !== '') {
-          dock.style.display = prev;
-        } else {
-          dock.style.removeProperty('display');
-        }
-      }
-    });
+    var isMap = (typeof window.location !== 'undefined') && window.location.pathname.includes('map.html');
+    window.ensureMasterBottomDock(isMap ? 'map' : 'router');
   } catch (e) {}
 }
 window.closeUserProfileModal = closeUserProfileModal;
