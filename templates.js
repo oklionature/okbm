@@ -153,8 +153,23 @@ window.applyStudioCardToTemplate = async function() {
   if (typeof triggerHaptic === 'function') triggerHaptic(12);
 
   try {
-    var canvas = await html2canvas(card, { backgroundColor: '#000000', scale: 2.5, useCORS: true, allowTaint: true, logging: false });
-    var finalPhotoUrl = canvas.toDataURL('image/jpeg', 0.88);
+    var canvas = await html2canvas(card, { backgroundColor: '#000000', scale: 2.0, useCORS: true, allowTaint: true, logging: false });
+    
+    // 📐 1200px 초과 방어 및 150KB 내외 레티나 최적 압축 (용량 폭탄 원천 차단)
+    var targetCanvas = canvas;
+    var maxDim = Math.max(canvas.width, canvas.height);
+    if (maxDim > 1200) {
+      var s = 1200 / maxDim;
+      var rCanvas = document.createElement('canvas');
+      rCanvas.width = Math.round(canvas.width * s);
+      rCanvas.height = Math.round(canvas.height * s);
+      var ctx = rCanvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(canvas, 0, 0, rCanvas.width, rCanvas.height);
+      targetCanvas = rCanvas;
+    }
+    var finalPhotoUrl = targetCanvas.toDataURL('image/jpeg', 0.78);
 
     window.currentSharePhoto = finalPhotoUrl;
     if (window.currentShareRecord) {
@@ -683,41 +698,8 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       }
     }
 
-    // 🚀 Base64 사진이 있으면 R2/드라이브 영구 링크로 승격
-    // 🚀 Base64 사진이 있으면 R2/드라이브 영구 링크로 승격
-    var finalCloudPhotos = [];
-    var hasBase64 = photosToSave.some(function(p) { return typeof p === 'string' && p.startsWith('data:'); });
-
-    if (hasBase64 && typeof window.uploadSinglePhotoToDrive === 'function') {
-      if (typeof window.showPhotoLoadingModal === 'function') {
-        window.showPhotoLoadingModal(1, photosToSave.length);
-      }
-
-      for (var i = 0; i < photosToSave.length; i++) {
-        var pItem = photosToSave[i];
-        if (typeof pItem === 'string' && pItem.startsWith('data:')) {
-          try {
-            var uploadPromise = window.uploadSinglePhotoToDrive(pItem, 'pack_' + (rec.id || Date.now()) + '_' + i + '.jpg');
-            var timeoutPromise = new Promise(function(res) { setTimeout(function() { res(pItem); }, 3500); });
-            var cloudUrl = await Promise.race([uploadPromise, timeoutPromise]);
-            finalCloudPhotos.push((cloudUrl && cloudUrl.startsWith('http')) ? cloudUrl : pItem);
-          } catch (upErr) {
-            finalCloudPhotos.push(pItem);
-          }
-        } else {
-          finalCloudPhotos.push(pItem);
-        }
-      }
-
-      if (typeof window.hidePhotoLoadingModal === 'function') {
-        window.hidePhotoLoadingModal();
-      }
-    } else {
-      finalCloudPhotos = photosToSave;
-    }
-
-    var mainCloudPhoto = finalCloudPhotos[0] || '';
-    // 🛡️ [메모 분리 보존]: 템플릿의 한줄 각오만 갱신하고, 히스토리의 사진별 120자 일지는 100% 계승
+   // ⚡ 1. 0.01초 낙관적 로컬 즉시 확정 (블로킹 없는 즉각 보관)
+    var localMainPhoto = photosToSave.length > 0 ? photosToSave[0] : '';
     var existingPhotoMemos = Array.isArray(rec.photoMemos) && rec.photoMemos.length > 0 ? rec.photoMemos : [];
     var existingFullMemo = rec.memo || (existingPhotoMemos[0] || '');
 
@@ -725,39 +707,82 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       id: rec.id || ('pack_' + Date.now()),
       date: rec.date || cleanDateStr,
       spot: liveSpot,
-      memo: existingFullMemo, // 기존 장문 일지 100% 보존 (빈칸 덮어쓰기 원천 차단)
+      memo: existingFullMemo,
       oneLineMemo: liveMemo || (liveSpot ? (liveSpot + ' 패킹') : '기록 준비 완료'),
-      photoMemos: existingPhotoMemos, // 사진별 120자 메모 100% 계승
+      photoMemos: existingPhotoMemos,
       elevation: rec.elevation || '',
       weightKg: weightKg,
       weightGrams: totalGrams || rec.weightGrams || 0,
       itemCount: items.length,
       items: items,
-      customTemplatePhoto: studioTmplPhoto, // 🌟 뒷면 템플릿 전용 포토로 영구 주입
-      photo: mainCloudPhoto,
-      photos: finalCloudPhotos,
-      fieldPhoto: mainCloudPhoto,
-      photo_url: mainCloudPhoto,
-      photos_json: JSON.stringify(finalCloudPhotos),
+      customTemplatePhoto: studioTmplPhoto,
+      photo: localMainPhoto,
+      photos: photosToSave,
+      fieldPhoto: localMainPhoto,
+      photo_url: localMainPhoto,
+      photos_json: JSON.stringify(photosToSave),
       templateId: window.selectedTemplateId || rec.templateId || 1,
       isPublished: true
     };
 
-    // 🏛️ [단일 파이프라인 전담 위임]: savePackingHistoryRecord 내부에서 로컬 및 클라우드 업서트를 완벽히 단 1회만 처리
     if (typeof window.savePackingHistoryRecord === 'function') {
       window.savePackingHistoryRecord(newRecord);
     }
 
     window.__studioMultiPhotos = null;
 
+    // 🚀 2. 모달 즉시 닫고 보관함으로 0.01초 만에 화면 전환
     if (typeof closePackShareModal === 'function') closePackShareModal();
     
     setTimeout(function() {
       if (typeof window.openHistoryModal === 'function') window.openHistoryModal();
-    }, 60);
+    }, 40);
 
-    if (typeof showToast === 'function') showToast('🎒 보관함 및 전국 피드에 완벽 등록되었습니다!', 'success', 2500);
+    if (typeof showToast === 'function') showToast('✓ 보관함에 등록되었습니다. (클라우드 동기화 중)', 'success', 2200);
     if (typeof triggerHaptic === 'function') triggerHaptic(15);
+
+    // 🌐 3. 무중단 백그라운드 워커: 3장 단위 병렬 청크로 클라우드 영구 CDN 승격
+    (async function runBackgroundUpload() {
+      var finalCloudPhotos = new Array(photosToSave.length);
+      var uploadTasks = [];
+
+      for (var i = 0; i < photosToSave.length; i++) {
+        (function(idx) {
+          var pItem = photosToSave[idx];
+          if (typeof pItem === 'string' && pItem.startsWith('data:')) {
+            uploadTasks.push(async function() {
+              var fnName = 'pack_' + (newRecord.id || Date.now()) + '_' + idx + '.jpg';
+              var uUrl = pItem;
+              if (typeof window.uploadSinglePhotoSmart === 'function') {
+                uUrl = await window.uploadSinglePhotoSmart(pItem, fnName);
+              } else if (typeof window.uploadSinglePhotoToDrive === 'function') {
+                uUrl = await window.uploadSinglePhotoToDrive(pItem, fnName);
+              }
+              finalCloudPhotos[idx] = (uUrl && uUrl.startsWith('http')) ? uUrl : pItem;
+            });
+          } else {
+            finalCloudPhotos[idx] = pItem;
+          }
+        })(i);
+      }
+
+      var CHUNK_SIZE = 3;
+      for (var c = 0; c < uploadTasks.length; c += CHUNK_SIZE) {
+        var chunk = uploadTasks.slice(c, c + CHUNK_SIZE);
+        await Promise.allSettled(chunk.map(function(t) { return t(); }));
+      }
+
+      var mainCloudPhoto = finalCloudPhotos.length > 0 ? finalCloudPhotos[0] : '';
+      newRecord.photo = mainCloudPhoto;
+      newRecord.photos = finalCloudPhotos;
+      newRecord.fieldPhoto = mainCloudPhoto;
+      newRecord.photo_url = mainCloudPhoto;
+      newRecord.photos_json = JSON.stringify(finalCloudPhotos);
+
+      if (typeof window.savePackingHistoryRecord === 'function') {
+        window.savePackingHistoryRecord(newRecord);
+      }
+    })();
   } catch (err) {
     console.error('[SaveCard Error]', err);
     if (typeof closePackShareModal === 'function') closePackShareModal();
@@ -867,9 +892,31 @@ window.handleShareCardPhotoUpload = async function(e) {
     if (typeof window.showPhotoLoadingModal === 'function') {
       window.showPhotoLoadingModal(i + 1, filesToProcess.length);
     }
-    var b64 = (typeof window.processSinglePhotoSmart === 'function') 
-      ? await window.processSinglePhotoSmart(filesToProcess[i])
-      : '';
+    var file = filesToProcess[i];
+    var b64 = await new Promise(function(resolve) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var img = new Image();
+        img.onload = function() {
+          var canvas = document.createElement('canvas');
+          var ctx = canvas.getContext('2d');
+          var MAX_DIM = 1200;
+          var maxLen = Math.max(img.width, img.height);
+          var scale = maxLen > MAX_DIM ? (MAX_DIM / maxLen) : 1;
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.76));
+        };
+        img.onerror = function() { resolve(''); };
+        img.src = e.target.result;
+      };
+      reader.onerror = function() { resolve(''); };
+      reader.readAsDataURL(file);
+    });
+
     if (b64 && b64.length > 50) validList.push(b64);
   }
 

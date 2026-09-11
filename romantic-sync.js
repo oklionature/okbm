@@ -29,11 +29,16 @@ function triggerHaptic(duration) {
   }
 }
 
-// [공통 유틸] 안전한 토스트 메시지 출력 (매개변수 타입 자동 감지 보정)
+// [공통 유틸] 안전한 토스트 메시지 출력 (매개변수 타입 자동 감지 보정 & 눈부심 제로 파스텔 규격)
 function showToast(msg, typeOrDuration, maybeDuration) {
   var dur = 2500;
+  var toastType = 'info';
+
   if (typeof typeOrDuration === 'number') {
     dur = typeOrDuration;
+  } else if (typeof typeOrDuration === 'string') {
+    toastType = typeOrDuration;
+    if (typeof maybeDuration === 'number') dur = maybeDuration;
   } else if (typeof maybeDuration === 'number') {
     dur = maybeDuration;
   }
@@ -50,13 +55,31 @@ function showToast(msg, typeOrDuration, maybeDuration) {
   }
 
   var container = document.getElementById('romanticToastContainer');
-  if (container) {
-    var toast = document.createElement('div');
-    toast.style.cssText = 'background:rgba(7,10,15,0.95); border:1.5px solid #38bdf8; color:#ffffff; font-size:0.76rem; font-weight:800; padding:10px 15px; border-radius:24px; box-shadow:0 12px 35px rgba(0,0,0,0.9); z-index:9999999; display:flex; align-items:center; gap:5px;';
-    toast.innerHTML = msg;
-    container.appendChild(toast);
-    setTimeout(function() { toast.remove(); }, dur);
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'romanticToastContainer';
+    container.style.cssText = 'position:fixed; bottom:calc(64px + env(safe-area-inset-bottom, 0px)); left:50%; transform:translateX(-50%); z-index:9999999; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; width:90%; max-width:380px;';
+    document.body.appendChild(container);
   }
+
+  var borderColor = 'rgba(186, 230, 253, 0.35)'; // 기본 파스텔 스카이블루
+  if (toastType === 'warn' || toastType === 'error') {
+    borderColor = 'rgba(254, 205, 211, 0.4)'; // 파스텔 로즈
+  } else if (toastType === 'success') {
+    borderColor = 'rgba(167, 243, 208, 0.4)'; // 파스텔 에메랄드
+  }
+
+  var toast = document.createElement('div');
+  toast.style.cssText = 'background:rgba(10, 14, 20, 0.96); border:1px solid ' + borderColor + '; color:#f1f5f9; font-size:0.75rem; font-weight:800; padding:9px 15px; border-radius:20px; box-shadow:0 8px 30px rgba(0,0,0,0.85); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); display:inline-flex; align-items:center; justify-content:center; gap:6px; text-align:center; pointer-events:auto; word-break:keep-all; line-height:1.35;';
+  toast.innerHTML = msg;
+  container.appendChild(toast);
+
+  setTimeout(function() {
+    toast.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(6px)';
+    setTimeout(function() { toast.remove(); }, 260);
+  }, dur);
 }
 
 // [공통 유틸] 브라우저 표준 한국 시간 타임스탬프 생성기
@@ -364,15 +387,67 @@ window.RomanticVault = window.RomanticVault || {
           this.write('okbm_memos', cloudData.memos, false);
           if (window.userMemos) window.userMemos = cloudData.memos;
         }
-      if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
-          var cleanHist = cloudData.packHistory.filter(function(h) { return h && !h.isDeleted; });
-          this.write('okbm_packing_history', cleanHist, false);
-          window.interactiveHistory = cleanHist;
-          window.packingHistoryList = cleanHist;
+    if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
+          var deletedIds = safeGetJSON('okbm_deleted_record_ids', []);
+          
+          // 🛑 1. 서버(R2/시트) 정본에서 삭제 표시된 글과 낭만루터 스냅 완벽 배제 (순수 루트만 보존)
+          var cleanHist = cloudData.packHistory.filter(function(h) {
+            if (!h || h.isDeleted || deletedIds.includes(String(h.id).trim())) return false;
+            return h.feedType !== 'router' && !String(h.id).startsWith('snap_');
+          });
+
+          // 📸 낭만루터(일상스냅) 전용 독립 금고 복원
+          var cloudSnaps = Array.isArray(cloudData.routerSnaps) ? cloudData.routerSnaps : [];
+          var cleanSnaps = cloudSnaps.filter(function(s) {
+            return s && !s.isDeleted && !deletedIds.includes(String(s.id).trim());
+          });
+          this.write('okbm_router_snaps', cleanSnaps, false);
+
+          // 🛑 2. 서버 정본에 이미 없는 글은 다른 기기(노트북)의 구형 로컬 캐시에서도 즉시 영구 소거 (부활 원천 차단)
+          var serverIdSet = new Set(cleanHist.map(function(s) { return String(s.id).trim(); }));
+          var localHist = (window.interactiveHistory && window.interactiveHistory.length > 0)
+            ? window.interactiveHistory
+            : safeGetJSON('okbm_packing_history', []);
+
+          var pMap = (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) || safeGetJSON('okbm_phone_photos_map', {});
+
+          var mergedHist = cleanHist.map(function(sItem) {
+            var sId = String(sItem.id || '').trim();
+            var localMatch = localHist.find(function(l) { return l && String(l.id).trim() === sId; });
+
+            if ((!sItem.photos || sItem.photos.length === 0) && localMatch && localMatch.photos && localMatch.photos.length > 0) {
+              sItem.photos = localMatch.photos;
+              sItem.photo = localMatch.photos[0];
+              sItem.fieldPhoto = localMatch.photos[0];
+            } else if ((!sItem.photos || sItem.photos.length === 0) && pMap[sId]) {
+              var pArr = Array.isArray(pMap[sId]) ? pMap[sId] : [pMap[sId]];
+              sItem.photos = pArr;
+              sItem.photo = pArr[0];
+              sItem.fieldPhoto = pArr[0];
+            }
+            return sItem;
+          });
+
+          // 🛡️ 로컬에서 방금 작성 중이던 임시 미발행 글(pack_temp_)만 예외적으로 보존
+          localHist.forEach(function(lItem) {
+            if (lItem && lItem.id && String(lItem.id).startsWith('pack_temp_')) {
+              mergedHist.unshift(lItem);
+            }
+          });
+
+          this.write('okbm_packing_history', mergedHist, false);
+          window.interactiveHistory = mergedHist;
+          window.packingHistoryList = mergedHist;
         }
         if (cloudData.routerSnaps && Array.isArray(cloudData.routerSnaps)) {
-          var cleanSnaps = cloudData.routerSnaps.filter(function(s) { return s && !s.isDeleted; });
+          var deletedIdsSnap = safeGetJSON('okbm_deleted_record_ids', []);
+          // 🛑 서버 R2에서 가져온 스냅이라도 블랙리스트에 있으면 즉시 영구 파기 (부활 차단)
+          var cleanSnaps = cloudData.routerSnaps.filter(function(s) {
+            return s && !s.isDeleted && !deletedIdsSnap.includes(String(s.id).trim());
+          });
           this.write('okbm_router_snaps', cleanSnaps, false);
+          if (window.__memoryStore) window.__memoryStore['okbm_router_snaps'] = cleanSnaps;
+          try { localStorage.setItem('okbm_router_snaps', JSON.stringify(cleanSnaps)); } catch(e) {}
         }
         if (cloudData.myGears && typeof cloudData.myGears === 'object') {
           var mg = cloudData.myGears;
@@ -381,6 +456,20 @@ window.RomanticVault = window.RomanticVault || {
           if (mg.customGears) this.write('okbm_custom_gears', mg.customGears, false);
           if (mg.gearPresets) this.write('okbm_gear_presets', mg.gearPresets, false);
           if (mg.gearMeta) this.write('okbm_gear_meta', mg.gearMeta, false);
+        }
+        // 내가 제보한 박지 클라우드 정본 수화 (빈 배열 덮어쓰기 파괴 영구 차단)
+        var localProps = (window.__memoryStore && window.__memoryStore['okbm_my_proposals']) || safeGetJSON('okbm_my_proposals', []);
+        if (cloudData.myProposals && Array.isArray(cloudData.myProposals) && cloudData.myProposals.length > 0) {
+          // 서버에 데이터가 있으면 로컬과 ID 기준 합집합(Merge) 병합
+          var propMap = {};
+          cloudData.myProposals.forEach(function(p) { if (p && p.id) propMap[String(p.id)] = p; });
+          localProps.forEach(function(p) { if (p && p.id) propMap[String(p.id)] = p; });
+          var finalMerged = Object.values(propMap);
+          this.write('okbm_my_proposals', finalMerged, false);
+          try { localStorage.setItem('okbm_my_proposals', JSON.stringify(finalMerged)); } catch(e) {}
+        } else if (localProps.length > 0) {
+          // 서버가 비어있고 로컬에 유효 데이터가 있으면 절대 지우지 않고 서버로 즉각 재전송(보호)
+          this.write('okbm_my_proposals', localProps, true);
         }
         this.isHydrated = true;
         console.log('[RomanticVault] 서버 정본 로컬 수화(Hydration) 완결');
@@ -449,7 +538,12 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
   window.packingHistoryList = cleanActiveHistory;
   window.interactiveHistory = cleanActiveHistory;
 
-  var lightweightPackHistory = rawHistory.filter(Boolean).map(function(h) {
+  var lightweightPackHistory = rawHistory.filter(function(h) {
+    // 🛑 낭만루트 동기화 시 낭만루터 일상 스냅 원천 배제
+    if (!h) return false;
+    if (h.feedType === 'router' || String(h.id).startsWith('snap_')) return false;
+    return true;
+  }).map(function(h) {
     if (h.isDeleted === true) {
       return {
         id: String(h.id),
@@ -508,11 +602,18 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
     createdAt: (profile && profile.createdAt) ? profile.createdAt : getFormattedNow(),
     lastNicknameChangedAt: profile ? (Number(profile.lastNicknameChangedAt) || 0) : 0,
     bookmarks: safeGetJSON('okbm_bookmarks', []),
-  visited: safeGetJSON('okbm_visited', []),
+    visited: safeGetJSON('okbm_visited', []),
     memos: safeGetJSON('okbm_memos', {}),
     following: safeGetJSON('okbm_following_users', []),
+    myProposals: safeGetJSON('okbm_my_proposals', []),
     packHistory: shouldSyncPackHistory ? lightweightPackHistory : undefined,
-    routerSnaps: safeGetJSON('okbm_router_snaps', []),
+    routerSnaps: (function() {
+      var deletedIds = safeGetJSON('okbm_deleted_record_ids', []);
+      var rawSnaps = (window.__memoryStore && window.__memoryStore['okbm_router_snaps']) || safeGetJSON('okbm_router_snaps', []);
+      return (rawSnaps || []).filter(function(s) {
+        return s && !s.isDeleted && !deletedIds.includes(String(s.id).trim());
+      });
+    })(),
     myGears: myGearsPayload
   };
 
@@ -611,6 +712,32 @@ function updateHeaderAuthUI() {
 // 마이데이터 연도 전역 상태
 window._selectedReportYear = String(new Date().getFullYear());
 
+// [공통 헬퍼] 낭만루트(순수 아웃도어 패킹 정본) 단일 추출기 (루터 일상 피드 원천 배제)
+window._getRomanticRouteOutdoorLogs = function() {
+  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_packing_history', [])
+    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
+
+  return (logs || []).filter(function(r) {
+    if (!r || r.isDeleted === true) return false;
+    if (String(r.id || '').startsWith('pack_temp_')) return false;
+    // 1. 일상(daily) 및 스냅 피드 원천 배제
+    if (r.feedType === 'daily' || r.feedType === 'snap') return false;
+    
+    // 2. 낭만루트 정식 아웃도어 스펙 검증 (배낭 무게, 장비 슬롯 아이템, 정식 템플릿 중 필수 보유)
+    var hasWeight = parseFloat(r.weightKg) > 0;
+    var hasItems = Array.isArray(r.items) && r.items.length > 0;
+    var hasTemplate = Boolean(r.templateId && Number(r.templateId) > 0);
+    var isOutdoorRoute = (r.feedType === 'route' || !r.feedType);
+
+    // 3. 루터 기본 장소명('나의 아웃도어')이면서 무게/장비가 없는 빈 껍데기 글 배제
+    var spotName = String(r.spot || r.spotName || '').trim();
+    if (spotName === '나의 아웃도어' && !hasWeight && !hasItems) return false;
+
+    return isOutdoorRoute && (hasWeight || hasItems || hasTemplate);
+  });
+};
+
 // [상단 듀얼 카운터] 연도 선택 팝오버 토글러
 window.toggleReportYearDropdown = function(e) {
   if (e) e.stopPropagation();
@@ -623,11 +750,7 @@ window.toggleReportYearDropdown = function(e) {
     return;
   }
 
-  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-    ? window.RomanticVault.read('okbm_packing_history', [])
-    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
-  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
-
+  var validLogs = window._getRomanticRouteOutdoorLogs();
   var curYearNum = new Date().getFullYear();
   var yearSet = new Set([String(curYearNum)]);
   validLogs.forEach(function(r) {
@@ -684,47 +807,11 @@ window.renderReportYearActivityList = function() {
 
   var curYear = window._selectedReportYear || String(new Date().getFullYear());
 
-  // 1. 개인 보관함 기록 인출
-  var localLogs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-    ? window.RomanticVault.read('okbm_packing_history', [])
-    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
+  // 순수 낭만루트(아웃도어 정식 등록물) 단일 인출
+  var validLogs = window._getRomanticRouteOutdoorLogs();
 
-  // 2. 공용 피드 캐시 인출 (내 작성 피드)
-  var profile = safeGetJSON('user_profile', null);
-  var myUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('user_auth_token') || '');
-  var myNick = (profile && profile.nickname) ? profile.nickname.trim() : (localStorage.getItem('okbm_user_nick') || '');
-
-  var cachedFeeds = safeGetJSON('okbm_cached_community_feeds', []) || [];
-  var memoryFeeds = window.__allLoadedFeeds || [];
-  var combinedFeeds = cachedFeeds.concat(memoryFeeds);
-
-  var myFeeds = combinedFeeds.filter(function(f) {
-    if (!f || f.isDeleted) return false;
-    var fUid = String(f.userId || f.authorId || '').trim();
-    var fAuthor = String(f.author || f.nickname || '').trim();
-    return (myUserId && fUid === myUserId) || (myNick && fAuthor === myNick);
-  });
-
-  // 3. ID 기준 중복 제거 및 데이터 병합
-  var recordMap = new Map();
-
-  (localLogs || []).forEach(function(r) {
-    if (!r || r.isDeleted) return;
-    var rId = String(r.id || (r.date + '_' + (r.spot || '')));
-    recordMap.set(rId, r);
-  });
-
-  myFeeds.forEach(function(f) {
-    var fId = String(f.id || (f.date + '_' + (f.spot || '')));
-    if (!recordMap.has(fId)) {
-      recordMap.set(fId, f);
-    }
-  });
-
-  var allLogs = Array.from(recordMap.values());
-
-  // 4. 선택 연도 필터링 및 최신 날짜순 정렬
-  var yearLogs = allLogs.filter(function(r) {
+  // 선택 연도 필터링 및 최신 날짜순 정렬 (상단 카운터 숫자와 100% 일치)
+  var yearLogs = validLogs.filter(function(r) {
     return String(r.date || '').includes(curYear);
   }).sort(function(a, b) {
     var ta = new Date(String(a.date || '').replace(/\./g, '-')).getTime() || 0;
@@ -770,10 +857,7 @@ window.selectReportYear = function(yearStr, e) {
   var curYearStr = String(new Date().getFullYear());
   if (labelText) labelText.innerText = (yearStr === curYearStr) ? '올해 활동' : yearStr + '년 활동';
 
-  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-    ? window.RomanticVault.read('okbm_packing_history', [])
-    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
-  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  var validLogs = window._getRomanticRouteOutdoorLogs();
 
   var yCount = 0;
   validLogs.forEach(function(r) {
@@ -828,24 +912,24 @@ function ensureMyReportAndAuthModalsInDOM() {
   var container = document.createElement('div');
   container.id = 'romanticAuthDomBundle';
   container.innerHTML = `
-    <!-- 1. 카카오 1초 간편 로그인 모달 -->
+    <!-- 1. 카카오 1초 간편 로그인 모달 (제8헌법 터치 44px 및 매트블랙 규격) -->
     <div class="custom-modal-overlay" id="loginModalOverlay" onclick="if(event.target===this) closeLoginModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100dvh; padding:0; overflow:hidden;">
       <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; position:relative;">
-        <div style="flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:calc(20px + env(safe-area-inset-top, 0px)) 16px calc(76px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:12px; text-align:center; box-sizing:border-box;">
-          <div style="width:54px; height:54px; border-radius:50%; background:rgba(255,255,255,0.08); border:1.5px solid #ffffff; display:flex; align-items:center; justify-content:center;">
-            <svg viewBox="0 0 24 24" style="width:26px; height:26px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
+        <div style="flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:calc(20px + env(safe-area-inset-top, 0px)) 16px calc(76px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:14px; text-align:center; box-sizing:border-box;">
+          <div style="width:54px; height:54px; border-radius:50%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; color:#e2e8f0;">
+            <svg viewBox="0 0 24 24" style="width:26px; height:26px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
           </div>
           <div>
-            <h3 style="color:#ffffff; font-size:1.15rem; font-weight:900;">낭만 백패커 로그인</h3>
-            <p style="font-size:0.78rem; color:#94a3b8; line-height:1.5; margin-top:6px;">
-              로그인 시 나만의 배낭 패킹 기록, 10대 슬롯 세팅,<br>그리고 소중한 비밀 메모가 클라우드에 안전하게 백업됩니다.
+            <h3 style="color:#ffffff; font-size:1.15rem; font-weight:900; letter-spacing:-0.02em;">낭만루트 로그인</h3>
+            <p style="font-size:0.78rem; color:#94a3b8; line-height:1.55; margin-top:6px;">
+              로그인 시 나만의 아웃도어 패킹 기록, 장비 세팅,<br>그리고 소중한 박지 비밀 메모가 클라우드에 안전하게 보존됩니다.
             </p>
           </div>
-          <div style="width:100%; max-width:320px; display:flex; flex-direction:column; gap:8px; margin-top:10px;">
-            <button type="button" class="modal-btn btn-social-kakao" style="width:100%; height:44px; font-size:0.86rem; font-weight:900; border-radius:10px; background:#fee500; color:#191919; border:none; cursor:pointer;" onclick="loginWithKakao()">
+          <div style="width:100%; max-width:320px; display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+            <button type="button" class="modal-btn btn-social-kakao" style="width:100%; height:46px; min-height:44px; font-size:0.86rem; font-weight:900; border-radius:10px; background:#fee500; color:#191919; border:none; cursor:pointer;" onclick="loginWithKakao()">
               카카오 1초 간편 로그인
             </button>
-            <button type="button" class="modal-btn" style="width:100%; height:40px; background:rgba(255,255,255,0.06); color:#cbd5e1; font-weight:800; font-size:0.78rem; border-radius:10px; border:none; cursor:pointer;" onclick="closeLoginModal()">
+            <button type="button" class="modal-btn" style="width:100%; height:44px; min-height:44px; background:rgba(255,255,255,0.06); color:#cbd5e1; font-weight:800; font-size:0.78rem; border-radius:10px; border:none; cursor:pointer;" onclick="closeLoginModal()">
               닫기
             </button>
           </div>
@@ -853,26 +937,26 @@ function ensureMyReportAndAuthModalsInDOM() {
       </div>
     </div>
 
-  <!-- 2. 마이데이터(마이리포트) 대시보드 모달 (완벽한 태그 정합성 3단 분리) -->
-    <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="if(event.target===this) closeUserProfileModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100%; height:100dvh; padding:0; margin:0; overflow:hidden;">
-      <div style="position:relative; width:100%; max-width:480px; height:100%; height:100dvh; margin:0 auto; background:#000000; overflow:hidden; box-sizing:border-box;">
+  <!-- 2. 마이데이터(마이리포트) 대시보드 모달 (노치 침범 0% 플렉스 3단 & 맵 하단독 100% 일체화) -->
+    <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="if(event.target===this) closeUserProfileModal();" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; width:100%; height:100%; background:#000000; z-index:3000000; margin:0; padding:0; overflow:hidden;">
+      <div style="position:relative; width:100%; max-width:480px; height:100%; margin:0 auto; background:#000000; overflow:hidden; display:flex; flex-direction:column; box-sizing:border-box;">
         
-        <!-- 1단 헤더 (완전 차광 상단 고정 바) -->
-        <div style="position:absolute; top:0; left:0; right:0; height:calc(54px + env(safe-area-inset-top, 0px)); background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:flex-end; padding:0 16px 10px 16px; box-sizing:border-box; z-index:50;">
-          <span style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.03em;">마이리포트</span>
+        <!-- 1단 헤더 (노치 안전 여백 확보 및 타이틀 상단 잘림 영구 해결) -->
+        <div style="flex-shrink:0; width:100%; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:calc(16px + env(safe-area-inset-top, 0px)) 16px 14px 16px; box-sizing:border-box; z-index:50;">
+          <span style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.03em; line-height:1;">마이리포트</span>
           
           <div onclick="triggerHaptic(12); window.openAccountSettingsModal();" title="개인정보 및 아이디 변경" style="display:flex; align-items:center; gap:8px; cursor:pointer; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); padding:3px 10px 3px 4px; border-radius:20px;">
-            <div style="position:relative; width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg, #38bdf8, #818cf8, #f43f5e); padding:1.8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+            <div style="position:relative; width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg, #38bdf8, #818cf8, #f43f5e); padding:1.5px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
               <div style="width:100%; height:100%; border-radius:50%; background:#090d14; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                <svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </div>
             </div>
-            <span id="reportHeaderCurrentNick" style="font-size:0.78rem; font-weight:800; color:#ffffff; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">낭만백패커</span>
+            <span id="reportHeaderCurrentNick" style="font-size:0.76rem; font-weight:800; color:#ffffff; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">낭만백패커</span>
           </div>
         </div>
 
-        <!-- 2단 본문 (모든 카드가 빈틈없이 위에서부터 차곡차곡 담기는 스크롤 바디) -->
-        <div id="userProfileScrollBody" style="position:absolute; top:calc(54px + env(safe-area-inset-top, 0px)); bottom:calc(64px + env(safe-area-inset-bottom, 0px)); left:0; right:0; width:100%; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior-y:contain; padding:12px 12px 24px 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box; z-index:10;">
+        <!-- 2단 본문 (헤더와 독 사이를 정확히 꽉 채우는 안전 스크롤 바디) -->
+        <div id="userProfileScrollBody" style="flex:1 1 0%; min-height:0; width:100%; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior-y:contain; padding:12px 12px 20px 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box; z-index:10;">
           
           <!-- 올해 vs 누적 활동 듀얼 카운터 -->
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; flex-shrink:0;">
@@ -1007,23 +1091,23 @@ function ensureMyReportAndAuthModalsInDOM() {
 
         </div>
 
-       <!-- 3단 독 바 (지도 하단 독과 100% 동일 규격: 56px, 아이콘, 폰트, 라우팅 완전 일치) -->
-        <div class="mobile-bottom-dock notranslate" style="position:absolute !important; bottom:0 !important; left:0 !important; right:0 !important; height:calc(56px + env(safe-area-inset-bottom, 0px)) !important; width:100% !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid var(--border-hairline) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:50 !important; box-sizing:border-box; padding-bottom:env(safe-area-inset-bottom, 0px) !important; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);">
+       <!-- 3단 독 바 (실제 모바일 기기 safe-area 완벽 대응 1:1 일체화 규격) -->
+        <div class="mobile-bottom-dock notranslate" style="position:fixed !important; bottom:0px !important; left:0 !important; right:0 !important; width:100% !important; max-width:480px !important; margin:0 auto !important; height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; min-height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; padding:0 0 env(safe-area-inset-bottom, 8px) 0 !important; background:rgba(0,0,0,0.96) !important; border-top:1px solid rgba(255,255,255,0.08) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:50 !important; box-sizing:border-box; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);">
           <!-- 1. 낭만루터 -->
-          <a href="index.html" class="dock-item" title="낭만루터" onclick="closeUserProfileModal(); window.smoothNavigate('index.html', event);">
-            <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          <a href="index.html" class="dock-item" title="낭만루터" onclick="closeUserProfileModal(); window.smoothNavigate('index.html', event);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; text-decoration:none; font-size:0.67rem; font-weight:700; gap:3px; flex:1; height:56px;">
+            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
             <span>낭만루터</span>
           </a>
 
           <!-- 2. 전국지도 -->
-          <a href="map.html" class="dock-item" title="전국지도" onclick="closeUserProfileModal(); window.smoothNavigate('map.html', event);">
-            <svg viewBox="0 0 24 24"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
+          <a href="map.html" class="dock-item" title="전국지도" onclick="closeUserProfileModal(); window.smoothNavigate('map.html', event);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; text-decoration:none; font-size:0.67rem; font-weight:700; gap:3px; flex:1; height:56px;">
+            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>
             <span>전국지도</span>
           </a>
 
           <!-- 3. 낭만플랜 -->
-          <a href="index.html?open=plan" class="dock-item" title="낭만플랜" onclick="closeUserProfileModal(); triggerHaptic(12);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <a href="index.html?open=plan" class="dock-item" title="낭만플랜" onclick="closeUserProfileModal(); triggerHaptic(12);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; text-decoration:none; font-size:0.67rem; font-weight:700; gap:3px; flex:1; height:56px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
               <rect x="3" y="4" width="18" height="18" rx="2"/>
               <line x1="16" y1="2" x2="16" y2="6"/>
               <line x1="8" y1="2" x2="8" y2="6"/>
@@ -1034,8 +1118,8 @@ function ensureMyReportAndAuthModalsInDOM() {
           </a>
 
           <!-- 4. 낭만보관함 -->
-          <a href="index.html?open=history" class="dock-item" title="낭만보관함" onclick="closeUserProfileModal(); triggerHaptic(12);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <a href="index.html?open=history" class="dock-item" title="낭만보관함" onclick="closeUserProfileModal(); triggerHaptic(12);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#94a3b8; text-decoration:none; font-size:0.67rem; font-weight:700; gap:3px; flex:1; height:56px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;">
               <path d="M21 8v13H3V8"/>
               <path d="M1 3h22v5H1z"/>
               <path d="M10 12h4"/>
@@ -1043,9 +1127,9 @@ function ensureMyReportAndAuthModalsInDOM() {
             <span>낭만보관함</span>
           </a>
 
-          <!-- 5. 마이리포트 (현재 활성화) -->
-          <button type="button" class="dock-item active" title="마이리포트" onclick="triggerHaptic(10);">
-            <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+          <!-- 5. 마이리포트 (현재 활성화: 파스텔 스카이블루 일체화) -->
+          <button type="button" class="dock-item active" title="마이리포트" onclick="triggerHaptic(10);" style="display:flex; flex-direction:column; align-items:center; justify-content:center; color:#38bdf8 !important; text-decoration:none; font-size:0.67rem; font-weight:700; gap:3px; flex:1; height:56px; background:none; border:none; cursor:pointer;">
+            <svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
             <span>마이리포트</span>
           </button>
         </div>
@@ -1109,10 +1193,10 @@ window.handleReportSecClick = function(secKey) {
 
   if (window.__reportRenderCache[secKey]) return;
 
-  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-    ? window.RomanticVault.read('okbm_packing_history', [])
-    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
-  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  // 순수 낭만루트(아웃도어 정식 등록물) 단일 정본 인출
+  var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
+    ? window._getRomanticRouteOutdoorLogs()
+    : [];
 
   if (secKey === 'myprops') {
     window._renderMyPropsModule(body);
@@ -1140,7 +1224,8 @@ window._renderMyPropsModule = function(el) {
     return;
   }
 
-  var listHtml = myProps.map(function(p, idx) {
+ var listHtml = myProps.map(function(p, idx) {
+    var isCorr = Boolean(p.is_correction || p.isCorrection || p.type === 'correction');
     var mainName = p.spot_main || p.name || '무명 박지';
     var subName = p.spot_sub ? ('(' + p.spot_sub + ')') : '';
     var dateStr = String(p.date || '').slice(0, 10);
@@ -1177,7 +1262,7 @@ window.triggerEditProposalFromReport = function(propId) {
     window.location.assign('map.html?edit_proposal=' + encodeURIComponent(propId));
   }
 };
-// 1. 장비 & 세팅 무게 연산 모듈
+// 1. 장비 & 세팅 무게 연산 모듈 (낭만루트 정본 단일 연동)
 window._gearModuleState = window._gearModuleState || {
   season: 'all',
   dietMode: 'month',
@@ -1188,10 +1273,9 @@ window._setGearSeasonFilter = function(seasonKey) {
   triggerHaptic(8);
   window._gearModuleState.season = seasonKey;
   var body = document.getElementById('accBody_gear');
-  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-    ? window.RomanticVault.read('okbm_packing_history', [])
-    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
-  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
+    ? window._getRomanticRouteOutdoorLogs()
+    : [];
   if (body) window._renderGearModule(validLogs, body);
 };
 
@@ -1199,10 +1283,9 @@ window._setGearDietMode = function(modeKey) {
   triggerHaptic(8);
   window._gearModuleState.dietMode = modeKey;
   var body = document.getElementById('accBody_gear');
-  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-    ? window.RomanticVault.read('okbm_packing_history', [])
-    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
-  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
+    ? window._getRomanticRouteOutdoorLogs()
+    : [];
   if (body) window._renderGearModule(validLogs, body);
 };
 
@@ -1210,10 +1293,9 @@ window._toggleGearSlotTop5 = function(slotName) {
   triggerHaptic(10);
   window._gearModuleState.activeSlot = (window._gearModuleState.activeSlot === slotName) ? null : slotName;
   var body = document.getElementById('accBody_gear');
-  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-    ? window.RomanticVault.read('okbm_packing_history', [])
-    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
-  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
+    ? window._getRomanticRouteOutdoorLogs()
+    : [];
   if (body) window._renderGearModule(validLogs, body);
 };
 
@@ -1548,9 +1630,9 @@ window._renderGearModule = function(validLogs, el) {
   `;
 };
 
-// 2. 고도 & 필드 지형 연산 모듈
+// 2. 고도 & 필드 지형 연산 모듈 (낭만루트 정본 단일 연동 & 현재 연도 기본값)
 window._terrainModuleState = window._terrainModuleState || {
-  selectedYear: 'all',
+  selectedYear: String(new Date().getFullYear()),
   elevDetailMode: null,
   expandedTheme: null,
   showTopElevation: false
@@ -1560,10 +1642,9 @@ window._setTerrainYearSelect = function(yearVal) {
   triggerHaptic(8);
   window._terrainModuleState.selectedYear = yearVal;
   var body = document.getElementById('accBody_terrain');
-  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-    ? window.RomanticVault.read('okbm_packing_history', [])
-    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
-  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
+    ? window._getRomanticRouteOutdoorLogs()
+    : [];
   if (body) window._renderTerrainModule(validLogs, body);
 };
 
@@ -1572,10 +1653,9 @@ window._toggleTerrainElevDetail = function(mode) {
   var st = window._terrainModuleState;
   st.elevDetailMode = (st.elevDetailMode === mode) ? null : mode;
   var body = document.getElementById('accBody_terrain');
-  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-    ? window.RomanticVault.read('okbm_packing_history', [])
-    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
-  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
+    ? window._getRomanticRouteOutdoorLogs()
+    : [];
   if (body) window._renderTerrainModule(validLogs, body);
 };
 
@@ -1584,10 +1664,9 @@ window._toggleTerrainThemeTop5 = function(themeKey) {
   var st = window._terrainModuleState;
   st.expandedTheme = (st.expandedTheme === themeKey) ? null : themeKey;
   var body = document.getElementById('accBody_terrain');
-  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-    ? window.RomanticVault.read('okbm_packing_history', [])
-    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
-  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
+    ? window._getRomanticRouteOutdoorLogs()
+    : [];
   if (body) window._renderTerrainModule(validLogs, body);
 };
 
@@ -1596,10 +1675,9 @@ window._toggleTopElevationRank = function() {
   var st = window._terrainModuleState;
   st.showTopElevation = !st.showTopElevation;
   var body = document.getElementById('accBody_terrain');
-  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-    ? window.RomanticVault.read('okbm_packing_history', [])
-    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
-  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
+    ? window._getRomanticRouteOutdoorLogs()
+    : [];
   if (body) window._renderTerrainModule(validLogs, body);
 };
 
@@ -1629,7 +1707,7 @@ window._renderTerrainModule = function(validLogs, el) {
   var allElevationRank = [];
 
   var elevTier = { high: 0, mid: 0, low: 0 };
-  var yearSet = new Set();
+  var yearSet = new Set([curYear]);
 
   validLogs.forEach(function(r) {
     var dStr = String(r.date || '');
@@ -1913,9 +1991,9 @@ window._renderTerrainModule = function(validLogs, el) {
   `;
 };
 
-// 3. 시즌 밸런스 연산 모듈
+// 3. 시즌 밸런스 연산 모듈 (낭만루트 정본 단일 연동 & 현재 연도 기본값)
 window._seasonModuleState = window._seasonModuleState || {
-  selectedYear: 'all',
+  selectedYear: String(new Date().getFullYear()),
   expandedSeason: null
 };
 
@@ -1923,10 +2001,9 @@ window._setSeasonYearSelect = function(yearVal) {
   triggerHaptic(8);
   window._seasonModuleState.selectedYear = yearVal;
   var body = document.getElementById('accBody_season');
-  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-    ? window.RomanticVault.read('okbm_packing_history', [])
-    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
-  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
+    ? window._getRomanticRouteOutdoorLogs()
+    : [];
   if (body) window._renderSeasonModule(validLogs, body);
 };
 
@@ -1935,16 +2012,16 @@ window._toggleSeasonDetail = function(seasonKey) {
   var st = window._seasonModuleState;
   st.expandedSeason = (st.expandedSeason === seasonKey) ? null : seasonKey;
   var body = document.getElementById('accBody_season');
-  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-    ? window.RomanticVault.read('okbm_packing_history', [])
-    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
-  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
+    ? window._getRomanticRouteOutdoorLogs()
+    : [];
   if (body) window._renderSeasonModule(validLogs, body);
 };
 
 window._renderSeasonModule = function(validLogs, el) {
   var state = window._seasonModuleState;
-  var yearSet = new Set();
+  var curYear = String(new Date().getFullYear());
+  var yearSet = new Set([curYear]);
 
   validLogs.forEach(function(r) {
     var y = String(r.date || '').slice(0, 4);
@@ -2053,9 +2130,9 @@ window._renderSeasonModule = function(validLogs, el) {
   `;
 };
 
-// 4. 지역 분포 연산 모듈
+// 4. 지역 분포 연산 모듈 (낭만루트 정본 단일 연동 & 현재 연도 기본값)
 window._regionModuleState = window._regionModuleState || {
-  selectedYear: 'all',
+  selectedYear: String(new Date().getFullYear()),
   expandedRegion: null
 };
 
@@ -2063,10 +2140,9 @@ window._setRegionYearSelect = function(yearVal) {
   triggerHaptic(8);
   window._regionModuleState.selectedYear = yearVal;
   var body = document.getElementById('accBody_region');
-  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-    ? window.RomanticVault.read('okbm_packing_history', [])
-    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
-  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
+    ? window._getRomanticRouteOutdoorLogs()
+    : [];
   if (body) window._renderRegionModule(validLogs, body);
 };
 
@@ -2075,16 +2151,16 @@ window._toggleRegionDetail = function(regionKey) {
   var st = window._regionModuleState;
   st.expandedRegion = (st.expandedRegion === regionKey) ? null : regionKey;
   var body = document.getElementById('accBody_region');
-  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-    ? window.RomanticVault.read('okbm_packing_history', [])
-    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
-  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
+    ? window._getRomanticRouteOutdoorLogs()
+    : [];
   if (body) window._renderRegionModule(validLogs, body);
 };
 
 window._renderRegionModule = function(validLogs, el) {
   var state = window._regionModuleState;
-  var yearSet = new Set();
+  var curYear = String(new Date().getFullYear());
+  var yearSet = new Set([curYear]);
 
   validLogs.forEach(function(r) {
     var y = String(r.date || '').slice(0, 4);
@@ -2201,7 +2277,7 @@ window._renderRegionModule = function(validLogs, el) {
   `;
 };
 
-// 마이리포트 경량 초기 진입
+// 마이리포트 경량 초기 진입 (정식 아웃도어 정본 단일 파이프라인 연동 & 제보 목록 포함)
 window.refreshMyReportFullStats = function() {
   ensureMyReportAndAuthModalsInDOM();
   window.__reportRenderCache = {};
@@ -2211,13 +2287,22 @@ window.refreshMyReportFullStats = function() {
   var headerNick = document.getElementById('reportHeaderCurrentNick');
   if (headerNick) headerNick.innerText = userNick;
 
-  var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-    ? window.RomanticVault.read('okbm_packing_history', [])
-    : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
-  var validLogs = (logs || []).filter(function(r) { return r && !r.isDeleted; });
+  // 0. 내가 제보한 박지 건수 실시간 갱신
+  var myProps = safeGetJSON('okbm_my_proposals', []);
+  var hPropStat = document.getElementById('reportHeaderMyPropsStat');
+  if (hPropStat) hPropStat.innerText = myProps.length + '곳';
+
+  // 순수 낭만루트(아웃도어 정식 등록물) 단일 인출로 일상/더미 글 원천 배제
+  var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
+    ? window._getRomanticRouteOutdoorLogs()
+    : [];
 
   var curYear = String(new Date().getFullYear());
   window._selectedReportYear = curYear;
+
+  if (window._terrainModuleState) window._terrainModuleState.selectedYear = curYear;
+  if (window._seasonModuleState) window._seasonModuleState.selectedYear = curYear;
+  if (window._regionModuleState) window._regionModuleState.selectedYear = curYear;
 
   var badgeText = document.getElementById('reportYearBadge');
   if (badgeText) badgeText.innerText = curYear;
@@ -2227,7 +2312,8 @@ window.refreshMyReportFullStats = function() {
 
   var yCount = 0;
   validLogs.forEach(function(r) {
-    if (String(r.date || '').includes(curYear)) yCount++;
+    var dStr = String(r.date || '');
+    if (dStr.includes(curYear)) yCount++;
   });
 
   var yEl = document.getElementById('reportYearCountNumber');
@@ -2235,7 +2321,8 @@ window.refreshMyReportFullStats = function() {
   if (yEl) yEl.innerText = yCount;
   if (tEl) tEl.innerText = validLogs.length;
 
-  ['gear', 'terrain', 'season', 'region'].forEach(function(k) {
+  // 제보목록(myprops) 포함 전체 섹션 아코디언 상태 일원화 초기화
+  ['myprops', 'gear', 'terrain', 'season', 'region'].forEach(function(k) {
     var b = document.getElementById('accBody_' + k);
     var a = document.getElementById('accArrow_' + k);
     if (b) { b.style.display = 'none'; b.innerHTML = ''; }
@@ -2278,12 +2365,48 @@ window.closeLoginModal = closeLoginModal;
 
 function openUserProfileModal() {
   try {
+    // 🛡️ 1. 지도의 렌더링 루프가 검색 바를 절대 되살리지 못하도록 CSS 엔진 차원에서 영구 차폐
+    var shieldStyle = document.getElementById('romanticModalShieldCss');
+    if (!shieldStyle) {
+      shieldStyle = document.createElement('style');
+      shieldStyle.id = 'romanticModalShieldCss';
+      shieldStyle.innerHTML = '.floating-top-search-wrap, .spot-detail-sheet, #spotDetailSheet, #spotDrawer, #spotPopupContainer { display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }';
+      document.head.appendChild(shieldStyle);
+    }
+
     ensureMyReportAndAuthModalsInDOM();
     if (typeof window.refreshMyReportFullStats === 'function') {
       window.refreshMyReportFullStats();
     }
+
     var modal = document.getElementById('userProfileModalOverlay');
-    if (modal) modal.style.setProperty('display', 'flex', 'important');
+    if (modal) {
+      // 🛡️ 2. 부모의 transform 틀(788px)을 탈출하여 브라우저 최상단 body(844px)에 직접 마운트
+      if (modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+      }
+
+      modal.style.setProperty('position', 'fixed', 'important');
+      modal.style.setProperty('top', '0', 'important');
+      modal.style.setProperty('left', '0', 'important');
+      modal.style.setProperty('right', '0', 'important');
+      modal.style.setProperty('bottom', '0', 'important');
+      modal.style.setProperty('width', '100vw', 'important');
+      modal.style.setProperty('height', '100dvh', 'important');
+      modal.style.setProperty('min-height', '100dvh', 'important');
+      modal.style.setProperty('z-index', '2147483647', 'important');
+      modal.style.setProperty('background', '#000000', 'important');
+      modal.style.setProperty('display', 'flex', 'important');
+    }
+
+    // 메인 화면 기본 독 바 숨김 처리
+    document.querySelectorAll('.mobile-bottom-dock').forEach(function(dock) {
+      if (!modal || !modal.contains(dock)) {
+        dock.setAttribute('data-report-prev-display', dock.style.display || '');
+        dock.style.setProperty('display', 'none', 'important');
+      }
+    });
+
     triggerHaptic(12);
   } catch (e) {}
 }
@@ -2293,6 +2416,23 @@ function closeUserProfileModal() {
   try {
     var modal = document.getElementById('userProfileModalOverlay');
     if (modal) modal.style.setProperty('display', 'none', 'important');
+
+    // 🛡️ 모달 닫힐 때 차폐 스타일시트 제거하여 지도 검색 바 정상 복구
+    var shieldStyle = document.getElementById('romanticModalShieldCss');
+    if (shieldStyle) shieldStyle.remove();
+
+    // 메인 화면 기본 독 바 원상 복구
+    document.querySelectorAll('.mobile-bottom-dock').forEach(function(dock) {
+      if (!modal || !modal.contains(dock)) {
+        var prev = dock.getAttribute('data-report-prev-display');
+        dock.removeAttribute('data-report-prev-display');
+        if (prev !== null && prev !== '') {
+          dock.style.display = prev;
+        } else {
+          dock.style.removeProperty('display');
+        }
+      }
+    });
   } catch (e) {}
 }
 window.closeUserProfileModal = closeUserProfileModal;
@@ -2562,7 +2702,7 @@ function loginWithKakao() {
             showToast('[' + finalNick + ']님 로그인 완료! 클라우드 동기화 중...', 'success', 2000);
           }
 loadUserDataFromCloud(kakaoId).then(function(cloudData) {
-            if (cloudData) {
+       if (cloudData) {
               var sNick = (cloudData.nickname || '').trim();
               if (sNick && sNick !== '낭만루터' && !sNick.includes('ENGINE')) {
                 profile.nickname = sNick;
@@ -2576,39 +2716,50 @@ loadUserDataFromCloud(kakaoId).then(function(cloudData) {
               localStorage.setItem('user_profile', JSON.stringify(profile));
               localStorage.setItem('user_profile_' + kakaoId, JSON.stringify(profile));
               localStorage.setItem('okbm_user_nick', profile.nickname);
-              if (cloudData.bookmarks && Array.isArray(cloudData.bookmarks)) {
-                localStorage.setItem('okbm_bookmarks', JSON.stringify(cloudData.bookmarks));
-              }
-              if (cloudData.visited && Array.isArray(cloudData.visited)) {
-                localStorage.setItem('okbm_visited', JSON.stringify(cloudData.visited));
-              }
-              if (cloudData.memos && typeof cloudData.memos === 'object') {
-                localStorage.setItem('okbm_memos', JSON.stringify(cloudData.memos));
-              }
-              if (cloudData.following && Array.isArray(cloudData.following)) {
-                localStorage.setItem('okbm_following_users', JSON.stringify(cloudData.following));
-              }
-           
-              if (cloudData.myGears && typeof cloudData.myGears === 'object') {
-                var mg = cloudData.myGears;
-                if (mg.selectedGears) localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(mg.selectedGears));
-                if (mg.favoriteGears) localStorage.setItem('okbm_favorite_gears', JSON.stringify(mg.favoriteGears));
-                if (mg.customGears) localStorage.setItem('okbm_custom_gears', JSON.stringify(mg.customGears));
-                if (mg.gearPresets) localStorage.setItem('okbm_gear_presets', JSON.stringify(mg.gearPresets));
-                if (mg.gearMeta) localStorage.setItem('okbm_gear_meta', JSON.stringify(mg.gearMeta));
-              }
-              if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
-                var cleanHist = cloudData.packHistory.filter(function(h) { return h && !h.isDeleted; });
-                localStorage.setItem('okbm_packing_history', JSON.stringify(cleanHist));
-                if (typeof window.saveToIndexedDB === 'function') {
-                  window.saveToIndexedDB('okbm_packing_history', cleanHist);
+
+              var vault = window.RomanticVault;
+              if (vault && typeof vault.write === 'function') {
+                if (cloudData.bookmarks && Array.isArray(cloudData.bookmarks)) {
+                  vault.write('okbm_bookmarks', cloudData.bookmarks, false);
                 }
-              }
-              if (cloudData.routerSnaps && Array.isArray(cloudData.routerSnaps)) {
-                var cleanSnaps = cloudData.routerSnaps.filter(function(s) { return s && !s.isDeleted; });
-                localStorage.setItem('okbm_router_snaps', JSON.stringify(cleanSnaps));
-                if (typeof window.saveToIndexedDB === 'function') {
-                  window.saveToIndexedDB('okbm_router_snaps', cleanSnaps);
+                if (cloudData.visited && Array.isArray(cloudData.visited)) {
+                  vault.write('okbm_visited', cloudData.visited, false);
+                }
+                if (cloudData.memos && typeof cloudData.memos === 'object') {
+                  vault.write('okbm_memos', cloudData.memos, false);
+                }
+                if (cloudData.following && Array.isArray(cloudData.following)) {
+                  vault.write('okbm_following_users', cloudData.following, false);
+                }
+                if (cloudData.myGears && typeof cloudData.myGears === 'object') {
+                  var mg = cloudData.myGears;
+                  if (mg.selectedGears) vault.write('okbm_selected_gears_multi', mg.selectedGears, false);
+                  if (mg.favoriteGears) vault.write('okbm_favorite_gears', mg.favoriteGears, false);
+                  if (mg.customGears) vault.write('okbm_custom_gears', mg.customGears, false);
+                  if (mg.gearPresets) vault.write('okbm_gear_presets', mg.gearPresets, false);
+                  if (mg.gearMeta) vault.write('okbm_gear_meta', mg.gearMeta, false);
+                }
+                if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
+                  var cleanHist = cloudData.packHistory.filter(function(h) { return h && !h.isDeleted; });
+                  vault.write('okbm_packing_history', cleanHist, false);
+                }
+                if (cloudData.routerSnaps && Array.isArray(cloudData.routerSnaps)) {
+                  var cleanSnaps = cloudData.routerSnaps.filter(function(s) { return s && !s.isDeleted; });
+                  vault.write('okbm_router_snaps', cleanSnaps, false);
+                }
+                if (cloudData.myProposals && Array.isArray(cloudData.myProposals)) {
+                  var loginProps = safeGetJSON('okbm_my_proposals', []);
+                  var finalLoginProps = (loginProps.length > cloudData.myProposals.length) ? loginProps : cloudData.myProposals;
+                  vault.write('okbm_my_proposals', finalLoginProps, false);
+                  try { localStorage.setItem('okbm_my_proposals', JSON.stringify(finalLoginProps)); } catch(e) {}
+                }
+              } else {
+                if (cloudData.bookmarks && Array.isArray(cloudData.bookmarks)) localStorage.setItem('okbm_bookmarks', JSON.stringify(cloudData.bookmarks));
+                if (cloudData.visited && Array.isArray(cloudData.visited)) localStorage.setItem('okbm_visited', JSON.stringify(cloudData.visited));
+                if (cloudData.memos && typeof cloudData.memos === 'object') localStorage.setItem('okbm_memos', JSON.stringify(cloudData.memos));
+                if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
+                  var fallbackHist = cloudData.packHistory.filter(function(h) { return h && !h.isDeleted; });
+                  if (typeof window.saveToIndexedDB === 'function') window.saveToIndexedDB('okbm_packing_history', fallbackHist);
                 }
               }
             }
@@ -2639,133 +2790,237 @@ loadUserDataFromCloud(kakaoId).then(function(cloudData) {
 }
 window.loginWithKakao = loginWithKakao;
 
-// 9. 커뮤니티 피드 공유
+// 9. 커뮤니티 피드 공유 - 제5헌법 Cloudflare R2 글로벌 CDN 직통 단일 파이프라인 (SSOT)
 window.shareFeedToCommunity = async function(feedRecord) {
   if (!feedRecord) return;
-  
+
   var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : null);
   var userId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('user_auth_token') || 'anonymous');
   var nickname = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만백패커');
   var userInsta = (feedRecord.instagram || localStorage.getItem('okbm_user_instagram') || '').replace(/[@\s]/g, '').trim();
 
-  var nowTime = Date.now();
-  window.__lastSharedFeedTimeMap = window.__lastSharedFeedTimeMap || {};
-  var lastSharedTime = window.__lastSharedFeedTimeMap[String(feedRecord.id)] || 0;
-  if (nowTime - lastSharedTime < 1500) {
-    return;
-  }
-  window.__lastSharedFeedTimeMap[String(feedRecord.id)] = nowTime;
-
   var targetGasUrl = window.GAS_API_URL || GAS_API_URL;
   if (!targetGasUrl || targetGasUrl.includes('구글시트_배포_URL')) return;
 
+  // 🛡️ [사진 0개 방어]: 레코드에 사진이 비어있으면 phone_photos_map에서 즉시 강제 인출
   var rawPhotos = [];
   if (Array.isArray(feedRecord.photos) && feedRecord.photos.length > 0) {
-    rawPhotos = feedRecord.photos.filter(function(p) { 
-      return typeof p === 'string' && (p.startsWith('http') || p.startsWith('data:')); 
-    });
+    rawPhotos = feedRecord.photos;
   } else if (feedRecord.photo && typeof feedRecord.photo === 'string') {
     rawPhotos = [feedRecord.photo];
   } else if (feedRecord.fieldPhoto && typeof feedRecord.fieldPhoto === 'string') {
     rawPhotos = [feedRecord.fieldPhoto];
   }
 
-  var allPhotos = [];
-  for (var i = 0; i < rawPhotos.length; i++) {
-    var pItem = rawPhotos[i];
-    if (typeof pItem === 'string' && pItem.startsWith('data:') && typeof window.uploadSinglePhotoToDrive === 'function') {
-      var cloudUrl = await window.uploadSinglePhotoToDrive(pItem, 'feed_' + (feedRecord.id || Date.now()) + '_' + i + '.jpg');
-      allPhotos.push((cloudUrl && cloudUrl.startsWith('http')) ? cloudUrl : pItem);
-      await new Promise(function(res) { setTimeout(res, 200); });
-    } else {
-      allPhotos.push(pItem);
+  if (rawPhotos.length === 0) {
+    var pMap = window.safeGetStorage ? (window.safeGetStorage('okbm_phone_photos_map', {}) || {}) : safeGetJSON('okbm_phone_photos_map', {});
+    var recovered = pMap[String(feedRecord.id)] || pMap[String(feedRecord.date)];
+    if (Array.isArray(recovered) && recovered.length > 0) {
+      rawPhotos = recovered;
     }
   }
 
-  var mainPhoto = allPhotos.length > 0 ? allPhotos[0] : (feedRecord.photo || feedRecord.fieldPhoto || '');
+  // 🛑 [빈 괄호 차단]: 사진이 0개면 시트에 빈 배열을 덮어쓰지 않고 즉시 중단
+  if (rawPhotos.length === 0) {
+    console.warn('[RomanticSync] 사진이 0개이므로 시트 전송을 안전하게 차단합니다.');
+    return;
+  }
+
+  // ⚡ [제5·10헌법 준수]: 브라우저 캔버스 초경량 압축(MAX_WIDTH 1200, quality 0.82) 및 Worker 직통 R2 업로드
+  var CF_WORKER_UPLOAD_URL = 'https://romantic-upload-worker.ggumfree.workers.dev';
+  var finalCdnPhotos = [];
+
+  var compressImageBase64 = function(base64Str, maxWidth, quality) {
+    return new Promise(function(resolve) {
+      var img = new Image();
+      img.onload = function() {
+        var w = img.width;
+        var h = img.height;
+        if (w > maxWidth) {
+          h = Math.round((h * maxWidth) / w);
+          w = maxWidth;
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = function() {
+        resolve(base64Str);
+      };
+      img.src = base64Str;
+    });
+  };
+
+  for (var i = 0; i < rawPhotos.length; i++) {
+    var pItem = rawPhotos[i];
+    if (typeof pItem === 'string' && pItem.startsWith('data:')) {
+      var uploadedUrl = '';
+      var safeFileName = 'photo_' + Date.now() + '_' + i + '_' + Math.random().toString(36).substring(2, 7) + '.jpg';
+
+      try {
+        // 제10헌법 미디어 초경량 압축 적용 후 Blob 변환
+        var compressedBase64 = await compressImageBase64(pItem, 1200, 0.82);
+        var base64Data = compressedBase64.includes(',') ? compressedBase64.split(',')[1] : compressedBase64;
+        var byteCharacters = atob(base64Data);
+        var byteNumbers = new Array(byteCharacters.length);
+        for (var b = 0; b < byteCharacters.length; b++) {
+          byteNumbers[b] = byteCharacters.charCodeAt(b);
+        }
+        var byteArray = new Uint8Array(byteNumbers);
+        var blob = new Blob([byteArray], { type: 'image/jpeg' });
+
+        var cfRes = await fetch(CF_WORKER_UPLOAD_URL + '?file=' + encodeURIComponent(safeFileName), {
+          method: 'POST',
+          headers: { 'Content-Type': 'image/jpeg' },
+          body: blob
+        });
+
+        if (cfRes.ok) {
+          var cfData = await cfRes.json();
+          if (cfData && cfData.status === 'SUCCESS' && cfData.url) {
+            uploadedUrl = cfData.url;
+          }
+        }
+      } catch (cfErr) {
+        console.warn('[RomanticSync] Cloudflare Worker 직통 업로드 예외:', cfErr);
+      }
+
+      // 폴백: Worker 장애 시 구글 앱스 스크립트 예비망 가동
+      if (!uploadedUrl || !uploadedUrl.startsWith('http')) {
+        try {
+          var driveRes = await fetch(targetGasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: 'UPLOAD_PHOTO',
+              base64: pItem,
+              fileName: safeFileName
+            })
+          });
+          if (driveRes.ok) {
+            var dData = await driveRes.json();
+            if (dData && dData.status === 'SUCCESS' && dData.url) {
+              uploadedUrl = dData.url;
+            }
+          }
+        } catch (dErr) {}
+      }
+
+      if (uploadedUrl && uploadedUrl.startsWith('http')) {
+        finalCdnPhotos.push(uploadedUrl);
+      }
+    } else if (typeof pItem === 'string' && pItem.startsWith('http')) {
+      finalCdnPhotos.push(pItem);
+    }
+  }
+
+  var cleanHttpPhotos = finalCdnPhotos.filter(function(u) { return typeof u === 'string' && u.startsWith('http'); });
+  if (cleanHttpPhotos.length === 0) {
+    cleanHttpPhotos = rawPhotos.filter(function(u) { return typeof u === 'string' && u.startsWith('http'); });
+  }
+
+  var mainPhoto = cleanHttpPhotos[0] || (rawPhotos[0] || '');
+
+  // 로컬 메모리 및 IndexedDB에 영구 R2 CDN 주소 즉각 안착
+  feedRecord.photos = cleanHttpPhotos;
+  feedRecord.photo = mainPhoto;
+  feedRecord.fieldPhoto = mainPhoto;
+  feedRecord.photo_url = mainPhoto;
+
+  var pMap = window.safeGetStorage ? (window.safeGetStorage('okbm_phone_photos_map', {}) || {}) : safeGetJSON('okbm_phone_photos_map', {});
+  pMap[String(feedRecord.id)] = cleanHttpPhotos;
+  if (window.__memoryStore) window.__memoryStore['okbm_phone_photos_map'] = pMap;
+  if (typeof window.saveToIndexedDB === 'function') {
+    window.saveToIndexedDB('okbm_phone_photos_map', pMap);
+  }
 
   var safePhotoMemos = [];
   if (Array.isArray(feedRecord.photoMemos) && feedRecord.photoMemos.length > 0) {
     safePhotoMemos = feedRecord.photoMemos;
-  } else {
-    var vaultHistory = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-      ? window.RomanticVault.read('okbm_packing_history', [])
-      : safeGetJSON('okbm_packing_history', []);
-    var matchedLocal = vaultHistory.find(function(h) { return h && String(h.id).trim() === String(feedRecord.id).trim(); });
-    if (matchedLocal && Array.isArray(matchedLocal.photoMemos) && matchedLocal.photoMemos.length > 0) {
-      safePhotoMemos = matchedLocal.photoMemos;
-    } else if (feedRecord.memo) {
-      safePhotoMemos = [feedRecord.memo];
-    }
+  } else if (feedRecord.memo) {
+    safePhotoMemos = [feedRecord.memo];
+  }
+
+  // 📡 [초경량 비동기 전송]: 루트(피드시트/feeds.json)와 루터(스냅시트/router_snaps.json) 물리적 저장 분기
+  var isRouterSnap = (feedRecord.feedType === 'router' || String(feedRecord.id).startsWith('snap_'));
+  var feedPayload = {
+    id: feedRecord.id,
+    isNewPost: Boolean(feedRecord.isNewPost),
+    feedType: isRouterSnap ? 'router' : 'route',
+    userId: userId,
+    author: nickname,
+    instagram: userInsta ? ('@' + userInsta) : '',
+    youtube: feedRecord.youtube || '',
+    spot: feedRecord.spot || feedRecord.spotName || (isRouterSnap ? '나의 아웃도어' : '낭만 스팟'),
+    date: feedRecord.date,
+    memo: (feedRecord.memo || feedRecord.oneLineMemo || '').slice(0, 120),
+    photoMemos: safePhotoMemos,
+    photo_memos_json: JSON.stringify(safePhotoMemos),
+    photo: mainPhoto,
+    photos: cleanHttpPhotos,
+    photo_url: mainPhoto,
+    photos_json: JSON.stringify(cleanHttpPhotos),
+    isPublished: true
+  };
+
+  // 🧭 낭만루트일 때만 패킹 스펙 및 템플릿 탑재
+  if (!isRouterSnap) {
+    feedPayload.elevation = feedRecord.elevation || '';
+    feedPayload.weightKg = feedRecord.weightKg || '0.00';
+    feedPayload.items = feedRecord.items || [];
+    feedPayload.templateId = feedRecord.templateId || 1;
   }
 
   var payload = {
-    action: 'SHARE_PUBLIC_FEED',
+    action: isRouterSnap ? 'SHARE_ROUTER_SNAP' : 'SHARE_PUBLIC_FEED',
     userId: userId,
     nickname: nickname,
-      feed: {
-      id: feedRecord.id,
-      feedType: feedRecord.feedType || 'route',
-      userId: userId,
-      author: nickname,
-      instagram: userInsta ? ('@' + userInsta) : '',
-      spot: feedRecord.spot || feedRecord.spotName,
-      elevation: feedRecord.elevation,
-      weightKg: feedRecord.weightKg,
-      date: feedRecord.date,
-      memo: (feedRecord.memo || feedRecord.oneLineMemo || '').slice(0, 120),
-      photoMemos: safePhotoMemos,
-      photo_memos_json: JSON.stringify(safePhotoMemos),
-      photo: mainPhoto,
-      photos: allPhotos,
-      photo_url: mainPhoto,
-      photos_json: JSON.stringify(allPhotos),
-      items: feedRecord.items || [],
-      templateId: feedRecord.templateId || 1
-    }
+    isNewPost: Boolean(feedRecord.isNewPost),
+    feed: feedPayload
   };
 
+  // 구글 시트 및 R2 feeds.json으로 비동기 백그라운드 전송 (응답 대기 없이 즉시 통과)
   fetch(targetGasUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(payload)
-  }).then(function(res) {
-    return res.json();
-  }).then(function(data) {
-    if (data && data.status === 'SUCCESS') {
-      console.log('[RomanticSync] 공용 피드 전송 및 R2 동기화 성공');
-    }
-  }).catch(function(err) {
-    console.warn('[RomanticSync] 커뮤니티 피드 전송 실패:', err);
+  }).then(function() {
+    if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(true);
+  }).catch(function(e) {
+    console.warn('[RomanticSync] 백그라운드 시트 기록 지연 (앱 정상 구동 유지):', e);
   });
 };
 
 // 10. 커뮤니티 피드 삭제
 window.deleteFeedFromCommunity = function(feedId, dateStr) {
+  var sId = String(feedId || '').trim();
   var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : null);
-  var userId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('user_auth_token') || '');
+  var userId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('user_auth_token') || localStorage.getItem('okbm_user_id') || '');
 
   var targetGasUrl = window.GAS_API_URL || GAS_API_URL;
   if (!targetGasUrl || targetGasUrl.includes('구글시트_배포_URL')) return;
 
+  var isRouterSnap = sId.startsWith('snap_');
   var payload = {
-    action: 'DELETE_PUBLIC_FEED',
-    feedId: feedId || '',
+    action: isRouterSnap ? 'DELETE_ROUTER_SNAP' : 'DELETE_PUBLIC_FEED',
+    feedId: sId,
+    id: sId,
     date: dateStr || '',
     userId: userId
   };
 
-  fetch(targetGasUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(payload)
-  }).then(function(res) {
-    return res.json();
-  }).then(function(data) {
-    if (data && data.status === 'SUCCESS') {
-      console.log('[RomanticSync] 공용 피드 서버 영구 삭제 완료');
-    }
-  }).catch(function(err) {
-    console.warn('[RomanticSync] 피드 삭제 요청 실패:', err);
-  });
+  // ⚡ [Fire-and-Forget 백그라운드 전송]: 응답을 기다리지 않고 시트로 신호만 툭 던져두어 화면 대기열 0% 보장
+  try {
+    fetch(targetGasUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).catch(function() {});
+  } catch (e) {}
+
+  console.log('[RomanticSync] ' + (isRouterSnap ? '루터 스냅' : '루트 피드') + ' 백그라운드 시트 삭제 신호 발송 완료');
 };
