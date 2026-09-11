@@ -144,14 +144,26 @@
       html, body { 
         width: 100%; 
         height: 100%; 
-        height: 100dvh; 
+        height: 100svh; 
         overflow: hidden; 
+        overscroll-behavior: none !important; 
         display: flex; 
         flex-direction: column; 
-        background-color: var(--bg-base); 
+        background-color: #010204 !important; 
         color: var(--text-primary); 
         line-height: 1.45; 
-        transition: background-color 0.25s ease, color 0.25s ease;
+        animation: pageFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      @keyframes pageFadeIn {
+        from { opacity: 0.35; transform: scale(0.996); }
+        to { opacity: 1; transform: scale(1); }
+      }
+
+      body.page-leave {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transition: opacity 0.10s ease-out !important;
       }
 
       .ui-icon { 
@@ -291,12 +303,12 @@
       .filter-wrapper { background: var(--bg-base); border-bottom: 1px solid var(--border-titanium); display: flex; flex-direction: column; gap: 4px; padding: 5px 8px; flex-shrink: 0; }
       .master-tab-bar { display: flex; background: var(--bg-card); border-radius: 8px; padding: 2px; gap: 2px; width: 100%; }
       .master-tab-btn { flex: 1; padding: 4px 1px; min-height: 26px; border: none; border-radius: 6px; background: transparent; color: var(--text-muted); font-size: 0.74rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; white-space: nowrap; }
-      .master-tab-btn.active { background: var(--bg-surface); color: var(--accent-blue); border: 1px solid var(--border-titanium); }
+      .master-tab-btn.active { background: rgba(52, 211, 153, 0.12); color: #6ee7b7; border: 1px solid rgba(52, 211, 153, 0.35); }
       .sub-chips-bar { display: flex; overflow-x: auto; gap: 4px; align-items: center; padding: 1px 0; scrollbar-width: none; width: 100%; }
       .sub-chips-bar::-webkit-scrollbar { display: none; }
-      .filter-chip { padding: 3px 8px; min-height: 24px; border-radius: 12px; border: 1px solid var(--border-hairline); background: var(--bg-card); color: var(--text-secondary); font-size: 0.71rem; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; }
-      .filter-chip.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); box-shadow: 0 0 8px rgba(56,189,248,0.45); }
-      .filter-chip.chip-status.active { background: #0d9488; border-color: #2dd4bf; box-shadow: 0 0 8px rgba(45,212,191,0.45); }
+      .filter-chip { padding: 3px 8px; min-height: 24px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.04); color: var(--text-secondary); font-size: 0.71rem; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; }
+      .filter-chip.active { background: rgba(52, 211, 153, 0.16); color: #a7f3d0; border: 1px solid rgba(52, 211, 153, 0.45); box-shadow: none; font-weight: 800; }
+      .filter-chip.chip-status.active { background: rgba(52, 211, 153, 0.16); color: #a7f3d0; border: 1px solid rgba(52, 211, 153, 0.45); box-shadow: none; font-weight: 800; }
 
       .spot-list { flex: 1; overflow-y: auto; list-style: none; background: var(--bg-surface); width: 100%; padding-bottom: 80px; }
       .region-group { border-bottom: 1px solid var(--border-subtle); width: 100%; }
@@ -306,7 +318,7 @@
       .spot-item:hover { background-color: var(--bg-card); }
       .spot-item.active-spot { background-color: var(--bg-card-hover) !important; border-left: 3px solid var(--accent-blue) !important; }
       
-      .spot-name-colored { font-size: 0.9rem; font-weight: 800; }
+      .spot-name-colored { font-size: 0.88rem; font-weight: 800; letter-spacing: -0.01em; }
       .color-diff-easy { color: #10b981 !important; }
       .color-diff-mid { color: #f59e0b !important; }
       .color-diff-hard { color: #f43f5e !important; }
@@ -315,37 +327,41 @@
       .badge-new { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
       .badge-hot { background: linear-gradient(135deg, #f43f5e, #f97316); color: #fff; }
       
-      .badge-sub-point { background: rgba(56,189,248,0.14); color: var(--accent-blue); border: 1px solid rgba(56,189,248,0.4); font-size: 0.80rem; font-weight: 800; padding: 2px 7px; border-radius: 5px; display: inline-flex; align-items: center; gap: 3px; margin: 2px 0 1px 0; }
+      .badge-sub-point { background: rgba(255, 255, 255, 0.06); color: var(--accent-silver); border: 1px solid rgba(255, 255, 255, 0.16); font-size: 0.68rem; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; margin: 0; }
 
-      .badge-drone { font-size: 0.63rem; font-weight: 800; padding: 1.5px 5px; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; }
-      .drone-ok { background: rgba(16,185,129,0.16); color: #059669; border: 1px solid rgba(16,185,129,0.35); }
-      .drone-warn { background: rgba(245,158,11,0.16); color: #d97706; border: 1px solid rgba(245,158,11,0.35); }
-      .drone-no { background: rgba(244,63,94,0.16); color: #e11d48; border: 1px solid rgba(244,63,94,0.35); }
+      .badge-drone { display: none !important; }
 
       .spot-card-quick-actions { position: static !important; display: flex !important; align-items: center; gap: 3px; flex-shrink: 0; margin-left: auto !important; }
       .btn-card-quick { background: var(--bg-card); border: 1px solid var(--border-hairline); color: var(--text-muted); border-radius: 5px; padding: 2.5px 6px; font-size: 0.65rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 2px; transition: all 0.2s ease; }
-      .btn-card-quick.active-fav { background: #f43f5e !important; border: 1.5px solid #f43f5e !important; color: #ffffff !important; box-shadow: 0 0 10px rgba(244,63,94,0.55); font-weight: 900; }
-      .btn-card-quick.active-done { background: #0284c7 !important; border: 1.5px solid #38bdf8 !important; color: #ffffff !important; box-shadow: 0 0 10px rgba(56,189,248,0.55); font-weight: 900; }
+      .btn-card-quick.active-fav { background: #e11d48 !important; border: 1px solid #e11d48 !important; color: #ffffff !important; box-shadow: none !important; font-weight: 800; }
+      .btn-card-quick.active-done { background: #0284c7 !important; border: 1px solid #0284c7 !important; color: #ffffff !important; box-shadow: none !important; font-weight: 800; }
       
       .city-badge-colored {
-        font-size: 0.74rem !important;
+        font-size: 0.65rem !important;
         font-weight: 800 !important;
         color: #0d9488 !important;
-        background: rgba(45, 212, 191, 0.14) !important;
-        border: 1px solid rgba(45, 212, 191, 0.35) !important;
-        padding: 1px 5px !important;
+        background: rgba(45, 212, 191, 0.12) !important;
+        border: 1px solid rgba(45, 212, 191, 0.3) !important;
+        padding: 1px 4.5px !important;
         border-radius: 4px !important;
       }
       
-      .meta-tag { font-size: 0.65rem; padding: 2px 5px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; flex-shrink: 0; }
-      .tag-terrain-deck { background: rgba(245,158,11,0.14); color: #d97706; border: 1px solid rgba(245,158,11,0.28); }
-      .tag-terrain-rock { background: rgba(148,163,184,0.14); color: var(--text-secondary); border: 1px solid rgba(148,163,184,0.28); }
-      .tag-terrain-soil { background: rgba(34,197,94,0.14); color: #16a34a; border: 1px solid rgba(34,197,94,0.28); }
-      .tag-terrain-beach { background: rgba(14,165,233,0.16); color: #0284c7; border: 1px solid rgba(56,189,248,0.38); }
-      .tag-terrain-island { background: rgba(45,212,191,0.16); color: var(--accent-teal); border: 1px solid rgba(45,212,191,0.35); }
-      .tag-terrain-valley { background: rgba(56,189,248,0.14); color: #0284c7; border: 1px solid rgba(56,189,248,0.28); }
-      .tag-diff { background: rgba(2,132,199,0.18); color: var(--accent-amber); border: 1px solid rgba(2,132,199,0.35); }
-      .tag-dist { background: rgba(16,185,129,0.14); color: var(--accent-emerald); border: 1px solid rgba(16,185,129,0.3); }
+      .meta-tag {
+        font-size: 0.64rem;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 2.5px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #94a3b8;
+      }
+      .tag-diff { color: #cbd5e1; }
+      .tag-dist { color: #cbd5e1; }
       
       .spot-desc-multi {
         font-size: 0.74rem;
@@ -454,8 +470,8 @@
       .lod-marker-container { position: relative !important; width: 34px !important; height: 42px !important; pointer-events: auto !important; cursor: pointer !important; -webkit-tap-highlight-color: transparent; }
       .marker-badge-corner { position: absolute; top: -6px; width: 18px; height: 18px; border-radius: 50%; display: flex !important; align-items: center !important; justify-content: center !important; border: 1.5px solid #ffffff; z-index: 10; pointer-events: none !important; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6); padding: 0 !important; box-sizing: border-box; }
       .marker-badge-corner svg, .marker-badge-corner .ui-icon { width: 10px !important; height: 10px !important; margin: 0 !important; padding: 0 !important; vertical-align: 0 !important; display: block !important; flex-shrink: 0; }
-      .badge-corner-fav { left: -7px; background: #f43f5e; color: #ffffff; }
-      .badge-corner-visited { right: -7px; background: #0284c7; color: #ffffff; }
+      .badge-corner-fav { left: -7px; background: #e11d48; color: #ffffff; }
+      .badge-corner-visited { right: -7px; background: #0ea5e9; color: #ffffff; }
 
       .lod-marker-label { position: absolute !important; bottom: 44px !important; left: 50%; transform: translateX(-50%); background: transparent !important; border: none !important; box-shadow: none !important; pointer-events: none !important; display: flex !important; flex-direction: column !important; align-items: center !important; gap: 1px !important; white-space: nowrap !important; }
       .lod-label-row-1 { font-family: 'SUIT', 'Pretendard Variable', sans-serif !important; font-size: 0.80rem !important; font-weight: 900 !important; line-height: 1.15 !important; letter-spacing: -0.03em !important; color: #FACC15 !important; text-shadow: 0 2px 6px #000000, 0 0 4px #000000 !important; -webkit-text-stroke: 1.0px #000000 !important; paint-order: stroke fill !important; }
@@ -465,26 +481,31 @@
       /* 4단계 요약 카드 */
       .summary-block-wrap { display: flex; flex-direction: column; gap: 5px; margin-top: 4px; width: 100%; }
       .summary-card { background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 7px; padding: 7px 9px; font-size: 0.77rem; line-height: 1.4; color: var(--text-primary); }
-      .summary-card-view { border-left: 3px solid #38bdf8; background: rgba(56,189,248,0.06); }
-      .summary-card-access { border-left: 3px solid #2dd4bf; background: rgba(45,212,191,0.06); }
-      .summary-card-pitch { border-left: 3px solid #10b981; background: rgba(16,185,129,0.06); }
-      .summary-card-tip { border-left: 3px solid #f59e0b; background: rgba(245,158,11,0.06); }
+      .summary-card-view { border-left: 3px solid #94a3b8; background: rgba(255, 255, 255, 0.04); }
+      .summary-card-access { border-left: 3px solid #94a3b8; background: rgba(255, 255, 255, 0.04); }
+      .summary-card-pitch { border-left: 3px solid #94a3b8; background: rgba(255, 255, 255, 0.04); }
+      .summary-card-tip { border-left: 3px solid #94a3b8; background: rgba(255, 255, 255, 0.04); }
       .summary-card-title { font-weight: 800; font-size: 0.73rem; margin-bottom: 2px; display: flex; align-items: center; gap: 4px; }
 
       /* 들머리 & 내비 모듈 */
       .entry-module-container { display: flex; flex-direction: column; gap: 4px; width: 100%; margin: 4px 0; position: relative; }
       .entry-row-1 { display: flex; gap: 4px; width: 100%; align-items: stretch; }
-      .entry-address-2line { flex: 3; font-size: 0.78rem; color: var(--accent-blue); background: rgba(2,132,199,0.12); border: 1px solid rgba(56,189,248,0.3); padding: 6px 9px; border-radius: 7px; text-decoration: none; display: flex; align-items: center; gap: 4px; line-height: 1.35; word-break: break-all; min-height: 40px; font-weight: 700; }
+      .entry-address-2line { flex: 3; font-size: 0.78rem; color: #f1f5f9; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.14); padding: 6px 9px; border-radius: 7px; text-decoration: none; display: flex; align-items: center; gap: 4px; line-height: 1.35; word-break: break-all; min-height: 40px; font-weight: 700; }
       .btn-copy-entry { flex: 1; background: var(--bg-card); border: 1px solid var(--border-titanium); color: var(--text-secondary); border-radius: 7px; font-size: 0.74rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-height: 40px; }
       .entry-guide-chip { font-size: 0.73rem; color: var(--accent-amber); background: rgba(245,158,11,0.14); border: 1px solid rgba(245,158,11,0.28); padding: 4px 8px; border-radius: 6px; margin-top: 2px; display: flex; align-items: center; gap: 4px; }
       .entry-row-2 { display: flex; gap: 4px; width: 100%; margin-top: 2px; }
 
-      .navi-btn-cell { flex: 1; padding: 7px 2px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 4px; transition: transform 0.1s ease; }
-      .navi-btn-cell:active { transform: scale(0.96); }
-      .cell-kakao { background: #fee500; color: #191919; }
-      .cell-tmap { background: #004fff; color: #ffffff; }
-      .cell-naver { background: #03c75a; color: #ffffff; }
-      .cell-reserve { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-titanium); }
+    /* 수정 코드 */
+      .navi-btn-cell { flex: 1; min-height: 34px; padding: 6px 2px; border-radius: 8px; font-size: 0.72rem; font-weight: 800; cursor: pointer; border: 1px solid var(--border-hairline); display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.15s ease; box-sizing: border-box; }
+      .navi-btn-cell:active { transform: scale(0.96); opacity: 0.85; }
+      .cell-kakao { background: rgba(253, 224, 71, 0.08); border-color: rgba(253, 224, 71, 0.25); color: #fde047; }
+      .cell-tmap { background: rgba(56, 189, 248, 0.08); border-color: rgba(56, 189, 248, 0.25); color: #38bdf8; }
+      .cell-naver { background: rgba(52, 211, 153, 0.08); border-color: rgba(52, 211, 153, 0.25); color: #34d399; }
+      .cell-reserve { background: rgba(255, 255, 255, 0.04); border-color: var(--border-hairline); color: var(--text-secondary); }
+      html[data-theme="light"] .cell-kakao { background: rgba(234, 179, 8, 0.12); border-color: rgba(234, 179, 8, 0.35); color: #854d0e; }
+      html[data-theme="light"] .cell-tmap { background: rgba(2, 132, 199, 0.10); border-color: rgba(2, 132, 199, 0.3); color: #0284c7; }
+      html[data-theme="light"] .cell-naver { background: rgba(5, 150, 105, 0.10); border-color: rgba(5, 150, 105, 0.3); color: #059669; }
+      html[data-theme="light"] .cell-reserve { background: rgba(0, 0, 0, 0.04); border-color: var(--border-hairline); color: var(--text-secondary); }
 
       .entry-lock-overlay-tight {
         position: absolute; top: 0; left: 0; right: 0; bottom: 0;
@@ -516,10 +537,21 @@
       .sheet-title-row { display: flex; align-items: center; justify-content: space-between; width: 100%; padding-bottom: 4px; border-bottom: 1px solid var(--border-hairline); cursor: pointer; }
       .compact-title { font-size: 1.12rem !important; font-weight: 900 !important; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
       .spot-live-weather-bar { display: flex; align-items: center; gap: 4px; margin: 4px 0; flex-wrap: wrap; }
-      .weather-chip { font-size: 0.65rem !important; background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 10px; padding: 2px 6px; color: var(--text-secondary); font-weight: 600; display: inline-flex; align-items: center; gap: 3px; }
-      .weather-wind-safe { color: var(--accent-emerald); border-color: rgba(16,185,129,0.35); }
-      .weather-wind-warn { color: var(--accent-amber); border-color: rgba(245,158,11,0.35); }
-      .weather-wind-danger { color: var(--accent-rose); border-color: rgba(244,63,94,0.35); font-weight: 800; }
+      .weather-chip {
+        font-size: 0.64rem !important;
+        background: rgba(255, 255, 255, 0.04) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 6px !important;
+        padding: 2.5px 7px !important;
+        color: #94a3b8 !important;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+      }
+      .weather-wind-safe { color: #94a3b8 !important; }
+      .weather-wind-warn { color: #cbd5e1 !important; }
+      .weather-wind-danger { color: #f87171 !important; border-color: rgba(248,113,113,0.3) !important; font-weight: 700; }
 
       .mobile-bottom-sheet {
         display: flex; position: fixed; left: 0; right: 0; width: 100%;
@@ -530,20 +562,37 @@
         flex-direction: column; overflow: hidden; pointer-events: none !important;
       }
       .mobile-bottom-sheet.open { transform: translateY(0); pointer-events: auto !important; }
-      .sheet-handle-bar-area { width: 100%; padding: 8px 0 4px 0; display: flex; justify-content: center; flex-shrink: 0; cursor: grab; }
-      .sheet-handle-bar { width: 44px; height: 4.5px; background: rgba(148,163,184,0.4); border-radius: 3px; }
       
       .fixed-floating-close-btn {
-        position: absolute; top: 10px; right: 12px; z-index: 50;
-        background: var(--bg-card); border: 1px solid var(--border-titanium);
-        width: 28px; height: 28px; border-radius: 50%; color: var(--text-secondary); font-size: 13px; font-weight: 800;
-        display: flex; align-items: center; justify-content: center; cursor: pointer;
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 60;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        transition: all 0.15s ease;
+        padding: 0;
       }
-      .sheet-content { overflow-y: auto; padding: 2px 12px 14px 12px; display: flex; flex-direction: column; gap: 3px; width: 100%; }
+      .fixed-floating-close-btn:active {
+        transform: scale(0.92);
+        background: rgba(255, 255, 255, 0.12);
+        color: #ffffff;
+      }
+      .sheet-content { overflow-y: auto; padding: 12px 12px 16px 12px; display: flex; flex-direction: column; gap: 3px; width: 100%; }
 
       /* 찜하기 / 다녀왔음 버튼 */
-      .user-action-grid-3 { display: flex; gap: 4px; width: 100%; margin: 3px 0; }
-      .btn-action-3 { flex: 1; padding: 8px 4px; border-radius: 8px; font-size: 0.74rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 3px; transition: all 0.25s ease; border: 1.5px solid transparent; }
+      .user-action-grid-3 { display: flex; gap: 4px; width: 100%; margin: 2px 0; }
+      .btn-action-3 { flex: 1; min-height: 29px; padding: 5px 4px; border-radius: 6px; font-size: 0.70rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 3px; transition: all 0.15s ease; border: 1px solid transparent; box-sizing: border-box; }
       
       .btn-action-3.btn-action-fav {
         background: var(--bg-card);
@@ -551,10 +600,11 @@
         color: var(--text-secondary);
       }
       .btn-action-3.btn-action-fav.bookmarked {
-        background: #f43f5e !important;
-        border: 1.5px solid #f43f5e !important;
+        background: #e11d48 !important;
+        border: 1px solid #e11d48 !important;
         color: #ffffff !important;
-        box-shadow: 0 0 16px rgba(244, 63, 94, 0.6) !important;
+        box-shadow: none !important;
+        font-weight: 800 !important;
       }
 
       .btn-action-3.btn-action-visited {
@@ -564,9 +614,10 @@
       }
       .btn-action-3.btn-action-visited.visited {
         background: #0284c7 !important;
-        border: 1.5px solid #38bdf8 !important;
+        border: 1px solid #0284c7 !important;
         color: #ffffff !important;
-        box-shadow: 0 0 16px rgba(56, 189, 248, 0.6) !important;
+        box-shadow: none !important;
+        font-weight: 800 !important;
       }
       .btn-action-share { background: rgba(59,130,246,0.08); border: 1.5px solid rgba(96,165,250,0.45); color: var(--accent-blue); }
 
@@ -660,7 +711,7 @@
       .dock-item.active { color: var(--accent-blue) !important; } 
       .dock-item svg { width: 19px; height: 19px; fill: currentColor; flex-shrink: 0; }
 
-      /* 🧭 지도 전용 플로팅 퀵 액션 허브 (박지목록 & 초기화 완벽 승계) */
+      /* 🧭 지도 전용 플로팅 퀵 액션 허브 (장소목록 & 초기화 완벽 승계) */
       .map-floating-quick-bar {
         position: absolute;
         bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 10px);
@@ -704,14 +755,14 @@
         background: rgba(255, 255, 255, 0.1);
       }
       .btn-floating-hub.highlight {
-        background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(2, 132, 199, 0.35));
-        border: 1px solid rgba(56, 189, 248, 0.45);
-        color: var(--accent-blue);
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        color: var(--accent-silver);
       }
       html[data-theme="light"] .btn-floating-hub.highlight {
-        background: #0284c7 !important;
+        background: #475569 !important;
         color: #ffffff !important;
-        border: none !important;
+        border: 1px solid #334155 !important;
       }
 
       .app-toast { position: fixed; top: 68px; left: 50%; transform: translateX(-50%) translateY(-15px); background: var(--bg-surface); border: 1.5px solid var(--border-titanium); color: var(--text-primary); padding: 8px 18px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,0.5); pointer-events: none; opacity: 0; transition: all 0.22s ease; display: inline-flex; align-items: center; gap: 6px; }
@@ -873,7 +924,7 @@
           <div class="sidebar-header-left">
             <span id="sidebarCampIcon" style="display:inline-flex; align-items:center;"></span>
             <span>박지 목록</span>
-            <span id="spotCount" style="color: var(--accent-blue); font-size: 0.78rem; font-weight: 800;">0개</span>
+            <span id="spotCount" style="color: #6ee7b7; font-size: 0.78rem; font-weight: 800;">0개</span>
             <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagAdminClick()">6.2ver Master</span>
           </div>
           <div class="sidebar-header-actions">
@@ -921,21 +972,10 @@
       
       <main id="map">
         <!-- 🧭 우측 상단 HUD 타워: 1열 위성/지도 모드 + 2열 테마 전환 -->
-        <div class="top-right-hud-group clean-hide">
-          <div class="top-hud-tower-box">
-            <button type="button" class="top-hud-btn" id="topRightLayerBtn" onclick="toggleMapTypeMode()" title="위성/일반/지형도 전환">
-              <svg viewBox="0 0 24 24" class="ui-icon" style="width:15px; height:15px; margin:0;"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>
-              <span style="font-size:0.55rem; font-weight:800;" id="towerMapTypeText">위성</span>
-            </button>
-            
-            <button type="button" class="top-hud-btn" id="topRightThemeBtn" onclick="toggleAppTheme()" title="일반(라이트)/다크 모드 전환">
-              <span id="themeToggleIcon" style="display:inline-flex; align-items:center; justify-content:center;">
-                <svg viewBox="0 0 24 24" class="ui-icon" style="width:15px; height:15px; margin:0;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-              </span>
-              <span style="font-size:0.55rem; font-weight:800;" id="themeToggleText">일반</span>
-            </button>
-          </div>
-        </div>
+        <!-- 3. 수정 코드 -->
+        <!-- 🧭 우측 상단 HUD: 위성/지도 모드 1단 컴팩트 버튼 -->
+        <!-- 1. 수정 코드 (상단 HUD 타워 제거) -->
+        <!-- 🧭 상단 시야 개방을 위해 우측 상단 타워 전면 철거 완료 -->
 
         <div class="left-bottom-filter-wrap clean-hide" id="leftBottomFilterWrap">
           <div class="left-filter-tower-box">
@@ -981,20 +1021,27 @@
 
     <!-- 모바일 50dvh 바텀 시트 -->
     <div class="mobile-bottom-sheet" id="mobileBottomSheet" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
-      <button type="button" class="fixed-floating-close-btn" onclick="closeMobileBottomSheet()" title="닫기">✕</button>
-      <div class="sheet-handle-bar-area"><div class="sheet-handle-bar"></div></div>
+      <button type="button" class="fixed-floating-close-btn" onclick="triggerHaptic(10); closeMobileBottomSheet();" title="닫기">
+        <svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; fill:none;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
       <div class="sheet-content" id="mobileSheetContent"></div>
     </div>
 
-   <!-- 🧭 모바일 지도 전용 플로팅 퀵 허브 (박지목록 & 초기화 쾌속 버튼) -->
-    <div class="map-floating-quick-bar mobile-only clean-hide" id="mapFloatingQuickBar">
-      <button type="button" class="btn-floating-hub highlight" id="dockSpotListBtn" onclick="triggerHaptic(12); toggleMobileSidebar();">
-        <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
-        <span id="dockSpotListText">박지목록</span>
-      </button>
+   <!-- 🧭 모바일 지도 전용 플로팅 퀵 허브 (장소목록 & 초기화 쾌속 버튼) -->
+    <!-- 2. 수정 코드 (초기화 ── 장소목록 ── 위성 3대 허브 배치) -->
+    <!-- 🧭 지도 전용 플로팅 퀵 허브 (초기화 · 장소목록 · 위성 3대 제어 일체형) -->
+    <div class="map-floating-quick-bar clean-hide" id="mapFloatingQuickBar">
       <button type="button" class="btn-floating-hub" id="dockResetMapBtn" onclick="triggerHaptic(12); handleSmartResetClick();">
-        <svg id="dockResetMapIcon" viewBox="0 0 24 24" style="width:14px; height:14px; fill:currentColor;"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-        <span id="dockResetMapText">초기화</span>
+        <svg id="dockResetMapIcon" viewBox="0 0 24 24" style="width:13px; height:13px; fill:currentColor;"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+        <span id="dockResetMapText" style="display:inline-block; width:50px; text-align:center;">초기화</span>
+      </button>
+      <button type="button" class="btn-floating-hub highlight" id="dockSpotListBtn" onclick="triggerHaptic(12); toggleMobileSidebar();">
+        <svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+        <span id="dockSpotListText">장소목록</span>
+      </button>
+      <button type="button" class="btn-floating-hub" id="dockMapLayerBtn" onclick="triggerHaptic(12); toggleMapTypeMode();" title="일반/위성/지형도 전환">
+        <svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+        <span id="dockMapLayerText" style="display:inline-block; width:38px; text-align:center;">일반</span>
       </button>
     </div>
 
@@ -1054,16 +1101,16 @@
           <span id="lntAlertTopIcon"></span>
           <span><strong>박지 보존을 위한 필수 실천</strong>: 자연을 훼손하지 않는 성숙한 백패킹 문화가 소중한 박지 폐쇄를 막습니다.</span>
         </p>
+        <div class="lnt-rule-item"><div class="lnt-rule-title">1. 사전에 계획하고 준비하기</div><div class="lnt-rule-desc">방문 지역의 규제 여부와 기상 상황을 미리 파악하고 쓰레기 배출 계획을 세웁니다.</div></div>
+        <div class="lnt-rule-item"><div class="lnt-rule-title">2. 지정된 구역에서 야영하기</div><div class="lnt-rule-desc">식생을 훼손하지 않고 바위, 자갈, 흙길 등 영향이 적은 지형을 이용합니다.</div></div>
+        <div class="lnt-rule-item"><div class="lnt-rule-title">3. 발생한 쓰레기는 완벽하게 회수하기</div><div class="lnt-rule-desc">가져온 모든 물품과 음식물 잔재를 포함하여 100% 되가져옵니다.</div></div>
+        <div class="lnt-rule-item"><div class="lnt-rule-title">4. 남겨진 자연물 및 문화재 보존하기</div><div class="lnt-rule-desc">돌, 식물, 단풍잎 등을 함부로 채취하지 않고 눈으로만 감상합니다.</div></div>
         <div class="lnt-rule-item" style="border-left-color:#f43f5e; background:rgba(244,63,94,0.08);">
-          <div class="lnt-rule-title" style="color:var(--accent-rose);"><span id="lntProhibitIcon"></span> 1. 산림 내 화기 사용 및 취사 절대 금지 [비화식 필수]</div>
-          <div class="lnt-rule-desc"><strong>「산림보호법 제34조」</strong> 준수: 버너·불멍은 절대 불가하며 보온병 온수, 비화식 발열팩(핫앤쿡 등)만 이용합니다.</div>
+          <div class="lnt-rule-title" style="color:var(--accent-rose);"><span id="lntProhibitIcon"></span> 5. 산림 내 화기 사용 금지</div>
+          <div class="lnt-rule-desc">산림내 취사 및 흡연등 화기사용을 절대 금합니다.</div>
         </div>
-        <div class="lnt-rule-item"><div class="lnt-rule-title">2. 지정된 단단한 바닥(데크·돌박지·기존 노지) 이용하기</div><div class="lnt-rule-desc">식생과 풀밭 훼손을 방지하고, 기존에 조성된 데크와 단단한 노지 위주로 피칭합니다.</div></div>
-        <div class="lnt-rule-item"><div class="lnt-rule-title">3. 발생한 모든 쓰레기는 100% 회수 하산하기</div><div class="lnt-rule-desc">음식물 잔반, 물티슈, 과일 껍질까지 단 하나의 흔적도 남기지 않고 배낭에 다시 담아옵니다.</div></div>
-        <div class="lnt-rule-item"><div class="lnt-rule-title">4. 자연 및 주변 환경을 있는 그대로 보존하기</div><div class="lnt-rule-desc">자연석 이동 금지, 나뭇가지 꺾지 않기, 팩으로 나무뿌리를 손상시키지 않습니다.</div></div>
-        <div class="lnt-rule-item"><div class="lnt-rule-title">5. 사전에 계획하고 입산 통제 규정 확인하기</div><div class="lnt-rule-desc">산불조심기간, 국립공원 및 지자체별 야영 금지 구역과 통제 여부를 사전에 반드시 파악합니다.</div></div>
-        <div class="lnt-rule-item"><div class="lnt-rule-title">6. 야생동물 보호 및 음식물 냄새 차단하기</div><div class="lnt-rule-desc">음식물 냄새를 철저히 밀봉하여 야생동물의 접근을 막고 먹이를 주지 않습니다.</div></div>
-        <div class="lnt-rule-item"><div class="lnt-rule-title">7. 다른 탐방객과 인근 마을 주민 배려하기</div><div class="lnt-rule-desc">야간 스피커 사용 금지, 조명 눈부심 매너를 지키고 주민 사생활을 존중합니다.</div></div>
+        <div class="lnt-rule-item"><div class="lnt-rule-title">6. 야생동물 보호하기</div><div class="lnt-rule-desc">야생동물에게 음식을 주지 않으며, 음식물을 밀폐용기에 철저히 보관합니다.</div></div>
+        <div class="lnt-rule-item"><div class="lnt-rule-title">7. 다른 방문객을 배려하기</div><div class="lnt-rule-desc">큰 소음이나 과도한 조명을 자제하고 타인의 휴식을 방해하지 않습니다.</div></div>
         <button type="button" class="modal-btn" style="background:#0f766e; color:#fff; font-weight:800; width:100%; padding:10px; margin-top:4px; font-size:0.82rem;" onclick="confirmLntPledgeAndUnlock()">
           K-LNT 7원칙을 준수하겠습니다 (들머리 주소 확인) ➔
         </button>
@@ -1148,19 +1195,24 @@
         var currentPath = window.location.pathname;
         var targetPath = url.split('?')[0];
 
-        // 동일 지도 페이지 클릭 시 리로드 없이 스마트 초기화만 작동
         if (targetPath.includes('map.html') && currentPath.includes('map.html')) {
           if (typeof handleSmartResetClick === 'function') handleSmartResetClick();
           return;
         }
 
-        // 브라우저 툴바 팝업 억제 텔레포트 전환 (뒤로가기 완벽 보존)
-        document.body.style.pointerEvents = 'none';
-        document.body.style.opacity = '0.92';
+        document.body.classList.add('page-leave');
         setTimeout(function() {
           window.location.assign(url);
-        }, 30);
+        }, 60);
       };
+
+      window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+          document.body.classList.remove('page-leave');
+          document.body.style.pointerEvents = 'auto';
+          document.body.style.opacity = '1';
+        }
+      });
 
       function safeGetJSON(key, defaultVal) {
         try {
@@ -1425,7 +1477,7 @@
         ROCK: `<svg viewBox="0 0 24 24" class="ui-icon"><polygon points="4 20 2 12 8 4 17 6 22 14 19 20 4 20" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
         SOIL: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M12 2L4 18h16L12 2z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
         BEACH: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M2 17c3 0 3-2 6-2s3 2 6 2 3-2 6-2M2 20c3 0 3-2 6-2s3 2 6 2 3-2 6-2" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
-        ISLAND: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M2 19c4 0 5-2 10-2s6 2 10 2" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
+        ISLAND: `<svg viewBox="0 0 24 24" class="ui-icon" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20c3-1 6-1 9 0 3 1 6 1 9 0"/><path d="M4 19.5c1.8-4.2 5.5-6.5 10.5-4.2"/><path d="M14.5 15.3c-.3-3.8-.8-7-2-9.3"/><path d="M12.5 6c-2.2-.2-4 1.2-4.5 2.8M12.5 6c1.8-1.5 4-.8 5 .8M12.5 6c.8 2 2.2 3.2 3.8 3.5"/></svg>`,
         VALLEY: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M3 4l7 16M21 4l-7 16" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>`,
         CAVE: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M4 19h16c0-7-3.5-13-8-13S4 12 4 19z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`,
         HEART: `<svg viewBox="0 0 24 24" class="ui-icon"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="currentColor"/></svg>`,
@@ -1571,8 +1623,9 @@
       return { region: '경기', cityName: '경기' };
       }
 
-      // ☀️/🌙 테마 전환 엔진 (우측 상단 HUD 연동)
-      var currentAppTheme = localStorage.getItem('okbm_theme') || 'light';
+     // 4. 수정 코드
+      // 🌙 다크모드 기본 고정 엔진 (눈부심 0% 테마)
+      var currentAppTheme = 'dark';
 
       function applyTheme(theme) {
         currentAppTheme = theme;
@@ -1979,23 +2032,23 @@
       function toggleMapTypeMode() {
         triggerHaptic(10);
         if (!map) return;
-        const textEl = document.getElementById('towerMapTypeText'), btnEl = document.getElementById('topRightLayerBtn');
+        const textEl = document.getElementById('dockMapLayerText'), btnEl = document.getElementById('dockMapLayerBtn');
         currentMapLayerState = (currentMapLayerState + 1) % 3;
         map.removeOverlayMapTypeId(kakao.maps.MapTypeId.TERRAIN);
 
         if (currentMapLayerState === 0) {
           map.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
-          if (textEl) textEl.innerText = '위성';
-          if (btnEl) btnEl.classList.remove('active-layer');
+          if (textEl) textEl.innerText = '일 반';
+          if (btnEl) { btnEl.classList.remove('highlight'); btnEl.style.color = 'var(--text-primary)'; }
         } else if (currentMapLayerState === 1) {
           map.setMapTypeId(kakao.maps.MapTypeId.HYBRID);
-          if (textEl) textEl.innerText = '지형도';
-          if (btnEl) btnEl.classList.add('active-layer');
+          if (textEl) textEl.innerText = '위 성';
+          if (btnEl) { btnEl.classList.add('highlight'); btnEl.style.color = '#38bdf8'; }
         } else if (currentMapLayerState === 2) {
           map.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);
           map.addOverlayMapTypeId(kakao.maps.MapTypeId.TERRAIN);
-          if (textEl) textEl.innerText = '일반';
-          if (btnEl) btnEl.classList.add('active-layer');
+          if (textEl) textEl.innerText = '지형도';
+          if (btnEl) { btnEl.classList.add('highlight'); btnEl.style.color = '#34d399'; }
         }
       }
 
@@ -2125,39 +2178,39 @@
 
         const verBtn = document.getElementById('versionTagBtn');
         if (verBtn) {
-          verBtn.innerHTML = enable ? '👑 6.2ver Master (소유자)' : '6.2ver Master';
-          verBtn.style.color = enable ? '#38bdf8' : 'var(--text-muted)';
+          verBtn.innerText = enable ? '6.2ver Master (관리)' : '6.2ver Master';
+          verBtn.style.color = enable ? 'var(--accent-silver)' : 'var(--text-muted)';
         }
       }
 
-      // 0.001초 즉시 동기 인증: 소유자 계정이면 페이지가 열리자마자 관리자 모드 즉시 가동!
-      (function autoAuthorizeOwner() {
-        if (checkAdminAuthorization()) {
-          isAdminMode = true;
-          document.addEventListener('DOMContentLoaded', () => {
-            applyAdminPermissions(true);
-            setTimeout(() => {
-              applyAdminPermissions(true);
-              if (typeof renderSpots === 'function') renderSpots();
-            }, 100);
-          });
-        }
-      })();
-
       function toggleAdminMode() {
         if (!checkAdminAuthorization()) {
-          showToast('🔒 소유자 전용 기능입니다. 올바른 소유자 계정으로 로그인해주세요.');
+          showToast('소유자 계정으로 로그인 후 이용 가능합니다.');
           return;
         }
         triggerHaptic(15);
         applyAdminPermissions(!isAdminMode);
         renderSpots();
         if (currentActiveSpot) refreshCurrentSpotPopup();
-        showToast(isAdminMode ? '👑 소유자 관리자 모드가 활성화되었습니다!' : '🔒 관리자 모드가 비활성화되었습니다.');
+        showToast(isAdminMode ? '관리자 모드가 활성화되었습니다.' : '관리자 모드가 해제되었습니다.');
       }
 
+      var versionTapCount = 0;
+      var versionTapTimer = null;
       function handleVersionTagAdminClick() {
-        toggleAdminMode();
+        clearTimeout(versionTapTimer);
+        versionTapCount++;
+        triggerHaptic(6);
+
+        if (versionTapCount >= 7) {
+          versionTapCount = 0;
+          toggleAdminMode();
+          return;
+        }
+
+        versionTapTimer = setTimeout(function() {
+          versionTapCount = 0;
+        }, 2200);
       }
       window.addEventListener('keydown', (e) => { if (e.shiftKey && (e.key === 'M' || e.key === 'm')) toggleAdminMode(); });
 
@@ -2238,7 +2291,7 @@ function updateSmartResetButtons() {
       }
       function updateDockSidebarText(isOpen) {
         const textEl = document.getElementById('dockSpotListText'), btn = document.getElementById('dockSpotListBtn');
-        if (textEl) textEl.innerText = isOpen ? '지도복귀' : '박지목록';
+        if (textEl) textEl.innerText = isOpen ? '지도복귀' : '장소목록';
         if (btn) btn.classList.toggle('active', isOpen);
         updateSmartResetButtons();
       }
@@ -2913,36 +2966,36 @@ function updateSmartResetButtons() {
                 }
 
                 return `
-                  <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
-                    <a href="${escapeHtml(targetLink)}" target="_blank" rel="noopener noreferrer" onclick="triggerHaptic(8); event.stopPropagation();" style="display:inline-flex; align-items:center; gap:4px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); padding:2px 7px; border-radius:12px; text-decoration:none; flex-shrink:0;" title="등록자 프로필 바로가기">
-                      <span style="font-size:0.63rem; color:#94a3b8; font-weight:700;">제보</span>
-                      <span style="font-size:0.68rem; color:#38bdf8; font-weight:900;">${escapeHtml(authorName)}</span>
-                      ${snsIconSvg}
-                    </a>
-                    <button type="button" data-id="${sId}" onclick="window.openSpotCorrectionModal(this.dataset.id, event);" style="display:inline-flex; align-items:center; gap:3px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.18); padding:2px 7px; border-radius:12px; font-size:0.63rem; font-weight:800; color:#cbd5e1; cursor:pointer; flex-shrink:0; outline:none;" title="틀린 정보 수정 건의">
-                      <svg viewBox="0 0 24 24" style="width:10px; height:10px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                      <span>수정건의</span>
-                    </button>
-                  </div>
+                  <a href="${escapeHtml(targetLink)}" target="_blank" rel="noopener noreferrer" onclick="triggerHaptic(8); event.stopPropagation();" style="display:inline-flex; align-items:center; gap:4px; background:rgba(251,191,36,0.10); border:1px solid rgba(251,191,36,0.38); padding:2px 8px; border-radius:12px; text-decoration:none; flex-shrink:0; margin-left:auto;" title="등록자 프로필 바로가기">
+                    <span style="font-size:0.63rem; color:#f59e0b; font-weight:800;">제보</span>
+                    <span style="font-size:0.70rem; color:#fde047; font-weight:900;">${escapeHtml(authorName)}</span>
+                    ${snsIconSvg}
+                  </a>
                 `;
               })()}
             </div>
 
-            <div style="display:flex; align-items:center; gap:4px; margin: 2px 0 3px 0; width:100%; overflow-x:auto; white-space:nowrap; scrollbar-width:none; flex-wrap:nowrap;">
-              ${getMetaBadgesHtml(spot)}
-              ${spot.droneStatus ? getDroneStatusBadge(spot.droneStatus) : ''}
+            <!-- 2.5행: 좌측 메타 태그 라인 ── 우측 한 칸 내려간 수정건의 버튼 -->
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin:2px 0 3px 0; width:100%;">
+              <div style="display:flex; align-items:center; gap:4px; overflow-x:auto; white-space:nowrap; scrollbar-width:none; flex:1;">
+                ${getMetaBadgesHtml(spot)}
+              </div>
+              <button type="button" data-id="${sId}" onclick="window.openSpotCorrectionModal(this.dataset.id, event);" style="display:inline-flex; align-items:center; gap:3px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); padding:2px 6px; border-radius:10px; font-size:0.62rem; font-weight:700; color:#94a3b8; cursor:pointer; flex-shrink:0; outline:none;" title="틀린 정보 수정 건의">
+                <svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                <span>수정건의</span>
+              </button>
             </div>
 
- <div class="spot-live-weather-bar" style="margin: 2px 0 4px 0; display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
-              ${sunset ? `<span class="weather-chip" style="color:#f59e0b; font-weight:800; background:rgba(245,158,11,0.15); border:1.2px solid rgba(245,158,11,0.5);">${ICONS.SUNSET} 일몰 ${sunset}</span>` : ''}
-              <div id="liveWeatherBox_${spot.id}" style="display:inline-flex; gap:4px;"><span class="weather-chip">${ICONS.TEMP} 기상 연동 완료</span></div>
+            <div class="spot-live-weather-bar" style="margin: 2px 0 4px 0; display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+              ${sunset ? `<span class="weather-chip" style="color:#cbd5e1; font-weight:700;">${ICONS.SUNSET} 일몰 ${sunset}</span>` : ''}
+              <div id="liveWeatherBox_${spot.id}" style="display:inline-flex; gap:4px;"><span class="weather-chip">${ICONS.TEMP} 기상 대기</span></div>
             </div>
 
             ${renderSpotFieldFeedsTrackHtml(spot)}
 
             <div class="summary-block-wrap" style="margin-top:2px;">
               <div class="summary-card summary-card-view">
-                <div class="summary-card-title" style="color:#38bdf8;">${ICONS.VIEW_CARD} [뷰/특징]</div>
+                <div class="summary-card-title" style="color:#e2e8f0;">${ICONS.VIEW_CARD} [뷰/특징]</div>
                 <div>${escapeHtml(summary.view || spot.desc || '탁 트인 자연 경관을 즐길 수 있는 추천 박지.')}</div>
               </div>
             </div>
@@ -2991,8 +3044,8 @@ function updateSmartResetButtons() {
 
                 ${!isUnlocked ? `
                   <div class="entry-lock-overlay-tight" id="entryLockOverlay_${sId}" onclick="triggerSpotUnlock('${sId}', '${escapeHtml(targetUnlockLink)}')">
-                    <span class="lock-main-text">${ICONS.LOCK} 클릭 시 들머리 주소, 4대 내비 & 실전 코스 공개</span>
-                    <span class="lock-sub-text">K-LNT 서약 후 상세 목적지와 코스 안내가 열립니다</span>
+                    <span class="lock-main-text">${ICONS.LOCK} 클릭 시 들머리 주소, 4대 내비 & 코스 공개 </span>
+                    <span class="lock-sub-text">등록자의 링크와 K-LNT 서약 후 상세 목적지, 코스 안내가 열립니다</span>
                   </div>` : ''}
 
                 ${spot.gpxUrl ? `
@@ -4208,11 +4261,11 @@ displaySpots.forEach(spot => {
         li.className = 'spot-item'; 
         li.id = `spotItem_${spot.id}`;
         li.innerHTML = `
-          <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; width:100%;">
+          <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; width:100%;">
             ${cityName ? `<span class="city-badge-colored">${escapeHtml(cityName)}</span>` : ''}
-            <span class="spot-name-colored ${diffClass}" style="font-size:1.02rem; font-weight:900; letter-spacing:-0.02em;">${escapeHtml(rawName)}</span>
-            ${spot.spot_sub ? `<span class="badge-sub-point" style="font-size:0.70rem; padding:1px 5px;">${escapeHtml(spot.spot_sub)}</span>` : ''}
-            ${spot.elevation ? `<span style="font-size:0.70rem; color:var(--accent-emerald); font-weight:700; display:inline-flex; align-items:center; gap:2px;">(${ICONS.MOUNTAIN}${escapeHtml(spot.elevation)})</span>` : ''}
+            <span class="spot-name-colored ${diffClass}" style="font-size:0.88rem; font-weight:900; letter-spacing:-0.01em;">${escapeHtml(rawName)}</span>
+            ${spot.spot_sub ? `<span class="badge-sub-point">${escapeHtml(spot.spot_sub)}</span>` : ''}
+            ${spot.elevation ? `<span style="font-size:0.68rem; color:var(--accent-emerald); font-weight:700; display:inline-flex; align-items:center; gap:2px;">(${ICONS.MOUNTAIN}${escapeHtml(spot.elevation)})</span>` : ''}
           </div>
 
           <div style="display:flex; align-items:center; justify-content:space-between; gap:5px; margin-top:3px; width:100%;">

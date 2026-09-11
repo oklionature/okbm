@@ -583,7 +583,7 @@ var totalKg = (totalGrams / 1000).toFixed(2);
    if (recentGearBox) {
       if (allPackedItems.length === 0) {
         recentGearBox.innerHTML = `
-          <div style="font-size:0.70rem; font-weight:800; color:#94a3b8;">담긴 장비 (0)</div>
+          <div style="font-size:0.70rem; font-weight:800; color:#94a3b8;">담긴 장비</div>
           <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; flex:1; color:#64748b; font-size:0.68rem; line-height:1.3;">
             <span>배낭 비어있음</span>
             <span style="font-size:0.58rem; color:#475569;">장비를 담아보세요</span>
@@ -601,12 +601,10 @@ var totalKg = (totalGrams / 1000).toFixed(2);
             <div style="font-size:0.78rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
               ${escapeHtml(lastItem.name)}
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:baseline; font-family:'JetBrains Mono', monospace;">
-              <span style="font-size:0.72rem; font-weight:900; color:${lastPal.color};">+${(lastItem.weight / 1000).toFixed(2)}kg</span>
-              <span style="font-size:0.60rem; color:#94a3b8;">${lastItem.weight}g</span>
+            <div style="display:flex; justify-content:flex-end; align-items:baseline; font-family:'JetBrains Mono', monospace;">
+              <span style="font-size:0.72rem; font-weight:900; color:${lastPal.color};">${lastItem.weight}g</span>
             </div>
           </div>
-          <div style="font-size:0.56rem; color:#38bdf8; font-weight:700; text-align:right;">목록 열기</div>
         `;
       }
     }
@@ -646,16 +644,9 @@ var totalKg = (totalGrams / 1000).toFixed(2);
 { id: 'camp', title: '테이블·체어' }
 ];
 
-      tabsContainer.innerHTML = catList.map(function(c) {
+   tabsContainer.innerHTML = catList.map(function(c) {
         var isActive = (c.id === activeTab);
-        var inPackCount = 0;
-        if (c.id === 'all') inPackCount = allPackedItems.length;
-        else if (c.id === 'fav') inPackCount = allPackedItems.filter(function(it) { return window.favoriteGearSet && window.favoriteGearSet.has(it.name); }).length;
-        else inPackCount = (gearMap[c.id] || []).length;
-
         var tTheme = CATEGORY_PALETTE[c.id] || { color: '#cbd5e1', border: 'rgba(255,255,255,0.12)' };
-        var countBadge = inPackCount > 0 ? `<span style="font-size:0.56rem; background:${isActive ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.08)'}; color:${isActive ? '#ffffff' : tTheme.color}; padding:0 3px; border-radius:6px; margin-left:2px; font-family:'JetBrains Mono', monospace; font-weight:800;">${inPackCount}</span>` : '';
-
         var btnBg = isActive ? tTheme.bg : 'rgba(255,255,255,0.03)';
         var btnBorder = isActive ? tTheme.border : 'rgba(255,255,255,0.07)';
         var btnColor = tTheme.color;
@@ -663,7 +654,7 @@ var totalKg = (totalGrams / 1000).toFixed(2);
 
         return `
           <button type="button" onclick="window.setCalcCategoryTab('${c.id}')" style="flex:0 0 76px !important; width:76px !important; min-width:76px !important; max-width:76px !important; height:30px !important; background:${btnBg}; border:1px solid ${btnBorder}; color:${btnColor}; font-size:0.67rem; font-weight:${isActive ? '900' : '700'}; padding:0 2px; border-radius:6px; white-space:nowrap; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; box-sizing:border-box; letter-spacing:-0.02em; transition:all 0.15s ease;">
-            ${starIconHtml}<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.title}</span>${countBadge}
+            ${starIconHtml}<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.title}</span>
           </button>
         `;
       }).join('');
@@ -1777,7 +1768,7 @@ window.saveCurrentPackingRecord = function() {
       tentEmpty: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#94a3b8; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0;"><path d="M19 20L12 4 5 20h14z"/><path d="M12 4v16M7 20l5-8 5 8"/></svg>',
       starGold: '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:#fbbf24; stroke:#f59e0b; stroke-width:1; flex-shrink:0; filter:drop-shadow(0 1px 3px rgba(251,191,36,0.4));"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
       flagGreen: '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:#34d399; stroke:#059669; stroke-width:1; flex-shrink:0; filter:drop-shadow(0 1px 3px rgba(52,211,153,0.4));"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>',
-      memoEdit: '<svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:#38bdf8; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+      memoEdit: '<svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:#cbd5e1; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
       trash: '<svg viewBox="0 0 24 24" style="width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
       check: '<svg viewBox="0 0 24 24" style="width:12px; height:12px; stroke:currentColor; fill:none; stroke-width:2.8; stroke-linecap:round; stroke-linejoin:round;"><polyline points="20 6 9 17 4 12"/></svg>',
       foodUtensils: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; stroke:#fb923c; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/></svg>',
@@ -1813,7 +1804,7 @@ window.saveCurrentPackingRecord = function() {
             ${UI_ICONS.tentEmpty}
             <span>다가오는 출정 일정이 없습니다.</span>
           </div>
-          <span style="font-size:0.65rem; color:#38bdf8; font-weight:900;">달력에서 날짜를 선택해보세요</span>
+          <span style="font-size:0.65rem; color:#38bdf8; font-weight:900;">
         </div>
       `;
     }
@@ -1857,7 +1848,7 @@ window.saveCurrentPackingRecord = function() {
     }
 
     var VECTOR_ICONS = {
-      calculator: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; stroke:#38bdf8; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;"><rect x="4" y="2" width="16" height="20" rx="3"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/><line x1="14" y1="18" x2="16" y2="18"/></svg>',
+      calculator: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; stroke:#cbd5e1; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;"><rect x="4" y="2" width="16" height="20" rx="3"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/><line x1="14" y1="18" x2="16" y2="18"/></svg>',
       checklist: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; stroke:#34d399; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
       bookmarks: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:#fbbf24; stroke:#fbbf24; stroke-width:1;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
       gears: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; stroke:#e2e8f0; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>'
@@ -1885,8 +1876,8 @@ window.saveCurrentPackingRecord = function() {
             </div>
           </div>
 
-          <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.72rem; font-weight:900; color:#cbd5e1; height:20px; line-height:20px; flex-shrink:0; letter-spacing:0.5px; margin-top:8px; margin-bottom:4px;">
-            <span style="color:#f43f5e;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#38bdf8;">토</span>
+          <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.72rem; font-weight:900; color:#94a3b8; height:20px; line-height:20px; flex-shrink:0; letter-spacing:0.5px; margin-top:8px; margin-bottom:4px;">
+            <span style="color:#f43f5e;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#cbd5e1;">토</span>
           </div>
           
           <div style="flex:1 1 0%; min-height:0; display:grid; grid-template-columns:repeat(7, 1fr); grid-template-rows:repeat(6, 1fr); gap:2px; text-align:center;">
@@ -1909,7 +1900,7 @@ window.saveCurrentPackingRecord = function() {
                 ${UI_ICONS.trash}
                 <span>삭제</span>
               </button>
-              <button type="button" onclick="window.savePlanMemo('${activeDateStr}');" style="height:24px; padding:0 9px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.38); color:#38bdf8; font-size:0.68rem; font-weight:800; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:3px;">
+              <button type="button" onclick="window.savePlanMemo('${activeDateStr}');" style="height:24px; padding:0 9px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#f8fafc; font-size:0.68rem; font-weight:800; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:3px;">
                 ${UI_ICONS.check}
                 <span>저장</span>
               </button>
@@ -2154,10 +2145,10 @@ window.saveCurrentPackingRecord = function() {
 /// 3. 군더더기 제로 단일 패킹 캔버스 뷰 (검색 + 전체리본 + 90% 선반 + SVG 듀얼 하단독)
     var calcSpotName = (window.currentLuckySpot && window.currentLuckySpot.name) 
       ? window.currentLuckySpot.name 
-      : (spotTitle !== '자유 출정 일정' ? spotTitle : '선자령 백패킹');
+      : (spotTitle !== '자유 출정 일정' ? spotTitle : '출발 준비 완료!');
     var calcSpotElev = (window.currentLuckySpot && window.currentLuckySpot.elevation) 
-      ? (String(window.currentLuckySpot.elevation).includes('m') ? window.currentLuckySpot.elevation : window.currentLuckySpot.elevation + 'm') 
-      : '832m';
+      ? (String(window.currentLuckySpot.elevation).includes('m') ? ('(' + window.currentLuckySpot.elevation + ')') : ('(' + window.currentLuckySpot.elevation + 'm)')) 
+      : '';
 
  var calculatorViewHtml = `
       <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; position:relative;">
@@ -2166,25 +2157,25 @@ window.saveCurrentPackingRecord = function() {
         <div style="flex:0 0 auto !important; display:flex; flex-direction:column; padding:2px 0; box-sizing:border-box; gap:5px; flex-shrink:0; position:relative; z-index:20;">
           
         <!-- 1. 최상단 출정 브리핑 바 (원터치 일정 변경 통합 & 여유로운 폰트 레이아웃) -->
-          <div onclick="window.togglePlanTripDateInlineDropdown(event);" style="height:42px !important; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:0 12px; display:flex; justify-content:space-between; align-items:center; box-sizing:border-box; flex-shrink:0; cursor:pointer; transition:background 0.15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='rgba(255,255,255,0.035)'">
+          <div onclick="window.togglePlanTripDateInlineDropdown(event);" style="height:42px !important; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0 12px; display:flex; justify-content:space-between; align-items:center; box-sizing:border-box; flex-shrink:0; cursor:pointer; transition:background 0.15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
             <div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">
-              <span style="font-size:0.82rem; font-family:'Space Grotesk', sans-serif; font-weight:800; color:#38bdf8; display:flex; align-items:center; gap:4px; flex-shrink:0; letter-spacing:0.2px;">
+              <span style="font-size:0.82rem; font-family:'Space Grotesk', sans-serif; font-weight:800; color:#e2e8f0; display:flex; align-items:center; gap:4px; flex-shrink:0; letter-spacing:0.2px;">
                 ${PLAN_SVG.calendar} <span>${activeDateStr}</span>
               </span>
               <div style="font-size:0.86rem; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                ${PLAN_SVG.pin}
+                <span style="color:#94a3b8; display:inline-flex; align-items:center;">${PLAN_SVG.pin}</span>
                 <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:-0.01em;">${escapeHtml(calcSpotName)}</span>
-                <span style="font-size:0.72rem; color:#94a3b8; font-weight:700; flex-shrink:0; margin-left:1px;">(${escapeHtml(calcSpotElev)})</span>
+                ${calcSpotElev ? `<span style="font-size:0.72rem; color:#94a3b8; font-weight:700; flex-shrink:0; margin-left:1px;">${escapeHtml(calcSpotElev)}</span>` : ''}
               </div>
             </div>
-            <span style="font-size:0.74rem; color:#64748b; font-weight:800; display:flex; align-items:center; gap:2px; flex-shrink:0; margin-left:6px;">
+            <span style="font-size:0.74rem; color:#94a3b8; font-weight:800; display:flex; align-items:center; gap:2px; flex-shrink:0; margin-left:6px;">
               <span>목록</span>
-              <span style="font-size:0.68rem; color:#38bdf8;">▾</span>
+              <span style="font-size:0.68rem; color:#cbd5e1;">▾</span>
             </span>
           </div>
 
           <!-- 1-1. 인라인 출정 일정 아코디언 드롭다운 -->
-          <div id="calcTripDateDropdown" style="display:none; position:absolute; top:42px; left:0; right:0; z-index:700; background:#0d121d; border:1.5px solid rgba(56,189,248,0.4); border-radius:8px; padding:8px; flex-direction:column; gap:6px; box-shadow:0 16px 40px rgba(0,0,0,0.95); box-sizing:border-box;"></div>
+          <div id="calcTripDateDropdown" style="display:none; position:absolute; top:42px; left:0; right:0; z-index:700; background:#0b0f17; border:1px solid rgba(255,255,255,0.18); border-radius:8px; padding:8px; flex-direction:column; gap:6px; box-shadow:0 16px 40px rgba(0,0,0,0.95); box-sizing:border-box;"></div>
 
           <!-- 2. 대시보드 (5:5 완벽 좌우 분할, 높이 88px) -->
           <div class="weight-dashboard-strip">
@@ -2204,8 +2195,8 @@ window.saveCurrentPackingRecord = function() {
               </div>
             </div>
 
-            <!-- 우측 50% 박스 (담긴 장비 뷰어 - 클릭 시 하단 목록 펼침) -->
-            <div class="weight-pod-box" id="planRecentGearBox" onclick="document.getElementById('calcPackedItemsPopover').style.display='flex';" style="cursor:pointer; background:rgba(255,255,255,0.035) !important;"></div>
+            <!-- 우측 50% 박스 (담긴 장비 뷰어 - 클릭 시 토글) -->
+            <div class="weight-pod-box" id="planRecentGearBox" onclick="var p=document.getElementById('calcPackedItemsPopover'); if(p){ p.style.display=(p.style.display==='flex'?'none':'flex'); }" style="cursor:pointer; background:rgba(255,255,255,0.035) !important;"></div>
 
           </div>
 
@@ -2333,8 +2324,8 @@ window.saveCurrentPackingRecord = function() {
             </div>
           </div>
 
-          <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.72rem; font-weight:900; color:#cbd5e1; height:20px; line-height:20px; flex-shrink:0; letter-spacing:0.5px; margin-top:8px; margin-bottom:4px;">
-            <span style="color:#f43f5e;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#38bdf8;">토</span>
+          <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.72rem; font-weight:900; color:#94a3b8; height:20px; line-height:20px; flex-shrink:0; letter-spacing:0.5px; margin-top:8px; margin-bottom:4px;">
+            <span style="color:#f43f5e;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#cbd5e1;">토</span>
           </div>
           
           <div style="flex:1 1 0%; min-height:0; display:grid; grid-template-columns:repeat(7, 1fr); grid-template-rows:repeat(6, 1fr); gap:2px; text-align:center;">
@@ -2363,7 +2354,7 @@ window.saveCurrentPackingRecord = function() {
                 var safeElev = escapeHtml(s.elevation);
                 var safeMeta = escapeHtml(s.metaLine);
                 return `
-                  <div data-spot="${safeName}" onclick="location.href='map.html?spot=' + encodeURIComponent(this.dataset.spot);" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-left:3.5px solid rgba(217,180,99,0.8); border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0;">
+                  <div data-spot="${safeName}" onclick="location.href='map.html?spot=' + encodeURIComponent(this.dataset.spot);" style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.08); border-left:1.5px solid rgba(217,180,99,0.6); border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0;">
                     <div style="flex:1; min-width:0; padding-right:10px;">
                       <div style="font-size:0.82rem; font-weight:900; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                         ${safeName}
