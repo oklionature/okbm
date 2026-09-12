@@ -3126,41 +3126,8 @@ var adBannersHtml = `
       } catch (e) {}
     }
 
-    var DEFAULT_TRIP_JOINS = [
-      {
-        tripId: "trip_1",
-        spotName: "강원 대관령 선자령",
-        date: "2026.09.12",
-        carpoolInfo: "사당역 07시 카풀 1석",
-        maxCapacity: 4,
-        currentJoined: 2,
-        participants: [
-          { userId: "author_1", nickname: "낭만호랑이", isHost: true },
-          { userId: "member_1", nickname: "솔캠러", isHost: false }
-        ],
-        openChatUrl: "https://open.kakao.com",
-        tags: "#비화식 #풍경사진 #쉘터공유",
-        authorName: "낭만호랑이",
-        desc: "풍차 능선에서 은하수 보고 비화식으로 조용히 힐링하실 분 모십니다."
-      },
-      {
-        tripId: "trip_2",
-        spotName: "인천 굴업도 섬 백패킹",
-        date: "2026.09.19",
-        carpoolInfo: "인천항 연안여객터미널 집결",
-        maxCapacity: 3,
-        currentJoined: 1,
-        participants: [
-          { userId: "author_2", nickname: "바다바람", isHost: true }
-        ],
-        openChatUrl: "https://open.kakao.com",
-        tags: "#개머리언덕 #초보환영 #배편완료",
-        authorName: "바다바람",
-        desc: "배편 예매 완료했습니다. 초보자분도 배낭만 메고 오시면 됩니다!"
-      }
-    ];
-
-    window.TRIP_JOINS_DATABASE = window.TRIP_JOINS_DATABASE || DEFAULT_TRIP_JOINS.slice();
+    var DEFAULT_TRIP_JOINS = [];
+    window.TRIP_JOINS_DATABASE = [];
 
     function getTripPhotosList(trip) {
       if (!trip) return [];
@@ -3290,33 +3257,48 @@ var adBannersHtml = `
 
     window.syncTripToCloudSheet = function(tripData) {
       if (!tripData) return;
-      var gasUrl = window.GAS_API_URL || GAS_API_URL;
-      if (!gasUrl || gasUrl.includes('구글시트_배포_URL')) return;
+      var gasUrl = 'https://script.google.com/macros/s/AKfycbzksZYPEENEc5BOPuseLPovzxwP88v9flH7kbWocL3zlrS4yDhPzTsr7PILwYQfQm4/exec';
 
       var photosToUpload = (Array.isArray(tripData.photos) && tripData.photos.length > 0) ? tripData.photos : [];
 
       (async function() {
-        var finalDriveUrls = [];
+        var finalUrls = [];
         for (var i = 0; i < photosToUpload.length; i++) {
           var pItem = photosToUpload[i];
-          if (typeof pItem === 'string' && pItem.startsWith('data:') && typeof window.uploadSinglePhotoToDrive === 'function') {
-            var singleUrl = await window.uploadSinglePhotoToDrive(pItem, 'trip_' + tripData.tripId + '_' + i + '.jpg');
-            finalDriveUrls.push((singleUrl && singleUrl.startsWith('http')) ? singleUrl : pItem);
-            await new Promise(function(res) { setTimeout(res, 350); });
-          } else {
-            finalDriveUrls.push(pItem);
+          if (typeof pItem === 'string' && pItem.startsWith('data:')) {
+            try {
+              var uploadRes = await fetch(gasUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                  action: 'UPLOAD_PHOTO',
+                  base64: pItem,
+                  fileName: 'trip_' + tripData.tripId + '_' + i + '.jpg'
+                })
+              });
+              var uploadData = await uploadRes.json();
+              if (uploadData && uploadData.status === 'SUCCESS' && uploadData.url) {
+                finalUrls.push(uploadData.url);
+              }
+            } catch(e) {}
+          } else if (typeof pItem === 'string' && pItem.startsWith('http')) {
+            finalUrls.push(pItem);
           }
         }
 
-        if (finalDriveUrls.length > 0) {
-          tripData.photos = finalDriveUrls;
-          tripData.photo = finalDriveUrls[0];
-        }
+        var defaultCover = 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?auto=format&fit=crop&w=900&q=80';
+        var safePhotos = finalUrls.length > 0 ? finalUrls : [defaultCover];
+        tripData.photos = safePhotos;
+        tripData.photo = safePhotos[0];
+
+        var profile = safeGetJSON('user_profile', null);
+        var curUid = (profile && profile.id) ? String(profile.id).trim() : (tripData.userId || '');
 
         var payload = {
           action: 'CREATE_TRIP',
           trip: {
             tripId: tripData.tripId,
+            userId: curUid,
             spotName: tripData.spotName,
             date: tripData.date,
             carpoolInfo: tripData.carpoolInfo,
@@ -3325,7 +3307,7 @@ var adBannersHtml = `
             participants: JSON.stringify(tripData.participants || []),
             gearShare: tripData.gearShare,
             openChatUrl: tripData.openChatUrl,
-            photos: JSON.stringify(tripData.photos || []),
+            photos: JSON.stringify(safePhotos),
             authorName: tripData.authorName,
             desc: tripData.desc,
             isActive: 'TRUE',
@@ -3341,7 +3323,7 @@ var adBannersHtml = `
           return res.json();
         }).then(function(data) {
           if (data && data.status === 'SUCCESS') {
-            console.log('✅ [Trip] 구글 시트 원정대 동행 등록 100% 완료');
+            if (typeof loadTripsFromGoogleSheet === 'function') loadTripsFromGoogleSheet();
           }
         }).catch(function(err) {});
       })();
@@ -3349,14 +3331,15 @@ var adBannersHtml = `
 
     window.__tombstoneTripIds = window.__tombstoneTripIds || new Set();
 
-  window.deleteTripFromCloudSheet = function(tripId, e, skipConfirm) {
+    window.deleteTripFromCloudSheet = function(tripId, e, skipConfirm) {
       if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
       if (!skipConfirm && !confirm('이 원정대를 삭제하시겠습니까?\n공용 시트와 내 낭만플랜 달력 일정에서 모두 삭제됩니다.')) return;
 
       triggerHaptic(15);
       var gasUrl = window.GAS_API_URL || GAS_API_URL;
       var targetIdStr = String(tripId).trim();
-      console.log('🗑️ [Trip] 원정대 연동 삭제 실행 ID:', targetIdStr);
+      var profile = safeGetJSON('user_profile', null);
+      var curUserId = (profile && profile.id) ? String(profile.id).trim() : '';
 
       window.__tombstoneTripIds.add(targetIdStr);
       try {
@@ -3371,7 +3354,7 @@ var adBannersHtml = `
         return String(t.tripId).trim() !== targetIdStr; 
       });
       if (typeof renderHomeTripJoinSlider === 'function') renderHomeTripJoinSlider();
-      // 🗑️ [낭만플랜 개인 달력에서도 해당 원정대 박지/메모 완전 소거]
+
       var planSpots = safeGetJSON('okbm_plan_spots', {});
       Object.keys(planSpots).forEach(function(dKey) {
         var arr = Array.isArray(planSpots[dKey]) ? planSpots[dKey] : (planSpots[dKey] && planSpots[dKey].name ? [planSpots[dKey]] : []);
@@ -3392,7 +3375,8 @@ var adBannersHtml = `
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'DELETE_TRIP',
-            tripId: targetIdStr
+            tripId: targetIdStr,
+            userId: curUserId
           })
         }).catch(function(err) {});
       }
@@ -3401,6 +3385,27 @@ var adBannersHtml = `
     };
 
     async function loadTripsFromGoogleSheet() {
+      var r2Domain = window.R2_PUBLIC_DOMAIN || 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
+      var r2TripsUrl = r2Domain + '/trips.json?_t=' + Date.now();
+
+      var cachedTombs = safeGetJSON('okbm_tombstone_trips', []);
+      window.__tombstoneTripIds = new Set(Array.isArray(cachedTombs) ? cachedTombs : []);
+
+      try {
+        var r2Res = await fetch(r2TripsUrl, { cache: 'no-store' });
+        if (r2Res.ok) {
+          var r2Data = await r2Res.json();
+          if (Array.isArray(r2Data)) {
+            var filteredR2 = r2Data.filter(function(t) {
+              return t && t.tripId && !window.__tombstoneTripIds.has(String(t.tripId).trim());
+            });
+            window.TRIP_JOINS_DATABASE = filteredR2;
+            renderHomeTripJoinSlider();
+            return;
+          }
+        }
+      } catch(r2Err) {}
+
       var TRIPS_GID = '1029159607';
       var sheetId = window.GOOGLE_SHEET_ID || '1NwU__GxGKdTBhiifJmCQd3KB03U-v5xrI4zvLaXR_y4';
       var gvizUrl = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/gviz/tq?tqx=out:csv&gid=' + TRIPS_GID + '&_t=' + Date.now();
@@ -3411,9 +3416,6 @@ var adBannersHtml = `
         var csvText = await res.text();
         if (typeof Papa === 'undefined') return;
 
-        var cachedTombs = safeGetJSON('okbm_tombstone_trips', []);
-        window.__tombstoneTripIds = new Set(Array.isArray(cachedTombs) ? cachedTombs : []);
-
         Papa.parse(csvText, {
           header: true,
           skipEmptyLines: true,
@@ -3422,7 +3424,7 @@ var adBannersHtml = `
               var savedMap = safeGetJSON('okbm_trip_photos_map', {});
               var loaded = [];
               results.data.forEach(function(row) {
-                var isActiveRaw = String(row.isActive || 'TRUE').toUpperCase();
+                var isActiveRaw = String(row.isActive || row['노출여부'] || 'TRUE').toUpperCase();
                 if (isActiveRaw === 'FALSE') return;
                 var spot = row.spotName || '';
                 var dateStr = row.date || '';
@@ -3433,7 +3435,6 @@ var adBannersHtml = `
                 if (window.__tombstoneTripIds.has(tId)) return;
 
                 var localPhotos = savedMap[tId];
-
                 var rawPhotos = String(row.photos || row.photo || '').trim();
                 var photoArr = [];
 
@@ -3458,6 +3459,7 @@ var adBannersHtml = `
 
                 var maxCap = parseInt(row.maxCapacity || row.maxMembers, 10) || 4;
                 var curJoin = parseInt(row.currentJoined, 10) || (participantArr.length > 0 ? participantArr.length : 1);
+                var rowUid = row.userId ? String(row.userId).trim() : '';
 
                 loaded.push({
                   tripId: tId,
@@ -3466,7 +3468,7 @@ var adBannersHtml = `
                   carpoolInfo: row.carpoolInfo || '',
                   maxCapacity: maxCap,
                   currentJoined: curJoin,
-                  participants: participantArr.length > 0 ? participantArr : [{ userId: 'host', nickname: row.authorName || '방장', isHost: true }],
+                  participants: participantArr.length > 0 ? participantArr : [{ userId: rowUid || 'host', nickname: row.authorName || '방장', isHost: true }],
                   gearShare: row.gearShare || '',
                   openChatUrl: row.openChatUrl || 'https://open.kakao.com',
                   photo: photoArr[0] || '',
@@ -3474,18 +3476,23 @@ var adBannersHtml = `
                   authorName: row.authorName || '낭만백패커',
                   desc: row.desc || '',
                   isActive: 'TRUE',
-                  createdAt: row.createdAt || ''
+                  createdAt: row.createdAt || '',
+                  userId: rowUid
                 });
               });
 
-              if (loaded.length > 0) {
-                window.TRIP_JOINS_DATABASE = loaded;
-                renderHomeTripJoinSlider();
-              }
+              window.TRIP_JOINS_DATABASE = loaded;
+              renderHomeTripJoinSlider();
+            } else {
+              window.TRIP_JOINS_DATABASE = [];
+              renderHomeTripJoinSlider();
             }
           }
         });
-      } catch (err) {}
+      } catch (err) {
+        window.TRIP_JOINS_DATABASE = [];
+        renderHomeTripJoinSlider();
+      }
     }
 
     window.__currentTripJoinModalIdx = 0;
@@ -3570,10 +3577,19 @@ var adBannersHtml = `
       var profile = safeGetJSON('user_profile', null);
       var currentNick = (profile && profile.nickname) ? profile.nickname : '';
       var currentUserId = (profile && profile.id) ? String(profile.id).trim() : '';
-      var isAuthor = currentNick && (currentNick === trip.authorName);
+
+      var isAuthor = Boolean(
+        currentUserId && (
+          (trip.userId && String(trip.userId).trim() === currentUserId) ||
+          (Array.isArray(trip.participants) && trip.participants.some(function(p) { return p.isHost && String(p.userId).trim() === currentUserId; }))
+        )
+      );
+      if (!isAuthor && currentNick && trip.authorName && !trip.userId) {
+        isAuthor = (currentNick === trip.authorName);
+      }
 
       var isAlreadyJoined = Array.isArray(trip.participants) && trip.participants.some(function(p) {
-        return (currentUserId && p.userId === currentUserId) || (currentNick && p.nickname === currentNick);
+        return (currentUserId && String(p.userId).trim() === currentUserId) || (currentNick && p.nickname === currentNick);
       });
 
       var participantList = Array.isArray(trip.participants) && trip.participants.length > 0
