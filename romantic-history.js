@@ -78,10 +78,10 @@
         overflow: hidden !important;
         display: flex !important;
         flex-direction: column !important;
-        justify-content: space-between !important;
+        justify-content: flex-start !important;
         align-items: stretch !important;
-        padding-top: calc(env(safe-area-inset-top, 0px)) !important;
-        padding-bottom: 2px !important; /* 🛡️ 이중 패딩 110px 완전 제거: 하단 독바 위 초밀착 */
+        padding-top: 0 !important;
+        padding-bottom: 2px !important;
         box-sizing: border-box !important;
         flex-shrink: 0 !important;
         contain: strict !important;
@@ -110,22 +110,27 @@
         height: 100% !important;
         display: flex !important;
         flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
+        align-items: stretch !important;
+        justify-content: flex-start !important;
         background: #000000 !important;
         overflow: hidden !important;
-        padding: 0 !important; /* 🛡️ 공백 0%: 좌우 여백 없이 화면 폭 100% 풀밀착 */
+        padding: 4px 8px 0 8px !important;
         box-sizing: border-box !important;
       }
 
       .reel-media-stage > div,
       .postcard-3d-wrapper,
       .postcard-face-front,
-      .postcard-face-back {
-        border-radius: 14px !important; /* 부드러운 모서리 라운드 유지 */
+      .postcard-face-back,
+      .reel-horizontal-track,
+      .reel-horizontal-track > div,
+      .reel-photo-target {
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        transform: translateZ(0) !important;
+        -webkit-transform: translateZ(0) !important;
       }
 
-     /* 📷 [가로 슬라이더 사진 규격 - 세로 스크롤 간섭 0% 보장] */
       .reel-horizontal-track {
         display: flex !important;
         flex-direction: row !important;
@@ -157,31 +162,36 @@
         box-sizing: border-box !important;
       }
 
-      /* 📐 검은 여백 0% 원천 박멸: 풀스크린 꽉 채우기(Cover) 표준 확정 */
       .reel-photo-target {
         width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
         height: 100% !important;
-        object-fit: cover !important; /* 빈틈없이 100% 꽉 채움 */
-        object-position: center !important;
+        min-height: 100% !important;
+        object-fit: cover !important;
+        object-position: center center !important;
         display: block !important;
         pointer-events: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
       }
 
       .reel-bottom-interactive-bar {
-        padding: 4px 16px 8px 16px !important; /* 상하는 4px로 초밀착, 좌우 프레임만 16px 여백 확보 */
+        margin-top: auto !important;
+        padding: 4px 16px 8px 16px !important;
         box-sizing: border-box !important;
         display: flex !important;
         flex-direction: column !important;
-        gap: 3px !important; /* 별점과 메모 간격 콤팩트화 */
+        gap: 3px !important;
         flex-shrink: 0 !important;
         background: #000000 !important;
         border-top: none !important;
       }
 
       .reel-memo-fixed-box {
-        height: 4.1em !important;
-        min-height: 4.1em !important;
-        max-height: 4.1em !important;
+        height: 4.2em !important;
+        min-height: 4.2em !important;
+        max-height: 4.2em !important;
         line-height: 1.4em !important;
         font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, sans-serif !important;
         font-size: 0.78rem !important;
@@ -190,6 +200,7 @@
         word-break: break-all !important;
         display: -webkit-box !important;
         -webkit-line-clamp: 3 !important;
+        line-clamp: 3 !important;
         -webkit-box-orient: vertical !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
@@ -230,20 +241,13 @@
     }
   }
 
-  // 📐 [가로/세로 스마트 판별 안전 가드 - 214개 콘솔 에러 원천 차단]
   window.applySmartPhotoFit = function(img) {
     if (!img) return;
-    var nw = img.naturalWidth;
-    var nh = img.naturalHeight;
-    if (nw > 0 && nh > 0) {
-      if (nh >= nw) {
-        img.classList.add('is-portrait');
-        img.style.setProperty('object-fit', 'cover', 'important');
-      } else {
-        img.classList.remove('is-portrait');
-        img.style.setProperty('object-fit', 'contain', 'important');
-      }
-    }
+    img.style.setProperty('object-fit', 'cover', 'important');
+    img.style.setProperty('width', '100%', 'important');
+    img.style.setProperty('min-width', '100%', 'important');
+    img.style.setProperty('height', '100%', 'important');
+    img.style.setProperty('min-height', '100%', 'important');
   };
 
   var HISTORY_VEC_ICONS = {
@@ -252,6 +256,18 @@
     flag: '<svg viewBox="0 0 24 24" style="width:13px; height:13px; color:#f43f5e; vertical-align:-2px;" fill="currentColor"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>',
     star: '<svg viewBox="0 0 24 24" style="width:13px; height:13px; color:#f59e0b; vertical-align:-2px;" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
     backpack: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; flex-shrink:0;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>'
+  };
+
+  var HISTORY_TOAST_VEC = {
+    lock: '<svg viewBox="0 0 24 24" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px;flex-shrink:0;" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px;flex-shrink:0;" fill="none" stroke="#f43f5e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+    camera: '<svg viewBox="0 0 24 24" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px;flex-shrink:0;" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+    globe: '<svg viewBox="0 0 24 24" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px;flex-shrink:0;" fill="none" stroke="#34d399" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>',
+    pin: '<svg viewBox="0 0 24 24" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px;flex-shrink:0;" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+    clock: '<svg viewBox="0 0 24 24" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px;flex-shrink:0;" fill="none" stroke="#fde047" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+    check: '<svg viewBox="0 0 24 24" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px;flex-shrink:0;" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    compass: '<svg viewBox="0 0 24 24" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px;flex-shrink:0;" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>',
+    link: '<svg viewBox="0 0 24 24" style="width:14px;height:14px;vertical-align:-2px;margin-right:5px;flex-shrink:0;" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'
   };
 
   if (!document.getElementById('basecamp-soft-ambient-fx-style')) {
@@ -431,10 +447,20 @@
       list.unshift(normalized);
     }
 
-    // 낭만루터 스냅이 섞여있다면 100% 영구 소거
     list = list.filter(function(it) {
       return it && it.feedType !== 'router' && !String(it.id).startsWith('snap_');
     });
+
+    if (normalized.customTemplatePhoto) {
+      window.__memoryStore = window.__memoryStore || {};
+      var curTmplMap = window.__memoryStore['okbm_custom_templates_map'] || {};
+      curTmplMap[String(normalized.id)] = normalized.customTemplatePhoto;
+      if (normalized.date) curTmplMap[String(normalized.date)] = normalized.customTemplatePhoto;
+      window.__memoryStore['okbm_custom_templates_map'] = curTmplMap;
+      if (typeof window.saveToIndexedDB === 'function') {
+        window.saveToIndexedDB('okbm_custom_templates_map', curTmplMap);
+      }
+    }
 
     window.interactiveHistory = list.slice();
     window.packingHistoryList = window.interactiveHistory;
@@ -569,7 +595,15 @@
 
       var idbTmplMap = await window.loadFromIndexedDB('okbm_custom_templates_map');
       if (idbTmplMap && typeof idbTmplMap === 'object') {
+        Object.keys(idbTmplMap).forEach(function(k) {
+          if (/^\d{4}[\.\-/]\d{2}[\.\-/]\d{2}/.test(k)) {
+            delete idbTmplMap[k];
+          }
+        });
         window.__memoryStore['okbm_custom_templates_map'] = idbTmplMap;
+        if (typeof window.saveToIndexedDB === 'function') {
+          window.saveToIndexedDB('okbm_custom_templates_map', idbTmplMap);
+        }
       }
 
       var rawList = await window.loadFromIndexedDB('okbm_packing_history');
@@ -584,15 +618,15 @@
         window.interactiveHistory = rawList.map(function(r, i) {
           var norm = window.normalizeHistoryRecord(r, i);
           if ((!norm.photos || norm.photos.length === 0) && idbPhotosMap) {
-            var found = idbPhotosMap[String(norm.id)] || idbPhotosMap[String(norm.date)] || idbPhotosMap[String(norm.date).replace(/[-/]/g, '.')];
+            var found = idbPhotosMap[String(norm.id)];
             if (found && found.length > 0) {
               norm.photos = found;
-             norm.photo = found[0];
+              norm.photo = found[0];
               norm.fieldPhoto = found[0];
             }
           }
           if (!norm.customTemplatePhoto && idbTmplMap) {
-            var foundTmpl = idbTmplMap[String(norm.id)] || idbTmplMap[String(norm.date)] || idbTmplMap[String(norm.date).replace(/[-/]/g, '.')];
+            var foundTmpl = idbTmplMap[String(norm.id)];
             if (foundTmpl) norm.customTemplatePhoto = foundTmpl;
           }
           return norm;
@@ -649,9 +683,7 @@
       }
 
       var localPhotos = (cleanPureId && savedPhotosMap[cleanPureId]) || 
-                        (rId && savedPhotosMap[rId]) ||
-                        (record.date && savedPhotosMap[String(record.date)]) ||
-                        (record.date && savedPhotosMap[String(record.date).replace(/[-/]/g, '.')]);
+                        (rId && savedPhotosMap[rId]);
 
       if (Array.isArray(localPhotos) && localPhotos.length > 0) rawList = localPhotos.filter(Boolean);
       else if (typeof localPhotos === 'string' && localPhotos.trim().length > 10) rawList = [localPhotos.trim()];
@@ -731,23 +763,11 @@
       d = parseInt(r.day, 10);
     }
 
-    // 🛡️ [미래 날짜 작성 원천 차단 가드]: 오늘 자정을 초과하는 미래 날짜는 현재 오늘 날짜로 강제 정규화
-    var checkDateObj = new Date(y, m - 1, d);
-    var todayLimit = new Date();
-    todayLimit.setHours(23, 59, 59, 999);
-
-    if (checkDateObj.getTime() > todayLimit.getTime()) {
-      var realNow = new Date();
-      y = realNow.getFullYear();
-      m = realNow.getMonth() + 1;
-      d = realNow.getDate();
-    }
-
     var cleanDate = y + '.' + String(m).padStart(2, '0') + '.' + String(d).padStart(2, '0');
     var recordId = (r && r.id) ? String(r.id) : ('pack_' + cleanDate.replace(/\D/g, '') + '_' + idx);
     var savedTmplPhoto = (r && r.customTemplatePhoto) ? String(r.customTemplatePhoto).trim() : '';
     if (!savedTmplPhoto && window.__memoryStore && window.__memoryStore['okbm_custom_templates_map']) {
-      savedTmplPhoto = window.__memoryStore['okbm_custom_templates_map'][recordId] || window.__memoryStore['okbm_custom_templates_map'][cleanDate] || '';
+      savedTmplPhoto = window.__memoryStore['okbm_custom_templates_map'][recordId] || '';
     }
 
    var rawPhotos = getRecordPhotos(r);
@@ -759,8 +779,6 @@
         rawPhotos = rawPhotos.filter(function(u) { return u && u !== savedTmplPhoto; });
       }
     }
-
-    var rawList = Array.isArray(r.items) ? r.items : (Array.isArray(r.gears) ? r.gears : []);
 
     var rawList = Array.isArray(r.items) ? r.items : (Array.isArray(r.gears) ? r.gears : []);
     var cleanItems = rawList.map(function(it) {
@@ -785,7 +803,6 @@
     var profile = safeGetJSON('user_profile', null);
     var currentAuthor = (r && r.author) ? r.author : ((profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만루터'));
 
-    // 🏷️ [낭만루트 vs 낭만루터 절대 철칙 판별 엔진 - R2 정본 완벽 포용]
     var isSnapRecord = Boolean(
       (recordId && String(recordId).startsWith('snap_')) ||
       (r && (r.feedType === 'router' || r.isRouterSnap === true))
@@ -798,8 +815,8 @@
       feedType: resolvedFeedType,
       author: currentAuthor,
       authorPhoto: resolvedAuthorPhoto,
-      templateId: (r && r.templateId !== undefined && r.templateId !== null) ? parseInt(r.templateId, 10) : savedTmplId,
-      customTemplatePhoto: savedTmplPhoto,
+      templateId: isSnapRecord ? null : ((r && r.templateId !== undefined && r.templateId !== null) ? parseInt(r.templateId, 10) : savedTmplId),
+      customTemplatePhoto: isSnapRecord ? '' : savedTmplPhoto,
       date: cleanDate,
       year: y,
       month: m,
@@ -1013,18 +1030,18 @@
   };
 
   // 📱 [지난 피드 목록 모달 & 다중 체크 일괄 삭제 통합 엔진 - 낭만일지 3단 필터 & 영수증 뱃지 완전 제거]
-  window.__isPastTripsSelectMode = false;
+ window.__isPastTripsSelectMode = false;
   window.__selectedPastTripIds = new Set();
-  window.__pastTripsPublishFilter = window.__pastTripsPublishFilter || 'all';
+  window.__pastTripsActiveTab = window.__pastTripsActiveTab || 'route';
 
-  window.togglePastTripsPublishFilter = function(targetFilter) {
-    if (window.__pastTripsPublishFilter === targetFilter) {
-      window.__pastTripsPublishFilter = 'all';
-    } else {
-      window.__pastTripsPublishFilter = targetFilter;
-    }
+  window.switchPastTripsTab = function(targetTab) {
+    window.__pastTripsActiveTab = targetTab;
     triggerHaptic(10);
     window.openPastTripsListModal();
+  };
+
+  window.togglePastTripsPublishFilter = function(targetFilter) {
+    window.switchPastTripsTab(targetFilter === 'private' ? 'private' : 'route');
   };
 
   window.togglePastTripsSelectMode = function() {
@@ -1208,7 +1225,7 @@
     window.openPastTripsListModal();
     triggerHaptic(15);
     if (typeof showToast === 'function') {
-      showToast('🗑️ 총 ' + selectedCount + '개의 기록이 삭제되었습니다.', 'info', 2500);
+      showToast(HISTORY_TOAST_VEC.trash + '총 ' + selectedCount + '개의 기록이 삭제되었습니다.', 'info', 2500);
     }
   };
 
@@ -1242,33 +1259,32 @@
         savedPhotosMap = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], savedPhotosMap);
       }
 
-      var rawLogs = (window.interactiveHistory && Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0)
-        ? window.interactiveHistory
-        : (window.safeGetStorage('okbm_packing_history', []) || []);
+      var routeLogs = window.safeGetStorage('okbm_packing_history', []) || [];
+      var snapLogs = window.safeGetStorage('okbm_router_snaps', []) || [];
+      var rawLogs = routeLogs.concat(snapLogs);
 
-      if (Array.isArray(rawLogs) && rawLogs.length > 0) {
-        window.interactiveHistory = rawLogs.filter(Boolean).map(function(r, i) {
-          var norm = window.normalizeHistoryRecord(r, i);
-          if (!norm.photos || norm.photos.length === 0) {
-            var matched = savedPhotosMap[String(norm.id)] || savedPhotosMap[String(norm.date)] || savedPhotosMap[String(norm.date || '').replace(/[-/]/g, '.')];
-            if (Array.isArray(matched) && matched.length > 0) {
-              norm.photos = matched;
-              norm.photo = matched[0];
-              norm.fieldPhoto = matched[0];
-            }
+      var logs = rawLogs.filter(Boolean).map(function(r, i) {
+        var norm = window.normalizeHistoryRecord(r, i);
+        if (!norm.photos || norm.photos.length === 0) {
+          var matched = savedPhotosMap[String(norm.id)];
+          if (Array.isArray(matched) && matched.length > 0) {
+            norm.photos = matched;
+            norm.photo = matched[0];
+            norm.fieldPhoto = matched[0];
           }
-          return norm;
-        });
-      }
-      var logs = (window.interactiveHistory || []).filter(Boolean);
+        }
+        return norm;
+      });
 
-      // 🔍 [나만보기 / 함께보기 / 전체보기 필터링]
-      var currentFilter = window.__pastTripsPublishFilter || 'all';
-      if (currentFilter === 'private') {
+      var activeTab = window.__pastTripsActiveTab || 'route';
+      if (activeTab === 'route') {
+        logs = logs.filter(function(r) { return r && r.feedType !== 'router' && !String(r.id).startsWith('snap_') && r.isPublished === true; });
+      } else if (activeTab === 'router') {
+        logs = logs.filter(function(r) { return r && (r.feedType === 'router' || String(r.id).startsWith('snap_')) && r.isPublished === true; });
+      } else if (activeTab === 'private') {
         logs = logs.filter(function(r) { return r && r.isPublished !== true; });
-      } else if (currentFilter === 'public') {
-        logs = logs.filter(function(r) { return r && r.isPublished === true; });
       }
+      window.__currentScopedPastTripLogs = logs.slice();
 
       var isSelectMode = Boolean(window.__isPastTripsSelectMode);
 
@@ -1295,7 +1311,7 @@
           var weightStr = escapeHtml(String(r.weightKg || '0.00'));
           var isChecked = window.__selectedPastTripIds.has(String(r.id).trim());
 
-          return '<div id="pastTripRowCard_' + safeId + '" data-record-id="' + safeId + '" onclick="window.__isPastTripsSelectMode ? window.togglePastTripItemSelection(this.dataset.recordId, event) : window.openSingleTripDualFeedModal(this.dataset.recordId)" style="background:' + (isChecked ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.04)') + '; border:1px solid ' + (isChecked ? '#38bdf8' : 'rgba(255,255,255,0.12)') + '; border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:all 0.15s ease; flex-shrink:0; user-select:none;">' +
+          return '<div id="pastTripRowCard_' + safeId + '" data-record-id="' + safeId + '" onclick="window.__isPastTripsSelectMode ? window.togglePastTripItemSelection(this.dataset.recordId, event) : window.openSingleTripDualFeedModal(this.dataset.recordId, window.__currentScopedPastTripLogs, \'' + activeTab + '\')" style="background:' + (isChecked ? 'rgba(56,189,248,0.12)' : 'rgba(255,255,255,0.04)') + '; border:1px solid ' + (isChecked ? '#38bdf8' : 'rgba(255,255,255,0.12)') + '; border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:all 0.15s ease; flex-shrink:0; user-select:none;">' +
             '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
               (isSelectMode ? (
                 '<div id="pastTripCheckbox_' + safeId + '" style="width:22px; height:22px; border-radius:6px; border:1.8px solid ' + (isChecked ? '#38bdf8' : 'rgba(255,255,255,0.35)') + '; background:' + (isChecked ? '#38bdf8' : 'transparent') + '; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s ease;">' +
@@ -1307,6 +1323,7 @@
               '</div>' +
               '<div style="min-width:0; flex:1;">' +
                 '<div style="font-size:0.86rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
+                  (activeTab === 'private' ? ('<span style="font-size:0.52rem; padding:1px 4px; border-radius:3px; font-weight:900; ' + ((r.feedType === 'router' || String(r.id).startsWith('snap_')) ? 'background:rgba(52,211,153,0.18); color:#34d399;' : 'background:rgba(56,189,248,0.18); color:#38bdf8;') + '">' + ((r.feedType === 'router' || String(r.id).startsWith('snap_')) ? '루터' : '루트') + '</span>') : '') +
                   HISTORY_VEC_ICONS.pin + ' <span>' + spotTitle + '</span>' +
                 '</div>' +
                 '<div style="font-size:0.62rem; color:#94a3b8; margin-top:2px;">' + dateText + (elevText ? ' · ' + elevText : '') + '</div>' +
@@ -1335,8 +1352,9 @@
         '</div>'
       );
 
-      var isPrivateActive = (currentFilter === 'private');
-      var isPublicActive = (currentFilter === 'public');
+      var isRouteTabActive = (activeTab === 'route');
+      var isRouterTabActive = (activeTab === 'router');
+      var isPrivateTabActive = (activeTab === 'private');
 
       modalEl.innerHTML = `
         <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
@@ -1347,15 +1365,15 @@
           ${headerRightHtml}
         </div>
 
-        <!-- 🔒 나만보기 / 🌐 함께보기 토글 바 (둘 다 끄면 전체보기) -->
-        <div style="flex-shrink:0; padding:8px 14px; background:#000000; display:flex; gap:8px; border-bottom:1px solid rgba(255,255,255,0.06);">
-          <button type="button" onclick="window.togglePastTripsPublishFilter('private');" style="flex:1; height:32px; border-radius:8px; font-size:0.74rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; transition:all 0.15s ease; background:${isPrivateActive ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${isPrivateActive ? '#38bdf8' : 'rgba(255,255,255,0.12)'}; color:${isPrivateActive ? '#38bdf8' : '#94a3b8'};">
-            <svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            <span>나만보기</span>
+        <div style="flex-shrink:0; padding:8px 14px; background:#000000; display:flex; gap:6px; border-bottom:1px solid rgba(255,255,255,0.06);">
+          <button type="button" onclick="window.switchPastTripsTab('route');" style="flex:1; height:32px; border-radius:8px; font-size:0.74rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:3px; transition:all 0.15s ease; background:${isRouteTabActive ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${isRouteTabActive ? '#38bdf8' : 'rgba(255,255,255,0.12)'}; color:${isRouteTabActive ? '#38bdf8' : '#94a3b8'};">
+            <span>낭만루트</span>
           </button>
-          <button type="button" onclick="window.togglePastTripsPublishFilter('public');" style="flex:1; height:32px; border-radius:8px; font-size:0.74rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; transition:all 0.15s ease; background:${isPublicActive ? 'rgba(52,211,153,0.2)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${isPublicActive ? '#34d399' : 'rgba(255,255,255,0.12)'}; color:${isPublicActive ? '#34d399' : '#94a3b8'};">
-            <svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>
-            <span>함께보기</span>
+          <button type="button" onclick="window.switchPastTripsTab('router');" style="flex:1; height:32px; border-radius:8px; font-size:0.74rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:3px; transition:all 0.15s ease; background:${isRouterTabActive ? 'rgba(52,211,153,0.2)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${isRouterTabActive ? '#34d399' : 'rgba(255,255,255,0.12)'}; color:${isRouterTabActive ? '#34d399' : '#94a3b8'};">
+            <span>낭만루터</span>
+          </button>
+          <button type="button" onclick="window.switchPastTripsTab('private');" style="flex:1; height:32px; border-radius:8px; font-size:0.74rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:3px; transition:all 0.15s ease; background:${isPrivateTabActive ? 'rgba(251,191,36,0.2)' : 'rgba(255,255,255,0.04)'}; border:1px solid ${isPrivateTabActive ? '#fbbf24' : 'rgba(255,255,255,0.12)'}; color:${isPrivateTabActive ? '#fbbf24' : '#94a3b8'};">
+            <span>나만보기</span>
           </button>
         </div>
 
@@ -1386,7 +1404,7 @@
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
     if (!isLogged) {
       triggerHaptic(12);
-      if (typeof showToast === 'function') showToast('🔒 낭만별(좋아요)은 카카오 로그인 후 누르실 수 있습니다.', 'info', 2200);
+      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.lock + '낭만별(좋아요)은 로그인 후 이용할 수 있습니다.', 'info', 2200);
       if (typeof openLoginModal === 'function') openLoginModal();
       return;
     }
@@ -1569,7 +1587,7 @@
     triggerHaptic(12);
     window.copyShareLinkFallback(url);
     if (typeof showToast === 'function') {
-      showToast('📸 피드 링크 복사 완료! 인스타그램으로 이동합니다.', 'success', 2400);
+      showToast(HISTORY_TOAST_VEC.camera + '피드 링크 복사 완료. 인스타그램으로 이동합니다.', 'success', 2400);
     }
     setTimeout(function() {
       // 모바일 기기 감지: 앱 설치 시 인스타 앱 실행, 미설치 또는 PC 시 인스타 웹 오픈
@@ -1612,7 +1630,7 @@
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
     if (!isLogged) {
       triggerHaptic(12);
-      if (typeof showToast === 'function') showToast('🔒 기록 관리는 로그인 후 이용하실 수 있습니다.', 'info', 2200);
+      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.lock + '기록 관리는 로그인 후 이용할 수 있습니다.', 'info', 2200);
       if (typeof openLoginModal === 'function') openLoginModal();
       return;
     }
@@ -1699,7 +1717,7 @@
 
     triggerHaptic(12);
     if (typeof showToast === 'function') {
-      showToast(nextStatus ? '🌐 [전체공개]로 전환되었습니다.' : '🔒 [나만보기]로 전환되었습니다.', 'info', 1600);
+      showToast((nextStatus ? HISTORY_TOAST_VEC.globe : HISTORY_TOAST_VEC.lock) + (nextStatus ? '[전체공개]로 전환되었습니다.' : '[나만보기]로 전환되었습니다.'), 'info', 1600);
     }
 
     // 4. 🛡️ [디바운스 락 600ms]: 사용자가 10번 연타해도 마지막 최종 1회만 서버로 전송
@@ -1753,11 +1771,12 @@
           <span>✍️ 박지 팁 & 현장 사진 수정</span>
         </button>
 
-        <!-- 🎨 20종 템플릿 스튜디오 -->
+        ${(!String(log.id).startsWith('snap_') && log.feedType !== 'router') ? `
         <button type="button" onclick="document.getElementById('tripActionActionSheet').remove(); window.openHistoryStudioModal(window.interactiveHistory.find(r=>r.id==='${log.id}'));" style="width:100%; height:42px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:8px; padding:0 14px;">
           <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:#fde047; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           <span>🎨 20종 템플릿 스튜디오로 인출</span>
         </button>
+        ` : ''}
 
         <!-- 🗑️ 기록 영구 삭제 -->
         <button type="button" onclick="if(confirm('이 기록을 보관함에서 삭제하시겠습니까?')){ window.deleteTripRecord('${log.id}'); document.getElementById('tripActionActionSheet').remove(); }" style="width:100%; height:42px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); border-radius:10px; color:#fda4af; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:8px; padding:0 14px;">
@@ -1960,7 +1979,7 @@
     } catch (err) {}
 
     if (typeof showToast === 'function') {
-      showToast('📍 [' + cleanSpot + '] 지도로 이동합니다.', 'info', 1200);
+      showToast(HISTORY_TOAST_VEC.pin + '[' + cleanSpot + '] 지도로 이동합니다.', 'info', 1200);
     }
 
     setTimeout(function() {
@@ -1979,9 +1998,9 @@
     var borderGrad = (typeof window.getCardStableBorderGradient === 'function') ? window.getCardStableBorderGradient(log, 0) : 'linear-gradient(135deg, #10b981, #047857)';
 
     var photosList = (typeof getRecordPhotos === 'function') ? getRecordPhotos(log) : (log.photos || []);
-    if (!photosList || photosList.length === 0) {
-      photosList = ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80'];
-    }
+    photosList = (Array.isArray(photosList) ? photosList : []).filter(function(u) {
+      return u && typeof u === 'string' && u.trim().length > 10 && !u.includes('unsplash.com');
+    });
 
     var photoMemos = Array.isArray(log.photoMemos) ? log.photoMemos : [];
     var fallbackMemo = (log.memo || log.oneLineMemo || '').trim();
@@ -1990,7 +2009,7 @@
     var genFn = (typeof window.generateCardMarkup === 'function') ? window.generateCardMarkup : (typeof generateCardMarkup === 'function' ? generateCardMarkup : null);
 
     if (genFn) {
-      packingSheetMarkup = genFn(tmplId, log, items, log.spot, fallbackMemo || (log.spot + ' 패킹'), photosList[0]);
+      packingSheetMarkup = genFn(tmplId, log, items, log.spot, fallbackMemo || (log.spot + ' 패킹'), photosList[0] || '');
     } else {
       packingSheetMarkup = '<div style="height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#f4f1ea; color:#1c1917; padding:12px; border-radius:13px;">' +
         '<div>' +
@@ -2032,6 +2051,13 @@
       '</div>';
     }).join('');
 
+    var isRouterSnap = Boolean(log.feedType === 'router' || String(log.id || '').startsWith('snap_'));
+    var templateSectionHtml = isRouterSnap ? '' : (
+      '<div style="padding:18px 16px 20px 16px; background:#000000;">' +
+        '<div style="width:100%; aspect-ratio:3/4; border-radius:14px; padding:2px; background:' + borderGrad + ';"><div style="width:100%; height:100%; border-radius:12px; overflow:hidden;">' + packingSheetMarkup + '</div></div>' +
+      '</div>'
+    );
+
     return '<div class="single-feed-block" data-record-id="' + escapeHtml(String(log.id)) + '" style="background:#000000; border-bottom:2px solid rgba(255,255,255,0.12); overflow:hidden; display:flex; flex-direction:column; flex-shrink:0; margin-bottom:28px; box-sizing:border-box;">' +
       '<div style="padding:14px 16px 10px 16px; background:#000000; display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid rgba(255,255,255,0.06);">' +
         '<div style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">' + escapeHtml(log.spot || '낭만 스팟') + (log.elevation ? (' <span style="font-size:0.75rem; color:#fde047; font-weight:800;">(' + escapeHtml(log.elevation) + ')</span>') : '') + '</div>' +
@@ -2040,9 +2066,7 @@
       '<div style="display:flex; flex-direction:column; width:100%;">' +
         photoSectionsHtml +
       '</div>' +
-      '<div style="padding:18px 16px 20px 16px; background:#000000;">' +
-        '<div style="width:100%; aspect-ratio:3/4; border-radius:14px; padding:2px; background:' + borderGrad + ';"><div style="width:100%; height:100%; border-radius:12px; overflow:hidden;">' + packingSheetMarkup + '</div></div>' +
-      '</div>' +
+      templateSectionHtml +
     '</div>';
   };
 // 🔖 [관심피드 북마크 저장/해제 토글 엔진]
@@ -2052,7 +2076,7 @@
 
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
     if (!isLogged) {
-      if (typeof showToast === 'function') showToast('🔒 관심피드 저장은 카카오 로그인 후 이용하실 수 있습니다.', 'info', 2000);
+      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.lock + '관심피드 저장은 로그인 후 이용할 수 있습니다.', 'info', 2000);
       if (typeof window.openLoginModal === 'function') {
         window.openLoginModal();
       } else if (typeof openLoginModal === 'function') {
@@ -2251,7 +2275,7 @@
 
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
     if (!isLogged) {
-      if (typeof showToast === 'function') showToast('🔒 관심루터 등록은 카카오 로그인 후 이용하실 수 있습니다.', 'info', 2000);
+      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.lock + '관심루터 등록은 로그인 후 이용할 수 있습니다.', 'info', 2000);
       if (typeof window.openLoginModal === 'function') {
         window.openLoginModal();
       } else if (typeof openLoginModal === 'function') {
@@ -2397,7 +2421,7 @@
 
     var modalEl = document.createElement('div');
     modalEl.id = 'userFeedCollectionModal';
-    modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000015; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); width:100%; max-width:100%; height:auto !important; background:#000000; z-index:1000010 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     window.__renderUserModalCards = function() {
       var container = document.getElementById('userModalCardsContainer');
@@ -2509,15 +2533,33 @@
     `;
 
     document.body.appendChild(modalEl);
+    if (typeof window.ensureMasterBottomDock === 'function') {
+      window.ensureMasterBottomDock('history');
+    }
     window.__renderUserModalCards();
   };
 
   
 // 📖 [백패킹/캠핑 피드 상세 듀얼 뷰 - 현재 스크롤 피드 실시간 추적 & 수정 100% 바인딩]
   window.openSingleTripDualFeedModal = function(recordId, scopedFeedList, contextTitle) {
-    var logs = (Array.isArray(scopedFeedList) && scopedFeedList.length > 0)
-      ? scopedFeedList
-      : (window.interactiveHistory || []);
+    var sId = String(recordId || '').trim();
+    var logs = [];
+    if (Array.isArray(scopedFeedList) && scopedFeedList.length > 0) {
+      logs = scopedFeedList;
+    } else {
+      var allPool = (window.interactiveHistory || []).concat(window.safeGetStorage('okbm_router_snaps', []) || []);
+      var targetRec = allPool.find(function(r) { return r && String(r.id).trim() === sId; });
+      if (targetRec) {
+        var isSnap = Boolean(targetRec.feedType === 'router' || sId.startsWith('snap_'));
+        var isPub = Boolean(targetRec.isPublished === true);
+        logs = allPool.filter(function(r) {
+          if (!r) return false;
+          var rSnap = Boolean(r.feedType === 'router' || String(r.id).startsWith('snap_'));
+          var rPub = Boolean(r.isPublished === true);
+          return (rSnap === isSnap) && (rPub === isPub);
+        });
+      }
+    }
 
     if (logs.length === 0) {
       if (typeof showToast === 'function') showToast('선택한 기록을 찾을 수 없습니다.', 'warn');
@@ -2538,10 +2580,9 @@
 
     var feedModal = document.createElement('div');
     feedModal.id = 'singleTripFeedModal';
-    feedModal.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000020; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    feedModal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); width:100%; max-width:100%; height:auto !important; background:#000000; z-index:1000010 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     feedModal.innerHTML = `
-      <!-- 극투명 미니멀 플로팅 네비게이션: 본문을 가리지 않는 초경량 글래스모피즘 -->
       <div style="position:fixed; top:calc(10px + env(safe-area-inset-top, 0px)); left:0; right:0; max-width:440px; margin:0 auto; padding:0 12px; display:flex; justify-content:space-between; align-items:center; z-index:1000025; pointer-events:none;">
         <button type="button" onclick="document.getElementById('singleTripFeedModal').remove(); triggerHaptic(10);" style="pointer-events:auto; background:rgba(0,0,0,0.22); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.12); color:#ffffff; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0;">◀</button>
         
@@ -2557,6 +2598,9 @@
       </div>
     `;
     document.body.appendChild(feedModal);
+    if (typeof window.ensureMasterBottomDock === 'function') {
+      window.ensureMasterBottomDock('history');
+    }
 
    window.__onDualFeedContainerScroll = function(container) {
       if (!container) return;
@@ -2592,7 +2636,7 @@
       }
       if (targetLog) {
         if (!window.isRecordOwner(targetLog)) {
-          if (typeof showToast === 'function') showToast('🔒 본인이 작성한 기록만 수정할 수 있습니다.', 'warn', 2200);
+          if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.lock + '본인이 작성한 기록만 수정할 수 있습니다.', 'warn', 2200);
           return;
         }
         window.openRichAfterTripModal(targetLog);
@@ -3421,7 +3465,7 @@
       }
 
       if (typeof showToast === 'function') {
-        showToast('📍 박지가 [' + spotName + '](으)로 변경되었습니다.', 'success', 1800);
+        showToast(HISTORY_TOAST_VEC.pin + '박지가 [' + spotName + '](으)로 변경되었습니다.', 'success', 1800);
       }
     };
 
@@ -3457,15 +3501,13 @@
     return false;
   };
 
-  // [모바일 풀스크린 힐링 기록 & 대형 스와이프 에디터 - 본인 소유권 100% 검증 가드 탑재]
   window.openRichAfterTripModal = function(record) {
     if (!record) return;
 
-    // 🛡️ [보안 가드 1]: 타인의 글 수정 원천 차단
     if (!window.isRecordOwner(record)) {
       triggerHaptic(15);
       if (typeof showToast === 'function') {
-        showToast('🔒 본인이 작성한 기록만 수정할 수 있습니다.', 'warn', 2200);
+        showToast(HISTORY_TOAST_VEC.lock + '본인이 작성한 기록만 수정할 수 있습니다.', 'warn', 2200);
       }
       return;
     }
@@ -3536,7 +3578,7 @@ window.__currentSwipePhotoIndex = 0;
 
     var formModal = document.createElement('div');
     formModal.id = 'modalRichAfterTrip';
-    formModal.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; max-height:100dvh; background:#000000; z-index:1000050; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    formModal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); width:100%; max-width:100%; height:auto !important; background:#000000; z-index:1000010 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     formModal.innerHTML = `
       <!-- 1. 상단 고정 헤더: 뒤로가기 + 박지/일상 뱃지 + 수정 완료 -->
@@ -3610,17 +3652,37 @@ window.__currentSwipePhotoIndex = 0;
     `;
 
     document.body.appendChild(formModal);
+    if (typeof window.ensureMasterBottomDock === 'function') {
+      window.ensureMasterBottomDock('history');
+    }
     window.__renderRichPhotoStage();
   };
 
  // [박지 후기 및 사진별 120자 영구 각인 단일 저장 엔진 - Await 완전 동기화]
   window.__saveRichAfterTrip = async function(recordId) {
-    if (window.__isPhotoCompressing) {
-      if (typeof showToast === 'function') showToast('사진 최적화가 진행 중입니다. 잠시만 기다려주세요.', 'info');
+    if (window.__isSubmittingRichTrip || window.__isPhotoCompressing) {
+      if (typeof showToast === 'function') showToast('처리 중입니다. 잠시만 기다려주세요.', 'info');
       return;
     }
+    window.__isSubmittingRichTrip = true;
 
     var sId = String(recordId || '').trim();
+    var preTarget = (window.interactiveHistory || []).find(function(r) { return r && String(r.id).trim() === sId; }) || window.__richCurrentRecord;
+    if (preTarget && preTarget.date) {
+      var chkParts = String(preTarget.date).match(/\d+/g);
+      if (chkParts && chkParts.length >= 3) {
+        var tObj = new Date(parseInt(chkParts[0], 10), parseInt(chkParts[1], 10) - 1, parseInt(chkParts[2], 10));
+        var nLimit = new Date();
+        nLimit.setHours(23, 59, 59, 999);
+        if (tObj.getTime() > nLimit.getTime()) {
+          triggerHaptic(12);
+          if (typeof showToast === 'function') {
+            showToast(HISTORY_TOAST_VEC.clock + '출발일 이후에 현장 사진과 일지를 등록할 수 있습니다.', 'info', 2400);
+          }
+          return;
+        }
+      }
+    }
     var isSnapTarget = sId.startsWith('snap_') || (window.__richCurrentRecord && window.__richCurrentRecord.feedType === 'router');
     var target = null;
     if (isSnapTarget) {
@@ -3641,7 +3703,7 @@ window.__currentSwipePhotoIndex = 0;
     var photosToProcess = Array.isArray(window.__tempUploadedPhotos) ? window.__tempUploadedPhotos.slice(0, 10) : [];
     if (photosToProcess.length === 0) {
       triggerHaptic(14);
-      if (typeof showToast === 'function') showToast('📸 현장 사진을 1장 이상 추가해주세요.', 'warn', 2200);
+      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.camera + '현장 사진을 1장 이상 추가해주세요.', 'warn', 2200);
       return;
     }
 
@@ -3656,24 +3718,6 @@ window.__currentSwipePhotoIndex = 0;
 
     var memoInputEl = document.getElementById('richFormMemoInput');
     var finalTypedMemo = memoInputEl ? memoInputEl.value.trim().slice(0, 120) : (window.__tempSingleMemo || '').trim();
-
-    // 🛡️ [저장 시점 미래 날짜 재검증]: 미래 일정이 보관함으로 넘어왔더라도 오늘 날짜로 확정
-    var chkDateParts = String(target.date || '').match(/\d+/g);
-    if (chkDateParts && chkDateParts.length >= 3) {
-      var tY = parseInt(chkDateParts[0], 10);
-      var tM = parseInt(chkDateParts[1], 10);
-      var tD = parseInt(chkDateParts[2], 10);
-      var tObj = new Date(tY, tM - 1, tD);
-      var nowLimit = new Date();
-      nowLimit.setHours(23, 59, 59, 999);
-      if (tObj.getTime() > nowLimit.getTime()) {
-        var nD = new Date();
-        target.year = nD.getFullYear();
-        target.month = nD.getMonth() + 1;
-        target.day = nD.getDate();
-        target.date = target.year + '.' + String(target.month).padStart(2, '0') + '.' + String(target.day).padStart(2, '0');
-      }
-    }
 
     target.memo = finalTypedMemo;
     target.oneLineMemo = finalTypedMemo;
@@ -3794,8 +3838,9 @@ window.__currentSwipePhotoIndex = 0;
     }
 
     triggerHaptic(15);
+    window.__isSubmittingRichTrip = false;
     if (typeof showToast === 'function') {
-      showToast('✓ 클라우드 보관이 완료되었습니다.', 'success', 2000);
+      showToast(HISTORY_TOAST_VEC.check + '클라우드 보관이 완료되었습니다.', 'success', 2000);
     }
   };
   // 🔗 [공유 링크 딥링크 다이렉트 자동 오픈 엔진]
@@ -3884,10 +3929,10 @@ window.__currentSwipePhotoIndex = 0;
     var currentMode = window.activeHistoryFeedTab || 'route';
     if (currentMode === 'route') {
       window.switchHistoryFeedTab('router');
-      if (typeof showToast === 'function') showToast('🏕️ [낭만루터] 일상 아웃도어 피드를 봅니다.', 'info', 1600);
+      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.camera + '[낭만루터] 일상 아웃도어 피드를 봅니다.', 'info', 1600);
     } else {
       window.switchHistoryFeedTab('route');
-      if (typeof showToast === 'function') showToast('🧭 [낭만루트] 정규 루트 기록을 봅니다.', 'info', 1600);
+      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.compass + '[낭만루트] 정규 루트 기록을 봅니다.', 'info', 1600);
     }
   };
 
@@ -4042,15 +4087,15 @@ window.__currentSwipePhotoIndex = 0;
 
     if (currentMode === 'explore') {
       if (!isLogged) {
-        if (typeof showToast === 'function') showToast('🔒 내 보관함은 로그인 후 이용하실 수 있습니다.', 'info', 2200);
+        if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.lock + '내 보관함은 로그인 후 이용할 수 있습니다.', 'info', 2200);
         if (typeof openLoginModal === 'function') openLoginModal();
         return;
       }
       window.switchHistoryFeedTab('my');
-      if (typeof showToast === 'function') showToast('🔒 [내 보관함] 기록을 봅니다.', 'info', 1600);
+      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.lock + '[내 보관함] 기록을 봅니다.', 'info', 1600);
     } else {
       window.switchHistoryFeedTab('explore');
-      if (typeof showToast === 'function') showToast('🌐 [전체 피드]를 둘러봅니다.', 'info', 1600);
+      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.globe + '[전체 피드]를 둘러봅니다.', 'info', 1600);
     }
   };
 
@@ -4060,7 +4105,7 @@ window.__currentSwipePhotoIndex = 0;
 
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
     if (!isLogged) {
-      if (typeof showToast === 'function') showToast('🔒 일상 스냅 등록은 카카오 로그인 후 이용하실 수 있습니다.', 'info', 2000);
+      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.lock + '일상 스냅 등록은 로그인 후 이용할 수 있습니다.', 'info', 2000);
       if (typeof window.openLoginModal === 'function') {
         window.openLoginModal();
       } else if (typeof openLoginModal === 'function') {
@@ -4158,24 +4203,7 @@ window.__currentSwipePhotoIndex = 0;
     }
   };
 
- // 하위 호환성 유지 알리아스
-  window.updateCarouselDots = window.updateCarouselFeedState;
-
-  // 📐 [가로/세로 스마트 자동 판별]: 세로는 꽉 채우고(Cover), 가로는 100% 비율 보존(Contain + 위아래 블랙)
-  window.applySmartPhotoFit = function(img) {
-    if (!img) return;
-    var nw = img.naturalWidth;
-    var nh = img.naturalHeight;
-    if (nw > 0 && nh > 0) {
-      if (nh >= nw) {
-        img.classList.add('is-portrait');
-        img.style.setProperty('object-fit', 'cover', 'important');
-      } else {
-        img.classList.remove('is-portrait');
-        img.style.setProperty('object-fit', 'contain', 'important');
-      }
-    }
-  };
+ window.updateCarouselDots = window.updateCarouselFeedState;
 
 window.renderHistoryStage = function(isLoading) {
     var modal = document.getElementById('romanticHistoryModal');
@@ -4205,7 +4233,6 @@ window.renderHistoryStage = function(isLoading) {
 
     var isRouteTab = (window.activeHistoryFeedTab === 'route');
 
-    // 🔒 [철통 보안]: 비공개(false)는 전수 차단하되, R2 공용 스냅의 undefined 속성은 공개로 수용
     var isExplicitlyPublished = function(item) {
       if (!item) return false;
       var raw = item.isPublished !== undefined ? item.isPublished : (item.is_published !== undefined ? item.is_published : item.published);
@@ -4322,7 +4349,7 @@ window.renderHistoryStage = function(isLoading) {
     var normalizedPublicList = sourceList.map(function(rawItem, rIdx) {
       var norm = window.normalizeHistoryRecord(rawItem, rIdx);
       var sId = String(norm.id || '').trim();
-      var foundPhotos = savedPhotosMap[sId] || (norm.date && savedPhotosMap[String(norm.date)]) || (norm.date && savedPhotosMap[String(norm.date).replace(/[-/]/g, '.')]);
+      var foundPhotos = savedPhotosMap[sId];
       
       if ((!norm.photos || norm.photos.length === 0) && foundPhotos && foundPhotos.length > 0) {
         norm.photos = Array.isArray(foundPhotos) ? foundPhotos : [foundPhotos];
@@ -4331,8 +4358,11 @@ window.renderHistoryStage = function(isLoading) {
       }
       return norm;
     }).filter(function(norm) {
-      if (!norm || !norm.id || !isExplicitlyPublished(norm)) return false;
-      return !deletedRecordIds.includes(String(norm.id).trim());
+      if (!norm || !norm.id) return false;
+      if (deletedRecordIds.includes(String(norm.id).trim())) return false;
+      var isOwner = window.isRecordOwner(norm);
+      if (isOwner) return true;
+      return isExplicitlyPublished(norm);
     });
 
     var currentList = normalizedPublicList.filter(function(norm) {
@@ -4434,7 +4464,7 @@ window.renderHistoryStage = function(isLoading) {
         var cardId = escapeHtml(String(record.id || idx));
         var tmplPhoto = record.customTemplatePhoto || (item && item.customTemplatePhoto) || '';
         if (!tmplPhoto && window.__memoryStore && window.__memoryStore['okbm_custom_templates_map']) {
-          tmplPhoto = window.__memoryStore['okbm_custom_templates_map'][String(record.id)] || window.__memoryStore['okbm_custom_templates_map'][String(record.date)] || '';
+          tmplPhoto = window.__memoryStore['okbm_custom_templates_map'][String(record.id)] || '';
         }
 
        var rawPhotosList = (typeof getRecordPhotos === 'function') ? getRecordPhotos(record) : (record.photos || []);
@@ -4476,10 +4506,8 @@ window.renderHistoryStage = function(isLoading) {
         }
 
         var followingList = safeGetJSON('okbm_following_users', []);
-
-        var followingList = safeGetJSON('okbm_following_users', []);
         var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
-       var followKey = recordUserId || authorName;
+        var followKey = recordUserId || authorName;
         var isFollowingThisAuthor = followingList.includes(followKey);
 
         // 🌐 [지능형 SNS/채널 자동 감지기]
@@ -4560,13 +4588,42 @@ if (isRouteTab) {
             ? '<img src="' + escapeHtml(authorAvatarUrl) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />'
             : '<div style="width:100%; height:100%; background:#090d14; display:flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
 
+          var planBadgeMarkup = '';
+          var centerDDayOverlayHtml = '';
+          var dParts = String(tripDate || '').match(/\d+/g);
+          if (dParts && dParts.length >= 3) {
+            var targetD = new Date(parseInt(dParts[0], 10), parseInt(dParts[1], 10) - 1, parseInt(dParts[2], 10));
+            var todayD = new Date();
+            todayD.setHours(0, 0, 0, 0);
+            targetD.setHours(0, 0, 0, 0);
+            var diffDays = Math.round((targetD.getTime() - todayD.getTime()) / 86400000);
+
+            if (totalPhotosCount > 0) {
+              planBadgeMarkup = '<span style="font-size:0.60rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.18); color:#e2e8f0; font-weight:900; padding:2px 6px; border-radius:4px; margin-left:5px;">인증완료</span>';
+            } else if (diffDays > 0) {
+              centerDDayOverlayHtml = '<div style="position:absolute; top:14px; right:14px; z-index:15; pointer-events:none; display:inline-flex; align-items:baseline; gap:6px; background:rgba(0,0,0,0.25); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,0.28); border-radius:22px; padding:4px 12px; box-shadow:0 4px 14px rgba(0,0,0,0.4);">' +
+                '<span style="font-size:0.62rem; color:#e2e8f0; font-weight:800; font-family:\'Space Grotesk\', sans-serif; letter-spacing:0.5px; text-shadow:0 1px 4px rgba(0,0,0,0.9);">PLAN</span>' +
+                '<span style="font-size:1.15rem; color:#ffffff; font-weight:900; font-family:\'Space Grotesk\', sans-serif; letter-spacing:0.3px; line-height:1; text-shadow:0 2px 8px rgba(0,0,0,0.95);">D-' + diffDays + '</span>' +
+              '</div>';
+            } else if (diffDays === 0) {
+              centerDDayOverlayHtml = '<div style="position:absolute; top:14px; right:14px; z-index:15; pointer-events:none; display:inline-flex; align-items:center; background:rgba(0,0,0,0.25); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); border:1px solid rgba(255,255,255,0.32); border-radius:22px; padding:4px 12px; box-shadow:0 4px 14px rgba(0,0,0,0.4);">' +
+                '<span style="font-size:1.10rem; color:#ffffff; font-weight:900; font-family:\'Space Grotesk\', sans-serif; letter-spacing:0.5px; line-height:1; text-shadow:0 2px 8px rgba(0,0,0,0.95);">D-DAY</span>' +
+              '</div>';
+            } else {
+              planBadgeMarkup = '<span style="font-size:0.60rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.18); color:#94a3b8; font-weight:800; padding:2px 6px; border-radius:4px; margin-left:5px;">등록대기</span>';
+            }
+          }
+
           routeOriginalHeaderHtml = '<div class="reel-header-row" style="height:56px !important; padding:0 14px !important;">' +
             '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
               '<button type="button" data-author="' + escapeHtml(authorName) + '" data-user-id="' + escapeHtml(recordUserId) + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId);" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.6);" title="' + escapeHtml(authorName) + '님의 피드 모아보기">' +
                 avatarMarkup +
               '</button>' +
               '<div style="display:flex; flex-direction:column; justify-content:center; min-width:0; flex:1;">' +
-                '<span style="font-size:0.68rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace; line-height:1.2;">' + escapeHtml(tripDate) + '</span>' +
+                '<div style="display:flex; align-items:center; line-height:1.2;">' +
+                  '<span style="font-size:0.68rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;">' + escapeHtml(tripDate) + '</span>' +
+                  planBadgeMarkup +
+                '</div>' +
                 (isRegisteredSpot ? (
                   '<button type="button" data-spot="' + escapeHtml(spotName) + '" onclick="window.navigateToSpotMap(this.dataset.spot, event);" style="background:none; border:none; padding:0; display:inline-flex; align-items:center; gap:2px; cursor:pointer; text-align:left; min-width:0; overflow:hidden;" title="지도에서 박지 위치 확인">' +
                     '<span style="font-size:0.82rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-decoration:underline; text-decoration-color:rgba(56,189,248,0.45); text-underline-offset:2px; line-height:1.3;">' + escapeHtml(spotName) + '</span>' +
@@ -4696,8 +4753,8 @@ if (isRouteTab) {
           '</div>';
         } else {
           horizontalSlidesHtml = mediaItems.map(function(pUrl) {
-            return '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex; align-items:center; justify-content:center;">' +
-              '<img class="reel-photo-target" src="' + pUrl + '" loading="eager" decoding="async" />' +
+            return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:block !important; padding:0 !important; margin:0 !important;">' +
+              '<img class="reel-photo-target" src="' + pUrl + '" loading="eager" decoding="async" style="width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; object-fit:cover !important; object-position:center center !important; display:block !important;" />' +
             '</div>';
           }).join('');
         }
@@ -4755,40 +4812,45 @@ if (isRouteTab) {
 
         var isSavedFeed = savedFeedsList.includes(String(record.id || '').trim());
 
-        var cardSnapPaddingTop = isRouteTab
-          ? 'calc(env(safe-area-inset-top, 0px))'
-          : 'calc(56px + env(safe-area-inset-top, 0px))';
+       var headerBarHtml = isRouteTab ? routeOriginalHeaderHtml : (
+          '<div class="reel-header-row" style="height:56px !important; padding:0 14px !important; border-bottom:1px solid rgba(255,255,255,0.06) !important; margin-bottom:0 !important;">' +
+            '<button type="button" onclick="window.openNewRouterSnapModal(); triggerHaptic(12);" style="background:rgba(255,255,255,0.12); border:1.5px solid rgba(186,230,253,0.35); border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#ffffff; padding:0; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.6);" title="새 스냅 등록">' +
+              '<svg viewBox="0 0 24 24" style="width:20px; height:20px; stroke:#ffffff; fill:none; stroke-width:2.4; stroke-linecap:round;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+            '</button>' +
+            '<div style="display:flex; align-items:center; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:2px; box-sizing:border-box;">' +
+              '<button type="button" onclick="window.activeHistoryFeedTab=\'route\'; window.renderHistoryStage(); triggerHaptic(8);" style="background:transparent; border:none; color:#94a3b8; font-size:0.65rem; font-weight:700; padding:3px 8px; border-radius:12px; cursor:pointer;">낭만루트</button>' +
+              '<button type="button" onclick="window.activeHistoryFeedTab=\'router\'; window.renderHistoryStage(); triggerHaptic(8);" style="background:#38bdf8; border:none; color:#000000; font-size:0.65rem; font-weight:900; padding:3px 8px; border-radius:12px; cursor:pointer;">낭만루터</button>' +
+            '</div>' +
+          '</div>'
+        );
 
-        return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap" data-reel-idx="' + idx + '" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '" style="position:relative; padding-top:' + cardSnapPaddingTop + ' !important;">' +
-          (isRouteTab ? routeOriginalHeaderHtml : '') +
-          '<!-- 미디어 스테이지 (낭만루터는 엽서 없이 100% 순수 사진만 출력) -->' +
-          '<div class="reel-media-stage">' +
-            '<div style="width:100%; height:100%; max-height:100%; position:relative; overflow:hidden; background:#000000; display:flex; align-items:center; justify-content:center;">' +
+        var mediaStagePadding = 'padding:4px 8px 0 8px !important;';
+        return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap" data-reel-idx="' + idx + '" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '" style="position:relative; padding-top:0 !important;">' +
+          headerBarHtml +
+          '<div class="reel-media-stage" style="' + mediaStagePadding + ' margin-top:0 !important;">' +
+            '<div style="width:100% !important; height:100% !important; max-height:100% !important; position:relative; overflow:hidden; background:#000000; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start;">' +
+              centerDDayOverlayHtml +
               (isRouteTab ? (
-                '<!-- 🧭 낭만루트: 개인 사진이 있으면 사진 우선(앞면), 터치 시 템플릿 스펙 시트(뒷면) -->' +
-                '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000; border-radius:0 !important;">' +
+                '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000; border-radius:12px !important; overflow:hidden !important;">' +
                   (totalPhotosCount > 0 ? (
-                    '<!-- 1. 개인 사진 있는 경우: 앞면(개인 사진 풀스크린) ⇄ 뒷면(패킹 템플릿) -->' +
-                    '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; border-radius:0 !important; box-sizing:border-box;">' +
+                    '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:stretch !important; justify-content:flex-start !important; padding:0 !important; border-radius:12px !important; box-sizing:border-box;">' +
                       '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \'' + cardId + '\');">' + horizontalSlidesHtml + '</div>' + dotsHtml +
                     '</div>' +
-                    '<div class="postcard-face-back" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:12px; border-radius:0 !important; box-sizing:border-box;">' +
+                    '<div class="postcard-face-back" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:12px; border-radius:12px !important; box-sizing:border-box;">' +
                       studioCardMarkup +
                     '</div>'
                   ) : (
-                    '<!-- 2. 개인 사진 없는 경우: 앞면(패킹 템플릿) ⇄ 뒷면(사진 등록 안내) -->' +
-                    '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:12px; border-radius:0 !important; box-sizing:border-box;">' +
+                    '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:12px; border-radius:12px !important; box-sizing:border-box;">' +
                       studioCardMarkup +
                     '</div>' +
-                    '<div class="postcard-face-back" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; border-radius:0 !important; box-sizing:border-box;">' +
+                    '<div class="postcard-face-back" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:stretch !important; justify-content:flex-start !important; padding:0 !important; border-radius:12px !important; box-sizing:border-box;">' +
                       '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \'' + cardId + '\');">' + horizontalSlidesHtml + '</div>' + dotsHtml +
                     '</div>'
                   )) +
                 '</div>'
               ) : (
-                '<!-- 🏕️ 낭만루터: 엽서 일체 없는 100% 순수 인스타그램형 사진 슬라이더 -->' +
-                '<div style="width:100% !important; height:100% !important; position:relative; background:#000000; overflow:hidden;">' +
-                  '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \'' + cardId + '\');">' +
+                '<div style="position:absolute !important; inset:0 !important; width:100% !important; height:100% !important; background:#000000; overflow:hidden !important; border-radius:12px !important; display:block !important; transform:translateZ(0); -webkit-transform:translateZ(0);">' +
+                  '<div class="reel-horizontal-track" style="width:100% !important; height:100% !important; display:flex !important;" onscroll="window.updateCarouselFeedState(this, \'' + cardId + '\');">' +
                     horizontalSlidesHtml +
                   '</div>' +
                   dotsHtml +
@@ -4797,8 +4859,7 @@ if (isRouteTab) {
             '</div>' +
           '</div>' +
 
-          '<!-- 하단 인터랙션바 -->' +
-          '<div class="reel-bottom-interactive-bar">' +
+          '<div class="reel-bottom-interactive-bar" style="padding-top:4px !important;">' +
             (!isRouteTab ? routerBottomMetaHtml : '') +
             '<div style="display:flex; justify-content:space-between; align-items:center; min-height:32px;">' +
               '<div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">' +
@@ -4806,7 +4867,7 @@ if (isRouteTab) {
                   '<svg id="feedStarIcon_' + cardId + '" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
                   '<span id="feedStarCountText_' + cardId + '" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif;">' + starCount + '</span>' +
                 '</button>' +
-                '<button type="button" data-feed-id="' + cardId + '" data-spot="' + escapeHtml(spotName) + '" data-memo="' + escapeHtml(memo120) + '" onclick="if(typeof window.shareCurrentFeed===\'function\'){ window.shareCurrentFeed(this.dataset.feedId, this.dataset.spot, this.dataset.memo); } else { triggerHaptic(10); if(navigator.clipboard){ navigator.clipboard.writeText(location.href); if(typeof showToast===\'function\') showToast(\'🔗 피드 링크가 복사되었습니다!\',\'success\'); } }" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">' +
+                '<button type="button" data-feed-id="' + cardId + '" data-spot="' + escapeHtml(spotName) + '" data-memo="' + escapeHtml(memo120) + '" onclick="if(typeof window.shareCurrentFeed===\'function\'){ window.shareCurrentFeed(this.dataset.feedId, this.dataset.spot, this.dataset.memo); } else { triggerHaptic(10); if(navigator.clipboard){ navigator.clipboard.writeText(location.href); if(typeof showToast===\'function\') showToast(HISTORY_TOAST_VEC.link + \'피드 링크가 복사되었습니다.\',\'success\'); } }" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">' +
                   '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
                 '</button>' +
                 '<button type="button" data-feed-id="' + cardId + '" onclick="window.toggleSaveFeed(this.dataset.feedId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:' + (isSavedFeed ? '#c084fc' : '#cbd5e1') + ';" title="관심피드 즐겨찾기 저장">' +
@@ -4826,24 +4887,7 @@ if (isRouteTab) {
       }).join('');
     }
 
-    // 🌟 [낭만루터 전용 상단 고정 헤더: 56px 규격 통일로 전환 시 덜컹거림 0%]
-    var routerFixedHeaderHtml = '';
-    if (!isRouteTab) {
-      routerFixedHeaderHtml = '<div style="position:absolute !important; top:0 !important; left:0 !important; right:0 !important; height:calc(56px + env(safe-area-inset-top, 0px)) !important; padding-top:env(safe-area-inset-top, 0px) !important; background:rgba(0,0,0,0.92) !important; backdrop-filter:blur(8px) !important; -webkit-backdrop-filter:blur(8px) !important; border-bottom:1px solid rgba(255,255,255,0.06) !important; display:flex !important; justify-content:space-between !important; align-items:center !important; padding-left:14px !important; padding-right:14px !important; z-index:40 !important; box-sizing:border-box !important;">' +
-        '<!-- 좌측: 큼직하고 시인성 높은 순백색(+) 단독 버튼 -->' +
-        '<button type="button" onclick="window.openNewRouterSnapModal(); triggerHaptic(12);" style="background:rgba(255,255,255,0.12); border:1.2px solid rgba(255,255,255,0.25); border-radius:50%; width:34px; height:34px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#ffffff; padding:0; flex-shrink:0; transition:all 0.15s ease; box-shadow:0 2px 8px rgba(0,0,0,0.4);" title="새 사진 올리기">' +
-          '<svg viewBox="0 0 24 24" style="width:19px; height:19px; stroke:#ffffff; fill:none; stroke-width:2.4; stroke-linecap:round;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
-        '</button>' +
-        '<!-- 우측: 낭만루트 ⇄ 낭만루터 전환 세그먼트 스위치 -->' +
-        '<div style="display:flex; align-items:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:14px; padding:2.5px; box-sizing:border-box;">' +
-          '<button type="button" onclick="window.activeHistoryFeedTab=\'route\'; window.renderHistoryStage(); triggerHaptic(8);" style="background:transparent; border:none; color:#94a3b8; font-size:0.68rem; font-weight:700; padding:3px 9px; border-radius:12px; cursor:pointer; transition:all 0.15s ease;">낭만루트</button>' +
-          '<button type="button" onclick="window.activeHistoryFeedTab=\'router\'; window.renderHistoryStage(); triggerHaptic(8);" style="background:#38bdf8; border:none; color:#000000; font-size:0.68rem; font-weight:900; padding:3px 9px; border-radius:12px; cursor:pointer; transition:all 0.15s ease;">낭만루터</button>' +
-        '</div>' +
-      '</div>';
-    }
-
-    content.innerHTML = routerFixedHeaderHtml +
-    '<div id="reelsVerticalContainer" class="reel-vertical-container">' +
+    content.innerHTML = '<div id="reelsVerticalContainer" class="reel-vertical-container">' +
       reelSlidesHtml +
     '</div>';
 
@@ -4854,22 +4898,12 @@ if (isRouteTab) {
     // ⚡ [세로 사진 100% 꽉 채우기 복원]: 캐시/네트워크 로드 완벽 감지 엔진
     var allReelImgs = content.querySelectorAll('.reel-photo-target');
     allReelImgs.forEach(function(img) {
-      var applyFit = function() {
-        if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-          if (img.naturalHeight >= img.naturalWidth) {
-            img.classList.add('is-portrait');
-            img.style.setProperty('object-fit', 'cover', 'important');
-          } else {
-            img.classList.remove('is-portrait');
-            img.style.setProperty('object-fit', 'contain', 'important');
-          }
-        }
-      };
-
       if (img.complete) {
-        applyFit();
+        window.applySmartPhotoFit(img);
       } else {
-        img.addEventListener('load', applyFit, { once: true });
+        img.addEventListener('load', function() {
+          window.applySmartPhotoFit(img);
+        }, { once: true });
       }
     });
 
@@ -4963,6 +4997,9 @@ if (isRouteTab) {
   };
 
   window.closeHistoryModal = function() {
+    if (window.__reelWindowObserver) {
+      try { window.__reelWindowObserver.disconnect(); } catch (e) {}
+    }
     var modal = document.getElementById('romanticHistoryModal');
     if (modal) {
       modal.style.setProperty('display', 'none', 'important');

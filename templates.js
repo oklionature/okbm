@@ -709,9 +709,15 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       }
     }
 
-    // 🛡️ 템플릿 그래픽이 가려지지 않도록 메인 사진의 템플릿 침범을 원천 차단
     var photosToSave = [];
-    var localMainPhoto = '';
+    if (Array.isArray(window.__studioMultiPhotos) && window.__studioMultiPhotos.length > 0) {
+      photosToSave = window.__studioMultiPhotos.slice(0, 10);
+    } else if (window.currentSharePhoto && typeof window.currentSharePhoto === 'string' && window.currentSharePhoto.length > 10 && !window.currentSharePhoto.includes('unsplash.com')) {
+      photosToSave = [window.currentSharePhoto];
+    } else if (Array.isArray(rec.photos) && rec.photos.length > 0) {
+      photosToSave = rec.photos.filter(function(u) { return u && !u.includes('unsplash.com'); });
+    }
+    var localMainPhoto = photosToSave[0] || '';
     var existingPhotoMemos = Array.isArray(rec.photoMemos) && rec.photoMemos.length > 0 ? rec.photoMemos : [];
     var existingFullMemo = rec.memo || (existingPhotoMemos[0] || '');
 
@@ -737,7 +743,17 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       isPublished: true
     };
 
-    // 🛡️ 최신 템플릿 기록이 무조건 1순위(최상단)로 오도록 로컬 배열 선두 배치
+    if (studioTmplPhoto) {
+      window.__memoryStore = window.__memoryStore || {};
+      var tmplMap = window.__memoryStore['okbm_custom_templates_map'] || {};
+      tmplMap[String(newRecord.id)] = studioTmplPhoto;
+      delete tmplMap[String(newRecord.date)];
+      window.__memoryStore['okbm_custom_templates_map'] = tmplMap;
+      if (typeof window.saveToIndexedDB === 'function') {
+        window.saveToIndexedDB('okbm_custom_templates_map', tmplMap);
+      }
+    }
+
     var curHist = JSON.parse(localStorage.getItem('okbm_packing_history') || '[]');
     curHist = curHist.filter(function(h) { return h.id !== newRecord.id; });
     curHist.unshift(newRecord);
@@ -766,8 +782,27 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
     if (typeof showToast === 'function') showToast('✓ 보관함에 등록되었습니다. (클라우드 동기화 중)', 'success', 2200);
     if (typeof triggerHaptic === 'function') triggerHaptic(15);
 
-    // 🌐 3. 무중단 백그라운드 워커: 3장 단위 병렬 청크로 클라우드 영구 CDN 승격
     (async function runBackgroundUpload() {
+      if (studioTmplPhoto && typeof studioTmplPhoto === 'string' && studioTmplPhoto.startsWith('data:')) {
+        try {
+          var tmplFileName = 'pack_' + (newRecord.id || Date.now()) + '_tmpl.jpg';
+          var tmplUrl = '';
+          if (typeof window.uploadSinglePhotoSmart === 'function') {
+            tmplUrl = await window.uploadSinglePhotoSmart(studioTmplPhoto, tmplFileName);
+          }
+          if (tmplUrl && tmplUrl.startsWith('http')) {
+            newRecord.customTemplatePhoto = tmplUrl;
+            if (window.__memoryStore && window.__memoryStore['okbm_custom_templates_map']) {
+              window.__memoryStore['okbm_custom_templates_map'][String(newRecord.id)] = tmplUrl;
+              window.__memoryStore['okbm_custom_templates_map'][String(newRecord.date)] = tmplUrl;
+              if (typeof window.saveToIndexedDB === 'function') {
+                window.saveToIndexedDB('okbm_custom_templates_map', window.__memoryStore['okbm_custom_templates_map']);
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
       var finalCloudPhotos = new Array(photosToSave.length);
       var uploadTasks = [];
 

@@ -595,10 +595,6 @@
       .link-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; text-decoration: none; padding: 5px 10px; border-radius: 7px; font-size: 0.72rem; font-weight: 700; color: #fff; cursor: pointer; border: none; }
       .btn-yt { background: linear-gradient(135deg, #e11d48, #be123c); } .btn-blog { background: linear-gradient(135deg, #059669, #047857); } .btn-insta { background: linear-gradient(45deg, #ea580c, #e11d48, #c026d3); }
 
-      .user-private-memo-box { margin-top: 4px; background: var(--bg-card); border: 1px dashed var(--border-hairline); border-radius: 7px; padding: 6px 9px; display: flex; flex-direction: column; gap: 3px; }
-      .user-private-memo-header { font-size: 0.7rem; font-weight: 700; color: var(--accent-teal); display: flex; justify-content: space-between; align-items: center; }
-      .user-private-memo-input { width: 100%; background: var(--bg-base); border: 1px solid var(--border-hairline); border-radius: 5px; color: var(--text-primary); font-size: 0.74rem; padding: 5px 7px; outline: none; resize: vertical; min-height: 34px; }
-      
       .app-disclaimer-box {
         font-size: clamp(0.68rem, 2.7vw, 0.76rem) !important;
         letter-spacing: -0.04em !important;
@@ -2805,23 +2801,6 @@ function updateSmartResetButtons() {
         }
       }
 
-      function saveUserPrivateMemo(spotId, text) {
-        if (!isUserLoggedIn()) return openLoginModal();
-        triggerHaptic(10);
-        const sId = String(spotId).trim();
-        const cleanText = String(text || '').trim();
-
-        if (window.RomanticVault && typeof window.RomanticVault.saveMemo === 'function') {
-          window.RomanticVault.saveMemo(sId, cleanText);
-        } else {
-          userMemos[sId] = cleanText;
-          localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
-          syncUserDataToCloud();
-        }
-
-        showToast(`${ICONS.MEMO} <span>나만의 메모가 안전하게 저장되었습니다.</span>`);
-      }
-
       function shareSpotCard(spotId) {
         const spot = spots.find(s => String(s.id).trim() === String(spotId).trim());
         if (!spot) return;
@@ -4955,6 +4934,9 @@ var overlay = document.getElementById('customModalOverlay');
         if (tempPickedMarker) { 
           tempPickedMarker.setMap(null); 
           tempPickedMarker = null; 
+        }
+        if (typeof window.hideLongPressProposalTooltip === 'function') {
+          window.hideLongPressProposalTooltip();
         }
       }
 

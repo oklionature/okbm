@@ -666,19 +666,30 @@ var totalKg = (totalGrams / 1000).toFixed(2);
       var cleanQ = window.__calcShelfSearchQuery || '';
       var pool = [];
 
-      var masterMap = safeGetJSON('okbm_master_gears_cache', {});
-      var customGears = safeGetJSON('okbm_custom_gears', []);
-      var allSource = [];
-      Object.keys(masterMap).forEach(function(k) { (masterMap[k] || []).forEach(function(g) { allSource.push(Object.assign({ category_id: k }, g)); }); });
-      customGears.forEach(function(cg) { allSource.push(cg); });
+      var customGears = safeGetJSON('okbm_custom_gears', []) || [];
+      var masterMap = safeGetJSON('okbm_master_gears_cache', {}) || {};
+      var allSource = customGears.map(function(cg) {
+        return Object.assign({}, cg, { category_id: cg.category_id || cg.categoryId || 'shelter', isCustom: true });
+      });
+
+      Object.keys(masterMap).forEach(function(k) {
+        (masterMap[k] || []).forEach(function(g) {
+          if (!allSource.some(function(item) { return item.name === g.name; })) {
+            allSource.push(Object.assign({}, g, { category_id: k, isCustom: false }));
+          }
+        });
+      });
+
+      var currentFavSet = new Set(safeGetJSON('okbm_favorite_gears', []));
+      window.favoriteGearSet = currentFavSet;
 
       if (curTab === 'all') {
         pool = allSource;
       } else if (curTab === 'fav') {
-        var favNames = Array.from(window.favoriteGearSet || []);
-        pool = favNames.map(function(fn) {
+        var favArr = Array.from(currentFavSet);
+        pool = favArr.map(function(fn) {
           var found = allSource.find(function(g) { return g.name === fn; });
-          return found || { name: fn, weight: 0, category_id: 'shelter', brand: '내 장비' };
+          return found || { id: 'fav_' + fn, name: fn, weight: 0, category_id: 'shelter', brand: '내 장비', isCustom: true };
         });
       } else {
         pool = allSource.filter(function(g) { return (g.category_id || 'shelter') === curTab; });
@@ -698,9 +709,13 @@ var totalKg = (totalGrams / 1000).toFixed(2);
         var bCount = (gearMap[bCat] || []).filter(function(it) { return it.name === b.name; }).length;
         if (aCount !== bCount) return bCount - aCount;
 
-        var aFav = window.favoriteGearSet && window.favoriteGearSet.has(a.name) ? 1 : 0;
-        var bFav = window.favoriteGearSet && window.favoriteGearSet.has(b.name) ? 1 : 0;
-        if (aFav !== bFav) return bFav - aFav;
+        var aCustom = a.isCustom ? 1 : 0;
+        var bCustom = b.isCustom ? 1 : 0;
+        if (aCustom !== bCustom) return bCustom - aCustom;
+
+        var aTime = a.id && String(a.id).startsWith('custom_') ? parseInt(String(a.id).split('_')[1], 10) : 0;
+        var bTime = b.id && String(b.id).startsWith('custom_') ? parseInt(String(b.id).split('_')[1], 10) : 0;
+        if (aTime !== bTime) return bTime - aTime;
 
         return a.name.localeCompare(b.name, 'ko');
       });
@@ -717,8 +732,10 @@ var totalKg = (totalGrams / 1000).toFixed(2);
           var pal = CATEGORY_PALETTE[targetCatId] || { color: '#94a3b8', border: 'rgba(255,255,255,0.12)' };
           var safeGearName = escapeHtml(g.name);
 
-          var cardBorder = isAdded ? `border:1px solid ${pal.border}; border-left:3.5px solid ${pal.color} !important;` : 'border:1px solid rgba(255,255,255,0.08); border-left:3.5px solid transparent !important;';
+          var cardBorder = isAdded ? `border:1px solid ${pal.border}; border-left:2px solid ${pal.color} !important;` : 'border:1px solid rgba(255,255,255,0.08); border-left:2px solid transparent !important;';
           var cardBg = isAdded ? 'background:rgba(255,255,255,0.055);' : 'background:rgba(255,255,255,0.02);';
+
+          var deleteBtnHtml = g.isCustom ? ` · <button type="button" data-gear="${safeGearName}" onclick="event.stopPropagation(); window.deleteCustomGearCompletely(this.dataset.gear);" style="background:none; border:none; color:#fda4af; font-size:0.58rem; font-weight:700; cursor:pointer; padding:0; text-decoration:underline;">삭제</button>` : '';
 
           return `
             <div class="gear-shelf-item-row" style="${cardBg} ${cardBorder}">
@@ -731,7 +748,7 @@ var totalKg = (totalGrams / 1000).toFixed(2);
                     ${safeGearName}
                   </div>
                   <div style="font-size:0.58rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; margin-top:1px;">
-                    <span style="color:${pal.color}; font-weight:700;">${escapeHtml(pal.label || '')}</span> · ${escapeHtml(g.brand || '')} · ${(Number(g.weight || 0) / 1000).toFixed(2)}kg (${g.weight || 0}g)
+                    <span style="color:${pal.color}; font-weight:700;">${escapeHtml(pal.label || '')}</span> · ${escapeHtml(g.brand || '')}${deleteBtnHtml} · ${(Number(g.weight || 0) / 1000).toFixed(2)}kg (${g.weight || 0}g)
                   </div>
                 </div>
               </div>
@@ -1082,80 +1099,187 @@ var totalKg = (totalGrams / 1000).toFixed(2);
 
     window.renderPlanCategorySlots();
     triggerHaptic(15);
-    if (typeof showToast === 'function') showToast('🎒 배낭 계산기 슬롯이 초기화되었습니다.', 'info');
+    if (typeof showToast === 'function') showToast('배낭 슬롯이 초기화되었습니다.', 'info');
   };
-// ➕ [계산기 하단 원클릭 빠른 장비 직접 추가 핸들러 (즐겨찾기 선택 확인)]
-  window.addQuickGearFromCalculator = function() {
-    var nameInput = document.getElementById('quickCalcGearName');
-    var catSelect = document.getElementById('quickCalcGearCat');
-    var weightInput = document.getElementById('quickCalcGearWeight');
+window.openQuickGearRegisterModal = function(opts) {
+    var isFromCalc = (window.activePlanSubMode === 'calculator');
+    var defaultAddToPack = (opts && typeof opts.addToPack === 'boolean') ? opts.addToPack : isFromCalc;
+    var searchInput = document.getElementById('calcShelfSearchInput');
+    var initName = (searchInput && isFromCalc) ? searchInput.value.trim() : '';
 
-    if (!nameInput || !catSelect || !weightInput) return;
-    var name = nameInput.value.trim();
-    var catId = catSelect.value;
-    var weight = parseInt(weightInput.value, 10);
+    var old = document.getElementById('quickGearDetailModal');
+    if (old) old.remove();
+
+    var modal = document.createElement('div');
+    modal.id = 'quickGearDetailModal';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:1000030; display:flex; align-items:flex-end; justify-content:center; box-sizing:border-box;';
+    modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+    modal.innerHTML = `
+      <div style="width:100%; max-width:480px; background:#07090e; border-top:1.5px solid rgba(255,255,255,0.14); border-radius:16px 16px 0 0; padding:14px 16px calc(18px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box; box-shadow:0 -12px 35px rgba(0,0,0,0.95); animation:slideUpSheet 0.22s ease-out;">
+        <div style="width:36px; height:4px; background:rgba(255,255,255,0.2); border-radius:2px; margin:0 auto 4px auto;"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
+          <span style="font-size:0.88rem; font-weight:800; color:#f8fafc; letter-spacing:-0.02em;">새 장비 등록</span>
+          <button type="button" onclick="document.getElementById('quickGearDetailModal').remove();" style="background:none; border:none; color:#64748b; font-size:1.1rem; cursor:pointer; padding:2px 6px;">✕</button>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <input type="text" id="regGearName" placeholder="장비명 (예: MSR 엘릭서 2)" value="${escapeHtml(initName)}" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#ffffff; font-size:0.82rem; padding:0 12px; outline:none; box-sizing:border-box;" />
+          <div style="position:relative; width:100%;">
+            <select id="regGearCat" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#f1f5f9; font-size:0.80rem; font-weight:700; padding:0 30px 0 12px; outline:none; -webkit-appearance:none; appearance:none; box-sizing:border-box;">
+              <option value="shelter" style="background:#07090e; color:#ffffff;">텐트·타프</option>
+              <option value="sleep" style="background:#07090e; color:#ffffff;">침낭·매트</option>
+              <option value="pack" style="background:#07090e; color:#ffffff;">배낭</option>
+              <option value="food" style="background:#07090e; color:#ffffff;">음식</option>
+              <option value="kitchen" style="background:#07090e; color:#ffffff;">취사</option>
+              <option value="wear" style="background:#07090e; color:#ffffff;">의류</option>
+              <option value="electronics" style="background:#07090e; color:#ffffff;">기기·소품</option>
+              <option value="camp" style="background:#07090e; color:#ffffff;">테이블·체어</option>
+            </select>
+            <div style="position:absolute; right:12px; top:50%; transform:translateY(-50%); pointer-events:none; color:#64748b; font-size:0.65rem;">▼</div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; box-sizing:border-box;">
+            <input type="number" id="regGearWeight" placeholder="무게(g)" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#ffffff; font-size:0.82rem; padding:0 12px; outline:none; font-family:'JetBrains Mono', monospace; box-sizing:border-box;" />
+            <input type="text" id="regGearBrand" placeholder="브랜드(선택)" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#ffffff; font-size:0.82rem; padding:0 12px; outline:none; box-sizing:border-box;" />
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; box-sizing:border-box;">
+            <div onclick="window.openRomanticDatePickerModal('regGearPurchaseDate')" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; display:flex; align-items:center; justify-content:space-between; padding:0 10px; box-sizing:border-box; cursor:pointer;">
+              <span style="font-size:0.75rem; color:#94a3b8; font-weight:800; flex-shrink:0;">구매일</span>
+              <input type="text" id="regGearPurchaseDate" placeholder="선택" readonly style="width:100%; min-width:0; height:100%; background:none; border:none; color:#cbd5e1; font-size:0.76rem; text-align:right; outline:none; font-family:'JetBrains Mono', monospace; padding:0; pointer-events:none;" />
+            </div>
+            <input type="text" id="regGearPrice" inputmode="numeric" placeholder="구매가(원)" oninput="window.formatDirectInputPrice(this)" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fbbf24; font-size:0.80rem; font-weight:700; padding:0 12px; outline:none; font-family:'JetBrains Mono', monospace; box-sizing:border-box;" />
+          </div>
+          <label style="display:flex; align-items:center; gap:8px; padding:4px 2px; cursor:pointer; user-select:none; -webkit-user-select:none;">
+            <input type="checkbox" id="chkRegAddToPack" ${defaultAddToPack ? 'checked' : ''} style="width:16px; height:16px; accent-color:#38bdf8; cursor:pointer;" />
+            <span style="font-size:0.75rem; font-weight:800; color:#cbd5e1;">등록 즉시 현재 배낭에도 담기</span>
+          </label>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:2px;">
+          <button type="button" onclick="document.getElementById('quickGearDetailModal').remove();" style="flex:1; height:42px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; color:#94a3b8; font-size:0.78rem; font-weight:800; cursor:pointer;">취소</button>
+          <button type="button" onclick="window.submitQuickGearRegister();" style="flex:2; height:42px; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.22); border-radius:8px; color:#ffffff; font-size:0.82rem; font-weight:800; cursor:pointer;">등록 완료</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    triggerHaptic(10);
+  };
+
+  window.submitQuickGearRegister = function() {
+    var nameEl = document.getElementById('regGearName');
+    var catEl = document.getElementById('regGearCat');
+    var weightEl = document.getElementById('regGearWeight');
+    var brandEl = document.getElementById('regGearBrand');
+    var pDateEl = document.getElementById('regGearPurchaseDate');
+    var priceEl = document.getElementById('regGearPrice');
+    var chkPack = document.getElementById('chkRegAddToPack');
+
+    if (!nameEl || !catEl || !weightEl) return;
+
+    var name = nameEl.value.trim();
+    var catId = catEl.value || 'shelter';
+    var weight = parseInt(weightEl.value, 10);
+    var brand = brandEl ? brandEl.value.trim() : '';
+    var rawDate = pDateEl && pDateEl.value ? pDateEl.value.trim() : '';
+    var pDate = '';
+    if (rawDate) {
+      var dp = rawDate.match(/\d+/g);
+      if (dp && dp.length >= 3) {
+        pDate = dp[0].slice(-2) + '.' + String(dp[1]).padStart(2, '0') + '.' + String(dp[2]).padStart(2, '0');
+      } else {
+        pDate = rawDate;
+      }
+    }
+    var rawPrice = priceEl ? parseInt((priceEl.value || '').replace(/[^0-9]/g, ''), 10) : 0;
+    var price = isNaN(rawPrice) ? 0 : rawPrice;
+    var shouldAddToPack = chkPack ? chkPack.checked : false;
 
     if (!name || isNaN(weight) || weight < 0) {
       if (typeof showToast === 'function') showToast('장비명과 무게(g)를 입력해주세요.', 'warn');
       return;
     }
 
-    if (!window.selectedGearMap) window.selectedGearMap = {};
-    if (!Array.isArray(window.selectedGearMap[catId])) window.selectedGearMap[catId] = [];
-
-    var newItem = {
-      id: 'item_' + Date.now(),
+    var newCustom = {
+      id: 'custom_' + Date.now(),
       name: name,
-      weight: weight
+      weight: weight,
+      brand: brand || '내 장비',
+      category_id: catId,
+      verified: true,
+      specs: brand || '직접 등록한 내 장비'
     };
-    window.selectedGearMap[catId].push(newItem);
 
-    // 🏛️ [RomanticVault 일원화]
-    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-      window.RomanticVault.write('okbm_selected_gears_multi', window.selectedGearMap, true);
-    } else {
-      localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
-    }
+    var customGears = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_custom_gears', [])
+      : safeGetJSON('okbm_custom_gears', []);
 
-    // ❓ 즐겨찾기(⭐ 내 장비) 등록 여부 확인 팝업
-    var wantFav = confirm('⭐ [' + name + '] 장비를 \'내 장비(즐겨찾기)\'에도 등록할까요?\n(확인 시 본인의 내 장비함에만 안전하게 보존됩니다)');
-    if (wantFav) {
-      var customGears = safeGetJSON('okbm_custom_gears', []);
-      if (!customGears.some(function(g) { return g.name === name; })) {
-        customGears.unshift({
-          id: 'custom_' + Date.now(),
-          name: name,
-          weight: weight,
-          brand: '내 장비',
-          category_id: catId,
-          verified: true,
-          specs: '직접 등록한 내 장비'
-        });
-        if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-          window.RomanticVault.write('okbm_custom_gears', customGears, false);
-        } else {
-          localStorage.setItem('okbm_custom_gears', JSON.stringify(customGears));
-        }
-      }
-
-      if (!window.favoriteGearSet) window.favoriteGearSet = new Set();
-      window.favoriteGearSet.add(name);
+    if (!customGears.some(function(g) { return g.name === name; })) {
+      customGears.unshift(newCustom);
       if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-        window.RomanticVault.write('okbm_favorite_gears', Array.from(window.favoriteGearSet), true);
+        window.RomanticVault.write('okbm_custom_gears', customGears, false);
       } else {
-        localStorage.setItem('okbm_favorite_gears', JSON.stringify(Array.from(window.favoriteGearSet)));
+        localStorage.setItem('okbm_custom_gears', JSON.stringify(customGears));
       }
-      if (typeof showToast === 'function') showToast('⭐ [' + name + '] 슬롯 및 내 장비에 저장됨!', 'success');
-    } else {
-      if (typeof showToast === 'function') showToast('🎒 [' + name + '] 이번 배낭 슬롯에 담김!', 'info');
     }
 
-    nameInput.value = '';
-    weightInput.value = '';
+    var cat = (window.CATEGORIES || []).find(function(c) { return c.id === catId; });
+    if (cat && !cat.db.some(function(d) { return d.name === name; })) {
+      cat.db.unshift(newCustom);
+    }
+
+    if (!window.favoriteGearSet) window.favoriteGearSet = new Set();
+    window.favoriteGearSet.add(name);
+    var favArr = Array.from(window.favoriteGearSet);
+
+    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+      window.RomanticVault.write('okbm_favorite_gears', favArr, false);
+    } else {
+      localStorage.setItem('okbm_favorite_gears', JSON.stringify(favArr));
+    }
+
+    var gearMetaObj = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_gear_meta', {})
+      : safeGetJSON('okbm_gear_meta', {});
+
+    if (!gearMetaObj[name]) gearMetaObj[name] = { purchaseDate: '', price: 0, status: 'ok', memo: '' };
+    if (pDate) gearMetaObj[name].purchaseDate = pDate;
+    if (price > 0) gearMetaObj[name].price = price;
+
+    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+      window.RomanticVault.write('okbm_gear_meta', gearMetaObj, false);
+    } else {
+      localStorage.setItem('okbm_gear_meta', JSON.stringify(gearMetaObj));
+    }
+
+    if (shouldAddToPack) {
+      if (!window.selectedGearMap) window.selectedGearMap = {};
+      if (!Array.isArray(window.selectedGearMap[catId])) window.selectedGearMap[catId] = [];
+      window.selectedGearMap[catId].push({
+        id: 'item_' + Date.now() + '_' + Math.random(),
+        name: name,
+        weight: weight
+      });
+
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_selected_gears_multi', window.selectedGearMap, false);
+      } else {
+        localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
+      }
+    }
+
+    var modal = document.getElementById('quickGearDetailModal');
+    if (modal) modal.remove();
+
+    if (typeof syncUserDataToCloud === 'function') {
+      syncUserDataToCloud();
+    }
 
     triggerHaptic(12);
-    window.renderPlanCategorySlots();
-    if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+    if (typeof showToast === 'function') showToast('[' + name + '] 등록 완료', 'success');
+
+    if (window.activePlanSubMode === 'calculator') {
+      window.renderPlanCategorySlots();
+    } else {
+      window.renderPlanStage();
+    }
   };
 
   window.addCustomGearToCurrentCategory = function() {
@@ -1219,10 +1343,10 @@ var totalKg = (totalGrams / 1000).toFixed(2);
 
     if (window.favoriteGearSet.has(gearName)) {
       window.favoriteGearSet.delete(gearName);
-      if (typeof showToast === 'function') showToast('☆ [' + gearName + '] 내 장비 해제', 'info');
+      if (typeof showToast === 'function') showToast('[' + gearName + '] 내 장비 해제', 'info');
     } else {
       window.favoriteGearSet.add(gearName);
-      if (typeof showToast === 'function') showToast('⭐ [' + gearName + '] 내 장비 등록!', 'success');
+      if (typeof showToast === 'function') showToast('[' + gearName + '] 내 장비 등록', 'success');
     }
 
     // 🏛️ [RomanticVault 일원화]
@@ -1580,7 +1704,7 @@ window.saveCurrentPackingRecord = function() {
     }
 
     triggerHaptic(12);
-    if (typeof showToast === 'function') showToast('🍖 [' + name + '] 체크리스트에 추가됨!', 'success');
+    if (typeof showToast === 'function') showToast('[' + name + '] 체크리스트 추가 완료', 'success');
     window.renderPlanStage();
   };
 
@@ -1747,8 +1871,13 @@ window.saveCurrentPackingRecord = function() {
     var todayDate = now.getDate();
     var todayMidnight = new Date(todayYear, todayMonth - 1, todayDate);
 
-    // 🗓️ [D-Day 탐색] 오늘 이후 가장 가까운 계획/출정 탐색
+    var planSpotsObj = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_plan_spots', {})
+      : safeGetJSON('okbm_plan_spots', {}) || {};
+
     var allFutureDates = [];
+    var seenFutureDateKeys = {};
+
     Object.keys(planMemosObj).forEach(function(k) {
       var val = planMemosObj[k];
       if (val && String(val).trim().length > 0) {
@@ -1756,7 +1885,25 @@ window.saveCurrentPackingRecord = function() {
         if (p && p.length >= 3) {
           var targetD = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
           if (targetD >= todayMidnight) {
+            seenFutureDateKeys[k] = true;
             allFutureDates.push({ dateKey: k, dateObj: targetD, memo: String(val).trim() });
+          }
+        }
+      }
+    });
+
+    Object.keys(planSpotsObj).forEach(function(k) {
+      if (seenFutureDateKeys[k]) return;
+      var rawSpots = planSpotsObj[k];
+      var spotsArr = Array.isArray(rawSpots) ? rawSpots : (rawSpots && rawSpots.name ? [rawSpots] : []);
+      if (spotsArr.length > 0) {
+        var p = k.match(/\d+/g);
+        if (p && p.length >= 3) {
+          var targetD = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+          if (targetD >= todayMidnight) {
+            seenFutureDateKeys[k] = true;
+            var spotTitle = spotsArr[0].name || '계획된 일정';
+            allFutureDates.push({ dateKey: k, dateObj: targetD, memo: spotTitle });
           }
         }
       }
@@ -1789,16 +1936,19 @@ window.saveCurrentPackingRecord = function() {
       var tripTitle = spotMatch ? spotMatch[1].trim() : nearestTrip.memo.split('\n')[0].slice(0, 24);
 
      dDayBadgeHtml = `
-        <div onclick="window.startPackingForDate('${nearestTrip.dateKey}', '${escapeHtml(tripTitle)}');" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.14); border-radius:10px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0; box-sizing:border-box;">
-          <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">
-            <span style="font-size:0.72rem; font-family:'Space Grotesk', sans-serif; font-weight:900; color:#000000; background:#ffffff; padding:2px 7px; border-radius:4px; flex-shrink:0;">
+        <div onclick="window.startPackingForDate('${nearestTrip.dateKey}', '${escapeHtml(tripTitle)}');" style="background:linear-gradient(90deg, rgba(56,189,248,0.08) 0%, rgba(255,255,255,0.03) 100%); border:1.2px solid rgba(56,189,248,0.42); border-radius:10px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0; box-sizing:border-box; box-shadow:0 4px 18px rgba(0,0,0,0.6), 0 0 14px rgba(56,189,248,0.14); transition:all 0.15s ease;">
+          <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1; line-height:1;">
+            <span style="height:20px; font-size:0.72rem; font-family:'Space Grotesk', sans-serif; font-weight:900; color:#000000; background:#ffffff; padding:0 7px; border-radius:4px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 0 10px rgba(255,255,255,0.6); line-height:1;">
               ${dText}
             </span>
-            <div style="font-size:0.80rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:4px;">
-              <span>${nearestTrip.dateKey}</span> · <span style="display:inline-flex; align-items:center; vertical-align:-1.5px; flex-shrink:0;">${UI_ICONS.pin}</span> <span>${escapeHtml(tripTitle)}</span>
+            <div style="font-size:0.80rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-flex; align-items:center; gap:5px; line-height:1;">
+              <span style="line-height:1; display:inline-flex; align-items:center;">${nearestTrip.dateKey}</span>
+              <span style="color:#64748b; font-size:0.70rem; line-height:1; display:inline-flex; align-items:center;">·</span>
+              <span style="display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; line-height:1;">${UI_ICONS.pin}</span>
+              <span style="line-height:1; display:inline-flex; align-items:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(tripTitle)}</span>
             </div>
           </div>
-          <span style="font-size:0.65rem; color:#cbd5e1; font-weight:800; flex-shrink:0;">패킹하기 ➔</span>
+          <span style="font-size:0.68rem; color:#38bdf8; font-weight:800; flex-shrink:0; display:inline-flex; align-items:center; line-height:1; margin-left:8px;">패킹하기 ➔</span>
         </div>
       `;
     } else {
@@ -1824,17 +1974,29 @@ window.saveCurrentPackingRecord = function() {
       var thisDateKey = viewYear + '.' + String(viewMonth).padStart(2, '0') + '.' + String(d).padStart(2, '0');
 
       var dayRecord = monthHistory.find(function(h) { return h && Number(h.day) === Number(d); });
-      var isCompleted = !!(dayRecord && dayRecord.memo && String(dayRecord.memo).trim().length > 0);
+      var isCompleted = !!(dayRecord && ((dayRecord.memo && String(dayRecord.memo).trim().length > 0) || (dayRecord.items && dayRecord.items.length > 0)));
       var isRecorded = !!dayRecord;
       var hasPlanMemo = Boolean(planMemosObj[thisDateKey] && String(planMemosObj[thisDateKey]).trim().length > 0);
+      var rawDaySpots = planSpotsObj[thisDateKey];
+      var hasPlanSpot = Boolean((Array.isArray(rawDaySpots) && rawDaySpots.length > 0) || (rawDaySpots && rawDaySpots.name));
+      var hasPlan = hasPlanMemo || hasPlanSpot;
 
-      var circleStyle = 'width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:\'Space Grotesk\', sans-serif; font-size:0.78rem; font-weight:800; transition:all 0.15s ease;';
+      var circleStyle = 'position:relative; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:\'Space Grotesk\', sans-serif; font-size:0.78rem; font-weight:800; transition:all 0.15s ease;';
+      var indicatorDot = '';
 
       if (isSelected) {
-        circleStyle += 'background:rgba(255,255,255,0.22); border:1.5px solid #ffffff; color:#ffffff; font-weight:900; box-shadow:0 0 10px rgba(255,255,255,0.3);';
+        if (isCompleted) {
+          circleStyle += 'background:rgba(245,158,11,0.28); border:1.5px solid #f59e0b; color:#ffffff; font-weight:900; box-shadow:0 0 10px rgba(245,158,11,0.45);';
+          indicatorDot = '<span style="position:absolute; bottom:1px; left:50%; transform:translateX(-50%); width:3.5px; height:3.5px; background:#fbbf24; border-radius:50%;"></span>';
+        } else if (hasPlan) {
+          circleStyle += 'background:rgba(52,211,153,0.22); border:1.5px solid #34d399; color:#ffffff; font-weight:900; box-shadow:0 0 10px rgba(52,211,153,0.4);';
+          indicatorDot = '<span style="position:absolute; bottom:1px; left:50%; transform:translateX(-50%); width:3.5px; height:3.5px; background:#34d399; border-radius:50%;"></span>';
+        } else {
+          circleStyle += 'background:rgba(255,255,255,0.22); border:1.5px solid #ffffff; color:#ffffff; font-weight:900; box-shadow:0 0 10px rgba(255,255,255,0.3);';
+        }
       } else if (isCompleted) {
         circleStyle += 'background:rgba(245,158,11,0.22); border:1.5px solid #f59e0b; color:#fef08a; font-weight:900; box-shadow:0 0 8px rgba(245,158,11,0.35);';
-      } else if (hasPlanMemo) {
+      } else if (hasPlan) {
         circleStyle += 'background:rgba(52,211,153,0.18); border:1px solid rgba(52,211,153,0.45); color:#ffffff; font-weight:900;';
       } else if (isToday) {
         circleStyle += 'border:1px solid rgba(255,255,255,0.35); color:#ffffff; font-weight:800; background:rgba(255,255,255,0.04);';
@@ -1844,7 +2006,7 @@ window.saveCurrentPackingRecord = function() {
         circleStyle += 'color:#94a3b8;';
       }
 
-      calendarDaysHtml += '<div style="height:100% !important; width:100% !important; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none;" onclick="window.handlePlanCalendarClick(' + d + ', ' + viewMonth + ', ' + viewYear + ')"><div style="' + circleStyle + '">' + d + '</div></div>';
+      calendarDaysHtml += '<div style="height:100% !important; width:100% !important; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none;" onclick="window.handlePlanCalendarClick(' + d + ', ' + viewMonth + ', ' + viewYear + ')"><div style="' + circleStyle + '">' + d + indicatorDot + '</div></div>';
     }
 
     for (var te = 0; te < (42 - (firstDayIndex + lastDayOfMonth)); te++) {
@@ -1935,16 +2097,29 @@ window.saveCurrentPackingRecord = function() {
                 var chipBg = isExpedition ? 'rgba(52,211,153,0.08)' : 'rgba(255,255,255,0.05)';
                 var labelPrefix = isExpedition ? '<span style="font-size:0.62rem; color:#34d399; font-weight:800; margin-right:2px;">[원정대]</span>' : '';
 
-                return '<div style="display:inline-flex; align-items:center; gap:4px; background:' + chipBg + '; border:1px solid ' + chipBorder + '; padding:2px 8px; border-radius:12px; font-size:0.80rem; font-weight:800; color:#ffffff;">' +
+                var safeSName = escapeHtml(s.name);
+                return '<div style="display:inline-flex; align-items:center; gap:5px; background:' + chipBg + '; border:1px solid ' + chipBorder + '; padding:3px 8px; border-radius:12px; font-size:0.78rem; font-weight:800; color:#ffffff;">' +
                   '<span style="display:inline-flex; align-items:center; flex-shrink:0;">' + chipIcon + '</span>' +
                   labelPrefix +
-                  '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px;">' + escapeHtml(s.name + dispElev) + '</span>' +
+                  '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:130px;">' + escapeHtml(s.name + dispElev) + '</span>' +
+                  '<button type="button" data-date="' + escapeHtml(activeDateStr) + '" data-spot="' + safeSName + '" onclick="window.removeIndividualPlanSpot(this.dataset.date, this.dataset.spot, event)" style="background:none; border:none; color:#94a3b8; font-size:0.75rem; font-weight:900; cursor:pointer; padding:0 2px; margin-left:2px; line-height:1;">✕</button>' +
                 '</div>';
               }).join('');
 
               return '<div style="display:flex; flex-wrap:wrap; gap:5px; padding-bottom:5px; border-bottom:1px solid rgba(255,255,255,0.08); flex-shrink:0;">' + chipsHtml + '</div>';
             })()}
-            <textarea id="planDailyMemoInput" placeholder="이 날짜의 일정과 챙길 것들을 메모해보세요..." oninput="window.autoSavePlanMemo('${activeDateStr}', this.value)" style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:none; border:none; color:#ffffff; font-size:0.90rem; line-height:1.45; outline:none; resize:none; font-family:'Pretendard Variable', -apple-system, sans-serif; padding:0; margin:0; box-sizing:border-box;">${currentDayMemo}</textarea>
+            <textarea id="planDailyMemoInput" placeholder="이 날짜의 일정과 챙길 것들을 메모해보세요..." oninput="window.autoSavePlanMemo('${activeDateStr}', this.value)" style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:none; border:none; color:#ffffff; font-size:0.90rem; line-height:1.45; outline:none; resize:none; font-family:'Pretendard Variable', -apple-system, sans-serif; padding:0; margin:0; box-sizing:border-box;">${(function(m, sList){
+              if (!m) return '';
+              var lines = m.split('\n');
+              var filtered = lines.filter(function(line){
+                return !sList.some(function(s){ return line.includes(s.name); });
+              });
+              return escapeHtml(filtered.join('\n').trim());
+            })(currentDayMemo, (function(){
+              var pSpots = safeGetJSON('okbm_plan_spots', {});
+              var raw = pSpots[activeDateStr];
+              return Array.isArray(raw) ? raw : (raw && raw.name ? [raw] : []);
+            })())}</textarea>
           </div>
         </div>
 
@@ -2204,13 +2379,18 @@ window.saveCurrentPackingRecord = function() {
 
           </div>
 
-          <!-- 3. 통합 검색창 -->
-          <div style="height:32px !important; position:relative; width:100%; display:flex; align-items:center; box-sizing:border-box; flex-shrink:0;">
-            <div style="position:absolute; left:9px; color:#64748b; display:flex; align-items:center; pointer-events:none;">
-              ${PLAN_SVG.search}
+          <!-- 3. 통합 검색창 및 직접 등록 버튼 바 -->
+          <div style="display:flex; gap:5px; align-items:center; width:100%; flex-shrink:0; box-sizing:border-box;">
+            <div style="height:34px !important; position:relative; flex:1; min-width:0; display:flex; align-items:center;">
+              <div style="position:absolute; left:9px; color:#64748b; display:flex; align-items:center; pointer-events:none;">
+                ${PLAN_SVG.search}
+              </div>
+              <input type="text" id="calcShelfSearchInput" placeholder="브랜드, 장비명 검색..." oninput="window.handleCalcShelfSearch(this.value)" style="width:100%; height:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:6px; color:#e2e8f0; font-size:0.75rem; padding:0 28px 0 28px; outline:none; box-sizing:border-box;" />
+              <button type="button" id="btnCalcSearchClear" onclick="window.clearCalcShelfSearch()" style="display:none; position:absolute; right:8px; background:rgba(255,255,255,0.12); border:none; color:#cbd5e1; width:16px; height:16px; border-radius:50%; font-size:0.6rem; cursor:pointer; align-items:center; justify-content:center; padding:0;">✕</button>
             </div>
-            <input type="text" id="calcShelfSearchInput" placeholder="브랜드, 장비명, 스펙 검색..." oninput="window.handleCalcShelfSearch(this.value)" style="width:100%; height:100%; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:6px; color:#e2e8f0; font-size:0.75rem; padding:0 28px 0 28px; outline:none; box-sizing:border-box;" />
-            <button type="button" id="btnCalcSearchClear" onclick="window.clearCalcShelfSearch()" style="display:none; position:absolute; right:8px; background:rgba(255,255,255,0.12); border:none; color:#cbd5e1; width:16px; height:16px; border-radius:50%; font-size:0.6rem; cursor:pointer; align-items:center; justify-content:center; padding:0;">✕</button>
+            <button type="button" onclick="window.openQuickGearRegisterModal()" style="height:34px !important; min-width:62px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#ffffff; font-size:0.70rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; padding:0 8px;">
+              + 등록
+            </button>
           </div>
 
           <!-- 4. 카테고리 탭 리본 (균등 76px 고정) -->
@@ -2395,19 +2575,20 @@ window.saveCurrentPackingRecord = function() {
     var favList = Array.from(window.favoriteGearSet || []);
     var myFavGears = favList.map(function(name) {
       var found = allGearsPool.find(function(g) { return g.name === name; });
-      return found || { name: name, weight: 0, brand: '내 장비', categoryId: 'shelter' };
+      return found || { id: 'fav_' + name, name: name, weight: 0, brand: '내 장비', categoryId: 'shelter' };
+    });
+
+    myFavGears.sort(function(a, b) {
+      var aTime = (a.id && String(a.id).startsWith('custom_')) ? parseInt(String(a.id).split('_')[1], 10) : 0;
+      var bTime = (b.id && String(b.id).startsWith('custom_')) ? parseInt(String(b.id).split('_')[1], 10) : 0;
+      if (aTime !== bTime) return bTime - aTime;
+      return a.name.localeCompare(b.name, 'ko');
     });
 
     var activeCatFilter = window.__activeGearCategoryFilter || 'all';
     var filteredFavGears = (activeCatFilter === 'all')
       ? myFavGears
       : myFavGears.filter(function(g) { return g.categoryId === activeCatFilter; });
-
-    var totalInvestAmount = 0;
-    favList.forEach(function(name) {
-      var meta = gearMetaObj[name] || {};
-      totalInvestAmount += parseInt(String(meta.price || '').replace(/[^0-9]/g, ''), 10) || 0;
-    });
 
     var CATEGORY_PALETTE = {
       fav:         { color: '#fde047', label: '⭐ 내장비', bg: 'rgba(253,224,71,0.08)',  border: 'rgba(253,224,71,0.25)' },
@@ -2434,6 +2615,16 @@ window.saveCurrentPackingRecord = function() {
       { id: 'camp', label: '테이블·체어' }
     ];
 
+    var currentCatChip = catChips.find(function(c) { return c.id === activeCatFilter; });
+    var investLabelText = (activeCatFilter === 'all') ? '총 투자 금액:' : ((currentCatChip ? currentCatChip.label : '분류') + ' 합계:');
+
+    var targetGearsForSum = (activeCatFilter === 'all') ? myFavGears : filteredFavGears;
+    var totalInvestAmount = 0;
+    targetGearsForSum.forEach(function(g) {
+      var meta = gearMetaObj[g.name] || {};
+      totalInvestAmount += parseInt(String(meta.price || '').replace(/[^0-9]/g, ''), 10) || 0;
+    });
+
     var filterChipsHtml = catChips.map(function(c) {
       var isActive = (c.id === activeCatFilter);
       var pal = CATEGORY_PALETTE[c.id] || { color: '#e2e8f0', bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.22)' };
@@ -2447,44 +2638,23 @@ window.saveCurrentPackingRecord = function() {
     var gearsViewHtml = `
       <div id="planGearsScrollArea" style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:8px; padding:2px 0; overflow-y:auto !important; overscroll-behavior:none !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; box-sizing:border-box;">
         
-        <!-- 새 장비 직접 등록 -->
-        <div style="background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.18); border-radius:10px; padding:8px 10px; display:flex; flex-direction:column; gap:5px; flex-shrink:0; box-sizing:border-box;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:0.72rem; font-weight:800; color:#cbd5e1;">새 장비 직접 등록</span>
-            <span style="font-size:0.58rem; color:#64748b;">등록 즉시 내 장비로 저장</span>
+        <div style="background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.18); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; box-sizing:border-box;">
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <span style="font-size:0.80rem; font-weight:800; color:#f8fafc;">새 장비 직접 등록</span>
+            <span style="font-size:0.62rem; color:#64748b;">나만의 장비를 등록하고 관리해보세요</span>
           </div>
-
-          <div style="display:flex; gap:5px;">
-            <input type="text" id="mgrInputGearName" class="modal-input" placeholder="장비명 (예: MSR 엘릭서 2)" style="flex:2; min-width:0; font-size:0.72rem; height:30px; background:rgba(0,0,0,0.4); border-radius:5px; padding:0 6px;" />
-            <select id="mgrSelectGearCat" style="flex:1.2; min-width:0; height:30px; background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.12); border-radius:5px; color:#fff; font-size:0.68rem; font-weight:700; padding:0 3px; outline:none;">
-              <option value="shelter">텐트·타프</option>
-              <option value="sleep">침낭·매트</option>
-              <option value="pack">배낭</option>
-              <option value="food">음식</option>
-              <option value="kitchen">취사</option>
-              <option value="wear">의류</option>
-              <option value="electronics">기기·소품</option>
-              <option value="camp">테이블·체어</option>
-            </select>
-          </div>
-
-          <div style="display:flex; gap:5px;">
-            <input type="number" id="mgrInputGearWeight" class="modal-input" placeholder="무게(g)" style="flex:1; min-width:0; font-size:0.72rem; height:30px; background:rgba(0,0,0,0.4); border-radius:5px; font-family:'JetBrains Mono', monospace; padding:0 6px;" />
-            <input type="text" id="mgrInputGearPrice" class="modal-input" placeholder="구매가(원)" oninput="window.formatDirectInputPrice(this)" style="flex:1.2; min-width:0; font-size:0.72rem; height:30px; background:rgba(0,0,0,0.4); border-radius:5px; font-family:'JetBrains Mono', monospace; padding:0 6px; color:#fbbf24;" />
-            <button type="button" onclick="window.addDirectGearToManager();" style="flex:1; height:30px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.22); color:#fff; font-size:0.70rem; font-weight:800; border-radius:5px; cursor:pointer; flex-shrink:0; white-space:nowrap;">
-              + 등록
-            </button>
-          </div>
+          <button type="button" onclick="window.openQuickGearRegisterModal({ addToPack: false });" style="height:32px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#ffffff; font-size:0.72rem; font-weight:800; padding:0 12px; border-radius:6px; cursor:pointer; flex-shrink:0;">
+            + 등록하기
+          </button>
         </div>
 
-        <!-- 내 장비 개수 & 총 투자 금액 하이라이트 -->
         <div style="background:linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(15,23,42,0.6) 100%); border:1px solid rgba(255,255,255,0.15); border-top:1px solid rgba(255,255,255,0.25); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
           <div style="font-size:0.80rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:5px;">
             <span>⭐ 내 장비</span>
             <span style="font-size:0.70rem; color:#94a3b8; font-weight:800;" id="mgrFavCountLabel">(${filteredFavGears.length}개)</span>
           </div>
           <div style="display:flex; align-items:baseline; gap:5px;">
-            <span style="font-size:0.68rem; color:#94a3b8; font-weight:800;">총 투자 금액:</span>
+            <span style="font-size:0.68rem; color:#94a3b8; font-weight:800;">${investLabelText}</span>
             <span id="mgrTotalInvestText" style="font-size:1.02rem; font-weight:900; color:#fbbf24; font-family:'JetBrains Mono', 'Space Grotesk', monospace; text-shadow:0 1px 6px rgba(251,191,36,0.35);">₩${totalInvestAmount.toLocaleString()}</span>
           </div>
         </div>
@@ -2512,33 +2682,29 @@ window.saveCurrentPackingRecord = function() {
             return `
               <div class="my-gear-manage-card" data-gear-name="${safeGearNameAttr}" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-left:3.5px solid ${pal.color}; border-radius:8px; padding:7px 10px; display:flex; flex-direction:column; gap:5px; box-sizing:border-box; width:100%;">
                 
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; width:100%;">
-                  <div style="flex:1 1 0%; min-width:0; overflow:hidden;">
-                    <div style="font-size:0.80rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${safeGearNameAttr}">
-                      ${safeGearNameAttr}
+                <div onclick="window.openGearMetaEditSheet(this.dataset.gear)" data-gear="${safeGearNameAttr}" style="display:flex; justify-content:space-between; align-items:center; gap:8px; width:100%; cursor:pointer;">
+                  <div style="flex:1 1 0%; min-width:0;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <span style="font-size:0.82rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        ${safeGearNameAttr}
+                      </span>
+                      <span style="font-size:0.60rem; font-weight:700; color:${curStatus === 'repair' ? '#fda4af' : (curStatus === 'sell' ? '#fde047' : '#94a3b8')}; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); padding:1px 4px; border-radius:3px; flex-shrink:0;">
+                        ${curStatus === 'repair' ? '정비요망' : (curStatus === 'sell' ? '방출예정' : '정상')}
+                      </span>
                     </div>
-                    <div style="font-size:0.58rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; margin-top:2px;">
-                      <span style="color:${pal.color}; font-weight:700;">${escapeHtml(pal.label)}</span> · ${escapeHtml(g.brand || '내 장비')} · ${(g.weight / 1000).toFixed(2)}kg (${g.weight}g)
+                    <div style="font-size:0.60rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; margin-top:2px;">
+                      <span style="color:${pal.color}; font-weight:700;">${escapeHtml(pal.label)}</span> · ${escapeHtml(g.brand || '내 장비')} · ${(g.weight / 1000).toFixed(2)}kg
+                    </div>
+                    <div style="font-size:0.60rem; color:#64748b; font-family:'JetBrains Mono', monospace; margin-top:2px; display:flex; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                      ${meta.purchaseDate ? `<span>${escapeHtml(meta.purchaseDate)} 구매</span>` : ''}
+                      ${displayPrice ? `<span style="color:#fbbf24; font-weight:700;">₩${escapeHtml(displayPrice)}</span>` : ''}
+                      ${meta.memo ? `<span style="color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">· ${escapeHtml(meta.memo)}</span>` : ''}
                     </div>
                   </div>
 
-                  <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
-                    <select data-gear="${safeGearNameAttr}" onchange="window.updateGearMeta(this.dataset.gear, 'status', this.value)" style="height:22px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.12); border-radius:4px; color:${curStatus === 'repair' ? '#fda4af' : (curStatus === 'sell' ? '#fde047' : '#cbd5e1')}; font-size:0.58rem; font-weight:800; padding:0 3px; outline:none;">
-                      <option value="ok" ${curStatus === 'ok' ? 'selected' : ''}>정상</option>
-                      <option value="repair" ${curStatus === 'repair' ? 'selected' : ''}>정비요망</option>
-                      <option value="sell" ${curStatus === 'sell' ? 'selected' : ''}>방출예정</option>
-                    </select>
-
-                    <button type="button" data-gear="${safeGearNameAttr}" onclick="window.removeFavoriteGearFromManager(this.dataset.gear, this)" style="background:none; border:none; color:#64748b; font-size:0.60rem; font-weight:700; padding:2px 4px; cursor:pointer; text-decoration:underline;">
-                      해제
-                    </button>
+                  <div style="display:flex; align-items:center; color:#64748b; font-size:1.1rem; flex-shrink:0; padding-left:4px; pointer-events:none;">
+                    ›
                   </div>
-                </div>
-
-                <div style="display:flex; gap:4px; width:100%;">
-                  <input type="text" placeholder="구매일(24.03)" value="${escapeHtml(meta.purchaseDate || '')}" data-gear="${safeGearNameAttr}" oninput="window.updateGearMeta(this.dataset.gear, 'purchaseDate', this.value)" style="width:28%; height:26px; background:rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:4px; color:#cbd5e1; font-size:0.66rem; padding:0 5px; outline:none; box-sizing:border-box;" />
-                  <input type="text" placeholder="₩ 구매가" value="${escapeHtml(displayPrice)}" data-gear="${safeGearNameAttr}" oninput="window.handleGearPriceInput(this.dataset.gear, this)" style="width:32%; height:26px; background:rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:4px; color:#fbbf24; font-weight:700; font-family:'JetBrains Mono', monospace; font-size:0.66rem; padding:0 5px; outline:none; box-sizing:border-box;" />
-                  <input type="text" placeholder="상태 & 관리 메모..." value="${escapeHtml(meta.memo || '')}" data-gear="${safeGearNameAttr}" oninput="window.updateGearMeta(this.dataset.gear, 'memo', this.value)" style="flex:1; min-width:0; height:26px; background:rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:4px; color:#cbd5e1; font-size:0.66rem; padding:0 6px; outline:none; box-sizing:border-box;" />
                 </div>
 
               </div>
@@ -2595,18 +2761,109 @@ window.saveCurrentPackingRecord = function() {
       window.bindPlanCalendarSwipe();
     }
   };
- window.updateGearMeta = function(gearName, field, value) {
-    var gearMetaObj = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-      ? window.RomanticVault.read('okbm_gear_meta', {})
-      : safeGetJSON('okbm_gear_meta', {});
-    if (!gearMetaObj[gearName]) gearMetaObj[gearName] = {};
-    gearMetaObj[gearName][field] = value;
+ window.openGearMetaEditSheet = function(gearName) {
+    if (!gearName) return;
+    var old = document.getElementById('gearMetaEditSheet');
+    if (old) old.remove();
+
+    var gearMetaObj = safeGetJSON('okbm_gear_meta', {});
+    var meta = gearMetaObj[gearName] || { purchaseDate: '', price: '', status: 'ok', memo: '' };
+    var rawPrice = parseInt(String(meta.price || '').replace(/[^0-9]/g, ''), 10);
+    var displayPrice = !isNaN(rawPrice) && rawPrice > 0 ? rawPrice.toLocaleString() : '';
+
+    var sheet = document.createElement('div');
+    sheet.id = 'gearMetaEditSheet';
+    sheet.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:1000030; display:flex; align-items:flex-end; justify-content:center; box-sizing:border-box;';
+    sheet.onclick = function(e) { if (e.target === sheet) sheet.remove(); };
+
+    sheet.innerHTML = `
+      <div style="width:100%; max-width:480px; background:#07090e; border-top:1.5px solid rgba(255,255,255,0.14); border-radius:16px 16px 0 0; padding:14px 16px calc(18px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 -12px 35px rgba(0,0,0,0.95); animation:slideUpSheet 0.22s ease-out;">
+        <div style="width:36px; height:4px; background:rgba(255,255,255,0.2); border-radius:2px; margin:0 auto 2px auto;"></div>
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
+          <div style="font-size:0.90rem; font-weight:800; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px;">
+            ${escapeHtml(gearName)}
+          </div>
+          <button type="button" onclick="document.getElementById('gearMetaEditSheet').remove();" style="background:none; border:none; color:#64748b; font-size:1.1rem; cursor:pointer; padding:2px 6px;">✕</button>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; gap:8px;">
+            <div style="flex:1;">
+              <span style="font-size:0.62rem; color:#94a3b8; font-weight:700; margin-bottom:3px; display:block;">구매일</span>
+              <div onclick="window.openRomanticDatePickerModal('editSheetPurchaseDate')" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:6px; display:flex; align-items:center; padding:0 10px; box-sizing:border-box; cursor:pointer;">
+                <input type="text" id="editSheetPurchaseDate" placeholder="날짜 선택" value="${escapeHtml(meta.purchaseDate || '')}" readonly style="width:100%; min-width:0; height:100%; background:none; border:none; color:#cbd5e1; font-size:0.78rem; outline:none; font-family:'JetBrains Mono', monospace; padding:0; pointer-events:none;" />
+              </div>
+            </div>
+            <div style="flex:1;">
+              <span style="font-size:0.62rem; color:#94a3b8; font-weight:700; margin-bottom:3px; display:block;">구매가 (₩)</span>
+              <input type="text" id="editSheetPrice" inputmode="numeric" placeholder="150,000" value="${escapeHtml(displayPrice)}" oninput="window.formatDirectInputPrice(this)" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#fbbf24; font-size:0.78rem; font-weight:700; padding:0 10px; outline:none; font-family:'JetBrains Mono', monospace; box-sizing:border-box;" />
+            </div>
+          </div>
+          <div>
+            <span style="font-size:0.62rem; color:#94a3b8; font-weight:700; margin-bottom:3px; display:block;">장비 상태</span>
+            <select id="editSheetStatus" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#f1f5f9; font-size:0.78rem; font-weight:700; padding:0 10px; outline:none; -webkit-appearance:none; appearance:none; box-sizing:border-box;">
+              <option value="ok" ${meta.status === 'ok' ? 'selected' : ''} style="background:#07090e; color:#ffffff;">정상</option>
+              <option value="repair" ${meta.status === 'repair' ? 'selected' : ''} style="background:#07090e; color:#ffffff;">정비요망</option>
+              <option value="sell" ${meta.status === 'sell' ? 'selected' : ''} style="background:#07090e; color:#ffffff;">방출예정</option>
+            </select>
+          </div>
+          <div>
+            <span style="font-size:0.62rem; color:#94a3b8; font-weight:700; margin-bottom:3px; display:block;">관리 메모</span>
+            <textarea id="editSheetMemo" rows="3" placeholder="상태, 보관 위치, 수리 이력 등 메모를 자유롭게 입력하세요..." style="width:100%; height:72px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#cbd5e1; font-size:0.78rem; line-height:1.45; padding:8px 10px; outline:none; resize:none; box-sizing:border-box; font-family:'Pretendard Variable', -apple-system, sans-serif;">${escapeHtml(meta.memo || '')}</textarea>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
+          <button type="button" data-gear="${escapeHtml(gearName)}" onclick="window.saveGearMetaFromSheet(this.dataset.gear)" style="width:100%; height:44px; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.22); border-radius:8px; color:#ffffff; font-size:0.82rem; font-weight:800; cursor:pointer;">저장 완료</button>
+          ${(function(){
+            var cList = safeGetJSON('okbm_custom_gears', []);
+            var isC = cList.some(function(cg){ return cg && cg.name === gearName; });
+            var delText = isC ? '장비 영구 삭제' : '내 장비에서 해제';
+            var msg = isC ? '이 장비를 영구 삭제하시겠습니까?' : '내 장비에서 해제하시겠습니까?';
+            return '<button type="button" data-gear="' + escapeHtml(gearName) + '" onclick="window.showRomanticConfirm(\'' + msg + '\', function(){ window.removeFavoriteGearFromManager(\'' + escapeHtml(gearName) + '\'); var s=document.getElementById(\'gearMetaEditSheet\'); if(s) s.remove(); });" style="width:100%; height:36px; background:none; border:none; color:#fda4af; font-size:0.72rem; font-weight:700; cursor:pointer; text-decoration:underline;">' + delText + '</button>';
+          })()}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(sheet);
+    triggerHaptic(10);
+  };
+
+  window.saveGearMetaFromSheet = function(gearName) {
+    var pDateEl = document.getElementById('editSheetPurchaseDate');
+    var priceEl = document.getElementById('editSheetPrice');
+    var statusEl = document.getElementById('editSheetStatus');
+    var memoEl = document.getElementById('editSheetMemo');
+    if (!gearName || !pDateEl || !priceEl || !statusEl || !memoEl) return;
+
+    var rawDate = pDateEl.value.trim();
+    var pDate = '';
+    if (rawDate) {
+      var dp = rawDate.match(/\d+/g);
+      if (dp && dp.length >= 3) {
+        pDate = dp[0].slice(-2) + '.' + String(dp[1]).padStart(2, '0') + '.' + String(dp[2]).padStart(2, '0');
+      } else {
+        pDate = rawDate;
+      }
+    }
+    var rawPrice = parseInt(priceEl.value.replace(/[^0-9]/g, ''), 10) || 0;
+    var status = statusEl.value;
+    var memo = memoEl.value.trim();
+
+    var gearMetaObj = safeGetJSON('okbm_gear_meta', {});
+    gearMetaObj[gearName] = { purchaseDate: pDate, price: rawPrice, status: status, memo: memo };
+
     if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
       window.RomanticVault.write('okbm_gear_meta', gearMetaObj, true);
     } else {
       localStorage.setItem('okbm_gear_meta', JSON.stringify(gearMetaObj));
       if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
     }
+
+    var sheet = document.getElementById('gearMetaEditSheet');
+    if (sheet) sheet.remove();
+
+    triggerHaptic(12);
+    if (typeof showToast === 'function') showToast('[' + gearName + '] 정보가 저장되었습니다.', 'success');
+    window.renderPlanStage();
   };
 
   window.handleGearPriceInput = function(gearName, inputEl) {
@@ -2639,10 +2896,161 @@ window.saveCurrentPackingRecord = function() {
     inputEl.value = !isNaN(num) && num > 0 ? num.toLocaleString() : '';
   };
 
+  window.showRomanticConfirm = function(message, onConfirm) {
+    var old = document.getElementById('romanticConfirmModal');
+    if (old) old.remove();
+
+    var modal = document.createElement('div');
+    modal.id = 'romanticConfirmModal';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000060; display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
+    modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+    modal.innerHTML = `
+      <div style="width:100%; max-width:320px; background:#07090e; border:1px solid rgba(255,255,255,0.16); border-radius:12px; padding:18px 16px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; box-shadow:0 12px 35px rgba(0,0,0,0.9);">
+        <div style="font-size:0.86rem; font-weight:800; color:#f8fafc; line-height:1.45; text-align:center;">
+          ${escapeHtml(message).replace(/\n/g, '<br>')}
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button type="button" onclick="document.getElementById('romanticConfirmModal').remove();" style="flex:1; height:42px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#94a3b8; font-size:0.80rem; font-weight:800; cursor:pointer;">취소</button>
+          <button type="button" id="btnRomanticConfirmOk" style="flex:1; height:42px; background:rgba(244,63,94,0.14); border:1px solid rgba(244,63,94,0.3); border-radius:8px; color:#fda4af; font-size:0.80rem; font-weight:900; cursor:pointer;">확인</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    document.getElementById('btnRomanticConfirmOk').onclick = function() {
+      modal.remove();
+      if (typeof onConfirm === 'function') onConfirm();
+    };
+    triggerHaptic(10);
+  };
+
+  window.openRomanticDatePickerModal = function(targetInputId) {
+    var old = document.getElementById('romanticDatePickerModal');
+    if (old) old.remove();
+
+    var now = new Date();
+    var curY = now.getFullYear();
+    var curM = now.getMonth() + 1;
+
+    var modal = document.createElement('div');
+    modal.id = 'romanticDatePickerModal';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000055; display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
+    modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+    function renderPickerCal(y, m) {
+      var firstDay = new Date(y, m - 1, 1).getDay();
+      var lastDate = new Date(y, m, 0).getDate();
+      var daysHtml = '';
+      for (var i = 0; i < firstDay; i++) daysHtml += '<div></div>';
+      for (var d = 1; d <= lastDate; d++) {
+        var ds = String(d).padStart(2, '0');
+        var ms = String(m).padStart(2, '0');
+        var ys = String(y).slice(-2);
+        var fullVal = ys + '.' + ms + '.' + ds;
+        daysHtml += '<div onclick="var t=document.getElementById(\'' + targetInputId + '\'); if(t){ t.value=\'' + fullVal + '\'; t.style.color=\'#cbd5e1\'; } document.getElementById(\'romanticDatePickerModal\').remove();" style="height:34px; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-family:\'Space Grotesk\', sans-serif; font-weight:800; color:#e2e8f0; border-radius:6px; cursor:pointer; background:rgba(255,255,255,0.02);">' + d + '</div>';
+      }
+
+      var box = document.getElementById('romanticPickerInnerBox');
+      if (!box) return;
+      box.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
+          <button type="button" id="btnPickPrevM" style="background:none; border:none; color:#cbd5e1; font-size:1.0rem; cursor:pointer; padding:4px 8px;">◀</button>
+          <span style="font-size:0.90rem; font-weight:900; color:#ffffff; font-family:'Space Grotesk', sans-serif;">${y}년 ${m}월</span>
+          <button type="button" id="btnPickNextM" style="background:none; border:none; color:#cbd5e1; font-size:1.0rem; cursor:pointer; padding:4px 8px;">▶</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.65rem; font-weight:800; color:#64748b; margin:6px 0;">
+          <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:3px; text-align:center;">
+          ${daysHtml}
+        </div>
+      `;
+      document.getElementById('btnPickPrevM').onclick = function() { m--; if (m < 1) { m = 12; y--; } renderPickerCal(y, m); };
+      document.getElementById('btnPickNextM').onclick = function() { m++; if (m > 12) { m = 1; y++; } renderPickerCal(y, m); };
+    }
+
+    modal.innerHTML = '<div id="romanticPickerInnerBox" style="width:100%; max-width:300px; background:#07090e; border:1px solid rgba(255,255,255,0.16); border-radius:12px; padding:14px; display:flex; flex-direction:column; box-sizing:border-box; box-shadow:0 12px 35px rgba(0,0,0,0.9);"></div>';
+    document.body.appendChild(modal);
+    renderPickerCal(curY, curM);
+    triggerHaptic(8);
+  };
+
   window.setGearCategoryFilter = function(catId) {
     window.__activeGearCategoryFilter = catId;
     triggerHaptic(8);
     window.renderPlanStage();
+  };
+
+  window.deleteCustomGearCompletely = function(gearName) {
+    if (!gearName) return;
+
+    window.showRomanticConfirm('[' + gearName + '] 장비를 영구 삭제하시겠습니까?\n내 장비 및 배낭에서 모두 제거됩니다.', function() {
+      var customGears = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+        ? window.RomanticVault.read('okbm_custom_gears', [])
+        : safeGetJSON('okbm_custom_gears', []);
+      customGears = customGears.filter(function(cg) { return cg && cg.name !== gearName; });
+
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_custom_gears', customGears, false);
+      } else {
+        localStorage.setItem('okbm_custom_gears', JSON.stringify(customGears));
+      }
+
+      if (window.favoriteGearSet) {
+        window.favoriteGearSet.delete(gearName);
+        var favArr = Array.from(window.favoriteGearSet);
+        if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+          window.RomanticVault.write('okbm_favorite_gears', favArr, false);
+        } else {
+          localStorage.setItem('okbm_favorite_gears', JSON.stringify(favArr));
+        }
+      }
+
+      var gearMetaObj = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+        ? window.RomanticVault.read('okbm_gear_meta', {})
+        : safeGetJSON('okbm_gear_meta', {});
+      if (gearMetaObj[gearName]) {
+        delete gearMetaObj[gearName];
+        if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+          window.RomanticVault.write('okbm_gear_meta', gearMetaObj, false);
+        } else {
+          localStorage.setItem('okbm_gear_meta', JSON.stringify(gearMetaObj));
+        }
+      }
+
+      var gearMap = window.selectedGearMap || safeGetJSON('okbm_selected_gears_multi', {});
+      var isRemovedFromPack = false;
+      Object.keys(gearMap).forEach(function(catKey) {
+        if (Array.isArray(gearMap[catKey])) {
+          var prevLen = gearMap[catKey].length;
+          gearMap[catKey] = gearMap[catKey].filter(function(it) { return it && it.name !== gearName; });
+          if (gearMap[catKey].length !== prevLen) isRemovedFromPack = true;
+        }
+      });
+
+      if (isRemovedFromPack) {
+        window.selectedGearMap = gearMap;
+        if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+          window.RomanticVault.write('okbm_selected_gears_multi', gearMap, false);
+        } else {
+          localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(gearMap));
+        }
+      }
+
+      (window.CATEGORIES || []).forEach(function(cat) {
+        if (Array.isArray(cat.db)) {
+          cat.db = cat.db.filter(function(d) { return d && d.name !== gearName; });
+        }
+      });
+
+      if (typeof syncUserDataToCloud === 'function') {
+        syncUserDataToCloud();
+      }
+
+      triggerHaptic(12);
+      if (typeof showToast === 'function') showToast('[' + gearName + '] 장비가 영구 삭제되었습니다.', 'info');
+      window.renderPlanCategorySlots();
+    });
   };
 
   window.removeFavoriteGearFromManager = function(gearName, btnEl) {
@@ -2651,14 +3059,32 @@ window.saveCurrentPackingRecord = function() {
     var favArr = Array.from(window.favoriteGearSet);
 
     if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-      window.RomanticVault.write('okbm_favorite_gears', favArr, true);
+      window.RomanticVault.write('okbm_favorite_gears', favArr, false);
     } else {
       localStorage.setItem('okbm_favorite_gears', JSON.stringify(favArr));
-      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+    }
+
+    var customGears = safeGetJSON('okbm_custom_gears', []);
+    var isCustom = customGears.some(function(cg) { return cg && cg.name === gearName; });
+    if (isCustom) {
+      customGears = customGears.filter(function(cg) { return cg && cg.name !== gearName; });
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_custom_gears', customGears, false);
+      } else {
+        localStorage.setItem('okbm_custom_gears', JSON.stringify(customGears));
+      }
+
+      var gearMetaObj = safeGetJSON('okbm_gear_meta', {});
+      delete gearMetaObj[gearName];
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_gear_meta', gearMetaObj, true);
+      } else {
+        localStorage.setItem('okbm_gear_meta', JSON.stringify(gearMetaObj));
+      }
     }
 
     triggerHaptic(10);
-    if (typeof showToast === 'function') showToast('⭐ [' + gearName + '] 즐겨찾기 해제', 'info');
+    if (typeof showToast === 'function') showToast(isCustom ? '[' + gearName + '] 삭제 완료' : '[' + gearName + '] 내 장비 해제', 'info');
 
     if (btnEl) {
       var card = btnEl.closest('.my-gear-manage-card');
@@ -2727,7 +3153,7 @@ window.saveCurrentPackingRecord = function() {
     }
 
     triggerHaptic(15);
-    if (typeof showToast === 'function') showToast('🎒 [' + newPreset.name + '] 세트가 저장되었습니다!', 'success');
+    if (typeof showToast === 'function') showToast('[' + newPreset.name + '] 세트가 저장되었습니다.', 'success');
     window.renderPlanStage();
   };
 
@@ -2747,7 +3173,7 @@ window.saveCurrentPackingRecord = function() {
     }
 
     triggerHaptic(15);
-    if (typeof showToast === 'function') showToast('🎒 [' + target.name + '] 세트로 배낭이 1초 만에 세팅되었습니다!', 'success');
+    if (typeof showToast === 'function') showToast('[' + target.name + '] 세트가 배낭에 적용되었습니다.', 'success');
 
     window.activePlanSubMode = 'calculator';
     window.renderPlanStage();
@@ -2778,91 +3204,22 @@ window.saveCurrentPackingRecord = function() {
   };
 
  window.addDirectGearToManager = function() {
-    var nameEl = document.getElementById('mgrInputGearName');
-    var weightEl = document.getElementById('mgrInputGearWeight');
-    var catEl = document.getElementById('mgrSelectGearCat');
-    var priceEl = document.getElementById('mgrInputGearPrice');
-
-    if (!nameEl || !weightEl) return;
-    var name = nameEl.value.trim();
-    var weight = parseInt(weightEl.value, 10);
-    var catId = catEl ? catEl.value : 'shelter';
-    var rawPrice = priceEl ? parseInt((priceEl.value || '').replace(/[^0-9]/g, ''), 10) : 0;
-    var price = isNaN(rawPrice) ? 0 : rawPrice;
-
-    if (!name || isNaN(weight) || weight < 0) {
-      if (typeof showToast === 'function') showToast('장비명과 무게(g)를 올바르게 입력해주세요.', 'warn');
-      return;
-    }
-
-    var newCustomItem = {
-      id: 'custom_' + Date.now(),
-      name: name,
-      weight: weight,
-      brand: '내 장비',
-      category_id: catId,
-      verified: true,
-      specs: '내 장비함에서 직접 등록'
-    };
-
-    var customGears = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-      ? window.RomanticVault.read('okbm_custom_gears', [])
-      : safeGetJSON('okbm_custom_gears', []);
-
-    if (!customGears.some(function(g) { return g.name === name; })) {
-      customGears.unshift(newCustomItem);
-      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-        window.RomanticVault.write('okbm_custom_gears', customGears, false);
-      } else {
-        localStorage.setItem('okbm_custom_gears', JSON.stringify(customGears));
-      }
-    }
-
-    var cat = (window.CATEGORIES || []).find(function(c) { return c.id === catId; });
-    if (cat && !cat.db.some(function(d) { return d.name === name; })) {
-      cat.db.unshift(newCustomItem);
-    }
-
-    if (!window.favoriteGearSet) window.favoriteGearSet = new Set();
-    window.favoriteGearSet.add(name);
-    var favArr = Array.from(window.favoriteGearSet);
-
-    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-      window.RomanticVault.write('okbm_favorite_gears', favArr, false);
-    } else {
-      localStorage.setItem('okbm_favorite_gears', JSON.stringify(favArr));
-    }
-
-    var gearMetaObj = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-      ? window.RomanticVault.read('okbm_gear_meta', {})
-      : safeGetJSON('okbm_gear_meta', {});
-
-    if (!gearMetaObj[name]) gearMetaObj[name] = {};
-    if (price > 0) gearMetaObj[name].price = price;
-
-    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-      window.RomanticVault.write('okbm_gear_meta', gearMetaObj, true);
-    } else {
-      localStorage.setItem('okbm_gear_meta', JSON.stringify(gearMetaObj));
-      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-    }
-
-    triggerHaptic(15);
-    if (typeof showToast === 'function') showToast('⭐ [' + name + ']이 내 장비함에 등록되었습니다!', 'success');
-
-    nameEl.value = '';
-    weightEl.value = '';
-    if (priceEl) priceEl.value = '';
-    window.renderPlanStage();
+    window.openQuickGearRegisterModal({ addToPack: false });
   };
 
-  // [수정 코드]
-  // 📝 [낭만플랜 날짜별 메모 저장 헬퍼]
   window.autoSavePlanMemo = function(dateStr, val) {
     var planMemosObj = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
       ? window.RomanticVault.read('okbm_plan_memos', {})
       : safeGetJSON('okbm_plan_memos', {});
-    planMemosObj[dateStr] = val;
+    if (!planMemosObj || typeof planMemosObj !== 'object') planMemosObj = {};
+
+    var trimmed = String(val || '').trim();
+    if (trimmed) {
+      planMemosObj[dateStr] = String(val);
+    } else {
+      delete planMemosObj[dateStr];
+    }
+
     if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
       window.RomanticVault.write('okbm_plan_memos', planMemosObj, false);
     } else {
@@ -2873,15 +3230,28 @@ window.saveCurrentPackingRecord = function() {
   window.savePlanMemo = function(dateStr) {
     var input = document.getElementById('planDailyMemoInput');
     var val = input ? input.value : '';
-    window.autoSavePlanMemo(dateStr, val);
-    triggerHaptic(15);
-    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-      var planMemosObj = window.RomanticVault.read('okbm_plan_memos', {});
-      window.RomanticVault.write('okbm_plan_memos', planMemosObj, true);
-    } else if (typeof syncUserDataToCloud === 'function') {
-      syncUserDataToCloud();
+
+    var planMemosObj = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_plan_memos', {})
+      : safeGetJSON('okbm_plan_memos', {});
+    if (!planMemosObj || typeof planMemosObj !== 'object') planMemosObj = {};
+
+    var trimmed = String(val || '').trim();
+    if (trimmed) {
+      planMemosObj[dateStr] = String(val);
+    } else {
+      delete planMemosObj[dateStr];
     }
-    if (typeof showToast === 'function') showToast('📝 [' + dateStr + '] 계획 메모가 저장되었습니다!', 'success');
+
+    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+      window.RomanticVault.write('okbm_plan_memos', planMemosObj, true);
+    } else {
+      localStorage.setItem('okbm_plan_memos', JSON.stringify(planMemosObj));
+      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+    }
+
+    triggerHaptic(15);
+    if (typeof showToast === 'function') showToast('[' + dateStr + '] 메모가 저장되었습니다.', 'success');
     window.renderPlanStage();
   };
 
@@ -3158,6 +3528,26 @@ window.saveCurrentPackingRecord = function() {
     triggerHaptic(8);
   };
 
+  window.removeIndividualPlanSpot = function(dateKey, spotName, e) {
+    if (e) e.stopPropagation();
+    var planSpots = safeGetJSON('okbm_plan_spots', {});
+    var list = planSpots[dateKey];
+    if (Array.isArray(list)) {
+      planSpots[dateKey] = list.filter(function(s) { return s && s.name !== spotName; });
+      if (planSpots[dateKey].length === 0) delete planSpots[dateKey];
+    } else if (list && list.name === spotName) {
+      delete planSpots[dateKey];
+    }
+    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+      window.RomanticVault.write('okbm_plan_spots', planSpots, true);
+    } else {
+      localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots));
+      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+    }
+    triggerHaptic(10);
+    window.renderPlanStage();
+  };
+
   window.selectPlanDestination = function(spotName, elevation) {
     window.__pendingPlanDestination = { name: spotName, elevation: elevation };
     triggerHaptic(12);
@@ -3175,22 +3565,6 @@ window.commitPlanDestination = function(dateKey) {
     if (modal) modal.remove();
 
     if (!dest) return;
-
-    // 1. 메모장 내용 누적 보존 (앞선 메모 유실 방지)
-    var planMemos = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-      ? window.RomanticVault.read('okbm_plan_memos', {})
-      : safeGetJSON('okbm_plan_memos', {});
-    var existingMemo = String(planMemos[dateKey] || '').trim();
-    var cleanSpotText = dest.name + (dest.elevation ? (' (' + dest.elevation + ')') : '');
-
-    if (!existingMemo.includes(dest.name)) {
-      planMemos[dateKey] = existingMemo ? (existingMemo + '\n' + cleanSpotText) : cleanSpotText;
-      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-        window.RomanticVault.write('okbm_plan_memos', planMemos, false);
-      } else {
-        localStorage.setItem('okbm_plan_memos', JSON.stringify(planMemos));
-      }
-    }
 
     // 2. 목적지 멀티 배열 누적 저장 (동일 날짜 복수 일정 완벽 보존)
     var planSpots = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
