@@ -57,6 +57,8 @@
         flex: 1 1 0% !important;
         width: 100% !important;
         height: 100% !important;
+        min-height: 100% !important;
+        max-height: 100% !important;
         overflow-y: auto !important;
         overflow-x: hidden !important;
         scroll-snap-type: y mandatory !important;
@@ -72,16 +74,13 @@
       .reel-page-snap {
         width: 100% !important;
         height: 100% !important;
+        min-height: 100% !important;
+        max-height: 100% !important;
         scroll-snap-align: start !important;
         scroll-snap-stop: always !important;
         position: relative !important;
         overflow: hidden !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: flex-start !important;
-        align-items: stretch !important;
-        padding-top: 0 !important;
-        padding-bottom: 2px !important;
+        display: block !important;
         box-sizing: border-box !important;
         flex-shrink: 0 !important;
         contain: strict !important;
@@ -92,37 +91,41 @@
       }
 
       .reel-header-row {
-        height: 48px !important;
-        padding: 0 12px !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: 56px !important;
+        padding: 0 14px !important;
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
-        background: #000000 !important;
-        flex-shrink: 0 !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.3) 70%, transparent 100%) !important;
+        z-index: 10 !important;
+        border-bottom: none !important;
         box-sizing: border-box !important;
+        pointer-events: auto !important;
       }
 
-   .reel-media-stage {
-        flex: 1 1 0% !important;
-        min-height: 0 !important;
+      .reel-media-stage {
+        position: absolute !important;
+        inset: 0 !important;
         width: 100% !important;
         height: 100% !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
-        justify-content: flex-start !important;
+        display: block !important;
         background: #000000 !important;
         overflow: hidden !important;
-        padding: 4px 8px 0 8px !important;
+        padding: 0 !important;
+        margin: 0 !important;
         box-sizing: border-box !important;
+        z-index: 1 !important;
       }
 
       .reel-media-stage > div,
       .reel-horizontal-track,
       .reel-horizontal-track > div,
       .reel-photo-target {
-        border-radius: 12px !important;
+        border-radius: 0 !important;
         overflow: hidden !important;
         transform: translateZ(0) !important;
         -webkit-transform: translateZ(0) !important;
@@ -190,15 +193,19 @@
       }
 
       .reel-bottom-interactive-bar {
-        margin-top: auto !important;
-        padding: 4px 16px 8px 16px !important;
+        position: absolute !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        padding: 24px 14px 10px 14px !important;
         box-sizing: border-box !important;
         display: flex !important;
         flex-direction: column !important;
-        gap: 3px !important;
-        flex-shrink: 0 !important;
-        background: #000000 !important;
+        gap: 4px !important;
+        background: linear-gradient(0deg, rgba(0, 0, 0, 0.88) 0%, rgba(0, 0, 0, 0.5) 65%, transparent 100%) !important;
         border-top: none !important;
+        z-index: 10 !important;
+        pointer-events: auto !important;
       }
 
       .reel-memo-fixed-box {
@@ -208,8 +215,9 @@
         line-height: 1.4em !important;
         font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, sans-serif !important;
         font-size: 0.78rem !important;
-        font-weight: 450 !important;
-        color: #e2e8f0 !important;
+        font-weight: 500 !important;
+        color: #ffffff !important;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) !important;
         word-break: break-all !important;
         display: -webkit-box !important;
         -webkit-line-clamp: 3 !important;
@@ -3513,14 +3521,32 @@
 
     var profile = safeGetJSON('user_profile', null);
     var myUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
-    if (!myUserId || myUserId === 'guest') return false;
+    var myNick = (profile && profile.nickname) ? String(profile.nickname).trim() : (localStorage.getItem('okbm_user_nick') || '');
 
     var rUserId = String(record.userId || record.user_id || '').trim();
+    var rAuthor = String(record.author || record.nick || record.nickname || '').trim();
+    var rId = String(record.id || '').trim();
+
     var cleanMy = myUserId.replace(/^kakao_/, '').trim();
     var cleanR = rUserId.replace(/^kakao_/, '').trim();
 
     if (cleanMy && cleanR && cleanMy === cleanR) {
       return true;
+    }
+
+    var localHistory = window.safeGetStorage('okbm_packing_history', []) || [];
+    var localSnaps = window.safeGetStorage('okbm_router_snaps', []) || [];
+    var isInMyDevice = localHistory.some(function(h) { return h && String(h.id).trim() === rId; }) ||
+                       localSnaps.some(function(s) { return s && String(s.id).trim() === rId; });
+
+    if (isInMyDevice) {
+      return true;
+    }
+
+    if (!cleanR || cleanR === 'guest' || cleanR.startsWith('user_')) {
+      if (myNick && rAuthor && myNick === rAuthor) {
+        return true;
+      }
     }
 
     return false;
@@ -4838,7 +4864,7 @@ if (isRouteTab) {
         var isSavedFeed = savedFeedsList.includes(String(record.id || '').trim());
 
        var headerBarHtml = isRouteTab ? routeOriginalHeaderHtml : (
-          '<div class="reel-header-row" style="height:56px !important; padding:0 14px !important; border-bottom:1px solid rgba(255,255,255,0.06) !important; margin-bottom:0 !important;">' +
+          '<div class="reel-header-row" style="height:56px !important; padding:0 14px !important; border:none !important; border-bottom:none !important; margin-bottom:0 !important;">' +
             '<button type="button" onclick="window.openNewRouterSnapModal(); triggerHaptic(12);" style="background:rgba(255,255,255,0.12); border:1.5px solid rgba(186,230,253,0.35); border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#ffffff; padding:0; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.6);" title="새 스냅 등록">' +
               '<svg viewBox="0 0 24 24" style="width:20px; height:20px; stroke:#ffffff; fill:none; stroke-width:2.4; stroke-linecap:round;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
             '</button>' +
@@ -4849,32 +4875,30 @@ if (isRouteTab) {
           '</div>'
         );
 
-        var mediaStagePadding = 'padding:4px 8px 0 8px !important;';
-        return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap" data-reel-idx="' + idx + '" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '" style="position:relative; padding-top:0 !important;">' +
-          headerBarHtml +
-          '<div class="reel-media-stage" style="' + mediaStagePadding + ' margin-top:0 !important;">' +
-            '<div style="width:100% !important; height:100% !important; max-height:100% !important; position:relative; overflow:hidden; background:#000000; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start;">' +
+        return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap" data-reel-idx="' + idx + '" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '">' +
+          '<div class="reel-media-stage">' +
+            '<div style="width:100% !important; height:100% !important; position:relative; overflow:hidden; background:#000000;">' +
               centerDDayOverlayHtml +
               (isRouteTab ? (
-                '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000; border-radius:12px !important;">' +
+                '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000;">' +
                   (totalPhotosCount > 0 ? (
-                    '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:stretch !important; justify-content:flex-start !important; padding:0 !important; border-radius:12px !important; box-sizing:border-box;">' +
+                    '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000;">' +
                       '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \'' + cardId + '\');">' + horizontalSlidesHtml + '</div>' + dotsHtml +
                     '</div>' +
-                    '<div class="postcard-face-back" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:8px; border-radius:12px !important; box-sizing:border-box;">' +
+                    '<div class="postcard-face-back" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:8px; box-sizing:border-box;">' +
                       studioCardMarkup +
                     '</div>'
                   ) : (
-                    '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:8px; border-radius:12px !important; box-sizing:border-box;">' +
+                    '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:8px; box-sizing:border-box;">' +
                       studioCardMarkup +
                     '</div>' +
-                    '<div class="postcard-face-back" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:stretch !important; justify-content:flex-start !important; padding:0 !important; border-radius:12px !important; box-sizing:border-box;">' +
+                    '<div class="postcard-face-back" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000;">' +
                       '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \'' + cardId + '\');">' + horizontalSlidesHtml + '</div>' + dotsHtml +
                     '</div>'
                   )) +
                 '</div>'
               ) : (
-                '<div style="position:absolute !important; inset:0 !important; width:100% !important; height:100% !important; background:#000000; overflow:hidden !important; border-radius:12px !important; display:block !important; transform:translateZ(0); -webkit-transform:translateZ(0);">' +
+                '<div style="position:absolute !important; inset:0 !important; width:100% !important; height:100% !important; background:#000000; overflow:hidden !important; display:block !important; transform:translateZ(0); -webkit-transform:translateZ(0);">' +
                   '<div class="reel-horizontal-track" style="width:100% !important; height:100% !important; display:flex !important;" onscroll="window.updateCarouselFeedState(this, \'' + cardId + '\');">' +
                     horizontalSlidesHtml +
                   '</div>' +
@@ -4884,7 +4908,9 @@ if (isRouteTab) {
             '</div>' +
           '</div>' +
 
-          '<div class="reel-bottom-interactive-bar" style="padding-top:4px !important;">' +
+          headerBarHtml +
+
+          '<div class="reel-bottom-interactive-bar">' +
             (!isRouteTab ? routerBottomMetaHtml : '') +
             '<div style="display:flex; justify-content:space-between; align-items:center; min-height:32px;">' +
               '<div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">' +
@@ -4903,7 +4929,6 @@ if (isRouteTab) {
               bottomToolsHtml +
             '</div>' +
 
-            '<!-- 📐 고정 3줄 메모장 (CLS 0% 보장) -->' +
             '<div id="feedPhotoMemoText_' + cardId + '" class="reel-memo-fixed-box">' +
               cleanMemoContentHtml +
             '</div>' +
@@ -4969,12 +4994,13 @@ if (isRouteTab) {
     }
   };
 
-  // 🚀 [낭만보관함 모달 오픈 / 클로즈 - 마스터 독바와 1:1 결합 & 최상위 레이어 보장]
   window.openHistoryModal = function() {
+    if (typeof window.forceUpdateStableVh === 'function') {
+      window.forceUpdateStableVh();
+    }
     var modal = document.getElementById('romanticHistoryModal');
     var isAlreadyOpen = Boolean(modal && modal.style.display === 'flex');
 
-    // 🔄 [하단 독바 재터치 토글]: 이미 보관함이 열려 있으면 토스트 없이 낭만루트 ⇄ 낭만루터 즉각 전환
     if (isAlreadyOpen) {
       triggerHaptic(10);
       var currentTab = window.activeHistoryFeedTab || 'route';
@@ -4989,14 +5015,14 @@ if (isRouteTab) {
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'romanticHistoryModal';
-      modal.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; background:#000000; z-index:1000005 !important; justify-content:center; align-items:stretch; width:100% !important; max-width:100% !important; overflow:hidden !important; touch-action:pan-y !important; transform:translateZ(0); -webkit-transform:translateZ(0); contain:paint layout !important; box-sizing:border-box; overscroll-behavior:none !important;';
+      modal.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)) !important; width:100% !important; max-width:100% !important; height:auto !important; max-height:none !important; background:#000000; z-index:1000005 !important; justify-content:center; align-items:stretch; overflow:hidden !important; touch-action:pan-y !important; transform:translateZ(0); -webkit-transform:translateZ(0); box-sizing:border-box; overscroll-behavior:none !important;';
       modal.innerHTML = '<div class="romantic-history-content" style="width:100% !important; max-width:480px !important; margin:0 auto; height:100%; max-height:100%; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; box-sizing:border-box;"></div>';
       document.body.appendChild(modal);
     } else {
       modal.style.setProperty('top', '0', 'important');
-      modal.style.removeProperty('bottom');
-      modal.style.setProperty('height', 'calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px))', 'important');
-      modal.style.setProperty('max-height', 'calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px))', 'important');
+      modal.style.setProperty('bottom', 'calc(56px + env(safe-area-inset-bottom, 8px))', 'important');
+      modal.style.setProperty('height', 'auto', 'important');
+      modal.style.removeProperty('max-height');
       modal.style.setProperty('overscroll-behavior', 'none', 'important');
     }
 
