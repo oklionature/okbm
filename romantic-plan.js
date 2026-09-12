@@ -798,7 +798,7 @@ var totalKg = (totalGrams / 1000).toFixed(2);
     modal.onclick = function(e) { if (e.target === modal) window.closeGearPresetModal(); };
 
     modal.innerHTML = `
-      <div style="width:100%; max-width:480px; margin:0 auto; height:100dvh; display:flex; flex-direction:column; padding:calc(12px + env(safe-area-inset-top, 0px)) 14px calc(64px + env(safe-area-inset-bottom, 0px)) 14px; box-sizing:border-box;">
+      <div style="width:100%; max-width:480px; margin:0 auto; height:100%; height:calc(var(--vh, 1vh) * 100); display:flex; flex-direction:column; padding:calc(12px + env(safe-area-inset-top, 0px)) 14px calc(64px + env(safe-area-inset-bottom, 0px)) 14px; box-sizing:border-box;">
         <div style="flex-shrink:0; display:flex; flex-direction:column; gap:6px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08);">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:6px;">
@@ -3787,19 +3787,21 @@ window.commitPlanDestination = function(dateKey) {
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'romanticPlanModal';
-      modal.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:#000000; z-index:1000005 !important; justify-content:center; align-items:stretch; width:100% !important; max-width:100% !important; height:auto !important; overflow:hidden !important; touch-action:pan-y !important; transform:translateZ(0); -webkit-transform:translateZ(0); contain:paint layout !important; box-sizing:border-box;';
+      modal.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; background:#000000; z-index:1000005 !important; justify-content:center; align-items:stretch; width:100% !important; max-width:100% !important; overflow:hidden !important; touch-action:pan-y !important; transform:translateZ(0); -webkit-transform:translateZ(0); contain:paint layout !important; box-sizing:border-box;';
       modal.innerHTML = '<div class="romantic-plan-content" style="width:100% !important; max-width:480px !important; margin:0 auto; height:100%; max-height:100%; display:flex; flex-direction:column; justify-content:space-between; overflow-x:hidden !important; overflow-y:hidden !important; box-sizing:border-box;"></div>';
       document.body.appendChild(modal);
     } else {
       modal.style.setProperty('top', '0', 'important');
-      modal.style.setProperty('bottom', 'calc(56px + env(safe-area-inset-bottom, 8px))', 'important');
-      modal.style.setProperty('height', 'auto', 'important');
+      modal.style.removeProperty('bottom');
+      modal.style.setProperty('height', 'calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px))', 'important');
+      modal.style.setProperty('max-height', 'calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px))', 'important');
     }
 
     modal.style.setProperty('display', 'flex', 'important');
     modal.style.setProperty('z-index', '1000005', 'important');
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
+    document.body.classList.add('plan-modal-open');
 
     if (typeof window.ensureMasterBottomDock === 'function') {
       window.ensureMasterBottomDock('plan');
@@ -3824,6 +3826,7 @@ window.commitPlanDestination = function(dateKey) {
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
     }
+    document.body.classList.remove('plan-modal-open');
     var isMap = (typeof window.location !== 'undefined') && window.location.pathname.includes('map.html');
     if (typeof window.ensureMasterBottomDock === 'function') {
       window.ensureMasterBottomDock(isMap ? 'map' : 'router');

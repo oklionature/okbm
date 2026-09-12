@@ -2453,7 +2453,7 @@
 
     var modalEl = document.createElement('div');
     modalEl.id = 'userFeedCollectionModal';
-    modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); width:100%; max-width:100%; height:auto !important; background:#000000; z-index:1000010 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; width:100%; max-width:100%; background:#000000; z-index:1000010 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     window.__renderUserModalCards = function() {
       var container = document.getElementById('userModalCardsContainer');
@@ -2612,7 +2612,7 @@
 
     var feedModal = document.createElement('div');
     feedModal.id = 'singleTripFeedModal';
-    feedModal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); width:100%; max-width:100%; height:auto !important; background:#000000; z-index:1000010 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    feedModal.style.cssText = 'position:fixed; top:0; left:0; right:0; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; width:100%; max-width:100%; background:#000000; z-index:1000010 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     feedModal.innerHTML = `
       <div style="position:fixed; top:calc(10px + env(safe-area-inset-top, 0px)); left:0; right:0; max-width:440px; margin:0 auto; padding:0 12px; display:flex; justify-content:space-between; align-items:center; z-index:1000025; pointer-events:none;">
@@ -3603,7 +3603,7 @@ window.__currentSwipePhotoIndex = 0;
 
     var formModal = document.createElement('div');
     formModal.id = 'modalRichAfterTrip';
-    formModal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); width:100%; max-width:100%; height:auto !important; background:#000000; z-index:1000010 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    formModal.style.cssText = 'position:fixed; top:0; left:0; right:0; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; width:100%; max-width:100%; background:#000000; z-index:1000010 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     formModal.innerHTML = `
       <!-- 1. 상단 고정 헤더: 뒤로가기 + 박지/일상 뱃지 + 수정 완료 -->
@@ -4989,13 +4989,14 @@ if (isRouteTab) {
     if (!modal) {
       modal = document.createElement('div');
       modal.id = 'romanticHistoryModal';
-      modal.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:#000000; z-index:1000005 !important; justify-content:center; align-items:stretch; width:100% !important; max-width:100% !important; height:auto !important; overflow:hidden !important; touch-action:pan-y !important; transform:translateZ(0); -webkit-transform:translateZ(0); contain:paint layout !important; box-sizing:border-box; overscroll-behavior:none !important;';
+      modal.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; background:#000000; z-index:1000005 !important; justify-content:center; align-items:stretch; width:100% !important; max-width:100% !important; overflow:hidden !important; touch-action:pan-y !important; transform:translateZ(0); -webkit-transform:translateZ(0); contain:paint layout !important; box-sizing:border-box; overscroll-behavior:none !important;';
       modal.innerHTML = '<div class="romantic-history-content" style="width:100% !important; max-width:480px !important; margin:0 auto; height:100%; max-height:100%; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; box-sizing:border-box;"></div>';
       document.body.appendChild(modal);
     } else {
       modal.style.setProperty('top', '0', 'important');
-      modal.style.setProperty('bottom', 'calc(56px + env(safe-area-inset-bottom, 8px))', 'important');
-      modal.style.setProperty('height', 'auto', 'important');
+      modal.style.removeProperty('bottom');
+      modal.style.setProperty('height', 'calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px))', 'important');
+      modal.style.setProperty('max-height', 'calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px))', 'important');
       modal.style.setProperty('overscroll-behavior', 'none', 'important');
     }
 
@@ -5003,6 +5004,7 @@ if (isRouteTab) {
     modal.style.setProperty('z-index', '1000005', 'important');
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
+    document.body.classList.add('history-modal-open');
 
     if (typeof window.ensureMasterBottomDock === 'function') {
       window.ensureMasterBottomDock('history');
@@ -5031,6 +5033,7 @@ if (isRouteTab) {
       document.documentElement.style.overflow = '';
       document.body.style.overflow = '';
     }
+    document.body.classList.remove('history-modal-open');
     var isMap = (typeof window.location !== 'undefined') && window.location.pathname.includes('map.html');
     if (typeof window.ensureMasterBottomDock === 'function') {
       window.ensureMasterBottomDock(isMap ? 'map' : 'router');

@@ -85,10 +85,20 @@
       overflow: hidden !important;
     }
     body.pack-share-open .netflix-integrated-header,
-    body.pack-share-open #mainDualDockContainer {
+    body.pack-share-open #mainDualDockContainer,
+    body.plan-modal-open .netflix-feed-container,
+    body.plan-modal-open .netflix-integrated-header,
+    body.history-modal-open .netflix-feed-container,
+    body.history-modal-open .netflix-integrated-header {
       display: none !important;
       visibility: hidden !important;
       pointer-events: none !important;
+    }
+    #romanticMasterBottomDock {
+      display: flex !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+      z-index: 2147483647 !important;
     }
 
     /* 🏛️ [공통 최적화 레이아웃 클래스군] */
@@ -1370,10 +1380,8 @@
         </div>
       </div>
    </section>
+  </main>
 
-  <!-- 🎨 엽서 모달은 templates.js SSOT 엔진이 동적 생성 관리 -->
-
- <!-- 📱 전역 유일 마스터 하단 독바 컨테이너 (romantic-sync.js SSOT 단일 관리) -->
   <div id="romanticMasterBottomDock" class="mobile-bottom-dock notranslate"></div>
   <script>
     (function syncEarlyDockActive() {
