@@ -1032,7 +1032,7 @@
  <main class="netflix-feed-container notranslate">
 
  <section class="insta-stage-wrap" style="padding-top:6px !important; margin-top:0 !important; gap:4px !important;">
-  <!-- 🌟 우측 밀착 타이틀: 골드 낭만별 + 오늘의 낭만 스팟 + (순번) -->
+  <!-- 🌟 우측 밀착 타이틀: 골드 낭만별 + 이주의 낭만 스팟 + (순번) -->
   <div style="width:100%; display:flex; justify-content:flex-end; align-items:center; gap:5px; margin-bottom:2px; padding-right:4px; box-sizing:border-box; line-height:1;">
     <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:#fde047; stroke:#fde047; filter:drop-shadow(0 0 5px rgba(253,224,71,0.8)); flex-shrink:0;">
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -1605,6 +1605,9 @@
     }
 
     async function getRealArchiveRecordsAsync() {
+      var curProfile = safeGetJSON('user_profile', null);
+      var curUserId = curProfile && curProfile.id ? String(curProfile.id).trim() : '';
+
       try {
         var idbPhotos = await fetchFromIndexedDBDirect('okbm_phone_photos_map');
         if (idbPhotos && typeof idbPhotos === 'object') {
@@ -1613,7 +1616,12 @@
         }
         var idbHistory = await fetchFromIndexedDBDirect('okbm_packing_history');
         if (Array.isArray(idbHistory) && idbHistory.length > 0) {
-          window.interactiveHistory = idbHistory;
+          var filteredById = idbHistory.filter(function(h) {
+            if (!h) return false;
+            if (!curUserId) return true;
+            return !h.userId || h.userId === curUserId;
+          });
+          window.interactiveHistory = filteredById;
         }
       } catch(e) {}
 
@@ -3153,7 +3161,10 @@ var adBannersHtml = `
       var now = new Date();
       now.setHours(0,0,0,0);
 
+      var cachedTombs = new Set(safeGetJSON('okbm_tombstone_trips', []));
       var activeTrips = (window.TRIP_JOINS_DATABASE || []).filter(function(t) {
+        if (!t || !t.tripId) return false;
+        if (cachedTombs.has(String(t.tripId).trim())) return false;
         var dInfo = getTripDDayBadge(t.date);
         return !dInfo.isExpired;
       }).sort(function(a, b) {
@@ -3289,20 +3300,28 @@ var adBannersHtml = `
 
     window.__tombstoneTripIds = window.__tombstoneTripIds || new Set();
 
-    window.deleteTripFromCloudSheet = function(tripId, e) {
-      if (e) e.stopPropagation();
-      if (!confirm('이 원정대를 삭제하시겠습니까?\n공용 시트와 내 낭만플랜 달력 일정에서 모두 삭제됩니다.')) return;
+  window.deleteTripFromCloudSheet = function(tripId, e, skipConfirm) {
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+      if (!skipConfirm && !confirm('이 원정대를 삭제하시겠습니까?\n공용 시트와 내 낭만플랜 달력 일정에서 모두 삭제됩니다.')) return;
 
       triggerHaptic(15);
       var gasUrl = window.GAS_API_URL || GAS_API_URL;
       var targetIdStr = String(tripId).trim();
+      console.log('🗑️ [Trip] 원정대 연동 삭제 실행 ID:', targetIdStr);
 
       window.__tombstoneTripIds.add(targetIdStr);
+      try {
+        var tombArr = safeGetJSON('okbm_tombstone_trips', []);
+        if (!tombArr.includes(targetIdStr)) {
+          tombArr.push(targetIdStr);
+          localStorage.setItem('okbm_tombstone_trips', JSON.stringify(tombArr));
+        }
+      } catch(err) {}
+
       window.TRIP_JOINS_DATABASE = (window.TRIP_JOINS_DATABASE || []).filter(function(t) { 
         return String(t.tripId).trim() !== targetIdStr; 
       });
-      renderHomeTripJoinSlider();
-
+      if (typeof renderHomeTripJoinSlider === 'function') renderHomeTripJoinSlider();
       // 🗑️ [낭만플랜 개인 달력에서도 해당 원정대 박지/메모 완전 소거]
       var planSpots = safeGetJSON('okbm_plan_spots', {});
       Object.keys(planSpots).forEach(function(dKey) {
@@ -3343,6 +3362,9 @@ var adBannersHtml = `
         var csvText = await res.text();
         if (typeof Papa === 'undefined') return;
 
+        var cachedTombs = safeGetJSON('okbm_tombstone_trips', []);
+        window.__tombstoneTripIds = new Set(Array.isArray(cachedTombs) ? cachedTombs : []);
+
         Papa.parse(csvText, {
           header: true,
           skipEmptyLines: true,
@@ -3359,7 +3381,7 @@ var adBannersHtml = `
 
                 var tId = String(row.tripId || ('trip_' + spot.replace(/\s+/g, '') + '_' + dateStr.replace(/\D/g, ''))).trim();
 
-                if (window.__tombstoneTripIds && window.__tombstoneTripIds.has(tId)) return;
+                if (window.__tombstoneTripIds.has(tId)) return;
 
                 var localPhotos = savedMap[tId];
 
@@ -4394,7 +4416,10 @@ var adBannersHtml = `
       var old = document.getElementById('tripJoinListModal');
       if (old) old.remove();
 
+      var cachedTombs = new Set(safeGetJSON('okbm_tombstone_trips', []));
       var list = (window.TRIP_JOINS_DATABASE || []).filter(function(t) {
+        if (!t || !t.tripId) return false;
+        if (cachedTombs.has(String(t.tripId).trim())) return false;
         return !getTripDDayBadge(t.date).isExpired;
       });
 
@@ -4707,10 +4732,10 @@ var adBannersHtml = `
     });
   </script>
 
-  <script src="romantic-sync.js?v=2.5.1"></script>
-  <script src="templates.js?v=2.5.0"></script>
-  <script src="romantic-history.js?v=2.5.0"></script>
-  <script src="romantic-plan.js?v=2.5.0"></script>
+  <script src="romantic-sync.js?v=2.5.2"></script>
+  <script src="templates.js?v=2.5.1"></script>
+  <script src="romantic-history.js?v=2.5.2"></script>
+  <script src="romantic-plan.js?v=2.5.2"></script>
 
   <script>
 

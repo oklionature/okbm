@@ -796,12 +796,10 @@
     var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
     var userMemo = (r && r.memo !== undefined && r.memo !== null) ? String(r.memo).trim() : '';
 
-   // 🌿 특정 종목 및 장비명 제목 치환 배제 ➔ 순수 스팟명 또는 '나의 힐링 스팟'
-    var spotTitle = (r && (r.spot || r.spotName)) ? String(r.spot || r.spotName).trim() : '나의 힐링 스팟';
+   var spotTitle = (r && (r.spot || r.spotName)) ? String(r.spot || r.spotName).trim() : '나의 힐링 스팟';
 
-   // 👤 카카오 로그인 프로필 닉네임 1순위 바인딩
-    var profile = safeGetJSON('user_profile', null);
-    var currentAuthor = (r && r.author) ? r.author : ((profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만루터'));
+    var rawAuthor = r ? (r.author || r.nickname || r.authorName || r.nick) : '';
+    var currentAuthor = (rawAuthor && String(rawAuthor).trim()) ? String(rawAuthor).trim() : '낭만루터';
 
     var isSnapRecord = Boolean(
       (recordId && String(recordId).startsWith('snap_')) ||
@@ -810,8 +808,11 @@
     var resolvedFeedType = isSnapRecord ? 'router' : 'route';
 
     var resolvedAuthorPhoto = (r && (r.authorPhoto || r.author_photo || r.photoUrl || r.user_photo || r.userPhoto)) ? String(r.authorPhoto || r.author_photo || r.photoUrl || r.user_photo || r.userPhoto).trim() : '';
+    var resolvedUserId = (r && (r.userId || r.user_id)) ? String(r.userId || r.user_id).trim() : '';
+
     return {
       id: recordId,
+      userId: resolvedUserId,
       feedType: resolvedFeedType,
       author: currentAuthor,
       authorPhoto: resolvedAuthorPhoto,
@@ -3481,20 +3482,13 @@
 
     var profile = safeGetJSON('user_profile', null);
     var myUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
-    var myNick = (profile && profile.nickname) ? String(profile.nickname).trim() : (localStorage.getItem('okbm_user_nick') || '');
+    if (!myUserId || myUserId === 'guest') return false;
 
     var rUserId = String(record.userId || record.user_id || '').trim();
-    var rAuthor = String(record.author || record.nick || record.nickname || '').trim();
+    var cleanMy = myUserId.replace(/^kakao_/, '').trim();
+    var cleanR = rUserId.replace(/^kakao_/, '').trim();
 
-    // 1. 카카오 고유 ID 1:1 일치
-    if (myUserId && rUserId && myUserId === rUserId) return true;
-
-    // 2. 닉네임 1:1 일치 (단, 공용 기본 닉네임은 탈취 차단)
-    var isGeneric = (!rAuthor || rAuthor === '낭만루터' || rAuthor === '낭만백패커' || rAuthor === '게스트' || rAuthor === 'guest');
-    if (!isGeneric && myNick && rAuthor && myNick === rAuthor) return true;
-
-    // 3. 비로그인 오프라인 임시글만 허용
-    if (!record.isPublished && record.id && String(record.id).startsWith('pack_temp_')) {
+    if (cleanMy && cleanR && cleanMy === cleanR) {
       return true;
     }
 
@@ -3973,8 +3967,8 @@ window.__currentSwipePhotoIndex = 0;
         return (fId && fId === myId) || (myNick && fNick === myNick);
       }).map(function(f, idx) {
         var norm = window.normalizeHistoryRecord(f, idx);
-        norm.userId = myId;
-        norm.author = myNick;
+        norm.userId = String(f.user_id || f.userId || myId).trim();
+        norm.author = String(f.author || f.nick || f.nickname || myNick).trim();
         norm.isPublished = true;
         return norm;
       });
@@ -4576,17 +4570,15 @@ window.renderHistoryStage = function(isLoading) {
         var routerBottomMetaHtml = '';
 
 if (isRouteTab) {
-          // 🧭 [낭만루트]: 등록자 프로필 사진(SSOT) 100% 범용 직통 바인딩
-          var myMasterCover = localStorage.getItem('okbm_hero_cover_url') || ((profile && (profile.heroCoverUrl || profile.photoUrl)) ? (profile.heroCoverUrl || profile.photoUrl) : '');
-          var authorAvatarUrl = isMyRecord
-            ? (myMasterCover || record.authorPhoto || '')
+          var targetAvatarUrl = (typeof window.resolveUserMasterPhoto === 'function')
+            ? window.resolveUserMasterPhoto(recordUserId, authorName, record.authorPhoto)
             : (record.authorPhoto || '');
 
-          var hasValidImg = Boolean(authorAvatarUrl && String(authorAvatarUrl).startsWith('http'));
+          var hasValidImg = Boolean(targetAvatarUrl && String(targetAvatarUrl).startsWith('http'));
 
           var avatarMarkup = hasValidImg
-            ? '<img src="' + escapeHtml(authorAvatarUrl) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />'
-            : '<div style="width:100%; height:100%; background:#090d14; display:flex; align-items:center; justify-content:center;"><svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
+            ? '<img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="' + escapeHtml(targetAvatarUrl) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />'
+            : '<div style="width:100%; height:100%; background:#090d14; display:flex; align-items:center; justify-content:center;"><img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="" style="width:100%; height:100%; object-fit:cover; display:none;" /><svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
 
           var planBadgeMarkup = '';
           var centerDDayOverlayHtml = '';

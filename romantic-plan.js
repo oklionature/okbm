@@ -3374,11 +3374,9 @@ window.saveCurrentPackingRecord = function() {
     }, 50);
   };
 
-// 🗑️ [날짜 전체 일정 삭제 엔진 - okbm_plan_spots 박제 원천 차단]
-  window.clearEntireDaySchedule = function(dateKey) {
+window.clearEntireDaySchedule = function(dateKey) {
     if (!confirm('[' + dateKey + '] 일정을 완전히 지우시겠습니까?\n달력의 표시, 메모, 등록된 목적지가 모두 함께 삭제됩니다.')) return;
 
-    // 1. 계획 메모 삭제
     var planMemos = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
       ? window.RomanticVault.read('okbm_plan_memos', {})
       : safeGetJSON('okbm_plan_memos', {});
@@ -3389,16 +3387,40 @@ window.saveCurrentPackingRecord = function() {
       localStorage.setItem('okbm_plan_memos', JSON.stringify(planMemos));
     }
 
-    // 2. 🛡️ [박제 원천 차단] 독립 목적지 데이터 완전 파기
     var planSpots = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
       ? window.RomanticVault.read('okbm_plan_spots', {})
       : safeGetJSON('okbm_plan_spots', {});
+    var daySpots = planSpots[dateKey];
+    var tripsToDelete = [];
+    if (Array.isArray(daySpots)) {
+      daySpots.forEach(function(s) { if (s && s.tripId) tripsToDelete.push(s); });
+    } else if (daySpots && daySpots.tripId) {
+      tripsToDelete.push(daySpots);
+    }
     delete planSpots[dateKey];
     if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
       window.RomanticVault.write('okbm_plan_spots', planSpots, false);
     } else {
       localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots));
     }
+
+    var idsToPurge = new Set();
+    tripsToDelete.forEach(function(tr) {
+      if (tr && tr.tripId) idsToPurge.add(String(tr.tripId).trim());
+    });
+    if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
+      var dTarget = String(dateKey).replace(/[-/]/g, '.');
+      window.TRIP_JOINS_DATABASE.forEach(function(t) {
+        if (t && t.date && String(t.date).replace(/[-/]/g, '.') === dTarget && t.tripId) {
+          idsToPurge.add(String(t.tripId).trim());
+        }
+      });
+    }
+    idsToPurge.forEach(function(tId) {
+      if (typeof window.deleteTripFromCloudSheet === 'function') {
+        window.deleteTripFromCloudSheet(tId, null, true);
+      }
+    });
 
     // 3. 보관함 패킹 기록 삭제
     var historyList = (window.interactiveHistory && Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0)
@@ -3530,20 +3552,92 @@ window.saveCurrentPackingRecord = function() {
 
   window.removeIndividualPlanSpot = function(dateKey, spotName, e) {
     if (e) e.stopPropagation();
+
     var planSpots = safeGetJSON('okbm_plan_spots', {});
     var list = planSpots[dateKey];
+    var targetSpotObj = null;
+
+    if (Array.isArray(list)) {
+      targetSpotObj = list.find(function(s) { return s && s.name === spotName; });
+    } else if (list && list.name === spotName) {
+      targetSpotObj = list;
+    }
+
+    var isExpedition = Boolean(targetSpotObj && (targetSpotObj.tripId || targetSpotObj.isTrip));
+    var isHostUser = false;
+    var matchedTrip = null;
+
+    if (isExpedition && Array.isArray(window.TRIP_JOINS_DATABASE)) {
+      var dTarget = String(dateKey).replace(/[-/]/g, '.');
+      matchedTrip = window.TRIP_JOINS_DATABASE.find(function(t) {
+        if (!t || !t.date || !t.spotName) return false;
+        var tD = String(t.date).replace(/[-/]/g, '.');
+        var sMatch = t.spotName.includes(spotName) || spotName.includes(t.spotName);
+        return tD === dTarget && (sMatch || (targetSpotObj.tripId && t.tripId === targetSpotObj.tripId));
+      });
+    }
+
+    var profile = safeGetJSON('user_profile', null);
+    var curNick = profile ? String(profile.nickname || '').trim() : '';
+
+    if (isExpedition) {
+      if (targetSpotObj && targetSpotObj.isHost === true) isHostUser = true;
+      if (matchedTrip && curNick && matchedTrip.authorName === curNick) isHostUser = true;
+    }
+
+    var confirmMsg = isExpedition
+      ? (isHostUser ? '[' + spotName + '] 주최한 원정대입니다. 모집을 취소하고 완전히 삭제하시겠습니까?' : '[' + spotName + '] 원정대 참가를 취소하시겠습니까?')
+      : '[' + spotName + '] 일정을 삭제하시겠습니까?';
+
+    if (!confirm(confirmMsg)) return;
+
     if (Array.isArray(list)) {
       planSpots[dateKey] = list.filter(function(s) { return s && s.name !== spotName; });
       if (planSpots[dateKey].length === 0) delete planSpots[dateKey];
     } else if (list && list.name === spotName) {
       delete planSpots[dateKey];
     }
+
     if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
       window.RomanticVault.write('okbm_plan_spots', planSpots, true);
     } else {
       localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots));
-      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
     }
+
+    var planMemos = safeGetJSON('okbm_plan_memos', {});
+    var curMemo = String(planMemos[dateKey] || '');
+    if (curMemo) {
+      var lines = curMemo.split('\n').filter(function(line) {
+        var l = line.trim();
+        if (!l || l === '---') return false;
+        if (l.includes(spotName)) return false;
+        if (l.includes('[낭만 원정대') && (l.includes(spotName) || isExpedition)) return false;
+        return true;
+      });
+      var newMemo = lines.join('\n').trim();
+      if (newMemo) planMemos[dateKey] = newMemo;
+      else delete planMemos[dateKey];
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_plan_memos', planMemos, true);
+      } else {
+        localStorage.setItem('okbm_plan_memos', JSON.stringify(planMemos));
+      }
+    }
+
+    var tripIdToHandle = (targetSpotObj && targetSpotObj.tripId) || (matchedTrip && matchedTrip.tripId);
+    if (isExpedition && tripIdToHandle) {
+      if (isHostUser) {
+        if (typeof window.deleteTripFromCloudSheet === 'function') {
+          window.deleteTripFromCloudSheet(tripIdToHandle, null, true);
+        }
+      } else {
+        if (typeof window.cancelTripJoin === 'function') {
+          window.cancelTripJoin(tripIdToHandle);
+        }
+      }
+    }
+
+    if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(true);
     triggerHaptic(10);
     window.renderPlanStage();
   };

@@ -374,6 +374,29 @@ window.RomanticVault = window.RomanticVault || {
     this.isHydrating = true;
     try {
       var cloudData = await loadUserDataFromCloud(userId);
+      if (!cloudData) {
+        var defaultVaultKeys = [
+          'okbm_hero_cover_url', 'okbm_packing_history', 'okbm_router_snaps',
+          'okbm_phone_photos_map', 'okbm_trip_photos_map', 'okbm_selected_gears_multi',
+          'okbm_favorite_gears', 'okbm_custom_gears', 'okbm_gear_presets',
+          'okbm_gear_meta', 'okbm_bookmarks', 'okbm_visited', 'okbm_memos',
+          'okbm_plan_memos', 'okbm_plan_spots', 'okbm_my_proposals'
+        ];
+        defaultVaultKeys.forEach(function(k) { localStorage.removeItem(k); });
+        window.__memoryStore = {};
+        window.packingHistoryList = [];
+        window.interactiveHistory = [];
+        window.userBookmarks = new Set();
+        window.userVisited = new Set();
+        window.userMemos = {};
+        window.selectedGearMap = {};
+        window.favoriteGearSet = new Set();
+        if (typeof window.applyMasterCoverPhotoToAllUI === 'function') {
+          window.applyMasterCoverPhotoToAllUI('');
+        }
+        this.isHydrated = true;
+        return null;
+      }
       if (cloudData) {
         if (cloudData.bookmarks && Array.isArray(cloudData.bookmarks)) {
           this.write('okbm_bookmarks', cloudData.bookmarks, false);
@@ -390,9 +413,9 @@ window.RomanticVault = window.RomanticVault || {
     if (cloudData.packHistory && Array.isArray(cloudData.packHistory)) {
           var deletedIds = safeGetJSON('okbm_deleted_record_ids', []);
           
-          // 🛑 1. 서버(R2/시트) 정본에서 삭제 표시된 글과 낭만루터 스냅 완벽 배제 (순수 루트만 보존)
           var cleanHist = cloudData.packHistory.filter(function(h) {
             if (!h || h.isDeleted || deletedIds.includes(String(h.id).trim())) return false;
+            if (h.userId && String(h.userId).trim() !== String(userId).trim()) return false;
             return h.feedType !== 'router' && !String(h.id).startsWith('snap_');
           });
 
@@ -605,6 +628,8 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
     gearMeta: currentGearMeta
   };
 
+  var myProfilePhoto = (profile && profile.photoUrl && typeof profile.photoUrl === 'string' && profile.photoUrl.startsWith('http')) ? profile.photoUrl : '';
+
   var payload = {
     action: 'SAVE_USER_DATA',
     userId: userId,
@@ -614,7 +639,8 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
     forcePackSync: shouldSyncPackHistory,
     createdAt: (profile && profile.createdAt) ? profile.createdAt : getFormattedNow(),
     lastNicknameChangedAt: profile ? (Number(profile.lastNicknameChangedAt) || 0) : 0,
-    heroCoverUrl: localStorage.getItem('okbm_hero_cover_url') || ((profile && (profile.heroCoverUrl || profile.photoUrl)) ? (profile.heroCoverUrl || profile.photoUrl) : ''),
+    heroCoverUrl: myProfilePhoto,
+    photoUrl: myProfilePhoto,
     bookmarks: safeGetJSON('okbm_bookmarks', []),
     visited: safeGetJSON('okbm_visited', []),
     memos: safeGetJSON('okbm_memos', {}),
@@ -736,14 +762,28 @@ window._selectedReportYear = String(new Date().getFullYear());
 
 // [공통 헬퍼] 낭만루트(순수 아웃도어 패킹 정본) 단일 추출기 (루터 일상 피드 원천 배제)
 window._getRomanticRouteOutdoorLogs = function() {
+  var profile = safeGetJSON('user_profile', null);
+  var curUserId = (profile && profile.id) ? String(profile.id).replace(/\D/g, '') : '';
+  var curNick = (profile && profile.nickname) ? String(profile.nickname).trim() : '';
+
   var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
     ? window.RomanticVault.read('okbm_packing_history', [])
     : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
 
   return (logs || []).filter(function(r) {
     if (!r || r.isDeleted === true) return false;
+    if (!curUserId && !curNick) return false;
+
+    var rUid = String(r.userId || r.user_id || '').replace(/\D/g, '');
+    var rAuthor = String(r.author || r.nickname || r.nick || '').trim();
+
+    var isMyLog = false;
+    if (curUserId && rUid && curUserId === rUid) isMyLog = true;
+    else if (curNick && rAuthor && curNick === rAuthor) isMyLog = true;
+    else if (!rUid && !rAuthor) isMyLog = true;
+
+    if (!isMyLog) return false;
     if (String(r.id || '').startsWith('pack_temp_')) return false;
-    // 1. 일상(daily) 및 스냅 피드 원천 배제
     if (r.feedType === 'daily' || r.feedType === 'snap') return false;
     
     // 2. 낭만루트 정식 아웃도어 스펙 검증 (배낭 무게, 장비 슬롯 아이템, 정식 템플릿 중 필수 보유)
@@ -2290,7 +2330,11 @@ window.refreshMyReportFullStats = function() {
   var headerNick = document.getElementById('reportHeaderCurrentNick');
   if (headerNick) headerNick.innerText = userNick;
 
-  var mainPhoto = localStorage.getItem('okbm_hero_cover_url') || (profile && (profile.heroCoverUrl || profile.photoUrl)) || '';
+  var myIdKey = profile && profile.id ? ('okbm_avatar_' + String(profile.id).replace(/\D/g, '')) : '';
+  var mainPhoto = (profile && profile.photoUrl && !profile.photoUrl.includes('hero_cover'))
+    ? profile.photoUrl
+    : (myIdKey ? (localStorage.getItem(myIdKey) || '') : '');
+
   if (typeof window.applyMasterCoverPhotoToAllUI === 'function') {
     window.applyMasterCoverPhotoToAllUI(mainPhoto);
   }
@@ -2773,12 +2817,10 @@ window.uploadMasterUserCoverPhoto = async function(event) {
       throw new Error('사진 업로드 실패');
     }
 
-    localStorage.setItem('okbm_hero_cover_url', uploadedUrl);
-
     var profile = safeGetJSON('user_profile', null);
     if (profile) {
-      profile.heroCoverUrl = uploadedUrl;
       profile.photoUrl = uploadedUrl;
+      delete profile.heroCoverUrl;
       localStorage.setItem('user_profile', JSON.stringify(profile));
       if (profile.id) {
         localStorage.setItem('user_profile_' + profile.id, JSON.stringify(profile));
@@ -2963,12 +3005,15 @@ function logoutUser() {
   localStorage.removeItem('okbm_user_id');
   localStorage.removeItem('okbm_user_nick');
   localStorage.removeItem('okbm_following_users');
+  localStorage.removeItem('okbm_hero_cover_url');
 
-  for (var k in localStorage) {
-    if (k.startsWith('user_profile_') || k.startsWith('okbm_custom_nickname_')) {
-      localStorage.removeItem(k);
-    }
-  }
+  try {
+    Object.keys(localStorage).forEach(function(k) {
+      if (k.startsWith('user_profile_') || k.startsWith('okbm_custom_nickname_')) {
+        localStorage.removeItem(k);
+      }
+    });
+  } catch(e) {}
 
   if (typeof authState !== 'undefined') {
     authState.isLoggedIn = false;
@@ -3052,7 +3097,8 @@ function loginWithKakao() {
     loginBtn.innerHTML = '<span>카카오 로그인 인증 중...</span>';
   }
 
-  Kakao.Auth.login({
+  var loginMethod = (Kakao.Auth && typeof Kakao.Auth.loginForm === 'function') ? Kakao.Auth.loginForm : Kakao.Auth.login;
+  loginMethod({
     scope: 'profile_nickname',
     throughTalk: false,
     success: function(authObj) {
@@ -3067,9 +3113,38 @@ function loginWithKakao() {
             kakaoNick = res.properties.nickname.trim();
           }
 
-          var customSaved = (localStorage.getItem('okbm_custom_nickname_' + kakaoId) || '').trim();
-          var finalNick = (customSaved && customSaved !== '낭만루터' && customSaved !== '낭만백패커') ? customSaved : (kakaoNick || '낭만백패커');
+          var prevUserId = localStorage.getItem('okbm_user_id') || '';
+          var isDifferentUser = Boolean(prevUserId && prevUserId !== kakaoId);
 
+          var keysToPurge = [
+            'user_profile', 'user_auth_token', 'okbm_user_id', 'okbm_user_nick',
+            'okbm_hero_cover_url', 'okbm_packing_history', 'okbm_router_snaps',
+            'okbm_phone_photos_map', 'okbm_trip_photos_map', 'okbm_selected_gears_multi',
+            'okbm_favorite_gears', 'okbm_custom_gears', 'okbm_gear_presets',
+            'okbm_gear_meta', 'okbm_bookmarks', 'okbm_visited', 'okbm_memos',
+            'okbm_plan_memos', 'okbm_plan_spots', 'okbm_trip_consumables',
+            'okbm_packed_checks', 'okbm_my_proposals', 'okbm_following_users'
+          ];
+          keysToPurge.forEach(function(k) { localStorage.removeItem(k); });
+          window.__memoryStore = {};
+          window.packingHistoryList = [];
+          window.interactiveHistory = [];
+          window.userBookmarks = new Set();
+          window.userVisited = new Set();
+          window.userMemos = {};
+          window.selectedGearMap = {};
+          window.favoriteGearSet = new Set();
+          window.packedCheckSet = new Set();
+
+          if (isDifferentUser || !prevUserId) {
+            if (typeof window.saveToIndexedDB === 'function') {
+              window.saveToIndexedDB('okbm_packing_history', []);
+              window.saveToIndexedDB('okbm_phone_photos_map', {});
+              window.saveToIndexedDB('okbm_trip_photos_map', {});
+            }
+          }
+
+          var finalNick = kakaoNick || '낭만백패커';
           var profile = {
             id: kakaoId,
             nickname: finalNick,
@@ -3091,9 +3166,7 @@ function loginWithKakao() {
           }
 
           closeLoginModal();
-          if (typeof showToast === 'function') {
-            showToast('[' + finalNick + ']님 로그인 완료! 클라우드 동기화 중...', 'success', 2000);
-          }
+          showToast('[' + finalNick + ']님 환영합니다.', 'success', 1500);
 loadUserDataFromCloud(kakaoId).then(function(cloudData) {
        if (cloudData) {
               var sNick = (cloudData.nickname || '').trim();
@@ -3171,12 +3244,13 @@ loadUserDataFromCloud(kakaoId).then(function(cloudData) {
         }
       });
     },
-    fail: function() {
+    fail: function(err) {
       if (loginBtn) {
         loginBtn.style.pointerEvents = 'auto';
         loginBtn.style.opacity = '1';
         loginBtn.innerHTML = '카카오 1초 간편 로그인';
       }
+      console.warn('[Kakao Auth Fail]', err);
       if (typeof showToast === 'function') showToast('로그인이 취소되었습니다.', 'warn');
     }
   });
