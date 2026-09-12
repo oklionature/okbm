@@ -626,6 +626,14 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
       var rawSnaps = (window.__memoryStore && window.__memoryStore['okbm_router_snaps']) || safeGetJSON('okbm_router_snaps', []);
       return (rawSnaps || []).filter(function(s) {
         return s && !s.isDeleted && !deletedIds.includes(String(s.id).trim());
+      }).map(function(s) {
+        var copy = Object.assign({}, s);
+        if (Array.isArray(copy.photos)) {
+          copy.photos = copy.photos.filter(function(u) { return typeof u === 'string' && u.startsWith('http'); });
+          copy.photo = copy.photos[0] || '';
+          copy.fieldPhoto = copy.photos[0] || '';
+        }
+        return copy;
       });
     })(),
     myGears: myGearsPayload

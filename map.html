@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko" class="notranslate" data-theme="light">
+<html lang="ko" class="notranslate" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
@@ -9,14 +9,14 @@
     <meta http-equiv="Expires" content="0" />
 
     <!-- 🧭 브라우저 탭 제목 -->
-    <title>낭만루트 ROMANTIC ROOT | 전국 백패킹 지도 커뮤니티</title>
+    <title>낭만루트 ROMANTIC ROUTE | 전국 아웃도어 지도</title>
 
     <!-- 📱 SNS 공유 미리보기 카드 (Open Graph) -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="낭만루트 ROMANTIC ROOT | 전국 백패킹 지도 커뮤니티" />
-    <meta property="og:description" content="전국 검증된 백패킹 박지, 들머리 주소, 네비바로가기까지, 실전 코스 정보" />
+    <meta property="og:title" content="낭만루트 ROMANTIC ROUTE | 전국 아웃도어 지도" />
+    <meta property="og:description" content="전국 검증된 야영 스팟, 들머리 주소, 내비 바로가기, 코스 정보" />
     <meta property="og:image" content="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80" />
-    <meta name="description" content="전국 검증된 백패킹 박지, 들머리 주소, 네비바로가기까지 실전 코스 정보" />
+    <meta name="description" content="전국 검증된 야영 스팟, 들머리 주소, 내비 바로가기, 코스 정보" />
 
     <!-- 🔤 웹폰트 CDN -->
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
@@ -36,8 +36,7 @@
         src: url('https://cdn.jsdelivr.net/gh/projectnoonfonts_one@1.0/Arita-buri-SemiBold.woff') format('woff');
       }
 
-      /* 🌙 1. 다크 모드 테마 변수 */
-      :root, html[data-theme="dark"] {
+      :root {
         --bg-base: #010204;
         --bg-surface: #07090e;
         --bg-card: #0e121a;
@@ -63,9 +62,9 @@
         --header-bg: rgba(1, 2, 4, 0.96);
         --search-bar-bg: rgba(255, 255, 255, 0.08);
         --search-bar-border: rgba(255, 255, 255, 0.12);
-        --dock-bg: rgba(0, 0, 0, 0.96);
+        --dock-bg: #000000;
         --modal-bg: #090c13;
-        --modal-overlay: rgba(3, 5, 8, 0.92);
+        --modal-overlay: rgba(1, 2, 4, 0.92);
 
         --auth-btn-bg: rgba(56, 189, 248, 0.12);
         --auth-btn-border: rgba(56, 189, 248, 0.4);
@@ -74,38 +73,6 @@
         --auth-btn-logged-bg: rgba(16, 185, 129, 0.16);
         --auth-btn-logged-border: rgba(16, 185, 129, 0.45);
         --auth-btn-logged-color: #6ee7b7;
-      }
-
-      /* ☀️ 2. 일반(라이트) 모드 테마 변수 */
-      html[data-theme="light"] {
-        --bg-base: #e0f2fe;
-        --bg-surface: #ffffff;
-        --bg-card: #f8fafc;
-        --bg-card-hover: #e2d7c0;
-        --bg-hud: #f1ebd9;
-        --border-hairline: rgba(199, 187, 163, 0.4);
-        --border-accent: rgba(130, 110, 71, 0.3);
-        --border-titanium: rgba(199, 187, 163, 0.75);
-        --border-subtle: #e5dec9;
-        
-        --text-primary: #0f172a;
-        --text-secondary: #443a2c;
-        --text-muted: #826e47;
-        --accent-silver: #574d43;
-        
-        --accent-blue: #0284c7;
-        --accent-teal: #0d9488;
-        --accent-emerald: #059669;
-        --accent-amber: #826e47;
-        --accent-rose: #e11d48;
-        --accent-purple: #9333ea;
-
-        --header-bg: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 60%, #93c5fd 100%);
-        --search-bar-bg: rgba(255, 255, 255, 0.92);
-        --search-bar-border: #ffffff;
-        --dock-bg: #f1ebd9;
-        --modal-bg: #ffffff;
-        --modal-overlay: rgba(15, 23, 42, 0.65);
       }
 
       :root {
@@ -226,12 +193,6 @@
         -webkit-backdrop-filter: blur(18px) !important;
         transition: all 0.2s ease !important;
         box-sizing: border-box !important;
-      }
-
-      html[data-theme="light"] .apple-search-bar {
-        background: rgba(255, 255, 255, 0.90) !important;
-        border: 1.5px solid rgba(255, 255, 255, 1) !important;
-        box-shadow: 0 8px 24px rgba(100, 85, 60, 0.18) !important;
       }
 
       .apple-search-bar:focus-within {
@@ -515,10 +476,6 @@
       .cell-tmap { background: rgba(56, 189, 248, 0.08); border-color: rgba(56, 189, 248, 0.25); color: #38bdf8; }
       .cell-naver { background: rgba(52, 211, 153, 0.08); border-color: rgba(52, 211, 153, 0.25); color: #34d399; }
       .cell-reserve { background: rgba(255, 255, 255, 0.04); border-color: var(--border-hairline); color: var(--text-secondary); }
-      html[data-theme="light"] .cell-kakao { background: rgba(234, 179, 8, 0.12); border-color: rgba(234, 179, 8, 0.35); color: #854d0e; }
-      html[data-theme="light"] .cell-tmap { background: rgba(2, 132, 199, 0.10); border-color: rgba(2, 132, 199, 0.3); color: #0284c7; }
-      html[data-theme="light"] .cell-naver { background: rgba(5, 150, 105, 0.10); border-color: rgba(5, 150, 105, 0.3); color: #059669; }
-      html[data-theme="light"] .cell-reserve { background: rgba(0, 0, 0, 0.04); border-color: var(--border-hairline); color: var(--text-secondary); }
 
       .entry-lock-overlay-tight {
         position: absolute; top: 0; left: 0; right: 0; bottom: 0;
@@ -680,7 +637,7 @@
         border-top: 1px solid var(--border-hairline); 
         height: calc(56px + env(safe-area-inset-bottom, 0px)); 
         padding-bottom: env(safe-area-inset-bottom, 0px); 
-        z-index: var(--z-dock); 
+        z-index: 900 !important; 
         justify-content: space-around; 
         align-items: center; 
         backdrop-filter: blur(20px);
@@ -742,11 +699,6 @@
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
-      }
-      html[data-theme="light"] .map-floating-quick-bar {
-        background: rgba(241, 235, 217, 0.94) !important;
-        border: 1.5px solid rgba(199, 187, 163, 0.8) !important;
-        box-shadow: 0 8px 24px rgba(100, 85, 60, 0.2) !important;
       }
       .btn-floating-hub {
         background: transparent;
@@ -865,11 +817,6 @@
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         box-sizing: border-box;
-      }
-      html[data-theme="light"] .pin-picker-banner {
-        background: rgba(255, 255, 255, 0.94);
-        border: 1px solid rgba(2, 132, 199, 0.45);
-        box-shadow: 0 6px 20px rgba(100, 85, 60, 0.18);
       }
       .btn-cancel-pin-pick {
         background: rgba(244, 63, 94, 0.16);
@@ -1101,16 +1048,38 @@
       </button>
     </div>
 
+    <!-- 🔑 간편 로그인 모달 레이어 -->
+    <div class="custom-modal-overlay" id="loginModalOverlay" style="z-index: 1000 !important;" onclick="if(event.target===this) window.closeLoginModal();">
+      <div class="custom-modal login-box-card" onclick="event.stopPropagation();">
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; border-bottom:1px solid var(--border-hairline); padding-bottom:8px;">
+          <h3 style="font-size:0.92rem; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:5px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px; height:14px; color:#38bdf8;"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+            <span>낭만루트 간편 로그인</span>
+          </h3>
+          <button type="button" onclick="window.closeLoginModal();" style="background:none; border:none; color:var(--text-muted); font-size:1.1rem; cursor:pointer; padding:0 2px;">✕</button>
+        </div>
+        <p style="font-size:0.75rem; color:var(--text-secondary); line-height:1.45; text-align:center; margin-top:4px;">
+          로그인하시면 <strong>찜, 클리어, 현장 피드 소통, 나만의 메모</strong>가 모든 기기에 실시간 자동 동기화됩니다.
+        </p>
+        <div class="login-btn-social-group">
+          <button type="button" class="btn-social-kakao" onclick="if(typeof handleKakaoAuthLogin==='function'){ handleKakaoAuthLogin(); } else if(typeof handleAuthBtnClick==='function'){ handleAuthBtnClick(); } else { window.location.href='index.html?login=1'; }">
+            <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:#191919;"><path d="M12 3c-5.52 0-10 3.58-10 8 0 2.82 1.83 5.3 4.6 6.7l-1.2 4.4c-.1.4.3.7.6.5l5.2-3.4c.26.03.53.04.8.04 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/></svg>
+            <span>카카오 1초 간편 로그인</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- K-LNT 7원칙 모달 -->
     <div class="custom-modal-overlay" id="lntModalOverlay">
       <div class="lnt-modal-card">
         <div style="border-bottom:1px solid var(--border-hairline); padding-bottom:8px;">
           <h3 style="color:var(--accent-emerald); font-size:0.96rem; font-weight:800; display:flex; align-items:center; gap:5px;">
             <svg viewBox="0 0 24 24" class="ui-icon" style="width:16px; height:16px; color:#10b981;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="currentColor"/></svg>
-            <span>대한민국 백패커 K-LNT 7원칙</span>
+            <span>자연을 지키는 아웃도어 K-LNT 7원칙</span>
           </h3>
         </div>
-        <p style="font-size:0.74rem; color:var(--accent-amber); line-height:1.4; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); padding:6px 8px; border-radius:6px; display:flex; align-items:center; gap:5px;">
+        <p style="font-size:0.74rem; color:var(--accent-amber); line-height:1.4; background:rg  ba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); padding:6px 8px; border-radius:6px; display:flex; align-items:center; gap:5px;">
           <span id="lntAlertTopIcon"></span>
           <span><strong>박지 보존을 위한 필수 실천</strong>: 자연을 훼손하지 않는 성숙한 백패킹 문화가 소중한 박지 폐쇄를 막습니다.</span>
         </p>
@@ -1135,8 +1104,8 @@
       <div class="custom-modal">
         <h3 id="modalTitle" style="display:flex; align-items:center; gap:6px;"></h3>
         <p id="modalNotice" style="font-size:0.74rem; color:var(--accent-amber); line-height:1.4; display:flex; align-items:center; gap:4px;"></p>
-        <div class="modal-field"><label>1. 산/박지 이름 *</label><input type="text" id="modalInputName" class="modal-input" placeholder="예: 남양주 백봉산" /></div>
-        <div class="modal-field"><label>2. 세부 박지 포인트</label><input type="text" id="modalInputSub" class="modal-input" placeholder="예: 정상 전망데크" /></div>
+        <div class="modal-field"><label>1. 박지 이름 *</label><input type="text" id="modalInputName" class="modal-input" placeholder="스팟 또는 봉우리 명칭 입력" /></div>
+        <div class="modal-field"><label>2. 세부 포인트</label><input type="text" id="modalInputSub" class="modal-input" placeholder="정상 데크, 능선 안부, 헬기장 등" /></div>
         <div class="modal-field">
           <label>3. 박지 핀 위치</label>
           <div style="display: flex; gap: 6px; align-items: center;">
@@ -1144,12 +1113,12 @@
             <button type="button" class="modal-btn" style="background: #0284c7; color:#fff; font-weight:700; padding:6px 10px; display:inline-flex; align-items:center; gap:4px;" onclick="startPinPicking()"><span id="btnModalPinPickIcon"></span><span>콕 찍기</span></button>
           </div>
         </div>
-        <div class="modal-field"><label>4. 들머리 명칭</label><input type="text" id="modalInputTrailheadName" class="modal-input" placeholder="예: 마치고개 갓길" /></div>
-        <div class="modal-field"><label>5. 들머리 주소 (네비 목적지) *</label><textarea id="modalInputEntry" class="modal-input modal-textarea" rows="2" placeholder="경기 남양주시 호평동 산20-2, 쉼표 후 길안내 팁 입력 가능"></textarea></div>
+        <div class="modal-field"><label>4. 들머리 명칭</label><input type="text" id="modalInputTrailheadName" class="modal-input" placeholder="주차장, 등산로 입구 명칭" /></div>
+        <div class="modal-field"><label>5. 들머리 주소 (내비 목적지) *</label><textarea id="modalInputEntry" class="modal-input modal-textarea" rows="2" placeholder="도로명 또는 지번 주소 입력 (쉼표 후 길 안내 추가 가능)"></textarea></div>
         <div class="modal-field">
           <label>6. 고도 / 해발 (m)</label>
           <div style="display: flex; gap: 6px;">
-            <input type="text" id="modalInputElevation" class="modal-input" style="flex:1;" placeholder="587" />
+            <input type="text" id="modalInputElevation" class="modal-input" style="flex:1;" placeholder="고도 (m 단위 숫자)" />
             <button type="button" class="modal-btn" style="background:var(--bg-card); color:var(--text-primary); padding:6px 10px; display:inline-flex; align-items:center; gap:4px;" onclick="fetchElevationForModal()"><span id="btnModalElevIcon"></span><span>측정</span></button>
           </div>
         </div>
@@ -1175,14 +1144,14 @@
         </div>
         <div style="display: flex; gap: 8px;">
           <div class="modal-field" style="flex: 1;"><label>9. 난이도</label><select id="modalSelectDiff" class="select-diff"><option value="1">★ (매우 쉬움)</option><option value="2">★★ (쉬움)</option><option value="3" selected>★★★ (보통)</option><option value="4">★★★★ (힘듦)</option><option value="5">★★★★★ (극악)</option></select></div>
-          <div class="modal-field" style="width: 110px;"><label>10. 편도 거리(km)</label><input type="text" id="modalInputDistance" class="modal-input" placeholder="2.5" /></div>
+          <div class="modal-field" style="width: 110px;"><label>10. 편도 거리(km)</label><input type="text" id="modalInputDistance" class="modal-input" placeholder="편도 거리 (숫자)" /></div>
         </div>
        <div class="modal-field" style="display:flex; flex-direction:column; gap:6px; background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:8px; padding:8px;">
-          <label style="color:var(--accent-blue); font-weight:800; font-size:0.75rem;">11. 실전 4단계 요약 설명 (자동 줄바꿈 상세 기재)</label>
-          <div class="modal-field"><label style="font-size:0.70rem; color:#38bdf8; font-weight:700;">① [뷰/특징] *</label><textarea id="modalInputDescView" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="예: 360도 탁 트인 야경과 비금도 다도해 조망"></textarea></div>
-          <div class="modal-field"><label style="font-size:0.70rem; color:#2dd4bf; font-weight:700;">② [접근/코스]</label><textarea id="modalInputDescAccess" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="예: 구림리 주차장에서 1.7km, 완만한 암릉길 40분 소요"></textarea></div>
-          <div class="modal-field"><label style="font-size:0.70rem; color:#10b981; font-weight:700;">③ [박지/피칭]</label><textarea id="modalInputDescPitch" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="예: 정상 인근 전망데크 2~3동, 바위 옆 평평한 노지 2동 피칭 가능"></textarea></div>
-          <div class="modal-field"><label style="font-size:0.70rem; color:#f59e0b; font-weight:700;">④ [주의/팁]</label><textarea id="modalInputDescTip" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="예: 섬 특유의 강풍 주의, 가이라인 필수 고정, 화기 절대 금지"></textarea></div>
+          <label style="color:var(--accent-blue); font-weight:800; font-size:0.75rem;">11. 실전 4단계 요약 설명 (줄바꿈 기재)</label>
+          <div class="modal-field"><label style="font-size:0.70rem; color:#38bdf8; font-weight:700;">① [뷰/특징] *</label><textarea id="modalInputDescView" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="조망, 일몰/일출 시야, 주변 경관 특징"></textarea></div>
+          <div class="modal-field"><label style="font-size:0.70rem; color:#2dd4bf; font-weight:700;">② [접근/코스]</label><textarea id="modalInputDescAccess" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="거리, 소요 시간, 경사도, 등산로 상태"></textarea></div>
+          <div class="modal-field"><label style="font-size:0.70rem; color:#10b981; font-weight:700;">③ [박지/피칭]</label><textarea id="modalInputDescPitch" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="텐트 설치 가능 동수, 바닥면 상태"></textarea></div>
+          <div class="modal-field"><label style="font-size:0.70rem; color:#f59e0b; font-weight:700;">④ [주의/팁]</label><textarea id="modalInputDescTip" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="풍황 주의점, 팩 고정 팁, 안전 유의사항"></textarea></div>
         </div>
         <div class="modal-field"><label>12. YouTube 영상 링크</label><textarea id="modalInputYoutube" class="modal-input modal-textarea" rows="1" placeholder="https://youtu.be/..."></textarea></div>
         <div style="display: flex; gap: 8px;">
@@ -1202,9 +1171,44 @@
     </div>
        <script>
        // 🧰 [공통 유틸 1순위 선언 - ReferenceError 100% 영구 방어]
+      window.navigateToDockTab = function(tabName) {
+        var oldModal = document.getElementById('mapSpotFeedDetailModal');
+        if (oldModal) oldModal.remove();
+
+        var routes = {
+          router: 'index.html',
+          map: 'map.html',
+          plan: 'index.html?open=plan',
+          history: 'index.html?open=history',
+          report: 'index.html?open=report'
+        };
+
+        var targetUrl = routes[tabName] || 'index.html';
+        window.smoothNavigate(targetUrl);
+      };
+
+      window.openLoginModal = function() {
+        triggerHaptic(12);
+        var overlay = document.getElementById('loginModalOverlay');
+        if (overlay) {
+          overlay.style.setProperty('display', 'flex', 'important');
+        } else {
+          showToast('🔒 로그인이 필요한 기능입니다.');
+        }
+      };
+
+      window.closeLoginModal = function() {
+        triggerHaptic(10);
+        var overlay = document.getElementById('loginModalOverlay');
+        if (overlay) overlay.style.display = 'none';
+      };
+
       window.smoothNavigate = function(url, e) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
         triggerHaptic(10);
+        var oldModal = document.getElementById('mapSpotFeedDetailModal');
+        if (oldModal) oldModal.remove();
+
         var currentPath = window.location.pathname;
         var targetPath = url.split('?')[0];
 
@@ -1393,7 +1397,7 @@
                   fullName: derivedFullName,
                   lat: lat,
                   lng: lng,
-                  elevation: (row.elevation || row['고도'] || '450m').trim(),
+                  elevation: (row.elevation || row['고도'] || '').trim(),
                   trailhead_name: (row.trailhead_name || row['들머리명칭'] || '').trim(),
                   trailhead_addr: entry,
                   entryPoint: entry,
@@ -1407,6 +1411,7 @@
                   difficulty: row.difficulty || row['난이도'] || '3',
                   distance: row.distance_km ? (row.distance_km + 'km') : (row.distance || ''),
                   droneStatus: row.droneStatus || '',
+                  gpxUrl: (row.gpxUrl || row.gpx || row['GPX'] || row['등산로'] || '').trim(),
                   region: finalRegion,
                   cityName: finalCity,
                   searchCount: parseInt(row.searchCount || 0, 10),
@@ -1636,34 +1641,10 @@
       return { region: '경기', cityName: '경기' };
       }
 
-     // 4. 수정 코드
-      // 🌙 다크모드 기본 고정 엔진 (눈부심 0% 테마)
-      var currentAppTheme = 'dark';
-
-      function applyTheme(theme) {
-        currentAppTheme = theme;
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('okbm_theme', theme);
-
-        var iconEl = document.getElementById('themeToggleIcon');
-        var textEl = document.getElementById('themeToggleText');
-
-        if (theme === 'light') {
-          if (iconEl) iconEl.innerHTML = ICONS.MOON;
-          if (textEl) textEl.innerText = '다크';
-        } else {
-          if (iconEl) iconEl.innerHTML = ICONS.SUN;
-          if (textEl) textEl.innerText = '일반';
-        }
-        if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
-      }
-
-      function toggleAppTheme() {
-        triggerHaptic(10);
-        var newTheme = currentAppTheme === 'dark' ? 'light' : 'dark';
-        applyTheme(newTheme);
-        showToast(newTheme === 'light' ? '☀️ 일반(라이트) 모드로 전환되었습니다.' : '🌙 다크 모드로 전환되었습니다.');
-      }
+     var currentAppTheme = 'dark';
+      document.documentElement.setAttribute('data-theme', 'dark');
+      function applyTheme() { document.documentElement.setAttribute('data-theme', 'dark'); }
+      function toggleAppTheme() {}
 
       function isSpotUnlocked(spotId) {
         if (isAdminMode) return true;
@@ -1950,10 +1931,12 @@
             map.setLevel(Math.max(1, map.getLevel() - 1), { anchor: cluster.getCenter(), animate: { duration: 300 } });
           });
 
-          kakao.maps.event.addListener(map, 'zoom_start', () => { clearTimeout(lodDebounceTimer); });
-          kakao.maps.event.addListener(map, 'dragstart', () => { clearTimeout(lodDebounceTimer); });
+          kakao.maps.event.addListener(map, 'zoom_start', () => { clearTimeout(lodDebounceTimer); window.hideLongPressProposalTooltip(); });
+          kakao.maps.event.addListener(map, 'dragstart', () => { clearTimeout(lodDebounceTimer); window.hideLongPressProposalTooltip(); });
           kakao.maps.event.addListener(map, 'idle', () => debouncedUpdateLODLabels());
           kakao.maps.event.addListener(map, 'click', handleMapClick);
+
+          initMapLongPressProposalEngine(container);
 
          if (spots && spots.length > 0) {
             spots = spots.filter(s => s && s.lat && s.lng && !BLOCKED_SPOT_IDS.has(String(s.id).trim()));
@@ -1965,12 +1948,28 @@
             loadSpotsMasterEngine();
           }
 
-          // ⚡ [제9헌법 Server-Authoritative SSOT]: 스마트폰 묵은 피드 캐시 무효화 및 R2/시트 최신 피드 0.03초 강제 동기화
-          if (typeof window.fetchCommunityFeeds === 'function') {
-            window.fetchCommunityFeeds(true).then(function() {
-              if (currentActiveSpot) refreshCurrentSpotPopup();
-            });
-          }
+          // ⚡ [제9헌법 Server-Authoritative SSOT]: 스마트폰 묵은 피드 캐시 무효화 및 R2 feeds.json 0.03초 직통 번개 인출
+          (function loadR2FeedsDirectly() {
+            var r2Domain = window.R2_PUBLIC_DOMAIN || 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
+            fetch(r2Domain.replace(/\/+$/, '') + '/feeds.json?_t=' + Date.now(), { cache: 'no-store' })
+              .then(function(res) { return res.ok ? res.json() : []; })
+              .then(function(feeds) {
+                if (Array.isArray(feeds) && feeds.length > 0) {
+                  window.__allLoadedFeeds = feeds;
+                  localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(feeds));
+                  if (currentActiveSpot) {
+                    refreshCurrentSpotPopup();
+                  }
+                }
+              })
+              .catch(function() {
+                if (typeof window.fetchCommunityFeeds === 'function') {
+                  window.fetchCommunityFeeds(true).then(function() {
+                    if (currentActiveSpot) refreshCurrentSpotPopup();
+                  });
+                }
+              });
+          })();
         });
       }
 
@@ -1979,7 +1978,6 @@
           Kakao.init(KAKAO_APP_KEY);
         }
         initStaticVectors();
-        applyTheme(currentAppTheme);
         initMapEngine();
         if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
        if (window.innerWidth <= 768) {
@@ -2213,7 +2211,6 @@
       function handleVersionTagAdminClick() {
         clearTimeout(versionTapTimer);
         versionTapCount++;
-        triggerHaptic(6);
 
         if (versionTapCount >= 7) {
           versionTapCount = 0;
@@ -2426,15 +2423,22 @@ function updateSmartResetButtons() {
       }
 
       async function getElevation(lat, lng) {
+        if (!lat || !lng) return '';
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
         try {
-          const res = await fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`, { signal: controller.signal });
+          const res = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lng}`, { signal: controller.signal });
           clearTimeout(timeoutId);
-          const data = await res.json();
-          if (data?.results?.length > 0) return `${Math.round(data.results[0].elevation)}m`;
-        } catch (e) {}
-        return '450m';
+          if (res.ok) {
+            const data = await res.json();
+            if (data && Array.isArray(data.elevation) && data.elevation.length > 0 && data.elevation[0] !== null) {
+              return `${Math.round(data.elevation[0])}m`;
+            }
+          }
+        } catch (e) {
+          clearTimeout(timeoutId);
+        }
+        return '';
       }
 
       const geocodeQueryCache = new Map();
@@ -2464,14 +2468,42 @@ function updateSmartResetButtons() {
       }
 
       async function fetchElevationForModal() {
-        let lat = modalPendingData.lat || (modalMode === 'EDIT' ? spots[modalEditIndex].lat : 0);
-        let lng = modalPendingData.lng || (modalMode === 'EDIT' ? spots[modalEditIndex].lng : 0);
+        triggerHaptic(10);
+        let lat = modalPendingData.lat || (modalMode === 'EDIT' && spots[modalEditIndex] ? spots[modalEditIndex].lat : 0);
+        let lng = modalPendingData.lng || (modalMode === 'EDIT' && spots[modalEditIndex] ? spots[modalEditIndex].lng : 0);
+
         if (!lat || !lng) {
-          const coords = await searchCoordsByQuery(document.getElementById('modalInputEntry').value.trim() || document.getElementById('modalInputName').value.trim());
-          if (coords) { lat = coords.lat; lng = coords.lng; modalPendingData.lat = lat; modalPendingData.lng = lng; }
+          const entryVal = document.getElementById('modalInputEntry')?.value.trim();
+          const nameVal = document.getElementById('modalInputName')?.value.trim();
+          const coords = await searchCoordsByQuery(entryVal || nameVal);
+          if (coords && coords.lat && coords.lng) {
+            lat = coords.lat;
+            lng = coords.lng;
+            modalPendingData.lat = lat;
+            modalPendingData.lng = lng;
+          }
         }
-        if (!lat || !lng) return alert('위치를 먼저 지정해주세요.');
-        document.getElementById('modalInputElevation').value = await getElevation(lat, lng);
+
+        if (!lat || !lng) {
+          showToast(`${ICONS.ALERT_CARD} <span>[3. 콕 찍기] 또는 들머리 주소를 먼저 입력해주세요.</span>`);
+          return;
+        }
+
+        const elevInput = document.getElementById('modalInputElevation');
+        if (elevInput) elevInput.placeholder = '고도 측정 중...';
+
+        const measuredElev = await getElevation(lat, lng);
+        if (elevInput) {
+          elevInput.value = measuredElev;
+          elevInput.placeholder = '고도 (m 단위 숫자)';
+        }
+
+        if (measuredElev) {
+          triggerHaptic(15);
+          showToast(`${ICONS.MOUNTAIN} <span>해발고도 ${measuredElev} 측정 완료!</span>`);
+        } else {
+          showToast(`${ICONS.ALERT_CARD} <span>고도 측정에 실패했습니다. 직접 입력해주세요.</span>`);
+        }
       }
 
       function smoothCenterMapOnSpot(lat, lng) {
@@ -2794,11 +2826,46 @@ function updateSmartResetButtons() {
         const spot = spots.find(s => String(s.id).trim() === String(spotId).trim());
         if (!spot) return;
         triggerHaptic(10);
-      const titleName = spot.fullName || `${spot.spot_main} (${spot.spot_sub || ''})`;
+        const titleName = spot.fullName || `${spot.spot_main} (${spot.spot_sub || ''})`;
         const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1) + 'index.html';
         const shareUrl = `${window.location.origin}${basePath}?spot=${encodeURIComponent(spot.spot_main || spot.name)}`;
-        if (navigator.share) navigator.share({ title: `[낭만백패킹] ${titleName}`, url: shareUrl }).catch(() => {});
-        else copyTextToClipboard(shareUrl, '박지 공유 링크가 복사되었습니다!');
+        const descText = `${spot.trailhead_name || '들머리'}: ${spot.trailhead_addr || spot.entryPoint || '위치 정보 확인'}`;
+
+        if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized()) {
+          try {
+            const shareFn = (Kakao.Share && Kakao.Share.sendDefault) ? Kakao.Share.sendDefault : (Kakao.Link && Kakao.Link.sendDefault ? Kakao.Link.sendDefault : null);
+            if (shareFn) {
+              shareFn({
+                objectType: 'feed',
+                content: {
+                  title: `[낭만루트] ${titleName}`,
+                  description: descText,
+                  imageUrl: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80',
+                  link: {
+                    mobileWebUrl: shareUrl,
+                    webUrl: shareUrl
+                  }
+                },
+                buttons: [
+                  {
+                    title: '박지 코스 및 내비 확인',
+                    link: {
+                      mobileWebUrl: shareUrl,
+                      webUrl: shareUrl
+                    }
+                  }
+                ]
+              });
+              return;
+            }
+          } catch (kakaoErr) {}
+        }
+
+        if (navigator.share) {
+          navigator.share({ title: `[낭만루트] ${titleName}`, text: descText, url: shareUrl }).catch(() => {});
+        } else {
+          copyTextToClipboard(shareUrl, '스팟 공유 링크가 복사되었습니다!');
+        }
       }
 
       const entryCoordsCache = new Map();
@@ -2852,17 +2919,28 @@ function updateSmartResetButtons() {
         const sId = String(spotId).trim();
         triggerHaptic(10);
         if (currentGpxPolyline && activeGpxSpotId === sId) {
-          currentGpxPolyline.setMap(null); currentGpxPolyline = null; activeGpxSpotId = null;
+          currentGpxPolyline.setMap(null);
+          currentGpxPolyline = null;
+          activeGpxSpotId = null;
           showToast(`${ICONS.HIKING} <span>등산로 코스선 표시를 해제했습니다.</span>`);
           refreshCurrentSpotPopup();
           return;
         }
 
-        if (!gpxUrl || !gpxUrl.trim()) return showToast(`${ICONS.ALERT_CARD} <span>해당 박지의 GPX 등산로 데이터가 준비 중입니다.</span>`);
+        if (!gpxUrl || !gpxUrl.trim() || gpxUrl === 'undefined') {
+          showToast(`${ICONS.ALERT_CARD} <span>해당 박지의 GPX 등산로 데이터가 준비 중입니다.</span>`);
+          return;
+        }
 
         try {
           showToast(`${ICONS.HIKING} <span>등산로 GPX 경로를 불러오는 중...</span>`);
-          const res = await fetch(gpxUrl);
+          let fetchTargetUrl = gpxUrl.trim();
+          if (fetchTargetUrl.includes('drive.google.com')) {
+            const idMatch = fetchTargetUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/) || fetchTargetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if (idMatch && idMatch[1]) fetchTargetUrl = `https://lh3.googleusercontent.com/d/${idMatch[1]}`;
+          }
+
+          const res = await fetch(fetchTargetUrl);
           if (!res.ok) throw new Error('GPX fetch failed');
           const gpxText = await res.text();
           const xml = new DOMParser().parseFromString(gpxText, 'text/xml');
@@ -2870,17 +2948,40 @@ function updateSmartResetButtons() {
 
           const path = [];
           for (let i = 0; i < trkpts.length; i++) {
-            const lat = parseFloat(trkpts[i].getAttribute('lat')), lon = parseFloat(trkpts[i].getAttribute('lon'));
-            if (!isNaN(lat) && !isNaN(lon)) path.push(new kakao.maps.LatLng(lat, lon));
+            const lat = parseFloat(trkpts[i].getAttribute('lat'));
+            const lon = parseFloat(trkpts[i].getAttribute('lon'));
+            if (!isNaN(lat) && !isNaN(lon)) {
+              path.push(new kakao.maps.LatLng(lat, lon));
+            }
           }
 
+          if (path.length === 0) {
+            const rtepts = xml.getElementsByTagName('rtept');
+            for (let j = 0; j < rtepts.length; j++) {
+              const rLat = parseFloat(rtepts[j].getAttribute('lat'));
+              const rLon = parseFloat(rtepts[j].getAttribute('lon'));
+              if (!isNaN(rLat) && !isNaN(rLon)) path.push(new kakao.maps.LatLng(rLat, rLon));
+            }
+          }
+
+          if (path.length === 0) throw new Error('No coordinates found in GPX');
+
           if (currentGpxPolyline) currentGpxPolyline.setMap(null);
-          currentGpxPolyline = new kakao.maps.Polyline({ map, path, strokeWeight: 4.5, strokeColor: '#f97316', strokeOpacity: 0.9, strokeStyle: 'solid' });
+          currentGpxPolyline = new kakao.maps.Polyline({
+            map: map,
+            path: path,
+            strokeWeight: 4.5,
+            strokeColor: '#f97316',
+            strokeOpacity: 0.9,
+            strokeStyle: 'solid'
+          });
           activeGpxSpotId = sId;
           triggerHaptic(15);
-          showToast(`${ICONS.HIKING} <span>지도에 등산로 주황색 코스선이 표시되었습니다!</span>`);
+          showToast(`${ICONS.HIKING} <span>지도에 등산로 코스선(주황색)이 표시되었습니다!</span>`);
           refreshCurrentSpotPopup();
-        } catch (err) { showToast(`${ICONS.ALERT_CARD} <span>GPX 파일을 불러오지 못했습니다.</span>`); }
+        } catch (err) {
+          showToast(`${ICONS.ALERT_CARD} <span>등산로 파일을 불러올 수 없습니다.</span>`);
+        }
       }
 
       function parseStructuredSummary(rawText) {
@@ -2930,13 +3031,13 @@ function updateSmartResetButtons() {
         const targetUnlockLink = ytList.length > 0 ? cleanYouTubeUrl(ytList[0]) : (spot.authorSnsUrl || 'https://instagram.com/oklionnature');
         const closeBtn = isMobileSheet ? '' : `<button type="button" class="sheet-close-btn" onclick="closePcSlidingDrawer()" title="닫기">✕</button>`;
         const adminTopActions = isAdminMode ? `
-          <button type="button" class="btn-edit" style="display:inline-block;" onclick="editSpotById(event, '${spot.id}')">${ICONS.EDIT}수정</button>
-          <button type="button" class="btn-del" style="display:inline-block;" onclick="deleteSpotById(event, '${spot.id}')">${ICONS.DEL}삭제</button>
+          <button type="button" class="btn-edit" style="display:inline-block;" data-id="${spot.id}" onclick="editSpotById(event, this.dataset.id)">${ICONS.EDIT}수정</button>
+          <button type="button" class="btn-del" style="display:inline-block;" data-id="${spot.id}" onclick="deleteSpotById(event, this.dataset.id)">${ICONS.DEL}삭제</button>
         ` : '';
 
         return `
           <div style="position: relative; width: 100%;">
-            <div class="sheet-title-row" style="padding-right: ${isMobileSheet ? '36px' : '0'};" onclick="smoothCenterMapOnSpot(${spot.lat}, ${spot.lng})" title="지도를 박지 중심으로 이동">
+            <div class="sheet-title-row" style="padding-right: ${isMobileSheet ? '36px' : '0'};" data-lat="${spot.lat}" data-lng="${spot.lng}" onclick="smoothCenterMapOnSpot(parseFloat(this.dataset.lat), parseFloat(this.dataset.lng))" title="지도를 박지 중심으로 이동">
               <div class="compact-title">
                 ${cityName ? `<span class="city-badge-colored">${escapeHtml(cityName)}</span>` : ''}
                 <span class="${diffClass}">${escapeHtml(cleanMainName)}</span>
@@ -3014,13 +3115,13 @@ function updateSmartResetButtons() {
             </div>
 
             <div class="user-action-grid-3" style="display:flex; gap:5px; width:100%; margin:6px 0 4px 0;" onclick="event.stopPropagation();">
-              <button type="button" class="btn-action-3 btn-action-fav ${isFav ? 'bookmarked' : ''}" onclick="toggleUserBookmark('${sId}', event)">
+              <button type="button" class="btn-action-3 btn-action-fav ${isFav ? 'bookmarked' : ''}" data-id="${sId}" onclick="toggleUserBookmark(this.dataset.id, event)">
                 ${ICONS.HEART} <span>${isFav ? '찜됨' : '찜하기'}</span>
               </button>
-              <button type="button" class="btn-action-3 btn-action-visited ${isDone ? 'visited' : ''}" onclick="toggleUserVisited('${sId}', event)">
+              <button type="button" class="btn-action-3 btn-action-visited ${isDone ? 'visited' : ''}" data-id="${sId}" onclick="toggleUserVisited(this.dataset.id, event)">
                 ${ICONS.FLAG} <span>${isDone ? '클리어' : '다녀왔음'}</span>
               </button>
-              <button type="button" class="btn-action-3 btn-action-share" onclick="shareSpotCard('${sId}')">
+              <button type="button" class="btn-action-3 btn-action-share" data-id="${sId}" onclick="shareSpotCard(this.dataset.id)">
                 ${ICONS.SHARE} <span>공유</span>
               </button>
             </div>
@@ -3038,8 +3139,8 @@ function updateSmartResetButtons() {
             ` : `
              <div class="entry-module-container" style="position:relative; width:100%; display:flex; flex-direction:column; gap:4px; margin:4px 0;">
                 <div class="entry-row-1">
-                  <a href="javascript:void(0)" onclick="navigateToNaviApp('kakao', this.dataset.name, this.dataset.addr, ${spot.lat}, ${spot.lng})" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}" class="entry-address-2line">${ICONS.NAV} ${escapeHtml(tName)}: ${cleanAddress} ↗</a>
-                  <button type="button" class="btn-copy-entry" onclick="copyTextToClipboard(this.dataset.addr)" data-addr="${cleanAddress}">${ICONS.COPY} 복사</button>
+                  <div class="entry-address-2line" style="cursor:text; user-select:text; -webkit-user-select:text; pointer-events:auto;" onclick="event.stopPropagation();">${ICONS.NAV} ${escapeHtml(tName)}: ${cleanAddress}</div>
+                  <button type="button" class="btn-copy-entry" onclick="event.stopPropagation(); copyTextToClipboard(this.dataset.addr);" data-addr="${cleanAddress}">${ICONS.COPY} 복사</button>
                 </div>
                 ${guide ? `<div class="entry-guide-chip">${ICONS.TIP} 길 안내: ${escapeHtml(guide)}</div>` : ''}
                 <div class="entry-row-2">
@@ -3056,13 +3157,13 @@ function updateSmartResetButtons() {
                   </div>` : ''}
 
                 ${!isUnlocked ? `
-                  <div class="entry-lock-overlay-tight" id="entryLockOverlay_${sId}" onclick="triggerSpotUnlock('${sId}', '${escapeHtml(targetUnlockLink)}')">
+                  <div class="entry-lock-overlay-tight" id="entryLockOverlay_${sId}" data-id="${sId}" data-target="${escapeHtml(targetUnlockLink)}" onclick="triggerSpotUnlock(this.dataset.id, this.dataset.target)">
                     <span class="lock-main-text">${ICONS.LOCK} 클릭 시 들머리 주소, 4대 내비 & 코스 공개 </span>
                     <span class="lock-sub-text">등록자의 링크와 K-LNT 서약 후 상세 목적지, 코스 안내가 열립니다</span>
                   </div>` : ''}
 
                 ${spot.gpxUrl ? `
-                  <button type="button" class="btn-gpx-track-toggle ${isGpxActive ? 'active' : ''}" onclick="toggleGpxTrack('${sId}', '${escapeHtml(spot.gpxUrl)}')">
+                  <button type="button" class="btn-gpx-track-toggle ${isGpxActive ? 'active' : ''}" data-id="${sId}" data-url="${escapeHtml(spot.gpxUrl)}" onclick="toggleGpxTrack(this.dataset.id, this.dataset.url)">
                     ${ICONS.HIKING} ${isGpxActive ? '지도에서 등산로 선 지우기 ✕' : '등산로 GPX 코스선 지도에 표시'}
                   </button>
                 ` : ''}
@@ -3244,8 +3345,8 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
 
         if (list.length === 0) {
           list = [isYt 
-            ? ('https://www.youtube.com/results?search_query=' + encodeURIComponent(spotName + ' 백패킹'))
-            : ('https://search.naver.com/search.naver?where=view&query=' + encodeURIComponent(spotName + ' 백패킹'))
+            ? ('https://www.youtube.com/results?search_query=' + encodeURIComponent(spotName + ' 야영'))
+            : ('https://search.naver.com/search.naver?where=view&query=' + encodeURIComponent(spotName + ' 야영'))
           ];
         }
 
@@ -3402,33 +3503,41 @@ var feedMap = new Map();
         // 단어 앞뒤가 한글 접두사/접미사(예: '최'고봉)로 결합되지 않은 독립 명칭만 검출
         var spotWordRegex = new RegExp('(?:^|[^가-힣a-zA-Z0-9])' + safeRegexSpot + '(?:$|[^가-힣a-zA-Z0-9])', 'i');
 
+        var normalizePhotoLink = function(url) {
+          if (!url || typeof url !== 'string') return '';
+          var clean = url.replace(/^["'\[\]\s]+|["'\[\]\s]+$/g, '').trim();
+          if (clean.includes('drive.google.com')) {
+            var idMatch = clean.match(/[?&]id=([a-zA-Z0-9_-]+)/) || clean.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if (idMatch && idMatch[1]) {
+              return 'https://lh3.googleusercontent.com/d/' + idMatch[1] + '=w1200';
+            }
+          }
+          return clean;
+        };
+
         communityFeeds.concat(myHistory).forEach(function(f) {
           if (!f) return;
+
+          var fType = String(f.feedType || f.type || '').trim().toLowerCase();
+          if (fType === 'snap' || fType === 'router_snap') return;
+
           var fId = String(f.id || '').replace(/^["']|["']$/g, '').trim();
           if (!fId) return;
 
           var fSpotId = String(f.spotId || f.campsiteId || '').trim();
-          // 🛡️ [메모 본문 검색 전면 배제]: 공식 박지명 필드만 한정 검사
           var fRawSpot = String(f.spot || f.campsite || f.place || '').trim().toLowerCase();
           if (!fRawSpot && !fSpotId) return;
 
           var isMatch = false;
 
-          // 1순위: 박지 고유 ID 1:1 직통 매칭
           if (fSpotId && currentSpotId && fSpotId === currentSpotId) {
             isMatch = true;
-          } 
-          // 2순위: 공식 박지명 필드 정밀 검증
-          else if (cleanSpotName.length >= 2 && spotWordRegex.test(' ' + fRawSpot + ' ')) {
-            
-            // 🛡️ 타 시/군 지역명 충돌 배제 (예: 충주 고봉 vs 용인 최고봉)
+          } else if (cleanSpotName.length >= 2 && spotWordRegex.test(' ' + fRawSpot + ' ')) {
             var hasRegionConflict = false;
             var otherRegions = ['용인', '양평', '가평', '포천', '강화', '인천', '서울', '충주', '제천', '단양', '원주', '춘천', '강릉', '정선', '평창', '영월', '태백', '삼척'];
-            
             for (var rIdx = 0; rIdx < otherRegions.length; rIdx++) {
               var reg = otherRegions[rIdx];
               if (fRawSpot.includes(reg)) {
-                // 피드에 적힌 지역명이 현재 박지의 지역명(spotCity)과 정면 충돌하면 탈락
                 if (spotCity && !spotCity.includes(reg) && !reg.includes(spotCity)) {
                   hasRegionConflict = true;
                   break;
@@ -3437,13 +3546,7 @@ var feedMap = new Map();
             }
 
             if (!hasRegionConflict) {
-              if (subKeywords.length > 0) {
-                // 서브네임 단어(정자, 능선, 바위 등) 검증
-                var hasSub = subKeywords.some(function(kw) { return fRawSpot.includes(kw); });
-                isMatch = true; // 동일 산 피드로 정상 수용
-              } else {
-                isMatch = true;
-              }
+              isMatch = true;
             }
           }
 
@@ -3451,8 +3554,12 @@ var feedMap = new Map();
             if (!feedMap.has(fId)) {
               feedMap.set(fId, f);
             } else {
-              var current = feedMap.get(fId);
-              if (!current.photo_url && f.photo_url) feedMap.set(fId, f);
+              var cur = feedMap.get(fId);
+              var curHasPhoto = Boolean(cur.photo_url && cur.photo_url.length > 10);
+              var newHasPhoto = Boolean(f.photo_url && f.photo_url.length > 10);
+              if (!curHasPhoto && newHasPhoto) {
+                feedMap.set(fId, f);
+              }
             }
           }
         });
@@ -3478,49 +3585,152 @@ var feedMap = new Map();
 
        var feedCardsHtml = matchedFeeds.slice(0, 6).map(function(f) {
           var fId = escapeHtml(String(f.id));
+          var realPhotos = [];
 
-          // 🌐 [1순위: 시트/R2 photo_url 및 photos_json 절대 우선 인출]
-          var photos = [];
-          if (f.photos_json && typeof f.photos_json === 'string' && f.photos_json.trim().startsWith('[')) {
-            try {
-              var parsed = JSON.parse(f.photos_json);
-              if (Array.isArray(parsed) && parsed.length > 0) photos = parsed.filter(Boolean);
-            } catch(e) {}
-          }
-          if (photos.length === 0 && f.photo_url && String(f.photo_url).trim().length > 10) {
-            photos = [String(f.photo_url).trim()];
-          }
-          if (photos.length === 0 && Array.isArray(f.photos) && f.photos.length > 0) {
-            photos = f.photos.filter(Boolean);
-          }
-          if (photos.length === 0 && (f.photo || f.fieldPhoto)) {
-            photos = [f.photo || f.fieldPhoto];
-          }
+          var collectPhoto = function(rawVal) {
+            if (!rawVal) return;
+            if (Array.isArray(rawVal)) {
+              rawVal.forEach(collectPhoto);
+              return;
+            }
+            if (typeof rawVal === 'string' && rawVal.trim().startsWith('[')) {
+              try {
+                var p = JSON.parse(rawVal);
+                if (Array.isArray(p)) { p.forEach(collectPhoto); return; }
+              } catch(e) {}
+            }
+            var clean = normalizePhotoLink(rawVal);
+            if (clean && clean.indexOf('http') === 0 && clean.length > 10 && !realPhotos.includes(clean)) {
+              realPhotos.push(clean);
+            }
+          };
 
-         var thumbUrl = '';
-          for (var pIdx = 0; pIdx < photos.length; pIdx++) {
-            var rawU = photos[pIdx];
-            if (typeof rawU === 'string') {
-              var cleanU = rawU.trim();
-              if (cleanU.indexOf('http') === 0 && cleanU.length > 15) {
-                thumbUrl = cleanU;
-                break;
-              }
+          collectPhoto(f.photos);
+          collectPhoto(f.photos_json);
+          collectPhoto(f.photo_url);
+          collectPhoto(f.photoUrl);
+          collectPhoto(f.fieldPhoto);
+          collectPhoto(f.photo);
+          collectPhoto(f.coverPhoto);
+
+          if (realPhotos.length === 0) {
+            var pool = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
+              ? window.__allLoadedFeeds
+              : (safeGetJSON('okbm_cached_community_feeds', []) || []);
+            var rId = String(f.id || '').trim();
+            var serverMatch = pool.find(function(item) {
+              return item && String(item.id || '').trim() === rId;
+            });
+            if (serverMatch) {
+              collectPhoto(serverMatch.photos);
+              collectPhoto(serverMatch.photos_json);
+              collectPhoto(serverMatch.photo_url);
+              collectPhoto(serverMatch.photoUrl);
             }
           }
-          if (!thumbUrl) {
-            thumbUrl = 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';
+
+          if (realPhotos.length === 0 && typeof window.getRecordPhotos === 'function') {
+            collectPhoto(window.getRecordPhotos(f));
           }
 
+          var thumbUrl = (realPhotos.length > 0) ? realPhotos[0] : '';
           var authorNick = f.author || f.nickname || f.nick || '개척 캠퍼';
           var memo100 = (f.memo || f.oneLineMemo || '').trim();
           var weightStr = f.weightKg ? (f.weightKg + 'kg') : '';
           var likesCount = Number(starsMap[String(f.id).trim()]) || Number(f.likes) || 0;
 
+          var imageStageHtml = thumbUrl
+            ? `<img src="${thumbUrl}" style="width:100%; height:100%; object-fit:cover; display:block;" loading="lazy" />`
+            : `<div style="width:100%; height:100%; background:#0b0f17; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:#64748b;"><svg viewBox="0 0 24 24" style="width:24px; height:24px;" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 20h20L12 2z"/></svg><span style="font-size:0.60rem; font-weight:800;">기록</span></div>`;
+
           return `
-            <div onclick="openMapSpotFeedDetailModal('${fId}', '${escapeHtml(String(spot.id).trim())}')" style="flex:0 0 145px; width:145px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; flex-shrink:0; box-sizing:border-box;">
+            <div data-feed-id="${fId}" data-spot-id="${escapeHtml(String(spot.id).trim())}" onclick="openMapSpotFeedDetailModal(this.dataset.feedId, this.dataset.spotId)" style="flex:0 0 145px; width:145px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; flex-shrink:0; box-sizing:border-box;">
               <div style="width:100%; aspect-ratio:3/4; position:relative; background:#000; overflow:hidden;">
-                <img src="${thumbUrl}" style="width:100%; height:100%; object-fit:cover; display:block;" loading="lazy" />
+                ${imageStageHtml}
+                <div style="position:absolute; top:5px; left:5px; background:rgba(0,0,0,0.72); backdrop-filter:blur(4px); padding:2px 6px; border-radius:4px; font-size:0.56rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:85px;">
+                  ${escapeHtml(authorNick)}
+                </div>
+              </div>
+              <div style="padding:6px 7px; display:flex; flex-direction:column; gap:3px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:0.58rem; color:#fde047; font-weight:800; font-family:'Space Grotesk', sans-serif; display:inline-flex; align-items:center; gap:2px;">
+                    ${starSvg} <span>${likesCount}</span>
+                  </span>
+                  ${weightStr ? `
+                    <span style="font-size:0.56rem; color:#cbd5e1; font-weight:800; font-family:'Space Grotesk',sans-serif; display:inline-flex; align-items:center; gap:2px;">
+                      ${backpackSvg} <span>${escapeHtml(weightStr)}</span>
+                    </span>` : ''}
+                </div>
+                <div style="font-size:0.65rem; color:#cbd5e1; line-height:1.35; height:2.7em; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; text-overflow:ellipsis; word-break:break-all;">
+                  “${escapeHtml(memo100 || '추천 박지입니다.')}”
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');var feedCardsHtml = matchedFeeds.slice(0, 6).map(function(f) {
+          var fId = escapeHtml(String(f.id));
+          var realPhotos = [];
+
+          var collectPhoto = function(rawVal) {
+            if (!rawVal) return;
+            if (Array.isArray(rawVal)) {
+              rawVal.forEach(collectPhoto);
+              return;
+            }
+            if (typeof rawVal === 'string' && rawVal.trim().startsWith('[')) {
+              try {
+                var p = JSON.parse(rawVal);
+                if (Array.isArray(p)) { p.forEach(collectPhoto); return; }
+              } catch(e) {}
+            }
+            var clean = normalizePhotoLink(rawVal);
+            if (clean && clean.indexOf('http') === 0 && clean.length > 10 && !realPhotos.includes(clean)) {
+              realPhotos.push(clean);
+            }
+          };
+
+          collectPhoto(f.photos);
+          collectPhoto(f.photos_json);
+          collectPhoto(f.photo_url);
+          collectPhoto(f.photoUrl);
+          collectPhoto(f.fieldPhoto);
+          collectPhoto(f.photo);
+          collectPhoto(f.coverPhoto);
+
+          if (realPhotos.length === 0) {
+            var pool = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
+              ? window.__allLoadedFeeds
+              : (safeGetJSON('okbm_cached_community_feeds', []) || []);
+            var rId = String(f.id || '').trim();
+            var serverMatch = pool.find(function(item) {
+              return item && String(item.id || '').trim() === rId;
+            });
+            if (serverMatch) {
+              collectPhoto(serverMatch.photos);
+              collectPhoto(serverMatch.photos_json);
+              collectPhoto(serverMatch.photo_url);
+              collectPhoto(serverMatch.photoUrl);
+            }
+          }
+
+          if (realPhotos.length === 0 && typeof window.getRecordPhotos === 'function') {
+            collectPhoto(window.getRecordPhotos(f));
+          }
+
+          var thumbUrl = (realPhotos.length > 0) ? realPhotos[0] : '';
+          var authorNick = f.author || f.nickname || f.nick || '개척 캠퍼';
+          var memo100 = (f.memo || f.oneLineMemo || '').trim();
+          var weightStr = f.weightKg ? (f.weightKg + 'kg') : '';
+          var likesCount = Number(starsMap[String(f.id).trim()]) || Number(f.likes) || 0;
+
+          var imageStageHtml = thumbUrl
+            ? `<img src="${thumbUrl}" style="width:100%; height:100%; object-fit:cover; display:block;" loading="lazy" />`
+            : `<div style="width:100%; height:100%; background:#0b0f17; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:#64748b;"><svg viewBox="0 0 24 24" style="width:24px; height:24px;" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2L2 20h20L12 2z"/></svg><span style="font-size:0.60rem; font-weight:800;">기록</span></div>`;
+
+          return `
+            <div data-feed-id="${fId}" data-spot-id="${escapeHtml(String(spot.id).trim())}" onclick="openMapSpotFeedDetailModal(this.dataset.feedId, this.dataset.spotId)" style="flex:0 0 145px; width:145px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; flex-shrink:0; box-sizing:border-box;">
+              <div style="width:100%; aspect-ratio:3/4; position:relative; background:#000; overflow:hidden;">
+                ${imageStageHtml}
                 <div style="position:absolute; top:5px; left:5px; background:rgba(0,0,0,0.72); backdrop-filter:blur(4px); padding:2px 6px; border-radius:4px; font-size:0.56rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:85px;">
                   ${escapeHtml(authorNick)}
                 </div>
@@ -3575,8 +3785,10 @@ var feedMap = new Map();
           feedPool = feedPool.concat(myHistory);
         }
 
-        var targetFeed = feedPool.find(function(f) {
+      var targetFeed = feedPool.find(function(f) {
           if (!f || !f.id) return false;
+          var fType = String(f.feedType || f.type || '').trim().toLowerCase();
+          if (fType === 'snap' || fType === 'router_snap') return false;
           var fId = String(f.id).replace(/^["']|["']$/g, '').trim();
           return fId === targetFeedId;
         });
@@ -3587,24 +3799,62 @@ var feedMap = new Map();
         }
 
         var cardId = escapeHtml(String(targetFeed.id));
-
-        // 🌐 [Cloudflare R2 정본 사진 1순위 인출 엔진 - 구글 시트 photo_url / photos_json 100% 흡수]
         var photos = [];
+
+        var normalizePhotoLink = function(url) {
+          if (!url || typeof url !== 'string') return '';
+          var clean = url.replace(/^["'\[\]\s]+|["'\[\]\s]+$/g, '').trim();
+          if (clean.includes('drive.google.com')) {
+            var idMatch = clean.match(/[?&]id=([a-zA-Z0-9_-]+)/) || clean.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if (idMatch && idMatch[1]) {
+              return 'https://lh3.googleusercontent.com/d/' + idMatch[1] + '=w1200';
+            }
+          }
+          return clean;
+        };
+
+        var mainPhoto = normalizePhotoLink(targetFeed.photo_url || targetFeed.photoUrl || targetFeed.fieldPhoto || targetFeed.photo || targetFeed.coverPhoto || '');
+        if (mainPhoto.indexOf('http') === 0 && mainPhoto.length > 15) {
+          photos.push(mainPhoto);
+        }
+
+        if (Array.isArray(targetFeed.photos) && targetFeed.photos.length > 0) {
+          targetFeed.photos.forEach(function(u) {
+            var clean = normalizePhotoLink(u);
+            if (clean.indexOf('http') === 0 && clean.length > 15 && !photos.includes(clean)) {
+              photos.push(clean);
+            }
+          });
+        }
+
         if (targetFeed.photos_json && typeof targetFeed.photos_json === 'string' && targetFeed.photos_json.trim().startsWith('[')) {
           try {
             var parsed = JSON.parse(targetFeed.photos_json);
-            if (Array.isArray(parsed) && parsed.length > 0) photos = parsed.filter(Boolean);
+            if (Array.isArray(parsed)) {
+              parsed.forEach(function(u) {
+                var clean = normalizePhotoLink(u);
+                if (clean.indexOf('http') === 0 && clean.length > 15 && !photos.includes(clean)) {
+                  photos.push(clean);
+                }
+              });
+            }
           } catch(e) {}
         }
-        if (photos.length === 0 && targetFeed.photo_url && String(targetFeed.photo_url).trim().length > 10) {
-          photos = [String(targetFeed.photo_url).trim()];
+
+        if (photos.length === 0 && typeof window.getRecordPhotos === 'function') {
+          photos = window.getRecordPhotos(targetFeed);
         }
-        if (photos.length === 0 && Array.isArray(targetFeed.photos) && targetFeed.photos.length > 0) {
-          photos = targetFeed.photos.filter(Boolean);
+
+        if (photos.length === 0) {
+          var rId = String(targetFeed.id || '').replace(/^["']|["']$/g, '').trim();
+          var memoryMap = (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) || safeGetJSON('okbm_phone_photos_map', {}) || {};
+          var localPhotos = (rId && memoryMap[rId]) || (targetFeed.date && memoryMap[String(targetFeed.date)]) || (targetFeed.date && memoryMap[String(targetFeed.date).replace(/[-/]/g, '.')]);
+          if (Array.isArray(localPhotos) && localPhotos.length > 0) photos = localPhotos.filter(Boolean);
         }
-        if (photos.length === 0 && (targetFeed.photo || targetFeed.fieldPhoto)) {
-          photos = [targetFeed.photo || targetFeed.fieldPhoto];
-        }
+
+        photos = photos.filter(function(u) {
+          return u && (u.indexOf('http') === 0 || u.indexOf('data:image') === 0 || u.indexOf('blob:') === 0);
+        });
 
        // 🌟 [R2 글로벌 CDN 링크 정규화 & 빈 주소/따옴표 노이즈 100% 원천 차단]
         photos = photos.map(function(u) {
@@ -3618,7 +3868,19 @@ var feedMap = new Map();
         }).filter(function(u) { return u.startsWith('http') && u.length > 15; });
 
         if (photos.length === 0) {
-          photos = ['https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80'];
+          var serverPool = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
+            ? window.__allLoadedFeeds
+            : (safeGetJSON('okbm_cached_community_feeds', []) || []);
+          var fRecord = serverPool.find(function(item) {
+            return item && String(item.id || '').trim() === cardId;
+          });
+          if (fRecord) {
+            var rawList = [].concat(fRecord.photos || []).concat(fRecord.photo_url || []).concat(fRecord.photoUrl || []);
+            rawList.forEach(function(u) {
+              var clean = normalizePhotoLink(u);
+              if (clean && clean.indexOf('http') === 0 && !photos.includes(clean)) photos.push(clean);
+            });
+          }
         }
 
         var authorNick = targetFeed.author || targetFeed.nickname || targetFeed.nick || '개척 캠퍼';
@@ -3670,7 +3932,7 @@ var feedMap = new Map();
         if (!isSelf) {
           followBtnHtml = isFollowing
             ? '<button type="button" data-user-id="' + escapeHtml(recordUserId) + '" data-author="' + escapeHtml(authorNick) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(52,211,153,0.14); border:1px solid #34d399; color:#34d399; font-size:0.62rem; font-weight:900; padding:2px 7px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>관심루터</span></button>'
-            : '<button type="button" data-user-id="' + escapeHtml(recordUserId) + '" data-author="' + escapeHtml(authorNick) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#cbd5e1; font-size:0.62rem; font-weight:800; padding:2px 7px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>+ 관심</span></button>';
+            : '<button type="button" data-user-id="' + escapeHtml(recordUserId) + '" data-author="' + escapeHtml(authorNick) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#cbd5e1; font-size:0.62rem; font-weight:800; padding:2px 7px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>관심</span></button>';
         }
 
         // 📱 [모바일 렌더링 붕괴 0% 방탄 이미지 트랙]: 3:4 규격 고정 및 CSS 이중 렌더러
@@ -3694,11 +3956,11 @@ var feedMap = new Map();
 
         var modalEl = document.createElement('div');
         modalEl.id = 'mapSpotFeedDetailModal';
-        modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; background:rgba(0,0,0,0.65); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); z-index:1000050; display:flex; justify-content:center; align-items:center; padding:12px; box-sizing:border-box;';
+        modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 0px)); width:100%; background:rgba(0,0,0,0.7); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); z-index:880; display:flex; justify-content:center; align-items:center; padding:10px 12px; box-sizing:border-box;';
         modalEl.onclick = function(e) { if (e.target === modalEl) modalEl.remove(); };
 
         modalEl.innerHTML = `
-          <div style="width:min(94vw, 440px); max-height:92dvh; background:#07090e; border:1px solid rgba(255,255,255,0.12); border-radius:18px; box-shadow:0 30px 80px rgba(0,0,0,0.95); display:flex; flex-direction:column; overflow:hidden; box-sizing:border-box;" onclick="event.stopPropagation();">
+          <div style="width:min(94vw, 440px); max-height:100%; background:#07090e; border:1px solid rgba(255,255,255,0.12); border-radius:18px; box-shadow:0 30px 80px rgba(0,0,0,0.95); display:flex; flex-direction:column; overflow:hidden; box-sizing:border-box;" onclick="event.stopPropagation();">
             
             <!-- 상단 바: 작성자 · 이웃추가 · 인스타 ── 날짜 및 닫기 -->
             <div style="padding:11px 14px; background:rgba(0,0,0,0.5); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
@@ -3730,7 +3992,7 @@ var feedMap = new Map();
             <div style="padding:10px 14px 14px 14px; background:#07090e; display:flex; flex-direction:column; gap:8px; overflow-y:auto;">
               <div style="display:flex; justify-content:space-between; align-items:center; position:relative; min-height:28px;">
                 <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
-                  <button type="button" onclick="window.toggleFeedStar('${cardId}', event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                  <button type="button" data-card-id="${cardId}" onclick="window.toggleFeedStar(this.dataset.cardId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:4px;">
                     <svg id="feedStarIcon_${cardId}" viewBox="0 0 24 24" style="width:18px; height:18px; filter:${isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none'};" fill="${isStarred ? '#fde047' : 'none'}" stroke="${isStarred ? '#fde047' : '#ffffff'}" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                     <span id="feedStarCountText_${cardId}" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:'Space Grotesk', sans-serif;">${likesCount}</span>
                   </button>
@@ -3765,6 +4027,136 @@ var feedMap = new Map();
         `;
 
         document.body.appendChild(modalEl);
+      };
+
+      window.toggleFeedStar = function(cardId, e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        if (window.__isFeedStarLock) return;
+        window.__isFeedStarLock = true;
+        setTimeout(function() { window.__isFeedStarLock = false; }, 350);
+
+        if (!isUserLoggedIn()) {
+          triggerHaptic(10);
+          if (typeof openLoginModal === 'function') openLoginModal();
+          showToast(`${ICONS.LOCK} <span>별점 추가는 로그인 후 이용 가능합니다.</span>`);
+          return;
+        }
+
+        var cId = String(cardId).trim();
+        var userStarsMap = safeGetJSON('okbm_feed_stars_map', {}) || {};
+        var starsMap = safeGetJSON('okbm_feed_stars_counts', {}) || {};
+        var isStarred = Boolean(userStarsMap[cId]);
+
+        var curCount = Number(starsMap[cId]) || 0;
+        if (isStarred) {
+          delete userStarsMap[cId];
+          curCount = Math.max(0, curCount - 1);
+        } else {
+          userStarsMap[cId] = true;
+          curCount += 1;
+        }
+        starsMap[cId] = curCount;
+
+        localStorage.setItem('okbm_feed_stars_map', JSON.stringify(userStarsMap));
+        localStorage.setItem('okbm_feed_stars_counts', JSON.stringify(starsMap));
+
+        var icon = document.getElementById('feedStarIcon_' + cId);
+        var text = document.getElementById('feedStarCountText_' + cId);
+        if (icon) {
+          var active = !isStarred;
+          icon.setAttribute('fill', active ? '#fde047' : 'none');
+          icon.setAttribute('stroke', active ? '#fde047' : '#ffffff');
+          icon.style.filter = active ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none';
+        }
+        if (text) {
+          text.innerText = curCount;
+        }
+
+        triggerHaptic(!isStarred ? 15 : 10);
+        showToast(!isStarred ? '⭐ 피드에 별을 남겼습니다!' : '⭐ 별점을 취소했습니다.');
+        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+      };
+
+      window.toggleSaveFeed = function(cardId, e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        if (window.__isFeedSaveLock) return;
+        window.__isFeedSaveLock = true;
+        setTimeout(function() { window.__isFeedSaveLock = false; }, 350);
+
+        if (!isUserLoggedIn()) {
+          triggerHaptic(10);
+          if (typeof openLoginModal === 'function') openLoginModal();
+          showToast(`${ICONS.LOCK} <span>관심피드 저장은 로그인 후 이용 가능합니다.</span>`);
+          return;
+        }
+
+        var cId = String(cardId).trim();
+        var savedList = safeGetJSON('okbm_saved_feeds', []) || [];
+        var idx = savedList.indexOf(cId);
+        var isNowSaved = false;
+
+        if (idx > -1) {
+          savedList.splice(idx, 1);
+          isNowSaved = false;
+        } else {
+          savedList.push(cId);
+          isNowSaved = true;
+        }
+        localStorage.setItem('okbm_saved_feeds', JSON.stringify(savedList));
+
+        var btn = e.currentTarget;
+        if (btn) {
+          var svg = btn.querySelector('svg');
+          if (svg) {
+            svg.setAttribute('fill', isNowSaved ? '#c084fc' : 'none');
+            svg.style.color = isNowSaved ? '#c084fc' : '#cbd5e1';
+            svg.style.filter = isNowSaved ? 'drop-shadow(0 0 6px rgba(192,132,252,0.8))' : 'none';
+          }
+        }
+
+        triggerHaptic(isNowSaved ? 15 : 10);
+        showToast(isNowSaved ? '🔖 관심피드에 보관되었습니다.' : '🔖 관심피드에서 제외되었습니다.');
+        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
+      };
+
+      window.toggleFollowUser = function(userId, authorNick, e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        if (!isUserLoggedIn()) {
+          triggerHaptic(10);
+          if (typeof openLoginModal === 'function') openLoginModal();
+          showToast(`${ICONS.LOCK} <span>루터 팔로우는 로그인 후 이용 가능합니다.</span>`);
+          return;
+        }
+
+        var targetKey = String(userId || authorNick).trim();
+        if (!targetKey) return;
+
+        var followingList = safeGetJSON('okbm_following_users', []) || [];
+        var idx = followingList.indexOf(targetKey);
+        var isNowFollowing = false;
+
+        if (idx > -1) {
+          followingList.splice(idx, 1);
+          isNowFollowing = false;
+        } else {
+          followingList.push(targetKey);
+          isNowFollowing = true;
+        }
+        localStorage.setItem('okbm_following_users', JSON.stringify(followingList));
+
+        var btn = e.currentTarget;
+        if (btn) {
+          btn.innerHTML = isNowFollowing
+            ? '<svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>관심루터</span>'
+            : '<svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>관심</span>';
+          btn.style.background = isNowFollowing ? 'rgba(52,211,153,0.14)' : 'rgba(255,255,255,0.08)';
+          btn.style.borderColor = isNowFollowing ? '#34d399' : 'rgba(255,255,255,0.2)';
+          btn.style.color = isNowFollowing ? '#34d399' : '#cbd5e1';
+        }
+
+        triggerHaptic(isNowFollowing ? 15 : 10);
+        showToast(isNowFollowing ? `✨ [${authorNick}] 님을 관심루터로 등록했습니다.` : `[${authorNick}] 님 관심 등록을 해제했습니다.`);
+        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
       };
 
       window.updateMapHeroDots = function(container) {
@@ -4287,10 +4679,10 @@ displaySpots.forEach(spot => {
               ${mainTerrainHtml}
             </div>
             <div class="spot-card-quick-actions" style="display:flex; align-items:center; gap:3px; flex-shrink:0; margin-left:auto;" onclick="event.stopPropagation();">
-              <button type="button" class="btn-card-quick ${isFav ? 'active-fav' : ''}" onclick="toggleUserBookmark('${sId}', event)">${ICONS.HEART} 찜</button>
-              <button type="button" class="btn-card-quick ${isDone ? 'active-done' : ''}" onclick="toggleUserVisited('${sId}', event)">${ICONS.FLAG} 클리어</button>
-              <button class="btn-edit" style="display:${isAdminMode ? 'inline-block' : 'none'};" onclick="editSpotById(event, '${spot.id}')">수정</button>
-              <button class="btn-del" style="display:${isAdminMode ? 'inline-block' : 'none'};" onclick="deleteSpotById(event, '${spot.id}')">삭제</button>
+              <button type="button" class="btn-card-quick ${isFav ? 'active-fav' : ''}" data-id="${sId}" onclick="toggleUserBookmark(this.dataset.id, event)">${ICONS.HEART} 찜</button>
+              <button type="button" class="btn-card-quick ${isDone ? 'active-done' : ''}" data-id="${sId}" onclick="toggleUserVisited(this.dataset.id, event)">${ICONS.FLAG} 클리어</button>
+              <button class="btn-edit" style="display:${isAdminMode ? 'inline-block' : 'none'};" data-id="${sId}" onclick="editSpotById(event, this.dataset.id)">수정</button>
+              <button class="btn-del" style="display:${isAdminMode ? 'inline-block' : 'none'};" data-id="${sId}" onclick="deleteSpotById(event, this.dataset.id)">삭제</button>
             </div>
           </div>
 
@@ -4410,12 +4802,12 @@ displaySpots.forEach(spot => {
             if (coordsInput) coordsInput.value = `${existingProp.lat}, ${existingProp.lng}`;
           }
         } else {
-          if (titleEl) titleEl.innerHTML = ICONS.PIN + ' <span>박지 제보 접수 (관리자 검수용)</span>';
+          if (titleEl) titleEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; flex-shrink:0;"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg><span>장소 제보하기</span>`;
           if (noticeEl) {
             noticeEl.style.display = 'flex';
-            noticeEl.innerHTML = ICONS.BACKPACK + ' <span>제보해 주신 박지는 <strong>[관리자 검토 및 승인]</strong> 후 정식 지도에 등록됩니다.</span>';
+            noticeEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; flex-shrink:0; color:#f59e0b;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>제보해주신 소중한 장소는 확인 후 전국 지도에 정식 등록됩니다.</span>`;
           }
-          if (btnEl) btnEl.innerText = '제보 접수하기';
+          if (btnEl) btnEl.innerText = '장소 제보 접수하기';
 
           if (lat && lng) {
             modalPendingData.lat = parseFloat(lat);
@@ -4567,6 +4959,8 @@ var overlay = document.getElementById('customModalOverlay');
       }
 
       async function saveCustomModal() {
+        if (window.__isModalSubmitting) return;
+
         const name = document.getElementById('modalInputName')?.value.trim();
         const sub = document.getElementById('modalInputSub')?.value.trim();
         const tName = document.getElementById('modalInputTrailheadName')?.value.trim();
@@ -4574,6 +4968,7 @@ var overlay = document.getElementById('customModalOverlay');
         
         if (!name || !entry) return alert('박지명과 들머리 주소를 입력해주세요.');
 
+        window.__isModalSubmitting = true;
         const submitBtn = document.getElementById('modalSubmitBtn');
         if (submitBtn) {
           submitBtn.disabled = true; 
@@ -4601,6 +4996,7 @@ var overlay = document.getElementById('customModalOverlay');
           let elevation = document.getElementById('modalInputElevation')?.value.trim();
           if (!elevation && lat && lng) elevation = await getElevation(lat, lng);
           if (elevation && !String(elevation).includes('m') && !isNaN(elevation)) elevation = `${elevation}m`;
+          if (!elevation) elevation = '';
 
           // 📝 4대 설명 독립 입력값을 규격화된 포맷으로 조합
           const descView = document.getElementById('modalInputDescView')?.value.trim();
@@ -4694,7 +5090,7 @@ var overlay = document.getElementById('customModalOverlay');
                 spot_main: finalSpotMain, 
                 spot_sub: sub, 
                 fullName: fullName,
-                elevation: elevation || '450m', 
+                elevation: elevation || '', 
                 campsite_lat: lat,
                 campsite_lng: lng,
                 lat: lat, 
@@ -4735,6 +5131,7 @@ var overlay = document.getElementById('customModalOverlay');
                 myProps.unshift(propRecord);
               }
               localStorage.setItem('okbm_my_proposals', JSON.stringify(myProps));
+              if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
 
               window.__currentEditingProposalId = null;
               window.__isSpotCorrectionMode = false;
@@ -4756,7 +5153,7 @@ var overlay = document.getElementById('customModalOverlay');
               fullName, 
               lat, 
               lng, 
-              elevation: elevation || '450m', 
+              elevation: elevation || '', 
               trailhead_name: tName, 
               trailhead_addr: entry, 
               entryPoint: entry, 
@@ -4835,6 +5232,7 @@ var overlay = document.getElementById('customModalOverlay');
             }
           }
         } finally {
+          window.__isModalSubmitting = false;
           if (submitBtn) {
             submitBtn.disabled = false; 
             submitBtn.innerText = modalMode === 'PROPOSAL' ? '제보 접수하기' : '저장 완료';
@@ -4874,8 +5272,147 @@ var overlay = document.getElementById('customModalOverlay');
       }
 
       let isMarkerClickProcessing = false;
+      var longPressProposalOverlay = null;
+
+      window.hideLongPressProposalTooltip = function() {
+        if (longPressProposalOverlay) {
+          longPressProposalOverlay.setMap(null);
+          longPressProposalOverlay = null;
+        }
+      };
+
+      function initMapLongPressProposalEngine(container) {
+        if (!container) return;
+        var pressTimer = null;
+        var startCoords = { x: 0, y: 0 };
+        var isMoved = false;
+
+        function startTimer(clientX, clientY) {
+          isMoved = false;
+          startCoords = { x: clientX, y: clientY };
+          clearTimeout(pressTimer);
+          pressTimer = setTimeout(function() {
+            if (!isMoved && map) {
+              triggerHaptic(20);
+              var rect = container.getBoundingClientRect();
+              var point = new kakao.maps.Point(clientX - rect.left, clientY - rect.top);
+              var proj = map.getProjection();
+              if (proj) {
+                var latlng = proj.coordsFromContainerPoint(point);
+                window.showLongPressProposalTooltip(latlng);
+              }
+            }
+          }, 500);
+        }
+
+        function cancelTimer() {
+          clearTimeout(pressTimer);
+        }
+
+        container.addEventListener('touchstart', function(e) {
+          if (e.touches.length === 1) {
+            startTimer(e.touches[0].clientX, e.touches[0].clientY);
+          }
+        }, { passive: true });
+
+        container.addEventListener('touchmove', function(e) {
+          if (e.touches.length === 1) {
+            var dx = Math.abs(e.touches[0].clientX - startCoords.x);
+            var dy = Math.abs(e.touches[0].clientY - startCoords.y);
+            if (dx > 8 || dy > 8) {
+              isMoved = true;
+              cancelTimer();
+            }
+          }
+        }, { passive: true });
+
+        container.addEventListener('touchend', cancelTimer, { passive: true });
+        container.addEventListener('touchcancel', cancelTimer, { passive: true });
+
+        container.addEventListener('mousedown', function(e) {
+          if (e.button === 0) {
+            startTimer(e.clientX, e.clientY);
+          }
+        });
+
+        container.addEventListener('mousemove', function(e) {
+          var dx = Math.abs(e.clientX - startCoords.x);
+          var dy = Math.abs(e.clientY - startCoords.y);
+          if (dx > 8 || dy > 8) {
+            isMoved = true;
+            cancelTimer();
+          }
+        });
+
+        container.addEventListener('mouseup', cancelTimer);
+        container.addEventListener('mouseleave', cancelTimer);
+      }
+
+      window.showLongPressProposalTooltip = function(latlng) {
+        window.hideLongPressProposalTooltip();
+        if (!map || !latlng) return;
+
+        var lat = parseFloat(latlng.getLat().toFixed(6));
+        var lng = parseFloat(latlng.getLng().toFixed(6));
+
+        var el = document.createElement('div');
+        el.style.cssText = 'position:relative; display:flex; flex-direction:column; align-items:center; transform:translateY(-100%); margin-top:-14px; pointer-events:auto !important; z-index:9000; animation:pageFadeIn 0.15s ease-out forwards;';
+
+        var stopAll = function(e) {
+          if (e) {
+            e.stopPropagation();
+            if (e.cancelable && e.type !== 'touchstart' && e.type !== 'touchend') {
+              e.preventDefault();
+            }
+          }
+        };
+
+        el.addEventListener('touchstart', stopAll, { passive: false });
+        el.addEventListener('touchend', stopAll, { passive: false });
+        el.addEventListener('mousedown', stopAll);
+        el.addEventListener('click', stopAll);
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.setAttribute('data-lat', lat);
+        btn.setAttribute('data-lng', lng);
+        btn.style.cssText = 'background:rgba(14,18,26,0.96); border:1px solid rgba(255,255,255,0.18); border-radius:20px; padding:7px 14px; color:#ffffff; font-size:0.76rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px; box-shadow:0 10px 28px rgba(0,0,0,0.8); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); white-space:nowrap; outline:none; -webkit-tap-highlight-color:transparent;';
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; flex-shrink:0;"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg><span>장소 제보하기</span>`;
+
+        var handleTrigger = function(e) {
+          if (e) {
+            e.stopPropagation();
+            e.preventDefault();
+          }
+          triggerHaptic(12);
+          var tLat = parseFloat(btn.getAttribute('data-lat'));
+          var tLng = parseFloat(btn.getAttribute('data-lng'));
+          window.hideLongPressProposalTooltip();
+          openUserProposalModal('', tLat, tLng, '');
+        };
+
+        btn.addEventListener('touchend', handleTrigger, { passive: false });
+        btn.addEventListener('click', handleTrigger);
+
+        var arrow = document.createElement('div');
+        arrow.style.cssText = 'width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; border-top:6px solid rgba(255,255,255,0.18); margin-top:-0.5px;';
+
+        el.appendChild(btn);
+        el.appendChild(arrow);
+
+        longPressProposalOverlay = new kakao.maps.CustomOverlay({
+          position: latlng,
+          content: el,
+          yAnchor: 1.0,
+          zIndex: 9000,
+          clickable: true
+        });
+
+        longPressProposalOverlay.setMap(map);
+      };
 
       function handleMapClick(mouseEvent) {
+        window.hideLongPressProposalTooltip();
         const pcDrop = document.getElementById('pcSearchDropdown');
         if (pcDrop) pcDrop.style.display = 'none';
 
@@ -4901,11 +5438,12 @@ var overlay = document.getElementById('customModalOverlay');
           const coordsDisplay = document.getElementById('modalInputCoordsDisplay');
           if (coordsDisplay) coordsDisplay.value = `${lat}, ${lng}`;
 
-          // 🛡️ 들머리 주소창(modalInputEntry)에 산꼭대기 지번을 억지로 채우는 로직 전면 배제 (고도만 측정 후 모달 복귀)
+          const overlay = document.getElementById('customModalOverlay');
+          if (overlay) overlay.style.display = 'flex';
+
           getElevation(lat, lng).then(elev => {
             const elevInput = document.getElementById('modalInputElevation');
-            if (elevInput && !elevInput.value) elevInput.value = elev;
-            document.getElementById('customModalOverlay').style.display = 'flex';
+            if (elevInput && !elevInput.value && elev) elevInput.value = elev;
           });
           return;
         }
@@ -5053,7 +5591,7 @@ var overlay = document.getElementById('customModalOverlay');
               : '<span style="font-size:0.56rem; font-weight:700; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">자연</span>';
 
             li.innerHTML = `
-              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; padding-right:8px;">
+              <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
                 <div style="display:flex; align-items:center; gap:5px;">
                   ${badgeHtml}
                   <span style="font-size:0.80rem; font-weight:800; color:${res.isInternal ? '#38bdf8' : 'var(--text-primary)'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
@@ -5063,8 +5601,7 @@ var overlay = document.getElementById('customModalOverlay');
                 <span style="font-size:0.63rem; color:var(--text-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                   ${escapeHtml(res.sub)}
                 </span>
-              </div>
-             ${(!res.isInternal) ? `<button type="button" class="btn-quick-add" style="display:inline-block; padding:3px 7px; font-size:0.65rem; background:#0f766e;" onclick="event.stopPropagation(); quickAddFromSearch('${escapeHtml(res.title)}', ${res.lat}, ${res.lng}, '${escapeHtml(res.sub)}')">➕ 제보</button>` : ''}`;
+              </div>`;
 
             li.addEventListener('click', () => {
               triggerHaptic(10);

@@ -670,6 +670,7 @@
       return clean;
     }).filter(function(u) { return u.length > 10; });
   }
+  window.getRecordPhotos = getRecordPhotos;
 
   // 🎨 [3D 엽서 테두리 팔레트]
   window.NATURAL_BORDER_PALETTES = [
@@ -1840,9 +1841,9 @@
     }
 
     // 🛑 공용 피드 캐시에서도 해당 스냅 즉각 제거
-    if (Array.isArray(window.__allLoadedFeeds)) {
-      window.__allLoadedFeeds = window.__allLoadedFeeds.filter(function(f) { return f && String(f.id).trim() !== sId; });
-      localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(window.__allLoadedFeeds));
+    if (Array.isArray(window.__allLoadedRouterSnaps)) {
+      window.__allLoadedRouterSnaps = window.__allLoadedRouterSnaps.filter(function(f) { return f && String(f.id).trim() !== sId; });
+      localStorage.setItem('okbm_cached_router_snaps', JSON.stringify(window.__allLoadedRouterSnaps));
     }
 
     // ☁️ R2 유저 파일(users/user_...json)에서도 삭제 상태를 즉시 덮어쓰도록 강제 동기화

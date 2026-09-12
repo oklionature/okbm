@@ -1061,9 +1061,8 @@
    <div class="insta-memo-title-line" style="display:flex; justify-content:space-between; align-items:center;">
       <h1 class="insta-memo-spot-title" id="heroMainTitle">박지 로딩 중...</h1>
 
-      <!-- ⭐ 은은한 플래티넘 글래스 캡슐 뱃지 -->
       <button type="button" id="btnHeroAuthorFeed" onclick="window.openHeroAuthorCollection(event)" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:12px; padding:3px 8px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">
-        <span style="font-size:0.64rem; color:#fde047; line-height:1;">★</span>
+        <svg viewBox="0 0 24 24" style="width:10px; height:10px; fill:#fde047; color:#fde047; flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         <span id="heroAuthorText" style="font-size:0.68rem; font-weight:800; color:#e2e8f0; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">낭만백패커</span>
       </button>
     </div>
@@ -1326,7 +1325,10 @@
         </div>
         <div style="text-align:right;">
           <div style="font-size:1.25rem; font-weight:900; color:#ffffff; font-family:var(--font-en);" id="mainBannerKgText">0.00 kg</div>
-          <span style="font-size:0.65rem; color:#94a3b8; font-weight:800;">점검하기 ➔</span>
+          <span style="font-size:0.65rem; color:#94a3b8; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+            <span>점검하기</span>
+            <svg viewBox="0 0 24 24" style="width:11px; height:11px; fill:none; stroke:#38bdf8; stroke-width:2.5; flex-shrink:0;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </span>
         </div>
       </div>
    </section>
@@ -1386,7 +1388,7 @@
         </div>
 
         <div style="position:relative; width:100%; display:flex; align-items:center;">
-          <input type="text" id="gearSearchFixedInput" class="modal-input" placeholder="🔍 브랜드, 장비명, 스펙 검색..." oninput="handleGearSearchInput(this.value)" style="border-color:rgba(255,255,255,0.25); font-size:0.85rem; padding:0 32px 0 12px; height:42px; border-radius:8px; width:100%; box-sizing:border-box;" />
+          <input type="text" id="gearSearchFixedInput" class="modal-input" placeholder="브랜드, 장비명, 스펙 검색..." oninput="handleGearSearchInput(this.value)" style="border-color:rgba(255,255,255,0.25); font-size:0.85rem; padding:0 32px 0 12px; height:42px; border-radius:8px; width:100%; box-sizing:border-box;" />
           <button type="button" id="btnGearSearchClear" style="display:none; position:absolute; right:8px; background:rgba(255,255,255,0.25); border:none; color:#ffffff; width:17px; height:17px; border-radius:50%; font-size:0.6rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0;" onclick="clearGearSearchInput()">✕</button>
         </div>
 
@@ -1402,11 +1404,13 @@
       <div class="gear-db-list" id="presetGearDbList" style="flex:1; overflow-y:auto; margin-top:8px;"></div>
 
       <div style="position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:480px; height:calc(56px + env(safe-area-inset-bottom, 0px)); padding:6px 12px calc(8px + env(safe-area-inset-bottom, 0px)) 12px; background:rgba(7,9,14,0.98); border-top:1px solid rgba(255,255,255,0.12); display:flex; align-items:center; gap:8px; box-sizing:border-box; z-index:9999999;">
-        <button type="button" onclick="clearAllGearsInCategory(currentOpeningCategoryId)" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1; font-size:0.75rem; font-weight:800; height:44px; padding:0 14px; border-radius:10px; cursor:pointer;">
-          <span>↺ 비우기</span>
+        <button type="button" onclick="clearAllGearsInCategory(currentOpeningCategoryId)" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1; font-size:0.75rem; font-weight:800; height:44px; padding:0 14px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+          <svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:none; stroke:#cbd5e1; stroke-width:2.2; flex-shrink:0;"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          <span>비우기</span>
         </button>
         <button type="button" onclick="triggerHaptic(12); closeGearPresetModal();" style="flex:1; height:44px; background:#ffffff; color:#000000; font-size:0.84rem; font-weight:900; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
-          <span>장비 선택 완료 ✓</span>
+          <span>장비 선택 완료</span>
+          <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#000000; stroke-width:2.5; flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
         </button>
       </div>
     </div>
@@ -1645,7 +1649,7 @@
       if (!token || !profile || !profile.id) {
         triggerHaptic(10);
         openLoginModal();
-        showToast('🔒 낭만별은 로그인 후 누르실 수 있습니다.', 'info');
+        showToast('낭만별은 로그인 후 이용하실 수 있습니다.', 'info');
         return;
       }
 
@@ -1665,7 +1669,7 @@
         starsMap[sId] = true;
         curCount++;
         triggerHaptic(15);
-        showToast('⭐ 낭만별을 보냈습니다!', 'success', 1800);
+        showToast('낭만별을 보냈습니다.', 'success', 1800);
       }
 
       starCounts[sId] = curCount;
@@ -1863,7 +1867,7 @@
         var sId = escapeHtml(String(f.id || sName));
 
         return `
-          <div onclick="openSecretSpotHeroViewer('${sId}')" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; box-sizing:border-box; transition:transform 0.15s ease;">
+          <div data-spot-id="${sId}" onclick="openSecretSpotHeroViewer(this.dataset.spotId)" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; box-sizing:border-box; transition:transform 0.15s ease;">
             <div style="width:100%; aspect-ratio:4/3; position:relative; background:#000; overflow:hidden;">
               <img src="${item.photoUrl}" alt="${escapeHtml(sName)}" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;" />
               <div style="position:absolute; bottom:6px; right:6px; background:rgba(0,0,0,0.75); backdrop-filter:blur(4px); color:#fde047; font-size:0.58rem; font-weight:900; font-family:var(--font-en); padding:2px 6px; border-radius:4px; border:1px solid rgba(253,224,71,0.35);">${escapeHtml(badgeText)}</div>
@@ -2260,9 +2264,9 @@
             });
             if (target) {
               target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              showToast(`📖 [${spotName}] 피드로 이동했습니다!`, 'success');
+              showToast(`[${spotName}] 피드로 이동했습니다.`, 'success');
             } else {
-              showToast(`📖 [${spotName}]에 등록된 피드를 둘러보세요!`, 'info');
+              showToast(`[${spotName}]에 등록된 피드를 둘러보세요.`, 'info');
             }
           }, 350);
         }, 150);
@@ -2987,8 +2991,8 @@ var adBannersHtml = `
 
           ${onlyViewText ? `
             <div style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.08); border-left:3px solid rgba(255,255,255,0.6); border-radius:8px; padding:10px 12px; font-size:0.78rem; line-height:1.55; color:#cbd5e1; margin-top:6px;">
-              <div style="font-weight:900; font-size:0.73rem; color:#ffffff; margin-bottom:3px; display:flex; align-items:center; gap:4px;">
-                <span>⛰️</span>
+              <div style="font-weight:900; font-size:0.73rem; color:#ffffff; margin-bottom:3px; display:flex; align-items:center; gap:5px;">
+                <svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:none; stroke:#34d399; stroke-width:2.2; flex-shrink:0;"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
                 <span>[영상 속 스팟 뷰 & 특징]</span>
               </div>
               <div>${escapeHtml(onlyViewText)}</div>
@@ -2996,8 +3000,9 @@ var adBannersHtml = `
 
           ${adBannersHtml}
 
-          <div style="border-radius:12px; border:1px dashed rgba(255,255,255,0.1); background:rgba(255,255,255,0.015); padding:10px 12px; text-align:center; margin-top:4px;">
-            <span style="font-size:0.65rem; color:#64748b;">🔒 상세 들머리 주소(네비) 및 코스는 <strong>장소확인(전국지도)</strong>에서 확인 가능합니다.</span>
+          <div style="border-radius:12px; border:1px dashed rgba(255,255,255,0.1); background:rgba(255,255,255,0.015); padding:10px 12px; text-align:center; margin-top:4px; display:flex; align-items:center; justify-content:center; gap:5px;">
+            <svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:none; stroke:#94a3b8; stroke-width:2; flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span style="font-size:0.65rem; color:#94a3b8;">상세 들머리 주소(네비) 및 코스는 <strong>장소확인(전국지도)</strong>에서 확인 가능합니다.</span>
           </div>
         `;
       }
@@ -3136,8 +3141,8 @@ var adBannersHtml = `
       now.setHours(0,0,0,0);
       var diffDays = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
       if (diffDays < 0) return { text: "마감", cls: "color:#64748b; background:rgba(255,255,255,0.04);", isExpired: true };
-      if (diffDays === 0) return { text: "오늘출발", cls: "color:#ffffff; background:rgba(244,63,94,0.3); font-weight:800;" };
-      return { text: "D-" + diffDays, cls: "color:#ffffff; background:rgba(255,255,255,0.12); font-weight:800;" };
+      if (diffDays === 0) return { text: "오늘출발", cls: "color:#ffffff; background:rgba(244,63,94,0.25); border:1px solid rgba(244,63,94,0.4); font-weight:800;" };
+      return { text: "D-" + diffDays, cls: "color:#ffffff; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.16); font-weight:800;" };
     }
 
     function renderHomeTripJoinSlider() {
@@ -3182,15 +3187,15 @@ var adBannersHtml = `
         var curJoin = parseInt(t.currentJoined, 10) || ((t.participants && t.participants.length) ? t.participants.length : 1);
         var isFull = Boolean(t.isFull || curJoin >= maxCap);
         var pct = Math.min(100, Math.round((curJoin / maxCap) * 100));
-        var carpoolBadge = t.carpoolInfo ? `<span style="font-size:0.56rem; color:#cbd5e1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); padding:1px 4px; border-radius:3px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">🚗 ${escapeHtml(t.carpoolInfo)}</span>` : '';
+        var carpoolBadge = t.carpoolInfo ? `<span style="font-size:0.56rem; color:#cbd5e1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); padding:1px 4px; border-radius:3px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-flex; align-items:center; gap:3px;"><svg viewBox="0 0 24 24" style="width:10px; height:10px; fill:none; stroke:#fbbf24; stroke-width:2.2; flex-shrink:0;"><path d="M5 17h14M5 17a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2M7 17v2M17 17v2"/></svg>${escapeHtml(t.carpoolInfo)}</span>` : '';
 
         return `
-          <div onclick="openTripDetailModal('${escapeHtml(t.tripId)}')" style="width:174px; flex-shrink:0; background:${isFull ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.035)'}; border:1px solid ${isFull ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)'}; border-radius:12px; padding:10px 11px; display:flex; flex-direction:column; justify-content:space-between; gap:6px; cursor:pointer; opacity:${isFull ? '0.6' : '1'};">
+          <div data-trip-id="${escapeHtml(t.tripId)}" onclick="openTripDetailModal(this.dataset.tripId)" style="width:174px; flex-shrink:0; background:${isFull ? 'rgba(255,255,255,0.015)' : 'rgba(255,255,255,0.035)'}; border:1px solid ${isFull ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)'}; border-radius:12px; padding:10px 11px; display:flex; flex-direction:column; justify-content:space-between; gap:6px; cursor:pointer; opacity:${isFull ? '0.6' : '1'};">
             <div style="display:flex; flex-direction:column; gap:3px;">
               <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span style="font-size:0.58rem; padding:1px 5px; border-radius:3px; ${isFull ? 'color:#64748b; background:rgba(255,255,255,0.04);' : dBadge.cls}">${isFull ? '마감' : dBadge.text}</span>
-                <span style="font-size:0.60rem; color:${isFull ? '#64748b' : '#34d399'}; font-weight:800; font-family:var(--font-en); background:rgba(52,211,153,0.1); border:1px solid rgba(52,211,153,0.25); padding:1px 5px; border-radius:4px;">
-                  👥 ${curJoin}/${maxCap}명
+                <span style="font-size:0.60rem; color:${isFull ? '#64748b' : '#34d399'}; font-weight:800; font-family:var(--font-en); background:rgba(52,211,153,0.1); border:1px solid rgba(52,211,153,0.25); padding:1px 5px; border-radius:4px; display:inline-flex; align-items:center; gap:2px;">
+                  <svg viewBox="0 0 24 24" style="width:10px; height:10px; fill:none; stroke:#34d399; stroke-width:2.2; flex-shrink:0;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>${curJoin}/${maxCap}명
                 </span>
               </div>
               <div style="font-size:0.84rem; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(t.spotName)}</div>
@@ -3201,7 +3206,7 @@ var adBannersHtml = `
               </div>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed rgba(255,255,255,0.08); padding-top:5px; margin-top:2px;">
-              <span style="font-size:0.58rem; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">👤 ${escapeHtml(t.authorName || '백패커')}</span>
+              <span style="font-size:0.58rem; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:10px; height:10px; fill:none; stroke:#38bdf8; stroke-width:2.2; flex-shrink:0;"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg>${escapeHtml(t.authorName || '백패커')}</span>
               <span style="font-size:0.60rem; color:${isFull ? '#64748b' : '#ffffff'}; font-weight:800;">${isFull ? '마감됨' : '참가 ➔'}</span>
             </div>
           </div>
@@ -3210,9 +3215,11 @@ var adBannersHtml = `
 
       if (activeTrips.length > 3) {
         html += `
-          <div onclick="openTripJoinListModal()" style="width:110px; flex-shrink:0; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 10px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:4px; cursor:pointer;">
-            <div style="font-size:1rem; color:#94a3b8;">➔</div>
-            <div style="font-size:0.75rem; font-weight:800; color:#fff;">전체보기</div>
+          <div onclick="openTripJoinListModal()" style="width:110px; flex-shrink:0; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 10px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; gap:6px; cursor:pointer;">
+            <div style="width:28px; height:28px; border-radius:50%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); display:flex; align-items:center; justify-content:center;">
+              <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#cbd5e1; stroke-width:2.2;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+            <div style="font-size:0.75rem; font-weight:800; color:#ffffff;">전체보기</div>
             <div style="font-size:0.56rem; color:#94a3b8;">(${activeTrips.length}개 원정)</div>
           </div>
         `;
@@ -3525,9 +3532,9 @@ var adBannersHtml = `
 
                 <div style="position:absolute; bottom:10px; left:14px; right:14px; z-index:2; display:flex; flex-direction:column; gap:6px;">
                   <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div style="font-size:0.92rem; font-weight:900; color:#ffffff; text-shadow:0 1px 4px rgba(0,0,0,0.95);">👤 ${escapeHtml(trip.authorName || '낭만백패커')}</div>
+                    <div style="font-size:0.92rem; font-weight:900; color:#ffffff; text-shadow:0 1px 4px rgba(0,0,0,0.95); display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:none; stroke:#38bdf8; stroke-width:2.2; flex-shrink:0;"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg>${escapeHtml(trip.authorName || '낭만백패커')}</div>
                     ${isAuthor ? `
-                      <button type="button" onclick="window.deleteTripFromCloudSheet('${escapeHtml(trip.tripId)}', event);" style="background:rgba(244,63,94,0.3); border:1px solid #f43f5e; color:#fda4af; font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:6px; cursor:pointer;">
+                      <button type="button" data-trip-id="${escapeHtml(trip.tripId)}" onclick="window.deleteTripFromCloudSheet(this.dataset.tripId, event);" style="background:rgba(244,63,94,0.25); border:1px solid rgba(244,63,94,0.45); color:#fda4af; font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:6px; cursor:pointer;">
                         원정대 삭제 ✕
                       </button>
                     ` : ''}
@@ -3563,12 +3570,13 @@ var adBannersHtml = `
 
             <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:8px;">
               <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:6px;">
-                <div style="font-size:0.78rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:4px;">
-                  <span>📋</span>
+                <div style="font-size:0.78rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:5px;">
+                  <svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:none; stroke:#38bdf8; stroke-width:2.2; flex-shrink:0;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
                   <span>원정대 실전 구인 요강</span>
                 </div>
-                <div style="font-size:0.70rem; font-weight:900; color:#34d399; font-family:var(--font-en); background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.3); padding:2px 8px; border-radius:6px;">
-                  👥 ${curJoin} / ${maxCap}명 확정
+                <div style="font-size:0.70rem; font-weight:900; color:#34d399; font-family:var(--font-en); background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.3); padding:2px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:3px;">
+                  <svg viewBox="0 0 24 24" style="width:11px; height:11px; fill:none; stroke:#34d399; stroke-width:2.2; flex-shrink:0;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+                  <span>${curJoin} / ${maxCap}명 확정</span>
                 </div>
               </div>
 
@@ -3576,9 +3584,12 @@ var adBannersHtml = `
                 <span style="font-size:0.65rem; color:#94a3b8; font-weight:700;">확정 대원 명단:</span>
                 <div style="display:flex; flex-wrap:wrap; gap:5px;">
                   ${participantList.map(function(p) {
+                    var iconSvg = p.isHost 
+                      ? '<svg viewBox="0 0 24 24" style="width:11px; height:11px; fill:#f59e0b; flex-shrink:0;"><path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5m14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/></svg>'
+                      : '<svg viewBox="0 0 24 24" style="width:11px; height:11px; fill:none; stroke:#34d399; stroke-width:2.2; flex-shrink:0;"><path d="M19 21L12 4L5 21M12 4v17M8 21l4-5 4 5"/></svg>';
                     return `
-                      <span style="font-size:0.68rem; font-weight:800; color:#ffffff; background:${p.isHost ? 'rgba(56,189,248,0.2)' : 'rgba(255,255,255,0.08)'}; border:1px solid ${p.isHost ? '#38bdf8' : 'rgba(255,255,255,0.18)'}; padding:2.5px 7px; border-radius:6px; display:inline-flex; align-items:center; gap:3px;">
-                        ${p.isHost ? '👑 ' : '⛺ '}${escapeHtml(p.nickname || '대원')}
+                      <span style="font-size:0.68rem; font-weight:800; color:#ffffff; background:${p.isHost ? 'rgba(56,189,248,0.15)' : 'rgba(255,255,255,0.06)'}; border:1px solid ${p.isHost ? 'rgba(56,189,248,0.4)' : 'rgba(255,255,255,0.15)'}; padding:2.5px 7px; border-radius:6px; display:inline-flex; align-items:center; gap:3px;">
+                        ${iconSvg}${escapeHtml(p.nickname || '대원')}
                       </span>
                     `;
                   }).join('')}
@@ -3620,20 +3631,24 @@ var adBannersHtml = `
 
             <div style="display:flex; flex-direction:column; gap:6px; margin-top:2px; flex-shrink:0;">
               ${isAlreadyJoined ? `
-                <button type="button" onclick="cancelTripJoin('${escapeHtml(trip.tripId)}')" style="width:100%; height:46px; background:rgba(244,63,94,0.15); border:1px solid #f43f5e; color:#fda4af; border-radius:10px; font-size:0.86rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
-                  <span>✕ 참가 신청 취소하기</span>
+                <button type="button" data-trip-id="${escapeHtml(trip.tripId)}" onclick="cancelTripJoin(this.dataset.tripId)" style="width:100%; height:46px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); color:#fda4af; border-radius:10px; font-size:0.86rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
+                  <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#fda4af; stroke-width:2.2; flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  <span>참가 신청 취소하기</span>
                 </button>
               ` : (isFull ? `
-                <button type="button" disabled style="width:100%; height:46px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#64748b; border-radius:10px; font-size:0.86rem; font-weight:900; cursor:not-allowed; display:flex; align-items:center; justify-content:center; gap:6px;">
-                  <span>🔒 정원이 마감되었습니다 (${curJoin}/${maxCap})</span>
+                <button type="button" disabled style="width:100%; height:46px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:#64748b; border-radius:10px; font-size:0.86rem; font-weight:900; cursor:not-allowed; display:flex; align-items:center; justify-content:center; gap:6px;">
+                  <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#64748b; stroke-width:2; flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <span>정원이 마감되었습니다 (${curJoin}/${maxCap})</span>
                 </button>
               ` : `
-                <button type="button" onclick="joinTripAndOpenPlan('${escapeHtml(trip.tripId)}')" style="width:100%; height:46px; background:#ffffff; color:#000000; border:none; border-radius:10px; font-size:0.86rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(255,255,255,0.15);">
-                  <span>⛺ 원정대 참가 신청 & 내 달력 등록 (${curJoin}/${maxCap}) ➔</span>
+                <button type="button" data-trip-id="${escapeHtml(trip.tripId)}" onclick="joinTripAndOpenPlan(this.dataset.tripId)" style="width:100%; height:46px; background:#ffffff; color:#000000; border:none; border-radius:10px; font-size:0.86rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(255,255,255,0.15);">
+                  <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:none; stroke:#000000; stroke-width:2.2; flex-shrink:0;"><path d="M19 21L12 4L5 21M12 4v17M8 21l4-5 4 5"/></svg>
+                  <span>원정대 참가 신청 & 내 달력 등록 (${curJoin}/${maxCap})</span>
                 </button>
               `)}
-              <a href="${escapeHtml(trip.openChatUrl || 'https://open.kakao.com')}" target="_blank" rel="noopener noreferrer" style="width:100%; height:40px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; border-radius:10px; text-decoration:none; font-size:0.80rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:5px;">
-                <span>💬 카카오톡 오픈채팅 문의하기</span>
+              <a href="${escapeHtml(trip.openChatUrl || 'https://open.kakao.com')}" target="_blank" rel="noopener noreferrer" style="width:100%; height:40px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; border-radius:10px; text-decoration:none; font-size:0.80rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:6px;">
+                <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:#fde047; flex-shrink:0;"><path d="M12 3c-5.5 0-10 3.5-10 7.8 0 2.8 1.9 5.3 4.8 6.7-.2.8-.8 3-1 3.5 0 0-.1.3.1.4.2.1.4 0 .4 0 .6-.1 3.5-2.3 4.1-2.7.5.1 1.1.1 1.6.1 5.5 0 10-3.5 10-7.8S17.5 3 12 3z"/></svg>
+                <span>카카오톡 오픈채팅 문의하기</span>
               </a>
             </div>
 
@@ -3705,7 +3720,7 @@ var adBannersHtml = `
       var profile = rawProfile ? JSON.parse(rawProfile) : null;
       if (!token || !profile || !profile.id) {
         triggerHaptic(10);
-        showToast('🔒 원정대 모집은 로그인 후 이용 가능합니다.', 2200);
+        showToast('원정대 모집은 로그인 후 이용 가능합니다.', 2200);
         if (typeof openLoginModal === 'function') openLoginModal();
         return;
       }
@@ -3742,16 +3757,22 @@ var adBannersHtml = `
 
             <div style="display:flex; gap:6px;">
               <div style="flex:1.2; display:flex; flex-direction:column; gap:2px;">
-                <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800;">📅 출발 날짜 (스케줄 연동) *</label>
+                <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                  <svg viewBox="0 0 24 24" style="width:11px; height:11px; fill:none; stroke:#f59e0b; stroke-width:2.2; flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <span>출발 날짜 (스케줄 연동) *</span>
+                </label>
                 <input type="text" id="tripInputDate" placeholder="터치하여 달력 선택" readonly onclick="window.openTripDatePickerModal();" style="width:100%; height:clamp(33px, 4.3vh, 37px); background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.35); border-radius:8px; color:#38bdf8; font-size:clamp(0.76rem, 2.2vw, 0.82rem); padding:0 10px; outline:none; box-sizing:border-box; font-family:var(--font-en); font-weight:800; cursor:pointer;" />
               </div>
               <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
-                <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800;">👥 모집 정원 (총원) *</label>
+                <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                  <svg viewBox="0 0 24 24" style="width:11px; height:11px; fill:none; stroke:#34d399; stroke-width:2.2; flex-shrink:0;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+                  <span>모집 정원 (총원) *</span>
+                </label>
                 <select id="tripSelectMaxCapacity" style="width:100%; height:clamp(33px, 4.3vh, 37px); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:clamp(0.76rem, 2.2vw, 0.82rem); padding:0 8px; outline:none; box-sizing:border-box; font-weight:800;">
-                  <option value="2">2명 </option>
-                  <option value="3">3명 </option>
-                  <option value="4" selected>4명 </option>
-                  <option value="5">5명 )</option>
+                  <option value="2">2명</option>
+                  <option value="3">3명</option>
+                  <option value="4" selected>4명</option>
+                  <option value="5">5명</option>
                   <option value="6">6명 (소그룹)</option>
                   <option value="8">8명 (단체)</option>
                 </select>
@@ -3759,27 +3780,40 @@ var adBannersHtml = `
             </div>
 
             <div style="display:flex; flex-direction:column; gap:2px;">
-              <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800;">🚗 카풀 및 이동 수단</label>
+              <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                <svg viewBox="0 0 24 24" style="width:11px; height:11px; fill:none; stroke:#a78bfa; stroke-width:2.2; flex-shrink:0;"><path d="M5 17h14M5 17a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2M7 17v2M17 17v2"/></svg>
+                <span>카풀 및 이동 수단</span>
+              </label>
               <input type="text" id="tripInputCarpool" placeholder="예: 사당역 07시 카풀 1석 / 들머리 집결" style="width:100%; height:clamp(33px, 4.3vh, 37px); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:clamp(0.76rem, 2.2vw, 0.82rem); padding:0 10px; outline:none; box-sizing:border-box;" />
             </div>
 
             <div style="display:flex; flex-direction:column; gap:2px;">
-              <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800;">🎒 장비 분담 & 안내 사항</label>
+              <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                <svg viewBox="0 0 24 24" style="width:11px; height:11px; fill:none; stroke:#34d399; stroke-width:2.2; flex-shrink:0;"><path d="M6 2h12v6H6zM4 8h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/></svg>
+                <span>장비 분담 & 안내 사항</span>
+              </label>
               <input type="text" id="tripInputGearShare" placeholder="예: 방장 4인 쉘터 지참 / 체어 챙길것" style="width:100%; height:clamp(33px, 4.3vh, 37px); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:clamp(0.76rem, 2.2vw, 0.82rem); padding:0 10px; outline:none; box-sizing:border-box;" />
             </div>
 
             <div style="display:flex; flex-direction:column; gap:2px;">
-              <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800;">💬 카카오톡 오픈채팅 링크 *</label>
+              <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                <svg viewBox="0 0 24 24" style="width:11px; height:11px; fill:#fde047; flex-shrink:0;"><path d="M12 3c-5.5 0-10 3.5-10 7.8 0 2.8 1.9 5.3 4.8 6.7-.2.8-.8 3-1 3.5 0 0-.1.3.1.4.2.1.4 0 .4 0 .6-.1 3.5-2.3 4.1-2.7.5.1 1.1.1 1.6.1 5.5 0 10-3.5 10-7.8S17.5 3 12 3z"/></svg>
+                <span>카카오톡 오픈채팅 링크 *</span>
+              </label>
               <input type="text" id="tripInputChatUrl" placeholder="https://open.kakao.com/o/..." style="width:100%; height:clamp(33px, 4.3vh, 37px); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:clamp(0.76rem, 2.2vw, 0.82rem); padding:0 10px; outline:none; box-sizing:border-box;" />
             </div>
 
             <div style="display:flex; flex-direction:column; gap:2px;">
-              <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800;">📝 동행 소개글</label>
+              <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                <svg viewBox="0 0 24 24" style="width:11px; height:11px; fill:none; stroke:#38bdf8; stroke-width:2.2; flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                <span>동행 소개글</span>
+              </label>
               <textarea id="tripInputDesc" rows="2" placeholder="스타일(비화식, 사진, 매너캠핑 등)을 편하게 적어주세요." style="width:100%; height:clamp(42px, 5.5vh, 48px); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:clamp(0.75rem, 2.1vw, 0.80rem); padding:6px 10px; outline:none; resize:none; box-sizing:border-box;"></textarea>
             </div>
 
-            <button type="button" onclick="submitNewTripJoin()" style="width:100%; height:clamp(38px, 5.2vh, 44px); background:#ffffff; color:#000000; border:none; border-radius:10px; font-size:clamp(0.82rem, 2.4vw, 0.88rem); font-weight:900; cursor:pointer; margin-top:2px; flex-shrink:0; box-shadow:0 4px 14px rgba(255,255,255,0.2);">
-              원정대 등록 완료 ✓
+            <button type="button" onclick="submitNewTripJoin()" style="width:100%; height:clamp(38px, 5.2vh, 44px); background:#ffffff; color:#000000; border:none; border-radius:10px; font-size:clamp(0.82rem, 2.4vw, 0.88rem); font-weight:900; cursor:pointer; margin-top:2px; flex-shrink:0; box-shadow:0 4px 14px rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; gap:6px;">
+              <span>원정대 등록 완료</span>
+              <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#000000; stroke-width:2.5; flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
           </div>
         </div>
@@ -3976,8 +4010,8 @@ var adBannersHtml = `
         <div style="width:100%; max-width:340px; background:#0a0d14; border:1.5px solid rgba(56,189,248,0.5); border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:8px; box-shadow:0 24px 60px rgba(0,0,0,0.95); box-sizing:border-box;" onclick="event.stopPropagation();">
           
           <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:6px;">
-            <div style="font-size:0.88rem; font-weight:900; color:#fff; display:flex; align-items:center; gap:5px;">
-              <span>📅</span>
+            <div style="font-size:0.88rem; font-weight:900; color:#fff; display:flex; align-items:center; gap:6px;">
+              <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#f59e0b; stroke-width:2.2; flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               <span>출발 날짜 & 내 스케줄</span>
             </div>
             <button type="button" onclick="document.getElementById('tripDatePickerModal').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer;">✕</button>
@@ -3989,9 +4023,9 @@ var adBannersHtml = `
               <span id="tripPickerMonthTitle" style="font-size:0.84rem; font-weight:900; color:#38bdf8; font-family:'Space Grotesk', sans-serif;"></span>
               <button type="button" onclick="window.changeTripPickerMonth(1);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:22px; height:22px; border-radius:4px; font-size:0.68rem; cursor:pointer;">▶</button>
             </div>
-            <div style="display:flex; align-items:center; gap:5px; font-size:0.55rem; font-weight:800;">
-              <span style="color:#fde047;">★완료</span>
-              <span style="color:#34d399;">⚑계획</span>
+            <div style="display:flex; align-items:center; gap:6px; font-size:0.58rem; font-weight:800;">
+              <span style="color:#fde047; display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:8px; height:8px; fill:#fde047;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>완료</span>
+              <span style="color:#34d399; display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:8px; height:8px; fill:#34d399;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>계획</span>
             </div>
           </div>
 
@@ -4005,7 +4039,10 @@ var adBannersHtml = `
 
           <div style="display:flex; gap:6px; margin-top:2px;">
             <button type="button" onclick="document.getElementById('tripDatePickerModal').remove();" style="flex:1; height:36px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); color:#cbd5e1; font-size:0.75rem; font-weight:800; border-radius:8px; cursor:pointer;">취소</button>
-            <button type="button" onclick="window.confirmTripDateSelection();" style="flex:1.8; height:36px; background:linear-gradient(135deg, #0284c7, #0369a1); border:1px solid #38bdf8; color:#fff; font-size:0.80rem; font-weight:900; border-radius:8px; cursor:pointer; box-shadow:0 3px 10px rgba(2,132,199,0.35);">이 날짜로 선택 ✓</button>
+            <button type="button" onclick="window.confirmTripDateSelection();" style="flex:1.8; height:36px; background:#ffffff; color:#000000; border:none; font-size:0.80rem; font-weight:900; border-radius:8px; cursor:pointer; box-shadow:0 3px 10px rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; gap:5px;">
+              <span>이 날짜로 선택</span>
+              <svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:none; stroke:#000000; stroke-width:2.5; flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
           </div>
         </div>
       `;
@@ -4062,19 +4099,19 @@ var adBannersHtml = `
         var marker = '';
 
         if (isSelected) {
-          bg = '#0284c7'; color = '#ffffff'; border = '1px solid #38bdf8';
+          bg = 'rgba(255,255,255,0.18)'; color = '#ffffff'; border = '1px solid #ffffff';
         } else if (isToday) {
-          border = '1px solid #38bdf8'; color = '#38bdf8';
+          border = '1px solid rgba(255,255,255,0.4)'; color = '#ffffff';
         } else if (completedRecord) {
-          marker = '<span style="position:absolute; bottom:1px; font-size:6px; color:#f59e0b;">★</span>';
-          color = '#fde047';
+          marker = '<svg viewBox="0 0 24 24" style="position:absolute; bottom:2px; width:6px; height:6px; fill:#fbbf24;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+          color = '#fef08a';
         } else if (hasMemo) {
-          marker = '<span style="position:absolute; bottom:1px; font-size:6px; color:#34d399;">⚑</span>';
-          color = '#34d399';
+          marker = '<svg viewBox="0 0 24 24" style="position:absolute; bottom:2px; width:6px; height:6px; fill:#34d399;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>';
+          color = '#a7f3d0';
         }
 
         daysHtml += `
-          <div onclick="window.selectTripPickerDate('${dateKey}');" style="position:relative; height:28px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:'Space Grotesk', sans-serif; font-size:0.75rem; font-weight:800; border-radius:6px; cursor:pointer; background:${bg}; color:${color}; border:${border}; box-sizing:border-box;">
+          <div data-date-key="${dateKey}" onclick="window.selectTripPickerDate(this.dataset.dateKey);" style="position:relative; height:28px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:'Space Grotesk', sans-serif; font-size:0.75rem; font-weight:800; border-radius:6px; cursor:pointer; background:${bg}; color:${color}; border:${border}; box-sizing:border-box;">
             ${d}
             ${marker}
           </div>
@@ -4089,11 +4126,11 @@ var adBannersHtml = `
         var foundMemo = planMemosObj[sDate] || '';
 
         if (foundRec) {
-          hintEl.innerHTML = '<span style="color:#fde047; font-weight:800;">★ [' + sDate + '] 이미 다녀온 출발: ' + escapeHtml(foundRec.spot || '백패킹') + ' (' + (foundRec.weightKg || '0.00') + 'kg)</span>';
+          hintEl.innerHTML = '<span style="color:#fef08a; font-weight:800; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:11px; height:11px; fill:#fbbf24; flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>[' + sDate + '] 이미 다녀온 활동: ' + escapeHtml(foundRec.spot || '활동') + ' (' + (foundRec.weightKg || '0.00') + 'kg)</span>';
         } else if (foundMemo) {
-          hintEl.innerHTML = '<span style="color:#34d399; font-weight:800;">⚑ [' + sDate + '] 기존 계획: ' + escapeHtml(foundMemo.slice(0, 38)) + '...</span>';
+          hintEl.innerHTML = '<span style="color:#a7f3d0; font-weight:800; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:11px; height:11px; fill:#34d399; flex-shrink:0;"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>[' + sDate + '] 기존 계획: ' + escapeHtml(foundMemo.slice(0, 38)) + '...</span>';
         } else {
-          hintEl.innerHTML = '<span style="color:#94a3b8;">✓ [' + sDate + '] 비어있는 일정입니다. 원정대 출발일로 적합합니다!</span>';
+          hintEl.innerHTML = '<span style="color:#cbd5e1; display:inline-flex; align-items:center; gap:4px;"><svg viewBox="0 0 24 24" style="width:11px; height:11px; fill:none; stroke:#cbd5e1; stroke-width:2.2; flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>[' + sDate + '] 비어있는 일정입니다. 원정대 등록에 적합합니다.</span>';
         }
       }
     };
@@ -4367,9 +4404,12 @@ var adBannersHtml = `
 
       modal.innerHTML = `
         <div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); display:flex; justify-content:space-between; align-items:center;">
-          <div style="display:flex; align-items:center; gap:6px;">
-            <button onclick="document.getElementById('tripJoinListModal').remove()" style="background:none; border:none; color:#cbd5e1; font-size:1.1rem; cursor:pointer;">◀</button>
-            <span style="font-size:0.95rem; font-weight:900; color:#fff;">🤝 전체 원정대 목록</span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button onclick="document.getElementById('tripJoinListModal').remove()" style="background:none; border:none; color:#cbd5e1; font-size:1.1rem; cursor:pointer; padding:0; display:flex; align-items:center;">◀</button>
+            <span style="font-size:0.95rem; font-weight:900; color:#fff; display:flex; align-items:center; gap:6px;">
+              <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:none; stroke:#38bdf8; stroke-width:2.2; flex-shrink:0;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+              <span>전체 원정대 목록</span>
+            </span>
           </div>
           <button onclick="document.getElementById('tripJoinListModal').remove(); openTripCreateModal();" style="background:#ffffff; color:#000; font-size:0.72rem; font-weight:900; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;">+ 모집하기</button>
         </div>
@@ -4377,16 +4417,20 @@ var adBannersHtml = `
         <div style="flex:1; overflow-y:auto; padding:12px 14px calc(24px + env(safe-area-inset-bottom, 0px)) 14px; display:flex; flex-direction:column; gap:8px; max-width:440px; margin:0 auto; width:100%; box-sizing:border-box;">
           ${list.length === 0 ? '<div style="text-align:center; color:#64748b; padding:60px 0; font-size:0.78rem;">현재 모집 중인 원정대가 없습니다.</div>' : list.map(function(t) {
             var dBadge = getTripDDayBadge(t.date);
+            var carpoolText = t.carpoolInfo ? ` · <span style="display:inline-flex; align-items:center; gap:2px;"><svg viewBox="0 0 24 24" style="width:9px; height:9px; fill:none; stroke:#a78bfa; stroke-width:2; vertical-align:-1px;"><path d="M5 17h14M5 17a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2M7 17v2M17 17v2"/></svg>${escapeHtml(t.carpoolInfo)}</span>` : '';
             return `
-              <div onclick="document.getElementById('tripJoinListModal').remove(); openTripDetailModal('${escapeHtml(t.tripId)}');" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+              <div data-trip-id="${escapeHtml(t.tripId)}" onclick="document.getElementById('tripJoinListModal').remove(); openTripDetailModal(this.dataset.tripId);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
                 <div style="flex:1; min-width:0; padding-right:8px;">
                   <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
                     <span style="font-size:0.60rem; padding:1px 5px; border-radius:3px; ${dBadge.cls}">${dBadge.text}</span>
                     <span style="font-size:0.86rem; font-weight:900; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(t.spotName)}</span>
                   </div>
-                  <div style="font-size:0.65rem; color:#94a3b8;">${escapeHtml(t.date)} · ${escapeHtml(t.maxMembers || '')} ${t.carpoolInfo ? ' · 🚗 ' + escapeHtml(t.carpoolInfo) : ''}</div>
+                  <div style="font-size:0.65rem; color:#94a3b8;">${escapeHtml(t.date)} · 정원 ${escapeHtml(String(t.maxCapacity || '4'))}명${carpoolText}</div>
                 </div>
-                <span style="font-size:0.68rem; color:#fff; font-weight:800; background:rgba(255,255,255,0.08); padding:4px 8px; border-radius:6px; flex-shrink:0;">신청 ➔</span>
+                <span style="font-size:0.68rem; color:#fff; font-weight:800; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); padding:4px 8px; border-radius:6px; flex-shrink:0; display:inline-flex; align-items:center; gap:3px;">
+                  <span>신청</span>
+                  <svg viewBox="0 0 24 24" style="width:10px; height:10px; fill:none; stroke:#ffffff; stroke-width:2.2; flex-shrink:0;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </span>
               </div>
             `;
           }).join('')}
