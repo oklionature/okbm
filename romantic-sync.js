@@ -368,11 +368,23 @@ window.RomanticVault = window.RomanticVault || {
     if (window.userMemos) window.userMemos = memos;
   },
 
-  // [서버 정본 자동 수화(Hydration) 마스터 스위치]
   hydrateFromServer: async function(userId) {
     if (!userId || this.isHydrating) return null;
     this.isHydrating = true;
     try {
+      var currentSessionId = String(userId).trim();
+      var storedUserId = localStorage.getItem('okbm_user_id') || '';
+
+      if (storedUserId && storedUserId !== currentSessionId) {
+        window.__memoryStore = {};
+        window.packingHistoryList = [];
+        window.interactiveHistory = [];
+        if (typeof window.saveToIndexedDB === 'function') {
+          await window.saveToIndexedDB('okbm_packing_history', []);
+          await window.saveToIndexedDB('okbm_router_snaps', []);
+        }
+      }
+
       var cloudData = await loadUserDataFromCloud(userId);
       if (!cloudData) {
         var defaultVaultKeys = [
@@ -661,8 +673,16 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
     routerSnaps: (function() {
       var deletedIds = safeGetJSON('okbm_deleted_record_ids', []);
       var rawSnaps = (window.__memoryStore && window.__memoryStore['okbm_router_snaps']) || safeGetJSON('okbm_router_snaps', []);
+      var cleanCurUid = String(userId).replace(/\D/g, '');
+      var cleanCurNick = (profile && profile.nickname) ? String(profile.nickname).trim() : '';
+
       return (rawSnaps || []).filter(function(s) {
-        return s && !s.isDeleted && !deletedIds.includes(String(s.id).trim());
+        if (!s || s.isDeleted || deletedIds.includes(String(s.id).trim())) return false;
+        var sUid = String(s.userId || s.user_id || '').replace(/\D/g, '');
+        var sAuthor = String(s.author || s.nickname || s.nick || '').trim();
+        if (sUid && cleanCurUid && sUid !== cleanCurUid) return false;
+        if (cleanCurNick && sAuthor && cleanCurNick !== '낭만루터' && cleanCurNick !== '낭만백패커' && sAuthor !== cleanCurNick) return false;
+        return true;
       }).map(function(s) {
         var copy = Object.assign({}, s);
         if (Array.isArray(copy.photos)) {
@@ -3131,7 +3151,6 @@ function loginWithKakao() {
           }
 
           var prevUserId = localStorage.getItem('okbm_user_id') || '';
-          var isDifferentUser = Boolean(prevUserId && prevUserId !== kakaoId);
 
           var keysToPurge = [
             'user_profile', 'user_auth_token', 'okbm_user_id', 'okbm_user_nick',
@@ -3143,6 +3162,7 @@ function loginWithKakao() {
             'okbm_packed_checks', 'okbm_my_proposals', 'okbm_following_users'
           ];
           keysToPurge.forEach(function(k) { localStorage.removeItem(k); });
+
           window.__memoryStore = {};
           window.packingHistoryList = [];
           window.interactiveHistory = [];
@@ -3153,12 +3173,11 @@ function loginWithKakao() {
           window.favoriteGearSet = new Set();
           window.packedCheckSet = new Set();
 
-          if (isDifferentUser || !prevUserId) {
-            if (typeof window.saveToIndexedDB === 'function') {
-              window.saveToIndexedDB('okbm_packing_history', []);
-              window.saveToIndexedDB('okbm_phone_photos_map', {});
-              window.saveToIndexedDB('okbm_trip_photos_map', {});
-            }
+          if (typeof window.saveToIndexedDB === 'function') {
+            window.saveToIndexedDB('okbm_packing_history', []);
+            window.saveToIndexedDB('okbm_router_snaps', []);
+            window.saveToIndexedDB('okbm_phone_photos_map', {});
+            window.saveToIndexedDB('okbm_trip_photos_map', {});
           }
 
           var finalNick = kakaoNick || '낭만백패커';

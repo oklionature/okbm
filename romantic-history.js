@@ -119,9 +119,6 @@
       }
 
       .reel-media-stage > div,
-      .postcard-3d-wrapper,
-      .postcard-face-front,
-      .postcard-face-back,
       .reel-horizontal-track,
       .reel-horizontal-track > div,
       .reel-photo-target {
@@ -129,6 +126,22 @@
         overflow: hidden !important;
         transform: translateZ(0) !important;
         -webkit-transform: translateZ(0) !important;
+      }
+
+      .postcard-face-front {
+        transform: rotateY(0deg) translateZ(1px) !important;
+        -webkit-transform: rotateY(0deg) translateZ(1px) !important;
+        z-index: 2 !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+      }
+
+      .postcard-face-back {
+        transform: rotateY(180deg) translateZ(1px) !important;
+        -webkit-transform: rotateY(180deg) translateZ(1px) !important;
+        z-index: 1 !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
       }
 
       .reel-horizontal-track {
@@ -2336,10 +2349,28 @@
     var targetUserId = String(userId || '').trim();
 
     var feedPool = [];
-    if (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0) {
-      feedPool = window.__allLoadedFeeds;
-    } else {
-      feedPool = safeGetJSON('okbm_cached_community_feeds', []) || [];
+    var routePool = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
+      ? window.__allLoadedFeeds
+      : (safeGetJSON('okbm_cached_community_feeds', []) || []);
+
+    var snapPool = (Array.isArray(window.__allLoadedRouterSnaps) && window.__allLoadedRouterSnaps.length > 0)
+      ? window.__allLoadedRouterSnaps
+      : (safeGetJSON('okbm_cached_router_snaps', []) || []);
+
+    var mySnaps = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_router_snaps', [])
+      : (safeGetJSON('okbm_router_snaps', []) || []);
+
+    feedPool = routePool.concat(snapPool);
+
+    if (Array.isArray(mySnaps)) {
+      mySnaps.forEach(function(sRec) {
+        if (sRec && sRec.isPublished === true) {
+          if (!feedPool.some(function(f) { return String(f.id).trim() === String(sRec.id).trim(); })) {
+            feedPool.push(sRec);
+          }
+        }
+      });
     }
 
     if (Array.isArray(window.interactiveHistory)) {
@@ -4825,16 +4856,16 @@ if (isRouteTab) {
             '<div style="width:100% !important; height:100% !important; max-height:100% !important; position:relative; overflow:hidden; background:#000000; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start;">' +
               centerDDayOverlayHtml +
               (isRouteTab ? (
-                '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000; border-radius:12px !important; overflow:hidden !important;">' +
+                '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000; border-radius:12px !important;">' +
                   (totalPhotosCount > 0 ? (
                     '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:stretch !important; justify-content:flex-start !important; padding:0 !important; border-radius:12px !important; box-sizing:border-box;">' +
                       '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \'' + cardId + '\');">' + horizontalSlidesHtml + '</div>' + dotsHtml +
                     '</div>' +
-                    '<div class="postcard-face-back" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:12px; border-radius:12px !important; box-sizing:border-box;">' +
+                    '<div class="postcard-face-back" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:8px; border-radius:12px !important; box-sizing:border-box;">' +
                       studioCardMarkup +
                     '</div>'
                   ) : (
-                    '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:12px; border-radius:12px !important; box-sizing:border-box;">' +
+                    '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:8px; border-radius:12px !important; box-sizing:border-box;">' +
                       studioCardMarkup +
                     '</div>' +
                     '<div class="postcard-face-back" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:stretch !important; justify-content:flex-start !important; padding:0 !important; border-radius:12px !important; box-sizing:border-box;">' +
