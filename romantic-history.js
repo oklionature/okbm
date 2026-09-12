@@ -814,7 +814,7 @@
       memo: userMemo,
       oneLineMemo: (r && r.oneLineMemo) ? r.oneLineMemo : '',
       photoMemos: (r && Array.isArray(r.photoMemos)) ? r.photoMemos : [],
-      isPublished: Boolean(r && r.isPublished === true),
+      isPublished: (r && (r.isPublished === false || r.is_published === false || r.isPublished === 'false')) ? false : true,
       instagram: (r && r.instagram) ? r.instagram : '',
       items: cleanItems,
       photos: rawPhotos,
@@ -4204,27 +4204,41 @@ window.renderHistoryStage = function(isLoading) {
 
     var isRouteTab = (window.activeHistoryFeedTab === 'route');
 
-    // 🔒 [원천 차단]: 메인 피드에서는 비공개('나만보기') 글을 무조건 제외 (보관함 모달에서만 확인)
-    var allPublicList = [];
-    if (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0) {
-      allPublicList = window.__allLoadedFeeds.filter(function(f) { return f && f.isPublished !== false; });
-    } else {
-      allPublicList = (window.safeGetStorage('okbm_cached_community_feeds', []) || []).filter(function(f) { return f && f.isPublished !== false; });
-    }
+    // 🔒 [철통 보안]: 비공개(false)는 전수 차단하되, R2 공용 스냅의 undefined 속성은 공개로 수용
+    var isExplicitlyPublished = function(item) {
+      if (!item) return false;
+      var raw = item.isPublished !== undefined ? item.isPublished : (item.is_published !== undefined ? item.is_published : item.published);
+      if (raw === false || raw === 'false' || raw === 'FALSE' || raw === 0 || raw === '0' || raw === 'N' || raw === 'n') {
+        return false;
+      }
+      if (raw === undefined || raw === null) {
+        return true;
+      }
+      return Boolean(raw === true || raw === 'true' || raw === 'TRUE' || raw === 1 || raw === '1' || raw === 'Y' || raw === 'y');
+    };
 
-   // 내 공개 루트 글 병합
+    var allPublicList = [];
+    var rawFeedPool = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
+      ? window.__allLoadedFeeds
+      : (window.safeGetStorage('okbm_cached_community_feeds', []) || []);
+
+    // 타인의 글은 오직 100% 공개(isExplicitlyPublished)인 건만 공용 풀에 진입 허용
+    allPublicList = rawFeedPool.filter(function(f) {
+      return isExplicitlyPublished(f);
+    });
+
+    // 내 글 중 공개된 글만 메인 피드 큐에 병합 (나만보기는 메인 피드 진입 원천 차단)
     (window.interactiveHistory || []).forEach(function(myRec) {
-      if (myRec && myRec.isPublished === true) {
+      if (myRec && isExplicitlyPublished(myRec)) {
         if (!allPublicList.some(function(p) { return String(p.id).trim() === String(myRec.id).trim(); })) {
           allPublicList.push(myRec);
         }
       }
     });
 
-    // 내 일상 스냅 글 병합 (저장 즉시 0.001초 만에 화면에 실시간 노출)
     var mySnaps = window.safeGetStorage('okbm_router_snaps', []) || [];
     mySnaps.forEach(function(mySnap) {
-      if (mySnap && mySnap.isPublished === true) {
+      if (mySnap && isExplicitlyPublished(mySnap)) {
         if (!allPublicList.some(function(p) { return String(p.id).trim() === String(mySnap.id).trim(); })) {
           allPublicList.push(mySnap);
         }
@@ -4236,39 +4250,34 @@ window.renderHistoryStage = function(isLoading) {
     if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
       savedPhotosMap = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], savedPhotosMap);
     }
-
-    // 🛡️ [공개 피드 단일 공급원]: 메인 릴스 피드에는 오직 공개(isPublished === true) 피드만 진입 (나만보기는 보관함 모아보기에서만 확인)
     var sourceList = [];
     if (isRouteTab) {
-      // 🧭 낭만루트: 내 로컬 공개글 + R2 공용 루트 피드
       sourceList = (window.safeGetStorage('okbm_packing_history', []) || []).filter(function(r) {
-        return r && r.isPublished === true && r.feedType !== 'router' && !String(r.id).startsWith('snap_');
+        return r && isExplicitlyPublished(r) && r.feedType !== 'router' && !String(r.id).startsWith('snap_');
       });
       allPublicList.forEach(function(p) {
-        if (p && p.isPublished === true && p.feedType !== 'router' && !String(p.id).startsWith('snap_')) {
+        if (p && isExplicitlyPublished(p) && p.feedType !== 'router' && !String(p.id).startsWith('snap_')) {
           if (!sourceList.some(function(s) { return String(s.id).trim() === String(p.id).trim(); })) {
             sourceList.push(p);
           }
         }
       });
-    } else {
-      // 🏕️ 낭만루터: 내 로컬 공개 스냅 + R2 공용 루터 스냅 (비로그인 방문자도 전체 공개 스냅 100% 감상)
+   } else {
       sourceList = (window.safeGetStorage('okbm_router_snaps', []) || []).filter(function(r) {
-        return r && r.isPublished !== false;
+        return r && isExplicitlyPublished(r);
       });
       allPublicList.forEach(function(p) {
-        if (p && p.isPublished !== false && (p.feedType === 'router' || String(p.id).startsWith('snap_'))) {
+        if (p && isExplicitlyPublished(p) && (p.feedType === 'router' || String(p.id).startsWith('snap_'))) {
           if (!sourceList.some(function(s) { return String(s.id).trim() === String(p.id).trim(); })) {
             sourceList.push(p);
           }
         }
       });
-   // 🌟 [비로그인/로그인 공통]: R2 router_snaps.json 정본 스냅 100% 최우선 직통 바인딩
+   // 🌟 [비로그인/로그인 공통]: R2 router_snaps.json 정본 스냅 중 공개(isExplicitlyPublished) 건만 바인딩
       var r2Snaps = Array.isArray(window.__allLoadedRouterSnaps) && window.__allLoadedRouterSnaps.length > 0
         ? window.__allLoadedRouterSnaps
         : (safeGetJSON('okbm_cached_router_snaps', []) || []);
 
-      // 메모리가 비어있을 경우 R2 즉시 인출 비동기 백업 트리거
       if (r2Snaps.length === 0 && !window.__isSnapsFetching) {
         window.__isSnapsFetching = true;
         var r2DomainStr = window.R2_PUBLIC_DOMAIN || 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
@@ -4287,17 +4296,17 @@ window.renderHistoryStage = function(isLoading) {
       }
 
       r2Snaps.forEach(function(af) {
-        if (af && af.isPublished !== false) {
+        if (af && isExplicitlyPublished(af)) {
           if (!sourceList.some(function(s) { return String(s.id).trim() === String(af.id).trim(); })) {
             sourceList.push(af);
           }
         }
       });
 
-      // feeds.json 내 혹시 포함된 보조 스냅도 합집합 병합
+      // feeds.json 내 보조 스냅도 공개된 것만 병합
       var r2Pool = Array.isArray(window.__allLoadedFeeds) ? window.__allLoadedFeeds : [];
       r2Pool.forEach(function(af) {
-        if (af && af.isPublished !== false) {
+        if (af && isExplicitlyPublished(af)) {
           var isSnapItem = Boolean(af.feedType === 'router' || (af.id && String(af.id).startsWith('snap_')));
           if (isSnapItem && !sourceList.some(function(s) { return String(s.id).trim() === String(af.id).trim(); })) {
             sourceList.push(af);
@@ -4306,7 +4315,7 @@ window.renderHistoryStage = function(isLoading) {
       });
     }
 
-    // 🛡️ [제6헌법 준수]: 삭제 목록(okbm_deleted_record_ids) 배제 및 비로그인 게스트 뷰 100% 보장
+    // 🛡️ [제6헌법 준수]: 삭제 목록 배제 및 타인 비공개 글 100% 원천 봉쇄
     var deletedRecordIds = safeGetJSON('okbm_deleted_record_ids', []);
 
     var normalizedPublicList = sourceList.map(function(rawItem, rIdx) {
@@ -4321,7 +4330,7 @@ window.renderHistoryStage = function(isLoading) {
       }
       return norm;
     }).filter(function(norm) {
-      if (!norm || !norm.id || norm.isPublished === false) return false;
+      if (!norm || !norm.id || !isExplicitlyPublished(norm)) return false;
       return !deletedRecordIds.includes(String(norm.id).trim());
     });
 
@@ -4347,9 +4356,12 @@ window.renderHistoryStage = function(isLoading) {
       return isRouteTab ? !isSnap : isSnap;
     });
 
-    // 🌟 [스마트폰 비로그인 구제]: R2에 스냅이 있는데 0개로 걸러졌을 경우 R2 원본 2개 무조건 직통 바인딩
+    // 🌟 [스마트폰 비로그인 구제]: R2에 스냅이 있는데 0개로 걸러졌을 경우 공개(isExplicitlyPublished) 정본만 안전 바인딩
     if (!isRouteTab && currentList.length === 0 && Array.isArray(window.__allLoadedRouterSnaps) && window.__allLoadedRouterSnaps.length > 0) {
-      currentList = window.__allLoadedRouterSnaps.map(function(s, idx) {
+      currentList = window.__allLoadedRouterSnaps.filter(function(s) {
+        if (!s || !s.id || !isExplicitlyPublished(s)) return false;
+        return !deletedRecordIds.includes(String(s.id).trim());
+      }).map(function(s, idx) {
         var n = window.normalizeHistoryRecord(s, idx);
         n.feedType = 'router';
         if (!n.photos || n.photos.length === 0) {
