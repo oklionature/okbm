@@ -434,6 +434,7 @@ window.RomanticVault = window.RomanticVault || {
 
           var pMap = (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) || safeGetJSON('okbm_phone_photos_map', {});
 
+          var currentPureUserId = String(userId).replace(/\D/g, '');
           var mergedHist = cleanHist.map(function(sItem) {
             var sId = String(sItem.id || '').trim();
             var localMatch = localHist.find(function(l) { return l && String(l.id).trim() === sId; });
@@ -451,9 +452,10 @@ window.RomanticVault = window.RomanticVault || {
             return sItem;
           });
 
-          // 🛡️ 로컬에서 방금 작성 중이던 임시 미발행 글(pack_temp_)만 예외적으로 보존
           localHist.forEach(function(lItem) {
-            if (lItem && lItem.id && String(lItem.id).startsWith('pack_temp_')) {
+            if (!lItem) return;
+            var lUid = String(lItem.userId || lItem.user_id || '').replace(/\D/g, '');
+            if (String(lItem.id).startsWith('pack_temp_') && (!lUid || lUid === currentPureUserId)) {
               mergedHist.unshift(lItem);
             }
           });
@@ -574,10 +576,19 @@ function syncUserDataToCloud(isPackHistoryUpdated) {
   window.packingHistoryList = cleanActiveHistory;
   window.interactiveHistory = cleanActiveHistory;
 
+  var pureCurUserId = String(userId).replace(/\D/g, '');
+  var curProfileNick = (profile && profile.nickname) ? String(profile.nickname).trim() : '';
+
   var lightweightPackHistory = rawHistory.filter(function(h) {
-    // 🛑 낭만루트 동기화 시 낭만루터 일상 스냅 원천 배제
     if (!h) return false;
     if (h.feedType === 'router' || String(h.id).startsWith('snap_')) return false;
+
+    var hUid = String(h.userId || h.user_id || '').replace(/\D/g, '');
+    var hAuthor = String(h.author || h.nickname || h.nick || '').trim();
+
+    if (hUid && pureCurUserId && hUid !== pureCurUserId) return false;
+    if (curProfileNick && hAuthor && curProfileNick !== '낭만루터' && curProfileNick !== '낭만백패커' && hAuthor !== curProfileNick) return false;
+
     return true;
   }).map(function(h) {
     if (h.isDeleted === true) {
@@ -766,33 +777,39 @@ window._getRomanticRouteOutdoorLogs = function() {
   var curUserId = (profile && profile.id) ? String(profile.id).replace(/\D/g, '') : '';
   var curNick = (profile && profile.nickname) ? String(profile.nickname).trim() : '';
 
+  if (!curUserId && !curNick) return [];
+
   var logs = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
     ? window.RomanticVault.read('okbm_packing_history', [])
     : (window.interactiveHistory || safeGetJSON('okbm_packing_history', []));
 
   return (logs || []).filter(function(r) {
     if (!r || r.isDeleted === true) return false;
-    if (!curUserId && !curNick) return false;
 
     var rUid = String(r.userId || r.user_id || '').replace(/\D/g, '');
     var rAuthor = String(r.author || r.nickname || r.nick || '').trim();
 
     var isMyLog = false;
-    if (curUserId && rUid && curUserId === rUid) isMyLog = true;
-    else if (curNick && rAuthor && curNick === rAuthor) isMyLog = true;
-    else if (!rUid && !rAuthor) isMyLog = true;
+    if (curUserId && rUid) {
+      isMyLog = (curUserId === rUid);
+      if (isMyLog && curNick && rAuthor && curNick !== rAuthor && rAuthor !== '낭만루터' && rAuthor !== '낭만백패커') {
+        isMyLog = false;
+      }
+    } else if (curNick && rAuthor) {
+      if (curNick !== '낭만루터' && curNick !== '낭만백패커') {
+        isMyLog = (curNick === rAuthor);
+      }
+    }
 
     if (!isMyLog) return false;
     if (String(r.id || '').startsWith('pack_temp_')) return false;
     if (r.feedType === 'daily' || r.feedType === 'snap') return false;
-    
-    // 2. 낭만루트 정식 아웃도어 스펙 검증 (배낭 무게, 장비 슬롯 아이템, 정식 템플릿 중 필수 보유)
+
     var hasWeight = parseFloat(r.weightKg) > 0;
     var hasItems = Array.isArray(r.items) && r.items.length > 0;
     var hasTemplate = Boolean(r.templateId && Number(r.templateId) > 0);
     var isOutdoorRoute = (r.feedType === 'route' || !r.feedType);
 
-    // 3. 루터 기본 장소명('나의 아웃도어')이면서 무게/장비가 없는 빈 껍데기 글 배제
     var spotName = String(r.spot || r.spotName || '').trim();
     if (spotName === '나의 아웃도어' && !hasWeight && !hasItems) return false;
 

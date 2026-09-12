@@ -5,7 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="google" content="notranslate" />
   <script>
-    // 📐 [이미지 인라인 onload 에러 428개 완벽 박멸 전역 안전 가드]
+    (function autoPurgeLegacyClientCache() {
+      var CLEAN_EPOCH = '20260912_PURGE_V1';
+      var currentEpoch = localStorage.getItem('okbm_client_epoch');
+      if (currentEpoch !== CLEAN_EPOCH) {
+        var keepKeys = ['okbm_spots_cache'];
+        Object.keys(localStorage).forEach(function(k) {
+          if (!keepKeys.includes(k)) localStorage.removeItem(k);
+        });
+        if (typeof indexedDB !== 'undefined') {
+          try { indexedDB.deleteDatabase('okbm_vault_db'); } catch(e) {}
+        }
+        localStorage.setItem('okbm_client_epoch', CLEAN_EPOCH);
+      }
+    })();
+
     window.applySmartPhotoFit = window.applySmartPhotoFit || function(img) {
       if (!img) return;
       if (img.naturalWidth > 0 && img.naturalHeight > 0) {
