@@ -1905,7 +1905,7 @@ window.saveCurrentPackingRecord = function() {
         var page = 0;
         var pageSize = 1000;
         while (true) {
-          var res = await fetch(targetUrl + '/rest/v1/gears?select=id,name,item_name,weight_g,weight,brand,category_id,specs_detail,specs,verified,weight_type,evidence&order=id.asc&offset=' + (page * pageSize) + '&limit=' + pageSize, {
+          var res = await fetch(targetUrl + '/rest/v1/gears?select=*&order=id.asc&offset=' + (page * pageSize) + '&limit=' + pageSize, {
             headers: {
               'apikey': targetKey,
               'Authorization': 'Bearer ' + targetKey,
@@ -1928,6 +1928,9 @@ window.saveCurrentPackingRecord = function() {
     if (allRows && allRows.length > 0) {
       applyFetchedGears(allRows);
       localStorage.setItem('okbm_gear_version', CURRENT_GEAR_VERSION);
+      if (typeof window.renderPlanStage === 'function') {
+        window.renderPlanStage();
+      }
     }
   };
 
