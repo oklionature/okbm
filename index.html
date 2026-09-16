@@ -1414,23 +1414,20 @@
 
   <script>
     window.smoothNavigate = function(url, e) {
-      if (e) { e.preventDefault(); e.stopPropagation(); }
       triggerHaptic(10);
       var currentPath = window.location.pathname;
-      var targetPath = url.split('?')[0];
+      var targetPath = (url || '').split('?')[0];
 
-      // 동일 페이지 클릭 시 리로드 없이 맨 위로 스무스 이동
       if ((targetPath.includes('index.html') || targetPath === '/' || targetPath === '') && (currentPath.includes('index.html') || currentPath.endsWith('/'))) {
+        if (e && typeof e.preventDefault === 'function') e.preventDefault();
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
-      // 화면 깜빡임/툴바 요동 없이 텔레포트 전환 (뒤로가기 완벽 보존)
-      document.body.style.pointerEvents = 'none';
-      document.body.style.opacity = '0.92';
-      setTimeout(function() {
-        window.location.assign(url);
-      }, 30);
+      if (e && typeof e.preventDefault === 'function') {
+        e.preventDefault();
+      }
+      location.href = url;
     };
 
    function safeGetJSON(key, defaultVal) {
@@ -5264,11 +5261,12 @@ var adBannersHtml = `
               window.closeAllTripModals();
             }
             if (title.includes('루트') || title.includes('홈')) {
+              e.preventDefault();
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }
           }
         }
-      }, true);
+      });
 
   wrapModal('openPlanModal', 'closePlanModal', 'romanticPlanModal');
       wrapModal('openHistoryModal', 'closeHistoryModal', 'romanticHistoryModal');

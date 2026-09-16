@@ -1301,9 +1301,11 @@
       var userBookmarks = new Set((safeGetJSON('okbm_bookmarks', []) || []).map(function(s) { return String(s).trim(); }));
       var userVisited = new Set((safeGetJSON('okbm_visited', []) || []).map(function(s) { return String(s).trim(); }));
       var userMemos = safeGetJSON('okbm_memos', {}) || {};
+      var spotComments = safeGetJSON('okbm_comments', {}) || {};
       window.userBookmarks = userBookmarks;
       window.userVisited = userVisited;
       window.userMemos = userMemos;
+      window.spotComments = spotComments;
 
       window.addEventListener('okbm_bookmark_changed', function(e) {
         var rawB = (e && e.detail && Array.isArray(e.detail.bookmarks)) ? e.detail.bookmarks : safeGetJSON('okbm_bookmarks', []);
@@ -2511,7 +2513,6 @@ function updateSmartResetButtons() {
         if (!map) return;
         const currentLevel = map.getLevel();
 
-        // 🌟 전국 레벨(11 이상)에서는 개별 글자 라벨을 지도에서 즉시 전면 소멸
         if (currentLevel >= 11) {
           spotLabelOverlayMap.forEach((overlay) => {
             if (overlay && overlay.getMap()) overlay.setMap(null);
@@ -2520,19 +2521,29 @@ function updateSmartResetButtons() {
         }
 
         const proj = map.getProjection();
+        if (!proj) return;
+
         const bounds = map.getBounds();
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+        const latBuffer = (ne.getLat() - sw.getLat()) * 0.05;
+        const lngBuffer = (ne.getLng() - sw.getLng()) * 0.05;
+        const minLat = sw.getLat() - latBuffer;
+        const maxLat = ne.getLat() + latBuffer;
+        const minLng = sw.getLng() - lngBuffer;
+        const maxLng = ne.getLng() + lngBuffer;
+
         const occupiedBoxes = [];
         const activeId = currentActiveSpot ? String(currentActiveSpot.id).trim() : (window.__MANUAL_ACTIVE_ID__ || null);
+        const candidateSpots = [];
 
-       const candidateSpots = [];
         spotNativeMarkerMap.forEach((marker, id) => {
           if (marker && marker.getMap()) {
             const spot = marker.spotData;
             const sId = String(spot.id).trim();
             const isSelected = (activeId === sId);
-            const latlng = spot._latlng || (spot._latlng = new kakao.maps.LatLng(spot.lat, spot.lng));
 
-            if (bounds && !bounds.contain(latlng) && !isSelected) {
+            if (!isSelected && (spot.lat < minLat || spot.lat > maxLat || spot.lng < minLng || spot.lng > maxLng)) {
               const overlay = spotLabelOverlayMap.get(sId);
               if (overlay && overlay.getMap()) overlay.setMap(null);
               return;
@@ -2557,33 +2568,49 @@ function updateSmartResetButtons() {
         const maxRenderCount = currentLevel <= 6 ? 60 : 35;
         let renderedCount = 0;
 
-        candidateSpots.forEach(({ id, spot, priority, isSelected }) => {
+        for (let i = 0; i < candidateSpots.length; i++) {
+          const item = candidateSpots[i];
+          const id = item.id;
+          const spot = item.spot;
+          const priority = item.priority;
+          const isSelected = item.isSelected;
+
           const overlay = spotLabelOverlayMap.get(id);
-          if (!overlay) return;
+          if (!overlay) continue;
 
           if (currentLevel >= 11 || (!isSelected && currentLevel >= 12) || (!isSelected && renderedCount >= maxRenderCount)) {
             if (overlay.getMap()) overlay.setMap(null);
-            return;
+            continue;
           }
 
-          const latlng = new kakao.maps.LatLng(spot.lat, spot.lng);
-          const screenPoint = proj ? proj.containerPointFromCoords(latlng) : null;
-          if (!screenPoint) return;
+          const latlng = spot._renderLatLng || new kakao.maps.LatLng(spot.renderLat || spot.lat, spot.renderLng || spot.lng);
+          const screenPoint = proj.containerPointFromCoords(latlng);
+          if (!screenPoint) continue;
 
           const isFullMode = isSelected || (currentLevel <= 7);
-          const labelWidth = isFullMode ? 90 : 58, labelHeight = isFullMode ? 54 : 22;
+          const labelWidth = isFullMode ? 90 : 58;
+          const labelHeight = isFullMode ? 54 : 22;
 
-          const box = {
-            left: screenPoint.x - labelWidth / 2, right: screenPoint.x + labelWidth / 2,
-            top: screenPoint.y - labelHeight - 44, bottom: screenPoint.y - 44
-          };
+          const boxLeft = screenPoint.x - labelWidth / 2;
+          const boxRight = screenPoint.x + labelWidth / 2;
+          const boxTop = screenPoint.y - labelHeight - 44;
+          const boxBottom = screenPoint.y - 44;
 
-          const hasCollision = occupiedBoxes.some(b => !(box.left > b.right + 4 || box.right < b.left - 4 || box.top > b.bottom + 2 || box.bottom < b.top - 2));
+          let hasCollision = false;
+          if (!isSelected && priority < 10000) {
+            for (let j = 0; j < occupiedBoxes.length; j++) {
+              const b = occupiedBoxes[j];
+              if (!(boxLeft > b.right + 4 || boxRight < b.left - 4 || boxTop > b.bottom + 2 || boxBottom < b.top - 2)) {
+                hasCollision = true;
+                break;
+              }
+            }
+          }
 
-          if (!isSelected && hasCollision && priority < 10000) {
+          if (hasCollision) {
             if (overlay.getMap()) overlay.setMap(null);
           } else {
-            occupiedBoxes.push(box);
+            occupiedBoxes.push({ left: boxLeft, right: boxRight, top: boxTop, bottom: boxBottom });
             renderedCount++;
             
             const diffClass = getSpotDiffColorClass(spot.difficulty);
@@ -2623,7 +2650,7 @@ function updateSmartResetButtons() {
             overlay.setZIndex(isSelected ? 9999 : 150);
             if (!overlay.getMap()) overlay.setMap(map);
           }
-        });
+        }
       }
       function closeAllPopups() { 
         closeMobileBottomSheet(); 
@@ -5153,13 +5180,11 @@ var overlay = document.getElementById('customModalOverlay');
         }
         
         spots.splice(index, 1);
-        delete spotComments[deletedId]; 
         userBookmarks.delete(sId); 
         userVisited.delete(sId); 
         delete userMemos[sId];
         
         localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
-        localStorage.setItem('okbm_comments', JSON.stringify(spotComments));
         localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks]));
         localStorage.setItem('okbm_visited', JSON.stringify([...userVisited]));
         localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
@@ -5334,7 +5359,6 @@ var overlay = document.getElementById('customModalOverlay');
         try {
           const backupData = { 
             spots, 
-            comments: spotComments, 
             bookmarks: [...userBookmarks], 
             visited: [...userVisited], 
             memos: userMemos, 
@@ -5378,11 +5402,7 @@ var overlay = document.getElementById('customModalOverlay');
             const data = JSON.parse(event.target.result);
             if (!data || typeof data !== 'object') throw new Error('유효하지 않은 데이터 구조');
 
-           if (data.comments && typeof data.comments === 'object') { 
-              spotComments = data.comments; 
-              localStorage.setItem('okbm_comments', JSON.stringify(spotComments)); 
-            }
-            if (Array.isArray(data.bookmarks)) { 
+           if (Array.isArray(data.bookmarks)) { 
               userBookmarks = new Set(data.bookmarks.map(s => String(s).trim())); 
               if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
                 window.RomanticVault.write('okbm_bookmarks', Array.from(userBookmarks), true);

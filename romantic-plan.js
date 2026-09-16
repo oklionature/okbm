@@ -698,7 +698,9 @@ var totalKg = (totalGrams / 1000).toFixed(2);
       var pool = [];
 
       var customGears = safeGetJSON('okbm_custom_gears', []) || [];
-      var masterMap = safeGetJSON('okbm_master_gears_cache', {}) || {};
+      var masterMap = window.__memoryStore && window.__memoryStore['okbm_master_gears_cache']
+        ? window.__memoryStore['okbm_master_gears_cache']
+        : (safeGetJSON('okbm_master_gears_cache', {}) || {});
       var allSource = customGears.map(function(cg) {
         return Object.assign({}, cg, { category_id: cg.category_id || cg.categoryId || 'shelter', isCustom: true });
       });
@@ -749,12 +751,16 @@ var totalKg = (totalGrams / 1000).toFixed(2);
       if (filtered.length === 0) {
         shelfContainer.innerHTML = `<div style="text-align:center; padding:60px 0; color:#64748b; font-size:0.75rem;">일치하는 장비가 없습니다.<br>상단 검색어를 변경하거나 직접 등록해보세요.</div>`;
       } else {
+        var initialLimit = cleanQ ? filtered.length : 40;
+        var renderItems = filtered.slice(0, initialLimit);
+
         var guideHtml = `
           <div style="display:flex; justify-content:space-between; align-items:center; padding:2px 4px 6px 4px; border-bottom:1px solid rgba(255,255,255,0.05); margin-bottom:6px;">
-            <span style="font-size:0.60rem; color:#64748b; font-weight:700;">전체 ${filtered.length}개 장비</span>4px;">
+            <span style="font-size:0.60rem; color:#64748b; font-weight:700;">전체 ${filtered.length}개 장비</span>
           </div>
         `;
-        shelfContainer.innerHTML = guideHtml + filtered.map(function(g) {
+
+        function renderRowHtml(g) {
           var targetCatId = g.category_id || 'shelter';
           var currentCatItems = gearMap[targetCatId] || [];
           var count = currentCatItems.filter(function(it) { return it.name === g.name; }).length;
@@ -799,7 +805,21 @@ var totalKg = (totalGrams / 1000).toFixed(2);
               </div>
             </div>
           `;
-        }).join('');
+        }
+
+        shelfContainer.innerHTML = guideHtml + renderItems.map(renderRowHtml).join('');
+
+        if (filtered.length > initialLimit) {
+          shelfContainer.onscroll = function() {
+            if (shelfContainer.scrollTop + shelfContainer.clientHeight >= shelfContainer.scrollHeight - 100) {
+              shelfContainer.onscroll = null;
+              var moreItems = filtered.slice(initialLimit);
+              shelfContainer.insertAdjacentHTML('beforeend', moreItems.map(renderRowHtml).join(''));
+            }
+          };
+        } else {
+          shelfContainer.onscroll = null;
+        }
       }
     }
   };
@@ -1858,6 +1878,10 @@ window.saveCurrentPackingRecord = function() {
 
   // 🌐 [마스터 장비 최신화 엔진 - 정적 JSON 1차 로드(Supabase 0회 호출) & Supabase 백업 폴백]
   window.loadGearDbFromGoogleSheet = async function(isForce) {
+    if (!isForce && window.GEARS_MASTER && Array.isArray(window.GEARS_MASTER) && window.GEARS_MASTER.length > 0) {
+      return;
+    }
+
     var storedVer = localStorage.getItem('okbm_gear_version');
     var isVerMismatch = (storedVer !== CURRENT_GEAR_VERSION);
 
@@ -1872,6 +1896,10 @@ window.saveCurrentPackingRecord = function() {
       (window.CATEGORIES || []).forEach(function(cat) {
         cat.db = cachedMap[cat.id] ? cachedMap[cat.id].slice() : [];
       });
+      var cachedList = safeGetJSON('okbm_master_gears', null);
+      if (Array.isArray(cachedList)) {
+        window.GEARS_MASTER = cachedList;
+      }
       return;
     }
 
