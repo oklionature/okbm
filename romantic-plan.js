@@ -4740,6 +4740,14 @@ window.commitPlanDestination = function(dateKey) {
 
   // 초기 실행
   if (typeof window.loadGearDbFromGoogleSheet === 'function') {
-    window.loadGearDbFromGoogleSheet();
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(function() {
+        window.loadGearDbFromGoogleSheet();
+      }, { timeout: 2000 });
+    } else {
+      setTimeout(function() {
+        window.loadGearDbFromGoogleSheet();
+      }, 350);
+    }
   }
 })();

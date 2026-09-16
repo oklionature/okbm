@@ -1,14 +1,6 @@
 // =========================================================================
-// 🚀 [templates.js] 19종 템플릿 엔진 & 포토 카드 스튜디오 마스터 (v2.6.0)
+// 🚀 [templates.js] 6종 정예 템플릿 엔진 & 포토 카드 스튜디오 마스터 (v2.6.1)
 // =========================================================================
-if (!document.getElementById('romantic-hand-font-loader')) {
-  var fLink = document.createElement('link');
-  fLink.id = 'romantic-hand-font-loader';
-  fLink.rel = 'stylesheet';
-  fLink.href = 'https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap';
-  document.head.appendChild(fLink);
-}
-
 if (!document.getElementById('tmpl-spin-anim-style')) {
   var spinStyle = document.createElement('style');
   spinStyle.id = 'tmpl-spin-anim-style';

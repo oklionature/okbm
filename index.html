@@ -237,10 +237,10 @@
   <title>낭만루트 ROMANTIC ROUTE | 대한민국 전국 백패킹 필드 팩트맵</title>
 
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT/fonts/static/woff2/SUIT.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT/fonts/static/woff2/SUIT.css" media="print" onload="this.media='all'" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Cinzel:wght@700;900&family=Dancing+Script:wght@700&family=Gaegu:wght@700&family=JetBrains+Mono:wght@500;700;800&family=Noto+Serif+KR:wght@600;900&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@700&family=JetBrains+Mono:wght@700;800&family=Noto+Serif+KR:wght@600&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   
   <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -5037,12 +5037,12 @@ var adBannersHtml = `
       try {
         var supaSpots = null;
         if (window.supabaseClient) {
-          var sbRes = await window.supabaseClient.from('spots').select('id,spot_main,name,fullname,city_name,region,elevation,difficulty,distance,terrain,desc_summary,lat,lng').order('id', { ascending: true });
+          var sbRes = await window.supabaseClient.from('spots').select('*').order('id', { ascending: true });
           if (sbRes.data && Array.isArray(sbRes.data) && sbRes.data.length > 0) {
             supaSpots = sbRes.data;
           }
         } else if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-          var res = await fetch(window.SUPABASE_URL + '/rest/v1/spots?select=id,spot_main,name,fullname,city_name,region,elevation,difficulty,distance,terrain,desc_summary,lat,lng&order=id.asc', {
+          var res = await fetch(window.SUPABASE_URL + '/rest/v1/spots?select=*&order=id.asc', {
             headers: {
               'apikey': window.SUPABASE_ANON_KEY,
               'Authorization': 'Bearer ' + window.SUPABASE_ANON_KEY,
