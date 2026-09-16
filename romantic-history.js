@@ -853,14 +853,9 @@
     };
     if (!record) return urls;
     if (Array.isArray(record.photos)) record.photos.forEach(push);
-    push(record.photo);
-    push(record.fieldPhoto);
-    push(record.photo_url);
     return urls;
   };
   (async function preloadLocalStorageToMemory() {
-    // [복원 통로 단일화] IndexedDB 스냅샷을 더 이상 신뢰하지 않고,
-    // localStorage('okbm_packing_history') 하나만을 유일한 복원 소스로 사용합니다.
     try {
       var rawList = null;
       var localRaw = localStorage.getItem('okbm_packing_history');
@@ -870,7 +865,10 @@
 
       if (rawList && Array.isArray(rawList) && rawList.length > 0) {
         window.interactiveHistory = rawList.map(function(r, i) {
-          return window.normalizeHistoryRecord(r, i);
+          if (typeof window.normalizeHistoryRecord === 'function') {
+            return window.normalizeHistoryRecord(r, i);
+          }
+          return r;
         });
         window.packingHistoryList = window.interactiveHistory;
         window.__memoryStore['okbm_packing_history'] = window.interactiveHistory;
@@ -1400,104 +1398,102 @@ window.normalizeHistoryRecord = function(r, idx) {
     });
   };
 
-  window.executeBatchDeletePastTrips = function() {
+  window.executeBatchDeletePastTrips = async function() {
     var selectedCount = window.__selectedPastTripIds.size;
     if (selectedCount === 0) return;
 
     triggerHaptic(20);
-    var confirmMsg = '선택한 ' + selectedCount + '개의 출발 기록을 삭제하시겠습니까?\n' +
-      '• 모든 기기에서 즉시 삭제되며 부활하지 않습니다.\n' +
-      '• 공용 피드 및 구글 클라우드에서 안전하게 정리됩니다.';
-    
+    var confirmMsg = '선택한 ' + selectedCount + '개의 기록을 영구 삭제하시겠습니까?\n' +
+      '• 모든 기기에서 즉시 삭제되며 복구할 수 없습니다.';
+
     if (!confirm(confirmMsg)) return;
 
-    var rawList = window.safeGetStorage('okbm_packing_history', []) || [];
-    var savedPhotosMap = window.safeGetStorage('okbm_phone_photos_map', {}) || {};
-    if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
-      savedPhotosMap = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], savedPhotosMap);
+    var idsToDelete = Array.from(window.__selectedPastTripIds);
+    var targetUrl = window.SUPABASE_URL || '';
+    var targetKey = window.SUPABASE_ANON_KEY || '';
+
+    var deleteBtn = document.querySelector('#pastTripsBatchDeleteBar button');
+    if (deleteBtn) {
+      deleteBtn.disabled = true;
+      deleteBtn.style.opacity = '0.6';
     }
 
-    var idsToDelete = new Set(window.__selectedPastTripIds);
-    var targetRecordsToDelete = [];
-    var tombstones = [];
-
-    // 🛡️ 영구 삭제 블랙리스트 갱신
-    var deletedIds = safeGetJSON('okbm_deleted_record_ids', []);
-    idsToDelete.forEach(function(delId) {
-      if (!deletedIds.includes(delId)) deletedIds.push(delId);
-    });
-    localStorage.setItem('okbm_deleted_record_ids', JSON.stringify(deletedIds));
-
-    var remainingList = rawList.filter(function(r, idx) {
-      if (!r) return false;
-      var rId = String(r.id || '').trim();
-      if (rId && idsToDelete.has(rId)) {
-        targetRecordsToDelete.push(r);
-        tombstones.push({
-          id: rId,
-          date: r.date || '',
-          isDeleted: true,
-          deletedAt: Date.now()
+    if (targetUrl && targetKey) {
+      try {
+        var inClause = 'in.(' + idsToDelete.map(encodeURIComponent).join(',') + ')';
+        var res = await fetch(targetUrl + '/rest/v1/feeds?id=' + inClause, {
+          method: 'DELETE',
+          headers: {
+            'apikey': targetKey,
+            'Authorization': 'Bearer ' + targetKey,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          }
         });
-        return false;
-      }
-      var cleanD = r.date ? String(r.date).replace(/[-/]/g, '.') : '';
-      var pParts = cleanD.match(/\d+/g);
-      if (pParts && pParts.length >= 3) {
-        var sKey = 'pack_' + pParts[0] + pParts[1].padStart(2, '0') + pParts[2].padStart(2, '0') + '_' + idx;
-        if (idsToDelete.has(sKey)) {
-          targetRecordsToDelete.push(r);
-          tombstones.push({
-            id: sKey,
-            date: r.date || '',
-            isDeleted: true,
-            deletedAt: Date.now()
-          });
-          return false;
+
+        if (!res.ok) {
+          if (typeof showToast === 'function') {
+            showToast('서버 삭제 실패 (HTTP ' + res.status + ')', 'error', 2600);
+          }
+          if (deleteBtn) {
+            deleteBtn.disabled = false;
+            deleteBtn.style.opacity = '1';
+          }
+          return;
         }
+
+        var deletedRows = await res.json();
+        if (!Array.isArray(deletedRows) || deletedRows.length === 0) {
+          if (typeof showToast === 'function') {
+            showToast('삭제 권한이 없거나 이미 삭제된 항목입니다.', 'warn', 2600);
+          }
+          if (deleteBtn) {
+            deleteBtn.disabled = false;
+            deleteBtn.style.opacity = '1';
+          }
+          return;
+        }
+      } catch (err) {
+        if (typeof showToast === 'function') {
+          showToast('네트워크 오류로 삭제에 실패했습니다.', 'error', 2600);
+        }
+        if (deleteBtn) {
+          deleteBtn.disabled = false;
+          deleteBtn.style.opacity = '1';
+        }
+        return;
       }
-      return true;
-    });
-
-    targetRecordsToDelete.forEach(function(delItem) {
-      var dId = String(delItem.id || '').trim();
-      var dDate = String(delItem.date || '').trim();
-      var altDate = dDate.replace(/[-/]/g, '.');
-
-      if (dId && savedPhotosMap[dId]) delete savedPhotosMap[dId];
-      if (dDate && savedPhotosMap[dDate]) delete savedPhotosMap[dDate];
-      if (altDate && savedPhotosMap[altDate]) delete savedPhotosMap[altDate];
-
-      if (typeof window.deleteFeedFromCommunity === 'function') {
-        window.deleteFeedFromCommunity(dId, dDate);
-      }
-    });
-
-    window.__memoryStore['okbm_phone_photos_map'] = savedPhotosMap;
-    window.safeSetStorage('okbm_phone_photos_map', savedPhotosMap);
-    if (typeof window.saveToIndexedDB === 'function') {
-      window.saveToIndexedDB('okbm_phone_photos_map', savedPhotosMap);
     }
 
-    window.__tombstoneHistoryQueue = remainingList.concat(tombstones);
+    var idSet = new Set(idsToDelete);
+    var purgeFn = function(r) {
+      return r && !idSet.has(String(r.id).trim());
+    };
 
-    window.interactiveHistory = remainingList.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
+    var rawList = window.safeGetStorage('okbm_packing_history', []) || [];
+    var remainingList = rawList.filter(purgeFn);
+
+    window.interactiveHistory = remainingList.map(function(r, i) {
+      return window.normalizeHistoryRecord(r, i);
+    });
     window.packingHistoryList = window.interactiveHistory;
     window.safeSetStorage('okbm_packing_history', remainingList);
-    if (window.__memoryStore) window.__memoryStore['okbm_packing_history'] = remainingList;
-    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-      window.RomanticVault.write('okbm_packing_history', remainingList, false);
+    if (window.__memoryStore) {
+      window.__memoryStore['okbm_packing_history'] = remainingList;
     }
-    try { localStorage.setItem('okbm_packing_history', JSON.stringify(remainingList)); } catch(e) { console.warn('[romantic-history.js:executeBatchDeletePastTrips localSet]', e); }
-    if (typeof window.saveToIndexedDB === 'function') {
-      window.saveToIndexedDB('okbm_packing_history', remainingList);
-    }
+    try {
+      localStorage.setItem('okbm_packing_history', JSON.stringify(remainingList));
+    } catch (e) {}
 
     if (Array.isArray(window.__allLoadedFeeds)) {
-      window.__allLoadedFeeds = window.__allLoadedFeeds.filter(function(f) { return !idsToDelete.has(String(f.id).trim()); });
+      window.__allLoadedFeeds = window.__allLoadedFeeds.filter(purgeFn);
+      try {
+        localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(window.__allLoadedFeeds));
+      } catch (e) {}
     }
+
     if (Array.isArray(window.heroTopRecords)) {
-      window.heroTopRecords = window.heroTopRecords.filter(function(f) { return !idsToDelete.has(String(f.id).trim()); });
+      window.heroTopRecords = window.heroTopRecords.filter(purgeFn);
       window.currentHeroCardIndex = 0;
       if (typeof window.renderCurrentHeroCard === 'function') {
         window.renderCurrentHeroCard();
@@ -1505,11 +1501,15 @@ window.normalizeHistoryRecord = function(r, idx) {
     }
 
     triggerHaptic(15);
-    if (typeof showToast === 'function') showToast(targetRecordsToDelete.length + '개의 기록이 삭제되었습니다.', 'info');
+    if (typeof showToast === 'function') {
+      showToast(selectedCount + '개의 기록이 영구 삭제되었습니다.', 'info');
+    }
     window.__isPastTripsSelectMode = false;
     window.__selectedPastTripIds.clear();
     window.openPastTripsListModal();
-    if (typeof window.renderHistoryStage === 'function') window.renderHistoryStage();
+    if (typeof window.renderHistoryStage === 'function') {
+      window.renderHistoryStage();
+    }
   };
 
   window.closePastTripsListModal = function() {
@@ -1672,94 +1672,237 @@ window.normalizeHistoryRecord = function(r, idx) {
     }
   };
 
+window.okbmGetUserStarsKey = function(userId) {
+  var uId = String(userId || '').trim();
+  if (!uId) {
+    var profile = safeGetJSON('user_profile', null);
+    uId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+  }
+  return uId ? ('okbm_feed_stars_map_' + uId) : 'okbm_feed_stars_map';
+};
+
+window.fetchUserFeedLikesFromServer = async function() {
+  var profile = safeGetJSON('user_profile', null);
+  var currentUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+  if (!currentUserId || currentUserId === 'guest') return {};
+
+  var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
+  var targetKey = window.SUPABASE_ANON_KEY || '';
+  if (!targetUrl || !targetKey) return {};
+
+  try {
+    var res = await fetch(targetUrl + '/rest/v1/feed_likes?user_id=eq.' + encodeURIComponent(currentUserId) + '&select=feed_id', {
+      headers: {
+        'apikey': targetKey,
+        'Authorization': 'Bearer ' + targetKey,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!res.ok) return {};
+    var rows = await res.json();
+    if (Array.isArray(rows)) {
+      var starsMap = {};
+      rows.forEach(function(row) {
+        if (row && row.feed_id) {
+          var cleanId = String(row.feed_id).replace(/^["']|["']$/g, '').trim();
+          if (cleanId) starsMap[cleanId] = true;
+        }
+      });
+      var userKey = window.okbmGetUserStarsKey(currentUserId);
+      localStorage.setItem(userKey, JSON.stringify(starsMap));
+
+      document.querySelectorAll('[id^="feedStarIcon_"]').forEach(function(icon) {
+        var sId = String(icon.id.replace('feedStarIcon_', '')).replace(/^["']|["']$/g, '').trim();
+        var isStarred = Boolean(starsMap[sId]);
+        icon.setAttribute('fill', isStarred ? '#fde047' : 'none');
+        icon.setAttribute('stroke', isStarred ? '#fde047' : '#ffffff');
+        icon.style.filter = isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none';
+      });
+
+      return starsMap;
+    }
+  } catch (err) {}
+  return {};
+};
+
+window.okbmSyncFeedLikeAction = async function(feedId, userId, isAdding, finalCount) {
+  var sId = String(feedId || '').trim();
+  var uId = String(userId || '').trim();
+  if (!sId || !uId) return;
+
+  var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
+  var targetKey = window.SUPABASE_ANON_KEY || '';
+  if (!targetUrl || !targetKey) return;
+
+  var headers = {
+    'apikey': targetKey,
+    'Authorization': 'Bearer ' + targetKey,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  };
+
+  try {
+    if (isAdding) {
+      await fetch(targetUrl + '/rest/v1/feed_likes', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ feed_id: sId, user_id: uId, created_at: new Date().toISOString() })
+      });
+    } else {
+      await fetch(targetUrl + '/rest/v1/feed_likes?feed_id=eq.' + encodeURIComponent(sId) + '&user_id=eq.' + encodeURIComponent(uId), {
+        method: 'DELETE',
+        headers: headers
+      });
+    }
+  } catch (likeErr) {}
+
+  try {
+    await fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
+      method: 'PATCH',
+      headers: headers,
+      body: JSON.stringify({ likes_count: Math.max(0, Number(finalCount) || 0), updated_at: new Date().toISOString() })
+    });
+  } catch (patchErr) {}
+};
+
 window.okbmSyncFeedLikeCount = function(recordId, count) {
   var sId = String(recordId || '').trim();
   if (!sId) return;
   var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
   var targetKey = window.SUPABASE_ANON_KEY || '';
   if (!targetUrl || !targetKey) return;
-  var targetTable = 'feeds';
-  var likeHeaders = {
-    'apikey': targetKey,
-    'Authorization': 'Bearer ' + targetKey,
-    'Content-Type': 'application/json',
-    'Prefer': 'return=representation'
-  };
-  var likeBody = { likes_count: Number(count) || 0, updated_at: new Date().toISOString() };
-  fetch(targetUrl + '/rest/v1/' + targetTable + '?id=eq.' + encodeURIComponent(sId), {
+  fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
     method: 'PATCH',
-    headers: likeHeaders,
-    body: JSON.stringify(likeBody)
+    headers: {
+      'apikey': targetKey,
+      'Authorization': 'Bearer ' + targetKey,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify({ likes_count: Math.max(0, Number(count) || 0), updated_at: new Date().toISOString() })
   }).catch(function() {});
 };
 
-// 🌟 [1. 낭만별(좋아요) 실시간 토글 & 클라우드 백엔드 연동 엔진]
-  window.toggleFeedStar = function(cardId, e) {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    if (!cardId) return;
+window.__starToggleLockMap = window.__starToggleLockMap || {};
 
-    var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
-    if (!isLogged) {
-      triggerHaptic(12);
-      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.lock + '낭만별은 로그인 후 이용할 수 있습니다.', 'info', 2200);
-      if (typeof openLoginModal === 'function') openLoginModal();
-      return;
+window.toggleFeedStar = async function(cardId, e) {
+  if (e) {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+  }
+  if (!cardId) return;
+
+  var sId = String(cardId).replace(/^["']|["']$/g, '').trim();
+  if (!sId) return;
+
+  var isLogged = false;
+  if (typeof isUserLoggedIn === 'function') {
+    isLogged = isUserLoggedIn();
+  } else {
+    var token = localStorage.getItem('user_auth_token');
+    var prof = safeGetJSON('user_profile', null);
+    isLogged = !!(token && token.trim().length > 0 && prof && prof.id);
+  }
+
+  if (!isLogged) {
+    triggerHaptic(12);
+    var toastFn = window.showToast || (typeof showToast === 'function' ? showToast : null);
+    if (toastFn) {
+      toastFn('로그인 후 이용할 수 있습니다.', 'info', 2200);
     }
-
-    var sId = String(cardId).trim();
-    var starsMap = safeGetJSON('okbm_feed_stars_map', {});
-    var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
-
-    var isStarred = Boolean(starsMap[sId]);
-    var currentCount = Number(starCounts[sId] || 0);
-
-    if (isStarred) {
-      delete starsMap[sId];
-      currentCount = Math.max(0, currentCount - 1);
-      triggerHaptic(8);
-    } else {
-      starsMap[sId] = true;
-      currentCount += 1;
-      triggerHaptic(14);
+    if (typeof window.openLoginModal === 'function') {
+      window.openLoginModal();
+    } else if (typeof window.handleAuthBtnClick === 'function') {
+      window.handleAuthBtnClick();
+    } else if (typeof openLoginModal === 'function') {
+      openLoginModal();
     }
+    return;
+  }
 
-    starCounts[sId] = currentCount;
-    localStorage.setItem('okbm_feed_stars_map', JSON.stringify(starsMap));
-    localStorage.setItem('okbm_feed_stars_counts', JSON.stringify(starCounts));
+  if (window.__starToggleLockMap[sId]) return;
+  window.__starToggleLockMap[sId] = true;
 
-    // 🌟 홈 화면 히어로 랭킹 큐에 실시간 반영
-    var targetCard = (window.interactiveHistory || []).find(function(r) { return String(r.id).trim() === sId; });
-    if (!targetCard && Array.isArray(window.__allLoadedFeeds)) {
-      targetCard = window.__allLoadedFeeds.find(function(r) { return String(r.id).trim() === sId; });
-    }
-    if (targetCard && Array.isArray(window.heroTopRecords)) {
-      var hItem = window.heroTopRecords.find(function(h) { return String(h.id).trim() === sId; });
-      if (hItem) {
-        hItem.likes = currentCount;
-        if (typeof window.renderCurrentHeroCard === 'function') window.renderCurrentHeroCard();
-      }
-    }
+  var profile = safeGetJSON('user_profile', null);
+  var currentUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+  var userKey = window.okbmGetUserStarsKey(currentUserId);
 
-    var starIcon = document.getElementById('feedStarIcon_' + sId);
-    var starText = document.getElementById('feedStarCountText_' + sId);
-    if (starIcon) {
-      starIcon.setAttribute('fill', !isStarred ? '#fde047' : 'none');
-      starIcon.setAttribute('stroke', !isStarred ? '#fde047' : '#ffffff');
-      starIcon.style.filter = !isStarred ? 'drop-shadow(0 0 8px rgba(253,224,71,0.8))' : 'none';
-      starIcon.style.transform = 'scale(1.25)';
-      setTimeout(function() { if (starIcon) starIcon.style.transform = 'scale(1)'; }, 200);
-    }
-    if (starText) {
-      starText.innerText = currentCount;
-    }
+  var starsMap = safeGetJSON(userKey, {});
+  var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
 
-    // ⚡ [별점 신호 정밀 전송]: 반전된 최종 상태(!isStarred)를 정확한 true/false 불리언으로 전달
-    var nextStarState = !isStarred;
+  var targetCard = (window.interactiveHistory || []).find(function(r) {
+    return r && String(r.id).replace(/^["']|["']$/g, '').trim() === sId;
+  });
+  if (!targetCard && Array.isArray(window.__allLoadedFeeds)) {
+    targetCard = window.__allLoadedFeeds.find(function(r) {
+      return r && String(r.id).replace(/^["']|["']$/g, '').trim() === sId;
+    });
+  }
 
-    if (typeof window.okbmSyncFeedLikeCount === 'function') {
-      window.okbmSyncFeedLikeCount(sId, currentCount);
+  var isCurrentlyStarred = Boolean(starsMap[sId]);
+  var currentCount = (starCounts[sId] !== undefined)
+    ? Number(starCounts[sId])
+    : Number((targetCard && (targetCard.likes_count || targetCard.likes)) || 0);
+
+  if (isNaN(currentCount) || currentCount < 0) currentCount = 0;
+
+  var nextStarred = !isCurrentlyStarred;
+  var nextCount = nextStarred ? (currentCount + 1) : Math.max(0, currentCount - 1);
+
+  if (nextStarred) {
+    starsMap[sId] = true;
+    triggerHaptic(14);
+  } else {
+    delete starsMap[sId];
+    triggerHaptic(8);
+  }
+
+  starCounts[sId] = nextCount;
+  localStorage.setItem(userKey, JSON.stringify(starsMap));
+  localStorage.setItem('okbm_feed_stars_counts', JSON.stringify(starCounts));
+
+  if (targetCard) {
+    targetCard.likes = nextCount;
+    targetCard.likes_count = nextCount;
+  }
+  if (Array.isArray(window.heroTopRecords)) {
+    var hItem = window.heroTopRecords.find(function(h) {
+      return h && String(h.id).replace(/^["']|["']$/g, '').trim() === sId;
+    });
+    if (hItem) {
+      hItem.likes = nextCount;
+      hItem.likes_count = nextCount;
+      if (typeof window.renderCurrentHeroCard === 'function') window.renderCurrentHeroCard();
     }
+  }
+
+  var updateStarDOMElements = function(idVal, starredVal, countVal) {
+    var icons = document.querySelectorAll('[id="feedStarIcon_' + idVal + '"]');
+    icons.forEach(function(icon) {
+      icon.setAttribute('fill', starredVal ? '#fde047' : 'none');
+      icon.setAttribute('stroke', starredVal ? '#fde047' : '#ffffff');
+      icon.style.filter = starredVal ? 'drop-shadow(0 0 8px rgba(253,224,71,0.8))' : 'none';
+      icon.style.transform = 'scale(1.25)';
+      setTimeout(function() { if (icon) icon.style.transform = 'scale(1)'; }, 180);
+    });
+
+    var texts = document.querySelectorAll('[id="feedStarCountText_' + idVal + '"]');
+    texts.forEach(function(txt) {
+      txt.innerText = countVal;
+    });
   };
+
+  updateStarDOMElements(sId, nextStarred, nextCount);
+
+  try {
+    await window.okbmSyncFeedLikeAction(sId, currentUserId, nextStarred, nextCount);
+  } finally {
+    setTimeout(function() {
+      delete window.__starToggleLockMap[sId];
+    }, 350);
+  }
+};
 
 // 🔗 [2. 스마트 멀티 공유 모달 엔진 - 3대 핵심 채널 최적화]
   window.shareCurrentFeed = function(recordId, spotName, memoText) {
@@ -1936,12 +2079,10 @@ window.okbmSyncFeedLikeCount = function(recordId, count) {
     // 1. 상태 즉시 반전 (0.001초 로컬 확정)
     var nextStatus = !(target.isPublished === true);
 
-    // 🛡️ [사진 없는 템플릿 전체공개 차단]: 현장 사진이 없고 템플릿만 있는 기록은 디데이 이후 사진 등록 전까지 전체공개 불가
     if (nextStatus === true) {
       var targetPhotos = (typeof getRecordPhotos === 'function') ? getRecordPhotos(target) : (target.photos || []);
-      var targetTmpl = target.readyShotPhoto || target.customTemplatePhoto || '';
       var hasFieldPhotos = Array.isArray(targetPhotos) && targetPhotos.some(function(u) {
-        return u && !u.includes('unsplash.com') && u !== targetTmpl && u !== target.readyShotPhoto;
+        return typeof u === 'string' && (u.startsWith('https://') || u.startsWith('http://')) && !u.includes('unsplash.com');
       });
 
       if (!hasFieldPhotos) {
@@ -4361,6 +4502,9 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
             window.__allLoadedFeeds = supaFeeds;
             window.__feedPaginationOffset = supaFeeds.length;
             localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(supaFeeds));
+            if (typeof window.fetchUserFeedLikesFromServer === 'function') {
+              window.fetchUserFeedLikesFromServer();
+            }
           } else {
             var existingIds = new Set((window.__allLoadedFeeds || []).map(function(f) { return String(f.id); }));
             var addedItems = [];
@@ -4398,14 +4542,22 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
   window.fetchMoreCommunityFeeds = async function() {
     if (window.__isFetchingMoreFeeds || window.__feedHasMore === false) return;
     window.__isFetchingMoreFeeds = true;
-    var offset = window.__feedPaginationOffset || (Array.isArray(window.__allLoadedFeeds) ? window.__allLoadedFeeds.length : 10);
+
+    var reelContainer = document.getElementById('reelsVerticalContainer');
+    var currentRenderedCount = reelContainer ? reelContainer.querySelectorAll('.reel-page-snap').length : 0;
+    var offset = Math.max(currentRenderedCount, window.__feedPaginationOffset || 0);
 
     try {
       var nextBatch = await window.fetchCommunityFeeds(false, offset, 5);
-      if (Array.isArray(nextBatch) && nextBatch.length > 0 && typeof window.appendNewFeedCardsToReels === 'function') {
-        window.appendNewFeedCardsToReels(nextBatch);
+      if (Array.isArray(nextBatch) && nextBatch.length > 0) {
+        if (typeof window.appendNewFeedCardsToReels === 'function') {
+          window.appendNewFeedCardsToReels(nextBatch);
+        }
+      } else {
+        window.__feedHasMore = false;
       }
     } catch (err) {
+      console.warn('[romantic-history.js:fetchMoreCommunityFeeds]', err);
     } finally {
       window.__isFetchingMoreFeeds = false;
     }
@@ -4561,7 +4713,8 @@ window.renderHistoryStage = function(isLoading) {
     var myUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
     var savedNick = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만백패커');
     var savedInsta = localStorage.getItem('okbm_user_instagram') || '';
-    var starsMap = safeGetJSON('okbm_feed_stars_map', {});
+    var userStarsKey = (typeof window.okbmGetUserStarsKey === 'function') ? window.okbmGetUserStarsKey(myUserId) : 'okbm_feed_stars_map';
+    var starsMap = safeGetJSON(userStarsKey, {});
     var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
     var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
 
@@ -4658,8 +4811,9 @@ window.renderHistoryStage = function(isLoading) {
         var cleanInsta = String(instaId).replace(/[@\s]/g, '').trim();
         var itemsCount = Array.isArray(record.items) ? record.items.length : 0;
 
-        var isStarred = Boolean(starsMap[cardId]);
-        var starCount = Number(starCounts[cardId] || 0);
+        var cleanCardId = String(record.id || idx).replace(/^["']|["']$/g, '').trim();
+        var isStarred = Boolean(starsMap[cleanCardId] || starsMap[cardId]);
+        var starCount = Number(starCounts[cleanCardId] || starCounts[cardId] || record.likes_count || record.likes || 0);
         var mediaItems = (photos && photos.length > 0) ? photos : [];
         var totalPhotosCount = mediaItems.length;
 
@@ -4969,9 +5123,9 @@ window.renderHistoryStage = function(isLoading) {
           '<div class="reel-bottom-interactive-bar">' +
             '<div style="display:flex; justify-content:space-between; align-items:center; min-height:32px;">' +
               '<div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">' +
-                '<button type="button" onclick="window.toggleFeedStar(\'' + cardId + '\', event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:4px;">' +
-                  '<svg id="feedStarIcon_' + cardId + '" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
-                  '<span id="feedStarCountText_' + cardId + '" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif;">' + starCount + '</span>' +
+                '<button type="button" data-star-card-id="' + cleanCardId + '" onclick="event.stopPropagation(); window.toggleFeedStar(this.dataset.starCardId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:4px; touch-action:manipulation;">' +
+                  '<svg id="feedStarIcon_' + cleanCardId + '" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
+                  '<span id="feedStarCountText_' + cleanCardId + '" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif;">' + starCount + '</span>' +
                 '</button>' +
                 '<button type="button" data-feed-id="' + cardId + '" data-spot="' + escapeHtml(spotName) + '" data-memo="' + escapeHtml(memo120) + '" onclick="if(typeof window.shareCurrentFeed===\'function\'){ window.shareCurrentFeed(this.dataset.feedId, this.dataset.spot, this.dataset.memo); } else { triggerHaptic(10); if(navigator.clipboard){ navigator.clipboard.writeText(location.href); if(typeof showToast===\'function\') showToast(HISTORY_TOAST_VEC.link + \'피드 링크가 복사되었습니다.\',\'success\'); } }" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">' +
                   '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
@@ -4994,7 +5148,7 @@ window.renderHistoryStage = function(isLoading) {
       }).join('');
     }
 
-    content.innerHTML = '<div id="reelsVerticalContainer" class="reel-vertical-container" style="flex:1 1 auto; min-height:0; height:auto;">' +
+    content.innerHTML = '<div id="reelsVerticalContainer" class="reel-vertical-container" style="flex:1 1 auto; min-height:0; height:auto;" onscroll="window.__handleReelsVerticalScroll(this);">' +
       reelSlidesHtml +
     '</div>';
 
@@ -5030,7 +5184,8 @@ window.renderHistoryStage = function(isLoading) {
       var profile = safeGetJSON('user_profile', null);
       var myUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
       var savedNick = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만백패커');
-      var starsMap = safeGetJSON('okbm_feed_stars_map', {});
+      var userStarsKey = (typeof window.okbmGetUserStarsKey === 'function') ? window.okbmGetUserStarsKey(myUserId) : 'okbm_feed_stars_map';
+      var starsMap = safeGetJSON(userStarsKey, {});
       var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
       var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
 
@@ -5046,8 +5201,9 @@ window.renderHistoryStage = function(isLoading) {
         var weightKg = record.weightKg || '0.00';
         var memo120 = (record.memo || record.oneLineMemo || '').slice(0, 120);
         var authorName = record.author || record.nick || record.nickname || '낭만백패커';
-        var isStarred = Boolean(starsMap[cardId]);
-        var starCount = Number(starCounts[cardId] || 0);
+        var cleanCardId = String(record.id || globalIdx).replace(/^["']|["']$/g, '').trim();
+        var isStarred = Boolean(starsMap[cleanCardId] || starsMap[cardId]);
+        var starCount = Number(starCounts[cleanCardId] || starCounts[cardId] || record.likes_count || record.likes || 0);
         var mediaItems = (photos && photos.length > 0) ? photos : [];
         var totalPhotosCount = mediaItems.length;
         var recordUserId = String(record.userId || '').trim();
@@ -5120,9 +5276,9 @@ window.renderHistoryStage = function(isLoading) {
           '<div class="reel-bottom-interactive-bar">' +
             '<div style="display:flex; justify-content:space-between; align-items:center; min-height:32px;">' +
               '<div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">' +
-                '<button type="button" onclick="window.toggleFeedStar(\'' + cardId + '\', event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:4px;">' +
-                  '<svg id="feedStarIcon_' + cardId + '" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
-                  '<span id="feedStarCountText_' + cardId + '" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif;">' + starCount + '</span>' +
+                '<button type="button" data-star-card-id="' + cleanCardId + '" onclick="event.stopPropagation(); window.toggleFeedStar(this.dataset.starCardId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:4px; touch-action:manipulation;">' +
+                  '<svg id="feedStarIcon_' + cleanCardId + '" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
+                  '<span id="feedStarCountText_' + cleanCardId + '" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif;">' + starCount + '</span>' +
                 '</button>' +
               '</div>' +
             '</div>' +
@@ -5154,6 +5310,18 @@ window.renderHistoryStage = function(isLoading) {
       }
     };
 
+    window.__reelsScrollDebounceTimer = null;
+    window.__handleReelsVerticalScroll = function(container) {
+      if (!container || window.__isFetchingMoreFeeds || window.__feedHasMore === false) return;
+      clearTimeout(window.__reelsScrollDebounceTimer);
+      window.__reelsScrollDebounceTimer = setTimeout(function() {
+        var remainingDistance = container.scrollHeight - (container.scrollTop + container.clientHeight);
+        if (remainingDistance <= container.clientHeight * 1.5) {
+          window.fetchMoreCommunityFeeds();
+        }
+      }, 60);
+    };
+
     if (window.IntersectionObserver) {
       if (window.__reelWindowObserver) {
         window.__reelWindowObserver.disconnect();
@@ -5163,11 +5331,11 @@ window.renderHistoryStage = function(isLoading) {
         var allReelCards = Array.from(reelContainer.querySelectorAll('.reel-page-snap'));
         window.__reelWindowObserver = new IntersectionObserver(function(entries) {
           entries.forEach(function(entry) {
-            if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+            if (entry.isIntersecting && entry.intersectionRatio >= 0.25) {
               var curIdx = parseInt(entry.target.dataset.reelIdx, 10);
               if (!isNaN(curIdx)) {
                 var totalCards = reelContainer.querySelectorAll('.reel-page-snap').length;
-                if (curIdx >= totalCards - 3 && window.__feedHasMore && !window.__isFetchingMoreFeeds) {
+                if (curIdx >= totalCards - 2 && window.__feedHasMore && !window.__isFetchingMoreFeeds) {
                   window.fetchMoreCommunityFeeds();
                 }
 
@@ -5186,7 +5354,7 @@ window.renderHistoryStage = function(isLoading) {
               }
             }
           });
-        }, { root: reelContainer, threshold: 0.5 });
+        }, { root: reelContainer, threshold: 0.25 });
 
         allReelCards.forEach(function(card) {
           window.__reelWindowObserver.observe(card);
@@ -5258,7 +5426,10 @@ window.renderHistoryStage = function(isLoading) {
     }
 
     // ⚡ [R2 공용 단일 진실 공급원 인출]: 로그인 여부와 무관하게 feeds.json을 인출하여 모바일/PC 즉시 렌더링
-    window.fetchCommunityFeeds().then(function() {
+    window.fetchCommunityFeeds().then(async function() {
+      if (typeof window.fetchUserFeedLikesFromServer === 'function') {
+        await window.fetchUserFeedLikesFromServer();
+      }
       if (typeof window.renderHistoryStage === 'function') {
         window.renderHistoryStage();
       }

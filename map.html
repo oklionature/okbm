@@ -3517,7 +3517,8 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
           var authorNick = f.author || f.nickname || f.nick || '개척 캠퍼';
           var memo100 = (f.memo || f.oneLineMemo || '').trim();
           var weightStr = f.weightKg ? (f.weightKg + 'kg') : '';
-          var likesCount = Number(starsMap[String(f.id).trim()]) || Number(f.likes) || 0;
+          var serverLikes = (f.likes_count !== undefined && f.likes_count !== null) ? Number(f.likes_count) : Number(f.likes || 0);
+          var likesCount = Number(starsMap[String(f.id).trim()]) || serverLikes || 0;
 
           return `
             <div data-feed-id="${fId}" data-spot-id="${escapeHtml(String(spot.id).trim())}" onclick="openMapSpotFeedDetailModal(this.dataset.feedId, this.dataset.spotId)" style="flex:0 0 145px; width:145px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; flex-shrink:0; box-sizing:border-box;">
@@ -3626,9 +3627,13 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
         var initialMemo = photoMemosArr[0] || memoText || '';
 
         var starsMap = safeGetJSON('okbm_feed_stars_counts', {}) || {};
-        var userStarsMap = safeGetJSON('okbm_feed_stars_map', {}) || {};
+        var curProfile = safeGetJSON('user_profile', null);
+        var curUId = (curProfile && curProfile.id) ? String(curProfile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+        var userStarsKey = (typeof window.okbmGetUserStarsKey === 'function') ? window.okbmGetUserStarsKey(curUId) : (curUId ? ('okbm_feed_stars_map_' + curUId) : 'okbm_feed_stars_map');
+        var userStarsMap = safeGetJSON(userStarsKey, {}) || {};
         var isStarred = Boolean(userStarsMap[cardId]);
-        var likesCount = Number(starsMap[cardId]) || Number(targetFeed.likes) || 0;
+        var serverFeedLikes = (targetFeed.likes_count !== undefined && targetFeed.likes_count !== null) ? Number(targetFeed.likes_count) : Number(targetFeed.likes || 0);
+        var likesCount = Number(starsMap[cardId]) || serverFeedLikes || 0;
 
         var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
         var isSavedFeed = savedFeedsList.includes(cardId);
@@ -3734,141 +3739,7 @@ var initialBlogName = (cachedMeta && cachedMeta.blogName) ? cachedMeta.blogName 
 
       };
 
-      window.toggleFeedStar = function(cardId, e) {
-        if (e) { e.preventDefault(); e.stopPropagation(); }
-        if (window.__isFeedStarLock) return;
-        window.__isFeedStarLock = true;
-        setTimeout(function() { window.__isFeedStarLock = false; }, 350);
-
-        if (!isUserLoggedIn()) {
-          triggerHaptic(10);
-          if (typeof openLoginModal === 'function') openLoginModal();
-          showToast(`${ICONS.LOCK} <span>별점 추가는 로그인 후 이용 가능합니다.</span>`);
-          return;
-        }
-
-        var cId = String(cardId).trim();
-        var userStarsMap = safeGetJSON('okbm_feed_stars_map', {}) || {};
-        var starsMap = safeGetJSON('okbm_feed_stars_counts', {}) || {};
-        var isStarred = Boolean(userStarsMap[cId]);
-
-        var curCount = Number(starsMap[cId]) || 0;
-        if (isStarred) {
-          delete userStarsMap[cId];
-          curCount = Math.max(0, curCount - 1);
-        } else {
-          userStarsMap[cId] = true;
-          curCount += 1;
-        }
-        starsMap[cId] = curCount;
-
-        localStorage.setItem('okbm_feed_stars_map', JSON.stringify(userStarsMap));
-        localStorage.setItem('okbm_feed_stars_counts', JSON.stringify(starsMap));
-
-        var icon = document.getElementById('feedStarIcon_' + cId);
-        var text = document.getElementById('feedStarCountText_' + cId);
-        if (icon) {
-          var active = !isStarred;
-          icon.setAttribute('fill', active ? '#fde047' : 'none');
-          icon.setAttribute('stroke', active ? '#fde047' : '#ffffff');
-          icon.style.filter = active ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none';
-        }
-        if (text) {
-          text.innerText = curCount;
-        }
-
-        triggerHaptic(!isStarred ? 15 : 10);
-        if (!isStarred) {
-          showToast('⭐ 피드에 별을 남겼습니다!');
-        }
-        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-      };
-
-      window.toggleSaveFeed = function(cardId, e) {
-        if (e) { e.preventDefault(); e.stopPropagation(); }
-        if (window.__isFeedSaveLock) return;
-        window.__isFeedSaveLock = true;
-        setTimeout(function() { window.__isFeedSaveLock = false; }, 350);
-
-        if (!isUserLoggedIn()) {
-          triggerHaptic(10);
-          if (typeof openLoginModal === 'function') openLoginModal();
-          showToast(`${ICONS.LOCK} <span>관심피드 저장은 로그인 후 이용 가능합니다.</span>`);
-          return;
-        }
-
-        var cId = String(cardId).trim();
-        var savedList = safeGetJSON('okbm_saved_feeds', []) || [];
-        var idx = savedList.indexOf(cId);
-        var isNowSaved = false;
-
-        if (idx > -1) {
-          savedList.splice(idx, 1);
-          isNowSaved = false;
-        } else {
-          savedList.push(cId);
-          isNowSaved = true;
-        }
-        localStorage.setItem('okbm_saved_feeds', JSON.stringify(savedList));
-
-        var btn = e.currentTarget;
-        if (btn) {
-          var svg = btn.querySelector('svg');
-          if (svg) {
-            svg.setAttribute('fill', isNowSaved ? '#c084fc' : 'none');
-            svg.style.color = isNowSaved ? '#c084fc' : '#cbd5e1';
-            svg.style.filter = isNowSaved ? 'drop-shadow(0 0 6px rgba(192,132,252,0.8))' : 'none';
-          }
-        }
-
-        triggerHaptic(isNowSaved ? 15 : 10);
-        if (isNowSaved) {
-          showToast('🔖 관심피드에 보관되었습니다.');
-        }
-        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-      };
-
-      window.toggleFollowUser = function(userId, authorNick, e) {
-        if (e) { e.preventDefault(); e.stopPropagation(); }
-        if (!isUserLoggedIn()) {
-          triggerHaptic(10);
-          if (typeof openLoginModal === 'function') openLoginModal();
-          showToast(`${ICONS.LOCK} <span>루터 팔로우는 로그인 후 이용 가능합니다.</span>`);
-          return;
-        }
-
-        var targetKey = String(userId || authorNick).trim();
-        if (!targetKey) return;
-
-        var followingList = safeGetJSON('okbm_following_users', []) || [];
-        var idx = followingList.indexOf(targetKey);
-        var isNowFollowing = false;
-
-        if (idx > -1) {
-          followingList.splice(idx, 1);
-          isNowFollowing = false;
-        } else {
-          followingList.push(targetKey);
-          isNowFollowing = true;
-        }
-        localStorage.setItem('okbm_following_users', JSON.stringify(followingList));
-
-        var btn = e.currentTarget;
-        if (btn) {
-          btn.innerHTML = isNowFollowing
-            ? '<svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>관심루터</span>'
-            : '<svg viewBox="0 0 24 24" style="width:9px; height:9px;" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>관심</span>';
-          btn.style.background = isNowFollowing ? 'rgba(52,211,153,0.14)' : 'rgba(255,255,255,0.08)';
-          btn.style.borderColor = isNowFollowing ? '#34d399' : 'rgba(255,255,255,0.2)';
-          btn.style.color = isNowFollowing ? '#34d399' : '#cbd5e1';
-        }
-
-        triggerHaptic(isNowFollowing ? 15 : 10);
-        if (isNowFollowing) {
-          showToast(`✨ [${escapeHtml(authorNick)}] 님을 관심루터로 등록했습니다.`);
-        }
-        if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud();
-      };
+      // toggleFeedStar, toggleSaveFeed, toggleFollowUser는 romantic-history.js의 전역 단일 엔진을 공통 사용합니다.
 
       window.updateMapHeroDots = function(container) {
         if (!container) return;

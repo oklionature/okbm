@@ -900,7 +900,7 @@ window.generateReadyShotMarkup = function(record, options) {
   options = options || {};
   record = record || {};
 
-  var photoUrl = options.photo || (Array.isArray(record.photos) && record.photos[0]) || record.readyShotPhoto || '';
+  var photoUrl = options.photo || record.readyShotPhoto || '';
   var mode = options.mode || record.readyShotMode || 'minimal';
   var posX = (options.posX !== undefined) ? options.posX : ((record.readyShotPosX !== undefined) ? record.readyShotPosX : 50);
   var posY = (options.posY !== undefined) ? options.posY : ((record.readyShotPosY !== undefined) ? record.readyShotPosY : 50);
@@ -1271,7 +1271,6 @@ function saveCurrentPackingRecord() {
     weightGrams: totalGrams,
     itemCount: allItems.length,
     items: allItems.map(function(g) { return { id: g.id || ('item_' + Math.random()), name: g.name, weight: g.weight }; }),
-    photo: '',
     photos: []
   };
 
