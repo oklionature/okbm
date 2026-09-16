@@ -120,14 +120,22 @@ window.executeCleanSlateMasterReset = async function(isSilent) {
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
   if (userId && targetUrl && targetKey) {
-    fetch(targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(userId), {
-      method: 'DELETE',
-      headers: {
-        'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
-        'Content-Type': 'application/json'
+    try {
+      var resetRes = await fetch(targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(userId), {
+        method: 'DELETE',
+        headers: {
+          'apikey': targetKey,
+          'Authorization': 'Bearer ' + targetKey,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        }
+      });
+      if (!resetRes.ok) {
+        console.error('[executeCleanSlateMasterReset] 서버 일괄 삭제 실패 status=' + resetRes.status);
       }
-    }).catch(function() {});
+    } catch (resetErr) {
+      console.error('[executeCleanSlateMasterReset] 서버 일괄 삭제 네트워크 예외:', resetErr);
+    }
   }
 
   if (isUserLoggedIn()) {
@@ -408,29 +416,12 @@ window.RomanticVault = window.RomanticVault || {
         this.write('okbm_memos', serverMemos, false);
         window.userMemos = serverMemos;
 
-        var localHistBefore = this.read('okbm_packing_history', []);
-        var sHist = cloudData.pack_history || cloudData.packHistory;
-        if (sHist && Array.isArray(sHist)) {
-          var cleanHist = sHist.filter(function(h) {
-            if (!h) return false;
-            if (h.userId && String(h.userId).trim() !== String(userId).trim()) return false;
-            return true;
-          }).map(function(sItem) {
-            var pList = Array.isArray(sItem.photos) ? sItem.photos : [];
-            sItem.photos = pList.filter(function(u) { return typeof u === 'string' && u.trim().startsWith('https://'); });
-            return sItem;
-          });
-
-          var hasLocalNewerHist = Array.isArray(localHistBefore) && localHistBefore.some(function(lh) {
-            return lh && lh.updatedAt && lh.updatedAt > hydrationStartTime;
-          });
-
-          if (!hasLocalNewerHist) {
-            this.write('okbm_packing_history', cleanHist, false);
-            window.interactiveHistory = cleanHist;
-            window.packingHistoryList = cleanHist;
-          }
-        }
+        // [헌법 제1조: SSOT 원칙] 글/피드의 절대 진실 공급원은 feeds 테이블 하나뿐입니다.
+        // users 테이블의 pack_history는 예전 백업용 잔재이며, 여기서 이를 읽어
+        // window.interactiveHistory/packingHistoryList를 덮어쓰면 feeds 테이블에서
+        // 이미 삭제된 글이 이 낡은 백업에서 되살아나 로컬을 오염시킵니다.
+        // 활동 히스토리 복원은 feeds 테이블을 조회하는 fetchCommunityFeeds에
+        // 전적으로 위임하고, 여기서는 더 이상 pack_history를 로컬에 반영하지 않습니다.
 
         var rawMyGears = cloudData.my_gears || cloudData.myGears;
         if (rawMyGears && typeof rawMyGears === 'object') {
@@ -3190,7 +3181,7 @@ function logoutUser() {
     'okbm_custom_gears', 'okbm_gear_presets', 'okbm_gear_meta',
     'okbm_trip_consumables', 'okbm_packed_checks', 'okbm_phone_photos_map',
     'okbm_trip_photos_map', 'okbm_user_instagram', 'okbm_cached_community_feeds',
-    'okbm_hero_cover_url', 'okbm_my_proposals', 'okbm_deleted_record_ids',
+    'okbm_hero_cover_url', 'okbm_my_proposals',
     'okbm_feed_stars_map', 'okbm_feed_stars_counts'
   ];
   userPersonalKeys.forEach(function(k) {
@@ -3276,7 +3267,7 @@ function loginWithKakao() {
               'okbm_custom_gears', 'okbm_gear_presets', 'okbm_gear_meta',
               'okbm_trip_consumables', 'okbm_packed_checks', 'okbm_phone_photos_map',
               'okbm_trip_photos_map', 'okbm_user_instagram', 'okbm_cached_community_feeds',
-              'okbm_hero_cover_url', 'okbm_my_proposals', 'okbm_deleted_record_ids'
+              'okbm_hero_cover_url', 'okbm_my_proposals'
             ];
             purgeKeys.forEach(function(k) {
               try { localStorage.removeItem(k); } catch(e) {}
@@ -3474,90 +3465,50 @@ window.shareFeedToCommunity = async function(feedRecord) {
     }
   } catch (mapSyncErr) {}
 
-  var safePhotoMemos = [];
-  if (Array.isArray(feedRecord.photoMemos) && feedRecord.photoMemos.length > 0) {
-    safePhotoMemos = feedRecord.photoMemos;
-  } else if (feedRecord.memo) {
-    safePhotoMemos = [feedRecord.memo];
-  }
-
-  var currentMasterCover = localStorage.getItem('okbm_hero_cover_url') || ((profile && (profile.heroCoverUrl || profile.photoUrl)) ? (profile.heroCoverUrl || profile.photoUrl) : '');
-  var cleanElevation = null;
-  if (feedRecord.elevation !== undefined && feedRecord.elevation !== null && feedRecord.elevation !== '') {
-    var parsedElev = parseFloat(String(feedRecord.elevation).replace(/[^\d.-]/g, ''));
-    if (!isNaN(parsedElev)) cleanElevation = parsedElev;
-  }
-
-  var cleanWeight = null;
-  if (feedRecord.weightKg !== undefined && feedRecord.weightKg !== null && feedRecord.weightKg !== '') {
-    var parsedW = parseFloat(String(feedRecord.weightKg).replace(/[^\d.-]/g, ''));
-    if (!isNaN(parsedW)) cleanWeight = parsedW;
-  }
-
-  var cleanTemplateId = null;
-  if (feedRecord.templateId !== undefined && feedRecord.templateId !== null && feedRecord.templateId !== '') {
-    var parsedTid = parseInt(String(feedRecord.templateId).replace(/\D/g, ''), 10);
-    if (!isNaN(parsedTid) && parsedTid > 0) cleanTemplateId = parsedTid;
-  }
-
-  var nowIso = new Date().toISOString();
-  var supabaseRow = {
-    id: String(feedRecord.id),
-    user_id: String(userId),
-    nickname: String(nickname),
-    author: String(nickname),
-    author_photo: String(currentMasterCover || ''),
-    spot: String(feedRecord.spot || feedRecord.spotName || ''),
-    elevation: cleanElevation,
-    weight_kg: cleanWeight,
-    date: String(feedRecord.date || ''),
-    memo: String(feedRecord.memo || '').slice(0, 120),
-    photos: finalCdnPhotos,
-    items: Array.isArray(feedRecord.items) ? feedRecord.items : [],
-    template_id: cleanTemplateId,
-    likes_count: Number(feedRecord.likesCount || feedRecord.likes_count || 0),
-    created_at: nowIso,
-    updated_at: nowIso,
-    instagram: userInsta ? ('@' + userInsta) : '',
-    photo_memos_json: safePhotoMemos,
-    is_published: true
-  };
-
-  try {
-    var res = await fetch(targetSupabaseUrl + '/rest/v1/feeds', {
-      method: 'POST',
-      headers: {
-        'apikey': window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + (window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY),
-        'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates'
-      },
-      body: JSON.stringify(supabaseRow)
-    });
-    if (res.ok && typeof syncUserDataToCloud === 'function') {
-      syncUserDataToCloud(true);
-    }
-  } catch (supaErr) {
-    console.warn('[RomanticSync] feeds 저장 예외:', supaErr);
-  }
-
+  // [단 1개의 통로로만 서버 쓰기] shareFeedToCommunity는 사진을 CDN에 업로드하고
+  // 업로드된 URL 배열을 반환하는 역할까지만 담당합니다. feeds 테이블에 대한 실제
+  // DB 쓰기는 romantic-history.js의 savePackingHistoryRecord → submitFeedPayload
+  // 단일 경로에서만 수행하여, 동일 레코드에 대해 서로 다른 페이로드가 경합하며
+  // 서버 데이터를 덮어쓰는 경쟁 상태(race condition)를 제거합니다.
   return finalCdnPhotos;
 };
 
-window.deleteFeedFromCommunity = function(feedId) {
+window.deleteFeedFromCommunity = async function(feedId) {
   var sId = String(feedId || '').trim();
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
-  if (!targetUrl || !targetKey || !sId) return;
+  if (!targetUrl || !targetKey || !sId) return { ok: false, error: 'MISSING_CONFIG' };
 
-  fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
-    method: 'DELETE',
-    headers: {
-      'apikey': targetKey,
-      'Authorization': 'Bearer ' + targetKey,
-      'Content-Type': 'application/json'
+  // [삭제 검증] return=representation으로 실제 삭제된 행을 확인합니다.
+  try {
+    var res = await fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
+      method: 'DELETE',
+      headers: {
+        'apikey': targetKey,
+        'Authorization': 'Bearer ' + targetKey,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      }
+    });
+
+    if (!res.ok) {
+      console.error('[RomanticSync] deleteFeedFromCommunity 실패 status=' + res.status);
+      return { ok: false, status: res.status };
     }
-  }).catch(function() {});
+
+    var deletedRows = [];
+    try { deletedRows = await res.json(); } catch (parseErr) {}
+
+    if (!Array.isArray(deletedRows) || deletedRows.length === 0) {
+      console.error('[RomanticSync] deleteFeedFromCommunity: 서버에서 0건 삭제됨:', sId);
+      return { ok: false, error: 'ZERO_ROWS_DELETED' };
+    }
+
+    return { ok: true, data: deletedRows };
+  } catch (err) {
+    console.error('[RomanticSync] deleteFeedFromCommunity 네트워크 예외:', err);
+    return { ok: false, error: String(err) };
+  }
 };
 
 window.saveProposalToSupabase = async function(proposalData, isCorrection) {
@@ -3719,30 +3670,10 @@ window.saveUserToSupabase = async function(profileData) {
   var rawPlanSpots = (vault && typeof vault.read === 'function') ? vault.read('okbm_plan_spots', {}) : safeGetJSON('okbm_plan_spots', {});
   var planSpots = rawPlanSpots || {};
 
-  var rawHistory = (Array.isArray(window.packingHistoryList) && window.packingHistoryList.length > 0)
-    ? window.packingHistoryList
-    : ((Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0)
-      ? window.interactiveHistory
-      : ((vault && typeof vault.read === 'function') ? vault.read('okbm_packing_history', []) : safeGetJSON('okbm_packing_history', [])));
-
-  var packHistory = (rawHistory || []).filter(Boolean).map(function(item) {
-    var cleanPhotos = Array.isArray(item.photos) ? item.photos.filter(function(u) { return typeof u === 'string' && u.startsWith('https://'); }) : [];
-    return {
-      id: String(item.id),
-      date: item.date || '',
-      spot: item.spot || '',
-      elevation: item.elevation || '',
-      weightKg: item.weightKg || '0.00',
-      weightGrams: item.weightGrams || 0,
-      itemCount: item.itemCount || 0,
-      memo: item.memo || '',
-      oneLineMemo: item.oneLineMemo || '',
-      photos: cleanPhotos,
-      items: Array.isArray(item.items) ? item.items : [],
-      templateId: item.templateId || 1,
-      isPublished: Boolean(item.isPublished !== false)
-    };
-  });
+  // [헌법 제1조: SSOT 원칙] 글/피드 데이터는 feeds 테이블에서만 관리합니다.
+  // users 테이블에 pack_history를 통째로 중복 저장하면, feeds 테이블에서 지운
+  // 글이 이 백업 컬럼에 영구 보존되어 두 저장소 간 데이터 불일치가 발생합니다.
+  // 따라서 더 이상 packHistory를 조립하거나 users.pack_history에 쓰지 않습니다.
 
   var payload = {
     id: userId,
@@ -3763,7 +3694,6 @@ window.saveUserToSupabase = async function(profileData) {
       planMemos: planMemos || {},
       planSpots: planSpots || {}
     },
-    pack_history: packHistory,
     updated_at: new Date().toISOString()
   };
   if (safeCreatedAt) {

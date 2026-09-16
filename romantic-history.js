@@ -545,60 +545,23 @@
     layer.style.animation = 'card_edge_sharp_pulse 0.65s cubic-bezier(0.2, 0.8, 0.25, 1) forwards';
   };
 
-  // 💾 [스마트폰 내장 대용량 영구 저장소(IndexedDB) & 텍스트/사진 분리형 하이브리드 캐시 엔진]
-  var DB_NAME = 'okbm_vault_db';
-  var DB_VERSION = 1;
-  var STORE_NAME = 'packing_vault';
+  // 💾 [복원 통로 단일화] IndexedDB(okbm_vault_db) 좀비 캐시를 전면 차단합니다.
+  // 과거에는 IndexedDB에 남아있던 낡은 스냅샷이 앱 재시작 시 localStorage/메모리를
+  // 덮어쓰면서 "방금 수정/삭제한 내용이 다시 살아나는" 원인이 되었습니다.
+  // 이제 캐시 경로는 localStorage('okbm_packing_history') 단 1개로 일원화합니다.
+  // 아래 두 함수는 기존 호출부(여러 파일에 흩어져 있음)를 깨뜨리지 않기 위해
+  // 시그니처만 유지한 채 완전한 무동작(no-op)으로 남겨둡니다.
   window.__memoryStore = window.__memoryStore || {};
 
-  function getIndexedDBInstance() {
-    return new Promise(function(resolve) {
-      if (typeof indexedDB === 'undefined') {
-        resolve(null);
-        return;
-      }
-      var request = indexedDB.open(DB_NAME, DB_VERSION);
-      request.onupgradeneeded = function(e) {
-        var db = e.target.result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME, { keyPath: 'key' });
-        }
-      };
-      request.onsuccess = function(e) { resolve(e.target.result); };
-      request.onerror = function() { resolve(null); };
-    });
-  }
-
-  window.saveToIndexedDB = async function(key, value) {
-    try {
-      var db = await getIndexedDBInstance();
-      if (!db) return false;
-      return new Promise(function(resolve) {
-        var tx = db.transaction(STORE_NAME, 'readwrite');
-        var store = tx.objectStore(STORE_NAME);
-        store.put({ key: key, data: value, updatedAt: Date.now() });
-        tx.oncomplete = function() { resolve(true); };
-        tx.onerror = function() { resolve(false); };
-      });
-    } catch (e) {
-      return false;
-    }
+  window.saveToIndexedDB = async function() {
+    // IndexedDB 쓰기 비활성화됨 (좀비 캐시 방지). 항상 아무 것도 하지 않습니다.
+    return false;
   };
 
-  window.loadFromIndexedDB = async function(key) {
-    try {
-      var db = await getIndexedDBInstance();
-      if (!db) return null;
-      return new Promise(function(resolve) {
-        var tx = db.transaction(STORE_NAME, 'readonly');
-        var store = tx.objectStore(STORE_NAME);
-        var req = store.get(key);
-        req.onsuccess = function() { resolve(req.result ? req.result.data : null); };
-        req.onerror = function() { resolve(null); };
-      });
-    } catch (e) {
-      return null;
-    }
+  window.loadFromIndexedDB = async function() {
+    // IndexedDB 읽기 비활성화됨 (좀비 캐시 방지). 항상 null을 반환해
+    // 호출부가 localStorage 단일 캐시로 자연스럽게 폴백하도록 합니다.
+    return null;
   };
 
 
@@ -622,6 +585,43 @@
       try {
         localStorage.setItem(key, JSON.stringify(rawObj));
       } catch (e) { console.warn('[romantic-history.js:safeSetStorage]', e); }
+    }
+  };
+
+  // 🔒 [단 1개의 통로로만 서버 쓰기] feeds 테이블에 쓰는 유일한 함수입니다.
+  // 이 함수 이외의 곳에서 절대로 '/rest/v1/feeds' POST를 직접 호출하지 않습니다.
+  // await로 서버 응답(200 OK)을 반드시 확인하고, 실패 시 명확한 에러를 반환합니다.
+  window.submitFeedPayload = async function(payload) {
+    var targetUrl = window.SUPABASE_URL || (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '') || '';
+    var targetKey = window.SUPABASE_ANON_KEY || (typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '') || '';
+    if (!targetUrl || !targetKey) {
+      return { ok: false, error: 'SUPABASE_NOT_CONFIGURED' };
+    }
+    try {
+      var res = await fetch(targetUrl + '/rest/v1/feeds', {
+        method: 'POST',
+        headers: {
+          'apikey': targetKey,
+          'Authorization': 'Bearer ' + targetKey,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates,return=representation'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        var errText = '';
+        try { errText = await res.text(); } catch (readErr) {}
+        console.error('[submitFeedPayload] 서버 저장 실패 status=' + res.status, errText);
+        return { ok: false, status: res.status, error: errText || ('HTTP ' + res.status) };
+      }
+
+      var data = null;
+      try { data = await res.json(); } catch (parseErr) {}
+      return { ok: true, status: res.status, data: data };
+    } catch (networkErr) {
+      console.error('[submitFeedPayload] 네트워크 예외:', networkErr);
+      return { ok: false, error: (networkErr && networkErr.message) ? networkErr.message : String(networkErr) };
     }
   };
 
@@ -793,16 +793,19 @@
         updated_at: new Date().toISOString()
       };
 
-      fetch(targetUrl + '/rest/v1/feeds', {
-        method: 'POST',
-        headers: {
-          'apikey': targetKey,
-          'Authorization': 'Bearer ' + targetKey,
-          'Content-Type': 'application/json',
-          'Prefer': 'resolution=merge-duplicates'
-        },
-        body: JSON.stringify(payload)
-      }).catch(function() {});
+      // [단 1개의 통로로만 서버 쓰기] submitFeedPayload가 유일한 write 경로입니다.
+      var submitResult = await window.submitFeedPayload(payload);
+
+      if (!submitResult.ok) {
+        normalized.__serverSaveFailed = true;
+        normalized.__serverSaveError = submitResult.error || ('HTTP ' + submitResult.status);
+        console.error('[romantic-history.js:savePackingHistoryRecord] 서버 저장 실패:', submitResult);
+        if (typeof showToast === 'function') {
+          showToast('저장에 실패했습니다. 네트워크 상태를 확인하고 다시 시도해주세요.', 'error', 2600);
+        }
+        // 서버 저장이 확인되지 않았으므로 커뮤니티 피드 캐시/화면에는 반영하지 않습니다.
+        return normalized;
+      }
     }
 
     if (typeof syncUserDataToCloud === 'function') {
@@ -855,14 +858,14 @@
     push(record.photo_url);
     return urls;
   };
-  (async function preloadIndexedDbToMemory() {
+  (async function preloadLocalStorageToMemory() {
+    // [복원 통로 단일화] IndexedDB 스냅샷을 더 이상 신뢰하지 않고,
+    // localStorage('okbm_packing_history') 하나만을 유일한 복원 소스로 사용합니다.
     try {
-      var rawList = await window.loadFromIndexedDB('okbm_packing_history');
-      if (!rawList || !Array.isArray(rawList) || rawList.length === 0) {
-        var localRaw = localStorage.getItem('okbm_packing_history');
-        if (localRaw) {
-          try { rawList = JSON.parse(localRaw); } catch(e) {}
-        }
+      var rawList = null;
+      var localRaw = localStorage.getItem('okbm_packing_history');
+      if (localRaw) {
+        try { rawList = JSON.parse(localRaw); } catch(e) {}
       }
 
       if (rawList && Array.isArray(rawList) && rawList.length > 0) {
@@ -872,7 +875,7 @@
         window.packingHistoryList = window.interactiveHistory;
         window.__memoryStore['okbm_packing_history'] = window.interactiveHistory;
       }
-    } catch (e) { console.warn('[romantic-history.js:preloadIndexedDbToMemory]', e); }
+    } catch (e) { console.warn('[romantic-history.js:preloadLocalStorageToMemory]', e); }
   })();
 function getRecordPhotos(record) {
     if (!record) return [];
@@ -2015,7 +2018,16 @@ window.okbmSyncFeedLikeCount = function(recordId, count) {
     clearTimeout(window.__publishDebounceTimers[sId]);
     window.__publishDebounceTimers[sId] = setTimeout(function() {
       if (nextStatus) {
-        if (typeof window.shareFeedToCommunity === 'function') window.shareFeedToCommunity(target);
+        // [단 1개의 통로로만 서버 쓰기] feeds 쓰기는 savePackingHistoryRecord →
+        // submitFeedPayload 단일 경로만 사용합니다 (shareFeedToCommunity는 더 이상
+        // DB에 쓰지 않고 사진 업로드만 담당합니다).
+        if (typeof window.savePackingHistoryRecord === 'function') {
+          window.savePackingHistoryRecord(target).then(function(result) {
+            if (result && result.__serverSaveFailed && typeof showToast === 'function') {
+              showToast('공개 설정 동기화에 실패했습니다. 다시 시도해주세요.', 'error', 2400);
+            }
+          });
+        }
       } else {
         if (typeof window.deleteFeedFromCommunity === 'function') window.deleteFeedFromCommunity(target.id, target.date);
       }
@@ -2106,7 +2118,7 @@ window.okbmSyncFeedLikeCount = function(recordId, count) {
     document.body.appendChild(sheet);
   };
 
-window.deleteTripRecord = function(recordId, e) {
+window.deleteTripRecord = async function(recordId, e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
     var sId = String(recordId || '').trim();
     if (!sId) return;
@@ -2117,6 +2129,66 @@ window.deleteTripRecord = function(recordId, e) {
 
     triggerHaptic(15);
 
+    // [삭제 검증] 서버에서 실제로 행이 삭제되었음을 확인하기 전까지는
+    // 로컬 화면에서 절대 지우지 않습니다. 이전에는 로컬을 먼저 지우고 서버
+    // DELETE는 응답을 확인하지 않는 '눈가림' 방식이라, RLS 등으로 서버에서
+    // 실제로는 0건 삭제되어도 사용자는 지워진 줄 알았다가 새로고침 시
+    // 글이 부활하는 문제가 있었습니다.
+    var targetUrl = window.SUPABASE_URL || '';
+    var targetKey = window.SUPABASE_ANON_KEY || '';
+
+    if (targetUrl && targetKey) {
+      var deleteBtn = e && e.target ? e.target.closest('button') : null;
+      if (deleteBtn) { deleteBtn.disabled = true; }
+
+      try {
+        var delRes = await fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
+          method: 'DELETE',
+          headers: {
+            'apikey': targetKey,
+            'Authorization': 'Bearer ' + targetKey,
+            'Content-Type': 'application/json',
+            // return=representation: 실제로 삭제된 행을 응답 본문으로 돌려받아
+            // "응답 200이지만 실은 0건 삭제"인 유령 삭제를 걸러낼 수 있습니다.
+            'Prefer': 'return=representation'
+          }
+        });
+
+        if (!delRes.ok) {
+          var errBody = '';
+          try { errBody = await delRes.text(); } catch (readErr) {}
+          console.error('[romantic-history.js:deleteTripRecord] 서버 삭제 실패 status=' + delRes.status, errBody);
+          if (typeof showToast === 'function') {
+            showToast('삭제에 실패했습니다 (서버 응답: ' + delRes.status + '). 다시 시도해주세요.', 'error', 2600);
+          }
+          if (deleteBtn) { deleteBtn.disabled = false; }
+          return;
+        }
+
+        var deletedRows = [];
+        try { deletedRows = await delRes.json(); } catch (parseErr) {}
+
+        if (!Array.isArray(deletedRows) || deletedRows.length === 0) {
+          // HTTP 200/204는 왔지만 실제로 삭제된 행이 0건인 경우
+          // (권한 문제 등으로 서버가 조용히 무시한 경우) — 화면에서 지우지 않습니다.
+          console.error('[romantic-history.js:deleteTripRecord] 서버에서 0건 삭제됨 (권한/RLS 문제 가능성):', sId);
+          if (typeof showToast === 'function') {
+            showToast('서버에서 삭제가 확인되지 않았습니다. 권한 문제일 수 있습니다.', 'error', 2800);
+          }
+          if (deleteBtn) { deleteBtn.disabled = false; }
+          return;
+        }
+      } catch (networkErr) {
+        console.error('[romantic-history.js:deleteTripRecord] 네트워크 예외:', networkErr);
+        if (typeof showToast === 'function') {
+          showToast('삭제 요청 중 네트워크 오류가 발생했습니다. 다시 시도해주세요.', 'error', 2600);
+        }
+        if (deleteBtn) { deleteBtn.disabled = false; }
+        return;
+      }
+    }
+
+    // 여기까지 왔다면 서버 삭제가 확인되었으므로(또는 서버 설정이 없으므로) 로컬 캐시를 정리합니다.
     var purgeFn = function(r) {
       return r && String(r.id).trim() !== sId;
     };
@@ -2133,9 +2205,6 @@ window.deleteTripRecord = function(recordId, e) {
     window.packingHistoryList = window.interactiveHistory;
     window.safeSetStorage('okbm_packing_history', filteredHistory);
     if (window.__memoryStore) window.__memoryStore['okbm_packing_history'] = filteredHistory;
-    if (typeof window.saveToIndexedDB === 'function') {
-      window.saveToIndexedDB('okbm_packing_history', filteredHistory);
-    }
     try { localStorage.setItem('okbm_packing_history', JSON.stringify(filteredHistory)); } catch(e) { console.warn('[romantic-history.js:deleteTripRecord localSet]', e); }
 
     if (Array.isArray(window.heroTopRecords)) {
@@ -2156,20 +2225,6 @@ window.deleteTripRecord = function(recordId, e) {
 
     if (typeof window.renderHistoryStage === 'function') {
       window.renderHistoryStage();
-    }
-
-    var targetUrl = window.SUPABASE_URL || '';
-    var targetKey = window.SUPABASE_ANON_KEY || '';
-    if (targetUrl && targetKey) {
-      var sbDelHeaders = {
-        'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
-        'Content-Type': 'application/json'
-      };
-      fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
-        method: 'DELETE',
-        headers: sbDelHeaders
-      }).catch(function() {});
     }
 
     if (typeof showToast === 'function') showToast('기록이 삭제되었습니다.', 'info');
@@ -4074,50 +4129,31 @@ window.deleteTripRecord = function(recordId, e) {
       target.photo = uploadedCdnPhotos[0] || '';
     }
 
-    var targetUrl = window.SUPABASE_URL || '';
-    var targetKey = window.SUPABASE_ANON_KEY || '';
-    if (targetUrl && targetKey) {
-      var sbHeaders = {
-        'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
-        'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates'
-      };
-
-      var payload = {
-        id: target.id,
-        user_id: target.userId,
-        author: target.author,
-        author_photo: target.authorPhoto || '',
-        spot: target.spot,
-        elevation: target.elevation ? String(target.elevation) : '',
-        weight_kg: parseFloat(target.weightKg) || 0,
-        date: target.date,
-        memo: target.memo,
-        template_id: target.templateId || 1,
-        likes_count: Number(target.likes || 0),
-        instagram: target.instagram || '',
-        youtube: target.youtube || '',
-        photo_memos_json: target.photoMemos || [],
-        is_published: target.isPublished !== false,
-        photos: target.photos || [],
-        photo: target.photo || (target.photos && target.photos[0]) || '',
-        items: target.items || [],
-        ready_shot_photo: target.readyShotPhoto || target.customTemplatePhoto || '',
-        feed_type: target.feedType || 'route',
-        updated_at: new Date().toISOString()
-      };
-
-      fetch(targetUrl + '/rest/v1/feeds', {
-        method: 'POST',
-        headers: sbHeaders,
-        body: JSON.stringify(payload)
-      }).catch(function() {});
-    }
-
+    // [단 1개의 통로로만 서버 쓰기] savePackingHistoryRecord → submitFeedPayload가
+    // 이 저장 흐름에서 feeds 테이블에 쓰는 유일한 경로입니다. 이전에는 여기서 별도
+    // fetch를 한 번 더 쏘고, savePackingHistoryRecord 내부에서 또 한 번 쏘는 식으로
+    // 동일 레코드에 대해 서로 다른 페이로드가 경합했습니다. 이제 1번만 호출하고,
+    // 반드시 await로 서버 응답을 확인합니다.
+    var savedTarget = null;
     if (typeof window.savePackingHistoryRecord === 'function') {
-      target = window.savePackingHistoryRecord(target) || target;
+      savedTarget = await window.savePackingHistoryRecord(target);
     }
+
+    if (savedTarget && savedTarget.__serverSaveFailed) {
+      // 서버 저장이 실패했으므로 "저장 성공" 처리를 하지 않고 사용자가 다시
+      // 시도할 수 있도록 버튼과 상태를 원복합니다. 에러 토스트는
+      // savePackingHistoryRecord 내부에서 이미 표시했습니다.
+      window.__isSubmittingRichTrip = false;
+      var failedSubmitBtn = document.getElementById('btnSubmitRichTrip');
+      if (failedSubmitBtn) {
+        failedSubmitBtn.disabled = false;
+        failedSubmitBtn.style.opacity = '1';
+        failedSubmitBtn.innerText = '저장';
+      }
+      return;
+    }
+
+    target = savedTarget || target;
 
     try {
       if (typeof syncUserDataToCloud === 'function') {
@@ -4295,8 +4331,9 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
             var isOwner = (currentUserId && rowUserId && currentUserId === rowUserId);
             if (isOwner) return true;
             if (window.okbmIsExplicitlyPrivate && window.okbmIsExplicitlyPrivate(row)) return false;
-            var rowPhotos = getRecordPhotos(row);
-            if (!Array.isArray(rowPhotos) || rowPhotos.length === 0) return false;
+            // [클라이언트 과잉 검열 제거] 레디샷(완성 카드)만 등록하고 아직 현장
+            // 사진을 올리지 않은 정상 공개 피드까지 사진 유무만으로 걸러내던
+            // 필터를 제거합니다. 공개 여부(isPublished)만으로 판단합니다.
             return true;
           });
         };
@@ -4547,8 +4584,10 @@ window.renderHistoryStage = function(isLoading) {
 
       if (!isOwner) {
         if (norm.isPublished === false || (window.okbmIsExplicitlyPrivate && window.okbmIsExplicitlyPrivate(norm))) return;
-        var feedPhotos = getRecordPhotos(norm);
-        if (!Array.isArray(feedPhotos) || feedPhotos.length === 0) return;
+        // [클라이언트 과잉 검열 제거] 인출 단계(keepScopedRows)와 동일한 사진 유무
+        // 필터가 렌더링 단계에도 중복으로 걸려 있어, 레디샷만 등록된 정상 공개
+        // 피드가 타인 화면에서 숨겨지는 원인이었습니다. 공개 여부와 디데이 도달
+        // 여부만으로 판단합니다.
         if (typeof window.okbmRouteDateReached === 'function' && !window.okbmRouteDateReached(norm)) return;
       }
 
