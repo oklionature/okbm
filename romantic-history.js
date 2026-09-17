@@ -252,10 +252,13 @@
       }
       .history-tab-route .reel-media-stage {
         position: absolute !important;
-        inset: 0 !important;
+        top: max(26px, env(safe-area-inset-top, 0px)) !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
         flex: none !important;
         width: 100% !important;
-        height: 100% !important;
+        height: auto !important;
         max-width: none !important;
       }
       .reel-media-stage .postcard-face-front,
@@ -302,15 +305,15 @@
 
       .history-tab-route .reel-page-snap > .reel-header-row {
         position: absolute !important;
-        top: 0 !important;
+        top: max(26px, env(safe-area-inset-top, 0px)) !important;
         left: 0 !important;
         right: 0 !important;
         height: auto !important;
-        min-height: calc(52px + max(44px, env(safe-area-inset-top, 0px))) !important;
-        padding-top: max(44px, env(safe-area-inset-top, 0px)) !important;
+        min-height: 52px !important;
+        padding-top: 6px !important;
         padding-left: 14px !important;
         padding-right: 14px !important;
-        padding-bottom: 8px !important;
+        padding-bottom: 12px !important;
         z-index: 20 !important;
         background: linear-gradient(to bottom, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 72%, transparent 100%) !important;
         border-bottom: none !important;
@@ -1081,6 +1084,8 @@ window.normalizeHistoryRecord = function(r, idx) {
     var rPosX = (r && (r.ready_shot_pos_x !== undefined ? r.ready_shot_pos_x : r.readyShotPosX));
     var rPosY = (r && (r.ready_shot_pos_y !== undefined ? r.ready_shot_pos_y : r.readyShotPosY));
     var rScale = (r && (r.ready_shot_scale !== undefined ? r.ready_shot_scale : r.readyShotScale));
+    var rawLikes = (r && (r.likes_count !== undefined ? r.likes_count : r.likes));
+    var finalLikes = (rawLikes !== undefined && rawLikes !== null && !isNaN(Number(rawLikes))) ? Number(rawLikes) : 0;
 
     return {
       id: recordId,
@@ -1110,6 +1115,8 @@ window.normalizeHistoryRecord = function(r, idx) {
       oneLineMemo: (r && r.oneLineMemo) ? r.oneLineMemo : userMemo,
       photoMemos: resolvedPhotoMemos,
       isPublished: resolvedPublished,
+      likes: finalLikes,
+      likes_count: finalLikes,
       instagram: (r && r.instagram) ? r.instagram : '',
       youtube: (r && r.youtube) ? r.youtube : '',
       items: cleanItems,
@@ -1887,12 +1894,9 @@ window.normalizeHistoryRecord = function(r, idx) {
 window.okbmGetNormalizedUserId = function(rawId) {
   var uId = String(rawId || '').trim();
   if (!uId) {
-    var profile = safeGetJSON('user_profile', null) || safeGetJSON('okbm_user_info', null) || safeGetJSON('kakao_account', null);
+    var profile = safeGetJSON('user_profile', null);
     if (profile) {
       uId = String(profile.id || profile.userId || profile.user_id || '').trim();
-    }
-    if (!uId) {
-      uId = localStorage.getItem('okbm_user_id') || localStorage.getItem('user_id') || localStorage.getItem('kakao_user_id') || '';
     }
   }
   uId = String(uId || '').trim();
@@ -1978,10 +1982,14 @@ window.fetchUserFeedLikesFromServer = async function() {
   return {};
 };
 
+window.__pendingLikeRequests = window.__pendingLikeRequests || new Map();
+
 window.okbmSyncFeedLikeAction = async function(feedId, userId, isAdding, nextCount) {
   var sId = String(feedId || '').trim();
   var canonicalId = window.okbmGetNormalizedUserId(userId);
-  if (!sId || !canonicalId) return;
+  if (!sId || !canonicalId) {
+    throw new Error('feedId and canonical userId are required');
+  }
 
   var pureNumId = canonicalId.replace(/^kakao_/, '').trim();
   var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
@@ -2001,20 +2009,26 @@ window.okbmSyncFeedLikeAction = async function(feedId, userId, isAdding, nextCou
     'Prefer': 'return=minimal'
   };
 
-  try {
+  var syncExecution = (async function() {
     if (isAdding) {
       if (window.supabaseClient) {
-        await window.supabaseClient.from('feed_likes').upsert({
+        var insertRes = await window.supabaseClient.from('feed_likes').upsert({
           feed_id: sId,
           user_id: canonicalId,
           created_at: new Date().toISOString()
         }, { onConflict: 'feed_id,user_id' });
+        if (insertRes.error) throw insertRes.error;
       } else {
-        await fetch(targetUrl + '/rest/v1/feed_likes', {
+        var postRes = await fetch(targetUrl + '/rest/v1/feed_likes', {
           method: 'POST',
           headers: postHeaders,
-          body: JSON.stringify({ feed_id: sId, user_id: canonicalId, created_at: new Date().toISOString() })
+          body: JSON.stringify({ feed_id: sId, user_id: canonicalId, created_at: new Date().toISOString() }),
+          keepalive: true
         });
+        if (!postRes.ok) {
+          var errText = await postRes.text().catch(function() { return ''; });
+          throw new Error('feed_likes insert failed: ' + postRes.status + ' ' + errText);
+        }
       }
     } else {
       var queryIds = [canonicalId];
@@ -2022,29 +2036,75 @@ window.okbmSyncFeedLikeAction = async function(feedId, userId, isAdding, nextCou
         queryIds.push(pureNumId);
       }
       if (window.supabaseClient) {
-        await window.supabaseClient.from('feed_likes').delete().eq('feed_id', sId).in('user_id', queryIds);
+        var delRes = await window.supabaseClient.from('feed_likes').delete().eq('feed_id', sId).in('user_id', queryIds);
+        if (delRes.error) throw delRes.error;
       } else {
         var inParam = 'in.(' + queryIds.map(encodeURIComponent).join(',') + ')';
-        await fetch(targetUrl + '/rest/v1/feed_likes?feed_id=eq.' + encodeURIComponent(sId) + '&user_id=' + inParam, {
+        var delFetch = await fetch(targetUrl + '/rest/v1/feed_likes?feed_id=eq.' + encodeURIComponent(sId) + '&user_id=' + inParam, {
           method: 'DELETE',
-          headers: deleteHeaders
+          headers: deleteHeaders,
+          keepalive: true
         });
+        if (!delFetch.ok) {
+          var delErrText = await delFetch.text().catch(function() { return ''; });
+          throw new Error('feed_likes delete failed: ' + delFetch.status + ' ' + delErrText);
+        }
       }
     }
 
-    if (typeof nextCount === 'number' && !isNaN(nextCount)) {
-      var validCount = Math.max(0, nextCount);
-      if (window.supabaseClient) {
-        await window.supabaseClient.from('feeds').update({ likes_count: validCount }).eq('id', sId);
-      } else {
-        await fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
-          method: 'PATCH',
-          headers: postHeaders,
-          body: JSON.stringify({ likes_count: validCount })
-        });
+    var exactCount = 0;
+    if (window.supabaseClient) {
+      var countRes = await window.supabaseClient.from('feed_likes').select('*', { count: 'exact', head: true }).eq('feed_id', sId);
+      if (countRes.error) throw countRes.error;
+      exactCount = countRes.count || 0;
+    } else {
+      var countFetch = await fetch(targetUrl + '/rest/v1/feed_likes?feed_id=eq.' + encodeURIComponent(sId) + '&select=feed_id', {
+        method: 'HEAD',
+        headers: {
+          'apikey': targetKey,
+          'Authorization': 'Bearer ' + targetKey,
+          'Range': '0-0',
+          'Prefer': 'count=exact'
+        },
+        keepalive: true
+      });
+      if (!countFetch.ok) {
+        throw new Error('feed_likes count failed: ' + countFetch.status);
+      }
+      var cr = countFetch.headers.get('content-range');
+      if (cr && cr.includes('/')) {
+        var totalPart = cr.split('/')[1];
+        exactCount = parseInt(totalPart, 10) || 0;
       }
     }
-  } catch (restErr) {}
+
+    if (window.supabaseClient) {
+      var updateRes = await window.supabaseClient.from('feeds').update({ likes_count: exactCount }).eq('id', sId);
+      if (updateRes.error) throw updateRes.error;
+    } else {
+      var patchFetch = await fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
+        method: 'PATCH',
+        headers: postHeaders,
+        body: JSON.stringify({ likes_count: exactCount }),
+        keepalive: true
+      });
+      if (!patchFetch.ok) {
+        var patchErr = await patchFetch.text().catch(function() { return ''; });
+        throw new Error('feeds update failed: ' + patchFetch.status + ' ' + patchErr);
+      }
+    }
+
+    return { success: true, is_starred: isAdding, likes_count: exactCount };
+  })();
+
+  window.__pendingLikeRequests.set(sId, syncExecution);
+  try {
+    return await syncExecution;
+  } finally {
+    if (window.__pendingLikeRequests.get(sId) === syncExecution) {
+      window.__pendingLikeRequests.delete(sId);
+    }
+  }
 };
 
 window.okbmSyncFeedLikeCount = function() {};
@@ -2084,10 +2144,6 @@ window.toggleFeedStar = async function(cardId, e) {
   if (window.__starToggleLockMap[sId]) return;
   window.__starToggleLockMap[sId] = true;
 
-  var userKey = window.okbmGetUserStarsKey(canonicalUserId);
-  var starsMap = safeGetJSON(userKey, {});
-  var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
-
   var targetCard = (window.interactiveHistory || []).find(function(r) {
     return r && String(r.id).replace(/[`'"]/g, '').trim() === sId;
   });
@@ -2097,71 +2153,38 @@ window.toggleFeedStar = async function(cardId, e) {
     });
   }
 
-  var isCurrentlyStarred = Boolean(starsMap[sId]);
-  var currentCount = (starCounts[sId] !== undefined)
-    ? Number(starCounts[sId])
-    : Number((targetCard && (targetCard.likes_count || targetCard.likes)) || 0);
+  var directBtn = e ? (e.currentTarget || (e.target && e.target.closest('button'))) : null;
+  var cardBtn = directBtn || document.querySelector('[data-star-card-id="' + (CSS.escape ? CSS.escape(sId) : sId) + '"]');
+  var cardSvg = cardBtn ? cardBtn.querySelector('svg') : null;
+  var cardCountSpan = cardBtn ? cardBtn.querySelector('[id^="feedStarCountText_"]') : null;
 
+  var isCurrentlyStarred = false;
+  if (cardSvg) {
+    var fillAttr = cardSvg.getAttribute('fill');
+    isCurrentlyStarred = Boolean(fillAttr && fillAttr !== 'none' && fillAttr !== 'transparent');
+  } else {
+    var userKey = window.okbmGetUserStarsKey(canonicalUserId);
+    var starsMap = safeGetJSON(userKey, {});
+    isCurrentlyStarred = Boolean(starsMap[sId]);
+  }
+
+  var currentCount = 0;
+  if (cardCountSpan && cardCountSpan.innerText) {
+    var parsedDomCount = parseInt(cardCountSpan.innerText.trim(), 10);
+    if (!isNaN(parsedDomCount)) currentCount = parsedDomCount;
+  } else if (targetCard && (targetCard.likes_count !== undefined || targetCard.likes !== undefined)) {
+    var parsedCardCount = Number(targetCard.likes_count !== undefined ? targetCard.likes_count : targetCard.likes);
+    if (!isNaN(parsedCardCount)) currentCount = parsedCardCount;
+  }
   if (isNaN(currentCount) || currentCount < 0) currentCount = 0;
 
   var nextStarred = !isCurrentlyStarred;
   var nextCount = nextStarred ? (currentCount + 1) : Math.max(0, currentCount - 1);
 
   if (nextStarred) {
-    starsMap[sId] = true;
     triggerHaptic(14);
   } else {
-    delete starsMap[sId];
     triggerHaptic(8);
-  }
-
-  starCounts[sId] = nextCount;
-  localStorage.setItem(userKey, JSON.stringify(starsMap));
-  localStorage.setItem('okbm_feed_stars_counts', JSON.stringify(starCounts));
-
-  if (targetCard) {
-    targetCard.likes = nextCount;
-    targetCard.likes_count = nextCount;
-  }
-
-  if (Array.isArray(window.__allLoadedFeeds)) {
-    var loadedTarget = window.__allLoadedFeeds.find(function(f) {
-      return f && String(f.id).replace(/[`'"]/g, '').trim() === sId;
-    });
-    if (loadedTarget) {
-      loadedTarget.likes = nextCount;
-      loadedTarget.likes_count = nextCount;
-    }
-    try {
-      localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(window.__allLoadedFeeds));
-    } catch (cacheErr) {}
-  }
-
-  if (Array.isArray(window.heroTopRecords)) {
-    var hItem = window.heroTopRecords.find(function(h) {
-      return h && String(h.id).replace(/[`'"]/g, '').trim() === sId;
-    });
-    if (hItem) {
-      hItem.likes = nextCount;
-      hItem.likes_count = nextCount;
-      if (typeof window.renderCurrentHeroCard === 'function') window.renderCurrentHeroCard();
-    }
-  }
-
-  var clickedBtn = e ? (e.currentTarget || (e.target && e.target.closest('button'))) : null;
-  if (clickedBtn) {
-    var directIcon = clickedBtn.querySelector('svg');
-    if (directIcon) {
-      directIcon.setAttribute('fill', nextStarred ? '#fde047' : 'none');
-      directIcon.setAttribute('stroke', nextStarred ? '#fde047' : '#ffffff');
-      directIcon.style.filter = nextStarred ? 'drop-shadow(0 0 8px rgba(253,224,71,0.8))' : 'none';
-      directIcon.style.transform = 'scale(1.25)';
-      setTimeout(function() { if (directIcon) directIcon.style.transform = 'scale(1)'; }, 180);
-    }
-    var directCount = clickedBtn.querySelector('[id^="feedStarCountText_"]');
-    if (directCount) {
-      directCount.innerText = nextCount;
-    }
   }
 
   var updateStarDOMElements = function(idVal, starredVal, countVal) {
@@ -2174,9 +2197,9 @@ window.toggleFeedStar = async function(cardId, e) {
           icon.setAttribute('stroke', starredVal ? '#fde047' : '#ffffff');
           icon.style.filter = starredVal ? 'drop-shadow(0 0 8px rgba(253,224,71,0.8))' : 'none';
         }
-        var countSpan = btn.querySelector('[id^="feedStarCountText_"]');
-        if (countSpan) {
-          countSpan.innerText = countVal;
+        var countSpanEl = btn.querySelector('[id^="feedStarCountText_"]');
+        if (countSpanEl) {
+          countSpanEl.innerText = countVal;
         }
       });
     } catch (selErr) {}
@@ -2194,16 +2217,127 @@ window.toggleFeedStar = async function(cardId, e) {
     }
   };
 
+  if (directBtn) {
+    var directIcon = directBtn.querySelector('svg');
+    if (directIcon) {
+      directIcon.style.transform = 'scale(1.25)';
+      setTimeout(function() { if (directIcon) directIcon.style.transform = 'scale(1)'; }, 180);
+    }
+  }
+
   updateStarDOMElements(sId, nextStarred, nextCount);
 
+  if (targetCard) {
+    targetCard.likes = nextCount;
+    targetCard.likes_count = nextCount;
+  }
+  if (Array.isArray(window.__allLoadedFeeds)) {
+    var loadedTarget = window.__allLoadedFeeds.find(function(f) {
+      return f && String(f.id).replace(/[`'"]/g, '').trim() === sId;
+    });
+    if (loadedTarget) {
+      loadedTarget.likes = nextCount;
+      loadedTarget.likes_count = nextCount;
+    }
+  }
+  if (Array.isArray(window.heroTopRecords)) {
+    var hItem = window.heroTopRecords.find(function(h) {
+      return h && String(h.id).replace(/[`'"]/g, '').trim() === sId;
+    });
+    if (hItem) {
+      hItem.likes = nextCount;
+      hItem.likes_count = nextCount;
+      if (typeof window.renderCurrentHeroCard === 'function') window.renderCurrentHeroCard();
+    }
+  }
+
   try {
-    await window.okbmSyncFeedLikeAction(sId, canonicalUserId, nextStarred, nextCount);
+    var serverRes = await window.okbmSyncFeedLikeAction(sId, canonicalUserId, nextStarred, nextCount);
+    var finalStarred = (serverRes && typeof serverRes.is_starred === 'boolean') ? serverRes.is_starred : nextStarred;
+    var finalCount = (serverRes && typeof serverRes.likes_count === 'number') ? serverRes.likes_count : nextCount;
+
+    var userKey = window.okbmGetUserStarsKey(canonicalUserId);
+    var currentStarsMap = safeGetJSON(userKey, {});
+    if (finalStarred) {
+      currentStarsMap[sId] = true;
+    } else {
+      delete currentStarsMap[sId];
+    }
+    try { localStorage.setItem(userKey, JSON.stringify(currentStarsMap)); } catch (e) {}
+
+    var currentCounts = safeGetJSON('okbm_feed_stars_counts', {});
+    currentCounts[sId] = finalCount;
+    try { localStorage.setItem('okbm_feed_stars_counts', JSON.stringify(currentCounts)); } catch (e) {}
+
+    if (finalStarred !== nextStarred || finalCount !== nextCount) {
+      updateStarDOMElements(sId, finalStarred, finalCount);
+      if (targetCard) {
+        targetCard.likes = finalCount;
+        targetCard.likes_count = finalCount;
+      }
+      if (Array.isArray(window.__allLoadedFeeds)) {
+        var lTarget = window.__allLoadedFeeds.find(function(f) {
+          return f && String(f.id).replace(/[`'"]/g, '').trim() === sId;
+        });
+        if (lTarget) {
+          lTarget.likes = finalCount;
+          lTarget.likes_count = finalCount;
+        }
+      }
+      if (Array.isArray(window.heroTopRecords)) {
+        var hTarget = window.heroTopRecords.find(function(h) {
+          return h && String(h.id).replace(/[`'"]/g, '').trim() === sId;
+        });
+        if (hTarget) {
+          hTarget.likes = finalCount;
+          hTarget.likes_count = finalCount;
+          if (typeof window.renderCurrentHeroCard === 'function') window.renderCurrentHeroCard();
+        }
+      }
+    }
+
+    if (Array.isArray(window.__allLoadedFeeds)) {
+      try {
+        localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(window.__allLoadedFeeds));
+      } catch (cacheErr) {}
+    }
+  } catch (syncErr) {
+    console.error('[toggleFeedStar Rollback]', syncErr);
+    updateStarDOMElements(sId, isCurrentlyStarred, currentCount);
+    if (targetCard) {
+      targetCard.likes = currentCount;
+      targetCard.likes_count = currentCount;
+    }
+    if (Array.isArray(window.__allLoadedFeeds)) {
+      var rbTarget = window.__allLoadedFeeds.find(function(f) {
+        return f && String(f.id).replace(/[`'"]/g, '').trim() === sId;
+      });
+      if (rbTarget) {
+        rbTarget.likes = currentCount;
+        rbTarget.likes_count = currentCount;
+      }
+    }
+    if (Array.isArray(window.heroTopRecords)) {
+      var rbHero = window.heroTopRecords.find(function(h) {
+        return h && String(h.id).replace(/[`'"]/g, '').trim() === sId;
+      });
+      if (rbHero) {
+        rbHero.likes = currentCount;
+        rbHero.likes_count = currentCount;
+        if (typeof window.renderCurrentHeroCard === 'function') window.renderCurrentHeroCard();
+      }
+    }
+    var toastWarn = window.showToast || (typeof showToast === 'function' ? showToast : null);
+    if (toastWarn) {
+      toastWarn('좋아요 반영에 실패했습니다. 다시 시도해주세요.', 'warn');
+    }
   } finally {
     setTimeout(function() {
       delete window.__starToggleLockMap[sId];
-    }, 300);
+    }, 250);
   }
 };
+
 
 // 🔗 [2. 스마트 멀티 공유 모달 엔진 - 3대 핵심 채널 최적화]
   window.shareCurrentFeed = function(recordId, spotName, memoText) {
@@ -5483,12 +5617,9 @@ window.renderHistoryStage = function(isLoading) {
         var itemsCount = Array.isArray(record.items) ? record.items.length : 0;
 
         var cleanCardId = String(record.id || idx).replace(/^["']|["']$/g, '').trim();
-        var isStarred = Boolean(starsMap[cleanCardId] || starsMap[cardId]);
-        var serverLikes = (record.likes_count !== undefined && record.likes_count !== null) ? Number(record.likes_count) : Number(record.likes || 0);
-        var starCount = isNaN(serverLikes) ? 0 : serverLikes;
-        if (isStarred && starCount === 0) {
-          starCount = 1;
-        }
+        var isStarred = Boolean(starsMap[cleanCardId] || starsMap[cardId] || starsMap[String(record.id)]);
+        var parsedLikes = (record.likes_count !== undefined && record.likes_count !== null) ? Number(record.likes_count) : (record.likes !== undefined ? Number(record.likes) : Number(starCounts[cleanCardId] || 0));
+        var starCount = isNaN(parsedLikes) ? 0 : parsedLikes;
         var mediaItems = (photos && photos.length > 0) ? photos : [];
         var totalPhotosCount = mediaItems.length;
 
@@ -5581,7 +5712,7 @@ window.renderHistoryStage = function(isLoading) {
           }
         }
 
-        var headerBarHtml = '<div class="reel-header-row" style="top:0 !important; height:auto !important; min-height:calc(52px + max(44px, env(safe-area-inset-top, 0px))) !important; padding-top:max(44px, env(safe-area-inset-top, 0px)) !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:8px !important; box-sizing:border-box !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 72%, transparent 100%) !important;">' +
+        var headerBarHtml = '<div class="reel-header-row" style="position:absolute !important; top:max(26px, env(safe-area-inset-top, 0px)) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 72%, transparent 100%) !important; border-bottom:none !important;">' +
           '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
             '<button type="button" data-author="' + escapeHtml(authorName) + '" data-user-id="' + escapeHtml(recordUserId) + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.6);" title="' + escapeHtml(authorName) + '님의 피드 모아보기">' +
               avatarMarkup +
@@ -5876,9 +6007,6 @@ window.renderHistoryStage = function(isLoading) {
         var isStarred = Boolean(starsMap[cleanCardId] || starsMap[cardId]);
         var serverLikes = (record.likes_count !== undefined && record.likes_count !== null) ? Number(record.likes_count) : Number(record.likes || 0);
         var starCount = isNaN(serverLikes) ? 0 : serverLikes;
-        if (isStarred && starCount === 0) {
-          starCount = 1;
-        }
         var mediaItems = (photos && photos.length > 0) ? photos : [];
         var totalPhotosCount = mediaItems.length;
         var recordUserId = String(record.userId || '').trim();
@@ -5893,7 +6021,7 @@ window.renderHistoryStage = function(isLoading) {
           ? '<img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="' + escapeHtml(targetAvatarUrl) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />'
           : '<div style="width:100%; height:100%; background:#090d14; display:flex; align-items:center; justify-content:center;"><img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="" style="width:100%; height:100%; object-fit:cover; display:none;" /><svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
 
-        var headerBarHtml = '<div class="reel-header-row" style="top:0 !important; height:auto !important; min-height:calc(52px + max(44px, env(safe-area-inset-top, 0px))) !important; padding-top:max(44px, env(safe-area-inset-top, 0px)) !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:8px !important; box-sizing:border-box !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 72%, transparent 100%) !important;">' +
+        var headerBarHtml = '<div class="reel-header-row" style="position:absolute !important; top:max(26px, env(safe-area-inset-top, 0px)) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 72%, transparent 100%) !important; border-bottom:none !important;">' +
           '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
             '<button type="button" data-author="' + escapeHtml(authorName) + '" data-user-id="' + escapeHtml(recordUserId) + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.6);" title="' + escapeHtml(authorName) + '님의 피드 모아보기">' +
               avatarMarkup +

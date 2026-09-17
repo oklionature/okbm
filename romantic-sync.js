@@ -3845,7 +3845,7 @@ function logoutUser() {
 
   try {
     Object.keys(localStorage).forEach(function(k) {
-      if (k.startsWith('user_profile_') || k.startsWith('okbm_custom_nickname_')) {
+      if (k.startsWith('user_profile_') || k.startsWith('okbm_custom_nickname_') || k.startsWith('okbm_feed_stars_map')) {
         localStorage.removeItem(k);
       }
     });
@@ -3897,9 +3897,20 @@ function logoutUser() {
     showToast('로그아웃되었습니다. 초기 화면으로 이동합니다.', 'info', 1200);
   }
 
-  setTimeout(function() {
+  var doReload = function() {
     window.location.reload();
-  }, 200);
+  };
+
+  if (window.__pendingLikeRequests && window.__pendingLikeRequests.size > 0) {
+    var pendingList = Array.from(window.__pendingLikeRequests.values());
+    var waitPromise = Promise.allSettled(pendingList);
+    var timeoutPromise = new Promise(function(resolve) { setTimeout(resolve, 1500); });
+    Promise.race([waitPromise, timeoutPromise]).finally(function() {
+      setTimeout(doReload, 50);
+    });
+  } else {
+    setTimeout(doReload, 200);
+  }
 }
 window.logoutUser = logoutUser;
 
