@@ -296,14 +296,18 @@
         border-radius: 14px !important;
         box-shadow: 0 12px 30px rgba(0, 0, 0, 0.9) !important;
       }
+      .reel-status-bar-shield {
+        display: none !important;
+      }
+
       .history-tab-route .reel-page-snap > .reel-header-row {
         position: absolute !important;
-        top: 0 !important;
+        top: calc(8px + env(safe-area-inset-top, 0px)) !important;
         left: 0 !important;
         right: 0 !important;
-        height: calc(52px + env(safe-area-inset-top, 0px)) !important;
-        min-height: calc(52px + env(safe-area-inset-top, 0px)) !important;
-        padding-top: env(safe-area-inset-top, 0px) !important;
+        height: 52px !important;
+        min-height: 52px !important;
+        padding-top: 0 !important;
         padding-left: 14px !important;
         padding-right: 14px !important;
         padding-bottom: 0 !important;
@@ -3404,42 +3408,26 @@ window.deleteTripRecord = async function(recordId, e) {
       isLoading: false
     };
 
-    var repSnsUrl = '';
-    var repSnsType = '';
-
-    if (!isSelf) {
-      initialRenderList.forEach(function(f) {
-        if (!repSnsUrl) {
-          var raw = String(f.instagram || f.insta || f.instaId || f.user_instagram || f.youtube || f.youtubeUrl || '').trim();
-          if (raw.includes('youtube.com') || raw.includes('youtu.be')) {
-            var cleanYt = raw.replace(/^@+/, '').split('?')[0].trim();
-            var m = cleanYt.match(/(?:youtube\.com\/(?:@|c\/|channel\/)?|youtu\.be\/)([\w\-\_\.]+)/i);
-            repSnsUrl = (m && m[1]) ? ('https://www.youtube.com/@' + m[1].replace(/^@/, '')) : (cleanYt.startsWith('http') ? cleanYt : ('https://' + cleanYt));
-            repSnsType = 'youtube';
-          } else if (raw) {
-            var pureId = raw.replace(/^@+/, '').replace(/https?:\/\/(?:www\.)?instagram\.com\//, '').replace(/instagram\.com\//, '').replace(/[@\s]/g, '').split('?')[0].trim();
-            if (pureId) {
-              repSnsUrl = 'https://instagram.com/' + pureId;
-              repSnsType = 'instagram';
-            }
-          }
-        }
-      });
-    }
-
     var repSnsBadgeHtml = '';
-    if (!isSelf && repSnsUrl) {
-      if (repSnsType === 'youtube') {
-        repSnsBadgeHtml = '<a href="' + repSnsUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;" title="유튜브">' +
-          '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none">' +
-            '<path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z" fill="#f43f5e"/>' +
-            '<path d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z" fill="#ffffff"/>' +
-          '</svg>' +
-        '</a>';
-      } else {
-        repSnsBadgeHtml = '<a href="' + repSnsUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;" title="인스타그램">' +
-          '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:#e2e8f0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>' +
-        '</a>';
+    if (isSelf) {
+      var selfInsta = localStorage.getItem('okbm_user_instagram') || '';
+      var selfYt = localStorage.getItem('okbm_user_youtube') || '';
+      var selfBlog = localStorage.getItem('okbm_user_blog') || '';
+      var selfSns = localStorage.getItem('okbm_user_sns_channel') || '';
+      if (typeof window.renderUserSnsBadgesHtml === 'function') {
+        repSnsBadgeHtml = window.renderUserSnsBadgesHtml(selfInsta, selfYt, selfBlog, true, selfSns);
+      }
+    } else {
+      var otherInsta = '';
+      var otherYt = '';
+      var otherBlog = '';
+      initialRenderList.forEach(function(f) {
+        if (!otherInsta && (f.instagram || f.insta || f.instaId)) otherInsta = f.instagram || f.insta || f.instaId;
+        if (!otherYt && (f.youtube || f.youtubeUrl)) otherYt = f.youtube || f.youtubeUrl;
+        if (!otherBlog && (f.blog || f.blogUrl)) otherBlog = f.blog || f.blogUrl;
+      });
+      if (typeof window.renderUserSnsBadgesHtml === 'function') {
+        repSnsBadgeHtml = window.renderUserSnsBadgesHtml(otherInsta, otherYt, otherBlog, false, '');
       }
     }
 
@@ -3459,26 +3447,55 @@ window.deleteTripRecord = async function(recordId, e) {
       }).join('');
     }
 
+    var initialPhotoUrl = '';
+    if (initialRenderList.length > 0) {
+      for (var pSearchIdx = 0; pSearchIdx < initialRenderList.length; pSearchIdx++) {
+        var pItem = initialRenderList[pSearchIdx];
+        if (pItem && pItem.authorPhoto && String(pItem.authorPhoto).startsWith('http')) {
+          initialPhotoUrl = String(pItem.authorPhoto).trim();
+          break;
+        }
+      }
+    }
+    if (!initialPhotoUrl && targetUserId && typeof window.resolveUserMasterPhoto === 'function') {
+      initialPhotoUrl = window.resolveUserMasterPhoto(targetUserId, targetAuthor, '');
+    }
+
     var modalEl = document.createElement('div');
     modalEl.id = 'userFeedCollectionModal';
+    modalEl.dataset.author = targetAuthor;
+    modalEl.dataset.userId = targetUserId;
     modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; width:100%; max-width:100%; background:#000000; z-index:1000010 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     modalEl.innerHTML = `
-      <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10; gap:10px;">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">
-            <button type="button" onclick="window.goBackModal(event);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">◀</button>
-            <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden;">
-              <span style="font-size:0.92rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:1;">[${escapeHtml(targetAuthor)}]</span>
-              ${repSnsBadgeHtml}
-              ${followBtnHtml}
-            </div>
-          </div>
-          <span id="userModalRouteCountBadge" style="font-size:0.65rem; color:#38bdf8; font-weight:800; background:rgba(56,189,248,0.15); padding:2px 8px; border-radius:5px; border:1px solid rgba(56,189,248,0.3); flex-shrink:0;">낭만루트 (${initialRenderList.length})</span>
+      <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" onclick="window.goBackModal(event);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">◀</button>
+          <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">루터 정보</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          ${followBtnHtml}
+          <span id="userModalRouteCountBadge" style="font-size:0.65rem; color:#38bdf8; font-weight:800; background:rgba(56,189,248,0.15); padding:2px 8px; border-radius:5px; border:1px solid rgba(56,189,248,0.3); flex-shrink:0;">기록 (${initialRenderList.length})</span>
         </div>
       </div>
 
-      <div id="userModalCardsContainer" onscroll="window.__handleUserCollectionScroll(this);" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:14px 12px calc(80px + env(safe-area-inset-bottom, 8px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
+      <div id="userCollectionHeaderWrapper" style="flex-shrink:0; width:100%; max-width:480px; margin:0 auto; box-sizing:border-box; z-index:9;">
+        ${(typeof window.renderUserProfileHeaderSection === 'function') ? window.renderUserProfileHeaderSection({
+          isOwner: isSelf,
+          userId: targetUserId,
+          nickname: targetAuthor,
+          bio: isSelf ? ((profile && profile.bio) || localStorage.getItem('okbm_user_bio') || '') : '',
+          photoUrl: initialPhotoUrl,
+          instagram: isSelf ? (localStorage.getItem('okbm_user_instagram') || '') : otherInsta,
+          youtube: isSelf ? (localStorage.getItem('okbm_user_youtube') || '') : otherYt,
+          blog: isSelf ? (localStorage.getItem('okbm_user_blog') || '') : otherBlog,
+          snsChannel: isSelf ? (localStorage.getItem('okbm_user_sns_channel') || '') : '',
+          feedCount: initialRenderList.length,
+          isFollowing: isFollowing
+        }) : ''}
+      </div>
+
+      <div id="userModalCardsContainer" onscroll="window.__handleUserCollectionScroll(this);" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:12px 12px calc(80px + env(safe-area-inset-bottom, 8px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
         ${cardsHtml}
       </div>
     `;
@@ -3490,6 +3507,60 @@ window.deleteTripRecord = async function(recordId, e) {
 
     var targetUrl = window.SUPABASE_URL || '';
     var targetKey = window.SUPABASE_ANON_KEY || '';
+
+    if (!targetUserId && initialRenderList.length > 0) {
+      for (var fIdx = 0; fIdx < initialRenderList.length; fIdx++) {
+        var cand = initialRenderList[fIdx];
+        if (cand && (cand.userId || cand.user_id)) {
+          targetUserId = String(cand.userId || cand.user_id).trim();
+          break;
+        }
+      }
+    }
+
+    if (targetUrl && targetKey && targetUserId) {
+      fetch(targetUrl + '/rest/v1/users?id=eq.' + encodeURIComponent(targetUserId) + '&select=id,bio,hero_cover_url,photo_url,nickname,my_gears', {
+        headers: {
+          'apikey': targetKey,
+          'Authorization': 'Bearer ' + targetKey,
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(function(r) { return r.ok ? r.json() : []; })
+      .then(function(uRows) {
+        if (Array.isArray(uRows) && uRows.length > 0) {
+          var uRow = uRows[0];
+          var fetchedBio = String(uRow.bio || '').trim();
+          var fetchedPhoto = String(uRow.hero_cover_url || uRow.photo_url || '').trim();
+          var fetchedNick = String(uRow.nickname || targetAuthor).trim();
+          var fetchedGears = (uRow.my_gears && typeof uRow.my_gears === 'object') ? uRow.my_gears : {};
+          var fetchedSns = (fetchedGears.sns && typeof fetchedGears.sns === 'object') ? fetchedGears.sns : {};
+
+          var remoteInsta = fetchedSns.instagram || uRow.instagram || otherInsta;
+          var remoteYt = fetchedSns.youtube || uRow.youtube || otherYt;
+          var remoteBlog = fetchedSns.blog || uRow.blog || otherBlog;
+
+          var wrapEl = document.getElementById('userCollectionHeaderWrapper');
+          if (wrapEl && typeof window.renderUserProfileHeaderSection === 'function') {
+            var liveConfig = {
+              isOwner: isSelf,
+              userId: targetUserId,
+              nickname: isSelf ? targetAuthor : fetchedNick,
+              bio: isSelf ? ((profile && profile.bio) || localStorage.getItem('okbm_user_bio') || '') : fetchedBio,
+              photoUrl: (fetchedPhoto && fetchedPhoto.startsWith('http')) ? fetchedPhoto : initialPhotoUrl,
+              instagram: isSelf ? (localStorage.getItem('okbm_user_instagram') || '') : remoteInsta,
+              youtube: isSelf ? (localStorage.getItem('okbm_user_youtube') || '') : remoteYt,
+              blog: isSelf ? (localStorage.getItem('okbm_user_blog') || '') : remoteBlog,
+              snsChannel: isSelf ? (localStorage.getItem('okbm_user_sns_channel') || '') : '',
+              feedCount: initialRenderList.length,
+              isFollowing: isFollowing
+            };
+            wrapEl.innerHTML = window.renderUserProfileHeaderSection(liveConfig);
+          }
+        }
+      }).catch(function() {});
+    }
+
     if (targetUrl && targetKey && (targetUserId || targetAuthor)) {
       var filterParam = targetUserId
         ? ('user_id=eq.' + encodeURIComponent(targetUserId))
@@ -3513,7 +3584,7 @@ window.deleteTripRecord = async function(recordId, e) {
           var totalCount = cr.split('/')[1];
           var badgeEl = document.getElementById('userModalRouteCountBadge');
           if (totalCount && totalCount !== '*' && badgeEl) {
-            badgeEl.innerText = '낭만루트 (' + totalCount + ')';
+            badgeEl.innerText = '기록 (' + totalCount + ')';
           }
         }
       }).catch(function() {});
@@ -5226,11 +5297,10 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     window.toggleFeedStreamMode(e);
   };
 
-  // 📸 [하위 호환 방탄 스텁]: 일상 스냅 호출 시 낭만루트 안내
   window.openNewRouterSnapModal = function() {
     triggerHaptic(10);
     if (typeof showToast === 'function') {
-      showToast('낭만루트(패킹/출정 기록)에서 사진을 등록할 수 있습니다.', 'info');
+      showToast('낭만루트 기록에서 사진을 등록할 수 있습니다.', 'info');
     }
   };
  // 🔘 [인스타그램 가로 슬라이더 도트 & 사진별 120자 고정 3줄 메모 실시간 동기화]
@@ -5511,7 +5581,7 @@ window.renderHistoryStage = function(isLoading) {
           }
         }
 
-        var headerBarHtml = '<div class="reel-header-row" style="height:calc(52px + env(safe-area-inset-top, 0px)) !important; min-height:calc(52px + env(safe-area-inset-top, 0px)) !important; padding-top:env(safe-area-inset-top, 0px) !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:0 !important; box-sizing:border-box !important;">' +
+        var headerBarHtml = '<div class="reel-header-row" style="top:calc(8px + env(safe-area-inset-top, 0px)) !important; height:52px !important; min-height:52px !important; padding-top:0 !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:0 !important; box-sizing:border-box !important;">' +
           '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
             '<button type="button" data-author="' + escapeHtml(authorName) + '" data-user-id="' + escapeHtml(recordUserId) + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.6);" title="' + escapeHtml(authorName) + '님의 피드 모아보기">' +
               avatarMarkup +
@@ -5823,7 +5893,7 @@ window.renderHistoryStage = function(isLoading) {
           ? '<img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="' + escapeHtml(targetAvatarUrl) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />'
           : '<div style="width:100%; height:100%; background:#090d14; display:flex; align-items:center; justify-content:center;"><img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="" style="width:100%; height:100%; object-fit:cover; display:none;" /><svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
 
-        var headerBarHtml = '<div class="reel-header-row" style="height:calc(52px + env(safe-area-inset-top, 0px)) !important; min-height:calc(52px + env(safe-area-inset-top, 0px)) !important; padding-top:env(safe-area-inset-top, 0px) !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:0 !important; box-sizing:border-box !important;">' +
+        var headerBarHtml = '<div class="reel-header-row" style="top:calc(8px + env(safe-area-inset-top, 0px)) !important; height:52px !important; min-height:52px !important; padding-top:0 !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:0 !important; box-sizing:border-box !important;">' +
           '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
             '<button type="button" data-author="' + escapeHtml(authorName) + '" data-user-id="' + escapeHtml(recordUserId) + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.6);" title="' + escapeHtml(authorName) + '님의 피드 모아보기">' +
               avatarMarkup +

@@ -484,6 +484,29 @@ window.RomanticVault = window.RomanticVault || {
           if (serverPlanSpots && typeof serverPlanSpots === 'object') {
             this.write('okbm_plan_spots', serverPlanSpots, false);
           }
+
+          var serverSns = mg.sns || {};
+          var instaVal = String(cloudData.instagram || serverSns.instagram || '').trim();
+          var ytVal = String(cloudData.youtube || serverSns.youtube || '').trim();
+          var blogVal = String(cloudData.blog || serverSns.blog || '').trim();
+
+          if (instaVal) localStorage.setItem('okbm_user_instagram', instaVal);
+          else localStorage.removeItem('okbm_user_instagram');
+
+          if (ytVal) localStorage.setItem('okbm_user_youtube', ytVal);
+          else localStorage.removeItem('okbm_user_youtube');
+
+          if (blogVal) localStorage.setItem('okbm_user_blog', blogVal);
+          else localStorage.removeItem('okbm_user_blog');
+
+          var curSnsProf = safeGetJSON('user_profile_' + userId, null) || safeGetJSON('user_profile', null);
+          if (curSnsProf) {
+            curSnsProf.instagram = instaVal;
+            curSnsProf.youtube = ytVal;
+            curSnsProf.blog = blogVal;
+            localStorage.setItem('user_profile', JSON.stringify(curSnsProf));
+            if (curSnsProf.id) localStorage.setItem('user_profile_' + curSnsProf.id, JSON.stringify(curSnsProf));
+          }
         }
 
         var curP = safeGetJSON('user_profile_' + userId, null) || safeGetJSON('user_profile', null);
@@ -991,6 +1014,261 @@ window.refreshMyReportFullStats = function() {
     bioEl.innerText = bioVal || '소개글을 작성해보세요.';
     bioEl.style.color = bioVal ? '#cbd5e1' : '#64748b';
   }
+
+  var snsWrap = document.getElementById('reportHeaderSnsWrap');
+  if (snsWrap) {
+    var rawInsta = localStorage.getItem('okbm_user_instagram') || '';
+    var rawYt = localStorage.getItem('okbm_user_youtube') || '';
+    var rawBlog = localStorage.getItem('okbm_user_blog') || '';
+    var rawSns = localStorage.getItem('okbm_user_sns_channel') || '';
+
+    var instaTarget = '';
+    var pureInsta = rawInsta.replace(/[@\s]/g, '').trim();
+    if (pureInsta) {
+      instaTarget = 'https://instagram.com/' + pureInsta;
+    } else if (rawSns.includes('instagram.com')) {
+      instaTarget = rawSns.startsWith('http') ? rawSns : ('https://' + rawSns);
+    }
+
+    var ytTarget = '';
+    var checkYt = rawYt || (rawSns.includes('youtube.com') || rawSns.includes('youtu.be') ? rawSns : '');
+    if (checkYt) {
+      var cleanYt = checkYt.replace(/^@+/, '').split('?')[0].trim();
+      var mYt = cleanYt.match(/(?:youtube\.com\/(?:@|c\/|channel\/)?|youtu\.be\/)([\w\-\_\.]+)/i);
+      ytTarget = (mYt && mYt[1]) ? ('https://www.youtube.com/@' + mYt[1].replace(/^@/, '')) : (cleanYt.startsWith('http') ? cleanYt : ('https://' + cleanYt));
+    }
+
+    var blogTarget = '';
+    var checkBlog = rawBlog || (rawSns.includes('blog.naver.com') ? rawSns : '');
+    if (checkBlog) {
+      var cleanBlog = checkBlog.trim();
+      blogTarget = cleanBlog.startsWith('http') ? cleanBlog : ('https://' + cleanBlog);
+    }
+
+    snsWrap.innerHTML = window.renderUserSnsBadgesHtml(rawInsta, rawYt, rawBlog, true, rawSns);
+  }
+};
+
+window.renderUserSnsBadgesHtml = function(rawInsta, rawYt, rawBlog, isOwner, rawSns) {
+  rawInsta = rawInsta || '';
+  rawYt = rawYt || '';
+  rawBlog = rawBlog || '';
+  rawSns = rawSns || '';
+
+  var instaTarget = '';
+  var pureInsta = rawInsta.replace(/[@\s]/g, '').trim();
+  if (pureInsta) {
+    instaTarget = 'https://instagram.com/' + pureInsta;
+  } else if (rawSns.includes('instagram.com')) {
+    instaTarget = rawSns.startsWith('http') ? rawSns : ('https://' + rawSns);
+  }
+
+  var ytTarget = '';
+  var checkYt = rawYt || (rawSns.includes('youtube.com') || rawSns.includes('youtu.be') ? rawSns : '');
+  if (checkYt) {
+    var cleanYt = checkYt.replace(/^@+/, '').split('?')[0].trim();
+    var mYt = cleanYt.match(/(?:youtube\.com\/(?:@|c\/|channel\/)?|youtu\.be\/)([\w\-\_\.]+)/i);
+    ytTarget = (mYt && mYt[1]) ? ('https://www.youtube.com/@' + mYt[1].replace(/^@/, '')) : (cleanYt.startsWith('http') ? cleanYt : ('https://' + cleanYt));
+  }
+
+  var blogTarget = '';
+  var checkBlog = rawBlog || (rawSns.includes('blog.naver.com') ? rawSns : '');
+  if (checkBlog) {
+    var cleanBlog = checkBlog.trim();
+    blogTarget = cleanBlog.startsWith('http') ? cleanBlog : ('https://' + cleanBlog);
+  }
+
+  var badges = [];
+  if (instaTarget) {
+    badges.push('<a href="' + instaTarget + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:24px; height:24px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;" title="인스타그램"><svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:#e2e8f0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></a>');
+  }
+
+  if (ytTarget) {
+    badges.push('<a href="' + ytTarget + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:24px; height:24px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;" title="유튜브"><svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z" fill="#f43f5e"/><path d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z" fill="#ffffff"/></svg></a>');
+  }
+
+  if (blogTarget) {
+    badges.push('<a href="' + blogTarget + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:24px; height:24px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;" title="네이버 블로그"><svg viewBox="0 0 24 24" style="width:12px; height:12px;" fill="none"><path d="M16.273 12.845 7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727v12.845z" fill="#03c75a"/></svg></a>');
+  }
+
+  if (isOwner) {
+    var editActionBtn = '<button type="button" onclick="window.openSnsEditorModal(); triggerHaptic(8);" style="height:24px; padding:0 8px; border-radius:6px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); color:#94a3b8; font-size:0.65rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:3px;">' +
+      (badges.length > 0 ? '<svg viewBox="0 0 24 24" style="width:10px; height:10px; stroke:currentColor; fill:none; stroke-width:2.2;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' : '<span style="color:#38bdf8; font-size:0.8rem; line-height:1;">+</span><span>SNS 등록</span>') +
+    '</button>';
+    badges.push(editActionBtn);
+  }
+
+  return badges.join('');
+};
+
+window.renderUserProfileHeaderSection = function(config) {
+  var isOwner = Boolean(config && config.isOwner);
+  var nick = String((config && config.nickname) || (isOwner ? '야영자' : '루터')).trim();
+  var bio = String((config && config.bio) || '').trim();
+  var photoUrl = (config && config.photoUrl && String(config.photoUrl).startsWith('http')) ? String(config.photoUrl).trim() : '';
+  var feedCount = (config && typeof config.feedCount === 'number') ? config.feedCount : 0;
+  var isFollowing = Boolean(config && config.isFollowing);
+  var targetUserId = String((config && config.userId) || '').trim();
+  var targetAuthor = String((config && config.nickname) || '').trim();
+
+  var snsHtml = '';
+  if (typeof window.renderUserSnsBadgesHtml === 'function') {
+    snsHtml = window.renderUserSnsBadgesHtml(
+      config && config.instagram,
+      config && config.youtube,
+      config && config.blog,
+      isOwner,
+      config && config.snsChannel
+    );
+  }
+
+  var bioClickAttr = isOwner ? 'onclick="window.editReportUserBio();"' : '';
+  var bioCursor = isOwner ? 'cursor:pointer; ' : '';
+  var bioText = bio || (isOwner ? '소개글을 작성해보세요.' : '소개글이 없습니다.');
+  var bioColor = bio ? '#e2e8f0' : '#64748b';
+
+  var avatarClickAttr = isOwner
+    ? 'onclick="triggerHaptic(12); window.openAccountSettingsModal();" title="설정"'
+    : (photoUrl ? 'onclick="triggerHaptic(10); if(window.previewMasterUserCoverPhotoLarge){ window.previewMasterUserCoverPhotoLarge(); }"' : '');
+  var avatarCursor = (isOwner || photoUrl) ? 'cursor:pointer; ' : '';
+
+  var avatarImgHtml = photoUrl
+    ? '<div class="user-profile-avatar-img" style="width:100%; height:100%; border-radius:50%; background:#121212; background-size:cover; background-position:center; background-repeat:no-repeat; background-image:url(\'' + photoUrl + '\'); display:flex; align-items:center; justify-content:center; overflow:hidden;"></div>'
+    : '<div class="user-profile-avatar-img" style="width:100%; height:100%; border-radius:50%; background:#121212; display:flex; align-items:center; justify-content:center; overflow:hidden;"><svg viewBox="0 0 24 24" style="width:34px; height:34px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
+
+  var actionGridHtml = '';
+  if (isOwner) {
+    actionGridHtml = '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">' +
+      '<button type="button" onclick="triggerHaptic(8); window.openMyPastTripsFromReport();" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
+        '<span>모아보기</span>' +
+      '</button>' +
+      '<button type="button" onclick="triggerHaptic(8); window.openRoutersInterestFromReport();" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
+        '<span>관심루터</span>' +
+      '</button>' +
+      '<button type="button" onclick="triggerHaptic(8); window.openFeedsInterestFromReport();" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
+        '<span>관심피드</span>' +
+      '</button>' +
+    '</div>';
+  }
+
+  var cardPaddingBottom = isOwner ? '14px' : '16px';
+  var cardGap = isOwner ? '12px' : '0px';
+
+  return '<div class="unified-user-profile-header-card" style="flex-shrink:0; width:100%; background:#000000; border-bottom:1px solid rgba(255,255,255,0.08); padding:16px 16px ' + cardPaddingBottom + ' 16px; box-sizing:border-box; z-index:50; display:flex; flex-direction:column; gap:' + cardGap + ';">' +
+    '<div style="display:flex; justify-content:space-between; align-items:center; gap:16px;">' +
+      '<div style="flex:1 1 0%; min-width:0; display:flex; flex-direction:column; gap:6px;">' +
+        '<div ' + bioClickAttr + ' style="' + bioCursor + 'background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:9px 10px; min-height:68px; box-sizing:border-box; display:flex; align-items:flex-start;">' +
+          '<span class="user-profile-bio-span" style="font-size:0.75rem; color:' + bioColor + '; line-height:1.45; word-break:break-all; min-height:4.35em; display:-webkit-box; -webkit-line-clamp:5; line-clamp:5; -webkit-box-orient:vertical; overflow:hidden;">' + bioText + '</span>' +
+        '</div>' +
+        '<div class="user-profile-sns-wrap" style="display:flex; align-items:center; gap:6px; min-height:26px;">' +
+          snsHtml +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex-shrink:0;">' +
+        '<div ' + avatarClickAttr + ' style="' + avatarCursor + 'position:relative; width:80px; height:80px; border-radius:50%; background:rgba(255,255,255,0.12); padding:1.5px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(0,0,0,0.7);">' +
+          avatarImgHtml +
+        '</div>' +
+        '<span class="user-profile-nick-span" style="font-size:0.88rem; font-weight:800; color:#ffffff; letter-spacing:-0.02em; max-width:96px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;">' + nick + '</span>' +
+      '</div>' +
+    '</div>' +
+    actionGridHtml +
+  '</div>';
+};
+
+window.openSnsEditorModal = function() {
+  triggerHaptic(10);
+  var curInsta = localStorage.getItem('okbm_user_instagram') || '';
+  var curYt = localStorage.getItem('okbm_user_youtube') || '';
+  var curBlog = localStorage.getItem('okbm_user_blog') || '';
+
+  var old = document.getElementById('reportSnsEditorModalOverlay');
+  if (old) old.remove();
+
+  var modal = document.createElement('div');
+  modal.id = 'reportSnsEditorModalOverlay';
+  modal.style.cssText = 'position:fixed; inset:0; z-index:2147483646 !important; background:rgba(0,0,0,0.92); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+  modal.innerHTML = '<div style="width:100%; max-width:340px; background:#080b11; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:16px; box-sizing:border-box; display:flex; flex-direction:column; gap:12px;" onclick="event.stopPropagation();">' +
+      '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+        '<span style="font-size:0.90rem; font-weight:900; color:#ffffff;">SNS 채널 관리</span>' +
+        '<button type="button" onclick="document.getElementById(\'reportSnsEditorModalOverlay\').remove();" style="background:none; border:none; color:#94a3b8; font-size:1rem; cursor:pointer;">✕</button>' +
+      '</div>' +
+      '<div style="display:flex; flex-direction:column; gap:8px;">' +
+        '<div>' +
+          '<span style="font-size:0.68rem; color:#94a3b8; font-weight:700;">인스타그램 ID</span>' +
+          '<input type="text" id="snsInputInsta" value="' + curInsta + '" placeholder="@아이디 (예: @user)" style="width:100%; height:36px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:6px; padding:0 10px; color:#fff; font-size:0.78rem; outline:none; box-sizing:border-box; margin-top:2px;" />' +
+        '</div>' +
+        '<div>' +
+          '<span style="font-size:0.68rem; color:#94a3b8; font-weight:700;">유튜브 채널</span>' +
+          '<input type="text" id="snsInputYt" value="' + curYt + '" placeholder="채널 주소 (예: youtube.com/@ch)" style="width:100%; height:36px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:6px; padding:0 10px; color:#fff; font-size:0.78rem; outline:none; box-sizing:border-box; margin-top:2px;" />' +
+        '</div>' +
+        '<div>' +
+          '<span style="font-size:0.68rem; color:#94a3b8; font-weight:700;">네이버 블로그</span>' +
+          '<input type="text" id="snsInputBlog" value="' + curBlog + '" placeholder="블로그 주소 (예: blog.naver.com/id)" style="width:100%; height:36px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:6px; padding:0 10px; color:#fff; font-size:0.78rem; outline:none; box-sizing:border-box; margin-top:2px;" />' +
+        '</div>' +
+      '</div>' +
+      '<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:4px;">' +
+        '<button type="button" onclick="document.getElementById(\'reportSnsEditorModalOverlay\').remove();" style="height:38px; background:rgba(255,255,255,0.06); border:none; border-radius:6px; color:#94a3b8; font-size:0.78rem; font-weight:800; cursor:pointer;">취소</button>' +
+        '<button type="button" onclick="window.saveSnsFromEditorModal();" style="height:38px; background:#38bdf8; border:none; border-radius:6px; color:#000000; font-size:0.78rem; font-weight:900; cursor:pointer;">저장</button>' +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(modal);
+};
+
+window.saveSnsFromEditorModal = function() {
+  triggerHaptic(12);
+  var inInsta = document.getElementById('snsInputInsta');
+  var inYt = document.getElementById('snsInputYt');
+  var inBlog = document.getElementById('snsInputBlog');
+
+  var valInsta = inInsta ? inInsta.value.trim() : '';
+  var valYt = inYt ? inYt.value.trim() : '';
+  var valBlog = inBlog ? inBlog.value.trim() : '';
+
+  if (valInsta) localStorage.setItem('okbm_user_instagram', valInsta);
+  else localStorage.removeItem('okbm_user_instagram');
+
+  if (valYt) localStorage.setItem('okbm_user_youtube', valYt);
+  else localStorage.removeItem('okbm_user_youtube');
+
+  if (valBlog) localStorage.setItem('okbm_user_blog', valBlog);
+  else localStorage.removeItem('okbm_user_blog');
+
+  var profile = safeGetJSON('user_profile', null) || {};
+  profile.instagram = valInsta;
+  profile.youtube = valYt;
+  profile.blog = valBlog;
+  localStorage.setItem('user_profile', JSON.stringify(profile));
+  if (profile.id) {
+    localStorage.setItem('user_profile_' + profile.id, JSON.stringify(profile));
+  }
+
+  if (typeof window.saveUserToSupabase === 'function') {
+    window.saveUserToSupabase(profile).catch(function(e) {
+      console.warn('[romantic-sync.js:saveSnsFromEditorModal]', e);
+    });
+  }
+
+  var m = document.getElementById('reportSnsEditorModalOverlay');
+  if (m) m.remove();
+
+  if (typeof window.refreshMyReportFullStats === 'function') {
+    window.refreshMyReportFullStats();
+  }
+
+  var collSnsWrap = document.getElementById('userCollectionSnsWrap');
+  if (collSnsWrap && typeof window.renderUserSnsBadgesHtml === 'function') {
+    collSnsWrap.innerHTML = window.renderUserSnsBadgesHtml(valInsta, valYt, valBlog, true);
+  }
+  document.querySelectorAll('.user-profile-sns-wrap').forEach(function(wrap) {
+    if (typeof window.renderUserSnsBadgesHtml === 'function') {
+      wrap.innerHTML = window.renderUserSnsBadgesHtml(valInsta, valYt, valBlog, true);
+    }
+  });
+
+  showToast('SNS 채널이 저장되었습니다.', 'success', 1500);
 };
 
 // [상단 듀얼 카운터] 연도 선택 팝오버 토글러
@@ -1236,38 +1514,7 @@ function ensureMyReportAndAuthModalsInDOM() {
           </div>
         </header>
 
-        <div style="flex-shrink:0; width:100%; background:#000000; border-bottom:1px solid rgba(255,255,255,0.08); padding:16px 16px 14px 16px; box-sizing:border-box; z-index:50; display:flex; flex-direction:column; gap:12px;">
-          
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:16px;">
-            <div style="flex:1 1 0%; min-width:0;">
-              <div onclick="window.editReportUserBio()" style="cursor:pointer; background:rgba(255,255,255,0.025); border:1px dashed rgba(255,255,255,0.12); border-radius:8px; padding:10px 12px; min-height:88px; box-sizing:border-box; display:flex; align-items:flex-start;">
-                <span id="reportProfileBioText" style="font-size:0.75rem; color:#cbd5e1; line-height:1.5; word-break:break-all; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">소개글을 작성해보세요.</span>
-              </div>
-            </div>
-
-            <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex-shrink:0;">
-              <div onclick="triggerHaptic(12); window.openAccountSettingsModal();" title="설정" style="position:relative; width:88px; height:88px; border-radius:50%; background:linear-gradient(135deg, rgba(186,230,253,0.8), rgba(167,243,208,0.5), rgba(253,230,138,0.5)); padding:2.5px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 6px 20px rgba(0,0,0,0.75);">
-                <div id="reportHeaderProfileImg" style="width:100%; height:100%; border-radius:50%; background:#090d14; background-size:cover; background-position:center; background-repeat:no-repeat; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                  <svg viewBox="0 0 24 24" style="width:38px; height:38px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </div>
-              </div>
-              <span id="reportHeaderCurrentNick" style="font-size:0.88rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em; max-width:96px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;"></span>
-            </div>
-          </div>
-
-          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px;">
-            <button type="button" onclick="triggerHaptic(8); window.openMyPastTripsFromReport();" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.75rem; font-weight:800; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">
-              <span>모아보기</span>
-            </button>
-            <button type="button" onclick="triggerHaptic(8); window.openRoutersInterestFromReport();" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.75rem; font-weight:800; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">
-              <span>관심루터</span>
-            </button>
-            <button type="button" onclick="triggerHaptic(8); window.openFeedsInterestFromReport();" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.75rem; font-weight:800; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">
-              <span>관심피드</span>
-            </button>
-          </div>
-
-        </div>
+        <div id="reportProfileHeaderContainer" style="flex-shrink:0; width:100%; box-sizing:border-box;"></div>
 
         <!-- 2단 본문 (헤더와 독 사이를 정확히 꽉 채우는 안전 스크롤 바디) -->
         <div id="userProfileScrollBody" style="flex:1 1 0%; min-height:0; width:100%; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior-y:contain; padding:12px 12px 20px 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box; z-index:10;">
@@ -2911,12 +3158,10 @@ window.editReportUserBio = function() {
     var clean = textarea.value.trim().slice(0, 100);
     localStorage.setItem('okbm_user_bio', clean);
 
-    var profile = safeGetJSON('user_profile', null);
-    if (profile) {
-      profile.bio = clean;
-      localStorage.setItem('user_profile', JSON.stringify(profile));
-      if (profile.id) localStorage.setItem('user_profile_' + profile.id, JSON.stringify(profile));
-    }
+    var profile = safeGetJSON('user_profile', null) || {};
+    profile.bio = clean;
+    localStorage.setItem('user_profile', JSON.stringify(profile));
+    if (profile.id) localStorage.setItem('user_profile_' + profile.id, JSON.stringify(profile));
 
     var bioEl = document.getElementById('reportProfileBioText');
     if (bioEl) {
@@ -2924,23 +3169,20 @@ window.editReportUserBio = function() {
       bioEl.style.color = clean ? '#cbd5e1' : '#64748b';
     }
 
-    var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
-    var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
-    var uId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
-    if (targetUrl && targetKey && uId) {
-      fetch(targetUrl + '/rest/v1/users?id=eq.' + encodeURIComponent(uId), {
-        method: 'PATCH',
-        headers: {
-          'apikey': targetKey,
-          'Authorization': 'Bearer ' + targetKey,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({
-          bio: clean,
-          updated_at: new Date().toISOString()
-        })
-      }).catch(function() {});
+    var collBioEl = document.getElementById('userCollectionBioText');
+    if (collBioEl) {
+      collBioEl.innerText = clean || '소개글을 작성해보세요.';
+      collBioEl.style.color = clean ? '#cbd5e1' : '#64748b';
+    }
+    document.querySelectorAll('.user-profile-bio-span').forEach(function(span) {
+      span.innerText = clean || '소개글을 작성해보세요.';
+      span.style.color = clean ? '#cbd5e1' : '#64748b';
+    });
+
+    if (typeof window.saveUserToSupabase === 'function') {
+      window.saveUserToSupabase(profile).catch(function(e) {
+        console.warn('[romantic-sync.js:editReportUserBio]', e);
+      });
     }
 
     modal.remove();
@@ -3028,17 +3270,24 @@ function openUserProfileModal() {
     window.__reportRenderCache = {};
 
     var currentProfile = safeGetJSON('user_profile', null);
-    var targetNick = (currentProfile && currentProfile.nickname) ? currentProfile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만백패커');
+    var targetNick = (currentProfile && currentProfile.nickname) ? currentProfile.nickname : (localStorage.getItem('okbm_user_nick') || '야영자');
     var targetPhoto = (currentProfile && (currentProfile.photoUrl || currentProfile.heroCoverUrl)) ? (currentProfile.photoUrl || currentProfile.heroCoverUrl) : (localStorage.getItem('okbm_hero_cover_url') || '');
-
-    var nickEl = document.getElementById('reportHeaderCurrentNick');
-    if (nickEl) nickEl.innerText = targetNick;
-
     var bioVal = (currentProfile && currentProfile.bio) ? currentProfile.bio : (localStorage.getItem('okbm_user_bio') || '');
-    var bioEl = document.getElementById('reportProfileBioText');
-    if (bioEl) {
-      bioEl.innerText = bioVal || '소개글을 작성해보세요. (터치하여 수정)';
-      bioEl.style.color = bioVal ? '#cbd5e1' : '#64748b';
+    var targetUserId = (currentProfile && currentProfile.id) ? String(currentProfile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+
+    var headerContainer = document.getElementById('reportProfileHeaderContainer');
+    if (headerContainer && typeof window.renderUserProfileHeaderSection === 'function') {
+      headerContainer.innerHTML = window.renderUserProfileHeaderSection({
+        isOwner: true,
+        userId: targetUserId,
+        nickname: targetNick,
+        bio: bioVal,
+        photoUrl: targetPhoto,
+        instagram: localStorage.getItem('okbm_user_instagram') || '',
+        youtube: localStorage.getItem('okbm_user_youtube') || '',
+        blog: localStorage.getItem('okbm_user_blog') || '',
+        snsChannel: localStorage.getItem('okbm_user_sns_channel') || ''
+      });
     }
 
     if (typeof window.applyMasterCoverPhotoToAllUI === 'function') {
@@ -3882,20 +4131,6 @@ window.shareFeedToCommunity = async function(feedRecord) {
   }
 
   feedRecord.photos = finalCdnPhotos;
-  feedRecord.photo = finalCdnPhotos[0] || '';
-  feedRecord.fieldPhoto = finalCdnPhotos[0] || '';
-  feedRecord.photo_url = finalCdnPhotos[0] || '';
-
-  try {
-    var photoStoreMap = (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) || (typeof safeGetJSON === 'function' ? safeGetJSON('okbm_phone_photos_map', {}) : {});
-    if (photoStoreMap && feedRecord.id) {
-      photoStoreMap[String(feedRecord.id)] = finalCdnPhotos;
-      if (window.__memoryStore) window.__memoryStore['okbm_phone_photos_map'] = photoStoreMap;
-      if (typeof window.saveToIndexedDB === 'function') {
-        window.saveToIndexedDB('okbm_phone_photos_map', photoStoreMap);
-      }
-    }
-  } catch (mapSyncErr) {}
 
   // [단 1개의 통로로만 서버 쓰기] shareFeedToCommunity는 사진을 CDN에 업로드하고
   // 업로드된 URL 배열을 반환하는 역할까지만 담당합니다. feeds 테이블에 대한 실제
@@ -4111,6 +4346,9 @@ window.saveUserToSupabase = async function(profileData) {
   // 따라서 더 이상 packHistory를 조립하거나 users.pack_history에 쓰지 않습니다.
 
   var userBio = (prof && prof.bio) || localStorage.getItem('okbm_user_bio') || '';
+  var userInsta = (prof && prof.instagram) || localStorage.getItem('okbm_user_instagram') || '';
+  var userYt = (prof && prof.youtube) || localStorage.getItem('okbm_user_youtube') || '';
+  var userBlog = (prof && prof.blog) || localStorage.getItem('okbm_user_blog') || '';
 
   var payload = {
     id: userId,
@@ -4131,7 +4369,12 @@ window.saveUserToSupabase = async function(profileData) {
       gearPresets: gearPresets || [],
       gearMeta: gearMeta || {},
       planMemos: planMemos || {},
-      planSpots: planSpots || {}
+      planSpots: planSpots || {},
+      sns: {
+        instagram: userInsta,
+        youtube: userYt,
+        blog: userBlog
+      }
     },
     updated_at: new Date().toISOString()
   };
