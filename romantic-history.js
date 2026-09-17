@@ -302,17 +302,17 @@
 
       .history-tab-route .reel-page-snap > .reel-header-row {
         position: absolute !important;
-        top: calc(8px + env(safe-area-inset-top, 0px)) !important;
+        top: 0 !important;
         left: 0 !important;
         right: 0 !important;
-        height: 52px !important;
-        min-height: 52px !important;
-        padding-top: 0 !important;
+        height: auto !important;
+        min-height: calc(52px + max(44px, env(safe-area-inset-top, 0px))) !important;
+        padding-top: max(44px, env(safe-area-inset-top, 0px)) !important;
         padding-left: 14px !important;
         padding-right: 14px !important;
-        padding-bottom: 0 !important;
+        padding-bottom: 8px !important;
         z-index: 20 !important;
-        background: transparent !important;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 72%, transparent 100%) !important;
         border-bottom: none !important;
       }
 
@@ -5581,7 +5581,7 @@ window.renderHistoryStage = function(isLoading) {
           }
         }
 
-        var headerBarHtml = '<div class="reel-header-row" style="top:calc(8px + env(safe-area-inset-top, 0px)) !important; height:52px !important; min-height:52px !important; padding-top:0 !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:0 !important; box-sizing:border-box !important;">' +
+        var headerBarHtml = '<div class="reel-header-row" style="top:0 !important; height:auto !important; min-height:calc(52px + max(44px, env(safe-area-inset-top, 0px))) !important; padding-top:max(44px, env(safe-area-inset-top, 0px)) !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:8px !important; box-sizing:border-box !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 72%, transparent 100%) !important;">' +
           '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
             '<button type="button" data-author="' + escapeHtml(authorName) + '" data-user-id="' + escapeHtml(recordUserId) + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.6);" title="' + escapeHtml(authorName) + '님의 피드 모아보기">' +
               avatarMarkup +
@@ -5893,7 +5893,7 @@ window.renderHistoryStage = function(isLoading) {
           ? '<img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="' + escapeHtml(targetAvatarUrl) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />'
           : '<div style="width:100%; height:100%; background:#090d14; display:flex; align-items:center; justify-content:center;"><img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="" style="width:100%; height:100%; object-fit:cover; display:none;" /><svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
 
-        var headerBarHtml = '<div class="reel-header-row" style="top:calc(8px + env(safe-area-inset-top, 0px)) !important; height:52px !important; min-height:52px !important; padding-top:0 !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:0 !important; box-sizing:border-box !important;">' +
+        var headerBarHtml = '<div class="reel-header-row" style="top:0 !important; height:auto !important; min-height:calc(52px + max(44px, env(safe-area-inset-top, 0px))) !important; padding-top:max(44px, env(safe-area-inset-top, 0px)) !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:8px !important; box-sizing:border-box !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 72%, transparent 100%) !important;">' +
           '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
             '<button type="button" data-author="' + escapeHtml(authorName) + '" data-user-id="' + escapeHtml(recordUserId) + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.6);" title="' + escapeHtml(authorName) + '님의 피드 모아보기">' +
               avatarMarkup +
