@@ -285,7 +285,70 @@
     triggerHaptic(8);
     window.renderPlanCategorySlots();
   };
- // 🎒 [내 장비 세트(프리셋) 슬라이드 시트 완전 연동 엔진]
+ window.__presetTouch = null;
+  window.__presetSwiped = false;
+
+  window.setPresetDeleteMode = function(id, showDelete) {
+    var loadBtn = document.getElementById('presetLoadBtn_' + id);
+    var delBtn = document.getElementById('presetDelBtn_' + id);
+    var row = document.getElementById('presetRow_' + id);
+    if (!loadBtn || !delBtn) return;
+
+    if (showDelete) {
+      loadBtn.style.display = 'none';
+      delBtn.style.display = 'flex';
+      if (row) {
+        row.style.borderColor = 'rgba(244,63,94,0.45)';
+        row.dataset.deleteMode = 'true';
+      }
+      triggerHaptic(10);
+    } else {
+      delBtn.style.display = 'none';
+      loadBtn.style.display = 'flex';
+      if (row) {
+        row.style.borderColor = 'rgba(255,255,255,0.09)';
+        row.dataset.deleteMode = 'false';
+      }
+    }
+  };
+
+  window.handlePresetTouchStart = function(e, id) {
+    if (!e.touches || !e.touches[0]) return;
+    window.__presetTouch = {
+      id: id,
+      startX: e.touches[0].clientX,
+      startY: e.touches[0].clientY,
+      isSwipe: false
+    };
+    window.startPresetLongPress(e, id);
+  };
+
+  window.handlePresetTouchMove = function(e, id) {
+    window.checkPresetTouchMove(e);
+    if (!window.__presetTouch || window.__presetTouch.id !== id || !e.touches || !e.touches[0]) return;
+    var dx = e.touches[0].clientX - window.__presetTouch.startX;
+    var dy = e.touches[0].clientY - window.__presetTouch.startY;
+
+    if (Math.abs(dx) > 28 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+      window.cancelPresetLongPress(e);
+      window.__presetTouch.isSwipe = true;
+      if (dx < -28) {
+        window.setPresetDeleteMode(id, true);
+      } else if (dx > 28) {
+        window.setPresetDeleteMode(id, false);
+      }
+    }
+  };
+
+  window.handlePresetTouchEnd = function(e, id) {
+    window.cancelPresetLongPress(e);
+    if (window.__presetTouch && window.__presetTouch.isSwipe) {
+      window.__presetSwiped = true;
+      setTimeout(function() { window.__presetSwiped = false; }, 300);
+    }
+    window.__presetTouch = null;
+  };
+
   window.openQuickPresetPicker = function() {
     triggerHaptic(10);
     var sheet = document.getElementById('calcPresetSlideSheet');
@@ -307,17 +370,19 @@
       } else {
         listContainer.innerHTML = presets.map(function(p) {
           return `
-            <div data-preset-id="${p.id}"
-                 onclick="if(!window.__presetLongPressTriggered){ window.loadGearPreset('${p.id}'); window.closeQuickPresetPicker(); }"
-                 ontouchstart="window.startPresetLongPress(event, '${p.id}')"
-                 ontouchmove="window.checkPresetTouchMove(event)"
-                 ontouchend="window.cancelPresetLongPress(event)"
-                 ontouchcancel="window.cancelPresetLongPress(event)"
+            <div id="presetRow_${p.id}"
+                 data-preset-id="${p.id}"
+                 data-delete-mode="false"
+                 onclick="if(window.__presetSwiped) return; if(this.dataset.deleteMode === 'true'){ window.setPresetDeleteMode('${p.id}', false); return; } window.openPresetActionModal('${p.id}');"
+                 ontouchstart="window.handlePresetTouchStart(event, '${p.id}')"
+                 ontouchmove="window.handlePresetTouchMove(event, '${p.id}')"
+                 ontouchend="window.handlePresetTouchEnd(event, '${p.id}')"
+                 ontouchcancel="window.handlePresetTouchEnd(event, '${p.id}')"
                  onmousedown="window.startPresetLongPress(event, '${p.id}')"
                  onmouseup="window.cancelPresetLongPress(event)"
                  onmouseleave="window.cancelPresetLongPress(event)"
                  oncontextmenu="event.preventDefault(); window.openPresetActionModal('${p.id}'); return false;"
-                 style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.09); border-radius:8px; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;">
+                 style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.09); border-radius:8px; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; touch-action:pan-y; transition:border-color 0.15s ease;">
               <div style="min-width:0; flex:1; padding-right:10px;">
                 <div style="font-size:0.82rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                   ${escapeHtml(p.name)}
@@ -326,9 +391,20 @@
                   장비 ${p.itemCount || 0}개 · ${p.totalKg || '0.00'}kg
                 </div>
               </div>
-              <button type="button" onclick="event.stopPropagation(); window.loadGearPreset('${p.id}'); window.closeQuickPresetPicker();" style="font-size:0.68rem; font-weight:800; color:#000000; background:#e2e8f0; border:none; padding:5px 12px; border-radius:5px; cursor:pointer; flex-shrink:0;">
-                장착
-              </button>
+              <div style="display:flex; align-items:center; flex-shrink:0; min-width:52px; justify-content:flex-end;">
+                <button type="button"
+                        id="presetLoadBtn_${p.id}"
+                        onclick="event.stopPropagation(); window.loadGearPreset('${p.id}'); window.closeQuickPresetPicker();"
+                        style="font-size:0.68rem; font-weight:800; color:#000000; background:#e2e8f0; border:none; padding:5px 12px; border-radius:5px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                  장착
+                </button>
+                <button type="button"
+                        id="presetDelBtn_${p.id}"
+                        onclick="event.stopPropagation(); window.deleteGearPreset('${p.id}');"
+                        style="display:none; font-size:0.68rem; font-weight:800; color:#fda4af; background:rgba(244,63,94,0.18); border:1px solid rgba(244,63,94,0.35); padding:5px 12px; border-radius:5px; cursor:pointer; align-items:center; justify-content:center;">
+                  삭제
+                </button>
+              </div>
             </div>
           `;
         }).join('');
@@ -4155,98 +4231,99 @@ window.saveCurrentPackingRecord = function() {
     var target = presets.find(function(p) { return String(p.id) === String(presetId); });
     if (!target) return;
 
-    var modal = document.createElement('div');
-    modal.id = 'presetActionModal';
-    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:1000040; display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
-    modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+    var catPalettes = {
+      shelter:     { color: '#10b981', label: '텐트·타프' },
+      sleep:       { color: '#14b8a6', label: '침낭·매트' },
+      pack:        { color: '#f43f5e', label: '배낭' },
+      food:        { color: '#f97316', label: '음식' },
+      kitchen:     { color: '#84cc16', label: '취사' },
+      wear:        { color: '#a855f7', label: '의류' },
+      electronics: { color: '#eab308', label: '기기·소품' },
+      camp:        { color: '#06b6d4', label: '테이블·체어' }
+    };
 
-    modal.innerHTML = `
-      <div style="width:100%; max-width:320px; background:#0b0f17; border:1px solid rgba(255,255,255,0.16); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 16px 40px rgba(0,0,0,0.9);">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
-          <div style="font-size:0.86rem; font-weight:800; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:230px;">
-            ${escapeHtml(target.name)}
+    var gearMap = target.gears || {};
+    var allItems = [];
+    var totalGrams = 0;
+
+    Object.keys(gearMap).forEach(function(catId) {
+      (gearMap[catId] || []).forEach(function(it) {
+        if (it && (it.name || it.itemName)) {
+          var w = Number(it.weight || 0);
+          totalGrams += w;
+          var info = catPalettes[catId] || { color: '#94a3b8', label: catId };
+          allItems.push({
+            name: it.name || it.itemName,
+            weight: w,
+            catName: info.label,
+            color: info.color
+          });
+        }
+      });
+    });
+
+    var itemsHtml = '';
+    if (allItems.length === 0) {
+      itemsHtml = '<div style="text-align:center; padding:50px 0; color:#64748b; font-size:0.80rem;">담긴 장비가 없습니다.</div>';
+    } else {
+      itemsHtml = allItems.map(function(item) {
+        var wKg = (item.weight / 1000).toFixed(2);
+        return `
+          <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-left:3px solid ${item.color}; border-radius:8px; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; box-sizing:border-box; flex-shrink:0;">
+            <div style="min-width:0; flex:1; padding-right:10px;">
+              <div style="font-size:0.82rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                ${escapeHtml(item.name)}
+              </div>
+              <div style="font-size:0.62rem; color:${item.color}; font-weight:700; margin-top:2px;">
+                ${escapeHtml(item.catName)}
+              </div>
+            </div>
+            <div style="text-align:right; font-family:'JetBrains Mono', monospace; flex-shrink:0;">
+              <div style="font-size:0.82rem; font-weight:900; color:#ffffff;">${wKg}kg</div>
+              <div style="font-size:0.60rem; color:#94a3b8;">${item.weight}g</div>
+            </div>
           </div>
-          <button type="button" onclick="document.getElementById('presetActionModal').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <button type="button" onclick="document.getElementById('presetActionModal').remove(); window.renameGearPreset('${target.id}');" style="height:42px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#ffffff; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center;">
-            세트 이름 수정
-          </button>
-          <button type="button" onclick="document.getElementById('presetActionModal').remove(); window.deleteGearPreset('${target.id}');" style="height:42px; background:rgba(244,63,94,0.08); border:1px solid rgba(244,63,94,0.25); border-radius:8px; color:#fda4af; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center;">
-            세트 삭제
-          </button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(modal);
-  };
-
-  window.__presetLongPressTimer = null;
-  window.__presetLongPressTriggered = false;
-  window.__presetTouchStartPos = { x: 0, y: 0 };
-
-  window.cancelPresetLongPress = function(e) {
-    if (window.__presetLongPressTimer) {
-      clearTimeout(window.__presetLongPressTimer);
-      window.__presetLongPressTimer = null;
+        `;
+      }).join('');
     }
-  };
-
-  window.checkPresetTouchMove = function(e) {
-    if (!window.__presetLongPressTimer) return;
-    if (e && e.touches && e.touches[0]) {
-      var moveX = Math.abs(e.touches[0].clientX - window.__presetTouchStartPos.x);
-      var moveY = Math.abs(e.touches[0].clientY - window.__presetTouchStartPos.y);
-      if (moveX > 8 || moveY > 8) {
-        window.cancelPresetLongPress(e);
-      }
-    }
-  };
-
-  window.startPresetLongPress = function(e, presetId) {
-    window.cancelPresetLongPress();
-    window.__presetLongPressTriggered = false;
-    if (e && e.touches && e.touches[0]) {
-      window.__presetTouchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    }
-    window.__presetLongPressTimer = setTimeout(function() {
-      window.__presetLongPressTriggered = true;
-      triggerHaptic(20);
-      window.openPresetActionModal(presetId);
-      setTimeout(function() { window.__presetLongPressTriggered = false; }, 300);
-    }, 450);
-  };
-
-  window.openPresetActionModal = function(presetId) {
-    var old = document.getElementById('presetActionModal');
-    if (old) old.remove();
-
-    var presets = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-      ? window.RomanticVault.read('okbm_gear_presets', [])
-      : safeGetJSON('okbm_gear_presets', []);
-    var target = presets.find(function(p) { return String(p.id) === String(presetId); });
-    if (!target) return;
 
     var modal = document.createElement('div');
     modal.id = 'presetActionModal';
-    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:1000040; display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000040; display:flex; align-items:flex-end; justify-content:center; padding:0; box-sizing:border-box;';
     modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
 
     modal.innerHTML = `
-      <div style="width:100%; max-width:320px; background:#0b0f17; border:1px solid rgba(255,255,255,0.16); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 16px 40px rgba(0,0,0,0.9);">
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
-          <div style="font-size:0.86rem; font-weight:800; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:230px;">
-            ${escapeHtml(target.name)}
+      <div style="width:100%; max-width:480px; height:88vh; height:calc(var(--vh, 1vh) * 88); background:#07090e; border-top:1.5px solid rgba(255,255,255,0.16); border-radius:18px 18px 0 0; padding:14px 16px calc(14px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:10px; box-sizing:border-box; box-shadow:0 -12px 40px rgba(0,0,0,0.95); animation:slideUpSheet 0.22s ease-out;">
+        <div style="width:36px; height:4px; background:rgba(255,255,255,0.2); border-radius:2px; margin:0 auto 2px auto; flex-shrink:0;"></div>
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px; flex-shrink:0;">
+          <div style="min-width:0; flex:1; padding-right:10px;">
+            <div style="font-size:1.02rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+              ${escapeHtml(target.name)}
+            </div>
+            <div style="font-size:0.72rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; margin-top:3px;">
+              총 ${allItems.length}개 장비 · ${(totalGrams / 1000).toFixed(2)}kg (${totalGrams.toLocaleString()}g)
+            </div>
           </div>
-          <button type="button" onclick="document.getElementById('presetActionModal').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
+          <button type="button" onclick="document.getElementById('presetActionModal').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.25rem; cursor:pointer; padding:2px 6px; flex-shrink:0;">✕</button>
         </div>
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <button type="button" onclick="document.getElementById('presetActionModal').remove(); window.renameGearPreset('${target.id}');" style="height:42px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#ffffff; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center;">
-            세트 이름 수정
+
+        <div style="flex:1 1 0%; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain; display:flex; flex-direction:column; gap:5px; padding-right:2px;">
+          ${itemsHtml}
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:6px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.08); flex-shrink:0;">
+          <button type="button" onclick="document.getElementById('presetActionModal').remove(); window.loadGearPreset('${target.id}'); window.closeQuickPresetPicker();" style="width:100%; height:44px; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.25); border-radius:8px; color:#ffffff; font-size:0.86rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+            이 세트 바로 장착하기
           </button>
-          <button type="button" onclick="document.getElementById('presetActionModal').remove(); window.deleteGearPreset('${target.id}');" style="height:42px; background:rgba(244,63,94,0.08); border:1px solid rgba(244,63,94,0.25); border-radius:8px; color:#fda4af; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center;">
-            세트 삭제
-          </button>
+          <div style="display:flex; gap:6px;">
+            <button type="button" onclick="document.getElementById('presetActionModal').remove(); window.renameGearPreset('${target.id}');" style="flex:1; height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#cbd5e1; font-size:0.76rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; white-space:nowrap;">
+              세트 이름 수정
+            </button>
+            <button type="button" onclick="document.getElementById('presetActionModal').remove(); window.deleteGearPreset('${target.id}');" style="flex:1; height:38px; background:rgba(244,63,94,0.08); border:1px solid rgba(244,63,94,0.25); border-radius:8px; color:#fda4af; font-size:0.76rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; white-space:nowrap;">
+              세트 삭제
+            </button>
+          </div>
         </div>
       </div>
     `;

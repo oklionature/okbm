@@ -859,46 +859,67 @@ window._getRomanticRouteOutdoorLogs = function() {
   var curUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '').trim();
   var curPureId = curUserId.replace(/\D/g, '');
 
-  var logs = [];
+  var sourcePool = [];
   if (Array.isArray(window.packingHistoryList) && window.packingHistoryList.length > 0) {
-    logs = window.packingHistoryList;
-  } else if (Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0) {
-    logs = window.interactiveHistory;
-  } else if (typeof window.safeGetStorage === 'function') {
-    logs = window.safeGetStorage('okbm_packing_history', []);
-  } else if (window.RomanticVault && typeof window.RomanticVault.read === 'function') {
-    var vaultLogs = window.RomanticVault.read('okbm_packing_history', []);
-    if (Array.isArray(vaultLogs) && vaultLogs.length > 0) {
-      logs = vaultLogs;
+    sourcePool = sourcePool.concat(window.packingHistoryList);
+  }
+  if (Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0) {
+    sourcePool = sourcePool.concat(window.interactiveHistory);
+  }
+  if (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0) {
+    sourcePool = sourcePool.concat(window.__allLoadedFeeds);
+  }
+  if (typeof window.safeGetStorage === 'function') {
+    var localHistory = window.safeGetStorage('okbm_packing_history', []);
+    if (Array.isArray(localHistory) && localHistory.length > 0) {
+      sourcePool = sourcePool.concat(localHistory);
     }
   }
 
-  if ((!logs || logs.length === 0)) {
-    logs = safeGetJSON('okbm_packing_history', []);
-  }
+  var dedupMap = new Map();
+  sourcePool.forEach(function(r) {
+    if (!r || r.isDeleted === true) return;
+    var rId = String(r.id || '').trim();
+    if (!rId || rId.startsWith('pack_temp_')) return;
+    if (!dedupMap.has(rId)) {
+      dedupMap.set(rId, r);
+    }
+  });
 
-  return (logs || []).filter(function(r) {
-    if (!r || r.isDeleted === true) return false;
+  var logs = Array.from(dedupMap.values());
 
+  return logs.filter(function(r) {
     var rUid = String(r.userId || r.user_id || '').trim();
     var rPureId = rUid.replace(/\D/g, '');
 
-    // If both current user and log record have numeric IDs and they conflict, exclude
     if (curPureId && rPureId && curPureId !== rPureId) {
       return false;
     }
 
-    if (String(r.id || '').startsWith('pack_temp_')) return false;
+    var photosList = [];
+    if (Array.isArray(r.photos)) {
+      photosList = r.photos;
+    } else if (typeof r.photos === 'string' && r.photos.trim().startsWith('[')) {
+      try { photosList = JSON.parse(r.photos); } catch (e) { photosList = []; }
+    }
 
-    var spotName = String(r.spot || r.spotName || '').trim();
-    if (!spotName && !r.date) return false;
+    var tmplPhoto = String(r.readyShotPhoto || r.ready_shot_photo || r.customTemplatePhoto || '').trim();
+    var validFieldPhotos = photosList.filter(function(u) {
+      return typeof u === 'string' && (u.startsWith('https://') || u.startsWith('http://')) && !u.includes('unsplash.com') && u !== tmplPhoto;
+    });
 
-    return true;
+    if (validFieldPhotos.length === 0) {
+      return false;
+    }
+
+    return Boolean(r.date);
   });
 };
 
 // [마이리포트 오픈 시 가벼운 핵심 카운터 즉시 갱신 엔진 (상세 아코디언은 온디맨드 계산 유지)]
 window.refreshMyReportFullStats = function() {
+  window.__reportRenderCache = {};
+
   var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
     ? window._getRomanticRouteOutdoorLogs()
     : [];
@@ -927,7 +948,7 @@ window.refreshMyReportFullStats = function() {
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
 
   if (curUserId && targetUrl && targetKey) {
-    fetch(targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(curUserId) + '&select=id,date', {
+    fetch(targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(curUserId) + '&select=id,date,photos', {
       headers: {
         'apikey': targetKey,
         'Authorization': 'Bearer ' + targetKey
@@ -937,9 +958,19 @@ window.refreshMyReportFullStats = function() {
       return [];
     }).then(function(rows) {
       if (Array.isArray(rows) && rows.length > 0) {
-        if (rows.length > validLogs.length) {
-          var totalNum = rows.length;
-          var yNum = rows.filter(function(r) { return String(r.date || '').includes(curYear); }).length;
+        var photoConfirmedRows = rows.filter(function(rw) {
+          var pList = [];
+          if (Array.isArray(rw.photos)) pList = rw.photos;
+          else if (typeof rw.photos === 'string' && rw.photos.trim().startsWith('[')) {
+            try { pList = JSON.parse(rw.photos); } catch (e) { pList = []; }
+          }
+          return pList.some(function(u) {
+            return typeof u === 'string' && (u.startsWith('https://') || u.startsWith('http://')) && !u.includes('unsplash.com');
+          });
+        });
+        if (photoConfirmedRows.length > validLogs.length) {
+          var totalNum = photoConfirmedRows.length;
+          var yNum = photoConfirmedRows.filter(function(r) { return String(r.date || '').includes(curYear); }).length;
           if (tEl) tEl.innerText = totalNum;
           if (yEl) yEl.innerText = yNum;
         }
@@ -2518,8 +2549,7 @@ window._renderRegionModule = function(validLogs, el) {
   };
 
   filteredLogs.forEach(function(r) {
-    var spot = String(r.spot || '').trim();
-    if (!spot) return;
+    var spot = String(r.spot || r.spotName || '미등록 노지').trim();
 
     var matchedKey = '기타';
     if (/강원|태백|정선|삼척|강릉|동해|속초|고성|양양|인제|원주|평창|홍천|춘천|화천|양구|영월/i.test(spot)) {

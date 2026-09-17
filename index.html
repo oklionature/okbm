@@ -295,13 +295,22 @@
       -webkit-font-smoothing: antialiased !important;
       -moz-osx-font-smoothing: grayscale !important;
       text-rendering: optimizeLegibility !important;
-      -webkit-tap-highlight-color: transparent;
+      -webkit-tap-highlight-color: transparent !important;
       letter-spacing: -0.02em;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      -webkit-touch-callout: none !important;
     }
 
     button, input, select, textarea {
       font-family: var(--font-body);
       -webkit-font-smoothing: antialiased;
+    }
+
+    input, textarea, [contenteditable], [contenteditable="true"] {
+      user-select: text !important;
+      -webkit-user-select: text !important;
+      -webkit-touch-callout: default !important;
     }
 
   html, body {
@@ -5206,6 +5215,17 @@ var adBannersHtml = `
         }, 150);
       }, true);
     })();
+
+    window.addEventListener('contextmenu', function(e) {
+      var target = e.target;
+      if (target) {
+        var tag = target.tagName ? target.tagName.toLowerCase() : '';
+        if (tag === 'input' || tag === 'textarea' || target.isContentEditable) {
+          return;
+        }
+      }
+      e.preventDefault();
+    }, { capture: true });
 
     window.addEventListener('popstate', function() {
       if (window.modalCloseStack.length > 0) {
