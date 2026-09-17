@@ -277,6 +277,11 @@
 
   window.setCalcCategoryTab = function(catId) {
     window.__activeCalcCategoryTab = catId;
+    window.__calcShelfSearchQuery = '';
+    var searchInput = document.getElementById('calcShelfSearchInput');
+    if (searchInput) searchInput.value = '';
+    var clearBtn = document.getElementById('btnCalcSearchClear');
+    if (clearBtn) clearBtn.style.display = 'none';
     triggerHaptic(8);
     window.renderPlanCategorySlots();
   };
@@ -288,7 +293,9 @@
     var listContainer = document.getElementById('calcPresetSheetList');
     if (!sheet) return;
 
-    var presets = safeGetJSON('okbm_gear_presets', []);
+    var presets = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_gear_presets', [])
+      : safeGetJSON('okbm_gear_presets', []);
     if (listContainer) {
       if (presets.length === 0) {
         listContainer.innerHTML = `
@@ -300,8 +307,18 @@
       } else {
         listContainer.innerHTML = presets.map(function(p) {
           return `
-            <div onclick="window.loadGearPreset('${p.id}'); window.closeQuickPresetPicker();" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.09); border-radius:8px; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0;">
-              <div style="min-width:0; flex:1; padding-right:8px;">
+            <div data-preset-id="${p.id}"
+                 onclick="if(!window.__presetLongPressTriggered){ window.loadGearPreset('${p.id}'); window.closeQuickPresetPicker(); }"
+                 ontouchstart="window.startPresetLongPress(event, '${p.id}')"
+                 ontouchmove="window.checkPresetTouchMove(event)"
+                 ontouchend="window.cancelPresetLongPress(event)"
+                 ontouchcancel="window.cancelPresetLongPress(event)"
+                 onmousedown="window.startPresetLongPress(event, '${p.id}')"
+                 onmouseup="window.cancelPresetLongPress(event)"
+                 onmouseleave="window.cancelPresetLongPress(event)"
+                 oncontextmenu="event.preventDefault(); window.openPresetActionModal('${p.id}'); return false;"
+                 style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.09); border-radius:8px; padding:9px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;">
+              <div style="min-width:0; flex:1; padding-right:10px;">
                 <div style="font-size:0.82rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                   ${escapeHtml(p.name)}
                 </div>
@@ -309,9 +326,9 @@
                   장비 ${p.itemCount || 0}개 · ${p.totalKg || '0.00'}kg
                 </div>
               </div>
-              <span style="font-size:0.68rem; font-weight:800; color:#000000; background:#e2e8f0; padding:4px 9px; border-radius:5px; flex-shrink:0;">
+              <button type="button" onclick="event.stopPropagation(); window.loadGearPreset('${p.id}'); window.closeQuickPresetPicker();" style="font-size:0.68rem; font-weight:800; color:#000000; background:#e2e8f0; border:none; padding:5px 12px; border-radius:5px; cursor:pointer; flex-shrink:0;">
                 장착
-              </span>
+              </button>
             </div>
           `;
         }).join('');
@@ -1863,7 +1880,7 @@ window.saveCurrentPackingRecord = function() {
     }
   };
 
-  var CURRENT_GEAR_VERSION = '20260916_V4_1715';
+  var CURRENT_GEAR_VERSION = '20260917_CLEAN_1621';
 
   // 1. 초기 로드 시 버전 불일치 감지 -> 구버전 장비 캐시 자동 소거
   (function verifyGearCacheVersion() {
@@ -4082,9 +4099,184 @@ window.saveCurrentPackingRecord = function() {
       localStorage.setItem('okbm_gear_presets', JSON.stringify(presets));
     }
 
+    if (typeof syncUserDataToCloud === 'function') {
+      syncUserDataToCloud();
+    }
+
     triggerHaptic(15);
     if (typeof showToast === 'function') showToast('[' + escapeHtml(newPreset.name) + '] 세트가 저장되었습니다.', 'success');
     window.renderPlanStage();
+    window.openQuickPresetPicker();
+  };
+
+  window.__presetLongPressTimer = null;
+  window.__presetLongPressTriggered = false;
+  window.__presetTouchStartPos = { x: 0, y: 0 };
+
+  window.cancelPresetLongPress = function(e) {
+    if (window.__presetLongPressTimer) {
+      clearTimeout(window.__presetLongPressTimer);
+      window.__presetLongPressTimer = null;
+    }
+  };
+
+  window.checkPresetTouchMove = function(e) {
+    if (!window.__presetLongPressTimer) return;
+    if (e && e.touches && e.touches[0]) {
+      var moveX = Math.abs(e.touches[0].clientX - window.__presetTouchStartPos.x);
+      var moveY = Math.abs(e.touches[0].clientY - window.__presetTouchStartPos.y);
+      if (moveX > 8 || moveY > 8) {
+        window.cancelPresetLongPress(e);
+      }
+    }
+  };
+
+  window.startPresetLongPress = function(e, presetId) {
+    window.cancelPresetLongPress();
+    window.__presetLongPressTriggered = false;
+    if (e && e.touches && e.touches[0]) {
+      window.__presetTouchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+    window.__presetLongPressTimer = setTimeout(function() {
+      window.__presetLongPressTriggered = true;
+      triggerHaptic(20);
+      window.openPresetActionModal(presetId);
+      setTimeout(function() { window.__presetLongPressTriggered = false; }, 300);
+    }, 450);
+  };
+
+  window.openPresetActionModal = function(presetId) {
+    var old = document.getElementById('presetActionModal');
+    if (old) old.remove();
+
+    var presets = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_gear_presets', [])
+      : safeGetJSON('okbm_gear_presets', []);
+    var target = presets.find(function(p) { return String(p.id) === String(presetId); });
+    if (!target) return;
+
+    var modal = document.createElement('div');
+    modal.id = 'presetActionModal';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:1000040; display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
+    modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+    modal.innerHTML = `
+      <div style="width:100%; max-width:320px; background:#0b0f17; border:1px solid rgba(255,255,255,0.16); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 16px 40px rgba(0,0,0,0.9);">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
+          <div style="font-size:0.86rem; font-weight:800; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:230px;">
+            ${escapeHtml(target.name)}
+          </div>
+          <button type="button" onclick="document.getElementById('presetActionModal').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button type="button" onclick="document.getElementById('presetActionModal').remove(); window.renameGearPreset('${target.id}');" style="height:42px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#ffffff; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+            세트 이름 수정
+          </button>
+          <button type="button" onclick="document.getElementById('presetActionModal').remove(); window.deleteGearPreset('${target.id}');" style="height:42px; background:rgba(244,63,94,0.08); border:1px solid rgba(244,63,94,0.25); border-radius:8px; color:#fda4af; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+            세트 삭제
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  };
+
+  window.__presetLongPressTimer = null;
+  window.__presetLongPressTriggered = false;
+  window.__presetTouchStartPos = { x: 0, y: 0 };
+
+  window.cancelPresetLongPress = function(e) {
+    if (window.__presetLongPressTimer) {
+      clearTimeout(window.__presetLongPressTimer);
+      window.__presetLongPressTimer = null;
+    }
+  };
+
+  window.checkPresetTouchMove = function(e) {
+    if (!window.__presetLongPressTimer) return;
+    if (e && e.touches && e.touches[0]) {
+      var moveX = Math.abs(e.touches[0].clientX - window.__presetTouchStartPos.x);
+      var moveY = Math.abs(e.touches[0].clientY - window.__presetTouchStartPos.y);
+      if (moveX > 8 || moveY > 8) {
+        window.cancelPresetLongPress(e);
+      }
+    }
+  };
+
+  window.startPresetLongPress = function(e, presetId) {
+    window.cancelPresetLongPress();
+    window.__presetLongPressTriggered = false;
+    if (e && e.touches && e.touches[0]) {
+      window.__presetTouchStartPos = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+    window.__presetLongPressTimer = setTimeout(function() {
+      window.__presetLongPressTriggered = true;
+      triggerHaptic(20);
+      window.openPresetActionModal(presetId);
+      setTimeout(function() { window.__presetLongPressTriggered = false; }, 300);
+    }, 450);
+  };
+
+  window.openPresetActionModal = function(presetId) {
+    var old = document.getElementById('presetActionModal');
+    if (old) old.remove();
+
+    var presets = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_gear_presets', [])
+      : safeGetJSON('okbm_gear_presets', []);
+    var target = presets.find(function(p) { return String(p.id) === String(presetId); });
+    if (!target) return;
+
+    var modal = document.createElement('div');
+    modal.id = 'presetActionModal';
+    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:1000040; display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
+    modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+    modal.innerHTML = `
+      <div style="width:100%; max-width:320px; background:#0b0f17; border:1px solid rgba(255,255,255,0.16); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 16px 40px rgba(0,0,0,0.9);">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
+          <div style="font-size:0.86rem; font-weight:800; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:230px;">
+            ${escapeHtml(target.name)}
+          </div>
+          <button type="button" onclick="document.getElementById('presetActionModal').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button type="button" onclick="document.getElementById('presetActionModal').remove(); window.renameGearPreset('${target.id}');" style="height:42px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#ffffff; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+            세트 이름 수정
+          </button>
+          <button type="button" onclick="document.getElementById('presetActionModal').remove(); window.deleteGearPreset('${target.id}');" style="height:42px; background:rgba(244,63,94,0.08); border:1px solid rgba(244,63,94,0.25); border-radius:8px; color:#fda4af; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+            세트 삭제
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  };
+
+  window.renameGearPreset = function(presetId) {
+    var presets = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_gear_presets', [])
+      : safeGetJSON('okbm_gear_presets', []);
+    var target = presets.find(function(p) { return String(p.id) === String(presetId); });
+    if (!target) return;
+
+    var newName = prompt('세트 이름을 수정하세요:', target.name);
+    if (!newName || !newName.trim() || newName.trim() === target.name) return;
+
+    target.name = newName.trim();
+    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+      window.RomanticVault.write('okbm_gear_presets', presets, true);
+    } else {
+      localStorage.setItem('okbm_gear_presets', JSON.stringify(presets));
+    }
+
+    if (typeof syncUserDataToCloud === 'function') {
+      syncUserDataToCloud();
+    }
+
+    triggerHaptic(10);
+    if (typeof showToast === 'function') showToast('세트 이름이 수정되었습니다.', 'success');
+    window.openQuickPresetPicker();
   };
 
   window.loadGearPreset = function(presetId) {
@@ -4126,9 +4318,13 @@ window.saveCurrentPackingRecord = function() {
       localStorage.setItem('okbm_gear_presets', JSON.stringify(presets));
     }
 
+    if (typeof syncUserDataToCloud === 'function') {
+      syncUserDataToCloud();
+    }
+
     triggerHaptic(10);
     if (typeof showToast === 'function') showToast('패킹 세트가 삭제되었습니다.', 'info');
-    window.renderPlanStage();
+    window.openQuickPresetPicker();
   };
 
  window.addDirectGearToManager = function() {
