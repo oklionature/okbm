@@ -1980,6 +1980,9 @@ window.saveCurrentPackingRecord = function() {
     }
   };
 
+  // [정식 명칭] loadGearDbMaster: Supabase/정적 JSON에서 기어 마스터 DB를 로드합니다.
+  window.loadGearDbMaster = window.loadGearDbFromGoogleSheet;
+
   function applyFetchedGears(rows) {
     var sheetGearsByCategory = {};
     var compactMasterRows = [];

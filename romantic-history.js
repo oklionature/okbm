@@ -597,11 +597,9 @@
     if (typeof window.saveToIndexedDB === 'function') {
       window.saveToIndexedDB(key, rawObj);
     }
-    if (key !== 'okbm_phone_photos_map' && key !== 'okbm_trip_photos_map') {
-      try {
+    try {
         localStorage.setItem(key, JSON.stringify(rawObj));
       } catch (e) { console.warn('[romantic-history.js:safeSetStorage]', e); }
-    }
   };
 
   // 🔒 [단 1개의 통로로만 서버 쓰기] feeds 테이블에 쓰는 유일한 함수입니다.
@@ -761,7 +759,6 @@
       cloned.photos = sourcePhotos.filter(function(u) {
         return typeof u === 'string' && (u.startsWith('https://') || u.startsWith('http://'));
       });
-      cloned.photo = cloned.photos[0] || cloned.readyShotPhoto || '';
       return cloned;
     });
 
@@ -798,7 +795,6 @@
         photo_memos_json: normalized.photoMemos || [],
         is_published: finalPublished,
         photos: normalized.photos || [],
-        photo: (normalized.photos && normalized.photos[0]) || tmplPhoto || '',
         items: normalized.items || [],
         ready_shot_photo: tmplPhoto,
         ready_shot_mode: normalized.readyShotMode || 'minimal',
@@ -4372,14 +4368,11 @@ window.deleteTripRecord = async function(recordId, e) {
       `;
     } else {
       var slidesHtml = photos.map(function(url, pIdx) {
-        var isPrivate = window.OKBMPrivateAssetResolver && window.OKBMPrivateAssetResolver.isReference(url);
-        var src = isPrivate ? 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=' : url;
-        var refAttr = isPrivate ? ' data-okbm-photo-value=\"' + window.OKBMPrivateAssetResolver.encodeValue(url) + '\"' : '';
         var bindingAttr = ' data-okbm-photo-record-id="' + String(window.__richCurrentRecord && window.__richCurrentRecord.id || '') + '" data-okbm-photo-index="' + String(pIdx) + '" data-okbm-photo-kind="phone"';
         return `
           <div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center;">
-            <img src="${src}"${refAttr}${bindingAttr} style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(22px) brightness(0.32); transform:scale(1.15); pointer-events:none;" />
-            <img src="${src}"${refAttr}${bindingAttr} style="position:relative; z-index:2; width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;" />
+            <img src="${url}"${bindingAttr} style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(22px) brightness(0.32); transform:scale(1.15); pointer-events:none;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
+            <img src="${url}"${bindingAttr} style="position:relative; z-index:2; width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
             
             <button type="button" onclick="event.stopPropagation(); window.__removeRichSinglePhoto(${pIdx});" style="position:absolute; top:10px; right:10px; z-index:10; width:28px; height:28px; border-radius:50%; background:rgba(0,0,0,0.7); color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); font-size:13px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);">✕</button>
           </div>
@@ -4405,7 +4398,7 @@ window.deleteTripRecord = async function(recordId, e) {
                ontouchend="window.__handleTouchThumbEnd(event);"
                onclick="window.__commitCurrentMemoInput(); window.__currentSwipePhotoIndex = ${tIdx}; window.__renderRichPhotoStage(); triggerHaptic(8);" 
                style="width:54px; height:54px; border-radius:9px; overflow:hidden; position:relative; flex-shrink:0; cursor:grab; background:#000; box-sizing:border-box; transition:all 0.18s cubic-bezier(0.16, 1, 0.3, 1); user-select:none; -webkit-user-select:none; touch-action:none; ${activeBorderStyle}">
-            <img src="${(window.OKBMPrivateAssetResolver && window.OKBMPrivateAssetResolver.isReference(tUrl)) ? "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" : tUrl}" ${(window.OKBMPrivateAssetResolver && window.OKBMPrivateAssetResolver.isReference(tUrl)) ? "data-okbm-photo-value=\"" + window.OKBMPrivateAssetResolver.encodeValue(tUrl) + "\"" : ""} data-okbm-photo-record-id="${escapeHtml(String(window.__richCurrentRecord && window.__richCurrentRecord.id || ''))}" data-okbm-photo-index="${tIdx}" data-okbm-photo-kind="phone" style="width:100%; height:100%; object-fit:cover; pointer-events:none; display:block;" />
+            <img src="${tUrl}" data-okbm-photo-record-id="${escapeHtml(String(window.__richCurrentRecord && window.__richCurrentRecord.id || ''))}" data-okbm-photo-index="${tIdx}" data-okbm-photo-kind="phone" style="width:100%; height:100%; object-fit:cover; pointer-events:none; display:block;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
             ${isCurrentView ? '<div style="position:absolute; inset:0; border:1px solid rgba(255,255,255,0.4); pointer-events:none; border-radius:7px;"></div>' : ''}
           </div>
         `;
@@ -4434,9 +4427,6 @@ window.deleteTripRecord = async function(recordId, e) {
         if (track) {
           var targetLeft = (window.__currentSwipePhotoIndex || 0) * track.offsetWidth;
           track.scrollLeft = targetLeft;
-        }
-        if (window.OKBMPrivateAssetResolver) {
-          window.OKBMPrivateAssetResolver.resolveImageElements(stageContainer, '').catch(function() {});
         }
       }, 30);
     }
@@ -5524,9 +5514,12 @@ window.renderHistoryStage = function(isLoading) {
     var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
     var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
 
+    // [제1조 SSOT] __allLoadedFeeds가 유일한 진실 공급원입니다.
+    // __allLoadedFeeds가 비어있어도 interactiveHistory와 Union 결합하지 않습니다.
+    // 서버 동기화 전이라면 로컬 소유 피드만 표시합니다.
     var ssotFeedPool = Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0
       ? window.__allLoadedFeeds
-      : (Array.isArray(window.interactiveHistory) ? window.interactiveHistory : []);
+      : window.interactiveHistory.filter(function(r) { return r && r._isLocalOwner; });
 
     var combinedList = [];
     var addedIds = new Set();
@@ -5553,6 +5546,7 @@ window.renderHistoryStage = function(isLoading) {
       combinedList.push(norm);
       addedIds.add(feedId);
     });
+
 
     var currentList = combinedList;
     if (window.activeHistoryFeedTab === 'my') {

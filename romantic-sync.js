@@ -417,42 +417,17 @@ window.RomanticVault = window.RomanticVault || {
         this.write('okbm_memos', serverMemos, false);
         window.userMemos = serverMemos;
 
-        var localSavedFeeds = safeGetJSON('okbm_saved_feeds', []);
+        // [제1조 SSOT] 서버 데이터가 단방향으로 로컬을 덮어씁니다.
+        // 로컬 배열과 비교 후 로컬→서버 역전송(Merge)하던 양방향 루프를 완전 제거합니다.
         if (cloudData.saved_feeds !== undefined && Array.isArray(cloudData.saved_feeds)) {
           var cleanSavedFeeds = cloudData.saved_feeds.map(function(s) { return String(s).trim(); }).filter(Boolean);
-          if (cleanSavedFeeds.length > 0 || localSavedFeeds.length === 0) {
-            this.write('okbm_saved_feeds', cleanSavedFeeds, false);
-          } else if (localSavedFeeds.length > 0) {
-            this.write('okbm_saved_feeds', localSavedFeeds, true);
-          }
-        } else if (localSavedFeeds.length > 0) {
-          this.write('okbm_saved_feeds', localSavedFeeds, true);
+          this.write('okbm_saved_feeds', cleanSavedFeeds, false);
         }
 
-        var localFollowing = safeGetJSON('okbm_following_users', []);
         var rawFollowing = cloudData.following || cloudData.following_users;
         if (rawFollowing !== undefined && Array.isArray(rawFollowing)) {
           var cleanFollowing = rawFollowing.map(function(s) { return String(s).trim(); }).filter(Boolean);
-          if (cleanFollowing.length > 0 || localFollowing.length === 0) {
-            this.write('okbm_following_users', cleanFollowing, false);
-          } else if (localFollowing.length > 0) {
-            this.write('okbm_following_users', localFollowing, true);
-          }
-        } else if (localFollowing.length > 0) {
-          this.write('okbm_following_users', localFollowing, true);
-        }
-
-        var localFollowing = safeGetJSON('okbm_following_users', []);
-        var rawFollowing = cloudData.following || cloudData.following_users;
-        if (rawFollowing !== undefined && Array.isArray(rawFollowing)) {
-          var cleanFollowing = rawFollowing.map(function(s) { return String(s).trim(); }).filter(Boolean);
-          if (cleanFollowing.length > 0 || localFollowing.length === 0) {
-            this.write('okbm_following_users', cleanFollowing, false);
-          } else if (localFollowing.length > 0) {
-            this.write('okbm_following_users', localFollowing, true);
-          }
-        } else if (localFollowing.length > 0) {
-          this.write('okbm_following_users', localFollowing, true);
+          this.write('okbm_following_users', cleanFollowing, false);
         }
 
         // [헌법 제1조: SSOT 원칙] 글/피드의 절대 진실 공급원은 feeds 테이블 하나뿐입니다.
@@ -4052,12 +4027,6 @@ window.shareFeedToCommunity = async function(feedRecord) {
   if (!targetSupabaseUrl) return [];
 
   var rawPhotos = Array.isArray(feedRecord.photos) ? feedRecord.photos.slice() : [];
-  if (rawPhotos.length === 0 && feedRecord.id) {
-    var pMap = (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) || (typeof safeGetJSON === 'function' ? safeGetJSON('okbm_phone_photos_map', {}) : {});
-    if (pMap && pMap[feedRecord.id] && Array.isArray(pMap[feedRecord.id])) {
-      rawPhotos = pMap[feedRecord.id].slice();
-    }
-  }
   if (rawPhotos.length === 0) {
     return [];
   }
