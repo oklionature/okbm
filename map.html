@@ -211,10 +211,20 @@
         flex-shrink: 0; 
       }
 
-     /* 🔍 당근마켓 스타일 상단 플로팅 글래스 검색창 */
+     .app-status-bar-scrim {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: max(26px, env(safe-area-inset-top, 26px)) !important;
+        background: #010204 !important;
+        z-index: 999999 !important;
+        pointer-events: none !important;
+      }
+
       .floating-top-search-wrap {
         position: absolute !important;
-        top: calc(10px + env(safe-area-inset-top, 0px)) !important;
+        top: calc(max(26px, env(safe-area-inset-top, 26px)) + 6px) !important;
         left: 12px !important;
         right: 12px !important;
         max-width: 480px !important;
@@ -902,13 +912,27 @@
         .left-bottom-filter-wrap { bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 10px) !important; left: 8px !important; }
         .right-bottom-hud-group { bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 10px) !important; right: 8px !important; }
         .mobile-only { display: flex !important; }
-        .sidebar { position: absolute; top: 0; left: 0; right: 0; width: 100% !important; height: calc(100% - 56px - env(safe-area-inset-bottom, 0px)) !important; z-index: var(--z-sidebar) !important; border-right: none; border-bottom: 1px solid var(--border-hairline); transform: translateY(0); }
+        .sidebar { 
+          position: absolute; 
+          top: 0; 
+          left: 0; 
+          right: 0; 
+          width: 100% !important; 
+          height: calc(100% - 56px - env(safe-area-inset-bottom, 0px)) !important; 
+          z-index: var(--z-sidebar) !important; 
+          border-right: none; 
+          border-bottom: 1px solid var(--border-hairline); 
+          transform: translateY(0);
+          padding-top: max(26px, env(safe-area-inset-top, 26px)) !important;
+          box-sizing: border-box !important;
+        }
         .sidebar.collapsed { transform: translateY(-130%) !important; }
         .mobile-bottom-dock { display: flex !important; }
       }
     </style>
   </head>
   <body>
+    <div class="app-status-bar-scrim"></div>
     <div id="appToast" class="app-toast"></div>
 
     <!-- 🔍 당근마켓 스타일 지도 위 투명 플로팅 검색창 -->
