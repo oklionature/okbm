@@ -1316,7 +1316,69 @@ window.normalizeHistoryRecord = function(r, idx) {
   };
 
   // 📱 [지난 피드 목록 모달 & 다중 체크 일괄 삭제 통합 엔진 - 낭만일지 3단 필터 & 영수증 뱃지 완전 제거]
- window.__isPastTripsSelectMode = false;
+ window.__modalHistoryStack = window.__modalHistoryStack || [];
+
+  window.recordModalHistoryStep = function(currentModalId, restoreFn) {
+    if (!currentModalId) return;
+    if (window.__modalHistoryStack.length > 0) {
+      var last = window.__modalHistoryStack[window.__modalHistoryStack.length - 1];
+      if (last.id === currentModalId) return;
+    }
+    window.__modalHistoryStack.push({
+      id: currentModalId,
+      restore: restoreFn
+    });
+  };
+
+  window.goBackModal = function(e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    triggerHaptic(10);
+
+    var currentTopModal = null;
+    var openModalSelectors = [
+      'singleTripFeedModal',
+      'userFeedCollectionModal',
+      'pastTripsListModal',
+      'followedRoutersModal',
+      'savedFeedsListModal',
+      'savedFeedsEmptyModal',
+      'userAccountSettingsModal'
+    ];
+
+    for (var i = 0; i < openModalSelectors.length; i++) {
+      var el = document.getElementById(openModalSelectors[i]);
+      if (el && el.style.display !== 'none') {
+        currentTopModal = el;
+        break;
+      }
+    }
+
+    if (currentTopModal) {
+      currentTopModal.remove();
+    }
+
+    if (window.__modalHistoryStack.length > 0) {
+      var prevStep = window.__modalHistoryStack.pop();
+      if (prevStep && typeof prevStep.restore === 'function') {
+        prevStep.restore();
+        return;
+      }
+    }
+
+    var reportModal = document.getElementById('userProfileModalOverlay');
+    if (reportModal && reportModal.style.display !== 'none') {
+      return;
+    }
+
+    var historyModal = document.getElementById('romanticHistoryModal');
+    if (historyModal && historyModal.style.display !== 'none') {
+      if (typeof window.ensureMasterBottomDock === 'function') {
+        window.ensureMasterBottomDock('history');
+      }
+    }
+  };
+
+  window.__isPastTripsSelectMode = false;
   window.__selectedPastTripIds = new Set();
   window.__pastTripsActiveTab = window.__pastTripsActiveTab || 'route';
 
@@ -1532,8 +1594,15 @@ window.normalizeHistoryRecord = function(r, idx) {
     triggerHaptic(10);
   };
 
-  window.openPastTripsListModal = function() {
+  window.openPastTripsListModal = function(isRestored) {
     try {
+      var activeReport = document.getElementById('userProfileModalOverlay');
+      if (!isRestored && activeReport && activeReport.style.display !== 'none') {
+        window.recordModalHistoryStep('userProfileModalOverlay', function() {
+          if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal();
+        });
+      }
+
       var old = document.getElementById('pastTripsListModal');
       if (old) old.remove();
 
@@ -1647,7 +1716,7 @@ window.normalizeHistoryRecord = function(r, idx) {
       modalEl.innerHTML = `
         <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
           <div style="display:flex; align-items:center; gap:8px;">
-            <button type="button" onclick="window.closePastTripsListModal(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
+            <button type="button" onclick="window.closePastTripsListModal(); window.goBackModal(event);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
             <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">낭만일지</span>
           </div>
           ${headerRightHtml}
@@ -2539,38 +2608,51 @@ window.deleteTripRecord = async function(recordId, e) {
 // 📖 [단일 피드 카드 마크업 생성기 - 각 사진별 120자 캡션 1:1 결합 렌더러]
   window.buildSingleFeedCardHtml = function(log) {
     if (!log) return '';
-    var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
-    var tmplId = log.templateId || savedTmplId;
+    var rawTmplId = log.template_id !== undefined ? log.template_id : log.templateId;
+    var tmplId = (rawTmplId !== undefined && rawTmplId !== null && parseInt(rawTmplId, 10) > 0) ? parseInt(rawTmplId, 10) : 1;
     var items = Array.isArray(log.items) ? log.items : [];
     var borderGrad = (typeof window.getCardStableBorderGradient === 'function') ? window.getCardStableBorderGradient(log, 0) : 'linear-gradient(135deg, #10b981, #047857)';
 
+    var actualReadyShot = String(log.readyShotPhoto || log.ready_shot_photo || log.customTemplatePhoto || '').trim();
+
     var photosList = (typeof getRecordPhotos === 'function') ? getRecordPhotos(log) : (log.photos || []);
     photosList = (Array.isArray(photosList) ? photosList : []).filter(function(u) {
-      return u && typeof u === 'string' && u.trim().length > 10 && !u.includes('unsplash.com');
+      return u && typeof u === 'string' && u.trim().length > 10 && !u.includes('unsplash.com') && u !== actualReadyShot;
     });
 
     var photoMemos = Array.isArray(log.photoMemos) ? log.photoMemos : [];
     var fallbackMemo = (log.memo || log.oneLineMemo || '').trim();
 
     var packingSheetMarkup = '';
-    var genFn = (typeof window.generateCardMarkup === 'function') ? window.generateCardMarkup : (typeof generateCardMarkup === 'function' ? generateCardMarkup : null);
+    var isReadyShotMode = Boolean(actualReadyShot && actualReadyShot.length > 10);
 
-    if (genFn) {
-      packingSheetMarkup = genFn(tmplId, log, items, log.spot, fallbackMemo || (log.spot + ' 패킹'), photosList[0] || '');
+    if (isReadyShotMode) {
+      if (typeof window.generateReadyShotMarkup === 'function') {
+        packingSheetMarkup = window.generateReadyShotMarkup(log, { photo: actualReadyShot });
+      } else {
+        packingSheetMarkup = '<div style="width:100%; height:100%; background:#000000; border-radius:12px; overflow:hidden; display:flex; align-items:center; justify-content:center;">' +
+          '<img src="' + escapeHtml(actualReadyShot) + '" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:100%; object-fit:contain; display:block;" />' +
+        '</div>';
+      }
     } else {
-      packingSheetMarkup = '<div style="height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#f4f1ea; color:#1c1917; padding:12px; border-radius:13px;">' +
-        '<div>' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px dashed #000; padding-bottom:3px;">' +
-            '<span style="font-family:\'Space Grotesk\', sans-serif; font-size:0.75rem; font-weight:900;">ROMANTIC PACK</span>' +
-            '<span style="font-size:0.52rem; background:#0284c7; color:#fff; font-weight:900; padding:1px 5px; border-radius:3px;">#0' + tmplId + '</span>' +
+      var genFn = (typeof window.generateCardMarkup === 'function') ? window.generateCardMarkup : (typeof generateCardMarkup === 'function' ? generateCardMarkup : null);
+      if (genFn) {
+        packingSheetMarkup = genFn(tmplId, log, items, log.spot, fallbackMemo || (log.spot + ' 패킹'), photosList[0] || '');
+      } else {
+        packingSheetMarkup = '<div style="height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#f4f1ea; color:#1c1917; padding:12px; border-radius:13px;">' +
+          '<div>' +
+            '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px dashed #000; padding-bottom:3px;">' +
+              '<span style="font-family:\'Space Grotesk\', sans-serif; font-size:0.75rem; font-weight:900;">ROMANTIC PACK</span>' +
+              '<span style="font-size:0.52rem; background:#0284c7; color:#fff; font-weight:900; padding:1px 5px; border-radius:3px;">#0' + tmplId + '</span>' +
+            '</div>' +
+            '<div style="margin-top:6px; font-size:0.95rem; font-weight:900; color:#0f172a;">' + escapeHtml(log.spot || '낭만 스팟') + '</div>' +
           '</div>' +
-          '<div style="margin-top:6px; font-size:0.95rem; font-weight:900; color:#0f172a;">' + escapeHtml(log.spot || '낭만 스팟') + '</div>' +
-        '</div>' +
-        '<div style="border-top:1.5px dashed #000; padding-top:5px; display:flex; justify-content:space-between; align-items:baseline;">' +
-          '<span style="font-size:0.68rem; font-weight:900; color:#64748b;">TOTAL</span>' +
-          '<span style="font-size:1.35rem; font-weight:900; color:#000; font-family:\'Space Grotesk\', sans-serif;">' + (log.weightKg || '0.00') + ' KG</span>' +
-        '</div>' +
-      '</div>';
+          '<div style="border-top:1.5px dashed #000; padding-top:5px; display:flex; justify-content:space-between; align-items:baseline;">' +
+            '<span style="font-size:0.68rem; font-weight:900; color:#64748b;">TOTAL</span>' +
+            '<span style="font-size:1.35rem; font-weight:900; color:#000; font-family:\'Space Grotesk\', sans-serif;">' + (log.weightKg || '0.00') + ' KG</span>' +
+          '</div>' +
+        '</div>';
+      }
     }
 
     var photoSectionsHtml = photosList.map(function(pUrl, pIdx) {
@@ -2598,7 +2680,13 @@ window.deleteTripRecord = async function(recordId, e) {
       '</div>';
     }).join('');
 
-    var templateSectionHtml = (
+    var templateSectionHtml = isReadyShotMode ? (
+      '<div style="padding:18px 16px 20px 16px; background:#000000; display:flex; justify-content:center;">' +
+        '<div style="width:100%; max-width:330px; aspect-ratio:3/4; border-radius:14px; overflow:hidden; box-shadow:0 12px 30px rgba(0,0,0,0.9);">' +
+          packingSheetMarkup +
+        '</div>' +
+      '</div>'
+    ) : (
       '<div style="padding:18px 16px 20px 16px; background:#000000;">' +
         '<div style="width:100%; aspect-ratio:3/4; border-radius:14px; padding:2px; background:' + borderGrad + ';"><div style="width:100%; height:100%; border-radius:12px; overflow:hidden;">' + packingSheetMarkup + '</div></div>' +
       '</div>'
@@ -2616,6 +2704,8 @@ window.deleteTripRecord = async function(recordId, e) {
     '</div>';
   };
 // 🔖 [관심피드 북마크 저장/해제 토글 엔진]
+ window.__saveFeedDebounceTimers = window.__saveFeedDebounceTimers || {};
+
  window.toggleSaveFeed = function(feedId, e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
     triggerHaptic(12);
@@ -2649,10 +2739,17 @@ window.deleteTripRecord = async function(recordId, e) {
     }
 
     if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-      window.RomanticVault.write('okbm_saved_feeds', savedFeeds, false);
+      window.RomanticVault.write('okbm_saved_feeds', savedFeeds, true);
     } else {
       localStorage.setItem('okbm_saved_feeds', JSON.stringify(savedFeeds));
     }
+
+    clearTimeout(window.__saveFeedDebounceTimers[sId]);
+    window.__saveFeedDebounceTimers[sId] = setTimeout(function() {
+      if (typeof syncUserDataToCloud === 'function') {
+        syncUserDataToCloud(false);
+      }
+    }, 400);
 
     var targetBtns = [];
     var clickedBtn = e ? (e.currentTarget || (e.target && e.target.closest('button'))) : null;
@@ -2676,24 +2773,35 @@ window.deleteTripRecord = async function(recordId, e) {
     });
   };
 
- // 👥 [관심루터 & 관심피드 통합 모아보기 모달 엔진]
-  window.openRomanticInterestModal = function(initialTab) {
+ window.openFollowedRoutersModal = function(isRestored) {
     triggerHaptic(12);
-    var old = document.getElementById('romanticInterestModal');
-    if (old) old.remove();
 
-    var activeTab = (initialTab === 'feeds') ? 'feeds' : 'routers';
+    var activeReport = document.getElementById('userProfileModalOverlay');
+    if (!isRestored && activeReport && activeReport.style.display !== 'none') {
+      window.recordModalHistoryStep('userProfileModalOverlay', function() {
+        if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal();
+      });
+    }
+
+    [
+      'followedRoutersModal',
+      'savedFeedsEmptyModal',
+      'singleTripFeedModal',
+      'pastTripsListModal',
+      'romanticInterestModal'
+    ].forEach(function(mId) {
+      var m = document.getElementById(mId);
+      if (m) m.remove();
+    });
 
     var followingList = safeGetJSON('okbm_following_users', []);
-    var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
 
     var allFeeds = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
       ? window.__allLoadedFeeds
       : (window.safeGetStorage('okbm_cached_community_feeds', []) || []);
 
-   if (Array.isArray(window.interactiveHistory)) {
+    if (Array.isArray(window.interactiveHistory)) {
       window.interactiveHistory.forEach(function(myRec) {
-        // 🔒 공개(isPublished === true)된 기록만 공용 모아보기 풀에 안전하게 병합
         if (myRec && window.okbmIsPublicFeedItem && window.okbmIsPublicFeedItem(myRec)) {
           if (!allFeeds.some(function(f) { return String(f.id).trim() === String(myRec.id).trim(); })) {
             allFeeds.push(myRec);
@@ -2702,134 +2810,223 @@ window.deleteTripRecord = async function(recordId, e) {
       });
     }
 
+    var routerItems = followingList.map(function(authorKey) {
+      var cleanKey = String(authorKey).trim();
+      var userFeeds = allFeeds.filter(function(f) {
+        return f && (String(f.userId || f.user_id || '').trim() === cleanKey || String(f.author || f.nick || f.nickname || '').trim() === cleanKey);
+      });
+      var latestFeed = userFeeds[0] || null;
+
+      var displayNick = '';
+      if (latestFeed && (latestFeed.author || latestFeed.nick || latestFeed.nickname)) {
+        displayNick = String(latestFeed.author || latestFeed.nick || latestFeed.nickname).trim();
+      }
+      if (!displayNick && !cleanKey.startsWith('kakao_')) {
+        displayNick = cleanKey;
+      }
+      if (!displayNick || displayNick.startsWith('kakao_')) {
+        displayNick = '낭만루터';
+      }
+
+      var thumbPhoto = (latestFeed && window.okbmPublicPhotoUrls && window.okbmPublicPhotoUrls(latestFeed)[0]) || '';
+      var latestSpot = latestFeed ? (latestFeed.spot || '활동 기록') : '기록 없음';
+      var latestDate = latestFeed ? (latestFeed.date || '') : '';
+      var targetUserId = (latestFeed && (latestFeed.userId || latestFeed.user_id)) || (cleanKey.startsWith('kakao_') ? cleanKey : '');
+
+      return {
+        rawKey: cleanKey,
+        displayNick: displayNick,
+        targetUserId: targetUserId,
+        thumbPhoto: thumbPhoto,
+        latestSpot: latestSpot,
+        latestDate: latestDate
+      };
+    });
+
+    routerItems.sort(function(a, b) {
+      return a.displayNick.localeCompare(b.displayNick, 'ko');
+    });
+
     var modalEl = document.createElement('div');
-    modalEl.id = 'romanticInterestModal';
-    modalEl.style.cssText = 'position:fixed; inset:0; width:100%; height:100%; height:100dvh; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:1000030; display:flex; justify-content:center; align-items:flex-end; box-sizing:border-box;';
+    modalEl.id = 'followedRoutersModal';
+    modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; width:100%; max-width:100%; background:#000000; z-index:1000030 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
-    window.__renderInterestModalContent = function(tabName) {
-      activeTab = tabName;
-      var tabRoutersBtn = document.getElementById('interestTabBtnRouters');
-      var tabFeedsBtn = document.getElementById('interestTabBtnFeeds');
-      var bodyContainer = document.getElementById('interestModalBodyContent');
-      if (!bodyContainer) return;
+    var listHtml = '';
+    if (routerItems.length === 0) {
+      listHtml = '<div style="text-align:center; padding:70px 14px; color:#94a3b8; font-size:0.80rem; line-height:1.6;">등록된 관심루터가 없습니다.<br>피드 상단의 [+관심] 버튼을 눌러 관심루터를 등록해보세요.</div>';
+    } else {
+      listHtml = routerItems.map(function(item) {
+        var safeNick = escapeHtml(item.displayNick);
+        var safeUser = escapeHtml(item.targetUserId);
+        var safeRawKey = escapeHtml(item.rawKey);
 
-      if (tabRoutersBtn && tabFeedsBtn) {
-        if (activeTab === 'routers') {
-          tabRoutersBtn.style.background = 'rgba(52,211,153,0.18)';
-          tabRoutersBtn.style.borderColor = '#34d399';
-          tabRoutersBtn.style.color = '#34d399';
-          tabFeedsBtn.style.background = 'rgba(255,255,255,0.04)';
-          tabFeedsBtn.style.borderColor = 'rgba(255,255,255,0.1)';
-          tabFeedsBtn.style.color = '#94a3b8';
-        } else {
-          tabFeedsBtn.style.background = 'rgba(192,132,252,0.18)';
-          tabFeedsBtn.style.borderColor = '#c084fc';
-          tabFeedsBtn.style.color = '#c084fc';
-          tabRoutersBtn.style.background = 'rgba(255,255,255,0.04)';
-          tabRoutersBtn.style.borderColor = 'rgba(255,255,255,0.1)';
-          tabRoutersBtn.style.color = '#94a3b8';
-        }
-      }
-
-      if (activeTab === 'routers') {
-        if (followingList.length === 0) {
-          bodyContainer.innerHTML = '<div style="text-align:center; padding:50px 14px; color:#94a3b8; font-size:0.80rem; line-height:1.6;">' +
-            '등록된 관심루터가 없습니다.<br>피드 상단의 [+관심] 버튼을 눌러 관심루터를 등록해보세요.' +
-          '</div>';
-          return;
-        }
-
-        bodyContainer.innerHTML = followingList.map(function(authorKey) {
-          var cleanKey = String(authorKey).trim();
-          var userFeeds = allFeeds.filter(function(f) {
-            return f && window.okbmIsPublicFeedItem && window.okbmIsPublicFeedItem(f) && (String(f.userId || '').trim() === cleanKey || String(f.author || f.nick || '').trim() === cleanKey);
-          });
-          var latestFeed = userFeeds[0] || null;
-          var thumbPhoto = (latestFeed && window.okbmPublicPhotoUrls(latestFeed)[0]) || '';
-          var latestSpot = latestFeed ? (latestFeed.spot || '활동 기록') : '기록 없음';
-          var latestDate = latestFeed ? (latestFeed.date || '') : '';
-          var safeKey = escapeHtml(cleanKey);
-
-          return '<div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">' +
-            '<div data-author="' + safeKey + '" onclick="document.getElementById(\'romanticInterestModal\').remove(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.author);" style="display:flex; align-items:center; gap:10px; cursor:pointer; min-width:0; flex:1;">' +
-              '<div style="width:44px; height:44px; border-radius:10px; overflow:hidden; background:#0f172a; flex-shrink:0; border:1px solid rgba(255,255,255,0.15);">' +
-                '<img src="' + thumbPhoto + '" style="width:100%; height:100%; object-fit:cover;" />' +
-              '</div>' +
-              '<div style="min-width:0; flex:1;">' +
-                '<div style="font-size:0.86rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + safeKey + '</div>' +
-                '<div style="font-size:0.64rem; color:#94a3b8; margin-top:2px;">' + escapeHtml(latestSpot) + (latestDate ? ' · ' + escapeHtml(latestDate) : '') + '</div>' +
-              '</div>' +
+        return '<div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">' +
+          '<div data-author="' + safeNick + '" data-user-id="' + safeUser + '" onclick="window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId);" style="display:flex; align-items:center; gap:10px; cursor:pointer; min-width:0; flex:1;">' +
+            '<div style="width:44px; height:44px; border-radius:10px; overflow:hidden; background:#0f172a; flex-shrink:0; border:1px solid rgba(255,255,255,0.15);">' +
+              '<img src="' + item.thumbPhoto + '" style="width:100%; height:100%; object-fit:cover; display:block;" />' +
             '</div>' +
-            '<button type="button" data-author="' + safeKey + '" onclick="window.toggleFollowUser(this.dataset.author, this.dataset.author, event); window.openRomanticInterestModal(\'routers\');" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.3); color:#fda4af; font-size:0.64rem; font-weight:800; padding:4px 9px; border-radius:8px; cursor:pointer; flex-shrink:0; margin-left:8px;">해제</button>' +
-          '</div>';
-        }).join('');
-      } else {
-        var matchedSavedFeeds = allFeeds.filter(function(f) {
-          return f && f.id && savedFeedsList.includes(String(f.id).trim()) && window.okbmIsPublicFeedItem && window.okbmIsPublicFeedItem(f);
-        });
-
-        if (matchedSavedFeeds.length === 0) {
-          bodyContainer.innerHTML = '<div style="text-align:center; padding:50px 14px; color:#94a3b8; font-size:0.80rem; line-height:1.6;">' +
-            '저장된 관심피드가 없습니다.<br>마음에 드는 피드 하단의 북마크 아이콘을 눌러 저장해보세요.' +
-          '</div>';
-          return;
-        }
-
-        bodyContainer.innerHTML = '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">' +
-          matchedSavedFeeds.map(function(f) {
-            var fId = escapeHtml(String(f.id));
-            var thumb = (window.okbmPublicPhotoUrls && window.okbmPublicPhotoUrls(f)[0]) || '';
-            if (!thumb) return '';
-            var fSpot = escapeHtml(f.spot || '나의 힐링 스팟');
-            var fWeight = escapeHtml(String(f.weightKg || '0.00'));
-            var fAuthor = escapeHtml(f.author || f.nick || '루터');
-
-            return '<div style="position:relative; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; overflow:hidden; display:flex; flex-direction:column;">' +
-              '<div data-feed-id="' + fId + '" onclick="document.getElementById(\'romanticInterestModal\').remove(); window.openSingleTripDualFeedModal(this.dataset.feedId);" style="width:100%; aspect-ratio:4/3; position:relative; cursor:pointer; background:#05070a;">' +
-                '<img src="' + thumb + '" style="width:100%; height:100%; object-fit:cover;" />' +
-                '<span style="position:absolute; top:6px; left:6px; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); font-size:0.55rem; color:#fff; font-weight:800; padding:2px 5px; border-radius:4px;">' + fAuthor + '</span>' +
-              '</div>' +
-              '<div style="padding:8px 10px; display:flex; justify-content:space-between; align-items:center;">' +
-                '<div style="min-width:0; flex:1; padding-right:4px;">' +
-                  '<div style="font-size:0.75rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + fSpot + '</div>' +
-                  '<div style="font-size:0.62rem; color:#34d399; font-family:\'Space Grotesk\', sans-serif; font-weight:900; margin-top:1px;">' + fWeight + 'kg</div>' +
-                '</div>' +
-                '<button type="button" data-feed-id="' + fId + '" onclick="window.toggleSaveFeed(this.dataset.feedId, event); window.openRomanticInterestModal(\'feeds\');" style="background:none; border:none; padding:2px; cursor:pointer; color:#c084fc;" title="저장 취소">' +
-                  '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="currentColor"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
-                '</button>' +
-              '</div>' +
-            '</div>';
-          }).join('') +
+            '<div style="min-width:0; flex:1;">' +
+              '<div style="font-size:0.88rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + safeNick + '</div>' +
+              '<div style="font-size:0.64rem; color:#94a3b8; margin-top:2px;">' + escapeHtml(item.latestSpot) + (item.latestDate ? ' · ' + escapeHtml(item.latestDate) : '') + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<button type="button" data-raw-key="' + safeRawKey + '" data-author="' + safeNick + '" onclick="window.toggleFollowUser(this.dataset.rawKey, this.dataset.author, event); window.openFollowedRoutersModal();" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.3); color:#fda4af; font-size:0.64rem; font-weight:800; padding:5px 10px; border-radius:8px; cursor:pointer; flex-shrink:0; margin-left:8px;">해제</button>' +
         '</div>';
-      }
-    };
+      }).join('');
+    }
 
-    modalEl.innerHTML = '<div style="width:100%; max-width:440px; max-height:82vh; background:#0c1017; border-top:1.5px solid rgba(56,189,248,0.35); border-radius:20px 20px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; overflow:hidden;">' +
-      '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">' +
-        '<div style="display:flex; align-items:center; gap:6px;">' +
-          '<button type="button" id="interestTabBtnRouters" onclick="window.__renderInterestModalContent(\'routers\'); triggerHaptic(8);" style="border:1px solid #34d399; background:rgba(52,211,153,0.18); color:#34d399; font-size:0.75rem; font-weight:900; padding:5px 10px; border-radius:10px; cursor:pointer; transition:all 0.15s ease;">' +
-            '관심루터 (' + followingList.length + ')' +
-          '</button>' +
-          '<button type="button" id="interestTabBtnFeeds" onclick="window.__renderInterestModalContent(\'feeds\'); triggerHaptic(8);" style="border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); color:#94a3b8; font-size:0.75rem; font-weight:900; padding:5px 10px; border-radius:10px; cursor:pointer; transition:all 0.15s ease;">' +
-            '관심피드 (' + savedFeedsList.length + ')' +
-          '</button>' +
-        '</div>' +
-        '<button type="button" onclick="document.getElementById(\'romanticInterestModal\').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>' +
-      '</div>' +
-      '<div id="interestModalBodyContent" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding-bottom:10px;">' +
-      '</div>' +
-    '</div>';
+    modalEl.innerHTML = `
+      <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" onclick="window.goBackModal(event);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
+          <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">관심루터 (${routerItems.length})</span>
+        </div>
+      </div>
+
+      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:14px 12px calc(80px + env(safe-area-inset-bottom, 8px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
+        ${listHtml}
+      </div>
+    `;
 
     document.body.appendChild(modalEl);
-    window.__renderInterestModalContent(activeTab);
+    if (typeof window.ensureMasterBottomDock === 'function') {
+      window.ensureMasterBottomDock('history');
+    }
   };
 
-  // 하위 호환
-  window.openFollowedRoutersModal = function() {
-    window.openRomanticInterestModal('routers');
+  window.openSavedFeedsModal = function(isRestored) {
+    triggerHaptic(12);
+
+    var activeReport = document.getElementById('userProfileModalOverlay');
+    if (!isRestored && activeReport && activeReport.style.display !== 'none') {
+      window.recordModalHistoryStep('userProfileModalOverlay', function() {
+        if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal();
+      });
+    }
+
+    [
+      'followedRoutersModal',
+      'savedFeedsListModal',
+      'savedFeedsEmptyModal',
+      'singleTripFeedModal',
+      'pastTripsListModal',
+      'romanticInterestModal'
+    ].forEach(function(mId) {
+      var m = document.getElementById(mId);
+      if (m) m.remove();
+    });
+
+    var savedFeedsList = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_saved_feeds', [])
+      : safeGetJSON('okbm_saved_feeds', []);
+
+    var allFeeds = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
+      ? window.__allLoadedFeeds
+      : (window.safeGetStorage('okbm_cached_community_feeds', []) || []);
+
+    if (Array.isArray(window.interactiveHistory)) {
+      window.interactiveHistory.forEach(function(myRec) {
+        if (myRec && window.okbmIsPublicFeedItem && window.okbmIsPublicFeedItem(myRec)) {
+          if (!allFeeds.some(function(f) { return String(f.id).trim() === String(myRec.id).trim(); })) {
+            allFeeds.push(myRec);
+          }
+        }
+      });
+    }
+
+    var matchedSavedFeeds = [];
+    var validIdSet = new Set();
+
+    savedFeedsList.forEach(function(sId) {
+      var found = allFeeds.find(function(f) {
+        return f && String(f.id).trim() === String(sId).trim();
+      });
+      if (found && (!window.okbmIsPublicFeedItem || window.okbmIsPublicFeedItem(found))) {
+        matchedSavedFeeds.push(found);
+        validIdSet.add(String(sId).trim());
+      }
+    });
+
+    if (allFeeds.length > 0 && validIdSet.size !== savedFeedsList.length) {
+      var cleanedIds = savedFeedsList.filter(function(id) {
+        return validIdSet.has(String(id).trim());
+      });
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_saved_feeds', cleanedIds, true);
+      } else {
+        localStorage.setItem('okbm_saved_feeds', JSON.stringify(cleanedIds));
+      }
+    }
+
+    window.__currentScopedSavedFeeds = matchedSavedFeeds.slice();
+
+    var modalEl = document.createElement('div');
+    modalEl.id = 'savedFeedsListModal';
+    modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; width:100%; max-width:100%; background:#000000; z-index:1000030 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+
+    var listContentHtml = '';
+    if (matchedSavedFeeds.length === 0) {
+      listContentHtml = '<div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:#94a3b8; font-size:0.80rem; padding:40px 14px; text-align:center;">' +
+        '<div style="width:48px; height:48px; border-radius:50%; background:rgba(192,132,252,0.1); border:1px solid rgba(192,132,252,0.25); display:flex; align-items:center; justify-content:center; color:#c084fc;">' +
+          '<svg viewBox="0 0 24 24" style="width:24px; height:24px;" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
+        '</div>' +
+        '<span style="font-size:0.88rem; font-weight:800; color:#ffffff;">저장된 관심피드가 없습니다</span>' +
+        '<span style="font-size:0.68rem; color:#64748b; line-height:1.5;">피드 하단의 북마크 아이콘을 터치하여<br>소중한 기록을 저장해보세요.</span>' +
+      '</div>';
+    } else {
+      var cardsHtml = matchedSavedFeeds.map(function(r) {
+        var photos = (typeof getRecordPhotos === 'function') ? getRecordPhotos(r) : (r.photos || []);
+        var thumbPhoto = (photos && photos.length > 0 && photos[0]) ? photos[0] : (r.readyShotPhoto || r.customTemplatePhoto || '');
+        var safeId = escapeHtml(String(r.id || ''));
+        var spotTitle = escapeHtml(r.spot || '방문 박지');
+        var authorText = escapeHtml(r.author || r.nickname || '낭만백패커');
+        var dateText = escapeHtml(r.date || '');
+        var weightStr = escapeHtml(String(r.weightKg || '0.00'));
+
+        return '<div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">' +
+          '<div data-feed-id="' + safeId + '" onclick="window.openSingleTripDualFeedModal(this.dataset.feedId, window.__currentScopedSavedFeeds, \'관심피드\');" style="display:flex; align-items:center; gap:10px; cursor:pointer; min-width:0; flex:1;">' +
+            '<div style="width:48px; height:48px; border-radius:10px; overflow:hidden; background:#0f172a; flex-shrink:0; border:1px solid rgba(255,255,255,0.15);">' +
+              '<img src="' + thumbPhoto + '" style="width:100%; height:100%; object-fit:cover; display:block;" />' +
+            '</div>' +
+            '<div style="min-width:0; flex:1;">' +
+              '<div style="font-size:0.86rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + spotTitle + '</div>' +
+              '<div style="font-size:0.64rem; color:#94a3b8; margin-top:2px;">' + authorText + ' · ' + dateText + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="display:flex; align-items:center; gap:8px; flex-shrink:0; margin-left:8px;">' +
+            '<span style="font-size:0.82rem; font-weight:900; color:#34d399; font-family:\'Space Grotesk\', sans-serif;">' + weightStr + 'kg</span>' +
+            '<button type="button" data-feed-id="' + safeId + '" onclick="window.toggleSaveFeed(this.dataset.feedId, event); window.openSavedFeedsModal();" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.3); color:#fda4af; font-size:0.64rem; font-weight:800; padding:4px 8px; border-radius:6px; cursor:pointer;" title="저장 해제">해제</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      listContentHtml = '<div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:14px 12px calc(80px + env(safe-area-inset-bottom, 8px)) 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">' +
+        cardsHtml +
+      '</div>';
+    }
+
+    modalEl.innerHTML = `
+      <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" onclick="window.goBackModal(event);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
+          <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">관심피드 (${matchedSavedFeeds.length})</span>
+        </div>
+      </div>
+      ${listContentHtml}
+    `;
+
+    document.body.appendChild(modalEl);
+    if (typeof window.ensureMasterBottomDock === 'function') {
+      window.ensureMasterBottomDock('history');
+    }
   };
-  window.openSavedFeedsModal = function() {
-    window.openRomanticInterestModal('feeds');
+
+  window.openRomanticInterestModal = function(initialTab) {
+    if (initialTab === 'feeds') {
+      window.openSavedFeedsModal();
+    } else {
+      window.openFollowedRoutersModal();
+    }
   };
  // 👥 [단방향 관심루터/크루 팔로우 토글 엔진]
  window.toggleFollowUser = function(targetUserId, targetAuthor, e) {
@@ -2880,15 +3077,27 @@ window.deleteTripRecord = async function(recordId, e) {
     }
 
     if (typeof window.renderHistoryStage === 'function') window.renderHistoryStage();
+    var followedModal = document.getElementById('followedRoutersModal');
+    if (followedModal && typeof window.openFollowedRoutersModal === 'function') {
+      window.openFollowedRoutersModal();
+    }
     var modalEl = document.getElementById('userFeedCollectionModal');
     if (modalEl && typeof window.openUserFeedCollectionModal === 'function') {
       window.openUserFeedCollectionModal(sTargetAuthor, sTargetId);
     }
   };
 
-  window.openUserFeedCollectionModal = function(authorName, userId, initialTab) {
+  window.openUserFeedCollectionModal = function(authorName, userId, initialTab, isRestored) {
     if (!authorName && !userId) return;
     triggerHaptic(12);
+
+    var followedModal = document.getElementById('followedRoutersModal');
+    if (!isRestored && followedModal) {
+      window.recordModalHistoryStep('followedRoutersModal', function() {
+        if (typeof window.openFollowedRoutersModal === 'function') window.openFollowedRoutersModal(true);
+      });
+      followedModal.remove();
+    }
 
     var old = document.getElementById('userFeedCollectionModal');
     if (old) old.remove();
@@ -2934,49 +3143,51 @@ window.deleteTripRecord = async function(recordId, e) {
     window.__scopedUserFeedsMap[targetAuthor] = matchedFeeds;
     window.__currentUserModalTab = 'route';
 
+    var profile = safeGetJSON('user_profile', null);
+    var myUserId = (profile && profile.id) ? String(profile.id).trim() : '';
+    var followKey = targetUserId || targetAuthor;
+    var followingList = safeGetJSON('okbm_following_users', []);
+    var isFollowing = followingList.includes(followKey);
+    var isSelf = Boolean(myUserId && targetUserId && myUserId === targetUserId);
+
     var repSnsUrl = '';
     var repSnsType = '';
 
-    matchedFeeds.forEach(function(f) {
-      if (!repSnsUrl) {
-        var raw = String(f.instagram || f.youtube || f.youtubeUrl || '').trim();
-        if (raw.includes('youtube.com') || raw.includes('youtu.be')) {
-          var cleanYt = raw.replace(/^@+/, '').split('?')[0].trim();
-          var m = cleanYt.match(/(?:youtube\.com\/(?:@|c\/|channel\/)?|youtu\.be\/)([\w\-\_\.]+)/i);
-          repSnsUrl = (m && m[1]) ? ('https://www.youtube.com/@' + m[1].replace(/^@/, '')) : (cleanYt.startsWith('http') ? cleanYt : ('https://' + cleanYt));
-          repSnsType = 'youtube';
-        } else if (raw) {
-          var pureId = raw.replace(/^@+/, '').replace(/instagram\.com\//, '').replace(/[@\s]/g, '').split('?')[0].trim();
-          if (pureId) {
-            repSnsUrl = 'https://instagram.com/' + pureId;
-            repSnsType = 'instagram';
+    if (!isSelf) {
+      matchedFeeds.forEach(function(f) {
+        if (!repSnsUrl) {
+          var raw = String(f.instagram || f.insta || f.instaId || f.user_instagram || f.youtube || f.youtubeUrl || '').trim();
+          if (raw.includes('youtube.com') || raw.includes('youtu.be')) {
+            var cleanYt = raw.replace(/^@+/, '').split('?')[0].trim();
+            var m = cleanYt.match(/(?:youtube\.com\/(?:@|c\/|channel\/)?|youtu\.be\/)([\w\-\_\.]+)/i);
+            repSnsUrl = (m && m[1]) ? ('https://www.youtube.com/@' + m[1].replace(/^@/, '')) : (cleanYt.startsWith('http') ? cleanYt : ('https://' + cleanYt));
+            repSnsType = 'youtube';
+          } else if (raw) {
+            var pureId = raw.replace(/^@+/, '').replace(/https?:\/\/(?:www\.)?instagram\.com\//, '').replace(/instagram\.com\//, '').replace(/[@\s]/g, '').split('?')[0].trim();
+            if (pureId) {
+              repSnsUrl = 'https://instagram.com/' + pureId;
+              repSnsType = 'instagram';
+            }
           }
         }
-      }
-    });
+      });
+    }
 
     var repSnsBadgeHtml = '';
-    if (repSnsUrl) {
+    if (!isSelf && repSnsUrl) {
       if (repSnsType === 'youtube') {
-        repSnsBadgeHtml = '<a href="' + repSnsUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;" title="유튜브 채널">' +
+        repSnsBadgeHtml = '<a href="' + repSnsUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;" title="유튜브">' +
           '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none">' +
             '<path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z" fill="#f43f5e"/>' +
             '<path d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z" fill="#ffffff"/>' +
           '</svg>' +
         '</a>';
       } else {
-        repSnsBadgeHtml = '<a href="' + repSnsUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;" title="인스타그램 프로필">' +
+        repSnsBadgeHtml = '<a href="' + repSnsUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0;" title="인스타그램">' +
           '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:#e2e8f0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>' +
         '</a>';
       }
     }
-
-    var profile = safeGetJSON('user_profile', null);
-    var myUserId = (profile && profile.id) ? String(profile.id).trim() : '';
-    var followKey = targetUserId || targetAuthor;
-    var followingList = safeGetJSON('okbm_following_users', []);
-    var isFollowing = followingList.includes(followKey);
-    var isSelf = (myUserId && targetUserId && myUserId === targetUserId);
 
     var followBtnHtml = '';
     if (!isSelf) {
@@ -3042,7 +3253,7 @@ window.deleteTripRecord = async function(recordId, e) {
         var fMemo = escapeHtml((f.memo || f.oneLineMemo || '').slice(0, 60));
         var safeId = escapeHtml(String(f.id || ''));
 
-        return '<div data-feed-id="' + safeId + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="document.getElementById(\'userFeedCollectionModal\').remove(); window.openSingleTripDualFeedModal(this.dataset.feedId, window.__scopedUserFilteredFeedsMap[\'' + escapeHtml(targetAuthor) + '\'], this.dataset.author);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; display:flex; gap:12px; align-items:center; cursor:pointer; flex-shrink:0; transition:all 0.15s ease;">' +
+        return '<div data-feed-id="' + safeId + '" data-author="' + escapeHtml(targetAuthor) + '" data-user-id="' + escapeHtml(targetUserId) + '" onclick="window.openSingleTripDualFeedModal(this.dataset.feedId, window.__scopedUserFilteredFeedsMap[\'' + escapeHtml(targetAuthor) + '\'], this.dataset.author);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; display:flex; gap:12px; align-items:center; cursor:pointer; flex-shrink:0; transition:all 0.15s ease;">' +
           '<div style="width:58px; height:58px; border-radius:8px; overflow:hidden; background:#0f172a; flex-shrink:0; border:1px solid rgba(255,255,255,0.14);">' +
             '<img src="' + thumb + '" style="width:100%; height:100%; object-fit:cover; display:block;" />' +
           '</div>' +
@@ -3065,16 +3276,13 @@ window.deleteTripRecord = async function(recordId, e) {
     modalEl.innerHTML = `
       <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10; gap:10px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1; padding-right:8px;">
-            <button type="button" onclick="document.getElementById('userFeedCollectionModal').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">◀</button>
+          <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">
+            <button type="button" onclick="window.goBackModal(event);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">◀</button>
             <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden;">
-              <span style="font-size:0.92rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">[${escapeHtml(targetAuthor)}]</span>
+              <span style="font-size:0.92rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex-shrink:1;">[${escapeHtml(targetAuthor)}]</span>
               ${repSnsBadgeHtml}
+              ${followBtnHtml}
             </div>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-            <span id="userModalRouteCountBadge" style="font-size:0.68rem; padding:4px 8px; border-radius:6px; background:#38bdf8; color:#000000; font-weight:900;">낭만루트</span>
-            ${followBtnHtml}
           </div>
         </div>
       </div>
@@ -3093,6 +3301,29 @@ window.deleteTripRecord = async function(recordId, e) {
   
 // 📖 [백패킹/캠핑 피드 상세 듀얼 뷰 - 현재 스크롤 피드 실시간 추적 & 수정 100% 바인딩]
   window.openSingleTripDualFeedModal = function(recordId, scopedFeedList, contextTitle) {
+    var pastTripsEl = document.getElementById('pastTripsListModal');
+    var userCollEl = document.getElementById('userFeedCollectionModal');
+    var savedFeedsEl = document.getElementById('savedFeedsListModal') || document.getElementById('savedFeedsEmptyModal');
+
+    if (pastTripsEl) {
+      window.recordModalHistoryStep('pastTripsListModal', function() {
+        if (typeof window.openPastTripsListModal === 'function') window.openPastTripsListModal(true);
+      });
+      pastTripsEl.remove();
+    } else if (userCollEl) {
+      var savedAuthor = contextTitle || userCollEl.dataset.author || '';
+      var savedUserId = userCollEl.dataset.userId || '';
+      window.recordModalHistoryStep('userFeedCollectionModal', function() {
+        if (typeof window.openUserFeedCollectionModal === 'function') window.openUserFeedCollectionModal(savedAuthor, savedUserId, 'route', true);
+      });
+      userCollEl.remove();
+    } else if (savedFeedsEl || contextTitle === '관심피드') {
+      window.recordModalHistoryStep('savedFeedsListModal', function() {
+        if (typeof window.openSavedFeedsModal === 'function') window.openSavedFeedsModal(true);
+      });
+      if (savedFeedsEl) savedFeedsEl.remove();
+    }
+
     var sId = String(recordId || '').trim();
     var logs = [];
     if (Array.isArray(scopedFeedList) && scopedFeedList.length > 0) {
@@ -3140,9 +3371,9 @@ window.deleteTripRecord = async function(recordId, e) {
 
     feedModal.innerHTML = `
       <div style="position:fixed; top:calc(10px + env(safe-area-inset-top, 0px)); left:0; right:0; max-width:440px; margin:0 auto; padding:0 12px; display:flex; justify-content:space-between; align-items:center; z-index:1000025; pointer-events:none;">
-        <button type="button" onclick="document.getElementById('singleTripFeedModal').remove(); triggerHaptic(10);" style="pointer-events:auto; background:rgba(0,0,0,0.22); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.12); color:#ffffff; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0;">◀</button>
+        <button type="button" onclick="window.goBackModal(event);" style="pointer-events:auto; background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.2); color:#ffffff; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0;">◀</button>
         
-        <button type="button" id="btnFloatEditTripLog" onclick="window.__triggerEditCurrentActiveFeed();" style="pointer-events:auto; background:rgba(0,0,0,0.22); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.12); color:#fde047; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0;" title="현재 피드 수정">
+        <button type="button" id="btnFloatEditTripLog" onclick="window.__triggerEditCurrentActiveFeed();" style="pointer-events:auto; background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.2); color:#fde047; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0;" title="현재 피드 수정">
           <svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
         </button>
       </div>
@@ -4979,18 +5210,20 @@ window.renderHistoryStage = function(isLoading) {
         }
 
         var socialBadgesHtml = '';
-        if (instaTargetUrl) {
-          socialBadgesHtml += '<a href="' + instaTargetUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="인스타그램 프로필">' +
-            '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:#e2e8f0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>' +
+        if (!isMyRecord) {
+          if (instaTargetUrl) {
+            socialBadgesHtml += '<a href="' + instaTargetUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="인스타그램">' +
+              '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:#e2e8f0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>' +
             '</a>';
-        }
-        if (youtubeTargetUrl) {
-          socialBadgesHtml += '<a href="' + youtubeTargetUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="유튜브 채널">' +
-            '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none">' +
-              '<path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z" fill="#f43f5e"/>' +
-              '<path d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z" fill="#ffffff"/>' +
-            '</svg>' +
-          '</a>';
+          }
+          if (youtubeTargetUrl) {
+            socialBadgesHtml += '<a href="' + youtubeTargetUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="유튜브">' +
+              '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none">' +
+                '<path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z" fill="#f43f5e"/>' +
+                '<path d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z" fill="#ffffff"/>' +
+              '</svg>' +
+            '</a>';
+          }
         }
 
         // 🏷️ [낭만루트 헤더]

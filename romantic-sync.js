@@ -416,9 +416,43 @@ window.RomanticVault = window.RomanticVault || {
         this.write('okbm_memos', serverMemos, false);
         window.userMemos = serverMemos;
 
-        var serverSavedFeeds = (cloudData.saved_feeds && Array.isArray(cloudData.saved_feeds)) ? cloudData.saved_feeds : [];
-        var cleanSavedFeeds = serverSavedFeeds.map(function(s) { return String(s).trim(); }).filter(Boolean);
-        this.write('okbm_saved_feeds', cleanSavedFeeds, false);
+        var localSavedFeeds = safeGetJSON('okbm_saved_feeds', []);
+        if (cloudData.saved_feeds !== undefined && Array.isArray(cloudData.saved_feeds)) {
+          var cleanSavedFeeds = cloudData.saved_feeds.map(function(s) { return String(s).trim(); }).filter(Boolean);
+          if (cleanSavedFeeds.length > 0 || localSavedFeeds.length === 0) {
+            this.write('okbm_saved_feeds', cleanSavedFeeds, false);
+          } else if (localSavedFeeds.length > 0) {
+            this.write('okbm_saved_feeds', localSavedFeeds, true);
+          }
+        } else if (localSavedFeeds.length > 0) {
+          this.write('okbm_saved_feeds', localSavedFeeds, true);
+        }
+
+        var localFollowing = safeGetJSON('okbm_following_users', []);
+        var rawFollowing = cloudData.following || cloudData.following_users;
+        if (rawFollowing !== undefined && Array.isArray(rawFollowing)) {
+          var cleanFollowing = rawFollowing.map(function(s) { return String(s).trim(); }).filter(Boolean);
+          if (cleanFollowing.length > 0 || localFollowing.length === 0) {
+            this.write('okbm_following_users', cleanFollowing, false);
+          } else if (localFollowing.length > 0) {
+            this.write('okbm_following_users', localFollowing, true);
+          }
+        } else if (localFollowing.length > 0) {
+          this.write('okbm_following_users', localFollowing, true);
+        }
+
+        var localFollowing = safeGetJSON('okbm_following_users', []);
+        var rawFollowing = cloudData.following || cloudData.following_users;
+        if (rawFollowing !== undefined && Array.isArray(rawFollowing)) {
+          var cleanFollowing = rawFollowing.map(function(s) { return String(s).trim(); }).filter(Boolean);
+          if (cleanFollowing.length > 0 || localFollowing.length === 0) {
+            this.write('okbm_following_users', cleanFollowing, false);
+          } else if (localFollowing.length > 0) {
+            this.write('okbm_following_users', localFollowing, true);
+          }
+        } else if (localFollowing.length > 0) {
+          this.write('okbm_following_users', localFollowing, true);
+        }
 
         // [헌법 제1조: SSOT 원칙] 글/피드의 절대 진실 공급원은 feeds 테이블 하나뿐입니다.
         // users 테이블의 pack_history는 예전 백업용 잔재이며, 여기서 이를 읽어
@@ -1344,10 +1378,10 @@ function ensureMyReportAndAuthModalsInDOM() {
     </div>
 
     <!-- 3. 계정 관리 모달 -->
-    <div class="custom-modal-overlay" id="userAccountSettingsModal" style="display:none; position:fixed; inset:0; background:#000000; z-index:100005; justify-content:center; align-items:stretch; width:100%; height:100dvh; padding:0; overflow:hidden;">
+    <div class="custom-modal-overlay" id="userAccountSettingsModal" style="display:none; position:fixed; inset:0; background:#000000; z-index:2147483642 !important; justify-content:center; align-items:stretch; width:100%; height:100dvh; padding:0; overflow:hidden;">
       <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
         <div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box;">
-          <button type="button" onclick="triggerHaptic(10); document.getElementById('userAccountSettingsModal').style.display='none'; openUserProfileModal();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
+          <button type="button" onclick="document.getElementById('userAccountSettingsModal').style.display='none'; if(typeof window.goBackModal==='function'){ window.goBackModal(event); } else { openUserProfileModal(); }" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
           <span style="font-size:0.95rem; font-weight:900; color:#ffffff;">계정 관리</span>
           <div style="width:30px;"></div>
         </div>
@@ -2695,6 +2729,9 @@ window.ensureMasterBottomDock = function(activeTabId) {
 // 🧭 [5대 탭 전역 중앙 네비게이션 디스패처 - 선제적 탭 색상 고정 & DOM 파괴 없는 초고속 라우팅]
 window.navigateToDockTab = function(tabId) {
   triggerHaptic(10);
+  if (Array.isArray(window.__modalHistoryStack)) {
+    window.__modalHistoryStack = [];
+  }
   var isMap = (typeof window.location !== 'undefined') && window.location.pathname.includes('map.html');
 
   // 0. 누르자마자 0초 만에 해당 탭 색상 선제 고정 (핑퐁 점멸 완전 차단)
@@ -2722,7 +2759,9 @@ window.navigateToDockTab = function(tabId) {
     'feedCustomShareModal',
     'romanticInterestModal',
     'richTripSpotSearchModal',
-    'gearPresetModal'
+    'gearPresetModal',
+    'followedRoutersModal',
+    'savedFeedsEmptyModal'
   ].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.remove();
@@ -2881,9 +2920,14 @@ window.editReportUserBio = function() {
 
 window.openMyPastTripsFromReport = function() {
   triggerHaptic(10);
+  if (typeof window.recordModalHistoryStep === 'function') {
+    window.recordModalHistoryStep('userProfileModalOverlay', function() {
+      if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal();
+    });
+  }
   if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
   if (typeof window.openPastTripsListModal === 'function') {
-    window.openPastTripsListModal();
+    window.openPastTripsListModal(true);
   } else {
     window.navigateToDockTab('history');
   }
@@ -2891,9 +2935,14 @@ window.openMyPastTripsFromReport = function() {
 
 window.openRoutersInterestFromReport = function() {
   triggerHaptic(10);
+  if (typeof window.recordModalHistoryStep === 'function') {
+    window.recordModalHistoryStep('userProfileModalOverlay', function() {
+      if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal();
+    });
+  }
   if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
-  if (typeof window.openRomanticInterestModal === 'function') {
-    window.openRomanticInterestModal('routers');
+  if (typeof window.openFollowedRoutersModal === 'function') {
+    window.openFollowedRoutersModal(true);
   } else {
     window.navigateToDockTab('history');
   }
@@ -2901,9 +2950,14 @@ window.openRoutersInterestFromReport = function() {
 
 window.openFeedsInterestFromReport = function() {
   triggerHaptic(10);
+  if (typeof window.recordModalHistoryStep === 'function') {
+    window.recordModalHistoryStep('userProfileModalOverlay', function() {
+      if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal();
+    });
+  }
   if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
-  if (typeof window.openRomanticInterestModal === 'function') {
-    window.openRomanticInterestModal('feeds');
+  if (typeof window.openSavedFeedsModal === 'function') {
+    window.openSavedFeedsModal(true);
   } else {
     window.navigateToDockTab('history');
   }
@@ -2919,6 +2973,18 @@ function openUserProfileModal() {
       openLoginModal();
       return;
     }
+
+    [
+      'followedRoutersModal',
+      'savedFeedsEmptyModal',
+      'singleTripFeedModal',
+      'pastTripsListModal',
+      'romanticInterestModal',
+      'userFeedCollectionModal'
+    ].forEach(function(mId) {
+      var m = document.getElementById(mId);
+      if (m) m.remove();
+    });
 
     var shieldStyle = document.getElementById('romanticModalShieldCss');
     if (!shieldStyle) {
@@ -3519,7 +3585,7 @@ function logoutUser() {
     'okbm_trip_consumables', 'okbm_packed_checks', 'okbm_phone_photos_map',
     'okbm_trip_photos_map', 'okbm_user_instagram', 'okbm_cached_community_feeds',
     'okbm_hero_cover_url', 'okbm_my_proposals',
-    'okbm_feed_stars_map', 'okbm_feed_stars_counts'
+    'okbm_feed_stars_map', 'okbm_feed_stars_counts', 'okbm_saved_feeds'
   ];
   userPersonalKeys.forEach(function(k) {
     try { localStorage.removeItem(k); } catch(e) { console.warn('[romantic-sync.js:logoutUser removeItem]', e); }
@@ -3604,7 +3670,7 @@ function loginWithKakao() {
               'okbm_custom_gears', 'okbm_gear_presets', 'okbm_gear_meta',
               'okbm_trip_consumables', 'okbm_packed_checks', 'okbm_phone_photos_map',
               'okbm_trip_photos_map', 'okbm_user_instagram', 'okbm_cached_community_feeds',
-              'okbm_hero_cover_url', 'okbm_my_proposals'
+              'okbm_hero_cover_url', 'okbm_my_proposals', 'okbm_saved_feeds', 'okbm_following_users'
             ];
             purgeKeys.forEach(function(k) {
               try { localStorage.removeItem(k); } catch(e) {}
@@ -3971,7 +4037,9 @@ window.saveUserToSupabase = async function(profileData) {
   var customSavedNick = localStorage.getItem('okbm_user_nick') || (prof && prof.id ? localStorage.getItem('okbm_custom_nickname_' + prof.id) : '');
   var nickname = String(customSavedNick || (prof && prof.nickname) || '낭만백패커').trim();
   var coverUrl = (prof && (prof.photoUrl || prof.heroCoverUrl)) || localStorage.getItem('okbm_hero_cover_url') || '';
-  var followingList = safeGetJSON('okbm_following_users', []);
+  var followingList = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_following_users', [])
+    : safeGetJSON('okbm_following_users', []);
   var lastNickChanged = Number(prof && prof.lastNicknameChangedAt) || 0;
 
   var safeCreatedAt = undefined;
