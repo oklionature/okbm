@@ -308,7 +308,7 @@
         padding-right: 14px !important;
         padding-bottom: 0 !important;
         z-index: 20 !important;
-        background: linear-gradient(to bottom, #000000 0%, rgba(0,0,0,0.85) env(safe-area-inset-top, 0px), rgba(0,0,0,0.4) calc(env(safe-area-inset-top, 0px) + 24px), rgba(0,0,0,0) 100%) !important;
+        background: transparent !important;
         border-bottom: none !important;
       }
 
