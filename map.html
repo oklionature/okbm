@@ -3995,22 +3995,15 @@ var liveSearchTimer = null;
         }
       }
 
-      function renderSpots() {
+      var clustererDebounceTimer = null;
+
+      function renderSpots(forceRebuild = false) {
         var latestB = (window.RomanticVault && typeof window.RomanticVault.read === 'function') ? window.RomanticVault.read('okbm_bookmarks', []) : safeGetJSON('okbm_bookmarks', []);
         var latestV = (window.RomanticVault && typeof window.RomanticVault.read === 'function') ? window.RomanticVault.read('okbm_visited', []) : safeGetJSON('okbm_visited', []);
         userBookmarks = new Set((latestB || []).map(function(s) { return String(s).trim(); }));
         userVisited = new Set((latestV || []).map(function(s) { return String(s).trim(); }));
         window.userBookmarks = userBookmarks;
         window.userVisited = userVisited;
-
-        const currentlyOpenRegions = new Set();
-        document.querySelectorAll('.region-group').forEach(group => {
-          const container = group.querySelector('.region-items-container');
-          const titleText = group.querySelector('.region-group-title span:first-child')?.innerText?.trim();
-          if (container && container.style.display !== 'none' && titleText) {
-            currentlyOpenRegions.add(titleText);
-          }
-        });
 
         const currentIds = new Set(spots.map(s => String(s.id).trim()));
         spotNativeMarkerMap.forEach((marker, id) => { 
@@ -4026,9 +4019,7 @@ var liveSearchTimer = null;
           } 
         });
 
-        if (globalClusterer) globalClusterer.clear();
         const activeMarkers = [];
-
         let displaySpots = [...spots];
         if (isAdminMode) {
           displaySpots.sort((a, b) => (b.sheetIndex || 0) - (a.sheetIndex || 0) || Number(b.id) - Number(a.id));
@@ -4040,16 +4031,14 @@ var liveSearchTimer = null;
           });
         }
 
-       const targetOrder = ["서울/인천", "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
+        const targetOrder = ["서울/인천", "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"];
         const grouped = Object.fromEntries(targetOrder.map(r => [r, []]));
-
-        // 🎯 [동일 좌표 자동 방사형 분산 엔진]: 포개진 핀을 15m 간격으로 자동 전개
         const coordCountMap = new Map();
-displaySpots.forEach(spot => {
+
+        displaySpots.forEach(spot => {
           let lat = parseFloat(spot.lat), lng = parseFloat(spot.lng);
           if (isNaN(lat) || isNaN(lng)) return;
 
-          // 🌐 위경도 뒤바뀜 2차 방어선
           if (lat > 100 && lng < 50 && lng > 0) {
             const tmp = lat; lat = lng; lng = tmp;
             spot.lat = lat; spot.lng = lng;
@@ -4059,7 +4048,6 @@ displaySpots.forEach(spot => {
           const overlapIndex = coordCountMap.get(coordKey) || 0;
           coordCountMap.set(coordKey, overlapIndex + 1);
 
-          // 동일 좌표가 2개 이상이면 2번째 핀부터 나선형(15m)으로 살짝 펼쳐서 렌더링
           if (overlapIndex > 0) {
             const angle = overlapIndex * 1.57;
             const dist = 0.00018 * Math.ceil(overlapIndex / 4);
@@ -4073,7 +4061,6 @@ displaySpots.forEach(spot => {
           const sId = String(spot.id).trim();
           const latlng = spot._renderLatLng || (spot._renderLatLng = new kakao.maps.LatLng(lat, lng));
 
-          // 10대 권역 정규화 보장
           if (!spot._regionNormalized) {
             spot.region = normalizeTo10Regions(spot.region, detectRegionAndCity(lat, lng, spot.spot_main || spot.name, spot.trailhead_addr || spot.entryPoint).region);
             spot._regionNormalized = true;
@@ -4137,10 +4124,14 @@ displaySpots.forEach(spot => {
 
         let visibleCount = 0;
         const spotListEl = document.getElementById('spotList');
-        spotListEl.innerHTML = '';
+        const isDomBuilt = !forceRebuild && !isAdminMode && spotListEl.children.length > 0 && spotListEl.querySelector('.region-group');
+
+        const regionVisibleCounts = Object.fromEntries(targetOrder.map(r => [r, 0]));
 
         displaySpots.forEach(spot => {
-          const sId = String(spot.id).trim(), marker = spotNativeMarkerMap.get(sId), labelOverlay = spotLabelOverlayMap.get(sId);
+          const sId = String(spot.id).trim();
+          const marker = spotNativeMarkerMap.get(sId);
+          const labelOverlay = spotLabelOverlayMap.get(sId);
           let match = true;
           const diffNum = parseInt(spot.difficulty, 10) || 3;
 
@@ -4186,68 +4177,103 @@ displaySpots.forEach(spot => {
             else if (currentMyFilter === 'VISITED' && !userVisited.has(sId)) match = false;
           }
 
-         if (match) {
-            activeMarkers.push(marker);
+          if (match) {
+            if (marker) activeMarkers.push(marker);
             if (grouped[regKey]) grouped[regKey].push(spot);
+            if (regionVisibleCounts[regKey] !== undefined) regionVisibleCounts[regKey]++;
             visibleCount++;
           } else {
             if (marker) marker.setMap(null);
             if (labelOverlay) labelOverlay.setMap(null);
           }
+
+          if (isDomBuilt) {
+            const cardEl = document.getElementById(`spotItem_${sId}`);
+            if (cardEl) cardEl.style.display = match ? 'flex' : 'none';
+          }
         });
 
-        if (globalClusterer && activeMarkers.length > 0) globalClusterer.addMarkers(activeMarkers);
-        updateLODLabels();
-        
+        clearTimeout(clustererDebounceTimer);
+        clustererDebounceTimer = setTimeout(() => {
+          if (globalClusterer) {
+            globalClusterer.clear();
+            if (activeMarkers.length > 0) {
+              globalClusterer.addMarkers(activeMarkers);
+            }
+          }
+          updateLODLabels();
+        }, 80);
+
         const spotCountEl = document.getElementById('spotCount');
         if (spotCountEl) spotCountEl.innerText = `${visibleCount}개`;
 
-        const fragment = document.createDocumentFragment();
-
-        if (isAdminMode) {
-          const adminHeaderDiv = document.createElement('div');
-          adminHeaderDiv.style.cssText = "padding:8px 14px; background:rgba(16,185,129,0.15); border-bottom:1px solid rgba(16,185,129,0.3); font-size:0.78rem; color:var(--accent-emerald); font-weight:bold;";
-          adminHeaderDiv.innerHTML = `${ICONS.FAST} [관리자 검수] 최신 등록순 목록 (${visibleCount}개)`;
-          fragment.appendChild(adminHeaderDiv);
-          displaySpots.forEach(spot => { 
-            const mk = spotNativeMarkerMap.get(String(spot.id).trim());
-            if (mk && mk.getMap()) fragment.appendChild(createSpotCardElement(spot)); 
+        if (isDomBuilt) {
+          targetOrder.forEach(regKey => {
+            const groupDiv = spotListEl.querySelector(`.region-group[data-region="${regKey}"]`);
+            if (!groupDiv) return;
+            const count = regionVisibleCounts[regKey] || 0;
+            if (count === 0) {
+              groupDiv.style.display = 'none';
+            } else {
+              groupDiv.style.display = 'block';
+              const titleSpan = groupDiv.querySelector('.region-group-title span:last-child');
+              const container = groupDiv.querySelector('.region-items-container');
+              const isOpen = container && container.style.display !== 'none';
+              if (titleSpan) {
+                titleSpan.innerHTML = `${count}개 ${isOpen ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}`;
+              }
+            }
           });
         } else {
-          targetOrder.forEach(regionKey => {
-            const items = grouped[regionKey];
-            if (!items || items.length === 0) return;
-            
-            const wasOpen = currentlyOpenRegions.has(regionKey) || currentlyOpenRegions.has(`${regionKey}`);
-            const shouldBeOpen = wasOpen || (currentMasterTab === 'REGION' && currentRegionFilter === regionKey);
+          spotListEl.innerHTML = '';
+          const fragment = document.createDocumentFragment();
 
-            const groupDiv = document.createElement('div');
-            groupDiv.className = 'region-group';
-            const groupTitle = document.createElement('div');
-            groupTitle.className = 'region-group-title';
-            groupTitle.innerHTML = `<span style="display:flex; align-items:center; gap:4px;">${ICONS.PIN}${regionKey}</span><span style="color:var(--text-muted); font-size:0.74rem;">${items.length}개 ${shouldBeOpen ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}</span>`;
-            if (shouldBeOpen) groupTitle.style.borderLeftColor = '#0f766e';
-            
-            const groupItemsContainer = document.createElement('div');
-            groupItemsContainer.className = 'region-items-container';
-            groupItemsContainer.style.display = shouldBeOpen ? 'block' : 'none';
-
-            groupTitle.addEventListener('click', () => {
-              triggerHaptic(10);
-              const isClosed = groupItemsContainer.style.display === 'none';
-              groupItemsContainer.style.display = isClosed ? 'block' : 'none';
-              groupTitle.querySelector('span:last-child').innerHTML = `${items.length}개 ${isClosed ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}`;
-              groupTitle.style.borderLeftColor = isClosed ? '#0f766e' : 'transparent';
-              updateSmartResetButtons();
+          if (isAdminMode) {
+            const adminHeaderDiv = document.createElement('div');
+            adminHeaderDiv.style.cssText = "padding:8px 14px; background:rgba(16,185,129,0.15); border-bottom:1px solid rgba(16,185,129,0.3); font-size:0.78rem; color:var(--accent-emerald); font-weight:bold;";
+            adminHeaderDiv.innerHTML = `${ICONS.FAST} [관리자 검수] 최신 등록순 목록 (${visibleCount}개)`;
+            fragment.appendChild(adminHeaderDiv);
+            displaySpots.forEach(spot => { 
+              const mk = spotNativeMarkerMap.get(String(spot.id).trim());
+              if (mk && mk.getMap()) fragment.appendChild(createSpotCardElement(spot)); 
             });
+          } else {
+            targetOrder.forEach(regionKey => {
+              const items = grouped[regionKey];
+              if (!items || items.length === 0) return;
+              
+              const shouldBeOpen = (currentMasterTab === 'REGION' && currentRegionFilter === regionKey);
 
-            items.forEach(spot => groupItemsContainer.appendChild(createSpotCardElement(spot)));
-            groupDiv.appendChild(groupTitle); 
-            groupDiv.appendChild(groupItemsContainer); 
-            fragment.appendChild(groupDiv);
-          });
+              const groupDiv = document.createElement('div');
+              groupDiv.className = 'region-group';
+              groupDiv.setAttribute('data-region', regionKey);
+              const groupTitle = document.createElement('div');
+              groupTitle.className = 'region-group-title';
+              groupTitle.innerHTML = `<span style="display:flex; align-items:center; gap:4px;">${ICONS.PIN}${regionKey}</span><span style="color:var(--text-muted); font-size:0.74rem;">${items.length}개 ${shouldBeOpen ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}</span>`;
+              if (shouldBeOpen) groupTitle.style.borderLeftColor = '#0f766e';
+              
+              const groupItemsContainer = document.createElement('div');
+              groupItemsContainer.className = 'region-items-container';
+              groupItemsContainer.style.display = shouldBeOpen ? 'block' : 'none';
+
+              groupTitle.addEventListener('click', () => {
+                triggerHaptic(10);
+                const isClosed = groupItemsContainer.style.display === 'none';
+                groupItemsContainer.style.display = isClosed ? 'block' : 'none';
+                const currentCount = regionVisibleCounts[regionKey] || 0;
+                groupTitle.querySelector('span:last-child').innerHTML = `${currentCount}개 ${isClosed ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}`;
+                groupTitle.style.borderLeftColor = isClosed ? '#0f766e' : 'transparent';
+                updateSmartResetButtons();
+              });
+
+              items.forEach(spot => groupItemsContainer.appendChild(createSpotCardElement(spot)));
+              groupDiv.appendChild(groupTitle); 
+              groupDiv.appendChild(groupItemsContainer); 
+              fragment.appendChild(groupDiv);
+            });
+          }
+          spotListEl.appendChild(fragment);
         }
-        spotListEl.appendChild(fragment);
         updateSmartResetButtons();
       }
 
@@ -4827,7 +4853,7 @@ var overlay = document.getElementById('customModalOverlay');
             spots.unshift(newSpot); 
             localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
             updateNewSpotFlags(spots); 
-            renderSpots(); 
+            renderSpots(true); 
             focusSpotOnMap(newSpot);
             try {
               var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
@@ -5192,7 +5218,7 @@ var overlay = document.getElementById('customModalOverlay');
         closeAllPopups(); 
         renderSubChips(); 
         updateNewSpotFlags(spots); 
-        renderSpots();
+        renderSpots(true);
         
         if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
           fetch(window.SUPABASE_URL + '/rest/v1/spots?id=eq.' + encodeURIComponent(sId), {

@@ -108,9 +108,6 @@
           ? '#romanticMasterBottomDock .dock-item[title="낭만루트"] { color:#94a3b8 !important; font-weight:700 !important; } #romanticMasterBottomDock .dock-item[title="낭만플랜"] { color:#38bdf8 !important; font-weight:900 !important; }'
           : '#romanticMasterBottomDock .dock-item[title="낭만루트"] { color:#94a3b8 !important; font-weight:700 !important; } #romanticMasterBottomDock .dock-item[title="낭만보관함"] { color:#38bdf8 !important; font-weight:900 !important; }';
         document.head.appendChild(styleTag);
-        setTimeout(function() {
-          document.documentElement.classList.remove('direct-modal-pending');
-        }, 600);
       }
     })();
   </script>
@@ -240,6 +237,8 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT/fonts/static/woff2/SUIT.css" media="print" onload="this.media='all'" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev" crossorigin>
+  <link rel="preconnect" href="https://qnumfecythtqtrxeasys.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@700&family=JetBrains+Mono:wght@700;800&family=Noto+Serif+KR:wght@600&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   
   <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
@@ -1193,8 +1192,12 @@
 <script>
 (function purgeLegacyHeroCache() {
   try {
-    localStorage.removeItem('okbm_hero_cover_url');
-    localStorage.removeItem('okbm_cached_community_feeds');
+    var FEED_SYNC_EPOCH = '20260917_FEED_SYNC_V1';
+    if (localStorage.getItem('okbm_feed_epoch') !== FEED_SYNC_EPOCH) {
+      localStorage.removeItem('okbm_hero_cover_url');
+      localStorage.removeItem('okbm_cached_community_feeds');
+      localStorage.setItem('okbm_feed_epoch', FEED_SYNC_EPOCH);
+    }
   } catch(e) {}
 })();
 </script>
@@ -1417,10 +1420,15 @@
       triggerHaptic(10);
       var currentPath = window.location.pathname;
       var targetPath = (url || '').split('?')[0];
+      var isTargetHome = (targetPath.includes('index.html') || targetPath === '/' || targetPath === '');
+      var isCurrentHome = (currentPath.includes('index.html') || currentPath.endsWith('/'));
 
-      if ((targetPath.includes('index.html') || targetPath === '/' || targetPath === '') && (currentPath.includes('index.html') || currentPath.endsWith('/'))) {
+      if (isTargetHome && isCurrentHome) {
         if (e && typeof e.preventDefault === 'function') e.preventDefault();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (typeof window.closeAllTripModals === 'function') window.closeAllTripModals();
+        if (typeof closePlanModal === 'function') closePlanModal();
+        if (typeof closeHistoryModal === 'function') closeHistoryModal();
+        window.scrollTo({ top: 0, behavior: 'auto' });
         return;
       }
 
@@ -1919,7 +1927,7 @@
         return `
           <div class="n-trailer-card" data-spot-id="${sId}" onclick="openSecretSpotHeroViewer(this.dataset.spotId)" style="width:118px !important; flex-shrink:0; cursor:pointer;">
             <div class="n-trailer-thumb">
-              <img src="${item.photoUrl}" alt="${escapeHtml(sName)}" loading="lazy" />
+              <img src="${item.photoUrl}" alt="${escapeHtml(sName)}" loading="lazy" decoding="async" />
               <div class="n-trailer-weight-chip" style="color:#fde047; border-color:rgba(253,224,71,0.4);">${escapeHtml(badgeText)}</div>
             </div>
             <div class="n-trailer-info">
@@ -1949,7 +1957,6 @@
       if (!width) return;
       var curIdx = Math.round(trackEl.scrollLeft / width);
 
-      // 1. 도트 인디케이터 실시간 점멸
       var container = document.getElementById('secretSpotDotsWrap');
       if (container) {
         var dots = container.children;
@@ -1966,28 +1973,22 @@
         }
       }
 
-      // 2. 사진별 메모 실시간 교체 (작성 모드 분기 및 빈 사진 방어)
       var modalEl = document.getElementById('secretSpotHeroModal');
       var quoteEl = document.getElementById('secretSpotQuoteText');
       if (modalEl && quoteEl) {
-        var memoMode = modalEl.dataset.memoMode || 'per_photo';
         var defaultMemo = modalEl.dataset.defaultMemo || '';
-        if (memoMode === 'single') {
-          quoteEl.innerText = '“' + defaultMemo + '”';
-        } else {
-          try {
-            var memos = JSON.parse(modalEl.dataset.photoMemos || '[]');
-            var curText = (Array.isArray(memos) && memos[curIdx] !== undefined) ? memos[curIdx] : '';
-            if (curText && curText.trim().length > 0) {
-              quoteEl.innerText = '“' + curText.trim() + '”';
-            } else if (curIdx === 0 && defaultMemo) {
-              quoteEl.innerText = '“' + defaultMemo + '”';
-            } else {
-              quoteEl.innerText = '“등록된 글이 없습니다.”';
-            }
-          } catch (err) {
-            quoteEl.innerText = '“' + defaultMemo + '”';
+        try {
+          var memos = JSON.parse(modalEl.dataset.photoMemos || '[]');
+          var curText = (Array.isArray(memos) && memos[curIdx] !== undefined) ? memos[curIdx] : '';
+          if (curText && curText.trim().length > 0) {
+            quoteEl.innerText = '“' + curText.trim() + '”';
+          } else if (defaultMemo && defaultMemo.trim().length > 0) {
+            quoteEl.innerText = '“' + defaultMemo.trim() + '”';
+          } else {
+            quoteEl.innerText = '“자연 속에서 비화식으로 즐기는 조용한 하룻밤.”';
           }
+        } catch (err) {
+          quoteEl.innerText = '“' + defaultMemo + '”';
         }
       }
     };
@@ -2049,20 +2050,9 @@
         return;
       }
 
-      // 📦 사진별 메모 및 작성 모드 추출
-      var photoMemosArr = [];
-      if (matchedFeed) {
-        var rawM = matchedFeed.photoMemos || matchedFeed.photo_memos || matchedFeed.photo_memos_json;
-        if (Array.isArray(rawM)) photoMemosArr = rawM;
-        else if (typeof rawM === 'string' && rawM.trim().startsWith('[')) {
-          try { photoMemosArr = JSON.parse(rawM); } catch(e) {}
-        }
-      }
+      var photoMemosArr = matchedFeed ? getRecordPhotoMemos(matchedFeed) : [];
       var defaultDesc = String(desc || '').trim();
-      var hasMulti = photoMemosArr.filter(function(m) { return m && m.trim().length > 0; }).length > 1;
-      var activeMode = (matchedFeed && matchedFeed.memoMode) || (hasMulti ? 'per_photo' : 'single');
 
-      // 🖼️ 3:4 풀커버 슬라이드
       var slidesHtml = photosList.map(function(u) {
         return `
           <div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000;">
@@ -2072,7 +2062,6 @@
         `;
       }).join('');
 
-      // 🔘 사진 속 마이크로 도트 인디케이터
       var dotsHtml = (photosList.length > 1) ? `
         <div id="secretSpotDotsWrap" style="position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; align-items:center; gap:4px; height:8px; z-index:25; pointer-events:none;">
           ${photosList.map(function(_, bIdx) {
@@ -2087,15 +2076,14 @@
       modalEl.id = 'secretSpotHeroModal';
       modalEl.dataset.photoMemos = JSON.stringify(photoMemosArr);
       modalEl.dataset.defaultMemo = defaultDesc;
-      modalEl.dataset.memoMode = activeMode;
       modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); width:100%; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)); background:rgba(0,0,0,0.96); z-index:1000045; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;';
       if (typeof window.ensureMasterBottomDock === 'function') {
         window.ensureMasterBottomDock('router');
       }
 
-      var firstMemoText = (activeMode === 'single' || !photoMemosArr[0] || photoMemosArr[0].trim().length === 0)
-        ? defaultDesc
-        : photoMemosArr[0].trim();
+      var firstMemoText = (photoMemosArr[0] && photoMemosArr[0].trim().length > 0)
+        ? photoMemosArr[0].trim()
+        : defaultDesc;
 
       modalEl.innerHTML = `
         <!-- 상단 스크롤 본문 -->
@@ -2400,80 +2388,29 @@
 
     function getRecordPhotoMemos(rec) {
       if (!rec) return [];
-      var raw = rec.photoMemos || rec.photo_memos || rec.memos;
-      if (Array.isArray(raw)) return raw;
+      var raw = rec.photoMemos || rec.photo_memos || rec.photo_memos_json || rec.memos;
+      if (Array.isArray(raw)) return raw.map(function(m) { return m != null ? String(m).trim() : ''; });
       if (typeof raw === 'string' && raw.trim().startsWith('[')) {
         try {
           var parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) return parsed;
+          if (Array.isArray(parsed)) return parsed.map(function(m) { return m != null ? String(m).trim() : ''; });
         } catch (e) {}
       }
       return [];
     }
 
-    // 🔍 [사진별 메모 전천후 하이브리드 추출기]
-    function getRecordPhotoMemos(rec) {
-      if (!rec) return [];
-      var candidates = [rec.photoMemos, rec.photo_memos, rec.memos, rec.photoMemoList, rec.notes];
-      for (var i = 0; i < candidates.length; i++) {
-        var c = candidates[i];
-        if (Array.isArray(c) && c.length > 0) return c;
-        if (typeof c === 'string' && c.trim().startsWith('[')) {
-          try {
-            var parsed = JSON.parse(c);
-            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-          } catch (e) {}
-        }
-      }
-
-      // 서버 피드에 누락된 경우 로컬 원본 보관함(okbm_packing_history)에서 2차 대조
-      try {
-        var localList = safeGetJSON('okbm_packing_history', []);
-        var rId = String(rec.id || '').trim();
-        var cleanId = rId.split(';')[0].trim();
-        var matched = localList.find(function(h) {
-          if (!h) return false;
-          var hId = String(h.id || '').trim();
-          return hId === rId || (cleanId && hId.startsWith(cleanId)) || (h.date && h.date === rec.date && h.spot === rec.spot);
-        });
-        if (matched) {
-          var localM = matched.photoMemos || matched.photo_memos || matched.memos;
-          if (Array.isArray(localM) && localM.length > 0) return localM;
-          if (typeof localM === 'string' && localM.trim().startsWith('[')) {
-            var localParsed = JSON.parse(localM);
-            if (Array.isArray(localParsed)) return localParsed;
-          }
-        }
-      } catch (err) {}
-
-      // 로컬 okbm_memos 맵 대조
-      try {
-        var memosMap = safeGetJSON('okbm_memos', {});
-        var directMemo = memosMap[rec.id] || memosMap[cleanId];
-        if (Array.isArray(directMemo) && directMemo.length > 0) return directMemo;
-      } catch (err2) {}
-
-      return [];
-    }
-
- // 🔘 [히어로 가로 슬라이더 도트 & 사진별/통합 메모 실시간 직통 동기화 (rAF 쓰로틀링 최적화)]
     var _heroCarouselTicking = false;
     window.updateHeroCarouselState = function(trackEl) {
-      if (!trackEl || _heroCarouselTicking) return;
-      _heroCarouselTicking = true;
-
-      window.requestAnimationFrame(function() {
-        _heroCarouselTicking = false;
+      if (!trackEl) return;
+      var executeUpdate = function() {
         var scrollLeft = trackEl.scrollLeft;
         var width = trackEl.offsetWidth;
         if (!width) return;
         var curIdx = Math.round(scrollLeft / width);
 
-        // 사진 번호가 바뀌지 않았으면 불필요한 DOM 조작 및 JSON 파싱 즉시 건너뜀
         if (trackEl._lastHeroIdx === curIdx) return;
         trackEl._lastHeroIdx = curIdx;
 
-        // 1. 도트 인디케이터 실시간 동기화
         var dotsWrap = document.getElementById('heroDotsWrapper');
         if (dotsWrap && dotsWrap.children.length > 0) {
           var dots = dotsWrap.children;
@@ -2490,32 +2427,33 @@
           }
         }
 
-        // 2. 통합 메모 모드 vs 사진별 개별 메모 모드 실시간 분기
         var cardRoot = document.getElementById('instaMainCard');
         var quoteEl = document.getElementById('heroQuoteText');
         if (cardRoot && quoteEl) {
-          var memoMode = cardRoot.dataset.memoMode || 'per_photo';
           var defaultMemo = cardRoot.dataset.defaultMemo || '자연 속에서 비화식으로 즐기는 조용한 하룻밤.';
-
-          if (memoMode === 'single') {
-            quoteEl.innerText = '“' + defaultMemo + '”';
-          } else {
-            try {
-              var memos = JSON.parse(cardRoot.dataset.photoMemos || '[]');
-              var curText = (Array.isArray(memos) && memos[curIdx] !== undefined) ? memos[curIdx] : '';
-              if (curText && curText.trim().length > 0) {
-                quoteEl.innerText = '“' + curText.trim() + '”';
-              } else if (curIdx === 0 && defaultMemo) {
-                quoteEl.innerText = '“' + defaultMemo + '”';
-              } else {
-                quoteEl.innerText = '“등록된 글이 없습니다.”';
-              }
-            } catch (err) {
-              quoteEl.innerText = '“' + defaultMemo + '”';
+          try {
+            var memos = JSON.parse(cardRoot.dataset.photoMemos || '[]');
+            var curText = (Array.isArray(memos) && memos[curIdx] !== undefined) ? memos[curIdx] : '';
+            if (curText && curText.trim().length > 0) {
+              quoteEl.innerText = '“' + curText.trim() + '”';
+            } else if (defaultMemo && defaultMemo.trim().length > 0) {
+              quoteEl.innerText = '“' + defaultMemo.trim() + '”';
+            } else {
+              quoteEl.innerText = '“자연 속에서 비화식으로 즐기는 조용한 하룻밤.”';
             }
+          } catch (err) {
+            quoteEl.innerText = '“' + defaultMemo + '”';
           }
         }
-      });
+      };
+
+      if (!_heroCarouselTicking) {
+        _heroCarouselTicking = true;
+        window.requestAnimationFrame(function() {
+          _heroCarouselTicking = false;
+          executeUpdate();
+        });
+      }
     };
 
     function renderCurrentHeroCard() {
@@ -2533,33 +2471,26 @@
       var quoteEl = document.getElementById('heroQuoteText');
       var indicatorEl = document.getElementById('heroCardIndexIndicator');
       var trackEl = document.getElementById('heroPhotoSwipeTrack');
-      var dotsWrap = document.getElementById('heroDotsWrapper');
 
       var spotTitle = record.spot || record.spotName || '낭만 필드 박지';
       var authorName = record.author || '낭만백패커';
 
-      // 📦 사진별 메모 및 모드(single vs per_photo) 각인
-      var photoMemosArr = [];
-      var rawM = record.photoMemos || record.photo_memos || record.photo_memos_json;
-      if (Array.isArray(rawM)) {
-        photoMemosArr = rawM;
-      } else if (typeof rawM === 'string' && rawM.trim().startsWith('[')) {
-        try { photoMemosArr = JSON.parse(rawM); } catch(e) {}
-      }
-
+      var photoMemosArr = getRecordPhotoMemos(record);
       var defaultMemoText = (record.memo || record.oneLineMemo || '').trim();
-      var hasMulti = photoMemosArr.filter(function(m) { return m && m.trim().length > 0; }).length > 1;
-      var activeMode = record.memoMode || (hasMulti ? 'per_photo' : 'single');
 
       if (cardRoot) {
         cardRoot.dataset.photoMemos = JSON.stringify(photoMemosArr);
         cardRoot.dataset.defaultMemo = defaultMemoText || '자연 속에서 비화식으로 즐기는 조용한 하룻밤.';
-        cardRoot.dataset.memoMode = activeMode;
       }
 
-      var firstMemoText = (activeMode === 'single' || !photoMemosArr[0])
-        ? (defaultMemoText || '자연 속에서 비화식으로 즐기는 조용한 하룻밤.')
-        : photoMemosArr[0].trim();
+      var firstMemoText = '';
+      if (Array.isArray(photoMemosArr) && photoMemosArr.length > 0 && photoMemosArr[0] && photoMemosArr[0].trim().length > 0) {
+        firstMemoText = photoMemosArr[0].trim();
+      } else if (defaultMemoText && defaultMemoText.length > 0) {
+        firstMemoText = defaultMemoText;
+      } else {
+        firstMemoText = '자연 속에서 비화식으로 즐기는 조용한 하룻밤.';
+      }
 
       if (titleEl) titleEl.innerText = spotTitle;
       if (authorEl) authorEl.innerText = authorName;
@@ -2598,15 +2529,20 @@
             if (typeof window.navigateHeroFeed === 'function') window.navigateHeroFeed(1);
           } else {
             track.scrollLeft = 0;
+            track._lastHeroIdx = -1;
             window.refreshHeroDotsCount();
+            window.updateHeroCarouselState(track);
           }
         }
       };
 
       if (trackEl) {
-        trackEl.innerHTML = photos.map(function(pUrl) {
+        trackEl._lastHeroIdx = -1;
+        trackEl.innerHTML = photos.map(function(pUrl, pIdx) {
+          var isFirst = (pIdx === 0);
+          var loadingAttr = isFirst ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"';
           return '<div class="hero-slide-item" style="flex:0 0 100%; width:100%; height:100%; min-width:100%; position:relative; overflow:hidden; background:#000000;">' +
-            '<img src="' + pUrl + '" referrerpolicy="no-referrer" loading="eager" onerror="window.handleHeroSlideImgError(this);" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.95) contrast(1.04); display:block;" />' +
+            '<img src="' + pUrl + '" referrerpolicy="no-referrer" ' + loadingAttr + ' decoding="async" onerror="window.handleHeroSlideImgError(this);" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.95) contrast(1.04); display:block;" />' +
             '<div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 28%, transparent 80%, rgba(0,0,0,0.35) 100%); pointer-events:none; z-index:2;"></div>' +
           '</div>';
         }).join('');
@@ -2723,7 +2659,6 @@
       weightKg: "5.52",
       memo: "백두대간 능선을 따라 펼쳐지는 풍차와 억새, 은하수가 쏟아지는 밤",
       oneLineMemo: "백두대간 능선을 따라 펼쳐지는 풍차와 억새, 은하수가 쏟아지는 밤",
-      photo: "",
       photos: [],
       items: [
         { name: "지팩스 듀플렉스 2P 텐트", weight: 550 },
@@ -2736,7 +2671,7 @@
 
    async function initDynamicHeroAndFeeds() {
       initHeroGestureEngine();
-      
+
       var r2Domain = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
       window.R2_PUBLIC_DOMAIN = r2Domain;
       initSmartHeaderScrollEngine();
@@ -2764,85 +2699,143 @@
       };
 
       var sortFeedsByStarsAndDate = function(feedList) {
-        var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
         return feedList.filter(function(f) {
           return window.okbmIsPublicFeedItem ? window.okbmIsPublicFeedItem(f) : (f && f.isPublished !== false);
         }).sort(function(a, b) {
-          var sA = Number(starCounts[a.id] != null ? starCounts[a.id] : (a.likes || 0));
-          var sB = Number(starCounts[b.id] != null ? starCounts[b.id] : (b.likes || 0));
+          var sA = Number((a.likes != null) ? a.likes : (a.likes_count || 0));
+          var sB = Number((b.likes != null) ? b.likes : (b.likes_count || 0));
           if (sB !== sA) return sB - sA;
           return getFeedTimeValue(b) - getFeedTimeValue(a);
         });
       };
 
-     try {
-        var supaFeeds = null;
-        if (typeof window.fetchCommunityFeeds === 'function') {
-          supaFeeds = await window.fetchCommunityFeeds(false, 0, 10);
-        } else if (window.supabaseClient) {
-          var sbRes = await window.supabaseClient
-            .from('feeds')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(10);
-          if (sbRes.data && Array.isArray(sbRes.data)) {
-            supaFeeds = sbRes.data;
+      var applyFeedData = function(feedList) {
+        var uniqueFeedMap = new Map();
+        feedList.filter(Boolean).forEach(function(f) {
+          var uKey = String(f.id || '').trim();
+          if (!uKey || uKey.startsWith('feed_') || uKey.startsWith('pack_')) {
+            uKey = String(f.userId || f.user_id || '') + '_' + String(f.date || '').replace(/\D/g, '') + '_' + String(f.spot || '').trim();
           }
-        }
+          if (!uniqueFeedMap.has(uKey)) {
+            uniqueFeedMap.set(uKey, f);
+          }
+        });
 
-        if (Array.isArray(supaFeeds) && supaFeeds.length > 0) {
-          var uniqueFeedMap = new Map();
-          supaFeeds.filter(Boolean).forEach(function(f) {
-            var uKey = String(f.id || '').trim();
-            if (!uKey || uKey.startsWith('feed_') || uKey.startsWith('pack_')) {
-              uKey = String(f.userId || f.user_id || '') + '_' + String(f.date || '').replace(/\D/g, '') + '_' + String(f.spot || '').trim();
-            }
-            if (!uniqueFeedMap.has(uKey)) {
-              uniqueFeedMap.set(uKey, f);
-            }
-          });
+        var allCleanFeeds = sortFeedsByStarsAndDate(Array.from(uniqueFeedMap.values()));
 
-          var allCleanFeeds = sortFeedsByStarsAndDate(Array.from(uniqueFeedMap.values()));
+        var hasValidPhoto = function(f) {
+          if (!f) return false;
+          var pList = (typeof getArchivePhotosList === 'function') ? getArchivePhotosList(f) : [];
+          var u = (pList && pList[0]) || '';
+          return typeof u === 'string' && u.trim().startsWith('https://');
+        };
 
-          var hasValidPhoto = function(f) {
-            if (!f) return false;
-            var pList = (typeof getArchivePhotosList === 'function') ? getArchivePhotosList(f) : [];
-            var u = (pList && pList[0]) || '';
-            return typeof u === 'string' && u.trim().startsWith('https://');
-          };
+        var photoFeedsOnly = allCleanFeeds.filter(function(f) {
+          return hasValidPhoto(f) && (!window.okbmIsPublicFeedItem || window.okbmIsPublicFeedItem(f));
+        });
 
-          var photoFeedsOnly = allCleanFeeds.filter(function(f) {
-            return hasValidPhoto(f) && (!window.okbmIsPublicFeedItem || window.okbmIsPublicFeedItem(f));
-          });
-          var topPicks = photoFeedsOnly;
+        window.__allLoadedFeeds = allCleanFeeds;
+        window.heroTopRecords = photoFeedsOnly.slice(0, 10);
+        window.currentHeroCardIndex = 0;
+        renderCurrentHeroCard();
+        if (typeof renderSecretSpotTrailerRail === 'function') renderSecretSpotTrailerRail();
+      };
 
-          window.__allLoadedFeeds = allCleanFeeds;
-          window.heroTopRecords = topPicks.slice(0, 10);
-          window.currentHeroCardIndex = 0;
-          renderCurrentHeroCard();
-          if (typeof renderSecretSpotTrailerRail === 'function') renderSecretSpotTrailerRail();
-          return;
-        }
-      } catch (sbErr) {
-        console.warn('[Index] Supabase 피드 조회 대기:', sbErr.message);
-      }
-
-      // 🛡️ 오프라인 캐시 폴백 (캐시에서도 10개 우선 인출)
-      var fallbackFeeds = safeGetJSON('okbm_cached_community_feeds', []);
-      if (!Array.isArray(fallbackFeeds) || fallbackFeeds.length === 0) {
+      var cachedFeeds = safeGetJSON('okbm_cached_community_feeds', []);
+      if (Array.isArray(cachedFeeds) && cachedFeeds.length > 0) {
+        applyFeedData(cachedFeeds);
+      } else {
         var presetCopy = Object.assign({}, FALLBACK_HERO_PRESET);
         var persistentNick = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '');
         if (typeof isUserLoggedIn === 'function' && isUserLoggedIn() && persistentNick) {
           presetCopy.author = persistentNick;
         }
-        fallbackFeeds = [presetCopy];
+        applyFeedData([presetCopy]);
       }
-      var sortedFallback = sortFeedsByStarsAndDate(fallbackFeeds);
-      window.__allLoadedFeeds = sortedFallback;
-      window.heroTopRecords = sortedFallback.slice(0, 10);
-      window.currentHeroCardIndex = 0;
-      renderCurrentHeroCard();
-      if (typeof renderSecretSpotTrailerRail === 'function') renderSecretSpotTrailerRail();
+
+      setTimeout(async function() {
+        try {
+          var rawRows = null;
+          if (window.supabaseClient) {
+            var sbRes = await window.supabaseClient
+              .from('feeds')
+              .select('*')
+              .order('likes_count', { ascending: false })
+              .order('created_at', { ascending: false })
+              .limit(30);
+            if (sbRes.data && Array.isArray(sbRes.data)) {
+              rawRows = sbRes.data;
+            }
+          }
+
+          if (!rawRows && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+            var res = await fetch(window.SUPABASE_URL + '/rest/v1/feeds?select=*&order=likes_count.desc,created_at.desc&limit=30', {
+              headers: {
+                'apikey': window.SUPABASE_ANON_KEY,
+                'Authorization': 'Bearer ' + window.SUPABASE_ANON_KEY,
+                'Content-Type': 'application/json'
+              }
+            });
+            if (res.ok) {
+              var data = await res.json();
+              if (Array.isArray(data)) rawRows = data;
+            }
+          }
+
+          if (Array.isArray(rawRows) && rawRows.length > 0) {
+            var normalizedFeeds = rawRows.map(function(r) {
+              var pArr = [];
+              if (r.photos) {
+                if (Array.isArray(r.photos)) pArr = r.photos;
+                else if (typeof r.photos === 'string' && r.photos.trim().startsWith('[')) {
+                  try { pArr = JSON.parse(r.photos); } catch(e) {}
+                } else if (typeof r.photos === 'string' && r.photos.trim().startsWith('https://')) {
+                  pArr = [r.photos.trim()];
+                }
+              }
+
+              var itemsArr = [];
+              if (r.items) {
+                if (Array.isArray(r.items)) itemsArr = r.items;
+                else if (typeof r.items === 'string' && r.items.trim().startsWith('[')) {
+                  try { itemsArr = JSON.parse(r.items); } catch(e) {}
+                }
+              }
+
+              var parsedMemos = [];
+              var rawMemoData = r.photo_memos_json || r.photo_memos;
+              if (Array.isArray(rawMemoData)) {
+                parsedMemos = rawMemoData;
+              } else if (typeof rawMemoData === 'string' && rawMemoData.trim().startsWith('[')) {
+                try { parsedMemos = JSON.parse(rawMemoData); } catch(e) {}
+              }
+
+              return {
+                id: r.id,
+                userId: r.user_id,
+                spot: r.spot || r.spot_name || '백패킹 필드',
+                elevation: r.elevation || '',
+                weightKg: r.weight_kg != null ? String(r.weight_kg) : '',
+                date: r.date || '',
+                memo: r.memo || '',
+                oneLineMemo: r.memo || '',
+                templateId: r.template_id || 1,
+                likes: r.likes_count != null ? Number(r.likes_count) : 0,
+                createdAt: r.created_at || '',
+                isPublished: r.is_published !== false,
+                photos: pArr,
+                items: itemsArr,
+                author: r.author || '낭만백패커',
+                nick: r.author || '낭만백패커',
+                photoMemos: parsedMemos
+              };
+            });
+
+            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(normalizedFeeds));
+            applyFeedData(normalizedFeeds);
+          }
+        } catch (sbErr) {}
+      }, 30);
     }
 
     function filterHeroCategory(catKey, btnEl) {
@@ -3334,8 +3327,6 @@ var adBannersHtml = `
     };
     window.syncTripToCloudSheet = window.syncTripToSupabase;
 
-    window.__tombstoneTripIds = window.__tombstoneTripIds || new Set();
-
     window.deleteTripFromSupabase = async function(tripId, e, skipConfirm) {
       if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
       if (!skipConfirm && !confirm('이 원정대 공고를 삭제하시겠습니까?\n달력과 홈 화면에서 즉시 삭제됩니다.')) return;
@@ -3557,26 +3548,10 @@ var adBannersHtml = `
       var photoList = [];
       if (Array.isArray(trip.photos) && trip.photos.length > 0) {
         photoList = trip.photos.map(function(value) {
-          if (window.OKBMPrivateAssetResolver && window.OKBMPrivateAssetResolver.isReference(value)) return value;
           return String(value || '').replace(/^["']|["']$/g, '').trim();
         }).filter(function(value) {
-          return (window.OKBMPrivateAssetResolver && window.OKBMPrivateAssetResolver.isReference(value)) || (typeof value === 'string' && value.length > 10);
+          return typeof value === 'string' && value.startsWith('https://');
         });
-      } else if (trip.photo) {
-        if (window.OKBMPrivateAssetResolver && window.OKBMPrivateAssetResolver.isReference(trip.photo)) {
-          photoList = [trip.photo];
-        } else {
-          var cleanPhoto = String(trip.photo).replace(/^["']|["']$/g, '').trim();
-          if (cleanPhoto.length > 10) photoList = [cleanPhoto];
-        }
-      }
-
-      if (photoList.length === 0 && matched) {
-        if (matched.photo && typeof matched.photo === 'string' && matched.photo.length > 10) {
-          photoList.push(matched.photo);
-        } else if (matched.photo_url && typeof matched.photo_url === 'string' && matched.photo_url.length > 10) {
-          photoList.push(matched.photo_url);
-        }
       }
 
       window.__tripDetailPhotos = photoList;
@@ -4194,8 +4169,6 @@ var adBannersHtml = `
       var existPhotos = [];
       if (Array.isArray(trip.photos) && trip.photos.length > 0) {
         existPhotos = trip.photos.slice();
-      } else if (trip.photo) {
-        existPhotos = [trip.photo];
       }
       window.__tempTripCreatePhotos = existPhotos;
       window.__currentTripCreatePhotoIdx = 0;
@@ -4239,7 +4212,6 @@ var adBannersHtml = `
       }
 
       var photoList = (window.__tempTripCreatePhotos && window.__tempTripCreatePhotos.length > 0) ? window.__tempTripCreatePhotos.slice() : [];
-      var mainPhoto = photoList.length > 0 ? photoList[0] : '';
       var safeDate = date.replace(/\./g, '-');
 
       var updateRow = {
@@ -4270,13 +4242,12 @@ var adBannersHtml = `
           localTrip.openChatUrl = chatUrl;
           localTrip.desc = desc;
           localTrip.photos = photoList;
-          localTrip.photo = mainPhoto;
         }
 
         var myTrips = safeGetJSON('okbm_my_created_trips', []);
         var myT = myTrips.find(function(t) { return String(t.tripId) === String(tripId); });
         if (myT) {
-          Object.assign(myT, { spotName: spot, date: date, maxCapacity: maxCap, openChatUrl: chatUrl, desc: desc, photos: photoList, photo: mainPhoto });
+          Object.assign(myT, { spotName: spot, date: date, maxCapacity: maxCap, openChatUrl: chatUrl, desc: desc, photos: photoList });
           localStorage.setItem('okbm_my_created_trips', JSON.stringify(myTrips));
         }
 
@@ -4696,7 +4667,6 @@ var adBannersHtml = `
       var userId = (rawUid.startsWith('kakao_') || rawUid.startsWith('apple_') || rawUid.startsWith('guest_') || rawUid.startsWith('user_')) ? rawUid : ('kakao_' + rawUid);
       
       var photoList = (window.__tempTripCreatePhotos && window.__tempTripCreatePhotos.length > 0) ? window.__tempTripCreatePhotos.slice() : [];
-      var mainPhoto = (photoList.length > 0) ? photoList[0] : '';
 
       var pad = function(n) { return String(n).padStart(2, '0'); };
       var d = new Date();
@@ -4708,7 +4678,6 @@ var adBannersHtml = `
         date: date,
         maxCapacity: maxCap,
         openChatUrl: chatUrl,
-        photo: mainPhoto,
         photos: photoList.length > 0 ? photoList : [],
         authorName: nick,
         desc: desc || '함께 안전하고 즐거운 클린 백패킹을 떠나요!',
@@ -4954,7 +4923,7 @@ var adBannersHtml = `
       var urlParams = new URLSearchParams(window.location.search);
       var openParam = urlParams.get('open');
       var tabParam = urlParams.get('tab');
-      
+
       var releaseGuard = function() {
         document.documentElement.classList.remove('direct-modal-pending');
       };
@@ -4967,10 +4936,18 @@ var adBannersHtml = `
           openHistoryModal();
           releaseGuard();
         } else {
-          setTimeout(function() { 
-            if (typeof openHistoryModal === 'function') openHistoryModal(); 
-            releaseGuard();
-          }, 10);
+          var pollCount = 0;
+          var histPoll = setInterval(function() {
+            pollCount++;
+            if (typeof openHistoryModal === 'function') {
+              clearInterval(histPoll);
+              openHistoryModal();
+              releaseGuard();
+            } else if (pollCount > 20) {
+              clearInterval(histPoll);
+              releaseGuard();
+            }
+          }, 16);
         }
       } else if (openParam === 'basecamp' || openParam === 'plan' || tabParam === 'plan') {
         if (window.history && window.history.replaceState) {
@@ -4980,10 +4957,18 @@ var adBannersHtml = `
           openPlanModal('calendar');
           releaseGuard();
         } else {
-          setTimeout(function() { 
-            if (typeof openPlanModal === 'function') openPlanModal('calendar'); 
-            releaseGuard();
-          }, 10);
+          var pollCountPlan = 0;
+          var planPoll = setInterval(function() {
+            pollCountPlan++;
+            if (typeof openPlanModal === 'function') {
+              clearInterval(planPoll);
+              openPlanModal('calendar');
+              releaseGuard();
+            } else if (pollCountPlan > 20) {
+              clearInterval(planPoll);
+              releaseGuard();
+            }
+          }, 16);
         }
       } else {
         releaseGuard();
@@ -5094,13 +5079,13 @@ var adBannersHtml = `
         updateHeaderAuthUI();
       }
 
-      initDynamicHeroAndFeeds();
       checkIncomingDirectTab();
+      initDynamicHeroAndFeeds();
       refreshMainBannerWeight();
       renderVideoCurationSlider();
       renderHomeTripJoinSlider();
 
-    var scheduleHeavyTasks = window.requestIdleCallback || function(cb) { setTimeout(cb, 60); };
+      var scheduleHeavyTasks = window.requestIdleCallback || function(cb) { setTimeout(cb, 120); };
       scheduleHeavyTasks(function() {
         loadPortalSpotData();
         loadFeaturedVideosFromSupabase();

@@ -95,9 +95,9 @@
       .reel-header-row {
         position: relative !important;
         width: 100% !important;
-        height: 52px !important;
-        min-height: 52px !important;
-        padding: 0 14px !important;
+        height: calc(52px + env(safe-area-inset-top, 0px)) !important;
+        min-height: calc(52px + env(safe-area-inset-top, 0px)) !important;
+        padding: env(safe-area-inset-top, 0px) 14px 0 14px !important;
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
@@ -1672,116 +1672,170 @@ window.normalizeHistoryRecord = function(r, idx) {
     }
   };
 
-window.okbmGetUserStarsKey = function(userId) {
-  var uId = String(userId || '').trim();
+window.okbmGetNormalizedUserId = function(rawId) {
+  var uId = String(rawId || '').trim();
   if (!uId) {
-    var profile = safeGetJSON('user_profile', null);
-    uId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+    var profile = safeGetJSON('user_profile', null) || safeGetJSON('okbm_user_info', null) || safeGetJSON('kakao_account', null);
+    if (profile) {
+      uId = String(profile.id || profile.userId || profile.user_id || '').trim();
+    }
+    if (!uId) {
+      uId = localStorage.getItem('okbm_user_id') || localStorage.getItem('user_id') || localStorage.getItem('kakao_user_id') || '';
+    }
   }
-  return uId ? ('okbm_feed_stars_map_' + uId) : 'okbm_feed_stars_map';
+  uId = String(uId || '').trim();
+  if (!uId || uId === 'guest' || uId === 'null' || uId === 'undefined') return '';
+  return uId.startsWith('kakao_') ? uId : ('kakao_' + uId);
+};
+
+window.okbmCheckUserLoginStatus = function() {
+  if (typeof isUserLoggedIn === 'function') {
+    try {
+      if (isUserLoggedIn()) return true;
+    } catch (e) {}
+  }
+  var id = window.okbmGetNormalizedUserId();
+  if (id && id !== 'guest') return true;
+  var token = localStorage.getItem('user_auth_token') || localStorage.getItem('kakao_access_token') || localStorage.getItem('access_token');
+  return Boolean(token && token.trim().length > 0);
+};
+
+window.okbmGetUserStarsKey = function(userId) {
+  var resolvedId = window.okbmGetNormalizedUserId(userId);
+  return resolvedId ? ('okbm_feed_stars_map_' + resolvedId) : 'okbm_feed_stars_map';
 };
 
 window.fetchUserFeedLikesFromServer = async function() {
-  var profile = safeGetJSON('user_profile', null);
-  var currentUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
-  if (!currentUserId || currentUserId === 'guest') return {};
+  var canonicalId = window.okbmGetNormalizedUserId();
+  if (!canonicalId) return {};
 
+  var pureNumId = canonicalId.replace(/^kakao_/, '').trim();
   var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-  var targetKey = window.SUPABASE_ANON_KEY || '';
-  if (!targetUrl || !targetKey) return {};
+  var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
 
   try {
-    var res = await fetch(targetUrl + '/rest/v1/feed_likes?user_id=eq.' + encodeURIComponent(currentUserId) + '&select=feed_id', {
-      headers: {
-        'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
-        'Content-Type': 'application/json'
+    var rows = null;
+    var queryIds = [canonicalId];
+    if (pureNumId && pureNumId !== canonicalId) {
+      queryIds.push(pureNumId);
+    }
+
+    if (window.supabaseClient) {
+      var sbRes = await window.supabaseClient.from('feed_likes').select('feed_id').in('user_id', queryIds);
+      if (sbRes.data && Array.isArray(sbRes.data)) {
+        rows = sbRes.data;
       }
-    });
-    if (!res.ok) return {};
-    var rows = await res.json();
-    if (Array.isArray(rows)) {
-      var starsMap = {};
-      rows.forEach(function(row) {
-        if (row && row.feed_id) {
-          var cleanId = String(row.feed_id).replace(/^["']|["']$/g, '').trim();
-          if (cleanId) starsMap[cleanId] = true;
+    }
+    if (!rows) {
+      var inParam = 'in.(' + queryIds.map(encodeURIComponent).join(',') + ')';
+      var res = await fetch(targetUrl + '/rest/v1/feed_likes?user_id=' + inParam + '&select=feed_id', {
+        headers: {
+          'apikey': targetKey,
+          'Authorization': 'Bearer ' + targetKey,
+          'Content-Type': 'application/json'
         }
       });
-      var userKey = window.okbmGetUserStarsKey(currentUserId);
-      localStorage.setItem(userKey, JSON.stringify(starsMap));
-
-      document.querySelectorAll('[id^="feedStarIcon_"]').forEach(function(icon) {
-        var sId = String(icon.id.replace('feedStarIcon_', '')).replace(/^["']|["']$/g, '').trim();
-        var isStarred = Boolean(starsMap[sId]);
-        icon.setAttribute('fill', isStarred ? '#fde047' : 'none');
-        icon.setAttribute('stroke', isStarred ? '#fde047' : '#ffffff');
-        icon.style.filter = isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none';
-      });
-
-      return starsMap;
+      if (res.ok) {
+        rows = await res.json();
+      }
     }
+    if (!Array.isArray(rows)) return {};
+    var starsMap = {};
+    rows.forEach(function(row) {
+      if (row && row.feed_id) {
+        var cleanId = String(row.feed_id).replace(/^["']|["']$/g, '').trim();
+        if (cleanId) starsMap[cleanId] = true;
+      }
+    });
+
+    var userKey = window.okbmGetUserStarsKey(canonicalId);
+    localStorage.setItem(userKey, JSON.stringify(starsMap));
+
+    document.querySelectorAll('[data-star-card-id]').forEach(function(btn) {
+      var sId = String(btn.getAttribute('data-star-card-id') || '').trim();
+      var icon = btn.querySelector('svg');
+      if (!icon || !sId) return;
+      var isStarred = Boolean(starsMap[sId]);
+      icon.setAttribute('fill', isStarred ? '#fde047' : 'none');
+      icon.setAttribute('stroke', isStarred ? '#fde047' : '#ffffff');
+      icon.style.filter = isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none';
+    });
+
+    return starsMap;
   } catch (err) {}
   return {};
 };
 
-window.okbmSyncFeedLikeAction = async function(feedId, userId, isAdding, finalCount) {
+window.okbmSyncFeedLikeAction = async function(feedId, userId, isAdding, nextCount) {
   var sId = String(feedId || '').trim();
-  var uId = String(userId || '').trim();
-  if (!sId || !uId) return;
+  var canonicalId = window.okbmGetNormalizedUserId(userId);
+  if (!sId || !canonicalId) return;
 
+  var pureNumId = canonicalId.replace(/^kakao_/, '').trim();
   var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-  var targetKey = window.SUPABASE_ANON_KEY || '';
-  if (!targetUrl || !targetKey) return;
+  var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
 
-  var headers = {
+  var postHeaders = {
     'apikey': targetKey,
     'Authorization': 'Bearer ' + targetKey,
     'Content-Type': 'application/json',
-    'Prefer': 'return=representation'
+    'Prefer': 'resolution=merge-duplicates,return=minimal'
+  };
+
+  var deleteHeaders = {
+    'apikey': targetKey,
+    'Authorization': 'Bearer ' + targetKey,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=minimal'
   };
 
   try {
     if (isAdding) {
-      await fetch(targetUrl + '/rest/v1/feed_likes', {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({ feed_id: sId, user_id: uId, created_at: new Date().toISOString() })
-      });
+      if (window.supabaseClient) {
+        await window.supabaseClient.from('feed_likes').upsert({
+          feed_id: sId,
+          user_id: canonicalId,
+          created_at: new Date().toISOString()
+        }, { onConflict: 'feed_id,user_id' });
+      } else {
+        await fetch(targetUrl + '/rest/v1/feed_likes', {
+          method: 'POST',
+          headers: postHeaders,
+          body: JSON.stringify({ feed_id: sId, user_id: canonicalId, created_at: new Date().toISOString() })
+        });
+      }
     } else {
-      await fetch(targetUrl + '/rest/v1/feed_likes?feed_id=eq.' + encodeURIComponent(sId) + '&user_id=eq.' + encodeURIComponent(uId), {
-        method: 'DELETE',
-        headers: headers
-      });
+      var queryIds = [canonicalId];
+      if (pureNumId && pureNumId !== canonicalId) {
+        queryIds.push(pureNumId);
+      }
+      if (window.supabaseClient) {
+        await window.supabaseClient.from('feed_likes').delete().eq('feed_id', sId).in('user_id', queryIds);
+      } else {
+        var inParam = 'in.(' + queryIds.map(encodeURIComponent).join(',') + ')';
+        await fetch(targetUrl + '/rest/v1/feed_likes?feed_id=eq.' + encodeURIComponent(sId) + '&user_id=' + inParam, {
+          method: 'DELETE',
+          headers: deleteHeaders
+        });
+      }
     }
-  } catch (likeErr) {}
 
-  try {
-    await fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
-      method: 'PATCH',
-      headers: headers,
-      body: JSON.stringify({ likes_count: Math.max(0, Number(finalCount) || 0), updated_at: new Date().toISOString() })
-    });
-  } catch (patchErr) {}
+    if (typeof nextCount === 'number' && !isNaN(nextCount)) {
+      var validCount = Math.max(0, nextCount);
+      if (window.supabaseClient) {
+        await window.supabaseClient.from('feeds').update({ likes_count: validCount }).eq('id', sId);
+      } else {
+        await fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
+          method: 'PATCH',
+          headers: postHeaders,
+          body: JSON.stringify({ likes_count: validCount })
+        });
+      }
+    }
+  } catch (restErr) {}
 };
 
-window.okbmSyncFeedLikeCount = function(recordId, count) {
-  var sId = String(recordId || '').trim();
-  if (!sId) return;
-  var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-  var targetKey = window.SUPABASE_ANON_KEY || '';
-  if (!targetUrl || !targetKey) return;
-  fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
-    method: 'PATCH',
-    headers: {
-      'apikey': targetKey,
-      'Authorization': 'Bearer ' + targetKey,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation'
-    },
-    body: JSON.stringify({ likes_count: Math.max(0, Number(count) || 0), updated_at: new Date().toISOString() })
-  }).catch(function() {});
-};
+window.okbmSyncFeedLikeCount = function() {};
 
 window.__starToggleLockMap = window.__starToggleLockMap || {};
 
@@ -1793,19 +1847,13 @@ window.toggleFeedStar = async function(cardId, e) {
   }
   if (!cardId) return;
 
-  var sId = String(cardId).replace(/^["']|["']$/g, '').trim();
+  var sId = String(cardId).replace(/[`'"]/g, '').trim();
   if (!sId) return;
 
-  var isLogged = false;
-  if (typeof isUserLoggedIn === 'function') {
-    isLogged = isUserLoggedIn();
-  } else {
-    var token = localStorage.getItem('user_auth_token');
-    var prof = safeGetJSON('user_profile', null);
-    isLogged = !!(token && token.trim().length > 0 && prof && prof.id);
-  }
+  var isLogged = window.okbmCheckUserLoginStatus();
+  var canonicalUserId = window.okbmGetNormalizedUserId();
 
-  if (!isLogged) {
+  if (!isLogged || !canonicalUserId) {
     triggerHaptic(12);
     var toastFn = window.showToast || (typeof showToast === 'function' ? showToast : null);
     if (toastFn) {
@@ -1824,19 +1872,16 @@ window.toggleFeedStar = async function(cardId, e) {
   if (window.__starToggleLockMap[sId]) return;
   window.__starToggleLockMap[sId] = true;
 
-  var profile = safeGetJSON('user_profile', null);
-  var currentUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
-  var userKey = window.okbmGetUserStarsKey(currentUserId);
-
+  var userKey = window.okbmGetUserStarsKey(canonicalUserId);
   var starsMap = safeGetJSON(userKey, {});
   var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
 
   var targetCard = (window.interactiveHistory || []).find(function(r) {
-    return r && String(r.id).replace(/^["']|["']$/g, '').trim() === sId;
+    return r && String(r.id).replace(/[`'"]/g, '').trim() === sId;
   });
   if (!targetCard && Array.isArray(window.__allLoadedFeeds)) {
     targetCard = window.__allLoadedFeeds.find(function(r) {
-      return r && String(r.id).replace(/^["']|["']$/g, '').trim() === sId;
+      return r && String(r.id).replace(/[`'"]/g, '').trim() === sId;
     });
   }
 
@@ -1866,9 +1911,23 @@ window.toggleFeedStar = async function(cardId, e) {
     targetCard.likes = nextCount;
     targetCard.likes_count = nextCount;
   }
+
+  if (Array.isArray(window.__allLoadedFeeds)) {
+    var loadedTarget = window.__allLoadedFeeds.find(function(f) {
+      return f && String(f.id).replace(/[`'"]/g, '').trim() === sId;
+    });
+    if (loadedTarget) {
+      loadedTarget.likes = nextCount;
+      loadedTarget.likes_count = nextCount;
+    }
+    try {
+      localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(window.__allLoadedFeeds));
+    } catch (cacheErr) {}
+  }
+
   if (Array.isArray(window.heroTopRecords)) {
     var hItem = window.heroTopRecords.find(function(h) {
-      return h && String(h.id).replace(/^["']|["']$/g, '').trim() === sId;
+      return h && String(h.id).replace(/[`'"]/g, '').trim() === sId;
     });
     if (hItem) {
       hItem.likes = nextCount;
@@ -1877,30 +1936,60 @@ window.toggleFeedStar = async function(cardId, e) {
     }
   }
 
-  var updateStarDOMElements = function(idVal, starredVal, countVal) {
-    var icons = document.querySelectorAll('[id="feedStarIcon_' + idVal + '"]');
-    icons.forEach(function(icon) {
-      icon.setAttribute('fill', starredVal ? '#fde047' : 'none');
-      icon.setAttribute('stroke', starredVal ? '#fde047' : '#ffffff');
-      icon.style.filter = starredVal ? 'drop-shadow(0 0 8px rgba(253,224,71,0.8))' : 'none';
-      icon.style.transform = 'scale(1.25)';
-      setTimeout(function() { if (icon) icon.style.transform = 'scale(1)'; }, 180);
-    });
+  var clickedBtn = e ? (e.currentTarget || (e.target && e.target.closest('button'))) : null;
+  if (clickedBtn) {
+    var directIcon = clickedBtn.querySelector('svg');
+    if (directIcon) {
+      directIcon.setAttribute('fill', nextStarred ? '#fde047' : 'none');
+      directIcon.setAttribute('stroke', nextStarred ? '#fde047' : '#ffffff');
+      directIcon.style.filter = nextStarred ? 'drop-shadow(0 0 8px rgba(253,224,71,0.8))' : 'none';
+      directIcon.style.transform = 'scale(1.25)';
+      setTimeout(function() { if (directIcon) directIcon.style.transform = 'scale(1)'; }, 180);
+    }
+    var directCount = clickedBtn.querySelector('[id^="feedStarCountText_"]');
+    if (directCount) {
+      directCount.innerText = nextCount;
+    }
+  }
 
-    var texts = document.querySelectorAll('[id="feedStarCountText_' + idVal + '"]');
-    texts.forEach(function(txt) {
-      txt.innerText = countVal;
-    });
+  var updateStarDOMElements = function(idVal, starredVal, countVal) {
+    var escapedId = CSS.escape ? CSS.escape(idVal) : idVal;
+    try {
+      document.querySelectorAll('[data-star-card-id="' + escapedId + '"]').forEach(function(btn) {
+        var icon = btn.querySelector('svg');
+        if (icon) {
+          icon.setAttribute('fill', starredVal ? '#fde047' : 'none');
+          icon.setAttribute('stroke', starredVal ? '#fde047' : '#ffffff');
+          icon.style.filter = starredVal ? 'drop-shadow(0 0 8px rgba(253,224,71,0.8))' : 'none';
+        }
+        var countSpan = btn.querySelector('[id^="feedStarCountText_"]');
+        if (countSpan) {
+          countSpan.innerText = countVal;
+        }
+      });
+    } catch (selErr) {}
+
+    var legacyIcon = document.getElementById('feedStarIcon_' + idVal);
+    if (legacyIcon) {
+      legacyIcon.setAttribute('fill', starredVal ? '#fde047' : 'none');
+      legacyIcon.setAttribute('stroke', starredVal ? '#fde047' : '#ffffff');
+      legacyIcon.style.filter = starredVal ? 'drop-shadow(0 0 8px rgba(253,224,71,0.8))' : 'none';
+    }
+
+    var legacyText = document.getElementById('feedStarCountText_' + idVal);
+    if (legacyText) {
+      legacyText.innerText = countVal;
+    }
   };
 
   updateStarDOMElements(sId, nextStarred, nextCount);
 
   try {
-    await window.okbmSyncFeedLikeAction(sId, currentUserId, nextStarred, nextCount);
+    await window.okbmSyncFeedLikeAction(sId, canonicalUserId, nextStarred, nextCount);
   } finally {
     setTimeout(function() {
       delete window.__starToggleLockMap[sId];
-    }, 350);
+    }, 300);
   }
 };
 
@@ -4413,8 +4502,8 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       feedList.forEach(function(f) {
         if (f && f.id) {
           var sId = String(f.id).trim();
-          var serverLikes = Number(f.likes_count || f.likes) || 0;
-          starCounts[sId] = Math.max(Number(starCounts[sId]) || 0, serverLikes);
+          var serverLikes = (f.likes_count !== undefined && f.likes_count !== null) ? Number(f.likes_count) : Number(f.likes || 0);
+          starCounts[sId] = isNaN(serverLikes) ? 0 : serverLikes;
         }
       });
       localStorage.setItem('okbm_feed_stars_counts', JSON.stringify(starCounts));
@@ -4813,7 +4902,11 @@ window.renderHistoryStage = function(isLoading) {
 
         var cleanCardId = String(record.id || idx).replace(/^["']|["']$/g, '').trim();
         var isStarred = Boolean(starsMap[cleanCardId] || starsMap[cardId]);
-        var starCount = Number(starCounts[cleanCardId] || starCounts[cardId] || record.likes_count || record.likes || 0);
+        var serverLikes = (record.likes_count !== undefined && record.likes_count !== null) ? Number(record.likes_count) : Number(record.likes || 0);
+        var starCount = isNaN(serverLikes) ? 0 : serverLikes;
+        if (isStarred && starCount === 0) {
+          starCount = 1;
+        }
         var mediaItems = (photos && photos.length > 0) ? photos : [];
         var totalPhotosCount = mediaItems.length;
 
@@ -4904,7 +4997,7 @@ window.renderHistoryStage = function(isLoading) {
           }
         }
 
-        var headerBarHtml = '<div class="reel-header-row" style="height:56px !important; padding:0 14px !important;">' +
+        var headerBarHtml = '<div class="reel-header-row" style="height:calc(54px + env(safe-area-inset-top, 0px)) !important; min-height:calc(54px + env(safe-area-inset-top, 0px)) !important; padding:env(safe-area-inset-top, 0px) 14px 0 14px !important; background:#000000 !important;">' +
           '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
             '<button type="button" data-author="' + escapeHtml(authorName) + '" data-user-id="' + escapeHtml(recordUserId) + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.6);" title="' + escapeHtml(authorName) + '님의 피드 모아보기">' +
               avatarMarkup +
@@ -5123,9 +5216,9 @@ window.renderHistoryStage = function(isLoading) {
           '<div class="reel-bottom-interactive-bar">' +
             '<div style="display:flex; justify-content:space-between; align-items:center; min-height:32px;">' +
               '<div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">' +
-                '<button type="button" data-star-card-id="' + cleanCardId + '" onclick="event.stopPropagation(); window.toggleFeedStar(this.dataset.starCardId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:4px; touch-action:manipulation;">' +
-                  '<svg id="feedStarIcon_' + cleanCardId + '" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
-                  '<span id="feedStarCountText_' + cleanCardId + '" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif;">' + starCount + '</span>' +
+                '<button type="button" data-star-card-id="' + cleanCardId + '" onclick="event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); window.toggleFeedStar(this.dataset.starCardId, event);" ontouchstart="event.stopPropagation(); event.stopImmediatePropagation();" style="background:none; border:none; padding:6px 4px; margin:-6px -4px; cursor:pointer; display:flex; align-items:center; gap:4px; touch-action:manipulation; -webkit-tap-highlight-color:transparent; pointer-events:auto; z-index:20;">' +
+                  '<svg id="feedStarIcon_' + cleanCardId + '" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease; pointer-events:none;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
+                  '<span id="feedStarCountText_' + cleanCardId + '" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif; pointer-events:none;">' + starCount + '</span>' +
                 '</button>' +
                 '<button type="button" data-feed-id="' + cardId + '" data-spot="' + escapeHtml(spotName) + '" data-memo="' + escapeHtml(memo120) + '" onclick="if(typeof window.shareCurrentFeed===\'function\'){ window.shareCurrentFeed(this.dataset.feedId, this.dataset.spot, this.dataset.memo); } else { triggerHaptic(10); if(navigator.clipboard){ navigator.clipboard.writeText(location.href); if(typeof showToast===\'function\') showToast(HISTORY_TOAST_VEC.link + \'피드 링크가 복사되었습니다.\',\'success\'); } }" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">' +
                   '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
@@ -5203,7 +5296,11 @@ window.renderHistoryStage = function(isLoading) {
         var authorName = record.author || record.nick || record.nickname || '낭만백패커';
         var cleanCardId = String(record.id || globalIdx).replace(/^["']|["']$/g, '').trim();
         var isStarred = Boolean(starsMap[cleanCardId] || starsMap[cardId]);
-        var starCount = Number(starCounts[cleanCardId] || starCounts[cardId] || record.likes_count || record.likes || 0);
+        var serverLikes = (record.likes_count !== undefined && record.likes_count !== null) ? Number(record.likes_count) : Number(record.likes || 0);
+        var starCount = isNaN(serverLikes) ? 0 : serverLikes;
+        if (isStarred && starCount === 0) {
+          starCount = 1;
+        }
         var mediaItems = (photos && photos.length > 0) ? photos : [];
         var totalPhotosCount = mediaItems.length;
         var recordUserId = String(record.userId || '').trim();
@@ -5218,7 +5315,7 @@ window.renderHistoryStage = function(isLoading) {
           ? '<img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="' + escapeHtml(targetAvatarUrl) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />'
           : '<div style="width:100%; height:100%; background:#090d14; display:flex; align-items:center; justify-content:center;"><img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="" style="width:100%; height:100%; object-fit:cover; display:none;" /><svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
 
-        var headerBarHtml = '<div class="reel-header-row" style="height:56px !important; padding:0 14px !important;">' +
+        var headerBarHtml = '<div class="reel-header-row" style="height:calc(54px + env(safe-area-inset-top, 0px)) !important; min-height:calc(54px + env(safe-area-inset-top, 0px)) !important; padding:env(safe-area-inset-top, 0px) 14px 0 14px !important; background:#000000 !important;">' +
           '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
             '<button type="button" data-author="' + escapeHtml(authorName) + '" data-user-id="' + escapeHtml(recordUserId) + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.6);" title="' + escapeHtml(authorName) + '님의 피드 모아보기">' +
               avatarMarkup +
@@ -5276,9 +5373,9 @@ window.renderHistoryStage = function(isLoading) {
           '<div class="reel-bottom-interactive-bar">' +
             '<div style="display:flex; justify-content:space-between; align-items:center; min-height:32px;">' +
               '<div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">' +
-                '<button type="button" data-star-card-id="' + cleanCardId + '" onclick="event.stopPropagation(); window.toggleFeedStar(this.dataset.starCardId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:4px; touch-action:manipulation;">' +
-                  '<svg id="feedStarIcon_' + cleanCardId + '" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
-                  '<span id="feedStarCountText_' + cleanCardId + '" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif;">' + starCount + '</span>' +
+                '<button type="button" data-star-card-id="' + cleanCardId + '" onclick="event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); window.toggleFeedStar(this.dataset.starCardId, event);" ontouchstart="event.stopPropagation(); event.stopImmediatePropagation();" style="background:none; border:none; padding:6px 4px; margin:-6px -4px; cursor:pointer; display:flex; align-items:center; gap:4px; touch-action:manipulation; -webkit-tap-highlight-color:transparent; pointer-events:auto; z-index:20;">' +
+                  '<svg id="feedStarIcon_' + cleanCardId + '" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease; pointer-events:none;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
+                  '<span id="feedStarCountText_' + cleanCardId + '" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif; pointer-events:none;">' + starCount + '</span>' +
                 '</button>' +
               '</div>' +
             '</div>' +
@@ -5425,8 +5522,11 @@ window.renderHistoryStage = function(isLoading) {
       window.ensureMasterBottomDock('history');
     }
 
-    // ⚡ [R2 공용 단일 진실 공급원 인출]: 로그인 여부와 무관하게 feeds.json을 인출하여 모바일/PC 즉시 렌더링
-    window.fetchCommunityFeeds().then(async function() {
+    if (typeof window.renderHistoryStage === 'function') {
+      window.renderHistoryStage();
+    }
+
+    window.fetchCommunityFeeds(true).then(async function() {
       if (typeof window.fetchUserFeedLikesFromServer === 'function') {
         await window.fetchUserFeedLikesFromServer();
       }
@@ -5435,9 +5535,6 @@ window.renderHistoryStage = function(isLoading) {
       }
     });
 
-    if (typeof window.renderHistoryStage === 'function') {
-      window.renderHistoryStage();
-    }
     triggerHaptic(10);
   };
 

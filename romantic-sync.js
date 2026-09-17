@@ -486,6 +486,16 @@ window.RomanticVault = window.RomanticVault || {
           }
         }
 
+        var userBio = cloudData.bio || cloudData.description || '';
+        if (userBio) {
+          localStorage.setItem('okbm_user_bio', userBio);
+          var profBio = safeGetJSON('user_profile', null);
+          if (profBio) {
+            profBio.bio = userBio;
+            localStorage.setItem('user_profile', JSON.stringify(profBio));
+          }
+        }
+
         var serverProps = cloudData.my_proposals || cloudData.myProposals;
         if (serverProps && Array.isArray(serverProps)) {
           this.write('okbm_my_proposals', serverProps, false);
@@ -493,6 +503,10 @@ window.RomanticVault = window.RomanticVault || {
         }
 
         this.isHydrated = true;
+
+        if (typeof window.fetchUserFeedLikesFromServer === 'function') {
+          window.fetchUserFeedLikesFromServer().catch(function() {});
+        }
 
         try {
           if (typeof window.renderPlanStage === 'function') window.renderPlanStage();
@@ -901,6 +915,13 @@ window.refreshMyReportFullStats = function() {
   if (!Array.isArray(myProps)) myProps = [];
   var hStat = document.getElementById('reportHeaderMyPropsStat');
   if (hStat) hStat.innerText = myProps.length + '곳';
+
+  var bioVal = (profile && profile.bio) ? profile.bio : (localStorage.getItem('okbm_user_bio') || '');
+  var bioEl = document.getElementById('reportProfileBioText');
+  if (bioEl) {
+    bioEl.innerText = bioVal || '소개글을 작성해보세요.';
+    bioEl.style.color = bioVal ? '#cbd5e1' : '#64748b';
+  }
 };
 
 // [상단 듀얼 카운터] 연도 선택 팝오버 토글러
@@ -1108,22 +1129,42 @@ function ensureMyReportAndAuthModalsInDOM() {
       </div>
     </div>
 
-  <!-- 2. 마이데이터(마이리포트) 대시보드 모달 (노치 침범 0% 플렉스 3단 & 맵 하단독 100% 일체화) -->
+  <!-- 2. 마이데이터(마이리포트) 대시보드 모달 (인스타그램 프로필 스타일 개편) -->
     <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="if(event.target===this) closeUserProfileModal();" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; width:100%; height:100%; background:#000000; z-index:3000000; margin:0; padding:0; overflow:hidden;">
       <div style="position:relative; width:100%; max-width:480px; height:100%; margin:0 auto; background:#000000; overflow:hidden; display:flex; flex-direction:column; box-sizing:border-box;">
         
-        <!-- 1단 헤더 (노치 안전 여백 확보 및 유저 메인 사진 34px 와이드 규격) -->
-        <div style="flex-shrink:0; width:100%; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:calc(14px + env(safe-area-inset-top, 0px)) 16px 14px 16px; box-sizing:border-box; z-index:50;">
-          <span style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.03em; line-height:1;">마이리포트</span>
+        <!-- 1단 인스타그램형 프로필 헤더 (대형 아바타 88px 및 3줄 자기소개) -->
+        <div style="flex-shrink:0; width:100%; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); padding:calc(16px + env(safe-area-inset-top, 0px)) 16px 14px 16px; box-sizing:border-box; z-index:50; display:flex; flex-direction:column; gap:12px;">
           
-          <div onclick="triggerHaptic(12); window.openAccountSettingsModal();" title="개인정보 및 메인 사진 변경" style="display:flex; align-items:center; gap:8px; cursor:pointer; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); padding:3px 4px 3px 12px; border-radius:24px;">
-            <span id="reportHeaderCurrentNick" style="font-size:0.78rem; font-weight:800; color:#ffffff; max-width:110px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
-            <div style="position:relative; width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg, rgba(186,230,253,0.8), rgba(167,243,208,0.5), rgba(253,230,138,0.5)); padding:1.5px; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.6);">
-              <div id="reportHeaderProfileImg" style="width:100%; height:100%; border-radius:50%; background:#090d14; background-size:cover; background-position:center; background-repeat:no-repeat; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                <svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:16px;">
+            <div style="flex:1 1 0%; min-width:0;">
+              <div onclick="window.editReportUserBio()" style="cursor:pointer; background:rgba(255,255,255,0.025); border:1px dashed rgba(255,255,255,0.12); border-radius:8px; padding:10px 12px; min-height:88px; box-sizing:border-box; display:flex; align-items:flex-start;">
+                <span id="reportProfileBioText" style="font-size:0.75rem; color:#cbd5e1; line-height:1.5; word-break:break-all; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">소개글을 작성해보세요.</span>
               </div>
             </div>
+
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px; flex-shrink:0;">
+              <div onclick="triggerHaptic(12); window.openAccountSettingsModal();" title="설정" style="position:relative; width:88px; height:88px; border-radius:50%; background:linear-gradient(135deg, rgba(186,230,253,0.8), rgba(167,243,208,0.5), rgba(253,230,138,0.5)); padding:2.5px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 6px 20px rgba(0,0,0,0.75);">
+                <div id="reportHeaderProfileImg" style="width:100%; height:100%; border-radius:50%; background:#090d14; background-size:cover; background-position:center; background-repeat:no-repeat; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                  <svg viewBox="0 0 24 24" style="width:38px; height:38px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+              </div>
+              <span id="reportHeaderCurrentNick" style="font-size:0.88rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em; max-width:96px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;"></span>
+            </div>
           </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px;">
+            <button type="button" onclick="triggerHaptic(8); window.openMyPastTripsFromReport();" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.75rem; font-weight:800; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">
+              <span>모아보기</span>
+            </button>
+            <button type="button" onclick="triggerHaptic(8); window.openRoutersInterestFromReport();" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.75rem; font-weight:800; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">
+              <span>관심루터</span>
+            </button>
+            <button type="button" onclick="triggerHaptic(8); window.openFeedsInterestFromReport();" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.75rem; font-weight:800; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">
+              <span>관심피드</span>
+            </button>
+          </div>
+
         </div>
 
         <!-- 2단 본문 (헤더와 독 사이를 정확히 꽉 채우는 안전 스크롤 바디) -->
@@ -1269,7 +1310,7 @@ function ensureMyReportAndAuthModalsInDOM() {
     <div class="custom-modal-overlay" id="userAccountSettingsModal" style="display:none; position:fixed; inset:0; background:#000000; z-index:100005; justify-content:center; align-items:stretch; width:100%; height:100dvh; padding:0; overflow:hidden;">
       <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
         <div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box;">
-          <button type="button" onclick="triggerHaptic(10); document.getElementById('userAccountSettingsModal').style.display='none';" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
+          <button type="button" onclick="triggerHaptic(10); document.getElementById('userAccountSettingsModal').style.display='none'; openUserProfileModal();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
           <span style="font-size:0.95rem; font-weight:900; color:#ffffff;">계정 관리</span>
           <div style="width:30px;"></div>
         </div>
@@ -2714,6 +2755,124 @@ if (typeof window !== 'undefined') {
   window.ensureMasterBottomDock();
 }
 
+window.editReportUserBio = function() {
+  triggerHaptic(10);
+  var currentBio = localStorage.getItem('okbm_user_bio') || '';
+  var oldModal = document.getElementById('reportBioEditorModalOverlay');
+  if (oldModal) oldModal.remove();
+
+  var modal = document.createElement('div');
+  modal.id = 'reportBioEditorModalOverlay';
+  modal.style.cssText = 'position:fixed; inset:0; z-index:2147483646 !important; background:rgba(0,0,0,0.92); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+  modal.innerHTML = '<div style="width:100%; max-width:340px; background:#080b11; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:16px; box-sizing:border-box; display:flex; flex-direction:column; gap:12px;">' +
+      '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+        '<span style="font-size:0.90rem; font-weight:900; color:#ffffff;">소개글</span>' +
+        '<span id="bioEditorCharCount" style="font-size:0.68rem; color:#64748b; font-family:var(--font-mono);">' + currentBio.length + '/100</span>' +
+      '</div>' +
+      '<textarea id="bioEditorTextarea" maxlength="100" placeholder="소개글을 작성해보세요." style="width:100%; height:90px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:10px; color:#ffffff; font-size:0.78rem; line-height:1.45; resize:none; outline:none; box-sizing:border-box; font-family:inherit;"></textarea>' +
+      '<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">' +
+        '<button type="button" id="bioEditorCancelBtn" style="height:38px; background:rgba(255,255,255,0.06); border:none; border-radius:6px; color:#94a3b8; font-size:0.78rem; font-weight:800; cursor:pointer;">취소</button>' +
+        '<button type="button" id="bioEditorSaveBtn" style="height:38px; background:#38bdf8; border:none; border-radius:6px; color:#000000; font-size:0.78rem; font-weight:900; cursor:pointer;">저장</button>' +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(modal);
+
+  var textarea = document.getElementById('bioEditorTextarea');
+  var countEl = document.getElementById('bioEditorCharCount');
+  var cancelBtn = document.getElementById('bioEditorCancelBtn');
+  var saveBtn = document.getElementById('bioEditorSaveBtn');
+
+  textarea.value = currentBio;
+  setTimeout(function() {
+    textarea.focus();
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+  }, 100);
+
+  textarea.oninput = function() {
+    countEl.innerText = textarea.value.length + '/100';
+  };
+
+  cancelBtn.onclick = function() {
+    triggerHaptic(8);
+    modal.remove();
+  };
+
+  saveBtn.onclick = function() {
+    triggerHaptic(12);
+    var clean = textarea.value.trim().slice(0, 100);
+    localStorage.setItem('okbm_user_bio', clean);
+
+    var profile = safeGetJSON('user_profile', null);
+    if (profile) {
+      profile.bio = clean;
+      localStorage.setItem('user_profile', JSON.stringify(profile));
+      if (profile.id) localStorage.setItem('user_profile_' + profile.id, JSON.stringify(profile));
+    }
+
+    var bioEl = document.getElementById('reportProfileBioText');
+    if (bioEl) {
+      bioEl.innerText = clean || '소개글을 작성해보세요.';
+      bioEl.style.color = clean ? '#cbd5e1' : '#64748b';
+    }
+
+    var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+    var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+    var uId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+    if (targetUrl && targetKey && uId) {
+      fetch(targetUrl + '/rest/v1/users?id=eq.' + encodeURIComponent(uId), {
+        method: 'PATCH',
+        headers: {
+          'apikey': targetKey,
+          'Authorization': 'Bearer ' + targetKey,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          bio: clean,
+          updated_at: new Date().toISOString()
+        })
+      }).catch(function() {});
+    }
+
+    modal.remove();
+    showToast('소개글이 저장되었습니다.', 'success', 1500);
+  };
+};
+
+window.openMyPastTripsFromReport = function() {
+  triggerHaptic(10);
+  if (typeof window.openPastTripsListModal === 'function') {
+    window.openPastTripsListModal();
+  } else {
+    window.navigateToDockTab('history');
+  }
+};
+
+window.openRoutersInterestFromReport = function() {
+  triggerHaptic(10);
+  if (typeof window.openRomanticInterestModal === 'function') {
+    window.openRomanticInterestModal('routers');
+  } else {
+    window.navigateToDockTab('history');
+  }
+};
+
+window.openFeedsInterestFromReport = function() {
+  triggerHaptic(10);
+  if (typeof window.openRomanticInterestModal === 'function') {
+    window.openRomanticInterestModal('feeds');
+  } else {
+    window.navigateToDockTab('history');
+  }
+};
+
+window.openMyFeedsModal = window.openMyPastTripsFromReport;
+window.openFollowingUsersModal = window.openRoutersInterestFromReport;
+window.openSavedFeedsModal = window.openFeedsInterestFromReport;
+
 function openUserProfileModal() {
   try {
     if (!isUserLoggedIn()) {
@@ -2738,6 +2897,13 @@ function openUserProfileModal() {
 
     var nickEl = document.getElementById('reportHeaderCurrentNick');
     if (nickEl) nickEl.innerText = targetNick;
+
+    var bioVal = (currentProfile && currentProfile.bio) ? currentProfile.bio : (localStorage.getItem('okbm_user_bio') || '');
+    var bioEl = document.getElementById('reportProfileBioText');
+    if (bioEl) {
+      bioEl.innerText = bioVal || '소개글을 작성해보세요. (터치하여 수정)';
+      bioEl.style.color = bioVal ? '#cbd5e1' : '#64748b';
+    }
 
     if (typeof window.applyMasterCoverPhotoToAllUI === 'function') {
       window.applyMasterCoverPhotoToAllUI(targetPhoto);
@@ -2871,53 +3037,187 @@ window.resetMasterUserCoverPhoto = function() {
   showToast('기본 프로필로 복원되었습니다.', 'info');
 };    
 
-// [메인 대표 사진 업로드] 제5·10헌법 Canvas 압축 및 Cloudflare R2 직통 전송 파이프라인
-window.uploadMasterUserCoverPhoto = async function(event) {
+// [메인 대표 사진 인터랙티브 크로퍼 & Cloudflare R2 직통 전송 엔진]
+window.uploadMasterUserCoverPhoto = function(event) {
   var file = event.target.files && event.target.files[0];
   if (!file) return;
 
-  var btn = document.getElementById('btnTriggerUploadCover');
-  var originalBtnText = btn ? btn.innerHTML : '';
-  if (btn) {
-    btn.disabled = true;
-    btn.style.opacity = '0.6';
-    btn.innerHTML = '<span>최적화 중...</span>';
-  }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    window.openCoverPhotoCropperModal(e.target.result);
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+};
 
-  try {
-    var base64 = await new Promise(function(resolve, reject) {
-      var reader = new FileReader();
-      reader.onload = function(e) { resolve(e.target.result); };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+window.openCoverPhotoCropperModal = function(imageSrc) {
+  triggerHaptic(10);
+  var oldModal = document.getElementById('coverPhotoCropperModal');
+  if (oldModal) oldModal.remove();
 
-    var compressedBase64 = await new Promise(function(resolve) {
-      var img = new Image();
-      img.onload = function() {
-        var maxWidth = 1200;
-        var w = img.width;
-        var h = img.height;
-        if (w > maxWidth) {
-          h = Math.round((h * maxWidth) / w);
-          w = maxWidth;
-        }
-        var canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        var ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', 0.82));
-      };
-      img.onerror = function() { resolve(base64); };
-      img.src = base64;
-    });
+  var modal = document.createElement('div');
+  modal.id = 'coverPhotoCropperModal';
+  modal.style.cssText = 'position:fixed; inset:0; z-index:3000020; background:#000000; display:flex; flex-direction:column; justify-content:space-between; align-items:center; padding:calc(12px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px; box-sizing:border-box; user-select:none; -webkit-user-select:none; touch-action:none;';
 
-    var uploadedUrl = '';
-    var safeFileName = 'master_cover_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7) + '.jpg';
-    var CF_WORKER_UPLOAD_URL = 'https://romantic-upload-worker.ggumfree.workers.dev';
+  modal.innerHTML = '<div style="width:100%; max-width:480px; display:flex; justify-content:space-between; align-items:center; z-index:50;">' +
+      '<button type="button" id="cropperCancelBtn" style="background:none; border:none; color:#cbd5e1; font-size:0.90rem; font-weight:800; cursor:pointer; padding:6px 0;">취소</button>' +
+      '<span style="font-size:0.95rem; font-weight:900; color:#ffffff;">프로필 사진</span>' +
+      '<button type="button" id="cropperConfirmBtn" style="background:none; border:none; color:#38bdf8; font-size:0.95rem; font-weight:900; cursor:pointer; padding:6px 0;">확인</button>' +
+    '</div>' +
+
+    '<div style="position:relative; width:300px; height:300px; margin:auto; display:flex; align-items:center; justify-content:center; touch-action:none;">' +
+      '<canvas id="cropperViewportCanvas" width="300" height="300" style="position:absolute; inset:0; border-radius:50%; box-shadow:0 0 0 9999px rgba(0,0,0,0.85); cursor:grab; touch-action:none;"></canvas>' +
+      '<div style="position:absolute; inset:0; border:2px solid rgba(255,255,255,0.4); border-radius:50%; pointer-events:none; box-sizing:border-box;"></div>' +
+    '</div>' +
+
+    '<div style="width:100%; max-width:480px; height:20px;"></div>';
+
+  document.body.appendChild(modal);
+
+  var canvas = document.getElementById('cropperViewportCanvas');
+  var ctx = canvas.getContext('2d');
+  var cancelBtn = document.getElementById('cropperCancelBtn');
+  var confirmBtn = document.getElementById('cropperConfirmBtn');
+
+  var img = new Image();
+  var scale = 1;
+  var baseScale = 1;
+  var offsetX = 0;
+  var offsetY = 0;
+
+  var isDragging = false;
+  var isPinching = false;
+  var startX = 0;
+  var startY = 0;
+  var initialDistance = 0;
+  var initialScale = 1;
+
+  var render = function() {
+    ctx.clearRect(0, 0, 300, 300);
+    ctx.save();
+    ctx.translate(150, 150);
+    ctx.scale(scale * baseScale, scale * baseScale);
+    ctx.translate(offsetX, offsetY);
+    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+    ctx.restore();
+  };
+
+  img.onload = function() {
+    var minDim = Math.min(img.width, img.height);
+    baseScale = 300 / minDim;
+    render();
+  };
+  img.src = imageSrc;
+
+  cancelBtn.onclick = function() {
+    triggerHaptic(8);
+    modal.remove();
+  };
+
+  var getDistance = function(touches) {
+    return Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
+  };
+
+  canvas.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    var delta = e.deltaY < 0 ? 0.08 : -0.08;
+    scale = Math.max(0.6, Math.min(4.0, scale + delta));
+    render();
+  }, { passive: false });
+
+  canvas.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    if (e.touches.length === 2) {
+      isPinching = true;
+      isDragging = false;
+      initialDistance = getDistance(e.touches);
+      initialScale = scale;
+    } else if (e.touches.length === 1) {
+      isDragging = true;
+      isPinching = false;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchmove', function(e) {
+    if (!isDragging && !isPinching) return;
+    e.preventDefault();
+
+    if (isPinching && e.touches.length === 2) {
+      var currentDistance = getDistance(e.touches);
+      if (initialDistance > 0) {
+        var ratio = currentDistance / initialDistance;
+        scale = Math.max(0.6, Math.min(4.0, initialScale * ratio));
+        render();
+      }
+    } else if (isDragging && e.touches.length === 1) {
+      var currentX = e.touches[0].clientX;
+      var currentY = e.touches[0].clientY;
+      var dx = (currentX - startX) / (scale * baseScale);
+      var dy = (currentY - startY) / (scale * baseScale);
+      offsetX += dx;
+      offsetY += dy;
+      startX = currentX;
+      startY = currentY;
+      render();
+    }
+  }, { passive: false });
+
+  var handleTouchEnd = function() {
+    isDragging = false;
+    isPinching = false;
+  };
+
+  window.addEventListener('touchend', handleTouchEnd, { passive: true });
+  window.addEventListener('touchcancel', handleTouchEnd, { passive: true });
+
+  canvas.addEventListener('mousedown', function(e) {
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    canvas.style.cursor = 'grabbing';
+  });
+
+  window.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+    var dx = (e.clientX - startX) / (scale * baseScale);
+    var dy = (e.clientY - startY) / (scale * baseScale);
+    offsetX += dx;
+    offsetY += dy;
+    startX = e.clientX;
+    startY = e.clientY;
+    render();
+  });
+
+  window.addEventListener('mouseup', function() {
+    isDragging = false;
+    canvas.style.cursor = 'grab';
+  });
+
+  confirmBtn.onclick = async function() {
+    triggerHaptic(12);
+    confirmBtn.disabled = true;
+    confirmBtn.innerText = '등록 중...';
+
+    var finalCanvas = document.createElement('canvas');
+    finalCanvas.width = 1200;
+    finalCanvas.height = 1200;
+    var fCtx = finalCanvas.getContext('2d');
+
+    var ratio = 1200 / 300;
+    fCtx.translate(600, 600);
+    fCtx.scale(scale * baseScale * ratio, scale * baseScale * ratio);
+    fCtx.translate(offsetX, offsetY);
+    fCtx.drawImage(img, -img.width / 2, -img.height / 2);
+
+    var compressedBase64 = finalCanvas.toDataURL('image/jpeg', 0.85);
 
     try {
+      var uploadedUrl = '';
+      var safeFileName = 'master_cover_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7) + '.jpg';
+      var CF_WORKER_UPLOAD_URL = 'https://romantic-upload-worker.ggumfree.workers.dev';
+
       var base64Data = compressedBase64.includes(',') ? compressedBase64.split(',')[1] : compressedBase64;
       var byteCharacters = atob(base64Data);
       var byteNumbers = new Array(byteCharacters.length);
@@ -2938,46 +3238,43 @@ window.uploadMasterUserCoverPhoto = async function(event) {
           uploadedUrl = cfData.url;
         }
       }
-    } catch (cfErr) {}
 
-    if (!uploadedUrl || !uploadedUrl.startsWith('http')) {
-      showToast('사진 업로드에 실패했습니다. 다시 시도해주세요.', 'error');
-      return;
-    }
-
-    var profile = safeGetJSON('user_profile', null);
-    if (profile) {
-      profile.photoUrl = uploadedUrl;
-      profile.heroCoverUrl = uploadedUrl;
-      localStorage.setItem('okbm_hero_cover_url', uploadedUrl);
-      localStorage.setItem('user_profile', JSON.stringify(profile));
-      if (profile.id) {
-        localStorage.setItem('user_profile_' + profile.id, JSON.stringify(profile));
+      if (!uploadedUrl || !uploadedUrl.startsWith('http')) {
+        showToast('사진 업로드에 실패했습니다.', 'error');
+        confirmBtn.disabled = false;
+        confirmBtn.innerText = '확인';
+        return;
       }
-    }
 
-    window.applyMasterCoverPhotoToAllUI(uploadedUrl);
+      var profile = safeGetJSON('user_profile', null);
+      if (profile) {
+        profile.photoUrl = uploadedUrl;
+        profile.heroCoverUrl = uploadedUrl;
+        localStorage.setItem('okbm_hero_cover_url', uploadedUrl);
+        localStorage.setItem('user_profile', JSON.stringify(profile));
+        if (profile.id) {
+          localStorage.setItem('user_profile_' + profile.id, JSON.stringify(profile));
+        }
+      }
 
-    if (typeof window.saveUserToSupabase === 'function' && profile) {
-      window.saveUserToSupabase(profile);
-    }
+      window.applyMasterCoverPhotoToAllUI(uploadedUrl);
 
-    if (typeof syncUserDataToCloud === 'function') {
-      syncUserDataToCloud();
-    }
+      if (typeof window.saveUserToSupabase === 'function' && profile) {
+        window.saveUserToSupabase(profile);
+      }
 
-    triggerHaptic(15);
-    showToast('메인 대표 사진이 전역 반영되었습니다!', 'success', 2500);
-  } catch (err) {
-    showToast('사진 등록 중 오류가 발생했습니다.', 'error', 3000);
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      btn.innerHTML = originalBtnText;
+      if (typeof syncUserDataToCloud === 'function') {
+        syncUserDataToCloud();
+      }
+
+      modal.remove();
+      showToast('프로필 사진이 저장되었습니다.', 'success', 2500);
+    } catch (err) {
+      showToast('사진 등록 중 오류가 발생했습니다.', 'error', 3000);
+      confirmBtn.disabled = false;
+      confirmBtn.innerText = '확인';
     }
-    event.target.value = '';
-  }
+  };
 };
 
 // 계정 설정 모달 제어 (가입날짜 완전 보존 & 14일 쿨다운 정밀 잠금)
@@ -3311,17 +3608,16 @@ function loginWithKakao() {
           closeLoginModal();
           showToast('[' + finalNick + ']님 환영합니다.', 'success', 1500);
 
-          if (window.RomanticVault && typeof window.RomanticVault.hydrateFromServer === 'function') {
-            window.RomanticVault.hydrateFromServer(kakaoId)
-              .then(function() {
-                setTimeout(function() { window.location.reload(); }, 250);
-              })
-              .catch(function() {
-                setTimeout(function() { window.location.reload(); }, 250);
-              });
-          } else {
-            setTimeout(function() { window.location.reload(); }, 250);
-          }
+          var afterLoginSync = async function() {
+            if (window.RomanticVault && typeof window.RomanticVault.hydrateFromServer === 'function') {
+              try { await window.RomanticVault.hydrateFromServer(kakaoId); } catch(e) {}
+            }
+            if (typeof window.fetchUserFeedLikesFromServer === 'function') {
+              try { await window.fetchUserFeedLikesFromServer(); } catch(e) {}
+            }
+            setTimeout(function() { window.location.reload(); }, 200);
+          };
+          afterLoginSync();
         },
         fail: function() {
           if (loginBtn) {
@@ -3675,9 +3971,12 @@ window.saveUserToSupabase = async function(profileData) {
   // 글이 이 백업 컬럼에 영구 보존되어 두 저장소 간 데이터 불일치가 발생합니다.
   // 따라서 더 이상 packHistory를 조립하거나 users.pack_history에 쓰지 않습니다.
 
+  var userBio = (prof && prof.bio) || localStorage.getItem('okbm_user_bio') || '';
+
   var payload = {
     id: userId,
     nickname: nickname,
+    bio: userBio,
     hero_cover_url: coverUrl,
     photo_url: coverUrl,
     following: followingList,
