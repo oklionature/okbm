@@ -185,18 +185,17 @@
     }
   }
 
-  // 🎨 [10대 슬롯 28px 라인아트 벡터] - 아날로그 밤숲 감성: 눈부심 제로 은은한 반투명 미스트 기어
-  var PLAN_SLOT_VECTORS = {
-    shelter: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 38C6 20 14 8 24 8s18 12 18 30H6z"/><path d="M14 38c0-12 4-20 10-20s10 8 10 20M6 38h36"/></svg>',
-    sleep: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="10" width="16" height="28" rx="8"/><line x1="6" y1="18" x2="22" y2="18"/><line x1="6" y1="26" x2="22" y2="26"/><path d="M26 14c4-3 10-3 14 0v24a6 6 0 0 1-12 0V14"/></svg>',
-    pack: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="4" width="32" height="9" rx="4.5" stroke="rgba(255,255,255,0.06)"/><rect x="12" y="15" width="24" height="27" rx="3"/><path d="M6 6l6 36M42 6l-6 36M12 25h24"/></svg>',
-    food: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M24 4c-6 9-12 17-12 25a12 12 0 0 0 24 0c0-8-6-16-12-25z"/><path d="M24 16v13l8 4"/></svg>',
-    kitchen: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18h28v18a6 6 0 0 1-6 6H14a6 6 0 0 1-6-6V18z"/><path d="M36 24h5a3 3 0 0 1 0 6h-5M14 8c0 3-3 5-3 8M22 6c0 4-3 6-3 10M30 8c0 3-3 5-3 8"/></svg>',
-    wear: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M34 8l-10-4-10 4L2 26l7 3 3-11v24h24V18l3 11 7-3-12-18z"/><path d="M18 14h12l-6 8-6-8z"/></svg>',
-    electronics: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="26 3 10 27 24 27 22 45 38 21 24 21 26 3"/></svg>',
-    camp: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14h28v14a5 5 0 0 1-5 5H15a5 5 0 0 1-5-5V14z"/><path d="M14 33L8 45M34 33l6 12M15 33l18 12M33 33L15 45"/></svg>',
-    slot9: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="24" cy="36" rx="14" ry="5"/><path d="M16 36V22h16v14M24 22v-8M20 14l4-8 4 8"/></svg>',
-    slot10: '<svg viewBox="0 0 48 48" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="16" width="36" height="26" rx="4"/><path d="M24 16v26M6 26h36M18 16c0-6 6-10 6-10s6 4 6 10"/></svg>'
+  var PLAN_CATEGORY_PALETTE = {
+    fav:         { color: '#fde047', label: '⭐ 내장비', bg: 'rgba(253,224,71,0.08)',  border: 'rgba(253,224,71,0.25)' },
+    all:         { color: '#e2e8f0', label: '전체',     bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.22)' },
+    shelter:     { color: '#10b981', label: '텐트·타프', bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.25)' },
+    sleep:       { color: '#14b8a6', label: '침낭·매트', bg: 'rgba(20,184,166,0.08)',  border: 'rgba(20,184,166,0.25)' },
+    pack:        { color: '#f43f5e', label: '배낭',     bg: 'rgba(244,63,94,0.08)',   border: 'rgba(244,63,94,0.25)' },
+    food:        { color: '#f97316', label: '음식',     bg: 'rgba(249,115,22,0.08)',  border: 'rgba(249,115,22,0.25)' },
+    kitchen:     { color: '#84cc16', label: '취사',     bg: 'rgba(132,204,22,0.08)',  border: 'rgba(132,204,22,0.25)' },
+    wear:        { color: '#a855f7', label: '의류',     bg: 'rgba(168,85,247,0.08)',  border: 'rgba(168,85,247,0.25)' },
+    electronics: { color: '#eab308', label: '기기·소품', bg: 'rgba(234,179,8,0.08)',   border: 'rgba(234,179,8,0.25)' },
+    camp:        { color: '#06b6d4', label: '테이블·체어',bg: 'rgba(6,182,212,0.08)',  border: 'rgba(6,182,212,0.25)' }
   };
 
  var DEFAULT_CATEGORIES = [
@@ -610,7 +609,7 @@
 
   window.selectInlineTripDate = function(dateKey, spot, elev) {
     window.activeSelectedDateKey = dateKey;
-    if (spot && spot !== '일정 메모' && spot !== '방문 일정' && spot !== '출정 기록') {
+    if (spot && spot !== '일정 메모' && spot !== '방문 일정') {
       window.currentLuckySpot = { name: spot, elevation: elev || '' };
     }
     var dropdown = document.getElementById('calcTripDateDropdown');
@@ -649,18 +648,7 @@ var totalKg = (totalGrams / 1000).toFixed(2);
     var bplBadge = document.getElementById('planBplStatusBadge');
     var recentGearBox = document.getElementById('planRecentGearBox');
 
-   var CATEGORY_PALETTE = {
-      fav:         { color: '#fde047', label: '⭐ 내장비', bg: 'rgba(253,224,71,0.08)',  border: 'rgba(253,224,71,0.25)' },
-      all:         { color: '#e2e8f0', label: '전체',     bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.22)' },
-      shelter:     { color: '#10b981', label: '텐트·타프', bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.25)' },
-      sleep:       { color: '#14b8a6', label: '침낭·매트', bg: 'rgba(20,184,166,0.08)',  border: 'rgba(20,184,166,0.25)' },
-      pack:        { color: '#f43f5e', label: '배낭',     bg: 'rgba(244,63,94,0.08)',   border: 'rgba(244,63,94,0.25)' },
-      food:        { color: '#f97316', label: '음식',     bg: 'rgba(249,115,22,0.08)',  border: 'rgba(249,115,22,0.25)' },
-      kitchen:     { color: '#84cc16', label: '취사',     bg: 'rgba(132,204,22,0.08)',  border: 'rgba(132,204,22,0.25)' },
-      wear:        { color: '#a855f7', label: '의류',     bg: 'rgba(168,85,247,0.08)',  border: 'rgba(168,85,247,0.25)' },
-      electronics: { color: '#eab308', label: '기기·소품', bg: 'rgba(234,179,8,0.08)',   border: 'rgba(234,179,8,0.25)' },
-      camp:        { color: '#06b6d4', label: '테이블·체어',bg: 'rgba(6,182,212,0.08)',  border: 'rgba(6,182,212,0.25)' }
-    };
+   var CATEGORY_PALETTE = PLAN_CATEGORY_PALETTE;
 
     var weightTheme = {
       color: '#2dd4bf',
@@ -1110,16 +1098,7 @@ var totalKg = (totalGrams / 1000).toFixed(2);
       return c.id === resolvedCatId;
     }) || { title: '장비', id: resolvedCatId };
 
-    var CATEGORY_PALETTE = {
-      shelter:     { color: '#10b981', label: '텐트·타프', bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.3)' },
-      sleep:       { color: '#14b8a6', label: '침낭·매트', bg: 'rgba(20,184,166,0.12)',  border: 'rgba(20,184,166,0.3)' },
-      pack:        { color: '#f43f5e', label: '배낭',     bg: 'rgba(244,63,94,0.12)',   border: 'rgba(244,63,94,0.3)' },
-      food:        { color: '#f97316', label: '음식',     bg: 'rgba(249,115,22,0.12)',  border: 'rgba(249,115,22,0.3)' },
-      kitchen:     { color: '#84cc16', label: '취사',     bg: 'rgba(132,204,22,0.12)',  border: 'rgba(132,204,22,0.3)' },
-      wear:        { color: '#a855f7', label: '의류',     bg: 'rgba(168,85,247,0.12)',  border: 'rgba(168,85,247,0.3)' },
-      electronics: { color: '#eab308', label: '기기·소품', bg: 'rgba(234,179,8,0.12)',   border: 'rgba(234,179,8,0.3)' },
-      camp:        { color: '#06b6d4', label: '테이블·체어',bg: 'rgba(6,182,212,0.12)',  border: 'rgba(6,182,212,0.3)' }
-    };
+    var CATEGORY_PALETTE = PLAN_CATEGORY_PALETTE;
     var pal = CATEGORY_PALETTE[resolvedCatId] || { color: '#38bdf8', label: cat.title, bg: 'rgba(56,189,248,0.12)', border: 'rgba(56,189,248,0.3)' };
 
     var catBadge = document.getElementById('gdmCategoryBadge');
@@ -1754,59 +1733,6 @@ window.openQuickGearRegisterModal = function(opts) {
     }
   };
 
-  window.addCustomGearToCurrentCategory = function() {
-    if (!window.currentOpeningCategoryId) return;
-    var nameInput = document.getElementById('customInputGearName');
-    var weightInput = document.getElementById('customInputGearWeight');
-    if (!nameInput || !weightInput) return;
-
-    var name = nameInput.value.trim();
-    var weight = parseInt(weightInput.value, 10);
-    if (!name || isNaN(weight) || weight < 0) {
-      if (typeof showToast === 'function') showToast('장비명과 정확한 무게(g)를 입력해주세요.', 'warn');
-      return;
-    }
-
-    var newCustomItem = {
-      id: 'custom_' + Date.now(),
-      name: name,
-      weight: weight,
-      brand: '내 장비',
-      category_id: window.currentOpeningCategoryId,
-      verified: true,
-      specs: '직접 등록한 내 장비'
-    };
-
-    var customGears = safeGetJSON('okbm_custom_gears', []);
-    if (!customGears.some(function(g) { return g.name === name; })) {
-      customGears.unshift(newCustomItem);
-      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-        window.RomanticVault.write('okbm_custom_gears', customGears, false);
-      } else {
-        localStorage.setItem('okbm_custom_gears', JSON.stringify(customGears));
-      }
-    }
-
-    var cat = (window.CATEGORIES || []).find(function(c) { return c.id === window.currentOpeningCategoryId; });
-    if (cat && !cat.db.some(function(d) { return d.name === name; })) {
-      cat.db.unshift(newCustomItem);
-    }
-
-    if (!window.favoriteGearSet) window.favoriteGearSet = new Set();
-    window.favoriteGearSet.add(name);
-    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-      window.RomanticVault.write('okbm_favorite_gears', Array.from(window.favoriteGearSet), true);
-    } else {
-      localStorage.setItem('okbm_favorite_gears', JSON.stringify(Array.from(window.favoriteGearSet)));
-    }
-
-    window.addGearToCategory(name, weight);
-
-    nameInput.value = '';
-    weightInput.value = '';
-    if (typeof showToast === 'function') showToast('⭐ [' + escapeHtml(name) + ']이 내 장비함에 등록되었습니다!', 'success');
-  };
-
   window.toggleFavoriteGear = function(gearName, e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
     if (!gearName) return;
@@ -1931,8 +1857,7 @@ window.saveCurrentPackingRecord = function() {
       isPublished: true,
       items: packedItems,
       photos: [],
-      photo: '',
-      fieldPhoto: ''
+      readyShotPhoto: ''
     };
 
     // 🏛️ 보관함(History) DB에 즉시 영구 각인 및 전역 캐시 갱신
@@ -2403,63 +2328,22 @@ window.saveCurrentPackingRecord = function() {
   };
 
   window.hasRecordFieldPhotos = function(rec, dateStr) {
-    if (!rec && !dateStr) return false;
+    if (!rec) return false;
+    var photoList = Array.isArray(rec.photos) ? rec.photos : (rec.photo ? [rec.photo] : []);
+    if (photoList.length === 0) return false;
 
-    if (rec) {
-      var tmplPhoto = String(rec.customTemplatePhoto || '').trim();
-      if (!tmplPhoto && window.__memoryStore && window.__memoryStore['okbm_custom_templates_map']) {
-        tmplPhoto = window.__memoryStore['okbm_custom_templates_map'][String(rec.id)] || '';
-      }
-
-      var photoList = [];
-      if (Array.isArray(rec.photos) && rec.photos.length > 0) {
-        photoList = rec.photos;
-      } else if (rec.photo) {
-        photoList = [rec.photo];
-      } else if (rec.photo_url) {
-        photoList = [rec.photo_url];
-      } else if (rec.fieldPhoto) {
-        photoList = [rec.fieldPhoto];
-      }
-
-      var realPhotos = photoList.filter(function(u) {
-        if (!u || typeof u !== 'string') return false;
-        var cleanU = u.trim();
-        if (cleanU.length < 10) return false;
-        if (tmplPhoto && cleanU === tmplPhoto) return false;
-        if (cleanU.includes('images.unsplash.com')) return false;
-        return true;
-      });
-
-      if (realPhotos.length > 0) return true;
-
-      var rId = String(rec.id || '').trim();
-      var savedPhotosMap = (typeof window.safeGetStorage === 'function' ? window.safeGetStorage('okbm_phone_photos_map', {}) : safeGetJSON('okbm_phone_photos_map', {})) || {};
-      if (window.__memoryStore && window.__memoryStore['okbm_phone_photos_map']) {
-        savedPhotosMap = Object.assign({}, window.__memoryStore['okbm_phone_photos_map'], savedPhotosMap);
-      }
-      var localPhotos = (rId && savedPhotosMap[rId]) ? savedPhotosMap[rId] : null;
-      if (Array.isArray(localPhotos)) {
-        var realLocal = localPhotos.filter(function(u) {
-          if (!u || typeof u !== 'string') return false;
-          var cleanU = u.trim();
-          if (cleanU.length < 10) return false;
-          if (tmplPhoto && cleanU === tmplPhoto) return false;
-          if (cleanU.includes('images.unsplash.com')) return false;
-          return true;
-        });
-        if (realLocal.length > 0) return true;
-      }
-
-      if (Array.isArray(rec.photoMemos) && rec.photoMemos.length > 0) {
-        var hasValidMemo = rec.photoMemos.some(function(m) { return m && String(m).trim().length > 0; });
-        if (hasValidMemo && rec.photos && rec.photos.length > 0) {
-          return true;
-        }
-      }
+    var tmplPhoto = String(rec.customTemplatePhoto || '').trim();
+    if (!tmplPhoto && window.__memoryStore && window.__memoryStore['okbm_custom_templates_map']) {
+      tmplPhoto = window.__memoryStore['okbm_custom_templates_map'][String(rec.id)] || '';
     }
 
-    return false;
+    return photoList.some(function(u) {
+      if (!u || typeof u !== 'string') return false;
+      var cleanU = u.trim();
+      if (cleanU.length < 10) return false;
+      if (tmplPhoto && cleanU === tmplPhoto) return false;
+      return !cleanU.includes('images.unsplash.com');
+    });
   };
 
   window.renderPlanStage = function() {
@@ -2578,9 +2462,7 @@ window.saveCurrentPackingRecord = function() {
     var rawPlanSpotsObj = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
       ? window.RomanticVault.read('okbm_plan_spots', {})
       : safeGetJSON('okbm_plan_spots', {}) || {};
-    var planSpotsObj = (typeof window.okbmCleanPlanMap === 'function')
-      ? window.okbmCleanPlanMap(rawPlanSpotsObj, deletedDatesSet)
-      : rawPlanSpotsObj;
+    var planSpotsObj = rawPlanSpotsObj || {};
 
     function resolveSpotAndMemo(targetDateStr) {
       var sName = '';
@@ -2826,35 +2708,47 @@ window.saveCurrentPackingRecord = function() {
       calendarDaysHtml += '<div style="height:100% !important;"></div>';
     }
 
- for (var d = 1; d <= lastDayOfMonth; d++) {
+    var monthHistoryByDay = {};
+    monthHistory.forEach(function(h) {
+      if (!h) return;
+      var hD = Number(h.day);
+      if (isNaN(hD) || !hD) {
+        if (h.date) {
+          var p = String(h.date).match(/\d+/g);
+          if (p && p.length >= 3) hD = parseInt(p[2], 10);
+        }
+      }
+      if (hD && !monthHistoryByDay[hD]) {
+        monthHistoryByDay[hD] = h;
+      }
+    });
+
+    var tripJoinsDateSet = new Set();
+    if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
+      window.TRIP_JOINS_DATABASE.forEach(function(t) {
+        if (!t || !t.date || t.isClosed) return;
+        var tUid = String(t.userId || '').trim();
+        var tAuthor = String(t.authorName || '').trim();
+        var isHost = Boolean((curUid && tUid && curUid === tUid) || (curNick && tAuthor && curNick === tAuthor));
+        if (isHost) {
+          tripJoinsDateSet.add(String(t.date).replace(/[-/]/g, '.'));
+        }
+      });
+    }
+
+    for (var d = 1; d <= lastDayOfMonth; d++) {
       var isSelected = (d === activeDay);
       var isToday = (Number(viewYear) === todayYear && Number(viewMonth) === todayMonth && Number(d) === todayDate);
       var thisDateKey = viewYear + '.' + String(viewMonth).padStart(2, '0') + '.' + String(d).padStart(2, '0');
 
-      var dayRecord = monthHistory.find(function(h) {
-        if (!h) return false;
-        var hD = Number(h.day);
-        if (isNaN(hD) || !hD) {
-          if (h.date) {
-            var p = String(h.date).match(/\d+/g);
-            if (p && p.length >= 3) hD = parseInt(p[2], 10);
-          }
-        }
-        return hD === Number(d);
-      });
+      var dayRecord = monthHistoryByDay[d] || null;
       var hasFieldPhoto = Boolean(window.hasRecordFieldPhotos && window.hasRecordFieldPhotos(dayRecord, thisDateKey));
       var isCompleted = Boolean(dayRecord && hasFieldPhoto);
       var isRecorded = !!dayRecord;
       var hasPlanMemo = Boolean(planMemosObj[thisDateKey] && String(planMemosObj[thisDateKey]).trim().length > 0);
       var rawDaySpots = planSpotsObj[thisDateKey];
       var hasPlanSpot = Boolean((Array.isArray(rawDaySpots) && rawDaySpots.length > 0) || (rawDaySpots && rawDaySpots.name));
-      var hasTripJoin = Array.isArray(window.TRIP_JOINS_DATABASE) && window.TRIP_JOINS_DATABASE.some(function(t) {
-        if (!t || !t.date || t.isClosed) return false;
-        if (String(t.date).replace(/[-/]/g, '.') !== thisDateKey) return false;
-        var tUid = String(t.userId || '').trim();
-        var tAuthor = String(t.authorName || '').trim();
-        return (curUid && tUid && curUid === tUid) || (curNick && tAuthor && curNick === tAuthor);
-      });
+      var hasTripJoin = tripJoinsDateSet.has(thisDateKey);
       var hasPlan = hasPlanMemo || hasPlanSpot || hasTripJoin || Boolean(dayRecord && !isCompleted);
 
       var circleStyle = 'position:relative; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:\'Space Grotesk\', sans-serif; font-size:0.78rem; font-weight:800; transition:all 0.15s ease;';
@@ -2975,13 +2869,17 @@ window.saveCurrentPackingRecord = function() {
               if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
                 var dTarget = String(activeDateStr).replace(/[-/]/g, '.');
                 var curProf = safeGetJSON('user_profile', null);
-                var activeUid = (curProf && curProf.id) ? String(curProf.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+                var rawActiveUid = (curProf && curProf.id) ? String(curProf.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+                var cleanActiveUid = rawActiveUid.replace(/^(kakao_|apple_|guest_|user_)/, '');
                 var activeNick = (curProf && curProf.nickname) ? String(curProf.nickname).trim() : (localStorage.getItem('okbm_user_nick') || '');
+
                 window.TRIP_JOINS_DATABASE.forEach(function(t) {
-                  if (t && t.date && String(t.date).replace(/[-/]/g, '.') === dTarget && t.tripId) {
-                    var tUid = String(t.userId || '').trim();
+                  if (t && t.date && !t.isClosed && t.tripId && String(t.date).replace(/[-/]/g, '.') === dTarget) {
+                    var rawTUid = String(t.userId || '').trim();
+                    var cleanTUid = rawTUid.replace(/^(kakao_|apple_|guest_|user_)/, '');
                     var tAuthor = String(t.authorName || '').trim();
-                    var isHost = (activeUid && tUid && activeUid === tUid) || (activeNick && tAuthor && activeNick === tAuthor);
+                    var isHost = Boolean((cleanActiveUid && cleanTUid && cleanActiveUid === cleanTUid) || (activeNick && tAuthor && activeNick === tAuthor));
+
                     if (isHost && !spotArray.some(function(s) { return s && s.tripId === t.tripId; })) {
                       spotArray.unshift({
                         name: t.spotName,
@@ -3019,10 +2917,11 @@ window.saveCurrentPackingRecord = function() {
                 var chipBg = isCompletedSpot ? 'rgba(245,158,11,0.14)' : (isExpedition ? 'rgba(56,189,248,0.10)' : 'rgba(255,255,255,0.05)');
 
                 var safeSName = escapeHtml(s.name);
+                var safeTripId = escapeHtml(s.tripId || '');
                 return '<div style="display:inline-flex; align-items:center; gap:5px; background:' + chipBg + '; border:1px solid ' + chipBorder + '; padding:3px 8px; border-radius:12px; font-size:0.78rem; font-weight:800; color:#ffffff;">' +
                   '<span style="display:inline-flex; align-items:center; flex-shrink:0;">' + chipIcon + '</span>' +
                   '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px; color:#ffffff;">' + escapeHtml(s.name + dispElev) + '</span>' +
-                  (s.isHistory ? '' : ('<button type="button" data-date="' + escapeHtml(activeDateStr) + '" data-spot="' + safeSName + '" onclick="window.removeIndividualPlanSpot(this.dataset.date, this.dataset.spot, event)" style="background:none; border:none; color:#94a3b8; font-size:0.75rem; font-weight:900; cursor:pointer; padding:0 2px; margin-left:2px; line-height:1;">✕</button>')) +
+                  (s.isHistory ? '' : ('<button type="button" data-date="' + escapeHtml(activeDateStr) + '" data-spot="' + safeSName + '" data-trip-id="' + safeTripId + '" onclick="window.removeIndividualPlanSpot(this.dataset.date, this.dataset.spot, event, this.dataset.tripId)" style="background:none; border:none; color:#94a3b8; font-size:0.75rem; font-weight:900; cursor:pointer; padding:0 2px; margin-left:2px; line-height:1;">✕</button>')) +
                 '</div>';
               }).join('');
 
@@ -3378,7 +3277,7 @@ window.saveCurrentPackingRecord = function() {
             </button>
           </div>
 
-          <!-- 1-1. 인라인 출정 일정 아코디언 드롭다운 (확장 높이 및 가독성 최적화) -->
+          <!-- 1-1. 인라인 방문 일정 아코디언 드롭다운 (확장 높이 및 가독성 최적화) -->
           <div id="calcTripDateDropdown" style="display:none; position:absolute; top:60px; left:0; right:0; z-index:700; background:#0b0f17; border:1.5px solid rgba(255,255,255,0.2); border-radius:10px; padding:10px; flex-direction:column; gap:6px; box-shadow:0 18px 45px rgba(0,0,0,0.96); box-sizing:border-box;"></div>
 
           <!-- 2. 대시보드 (5:5 완벽 좌우 분할, 높이 88px) -->
@@ -3614,18 +3513,7 @@ window.saveCurrentPackingRecord = function() {
       ? myFavGears
       : myFavGears.filter(function(g) { return g.categoryId === activeCatFilter; });
 
-    var CATEGORY_PALETTE = {
-      fav:         { color: '#fde047', label: '⭐ 내장비', bg: 'rgba(253,224,71,0.08)',  border: 'rgba(253,224,71,0.25)' },
-      all:         { color: '#e2e8f0', label: '전체',     bg: 'rgba(255,255,255,0.08)', border: 'rgba(255,255,255,0.22)' },
-      shelter:     { color: '#10b981', label: '텐트·타프', bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.25)' },
-      sleep:       { color: '#14b8a6', label: '침낭·매트', bg: 'rgba(20,184,166,0.08)',  border: 'rgba(20,184,166,0.25)' },
-      pack:        { color: '#f43f5e', label: '배낭',     bg: 'rgba(244,63,94,0.08)',   border: 'rgba(244,63,94,0.25)' },
-      food:        { color: '#f97316', label: '음식',     bg: 'rgba(249,115,22,0.08)',  border: 'rgba(249,115,22,0.25)' },
-      kitchen:     { color: '#84cc16', label: '취사',     bg: 'rgba(132,204,22,0.08)',  border: 'rgba(132,204,22,0.25)' },
-      wear:        { color: '#a855f7', label: '의류',     bg: 'rgba(168,85,247,0.08)',  border: 'rgba(168,85,247,0.25)' },
-      electronics: { color: '#eab308', label: '기기·소품', bg: 'rgba(234,179,8,0.08)',   border: 'rgba(234,179,8,0.25)' },
-      camp:        { color: '#06b6d4', label: '테이블·체어',bg: 'rgba(6,182,212,0.08)',  border: 'rgba(6,182,212,0.25)' }
-    };
+    var CATEGORY_PALETTE = PLAN_CATEGORY_PALETTE;
 
     var catChips = [
       { id: 'all', label: '전체' },
@@ -4231,16 +4119,7 @@ window.saveCurrentPackingRecord = function() {
     var target = presets.find(function(p) { return String(p.id) === String(presetId); });
     if (!target) return;
 
-    var catPalettes = {
-      shelter:     { color: '#10b981', label: '텐트·타프' },
-      sleep:       { color: '#14b8a6', label: '침낭·매트' },
-      pack:        { color: '#f43f5e', label: '배낭' },
-      food:        { color: '#f97316', label: '음식' },
-      kitchen:     { color: '#84cc16', label: '취사' },
-      wear:        { color: '#a855f7', label: '의류' },
-      electronics: { color: '#eab308', label: '기기·소품' },
-      camp:        { color: '#06b6d4', label: '테이블·체어' }
-    };
+    var catPalettes = PLAN_CATEGORY_PALETTE;
 
     var gearMap = target.gears || {};
     var allItems = [];
@@ -4584,6 +4463,54 @@ window.clearEntireDaySchedule = function(dateKey) {
     var normDate = String(dateKey).replace(/[-/]/g, '.');
     var altDate = String(dateKey).replace(/[./]/g, '-');
 
+    var curProf = safeGetJSON('user_profile', null);
+    var rawActiveUid = (curProf && curProf.id) ? String(curProf.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+    var cleanActiveUid = rawActiveUid.replace(/^(kakao_|apple_|guest_|user_)/, '');
+    var activeNick = (curProf && curProf.nickname) ? String(curProf.nickname).trim() : (localStorage.getItem('okbm_user_nick') || '');
+
+    var deletedTripIds = [];
+    if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
+      window.TRIP_JOINS_DATABASE = window.TRIP_JOINS_DATABASE.filter(function(t) {
+        if (!t || !t.date || !t.tripId) return true;
+        var tD = String(t.date).replace(/[-/]/g, '.');
+        if (tD === normDate || tD === String(dateKey)) {
+          var rawTUid = String(t.userId || '').trim();
+          var cleanTUid = rawTUid.replace(/^(kakao_|apple_|guest_|user_)/, '');
+          var tAuthor = String(t.authorName || '').trim();
+          var isHost = Boolean((cleanActiveUid && cleanTUid && cleanActiveUid === cleanTUid) || (activeNick && tAuthor && activeNick === tAuthor));
+          if (isHost) {
+            deletedTripIds.push(String(t.tripId).trim());
+            return false;
+          }
+        }
+        return true;
+      });
+      if (typeof window.renderHomeTripJoinSlider === 'function') {
+        window.renderHomeTripJoinSlider();
+      }
+    }
+
+    var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
+    var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
+
+    if (deletedTripIds.length > 0) {
+      if (window.supabaseClient) {
+        window.supabaseClient.from('trips').delete().in('id', deletedTripIds).then(function() {});
+      } else if (targetUrl && targetKey) {
+        var tripDelHeaders = {
+          'apikey': targetKey,
+          'Authorization': 'Bearer ' + targetKey,
+          'Content-Type': 'application/json'
+        };
+        deletedTripIds.forEach(function(tId) {
+          fetch(targetUrl + '/rest/v1/trips?id=eq.' + encodeURIComponent(tId), {
+            method: 'DELETE',
+            headers: tripDelHeaders
+          }).catch(function() {});
+        });
+      }
+    }
+
     var planMemos = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
       ? window.RomanticVault.read('okbm_plan_memos', {})
       : safeGetJSON('okbm_plan_memos', {});
@@ -4651,8 +4578,6 @@ window.clearEntireDaySchedule = function(dateKey) {
       }
     }
 
-    var targetUrl = window.SUPABASE_URL || '';
-    var targetKey = window.SUPABASE_ANON_KEY || '';
     if (targetUrl && targetKey && deletedRecordIds.length > 0) {
       var delHeaders = {
         'apikey': targetKey,
@@ -4781,38 +4706,71 @@ window.clearEntireDaySchedule = function(dateKey) {
     triggerHaptic(8);
   };
 
-  window.removeIndividualPlanSpot = function(dateKey, spotName, e) {
-    if (e) e.stopPropagation();
+  window.removeIndividualPlanSpot = function(dateKey, spotName, e, explicitTripId) {
+    if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
 
     var dTarget = String(dateKey).replace(/[-/]/g, '.');
-    var matchedTrip = null;
-    if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
-      matchedTrip = window.TRIP_JOINS_DATABASE.find(function(t) {
+    var targetTripId = explicitTripId ? String(explicitTripId).trim() : '';
+
+    if (!targetTripId && Array.isArray(window.TRIP_JOINS_DATABASE)) {
+      var foundTrip = window.TRIP_JOINS_DATABASE.find(function(t) {
         if (!t || !t.date || !t.spotName) return false;
         var tD = String(t.date).replace(/[-/]/g, '.');
         return tD === dTarget && (t.spotName.includes(spotName) || spotName.includes(t.spotName));
       });
+      if (foundTrip && foundTrip.tripId) {
+        targetTripId = String(foundTrip.tripId).trim();
+      }
     }
 
-    var isExpedition = Boolean(matchedTrip);
+    var isExpedition = Boolean(targetTripId);
     var confirmMsg = isExpedition
-      ? '[' + spotName + '] 원정대 모집 공고를 취소하고 완전히 삭제하시겠습니까?'
+      ? '[' + spotName + '] 모집 공고를 취소하고 완전히 삭제하시겠습니까?'
       : '[' + spotName + '] 일정을 삭제하시겠습니까?';
 
     if (!confirm(confirmMsg)) return;
 
-    if (isExpedition && matchedTrip && matchedTrip.tripId) {
-      if (typeof window.deleteTripFromCloudSheet === 'function') {
-        window.deleteTripFromCloudSheet(matchedTrip.tripId, null, true);
+    if (isExpedition && targetTripId) {
+      if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
+        window.TRIP_JOINS_DATABASE = window.TRIP_JOINS_DATABASE.filter(function(t) {
+          return String(t.tripId).trim() !== targetTripId;
+        });
+        if (typeof window.renderHomeTripJoinSlider === 'function') {
+          window.renderHomeTripJoinSlider();
+        }
+      }
+
+      if (window.supabaseClient) {
+        window.supabaseClient.from('trips').delete().eq('id', targetTripId).then(function() {});
+      } else {
+        var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
+        var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
+        if (targetUrl && targetKey) {
+          fetch(targetUrl + '/rest/v1/trips?id=eq.' + encodeURIComponent(targetTripId), {
+            method: 'DELETE',
+            headers: {
+              'apikey': targetKey,
+              'Authorization': 'Bearer ' + targetKey,
+              'Content-Type': 'application/json'
+            }
+          }).catch(function() {});
+        }
       }
     }
 
-    var planSpots = safeGetJSON('okbm_plan_spots', {});
+    var planSpots = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_plan_spots', {})
+      : safeGetJSON('okbm_plan_spots', {});
+
     var list = planSpots[dateKey];
     if (Array.isArray(list)) {
-      planSpots[dateKey] = list.filter(function(s) { return s && s.name !== spotName; });
+      planSpots[dateKey] = list.filter(function(s) {
+        if (!s) return false;
+        if (targetTripId && s.tripId && String(s.tripId).trim() === targetTripId) return false;
+        return s.name !== spotName;
+      });
       if (planSpots[dateKey].length === 0) delete planSpots[dateKey];
-    } else if (list && list.name === spotName) {
+    } else if (list && (list.name === spotName || (targetTripId && list.tripId && String(list.tripId).trim() === targetTripId))) {
       delete planSpots[dateKey];
     }
 

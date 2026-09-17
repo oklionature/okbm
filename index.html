@@ -33,54 +33,71 @@
       });
     })();
 
-    (function autoPurgeStaleGearCache() {
-      var CURRENT_GEAR_EPOCH = '20260916_V4_1715';
+    function purgeIfStale(epochKey, epochValue, keysToRemove, options) {
       try {
-        if (localStorage.getItem('okbm_gear_version') !== CURRENT_GEAR_EPOCH) {
-          localStorage.removeItem('okbm_master_gears');
-          localStorage.removeItem('okbm_master_gears_cache');
+        if (localStorage.getItem(epochKey) !== epochValue) {
+          if (Array.isArray(keysToRemove)) {
+            keysToRemove.forEach(function(k) { localStorage.removeItem(k); });
+          }
+          if (options && typeof options.customPurge === 'function') {
+            options.customPurge();
+          }
+          if (!options || options.updateEpoch !== false) {
+            localStorage.setItem(epochKey, epochValue);
+          }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('[purgeIfStale]', e);
+      }
+    }
+    window.purgeIfStale = purgeIfStale;
+
+    (function autoPurgeStaleGearCache() {
+      purgeIfStale('okbm_gear_version', '20260916_V4_1715', [
+        'okbm_master_gears',
+        'okbm_master_gears_cache'
+      ], { updateEpoch: false });
     })();
 
     (function autoPurgeLegacyClientCache() {
       var CLEAN_EPOCH = '20260912_CLEAN_RESET_V3';
-      var currentEpoch = localStorage.getItem('okbm_client_epoch');
-      if (currentEpoch !== CLEAN_EPOCH) {
-        var keepKeys = [
-          'okbm_spots_cache',
-          'okbm_master_spots',
-          'okbm_master_gears',
-          'okbm_master_gears_cache',
-          'okbm_gear_version',
-          'user_auth_token',
-          'user_profile',
-          'okbm_user_id',
-          'okbm_user_nick',
-          'okbm_bookmarks',
-          'okbm_visited',
-          'okbm_memos',
-          'okbm_plan_memos',
-          'okbm_plan_spots',
-          'okbm_packing_history',
-          'okbm_selected_gears_multi',
-          'okbm_favorite_gears',
-          'okbm_custom_gears',
-          'okbm_gear_presets',
-          'okbm_gear_meta',
-          'okbm_hero_cover_url',
-          'okbm_my_proposals'
-        ];
-        Object.keys(localStorage).forEach(function(k) {
-          if (!keepKeys.includes(k) && !k.startsWith('user_profile_')) {
-            localStorage.removeItem(k);
-          }
-        });
-        localStorage.removeItem('okbm_deleted_record_ids');
-        localStorage.removeItem('okbm_phone_photos_map');
-        localStorage.removeItem('okbm_trip_photos_map');
-        localStorage.setItem('okbm_client_epoch', CLEAN_EPOCH);
-      }
+      var keepKeys = [
+        'okbm_spots_cache',
+        'okbm_master_spots',
+        'okbm_master_gears',
+        'okbm_master_gears_cache',
+        'okbm_gear_version',
+        'user_auth_token',
+        'user_profile',
+        'okbm_user_id',
+        'okbm_user_nick',
+        'okbm_bookmarks',
+        'okbm_visited',
+        'okbm_memos',
+        'okbm_plan_memos',
+        'okbm_plan_spots',
+        'okbm_packing_history',
+        'okbm_selected_gears_multi',
+        'okbm_favorite_gears',
+        'okbm_custom_gears',
+        'okbm_gear_presets',
+        'okbm_gear_meta',
+        'okbm_hero_cover_url',
+        'okbm_my_proposals'
+      ];
+      purgeIfStale('okbm_client_epoch', CLEAN_EPOCH, [
+        'okbm_deleted_record_ids',
+        'okbm_phone_photos_map',
+        'okbm_trip_photos_map'
+      ], {
+        customPurge: function() {
+          Object.keys(localStorage).forEach(function(k) {
+            if (!keepKeys.includes(k) && !k.startsWith('user_profile_')) {
+              localStorage.removeItem(k);
+            }
+          });
+        }
+      });
     })();
 
     window.applySmartPhotoFit = window.applySmartPhotoFit || function(img) {
@@ -348,15 +365,6 @@
     @keyframes slowCelestialPulse {
       0%, 100% { opacity: 0.30; }
       50% { opacity: 0.08; }
-    }
-    .global-app-starlight-canvas {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      overflow: hidden;
-      contain: strict !important;
-      will-change: opacity;
     }
 
     .icon-svg {
@@ -1107,8 +1115,6 @@
 </head>
 <body>
 
-  <div id="globalAppMilkyWayLayer" class="global-app-starlight-canvas"></div>
-
 <header class="netflix-integrated-header notranslate">
    <!-- 🌌 서정적 딥 슬로우: 마이크로 십자성(5.5~6px) + 초미세 도트(1~1.6px) -->
     <div class="header-starlight-layer">
@@ -1200,14 +1206,13 @@
 
 <script>
 (function purgeLegacyHeroCache() {
-  try {
-    var FEED_SYNC_EPOCH = '20260917_FEED_SYNC_V1';
-    if (localStorage.getItem('okbm_feed_epoch') !== FEED_SYNC_EPOCH) {
-      localStorage.removeItem('okbm_hero_cover_url');
-      localStorage.removeItem('okbm_cached_community_feeds');
-      localStorage.setItem('okbm_feed_epoch', FEED_SYNC_EPOCH);
-    }
-  } catch(e) {}
+  var helper = window.purgeIfStale || (typeof purgeIfStale === 'function' ? purgeIfStale : null);
+  if (helper) {
+    helper('okbm_feed_epoch', '20260917_FEED_SYNC_V1', [
+      'okbm_hero_cover_url',
+      'okbm_cached_community_feeds'
+    ]);
+  }
 })();
 </script>
 
@@ -1447,10 +1452,18 @@
       location.href = url;
     };
 
+   window.__safeJSONCache = window.__safeJSONCache || new Map();
    function safeGetJSON(key, defaultVal) {
       try {
         var item = localStorage.getItem(key);
-        return item ? JSON.parse(item) : defaultVal;
+        if (!item) return defaultVal;
+        var cached = window.__safeJSONCache.get(key);
+        if (cached && cached.raw === item) {
+          return cached.parsed;
+        }
+        var parsed = JSON.parse(item);
+        window.__safeJSONCache.set(key, { raw: item, parsed: parsed });
+        return parsed;
       } catch (e) {
         return defaultVal;
       }
@@ -1489,36 +1502,6 @@
     var currentCustomRatioVal = 0.75;
     var currentPhotoScaleVal = 1.0;
 
-    function extractCleanGearsFromRecord(record) {
-      if (!record) return [];
-      var rawItems = record.items || record.gears || [];
-      if (typeof rawItems === 'string') {
-        try { rawItems = JSON.parse(rawItems); } catch(e) { rawItems = []; }
-      }
-      if (!Array.isArray(rawItems) || rawItems.length === 0) {
-        var selectedMulti = safeGetJSON('okbm_selected_gears_multi', {});
-        if (selectedMulti && typeof selectedMulti === 'object') {
-          rawItems = [];
-          Object.keys(selectedMulti).forEach(function(k) {
-            (selectedMulti[k] || []).forEach(function(it) { if (it) rawItems.push(it); });
-          });
-        }
-      }
-
-      if (!Array.isArray(rawItems)) return [];
-
-      return rawItems.map(function(it) {
-        if (typeof it === 'string') {
-          var match = it.match(/^(.*?)\s*\((\d+)g\)$/);
-          return match ? { name: match[1], weight: parseInt(match[2], 10) } : { name: it, weight: 0 };
-        }
-        return {
-          name: it.name || it.itemName || '배낭 장비',
-          weight: Number(it.weight || it.weight_g || 0)
-        };
-      }).filter(function(it) { return it.name && it.name.trim().length > 0; });
-    }
-
     function getArchivePhotosList(record) {
       if (!record) return [];
       var list = [];
@@ -1530,104 +1513,6 @@
       return list.filter(function(u) {
         return typeof u === 'string' && u.trim().startsWith('https://');
       });
-    }
-
-    async function getRealArchiveRecordsAsync() {
-      var curProfile = safeGetJSON('user_profile', null);
-      var curUserId = curProfile && curProfile.id ? String(curProfile.id).trim() : '';
-      var list = (window.interactiveHistory && Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0)
-        ? window.interactiveHistory
-        : ((window.packingHistoryList && Array.isArray(window.packingHistoryList)) ? window.packingHistoryList : safeGetJSON('okbm_packing_history', []));
-
-      if (curUserId && Array.isArray(list)) {
-        list = list.filter(function(h) { return !h || !h.userId || h.userId === curUserId; });
-      }
-      return (list || []).filter(Boolean);
-    }
-
-   // 🌟 [별점 단일화 & 최다 별점 히어로 자동 승격 엔진]
-    function getCardLikesCount(cardId) {
-      var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
-      return Number(starCounts[cardId]) || 0;
-    }
-
-    function isUserLikedCard(cardId) {
-      var starsMap = safeGetJSON('okbm_feed_stars_map', {});
-      return Boolean(starsMap[cardId]);
-    }
-
-    function toggleCardLike(cardId, e) {
-      if (e) e.stopPropagation();
-      var token = localStorage.getItem('user_auth_token');
-      var profile = safeGetJSON('user_profile', null);
-      if (!token || !profile || !profile.id) {
-        triggerHaptic(10);
-        openLoginModal();
-        showToast('낭만별은 로그인 후 이용하실 수 있습니다.', 'info');
-        return;
-      }
-
-      var sId = String(cardId).trim();
-      var starsMap = safeGetJSON('okbm_feed_stars_map', {});
-      var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
-
-      var isStarred = Boolean(starsMap[sId]);
-      var curCount = Number(starCounts[sId] || 0);
-
-      if (isStarred) {
-        delete starsMap[sId];
-        curCount = Math.max(0, curCount - 1);
-        triggerHaptic(8);
-      } else {
-        starsMap[sId] = true;
-        curCount++;
-        triggerHaptic(15);
-      }
-
-      starCounts[sId] = curCount;
-      localStorage.setItem('okbm_feed_stars_map', JSON.stringify(starsMap));
-      localStorage.setItem('okbm_feed_stars_counts', JSON.stringify(starCounts));
-
-      updateAllLikeUI();
-
-      if (window.supabaseClient) {
-        window.supabaseClient.from('feeds').update({
-          likes_count: curCount,
-          updated_at: new Date().toISOString()
-        }).eq('id', sId).then(function() {});
-      } else if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-        fetch(window.SUPABASE_URL + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
-          method: 'PATCH',
-          headers: {
-            'apikey': window.SUPABASE_ANON_KEY,
-            'Authorization': 'Bearer ' + window.SUPABASE_ANON_KEY,
-            'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
-          },
-          body: JSON.stringify({
-            likes_count: curCount,
-            updated_at: new Date().toISOString()
-          })
-        }).catch(function() {});
-      }
-    }
-
-    function updateAllLikeUI() {
-      var hero = window.currentHeroRecord;
-      if (hero && hero.id) {
-        var hCount = getCardLikesCount(hero.id);
-        var hLiked = isUserLikedCard(hero.id);
-        var btnLike = document.getElementById('btnHeroLike');
-        var iconLike = document.getElementById('heroLikeIcon');
-        var textLike = document.getElementById('heroLikeCount');
-        if (textLike) textLike.innerText = hCount;
-        if (iconLike) {
-          iconLike.innerHTML = hLiked 
-            ? '<svg viewBox="0 0 24 24" style="width:14px; height:14px; filter:drop-shadow(0 0 6px rgba(253,224,71,0.8));" fill="#fde047" stroke="#fde047" stroke-width="1"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
-            : '<svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="#ffffff" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
-        }
-        if (btnLike) btnLike.classList.toggle('liked', hLiked);
-      }
     }
 
    // =========================================================================
@@ -2192,33 +2077,11 @@
       }
     }
 
-    function closeTemplateCardModal() {
-      if (typeof window.closePackShareModal === 'function') {
-        window.closePackShareModal();
-      } else if (typeof closePackShareModal === 'function') {
-        closePackShareModal();
-      }
-      triggerHaptic(10);
-    }
-
     window.heroTopRecords = [];
     window.currentHeroCardIndex = 0;
     window.currentHeroPhotoIndex = 0;
     window.currentHeroPhotosList = [];
     window.currentHeroRecord = null;
-    window.__heroPhotoCache = new Map();
-
-    function preloadHeroPhotos(photoList) {
-      if (!Array.isArray(photoList) || photoList.length === 0) return;
-      photoList.forEach(function(url) {
-        if (url && typeof url === 'string' && !window.__heroPhotoCache.has(url)) {
-          var img = new Image();
-          img.decoding = 'async';
-          img.src = url;
-          window.__heroPhotoCache.set(url, img);
-        }
-      });
-    }
 
  // 👤 [1위 등록자 피드 모아보기 직통 연동]
     window.openHeroAuthorCollection = function(e) {
@@ -2843,69 +2706,10 @@
             localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(normalizedFeeds));
             applyFeedData(normalizedFeeds);
           }
-        } catch (sbErr) {}
+        } catch (sbErr) {
+          console.warn('[fetchCommunityFeeds]', sbErr);
+        }
       }, 30);
-    }
-
-    function filterHeroCategory(catKey, btnEl) {
-      document.querySelectorAll('.n-cat-chip').forEach(function(b) { b.classList.remove('active'); });
-      if (btnEl) btnEl.classList.add('active');
-
-      var allLogs = (window.__allLoadedFeeds || []).filter(function(f) {
-        return !window.okbmIsPublicFeedItem || window.okbmIsPublicFeedItem(f);
-      });
-      if (allLogs.length === 0) return;
-      applyCategoryFilter(catKey, allLogs);
-    }
-
-    function applyCategoryFilter(catKey, allLogs) {
-      if (!allLogs || allLogs.length === 0) return;
-
-      var filtered = allLogs;
-      if (catKey === 'easy') {
-        filtered = allLogs.filter(function(r) {
-          var w = parseFloat(r.weightKg || '0');
-          var elev = parseInt(String(r.elevation || '0').replace(/\D/g, ''), 10) || 0;
-          var s = (String(r.spot || '') + ' ' + String(r.memo || '')).toLowerCase();
-          return (w > 0 && w <= 6.8) || (elev > 0 && elev <= 550) || s.includes('데크') || s.includes('초보') || s.includes('퇴근') || s.includes('공원') || s.includes('산책');
-        });
-      } else if (catKey === 'island') {
-        filtered = allLogs.filter(function(r) {
-          var s = (String(r.spot || '') + ' ' + String(r.memo || '')).toLowerCase();
-          return s.includes('도') || s.includes('섬') || s.includes('해변') || s.includes('해수욕장') || s.includes('바다') || s.includes('비치') || s.includes('포구');
-        });
-      } else if (catKey === 'alpine') {
-        filtered = allLogs.filter(function(r) {
-          var elev = parseInt(String(r.elevation || '0').replace(/\D/g, ''), 10) || 0;
-          var s = (String(r.spot || '') + ' ' + String(r.memo || '')).toLowerCase();
-          return elev >= 600 || s.includes('산') || s.includes('봉') || s.includes('령') || s.includes('능선') || s.includes('대간') || s.includes('알파인');
-        });
-      } else if (catKey === 'gear') {
-        filtered = allLogs.filter(function(r) {
-          var w = parseFloat(r.weightKg || '0');
-          var s = (String(r.spot || '') + ' ' + String(r.memo || '')).toLowerCase();
-          return (w > 0 && w <= 5.2) || s.includes('bpl') || s.includes('경량') || s.includes('ul');
-        });
-      }
-
-      if (filtered.length === 0) filtered = allLogs;
-
-      window.heroTopRecords = filtered;
-      window.currentHeroCardIndex = 0;
-
-      renderCurrentHeroCard();
-      triggerHaptic(12);
-
-      var card = document.getElementById('instaMainCard');
-      if (card) {
-        card.style.opacity = '0.5';
-        card.style.transform = 'scale(0.98)';
-        setTimeout(function() {
-          card.style.transition = 'opacity 0.22s ease, transform 0.22s ease';
-          card.style.opacity = '1';
-          card.style.transform = 'scale(1)';
-        }, 50);
-      }
     }
 
     window.extractYouTubeVideoId = function(url) {
@@ -3260,9 +3064,7 @@ var adBannersHtml = `
       var myAuthor = persistentAuthor;
 
       var fullDescription = tripData.desc || '';
-      var photoArray = (Array.isArray(tripData.photos) ? tripData.photos : []).filter(function(u) {
-        return typeof u === 'string' && u.trim().startsWith('https://');
-      });
+      var photoArray = getTripPhotosList(tripData);
 
       var row = {
         host_id: curUid,
@@ -3353,7 +3155,9 @@ var adBannersHtml = `
       if (window.supabaseClient && targetIdStr) {
         try {
           await window.supabaseClient.from('trips').delete().eq('id', targetIdStr);
-        } catch (err) {}
+        } catch (err) {
+          console.warn('[deleteCurrentTripJoin]', err);
+        }
       }
 
       window.TRIP_JOINS_DATABASE = (window.TRIP_JOINS_DATABASE || []).filter(function(t) { 
@@ -3444,11 +3248,6 @@ var adBannersHtml = `
     }
     window.purgeExpiredTripsAndPhotos = purgeExpiredTripsFromSupabase;
 
-    function initSupabaseTripRealtime() {
-      // WebSocket realtime subscriptions disabled to save resources and simplify architecture
-      return;
-    }
-
     window.toggleTripClosedStatus = async function(tripId, e) {
       if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
       var targetIdStr = String(tripId).trim();
@@ -3527,10 +3326,6 @@ var adBannersHtml = `
       renderTripDetailSheet(activeTrips);
     };
 
-    function openTripDetailModal(tripId) {
-      window.openTripDetailModal(tripId);
-    }
-
     function renderTripDetailSheet(activeTrips) {
       var trip = activeTrips[window.__currentTripJoinModalIdx];
       if (!trip) return;
@@ -3554,14 +3349,7 @@ var adBannersHtml = `
       var subPoint = matched ? (matched.spot_sub || '') : '';
       var navTargetParam = encodeURIComponent(String(mainName).replace(/\s*\(.*?\)/g, ''));
 
-      var photoList = [];
-      if (Array.isArray(trip.photos) && trip.photos.length > 0) {
-        photoList = trip.photos.map(function(value) {
-          return String(value || '').replace(/^["']|["']$/g, '').trim();
-        }).filter(function(value) {
-          return typeof value === 'string' && value.startsWith('https://');
-        });
-      }
+      var photoList = getTripPhotosList(trip);
 
       window.__tripDetailPhotos = photoList;
       window.__currentTripDetailPhotoIdx = 0;
@@ -4175,10 +3963,7 @@ var adBannersHtml = `
       if (chatInput) chatInput.value = trip.openChatUrl || '';
       if (descInput) descInput.value = trip.desc || '';
 
-      var existPhotos = [];
-      if (Array.isArray(trip.photos) && trip.photos.length > 0) {
-        existPhotos = trip.photos.slice();
-      }
+      var existPhotos = getTripPhotosList(trip);
       window.__tempTripCreatePhotos = existPhotos;
       window.__currentTripCreatePhotoIdx = 0;
       renderTripPhotoStack();
@@ -4904,30 +4689,6 @@ var adBannersHtml = `
 
     // 🚀 [스튜디오 사진 업로드 / 캡처 / 공유 파이프라인은 templates.js로 완전 이관 완료]
 
-  
-
-  function initStarlightEngines() {
-      var metallicColors = ['#ffffff', '#f8fafc', '#cbd5e1'];
-      var makeSubtleDotStar = function(top, left, size, opacity, dur, delay) {
-        return '<div style="position:absolute; top:' + top + '%; left:' + left + '%; width:' + size + 'px; height:' + size + 'px; border-radius:50%; background:#ffffff; opacity:' + opacity + '; transform:translateZ(0); will-change:opacity; animation:slowCelestialPulse ' + dur + 's infinite ease-in-out ' + delay + 's;"></div>';
-      };
-      var makeCrossStar = function(top, left, size, color, dur, delay) {
-        return '<svg viewBox="0 0 24 24" style="position:absolute; top:' + top + '%; left:' + left + '%; width:' + size + 'px; height:' + size + 'px; color:' + color + '; fill:currentColor; transform:translateZ(0); will-change:opacity; animation:slowCelestialTwinkle ' + dur + 's infinite ease-in-out ' + delay + 's;"><path d="M12,2 Q12,12 2,12 Q12,12 12,22 Q12,12 22,12 Q12,12 12,2 Z"/><circle cx="12" cy="12" r="1.2" fill="#ffffff"/></svg>';
-      };
-
-      var globalLayer = document.getElementById('globalAppMilkyWayLayer');
-      if (globalLayer) {
-        var html = '';
-        for (var i = 0; i < 10; i++) {
-          var top = Math.floor(Math.random() * 94) + 3, left = Math.floor(Math.random() * 94) + 3;
-          var dur = (Math.random() * 2.0 + 4.5).toFixed(1), delay = (Math.random() * 4).toFixed(1);
-          if (i % 4 === 0) html += makeCrossStar(top, left, 3, metallicColors[i % metallicColors.length], dur, delay);
-          else html += makeSubtleDotStar(top, left, 1.5, 0.25, dur, delay);
-        }
-        globalLayer.innerHTML = html;
-      }
-    }
-
    function checkIncomingDirectTab() {
       var urlParams = new URLSearchParams(window.location.search);
       var openParam = urlParams.get('open');
@@ -5077,7 +4838,9 @@ var adBannersHtml = `
             }
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('[checkIncomingDirectTab]', e);
+      }
     }
     document.addEventListener('DOMContentLoaded', function() {
       if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {

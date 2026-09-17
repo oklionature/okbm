@@ -28,6 +28,8 @@ function setupStudioPhotoDrag(targetEl) {
   var startPosX = 50, startPosY = 50;
   var startDist = 0;
   var startScale = 1.0;
+  var touchStartTime = 0;
+  var studioModes = ['minimal', 'chic', 'packing', 'essay', 'sage'];
 
   function getDistance(touches) {
     var dx = touches[0].clientX - touches[1].clientX;
@@ -74,6 +76,7 @@ function setupStudioPhotoDrag(targetEl) {
 
     isDragging = true;
     isPinching = false;
+    touchStartTime = Date.now();
     var clientX = e.touches ? e.touches[0].clientX : e.clientX;
     var clientY = e.touches ? e.touches[0].clientY : e.clientY;
     startX = clientX;
@@ -129,6 +132,32 @@ function setupStudioPhotoDrag(targetEl) {
       }
     }
     if (!e.touches || e.touches.length === 0) {
+      var clientX = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientX : e.clientX;
+      var clientY = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientY : e.clientY;
+      var diffX = clientX - startX;
+      var diffY = clientY - startY;
+      var absX = Math.abs(diffX);
+      var absY = Math.abs(diffY);
+      var duration = Date.now() - touchStartTime;
+
+      if (!isPinching && (currentPhotoScaleVal || 1.0) <= 1.05 && absX > 45 && absX > absY * 1.5 && duration < 350) {
+        window.currentPhotoPosX = startPosX;
+        window.currentPhotoPosY = startPosY;
+        updateTransform();
+
+        var curMode = window.currentStudioCardMode || 'minimal';
+        var curIdx = studioModes.indexOf(curMode);
+        if (curIdx === -1) curIdx = 0;
+
+        var nextIdx = 0;
+        if (diffX < 0) {
+          nextIdx = (curIdx + 1) % studioModes.length;
+        } else {
+          nextIdx = (curIdx - 1 + studioModes.length) % studioModes.length;
+        }
+        window.switchStudioMode(studioModes[nextIdx]);
+      }
+
       isDragging = false;
       isPinching = false;
       targetEl.style.cursor = 'grab';
@@ -550,19 +579,19 @@ window.updateStudioCardLive = function() {
       var wG = (typeof it === 'object' && it.weight) ? it.weight : 0;
       var wStr = wG > 0 ? (wG / 1000).toFixed(2) + 'kg' : '';
       return `
-        <div style="display:flex; justify-content:space-between; align-items:center; min-width:0; padding:1.5px 0; box-sizing:border-box;">
-          <span style="font-size:0.62rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 5px rgba(0,0,0,0.95); -webkit-text-stroke:0.35px #000; display:flex; align-items:center;">
-            <span style="display:inline-block; width:3.5px; height:3.5px; background:#ffffff; border-radius:50%; margin-right:4px; flex-shrink:0; box-shadow:0 0 2px #000;"></span>
+        <div style="display:flex; justify-content:space-between; align-items:center; min-width:0; box-sizing:border-box; line-height:1.2;">
+          <span style="font-size:0.62rem; font-weight:700; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; text-shadow:0 1px 3px rgba(0,0,0,0.9), 0 0 2px rgba(0,0,0,0.8); display:flex; align-items:center;">
+            <span style="display:inline-block; width:3px; height:3px; background:#ffffff; border-radius:50%; margin-right:4px; flex-shrink:0; box-shadow:0 1px 2px rgba(0,0,0,0.8);"></span>
             <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(cName)}</span>
           </span>
-          <span style="font-family:'Space Grotesk', sans-serif; font-size:0.58rem; font-weight:900; color:#ffffff; flex-shrink:0; margin-left:4px; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 5px rgba(0,0,0,0.95); -webkit-text-stroke:0.35px #000;">${wStr}</span>
+          <span style="font-family:'Space Grotesk', sans-serif; font-size:0.58rem; font-weight:800; color:#ffffff; flex-shrink:0; margin-left:6px; text-shadow:0 1px 3px rgba(0,0,0,0.9), 0 0 2px rgba(0,0,0,0.8);">${wStr}</span>
         </div>
       `;
     }).join('');
 
     if (remainingCount > 0) {
       sageGears += `
-        <div style="display:flex; align-items:center; font-size:0.56rem; font-weight:900; color:#e2e8f0; padding:1.5px 0; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 5px rgba(0,0,0,0.95); -webkit-text-stroke:0.25px #000;">
+        <div style="display:flex; align-items:center; font-size:0.56rem; font-weight:800; color:#e2e8f0; text-shadow:0 1px 3px rgba(0,0,0,0.9); line-height:1.2;">
           <span>+외 ${remainingCount}개 장비</span>
         </div>
       `;
@@ -591,29 +620,29 @@ window.updateStudioCardLive = function() {
         <div style="position:relative; z-index:10; display:flex; justify-content:space-between; align-items:center; padding:10px 12px 4px 12px; box-sizing:border-box;">
           <div style="display:inline-flex; align-items:center; gap:5px;">
             ${brandSvgWhite}
-            <span style="font-family:'Space Grotesk', -apple-system, sans-serif; font-size:0.72rem; font-weight:800; color:#ffffff; letter-spacing:0.8px; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 4px rgba(0,0,0,0.9); -webkit-text-stroke:0.3px #000;">낭만루트</span>
+            <span style="font-family:'Space Grotesk', -apple-system, sans-serif; font-size:0.72rem; font-weight:800; color:#ffffff; letter-spacing:0.8px; text-shadow:0 1px 4px rgba(0,0,0,0.9);">낭만루트</span>
           </div>
-          <div style="display:inline-flex; align-items:center; gap:5px; font-family:'Space Grotesk', sans-serif; font-size:0.58rem; font-weight:700; color:#ffffff; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 4px rgba(0,0,0,0.9); -webkit-text-stroke:0.25px #000;">
+          <div style="display:inline-flex; align-items:center; gap:5px; font-family:'Space Grotesk', sans-serif; font-size:0.58rem; font-weight:700; color:#ffffff; text-shadow:0 1px 4px rgba(0,0,0,0.9);">
             <span style="background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.6); padding:1px 6px; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,0.8);">READY SHOT</span>
           </div>
         </div>
-        <div style="position:relative; z-index:10; width:100%; padding:0 10px; box-sizing:border-box; margin-top:auto; margin-bottom:4px;">
+        <div style="position:relative; z-index:10; width:100%; padding:0 10px; box-sizing:border-box; margin-top:auto; margin-bottom:2px; display:flex; flex-direction:column; justify-content:flex-end;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <div style="display:inline-flex; align-items:center; gap:3px; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 5px rgba(0,0,0,0.95); -webkit-text-stroke:0.35px #000;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" style="width:11px; height:11px; filter:drop-shadow(0 1px 2px #000);"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <div style="display:inline-flex; align-items:center; gap:3px; text-shadow:0 1px 4px rgba(0,0,0,0.95);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" style="width:11px; height:11px; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.8));"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
               <span style="font-size:0.72rem; font-weight:900; color:#ffffff;">${escapeHtml(spotDisplay)}</span>
             </div>
-            <div style="display:inline-flex; align-items:center; gap:4px; font-family:'Space Grotesk', sans-serif; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 5px rgba(0,0,0,0.95); -webkit-text-stroke:0.35px #000;">
+            <div style="display:inline-flex; align-items:center; gap:4px; font-family:'Space Grotesk', sans-serif; text-shadow:0 1px 4px rgba(0,0,0,0.95);">
               <span style="font-size:0.78rem; font-weight:900; color:#ffffff;">${weightKg} KG</span>
               <span style="font-size:0.5rem; color:rgba(255,255,255,0.7);">|</span>
               <span style="font-size:0.60rem; font-weight:800; color:#cbd5e1;">${escapeHtml(dateStr)}</span>
             </div>
           </div>
-          <div style="background:transparent; border:none; padding:2px 2px; display:grid; grid-template-columns:1fr 1fr; column-gap:12px; row-gap:3px; box-sizing:border-box;">
+          <div style="background:transparent; border:none; padding:0; display:grid; grid-template-columns:1fr 1fr; column-gap:12px; row-gap:4px; box-sizing:border-box;">
             ${sageGears}
           </div>
         </div>
-        <div style="position:relative; z-index:10; display:flex; justify-content:space-between; align-items:center; padding:3px 12px 10px 12px; font-family:'Space Grotesk', sans-serif; font-size:0.55rem; font-weight:800; color:#ffffff; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 4px rgba(0,0,0,0.9); -webkit-text-stroke:0.25px #000;">
+        <div style="position:relative; z-index:10; display:flex; justify-content:space-between; align-items:center; padding:2px 12px 8px 12px; font-family:'Space Grotesk', sans-serif; font-size:0.55rem; font-weight:800; color:#ffffff; text-shadow:0 1px 4px rgba(0,0,0,0.9);">
           <span>3:4 FRAME</span>
           <div style="display:inline-flex; align-items:center; gap:6px;">
             <span style="width:6px; height:6px; border-radius:50%; background:#22c55e; display:inline-block; box-shadow:0 0 3px #000;"></span>
@@ -633,8 +662,8 @@ window.updateStudioCardLive = function() {
           <img src="${window.currentSharePhoto}" style="width:112%; height:112%; object-fit:cover; object-position:${posX}% ${posY}%; filter:blur(9px) brightness(0.82); transform:scale(1.06); display:block; margin:-6%;" />
           <div style="position:absolute; inset:0; background:rgba(0,0,0,0.28);"></div>
         </div>
-        <div style="position:relative; z-index:3; width:88%; max-width:290px; aspect-ratio:3/4; background:rgba(18, 18, 22, 0.85); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border-radius:10px; box-shadow:0 24px 60px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.35); padding:9px 9px 12px 9px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; border:1px solid rgba(255,255,255,0.2);">
-          <div style="width:100%; display:flex; justify-content:space-between; align-items:center; padding:0 2px 5px 2px; box-sizing:border-box; margin-bottom:6px; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,0.12);">
+        <div style="position:relative; z-index:3; width:88%; max-width:290px; aspect-ratio:3/4; background:#000000; border-radius:10px; box-shadow:0 24px 60px rgba(0,0,0,0.95), inset 0 1px 1px rgba(255,255,255,0.3); padding:9px 9px 12px 9px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; border:1px solid rgba(255,255,255,0.22);">
+          <div style="width:100%; display:flex; justify-content:space-between; align-items:center; padding:0 2px 5px 2px; box-sizing:border-box; margin-bottom:6px; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,0.15);">
             <div style="display:flex; align-items:center; gap:4px; max-width:65%; min-width:0;">
               <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:10px; height:10px; flex-shrink:0; opacity:0.85;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
               <span style="font-size:0.56rem; font-weight:800; color:#ffffff; letter-spacing:0.4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(spotVal || 'COLLECTION')}</span>
@@ -644,18 +673,17 @@ window.updateStudioCardLive = function() {
           <div style="width:100%; aspect-ratio:4/3; border-radius:4px; overflow:hidden; background:#000; box-shadow:0 4px 14px rgba(0,0,0,0.6); flex-shrink:0; position:relative;">
             <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; display:block; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; pointer-events:none;" />
           </div>
-          <div style="flex-shrink:0; display:flex; align-items:flex-end; justify-content:space-between; padding-top:6px;">
-            <div style="flex:1; min-width:0;"></div>
-            <div style="flex-shrink:0; display:flex; justify-content:center; align-items:center; gap:5px; font-family:'Space Grotesk', sans-serif; font-size:0.60rem; font-weight:800; color:#ffffff; letter-spacing:0.6px;">
-              <span>${totalCount} ITEMS</span>
+          <div style="flex:1; width:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; min-height:0; box-sizing:border-box;">
+            <div style="display:flex; justify-content:center; align-items:center; gap:6px; font-family:'Space Grotesk', sans-serif; letter-spacing:0.6px;">
+              <span style="color:#ffffff; font-weight:800; font-size:0.74rem;">${totalCount} ITEMS</span>
               <span style="color:rgba(255,255,255,0.35);">·</span>
-              <span style="color:#ffffff; font-weight:900; font-size:0.70rem;">${weightKg} KG</span>
+              <span style="color:#ffffff; font-weight:900; font-size:0.86rem;">${weightKg} KG</span>
               <span style="color:rgba(255,255,255,0.35);">·</span>
-              <span style="color:#e2e8f0; font-weight:800;">LNT</span>
+              <span style="color:#e2e8f0; font-weight:800; font-size:0.55rem; padding:1px 4px; border-radius:3px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25);">LNT</span>
             </div>
-            <div style="flex:1; min-width:0; display:flex; justify-content:flex-end; align-items:center; gap:3px; opacity:0.65;">
-              <div style="transform:scale(0.8); transform-origin:right center;">${brandSvgWhite}</div>
-              <span style="font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.46rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px;">낭만루트</span>
+            <div style="position:absolute; right:0; bottom:0; display:flex; align-items:center; gap:3px; opacity:0.6;">
+              <div style="transform:scale(0.75); transform-origin:right center;">${brandSvgWhite}</div>
+              <span style="font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.44rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px;">낭만루트</span>
             </div>
           </div>
         </div>
@@ -736,7 +764,7 @@ window.updateStudioCardLive = function() {
     var wG = (typeof it === 'object' && it.weight) ? it.weight : 0;
     var wStr = wG > 0 ? (wG / 1000).toFixed(2) + 'kg' : '';
     return `
-      <div style="display:flex; justify-content:space-between; align-items:center; font-size:${fontSize}; line-height:1.2; padding:0.5px 0; gap:2px; min-width:0; box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:${fontSize}; line-height:1.2; padding:0; gap:2px; min-width:0; box-sizing:border-box;">
         <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; font-weight:700; color:#1e293b; display:flex; align-items:center;">
           ${svgDot}<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(cName)}</span>
         </span>
@@ -747,18 +775,18 @@ window.updateStudioCardLive = function() {
 
   if (items.length > 16) {
     gearRows += `
-      <div style="display:flex; align-items:center; font-size:0.50rem; font-weight:800; color:#64748b; padding:0.5px 0;">
+      <div style="display:flex; align-items:center; font-size:0.50rem; font-weight:800; color:#64748b; line-height:1.2;">
         <span>+외 ${items.length - 16}개 장비</span>
       </div>
     `;
   }
 
   container.innerHTML = `
-    <div style="width:100%; ${cardRatioCss} max-height:calc(100dvh - 130px); margin:0 auto; background:#fbfaf7; box-shadow:0 16px 36px rgba(0,0,0,0.85); border-radius:10px; padding:7px 7px 8px 7px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; color:#1e293b; font-family:'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;">
-      <div style="position:relative; width:100%; aspect-ratio:4/3; border-radius:6px; overflow:hidden; background:#000; box-shadow:inset 0 0 3px rgba(0,0,0,0.3); flex-shrink:0;">
+    <div style="width:100%; ${cardRatioCss} max-height:calc(100dvh - 130px); margin:0 auto; background:#fbfaf7; box-shadow:0 16px 36px rgba(0,0,0,0.85); border-radius:10px; padding:7px 7px 8px 7px; display:flex; flex-direction:column; justify-content:space-between; gap:6px; box-sizing:border-box; color:#1e293b; font-family:'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;">
+      <div style="position:relative; width:100%; flex:1 1 0%; min-height:100px; border-radius:6px; overflow:hidden; background:#000; box-shadow:inset 0 0 3px rgba(0,0,0,0.3);">
         <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; pointer-events:none;" />
       </div>
-      <div style="flex:1; display:flex; flex-direction:column; justify-content:space-between; padding-top:6px; min-height:0;">
+      <div style="flex-shrink:0; display:flex; flex-direction:column; gap:4px; width:100%; box-sizing:border-box;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:3px;">
           <div style="font-size:0.82rem; font-weight:900; color:#0f172a; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; display:flex; align-items:center;">
             ${SVG_ICONS.pin}<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(spotDisplay)}</span>
@@ -768,10 +796,10 @@ window.updateStudioCardLive = function() {
             <span style="font-family:'Space Grotesk', sans-serif; font-size:1.02rem; font-weight:900; color:#0f172a; line-height:1;">${weightKg}kg</span>
           </div>
         </div>
-        <div style="display:grid; grid-template-columns:${isTwoCol ? '1fr 1fr' : '1fr'}; column-gap:8px; row-gap:1px; width:100%; box-sizing:border-box; padding:3px 0; flex:1; min-height:0; overflow:hidden;">
+        <div style="display:grid; grid-template-columns:${isTwoCol ? '1fr 1fr' : '1fr'}; column-gap:8px; row-gap:4px; width:100%; box-sizing:border-box; padding:2px 0 1px 0;">
           ${gearRows}
         </div>
-        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.48rem; color:#64748b; border-top:1px dashed #cbd5e1; padding-top:4px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.48rem; color:#64748b; border-top:1px dashed #cbd5e1; padding-top:3px;">
           <div style="display:flex; align-items:center; gap:5px;">
             ${brandSvgDark}
             <span style="font-weight:900; color:#334155; letter-spacing:0.8px;">낭만루트</span>
@@ -948,35 +976,34 @@ window.generateReadyShotMarkup = function(record, options) {
     var displayedItems = items.slice(0, maxDisplay);
     var remainingCount = items.length - maxDisplay;
 
-    var sageGearsHtml = displayedItems.map(function(it) {
+    var sageGears = displayedItems.map(function(it) {
       var rawN = (typeof it === 'string') ? it : (it.name || '');
       var cName = rawN.replace(/\s*\(\d+g\)$/, '');
       var wG = (typeof it === 'object' && it.weight) ? it.weight : 0;
       var wStr = wG > 0 ? (wG / 1000).toFixed(2) + 'kg' : '';
       return `
-        <div style="display:flex; justify-content:space-between; align-items:center; min-width:0; padding:1.5px 0; box-sizing:border-box;">
-          <span style="font-size:0.62rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 5px rgba(0,0,0,0.95); -webkit-text-stroke:0.35px #000; display:flex; align-items:center;">
-            <span style="display:inline-block; width:3.5px; height:3.5px; background:#ffffff; border-radius:50%; margin-right:4px; flex-shrink:0; box-shadow:0 0 2px #000;"></span>
+        <div style="display:flex; justify-content:space-between; align-items:center; min-width:0; box-sizing:border-box; line-height:1.2;">
+          <span style="font-size:0.62rem; font-weight:700; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; text-shadow:0 1px 3px rgba(0,0,0,0.9), 0 0 2px rgba(0,0,0,0.8); display:flex; align-items:center;">
+            <span style="display:inline-block; width:3px; height:3px; background:#ffffff; border-radius:50%; margin-right:4px; flex-shrink:0; box-shadow:0 1px 2px rgba(0,0,0,0.8);"></span>
             <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(cName)}</span>
           </span>
-          <span style="font-family:'Space Grotesk', sans-serif; font-size:0.58rem; font-weight:900; color:#ffffff; flex-shrink:0; margin-left:4px; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 5px rgba(0,0,0,0.95); -webkit-text-stroke:0.35px #000;">${wStr}</span>
+          <span style="font-family:'Space Grotesk', sans-serif; font-size:0.58rem; font-weight:800; color:#ffffff; flex-shrink:0; margin-left:6px; text-shadow:0 1px 3px rgba(0,0,0,0.9), 0 0 2px rgba(0,0,0,0.8);">${wStr}</span>
         </div>
       `;
     }).join('');
 
     if (remainingCount > 0) {
-      sageGearsHtml += `
-        <div style="display:flex; align-items:center; font-size:0.56rem; font-weight:900; color:#e2e8f0; padding:1.5px 0; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 5px rgba(0,0,0,0.95); -webkit-text-stroke:0.25px #000;">
+      sageGears += `
+        <div style="display:flex; align-items:center; font-size:0.56rem; font-weight:800; color:#e2e8f0; text-shadow:0 1px 3px rgba(0,0,0,0.9); line-height:1.2;">
           <span>+외 ${remainingCount}개 장비</span>
         </div>
       `;
     }
 
-    return `
-      <div class="ready-shot-card-vector ready-shot-sage" style="position:relative; width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto; overflow:hidden; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,0.9); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
-        <img src="${escapeHtml(photoUrl)}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
-        
-        <div style="position:absolute; inset:0; z-index:2; pointer-events:none; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr 1fr 1fr; opacity:0.65;">
+    container.innerHTML = `
+      <div style="position:relative; width:100%; ${cardRatioCss} max-height:calc(100dvh - 130px); margin:0 auto; overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
+        <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
+        <div style="position:absolute; inset:0; z-index:3; pointer-events:none; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr 1fr 1fr; opacity:0.65;">
           <div style="border-right:1px solid rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.4);"></div>
           <div style="border-right:1px solid rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.4);"></div>
           <div style="border-bottom:1px solid rgba(255,255,255,0.4);"></div>
@@ -987,42 +1014,38 @@ window.generateReadyShotMarkup = function(record, options) {
           <div style="border-right:1px solid rgba(255,255,255,0.4);"></div>
           <div></div>
         </div>
-
-        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:44px; height:44px; border:1px solid rgba(255,255,255,0.85); z-index:3; pointer-events:none;">
+        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:44px; height:44px; border:1px solid rgba(255,255,255,0.85); z-index:4; pointer-events:none;">
           <div style="position:absolute; top:-1px; left:50%; transform:translateX(-50%); width:6px; height:1px; background:#000;"></div>
           <div style="position:absolute; bottom:-1px; left:50%; transform:translateX(-50%); width:6px; height:1px; background:#000;"></div>
           <div style="position:absolute; left:-1px; top:50%; transform:translateY(-50%); width:1px; height:6px; background:#000;"></div>
           <div style="position:absolute; right:-1px; top:50%; transform:translateY(-50%); width:1px; height:6px; background:#000;"></div>
         </div>
-
         <div style="position:relative; z-index:10; display:flex; justify-content:space-between; align-items:center; padding:10px 12px 4px 12px; box-sizing:border-box;">
           <div style="display:inline-flex; align-items:center; gap:5px;">
             ${brandSvgWhite}
-            <span style="font-family:'Space Grotesk', -apple-system, sans-serif; font-size:0.72rem; font-weight:800; color:#ffffff; letter-spacing:0.8px; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 4px rgba(0,0,0,0.9); -webkit-text-stroke:0.3px #000;">낭만루트</span>
+            <span style="font-family:'Space Grotesk', -apple-system, sans-serif; font-size:0.72rem; font-weight:800; color:#ffffff; letter-spacing:0.8px; text-shadow:0 1px 4px rgba(0,0,0,0.9);">낭만루트</span>
           </div>
-          <div style="display:inline-flex; align-items:center; gap:5px; font-family:'Space Grotesk', sans-serif; font-size:0.58rem; font-weight:700; color:#ffffff; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 4px rgba(0,0,0,0.9); -webkit-text-stroke:0.25px #000;">
+          <div style="display:inline-flex; align-items:center; gap:5px; font-family:'Space Grotesk', sans-serif; font-size:0.58rem; font-weight:700; color:#ffffff; text-shadow:0 1px 4px rgba(0,0,0,0.9);">
             <span style="background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.6); padding:1px 6px; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,0.8);">READY SHOT</span>
           </div>
         </div>
-
-        <div style="position:relative; z-index:10; width:100%; padding:0 10px; box-sizing:border-box; margin-top:auto; margin-bottom:4px;">
+        <div style="position:relative; z-index:10; width:100%; padding:0 10px; box-sizing:border-box; margin-top:auto; margin-bottom:2px; display:flex; flex-direction:column; justify-content:flex-end;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <div style="display:inline-flex; align-items:center; gap:4px; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 5px rgba(0,0,0,0.95); -webkit-text-stroke:0.35px #000;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" style="width:11px; height:11px; filter:drop-shadow(0 1px 2px #000);"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span style="font-size:0.72rem; font-weight:900; color:#ffffff;">${escapeHtml(spotVal)}</span>
+            <div style="display:inline-flex; align-items:center; gap:3px; text-shadow:0 1px 4px rgba(0,0,0,0.95);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" style="width:11px; height:11px; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.8));"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span style="font-size:0.72rem; font-weight:900; color:#ffffff;">${escapeHtml(spotDisplay)}</span>
             </div>
-            <div style="display:inline-flex; align-items:center; gap:4px; font-family:'Space Grotesk', sans-serif; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 5px rgba(0,0,0,0.95); -webkit-text-stroke:0.35px #000;">
+            <div style="display:inline-flex; align-items:center; gap:4px; font-family:'Space Grotesk', sans-serif; text-shadow:0 1px 4px rgba(0,0,0,0.95);">
               <span style="font-size:0.78rem; font-weight:900; color:#ffffff;">${weightKg} KG</span>
-              <span style="font-size:0.50rem; color:rgba(255,255,255,0.7);">|</span>
+              <span style="font-size:0.5rem; color:rgba(255,255,255,0.7);">|</span>
               <span style="font-size:0.60rem; font-weight:800; color:#cbd5e1;">${escapeHtml(dateStr)}</span>
             </div>
           </div>
-          <div style="background:transparent; border:none; padding:2px 2px; display:grid; grid-template-columns:1fr 1fr; column-gap:12px; row-gap:3px; box-sizing:border-box;">
-            ${sageGearsHtml}
+          <div style="background:transparent; border:none; padding:0; display:grid; grid-template-columns:1fr 1fr; column-gap:12px; row-gap:4px; box-sizing:border-box;">
+            ${sageGears}
           </div>
         </div>
-
-        <div style="position:relative; z-index:10; display:flex; justify-content:space-between; align-items:center; padding:3px 12px 10px 12px; font-family:'Space Grotesk', sans-serif; font-size:0.55rem; font-weight:800; color:#ffffff; text-shadow:-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 4px rgba(0,0,0,0.9); -webkit-text-stroke:0.25px #000;">
+        <div style="position:relative; z-index:10; display:flex; justify-content:space-between; align-items:center; padding:2px 12px 8px 12px; font-family:'Space Grotesk', sans-serif; font-size:0.55rem; font-weight:800; color:#ffffff; text-shadow:0 1px 4px rgba(0,0,0,0.9);">
           <span>3:4 FRAME</span>
           <div style="display:inline-flex; align-items:center; gap:6px;">
             <span style="width:6px; height:6px; border-radius:50%; background:#22c55e; display:inline-block; box-shadow:0 0 3px #000;"></span>
@@ -1032,6 +1055,7 @@ window.generateReadyShotMarkup = function(record, options) {
         </div>
       </div>
     `;
+    return;
   }
 
   if (mode === 'chic') {
@@ -1041,8 +1065,8 @@ window.generateReadyShotMarkup = function(record, options) {
           <img src="${escapeHtml(photoUrl)}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:112%; height:112%; object-fit:cover; object-position:${posX}% ${posY}%; filter:blur(9px) brightness(0.82); transform:scale(1.06); display:block; margin:-6%;" />
           <div style="position:absolute; inset:0; background:rgba(0,0,0,0.28);"></div>
         </div>
-        <div style="position:relative; z-index:3; width:88%; max-width:290px; aspect-ratio:3/4; background:rgba(18, 18, 22, 0.85); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border-radius:10px; box-shadow:0 24px 60px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.35); padding:9px 9px 12px 9px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; border:1px solid rgba(255,255,255,0.2);">
-          <div style="width:100%; display:flex; justify-content:space-between; align-items:center; padding:0 2px 5px 2px; box-sizing:border-box; margin-bottom:6px; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,0.12);">
+        <div style="position:relative; z-index:3; width:88%; max-width:290px; aspect-ratio:3/4; background:#000000; border-radius:10px; box-shadow:0 24px 60px rgba(0,0,0,0.95), inset 0 1px 1px rgba(255,255,255,0.3); padding:9px 9px 12px 9px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; border:1px solid rgba(255,255,255,0.22);">
+          <div style="width:100%; display:flex; justify-content:space-between; align-items:center; padding:0 2px 5px 2px; box-sizing:border-box; margin-bottom:6px; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,0.15);">
             <div style="display:flex; align-items:center; gap:4px; max-width:65%; min-width:0;">
               <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:10px; height:10px; flex-shrink:0; opacity:0.85;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
               <span style="font-size:0.56rem; font-weight:800; color:#ffffff; letter-spacing:0.4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(spotVal || 'COLLECTION')}</span>
@@ -1052,18 +1076,17 @@ window.generateReadyShotMarkup = function(record, options) {
           <div style="width:100%; aspect-ratio:4/3; border-radius:4px; overflow:hidden; background:#000; box-shadow:0 4px 14px rgba(0,0,0,0.6); flex-shrink:0; position:relative;">
             <img src="${escapeHtml(photoUrl)}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; display:block; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; pointer-events:none;" />
           </div>
-          <div style="flex-shrink:0; display:flex; align-items:flex-end; justify-content:space-between; padding-top:6px;">
-            <div style="flex:1; min-width:0;"></div>
-            <div style="flex-shrink:0; display:flex; justify-content:center; align-items:center; gap:5px; font-family:'Space Grotesk', sans-serif; font-size:0.60rem; font-weight:800; color:#ffffff; letter-spacing:0.6px;">
-              <span>${totalCount} ITEMS</span>
+          <div style="flex:1; width:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; min-height:0; box-sizing:border-box;">
+            <div style="display:flex; justify-content:center; align-items:center; gap:6px; font-family:'Space Grotesk', sans-serif; letter-spacing:0.6px;">
+              <span style="color:#ffffff; font-weight:800; font-size:0.74rem;">${totalCount} ITEMS</span>
               <span style="color:rgba(255,255,255,0.35);">·</span>
-              <span style="color:#ffffff; font-weight:900; font-size:0.70rem;">${weightKg} KG</span>
+              <span style="color:#ffffff; font-weight:900; font-size:0.86rem;">${weightKg} KG</span>
               <span style="color:rgba(255,255,255,0.35);">·</span>
-              <span style="color:#e2e8f0; font-weight:800;">LNT</span>
+              <span style="color:#e2e8f0; font-weight:800; font-size:0.55rem; padding:1px 4px; border-radius:3px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25);">LNT</span>
             </div>
-            <div style="flex:1; min-width:0; display:flex; justify-content:flex-end; align-items:center; gap:3px; opacity:0.65;">
-              <div style="transform:scale(0.8); transform-origin:right center;">${brandSvgWhite}</div>
-              <span style="font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.46rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px;">낭만루트</span>
+            <div style="position:absolute; right:0; bottom:0; display:flex; align-items:center; gap:3px; opacity:0.6;">
+              <div style="transform:scale(0.75); transform-origin:right center;">${brandSvgWhite}</div>
+              <span style="font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.44rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px;">낭만루트</span>
             </div>
           </div>
         </div>
@@ -1143,7 +1166,7 @@ window.generateReadyShotMarkup = function(record, options) {
     var wG = (typeof it === 'object' && it.weight) ? it.weight : 0;
     var wStr = wG > 0 ? (wG / 1000).toFixed(2) + 'kg' : '';
     return `
-      <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.56rem; line-height:1.2; padding:0.5px 0; gap:2px; min-width:0;">
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.56rem; line-height:1.2; padding:0; gap:2px; min-width:0;">
         <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; font-weight:700; color:#1e293b; display:flex; align-items:center;">
           ${svgDot}<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(cName)}</span>
         </span>
@@ -1154,18 +1177,18 @@ window.generateReadyShotMarkup = function(record, options) {
 
   if (pRemain > 0) {
     pRows += `
-      <div style="display:flex; align-items:center; font-size:0.54rem; font-weight:800; color:#64748b; padding:0.5px 0;">
+      <div style="display:flex; align-items:center; font-size:0.54rem; font-weight:800; color:#64748b; line-height:1.2;">
         <span>+외 ${pRemain}개 장비</span>
       </div>
     `;
   }
 
   return `
-    <div class="ready-shot-card-vector ready-shot-packing" style="width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto; background:#fbfaf7; box-shadow:0 12px 30px rgba(0,0,0,0.9); border-radius:12px; padding:8px 8px 10px 8px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; color:#1e293b; font-family:'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; user-select:none;">
-      <div style="position:relative; width:100%; aspect-ratio:4/3; border-radius:6px; overflow:hidden; background:#000; box-shadow:inset 0 0 3px rgba(0,0,0,0.3); flex-shrink:0;">
+    <div class="ready-shot-card-vector ready-shot-packing" style="width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto; background:#fbfaf7; box-shadow:0 12px 30px rgba(0,0,0,0.9); border-radius:12px; padding:8px 8px 10px 8px; display:flex; flex-direction:column; justify-content:space-between; gap:6px; box-sizing:border-box; color:#1e293b; font-family:'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; user-select:none;">
+      <div style="position:relative; width:100%; flex:1 1 0%; min-height:100px; border-radius:6px; overflow:hidden; background:#000; box-shadow:inset 0 0 3px rgba(0,0,0,0.3);">
         <img src="${escapeHtml(photoUrl)}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block;" />
       </div>
-      <div style="flex:1; display:flex; flex-direction:column; justify-content:space-between; padding-top:6px; min-height:0;">
+      <div style="flex-shrink:0; display:flex; flex-direction:column; gap:4px; width:100%; box-sizing:border-box;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:3px;">
           <div style="font-size:0.80rem; font-weight:900; color:#0f172a; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; display:flex; align-items:center;">
             ${SVG_ICONS.pin}<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(spotVal)}</span>
@@ -1175,10 +1198,10 @@ window.generateReadyShotMarkup = function(record, options) {
             <span style="font-family:'Space Grotesk', sans-serif; font-size:1.02rem; font-weight:900; color:#0f172a; line-height:1;">${weightKg}kg</span>
           </div>
         </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; column-gap:8px; row-gap:2px; width:100%; box-sizing:border-box; padding:3px 0; flex:1; min-height:0; overflow:hidden;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; column-gap:8px; row-gap:4px; width:100%; box-sizing:border-box; padding:2px 0 1px 0;">
           ${pRows}
         </div>
-        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.48rem; color:#64748b; border-top:1px dashed #cbd5e1; padding-top:4px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.48rem; color:#64748b; border-top:1px dashed #cbd5e1; padding-top:3px;">
           <div style="display:flex; align-items:center; gap:5px;">
             ${brandSvgDark}
             <span style="font-weight:900; color:#334155; letter-spacing:0.8px;">낭만루트</span>
@@ -1579,7 +1602,7 @@ function ensurePackShareModalDOM() {
         <div style="display:flex; gap:5px; width:100%; align-items:center;">
           <input type="text" id="shareCardMemoInput" placeholder="한줄 메모 (선택)" oninput="if(typeof updateShareCardLive==='function') updateShareCardLive();" style="flex:1; height:32px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; font-size:0.75rem; padding:0 10px; outline:none; box-sizing:border-box;" />
           
-          <input type="file" id="shareCardPhotoInput" accept="image/*" multiple style="display:none;" onchange="window.handleShareCardPhotoUpload(event)" />
+          <input type="file" id="shareCardPhotoInput" accept="image/*" style="display:none;" onchange="window.handleShareCardPhotoUpload(event)" />
           <button type="button" onclick="document.getElementById('shareCardPhotoInput').click()" style="height:32px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); color:#38bdf8; font-size:0.72rem; font-weight:900; padding:0 10px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; gap:4px; flex-shrink:0; white-space:nowrap; cursor:pointer;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px; height:13px; flex-shrink:0;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
             <span>스튜디오</span>
@@ -1613,79 +1636,73 @@ function ensurePackShareModalDOM() {
 }
 
 window.handleShareCardPhotoUpload = async function(e) {
-  var files = Array.from(e.target.files || []);
-  if (files.length === 0) return;
+  var files = e.target.files;
+  if (!files || files.length === 0) return;
 
-  var filesToProcess = files.slice(0, 10);
+  var file = files[0];
   if (typeof window.showPhotoLoadingModal === 'function') {
-    window.showPhotoLoadingModal(1, filesToProcess.length);
+    window.showPhotoLoadingModal(1, 1);
   }
 
   var CF_WORKER_UPLOAD_URL = 'https://romantic-upload-worker.ggumfree.workers.dev';
-  var validList = [];
+  var uploadedUrl = '';
 
-  for (var i = 0; i < filesToProcess.length; i++) {
-    if (typeof window.showPhotoLoadingModal === 'function') {
-      window.showPhotoLoadingModal(i + 1, filesToProcess.length);
-    }
-    var file = filesToProcess[i];
+  try {
     var blob = await new Promise(function(resolve) {
-      var reader = new FileReader();
-      reader.onload = function(evt) {
-        var img = new Image();
-        img.onload = function() {
-          var canvas = document.createElement('canvas');
-          var ctx = canvas.getContext('2d');
-          var MAX_DIM = 1200;
-          var maxLen = Math.max(img.width, img.height);
-          var scale = maxLen > MAX_DIM ? (MAX_DIM / maxLen) : 1;
-          canvas.width = Math.round(img.width * scale);
-          canvas.height = Math.round(img.height * scale);
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          canvas.toBlob(function(b) { resolve(b); }, 'image/jpeg', 0.82);
-        };
-        img.onerror = function() { resolve(null); };
-        img.src = evt.target.result;
+      var objectUrl = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function() {
+        URL.revokeObjectURL(objectUrl);
+        var canvas = document.createElement('canvas');
+        var ctx = canvas.getContext('2d');
+        var MAX_DIM = 1200;
+        var maxLen = Math.max(img.width, img.height);
+        var scale = maxLen > MAX_DIM ? (MAX_DIM / maxLen) : 1;
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(function(b) { resolve(b); }, 'image/jpeg', 0.86);
       };
-      reader.onerror = function() { resolve(null); };
-      reader.readAsDataURL(file);
+      img.onerror = function() {
+        URL.revokeObjectURL(objectUrl);
+        resolve(null);
+      };
+      img.src = objectUrl;
     });
 
     if (blob) {
-      try {
-        var safeFileName = 'ready_' + Date.now() + '_' + i + '_' + Math.random().toString(36).substring(2, 7) + '.jpg';
-        var cfRes = await fetch(CF_WORKER_UPLOAD_URL + '?file=' + encodeURIComponent(safeFileName), {
-          method: 'POST',
-          headers: { 'Content-Type': 'image/jpeg' },
-          body: blob
-        });
-        if (cfRes.ok) {
-          var cfData = await cfRes.json();
-          if (cfData && cfData.status === 'SUCCESS' && cfData.url && cfData.url.startsWith('https://')) {
-            validList.push(cfData.url);
-          }
+      var safeFileName = 'ready_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7) + '.jpg';
+      var cfRes = await fetch(CF_WORKER_UPLOAD_URL + '?file=' + encodeURIComponent(safeFileName), {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/jpeg' },
+        body: blob
+      });
+      if (cfRes.ok) {
+        var cfData = await cfRes.json();
+        if (cfData && cfData.status === 'SUCCESS' && cfData.url && cfData.url.startsWith('https://')) {
+          uploadedUrl = cfData.url;
         }
-      } catch (upErr) {
-        console.warn('[templates.js:handleShareCardPhotoUpload]', upErr);
       }
     }
+  } catch (upErr) {
+    console.warn('[templates.js:handleShareCardPhotoUpload]', upErr);
+  } finally {
+    if (typeof window.hidePhotoLoadingModal === 'function') {
+      window.hidePhotoLoadingModal();
+    }
+    e.target.value = '';
   }
 
-  if (typeof window.hidePhotoLoadingModal === 'function') {
-    window.hidePhotoLoadingModal();
-  }
-
-  if (validList.length > 0) {
-    window.__studioMultiPhotos = validList;
-    window.currentSharePhoto = validList[0];
-    window.currentSharePhotoRaw = validList[0];
+  if (uploadedUrl) {
+    window.__studioMultiPhotos = null;
+    window.currentSharePhoto = uploadedUrl;
+    window.currentSharePhotoRaw = uploadedUrl;
     window.openPhotoStudio();
   } else {
     if (typeof showToast === 'function') showToast('사진 업로드에 실패했습니다. 네트워크를 확인해주세요.', 'warn');
   }
-  e.target.value = '';
 };
 
 window.closePackShareModal = function() {
@@ -1739,6 +1756,14 @@ window.openPackShareModal = function(record, items, forceStudio) {
         }
       });
     });
+  }
+
+  var totalGramsCalc = currentShareItems.reduce(function(sum, g) { return sum + Number(g.weight || 0); }, 0);
+  if (!currentShareRecord.weightKg || currentShareRecord.weightKg === 'undefined' || currentShareRecord.weightKg === '0.00') {
+    currentShareRecord.weightKg = (totalGramsCalc > 0) ? (totalGramsCalc / 1000).toFixed(2) : '0.00';
+  }
+  if (!currentShareRecord.weightGrams) {
+    currentShareRecord.weightGrams = totalGramsCalc;
   }
 
   currentSharePhoto = currentShareRecord.photo || '';
@@ -2021,7 +2046,19 @@ if (!document.getElementById('template-cards-core-style')) {
 function generateCardMarkup(tmplId, record, items, spot, memo) {
   var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
   var nick = profile ? profile.nickname : '낭만탐험가';
-  var weight = record ? record.weightKg : '0.00';
+  var list = items || [];
+  var fallbackWeightGrams = list.reduce(function(sum, it) {
+    var w = (typeof it === 'object' && it !== null) ? Number(it.weight || it.weight_g || 0) : 0;
+    return sum + w;
+  }, 0);
+  var weight = '0.00';
+  if (record && record.weightKg && record.weightKg !== 'undefined') {
+    weight = String(record.weightKg);
+  } else if (fallbackWeightGrams > 0) {
+    weight = (fallbackWeightGrams / 1000).toFixed(2);
+  } else if (record && record.weightGrams) {
+    weight = (Number(record.weightGrams) / 1000).toFixed(2);
+  }
   var dateStr = (record && record.date) ? record.date : (function() {
     var d = new Date();
     return d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
