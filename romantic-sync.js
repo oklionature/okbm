@@ -170,7 +170,8 @@ async function loadUserDataFromCloud(userId) {
   try {
     var controller = new AbortController();
     var timeoutId = setTimeout(function() { controller.abort(); }, 5000);
-    var res = await fetch(targetUrl + '/rest/v1/users?id=eq.' + encodeURIComponent(String(userId).trim()) + '&select=*', {
+    var queryColumns = 'id,nickname,bio,hero_cover_url,photo_url,bookmarks,visited,memos,saved_feeds,following,my_gears,created_at,last_nickname_changed_at';
+    var res = await fetch(targetUrl + '/rest/v1/users?id=eq.' + encodeURIComponent(String(userId).trim()) + '&select=' + queryColumns, {
       method: 'GET',
       headers: {
         'apikey': targetKey,
@@ -971,32 +972,33 @@ window.refreshMyReportFullStats = function() {
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
 
   if (curUserId && targetUrl && targetKey) {
-    fetch(targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(curUserId) + '&select=id,date,photos', {
+    fetch(targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(curUserId) + '&select=id,date', {
       headers: {
         'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey
+        'Authorization': 'Bearer ' + targetKey,
+        'Range-Unit': 'items',
+        'Prefer': 'count=exact'
       }
     }).then(function(res) {
-      if (res.ok) return res.json();
-      return [];
-    }).then(function(rows) {
-      if (Array.isArray(rows) && rows.length > 0) {
-        var photoConfirmedRows = rows.filter(function(rw) {
-          var pList = [];
-          if (Array.isArray(rw.photos)) pList = rw.photos;
-          else if (typeof rw.photos === 'string' && rw.photos.trim().startsWith('[')) {
-            try { pList = JSON.parse(rw.photos); } catch (e) { pList = []; }
-          }
-          return pList.some(function(u) {
-            return typeof u === 'string' && (u.startsWith('https://') || u.startsWith('http://')) && !u.includes('unsplash.com');
-          });
-        });
-        if (photoConfirmedRows.length > validLogs.length) {
-          var totalNum = photoConfirmedRows.length;
-          var yNum = photoConfirmedRows.filter(function(r) { return String(r.date || '').includes(curYear); }).length;
-          if (tEl) tEl.innerText = totalNum;
-          if (yEl) yEl.innerText = yNum;
+      if (res.ok) {
+        var contentRange = res.headers.get('content-range');
+        var serverTotal = 0;
+        if (contentRange && contentRange.includes('/')) {
+          var parsedCount = parseInt(contentRange.split('/')[1], 10);
+          if (!isNaN(parsedCount)) serverTotal = parsedCount;
         }
+        return res.json().then(function(rows) {
+          return { rows: Array.isArray(rows) ? rows : [], total: serverTotal };
+        });
+      }
+      return { rows: [], total: 0 };
+    }).then(function(data) {
+      var serverRows = data.rows;
+      var serverTotalCount = data.total || serverRows.length;
+      if (serverTotalCount > validLogs.length) {
+        if (tEl) tEl.innerText = serverTotalCount;
+        var serverYearCount = serverRows.filter(function(r) { return String(r.date || '').includes(curYear); }).length;
+        if (yEl && serverYearCount > 0) yEl.innerText = serverYearCount;
       }
     }).catch(function() {});
   }

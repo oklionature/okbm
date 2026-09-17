@@ -5278,15 +5278,16 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
             var isOwner = (currentUserId && rowUserId && currentUserId === rowUserId);
             if (isOwner) return true;
             if (window.okbmIsExplicitlyPrivate && window.okbmIsExplicitlyPrivate(row)) return false;
-            // [클라이언트 과잉 검열 제거] 레디샷(완성 카드)만 등록하고 아직 현장
-            // 사진을 올리지 않은 정상 공개 피드까지 사진 유무만으로 걸러내던
-            // 필터를 제거합니다. 공개 여부(isPublished)만으로 판단합니다.
             return true;
           });
         };
 
         var fetchTableRows = function(tableName) {
-          var queryUrl = targetUrl + '/rest/v1/' + tableName + '?select=*&order=created_at.desc&offset=' + offset + '&limit=' + limit;
+          var projectionColumns = 'id,user_id,author,author_photo,spot,elevation,weight_kg,date,memo,photos,photo,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
+          var filterParam = currentUserId
+            ? ('&or=(is_published.eq.true,user_id.eq.' + encodeURIComponent(currentUserId) + ')')
+            : '&is_published=eq.true';
+          var queryUrl = targetUrl + '/rest/v1/' + tableName + '?select=' + projectionColumns + filterParam + '&order=created_at.desc&offset=' + offset + '&limit=' + limit;
           return fetch(queryUrl, { headers: headers })
             .then(function(r) {
               if (r.ok) return r.json();
@@ -6107,9 +6108,9 @@ window.renderHistoryStage = function(isLoading) {
 
       if (window.__reelWindowObserver) {
         var updatedCards = reelContainer.querySelectorAll('.reel-page-snap');
-        updatedCards.forEach(function(c) {
-          window.__reelWindowObserver.observe(c);
-        });
+        for (var cIdx = startIdx; cIdx < updatedCards.length; cIdx++) {
+          window.__reelWindowObserver.observe(updatedCards[cIdx]);
+        }
       }
     };
 
@@ -6232,10 +6233,7 @@ window.renderHistoryStage = function(isLoading) {
       window.renderHistoryStage();
     }
 
-    window.fetchCommunityFeeds(true).then(async function() {
-      if (typeof window.fetchUserFeedLikesFromServer === 'function') {
-        await window.fetchUserFeedLikesFromServer();
-      }
+    window.fetchCommunityFeeds(true).then(function() {
       if (typeof window.renderHistoryStage === 'function') {
         window.renderHistoryStage();
       }

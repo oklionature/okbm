@@ -1894,7 +1894,6 @@ window.saveCurrentPackingRecord = function() {
     } catch(e) {}
   })();
 
-  // 🌐 [마스터 장비 최신화 엔진 - 정적 JSON 1차 로드(Supabase 0회 호출) & Supabase 백업 폴백]
   window.loadGearDbFromGoogleSheet = async function(isForce) {
     if (!isForce && window.GEARS_MASTER && Array.isArray(window.GEARS_MASTER) && window.GEARS_MASTER.length > 0) {
       return;
@@ -1909,29 +1908,29 @@ window.saveCurrentPackingRecord = function() {
       isForce = true;
     }
 
-    var cachedMap = safeGetJSON('okbm_master_gears_cache', null);
-    if (!isForce && cachedMap && typeof cachedMap === 'object' && Object.keys(cachedMap).length > 0) {
-      (window.CATEGORIES || []).forEach(function(cat) {
-        cat.db = cachedMap[cat.id] ? cachedMap[cat.id].slice() : [];
-      });
-      var cachedList = safeGetJSON('okbm_master_gears', null);
-      if (Array.isArray(cachedList)) {
-        window.GEARS_MASTER = cachedList;
-      }
-      return;
-    }
-
     var cachedList = safeGetJSON('okbm_master_gears', null);
     if (!isForce && Array.isArray(cachedList) && cachedList.length > 0) {
       applyFetchedGears(cachedList);
       return;
     }
 
+    var cachedMap = safeGetJSON('okbm_master_gears_cache', null);
+    if (!isForce && cachedMap && typeof cachedMap === 'object' && Object.keys(cachedMap).length > 0) {
+      (window.CATEGORIES || []).forEach(function(cat) {
+        cat.db = cachedMap[cat.id] ? cachedMap[cat.id].slice() : [];
+      });
+      return;
+    }
+
     var allRows = null;
 
-    // ⚡ 1차 시도: 정적 JSON 파일 로드 (Supabase API 호출 0건 / 무료 호스팅 트래픽 활용)
     try {
-      var staticRes = await fetch('gears_master.json?v=' + CURRENT_GEAR_VERSION);
+      var originBase = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
+      var primaryUrl = originBase ? (originBase + '/gears_master.json?v=' + CURRENT_GEAR_VERSION) : ('gears_master.json?v=' + CURRENT_GEAR_VERSION);
+      var staticRes = await fetch(primaryUrl);
+      if (!staticRes.ok) {
+        staticRes = await fetch('gears_master.json?v=' + CURRENT_GEAR_VERSION);
+      }
       if (staticRes.ok) {
         var staticData = await staticRes.json();
         if (Array.isArray(staticData) && staticData.length > 0) {
@@ -1942,16 +1941,17 @@ window.saveCurrentPackingRecord = function() {
       console.warn('[romantic-plan.js] Static gears_master.json fetch failed, fallback to Supabase', staticErr);
     }
 
-    // ⚡ 2차 시도: Supabase REST API 폴백 (정적 파일 로드가 불가능할 때만 1회 호출)
     if (!allRows || allRows.length === 0) {
       try {
         var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
         var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
+        var selectCols = 'id,category_id,item_name,weight_g,brand,specs_detail,verified,weight_type,evidence';
         var rowsAccum = [];
         var page = 0;
         var pageSize = 1000;
-        while (true) {
-          var res = await fetch(targetUrl + '/rest/v1/gears?select=*&order=id.asc&offset=' + (page * pageSize) + '&limit=' + pageSize, {
+        var maxPages = 10;
+        while (page < maxPages) {
+          var res = await fetch(targetUrl + '/rest/v1/gears?select=' + selectCols + '&order=id.asc&offset=' + (page * pageSize) + '&limit=' + pageSize, {
             headers: {
               'apikey': targetKey,
               'Authorization': 'Bearer ' + targetKey,
@@ -1973,7 +1973,7 @@ window.saveCurrentPackingRecord = function() {
 
     if (allRows && allRows.length > 0) {
       applyFetchedGears(allRows);
-      localStorage.setItem('okbm_gear_version', CURRENT_GEAR_VERSION);
+      try { localStorage.setItem('okbm_gear_version', CURRENT_GEAR_VERSION); } catch(e) {}
       if (typeof window.renderPlanStage === 'function') {
         window.renderPlanStage();
       }
@@ -1982,6 +1982,8 @@ window.saveCurrentPackingRecord = function() {
 
   function applyFetchedGears(rows) {
     var sheetGearsByCategory = {};
+    var compactMasterRows = [];
+
     rows.forEach(function(row) {
       var catId = String(row.category_id || row.category || '').trim();
       var name = String(row.item_name || row.name || '').trim();
@@ -1991,11 +1993,11 @@ window.saveCurrentPackingRecord = function() {
       var verified = (row.verified === 'TRUE' || row.verified === true);
       var weight_type = String(row.weight_type || '공식제원무게').trim();
       var evidence = String(row.evidence || '공식 카탈로그 제원').trim();
+      var rowId = row.gear_id || row.id || ('gear_' + Date.now() + '_' + Math.random());
 
       if (catId && name && !isNaN(weight)) {
-        if (!sheetGearsByCategory[catId]) sheetGearsByCategory[catId] = [];
-        sheetGearsByCategory[catId].push({
-          id: row.gear_id || row.id || ('gear_' + Date.now() + '_' + Math.random()),
+        var gearItem = {
+          id: rowId,
           name: name,
           weight: weight,
           brand: brand,
@@ -2004,27 +2006,53 @@ window.saveCurrentPackingRecord = function() {
           weight_type: weight_type,
           evidence: evidence,
           category_id: catId,
-          raw: row
+          raw: {
+            id: rowId,
+            category_id: catId,
+            item_name: name,
+            weight_g: weight,
+            brand: brand,
+            specs_detail: specs,
+            verified: verified,
+            weight_type: weight_type,
+            evidence: evidence
+          }
+        };
+
+        if (!sheetGearsByCategory[catId]) sheetGearsByCategory[catId] = [];
+        sheetGearsByCategory[catId].push(gearItem);
+
+        compactMasterRows.push({
+          id: rowId,
+          category_id: catId,
+          item_name: name,
+          weight_g: weight,
+          brand: brand,
+          specs_detail: specs,
+          verified: verified,
+          weight_type: weight_type,
+          evidence: evidence
         });
       }
     });
 
-    // 💾 관리자 공식 마스터 캐시 저장
-    localStorage.setItem('okbm_master_gears_cache', JSON.stringify(sheetGearsByCategory));
-    localStorage.setItem('okbm_master_gears', JSON.stringify(rows));
+    try {
+      localStorage.setItem('okbm_master_gears', JSON.stringify(compactMasterRows));
+      localStorage.setItem('okbm_master_gears_cache', JSON.stringify(sheetGearsByCategory));
+    } catch(e) {
+      console.warn('[romantic-plan.js] Master gears storage quota exceeded, memory store active', e);
+    }
 
     window.__memoryStore = window.__memoryStore || {};
-    window.__memoryStore['okbm_master_gears'] = rows;
+    window.__memoryStore['okbm_master_gears'] = compactMasterRows;
     window.__memoryStore['okbm_master_gears_cache'] = sheetGearsByCategory;
-    window.GEARS_MASTER = rows;
+    window.GEARS_MASTER = compactMasterRows;
 
-    // 🔒 관리자 공식 마스터 DB만 순수하게 주입 (개인 장비와 섞지 않음)
     (window.CATEGORIES || []).forEach(function(cat) {
       cat.db = sheetGearsByCategory[cat.id] ? sheetGearsByCategory[cat.id].slice() : [];
     });
 
-    // 🛠️ 담긴 장비(선택 목록)의 무게/스펙 오류 자동 보정 (Auto-Heal)
-    autoHealSelectedGears(rows);
+    autoHealSelectedGears(compactMasterRows);
 
     if (typeof window.renderPlanCategorySlots === 'function') {
       window.renderPlanCategorySlots();
@@ -4502,12 +4530,15 @@ window.clearEntireDaySchedule = function(dateKey) {
           'Authorization': 'Bearer ' + targetKey,
           'Content-Type': 'application/json'
         };
-        deletedTripIds.forEach(function(tId) {
-          fetch(targetUrl + '/rest/v1/trips?id=eq.' + encodeURIComponent(tId), {
+        var tripChunkSize = 30;
+        for (var tc = 0; tc < deletedTripIds.length; tc += tripChunkSize) {
+          var tChunk = deletedTripIds.slice(tc, tc + tripChunkSize);
+          var tFilter = 'in.(' + tChunk.map(function(id) { return encodeURIComponent(id); }).join(',') + ')';
+          fetch(targetUrl + '/rest/v1/trips?id=' + tFilter, {
             method: 'DELETE',
             headers: tripDelHeaders
           }).catch(function() {});
-        });
+        }
       }
     }
 
@@ -4584,12 +4615,15 @@ window.clearEntireDaySchedule = function(dateKey) {
         'Authorization': 'Bearer ' + targetKey,
         'Content-Type': 'application/json'
       };
-      deletedRecordIds.forEach(function(dId) {
-        fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(dId), {
+      var feedChunkSize = 30;
+      for (var fc = 0; fc < deletedRecordIds.length; fc += feedChunkSize) {
+        var fChunk = deletedRecordIds.slice(fc, fc + feedChunkSize);
+        var fFilter = 'in.(' + fChunk.map(function(id) { return encodeURIComponent(id); }).join(',') + ')';
+        fetch(targetUrl + '/rest/v1/feeds?id=' + fFilter, {
           method: 'DELETE',
           headers: delHeaders
         }).catch(function() {});
-      });
+      }
     }
 
     if (typeof syncUserDataToCloud === 'function') {

@@ -2978,7 +2978,7 @@ var adBannersHtml = `
       if (!slider) return;
 
       var activeTrips = (window.TRIP_JOINS_DATABASE || []).filter(function(t) {
-        return t && t.tripId;
+        return t && t.tripId && !getTripDDayBadge(t.date).isExpired;
       }).sort(function(a, b) {
         var aClosed = Boolean(a.isClosed);
         var bClosed = Boolean(b.isClosed);
@@ -3125,9 +3125,6 @@ var adBannersHtml = `
           tripData.userId = curUid;
 
           showToast('원정대 공고가 등록되었습니다!', 'success');
-          if (typeof window.loadTripsFromSupabase === 'function') {
-            await window.loadTripsFromSupabase();
-          }
           return realUuid;
         }
       } catch (err) {
@@ -3173,10 +3170,17 @@ var adBannersHtml = `
     async function loadTripsFromSupabase() {
       if (!window.supabaseClient) return;
       try {
+        var dNow = new Date();
+        dNow.setDate(dNow.getDate() - 90);
+        var pad = function(n) { return String(n).padStart(2, '0'); };
+        var cutoffDate = dNow.getFullYear() + '-' + pad(dNow.getMonth() + 1) + '-' + pad(dNow.getDate());
+
         var res = await window.supabaseClient
           .from('trips')
           .select('*')
-          .order('start_date', { ascending: true });
+          .gte('start_date', cutoffDate)
+          .order('start_date', { ascending: true })
+          .limit(100);
 
         if (res.data && Array.isArray(res.data)) {
           var mapped = res.data.filter(function(r) {
@@ -3211,7 +3215,6 @@ var adBannersHtml = `
           });
           window.TRIP_JOINS_DATABASE = mapped;
           renderHomeTripJoinSlider();
-          purgeExpiredTripsFromSupabase(res.data);
         }
       } catch (err) {
         console.error('[SUPABASE LOAD_TRIPS Error]', err);
@@ -3219,33 +3222,7 @@ var adBannersHtml = `
     }
     window.loadTripsFromGoogleSheet = loadTripsFromSupabase;
 
-    async function purgeExpiredTripsFromSupabase(rawTripsList) {
-      if (!window.supabaseClient || !Array.isArray(rawTripsList) || rawTripsList.length === 0) return;
-      var nowTime = Date.now();
-      var expiredTripIds = [];
-
-      rawTripsList.forEach(function(row) {
-        if (!row || !row.id || !row.start_date) return;
-        var p = String(row.start_date).match(/\d+/g);
-        if (!p || p.length < 3) return;
-        var sYear = parseInt(p[0], 10);
-        var sMonth = parseInt(p[1], 10) - 1;
-        var sDay = parseInt(p[2], 10);
-
-        var expireDeadline = new Date(sYear, sMonth, sDay + 2, 0, 0, 0).getTime();
-        if (nowTime >= expireDeadline) {
-          expiredTripIds.push(String(row.id));
-        }
-      });
-
-      if (expiredTripIds.length > 0) {
-        try {
-          await window.supabaseClient.from('trips').delete().in('id', expiredTripIds);
-        } catch (purgeErr) {
-          console.error('[AUTO PURGE EXCEPTION]', purgeErr);
-        }
-      }
-    }
+    async function purgeExpiredTripsFromSupabase() {}
     window.purgeExpiredTripsAndPhotos = purgeExpiredTripsFromSupabase;
 
     window.toggleTripClosedStatus = async function(tripId, e) {
@@ -4521,7 +4498,7 @@ var adBannersHtml = `
       if (old) old.remove();
 
       var list = (window.TRIP_JOINS_DATABASE || []).filter(function(t) {
-        return t && t.tripId;
+        return t && t.tripId && !getTripDDayBadge(t.date).isExpired;
       }).sort(function(a, b) {
         var aClosed = Boolean(a.isClosed);
         var bClosed = Boolean(b.isClosed);

@@ -331,23 +331,6 @@ window.handleFreeRatioChange = function(val) {
   window.updateStudioCardLive();
 };
 
-window.handlePhotoScaleChange = function(val) {
-  currentPhotoScaleVal = parseFloat(val);
-  var label = document.getElementById('freePhotoScaleLabel');
-  if (label) label.innerText = Math.round(currentPhotoScaleVal * 100) + '%';
-  var liveLabel = document.getElementById('studioLiveScaleLabel');
-  if (liveLabel) liveLabel.innerText = Math.round(currentPhotoScaleVal * 100) + '%';
-  var liveSlider = document.getElementById('studioLiveScaleSlider');
-  if (liveSlider && liveSlider.value !== val) liveSlider.value = val;
-  var img = document.getElementById('photoStudioBgImage');
-  if (img) {
-    var posX = (window.currentPhotoPosX !== undefined) ? window.currentPhotoPosX : 50;
-    var posY = (window.currentPhotoPosY !== undefined) ? window.currentPhotoPosY : 50;
-    img.style.transform = 'scale(' + currentPhotoScaleVal + ')';
-    img.style.transformOrigin = posX + '% ' + posY + '%';
-  }
-};
-
 window.switchStudioMode = function(mode) {
   window.currentStudioCardMode = mode;
   var map = { 'minimal': 'btnStudioModeMinimal', 'chic': 'btnStudioModeChic', 'packing': 'btnStudioModePacking', 'essay': 'btnStudioModeEssay', 'sage': 'btnStudioModeSage' };
@@ -371,13 +354,6 @@ window.switchStudioMode = function(mode) {
   if (typeof triggerHaptic === 'function') triggerHaptic(10);
 };
 
-window.setStudioTextColor = function(color) {
-  window.currentPhotoTextColor = color;
-  window.updateStudioUI();
-  window.updateStudioCardLive();
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
-};
-
 window.updateStudioUI = function() {
   var mapBtns = { '1/1': 'btnStudioRatio11', '4/5': 'btnStudioRatio45', '3/4': 'btnStudioRatio34', '9/16': 'btnStudioRatio916', 'free': 'btnStudioRatioFree' };
   Object.keys(mapBtns).forEach(function(r) {
@@ -386,12 +362,6 @@ window.updateStudioUI = function() {
     if (r === window.currentCardRatio) { btn.style.background = '#ffffff'; btn.style.color = '#000000'; btn.style.fontWeight = '900'; }
     else { btn.style.background = 'transparent'; btn.style.color = '#cbd5e1'; btn.style.fontWeight = '800'; }
   });
-  var btnW = document.getElementById('btnStudioColorWhite');
-  var btnB = document.getElementById('btnStudioColorBlack');
-  if (btnW && btnB) {
-    btnW.style.boxShadow = (window.currentPhotoTextColor === 'white') ? '0 0 0 2px #ffffff' : 'none';
-    btnB.style.boxShadow = (window.currentPhotoTextColor === 'black') ? '0 0 0 2px #ffffff' : 'none';
-  }
 };
 
 window.saveStudioCardToPhone = async function() {
@@ -1253,13 +1223,7 @@ function renderAdaptiveGearList(items, options) {
   return '<div style="display:grid; grid-template-columns:' + (isTwoCol ? '1fr 1fr' : '1fr') + '; column-gap:6px; row-gap:0px; width:100%; box-sizing:border-box;">' + rowsHtml + '</div>';
 }
 
-// 🚪 1. 배낭 패킹 저장 & 카드 생성 모달 호출 (보관함 및 클라우드 엔진 단일화)
-function saveCurrentPackingRecord() {
-  if (typeof window.saveCurrentPackingRecord === 'function' && window.saveCurrentPackingRecord !== saveCurrentPackingRecord) {
-    window.saveCurrentPackingRecord();
-    return;
-  }
-
+window.saveCurrentPackingRecord = function() {
   var allItems = [];
   if (typeof CATEGORIES !== 'undefined' && typeof selectedGearMap !== 'undefined') {
     CATEGORIES.forEach(function(c) {
@@ -1291,14 +1255,11 @@ function saveCurrentPackingRecord() {
 
   if (typeof window.savePackingHistoryRecord === 'function') {
     window.savePackingHistoryRecord(newRecord);
-  } else {
-    if (!window.interactiveHistory) window.interactiveHistory = [];
-    window.interactiveHistory.push(newRecord);
-    window.packingHistoryList = window.interactiveHistory;
   }
 
-  openPackShareModal(newRecord, allItems, false);
-}
+  window.openPackShareModal(newRecord, allItems, false);
+};
+var saveCurrentPackingRecord = window.saveCurrentPackingRecord;
 
 // 🏷️ [지능형 상단 템플릿 칩 컨테이너 탐색 및 자동 렌더링 엔진]
 function findTemplateChipContainer() {
@@ -1442,6 +1403,56 @@ window.clearSpotSearchInput = function() {
   if (dropdown) dropdown.style.display = 'none';
   if (typeof updateShareCardLive === 'function') updateShareCardLive();
   if (typeof triggerHaptic === 'function') triggerHaptic(10);
+};
+
+window.sharePackCardDirect = async function() {
+  var card = document.getElementById('packShareCaptureArea');
+  if (!card || typeof html2canvas === 'undefined') return;
+  if (typeof triggerHaptic === 'function') triggerHaptic(15);
+  if (typeof showToast === 'function') showToast('카드를 준비 중입니다...', 'info', 1500);
+
+  try {
+    var canvas = await html2canvas(card, {
+      backgroundColor: null,
+      scale: 3.0,
+      useCORS: true,
+      allowTaint: false,
+      logging: false
+    });
+
+    if (navigator.share && navigator.canShare) {
+      canvas.toBlob(async function(blob) {
+        if (!blob) return;
+        var file = new File([blob], 'romantic_pack_' + Date.now() + '.png', { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: '낭만루트',
+              text: '낭만루트 패킹 카드'
+            });
+            return;
+          } catch (shErr) {
+            if (shErr.name === 'AbortError') return;
+          }
+        }
+        var link = document.createElement('a');
+        link.download = '낭만루트_패킹카드_' + Date.now() + '.png';
+        link.href = canvas.toDataURL('image/png', 0.95);
+        link.click();
+        if (typeof showToast === 'function') showToast('카드가 저장되었습니다.', 'success', 2200);
+      }, 'image/png', 0.95);
+    } else {
+      var link = document.createElement('a');
+      link.download = '낭만루트_패킹카드_' + Date.now() + '.png';
+      link.href = canvas.toDataURL('image/png', 0.95);
+      link.click();
+      if (typeof showToast === 'function') showToast('카드가 저장되었습니다.', 'success', 2200);
+    }
+  } catch (err) {
+    console.warn('[templates.js:sharePackCardDirect]', err);
+    if (typeof showToast === 'function') showToast('카드 생성 중 오류가 발생했습니다.', 'warn');
+  }
 };
 
 window.saveCardToVaultAndOpenBasecamp = async function() {
@@ -1766,7 +1777,7 @@ window.openPackShareModal = function(record, items, forceStudio) {
     currentShareRecord.weightGrams = totalGramsCalc;
   }
 
-  currentSharePhoto = currentShareRecord.photo || '';
+  currentSharePhoto = currentShareRecord.readyShotPhoto || currentShareRecord.ready_shot_photo || '';
   currentPhotoTextColor = currentShareRecord.textColor || 'white';
   currentCardRatio = currentShareRecord.ratio || '9/16';
 
@@ -1821,9 +1832,7 @@ window.openPackShareModal = function(record, items, forceStudio) {
   setTimeout(function() { initCardSwipeGesture(); }, 60);
 };
 
-function openPackShareModal(record, items, forceStudio) {
-  window.openPackShareModal(record, items, forceStudio);
-}
+var openPackShareModal = window.openPackShareModal;
 // 🏷️ 3. 템플릿 전환 & 상단 칩/이름 실시간 동기화
 function switchShareCardTemplate(tmplId, isSwipe) {
   var targetId = Number(tmplId);
@@ -2066,7 +2075,6 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
 
   var targetSpot = (spot !== undefined && spot !== null) ? String(spot).trim() : '';
   var targetMemo = (memo !== undefined && memo !== null) ? String(memo).trim() : '';
-  var list = items || [];
 
   // 🛡️ [박지 비공개 & 여백 레이아웃 보존 헬퍼]
   var spotText = targetSpot ? escapeHtml(targetSpot) : '&nbsp;';
