@@ -2642,6 +2642,7 @@ window.deleteTripRecord = async function(recordId, e) {
 
     if (isSaved) {
       savedFeeds = savedFeeds.filter(function(id) { return id !== sId; });
+      if (typeof showToast === 'function') showToast('관심피드 저장이 해제되었습니다.', 'info', 1600);
     } else {
       savedFeeds.unshift(sId);
       if (typeof showToast === 'function') showToast('관심피드로 저장되었습니다.', 'success', 1800);
@@ -2653,9 +2654,26 @@ window.deleteTripRecord = async function(recordId, e) {
       localStorage.setItem('okbm_saved_feeds', JSON.stringify(savedFeeds));
     }
 
-    if (typeof window.renderHistoryStage === 'function') {
-      window.renderHistoryStage();
-    }
+    var targetBtns = [];
+    var clickedBtn = e ? (e.currentTarget || (e.target && e.target.closest('button'))) : null;
+    if (clickedBtn) targetBtns.push(clickedBtn);
+
+    try {
+      var escapedId = (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(sId) : sId;
+      document.querySelectorAll('button[data-feed-id="' + escapedId + '"]').forEach(function(btn) {
+        if (!btn.hasAttribute('data-spot') && targetBtns.indexOf(btn) === -1) {
+          targetBtns.push(btn);
+        }
+      });
+    } catch (domErr) {}
+
+    targetBtns.forEach(function(btn) {
+      btn.style.color = isSaved ? '#cbd5e1' : '#c084fc';
+      var svg = btn.querySelector('svg');
+      if (svg) {
+        svg.setAttribute('fill', isSaved ? 'none' : '#c084fc');
+      }
+    });
   };
 
  // 👥 [관심루터 & 관심피드 통합 모아보기 모달 엔진]
@@ -5105,12 +5123,6 @@ window.renderHistoryStage = function(isLoading) {
             '</div>' +
             '<button type="button" id="btnToggleBottomTools_' + cardId + '" data-card-id="' + cardId + '" onclick="window.toggleFeedBottomTools(this.dataset.cardId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#94a3b8; transition:all 0.2s ease; flex-shrink:0;" title="관리 도구 열기">' +
               '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>' +
-            '</button>' +
-          '</div>';
-        } else if (isLogged) {
-          bottomToolsHtml = '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
-            '<button type="button" onclick="window.openRomanticInterestModal(\'routers\'); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#c084fc;" title="관심 모아보기">' +
-              '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
             '</button>' +
           '</div>';
         } else {

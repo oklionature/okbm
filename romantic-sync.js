@@ -416,6 +416,10 @@ window.RomanticVault = window.RomanticVault || {
         this.write('okbm_memos', serverMemos, false);
         window.userMemos = serverMemos;
 
+        var serverSavedFeeds = (cloudData.saved_feeds && Array.isArray(cloudData.saved_feeds)) ? cloudData.saved_feeds : [];
+        var cleanSavedFeeds = serverSavedFeeds.map(function(s) { return String(s).trim(); }).filter(Boolean);
+        this.write('okbm_saved_feeds', cleanSavedFeeds, false);
+
         // [헌법 제1조: SSOT 원칙] 글/피드의 절대 진실 공급원은 feeds 테이블 하나뿐입니다.
         // users 테이블의 pack_history는 예전 백업용 잔재이며, 여기서 이를 읽어
         // window.interactiveHistory/packingHistoryList를 덮어쓰면 feeds 테이블에서
@@ -2877,6 +2881,7 @@ window.editReportUserBio = function() {
 
 window.openMyPastTripsFromReport = function() {
   triggerHaptic(10);
+  if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
   if (typeof window.openPastTripsListModal === 'function') {
     window.openPastTripsListModal();
   } else {
@@ -2886,6 +2891,7 @@ window.openMyPastTripsFromReport = function() {
 
 window.openRoutersInterestFromReport = function() {
   triggerHaptic(10);
+  if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
   if (typeof window.openRomanticInterestModal === 'function') {
     window.openRomanticInterestModal('routers');
   } else {
@@ -2895,6 +2901,7 @@ window.openRoutersInterestFromReport = function() {
 
 window.openFeedsInterestFromReport = function() {
   triggerHaptic(10);
+  if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
   if (typeof window.openRomanticInterestModal === 'function') {
     window.openRomanticInterestModal('feeds');
   } else {
@@ -3986,6 +3993,7 @@ window.saveUserToSupabase = async function(profileData) {
   var bookmarks = (vault && typeof vault.read === 'function') ? vault.read('okbm_bookmarks', []) : safeGetJSON('okbm_bookmarks', []);
   var visited = (vault && typeof vault.read === 'function') ? vault.read('okbm_visited', []) : safeGetJSON('okbm_visited', []);
   var memos = (vault && typeof vault.read === 'function') ? vault.read('okbm_memos', {}) : safeGetJSON('okbm_memos', {});
+  var savedFeeds = (vault && typeof vault.read === 'function') ? vault.read('okbm_saved_feeds', []) : safeGetJSON('okbm_saved_feeds', []);
 
   var selectedGears = (vault && typeof vault.read === 'function') ? vault.read('okbm_selected_gears_multi', {}) : safeGetJSON('okbm_selected_gears_multi', {});
   var favoriteGears = (vault && typeof vault.read === 'function') ? vault.read('okbm_favorite_gears', []) : safeGetJSON('okbm_favorite_gears', []);
@@ -4017,6 +4025,7 @@ window.saveUserToSupabase = async function(profileData) {
     bookmarks: Array.isArray(bookmarks) ? bookmarks : [],
     visited: Array.isArray(visited) ? visited : [],
     memos: (memos && typeof memos === 'object') ? memos : {},
+    saved_feeds: Array.isArray(savedFeeds) ? savedFeeds : [],
     my_gears: {
       selectedGears: selectedGears || {},
       favoriteGears: favoriteGears || [],
