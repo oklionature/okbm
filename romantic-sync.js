@@ -1133,8 +1133,41 @@ function ensureMyReportAndAuthModalsInDOM() {
     <div class="custom-modal-overlay" id="userProfileModalOverlay" onclick="if(event.target===this) closeUserProfileModal();" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; width:100%; height:100%; background:#000000; z-index:3000000; margin:0; padding:0; overflow:hidden;">
       <div style="position:relative; width:100%; max-width:480px; height:100%; margin:0 auto; background:#000000; overflow:hidden; display:flex; flex-direction:column; box-sizing:border-box;">
         
-        <!-- 1단 인스타그램형 프로필 헤더 (대형 아바타 88px 및 3줄 자기소개) -->
-        <div style="flex-shrink:0; width:100%; background:#07090e; border-bottom:1px solid rgba(255,255,255,0.08); padding:calc(16px + env(safe-area-inset-top, 0px)) 16px 14px 16px; box-sizing:border-box; z-index:50; display:flex; flex-direction:column; gap:12px;">
+        <header style="position:relative !important; width:100% !important; height:calc(47px + env(safe-area-inset-top, 0px)) !important; min-height:calc(47px + env(safe-area-inset-top, 0px)) !important; max-height:calc(47px + env(safe-area-inset-top, 0px)) !important; background:#000000 !important; border-bottom:none !important; padding:0 16px !important; padding-top:env(safe-area-inset-top, 0px) !important; flex-shrink:0 !important; z-index:60 !important; overflow:hidden !important; box-sizing:border-box !important;">
+          <div style="position:absolute; inset:0; pointer-events:none; overflow:hidden; z-index:1;">
+            <svg viewBox="0 0 24 24" style="position:absolute; top:30%; left:26%; width:5.5px; height:5.5px; fill:#fde047;"><path d="M12,2 Q12,12 2,12 Q12,12 12,22 Q12,12 22,12 Q12,12 12,2 Z"/><circle cx="12" cy="12" r="1.5" fill="#ffffff"/></svg>
+            <svg viewBox="0 0 24 24" style="position:absolute; top:42%; left:67%; width:6.0px; height:6.0px; fill:#e2e8f0;"><path d="M12,2 Q12,12 2,12 Q12,12 12,22 Q12,12 22,12 Q12,12 12,2 Z"/><circle cx="12" cy="12" r="1.5" fill="#ffffff"/></svg>
+            <div style="position:absolute; top:65%; left:14%; width:1.2px; height:1.2px; border-radius:50%; background:#ffffff;"></div>
+            <div style="position:absolute; top:24%; left:45%; width:1.0px; height:1.0px; border-radius:50%; background:#fde047;"></div>
+            <div style="position:absolute; top:70%; left:53%; width:1.6px; height:1.6px; border-radius:50%; background:#cbd5e1;"></div>
+            <div style="position:absolute; top:25%; left:82%; width:1.2px; height:1.2px; border-radius:50%; background:#ffffff;"></div>
+            <div style="position:absolute; top:68%; left:93%; width:1.0px; height:1.0px; border-radius:50%; background:#fde047;"></div>
+          </div>
+          <div style="height:47px !important; display:flex !important; align-items:center !important; justify-content:space-between !important; max-width:480px !important; margin:0 auto !important; position:relative !important; z-index:2 !important;">
+            <div style="height:47px !important; display:inline-flex !important; align-items:center !important; gap:8px !important; text-decoration:none !important; cursor:default !important;">
+              <div style="width:30px !important; height:30px !important; min-width:30px !important; min-height:30px !important; max-width:30px !important; max-height:30px !important; display:flex !important; align-items:center !important; justify-content:center !important; flex-shrink:0 !important; overflow:hidden !important;">
+                <svg viewBox="0 0 32 32" fill="none" style="width:28px !important; height:28px !important; min-width:28px !important; min-height:28px !important; max-width:28px !important; max-height:28px !important; display:block !important; flex-shrink:0 !important;">
+                  <circle cx="21" cy="6" r="9" fill="rgba(244,114,182,0.12)"/>
+                  <circle cx="21" cy="6" r="6" fill="rgba(245,158,11,0.18)"/>
+                  <circle cx="21" cy="6" r="3.8" fill="rgba(251,191,36,0.28)"/>
+                  <circle cx="2" cy="24" r="1.8" fill="#fda4af"/>
+                  <circle cx="9" cy="12" r="2.2" fill="#fda4af"/>
+                  <circle cx="14" cy="16" r="1.8" fill="#fda4af"/>
+                  <circle cx="13" cy="24" r="1.8" fill="#fda4af"/>
+                  <path d="M2 24L9 12H12.5L14 16L10 16M10 16L13 24" stroke="#fda4af" stroke-width="1.8" stroke-linecap="round"/>
+                  <circle cx="21" cy="6" r="2.8" fill="#f59e0b"/>
+                  <circle cx="27" cy="13" r="2.2" fill="#e2e8f0"/>
+                  <circle cx="30" cy="24" r="2.4" fill="#e2e8f0"/>
+                  <path d="M13 24L21 6H25L27 13L22 13M22 13L30 24" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
+                  <circle cx="21" cy="6" r="1" fill="#ffffff"/>
+                </svg>
+              </div>
+              <span style="font-size:1.2rem !important; font-weight:900 !important; letter-spacing:-0.035em !important; line-height:1 !important; color:#ffffff !important; display:inline-block !important;">낭만루트</span>
+            </div>
+          </div>
+        </header>
+
+        <div style="flex-shrink:0; width:100%; background:#000000; border-bottom:1px solid rgba(255,255,255,0.08); padding:16px 16px 14px 16px; box-sizing:border-box; z-index:50; display:flex; flex-direction:column; gap:12px;">
           
           <div style="display:flex; justify-content:space-between; align-items:center; gap:16px;">
             <div style="flex:1 1 0%; min-width:0;">
