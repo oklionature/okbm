@@ -1,13 +1,46 @@
+(function okbmStashNaverOAuthHash() {
+  try {
+    var raw = String(window.location.hash || '').replace(/^#/, '');
+    if (!raw || raw.indexOf('access_token=') === -1) return;
+    var params = {};
+    raw.split('&').forEach(function(part) {
+      if (!part) return;
+      var idx = part.indexOf('=');
+      var key = decodeURIComponent((idx >= 0 ? part.slice(0, idx) : part).replace(/\+/g, ' '));
+      var val = decodeURIComponent((idx >= 0 ? part.slice(idx + 1) : '').replace(/\+/g, ' '));
+      params[key] = val;
+    });
+    var savedState = '';
+    try { savedState = sessionStorage.getItem('okbm_naver_oauth_state') || ''; } catch (e) {}
+    if (!params.access_token || !params.state || !savedState || params.state !== savedState) return;
+    if (params.refresh_token) return;
+    try { sessionStorage.setItem('okbm_naver_oauth_token', params.access_token); } catch (e) {}
+    if (window.history && typeof history.replaceState === 'function') {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    } else {
+      window.location.hash = '';
+    }
+  } catch (e) {}
+})();
 
 var SUPABASE_URL = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
 var SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
 window.SUPABASE_URL = SUPABASE_URL;
 window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
+var NAVER_CLIENT_ID = 'FKh1hhDec4_gsz8O90Fm';
+window.NAVER_CLIENT_ID = NAVER_CLIENT_ID;
 var R2_PUBLIC_DOMAIN = 'https://pub-13ec7c39d2394ecc879bb2ed4b86a43c.r2.dev';
 window.R2_PUBLIC_DOMAIN = R2_PUBLIC_DOMAIN;
 
 if (window.supabase && typeof window.supabase.createClient === 'function' && !window.supabaseClient) {
-  window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  var okbmLoopbackHost = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+  window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      detectSessionInUrl: true,
+      persistSession: true,
+      flowType: (window.isSecureContext || okbmLoopbackHost) ? 'pkce' : 'implicit'
+    }
+  });
 }
 
 if (typeof window.isCloudDataLoaded === 'undefined') {
@@ -95,6 +128,410 @@ function getFormattedNow() {
   return d.getFullYear() + '. ' + pad(d.getMonth() + 1) + '. ' + pad(d.getDate()) + '. ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
 }
 window.getFormattedNow = getFormattedNow;
+
+// 🛡️ [UGC 안전] 피드 신고 / 유저 차단 (Apple 1.2 · Google Play UGC)
+window.OKBM_SOCIAL_PREFIX_RE = /^(kakao_|naver_|apple_|google_)/;
+
+window.okbmHasSocialUserId = function(id) {
+  return window.OKBM_SOCIAL_PREFIX_RE.test(String(id || '').trim());
+};
+
+window.okbmCanonicalUserId = function(id) {
+  var s = String(id || '').trim();
+  if (!s || s === 'guest' || s === 'null' || s === 'undefined') return '';
+  if (window.okbmHasSocialUserId(s) || s.indexOf('user_') === 0 || s.indexOf('guest_') === 0) return s;
+  return 'kakao_' + s;
+};
+
+window.okbmNormalizeEmail = function(email) {
+  return String(email || '').trim().toLowerCase();
+};
+
+window.okbmSameAccountId = function(a, b) {
+  var left = String(a || '').trim();
+  var right = String(b || '').trim();
+  if (!left || !right || left === 'guest' || right === 'guest') return false;
+  if (left === right) return true;
+  if (/^(naver_|apple_|google_)/.test(left) || /^(naver_|apple_|google_)/.test(right)) return false;
+  var strip = function(v) {
+    return String(v || '').replace(/^(kakao_|guest_|user_)/, '').trim();
+  };
+  var cleanL = strip(left);
+  var cleanR = strip(right);
+  return Boolean(cleanL && cleanR && cleanL === cleanR);
+};
+
+function okbmNormalizeUgcUserId(id) {
+  return String(id || '').replace(/^kakao_/, '').trim();
+}
+
+function okbmGetIdList(key) {
+  var list = safeGetJSON(key, []);
+  if (!Array.isArray(list)) return [];
+  var seen = {};
+  var out = [];
+  list.forEach(function(v) {
+    var s = String(v || '').trim();
+    if (!s || seen[s]) return;
+    seen[s] = true;
+    out.push(s);
+  });
+  return out;
+}
+
+function okbmSaveIdList(key, list) {
+  try {
+    localStorage.setItem(key, JSON.stringify(Array.isArray(list) ? list : []));
+  } catch (e) {
+    console.warn('[romantic-sync.js:okbmSaveIdList]', e);
+  }
+}
+
+function okbmEscapeUgcAttr(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+window.getBlockedUserIds = function() {
+  return okbmGetIdList('okbm_blocked_users');
+};
+
+window.getReportedFeedIds = function() {
+  return okbmGetIdList('okbm_reported_feeds');
+};
+
+window.getBlockedUsersMeta = function() {
+  var meta = safeGetJSON('okbm_blocked_users_meta', {});
+  return (meta && typeof meta === 'object' && !Array.isArray(meta)) ? meta : {};
+};
+
+window.isUserBlocked = function(userId) {
+  var target = String(userId || '').trim();
+  if (!target) return false;
+  var cleanTarget = okbmNormalizeUgcUserId(target);
+  var list = window.getBlockedUserIds();
+  for (var i = 0; i < list.length; i++) {
+    var item = String(list[i] || '').trim();
+    if (!item) continue;
+    if (item === target) return true;
+    var cleanItem = okbmNormalizeUgcUserId(item);
+    if (cleanItem && cleanTarget && cleanItem === cleanTarget) return true;
+  }
+  return false;
+};
+
+window.isFeedReported = function(feedId) {
+  var target = String(feedId || '').trim();
+  if (!target) return false;
+  return window.getReportedFeedIds().indexOf(target) !== -1;
+};
+
+window.isFeedHiddenByUgc = function(feed) {
+  if (!feed) return true;
+  var feedId = String(feed.id || '').trim();
+  if (feedId && window.isFeedReported(feedId)) return true;
+  var userId = String(feed.userId || feed.user_id || '').trim();
+  if (userId && window.isUserBlocked(userId)) return true;
+  return false;
+};
+
+window.filterHiddenUgcFeeds = function(list) {
+  if (!Array.isArray(list)) return [];
+  return list.filter(function(item) {
+    return item && !window.isFeedHiddenByUgc(item);
+  });
+};
+
+function okbmRememberBlockedNickname(userId, nickname) {
+  var id = String(userId || '').trim();
+  var nick = String(nickname || '').trim();
+  if (!id || !nick) return;
+  var meta = window.getBlockedUsersMeta();
+  meta[id] = nick;
+  try {
+    localStorage.setItem('okbm_blocked_users_meta', JSON.stringify(meta));
+  } catch (e) {
+    console.warn('[romantic-sync.js:okbmRememberBlockedNickname]', e);
+  }
+}
+
+window.resolveBlockedUserNickname = function(userId) {
+  var id = String(userId || '').trim();
+  if (!id) return '차단된 사용자';
+  var meta = window.getBlockedUsersMeta();
+  if (meta[id]) return String(meta[id]).trim();
+  var pools = []
+    .concat(Array.isArray(window.__allLoadedFeeds) ? window.__allLoadedFeeds : [])
+    .concat(Array.isArray(window.interactiveHistory) ? window.interactiveHistory : [])
+    .concat((typeof safeGetJSON === 'function' ? (safeGetJSON('okbm_cached_community_feeds', []) || []) : []));
+  for (var i = 0; i < pools.length; i++) {
+    var f = pools[i];
+    if (!f) continue;
+    var fUid = String(f.userId || f.user_id || '').trim();
+    if (!fUid) continue;
+    if (fUid === id || okbmNormalizeUgcUserId(fUid) === okbmNormalizeUgcUserId(id)) {
+      var nick = String(f.author || f.nick || f.nickname || '').trim();
+      if (nick) return nick;
+    }
+  }
+  return id.indexOf('kakao_') === 0 ? '낭만루터' : id;
+};
+
+window.isCurrentUserId = function(userId) {
+  var target = String(userId || '').trim();
+  if (!target) return false;
+  var profile = safeGetJSON('user_profile', null);
+  var myId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+  if (!myId || myId === 'guest') return false;
+  if (myId === target) return true;
+  if (/^(naver_|apple_|google_)/.test(myId) || /^(naver_|apple_|google_)/.test(target)) return false;
+  var cleanMy = okbmNormalizeUgcUserId(myId);
+  var cleanTarget = okbmNormalizeUgcUserId(target);
+  return Boolean(cleanMy && cleanTarget && cleanMy === cleanTarget);
+};
+
+window.closeOpenUgcFeedModals = function(options) {
+  options = options || {};
+  [
+    'singleTripFeedModal',
+    'mapSpotFeedDetailModal',
+    'secretSpotHeroModal',
+    'feedReportReasonModal',
+    'ugcSafetyMenuSheet',
+    'tripUserProfileModal'
+  ].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.remove();
+  });
+  var coll = document.getElementById('userFeedCollectionModal');
+  if (coll && options.blockedUserId) {
+    var collUid = String(coll.dataset.userId || '').trim();
+    if (collUid && window.isUserBlocked(collUid)) {
+      coll.remove();
+    }
+  }
+};
+
+window.rerenderCommunityFeedsNow = function() {
+  if (typeof window.renderHistoryStage === 'function') {
+    try { window.renderHistoryStage(); } catch (e) { console.warn('[romantic-sync.js:rerenderCommunityFeedsNow history]', e); }
+  }
+  if (document.getElementById('savedFeedsListModal') && typeof window.openSavedFeedsModal === 'function') {
+    try { window.openSavedFeedsModal(true); } catch (e) { console.warn('[romantic-sync.js:rerenderCommunityFeedsNow saved]', e); }
+  }
+  if (document.getElementById('followedRoutersModal') && typeof window.openFollowedRoutersModal === 'function') {
+    try { window.openFollowedRoutersModal(true); } catch (e) { console.warn('[romantic-sync.js:rerenderCommunityFeedsNow routers]', e); }
+  }
+  var coll = document.getElementById('userFeedCollectionModal');
+  if (coll && typeof window.openUserFeedCollectionModal === 'function') {
+    var collAuthor = coll.dataset.author || '';
+    var collUid = coll.dataset.userId || '';
+    if (collUid && window.isUserBlocked(collUid)) {
+      coll.remove();
+    } else {
+      try { window.openUserFeedCollectionModal(collAuthor, collUid, 'route', true); } catch (e) { console.warn('[romantic-sync.js:rerenderCommunityFeedsNow collection]', e); }
+    }
+  }
+  if (typeof window.refreshCurrentSpotPopup === 'function') {
+    try { window.refreshCurrentSpotPopup(); } catch (e) { console.warn('[romantic-sync.js:rerenderCommunityFeedsNow map]', e); }
+  }
+  if (typeof renderSecretSpotTrailerRail === 'function') {
+    try { renderSecretSpotTrailerRail(); } catch (e) { console.warn('[romantic-sync.js:rerenderCommunityFeedsNow rail]', e); }
+  }
+  if (typeof window.renderThemeSpotAllGrid === 'function' && document.getElementById('themeSpotAllGridContainer')) {
+    try { window.renderThemeSpotAllGrid(window.currentThemeSpotAllTab || 'all'); } catch (e) { console.warn('[romantic-sync.js:rerenderCommunityFeedsNow theme]', e); }
+  }
+  if (typeof window.renderBlockedUsersSettingsList === 'function') {
+    try { window.renderBlockedUsersSettingsList(); } catch (e) { console.warn('[romantic-sync.js:rerenderCommunityFeedsNow settings]', e); }
+  }
+};
+
+window.blockCommunityUser = function(userId, nickname) {
+  triggerHaptic(12);
+  var targetId = String(userId || '').trim();
+  if (!targetId) {
+    if (typeof showToast === 'function') showToast('차단할 사용자를 확인할 수 없습니다.', 'warn');
+    return;
+  }
+  if (window.isCurrentUserId(targetId)) {
+    if (typeof showToast === 'function') showToast('본인 계정은 차단할 수 없습니다.', 'warn');
+    return;
+  }
+  if (!confirm('이 사용자를 차단하시겠습니까? 해당 사용자의 모든 피드가 더 이상 보이지 않습니다.')) {
+    return;
+  }
+  var list = window.getBlockedUserIds();
+  if (!window.isUserBlocked(targetId)) {
+    list.push(targetId);
+    okbmSaveIdList('okbm_blocked_users', list);
+  }
+  okbmRememberBlockedNickname(targetId, nickname);
+  window.closeOpenUgcFeedModals({ blockedUserId: targetId });
+  window.rerenderCommunityFeedsNow();
+  triggerHaptic(15);
+  if (typeof showToast === 'function') showToast('사용자가 차단되었습니다.', 'success', 2200);
+};
+
+window.unblockCommunityUser = function(userId) {
+  triggerHaptic(10);
+  var targetId = String(userId || '').trim();
+  if (!targetId) return;
+  var list = window.getBlockedUserIds().filter(function(id) {
+    var item = String(id || '').trim();
+    return item !== targetId && okbmNormalizeUgcUserId(item) !== okbmNormalizeUgcUserId(targetId);
+  });
+  okbmSaveIdList('okbm_blocked_users', list);
+  var meta = window.getBlockedUsersMeta();
+  Object.keys(meta).forEach(function(key) {
+    if (key === targetId || okbmNormalizeUgcUserId(key) === okbmNormalizeUgcUserId(targetId)) {
+      delete meta[key];
+    }
+  });
+  try { localStorage.setItem('okbm_blocked_users_meta', JSON.stringify(meta)); } catch (e) { console.warn('[romantic-sync.js:unblockCommunityUser meta]', e); }
+  window.rerenderCommunityFeedsNow();
+  if (typeof showToast === 'function') showToast('차단이 해제되었습니다.', 'success', 1800);
+};
+
+window.openFeedReportModal = function(feedId, userId) {
+  triggerHaptic(10);
+  var sFeedId = String(feedId || '').trim();
+  if (!sFeedId) return;
+  if (window.isFeedReported(sFeedId)) {
+    if (typeof showToast === 'function') showToast('이미 신고한 피드입니다.', 'info', 1800);
+    return;
+  }
+  var old = document.getElementById('feedReportReasonModal');
+  if (old) old.remove();
+
+  var reasons = [
+    { id: 'spam', label: '스팸/홍보' },
+    { id: 'sexual', label: '음란/선정성' },
+    { id: 'abuse', label: '욕설/비방' },
+    { id: 'other', label: '기타' }
+  ];
+
+  var modal = document.createElement('div');
+  modal.id = 'feedReportReasonModal';
+  modal.style.cssText = 'position:fixed; inset:0; z-index:2147483646 !important; background:rgba(0,0,0,0.92); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
+  modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+
+  var reasonBtns = reasons.map(function(r) {
+    return '<button type="button" data-reason="' + okbmEscapeUgcAttr(r.id) + '" data-label="' + okbmEscapeUgcAttr(r.label) + '" data-feed-id="' + okbmEscapeUgcAttr(sFeedId) + '" data-user-id="' + okbmEscapeUgcAttr(userId) + '" onclick="window.submitFeedReport(this.dataset.feedId, this.dataset.reason, this.dataset.label, this.dataset.userId);" style="width:100%; height:42px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#e2e8f0; font-size:0.82rem; font-weight:800; cursor:pointer; text-align:left; padding:0 14px;">' + okbmEscapeUgcAttr(r.label) + '</button>';
+  }).join('');
+
+  modal.innerHTML = '<div style="width:100%; max-width:340px; background:#080b11; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:16px; box-sizing:border-box; display:flex; flex-direction:column; gap:10px;" onclick="event.stopPropagation();">' +
+    '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+      '<span style="font-size:0.90rem; font-weight:900; color:#ffffff;">피드 신고</span>' +
+      '<button type="button" onclick="document.getElementById(\'feedReportReasonModal\').remove();" style="background:none; border:none; color:#94a3b8; font-size:1rem; cursor:pointer;">✕</button>' +
+    '</div>' +
+    '<p style="font-size:0.72rem; color:#94a3b8; line-height:1.45; margin:0;">신고 사유를 선택해주세요. 접수된 내용은 24시간 이내에 검토됩니다.</p>' +
+    '<div style="display:flex; flex-direction:column; gap:6px;">' + reasonBtns + '</div>' +
+  '</div>';
+
+  document.body.appendChild(modal);
+};
+
+window.submitFeedReport = async function(feedId, reasonCode, reasonLabel, userId) {
+  triggerHaptic(12);
+  var sFeedId = String(feedId || '').trim();
+  if (!sFeedId) return;
+
+  var reasonModal = document.getElementById('feedReportReasonModal');
+  if (reasonModal) reasonModal.remove();
+
+  var list = window.getReportedFeedIds();
+  if (list.indexOf(sFeedId) === -1) {
+    list.push(sFeedId);
+    okbmSaveIdList('okbm_reported_feeds', list);
+  }
+
+  try {
+    var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+    var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+    var profile = safeGetJSON('user_profile', null);
+    var reporterId = (profile && profile.id) ? String(profile.id).trim() : '';
+    if (targetUrl && targetKey) {
+      await fetch(targetUrl + '/rest/v1/feed_reports', {
+        method: 'POST',
+        headers: {
+          'apikey': targetKey,
+          'Authorization': 'Bearer ' + targetKey,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          feed_id: sFeedId,
+          reporter_id: reporterId || null,
+          reported_user_id: String(userId || '').trim() || null,
+          reason: String(reasonCode || 'other'),
+          reason_label: String(reasonLabel || reasonCode || '기타')
+        })
+      }).catch(function(postErr) {
+        console.warn('[romantic-sync.js:submitFeedReport post]', postErr);
+      });
+    }
+  } catch (e) {
+    console.warn('[romantic-sync.js:submitFeedReport]', e);
+  }
+
+  window.closeOpenUgcFeedModals({});
+  window.rerenderCommunityFeedsNow();
+  if (typeof showToast === 'function') {
+    showToast('신고가 접수되었습니다. 24시간 이내에 검토 및 조치됩니다.', 'success', 2800);
+  }
+};
+
+window.buildUgcSafetyButtonsHtml = function(feedId, userId, nickname, layout) {
+  var sFeedId = String(feedId || '').trim();
+  var sUserId = String(userId || '').trim();
+  var sNick = String(nickname || '').trim();
+  if (sUserId && window.isCurrentUserId(sUserId)) return '';
+  if (!sFeedId && !sUserId) return '';
+
+  var compact = layout === 'compact';
+  var btnBase = compact
+    ? 'background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.2); color:#ffffff; height:28px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0 9px;'
+    : 'background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; height:32px; padding:0 9px; font-size:0.64rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px;';
+
+  var reportBtn = sFeedId
+    ? '<button type="button" data-feed-id="' + okbmEscapeUgcAttr(sFeedId) + '" data-user-id="' + okbmEscapeUgcAttr(sUserId) + '" onclick="event.preventDefault(); event.stopPropagation(); window.openFeedReportModal(this.dataset.feedId, this.dataset.userId);" style="' + btnBase + ' color:#fda4af;" title="신고">신고</button>'
+    : '';
+  var blockBtn = sUserId
+    ? '<button type="button" data-user-id="' + okbmEscapeUgcAttr(sUserId) + '" data-author="' + okbmEscapeUgcAttr(sNick) + '" onclick="event.preventDefault(); event.stopPropagation(); window.blockCommunityUser(this.dataset.userId, this.dataset.author);" style="' + btnBase + ' color:#cbd5e1;" title="유저 차단">차단</button>'
+    : '';
+
+  if (!reportBtn && !blockBtn) return '';
+  return '<div class="ugc-safety-actions" style="display:inline-flex; align-items:center; gap:6px; flex-shrink:0;">' + reportBtn + blockBtn + '</div>';
+};
+
+window.renderBlockedUsersSettingsList = function() {
+  var wrap = document.getElementById('settingsBlockedUsersList');
+  var countEl = document.getElementById('settingsBlockedUsersCount');
+  if (!wrap) return;
+  var ids = window.getBlockedUserIds();
+  if (countEl) countEl.innerText = ids.length ? (ids.length + '명') : '없음';
+  if (ids.length === 0) {
+    wrap.innerHTML = '<div style="font-size:0.68rem; color:#64748b; padding:4px 0;">차단한 사용자가 없습니다.</div>';
+    return;
+  }
+  wrap.innerHTML = ids.map(function(id) {
+    var nick = window.resolveBlockedUserNickname(id);
+    var safeNick = okbmEscapeUgcAttr(nick);
+    var safeId = okbmEscapeUgcAttr(id);
+    var shortId = id.length > 18 ? (id.slice(0, 16) + '…') : id;
+    return '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.06);">' +
+      '<div style="min-width:0; flex:1;">' +
+        '<div style="font-size:0.78rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + safeNick + '</div>' +
+        '<div style="font-size:0.58rem; color:#64748b; font-family:var(--font-mono); margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + okbmEscapeUgcAttr(shortId) + '</div>' +
+      '</div>' +
+      '<button type="button" data-user-id="' + safeId + '" onclick="window.unblockCommunityUser(this.dataset.userId);" style="flex-shrink:0; height:30px; padding:0 10px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#e2e8f0; font-size:0.66rem; font-weight:800; cursor:pointer;">차단 해제</button>' +
+    '</div>';
+  }).join('');
+};
 
 // UtilitiesFormattedNow removed
 
@@ -185,7 +622,11 @@ async function loadUserDataFromCloud(userId) {
       var rows = await res.json();
       if (Array.isArray(rows) && rows.length > 0) {
         var row = rows[0];
-        return row.user_data || row.data || row;
+        var data = row.user_data || row.data || row;
+        if (typeof okbmRepairKnownOwnerProfile === 'function') {
+          data = okbmRepairKnownOwnerProfile(userId, data);
+        }
+        return data;
       }
     }
   } catch (e) { console.warn('[romantic-sync.js:loadUserDataFromCloud]', e); }
@@ -205,19 +646,10 @@ function isUserLoggedIn() {
   }
 
   var idStr = String(profile.id).trim();
-  if (!idStr.startsWith('kakao_')) {
-    idStr = 'kakao_' + idStr;
-    profile.id = idStr;
-    profile.isMember = true;
-    localStorage.setItem('user_profile', JSON.stringify(profile));
-    localStorage.setItem('user_profile_' + idStr, JSON.stringify(profile));
-    localStorage.setItem('okbm_user_id', idStr);
-  }
-
-  var hasValid = !!(profile.id && String(profile.id).startsWith('kakao_'));
+  var hasValid = window.okbmHasSocialUserId(idStr);
   if (typeof authState !== 'undefined') {
     authState.isLoggedIn = hasValid;
-    authState.userProfile = profile;
+    authState.userProfile = hasValid ? profile : null;
   }
   return hasValid;
 }
@@ -372,6 +804,7 @@ window.RomanticVault = window.RomanticVault || {
   },
 
   hydrateFromServer: async function(userId) {
+    if (window.__okbmAccountPurging) return null;
     if (!userId || this.isHydrating) return null;
     this.isHydrating = true;
     var hydrationStartTime = Date.now();
@@ -465,15 +898,13 @@ window.RomanticVault = window.RomanticVault || {
           var instaVal = String(cloudData.instagram || serverSns.instagram || '').trim();
           var ytVal = String(cloudData.youtube || serverSns.youtube || '').trim();
           var blogVal = String(cloudData.blog || serverSns.blog || '').trim();
+          if (!instaVal && String(userId || '').trim() === 'kakao_5060259862') instaVal = 'oklionnature';
 
           if (instaVal) localStorage.setItem('okbm_user_instagram', instaVal);
-          else localStorage.removeItem('okbm_user_instagram');
 
           if (ytVal) localStorage.setItem('okbm_user_youtube', ytVal);
-          else localStorage.removeItem('okbm_user_youtube');
 
           if (blogVal) localStorage.setItem('okbm_user_blog', blogVal);
-          else localStorage.removeItem('okbm_user_blog');
 
           var curSnsProf = safeGetJSON('user_profile_' + userId, null) || safeGetJSON('user_profile', null);
           if (curSnsProf) {
@@ -487,6 +918,9 @@ window.RomanticVault = window.RomanticVault || {
 
         var curP = safeGetJSON('user_profile_' + userId, null) || safeGetJSON('user_profile', null);
         if (curP) {
+          if (String(userId || '').trim() === 'kakao_5060259862' && String(cloudData.nickname || '').trim() === '김사자') {
+            cloudData.nickname = '오라네';
+          }
           if (cloudData.nickname && cloudData.nickname !== '낭만백패커') {
             curP.nickname = cloudData.nickname;
             localStorage.setItem('okbm_user_nick', cloudData.nickname);
@@ -1126,10 +1560,14 @@ window.renderUserProfileHeaderSection = function(config) {
         '<span>관심피드</span>' +
       '</button>' +
     '</div>';
+  } else if (targetUserId && !(typeof window.isCurrentUserId === 'function' && window.isCurrentUserId(targetUserId))) {
+    actionGridHtml = '<div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">' +
+      '<button type="button" data-user-id="' + _escapeReportPropHtml(targetUserId) + '" data-author="' + _escapeReportPropHtml(targetAuthor) + '" onclick="window.blockCommunityUser(this.dataset.userId, this.dataset.author);" style="width:100%; height:36px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#fda4af; font-size:0.74rem; font-weight:800; cursor:pointer;">유저 차단</button>' +
+    '</div>';
   }
 
-  var cardPaddingBottom = isOwner ? '14px' : '16px';
-  var cardGap = isOwner ? '12px' : '0px';
+  var cardPaddingBottom = actionGridHtml ? '14px' : '16px';
+  var cardGap = actionGridHtml ? '12px' : '0px';
 
   return '<div class="unified-user-profile-header-card" style="flex-shrink:0; width:100%; background:#000000; border-bottom:1px solid rgba(255,255,255,0.08); padding:16px 16px ' + cardPaddingBottom + ' 16px; box-sizing:border-box; z-index:50; display:flex; flex-direction:column; gap:' + cardGap + ';">' +
     '<div style="display:flex; justify-content:space-between; align-items:center; gap:16px;">' +
@@ -1428,24 +1866,37 @@ function ensureMyReportAndAuthModalsInDOM() {
   var container = document.createElement('div');
   container.id = 'romanticAuthDomBundle';
   container.innerHTML = `
-    <!-- 1. 카카오 1초 간편 로그인 모달 (제8헌법 터치 44px 및 매트블랙 규격) -->
-    <div class="custom-modal-overlay" id="loginModalOverlay" onclick="if(event.target===this) closeLoginModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:stretch; width:100%; height:100%; overscroll-behavior:none !important; padding:0; overflow:hidden;">
-      <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; position:relative;">
-        <div style="flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:calc(20px + env(safe-area-inset-top, 0px)) 16px calc(76px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:14px; text-align:center; box-sizing:border-box;">
-          <div style="width:54px; height:54px; border-radius:50%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; color:#e2e8f0;">
-            <svg viewBox="0 0 24 24" style="width:26px; height:26px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
+   <!-- 1. 소셜 로그인 모달 (Apple / 카카오 / 네이버 / Google) -->
+    <div class="custom-modal-overlay" id="loginModalOverlay" onclick="if(event.target===this) closeLoginModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:center; width:100%; height:100%; overscroll-behavior:none !important; padding:0; overflow:hidden;">
+      <div style="width:100%; max-width:320px; margin:0 auto; display:flex; flex-direction:column; justify-content:center; align-items:center; box-sizing:border-box; position:relative; padding:0 16px; transform:translateY(-20%); -webkit-transform:translateY(-20%);">
+        <div style="width:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px; text-align:center; box-sizing:border-box;">
+          <div style="width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; color:#e2e8f0;">
+            <svg viewBox="0 0 24 24" style="width:20px; height:20px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
           </div>
           <div>
-            <h3 style="color:#ffffff; font-size:1.15rem; font-weight:900; letter-spacing:-0.02em;">낭만루트 로그인</h3>
-            <p style="font-size:0.78rem; color:#94a3b8; line-height:1.55; margin-top:6px;">
-              로그인 시 나만의 아웃도어 패킹 기록, 장비 세팅,<br>그리고 소중한 박지 비밀 메모가 클라우드에 안전하게 보존됩니다.
+            <h3 style="color:#ffffff; font-size:1.02rem; font-weight:900; letter-spacing:-0.02em; margin:0;">낭만루트 로그인</h3>
+            <p style="font-size:0.72rem; color:#94a3b8; line-height:1.4; margin-top:5px; margin-bottom:0; word-break:keep-all;">
+              로그인후 낭만루트의 모든 기능을 이용하실수 있습니다.
             </p>
           </div>
-          <div style="width:100%; max-width:320px; display:flex; flex-direction:column; gap:10px; margin-top:8px;">
-            <button type="button" class="modal-btn btn-social-kakao" style="width:100%; height:46px; min-height:44px; font-size:0.86rem; font-weight:900; border-radius:10px; background:#fee500; color:#191919; border:none; cursor:pointer;" onclick="loginWithKakao()">
-              카카오 1초 간편 로그인
+          <div style="width:100%; display:flex; flex-direction:column; gap:7px; margin-top:6px;">
+            <button type="button" class="modal-btn btn-social-apple" onclick="loginWithApple()" style="width:100%; height:34px !important; min-height:34px !important; border-radius:8px !important; font-size:0.76rem !important; font-weight:800 !important; padding:0 10px !important; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; background:#ffffff; color:#000000; border:none;">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="#000000" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.422 2.198-1.164 3.01-.85.93-2.02 1.552-3.215 1.462-.146-1.09.41-2.247 1.154-3.11C14.03 1.79 15.27 1.16 16.365 1.43zM20.52 17.39c-.55 1.275-.81 1.84-1.52 2.97-1.01 1.57-2.43 3.52-4.18 3.535-1.555.02-1.96-1.01-4.08-.995-2.12.015-2.57 1.02-4.125.995-1.75-.02-3.09-1.78-4.1-3.35C.74 17.06.27 12.2 2.05 9.42c1.23-1.95 3.17-3.09 5.01-3.09 1.87 0 3.045 1.02 4.595 1.02 1.51 0 2.43-1.03 4.6-1.03 1.64 0 3.37.89 4.6 2.43-4.04 2.22-3.39 8.01.665 8.64z"/></svg>
+              <span>Apple로 계속하기</span>
             </button>
-            <button type="button" class="modal-btn" style="width:100%; height:44px; min-height:44px; background:rgba(255,255,255,0.06); color:#cbd5e1; font-weight:800; font-size:0.78rem; border-radius:10px; border:none; cursor:pointer;" onclick="closeLoginModal()">
+            <button type="button" class="modal-btn btn-social-kakao" onclick="loginWithKakao()" style="width:100%; height:34px !important; min-height:34px !important; border-radius:8px !important; font-size:0.76rem !important; font-weight:800 !important; padding:0 10px !important; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; background:#fee500; color:#191919; border:none;">
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="#191919" d="M12 4C6.48 4 2 7.58 2 12.02c0 2.9 1.94 5.45 4.84 6.9-.15.56-.54 2.03-.62 2.35-.09.33.12.46.38.27.16-.07 2.55-1.73 3.58-2.44.6.09 1.21.13 1.82.13 5.52 0 10-3.58 10-8.02C22 7.58 17.52 4 12 4z"/></svg>
+              <span>카카오 1초 간편 로그인</span>
+            </button>
+            <button type="button" class="modal-btn btn-social-naver" onclick="loginWithNaver()" style="width:100%; height:34px !important; min-height:34px !important; border-radius:8px !important; font-size:0.76rem !important; font-weight:800 !important; padding:0 10px !important; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; background:#03c75a; color:#ffffff; border:none;">
+              <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path fill="#ffffff" d="M15.5 4v8.35L8.55 4H4v16h4.5v-8.35L15.45 20H20V4h-4.5z"/></svg>
+              <span>네이버로 시작하기</span>
+            </button>
+            <button type="button" class="modal-btn btn-social-google" onclick="loginWithGoogle()" style="width:100%; height:34px !important; min-height:34px !important; border-radius:8px !important; font-size:0.76rem !important; font-weight:800 !important; padding:0 10px !important; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; background:#ffffff; color:#1f2937; border:1px solid rgba(255,255,255,0.2);">
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+              <span>Google로 계속하기</span>
+            </button>
+            <button type="button" class="modal-btn" style="width:100%; height:34px; min-height:34px; background:rgba(255,255,255,0.06); color:#cbd5e1; font-weight:800; font-size:0.72rem; border-radius:8px; border:none; cursor:pointer;" onclick="closeLoginModal()">
               닫기
             </button>
           </div>
@@ -1680,8 +2131,22 @@ function ensureMyReportAndAuthModalsInDOM() {
             <span id="settingsModalJoinDate" style="color:#e2e8f0; font-family:var(--font-mono); font-size:0.80rem; font-weight:800;">2026.01.01</span>
           </div>
 
+          <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <span style="color:#ffffff; font-size:0.78rem; font-weight:900;">차단한 사용자 관리</span>
+                <p style="color:#64748b; font-size:0.62rem; margin-top:2px;">차단된 사용자의 피드는 커뮤니티에 표시되지 않습니다.</p>
+              </div>
+              <span id="settingsBlockedUsersCount" style="font-size:0.66rem; color:#94a3b8; font-weight:800; background:rgba(255,255,255,0.06); padding:3px 8px; border-radius:8px;">없음</span>
+            </div>
+            <div id="settingsBlockedUsersList" style="display:flex; flex-direction:column;"></div>
+          </div>
+
           <button type="button" class="modal-btn" style="background:rgba(244,63,94,0.15); border:1px solid #f43f5e; color:#fda4af; font-weight:800; height:42px; border-radius:10px; margin-top:6px; font-size:0.82rem; cursor:pointer;" onclick="document.getElementById('userAccountSettingsModal').style.display='none'; closeUserProfileModal(); logoutUser();">
             로그아웃
+          </button>
+          <button type="button" id="settingsModalDeleteAccountBtn" class="modal-btn" style="background:transparent; border:1px solid rgba(251,113,133,0.42); color:#fb7185; font-weight:800; height:42px; border-radius:10px; margin-top:2px; font-size:0.82rem; cursor:pointer;" onclick="if(typeof window.confirmUserAccountDeletion==='function'){ window.confirmUserAccountDeletion(); }">
+            회원 탈퇴
           </button>
         </div>
         <div></div>
@@ -3661,6 +4126,10 @@ window.openAccountSettingsModal = function() {
   var noticeEl = document.getElementById('settingsModalCooldownNotice');
   var submitBtn = modal.querySelector('button[onclick="saveNicknameFromSettingsModal()"]');
   var authActionBtn = document.getElementById('settingsModalAuthActionBtn');
+  var deleteAccountBtn = document.getElementById('settingsModalDeleteAccountBtn');
+  if (deleteAccountBtn) {
+    deleteAccountBtn.style.display = isLogged ? '' : 'none';
+  }
 
   if (authActionBtn) {
     if (isLogged) {
@@ -3674,10 +4143,10 @@ window.openAccountSettingsModal = function() {
         logoutUser();
       };
     } else {
-      authActionBtn.style.background = '#fee500';
+      authActionBtn.style.background = '#ffffff';
       authActionBtn.style.border = 'none';
-      authActionBtn.style.color = '#191919';
-      authActionBtn.innerText = '카카오 1초 간편 로그인';
+      authActionBtn.style.color = '#111827';
+      authActionBtn.innerText = '소셜 로그인';
       authActionBtn.onclick = function() {
         modal.style.display = 'none';
         openLoginModal();
@@ -3720,16 +4189,20 @@ window.openAccountSettingsModal = function() {
     }
   }
 
+  if (typeof window.renderBlockedUsersSettingsList === 'function') {
+    window.renderBlockedUsersSettingsList();
+  }
+
   modal.style.display = 'flex';
 };
 
-window.saveNicknameFromSettingsModal = function() {
+window.saveNicknameFromSettingsModal = async function() {
   var input = document.getElementById('settingsModalNicknameInput');
   if (!input || !input.value.trim()) {
     showToast('새 닉네임을 입력해주세요.', 'warn');
     return;
   }
-  var clean = input.value.trim();
+  var clean = okbmNormalizeNickname(input.value);
 
   var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : { isMember: true });
   var COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000;
@@ -3744,8 +4217,22 @@ window.saveNicknameFromSettingsModal = function() {
     return;
   }
 
-  if (profile && profile.nickname === clean) {
+  if (profile && okbmNormalizeNickname(profile.nickname) === clean) {
     showToast('현재 사용 중인 닉네임과 동일합니다.', 'info');
+    return;
+  }
+
+  try {
+    var taken = await okbmIsNicknameTaken(clean, profile && profile.id);
+    if (taken) {
+      triggerHaptic(20);
+      showToast('이미 사용 중인 닉네임입니다.', 'warn');
+      return;
+    }
+  } catch (dupErr) {
+    console.warn('[saveNicknameFromSettingsModal dup]', dupErr);
+    triggerHaptic(20);
+    showToast('닉네임 확인에 실패했습니다. 다시 시도해주세요.', 'warn');
     return;
   }
 
@@ -3812,6 +4299,9 @@ function logoutUser() {
       Kakao.Auth.logout(function() {});
     } catch (e) { console.warn('[romantic-sync.js:logoutUser kakao]', e); }
   }
+  if (window.supabaseClient && window.supabaseClient.auth && typeof window.supabaseClient.auth.signOut === 'function') {
+    try { window.supabaseClient.auth.signOut(); } catch (e) { console.warn('[romantic-sync.js:logoutUser supabase]', e); }
+  }
 
   localStorage.removeItem('user_auth_token');
   localStorage.removeItem('user_profile');
@@ -3875,7 +4365,15 @@ function logoutUser() {
   }
 
   var doReload = function() {
-    window.location.reload();
+    var go = function() { window.location.reload(); };
+    if (window.supabaseClient && window.supabaseClient.auth && typeof window.supabaseClient.auth.signOut === 'function') {
+      Promise.race([
+        window.supabaseClient.auth.signOut().catch(function() {}),
+        new Promise(function(resolve) { setTimeout(resolve, 1200); })
+      ]).finally(go);
+    } else {
+      go();
+    }
   };
 
   if (window.__pendingLikeRequests && window.__pendingLikeRequests.size > 0) {
@@ -3891,7 +4389,736 @@ function logoutUser() {
 }
 window.logoutUser = logoutUser;
 
-// 8. 카카오 로그인 및 클라우드 데이터 동기화
+window.confirmUserAccountDeletion = async function() {
+  triggerHaptic(12);
+
+  if (!confirm('정말 탈퇴하시겠습니까? 작성한 모든 피드와 활동 기록, 개인 세팅이 영구 삭제되며 복구할 수 없습니다.')) {
+    return;
+  }
+
+  var profile = safeGetJSON('user_profile', null) || (typeof authState !== 'undefined' ? authState.userProfile : null);
+  var userId = (profile && profile.id)
+    ? String(profile.id).trim()
+    : String(localStorage.getItem('okbm_user_id') || '').trim();
+
+  if (!userId) {
+    showToast('로그인된 계정을 확인할 수 없습니다.', 'warn');
+    return;
+  }
+
+  triggerHaptic(20);
+
+  var deleteBtn = document.getElementById('settingsModalDeleteAccountBtn');
+  var restoreDeleteBtn = function() {
+    if (!deleteBtn) return;
+    deleteBtn.disabled = false;
+    deleteBtn.style.opacity = '1';
+    deleteBtn.style.pointerEvents = '';
+    deleteBtn.innerText = '회원 탈퇴';
+  };
+  if (deleteBtn) {
+    deleteBtn.disabled = true;
+    deleteBtn.style.opacity = '0.55';
+    deleteBtn.style.pointerEvents = 'none';
+    deleteBtn.innerText = '탈퇴 처리 중...';
+  }
+
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  if (!targetUrl || !targetKey) {
+    restoreDeleteBtn();
+    showToast('서버 설정이 없어 탈퇴를 완료할 수 없습니다.', 'error', 2800);
+    return;
+  }
+
+  window.__okbmAccountPurging = true;
+
+  var accountIds = [];
+  var pushAccountId = function(id) {
+    var s = String(id || '').trim();
+    if (!s || accountIds.indexOf(s) !== -1) return;
+    accountIds.push(s);
+  };
+  pushAccountId(userId);
+  var numericId = userId.replace(/^(kakao_|naver_|apple_|google_)/, '');
+  pushAccountId(numericId);
+  if (userId.indexOf('kakao_') === 0 && numericId) pushAccountId('kakao_' + numericId);
+
+  var jsonHeaders = {
+    'apikey': targetKey,
+    'Authorization': 'Bearer ' + targetKey,
+    'Content-Type': 'application/json'
+  };
+
+  var restJson = async function(pathWithQuery, options) {
+    var res = await fetch(targetUrl + '/rest/v1/' + pathWithQuery, options);
+    var text = '';
+    try { text = await res.text(); } catch (e) {}
+    var data = null;
+    if (text) {
+      try { data = JSON.parse(text); } catch (e) { data = text; }
+    }
+    return { ok: res.ok, status: res.status, data: data, text: text };
+  };
+
+  var deleteByColumn = async function(table, column, ids) {
+    var last = { ok: true, status: 200, data: [], text: '' };
+    for (var i = 0; i < ids.length; i++) {
+      last = await restJson(table + '?' + column + '=eq.' + encodeURIComponent(ids[i]), {
+        method: 'DELETE',
+        headers: Object.assign({}, jsonHeaders, { Prefer: 'return=representation' })
+      });
+      if (last.status === 404 || last.status === 405) return last;
+      if (!last.ok) return last;
+    }
+    return last;
+  };
+
+  var countByColumn = async function(table, column, ids) {
+    var total = 0;
+    for (var i = 0; i < ids.length; i++) {
+      var counted = await restJson(table + '?' + column + '=eq.' + encodeURIComponent(ids[i]) + '&select=id', {
+        method: 'GET',
+        headers: jsonHeaders
+      });
+      if (counted.status === 404) return 0;
+      if (Array.isArray(counted.data)) total += counted.data.length;
+    }
+    return total;
+  };
+
+  var wipeUserRow = async function(id) {
+    var emptyUser = {
+      nickname: '',
+      bio: '',
+      hero_cover_url: '',
+      photo_url: '',
+      bookmarks: [],
+      visited: [],
+      memos: {},
+      saved_feeds: [],
+      following: [],
+      my_gears: {},
+      last_nickname_changed_at: 0,
+      updated_at: new Date().toISOString()
+    };
+    var patched = await restJson('users?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH',
+      headers: Object.assign({}, jsonHeaders, { Prefer: 'return=representation' }),
+      body: JSON.stringify(emptyUser)
+    });
+    if (!patched.ok && patched.status !== 404) {
+      console.error('[confirmUserAccountDeletion] users PATCH 실패 status=' + patched.status, patched.text);
+    }
+    return deleteByColumn('users', 'id', [id]);
+  };
+
+  var failDeletion = function(message) {
+    window.__okbmAccountPurging = false;
+    restoreDeleteBtn();
+    showToast(message || '서버 데이터 삭제 중 오류가 발생했습니다. 네트워크를 확인한 뒤 다시 시도해주세요.', 'error', 3200);
+  };
+
+  try {
+    await deleteByColumn('feed_likes', 'user_id', accountIds);
+    var feedsDel = await deleteByColumn('feeds', 'user_id', accountIds);
+    if (!feedsDel.ok && feedsDel.status !== 404) {
+      failDeletion('피드 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+    await deleteByColumn('proposals', 'user_id', accountIds);
+    await deleteByColumn('spot_corrections', 'user_id', accountIds);
+    await deleteByColumn('trips', 'user_id', accountIds);
+
+    for (var u = 0; u < accountIds.length; u++) {
+      await wipeUserRow(accountIds[u]);
+    }
+
+    var leftoverFeeds = await countByColumn('feeds', 'user_id', accountIds);
+    if (leftoverFeeds > 0) {
+      failDeletion('피드가 서버에서 아직 남아 있어 탈퇴를 완료하지 못했습니다.');
+      return;
+    }
+
+    var leftoverUsers = 0;
+    for (var v = 0; v < accountIds.length; v++) {
+      var userCheck = await restJson('users?id=eq.' + encodeURIComponent(accountIds[v]) + '&select=id,nickname,bookmarks,saved_feeds,following,my_gears', {
+        method: 'GET',
+        headers: jsonHeaders
+      });
+      if (!Array.isArray(userCheck.data) || !userCheck.data.length) continue;
+      leftoverUsers += 1;
+      var row = userCheck.data[0] || {};
+      var gears = row.my_gears && typeof row.my_gears === 'object' ? row.my_gears : {};
+      var hasMyList = Boolean(String(row.nickname || '').trim()) ||
+        (Array.isArray(row.bookmarks) && row.bookmarks.length > 0) ||
+        (Array.isArray(row.saved_feeds) && row.saved_feeds.length > 0) ||
+        (Array.isArray(row.following) && row.following.length > 0) ||
+        Object.keys(gears).length > 0;
+      if (hasMyList) {
+        failDeletion('계정/마이목록이 서버에서 아직 남아 있어 탈퇴를 완료하지 못했습니다.');
+        return;
+      }
+    }
+    if (leftoverUsers > 0) {
+      console.warn('[confirmUserAccountDeletion] users 행은 RLS로 남았지만 마이목록은 비웠습니다.');
+    }
+  } catch (cloudErr) {
+    console.error('[confirmUserAccountDeletion] 클라우드 삭제 예외:', cloudErr);
+    failDeletion();
+    return;
+  }
+
+  await new Promise(function(resolve) {
+    var settled = false;
+    var done = function() {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+    setTimeout(done, 1800);
+
+    try {
+      if (typeof Kakao !== 'undefined' && Kakao.API && typeof Kakao.API.request === 'function') {
+        Kakao.API.request({
+          url: '/v1/user/unlink',
+          success: function() {
+            try {
+              if (Kakao.Auth && typeof Kakao.Auth.logout === 'function') {
+                Kakao.Auth.logout(done);
+                return;
+              }
+            } catch (unlinkLogoutErr) {
+              console.warn('[romantic-sync.js:confirmUserAccountDeletion kakao logout]', unlinkLogoutErr);
+            }
+            done();
+          },
+          fail: function() {
+            try {
+              if (Kakao.Auth && typeof Kakao.Auth.logout === 'function') {
+                Kakao.Auth.logout(done);
+                return;
+              }
+            } catch (failLogoutErr) {
+              console.warn('[romantic-sync.js:confirmUserAccountDeletion kakao logout]', failLogoutErr);
+            }
+            done();
+          }
+        });
+      } else if (typeof Kakao !== 'undefined' && Kakao.Auth && typeof Kakao.Auth.logout === 'function') {
+        Kakao.Auth.logout(done);
+      } else {
+        done();
+      }
+    } catch (kakaoErr) {
+      console.warn('[romantic-sync.js:confirmUserAccountDeletion kakao]', kakaoErr);
+      done();
+    }
+  });
+
+  var keepLocalKeys = {
+    okbm_spots_cache: true,
+    okbm_master_spots: true,
+    okbm_master_gears: true,
+    okbm_master_gears_cache: true,
+    okbm_gear_version: true,
+    okbm_client_epoch: true
+  };
+  try {
+    Object.keys(localStorage).forEach(function(k) {
+      if (!keepLocalKeys[k]) {
+        localStorage.removeItem(k);
+      }
+    });
+  } catch (lsErr) {
+    console.warn('[romantic-sync.js:confirmUserAccountDeletion localStorage]', lsErr);
+  }
+
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      Object.keys(sessionStorage).forEach(function(k) {
+        if (k.indexOf('okbm_') === 0 || k.indexOf('user_') === 0 || k.indexOf('kakao_') === 0) {
+          sessionStorage.removeItem(k);
+        }
+      });
+    }
+  } catch (ssErr) {
+    console.warn('[romantic-sync.js:confirmUserAccountDeletion sessionStorage]', ssErr);
+  }
+
+  if (typeof authState !== 'undefined') {
+    authState.isLoggedIn = false;
+    authState.userProfile = null;
+  }
+
+  window.__memoryStore = {};
+  window.isCloudDataLoaded = false;
+  if (typeof window.userBookmarks !== 'undefined') window.userBookmarks = new Set();
+  if (typeof window.userVisited !== 'undefined') window.userVisited = new Set();
+  if (typeof window.userMemos !== 'undefined') window.userMemos = {};
+  window.selectedGearMap = {};
+  window.favoriteGearSet = new Set();
+  window.packedCheckSet = new Set();
+  window.interactiveHistory = [];
+  window.packingHistoryList = [];
+  window.currentShareRecord = null;
+  window.currentShareItems = [];
+  window.__allLoadedFeeds = [];
+  window.heroTopRecords = [];
+
+  var modals = [
+    'loginModalOverlay', 'userProfileModalOverlay', 'myReportModal', 'clearMapModal',
+    'pastTripsListModal', 'singleTripFeedModal', 'romanticPlanModal', 'romanticHistoryModal',
+    'userAccountSettingsModal'
+  ];
+  modals.forEach(function(mId) {
+    var el = document.getElementById(mId);
+    if (el) {
+      if (mId === 'userAccountSettingsModal') {
+        el.style.display = 'none';
+      } else {
+        el.remove();
+      }
+    }
+  });
+
+  if (typeof showToast === 'function') {
+    showToast('계정이 안전하게 영구 삭제되었습니다.', 'success', 1600);
+  }
+
+  setTimeout(function() {
+    window.location.reload();
+  }, 400);
+};
+
+// 8. 4대 소셜 로그인 및 이메일 기반 계정 통합
+function okbmMarkSocialButtonsBusy(busy, message, activeClass) {
+  var buttons = document.querySelectorAll('.btn-social-apple, .btn-social-kakao, .btn-social-naver, .btn-social-google');
+  buttons.forEach(function(btn) {
+    if (busy) {
+      if (!btn.getAttribute('data-okbm-html')) btn.setAttribute('data-okbm-html', btn.innerHTML);
+      btn.style.pointerEvents = 'none';
+      btn.style.opacity = '0.75';
+      if (message && (!activeClass || btn.classList.contains(activeClass))) {
+        btn.innerHTML = '<span>' + message + '</span>';
+      }
+    } else {
+      btn.style.pointerEvents = 'auto';
+      btn.style.opacity = '1';
+      var html = btn.getAttribute('data-okbm-html');
+      if (html) btn.innerHTML = html;
+    }
+  });
+}
+
+function okbmPurgeLocalSessionData() {
+  try { localStorage.removeItem('user_profile'); } catch (e) {}
+  var purgeKeys = [
+    'okbm_bookmarks', 'okbm_visited', 'okbm_memos',
+    'okbm_plan_memos', 'okbm_plan_spots', 'okbm_packing_history',
+    'okbm_selected_gears_multi', 'okbm_favorite_gears',
+    'okbm_custom_gears', 'okbm_gear_presets', 'okbm_gear_meta',
+    'okbm_trip_consumables', 'okbm_packed_checks', 'okbm_phone_photos_map',
+    'okbm_trip_photos_map', 'okbm_user_instagram', 'okbm_cached_community_feeds',
+    'okbm_hero_cover_url', 'okbm_my_proposals', 'okbm_saved_feeds', 'okbm_following_users'
+  ];
+  purgeKeys.forEach(function(k) {
+    try { localStorage.removeItem(k); } catch (e) {}
+  });
+  window.__memoryStore = {};
+  window.packingHistoryList = [];
+  window.interactiveHistory = [];
+}
+
+function okbmSocialUserSelect() {
+  return 'id,nickname,email,photo_url,hero_cover_url,bookmarks,my_gears,last_nickname_changed_at';
+}
+
+function okbmReadSnsFromUserRow(row) {
+  var mg = row && row.my_gears && typeof row.my_gears === 'object' ? row.my_gears : {};
+  var sns = mg.sns && typeof mg.sns === 'object' ? mg.sns : {};
+  return {
+    instagram: String(sns.instagram || row && row.instagram || '').trim(),
+    youtube: String(sns.youtube || row && row.youtube || '').trim(),
+    blog: String(sns.blog || row && row.blog || '').trim()
+  };
+}
+
+function okbmRepairKnownOwnerProfile(userId, row) {
+  if (!row || String(userId || '').trim() !== 'kakao_5060259862') return row;
+  var sns = okbmReadSnsFromUserRow(row);
+  if (!sns.instagram) {
+    var mg = row.my_gears && typeof row.my_gears === 'object' ? row.my_gears : {};
+    mg.sns = {
+      instagram: 'oklionnature',
+      youtube: sns.youtube || '',
+      blog: sns.blog || ''
+    };
+    row.my_gears = mg;
+    if (String(row.nickname || '').trim() === '김사자') row.nickname = '오라네';
+  }
+  return row;
+}
+
+async function okbmFetchUserRow(query) {
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  if (!targetUrl || !targetKey || !query) return null;
+  try {
+    var res = await fetch(targetUrl + '/rest/v1/users?' + query + '&select=' + okbmSocialUserSelect(), {
+      method: 'GET',
+      headers: {
+        'apikey': targetKey,
+        'Authorization': 'Bearer ' + targetKey,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!res.ok) return null;
+    var rows = await res.json();
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    return okbmRepairKnownOwnerProfile(rows[0].id, rows[0]);
+  } catch (e) {
+    console.warn('[okbmFetchUserRow]', e);
+    return null;
+  }
+}
+
+async function okbmFindUserById(userId) {
+  var id = String(userId || '').trim();
+  if (!id) return null;
+  return okbmFetchUserRow('id=eq.' + encodeURIComponent(id));
+}
+
+async function okbmFindUserByEmail(email) {
+  var normalized = window.okbmNormalizeEmail(email);
+  if (!normalized) return null;
+  return okbmFetchUserRow('email=eq.' + encodeURIComponent(normalized));
+}
+
+function okbmNormalizeNickname(nick) {
+  return String(nick || '').replace(/\s+/g, ' ').trim();
+}
+
+function okbmEscapeIlikeExact(value) {
+  return String(value || '').replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
+}
+
+function okbmRandomNickSuffix() {
+  return String(1000 + Math.floor(Math.random() * 9000));
+}
+
+async function okbmLookupNicknameOwners(nickname, excludeUserId) {
+  var nick = okbmNormalizeNickname(nickname);
+  if (!nick) return [];
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  if (!targetUrl || !targetKey) throw new Error('nickname lookup unavailable');
+  var filter = 'nickname=ilike.' + encodeURIComponent(okbmEscapeIlikeExact(nick));
+  var exclude = String(excludeUserId || '').trim();
+  if (exclude) filter += '&id=neq.' + encodeURIComponent(exclude);
+  var res = await fetch(targetUrl + '/rest/v1/users?' + filter + '&select=id,nickname&limit=1', {
+    method: 'GET',
+    headers: {
+      'apikey': targetKey,
+      'Authorization': 'Bearer ' + targetKey,
+      'Content-Type': 'application/json'
+    }
+  });
+  if (!res.ok) throw new Error('nickname lookup ' + res.status);
+  var rows = await res.json();
+  return Array.isArray(rows) ? rows : [];
+}
+
+async function okbmIsNicknameTaken(nickname, excludeUserId) {
+  var rows = await okbmLookupNicknameOwners(nickname, excludeUserId);
+  return rows.length > 0;
+}
+
+async function okbmResolveUniqueNickname(desired, excludeUserId) {
+  var base = okbmNormalizeNickname(desired) || '낭만백패커';
+  try {
+    if (!(await okbmIsNicknameTaken(base, excludeUserId))) return base;
+    var n;
+    for (n = 0; n < 10; n++) {
+      var candidate = base + okbmRandomNickSuffix();
+      if (!(await okbmIsNicknameTaken(candidate, excludeUserId))) return candidate;
+    }
+    return '낭만백패커' + okbmRandomNickSuffix();
+  } catch (e) {
+    console.warn('[okbmResolveUniqueNickname]', e);
+    return base + okbmRandomNickSuffix();
+  }
+}
+
+async function okbmPatchUserEmail(userId, email) {
+  var normalized = window.okbmNormalizeEmail(email);
+  if (!userId || !normalized) return false;
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  if (!targetUrl || !targetKey) return false;
+  try {
+    var res = await fetch(targetUrl + '/rest/v1/users?id=eq.' + encodeURIComponent(userId), {
+      method: 'PATCH',
+      headers: {
+        'apikey': targetKey,
+        'Authorization': 'Bearer ' + targetKey,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ email: normalized, updated_at: new Date().toISOString() })
+    });
+    return res.ok;
+  } catch (e) {
+    return false;
+  }
+}
+
+function okbmOAuthRedirectTo() {
+  var protocol = window.location.protocol || 'http:';
+  var hostname = window.location.hostname || '127.0.0.1';
+  var port = String(window.location.port || '');
+  if (!port && protocol === 'http:' && (hostname === '127.0.0.1' || hostname === 'localhost')) {
+    port = '5500';
+  }
+  var host = port ? (hostname + ':' + port) : hostname;
+  var path = String(window.location.pathname || '/').split('?')[0].split('#')[0] || '/';
+  var redirect = protocol + '//' + host + path;
+  try { sessionStorage.setItem('okbm_oauth_redirect', redirect); } catch (e) {}
+  console.log('[OAuth redirectTo]', redirect);
+  return redirect;
+}
+
+async function okbmStartSupabaseOAuth(provider, activeClass, busyMessage) {
+  triggerHaptic(12);
+  if (!window.supabaseClient || !window.supabaseClient.auth || typeof window.supabaseClient.auth.signInWithOAuth !== 'function') {
+    okbmMarkSocialButtonsBusy(false);
+    if (typeof showToast === 'function') showToast('로그인 서버에 연결할 수 없습니다.', 'warn');
+    return;
+  }
+  var redirectTo = okbmOAuthRedirectTo();
+  okbmMarkSocialButtonsBusy(true, busyMessage, activeClass);
+  try {
+    var res = await window.supabaseClient.auth.signInWithOAuth({
+      provider: provider,
+      options: {
+        redirectTo: redirectTo,
+        skipBrowserRedirect: true
+      }
+    });
+    if (res && res.error) throw res.error;
+    var url = res && res.data && res.data.url;
+    if (!url) throw new Error('oauth url missing');
+    try {
+      var parsed = new URL(url);
+      parsed.searchParams.set('redirect_to', redirectTo);
+      url = parsed.toString();
+    } catch (e) {}
+    console.log('[OAuth authorize]', url);
+    window.location.assign(url);
+  } catch (err) {
+    console.warn('[Supabase OAuth ' + provider + ']', err);
+    okbmMarkSocialButtonsBusy(false);
+    if (typeof showToast === 'function') showToast('로그인을 시작하지 못했습니다.', 'warn');
+  }
+}
+
+function okbmShouldSkipOAuthBootstrap(session) {
+  if (!session || !session.user) return true;
+  var token = String(session.access_token || '').trim();
+  if (token && localStorage.getItem('user_auth_token') === token) return true;
+  var profile = safeGetJSON('user_profile', null);
+  if (!profile || !profile.id) return false;
+  if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) return false;
+  var sessionEmail = window.okbmNormalizeEmail(session.user.email || '');
+  var profileEmail = window.okbmNormalizeEmail(profile.email || localStorage.getItem('okbm_user_email') || '');
+  if (sessionEmail && profileEmail && sessionEmail === profileEmail) {
+    if (token) localStorage.setItem('user_auth_token', token);
+    return true;
+  }
+  return false;
+}
+
+async function okbmConsumeSupabaseOAuthSession(session) {
+  if (!session || !session.user) return;
+  var user = session.user;
+  var meta = user.app_metadata || {};
+  var identities = Array.isArray(user.identities) ? user.identities : [];
+  var provider = String(meta.provider || '').toLowerCase();
+  if (!provider && identities.length) {
+    provider = String(identities[0].provider || '').toLowerCase();
+  }
+  if (provider !== 'google' && provider !== 'apple') return;
+  if (okbmShouldSkipOAuthBootstrap(session)) return;
+  if (window.__okbmOAuthBootstrapping) return;
+  window.__okbmOAuthBootstrapping = true;
+
+  var identity = null;
+  for (var i = 0; i < identities.length; i++) {
+    if (String(identities[i].provider || '').toLowerCase() === provider) {
+      identity = identities[i];
+      break;
+    }
+  }
+  if (!identity && identities.length) identity = identities[0];
+  var providerId = '';
+  if (identity) providerId = String(identity.id || identity.identity_id || '').trim();
+  if (!providerId) providerId = String(user.id || '').trim();
+  var um = user.user_metadata || {};
+  var nick = String(um.full_name || um.name || um.nickname || '').trim();
+  var photo = String(um.avatar_url || um.picture || '').trim();
+  var email = String(user.email || um.email || '').trim();
+  try {
+    await handleSocialLoginSuccess(provider, providerId, email, nick, photo, session.access_token);
+  } catch (e) {
+    window.__okbmOAuthBootstrapping = false;
+    console.warn('[okbmConsumeSupabaseOAuthSession]', e);
+    okbmMarkSocialButtonsBusy(false);
+  }
+}
+
+function okbmInitSupabaseOAuthBridge() {
+  var client = window.supabaseClient;
+  if (!client || !client.auth) return;
+  if (typeof client.auth.getSession === 'function') {
+    client.auth.getSession().then(function(res) {
+      var session = res && res.data ? res.data.session : null;
+      okbmConsumeSupabaseOAuthSession(session);
+    }).catch(function(e) {
+      console.warn('[okbmInitSupabaseOAuthBridge getSession]', e);
+    });
+  }
+  if (typeof client.auth.onAuthStateChange === 'function') {
+    client.auth.onAuthStateChange(function(event, session) {
+      if (event === 'SIGNED_IN') okbmConsumeSupabaseOAuthSession(session);
+    });
+  }
+}
+
+async function handleSocialLoginSuccess(provider, providerId, email, nickname, photoUrl, authToken) {
+  provider = String(provider || '').trim().toLowerCase();
+  providerId = String(providerId || '').trim();
+  if (!provider || !providerId) {
+    okbmMarkSocialButtonsBusy(false);
+    if (typeof showToast === 'function') showToast('로그인 정보를 확인하지 못했습니다.', 'warn');
+    return;
+  }
+
+  var normalizedEmail = window.okbmNormalizeEmail(email);
+  var providerScopedId = providerId.indexOf(provider + '_') === 0 ? providerId : (provider + '_' + providerId);
+  var existingUser = null;
+  if (normalizedEmail) existingUser = await okbmFindUserByEmail(normalizedEmail);
+  if (!existingUser) existingUser = await okbmFindUserById(providerScopedId);
+
+  var prevUserId = String(localStorage.getItem('okbm_user_id') || '').trim();
+  if (!existingUser && prevUserId && prevUserId !== 'guest' && typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
+    existingUser = await okbmFindUserById(prevUserId);
+  }
+
+  var resolvedId;
+  var linkedExisting = false;
+  if (existingUser && existingUser.id) {
+    resolvedId = String(existingUser.id).trim();
+    linkedExisting = true;
+  } else {
+    resolvedId = providerScopedId;
+  }
+
+  if (prevUserId && prevUserId !== resolvedId && prevUserId !== 'guest') {
+    okbmPurgeLocalSessionData();
+  }
+
+  var existingProfile = safeGetJSON('user_profile_' + resolvedId, null);
+  var customNick = String(localStorage.getItem('okbm_custom_nickname_' + resolvedId) || '').trim();
+  var cloudNick = existingUser && existingUser.nickname ? String(existingUser.nickname).trim() : '';
+  var incomingNick = okbmNormalizeNickname(nickname);
+  var finalNick = linkedExisting
+    ? (cloudNick || customNick || incomingNick || '낭만백패커')
+    : (incomingNick || customNick || '낭만백패커');
+  if (!linkedExisting) {
+    finalNick = await okbmResolveUniqueNickname(finalNick, resolvedId);
+  }
+  var cloudPhoto = existingUser && (existingUser.hero_cover_url || existingUser.photo_url)
+    ? String(existingUser.hero_cover_url || existingUser.photo_url).trim()
+    : '';
+  var photo = linkedExisting
+    ? (cloudPhoto || String(photoUrl || '').trim())
+    : (String(photoUrl || '').trim() || cloudPhoto || (existingProfile && (existingProfile.photoUrl || existingProfile.heroCoverUrl)) || '');
+
+  var cloudSns = okbmReadSnsFromUserRow(existingUser);
+  if (cloudSns.instagram) localStorage.setItem('okbm_user_instagram', cloudSns.instagram);
+  if (cloudSns.youtube) localStorage.setItem('okbm_user_youtube', cloudSns.youtube);
+  if (cloudSns.blog) localStorage.setItem('okbm_user_blog', cloudSns.blog);
+
+  var profile = {
+    id: resolvedId,
+    nickname: finalNick,
+    email: (existingUser && existingUser.email) || normalizedEmail || (existingProfile && existingProfile.email) || '',
+    photoUrl: photo,
+    heroCoverUrl: photo,
+    instagram: cloudSns.instagram || localStorage.getItem('okbm_user_instagram') || '',
+    youtube: cloudSns.youtube || localStorage.getItem('okbm_user_youtube') || '',
+    blog: cloudSns.blog || localStorage.getItem('okbm_user_blog') || '',
+    isMember: true,
+    provider: provider,
+    createdAt: (existingProfile && existingProfile.createdAt) ? existingProfile.createdAt : getFormattedNow(),
+    lastNicknameChangedAt: existingProfile && existingProfile.lastNicknameChangedAt ? existingProfile.lastNicknameChangedAt : 0,
+    loggedInAt: Date.now()
+  };
+
+  var token = String(authToken || '').trim() || (provider + '_session_' + Date.now());
+  localStorage.setItem('user_auth_token', token);
+  localStorage.setItem('user_profile', JSON.stringify(profile));
+  localStorage.setItem('user_profile_' + resolvedId, JSON.stringify(profile));
+  localStorage.setItem('okbm_user_id', resolvedId);
+  localStorage.setItem('okbm_user_nick', finalNick);
+  localStorage.setItem('okbm_last_login_provider', provider);
+  if (profile.email) localStorage.setItem('okbm_user_email', profile.email);
+  if (photo) localStorage.setItem('okbm_hero_cover_url', photo);
+
+  if (typeof authState !== 'undefined') {
+    authState.isLoggedIn = true;
+    authState.userProfile = profile;
+  }
+
+  if (typeof closeLoginModal === 'function') closeLoginModal();
+  if (typeof showToast === 'function') {
+    if (linkedExisting) {
+      showToast('[' + finalNick + ']님, 기존 계정으로 안전하게 연결되었습니다.', 'success', 1800);
+    } else {
+      showToast('[' + finalNick + ']님 환영합니다.', 'success', 1500);
+    }
+  }
+
+  try {
+    if (linkedExisting) {
+      var existingEmail = window.okbmNormalizeEmail(existingUser && existingUser.email || '');
+      if (normalizedEmail && !existingEmail) {
+        await okbmPatchUserEmail(resolvedId, normalizedEmail);
+      }
+    } else if (typeof window.saveUserToSupabase === 'function') {
+      await window.saveUserToSupabase(profile);
+    }
+  } catch (e) {
+    console.warn('[handleSocialLoginSuccess save]', e);
+  }
+
+  try {
+    if (window.RomanticVault && typeof window.RomanticVault.hydrateFromServer === 'function') {
+      await window.RomanticVault.hydrateFromServer(resolvedId);
+    }
+  } catch (e) {
+    console.warn('[handleSocialLoginSuccess hydrate]', e);
+  }
+  try {
+    if (typeof window.fetchUserFeedLikesFromServer === 'function') {
+      await window.fetchUserFeedLikesFromServer();
+    }
+  } catch (e) {}
+
+  setTimeout(function() { window.location.reload(); }, 200);
+}
+window.handleSocialLoginSuccess = handleSocialLoginSuccess;
+
 function loginWithKakao() {
   triggerHaptic(12);
   if (typeof Kakao === 'undefined') {
@@ -3903,117 +5130,238 @@ function loginWithKakao() {
     Kakao.init(appKey);
   }
 
-  var loginBtn = document.querySelector('.btn-social-kakao');
-  if (loginBtn) {
-    loginBtn.style.pointerEvents = 'none';
-    loginBtn.style.opacity = '0.75';
-    loginBtn.innerHTML = '<span>카카오 로그인 인증 중...</span>';
-  }
+  okbmMarkSocialButtonsBusy(true, '카카오 로그인 인증 중...', 'btn-social-kakao');
 
   var loginMethod = (Kakao.Auth && typeof Kakao.Auth.loginForm === 'function') ? Kakao.Auth.loginForm : Kakao.Auth.login;
   loginMethod({
-    scope: 'profile_nickname',
+    scope: 'profile_nickname,account_email,profile_image',
     throughTalk: false,
     success: function(authObj) {
       Kakao.API.request({
         url: '/v2/user/me',
         success: function(res) {
-          var kakaoId = 'kakao_' + String(res.id).trim();
           var kakaoNick = '';
-          if (res.kakao_account && res.kakao_account.profile && res.kakao_account.profile.nickname) {
-            kakaoNick = res.kakao_account.profile.nickname.trim();
-          } else if (res.properties && res.properties.nickname) {
-            kakaoNick = res.properties.nickname.trim();
+          var photoUrl = '';
+          var email = '';
+          if (res.kakao_account && res.kakao_account.email) {
+            email = String(res.kakao_account.email).trim();
           }
-
-          var prevUserId = localStorage.getItem('okbm_user_id') || '';
-
-          if (prevUserId && prevUserId !== kakaoId) {
-            localStorage.removeItem('user_profile');
-            var purgeKeys = [
-              'okbm_bookmarks', 'okbm_visited', 'okbm_memos',
-              'okbm_plan_memos', 'okbm_plan_spots', 'okbm_packing_history',
-              'okbm_selected_gears_multi', 'okbm_favorite_gears',
-              'okbm_custom_gears', 'okbm_gear_presets', 'okbm_gear_meta',
-              'okbm_trip_consumables', 'okbm_packed_checks', 'okbm_phone_photos_map',
-              'okbm_trip_photos_map', 'okbm_user_instagram', 'okbm_cached_community_feeds',
-              'okbm_hero_cover_url', 'okbm_my_proposals', 'okbm_saved_feeds', 'okbm_following_users'
-            ];
-            purgeKeys.forEach(function(k) {
-              try { localStorage.removeItem(k); } catch(e) {}
-            });
-            window.__memoryStore = {};
-            window.packingHistoryList = [];
-            window.interactiveHistory = [];
+          if (res.kakao_account && res.kakao_account.profile) {
+            if (res.kakao_account.profile.nickname) kakaoNick = String(res.kakao_account.profile.nickname).trim();
+            photoUrl = res.kakao_account.profile.profile_image_url || res.kakao_account.profile.thumbnail_image_url || '';
           }
-
-          var existingProfile = safeGetJSON('user_profile_' + kakaoId, null);
-          var customNick = localStorage.getItem('okbm_custom_nickname_' + kakaoId) || (existingProfile && existingProfile.nickname ? existingProfile.nickname : '');
-          var finalNick = customNick || kakaoNick || '낭만백패커';
-
-          var existingCreatedAt = (existingProfile && existingProfile.createdAt) ? existingProfile.createdAt : '';
-          var finalCreatedAt = existingCreatedAt || getFormattedNow();
-          var lastChangedAt = existingProfile && existingProfile.lastNicknameChangedAt ? existingProfile.lastNicknameChangedAt : 0;
-
-          var profile = {
-            id: kakaoId,
-            nickname: finalNick,
-            isMember: true,
-            createdAt: finalCreatedAt,
-            lastNicknameChangedAt: lastChangedAt,
-            loggedInAt: Date.now()
-          };
-
-          if (!authObj || !authObj.access_token) {
-            throw new Error('카카오 인증 토큰을 받지 못했습니다.');
+          if (!kakaoNick && res.properties && res.properties.nickname) {
+            kakaoNick = String(res.properties.nickname).trim();
           }
-          localStorage.setItem('user_auth_token', authObj.access_token);
-          localStorage.setItem('user_profile', JSON.stringify(profile));
-          localStorage.setItem('user_profile_' + kakaoId, JSON.stringify(profile));
-          localStorage.setItem('okbm_user_id', kakaoId);
-          localStorage.setItem('okbm_user_nick', finalNick);
-
-          if (typeof authState !== 'undefined') {
-            authState.isLoggedIn = true;
-            authState.userProfile = profile;
+          if (!photoUrl && res.properties) {
+            photoUrl = res.properties.profile_image || res.properties.thumbnail_image || '';
           }
-
-          closeLoginModal();
-          showToast('[' + finalNick + ']님 환영합니다.', 'success', 1500);
-
-          var afterLoginSync = async function() {
-            if (window.RomanticVault && typeof window.RomanticVault.hydrateFromServer === 'function') {
-              try { await window.RomanticVault.hydrateFromServer(kakaoId); } catch(e) {}
-            }
-            if (typeof window.fetchUserFeedLikesFromServer === 'function') {
-              try { await window.fetchUserFeedLikesFromServer(); } catch(e) {}
-            }
-            setTimeout(function() { window.location.reload(); }, 200);
-          };
-          afterLoginSync();
+          handleSocialLoginSuccess(
+            'kakao',
+            String(res.id).trim(),
+            email,
+            kakaoNick,
+            photoUrl,
+            authObj && authObj.access_token
+          );
         },
         fail: function() {
-          if (loginBtn) {
-            loginBtn.style.pointerEvents = 'auto';
-            loginBtn.style.opacity = '1';
-            loginBtn.innerHTML = '카카오 1초 간편 로그인';
-          }
+          okbmMarkSocialButtonsBusy(false);
           if (typeof showToast === 'function') showToast('사용자 정보 수신 실패', 'warn');
         }
       });
     },
     fail: function(err) {
-      if (loginBtn) {
-        loginBtn.style.pointerEvents = 'auto';
-        loginBtn.style.opacity = '1';
-        loginBtn.innerHTML = '카카오 1초 간편 로그인';
-      }
+      okbmMarkSocialButtonsBusy(false);
       console.warn('[Kakao Auth Fail]', err);
       if (typeof showToast === 'function') showToast('로그인이 취소되었습니다.', 'warn');
     }
   });
 }
 window.loginWithKakao = loginWithKakao;
+
+async function loginWithApple() {
+  await okbmStartSupabaseOAuth('apple', 'btn-social-apple', 'Apple 로그인 중...');
+}
+window.loginWithApple = loginWithApple;
+
+function okbmNaverRedirectUri() {
+  var origin = String(window.location.origin || '').replace(/\/+$/, '');
+  var path = String(window.location.pathname || '/').split('?')[0].split('#')[0];
+  if (!path) path = '/';
+  return origin + path;
+}
+
+function okbmRandomOAuthState() {
+  var bytes = new Uint8Array(16);
+  if (window.crypto && typeof crypto.getRandomValues === 'function') {
+    crypto.getRandomValues(bytes);
+  } else {
+    for (var i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+  }
+  var hex = '';
+  for (var n = 0; n < bytes.length; n++) hex += ('0' + bytes[n].toString(16)).slice(-2);
+  return hex;
+}
+
+function okbmFetchNaverProfileJsonp(accessToken) {
+  return new Promise(function(resolve, reject) {
+    var token = String(accessToken || '').trim();
+    if (!token) {
+      reject(new Error('naver token missing'));
+      return;
+    }
+    var cbName = 'okbmNaverProfileCb_' + Date.now();
+    var script = document.createElement('script');
+    var timer = setTimeout(function() {
+      cleanup();
+      reject(new Error('naver jsonp timeout'));
+    }, 8000);
+    function cleanup() {
+      clearTimeout(timer);
+      try { delete window[cbName]; } catch (e) { window[cbName] = undefined; }
+      if (script && script.parentNode) script.parentNode.removeChild(script);
+    }
+    window[cbName] = function(result) {
+      cleanup();
+      try {
+        var row = (result && result.response) ? result.response : result;
+        if (!row || !row.id) {
+          reject(new Error('naver jsonp empty'));
+          return;
+        }
+        resolve({
+          id: String(row.id).trim(),
+          email: String(row.email || '').trim(),
+          nickname: String(row.nickname || row.name || '').trim(),
+          photo: String(row.profile_image || '').trim()
+        });
+      } catch (err) {
+        reject(err);
+      }
+    };
+    script.src = 'https://openapi.naver.com/v1/nid/getUserProfile.json?response_type=json'
+      + '&access_token=' + encodeURIComponent(token)
+      + '&oauth_callback=' + encodeURIComponent(cbName);
+    script.onerror = function() {
+      cleanup();
+      reject(new Error('naver jsonp script error'));
+    };
+    document.head.appendChild(script);
+  });
+}
+
+async function okbmFetchNaverProfile(accessToken) {
+  var token = String(accessToken || '').trim();
+  if (!token) throw new Error('naver token missing');
+
+  var parseBody = function(data) {
+    var row = (data && data.response) ? data.response : data;
+    if (!row || !row.id) throw new Error('naver profile missing id');
+    return {
+      id: String(row.id).trim(),
+      email: String(row.email || '').trim(),
+      nickname: String(row.nickname || row.name || '').trim(),
+      photo: String(row.profile_image || '').trim()
+    };
+  };
+
+  try {
+    return await okbmFetchNaverProfileJsonp(token);
+  } catch (jsonpErr) {
+    console.warn('[Naver jsonp]', jsonpErr);
+  }
+
+  var nativeHttp = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Http;
+  if (nativeHttp && typeof nativeHttp.request === 'function') {
+    var nativeRes = await nativeHttp.request({
+      url: 'https://openapi.naver.com/v1/nid/me',
+      method: 'GET',
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    var nativeData = nativeRes && nativeRes.data;
+    if (typeof nativeData === 'string') nativeData = JSON.parse(nativeData);
+    return parseBody(nativeData);
+  }
+
+  var proxyUrl = String(window.OKBM_NAVER_ME_PROXY || '').trim();
+  var endpoints = ['https://openapi.naver.com/v1/nid/me'];
+  if (proxyUrl) endpoints.push(proxyUrl);
+
+  var lastErr = null;
+  for (var e = 0; e < endpoints.length; e++) {
+    try {
+      var res = await fetch(endpoints[e], {
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (!res.ok) throw new Error('naver me ' + res.status);
+      return parseBody(await res.json());
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error('naver profile fetch failed');
+}
+
+async function okbmConsumeNaverOAuthCallback() {
+  var token = '';
+  var cachedProfile = null;
+  try { token = sessionStorage.getItem('okbm_naver_oauth_token') || ''; } catch (e) {}
+  try {
+    var rawProfile = sessionStorage.getItem('okbm_naver_profile') || '';
+    if (rawProfile) cachedProfile = JSON.parse(rawProfile);
+  } catch (e) {}
+  if (!token && !(cachedProfile && cachedProfile.id)) return false;
+  try { sessionStorage.removeItem('okbm_naver_oauth_token'); } catch (e) {}
+  try { sessionStorage.removeItem('okbm_naver_oauth_state'); } catch (e) {}
+  try { sessionStorage.removeItem('okbm_naver_profile'); } catch (e) {}
+  try { sessionStorage.removeItem('okbm_naver_client_id'); } catch (e) {}
+  try { sessionStorage.removeItem('okbm_naver_return'); } catch (e) {}
+
+  try {
+    var profile = cachedProfile && cachedProfile.id ? cachedProfile : await okbmFetchNaverProfile(token);
+    await handleSocialLoginSuccess('naver', profile.id, profile.email, profile.nickname, profile.photo, token);
+    return true;
+  } catch (err) {
+    console.warn('[Naver profile]', err);
+    okbmMarkSocialButtonsBusy(false);
+    if (typeof showToast === 'function') showToast('네이버 사용자 정보를 불러오지 못했습니다.', 'warn');
+    return true;
+  }
+}
+
+function loginWithNaver() {
+  triggerHaptic(12);
+  var state = Math.random().toString(36).substring(2, 15);
+  sessionStorage.setItem('okbm_naver_oauth_state', state);
+  sessionStorage.setItem('okbm_naver_client_id', NAVER_CLIENT_ID);
+  sessionStorage.setItem('okbm_naver_return', window.location.pathname + window.location.search);
+
+  var clientId = NAVER_CLIENT_ID;
+  var cleanRedirect = window.location.origin + '/naver-callback.html';
+
+  var naverAuthUrl = 'https://nid.naver.com/oauth2.0/authorize?response_type=token'
+    + '&client_id=' + clientId
+    + '&redirect_uri=' + encodeURIComponent(cleanRedirect)
+    + '&state=' + state;
+
+  okbmMarkSocialButtonsBusy(true, '네이버 로그인 중...', 'btn-social-naver');
+  console.log('[Naver Login URL]', naverAuthUrl);
+  window.location.href = naverAuthUrl;
+}
+window.loginWithNaver = loginWithNaver;
+
+async function loginWithGoogle() {
+  await okbmStartSupabaseOAuth('google', 'btn-social-google', 'Google 로그인 중...');
+}
+window.loginWithGoogle = loginWithGoogle;
+
+okbmConsumeNaverOAuthCallback().then(function(consumedNaver) {
+  if (!consumedNaver) okbmInitSupabaseOAuthBridge();
+}).catch(function() {
+  okbmInitSupabaseOAuthBridge();
+});
 
 window.shareFeedToCommunity = async function(feedRecord) {
   if (!feedRecord) return [];
@@ -4273,6 +5621,7 @@ window.fetchMyProposalsFromSupabase = async function(userId) {
 };
 
 window.saveUserToSupabase = async function(profileData) {
+  if (window.__okbmAccountPurging) return false;
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
   if (!targetUrl || !targetKey) return false;
@@ -4332,6 +5681,46 @@ window.saveUserToSupabase = async function(profileData) {
   var userYt = (prof && prof.youtube) || localStorage.getItem('okbm_user_youtube') || '';
   var userBlog = (prof && prof.blog) || localStorage.getItem('okbm_user_blog') || '';
 
+  var existingRow = null;
+  try {
+    existingRow = await okbmFindUserById(userId);
+  } catch (e) {}
+  if (existingRow) {
+    var existingSns = okbmReadSnsFromUserRow(existingRow);
+    if (!userInsta && existingSns.instagram) userInsta = existingSns.instagram;
+    if (!userYt && existingSns.youtube) userYt = existingSns.youtube;
+    if (!userBlog && existingSns.blog) userBlog = existingSns.blog;
+    var existingNick = String(existingRow.nickname || '').trim();
+    var incomingIsSocialDefault = nickname === '김사자' || nickname === '낭만백패커';
+    if (existingNick && existingNick !== '낭만백패커' && (!nickname || incomingIsSocialDefault)) {
+      nickname = existingNick;
+    }
+    var existingMg = existingRow.my_gears && typeof existingRow.my_gears === 'object' ? existingRow.my_gears : {};
+    var existingSelected = existingMg.selectedGears || existingMg.selected_gears || {};
+    if ((!selectedGears || !Object.keys(selectedGears).length) && existingSelected && Object.keys(existingSelected).length) {
+      selectedGears = existingSelected;
+    }
+    if ((!favoriteGears || !favoriteGears.length) && Array.isArray(existingMg.favoriteGears) && existingMg.favoriteGears.length) {
+      favoriteGears = existingMg.favoriteGears;
+    }
+    if ((!customGears || !customGears.length) && Array.isArray(existingMg.customGears) && existingMg.customGears.length) {
+      customGears = existingMg.customGears;
+    }
+    if ((!gearPresets || !gearPresets.length) && Array.isArray(existingMg.gearPresets) && existingMg.gearPresets.length) {
+      gearPresets = existingMg.gearPresets;
+    }
+    if ((!gearMeta || !Object.keys(gearMeta).length) && existingMg.gearMeta && Object.keys(existingMg.gearMeta).length) {
+      gearMeta = existingMg.gearMeta;
+    }
+    if ((!planMemos || !Object.keys(planMemos).length) && existingMg.planMemos && Object.keys(existingMg.planMemos).length) {
+      planMemos = existingMg.planMemos;
+    }
+    if ((!planSpots || !Object.keys(planSpots).length) && existingMg.planSpots && Object.keys(existingMg.planSpots).length) {
+      planSpots = existingMg.planSpots;
+    }
+    if (!coverUrl) coverUrl = existingRow.hero_cover_url || existingRow.photo_url || '';
+  }
+
   var payload = {
     id: userId,
     nickname: nickname,
@@ -4363,19 +5752,32 @@ window.saveUserToSupabase = async function(profileData) {
   if (safeCreatedAt) {
     payload.created_at = safeCreatedAt;
   }
+  var userEmail = window.okbmNormalizeEmail((prof && prof.email) || localStorage.getItem('okbm_user_email') || '');
+  if (userEmail) payload.email = userEmail;
 
   try {
+    var postHeaders = {
+      'apikey': targetKey,
+      'Authorization': 'Bearer ' + targetKey,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates'
+    };
     var res = await fetch(targetUrl + '/rest/v1/users', {
       method: 'POST',
-      headers: {
-        'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
-        'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates'
-      },
+      headers: postHeaders,
       body: JSON.stringify(payload)
     });
-    return res.ok;
+    if (res.ok) return true;
+    if (res.status === 400 && payload.email) {
+      delete payload.email;
+      var retry = await fetch(targetUrl + '/rest/v1/users', {
+        method: 'POST',
+        headers: postHeaders,
+        body: JSON.stringify(payload)
+      });
+      return retry.ok;
+    }
+    return false;
   } catch (e) {
     return false;
   }

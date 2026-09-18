@@ -2901,15 +2901,18 @@ window.saveCurrentPackingRecord = function() {
                 var dTarget = String(activeDateStr).replace(/[-/]/g, '.');
                 var curProf = safeGetJSON('user_profile', null);
                 var rawActiveUid = (curProf && curProf.id) ? String(curProf.id).trim() : (localStorage.getItem('okbm_user_id') || '');
-                var cleanActiveUid = rawActiveUid.replace(/^(kakao_|apple_|guest_|user_)/, '');
                 var activeNick = (curProf && curProf.nickname) ? String(curProf.nickname).trim() : (localStorage.getItem('okbm_user_nick') || '');
 
                 window.TRIP_JOINS_DATABASE.forEach(function(t) {
                   if (t && t.date && !t.isClosed && t.tripId && String(t.date).replace(/[-/]/g, '.') === dTarget) {
-                    var rawTUid = String(t.userId || '').trim();
-                    var cleanTUid = rawTUid.replace(/^(kakao_|apple_|guest_|user_)/, '');
+                    var rawTUid = String(t.userId || t.host_id || '').trim();
                     var tAuthor = String(t.authorName || '').trim();
-                    var isHost = Boolean((cleanActiveUid && cleanTUid && cleanActiveUid === cleanTUid) || (activeNick && tAuthor && activeNick === tAuthor));
+                    var isHost = Boolean(
+                      (typeof window.okbmSameAccountId === 'function'
+                        ? window.okbmSameAccountId(rawActiveUid, rawTUid)
+                        : (rawActiveUid && rawTUid && rawActiveUid === rawTUid)) ||
+                      (activeNick && tAuthor && activeNick === tAuthor)
+                    );
 
                     if (isHost && !spotArray.some(function(s) { return s && s.tripId === t.tripId; })) {
                       spotArray.unshift({
@@ -4496,7 +4499,6 @@ window.clearEntireDaySchedule = function(dateKey) {
 
     var curProf = safeGetJSON('user_profile', null);
     var rawActiveUid = (curProf && curProf.id) ? String(curProf.id).trim() : (localStorage.getItem('okbm_user_id') || '');
-    var cleanActiveUid = rawActiveUid.replace(/^(kakao_|apple_|guest_|user_)/, '');
     var activeNick = (curProf && curProf.nickname) ? String(curProf.nickname).trim() : (localStorage.getItem('okbm_user_nick') || '');
 
     var deletedTripIds = [];
@@ -4505,10 +4507,14 @@ window.clearEntireDaySchedule = function(dateKey) {
         if (!t || !t.date || !t.tripId) return true;
         var tD = String(t.date).replace(/[-/]/g, '.');
         if (tD === normDate || tD === String(dateKey)) {
-          var rawTUid = String(t.userId || '').trim();
-          var cleanTUid = rawTUid.replace(/^(kakao_|apple_|guest_|user_)/, '');
+          var rawTUid = String(t.userId || t.host_id || '').trim();
           var tAuthor = String(t.authorName || '').trim();
-          var isHost = Boolean((cleanActiveUid && cleanTUid && cleanActiveUid === cleanTUid) || (activeNick && tAuthor && activeNick === tAuthor));
+          var isHost = Boolean(
+            (typeof window.okbmSameAccountId === 'function'
+              ? window.okbmSameAccountId(rawActiveUid, rawTUid)
+              : (rawActiveUid && rawTUid && rawActiveUid === rawTUid)) ||
+            (activeNick && tAuthor && activeNick === tAuthor)
+          );
           if (isHost) {
             deletedTripIds.push(String(t.tripId).trim());
             return false;

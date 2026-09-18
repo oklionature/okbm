@@ -259,13 +259,41 @@
   <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@700&family=JetBrains+Mono:wght@700;800&family=Noto+Serif+KR:wght@600&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   
   <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
+  <script>
+    (function okbmStashNaverOAuthHashEarly() {
+      try {
+        var raw = String(location.hash || '').replace(/^#/, '');
+        if (!raw || raw.indexOf('access_token=') === -1) return;
+        var params = {};
+        raw.split('&').forEach(function(part) {
+          if (!part) return;
+          var idx = part.indexOf('=');
+          var key = decodeURIComponent((idx >= 0 ? part.slice(0, idx) : part).replace(/\+/g, ' '));
+          var val = decodeURIComponent((idx >= 0 ? part.slice(idx + 1) : '').replace(/\+/g, ' '));
+          params[key] = val;
+        });
+        var savedState = sessionStorage.getItem('okbm_naver_oauth_state') || '';
+        if (!params.access_token || !params.state || !savedState || params.state !== savedState) return;
+        if (params.refresh_token) return;
+        sessionStorage.setItem('okbm_naver_oauth_token', params.access_token);
+        history.replaceState(null, '', location.pathname + location.search);
+      } catch (e) {}
+    })();
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     (function initSupabaseClient() {
       var sbUrl = 'https://qnumfecythtqtrxeasys.supabase.co';
       var sbKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
       if (window.supabase && typeof window.supabase.createClient === 'function') {
-        window.supabaseClient = window.supabase.createClient(sbUrl, sbKey);
+        var loopback = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+        window.supabaseClient = window.supabase.createClient(sbUrl, sbKey, {
+          auth: {
+            detectSessionInUrl: true,
+            persistSession: true,
+            flowType: (window.isSecureContext || loopback) ? 'pkce' : 'implicit'
+          }
+        });
       }
     })();
   </script>
@@ -1087,6 +1115,17 @@
       outline: none;
     }
     .btn-social-kakao { background: #fee500; color: #191919; }
+    #loginModalOverlay .btn-social-apple,
+    #loginModalOverlay .btn-social-kakao,
+    #loginModalOverlay .btn-social-naver,
+    #loginModalOverlay .btn-social-google {
+      height: 44px !important;
+      min-height: 44px !important;
+      border-radius: 10px !important;
+      font-weight: 800 !important;
+      font-size: 0.86rem !important;
+      padding: 0 12px !important;
+    }
 
     .spot-search-dropdown-list {
       display: none;
@@ -1592,6 +1631,9 @@
       var feedPool = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
         ? window.__allLoadedFeeds
         : (safeGetJSON('okbm_cached_community_feeds', []) || []);
+      if (typeof window.filterHiddenUgcFeeds === 'function') {
+        feedPool = window.filterHiddenUgcFeeds(feedPool);
+      }
 
       var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
       var validPhotoFeeds = [];
@@ -1719,6 +1761,9 @@
       var feedPool = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
         ? window.__allLoadedFeeds
         : (safeGetJSON('okbm_cached_community_feeds', []) || []);
+      if (typeof window.filterHiddenUgcFeeds === 'function') {
+        feedPool = window.filterHiddenUgcFeeds(feedPool);
+      }
 
       if (feedPool.length === 0) {
         railContainer.innerHTML = '<div style="padding:24px 10px; font-size:0.72rem; color:#64748b;">등록된 피드를 불러오는 중입니다...</div>';
@@ -1897,6 +1942,9 @@
       var cleanTargetKey = targetKey.replace(/\s*\(.*?\)/g, '').trim().toLowerCase();
 
       var cachedFeeds = window.__allLoadedFeeds || safeGetJSON('okbm_cached_community_feeds', []) || [];
+      if (typeof window.filterHiddenUgcFeeds === 'function') {
+        cachedFeeds = window.filterHiddenUgcFeeds(cachedFeeds);
+      }
       var spotPool = (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots) && registeredSpots.length > 0)
         ? registeredSpots : (safeGetJSON('okbm_spots_cache', []) || []);
 
@@ -1927,6 +1975,11 @@
         : (matchedSpot ? (matchedSpot.desc || matchedSpot.desc_summary || '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.') : '자연 속에서 비화식과 흔적 없는 클린 백패킹을 실천하는 추천 장소입니다.');
       var author = (matchedFeed && (matchedFeed.author || matchedFeed.nick)) ? (matchedFeed.author || matchedFeed.nick) : '낭만백패커';
       var feedOrSpotId = escapeHtml(String((matchedFeed && matchedFeed.id) || (matchedSpot && matchedSpot.id) || cleanMapSpotName));
+      var heroFeedId = matchedFeed ? String(matchedFeed.id || '').trim() : '';
+      var heroUserId = matchedFeed ? String(matchedFeed.userId || matchedFeed.user_id || '').trim() : '';
+      var heroSafetyHtml = (heroFeedId && typeof window.buildUgcSafetyButtonsHtml === 'function')
+        ? window.buildUgcSafetyButtonsHtml(heroFeedId, heroUserId, author, 'inline')
+        : '';
 
       // 📷 사진 목록 추출
       var photosList = [];
@@ -2014,7 +2067,7 @@
                 “${escapeHtml(firstMemoText)}”
               </div>
 
-              <div class="insta-memo-actions-row" style="margin-top:2px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.12); display:flex; gap:6px;">
+              <div class="insta-memo-actions-row" style="margin-top:2px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.12); display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
                 <button type="button" class="btn-insta-action btn-action-map" data-spot="${escapeHtml(cleanMapSpotName)}" onclick="window.closeSecretSpotHeroModal(); location.href='map.html?spot=' + encodeURIComponent(this.dataset.spot);" style="flex:1;">
                   <svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                   <span>자세히보기</span>
@@ -2023,6 +2076,7 @@
                   <svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                   <span>장비 세팅보기</span>
                 </button>
+                ${heroSafetyHtml}
               </div>
             </div>
 
@@ -2122,6 +2176,9 @@
       var allFeeds = (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0)
         ? window.__allLoadedFeeds
         : (safeGetJSON('okbm_cached_community_feeds', []) || []);
+      if (typeof window.filterHiddenUgcFeeds === 'function') {
+        allFeeds = window.filterHiddenUgcFeeds(allFeeds);
+      }
 
       var userFeeds = allFeeds.filter(function(f) {
         if (!f) return false;
@@ -2190,13 +2247,19 @@
 
       var profileNickSafe = escapeHtml(targetNick);
       var userFeedsCount = userFeeds.length;
+      var profileBlockBtn = (targetUid && !(typeof window.isCurrentUserId === 'function' && window.isCurrentUserId(targetUid)))
+        ? '<button type="button" data-user-id="' + escapeHtml(targetUid) + '" data-author="' + profileNickSafe + '" onclick="window.blockCommunityUser(this.dataset.userId, this.dataset.author);" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); color:#fda4af; padding:4px 10px; border-radius:14px; font-size:0.68rem; font-weight:800; cursor:pointer; margin-right:6px;">차단</button>'
+        : '';
 
       modal.innerHTML = '<div class="modal-app-header" style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); height:48px; padding:0 14px; display:flex; justify-content:space-between; align-items:center; box-sizing:border-box;">' +
         '<div style="display:flex; align-items:center; gap:8px;">' +
           '<button type="button" class="circle-icon-btn" onclick="window.closeTripAuthorProfile();">◀</button>' +
           '<span style="font-size:0.95rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">원정대장 프로필</span>' +
         '</div>' +
-        '<button type="button" class="circle-icon-btn" onclick="window.closeTripAuthorProfile();">✕</button>' +
+        '<div style="display:flex; align-items:center;">' +
+          profileBlockBtn +
+          '<button type="button" class="circle-icon-btn" onclick="window.closeTripAuthorProfile();">✕</button>' +
+        '</div>' +
       '</div>' +
       '<div class="modal-scroll-body" style="flex:1 1 0%; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:12px 14px calc(76px + env(safe-area-inset-bottom, 8px)) 14px; box-sizing:border-box; display:flex; flex-direction:column; gap:14px;">' +
         '<div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:16px; display:flex; align-items:center; gap:14px; box-sizing:border-box;">' +
@@ -3054,9 +3117,9 @@ var adBannersHtml = `
         rawUid = 'user_' + Date.now();
         localStorage.setItem('okbm_user_id', rawUid);
       }
-      var curUid = (rawUid.startsWith('kakao_') || rawUid.startsWith('apple_') || rawUid.startsWith('guest_') || rawUid.startsWith('user_'))
-        ? rawUid
-        : ('kakao_' + rawUid);
+      var curUid = (typeof window.okbmCanonicalUserId === 'function')
+        ? window.okbmCanonicalUserId(rawUid)
+        : ((/^(kakao_|naver_|apple_|google_|guest_|user_)/.test(rawUid)) ? rawUid : ('kakao_' + rawUid));
 
       var memberCount = Number(tripData.maxCapacity || tripData.maxMembers || 4);
       var safeDate = tripData.date ? String(tripData.date).replace(/\./g, '-') : new Date().toISOString().split('T')[0];
@@ -3233,12 +3296,12 @@ var adBannersHtml = `
 
       var profile = safeGetJSON('user_profile', null);
       var rawUserId = (profile && profile.id) ? String(profile.id).trim() : '';
-      var cleanUserId = rawUserId.replace(/^(kakao_|apple_|guest_|user_)/, '');
       var currentNick = (profile && profile.nickname) ? String(profile.nickname).trim() : '';
-      var tripHostId = String(trip.userId || '').replace(/^(kakao_|apple_|guest_|user_)/, '');
 
       var isHost = Boolean(
-        (cleanUserId && tripHostId && cleanUserId === tripHostId) ||
+        (typeof window.okbmSameAccountId === 'function'
+          ? window.okbmSameAccountId(rawUserId, trip.userId || trip.host_id)
+          : (rawUserId && String(trip.userId || '').trim() === rawUserId)) ||
         (currentNick && trip.authorName && currentNick === String(trip.authorName).trim())
       );
 
@@ -3342,11 +3405,10 @@ var adBannersHtml = `
       var profile = safeGetJSON('user_profile', null);
       var currentNick = (profile && profile.nickname) ? String(profile.nickname).trim() : '';
       var rawUserId = (profile && profile.id) ? String(profile.id).trim() : '';
-      var cleanUserId = rawUserId.replace(/^(kakao_|apple_|guest_|user_)/, '');
-
-      var tripHostId = String(trip.userId || '').replace(/^(kakao_|apple_|guest_|user_)/, '');
       var isAuthor = Boolean(
-        (cleanUserId && tripHostId && cleanUserId === tripHostId) ||
+        (typeof window.okbmSameAccountId === 'function'
+          ? window.okbmSameAccountId(rawUserId, trip.userId || trip.host_id)
+          : (rawUserId && String(trip.userId || '').trim() === rawUserId)) ||
         (currentNick && trip.authorName && currentNick === String(trip.authorName).trim())
       );
       var isClosed = Boolean(trip.isClosed);
@@ -4435,7 +4497,9 @@ var adBannersHtml = `
         rawUid = 'user_' + Date.now();
         localStorage.setItem('okbm_user_id', rawUid);
       }
-      var userId = (rawUid.startsWith('kakao_') || rawUid.startsWith('apple_') || rawUid.startsWith('guest_') || rawUid.startsWith('user_')) ? rawUid : ('kakao_' + rawUid);
+      var userId = (typeof window.okbmCanonicalUserId === 'function')
+        ? window.okbmCanonicalUserId(rawUid)
+        : ((/^(kakao_|naver_|apple_|google_|guest_|user_)/.test(rawUid)) ? rawUid : ('kakao_' + rawUid));
       
       var photoList = (window.__tempTripCreatePhotos && window.__tempTripCreatePhotos.length > 0) ? window.__tempTripCreatePhotos.slice() : [];
 
@@ -4844,10 +4908,10 @@ var adBannersHtml = `
     });
   </script>
 
-  <script src="romantic-sync.js?v=2.7.0"></script>
+  <script src="romantic-sync.js?v=2.8.15"></script>
   <script src="templates.js?v=2.6.2"></script>
-  <script src="romantic-history.js?v=2.6.2"></script>
-  <script src="romantic-plan.js?v=2.7.0"></script>
+  <script src="romantic-history.js?v=2.7.1"></script>
+  <script src="romantic-plan.js?v=2.7.1"></script>
 
   <script>
 

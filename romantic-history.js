@@ -19,7 +19,7 @@
       .postcard-3d-wrapper {
         perspective: 1200px !important;
         transform-style: preserve-3d !important;
-        will-change: transform !important;
+        will-change: auto !important;
         transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1) !important;
         -webkit-tap-highlight-color: transparent !important;
         -webkit-font-smoothing: antialiased !important;
@@ -27,6 +27,7 @@
         transform: translateZ(0) !important;
       }
       .postcard-3d-wrapper.flipped {
+        will-change: transform !important;
         transform: rotateY(180deg) translateZ(0) !important;
       }
      .postcard-face-front, .postcard-face-back {
@@ -85,9 +86,8 @@
         display: block !important;
         box-sizing: border-box !important;
         flex-shrink: 0 !important;
-        contain: strict !important;
-        content-visibility: auto !important;
-        contain-intrinsic-size: 100% 100% !important;
+        contain: layout !important;
+        content-visibility: visible !important;
         touch-action: pan-y !important;
         background: #000000 !important;
       }
@@ -105,7 +105,11 @@
         justify-content: space-between !important;
         align-items: center !important;
         background: #000000 !important;
-        z-index: 20 !important;
+        z-index: 50 !important;
+        isolation: isolate !important;
+        transform: translateZ(40px) !important;
+        -webkit-transform: translateZ(40px) !important;
+        content-visibility: visible !important;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
         box-sizing: border-box !important;
         pointer-events: auto !important;
@@ -222,9 +226,8 @@
         flex-direction: column !important;
         box-sizing: border-box !important;
         flex-shrink: 0 !important;
-        contain: strict !important;
-        content-visibility: auto !important;
-        contain-intrinsic-size: 100% 100% !important;
+        contain: layout !important;
+        content-visibility: visible !important;
         touch-action: pan-y !important;
         background: #000000 !important;
       }
@@ -314,7 +317,11 @@
         padding-left: 14px !important;
         padding-right: 14px !important;
         padding-bottom: 12px !important;
-        z-index: 20 !important;
+        z-index: 50 !important;
+        isolation: isolate !important;
+        transform: translateZ(40px) !important;
+        -webkit-transform: translateZ(40px) !important;
+        content-visibility: visible !important;
         background: linear-gradient(to bottom, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 72%, transparent 100%) !important;
         border-bottom: none !important;
       }
@@ -1897,7 +1904,9 @@ window.okbmGetNormalizedUserId = function(rawId) {
   }
   uId = String(uId || '').trim();
   if (!uId || uId === 'guest' || uId === 'null' || uId === 'undefined') return '';
-  return uId.startsWith('kakao_') ? uId : ('kakao_' + uId);
+  if (typeof window.okbmCanonicalUserId === 'function') return window.okbmCanonicalUserId(uId);
+  if (/^(kakao_|naver_|apple_|google_|user_|guest_)/.test(uId)) return uId;
+  return 'kakao_' + uId;
 };
 
 window.okbmCheckUserLoginStatus = function() {
@@ -1987,25 +1996,72 @@ window.okbmSyncFeedLikeAction = async function(feedId, userId, isAdding, nextCou
     throw new Error('feedId and canonical userId are required');
   }
 
+  var committedCount = Number(nextCount);
+  if (isNaN(committedCount) || committedCount < 0) committedCount = isAdding ? 1 : 0;
+
   var pureNumId = canonicalId.replace(/^kakao_/, '').trim();
   var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
   var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
 
-  var postHeaders = {
+  var jsonHeaders = {
     'apikey': targetKey,
     'Authorization': 'Bearer ' + targetKey,
-    'Content-Type': 'application/json',
-    'Prefer': 'resolution=merge-duplicates,return=minimal'
+    'Content-Type': 'application/json'
   };
 
-  var deleteHeaders = {
-    'apikey': targetKey,
-    'Authorization': 'Bearer ' + targetKey,
-    'Content-Type': 'application/json',
-    'Prefer': 'return=minimal'
+  var parseLikePayload = function(data) {
+    var payload = data;
+    if (typeof payload === 'string') {
+      try { payload = JSON.parse(payload); } catch (e) { payload = null; }
+    }
+    if (Array.isArray(payload)) payload = payload[0];
+    if (!payload || typeof payload !== 'object') return null;
+    var count = Number(payload.likes_count);
+    if (isNaN(count) || count < 0) count = committedCount;
+    var starred = payload.is_starred;
+    if (typeof starred !== 'boolean') starred = !!isAdding;
+    return { success: true, is_starred: starred, likes_count: count };
   };
 
   var syncExecution = (async function() {
+    if (window.supabaseClient && typeof window.supabaseClient.rpc === 'function') {
+      try {
+        var rpcRes = await window.supabaseClient.rpc('apply_feed_like', {
+          p_feed_id: sId,
+          p_user_id: canonicalId,
+          p_adding: !!isAdding
+        });
+        if (!rpcRes.error) {
+          var parsedRpc = parseLikePayload(rpcRes.data);
+          if (parsedRpc) return parsedRpc;
+        } else {
+          console.warn('[apply_feed_like rpc]', rpcRes.error);
+        }
+      } catch (rpcErr) {
+        console.warn('[apply_feed_like rpc]', rpcErr);
+      }
+    }
+
+    try {
+      var rpcFetch = await fetch(targetUrl + '/rest/v1/rpc/apply_feed_like', {
+        method: 'POST',
+        headers: jsonHeaders,
+        body: JSON.stringify({
+          p_feed_id: sId,
+          p_user_id: canonicalId,
+          p_adding: !!isAdding
+        }),
+        keepalive: true
+      });
+      if (rpcFetch.ok) {
+        var rpcJson = await rpcFetch.json().catch(function() { return null; });
+        var parsedFetch = parseLikePayload(rpcJson);
+        if (parsedFetch) return parsedFetch;
+      }
+    } catch (rpcFetchErr) {
+      console.warn('[apply_feed_like fetch]', rpcFetchErr);
+    }
+
     if (isAdding) {
       if (window.supabaseClient) {
         var insertRes = await window.supabaseClient.from('feed_likes').upsert({
@@ -2017,11 +2073,11 @@ window.okbmSyncFeedLikeAction = async function(feedId, userId, isAdding, nextCou
       } else {
         var postRes = await fetch(targetUrl + '/rest/v1/feed_likes', {
           method: 'POST',
-          headers: postHeaders,
+          headers: Object.assign({}, jsonHeaders, { 'Prefer': 'resolution=merge-duplicates,return=minimal' }),
           body: JSON.stringify({ feed_id: sId, user_id: canonicalId, created_at: new Date().toISOString() }),
           keepalive: true
         });
-        if (!postRes.ok) {
+        if (!postRes.ok && postRes.status !== 409) {
           var errText = await postRes.text().catch(function() { return ''; });
           throw new Error('feed_likes insert failed: ' + postRes.status + ' ' + errText);
         }
@@ -2038,7 +2094,7 @@ window.okbmSyncFeedLikeAction = async function(feedId, userId, isAdding, nextCou
         var inParam = 'in.(' + queryIds.map(encodeURIComponent).join(',') + ')';
         var delFetch = await fetch(targetUrl + '/rest/v1/feed_likes?feed_id=eq.' + encodeURIComponent(sId) + '&user_id=' + inParam, {
           method: 'DELETE',
-          headers: deleteHeaders,
+          headers: Object.assign({}, jsonHeaders, { 'Prefer': 'return=minimal' }),
           keepalive: true
         });
         if (!delFetch.ok) {
@@ -2048,49 +2104,31 @@ window.okbmSyncFeedLikeAction = async function(feedId, userId, isAdding, nextCou
       }
     }
 
-    var exactCount = 0;
-    if (window.supabaseClient) {
-      var countRes = await window.supabaseClient.from('feed_likes').select('*', { count: 'exact', head: true }).eq('feed_id', sId);
-      if (countRes.error) throw countRes.error;
-      exactCount = countRes.count || 0;
-    } else {
-      var countFetch = await fetch(targetUrl + '/rest/v1/feed_likes?feed_id=eq.' + encodeURIComponent(sId) + '&select=feed_id', {
-        method: 'HEAD',
-        headers: {
-          'apikey': targetKey,
-          'Authorization': 'Bearer ' + targetKey,
-          'Range': '0-0',
-          'Prefer': 'count=exact'
-        },
-        keepalive: true
-      });
-      if (!countFetch.ok) {
-        throw new Error('feed_likes count failed: ' + countFetch.status);
+    try {
+      if (window.supabaseClient) {
+        var countRow = await window.supabaseClient.from('feeds').select('likes_count').eq('id', sId).maybeSingle();
+        if (!countRow.error && countRow.data && countRow.data.likes_count != null) {
+          var dbCount = Number(countRow.data.likes_count);
+          if (!isNaN(dbCount) && dbCount >= 0) committedCount = dbCount;
+        }
+      } else {
+        var countFetch = await fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId) + '&select=likes_count', {
+          headers: jsonHeaders,
+          keepalive: true
+        });
+        if (countFetch.ok) {
+          var countRows = await countFetch.json().catch(function() { return []; });
+          if (Array.isArray(countRows) && countRows[0] && countRows[0].likes_count != null) {
+            var fetchedCount = Number(countRows[0].likes_count);
+            if (!isNaN(fetchedCount) && fetchedCount >= 0) committedCount = fetchedCount;
+          }
+        }
       }
-      var cr = countFetch.headers.get('content-range');
-      if (cr && cr.includes('/')) {
-        var totalPart = cr.split('/')[1];
-        exactCount = parseInt(totalPart, 10) || 0;
-      }
+    } catch (countErr) {
+      console.warn('[feeds likes_count read]', countErr);
     }
 
-    if (window.supabaseClient) {
-      var updateRes = await window.supabaseClient.from('feeds').update({ likes_count: exactCount }).eq('id', sId);
-      if (updateRes.error) throw updateRes.error;
-    } else {
-      var patchFetch = await fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
-        method: 'PATCH',
-        headers: postHeaders,
-        body: JSON.stringify({ likes_count: exactCount }),
-        keepalive: true
-      });
-      if (!patchFetch.ok) {
-        var patchErr = await patchFetch.text().catch(function() { return ''; });
-        throw new Error('feeds update failed: ' + patchFetch.status + ' ' + patchErr);
-      }
-    }
-
-    return { success: true, is_starred: isAdding, likes_count: exactCount };
+    return { success: true, is_starred: !!isAdding, likes_count: committedCount };
   })();
 
   window.__pendingLikeRequests.set(sId, syncExecution);
@@ -2251,6 +2289,8 @@ window.toggleFeedStar = async function(cardId, e) {
     var serverRes = await window.okbmSyncFeedLikeAction(sId, canonicalUserId, nextStarred, nextCount);
     var finalStarred = (serverRes && typeof serverRes.is_starred === 'boolean') ? serverRes.is_starred : nextStarred;
     var finalCount = (serverRes && typeof serverRes.likes_count === 'number') ? serverRes.likes_count : nextCount;
+    if (nextStarred && finalCount < nextCount) finalCount = nextCount;
+    if (!nextStarred && finalCount > currentCount) finalCount = nextCount;
 
     var userKey = window.okbmGetUserStarsKey(canonicalUserId);
     var currentStarsMap = safeGetJSON(userKey, {});
@@ -2959,7 +2999,10 @@ window.deleteTripRecord = async function(recordId, e) {
     return '<div class="single-feed-block" data-record-id="' + escapeHtml(String(log.id)) + '" style="background:#000000; border-bottom:2px solid rgba(255,255,255,0.12); overflow:hidden; display:flex; flex-direction:column; flex-shrink:0; margin-bottom:28px; box-sizing:border-box;">' +
       '<div style="padding:14px 16px 10px 16px; background:#000000; display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid rgba(255,255,255,0.06);">' +
         '<div style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">' + escapeHtml(log.spot || '낭만 스팟') + (log.elevation ? (' <span style="font-size:0.75rem; color:#fde047; font-weight:800;">(' + escapeHtml(log.elevation) + ')</span>') : '') + '</div>' +
-        '<span style="font-size:0.72rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;">' + escapeHtml(log.date || '') + '</span>' +
+        '<div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">' +
+          '<span style="font-size:0.72rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;">' + escapeHtml(log.date || '') + '</span>' +
+          ((typeof window.isRecordOwner === 'function' && window.isRecordOwner(log)) ? '' : ((typeof window.buildUgcSafetyButtonsHtml === 'function') ? window.buildUgcSafetyButtonsHtml(log.id, log.userId || log.user_id, log.author || log.nick || log.nickname, 'inline') : '')) +
+        '</div>' +
       '</div>' +
       '<div style="display:flex; flex-direction:column; width:100%;">' +
         photoSectionsHtml +
@@ -3111,6 +3154,12 @@ window.deleteTripRecord = async function(recordId, e) {
       return a.displayNick.localeCompare(b.displayNick, 'ko');
     });
 
+    if (typeof window.isUserBlocked === 'function') {
+      routerItems = routerItems.filter(function(item) {
+        return !item.targetUserId || !window.isUserBlocked(item.targetUserId);
+      });
+    }
+
     var modalEl = document.createElement('div');
     modalEl.id = 'followedRoutersModal';
     modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; width:100%; max-width:100%; background:#000000; z-index:1000030 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
@@ -3210,6 +3259,10 @@ window.deleteTripRecord = async function(recordId, e) {
         validIdSet.add(String(sId).trim());
       }
     });
+
+    if (typeof window.filterHiddenUgcFeeds === 'function') {
+      matchedSavedFeeds = window.filterHiddenUgcFeeds(matchedSavedFeeds);
+    }
 
     if (allFeeds.length > 0 && validIdSet.size !== savedFeedsList.length) {
       var cleanedIds = savedFeedsList.filter(function(id) {
@@ -3452,6 +3505,10 @@ window.deleteTripRecord = async function(recordId, e) {
         }
       });
 
+      if (typeof window.filterHiddenUgcFeeds === 'function') {
+        newItems = window.filterHiddenUgcFeeds(newItems);
+      }
+
       state.offset += fetchedRows.length;
       if (fetchedRows.length < state.limit) {
         state.hasMore = false;
@@ -3517,6 +3574,10 @@ window.deleteTripRecord = async function(recordId, e) {
       return norm;
     });
 
+    if (typeof window.filterHiddenUgcFeeds === 'function') {
+      matchedFeeds = window.filterHiddenUgcFeeds(matchedFeeds);
+    }
+
     var dedupMap = new Map();
     matchedFeeds.forEach(function(item) {
       var sId = String(item.id).trim();
@@ -3566,6 +3627,9 @@ window.deleteTripRecord = async function(recordId, e) {
       followBtnHtml = isFollowing
         ? '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(52,211,153,0.15); border:1px solid #34d399; color:#34d399; padding:4px 10px; border-radius:14px; font-size:0.68rem; font-weight:900; cursor:pointer; display:inline-flex; align-items:center; gap:3px; flex-shrink:0;"><svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>관심</span></button>'
         : '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22); color:#ffffff; padding:4px 10px; border-radius:14px; font-size:0.68rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:3px; flex-shrink:0;"><svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>관심</span></button>';
+      if (targetUserId) {
+        followBtnHtml += '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.blockCommunityUser(this.dataset.userId, this.dataset.author);" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); color:#fda4af; padding:4px 10px; border-radius:14px; font-size:0.68rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:3px; flex-shrink:0;">차단</button>';
+      }
     }
 
     var cardsHtml = '';
@@ -3799,8 +3863,19 @@ window.deleteTripRecord = async function(recordId, e) {
       logs = pool.slice();
     }
 
+    if (typeof window.filterHiddenUgcFeeds === 'function') {
+      logs = window.filterHiddenUgcFeeds(logs);
+    }
+
     if (targetRec && !logs.some(function(r) { return String(r.id).trim() === sId; })) {
-      logs.unshift(targetRec);
+      if (!(typeof window.isFeedHiddenByUgc === 'function' && window.isFeedHiddenByUgc(targetRec))) {
+        logs.unshift(targetRec);
+      }
+    }
+
+    if (targetRec && typeof window.isFeedHiddenByUgc === 'function' && window.isFeedHiddenByUgc(targetRec)) {
+      if (typeof showToast === 'function') showToast('숨김 처리된 피드입니다.', 'info', 1800);
+      return;
     }
 
     if (logs.length === 0) {
@@ -3828,9 +3903,12 @@ window.deleteTripRecord = async function(recordId, e) {
       <div style="position:fixed; top:calc(10px + env(safe-area-inset-top, 0px)); left:0; right:0; max-width:440px; margin:0 auto; padding:0 12px; display:flex; justify-content:space-between; align-items:center; z-index:1000025; pointer-events:none;">
         <button type="button" onclick="window.goBackModal(event);" style="pointer-events:auto; background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.2); color:#ffffff; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0;">◀</button>
         
-        <button type="button" id="btnFloatEditTripLog" onclick="window.__triggerEditCurrentActiveFeed();" style="pointer-events:auto; background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.2); color:#fde047; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0;" title="현재 피드 수정">
-          <svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        </button>
+        <div style="pointer-events:auto; display:flex; align-items:center; gap:6px;">
+          <div id="btnFloatUgcSafety" style="display:none; align-items:center; gap:6px;"></div>
+          <button type="button" id="btnFloatEditTripLog" onclick="window.__triggerEditCurrentActiveFeed();" style="background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.2); color:#fde047; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0;" title="현재 피드 수정">
+            <svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </button>
+        </div>
       </div>
 
       <div id="dualFeedScrollContainer" onscroll="window.__onDualFeedContainerScroll(this);" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:calc(env(safe-area-inset-top, 0px)) 0 calc(76px + env(safe-area-inset-bottom, 8px)) 0; display:flex; flex-direction:column; box-sizing:border-box;">
@@ -3844,6 +3922,24 @@ window.deleteTripRecord = async function(recordId, e) {
       window.ensureMasterBottomDock('history');
     }
 
+    window.__syncDualFeedUgcChrome = function(curRecord) {
+      var editBtn = document.getElementById('btnFloatEditTripLog');
+      var safetyWrap = document.getElementById('btnFloatUgcSafety');
+      var isOwn = Boolean(curRecord && window.isRecordOwner && window.isRecordOwner(curRecord));
+      if (editBtn) {
+        editBtn.style.display = isOwn ? 'flex' : 'none';
+      }
+      if (safetyWrap) {
+        if (!isOwn && curRecord && typeof window.buildUgcSafetyButtonsHtml === 'function') {
+          safetyWrap.innerHTML = window.buildUgcSafetyButtonsHtml(curRecord.id, curRecord.userId || curRecord.user_id, curRecord.author || curRecord.nick || curRecord.nickname, 'compact');
+          safetyWrap.style.display = 'flex';
+        } else {
+          safetyWrap.innerHTML = '';
+          safetyWrap.style.display = 'none';
+        }
+      }
+    };
+
    window.__onDualFeedContainerScroll = function(container) {
       if (!container) return;
       var cards = container.querySelectorAll('.single-feed-block');
@@ -3854,7 +3950,6 @@ window.deleteTripRecord = async function(recordId, e) {
           var fId = c.dataset.recordId;
           if (fId) {
             window.__currentActiveDualFeedId = String(fId);
-            // 🛡️ [보안 가드 2]: 스크롤 중인 카드가 내 글일 때만 수정 버튼 노출
             var curRecord = (logs || []).find(function(r) { return r && String(r.id).trim() === String(fId).trim(); });
             if (!curRecord && typeof window.okbmFindFeedRecord === 'function') {
               curRecord = window.okbmFindFeedRecord(fId);
@@ -3862,15 +3957,14 @@ window.deleteTripRecord = async function(recordId, e) {
             if (!curRecord) {
               curRecord = (window.interactiveHistory || []).find(function(r) { return r && String(r.id).trim() === String(fId).trim(); });
             }
-            var editBtn = document.getElementById('btnFloatEditTripLog');
-            if (editBtn) {
-              editBtn.style.display = (curRecord && window.isRecordOwner(curRecord)) ? 'flex' : 'none';
-            }
+            window.__syncDualFeedUgcChrome(curRecord);
           }
           break;
         }
       }
     };
+
+    window.__syncDualFeedUgcChrome(logs[startIdx]);
 
     window.__triggerEditCurrentActiveFeed = function() {
       triggerHaptic(10);
@@ -4759,10 +4853,9 @@ window.deleteTripRecord = async function(recordId, e) {
     var rUserId = String(record.userId || record.user_id || '').trim();
     if (!rUserId || rUserId === 'guest') return false;
 
-    var cleanMy = myUserId.replace(/^kakao_/, '').trim();
-    var cleanR = rUserId.replace(/^kakao_/, '').trim();
-
-    return Boolean(cleanMy && cleanR && cleanMy === cleanR);
+    if (typeof window.isCurrentUserId === 'function') return window.isCurrentUserId(rUserId);
+    if (typeof window.okbmSameAccountId === 'function') return window.okbmSameAccountId(myUserId, rUserId);
+    return myUserId === rUserId;
   };
 
   window.openRichAfterTripModal = function(record) {
@@ -5473,6 +5566,35 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
  window.updateCarouselDots = window.updateCarouselFeedState;
 
+  function okbmBuildReelHeaderBarHtml(authorName, recordUserId, avatarMarkup, tripDate, spotName, isRegisteredSpot, extraRightHtml) {
+    var safeAuthor = escapeHtml(authorName || '낭만백패커');
+    var safeUserId = escapeHtml(recordUserId || '');
+    var safeSpot = escapeHtml(spotName || '나의 힐링 스팟');
+    var safeDate = escapeHtml(tripDate || '');
+    var spotRow = isRegisteredSpot
+      ? ('<button type="button" data-spot="' + safeSpot + '" onclick="window.navigateToSpotMap(this.dataset.spot, event);" style="background:none; border:none; padding:0; display:inline-flex; align-items:center; gap:2px; cursor:pointer; text-align:left; min-width:0; overflow:hidden;" title="지도에서 박지 위치 확인">' +
+          '<span style="font-size:0.74rem; font-weight:800; color:#e2e8f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-decoration:underline; text-decoration-color:rgba(56,189,248,0.45); text-underline-offset:2px; line-height:1.3;">' + safeSpot + '</span>' +
+          '<span style="font-size:0.60rem; color:#38bdf8; font-weight:900; flex-shrink:0;">↗</span>' +
+        '</button>')
+      : ('<span style="font-size:0.74rem; font-weight:800; color:#e2e8f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.3;">' + safeSpot + '</span>');
+
+    return '<div class="reel-header-row" style="position:absolute !important; top:max(26px, env(safe-area-inset-top, 0px)) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; z-index:50 !important; isolation:isolate !important; transform:translateZ(40px) !important; -webkit-transform:translateZ(40px) !important; content-visibility:visible !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 72%, transparent 100%) !important; border-bottom:none !important;">' +
+      '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
+        '<button type="button" data-author="' + safeAuthor + '" data-user-id="' + safeUserId + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.6);" title="' + safeAuthor + '님의 피드 모아보기">' +
+          avatarMarkup +
+        '</button>' +
+        '<div style="display:flex; flex-direction:column; justify-content:center; min-width:0; flex:1;">' +
+          '<div style="display:flex; align-items:center; gap:6px; min-width:0; line-height:1.2;">' +
+            '<span style="font-size:0.82rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + safeAuthor + '</span>' +
+            (safeDate ? '<span style="font-size:0.62rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace; flex-shrink:0;">' + safeDate + '</span>' : '') +
+          '</div>' +
+          spotRow +
+        '</div>' +
+      '</div>' +
+      (extraRightHtml ? ('<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' + extraRightHtml + '</div>') : '') +
+    '</div>';
+  }
+
 window.renderHistoryStage = function(isLoading) {
     var modal = document.getElementById('romanticHistoryModal');
     if (!modal) return;
@@ -5546,6 +5668,10 @@ window.renderHistoryStage = function(isLoading) {
       combinedList.push(norm);
       addedIds.add(feedId);
     });
+
+    if (typeof window.filterHiddenUgcFeeds === 'function') {
+      combinedList = window.filterHiddenUgcFeeds(combinedList);
+    }
 
 
     var currentList = combinedList;
@@ -5707,29 +5833,7 @@ window.renderHistoryStage = function(isLoading) {
           }
         }
 
-        var headerBarHtml = '<div class="reel-header-row" style="position:absolute !important; top:max(26px, env(safe-area-inset-top, 0px)) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 72%, transparent 100%) !important; border-bottom:none !important;">' +
-          '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
-            '<button type="button" data-author="' + escapeHtml(authorName) + '" data-user-id="' + escapeHtml(recordUserId) + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.6);" title="' + escapeHtml(authorName) + '님의 피드 모아보기">' +
-              avatarMarkup +
-            '</button>' +
-            '<div style="display:flex; flex-direction:column; justify-content:center; min-width:0; flex:1;">' +
-              '<div style="display:flex; align-items:center; line-height:1.2;">' +
-                '<span style="font-size:0.68rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;">' + escapeHtml(tripDate) + '</span>' +
-              '</div>' +
-              (isRegisteredSpot ? (
-                '<button type="button" data-spot="' + escapeHtml(spotName) + '" onclick="window.navigateToSpotMap(this.dataset.spot, event);" style="background:none; border:none; padding:0; display:inline-flex; align-items:center; gap:2px; cursor:pointer; text-align:left; min-width:0; overflow:hidden;" title="지도에서 박지 위치 확인">' +
-                  '<span style="font-size:0.82rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-decoration:underline; text-decoration-color:rgba(56,189,248,0.45); text-underline-offset:2px; line-height:1.3;">' + escapeHtml(spotName) + '</span>' +
-                  '<span style="font-size:0.60rem; color:#38bdf8; font-weight:900; flex-shrink:0;">↗</span>' +
-                '</button>'
-              ) : (
-                '<span style="font-size:0.82rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.3;">' + escapeHtml(spotName) + '</span>'
-              )) +
-            '</div>' +
-          '</div>' +
-          '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
-            socialBadgesHtml +
-          '</div>' +
-        '</div>';
+        var headerBarHtml = okbmBuildReelHeaderBarHtml(authorName, recordUserId, avatarMarkup, tripDate, spotName, isRegisteredSpot, socialBadgesHtml);
 
         // 🧰 [하단 4대 도구 인라인 슬라이드 서랍 토글]
         window.toggleFeedBottomTools = function(cardId, e) {
@@ -5809,7 +5913,9 @@ window.renderHistoryStage = function(isLoading) {
             '</button>' +
           '</div>';
         } else {
-          bottomToolsHtml = '';
+          bottomToolsHtml = (!isMyRecord && typeof window.buildUgcSafetyButtonsHtml === 'function')
+            ? window.buildUgcSafetyButtonsHtml(cardPureId, recordUserId, authorName, 'inline')
+            : '';
         }
 
         // 📷 [인스타그램 규격 순수 매트블랙 사진 트랙]
@@ -5975,6 +6081,11 @@ window.renderHistoryStage = function(isLoading) {
       var reelContainer = document.getElementById('reelsVerticalContainer');
       if (!reelContainer || !Array.isArray(newItems) || newItems.length === 0) return;
 
+      if (typeof window.filterHiddenUgcFeeds === 'function') {
+        newItems = window.filterHiddenUgcFeeds(newItems);
+      }
+      if (!newItems.length) return;
+
       var existingCards = reelContainer.querySelectorAll('.reel-page-snap');
       var startIdx = existingCards.length;
 
@@ -5986,7 +6097,7 @@ window.renderHistoryStage = function(isLoading) {
       var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
       var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
 
-      var appendedHtml = newItems.map(function(item, idxOffset) {
+    var appendedHtml = newItems.map(function(item, idxOffset) {
         var globalIdx = startIdx + idxOffset;
         var record = window.normalizeHistoryRecord(item, globalIdx);
         var cardId = escapeHtml(String(record.id || globalIdx));
@@ -6016,26 +6127,7 @@ window.renderHistoryStage = function(isLoading) {
           ? '<img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="' + escapeHtml(targetAvatarUrl) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />'
           : '<div style="width:100%; height:100%; background:#090d14; display:flex; align-items:center; justify-content:center;"><img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="" style="width:100%; height:100%; object-fit:cover; display:none;" /><svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
 
-        var headerBarHtml = '<div class="reel-header-row" style="position:absolute !important; top:max(26px, env(safe-area-inset-top, 0px)) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 72%, transparent 100%) !important; border-bottom:none !important;">' +
-          '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
-            '<button type="button" data-author="' + escapeHtml(authorName) + '" data-user-id="' + escapeHtml(recordUserId) + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.6);" title="' + escapeHtml(authorName) + '님의 피드 모아보기">' +
-              avatarMarkup +
-            '</button>' +
-            '<div style="display:flex; flex-direction:column; justify-content:center; min-width:0; flex:1;">' +
-              '<div style="display:flex; align-items:center; line-height:1.2;">' +
-                '<span style="font-size:0.68rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;">' + escapeHtml(tripDate) + '</span>' +
-              '</div>' +
-              (isRegisteredSpot ? (
-                '<button type="button" data-spot="' + escapeHtml(spotName) + '" onclick="window.navigateToSpotMap(this.dataset.spot, event);" style="background:none; border:none; padding:0; display:inline-flex; align-items:center; gap:2px; cursor:pointer; text-align:left; min-width:0; overflow:hidden;" title="지도에서 박지 위치 확인">' +
-                  '<span style="font-size:0.82rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-decoration:underline; text-decoration-color:rgba(56,189,248,0.45); text-underline-offset:2px; line-height:1.3;">' + escapeHtml(spotName) + '</span>' +
-                  '<span style="font-size:0.60rem; color:#38bdf8; font-weight:900; flex-shrink:0;">↗</span>' +
-                '</button>'
-              ) : (
-                '<span style="font-size:0.82rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.3;">' + escapeHtml(spotName) + '</span>'
-              )) +
-            '</div>' +
-          '</div>' +
-        '</div>';
+        var headerBarHtml = okbmBuildReelHeaderBarHtml(authorName, recordUserId, avatarMarkup, tripDate, spotName, isRegisteredSpot, '');
 
         var horizontalSlidesHtml = mediaItems.map(function(pUrl) {
           return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; margin:0 !important;">' +
@@ -6078,6 +6170,9 @@ window.renderHistoryStage = function(isLoading) {
                   '<svg id="feedStarIcon_' + cleanCardId + '" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease; pointer-events:none;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
                   '<span id="feedStarCountText_' + cleanCardId + '" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif; pointer-events:none;">' + starCount + '</span>' +
                 '</button>' +
+              '</div>' +
+              '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
+                (!isMyRecord && typeof window.buildUgcSafetyButtonsHtml === 'function' ? window.buildUgcSafetyButtonsHtml(cleanCardId, recordUserId, authorName, 'inline') : '') +
               '</div>' +
             '</div>' +
             '<div id="feedPhotoMemoText_' + cardId + '" class="reel-memo-fixed-box">' +
@@ -6130,6 +6225,12 @@ window.renderHistoryStage = function(isLoading) {
         window.__reelWindowObserver = new IntersectionObserver(function(entries) {
           entries.forEach(function(entry) {
             if (entry.isIntersecting && entry.intersectionRatio >= 0.25) {
+              var headerRow = entry.target.querySelector('.reel-header-row');
+              if (headerRow) {
+                headerRow.style.visibility = 'visible';
+                headerRow.style.opacity = '1';
+                headerRow.style.zIndex = '50';
+              }
               var curIdx = parseInt(entry.target.dataset.reelIdx, 10);
               if (!isNaN(curIdx)) {
                 var totalCards = reelContainer.querySelectorAll('.reel-page-snap').length;
