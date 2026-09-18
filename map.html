@@ -5,18 +5,31 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="google" content="notranslate" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="낭만루트" />
+    <link rel="apple-touch-icon" href="logo.png" />
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <script>
       (function okbmGateMapFirstEntry() {
         try {
-          if (sessionStorage.getItem('okbm_entered_via_index') === '1') return;
           var params = new URLSearchParams(location.search);
-          var homeParams = new URLSearchParams();
           var spot = params.get('spot') || params.get('q');
           var id = params.get('id');
           var feed = params.get('feed');
+          var openParam = params.get('open');
+
+          // 카카오톡 인앱 브라우저는 웹앱이 제대로 안 열리므로 외부 브라우저로 넘긴다.
+          if (/KAKAOTALK/i.test(navigator.userAgent || '') && (spot || id || feed || openParam)) {
+            location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+            return;
+          }
+
+          if (sessionStorage.getItem('okbm_entered_via_index') === '1') return;
+          var homeParams = new URLSearchParams();
           if (spot) {
             sessionStorage.setItem('okbm_pending_map_spot', spot);
             homeParams.set('spot', spot);
@@ -87,23 +100,23 @@
     </script>
 
     <!-- 🧭 브라우저 탭 제목 -->
-    <title>낭만루트 | 박지 탐색부터 패킹·기록·장비관리까지 올인원 아웃도어</title>
+    <title>장소 탐색부터 패킹·기록·장비관리까지 올인원 아웃도어 낭만루트</title>
     <link rel="icon" type="image/png" href="logo.png" />
 
     <!-- 📱 SNS 공유 미리보기 카드 (Open Graph) -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="낭만루트 | 박지 탐색부터 패킹·기록·장비관리까지 올인원 아웃도어" />
-    <meta property="og:description" content="조금 불편해도, 자연에 머물다. 자연에서 하루를 보내는 사람들을 위한 올인원 아웃도어" />
+    <meta property="og:title" content="장소 탐색부터 패킹·기록·장비관리까지 올인원 아웃도어 낭만루트" />
+    <meta property="og:description" content="조금 불편해도, 자연에 머물다. 자연에서 하룻밤을 보내는 사람들을 위한 올인원 아웃도어" />
     <meta property="og:image" content="https://oklionature.github.io/okbm/fulllogoblk.png?v=20260919_v3" />
     <meta property="og:image:secure_url" content="https://oklionature.github.io/okbm/fulllogoblk.png?v=20260919_v3" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="낭만루트 | 박지 탐색부터 패킹·기록·장비관리까지 올인원 아웃도어" />
-    <meta name="twitter:description" content="조금 불편해도, 자연에 머물다. 자연에서 하루를 보내는 사람들을 위한 올인원 아웃도어" />
+    <meta name="twitter:title" content="장소 탐색부터 패킹·기록·장비관리까지 올인원 아웃도어 낭만루트" />
+    <meta name="twitter:description" content="조금 불편해도, 자연에 머물다. 자연에서 하룻밤을 보내는 사람들을 위한 올인원 아웃도어" />
     <meta name="twitter:image" content="https://oklionature.github.io/okbm/fulllogoblk.png?v=20260919_v3" />
-    <meta name="description" content="조금 불편해도, 자연에 머물다. 자연에서 하루를 보내는 사람들을 위한 올인원 아웃도어" />
+    <meta name="description" content="조금 불편해도, 자연에 머물다. 자연에서 하룻밤을 보내는 사람들을 위한 올인원 아웃도어" />
 
     <!-- 🔤 웹폰트 CDN -->
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
@@ -2126,8 +2139,8 @@
             }
           }
         } catch (syncErr) { console.warn('[map.html:DOMContentLoaded:syncUserData]', syncErr); }
-
-    document.addEventListener('click', (e) => {
+ 
+        document.addEventListener('click', (e) => {
           const pcDrop = document.getElementById('pcSearchDropdown');
           const pcInput = document.getElementById('pcSearchInput');
           if (pcDrop && !pcDrop.contains(e.target) && e.target !== pcInput) pcDrop.style.display = 'none';
@@ -2933,19 +2946,27 @@ function updateSmartResetButtons() {
         }
       }
 
-      function shareSpotCard(spotId) {
+     function shareSpotCard(spotId) {
         const spot = spots.find(s => String(s.id).trim() === String(spotId).trim());
         if (!spot) return;
         triggerHaptic(10);
+
         const titleName = spot.fullName || `${spot.spot_main} (${spot.spot_sub || ''})`;
-        const dir = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
-        const shareParams = new URLSearchParams();
         const shareSpotName = String(spot.spot_main || spot.name || '').trim();
         const shareSpotId = String(spot.id || '').trim();
+
+        // 카카오톡은 콘솔에 등록된 HTTPS 도메인만 링크로 연다. 로컬 주소로 보내면 미리보기만 되고 탭이 막힌다.
+        const publicBase = 'https://oklionature.github.io/okbm/';
+        const shareParams = new URLSearchParams();
         if (shareSpotName) shareParams.set('spot', shareSpotName);
         if (shareSpotId) shareParams.set('id', shareSpotId);
-        const shareUrl = `${window.location.origin}${dir}index.html${shareParams.toString() ? '?' + shareParams.toString() : ''}`;
-        const descText = `${spot.trailhead_name || '들머리'}: ${spot.trailhead_addr || spot.entryPoint || '위치 정보 확인'}`;
+        const shareUrl = `${publicBase}index.html${shareParams.toString() ? '?' + shareParams.toString() : ''}`;
+        const shareLogoImg = publicBase + 'fulllogoblk.png?v=20260919_v3';
+
+        const summary = parseStructuredSummary(spot.desc_summary || spot.desc);
+        const rawDesc = summary.view || spot.desc_summary || spot.desc || '자연에서 하룻밤을 보내는 사람들을 위한 올인원 아웃도어';
+        const descText = rawDesc.replace(/\s+/g, ' ').trim();
+        const kakaoDesc = descText.length > 80 ? descText.slice(0, 79) + '…' : descText;
 
         if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized()) {
           try {
@@ -2955,8 +2976,10 @@ function updateSmartResetButtons() {
                 objectType: 'feed',
                 content: {
                   title: `[낭만루트] ${titleName}`,
-                  description: descText,
-                  imageUrl: `${window.location.origin}${dir}fulllogoblk.png?v=20260919_v3`,
+                  description: kakaoDesc,
+                  imageUrl: shareLogoImg,
+                  imageWidth: 800,
+                  imageHeight: 800,
                   link: {
                     mobileWebUrl: shareUrl,
                     webUrl: shareUrl
@@ -2964,23 +2987,33 @@ function updateSmartResetButtons() {
                 },
                 buttons: [
                   {
-                    title: '박지 코스 및 내비 확인',
+                    title: '앱에서 보기',
                     link: {
                       mobileWebUrl: shareUrl,
                       webUrl: shareUrl
                     }
                   }
-                ]
+                ],
+                installTalk: true
               });
               return;
             }
           } catch (kakaoErr) { console.warn('[map.html:shareSpotCard:kakao]', kakaoErr); }
         }
 
+        const labeledShareText = `[낭만루트] ${titleName}\n${descText}\n\n앱에서 보기`;
         if (navigator.share) {
-          navigator.share({ title: `[낭만루트] ${titleName}`, text: descText, url: shareUrl }).catch((e) => { console.warn('[map.html:shareSpotCard:navigator]', e); });
+          const isApple = /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+          const shareData = isApple
+            ? { title: '앱에서 보기', url: shareUrl }
+            : { title: '앱에서 보기', text: labeledShareText, url: shareUrl };
+          navigator.share(shareData).catch((e) => {
+            if (e && e.name === 'AbortError') return;
+            console.warn('[map.html:shareSpotCard:navigator]', e);
+            copyTextToClipboard('앱에서 보기\n' + shareUrl, '앱에서 보기 링크가 복사되었습니다!');
+          });
         } else {
-          copyTextToClipboard(shareUrl, '스팟 공유 링크가 복사되었습니다!');
+          copyTextToClipboard('앱에서 보기\n' + shareUrl, '앱에서 보기 링크가 복사되었습니다!');
         }
       }
 

@@ -5,6 +5,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="google" content="notranslate" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="낭만루트" />
+  <link rel="apple-touch-icon" href="logo.png" />
   <script>
     (function initStableAppViewport() {
       var lastWidth = window.innerWidth;
@@ -119,6 +124,15 @@
         var bootParams = new URLSearchParams(window.location.search);
         var bootSpot = bootParams.get('spot') || bootParams.get('q');
         var bootId = bootParams.get('id');
+        var bootOpen = bootParams.get('open');
+        var bootTab = bootParams.get('tab');
+        var bootFeed = bootParams.get('feed');
+
+        if (/KAKAOTALK/i.test(navigator.userAgent || '') && (bootSpot || bootId || bootOpen || bootTab || bootFeed)) {
+          location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+          return;
+        }
+
         if (bootSpot) sessionStorage.setItem('okbm_pending_map_spot', bootSpot);
         if (bootId) sessionStorage.setItem('okbm_pending_map_id', bootId);
       } catch (e) {}
@@ -259,12 +273,12 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>낭만루트 | 박지 탐색부터 패킹·기록·장비관리까지 올인원 아웃도어</title>
+  <title>장소 탐색부터 패킹·기록·장비관리까지 올인원 아웃도어 낭만루트</title>
   <link rel="icon" type="image/png" href="logo.png" />
 
   <!-- 📱 SNS 공유 미리보기 카드 (Open Graph) -->
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="낭만루트 | 박지 탐색부터 패킹·기록·장비관리까지 올인원 아웃도어" />
+  <meta property="og:title" content="장소 탐색부터 패킹·기록·장비관리까지 올인원 아웃도어 낭만루트" />
   <meta property="og:description" content="조금 불편해도, 자연에 머물다. 자연에서 하루를 보내는 사람들을 위한 올인원 아웃도어" />
   <meta property="og:image" content="https://oklionature.github.io/okbm/fulllogoblk.png?v=20260919_v3" />
   <meta property="og:image:secure_url" content="https://oklionature.github.io/okbm/fulllogoblk.png?v=20260919_v3" />
@@ -272,7 +286,7 @@
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="낭만루트 | 박지 탐색부터 패킹·기록·장비관리까지 올인원 아웃도어" />
+  <meta name="twitter:title" content="장소 탐색부터 패킹·기록·장비관리까지 올인원 아웃도어 낭만루트" />
   <meta name="twitter:description" content="조금 불편해도, 자연에 머물다. 자연에서 하루를 보내는 사람들을 위한 올인원 아웃도어" />
   <meta name="twitter:image" content="https://oklionature.github.io/okbm/fulllogoblk.png?v=20260919_v3" />
   <meta name="description" content="조금 불편해도, 자연에 머물다. 자연에서 하루를 보내는 사람들을 위한 올인원 아웃도어" />
@@ -4975,10 +4989,33 @@ var adBannersHtml = `
       var urlParams = new URLSearchParams(window.location.search);
       var openParam = urlParams.get('open');
       var tabParam = urlParams.get('tab');
+      var spotParam = urlParams.get('spot') || urlParams.get('q');
+      var idParam = urlParams.get('id');
 
       var releaseGuard = function() {
         document.documentElement.classList.remove('direct-modal-pending');
       };
+
+      if (spotParam) {
+        try { sessionStorage.setItem('okbm_pending_map_spot', spotParam); } catch (e) {}
+      }
+      if (idParam) {
+        try { sessionStorage.setItem('okbm_pending_map_id', idParam); } catch (e) {}
+      }
+
+      if (openParam === 'map' || tabParam === 'map') {
+        var mapParams = [];
+        if (spotParam) mapParams.push('spot=' + encodeURIComponent(spotParam));
+        if (idParam) mapParams.push('id=' + encodeURIComponent(idParam));
+        var targetMapUrl = 'map.html' + (mapParams.length ? '?' + mapParams.join('&') : '');
+        sessionStorage.setItem('okbm_entered_via_index', '1');
+        window.location.replace(targetMapUrl);
+        return;
+      }
+
+      if (spotParam || idParam) {
+        releaseGuard();
+      }
 
       if (tabParam === 'history' || openParam === 'history') {
         if (window.history && window.history.replaceState) {
