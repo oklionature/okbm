@@ -9,6 +9,32 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <script>
+      (function okbmGateMapFirstEntry() {
+        try {
+          if (sessionStorage.getItem('okbm_entered_via_index') === '1') return;
+          var params = new URLSearchParams(location.search);
+          var homeParams = new URLSearchParams();
+          var spot = params.get('spot') || params.get('q');
+          var id = params.get('id');
+          var feed = params.get('feed');
+          if (spot) {
+            sessionStorage.setItem('okbm_pending_map_spot', spot);
+            homeParams.set('spot', spot);
+          }
+          if (id) {
+            sessionStorage.setItem('okbm_pending_map_id', id);
+            homeParams.set('id', id);
+          }
+          if (feed) homeParams.set('feed', feed);
+          var dir = location.pathname.substring(0, location.pathname.lastIndexOf('/') + 1);
+          var homeUrl = dir + 'index.html';
+          var qs = homeParams.toString();
+          if (qs) homeUrl += '?' + qs;
+          location.replace(homeUrl);
+        } catch (e) {}
+      })();
+    </script>
+    <script>
       (function autoPurgeStaleGearCache() {
         var CURRENT_GEAR_EPOCH = '20260916_V4_1715';
         try {
@@ -61,14 +87,23 @@
     </script>
 
     <!-- 🧭 브라우저 탭 제목 -->
-    <title>낭만루트 ROMANTIC ROUTE | 전국 아웃도어 지도</title>
+    <title>낭만루트 | 박지 탐색부터 패킹·기록·장비관리까지 올인원 아웃도어</title>
+    <link rel="icon" type="image/png" href="logo.png" />
 
     <!-- 📱 SNS 공유 미리보기 카드 (Open Graph) -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="낭만루트 ROMANTIC ROUTE | 전국 아웃도어 지도" />
-    <meta property="og:description" content="전국 검증된 야영 스팟, 들머리 주소, 내비 바로가기, 코스 정보" />
-    <meta property="og:image" content="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80" />
-    <meta name="description" content="전국 검증된 야영 스팟, 들머리 주소, 내비 바로가기, 코스 정보" />
+    <meta property="og:title" content="낭만루트 | 박지 탐색부터 패킹·기록·장비관리까지 올인원 아웃도어" />
+    <meta property="og:description" content="조금 불편해도, 자연에 머물다. 자연에서 하루를 보내는 사람들을 위한 올인원 아웃도어" />
+    <meta property="og:image" content="https://oklionature.github.io/okbm/fulllogoblk.png?v=20260919_v3" />
+    <meta property="og:image:secure_url" content="https://oklionature.github.io/okbm/fulllogoblk.png?v=20260919_v3" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="낭만루트 | 박지 탐색부터 패킹·기록·장비관리까지 올인원 아웃도어" />
+    <meta name="twitter:description" content="조금 불편해도, 자연에 머물다. 자연에서 하루를 보내는 사람들을 위한 올인원 아웃도어" />
+    <meta name="twitter:image" content="https://oklionature.github.io/okbm/fulllogoblk.png?v=20260919_v3" />
+    <meta name="description" content="조금 불편해도, 자연에 머물다. 자연에서 하루를 보내는 사람들을 위한 올인원 아웃도어" />
 
     <!-- 🔤 웹폰트 CDN -->
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
@@ -2063,6 +2098,7 @@
         initStaticVectors();
         initMapEngine();
         if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
+        if (typeof trackDailyVisit === 'function') trackDailyVisit();
        if (window.innerWidth <= 768) {
           isSidebarCollapsed = true;
           const sidebar = document.getElementById('sidebar');
@@ -2210,14 +2246,31 @@
 
      function checkUrlParamSpotFocus() {
         const urlParams = new URLSearchParams(window.location.search);
-        const targetName = urlParams.get('spot') || urlParams.get('q');
-        const targetId = urlParams.get('id');
+        let targetName = urlParams.get('spot') || urlParams.get('q');
+        let targetId = urlParams.get('id');
+        try {
+          if (!targetId) targetId = sessionStorage.getItem('okbm_pending_map_id') || '';
+          if (!targetName) {
+            targetName = sessionStorage.getItem('okbm_pending_map_spot')
+              || sessionStorage.getItem('okbm_target_spot')
+              || sessionStorage.getItem('okbm_target_map_spot')
+              || '';
+          }
+        } catch (e) {}
         if (!spots || spots.length === 0) return;
+
+        function clearPendingMapFocus() {
+          try {
+            sessionStorage.removeItem('okbm_pending_map_id');
+            sessionStorage.removeItem('okbm_pending_map_spot');
+          } catch (e) {}
+        }
 
         // 1순위: 고유 ID로 1:1 직통 포커스 (동명 산 혼선 0% 차단)
         if (targetId) {
           const matchedById = spots.find(s => String(s.id).trim() === String(targetId).trim());
           if (matchedById) {
+            clearPendingMapFocus();
             setTimeout(() => focusSpotOnMap(matchedById), 350);
             return;
           }
@@ -2234,7 +2287,10 @@
             const reg = (s.region || '').toLowerCase();
             return fName.includes(clean) || (main.includes(clean) && (sub.includes(clean) || city.includes(clean) || reg.includes(clean))) || main === clean;
           });
-          if (found) setTimeout(() => focusSpotOnMap(found), 350);
+          if (found) {
+            clearPendingMapFocus();
+            setTimeout(() => focusSpotOnMap(found), 350);
+          }
         }
       }
 
@@ -2882,8 +2938,13 @@ function updateSmartResetButtons() {
         if (!spot) return;
         triggerHaptic(10);
         const titleName = spot.fullName || `${spot.spot_main} (${spot.spot_sub || ''})`;
-        const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1) + 'index.html';
-        const shareUrl = `${window.location.origin}${basePath}?spot=${encodeURIComponent(spot.spot_main || spot.name)}`;
+        const dir = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+        const shareParams = new URLSearchParams();
+        const shareSpotName = String(spot.spot_main || spot.name || '').trim();
+        const shareSpotId = String(spot.id || '').trim();
+        if (shareSpotName) shareParams.set('spot', shareSpotName);
+        if (shareSpotId) shareParams.set('id', shareSpotId);
+        const shareUrl = `${window.location.origin}${dir}index.html${shareParams.toString() ? '?' + shareParams.toString() : ''}`;
         const descText = `${spot.trailhead_name || '들머리'}: ${spot.trailhead_addr || spot.entryPoint || '위치 정보 확인'}`;
 
         if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized()) {
@@ -2895,7 +2956,7 @@ function updateSmartResetButtons() {
                 content: {
                   title: `[낭만루트] ${titleName}`,
                   description: descText,
-                  imageUrl: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=1200&q=80',
+                  imageUrl: `${window.location.origin}${dir}fulllogoblk.png?v=20260919_v3`,
                   link: {
                     mobileWebUrl: shareUrl,
                     webUrl: shareUrl
@@ -6223,9 +6284,9 @@ var overlay = document.getElementById('customModalOverlay');
         }
       })();
     </script>
-    <script src="romantic-sync.js?v=2.8.18"></script>
+    <script src="romantic-sync.js?v=2.8.20"></script>
     <script src="templates.js?v=2.6.3"></script>
-    <script src="romantic-history.js?v=2.7.1"></script>
+    <script src="romantic-history.js?v=2.7.2"></script>
     <script src="romantic-plan.js?v=2.7.4"></script>
 </body>
 </html>

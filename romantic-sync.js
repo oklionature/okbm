@@ -654,31 +654,68 @@ function isUserLoggedIn() {
   return hasValid;
 }
 
-function trackDailyVisit() {
-  var todayDateStr = new Date().toISOString().slice(0, 10);
-  var sessionKey = 'okbm_visit_recorded_' + todayDateStr;
-  if (!sessionStorage.getItem(sessionKey)) {
-    sessionStorage.setItem(sessionKey, 'true');
-    var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
-    var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
-    if (targetUrl && targetKey) {
-      fetch(targetUrl + '/rest/v1/stats', {
-        method: 'POST',
-        headers: {
-          'apikey': targetKey,
-          'Authorization': 'Bearer ' + targetKey,
-          'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify({
-          visit_date: todayDateStr,
-          is_logged_in: isUserLoggedIn(),
-          created_at: new Date().toISOString()
-        })
-      }).catch(function() {});
-    }
+function okbmSeoulDateKey() {
+  try {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Seoul',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date());
+  } catch (e) {
+    return new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).slice(0, 10);
   }
 }
+
+function okbmGetVisitorId() {
+  if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
+    var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
+    var uid = (profile && profile.id) ? String(profile.id).trim() : String(localStorage.getItem('okbm_user_id') || '').trim();
+    if (uid) {
+      return (typeof window.okbmCanonicalUserId === 'function') ? window.okbmCanonicalUserId(uid) : uid;
+    }
+  }
+  var guestId = String(localStorage.getItem('okbm_visitor_id') || '').trim();
+  if (!guestId) {
+    guestId = 'guest_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem('okbm_visitor_id', guestId);
+  }
+  return guestId;
+}
+
+function trackDailyVisit(force) {
+  var visitorId = okbmGetVisitorId();
+  if (!visitorId) return;
+
+  var todayDateStr = okbmSeoulDateKey();
+  var isMember = typeof isUserLoggedIn === 'function' && isUserLoggedIn();
+  var sessionKey = 'okbm_visit_recorded_' + todayDateStr + '_' + visitorId;
+  if (!force && sessionStorage.getItem(sessionKey)) return;
+
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  if (!targetUrl || !targetKey) return;
+
+  sessionStorage.setItem(sessionKey, 'pending');
+  fetch(targetUrl + '/rest/v1/rpc/track_visit', {
+    method: 'POST',
+    headers: {
+      'apikey': targetKey,
+      'Authorization': 'Bearer ' + targetKey,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      p_visitor_id: visitorId,
+      p_is_member: Boolean(isMember)
+    })
+  }).then(function(res) {
+    if (res.ok) sessionStorage.setItem(sessionKey, 'true');
+    else sessionStorage.removeItem(sessionKey);
+  }).catch(function() {
+    sessionStorage.removeItem(sessionKey);
+  });
+}
+window.trackDailyVisit = trackDailyVisit;
 
 window.okbmNormalizeDateKey = function(dateStr) {
   if (!dateStr) return '';
@@ -1225,6 +1262,7 @@ if (typeof window !== 'undefined') {
     window.fetchMasterSpotsFromSupabase();
     window.fetchMasterGearsFromSupabase();
     window.fetchRankingsFromSupabase();
+    if (typeof trackDailyVisit === 'function') trackDailyVisit();
   }, 350);
 
   window.addEventListener('online', function() {
@@ -1232,6 +1270,7 @@ if (typeof window !== 'undefined') {
     window.fetchMasterSpotsFromSupabase();
     window.fetchMasterGearsFromSupabase();
     window.fetchRankingsFromSupabase();
+    if (typeof trackDailyVisit === 'function') trackDailyVisit();
     if (localStorage.getItem('okbm_pending_cloud_sync') === 'true' && isUserLoggedIn()) {
       syncUserDataToCloud(true);
     }
@@ -3495,8 +3534,20 @@ window.navigateToDockTab = function(tabId) {
     if (typeof closeHistoryModal === 'function') closeHistoryModal();
     if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
     if (!isMap) {
-      if (typeof window.smoothNavigate === 'function') window.smoothNavigate('map.html');
-      else window.location.assign('map.html');
+      var mapUrl = 'map.html';
+      try {
+        sessionStorage.setItem('okbm_entered_via_index', '1');
+        var pendingId = sessionStorage.getItem('okbm_pending_map_id');
+        var pendingSpot = sessionStorage.getItem('okbm_pending_map_spot')
+          || sessionStorage.getItem('okbm_target_spot')
+          || sessionStorage.getItem('okbm_target_map_spot');
+        var mapParams = [];
+        if (pendingId) mapParams.push('id=' + encodeURIComponent(pendingId));
+        if (pendingSpot) mapParams.push('spot=' + encodeURIComponent(pendingSpot));
+        if (mapParams.length) mapUrl += '?' + mapParams.join('&');
+      } catch (e) {}
+      if (typeof window.smoothNavigate === 'function') window.smoothNavigate(mapUrl);
+      else window.location.assign(mapUrl);
       return;
     }
   } else if (tabId === 'plan') {
@@ -5106,6 +5157,8 @@ async function handleSocialLoginSuccess(provider, providerId, email, nickname, p
       await window.fetchUserFeedLikesFromServer();
     }
   } catch (e) {}
+
+  if (typeof trackDailyVisit === 'function') trackDailyVisit(true);
 
   setTimeout(function() { window.location.reload(); }, 200);
 }

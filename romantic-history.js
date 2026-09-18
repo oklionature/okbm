@@ -2380,7 +2380,8 @@ window.toggleFeedStar = async function(cardId, e) {
     triggerHaptic(10);
     var cleanId = String(recordId || '').trim();
     var cleanSpot = String(spotName || '자연 속 힐링 기록').split('(')[0].trim();
-    var shareUrl = location.origin + location.pathname + '?feed=' + encodeURIComponent(cleanId);
+    var homeDir = location.pathname.substring(0, location.pathname.lastIndexOf('/') + 1);
+    var shareUrl = location.origin + homeDir + 'index.html?feed=' + encodeURIComponent(cleanId);
     var shareTitle = '🏕️ 낭만루트 - ' + cleanSpot;
     var shareDesc = (memoText && memoText.trim().length > 0) ? memoText.trim().slice(0, 100) : '배낭을 메고 자연으로 떠난 낭만 기록을 확인해보세요.';
 
