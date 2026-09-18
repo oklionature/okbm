@@ -1,6 +1,6 @@
 
 /**
- * 🎒 낭만루트 낭만플랜(Plan) 전담 코어 엔진 (romantic-plan.js)
+ *  낭만루트 낭만플랜(Plan) 전담 코어 엔진 (romantic-plan.js)
  * 1. [달력 첫 화면]: 낭만보관함 연동 달력(완료 ★금색 / 계획 ⚑초록색) + 날짜별 출발 계획 메모장 + 낭만플랜세우기 카드
  * 2. [실전 체크리스트]: 음식/소모품 즉시 추가 입력창 + 최하단 고정 [✓ 패킹 체크 완료] 독
  * 3. [10대 슬롯 배낭계산기]: 2x5 그리드 + 28px 라인아트 + [20종 템플릿 카드 생성 ➔] 연동
@@ -107,7 +107,7 @@
         display: flex !important;
       }
 
-      /* 🎒 [체크리스트 & 장비 선반 최적화 클래스군] */
+      /*  [체크리스트 & 장비 선반 최적화 클래스군] */
       .checklist-item-row {
         border-radius: 9px !important;
         padding: 10px 12px !important;
@@ -861,7 +861,7 @@ var totalKg = (totalGrams / 1000).toFixed(2);
                 <button type="button" data-gear="${safeGearName}" onclick="window.toggleFavoriteGear(this.dataset.gear, event);" style="background:none; border:none; cursor:pointer; padding:4px; min-width:28px; min-height:28px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-left:-2px;">
                   ${isFav ? PLAN_SVG.starFilled : PLAN_SVG.starOutline}
                 </button>
-                <div style="min-width:0; flex:1; cursor:pointer;" onclick="if (!window.__longPressTriggered) window.openGearDetailModal('${safeGearName}', '${escapeHtml(targetCatId)}');">
+                <div style="min-width:0; flex:1; cursor:pointer;" onclick="if (!window.__longPressTriggered) window.openGearDetailFromEl(this);">
                   <div style="font-size:0.80rem; font-weight:800; color:${isAdded ? '#ffffff' : '#e2e8f0'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                     ${safeGearName}
                   </div>
@@ -1024,7 +1024,7 @@ var totalKg = (totalGrams / 1000).toFixed(2);
             <span>⭐ 내 장비</span>
           </button>
           <button type="button" id="gdmPackBtn" onclick="window.toggleDetailModalPack()" style="flex:1.4; height:42px; background:linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); border:1px solid rgba(255,255,255,0.2); color:#ffffff; font-size:0.78rem; font-weight:800; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:0 4px 14px rgba(37,99,235,0.4);">
-            <span>🎒 배낭에 담기</span>
+            <span>배낭에 담기</span>
           </button>
         </div>
       </div>
@@ -1082,6 +1082,24 @@ var totalKg = (totalGrams / 1000).toFixed(2);
       evidence: '카탈로그 제원',
       category_id: preferredCatId || 'shelter'
     };
+  };
+
+  window.openGearDetailFromEl = function(el) {
+    if (!el) return;
+    var row = el.closest ? el.closest('[data-gear-name]') : el;
+    if (!row || !row.dataset) return;
+    window.openGearDetailModal(row.dataset.gearName, row.dataset.gearCat);
+  };
+
+  window.confirmRemoveFavoriteGearFromSheet = function(btn) {
+    if (!btn || !btn.dataset) return;
+    var gearName = btn.dataset.gear;
+    var msg = btn.dataset.confirmMsg || '내 장비에서 해제하시겠습니까?';
+    window.showRomanticConfirm(msg, function() {
+      window.removeFavoriteGearFromManager(gearName);
+      var sheet = document.getElementById('gearMetaEditSheet');
+      if (sheet) sheet.remove();
+    });
   };
 
   // 🔍 [장비 상세정보 모달 열기]
@@ -1185,11 +1203,11 @@ var totalKg = (totalGrams / 1000).toFixed(2);
 
     if (packBtn) {
       if (count > 0) {
-        packBtn.innerHTML = `<span>🎒 담김 (${count}개) · 추가하기 +</span>`;
-        packBtn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-        packBtn.style.boxShadow = '0 4px 14px rgba(16,185,129,0.4)';
+        packBtn.innerHTML = '<span>빼기</span>';
+        packBtn.style.background = 'linear-gradient(135deg, #e11d48 0%, #be123c 100%)';
+        packBtn.style.boxShadow = '0 4px 14px rgba(225,29,72,0.4)';
       } else {
-        packBtn.innerHTML = `<span>🎒 배낭에 담기 +</span>`;
+        packBtn.innerHTML = '<span>배낭에 담기</span>';
         packBtn.style.background = 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)';
         packBtn.style.boxShadow = '0 4px 14px rgba(37,99,235,0.4)';
       }
@@ -1208,7 +1226,26 @@ var totalKg = (totalGrams / 1000).toFixed(2);
     if (!gear) return;
     var targetCatId = gear.category_id || window.currentOpeningCategoryId || 'shelter';
     window.currentOpeningCategoryId = targetCatId;
-    window.addGearToCategory(gear.name, Number(gear.weight || gear.weight_g || 0));
+    var currentCatItems = (window.selectedGearMap && window.selectedGearMap[targetCatId]) || [];
+    var packed = currentCatItems.some(function(it) { return it.name === gear.name; });
+
+    if (packed) {
+      window.selectedGearMap[targetCatId] = currentCatItems.filter(function(it) {
+        return it.name !== gear.name;
+      });
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_selected_gears_multi', window.selectedGearMap, true);
+      } else {
+        localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
+      }
+      window.renderPlanCategorySlots();
+      var searchInput = document.getElementById('gearSearchFixedInput');
+      window.renderPresetGearList(searchInput ? searchInput.value : '');
+      if (typeof triggerHaptic === 'function') triggerHaptic(10);
+    } else {
+      window.addGearToCategory(gear.name, Number(gear.weight || gear.weight_g || 0));
+    }
+
     window.updateDetailModalActionButtons();
   };
 
@@ -1412,7 +1449,7 @@ var totalKg = (totalGrams / 1000).toFixed(2);
 
       return `
         <div class="gear-db-item" data-gear-name="${escapeHtml(g.name)}" data-gear-cat="${escapeHtml(category.id)}" style="${isAdded ? 'background:rgba(255,255,255,0.055); border:1px solid rgba(255,255,255,0.22);' : (isFav ? 'background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.12);' : 'background:rgba(255,255,255,0.015); border:1px solid rgba(255,255,255,0.06);')}; border-radius:10px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; cursor:pointer; user-select:none; transition:all 0.15s ease;">
-          <div style="flex:1; min-width:0; padding-right:8px; display:flex; flex-direction:column; gap:2px;" onclick="event.stopPropagation(); if (!window.__longPressTriggered) window.openGearDetailModal('${escapeHtml(g.name)}', '${escapeHtml(category.id)}');">
+          <div style="flex:1; min-width:0; padding-right:8px; display:flex; flex-direction:column; gap:2px;" onclick="event.stopPropagation(); if (!window.__longPressTriggered) window.openGearDetailFromEl(this);">
             <div style="display:flex; align-items:center; gap:5px;">
               <button type="button" onclick="event.stopPropagation(); window.toggleFavoriteGearByIndex(${idx}, event);" style="background:none; border:none; font-size:1.0rem; cursor:pointer; padding:0 2px;">
                 ${isFav ? '⭐' : '<span style="color:#475569; opacity:0.4;">☆</span>'}
@@ -1881,7 +1918,7 @@ window.saveCurrentPackingRecord = function() {
     }
   };
 
-  var CURRENT_GEAR_VERSION = '20260917_CLEAN_1621';
+  var CURRENT_GEAR_VERSION = '20260918_CLEAN_1621_V2';
 
   // 1. 초기 로드 시 버전 불일치 감지 -> 구버전 장비 캐시 자동 소거
   (function verifyGearCacheVersion() {
@@ -2122,7 +2159,7 @@ window.saveCurrentPackingRecord = function() {
     }
   })();
 
-  // 🎒 [실전 패킹 체크리스트 인덱스 안전 토글 엔진 - 스크롤 위치 완벽 보존]
+  //  [실전 패킹 체크리스트 인덱스 안전 토글 엔진 - 스크롤 위치 완벽 보존]
   window.togglePackCheckByIndex = function(itemIdx) {
     var now = new Date();
     var targetDate = window.activeSelectedDateKey || (now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0'));
@@ -2442,7 +2479,7 @@ window.saveCurrentPackingRecord = function() {
       }
     }
 
-    // 🎒 [계산기/체크리스트 공용 무게 및 아이템 데이터 사전 집계]
+    //  [계산기/체크리스트 공용 무게 및 아이템 데이터 사전 집계]
     var totalGrams = 0;
     var planItems = [];
     var cats = window.CATEGORIES || [];
@@ -2637,7 +2674,7 @@ window.saveCurrentPackingRecord = function() {
     // 🎨 [고품질 시그니처 SVG 벡터 세트]
     var UI_ICONS = {
       pin: '<svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:none; stroke:#38bdf8; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
-      gnbLogo: '<svg viewBox="0 0 32 32" fill="none" style="width:14px; height:14px; display:inline-block; vertical-align:middle; flex-shrink:0;"><circle cx="21" cy="6" r="9" fill="rgba(244,114,182,0.12)"/><circle cx="21" cy="6" r="6" fill="rgba(245,158,11,0.18)"/><circle cx="21" cy="6" r="3.8" fill="rgba(251,191,36,0.28)"/><circle cx="2" cy="24" r="1.8" fill="#fda4af"/><circle cx="9" cy="12" r="2.2" fill="#fda4af"/><circle cx="14" cy="16" r="1.8" fill="#fda4af"/><circle cx="13" cy="24" r="1.8" fill="#fda4af"/><path d="M2 24L9 12H12.5L14 16L10 16M10 16L13 24" stroke="#fda4af" stroke-width="1.8" stroke-linecap="round"/><circle cx="21" cy="6" r="2.8" fill="#f59e0b"/><circle cx="27" cy="13" r="2.2" fill="#e2e8f0"/><circle cx="30" cy="24" r="2.4" fill="#e2e8f0"/><path d="M13 24L21 6H25L27 13L22 13M22 13L30 24" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/><circle cx="21" cy="6" r="1" fill="#ffffff"/></svg>',
+      gnbLogo: '<img src="logo.png" alt="낭만루트 로고" style="width:14px; height:14px; object-fit:contain; display:inline-block; vertical-align:middle; flex-shrink:0;" />',
       tentEmpty: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#94a3b8; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0;"><path d="M19 20L12 4 5 20h14z"/><path d="M12 4v16M7 20l5-8 5 8"/></svg>',
       starGold: '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:#f59e0b; stroke:#d97706; stroke-width:1; flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
       flagGreen: '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:#34d399; stroke:#059669; stroke-width:1; flex-shrink:0; filter:drop-shadow(0 1px 3px rgba(52,211,153,0.4));"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>',
@@ -3764,7 +3801,7 @@ window.saveCurrentPackingRecord = function() {
             var isC = cList.some(function(cg){ return cg && cg.name === gearName; });
             var delText = isC ? '장비 영구 삭제' : '내 장비에서 해제';
             var msg = isC ? '이 장비를 영구 삭제하시겠습니까?' : '내 장비에서 해제하시겠습니까?';
-            return '<button type="button" data-gear="' + escapeHtml(gearName) + '" onclick="window.showRomanticConfirm(\'' + msg + '\', function(){ window.removeFavoriteGearFromManager(\'' + escapeHtml(gearName) + '\'); var s=document.getElementById(\'gearMetaEditSheet\'); if(s) s.remove(); });" style="width:100%; height:36px; background:none; border:none; color:#fda4af; font-size:0.72rem; font-weight:700; cursor:pointer; text-decoration:underline;">' + delText + '</button>';
+            return '<button type="button" data-gear="' + escapeHtml(gearName) + '" data-confirm-msg="' + escapeHtml(msg) + '" onclick="window.confirmRemoveFavoriteGearFromSheet(this)" style="width:100%; height:36px; background:none; border:none; color:#fda4af; font-size:0.72rem; font-weight:700; cursor:pointer; text-decoration:underline;">' + delText + '</button>';
           })()}
         </div>
       </div>
@@ -4472,7 +4509,7 @@ window.saveCurrentPackingRecord = function() {
     }, { passive: true });
   };
 
-  // 🎒 달력/메모장의 박지명을 배낭 계산기로 직통 주입하여 기록 시작
+  //  달력/메모장의 박지명을 배낭 계산기로 직통 주입하여 기록 시작
   window.startPackingForDate = function(dateStr, spotName, elev) {
     triggerHaptic(12);
     window.activeSelectedDateKey = dateStr;

@@ -1921,21 +1921,7 @@ function ensureMyReportAndAuthModalsInDOM() {
           <div style="height:47px !important; display:flex !important; align-items:center !important; justify-content:space-between !important; max-width:480px !important; margin:0 auto !important; position:relative !important; z-index:2 !important;">
             <div style="height:47px !important; display:inline-flex !important; align-items:center !important; gap:8px !important; text-decoration:none !important; cursor:default !important;">
               <div style="width:30px !important; height:30px !important; min-width:30px !important; min-height:30px !important; max-width:30px !important; max-height:30px !important; display:flex !important; align-items:center !important; justify-content:center !important; flex-shrink:0 !important; overflow:hidden !important;">
-                <svg viewBox="0 0 32 32" fill="none" style="width:28px !important; height:28px !important; min-width:28px !important; min-height:28px !important; max-width:28px !important; max-height:28px !important; display:block !important; flex-shrink:0 !important;">
-                  <circle cx="21" cy="6" r="9" fill="rgba(244,114,182,0.12)"/>
-                  <circle cx="21" cy="6" r="6" fill="rgba(245,158,11,0.18)"/>
-                  <circle cx="21" cy="6" r="3.8" fill="rgba(251,191,36,0.28)"/>
-                  <circle cx="2" cy="24" r="1.8" fill="#fda4af"/>
-                  <circle cx="9" cy="12" r="2.2" fill="#fda4af"/>
-                  <circle cx="14" cy="16" r="1.8" fill="#fda4af"/>
-                  <circle cx="13" cy="24" r="1.8" fill="#fda4af"/>
-                  <path d="M2 24L9 12H12.5L14 16L10 16M10 16L13 24" stroke="#fda4af" stroke-width="1.8" stroke-linecap="round"/>
-                  <circle cx="21" cy="6" r="2.8" fill="#f59e0b"/>
-                  <circle cx="27" cy="13" r="2.2" fill="#e2e8f0"/>
-                  <circle cx="30" cy="24" r="2.4" fill="#e2e8f0"/>
-                  <path d="M13 24L21 6H25L27 13L22 13M22 13L30 24" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round"/>
-                  <circle cx="21" cy="6" r="1" fill="#ffffff"/>
-                </svg>
+                <img src="logo.png" alt="낭만루트 로고" style="width:28px !important; height:28px !important; object-fit:contain !important; display:block !important;" />
               </div>
               <span style="font-size:1.2rem !important; font-weight:900 !important; letter-spacing:-0.035em !important; line-height:1 !important; color:#ffffff !important; display:inline-block !important;">낭만루트</span>
             </div>
@@ -3413,8 +3399,8 @@ window.ensureMasterBottomDock = function(activeTabId) {
   dock.style.cssText = 'position:fixed !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; max-width:480px !important; margin:0 auto !important; height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; min-height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; padding:0 0 env(safe-area-inset-bottom, 8px) 0 !important; background:rgba(0,0,0,0.98) !important; border-top:1px solid rgba(255,255,255,0.1) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:2147483647 !important; box-sizing:border-box !important; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); pointer-events:auto !important; transform:translateZ(0) !important; -webkit-transform:translateZ(0) !important; contain:paint !important; overscroll-behavior:none !important;';
 
   var tabs = [
-    { id: 'router', name: '낭만루트', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>', action: "window.navigateToDockTab('router')" },
-    { id: 'map', name: '전국지도', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>', action: "window.navigateToDockTab('map')" },
+    { id: 'router', name: '낭만루터', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>', action: "window.navigateToDockTab('router')" },
+    { id: 'map', name: '낭만루트', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M15 5.1L9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5l-.16.03L15 5.1zM15 18.9l-6-2.1V5.1l6 2.1v11.7z"/></svg>', action: "window.navigateToDockTab('map')" },
     { id: 'plan', name: '낭만플랜', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/></svg>', action: "window.navigateToDockTab('plan')" },
     { id: 'history', name: '낭만보관함', svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:19px; height:19px;"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>', action: "window.navigateToDockTab('history')" },
     { id: 'report', name: '마이리포트', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>', action: "window.navigateToDockTab('report')" }
@@ -3485,6 +3471,12 @@ window.navigateToDockTab = function(tabId) {
     var el = document.getElementById(id);
     if (el) el.remove();
   });
+  if (typeof window.unlockHomeScrollForTripModal === 'function') {
+    window.unlockHomeScrollForTripModal();
+  } else {
+    document.body.classList.remove('trip-modal-open');
+    document.body.style.top = '';
+  }
 
   // 3. 5대 탭별 정밀 라우팅 (현 위치 스크롤 카메라 100% 유지)
   if (tabId === 'router' || tabId === 'route') {
@@ -3838,7 +3830,7 @@ window.previewMasterUserCoverPhotoLarge = function() {
 
   var viewer = document.createElement('div');
   viewer.id = 'masterCoverLargeViewerModal';
-  viewer.style.cssText = 'position:fixed; inset:0; z-index:1000100; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:20px; box-sizing:border-box; cursor:pointer;';
+  viewer.style.cssText = 'position:fixed; inset:0; z-index:2147483646 !important; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:20px; box-sizing:border-box; cursor:pointer;';
   viewer.onclick = function() { viewer.remove(); triggerHaptic(8); };
 
   viewer.innerHTML = '<div style="position:relative; width:250px; height:250px; border-radius:50%; border:2px solid rgba(186,230,253,0.6); box-shadow:0 0 35px rgba(56,189,248,0.35); overflow:hidden; background:#07090e; flex-shrink:0;">' +
@@ -3884,7 +3876,7 @@ window.openCoverPhotoCropperModal = function(imageSrc) {
 
   var modal = document.createElement('div');
   modal.id = 'coverPhotoCropperModal';
-  modal.style.cssText = 'position:fixed; inset:0; z-index:3000020; background:#000000; display:flex; flex-direction:column; justify-content:space-between; align-items:center; padding:calc(12px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px; box-sizing:border-box; user-select:none; -webkit-user-select:none; touch-action:none;';
+  modal.style.cssText = 'position:fixed; inset:0; z-index:2147483646 !important; background:#000000; display:flex; flex-direction:column; justify-content:space-between; align-items:center; padding:calc(12px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px; box-sizing:border-box; user-select:none; -webkit-user-select:none; touch-action:none;';
 
   modal.innerHTML = '<div style="width:100%; max-width:480px; display:flex; justify-content:space-between; align-items:center; z-index:50;">' +
       '<button type="button" id="cropperCancelBtn" style="background:none; border:none; color:#cbd5e1; font-size:0.90rem; font-weight:800; cursor:pointer; padding:6px 0;">취소</button>' +

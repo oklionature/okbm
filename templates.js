@@ -850,23 +850,11 @@ var TEMPLATE_NAMES = {
 // 🎨 [내장 SVG 아이콘 팩 - 참조 에러 원천 방지]
 var SVG_ICONS = window.SVG_ICONS || {
   brandLogo: function(color, stroke) {
-    color = color || '#ffffff';
-    stroke = stroke || '#ffffff';
-    return '<svg viewBox="0 0 32 32" fill="none" style="width:20px; height:20px; display:block; flex-shrink:0;">' +
-      '<circle cx="21" cy="6" r="9" fill="rgba(255,255,255,0.08)"/>' +
-      '<circle cx="21" cy="6" r="6" fill="rgba(255,255,255,0.12)"/>' +
-      '<circle cx="21" cy="6" r="3.8" fill="rgba(255,255,255,0.2)"/>' +
-      '<circle cx="2" cy="24" r="1.8" fill="' + stroke + '"/>' +
-      '<circle cx="9" cy="12" r="2.2" fill="' + stroke + '"/>' +
-      '<circle cx="14" cy="16" r="1.8" fill="' + stroke + '"/>' +
-      '<circle cx="13" cy="24" r="1.8" fill="' + stroke + '"/>' +
-      '<path d="M2 24L9 12H12.5L14 16L10 16M10 16L13 24" stroke="' + stroke + '" stroke-width="1.8" stroke-linecap="round"/>' +
-      '<circle cx="21" cy="6" r="2.8" fill="#ffffff"/>' +
-      '<circle cx="27" cy="13" r="2.2" fill="' + color + '"/>' +
-      '<circle cx="30" cy="24" r="2.4" fill="' + color + '"/>' +
-      '<path d="M13 24L21 6H25L27 13L22 13M22 13L30 24" stroke="' + color + '" stroke-width="2.6" stroke-linecap="round"/>' +
-      '<circle cx="21" cy="6" r="1" fill="' + color + '"/>' +
-    '</svg>';
+    var isDarkBg = (!color || color === '#ffffff' || color === '#fff' || color === 'white');
+    var shadow = isDarkBg
+      ? 'filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6));'
+      : 'filter:drop-shadow(0 1px 2px rgba(0,0,0,0.45));';
+    return '<img src="logo.png" alt="낭만루트 로고" style="width:20px; height:20px; object-fit:contain; display:block; flex-shrink:0; ' + shadow + '" />';
   },
   pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:11px; height:11px; display:inline-block; vertical-align:-2px; margin-right:3px; flex-shrink:0;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>',
   calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px; height:10px; display:inline-block; vertical-align:-1px; margin-right:3px; flex-shrink:0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="19" y1="10" y2="10"/></svg>',
