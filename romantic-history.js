@@ -281,8 +281,10 @@
       }
       .postcard-template-container .tmpl-card-base,
       .postcard-template-container .ready-shot-card-vector,
+      .postcard-template-container .photo-overlay-card,
       .postcard-face-back .tmpl-card-base,
       .postcard-face-back .ready-shot-card-vector,
+      .postcard-face-back .photo-overlay-card,
       .postcard-face-front .tmpl-card-base {
         width: 100% !important;
         max-width: 330px !important;
@@ -601,6 +603,17 @@
     var rawObj = (typeof value === 'string' ? JSON.parse(value) : value);
     window.__memoryStore = window.__memoryStore || {};
     window.__memoryStore[key] = rawObj;
+    // 🛡️ [성능 패치] 메모리 스토어 키 수 제한
+    var storeKeys = Object.keys(window.__memoryStore);
+    if (storeKeys.length > 50) {
+      // 가장 먼저 추가된 키부터 삭제 (단, 핵심 키는 보존)
+      var protectedKeys = ['okbm_packing_history', 'okbm_master_gears', 'okbm_plan_spots', 'okbm_plan_memos'];
+      for (var i = 0; i < storeKeys.length && Object.keys(window.__memoryStore).length > 50; i++) {
+        if (protectedKeys.indexOf(storeKeys[i]) === -1) {
+          delete window.__memoryStore[storeKeys[i]];
+        }
+      }
+    }
     if (typeof window.saveToIndexedDB === 'function') {
       window.saveToIndexedDB(key, rawObj);
     }
@@ -754,6 +767,10 @@
       } else if (sourceRecord) {
         stamp(sourceRecord);
         window.__allLoadedFeeds.unshift(sourceRecord);
+        // 🛡️ [메모리 누수 패치] 피드 배열 상한 200개 제한
+        if (window.__allLoadedFeeds.length > 200) {
+          window.__allLoadedFeeds.length = 200;
+        }
       }
       try {
         localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(window.__allLoadedFeeds));
@@ -954,6 +971,10 @@
         window.__allLoadedFeeds[existFeedIdx] = normalized;
       } else {
         window.__allLoadedFeeds.unshift(normalized);
+        // 🛡️ [메모리 누수 패치] 피드 배열 상한 200개 제한
+        if (window.__allLoadedFeeds.length > 200) {
+          window.__allLoadedFeeds.length = 200;
+        }
       }
       try {
         localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(window.__allLoadedFeeds));
@@ -2733,6 +2754,7 @@ window.toggleFeedStar = async function(cardId, e) {
 
     clearTimeout(window.__publishDebounceTimers[sId]);
     window.__publishDebounceTimers[sId] = setTimeout(function() {
+      delete window.__publishDebounceTimers[sId]; // 🛡️ 타이머 맵 정리
       var persistPublish = function() {
         if (typeof window.patchFeedPublishStatus !== 'function') {
           return Promise.resolve({ ok: false, error: 'NO_PATCH' });
@@ -3220,6 +3242,7 @@ window.deleteTripRecord = async function(recordId, e) {
 
     clearTimeout(window.__saveFeedDebounceTimers[sId]);
     window.__saveFeedDebounceTimers[sId] = setTimeout(function() {
+      delete window.__saveFeedDebounceTimers[sId]; // 🛡️ 타이머 맵 정리
       if (typeof syncUserDataToCloud === 'function') {
         syncUserDataToCloud(false);
       }
@@ -6650,9 +6673,13 @@ window.renderHistoryStage = function(isLoading) {
   };
 
   // 🔄 마이리포트 프로필 사진 변경 시 보관함 피드 아바타 실시간 리렌더링
-  window.addEventListener('okbm_profile_photo_changed', function() {
-    if (typeof window.renderHistoryStage === 'function') {
-      window.renderHistoryStage();
-    }
-  });
+  // 🛡️ [메모리 누수 패치] 중복 등록 방지
+  if (!window.__histProfilePhotoListenerBound) {
+    window.__histProfilePhotoListenerBound = true;
+    window.addEventListener('okbm_profile_photo_changed', function() {
+      if (typeof window.renderHistoryStage === 'function') {
+        window.renderHistoryStage();
+      }
+    });
+  }
 })();

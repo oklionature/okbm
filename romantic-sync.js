@@ -771,19 +771,34 @@ window.okbmIsCurrentUserAdmin = function() {
   return window.__okbmIsAdmin === true;
 };
 
+function okbmPersistAdminFlag(isAdmin) {
+  window.__okbmIsAdmin = !!isAdmin;
+  try {
+    var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
+    if (profile && profile.id) {
+      profile.isAdmin = window.__okbmIsAdmin;
+      profile.is_admin = window.__okbmIsAdmin;
+      if (window.__okbmIsAdmin) profile.role = 'admin';
+      localStorage.setItem('user_profile', JSON.stringify(profile));
+    }
+  } catch (e) {}
+  try {
+    window.dispatchEvent(new CustomEvent('okbm_admin_flag', { detail: { isAdmin: window.__okbmIsAdmin } }));
+  } catch (e2) {}
+  return window.__okbmIsAdmin === true;
+}
+
 window.okbmRefreshAdminFlagFromServer = async function() {
   var userId = okbmGetCurrentUserId();
   if (!userId) {
-    window.__okbmIsAdmin = false;
-    return false;
+    return okbmPersistAdminFlag(false);
   }
   try {
     var row = await okbmFindUserById(userId);
-    window.__okbmIsAdmin = !!(row && row.is_admin === true);
+    return okbmPersistAdminFlag(!!(row && row.is_admin === true));
   } catch (e) {
-    window.__okbmIsAdmin = false;
+    return okbmPersistAdminFlag(false);
   }
-  return window.__okbmIsAdmin === true;
 };
 
 window.okbmFetchFeedById = async function(feedId) {
@@ -850,6 +865,22 @@ function okbmMountAdminReportInspectorEntry() {
   entry.style.cssText = 'background:none; border:none; color:#e2e8f0; font-size:0.78rem; font-weight:700; text-align:left; padding:8px 0 2px 0; cursor:pointer;';
   entry.onclick = function() { window.openAdminReportInspector(); };
   logoutBtn.parentNode.insertBefore(entry, logoutBtn);
+
+  var oldSpot = document.getElementById('adminSpotInboxEntry');
+  if (oldSpot) oldSpot.remove();
+  var spotEntry = document.createElement('button');
+  spotEntry.id = 'adminSpotInboxEntry';
+  spotEntry.type = 'button';
+  spotEntry.textContent = '박지 검수함';
+  spotEntry.style.cssText = 'background:none; border:none; color:#e2e8f0; font-size:0.78rem; font-weight:700; text-align:left; padding:8px 0 2px 0; cursor:pointer;';
+  spotEntry.onclick = function() {
+    if (typeof window.openAdminSpotInbox === 'function') {
+      window.openAdminSpotInbox();
+      return;
+    }
+    window.location.assign('map.html?open=admin_inbox');
+  };
+  logoutBtn.parentNode.insertBefore(spotEntry, logoutBtn);
 }
 
 window.openAdminReportInspector = async function() {
@@ -1332,7 +1363,11 @@ async function loadUserDataFromCloud(userId) {
         if (typeof okbmRepairKnownOwnerProfile === 'function') {
           data = okbmRepairKnownOwnerProfile(userId, data);
         }
-        window.__okbmIsAdmin = data && data.is_admin === true;
+        if (typeof okbmPersistAdminFlag === 'function') {
+          okbmPersistAdminFlag(data && data.is_admin === true);
+        } else {
+          window.__okbmIsAdmin = data && data.is_admin === true;
+        }
         return data;
       }
     }
@@ -4732,8 +4767,13 @@ window.openCoverPhotoCropperModal = function(imageSrc) {
   };
   img.src = imageSrc;
 
+  // 🛡️ [메모리 누수 패치] 모달 닫힐 때 window 리스너 일괄 해제
+  var cropperAbort = new AbortController();
+  var cropperSignal = cropperAbort.signal;
+
   cancelBtn.onclick = function() {
     triggerHaptic(8);
+    cropperAbort.abort(); // 🛡️ window 리스너 일괄 해제
     modal.remove();
   };
 
@@ -4746,7 +4786,7 @@ window.openCoverPhotoCropperModal = function(imageSrc) {
     var delta = e.deltaY < 0 ? 0.08 : -0.08;
     scale = Math.max(0.6, Math.min(4.0, scale + delta));
     render();
-  }, { passive: false });
+  }, { passive: false, signal: cropperSignal });
 
   canvas.addEventListener('touchstart', function(e) {
     e.preventDefault();
@@ -4761,7 +4801,7 @@ window.openCoverPhotoCropperModal = function(imageSrc) {
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
     }
-  }, { passive: false });
+  }, { passive: false, signal: cropperSignal });
 
   window.addEventListener('touchmove', function(e) {
     if (!isDragging && !isPinching) return;
@@ -4785,22 +4825,22 @@ window.openCoverPhotoCropperModal = function(imageSrc) {
       startY = currentY;
       render();
     }
-  }, { passive: false });
+  }, { passive: false, signal: cropperSignal });
 
   var handleTouchEnd = function() {
     isDragging = false;
     isPinching = false;
   };
 
-  window.addEventListener('touchend', handleTouchEnd, { passive: true });
-  window.addEventListener('touchcancel', handleTouchEnd, { passive: true });
+  window.addEventListener('touchend', handleTouchEnd, { passive: true, signal: cropperSignal });
+  window.addEventListener('touchcancel', handleTouchEnd, { passive: true, signal: cropperSignal });
 
   canvas.addEventListener('mousedown', function(e) {
     isDragging = true;
     startX = e.clientX;
     startY = e.clientY;
     canvas.style.cursor = 'grabbing';
-  });
+  }, { signal: cropperSignal });
 
   window.addEventListener('mousemove', function(e) {
     if (!isDragging) return;
@@ -4811,12 +4851,12 @@ window.openCoverPhotoCropperModal = function(imageSrc) {
     startX = e.clientX;
     startY = e.clientY;
     render();
-  });
+  }, { signal: cropperSignal });
 
   window.addEventListener('mouseup', function() {
     isDragging = false;
     canvas.style.cursor = 'grab';
-  });
+  }, { signal: cropperSignal });
 
   confirmBtn.onclick = async function() {
     triggerHaptic(12);
@@ -4890,6 +4930,7 @@ window.openCoverPhotoCropperModal = function(imageSrc) {
         syncUserDataToCloud();
       }
 
+      cropperAbort.abort();
       modal.remove();
       showToast('프로필 사진이 저장되었습니다.', 'success', 2500);
     } catch (err) {
@@ -5136,6 +5177,13 @@ function logoutUser() {
   if (adminEntry) adminEntry.remove();
   var adminModal = document.getElementById('adminReportInspectorModal');
   if (adminModal) adminModal.remove();
+  var spotInboxEntry = document.getElementById('adminSpotInboxEntry');
+  if (spotInboxEntry) spotInboxEntry.remove();
+  var spotInboxModal = document.getElementById('adminSpotInboxModal');
+  if (spotInboxModal) spotInboxModal.remove();
+  if (typeof window.applyAdminPermissions === 'function') {
+    window.applyAdminPermissions(false);
+  }
 
   var userPersonalKeys = [
     'okbm_bookmarks', 'okbm_visited', 'okbm_memos',
@@ -5940,7 +5988,11 @@ async function handleSocialLoginSuccess(provider, providerId, email, nickname, p
     console.warn('[handleSocialLoginSuccess ugcSafety]', e);
   }
   try {
-    window.__okbmIsAdmin = !!(existingUser && existingUser.is_admin === true);
+    if (typeof okbmPersistAdminFlag === 'function') {
+      okbmPersistAdminFlag(!!(existingUser && existingUser.is_admin === true));
+    } else {
+      window.__okbmIsAdmin = !!(existingUser && existingUser.is_admin === true);
+    }
     if (typeof window.okbmRefreshAdminFlagFromServer === 'function') {
       await window.okbmRefreshAdminFlagFromServer();
     }
@@ -6373,6 +6425,10 @@ window.saveProposalToSupabase = async function(proposalData, isCorrection) {
     status: String(proposalData.status || 'pending'),
     user_id: resolvedUserId
   };
+  if (isCorrection) {
+    payload.orig_spot_id = String(proposalData.orig_spot_id || proposalData.origSpotId || '');
+    payload.correction_reason = String(proposalData.correctionReason || proposalData.correction_reason || '');
+  }
 
   try {
     var res = await fetch(targetUrl + '/rest/v1/' + tableName, {
@@ -6384,6 +6440,68 @@ window.saveProposalToSupabase = async function(proposalData, isCorrection) {
         'Prefer': 'resolution=merge-duplicates'
       },
       body: JSON.stringify(payload)
+    });
+    return res.ok;
+  } catch (e) {
+    return false;
+  }
+};
+
+window.fetchAdminSpotInbox = async function() {
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  if (!targetUrl || !targetKey) return [];
+  var headers = {
+    'apikey': targetKey,
+    'Authorization': 'Bearer ' + targetKey,
+    'Content-Type': 'application/json'
+  };
+  try {
+    var reqProps = fetch(targetUrl + '/rest/v1/proposals?select=*&order=created_at.desc', { headers: headers })
+      .then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; });
+    var reqCorrs = fetch(targetUrl + '/rest/v1/spot_corrections?select=*&order=created_at.desc', { headers: headers })
+      .then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; });
+    var results = await Promise.all([reqProps, reqCorrs]);
+    var props = Array.isArray(results[0]) ? results[0] : [];
+    var corrs = Array.isArray(results[1]) ? results[1] : [];
+    var normalize = function(item, isCorr) {
+      if (!item) return null;
+      var clone = Object.assign({}, item);
+      clone.type = isCorr ? 'correction' : 'proposal';
+      clone.isCorrection = isCorr;
+      clone.fullName = item.fullname || item.fullName || '';
+      clone.youtubeUrls = item.youtubeurls || item.youtubeUrls || '';
+      clone.blogUrl = item.blogurl || item.blogUrl || '';
+      clone.authorSnsUrl = item.authorsnsurl || item.authorSnsUrl || '';
+      clone.courseType = item.coursetype || item.courseType || '';
+      clone.origSpotId = item.orig_spot_id || item.origSpotId || '';
+      clone.correctionReason = item.correction_reason || item.correctionReason || '';
+      return clone;
+    };
+    return props.map(function(p) { return normalize(p, false); })
+      .concat(corrs.map(function(c) { return normalize(c, true); }))
+      .filter(Boolean);
+  } catch (e) {
+    console.warn('[romantic-sync.js:fetchAdminSpotInbox]', e);
+    return [];
+  }
+};
+
+window.updateAdminSpotInboxStatus = async function(propId, isCorrection, status) {
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  if (!targetUrl || !targetKey || !propId) return false;
+  var tableName = isCorrection ? 'spot_corrections' : 'proposals';
+  try {
+    var res = await fetch(targetUrl + '/rest/v1/' + tableName + '?id=eq.' + encodeURIComponent(String(propId)), {
+      method: 'PATCH',
+      headers: {
+        'apikey': targetKey,
+        'Authorization': 'Bearer ' + targetKey,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ status: String(status || 'pending') })
     });
     return res.ok;
   } catch (e) {

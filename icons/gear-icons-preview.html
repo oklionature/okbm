@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>낭만루트 장비 아이콘 · 공유 카드 목업</title>
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #07090e;
+      --font: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+      --en: 'Space Grotesk', sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: #f8fafc; font-family: var(--font); padding: 28px 20px 72px; }
+    .wrap { width: min(980px, 100%); margin: 0 auto; }
+    h1 { font-size: 1.15rem; font-weight: 900; }
+    .sub { margin: 6px 0 22px; color: #94a3b8; font-size: 0.78rem; font-weight: 600; }
+    h2 { font-size: 0.78rem; font-weight: 800; color: #cbd5e1; margin: 28px 0 12px; letter-spacing: 0.4px; }
+
+    .sheet, .light {
+      display: grid; grid-template-columns: repeat(8, minmax(0, 1fr));
+      gap: 10px; padding: 16px; border-radius: 14px;
+    }
+    .sheet { background: #0c1118; border: 1px solid rgba(255,255,255,0.08); color: #fff; }
+    .light { background: #f4f1ea; border: 1px solid #ddd4c6; color: #16120e; }
+
+    .cell { text-align: center; }
+    .cell svg { display: block; margin: 0 auto; }
+    .cell b { display: block; margin-top: 6px; font-size: 0.58rem; font-weight: 800; }
+
+    .sizes { display: flex; justify-content: center; align-items: flex-end; gap: 8px; margin-top: 8px; }
+    .row-label { font-size: 0.62rem; color: #64748b; font-weight: 700; margin-bottom: 8px; }
+
+    .mock-stage {
+      width: min(330px, 100%);
+      margin: 0 auto;
+      background: #05070c;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 18px;
+      padding: 10px;
+    }
+    .card {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      overflow: hidden;
+      border-radius: 14px;
+      background: #000;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.55);
+    }
+    .card img.bg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: 50% 40%;
+    }
+    .fade {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 58%;
+      background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.22) 40%, rgba(0,0,0,0.66) 100%);
+    }
+    .top {
+      position: absolute; top: 12px; left: 14px; right: 14px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .spot {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 0.68rem; font-weight: 800;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+    }
+    .date {
+      font-family: var(--en); font-size: 0.54rem; font-weight: 700;
+      color: #cbd5e1; letter-spacing: 0.8px;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+    }
+    .dock {
+      position: absolute; left: 12px; right: 12px; bottom: 10px;
+      display: flex; flex-direction: column; justify-content: flex-end;
+    }
+    .list {
+      display: grid; grid-template-columns: 1fr 1fr;
+      column-gap: 10px; row-gap: 5px;
+    }
+    .g {
+      display: flex; align-items: center; gap: 5px; min-width: 0;
+    }
+    .g svg {
+      width: 15px; height: 15px; flex-shrink: 0;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+    }
+    .g .meta { min-width: 0; flex: 1; }
+    .g .n {
+      font-size: 0.52rem; font-weight: 800; line-height: 1.15;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+    }
+    .g .w {
+      font-family: var(--en); font-size: 0.46rem; font-weight: 800;
+      color: #e2e8f0; text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+    }
+    .foot {
+      display: flex; justify-content: space-between; align-items: flex-end;
+      margin-top: 8px;
+    }
+    .kg {
+      font-family: var(--en); font-size: 1.18rem; font-weight: 900;
+      letter-spacing: -0.6px; line-height: 1;
+      text-shadow: 0 1px 6px rgba(0,0,0,0.7);
+    }
+    .kg small { font-family: var(--font); font-size: 0.48em; font-weight: 800; margin-left: 2px; }
+    .stamp {
+      display: flex; align-items: center; gap: 3px; opacity: 0.72;
+    }
+    .stamp img { width: 13px; height: 13px; }
+    .stamp span { font-size: 0.44rem; font-weight: 700; }
+
+    pre {
+      margin-top: 12px; padding: 14px;
+      background: #0c1118; border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; overflow: auto;
+      font-size: 0.68rem; line-height: 1.55; color: #cbd5e1;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>낭만루트 장비 아이콘 세트</h1>
+    <p class="sub">8종 라인 SVG · 카테고리 글자 없음 · 24px에서도 식별 가능한 공유 카드용 그래픽</p>
+
+    <object data="romantic-route-gear-icons.svg" type="image/svg+xml" hidden></object>
+    <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute">
+      <use href="romantic-route-gear-icons.svg#tent"/>
+    </svg>
+
+    <h2>64px · 다크</h2>
+    <div class="sheet" id="grid64"></div>
+    <h2>24px · 공유 카드 실사용 크기</h2>
+    <div class="sheet" id="grid24"></div>
+    <h2>24px · 라이트</h2>
+    <div class="light" id="grid24light"></div>
+
+    <h2>인증샷 공유 이미지 목업</h2>
+    <p class="sub" style="margin-top:-6px;">사진은 샘플. 아이콘·표시명·무게·총무게·날짜·장소는 앱 데이터처럼 배치.</p>
+    <div class="mock-stage">
+      <div class="card">
+        <img class="bg" src="../preview-camp.jpg" alt="샘플 캠핑 사진" />
+        <div class="fade"></div>
+        <div class="top">
+          <div class="spot">
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="2.2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span id="spotText">신안 그림산</span>
+          </div>
+          <span class="date" id="dateText">2026.09.19</span>
+        </div>
+        <div class="dock">
+          <div class="list" id="gearList"></div>
+          <div class="foot">
+            <div class="kg" id="totalText">7.82<small>kg</small></div>
+            <div class="stamp"><img src="../logo.png" alt="" /><span>낭만루트</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>웹에서 쓰는 방법</h2>
+    <pre>/* 스프라이트 */
+&lt;svg width="16" height="16" aria-hidden="true"&gt;
+  &lt;use href="icons/romantic-route-gear-icons.svg#tent" /&gt;
+&lt;/svg&gt;
+
+/* React */
+import TentIcon from './icons/tent.svg';
+&lt;img src={TentIcon} alt="" width={16} height={16} /&gt;
+
+/* React Native */
+import { SvgXml } from 'react-native-svg';
+&lt;SvgXml xml={tentSvgString} width={16} height={16} color="#fff" /&gt;</pre>
+  </div>
+
+  <script>
+    var ICONS = [
+      { id: 'tent', label: '텐트' },
+      { id: 'sleeping-bag', label: '침낭' },
+      { id: 'mat', label: '매트' },
+      { id: 'backpack', label: '배낭' },
+      { id: 'cooking', label: '취사' },
+      { id: 'clothing', label: '의류' },
+      { id: 'food', label: '식량' },
+      { id: 'other', label: '기타' }
+    ];
+
+    function iconSvg(id, size) {
+      return '<svg viewBox="0 0 64 64" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><use href="romantic-route-gear-icons.svg#' + id + '"/></svg>';
+    }
+
+    function fillGrid(el, size, showLabel) {
+      el.innerHTML = ICONS.map(function (ic) {
+        return '<div class="cell">' + iconSvg(ic.id, size) + (showLabel ? '<b>' + ic.label + '</b>' : '') + '</div>';
+      }).join('');
+    }
+
+    fillGrid(document.getElementById('grid64'), 64, true);
+    fillGrid(document.getElementById('grid24'), 24, true);
+    fillGrid(document.getElementById('grid24light'), 24, true);
+
+    var PACK = {
+      spot: '신안 그림산',
+      date: '2026.09.19',
+      items: [
+        { icon: 'tent', raw: 'The North Face Mountain 25 Tent', name: 'Mountain 25', weight: 4000 },
+        { icon: 'sleeping-bag', raw: 'Sea to Summit Spark SpII', name: 'Tensor', weight: 1440 },
+        { icon: 'mat', raw: 'NEMO Tensor All-Season', name: 'Tensor', weight: 260 },
+        { icon: 'backpack', raw: 'Osprey Exos 48', name: 'Osprey 48', weight: 900 },
+        { icon: 'cooking', raw: 'SOTO WindMaster SOD-310', name: 'WindMaster', weight: 67 },
+        { icon: 'clothing', raw: "Arc'teryx Beta AR Jacket Men's GORE-TEX", name: 'Beta AR', weight: 455 },
+        { icon: 'food', raw: 'Peak Refuel Chicken Pesto Pasta', name: 'Peak Refuel', weight: 586 },
+        { icon: 'other', raw: 'Petzl Actik Core', name: 'Actik Core', weight: 112 }
+      ]
+    };
+
+    var total = PACK.items.reduce(function (s, it) { return s + it.weight; }, 0);
+    document.getElementById('spotText').textContent = PACK.spot;
+    document.getElementById('dateText').textContent = PACK.date;
+    document.getElementById('totalText').innerHTML = (total / 1000).toFixed(2) + '<small>kg</small>';
+    document.getElementById('gearList').innerHTML = PACK.items.map(function (it) {
+      return '<div class="g">' +
+        iconSvg(it.icon, 15) +
+        '<div class="meta"><div class="n">' + it.name + '</div><div class="w">' + (it.weight / 1000).toFixed(2) + ' kg</div></div>' +
+      '</div>';
+    }).join('');
+  </script>
+</body>
+</html>

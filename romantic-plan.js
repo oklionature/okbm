@@ -960,6 +960,9 @@ var totalKg = (totalGrams / 1000).toFixed(2);
         </div>
       </div>
     `;
+    // 🛡️ [메모리 누수 패치] appendChild 누락 수정
+    document.body.appendChild(modal);
+    return modal;
   }
 
   // =========================================================================
@@ -1251,6 +1254,9 @@ var totalKg = (totalGrams / 1000).toFixed(2);
 
   // 🖱️ / 📱 [롱프레스(꾹 누르기) 이벤트 전역 위임 리스너]
   (function initGearLongPressDelegator() {
+    // 🛡️ [메모리 누수 패치] 중복 등록 방지 가드
+    if (window.__gearLongPressDelegatorInitialized) return;
+    window.__gearLongPressDelegatorInitialized = true;
     var timer = null;
     var startX = 0;
     var startY = 0;
@@ -2200,13 +2206,84 @@ window.saveCurrentPackingRecord = function() {
     }
     triggerHaptic(10);
 
-    var scrollBox = document.getElementById('checklistItemsScrollContainer');
-    var savedScroll = scrollBox ? scrollBox.scrollTop : 0;
+    // 🛡️ [성능 패치] 체크박스 토글 시 전체 리렌더 대신 부분 업데이트
+    var changedRow = document.querySelector('[data-check-idx="' + itemIdx + '"]');
+    if (changedRow) {
+      var isChecked = window.packedCheckSet.has(checkKey);
+      changedRow.classList.toggle('checked', isChecked);
+      var themeBorder = changedRow.getAttribute('data-theme-border') || 'rgba(255,255,255,0.14)';
+      changedRow.style.background = isChecked ? 'rgba(253,224,71,0.05)' : 'rgba(15,23,42,0.5)';
+      changedRow.style.border = '1px solid ' + (isChecked ? 'rgba(253,224,71,0.3)' : 'rgba(255,255,255,0.08)');
+      changedRow.style.borderLeft = isChecked ? '2px solid rgba(253,224,71,0.85)' : ('2px solid ' + themeBorder);
 
-    window.renderPlanStage();
+      var chkIcon = changedRow.querySelector('.check-icon') || changedRow.querySelector('.checklist-checkbox-box');
+      if (chkIcon) {
+        chkIcon.innerHTML = isChecked ? '✓' : '';
+        chkIcon.style.border = '1.2px solid ' + (isChecked ? '#fde047' : 'rgba(255,255,255,0.3)');
+        chkIcon.style.background = isChecked ? 'linear-gradient(135deg, #fde047 0%, #f59e0b 100%)' : 'rgba(0,0,0,0.35)';
+      }
 
-    var newScrollBox = document.getElementById('checklistItemsScrollContainer');
-    if (newScrollBox) newScrollBox.scrollTop = savedScroll;
+      var nameEl = changedRow.querySelector('.checklist-item-name');
+      if (nameEl) {
+        nameEl.style.color = isChecked ? '#94a3b8' : '#ffffff';
+        nameEl.style.textDecoration = isChecked ? 'line-through' : 'none';
+      }
+      var weightEl = changedRow.querySelector('.checklist-item-weight');
+      if (weightEl) {
+        weightEl.style.color = isChecked ? '#94a3b8' : (changedRow.getAttribute('data-theme-color') || '#cbd5e1');
+        weightEl.style.background = isChecked ? 'rgba(255,255,255,0.04)' : (changedRow.getAttribute('data-theme-bg') || 'rgba(255,255,255,0.06)');
+        weightEl.style.borderColor = isChecked ? 'rgba(255,255,255,0.1)' : (changedRow.getAttribute('data-theme-border') || 'rgba(255,255,255,0.14)');
+      }
+    } else {
+      var scrollBox = document.getElementById('checklistItemsScrollContainer');
+      var savedScroll = scrollBox ? scrollBox.scrollTop : 0;
+      window.renderPlanStage();
+      var newScrollBox = document.getElementById('checklistItemsScrollContainer');
+      if (newScrollBox) newScrollBox.scrollTop = savedScroll;
+      return;
+    }
+    // 통계 바만 갱신
+    if (typeof window.updateChecklistProgressBar === 'function') {
+      window.updateChecklistProgressBar();
+    }
+  };
+
+  window.updateChecklistProgressBar = function() {
+    var rows = document.querySelectorAll('#checklistItemsScrollContainer .checklist-item-row');
+    var total = rows.length;
+    var packed = 0;
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].classList.contains('checked')) packed++;
+    }
+    var pct = total > 0 ? Math.round((packed / total) * 100) : 0;
+    var all = total > 0 && packed === total;
+
+    var fill = document.getElementById('checklistProgressFill');
+    if (fill) fill.style.width = pct + '%';
+
+    var label = document.getElementById('checklistProgressLabel');
+    if (label) {
+      label.textContent = all ? '패킹 체크 100% 완료' : ('패킹 체크 완료 (' + packed + '/' + total + ' · ' + pct + '%)');
+    }
+
+    var dock = document.getElementById('checklistProgressDock');
+    if (dock) {
+      dock.style.border = '1px solid ' + (all ? 'rgba(253,224,71,0.6)' : 'rgba(255,255,255,0.2)');
+      dock.style.boxShadow = all ? '0 4px 16px rgba(253,224,71,0.3)' : '0 4px 14px rgba(0,0,0,0.5)';
+    }
+
+    var icon = document.getElementById('checklistProgressIcon');
+    if (icon) icon.style.stroke = all ? '#fde047' : '#ffffff';
+
+    var toggleBtn = document.getElementById('checklistToggleAllBtn');
+    if (toggleBtn) {
+      toggleBtn.textContent = all ? '전체 해제' : '전체 선택';
+      toggleBtn.style.background = all ? 'rgba(253,224,71,0.12)' : 'rgba(255,255,255,0.08)';
+      toggleBtn.style.borderColor = all ? 'rgba(253,224,71,0.4)' : 'rgba(255,255,255,0.18)';
+      toggleBtn.style.color = all ? '#fde047' : '#f8fafc';
+      var dateStr = window.activeSelectedDateKey || '';
+      toggleBtn.setAttribute('onclick', "window.toggleAllPackCheckItems(" + (!all) + ", '" + dateStr + "')");
+    }
   };
 
   window.toggleAllPackCheckItems = function(forceState, dateStr) {
@@ -3134,7 +3211,7 @@ window.saveCurrentPackingRecord = function() {
           </div>
           
           <div style="display:flex; align-items:center; flex-shrink:0;" onclick="event.stopPropagation();">
-            <button type="button" onclick="window.toggleAllPackCheckItems(${!isAllComplete}, '${activeDateStr}')" style="background:${isAllComplete ? 'rgba(253,224,71,0.12)' : 'rgba(255,255,255,0.08)'}; border:1px solid ${isAllComplete ? 'rgba(253,224,71,0.4)' : 'rgba(255,255,255,0.18)'}; color:${isAllComplete ? '#fde047' : '#f8fafc'}; font-size:0.72rem; font-weight:800; padding:6px 12px; border-radius:6px; cursor:pointer; transition:all 0.15s ease;">
+            <button type="button" id="checklistToggleAllBtn" onclick="window.toggleAllPackCheckItems(${!isAllComplete}, '${activeDateStr}')" style="background:${isAllComplete ? 'rgba(253,224,71,0.12)' : 'rgba(255,255,255,0.08)'}; border:1px solid ${isAllComplete ? 'rgba(253,224,71,0.4)' : 'rgba(255,255,255,0.18)'}; color:${isAllComplete ? '#fde047' : '#f8fafc'}; font-size:0.72rem; font-weight:800; padding:6px 12px; border-radius:6px; cursor:pointer; transition:all 0.15s ease;">
               ${isAllComplete ? '전체 해제' : '전체 선택'}
             </button>
           </div>
@@ -3159,20 +3236,20 @@ window.saveCurrentPackingRecord = function() {
             var chkBoxBg = isChecked ? 'linear-gradient(135deg, #fde047 0%, #f59e0b 100%)' : 'rgba(0,0,0,0.35)';
 
             return `
-              <div onclick="window.togglePackCheckByIndex(${idx})" class="checklist-item-row" style="background:${rowBg}; border:1px solid ${rowBorder}; border-left:${rowBorderLeft};">
+              <div onclick="window.togglePackCheckByIndex(${idx})" class="checklist-item-row${isChecked ? ' checked' : ''}" data-check-idx="${idx}" data-theme-border="${theme.border}" data-theme-color="${theme.color}" data-theme-bg="${theme.bg}" style="background:${rowBg}; border:1px solid ${rowBorder}; border-left:${rowBorderLeft};">
                 <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-                  <div class="checklist-checkbox-box" style="border:1.2px solid ${chkBoxBorder}; background:${chkBoxBg};">
+                  <div class="checklist-checkbox-box check-icon" style="border:1.2px solid ${chkBoxBorder}; background:${chkBoxBg};">
                     ${isChecked ? '✓' : ''}
                   </div>
 
-                  <span style="font-size:0.83rem; font-weight:800; color:${isChecked ? '#94a3b8' : '#ffffff'}; text-decoration:${isChecked ? 'line-through' : 'none'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:5px;">
+                  <span class="checklist-item-name" style="font-size:0.83rem; font-weight:800; color:${isChecked ? '#94a3b8' : '#ffffff'}; text-decoration:${isChecked ? 'line-through' : 'none'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:flex; align-items:center; gap:5px;">
                     ${isFood ? '<span style="display:inline-flex; align-items:center; width:13px; height:13px; color:#fb923c;">' + UI_ICONS.foodUtensils + '</span>' : ''}
                     <span>${escapeHtml(it.name || '')}</span>
                   </span>
                 </div>
 
                 <div style="display:flex; align-items:center; gap:6px; flex-shrink:0; margin-left:8px;">
-                  <span style="font-size:0.72rem; font-weight:800; color:${isChecked ? '#94a3b8' : theme.color}; font-family:'JetBrains Mono', monospace; background:${isChecked ? 'rgba(255,255,255,0.04)' : theme.bg}; border:1px solid ${isChecked ? 'rgba(255,255,255,0.1)' : theme.border}; padding:1px 6px; border-radius:4px;">
+                  <span class="checklist-item-weight" style="font-size:0.72rem; font-weight:800; color:${isChecked ? '#94a3b8' : theme.color}; font-family:'JetBrains Mono', monospace; background:${isChecked ? 'rgba(255,255,255,0.04)' : theme.bg}; border:1px solid ${isChecked ? 'rgba(255,255,255,0.1)' : theme.border}; padding:1px 6px; border-radius:4px;">
                     ${gWeightKg > 0 ? (gWeightKg + 'kg') : '0.00kg'}
                   </span>
                   ${isFood ? `
@@ -3195,11 +3272,11 @@ window.saveCurrentPackingRecord = function() {
         </div>
 
         <!-- 4. 최하단 프로그레스 게이지 완료 독 -->
-        <div style="position:relative; width:100%; height:44px; border-radius:10px; overflow:hidden; border:1px solid ${isAllComplete ? 'rgba(253,224,71,0.6)' : 'rgba(255,255,255,0.2)'}; background:rgba(15,23,42,0.7); flex-shrink:0; box-shadow:${isAllComplete ? '0 4px 16px rgba(253,224,71,0.3)' : '0 4px 14px rgba(0,0,0,0.5)'}; transition:all 0.25s ease;">
-          <div style="position:absolute; top:0; left:0; bottom:0; width:${planProgressPct}%; background:linear-gradient(90deg, rgba(253,224,71,0.2) 0%, rgba(245,158,11,0.55) 100%); transition:width 0.25s ease; pointer-events:none;"></div>
+        <div id="checklistProgressDock" style="position:relative; width:100%; height:44px; border-radius:10px; overflow:hidden; border:1px solid ${isAllComplete ? 'rgba(253,224,71,0.6)' : 'rgba(255,255,255,0.2)'}; background:rgba(15,23,42,0.7); flex-shrink:0; box-shadow:${isAllComplete ? '0 4px 16px rgba(253,224,71,0.3)' : '0 4px 14px rgba(0,0,0,0.5)'}; transition:all 0.25s ease;">
+          <div id="checklistProgressFill" style="position:absolute; top:0; left:0; bottom:0; width:${planProgressPct}%; background:linear-gradient(90deg, rgba(253,224,71,0.2) 0%, rgba(245,158,11,0.55) 100%); transition:width 0.25s ease; pointer-events:none;"></div>
           <button type="button" onclick="window.completeChecklist('${activeDateStr}');" style="position:relative; z-index:2; width:100%; height:100%; background:none; border:none; color:#ffffff; font-size:0.84rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap;">
-            <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:${isAllComplete ? '#fde047' : '#ffffff'}; fill:none; stroke-width:2.5;"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>${isAllComplete ? '패킹 체크 100% 완료' : ('패킹 체크 완료 (' + packedCount + '/' + planItems.length + ' · ' + planProgressPct + '%)')}</span>
+            <svg id="checklistProgressIcon" viewBox="0 0 24 24" style="width:16px; height:16px; stroke:${isAllComplete ? '#fde047' : '#ffffff'}; fill:none; stroke-width:2.5;"><polyline points="20 6 9 17 4 12"/></svg>
+            <span id="checklistProgressLabel">${isAllComplete ? '패킹 체크 100% 완료' : ('패킹 체크 완료 (' + packedCount + '/' + planItems.length + ' · ' + planProgressPct + '%)')}</span>
           </button>
         </div>
       </div>
@@ -3721,8 +3798,9 @@ window.saveCurrentPackingRecord = function() {
 
       // 👆 아래로 쓸어내려 월간 달력으로 원터치 복귀하는 제스처
       var ribbonEl = document.getElementById('weekRibbonSwipeArea');
-      if (ribbonEl && !ribbonEl._swipeBound) {
-        ribbonEl._swipeBound = true;
+      // 🛡️ [메모리 누수 패치] DOM 재구축 시에도 유지되는 가드
+      if (ribbonEl && !window.__ribbonSwipeBound) {
+        window.__ribbonSwipeBound = true;
         var rStartY = 0;
         ribbonEl.addEventListener('touchstart', function(e) {
           if (!e.touches || e.touches.length !== 1) return;
@@ -4484,8 +4562,10 @@ window.saveCurrentPackingRecord = function() {
   // 👆 계획 달력 좌우 스와이프 제스처 바인딩
   window.bindPlanCalendarSwipe = function() {
     var calBox = document.getElementById('planCalendarCardWrap');
-    if (!calBox || calBox._swipeBound) return;
-    calBox._swipeBound = true;
+    if (!calBox) return;
+    // 🛡️ [메모리 누수 패치] window 레벨 가드로 변경
+    if (window.__calSwipeBound) return;
+    window.__calSwipeBound = true;
 
     var startX = 0, startY = 0;
     calBox.addEventListener('touchstart', function(e) {
@@ -5052,13 +5132,21 @@ window.commitPlanDestination = function(dateKey) {
   };
 
   window.closePlanModal = function() {
+    var memoInput = document.getElementById('planDailyMemoInput');
+    if (memoInput && typeof window.autoSavePlanMemo === 'function') {
+      var memoDate = window.activeSelectedDateKey || '';
+      if (memoDate) window.autoSavePlanMemo(memoDate, memoInput.value);
+    }
     var modal = document.getElementById('romanticPlanModal');
     if (modal) {
-      modal.style.setProperty('display', 'none', 'important');
+      modal.remove(); // 🛡️ [구조 개선] DOM에서 완전 제거하여 메모리 해제
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
     }
     document.body.classList.remove('plan-modal-open');
+    // 🛡️ 제스처 플래그 리셋
+    window.__ribbonSwipeBound = false;
+    window.__calSwipeBound = false;
     var isMap = (typeof window.location !== 'undefined') && window.location.pathname.includes('map.html');
     if (typeof window.ensureMasterBottomDock === 'function') {
       window.ensureMasterBottomDock(isMap ? 'map' : 'router');
@@ -5067,7 +5155,9 @@ window.commitPlanDestination = function(dateKey) {
   };
 
   // ⚡ [실시간 동기화] 지도/외부에서 찜 변경 시 새로고침 0% 즉시 플랜 뷰 갱신
-  if (typeof window !== 'undefined') {
+  // 🛡️ [메모리 누수 패치] 리스너 중복 등록 방지
+  if (typeof window !== 'undefined' && !window.__planBookmarkListenerBound) {
+    window.__planBookmarkListenerBound = true;
     window.addEventListener('okbm_bookmark_changed', function() {
       var modal = document.getElementById('romanticPlanModal');
       var isModalOpen = modal && modal.style.display !== 'none';

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>낭만루트 발란스 목업</title>
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #111111;
+      --kr: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+      --pata: 'Fraunces', 'Libre Baskerville', Georgia, serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100dvh;
+      background: #07090e;
+      color: #f8fafc;
+      font-family: var(--kr);
+      padding: 24px 14px 64px;
+    }
+    .page { width: min(420px, 100%); margin: 0 auto; }
+    .head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .head img { width: 26px; height: 26px; object-fit: contain; }
+    .head h1 { font-size: 1.02rem; font-weight: 900; }
+    .sub { color: #94a3b8; font-size: 0.74rem; font-weight: 600; line-height: 1.5; margin-bottom: 16px; }
+    .stage {
+      background: #05070c;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 8px;
+    }
+    .poster {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      overflow: hidden;
+      background: #fff;
+      container-type: size;
+      border-radius: 18px;
+      padding: 1.6%;
+      box-sizing: border-box;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+    }
+    .sheet {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #111;
+      isolation: isolate;
+    }
+    .sheet .photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 46%;
+      display: block;
+    }
+    .copy, .rule, .word, .mark-wrap, .barcode {
+      pointer-events: none;
+    }
+    .copy {
+      position: absolute;
+      left: 6.2%;
+      top: 5.4%;
+      z-index: 6;
+      width: 42%;
+      font-family: var(--kr);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.18;
+    }
+    .copy-dark { color: #111; mix-blend-mode: multiply; }
+    .copy-light { color: #fff; mix-blend-mode: screen; }
+    .copy .lead {
+      font-size: 3.7cqw;
+      font-weight: 900;
+      margin-bottom: 4.6%;
+    }
+    .copy .mid {
+      font-size: 2.3cqw;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      line-height: 1.32;
+      margin-bottom: 5.4%;
+    }
+    .copy .end {
+      font-size: 2.7cqw;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+    .mark-wrap {
+      position: absolute;
+      right: 4.2%;
+      top: 2.8%;
+      z-index: 7;
+      height: 22cqw;
+      width: 28cqw;
+    }
+    .mark-wrap img {
+      position: absolute;
+      right: 0;
+      top: 0;
+      height: 100%;
+      width: auto;
+      display: block;
+      object-fit: contain;
+    }
+    .mark-dark { mix-blend-mode: multiply; }
+    .mark-light { mix-blend-mode: screen; }
+    .rule {
+      position: absolute;
+      left: 5.5%;
+      right: 5.5%;
+      top: 48.6%;
+      height: 0;
+      border-top: 1.6px solid #111;
+      z-index: 5;
+    }
+    .rule-dark { border-top-color: #111; mix-blend-mode: multiply; }
+    .rule-light { border-top-color: #fff; mix-blend-mode: screen; }
+    .word {
+      position: absolute;
+      left: 6%;
+      bottom: 4.2%;
+      z-index: 6;
+      text-align: left;
+      font-family: var(--pata);
+      font-weight: 600;
+      font-variation-settings: 'opsz' 144, 'SOFT' 40, 'WONK' 1;
+    }
+    .word-dark { color: #111; mix-blend-mode: multiply; }
+    .word-light { color: #fff; mix-blend-mode: screen; }
+    .kg {
+      font-size: 13.2cqw;
+      letter-spacing: -0.035em;
+      line-height: 0.84;
+    }
+    .kg b {
+      font-size: 0.38em;
+      font-weight: 600;
+      margin-left: 0.08em;
+      letter-spacing: 0.02em;
+      vertical-align: 0.22em;
+    }
+    .count {
+      margin-top: 1.6%;
+      font-size: 4.6cqw;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      line-height: 1;
+    }
+    .meta {
+      position: absolute;
+      right: 5.5%;
+      bottom: 4.8%;
+      z-index: 6;
+      text-align: right;
+      font-family: var(--kr);
+      font-weight: 800;
+      line-height: 1.25;
+    }
+    .meta-dark { color: #111; mix-blend-mode: multiply; }
+    .meta-light { color: #fff; mix-blend-mode: screen; }
+    .meta .date {
+      font-size: 2.8cqw;
+      letter-spacing: 0.04em;
+    }
+    .meta .spot {
+      margin-top: 2px;
+      font-size: 3.4cqw;
+      letter-spacing: -0.02em;
+    }
+    .note { margin-top: 12px; color: #64748b; font-size: 0.68rem; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="head">
+      <img src="logo.png" alt="" />
+      <h1>발란스 목업</h1>
+    </div>
+    <p class="sub">왼쪽 아래 무게+kg와 아이템 수, 오른쪽 아래 날짜·위치.</p>
+    <div class="stage">
+      <article class="poster">
+        <div class="sheet">
+          <img class="photo" src="preview-camp.jpg" alt="샘플 캠핑 사진" />
+          <div class="copy copy-dark">
+            <div class="lead">불편함을<br>감수하고</div>
+            <div class="mid">자연에서<br>하룻밤을<br>보내는 사람들</div>
+            <div class="end">낭만루터</div>
+          </div>
+          <div class="copy copy-light">
+            <div class="lead">불편함을<br>감수하고</div>
+            <div class="mid">자연에서<br>하룻밤을<br>보내는 사람들</div>
+            <div class="end">낭만루터</div>
+          </div>
+          <div class="mark-wrap">
+            <img class="mark-dark" src="fulllogo.png" alt="" />
+            <img class="mark-light" src="fulllogo.png" alt="낭만루트" />
+          </div>
+          <div class="rule rule-dark"></div>
+          <div class="rule rule-light"></div>
+          <div class="word word-dark">
+            <div class="kg">7.82<b>kg</b></div>
+            <div class="count">8 items</div>
+          </div>
+          <div class="word word-light">
+            <div class="kg">7.82<b>kg</b></div>
+            <div class="count">8 items</div>
+          </div>
+          <div class="meta meta-dark">
+            <div class="date">2026.09.19</div>
+            <div class="spot">설악산</div>
+          </div>
+          <div class="meta meta-light">
+            <div class="date">2026.09.19</div>
+            <div class="spot">설악산</div>
+          </div>
+        </div>
+      </article>
+    </div>
+    <p class="note">http://127.0.0.1:5500/balance-cover-mockup.html</p>
+  </div>
+</body>
+</html>

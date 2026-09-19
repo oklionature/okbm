@@ -18,9 +18,16 @@ var currentCustomRatioVal = 0.75;
 var currentAutoRatioVal = '3/4';
 var currentPhotoScaleVal = 1.0;
 
+// 🛡️ [메모리 누수 패치] 이전 드래그 리스너를 일괄 해제하기 위한 AbortController
+var __studioDragAbort = null;
 function setupStudioPhotoDrag(targetEl) {
-  if (!targetEl || targetEl.__dragSetup) return;
-  targetEl.__dragSetup = true;
+  // 이전 리스너 일괄 해제 (재호출 시 누적 방지)
+  if (!targetEl) return;
+  if (__studioDragAbort) {
+    __studioDragAbort.abort();
+  }
+  __studioDragAbort = new AbortController();
+  var signal = __studioDragAbort.signal;
 
   var isDragging = false;
   var isPinching = false;
@@ -29,7 +36,7 @@ function setupStudioPhotoDrag(targetEl) {
   var startDist = 0;
   var startScale = 1.0;
   var touchStartTime = 0;
-  var studioModes = ['minimal', 'chic', 'packing', 'essay', 'sage'];
+  var studioModes = ['balance', 'kuchi', 'issue', 'spread', 'magazine', 'overlay', 'minimal', 'chic', 'essay', 'sage', 'editorial'];
 
   function getDistance(touches) {
     var dx = touches[0].clientX - touches[1].clientX;
@@ -165,21 +172,19 @@ function setupStudioPhotoDrag(targetEl) {
   }
 
   targetEl.style.cursor = 'grab';
-  targetEl.addEventListener('mousedown', onPointerDown);
-  window.addEventListener('mousemove', onPointerMove);
-  window.addEventListener('mouseup', onPointerEnd);
-
-  targetEl.addEventListener('touchstart', onPointerDown, { passive: false });
-  window.addEventListener('touchmove', onPointerMove, { passive: false });
-  window.addEventListener('touchend', onPointerEnd);
-  window.addEventListener('touchcancel', onPointerEnd);
-
+  targetEl.addEventListener('mousedown', onPointerDown, { signal: signal });
+  window.addEventListener('mousemove', onPointerMove, { signal: signal });
+  window.addEventListener('mouseup', onPointerEnd, { signal: signal });
+  targetEl.addEventListener('touchstart', onPointerDown, { passive: false, signal: signal });
+  window.addEventListener('touchmove', onPointerMove, { passive: false, signal: signal });
+  window.addEventListener('touchend', onPointerEnd, { signal: signal });
+  window.addEventListener('touchcancel', onPointerEnd, { signal: signal });
   targetEl.addEventListener('wheel', function(e) {
     e.preventDefault();
     var delta = e.deltaY > 0 ? -0.05 : 0.05;
     currentPhotoScaleVal = Math.max(1.0, Math.min(2.5, +(currentPhotoScaleVal + delta).toFixed(2)));
     updateTransform();
-  }, { passive: false });
+  }, { passive: false, signal: signal });
 }
 
 function ensurePhotoStudioDOM() {
@@ -192,7 +197,7 @@ function ensurePhotoStudioDOM() {
   
   studio.innerHTML = `
     <div id="photoStudioStage" style="position:relative; width:100%; height:100%; max-width:440px; display:flex; justify-content:center; align-items:center; padding:env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px) 0; box-sizing:border-box;">
-      <div id="photoStudioCardTarget" style="width:100%; max-height:100%; overflow:hidden; position:relative; display:flex; justify-content:center; align-items:center;"></div>
+      <div id="photoStudioCardTarget" style="width:100%; max-height:calc(100% - 8px); overflow:visible; position:relative; display:flex; justify-content:center; align-items:center;"></div>
       
       <div style="position:absolute; top:calc(10px + env(safe-area-inset-top, 0px)); left:12px; right:12px; display:flex; flex-direction:column; gap:8px; z-index:100;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -218,12 +223,18 @@ function ensurePhotoStudioDOM() {
             height: 0 !important;
           }
         </style>
-        <div class="studio-mode-bar" style="display:flex; justify-content:flex-start; gap:5px; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; padding:2px 2px; -webkit-overflow-scrolling:touch;">
-          <button type="button" id="btnStudioModeMinimal" style="background:#ffffff; color:#000000; border:none; padding:4px 9px; border-radius:14px; font-size:0.62rem; font-weight:900; cursor:pointer; white-space:nowrap;" onclick="window.switchStudioMode('minimal')">미니멀 갤러리</button>
+        <div id="studioModeBar" class="studio-mode-bar" style="display:flex; justify-content:flex-start; gap:5px; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; padding:2px 2px; -webkit-overflow-scrolling:touch;">
+          <button type="button" id="btnStudioModeBalance" style="background:#ffffff; color:#000000; border:none; padding:4px 9px; border-radius:14px; font-size:0.62rem; font-weight:900; cursor:pointer; white-space:nowrap;" onclick="window.switchStudioMode('balance')">발란스</button>
+          <button type="button" id="btnStudioModeKuchi" style="background:rgba(0,0,0,0.65); color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); padding:4px 9px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; white-space:nowrap;" onclick="window.switchStudioMode('kuchi')">쿠치</button>
+          <button type="button" id="btnStudioModeIssue" style="background:rgba(0,0,0,0.65); color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); padding:4px 9px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; white-space:nowrap;" onclick="window.switchStudioMode('issue')">이슈</button>
+          <button type="button" id="btnStudioModeSpread" style="background:rgba(0,0,0,0.65); color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); padding:4px 9px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; white-space:nowrap;" onclick="window.switchStudioMode('spread')">스프레드</button>
+          <button type="button" id="btnStudioModeMagazine" style="background:rgba(0,0,0,0.65); color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); padding:4px 9px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; white-space:nowrap;" onclick="window.switchStudioMode('magazine')">매거진</button>
+          <button type="button" id="btnStudioModeOverlay" style="background:rgba(0,0,0,0.65); color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); padding:4px 9px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; white-space:nowrap;" onclick="window.switchStudioMode('overlay')">저널</button>
+          <button type="button" id="btnStudioModeMinimal" style="background:rgba(0,0,0,0.65); color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); padding:4px 9px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; white-space:nowrap;" onclick="window.switchStudioMode('minimal')">미니멀 갤러리</button>
           <button type="button" id="btnStudioModeChic" style="background:rgba(0,0,0,0.65); color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); padding:4px 9px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; white-space:nowrap;" onclick="window.switchStudioMode('chic')">시크 갤러리</button>
-          <button type="button" id="btnStudioModePacking" style="background:rgba(0,0,0,0.65); color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); padding:4px 9px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; white-space:nowrap;" onclick="window.switchStudioMode('packing')">장비 폴라로이드</button>
           <button type="button" id="btnStudioModeEssay" style="background:rgba(0,0,0,0.65); color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); padding:4px 9px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; white-space:nowrap;" onclick="window.switchStudioMode('essay')">감성 에세이</button>
           <button type="button" id="btnStudioModeSage" style="background:rgba(0,0,0,0.65); color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); padding:4px 9px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; white-space:nowrap;" onclick="window.switchStudioMode('sage')">내추럴 카메라</button>
+          <button type="button" id="btnStudioModeEditorial" style="background:rgba(0,0,0,0.65); color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); padding:4px 9px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; white-space:nowrap;" onclick="window.switchStudioMode('editorial')">에디토리얼</button>
         </div>
       </div>
 
@@ -248,6 +259,54 @@ function ensurePhotoStudioDOM() {
   return studio;
 }
 
+function ensureStudioExtraModeButtons() {
+  var bar = document.getElementById('studioModeBar');
+  if (!bar) return;
+  var leftoverPack = document.getElementById('btnStudioModePacking');
+  if (leftoverPack) leftoverPack.remove();
+  if (!document.getElementById('btnStudioModeBalance')) {
+    var balanceBtn = document.createElement('button');
+    balanceBtn.type = 'button';
+    balanceBtn.id = 'btnStudioModeBalance';
+    balanceBtn.style.cssText = 'background:rgba(0,0,0,0.65); color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); padding:4px 9px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; white-space:nowrap;';
+    balanceBtn.setAttribute('onclick', "window.switchStudioMode('balance')");
+    balanceBtn.textContent = '발란스';
+    bar.insertBefore(balanceBtn, bar.firstChild);
+  }
+  if (!document.getElementById('btnStudioModeKuchi')) {
+    var kuchiBtn = document.createElement('button');
+    kuchiBtn.type = 'button';
+    kuchiBtn.id = 'btnStudioModeKuchi';
+    kuchiBtn.style.cssText = 'background:rgba(0,0,0,0.65); color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); padding:4px 9px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; white-space:nowrap;';
+    kuchiBtn.setAttribute('onclick', "window.switchStudioMode('kuchi')");
+    kuchiBtn.textContent = '쿠치';
+    bar.insertBefore(kuchiBtn, bar.firstChild);
+  }
+  if (!document.getElementById('btnStudioModeIssue')) {
+    var issueBtn = document.createElement('button');
+    issueBtn.type = 'button';
+    issueBtn.id = 'btnStudioModeIssue';
+    issueBtn.style.cssText = 'background:rgba(0,0,0,0.65); color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); padding:4px 9px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; white-space:nowrap;';
+    issueBtn.setAttribute('onclick', "window.switchStudioMode('issue')");
+    issueBtn.textContent = '이슈';
+    bar.insertBefore(issueBtn, bar.firstChild);
+  }
+  if (!document.getElementById('btnStudioModeSpread')) {
+    var spreadBtn = document.createElement('button');
+    spreadBtn.type = 'button';
+    spreadBtn.id = 'btnStudioModeSpread';
+    spreadBtn.style.cssText = 'background:rgba(0,0,0,0.65); color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); padding:4px 9px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; white-space:nowrap;';
+    spreadBtn.setAttribute('onclick', "window.switchStudioMode('spread')");
+    spreadBtn.textContent = '스프레드';
+    bar.insertBefore(spreadBtn, bar.firstChild);
+  }
+  var order = ['btnStudioModeBalance', 'btnStudioModeKuchi', 'btnStudioModeIssue', 'btnStudioModeSpread', 'btnStudioModeMagazine', 'btnStudioModeOverlay', 'btnStudioModeMinimal', 'btnStudioModeChic', 'btnStudioModeEssay', 'btnStudioModeSage', 'btnStudioModeEditorial'];
+  order.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) bar.appendChild(el);
+  });
+}
+
 window.resetStudioPhotoFraming = function() {
   window.currentPhotoPosX = 50;
   window.currentPhotoPosY = 50;
@@ -267,8 +326,16 @@ window.openPhotoStudio = function() {
   var studio = ensurePhotoStudioDOM();
   if (studio) studio.style.setProperty('display', 'flex', 'important');
   window.currentCardRatio = '3/4';
-  window.currentStudioCardMode = window.currentStudioCardMode || 'minimal';
+  window.currentStudioCardMode = window.currentStudioCardMode || 'spread';
+  if (window.currentStudioCardMode === 'nrc') window.currentStudioCardMode = 'overlay';
+  if (window.currentStudioCardMode === 'packing') window.currentStudioCardMode = 'magazine';
+  var leftoverNrc = document.getElementById('btnStudioModeNrc');
+  if (leftoverNrc) leftoverNrc.remove();
+  var leftoverTheme = document.getElementById('btnStudioOverlayTheme');
+  if (leftoverTheme) leftoverTheme.remove();
+  ensureStudioExtraModeButtons();
   window.updateStudioUI();
+  syncStudioModeButtons(window.currentStudioCardMode);
   window.updateStudioCardLive();
   var target = document.getElementById('photoStudioCardTarget');
   if (target) setupStudioPhotoDrag(target);
@@ -331,25 +398,54 @@ window.handleFreeRatioChange = function(val) {
   window.updateStudioCardLive();
 };
 
-window.switchStudioMode = function(mode) {
-  window.currentStudioCardMode = mode;
-  var map = { 'minimal': 'btnStudioModeMinimal', 'chic': 'btnStudioModeChic', 'packing': 'btnStudioModePacking', 'essay': 'btnStudioModeEssay', 'sage': 'btnStudioModeSage' };
+function syncStudioModeButtons(mode) {
+  var map = { 'balance': 'btnStudioModeBalance', 'kuchi': 'btnStudioModeKuchi', 'issue': 'btnStudioModeIssue', 'spread': 'btnStudioModeSpread', 'magazine': 'btnStudioModeMagazine', 'overlay': 'btnStudioModeOverlay', 'minimal': 'btnStudioModeMinimal', 'chic': 'btnStudioModeChic', 'essay': 'btnStudioModeEssay', 'sage': 'btnStudioModeSage', 'editorial': 'btnStudioModeEditorial' };
+  var activeBtn = null;
   Object.keys(map).forEach(function(k) {
     var btn = document.getElementById(map[k]);
-    if (btn) {
-      if (k === mode) {
-        btn.style.background = '#ffffff';
-        btn.style.color = '#000000';
-        btn.style.fontWeight = '900';
-        btn.style.border = 'none';
-      } else {
-        btn.style.background = 'rgba(0,0,0,0.65)';
-        btn.style.color = '#cbd5e1';
-        btn.style.fontWeight = '800';
-        btn.style.border = '1px solid rgba(255,255,255,0.25)';
-      }
+    if (!btn) return;
+    if (k === mode) {
+      btn.style.background = '#ffffff';
+      btn.style.color = '#000000';
+      btn.style.fontWeight = '900';
+      btn.style.border = 'none';
+      activeBtn = btn;
+    } else {
+      btn.style.background = 'rgba(0,0,0,0.65)';
+      btn.style.color = '#cbd5e1';
+      btn.style.fontWeight = '800';
+      btn.style.border = '1px solid rgba(255,255,255,0.25)';
     }
   });
+  if (!activeBtn) return;
+  requestAnimationFrame(function() {
+    var bar = document.getElementById('studioModeBar') || (activeBtn.parentElement);
+    if (!bar) return;
+    var barRect = bar.getBoundingClientRect();
+    var btnRect = activeBtn.getBoundingClientRect();
+    if (!barRect.width || !btnRect.width) return;
+    var delta = (btnRect.left + btnRect.width / 2) - (barRect.left + barRect.width / 2);
+    var maxLeft = Math.max(0, bar.scrollWidth - bar.clientWidth);
+    var nextLeft = Math.max(0, Math.min(maxLeft, bar.scrollLeft + delta));
+    if (typeof bar.scrollTo === 'function') {
+      bar.scrollTo({ left: nextLeft, behavior: 'smooth' });
+    } else {
+      bar.scrollLeft = nextLeft;
+    }
+  });
+}
+
+window.switchStudioMode = function(mode) {
+  if (mode === 'nrc') mode = 'overlay';
+  if (mode === 'packing') mode = 'magazine';
+  window.currentStudioCardMode = mode;
+  var leftoverTheme = document.getElementById('btnStudioOverlayTheme');
+  if (leftoverTheme) leftoverTheme.remove();
+  if ((mode === 'overlay' || mode === 'editorial' || mode === 'magazine' || mode === 'spread' || mode === 'issue' || mode === 'kuchi' || mode === 'balance') && (!window.currentCardRatio || window.currentCardRatio === '4/5')) {
+    window.currentCardRatio = '3/4';
+    window.updateStudioUI();
+  }
+  syncStudioModeButtons(mode);
   window.updateStudioCardLive();
   if (typeof triggerHaptic === 'function') triggerHaptic(10);
 };
@@ -363,6 +459,107 @@ window.updateStudioUI = function() {
     else { btn.style.background = 'transparent'; btn.style.color = '#cbd5e1'; btn.style.fontWeight = '800'; }
   });
 };
+
+function getStudioAspectRatio() {
+  var r = window.currentCardRatio || '3/4';
+  if (r === '1/1') return 1;
+  if (r === '4/5') return 4 / 5;
+  if (r === '9/16') return 9 / 16;
+  if (r === 'free') {
+    var v = Number(currentCustomRatioVal);
+    return (v > 0.2 && v < 2.5) ? v : 0.75;
+  }
+  return 0.75;
+}
+
+function getStudioCardBoxCss() {
+  var r = window.currentCardRatio || '3/4';
+  var aspect = '3/4';
+  var maxW = '340px';
+  if (r === '1/1') aspect = '1/1';
+  else if (r === '4/5') aspect = '4/5';
+  else if (r === '9/16') { aspect = '9/16'; maxW = '300px'; }
+  else if (r === 'free') aspect = String(currentCustomRatioVal || 0.75);
+  return 'aspect-ratio:' + aspect + '; width:100%; max-width:' + maxW + '; height:auto; max-height:calc(100dvh - 168px); margin:0 auto;';
+}
+
+function getStudioExportSize() {
+  var aspect = getStudioAspectRatio();
+  var width = 1080;
+  var height = Math.round(width / aspect);
+  if (height > 2160) height = 2160;
+  if (height < 1080) height = 1080;
+  if (aspect >= 0.99 && aspect <= 1.01) height = 1080;
+  return { width: width, height: height };
+}
+
+function resolveStudioCardEl(card) {
+  if (!card || !card.querySelector) return card;
+  return card.querySelector('.photo-overlay-card') || card.querySelector('.ready-shot-card-vector') || card.firstElementChild || card;
+}
+
+async function captureStudioCardCanvas(card) {
+  var source = resolveStudioCardEl(card);
+  if (!source) throw new Error('no studio card');
+  var aspect = getStudioAspectRatio();
+  var rect = source.getBoundingClientRect();
+  var capW = Math.max(280, Math.round(rect.width || 340));
+  var capH = Math.max(280, Math.round(capW / aspect));
+  var host = document.createElement('div');
+  host.style.cssText = 'position:fixed; left:-16000px; top:0; width:' + capW + 'px; height:' + capH + 'px; overflow:visible; z-index:-1; pointer-events:none; background:#000000;';
+  var clone = source.cloneNode(true);
+  clone.style.width = capW + 'px';
+  clone.style.height = capH + 'px';
+  clone.style.maxWidth = 'none';
+  clone.style.maxHeight = 'none';
+  clone.style.aspectRatio = 'auto';
+  clone.style.margin = '0';
+  clone.style.borderRadius = '0';
+  clone.style.boxShadow = 'none';
+  clone.style.overflow = 'hidden';
+  host.appendChild(clone);
+  document.body.appendChild(host);
+  try {
+    var imgs = clone.querySelectorAll('img');
+    await Promise.all(Array.prototype.map.call(imgs, function(img) {
+      if (img.complete && img.naturalWidth) return Promise.resolve();
+      return new Promise(function(res) {
+        var done = function() { res(); };
+        img.onload = done;
+        img.onerror = done;
+        setTimeout(done, 1800);
+      });
+    }));
+    await new Promise(function(res) { requestAnimationFrame(function() { requestAnimationFrame(res); }); });
+    var canvas = await html2canvas(clone, {
+      backgroundColor: '#000000',
+      scale: 3,
+      width: capW,
+      height: capH,
+      windowWidth: capW,
+      windowHeight: capH,
+      useCORS: true,
+      allowTaint: false,
+      logging: false,
+      scrollX: 0,
+      scrollY: 0
+    });
+    var size = getStudioExportSize();
+    if (canvas.width === size.width && canvas.height === size.height) return canvas;
+    var out = document.createElement('canvas');
+    out.width = size.width;
+    out.height = size.height;
+    var ctx = out.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, size.width, size.height);
+    ctx.drawImage(canvas, 0, 0, size.width, size.height);
+    return out;
+  } finally {
+    if (host.parentNode) host.parentNode.removeChild(host);
+  }
+}
 
 window.saveStudioCardToPhone = async function() {
   var card = document.getElementById('photoStudioCardTarget');
@@ -379,17 +576,23 @@ window.saveStudioCardToPhone = async function() {
   if (typeof showToast === 'function') showToast('⏳ 인스타 공유용 고화질 레디샷 카드를 저장 중입니다...', 'info', 1800);
 
   try {
-    var canvas = await html2canvas(card, {
-      backgroundColor: '#000000',
-      scale: 3.0,
-      useCORS: true,
-      allowTaint: false,
-      logging: false
-    });
+    var canvas = await captureStudioCardCanvas(card);
+    var isPng = (window.currentStudioCardMode === 'overlay' || window.currentStudioCardMode === 'editorial' || window.currentStudioCardMode === 'magazine' || window.currentStudioCardMode === 'spread' || window.currentStudioCardMode === 'issue' || window.currentStudioCardMode === 'kuchi' || window.currentStudioCardMode === 'balance');
     var link = document.createElement('a');
-    link.download = '낭만루트_레디샷_' + Date.now() + '.jpg';
-    link.href = canvas.toDataURL('image/jpeg', 0.94);
-    link.click();
+    if (isPng) {
+      var blob = await new Promise(function(resolve, reject) {
+        canvas.toBlob(function(b) { b ? resolve(b) : reject(new Error('toBlob failed')); }, 'image/png');
+      });
+      var url = URL.createObjectURL(blob);
+      link.download = '낭만루트_레디샷_' + Date.now() + '.png';
+      link.href = url;
+      link.click();
+      setTimeout(function() { URL.revokeObjectURL(url); }, 2500);
+    } else {
+      link.download = '낭만루트_레디샷_' + Date.now() + '.jpg';
+      link.href = canvas.toDataURL('image/jpeg', 0.94);
+      link.click();
+    }
     if (typeof showToast === 'function') showToast('📸 인스타 공유용 고화질 레디샷이 저장되었습니다!', 'success', 2400);
   } catch (e) {
     console.error('saveStudioCardToPhone error:', e);
@@ -476,7 +679,7 @@ window.updateStudioCardLive = function() {
     Object.keys(window.selectedGearMap).forEach(function(cId) {
       (window.selectedGearMap[cId] || []).forEach(function(it) {
         if (it && (it.name || it.itemName)) {
-          items.push({ name: it.name || it.itemName, weight: Number(it.weight || it.weight_g || 0) });
+          items.push({ name: it.name || it.itemName, weight: Number(it.weight || it.weight_g || 0), categoryId: cId, brand: it.brand || '' });
         }
       });
     });
@@ -490,12 +693,7 @@ window.updateStudioCardLive = function() {
   var svgDot = '<span style="display:inline-block; width:3px; height:3px; background:#94a3b8; border-radius:50%; margin-right:3px; vertical-align:middle; flex-shrink:0;"></span>';
 
   var mode = window.currentStudioCardMode || 'minimal';
-  var ratioVal = window.currentCardRatio || '3/4';
-  var cardRatioCss = 'aspect-ratio:3/4; max-width:340px;';
-  if (ratioVal === '1/1') cardRatioCss = 'aspect-ratio:1/1; max-width:340px;';
-  else if (ratioVal === '4/5') cardRatioCss = 'aspect-ratio:4/5; max-width:340px;';
-  else if (ratioVal === '9/16') cardRatioCss = 'aspect-ratio:9/16; max-width:320px;';
-  else if (ratioVal === 'free') cardRatioCss = 'aspect-ratio:' + currentCustomRatioVal + '; max-width:340px;';
+  var cardRatioCss = getStudioCardBoxCss();
 
   var posX = (window.currentPhotoPosX !== undefined) ? window.currentPhotoPosX : 50;
   var posY = (window.currentPhotoPosY !== undefined) ? window.currentPhotoPosY : 50;
@@ -506,7 +704,7 @@ window.updateStudioCardLive = function() {
 
   if (mode === 'minimal') {
     container.innerHTML = `
-      <div style="position:relative; width:100%; ${cardRatioCss} max-height:calc(100dvh - 130px); margin:0 auto; overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
+      <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
         <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
         
         <!-- 상단 헤더 (위치 및 일자) -->
@@ -568,7 +766,7 @@ window.updateStudioCardLive = function() {
     }
 
     container.innerHTML = `
-      <div style="position:relative; width:100%; ${cardRatioCss} max-height:calc(100dvh - 130px); margin:0 auto; overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
+      <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
         <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
         <div style="position:absolute; inset:0; z-index:3; pointer-events:none; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr 1fr 1fr; opacity:0.65;">
           <div style="border-right:1px solid rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.4);"></div>
@@ -627,7 +825,7 @@ window.updateStudioCardLive = function() {
 
   if (mode === 'chic') {
     container.innerHTML = `
-      <div style="position:relative; width:100%; ${cardRatioCss} max-height:calc(100dvh - 130px); margin:0 auto; overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; justify-content:center; align-items:center; box-sizing:border-box; background:#000000;">
+      <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; justify-content:center; align-items:center; box-sizing:border-box; background:#000000;">
         <div style="position:absolute; inset:0; overflow:hidden; z-index:1; pointer-events:none;">
           <img src="${window.currentSharePhoto}" style="width:112%; height:112%; object-fit:cover; object-position:${posX}% ${posY}%; filter:blur(9px) brightness(0.82); transform:scale(1.06); display:block; margin:-6%;" />
           <div style="position:absolute; inset:0; background:rgba(0,0,0,0.28);"></div>
@@ -684,7 +882,7 @@ window.updateStudioCardLive = function() {
     }).join('');
 
     container.innerHTML = `
-      <div style="position:relative; width:100%; ${cardRatioCss} max-height:calc(100dvh - 130px); margin:0 auto; overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; justify-content:center; align-items:center; box-sizing:border-box; background:#07090e;">
+      <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; justify-content:center; align-items:center; box-sizing:border-box; background:#07090e;">
         <div style="position:absolute; inset:0; overflow:hidden; z-index:1; pointer-events:none;">
           <img src="${window.currentSharePhoto}" style="width:112%; height:112%; object-fit:cover; object-position:${posX}% ${posY}%; filter:blur(9px) brightness(0.82); transform:scale(1.06); display:block; margin:-6%;" />
           <div style="position:absolute; inset:0; background:rgba(0,0,0,0.28);"></div>
@@ -725,6 +923,135 @@ window.updateStudioCardLive = function() {
     return;
   }
 
+  if (mode === 'nrc') {
+    container.innerHTML = renderNrcCertShotMarkup({
+      photo: window.currentSharePhoto,
+      imgId: 'photoStudioBgImage',
+      posX: posX,
+      posY: posY,
+      scale: scale,
+      spot: spotDisplay,
+      date: dateStr,
+      weightKg: weightKg,
+      items: items,
+      brand: brandSvgWhite,
+      wrapCss: cardRatioCss
+    });
+    return;
+  }
+
+  if (mode === 'overlay') {
+    container.innerHTML = renderPhotoOverlayMarkup({
+      photo: window.currentSharePhoto,
+      imgId: 'photoStudioBgImage',
+      posX: posX,
+      posY: posY,
+      scale: scale,
+      spot: spotDisplay,
+      date: dateStr,
+      weightKg: weightKg,
+      itemCount: items.length,
+      items: items,
+      wrapCss: cardRatioCss
+    });
+    return;
+  }
+
+  if (mode === 'editorial') {
+    container.innerHTML = renderEditorialOverlayMarkup({
+      photo: window.currentSharePhoto,
+      imgId: 'photoStudioBgImage',
+      posX: posX,
+      posY: posY,
+      scale: scale,
+      spot: spotDisplay,
+      date: dateStr,
+      weightKg: weightKg,
+      itemCount: items.length,
+      items: items,
+      wrapCss: cardRatioCss
+    });
+    return;
+  }
+
+  if (mode === 'balance') {
+    container.innerHTML = renderBalanceMarkup({
+      photo: window.currentSharePhoto,
+      imgId: 'photoStudioBgImage',
+      posX: posX,
+      posY: posY,
+      scale: scale,
+      spot: spotDisplay,
+      date: dateStr,
+      weightKg: weightKg,
+      itemCount: items.length,
+      wrapCss: cardRatioCss
+    });
+    return;
+  }
+
+  if (mode === 'kuchi') {
+    container.innerHTML = renderKuchiMarkup({
+      photo: window.currentSharePhoto,
+      imgId: 'photoStudioBgImage',
+      posX: posX,
+      posY: posY,
+      scale: scale,
+      spot: spotDisplay,
+      date: dateStr,
+      weightKg: weightKg,
+      itemCount: items.length,
+      wrapCss: cardRatioCss
+    });
+    return;
+  }
+
+  if (mode === 'issue') {
+    container.innerHTML = renderIssueMarkup({
+      photo: window.currentSharePhoto,
+      imgId: 'photoStudioBgImage',
+      posX: posX,
+      posY: posY,
+      scale: scale,
+      spot: spotDisplay,
+      date: dateStr,
+      weightKg: weightKg,
+      itemCount: items.length,
+      wrapCss: cardRatioCss
+    });
+    return;
+  }
+
+  if (mode === 'spread') {
+    container.innerHTML = renderSpreadMarkup({
+      photo: window.currentSharePhoto,
+      imgId: 'photoStudioBgImage',
+      posX: posX,
+      posY: posY,
+      scale: scale,
+      spot: spotDisplay,
+      date: dateStr,
+      weightKg: weightKg,
+      items: items,
+      wrapCss: cardRatioCss
+    });
+    return;
+  }
+
+  if (mode === 'magazine') {
+    container.innerHTML = renderMagazineCoverMarkup({
+      photo: window.currentSharePhoto,
+      imgId: 'photoStudioBgImage',
+      posX: posX,
+      posY: posY,
+      scale: scale,
+      weightKg: weightKg,
+      itemCount: items.length,
+      wrapCss: cardRatioCss
+    });
+    return;
+  }
+
   var isTwoCol = items.length >= 8;
   var fontSize = items.length >= 18 ? '0.48rem' : (items.length >= 12 ? '0.52rem' : '0.56rem');
 
@@ -752,7 +1079,7 @@ window.updateStudioCardLive = function() {
   }
 
   container.innerHTML = `
-    <div style="width:100%; ${cardRatioCss} max-height:calc(100dvh - 130px); margin:0 auto; background:#fbfaf7; box-shadow:0 16px 36px rgba(0,0,0,0.85); border-radius:10px; padding:7px 7px 8px 7px; display:flex; flex-direction:column; justify-content:space-between; gap:6px; box-sizing:border-box; color:#1e293b; font-family:'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;">
+    <div style="${cardRatioCss} background:#fbfaf7; box-shadow:0 16px 36px rgba(0,0,0,0.85); border-radius:10px; padding:7px 7px 8px 7px; display:flex; flex-direction:column; justify-content:space-between; gap:6px; box-sizing:border-box; color:#1e293b; font-family:'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;">
       <div style="position:relative; width:100%; flex:1 1 0%; min-height:100px; border-radius:6px; overflow:hidden; background:#000; box-shadow:inset 0 0 3px rgba(0,0,0,0.3);">
         <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; pointer-events:none;" />
       </div>
@@ -874,6 +1201,678 @@ function escapeHtml(text) {
     .replace(/'/g, '&#39;');
 }
 
+window.currentOverlayTheme = window.currentOverlayTheme || 'dark';
+
+var OVERLAY_GEAR_ICON_PATHS = {
+  tent: '<path d="M12 48.5C12 31 19.5 16.5 32 13.5C44.5 16.5 52 31 52 48.5" stroke-width="2.3"/><path d="M8 48.5H56" stroke-width="2.25"/><path d="M12 48.5L7.5 48.5L11 39.5C12 35.5 16 34.5 18 38" stroke-width="2.15"/><path d="M29 48.5C29 33 38 26.5 45.5 35.5C47.5 39.5 47.5 48.5 47.5 48.5" stroke-width="1.7"/><path d="M38 30C40.2 37 40.2 43.5 37 48.5" stroke-width="1.6"/><path d="M18 48.5C22 32 28 16.5 32 13.5" stroke-width="1.55"/><path d="M20 48.5C24 43.5 40 43.5 44 48.5" stroke-width="1.55"/><path d="M8 48.5L6 53.5" stroke-width="1.6"/><path d="M56 48.5L58 53.5" stroke-width="1.6"/>',
+  'sleeping-bag': '<path d="M27 9.5C20.5 9.5 15.5 14.5 15.5 21.5C15.5 25.5 17.5 29 19.5 33L17.5 49C16.5 56 23 59 32 59C43 59 49 55 49 48L47 33C49 29 51 25.5 51 21.5C51 14.5 46 9.5 39.5 9.5C37.2 9.5 35 11.2 32 12.2C29 11.2 26.8 9.5 27 9.5Z" stroke-width="2.3"/><ellipse cx="32" cy="20.5" rx="8" ry="6.2" stroke-width="1.7"/><path d="M29 17.5C30.2 18.8 33.8 18.8 35 17.5" stroke-width="1.5"/><path d="M41.5 26.5L45.5 50" stroke-width="1.7"/><path d="M40 31C43 37 44.2 44 43 50.5" stroke-width="1.5"/><path d="M22 53.5C27.5 51.2 36.5 51.2 42 53.5" stroke-width="1.55"/>',
+  mat: '<ellipse cx="19.5" cy="32" rx="10.5" ry="16" stroke-width="2.3"/><ellipse cx="19.5" cy="32" rx="4" ry="6.5" stroke-width="1.6"/><path d="M22 16.2H49.5C53.5 16.2 54.8 19.2 51.8 21.4H24" stroke-width="2.15"/><path d="M22 47.8H49.5C53.5 47.8 54.8 44.8 51.8 42.6H24" stroke-width="2.15"/><path d="M51.8 21.4V42.6" stroke-width="2.05"/><path d="M29.5 21.4V42.6" stroke-width="1.5"/><path d="M37.5 21.4V42.6" stroke-width="1.5"/><path d="M44.8 21.4V42.6" stroke-width="1.5"/><path d="M13 26C25.5 23.5 25.5 40.5 13 38" stroke-width="1.7"/>',
+  backpack: '<path d="M22 21H42C45.8 21 47 23 47 26.5V47.5C47 51.8 44 54.5 40 54.5H24C20 54.5 17 51.8 17 47.5V26.5C17 23 18.2 21 22 21Z" stroke-width="2.3"/><path d="M20 22C20 14.5 25.5 11.5 32 11.5C38.5 11.5 44 14.5 44 22" stroke-width="2.2"/><path d="M24 18H40" stroke-width="1.65"/><path d="M24.5 27C17 31 15.5 40 20 51" stroke-width="1.75"/><path d="M39.5 27C47 31 48.5 40 44 51" stroke-width="1.75"/><path d="M14 45.5C11.8 45.8 11 48 12.2 50.2H19" stroke-width="1.8"/><path d="M50 45.5C52.2 45.8 53 48 51.8 50.2H45" stroke-width="1.8"/><path d="M19 48.2H45" stroke-width="1.8"/><path d="M47 30.5C51.2 31.5 51.4 42 47 44" stroke-width="1.65"/><path d="M25.5 34.5H38.5V47.5H25.5Z" stroke-width="1.6"/><path d="M22 32.5H28M36 32.5H42" stroke-width="1.55"/>',
+  cooking: '<path d="M16 30.5H48V45C48 51.5 42.5 54.5 32 54.5C21.5 54.5 16 51.5 16 45V30.5Z" stroke-width="2.3"/><path d="M14 30.5H50C50 24 44.5 21.5 32 21.5C19.5 21.5 14 24 14 30.5Z" stroke-width="2.2"/><circle cx="32" cy="21.5" r="2.6" stroke-width="1.7"/><path d="M18.5 31C18.5 15.5 45.5 15.5 45.5 31" stroke-width="1.9"/><path d="M21 38.5H27" stroke-width="1.55"/><path d="M48 34.5C51.5 34.5 53.5 36.5 53.5 39.5C53.5 42.5 51.5 44.5 48 44.5" stroke-width="1.7"/>',
+  clothing: '<path d="M26 16C26 9.5 28.8 7 32 7C35.2 7 38 9.5 38 16V18.5" stroke-width="2.2"/><path d="M22 21L16.5 36L14.5 50C14.5 53.8 17.5 56 22 56H42C46.5 56 49.5 53.8 49.5 50L47.5 36L42 21C40 18.8 36.2 17.8 32 17.8C27.8 17.8 24 18.8 22 21Z" stroke-width="2.3"/><path d="M16.5 36H22.5M47.5 36H41.5" stroke-width="1.6"/><path d="M32 20.5V50.5" stroke-width="1.7"/><path d="M21.5 39H29.5V49H21.5Z" stroke-width="1.55"/><path d="M28.5 16.5C29.6 18.2 34.4 18.2 35.5 16.5" stroke-width="1.5"/>',
+  food: '<path d="M16.5 20H38.5L41 49C41 53.2 37.2 55.5 29 55.5C20.8 55.5 17 53.2 17 49L16.5 20Z" stroke-width="2.3"/><path d="M18 20V15.5H37V20" stroke-width="1.85"/><path d="M35.5 13L39.5 17.5" stroke-width="1.55"/><rect x="21.5" y="29" width="14" height="11" rx="1.6" stroke-width="1.6"/><path d="M48.5 16.5C51.2 16.5 52.8 18.6 52.8 21.2V32.5C54 34.8 52.2 37.2 49.4 37.2C46.6 37.2 44.8 34.8 46 32.5V21.2C46 18.6 47.6 16.5 48.5 16.5Z" stroke-width="1.9"/><path d="M46.6 16.5H50.4" stroke-width="1.55"/><path d="M47.2 16.5V13.8M48.5 16.5V13.2M49.8 16.5V13.8" stroke-width="1.5"/>',
+  other: '<path d="M25 13C16 13 13.5 20.5 13.5 31C13.5 43.5 17.5 51 27 51C35 51 38.5 46 38.5 38.5V25" stroke-width="2.3"/><path d="M25 13C32 13 37.5 16.5 38.5 25" stroke-width="2.15"/><path d="M38.5 24.5C38.5 21.8 36.4 20 33.8 20" stroke-width="1.7"/><rect x="40.5" y="29" width="13.5" height="16.5" rx="2.2" stroke-width="2.1"/><path d="M47.2 29V25.2" stroke-width="1.7"/><circle cx="47.2" cy="37.2" r="3.4" stroke-width="1.65"/><path d="M47.2 32.2V30.8M47.2 43.6V42.2" stroke-width="1.5"/>'
+};
+
+function renderOverlayGearIcon(iconId, sizePx) {
+  var key = OVERLAY_GEAR_ICON_PATHS[iconId] ? iconId : 'other';
+  var size = sizePx || 36;
+  return '<svg viewBox="0 0 64 64" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:block; width:' + size + 'px; height:' + size + 'px; flex-shrink:0;">' + OVERLAY_GEAR_ICON_PATHS[key] + '</svg>';
+}
+
+function overlayResolveCategoryId(it) {
+  if (!it || typeof it !== 'object') return '';
+  var direct = it.categoryId || it.category_id || it.category || '';
+  if (direct && direct !== 'fav' && direct !== 'all') return String(direct);
+  var name = String(it.name || it.itemName || '');
+  if (window.selectedGearMap) {
+    var cats = Object.keys(window.selectedGearMap);
+    for (var i = 0; i < cats.length; i++) {
+      var list = window.selectedGearMap[cats[i]] || [];
+      for (var j = 0; j < list.length; j++) {
+        var g = list[j];
+        if (g && (g.name === name || g.itemName === name)) return cats[i];
+      }
+    }
+  }
+  return '';
+}
+
+function overlayIconIdFromItem(it) {
+  var cat = overlayResolveCategoryId(it);
+  var name = String((typeof it === 'string') ? it : (it && (it.name || it.itemName)) || '').toLowerCase();
+  if (cat === 'shelter' || /텐트|타프|tent|tarp|shelter/.test(name)) return 'tent';
+  if (cat === 'pack' || /배낭|백팩|backpack|pack\b|exos|osprey/.test(name)) return 'backpack';
+  if (cat === 'kitchen' || /취사|스토브|버너|코펠|stove|pot|windmaster/.test(name)) return 'cooking';
+  if (cat === 'wear' || /의류|자켓|재킷|바지|셔츠|jacket|pants|shell/.test(name)) return 'clothing';
+  if (cat === 'food' || /식량|음식|라면|햇반|리필|meal|food|pasta/.test(name)) return 'food';
+  if (/매트|패드|pad|mat|tensor/.test(name) && !/침낭|sleeping bag/.test(name)) return 'mat';
+  if (cat === 'sleep' || /침낭|sleeping|quilt|spark/.test(name)) return 'sleeping-bag';
+  if (cat === 'sleep') return /매트|패드|pad|mat/.test(name) ? 'mat' : 'sleeping-bag';
+  return 'other';
+}
+
+function overlayDisplayName(raw, brand) {
+  var src = String(raw || '').replace(/\s*\(\d+\s*g\)\s*$/i, '').trim();
+  if (!src) return '';
+  var model = src;
+  var paren = src.match(/\(([^)]+)\)\s*$/);
+  if (paren && /[A-Za-z]/.test(paren[1])) model = paren[1];
+  model = model.replace(/^(The North Face|Arc'?teryx|Sea to Summit|NEMO|Osprey|SOTO|Petzl|Mountain Hardwear|Big Agnes|MSR|Hilleberg|Zpacks|Hyperlite|Cumulus|Peak Refuel|REI Co-op|GSI Outdoors|KOMPERDELL)\s+/i, '');
+  model = model.replace(/\s*-\s*Men'?s.*$/i, '');
+  model = model.replace(/\s+with Footprint.*$/i, '');
+  model = model.replace(/\s+GORE-TEX.*$/i, '');
+  var tokens = model.split(/\s+/).filter(Boolean);
+  var stop = /^(Tent|Sleeping|Bag|Pad|Pack|Headlamp|Stove|Down|Ultralight|Insulated|All-Season|Men'?s|Women'?s|Pair|Poles?|Chair|Table|with|Footprint|SOD-\d+|KP\d+)$/i;
+  var kept = [];
+  for (var i = 0; i < tokens.length; i++) {
+    if (stop.test(tokens[i]) && kept.length) {
+      if (/^Jacket$/i.test(tokens[i])) kept.push('Jacket');
+      break;
+    }
+    kept.push(tokens[i]);
+    if (kept.length >= 3) break;
+  }
+  model = kept.join(' ').replace(/\s+/g, ' ').trim();
+  var brandKo = overlayBrandKo(brand, src);
+  if (brandKo && model.indexOf(brandKo) === 0) {
+    model = model.slice(brandKo.length).replace(/^[\s·\-]+/, '').trim();
+  }
+  return model || src;
+}
+
+function overlayBrandKo(brand, raw) {
+  var brandKo = '';
+  if (brand) {
+    brandKo = String(brand).replace(/\s*\([^)]*\)\s*/g, '').trim();
+    if (brandKo.length > 8) brandKo = brandKo.split(/\s+/)[0];
+    if (/^(The|A|An)$/i.test(brandKo)) brandKo = '';
+  } else {
+    var kb = String(raw || '').match(/^([가-힣A-Za-z][가-힣A-Za-z0-9 ]{1,10})/);
+    if (kb) brandKo = kb[1].trim().split(/\s+/)[0];
+  }
+  return brandKo;
+}
+
+function overlayNormalizeItems(items) {
+  return (Array.isArray(items) ? items : []).map(function(it) {
+    if (typeof it === 'string') {
+      return { rawName: it, brand: overlayBrandKo('', it), name: overlayDisplayName(it), weight: 0, icon: overlayIconIdFromItem({ name: it }) };
+    }
+    var raw = it.name || it.itemName || '';
+    return {
+      rawName: raw,
+      brand: overlayBrandKo(it.brand, raw),
+      name: overlayDisplayName(raw, it.brand),
+      weight: Number(it.weight || it.weight_g || 0),
+      icon: overlayIconIdFromItem(it)
+    };
+  }).filter(function(it) { return it.rawName; });
+}
+
+function overlayGroupItems(items) {
+  var groups = [];
+  var index = {};
+  (items || []).forEach(function(it) {
+    var key = it.icon || 'other';
+    if (index[key] === undefined) {
+      index[key] = groups.length;
+      groups.push({ icon: key, items: [] });
+    }
+    groups[index[key]].items.push(it);
+  });
+  return groups;
+}
+
+function ensureJournalFonts() {
+  if (!document.getElementById('journal-font-link')) {
+    var link = document.createElement('link');
+    link.id = 'journal-font-link';
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600;6..96,700;6..96,800&family=Libre+Baskerville:ital,wght@0,400;0,700&display=swap';
+    document.head.appendChild(link);
+  }
+  if (!document.getElementById('issue-font-link')) {
+    var issueLink = document.createElement('link');
+    issueLink.id = 'issue-font-link';
+    issueLink.rel = 'stylesheet';
+    issueLink.href = 'https://fonts.googleapis.com/css2?family=Anton&family=Caveat:wght@600;700&family=Barlow+Condensed:wght@500;600;700;800&family=Oswald:wght@500;600;700&display=swap';
+    document.head.appendChild(issueLink);
+  }
+  if (!document.getElementById('kuchi-font-link')) {
+    var kuchiLink = document.createElement('link');
+    kuchiLink.id = 'kuchi-font-link';
+    kuchiLink.rel = 'stylesheet';
+    kuchiLink.href = 'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Oswald:wght@500;600;700&display=swap';
+    document.head.appendChild(kuchiLink);
+  }
+  if (!document.getElementById('balance-font-link')) {
+    var balanceLink = document.createElement('link');
+    balanceLink.id = 'balance-font-link';
+    balanceLink.rel = 'stylesheet';
+    balanceLink.href = 'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap';
+    document.head.appendChild(balanceLink);
+  }
+}
+
+function ensureJournalStyles() {
+  var style = document.getElementById('journal-overlay-style');
+  if (!style) {
+    style = document.createElement('style');
+    style.id = 'journal-overlay-style';
+    document.head.appendChild(style);
+  }
+  style.textContent =
+    '.photo-overlay-card .jr-grain{position:absolute;inset:0;pointer-events:none;opacity:.42;' +
+    'background:repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(80,60,40,.06) 28px),' +
+    'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'180\' height=\'180\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'0.45\'/%3E%3C/svg%3E");}' +
+    '.photo-overlay-card.magazine-cover{container-type:size; isolation:isolate; background:#111;}' +
+    '.photo-overlay-card.magazine-cover .mag-photo{position:absolute;inset:0;z-index:1;pointer-events:none;}' +
+    '.photo-overlay-card.magazine-cover .mag-type{position:absolute;inset:0;pointer-events:none;}' +
+    '.photo-overlay-card.magazine-cover .mag-type-dark{z-index:4;color:#111111;mix-blend-mode:multiply;}' +
+    '.photo-overlay-card.magazine-cover .mag-type-light{z-index:5;color:#ffffff;mix-blend-mode:screen;}' +
+    '.photo-overlay-card.magazine-cover .mag-kg{position:absolute;left:3%;right:3%;top:10%;font-family:\'Bodoni Moda\',Georgia,serif;font-weight:700;font-size:4.4rem;font-size:22cqw;letter-spacing:-0.06em;line-height:0.78;text-align:center;white-space:nowrap;}' +
+    '.photo-overlay-card.magazine-cover .mag-kg b{font-size:0.38em;font-weight:600;letter-spacing:0.04em;margin-left:0.08em;}' +
+    '.photo-overlay-card.magazine-cover .mag-items{position:absolute;left:2%;right:2%;bottom:6%;font-family:\'Bodoni Moda\',Georgia,serif;font-weight:700;font-size:4rem;font-size:18cqw;letter-spacing:-0.05em;line-height:0.8;text-align:center;white-space:nowrap;}' +
+    '.photo-overlay-card.magazine-cover .mag-logo{position:absolute;top:12px;right:12px;left:auto;z-index:12;display:flex;justify-content:flex-end;pointer-events:none;}' +
+    '.photo-overlay-card.magazine-cover .mag-logo span{display:flex;align-items:center;justify-content:center;width:auto;height:auto;border-radius:0;background:none;box-shadow:none;}' +
+    '.photo-overlay-card.magazine-cover .mag-logo img{height:18px;width:18px;display:block;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 1px #fff) drop-shadow(1px 0 0 #111) drop-shadow(-1px 0 0 #111) drop-shadow(0 1px 0 #111) drop-shadow(0 -1px 0 #111) drop-shadow(0 1px 3px rgba(0,0,0,0.7));}' +
+    '.photo-overlay-card.spread-card{container-type:size; display:flex; flex-direction:column; background:#f7f4ee; color:#1b2430;}' +
+    '.photo-overlay-card.spread-card .sp-photo{position:relative; flex:1 1 0%; min-height:0; overflow:hidden; background:#111;}' +
+    '.photo-overlay-card.spread-card .sp-photo img{width:100%;height:100%;object-fit:cover;display:block;}' +
+    '.photo-overlay-card.spread-card .sp-fade{position:absolute;left:0;right:0;bottom:0;height:38%;pointer-events:none;background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.22) 50%,rgba(0,0,0,.5) 100%);}' +
+    '.photo-overlay-card.spread-card .sp-title{position:absolute;left:5%;right:5%;bottom:3%;z-index:4;font-family:\'Bodoni Moda\',Georgia,serif;font-weight:700;font-size:9cqw;letter-spacing:-.04em;line-height:.86;color:#fff;text-transform:uppercase;text-shadow:0 2px 14px rgba(0,0,0,.35);}' +
+    '.photo-overlay-card.spread-card .sp-paper{position:relative;flex:0 0 auto;padding:4.2% 5% 9.5%;box-sizing:border-box;}' +
+    '.photo-overlay-card.spread-card .sp-kg{font-family:\'Bodoni Moda\',Georgia,serif;font-size:8.6cqw;font-weight:700;letter-spacing:-.04em;line-height:.88;color:#1a2744;margin-bottom:3.2%;}' +
+    '.photo-overlay-card.spread-card .sp-byline{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-bottom:2.4%;border-bottom:1px solid rgba(27,36,48,.18);margin-bottom:3.4%;}' +
+    '.photo-overlay-card.spread-card .sp-spot{font-family:\'Pretendard Variable\',-apple-system,sans-serif;font-size:3.4cqw;font-weight:800;letter-spacing:-.02em;}' +
+    '.photo-overlay-card.spread-card .sp-date{font-family:\'Space Grotesk\',sans-serif;font-size:2.6cqw;font-weight:600;color:#5c6570;}' +
+    '.photo-overlay-card.spread-card .sp-cols{display:grid;grid-template-columns:1fr 1fr;column-gap:6%;row-gap:2.8%;}' +
+    '.photo-overlay-card.spread-card .sp-brand{font-family:\'Space Grotesk\',sans-serif;font-size:2cqw;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#5c6570;}' +
+    '.photo-overlay-card.spread-card .sp-name{margin-top:1px;font-family:\'Libre Baskerville\',\'Pretendard Variable\',Georgia,serif;font-size:3cqw;font-weight:700;line-height:1.2;word-break:keep-all;}' +
+    '.photo-overlay-card.spread-card .sp-w{margin-top:1px;font-family:\'Space Grotesk\',sans-serif;font-size:2.3cqw;font-weight:600;color:#5c6570;}' +
+    '.photo-overlay-card.spread-card .sp-logo{position:absolute;right:5%;bottom:3.2%;height:5.4cqw;width:auto;display:block;object-fit:contain;mix-blend-mode:multiply;filter:drop-shadow(1px 0 0 #111) drop-shadow(-1px 0 0 #111) drop-shadow(0 1px 0 #111);}' +
+    '.photo-overlay-card.issue-card{container-type:size; background:#fff; color:#fff; padding:3.6%; box-sizing:border-box;}' +
+    '.photo-overlay-card.issue-card .iss-sheet{position:relative;width:100%;height:100%;overflow:hidden;background:#000;background-image:linear-gradient(180deg,rgba(255,255,255,.06) 0%,transparent 38%,rgba(0,0,0,.35) 100%),linear-gradient(rgba(255,255,255,.22) 1.4px,transparent 1.4px),linear-gradient(90deg,rgba(255,255,255,.22) 1.4px,transparent 1.4px),linear-gradient(rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px);background-size:auto,14.2% 10.6%,14.2% 10.6%,2.84% 2.12%,2.84% 2.12%;box-shadow:inset 0 0 28px rgba(0,0,0,.55);}' +
+    '.photo-overlay-card.issue-card .iss-sheet::before{content:\'\';position:absolute;inset:0;pointer-events:none;z-index:1;opacity:.28;mix-blend-mode:overlay;background:radial-gradient(circle at 18% 12%,rgba(255,214,150,.18),transparent 36%),radial-gradient(circle at 88% 82%,rgba(0,0,0,.55),transparent 40%);}' +
+    '.photo-overlay-card.issue-card .iss-kg{position:absolute;left:2%;right:2%;top:.4%;z-index:6;font-family:Anton,Impact,sans-serif;font-size:31cqw;letter-spacing:-.045em;line-height:.76;text-align:center;text-transform:uppercase;}' +
+    '.photo-overlay-card.issue-card .iss-kg b{font-size:.26em;font-weight:400;letter-spacing:.06em;margin-left:.06em;vertical-align:.48em;}' +
+    '.photo-overlay-card.issue-card .iss-frame{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);width:60%;aspect-ratio:1/1;background:#f6f1e6;padding:2.4%;z-index:3;box-shadow:0 10px 22px rgba(0,0,0,.35);box-sizing:border-box;}' +
+    '.photo-overlay-card.issue-card .iss-frame img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}' +
+    '.photo-overlay-card.issue-card .iss-note{position:absolute;z-index:5;color:#fff;font-weight:700;line-height:1.05;white-space:nowrap;}' +
+    '.photo-overlay-card.issue-card .iss-date{left:3.2%;top:34%;font-family:Caveat,cursive;font-size:5.6cqw;letter-spacing:.02em;transform:rotate(-10deg);line-height:.95;}' +
+    '.photo-overlay-card.issue-card .iss-spot{right:3.6%;top:36%;font-family:\'Nanum Pen Script\',cursive;font-size:6.8cqw;transform:rotate(8deg);}' +
+    '.photo-overlay-card.issue-card .iss-arrow{position:absolute;z-index:5;pointer-events:none;stroke:#f4fbff;fill:none;stroke-width:2;stroke-linecap:round;}' +
+    '.photo-overlay-card.issue-card .iss-a1{left:16%;top:44%;width:8%;height:8%;}' +
+    '.photo-overlay-card.issue-card .iss-a2{right:16%;top:48%;width:8%;height:7%;}' +
+    '.photo-overlay-card.issue-card .iss-count{position:absolute;left:0;right:0;bottom:-1%;z-index:6;font-family:Anton,Impact,sans-serif;font-size:42cqw;letter-spacing:-.06em;line-height:.72;text-align:center;text-transform:uppercase;}' +
+    '.photo-overlay-card.issue-card .iss-count b{font-size:.26em;font-weight:400;letter-spacing:.06em;margin-left:.04em;vertical-align:1.85em;}' +
+    '.photo-overlay-card.issue-card .iss-logo{position:absolute;right:3.2%;bottom:2.4%;z-index:7;height:7.2cqw;width:auto;display:block;object-fit:contain;mix-blend-mode:screen;}' +
+    '.photo-overlay-card.kuchi-card{container-type:size; isolation:isolate; background:#fff; padding:2.8%; box-sizing:border-box;}' +
+    '.photo-overlay-card.kuchi-card .kc-sheet{position:relative;width:100%;height:100%;overflow:hidden;background:#111;isolation:isolate;}' +
+    '.photo-overlay-card.kuchi-card .kc-photo{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}' +
+    '.photo-overlay-card.kuchi-card .kc-rail{position:absolute;left:0;top:0;bottom:0;width:6.8%;background:#e6e05c;z-index:4;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:7% 0 8%;}' +
+    '.photo-overlay-card.kuchi-card .kc-block{display:flex;flex-direction:row;align-items:center;gap:8px;writing-mode:vertical-rl;text-orientation:mixed;color:#1a1a12;}' +
+    '.photo-overlay-card.kuchi-card .kc-block.spot{text-orientation:upright;}' +
+    '.photo-overlay-card.kuchi-card .kc-lab{font-family:\'Pretendard Variable\',sans-serif;font-size:2.4cqw;font-weight:700;letter-spacing:.12em;opacity:.72;}' +
+    '.photo-overlay-card.kuchi-card .kc-val{font-family:\'Barlow Condensed\',\'Oswald\',sans-serif;font-size:3.5cqw;font-weight:700;letter-spacing:.08em;white-space:nowrap;}' +
+    '.photo-overlay-card.kuchi-card .kc-mast{position:absolute;left:8%;right:2%;top:52%;text-align:center;pointer-events:none;}' +
+    '.photo-overlay-card.kuchi-card .kc-mast-dark{z-index:5;color:#2a2710;mix-blend-mode:multiply;}' +
+    '.photo-overlay-card.kuchi-card .kc-mast-light{z-index:6;color:#e7de6a;mix-blend-mode:screen;}' +
+    '.photo-overlay-card.kuchi-card .kc-kg{font-family:\'Barlow Condensed\',\'Oswald\',sans-serif;font-weight:500;font-size:38cqw;letter-spacing:.01em;line-height:.72;text-transform:uppercase;white-space:nowrap;}' +
+    '.photo-overlay-card.kuchi-card .kc-items{margin-top:2.2%;font-family:\'Barlow Condensed\',\'Oswald\',sans-serif;font-weight:600;font-size:5.2cqw;letter-spacing:.32em;text-transform:lowercase;}' +
+    '.photo-overlay-card.kuchi-card .kc-mark{position:absolute;right:3.4%;bottom:3.2%;z-index:7;height:6.6cqw;width:18cqw;pointer-events:none;}' +
+    '.photo-overlay-card.kuchi-card .kc-mark img{position:absolute;right:0;bottom:0;height:100%;width:auto;display:block;object-fit:contain;}' +
+    '.photo-overlay-card.kuchi-card .kc-mark-dark{mix-blend-mode:multiply;}' +
+    '.photo-overlay-card.kuchi-card .kc-mark-light{mix-blend-mode:screen;}' +
+    '.photo-overlay-card.balance-card{container-type:size; isolation:isolate; background:#fff; padding:1.6%; box-sizing:border-box;}' +
+    '.photo-overlay-card.balance-card .bl-sheet{position:relative;width:100%;height:100%;overflow:hidden;background:#111;isolation:isolate;}' +
+    '.photo-overlay-card.balance-card .bl-photo{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}' +
+    '.photo-overlay-card.balance-card .bl-copy{position:absolute;left:6.2%;top:5.4%;z-index:6;width:42%;font-family:\'Pretendard Variable\',sans-serif;font-weight:800;letter-spacing:-.02em;line-height:1.18;pointer-events:none;}' +
+    '.photo-overlay-card.balance-card .bl-copy-dark{color:#111;mix-blend-mode:multiply;}' +
+    '.photo-overlay-card.balance-card .bl-copy-light{color:#fff;mix-blend-mode:screen;}' +
+    '.photo-overlay-card.balance-card .bl-lead{font-size:3.7cqw;font-weight:900;margin-bottom:4.6%;}' +
+    '.photo-overlay-card.balance-card .bl-mid{font-size:2.3cqw;font-weight:700;letter-spacing:.01em;line-height:1.32;margin-bottom:5.4%;}' +
+    '.photo-overlay-card.balance-card .bl-end{font-size:2.7cqw;font-weight:800;letter-spacing:.08em;}' +
+    '.photo-overlay-card.balance-card .bl-logo{position:absolute;right:4.2%;top:2.8%;z-index:7;height:22cqw;width:28cqw;pointer-events:none;}' +
+    '.photo-overlay-card.balance-card .bl-logo img{position:absolute;right:0;top:0;height:100%;width:auto;display:block;object-fit:contain;}' +
+    '.photo-overlay-card.balance-card .bl-logo-dark{mix-blend-mode:multiply;}' +
+    '.photo-overlay-card.balance-card .bl-logo-light{mix-blend-mode:screen;}' +
+    '.photo-overlay-card.balance-card .bl-rule{position:absolute;left:5.5%;right:5.5%;top:48.6%;height:0;z-index:5;pointer-events:none;}' +
+    '.photo-overlay-card.balance-card .bl-rule-dark{border-top:1.6px solid #111;mix-blend-mode:multiply;}' +
+    '.photo-overlay-card.balance-card .bl-rule-light{border-top:1.6px solid #fff;mix-blend-mode:screen;}' +
+    '.photo-overlay-card.balance-card .bl-word{position:absolute;left:6%;bottom:4.2%;z-index:6;text-align:left;font-family:Fraunces,\'Libre Baskerville\',Georgia,serif;font-weight:600;pointer-events:none;}' +
+    '.photo-overlay-card.balance-card .bl-word-dark{color:#111;mix-blend-mode:multiply;}' +
+    '.photo-overlay-card.balance-card .bl-word-light{color:#fff;mix-blend-mode:screen;}' +
+    '.photo-overlay-card.balance-card .bl-kg{font-size:13.2cqw;letter-spacing:-.035em;line-height:.84;}' +
+    '.photo-overlay-card.balance-card .bl-kg b{font-size:.38em;font-weight:600;margin-left:.08em;letter-spacing:.02em;vertical-align:.22em;}' +
+    '.photo-overlay-card.balance-card .bl-count{margin-top:1.6%;font-size:4.6cqw;font-weight:600;letter-spacing:.04em;line-height:1;}' +
+    '.photo-overlay-card.balance-card .bl-meta{position:absolute;right:5.5%;bottom:4.8%;z-index:6;text-align:right;font-family:\'Pretendard Variable\',sans-serif;font-weight:800;line-height:1.25;pointer-events:none;}' +
+    '.photo-overlay-card.balance-card .bl-meta-dark{color:#111;mix-blend-mode:multiply;}' +
+    '.photo-overlay-card.balance-card .bl-meta-light{color:#fff;mix-blend-mode:screen;}' +
+    '.photo-overlay-card.balance-card .bl-date{font-size:2.8cqw;letter-spacing:.04em;}' +
+    '.photo-overlay-card.balance-card .bl-spot{margin-top:2px;font-size:3.4cqw;letter-spacing:-.02em;}';
+}
+
+function renderOutlinedBrandMark(heightPx) {
+  var h = heightPx || 32;
+  return '<img src="fulllogo.png" alt="낭만루트" style="height:' + h + 'px; width:auto; max-width:88px; display:block; object-fit:contain; mix-blend-mode:screen; filter:drop-shadow(0 0 1px #fff) drop-shadow(1px 0 0 #111) drop-shadow(-1px 0 0 #111) drop-shadow(0 1px 0 #111) drop-shadow(0 -1px 0 #111) drop-shadow(0 1px 3px rgba(0,0,0,0.55));" />';
+}
+
+function renderPhotoOverlayMarkup(opts) {
+  opts = opts || {};
+  ensureJournalFonts();
+  ensureJournalStyles();
+  var photoUrl = opts.photo || '';
+  var posX = (opts.posX !== undefined) ? opts.posX : 50;
+  var posY = (opts.posY !== undefined) ? opts.posY : 50;
+  var scale = opts.scale || 1.0;
+  var spot = opts.spot || '';
+  var dateStr = opts.date || '';
+  var weightKg = opts.weightKg || '0.00';
+  var wrapCss = opts.wrapCss || 'width:100%; max-width:340px; aspect-ratio:3/4; max-height:100%; margin:auto;';
+  var imgIdAttr = opts.imgId ? ' id="' + opts.imgId + '"' : '';
+  var imgErr = opts.onerror || '';
+  var allItems = overlayNormalizeItems(opts.items);
+  var totalCount = (opts.itemCount !== undefined) ? opts.itemCount : allItems.length;
+  var shown = allItems.slice(0, 8);
+  var n = shown.length;
+  var iconPx = n > 8 ? 13 : 16;
+  var makerSize = n > 8 ? '0.32rem' : '0.38rem';
+  var nameSize = n > 8 ? '0.38rem' : '0.44rem';
+  var wSize = n > 8 ? '0.34rem' : '0.40rem';
+  var ink = '#2a241c';
+  var mute = '#7a7166';
+  var paper = '#f3eee4';
+  var cells = shown.map(function(it) {
+    var wStr = it.weight > 0 ? (it.weight / 1000).toFixed(2) + ' kg' : '';
+    return '' +
+      '<div style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; min-width:0; color:' + ink + ';">' +
+        '<span style="color:' + ink + '; line-height:0; margin-bottom:5px;">' + renderOverlayGearIcon(it.icon, iconPx) + '</span>' +
+        (it.brand ? '<div style="width:100%; font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:' + makerSize + '; font-weight:600; color:' + mute + '; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + escapeHtml(it.brand) + '</div>' : '') +
+        '<div style="width:100%; margin-top:1px; font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:' + nameSize + '; font-weight:800; color:' + ink + '; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + escapeHtml(it.name) + '</div>' +
+        (wStr ? '<div style="width:100%; margin-top:2px; font-family:\'Space Grotesk\', sans-serif; font-size:' + wSize + '; font-weight:600; color:' + ink + ';">' + wStr + '</div>' : '') +
+      '</div>';
+  }).join('');
+  var tear = '' +
+    '<svg viewBox="0 0 1080 80" preserveAspectRatio="none" aria-hidden="true" style="position:absolute; left:-2px; right:-2px; bottom:-2px; width:calc(100% + 4px); height:28px; display:block; z-index:4; filter:drop-shadow(0 -3px 4px rgba(0,0,0,0.22));">' +
+      '<path fill="' + paper + '" d="M0 34C28 12 52 58 86 36C118 16 142 60 176 38C208 18 236 62 274 40C308 20 334 64 372 42C410 18 438 66 478 40C514 18 540 64 580 38C616 16 646 62 686 40C722 20 748 64 786 38C822 16 850 62 888 40C924 20 952 64 988 38C1020 18 1048 54 1080 32V80H0Z"/>' +
+      '<path fill="none" stroke="rgba(70,55,40,0.18)" stroke-width="2" d="M0 34C28 12 52 58 86 36C118 16 142 60 176 38C208 18 236 62 274 40C308 20 334 64 372 42C410 18 438 66 478 40C514 18 540 64 580 38C616 16 646 62 686 40C722 20 748 64 786 38C822 16 850 62 888 40C924 20 952 64 988 38C1020 18 1048 54 1080 32"/>' +
+    '</svg>';
+
+  return '' +
+    '<div class="photo-overlay-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); background:#111111; box-sizing:border-box; user-select:none; color:#ffffff; display:flex; flex-direction:column;">' +
+      '<div style="position:relative; flex:1 1 0%; min-height:0; overflow:hidden; z-index:1;">' +
+        '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; pointer-events:none;" />' +
+        '<div style="position:absolute; left:0; right:0; top:0; height:34%; pointer-events:none; background:linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.10) 58%, transparent 100%);"></div>' +
+        tear +
+        '<div style="position:absolute; top:12px; left:16px; z-index:6;">' +
+          '<div style="font-family:\'Space Grotesk\', sans-serif; font-size:1.85rem; font-weight:700; letter-spacing:-1.1px; line-height:0.86; color:#ffffff; text-shadow:0 2px 10px rgba(0,0,0,0.45);">' + escapeHtml(String(weightKg)) + '<span style="font-size:0.36em; font-weight:600; margin-left:3px;">KG</span></div>' +
+          '<div style="margin-top:5px; font-family:\'Space Grotesk\', sans-serif; font-size:0.72rem; font-weight:600; letter-spacing:0.4px; color:#ffffff; text-shadow:0 1px 6px rgba(0,0,0,0.5);">' + totalCount + ' ITEMS</div>' +
+        '</div>' +
+        '<div style="position:absolute; top:12px; right:12px; z-index:6; text-align:right;">' +
+          '<div style="font-family:\'Space Grotesk\', sans-serif; font-size:0.62rem; font-weight:600; letter-spacing:0.6px; color:#ffffff; text-shadow:0 1px 6px rgba(0,0,0,0.55);">' + escapeHtml(dateStr) + '</div>' +
+          (spot ? '<div style="margin-top:4px; display:flex; align-items:center; justify-content:flex-end; gap:4px; font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:0.60rem; font-weight:700; color:#ffffff; text-shadow:0 1px 6px rgba(0,0,0,0.55);">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="width:10px; height:10px; flex-shrink:0;"><path d="M12 21s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.2"/></svg>' +
+            '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:120px;">' + escapeHtml(spot) + '</span></div>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div style="position:relative; flex:0 0 auto; background:' + paper + '; color:' + ink + '; z-index:3; padding:14px 12px 12px 14px; box-sizing:border-box;">' +
+        '<div class="jr-grain"></div>' +
+        '<div style="position:absolute; left:14px; right:14px; top:12px; bottom:8px; pointer-events:none; background:repeating-linear-gradient(180deg, transparent 0, transparent 17px, rgba(90,70,50,0.08) 18px);"></div>' +
+        '<div style="position:relative; z-index:2; display:flex; flex-direction:column; gap:10px; box-sizing:border-box;">' +
+          '<div style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); column-gap:8px; row-gap:8px; align-items:start; min-width:0;">' + cells + '</div>' +
+          '<div style="display:flex; justify-content:space-between; align-items:flex-end; gap:10px;">' +
+            '<div style="font-family:\'Nanum Pen Script\', cursive; font-size:0.92rem; color:#4a433a; line-height:1.15;">불편함<br>그럼에도 불구하고</div>' +
+            renderOutlinedBrandMark(34) +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+window.renderPhotoOverlayMarkup = renderPhotoOverlayMarkup;
+
+function renderEditorialOverlayMarkup(opts) {
+  opts = opts || {};
+  ensureJournalFonts();
+  ensureJournalStyles();
+  var photoUrl = opts.photo || '';
+  var posX = (opts.posX !== undefined) ? opts.posX : 50;
+  var posY = (opts.posY !== undefined) ? opts.posY : 50;
+  var scale = opts.scale || 1.0;
+  var spot = opts.spot || '';
+  var dateStr = opts.date || '';
+  var weightKg = opts.weightKg || '0.00';
+  var wrapCss = opts.wrapCss || 'width:100%; max-width:340px; aspect-ratio:3/4; max-height:100%; margin:auto;';
+  var imgIdAttr = opts.imgId ? ' id="' + opts.imgId + '"' : '';
+  var imgErr = opts.onerror || '';
+  var allItems = overlayNormalizeItems(opts.items);
+  var totalCount = (opts.itemCount !== undefined) ? opts.itemCount : allItems.length;
+  var shown = allItems.slice(0, 8);
+  var n = shown.length;
+  var iconPx = n > 6 ? 15 : 17;
+  var makerSize = n > 6 ? '0.34rem' : '0.38rem';
+  var nameSize = n > 6 ? '0.40rem' : '0.46rem';
+  var wSize = n > 6 ? '0.36rem' : '0.40rem';
+  var cells = shown.map(function(it) {
+    var wStr = it.weight > 0 ? (it.weight / 1000).toFixed(2) + ' kg' : '';
+    return '' +
+      '<div style="display:flex; flex-direction:column; align-items:flex-start; text-align:left; min-width:0; color:#ffffff;">' +
+        '<span style="color:#ffffff; line-height:0; margin-bottom:5px; filter:drop-shadow(0 1px 4px rgba(0,0,0,0.7));">' + renderOverlayGearIcon(it.icon, iconPx) + '</span>' +
+        (it.brand ? '<div style="width:100%; font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:' + makerSize + '; font-weight:600; color:rgba(255,255,255,0.78); line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-shadow:0 1px 4px rgba(0,0,0,0.7);">' + escapeHtml(it.brand) + '</div>' : '') +
+        '<div style="width:100%; margin-top:1px; font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:' + nameSize + '; font-weight:800; color:#ffffff; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-shadow:0 1px 4px rgba(0,0,0,0.7);">' + escapeHtml(it.name) + '</div>' +
+        (wStr ? '<div style="width:100%; margin-top:2px; font-family:\'Space Grotesk\', sans-serif; font-size:' + wSize + '; font-weight:600; color:#ffffff; text-shadow:0 1px 4px rgba(0,0,0,0.7);">' + wStr + '</div>' : '') +
+      '</div>';
+  }).join('');
+  var lntSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:11px; height:11px; flex-shrink:0;"><path d="M12 21c0-6 3.2-9.2 8-11-1.2 5.4-4.4 8.2-8 11z"/><path d="M12 21C12 15 8.8 11.8 4 10c1.2 5.4 4.4 8.2 8 11z"/><path d="M12 21V8"/><path d="M12 8c1.6-2.8 4.2-4 7-4"/></svg>';
+
+  return '' +
+    '<div class="photo-overlay-card editorial-pack" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); background:#000000; box-sizing:border-box; user-select:none; color:#ffffff;">' +
+      '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; z-index:1; pointer-events:none;" />' +
+      '<div style="position:absolute; left:0; right:0; top:0; height:38%; z-index:2; pointer-events:none; background:linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.12) 55%, transparent 100%);"></div>' +
+      '<div style="position:absolute; left:0; right:0; bottom:0; height:46%; z-index:2; pointer-events:none; background:linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.08) 18%, rgba(0,0,0,0.55) 52%, rgba(0,0,0,0.86) 78%, rgba(0,0,0,0.94) 100%);"></div>' +
+      '<div style="position:absolute; inset:0; z-index:3; pointer-events:none;">' +
+        '<div style="position:absolute; top:14px; left:16px; right:16px; display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">' +
+          '<div style="min-width:0;">' +
+            '<div style="font-family:\'Space Grotesk\', sans-serif; font-size:0.48rem; font-weight:600; letter-spacing:2.2px; color:rgba(255,255,255,0.78); text-shadow:0 1px 6px rgba(0,0,0,0.55);">BACKPACKING RECORD</div>' +
+            '<div style="margin-top:4px; font-family:\'Space Grotesk\', sans-serif; font-size:1.72rem; font-weight:700; letter-spacing:-1.4px; line-height:0.88; color:#ffffff; text-shadow:0 2px 10px rgba(0,0,0,0.45);">' + escapeHtml(String(weightKg)) + '<span style="font-size:0.36em; font-weight:600; letter-spacing:0.4px; margin-left:3px;">KG</span></div>' +
+            '<div style="margin-top:5px; font-family:\'Space Grotesk\', sans-serif; font-size:0.78rem; font-weight:600; letter-spacing:0.4px; color:#ffffff; text-shadow:0 1px 6px rgba(0,0,0,0.5);">' + totalCount + ' ITEMS</div>' +
+            '<div style="margin-top:6px; display:flex; align-items:center; gap:4px; font-family:\'Space Grotesk\', sans-serif; font-size:0.48rem; font-weight:600; letter-spacing:0.4px; color:rgba(255,255,255,0.86); text-shadow:0 1px 6px rgba(0,0,0,0.55);">' + lntSvg + 'Leave No Trace</div>' +
+          '</div>' +
+          '<div style="text-align:right; flex-shrink:0;">' +
+            '<div style="font-family:\'Space Grotesk\', sans-serif; font-size:0.64rem; font-weight:600; letter-spacing:0.8px; color:#ffffff; text-shadow:0 1px 6px rgba(0,0,0,0.55);">' + escapeHtml(dateStr) + '</div>' +
+            (spot ? '<div style="margin-top:4px; display:flex; align-items:center; justify-content:flex-end; gap:4px; font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:0.62rem; font-weight:700; color:#ffffff; text-shadow:0 1px 6px rgba(0,0,0,0.55);">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="width:11px; height:11px; flex-shrink:0;"><path d="M12 21s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.2"/></svg>' +
+              '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:120px;">' + escapeHtml(spot) + '</span></div>' : '') +
+          '</div>' +
+        '</div>' +
+        '<div style="position:absolute; left:16px; right:16px; bottom:12px; display:grid; grid-template-columns:1fr auto; column-gap:10px; align-items:end;">' +
+          '<div style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); row-gap:10px; column-gap:8px; align-items:start; min-width:0;">' + cells + '</div>' +
+          renderOutlinedBrandMark(40) +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+window.renderEditorialOverlayMarkup = renderEditorialOverlayMarkup;
+
+function renderMagazineCoverMarkup(opts) {
+  opts = opts || {};
+  ensureJournalFonts();
+  ensureJournalStyles();
+  var photoUrl = opts.photo || '';
+  var posX = (opts.posX !== undefined) ? opts.posX : 50;
+  var posY = (opts.posY !== undefined) ? opts.posY : 50;
+  var scale = opts.scale || 1.0;
+  var weightKg = opts.weightKg || '0.00';
+  var totalCount = (opts.itemCount !== undefined) ? opts.itemCount : 0;
+  var wrapCss = opts.wrapCss || 'width:100%; max-width:340px; aspect-ratio:3/4; max-height:100%; margin:auto;';
+  var imgIdAttr = opts.imgId ? ' id="' + opts.imgId + '"' : '';
+  var imgErr = opts.onerror || '';
+
+  var typeHtml =
+    '<div class="mag-kg">' + escapeHtml(String(weightKg)) + '<b>KG</b></div>' +
+    '<div class="mag-items">' + totalCount + ' ITEMS</div>';
+
+  return '' +
+    '<div class="photo-overlay-card magazine-cover" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); background:#111111; box-sizing:border-box; user-select:none;">' +
+      '<div class="mag-photo">' +
+        '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block;" />' +
+      '</div>' +
+      '<div class="mag-type mag-type-dark">' + typeHtml + '</div>' +
+      '<div class="mag-type mag-type-light">' + typeHtml + '</div>' +
+      '<div class="mag-logo"><span><img src="logo.png" alt="낭만루트" /></span></div>' +
+    '</div>';
+}
+
+window.renderMagazineCoverMarkup = renderMagazineCoverMarkup;
+
+function renderSpreadMarkup(opts) {
+  opts = opts || {};
+  ensureJournalFonts();
+  ensureJournalStyles();
+  var photoUrl = opts.photo || '';
+  var posX = (opts.posX !== undefined) ? opts.posX : 50;
+  var posY = (opts.posY !== undefined) ? opts.posY : 50;
+  var scale = opts.scale || 1.0;
+  var spot = opts.spot || '';
+  var dateStr = opts.date || '';
+  var weightKg = opts.weightKg || '0.00';
+  var wrapCss = opts.wrapCss || 'width:100%; max-width:340px; aspect-ratio:3/4; max-height:100%; margin:auto;';
+  var imgIdAttr = opts.imgId ? ' id="' + opts.imgId + '"' : '';
+  var imgErr = opts.onerror || '';
+  var shown = overlayNormalizeItems(opts.items).slice(0, 8);
+  var cells = shown.map(function(it) {
+    var wStr = it.weight > 0 ? (it.weight / 1000).toFixed(2) + ' kg' : '';
+    return '' +
+      '<div class="sp-item">' +
+        (it.brand ? '<div class="sp-brand">' + escapeHtml(it.brand) + '</div>' : '') +
+        '<div class="sp-name">' + escapeHtml(it.name) + '</div>' +
+        (wStr ? '<div class="sp-w">' + wStr + '</div>' : '') +
+      '</div>';
+  }).join('');
+
+  return '' +
+    '<div class="photo-overlay-card spread-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); background:#f7f4ee; box-sizing:border-box; user-select:none;">' +
+      '<div class="sp-photo">' +
+        '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; pointer-events:none;" />' +
+        '<div class="sp-fade"></div>' +
+        '<div class="sp-title">THE PACK</div>' +
+      '</div>' +
+      '<div class="sp-paper">' +
+        '<div class="sp-kg">' + escapeHtml(String(weightKg)) + ' KG</div>' +
+        '<div class="sp-byline">' +
+          '<div class="sp-spot">' + escapeHtml(spot || '나의 힐링 스팟') + '</div>' +
+          '<div class="sp-date">' + escapeHtml(dateStr) + '</div>' +
+        '</div>' +
+        '<div class="sp-cols">' + cells + '</div>' +
+        '<img class="sp-logo" src="fulllogo.png" alt="낭만루트" />' +
+      '</div>' +
+    '</div>';
+}
+
+window.renderSpreadMarkup = renderSpreadMarkup;
+
+function issueDateLines(dateStr) {
+  var s = String(dateStr || '').trim();
+  var m = s.match(/^(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/);
+  if (m) {
+    return escapeHtml(m[1]) + '<br>' + escapeHtml(String(m[2]).padStart(2, '0') + '.' + String(m[3]).padStart(2, '0'));
+  }
+  return escapeHtml(s).replace(/\s+/g, '<br>');
+}
+
+function renderIssueMarkup(opts) {
+  opts = opts || {};
+  ensureJournalFonts();
+  ensureJournalStyles();
+  var photoUrl = opts.photo || '';
+  var posX = (opts.posX !== undefined) ? opts.posX : 50;
+  var posY = (opts.posY !== undefined) ? opts.posY : 50;
+  var scale = opts.scale || 1.0;
+  var spot = opts.spot || '나의 힐링 스팟';
+  var dateStr = opts.date || '';
+  var weightKg = opts.weightKg || '0.00';
+  var totalCount = (opts.itemCount !== undefined) ? opts.itemCount : (Array.isArray(opts.items) ? opts.items.length : 0);
+  var wrapCss = opts.wrapCss || 'width:100%; max-width:340px; aspect-ratio:3/4; max-height:100%; margin:auto;';
+  var imgIdAttr = opts.imgId ? ' id="' + opts.imgId + '"' : '';
+  var imgErr = opts.onerror || '';
+
+  return '' +
+    '<div class="photo-overlay-card issue-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); background:#ffffff; box-sizing:border-box; user-select:none;">' +
+      '<div class="iss-sheet">' +
+        '<div class="iss-kg">' + escapeHtml(String(weightKg)) + '<b>KG</b></div>' +
+        '<div class="iss-note iss-date">' + issueDateLines(dateStr) + '</div>' +
+        '<svg class="iss-arrow iss-a1" viewBox="0 0 80 50" aria-hidden="true"><path d="M8 28 C 28 8, 48 18, 74 22"/></svg>' +
+        '<div class="iss-frame">' +
+          '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
+        '</div>' +
+        '<div class="iss-note iss-spot">' + escapeHtml(spot) + '</div>' +
+        '<svg class="iss-arrow iss-a2" viewBox="0 0 70 50" aria-hidden="true"><path d="M62 18 C 40 8, 22 22, 6 28"/></svg>' +
+        '<div class="iss-count">' + escapeHtml(String(totalCount)) + '<b>ITEM</b></div>' +
+        '<img class="iss-logo" src="fulllogo.png" alt="낭만루트" />' +
+      '</div>' +
+    '</div>';
+}
+
+window.renderIssueMarkup = renderIssueMarkup;
+
+function renderKuchiMarkup(opts) {
+  opts = opts || {};
+  ensureJournalFonts();
+  ensureJournalStyles();
+  var photoUrl = opts.photo || '';
+  var posX = (opts.posX !== undefined) ? opts.posX : 50;
+  var posY = (opts.posY !== undefined) ? opts.posY : 50;
+  var scale = opts.scale || 1.0;
+  var spot = opts.spot || '나의 힐링 스팟';
+  var dateStr = opts.date || '';
+  var weightKg = opts.weightKg || '0.00';
+  var totalCount = (opts.itemCount !== undefined) ? opts.itemCount : (Array.isArray(opts.items) ? opts.items.length : 0);
+  var wrapCss = opts.wrapCss || 'width:100%; max-width:340px; aspect-ratio:3/4; max-height:100%; margin:auto;';
+  var imgIdAttr = opts.imgId ? ' id="' + opts.imgId + '"' : '';
+  var imgErr = opts.onerror || '';
+  var mastInner =
+    '<div class="kc-kg">' + escapeHtml(String(weightKg)) + '</div>' +
+    '<div class="kc-items">' + totalCount + ' items</div>';
+
+  return '' +
+    '<div class="photo-overlay-card kuchi-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:18px; box-shadow:0 24px 60px rgba(0,0,0,0.95); background:#ffffff; box-sizing:border-box; user-select:none;">' +
+      '<div class="kc-sheet">' +
+        '<img class="kc-photo"' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
+        '<div class="kc-rail">' +
+          '<div class="kc-block"><span class="kc-lab">date</span><span class="kc-val">' + escapeHtml(dateStr) + '</span></div>' +
+          '<div class="kc-block spot"><span class="kc-lab">spot</span><span class="kc-val">' + escapeHtml(spot) + '</span></div>' +
+        '</div>' +
+        '<div class="kc-mast kc-mast-dark">' + mastInner + '</div>' +
+        '<div class="kc-mast kc-mast-light">' + mastInner + '</div>' +
+        '<div class="kc-mark">' +
+          '<img class="kc-mark-dark" src="fulllogo.png" alt="" />' +
+          '<img class="kc-mark-light" src="fulllogo.png" alt="낭만루트" />' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+window.renderKuchiMarkup = renderKuchiMarkup;
+
+function renderBalanceMarkup(opts) {
+  opts = opts || {};
+  ensureJournalFonts();
+  ensureJournalStyles();
+  var photoUrl = opts.photo || '';
+  var posX = (opts.posX !== undefined) ? opts.posX : 50;
+  var posY = (opts.posY !== undefined) ? opts.posY : 50;
+  var scale = opts.scale || 1.0;
+  var spot = opts.spot || '나의 힐링 스팟';
+  var dateStr = opts.date || '';
+  var weightKg = opts.weightKg || '0.00';
+  var totalCount = (opts.itemCount !== undefined) ? opts.itemCount : (Array.isArray(opts.items) ? opts.items.length : 0);
+  var wrapCss = opts.wrapCss || 'width:100%; max-width:340px; aspect-ratio:3/4; max-height:100%; margin:auto;';
+  var imgIdAttr = opts.imgId ? ' id="' + opts.imgId + '"' : '';
+  var imgErr = opts.onerror || '';
+  var copyInner =
+    '<div class="bl-lead">불편함을<br>감수하고</div>' +
+    '<div class="bl-mid">자연에서<br>하룻밤을<br>보내는 사람들</div>' +
+    '<div class="bl-end">낭만루터</div>';
+  var wordInner =
+    '<div class="bl-kg">' + escapeHtml(String(weightKg)) + '<b>kg</b></div>' +
+    '<div class="bl-count">' + totalCount + ' items</div>';
+  var metaInner =
+    '<div class="bl-date">' + escapeHtml(dateStr) + '</div>' +
+    '<div class="bl-spot">' + escapeHtml(spot) + '</div>';
+
+  return '' +
+    '<div class="photo-overlay-card balance-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:18px; box-shadow:0 24px 60px rgba(0,0,0,0.95); background:#ffffff; box-sizing:border-box; user-select:none;">' +
+      '<div class="bl-sheet">' +
+        '<img class="bl-photo"' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
+        '<div class="bl-copy bl-copy-dark">' + copyInner + '</div>' +
+        '<div class="bl-copy bl-copy-light">' + copyInner + '</div>' +
+        '<div class="bl-logo">' +
+          '<img class="bl-logo-dark" src="fulllogo.png" alt="" />' +
+          '<img class="bl-logo-light" src="fulllogo.png" alt="낭만루트" />' +
+        '</div>' +
+        '<div class="bl-rule bl-rule-dark"></div>' +
+        '<div class="bl-rule bl-rule-light"></div>' +
+        '<div class="bl-word bl-word-dark">' + wordInner + '</div>' +
+        '<div class="bl-word bl-word-light">' + wordInner + '</div>' +
+        '<div class="bl-meta bl-meta-dark">' + metaInner + '</div>' +
+        '<div class="bl-meta bl-meta-light">' + metaInner + '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+window.renderBalanceMarkup = renderBalanceMarkup;
+
+async function exportPhotoOverlayPng(card) {
+  var canvas = await captureStudioCardCanvas(card);
+  var blob = await new Promise(function(resolve, reject) {
+    canvas.toBlob(function(b) { b ? resolve(b) : reject(new Error('toBlob failed')); }, 'image/png');
+  });
+  var url = URL.createObjectURL(blob);
+  var link = document.createElement('a');
+  link.download = '낭만루트_저널_' + Date.now() + '.png';
+  link.href = url;
+  link.click();
+  setTimeout(function() { URL.revokeObjectURL(url); }, 2500);
+}
+
+function renderNrcCertShotMarkup(opts) {
+  opts = opts || {};
+  var photoUrl = opts.photo || '';
+  var posX = (opts.posX !== undefined) ? opts.posX : 50;
+  var posY = (opts.posY !== undefined) ? opts.posY : 50;
+  var scale = opts.scale || 1.0;
+  var spot = opts.spot || '나의 힐링 스팟';
+  var dateStr = opts.date || '';
+  var weightKg = opts.weightKg || '0.00';
+  var items = Array.isArray(opts.items) ? opts.items : [];
+  var brand = opts.brand || '';
+  var wrapCss = opts.wrapCss || 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;';
+  var imgIdAttr = opts.imgId ? ' id="' + opts.imgId + '"' : '';
+  var imgErr = opts.onerror || '';
+  var n = items.length;
+  var twoCol = n >= 7;
+  var size = n >= 12 ? '0.46rem' : (n >= 8 ? '0.50rem' : '0.54rem');
+  var rows = items.map(function(it) {
+    var rawN = (typeof it === 'string') ? it : (it.name || '');
+    var cName = rawN.replace(/\s*\(\d+g\)$/, '');
+    var wG = (typeof it === 'object' && it.weight) ? Number(it.weight) : 0;
+    var wStr = wG > 0 ? (wG / 1000).toFixed(2) : '';
+    return '<div style="display:flex; justify-content:space-between; align-items:center; gap:4px; min-width:0; line-height:1.2;">' +
+      '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:' + size + '; font-weight:700; color:#ffffff; text-shadow:0 1px 3px rgba(0,0,0,0.9), 0 0 2px rgba(0,0,0,0.8);">' +
+        '<span style="display:inline-block; width:3px; height:3px; border-radius:50%; background:#ffffff; margin-right:4px; vertical-align:middle; box-shadow:0 1px 2px rgba(0,0,0,0.8);"></span>' +
+        escapeHtml(cName) +
+      '</span>' +
+      (wStr ? '<span style="font-family:\'Space Grotesk\', sans-serif; font-size:0.48rem; font-weight:800; color:#ffffff; flex-shrink:0; text-shadow:0 1px 3px rgba(0,0,0,0.9);">' + wStr + '</span>' : '') +
+    '</div>';
+  }).join('');
+
+  return '' +
+    '<div style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); background:#000000; box-sizing:border-box; user-select:none;">' +
+      '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; z-index:1; pointer-events:none;" />' +
+      '<div style="position:absolute; inset:auto 0 0 0; height:58%; z-index:2; pointer-events:none; background:linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.22) 40%, rgba(0,0,0,0.62) 100%);"></div>' +
+      '<div style="position:absolute; top:12px; left:14px; right:14px; z-index:5; display:flex; justify-content:space-between; align-items:center;">' +
+        '<div style="display:inline-flex; align-items:center; gap:4px; min-width:0; max-width:70%;">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" style="width:11px; height:11px; flex-shrink:0;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>' +
+          '<span style="font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:0.68rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-shadow:0 1px 4px rgba(0,0,0,0.8);">' + escapeHtml(spot) + '</span>' +
+        '</div>' +
+        '<span style="font-family:\'Space Grotesk\', sans-serif; font-size:0.54rem; font-weight:700; color:#cbd5e1; letter-spacing:0.8px; flex-shrink:0; text-shadow:0 1px 4px rgba(0,0,0,0.8);">' + escapeHtml(dateStr) + '</span>' +
+      '</div>' +
+      '<div style="position:absolute; left:12px; right:12px; bottom:10px; z-index:5; display:flex; flex-direction:column; justify-content:flex-end; max-height:62%;">' +
+        '<div style="display:grid; grid-template-columns:' + (twoCol ? '1fr 1fr' : '1fr') + '; column-gap:10px; row-gap:3px; align-content:end; min-height:0;">' + rows + '</div>' +
+        '<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:7px; gap:8px;">' +
+          '<div style="font-family:\'Space Grotesk\', \'Pretendard Variable\', sans-serif; font-size:1.18rem; font-weight:900; letter-spacing:-0.6px; line-height:1; color:#ffffff; text-shadow:0 1px 6px rgba(0,0,0,0.7), 0 1px 2px rgba(0,0,0,0.85);">' + escapeHtml(String(weightKg)) + '<span style="font-family:\'Pretendard Variable\', sans-serif; font-size:0.48em; font-weight:800; margin-left:2px;">kg</span></div>' +
+          '<div style="display:flex; align-items:center; gap:3px; opacity:0.7;">' +
+            '<div style="transform:scale(0.7); transform-origin:right center;">' + brand + '</div>' +
+            '<span style="font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:0.44rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px; text-shadow:0 1px 3px rgba(0,0,0,0.8);">낭만루트</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}
+
 window.generateReadyShotMarkup = function(record, options) {
   options = options || {};
   record = record || {};
@@ -959,7 +1958,7 @@ window.generateReadyShotMarkup = function(record, options) {
     }
 
     container.innerHTML = `
-      <div style="position:relative; width:100%; ${cardRatioCss} max-height:calc(100dvh - 130px); margin:0 auto; overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
+      <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
         <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
         <div style="position:absolute; inset:0; z-index:3; pointer-events:none; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr 1fr 1fr; opacity:0.65;">
           <div style="border-right:1px solid rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.4);"></div>
@@ -1112,6 +2111,127 @@ window.generateReadyShotMarkup = function(record, options) {
         </div>
       </div>
     `;
+  }
+
+  if (mode === 'nrc') {
+    return renderNrcCertShotMarkup({
+      photo: photoUrl,
+      onerror: 'onerror="this.onerror=null; window.handleFeedImageError && window.handleFeedImageError(this);"',
+      posX: posX,
+      posY: posY,
+      scale: scale,
+      spot: spotVal,
+      date: dateStr,
+      weightKg: weightKg,
+      items: items,
+      brand: brandSvgWhite,
+      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;'
+    });
+  }
+
+  if (mode === 'overlay') {
+    return renderPhotoOverlayMarkup({
+      photo: photoUrl,
+      onerror: 'onerror="this.onerror=null; window.handleFeedImageError && window.handleFeedImageError(this);"',
+      posX: posX,
+      posY: posY,
+      scale: scale,
+      spot: spotVal,
+      date: dateStr,
+      weightKg: weightKg,
+      itemCount: totalCount,
+      items: items,
+      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;'
+    });
+  }
+
+  if (mode === 'editorial') {
+    return renderEditorialOverlayMarkup({
+      photo: photoUrl,
+      onerror: 'onerror="this.onerror=null; window.handleFeedImageError && window.handleFeedImageError(this);"',
+      posX: posX,
+      posY: posY,
+      scale: scale,
+      spot: spotVal,
+      date: dateStr,
+      weightKg: weightKg,
+      itemCount: totalCount,
+      items: items,
+      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;'
+    });
+  }
+
+  if (mode === 'balance') {
+    return renderBalanceMarkup({
+      photo: photoUrl,
+      onerror: 'onerror="this.onerror=null; window.handleFeedImageError && window.handleFeedImageError(this);"',
+      posX: posX,
+      posY: posY,
+      scale: scale,
+      spot: spotVal,
+      date: dateStr,
+      weightKg: weightKg,
+      itemCount: totalCount,
+      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;'
+    });
+  }
+
+  if (mode === 'kuchi') {
+    return renderKuchiMarkup({
+      photo: photoUrl,
+      onerror: 'onerror="this.onerror=null; window.handleFeedImageError && window.handleFeedImageError(this);"',
+      posX: posX,
+      posY: posY,
+      scale: scale,
+      spot: spotVal,
+      date: dateStr,
+      weightKg: weightKg,
+      itemCount: totalCount,
+      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;'
+    });
+  }
+
+  if (mode === 'issue') {
+    return renderIssueMarkup({
+      photo: photoUrl,
+      onerror: 'onerror="this.onerror=null; window.handleFeedImageError && window.handleFeedImageError(this);"',
+      posX: posX,
+      posY: posY,
+      scale: scale,
+      spot: spotVal,
+      date: dateStr,
+      weightKg: weightKg,
+      itemCount: totalCount,
+      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;'
+    });
+  }
+
+  if (mode === 'spread') {
+    return renderSpreadMarkup({
+      photo: photoUrl,
+      onerror: 'onerror="this.onerror=null; window.handleFeedImageError && window.handleFeedImageError(this);"',
+      posX: posX,
+      posY: posY,
+      scale: scale,
+      spot: spotVal,
+      date: dateStr,
+      weightKg: weightKg,
+      items: items,
+      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;'
+    });
+  }
+
+  if (mode === 'magazine') {
+    return renderMagazineCoverMarkup({
+      photo: photoUrl,
+      onerror: 'onerror="this.onerror=null; window.handleFeedImageError && window.handleFeedImageError(this);"',
+      posX: posX,
+      posY: posY,
+      scale: scale,
+      weightKg: weightKg,
+      itemCount: totalCount,
+      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;'
+    });
   }
 
   // mode === 'packing' (default)
@@ -1737,7 +2857,12 @@ window.openPackShareModal = function(record, items, forceStudio) {
   var candidateItems = (Array.isArray(items) && items.length > 0) ? items : (currentShareRecord.items || currentShareRecord.gears || []);
   currentShareItems = candidateItems.map(function(item) {
     if (typeof item === 'object' && item !== null) {
-      return { name: item.name || item.itemName || '', weight: Number(item.weight || item.weight_g || 0) };
+      return {
+        name: item.name || item.itemName || '',
+        weight: Number(item.weight || item.weight_g || 0),
+        categoryId: item.categoryId || item.category_id || item.category || '',
+        brand: item.brand || ''
+      };
     }
     var str = String(item || '');
     var m = str.match(/^(.*?)\s*\((\d+)g\)$/);
@@ -1750,7 +2875,9 @@ window.openPackShareModal = function(record, items, forceStudio) {
         if (it && (it.name || it.itemName)) {
           currentShareItems.push({
             name: it.name || it.itemName,
-            weight: Number(it.weight || it.weight_g || 0)
+            weight: Number(it.weight || it.weight_g || 0),
+            categoryId: catId,
+            brand: it.brand || ''
           });
         }
       });
@@ -1872,15 +2999,18 @@ var cardTouchStartTime = 0;
 var isCardSwiping = false;
 var isCardPointerDown = false;
 
+var __cardSwipeAbort = null;
 function initCardSwipeGesture() {
+  // 🛡️ [메모리 누수 패치] 이전 카드 스와이프 리스너 해제
   var card = document.getElementById('packShareCaptureArea');
   if (!card) return;
 
+  if (__cardSwipeAbort) __cardSwipeAbort.abort();
+  __cardSwipeAbort = new AbortController();
+  var swipeSignal = __cardSwipeAbort.signal;
+
   card.style.userSelect = 'none';
   card.style.cursor = 'grab';
-
-  if (card.dataset.swipeBound === 'true') return;
-  card.dataset.swipeBound = 'true';
 
   function handleStart(clientX, clientY) {
     cardTouchStartX = clientX;
@@ -1958,29 +3088,29 @@ function initCardSwipeGesture() {
 
   card.addEventListener('touchstart', function(e) {
     handleStart(e.touches[0].clientX, e.touches[0].clientY);
-  }, { passive: true });
+  }, { passive: true, signal: swipeSignal });
 
   card.addEventListener('touchmove', function(e) {
     handleMove(e.touches[0].clientX, e.touches[0].clientY);
-  }, { passive: true });
+  }, { passive: true, signal: swipeSignal });
 
   card.addEventListener('touchend', function(e) {
     var endX = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientX : cardTouchStartX;
     var endY = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientY : cardTouchStartY;
     handleEnd(endX, endY);
-  }, { passive: true });
+  }, { passive: true, signal: swipeSignal });
 
   card.addEventListener('mousedown', function(e) {
     handleStart(e.clientX, e.clientY);
-  });
+  }, { signal: swipeSignal });
 
   window.addEventListener('mousemove', function(e) {
     if (isCardPointerDown) handleMove(e.clientX, e.clientY);
-  });
+  }, { signal: swipeSignal });
 
   window.addEventListener('mouseup', function(e) {
     if (isCardPointerDown) handleEnd(e.clientX, e.clientY);
-  });
+  }, { signal: swipeSignal });
 }
 
 if (!document.getElementById('template-cards-core-style')) {

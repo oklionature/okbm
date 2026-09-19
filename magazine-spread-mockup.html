@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>낭만루트 매거진 스프레드 목업</title>
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,600;6..96,700;6..96,800&family=Libre+Baskerville:ital,wght@0,400;0,700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --paper: #f7f4ee;
+      --ink: #1b2430;
+      --mute: #5c6570;
+      --rule: rgba(27, 36, 48, 0.18);
+      --serif: 'Bodoni Moda', Georgia, serif;
+      --body: 'Libre Baskerville', Georgia, serif;
+      --en: 'Space Grotesk', sans-serif;
+      --kr: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100dvh;
+      background: #07090e;
+      color: #f8fafc;
+      font-family: var(--kr);
+      padding: 24px 14px 64px;
+    }
+    .page { width: min(420px, 100%); margin: 0 auto; }
+    .head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .head img { width: 26px; height: 26px; object-fit: contain; }
+    .head h1 { font-size: 1.02rem; font-weight: 900; }
+    .sub { color: #94a3b8; font-size: 0.74rem; font-weight: 600; line-height: 1.5; margin-bottom: 16px; }
+    .stage {
+      background: #05070c;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 8px;
+    }
+    .poster {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 3 / 4;
+      overflow: hidden;
+      background: var(--paper);
+      color: var(--ink);
+      container-type: size;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+    }
+    .photo-wrap {
+      position: relative;
+      flex: 1 1 0%;
+      min-height: 0;
+      overflow: hidden;
+      background: #111;
+    }
+    .photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 42%;
+      display: block;
+    }
+    .photo-fade {
+      position: absolute;
+      inset: auto 0 0 0;
+      height: 38%;
+      background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.22) 50%, rgba(0,0,0,0.5) 100%);
+      pointer-events: none;
+    }
+    .headline {
+      position: absolute;
+      left: 5%;
+      right: 5%;
+      bottom: 3%;
+      z-index: 4;
+    }
+    .headline .line-photo,
+    .headline .line-paper {
+      font-family: var(--serif);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 0.86;
+      text-transform: uppercase;
+    }
+    .headline .line-photo {
+      font-size: 9cqw;
+      color: #fff;
+      text-shadow: 0 2px 14px rgba(0,0,0,0.35);
+    }
+    .headline .line-paper {
+      display: none;
+    }
+    .paper {
+      position: relative;
+      flex: 0 0 auto;
+      background: var(--paper);
+      padding: 4.2% 5% 9.5%;
+    }
+    .kg {
+      font-family: var(--serif);
+      font-size: 8.6cqw;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 0.88;
+      color: #1a2744;
+      margin-bottom: 3.2%;
+    }
+    .byline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 2.4%;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 3.4%;
+    }
+    .byline .spot {
+      font-size: 3.4cqw;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .byline .date {
+      font-family: var(--en);
+      font-size: 2.6cqw;
+      font-weight: 600;
+      color: var(--mute);
+    }
+    .mark {
+      position: absolute;
+      right: 5%;
+      bottom: 3.2%;
+      height: 5.4cqw;
+      width: auto;
+      display: block;
+      object-fit: contain;
+      mix-blend-mode: multiply;
+      filter: drop-shadow(1px 0 0 #111) drop-shadow(-1px 0 0 #111) drop-shadow(0 1px 0 #111);
+    }
+    .cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 6%;
+      row-gap: 2.8%;
+    }
+    .item .brand {
+      font-family: var(--en);
+      font-size: 2cqw;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--mute);
+    }
+    .item .name {
+      margin-top: 1px;
+      font-family: var(--body);
+      font-size: 3cqw;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .item .w {
+      margin-top: 1px;
+      font-family: var(--en);
+      font-size: 2.3cqw;
+      font-weight: 600;
+      color: var(--mute);
+    }
+    .note { margin-top: 12px; color: #64748b; font-size: 0.68rem; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="head">
+      <img src="logo.png" alt="" />
+      <h1>스프레드 목업</h1>
+    </div>
+    <p class="sub">사진 + 위치 + 장비 제조사·이름만. 장식 카피와 중복 로고는 뺐습니다.</p>
+    <div class="stage">
+      <article class="poster">
+        <div class="photo-wrap">
+          <img class="photo" src="preview-camp.jpg" alt="샘플 캠핑 사진" />
+          <div class="photo-fade"></div>
+          <div class="headline">
+            <div class="line-photo">THE PACK</div>
+          </div>
+        </div>
+        <div class="paper">
+          <div class="kg">7.82 KG</div>
+          <div class="byline">
+            <div class="spot">설악산</div>
+            <div class="date">2026.09.19</div>
+          </div>
+          <div class="cols">
+            <div class="item"><div class="brand">노스페이스</div><div class="name">Mountain 25</div><div class="w">3.99 kg</div></div>
+            <div class="item"><div class="brand">씨투써밋</div><div class="name">Spark 0F</div><div class="w">1.11 kg</div></div>
+            <div class="item"><div class="brand">니모</div><div class="name">Tensor</div><div class="w">0.40 kg</div></div>
+            <div class="item"><div class="brand">오스프리</div><div class="name">Exos 48</div><div class="w">1.26 kg</div></div>
+            <div class="item"><div class="brand">아크테릭스</div><div class="name">Beta AR</div><div class="w">0.46 kg</div></div>
+            <div class="item"><div class="brand">소토</div><div class="name">WindMaster</div><div class="w">0.07 kg</div></div>
+            <div class="item"><div class="brand">Peak Refuel</div><div class="name">Pesto Pasta</div><div class="w">0.45 kg</div></div>
+            <div class="item"><div class="brand">페츨</div><div class="name">Actik Core</div><div class="w">0.09 kg</div></div>
+          </div>
+          <img class="mark" src="fulllogo.png" alt="낭만루트" />
+        </div>
+      </article>
+    </div>
+    <p class="note">http://127.0.0.1:5500/magazine-spread-mockup.html</p>
+  </div>
+</body>
+</html>

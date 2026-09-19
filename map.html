@@ -379,10 +379,18 @@
       .btn-sidebar-submit { background: linear-gradient(135deg, #0d9488, #0f766e); border: 1px solid #14b8a6; color: #fff; padding: 4px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
       .header-insta-badge { display: inline-flex; align-items: center; gap: 4px; background: linear-gradient(45deg, #ea580c, #e11d48, #c026d3); padding: 4px 9px; border-radius: 12px; color: #fff; text-decoration: none; font-size: 0.7rem; font-weight: 700; }
       
-      .version-tag { font-size: 0.68rem; font-weight: 600; color: var(--text-muted); cursor: default; user-select: none; }
+      .version-tag { font-size: 0.68rem; font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none; }
+      .version-tag.is-admin-on { color: var(--accent-silver); font-weight: 800; }
       .sheet-edit-link { display: none; align-items: center; gap: 3px; background: #059669; color: #fff; text-decoration: none; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; }
-      .admin-data-tools { display: none; padding: 6px 10px; background: var(--bg-card); border-bottom: 1px solid var(--border-hairline); gap: 6px; }
-      .admin-tool-btn { flex: 1; padding: 4px 8px; font-size: 0.7rem; font-weight: 700; border-radius: 6px; border: 1px solid var(--border-hairline); background: var(--bg-surface); color: var(--text-secondary); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+      .admin-data-tools { display: none; padding: 6px 10px; background: var(--bg-card); border-bottom: 1px solid var(--border-hairline); gap: 6px; flex-wrap: wrap; }
+      .admin-tool-btn { flex: 1; min-width: 72px; padding: 4px 8px; font-size: 0.7rem; font-weight: 700; border-radius: 6px; border: 1px solid var(--border-hairline); background: var(--bg-surface); color: var(--text-secondary); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+      .admin-tool-btn.admin-tool-primary { background: rgba(16,185,129,0.16); color: #6ee7b7; border-color: rgba(16,185,129,0.4); }
+      .admin-tool-btn.admin-tool-review { background: rgba(56,189,248,0.14); color: #7dd3fc; border-color: rgba(56,189,248,0.4); }
+      .admin-inbox-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; margin-bottom: 10px; }
+      .admin-inbox-card h4 { margin: 0 0 6px; color: #f8fafc; font-size: 0.86rem; font-weight: 800; }
+      .admin-inbox-meta { color: #94a3b8; font-size: 0.7rem; line-height: 1.45; }
+      .admin-inbox-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+      .admin-inbox-actions button { border: none; border-radius: 8px; padding: 6px 8px; font-size: 0.68rem; font-weight: 800; cursor: pointer; }
 
       .filter-wrapper { background: var(--bg-base); border-bottom: 1px solid var(--border-titanium); display: flex; flex-direction: column; gap: 4px; padding: 5px 8px; flex-shrink: 0; }
       .master-tab-bar { display: flex; background: var(--bg-card); border-radius: 8px; padding: 2px; gap: 2px; width: 100%; }
@@ -453,15 +461,17 @@
         line-height: 1.45;
         margin-top: 3px;
         display: -webkit-box;
-        -webkit-line-clamp: 2;
+        -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
         word-break: break-all;
+        min-height: calc(1.45em * 3);
       }
       .spot-coords-text { font-size: 0.7rem; color: var(--text-muted); background: var(--bg-base); padding: 3px 7px; border-radius: 5px; border: 1px solid var(--border-hairline); width: fit-content; display: inline-flex; align-items: center; gap: 3px; font-family: monospace; }
-      .btn-edit, .btn-del { border: none; border-radius: 5px; padding: 3px 7px; font-size: 0.68rem; cursor: pointer; display: none; font-weight: 700; color: #fff; }
+      .btn-edit, .btn-del { border: none; border-radius: 5px; padding: 3px 7px; font-size: 0.68rem; cursor: pointer; display: none; font-weight: 700; color: #fff; white-space: nowrap; flex-shrink: 0; line-height: 1.2; }
       .btn-edit { background: #0284c7; } .btn-del { background: #ef4444; }
+      .sheet-admin-actions { display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; width: 100%; margin: 6px 0 2px; }
       .btn-quick-add { background: #0f766e; color: #fff; border: none; border-radius: 6px; padding: 4px 8px; font-size: 0.72rem; font-weight: 800; cursor: pointer; }
       .sheet-close-btn { background: var(--bg-card); border: 1px solid var(--border-titanium); color: var(--text-secondary); width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; font-weight: 800; }
 
@@ -564,8 +574,15 @@
 
       /* 4단계 요약 카드 */
       .summary-block-wrap { display: flex; flex-direction: column; gap: 5px; margin-top: 4px; width: 100%; }
-      .summary-card { background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 7px; padding: 7px 9px; font-size: 0.77rem; line-height: 1.4; color: var(--text-primary); }
+      .summary-card { background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 7px; padding: 7px 9px; font-size: 0.77rem; line-height: 1.45; color: var(--text-primary); }
       .summary-card-view { border-left: 3px solid #94a3b8; background: rgba(255, 255, 255, 0.04); }
+      .summary-card-view .summary-card-body {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        min-height: calc(1.45em * 3);
+      }
       .summary-card-access { border-left: 3px solid #94a3b8; background: rgba(255, 255, 255, 0.04); }
       .summary-card-pitch { border-left: 3px solid #94a3b8; background: rgba(255, 255, 255, 0.04); }
       .summary-card-tip { border-left: 3px solid #94a3b8; background: rgba(255, 255, 255, 0.04); }
@@ -635,7 +652,7 @@
 
       .mobile-bottom-sheet {
         display: flex; position: fixed; left: 0; right: 0; width: 100%;
-        bottom: calc(56px + env(safe-area-inset-bottom, 0px)); height: 50dvh; max-height: 50dvh;
+        bottom: calc(56px + env(safe-area-inset-bottom, 0px)); height: 64dvh; max-height: 64dvh;
         background: var(--modal-bg) !important; border-top: 1.5px solid var(--border-titanium) !important; border-radius: 18px 18px 0 0;
         z-index: var(--z-bottomsheet); box-shadow: 0 -12px 40px rgba(0,0,0,0.5);
         transform: translateY(105%); transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
@@ -900,6 +917,10 @@
       .modal-btn-cancel { background: var(--bg-card); color: var(--text-secondary); }
       .modal-btn-save { background: #0f766e; color: #fff; }
 
+      body.okbm-admin-pin-picking .lod-marker-container {
+        pointer-events: none !important;
+      }
+
       .pin-picker-banner {
         position: absolute;
         top: calc(62px + env(safe-area-inset-top, 0px));
@@ -923,6 +944,19 @@
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         box-sizing: border-box;
+      }
+      .btn-confirm-pin-pick {
+        background: rgba(16, 185, 129, 0.2);
+        border: 1px solid rgba(52, 211, 153, 0.65);
+        color: #34d399;
+        height: 24px;
+        padding: 0 10px;
+        border-radius: 12px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        cursor: pointer;
+        display: none;
+        align-items: center;
       }
       .btn-cancel-pin-pick {
         background: rgba(244, 63, 94, 0.16);
@@ -1028,6 +1062,8 @@
           </div>
         </div>
         <div class="admin-data-tools" id="adminDataTools">
+          <button type="button" class="admin-tool-btn admin-tool-primary" onclick="openAddModal()"><span id="iconToolAddSpot"></span> 박지등록</button>
+          <button type="button" class="admin-tool-btn admin-tool-review" onclick="openAdminSpotInbox()"><span id="iconToolInbox"></span> 검수함</button>
           <button type="button" class="admin-tool-btn" onclick="exportDataBackup()"><span id="iconToolBackup"></span> 백업</button>
           <button type="button" class="admin-tool-btn" onclick="document.getElementById('importFileInput').click()"><span id="iconToolRestore"></span> 복원</button>
           <input type="file" id="importFileInput" style="display:none" accept=".json" onchange="importDataBackup(event)" />
@@ -1103,13 +1139,14 @@
 
         <div id="pinPickerBanner" class="pin-picker-banner">
           <span id="bannerPinIcon"></span>
-          <span>지도를 클릭하여 박지 위치를 콕 찍어주세요!</span>
+          <span id="pinPickerBannerText">지도를 클릭하여 박지 위치를 콕 찍어주세요!</span>
+          <button type="button" class="btn-confirm-pin-pick" id="btnConfirmPinPick" onclick="confirmAdminPinMoveFromBanner()">확인</button>
           <button type="button" class="btn-cancel-pin-pick" onclick="cancelPinPicking()">취소</button>
         </div>
       </main>
     </div>
 
-    <!-- 모바일 50dvh 바텀 시트 -->
+    <!-- 모바일 64dvh 바텀 시트 -->
     <div class="mobile-bottom-sheet" id="mobileBottomSheet" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
       <button type="button" class="fixed-floating-close-btn" onclick="triggerHaptic(10); closeMobileBottomSheet();" title="닫기">
         <svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; fill:none;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1257,7 +1294,7 @@
           <div class="modal-field" style="width: 110px;"><label>10. 편도 거리(km)</label><input type="text" id="modalInputDistance" class="modal-input" placeholder="편도 거리 (숫자)" /></div>
         </div>
        <div class="modal-field" style="display:flex; flex-direction:column; gap:6px; background:var(--bg-card); border:1px solid var(--border-hairline); border-radius:8px; padding:8px;">
-          <label style="color:var(--accent-blue); font-weight:800; font-size:0.75rem;">11. 실전 4단계 요약 설명 (줄바꿈 기재)</label>
+          <label style="color:var(--accent-blue); font-weight:800; font-size:0.75rem;">11. 4단계 상세 설명</label>
           <div class="modal-field"><label style="font-size:0.70rem; color:#38bdf8; font-weight:700;">① [뷰/특징] *</label><textarea id="modalInputDescView" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="조망, 일몰/일출 시야, 주변 경관 특징"></textarea></div>
           <div class="modal-field"><label style="font-size:0.70rem; color:#2dd4bf; font-weight:700;">② [접근/코스]</label><textarea id="modalInputDescAccess" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="거리, 소요 시간, 경사도, 등산로 상태"></textarea></div>
           <div class="modal-field"><label style="font-size:0.70rem; color:#10b981; font-weight:700;">③ [박지/피칭]</label><textarea id="modalInputDescPitch" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="텐트 설치 가능 동수, 바닥면 상태"></textarea></div>
@@ -1281,6 +1318,26 @@
     </div>
        <script>
        // 🧰 [공통 유틸 1순위 선언 - ReferenceError 100% 영구 방어]
+      // 🛡️ [성능 패치] Map 기반 LRU 캐시 유틸
+      function limitedMapSet(map, key, value, maxSize) {
+        maxSize = maxSize || 100;
+        map.set(key, value);
+        if (map.size > maxSize) {
+          var firstKey = map.keys().next().value;
+          map.delete(firstKey);
+        }
+      }
+      function limitedObjSet(obj, key, value, maxSize) {
+        maxSize = maxSize || 100;
+        obj[key] = value;
+        var keys = Object.keys(obj);
+        if (keys.length > maxSize) delete obj[keys[0]];
+      }
+      window.limitedMapSet = limitedMapSet;
+      window.limitedObjSet = limitedObjSet;
+      // 🛡️ [구조 개선] DOM-JS 순환 참조 방지를 위한 WeakMap
+      var __spotDataMap = new WeakMap();
+
       window.navigateToDockTab = function(tabName) {
         var oldModal = document.getElementById('mapSpotFeedDetailModal');
         if (oldModal) oldModal.remove();
@@ -1791,8 +1848,8 @@
             targetSpot = spots.find(s => String(s.id).trim() === String(savedId).trim());
           }
         }
-        if (!targetSpot && mobileSheet && mobileSheet._spotData) targetSpot = mobileSheet._spotData;
-        if (!targetSpot && pcDrawer && pcDrawer._spotData) targetSpot = pcDrawer._spotData;
+        if (!targetSpot && mobileSheet) targetSpot = __spotDataMap.get(mobileSheet);
+        if (!targetSpot && pcDrawer) targetSpot = __spotDataMap.get(pcDrawer);
 
         if (!targetSpot) return;
 
@@ -1804,11 +1861,11 @@
         if (isMobile && isSheetOpen) {
           prefetchAndBindSpotMedia(targetSpot);
           if (mobileContent) mobileContent.innerHTML = generateDetailContentHtml(targetSpot, true);
-          if (mobileSheet) mobileSheet._spotData = targetSpot;
+          if (mobileSheet) __spotDataMap.set(mobileSheet, targetSpot);
           bindSpotMediaAfterRender(targetSpot);
         } else if (!isMobile && isDrawerOpen) {
           if (pcDrawer) {
-            pcDrawer._spotData = targetSpot;
+            __spotDataMap.set(pcDrawer, targetSpot);
             prefetchAndBindSpotMedia(targetSpot);
             pcDrawer.innerHTML = generateDetailContentHtml(targetSpot, false);
             bindSpotMediaAfterRender(targetSpot);
@@ -1827,7 +1884,7 @@
         var content = document.getElementById('mobileSheetContent');
         if (!sheet || !content) return;
 
-        sheet._spotData = spot;
+        __spotDataMap.set(sheet, spot);
         prefetchAndBindSpotMedia(spot);
         content.innerHTML = generateDetailContentHtml(spot, true);
         sheet.classList.add('open');
@@ -1871,7 +1928,7 @@
         var closeTab = document.getElementById('floatingDrawerCloseTab');
         if (!drawer) return;
 
-        drawer._spotData = spot;
+        __spotDataMap.set(drawer, spot);
         prefetchAndBindSpotMedia(spot);
         drawer.innerHTML = generateDetailContentHtml(spot, false);
         drawer.classList.add('open');
@@ -1931,7 +1988,7 @@
           { offset: new kakao.maps.Point(width / 2, height) }
         );
 
-        markerImageCache.set(cacheKey, markerImg);
+        limitedMapSet(markerImageCache, cacheKey, markerImg, 100);
         return markerImg;
       }
 
@@ -2005,6 +2062,8 @@
         setHtml('btnSidebarSubmit', `${ICONS.BACKPACK}<span>제보</span>`);
         setHtml('iconToolBackup', ICONS.BACKUP);
         setHtml('iconToolRestore', ICONS.RESTORE);
+        setHtml('iconToolAddSpot', ICONS.PIN);
+        setHtml('iconToolInbox', ICONS.EDIT);
         
         setHtml('tabIconRegion', ICONS.PIN);
         setHtml('tabIconTerrain', ICONS.ROCK);
@@ -2028,8 +2087,33 @@
         setHtml('radioCampIcon', ICONS.CAMP);
       }
 
+      function isKakaoMapReady() {
+        return !!(map && typeof kakao !== 'undefined' && kakao.maps && typeof kakao.maps.LatLng === 'function');
+      }
+
+      function flushPendingRenderSpots() {
+        if (!isKakaoMapReady()) return;
+        if (!window.__pendingRenderSpots) return;
+        var force = window.__pendingRenderSpots === 'force';
+        window.__pendingRenderSpots = false;
+        renderSpots(force);
+      }
+
+      function relayoutMapSafe() {
+        if (!isKakaoMapReady() || typeof map.relayout !== 'function') return;
+        try { map.relayout(); } catch (e) {}
+      }
+
       function initMapEngine() {
-        if (typeof kakao === 'undefined' || !kakao.maps) return;
+        if (window.__okbmMapEngineStarted) return;
+        if (typeof kakao === 'undefined' || !kakao.maps) {
+          if (!window.__okbmMapEngineRetries) window.__okbmMapEngineRetries = 0;
+          if (window.__okbmMapEngineRetries++ < 40) {
+            setTimeout(initMapEngine, 150);
+          }
+          return;
+        }
+        window.__okbmMapEngineStarted = true;
         kakao.maps.load(() => {
           const container = document.getElementById('map');
           if (!container) return;
@@ -2071,6 +2155,11 @@
           } else {
             loadSpotsMasterEngine();
           }
+          requestAnimationFrame(function() {
+            relayoutMapSafe();
+            flushPendingRenderSpots();
+            if (typeof window.bootMapAdminTools === 'function') window.bootMapAdminTools();
+          });
 
           window.__spotFeedsCache = new Map();
           window.fetchSpotFeedsOnDemand = async function(spot) {
@@ -2095,7 +2184,7 @@
               if (!res.ok) return [];
               var data = await res.json();
               var validFeeds = Array.isArray(data) ? data : [];
-              window.__spotFeedsCache.set(sId, validFeeds);
+              limitedMapSet(window.__spotFeedsCache, sId, validFeeds, 50);
               return validFeeds;
             } catch (e) {
               return [];
@@ -2132,8 +2221,12 @@
                   userVisited = new Set((safeGetJSON('okbm_visited', [])).map(String));
                   userMemos = safeGetJSON('okbm_memos', {});
                   renderSubChips();
-                  renderSpots();
-                  refreshCurrentSpotPopup();
+                  if (isKakaoMapReady()) {
+                    renderSpots();
+                    refreshCurrentSpotPopup();
+                  } else {
+                    window.__pendingRenderSpots = true;
+                  }
                 }
               }).catch(function(e) { console.warn('[map.html:hydrateFromServer]', e); });
             }
@@ -2308,27 +2401,57 @@
       }
 
     function checkAdminAuthorization() {
+        if (typeof window.okbmIsCurrentUserAdmin === 'function' && window.okbmIsCurrentUserAdmin()) return true;
+        if (window.__okbmIsAdmin === true) return true;
         var profile = safeGetJSON('user_profile', null);
         if (!profile || !profile.id) return false;
-        return Boolean(profile.role === 'admin' || profile.isAdmin === true);
+        return Boolean(profile.role === 'admin' || profile.isAdmin === true || profile.is_admin === true);
+      }
+
+      function applyAdminMarkerDragState() {
+        var movingId = String(window.__adminPinMoveSpotId || '').trim();
+        var picking = !!isPickingLocationMode;
+        if (document.body) document.body.classList.toggle('okbm-admin-pin-picking', picking);
+        spotNativeMarkerMap.forEach(function(marker, id) {
+          if (!marker) return;
+          var isTarget = !!movingId && String(id).trim() === movingId;
+          if (typeof marker.setDraggable === 'function') {
+            marker.setDraggable(isTarget);
+          }
+          if (typeof marker.setClickable === 'function') {
+            marker.setClickable(!picking);
+          }
+        });
+        if (picking) {
+          spotLabelOverlayMap.forEach(function(overlay) {
+            if (overlay && overlay.getMap()) overlay.setMap(null);
+          });
+        } else if (typeof updateLODLabels === 'function') {
+          updateLODLabels();
+        }
       }
 
       function applyAdminPermissions(enable) {
-        isAdminMode = enable;
+        isAdminMode = !!enable && checkAdminAuthorization();
+        window.isAdminMode = isAdminMode;
         
         const tools = document.getElementById('adminDataTools');
-        if (tools) tools.style.display = enable ? 'flex' : 'none';
+        if (tools) tools.style.display = isAdminMode ? 'flex' : 'none';
 
         document.querySelectorAll('.btn-del, .btn-edit, .btn-quick-add').forEach(btn => {
-          btn.style.display = enable ? 'inline-block' : 'none';
+          btn.style.display = isAdminMode ? 'inline-block' : 'none';
         });
 
         const verBtn = document.getElementById('versionTagBtn');
         if (verBtn) {
-          verBtn.innerText = enable ? '6.2ver Master (관리)' : '6.2ver Master';
-          verBtn.style.color = enable ? 'var(--accent-silver)' : 'var(--text-muted)';
+          verBtn.innerText = isAdminMode ? '6.2ver Master (관리)' : '6.2ver Master';
+          verBtn.classList.toggle('is-admin-on', isAdminMode);
+          verBtn.style.color = isAdminMode ? 'var(--accent-silver)' : 'var(--text-muted)';
         }
+
+        applyAdminMarkerDragState();
       }
+      window.applyAdminPermissions = applyAdminPermissions;
 
       function toggleAdminMode() {
         if (!checkAdminAuthorization()) {
@@ -2337,12 +2460,30 @@
         }
         triggerHaptic(15);
         applyAdminPermissions(!isAdminMode);
-        renderSpots();
+        if (isKakaoMapReady()) renderSpots(true);
+        else window.__pendingRenderSpots = 'force';
         if (currentActiveSpot) refreshCurrentSpotPopup();
-        showToast(isAdminMode ? '관리자 모드가 활성화되었습니다.' : '관리자 모드가 해제되었습니다.');
       }
 
-      function handleVersionTagAdminClick() {}
+      function handleVersionTagAdminClick() {
+        toggleAdminMode();
+      }
+
+      window.bootMapAdminTools = async function() {
+        if (window.__okbmMapAdminBooting) return;
+        window.__okbmMapAdminBooting = true;
+        if (checkAdminAuthorization()) applyAdminPermissions(true);
+        var isAdmin = checkAdminAuthorization();
+        if (typeof window.okbmRefreshAdminFlagFromServer === 'function') {
+          try { isAdmin = await window.okbmRefreshAdminFlagFromServer(); } catch (e) { isAdmin = checkAdminAuthorization(); }
+        }
+        applyAdminPermissions(!!isAdmin);
+        applyAdminMarkerDragState();
+        var params = new URLSearchParams(window.location.search);
+        if (isAdmin && params.get('open') === 'admin_inbox' && typeof window.openAdminSpotInbox === 'function') {
+          setTimeout(function() { window.openAdminSpotInbox(); }, 350);
+        }
+      };
 
       
 
@@ -2505,7 +2646,7 @@ function updateSmartResetButtons() {
           if (sessionItem) {
             const parsed = JSON.parse(sessionItem);
             if (Date.now() - parsed.time < 1800000) {
-              weatherCache.set(sId, parsed);
+              limitedMapSet(weatherCache, sId, parsed, 50);
               renderWeatherUI(sId, parsed.data);
               return;
             }
@@ -2518,7 +2659,7 @@ function updateSmartResetButtons() {
             const data = await res.json();
             const wData = { temp: Math.round(data.current.temperature_2m), wind: Number(data.current.wind_speed_10m.toFixed(1)) };
             const cacheObj = { time: Date.now(), data: wData };
-            weatherCache.set(sId, cacheObj);
+            limitedMapSet(weatherCache, sId, cacheObj, 50);
             try { sessionStorage.setItem(cacheKey, JSON.stringify(cacheObj)); } catch (e) {}
             renderWeatherUI(sId, wData);
           }
@@ -2562,14 +2703,14 @@ function updateSmartResetButtons() {
           geocoder.addressSearch(cleanQ, (result, status) => {
             if (status === kakao.maps.services.Status.OK && result.length > 0) {
               const resObj = { lat: parseFloat(result[0].y), lng: parseFloat(result[0].x), title: result[0].address_name };
-              geocodeQueryCache.set(cleanQ, resObj);
+              limitedMapSet(geocodeQueryCache, cleanQ, resObj, 100);
               resolve(resObj);
             } else {
               const places = new kakao.maps.services.Places();
               places.keywordSearch(cleanQ, (pResult, pStatus) => {
                 if (pStatus === kakao.maps.services.Status.OK && pResult.length > 0) {
                   const resObj = { lat: parseFloat(pResult[0].y), lng: parseFloat(pResult[0].x), title: pResult[0].place_name, address: pResult[0].road_address_name || pResult[0].address_name };
-                  geocodeQueryCache.set(cleanQ, resObj);
+                  limitedMapSet(geocodeQueryCache, cleanQ, resObj, 100);
                   resolve(resObj);
                 } else { resolve(null); }
               });
@@ -2653,6 +2794,12 @@ function updateSmartResetButtons() {
 
       function updateLODLabels() {
         if (!map) return;
+        if (isPickingLocationMode) {
+          spotLabelOverlayMap.forEach(function(overlay) {
+            if (overlay && overlay.getMap()) overlay.setMap(null);
+          });
+          return;
+        }
         const currentLevel = map.getLevel();
 
         if (currentLevel >= 11) {
@@ -2804,6 +2951,7 @@ function updateSmartResetButtons() {
 
       function focusSpotOnMap(spot) {
         if (!spot) return;
+        if (isPickingLocationMode || window.__adminPinMoveSpotId) return;
         triggerHaptic(12);
         isMarkerClickProcessing = true;
         setTimeout(() => { isMarkerClickProcessing = false; }, 400);
@@ -3032,7 +3180,7 @@ function updateSmartResetButtons() {
             const coords = await searchCoordsByQuery(targetQuery);
             if (coords && coords.lat && coords.lng) {
               targetLat = coords.lat; targetLng = coords.lng;
-              entryCoordsCache.set(targetQuery, { lat: targetLat, lng: targetLng });
+              limitedMapSet(entryCoordsCache, targetQuery, { lat: targetLat, lng: targetLng }, 100);
             }
           } catch (e) { console.warn('[map.html:navigateToNaviApp:searchCoords]', e); }
         }
@@ -3178,8 +3326,11 @@ function updateSmartResetButtons() {
         const targetUnlockLink = ytList.length > 0 ? cleanYouTubeUrl(ytList[0]) : (spot.authorSnsUrl || 'https://instagram.com/oklionnature');
         const closeBtn = isMobileSheet ? '' : `<button type="button" class="sheet-close-btn" onclick="closePcSlidingDrawer()" title="닫기">✕</button>`;
         const adminTopActions = isAdminMode ? `
-          <button type="button" class="btn-edit" style="display:inline-block;" data-id="${spot.id}" onclick="editSpotById(event, this.dataset.id)">${ICONS.EDIT}수정</button>
-          <button type="button" class="btn-del" style="display:inline-block;" data-id="${spot.id}" onclick="deleteSpotById(event, this.dataset.id)">${ICONS.DEL}삭제</button>
+          <div class="sheet-admin-actions" onclick="event.stopPropagation();">
+            <button type="button" class="btn-edit" style="display:inline-block;" data-id="${spot.id}" onclick="editSpotById(event, this.dataset.id)">${ICONS.EDIT}수정</button>
+            <button type="button" class="btn-edit" style="display:inline-block; background:#0f766e;" data-id="${spot.id}" onclick="startAdminPinMove(this.dataset.id, event)">${ICONS.PIN}핀</button>
+            <button type="button" class="btn-del" style="display:inline-block;" data-id="${spot.id}" onclick="deleteSpotById(event, this.dataset.id)">${ICONS.DEL}삭제</button>
+          </div>
         ` : '';
 
         return `
@@ -3191,8 +3342,9 @@ function updateSmartResetButtons() {
                 ${spot.elevation ? '<span style="font-size:0.76rem; color:var(--accent-emerald); font-weight:700; display:inline-flex; align-items:center; gap:2px;">(' + ICONS.MOUNTAIN + escapeHtml(spot.elevation) + ')</span>' : ''}
                 ${getSpotStatusBadges(spot)}
               </div>
-              <div style="display:flex; align-items:center; gap:6px;" onclick="event.stopPropagation();">${adminTopActions}${closeBtn}</div>
+              <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;" onclick="event.stopPropagation();">${closeBtn}</div>
             </div>
+            ${adminTopActions}
 
           <!-- 2행: 좌측 세부 포인트 ── 우측 등록자(구형: 오라네) + SNS 미니 아이콘 -->
             <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin:4px 0 3px 0; width:100%; min-height:24px;">
@@ -3235,7 +3387,7 @@ function updateSmartResetButtons() {
             <div class="summary-block-wrap" style="margin-top:2px;">
               <div class="summary-card summary-card-view">
                 <div class="summary-card-title" style="color:#e2e8f0;">${ICONS.VIEW_CARD} [뷰/특징]</div>
-                <div>${escapeHtml(summary.view || spot.desc || '탁 트인 자연 경관을 즐길 수 있는 추천 박지.')}</div>
+                <div class="summary-card-body">${escapeHtml(summary.view || spot.desc || '탁 트인 자연 경관을 즐길 수 있는 추천 박지.')}</div>
               </div>
             </div>
 
@@ -3738,7 +3890,7 @@ window.__ytMetaCache = window.__ytMetaCache || {};
           if (sessionCached) {
             var parsed = JSON.parse(sessionCached);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              window.__spotAutoVideosCache.set(cacheKey, parsed);
+              limitedMapSet(window.__spotAutoVideosCache, cacheKey, parsed, 80);
               return parsed;
             }
           }
@@ -3783,7 +3935,7 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         var extracted = window.rankMediaBySpot(merged, spotName, areaName, 5);
 
         if (extracted.length > 0) {
-          window.__spotAutoVideosCache.set(cacheKey, extracted);
+          limitedMapSet(window.__spotAutoVideosCache, cacheKey, extracted, 80);
           try { sessionStorage.setItem('okbm_yt_cache_v4_' + cacheKey, JSON.stringify(extracted)); } catch (e) {}
         }
         return extracted;
@@ -3805,7 +3957,7 @@ window.__ytMetaCache = window.__ytMetaCache || {};
           if (sessionCached) {
             var parsed = JSON.parse(sessionCached);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              window.__spotAutoBlogsCache.set(cacheKey, parsed);
+              limitedMapSet(window.__spotAutoBlogsCache, cacheKey, parsed, 80);
               return parsed;
             }
           }
@@ -3869,7 +4021,7 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         var extracted = window.rankMediaBySpot(allRanked(), spotName, areaName, 5);
 
         if (extracted.length > 0) {
-          window.__spotAutoBlogsCache.set(cacheKey, extracted);
+          limitedMapSet(window.__spotAutoBlogsCache, cacheKey, extracted, 80);
           try { sessionStorage.setItem('okbm_blog_cache_v7_' + cacheKey, JSON.stringify(extracted)); } catch (e) {}
         }
         return extracted;
@@ -3889,7 +4041,7 @@ window.__ytMetaCache = window.__ytMetaCache || {};
           if (res.ok) {
             var data = await res.json();
             if (data && data.title) {
-              window.__ytMetaCache[cleanUrl] = data.title;
+              limitedObjSet(window.__ytMetaCache, cleanUrl, data.title, 100);
               var targetEl = document.getElementById(domId);
               if (targetEl) targetEl.innerText = data.title;
               return;
@@ -3962,7 +4114,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
               var displayBlogName = rawNick || (blogId ? '@' + blogId : '실전 캠퍼');
 
               if (realTitle) {
-                window.__blogMetaCache[cleanUrl] = { title: realTitle, blogName: displayBlogName };
+                limitedObjSet(window.__blogMetaCache, cleanUrl, { title: realTitle, blogName: displayBlogName }, 100);
                 
                 var targetTitleEl = document.getElementById(titleDomId);
                 var targetBlogEl = document.getElementById(titleDomId + '_blogName');
@@ -4195,13 +4347,13 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
       window.prefetchSpotYouTubeList = function(spotId, spotName, rawRegisteredList) {
         if (window.__spotYtPrefetch[spotId]) return window.__spotYtPrefetch[spotId];
         window.__spotYtPrefetch[spotId] = window.collectSpotYouTubeCards(spotId, spotName, rawRegisteredList, function(partial, stillLoading) {
-          window.__spotYtCardsCache[spotId] = partial;
+          limitedObjSet(window.__spotYtCardsCache, spotId, partial, 50);
           var badgeEl = document.getElementById('ytBadgeCount_' + spotId);
           if (badgeEl) badgeEl.innerText = String((partial || []).length);
           window.paintSpotMediaDrawer(spotId, spotName, 'yt', partial, stillLoading);
         }).then(function(cards) {
           cards = cards || [];
-          window.__spotYtCardsCache[spotId] = cards;
+          limitedObjSet(window.__spotYtCardsCache, spotId, cards, 50);
           var badgeEl = document.getElementById('ytBadgeCount_' + spotId);
           if (badgeEl) badgeEl.innerText = String(cards.length);
           window.paintSpotMediaDrawer(spotId, spotName, 'yt', cards, false);
@@ -4320,7 +4472,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         window.__spotBlogPrefetch[spotId] = window.collectSpotBlogCards(spotId, spotName, rawRegisteredList)
           .then(function(cards) {
             cards = cards || [];
-            window.__spotBlogCardsCache[spotId] = cards;
+            limitedObjSet(window.__spotBlogCardsCache, spotId, cards, 50);
             var badgeEl = document.getElementById('blogBadgeCount_' + spotId);
             if (badgeEl) badgeEl.innerText = String(cards.length);
             window.paintSpotMediaDrawer(spotId, spotName, 'blog', cards, false);
@@ -4831,6 +4983,10 @@ var liveSearchTimer = null;
       var clustererDebounceTimer = null;
 
       function renderSpots(forceRebuild = false) {
+        if (!isKakaoMapReady()) {
+          window.__pendingRenderSpots = forceRebuild ? 'force' : (window.__pendingRenderSpots || true);
+          return;
+        }
         var latestB = (window.RomanticVault && typeof window.RomanticVault.read === 'function') ? window.RomanticVault.read('okbm_bookmarks', []) : safeGetJSON('okbm_bookmarks', []);
         var latestV = (window.RomanticVault && typeof window.RomanticVault.read === 'function') ? window.RomanticVault.read('okbm_visited', []) : safeGetJSON('okbm_visited', []);
         userBookmarks = new Set((latestB || []).map(function(s) { return String(s).trim(); }));
@@ -4903,12 +5059,28 @@ var liveSearchTimer = null;
             const marker = new kakao.maps.Marker({
               position: latlng, 
               image: createPureSvgMarkerImage(spot.difficulty), 
-              clickable: true, 
+              clickable: true,
+              draggable: String(window.__adminPinMoveSpotId || '').trim() === sId,
               zIndex: 9999
             });
-            kakao.maps.event.addListener(marker, 'click', () => focusSpotOnMap(spot));
+            kakao.maps.event.addListener(marker, 'click', function(mouseEvent) {
+              if (isPickingLocationMode) {
+                if (window.__adminPinMoveSpotId && String(sId) !== String(window.__adminPinMoveSpotId).trim()) {
+                  var pos = (mouseEvent && mouseEvent.latLng) ? mouseEvent.latLng : marker.getPosition();
+                  handleMapClick({ latLng: pos });
+                }
+                return;
+              }
+              focusSpotOnMap(spot);
+            });
+            bindAdminMarkerDrag(marker, sId);
             marker.spotData = spot;
             spotNativeMarkerMap.set(sId, marker);
+          } else {
+            const existingMarker = spotNativeMarkerMap.get(sId);
+            if (existingMarker && typeof existingMarker.setDraggable === 'function') {
+              existingMarker.setDraggable(String(window.__adminPinMoveSpotId || '').trim() === sId);
+            }
           }
 
           if (!spotLabelOverlayMap.has(sId) && map) {
@@ -4933,6 +5105,7 @@ var liveSearchTimer = null;
             labelDiv.style.cursor = 'pointer';
             labelDiv.onclick = (e) => {
               e.stopPropagation();
+              if (isPickingLocationMode) return;
               focusSpotOnMap(spot);
             };
             labelDiv.innerHTML = `
@@ -4957,7 +5130,7 @@ var liveSearchTimer = null;
 
         let visibleCount = 0;
         const spotListEl = document.getElementById('spotList');
-        const isDomBuilt = !forceRebuild && !isAdminMode && spotListEl.children.length > 0 && spotListEl.querySelector('.region-group');
+        const isDomBuilt = !forceRebuild && spotListEl && spotListEl.children.length > 0 && spotListEl.querySelector('.region-group');
 
         const regionVisibleCounts = Object.fromEntries(targetOrder.map(r => [r, 0]));
 
@@ -5036,6 +5209,7 @@ var liveSearchTimer = null;
           }
           updateLODLabels();
         }, 80);
+        window.renderSpots = renderSpots;
 
         const spotCountEl = document.getElementById('spotCount');
         if (spotCountEl) spotCountEl.innerText = `${visibleCount}개`;
@@ -5172,6 +5346,7 @@ var liveSearchTimer = null;
               <button type="button" class="btn-card-quick ${isFav ? 'active-fav' : ''}" data-id="${sId}" onclick="toggleUserBookmark(this.dataset.id, event)">${ICONS.HEART} 찜</button>
               <button type="button" class="btn-card-quick ${isDone ? 'active-done' : ''}" data-id="${sId}" onclick="toggleUserVisited(this.dataset.id, event)">${ICONS.FLAG} 클리어</button>
               <button class="btn-edit" style="display:${isAdminMode ? 'inline-block' : 'none'};" data-id="${sId}" onclick="editSpotById(event, this.dataset.id)">수정</button>
+              <button class="btn-edit" style="display:${isAdminMode ? 'inline-block' : 'none'}; background:#0f766e;" data-id="${sId}" onclick="startAdminPinMove(this.dataset.id, event)">핀</button>
               <button class="btn-del" style="display:${isAdminMode ? 'inline-block' : 'none'};" data-id="${sId}" onclick="deleteSpotById(event, this.dataset.id)">삭제</button>
             </div>
           </div>
@@ -5182,10 +5357,7 @@ var liveSearchTimer = null;
             ${spot.distance?.trim() ? `<span class="meta-tag tag-dist">${ICONS.DIST} ${escapeHtml(spot.distance.trim())}</span>` : ''}
           </div>
 
-          <div class="spot-desc-multi" title="${escapeHtml(descText)}" style="display:flex; align-items:flex-start; gap:4px; margin-top:3px;">
-            <span style="flex-shrink:0; margin-top:2px;">${ICONS.VIEW_CARD}</span>
-            <span>${escapeHtml(descText)}</span>
-          </div>`;
+          <div class="spot-desc-multi" title="${escapeHtml(descText)}">${ICONS.VIEW_CARD} ${escapeHtml(descText)}</div>`;
 
         li.addEventListener('click', () => focusSpotOnMap(spot));
         return li;
@@ -5228,6 +5400,8 @@ var liveSearchTimer = null;
 
         var authorInput = document.getElementById('modalInputAuthorSns');
         if (authorInput) { authorInput.value = ''; }
+        var reasonBox = document.getElementById('modalFieldCorrectionReason');
+        if (reasonBox) reasonBox.style.display = 'none';
       }
 
      // 🏕️ [유저 박지 제보 모달 오픈 - 기존 제보 수정 및 오염 방지 엔진]
@@ -5415,7 +5589,331 @@ var overlay = document.getElementById('customModalOverlay');
         }
       })();
 
+      function getSupabaseRestConfig() {
+        return {
+          url: window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co',
+          key: window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE'
+        };
+      }
+
+      function parseNumericField(value) {
+        var num = parseFloat(String(value || '').replace(/[^\d.-]/g, ''));
+        return isNaN(num) ? 0 : num;
+      }
+
+      function buildSpotDbPayload(spot) {
+        var media = [];
+        (spot.youtubeUrls || []).forEach(function(u) { if (u && String(u).trim()) media.push(String(u).trim()); });
+        (spot.blogUrls || []).forEach(function(u) { if (u && String(u).trim()) media.push(String(u).trim()); });
+        if (spot.authorSnsUrl) media.push(String(spot.authorSnsUrl).trim());
+        return {
+          id: String(spot.id).trim(),
+          region: spot.region || '',
+          cityName: spot.cityName || '',
+          spot_main: spot.spot_main || spot.name || '',
+          spot_sub: spot.spot_sub || '',
+          fullName: spot.fullName || '',
+          elevation: parseNumericField(spot.elevation),
+          campsite_lat: parseFloat(spot.lat) || 0,
+          campsite_lng: parseFloat(spot.lng) || 0,
+          terrain: Array.isArray(spot.terrain) ? spot.terrain.join(', ') : String(spot.terrain || ''),
+          trailhead_name: spot.trailhead_name || '',
+          trailhead_addr: spot.trailhead_addr || spot.entryPoint || '',
+          difficulty: String(spot.difficulty || '3'),
+          distance_km: parseNumericField(spot.distance || spot.distance_km),
+          desc_summary: spot.desc_summary || spot.desc || '',
+          mediaUrls: media.join('\n'),
+          course_type: spot.courseType || '일반',
+          author_sns_url: spot.authorSnsUrl || ''
+        };
+      }
+
+      async function persistSpotToSupabase(spot, isInsert) {
+        var cfg = getSupabaseRestConfig();
+        if (!cfg.url || !cfg.key || !spot) return false;
+        var payload = buildSpotDbPayload(spot);
+        var endpoint = isInsert
+          ? cfg.url + '/rest/v1/spots'
+          : cfg.url + '/rest/v1/spots?id=eq.' + encodeURIComponent(payload.id);
+        try {
+          var res = await fetch(endpoint, {
+            method: isInsert ? 'POST' : 'PATCH',
+            headers: {
+              'apikey': cfg.key,
+              'Authorization': 'Bearer ' + cfg.key,
+              'Content-Type': 'application/json',
+              'Prefer': isInsert ? 'resolution=merge-duplicates,return=minimal' : 'return=minimal'
+            },
+            body: JSON.stringify(payload)
+          });
+          return res.ok;
+        } catch (e) {
+          console.warn('[map.html:persistSpotToSupabase]', e);
+          return false;
+        }
+      }
+
+      function persistSpotsCache() {
+        try { localStorage.setItem('okbm_spots_cache', JSON.stringify(spots)); } catch (e) { console.warn('[map.html:persistSpotsCache]', e); }
+      }
+
+      function applySpotPositionLocally(spot, lat, lng) {
+        if (!spot) return;
+        spot.lat = parseFloat(lat);
+        spot.lng = parseFloat(lng);
+        spot._renderLatLng = null;
+        spot.renderLat = spot.lat;
+        spot.renderLng = spot.lng;
+        var sId = String(spot.id).trim();
+        var newLatLng = new kakao.maps.LatLng(spot.lat, spot.lng);
+        var curMarker = spotNativeMarkerMap.get(sId);
+        if (curMarker) {
+          curMarker.setPosition(newLatLng);
+          curMarker.spotData = spot;
+        }
+        var curLabel = spotLabelOverlayMap.get(sId);
+        if (curLabel) curLabel.setPosition(newLatLng);
+      }
+
+      function bindAdminMarkerDrag(marker, spotId) {
+        if (!marker || marker.__okbmDragBound) return;
+        marker.__okbmDragBound = true;
+        kakao.maps.event.addListener(marker, 'dragend', function() {
+          if (!isAdminMode || !checkAdminAuthorization()) return;
+          var movingId = String(window.__adminPinMoveSpotId || '').trim();
+          if (!movingId || String(spotId).trim() !== movingId) return;
+          var pos = marker.getPosition();
+          if (!pos) return;
+          var lat = parseFloat(pos.getLat().toFixed(6));
+          var lng = parseFloat(pos.getLng().toFixed(6));
+          var target = (spots || []).find(function(s) { return String(s.id).trim() === String(spotId).trim(); });
+          if (!target) return;
+          askConfirmAdminPinMove(target, lat, lng, pos);
+        });
+      }
+
+      function clearTempPickedMarker() {
+        if (tempPickedMarker) {
+          tempPickedMarker.setMap(null);
+          tempPickedMarker = null;
+        }
+      }
+
+      function createPickedMarkerImage() {
+        if (window.__okbmPickedMarkerImage) return window.__okbmPickedMarkerImage;
+        var width = 36, height = 46;
+        var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 36" width="' + width + '" height="' + height + '">' +
+          '<ellipse cx="14" cy="34" rx="7" ry="2" fill="rgba(0,0,0,0.45)"/>' +
+          '<path fill="#38bdf8" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round" d="M14 1 C6.82 1 1 6.82 1 14 C1 19.8 4.8 24.7 10 26.3 L14 32.5 L18 26.3 C23.2 24.7 27 19.8 27 14 C27 6.82 21.18 1 14 1 Z"/>' +
+          '<circle cx="14" cy="14" r="4.2" fill="#ffffff"/>' +
+          '</svg>';
+        window.__okbmPickedMarkerImage = new kakao.maps.MarkerImage(
+          'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+          new kakao.maps.Size(width, height),
+          { offset: new kakao.maps.Point(width / 2, height) }
+        );
+        return window.__okbmPickedMarkerImage;
+      }
+
+      function showTempPickedMarker(latLng) {
+        if (!map || !latLng) return;
+        clearTempPickedMarker();
+        tempPickedMarker = new kakao.maps.Marker({
+          position: latLng,
+          map: map,
+          image: createPickedMarkerImage(),
+          zIndex: 20000,
+          clickable: false
+        });
+      }
+
+      function setPinPickerBanner(mode, name) {
+        var banner = document.getElementById('pinPickerBanner');
+        var text = document.getElementById('pinPickerBannerText');
+        var okBtn = document.getElementById('btnConfirmPinPick');
+        if (!banner) return;
+        banner.style.display = 'flex';
+        if (mode === 'confirm') {
+          if (text) text.textContent = '[' + (name || '박지') + '] 이곳으로 이동시키겠습니까?';
+          if (okBtn) okBtn.style.display = 'inline-flex';
+        } else {
+          if (text) text.textContent = '지도를 클릭하여 박지 위치를 콕 찍어주세요!';
+          if (okBtn) okBtn.style.display = 'none';
+        }
+      }
+
+      function hidePinPickerBanner() {
+        var banner = document.getElementById('pinPickerBanner');
+        var okBtn = document.getElementById('btnConfirmPinPick');
+        if (banner) banner.style.display = 'none';
+        if (okBtn) okBtn.style.display = 'none';
+      }
+
+      function askConfirmAdminPinMove(target, lat, lng, previewLatLng) {
+        if (!target) return;
+        var latLng = previewLatLng || new kakao.maps.LatLng(lat, lng);
+        showTempPickedMarker(latLng);
+        window.__adminPinMovePending = { id: String(target.id).trim(), lat: lat, lng: lng };
+        window.__adminPinMoveConfirming = true;
+        isPickingLocationMode = true;
+        setPinPickerBanner('confirm', target.spot_main || target.name || '박지');
+        applyAdminMarkerDragState();
+      }
+
+      function confirmAdminPinMoveFromBanner() {
+        var pending = window.__adminPinMovePending;
+        if (!pending) return;
+        var target = (spots || []).find(function(s) { return String(s.id).trim() === String(pending.id).trim(); });
+        window.__adminPinMoveConfirming = false;
+        window.__adminPinMovePending = null;
+        if (!target) {
+          cancelPinPicking();
+          return;
+        }
+        commitAdminPinMove(target, pending.lat, pending.lng);
+      }
+      window.confirmAdminPinMoveFromBanner = confirmAdminPinMoveFromBanner;
+
+      async function commitAdminPinMove(target, lat, lng) {
+        if (!target) return;
+        applySpotPositionLocally(target, lat, lng);
+        persistSpotsCache();
+        await persistSpotToSupabase(target, false);
+        clearTempPickedMarker();
+        window.__adminPinMoveSpotId = null;
+        window.__adminPinMoveOrig = null;
+        window.__adminPinMovePending = null;
+        window.__adminPinMoveConfirming = false;
+        isPickingLocationMode = false;
+        hidePinPickerBanner();
+        applyAdminMarkerDragState();
+        currentActiveSpot = target;
+        if (isKakaoMapReady()) renderSpots();
+        focusSpotOnMap(target);
+        refreshCurrentSpotPopup();
+        triggerHaptic(12);
+      }
+
+      function allocateNextSpotId() {
+        var maxId = 0;
+        (spots || []).forEach(function(s) {
+          var n = parseInt(s.id, 10);
+          if (!isNaN(n) && n > maxId) maxId = n;
+        });
+        return String(maxId + 1);
+      }
+
+      function resolveCorrectionOrigSpotId(item) {
+        if (!item) return '';
+        if (item.orig_spot_id) return String(item.orig_spot_id).trim();
+        if (item.origSpotId) return String(item.origSpotId).trim();
+        var idMatch = String(item.id || '').match(/수정건의_(.+?)번_/);
+        if (idMatch) return idMatch[1];
+        var descMatch = String(item.desc_summary || '').match(/\[🚨\s*(.+?)번 박지 수정요청\]/);
+        if (descMatch) return descMatch[1];
+        return '';
+      }
+
+      function fillModalFromSpotLike(source) {
+        clearModalInputs();
+        var parsed = parseStructuredSummary(source.desc_summary || source.desc || '');
+        var setV = function(id, val) { var el = document.getElementById(id); if (el) el.value = val == null ? '' : val; };
+        setV('modalInputName', source.spot_main || source.name || '');
+        setV('modalInputSub', source.spot_sub || '');
+        setV('modalInputTrailheadName', source.trailhead_name || '');
+        setV('modalInputEntry', source.trailhead_addr || source.entryPoint || source.entry || source.trailhead_name || ((source.spot_main || source.name || '') + ' 들머리'));
+        setV('modalInputElevation', source.elevation || '');
+        setV('modalInputDistance', String(source.distance_km || source.distance || '').replace(/km$/i, ''));
+        var yt = Array.isArray(source.youtubeUrls) ? source.youtubeUrls.join('\n') : (source.youtubeurls || source.youtubeUrls || '');
+        setV('modalInputYoutube', yt);
+        var blog = Array.isArray(source.blogUrls) ? (source.blogUrls[0] || '') : (source.blogurl || source.blogUrl || '');
+        setV('modalInputBlog', blog);
+        setV('modalInputAuthorSns', source.authorSnsUrl || source.authorsnsurl || '');
+        setV('modalInputDescView', source.descView || parsed.view || '');
+        setV('modalInputDescAccess', source.descAccess || parsed.access || '');
+        setV('modalInputDescPitch', source.descPitch || parsed.pitch || '');
+        setV('modalInputDescTip', source.descTip || parsed.tip || '');
+
+        var lat = parseFloat(source.lat || source.campsite_lat) || 0;
+        var lng = parseFloat(source.lng || source.campsite_lng) || 0;
+        modalPendingData.lat = lat;
+        modalPendingData.lng = lng;
+        var coordsInput = document.getElementById('modalInputCoordsDisplay');
+        if (coordsInput) coordsInput.value = (lat && lng) ? (lat + ', ' + lng) : '';
+
+        var courseVal = source.courseType || source.coursetype || '일반';
+        var courseRadio = document.querySelector('input[name="modalCourseType"][value="' + courseVal + '"]');
+        if (courseRadio) courseRadio.checked = true;
+
+        var terrainText = Array.isArray(source.terrain) ? source.terrain.join(',') : String(source.terrain || '');
+        var terrainMap = { chkDeck: '데크', chkRock: '암릉', chkSoil: '노지', chkBeach: '해변', chkIsland: '섬', chkValley: '계곡', chkCave: '동굴' };
+        Object.keys(terrainMap).forEach(function(chkId) {
+          var chk = document.getElementById(chkId);
+          if (chk) chk.checked = terrainText.indexOf(terrainMap[chkId]) !== -1;
+        });
+
+        var diffSelect = document.getElementById('modalSelectDiff');
+        if (diffSelect) diffSelect.value = String(source.difficulty || '3');
+
+        var reasonBox = document.getElementById('modalFieldCorrectionReason');
+        var reasonInput = document.getElementById('modalInputCorrectionReason');
+        if (reasonBox) reasonBox.style.display = 'none';
+        if (reasonInput) reasonInput.value = source.correctionReason || source.correction_reason || '';
+      }
+
+      function showCustomModalOverlay() {
+        var overlay = document.getElementById('customModalOverlay');
+        if (!overlay) return;
+        overlay.style.setProperty('display', 'flex', 'important');
+        overlay.style.setProperty('z-index', '999999', 'important');
+        overlay.style.setProperty('opacity', '1', 'important');
+        overlay.style.setProperty('visibility', 'visible', 'important');
+        overlay.style.setProperty('pointer-events', 'auto', 'important');
+        var modalBox = overlay.querySelector('.custom-modal');
+        if (modalBox) {
+          modalBox.scrollTop = 0;
+          requestAnimationFrame(function() { modalBox.scrollTop = 0; });
+        }
+      }
+
+      function openEditModal(index) {
+        if (!checkAdminAuthorization()) {
+          showToast('관리자 권한이 확인되지 않았습니다.');
+          return;
+        }
+        var target = spots[index];
+        if (!target) {
+          showToast('박지 정보를 찾을 수 없습니다.');
+          return;
+        }
+        applyAdminPermissions(true);
+        modalMode = 'EDIT';
+        modalEditIndex = index;
+        window.__currentEditingProposalId = null;
+        window.__isSpotCorrectionMode = false;
+        window.__adminApplyingInboxItem = null;
+        resetModalPendingMemory();
+        fillModalFromSpotLike(target);
+
+        var titleEl = document.getElementById('modalTitle');
+        var noticeEl = document.getElementById('modalNotice');
+        var btnEl = document.getElementById('modalSubmitBtn');
+        if (titleEl) titleEl.innerHTML = ICONS.EDIT + ' <span>[' + escapeHtml(target.spot_main || target.name) + '] 박지 수정 (관리자)</span>';
+        if (noticeEl) {
+          noticeEl.style.display = 'flex';
+          noticeEl.innerHTML = ICONS.PIN + ' <span>핀 위치는 [콕 찍기]로 바꾸거나, 지도에서 마커를 드래그해 바로 저장할 수 있습니다.</span>';
+        }
+        if (btnEl) btnEl.innerText = '수정 내용 저장';
+        showCustomModalOverlay();
+      }
+      window.openEditModal = openEditModal;
+
       function openAddModal(defaultName = "", lat = 0, lng = 0, address = "") {
+        if (!checkAdminAuthorization()) {
+          showToast('관리자 권한이 확인되지 않았습니다.');
+          return;
+        }
+        applyAdminPermissions(true);
         modalMode = 'ADD'; 
         resetModalPendingMemory();
         modalPendingData = { lat: lat || 0, lng: lng || 0, address: address || '' };
@@ -5434,12 +5932,14 @@ var overlay = document.getElementById('customModalOverlay');
         const entryInput = document.getElementById('modalInputEntry');
         
         if (nameInput) nameInput.value = defaultName !== "새 박지 위치" ? defaultName : '';
-        if (coordsInput) coordsInput.value = (lat && lng) ? `위도: ${lat}, 경도: ${lng}` : '';
+        if (coordsInput) coordsInput.value = (lat && lng) ? `${lat}, ${lng}` : '';
         if (entryInput) entryInput.value = address || '';
-        
-        const overlay = document.getElementById('customModalOverlay');
-        if (overlay) overlay.style.display = 'flex';
+        var reasonBox = document.getElementById('modalFieldCorrectionReason');
+        if (reasonBox) reasonBox.style.display = 'none';
+        window.__adminApplyingInboxItem = null;
+        showCustomModalOverlay();
       }
+      window.openAddModal = openAddModal;
 
       function closeCustomModal() {
         const overlay = document.getElementById('customModalOverlay');
@@ -5596,7 +6096,9 @@ var overlay = document.getElementById('customModalOverlay');
                 lng: lng, 
                 terrain: terrainList.join(', '), 
                 trailhead_name: autoTrailheadName, 
-                trailhead_addr: entry, 
+                trailhead_addr: entry,
+                origSpotId: origSpotId,
+                orig_spot_id: origSpotId,
                 difficulty: difficulty, 
                 distance_km: distance || '', 
                 desc_summary: finalDesc,
@@ -5654,135 +6156,78 @@ var overlay = document.getElementById('customModalOverlay');
                 ? '소중한 정보 수정 건의가 접수되었습니다!\n관리자 검토 후 지도에 신속히 반영하겠습니다. 감사합니다!' 
                 : '소중한 박지 제보가 접수되었습니다!\n관리자 검토 전까지 [마이리포트]에서 언제든 수정할 수 있습니다.');
             } catch (e) { alert('제보 접수 중 통신 오류가 발생했습니다.'); }
-          } else if (modalMode === 'ADD') {
-        
-          } else if (modalMode === 'ADD') {
-            const newSpot = {
-              id: String(Date.now()), 
-              name, 
-              spot_main: name, 
-              spot_sub: sub, 
-              fullName, 
-              lat, 
-              lng, 
-              elevation: elevation || '', 
-              trailhead_name: tName, 
-              trailhead_addr: entry, 
-              entryPoint: entry, 
-              desc_summary: desc, 
-              desc, 
-              youtubeUrls: ytList, 
-              blogUrls: blogUrl ? [blogUrl] : [], 
-              authorSnsUrl, 
-              courseType, 
-              terrain: terrainList, 
-              difficulty, 
-              distance: distance ? `${distance}km` : '', 
-              region: '경기', 
-              cityName: '', 
-              searchCount: 0, 
-              sheetIndex: spots.length
-            };
-            spots.unshift(newSpot); 
-            localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
-            updateNewSpotFlags(spots); 
-            renderSpots(true); 
-            focusSpotOnMap(newSpot);
-            try {
-              var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-              var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
-              await fetch(targetUrl + '/rest/v1/spots', {
-                method: 'POST',
-                headers: {
-                  'apikey': targetKey,
-                  'Authorization': 'Bearer ' + targetKey,
-                  'Content-Type': 'application/json',
-                  'Prefer': 'resolution=merge-duplicates'
-                },
-                body: JSON.stringify({
-                  id: newSpot.id,
-                  name: newSpot.name,
-                  spot_main: newSpot.spot_main,
-                  spot_sub: newSpot.spot_sub,
-                  fullname: newSpot.fullName,
-                  lat: newSpot.lat,
-                  lng: newSpot.lng,
-                  elevation: newSpot.elevation,
-                  trailhead_name: newSpot.trailhead_name,
-                  trailhead_addr: newSpot.trailhead_addr,
-                  desc_summary: newSpot.desc_summary,
-                  terrain: newSpot.terrain,
-                  difficulty: newSpot.difficulty,
-                  distance: newSpot.distance
-                })
-              });
-            } catch (e) { console.warn('[map.html:saveCustomModal:insertSpot]', e); }
-         } else if (modalMode === 'EDIT') {
-            const target = spots[modalEditIndex];
-            if (target) {
-              Object.assign(target, { 
-                name, 
-                spot_main: name, 
-                spot_sub: sub, 
-                fullName, 
-                lat: parseFloat(lat), 
-                lng: parseFloat(lng), 
-                elevation: elevation || target.elevation, 
-                trailhead_name: tName, 
-                trailhead_addr: entry, 
-                entryPoint: entry, 
-                desc_summary: desc, 
-                desc, 
-                youtubeUrls: ytList, 
-                blogUrls: blogUrl ? [blogUrl] : target.blogUrls, 
-                authorSnsUrl, 
-                distance: distance ? `${distance}km` : target.distance, 
-                difficulty, 
-                courseType, 
-                terrain: terrainList
-              });
-
-              localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
-
-              const sId = String(target.id).trim();
-              const newLatLng = new kakao.maps.LatLng(lat, lng);
-              const curMarker = spotNativeMarkerMap.get(sId);
-              if (curMarker) { curMarker.setPosition(newLatLng); curMarker.spotData = target; }
-              const curLabel = spotLabelOverlayMap.get(sId);
-              if (curLabel) { curLabel.setPosition(newLatLng); }
-
-              renderSpots(); 
-              focusSpotOnMap(target);
-              smoothCenterMapOnSpot(lat, lng);
-              try {
-                var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-                var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
-                await fetch(targetUrl + '/rest/v1/spots?id=eq.' + encodeURIComponent(String(target.id).trim()), {
-                  method: 'PATCH',
-                  headers: {
-                    'apikey': targetKey,
-                    'Authorization': 'Bearer ' + targetKey,
-                    'Content-Type': 'application/json',
-                    'Prefer': 'return=minimal'
-                  },
-                  body: JSON.stringify({
-                    name: target.name,
-                    spot_main: target.spot_main,
-                    spot_sub: target.spot_sub,
-                    fullname: target.fullName,
-                    lat: target.lat,
-                    lng: target.lng,
-                    elevation: target.elevation,
-                    trailhead_name: target.trailhead_name,
-                    trailhead_addr: target.trailhead_addr,
-                    desc_summary: target.desc_summary,
-                    terrain: target.terrain,
-                    difficulty: target.difficulty,
-                    distance: target.distance
-                  })
-                });
-              } catch (e) { console.warn('[map.html:saveCustomModal:updateSpot]', e); }
+          } else if (modalMode === 'ADD' || modalMode === 'EDIT' || modalMode === 'ADMIN_APPLY') {
+            if (!checkAdminAuthorization()) {
+              showToast('관리자 권한이 확인되지 않았습니다.');
+              return;
             }
+
+            var inboxItem = window.__adminApplyingInboxItem || null;
+            var isInsert = modalMode === 'ADD';
+            var target = (modalMode === 'EDIT' && spots[modalEditIndex]) ? spots[modalEditIndex] : null;
+
+            if (modalMode === 'ADMIN_APPLY' && inboxItem) {
+              if (inboxItem.type === 'correction') {
+                var origId = resolveCorrectionOrigSpotId(inboxItem);
+                target = (spots || []).find(function(s) { return String(s.id).trim() === String(origId).trim(); }) || null;
+                isInsert = !target;
+              } else {
+                isInsert = true;
+              }
+            }
+
+            if (!target) {
+              target = {
+                id: allocateNextSpotId(),
+                searchCount: 0,
+                sheetIndex: 0
+              };
+              isInsert = true;
+            }
+
+            Object.assign(target, {
+              name: name,
+              spot_main: name,
+              spot_sub: sub,
+              fullName: fullName,
+              lat: parseFloat(lat),
+              lng: parseFloat(lng),
+              elevation: elevation || target.elevation || '',
+              trailhead_name: autoTrailheadName,
+              trailhead_addr: entry,
+              entryPoint: entry,
+              desc_summary: desc,
+              desc: desc,
+              youtubeUrls: ytList,
+              blogUrls: blogUrl ? [blogUrl] : (target.blogUrls || []),
+              authorSnsUrl: authorSnsUrl,
+              distance: distance ? (distance + 'km') : (target.distance || ''),
+              difficulty: difficulty,
+              courseType: courseType,
+              terrain: terrainList,
+              region: region,
+              cityName: cityName
+            });
+
+            if (isInsert && spots.indexOf(target) === -1) {
+              spots.unshift(target);
+            }
+
+            persistSpotsCache();
+            applySpotPositionLocally(target, target.lat, target.lng);
+            updateNewSpotFlags(spots);
+            renderSpots(true);
+            currentActiveSpot = target;
+            focusSpotOnMap(target);
+            refreshCurrentSpotPopup();
+            smoothCenterMapOnSpot(target.lat, target.lng);
+
+            var saved = await persistSpotToSupabase(target, isInsert);
+            if (inboxItem && typeof window.updateAdminSpotInboxStatus === 'function') {
+              await window.updateAdminSpotInboxStatus(inboxItem.id, inboxItem.type === 'correction', saved ? '반영완료' : '반영실패');
+            }
+            window.__adminApplyingInboxItem = null;
+            triggerHaptic(15);
           }
         } finally {
           window.__isModalSubmitting = false;
@@ -5794,32 +6239,73 @@ var overlay = document.getElementById('customModalOverlay');
         }
       }
 
+      function revealMapForPinPick() {
+        closeMobileBottomSheet();
+        closePcSlidingDrawer();
+        var modalOverlay = document.getElementById('customModalOverlay');
+        if (modalOverlay) modalOverlay.style.display = 'none';
+        isSidebarCollapsed = true;
+        var sidebar = document.getElementById('sidebar');
+        if (sidebar) sidebar.classList.add('collapsed');
+        if (typeof updateDockSidebarText === 'function') updateDockSidebarText(false);
+      }
+
       function startPinPicking() {
         triggerHaptic(12);
         isPickingLocationMode = true;
-        
-        var modalOverlay = document.getElementById('customModalOverlay');
-        if (modalOverlay) modalOverlay.style.display = 'none';
-
-        var banner = document.getElementById('pinPickerBanner');
-        if (banner) banner.style.display = 'flex';
-
-        if (window.innerWidth <= 768) {
-          isSidebarCollapsed = true;
-          var sidebar = document.getElementById('sidebar');
-          if (sidebar) sidebar.classList.add('collapsed');
-          if (typeof updateDockSidebarText === 'function') updateDockSidebarText(false);
-        }
-        showToast(`${ICONS.PIN} <span>지도를 클릭하여 박지 위치를 콕 찍어주세요!</span>`);
+        revealMapForPinPick();
+        setPinPickerBanner('pick');
+        applyAdminMarkerDragState();
       }
+
+      function startAdminPinMove(spotId, e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (!checkAdminAuthorization()) return;
+        applyAdminPermissions(true);
+        var sId = String(spotId || '').trim();
+        var target = (spots || []).find(function(s) { return String(s.id).trim() === sId; });
+        if (!target) return;
+        window.__adminPinMoveSpotId = sId;
+        window.__adminPinMoveOrig = {
+          lat: parseFloat(target.lat) || 0,
+          lng: parseFloat(target.lng) || 0
+        };
+        modalMode = 'EDIT';
+        modalEditIndex = spots.findIndex(function(s) { return String(s.id).trim() === sId; });
+        modalPendingData.lat = parseFloat(target.lat) || 0;
+        modalPendingData.lng = parseFloat(target.lng) || 0;
+        startPinPicking();
+        applyAdminMarkerDragState();
+        if (map && target.lat && target.lng) {
+          map.setLevel(Math.min(map.getLevel(), 4));
+          smoothCenterMapOnSpot(target.lat, target.lng);
+        }
+      }
+      window.startAdminPinMove = startAdminPinMove;
 
       function cancelPinPicking() {
         triggerHaptic(10);
         isPickingLocationMode = false;
-        
-        var banner = document.getElementById('pinPickerBanner');
-        if (banner) banner.style.display = 'none';
-
+        window.__adminPinMoveConfirming = false;
+        window.__adminPinMovePending = null;
+        hidePinPickerBanner();
+        clearTempPickedMarker();
+        if (window.__adminPinMoveSpotId) {
+          var origId = String(window.__adminPinMoveSpotId).trim();
+          var orig = window.__adminPinMoveOrig;
+          var origTarget = (spots || []).find(function(s) { return String(s.id).trim() === origId; });
+          if (origTarget && orig && orig.lat && orig.lng) {
+            applySpotPositionLocally(origTarget, orig.lat, orig.lng);
+          }
+          window.__adminPinMoveSpotId = null;
+          window.__adminPinMoveOrig = null;
+          applyAdminMarkerDragState();
+          return;
+        }
+        applyAdminMarkerDragState();
         var modalOverlay = document.getElementById('customModalOverlay');
         if (modalOverlay) modalOverlay.style.display = 'flex';
       }
@@ -5930,7 +6416,8 @@ var overlay = document.getElementById('customModalOverlay');
         btn.setAttribute('data-lat', lat);
         btn.setAttribute('data-lng', lng);
         btn.style.cssText = 'background:rgba(14,18,26,0.96); border:1px solid rgba(255,255,255,0.18); border-radius:20px; padding:7px 14px; color:#ffffff; font-size:0.76rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px; box-shadow:0 10px 28px rgba(0,0,0,0.8); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); white-space:nowrap; outline:none; -webkit-tap-highlight-color:transparent;';
-        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; flex-shrink:0;"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg><span>장소 제보하기</span>`;
+        var adminPick = isAdminMode && checkAdminAuthorization();
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; flex-shrink:0;"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg><span>${adminPick ? '박지 정식 등록' : '장소 제보하기'}</span>`;
 
         var handleTrigger = function(e) {
           if (e) {
@@ -5941,7 +6428,11 @@ var overlay = document.getElementById('customModalOverlay');
           var tLat = parseFloat(btn.getAttribute('data-lat'));
           var tLng = parseFloat(btn.getAttribute('data-lng'));
           window.hideLongPressProposalTooltip();
-          openUserProposalModal('', tLat, tLng, '');
+          if (isAdminMode && checkAdminAuthorization()) {
+            openAddModal('', tLat, tLng, '');
+          } else {
+            openUserProposalModal('', tLat, tLng, '');
+          }
         };
 
         btn.addEventListener('touchend', handleTrigger, { passive: false });
@@ -5969,23 +6460,32 @@ var overlay = document.getElementById('customModalOverlay');
         const pcDrop = document.getElementById('pcSearchDropdown');
         if (pcDrop) pcDrop.style.display = 'none';
 
-        if (isMarkerClickProcessing) {
+        if (isMarkerClickProcessing && !isPickingLocationMode) {
           return;
         }
 
        if (!mouseEvent.latLng) return;
         if (isPickingLocationMode) {
-          isPickingLocationMode = false;
-          const banner = document.getElementById('pinPickerBanner');
-          if (banner) banner.style.display = 'none';
-          
           const lat = parseFloat(mouseEvent.latLng.getLat().toFixed(6));
           const lng = parseFloat(mouseEvent.latLng.getLng().toFixed(6));
           modalPendingData.lat = lat; 
           modalPendingData.lng = lng;
-          
-          if (tempPickedMarker) tempPickedMarker.setMap(null);
-          tempPickedMarker = new kakao.maps.Marker({ position: mouseEvent.latLng, map: map });
+
+          var pinSpotId = window.__adminPinMoveSpotId;
+          if (pinSpotId) {
+            var pinTarget = (spots || []).find(function(s) { return String(s.id).trim() === String(pinSpotId).trim(); });
+            if (!pinTarget) {
+              cancelPinPicking();
+              return;
+            }
+            askConfirmAdminPinMove(pinTarget, lat, lng, mouseEvent.latLng);
+            return;
+          }
+
+          isPickingLocationMode = false;
+          hidePinPickerBanner();
+          applyAdminMarkerDragState();
+          showTempPickedMarker(mouseEvent.latLng);
           
           // 🎯 한글 사족 없는 순수 숫자 좌표만 표시
           const coordsDisplay = document.getElementById('modalInputCoordsDisplay');
@@ -6019,6 +6519,10 @@ var overlay = document.getElementById('customModalOverlay');
 
       async function deleteSpot(e, index) {
         if (e) e.stopPropagation();
+        if (!checkAdminAuthorization()) {
+          showToast('관리자 권한이 확인되지 않았습니다.');
+          return;
+        }
         const targetSpot = spots[index];
         if (!targetSpot) return;
         if (!confirm(`'${targetSpot.name}' 박지를 정말 삭제하시겠습니까?`)) return;
@@ -6065,6 +6569,198 @@ var overlay = document.getElementById('customModalOverlay');
         }
       }
 
+      function normalizeInboxItem(row, isCorrection) {
+        if (!row) return null;
+        var clone = Object.assign({}, row);
+        clone.type = isCorrection ? 'correction' : 'proposal';
+        clone.isCorrection = isCorrection;
+        clone.fullName = row.fullname || row.fullName || '';
+        clone.youtubeUrls = row.youtubeurls || row.youtubeUrls || '';
+        clone.blogUrl = row.blogurl || row.blogUrl || '';
+        clone.authorSnsUrl = row.authorsnsurl || row.authorSnsUrl || '';
+        clone.courseType = row.coursetype || row.courseType || '일반';
+        clone.origSpotId = row.orig_spot_id || row.origSpotId || resolveCorrectionOrigSpotId(row);
+        clone.correctionReason = row.correction_reason || row.correctionReason || '';
+        return clone;
+      }
+
+      async function fetchAdminSpotInboxItems() {
+        if (typeof window.fetchAdminSpotInbox === 'function') {
+          return window.fetchAdminSpotInbox();
+        }
+        var cfg = getSupabaseRestConfig();
+        var headers = { 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key, 'Content-Type': 'application/json' };
+        var [propsRes, corrRes] = await Promise.all([
+          fetch(cfg.url + '/rest/v1/proposals?select=*&order=created_at.desc', { headers: headers }),
+          fetch(cfg.url + '/rest/v1/spot_corrections?select=*&order=created_at.desc', { headers: headers })
+        ]);
+        var props = propsRes.ok ? await propsRes.json() : [];
+        var corrs = corrRes.ok ? await corrRes.json() : [];
+        return []
+          .concat((Array.isArray(props) ? props : []).map(function(r) { return normalizeInboxItem(r, false); }))
+          .concat((Array.isArray(corrs) ? corrs : []).map(function(r) { return normalizeInboxItem(r, true); }))
+          .filter(Boolean);
+      }
+
+      function isPendingInboxStatus(status) {
+        var s = String(status || '').trim();
+        return !s || s === 'pending' || s.indexOf('대기') !== -1 || s.indexOf('검수') !== -1;
+      }
+
+      window.openAdminSpotInbox = async function() {
+        if (!checkAdminAuthorization()) {
+          showToast('관리자 권한이 확인되지 않았습니다.');
+          return;
+        }
+        applyAdminPermissions(true);
+        triggerHaptic(10);
+        var old = document.getElementById('adminSpotInboxModal');
+        if (old) old.remove();
+
+        var overlay = document.createElement('div');
+        overlay.id = 'adminSpotInboxModal';
+        overlay.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); z-index:2147483645 !important; background:#000000; display:flex; justify-content:center; align-items:stretch;';
+        overlay.innerHTML = '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; background:#0c1017; display:flex; flex-direction:column; box-sizing:border-box;">' +
+          '<div style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); border-bottom:1px solid rgba(255,255,255,0.08);">' +
+            '<button type="button" onclick="document.getElementById(\'adminSpotInboxModal\').remove();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer;">◀</button>' +
+            '<span style="font-size:0.95rem; font-weight:900; color:#ffffff;">박지 검수함</span>' +
+            '<button type="button" onclick="window.renderAdminSpotInboxList();" style="background:none; border:none; color:#7dd3fc; font-size:0.72rem; font-weight:800; cursor:pointer;">새로고침</button>' +
+          '</div>' +
+          '<div id="adminSpotInboxList" style="flex:1; min-height:0; overflow-y:auto; padding:12px 16px 20px; color:#94a3b8; font-size:0.78rem;">불러오는 중</div>' +
+        '</div>';
+        document.body.appendChild(overlay);
+        await window.renderAdminSpotInboxList();
+      };
+
+      window.renderAdminSpotInboxList = async function() {
+        var listEl = document.getElementById('adminSpotInboxList');
+        if (!listEl) return;
+        listEl.textContent = '불러오는 중';
+        var items = [];
+        try {
+          items = await fetchAdminSpotInboxItems();
+        } catch (e) {
+          listEl.textContent = '목록을 불러오지 못했습니다.';
+          return;
+        }
+        window.__adminSpotInboxCache = items;
+        var pending = items.filter(function(it) { return isPendingInboxStatus(it.status); });
+        var done = items.filter(function(it) { return !isPendingInboxStatus(it.status); });
+        if (!items.length) {
+          listEl.innerHTML = '<div style="text-align:center; padding:28px 8px; color:#64748b;">접수된 제보/수정 건의가 없습니다.</div>';
+          return;
+        }
+
+        var renderCard = function(item) {
+          var title = item.spot_main || item.name || '이름 없음';
+          var kind = item.type === 'correction' ? '수정건의' : '신규제보';
+          var kindColor = item.type === 'correction' ? '#fb7185' : '#38bdf8';
+          var coord = (item.lat && item.lng) ? (item.lat + ', ' + item.lng) : '좌표 없음';
+          var reason = item.correctionReason || '';
+          var safeId = String(item.id || '').replace(/"/g, '');
+          return '<div class="admin-inbox-card">' +
+            '<div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">' +
+              '<span style="font-size:0.62rem; font-weight:900; color:' + kindColor + '; border:1px solid ' + kindColor + '55; border-radius:4px; padding:1px 6px;">' + kind + '</span>' +
+              '<span style="font-size:0.62rem; color:#94a3b8;">' + escapeHtml(item.status || '대기') + '</span>' +
+            '</div>' +
+            '<h4>' + escapeHtml(title) + (item.spot_sub ? ' · ' + escapeHtml(item.spot_sub) : '') + '</h4>' +
+            '<div class="admin-inbox-meta">' +
+              escapeHtml(item.trailhead_addr || item.trailhead_name || '') + '<br>' +
+              escapeHtml(coord) +
+              (reason ? '<br>사유: ' + escapeHtml(reason) : '') +
+            '</div>' +
+            '<div class="admin-inbox-actions">' +
+              '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.focusAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:rgba(255,255,255,0.08); color:#e2e8f0;">지도보기</button>' +
+              '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.reviewAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:#0284c7; color:#fff;">검토/수정</button>' +
+              '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.approveAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:#059669; color:#fff;">즉시반영</button>' +
+              '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.rejectAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:#be123c; color:#fff;">반려</button>' +
+            '</div>' +
+          '</div>';
+        };
+
+        listEl.innerHTML =
+          '<div style="font-size:0.72rem; font-weight:800; color:#a7f3d0; margin:0 0 8px;">대기 ' + pending.length + '건</div>' +
+          (pending.length ? pending.map(renderCard).join('') : '<div style="margin-bottom:14px; color:#64748b;">대기 건이 없습니다.</div>') +
+          (done.length ? '<div style="font-size:0.72rem; font-weight:800; color:#94a3b8; margin:16px 0 8px;">처리됨 ' + done.length + '건</div>' + done.map(renderCard).join('') : '');
+      };
+
+      function findAdminInboxItem(id, type) {
+        var list = window.__adminSpotInboxCache || [];
+        return list.find(function(it) {
+          return String(it.id) === String(id) && (!type || it.type === type);
+        }) || null;
+      }
+
+      window.focusAdminInboxItem = function(id, type) {
+        var item = findAdminInboxItem(id, type);
+        if (!item || !item.lat || !item.lng) {
+          showToast('좌표가 없어 지도로 이동할 수 없습니다.');
+          return;
+        }
+        var modal = document.getElementById('adminSpotInboxModal');
+        if (modal) modal.remove();
+        if (map) {
+          map.setLevel(4);
+          smoothCenterMapOnSpot(parseFloat(item.lat), parseFloat(item.lng));
+        }
+        showToast(ICONS.PIN + ' <span>' + escapeHtml(item.spot_main || '제보 위치') + '로 이동했습니다.</span>');
+      };
+
+      window.reviewAdminInboxItem = function(id, type) {
+        var item = findAdminInboxItem(id, type);
+        if (!item) {
+          showToast('해당 건을 찾을 수 없습니다.');
+          return;
+        }
+        var modal = document.getElementById('adminSpotInboxModal');
+        if (modal) modal.remove();
+        applyAdminPermissions(true);
+        modalMode = 'ADMIN_APPLY';
+        modalEditIndex = -1;
+        window.__adminApplyingInboxItem = item;
+        window.__isSpotCorrectionMode = item.type === 'correction';
+        window.__correctionTargetSpotId = resolveCorrectionOrigSpotId(item);
+        resetModalPendingMemory();
+        fillModalFromSpotLike(item);
+        var titleEl = document.getElementById('modalTitle');
+        var noticeEl = document.getElementById('modalNotice');
+        var btnEl = document.getElementById('modalSubmitBtn');
+        if (titleEl) titleEl.innerHTML = ICONS.EDIT + ' <span>' + (item.type === 'correction' ? '수정건의 검토 후 반영' : '신규 제보 검토 후 등록') + '</span>';
+        if (noticeEl) {
+          noticeEl.style.display = 'flex';
+          noticeEl.innerHTML = ICONS.ALERT_CARD + ' <span>내용을 확인·수정한 뒤 저장하면 지도에 바로 반영됩니다.</span>';
+        }
+        if (btnEl) btnEl.innerText = item.type === 'correction' ? '수정 반영 저장' : '정식 등록 저장';
+        showCustomModalOverlay();
+      };
+
+      window.approveAdminInboxItem = async function(id, type) {
+        var item = findAdminInboxItem(id, type);
+        if (!item) {
+          showToast('해당 건을 찾을 수 없습니다.');
+          return;
+        }
+        if (!confirm('이 내용을 지도에 즉시 반영할까요?')) return;
+        window.__adminApplyingInboxItem = item;
+        modalMode = 'ADMIN_APPLY';
+        resetModalPendingMemory();
+        fillModalFromSpotLike(item);
+        await saveCustomModal();
+        await window.renderAdminSpotInboxList();
+      };
+
+      window.rejectAdminInboxItem = async function(id, type) {
+        var item = findAdminInboxItem(id, type);
+        if (!item) return;
+        if (!confirm('이 건을 반려할까요?')) return;
+        var ok = true;
+        if (typeof window.updateAdminSpotInboxStatus === 'function') {
+          ok = await window.updateAdminSpotInboxStatus(item.id, item.type === 'correction', '반려');
+        }
+        showToast(ok ? '반려 처리했습니다.' : '상태 변경에 실패했습니다.');
+        await window.renderAdminSpotInboxList();
+      };
+
      // 🚀 검색창 ➕ 제보 클릭 시 관광명소/주소 태그를 완전 제거하고 세부포인트는 깨끗한 빈칸으로 유지
       function quickAddFromSearch(title, lat, lng, sub) {
         document.getElementById('pcSearchDropdown').style.display = 'none';
@@ -6076,7 +6772,11 @@ var overlay = document.getElementById('customModalOverlay');
           .trim();
         
         // 세부포인트(sub)에 주소가 오염되어 들어가는 것을 원천 차단 (사용자가 '정상 데크' 등 직접 기재)
-        openUserProposalModal(cleanName, lat, lng, "");
+        if (isAdminMode && checkAdminAuthorization()) {
+          openAddModal(cleanName, lat, lng, "");
+        } else {
+          openUserProposalModal(cleanName, lat, lng, "");
+        }
       }
   async function executeSearch(mode = 'pc') {
         const inputEl = document.getElementById('pcSearchInput');
@@ -6317,9 +7017,19 @@ var overlay = document.getElementById('customModalOverlay');
         }
       })();
     </script>
-    <script src="romantic-sync.js?v=2.8.34"></script>
-    <script src="templates.js?v=2.6.3"></script>
-    <script src="romantic-history.js?v=2.7.12"></script>
+    <script src="romantic-sync.js?v=2.8.35"></script>
+    <script src="templates.js?v=2.8.2"></script>
+    <script src="romantic-history.js?v=2.7.13"></script>
     <script src="romantic-plan.js?v=2.7.4"></script>
+    <script>
+      window.addEventListener('okbm_admin_flag', function(e) {
+        if (typeof window.applyAdminPermissions === 'function') {
+          window.applyAdminPermissions(!!(e && e.detail && e.detail.isAdmin));
+        }
+      });
+      window.addEventListener('load', function() {
+        if (typeof window.bootMapAdminTools === 'function') window.bootMapAdminTools();
+      });
+    </script>
 </body>
 </html>
