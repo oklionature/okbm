@@ -646,6 +646,121 @@
     }
   };
 
+  window.patchFeedPublishStatus = async function(recordId, isPublished) {
+    var sId = String(recordId || '').trim();
+    var targetUrl = window.SUPABASE_URL || (typeof SUPABASE_URL !== 'undefined' ? SUPABASE_URL : '') || '';
+    var targetKey = window.SUPABASE_ANON_KEY || (typeof SUPABASE_ANON_KEY !== 'undefined' ? SUPABASE_ANON_KEY : '') || '';
+    if (!targetUrl || !targetKey || !sId) {
+      return { ok: false, error: 'MISSING_CONFIG' };
+    }
+
+    try {
+      var res = await fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
+        method: 'PATCH',
+        headers: {
+          'apikey': targetKey,
+          'Authorization': 'Bearer ' + targetKey,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          is_published: Boolean(isPublished),
+          updated_at: new Date().toISOString()
+        })
+      });
+
+      if (!res.ok) {
+        var errText = '';
+        try { errText = await res.text(); } catch (readErr) {}
+        console.error('[patchFeedPublishStatus] 서버 갱신 실패 status=' + res.status, errText);
+        return { ok: false, status: res.status, error: errText || ('HTTP ' + res.status) };
+      }
+
+      var rows = [];
+      try { rows = await res.json(); } catch (parseErr) {}
+      if (!Array.isArray(rows) || rows.length === 0) {
+        return { ok: false, error: 'ZERO_ROWS_UPDATED' };
+      }
+      return { ok: true, data: rows };
+    } catch (networkErr) {
+      console.error('[patchFeedPublishStatus] 네트워크 예외:', networkErr);
+      return { ok: false, error: (networkErr && networkErr.message) ? networkErr.message : String(networkErr) };
+    }
+  };
+
+  window.okbmApplyPublishFlag = function(recordId, nextStatus, sourceRecord) {
+    var sId = String(recordId || '').trim();
+    if (!sId) return;
+    var published = Boolean(nextStatus);
+
+    var stamp = function(rec) {
+      if (!rec) return;
+      rec.isPublished = published;
+      rec.is_published = published;
+    };
+
+    if (sourceRecord) stamp(sourceRecord);
+
+    var lists = [
+      window.interactiveHistory,
+      window.packingHistoryList,
+      window.__allLoadedFeeds,
+      window.__currentScopedPastTripLogs,
+      (window.__memoryStore && window.__memoryStore['okbm_packing_history']) ? window.__memoryStore['okbm_packing_history'] : null
+    ];
+
+    lists.forEach(function(list) {
+      if (!Array.isArray(list)) return;
+      list.forEach(function(rec) {
+        if (rec && String(rec.id || '').trim() === sId) stamp(rec);
+      });
+    });
+
+    var packingList = null;
+    if (Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0) {
+      packingList = window.interactiveHistory;
+    } else if (typeof window.safeGetStorage === 'function') {
+      packingList = window.safeGetStorage('okbm_packing_history', []) || [];
+    }
+
+    if (Array.isArray(packingList)) {
+      var packingHit = false;
+      packingList.forEach(function(rec) {
+        if (rec && String(rec.id || '').trim() === sId) {
+          stamp(rec);
+          packingHit = true;
+        }
+      });
+      if (packingHit) {
+        window.interactiveHistory = packingList;
+        window.packingHistoryList = packingList;
+        if (window.__memoryStore) window.__memoryStore['okbm_packing_history'] = packingList;
+        if (typeof window.safeSetStorage === 'function') {
+          window.safeSetStorage('okbm_packing_history', packingList);
+        }
+        try { localStorage.setItem('okbm_packing_history', JSON.stringify(packingList)); } catch (e) {}
+        if (typeof window.saveToIndexedDB === 'function') {
+          window.saveToIndexedDB('okbm_packing_history', packingList);
+        }
+      }
+    }
+
+    if (Array.isArray(window.__allLoadedFeeds)) {
+      var feedIdx = window.__allLoadedFeeds.findIndex(function(f) {
+        return f && String(f.id || '').trim() === sId;
+      });
+      if (feedIdx !== -1) {
+        stamp(window.__allLoadedFeeds[feedIdx]);
+      } else if (sourceRecord) {
+        stamp(sourceRecord);
+        window.__allLoadedFeeds.unshift(sourceRecord);
+      }
+      try {
+        localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(window.__allLoadedFeeds));
+      } catch (e) {}
+    }
+  };
+
   window.savePackingHistoryRecord = async function(record) {
     if (!record) return null;
 
@@ -2532,15 +2647,14 @@ window.toggleFeedStar = async function(cardId, e) {
     }
 
     var sId = String(recordId).trim();
-    var rawList = window.safeGetStorage('okbm_packing_history', []) || [];
-    if (window.interactiveHistory && window.interactiveHistory.length > 0) {
-      rawList = window.interactiveHistory;
-    }
-    var target = rawList.find(function(r) { return r && String(r.id).trim() === sId; });
+    var target = (typeof window.okbmFindFeedRecord === 'function') ? window.okbmFindFeedRecord(sId) : null;
+
     if (!target) {
-      target = rawList.find(function(r, idx) {
-        return String(idx) === sId || (r.date && String(r.date).replace(/[-/]/g, '') === sId);
-      });
+      var rawList = (typeof window.safeGetStorage === 'function') ? (window.safeGetStorage('okbm_packing_history', []) || []) : [];
+      if (window.interactiveHistory && window.interactiveHistory.length > 0) {
+        rawList = window.interactiveHistory;
+      }
+      target = rawList.find(function(r) { return r && String(r.id).trim() === sId; });
     }
 
     if (!target) {
@@ -2548,8 +2662,16 @@ window.toggleFeedStar = async function(cardId, e) {
       return;
     }
 
-    // 1. 상태 즉시 반전 (0.001초 로컬 확정)
-    var nextStatus = !(target.isPublished === true);
+    if (typeof window.isRecordOwner === 'function' && !window.isRecordOwner(target) && !target._isLocalOwner) {
+      triggerHaptic(12);
+      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.lock + '본인 기록만 공개 설정을 변경할 수 있습니다.', 'warn', 2200);
+      return;
+    }
+
+    var currentPublished = (target.isPublished !== undefined)
+      ? Boolean(target.isPublished)
+      : (target.is_published !== undefined ? Boolean(target.is_published) : false);
+    var nextStatus = !currentPublished;
 
     if (nextStatus === true) {
       var targetPhotos = (typeof getRecordPhotos === 'function') ? getRecordPhotos(target) : (target.photos || []);
@@ -2574,77 +2696,76 @@ window.toggleFeedStar = async function(cardId, e) {
       }
     }
 
-    target.isPublished = nextStatus;
-
-    // 2. 낭만루트 저장소에 즉시 동기화
-    window.interactiveHistory = rawList.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
-    window.packingHistoryList = window.interactiveHistory;
-    if (window.__memoryStore) {
-      window.__memoryStore['okbm_packing_history'] = window.interactiveHistory;
-    }
-    window.safeSetStorage('okbm_packing_history', rawList);
-    try { localStorage.setItem('okbm_packing_history', JSON.stringify(rawList)); } catch(e) { console.warn('[romantic-history.js:toggleFeedPublishStatus localSet]', e); }
-    if (typeof window.saveToIndexedDB === 'function') {
-      window.saveToIndexedDB('okbm_packing_history', rawList);
+    if (typeof window.okbmApplyPublishFlag === 'function') {
+      window.okbmApplyPublishFlag(sId, nextStatus, target);
+    } else {
+      target.isPublished = nextStatus;
+      target.is_published = nextStatus;
     }
 
-    // 공용 피드 캐시 즉시 반영 (비공개 시 제거, 공개 시 등록)
-    if (Array.isArray(window.__allLoadedFeeds)) {
-      if (!nextStatus) {
-        window.__allLoadedFeeds = window.__allLoadedFeeds.filter(function(f) { return String(f.id).trim() !== sId; });
-      } else {
-        if (!window.__allLoadedFeeds.some(function(f) { return String(f.id).trim() === sId; })) {
-          window.__allLoadedFeeds.unshift(target);
-        }
+    var paintLockButton = function(published) {
+      var lockBtn = document.querySelector('[data-lock-btn-id="' + sId + '"]');
+      if (lockBtn) {
+        lockBtn.style.color = published ? '#34d399' : '#38bdf8';
+        lockBtn.setAttribute('title', published ? '전체 공개 중' : '비공개 (나만보기)');
+        lockBtn.innerHTML = published
+          ? '<svg viewBox="0 0 24 24" style="width:18px; height:18px; color:#34d399;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>'
+          : '<svg viewBox="0 0 24 24" style="width:18px; height:18px; color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+        lockBtn.style.transform = 'scale(1.25)';
+        setTimeout(function() { if (lockBtn) lockBtn.style.transform = 'scale(1)'; }, 150);
       }
-      localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(window.__allLoadedFeeds));
-    }
 
-    // 3. 🎯 [스크롤 튕김 제로]: 전체 화면을 다시 그리지 않고 해당 카드의 아이콘만 그 자리에서 교체
-    var lockBtn = document.querySelector('[data-lock-btn-id="' + sId + '"]');
-    if (lockBtn) {
-      if (nextStatus) {
-        lockBtn.setAttribute('title', '공개 중');
-        lockBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px; height:18px; color:#34d399;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>';
-      } else {
-        lockBtn.setAttribute('title', '비공개 (나만보기)');
-        lockBtn.innerHTML = '<svg viewBox="0 0 24 24" style="width:18px; height:18px; color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
+      var actionSheetBtn = document.getElementById('sheetTogglePublishBtn_' + sId);
+      if (actionSheetBtn) {
+        actionSheetBtn.style.color = published ? '#38bdf8' : '#cbd5e1';
+        actionSheetBtn.style.borderColor = published ? '#38bdf8' : 'rgba(255,255,255,0.15)';
+        actionSheetBtn.style.background = published ? 'rgba(56,189,248,0.14)' : 'rgba(255,255,255,0.06)';
+        actionSheetBtn.innerHTML = '<div style="display:flex; align-items:center; gap:8px;"><span>' + (published ? '🌐' : '🔒') + '</span><span>' + (published ? '전체 피드에 공개 중' : '현재 나만보기 (비공개)') + '</span></div><span style="font-size:0.68rem; color:' + (published ? '#38bdf8' : '#fde047') + '; background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">' + (published ? '비공개 전환' : '전체 공개하기') + '</span>';
       }
-      lockBtn.style.transform = 'scale(1.25)';
-      setTimeout(function() { if (lockBtn) lockBtn.style.transform = 'scale(1)'; }, 150);
-    }
+    };
 
-    // 점점점 액션시트가 열려있다면 내부 버튼 UI도 즉시 교체
-    var actionSheetBtn = document.getElementById('sheetTogglePublishBtn_' + sId);
-    if (actionSheetBtn) {
-      actionSheetBtn.style.color = nextStatus ? '#38bdf8' : '#cbd5e1';
-      actionSheetBtn.style.borderColor = nextStatus ? '#38bdf8' : 'rgba(255,255,255,0.15)';
-      actionSheetBtn.innerHTML = '<div style="display:flex; align-items:center; gap:8px;"><span>' + (nextStatus ? '🌐' : '🔒') + '</span><span>' + (nextStatus ? '전체 피드에 공개 중' : '현재 나만보기 (비공개)') + '</span></div><span style="font-size:0.68rem; color:' + (nextStatus ? '#38bdf8' : '#fde047') + '; background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">' + (nextStatus ? '비공개 전환' : '전체 공개하기') + '</span>';
-    }
+    paintLockButton(nextStatus);
 
     triggerHaptic(12);
     if (typeof showToast === 'function') {
       showToast((nextStatus ? HISTORY_TOAST_VEC.globe : HISTORY_TOAST_VEC.lock) + (nextStatus ? '[전체공개]로 전환되었습니다.' : '[나만보기]로 전환되었습니다.'), 'info', 1600);
     }
 
-    // 4. 🛡️ [디바운스 락 600ms]: 사용자가 10번 연타해도 마지막 최종 1회만 서버로 전송
     clearTimeout(window.__publishDebounceTimers[sId]);
     window.__publishDebounceTimers[sId] = setTimeout(function() {
-      if (nextStatus) {
-        // [단 1개의 통로로만 서버 쓰기] feeds 쓰기는 savePackingHistoryRecord →
-        // submitFeedPayload 단일 경로만 사용합니다 (shareFeedToCommunity는 더 이상
-        // DB에 쓰지 않고 사진 업로드만 담당합니다).
-        if (typeof window.savePackingHistoryRecord === 'function') {
-          window.savePackingHistoryRecord(target).then(function(result) {
-            if (result && result.__serverSaveFailed && typeof showToast === 'function') {
-              showToast('공개 설정 동기화에 실패했습니다. 다시 시도해주세요.', 'error', 2400);
+      var persistPublish = function() {
+        if (typeof window.patchFeedPublishStatus !== 'function') {
+          return Promise.resolve({ ok: false, error: 'NO_PATCH' });
+        }
+        return window.patchFeedPublishStatus(sId, nextStatus);
+      };
+
+      persistPublish().then(function(result) {
+        if (result && result.ok) {
+          if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(true);
+          return;
+        }
+
+        if (nextStatus && typeof window.savePackingHistoryRecord === 'function') {
+          return window.savePackingHistoryRecord(target).then(function(saved) {
+            if (saved && saved.__serverSaveFailed) {
+              if (typeof window.okbmApplyPublishFlag === 'function') window.okbmApplyPublishFlag(sId, !nextStatus, target);
+              paintLockButton(!nextStatus);
+              if (typeof showToast === 'function') {
+                showToast('공개 설정 동기화에 실패했습니다. 다시 시도해주세요.', 'error', 2400);
+              }
+              return;
             }
+            if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(true);
           });
         }
-      } else {
-        if (typeof window.deleteFeedFromCommunity === 'function') window.deleteFeedFromCommunity(target.id, target.date);
-      }
-      if (typeof syncUserDataToCloud === 'function') syncUserDataToCloud(true);
+
+        if (typeof window.okbmApplyPublishFlag === 'function') window.okbmApplyPublishFlag(sId, !nextStatus, target);
+        paintLockButton(!nextStatus);
+        if (typeof showToast === 'function') {
+          showToast('공개 설정 동기화에 실패했습니다. 다시 시도해주세요.', 'error', 2400);
+        }
+      });
     }, 600);
   };
 
@@ -2655,6 +2776,7 @@ window.toggleFeedStar = async function(cardId, e) {
       window.interactiveHistory,
       (typeof window.safeGetStorage === 'function') ? window.safeGetStorage('okbm_packing_history', []) : null,
       window.__allLoadedFeeds,
+      window.__currentScopedPastTripLogs,
       (typeof safeGetJSON === 'function') ? safeGetJSON('okbm_cached_community_feeds', []) : null
     ];
     for (var p = 0; p < pools.length; p++) {
@@ -2685,7 +2807,9 @@ window.toggleFeedStar = async function(cardId, e) {
     var old = document.getElementById('tripActionActionSheet');
     if (old) old.remove();
 
-    var isPub = Boolean(log.isPublished);
+    var isPub = (log.isPublished !== undefined)
+      ? Boolean(log.isPublished)
+      : Boolean(log.is_published);
 
     var sheet = document.createElement('div');
     sheet.id = 'tripActionActionSheet';
@@ -2909,6 +3033,48 @@ window.deleteTripRecord = async function(recordId, e) {
     }, 120);
   };
 
+  window.okbmApplyUgcSafetyFilter = function(list) {
+    if (!Array.isArray(list)) return [];
+    if (typeof window.filterHiddenUgcFeeds === 'function') return window.filterHiddenUgcFeeds(list);
+    return list.filter(Boolean);
+  };
+
+  window.okbmEnsureUgcSafetyFromServer = async function() {
+    if (typeof window.okbmSyncUgcSafetyFromServer === 'function') {
+      return window.okbmSyncUgcSafetyFromServer();
+    }
+    var changed = false;
+    if (typeof window.syncMyUserBlocksFromServer === 'function') {
+      try { changed = Boolean(await window.syncMyUserBlocksFromServer()) || changed; } catch (e) {
+        console.warn('[romantic-history.js:okbmEnsureUgcSafetyFromServer blocks]', e);
+      }
+    }
+    if (typeof window.syncMyFeedReportsFromServer === 'function') {
+      try { changed = Boolean(await window.syncMyFeedReportsFromServer()) || changed; } catch (e) {
+        console.warn('[romantic-history.js:okbmEnsureUgcSafetyFromServer reports]', e);
+      }
+    }
+    return changed;
+  };
+
+  function okbmBuildFeedOthersMoreBtnHtml(feedId, userId, authorName, variant) {
+    var sFeedId = String(feedId || '').trim();
+    var sUserId = String(userId || '').trim();
+    var sNick = String(authorName || '').trim();
+    if (sUserId && window.isCurrentUserId && window.isCurrentUserId(sUserId)) return '';
+    if (!sFeedId && !sUserId) return '';
+    if (typeof window.openUgcSafetyMenu !== 'function') return '';
+
+    var isFloat = variant === 'float';
+    var btnStyle = isFloat
+      ? 'background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.2); color:#ffffff; width:32px; height:32px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0; flex-shrink:0;'
+      : 'background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#94a3b8; flex-shrink:0;';
+
+    return '<button type="button" data-feed-id="' + escapeHtml(sFeedId) + '" data-user-id="' + escapeHtml(sUserId) + '" data-author="' + escapeHtml(sNick) + '" onclick="event.preventDefault(); event.stopPropagation(); window.openUgcSafetyMenu(this.dataset.feedId, this.dataset.userId, this.dataset.author, event);" style="' + btnStyle + '" title="더보기">' +
+      '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>' +
+    '</button>';
+  }
+
  // 👤 [특정 작성자 피드 모아보기 전담 모달 엔진 - 하단 단일 진실 공급원(SSOT) 통합 완료]
 // 📖 [단일 피드 카드 마크업 생성기 - 각 사진별 120자 캡션 1:1 결합 렌더러]
   window.buildSingleFeedCardHtml = function(log) {
@@ -3002,7 +3168,7 @@ window.deleteTripRecord = async function(recordId, e) {
         '<div style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">' + escapeHtml(log.spot || '낭만 스팟') + (log.elevation ? (' <span style="font-size:0.75rem; color:#fde047; font-weight:800;">(' + escapeHtml(log.elevation) + ')</span>') : '') + '</div>' +
         '<div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">' +
           '<span style="font-size:0.72rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;">' + escapeHtml(log.date || '') + '</span>' +
-          ((typeof window.isRecordOwner === 'function' && window.isRecordOwner(log)) ? '' : ((typeof window.buildUgcSafetyButtonsHtml === 'function') ? window.buildUgcSafetyButtonsHtml(log.id, log.userId || log.user_id, log.author || log.nick || log.nickname, 'inline') : '')) +
+          ((typeof window.isRecordOwner === 'function' && window.isRecordOwner(log)) ? '' : okbmBuildFeedOthersMoreBtnHtml(log.id, log.userId || log.user_id, log.author || log.nick || log.nickname, 'inline')) +
         '</div>' +
       '</div>' +
       '<div style="display:flex; flex-direction:column; width:100%;">' +
@@ -3163,7 +3329,7 @@ window.deleteTripRecord = async function(recordId, e) {
 
     var modalEl = document.createElement('div');
     modalEl.id = 'followedRoutersModal';
-    modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; width:100%; max-width:100%; background:#000000; z-index:1000030 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:1000030 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     var listHtml = '';
     if (routerItems.length === 0) {
@@ -3261,9 +3427,7 @@ window.deleteTripRecord = async function(recordId, e) {
       }
     });
 
-    if (typeof window.filterHiddenUgcFeeds === 'function') {
-      matchedSavedFeeds = window.filterHiddenUgcFeeds(matchedSavedFeeds);
-    }
+    matchedSavedFeeds = window.okbmApplyUgcSafetyFilter(matchedSavedFeeds);
 
     if (allFeeds.length > 0 && validIdSet.size !== savedFeedsList.length) {
       var cleanedIds = savedFeedsList.filter(function(id) {
@@ -3280,7 +3444,7 @@ window.deleteTripRecord = async function(recordId, e) {
 
     var modalEl = document.createElement('div');
     modalEl.id = 'savedFeedsListModal';
-    modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; width:100%; max-width:100%; background:#000000; z-index:1000030 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:1000030 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     var listContentHtml = '';
     if (matchedSavedFeeds.length === 0) {
@@ -3506,9 +3670,7 @@ window.deleteTripRecord = async function(recordId, e) {
         }
       });
 
-      if (typeof window.filterHiddenUgcFeeds === 'function') {
-        newItems = window.filterHiddenUgcFeeds(newItems);
-      }
+      newItems = window.okbmApplyUgcSafetyFilter(newItems);
 
       state.offset += fetchedRows.length;
       if (fetchedRows.length < state.limit) {
@@ -3529,6 +3691,99 @@ window.deleteTripRecord = async function(recordId, e) {
     }
   };
 
+  window.openRouterProfileMoreMenu = function(userId, nickname, feedId, e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    triggerHaptic(10);
+
+    var sUserId = String(userId || '').trim();
+    var sNick = String(nickname || '').trim();
+    var sFeedId = String(feedId || '').trim();
+    if (sUserId && window.isCurrentUserId && window.isCurrentUserId(sUserId)) return;
+
+    var followKey = sUserId || sNick;
+    var followingList = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_following_users', [])
+      : safeGetJSON('okbm_following_users', []);
+    var isFollowing = Boolean(followKey && Array.isArray(followingList) && followingList.indexOf(followKey) !== -1);
+
+    var old = document.getElementById('ugcSafetyMenuSheet');
+    if (old) old.remove();
+
+    var sheet = document.createElement('div');
+    sheet.id = 'ugcSafetyMenuSheet';
+    sheet.style.cssText = 'position:fixed; inset:0; z-index:2147483645 !important; background:rgba(0,0,0,0.78); display:flex; justify-content:center; align-items:flex-end; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);';
+    sheet.onclick = function(ev) { if (ev.target === sheet) sheet.remove(); };
+
+    var rowBtn = 'width:100%; height:46px; background:#111111; border:none; border-radius:10px; color:#e2e8f0; font-size:0.84rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:10px; padding:0 14px;';
+    var unfollowRow = '<button type="button" data-user-id="' + escapeHtml(sUserId) + '" data-author="' + escapeHtml(sNick) + '" onclick="document.getElementById(\'ugcSafetyMenuSheet\') && document.getElementById(\'ugcSafetyMenuSheet\').remove(); window.__unfollowRouterFromProfileMenu(this.dataset.userId, this.dataset.author, event);" style="' + rowBtn + (isFollowing ? '' : ' color:#94a3b8;') + '">' +
+      '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" y1="11" x2="16" y2="11"/></svg>' +
+      '<span>관심삭제</span>' +
+    '</button>';
+
+    var blockRow = sUserId
+      ? '<button type="button" data-user-id="' + escapeHtml(sUserId) + '" data-author="' + escapeHtml(sNick) + '" onclick="document.getElementById(\'ugcSafetyMenuSheet\') && document.getElementById(\'ugcSafetyMenuSheet\').remove(); window.blockCommunityUser(this.dataset.userId, this.dataset.author);" style="' + rowBtn + '">' +
+          '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h.5"/><path d="M16 16l5 5"/><path d="M21 16l-5 5"/></svg>' +
+          '<span>차단</span>' +
+        '</button>'
+      : '';
+
+    var reportRow = '<button type="button" data-feed-id="' + escapeHtml(sFeedId) + '" data-user-id="' + escapeHtml(sUserId) + '" onclick="document.getElementById(\'ugcSafetyMenuSheet\') && document.getElementById(\'ugcSafetyMenuSheet\').remove(); window.__reportRouterFromProfileMenu(this.dataset.feedId, this.dataset.userId);" style="' + rowBtn + '">' +
+      '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>' +
+      '<span>신고</span>' +
+    '</button>';
+
+    sheet.innerHTML = '<div style="width:100%; max-width:440px; background:#000000; border:none; border-radius:18px 18px 0 0; padding:16px 16px calc(72px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;" onclick="event.stopPropagation();">' +
+      '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">' +
+        '<span style="font-size:0.86rem; font-weight:900; color:#ffffff;">더보기</span>' +
+        '<button type="button" onclick="document.getElementById(\'ugcSafetyMenuSheet\').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer;">✕</button>' +
+      '</div>' +
+      unfollowRow +
+      blockRow +
+      reportRow +
+      '<button type="button" onclick="document.getElementById(\'ugcSafetyMenuSheet\').remove();" style="width:100%; height:42px; background:#111111; border:none; border-radius:10px; color:#94a3b8; font-size:0.78rem; font-weight:800; cursor:pointer; margin-top:2px;">취소</button>' +
+    '</div>';
+
+    document.body.appendChild(sheet);
+  };
+
+  window.__unfollowRouterFromProfileMenu = function(userId, nickname, e) {
+    var sUserId = String(userId || '').trim();
+    var sNick = String(nickname || '').trim();
+    var followKey = sUserId || sNick;
+    var followingList = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_following_users', [])
+      : safeGetJSON('okbm_following_users', []);
+    var isFollowing = Boolean(followKey && Array.isArray(followingList) && followingList.indexOf(followKey) !== -1);
+    if (!isFollowing) {
+      if (typeof showToast === 'function') showToast('관심 등록된 루터가 아닙니다.', 'info', 1800);
+      return;
+    }
+    if (typeof window.toggleFollowUser === 'function') {
+      window.toggleFollowUser(sUserId, sNick, e);
+    }
+  };
+
+  window.__reportRouterFromProfileMenu = function(feedId, userId) {
+    var sFeedId = String(feedId || '').trim();
+    if (!sFeedId) {
+      var scopedMap = window.__scopedUserFilteredFeedsMap || {};
+      var lists = Object.keys(scopedMap).map(function(k) { return scopedMap[k]; });
+      for (var i = 0; i < lists.length; i++) {
+        if (Array.isArray(lists[i]) && lists[i][0] && lists[i][0].id) {
+          sFeedId = String(lists[i][0].id).trim();
+          break;
+        }
+      }
+    }
+    if (!sFeedId && typeof showToast === 'function') {
+      showToast('신고할 기록을 찾을 수 없습니다.', 'warn', 1800);
+      return;
+    }
+    if (typeof window.openFeedReportModal === 'function') {
+      window.openFeedReportModal(sFeedId, userId);
+    }
+  };
+
   window.openUserFeedCollectionModal = function(authorName, userId, initialTab, isRestored) {
     if (!authorName && !userId) return;
     triggerHaptic(12);
@@ -3539,6 +3794,19 @@ window.deleteTripRecord = async function(recordId, e) {
         if (typeof window.openFollowedRoutersModal === 'function') window.openFollowedRoutersModal(true);
       });
       followedModal.remove();
+    }
+
+    var blockedModal = document.getElementById('blockedUsersManageModal');
+    if (!isRestored && blockedModal) {
+      window.recordModalHistoryStep('blockedUsersManageModal', function() {
+        window.__okbmInspectBlockedUserId = '';
+        var settingsEl = document.getElementById('userAccountSettingsModal');
+        if (settingsEl) settingsEl.style.display = 'flex';
+        if (typeof window.openBlockedUsersModal === 'function') window.openBlockedUsersModal();
+      });
+      blockedModal.remove();
+      var settingsHide = document.getElementById('userAccountSettingsModal');
+      if (settingsHide) settingsHide.style.display = 'none';
     }
 
     var old = document.getElementById('userFeedCollectionModal');
@@ -3575,9 +3843,7 @@ window.deleteTripRecord = async function(recordId, e) {
       return norm;
     });
 
-    if (typeof window.filterHiddenUgcFeeds === 'function') {
-      matchedFeeds = window.filterHiddenUgcFeeds(matchedFeeds);
-    }
+    matchedFeeds = window.okbmApplyUgcSafetyFilter(matchedFeeds);
 
     var dedupMap = new Map();
     matchedFeeds.forEach(function(item) {
@@ -3623,14 +3889,16 @@ window.deleteTripRecord = async function(recordId, e) {
       }
     }
 
+    var firstFeedId = (initialRenderList[0] && initialRenderList[0].id) ? String(initialRenderList[0].id).trim() : '';
     var followBtnHtml = '';
+    var moreBtnHtml = '';
     if (!isSelf) {
       followBtnHtml = isFollowing
-        ? '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(52,211,153,0.15); border:1px solid #34d399; color:#34d399; padding:4px 10px; border-radius:14px; font-size:0.68rem; font-weight:900; cursor:pointer; display:inline-flex; align-items:center; gap:3px; flex-shrink:0;"><svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>관심</span></button>'
-        : '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22); color:#ffffff; padding:4px 10px; border-radius:14px; font-size:0.68rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:3px; flex-shrink:0;"><svg viewBox="0 0 24 24" style="width:11px; height:11px;" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>관심</span></button>';
-      if (targetUserId) {
-        followBtnHtml += '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.blockCommunityUser(this.dataset.userId, this.dataset.author);" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); color:#fda4af; padding:4px 10px; border-radius:14px; font-size:0.68rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:3px; flex-shrink:0;">차단</button>';
-      }
+        ? '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(52,211,153,0.15); border:1px solid #34d399; color:#34d399; padding:5px 12px; border-radius:14px; font-size:0.78rem; font-weight:900; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;"><svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>관심</span></button>'
+        : '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22); color:#ffffff; padding:5px 12px; border-radius:14px; font-size:0.78rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;"><svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>관심</span></button>';
+      moreBtnHtml = '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" data-feed-id="' + escapeHtml(firstFeedId) + '" onclick="window.openRouterProfileMoreMenu(this.dataset.userId, this.dataset.author, this.dataset.feedId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#94a3b8; flex-shrink:0; padding:0;" title="더보기">' +
+        '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>' +
+      '</button>';
     }
 
     var cardsHtml = '';
@@ -3660,17 +3928,21 @@ window.deleteTripRecord = async function(recordId, e) {
     modalEl.id = 'userFeedCollectionModal';
     modalEl.dataset.author = targetAuthor;
     modalEl.dataset.userId = targetUserId;
-    modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; width:100%; max-width:100%; background:#000000; z-index:1000010 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    var inspectBlocked = Boolean(window.__okbmInspectBlockedUserId && String(window.__okbmInspectBlockedUserId).trim() === targetUserId);
+    if (inspectBlocked) modalEl.dataset.fromBlocked = '1';
+    var collectionZ = inspectBlocked ? '2147483645' : '1000010';
+    modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:' + collectionZ + ' !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     modalEl.innerHTML = `
       <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
-        <div style="display:flex; align-items:center; gap:8px;">
+        <div style="display:flex; align-items:center; gap:8px; min-width:0;">
           <button type="button" onclick="window.goBackModal(event);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">◀</button>
-          <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">루터 정보</span>
-        </div>
-        <div style="display:flex; align-items:center; gap:6px;">
-          ${followBtnHtml}
+          <span style="font-size:0.92rem; font-weight:900; color:#ffffff; flex-shrink:0;">루터 정보</span>
           <span id="userModalRouteCountBadge" style="font-size:0.65rem; color:#38bdf8; font-weight:800; background:rgba(56,189,248,0.15); padding:2px 8px; border-radius:5px; border:1px solid rgba(56,189,248,0.3); flex-shrink:0;">기록 (${initialRenderList.length})</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+          ${followBtnHtml}
+          ${moreBtnHtml}
         </div>
       </div>
 
@@ -3859,22 +4131,29 @@ window.deleteTripRecord = async function(recordId, e) {
       targetRec = allPool.find(function(r) { return r && String(r.id).trim() === sId; });
     }
 
+    var adminInspect = contextTitle === '__admin';
+
+    if (!targetRec && typeof window.okbmOpenDirectFeed === 'function') {
+      window.okbmOpenDirectFeed(sId, adminInspect);
+      return;
+    }
+
     if (logs.length === 0 && targetRec) {
       var pool = (window.__allLoadedFeeds && window.__allLoadedFeeds.length > 0) ? window.__allLoadedFeeds : ((window.interactiveHistory && window.interactiveHistory.length > 0) ? window.interactiveHistory : (window.safeGetStorage('okbm_packing_history', []) || []));
       logs = pool.slice();
     }
 
-    if (typeof window.filterHiddenUgcFeeds === 'function') {
-      logs = window.filterHiddenUgcFeeds(logs);
+    if (!adminInspect) {
+      logs = window.okbmApplyUgcSafetyFilter(logs);
     }
 
     if (targetRec && !logs.some(function(r) { return String(r.id).trim() === sId; })) {
-      if (!(typeof window.isFeedHiddenByUgc === 'function' && window.isFeedHiddenByUgc(targetRec))) {
+      if (adminInspect || !(typeof window.isFeedHiddenByUgc === 'function' && window.isFeedHiddenByUgc(targetRec))) {
         logs.unshift(targetRec);
       }
     }
 
-    if (targetRec && typeof window.isFeedHiddenByUgc === 'function' && window.isFeedHiddenByUgc(targetRec)) {
+    if (!adminInspect && targetRec && typeof window.isFeedHiddenByUgc === 'function' && window.isFeedHiddenByUgc(targetRec)) {
       if (typeof showToast === 'function') showToast('숨김 처리된 피드입니다.', 'info', 1800);
       return;
     }
@@ -3898,10 +4177,12 @@ window.deleteTripRecord = async function(recordId, e) {
 
     var feedModal = document.createElement('div');
     feedModal.id = 'singleTripFeedModal';
-    feedModal.style.cssText = 'position:fixed; top:0; left:0; right:0; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; width:100%; max-width:100%; background:#000000; z-index:1000010 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    var feedZ = adminInspect ? '2147483646' : '1000010';
+    var chromeZ = adminInspect ? '2147483647' : '1000025';
+    feedModal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:' + feedZ + ' !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     feedModal.innerHTML = `
-      <div style="position:fixed; top:calc(10px + env(safe-area-inset-top, 0px)); left:0; right:0; max-width:440px; margin:0 auto; padding:0 12px; display:flex; justify-content:space-between; align-items:center; z-index:1000025; pointer-events:none;">
+      <div style="position:fixed; top:calc(10px + env(safe-area-inset-top, 0px)); left:0; right:0; max-width:440px; margin:0 auto; padding:0 12px; display:flex; justify-content:space-between; align-items:center; z-index:` + chromeZ + `; pointer-events:none;">
         <button type="button" onclick="window.goBackModal(event);" style="pointer-events:auto; background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.2); color:#ffffff; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0;">◀</button>
         
         <div style="pointer-events:auto; display:flex; align-items:center; gap:6px;">
@@ -3931,9 +4212,9 @@ window.deleteTripRecord = async function(recordId, e) {
         editBtn.style.display = isOwn ? 'flex' : 'none';
       }
       if (safetyWrap) {
-        if (!isOwn && curRecord && typeof window.buildUgcSafetyButtonsHtml === 'function') {
-          safetyWrap.innerHTML = window.buildUgcSafetyButtonsHtml(curRecord.id, curRecord.userId || curRecord.user_id, curRecord.author || curRecord.nick || curRecord.nickname, 'compact');
-          safetyWrap.style.display = 'flex';
+        if (!isOwn && curRecord) {
+          safetyWrap.innerHTML = okbmBuildFeedOthersMoreBtnHtml(curRecord.id, curRecord.userId || curRecord.user_id, curRecord.author || curRecord.nick || curRecord.nickname, 'float');
+          safetyWrap.style.display = safetyWrap.innerHTML ? 'flex' : 'none';
         } else {
           safetyWrap.innerHTML = '';
           safetyWrap.style.display = 'none';
@@ -5223,25 +5504,27 @@ window.deleteTripRecord = async function(recordId, e) {
     }
   };
   // 🔗 [공유 링크 딥링크 다이렉트 자동 오픈 엔진]
-  document.addEventListener('DOMContentLoaded', function() {
+  function okbmBootDirectFeedParam() {
     try {
       var params = new URLSearchParams(window.location.search);
       var sharedFeedId = params.get('feed');
-      if (sharedFeedId) {
-        setTimeout(function() {
-          if (typeof window.openHistoryModal === 'function') {
-            window.openHistoryModal();
-            setTimeout(function() {
-              var targetCard = document.querySelector('[data-record-id="' + sharedFeedId + '"]');
-              if (targetCard) {
-                targetCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }
-            }, 300);
-          }
-        }, 500);
-      }
-    } catch (e) { console.warn('[romantic-history.js:DOMContentLoaded feedParam]', e); }
-  });
+      if (!sharedFeedId) return;
+      setTimeout(function() {
+        if (typeof window.okbmOpenDirectFeed === 'function') {
+          window.okbmOpenDirectFeed(sharedFeedId);
+          return;
+        }
+        if (typeof window.openSingleTripDualFeedModal === 'function') {
+          window.openSingleTripDualFeedModal(sharedFeedId);
+        }
+      }, 400);
+    } catch (e) { console.warn('[romantic-history.js:okbmBootDirectFeedParam]', e); }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', okbmBootDirectFeedParam);
+  } else {
+    okbmBootDirectFeedParam();
+  }
 
 async function uploadSinglePhotoSmart(base64Data, fileName) {
     if (!base64Data || typeof base64Data !== 'string') return '';
@@ -5294,6 +5577,9 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
   window.fetchCommunityFeeds = async function(isForce, offset, limit) {
     offset = typeof offset === 'number' ? offset : 0;
     limit = typeof limit === 'number' ? limit : 10;
+    if (typeof window.okbmEnsureUgcSafetyFromServer === 'function') {
+      try { await window.okbmEnsureUgcSafetyFromServer(); } catch (syncErr) { console.warn('[romantic-history.js:fetchCommunityFeeds ugcSafety]', syncErr); }
+    }
     var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
     var targetKey = window.SUPABASE_ANON_KEY || '';
 
@@ -5670,9 +5956,7 @@ window.renderHistoryStage = function(isLoading) {
       addedIds.add(feedId);
     });
 
-    if (typeof window.filterHiddenUgcFeeds === 'function') {
-      combinedList = window.filterHiddenUgcFeeds(combinedList);
-    }
+    combinedList = window.okbmApplyUgcSafetyFilter(combinedList);
 
 
     var currentList = combinedList;
@@ -5914,9 +6198,7 @@ window.renderHistoryStage = function(isLoading) {
             '</button>' +
           '</div>';
         } else {
-          bottomToolsHtml = (!isMyRecord && typeof window.buildUgcSafetyButtonsHtml === 'function')
-            ? window.buildUgcSafetyButtonsHtml(cardPureId, recordUserId, authorName, 'inline')
-            : '';
+          bottomToolsHtml = okbmBuildFeedOthersMoreBtnHtml(cardPureId, recordUserId, authorName, 'inline');
         }
 
         // 📷 [인스타그램 규격 순수 매트블랙 사진 트랙]
@@ -6082,9 +6364,7 @@ window.renderHistoryStage = function(isLoading) {
       var reelContainer = document.getElementById('reelsVerticalContainer');
       if (!reelContainer || !Array.isArray(newItems) || newItems.length === 0) return;
 
-      if (typeof window.filterHiddenUgcFeeds === 'function') {
-        newItems = window.filterHiddenUgcFeeds(newItems);
-      }
+      newItems = window.okbmApplyUgcSafetyFilter(newItems);
       if (!newItems.length) return;
 
       var existingCards = reelContainer.querySelectorAll('.reel-page-snap');
@@ -6173,7 +6453,7 @@ window.renderHistoryStage = function(isLoading) {
                 '</button>' +
               '</div>' +
               '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
-                (!isMyRecord && typeof window.buildUgcSafetyButtonsHtml === 'function' ? window.buildUgcSafetyButtonsHtml(cleanCardId, recordUserId, authorName, 'inline') : '') +
+                (isMyRecord ? '' : okbmBuildFeedOthersMoreBtnHtml(cleanCardId, recordUserId, authorName, 'inline')) +
               '</div>' +
             '</div>' +
             '<div id="feedPhotoMemoText_' + cardId + '" class="reel-memo-fixed-box">' +
