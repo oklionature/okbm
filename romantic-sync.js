@@ -354,6 +354,9 @@ window.closeOpenUgcFeedModals = function(options) {
     var el = document.getElementById(id);
     if (el) el.remove();
   });
+  if (typeof window.closeDirectMessageModals === 'function') {
+    window.closeDirectMessageModals({ blockedUserId: options.blockedUserId });
+  }
   var coll = document.getElementById('userFeedCollectionModal');
   if (coll && options.blockedUserId) {
     var collUid = String(coll.dataset.userId || '').trim();
@@ -1808,6 +1811,25 @@ if (typeof window !== 'undefined') {
       if (typeof window.okbmRefreshAdminFlagFromServer === 'function') {
         window.okbmRefreshAdminFlagFromServer().catch(function() {});
       }
+      if (typeof window.refreshProposalInboxForUser === 'function') {
+        window.refreshProposalInboxForUser().catch(function() {});
+      }
+      if (typeof window.okbmBindNoteLiveRefresh === 'function') {
+        window.okbmBindNoteLiveRefresh();
+      }
+      if (typeof window.okbmNoteRealtimeStartInbox === 'function') {
+        window.okbmNoteRealtimeStartInbox();
+      }
+      if (typeof window.pollUserNotifications === 'function') {
+        window.pollUserNotifications(false).catch(function() {});
+        if (!window.__okbmNotifPollTimer) {
+          window.__okbmNotifPollTimer = setInterval(function() {
+            if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
+              window.pollUserNotifications(true).catch(function() {});
+            }
+          }, 60000);
+        }
+      }
     }
   }, 100);
 }
@@ -1901,7 +1923,7 @@ window.fetchMasterGearsFromSupabase = async function(isForce) {
     return window.loadGearDbFromGoogleSheet(isForce);
   }
 
-  var CURRENT_GEAR_VERSION = '20260917_CLEAN_1621';
+  var CURRENT_GEAR_VERSION = '20260920_NH_TENTS_1743';
   var storedVer = localStorage.getItem('okbm_gear_version');
   if (storedVer !== CURRENT_GEAR_VERSION) {
     localStorage.removeItem('okbm_master_gears');
@@ -2316,7 +2338,11 @@ window.renderUserSnsBadgesHtml = function(rawInsta, rawYt, rawBlog, isOwner, raw
 };
 
 window.renderUserProfileHeaderSection = function(config) {
+  var uid = String((config && config.userId) || '').trim();
+  var me = '';
+  try { me = (typeof okbmGetCurrentUserId === 'function') ? String(okbmGetCurrentUserId() || '').trim() : ''; } catch (e) { me = ''; }
   var isOwner = Boolean(config && config.isOwner);
+  if (uid && me && uid !== me) isOwner = false;
   var nick = String((config && config.nickname) || (isOwner ? '야영자' : '루터')).trim();
   var bio = String((config && config.bio) || '').trim();
   var photoUrl = (config && config.photoUrl && String(config.photoUrl).startsWith('http')) ? String(config.photoUrl).trim() : '';
@@ -2338,9 +2364,10 @@ window.renderUserProfileHeaderSection = function(config) {
   var bioText = bio || (isOwner ? '소개글을 작성해보세요.' : '소개글이 없습니다.');
   var bioColor = bio ? '#e2e8f0' : '#64748b';
 
+  var safePhotoAttr = photoUrl ? _escapeReportPropHtml(photoUrl) : '';
   var avatarClickAttr = isOwner
     ? 'onclick="triggerHaptic(12); window.openAccountSettingsModal();" title="설정"'
-    : (photoUrl ? 'onclick="triggerHaptic(10); if(window.previewMasterUserCoverPhotoLarge){ window.previewMasterUserCoverPhotoLarge(); }"' : '');
+    : (photoUrl ? 'data-photo-url="' + safePhotoAttr + '" onclick="triggerHaptic(10); window.previewUserPhotoLarge(this.getAttribute(\'data-photo-url\'));" title="사진 보기"' : '');
   var avatarCursor = (isOwner || photoUrl) ? 'cursor:pointer; ' : '';
 
   var avatarImgHtml = photoUrl
@@ -2349,15 +2376,23 @@ window.renderUserProfileHeaderSection = function(config) {
 
   var actionGridHtml = '';
   if (isOwner) {
-    actionGridHtml = '<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">' +
-      '<button type="button" onclick="triggerHaptic(8); window.openMyPastTripsFromReport();" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
+    actionGridHtml = '<div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr; gap:6px; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">' +
+      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openMyPastTripsFromReport(event);" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.68rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
         '<span>모아보기</span>' +
       '</button>' +
-      '<button type="button" onclick="triggerHaptic(8); window.openRoutersInterestFromReport();" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
+      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openRoutersInterestFromReport(event);" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.68rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
         '<span>관심루터</span>' +
       '</button>' +
-      '<button type="button" onclick="triggerHaptic(8); window.openFeedsInterestFromReport();" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
+      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openFeedsInterestFromReport(event);" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.68rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
         '<span>관심피드</span>' +
+      '</button>' +
+      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); triggerHaptic(8); window.openUserNotificationInbox(\'note\', event);" style="position:relative; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.68rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
+        '<span>쪽지</span>' +
+        '<span id="reportNoteCountBadge" style="display:none; position:absolute; top:3px; right:8px; min-width:14px; height:14px; padding:0 4px; border-radius:8px; background:#f43f5e; color:#fff; font-size:0.50rem; font-weight:900; align-items:center; justify-content:center;"></span>' +
+      '</button>' +
+      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); triggerHaptic(8); window.openUserNotificationInbox(\'notif\', event);" style="position:relative; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.68rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
+        '<span>알림</span>' +
+        '<span id="reportNotifCountBadge" style="display:none; position:absolute; top:3px; right:8px; min-width:14px; height:14px; padding:0 4px; border-radius:8px; background:#f43f5e; color:#fff; font-size:0.50rem; font-weight:900; align-items:center; justify-content:center;"></span>' +
       '</button>' +
     '</div>';
   }
@@ -2985,6 +3020,38 @@ window.handleReportSecClick = function(secKey) {
   window.__reportRenderCache[secKey] = true;
 };
 
+window.okbmProposalStatusKind = function(p) {
+  var s = String((p && p.status) || '').trim();
+  if (s.indexOf('반려') !== -1 || s.indexOf('거절') !== -1) return 'rejected';
+  if (s.indexOf('반영완료') !== -1 || s.indexOf('채택') !== -1 || s.indexOf('승인') !== -1) return 'accepted';
+  if (s.indexOf('반영실패') !== -1) return 'pending';
+  return 'pending';
+};
+
+window.okbmResolveProposalSpotId = function(p, spotsList) {
+  if (!p) return '';
+  var id = String(p.approved_spot_id || p.approvedSpotId || '').trim();
+  if (id) return id;
+  if (p.is_correction || p.isCorrection || p.type === 'correction') {
+    var orig = String(p.orig_spot_id || p.origSpotId || '').trim();
+    if (orig) return orig;
+  }
+  var list = spotsList || window.spots || [];
+  if (!Array.isArray(list) || !list.length) return '';
+  var name = String(p.spot_main || p.name || '').trim();
+  var plat = parseFloat(p.lat || p.campsite_lat);
+  var plng = parseFloat(p.lng || p.campsite_lng);
+  var hit = list.find(function(s) {
+    if (!s) return false;
+    if (name && String(s.spot_main || s.name || '').trim() === name) return true;
+    if (isFinite(plat) && isFinite(plng) && plat && plng) {
+      return Math.abs(parseFloat(s.lat) - plat) < 0.003 && Math.abs(parseFloat(s.lng) - plng) < 0.003;
+    }
+    return false;
+  });
+  return hit ? String(hit.id || '').trim() : '';
+};
+
 // 0. 내가 제보한 박지 목록 렌더러 및 등록 전 수정/삭제 모듈
 window._renderMyPropsModule = function(el) {
   if (!el) return;
@@ -3005,33 +3072,49 @@ window._renderMyPropsModule = function(el) {
 
   var listHtml = validProps.map(function(p, idx) {
     var isCorr = Boolean(p.is_correction || p.isCorrection || p.type === 'correction');
+    var kind = window.okbmProposalStatusKind(p);
     var rawMainName = p.spot_main || p.name || '무명 박지';
     var mainName = _escapeReportPropHtml(rawMainName);
     var subName = p.spot_sub ? ('(' + _escapeReportPropHtml(p.spot_sub) + ')') : '';
-    var dateStr = _escapeReportPropHtml(String(p.date || '').slice(0, 10));
+    var dateStr = _escapeReportPropHtml(String(p.date || p.created_at || '').slice(0, 10));
     var rawEntry = p.trailhead_addr || p.entry || '들머리 미기재';
     var entryStr = _escapeReportPropHtml(rawEntry);
     var safeId = _escapeReportPropHtml(String(p.id || ''));
+    var statusHtml = kind === 'accepted'
+      ? '<span style="font-size:0.50rem; background:rgba(16,185,129,0.18); color:#34d399; border:1px solid rgba(52,211,153,0.35); border-radius:3px; padding:1px 4px; font-weight:800;">채택</span>'
+      : (kind === 'rejected'
+        ? '<span style="font-size:0.50rem; background:rgba(244,63,94,0.15); color:#fb7185; border:1px solid rgba(244,63,94,0.3); border-radius:3px; padding:1px 4px; font-weight:800;">반려</span>'
+        : '<span style="font-size:0.50rem; background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.3); border-radius:3px; padding:1px 4px; font-weight:800;">검수중</span>');
+    var actionsHtml = '';
+    if (kind === 'accepted') {
+      actionsHtml = '<button type="button" data-prop-id="' + safeId + '" onclick="window.triggerCorrectionFromMyProposal(this.getAttribute(\'data-prop-id\'))" style="background:rgba(251,191,36,0.12); border:1px solid #fbbf24; color:#fde047; font-size:0.62rem; font-weight:800; border-radius:5px; padding:3px 8px; cursor:pointer;">수정문의</button>';
+    } else if (kind === 'rejected') {
+      actionsHtml = '<button type="button" data-prop-id="' + safeId + '" onclick="window.triggerDeleteProposalFromReport(this.getAttribute(\'data-prop-id\'))" style="background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.3); color:#fda4af; font-size:0.62rem; font-weight:800; border-radius:5px; padding:3px 8px; cursor:pointer;">삭제</button>';
+    } else {
+      actionsHtml =
+        '<button type="button" data-prop-id="' + safeId + '" onclick="window.triggerEditProposalFromReport(this.getAttribute(\'data-prop-id\'))" style="background:rgba(56,189,248,0.12); border:1px solid #38bdf8; color:#38bdf8; font-size:0.62rem; font-weight:800; border-radius:5px; padding:3px 8px; cursor:pointer;">수정</button>' +
+        '<button type="button" data-prop-id="' + safeId + '" onclick="window.triggerDeleteProposalFromReport(this.getAttribute(\'data-prop-id\'))" style="background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.3); color:#fda4af; font-size:0.62rem; font-weight:800; border-radius:5px; padding:3px 8px; cursor:pointer;">삭제</button>';
+    }
 
     return '<div style="display:flex; justify-content:space-between; align-items:center; background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:7px 9px;">' +
       '<div style="display:flex; flex-direction:column; min-width:0; flex:1; padding-right:8px;">' +
-        '<div style="display:flex; align-items:center; gap:4px;">' +
+        '<div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">' +
           '<span style="font-size:0.58rem; color:#38bdf8; font-weight:900;">' + (idx + 1) + '.</span>' +
           '<span style="font-size:0.72rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + mainName + ' ' + subName + '</span>' +
           (isCorr
             ? '<span style="font-size:0.50rem; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:3px; padding:1px 4px; font-weight:800;">수정건의</span>'
             : '<span style="font-size:0.50rem; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); border-radius:3px; padding:1px 4px; font-weight:800;">신규제보</span>') +
+          statusHtml +
         '</div>' +
         '<span style="font-size:0.54rem; color:#64748b; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + entryStr + ' · ' + dateStr + '</span>' +
       '</div>' +
       '<div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">' +
-        '<button type="button" data-prop-id="' + safeId + '" onclick="window.triggerEditProposalFromReport(this.getAttribute(\'data-prop-id\'))" style="background:rgba(56,189,248,0.12); border:1px solid #38bdf8; color:#38bdf8; font-size:0.62rem; font-weight:800; border-radius:5px; padding:3px 8px; cursor:pointer;">수정</button>' +
-        '<button type="button" data-prop-id="' + safeId + '" onclick="window.triggerDeleteProposalFromReport(this.getAttribute(\'data-prop-id\'))" style="background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.3); color:#fda4af; font-size:0.62rem; font-weight:800; border-radius:5px; padding:3px 8px; cursor:pointer;">삭제</button>' +
+        actionsHtml +
       '</div>' +
     '</div>';
   }).join('');
 
-  el.innerHTML = '<div style="font-size:0.56rem; color:#94a3b8; margin:4px 0 4px 2px;">관리자 승인 전까지 [수정] 또는 [삭제]할 수 있습니다.</div>' +
+  el.innerHTML = '<div style="font-size:0.56rem; color:#94a3b8; margin:4px 0 4px 2px;">검수 중에는 수정·삭제가 가능하고, 채택되면 수정문의만 할 수 있습니다.</div>' +
     '<div style="display:flex; flex-direction:column; gap:4px;">' +
       listHtml +
     '</div>';
@@ -3039,6 +3122,14 @@ window._renderMyPropsModule = function(el) {
 
 window.triggerEditProposalFromReport = function(propId) {
   triggerHaptic(12);
+  var myProps = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_my_proposals', [])
+    : (typeof window.safeGetStorage === 'function' ? window.safeGetStorage('okbm_my_proposals', []) : safeGetJSON('okbm_my_proposals', []));
+  var target = (Array.isArray(myProps) ? myProps : []).find(function(p) { return p && String(p.id) === String(propId); });
+  if (target && window.okbmProposalStatusKind(target) === 'accepted') {
+    if (typeof showToast === 'function') showToast('채택된 제보는 수정할 수 없습니다. 수정문의로 신청해주세요.', 'warn');
+    return;
+  }
   closeUserProfileModal();
   var isMapPage = (typeof window.location !== 'undefined' && window.location.pathname.includes('map.html'));
   if (isMapPage && typeof window.openEditMyProposal === 'function') {
@@ -3048,17 +3139,44 @@ window.triggerEditProposalFromReport = function(propId) {
   }
 };
 
+window.triggerCorrectionFromMyProposal = function(propId) {
+  triggerHaptic(12);
+  var myProps = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_my_proposals', [])
+    : (typeof window.safeGetStorage === 'function' ? window.safeGetStorage('okbm_my_proposals', []) : safeGetJSON('okbm_my_proposals', []));
+  var target = (Array.isArray(myProps) ? myProps : []).find(function(p) { return p && String(p.id) === String(propId); });
+  if (!target) {
+    if (typeof showToast === 'function') showToast('해당 제보 내역을 찾을 수 없습니다.', 'warn');
+    return;
+  }
+  try { sessionStorage.setItem('okbm_pending_correction_proposal', JSON.stringify(target)); } catch (e) {}
+  if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
+  var isMapPage = (typeof window.location !== 'undefined' && window.location.pathname.includes('map.html'));
+  if (isMapPage && typeof window.openSpotCorrectionFromProposal === 'function') {
+    window.openSpotCorrectionFromProposal(target);
+    return;
+  }
+  var spotId = window.okbmResolveProposalSpotId(target);
+  var url = 'map.html?correction_proposal=' + encodeURIComponent(String(target.id || ''));
+  if (spotId) url += '&correction_spot=' + encodeURIComponent(spotId);
+  window.location.assign(url);
+};
+
 window.triggerDeleteProposalFromReport = function(propId) {
   if (!propId) return;
   triggerHaptic(12);
-  if (!confirm('이 제보 내역을 삭제하시겠습니까?')) return;
-
   var myProps = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
     ? window.RomanticVault.read('okbm_my_proposals', [])
     : (typeof window.safeGetStorage === 'function' ? window.safeGetStorage('okbm_my_proposals', []) : safeGetJSON('okbm_my_proposals', []));
   if (!Array.isArray(myProps)) myProps = [];
 
   var targetItem = myProps.find(function(p) { return p && String(p.id) === String(propId); });
+  if (targetItem && window.okbmProposalStatusKind(targetItem) === 'accepted') {
+    if (typeof showToast === 'function') showToast('채택된 제보는 삭제할 수 없습니다. 수정문의로 신청해주세요.', 'warn');
+    return;
+  }
+  if (!confirm('이 제보 내역을 삭제하시겠습니까?')) return;
+
   var isCorr = targetItem ? Boolean(targetItem.is_correction || targetItem.isCorrection || targetItem.type === 'correction') : false;
 
   var filtered = myProps.filter(function(p) { return p && String(p.id) !== String(propId); });
@@ -4228,6 +4346,7 @@ window.ensureMasterBottomDock = function(activeTabId) {
   }
 
   dock.style.display = 'flex';
+  if (typeof window.okbmPaintNotifBadge === 'function') window.okbmPaintNotifBadge();
 };
 
 // 🧭 [5대 탭 전역 중앙 네비게이션 디스패처 - 선제적 탭 색상 고정 & DOM 파괴 없는 초고속 라우팅]
@@ -4289,7 +4408,9 @@ window.navigateToDockTab = function(tabId) {
     'romanticDatePickerModal',
     'presetActionModal',
     'planYearPickerOverlay',
-    'datePickGuideHud'
+    'datePickGuideHud',
+    'userNotificationInboxModal',
+    'directMessageThreadModal'
   ].forEach(function(id) {
     var el = document.getElementById(id);
     if (el) el.remove();
@@ -4337,6 +4458,14 @@ window.navigateToDockTab = function(tabId) {
       else window.location.assign(mapUrl);
       return;
     }
+    if (typeof setMobileSidebarCollapsed === 'function') {
+      setMobileSidebarCollapsed(true);
+    } else {
+      var mapSidebar = document.getElementById('sidebar');
+      if (mapSidebar) mapSidebar.classList.add('collapsed');
+    }
+    if (typeof closeMobileBottomSheet === 'function') closeMobileBottomSheet();
+    if (typeof closePcSlidingDrawer === 'function') closePcSlidingDrawer();
   } else if (tabId === 'plan') {
     if (typeof closeHistoryModal === 'function') closeHistoryModal();
     if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
@@ -4353,18 +4482,24 @@ window.navigateToDockTab = function(tabId) {
   } else if (tabId === 'history') {
     if (typeof closePlanModal === 'function') closePlanModal();
     if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
-    if (typeof openHistoryModal === 'function') {
-      openHistoryModal();
-    } else if (isMap) {
+    if (isMap) {
       if (typeof window.smoothNavigate === 'function') window.smoothNavigate('index.html?open=history');
       else window.location.assign('index.html?open=history');
       return;
+    }
+    if (typeof openHistoryModal === 'function') {
+      openHistoryModal();
     }
   } else if (tabId === 'report') {
     if (typeof closePlanModal === 'function') closePlanModal();
     if (typeof closeHistoryModal === 'function') closeHistoryModal();
     if (!isUserLoggedIn()) {
       openLoginModal();
+      return;
+    }
+    if (isMap) {
+      if (typeof window.smoothNavigate === 'function') window.smoothNavigate('index.html?open=report');
+      else window.location.assign('index.html?open=report');
       return;
     }
     if (typeof openUserProfileModal === 'function') {
@@ -4462,46 +4597,71 @@ window.editReportUserBio = function() {
   };
 };
 
-window.openMyPastTripsFromReport = function() {
+window.openMyPastTripsFromReport = function(ev) {
+  if (ev) {
+    if (typeof ev.preventDefault === 'function') ev.preventDefault();
+    if (typeof ev.stopPropagation === 'function') ev.stopPropagation();
+  }
   triggerHaptic(10);
   if (typeof window.recordModalHistoryStep === 'function') {
     window.recordModalHistoryStep('userProfileModalOverlay', function() {
       if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal();
     });
   }
-  if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
+  var report = document.getElementById('userProfileModalOverlay');
+  if (report) report.style.setProperty('display', 'none', 'important');
   if (typeof window.openPastTripsListModal === 'function') {
     window.openPastTripsListModal(true);
+    if (typeof window.okbmLiftReportChildModal === 'function') {
+      window.okbmLiftReportChildModal(document.getElementById('pastTripsListModal'));
+    }
   } else {
     window.navigateToDockTab('history');
   }
 };
 
-window.openRoutersInterestFromReport = function() {
+window.openRoutersInterestFromReport = function(ev) {
+  if (ev) {
+    if (typeof ev.preventDefault === 'function') ev.preventDefault();
+    if (typeof ev.stopPropagation === 'function') ev.stopPropagation();
+  }
   triggerHaptic(10);
   if (typeof window.recordModalHistoryStep === 'function') {
     window.recordModalHistoryStep('userProfileModalOverlay', function() {
       if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal();
     });
   }
-  if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
+  var report = document.getElementById('userProfileModalOverlay');
+  if (report) report.style.setProperty('display', 'none', 'important');
   if (typeof window.openFollowedRoutersModal === 'function') {
     window.openFollowedRoutersModal(true);
+    if (typeof window.okbmLiftReportChildModal === 'function') {
+      window.okbmLiftReportChildModal(document.getElementById('followedRoutersModal'));
+    }
   } else {
     window.navigateToDockTab('history');
   }
 };
 
-window.openFeedsInterestFromReport = function() {
+window.openFeedsInterestFromReport = function(ev) {
+  if (ev) {
+    if (typeof ev.preventDefault === 'function') ev.preventDefault();
+    if (typeof ev.stopPropagation === 'function') ev.stopPropagation();
+  }
   triggerHaptic(10);
   if (typeof window.recordModalHistoryStep === 'function') {
     window.recordModalHistoryStep('userProfileModalOverlay', function() {
       if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal();
     });
   }
-  if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
-  if (typeof window.openSavedFeedsModal === 'function') {
-    window.openSavedFeedsModal(true);
+  var report = document.getElementById('userProfileModalOverlay');
+  if (report) report.style.setProperty('display', 'none', 'important');
+  var openSaved = window.openSavedFeedsListModal || window.openSavedFeedsModal;
+  if (typeof openSaved === 'function' && openSaved !== window.openFeedsInterestFromReport) {
+    openSaved(true);
+    if (typeof window.okbmLiftReportChildModal === 'function') {
+      window.okbmLiftReportChildModal(document.getElementById('savedFeedsListModal') || document.getElementById('savedFeedsEmptyModal'));
+    }
   } else {
     window.navigateToDockTab('history');
   }
@@ -4509,7 +4669,6 @@ window.openFeedsInterestFromReport = function() {
 
 window.openMyFeedsModal = window.openMyPastTripsFromReport;
 window.openFollowingUsersModal = window.openRoutersInterestFromReport;
-window.openSavedFeedsModal = window.openFeedsInterestFromReport;
 
 function openUserProfileModal() {
   try {
@@ -4572,6 +4731,18 @@ function openUserProfileModal() {
 
     if (typeof window.refreshMyReportFullStats === 'function') {
       window.refreshMyReportFullStats();
+    }
+    if (typeof window.refreshProposalInboxForUser === 'function') {
+      window.refreshProposalInboxForUser().then(function() {
+        var body = document.getElementById('accBody_myprops');
+        if (body && body.style.display === 'flex') window._renderMyPropsModule(body);
+      }).catch(function() {});
+    }
+    if (typeof window.pollUserNotifications === 'function') {
+      window.pollUserNotifications(true).catch(function() {});
+    }
+    if (typeof window.okbmRefreshNoteBadge === 'function') {
+      window.okbmRefreshNoteBadge().catch(function() {});
     }
 
     var modal = document.getElementById('userProfileModalOverlay');
@@ -4653,14 +4824,10 @@ window.applyMasterCoverPhotoToAllUI = function(photoUrl) {
   window.dispatchEvent(new CustomEvent('okbm_profile_photo_changed', { detail: { photoUrl: cleanUrl } }));
 };
 
-// 🔍 [메인 대표 사진 대형 확대 뷰어 라이트박스]
-window.previewMasterUserCoverPhotoLarge = function() {
-  triggerHaptic(10);
-  var profile = safeGetJSON('user_profile', null);
-  var photoUrl = localStorage.getItem('okbm_hero_cover_url') || (profile && (profile.heroCoverUrl || profile.photoUrl)) || '';
-
-  if (!photoUrl || !String(photoUrl).startsWith('http')) {
-    showToast('등록된 대표 사진이 없습니다. [사진 변경]을 눌러보세요.', 'info', 2200);
+window.previewUserPhotoLarge = function(photoUrl) {
+  var url = String(photoUrl || '').trim();
+  if (!url || url.indexOf('http') !== 0) {
+    if (typeof showToast === 'function') showToast('등록된 대표 사진이 없습니다.', 'info', 2200);
     return;
   }
 
@@ -4673,10 +4840,24 @@ window.previewMasterUserCoverPhotoLarge = function() {
   viewer.onclick = function() { viewer.remove(); triggerHaptic(8); };
 
   viewer.innerHTML = '<div style="position:relative; width:250px; height:250px; border-radius:50%; border:2px solid rgba(186,230,253,0.6); box-shadow:0 0 35px rgba(56,189,248,0.35); overflow:hidden; background:#07090e; flex-shrink:0;">' +
-      '<img src="' + photoUrl + '" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />' +
+      '<img src="' + _escapeReportPropHtml(url) + '" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />' +
     '</div>';
 
   document.body.appendChild(viewer);
+};
+
+// 🔍 [메인 대표 사진 대형 확대 뷰어 라이트박스]
+window.previewMasterUserCoverPhotoLarge = function() {
+  triggerHaptic(10);
+  var profile = safeGetJSON('user_profile', null);
+  var photoUrl = localStorage.getItem('okbm_hero_cover_url') || (profile && (profile.heroCoverUrl || profile.photoUrl)) || '';
+
+  if (!photoUrl || !String(photoUrl).startsWith('http')) {
+    showToast('등록된 대표 사진이 없습니다. [사진 변경]을 눌러보세요.', 'info', 2200);
+    return;
+  }
+
+  window.previewUserPhotoLarge(photoUrl);
 };
 
 // [메인 대표 사진 초기화]
@@ -5143,6 +5324,12 @@ window.saveNicknameFromSettingsModal = async function() {
 // 로그아웃 및 세션 완전 롤백
 function logoutUser() {
   triggerHaptic(15);
+  if (typeof window.okbmNoteRealtimeStop === 'function') {
+    try { window.okbmNoteRealtimeStop('all'); } catch (e) {}
+  }
+  if (typeof window.closeDirectMessageModals === 'function') {
+    try { window.closeDirectMessageModals({}); } catch (e) {}
+  }
 
   if (typeof Kakao !== 'undefined' && Kakao.Auth && typeof Kakao.Auth.logout === 'function') {
     try {
@@ -6404,6 +6591,9 @@ window.saveProposalToSupabase = async function(proposalData, isCorrection) {
   var resolvedUserId = String(proposalData.userId || proposalData.user_id || (prof && prof.id) || localStorage.getItem('okbm_user_id') || localStorage.getItem('user_auth_token') || '');
 
   var tableName = isCorrection ? 'spot_corrections' : 'proposals';
+  var authorNick = String(proposalData.author || proposalData.nickname || (prof && prof.nickname) || localStorage.getItem('okbm_user_nick') || '').trim();
+  if (authorNick === '김사자') authorNick = '오라네';
+
   var payload = {
     id: String(proposalData.id || ('prop_' + Date.now())),
     spot_main: String(proposalData.spot_main || proposalData.name || ''),
@@ -6423,7 +6613,8 @@ window.saveProposalToSupabase = async function(proposalData, isCorrection) {
     difficulty: String(proposalData.difficulty || ''),
     distance_km: String(proposalData.distance_km || ''),
     status: String(proposalData.status || 'pending'),
-    user_id: resolvedUserId
+    user_id: resolvedUserId,
+    author: authorNick
   };
   if (isCorrection) {
     payload.orig_spot_id = String(proposalData.orig_spot_id || proposalData.origSpotId || '');
@@ -6476,22 +6667,63 @@ window.fetchAdminSpotInbox = async function() {
       clone.courseType = item.coursetype || item.courseType || '';
       clone.origSpotId = item.orig_spot_id || item.origSpotId || '';
       clone.correctionReason = item.correction_reason || item.correctionReason || '';
+      clone.author = item.author || item.nickname || '';
+      clone.nickname = clone.author;
+      clone.userId = item.user_id || item.userId || '';
+      clone.user_id = clone.userId;
+      var lat = parseFloat((item.lat != null && item.lat !== '') ? item.lat : item.campsite_lat);
+      var lng = parseFloat((item.lng != null && item.lng !== '') ? item.lng : item.campsite_lng);
+      if (isFinite(lat) && lat) clone.lat = lat;
+      if (isFinite(lng) && lng) clone.lng = lng;
       return clone;
     };
-    return props.map(function(p) { return normalize(p, false); })
+    var items = props.map(function(p) { return normalize(p, false); })
       .concat(corrs.map(function(c) { return normalize(c, true); }))
       .filter(Boolean);
+
+    var missingIds = [];
+    items.forEach(function(it) {
+      var uid = String((it && it.user_id) || '').trim();
+      if (uid && !String((it && it.author) || '').trim() && missingIds.indexOf(uid) === -1) missingIds.push(uid);
+    });
+    if (missingIds.length) {
+      try {
+        var inList = missingIds.map(function(id) { return '"' + String(id).replace(/"/g, '') + '"'; }).join(',');
+        var uRes = await fetch(targetUrl + '/rest/v1/users?id=in.(' + inList + ')&select=id,nickname', { headers: headers });
+        if (uRes.ok) {
+          var uRows = await uRes.json();
+          var nickMap = {};
+          (Array.isArray(uRows) ? uRows : []).forEach(function(u) {
+            if (u && u.id) nickMap[String(u.id)] = String(u.nickname || '').trim();
+          });
+          items.forEach(function(it) {
+            if (!it || String(it.author || '').trim()) return;
+            var looked = nickMap[String(it.user_id || '')] || '';
+            if (looked === '김사자') looked = '오라네';
+            if (looked) {
+              it.author = looked;
+              it.nickname = looked;
+            }
+          });
+        }
+      } catch (hydrateErr) {
+        console.warn('[romantic-sync.js:fetchAdminSpotInbox hydrate]', hydrateErr);
+      }
+    }
+    return items;
   } catch (e) {
     console.warn('[romantic-sync.js:fetchAdminSpotInbox]', e);
     return [];
   }
 };
 
-window.updateAdminSpotInboxStatus = async function(propId, isCorrection, status) {
+window.updateAdminSpotInboxStatus = async function(propId, isCorrection, status, extra) {
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
   if (!targetUrl || !targetKey || !propId) return false;
   var tableName = isCorrection ? 'spot_corrections' : 'proposals';
+  var payload = { status: String(status || 'pending') };
+  if (extra && extra.approved_spot_id) payload.approved_spot_id = String(extra.approved_spot_id);
   try {
     var res = await fetch(targetUrl + '/rest/v1/' + tableName + '?id=eq.' + encodeURIComponent(String(propId)), {
       method: 'PATCH',
@@ -6501,7 +6733,7 @@ window.updateAdminSpotInboxStatus = async function(propId, isCorrection, status)
         'Content-Type': 'application/json',
         'Prefer': 'return=minimal'
       },
-      body: JSON.stringify({ status: String(status || 'pending') })
+      body: JSON.stringify(payload)
     });
     return res.ok;
   } catch (e) {
@@ -6562,6 +6794,9 @@ window.fetchMyProposalsFromSupabase = async function(userId) {
       clone.blogUrl = item.blogurl || item.blogUrl || '';
       clone.authorSnsUrl = item.authorsnsurl || item.authorSnsUrl || '';
       clone.courseType = item.coursetype || item.courseType || '';
+      clone.approved_spot_id = item.approved_spot_id || item.approvedSpotId || '';
+      clone.origSpotId = item.orig_spot_id || item.origSpotId || '';
+      clone.status = item.status || '';
       return clone;
     };
 
@@ -6571,6 +6806,1333 @@ window.fetchMyProposalsFromSupabase = async function(userId) {
     ].filter(Boolean);
   } catch (e) { console.warn('[romantic-sync.js:fetchMyProposalsFromSupabase]', e); }
   return [];
+};
+
+window.notifyProposalDecision = async function(item, status, approvedSpotId) {
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  if (!targetUrl || !targetKey || !item) return false;
+  var userId = String(item.user_id || item.userId || '').trim();
+  if (!userId) return false;
+  var kindStatus = String(status || '');
+  var accepted = kindStatus.indexOf('반영완료') !== -1 || kindStatus.indexOf('채택') !== -1 || kindStatus.indexOf('승인') !== -1;
+  var rejected = kindStatus.indexOf('반려') !== -1;
+  if (!accepted && !rejected) return false;
+  var isCorr = Boolean(item.type === 'correction' || item.isCorrection || item.is_correction);
+  var name = String(item.spot_main || item.name || '제보한 박지').trim();
+  var kind = (isCorr ? 'correction_' : 'proposal_') + (accepted ? 'accepted' : 'rejected');
+  var relatedId = String(item.id || '').trim();
+  var notifId = ('pn_' + kind + '_' + relatedId).slice(0, 180);
+  var title = accepted
+    ? (isCorr ? '수정 건의가 채택되었습니다' : '박지 제보가 채택되었습니다')
+    : (isCorr ? '수정 건의가 반려되었습니다' : '박지 제보가 반려되었습니다');
+  var body = accepted
+    ? ('[' + name + ']이(가) 지도에 반영되었습니다. 이후 내용 변경은 수정문의로만 신청할 수 있습니다.')
+    : ('[' + name + '] 제보가 반려되었습니다. 마이리포트에서 확인할 수 있습니다.');
+  try {
+    var res = await fetch(targetUrl + '/rest/v1/user_notifications', {
+      method: 'POST',
+      headers: {
+        'apikey': targetKey,
+        'Authorization': 'Bearer ' + targetKey,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({
+        id: notifId,
+        user_id: userId,
+        kind: kind,
+        title: title,
+        body: body,
+        related_id: relatedId,
+        related_spot_id: String(approvedSpotId || item.approved_spot_id || item.orig_spot_id || '').trim(),
+        related_spot_name: name,
+        is_read: false
+      })
+    });
+    return res.ok;
+  } catch (e) {
+    console.warn('[romantic-sync.js:notifyProposalDecision]', e);
+    return false;
+  }
+};
+
+window.mergeMyProposalsFromServer = function(serverList) {
+  var local = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_my_proposals', [])
+    : (typeof window.safeGetStorage === 'function' ? window.safeGetStorage('okbm_my_proposals', []) : safeGetJSON('okbm_my_proposals', []));
+  if (!Array.isArray(local)) local = [];
+  var byId = {};
+  local.forEach(function(p) {
+    if (p && p.id) byId[String(p.id)] = p;
+  });
+  (Array.isArray(serverList) ? serverList : []).forEach(function(s) {
+    if (!s || !s.id) return;
+    var id = String(s.id);
+    var prev = byId[id] || {};
+    byId[id] = Object.assign({}, prev, s, {
+      status: s.status || prev.status,
+      approved_spot_id: s.approved_spot_id || prev.approved_spot_id || '',
+      user_id: s.user_id || prev.user_id || '',
+      userId: s.user_id || s.userId || prev.userId || ''
+    });
+  });
+  var merged = Object.keys(byId).map(function(k) { return byId[k]; });
+  merged.sort(function(a, b) {
+    var at = String((a && (a.created_at || a.date)) || '');
+    var bt = String((b && (b.created_at || b.date)) || '');
+    return bt.localeCompare(at);
+  });
+  if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+    window.RomanticVault.write('okbm_my_proposals', merged, false);
+  }
+  try { localStorage.setItem('okbm_my_proposals', JSON.stringify(merged)); } catch (e) {}
+  var hStat = document.getElementById('reportHeaderMyPropsStat');
+  if (hStat) hStat.innerText = merged.length + '곳';
+  return merged;
+};
+
+window.refreshProposalInboxForUser = async function() {
+  var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
+  var userId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+  if (!userId || typeof window.fetchMyProposalsFromSupabase !== 'function') return [];
+  var server = await window.fetchMyProposalsFromSupabase(userId);
+  return window.mergeMyProposalsFromServer(server);
+};
+
+function okbmPaintCountBadgeEl(el, count) {
+  if (!el) return;
+  var n = Number(count || 0);
+  if (n <= 0) {
+    el.style.display = 'none';
+    el.textContent = '';
+    return;
+  }
+  el.style.display = 'flex';
+  el.textContent = n > 9 ? '9+' : String(n);
+}
+
+window.okbmPaintNotifBadge = function(count) {
+  var notifOnly = Number(window.__okbmUnreadNotifOnly || 0);
+  var noteOnly = Number(window.__okbmUnreadNoteCount || 0);
+  var unread = (typeof count === 'number') ? count : (notifOnly + noteOnly);
+  window.__okbmUnreadNotifCount = unread;
+  var dock = document.getElementById('romanticMasterBottomDock');
+  if (dock) {
+    var btn = dock.querySelector('button[title="마이리포트"]');
+    if (btn) {
+      var badge = btn.querySelector('.okbm-notif-badge');
+      if (unread <= 0) {
+        if (badge) badge.remove();
+      } else {
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'okbm-notif-badge';
+          badge.style.cssText = 'position:absolute; top:4px; right:calc(50% - 18px); min-width:14px; height:14px; padding:0 4px; border-radius:8px; background:#f43f5e; color:#fff; font-size:0.52rem; font-weight:900; display:flex; align-items:center; justify-content:center; line-height:14px;';
+          btn.style.position = 'relative';
+          btn.appendChild(badge);
+        }
+        badge.textContent = unread > 9 ? '9+' : String(unread);
+      }
+    }
+  }
+  okbmPaintCountBadgeEl(document.getElementById('reportNotifCountBadge'), notifOnly);
+  okbmPaintCountBadgeEl(document.getElementById('reportNoteCountBadge'), noteOnly);
+};
+
+window.fetchUserNotifications = async function() {
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
+  var userId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+  if (!targetUrl || !targetKey || !userId) return [];
+  try {
+    var res = await fetch(targetUrl + '/rest/v1/user_notifications?user_id=eq.' + encodeURIComponent(userId) + '&select=*&order=created_at.desc&limit=50', {
+      headers: okbmUgcRestHeaders()
+    });
+    if (!res.ok) return [];
+    var rows = await res.json();
+    return Array.isArray(rows) ? rows : [];
+  } catch (e) {
+    return [];
+  }
+};
+
+window.markUserNotificationsRead = async function(ids) {
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  var list = (ids || []).map(function(id) { return String(id || '').trim(); }).filter(Boolean);
+  if (!targetUrl || !targetKey || !list.length) return false;
+  try {
+    var inList = list.map(function(id) { return '"' + id.replace(/"/g, '') + '"'; }).join(',');
+    var res = await fetch(targetUrl + '/rest/v1/user_notifications?id=in.(' + inList + ')', {
+      method: 'PATCH',
+      headers: Object.assign({}, okbmUgcRestHeaders(), { 'Prefer': 'return=minimal' }),
+      body: JSON.stringify({ is_read: true })
+    });
+    return res.ok;
+  } catch (e) {
+    return false;
+  }
+};
+
+function okbmIsNoteNotification(row) {
+  if (!row) return true;
+  var kind = String(row.kind || '').toLowerCase();
+  var id = String(row.id || '');
+  var title = String(row.title || '');
+  if (kind === 'note' || kind === 'direct' || kind === 'dm') return true;
+  if (id.indexOf('pn_note_') === 0) return true;
+  if (title.indexOf('쪽지') !== -1) return true;
+  return false;
+}
+
+window.pollUserNotifications = async function(silent) {
+  var rows = await window.fetchUserNotifications();
+  rows = (rows || []).filter(function(r) {
+    if (!r) return false;
+    if (okbmIsNoteNotification(r)) return false;
+    return true;
+  });
+  window.__okbmUserNotifications = rows;
+  var unread = rows.filter(function(r) { return r && !r.is_read; });
+  window.__okbmUnreadNotifOnly = unread.length;
+  if (!silent && typeof window.okbmRefreshNoteBadge === 'function') {
+    await window.okbmRefreshNoteBadge();
+  } else if (typeof window.okbmApplyUnreadBadge === 'function') {
+    window.okbmApplyUnreadBadge();
+  } else {
+    var totalUnread = unread.length + Number(window.__okbmUnreadNoteCount || 0);
+    window.__okbmUnreadNotifCount = totalUnread;
+    window.okbmPaintNotifBadge(totalUnread);
+  }
+  if (!silent && unread.length) {
+    var newest = unread[0];
+    var seenKey = 'okbm_seen_notif_' + String(newest.id || '');
+    if (!sessionStorage.getItem(seenKey)) {
+      sessionStorage.setItem(seenKey, '1');
+      if (typeof showToast === 'function' && newest.title) {
+        showToast(newest.title, unread.length > 1 ? 'info' : 'success', 2800);
+      }
+    }
+  }
+  return rows;
+};
+
+function okbmNoteMyId() {
+  return (typeof okbmGetCurrentUserId === 'function') ? okbmGetCurrentUserId() : '';
+}
+
+function okbmNoteMyNick() {
+  var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
+  var custom = localStorage.getItem('okbm_user_nick') || (profile && profile.id ? localStorage.getItem('okbm_custom_nickname_' + profile.id) : '') || '';
+  return String(custom || (profile && profile.nickname) || '낭만백패커').trim();
+}
+
+function okbmNoteThreadId(a, b) {
+  var x = String(a || '').trim();
+  var y = String(b || '').trim();
+  if (!x || !y) return '';
+  return x < y ? (x + '__' + y) : (y + '__' + x);
+}
+
+function okbmNoteIdsMatch(a, b) {
+  var x = String(a || '').trim();
+  var y = String(b || '').trim();
+  if (!x || !y) return false;
+  if (x === y) return true;
+  if (typeof okbmNormalizeUgcUserId === 'function') {
+    var nx = okbmNormalizeUgcUserId(x);
+    var ny = okbmNormalizeUgcUserId(y);
+    return Boolean(nx && ny && nx === ny);
+  }
+  return false;
+}
+
+function okbmIsNoteHiddenUser(userId) {
+  var target = String(userId || '').trim();
+  if (!target) return true;
+  if (typeof window.isUserBlocked === 'function' && window.isUserBlocked(target)) return true;
+  var blockedBy = window.__okbmBlockedByIds || [];
+  for (var i = 0; i < blockedBy.length; i++) {
+    if (okbmNoteIdsMatch(blockedBy[i], target)) return true;
+  }
+  return false;
+}
+
+function okbmNoteBlockedToast(reason) {
+  var msg = '쪽지를 주고받을 수 없습니다.';
+  if (reason === 'you') msg = '차단한 사용자에게는 쪽지를 보낼 수 없습니다.';
+  else if (reason === 'them') msg = '상대가 차단한 사용자와는 쪽지를 주고받을 수 없습니다.';
+  else if (reason === 'self') msg = '나에게는 쪽지를 보낼 수 없습니다.';
+  if (typeof showToast === 'function') showToast(msg, 'warn', 2200);
+}
+
+function okbmStopNoteThreadPoll() {
+  if (window.__okbmNotePollTimer) {
+    clearInterval(window.__okbmNotePollTimer);
+    window.__okbmNotePollTimer = null;
+  }
+}
+
+window.okbmEnsureSupabaseClient = function() {
+  if (window.supabaseClient) return window.supabaseClient;
+  if (window.supabase && typeof window.supabase.createClient === 'function') {
+    var loopback = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname);
+    window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        detectSessionInUrl: true,
+        persistSession: true,
+        flowType: (window.isSecureContext || loopback) ? 'pkce' : 'implicit'
+      }
+    });
+  }
+  return window.supabaseClient || null;
+};
+
+window.okbmNoteRealtimeRemove = function(channel) {
+  if (!channel) return;
+  try {
+    var client = window.okbmEnsureSupabaseClient();
+    if (client && typeof client.removeChannel === 'function') client.removeChannel(channel);
+    else if (typeof channel.unsubscribe === 'function') channel.unsubscribe();
+  } catch (e) {}
+};
+
+window.okbmNoteRealtimeStop = function(kind) {
+  kind = kind || 'all';
+  if (kind === 'thread' || kind === 'all') {
+    window.okbmNoteRealtimeRemove(window.__okbmNoteRtThread);
+    window.__okbmNoteRtThread = null;
+    window.__okbmNoteRtThreadId = '';
+  }
+  if (kind === 'inbox' || kind === 'all') {
+    window.okbmNoteRealtimeRemove(window.__okbmNoteRtInboxA);
+    window.okbmNoteRealtimeRemove(window.__okbmNoteRtInboxB);
+    window.__okbmNoteRtInboxA = null;
+    window.__okbmNoteRtInboxB = null;
+    window.__okbmNoteRtInboxUser = '';
+  }
+};
+
+window.okbmNoteRealtimeStartThread = function(threadId) {
+  var tid = String(threadId || '').trim();
+  if (!tid) return;
+  if (window.__okbmNoteRtThreadId === tid && window.__okbmNoteRtThread) return;
+  window.okbmNoteRealtimeStop('thread');
+  var client = window.okbmEnsureSupabaseClient();
+  if (!client || typeof client.channel !== 'function') return;
+  var channel = client.channel('okbm-note-thread-' + tid)
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'direct_threads',
+      filter: 'id=eq.' + tid
+    }, function(payload) {
+      if (!okbmNoteRealtimeMessagesChanged(payload)) return;
+      var row = payload && payload.new;
+      var modal = document.getElementById('directMessageThreadModal');
+      if (!modal || !row) return;
+      var myId = okbmNoteMyId();
+      var theirId = String(modal.dataset.userId || '').trim();
+      if (!myId || !theirId || okbmNoteThreadId(myId, theirId) !== String(row.id || tid)) return;
+      var rows = okbmThreadMessages(row);
+      if (!rows.length && row.messages == null) {
+        window.okbmPaintNoteThreadMessages(true, true).catch(function() {});
+        return;
+      }
+      var lastAt = String(row.last_at || '');
+      var last = rows.length ? rows[rows.length - 1] : null;
+      if (!lastAt && last && last.created_at) lastAt = String(last.created_at);
+      if (lastAt) window.__okbmNoteRtPaintAt = lastAt;
+      var listEl = document.getElementById('directMessageThreadList');
+      if (listEl) {
+        var nearBottom = (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) < 120;
+        listEl.innerHTML = okbmRenderNoteBubbles(rows, myId, theirId);
+        if (nearBottom) listEl.scrollTop = listEl.scrollHeight;
+      }
+      if (last && !okbmNoteIdsMatch(last.sender_id, myId) && okbmThreadUnreadForMe(row, myId) > 0) {
+        window.okbmMarkNoteThreadRead(theirId).catch(function() {});
+      }
+      if (typeof window.okbmRefreshNoteBadge === 'function') {
+        window.okbmRefreshNoteBadge().catch(function() {});
+      }
+      if (document.getElementById('userNotificationInboxModal') && window.__okbmInboxTab === 'note') {
+        window.okbmPaintNoteInboxList();
+      }
+    })
+    .subscribe();
+  window.__okbmNoteRtThread = channel;
+  window.__okbmNoteRtThreadId = tid;
+};
+
+window.okbmNoteRealtimeStartInbox = function() {
+  var myId = okbmNoteMyId();
+  var client = window.okbmEnsureSupabaseClient();
+  if (!client || typeof client.channel !== 'function' || !myId) return;
+  if (window.__okbmNoteRtInboxUser === myId && window.__okbmNoteRtInboxA && window.__okbmNoteRtInboxB) return;
+  window.okbmNoteRealtimeStop('inbox');
+  var onEvt = function(payload) {
+    if (!okbmNoteRealtimeMessagesChanged(payload)) return;
+    var now = Date.now();
+    if (window.__okbmNoteRtInboxAt && (now - window.__okbmNoteRtInboxAt) < 400) return;
+    window.__okbmNoteRtInboxAt = now;
+    if (typeof window.okbmRefreshNoteBadge === 'function') {
+      window.okbmRefreshNoteBadge().catch(function() {});
+    }
+    if (document.getElementById('userNotificationInboxModal') && window.__okbmInboxTab === 'note') {
+      window.okbmPaintNoteInboxList();
+    }
+  };
+  window.__okbmNoteRtInboxA = client.channel('okbm-note-inbox-a-' + myId)
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'direct_threads',
+      filter: 'user_a=eq.' + myId
+    }, onEvt)
+    .subscribe();
+  window.__okbmNoteRtInboxB = client.channel('okbm-note-inbox-b-' + myId)
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'direct_threads',
+      filter: 'user_b=eq.' + myId
+    }, onEvt)
+    .subscribe();
+  window.__okbmNoteRtInboxUser = myId;
+};
+
+window.okbmApplyUnreadBadge = function() {
+  var total = Number(window.__okbmUnreadNotifOnly || 0) + Number(window.__okbmUnreadNoteCount || 0);
+  window.__okbmUnreadNotifCount = total;
+  if (typeof window.okbmPaintNotifBadge === 'function') window.okbmPaintNotifBadge(total);
+};
+
+window.okbmRefreshNoteBadge = async function() {
+  var n = 0;
+  if (typeof window.okbmCountUnreadNotes === 'function') {
+    try { n = await window.okbmCountUnreadNotes(); } catch (e) { n = 0; }
+  }
+  window.__okbmUnreadNoteCount = Number(n || 0);
+  window.okbmApplyUnreadBadge();
+  return window.__okbmUnreadNoteCount;
+};
+
+window.okbmBindNoteLiveRefresh = function() {
+  if (window.__okbmNoteLiveBound) return;
+  window.__okbmNoteLiveBound = true;
+  var refresh = function() {
+    if (document.visibilityState && document.visibilityState !== 'visible') return;
+    if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) return;
+    var now = Date.now();
+    if (window.__okbmNoteLiveAt && (now - window.__okbmNoteLiveAt) < 1500) return;
+    window.__okbmNoteLiveAt = now;
+    if (typeof window.okbmRefreshNoteBadge === 'function') {
+      window.okbmRefreshNoteBadge().catch(function() {});
+    }
+    if (document.getElementById('directMessageThreadModal') && typeof window.okbmPaintNoteThreadMessages === 'function') {
+      window.okbmPaintNoteThreadMessages(true).catch(function() {});
+    }
+    if (document.getElementById('userNotificationInboxModal') && window.__okbmInboxTab === 'note' && typeof window.okbmPaintNoteInboxList === 'function') {
+      window.okbmPaintNoteInboxList();
+    }
+  };
+  document.addEventListener('visibilitychange', refresh);
+  window.addEventListener('focus', refresh);
+  window.addEventListener('pageshow', refresh);
+};
+
+function okbmFormatNoteTime(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return (d.getMonth() + 1) + '.' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
+function okbmNoteCachedPhoto(userId) {
+  var uid = String(userId || '').trim();
+  if (!uid) return '';
+  window.__userProfilePhotoMap = window.__userProfilePhotoMap || {};
+  var cached = String(window.__userProfilePhotoMap[uid] || '').trim();
+  if (cached.indexOf('http') === 0) return cached;
+  var myId = okbmNoteMyId();
+  if (myId && okbmNoteIdsMatch(myId, uid)) {
+    var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
+    var myCover = localStorage.getItem('okbm_hero_cover_url') || ((profile && (profile.heroCoverUrl || profile.photoUrl)) ? (profile.heroCoverUrl || profile.photoUrl) : '');
+    if (myCover && String(myCover).indexOf('http') === 0) {
+      window.__userProfilePhotoMap[uid] = myCover;
+      return String(myCover).trim();
+    }
+  }
+  return '';
+}
+
+function okbmApplyUserAvatarSrc(userId, url) {
+  var uid = String(userId || '').trim();
+  var src = String(url || '').trim();
+  if (!uid || src.indexOf('http') !== 0) return;
+  window.__userProfilePhotoMap = window.__userProfilePhotoMap || {};
+  window.__userProfilePhotoMap[uid] = src;
+  var imgs = document.querySelectorAll('img[data-user-avatar-id]');
+  for (var i = 0; i < imgs.length; i++) {
+    if (String(imgs[i].getAttribute('data-user-avatar-id') || '') !== uid) continue;
+    imgs[i].src = src;
+    imgs[i].style.display = 'block';
+    var placeholder = imgs[i].parentElement ? imgs[i].parentElement.querySelector('.avatar-placeholder-svg') : null;
+    if (placeholder) placeholder.style.display = 'none';
+  }
+}
+
+window.okbmPrefetchUserPhotos = async function(userIds) {
+  var ids = (userIds || []).map(function(id) { return String(id || '').trim(); }).filter(Boolean);
+  window.__userProfilePhotoMap = window.__userProfilePhotoMap || {};
+  window.__userProfileFetchingMap = window.__userProfileFetchingMap || {};
+  var need = [];
+  var seen = {};
+  ids.forEach(function(id) {
+    if (seen[id] || window.__userProfilePhotoMap[id] || window.__userProfileFetchingMap[id]) return;
+    seen[id] = true;
+    need.push(id);
+  });
+  if (!need.length) return;
+  need.forEach(function(id) { window.__userProfileFetchingMap[id] = true; });
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  if (!targetUrl) return;
+  try {
+    var listed = need.map(function(id) {
+      return '"' + String(id).replace(/\\/g, '').replace(/"/g, '') + '"';
+    }).join(',');
+    var res = await fetch(targetUrl + '/rest/v1/users?id=in.(' + listed + ')&select=id,photo_url,hero_cover_url', {
+      headers: okbmUgcRestHeaders()
+    });
+    if (!res.ok) return;
+    var rows = await res.json();
+    (Array.isArray(rows) ? rows : []).forEach(function(u) {
+      var uid = String((u && u.id) || '').trim();
+      var remoteUrl = String((u && (u.hero_cover_url || u.photo_url)) || '').trim();
+      if (uid && remoteUrl.indexOf('http') === 0) okbmApplyUserAvatarSrc(uid, remoteUrl);
+    });
+  } catch (e) {}
+};
+
+function okbmNoteAvatarHtml(userId, size) {
+  var px = Number(size) || 36;
+  var uid = String(userId || '').trim();
+  var safeId = _escapeReportPropHtml(uid);
+  var photo = okbmNoteCachedPhoto(uid);
+  var hasImg = Boolean(photo && photo.indexOf('http') === 0);
+  var icon = Math.max(12, Math.round(px * 0.45));
+  return '<span style="width:' + px + 'px; height:' + px + 'px; border-radius:50%; background:rgba(255,255,255,0.12); padding:1.5px; box-sizing:border-box; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(0,0,0,0.55);">' +
+    '<span style="width:100%; height:100%; border-radius:50%; background:#121212; overflow:hidden; display:flex; align-items:center; justify-content:center;">' +
+      '<img data-user-avatar-id="' + safeId + '" src="' + (hasImg ? _escapeReportPropHtml(photo) : '') + '" alt="" style="width:100%; height:100%; object-fit:cover; display:' + (hasImg ? 'block' : 'none') + ';" onerror="this.style.display=\'none\'; var p=this.parentElement && this.parentElement.querySelector(\'.avatar-placeholder-svg\'); if(p) p.style.display=\'block\';" />' +
+      '<svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="width:' + icon + 'px; height:' + icon + 'px; display:' + (hasImg ? 'none' : 'block') + ';" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+    '</span>' +
+  '</span>';
+}
+
+function okbmNoteNameWithLoginHtml(userId, nick, size) {
+  return '<span style="display:inline-flex; align-items:center; gap:8px; min-width:0; max-width:100%;">' +
+    okbmNoteAvatarHtml(userId, size || 32) +
+    '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + _escapeReportPropHtml(nick || '사용자') + '</span>' +
+  '</span>';
+}
+
+function okbmThreadMessages(row) {
+  var msgs = row && row.messages;
+  if (typeof msgs === 'string') {
+    try { msgs = JSON.parse(msgs); } catch (e) { msgs = []; }
+  }
+  return Array.isArray(msgs) ? msgs : [];
+}
+
+function okbmNoteLastMessageMeta(msgs) {
+  if (!Array.isArray(msgs) || !msgs.length) return '0';
+  var last = msgs[msgs.length - 1] || {};
+  return String(msgs.length) + ':' + String(last.id || '') + ':' + String(last.created_at || '') + ':' + String(last.sender_id || '') + ':' + String(last.body || last.text || '');
+}
+
+function okbmNoteContentStamp(row) {
+  if (!row || typeof row !== 'object') return '';
+  var msgStamp = '';
+  if (Object.prototype.hasOwnProperty.call(row, 'messages') && row.messages != null) {
+    msgStamp = okbmNoteLastMessageMeta(okbmThreadMessages(row));
+  }
+  return [
+    String(row.id || ''),
+    String(row.last_at || ''),
+    String(row.last_sender_id || ''),
+    String(row.last_body || ''),
+    msgStamp
+  ].join('\u0001');
+}
+
+function okbmNoteRememberContentStamp(threadId, rowOrStamp) {
+  window.__okbmNoteContentStamp = window.__okbmNoteContentStamp || {};
+  var id = String(threadId || (rowOrStamp && rowOrStamp.id) || '').trim();
+  if (!id) return '';
+  var stamp = typeof rowOrStamp === 'string' ? rowOrStamp : okbmNoteContentStamp(rowOrStamp);
+  if (stamp) window.__okbmNoteContentStamp[id] = stamp;
+  return stamp;
+}
+
+function okbmNoteRealtimeMessagesChanged(payload) {
+  if (!payload) return false;
+  var event = String(payload.eventType || payload.event || '').toUpperCase();
+  var next = payload.new;
+  var prev = payload.old;
+  if (event === 'INSERT' || event === 'DELETE') {
+    if (next && next.id) okbmNoteRememberContentStamp(next.id, next);
+    return true;
+  }
+  if (!next) return false;
+  var id = String(next.id || '').trim();
+  var nextStamp = okbmNoteContentStamp(next);
+  var prevStamp = '';
+  if (prev && (prev.messages != null || prev.last_at || prev.last_body || prev.last_sender_id)) {
+    prevStamp = okbmNoteContentStamp(prev);
+  }
+  if (!prevStamp && id) {
+    prevStamp = (window.__okbmNoteContentStamp && window.__okbmNoteContentStamp[id]) || '';
+  }
+  if (nextStamp) okbmNoteRememberContentStamp(id, nextStamp);
+  if (prevStamp && nextStamp && prevStamp === nextStamp) return false;
+  if (prev && next) {
+    var sameContent = String(prev.last_at || '') === String(next.last_at || '')
+      && String(prev.last_body || '') === String(next.last_body || '')
+      && String(prev.last_sender_id || '') === String(next.last_sender_id || '');
+    if (sameContent) {
+      var prevHasMsgs = prev.messages != null;
+      var nextHasMsgs = next.messages != null;
+      if (!prevHasMsgs || !nextHasMsgs || okbmNoteLastMessageMeta(okbmThreadMessages(prev)) === okbmNoteLastMessageMeta(okbmThreadMessages(next))) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function okbmThreadHiddenForMe(row, myId) {
+  if (!row) return true;
+  var hiddenAt = okbmNoteIdsMatch(myId, row.user_a) ? row.hidden_a_at : row.hidden_b_at;
+  if (!hiddenAt) return false;
+  var ht = new Date(hiddenAt).getTime();
+  var lt = new Date(row.last_at).getTime();
+  if (isNaN(ht)) return true;
+  if (isNaN(lt)) return true;
+  return lt <= ht;
+}
+
+function okbmThreadUnreadForMe(row, myId) {
+  if (!row) return 0;
+  return Number(okbmNoteIdsMatch(myId, row.user_a) ? (row.unread_a || 0) : (row.unread_b || 0)) || 0;
+}
+
+function okbmThreadOtherOf(row, myId) {
+  if (okbmNoteIdsMatch(myId, row.user_a)) {
+    return { id: String(row.user_b || '').trim(), nick: String(row.nick_b || '사용자').trim() || '사용자' };
+  }
+  return { id: String(row.user_a || '').trim(), nick: String(row.nick_a || '사용자').trim() || '사용자' };
+}
+
+window.okbmNoteRpc = async function(name, payload) {
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var res = await fetch(targetUrl + '/rest/v1/rpc/' + name, {
+    method: 'POST',
+    headers: Object.assign({}, okbmUgcRestHeaders(), { 'Prefer': 'return=representation' }),
+    body: JSON.stringify(payload || {})
+  });
+  var text = '';
+  try { text = await res.text(); } catch (e) {}
+  var json = null;
+  try { json = text ? JSON.parse(text) : null; } catch (e) {}
+  return { ok: res.ok, status: res.status, json: json, text: text };
+};
+
+window.okbmRefreshBlockedByIds = async function(force) {
+  var myId = okbmNoteMyId();
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  if (!myId || !targetUrl || !targetKey) {
+    window.__okbmBlockedByIds = [];
+    return [];
+  }
+  var now = Date.now();
+  if (!force && window.__okbmBlockedByFetchedAt && (now - window.__okbmBlockedByFetchedAt) < 120000 && Array.isArray(window.__okbmBlockedByIds)) {
+    return window.__okbmBlockedByIds;
+  }
+  try {
+    var res = await fetch(targetUrl + '/rest/v1/user_blocks?blocked_id=eq.' + encodeURIComponent(myId) + '&select=blocker_id', {
+      headers: okbmUgcRestHeaders()
+    });
+    if (!res.ok) return window.__okbmBlockedByIds || [];
+    var rows = await res.json();
+    var ids = (Array.isArray(rows) ? rows : []).map(function(r) {
+      return String((r && r.blocker_id) || '').trim();
+    }).filter(Boolean);
+    window.__okbmBlockedByIds = ids;
+    window.__okbmBlockedByFetchedAt = now;
+    return ids;
+  } catch (e) {
+    return window.__okbmBlockedByIds || [];
+  }
+};
+
+window.okbmIsNotePairBlocked = async function(theirId, force) {
+  var target = String(theirId || '').trim();
+  var myId = okbmNoteMyId();
+  if (!target || !myId) return { blocked: true, reason: 'unknown' };
+  if (okbmNoteIdsMatch(myId, target) || (typeof window.isCurrentUserId === 'function' && window.isCurrentUserId(target))) {
+    return { blocked: true, reason: 'self' };
+  }
+  if (typeof window.isUserBlocked === 'function' && window.isUserBlocked(target)) {
+    return { blocked: true, reason: 'you' };
+  }
+  await window.okbmRefreshBlockedByIds(!!force);
+  if (okbmIsNoteHiddenUser(target)) return { blocked: true, reason: 'them' };
+  return { blocked: false, reason: '' };
+};
+
+window.closeDirectMessageModals = function(options) {
+  options = options || {};
+  var thread = document.getElementById('directMessageThreadModal');
+  if (thread) {
+    if (!options.blockedUserId || okbmNoteIdsMatch(thread.dataset.userId, options.blockedUserId)) {
+      okbmStopNoteThreadPoll();
+      if (typeof window.okbmNoteRealtimeStop === 'function') window.okbmNoteRealtimeStop('thread');
+      thread.remove();
+    }
+  }
+};
+
+window.okbmFetchNoteThreadMessages = async function(theirId) {
+  var myId = okbmNoteMyId();
+  var threadId = okbmNoteThreadId(myId, theirId);
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  if (!myId || !threadId || !targetUrl) return [];
+  try {
+    var res = await fetch(targetUrl + '/rest/v1/direct_threads?id=eq.' + encodeURIComponent(threadId) + '&select=messages&limit=1', {
+      headers: okbmUgcRestHeaders()
+    });
+    if (!res.ok) return [];
+    var rows = await res.json();
+    return okbmThreadMessages(Array.isArray(rows) ? rows[0] : null);
+  } catch (e) {
+    return [];
+  }
+};
+
+window.okbmMarkNoteThreadRead = async function(theirId) {
+  var myId = okbmNoteMyId();
+  var threadId = okbmNoteThreadId(myId, theirId);
+  if (!myId || !threadId) return false;
+  var key = myId + '\u0001' + threadId + '\u0001' + String(window.__okbmNoteRtPaintAt || '');
+  window.__okbmNoteMarkReadAt = window.__okbmNoteMarkReadAt || {};
+  var now = Date.now();
+  if (window.__okbmNoteMarkReadAt[key] && (now - window.__okbmNoteMarkReadAt[key]) < 800) return false;
+  window.__okbmNoteMarkReadAt[key] = now;
+  var rpc = await window.okbmNoteRpc('okbm_mark_direct_thread_read', { p_user_id: myId, p_thread_id: threadId });
+  return rpc.ok;
+};
+
+window.okbmFetchMyNoteThreads = async function() {
+  var myId = okbmNoteMyId();
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  if (!myId || !targetUrl) return [];
+  await window.okbmRefreshBlockedByIds();
+  try {
+    var res = await fetch(targetUrl + '/rest/v1/direct_threads?or=(user_a.eq.' + encodeURIComponent(myId) + ',user_b.eq.' + encodeURIComponent(myId) + ')&select=id,user_a,user_b,nick_a,nick_b,last_body,last_at,last_sender_id,unread_a,unread_b,hidden_a_at,hidden_b_at&order=last_at.desc&limit=80', {
+      headers: okbmUgcRestHeaders()
+    });
+    if (!res.ok) return [];
+    var rows = await res.json();
+    if (!Array.isArray(rows)) return [];
+    return rows.map(function(row) {
+      var other = okbmThreadOtherOf(row, myId);
+      return {
+        threadId: String(row.id || ''),
+        otherId: other.id,
+        otherNick: other.nick,
+        lastBody: String(row.last_body || ''),
+        lastAt: row.last_at,
+        unread: okbmThreadUnreadForMe(row, myId),
+        hidden: !other.id || okbmIsNoteHiddenUser(other.id) || okbmThreadHiddenForMe(row, myId)
+      };
+    }).filter(function(t) { return t.threadId && t.otherId && !t.hidden; });
+  } catch (e) {
+    return [];
+  }
+};
+
+window.okbmCountUnreadNotes = async function() {
+  var myId = okbmNoteMyId();
+  if (!myId) return 0;
+  var rpc = await window.okbmNoteRpc('okbm_unread_direct_count', { p_user_id: myId });
+  if (!rpc.ok) return Number(window.__okbmUnreadNoteCount || 0);
+  var n = rpc.json;
+  if (typeof n === 'number') return n;
+  if (n && typeof n.count === 'number') return n.count;
+  if (Array.isArray(n) && n.length && typeof n[0] === 'number') return n[0];
+  var parsed = Number(n);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
+window.deleteDirectMessageThread = async function(threadId, theirId, ev, skipConfirm) {
+  if (ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+  }
+  if (typeof triggerHaptic === 'function') triggerHaptic(10);
+  var myId = okbmNoteMyId();
+  var otherId = String(theirId || '').trim();
+  var tid = String(threadId || '').trim() || okbmNoteThreadId(myId, otherId);
+  if (!myId || !tid) return false;
+  if (!skipConfirm && !confirm('이 쪽지를 삭제할까요? 내 쪽지함에서만 사라집니다.')) return false;
+  var rpc = await window.okbmNoteRpc('okbm_hide_direct_thread', { p_user_id: myId, p_thread_id: tid });
+  if (!rpc.ok) {
+    if (typeof showToast === 'function') showToast('쪽지를 삭제하지 못했습니다. 잠시 후 다시 시도해주세요.', 'error', 2200);
+    return false;
+  }
+  var thread = document.getElementById('directMessageThreadModal');
+  if (thread && (!otherId || okbmNoteIdsMatch(thread.dataset.userId, otherId))) {
+    window.closeDirectMessageModals({});
+  }
+  if (typeof showToast === 'function') showToast('쪽지를 삭제했습니다.', 'success', 1600);
+  if (document.getElementById('userNotificationInboxModal') && window.__okbmInboxTab === 'note') {
+    window.okbmPaintNoteInboxList();
+  }
+  if (typeof window.okbmRefreshNoteBadge === 'function') {
+    window.okbmRefreshNoteBadge().catch(function() {});
+  }
+  return true;
+};
+
+window.okbmNotifyNoteReceiver = async function() {
+  if (typeof window.okbmRefreshNoteBadge === 'function') {
+    window.okbmRefreshNoteBadge().catch(function() {});
+  }
+};
+
+function okbmNoteDayKey(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function okbmNoteDateChip(iso) {
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  var days = ['일', '월', '화', '수', '목', '금', '토'];
+  return d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + days[d.getDay()] + '요일';
+}
+
+function okbmNoteClockHtml(iso) {
+  if (!iso) return '';
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  var h = d.getHours();
+  var ap = h < 12 ? '오전' : '오후';
+  var h12 = h % 12;
+  if (!h12) h12 = 12;
+  return ap + ' ' + h12 + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
+function okbmNoteIsSameGroup(a, b) {
+  if (!a || !b) return false;
+  if (String(a.sender_id || '') !== String(b.sender_id || '')) return false;
+  var t1 = new Date(a.created_at).getTime();
+  var t2 = new Date(b.created_at).getTime();
+  if (isNaN(t1) || isNaN(t2)) return false;
+  return Math.abs(t2 - t1) < 120000;
+}
+
+function okbmRenderNoteBubbles(rows, myId, theirId) {
+  if (!rows.length) {
+    return '<div style="text-align:center; padding:48px 12px; color:#64748b; font-size:0.78rem; line-height:1.6;">아직 주고받은 쪽지가 없습니다.<br>첫 쪽지를 보내보세요.</div>';
+  }
+  var html = '';
+  var prevDay = '';
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    var day = okbmNoteDayKey(r.created_at);
+    if (day && day !== prevDay) {
+      html += '<div style="display:flex; justify-content:center; margin:10px 0 8px;"><span style="font-size:0.62rem; color:#94a3b8; background:rgba(15,23,42,0.55); border-radius:999px; padding:5px 10px;">' + _escapeReportPropHtml(okbmNoteDateChip(r.created_at)) + '</span></div>';
+      prevDay = day;
+    }
+    var mine = okbmNoteIdsMatch(r.sender_id, myId);
+    var prev = i > 0 ? rows[i - 1] : null;
+    var next = i < rows.length - 1 ? rows[i + 1] : null;
+    var samePrevDay = prev && okbmNoteDayKey(prev.created_at) === day;
+    var sameNextDay = next && okbmNoteDayKey(next.created_at) === day;
+    var groupStart = !prev || !samePrevDay || !okbmNoteIsSameGroup(prev, r);
+    var groupEnd = !next || !sameNextDay || !okbmNoteIsSameGroup(r, next);
+    var body = _escapeReportPropHtml(r.body || '');
+    var when = groupEnd ? okbmNoteClockHtml(r.created_at) : '';
+    var timeHtml = when ? '<span style="font-size:0.54rem; color:#64748b; line-height:1.2; flex-shrink:0; margin-bottom:1px;">' + _escapeReportPropHtml(when) + '</span>' : '';
+    var topGap = groupStart ? '8px' : '2px';
+    if (mine) {
+      var radius = groupStart && groupEnd ? '18px 18px 4px 18px' : (groupStart ? '18px 18px 4px 18px' : (groupEnd ? '18px 4px 4px 18px' : '18px 4px 4px 18px'));
+      html += '<div style="display:flex; justify-content:flex-end; align-items:flex-end; gap:6px; margin:' + topGap + ' 0 0;">' +
+        timeHtml +
+        '<div style="max-width:72%; background:#fee500; color:#191919; border-radius:' + radius + '; padding:8px 11px; font-size:0.82rem; line-height:1.45; white-space:pre-wrap; word-break:break-word; box-shadow:0 1px 2px rgba(0,0,0,0.18);">' + body + '</div>' +
+      '</div>';
+    } else {
+      var radius = groupStart && groupEnd ? '18px 18px 18px 4px' : (groupStart ? '18px 18px 18px 4px' : (groupEnd ? '4px 18px 18px 4px' : '4px 18px 18px 4px'));
+      var avatar = groupStart ? okbmNoteAvatarHtml(theirId || r.sender_id, 28) : '<span style="width:28px; flex-shrink:0; display:inline-block;"></span>';
+      html += '<div style="display:flex; justify-content:flex-start; align-items:flex-end; gap:6px; margin:' + topGap + ' 0 0;">' +
+        avatar +
+        '<div style="max-width:68%; background:#2b3344; color:#f8fafc; border-radius:' + radius + '; padding:8px 11px; font-size:0.82rem; line-height:1.45; white-space:pre-wrap; word-break:break-word;">' + body + '</div>' +
+        timeHtml +
+      '</div>';
+    }
+  }
+  return html;
+}
+
+window.okbmPaintNoteThreadMessages = async function(silent, fromRealtime) {
+  var modal = document.getElementById('directMessageThreadModal');
+  if (!modal) return;
+  var theirId = String(modal.dataset.userId || '').trim();
+  var listEl = document.getElementById('directMessageThreadList');
+  if (!theirId || !listEl) return;
+  var pair = await window.okbmIsNotePairBlocked(theirId, false);
+  var composer = document.getElementById('directMessageComposer');
+  var blockHint = document.getElementById('directMessageBlockedHint');
+  if (pair.blocked) {
+    if (composer) composer.style.display = 'none';
+    if (blockHint) blockHint.style.display = 'block';
+    return;
+  }
+  if (composer) composer.style.display = 'flex';
+  if (blockHint) blockHint.style.display = 'none';
+  var rows = await window.okbmFetchNoteThreadMessages(theirId);
+  var last = rows.length ? rows[rows.length - 1] : null;
+  var lastAt = last && last.created_at ? String(last.created_at) : '';
+  var threadId = okbmNoteThreadId(okbmNoteMyId(), theirId);
+  var stamp = okbmNoteContentStamp({
+    id: threadId,
+    messages: rows,
+    last_at: lastAt,
+    last_sender_id: last && last.sender_id,
+    last_body: last && last.body
+  });
+  if (fromRealtime && stamp && window.__okbmNoteContentStamp && window.__okbmNoteContentStamp[threadId] === stamp && listEl.childNodes.length) return;
+  if (fromRealtime && lastAt && window.__okbmNoteRtPaintAt === lastAt && listEl.childNodes.length) return;
+  if (lastAt) window.__okbmNoteRtPaintAt = lastAt;
+  if (stamp) okbmNoteRememberContentStamp(threadId, stamp);
+  var nearBottom = (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) < 80;
+  listEl.innerHTML = okbmRenderNoteBubbles(rows, okbmNoteMyId(), theirId);
+  if (!silent || nearBottom) listEl.scrollTop = listEl.scrollHeight;
+  if (!fromRealtime) {
+    await window.okbmMarkNoteThreadRead(theirId);
+  } else if (last && !okbmNoteIdsMatch(last.sender_id, okbmNoteMyId())) {
+    await window.okbmMarkNoteThreadRead(theirId);
+  }
+  if (typeof window.okbmRefreshNoteBadge === 'function') {
+    window.okbmRefreshNoteBadge().catch(function() {});
+  }
+};
+
+window.sendDirectMessage = async function() {
+  if (typeof triggerHaptic === 'function') triggerHaptic(8);
+  var modal = document.getElementById('directMessageThreadModal');
+  var input = document.getElementById('directMessageInput');
+  if (!modal || !input) return;
+  if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
+    if (typeof showToast === 'function') showToast('쪽지는 로그인 후 이용할 수 있습니다.', 'info', 2000);
+    if (typeof window.openLoginModal === 'function') window.openLoginModal();
+    return;
+  }
+  var myId = okbmNoteMyId();
+  var theirId = String(modal.dataset.userId || '').trim();
+  var theirNick = String(modal.dataset.author || '').trim() || '사용자';
+  var body = String(input.value || '').trim();
+  if (!myId || !theirId) {
+    if (typeof showToast === 'function') showToast('상대 계정을 확인할 수 없습니다.', 'warn');
+    return;
+  }
+  if (!body) {
+    if (typeof showToast === 'function') showToast('쪽지 내용을 입력해주세요.', 'info', 1600);
+    return;
+  }
+  if (body.length > 500) {
+    if (typeof showToast === 'function') showToast('쪽지는 500자까지 보낼 수 있습니다.', 'warn', 2000);
+    return;
+  }
+  var pair = await window.okbmIsNotePairBlocked(theirId, true);
+  if (pair.blocked) {
+    okbmNoteBlockedToast(pair.reason);
+    return;
+  }
+  var btn = document.getElementById('directMessageSendBtn');
+  if (btn) btn.disabled = true;
+  try {
+    var rpc = await window.okbmNoteRpc('okbm_append_direct_message', {
+      p_sender_id: myId,
+      p_sender_nick: okbmNoteMyNick(),
+      p_receiver_id: theirId,
+      p_receiver_nick: theirNick,
+      p_body: body
+    });
+    if (!rpc.ok) {
+      var errText = String((rpc.json && (rpc.json.message || rpc.json.details)) || rpc.text || '');
+      if (errText.indexOf('blocked_direct_message') !== -1) {
+        okbmNoteBlockedToast('them');
+      } else if (typeof showToast === 'function') {
+        showToast('쪽지를 보내지 못했습니다. 잠시 후 다시 시도해주세요.', 'error', 2200);
+      }
+      if (btn) btn.disabled = false;
+      return;
+    }
+    input.value = '';
+    window.__okbmNoteRtPaintAt = '';
+    await window.okbmPaintNoteThreadMessages(false);
+  } catch (e) {
+    if (typeof showToast === 'function') showToast('쪽지를 보내지 못했습니다. 네트워크를 확인해주세요.', 'error', 2200);
+  }
+  if (btn) btn.disabled = false;
+};
+
+window.openDirectMessageThread = async function(userId, nickname) {
+  if (typeof triggerHaptic === 'function') triggerHaptic(10);
+  if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
+    if (typeof showToast === 'function') showToast('쪽지는 로그인 후 이용할 수 있습니다.', 'info', 2000);
+    if (typeof window.openLoginModal === 'function') window.openLoginModal();
+    return;
+  }
+  var theirId = String(userId || '').trim();
+  var theirNick = String(nickname || '').trim() || '사용자';
+  var myId = okbmNoteMyId();
+  if (!theirId) {
+    if (typeof showToast === 'function') showToast('상대 계정을 확인할 수 없습니다.', 'warn');
+    return;
+  }
+  if (!myId || okbmNoteIdsMatch(myId, theirId) || (typeof window.isCurrentUserId === 'function' && window.isCurrentUserId(theirId))) {
+    okbmNoteBlockedToast('self');
+    return;
+  }
+  var pair = await window.okbmIsNotePairBlocked(theirId, true);
+  if (pair.blocked) {
+    okbmNoteBlockedToast(pair.reason);
+    return;
+  }
+  okbmStopNoteThreadPoll();
+  if (typeof window.okbmBindNoteLiveRefresh === 'function') window.okbmBindNoteLiveRefresh();
+  if (typeof window.okbmPrefetchUserPhotos === 'function') {
+    await window.okbmPrefetchUserPhotos([theirId]);
+  }
+  var old = document.getElementById('directMessageThreadModal');
+  if (old) old.remove();
+  var overlay = document.createElement('div');
+  overlay.id = 'directMessageThreadModal';
+  overlay.dataset.userId = theirId;
+  overlay.dataset.author = theirNick;
+  overlay.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); z-index:2147483644 !important; background:#000000; display:flex; justify-content:center; align-items:stretch; pointer-events:auto;';
+  overlay.innerHTML = '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; background:#15202b; display:flex; flex-direction:column; box-sizing:border-box; pointer-events:auto;">' +
+    '<div style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center; padding:10px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); border-bottom:1px solid rgba(255,255,255,0.08); background:#0f1720;">' +
+      '<button type="button" onclick="window.closeDirectMessageModals({});" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer;">◀</button>' +
+      '<span style="font-size:0.95rem; font-weight:900; color:#ffffff; max-width:72%; overflow:hidden; display:inline-flex; align-items:center;">' + okbmNoteNameWithLoginHtml(theirId, theirNick, 36) + '</span>' +
+      '<div style="width:32px;"></div>' +
+    '</div>' +
+    '<div id="directMessageThreadList" style="flex:1; min-height:0; overflow-y:auto; padding:10px 12px 16px; display:flex; flex-direction:column; background:#15202b;"></div>' +
+    '<div id="directMessageBlockedHint" style="display:none; flex-shrink:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); color:#fda4af; font-size:0.78rem; text-align:center;">차단된 상대와는 쪽지를 주고받을 수 없습니다.</div>' +
+    '<div id="directMessageComposer" style="flex-shrink:0; display:flex; gap:8px; align-items:flex-end; padding:8px 10px calc(10px + env(safe-area-inset-bottom, 0px)); border-top:1px solid rgba(255,255,255,0.08); background:#0f1720;">' +
+      '<textarea id="directMessageInput" maxlength="500" rows="1" placeholder="메시지를 입력하세요" style="flex:1; min-height:38px; max-height:90px; resize:none; background:#1e293b; border:1px solid rgba(255,255,255,0.08); border-radius:20px; color:#e2e8f0; font-size:0.84rem; padding:9px 14px; outline:none; line-height:1.4;"></textarea>' +
+      '<button type="button" id="directMessageSendBtn" onclick="window.sendDirectMessage();" style="flex-shrink:0; height:38px; min-width:52px; padding:0 14px; border:none; border-radius:19px; background:#fee500; color:#191919; font-size:0.80rem; font-weight:900; cursor:pointer;">전송</button>' +
+    '</div>' +
+  '</div>';
+  document.body.appendChild(overlay);
+  if (typeof window.okbmLiftInboxAboveDock === 'function') window.okbmLiftInboxAboveDock(overlay);
+  var input = document.getElementById('directMessageInput');
+  if (input) {
+    input.addEventListener('keydown', function(ev) {
+      if (ev.key === 'Enter' && !ev.shiftKey) {
+        ev.preventDefault();
+        window.sendDirectMessage();
+      }
+    });
+  }
+  await window.okbmPaintNoteThreadMessages(false);
+  if (typeof window.okbmNoteRealtimeStartInbox === 'function') window.okbmNoteRealtimeStartInbox();
+  if (typeof window.okbmNoteRealtimeStartThread === 'function') {
+    window.okbmNoteRealtimeStartThread(okbmNoteThreadId(myId, theirId));
+  }
+};
+
+window.okbmCloseNoteSwipeRows = function(exceptFront) {
+  var list = document.getElementById('userNotificationInboxList');
+  if (!list) return;
+  list.querySelectorAll('.okbm-note-swipe-front').forEach(function(front) {
+    if (exceptFront && front === exceptFront) return;
+    front.style.transform = 'translateX(0)';
+    front.dataset.open = '0';
+  });
+};
+
+window.okbmBindNoteSwipeRows = function() {
+  var list = document.getElementById('userNotificationInboxList');
+  if (!list) return;
+  list.querySelectorAll('.okbm-note-swipe').forEach(function(row) {
+    if (row.dataset.swipeBound === '1') return;
+    row.dataset.swipeBound = '1';
+    var front = row.querySelector('.okbm-note-swipe-front');
+    if (!front) return;
+    var startX = 0;
+    var startY = 0;
+    var dx = 0;
+    var tracking = false;
+    var decided = false;
+    var horizontal = false;
+    var opened = false;
+
+    function snap(open) {
+      front.style.transition = 'transform 0.2s ease';
+      if (open) {
+        front.style.transform = 'translateX(-76px)';
+        front.dataset.open = '1';
+        window.okbmCloseNoteSwipeRows(front);
+      } else {
+        front.style.transform = 'translateX(0)';
+        front.dataset.open = '0';
+      }
+    }
+
+    front.addEventListener('pointerdown', function(ev) {
+      if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+      startX = ev.clientX;
+      startY = ev.clientY;
+      dx = 0;
+      tracking = true;
+      decided = false;
+      horizontal = false;
+      opened = front.dataset.open === '1';
+      front.style.transition = 'none';
+      try { front.setPointerCapture(ev.pointerId); } catch (e) {}
+    });
+    front.addEventListener('pointermove', function(ev) {
+      if (!tracking) return;
+      var mx = ev.clientX - startX;
+      var my = ev.clientY - startY;
+      if (!decided) {
+        if (Math.abs(mx) + Math.abs(my) < 8) return;
+        decided = true;
+        horizontal = Math.abs(mx) > Math.abs(my) * 1.15;
+        if (!horizontal) {
+          tracking = false;
+          return;
+        }
+      }
+      if (!horizontal) return;
+      var base = opened ? -76 : 0;
+      dx = Math.min(0, Math.max(-80, base + mx));
+      front.style.transform = 'translateX(' + dx + 'px)';
+    });
+    function endSwipe() {
+      if (!tracking) return;
+      tracking = false;
+      if (!decided || !horizontal) {
+        if (opened) snap(true);
+        return;
+      }
+      snap(dx < -40);
+    }
+    front.addEventListener('pointerup', endSwipe);
+    front.addEventListener('pointercancel', endSwipe);
+    front.addEventListener('click', function(ev) {
+      if (front.dataset.open === '1') {
+        ev.preventDefault();
+        ev.stopPropagation();
+        snap(false);
+      }
+    }, true);
+  });
+};
+
+window.okbmPaintNoteInboxList = async function() {
+  var listEl = document.getElementById('userNotificationInboxList');
+  if (!listEl) return;
+  listEl.innerHTML = '<div style="text-align:center; padding:28px 8px; color:#64748b;">불러오는 중</div>';
+  var threads = await window.okbmFetchMyNoteThreads();
+  var unreadSum = 0;
+  (threads || []).forEach(function(t) { unreadSum += Number(t.unread || 0) || 0; });
+  window.__okbmUnreadNoteCount = unreadSum;
+  if (typeof window.okbmApplyUnreadBadge === 'function') window.okbmApplyUnreadBadge();
+  if (!threads.length) {
+    listEl.innerHTML = '<div style="text-align:center; padding:28px 8px; color:#64748b;">주고받은 쪽지가 없습니다.<br>상대 아이디를 눌러 쪽지를 보낼 수 있습니다.</div>';
+    return;
+  }
+  if (typeof window.okbmPrefetchUserPhotos === 'function') {
+    await window.okbmPrefetchUserPhotos(threads.map(function(t) { return t.otherId; }));
+  }
+  listEl.innerHTML = threads.map(function(t) {
+    var unreadNum = t.unread ? '<span style="font-size:0.58rem; color:#38bdf8; font-weight:800; flex-shrink:0;">' + (t.unread > 9 ? '9+' : String(t.unread)) + '</span>' : '';
+    return '<div class="okbm-note-swipe" data-thread-id="' + _escapeReportPropHtml(t.threadId) + '" style="position:relative; overflow:hidden; border-bottom:1px solid rgba(255,255,255,0.06);">' +
+      '<div class="okbm-note-swipe-actions" style="position:absolute; right:0; top:0; bottom:0; width:76px; display:flex;">' +
+        '<button type="button" data-thread-id="' + _escapeReportPropHtml(t.threadId) + '" data-user-id="' + _escapeReportPropHtml(t.otherId) + '" onclick="window.deleteDirectMessageThread(this.dataset.threadId, this.dataset.userId, event, true);" style="width:76px; border:none; background:#f43f5e; color:#ffffff; font-size:0.78rem; font-weight:900; cursor:pointer;">삭제</button>' +
+      '</div>' +
+      '<div class="okbm-note-swipe-front" data-open="0" style="position:relative; background:#0c1017; transform:translateX(0); will-change:transform; touch-action:pan-y;">' +
+        '<button type="button" data-user-id="' + _escapeReportPropHtml(t.otherId) + '" data-author="' + _escapeReportPropHtml(t.otherNick) + '" onclick="if(this.parentElement && this.parentElement.dataset.open===\'1\'){return;} window.openDirectMessageThread(this.dataset.userId, this.dataset.author);" style="width:100%; text-align:left; background:transparent; border:none; padding:12px 0; display:flex; gap:10px; align-items:center; cursor:pointer;">' +
+          okbmNoteAvatarHtml(t.otherId, 44) +
+          '<div style="min-width:0; flex:1;">' +
+            '<div style="display:flex; justify-content:space-between; gap:8px; align-items:center;">' +
+              '<div style="font-size:0.82rem; font-weight:800; color:#e2e8f0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + _escapeReportPropHtml(t.otherNick) + '</div>' +
+              unreadNum +
+            '</div>' +
+            '<div style="font-size:0.68rem; color:#94a3b8; margin-top:4px; line-height:1.45; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + _escapeReportPropHtml(t.lastBody) + '</div>' +
+            (t.lastAt ? '<div style="font-size:0.58rem; color:#64748b; margin-top:6px;">' + okbmFormatNoteTime(t.lastAt) + '</div>' : '') +
+          '</div>' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  window.okbmBindNoteSwipeRows();
+};
+
+window.okbmPaintNotifInboxList = async function() {
+  var listEl = document.getElementById('userNotificationInboxList');
+  if (!listEl) return;
+  listEl.innerHTML = '<div style="text-align:center; padding:28px 8px; color:#64748b;">불러오는 중</div>';
+  var rows = await window.pollUserNotifications(true);
+  if (!listEl) return;
+  if (!rows.length) {
+    listEl.innerHTML = '<div style="text-align:center; padding:28px 8px; color:#64748b;">아직 도착한 알림이 없습니다.</div>';
+    return;
+  }
+  var unreadIds = [];
+  listEl.innerHTML = rows.map(function(r) {
+    if (r && !r.is_read && r.id) unreadIds.push(String(r.id));
+    var when = okbmFormatNoteTime(r.created_at);
+    var unreadDot = r.is_read ? '' : '<span style="width:7px; height:7px; border-radius:50%; background:#38bdf8; flex-shrink:0; margin-top:6px;"></span>';
+    return '<div style="padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; gap:8px; align-items:flex-start;">' +
+      unreadDot +
+      '<div style="min-width:0; flex:1;">' +
+        '<div style="font-size:0.80rem; font-weight:800; color:#e2e8f0;">' + _escapeReportPropHtml(r.title || '알림') + '</div>' +
+        '<div style="font-size:0.68rem; color:#94a3b8; margin-top:4px; line-height:1.45;">' + _escapeReportPropHtml(r.body || '') + '</div>' +
+        (when ? '<div style="font-size:0.58rem; color:#64748b; margin-top:6px;">' + when + '</div>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+  if (unreadIds.length) {
+    await window.markUserNotificationsRead(unreadIds);
+    if (typeof window.pollUserNotifications === 'function') {
+      window.pollUserNotifications(true).catch(function() {});
+    }
+  }
+};
+
+window.okbmLiftReportChildModal = function(overlay) {
+  if (!overlay) return;
+  var report = document.getElementById('userProfileModalOverlay');
+  if (report) report.style.setProperty('display', 'none', 'important');
+  var inbox = document.getElementById('userNotificationInboxModal');
+  if (inbox) inbox.remove();
+  overlay.style.setProperty('position', 'fixed', 'important');
+  overlay.style.setProperty('top', '0', 'important');
+  overlay.style.setProperty('left', '0', 'important');
+  overlay.style.setProperty('right', '0', 'important');
+  overlay.style.setProperty('bottom', 'calc(56px + env(safe-area-inset-bottom, 8px))', 'important');
+  overlay.style.setProperty('z-index', '2147483642', 'important');
+  overlay.style.setProperty('pointer-events', 'auto', 'important');
+  overlay.style.setProperty('display', 'flex', 'important');
+  if (overlay.parentElement === document.body) document.body.appendChild(overlay);
+  if (typeof window.ensureMasterBottomDock === 'function') {
+    window.ensureMasterBottomDock('history');
+  }
+  var dock = document.getElementById('romanticMasterBottomDock');
+  if (dock) {
+    dock.style.setProperty('z-index', '2147483647', 'important');
+    dock.style.setProperty('pointer-events', 'auto', 'important');
+    if (dock.parentElement === document.body) document.body.appendChild(dock);
+  }
+};
+
+window.okbmLiftInboxAboveDock = function(overlay) {
+  if (!overlay) return;
+  overlay.style.setProperty('position', 'fixed', 'important');
+  overlay.style.setProperty('top', '0', 'important');
+  overlay.style.setProperty('left', '0', 'important');
+  overlay.style.setProperty('right', '0', 'important');
+  overlay.style.setProperty('bottom', 'calc(56px + env(safe-area-inset-bottom, 8px))', 'important');
+  overlay.style.setProperty('z-index', '2147483644', 'important');
+  overlay.style.setProperty('pointer-events', 'auto', 'important');
+  var inner = overlay.firstElementChild;
+  if (inner) {
+    inner.style.setProperty('pointer-events', 'auto', 'important');
+    inner.style.setProperty('z-index', '1', 'important');
+  }
+  if (overlay.parentElement === document.body) document.body.appendChild(overlay);
+  if (typeof window.ensureMasterBottomDock === 'function') {
+    var onReport = document.getElementById('userProfileModalOverlay') && document.getElementById('userProfileModalOverlay').style.display === 'flex';
+    window.ensureMasterBottomDock(onReport ? 'report' : undefined);
+  }
+  var dock = document.getElementById('romanticMasterBottomDock');
+  if (dock) {
+    dock.style.setProperty('z-index', '2147483647', 'important');
+    dock.style.setProperty('pointer-events', 'auto', 'important');
+    if (dock.parentElement === document.body) document.body.appendChild(dock);
+  }
+};
+
+window.okbmSwitchInboxTab = function(tab, ev) {
+  if (ev) {
+    if (typeof ev.preventDefault === 'function') ev.preventDefault();
+    if (typeof ev.stopPropagation === 'function') ev.stopPropagation();
+    if (typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation();
+  }
+  window.__okbmInboxTab = String(tab || '') === 'notif' ? 'notif' : 'note';
+  var notifTab = document.getElementById('okbmInboxTabNotif');
+  var noteTab = document.getElementById('okbmInboxTabNote');
+  var active = 'height:30px; padding:0 16px; border:none; border-radius:8px; font-size:0.80rem; font-weight:900; cursor:pointer; background:rgba(56,189,248,0.2); color:#7dd3fc; pointer-events:auto;';
+  var idle = 'height:30px; padding:0 16px; border:none; border-radius:8px; font-size:0.80rem; font-weight:800; cursor:pointer; background:transparent; color:#94a3b8; pointer-events:auto;';
+  if (noteTab) noteTab.style.cssText = window.__okbmInboxTab === 'note' ? active : idle;
+  if (notifTab) notifTab.style.cssText = window.__okbmInboxTab === 'notif' ? active : idle;
+  if (window.__okbmInboxTab === 'notif') {
+    window.okbmPaintNotifInboxList();
+  } else {
+    window.okbmPaintNoteInboxList();
+  }
+};
+
+window.openUserNotificationInbox = async function(initialTab, ev) {
+  if (ev) {
+    if (typeof ev.preventDefault === 'function') ev.preventDefault();
+    if (typeof ev.stopPropagation === 'function') ev.stopPropagation();
+    if (typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation();
+  }
+  if (typeof triggerHaptic === 'function') triggerHaptic(10);
+  if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
+    if (typeof showToast === 'function') showToast('로그인 후 이용할 수 있습니다.', 'info', 2000);
+    if (typeof window.openLoginModal === 'function') window.openLoginModal();
+    return;
+  }
+  var tab = String(initialTab || 'note').toLowerCase();
+  if (tab !== 'notif') tab = 'note';
+  var old = document.getElementById('userNotificationInboxModal');
+  if (old) {
+    window.okbmLiftInboxAboveDock(old);
+    window.okbmSwitchInboxTab(tab, ev);
+    return;
+  }
+  var overlay = document.createElement('div');
+  overlay.id = 'userNotificationInboxModal';
+  overlay.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); z-index:2147483644 !important; background:#000000; display:flex; justify-content:center; align-items:stretch; pointer-events:auto;';
+  overlay.innerHTML = '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; background:#0c1017; display:flex; flex-direction:column; box-sizing:border-box; pointer-events:auto;">' +
+    '<div style="flex-shrink:0; display:flex; align-items:center; gap:10px; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); border-bottom:1px solid rgba(255,255,255,0.08);">' +
+      '<button type="button" onclick="document.getElementById(\'userNotificationInboxModal\').remove();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; flex-shrink:0;">◀</button>' +
+      '<div style="display:flex; align-items:center; gap:4px; background:rgba(255,255,255,0.05); border-radius:10px; padding:3px;">' +
+        '<button type="button" id="okbmInboxTabNote" onclick="window.okbmSwitchInboxTab(\'note\', event);">쪽지</button>' +
+        '<button type="button" id="okbmInboxTabNotif" onclick="window.okbmSwitchInboxTab(\'notif\', event);">알림</button>' +
+      '</div>' +
+    '</div>' +
+    '<div id="userNotificationInboxList" style="flex:1; min-height:0; overflow-y:auto; padding:12px 16px 20px; color:#94a3b8; font-size:0.78rem;">불러오는 중</div>' +
+  '</div>';
+  overlay.addEventListener('click', function(e) { e.stopPropagation(); });
+  document.body.appendChild(overlay);
+  window.okbmLiftInboxAboveDock(overlay);
+  if (typeof window.okbmBindNoteLiveRefresh === 'function') window.okbmBindNoteLiveRefresh();
+  if (typeof window.okbmNoteRealtimeStartInbox === 'function') window.okbmNoteRealtimeStartInbox();
+  window.okbmSwitchInboxTab(tab);
 };
 
 window.saveUserToSupabase = async function(profileData) {

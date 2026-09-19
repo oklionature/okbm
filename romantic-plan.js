@@ -1924,7 +1924,7 @@ window.saveCurrentPackingRecord = function() {
     }
   };
 
-  var CURRENT_GEAR_VERSION = '20260918_CLEAN_1621_V2';
+  var CURRENT_GEAR_VERSION = '20260920_NH_TENTS_1743';
 
   // 1. 초기 로드 시 버전 불일치 감지 -> 구버전 장비 캐시 자동 소거
   (function verifyGearCacheVersion() {

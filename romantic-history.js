@@ -278,6 +278,7 @@
         padding: calc(56px + 10px) 16px calc(140px + env(safe-area-inset-bottom, 8px)) 16px !important;
         box-sizing: border-box !important;
         overflow: hidden !important;
+        background: #000000 !important;
       }
       .postcard-template-container .tmpl-card-base,
       .postcard-template-container .ready-shot-card-vector,
@@ -1361,7 +1362,6 @@ window.normalizeHistoryRecord = function(r, idx) {
     var items = Array.isArray(cur.items) ? cur.items : [];
     var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
     var tmplId = cur.templateId || savedTmplId;
-    var borderGrad = window.getCardStableBorderGradient(cur, index);
     var shortCardMemo = cur.oneLineMemo || (cur.spot ? (cur.spot + ' 백패킹') : '자연 속 힐링 백패킹');
 
     var isCompleted = Boolean(cur.memo && cur.memo.trim().length > 0);
@@ -1442,7 +1442,7 @@ window.normalizeHistoryRecord = function(r, idx) {
     }
 
     return `
-      <div id="swipePostcardTarget" class="postcard-3d-wrapper ${isFlipped ? 'flipped' : ''}" style="width:100%; max-width:280px; aspect-ratio:3/4; position:relative; cursor:pointer; touch-action:pan-y; overscroll-behavior:contain; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; padding:2px; border-radius:15px; background:${borderGrad}; box-shadow:0 8px 24px rgba(0,0,0,0.85); box-sizing:border-box;">
+      <div id="swipePostcardTarget" class="postcard-3d-wrapper ${isFlipped ? 'flipped' : ''}" style="width:100%; max-width:280px; aspect-ratio:3/4; position:relative; cursor:pointer; touch-action:pan-y; overscroll-behavior:contain; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; padding:0; border-radius:15px; background:#000000; box-shadow:0 8px 24px rgba(0,0,0,0.85); box-sizing:border-box;">
         <div class="postcard-face-front" style="inset:2px !important; width:calc(100% - 4px) !important; height:calc(100% - 4px) !important; overflow:hidden; border-radius:13px; background:#0b0f19;">
           ${frontContentHtml}
         </div>
@@ -1490,6 +1490,9 @@ window.normalizeHistoryRecord = function(r, idx) {
 
     var currentTopModal = null;
     var openModalSelectors = [
+      'feedCustomShareModal',
+      'modalRichAfterTrip',
+      'tripActionActionSheet',
       'singleTripFeedModal',
       'userFeedCollectionModal',
       'pastTripsListModal',
@@ -1933,7 +1936,7 @@ window.normalizeHistoryRecord = function(r, idx) {
 
       var modalEl = document.createElement('div');
       modalEl.id = 'pastTripsListModal';
-      modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); width:100%; max-width:100%; background:#000000; z-index:1000010 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+      modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); width:100%; max-width:100%; background:#000000; z-index:2147483642 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
       if (typeof window.ensureMasterBottomDock === 'function') {
         window.ensureMasterBottomDock('history');
@@ -1995,6 +1998,7 @@ window.normalizeHistoryRecord = function(r, idx) {
       `;
 
       document.body.appendChild(modalEl);
+      if (typeof window.okbmLiftReportChildModal === 'function') window.okbmLiftReportChildModal(modalEl);
       triggerHaptic(12);
 
       var targetUrl = window.SUPABASE_URL || '';
@@ -2511,53 +2515,91 @@ window.toggleFeedStar = async function(cardId, e) {
 };
 
 
-// 🔗 [2. 스마트 멀티 공유 모달 엔진 - 3대 핵심 채널 최적화]
+// 🔗 [2. 스마트 멀티 공유 모달 엔진 - 3채널 동일 페이로드]
+  window.OKBM_PUBLIC_SHARE_BASE = 'https://oklionature.github.io/okbm/';
+
+  window.okbmBuildFeedSharePayload = function(recordId, spotName, memoText) {
+    var rec = (typeof window.okbmFindFeedRecord === 'function') ? window.okbmFindFeedRecord(recordId) : null;
+    var cleanId = String((rec && rec.id) || recordId || '').trim();
+    var rawSpot = String((rec && rec.spot) || spotName || '자연 속 힐링 기록');
+    var cleanSpot = rawSpot.split('(')[0].trim() || rawSpot.trim();
+    var memo = '';
+    if (rec) {
+      if (Array.isArray(rec.photoMemos) && rec.photoMemos[0]) memo = String(rec.photoMemos[0]).trim();
+      if (!memo) memo = String(rec.memo || rec.oneLineMemo || '').trim();
+    }
+    if (!memo) memo = String(memoText || '').trim();
+    var desc = memo
+      ? memo.replace(/\s+/g, ' ').trim()
+      : '배낭을 메고 자연으로 떠난 낭만 기록을 확인해보세요.';
+    if (desc.length > 80) desc = desc.slice(0, 79) + '…';
+
+    var url = window.OKBM_PUBLIC_SHARE_BASE + 'index.html?feed=' + encodeURIComponent(cleanId);
+    var photos = (rec && typeof getRecordPhotos === 'function') ? getRecordPhotos(rec) : [];
+    var image = '';
+    for (var i = 0; i < photos.length; i++) {
+      var pUrl = String(photos[i] || '').trim();
+      if (pUrl.indexOf('https://') === 0 && pUrl.indexOf('unsplash.com') < 0) {
+        image = pUrl;
+        break;
+      }
+    }
+    if (!image) image = window.OKBM_PUBLIC_SHARE_BASE + 'fulllogoblk.png?v=20260919_v3';
+
+    var title = '[낭만루트] ' + cleanSpot;
+    var body = title + '\n' + desc + '\n\n앱에서 보기\n' + url;
+    return {
+      id: cleanId,
+      spot: cleanSpot,
+      title: title,
+      description: desc,
+      url: url,
+      image: image,
+      body: body
+    };
+  };
+
   window.shareCurrentFeed = function(recordId, spotName, memoText) {
     triggerHaptic(10);
-    var cleanId = String(recordId || '').trim();
-    var cleanSpot = String(spotName || '자연 속 힐링 기록').split('(')[0].trim();
-    var homeDir = location.pathname.substring(0, location.pathname.lastIndexOf('/') + 1);
-    var shareUrl = location.origin + homeDir + 'index.html?feed=' + encodeURIComponent(cleanId);
-    var shareTitle = '🏕️ 낭만루트 - ' + cleanSpot;
-    var shareDesc = (memoText && memoText.trim().length > 0) ? memoText.trim().slice(0, 100) : '배낭을 메고 자연으로 떠난 낭만 기록을 확인해보세요.';
+    var payload = window.okbmBuildFeedSharePayload(recordId, spotName, memoText);
+    window.__okbmLastFeedShare = payload;
+    var safeId = escapeHtml(payload.id);
+    var safeSpot = escapeHtml(payload.spot);
 
     var old = document.getElementById('feedCustomShareModal');
     if (old) old.remove();
 
     var modal = document.createElement('div');
     modal.id = 'feedCustomShareModal';
-    modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:1000080; display:flex; justify-content:center; align-items:flex-end; box-sizing:border-box;';
+    modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:2147483646 !important; display:flex; justify-content:center; align-items:flex-end; box-sizing:border-box;';
     modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
 
     modal.innerHTML = `
-      <div style="width:100%; max-width:440px; background:#0c1017; border-top:1.5px solid rgba(56,189,248,0.35); border-radius:20px 20px 0 0; padding:18px 16px calc(18px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 -15px 40px rgba(0,0,0,0.85);" onclick="event.stopPropagation();">
+      <div style="width:100%; max-width:440px; background:#0c1017; border-top:1.5px solid rgba(56,189,248,0.35); border-radius:20px 20px 0 0; padding:18px 16px 16px 16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 -15px 40px rgba(0,0,0,0.85);" onclick="event.stopPropagation();">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
           <div style="display:flex; flex-direction:column;">
             <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">피드 공유하기</span>
-            <span style="font-size:0.68rem; color:#38bdf8; font-weight:800; margin-top:2px;">[${escapeHtml(cleanSpot)}]</span>
+            <span style="font-size:0.68rem; color:#38bdf8; font-weight:800; margin-top:2px;">[${safeSpot}]</span>
           </div>
           <button type="button" onclick="document.getElementById('feedCustomShareModal').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
         </div>
 
         <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; padding:10px 0 6px 0;">
-          <!-- 1. 카카오톡 -->
-          <button type="button" onclick="window.sendFeedToKakaoTalk('${escapeHtml(shareTitle)}', '${escapeHtml(shareDesc)}', '${shareUrl}'); document.getElementById('feedCustomShareModal').remove();" style="background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; padding:6px 0;">
+          <button type="button" data-record-id="${safeId}" onclick="window.sendFeedToKakaoTalk(this.dataset.recordId); document.getElementById('feedCustomShareModal') && document.getElementById('feedCustomShareModal').remove();" style="background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; padding:6px 0;">
             <div style="width:52px; height:52px; border-radius:16px; background:#fee500; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(254,229,0,0.25);">
               <svg viewBox="0 0 24 24" style="width:26px; height:26px; fill:#191919;"><path d="M12 3c-5.52 0-10 3.48-10 7.78 0 2.76 1.84 5.18 4.62 6.55l-1.18 4.34c-.11.4.34.73.69.5l5.06-3.34c.27.03.54.04.81.04 5.52 0 10-3.48 10-7.78 0-4.3-4.48-7.78-10-7.78z"/></svg>
             </div>
             <span style="font-size:0.72rem; font-weight:800; color:#e2e8f0;">카카오톡</span>
           </button>
 
-          <!-- 2. 인스타그램 -->
-          <button type="button" onclick="window.sendFeedToInstagram('${shareUrl}'); document.getElementById('feedCustomShareModal').remove();" style="background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; padding:6px 0;">
+          <button type="button" data-record-id="${safeId}" onclick="window.sendFeedToInstagram(this.dataset.recordId); document.getElementById('feedCustomShareModal') && document.getElementById('feedCustomShareModal').remove();" style="background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; padding:6px 0;">
             <div style="width:52px; height:52px; border-radius:16px; background:linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(220,39,67,0.3);">
               <svg viewBox="0 0 24 24" style="width:24px; height:24px; fill:#ffffff;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
             </div>
             <span style="font-size:0.72rem; font-weight:800; color:#e2e8f0;">인스타그램</span>
           </button>
 
-          <!-- 3. 링크 복사 -->
-          <button type="button" onclick="window.copyShareLinkFallback('${shareUrl}'); document.getElementById('feedCustomShareModal').remove();" style="background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; padding:6px 0;">
+          <button type="button" data-record-id="${safeId}" onclick="window.copyFeedShareLink(this.dataset.recordId); document.getElementById('feedCustomShareModal') && document.getElementById('feedCustomShareModal').remove();" style="background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; padding:6px 0;">
             <div style="width:52px; height:52px; border-radius:16px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(0,0,0,0.4);">
               <svg viewBox="0 0 24 24" style="width:22px; height:22px; stroke:#38bdf8; fill:none; stroke-width:2.2;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
             </div>
@@ -2567,25 +2609,33 @@ window.toggleFeedStar = async function(cardId, e) {
       </div>
     `;
     document.body.appendChild(modal);
-  };
-
-  // 🔗 [최신 웹 표준 스마트 공유 엔진]
-  window.copyShareLinkFallback = function(url) {
-    if (!url) return;
-    triggerHaptic(12);
-
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(url).then(function() {
-        if (typeof showToast === 'function') showToast('✓ 피드 링크가 복사되었습니다!', 'success', 2200);
-      }).catch(function() {
-        fallbackExecCopy(url);
-      });
-    } else {
-      fallbackExecCopy(url);
+    if (typeof window.ensureMasterBottomDock === 'function') {
+      window.ensureMasterBottomDock();
+    }
+    var dock = document.getElementById('romanticMasterBottomDock');
+    if (dock) {
+      dock.style.setProperty('z-index', '2147483647', 'important');
+      if (dock.parentElement === document.body) document.body.appendChild(dock);
     }
   };
 
-  function fallbackExecCopy(text) {
+  window.copyShareLinkFallback = function(text, toastMsg) {
+    if (!text) return;
+    triggerHaptic(12);
+    var msg = toastMsg || '✓ 피드 링크가 복사되었습니다!';
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function() {
+        if (typeof showToast === 'function') showToast(msg, 'success', 2200);
+      }).catch(function() {
+        fallbackExecCopy(text, msg);
+      });
+    } else {
+      fallbackExecCopy(text, msg);
+    }
+  };
+
+  function fallbackExecCopy(text, toastMsg) {
     var ta = document.createElement('textarea');
     ta.value = text;
     ta.style.position = 'fixed';
@@ -2595,34 +2645,56 @@ window.toggleFeedStar = async function(cardId, e) {
     ta.select();
     try {
       document.execCommand('copy');
-      if (typeof showToast === 'function') showToast('✓ 피드 링크가 복사되었습니다!', 'success', 2200);
+      if (typeof showToast === 'function') showToast(toastMsg || '✓ 피드 링크가 복사되었습니다!', 'success', 2200);
     } catch (err) { console.warn('[romantic-history.js:fallbackExecCopy]', err); }
     document.body.removeChild(ta);
   }
 
-  window.sendFeedToKakaoTalk = function(title, desc, url) {
-    triggerHaptic(12);
-    if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized() && Kakao.Share) {
-      try {
-        Kakao.Share.sendDefault({
-          objectType: 'text',
-          text: title + '\n\n“' + desc + '”\n\n낭만루트에서 확인하기',
-          link: { mobileWebUrl: url, webUrl: url }
-        });
-        return;
-      } catch (e) { console.warn('[romantic-history.js:sendFeedToKakaoTalk]', e); }
-    }
-    window.copyShareLinkFallback(url);
+  window.okbmResolveFeedSharePayload = function(recordId) {
+    var last = window.__okbmLastFeedShare;
+    if (last && String(last.id || '') === String(recordId || '')) return last;
+    return window.okbmBuildFeedSharePayload(recordId);
   };
 
-  window.sendFeedToInstagram = function(url) {
+  window.copyFeedShareLink = function(recordId) {
+    var p = window.okbmResolveFeedSharePayload(recordId);
+    window.copyShareLinkFallback(p.body, '✓ 같은 공유 내용이 복사되었습니다!');
+  };
+
+  window.sendFeedToKakaoTalk = function(recordId) {
     triggerHaptic(12);
-    window.copyShareLinkFallback(url);
-    if (typeof showToast === 'function') {
-      showToast(HISTORY_TOAST_VEC.camera + '피드 링크 복사 완료. 인스타그램으로 이동합니다.', 'success', 2400);
+    var p = window.okbmResolveFeedSharePayload(recordId);
+    if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized()) {
+      try {
+        var shareFn = (Kakao.Share && Kakao.Share.sendDefault) ? Kakao.Share.sendDefault : (Kakao.Link && Kakao.Link.sendDefault ? Kakao.Link.sendDefault : null);
+        if (shareFn) {
+          shareFn({
+            objectType: 'feed',
+            content: {
+              title: p.title,
+              description: p.description,
+              imageUrl: p.image,
+              imageWidth: 800,
+              imageHeight: 800,
+              link: { mobileWebUrl: p.url, webUrl: p.url }
+            },
+            buttons: [
+              { title: '앱에서 보기', link: { mobileWebUrl: p.url, webUrl: p.url } }
+            ],
+            installTalk: true
+          });
+          return;
+        }
+      } catch (e) { console.warn('[romantic-history.js:sendFeedToKakaoTalk]', e); }
     }
+    window.copyShareLinkFallback(p.body, '✓ 같은 공유 내용이 복사되었습니다!');
+  };
+
+  window.sendFeedToInstagram = function(recordId) {
+    triggerHaptic(12);
+    var p = window.okbmResolveFeedSharePayload(recordId);
+    window.copyShareLinkFallback(p.body, (HISTORY_TOAST_VEC.camera || '') + '같은 공유 내용 복사 완료. 인스타그램에 붙여넣기 하세요.');
     setTimeout(function() {
-      // 모바일 기기 감지: 앱 설치 시 인스타 앱 실행, 미설치 또는 PC 시 인스타 웹 오픈
       var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       if (isMobile) {
         window.location.href = 'instagram://app';
@@ -2637,18 +2709,22 @@ window.toggleFeedStar = async function(cardId, e) {
 
   window.triggerNativeShare = function(title, desc, url) {
     triggerHaptic(10);
+    var p = window.__okbmLastFeedShare;
+    var shareTitle = (p && p.title) || title;
+    var shareText = (p && p.description) || desc;
+    var shareUrl = (p && p.url) || url;
     if (navigator.share) {
       navigator.share({
-        title: title,
-        text: desc,
-        url: url
+        title: shareTitle,
+        text: shareText,
+        url: shareUrl
       }).catch(function(err) {
         if (err && err.name !== 'AbortError') {
-          window.copyShareLinkFallback(url);
+          window.copyShareLinkFallback((p && p.body) || shareUrl);
         }
       });
     } else {
-      window.copyShareLinkFallback(url);
+      window.copyShareLinkFallback((p && p.body) || shareUrl);
     }
   };
 
@@ -2741,7 +2817,7 @@ window.toggleFeedStar = async function(cardId, e) {
         actionSheetBtn.style.color = published ? '#38bdf8' : '#cbd5e1';
         actionSheetBtn.style.borderColor = published ? '#38bdf8' : 'rgba(255,255,255,0.15)';
         actionSheetBtn.style.background = published ? 'rgba(56,189,248,0.14)' : 'rgba(255,255,255,0.06)';
-        actionSheetBtn.innerHTML = '<div style="display:flex; align-items:center; gap:8px;"><span>' + (published ? '🌐' : '🔒') + '</span><span>' + (published ? '전체 피드에 공개 중' : '현재 나만보기 (비공개)') + '</span></div><span style="font-size:0.68rem; color:' + (published ? '#38bdf8' : '#fde047') + '; background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">' + (published ? '비공개 전환' : '전체 공개하기') + '</span>';
+        actionSheetBtn.innerHTML = '<div style="display:flex; align-items:center; gap:8px;"><span>' + (published ? '🌐' : '🔒') + '</span><span>' + (published ? '함께보기 중 (전체 공개)' : '현재 나만보기') + '</span></div><span style="font-size:0.68rem; color:' + (published ? '#38bdf8' : '#fde047') + '; background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">' + (published ? '나만보기로 전환' : '함께보기') + '</span>';
       }
     };
 
@@ -2749,7 +2825,7 @@ window.toggleFeedStar = async function(cardId, e) {
 
     triggerHaptic(12);
     if (typeof showToast === 'function') {
-      showToast((nextStatus ? HISTORY_TOAST_VEC.globe : HISTORY_TOAST_VEC.lock) + (nextStatus ? '[전체공개]로 전환되었습니다.' : '[나만보기]로 전환되었습니다.'), 'info', 1600);
+      showToast((nextStatus ? HISTORY_TOAST_VEC.globe : HISTORY_TOAST_VEC.lock) + (nextStatus ? '[함께보기]로 전환되었습니다.' : '[나만보기]로 전환되었습니다.'), 'info', 1600);
     }
 
     clearTimeout(window.__publishDebounceTimers[sId]);
@@ -2799,6 +2875,7 @@ window.toggleFeedStar = async function(cardId, e) {
       (typeof window.safeGetStorage === 'function') ? window.safeGetStorage('okbm_packing_history', []) : null,
       window.__allLoadedFeeds,
       window.__currentScopedPastTripLogs,
+      window.__currentScopedSavedFeeds,
       (typeof safeGetJSON === 'function') ? safeGetJSON('okbm_cached_community_feeds', []) : null
     ];
     for (var p = 0; p < pools.length; p++) {
@@ -2824,7 +2901,15 @@ window.toggleFeedStar = async function(cardId, e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
     triggerHaptic(10);
     var log = window.okbmFindFeedRecord(recordId);
-    if (!log) return;
+    if (!log && typeof window.__findCurrentDualFeedRecord === 'function') {
+      var curFeed = window.__findCurrentDualFeedRecord();
+      if (curFeed && String(curFeed.id || '').trim() === String(recordId || '').trim()) log = curFeed;
+    }
+    if (!log) {
+      if (typeof showToast === 'function') showToast('대상을 찾을 수 없습니다.', 'warn');
+      return;
+    }
+    window.__tripActionTargetLog = log;
 
     var old = document.getElementById('tripActionActionSheet');
     if (old) old.remove();
@@ -2833,48 +2918,64 @@ window.toggleFeedStar = async function(cardId, e) {
       ? Boolean(log.isPublished)
       : Boolean(log.is_published);
 
+    var safeId = escapeHtml(String(log.id || ''));
     var sheet = document.createElement('div');
     sheet.id = 'tripActionActionSheet';
-    sheet.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.78); z-index:1000009; display:flex; justify-content:center; align-items:flex-end; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);';
+    sheet.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.78); z-index:2147483646 !important; display:flex; justify-content:center; align-items:flex-end; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);';
+    sheet.onclick = function(ev) { if (ev.target === sheet) sheet.remove(); };
 
     sheet.innerHTML = `
-      <div style="width:100%; max-width:440px; background:#0c1017; border-top:1.5px solid rgba(56,189,248,0.35); border-radius:18px 18px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;">
+      <div style="width:100%; max-width:440px; background:#0c1017; border-top:1.5px solid rgba(56,189,248,0.35); border-radius:18px 18px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom, 0px)) 16px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box;" onclick="event.stopPropagation();">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
           <span style="font-size:0.86rem; font-weight:900; color:#fff;">[${escapeHtml(log.spot)}] 기록 관리</span>
           <button type="button" onclick="document.getElementById('tripActionActionSheet').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer;">✕</button>
         </div>
 
-        <!-- 🌐 공개 / 🔒 비공개 전환 버튼 -->
-        <button type="button" id="sheetTogglePublishBtn_${log.id}" onclick="document.getElementById('tripActionActionSheet').remove(); window.toggleFeedPublishStatus('${log.id}', event);" style="width:100%; height:42px; background:${isPub ? 'rgba(56,189,248,0.14)' : 'rgba(255,255,255,0.06)'}; border:1px solid ${isPub ? '#38bdf8' : 'rgba(255,255,255,0.15)'}; border-radius:10px; color:${isPub ? '#38bdf8' : '#cbd5e1'}; font-size:0.80rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:space-between; padding:0 14px;">
+        <button type="button" id="sheetTogglePublishBtn_${safeId}" data-record-id="${safeId}" onclick="document.getElementById('tripActionActionSheet') && document.getElementById('tripActionActionSheet').remove(); window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="width:100%; height:42px; background:${isPub ? 'rgba(56,189,248,0.14)' : 'rgba(255,255,255,0.06)'}; border:1px solid ${isPub ? '#38bdf8' : 'rgba(255,255,255,0.15)'}; border-radius:10px; color:${isPub ? '#38bdf8' : '#cbd5e1'}; font-size:0.80rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:space-between; padding:0 14px;">
           <div style="display:flex; align-items:center; gap:8px;">
             <span>${isPub ? '🌐' : '🔒'}</span>
-            <span>${isPub ? '전체 피드에 공개 중' : '현재 나만보기 (비공개)'}</span>
+            <span>${isPub ? '함께보기 중 (전체 공개)' : '현재 나만보기'}</span>
           </div>
           <span style="font-size:0.68rem; color:${isPub ? '#38bdf8' : '#fde047'}; background:rgba(255,255,255,0.08); padding:2px 6px; border-radius:4px;">
-            ${isPub ? '비공개 전환' : '전체 공개하기'}
+            ${isPub ? '나만보기로 전환' : '함께보기'}
           </span>
         </button>
 
-        <!-- ✍️ 100자 후기 및 사진 수정 -->
-        <button type="button" onclick="document.getElementById('tripActionActionSheet').remove(); window.openRichAfterTripModal(window.okbmFindFeedRecord('${log.id}'));" style="width:100%; height:42px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:8px; padding:0 14px;">
+        <button type="button" data-record-id="${safeId}" onclick="window.openTripEditFromMenu(this.dataset.recordId, event);" style="width:100%; height:42px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:8px; padding:0 14px;">
           <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:#38bdf8; fill:none; stroke-width:2.2;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-          <span>✍️ 박지 팁 & 현장 사진 수정</span>
+          <span>수정</span>
         </button>
 
-        <button type="button" onclick="document.getElementById('tripActionActionSheet').remove(); window.openHistoryStudioModal(window.interactiveHistory.find(r=>r.id==='${log.id}'));" style="width:100%; height:42px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:10px; color:#fff; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:8px; padding:0 14px;">
-          <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:#fde047; fill:none; stroke-width:2.2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          <span>🎨 20종 템플릿 스튜디오로 인출</span>
-        </button>
-
-        <!-- 🗑️ 기록 영구 삭제 -->
-        <button type="button" onclick="if(confirm('이 기록을 보관함에서 삭제하시겠습니까?')){ window.deleteTripRecord('${log.id}'); document.getElementById('tripActionActionSheet').remove(); }" style="width:100%; height:42px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); border-radius:10px; color:#fda4af; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:8px; padding:0 14px;">
+        <button type="button" data-record-id="${safeId}" onclick="document.getElementById('tripActionActionSheet') && document.getElementById('tripActionActionSheet').remove(); window.deleteTripRecord(this.dataset.recordId, event);" style="width:100%; height:42px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); border-radius:10px; color:#fda4af; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:8px; padding:0 14px;">
           <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:#f43f5e; fill:none; stroke-width:2.2;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-          <span>🗑️ 기록 삭제</span>
+          <span>기록 삭제</span>
         </button>
+
+        <button type="button" onclick="document.getElementById('tripActionActionSheet').remove();" style="width:100%; height:42px; background:#111111; border:none; border-radius:10px; color:#94a3b8; font-size:0.78rem; font-weight:800; cursor:pointer; margin-top:2px;">취소</button>
       </div>
     `;
 
     document.body.appendChild(sheet);
+  };
+
+  window.openTripEditFromMenu = function(recordId, e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    var sheet = document.getElementById('tripActionActionSheet');
+    if (sheet) sheet.remove();
+    var rec = window.__tripActionTargetLog || null;
+    if (!rec || (recordId && String(rec.id || '').trim() !== String(recordId).trim())) {
+      rec = (typeof window.okbmFindFeedRecord === 'function') ? window.okbmFindFeedRecord(recordId) : rec;
+    }
+    if (!rec && typeof window.__findCurrentDualFeedRecord === 'function') {
+      rec = window.__findCurrentDualFeedRecord();
+    }
+    if (!rec) {
+      if (typeof showToast === 'function') showToast('수정할 대상을 찾을 수 없습니다.', 'warn');
+      return;
+    }
+    if (typeof window.openRichAfterTripModal === 'function') {
+      window.openRichAfterTripModal(rec);
+    }
   };
 
 window.deleteTripRecord = async function(recordId, e) {
@@ -2991,25 +3092,52 @@ window.deleteTripRecord = async function(recordId, e) {
 
   
 // 🗺️ [전국 마스터 박지 DB 실시간 대조 & 지도 직통 이동 엔진]
-  window.isSpotRegisteredInMasterDB = function(rawSpotName) {
-    if (!rawSpotName) return false;
-    var clean = String(rawSpotName)
-      .replace(/\(.*?\)/g, '')
-      .replace(/\[.*?\]/g, '')
-      .replace(/\s+/g, '')
+  // 피드명은 '가평 울업산', DB는 spot_main '울업산' / fullName '[가평군] 울업산' 이라 공백·시군구 접미사까지 맞춰야 한다.
+  window.okbmCompactSpotFocusKey = function(str) {
+    return String(str || '')
+      .replace(/[()[\]]/g, ' ')
+      .replace(/\d+\s*m\b/gi, ' ')
+      .replace(/특별자치시|특별자치도|광역시|특별시/g, '')
+      .replace(/([가-힣]{2,})(시|군|구)/g, '$1')
+      .replace(/[\s\-_,./·]/g, '')
       .toLowerCase()
       .trim();
+  };
 
-    if (!clean || clean === '나의힐링스팟' || clean === '힐링박지' || clean === '방문스팟') return false;
+  window.okbmFindSpotByFocusQuery = function(list, query) {
+    var q = window.okbmCompactSpotFocusKey(query);
+    if (!q || q.length < 2) return null;
+    var arr = Array.isArray(list) ? list : [];
+    var best = null, bestScore = 0, bestMainLen = 0;
+    for (var i = 0; i < arr.length; i++) {
+      var s = arr[i];
+      if (!s) continue;
+      var main = window.okbmCompactSpotFocusKey(s.spot_main || s.name || s.spotName || s.spot || s.title || '');
+      var hay = window.okbmCompactSpotFocusKey([
+        s.fullName, s.fullname, s.spot_main, s.name, s.spotName, s.spot, s.title,
+        s.spot_sub, s.cityName, s.region
+      ].filter(Boolean).join(' '));
+      if (!main && !hay) continue;
+      var score = 0;
+      if (main && main === q) score = 100;
+      else if (hay && hay === q) score = 90;
+      else if (main && main.length >= 2 && q.indexOf(main) !== -1) score = 80;
+      else if (hay && hay.indexOf(q) !== -1) score = 70;
+      else if (hay && q.indexOf(hay) !== -1 && hay.length >= 4) score = 60;
+      if (score > bestScore || (score === bestScore && main.length > bestMainLen)) {
+        bestScore = score;
+        bestMainLen = main.length;
+        best = s;
+      }
+    }
+    return bestScore > 0 ? best : null;
+  };
 
+  function okbmCollectMasterSpotPool() {
     var pool = [];
-    if (Array.isArray(window.campingSpots)) pool = pool.concat(window.campingSpots);
-    if (Array.isArray(window.spotsData)) pool = pool.concat(window.spotsData);
-    if (Array.isArray(window.allSpots)) pool = pool.concat(window.allSpots);
-    if (Array.isArray(window.masterSpots)) pool = pool.concat(window.masterSpots);
-    if (Array.isArray(window.CAMPING_SPOTS)) pool = pool.concat(window.CAMPING_SPOTS);
-    if (Array.isArray(window.SPOTS_DB)) pool = pool.concat(window.SPOTS_DB);
-
+    [window.campingSpots, window.spotsData, window.allSpots, window.masterSpots, window.spots, window.CAMPING_SPOTS, window.SPOTS_DB].forEach(function(arr) {
+      if (Array.isArray(arr)) pool = pool.concat(arr);
+    });
     ['okbm_spots_cache', 'okbm_master_spots', 'camping_spots', 'okbm_spots'].forEach(function(k) {
       try {
         var item = localStorage.getItem(k);
@@ -3017,15 +3145,16 @@ window.deleteTripRecord = async function(recordId, e) {
           var parsed = JSON.parse(item);
           if (Array.isArray(parsed)) pool = pool.concat(parsed);
         }
-      } catch (e) { console.warn('[romantic-history.js:isSpotRegisteredInMasterDB parse]', e); }
+      } catch (e) { console.warn('[romantic-history.js:okbmCollectMasterSpotPool parse]', e); }
     });
+    return pool;
+  }
 
-    return pool.some(function(s) {
-      if (!s) return false;
-      var sName = String(s.name || s.spotName || s.spot || s.title || '').replace(/\s+/g, '').toLowerCase().trim();
-      if (!sName || sName === '나의힐링스팟' || sName === '힐링박지') return false;
-      return (sName === clean || clean.includes(sName) || sName.includes(clean));
-    });
+  window.isSpotRegisteredInMasterDB = function(rawSpotName) {
+    if (!rawSpotName) return false;
+    var compact = window.okbmCompactSpotFocusKey(rawSpotName);
+    if (!compact || compact === '나의힐링스팟' || compact === '힐링박지' || compact === '방문스팟') return false;
+    return !!window.okbmFindSpotByFocusQuery(okbmCollectMasterSpotPool(), rawSpotName);
   };
 
   window.navigateToSpotMap = function(rawSpotName, e) {
@@ -3044,14 +3173,23 @@ window.deleteTripRecord = async function(recordId, e) {
       return;
     }
 
+    var found = window.okbmFindSpotByFocusQuery(okbmCollectMasterSpotPool(), cleanSpot);
+    var targetId = found && found.id ? String(found.id).trim() : '';
+    var mapName = (found && String(found.spot_main || found.name || '').trim()) || cleanSpot;
+
     try {
-      localStorage.setItem('okbm_target_map_spot', cleanSpot);
+      localStorage.setItem('okbm_target_map_spot', mapName);
+      sessionStorage.setItem('okbm_pending_map_spot', mapName);
       sessionStorage.setItem('okbm_last_feed_return', location.href);
+      if (targetId) sessionStorage.setItem('okbm_pending_map_id', targetId);
+      else sessionStorage.removeItem('okbm_pending_map_id');
     } catch (err) {}
 
     setTimeout(function() {
       if (typeof window.closeHistoryModal === 'function') window.closeHistoryModal();
-      location.href = 'map.html?spot=' + encodeURIComponent(cleanSpot);
+      var href = 'map.html?spot=' + encodeURIComponent(mapName);
+      if (targetId) href += '&id=' + encodeURIComponent(targetId);
+      location.href = href;
     }, 120);
   };
 
@@ -3104,7 +3242,6 @@ window.deleteTripRecord = async function(recordId, e) {
     var rawTmplId = log.template_id !== undefined ? log.template_id : log.templateId;
     var tmplId = (rawTmplId !== undefined && rawTmplId !== null && parseInt(rawTmplId, 10) > 0) ? parseInt(rawTmplId, 10) : 1;
     var items = Array.isArray(log.items) ? log.items : [];
-    var borderGrad = (typeof window.getCardStableBorderGradient === 'function') ? window.getCardStableBorderGradient(log, 0) : 'linear-gradient(135deg, #10b981, #047857)';
 
     var actualReadyShot = String(log.readyShotPhoto || log.ready_shot_photo || log.customTemplatePhoto || '').trim();
 
@@ -3173,17 +3310,12 @@ window.deleteTripRecord = async function(recordId, e) {
       '</div>';
     }).join('');
 
-    var templateSectionHtml = isReadyShotMode ? (
+    var templateSectionHtml =
       '<div style="padding:18px 16px 20px 16px; background:#000000; display:flex; justify-content:center;">' +
-        '<div style="width:100%; max-width:330px; aspect-ratio:3/4; border-radius:14px; overflow:hidden; box-shadow:0 12px 30px rgba(0,0,0,0.9);">' +
+        '<div style="width:100%; max-width:330px; aspect-ratio:3/4; border-radius:14px; overflow:hidden; background:#000000; box-shadow:0 12px 30px rgba(0,0,0,0.9);">' +
           packingSheetMarkup +
         '</div>' +
-      '</div>'
-    ) : (
-      '<div style="padding:18px 16px 20px 16px; background:#000000;">' +
-        '<div style="width:100%; aspect-ratio:3/4; border-radius:14px; padding:2px; background:' + borderGrad + ';"><div style="width:100%; height:100%; border-radius:12px; overflow:hidden;">' + packingSheetMarkup + '</div></div>' +
-      '</div>'
-    );
+      '</div>';
 
     return '<div class="single-feed-block" data-record-id="' + escapeHtml(String(log.id)) + '" style="background:#000000; border-bottom:2px solid rgba(255,255,255,0.12); overflow:hidden; display:flex; flex-direction:column; flex-shrink:0; margin-bottom:28px; box-sizing:border-box;">' +
       '<div style="padding:14px 16px 10px 16px; background:#000000; display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid rgba(255,255,255,0.06);">' +
@@ -3352,7 +3484,7 @@ window.deleteTripRecord = async function(recordId, e) {
 
     var modalEl = document.createElement('div');
     modalEl.id = 'followedRoutersModal';
-    modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:1000030 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:2147483642 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     var listHtml = '';
     if (routerItems.length === 0) {
@@ -3392,7 +3524,8 @@ window.deleteTripRecord = async function(recordId, e) {
     `;
 
     document.body.appendChild(modalEl);
-    if (typeof window.ensureMasterBottomDock === 'function') {
+    if (typeof window.okbmLiftReportChildModal === 'function') window.okbmLiftReportChildModal(modalEl);
+    else if (typeof window.ensureMasterBottomDock === 'function') {
       window.ensureMasterBottomDock('history');
     }
   };
@@ -3467,7 +3600,7 @@ window.deleteTripRecord = async function(recordId, e) {
 
     var modalEl = document.createElement('div');
     modalEl.id = 'savedFeedsListModal';
-    modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:1000030 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:2147483642 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     var listContentHtml = '';
     if (matchedSavedFeeds.length === 0) {
@@ -3521,10 +3654,13 @@ window.deleteTripRecord = async function(recordId, e) {
     `;
 
     document.body.appendChild(modalEl);
-    if (typeof window.ensureMasterBottomDock === 'function') {
+    if (typeof window.okbmLiftReportChildModal === 'function') window.okbmLiftReportChildModal(modalEl);
+    else if (typeof window.ensureMasterBottomDock === 'function') {
       window.ensureMasterBottomDock('history');
     }
   };
+
+  window.openSavedFeedsListModal = window.openSavedFeedsModal;
 
   window.openRomanticInterestModal = function(initialTab) {
     if (initialTab === 'feeds') {
@@ -3738,6 +3874,7 @@ window.deleteTripRecord = async function(recordId, e) {
     sheet.onclick = function(ev) { if (ev.target === sheet) sheet.remove(); };
 
     var rowBtn = 'width:100%; height:46px; background:#111111; border:none; border-radius:10px; color:#e2e8f0; font-size:0.84rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:10px; padding:0 14px;';
+
     var unfollowRow = '<button type="button" data-user-id="' + escapeHtml(sUserId) + '" data-author="' + escapeHtml(sNick) + '" onclick="document.getElementById(\'ugcSafetyMenuSheet\') && document.getElementById(\'ugcSafetyMenuSheet\').remove(); window.__unfollowRouterFromProfileMenu(this.dataset.userId, this.dataset.author, event);" style="' + rowBtn + (isFollowing ? '' : ' color:#94a3b8;') + '">' +
       '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" y1="11" x2="16" y2="11"/></svg>' +
       '<span>관심삭제</span>' +
@@ -3839,11 +3976,15 @@ window.deleteTripRecord = async function(recordId, e) {
     var targetUserId = String(userId || '').trim();
 
     var profile = safeGetJSON('user_profile', null);
-    var myUserId = (profile && profile.id) ? String(profile.id).trim() : '';
+    var myUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+    if (!myUserId) {
+      try { myUserId = (typeof window.okbmGetCurrentUserId === 'function') ? String(window.okbmGetCurrentUserId() || '').trim() : ''; } catch (eSelf) { myUserId = ''; }
+    }
     var followKey = targetUserId || targetAuthor;
     var followingList = safeGetJSON('okbm_following_users', []);
     var isFollowing = followingList.includes(followKey);
     var isSelf = Boolean(myUserId && targetUserId && myUserId === targetUserId);
+    if (targetUserId && myUserId && targetUserId !== myUserId) isSelf = false;
 
     var localPool = [];
     if (Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0) {
@@ -3915,7 +4056,12 @@ window.deleteTripRecord = async function(recordId, e) {
     var firstFeedId = (initialRenderList[0] && initialRenderList[0].id) ? String(initialRenderList[0].id).trim() : '';
     var followBtnHtml = '';
     var moreBtnHtml = '';
+    var noteBtnHtml = '';
     if (!isSelf) {
+      var canNote = Boolean(targetUserId) && !(typeof window.isUserBlocked === 'function' && window.isUserBlocked(targetUserId));
+      if (canNote) {
+        noteBtnHtml = '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.openDirectMessageThread(this.dataset.userId, this.dataset.author);" style="background:rgba(56,189,248,0.14); border:1px solid rgba(56,189,248,0.4); color:#7dd3fc; padding:5px 12px; border-radius:14px; font-size:0.78rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">쪽지</button>';
+      }
       followBtnHtml = isFollowing
         ? '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(52,211,153,0.15); border:1px solid #34d399; color:#34d399; padding:5px 12px; border-radius:14px; font-size:0.78rem; font-weight:900; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;"><svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg><span>관심</span></button>'
         : '<button type="button" data-user-id="' + escapeHtml(targetUserId) + '" data-author="' + escapeHtml(targetAuthor) + '" onclick="window.toggleFollowUser(this.dataset.userId, this.dataset.author, event);" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.22); color:#ffffff; padding:5px 12px; border-radius:14px; font-size:0.78rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;"><svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>관심</span></button>';
@@ -3953,7 +4099,7 @@ window.deleteTripRecord = async function(recordId, e) {
     modalEl.dataset.userId = targetUserId;
     var inspectBlocked = Boolean(window.__okbmInspectBlockedUserId && String(window.__okbmInspectBlockedUserId).trim() === targetUserId);
     if (inspectBlocked) modalEl.dataset.fromBlocked = '1';
-    var collectionZ = inspectBlocked ? '2147483645' : '1000010';
+    var collectionZ = inspectBlocked ? '2147483645' : '2147483642';
     modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:' + collectionZ + ' !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     modalEl.innerHTML = `
@@ -3964,6 +4110,7 @@ window.deleteTripRecord = async function(recordId, e) {
           <span id="userModalRouteCountBadge" style="font-size:0.65rem; color:#38bdf8; font-weight:800; background:rgba(56,189,248,0.15); padding:2px 8px; border-radius:5px; border:1px solid rgba(56,189,248,0.3); flex-shrink:0;">기록 (${initialRenderList.length})</span>
         </div>
         <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+          ${noteBtnHtml}
           ${followBtnHtml}
           ${moreBtnHtml}
         </div>
@@ -4200,8 +4347,8 @@ window.deleteTripRecord = async function(recordId, e) {
 
     var feedModal = document.createElement('div');
     feedModal.id = 'singleTripFeedModal';
-    var feedZ = adminInspect ? '2147483646' : '1000010';
-    var chromeZ = adminInspect ? '2147483647' : '1000025';
+    var feedZ = adminInspect ? '2147483646' : '2147483643';
+    var chromeZ = adminInspect ? '2147483647' : '2147483644';
     feedModal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:' + feedZ + ' !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     feedModal.innerHTML = `
@@ -4210,8 +4357,8 @@ window.deleteTripRecord = async function(recordId, e) {
         
         <div style="pointer-events:auto; display:flex; align-items:center; gap:6px;">
           <div id="btnFloatUgcSafety" style="display:none; align-items:center; gap:6px;"></div>
-          <button type="button" id="btnFloatEditTripLog" onclick="window.__triggerEditCurrentActiveFeed();" style="background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.2); color:#fde047; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0;" title="현재 피드 수정">
-            <svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          <button type="button" id="btnFloatFeedMore" onclick="window.__triggerCurrentFeedMoreMenu(event);" style="background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.2); color:#ffffff; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0;" title="더보기">
+            <svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>
           </button>
         </div>
       </div>
@@ -4228,20 +4375,12 @@ window.deleteTripRecord = async function(recordId, e) {
     }
 
     window.__syncDualFeedUgcChrome = function(curRecord) {
-      var editBtn = document.getElementById('btnFloatEditTripLog');
+      var moreBtn = document.getElementById('btnFloatFeedMore');
       var safetyWrap = document.getElementById('btnFloatUgcSafety');
-      var isOwn = Boolean(curRecord && window.isRecordOwner && window.isRecordOwner(curRecord));
-      if (editBtn) {
-        editBtn.style.display = isOwn ? 'flex' : 'none';
-      }
+      if (moreBtn) moreBtn.style.display = 'flex';
       if (safetyWrap) {
-        if (!isOwn && curRecord) {
-          safetyWrap.innerHTML = okbmBuildFeedOthersMoreBtnHtml(curRecord.id, curRecord.userId || curRecord.user_id, curRecord.author || curRecord.nick || curRecord.nickname, 'float');
-          safetyWrap.style.display = safetyWrap.innerHTML ? 'flex' : 'none';
-        } else {
-          safetyWrap.innerHTML = '';
-          safetyWrap.style.display = 'none';
-        }
+        safetyWrap.innerHTML = '';
+        safetyWrap.style.display = 'none';
       }
     };
 
@@ -4271,8 +4410,7 @@ window.deleteTripRecord = async function(recordId, e) {
 
     window.__syncDualFeedUgcChrome(logs[startIdx]);
 
-    window.__triggerEditCurrentActiveFeed = function() {
-      triggerHaptic(10);
+    window.__findCurrentDualFeedRecord = function() {
       var curId = window.__currentActiveDualFeedId;
       var targetLog = (logs || []).find(function(r) { return r && String(r.id).trim() === String(curId).trim(); });
       if (!targetLog && typeof window.okbmFindFeedRecord === 'function') {
@@ -4281,6 +4419,30 @@ window.deleteTripRecord = async function(recordId, e) {
       if (!targetLog) {
         targetLog = (window.interactiveHistory || []).find(function(r) { return r && String(r.id).trim() === String(curId).trim(); });
       }
+      return targetLog || null;
+    };
+
+    window.__triggerCurrentFeedMoreMenu = function(e) {
+      if (e) { e.preventDefault(); e.stopPropagation(); }
+      triggerHaptic(10);
+      var targetLog = window.__findCurrentDualFeedRecord();
+      if (!targetLog) {
+        if (typeof showToast === 'function') showToast('대상을 찾을 수 없습니다.', 'warn');
+        return;
+      }
+      var isOwn = Boolean(window.isRecordOwner && window.isRecordOwner(targetLog));
+      if (isOwn && typeof window.openTripActionMenu === 'function') {
+        window.openTripActionMenu(targetLog.id, e);
+        return;
+      }
+      if (typeof window.openUgcSafetyMenu === 'function') {
+        window.openUgcSafetyMenu(targetLog.id, targetLog.userId || targetLog.user_id, targetLog.author || targetLog.nick || targetLog.nickname, e);
+      }
+    };
+
+    window.__triggerEditCurrentActiveFeed = function() {
+      triggerHaptic(10);
+      var targetLog = window.__findCurrentDualFeedRecord();
       if (targetLog) {
         if (!window.isRecordOwner(targetLog)) {
           if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.lock + '본인이 작성한 기록만 수정할 수 있습니다.', 'warn', 2200);
@@ -5168,7 +5330,7 @@ window.deleteTripRecord = async function(recordId, e) {
 
     var isNew = Boolean(record.isNewPost);
 
-    if (record.date && typeof window.okbmRouteDateReached === 'function' && !window.okbmRouteDateReached(record)) {
+    if (isNew && record.date && typeof window.okbmRouteDateReached === 'function' && !window.okbmRouteDateReached(record)) {
       triggerHaptic(12);
       if (typeof showToast === 'function') {
         showToast(HISTORY_TOAST_VEC.clock + '출발일 당일 이후에 현장 사진과 일지를 등록할 수 있습니다.', 'info', 2400);
@@ -5251,7 +5413,7 @@ window.deleteTripRecord = async function(recordId, e) {
 
     var formModal = document.createElement('div');
     formModal.id = 'modalRichAfterTrip';
-    formModal.style.cssText = 'position:fixed; top:0; left:0; right:0; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; width:100%; max-width:100%; background:#000000; z-index:1000010 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
+    formModal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:2147483645 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     formModal.innerHTML = `
       <!-- 1. 상단 고정 헤더: 뒤로가기 + 박지/일상 뱃지 + 수정 완료 -->
@@ -5327,6 +5489,11 @@ window.deleteTripRecord = async function(recordId, e) {
     document.body.appendChild(formModal);
     if (typeof window.ensureMasterBottomDock === 'function') {
       window.ensureMasterBottomDock('history');
+    }
+    var dock = document.getElementById('romanticMasterBottomDock');
+    if (dock) {
+      dock.style.setProperty('z-index', '2147483647', 'important');
+      if (dock.parentElement === document.body) document.body.appendChild(dock);
     }
     window.__renderRichPhotoStage();
   };

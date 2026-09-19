@@ -137,15 +137,18 @@
         if (bootId) sessionStorage.setItem('okbm_pending_map_id', bootId);
       } catch (e) {}
       var s = window.location.search;
-      var isDirectTab = s.includes('open=plan') || s.includes('open=history') || s.includes('tab=plan') || s.includes('tab=history') || s.includes('open=basecamp');
+      var isDirectTab = s.includes('open=plan') || s.includes('open=history') || s.includes('open=report') || s.includes('tab=plan') || s.includes('tab=history') || s.includes('tab=report') || s.includes('open=basecamp');
       if (isDirectTab) {
         document.documentElement.classList.add('direct-modal-pending');
         var isPlan = s.includes('open=plan') || s.includes('tab=plan') || s.includes('open=basecamp');
+        var isHistory = s.includes('open=history') || s.includes('tab=history');
         var styleTag = document.createElement('style');
         styleTag.id = 'earlyDockStateFix';
         styleTag.innerHTML = isPlan
           ? '#romanticMasterBottomDock .dock-item[title="낭만루터"], #romanticMasterBottomDock .dock-item[title="낭만루트"] { color:#94a3b8 !important; font-weight:700 !important; } #romanticMasterBottomDock .dock-item[title="낭만플랜"] { color:#38bdf8 !important; font-weight:900 !important; }'
-          : '#romanticMasterBottomDock .dock-item[title="낭만루터"], #romanticMasterBottomDock .dock-item[title="낭만루트"] { color:#94a3b8 !important; font-weight:700 !important; } #romanticMasterBottomDock .dock-item[title="낭만보관함"] { color:#38bdf8 !important; font-weight:900 !important; }';
+          : (isHistory
+            ? '#romanticMasterBottomDock .dock-item[title="낭만루터"], #romanticMasterBottomDock .dock-item[title="낭만루트"] { color:#94a3b8 !important; font-weight:700 !important; } #romanticMasterBottomDock .dock-item[title="낭만보관함"] { color:#38bdf8 !important; font-weight:900 !important; }'
+            : '#romanticMasterBottomDock .dock-item[title="낭만루터"], #romanticMasterBottomDock .dock-item[title="낭만루트"] { color:#94a3b8 !important; font-weight:700 !important; } #romanticMasterBottomDock .dock-item[title="마이리포트"] { color:#38bdf8 !important; font-weight:900 !important; }');
         document.head.appendChild(styleTag);
       }
     })();
@@ -2330,6 +2333,10 @@
 
       var profileNickSafe = escapeHtml(targetNick);
       var userFeedsCount = userFeeds.length;
+      var canTripNote = targetUid && !(typeof window.isCurrentUserId === 'function' && window.isCurrentUserId(targetUid)) && !(typeof window.isUserBlocked === 'function' && window.isUserBlocked(targetUid));
+      var profileNoteBtn = canTripNote
+        ? '<button type="button" data-user-id="' + escapeHtml(targetUid) + '" data-author="' + profileNickSafe + '" onclick="window.openDirectMessageThread(this.dataset.userId, this.dataset.author);" style="background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); color:#7dd3fc; padding:4px 10px; border-radius:14px; font-size:0.68rem; font-weight:800; cursor:pointer; margin-right:6px;">쪽지</button>'
+        : '';
       var profileBlockBtn = (targetUid && !(typeof window.isCurrentUserId === 'function' && window.isCurrentUserId(targetUid)))
         ? '<button type="button" data-user-id="' + escapeHtml(targetUid) + '" data-author="' + profileNickSafe + '" onclick="window.blockCommunityUser(this.dataset.userId, this.dataset.author);" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); color:#fda4af; padding:4px 10px; border-radius:14px; font-size:0.68rem; font-weight:800; cursor:pointer; margin-right:6px;">차단</button>'
         : '';
@@ -2340,6 +2347,7 @@
           '<span style="font-size:0.95rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">원정대장 프로필</span>' +
         '</div>' +
         '<div style="display:flex; align-items:center;">' +
+          profileNoteBtn +
           profileBlockBtn +
           '<button type="button" class="circle-icon-btn" onclick="window.closeTripAuthorProfile();">✕</button>' +
         '</div>' +
@@ -5059,6 +5067,27 @@ var adBannersHtml = `
             }
           }, 16);
         }
+      } else if (openParam === 'report' || tabParam === 'report') {
+        if (window.history && window.history.replaceState) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        if (typeof openUserProfileModal === 'function') {
+          openUserProfileModal();
+          releaseGuard();
+        } else {
+          var pollCountReport = 0;
+          var reportPoll = setInterval(function() {
+            pollCountReport++;
+            if (typeof openUserProfileModal === 'function') {
+              clearInterval(reportPoll);
+              openUserProfileModal();
+              releaseGuard();
+            } else if (pollCountReport > 20) {
+              clearInterval(reportPoll);
+              releaseGuard();
+            }
+          }, 16);
+        }
       } else {
         releaseGuard();
       }
@@ -5186,9 +5215,9 @@ var adBannersHtml = `
     });
   </script>
 
-    <script src="romantic-sync.js?v=2.8.35"></script>
+    <script src="romantic-sync.js?v=2.8.48"></script>
   <script src="templates.js?v=2.8.2"></script>
-    <script src="romantic-history.js?v=2.7.13"></script>
+    <script src="romantic-history.js?v=2.7.23"></script>
   <script src="romantic-plan.js?v=2.7.4"></script>
 
   <script>

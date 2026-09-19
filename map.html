@@ -577,11 +577,19 @@
       .summary-card { background: var(--bg-card); border: 1px solid var(--border-hairline); border-radius: 7px; padding: 7px 9px; font-size: 0.77rem; line-height: 1.45; color: var(--text-primary); }
       .summary-card-view { border-left: 3px solid #94a3b8; background: rgba(255, 255, 255, 0.04); }
       .summary-card-view .summary-card-body {
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        min-height: calc(1.45em * 3);
+        display: block;
+        overflow: visible;
+        white-space: pre-wrap;
+        word-break: keep-all;
+        overflow-wrap: break-word;
+        min-height: 0;
+      }
+      .summary-card-access div,
+      .summary-card-pitch div,
+      .summary-card-tip div {
+        white-space: pre-wrap;
+        word-break: keep-all;
+        overflow-wrap: break-word;
       }
       .summary-card-access { border-left: 3px solid #94a3b8; background: rgba(255, 255, 255, 0.04); }
       .summary-card-pitch { border-left: 3px solid #94a3b8; background: rgba(255, 255, 255, 0.04); }
@@ -685,7 +693,7 @@
         background: rgba(255, 255, 255, 0.12);
         color: #ffffff;
       }
-      .sheet-content { overflow-y: auto; padding: 12px 12px 16px 12px; display: flex; flex-direction: column; gap: 3px; width: 100%; }
+      .sheet-content { flex: 1 1 0%; min-height: 0; overflow-y: auto; padding: 12px 12px 16px 12px; display: flex; flex-direction: column; gap: 3px; width: 100%; }
 
       /* 찜하기 / 다녀왔음 버튼 */
       .user-action-grid-3 { display: flex; gap: 4px; width: 100%; margin: 2px 0; }
@@ -768,8 +776,8 @@
         transform: translate3d(0, 0, 0) !important;
         -webkit-transform: translate3d(0, 0, 0) !important;
         will-change: transform;
-        contain: layout size style;
         overflow: visible !important;
+        pointer-events: auto !important;
       }
       
       .mobile-bottom-dock::after {
@@ -1011,8 +1019,9 @@
           top: 0; 
           left: 0; 
           right: 0; 
+          bottom: calc(56px + env(safe-area-inset-bottom, 0px));
           width: 100% !important; 
-          height: calc(100% - 56px - env(safe-area-inset-bottom, 0px)) !important; 
+          height: auto !important; 
           z-index: var(--z-sidebar) !important; 
           border-right: none; 
           border-bottom: 1px solid var(--border-hairline); 
@@ -1021,7 +1030,11 @@
           box-sizing: border-box !important;
         }
         .sidebar.collapsed { transform: translateY(-130%) !important; }
-        .mobile-bottom-dock { display: flex !important; }
+        .mobile-bottom-dock {
+          display: flex !important;
+          z-index: 2147483647 !important;
+          pointer-events: auto !important;
+        }
       }
     </style>
   </head>
@@ -1338,9 +1351,23 @@
       // 🛡️ [구조 개선] DOM-JS 순환 참조 방지를 위한 WeakMap
       var __spotDataMap = new WeakMap();
 
+      function setMobileSidebarCollapsed(collapsed) {
+        isSidebarCollapsed = !!collapsed;
+        var sidebar = document.getElementById('sidebar');
+        if (sidebar) sidebar.classList.toggle('collapsed', isSidebarCollapsed);
+        if (typeof updateDockSidebarText === 'function') updateDockSidebarText(!isSidebarCollapsed);
+      }
+
       window.navigateToDockTab = function(tabName) {
         var oldModal = document.getElementById('mapSpotFeedDetailModal');
         if (oldModal) oldModal.remove();
+
+        if (tabName === 'map') {
+          setMobileSidebarCollapsed(true);
+          if (typeof closeMobileBottomSheet === 'function') closeMobileBottomSheet();
+          if (typeof closePcSlidingDrawer === 'function') closePcSlidingDrawer();
+          return;
+        }
 
         var routes = {
           router: 'index.html',
@@ -1439,6 +1466,7 @@
       var rawCachedSpots = safeGetJSON('okbm_spots_cache', []);
       var isCacheValid = Array.isArray(rawCachedSpots) && rawCachedSpots.length > 0 && rawCachedSpots[0].lat && rawCachedSpots[0].lng;
       var spots = isCacheValid ? rawCachedSpots : [];
+      window.spots = spots;
       var userBookmarks = new Set((safeGetJSON('okbm_bookmarks', []) || []).map(function(s) { return String(s).trim(); }));
       var userVisited = new Set((safeGetJSON('okbm_visited', []) || []).map(function(s) { return String(s).trim(); }));
       var userMemos = safeGetJSON('okbm_memos', {}) || {};
@@ -1555,6 +1583,10 @@
               youtubeUrls: ytUrls,
               blogUrls: blogUrls,
               authorSnsUrl: String(row.author_sns_url || '').trim(),
+              author: String(row.author || row.nickname || '').trim(),
+              nickname: String(row.author || row.nickname || '').trim(),
+              user_id: String(row.user_id || row.userId || '').trim(),
+              userId: String(row.user_id || row.userId || '').trim(),
               courseType: String(row.course_type || '일반').trim(),
               terrain: tArr,
               difficulty: String(row.difficulty || '3').trim(),
@@ -1570,6 +1602,7 @@
 
           if (validSpots.length > 0) {
             spots = validSpots;
+            window.spots = spots;
             localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
             updateNewSpotFlags(spots);
             renderSubChips();
@@ -2148,6 +2181,7 @@
 
          if (spots && spots.length > 0) {
             spots = spots.filter(s => s && s.lat && s.lng && !BLOCKED_SPOT_IDS.has(String(s.id).trim()));
+            window.spots = spots;
             updateNewSpotFlags(spots); 
             renderSubChips();
             renderSpots(); 
@@ -2172,7 +2206,7 @@
             var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
             var spotMainName = (spot.spot_main || spot.name || '').trim();
             if (!spotMainName) return [];
-            var query = targetUrl + '/rest/v1/feeds?select=id,user_id,spot,photos,photo_memos_json,author,memo,weight_kg,likes_count,date,created_at,feed_type&spot=ilike.*' + encodeURIComponent(spotMainName) + '*&feed_type=neq.snap&order=created_at.desc&limit=6';
+            var query = targetUrl + '/rest/v1/feeds?select=id,user_id,spot,photos,photo_memos_json,author,memo,weight_kg,likes_count,date,created_at,feed_type&spot=ilike.*' + encodeURIComponent(spotMainName) + '*&feed_type=neq.snap&order=created_at.desc&limit=40';
             try {
               var res = await fetch(query, {
                 headers: {
@@ -2183,7 +2217,7 @@
               });
               if (!res.ok) return [];
               var data = await res.json();
-              var validFeeds = Array.isArray(data) ? data : [];
+              var validFeeds = filterFeedsForMapSpot(spot, Array.isArray(data) ? data : []).slice(0, 6);
               limitedMapSet(window.__spotFeedsCache, sId, validFeeds, 50);
               return validFeeds;
             } catch (e) {
@@ -2350,6 +2384,46 @@
         }
       }
 
+      function compactSpotFocusKey(str) {
+        return String(str || '')
+          .replace(/[()[\]]/g, ' ')
+          .replace(/\d+\s*m\b/gi, ' ')
+          .replace(/특별자치시|특별자치도|광역시|특별시/g, '')
+          .replace(/([가-힣]{2,})(시|군|구)/g, '$1')
+          .replace(/[\s\-_,./·]/g, '')
+          .toLowerCase()
+          .trim();
+      }
+
+      function findSpotByFocusQuery(list, query) {
+        if (typeof window.okbmFindSpotByFocusQuery === 'function') {
+          return window.okbmFindSpotByFocusQuery(list, query);
+        }
+        var q = compactSpotFocusKey(query);
+        if (!q || q.length < 2) return null;
+        var arr = Array.isArray(list) ? list : [];
+        var best = null, bestScore = 0, bestMainLen = 0;
+        for (var i = 0; i < arr.length; i++) {
+          var s = arr[i];
+          if (!s) continue;
+          var main = compactSpotFocusKey(s.spot_main || s.name || '');
+          var hay = compactSpotFocusKey([s.fullName, s.spot_main, s.name, s.spot_sub, s.cityName, s.region].filter(Boolean).join(' '));
+          if (!main && !hay) continue;
+          var score = 0;
+          if (main && main === q) score = 100;
+          else if (hay && hay === q) score = 90;
+          else if (main && main.length >= 2 && q.indexOf(main) !== -1) score = 80;
+          else if (hay && hay.indexOf(q) !== -1) score = 70;
+          else if (hay && q.indexOf(hay) !== -1 && hay.length >= 4) score = 60;
+          if (score > bestScore || (score === bestScore && main.length > bestMainLen)) {
+            bestScore = score;
+            bestMainLen = main.length;
+            best = s;
+          }
+        }
+        return bestScore > 0 ? best : null;
+      }
+
      function checkUrlParamSpotFocus() {
         const urlParams = new URLSearchParams(window.location.search);
         let targetName = urlParams.get('spot') || urlParams.get('q');
@@ -2382,17 +2456,9 @@
           }
         }
 
-        // 2순위: 복합 명칭(시군구 + 산명 + 세부포인트) 복합 쿼리 판별
+        // 2순위: 시군+산명 피드명도 DB 산명(울업산) / fullName([가평군] 울업산)에 붙는다
         if (targetName) {
-          const clean = decodeURIComponent(targetName).trim().toLowerCase();
-          const found = spots.find(s => {
-            const fName = (s.fullName || '').toLowerCase();
-            const main = (s.spot_main || s.name || '').toLowerCase();
-            const sub = (s.spot_sub || '').toLowerCase();
-            const city = (s.cityName || '').toLowerCase();
-            const reg = (s.region || '').toLowerCase();
-            return fName.includes(clean) || (main.includes(clean) && (sub.includes(clean) || city.includes(clean) || reg.includes(clean))) || main === clean;
-          });
+          const found = findSpotByFocusQuery(spots, targetName);
           if (found) {
             clearPendingMapFocus();
             setTimeout(() => focusSpotOnMap(found), 350);
@@ -2555,9 +2621,7 @@ function updateSmartResetButtons() {
       }
 
       function toggleMobileSidebar() {
-        isSidebarCollapsed = !isSidebarCollapsed;
-        document.getElementById('sidebar').classList.toggle('collapsed', isSidebarCollapsed);
-        updateDockSidebarText(!isSidebarCollapsed);
+        setMobileSidebarCollapsed(!isSidebarCollapsed);
         if (!isSidebarCollapsed) closeMobileBottomSheet();
       }
       function updateDockSidebarText(isOpen) {
@@ -2974,9 +3038,7 @@ function updateSmartResetButtons() {
 
         const isMobileView = window.innerWidth <= 768 || ('ontouchstart' in window && window.innerWidth <= 1024);
         if (isMobileView) {
-          const sidebar = document.getElementById('sidebar');
-          if (sidebar) sidebar.classList.add('collapsed');
-          updateDockSidebarText(false);
+          setMobileSidebarCollapsed(true);
           closePcSlidingDrawer();
           openMobileBottomSheet(spot);
         } else {
@@ -3282,19 +3344,39 @@ function updateSmartResetButtons() {
       function parseStructuredSummary(rawText) {
         if (!rawText) return { view: '', access: '', pitch: '', tip: '', hasParsed: false };
         const clean = String(rawText).replace(/\\n/g, '\n');
-        const lines = clean.split('\n').map(l => l.trim()).filter(Boolean);
+        const lines = clean.split('\n');
         let view = '', access = '', pitch = '', tip = '', hasParsed = false;
+        let current = 'view';
 
-        lines.forEach(line => {
-          if (line.startsWith('[뷰/특징]') || line.startsWith('[뷰]') || line.startsWith('[특징]')) { view = line.replace(/^\[.*?\]\s*/, ''); hasParsed = true; }
-          else if (line.startsWith('[접근/코스]') || line.startsWith('[접근]') || line.startsWith('[코스]')) { access = line.replace(/^\[.*?\]\s*/, ''); hasParsed = true; }
-          else if (line.startsWith('[박지/피칭]') || line.startsWith('[박지]') || line.startsWith('[피칭]')) { pitch = line.replace(/^\[.*?\]\s*/, ''); hasParsed = true; }
-          else if (line.startsWith('[주의/팁]') || line.startsWith('[주의]') || line.startsWith('[팁]')) { tip = line.replace(/^\[.*?\]\s*/, ''); hasParsed = true; }
-          else {
-            if (!view) view = line;
-            else if (!access) access = line;
-            else if (!pitch) pitch = line;
-            else tip += (tip ? ' ' : '') + line;
+        function append(section, text) {
+          if (!text) return;
+          if (section === 'view') view += (view ? '\n' : '') + text;
+          else if (section === 'access') access += (access ? '\n' : '') + text;
+          else if (section === 'pitch') pitch += (pitch ? '\n' : '') + text;
+          else tip += (tip ? '\n' : '') + text;
+        }
+
+        lines.forEach((rawLine) => {
+          const line = String(rawLine || '').trim();
+          if (!line) return;
+          if (line.startsWith('[뷰/특징]') || line.startsWith('[뷰]') || line.startsWith('[특징]')) {
+            current = 'view';
+            hasParsed = true;
+            append('view', line.replace(/^\[.*?\]\s*/, ''));
+          } else if (line.startsWith('[접근/코스]') || line.startsWith('[접근]') || line.startsWith('[코스]')) {
+            current = 'access';
+            hasParsed = true;
+            append('access', line.replace(/^\[.*?\]\s*/, ''));
+          } else if (line.startsWith('[박지/피칭]') || line.startsWith('[박지]') || line.startsWith('[피칭]')) {
+            current = 'pitch';
+            hasParsed = true;
+            append('pitch', line.replace(/^\[.*?\]\s*/, ''));
+          } else if (line.startsWith('[주의/팁]') || line.startsWith('[주의]') || line.startsWith('[팁]') || line.startsWith('[현장 메모]')) {
+            current = 'tip';
+            hasParsed = true;
+            append('tip', line.replace(/^\[.*?\]\s*/, ''));
+          } else {
+            append(current, line);
           }
         });
         return { view, access, pitch, tip, hasParsed };
@@ -4517,8 +4599,27 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         return html;
       }
 
+      // 장산 ⊃ 지장산/선장산 같은 부분문자열 매칭으로 다른 박지 피드가 붙지 않게 한다
+      function feedBelongsToMapSpot(feedSpot, spot) {
+        var feed = String(feedSpot || '').replace(/\s+/g, ' ').trim();
+        var main = String((spot && (spot.spot_main || spot.name)) || '').trim();
+        if (!feed || !main) return false;
+        var escaped = main.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        var tokenRe = new RegExp('(^|[^가-힣A-Za-z0-9])' + escaped + '(?=$|[^가-힣A-Za-z0-9])');
+        return tokenRe.test(feed);
+      }
+
+      function filterFeedsForMapSpot(spot, feeds) {
+        if (!Array.isArray(feeds) || !feeds.length) return [];
+        return feeds.filter(function(f) {
+          return f && feedBelongsToMapSpot(f.spot || f.spotName || f.title || '', spot);
+        });
+      }
+
    function buildSpotFieldFeedsTrackContent(spot, matchedFeeds) {
         if (!Array.isArray(matchedFeeds) || matchedFeeds.length === 0) return '';
+        matchedFeeds = filterFeedsForMapSpot(spot, matchedFeeds);
+        if (!matchedFeeds.length) return '';
         if (typeof window.filterHiddenUgcFeeds === 'function') {
           matchedFeeds = window.filterHiddenUgcFeeds(matchedFeeds);
         }
@@ -5566,6 +5667,76 @@ var overlay = document.getElementById('customModalOverlay');
         if (btnEl) btnEl.innerText = '수정 건의 접수하기';
       };
 
+      function applyCorrectionModalChrome(spotName) {
+        var titleEl = document.getElementById('modalTitle');
+        var noticeEl = document.getElementById('modalNotice');
+        var btnEl = document.getElementById('modalSubmitBtn');
+        var reasonBox = document.getElementById('modalFieldCorrectionReason');
+        var reasonInput = document.getElementById('modalInputCorrectionReason');
+        if (reasonBox) reasonBox.style.display = 'flex';
+        if (reasonInput) reasonInput.value = '';
+        if (titleEl) titleEl.innerHTML = ICONS.EDIT + ' <span>[' + escapeHtml(spotName || '박지') + '] 정보 수정 건의</span>';
+        if (noticeEl) {
+          noticeEl.style.display = 'flex';
+          noticeEl.innerHTML = ICONS.ALERT_CARD + ' <span>폐쇄, 데크 철거, 들머리 변경 등 <strong>수정 사유</strong>를 적어주시면 신속히 반영됩니다.</span>';
+        }
+        if (btnEl) btnEl.innerText = '수정 건의 접수하기';
+        var overlay = document.getElementById('customModalOverlay');
+        if (overlay) overlay.style.setProperty('z-index', '2147483644', 'important');
+      }
+
+      window.openSpotCorrectionFromProposal = function(proposal) {
+        if (!proposal) return;
+        var spotId = typeof window.okbmResolveProposalSpotId === 'function'
+          ? window.okbmResolveProposalSpotId(proposal, spots)
+          : String(proposal.approved_spot_id || proposal.orig_spot_id || '').trim();
+        var targetSpot = (spots || []).find(function(s) { return String(s.id).trim() === String(spotId).trim(); });
+        if (!targetSpot) {
+          var name = String(proposal.spot_main || proposal.name || '').trim();
+          var plat = parseFloat(proposal.lat || proposal.campsite_lat);
+          var plng = parseFloat(proposal.lng || proposal.campsite_lng);
+          targetSpot = (spots || []).find(function(s) {
+            if (!s) return false;
+            if (name && String(s.spot_main || s.name || '').trim() === name) return true;
+            if (isFinite(plat) && isFinite(plng) && plat && plng) {
+              return Math.abs(parseFloat(s.lat) - plat) < 0.003 && Math.abs(parseFloat(s.lng) - plng) < 0.003;
+            }
+            return false;
+          }) || null;
+        }
+        if (targetSpot) {
+          window.openSpotCorrectionModal(targetSpot.id);
+          applyCorrectionModalChrome(targetSpot.spot_main || targetSpot.name);
+          return;
+        }
+
+        var parsedSummary = parseStructuredSummary(proposal.desc_summary || proposal.desc || '');
+        var fallbackId = String(spotId || proposal.id || Date.now()).trim();
+        window.__isSpotCorrectionMode = true;
+        window.__correctionTargetSpotId = fallbackId;
+        window.__origSpotBeforeCorrection = JSON.parse(JSON.stringify(proposal));
+        var existingPropObj = {
+          id: '수정건의_' + fallbackId + '번_' + Date.now(),
+          spot_main: proposal.spot_main || proposal.name || '',
+          spot_sub: proposal.spot_sub || '',
+          trailhead_name: proposal.trailhead_name || '',
+          trailhead_addr: proposal.trailhead_addr || proposal.entry || '',
+          elevation: proposal.elevation || '',
+          distance_km: String(proposal.distance_km || proposal.distance || '').replace(/km$/i, ''),
+          youtubeUrls: Array.isArray(proposal.youtubeUrls) ? proposal.youtubeUrls.join('\n') : (proposal.youtubeurls || proposal.youtubeUrls || ''),
+          blogUrl: proposal.blogUrl || proposal.blogurl || '',
+          authorSnsUrl: proposal.authorSnsUrl || proposal.authorsnsurl || '',
+          descView: proposal.descView || parsedSummary.view || '',
+          descAccess: proposal.descAccess || parsedSummary.access || '',
+          descPitch: proposal.descPitch || parsedSummary.pitch || '',
+          descTip: proposal.descTip || parsedSummary.tip || '',
+          lat: proposal.lat || proposal.campsite_lat,
+          lng: proposal.lng || proposal.campsite_lng
+        };
+        openUserProposalModal('', 0, 0, '', existingPropObj);
+        applyCorrectionModalChrome(existingPropObj.spot_main);
+      };
+
       // 🛠️ 내 제보 목록에서 수정 버튼 클릭 시 바로 호출되는 전역 핸들러
       window.openEditMyProposal = function(proposalId) {
         var myProps = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
@@ -5577,6 +5748,14 @@ var overlay = document.getElementById('customModalOverlay');
           showToast('해당 제보 내역을 찾을 수 없습니다.');
           return;
         }
+        if (typeof window.okbmProposalStatusKind === 'function' && window.okbmProposalStatusKind(target) === 'accepted') {
+          if (typeof window.openSpotCorrectionFromProposal === 'function') {
+            window.openSpotCorrectionFromProposal(target);
+          } else {
+            showToast('채택된 제보는 수정문의로 신청해주세요.');
+          }
+          return;
+        }
         openUserProposalModal('', 0, 0, '', target);
       };
 
@@ -5584,7 +5763,29 @@ var overlay = document.getElementById('customModalOverlay');
       (function checkProposalEditUrl() {
         var params = new URLSearchParams(window.location.search);
         var editPropId = params.get('edit_proposal');
-        if (editPropId) {
+        var correctionSpotId = params.get('correction_spot');
+        var correctionPropId = params.get('correction_proposal');
+        var openPendingCorrection = function() {
+          var pending = null;
+          try { pending = JSON.parse(sessionStorage.getItem('okbm_pending_correction_proposal') || 'null'); } catch (e) { pending = null; }
+          if (correctionPropId && !pending) {
+            var myProps = (window.RomanticVault && window.RomanticVault.read)
+              ? window.RomanticVault.read('okbm_my_proposals', [])
+              : safeGetJSON('okbm_my_proposals', []);
+            pending = (Array.isArray(myProps) ? myProps : []).find(function(p) { return p && String(p.id) === String(correctionPropId); }) || null;
+          }
+          if (pending && typeof window.openSpotCorrectionFromProposal === 'function') {
+            window.openSpotCorrectionFromProposal(pending);
+            try { sessionStorage.removeItem('okbm_pending_correction_proposal'); } catch (e) {}
+            return;
+          }
+          if (correctionSpotId && typeof window.openSpotCorrectionModal === 'function') {
+            window.openSpotCorrectionModal(correctionSpotId);
+          }
+        };
+        if (correctionSpotId || correctionPropId) {
+          setTimeout(openPendingCorrection, 500);
+        } else if (editPropId) {
           setTimeout(function() { window.openEditMyProposal(editPropId); }, 400);
         }
       })();
@@ -5606,7 +5807,7 @@ var overlay = document.getElementById('customModalOverlay');
         (spot.youtubeUrls || []).forEach(function(u) { if (u && String(u).trim()) media.push(String(u).trim()); });
         (spot.blogUrls || []).forEach(function(u) { if (u && String(u).trim()) media.push(String(u).trim()); });
         if (spot.authorSnsUrl) media.push(String(spot.authorSnsUrl).trim());
-        return {
+        var payload = {
           id: String(spot.id).trim(),
           region: spot.region || '',
           cityName: spot.cityName || '',
@@ -5626,6 +5827,11 @@ var overlay = document.getElementById('customModalOverlay');
           course_type: spot.courseType || '일반',
           author_sns_url: spot.authorSnsUrl || ''
         };
+        var author = String(spot.author || spot.nickname || spot.authorNick || '').trim();
+        var uid = String(spot.user_id || spot.userId || '').trim();
+        if (author) payload.author = author;
+        if (uid) payload.user_id = uid;
+        return payload;
       }
 
       async function persistSpotToSupabase(spot, isInsert) {
@@ -5801,6 +6007,66 @@ var overlay = document.getElementById('customModalOverlay');
           if (!isNaN(n) && n > maxId) maxId = n;
         });
         return String(maxId + 1);
+      }
+
+      function normalizeReporterNick(nick) {
+        var name = String(nick || '').trim();
+        if (name === '김사자') return '오라네';
+        return name;
+      }
+
+      function resolveCurrentUserReporter() {
+        var curProfile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
+        var userId = String((curProfile && curProfile.id) || localStorage.getItem('okbm_user_id') || localStorage.getItem('user_auth_token') || '').trim();
+        var nick = '';
+        if (curProfile && curProfile.nickname) nick = String(curProfile.nickname).trim();
+        if (!nick) nick = String(localStorage.getItem('okbm_user_nick') || '').trim();
+        if (!nick && userId) nick = String(localStorage.getItem('okbm_custom_nickname_' + userId) || '').trim();
+        return { userId: userId, nickname: normalizeReporterNick(nick) };
+      }
+
+      function resolveInboxReporter(item) {
+        if (!item) return { userId: '', nickname: '' };
+        var userId = String(item.user_id || item.userId || '').trim();
+        var nick = String(item.author || item.nickname || item.authorNick || item.reporter || '').trim();
+        return { userId: userId, nickname: normalizeReporterNick(nick) };
+      }
+
+      async function lookupUserNickname(userId) {
+        var id = String(userId || '').trim();
+        if (!id) return '';
+        var cfg = getSupabaseRestConfig();
+        if (!cfg.url || !cfg.key) return '';
+        try {
+          var res = await fetch(cfg.url + '/rest/v1/users?id=eq.' + encodeURIComponent(id) + '&select=nickname', {
+            headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + cfg.key }
+          });
+          if (!res.ok) return '';
+          var rows = await res.json();
+          return normalizeReporterNick(rows && rows[0] && rows[0].nickname);
+        } catch (e) {
+          return '';
+        }
+      }
+
+      function resolveInboxCoords(item) {
+        if (!item) return null;
+        var latRaw = (item.lat != null && item.lat !== '') ? item.lat : item.campsite_lat;
+        var lngRaw = (item.lng != null && item.lng !== '') ? item.lng : item.campsite_lng;
+        var lat = parseFloat(latRaw);
+        var lng = parseFloat(lngRaw);
+        if (!isFinite(lat) || !isFinite(lng) || !lat || !lng) return null;
+        return { lat: lat, lng: lng };
+      }
+
+      function revealMapUnderInbox() {
+        var inbox = document.getElementById('adminSpotInboxModal');
+        if (inbox) inbox.remove();
+        var settings = document.getElementById('userAccountSettingsModal');
+        if (settings) settings.style.display = 'none';
+        if (typeof closeUserProfileModal === 'function') closeUserProfileModal();
+        if (typeof window.navigateToDockTab === 'function') window.navigateToDockTab('map');
+        else if (typeof setMobileSidebarCollapsed === 'function') setMobileSidebarCollapsed(true);
       }
 
       function resolveCorrectionOrigSpotId(item) {
@@ -6053,6 +6319,15 @@ var overlay = document.getElementById('customModalOverlay');
               var orig = window.__origSpotBeforeCorrection || {};
               
               var propId = window.__currentEditingProposalId || (isCorrection ? `수정건의_${origSpotId}번_${Date.now()}` : `신규제보_${Date.now()}`);
+              if (window.__currentEditingProposalId && typeof window.okbmProposalStatusKind === 'function') {
+                var existingLocked = ((window.RomanticVault && window.RomanticVault.read) ? window.RomanticVault.read('okbm_my_proposals', []) : safeGetJSON('okbm_my_proposals', [])).find(function(p) {
+                  return p && String(p.id) === String(window.__currentEditingProposalId);
+                });
+                if (existingLocked && window.okbmProposalStatusKind(existingLocked) === 'accepted') {
+                  showToast('채택된 제보는 수정할 수 없습니다. 수정문의로 신청해주세요.');
+                  return;
+                }
+              }
               var finalSpotMain = name;
 
               // 🔍 수정 사유 및 변경 대조(Diff) 자동 추출
@@ -6076,8 +6351,8 @@ var overlay = document.getElementById('customModalOverlay');
 
               var finalDesc = headerNotice + desc;
 
-              var curProfile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
-              var curUserId = (curProfile && curProfile.id) ? String(curProfile.id).trim() : (localStorage.getItem('okbm_user_id') || localStorage.getItem('user_auth_token') || '');
+              var reporter = resolveCurrentUserReporter();
+              var curUserId = reporter.userId;
 
               var propRecord = {
                 id: propId,
@@ -6113,6 +6388,8 @@ var overlay = document.getElementById('customModalOverlay');
                 courseType: courseType,
                 date: (typeof getFormattedNow === 'function') ? getFormattedNow() : new Date().toLocaleDateString(),
                 status: isCorrection ? '수정건의대기' : '검수대기',
+                author: reporter.nickname,
+                nickname: reporter.nickname,
                 userId: curUserId,
                 user_id: curUserId
               };
@@ -6209,6 +6486,22 @@ var overlay = document.getElementById('customModalOverlay');
               cityName: cityName
             });
 
+            if (modalMode === 'ADMIN_APPLY' && inboxItem && inboxItem.type !== 'correction') {
+              var reporter = resolveInboxReporter(inboxItem);
+              if (reporter.userId && !reporter.nickname) {
+                reporter.nickname = await lookupUserNickname(reporter.userId);
+              }
+              if (reporter.nickname) {
+                target.author = reporter.nickname;
+                target.nickname = reporter.nickname;
+                target.authorNick = reporter.nickname;
+              }
+              if (reporter.userId) {
+                target.user_id = reporter.userId;
+                target.userId = reporter.userId;
+              }
+            }
+
             if (isInsert && spots.indexOf(target) === -1) {
               spots.unshift(target);
             }
@@ -6224,7 +6517,11 @@ var overlay = document.getElementById('customModalOverlay');
 
             var saved = await persistSpotToSupabase(target, isInsert);
             if (inboxItem && typeof window.updateAdminSpotInboxStatus === 'function') {
-              await window.updateAdminSpotInboxStatus(inboxItem.id, inboxItem.type === 'correction', saved ? '반영완료' : '반영실패');
+              var newStatus = saved ? '반영완료' : '반영실패';
+              await window.updateAdminSpotInboxStatus(inboxItem.id, inboxItem.type === 'correction', newStatus, saved ? { approved_spot_id: String(target.id) } : null);
+              if (saved && typeof window.notifyProposalDecision === 'function') {
+                await window.notifyProposalDecision(inboxItem, newStatus, String(target.id));
+              }
             }
             window.__adminApplyingInboxItem = null;
             triggerHaptic(15);
@@ -6244,10 +6541,7 @@ var overlay = document.getElementById('customModalOverlay');
         closePcSlidingDrawer();
         var modalOverlay = document.getElementById('customModalOverlay');
         if (modalOverlay) modalOverlay.style.display = 'none';
-        isSidebarCollapsed = true;
-        var sidebar = document.getElementById('sidebar');
-        if (sidebar) sidebar.classList.add('collapsed');
-        if (typeof updateDockSidebarText === 'function') updateDockSidebarText(false);
+        setMobileSidebarCollapsed(true);
       }
 
       function startPinPicking() {
@@ -6581,6 +6875,15 @@ var overlay = document.getElementById('customModalOverlay');
         clone.courseType = row.coursetype || row.courseType || '일반';
         clone.origSpotId = row.orig_spot_id || row.origSpotId || resolveCorrectionOrigSpotId(row);
         clone.correctionReason = row.correction_reason || row.correctionReason || '';
+        clone.author = row.author || row.nickname || '';
+        clone.nickname = clone.author;
+        clone.userId = row.user_id || row.userId || '';
+        clone.user_id = clone.userId;
+        var coords = resolveInboxCoords(clone);
+        if (coords) {
+          clone.lat = coords.lat;
+          clone.lng = coords.lng;
+        }
         return clone;
       }
 
@@ -6667,6 +6970,7 @@ var overlay = document.getElementById('customModalOverlay');
             '<div class="admin-inbox-meta">' +
               escapeHtml(item.trailhead_addr || item.trailhead_name || '') + '<br>' +
               escapeHtml(coord) +
+              (item.author || item.nickname ? '<br>제보: ' + escapeHtml(item.author || item.nickname) : '') +
               (reason ? '<br>사유: ' + escapeHtml(reason) : '') +
             '</div>' +
             '<div class="admin-inbox-actions">' +
@@ -6693,17 +6997,33 @@ var overlay = document.getElementById('customModalOverlay');
 
       window.focusAdminInboxItem = function(id, type) {
         var item = findAdminInboxItem(id, type);
-        if (!item || !item.lat || !item.lng) {
+        var coords = resolveInboxCoords(item);
+        if (!item || !coords) {
           showToast('좌표가 없어 지도로 이동할 수 없습니다.');
           return;
         }
-        var modal = document.getElementById('adminSpotInboxModal');
-        if (modal) modal.remove();
-        if (map) {
+        revealMapUnderInbox();
+        window.__pendingInboxMapFocus = { lat: coords.lat, lng: coords.lng, name: item.spot_main || '제보 위치' };
+        setTimeout(function() {
+          var pending = window.__pendingInboxMapFocus;
+          if (!pending) return;
+          if (!map) {
+            showToast('지도를 아직 불러오지 못했습니다.');
+            return;
+          }
+          try { kakao.maps.event.trigger(map, 'resize'); } catch (e) {}
           map.setLevel(4);
-          smoothCenterMapOnSpot(parseFloat(item.lat), parseFloat(item.lng));
-        }
-        showToast(ICONS.PIN + ' <span>' + escapeHtml(item.spot_main || '제보 위치') + '로 이동했습니다.</span>');
+          smoothCenterMapOnSpot(pending.lat, pending.lng);
+          if (typeof clearTempPickedMarker === 'function') clearTempPickedMarker();
+          if (typeof kakao !== 'undefined' && kakao.maps) {
+            tempPickedMarker = new kakao.maps.Marker({
+              map: map,
+              position: new kakao.maps.LatLng(pending.lat, pending.lng),
+              image: (typeof createPickedMarkerImage === 'function') ? createPickedMarkerImage() : undefined
+            });
+          }
+          showToast(ICONS.PIN + ' <span>' + escapeHtml(pending.name) + '로 이동했습니다.</span>');
+        }, 160);
       };
 
       window.reviewAdminInboxItem = function(id, type) {
@@ -6756,6 +7076,9 @@ var overlay = document.getElementById('customModalOverlay');
         var ok = true;
         if (typeof window.updateAdminSpotInboxStatus === 'function') {
           ok = await window.updateAdminSpotInboxStatus(item.id, item.type === 'correction', '반려');
+        }
+        if (ok && typeof window.notifyProposalDecision === 'function') {
+          await window.notifyProposalDecision(item, '반려');
         }
         showToast(ok ? '반려 처리했습니다.' : '상태 변경에 실패했습니다.');
         await window.renderAdminSpotInboxList();
@@ -6858,10 +7181,8 @@ var overlay = document.getElementById('customModalOverlay');
             li.addEventListener('click', () => {
               triggerHaptic(10);
               dropdown.style.display = 'none';
-              if (window.innerWidth <= 768) { 
-                isSidebarCollapsed = true; 
-                document.getElementById('sidebar').classList.add('collapsed'); 
-                updateDockSidebarText(false); 
+              if (window.innerWidth <= 768) {
+                setMobileSidebarCollapsed(true);
               }
               if (res.isInternal && res.spotObj) { 
                 focusSpotOnMap(res.spotObj); 
@@ -6980,7 +7301,8 @@ var overlay = document.getElementById('customModalOverlay');
               }
             }
             if (Array.isArray(data.spots) && data.spots.length > 0) { 
-              spots = data.spots; 
+              spots = data.spots;
+              window.spots = spots;
               localStorage.setItem('okbm_spots_cache', JSON.stringify(spots)); 
             }
 
@@ -7017,9 +7339,9 @@ var overlay = document.getElementById('customModalOverlay');
         }
       })();
     </script>
-    <script src="romantic-sync.js?v=2.8.35"></script>
+    <script src="romantic-sync.js?v=2.8.48"></script>
     <script src="templates.js?v=2.8.2"></script>
-    <script src="romantic-history.js?v=2.7.13"></script>
+    <script src="romantic-history.js?v=2.7.23"></script>
     <script src="romantic-plan.js?v=2.7.4"></script>
     <script>
       window.addEventListener('okbm_admin_flag', function(e) {
