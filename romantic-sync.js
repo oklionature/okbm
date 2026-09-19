@@ -2364,10 +2364,9 @@ window.renderUserProfileHeaderSection = function(config) {
   var bioText = bio || (isOwner ? '소개글을 작성해보세요.' : '소개글이 없습니다.');
   var bioColor = bio ? '#e2e8f0' : '#64748b';
 
-  var safePhotoAttr = photoUrl ? _escapeReportPropHtml(photoUrl) : '';
   var avatarClickAttr = isOwner
     ? 'onclick="triggerHaptic(12); window.openAccountSettingsModal();" title="설정"'
-    : (photoUrl ? 'data-photo-url="' + safePhotoAttr + '" onclick="triggerHaptic(10); window.previewUserPhotoLarge(this.getAttribute(\'data-photo-url\'));" title="사진 보기"' : '');
+    : (photoUrl ? 'onclick="triggerHaptic(10); if(window.previewMasterUserCoverPhotoLarge){ window.previewMasterUserCoverPhotoLarge(); }"' : '');
   var avatarCursor = (isOwner || photoUrl) ? 'cursor:pointer; ' : '';
 
   var avatarImgHtml = photoUrl
@@ -2394,6 +2393,10 @@ window.renderUserProfileHeaderSection = function(config) {
         '<span>알림</span>' +
         '<span id="reportNotifCountBadge" style="display:none; position:absolute; top:3px; right:8px; min-width:14px; height:14px; padding:0 4px; border-radius:8px; background:#f43f5e; color:#fff; font-size:0.50rem; font-weight:900; align-items:center; justify-content:center;"></span>' +
       '</button>' +
+    '</div>';
+  } else if (uid) {
+    actionGridHtml = '<div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">' +
+      '<button type="button" data-user-id="' + _escapeReportPropHtml(uid) + '" data-author="' + _escapeReportPropHtml(nick) + '" onclick="event.preventDefault(); event.stopPropagation(); triggerHaptic(8); window.openDirectMessageThread(this.dataset.userId, this.dataset.author);" style="width:100%; height:36px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); border-radius:8px; color:#7dd3fc; font-size:0.78rem; font-weight:900; cursor:pointer;">쪽지 보내기</button>' +
     '</div>';
   }
 
@@ -4824,10 +4827,14 @@ window.applyMasterCoverPhotoToAllUI = function(photoUrl) {
   window.dispatchEvent(new CustomEvent('okbm_profile_photo_changed', { detail: { photoUrl: cleanUrl } }));
 };
 
-window.previewUserPhotoLarge = function(photoUrl) {
-  var url = String(photoUrl || '').trim();
-  if (!url || url.indexOf('http') !== 0) {
-    if (typeof showToast === 'function') showToast('등록된 대표 사진이 없습니다.', 'info', 2200);
+// 🔍 [메인 대표 사진 대형 확대 뷰어 라이트박스]
+window.previewMasterUserCoverPhotoLarge = function() {
+  triggerHaptic(10);
+  var profile = safeGetJSON('user_profile', null);
+  var photoUrl = localStorage.getItem('okbm_hero_cover_url') || (profile && (profile.heroCoverUrl || profile.photoUrl)) || '';
+
+  if (!photoUrl || !String(photoUrl).startsWith('http')) {
+    showToast('등록된 대표 사진이 없습니다. [사진 변경]을 눌러보세요.', 'info', 2200);
     return;
   }
 
@@ -4840,24 +4847,10 @@ window.previewUserPhotoLarge = function(photoUrl) {
   viewer.onclick = function() { viewer.remove(); triggerHaptic(8); };
 
   viewer.innerHTML = '<div style="position:relative; width:250px; height:250px; border-radius:50%; border:2px solid rgba(186,230,253,0.6); box-shadow:0 0 35px rgba(56,189,248,0.35); overflow:hidden; background:#07090e; flex-shrink:0;">' +
-      '<img src="' + _escapeReportPropHtml(url) + '" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />' +
+      '<img src="' + photoUrl + '" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />' +
     '</div>';
 
   document.body.appendChild(viewer);
-};
-
-// 🔍 [메인 대표 사진 대형 확대 뷰어 라이트박스]
-window.previewMasterUserCoverPhotoLarge = function() {
-  triggerHaptic(10);
-  var profile = safeGetJSON('user_profile', null);
-  var photoUrl = localStorage.getItem('okbm_hero_cover_url') || (profile && (profile.heroCoverUrl || profile.photoUrl)) || '';
-
-  if (!photoUrl || !String(photoUrl).startsWith('http')) {
-    showToast('등록된 대표 사진이 없습니다. [사진 변경]을 눌러보세요.', 'info', 2200);
-    return;
-  }
-
-  window.previewUserPhotoLarge(photoUrl);
 };
 
 // [메인 대표 사진 초기화]
