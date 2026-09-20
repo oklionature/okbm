@@ -6783,14 +6783,14 @@ function loginWithNaver() {
   sessionStorage.setItem('okbm_naver_client_id', NAVER_CLIENT_ID);
   sessionStorage.setItem('okbm_naver_return', window.location.pathname + window.location.search);
 
-  var clientId = NAVER_CLIENT_ID;
-  var cleanRedirect = window.location.origin + '/naver-callback.html';
+ var clientId = NAVER_CLIENT_ID;
+  var basePath = window.location.pathname.indexOf('/okbm') !== -1 ? '/okbm' : '';
+  var cleanRedirect = window.location.origin + basePath + '/naver-callback.html';
 
   var naverAuthUrl = 'https://nid.naver.com/oauth2.0/authorize?response_type=token'
     + '&client_id=' + clientId
     + '&redirect_uri=' + encodeURIComponent(cleanRedirect)
     + '&state=' + state;
-
   okbmMarkSocialButtonsBusy(true, '네이버 로그인 중...', 'btn-social-naver');
   console.log('[Naver Login URL]', naverAuthUrl);
   window.location.href = naverAuthUrl;
