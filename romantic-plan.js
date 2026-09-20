@@ -2204,10 +2204,10 @@ window.saveCurrentPackingRecord = function() {
     var allRows = null;
 
     try {
-      var originBase = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
-      var primaryUrl = originBase ? (originBase + '/gears_master.json?v=' + CURRENT_GEAR_VERSION) : ('gears_master.json?v=' + CURRENT_GEAR_VERSION);
+      var basePath = (typeof window !== 'undefined' && window.location && window.location.pathname.indexOf('/okbm') !== -1) ? '/okbm/' : '';
+      var primaryUrl = basePath ? (basePath + 'gears_master.json?v=' + CURRENT_GEAR_VERSION) : ('gears_master.json?v=' + CURRENT_GEAR_VERSION);
       var staticRes = await fetch(primaryUrl);
-      if (!staticRes.ok) {
+      if (!staticRes.ok && basePath) {
         staticRes = await fetch('gears_master.json?v=' + CURRENT_GEAR_VERSION);
       }
       if (staticRes.ok) {
