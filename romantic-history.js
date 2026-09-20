@@ -283,7 +283,7 @@
       }
       .history-tab-route .reel-media-stage {
         position: absolute !important;
-        top: max(26px, env(safe-area-inset-top, 0px)) !important;
+        top: max(44px, env(safe-area-inset-top, 0px)) !important;
         bottom: 0 !important;
         left: 0 !important;
         right: 0 !important;
@@ -362,7 +362,7 @@
 
       .history-tab-route .reel-page-snap > .reel-header-row {
         position: absolute !important;
-        top: max(26px, env(safe-area-inset-top, 0px)) !important;
+        top: max(44px, env(safe-area-inset-top, 0px)) !important;
         left: 0 !important;
         right: 0 !important;
         height: auto !important;
@@ -6413,7 +6413,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
         '</button>')
       : ('<span style="font-size:0.74rem; font-weight:800; color:#e2e8f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.3;">' + safeSpot + '</span>');
 
-    return '<div class="reel-header-row" style="position:absolute !important; top:max(26px, env(safe-area-inset-top, 0px)) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; z-index:50 !important; isolation:isolate !important; transform:translateZ(40px) !important; -webkit-transform:translateZ(40px) !important; content-visibility:visible !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 72%, transparent 100%) !important; border-bottom:none !important;">' +
+    return '<div class="reel-header-row" style="position:absolute !important; top:max(44px, env(safe-area-inset-top, 0px)) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; z-index:50 !important; isolation:isolate !important; transform:translateZ(40px) !important; -webkit-transform:translateZ(40px) !important; content-visibility:visible !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 72%, transparent 100%) !important; border-bottom:none !important;">' +
       '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
         '<button type="button" data-author="' + safeAuthor + '" data-user-id="' + safeUserId + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.6);" title="' + safeAuthor + '님의 피드 모아보기">' +
           avatarMarkup +

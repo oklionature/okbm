@@ -3585,20 +3585,22 @@ window.saveCurrentPackingRecord = function() {
       var rawQ = (q || '').trim();
       var cleanQ = rawQ.toLowerCase();
 
-      var customOptionHtml = '';
-      if (rawQ.length >= 1) {
-        customOptionHtml = `
-          <div class="js-apply-calc-spot" data-spot="${escapeHtml(rawQ)}" data-elevation="" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:11px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; min-height:46px; box-sizing:border-box;">
-            <div style="min-width:0; flex:1; padding-right:10px;">
-              <div style="font-size:0.86rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                + "${escapeHtml(rawQ)}" 직접 지정
-              </div>
-              <div style="font-size:0.65rem; color:#94a3b8; margin-top:2px;">새로운 장소로 현재 일정에 등록합니다</div>
-            </div>
-            <span style="font-size:0.72rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.22); padding:5px 10px; border-radius:6px; flex-shrink:0;">지정</span>
-          </div>
-        `;
+      if (!rawQ) {
+        listEl.innerHTML = '<div style="text-align:center; padding:45px 0; color:#64748b; font-size:0.75rem; line-height:1.6;">가고 싶은 박지명, 산, 또는 지역명을 검색해보세요.</div>';
+        return;
       }
+
+      var customOptionHtml = `
+        <div class="js-apply-calc-spot" data-spot="${escapeHtml(rawQ)}" data-elevation="" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:11px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; min-height:46px; box-sizing:border-box;">
+          <div style="min-width:0; flex:1; padding-right:10px;">
+            <div style="font-size:0.86rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+              + "${escapeHtml(rawQ)}" 직접 지정
+            </div>
+            <div style="font-size:0.65rem; color:#94a3b8; margin-top:2px;">새로운 장소로 현재 일정에 등록합니다</div>
+          </div>
+          <span style="font-size:0.72rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.22); padding:5px 10px; border-radius:6px; flex-shrink:0;">지정</span>
+        </div>
+      `;
 
       var filtered = spotList.filter(function(s) {
         if (!s) return false;
@@ -3608,7 +3610,7 @@ window.saveCurrentPackingRecord = function() {
       });
 
       if (filtered.length === 0) {
-        listEl.innerHTML = customOptionHtml ? customOptionHtml : '<div style="text-align:center; padding:35px 0; color:#64748b; font-size:0.75rem;">일치하는 장소가 없습니다. 상단에 입력하여 직접 지정해보세요.</div>';
+        listEl.innerHTML = customOptionHtml + '<div style="text-align:center; padding:30px 0; color:#64748b; font-size:0.75rem; line-height:1.6;">일치하는 등록 박지가 없습니다.<br>위 직접 지정을 통해 새 장소로 등록할 수 있습니다.</div>';
         return;
       }
 
