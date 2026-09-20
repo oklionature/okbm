@@ -217,13 +217,14 @@
         box-shadow: none !important;
         flex: 0 1 auto !important;
       }
+      .reel-photo-target.is-portrait,
       .reel-photo-target.is-portrait-crop {
-        aspect-ratio: 3 / 4 !important;
-        object-fit: cover !important;
-        width: auto !important;
-        height: auto !important;
+        width: 100% !important;
+        height: 100% !important;
         max-width: 100% !important;
         max-height: 100% !important;
+        object-fit: cover !important;
+        aspect-ratio: auto !important;
         background: #000000 !important;
       }
       .reel-photo-target.is-keep-ratio,
@@ -341,9 +342,14 @@
         box-shadow: none !important;
         background: #000000 !important;
       }
+      .postcard-face-front .reel-horizontal-track .reel-photo-target.is-portrait,
       .postcard-face-front .reel-horizontal-track .reel-photo-target.is-portrait-crop {
-        aspect-ratio: 3 / 4 !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
         object-fit: cover !important;
+        aspect-ratio: auto !important;
       }
       .postcard-face-front .reel-horizontal-track .reel-photo-target.is-keep-ratio,
       .postcard-face-front .reel-horizontal-track .reel-photo-target.is-square,
@@ -433,6 +439,57 @@
       if (t === null || t === undefined) return '';
       return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     })(text);
+  };
+
+  // 📱 [세로 사진 상단 안전바까지 꽉 채우기 & 가로/정사각형 비율 유지 엔진]
+  window.applySmartPhotoFit = function(img) {
+    if (!img) return;
+    if (img.closest && (img.closest('.postcard-template-container') || img.closest('.postcard-face-back'))) return;
+    var fit = function() {
+      var w = img.naturalWidth || img.videoWidth || 0;
+      var h = img.naturalHeight || img.videoHeight || 0;
+      if (w <= 0 || h <= 0) return;
+      var ratio = w / h;
+      var inReel = !!(img.closest && img.closest('.reel-horizontal-track'));
+      img.classList.remove('is-landscape', 'is-square', 'is-portrait', 'is-portrait-crop', 'is-keep-ratio');
+      img.style.setProperty('border-radius', '0', 'important');
+      img.style.setProperty('box-shadow', 'none', 'important');
+      img.style.setProperty('object-position', 'center center', 'important');
+      img.style.setProperty('background-color', '#000000', 'important');
+      img.style.setProperty('min-width', '0', 'important');
+      img.style.setProperty('min-height', '0', 'important');
+      if (ratio < 0.98) {
+        // 📱 [세로사진]: 상단 안전바까지 100% 화면 꽉차게 (width: 100%, height: 100%, object-fit: cover)
+        img.classList.add('is-portrait', 'is-portrait-crop');
+        img.style.setProperty('width', '100%', 'important');
+        img.style.setProperty('height', '100%', 'important');
+        img.style.setProperty('max-width', '100%', 'important');
+        img.style.setProperty('max-height', '100%', 'important');
+        img.style.setProperty('object-fit', 'cover', 'important');
+        img.style.removeProperty('aspect-ratio');
+      } else {
+        // 🖼️ [나머지들 (가로/정사각형)]: 기존 비율 및 contain 유지
+        img.style.setProperty('width', inReel ? 'auto' : '100%', 'important');
+        img.style.setProperty('height', 'auto', 'important');
+        img.style.setProperty('max-width', '100%', 'important');
+        img.style.setProperty('max-height', inReel ? '100%' : 'none', 'important');
+        img.style.setProperty('aspect-ratio', w + ' / ' + h, 'important');
+        img.style.setProperty('object-fit', 'contain', 'important');
+        if (ratio > 1.02) {
+          img.classList.add('is-landscape', 'is-keep-ratio');
+        } else {
+          img.classList.add('is-square', 'is-keep-ratio');
+        }
+      }
+    };
+    if (img.complete && (img.naturalWidth || img.videoWidth)) {
+      fit();
+      return;
+    }
+    img.addEventListener('load', fit, { once: true });
+    if (typeof img.decode === 'function') {
+      img.decode().then(fit).catch(function() {});
+    }
   };
 
   if (!window.__okbmHistorySafeClickBound) {
@@ -6403,7 +6460,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
     var horizontalSlidesHtml = mediaItems.map(function(pUrl) {
       return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; margin:0 !important;">' +
-        '<img class="reel-photo-target" src="' + pUrl + '" loading="eager" decoding="async" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto !important; height:auto !important; max-width:100% !important; max-height:100% !important; object-fit:contain !important; object-position:center center !important; display:block !important; background:#000000 !important;" />' +
+        '<img class="reel-photo-target" src="' + pUrl + '" loading="eager" decoding="async" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
       '</div>';
     }).join('');
 
@@ -6883,7 +6940,7 @@ window.renderHistoryStage = function(isLoading) {
         } else {
           horizontalSlidesHtml = mediaItems.map(function(pUrl) {
             return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; margin:0 !important;">' +
-              '<img class="reel-photo-target" src="' + pUrl + '" loading="eager" decoding="async" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto !important; height:auto !important; max-width:100% !important; max-height:100% !important; object-fit:contain !important; object-position:center center !important; display:block !important; background:#000000 !important;" />' +
+              '<img class="reel-photo-target" src="' + pUrl + '" loading="eager" decoding="async" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
             '</div>';
           }).join('');
         }
@@ -7081,7 +7138,7 @@ window.renderHistoryStage = function(isLoading) {
 
         var horizontalSlidesHtml = mediaItems.map(function(pUrl) {
           return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; margin:0 !important;">' +
-            '<img class="reel-photo-target" src="' + pUrl + '" loading="eager" decoding="async" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto !important; height:auto !important; max-width:100% !important; max-height:100% !important; object-fit:contain !important; object-position:center center !important; display:block !important; background:#000000 !important;" />' +
+            '<img class="reel-photo-target" src="' + pUrl + '" loading="eager" decoding="async" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
           '</div>';
         }).join('');
 

@@ -149,11 +149,19 @@ window.escapeHtml = window.escapeHtml || function(t) {
 window.applySmartPhotoFit = window.applySmartPhotoFit || function(img) {
   if (!img) return;
   if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-    if (img.naturalHeight >= img.naturalWidth) {
-      img.classList.add('is-portrait');
+    var ratio = img.naturalWidth / img.naturalHeight;
+    if (ratio < 0.98) {
+      img.classList.remove('is-landscape', 'is-square', 'is-keep-ratio');
+      img.classList.add('is-portrait', 'is-portrait-crop');
+      img.style.setProperty('width', '100%', 'important');
+      img.style.setProperty('height', '100%', 'important');
+      img.style.setProperty('max-width', '100%', 'important');
+      img.style.setProperty('max-height', '100%', 'important');
       img.style.setProperty('object-fit', 'cover', 'important');
+      img.style.removeProperty('aspect-ratio');
     } else {
-      img.classList.remove('is-portrait');
+      img.classList.remove('is-portrait', 'is-portrait-crop');
+      img.classList.add('is-keep-ratio');
       img.style.setProperty('object-fit', 'contain', 'important');
     }
   }
@@ -264,29 +272,36 @@ window.applySmartPhotoFit = function(img) {
     var h = img.naturalHeight || img.videoHeight || 0;
     if (w <= 0 || h <= 0) return;
     var ratio = w / h;
-    var tallerThan34 = ratio < (3 / 4);
     var inReel = !!(img.closest && img.closest('.reel-horizontal-track'));
-    img.classList.remove('is-landscape', 'is-square', 'is-portrait-crop', 'is-keep-ratio');
+    img.classList.remove('is-landscape', 'is-square', 'is-portrait', 'is-portrait-crop', 'is-keep-ratio');
     img.style.setProperty('border-radius', '0', 'important');
     img.style.setProperty('box-shadow', 'none', 'important');
     img.style.setProperty('object-position', 'center center', 'important');
     img.style.setProperty('background-color', '#000000', 'important');
     img.style.setProperty('min-width', '0', 'important');
     img.style.setProperty('min-height', '0', 'important');
-    img.style.setProperty('width', inReel ? 'auto' : '100%', 'important');
-    img.style.setProperty('height', 'auto', 'important');
-    img.style.setProperty('max-width', '100%', 'important');
-    img.style.setProperty('max-height', inReel ? '100%' : 'none', 'important');
-    if (tallerThan34) {
-      img.classList.add('is-portrait-crop');
-      img.style.setProperty('aspect-ratio', '3 / 4', 'important');
+    if (ratio < 0.98) {
+      // 📱 [세로사진]: 상단 안전바까지 100% 화면 꽉차게 (width: 100%, height: 100%, object-fit: cover)
+      img.classList.add('is-portrait', 'is-portrait-crop');
+      img.style.setProperty('width', '100%', 'important');
+      img.style.setProperty('height', '100%', 'important');
+      img.style.setProperty('max-width', '100%', 'important');
+      img.style.setProperty('max-height', '100%', 'important');
       img.style.setProperty('object-fit', 'cover', 'important');
+      img.style.removeProperty('aspect-ratio');
     } else {
+      // 🖼️ [나머지들 (가로/정사각형)]: 기존 비율 및 contain 유지
+      img.style.setProperty('width', inReel ? 'auto' : '100%', 'important');
+      img.style.setProperty('height', 'auto', 'important');
+      img.style.setProperty('max-width', '100%', 'important');
+      img.style.setProperty('max-height', inReel ? '100%' : 'none', 'important');
       img.style.setProperty('aspect-ratio', w + ' / ' + h, 'important');
       img.style.setProperty('object-fit', 'contain', 'important');
-      if (ratio > 1.02) img.classList.add('is-landscape', 'is-keep-ratio');
-      else if (ratio >= 0.98) img.classList.add('is-square', 'is-keep-ratio');
-      else img.classList.add('is-keep-ratio');
+      if (ratio > 1.02) {
+        img.classList.add('is-landscape', 'is-keep-ratio');
+      } else {
+        img.classList.add('is-square', 'is-keep-ratio');
+      }
     }
   };
   if (img.complete && (img.naturalWidth || img.videoWidth)) {
@@ -6947,8 +6962,7 @@ window.saveProposalToSupabase = async function(proposalData, isCorrection) {
   var resolvedUserId = String(proposalData.userId || proposalData.user_id || (prof && prof.id) || localStorage.getItem('okbm_user_id') || localStorage.getItem('user_auth_token') || '');
 
   var tableName = isCorrection ? 'spot_corrections' : 'proposals';
-  var authorNick = String(proposalData.author || proposalData.nickname || (prof && prof.nickname) || localStorage.getItem('okbm_user_nick') || '').trim();
-  if (authorNick === '김사자') authorNick = '오라네';
+  var authorNick = String(proposalData.author || proposalData.nickname || (prof && prof.nickname) || localStorage.getItem('okbm_user_nick') || '낭만백패커').trim() || '낭만백패커';
 
   var payload = {
     id: String(proposalData.id || ('prop_' + Date.now())),
@@ -7055,7 +7069,6 @@ window.fetchAdminSpotInbox = async function() {
           items.forEach(function(it) {
             if (!it || String(it.author || '').trim()) return;
             var looked = nickMap[String(it.user_id || '')] || '';
-            if (looked === '김사자') looked = '오라네';
             if (looked) {
               it.author = looked;
               it.nickname = looked;
@@ -8562,8 +8575,8 @@ window.saveUserToSupabase = async function(profileData) {
     if (!userYt && existingSns.youtube) userYt = existingSns.youtube;
     if (!userBlog && existingSns.blog) userBlog = existingSns.blog;
     var existingNick = String(existingRow.nickname || '').trim();
-    var incomingIsSocialDefault = nickname === '김사자' || nickname === '낭만백패커';
-    if (existingNick && existingNick !== '낭만백패커' && (!nickname || incomingIsSocialDefault)) {
+    var incomingIsDefault = !nickname || nickname === '낭만백패커';
+    if (existingNick && existingNick !== '낭만백패커' && incomingIsDefault) {
       nickname = existingNick;
     }
     var existingMg = existingRow.my_gears && typeof existingRow.my_gears === 'object' ? existingRow.my_gears : {};

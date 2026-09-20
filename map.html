@@ -6057,8 +6057,7 @@ var overlay = document.getElementById('customModalOverlay');
 
       function normalizeReporterNick(nick) {
         var name = String(nick || '').trim();
-        if (name === '김사자') return '오라네';
-        return name;
+        return name || '낭만백패커';
       }
 
       function resolveCurrentUserReporter() {
