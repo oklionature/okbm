@@ -3600,6 +3600,37 @@ window.deleteTripRecord = async function(recordId, e) {
         '</div>' +
       '</div>';
 
+    var sFeedId = escapeHtml(String(log.id));
+    var sCleanId = String(log.id).replace(/^["']|["']$/g, '').trim();
+    var sProfile = safeGetJSON('user_profile', null);
+    var sMyId = (sProfile && sProfile.id) ? String(sProfile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+    var sUserStarsKey = (typeof window.okbmGetUserStarsKey === 'function') ? window.okbmGetUserStarsKey(sMyId) : 'okbm_feed_stars_map';
+    var sStarsMap = safeGetJSON(sUserStarsKey, {});
+    var sStarCounts = safeGetJSON('okbm_feed_stars_counts', {});
+    var sIsStarred = Boolean(sStarsMap[sCleanId] || sStarsMap[sFeedId]);
+    var sLikes = (log.likes_count !== undefined && log.likes_count !== null) ? Number(log.likes_count) : (log.likes !== undefined ? Number(log.likes) : Number(sStarCounts[sCleanId] || 0));
+    var sStarCount = isNaN(sLikes) ? 0 : sLikes;
+    var sSavedList = safeGetJSON('okbm_saved_feeds', []);
+    var sIsSaved = sSavedList.includes(sCleanId) || sSavedList.includes(sFeedId);
+    var sSpot = log.spot || '낭만 스팟';
+    var sMemo = fallbackMemo || sSpot;
+
+    var interactiveBarHtml =
+      '<div style="padding:10px 16px 14px 16px; background:#000000; display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.06);">' +
+        '<div style="display:flex; align-items:center; gap:14px;">' +
+          '<button type="button" data-star-card-id="' + sCleanId + '" onclick="event.preventDefault(); event.stopPropagation(); window.toggleFeedStar(this.dataset.starCardId, event);" style="background:none; border:none; padding:4px 0; cursor:pointer; display:flex; align-items:center; gap:5px; color:#ffffff;">' +
+            '<svg id="feedStarIcon_' + sCleanId + '" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (sIsStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + ';" fill="' + (sIsStarred ? '#fde047' : 'none') + '" stroke="' + (sIsStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
+            '<span id="feedStarCountText_' + sCleanId + '" style="font-size:0.78rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif;">' + sStarCount + '</span>' +
+          '</button>' +
+          '<button type="button" data-feed-id="' + sFeedId + '" data-spot="' + escapeHtml(sSpot) + '" data-memo="' + escapeHtml(sMemo) + '" onclick="if(typeof window.shareCurrentFeed===\'function\'){ window.shareCurrentFeed(this.dataset.feedId, this.dataset.spot, this.dataset.memo); } else { triggerHaptic(10); if(navigator.clipboard){ navigator.clipboard.writeText(location.href); if(typeof showToast===\'function\') showToast(HISTORY_TOAST_VEC.link + \'피드 링크가 복사되었습니다.\',\'success\'); } }" style="background:none; border:none; padding:4px 0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">' +
+            '<svg viewBox="0 0 24 24" style="width:17px; height:17px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
+          '</button>' +
+          '<button type="button" data-save-feed="1" data-feed-id="' + sFeedId + '" onclick="window.toggleSaveFeed(this.dataset.feedId, event);" style="background:none; border:none; padding:4px 0; cursor:pointer; display:flex; align-items:center; color:' + (sIsSaved ? '#c084fc' : '#cbd5e1') + ';" title="관심피드 즐겨찾기 저장">' +
+            '<svg viewBox="0 0 24 24" style="width:17px; height:17px;" fill="' + (sIsSaved ? '#c084fc' : 'none') + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
+          '</button>' +
+        '</div>' +
+      '</div>';
+
     return '<div class="single-feed-block" data-record-id="' + escapeHtml(String(log.id)) + '" style="background:#000000; border-bottom:2px solid rgba(255,255,255,0.12); overflow:hidden; display:flex; flex-direction:column; flex-shrink:0; margin-bottom:28px; box-sizing:border-box;">' +
       '<div style="padding:14px 16px 10px 16px; background:#000000; display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid rgba(255,255,255,0.06);">' +
         '<div style="font-size:1.05rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">' + escapeHtml(log.spot || '낭만 스팟') + (log.elevation ? (' <span style="font-size:0.75rem; color:#fde047; font-weight:800;">(' + escapeHtml(log.elevation) + ')</span>') : '') + '</div>' +
@@ -3612,6 +3643,7 @@ window.deleteTripRecord = async function(recordId, e) {
         photoSectionsHtml +
       '</div>' +
       templateSectionHtml +
+      interactiveBarHtml +
     '</div>';
   };
 // 🔖 [관심피드 북마크 저장/해제 토글 엔진]
@@ -6578,6 +6610,346 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     });
   }
 
+  // 🧰 [하단 4대 도구 인라인 슬라이드 서랍 토글]
+  window.toggleFeedBottomTools = function(cardId, e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    triggerHaptic(10);
+
+    var drawer = document.getElementById('bottomToolsDrawer_' + cardId);
+    var triggerBtn = document.getElementById('btnToggleBottomTools_' + cardId);
+    if (!drawer || !triggerBtn) return;
+
+    var isOpen = drawer.dataset.opened === 'true';
+
+    document.querySelectorAll('[id^="bottomToolsDrawer_"]').forEach(function(d) {
+      if (d !== drawer) {
+        d.style.maxWidth = '0px';
+        d.style.opacity = '0';
+        d.style.transform = 'scale(0.85) translateX(12px)';
+        d.style.pointerEvents = 'none';
+        d.dataset.opened = 'false';
+        var bId = d.id.replace('bottomToolsDrawer_', 'btnToggleBottomTools_');
+        var btn = document.getElementById(bId);
+        if (btn) {
+          btn.style.transform = 'rotate(0deg)';
+          btn.style.color = '#94a3b8';
+          btn.style.borderColor = 'rgba(255,255,255,0.15)';
+        }
+      }
+    });
+
+    if (isOpen) {
+      drawer.style.maxWidth = '0px';
+      drawer.style.opacity = '0';
+      drawer.style.transform = 'scale(0.85) translateX(12px)';
+      drawer.style.pointerEvents = 'none';
+      drawer.dataset.opened = 'false';
+      triggerBtn.style.transform = 'rotate(0deg)';
+      triggerBtn.style.color = '#94a3b8';
+      triggerBtn.style.borderColor = 'rgba(255,255,255,0.15)';
+    } else {
+      drawer.style.maxWidth = '210px';
+      drawer.style.opacity = '1';
+      drawer.style.transform = 'scale(1) translateX(0px)';
+      drawer.style.pointerEvents = 'auto';
+      drawer.dataset.opened = 'true';
+      triggerBtn.style.transform = 'rotate(90deg)';
+      triggerBtn.style.color = '#38bdf8';
+      triggerBtn.style.borderColor = '#38bdf8';
+    }
+  };
+
+  // 🎴 [피드 단일 스냅 카드 HTML 생성기 - 초기/무한스크롤 SSOT 100% 일치]
+  window.buildReelSingleSnapCardHtml = function(item, idx, ctx) {
+    ctx = ctx || {};
+    var myUserId = ctx.myUserId || '';
+    var savedNick = ctx.savedNick || '낭만백패커';
+    var starsMap = ctx.starsMap || {};
+    var starCounts = ctx.starCounts || {};
+    var savedFeedsList = ctx.savedFeedsList || [];
+    var isLogged = (ctx.isLogged !== undefined) ? ctx.isLogged : ((typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false);
+
+    var record = window.normalizeHistoryRecord(item, idx);
+    var cardId = escapeHtml(String(record.id || idx));
+    var tmplPhoto = record.readyShotPhoto || record.customTemplatePhoto || (item && (item.readyShotPhoto || item.customTemplatePhoto)) || '';
+    if (!tmplPhoto && window.__memoryStore && window.__memoryStore['okbm_ready_shots_map']) {
+      var rShot = window.__memoryStore['okbm_ready_shots_map'][String(record.id)];
+      if (rShot && rShot.photo) tmplPhoto = rShot.photo;
+    }
+    if (!tmplPhoto && window.__memoryStore && window.__memoryStore['okbm_custom_templates_map']) {
+      tmplPhoto = window.__memoryStore['okbm_custom_templates_map'][String(record.id)] || '';
+    }
+
+    var tmplPhotoClean = record.readyShotPhoto || '';
+    var rawPhotosList = (typeof getRecordPhotos === 'function') ? getRecordPhotos(record) : (record.photos || []);
+    var photos = (Array.isArray(rawPhotosList) ? rawPhotosList : []).filter(function(p) {
+      return p && p !== tmplPhotoClean;
+    });
+
+    var spotName = record.spot || '나의 힐링 스팟';
+    var tripDate = record.date || '';
+    var weightKg = record.weightKg || '0.00';
+    var memo120 = (record.memo || record.oneLineMemo || '').slice(0, 120);
+    var authorName = record.author || record.nick || record.nickname || '';
+    if (window.okbmIsOwnPostRecord && window.okbmIsOwnPostRecord(record, myUserId) && window.okbmIsPlaceholderNick && window.okbmIsPlaceholderNick(authorName) && savedNick && !window.okbmIsPlaceholderNick(savedNick)) {
+      authorName = savedNick;
+    }
+    if (!authorName) authorName = '낭만백패커';
+
+    var cleanCardId = String(record.id || idx).replace(/^["']|["']$/g, '').trim();
+    var isStarred = Boolean(starsMap[cleanCardId] || starsMap[cardId] || starsMap[String(record.id)]);
+    var parsedLikes = (record.likes_count !== undefined && record.likes_count !== null) ? Number(record.likes_count) : (record.likes !== undefined ? Number(record.likes) : Number(starCounts[cleanCardId] || 0));
+    var starCount = isNaN(parsedLikes) ? 0 : parsedLikes;
+    var mediaItems = (photos && photos.length > 0) ? photos : [];
+    var totalPhotosCount = mediaItems.length;
+
+    var recordUserId = String(record.userId || '').trim();
+    var cardPureId = String(record.id || '').trim();
+
+    var isMyRecord = Boolean(record._isLocalOwner || (isLogged && (typeof window.isRecordOwner === 'function') && window.isRecordOwner(record)));
+
+    // 🌐 SNS 배지
+    var rawSnsText = String(record.instagram || record.youtube || record.youtubeUrl || '').trim();
+    var instaTargetUrl = '';
+    var youtubeTargetUrl = '';
+
+    if (rawSnsText.includes('youtube.com') || rawSnsText.includes('youtu.be')) {
+      var cleanYt = rawSnsText.replace(/^@+/, '').split('?')[0].trim();
+      var channelMatch = cleanYt.match(/(?:youtube\.com\/(?:@|c\/|channel\/)?|youtu\.be\/)([\w\-\_\.]+)/i);
+      if (channelMatch && channelMatch[1]) {
+        youtubeTargetUrl = 'https://www.youtube.com/@' + channelMatch[1].replace(/^@/, '');
+      } else {
+        youtubeTargetUrl = cleanYt.startsWith('http') ? cleanYt : ('https://' + cleanYt);
+      }
+    } else if (rawSnsText) {
+      if (rawSnsText.includes('instagram.com')) {
+        var cleanInstaUrl = rawSnsText.replace(/^@+/, '').split('?')[0].trim();
+        instaTargetUrl = cleanInstaUrl.startsWith('http') ? cleanInstaUrl : ('https://' + cleanInstaUrl);
+      } else {
+        var pureInstaId = rawSnsText.replace(/[@\s]/g, '').trim();
+        if (pureInstaId) instaTargetUrl = 'https://instagram.com/' + pureInstaId;
+      }
+    }
+
+    if (!youtubeTargetUrl && record.youtube) {
+      var yStr = String(record.youtube).replace(/^@+/, '').split('?')[0].trim();
+      var m = yStr.match(/(?:youtube\.com\/(?:@|c\/|channel\/)?|youtu\.be\/)([\w\-\_\.]+)/i);
+      if (m && m[1]) {
+        youtubeTargetUrl = 'https://www.youtube.com/@' + m[1].replace(/^@/, '');
+      }
+    }
+
+    var socialBadgesHtml = '';
+    if (!isMyRecord) {
+      if (instaTargetUrl) {
+        socialBadgesHtml += '<a href="' + instaTargetUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="인스타그램">' +
+          '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:#e2e8f0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>' +
+          '</a>';
+      }
+      if (youtubeTargetUrl) {
+        socialBadgesHtml += '<a href="' + youtubeTargetUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="유튜브">' +
+          '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none">' +
+            '<path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z" fill="#f43f5e"/>' +
+            '<path d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z" fill="#ffffff"/>' +
+          '</svg>' +
+        '</a>';
+      }
+    }
+
+    var isRegisteredSpot = window.isSpotRegisteredInMasterDB(spotName);
+    var centerDDayOverlayHtml = '';
+
+    var targetAvatarUrl = (typeof window.resolveUserMasterPhoto === 'function')
+      ? window.resolveUserMasterPhoto(recordUserId, authorName, record.authorPhoto)
+      : (record.authorPhoto || '');
+
+    var hasValidImg = Boolean(targetAvatarUrl && String(targetAvatarUrl).startsWith('http'));
+
+    var avatarMarkup = hasValidImg
+      ? '<img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="' + escapeHtml(targetAvatarUrl) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />'
+      : '<div style="width:100%; height:100%; background:#090d14; display:flex; align-items:center; justify-content:center;"><img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="" style="width:100%; height:100%; object-fit:cover; display:none;" /><svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
+
+    var diffDays = null;
+    var dParts = String(tripDate || '').match(/\d+/g);
+    if (dParts && dParts.length >= 3) {
+      var targetD = new Date(parseInt(dParts[0], 10), parseInt(dParts[1], 10) - 1, parseInt(dParts[2], 10));
+      var todayD = new Date();
+      todayD.setHours(0, 0, 0, 0);
+      targetD.setHours(0, 0, 0, 0);
+      diffDays = Math.round((targetD.getTime() - todayD.getTime()) / 86400000);
+
+      if (totalPhotosCount === 0) {
+        var ddayLabel = diffDays > 0 ? ('D-' + diffDays) : (diffDays === 0 ? 'D-DAY' : ('D+' + Math.abs(diffDays)));
+        centerDDayOverlayHtml = '<div id="dDayBadgeWrap_' + cardId + '" style="position:absolute; top:14px; right:14px; z-index:25; pointer-events:none; display:inline-flex; align-items:center; background:#0c1017; border:1px solid rgba(255,255,255,0.14); border-radius:6px; padding:3px 8px;">' +
+          '<span style="font-size:0.75rem; color:#e2e8f0; font-weight:900; font-family:\'Space Grotesk\', sans-serif; letter-spacing:0.4px; line-height:1;">' + ddayLabel + '</span>' +
+        '</div>';
+      }
+    }
+
+    var headerBarHtml = okbmBuildReelHeaderBarHtml(authorName, recordUserId, avatarMarkup, tripDate, spotName, isRegisteredSpot, socialBadgesHtml);
+
+    var hasRealFieldPhotos = Boolean(totalPhotosCount > 0);
+    var isPub = Boolean(record.isPublished === true && hasRealFieldPhotos);
+    var bottomToolsHtml = '';
+
+    if (isMyRecord) {
+      bottomToolsHtml = '<div style="display:flex; align-items:center; justify-content:flex-end; position:relative; flex-shrink:0;">' +
+        '<div id="bottomToolsDrawer_' + cardId + '" data-opened="false" style="display:flex; align-items:center; gap:6px; max-width:0px; opacity:0; transform:scale(0.85) translateX(12px); transform-origin:right center; overflow:hidden; transition:all 0.25s cubic-bezier(0.16, 1, 0.3, 1); pointer-events:none; margin-right:6px; box-sizing:border-box;">' +
+          '<button type="button" onclick="window.openPastTripsListModal(); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#38bdf8; flex-shrink:0;" title="보관함 모아보기">' +
+            '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' +
+          '</button>' +
+          '<button type="button" data-record-id="' + cardId + '" data-lock-btn-id="' + cardId + '" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:' + (isPub ? '#34d399' : '#38bdf8') + '; flex-shrink:0;" title="' + (isPub ? '전체 공개 중' : (hasRealFieldPhotos ? '비공개 (나만보기)' : '비공개 (디데이 이후 사진 등록 시 전체공개 가능)')) + '">' +
+            (isPub
+              ? '<svg viewBox="0 0 24 24" style="width:16px; height:16px; color:#34d399;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>'
+              : '<svg viewBox="0 0 24 24" style="width:16px; height:16px; color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+            ) +
+          '</button>' +
+          '<button type="button" data-record-id="' + cardId + '" onclick="window.openRichAfterTripModal(window.okbmFindFeedRecord(this.dataset.recordId)); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fde047; flex-shrink:0;" title="일지 및 사진 수정">' +
+            '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
+          '</button>' +
+          '<button type="button" data-record-id="' + cardPureId + '" onclick="window.deleteTripRecord(this.dataset.recordId, event);" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#f43f5e; flex-shrink:0;" title="기록 삭제">' +
+            '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
+          '</button>' +
+        '</div>' +
+        '<button type="button" id="btnToggleBottomTools_' + cardId + '" data-card-id="' + cardId + '" onclick="window.toggleFeedBottomTools(this.dataset.cardId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#94a3b8; transition:all 0.2s ease; flex-shrink:0;" title="관리 도구 열기">' +
+          '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>' +
+        '</button>' +
+      '</div>';
+    } else {
+      bottomToolsHtml = okbmBuildFeedOthersMoreBtnHtml(cardPureId, recordUserId, authorName, 'inline');
+    }
+
+    var horizontalSlidesHtml = '';
+    if (totalPhotosCount === 0) {
+      horizontalSlidesHtml = '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; background:#000000; display:flex !important; flex-direction:column !important; align-items:center !important; justify-content:center !important; gap:10px; padding:24px; box-sizing:border-box; text-align:center;">' +
+        '<div style="width:48px; height:48px; border-radius:50%; background:rgba(255,255,255,0.04); border:1.5px dashed rgba(56,189,248,0.35); display:flex; align-items:center; justify-content:center; color:#38bdf8;">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px; height:24px;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>' +
+        '</div>' +
+        '<div style="font-size:0.86rem; font-weight:800; color:#cbd5e1;">등록된 현장 사진이 없습니다</div>' +
+        '<div style="font-size:0.68rem; color:#64748b; line-height:1.4;">하단 [···] 도구에서 사진을 추가해보세요</div>' +
+      '</div>';
+    } else {
+      horizontalSlidesHtml = mediaItems.map(function(pUrl) {
+        return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; margin:0 !important;">' +
+          '<img class="reel-photo-target" src="' + pUrl + '" loading="eager" decoding="async" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
+        '</div>';
+      }).join('');
+    }
+
+    var dotsHtml = '';
+    if (totalPhotosCount > 1) {
+      var dotsItemsHtml = Array.from({ length: totalPhotosCount }).map(function(_, dIdx) {
+        var dotW = (dIdx === 0) ? '12px' : '4px';
+        var dotBg = (dIdx === 0) ? '#ffffff' : 'rgba(255,255,255,0.3)';
+        var dotShadow = (dIdx === 0) ? 'box-shadow:0 0 6px rgba(255,255,255,0.8);' : '';
+        return '<div class="carousel-dot-item" style="width:' + dotW + '; height:3.5px; border-radius:2px; background:' + dotBg + '; ' + dotShadow + ' transition:all 0.2s ease;"></div>';
+      }).join('');
+      dotsHtml = '<div id="dotsWrap_' + cardId + '" style="position:absolute; bottom:8px; left:50%; transform:translateX(-50%); z-index:5; display:flex; justify-content:center; align-items:center; gap:4px; height:14px; padding:0 8px; background:#0c1017; border-radius:10px; border:1px solid rgba(255,255,255,0.15); pointer-events:none;">' + dotsItemsHtml + '</div>';
+    }
+
+    var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
+    var tmplId = record.templateId || savedTmplId;
+    var rawPhoto = mediaItems[0] || '';
+    var genFn = (typeof window.generateCardMarkup === 'function') ? window.generateCardMarkup : (typeof generateCardMarkup === 'function' ? generateCardMarkup : null);
+    var backTemplateCardHtml = '';
+
+    if (genFn) {
+      backTemplateCardHtml = genFn(tmplId, record, record.items || [], spotName, memo120 || spotName, rawPhoto);
+    } else {
+      backTemplateCardHtml = '<div style="width:100%; height:100%; background:#090d15; padding:16px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; position:relative;">' +
+        '<div>' +
+          '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed rgba(255,255,255,0.18); padding-bottom:6px;">' +
+            '<span style="font-size:0.90rem; font-weight:800; color:#38bdf8; display:flex; align-items:center; gap:4px;">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:14px; height:14px;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>' +
+              '<span>' + escapeHtml(spotName) + '</span>' +
+            '</span>' +
+            '<span style="font-size:0.65rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;">' + escapeHtml(tripDate) + '</span>' +
+          '</div>' +
+          '<div style="margin-top:12px; display:flex; justify-content:space-between; align-items:baseline; background:rgba(255,255,255,0.03); padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">' +
+            '<span style="font-size:0.72rem; color:#94a3b8; font-weight:700;">총 패킹 무게</span>' +
+            '<span style="font-size:1.45rem; font-weight:900; color:#34d399; font-family:\'Space Grotesk\', sans-serif;">' + weightKg + ' KG</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }
+
+    var studioCardMarkup = '';
+    var actualReadyShot = (record.readyShotPhoto && String(record.readyShotPhoto).trim().length > 10) ? String(record.readyShotPhoto).trim() : '';
+
+    if (actualReadyShot && typeof window.generateReadyShotMarkup === 'function') {
+      studioCardMarkup = '<div class="postcard-template-container">' +
+        window.generateReadyShotMarkup(record, { photo: actualReadyShot }) +
+        '</div>';
+    } else if (actualReadyShot) {
+      studioCardMarkup = '<div class="postcard-template-container"><div style="width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto; position:relative; background:#000000; border-radius:14px; overflow:hidden; display:flex; align-items:center; justify-content:center; box-shadow:0 12px 30px rgba(0,0,0,0.9);"><img class="reel-photo-target" src="' + escapeHtml(actualReadyShot) + '" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100% !important; height:100% !important; object-fit:contain !important; display:block; background:#000000;" /></div></div>';
+    } else {
+      studioCardMarkup = '<div class="postcard-template-container">' + backTemplateCardHtml + '</div>';
+    }
+
+    var photoMemosArr = (Array.isArray(record.photoMemos) && record.photoMemos.length > 0) ? record.photoMemos : [memo120];
+    var initialPhotoMemo = photoMemosArr[0] || memo120 || '';
+    var cleanMemoContentHtml = initialPhotoMemo.trim()
+      ? escapeHtml(initialPhotoMemo.trim())
+      : '<span style="color:#475569;">등록된 일지 메모가 없습니다.</span>';
+
+    var isSavedFeed = savedFeedsList.includes(String(record.id || '').trim());
+
+    return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap" data-reel-idx="' + idx + '" data-feed-id="' + cardId + '" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '">' +
+      headerBarHtml +
+
+      '<div class="reel-media-stage">' +
+        '<div style="width:100% !important; height:100% !important; position:relative; overflow:hidden; background:#000000;">' +
+          (centerDDayOverlayHtml ? centerDDayOverlayHtml : '') +
+          '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000;">' +
+            '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000;">' +
+              (totalPhotosCount > 0 ? (
+                '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \`' + cardId + '\`);">' + horizontalSlidesHtml + '</div>' + dotsHtml
+              ) : (
+                '<div style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:24px 18px; box-sizing:border-box; text-align:center; background:#000000; pointer-events:none;">' +
+                  '<div style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:20px; pointer-events:none;">' +
+                    '<button type="button" data-record-id="' + cardPureId + '" onclick="event.stopPropagation(); triggerHaptic(12); window.openRichAfterTripModal(window.okbmFindFeedRecord(this.dataset.recordId));" style="pointer-events:auto; width:58px; height:58px; border-radius:50%; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.22); display:flex; align-items:center; justify-content:center; color:#e2e8f0; box-shadow:0 4px 18px rgba(0,0,0,0.5); cursor:pointer; padding:0; outline:none; transition:transform 0.15s ease, background 0.15s ease;" onmousedown="this.style.transform=\'scale(0.92)\'; this.style.background=\'rgba(255,255,255,0.14)\';" onmouseup="this.style.transform=\'scale(1)\'; this.style.background=\'rgba(255,255,255,0.06)\';" ontouchstart="this.style.transform=\'scale(0.92)\'; this.style.background=\'rgba(255,255,255,0.14)\';" ontouchend="this.style.transform=\'scale(1)\'; this.style.background=\'rgba(255,255,255,0.06)\;\'">' +
+                      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:26px; height:26px; pointer-events:none;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>' +
+                    '</button>' +
+                    '<div style="font-size:1.02rem; font-weight:900; color:#ffffff;">' + escapeHtml(spotName) + '</div>' +
+                    '<div style="font-size:0.74rem; color:#94a3b8; line-height:1.5; word-break:keep-all;">아이콘을 터치하여 사진을 등록하거나,<br>카드를 탭하여 패킹 정보를 확인하세요.</div>' +
+                  '</div>' +
+                '</div>'
+              )) +
+            '</div>' +
+            '<div class="postcard-face-back" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; box-sizing:border-box;">' +
+              studioCardMarkup +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="reel-bottom-interactive-bar">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; min-height:32px;">' +
+          '<div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">' +
+            '<button type="button" data-star-card-id="' + cleanCardId + '" onclick="event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); window.toggleFeedStar(this.dataset.starCardId, event);" ontouchstart="event.stopPropagation(); event.stopImmediatePropagation();" style="background:none; border:none; padding:6px 4px; margin:-6px -4px; cursor:pointer; display:flex; align-items:center; gap:4px; touch-action:manipulation; -webkit-tap-highlight-color:transparent; pointer-events:auto; z-index:20;">' +
+              '<svg id="feedStarIcon_' + cleanCardId + '" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease; pointer-events:none;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
+              '<span id="feedStarCountText_' + cleanCardId + '" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif; pointer-events:none;">' + starCount + '</span>' +
+            '</button>' +
+            '<button type="button" data-feed-id="' + cardId + '" data-spot="' + escapeHtml(spotName) + '" data-memo="' + escapeHtml(memo120) + '" onclick="if(typeof window.shareCurrentFeed===\'function\'){ window.shareCurrentFeed(this.dataset.feedId, this.dataset.spot, this.dataset.memo); } else { triggerHaptic(10); if(navigator.clipboard){ navigator.clipboard.writeText(location.href); if(typeof showToast===\'function\') showToast(HISTORY_TOAST_VEC.link + \'피드 링크가 복사되었습니다.\',\'success\'); } }" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">' +
+              '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
+            '</button>' +
+            '<button type="button" data-save-feed="1" data-feed-id="' + cardId + '" onclick="window.toggleSaveFeed(this.dataset.feedId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:' + (isSavedFeed ? '#c084fc' : '#cbd5e1') + ';" title="관심피드 즐겨찾기 저장">' +
+              '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="' + (isSavedFeed ? '#c084fc' : 'none') + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
+            '</button>' +
+          '</div>' +
+
+          '<div style="display:flex; align-items:center; gap:8px;">' +
+            bottomToolsHtml +
+          '</div>' +
+        '</div>' +
+
+        '<div id="feedPhotoMemoText_' + cardId + '" class="reel-memo-fixed-box">' +
+          cleanMemoContentHtml +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  };
+
 window.renderHistoryStage = function(isLoading) {
     var modal = document.getElementById('romanticHistoryModal');
     if (!modal) return;
@@ -6717,346 +7089,17 @@ window.renderHistoryStage = function(isLoading) {
         '<div style="font-size:0.75rem; color:#94a3b8; line-height:1.5;">' + emptySubMsg + '</div>' +
       '</div>';
     } else {
-    reelSlidesHtml = currentList.map(function(item, idx) {
-        var record = window.normalizeHistoryRecord(item, idx);
-        var cardId = escapeHtml(String(record.id || idx));
-        var tmplPhoto = record.readyShotPhoto || record.customTemplatePhoto || (item && (item.readyShotPhoto || item.customTemplatePhoto)) || '';
-        if (!tmplPhoto && window.__memoryStore && window.__memoryStore['okbm_ready_shots_map']) {
-          var rShot = window.__memoryStore['okbm_ready_shots_map'][String(record.id)];
-          if (rShot && rShot.photo) tmplPhoto = rShot.photo;
-        }
-        if (!tmplPhoto && window.__memoryStore && window.__memoryStore['okbm_custom_templates_map']) {
-          tmplPhoto = window.__memoryStore['okbm_custom_templates_map'][String(record.id)] || '';
-        }
+      var feedRenderCtx = {
+        myUserId: myUserId,
+        savedNick: savedNick,
+        starsMap: starsMap,
+        starCounts: starCounts,
+        savedFeedsList: savedFeedsList,
+        isLogged: isLogged
+      };
 
-        var tmplPhoto = record.readyShotPhoto || '';
-        var rawPhotosList = getRecordPhotos(record);
-        var photos = rawPhotosList.filter(function(p) {
-          return p && p !== tmplPhoto;
-        });
-
-       var spotName = record.spot || '나의 힐링 스팟';
-        var tripDate = record.date || '';
-        var weightKg = record.weightKg || '0.00';
-        var memo120 = (record.memo || record.oneLineMemo || '').slice(0, 120);
-        var authorName = record.author || record.nick || record.nickname || '';
-        if (window.okbmIsOwnPostRecord && window.okbmIsOwnPostRecord(record, myUserId) && window.okbmIsPlaceholderNick && window.okbmIsPlaceholderNick(authorName) && savedNick && !window.okbmIsPlaceholderNick(savedNick)) {
-          authorName = savedNick;
-        }
-        if (!authorName) authorName = '낭만백패커';
-        var instaId = record.instagram || record.instaId || '';
-        var cleanInsta = String(instaId).replace(/[@\s]/g, '').trim();
-        var itemsCount = Array.isArray(record.items) ? record.items.length : 0;
-
-        var cleanCardId = String(record.id || idx).replace(/^["']|["']$/g, '').trim();
-        var isStarred = Boolean(starsMap[cleanCardId] || starsMap[cardId] || starsMap[String(record.id)]);
-        var parsedLikes = (record.likes_count !== undefined && record.likes_count !== null) ? Number(record.likes_count) : (record.likes !== undefined ? Number(record.likes) : Number(starCounts[cleanCardId] || 0));
-        var starCount = isNaN(parsedLikes) ? 0 : parsedLikes;
-        var mediaItems = (photos && photos.length > 0) ? photos : [];
-        var totalPhotosCount = mediaItems.length;
-
-        var recordUserId = String(record.userId || '').trim();
-        var cardPureId = String(record.id || '').trim();
-
-        var isMyRecord = Boolean(record._isLocalOwner || (isLogged && (typeof window.isRecordOwner === 'function') && window.isRecordOwner(record)));
-
-        var followingList = safeGetJSON('okbm_following_users', []);
-        var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
-        var followKey = recordUserId || authorName;
-        var isFollowingThisAuthor = followingList.includes(followKey);
-
-        // 🌐 [지능형 SNS/채널 자동 감지기]
-        var rawSnsText = String(record.instagram || record.youtube || record.youtubeUrl || '').trim();
-        var instaTargetUrl = '';
-        var youtubeTargetUrl = '';
-
-        if (rawSnsText.includes('youtube.com') || rawSnsText.includes('youtu.be')) {
-          var cleanYt = rawSnsText.replace(/^@+/, '').split('?')[0].trim();
-          var channelMatch = cleanYt.match(/(?:youtube\.com\/(?:@|c\/|channel\/)?|youtu\.be\/)([\w\-\_\.]+)/i);
-          if (channelMatch && channelMatch[1]) {
-            youtubeTargetUrl = 'https://www.youtube.com/@' + channelMatch[1].replace(/^@/, '');
-          } else {
-            youtubeTargetUrl = cleanYt.startsWith('http') ? cleanYt : ('https://' + cleanYt);
-          }
-        } else if (rawSnsText) {
-          if (rawSnsText.includes('instagram.com')) {
-            var cleanInstaUrl = rawSnsText.replace(/^@+/, '').split('?')[0].trim();
-            instaTargetUrl = cleanInstaUrl.startsWith('http') ? cleanInstaUrl : ('https://' + cleanInstaUrl);
-          } else {
-            var pureInstaId = rawSnsText.replace(/[@\s]/g, '').trim();
-            if (pureInstaId) instaTargetUrl = 'https://instagram.com/' + pureInstaId;
-          }
-        }
-
-        if (!youtubeTargetUrl && record.youtube) {
-          var yStr = String(record.youtube).replace(/^@+/, '').split('?')[0].trim();
-          var m = yStr.match(/(?:youtube\.com\/(?:@|c\/|channel\/)?|youtu\.be\/)?([\w\-\_\.]+)/i);
-          if (m && m[1]) {
-            youtubeTargetUrl = 'https://www.youtube.com/@' + m[1].replace(/^@/, '');
-          }
-        }
-
-        var socialBadgesHtml = '';
-        if (!isMyRecord) {
-          if (instaTargetUrl) {
-            socialBadgesHtml += '<a href="' + instaTargetUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="인스타그램">' +
-              '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:#e2e8f0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>' +
-            '</a>';
-          }
-          if (youtubeTargetUrl) {
-            socialBadgesHtml += '<a href="' + youtubeTargetUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="유튜브">' +
-              '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none">' +
-                '<path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z" fill="#f43f5e"/>' +
-                '<path d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z" fill="#ffffff"/>' +
-              '</svg>' +
-            '</a>';
-          }
-        }
-
-        // 🏷️ [낭만루트 헤더]
-        var isRegisteredSpot = window.isSpotRegisteredInMasterDB(spotName);
-        var centerDDayOverlayHtml = '';
-
-        var targetAvatarUrl = (typeof window.resolveUserMasterPhoto === 'function')
-          ? window.resolveUserMasterPhoto(recordUserId, authorName, record.authorPhoto)
-          : (record.authorPhoto || '');
-
-        var hasValidImg = Boolean(targetAvatarUrl && String(targetAvatarUrl).startsWith('http'));
-
-        var avatarMarkup = hasValidImg
-          ? '<img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="' + escapeHtml(targetAvatarUrl) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />'
-          : '<div style="width:100%; height:100%; background:#090d14; display:flex; align-items:center; justify-content:center;"><img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="" style="width:100%; height:100%; object-fit:cover; display:none;" /><svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
-
-       var diffDays = null;
-        var dParts = String(tripDate || '').match(/\d+/g);
-        if (dParts && dParts.length >= 3) {
-          var targetD = new Date(parseInt(dParts[0], 10), parseInt(dParts[1], 10) - 1, parseInt(dParts[2], 10));
-          var todayD = new Date();
-          todayD.setHours(0, 0, 0, 0);
-          targetD.setHours(0, 0, 0, 0);
-          diffDays = Math.round((targetD.getTime() - todayD.getTime()) / 86400000);
-
-          if (totalPhotosCount === 0) {
-            var ddayLabel = diffDays > 0 ? ('D-' + diffDays) : (diffDays === 0 ? 'D-DAY' : ('D+' + Math.abs(diffDays)));
-            centerDDayOverlayHtml = '<div id="dDayBadgeWrap_' + cardId + '" style="position:absolute; top:14px; right:14px; z-index:25; pointer-events:none; display:inline-flex; align-items:center; background:#0c1017; border:1px solid rgba(255,255,255,0.14); border-radius:6px; padding:3px 8px;">' +
-              '<span style="font-size:0.75rem; color:#e2e8f0; font-weight:900; font-family:\'Space Grotesk\', sans-serif; letter-spacing:0.4px; line-height:1;">' + ddayLabel + '</span>' +
-            '</div>';
-          }
-        }
-
-        var headerBarHtml = okbmBuildReelHeaderBarHtml(authorName, recordUserId, avatarMarkup, tripDate, spotName, isRegisteredSpot, socialBadgesHtml);
-
-        // 🧰 [하단 4대 도구 인라인 슬라이드 서랍 토글]
-        window.toggleFeedBottomTools = function(cardId, e) {
-          if (e) { e.preventDefault(); e.stopPropagation(); }
-          triggerHaptic(10);
-
-          var drawer = document.getElementById('bottomToolsDrawer_' + cardId);
-          var triggerBtn = document.getElementById('btnToggleBottomTools_' + cardId);
-          if (!drawer || !triggerBtn) return;
-
-          var isOpen = drawer.dataset.opened === 'true';
-
-          document.querySelectorAll('[id^="bottomToolsDrawer_"]').forEach(function(d) {
-            if (d !== drawer) {
-              d.style.maxWidth = '0px';
-              d.style.opacity = '0';
-              d.style.transform = 'scale(0.85) translateX(12px)';
-              d.style.pointerEvents = 'none';
-              d.dataset.opened = 'false';
-              var bId = d.id.replace('bottomToolsDrawer_', 'btnToggleBottomTools_');
-              var btn = document.getElementById(bId);
-              if (btn) {
-                btn.style.transform = 'rotate(0deg)';
-                btn.style.color = '#94a3b8';
-                btn.style.borderColor = 'rgba(255,255,255,0.15)';
-              }
-            }
-          });
-
-          if (isOpen) {
-            drawer.style.maxWidth = '0px';
-            drawer.style.opacity = '0';
-            drawer.style.transform = 'scale(0.85) translateX(12px)';
-            drawer.style.pointerEvents = 'none';
-            drawer.dataset.opened = 'false';
-            triggerBtn.style.transform = 'rotate(0deg)';
-            triggerBtn.style.color = '#94a3b8';
-            triggerBtn.style.borderColor = 'rgba(255,255,255,0.15)';
-          } else {
-            drawer.style.maxWidth = '210px';
-            drawer.style.opacity = '1';
-            drawer.style.transform = 'scale(1) translateX(0px)';
-            drawer.style.pointerEvents = 'auto';
-            drawer.dataset.opened = 'true';
-            triggerBtn.style.transform = 'rotate(90deg)';
-            triggerBtn.style.color = '#38bdf8';
-            triggerBtn.style.borderColor = '#38bdf8';
-          }
-        };
-
-        // 🛠️ [하단 우측 슬라이딩 도구 서랍: 해당 글 관리 전담]
-        var hasRealFieldPhotos = Boolean(totalPhotosCount > 0);
-        var isPub = Boolean(record.isPublished === true && hasRealFieldPhotos);
-        var bottomToolsHtml = '';
-
-        if (isMyRecord) {
-          bottomToolsHtml = '<div style="display:flex; align-items:center; justify-content:flex-end; position:relative; flex-shrink:0;">' +
-            '<div id="bottomToolsDrawer_' + cardId + '" data-opened="false" style="display:flex; align-items:center; gap:6px; max-width:0px; opacity:0; transform:scale(0.85) translateX(12px); transform-origin:right center; overflow:hidden; transition:all 0.25s cubic-bezier(0.16, 1, 0.3, 1); pointer-events:none; margin-right:6px; box-sizing:border-box;">' +
-              '<button type="button" onclick="window.openPastTripsListModal(); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#38bdf8; flex-shrink:0;" title="보관함 모아보기">' +
-                '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' +
-              '</button>' +
-              '<button type="button" data-record-id="' + cardId + '" data-lock-btn-id="' + cardId + '" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:' + (isPub ? '#34d399' : '#38bdf8') + '; flex-shrink:0;" title="' + (isPub ? '전체 공개 중' : (hasRealFieldPhotos ? '비공개 (나만보기)' : '비공개 (디데이 이후 사진 등록 시 전체공개 가능)')) + '">' +
-                (isPub
-                  ? '<svg viewBox="0 0 24 24" style="width:16px; height:16px; color:#34d399;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>'
-                  : '<svg viewBox="0 0 24 24" style="width:16px; height:16px; color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
-                ) +
-              '</button>' +
-              '<button type="button" data-record-id="' + cardId + '" onclick="window.openRichAfterTripModal(window.okbmFindFeedRecord(this.dataset.recordId)); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fde047; flex-shrink:0;" title="일지 및 사진 수정">' +
-                '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
-              '</button>' +
-              '<button type="button" data-record-id="' + cardPureId + '" onclick="window.deleteTripRecord(this.dataset.recordId, event);" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.35); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#f43f5e; flex-shrink:0;" title="기록 삭제">' +
-                '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>' +
-              '</button>' +
-            '</div>' +
-            '<button type="button" id="btnToggleBottomTools_' + cardId + '" data-card-id="' + cardId + '" onclick="window.toggleFeedBottomTools(this.dataset.cardId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#94a3b8; transition:all 0.2s ease; flex-shrink:0;" title="관리 도구 열기">' +
-              '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>' +
-            '</button>' +
-          '</div>';
-        } else {
-          bottomToolsHtml = okbmBuildFeedOthersMoreBtnHtml(cardPureId, recordUserId, authorName, 'inline');
-        }
-
-        // 📷 [인스타그램 규격 순수 매트블랙 사진 트랙]
-        var horizontalSlidesHtml = '';
-        if (totalPhotosCount === 0) {
-          horizontalSlidesHtml = '<div style="flex:0 0 100% !important; width:100% !important; height:100% !important; background:#000000; display:flex !important; flex-direction:column !important; align-items:center !important; justify-content:center !important; gap:10px; padding:24px; box-sizing:border-box; text-align:center;">' +
-            '<div style="width:48px; height:48px; border-radius:50%; background:rgba(255,255,255,0.04); border:1.5px dashed rgba(56,189,248,0.35); display:flex; align-items:center; justify-content:center; color:#38bdf8;">' +
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:24px; height:24px;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>' +
-            '</div>' +
-            '<div style="font-size:0.86rem; font-weight:800; color:#cbd5e1;">등록된 현장 사진이 없습니다</div>' +
-            '<div style="font-size:0.68rem; color:#64748b; line-height:1.4;">하단 [···] 도구에서 사진을 추가해보세요</div>' +
-          '</div>';
-        } else {
-          horizontalSlidesHtml = mediaItems.map(function(pUrl) {
-            return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; margin:0 !important;">' +
-              '<img class="reel-photo-target" src="' + pUrl + '" loading="eager" decoding="async" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
-            '</div>';
-          }).join('');
-        }
-
-        var dotsHtml = '';
-        if (totalPhotosCount > 1) {
-          var dotsItemsHtml = Array.from({ length: totalPhotosCount }).map(function(_, dIdx) {
-            var dotW = (dIdx === 0) ? '12px' : '4px';
-            var dotBg = (dIdx === 0) ? '#ffffff' : 'rgba(255,255,255,0.3)';
-            var dotShadow = (dIdx === 0) ? 'box-shadow:0 0 6px rgba(255,255,255,0.8);' : '';
-            return '<div class="carousel-dot-item" style="width:' + dotW + '; height:3.5px; border-radius:2px; background:' + dotBg + '; ' + dotShadow + ' transition:all 0.2s ease;"></div>';
-          }).join('');
-          dotsHtml = '<div id="dotsWrap_' + cardId + '" style="position:absolute; bottom:8px; left:50%; transform:translateX(-50%); z-index:5; display:flex; justify-content:center; align-items:center; gap:4px; height:14px; padding:0 8px; background:#0c1017; border-radius:10px; border:1px solid rgba(255,255,255,0.15); pointer-events:none;">' + dotsItemsHtml + '</div>';
-        }
-
-        var savedTmplId = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
-        var tmplId = record.templateId || savedTmplId;
-        var rawPhoto = mediaItems[0] || '';
-        var genFn = (typeof window.generateCardMarkup === 'function') ? window.generateCardMarkup : (typeof generateCardMarkup === 'function' ? generateCardMarkup : null);
-        var backTemplateCardHtml = '';
-
-        if (genFn) {
-          backTemplateCardHtml = genFn(tmplId, record, record.items || [], spotName, memo120 || spotName, rawPhoto);
-        } else {
-          backTemplateCardHtml = '<div style="width:100%; height:100%; background:#090d15; padding:16px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; position:relative;">' +
-            '<div>' +
-              '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px dashed rgba(255,255,255,0.18); padding-bottom:6px;">' +
-                '<span style="font-size:0.90rem; font-weight:800; color:#38bdf8; display:flex; align-items:center; gap:4px;">' +
-                  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:14px; height:14px;"><path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M12 2v5M8 2h8M8 15h8v4H8z"/></svg>' +
-                  '<span>' + escapeHtml(spotName) + '</span>' +
-                '</span>' +
-                '<span style="font-size:0.65rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace;">' + escapeHtml(tripDate) + '</span>' +
-              '</div>' +
-              '<div style="margin-top:12px; display:flex; justify-content:space-between; align-items:baseline; background:rgba(255,255,255,0.03); padding:10px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.08);">' +
-                '<span style="font-size:0.72rem; color:#94a3b8; font-weight:700;">총 패킹 무게</span>' +
-                '<span style="font-size:1.45rem; font-weight:900; color:#34d399; font-family:\'Space Grotesk\', sans-serif;">' + weightKg + ' KG</span>' +
-              '</div>' +
-            '</div>' +
-          '</div>';
-        }
-
-        var studioCardMarkup = '';
-        var actualReadyShot = (record.readyShotPhoto && String(record.readyShotPhoto).trim().length > 10) ? String(record.readyShotPhoto).trim() : '';
-
-        if (actualReadyShot && typeof window.generateReadyShotMarkup === 'function') {
-          studioCardMarkup = '<div class="postcard-template-container">' +
-            window.generateReadyShotMarkup(record, { photo: actualReadyShot }) +
-            '</div>';
-        } else if (actualReadyShot) {
-          studioCardMarkup = '<div class="postcard-template-container"><div style="width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto; position:relative; background:#000000; border-radius:14px; overflow:hidden; display:flex; align-items:center; justify-content:center; box-shadow:0 12px 30px rgba(0,0,0,0.9);"><img class="reel-photo-target" src="' + escapeHtml(actualReadyShot) + '" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100% !important; height:100% !important; object-fit:contain !important; display:block; background:#000000;" /></div></div>';
-        } else {
-          studioCardMarkup = '<div class="postcard-template-container">' + backTemplateCardHtml + '</div>';
-        }
-
-        var photoMemosArr = (Array.isArray(record.photoMemos) && record.photoMemos.length > 0) ? record.photoMemos : [memo120];
-        var initialPhotoMemo = photoMemosArr[0] || memo120 || '';
-        var cleanMemoContentHtml = initialPhotoMemo.trim()
-          ? escapeHtml(initialPhotoMemo.trim())
-          : '<span style="color:#475569;">등록된 일지 메모가 없습니다.</span>';
-
-        var isSavedFeed = savedFeedsList.includes(String(record.id || '').trim());
-
-        return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap" data-reel-idx="' + idx + '" data-feed-id="' + cardId + '" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '">' +
-          headerBarHtml +
-
-          '<div class="reel-media-stage">' +
-            '<div style="width:100% !important; height:100% !important; position:relative; overflow:hidden; background:#000000;">' +
-              (centerDDayOverlayHtml ? centerDDayOverlayHtml : '') +
-              '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000;">' +
-                '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000;">' +
-                  (totalPhotosCount > 0 ? (
-                    '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \`' + cardId + '\`);">' + horizontalSlidesHtml + '</div>' + dotsHtml
-                  ) : (
-                    '<div style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:24px 18px; box-sizing:border-box; text-align:center; background:#000000; pointer-events:none;">' +
-                      '<div style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:20px; pointer-events:none;">' +
-                        '<button type="button" data-record-id="' + cardPureId + '" onclick="event.stopPropagation(); triggerHaptic(12); window.openRichAfterTripModal(window.okbmFindFeedRecord(this.dataset.recordId));" style="pointer-events:auto; width:58px; height:58px; border-radius:50%; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.22); display:flex; align-items:center; justify-content:center; color:#e2e8f0; box-shadow:0 4px 18px rgba(0,0,0,0.5); cursor:pointer; padding:0; outline:none; transition:transform 0.15s ease, background 0.15s ease;" onmousedown="this.style.transform=\'scale(0.92)\'; this.style.background=\'rgba(255,255,255,0.14)\';" onmouseup="this.style.transform=\'scale(1)\'; this.style.background=\'rgba(255,255,255,0.06)\';" ontouchstart="this.style.transform=\'scale(0.92)\'; this.style.background=\'rgba(255,255,255,0.14)\';" ontouchend="this.style.transform=\'scale(1)\'; this.style.background=\'rgba(255,255,255,0.06)\;\'">' +
-                          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:26px; height:26px; pointer-events:none;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>' +
-                        '</button>' +
-                        '<div style="font-size:1.02rem; font-weight:900; color:#ffffff;">' + escapeHtml(spotName) + '</div>' +
-                        '<div style="font-size:0.74rem; color:#94a3b8; line-height:1.5; word-break:keep-all;">아이콘을 터치하여 사진을 등록하거나,<br>카드를 탭하여 패킹 정보를 확인하세요.</div>' +
-                      '</div>' +
-                    '</div>'
-                  )) +
-                '</div>' +
-                '<div class="postcard-face-back" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; box-sizing:border-box;">' +
-                  studioCardMarkup +
-                '</div>' +
-              '</div>' +
-            '</div>' +
-          '</div>' +
-
-          '<div class="reel-bottom-interactive-bar">' +
-            '<div style="display:flex; justify-content:space-between; align-items:center; min-height:32px;">' +
-              '<div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">' +
-                '<button type="button" data-star-card-id="' + cleanCardId + '" onclick="event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); window.toggleFeedStar(this.dataset.starCardId, event);" ontouchstart="event.stopPropagation(); event.stopImmediatePropagation();" style="background:none; border:none; padding:6px 4px; margin:-6px -4px; cursor:pointer; display:flex; align-items:center; gap:4px; touch-action:manipulation; -webkit-tap-highlight-color:transparent; pointer-events:auto; z-index:20;">' +
-                  '<svg id="feedStarIcon_' + cleanCardId + '" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease; pointer-events:none;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
-                  '<span id="feedStarCountText_' + cleanCardId + '" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif; pointer-events:none;">' + starCount + '</span>' +
-                '</button>' +
-                '<button type="button" data-feed-id="' + cardId + '" data-spot="' + escapeHtml(spotName) + '" data-memo="' + escapeHtml(memo120) + '" onclick="if(typeof window.shareCurrentFeed===\'function\'){ window.shareCurrentFeed(this.dataset.feedId, this.dataset.spot, this.dataset.memo); } else { triggerHaptic(10); if(navigator.clipboard){ navigator.clipboard.writeText(location.href); if(typeof showToast===\'function\') showToast(HISTORY_TOAST_VEC.link + \'피드 링크가 복사되었습니다.\',\'success\'); } }" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">' +
-                  '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
-                '</button>' +
-                '<button type="button" data-save-feed="1" data-feed-id="' + cardId + '" onclick="window.toggleSaveFeed(this.dataset.feedId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:' + (isSavedFeed ? '#c084fc' : '#cbd5e1') + ';" title="관심피드 즐겨찾기 저장">' +
-                  '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="' + (isSavedFeed ? '#c084fc' : 'none') + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
-                '</button>' +
-              '</div>' +
-
-              '<div style="display:flex; align-items:center; gap:8px;">' +
-                bottomToolsHtml +
-              '</div>' +
-            '</div>' +
-
-            '<div id="feedPhotoMemoText_' + cardId + '" class="reel-memo-fixed-box">' +
-              cleanMemoContentHtml +
-            '</div>' +
-          '</div>' +
-        '</div>';
+      reelSlidesHtml = currentList.map(function(item, idx) {
+        return window.buildReelSingleSnapCardHtml(item, idx, feedRenderCtx);
       }).join('');
     }
 
@@ -7096,6 +7139,7 @@ window.renderHistoryStage = function(isLoading) {
       var existingCards = reelContainer.querySelectorAll('.reel-page-snap');
       var startIdx = existingCards.length;
 
+      var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
       var profile = safeGetJSON('user_profile', null);
       var myUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
       var savedNick = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '낭만백패커');
@@ -7104,89 +7148,17 @@ window.renderHistoryStage = function(isLoading) {
       var starCounts = safeGetJSON('okbm_feed_stars_counts', {});
       var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
 
-    var appendedHtml = newItems.map(function(item, idxOffset) {
-        var globalIdx = startIdx + idxOffset;
-        var record = window.normalizeHistoryRecord(item, globalIdx);
-        var cardId = escapeHtml(String(record.id || globalIdx));
-        var tmplPhoto = record.readyShotPhoto || '';
-        var rawPhotosList = getRecordPhotos(record);
-        var photos = rawPhotosList.filter(function(p) { return p && p !== tmplPhoto; });
-        var spotName = record.spot || '나의 힐링 스팟';
-        var tripDate = record.date || '';
-        var weightKg = record.weightKg || '0.00';
-        var memo120 = (record.memo || record.oneLineMemo || '').slice(0, 120);
-        var authorName = record.author || record.nick || record.nickname || '낭만백패커';
-        var cleanCardId = String(record.id || globalIdx).replace(/^["']|["']$/g, '').trim();
-        var isStarred = Boolean(starsMap[cleanCardId] || starsMap[cardId]);
-        var serverLikes = (record.likes_count !== undefined && record.likes_count !== null) ? Number(record.likes_count) : Number(record.likes || 0);
-        var starCount = isNaN(serverLikes) ? 0 : serverLikes;
-        var mediaItems = (photos && photos.length > 0) ? photos : [];
-        var totalPhotosCount = mediaItems.length;
-        var recordUserId = String(record.userId || '').trim();
-        var isMyRecord = Boolean(record._isLocalOwner || (isLogged && (typeof window.isRecordOwner === 'function') && window.isRecordOwner(record)));
-        var isRegisteredSpot = window.isSpotRegisteredInMasterDB(spotName);
+      var feedRenderCtx = {
+        myUserId: myUserId,
+        savedNick: savedNick,
+        starsMap: starsMap,
+        starCounts: starCounts,
+        savedFeedsList: savedFeedsList,
+        isLogged: isLogged
+      };
 
-        var targetAvatarUrl = (typeof window.resolveUserMasterPhoto === 'function')
-          ? window.resolveUserMasterPhoto(recordUserId, authorName, record.authorPhoto)
-          : (record.authorPhoto || '');
-        var hasValidImg = Boolean(targetAvatarUrl && String(targetAvatarUrl).startsWith('http'));
-        var avatarMarkup = hasValidImg
-          ? '<img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="' + escapeHtml(targetAvatarUrl) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />'
-          : '<div style="width:100%; height:100%; background:#090d14; display:flex; align-items:center; justify-content:center;"><img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="" style="width:100%; height:100%; object-fit:cover; display:none;" /><svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
-
-        var headerBarHtml = okbmBuildReelHeaderBarHtml(authorName, recordUserId, avatarMarkup, tripDate, spotName, isRegisteredSpot, '');
-
-        var horizontalSlidesHtml = mediaItems.map(function(pUrl) {
-          return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; margin:0 !important;">' +
-            '<img class="reel-photo-target" src="' + pUrl + '" loading="eager" decoding="async" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
-          '</div>';
-        }).join('');
-
-        var dotsHtml = '';
-        if (totalPhotosCount > 1) {
-          var dotsItemsHtml = Array.from({ length: totalPhotosCount }).map(function(_, dIdx) {
-            var dotW = (dIdx === 0) ? '12px' : '4px';
-            var dotBg = (dIdx === 0) ? '#ffffff' : 'rgba(255,255,255,0.3)';
-            var dotShadow = (dIdx === 0) ? 'box-shadow:0 0 6px rgba(255,255,255,0.8);' : '';
-            return '<div class="carousel-dot-item" style="width:' + dotW + '; height:3.5px; border-radius:2px; background:' + dotBg + '; ' + dotShadow + ' transition:all 0.2s ease;"></div>';
-          }).join('');
-          dotsHtml = '<div id="dotsWrap_' + cardId + '" style="position:absolute; bottom:8px; left:50%; transform:translateX(-50%); z-index:5; display:flex; justify-content:center; align-items:center; gap:4px; height:14px; padding:0 8px; background:#0c1017; border-radius:10px; border:1px solid rgba(255,255,255,0.15); pointer-events:none;">' + dotsItemsHtml + '</div>';
-        }
-
-        var photoMemosArr = (Array.isArray(record.photoMemos) && record.photoMemos.length > 0) ? record.photoMemos : [memo120];
-        var initialPhotoMemo = photoMemosArr[0] || memo120 || '';
-        var cleanMemoContentHtml = initialPhotoMemo.trim()
-          ? escapeHtml(initialPhotoMemo.trim())
-          : '<span style="color:#475569;">등록된 일지 메모가 없습니다.</span>';
-
-        return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap" data-reel-idx="' + globalIdx + '" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '">' +
-          headerBarHtml +
-          '<div class="reel-media-stage">' +
-            '<div style="width:100% !important; height:100% !important; position:relative; overflow:hidden; background:#000000;">' +
-              '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000;">' +
-                '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000;">' +
-                  '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \`' + cardId + '\`);">' + horizontalSlidesHtml + '</div>' + dotsHtml +
-                '</div>' +
-              '</div>' +
-            '</div>' +
-          '</div>' +
-          '<div class="reel-bottom-interactive-bar">' +
-            '<div style="display:flex; justify-content:space-between; align-items:center; min-height:32px;">' +
-              '<div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">' +
-                '<button type="button" data-star-card-id="' + cleanCardId + '" onclick="event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); window.toggleFeedStar(this.dataset.starCardId, event);" ontouchstart="event.stopPropagation(); event.stopImmediatePropagation();" style="background:none; border:none; padding:6px 4px; margin:-6px -4px; cursor:pointer; display:flex; align-items:center; gap:4px; touch-action:manipulation; -webkit-tap-highlight-color:transparent; pointer-events:auto; z-index:20;">' +
-                  '<svg id="feedStarIcon_' + cleanCardId + '" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease; pointer-events:none;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
-                  '<span id="feedStarCountText_' + cleanCardId + '" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif; pointer-events:none;">' + starCount + '</span>' +
-                '</button>' +
-              '</div>' +
-              '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
-                (isMyRecord ? '' : okbmBuildFeedOthersMoreBtnHtml(cleanCardId, recordUserId, authorName, 'inline')) +
-              '</div>' +
-            '</div>' +
-            '<div id="feedPhotoMemoText_' + cardId + '" class="reel-memo-fixed-box">' +
-              cleanMemoContentHtml +
-            '</div>' +
-          '</div>' +
-        '</div>';
+      var appendedHtml = newItems.map(function(item, idxOffset) {
+        return window.buildReelSingleSnapCardHtml(item, startIdx + idxOffset, feedRenderCtx);
       }).join('');
 
       reelContainer.insertAdjacentHTML('beforeend', appendedHtml);
