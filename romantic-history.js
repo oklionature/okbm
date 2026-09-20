@@ -356,8 +356,17 @@
       .postcard-face-front .reel-horizontal-track .reel-photo-target.is-landscape {
         object-fit: contain !important;
       }
-      .reel-status-bar-shield {
-        display: none !important;
+      .reel-status-bar-shield,
+      .history-status-bar-scrim {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: max(32px, env(safe-area-inset-top, 32px)) !important;
+        background: #000000 !important;
+        z-index: 1000010 !important;
+        pointer-events: none !important;
+        display: block !important;
       }
 
       .history-tab-route .reel-page-snap > .reel-header-row {
@@ -7310,9 +7319,14 @@ window.renderHistoryStage = function(isLoading) {
       modal = document.createElement('div');
       modal.id = 'romanticHistoryModal';
       modal.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)) !important; width:100% !important; max-width:100% !important; height:auto !important; max-height:none !important; background:#000000; z-index:1000005 !important; justify-content:center; align-items:stretch; overflow:hidden !important; touch-action:pan-y !important; transform:translateZ(0); -webkit-transform:translateZ(0); box-sizing:border-box; overscroll-behavior:none !important;';
-      modal.innerHTML = '<div class="romantic-history-content" style="width:100% !important; max-width:100% !important; margin:0; height:100%; max-height:100%; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; box-sizing:border-box;"></div>';
+      modal.innerHTML = '<div class="history-status-bar-scrim"></div><div class="romantic-history-content" style="width:100% !important; max-width:100% !important; margin:0; height:100%; max-height:100%; display:flex; flex-direction:column; justify-content:space-between; overflow:hidden; box-sizing:border-box;"></div>';
       document.body.appendChild(modal);
     } else {
+      if (!modal.querySelector('.history-status-bar-scrim')) {
+        var scrim = document.createElement('div');
+        scrim.className = 'history-status-bar-scrim';
+        modal.insertBefore(scrim, modal.firstChild);
+      }
       modal.style.setProperty('top', '0', 'important');
       modal.style.setProperty('bottom', 'calc(56px + env(safe-area-inset-bottom, 8px))', 'important');
       modal.style.setProperty('height', 'auto', 'important');
