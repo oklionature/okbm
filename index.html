@@ -5420,28 +5420,6 @@ var adBannersHtml = `
 
   
 
-      if (window.Capacitor && window.Capacitor.Plugins) {
-        var App = window.Capacitor.Plugins.App;
-        if (App) {
-          var lastBackTime = 0;
-          App.addListener('backButton', function(data) {
-            if (window.closeTopmostModal()) return;
-
-            if (window.history.length > 1 && data.canGoBack) {
-              window.history.back();
-              return;
-            }
-
-            var currentTime = Date.now();
-            if (currentTime - lastBackTime < 2000) {
-              App.exitApp();
-            } else {
-              lastBackTime = currentTime;
-              showToast("'뒤로' 버튼을 한 번 더 누르면 앱이 종료됩니다.", 2000);
-            }
-          });
-        }
-      }
     });
   </script>
 </body>

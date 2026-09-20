@@ -8728,3 +8728,134 @@ function _sanitizeLocalRomanticStorage() {
 if (typeof window !== 'undefined') {
   _sanitizeLocalRomanticStorage();
 }
+
+// ============================================================================
+// 📱 안드로이드 하드웨어/제스처 뒤로가기 3단계 우선순위 가드 (Capacitor App)
+// 1순위: 화면에 열려 있는 팝업/모달(로그인, 설정, 보관함 등) 닫기
+// 2순위: 열린 모달이 없고 이전 웹 히스토리가 있다면 window.history.back()
+// 3순위: 더 이상 뒤로 갈 곳이 없는 첫 화면에서는 안내 후 2초 내 재입력 시에만 앱 종료 (App.exitApp)
+// ============================================================================
+(function initCapacitorBackButtonGuard() {
+  if (typeof window === 'undefined') return;
+  if (window.__okbmBackButtonGuardInitialized) return;
+  window.__okbmBackButtonGuardInitialized = true;
+
+  function tryCloseTopmostModal() {
+    // 1. 등록된 modalCloseStack이 있다면 최상단 모달 닫기
+    if (typeof window.closeTopmostModal === 'function') {
+      try {
+        if (window.closeTopmostModal()) return true;
+      } catch (e) {}
+    }
+
+    // 2. 주요 모달 ID 우선순위별 닫기 처리
+    var knownModalConfigs = [
+      { id: 'ugcSafetyMenuSheet', close: function(el) { el.remove(); } },
+      { id: 'feedReportModal', close: function() { if (typeof window.closeFeedReportModal === 'function') window.closeFeedReportModal(); } },
+      { id: 'loginModalOverlay', close: function() { if (typeof window.closeLoginModal === 'function') window.closeLoginModal(); } },
+      { id: 'userAccountSettingsModal', close: function() { if (typeof window.closeAccountSettingsModal === 'function') window.closeAccountSettingsModal(); } },
+      { id: 'userProfileModalOverlay', close: function() { if (typeof window.closeUserProfileModal === 'function') window.closeUserProfileModal(); } },
+      { id: 'photoStudioOverlay', close: function() { if (typeof window.closePhotoStudio === 'function') window.closePhotoStudio(); } },
+      { id: 'packShareModalOverlay', close: function() { if (typeof window.closePackShareModal === 'function') window.closePackShareModal(); } },
+      { id: 'gearPresetModal', close: function() { if (typeof window.closeGearPresetModal === 'function') window.closeGearPresetModal(); } },
+      { id: 'videoDetailModal', close: function() { if (typeof window.closeVideoDetailModal === 'function') window.closeVideoDetailModal(); } },
+      { id: 'romanticPlanModal', close: function() { if (typeof window.closePlanModal === 'function') window.closePlanModal(); } },
+      { id: 'romanticHistoryModal', close: function() { if (typeof window.closeHistoryModal === 'function') window.closeHistoryModal(); } },
+      { id: 'romanticTripPhotosModal', close: function() { if (typeof window.closeTripPhotosModal === 'function') window.closeTripPhotosModal(); } },
+      { id: 'romanticGearBoxModal', close: function() { if (typeof window.closeGearBoxModal === 'function') window.closeGearBoxModal(); } },
+      { id: 'romanticMyListModal', close: function() { if (typeof window.closeMyListModal === 'function') window.closeMyListModal(); } },
+      { id: 'spotDetailSheet', close: function() { if (typeof window.closeSpotDetailSheet === 'function') window.closeSpotDetailSheet(); } },
+      { id: 'spotDrawer', close: function() { if (typeof window.closeSpotDrawer === 'function') window.closeSpotDrawer(); } }
+    ];
+
+    for (var i = 0; i < knownModalConfigs.length; i++) {
+      var item = knownModalConfigs[i];
+      var el = document.getElementById(item.id);
+      if (el) {
+        var style = window.getComputedStyle(el);
+        if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
+          try {
+            item.close(el);
+            if (typeof triggerHaptic === 'function') triggerHaptic(10);
+            return true;
+          } catch (e) {}
+        }
+      }
+    }
+
+    // 3. 커스텀 모달 오버레이 공통 탐색 (화면에 떠 있는 모달 닫기)
+    var overlays = document.querySelectorAll('.custom-modal-overlay, .modal-overlay, .modal-backdrop, [role="dialog"]');
+    for (var j = overlays.length - 1; j >= 0; j--) {
+      var ov = overlays[j];
+      var st = window.getComputedStyle(ov);
+      if (st.display !== 'none' && st.visibility !== 'hidden' && st.opacity !== '0') {
+        var closeBtn = ov.querySelector('.close-modal, .btn-close, [data-dismiss="modal"], .modal-close-btn, [onclick*="close"]');
+        if (closeBtn && typeof closeBtn.click === 'function') {
+          closeBtn.click();
+          return true;
+        }
+        ov.style.setProperty('display', 'none', 'important');
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function showExitNotice(msg) {
+    if (typeof showToast === 'function') {
+      showToast(msg, 'info', 2000);
+      return;
+    }
+    var existing = document.getElementById('okbmExitToastBanner');
+    if (existing) existing.remove();
+    var banner = document.createElement('div');
+    banner.id = 'okbmExitToastBanner';
+    banner.textContent = msg;
+    banner.style.cssText = 'position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,0.95); color:#ffffff; font-size:13px; font-weight:700; padding:10px 20px; border-radius:24px; z-index:9999999; box-shadow:0 4px 18px rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.18); pointer-events:none; transition:opacity 0.25s ease;';
+    document.body.appendChild(banner);
+    setTimeout(function() {
+      if (banner && banner.parentNode) {
+        banner.style.opacity = '0';
+        setTimeout(function() { banner.remove(); }, 300);
+      }
+    }, 2000);
+  }
+
+  function registerCapacitorBackHandler() {
+    if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.App) {
+      return;
+    }
+    var App = window.Capacitor.Plugins.App;
+    var lastBackTime = 0;
+
+    App.addListener('backButton', function(data) {
+      // 1순위: 화면에 열려 있는 팝업/모달 닫기
+      if (tryCloseTopmostModal()) {
+        return;
+      }
+
+      // 2순위: 열린 모달이 없고 이전 웹 히스토리가 있다면 window.history.back()
+      if (data && data.canGoBack) {
+        window.history.back();
+        return;
+      }
+
+      // 3순위: 더 이상 뒤로 갈 곳이 없는 첫 화면에서는 2초 내 재입력 시에만 앱 종료
+      var currentTime = Date.now();
+      if (currentTime - lastBackTime < 2000) {
+        App.exitApp();
+      } else {
+        lastBackTime = currentTime;
+        if (typeof triggerHaptic === 'function') triggerHaptic(12);
+        showExitNotice("뒤로가기 버튼을 한 번 더 누르면 종료됩니다");
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', registerCapacitorBackHandler);
+  } else {
+    registerCapacitorBackHandler();
+  }
+})();
