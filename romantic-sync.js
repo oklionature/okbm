@@ -8856,23 +8856,28 @@ if (typeof window !== 'undefined') {
   }
 
   // ☀️ [스마트폰 상태바 텍스트/아이콘 순백색(White) 강제 고정 엔진]
+  // Capacitor: DARK = 어두운 배경용 흰 아이콘 / LIGHT = 밝은 배경용 검정 아이콘
   function configureCapacitorStatusBar() {
     function applyStatusBarStyles() {
-      var StatusBar = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.StatusBar) || window.StatusBar;
-      if (!StatusBar) return;
+      var plugins = (window.Capacitor && window.Capacitor.Plugins) || {};
+      var StatusBar = plugins.StatusBar || window.StatusBar;
+      var SystemBars = plugins.SystemBars;
 
       try {
-        // 1. 순백색 아이콘/텍스트 강제: Style.Dark ('DARK') = 검은 배경용 흰색 텍스트
+        // Capacitor 8+ SystemBars (Android 15+ 권장 경로)
+        if (SystemBars && typeof SystemBars.setStyle === 'function') {
+          SystemBars.setStyle({ style: 'DARK' }).catch(function() {});
+        }
+
+        if (!StatusBar) return;
+
+        // 네이티브 edge-to-edge와 맞춤: 웹뷰가 상태바 아래까지 그려지고, CSS scrim이 검정 배경 담당
+        if (typeof StatusBar.setOverlaysWebView === 'function') {
+          StatusBar.setOverlaysWebView({ overlay: true }).catch(function() {});
+        }
+        // 순백색 아이콘/텍스트 강제 (검정 노치에서 시간·안테나 보이게)
         if (typeof StatusBar.setStyle === 'function') {
           StatusBar.setStyle({ style: 'DARK' }).catch(function() {});
-        }
-        // 2. 상태바 배경 순흑색(#000000) 강제
-        if (typeof StatusBar.setBackgroundColor === 'function') {
-          StatusBar.setBackgroundColor({ color: '#000000' }).catch(function() {});
-        }
-        // 3. 웹뷰 오버레이(투명 상태바) 여부 안정화
-        if (typeof StatusBar.setOverlaysWebView === 'function') {
-          StatusBar.setOverlaysWebView({ overlay: false }).catch(function() {});
         }
       } catch (e) {
         console.warn('[configureCapacitorStatusBar]', e);
@@ -8880,10 +8885,13 @@ if (typeof window !== 'undefined') {
     }
 
     applyStatusBarStyles();
-    // 웹뷰 초기화 지연 및 페이지 전환 타이밍 대응 (100ms, 500ms, 1200ms)
     setTimeout(applyStatusBarStyles, 100);
     setTimeout(applyStatusBarStyles, 500);
     setTimeout(applyStatusBarStyles, 1200);
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) applyStatusBarStyles();
+    });
+    window.addEventListener('focus', applyStatusBarStyles);
   }
 
   if (document.readyState === 'loading') {
