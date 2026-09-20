@@ -3092,7 +3092,7 @@ function ensureMyReportAndAuthModalsInDOM() {
             </p>
           </div>
           <div style="width:100%; display:flex; flex-direction:column; gap:7px; margin-top:6px;">
-            <button type="button" class="modal-btn btn-social-apple" onclick="loginWithApple()" style="width:100%; height:34px !important; min-height:34px !important; border-radius:8px !important; font-size:0.76rem !important; font-weight:800 !important; padding:0 10px !important; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; background:#ffffff; color:#000000; border:none;">
+            <button type="button" class="modal-btn btn-social-apple" onclick="loginWithApple()" style="display:none !important; width:100%; height:34px !important; min-height:34px !important; border-radius:8px !important; font-size:0.76rem !important; font-weight:800 !important; padding:0 10px !important; cursor:pointer; align-items:center; justify-content:center; gap:6px; background:#ffffff; color:#000000; border:none;">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="#000000" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.422 2.198-1.164 3.01-.85.93-2.02 1.552-3.215 1.462-.146-1.09.41-2.247 1.154-3.11C14.03 1.79 15.27 1.16 16.365 1.43zM20.52 17.39c-.55 1.275-.81 1.84-1.52 2.97-1.01 1.57-2.43 3.52-4.18 3.535-1.555.02-1.96-1.01-4.08-.995-2.12.015-2.57 1.02-4.125.995-1.75-.02-3.09-1.78-4.1-3.35C.74 17.06.27 12.2 2.05 9.42c1.23-1.95 3.17-3.09 5.01-3.09 1.87 0 3.045 1.02 4.595 1.02 1.51 0 2.43-1.03 4.6-1.03 1.64 0 3.37.89 4.6 2.43-4.04 2.22-3.39 8.01.665 8.64z"/></svg>
               <span>Apple로 계속하기</span>
             </button>
