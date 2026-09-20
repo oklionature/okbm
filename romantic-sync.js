@@ -8801,6 +8801,8 @@ if (typeof window !== 'undefined') {
 
     return false;
   }
+  window.tryCloseAnyVisibleModal = tryCloseTopmostModal;
+  window.tryCloseTopmostModal = tryCloseTopmostModal;
 
   function showExitNotice(msg) {
     if (typeof showToast === 'function') {
