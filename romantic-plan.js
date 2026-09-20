@@ -4262,6 +4262,20 @@ window.saveCurrentPackingRecord = function() {
     var curY = now.getFullYear();
     var curM = now.getMonth() + 1;
 
+    var targetEl = document.getElementById(targetInputId);
+    if (targetEl && targetEl.value) {
+      var mMatch = targetEl.value.match(/(\d{2,4})[.-](\d{1,2})[.-](\d{1,2})/);
+      if (mMatch) {
+        var parsedYear = parseInt(mMatch[1], 10);
+        if (parsedYear < 100) parsedYear += (parsedYear > 50 ? 1900 : 2000);
+        var parsedMonth = parseInt(mMatch[2], 10);
+        if (parsedYear >= 1970 && parsedYear <= curY + 5 && parsedMonth >= 1 && parsedMonth <= 12) {
+          curY = parsedYear;
+          curM = parsedMonth;
+        }
+      }
+    }
+
     var modal = document.createElement('div');
     modal.id = 'romanticDatePickerModal';
     modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1000055; display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
@@ -4277,26 +4291,57 @@ window.saveCurrentPackingRecord = function() {
         var ms = String(m).padStart(2, '0');
         var ys = String(y).slice(-2);
         var fullVal = ys + '.' + ms + '.' + ds;
-        daysHtml += '<div onclick="var t=document.getElementById(\'' + targetInputId + '\'); if(t){ t.value=\'' + fullVal + '\'; t.style.color=\'#cbd5e1\'; } document.getElementById(\'romanticDatePickerModal\').remove();" style="height:34px; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-family:\'Space Grotesk\', sans-serif; font-weight:800; color:#e2e8f0; border-radius:6px; cursor:pointer; background:rgba(255,255,255,0.02);">' + d + '</div>';
+        daysHtml += '<div onclick="var t=document.getElementById(\'' + targetInputId + '\'); if(t){ t.value=\'' + fullVal + '\'; t.style.color=\'#cbd5e1\'; } document.getElementById(\'romanticDatePickerModal\').remove(); triggerHaptic(8);" style="height:34px; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-family:\'Space Grotesk\', sans-serif; font-weight:800; color:#e2e8f0; border-radius:6px; cursor:pointer; background:rgba(255,255,255,0.02); transition:background 0.15s ease;" onmouseover="this.style.background=\'rgba(56,189,248,0.2)\'" onmouseout="this.style.background=\'rgba(255,255,255,0.02)\'">' + d + '</div>';
+      }
+
+      var maxYear = now.getFullYear() + 2;
+      var minYear = 1990;
+      var yearOptions = '';
+      for (var yr = maxYear; yr >= minYear; yr--) {
+        yearOptions += '<option value="' + yr + '" ' + (yr === y ? 'selected' : '') + ' style="background:#0c1017; color:#ffffff;">' + yr + '년</option>';
+      }
+
+      var monthOptions = '';
+      for (var mo = 1; mo <= 12; mo++) {
+        monthOptions += '<option value="' + mo + '" ' + (mo === m ? 'selected' : '') + ' style="background:#0c1017; color:#ffffff;">' + mo + '월</option>';
       }
 
       var box = document.getElementById('romanticPickerInnerBox');
       if (!box) return;
       box.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px;">
-          <button type="button" id="btnPickPrevM" style="background:none; border:none; color:#cbd5e1; font-size:1.0rem; cursor:pointer; padding:4px 8px;">◀</button>
-          <span style="font-size:0.90rem; font-weight:900; color:#ffffff; font-family:'Space Grotesk', sans-serif;">${y}년 ${m}월</span>
-          <button type="button" id="btnPickNextM" style="background:none; border:none; color:#cbd5e1; font-size:1.0rem; cursor:pointer; padding:4px 8px;">▶</button>
+        <div style="display:flex; justify-content:center; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px; gap:8px;">
+          <select id="pickYearSelect" style="background:#0c1017; border:1px solid rgba(255,255,255,0.22); border-radius:7px; color:#ffffff; font-size:0.90rem; font-weight:900; font-family:'Space Grotesk', sans-serif; padding:5px 10px; outline:none; cursor:pointer;">
+            ${yearOptions}
+          </select>
+          <select id="pickMonthSelect" style="background:#0c1017; border:1px solid rgba(255,255,255,0.22); border-radius:7px; color:#ffffff; font-size:0.90rem; font-weight:900; font-family:'Space Grotesk', sans-serif; padding:5px 10px; outline:none; cursor:pointer;">
+            ${monthOptions}
+          </select>
         </div>
-        <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.65rem; font-weight:800; color:#64748b; margin:6px 0;">
-          <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+        <div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.65rem; font-weight:800; color:#64748b; margin:8px 0 4px 0;">
+          <span style="color:#f43f5e;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#38bdf8;">토</span>
         </div>
         <div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:3px; text-align:center;">
           ${daysHtml}
         </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06);">
+          <button type="button" id="btnPickClear" style="background:none; border:none; color:#f43f5e; font-size:0.72rem; font-weight:700; cursor:pointer; padding:4px 6px;">초기화</button>
+          <button type="button" id="btnPickToday" style="background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); border-radius:6px; color:#38bdf8; font-size:0.72rem; font-weight:800; cursor:pointer; padding:4px 8px;">오늘</button>
+        </div>
       `;
-      document.getElementById('btnPickPrevM').onclick = function() { m--; if (m < 1) { m = 12; y--; } renderPickerCal(y, m); };
-      document.getElementById('btnPickNextM').onclick = function() { m++; if (m > 12) { m = 1; y++; } renderPickerCal(y, m); };
+
+      document.getElementById('pickYearSelect').onchange = function(e) { y = parseInt(e.target.value, 10); renderPickerCal(y, m); };
+      document.getElementById('pickMonthSelect').onchange = function(e) { m = parseInt(e.target.value, 10); renderPickerCal(y, m); };
+      document.getElementById('btnPickClear').onclick = function() {
+        var t = document.getElementById(targetInputId);
+        if (t) { t.value = ''; }
+        document.getElementById('romanticDatePickerModal').remove();
+        triggerHaptic(6);
+      };
+      document.getElementById('btnPickToday').onclick = function() {
+        var tNow = new Date();
+        renderPickerCal(tNow.getFullYear(), tNow.getMonth() + 1);
+        triggerHaptic(6);
+      };
     }
 
     modal.innerHTML = '<div id="romanticPickerInnerBox" style="width:100%; max-width:300px; background:#07090e; border:1px solid rgba(255,255,255,0.16); border-radius:12px; padding:14px; display:flex; flex-direction:column; box-sizing:border-box; box-shadow:0 12px 35px rgba(0,0,0,0.9);"></div>';
