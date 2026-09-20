@@ -8855,9 +8855,30 @@ if (typeof window !== 'undefined') {
     });
   }
 
+  // ☀️ [스마트폰 상태바 텍스트/아이콘 순백색(White) 강제 고정 엔진]
+  function configureCapacitorStatusBar() {
+    if (!window.Capacitor || !window.Capacitor.Plugins) return;
+    var StatusBar = window.Capacitor.Plugins.StatusBar;
+    if (StatusBar) {
+      try {
+        if (typeof StatusBar.setStyle === 'function') {
+          // Style.DARK: 검은 배경용 -> 텍스트/시계/안테나/배터리를 순백색(White)으로 강제 전환
+          StatusBar.setStyle({ style: 'DARK' }).catch(function() {});
+        }
+        if (typeof StatusBar.setBackgroundColor === 'function') {
+          StatusBar.setBackgroundColor({ color: '#000000' }).catch(function() {});
+        }
+      } catch (e) {}
+    }
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', registerCapacitorBackHandler);
+    document.addEventListener('DOMContentLoaded', function() {
+      registerCapacitorBackHandler();
+      configureCapacitorStatusBar();
+    });
   } else {
     registerCapacitorBackHandler();
+    configureCapacitorStatusBar();
   }
 })();

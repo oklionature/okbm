@@ -283,7 +283,7 @@
       }
       .history-tab-route .reel-media-stage {
         position: absolute !important;
-        top: max(44px, env(safe-area-inset-top, 0px)) !important;
+        top: max(32px, env(safe-area-inset-top, 0px)) !important;
         bottom: 0 !important;
         left: 0 !important;
         right: 0 !important;
@@ -362,7 +362,7 @@
 
       .history-tab-route .reel-page-snap > .reel-header-row {
         position: absolute !important;
-        top: max(44px, env(safe-area-inset-top, 0px)) !important;
+        top: max(32px, env(safe-area-inset-top, 0px)) !important;
         left: 0 !important;
         right: 0 !important;
         height: auto !important;
@@ -376,7 +376,7 @@
         transform: translateZ(40px) !important;
         -webkit-transform: translateZ(40px) !important;
         content-visibility: visible !important;
-        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 72%, transparent 100%) !important;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important;
         border-bottom: none !important;
       }
 
@@ -6406,27 +6406,28 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var safeUserId = escapeHtml(recordUserId || '');
     var safeSpot = escapeHtml(spotName || '나의 힐링 스팟');
     var safeDate = escapeHtml(tripDate || '');
+    var textShadowStyle = 'text-shadow:0 1px 4px rgba(0,0,0,0.95), 0 2px 8px rgba(0,0,0,0.7);';
     var spotRow = isRegisteredSpot
       ? ('<button type="button" data-spot="' + safeSpot + '" onclick="window.navigateToSpotMap(this.dataset.spot, event);" style="background:none; border:none; padding:0; display:inline-flex; align-items:center; gap:2px; cursor:pointer; text-align:left; min-width:0; overflow:hidden;" title="지도에서 박지 위치 확인">' +
-          '<span style="font-size:0.74rem; font-weight:800; color:#e2e8f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-decoration:underline; text-decoration-color:rgba(56,189,248,0.45); text-underline-offset:2px; line-height:1.3;">' + safeSpot + '</span>' +
-          '<span style="font-size:0.60rem; color:#38bdf8; font-weight:900; flex-shrink:0;">↗</span>' +
+          '<span style="font-size:0.74rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-decoration:underline; text-decoration-color:rgba(56,189,248,0.55); text-underline-offset:2px; line-height:1.3; ' + textShadowStyle + '">' + safeSpot + '</span>' +
+          '<span style="font-size:0.60rem; color:#38bdf8; font-weight:900; flex-shrink:0; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.9));">↗</span>' +
         '</button>')
-      : ('<span style="font-size:0.74rem; font-weight:800; color:#e2e8f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.3;">' + safeSpot + '</span>');
+      : ('<span style="font-size:0.74rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.3; ' + textShadowStyle + '">' + safeSpot + '</span>');
 
-    return '<div class="reel-header-row" style="position:absolute !important; top:max(44px, env(safe-area-inset-top, 0px)) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; z-index:50 !important; isolation:isolate !important; transform:translateZ(40px) !important; -webkit-transform:translateZ(40px) !important; content-visibility:visible !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.28) 72%, transparent 100%) !important; border-bottom:none !important;">' +
+    return '<div class="reel-header-row" style="position:absolute !important; top:max(32px, env(safe-area-inset-top, 0px)) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; z-index:50 !important; isolation:isolate !important; transform:translateZ(40px) !important; -webkit-transform:translateZ(40px) !important; content-visibility:visible !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important; border-bottom:none !important;">' +
       '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
-        '<button type="button" data-author="' + safeAuthor + '" data-user-id="' + safeUserId + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.6);" title="' + safeAuthor + '님의 피드 모아보기">' +
+        '<button type="button" data-author="' + safeAuthor + '" data-user-id="' + safeUserId + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.7);" title="' + safeAuthor + '님의 피드 모아보기">' +
           avatarMarkup +
         '</button>' +
         '<div style="display:flex; flex-direction:column; justify-content:center; min-width:0; flex:1;">' +
           '<div style="display:flex; align-items:center; gap:6px; min-width:0; line-height:1.2;">' +
-            '<span style="font-size:0.82rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + safeAuthor + '</span>' +
-            (safeDate ? '<span style="font-size:0.62rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace; flex-shrink:0;">' + safeDate + '</span>' : '') +
+            '<span style="font-size:0.82rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; ' + textShadowStyle + '">' + safeAuthor + '</span>' +
+            (safeDate ? '<span style="font-size:0.62rem; color:#cbd5e1; font-family:\'JetBrains Mono\', monospace; flex-shrink:0; text-shadow:0 1px 3px rgba(0,0,0,0.9);">' + safeDate + '</span>' : '') +
           '</div>' +
           spotRow +
         '</div>' +
       '</div>' +
-      (extraRightHtml ? ('<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' + extraRightHtml + '</div>') : '') +
+      (extraRightHtml ? ('<div style="display:flex; align-items:center; gap:6px; flex-shrink:0; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.8));">' + extraRightHtml + '</div>') : '') +
     '</div>';
   }
 

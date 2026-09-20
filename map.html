@@ -5,6 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#000000" />
+    <meta name="color-scheme" content="dark" />
     <meta name="google" content="notranslate" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -132,6 +133,7 @@
       }
 
       :root {
+        color-scheme: dark !important;
         --bg-base: #010204;
         --bg-surface: #07090e;
         --bg-card: #0e121a;
@@ -280,19 +282,19 @@
       }
 
      .app-status-bar-scrim {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        height: max(44px, env(safe-area-inset-top, 44px)) !important;
-        background: #010204 !important;
-        z-index: 999999 !important;
-        pointer-events: none !important;
-      }
+         position: fixed !important;
+         top: 0 !important;
+         left: 0 !important;
+         right: 0 !important;
+         height: max(32px, env(safe-area-inset-top, 32px)) !important;
+         background: #010204 !important;
+         z-index: 999999 !important;
+         pointer-events: none !important;
+       }
 
-      .floating-top-search-wrap {
-        position: absolute !important;
-        top: calc(max(44px, env(safe-area-inset-top, 44px)) + 6px) !important;
+       .floating-top-search-wrap {
+         position: absolute !important;
+         top: calc(max(32px, env(safe-area-inset-top, 32px)) + 6px) !important;
         left: 12px !important;
         right: 12px !important;
         max-width: 480px !important;
@@ -675,7 +677,7 @@
 
       .mobile-bottom-sheet {
         display: flex; position: fixed; left: 0; right: 0; width: 100%;
-        bottom: calc(56px + env(safe-area-inset-bottom, 0px)); height: 64vh; height: 64dvh; max-height: 64vh; max-height: 64dvh;
+        bottom: calc(56px + env(safe-area-inset-bottom, 0px)); height: 50vh; height: 50dvh; max-height: 50vh; max-height: 50dvh;
         background: #0c1017 !important; border-top: 1.5px solid var(--border-titanium) !important; border-radius: 18px 18px 0 0;
         z-index: var(--z-bottomsheet); box-shadow: 0 -8px 24px rgba(0,0,0,0.45);
         transform: translateY(105%); transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
@@ -1032,7 +1034,7 @@
           border-right: none; 
           border-bottom: 1px solid var(--border-hairline); 
           transform: translateY(0);
-          padding-top: max(44px, env(safe-area-inset-top, 44px)) !important;
+          padding-top: max(32px, env(safe-area-inset-top, 32px)) !important;
           box-sizing: border-box !important;
         }
         .sidebar.collapsed { transform: translateY(-130%) !important; }
@@ -1165,7 +1167,7 @@
       </main>
     </div>
 
-    <!-- 모바일 64dvh 바텀 시트 -->
+    <!-- 모바일 50dvh 바텀 시트 -->
     <div class="mobile-bottom-sheet" id="mobileBottomSheet" onclick="event.stopPropagation();" ontouchstart="event.stopPropagation();">
       <button type="button" class="fixed-floating-close-btn" onclick="triggerHaptic(10); closeMobileBottomSheet();" title="닫기">
         <svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; fill:none;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1946,6 +1948,9 @@
           });
         }
         requestAnimationFrame(() => { content.scrollTop = 0; });
+        if (spot.lat && spot.lng) {
+          smoothCenterMapOnSpot(spot.lat, spot.lng);
+        }
       }
 
       function closeMobileBottomSheet() {
@@ -2845,7 +2850,7 @@ function updateSmartResetButtons() {
           const centerPoint = proj.pointFromCoords(rawLatLng);
           if (centerPoint) {
             const offsetX = isMobile ? 0 : -Math.round(window.innerWidth * 0.10);
-            const offsetY = isMobile ? Math.round(window.innerHeight * 0.22) : 0;
+            const offsetY = isMobile ? Math.round(window.innerHeight * 0.20) : 0;
             const adjustedPoint = new kakao.maps.Point(centerPoint.x + offsetX, centerPoint.y + offsetY);
             map.panTo(proj.coordsFromPoint(adjustedPoint));
           } else { map.panTo(rawLatLng); }
@@ -7385,9 +7390,9 @@ var overlay = document.getElementById('customModalOverlay');
         }
       })();
     </script>
-    <script src="romantic-sync.js?v=2.8.53"></script>
+    <script src="romantic-sync.js?v=2.8.54"></script>
     <script src="templates.js?v=2.8.3"></script>
-    <script src="romantic-history.js?v=2.7.34"></script>
+    <script src="romantic-history.js?v=2.7.36"></script>
     <script src="romantic-plan.js?v=2.8.2"></script>
     <script>
       window.addEventListener('okbm_admin_flag', function(e) {
