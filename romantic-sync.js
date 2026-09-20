@@ -23,6 +23,72 @@
   } catch (e) {}
 })();
 
+// 🧹 [캐시 정리 엔진] SSOT 중앙 집중식 레거시 캐시 정리
+function purgeIfStale(epochKey, epochValue, keysToRemove, options) {
+  try {
+    if (localStorage.getItem(epochKey) !== epochValue) {
+      if (Array.isArray(keysToRemove)) {
+        keysToRemove.forEach(function(k) { localStorage.removeItem(k); });
+      }
+      if (options && typeof options.customPurge === 'function') {
+        options.customPurge();
+      }
+      if (!options || options.updateEpoch !== false) {
+        localStorage.setItem(epochKey, epochValue);
+      }
+    }
+  } catch (e) {
+    console.warn('[purgeIfStale]', e);
+  }
+}
+window.purgeIfStale = purgeIfStale;
+
+(function autoPurgeStaleGearCache() {
+  try {
+    localStorage.removeItem('okbm_master_gears');
+    localStorage.removeItem('okbm_master_gears_cache');
+  } catch (e) {}
+})();
+
+(function autoPurgeLegacyClientCache() {
+  var CLEAN_EPOCH = '20260912_CLEAN_RESET_V3';
+  var keepKeys = [
+    'okbm_spots_cache',
+    'okbm_master_spots',
+    'okbm_gear_version',
+    'user_auth_token',
+    'user_profile',
+    'okbm_user_id',
+    'okbm_user_nick',
+    'okbm_bookmarks',
+    'okbm_visited',
+    'okbm_memos',
+    'okbm_plan_memos',
+    'okbm_plan_spots',
+    'okbm_packing_history',
+    'okbm_selected_gears_multi',
+    'okbm_favorite_gears',
+    'okbm_custom_gears',
+    'okbm_gear_presets',
+    'okbm_gear_meta',
+    'okbm_hero_cover_url',
+    'okbm_my_proposals'
+  ];
+  purgeIfStale('okbm_client_epoch', CLEAN_EPOCH, [
+    'okbm_deleted_record_ids',
+    'okbm_phone_photos_map',
+    'okbm_trip_photos_map'
+  ], {
+    customPurge: function() {
+      Object.keys(localStorage).forEach(function(k) {
+        if (!keepKeys.includes(k) && !k.startsWith('user_profile_')) {
+          localStorage.removeItem(k);
+        }
+      });
+    }
+  });
+})();
+
 var SUPABASE_URL = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
 var SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
 window.SUPABASE_URL = SUPABASE_URL;
@@ -66,6 +132,178 @@ function triggerHaptic(duration) {
       }
     } catch (e) { console.warn('[romantic-sync.js:triggerHaptic]', e); }
   }
+}
+
+window.safeGetJSON = safeGetJSON;
+window.triggerHaptic = triggerHaptic;
+window.escapeHtml = window.escapeHtml || function(t) {
+  if (t === null || t === undefined) return '';
+  return String(t)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
+window.applySmartPhotoFit = window.applySmartPhotoFit || function(img) {
+  if (!img) return;
+  if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+    if (img.naturalHeight >= img.naturalWidth) {
+      img.classList.add('is-portrait');
+      img.style.setProperty('object-fit', 'cover', 'important');
+    } else {
+      img.classList.remove('is-portrait');
+      img.style.setProperty('object-fit', 'contain', 'important');
+    }
+  }
+};
+
+function okbmStripClientTombstoneFields(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) {
+    return obj.filter(function(item) {
+      return item && item._memDeleted !== true && item.isDeleted !== true && item.is_deleted !== true;
+    }).map(okbmStripClientTombstoneFields);
+  }
+  var copy = Object.assign({}, obj);
+  delete copy.isDeleted;
+  delete copy._memDeleted;
+  delete copy.is_deleted;
+  return copy;
+}
+window.okbmStripClientTombstoneFields = okbmStripClientTombstoneFields;
+
+window.__okbmSessionCache = window.__okbmSessionCache || {
+  session: null,
+  user: null,
+  synced: false,
+  updatedAt: 0
+};
+
+function okbmWriteSessionCache(session) {
+  window.__okbmSessionCache = {
+    session: session || null,
+    user: (session && session.user) ? session.user : null,
+    synced: true,
+    updatedAt: Date.now()
+  };
+}
+
+window.SVG_ICONS = window.SVG_ICONS || {
+  brandLogo: function(color, stroke) {
+    var isDarkBg = (!color || color === '#ffffff' || color === '#fff' || color === 'white');
+    var shadow = isDarkBg
+      ? 'filter:drop-shadow(0 1px 3px rgba(0,0,0,0.6));'
+      : 'filter:drop-shadow(0 1px 2px rgba(0,0,0,0.45));';
+    return '<img src="logo.png" alt="낭만루트 로고" style="width:20px; height:20px; object-fit:contain; display:block; flex-shrink:0; ' + shadow + '" />';
+  },
+  pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:11px; height:11px; display:inline-block; vertical-align:-2px; margin-right:3px; flex-shrink:0;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>',
+  calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px; height:10px; display:inline-block; vertical-align:-1px; margin-right:3px; flex-shrink:0;"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="19" y1="10" y2="10"/></svg>',
+  quote: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:10px; height:10px; display:inline-block; vertical-align:-1px; margin-right:3px; flex-shrink:0; opacity:0.85;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  bullet: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:3.5px; height:3.5px; display:inline-block; vertical-align:middle; margin-right:3px; opacity:0.7; flex-shrink:0;"><circle cx="12" cy="12" r="6"/></svg>',
+  lntShield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:12px; height:12px; display:inline-block; vertical-align:-2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>'
+};
+
+window.autoPurgeStaleGearCache = window.autoPurgeStaleGearCache || function() {
+  try {
+    localStorage.removeItem('okbm_master_gears');
+    localStorage.removeItem('okbm_master_gears_cache');
+  } catch (e) {
+    console.warn('[romantic-sync.js:autoPurgeStaleGearCache]', e);
+  }
+};
+
+window.autoPurgeLegacyClientCache = window.autoPurgeLegacyClientCache || function() {
+  var CLEAN_EPOCH = '20260912_CLEAN_RESET_V3';
+  var keepKeys = [
+    'okbm_spots_cache', 'okbm_master_spots',
+    'okbm_gear_version', 'user_auth_token', 'user_profile', 'okbm_user_id', 'okbm_user_nick',
+    'okbm_bookmarks', 'okbm_visited', 'okbm_memos', 'okbm_plan_memos', 'okbm_plan_spots',
+    'okbm_packing_history', 'okbm_selected_gears_multi', 'okbm_favorite_gears', 'okbm_custom_gears',
+    'okbm_gear_presets', 'okbm_gear_meta', 'okbm_hero_cover_url', 'okbm_my_proposals'
+  ];
+  try {
+    if (typeof window.purgeIfStale === 'function') {
+      window.purgeIfStale('okbm_client_epoch', CLEAN_EPOCH, [
+        'okbm_deleted_record_ids',
+        'okbm_phone_photos_map',
+        'okbm_trip_photos_map'
+      ], {
+        customPurge: function() {
+          Object.keys(localStorage).forEach(function(k) {
+            if (keepKeys.indexOf(k) === -1 && k.indexOf('user_profile_') !== 0) {
+              localStorage.removeItem(k);
+            }
+          });
+        }
+      });
+      return;
+    }
+    if (localStorage.getItem('okbm_client_epoch') !== CLEAN_EPOCH) {
+      Object.keys(localStorage).forEach(function(k) {
+        if (keepKeys.indexOf(k) === -1 && k.indexOf('user_profile_') !== 0) {
+          localStorage.removeItem(k);
+        }
+      });
+      localStorage.removeItem('okbm_deleted_record_ids');
+      localStorage.removeItem('okbm_phone_photos_map');
+      localStorage.removeItem('okbm_trip_photos_map');
+      localStorage.setItem('okbm_client_epoch', CLEAN_EPOCH);
+    }
+  } catch (e) {
+    console.warn('[romantic-sync.js:autoPurgeLegacyClientCache]', e);
+  }
+};
+
+window.applySmartPhotoFit = function(img) {
+  if (!img) return;
+  if (img.closest && (img.closest('.postcard-template-container') || img.closest('.postcard-face-back'))) return;
+  var fit = function() {
+    var w = img.naturalWidth || img.videoWidth || 0;
+    var h = img.naturalHeight || img.videoHeight || 0;
+    if (w <= 0 || h <= 0) return;
+    var ratio = w / h;
+    var tallerThan34 = ratio < (3 / 4);
+    var inReel = !!(img.closest && img.closest('.reel-horizontal-track'));
+    img.classList.remove('is-landscape', 'is-square', 'is-portrait-crop', 'is-keep-ratio');
+    img.style.setProperty('border-radius', '0', 'important');
+    img.style.setProperty('box-shadow', 'none', 'important');
+    img.style.setProperty('object-position', 'center center', 'important');
+    img.style.setProperty('background-color', '#000000', 'important');
+    img.style.setProperty('min-width', '0', 'important');
+    img.style.setProperty('min-height', '0', 'important');
+    img.style.setProperty('width', inReel ? 'auto' : '100%', 'important');
+    img.style.setProperty('height', 'auto', 'important');
+    img.style.setProperty('max-width', '100%', 'important');
+    img.style.setProperty('max-height', inReel ? '100%' : 'none', 'important');
+    if (tallerThan34) {
+      img.classList.add('is-portrait-crop');
+      img.style.setProperty('aspect-ratio', '3 / 4', 'important');
+      img.style.setProperty('object-fit', 'cover', 'important');
+    } else {
+      img.style.setProperty('aspect-ratio', w + ' / ' + h, 'important');
+      img.style.setProperty('object-fit', 'contain', 'important');
+      if (ratio > 1.02) img.classList.add('is-landscape', 'is-keep-ratio');
+      else if (ratio >= 0.98) img.classList.add('is-square', 'is-keep-ratio');
+      else img.classList.add('is-keep-ratio');
+    }
+  };
+  if (img.complete && (img.naturalWidth || img.videoWidth)) {
+    fit();
+    return;
+  }
+  img.addEventListener('load', fit, { once: true });
+  if (typeof img.decode === 'function') {
+    img.decode().then(fit).catch(function() {});
+  }
+};
+
+try {
+  window.autoPurgeStaleGearCache();
+  window.autoPurgeLegacyClientCache();
+} catch (purgeErr) {
+  console.warn('[romantic-sync.js:autoPurge boot]', purgeErr);
 }
 
 // [공통 유틸] 안전한 토스트 메시지 출력 (매개변수 타입 자동 감지 보정 & 눈부심 제로 파스텔 규격)
@@ -202,6 +440,7 @@ function okbmGetCurrentUserId() {
   if (!myId || myId === 'guest' || myId === 'null' || myId === 'undefined') return '';
   return myId;
 }
+window.okbmGetCurrentUserId = okbmGetCurrentUserId;
 
 function okbmUgcRestHeaders() {
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
@@ -426,32 +665,12 @@ window.syncMyUserBlocksFromServer = async function() {
       if (r.blocked_nickname) serverMeta[id] = String(r.blocked_nickname).trim();
     });
 
-    if (serverIds.length === 0 && !localStorage.getItem('okbm_user_blocks_bootstrapped')) {
-      var legacyIds = okbmGetIdList('okbm_blocked_users');
-      var legacyMeta = window.getBlockedUsersMeta();
-      if (legacyIds.length > 0) {
-        for (var i = 0; i < legacyIds.length; i++) {
-          var legacyId = String(legacyIds[i] || '').trim();
-          if (!legacyId) continue;
-          await fetch(targetUrl + '/rest/v1/user_blocks', {
-            method: 'POST',
-            headers: Object.assign({}, okbmUgcRestHeaders(), { 'Prefer': 'resolution=merge-duplicates,return=minimal' }),
-            body: JSON.stringify({
-              blocker_id: blockerId,
-              blocked_id: legacyId,
-              blocked_nickname: String(legacyMeta[legacyId] || '').trim() || null
-            })
-          }).catch(function(bootErr) {
-            console.warn('[romantic-sync.js:syncMyUserBlocksFromServer bootstrap]', bootErr);
-          });
-        }
-        try { localStorage.setItem('okbm_user_blocks_bootstrapped', '1'); } catch (e) {}
-        return window.syncMyUserBlocksFromServer();
-      }
-      try { localStorage.setItem('okbm_user_blocks_bootstrapped', '1'); } catch (e) {}
+    var prev = window.getBlockedUserIds().join('|');
+    if (serverIds.length === 0) {
+      okbmWriteBlockedUsersCache([], {});
+      return prev !== '';
     }
 
-    var prev = window.getBlockedUserIds().join('|');
     var mergedMeta = window.getBlockedUsersMeta();
     Object.keys(serverMeta).forEach(function(k) { mergedMeta[k] = serverMeta[k]; });
     okbmWriteBlockedUsersCache(serverIds, mergedMeta);
@@ -510,7 +729,7 @@ window.blockCommunityUser = async function(userId, nickname) {
   try {
     var postRes = await fetch(targetUrl + '/rest/v1/user_blocks', {
       method: 'POST',
-      headers: Object.assign({}, okbmUgcRestHeaders(), { 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+      headers: Object.assign({}, okbmUgcRestHeaders(), { 'Prefer': 'return=representation' }),
       body: JSON.stringify({
         blocker_id: blockerId,
         blocked_id: targetId,
@@ -895,7 +1114,7 @@ window.openAdminReportInspector = async function() {
 
   var overlay = document.createElement('div');
   overlay.id = 'adminReportInspectorModal';
-  overlay.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); z-index:2147483645 !important; background:#000000; display:flex; justify-content:center; align-items:stretch;';
+  overlay.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:calc(100vh - 56px - env(safe-area-inset-bottom, 8px)); height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(100vh - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); z-index:2147483645 !important; background:#000000; display:flex; justify-content:center; align-items:stretch;';
   overlay.innerHTML = '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; background:#0c1017; display:flex; flex-direction:column; box-sizing:border-box;">' +
     '<div style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); border-bottom:1px solid rgba(255,255,255,0.08);">' +
       '<button type="button" onclick="document.getElementById(\'adminReportInspectorModal\').remove();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer;">◀</button>' +
@@ -1019,6 +1238,38 @@ window.okbmAdminInspectDeleteFeed = async function(feedId) {
   var del = { ok: false };
   if (typeof window.deleteFeedFromCommunity === 'function') {
     del = await window.deleteFeedFromCommunity(sId);
+  } else {
+    var fallbackUrl = window.SUPABASE_URL || SUPABASE_URL;
+    var fallbackKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+    if (!fallbackUrl || !fallbackKey) {
+      if (typeof showToast === 'function') showToast('삭제에 실패했습니다.', 'error');
+      return;
+    }
+    try {
+      var delRes = await fetch(fallbackUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
+        method: 'DELETE',
+        headers: {
+          'apikey': fallbackKey,
+          'Authorization': 'Bearer ' + fallbackKey,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        }
+      });
+      if (!delRes.ok) {
+        del = { ok: false, status: delRes.status };
+      } else {
+        var deletedRows = [];
+        try { deletedRows = await delRes.json(); } catch (parseErr) {}
+        if (!Array.isArray(deletedRows) || deletedRows.length === 0) {
+          del = { ok: false, error: 'ZERO_ROWS_DELETED' };
+        } else {
+          del = { ok: true, data: deletedRows };
+        }
+      }
+    } catch (delErr) {
+      console.warn('[romantic-sync.js:okbmAdminInspectDeleteFeed fallback]', delErr);
+      del = { ok: false, error: String(delErr) };
+    }
   }
   if (!del.ok && del.error !== 'ZERO_ROWS_DELETED') {
     if (typeof showToast === 'function') showToast('삭제에 실패했습니다.', 'error');
@@ -1091,7 +1342,7 @@ window.buildUgcSafetyButtonsHtml = function(feedId, userId, nickname, layout) {
 
   var compact = layout === 'compact';
   var btnBase = compact
-    ? 'background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,0.2); color:#ffffff; height:28px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0 9px;'
+    ? 'background:#0c1017; border:1px solid rgba(255,255,255,0.2); color:#ffffff; height:28px; border-radius:14px; font-size:0.62rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0 9px;'
     : 'background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; height:32px; padding:0 9px; font-size:0.64rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px;';
 
   var reportBtn = sFeedId
@@ -1252,7 +1503,7 @@ window.openBlockedUsersModal = function() {
 
   var overlay = document.createElement('div');
   overlay.id = 'blockedUsersManageModal';
-  overlay.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); z-index:2147483644 !important; background:#000000; display:flex; justify-content:center; align-items:stretch;';
+  overlay.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:calc(100vh - 56px - env(safe-area-inset-bottom, 8px)); height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(100vh - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); z-index:2147483644 !important; background:#000000; display:flex; justify-content:center; align-items:stretch;';
   overlay.innerHTML = '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; background:#0c1017; display:flex; flex-direction:column; box-sizing:border-box;">' +
     '<div style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); border-bottom:1px solid rgba(255,255,255,0.08);">' +
       '<button type="button" onclick="document.getElementById(\'blockedUsersManageModal\').remove();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer;">◀</button>' +
@@ -1275,8 +1526,8 @@ window.openBlockedUsersModal = function() {
 
 // UtilitiesFormattedNow removed
 
-window.executeCleanSlateMasterReset = async function(isSilent) {
-  if (!isSilent && !confirm('주의: 모든 활동 기록이 영구 삭제됩니다.\n정말 초기화하시겠습니까?')) {
+window.executeCleanSlateMasterReset = async function() {
+  if (!confirm('주의: 모든 활동 기록이 영구 삭제됩니다.\n정말 초기화하시겠습니까?')) {
     return;
   }
 
@@ -1329,12 +1580,6 @@ window.executeCleanSlateMasterReset = async function(isSilent) {
   }, 300);
 };
 
-if (typeof window !== 'undefined' && window.location.search.includes('clean_slate=true')) {
-  setTimeout(function() {
-    window.executeCleanSlateMasterReset(true);
-  }, 300);
-}
-
 async function loadUserDataFromCloud(userId) {
   if (!userId) return null;
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -1380,6 +1625,16 @@ async function loadUserDataFromCloud(userId) {
 
 // 2. 로그인 상태 검증 및 세션 체크
 function isUserLoggedIn() {
+  var cache = window.__okbmSessionCache || {};
+  var sessionUser = cache.session && cache.session.user;
+  if (sessionUser && sessionUser.id) {
+    if (typeof authState !== 'undefined') {
+      authState.isLoggedIn = true;
+      authState.userProfile = safeGetJSON('user_profile', null);
+    }
+    return true;
+  }
+
   var token = localStorage.getItem('user_auth_token');
   var profile = safeGetJSON('user_profile', null);
   if (!token || !token.trim() || !profile || !profile.id) {
@@ -1391,13 +1646,14 @@ function isUserLoggedIn() {
   }
 
   var idStr = String(profile.id).trim();
-  var hasValid = window.okbmHasSocialUserId(idStr);
+  var hasValid = (typeof window.okbmHasSocialUserId === 'function') ? window.okbmHasSocialUserId(idStr) : !!idStr;
   if (typeof authState !== 'undefined') {
     authState.isLoggedIn = hasValid;
     authState.userProfile = hasValid ? profile : null;
   }
   return hasValid;
 }
+window.isUserLoggedIn = isUserLoggedIn;
 
 function okbmSeoulDateKey() {
   try {
@@ -1473,6 +1729,66 @@ window.okbmNormalizeDateKey = function(dateStr) {
     return y + '.' + m + '.' + d;
   }
   return s;
+};
+
+window.okbmUnescapePlanText = function(text) {
+  var s = String(text == null ? '' : text);
+  if (s.indexOf('&') === -1) return s;
+  var prev = '';
+  var n = 0;
+  while (s !== prev && n < 3) {
+    prev = s;
+    s = s.replace(/&nbsp;/gi, ' ')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#0*39;|&#x0*27;|&apos;/gi, "'")
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>')
+      .replace(/&amp;/gi, '&');
+    n += 1;
+  }
+  return s;
+};
+
+window.okbmIsXssProbeSpotName = function(name) {
+  var s = window.okbmUnescapePlanText(name);
+  return /alert\s*\(|javascript\s*:|onerror\s*=|<\s*script|payload\s*'?\s*\)|XSS\s*'?\s*\)/i.test(s);
+};
+
+window.okbmSanitizePlanSpotsMap = function(raw) {
+  var src = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  var out = {};
+  var changed = false;
+  Object.keys(src).forEach(function(dateKey) {
+    var rawVal = src[dateKey];
+    var arr = Array.isArray(rawVal) ? rawVal : (rawVal && rawVal.name ? [rawVal] : []);
+    var kept = [];
+    arr.forEach(function(item) {
+      if (!item || typeof item !== 'object') {
+        changed = true;
+        return;
+      }
+      var name = window.okbmUnescapePlanText(item.name || '');
+      var elev = window.okbmUnescapePlanText(item.elevation || '');
+      if (!name.trim() || window.okbmIsXssProbeSpotName(name)) {
+        changed = true;
+        return;
+      }
+      if (window.okbmIsXssProbeSpotName(elev)) {
+        elev = '';
+        changed = true;
+      }
+      if (name !== item.name || elev !== (item.elevation || '')) changed = true;
+      var copy = {};
+      Object.keys(item).forEach(function(k) { copy[k] = item[k]; });
+      copy.name = name;
+      copy.elevation = elev;
+      kept.push(copy);
+    });
+    if (kept.length) out[dateKey] = kept;
+    else if (arr.length) changed = true;
+  });
+  if (Object.keys(src).length !== Object.keys(out).length) changed = true;
+  return { spots: out, changed: changed };
 };
 
 window.RomanticVault = window.RomanticVault || {
@@ -1673,14 +1989,16 @@ window.RomanticVault = window.RomanticVault || {
 
           var serverPlanSpots = mg.planSpots || mg.plan_spots;
           if (serverPlanSpots && typeof serverPlanSpots === 'object') {
-            this.write('okbm_plan_spots', serverPlanSpots, false);
+            var sanitizedSpots = (typeof window.okbmSanitizePlanSpotsMap === 'function')
+              ? window.okbmSanitizePlanSpotsMap(serverPlanSpots)
+              : { spots: serverPlanSpots, changed: false };
+            this.write('okbm_plan_spots', sanitizedSpots.spots, sanitizedSpots.changed);
           }
 
           var serverSns = mg.sns || {};
           var instaVal = String(cloudData.instagram || serverSns.instagram || '').trim();
           var ytVal = String(cloudData.youtube || serverSns.youtube || '').trim();
           var blogVal = String(cloudData.blog || serverSns.blog || '').trim();
-          if (!instaVal && String(userId || '').trim() === 'kakao_5060259862') instaVal = 'oklionnature';
 
           if (instaVal) localStorage.setItem('okbm_user_instagram', instaVal);
 
@@ -1700,9 +2018,6 @@ window.RomanticVault = window.RomanticVault || {
 
         var curP = safeGetJSON('user_profile_' + userId, null) || safeGetJSON('user_profile', null);
         if (curP) {
-          if (String(userId || '').trim() === 'kakao_5060259862' && String(cloudData.nickname || '').trim() === '김사자') {
-            cloudData.nickname = '오라네';
-          }
           if (cloudData.nickname && cloudData.nickname !== '낭만백패커') {
             curP.nickname = cloudData.nickname;
             localStorage.setItem('okbm_user_nick', cloudData.nickname);
@@ -1784,6 +2099,59 @@ window.RomanticVault = window.RomanticVault || {
   }
 };
 
+window.okbmStopNotifPoll = function() {
+  if (window.__okbmNotifPollTimer) {
+    clearInterval(window.__okbmNotifPollTimer);
+    window.__okbmNotifPollTimer = null;
+  }
+};
+
+window.okbmStartNotifPoll = function() {
+  if (window.__okbmNotifPollTimer) return;
+  if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) return;
+  if (document.visibilityState && document.visibilityState !== 'visible') return;
+  if (typeof window.pollUserNotifications !== 'function') return;
+  window.__okbmNotifPollTimer = setInterval(function() {
+    if (document.visibilityState && document.visibilityState !== 'visible') return;
+    if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
+      window.pollUserNotifications(true).catch(function() {});
+    }
+  }, 60000);
+};
+
+window.okbmCleanupModalWatchers = function() {
+  window.okbmStopNotifPoll();
+  if (typeof window.okbmReleaseReelFeedObserver === 'function') {
+    window.okbmReleaseReelFeedObserver();
+  } else {
+    if (window.__reelWindowObserver) {
+      try { window.__reelWindowObserver.disconnect(); } catch (e) {}
+      window.__reelWindowObserver = null;
+    }
+    if (window.__reelsScrollDebounceTimer) {
+      clearTimeout(window.__reelsScrollDebounceTimer);
+      window.__reelsScrollDebounceTimer = null;
+    }
+  }
+};
+
+if (typeof window !== 'undefined' && !window.__okbmWatcherPageBind) {
+  window.__okbmWatcherPageBind = true;
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden') {
+      window.okbmCleanupModalWatchers();
+    } else if (document.visibilityState === 'visible') {
+      window.okbmStartNotifPoll();
+      if (window.__okbmHistoryModalOpen && typeof window.okbmBindReelFeedObserver === 'function') {
+        window.okbmBindReelFeedObserver();
+      }
+    }
+  });
+  window.addEventListener('pagehide', function() {
+    window.okbmCleanupModalWatchers();
+  });
+}
+
 if (typeof window !== 'undefined') {
   window.__okbmBlockedUsersCache = okbmGetIdList('okbm_blocked_users');
   window.__okbmBlockedUsersMetaCache = (function() {
@@ -1822,13 +2190,7 @@ if (typeof window !== 'undefined') {
       }
       if (typeof window.pollUserNotifications === 'function') {
         window.pollUserNotifications(false).catch(function() {});
-        if (!window.__okbmNotifPollTimer) {
-          window.__okbmNotifPollTimer = setInterval(function() {
-            if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
-              window.pollUserNotifications(true).catch(function() {});
-            }
-          }, 60000);
-        }
+        window.okbmStartNotifPoll();
       }
     }
   }, 100);
@@ -1923,15 +2285,13 @@ window.fetchMasterGearsFromSupabase = async function(isForce) {
     return window.loadGearDbFromGoogleSheet(isForce);
   }
 
-  var CURRENT_GEAR_VERSION = '20260920_NH_TENTS_1743';
-  var storedVer = localStorage.getItem('okbm_gear_version');
-  if (storedVer !== CURRENT_GEAR_VERSION) {
+  var CURRENT_GEAR_VERSION = '20260920_GEARS_V4_NALGENE';
+  try {
     localStorage.removeItem('okbm_master_gears');
     localStorage.removeItem('okbm_master_gears_cache');
-    isForce = true;
-  }
+  } catch (e) {}
 
-  var cachedGears = safeGetJSON('okbm_master_gears', null);
+  var cachedGears = (window.__memoryStore && window.__memoryStore['okbm_master_gears']) || window.GEARS_MASTER || null;
   if (!isForce && Array.isArray(cachedGears) && cachedGears.length > 0) {
     window.__memoryStore = window.__memoryStore || {};
     window.__memoryStore['okbm_master_gears'] = cachedGears;
@@ -1945,8 +2305,7 @@ window.fetchMasterGearsFromSupabase = async function(isForce) {
     if (sRes.ok) {
       var sData = await sRes.json();
       if (Array.isArray(sData) && sData.length > 0) {
-        localStorage.setItem('okbm_master_gears', JSON.stringify(sData));
-        localStorage.setItem('okbm_gear_version', CURRENT_GEAR_VERSION);
+        // 🛡️ [헌법 제1조 & 5MB 초과 방지] localStorage에 장비 마스터를 절대 저장하지 않고 메모리에만 수화(Hydrate)
         window.__memoryStore = window.__memoryStore || {};
         window.__memoryStore['okbm_master_gears'] = sData;
         window.GEARS_MASTER = sData;
@@ -1988,8 +2347,7 @@ window.fetchMasterGearsFromSupabase = async function(isForce) {
     }
 
     if (allGears.length > 0) {
-      localStorage.setItem('okbm_master_gears', JSON.stringify(allGears));
-      localStorage.setItem('okbm_gear_version', CURRENT_GEAR_VERSION);
+      // 🛡️ [헌법 제1조 & 5MB 초과 방지] localStorage에 장비 마스터를 절대 저장하지 않고 메모리에만 수화(Hydrate)
       window.__memoryStore = window.__memoryStore || {};
       window.__memoryStore['okbm_master_gears'] = allGears;
       window.GEARS_MASTER = allGears;
@@ -2136,7 +2494,12 @@ window._getRomanticRouteOutdoorLogs = function() {
 
   var dedupMap = new Map();
   sourcePool.forEach(function(r) {
-    if (!r || r.isDeleted === true) return;
+    if (!r || r._memDeleted === true) return;
+    if (r.isDeleted === true) {
+      r._memDeleted = true;
+      delete r.isDeleted;
+      return;
+    }
     var rId = String(r.id || '').trim();
     if (!rId || rId.startsWith('pack_temp_')) return;
     if (!dedupMap.has(rId)) {
@@ -2904,7 +3267,7 @@ function ensureMyReportAndAuthModalsInDOM() {
     </div>
 
     <!-- 3. 계정 관리 모달 -->
-    <div class="custom-modal-overlay" id="userAccountSettingsModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:#000000; z-index:2147483642 !important; justify-content:center; align-items:stretch; width:100%; height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); padding:0; overflow:hidden;">
+    <div class="custom-modal-overlay" id="userAccountSettingsModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); background:#000000; z-index:2147483642 !important; justify-content:center; align-items:stretch; width:100%; height:calc(100vh - 56px - env(safe-area-inset-bottom, 8px)); height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(100vh - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(100dvh - 56px - env(safe-area-inset-bottom, 8px)); padding:0; overflow:hidden;">
       <div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">
         <div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box;">
           <button type="button" onclick="document.getElementById('userAccountSettingsModal').style.display='none'; if(typeof window.goBackModal==='function'){ window.goBackModal(event); } else { openUserProfileModal(); }" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">◀</button>
@@ -4316,7 +4679,7 @@ window.ensureMasterBottomDock = function(activeTabId) {
     document.body.appendChild(dock);
   }
 
-  dock.style.cssText = 'position:fixed !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; max-width:480px !important; margin:0 auto !important; height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; min-height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; padding:0 0 env(safe-area-inset-bottom, 8px) 0 !important; background:rgba(0,0,0,0.98) !important; border-top:1px solid rgba(255,255,255,0.1) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:2147483647 !important; box-sizing:border-box !important; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); pointer-events:auto !important; transform:translateZ(0) !important; -webkit-transform:translateZ(0) !important; contain:paint !important; overscroll-behavior:none !important;';
+  dock.style.cssText = 'position:fixed !important; bottom:0 !important; left:0 !important; right:0 !important; width:100% !important; max-width:480px !important; margin:0 auto !important; height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; min-height:calc(56px + env(safe-area-inset-bottom, 8px)) !important; padding:0 0 env(safe-area-inset-bottom, 8px) 0 !important; background:#000000 !important; border-top:1px solid rgba(255,255,255,0.1) !important; display:flex !important; justify-content:space-around !important; align-items:center !important; z-index:2147483647 !important; box-sizing:border-box !important; pointer-events:auto !important; transform:translateZ(0) !important; -webkit-transform:translateZ(0) !important; contain:paint !important; overscroll-behavior:none !important;';
 
   var tabs = [
     { id: 'router', name: '낭만루터', svg: '<svg viewBox="0 0 24 24" style="width:19px; height:19px; fill:currentColor;"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>', action: "window.navigateToDockTab('router')" },
@@ -5317,6 +5680,9 @@ window.saveNicknameFromSettingsModal = async function() {
 // 로그아웃 및 세션 완전 롤백
 function logoutUser() {
   triggerHaptic(15);
+  if (typeof window.okbmCleanupModalWatchers === 'function') {
+    try { window.okbmCleanupModalWatchers(); } catch (e) {}
+  }
   if (typeof window.okbmNoteRealtimeStop === 'function') {
     try { window.okbmNoteRealtimeStop('all'); } catch (e) {}
   }
@@ -5661,8 +6027,6 @@ window.confirmUserAccountDeletion = async function() {
   var keepLocalKeys = {
     okbm_spots_cache: true,
     okbm_master_spots: true,
-    okbm_master_gears: true,
-    okbm_master_gears_cache: true,
     okbm_gear_version: true,
     okbm_client_epoch: true
   };
@@ -5791,18 +6155,6 @@ function okbmReadSnsFromUserRow(row) {
 }
 
 function okbmRepairKnownOwnerProfile(userId, row) {
-  if (!row || String(userId || '').trim() !== 'kakao_5060259862') return row;
-  var sns = okbmReadSnsFromUserRow(row);
-  if (!sns.instagram) {
-    var mg = row.my_gears && typeof row.my_gears === 'object' ? row.my_gears : {};
-    mg.sns = {
-      instagram: 'oklionnature',
-      youtube: sns.youtube || '',
-      blog: sns.blog || ''
-    };
-    row.my_gears = mg;
-    if (String(row.nickname || '').trim() === '김사자') row.nickname = '오라네';
-  }
   return row;
 }
 
@@ -6028,6 +6380,7 @@ function okbmInitSupabaseOAuthBridge() {
   if (typeof client.auth.getSession === 'function') {
     client.auth.getSession().then(function(res) {
       var session = res && res.data ? res.data.session : null;
+      okbmWriteSessionCache(session);
       okbmConsumeSupabaseOAuthSession(session);
     }).catch(function(e) {
       console.warn('[okbmInitSupabaseOAuthBridge getSession]', e);
@@ -6035,7 +6388,17 @@ function okbmInitSupabaseOAuthBridge() {
   }
   if (typeof client.auth.onAuthStateChange === 'function') {
     client.auth.onAuthStateChange(function(event, session) {
-      if (event === 'SIGNED_IN') okbmConsumeSupabaseOAuthSession(session);
+      okbmWriteSessionCache(session);
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+        okbmConsumeSupabaseOAuthSession(session);
+      } else if (event === 'SIGNED_OUT') {
+        localStorage.removeItem('user_auth_token');
+        localStorage.removeItem('user_profile');
+        if (typeof authState !== 'undefined') {
+          authState.isLoggedIn = false;
+          authState.userProfile = null;
+        }
+      }
     });
   }
 }
@@ -6621,7 +6984,7 @@ window.saveProposalToSupabase = async function(proposalData, isCorrection) {
         'apikey': targetKey,
         'Authorization': 'Bearer ' + targetKey,
         'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates'
+        'Prefer': 'return=minimal'
       },
       body: JSON.stringify(payload)
     });
@@ -6829,7 +7192,7 @@ window.notifyProposalDecision = async function(item, status, approvedSpotId) {
         'apikey': targetKey,
         'Authorization': 'Bearer ' + targetKey,
         'Content-Type': 'application/json',
-        'Prefer': 'resolution=merge-duplicates'
+        'Prefer': 'return=minimal'
       },
       body: JSON.stringify({
         id: notifId,
@@ -8268,7 +8631,7 @@ window.saveUserToSupabase = async function(profileData) {
       'apikey': targetKey,
       'Authorization': 'Bearer ' + targetKey,
       'Content-Type': 'application/json',
-      'Prefer': 'resolution=merge-duplicates'
+      'Prefer': 'return=minimal'
     };
     var res = await fetch(targetUrl + '/rest/v1/users', {
       method: 'POST',
@@ -8276,6 +8639,14 @@ window.saveUserToSupabase = async function(profileData) {
       body: JSON.stringify(payload)
     });
     if (res.ok) return true;
+    if (res.status === 409) {
+      var patchRes = await fetch(targetUrl + '/rest/v1/users?id=eq.' + encodeURIComponent(userId), {
+        method: 'PATCH',
+        headers: postHeaders,
+        body: JSON.stringify(payload)
+      });
+      return patchRes.ok;
+    }
     if (res.status === 400 && payload.email) {
       delete payload.email;
       var retry = await fetch(targetUrl + '/rest/v1/users', {
@@ -8283,7 +8654,15 @@ window.saveUserToSupabase = async function(profileData) {
         headers: postHeaders,
         body: JSON.stringify(payload)
       });
-      return retry.ok;
+      if (retry.ok) return true;
+      if (retry.status === 409) {
+        var patchRetry = await fetch(targetUrl + '/rest/v1/users?id=eq.' + encodeURIComponent(userId), {
+          method: 'PATCH',
+          headers: postHeaders,
+          body: JSON.stringify(payload)
+        });
+        return patchRetry.ok;
+      }
     }
     return false;
   } catch (e) {

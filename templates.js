@@ -1,6 +1,22 @@
 // =========================================================================
 // 🚀 [templates.js] 6종 정예 템플릿 엔진 & 포토 카드 스튜디오 마스터 (v2.6.1)
 // =========================================================================
+(function(window) {
+if (typeof window.escapeHtml !== 'function') {
+  window.escapeHtml = function(t) {
+    if (t == null) return '';
+    return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  };
+}
+var escapeHtml = window.escapeHtml;
+
+var SVG_ICONS = window.SVG_ICONS || { brandLogo: '' };
+
+var showToast = window.showToast || function(m) { console.warn('[templates.js]', m); };
+var triggerHaptic = window.triggerHaptic || function() {};
+var initCardSwipeGesture = window.initCardSwipeGesture || function() {};
+
 if (!document.getElementById('tmpl-spin-anim-style')) {
   var spinStyle = document.createElement('style');
   spinStyle.id = 'tmpl-spin-anim-style';
@@ -18,16 +34,28 @@ var currentCustomRatioVal = 0.75;
 var currentAutoRatioVal = '3/4';
 var currentPhotoScaleVal = 1.0;
 
-// 🛡️ [메모리 누수 패치] 이전 드래그 리스너를 일괄 해제하기 위한 AbortController
+// 🛡️ [메모리 누수 패치] window/target 드래그 리스너 일괄 해제
 var __studioDragAbort = null;
-function setupStudioPhotoDrag(targetEl) {
-  // 이전 리스너 일괄 해제 (재호출 시 누적 방지)
-  if (!targetEl) return;
+var __studioDragCleanup = null;
+
+function teardownStudioPhotoDrag() {
   if (__studioDragAbort) {
-    __studioDragAbort.abort();
+    try { __studioDragAbort.abort(); } catch (e) {}
+    __studioDragAbort = null;
   }
-  __studioDragAbort = new AbortController();
-  var signal = __studioDragAbort.signal;
+  if (typeof __studioDragCleanup === 'function') {
+    try { __studioDragCleanup(); } catch (e) {}
+    __studioDragCleanup = null;
+  }
+}
+
+function setupStudioPhotoDrag(targetEl) {
+  teardownStudioPhotoDrag();
+  if (!targetEl) return;
+
+  var ac = (typeof AbortController === 'function') ? new AbortController() : null;
+  __studioDragAbort = ac;
+  var signal = ac ? ac.signal : undefined;
 
   var isDragging = false;
   var isPinching = false;
@@ -171,20 +199,37 @@ function setupStudioPhotoDrag(targetEl) {
     }
   }
 
-  targetEl.style.cursor = 'grab';
-  targetEl.addEventListener('mousedown', onPointerDown, { signal: signal });
-  window.addEventListener('mousemove', onPointerMove, { signal: signal });
-  window.addEventListener('mouseup', onPointerEnd, { signal: signal });
-  targetEl.addEventListener('touchstart', onPointerDown, { passive: false, signal: signal });
-  window.addEventListener('touchmove', onPointerMove, { passive: false, signal: signal });
-  window.addEventListener('touchend', onPointerEnd, { signal: signal });
-  window.addEventListener('touchcancel', onPointerEnd, { signal: signal });
-  targetEl.addEventListener('wheel', function(e) {
+  function onWheel(e) {
     e.preventDefault();
     var delta = e.deltaY > 0 ? -0.05 : 0.05;
     currentPhotoScaleVal = Math.max(1.0, Math.min(2.5, +(currentPhotoScaleVal + delta).toFixed(2)));
     updateTransform();
-  }, { passive: false, signal: signal });
+  }
+
+  var mouseOpts = signal ? { signal: signal } : false;
+  var touchOpts = signal ? { passive: false, signal: signal } : { passive: false };
+  var wheelOpts = signal ? { passive: false, signal: signal } : { passive: false };
+
+  targetEl.style.cursor = 'grab';
+  targetEl.addEventListener('mousedown', onPointerDown, mouseOpts);
+  window.addEventListener('mousemove', onPointerMove, mouseOpts);
+  window.addEventListener('mouseup', onPointerEnd, mouseOpts);
+  targetEl.addEventListener('touchstart', onPointerDown, touchOpts);
+  window.addEventListener('touchmove', onPointerMove, touchOpts);
+  window.addEventListener('touchend', onPointerEnd, mouseOpts);
+  window.addEventListener('touchcancel', onPointerEnd, mouseOpts);
+  targetEl.addEventListener('wheel', onWheel, wheelOpts);
+
+  __studioDragCleanup = function() {
+    targetEl.removeEventListener('mousedown', onPointerDown);
+    window.removeEventListener('mousemove', onPointerMove);
+    window.removeEventListener('mouseup', onPointerEnd);
+    targetEl.removeEventListener('touchstart', onPointerDown);
+    window.removeEventListener('touchmove', onPointerMove);
+    window.removeEventListener('touchend', onPointerEnd);
+    window.removeEventListener('touchcancel', onPointerEnd);
+    targetEl.removeEventListener('wheel', onWheel);
+  };
 }
 
 function ensurePhotoStudioDOM() {
@@ -238,7 +283,7 @@ function ensurePhotoStudioDOM() {
         </div>
       </div>
 
-      <div id="studioFreeRatioSliderContainer" style="display:none; position:absolute; bottom:calc(85px + env(safe-area-inset-bottom, 0px)); left:20px; right:20px; background:rgba(0,0,0,0.85); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.2); border-radius:14px; padding:8px 12px; z-index:100; flex-direction:column; gap:6px;">
+      <div id="studioFreeRatioSliderContainer" style="display:none; position:absolute; bottom:calc(85px + env(safe-area-inset-bottom, 0px)); left:20px; right:20px; background:#0c1017; border:1px solid rgba(255,255,255,0.2); border-radius:14px; padding:8px 12px; z-index:100; flex-direction:column; gap:6px;">
         <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.65rem; color:#94a3b8; font-weight:700;">
           <span>자유 비율 조절</span>
           <span id="freeRatioValLabel" style="color:#ffffff; font-family:'Space Grotesk', sans-serif; font-weight:900;">3 : 4</span>
@@ -246,7 +291,7 @@ function ensurePhotoStudioDOM() {
         <input type="range" id="studioFreeRatioSlider" min="0.52" max="1.0" step="0.01" value="0.75" style="width:100%; accent-color:#ffffff; cursor:pointer;" oninput="window.handleFreeRatioChange(this.value)" />
       </div>
 
-      <div class="studio-ratio-bar" style="position:absolute; bottom:calc(14px + env(safe-area-inset-bottom, 0px)); display:flex; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.2); border-radius:24px; padding:3px 6px; gap:3px; z-index:100; overflow-x:auto; max-width:92%; scrollbar-width:none; -ms-overflow-style:none;">
+      <div class="studio-ratio-bar" style="position:absolute; bottom:calc(14px + env(safe-area-inset-bottom, 0px)); display:flex; background:#0c1017; border:1px solid rgba(255,255,255,0.2); border-radius:24px; padding:3px 6px; gap:3px; z-index:100; overflow-x:auto; max-width:92%; scrollbar-width:none; -ms-overflow-style:none; contain:content;">
         <button type="button" id="btnStudioRatio34" class="modal-btn" style="font-size:0.65rem; font-weight:900; padding:4px 9px; border-radius:14px; background:#ffffff; color:#000000; white-space:nowrap;" onclick="window.setStudioRatio('3/4')">3:4 기본</button>
         <button type="button" id="btnStudioRatio11" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:transparent; color:#cbd5e1; white-space:nowrap;" onclick="window.setStudioRatio('1/1')">1:1</button>
         <button type="button" id="btnStudioRatio45" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:transparent; color:#cbd5e1; white-space:nowrap;" onclick="window.setStudioRatio('4/5')">4:5</button>
@@ -373,11 +418,13 @@ window.syncGlobalModalScrollLock = function() {
 };
 
 window.closePhotoStudio = function() {
+  teardownStudioPhotoDrag();
   var studio = document.getElementById('photoStudioOverlay');
   if (studio) studio.style.setProperty('display', 'none', 'important');
   var modal = document.getElementById('packShareModalOverlay');
   if (modal) modal.style.setProperty('display', 'flex', 'important');
   if (typeof window.updateShareCardLive === 'function') window.updateShareCardLive();
+  initCardSwipeGesture();
   window.syncGlobalModalScrollLock();
   if (typeof triggerHaptic === 'function') triggerHaptic(10);
 };
@@ -480,7 +527,7 @@ function getStudioCardBoxCss() {
   else if (r === '4/5') aspect = '4/5';
   else if (r === '9/16') { aspect = '9/16'; maxW = '300px'; }
   else if (r === 'free') aspect = String(currentCustomRatioVal || 0.75);
-  return 'aspect-ratio:' + aspect + '; width:100%; max-width:' + maxW + '; height:auto; max-height:calc(100dvh - 168px); margin:0 auto;';
+  return 'aspect-ratio:' + aspect + '; width:100%; max-width:' + maxW + '; height:auto; max-height:calc(100vh - 168px); max-height:calc(100dvh - 168px); margin:0 auto;';
 }
 
 function getStudioExportSize() {
@@ -499,6 +546,11 @@ function resolveStudioCardEl(card) {
 }
 
 async function captureStudioCardCanvas(card) {
+  var h2c = (typeof html2canvas === 'function') ? html2canvas : (typeof window !== 'undefined' ? window.html2canvas : null);
+  if (typeof h2c !== 'function') {
+    if (typeof showToast === 'function') showToast('이미지 처리 엔진을 불러오는 중입니다. 잠시 후 다시 시도해주세요.', 'warn');
+    throw new Error('html2canvas not loaded');
+  }
   var source = resolveStudioCardEl(card);
   if (!source) throw new Error('no studio card');
   var aspect = getStudioAspectRatio();
@@ -531,7 +583,7 @@ async function captureStudioCardCanvas(card) {
       });
     }));
     await new Promise(function(res) { requestAnimationFrame(function() { requestAnimationFrame(res); }); });
-    var canvas = await html2canvas(clone, {
+    var canvas = await h2c(clone, {
       backgroundColor: '#000000',
       scale: 3,
       width: capW,
@@ -563,7 +615,11 @@ async function captureStudioCardCanvas(card) {
 
 window.saveStudioCardToPhone = async function() {
   var card = document.getElementById('photoStudioCardTarget');
-  if (!card || typeof html2canvas === 'undefined') return;
+  var h2c = (typeof html2canvas === 'function') ? html2canvas : (typeof window !== 'undefined' ? window.html2canvas : null);
+  if (!card || typeof h2c !== 'function') {
+    if (typeof showToast === 'function') showToast('이미지 처리 엔진을 불러오는 중입니다. 잠시 후 다시 시도해주세요.', 'warn');
+    return;
+  }
   if (typeof triggerHaptic === 'function') triggerHaptic(15);
 
   var btn = document.getElementById('btnStudioSaveCard');
@@ -704,7 +760,7 @@ window.updateStudioCardLive = function() {
 
   if (mode === 'minimal') {
     container.innerHTML = `
-      <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
+      <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
         <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
         
         <!-- 상단 헤더 (위치 및 일자) -->
@@ -766,7 +822,7 @@ window.updateStudioCardLive = function() {
     }
 
     container.innerHTML = `
-      <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
+      <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
         <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
         <div style="position:absolute; inset:0; z-index:3; pointer-events:none; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr 1fr 1fr; opacity:0.65;">
           <div style="border-right:1px solid rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.4);"></div>
@@ -825,12 +881,12 @@ window.updateStudioCardLive = function() {
 
   if (mode === 'chic') {
     container.innerHTML = `
-      <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; justify-content:center; align-items:center; box-sizing:border-box; background:#000000;">
+      <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); display:flex; justify-content:center; align-items:center; box-sizing:border-box; background:#000000;">
         <div style="position:absolute; inset:0; overflow:hidden; z-index:1; pointer-events:none;">
           <img src="${window.currentSharePhoto}" style="width:112%; height:112%; object-fit:cover; object-position:${posX}% ${posY}%; filter:blur(9px) brightness(0.82); transform:scale(1.06); display:block; margin:-6%;" />
           <div style="position:absolute; inset:0; background:rgba(0,0,0,0.28);"></div>
         </div>
-        <div style="position:relative; z-index:3; width:88%; max-width:290px; aspect-ratio:3/4; background:#000000; border-radius:10px; box-shadow:0 24px 60px rgba(0,0,0,0.95), inset 0 1px 1px rgba(255,255,255,0.3); padding:9px 9px 12px 9px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; border:1px solid rgba(255,255,255,0.22);">
+        <div style="position:relative; z-index:3; width:88%; max-width:290px; aspect-ratio:3/4; background:#000000; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.45), inset 0 1px 1px rgba(255,255,255,0.3); padding:9px 9px 12px 9px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; border:1px solid rgba(255,255,255,0.22);">
           <div style="width:100%; display:flex; justify-content:space-between; align-items:center; padding:0 2px 5px 2px; box-sizing:border-box; margin-bottom:6px; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,0.15);">
             <div style="display:flex; align-items:center; gap:4px; max-width:65%; min-width:0;">
               <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:10px; height:10px; flex-shrink:0; opacity:0.85;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -882,7 +938,7 @@ window.updateStudioCardLive = function() {
     }).join('');
 
     container.innerHTML = `
-      <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; justify-content:center; align-items:center; box-sizing:border-box; background:#07090e;">
+      <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); display:flex; justify-content:center; align-items:center; box-sizing:border-box; background:#07090e;">
         <div style="position:absolute; inset:0; overflow:hidden; z-index:1; pointer-events:none;">
           <img src="${window.currentSharePhoto}" style="width:112%; height:112%; object-fit:cover; object-position:${posX}% ${posY}%; filter:blur(9px) brightness(0.82); transform:scale(1.06); display:block; margin:-6%;" />
           <div style="position:absolute; inset:0; background:rgba(0,0,0,0.28);"></div>
@@ -1175,7 +1231,7 @@ var TEMPLATE_NAMES = {
   6: '📸 코닥 슬라이드'
 };
 // 🎨 [내장 SVG 아이콘 팩 - 참조 에러 원천 방지]
-var SVG_ICONS = window.SVG_ICONS || {
+SVG_ICONS = window.SVG_ICONS || {
   brandLogo: function(color, stroke) {
     var isDarkBg = (!color || color === '#ffffff' || color === '#fff' || color === 'white');
     var shadow = isDarkBg
@@ -1189,17 +1245,6 @@ var SVG_ICONS = window.SVG_ICONS || {
   bullet: '<svg viewBox="0 0 24 24" fill="currentColor" style="width:3.5px; height:3.5px; display:inline-block; vertical-align:middle; margin-right:3px; opacity:0.7; flex-shrink:0;"><circle cx="12" cy="12" r="6"/></svg>',
   lntShield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:12px; height:12px; display:inline-block; vertical-align:-2px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>'
 };
-
-// 🧰 [공통 유틸] HTML 특수문자 이스케이프
-function escapeHtml(text) {
-  if (text === null || text === undefined) return '';
-  return String(text)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
 
 window.currentOverlayTheme = window.currentOverlayTheme || 'dark';
 
@@ -1501,7 +1546,7 @@ function renderPhotoOverlayMarkup(opts) {
     '</svg>';
 
   return '' +
-    '<div class="photo-overlay-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); background:#111111; box-sizing:border-box; user-select:none; color:#ffffff; display:flex; flex-direction:column;">' +
+    '<div class="photo-overlay-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#111111; box-sizing:border-box; user-select:none; color:#ffffff; display:flex; flex-direction:column;">' +
       '<div style="position:relative; flex:1 1 0%; min-height:0; overflow:hidden; z-index:1;">' +
         '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; pointer-events:none;" />' +
         '<div style="position:absolute; left:0; right:0; top:0; height:34%; pointer-events:none; background:linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.10) 58%, transparent 100%);"></div>' +
@@ -1568,7 +1613,7 @@ function renderEditorialOverlayMarkup(opts) {
   var lntSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:11px; height:11px; flex-shrink:0;"><path d="M12 21c0-6 3.2-9.2 8-11-1.2 5.4-4.4 8.2-8 11z"/><path d="M12 21C12 15 8.8 11.8 4 10c1.2 5.4 4.4 8.2 8 11z"/><path d="M12 21V8"/><path d="M12 8c1.6-2.8 4.2-4 7-4"/></svg>';
 
   return '' +
-    '<div class="photo-overlay-card editorial-pack" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); background:#000000; box-sizing:border-box; user-select:none; color:#ffffff;">' +
+    '<div class="photo-overlay-card editorial-pack" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#000000; box-sizing:border-box; user-select:none; color:#ffffff;">' +
       '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; z-index:1; pointer-events:none;" />' +
       '<div style="position:absolute; left:0; right:0; top:0; height:38%; z-index:2; pointer-events:none; background:linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.12) 55%, transparent 100%);"></div>' +
       '<div style="position:absolute; left:0; right:0; bottom:0; height:46%; z-index:2; pointer-events:none; background:linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.08) 18%, rgba(0,0,0,0.55) 52%, rgba(0,0,0,0.86) 78%, rgba(0,0,0,0.94) 100%);"></div>' +
@@ -1616,7 +1661,7 @@ function renderMagazineCoverMarkup(opts) {
     '<div class="mag-items">' + totalCount + ' ITEMS</div>';
 
   return '' +
-    '<div class="photo-overlay-card magazine-cover" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); background:#111111; box-sizing:border-box; user-select:none;">' +
+    '<div class="photo-overlay-card magazine-cover" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#111111; box-sizing:border-box; user-select:none;">' +
       '<div class="mag-photo">' +
         '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block;" />' +
       '</div>' +
@@ -1654,7 +1699,7 @@ function renderSpreadMarkup(opts) {
   }).join('');
 
   return '' +
-    '<div class="photo-overlay-card spread-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); background:#f7f4ee; box-sizing:border-box; user-select:none;">' +
+    '<div class="photo-overlay-card spread-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#f7f4ee; box-sizing:border-box; user-select:none;">' +
       '<div class="sp-photo">' +
         '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; pointer-events:none;" />' +
         '<div class="sp-fade"></div>' +
@@ -1700,7 +1745,7 @@ function renderIssueMarkup(opts) {
   var imgErr = opts.onerror || '';
 
   return '' +
-    '<div class="photo-overlay-card issue-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); background:#ffffff; box-sizing:border-box; user-select:none;">' +
+    '<div class="photo-overlay-card issue-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#ffffff; box-sizing:border-box; user-select:none;">' +
       '<div class="iss-sheet">' +
         '<div class="iss-kg">' + escapeHtml(String(weightKg)) + '<b>KG</b></div>' +
         '<div class="iss-note iss-date">' + issueDateLines(dateStr) + '</div>' +
@@ -1738,7 +1783,7 @@ function renderKuchiMarkup(opts) {
     '<div class="kc-items">' + totalCount + ' items</div>';
 
   return '' +
-    '<div class="photo-overlay-card kuchi-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:18px; box-shadow:0 24px 60px rgba(0,0,0,0.95); background:#ffffff; box-sizing:border-box; user-select:none;">' +
+    '<div class="photo-overlay-card kuchi-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:18px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#ffffff; box-sizing:border-box; user-select:none;">' +
       '<div class="kc-sheet">' +
         '<img class="kc-photo"' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
         '<div class="kc-rail">' +
@@ -1784,7 +1829,7 @@ function renderBalanceMarkup(opts) {
     '<div class="bl-spot">' + escapeHtml(spot) + '</div>';
 
   return '' +
-    '<div class="photo-overlay-card balance-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:18px; box-shadow:0 24px 60px rgba(0,0,0,0.95); background:#ffffff; box-sizing:border-box; user-select:none;">' +
+    '<div class="photo-overlay-card balance-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:18px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#ffffff; box-sizing:border-box; user-select:none;">' +
       '<div class="bl-sheet">' +
         '<img class="bl-photo"' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
         '<div class="bl-copy bl-copy-dark">' + copyInner + '</div>' +
@@ -1850,7 +1895,7 @@ function renderNrcCertShotMarkup(opts) {
   }).join('');
 
   return '' +
-    '<div style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); background:#000000; box-sizing:border-box; user-select:none;">' +
+    '<div style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#000000; box-sizing:border-box; user-select:none;">' +
       '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; z-index:1; pointer-events:none;" />' +
       '<div style="position:absolute; inset:auto 0 0 0; height:58%; z-index:2; pointer-events:none; background:linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.22) 40%, rgba(0,0,0,0.62) 100%);"></div>' +
       '<div style="position:absolute; top:12px; left:14px; right:14px; z-index:5; display:flex; justify-content:space-between; align-items:center;">' +
@@ -1958,7 +2003,7 @@ window.generateReadyShotMarkup = function(record, options) {
     }
 
     container.innerHTML = `
-      <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 24px 60px rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
+      <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
         <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
         <div style="position:absolute; inset:0; z-index:3; pointer-events:none; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr 1fr 1fr; opacity:0.65;">
           <div style="border-right:1px solid rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.4);"></div>
@@ -2022,7 +2067,7 @@ window.generateReadyShotMarkup = function(record, options) {
           <img src="${escapeHtml(photoUrl)}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:112%; height:112%; object-fit:cover; object-position:${posX}% ${posY}%; filter:blur(9px) brightness(0.82); transform:scale(1.06); display:block; margin:-6%;" />
           <div style="position:absolute; inset:0; background:rgba(0,0,0,0.28);"></div>
         </div>
-        <div style="position:relative; z-index:3; width:88%; max-width:290px; aspect-ratio:3/4; background:#000000; border-radius:10px; box-shadow:0 24px 60px rgba(0,0,0,0.95), inset 0 1px 1px rgba(255,255,255,0.3); padding:9px 9px 12px 9px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; border:1px solid rgba(255,255,255,0.22);">
+        <div style="position:relative; z-index:3; width:88%; max-width:290px; aspect-ratio:3/4; background:#000000; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.45), inset 0 1px 1px rgba(255,255,255,0.3); padding:9px 9px 12px 9px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; border:1px solid rgba(255,255,255,0.22);">
           <div style="width:100%; display:flex; justify-content:space-between; align-items:center; padding:0 2px 5px 2px; box-sizing:border-box; margin-bottom:6px; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,0.15);">
             <div style="display:flex; align-items:center; gap:4px; max-width:65%; min-width:0;">
               <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:10px; height:10px; flex-shrink:0; opacity:0.85;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -2469,6 +2514,15 @@ window.handleSpotSearchInput = function(val) {
     window.selectSpotFromDropdown(spotName, elev);
   };
 
+  if (!window.__okbmTemplateSpotClickBound) {
+    window.__okbmTemplateSpotClickBound = true;
+    document.addEventListener('click', function(e) {
+      var item = e.target.closest('#spotSearchDropdown .spot-dropdown-item');
+      if (!item) return;
+      window.handleSpotSearchItemClick(item);
+    }, true);
+  }
+
   dropdown.innerHTML = filtered.slice(0, 12).map(function(s) {
     var displayName = s.fullName || s.name || s.spot_main || '';
     var elevText = s.elevation ? (String(s.elevation).includes('m') ? s.elevation : s.elevation + 'm') : '';
@@ -2476,7 +2530,7 @@ window.handleSpotSearchInput = function(val) {
     var safeName = escapeHtml(displayName);
     var safeElev = escapeHtml(elevText);
 
-    return '<div class="spot-dropdown-item" data-spot="' + safeName + '" data-elevation="' + safeElev + '" onclick="window.handleSpotSearchItemClick(this)" style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; cursor:pointer; box-sizing:border-box;">' +
+    return '<div class="spot-dropdown-item" data-spot="' + safeName + '" data-elevation="' + safeElev + '" style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; cursor:pointer; box-sizing:border-box;">' +
       '<div style="display:flex; align-items:center; gap:5px; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; pointer-events:none;">' +
         SVG_ICONS.pin + '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + safeName + '</span>' +
       '</div>' +
@@ -2515,12 +2569,16 @@ window.clearSpotSearchInput = function() {
 
 window.sharePackCardDirect = async function() {
   var card = document.getElementById('packShareCaptureArea');
-  if (!card || typeof html2canvas === 'undefined') return;
+  var h2c = (typeof html2canvas === 'function') ? html2canvas : (typeof window !== 'undefined' ? window.html2canvas : null);
+  if (!card || typeof h2c !== 'function') {
+    if (typeof showToast === 'function') showToast('이미지 처리 엔진을 불러오는 중입니다. 잠시 후 다시 시도해주세요.', 'warn');
+    return;
+  }
   if (typeof triggerHaptic === 'function') triggerHaptic(15);
   if (typeof showToast === 'function') showToast('카드를 준비 중입니다...', 'info', 1500);
 
   try {
-    var canvas = await html2canvas(card, {
+    var canvas = await h2c(card, {
       backgroundColor: null,
       scale: 3.0,
       useCORS: true,
@@ -2825,6 +2883,8 @@ window.handleShareCardPhotoUpload = async function(e) {
 };
 
 window.closePackShareModal = function() {
+  teardownCardSwipeGesture();
+  teardownStudioPhotoDrag();
   var modal = document.getElementById('packShareModalOverlay');
   if (modal) {
     modal.style.setProperty('display', 'none', 'important');
@@ -2944,7 +3004,14 @@ window.openPackShareModal = function(record, items, forceStudio) {
   renderTemplateChips();
   switchShareCardTemplate(selectedTemplateId);
 
-  setTimeout(function() { initCardSwipeGesture(); }, 60);
+  if (__cardSwipeInitTimer) {
+    clearTimeout(__cardSwipeInitTimer);
+    __cardSwipeInitTimer = null;
+  }
+  __cardSwipeInitTimer = setTimeout(function() {
+    __cardSwipeInitTimer = null;
+    initCardSwipeGesture();
+  }, 60);
 };
 
 var openPackShareModal = window.openPackShareModal;
@@ -3000,14 +3067,34 @@ var isCardSwiping = false;
 var isCardPointerDown = false;
 
 var __cardSwipeAbort = null;
-function initCardSwipeGesture() {
-  // 🛡️ [메모리 누수 패치] 이전 카드 스와이프 리스너 해제
+var __cardSwipeCleanup = null;
+var __cardSwipeInitTimer = null;
+
+function teardownCardSwipeGesture() {
+  if (__cardSwipeInitTimer) {
+    clearTimeout(__cardSwipeInitTimer);
+    __cardSwipeInitTimer = null;
+  }
+  if (__cardSwipeAbort) {
+    try { __cardSwipeAbort.abort(); } catch (e) {}
+    __cardSwipeAbort = null;
+  }
+  if (typeof __cardSwipeCleanup === 'function') {
+    try { __cardSwipeCleanup(); } catch (e) {}
+    __cardSwipeCleanup = null;
+  }
+  isCardPointerDown = false;
+  isCardSwiping = false;
+}
+
+initCardSwipeGesture = function() {
   var card = document.getElementById('packShareCaptureArea');
+  teardownCardSwipeGesture();
   if (!card) return;
 
-  if (__cardSwipeAbort) __cardSwipeAbort.abort();
-  __cardSwipeAbort = new AbortController();
-  var swipeSignal = __cardSwipeAbort.signal;
+  var ac = (typeof AbortController === 'function') ? new AbortController() : null;
+  __cardSwipeAbort = ac;
+  var swipeSignal = ac ? ac.signal : undefined;
 
   card.style.userSelect = 'none';
   card.style.cursor = 'grab';
@@ -3086,32 +3173,46 @@ function initCardSwipeGesture() {
     isCardSwiping = false;
   }
 
-  card.addEventListener('touchstart', function(e) {
+  function onTouchStart(e) {
     handleStart(e.touches[0].clientX, e.touches[0].clientY);
-  }, { passive: true, signal: swipeSignal });
-
-  card.addEventListener('touchmove', function(e) {
+  }
+  function onTouchMove(e) {
     handleMove(e.touches[0].clientX, e.touches[0].clientY);
-  }, { passive: true, signal: swipeSignal });
-
-  card.addEventListener('touchend', function(e) {
+  }
+  function onTouchEnd(e) {
     var endX = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientX : cardTouchStartX;
     var endY = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientY : cardTouchStartY;
     handleEnd(endX, endY);
-  }, { passive: true, signal: swipeSignal });
-
-  card.addEventListener('mousedown', function(e) {
+  }
+  function onMouseDown(e) {
     handleStart(e.clientX, e.clientY);
-  }, { signal: swipeSignal });
-
-  window.addEventListener('mousemove', function(e) {
+  }
+  function onWindowMouseMove(e) {
     if (isCardPointerDown) handleMove(e.clientX, e.clientY);
-  }, { signal: swipeSignal });
-
-  window.addEventListener('mouseup', function(e) {
+  }
+  function onWindowMouseUp(e) {
     if (isCardPointerDown) handleEnd(e.clientX, e.clientY);
-  }, { signal: swipeSignal });
-}
+  }
+
+  var swipeMouseOpts = swipeSignal ? { signal: swipeSignal } : false;
+  var swipeTouchOpts = swipeSignal ? { passive: true, signal: swipeSignal } : { passive: true };
+
+  card.addEventListener('touchstart', onTouchStart, swipeTouchOpts);
+  card.addEventListener('touchmove', onTouchMove, swipeTouchOpts);
+  card.addEventListener('touchend', onTouchEnd, swipeTouchOpts);
+  card.addEventListener('mousedown', onMouseDown, swipeMouseOpts);
+  window.addEventListener('mousemove', onWindowMouseMove, swipeMouseOpts);
+  window.addEventListener('mouseup', onWindowMouseUp, swipeMouseOpts);
+
+  __cardSwipeCleanup = function() {
+    card.removeEventListener('touchstart', onTouchStart);
+    card.removeEventListener('touchmove', onTouchMove);
+    card.removeEventListener('touchend', onTouchEnd);
+    card.removeEventListener('mousedown', onMouseDown);
+    window.removeEventListener('mousemove', onWindowMouseMove);
+    window.removeEventListener('mouseup', onWindowMouseUp);
+  };
+};
 
 if (!document.getElementById('template-cards-core-style')) {
   var cardCoreStyle = document.createElement('style');
@@ -3388,3 +3489,9 @@ function generateCardMarkup(tmplId, record, items, spot, memo) {
       return generateCardMarkup(1, record, items, spot, memo);
   }
 }
+
+window.generateCardMarkup = generateCardMarkup;
+window.switchShareCardTemplate = switchShareCardTemplate;
+window.updateShareCardLive = updateShareCardLive;
+window.initCardSwipeGesture = initCardSwipeGesture;
+})(window);

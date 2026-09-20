@@ -49,12 +49,9 @@
     </script>
     <script>
       (function autoPurgeStaleGearCache() {
-        var CURRENT_GEAR_EPOCH = '20260916_V4_1715';
         try {
-          if (localStorage.getItem('okbm_gear_version') !== CURRENT_GEAR_EPOCH) {
-            localStorage.removeItem('okbm_master_gears');
-            localStorage.removeItem('okbm_master_gears_cache');
-          }
+          localStorage.removeItem('okbm_master_gears');
+          localStorage.removeItem('okbm_master_gears_cache');
         } catch (e) {}
       })();
 
@@ -65,8 +62,6 @@
           var keepKeys = [
             'okbm_spots_cache',
             'okbm_master_spots',
-            'okbm_master_gears',
-            'okbm_master_gears_cache',
             'okbm_gear_version',
             'user_auth_token',
             'user_profile',
@@ -221,6 +216,15 @@
         animation: pageFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
       }
 
+      /* 1. [CSS 최적화] index.html, map.html 공통 추가 */
+      html, body {
+        overscroll-behavior: none;
+        -webkit-overflow-scrolling: touch;
+      }
+      .mobile-bottom-sheet, .sidebar, #pastTripsScrollContainer {
+        overscroll-behavior-y: contain;
+      }
+
       /* 🏛️ 인스타/당근 규격: 바텀시트, 검색 드롭다운, 서브 모달 고무줄 튕김 전역 차단 */
       .sheet-content,
       .custom-modal,
@@ -232,6 +236,20 @@
       #planGearsScrollArea {
         overscroll-behavior: none !important;
         -webkit-overflow-scrolling: touch !important;
+      }
+
+      .sheet-content,
+      .custom-modal,
+      .search-dropdown,
+      .spot-list,
+      #planGearsScrollArea {
+        contain: content;
+      }
+
+      .sheet-content,
+      .sheet-content * {
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
       }
 
       @keyframes pageFadeIn {
@@ -290,7 +308,7 @@
       .apple-search-bar {
         width: 100% !important;
         height: 44px !important;
-        background: rgba(7, 10, 17, 0.78) !important;
+        background: #0c1017 !important;
         border: 1px solid rgba(255, 255, 255, 0.14) !important;
         border-top: 1px solid rgba(255, 255, 255, 0.28) !important;
         border-radius: 14px !important;
@@ -299,8 +317,6 @@
         padding: 0 12px !important;
         gap: 8px !important;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
-        backdrop-filter: blur(18px) !important;
-        -webkit-backdrop-filter: blur(18px) !important;
         transition: all 0.2s ease !important;
         box-sizing: border-box !important;
       }
@@ -359,12 +375,11 @@
         display: none; 
         z-index: var(--z-dropdown); 
         border: 1.5px solid var(--border-titanium); 
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
+        contain: content;
       }
 
       /* 🗺️ 사이드바 & 슬라이딩 드로어 */
-      .container { display: flex; width: 100%; flex: 1; position: relative; overflow: hidden; height: 100dvh !important; }
+      .container { display: flex; width: 100%; flex: 1; position: relative; overflow: hidden; height: 100vh !important; height: 100dvh !important; }
       .sidebar { width: 390px; max-width: 100%; height: 100%; background-color: var(--bg-surface); border-right: 1px solid var(--border-titanium); display: flex; flex-direction: column; flex-shrink: 0; z-index: var(--z-sidebar); color: var(--text-primary); position: relative; box-shadow: 4px 0 20px rgba(0,0,0,0.15); }
 
       .pc-sliding-drawer { position: absolute; top: 0; left: 390px; width: 380px; height: 100%; background: var(--bg-surface) !important; border-right: 1.5px solid var(--border-titanium); z-index: var(--z-pc-drawer); box-shadow: 12px 0 36px rgba(0,0,0,0.4); transform: translateX(-100%); opacity: 0; visibility: hidden; pointer-events: none; transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.25s ease, visibility 0.3s; display: flex; flex-direction: column; overflow-y: auto; padding: 14px 16px; gap: 7px; }
@@ -402,7 +417,7 @@
       .filter-chip.active { background: rgba(52, 211, 153, 0.16); color: #a7f3d0; border: 1px solid rgba(52, 211, 153, 0.45); box-shadow: none; font-weight: 800; }
       .filter-chip.chip-status.active { background: rgba(52, 211, 153, 0.16); color: #a7f3d0; border: 1px solid rgba(52, 211, 153, 0.45); box-shadow: none; font-weight: 800; }
 
-      .spot-list { flex: 1; overflow-y: auto; list-style: none; background: var(--bg-surface); width: 100%; padding-bottom: 80px; }
+      .spot-list { flex: 1; overflow-y: auto; list-style: none; background: var(--bg-surface); width: 100%; padding-bottom: 80px; contain: content; }
       .region-group { border-bottom: 1px solid var(--border-subtle); width: 100%; }
       .region-group-title { padding: 8px 14px; background-color: var(--bg-base); font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-left: 3px solid transparent; transition: all 0.2s; }
       
@@ -615,7 +630,6 @@
       .entry-lock-overlay-tight {
         position: absolute; top: 0; left: 0; right: 0; bottom: 0;
         background: var(--modal-overlay) !important;
-        backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         text-align: center; padding: 6px 10px; border-radius: 8px;
         border: 1.5px dashed rgba(244,63,94,0.75); z-index: 10; cursor: pointer;
@@ -660,11 +674,12 @@
 
       .mobile-bottom-sheet {
         display: flex; position: fixed; left: 0; right: 0; width: 100%;
-        bottom: calc(56px + env(safe-area-inset-bottom, 0px)); height: 64dvh; max-height: 64dvh;
-        background: var(--modal-bg) !important; border-top: 1.5px solid var(--border-titanium) !important; border-radius: 18px 18px 0 0;
-        z-index: var(--z-bottomsheet); box-shadow: 0 -12px 40px rgba(0,0,0,0.5);
+        bottom: calc(56px + env(safe-area-inset-bottom, 0px)); height: 64vh; height: 64dvh; max-height: 64vh; max-height: 64dvh;
+        background: #0c1017 !important; border-top: 1.5px solid var(--border-titanium) !important; border-radius: 18px 18px 0 0;
+        z-index: var(--z-bottomsheet); box-shadow: 0 -8px 24px rgba(0,0,0,0.45);
         transform: translateY(105%); transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
         flex-direction: column; overflow: hidden; pointer-events: none !important;
+        contain: content;
       }
       .mobile-bottom-sheet.open { transform: translateY(0); pointer-events: auto !important; }
       
@@ -673,7 +688,7 @@
         top: 12px;
         right: 12px;
         z-index: 60;
-        background: rgba(255, 255, 255, 0.06);
+        background: #0c1017;
         border: 1px solid rgba(255, 255, 255, 0.14);
         width: 30px;
         height: 30px;
@@ -683,8 +698,6 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
         transition: all 0.15s ease;
         padding: 0;
       }
@@ -693,7 +706,7 @@
         background: rgba(255, 255, 255, 0.12);
         color: #ffffff;
       }
-      .sheet-content { flex: 1 1 0%; min-height: 0; overflow-y: auto; padding: 12px 12px 16px 12px; display: flex; flex-direction: column; gap: 3px; width: 100%; }
+      .sheet-content { flex: 1 1 0%; min-height: 0; overflow-y: auto; padding: 12px 12px 16px 12px; display: flex; flex-direction: column; gap: 3px; width: 100%; contain: content; background: #0c1017; }
 
       /* 찜하기 / 다녀왔음 버튼 */
       .user-action-grid-3 { display: flex; gap: 4px; width: 100%; margin: 2px 0; }
@@ -764,18 +777,15 @@
         display: flex !important; 
         position: fixed; 
         bottom: 0; left: 0; right: 0; 
-        background: rgba(0, 0, 0, 0.96) !important; 
+        background: #000000 !important; 
         border-top: 1px solid var(--border-hairline); 
         height: calc(56px + env(safe-area-inset-bottom, 0px)); 
         padding-bottom: env(safe-area-inset-bottom, 0px); 
         z-index: 900 !important; 
         justify-content: space-around; 
         align-items: center; 
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
         transform: translate3d(0, 0, 0) !important;
         -webkit-transform: translate3d(0, 0, 0) !important;
-        will-change: transform;
         overflow: visible !important;
         pointer-events: auto !important;
       }
@@ -822,14 +832,12 @@
         display: flex;
         align-items: center;
         gap: 6px;
-        background: rgba(9, 12, 19, 0.88);
+        background: #0c1017;
         border: 1px solid var(--border-titanium);
         border-top: 1px solid rgba(255, 255, 255, 0.25);
         border-radius: 24px;
         padding: 4px 6px;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
       }
       .btn-floating-hub {
         background: transparent;
@@ -874,10 +882,9 @@
         bottom: calc(56px + env(safe-area-inset-bottom, 0px)) !important;
         width: 100% !important;
         height: auto !important;
+        max-height: calc(100vh - 56px - env(safe-area-inset-bottom, 0px)) !important;
         max-height: calc(100dvh - 56px - env(safe-area-inset-bottom, 0px)) !important;
         background: rgba(3, 5, 8, 0.88) !important; 
-        backdrop-filter: blur(10px) !important;
-        -webkit-backdrop-filter: blur(10px) !important;
         display: none; 
         justify-content: center !important; 
         align-items: center !important; 
@@ -899,7 +906,7 @@
         -webkit-overflow-scrolling: touch !important;
         overscroll-behavior: contain !important;
         border-radius: 16px !important; 
-        box-shadow: 0 25px 60px rgba(0,0,0,0.85) !important; 
+        box-shadow: 0 8px 24px rgba(0,0,0,0.45) !important; 
         padding: 18px 16px !important; 
         display: flex !important; 
         flex-direction: column !important; 
@@ -912,7 +919,7 @@
       .lnt-rule-title { font-size: 0.8rem; font-weight: 800; color: var(--accent-emerald); display: flex; align-items: center; gap: 5px; }
       .lnt-rule-desc { font-size: 0.72rem; color: var(--text-secondary); line-height: 1.4; }
 
-      .custom-modal { background: var(--modal-bg); color: var(--text-primary); width: 430px; max-width: calc(100vw - 24px); max-height: 88vh; overflow-y: auto; border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); padding: 16px; display: flex; flex-direction: column; gap: 9px; border: 1.5px solid var(--border-titanium); }
+      .custom-modal { background: var(--modal-bg); color: var(--text-primary); width: 430px; max-width: calc(100vw - 24px); max-height: 88vh; overflow-y: auto; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.45); padding: 16px; display: flex; flex-direction: column; gap: 9px; border: 1.5px solid var(--border-titanium); contain: content; }
       .modal-field { display: flex; flex-direction: column; gap: 2px; }
       .modal-field label { font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); }
       .modal-input { width: 100%; padding: 7px 10px; border: 1px solid var(--border-hairline); border-radius: 6px; font-size: 0.82rem; outline: none; background: var(--bg-base); color: var(--text-primary); }
@@ -934,7 +941,7 @@
         top: calc(62px + env(safe-area-inset-top, 0px));
         left: 50%;
         transform: translateX(-50%);
-        background: rgba(7, 10, 17, 0.92);
+        background: #0c1017;
         border: 1px solid rgba(56, 189, 248, 0.45);
         border-top: 1px solid rgba(255, 255, 255, 0.3);
         height: 36px;
@@ -949,8 +956,6 @@
         gap: 8px;
         white-space: nowrap;
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
         box-sizing: border-box;
       }
       .btn-confirm-pin-pick {
@@ -1428,16 +1433,17 @@
         }
       });
 
-      function safeGetJSON(key, defaultVal) {
+      // 🧰 [공통 유틸] romantic-sync.js window.* 버전 참조
+      var safeGetJSON = window.safeGetJSON = window.safeGetJSON || function(key, defaultVal) {
         try {
           var item = localStorage.getItem(key);
           return item ? JSON.parse(item) : defaultVal;
         } catch (e) {
           return defaultVal;
         }
-      }
+      };
 
-      function escapeHtml(text) {
+      var escapeHtml = window.escapeHtml = window.escapeHtml || function(text) {
         if (text === null || text === undefined) return '';
         return String(text)
           .replace(/&/g, '&amp;')
@@ -1445,13 +1451,17 @@
           .replace(/>/g, '&gt;')
           .replace(/"/g, '&quot;')
           .replace(/'/g, '&#39;');
-      }
+      };
 
-      function triggerHaptic(duration) {
+      var triggerHaptic = window.triggerHaptic = window.triggerHaptic || function(duration) {
         if (typeof window !== 'undefined' && 'navigator' in window && typeof navigator.vibrate === 'function') {
-          try { navigator.vibrate(duration || 12); } catch (e) { console.warn('[map.html:triggerHaptic]', e); }
+          try {
+            if (navigator.userActivation ? navigator.userActivation.hasBeenActive : true) {
+              navigator.vibrate(duration || 12);
+            }
+          } catch (e) { console.warn('[map.html:triggerHaptic]', e); }
         }
-      }
+      };
 
       // 🌐 [상수 및 환경 설정]
       window.CURRENT_VERSION = "6.2ver Final Master";
@@ -3274,6 +3284,40 @@ function updateSmartResetButtons() {
         }
       }
 
+      if (!window.__okbmMapSafeClickBound) {
+        window.__okbmMapSafeClickBound = true;
+        document.addEventListener('click', function(e) {
+          var naviBtn = e.target.closest('.js-navi-app');
+          if (naviBtn) {
+            e.stopPropagation();
+            var lat = parseFloat(naviBtn.dataset.lat);
+            var lng = parseFloat(naviBtn.dataset.lng);
+            navigateToNaviApp(
+              naviBtn.dataset.navi,
+              naviBtn.dataset.name,
+              naviBtn.dataset.addr,
+              isFinite(lat) ? lat : 0,
+              isFinite(lng) ? lng : 0
+            );
+            return;
+          }
+          var copyBtn = e.target.closest('.js-copy-entry');
+          if (copyBtn) {
+            e.stopPropagation();
+            copyTextToClipboard(copyBtn.dataset.addr);
+            return;
+          }
+          var centerEl = e.target.closest('.js-center-spot');
+          if (centerEl && !e.target.closest('.js-spot-title-actions') && !e.target.closest('.sheet-close-btn')) {
+            var cLat = parseFloat(centerEl.dataset.lat);
+            var cLng = parseFloat(centerEl.dataset.lng);
+            if (typeof smoothCenterMapOnSpot === 'function' && isFinite(cLat) && isFinite(cLng)) {
+              smoothCenterMapOnSpot(cLat, cLng);
+            }
+          }
+        }, true);
+      }
+
       async function toggleGpxTrack(spotId, gpxUrl) {
         const sId = String(spotId).trim();
         triggerHaptic(10);
@@ -3398,6 +3442,8 @@ function updateSmartResetButtons() {
         const { navAddress, guide } = parseEntryPoint(rawAddr);
         const cleanAddress = escapeHtml(navAddress || rawAddr);
         const sunset = calculateSunsetTime(spot.lat, spot.lng);
+        const safeLat = (isFinite(Number(spot.lat)) ? String(Number(spot.lat)) : '');
+        const safeLng = (isFinite(Number(spot.lng)) ? String(Number(spot.lng)) : '');
 
         const summary = parseStructuredSummary(spot.desc_summary || spot.desc);
         const isFav = userBookmarks.has(sId), isDone = userVisited.has(sId);
@@ -3417,14 +3463,14 @@ function updateSmartResetButtons() {
 
         return `
           <div style="position: relative; width: 100%;">
-            <div class="sheet-title-row" style="padding-right: ${isMobileSheet ? '36px' : '0'};" data-lat="${spot.lat}" data-lng="${spot.lng}" onclick="smoothCenterMapOnSpot(parseFloat(this.dataset.lat), parseFloat(this.dataset.lng))" title="지도를 박지 중심으로 이동">
+            <div class="sheet-title-row js-center-spot" style="padding-right: ${isMobileSheet ? '36px' : '0'};" data-lat="${safeLat}" data-lng="${safeLng}" title="지도를 박지 중심으로 이동">
               <div class="compact-title">
                 ${cityName ? `<span class="city-badge-colored">${escapeHtml(cityName)}</span>` : ''}
                 <span class="${diffClass}">${escapeHtml(cleanMainName)}</span>
                 ${spot.elevation ? '<span style="font-size:0.76rem; color:var(--accent-emerald); font-weight:700; display:inline-flex; align-items:center; gap:2px;">(' + ICONS.MOUNTAIN + escapeHtml(spot.elevation) + ')</span>' : ''}
                 ${getSpotStatusBadges(spot)}
               </div>
-              <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;" onclick="event.stopPropagation();">${closeBtn}</div>
+              <div class="js-spot-title-actions" style="display:flex; align-items:center; gap:6px; flex-shrink:0;" onclick="event.stopPropagation();">${closeBtn}</div>
             </div>
             ${adminTopActions}
 
@@ -3499,14 +3545,14 @@ function updateSmartResetButtons() {
              <div class="entry-module-container" style="position:relative; width:100%; display:flex; flex-direction:column; gap:4px; margin:4px 0;">
                 <div class="entry-row-1">
                   <div class="entry-address-2line" style="cursor:text; user-select:text; -webkit-user-select:text; pointer-events:auto;" onclick="event.stopPropagation();">${ICONS.NAV} ${escapeHtml(tName)}: ${cleanAddress}</div>
-                  <button type="button" class="btn-copy-entry" onclick="event.stopPropagation(); copyTextToClipboard(this.dataset.addr);" data-addr="${cleanAddress}">${ICONS.COPY} 복사</button>
+                  <button type="button" class="btn-copy-entry js-copy-entry" data-addr="${cleanAddress}">${ICONS.COPY} 복사</button>
                 </div>
                 ${guide ? `<div class="entry-guide-chip">${ICONS.TIP} 길 안내: ${escapeHtml(guide)}</div>` : ''}
                 <div class="entry-row-2">
-                  <button type="button" class="navi-btn-cell cell-kakao" onclick="navigateToNaviApp('kakao', this.dataset.name, this.dataset.addr, ${spot.lat}, ${spot.lng})" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}">카카오</button>
-                  <button type="button" class="navi-btn-cell cell-tmap" onclick="navigateToNaviApp('tmap', this.dataset.name, this.dataset.addr, ${spot.lat}, ${spot.lng})" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}">티맵</button>
-                  <button type="button" class="navi-btn-cell cell-naver" onclick="navigateToNaviApp('naver', this.dataset.name, this.dataset.addr, ${spot.lat}, ${spot.lng})" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}">네이버</button>
-                  <button type="button" class="navi-btn-cell cell-reserve" onclick="navigateToNaviApp('roadview', this.dataset.name, this.dataset.addr, ${spot.lat}, ${spot.lng})" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}">${ICONS.ROADVIEW} 로드뷰</button>
+                  <button type="button" class="navi-btn-cell cell-kakao js-navi-app" data-navi="kakao" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}" data-lat="${safeLat}" data-lng="${safeLng}">카카오</button>
+                  <button type="button" class="navi-btn-cell cell-tmap js-navi-app" data-navi="tmap" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}" data-lat="${safeLat}" data-lng="${safeLng}">티맵</button>
+                  <button type="button" class="navi-btn-cell cell-naver js-navi-app" data-navi="naver" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}" data-lat="${safeLat}" data-lng="${safeLng}">네이버</button>
+                  <button type="button" class="navi-btn-cell cell-reserve js-navi-app" data-navi="roadview" data-name="${escapeHtml(cleanMainName)}" data-addr="${cleanAddress}" data-lat="${safeLat}" data-lng="${safeLng}">${ICONS.ROADVIEW} 로드뷰</button>
                 </div>
 
                 ${summary.access ? `
@@ -4355,7 +4401,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
               <div style="flex:0 0 calc(50% - 4px); width:calc(50% - 4px); aspect-ratio:16/9; border-radius:6px; overflow:hidden; background:#000; position:relative; box-sizing:border-box;">
                 <img src="${escapeHtml(item.thumb)}" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';" />
                 <div style="position:absolute; inset:0; background:rgba(0,0,0,0.18); display:flex; align-items:center; justify-content:center;">
-                  <div style="width:24px; height:24px; border-radius:50%; background:rgba(0,0,0,0.65); display:flex; align-items:center; justify-content:center; backdrop-filter:blur(2px);">
+                  <div style="width:24px; height:24px; border-radius:50%; background:#0c1017; display:flex; align-items:center; justify-content:center;">
                     <svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-left:1px;" fill="#ffffff"><polygon points="9.6 15.6 15.8 12 9.6 8.4 9.6 15.6"/></svg>
                   </div>
                 </div>
@@ -4647,7 +4693,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
             <div data-feed-id="${fId}" data-spot-id="${escapeHtml(String(spot.id).trim())}" onclick="openMapSpotFeedDetailModal(this.dataset.feedId, this.dataset.spotId)" style="flex:0 0 145px; width:145px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; flex-shrink:0; box-sizing:border-box;">
               <div style="width:100%; aspect-ratio:3/4; position:relative; background:#000; overflow:hidden;">
                 <img src="${escapeHtml(thumbUrl)}" style="width:100%; height:100%; object-fit:cover; display:block;" loading="lazy" />
-                <div style="position:absolute; top:5px; left:5px; background:rgba(0,0,0,0.72); backdrop-filter:blur(4px); padding:2px 6px; border-radius:4px; font-size:0.56rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:85px;">
+                <div style="position:absolute; top:5px; left:5px; background:#0c1017; padding:2px 6px; border-radius:4px; font-size:0.56rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:85px;">
                   ${escapeHtml(authorNick)}
                 </div>
               </div>
@@ -4800,7 +4846,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
 
   var modalEl = document.createElement('div');
         modalEl.id = 'mapSpotFeedDetailModal';
-        modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 0px)); width:100%; background:rgba(0,0,0,0.7); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); z-index:880; display:flex; justify-content:center; align-items:center; padding:8px; box-sizing:border-box;';
+        modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 0px)); width:100%; background:#0c1017; z-index:880; display:flex; justify-content:center; align-items:center; padding:8px; box-sizing:border-box;';
         modalEl.onclick = function(e) { if (e.target === modalEl) modalEl.remove(); };
 
         modalEl.innerHTML = `
@@ -5848,7 +5894,7 @@ var overlay = document.getElementById('customModalOverlay');
               'apikey': cfg.key,
               'Authorization': 'Bearer ' + cfg.key,
               'Content-Type': 'application/json',
-              'Prefer': isInsert ? 'resolution=merge-duplicates,return=minimal' : 'return=minimal'
+              'Prefer': 'return=minimal'
             },
             body: JSON.stringify(payload)
           });
@@ -6709,7 +6755,7 @@ var overlay = document.getElementById('customModalOverlay');
         btn.type = 'button';
         btn.setAttribute('data-lat', lat);
         btn.setAttribute('data-lng', lng);
-        btn.style.cssText = 'background:rgba(14,18,26,0.96); border:1px solid rgba(255,255,255,0.18); border-radius:20px; padding:7px 14px; color:#ffffff; font-size:0.76rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px; box-shadow:0 10px 28px rgba(0,0,0,0.8); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); white-space:nowrap; outline:none; -webkit-tap-highlight-color:transparent;';
+        btn.style.cssText = 'background:#0c1017; border:1px solid rgba(255,255,255,0.18); border-radius:20px; padding:7px 14px; color:#ffffff; font-size:0.76rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px; box-shadow:0 8px 20px rgba(0,0,0,0.55); white-space:nowrap; outline:none; -webkit-tap-highlight-color:transparent;';
         var adminPick = isAdminMode && checkAdminAuthorization();
         btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; flex-shrink:0;"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg><span>${adminPick ? '박지 정식 등록' : '장소 제보하기'}</span>`;
 
@@ -7339,10 +7385,10 @@ var overlay = document.getElementById('customModalOverlay');
         }
       })();
     </script>
-    <script src="romantic-sync.js?v=2.8.48"></script>
-    <script src="templates.js?v=2.8.2"></script>
-    <script src="romantic-history.js?v=2.7.23"></script>
-    <script src="romantic-plan.js?v=2.7.4"></script>
+    <script src="romantic-sync.js?v=2.8.53"></script>
+    <script src="templates.js?v=2.8.3"></script>
+    <script src="romantic-history.js?v=2.7.33"></script>
+    <script src="romantic-plan.js?v=2.7.9"></script>
     <script>
       window.addEventListener('okbm_admin_flag', function(e) {
         if (typeof window.applyAdminPermissions === 'function') {

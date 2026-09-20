@@ -94,13 +94,14 @@
         background: #0d121d !important;
         border-top: 1.5px solid rgba(255, 255, 255, 0.16) !important;
         border-radius: 16px 16px 0 0 !important;
-        box-shadow: 0 -10px 35px rgba(0, 0, 0, 0.9) !important;
+        box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.45) !important;
         transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
         z-index: 1000020 !important;
         display: none;
         flex-direction: column !important;
         max-height: 72% !important;
         box-sizing: border-box !important;
+        contain: content !important;
       }
       .calc-slide-sheet.active {
         transform: translate(-50%, 0%) !important;
@@ -154,28 +155,132 @@
     document.head.appendChild(style);
   }
 
-  // 🧰 [공통 유틸리티]
-  function safeGetJSON(key, defaultVal) {
-    try {
-      var item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : defaultVal;
-    } catch (e) {
-      console.warn('[romantic-plan.js:safeGetJSON]', e);
-      return defaultVal;
+  // 🧰 [공통 유틸리티] romantic-sync.js window.* 버전 참조
+  var safeGetJSON = function(key, defaultVal) {
+    return (typeof window.safeGetJSON === 'function') ? window.safeGetJSON(key, defaultVal) : (function() {
+      try { var item = localStorage.getItem(key); return item ? JSON.parse(item) : defaultVal; } catch(e) { return defaultVal; }
+    })();
+  };
+
+  var escapeHtml = function(text) {
+    return (typeof window.escapeHtml === 'function') ? window.escapeHtml(text) : (function(t) {
+      if (t === null || t === undefined) return '';
+      return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    })(text);
+  };
+
+  function unescapePlanText(text) {
+    if (typeof window.okbmUnescapePlanText === 'function') return window.okbmUnescapePlanText(text);
+    return String(text == null ? '' : text);
+  }
+
+  function planSpotLabel(text) {
+    return escapeHtml(unescapePlanText(text));
+  }
+
+  function flushPendingPlanSpotsUpdate() {
+    if (!window.__pendingPlanSpotsUpdate) return false;
+    if (!window.RomanticVault || typeof window.RomanticVault.write !== 'function') return false;
+    var payload = window.__pendingPlanSpots;
+    window.__pendingPlanSpotsUpdate = false;
+    window.__pendingPlanSpots = null;
+    if (payload) window.RomanticVault.write('okbm_plan_spots', payload, true);
+    return true;
+  }
+  window.flushPendingPlanSpotsUpdate = flushPendingPlanSpotsUpdate;
+
+  function persistSanitizedPlanSpots(rawSpots) {
+    if (typeof window.okbmSanitizePlanSpotsMap !== 'function') return rawSpots || {};
+    var result = window.okbmSanitizePlanSpotsMap(rawSpots);
+    if (result.changed) {
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.__pendingPlanSpotsUpdate = false;
+        window.__pendingPlanSpots = null;
+        window.RomanticVault.write('okbm_plan_spots', result.spots, true);
+      } else {
+        window.__pendingPlanSpotsUpdate = true;
+        window.__pendingPlanSpots = result.spots;
+      }
     }
+    return result.spots;
   }
 
-  function escapeHtml(text) {
-    if (text === null || text === undefined) return '';
-    return String(text)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
+  (function okbmBindPendingPlanSpotsFlush() {
+    var tries = 0;
+    function bind() {
+      var vault = window.RomanticVault;
+      if (!vault || typeof vault.write !== 'function') return false;
+      if (!vault.__okbmPlanSpotsFlushHooked) {
+        vault.__okbmPlanSpotsFlushHooked = true;
+        var origWrite = vault.write;
+        vault.write = function(key, val, shouldSyncCloud) {
+          var ret = origWrite.call(this, key, val, shouldSyncCloud);
+          flushPendingPlanSpotsUpdate();
+          return ret;
+        };
+      }
+      flushPendingPlanSpotsUpdate();
+      return true;
+    }
+    if (bind()) return;
+    var timer = setInterval(function() {
+      tries += 1;
+      if (bind() || tries >= 40) clearInterval(timer);
+    }, 50);
+  })();
+
+  if (!window.__okbmPlanSafeClickBound) {
+    window.__okbmPlanSafeClickBound = true;
+    document.addEventListener('click', function(e) {
+      var destBtn = e.target.closest('.js-select-plan-dest');
+      if (destBtn) {
+        e.stopPropagation();
+        if (typeof window.selectPlanDestination === 'function') {
+          window.selectPlanDestination(destBtn.dataset.spot || '', destBtn.dataset.elevation || '');
+        }
+        return;
+      }
+      var packingEl = e.target.closest('.js-start-packing');
+      if (packingEl) {
+        if (typeof window.startPackingForDate === 'function') {
+          window.startPackingForDate(packingEl.dataset.date || '', packingEl.dataset.title || '', packingEl.dataset.elevation || '');
+        }
+        return;
+      }
+      var calcSpot = e.target.closest('.js-apply-calc-spot');
+      if (calcSpot) {
+        if (typeof window.applySelectedCalcSpot === 'function') {
+          window.applySelectedCalcSpot(calcSpot.dataset.spot || '', calcSpot.dataset.elevation || '');
+        }
+        return;
+      }
+      var saveMemo = e.target.closest('.js-save-plan-memo');
+      if (saveMemo) {
+        if (typeof window.savePlanMemo === 'function') {
+          window.savePlanMemo(saveMemo.dataset.date || '');
+        }
+        return;
+      }
+      var clearDay = e.target.closest('.js-clear-day-schedule');
+      if (clearDay) {
+        if (typeof window.clearEntireDaySchedule === 'function') {
+          window.clearEntireDaySchedule(clearDay.dataset.date || '');
+        }
+        return;
+      }
+      var mapRow = e.target.closest('.js-open-spot-map');
+      if (mapRow) {
+        var spotName = mapRow.dataset.spot || '';
+        if (mapRow.dataset.saveTarget === '1') {
+          try { localStorage.setItem('okbm_target_spot', spotName); } catch (err) {}
+        }
+        location.href = 'map.html?spot=' + encodeURIComponent(spotName);
+      }
+    }, true);
   }
 
-  function triggerHaptic(duration) {
+  var triggerHaptic = function(duration) {
+    if (typeof window.triggerHaptic === 'function') return window.triggerHaptic(duration);
     if (typeof window !== 'undefined' && 'navigator' in window && typeof navigator.vibrate === 'function') {
       try {
         if (navigator.userActivation ? navigator.userActivation.hasBeenActive : true) {
@@ -183,7 +288,7 @@
         }
       } catch (e) { console.warn('[romantic-plan.js:triggerHaptic]', e); }
     }
-  }
+  };
 
   var PLAN_CATEGORY_PALETTE = {
     fav:         { color: '#fde047', label: '⭐ 내장비', bg: 'rgba(253,224,71,0.08)',  border: 'rgba(253,224,71,0.25)' },
@@ -195,7 +300,8 @@
     kitchen:     { color: '#84cc16', label: '취사',     bg: 'rgba(132,204,22,0.08)',  border: 'rgba(132,204,22,0.25)' },
     wear:        { color: '#a855f7', label: '의류',     bg: 'rgba(168,85,247,0.08)',  border: 'rgba(168,85,247,0.25)' },
     electronics: { color: '#eab308', label: '기기·소품', bg: 'rgba(234,179,8,0.08)',   border: 'rgba(234,179,8,0.25)' },
-    camp:        { color: '#06b6d4', label: '테이블·체어',bg: 'rgba(6,182,212,0.08)',  border: 'rgba(6,182,212,0.25)' }
+    camp:        { color: '#06b6d4', label: '테이블·체어',bg: 'rgba(6,182,212,0.08)',  border: 'rgba(6,182,212,0.25)' },
+    other:       { color: '#94a3b8', label: '기타·소품', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.25)' }
   };
 
  var DEFAULT_CATEGORIES = [
@@ -245,6 +351,12 @@
       id: 'camp',
       title: '테이블 · 체어',
       icon: '<svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:none; stroke:#38bdf8; stroke-width:2.2;"><rect x="4" y="10" width="16" height="4" rx="1"/><path d="M6 14v6M18 14v6M8 10V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v4"/></svg>',
+      db: []
+    },
+    {
+      id: 'other',
+      title: '기타 · 소품',
+      icon: '<svg viewBox="0 0 64 64" style="width:14px; height:14px; fill:none; stroke:#94a3b8; stroke-linecap:round; stroke-linejoin:round;"><path d="M25 13C16 13 13.5 20.5 13.5 31C13.5 43.5 17.5 51 27 51C35 51 38.5 46 38.5 38.5V25" stroke-width="3"/><path d="M25 13C32 13 37.5 16.5 38.5 25" stroke-width="3"/><rect x="40.5" y="29" width="13.5" height="16.5" rx="2.2" stroke-width="3"/><circle cx="47.2" cy="37.2" r="3.4" stroke-width="2.5"/></svg>',
       db: []
     }
   ];
@@ -531,7 +643,7 @@
     // 3. 동행 원정대 일정 보강 (본인이 개설한 원정대만 수집)
     if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
       var dropProf = safeGetJSON('user_profile', null);
-      var dropUid = (dropProf && dropProf.id) ? String(dropProf.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+      var dropUid = (typeof window.okbmGetCurrentUserId === 'function') ? String(window.okbmGetCurrentUserId() || '').trim() : '';
       var dropNick = (dropProf && dropProf.nickname) ? String(dropProf.nickname).trim() : (localStorage.getItem('okbm_user_nick') || '');
       window.TRIP_JOINS_DATABASE.forEach(function(tr) {
         if (tr && tr.date && tr.spotName && !tr.isClosed) {
@@ -618,14 +730,10 @@
     window.renderPlanStage();
   };
 
-  window.renderPlanCategorySlots = function() {
-    var shelfContainer = document.getElementById('calcGearShelfList');
-    var tabsContainer = document.getElementById('calcCategoryTabsBar');
-
+  function okbmCollectPackedGearItems() {
     var gearMap = window.selectedGearMap || {};
     var allPackedItems = [];
     var totalGrams = 0;
-
     (window.CATEGORIES || []).forEach(function(cat) {
       (gearMap[cat.id] || []).forEach(function(it, idx) {
         if (it && (it.name || it.itemName)) {
@@ -640,15 +748,39 @@
         }
       });
     });
+    return { items: allPackedItems, totalGrams: totalGrams };
+  }
 
-var totalKg = (totalGrams / 1000).toFixed(2);
+  function okbmGearRowMatches(el, gearName) {
+    if (!el || !gearName) return false;
+    return (el.dataset.gearName || el.getAttribute('data-gear-name') || '') === gearName;
+  }
+
+  function okbmBuildShelfPackSlotHtml(catId, gearName, weight, count) {
+    var safeCat = escapeHtml(catId || 'shelter');
+    var safeGear = escapeHtml(gearName || '');
+    var w = Number(weight || 0);
+    if (count > 0) {
+      return '<div style="display:flex; align-items:center; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:14px; padding:1px 4px; gap:4px; height:24px;">' +
+        '<button type="button" data-cat="' + safeCat + '" data-gear="' + safeGear + '" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.decrementGearCount(this.dataset.gear);" style="background:none; border:none; color:#ffffff; font-size:0.85rem; font-weight:900; cursor:pointer; width:16px;">−</button>' +
+        '<span class="gear-shelf-count" style="font-size:0.72rem; font-weight:900; color:#ffffff; font-family:\'JetBrains Mono\', monospace; min-width:12px; text-align:center;">' + count + '</span>' +
+        '<button type="button" data-cat="' + safeCat + '" data-gear="' + safeGear + '" data-weight="' + w + '" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.addGearToCategory(this.dataset.gear, Number(this.dataset.weight));" style="background:none; border:none; color:#ffffff; font-size:0.85rem; font-weight:900; cursor:pointer; width:16px;">+</button>' +
+      '</div>';
+    }
+    return '<button type="button" data-cat="' + safeCat + '" data-gear="' + safeGear + '" data-weight="' + w + '" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.addGearToCategory(this.dataset.gear, Number(this.dataset.weight));" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.16); color:#ffffff; font-size:0.66rem; font-weight:800; padding:3px 9px; border-radius:6px; cursor:pointer;">+ 담기</button>';
+  }
+
+  window.refreshPlanPackedChrome = function() {
+    var packed = okbmCollectPackedGearItems();
+    var allPackedItems = packed.items;
+    var totalGrams = packed.totalGrams;
+    var totalKg = (totalGrams / 1000).toFixed(2);
     var kgEl = document.getElementById('planTotalWeightKgText');
     var gramsEl = document.getElementById('planTotalWeightGramsText');
     var gaugeEl = document.getElementById('planWeightGaugeFill');
     var bplBadge = document.getElementById('planBplStatusBadge');
     var recentGearBox = document.getElementById('planRecentGearBox');
-
-   var CATEGORY_PALETTE = PLAN_CATEGORY_PALETTE;
+    var CATEGORY_PALETTE = PLAN_CATEGORY_PALETTE;
 
     var weightTheme = {
       color: '#2dd4bf',
@@ -656,7 +788,6 @@ var totalKg = (totalGrams / 1000).toFixed(2);
       badgeBorder: 'rgba(45, 212, 191, 0.28)',
       text: 'UL 초경량 (≤6kg)'
     };
-
     if (totalGrams > 14000) {
       weightTheme = {
         color: '#f87171',
@@ -691,57 +822,168 @@ var totalKg = (totalGrams / 1000).toFixed(2);
       gaugeEl.style.setProperty('background-color', weightTheme.color, 'important');
     }
 
-    var gearsPillsBox = document.getElementById('planGearsPillsBox');
-    var gearsBottomBox = document.getElementById('planGearsBottomBox');
-
-   if (recentGearBox) {
+    if (recentGearBox) {
       if (allPackedItems.length === 0) {
-        recentGearBox.innerHTML = `
-          <div style="font-size:0.70rem; font-weight:800; color:#94a3b8;">담긴 장비</div>
-          <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; flex:1; color:#64748b; font-size:0.68rem; line-height:1.3;">
-            <span>배낭 비어있음</span>
-            <span style="font-size:0.58rem; color:#475569;">장비를 담아보세요</span>
-          </div>
-        `;
+        recentGearBox.innerHTML = '' +
+          '<div style="font-size:0.70rem; font-weight:800; color:#94a3b8;">담긴 장비</div>' +
+          '<div style="display:flex; flex-direction:column; justify-content:center; align-items:center; flex:1; color:#64748b; font-size:0.68rem; line-height:1.3;">' +
+            '<span>배낭 비어있음</span>' +
+            '<span style="font-size:0.58rem; color:#475569;">장비를 담아보세요</span>' +
+          '</div>';
       } else {
         var lastItem = allPackedItems[allPackedItems.length - 1];
         var lastPal = CATEGORY_PALETTE[lastItem.catId] || { color: '#94a3b8' };
-        recentGearBox.innerHTML = `
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:0.70rem; font-weight:800; color:#cbd5e1;">담긴 장비</span>
-            <span style="font-size:0.62rem; font-weight:900; color:#ffffff; background:rgba(255,255,255,0.12); padding:1px 5px; border-radius:4px; font-family:'JetBrains Mono', monospace;">${allPackedItems.length}개 ▾</span>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:2px; min-width:0;">
-            <div style="font-size:0.78rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-              ${escapeHtml(lastItem.name)}
-            </div>
-            <div style="display:flex; justify-content:flex-end; align-items:baseline; font-family:'JetBrains Mono', monospace;">
-              <span style="font-size:0.72rem; font-weight:900; color:${lastPal.color};">${lastItem.weight}g</span>
-            </div>
-          </div>
-        `;
+        recentGearBox.innerHTML = '' +
+          '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+            '<span style="font-size:0.70rem; font-weight:800; color:#cbd5e1;">담긴 장비</span>' +
+            '<span style="font-size:0.62rem; font-weight:900; color:#ffffff; background:rgba(255,255,255,0.12); padding:1px 5px; border-radius:4px; font-family:\'JetBrains Mono\', monospace;">' + allPackedItems.length + '개 ▾</span>' +
+          '</div>' +
+          '<div style="display:flex; flex-direction:column; gap:2px; min-width:0;">' +
+            '<div style="font-size:0.78rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(lastItem.name) + '</div>' +
+            '<div style="display:flex; justify-content:flex-end; align-items:baseline; font-family:\'JetBrains Mono\', monospace;">' +
+              '<span style="font-size:0.72rem; font-weight:900; color:' + lastPal.color + ';">' + lastItem.weight + 'g</span>' +
+            '</div>' +
+          '</div>';
       }
     }
 
     var popoverListEl = document.getElementById('calcPackedItemsListContainer');
     if (popoverListEl) {
-      popoverListEl.innerHTML = allPackedItems.length === 0 ? '<div style="text-align:center; padding:35px 0; color:#64748b; font-size:0.75rem;">담긴 장비가 없습니다.</div>' : allPackedItems.map(function(it) {
-        var pal = CATEGORY_PALETTE[it.catId] || { color: '#94a3b8' };
-        return `
-          <div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-left:3.5px solid ${pal.color}; border-radius:7px; padding:7px 10px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
-            <div style="flex:1; min-width:0; padding-right:8px;">
-              <div style="font-size:0.80rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(it.name)}</div>
-              <div style="font-size:0.60rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; margin-top:1px;">${(it.weight / 1000).toFixed(2)}kg (${it.weight}g)</div>
-            </div>
-            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-              <button type="button" data-cat="${escapeHtml(it.catId)}" data-gear="${escapeHtml(it.name)}" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.decrementGearCount(this.dataset.gear);" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.3); color:#fda4af; font-size:0.72rem; font-weight:900; width:26px; height:26px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center;">
-                −
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
+      popoverListEl.innerHTML = allPackedItems.length === 0
+        ? '<div style="text-align:center; padding:35px 0; color:#64748b; font-size:0.75rem;">담긴 장비가 없습니다.</div>'
+        : allPackedItems.map(function(it) {
+          var pal = CATEGORY_PALETTE[it.catId] || { color: '#94a3b8' };
+          return '<div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-left:3.5px solid ' + pal.color + '; border-radius:7px; padding:7px 10px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">' +
+            '<div style="flex:1; min-width:0; padding-right:8px;">' +
+              '<div style="font-size:0.80rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + escapeHtml(it.name) + '</div>' +
+              '<div style="font-size:0.60rem; color:#94a3b8; font-family:\'JetBrains Mono\', monospace; margin-top:1px;">' + (it.weight / 1000).toFixed(2) + 'kg (' + it.weight + 'g)</div>' +
+            '</div>' +
+            '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">' +
+              '<button type="button" data-cat="' + escapeHtml(it.catId) + '" data-gear="' + escapeHtml(it.name) + '" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.decrementGearCount(this.dataset.gear);" style="background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.3); color:#fda4af; font-size:0.72rem; font-weight:900; width:26px; height:26px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center;">−</button>' +
+            '</div>' +
+          '</div>';
+        }).join('');
     }
+  };
+
+  window.patchGearInteractionRows = function(gearName) {
+    if (!gearName) return false;
+    var gearMap = window.selectedGearMap || {};
+    var isFav = !!(window.favoriteGearSet && window.favoriteGearSet.has(gearName));
+    var found = false;
+
+    document.querySelectorAll('.gear-shelf-item-row').forEach(function(row) {
+      if (!okbmGearRowMatches(row, gearName)) return;
+      found = true;
+      var catId = row.dataset.gearCat || row.getAttribute('data-gear-cat') || 'shelter';
+      var count = (gearMap[catId] || []).filter(function(it) { return it && it.name === gearName; }).length;
+      var isAdded = count > 0;
+      var pal = PLAN_CATEGORY_PALETTE[catId] || { color: '#94a3b8', border: 'rgba(255,255,255,0.12)' };
+      row.style.setProperty('background', isAdded ? 'rgba(255,255,255,0.055)' : 'rgba(255,255,255,0.02)');
+      row.style.setProperty('border', isAdded ? ('1px solid ' + pal.border) : '1px solid rgba(255,255,255,0.08)');
+      row.style.setProperty('border-left', isAdded ? ('2px solid ' + pal.color) : '2px solid transparent', 'important');
+
+      var starBtn = row.querySelector('.gear-shelf-star-btn');
+      if (starBtn) starBtn.innerHTML = isFav ? PLAN_SVG.starFilled : PLAN_SVG.starOutline;
+
+      var nameEl = row.querySelector('.gear-shelf-name');
+      if (nameEl) nameEl.style.color = isAdded ? '#ffffff' : '#e2e8f0';
+
+      var packSlot = row.querySelector('.gear-shelf-pack-slot');
+      var weightBtn = row.querySelector('[data-weight]');
+      var weight = weightBtn ? Number(weightBtn.getAttribute('data-weight') || 0) : Number(row.getAttribute('data-weight') || 0);
+      if (packSlot) packSlot.innerHTML = okbmBuildShelfPackSlotHtml(catId, gearName, weight, count);
+    });
+
+    document.querySelectorAll('.gear-db-item').forEach(function(row) {
+      if (!okbmGearRowMatches(row, gearName)) return;
+      found = true;
+      var catId = row.dataset.gearCat || window.currentOpeningCategoryId || 'shelter';
+      var count = (gearMap[catId] || []).filter(function(it) { return it && it.name === gearName; }).length;
+      var isAdded = count > 0;
+      row.style.background = isAdded ? 'rgba(255,255,255,0.055)' : (isFav ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.015)');
+      row.style.border = isAdded ? '1px solid rgba(255,255,255,0.22)' : (isFav ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(255,255,255,0.06)');
+
+      var starBtn = row.querySelector('.gear-db-star-btn');
+      if (starBtn) {
+        starBtn.innerHTML = isFav ? '⭐' : '<span style="color:#475569; opacity:0.4;">☆</span>';
+      }
+
+      var nameEl = row.querySelector('.gear-db-name');
+      if (nameEl) nameEl.style.color = isAdded ? '#ffffff' : '#e2e8f0';
+
+      var idx = -1;
+      if (Array.isArray(window.__currentFilteredGears)) {
+        idx = window.__currentFilteredGears.findIndex(function(g) { return g && g.name === gearName; });
+      }
+
+      var metaRow = row.querySelector('.gear-db-meta');
+      if (metaRow) {
+        var addedBadge = metaRow.querySelector('.gear-db-added-badge');
+        if (isAdded) {
+          if (addedBadge) {
+            addedBadge.textContent = '담김 ' + count + '개';
+          } else {
+            var badge = document.createElement('span');
+            badge.className = 'gear-db-added-badge';
+            badge.style.cssText = 'font-size:0.58rem; font-weight:800; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); color:#f8fafc; padding:1px 5px; border-radius:4px; flex-shrink:0;';
+            badge.textContent = '담김 ' + count + '개';
+            metaRow.insertBefore(badge, metaRow.firstChild);
+          }
+        } else if (addedBadge) {
+          addedBadge.remove();
+        }
+
+        var favBadge = metaRow.querySelector('.gear-db-fav-badge');
+        if (isFav) {
+          if (!favBadge) {
+            var fBadge = document.createElement('span');
+            fBadge.className = 'gear-db-fav-badge';
+            fBadge.style.cssText = 'font-size:0.58rem; font-weight:800; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#e2e8f0; padding:1px 5px; border-radius:4px; flex-shrink:0;';
+            fBadge.textContent = '⭐ 내 장비';
+            if (metaRow.firstChild && metaRow.firstChild.classList && metaRow.firstChild.classList.contains('gear-db-added-badge')) {
+              metaRow.insertBefore(fBadge, metaRow.firstChild.nextSibling);
+            } else {
+              metaRow.insertBefore(fBadge, metaRow.firstChild);
+            }
+          }
+        } else if (favBadge) {
+          favBadge.remove();
+        }
+      }
+
+      var packSlot = row.querySelector('.gear-db-pack-slot');
+      var kgEl = row.querySelector('.gear-db-kg');
+      if (kgEl) kgEl.style.color = isAdded ? '#f8fafc' : '#94a3b8';
+      if (packSlot && idx >= 0) {
+        if (isAdded) {
+          packSlot.innerHTML = '<div style="display:flex; align-items:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); border-radius:16px; padding:1px 3px; gap:2px; height:24px;" onclick="event.stopPropagation();">' +
+            '<button type="button" style="background:none; border:none; color:#ffffff; width:18px; height:18px; font-size:0.9rem; font-weight:900; cursor:pointer;" onclick="window.decrementGearByIndex(' + idx + ', event)">−</button>' +
+            '<span class="gear-db-count" style="font-size:0.72rem; font-weight:900; color:#ffffff; min-width:14px; text-align:center; font-family:\'JetBrains Mono\', monospace;">' + count + '</span>' +
+            '<button type="button" style="background:none; border:none; color:#ffffff; width:18px; height:18px; font-size:0.9rem; font-weight:900; cursor:pointer;" onclick="window.addGearByIndex(' + idx + ', event)">+</button>' +
+          '</div>';
+        } else {
+          packSlot.innerHTML = '<button type="button" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#cbd5e1; font-size:0.65rem; font-weight:700; padding:2px 8px; border-radius:10px; cursor:pointer;" onclick="event.stopPropagation(); window.addGearByIndex(' + idx + ');">+ 담기</button>';
+        }
+      } else if (packSlot) {
+        var countEl = packSlot.querySelector('.gear-db-count');
+        if (countEl) countEl.textContent = String(count);
+      }
+    });
+
+    if (typeof window.updateDetailModalActionButtons === 'function') {
+      window.updateDetailModalActionButtons();
+    }
+    return found;
+  };
+
+  window.renderPlanCategorySlots = function() {
+    var shelfContainer = document.getElementById('calcGearShelfList');
+    var tabsContainer = document.getElementById('calcCategoryTabsBar');
+    var gearMap = window.selectedGearMap || {};
+    var CATEGORY_PALETTE = PLAN_CATEGORY_PALETTE;
+
+    window.refreshPlanPackedChrome();
 
     if (tabsContainer) {
       var activeTab = window.__activeCalcCategoryTab;
@@ -754,7 +996,8 @@ var totalKg = (totalGrams / 1000).toFixed(2);
         { id: 'kitchen', title: '취사' },
         { id: 'wear', title: '의류' },
         { id: 'electronics', title: '기기·소품' },
-        { id: 'camp', title: '테이블·체어' }
+        { id: 'camp', title: '테이블·체어' },
+        { id: 'other', title: '기타·소품' }
       ];
 
       tabsContainer.innerHTML = catList.map(function(c) {
@@ -779,9 +1022,13 @@ var totalKg = (totalGrams / 1000).toFixed(2);
       var pool = [];
 
       var customGears = safeGetJSON('okbm_custom_gears', []) || [];
-      var masterMap = window.__memoryStore && window.__memoryStore['okbm_master_gears_cache']
-        ? window.__memoryStore['okbm_master_gears_cache']
-        : (safeGetJSON('okbm_master_gears_cache', {}) || {});
+      var masterMap = (window.__memoryStore && window.__memoryStore['okbm_master_gears_cache']) || {};
+      if (Object.keys(masterMap).length === 0 && Array.isArray(window.CATEGORIES)) {
+        masterMap = {};
+        window.CATEGORIES.forEach(function(cat) {
+          if (Array.isArray(cat.db)) masterMap[cat.id] = cat.db;
+        });
+      }
       var allSource = customGears.map(function(cg) {
         return Object.assign({}, cg, { category_id: cg.category_id || cg.categoryId || 'shelter', isCustom: true });
       });
@@ -850,19 +1097,19 @@ var totalKg = (totalGrams / 1000).toFixed(2);
           var pal = CATEGORY_PALETTE[targetCatId] || { color: '#94a3b8', border: 'rgba(255,255,255,0.12)' };
           var safeGearName = escapeHtml(g.name);
 
-          var cardBorder = isAdded ? `border:1px solid ${pal.border}; border-left:2px solid ${pal.color} !important;` : 'border:1px solid rgba(255,255,255,0.08); border-left:2px solid transparent !important;';
+          var cardBorder = isAdded ? ('border:1px solid ' + pal.border + '; border-left:2px solid ' + pal.color + ';') : 'border:1px solid rgba(255,255,255,0.08); border-left:2px solid transparent;';
           var cardBg = isAdded ? 'background:rgba(255,255,255,0.055);' : 'background:rgba(255,255,255,0.02);';
 
           var deleteBtnHtml = g.isCustom ? ` · <button type="button" data-gear="${safeGearName}" onclick="event.stopPropagation(); window.deleteCustomGearCompletely(this.dataset.gear);" style="background:none; border:none; color:#fda4af; font-size:0.58rem; font-weight:700; cursor:pointer; padding:0; text-decoration:underline;">삭제</button>` : '';
 
           return `
-            <div class="gear-shelf-item-row" data-gear-name="${safeGearName}" data-gear-cat="${escapeHtml(targetCatId)}" style="${cardBg} ${cardBorder}">
+            <div class="gear-shelf-item-row" data-gear-name="${safeGearName}" data-gear-cat="${escapeHtml(targetCatId)}" data-weight="${g.weight || 0}" style="${cardBg} ${cardBorder}">
               <div style="min-width:0; flex:1; padding-right:8px; display:flex; align-items:center; gap:6px;">
-                <button type="button" data-gear="${safeGearName}" onclick="window.toggleFavoriteGear(this.dataset.gear, event);" style="background:none; border:none; cursor:pointer; padding:4px; min-width:28px; min-height:28px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-left:-2px;">
+                <button type="button" class="gear-shelf-star-btn" data-gear="${safeGearName}" onclick="window.toggleFavoriteGear(this.dataset.gear, event);" style="background:none; border:none; cursor:pointer; padding:4px; min-width:28px; min-height:28px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-left:-2px;">
                   ${isFav ? PLAN_SVG.starFilled : PLAN_SVG.starOutline}
                 </button>
                 <div style="min-width:0; flex:1; cursor:pointer;" onclick="if (!window.__longPressTriggered) window.openGearDetailFromEl(this);">
-                  <div style="font-size:0.80rem; font-weight:800; color:${isAdded ? '#ffffff' : '#e2e8f0'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                  <div class="gear-shelf-name" style="font-size:0.80rem; font-weight:800; color:${isAdded ? '#ffffff' : '#e2e8f0'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                     ${safeGearName}
                   </div>
                   <div style="font-size:0.58rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; margin-top:1px;">
@@ -871,18 +1118,8 @@ var totalKg = (totalGrams / 1000).toFixed(2);
                 </div>
               </div>
 
-              <div style="flex-shrink:0;">
-                ${isAdded ? `
-                  <div style="display:flex; align-items:center; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:14px; padding:1px 4px; gap:4px; height:24px;">
-                    <button type="button" data-cat="${escapeHtml(targetCatId)}" data-gear="${safeGearName}" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.decrementGearCount(this.dataset.gear);" style="background:none; border:none; color:#ffffff; font-size:0.85rem; font-weight:900; cursor:pointer; width:16px;">−</button>
-                    <span style="font-size:0.72rem; font-weight:900; color:#ffffff; font-family:'JetBrains Mono', monospace; min-width:12px; text-align:center;">${count}</span>
-                    <button type="button" data-cat="${escapeHtml(targetCatId)}" data-gear="${safeGearName}" data-weight="${g.weight || 0}" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.addGearToCategory(this.dataset.gear, Number(this.dataset.weight));" style="background:none; border:none; color:#ffffff; font-size:0.85rem; font-weight:900; cursor:pointer; width:16px;">+</button>
-                  </div>
-                ` : `
-                  <button type="button" data-cat="${escapeHtml(targetCatId)}" data-gear="${safeGearName}" data-weight="${g.weight || 0}" onclick="window.currentOpeningCategoryId=this.dataset.cat; window.addGearToCategory(this.dataset.gear, Number(this.dataset.weight));" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.16); color:#ffffff; font-size:0.66rem; font-weight:800; padding:3px 9px; border-radius:6px; cursor:pointer;">
-                    + 담기
-                  </button>
-                `}
+              <div class="gear-shelf-pack-slot" style="flex-shrink:0;">
+                ${okbmBuildShelfPackSlotHtml(targetCatId, g.name, g.weight || 0, count)}
               </div>
             </div>
           `;
@@ -890,13 +1127,21 @@ var totalKg = (totalGrams / 1000).toFixed(2);
 
         shelfContainer.innerHTML = guideHtml + renderItems.map(renderRowHtml).join('');
 
+        if (shelfContainer.__okbmShelfScrollRaf) {
+          cancelAnimationFrame(shelfContainer.__okbmShelfScrollRaf);
+          shelfContainer.__okbmShelfScrollRaf = 0;
+        }
         if (filtered.length > initialLimit) {
           shelfContainer.onscroll = function() {
-            if (shelfContainer.scrollTop + shelfContainer.clientHeight >= shelfContainer.scrollHeight - 100) {
-              shelfContainer.onscroll = null;
-              var moreItems = filtered.slice(initialLimit);
-              shelfContainer.insertAdjacentHTML('beforeend', moreItems.map(renderRowHtml).join(''));
-            }
+            if (shelfContainer.__okbmShelfScrollRaf) return;
+            shelfContainer.__okbmShelfScrollRaf = requestAnimationFrame(function() {
+              shelfContainer.__okbmShelfScrollRaf = 0;
+              if (shelfContainer.scrollTop + shelfContainer.clientHeight >= shelfContainer.scrollHeight - 100) {
+                shelfContainer.onscroll = null;
+                var moreItems = filtered.slice(initialLimit);
+                shelfContainer.insertAdjacentHTML('beforeend', moreItems.map(renderRowHtml).join(''));
+              }
+            });
           };
         } else {
           shelfContainer.onscroll = null;
@@ -907,13 +1152,16 @@ var totalKg = (totalGrams / 1000).toFixed(2);
 
   window.removeGearFromPlanSlot = function(categoryId, itemIndex) {
     if (window.selectedGearMap && window.selectedGearMap[categoryId]) {
+      var removed = window.selectedGearMap[categoryId][itemIndex];
+      var removedName = (removed && (removed.name || removed.itemName)) || '';
       window.selectedGearMap[categoryId].splice(itemIndex, 1);
       if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
         window.RomanticVault.write('okbm_selected_gears_multi', window.selectedGearMap, true);
       } else {
         localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
       }
-      window.renderPlanCategorySlots();
+      window.refreshPlanPackedChrome();
+      if (removedName) window.patchGearInteractionRows(removedName);
       triggerHaptic(10);
     }
   };
@@ -979,7 +1227,7 @@ var totalKg = (totalGrams / 1000).toFixed(2);
     modal.onclick = function(e) { if (e.target === modal) window.closeGearDetailModal(); };
 
     modal.innerHTML = `
-      <div style="background:linear-gradient(180deg, #0f131f 0%, #07090e 100%); border:1px solid rgba(255,255,255,0.14); box-shadow:0 24px 60px rgba(0,0,0,0.85); border-radius:20px; width:100%; max-width:400px; padding:20px; box-sizing:border-box; display:flex; flex-direction:column; gap:13px; position:relative; max-height:88vh; overflow-y:auto;">
+      <div style="background:#0c1017; border:1px solid rgba(255,255,255,0.14); box-shadow:0 8px 24px rgba(0,0,0,0.45); border-radius:20px; width:100%; max-width:400px; padding:20px; box-sizing:border-box; display:flex; flex-direction:column; gap:13px; position:relative; max-height:88vh; overflow-y:auto; contain:content;">
         
         <!-- 상단: 카테고리 배지, 검증 배지, 닫기 버튼 -->
         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -1060,8 +1308,13 @@ var totalKg = (totalGrams / 1000).toFixed(2);
       }
     }
 
-    // 3. 마스터 캐시 맵 확인
-    var masterMap = safeGetJSON('okbm_master_gears_cache', {}) || {};
+    // 3. 마스터 메모리 맵 확인
+    var masterMap = (window.__memoryStore && window.__memoryStore['okbm_master_gears_cache']) || {};
+    if (Object.keys(masterMap).length === 0 && Array.isArray(window.CATEGORIES)) {
+      window.CATEGORIES.forEach(function(cat) {
+        if (Array.isArray(cat.db)) masterMap[cat.id] = cat.db;
+      });
+    }
     for (var catId in masterMap) {
       var list = masterMap[catId] || [];
       found = list.find(function(g) {
@@ -1071,7 +1324,7 @@ var totalKg = (totalGrams / 1000).toFixed(2);
     }
 
     // 4. 마스터 배열 확인
-    var masterList = safeGetJSON('okbm_master_gears', []) || [];
+    var masterList = (window.__memoryStore && window.__memoryStore['okbm_master_gears']) || window.GEARS_MASTER || [];
     found = masterList.find(function(g) {
       return g && (g.name || g.item_name || '').trim().toLowerCase() === targetName;
     });
@@ -1241,9 +1494,8 @@ var totalKg = (totalGrams / 1000).toFixed(2);
       } else {
         localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
       }
-      window.renderPlanCategorySlots();
-      var searchInput = document.getElementById('gearSearchFixedInput');
-      window.renderPresetGearList(searchInput ? searchInput.value : '');
+      window.refreshPlanPackedChrome();
+      window.patchGearInteractionRows(gear.name);
       if (typeof triggerHaptic === 'function') triggerHaptic(10);
     } else {
       window.addGearToCategory(gear.name, Number(gear.weight || gear.weight_g || 0));
@@ -1448,8 +1700,8 @@ var totalKg = (totalGrams / 1000).toFixed(2);
       var isAdded = countInPack > 0;
       var isFav = window.favoriteGearSet && window.favoriteGearSet.has(g.name);
 
-      var addedBadge = isAdded ? '<span style="font-size:0.58rem; font-weight:800; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); color:#f8fafc; padding:1px 5px; border-radius:4px; flex-shrink:0;">담김 ' + countInPack + '개</span>' : '';
-      var myGearBadge = isFav ? '<span style="font-size:0.58rem; font-weight:800; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#e2e8f0; padding:1px 5px; border-radius:4px; flex-shrink:0;">⭐ 내 장비</span>' : '';
+      var addedBadge = isAdded ? '<span class="gear-db-added-badge" style="font-size:0.58rem; font-weight:800; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); color:#f8fafc; padding:1px 5px; border-radius:4px; flex-shrink:0;">담김 ' + countInPack + '개</span>' : '';
+      var myGearBadge = isFav ? '<span class="gear-db-fav-badge" style="font-size:0.58rem; font-weight:800; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#e2e8f0; padding:1px 5px; border-radius:4px; flex-shrink:0;">⭐ 내 장비</span>' : '';
       var brandHtml = g.brand ? '<span style="font-size:0.60rem; font-weight:700; color:#94a3b8; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); padding:1px 4px; border-radius:3px; flex-shrink:0;">' + escapeHtml(g.brand) + '</span>' : '';
       var verifiedBadgeHtml = g.verified ? '<span style="font-size:0.58rem; font-weight:700; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:#cbd5e1; padding:1px 4px; border-radius:3px; flex-shrink:0;">실측</span>' : '';
 
@@ -1457,14 +1709,14 @@ var totalKg = (totalGrams / 1000).toFixed(2);
         <div class="gear-db-item" data-gear-name="${escapeHtml(g.name)}" data-gear-cat="${escapeHtml(category.id)}" style="${isAdded ? 'background:rgba(255,255,255,0.055); border:1px solid rgba(255,255,255,0.22);' : (isFav ? 'background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.12);' : 'background:rgba(255,255,255,0.015); border:1px solid rgba(255,255,255,0.06);')}; border-radius:10px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; cursor:pointer; user-select:none; transition:all 0.15s ease;">
           <div style="flex:1; min-width:0; padding-right:8px; display:flex; flex-direction:column; gap:2px;" onclick="event.stopPropagation(); if (!window.__longPressTriggered) window.openGearDetailFromEl(this);">
             <div style="display:flex; align-items:center; gap:5px;">
-              <button type="button" onclick="event.stopPropagation(); window.toggleFavoriteGearByIndex(${idx}, event);" style="background:none; border:none; font-size:1.0rem; cursor:pointer; padding:0 2px;">
+              <button type="button" class="gear-db-star-btn" onclick="event.stopPropagation(); window.toggleFavoriteGearByIndex(${idx}, event);" style="background:none; border:none; font-size:1.0rem; cursor:pointer; padding:0 2px;">
                 ${isFav ? '⭐' : '<span style="color:#475569; opacity:0.4;">☆</span>'}
               </button>
-              <div style="font-size:0.78rem; font-weight:800; color:${isAdded ? '#ffffff' : '#e2e8f0'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">
+              <div class="gear-db-name" style="font-size:0.78rem; font-weight:800; color:${isAdded ? '#ffffff' : '#e2e8f0'}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">
                 ${escapeHtml(g.name)}
               </div>
             </div>
-            <div style="display:flex; align-items:center; gap:4px; margin-left:24px; flex-wrap:wrap;">
+            <div class="gear-db-meta" style="display:flex; align-items:center; gap:4px; margin-left:24px; flex-wrap:wrap;">
               ${addedBadge}
               ${myGearBadge}
               ${brandHtml}
@@ -1472,13 +1724,14 @@ var totalKg = (totalGrams / 1000).toFixed(2);
             </div>
           </div>
           <div style="text-align:right; flex-shrink:0; display:flex; flex-direction:column; align-items:flex-end; gap:3px;">
-            <div style="font-size:0.86rem; font-weight:900; font-family:'JetBrains Mono', monospace; color:${isAdded ? '#f8fafc' : '#94a3b8'};">
+            <div class="gear-db-kg" style="font-size:0.86rem; font-weight:900; font-family:'JetBrains Mono', monospace; color:${isAdded ? '#f8fafc' : '#94a3b8'};">
               ${(g.weight / 1000).toFixed(2)}<span style="font-size:0.55rem; color:#64748b; margin-left:1px;">kg</span>
             </div>
+            <div class="gear-db-pack-slot">
             ${isAdded ? `
               <div style="display:flex; align-items:center; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); border-radius:16px; padding:1px 3px; gap:2px; height:24px;" onclick="event.stopPropagation();">
                 <button type="button" style="background:none; border:none; color:#ffffff; width:18px; height:18px; font-size:0.9rem; font-weight:900; cursor:pointer;" onclick="window.decrementGearByIndex(${idx}, event)">−</button>
-                <span style="font-size:0.72rem; font-weight:900; color:#ffffff; min-width:14px; text-align:center; font-family:'JetBrains Mono', monospace;">${countInPack}</span>
+                <span class="gear-db-count" style="font-size:0.72rem; font-weight:900; color:#ffffff; min-width:14px; text-align:center; font-family:'JetBrains Mono', monospace;">${countInPack}</span>
                 <button type="button" style="background:none; border:none; color:#ffffff; width:18px; height:18px; font-size:0.9rem; font-weight:900; cursor:pointer;" onclick="window.addGearByIndex(${idx}, event)">+</button>
               </div>
             ` : `
@@ -1486,6 +1739,7 @@ var totalKg = (totalGrams / 1000).toFixed(2);
                 + 담기
               </button>
             `}
+            </div>
           </div>
         </div>
       `;
@@ -1528,9 +1782,8 @@ var totalKg = (totalGrams / 1000).toFixed(2);
       localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
     }
 
-    window.renderPlanCategorySlots();
-    var searchInput = document.getElementById('gearSearchFixedInput');
-    window.renderPresetGearList(searchInput ? searchInput.value : '');
+    window.refreshPlanPackedChrome();
+    window.patchGearInteractionRows(name);
     triggerHaptic(12);
   };
 
@@ -1548,9 +1801,8 @@ var totalKg = (totalGrams / 1000).toFixed(2);
         localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(window.selectedGearMap));
       }
 
-      window.renderPlanCategorySlots();
-      var searchInput = document.getElementById('gearSearchFixedInput');
-      window.renderPresetGearList(searchInput ? searchInput.value : '');
+      window.refreshPlanPackedChrome();
+      window.patchGearInteractionRows(gearName);
       triggerHaptic(10);
     }
   };
@@ -1628,6 +1880,7 @@ window.openQuickGearRegisterModal = function(opts) {
               <option value="wear" style="background:#07090e; color:#ffffff;">의류</option>
               <option value="electronics" style="background:#07090e; color:#ffffff;">기기·소품</option>
               <option value="camp" style="background:#07090e; color:#ffffff;">테이블·체어</option>
+              <option value="other" style="background:#07090e; color:#ffffff;">기타·소품</option>
             </select>
             <div style="position:absolute; right:12px; top:50%; transform:translateY(-50%); pointer-events:none; color:#64748b; font-size:0.65rem;">▼</div>
           </div>
@@ -1795,9 +2048,7 @@ window.openQuickGearRegisterModal = function(opts) {
       localStorage.setItem('okbm_favorite_gears', JSON.stringify(Array.from(window.favoriteGearSet)));
     }
 
-    var searchInput = document.getElementById('gearSearchFixedInput');
-    window.renderPresetGearList(searchInput ? searchInput.value : '');
-    window.renderPlanCategorySlots();
+    window.patchGearInteractionRows(gearName);
     triggerHaptic(10);
   };
 
@@ -1924,16 +2175,13 @@ window.saveCurrentPackingRecord = function() {
     }
   };
 
-  var CURRENT_GEAR_VERSION = '20260920_NH_TENTS_1743';
+  var CURRENT_GEAR_VERSION = '20260920_GEARS_V4_NALGENE';
 
-  // 1. 초기 로드 시 버전 불일치 감지 -> 구버전 장비 캐시 자동 소거
+  // 1. 초기 로드 시 구버전 장비 캐시 즉시 소거 (localStorage 영구 중단, 메모리 전용화)
   (function verifyGearCacheVersion() {
     try {
-      var storedVer = localStorage.getItem('okbm_gear_version');
-      if (storedVer !== CURRENT_GEAR_VERSION) {
-        localStorage.removeItem('okbm_master_gears');
-        localStorage.removeItem('okbm_master_gears_cache');
-      }
+      localStorage.removeItem('okbm_master_gears');
+      localStorage.removeItem('okbm_master_gears_cache');
     } catch(e) {}
   })();
 
@@ -1942,26 +2190,14 @@ window.saveCurrentPackingRecord = function() {
       return;
     }
 
-    var storedVer = localStorage.getItem('okbm_gear_version');
-    var isVerMismatch = (storedVer !== CURRENT_GEAR_VERSION);
-
-    if (isVerMismatch) {
+    try {
       localStorage.removeItem('okbm_master_gears');
       localStorage.removeItem('okbm_master_gears_cache');
-      isForce = true;
-    }
+    } catch(e) {}
 
-    var cachedList = safeGetJSON('okbm_master_gears', null);
-    if (!isForce && Array.isArray(cachedList) && cachedList.length > 0) {
-      applyFetchedGears(cachedList);
-      return;
-    }
-
-    var cachedMap = safeGetJSON('okbm_master_gears_cache', null);
-    if (!isForce && cachedMap && typeof cachedMap === 'object' && Object.keys(cachedMap).length > 0) {
-      (window.CATEGORIES || []).forEach(function(cat) {
-        cat.db = cachedMap[cat.id] ? cachedMap[cat.id].slice() : [];
-      });
+    var memList = window.__memoryStore && window.__memoryStore['okbm_master_gears'];
+    if (!isForce && Array.isArray(memList) && memList.length > 0) {
+      applyFetchedGears(memList);
       return;
     }
 
@@ -2082,12 +2318,11 @@ window.saveCurrentPackingRecord = function() {
       }
     });
 
+    // 🛡️ [헌법 제1조 & 5MB 초과 방지] localStorage에 장비 마스터를 절대 저장하지 않고 메모리에만 수화(Hydrate)
     try {
-      localStorage.setItem('okbm_master_gears', JSON.stringify(compactMasterRows));
-      localStorage.setItem('okbm_master_gears_cache', JSON.stringify(sheetGearsByCategory));
-    } catch(e) {
-      console.warn('[romantic-plan.js] Master gears storage quota exceeded, memory store active', e);
-    }
+      localStorage.removeItem('okbm_master_gears');
+      localStorage.removeItem('okbm_master_gears_cache');
+    } catch(e) {}
 
     window.__memoryStore = window.__memoryStore || {};
     window.__memoryStore['okbm_master_gears'] = compactMasterRows;
@@ -2152,20 +2387,49 @@ window.saveCurrentPackingRecord = function() {
     }
   }
 
-  // 🚀 초기 로드 시 관리자 마스터 캐시 복원
+  // 🚀 초기 로드 시 런타임 메모리 스토어에서 장비 복원 및 로컬스토리지 청소
   (function initCachedGears() {
-    var storedVer = localStorage.getItem('okbm_gear_version');
-    if (storedVer === CURRENT_GEAR_VERSION) {
-      var cached = safeGetJSON('okbm_master_gears_cache', null);
-      if (cached) {
-        (window.CATEGORIES || []).forEach(function(cat) {
-          cat.db = cached[cat.id] ? cached[cat.id].slice() : [];
-        });
-      }
+    try {
+      localStorage.removeItem('okbm_master_gears');
+      localStorage.removeItem('okbm_master_gears_cache');
+    } catch (e) {}
+    var cached = window.__memoryStore && window.__memoryStore['okbm_master_gears_cache'];
+    if (cached) {
+      (window.CATEGORIES || []).forEach(function(cat) {
+        cat.db = cached[cat.id] ? cached[cat.id].slice() : [];
+      });
     }
   })();
 
   //  [실전 패킹 체크리스트 인덱스 안전 토글 엔진 - 스크롤 위치 완벽 보존]
+  window.paintChecklistRow = function(changedRow, isChecked) {
+    if (!changedRow) return;
+    changedRow.classList.toggle('checked', !!isChecked);
+    var themeBorder = changedRow.getAttribute('data-theme-border') || 'rgba(255,255,255,0.14)';
+    changedRow.style.background = isChecked ? 'rgba(253,224,71,0.05)' : 'rgba(15,23,42,0.5)';
+    changedRow.style.border = '1px solid ' + (isChecked ? 'rgba(253,224,71,0.3)' : 'rgba(255,255,255,0.08)');
+    changedRow.style.borderLeft = isChecked ? '2px solid rgba(253,224,71,0.85)' : ('2px solid ' + themeBorder);
+
+    var chkIcon = changedRow.querySelector('.check-icon') || changedRow.querySelector('.checklist-checkbox-box');
+    if (chkIcon) {
+      chkIcon.innerHTML = isChecked ? '✓' : '';
+      chkIcon.style.border = '1.2px solid ' + (isChecked ? '#fde047' : 'rgba(255,255,255,0.3)');
+      chkIcon.style.background = isChecked ? 'linear-gradient(135deg, #fde047 0%, #f59e0b 100%)' : 'rgba(0,0,0,0.35)';
+    }
+
+    var nameEl = changedRow.querySelector('.checklist-item-name');
+    if (nameEl) {
+      nameEl.style.color = isChecked ? '#94a3b8' : '#ffffff';
+      nameEl.style.textDecoration = isChecked ? 'line-through' : 'none';
+    }
+    var weightEl = changedRow.querySelector('.checklist-item-weight');
+    if (weightEl) {
+      weightEl.style.color = isChecked ? '#94a3b8' : (changedRow.getAttribute('data-theme-color') || '#cbd5e1');
+      weightEl.style.background = isChecked ? 'rgba(255,255,255,0.04)' : (changedRow.getAttribute('data-theme-bg') || 'rgba(255,255,255,0.06)');
+      weightEl.style.borderColor = isChecked ? 'rgba(255,255,255,0.1)' : (changedRow.getAttribute('data-theme-border') || 'rgba(255,255,255,0.14)');
+    }
+  };
+
   window.togglePackCheckByIndex = function(itemIdx) {
     var now = new Date();
     var targetDate = window.activeSelectedDateKey || (now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0'));
@@ -2209,31 +2473,7 @@ window.saveCurrentPackingRecord = function() {
     // 🛡️ [성능 패치] 체크박스 토글 시 전체 리렌더 대신 부분 업데이트
     var changedRow = document.querySelector('[data-check-idx="' + itemIdx + '"]');
     if (changedRow) {
-      var isChecked = window.packedCheckSet.has(checkKey);
-      changedRow.classList.toggle('checked', isChecked);
-      var themeBorder = changedRow.getAttribute('data-theme-border') || 'rgba(255,255,255,0.14)';
-      changedRow.style.background = isChecked ? 'rgba(253,224,71,0.05)' : 'rgba(15,23,42,0.5)';
-      changedRow.style.border = '1px solid ' + (isChecked ? 'rgba(253,224,71,0.3)' : 'rgba(255,255,255,0.08)');
-      changedRow.style.borderLeft = isChecked ? '2px solid rgba(253,224,71,0.85)' : ('2px solid ' + themeBorder);
-
-      var chkIcon = changedRow.querySelector('.check-icon') || changedRow.querySelector('.checklist-checkbox-box');
-      if (chkIcon) {
-        chkIcon.innerHTML = isChecked ? '✓' : '';
-        chkIcon.style.border = '1.2px solid ' + (isChecked ? '#fde047' : 'rgba(255,255,255,0.3)');
-        chkIcon.style.background = isChecked ? 'linear-gradient(135deg, #fde047 0%, #f59e0b 100%)' : 'rgba(0,0,0,0.35)';
-      }
-
-      var nameEl = changedRow.querySelector('.checklist-item-name');
-      if (nameEl) {
-        nameEl.style.color = isChecked ? '#94a3b8' : '#ffffff';
-        nameEl.style.textDecoration = isChecked ? 'line-through' : 'none';
-      }
-      var weightEl = changedRow.querySelector('.checklist-item-weight');
-      if (weightEl) {
-        weightEl.style.color = isChecked ? '#94a3b8' : (changedRow.getAttribute('data-theme-color') || '#cbd5e1');
-        weightEl.style.background = isChecked ? 'rgba(255,255,255,0.04)' : (changedRow.getAttribute('data-theme-bg') || 'rgba(255,255,255,0.06)');
-        weightEl.style.borderColor = isChecked ? 'rgba(255,255,255,0.1)' : (changedRow.getAttribute('data-theme-border') || 'rgba(255,255,255,0.14)');
-      }
+      window.paintChecklistRow(changedRow, window.packedCheckSet.has(checkKey));
     } else {
       var scrollBox = document.getElementById('checklistItemsScrollContainer');
       var savedScroll = scrollBox ? scrollBox.scrollTop : 0;
@@ -2242,7 +2482,6 @@ window.saveCurrentPackingRecord = function() {
       if (newScrollBox) newScrollBox.scrollTop = savedScroll;
       return;
     }
-    // 통계 바만 갱신
     if (typeof window.updateChecklistProgressBar === 'function') {
       window.updateChecklistProgressBar();
     }
@@ -2328,7 +2567,17 @@ window.saveCurrentPackingRecord = function() {
       localStorage.setItem('okbm_packed_checks', JSON.stringify(packedArr));
     }
     triggerHaptic(12);
-    window.renderPlanStage();
+    var rows = document.querySelectorAll('#checklistItemsScrollContainer .checklist-item-row');
+    if (rows.length) {
+      for (var r = 0; r < rows.length; r++) {
+        window.paintChecklistRow(rows[r], shouldCheck);
+      }
+      if (typeof window.updateChecklistProgressBar === 'function') {
+        window.updateChecklistProgressBar();
+      }
+    } else {
+      window.renderPlanStage();
+    }
   };
 
   window.addChecklistConsumableItem = function() {
@@ -2607,7 +2856,7 @@ window.saveCurrentPackingRecord = function() {
     var rawPlanSpotsObj = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
       ? window.RomanticVault.read('okbm_plan_spots', {})
       : safeGetJSON('okbm_plan_spots', {}) || {};
-    var planSpotsObj = rawPlanSpotsObj || {};
+    var planSpotsObj = persistSanitizedPlanSpots(rawPlanSpotsObj || {});
 
     function resolveSpotAndMemo(targetDateStr) {
       var sName = '';
@@ -2630,8 +2879,12 @@ window.saveCurrentPackingRecord = function() {
         });
         if (hRec) {
           if (hRec.spot && hRec.spot !== '자유 일정' && hRec.spot !== '나의 힐링 스팟') {
-            sName = hRec.spot;
-            sElev = hRec.elevation || '';
+            sName = unescapePlanText(hRec.spot);
+            sElev = unescapePlanText(hRec.elevation || '');
+            if (typeof window.okbmIsXssProbeSpotName === 'function' && window.okbmIsXssProbeSpotName(sName)) {
+              sName = '';
+              sElev = '';
+            }
           }
           sMemo = String(hRec.memo || hRec.oneLineMemo || '').trim();
           isComp = Boolean(window.hasRecordFieldPhotos && window.hasRecordFieldPhotos(hRec, targetDateStr));
@@ -2643,8 +2896,12 @@ window.saveCurrentPackingRecord = function() {
         var rawS = planSpotsObj[targetDateStr];
         var sArr = Array.isArray(rawS) ? rawS : (rawS && rawS.name ? [rawS] : []);
         if (sArr.length > 0 && sArr[0].name) {
-          sName = sArr[0].name;
-          if (sArr[0].elevation) sElev = sArr[0].elevation;
+          sName = unescapePlanText(sArr[0].name);
+          if (sArr[0].elevation) sElev = unescapePlanText(sArr[0].elevation);
+          if (typeof window.okbmIsXssProbeSpotName === 'function' && window.okbmIsXssProbeSpotName(sName)) {
+            sName = '';
+            sElev = '';
+          }
         }
       }
 
@@ -2668,7 +2925,7 @@ window.saveCurrentPackingRecord = function() {
       if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
         var dTarget = String(targetDateStr).replace(/[-/]/g, '.');
         var curProfile = safeGetJSON('user_profile', null);
-        var curUid = (curProfile && curProfile.id) ? String(curProfile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+        var curUid = (typeof window.okbmGetCurrentUserId === 'function') ? String(window.okbmGetCurrentUserId() || '').trim() : '';
         var curNick = (curProfile && curProfile.nickname) ? String(curProfile.nickname).trim() : (localStorage.getItem('okbm_user_nick') || '');
         liveTrip = window.TRIP_JOINS_DATABASE.find(function(t) {
           if (!t || !t.date || !t.tripId) return false;
@@ -2704,7 +2961,7 @@ window.saveCurrentPackingRecord = function() {
     var allFutureDates = [];
 
     var curProfile = safeGetJSON('user_profile', null);
-    var curUid = (curProfile && curProfile.id) ? String(curProfile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+    var curUid = (typeof window.okbmGetCurrentUserId === 'function') ? String(window.okbmGetCurrentUserId() || '').trim() : '';
     var curNick = (curProfile && curProfile.nickname) ? String(curProfile.nickname).trim() : (localStorage.getItem('okbm_user_nick') || '');
 
     var tripDatesList = (Array.isArray(window.TRIP_JOINS_DATABASE) ? window.TRIP_JOINS_DATABASE : [])
@@ -2780,8 +3037,8 @@ window.saveCurrentPackingRecord = function() {
               ${activeSpotInfo.name ? `
                 <span style="color:#64748b; font-size:0.70rem; line-height:1; display:inline-flex; align-items:center;">·</span>
                 <span style="display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; line-height:1; color:#fcd34d;">${UI_ICONS.pin}</span>
-                <span style="line-height:1; display:inline-flex; align-items:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#ffffff; font-weight:800;">${escapeHtml(activeSpotInfo.name)}</span>
-                ${activeSpotInfo.elevation ? `<span style="font-size:0.70rem; color:#94a3b8; font-weight:700;">(${escapeHtml(activeSpotInfo.elevation)})</span>` : ''}
+                <span style="line-height:1; display:inline-flex; align-items:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#ffffff; font-weight:800;">${planSpotLabel(activeSpotInfo.name)}</span>
+                ${activeSpotInfo.elevation ? `<span style="font-size:0.70rem; color:#94a3b8; font-weight:700;">(${planSpotLabel(activeSpotInfo.elevation)})</span>` : ''}
               ` : ''}
             </div>
           </div>
@@ -2797,7 +3054,7 @@ window.saveCurrentPackingRecord = function() {
       var aIcon = activeSpotInfo.isTrip ? UI_ICONS.gnbLogo : UI_ICONS.pin;
 
       dDayBadgeHtml = `
-        <div onclick="window.startPackingForDate('${activeDateStr}', '${escapeHtml(aTitle)}');" style="background:linear-gradient(90deg, rgba(56,189,248,0.08) 0%, rgba(255,255,255,0.03) 100%); border:1.2px solid rgba(56,189,248,0.42); border-radius:10px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0; box-sizing:border-box; box-shadow:0 4px 18px rgba(0,0,0,0.6), 0 0 14px rgba(56,189,248,0.14); transition:all 0.15s ease;">
+        <div class="js-start-packing" data-date="${escapeHtml(activeDateStr)}" data-title="${escapeHtml(aTitle)}" data-elevation="${escapeHtml(activeSpotInfo.elevation || '')}" style="background:linear-gradient(90deg, rgba(56,189,248,0.08) 0%, rgba(255,255,255,0.03) 100%); border:1.2px solid rgba(56,189,248,0.42); border-radius:10px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0; box-sizing:border-box; box-shadow:0 4px 18px rgba(0,0,0,0.6), 0 0 14px rgba(56,189,248,0.14); transition:all 0.15s ease;">
           <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1; line-height:1;">
             <span style="height:20px; font-size:0.72rem; font-family:'Space Grotesk', sans-serif; font-weight:900; color:#000000; background:#ffffff; padding:0 7px; border-radius:4px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 0 10px rgba(255,255,255,0.6); line-height:1;">
               ${aDText}
@@ -2806,8 +3063,8 @@ window.saveCurrentPackingRecord = function() {
               <span style="line-height:1; display:inline-flex; align-items:center;">${activeDateStr}</span>
               <span style="color:#64748b; font-size:0.70rem; line-height:1; display:inline-flex; align-items:center;">·</span>
               <span style="display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; line-height:1;">${aIcon}</span>
-              <span style="line-height:1; display:inline-flex; align-items:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:900;">${escapeHtml(aTitle)}</span>
-              ${activeSpotInfo.elevation ? `<span style="font-size:0.70rem; color:#94a3b8; font-weight:700;">(${escapeHtml(activeSpotInfo.elevation)})</span>` : ''}
+              <span style="line-height:1; display:inline-flex; align-items:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:900;">${planSpotLabel(aTitle)}</span>
+              ${activeSpotInfo.elevation ? `<span style="font-size:0.70rem; color:#94a3b8; font-weight:700;">(${planSpotLabel(activeSpotInfo.elevation)})</span>` : ''}
             </div>
           </div>
           <span style="font-size:0.68rem; color:#38bdf8; font-weight:800; flex-shrink:0; display:inline-flex; align-items:center; line-height:1; margin-left:8px;">패킹하기</span>
@@ -2820,7 +3077,7 @@ window.saveCurrentPackingRecord = function() {
       var nIcon = nearestTrip.isTrip ? UI_ICONS.gnbLogo : UI_ICONS.pin;
 
       dDayBadgeHtml = `
-        <div onclick="window.startPackingForDate('${nearestTrip.dateKey}', '${escapeHtml(tripTitle)}');" style="background:linear-gradient(90deg, rgba(56,189,248,0.08) 0%, rgba(255,255,255,0.03) 100%); border:1.2px solid rgba(56,189,248,0.42); border-radius:10px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0; box-sizing:border-box; box-shadow:0 4px 18px rgba(0,0,0,0.6), 0 0 14px rgba(56,189,248,0.14); transition:all 0.15s ease;">
+        <div class="js-start-packing" data-date="${escapeHtml(nearestTrip.dateKey)}" data-title="${escapeHtml(tripTitle)}" data-elevation="${escapeHtml(nearestTrip.elevation || '')}" style="background:linear-gradient(90deg, rgba(56,189,248,0.08) 0%, rgba(255,255,255,0.03) 100%); border:1.2px solid rgba(56,189,248,0.42); border-radius:10px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0; box-sizing:border-box; box-shadow:0 4px 18px rgba(0,0,0,0.6), 0 0 14px rgba(56,189,248,0.14); transition:all 0.15s ease;">
           <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1; line-height:1;">
             <span style="height:20px; font-size:0.72rem; font-family:'Space Grotesk', sans-serif; font-weight:900; color:#000000; background:#ffffff; padding:0 7px; border-radius:4px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 0 10px rgba(255,255,255,0.6); line-height:1;">
               ${dText}
@@ -2829,8 +3086,8 @@ window.saveCurrentPackingRecord = function() {
               <span style="line-height:1; display:inline-flex; align-items:center;">${nearestTrip.dateKey}</span>
               <span style="color:#64748b; font-size:0.70rem; line-height:1; display:inline-flex; align-items:center;">·</span>
               <span style="display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; line-height:1;">${nIcon}</span>
-              <span style="line-height:1; display:inline-flex; align-items:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:900;">${escapeHtml(tripTitle)}</span>
-              ${nearestTrip.elevation ? `<span style="font-size:0.70rem; color:#94a3b8; font-weight:700;">(${escapeHtml(nearestTrip.elevation)})</span>` : ''}
+              <span style="line-height:1; display:inline-flex; align-items:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:900;">${planSpotLabel(tripTitle)}</span>
+              ${nearestTrip.elevation ? `<span style="font-size:0.70rem; color:#94a3b8; font-weight:700;">(${planSpotLabel(nearestTrip.elevation)})</span>` : ''}
             </div>
           </div>
           <span style="font-size:0.68rem; color:#38bdf8; font-weight:800; flex-shrink:0; display:inline-flex; align-items:center; line-height:1; margin-left:8px;">패킹하기</span>
@@ -2992,9 +3249,9 @@ window.saveCurrentPackingRecord = function() {
                   (planSpotsObj[activeDateStr] && (Array.isArray(planSpotsObj[activeDateStr]) ? planSpotsObj[activeDateStr].length > 0 : planSpotsObj[activeDateStr].name)) ||
                   activeSpotInfo.name || activeSpotInfo.isCompleted);
                 if (!hasAnyData) return '';
-                return '<button type="button" onclick="window.clearEntireDaySchedule(\'' + activeDateStr + '\');" style="height:24px; padding:0 8px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.3); color:#f43f5e; font-size:0.68rem; font-weight:800; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:3px;">' + UI_ICONS.trash + '<span>삭제</span></button>';
+                return '<button type="button" class="js-clear-day-schedule" data-date="' + escapeHtml(activeDateStr) + '" style="height:24px; padding:0 8px; background:rgba(244,63,94,0.12); border:1px solid rgba(244,63,94,0.3); color:#f43f5e; font-size:0.68rem; font-weight:800; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:3px;">' + UI_ICONS.trash + '<span>삭제</span></button>';
               })()}
-              <button type="button" onclick="window.savePlanMemo('${activeDateStr}');" style="height:24px; padding:0 9px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#f8fafc; font-size:0.68rem; font-weight:800; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:3px;">
+              <button type="button" class="js-save-plan-memo" data-date="${escapeHtml(activeDateStr)}" style="height:24px; padding:0 9px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#f8fafc; font-size:0.68rem; font-weight:800; border-radius:6px; cursor:pointer; display:flex; align-items:center; gap:3px;">
                 ${UI_ICONS.check}
                 <span>저장</span>
               </button>
@@ -3014,7 +3271,7 @@ window.saveCurrentPackingRecord = function() {
               if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
                 var dTarget = String(activeDateStr).replace(/[-/]/g, '.');
                 var curProf = safeGetJSON('user_profile', null);
-                var rawActiveUid = (curProf && curProf.id) ? String(curProf.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+                var rawActiveUid = (typeof window.okbmGetCurrentUserId === 'function') ? String(window.okbmGetCurrentUserId() || '').trim() : '';
                 var activeNick = (curProf && curProf.nickname) ? String(curProf.nickname).trim() : (localStorage.getItem('okbm_user_nick') || '');
 
                 window.TRIP_JOINS_DATABASE.forEach(function(t) {
@@ -3057,18 +3314,21 @@ window.saveCurrentPackingRecord = function() {
               var completedSvgIcon = '<svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:#f59e0b; stroke:#d97706; stroke-width:1; flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
 
               var chipsHtml = spotArray.map(function(s) {
-                var dispElev = s.elevation ? (' (' + s.elevation + ')') : '';
+                var cleanName = unescapePlanText(s.name || '');
+                var cleanElev = unescapePlanText(s.elevation || '');
+                if (!cleanName || (typeof window.okbmIsXssProbeSpotName === 'function' && window.okbmIsXssProbeSpotName(cleanName))) return '';
+                var dispElev = cleanElev ? (' (' + cleanElev + ')') : '';
                 var isCompletedSpot = Boolean(s.isCompleted || (activeSpotInfo && activeSpotInfo.isCompleted && s.name === activeSpotInfo.name));
                 var isExpedition = Boolean(s.isTrip || s.tripId);
                 var chipIcon = isCompletedSpot ? completedSvgIcon : (isExpedition ? UI_ICONS.gnbLogo : pinSvgIcon);
                 var chipBorder = isCompletedSpot ? 'rgba(245,158,11,0.5)' : (isExpedition ? 'rgba(56,189,248,0.45)' : 'rgba(255,255,255,0.12)');
                 var chipBg = isCompletedSpot ? 'rgba(245,158,11,0.14)' : (isExpedition ? 'rgba(56,189,248,0.10)' : 'rgba(255,255,255,0.05)');
 
-                var safeSName = escapeHtml(s.name);
+                var safeSName = planSpotLabel(cleanName);
                 var safeTripId = escapeHtml(s.tripId || '');
                 return '<div style="display:inline-flex; align-items:center; gap:5px; background:' + chipBg + '; border:1px solid ' + chipBorder + '; padding:3px 8px; border-radius:12px; font-size:0.78rem; font-weight:800; color:#ffffff;">' +
                   '<span style="display:inline-flex; align-items:center; flex-shrink:0;">' + chipIcon + '</span>' +
-                  '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px; color:#ffffff;">' + escapeHtml(s.name + dispElev) + '</span>' +
+                  '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px; color:#ffffff;">' + planSpotLabel(cleanName + dispElev) + '</span>' +
                   (s.isHistory ? '' : ('<button type="button" data-date="' + escapeHtml(activeDateStr) + '" data-spot="' + safeSName + '" data-trip-id="' + safeTripId + '" onclick="window.removeIndividualPlanSpot(this.dataset.date, this.dataset.spot, event, this.dataset.tripId)" style="background:none; border:none; color:#94a3b8; font-size:0.75rem; font-weight:900; cursor:pointer; padding:0 2px; margin-left:2px; line-height:1;">✕</button>')) +
                 '</div>';
               }).join('');
@@ -3119,7 +3379,7 @@ window.saveCurrentPackingRecord = function() {
             </div>
             <button type="button" onclick="window.closeBookmarksBottomSheet();" style="background:none; border:none; color:#64748b; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
           </div>
-          <div id="planBookmarkSheetList" style="flex:1; overflow-y:auto; padding:10px 14px; display:flex; flex-direction:column; gap:6px; overscroll-behavior-y:contain; -webkit-overflow-scrolling:touch;"></div>
+          <div id="planBookmarkSheetList" style="flex:1; overflow-y:auto; padding:10px 14px; display:flex; flex-direction:column; gap:6px; overscroll-behavior-y:contain; -webkit-overflow-scrolling:touch; contain:content;"></div>
         </div>
       </div>
     `;
@@ -3150,12 +3410,12 @@ window.saveCurrentPackingRecord = function() {
         var safeName = escapeHtml(s.name);
         var safeElev = escapeHtml(s.elevation);
         return `
-          <div data-spot="${safeName}" onclick="localStorage.setItem('okbm_target_spot', this.dataset.spot); location.href='map.html?spot=' + encodeURIComponent(this.dataset.spot);" style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:9px 11px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0; transition:all 0.15s ease;">
+          <div class="js-open-spot-map" data-spot="${safeName}" data-save-target="1" style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:9px 11px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0; transition:all 0.15s ease;">
             <div style="flex:1; min-width:0; padding-right:8px;">
               <div style="font-size:0.80rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeName}</div>
               <div style="font-size:0.60rem; color:#64748b; margin-top:2px;">위치: ${safeElev} · <span style="color:#94a3b8; text-decoration:underline;">지도 보기</span></div>
             </div>
-            <button type="button" data-spot="${safeName}" data-elevation="${safeElev}" onclick="event.stopPropagation(); window.selectPlanDestination(this.dataset.spot, this.dataset.elevation);" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#f1f5f9; font-size:0.68rem; font-weight:800; padding:5px 10px; border-radius:6px; cursor:pointer; flex-shrink:0; white-space:nowrap;">
+            <button type="button" class="js-select-plan-dest" data-spot="${safeName}" data-elevation="${safeElev}" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.18); color:#f1f5f9; font-size:0.68rem; font-weight:800; padding:5px 10px; border-radius:6px; cursor:pointer; flex-shrink:0; white-space:nowrap;">
               일정 등록
             </button>
           </div>
@@ -3183,7 +3443,8 @@ window.saveCurrentPackingRecord = function() {
       kitchen:     { color: '#fb923c', bg: 'rgba(251, 146, 60, 0.09)', border: 'rgba(251, 146, 60, 0.28)' },
       wear:        { color: '#c084fc', bg: 'rgba(192, 132, 252, 0.09)', border: 'rgba(192, 132, 252, 0.28)' },
       electronics: { color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.09)', border: 'rgba(56, 189, 248, 0.28)' },
-      camp:        { color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.09)', border: 'rgba(56, 189, 248, 0.28)' }
+      camp:        { color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.09)', border: 'rgba(56, 189, 248, 0.28)' },
+      other:       { color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.09)', border: 'rgba(148, 163, 184, 0.28)' }
     };
 
     var spotTitle = (activeSpotInfo && activeSpotInfo.name)
@@ -3221,7 +3482,7 @@ window.saveCurrentPackingRecord = function() {
         </div>
 
         <!-- 📋 2. 체크리스트 목록 영역 -->
-        <div id="checklistItemsScrollContainer" style="flex:1 1 0% !important; min-height:0 !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; overscroll-behavior-y:contain !important; overscroll-behavior:contain !important; touch-action:pan-y !important; display:flex; flex-direction:column; gap:5px; padding-right:2px;">
+        <div id="checklistItemsScrollContainer" style="flex:1 1 0% !important; min-height:0 !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; overscroll-behavior-y:contain !important; overscroll-behavior:contain !important; touch-action:pan-y !important; contain:content; display:flex; flex-direction:column; gap:5px; padding-right:2px;">
         ${planItems.map(function(it, idx) {
             var checkKey = activeDateStr + '__' + it.name;
             var isChecked = window.packedCheckSet && window.packedCheckSet.has(checkKey);
@@ -3327,7 +3588,7 @@ window.saveCurrentPackingRecord = function() {
       var customOptionHtml = '';
       if (rawQ.length >= 1) {
         customOptionHtml = `
-          <div onclick="window.applySelectedCalcSpot('${escapeHtml(rawQ)}', '')" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:11px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; min-height:46px; box-sizing:border-box;">
+          <div class="js-apply-calc-spot" data-spot="${escapeHtml(rawQ)}" data-elevation="" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:11px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; min-height:46px; box-sizing:border-box;">
             <div style="min-width:0; flex:1; padding-right:10px;">
               <div style="font-size:0.86rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                 + "${escapeHtml(rawQ)}" 직접 지정
@@ -3356,7 +3617,7 @@ window.saveCurrentPackingRecord = function() {
         var elev = s.elevation ? (String(s.elevation).includes('m') ? s.elevation : (s.elevation + 'm')) : '';
         var region = s.address || s.region || '';
         return `
-          <div onclick="window.applySelectedCalcSpot('${escapeHtml(name)}', '${escapeHtml(elev)}')" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; min-height:46px; box-sizing:border-box;">
+          <div class="js-apply-calc-spot" data-spot="${escapeHtml(name)}" data-elevation="${escapeHtml(elev)}" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; min-height:46px; box-sizing:border-box;">
             <div style="min-width:0; flex:1; padding-right:10px;">
               <div style="font-size:0.84rem; font-weight:800; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                 ${escapeHtml(name)} ${elev ? `<span style="font-size:0.72rem; color:#94a3b8; font-weight:700;">(${escapeHtml(elev)})</span>` : ''}
@@ -3372,6 +3633,12 @@ window.saveCurrentPackingRecord = function() {
     };
 
     window.applySelectedCalcSpot = function(name, elev) {
+      name = unescapePlanText(name || '');
+      elev = unescapePlanText(elev || '');
+      if (!name || (typeof window.okbmIsXssProbeSpotName === 'function' && window.okbmIsXssProbeSpotName(name))) {
+        if (typeof showToast === 'function') showToast('올바른 장소명을 입력해 주세요.', 'warn');
+        return;
+      }
       window.currentLuckySpot = { name: name, elevation: elev || '' };
       var curDate = window.activeSelectedDateKey;
       if (curDate) {
@@ -3609,7 +3876,7 @@ window.saveCurrentPackingRecord = function() {
                 var safeElev = escapeHtml(s.elevation);
                 var safeMeta = escapeHtml(s.metaLine);
                 return `
-                  <div data-spot="${safeName}" onclick="location.href='map.html?spot=' + encodeURIComponent(this.dataset.spot);" style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.08); border-left:1.5px solid rgba(217,180,99,0.6); border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0;">
+                  <div class="js-open-spot-map" data-spot="${safeName}" style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.08); border-left:1.5px solid rgba(217,180,99,0.6); border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; flex-shrink:0;">
                     <div style="flex:1; min-width:0; padding-right:10px;">
                       <div style="font-size:0.82rem; font-weight:900; color:#f8fafc; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                         ${safeName}
@@ -3618,7 +3885,7 @@ window.saveCurrentPackingRecord = function() {
                         ${safeMeta}
                       </div>
                     </div>
-                    <button type="button" data-spot="${safeName}" data-elevation="${safeElev}" onclick="event.stopPropagation(); window.selectPlanDestination(this.dataset.spot, this.dataset.elevation);" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.18); color:#e2e8f0; font-size:0.68rem; font-weight:800; padding:5px 10px; border-radius:6px; cursor:pointer; flex-shrink:0; white-space:nowrap; transition:all 0.15s ease;">
+                    <button type="button" class="js-select-plan-dest" data-spot="${safeName}" data-elevation="${safeElev}" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.18); color:#e2e8f0; font-size:0.68rem; font-weight:800; padding:5px 10px; border-radius:6px; cursor:pointer; flex-shrink:0; white-space:nowrap; transition:all 0.15s ease;">
                       목적지로 설정
                     </button>
                   </div>
@@ -3672,7 +3939,8 @@ window.saveCurrentPackingRecord = function() {
       { id: 'kitchen', label: '취사' },
       { id: 'wear', label: '의류' },
       { id: 'electronics', label: '기기·소품' },
-      { id: 'camp', label: '테이블·체어' }
+      { id: 'camp', label: '테이블·체어' },
+      { id: 'other', label: '기타·소품' }
     ];
 
     var currentCatChip = catChips.find(function(c) { return c.id === activeCatFilter; });
@@ -3696,7 +3964,7 @@ window.saveCurrentPackingRecord = function() {
     }).join('');
 
     var gearsViewHtml = `
-      <div id="planGearsScrollArea" style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:8px; padding:2px 0; overflow-y:auto !important; overscroll-behavior:none !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; box-sizing:border-box;">
+      <div id="planGearsScrollArea" style="flex:1 1 0% !important; min-height:0 !important; width:100%; display:flex; flex-direction:column; gap:8px; padding:2px 0; overflow-y:auto !important; overscroll-behavior:none !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; contain:content; box-sizing:border-box;">
         
         <div style="background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.18); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; box-sizing:border-box;">
           <div style="display:flex; flex-direction:column; gap:2px;">
@@ -4615,7 +4883,7 @@ window.clearEntireDaySchedule = function(dateKey) {
     var altDate = String(dateKey).replace(/[./]/g, '-');
 
     var curProf = safeGetJSON('user_profile', null);
-    var rawActiveUid = (curProf && curProf.id) ? String(curProf.id).trim() : (localStorage.getItem('okbm_user_id') || '');
+    var rawActiveUid = (typeof window.okbmGetCurrentUserId === 'function') ? String(window.okbmGetCurrentUserId() || '').trim() : '';
     var activeNick = (curProf && curProf.nickname) ? String(curProf.nickname).trim() : (localStorage.getItem('okbm_user_nick') || '');
 
     var deletedTripIds = [];
@@ -4723,7 +4991,10 @@ window.clearEntireDaySchedule = function(dateKey) {
       window.__allLoadedFeeds = window.__allLoadedFeeds.filter(function(f) {
         return f && !deletedRecordIds.includes(String(f.id).trim());
       });
-      try { localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(window.__allLoadedFeeds)); } catch(e) {}
+      try {
+        var topFeeds = window.__allLoadedFeeds.slice(0, 15);
+        localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(topFeeds));
+      } catch(e) {}
     }
     if (Array.isArray(window.heroTopRecords)) {
       window.heroTopRecords = window.heroTopRecords.filter(function(f) {
@@ -4846,7 +5117,7 @@ window.clearEntireDaySchedule = function(dateKey) {
     hud.id = 'datePickGuideHud';
     hud.style.cssText = 'position:fixed !important; top:calc(31% + 14px) !important; left:50% !important; transform:translateX(-50%) !important; z-index:10000020 !important; display:flex !important; align-items:center !important; gap:8px !important; background:#0d121d !important; border:1.5px solid rgba(56,189,248,0.75) !important; border-radius:24px !important; height:42px !important; padding:0 10px 0 12px !important; box-shadow:0 8px 30px rgba(0,0,0,0.9), 0 0 14px rgba(56,189,248,0.25) !important; box-sizing:border-box !important; max-width:calc(100vw - 24px) !important; white-space:nowrap !important; pointer-events:auto !important;';
 
-    var safeSpot = escapeHtml(spotName);
+    var safeSpot = planSpotLabel(spotName);
     var pinSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:15px; height:15px; flex-shrink:0; vertical-align:-1px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
 
     hud.innerHTML = `
@@ -4961,6 +5232,9 @@ window.commitPlanDestination = function(dateKey) {
     if (modal) modal.remove();
 
     if (!dest) return;
+    dest.name = unescapePlanText(dest.name || '');
+    dest.elevation = unescapePlanText(dest.elevation || '');
+    if (!dest.name || (typeof window.okbmIsXssProbeSpotName === 'function' && window.okbmIsXssProbeSpotName(dest.name))) return;
     if (typeof window.okbmUnmarkDeletedDate === 'function') {
       window.okbmUnmarkDeletedDate(dateKey);
     }
@@ -5082,6 +5356,10 @@ window.commitPlanDestination = function(dateKey) {
     if (historyModal) {
       historyModal.style.setProperty('display', 'none', 'important');
     }
+    window.__okbmHistoryModalOpen = false;
+    if (typeof window.okbmReleaseReelFeedObserver === 'function') {
+      window.okbmReleaseReelFeedObserver();
+    }
 
     ['pastTripsListModal', 'singleTripFeedModal', 'clearMapModal', 'myReportModal', 'tripActionActionSheet'].forEach(function(mId) {
       var el = document.getElementById(mId);
@@ -5107,6 +5385,7 @@ window.commitPlanDestination = function(dateKey) {
     document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
     document.body.classList.add('plan-modal-open');
+    if (typeof window.okbmStartNotifPoll === 'function') window.okbmStartNotifPoll();
 
     if (typeof window.ensureMasterBottomDock === 'function') {
       window.ensureMasterBottomDock('plan');
@@ -5132,6 +5411,9 @@ window.commitPlanDestination = function(dateKey) {
   };
 
   window.closePlanModal = function() {
+    if (typeof window.okbmCleanupModalWatchers === 'function') {
+      window.okbmCleanupModalWatchers();
+    }
     var memoInput = document.getElementById('planDailyMemoInput');
     if (memoInput && typeof window.autoSavePlanMemo === 'function') {
       var memoDate = window.activeSelectedDateKey || '';
@@ -5150,6 +5432,11 @@ window.commitPlanDestination = function(dateKey) {
     var isMap = (typeof window.location !== 'undefined') && window.location.pathname.includes('map.html');
     if (typeof window.ensureMasterBottomDock === 'function') {
       window.ensureMasterBottomDock(isMap ? 'map' : 'router');
+    }
+    var histStillOpen = document.getElementById('romanticHistoryModal');
+    if (window.__okbmHistoryModalOpen && histStillOpen && histStillOpen.style.display !== 'none') {
+      if (typeof window.okbmStartNotifPoll === 'function') window.okbmStartNotifPoll();
+      if (typeof window.okbmBindReelFeedObserver === 'function') window.okbmBindReelFeedObserver();
     }
     triggerHaptic(10);
   };
