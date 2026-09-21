@@ -141,6 +141,37 @@ window.escapeHtml = window.escapeHtml || function(t) {
     .replace(/'/g, '&#39;');
 };
 
+var OKBM_USER_BIO_MAX = 100;
+
+function okbmNormalizeUserBio(text) {
+  var s = String(text == null ? '' : text);
+  s = s.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  s = s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
+  s = s.replace(/\n{3,}/g, '\n\n').trim();
+  if (s.length > OKBM_USER_BIO_MAX) s = s.slice(0, OKBM_USER_BIO_MAX);
+  return s;
+}
+
+function okbmSafeImageUrl(url) {
+  var raw = String(url == null ? '' : url).trim();
+  if (!raw) return '';
+  if (/[\u0000-\u001F\u007F<>"'\\\s]/.test(raw)) return '';
+  try {
+    var parsed = new URL(raw);
+    if (parsed.protocol !== 'https:') return '';
+    if (parsed.username || parsed.password) return '';
+    var href = String(parsed.href || '').trim();
+    if (!href || href.indexOf('https://') !== 0) return '';
+    if (/[\u0000-\u001F\u007F<>"'\\]/.test(href)) return '';
+    return encodeURI(href);
+  } catch (e) {
+    return '';
+  }
+}
+
+window.okbmNormalizeUserBio = okbmNormalizeUserBio;
+window.okbmSafeImageUrl = okbmSafeImageUrl;
+
 window.applySmartPhotoFit = window.applySmartPhotoFit || function(img) {
   if (!img) return;
   if (img.naturalWidth > 0 && img.naturalHeight > 0) {
@@ -3009,8 +3040,8 @@ window.renderUserProfileHeaderSection = function(config) {
   var isOwner = Boolean(config && config.isOwner);
   if (uid && me && uid !== me) isOwner = false;
   var nick = String((config && config.nickname) || (isOwner ? '야영자' : '루터')).trim();
-  var bio = String((config && config.bio) || '').trim();
-  var photoUrl = (config && config.photoUrl && String(config.photoUrl).startsWith('http')) ? String(config.photoUrl).trim() : '';
+  var bio = okbmNormalizeUserBio((config && config.bio) || '');
+  var photoUrl = okbmSafeImageUrl(config && config.photoUrl);
   var feedCount = (config && typeof config.feedCount === 'number') ? config.feedCount : 0;
 
   var snsHtml = '';
@@ -3072,7 +3103,7 @@ window.renderUserProfileHeaderSection = function(config) {
     '<div style="display:flex; justify-content:space-between; align-items:center; gap:16px;">' +
       '<div style="flex:1 1 0%; min-width:0; display:flex; flex-direction:column; gap:6px;">' +
         '<div ' + bioClickAttr + ' style="' + bioCursor + 'background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:9px 10px; min-height:68px; box-sizing:border-box; display:flex; align-items:flex-start;">' +
-          '<span class="user-profile-bio-span" style="font-size:0.87rem; color:' + bioColor + '; line-height:1.45; word-break:break-all; min-height:4.35em; display:-webkit-box; -webkit-line-clamp:5; line-clamp:5; -webkit-box-orient:vertical; overflow:hidden;">' + bioText + '</span>' +
+          '<span class="user-profile-bio-span" style="font-size:0.87rem; color:' + bioColor + '; line-height:1.45; word-break:break-all; min-height:4.35em; display:-webkit-box; -webkit-line-clamp:5; line-clamp:5; -webkit-box-orient:vertical; overflow:hidden;">' + _escapeReportPropHtml(bioText) + '</span>' +
         '</div>' +
         '<div class="user-profile-sns-wrap" style="display:flex; align-items:center; gap:6px; min-height:26px;">' +
           snsHtml +
@@ -3082,7 +3113,7 @@ window.renderUserProfileHeaderSection = function(config) {
         '<div ' + avatarClickAttr + ' style="' + avatarCursor + 'position:relative; width:80px; height:80px; border-radius:50%; background:rgba(255,255,255,0.12); padding:1.5px; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(0,0,0,0.7);">' +
           avatarImgHtml +
         '</div>' +
-        '<span class="user-profile-nick-span" style="font-size:0.88rem; font-weight:800; color:#ffffff; letter-spacing:-0.02em; max-width:96px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;">' + nick + '</span>' +
+        '<span class="user-profile-nick-span" style="font-size:0.88rem; font-weight:800; color:#ffffff; letter-spacing:-0.02em; max-width:96px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;">' + _escapeReportPropHtml(nick) + '</span>' +
       '</div>' +
     '</div>' +
     actionGridHtml +
@@ -5210,7 +5241,7 @@ if (typeof window !== 'undefined') {
 
 window.editReportUserBio = function() {
   triggerHaptic(10);
-  var currentBio = localStorage.getItem('okbm_user_bio') || '';
+  var currentBio = okbmNormalizeUserBio(localStorage.getItem('okbm_user_bio') || '');
   var oldModal = document.getElementById('reportBioEditorModalOverlay');
   if (oldModal) oldModal.remove();
 
@@ -5222,9 +5253,9 @@ window.editReportUserBio = function() {
   modal.innerHTML = '<div style="width:100%; max-width:340px; background:#080b11; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:16px; box-sizing:border-box; display:flex; flex-direction:column; gap:12px;">' +
       '<div style="display:flex; justify-content:space-between; align-items:center;">' +
         '<span style="font-size:0.90rem; font-weight:900; color:#ffffff;">소개글</span>' +
-        '<span id="bioEditorCharCount" style="font-size:0.68rem; color:#64748b; font-family:var(--font-mono);">' + currentBio.length + '/100</span>' +
+        '<span id="bioEditorCharCount" style="font-size:0.68rem; color:#64748b; font-family:var(--font-mono);">' + currentBio.length + '/' + OKBM_USER_BIO_MAX + '</span>' +
       '</div>' +
-      '<textarea id="bioEditorTextarea" maxlength="100" placeholder="소개글을 작성해보세요." style="width:100%; height:90px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:10px; color:#ffffff; font-size:0.78rem; line-height:1.45; resize:none; outline:none; box-sizing:border-box; font-family:inherit;"></textarea>' +
+      '<textarea id="bioEditorTextarea" maxlength="' + OKBM_USER_BIO_MAX + '" placeholder="소개글을 작성해보세요." style="width:100%; height:90px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:10px; color:#ffffff; font-size:0.78rem; line-height:1.45; resize:none; outline:none; box-sizing:border-box; font-family:inherit;"></textarea>' +
       '<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">' +
         '<button type="button" id="bioEditorCancelBtn" style="height:38px; background:rgba(255,255,255,0.06); border:none; border-radius:6px; color:#94a3b8; font-size:0.78rem; font-weight:800; cursor:pointer;">취소</button>' +
         '<button type="button" id="bioEditorSaveBtn" style="height:38px; background:#38bdf8; border:none; border-radius:6px; color:#000000; font-size:0.78rem; font-weight:900; cursor:pointer;">저장</button>' +
@@ -5245,7 +5276,12 @@ window.editReportUserBio = function() {
   }, 100);
 
   textarea.oninput = function() {
-    countEl.innerText = textarea.value.length + '/100';
+    var s = String(textarea.value || '');
+    s = s.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    s = s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
+    if (s.length > OKBM_USER_BIO_MAX) s = s.slice(0, OKBM_USER_BIO_MAX);
+    if (s !== textarea.value) textarea.value = s;
+    countEl.innerText = s.length + '/' + OKBM_USER_BIO_MAX;
   };
 
   cancelBtn.onclick = function() {
@@ -5255,7 +5291,7 @@ window.editReportUserBio = function() {
 
   saveBtn.onclick = function() {
     triggerHaptic(12);
-    var clean = textarea.value.trim().slice(0, 100);
+    var clean = okbmNormalizeUserBio(textarea.value);
     localStorage.setItem('okbm_user_bio', clean);
 
     var profile = safeGetJSON('user_profile', null) || {};

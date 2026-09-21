@@ -1,19 +1,79 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient, type User } from "npm:@supabase/supabase-js@2";
 import { getServiceRoleKey, getSupabaseUrl, handleOptions, jsonResponse } from "./social-session.ts";
 
-function collectAccountIds(okbmUserId: string, authUserId: string): string[] {
+type AdminClient = ReturnType<typeof createClient>;
+
+function uniqueIds(...values: string[]): string[] {
   const ids: string[] = [];
-  const push = (value: string) => {
+  for (const value of values) {
     const s = String(value || "").trim();
     if (s && ids.indexOf(s) === -1) ids.push(s);
-  };
-  push(okbmUserId);
-  push(authUserId);
-  const plain = okbmUserId.replace(/^(kakao_|naver_|apple_|google_)/, "");
-  push(plain);
-  if (okbmUserId.indexOf("kakao_") === 0 && plain) push("kakao_" + plain);
-  if (okbmUserId.indexOf("naver_") === 0 && plain) push("naver_" + plain);
+  }
   return ids;
+}
+
+function plantedOkbmUserId(authUser: User): string {
+  const appMeta = (authUser.app_metadata || {}) as Record<string, unknown>;
+  return String(appMeta.okbm_user_id || "").trim();
+}
+
+function collectAccountIds(okbmUserId: string, authUserId: string): string[] {
+  return uniqueIds(okbmUserId, authUserId);
+}
+
+async function canDeletePublicUserRow(
+  admin: AdminClient,
+  authUser: User,
+  candidateId: string,
+): Promise<boolean> {
+  const id = String(candidateId || "").trim();
+  if (!id) return false;
+
+  const planted = plantedOkbmUserId(authUser);
+  if (id !== authUser.id && id !== planted) return false;
+
+  const { data, error } = await admin
+    .from("users")
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
+  if (error && error.code !== "PGRST116") {
+    console.error("[delete-account] users ownership lookup", error);
+    return false;
+  }
+  return String(data?.id || "").trim() === id;
+}
+
+async function deleteDirectThreadsForUser(admin: AdminClient, userId: string) {
+  const id = String(userId || "").trim();
+  if (!id) return;
+
+  const { data: asA, error: errA } = await admin
+    .from("direct_threads")
+    .select("id")
+    .eq("user_a", id);
+  if (errA && errA.code !== "PGRST116" && errA.code !== "42P01") {
+    console.error("[delete-account] direct_threads.user_a", errA);
+  }
+
+  const { data: asB, error: errB } = await admin
+    .from("direct_threads")
+    .select("id")
+    .eq("user_b", id);
+  if (errB && errB.code !== "PGRST116" && errB.code !== "42P01") {
+    console.error("[delete-account] direct_threads.user_b", errB);
+  }
+
+  const threadIds = uniqueIds(
+    ...(Array.isArray(asA) ? asA.map((row) => String(row.id || "")) : []),
+    ...(Array.isArray(asB) ? asB.map((row) => String(row.id || "")) : []),
+  );
+  for (const threadId of threadIds) {
+    const { error } = await admin.from("direct_threads").delete().eq("id", threadId);
+    if (error && error.code !== "PGRST116" && error.code !== "42P01") {
+      console.error("[delete-account] direct_threads.id", error);
+    }
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -43,8 +103,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const authUser = userData.user;
-    const appMeta = (authUser.app_metadata || {}) as Record<string, unknown>;
-    const okbmUserId = String(appMeta.okbm_user_id || authUser.id).trim();
+    const okbmUserId = plantedOkbmUserId(authUser);
     const accountIds = collectAccountIds(okbmUserId, authUser.id);
 
     const deleteByColumn = async (table: string, column: string) => {
@@ -69,19 +128,15 @@ Deno.serve(async (req: Request) => {
     await deleteByColumn("talks", "user_id");
 
     for (const id of accountIds) {
-      const { data: threads } = await admin
-        .from("direct_threads")
-        .select("id")
-        .or(`user_a.eq.${id},user_b.eq.${id}`);
-      if (Array.isArray(threads)) {
-        for (const thread of threads) {
-          await admin.from("direct_threads").delete().eq("id", thread.id);
-        }
-      }
+      await deleteDirectThreadsForUser(admin, id);
     }
 
     for (const id of accountIds) {
-      await admin.from("users").delete().eq("id", id);
+      if (!(await canDeletePublicUserRow(admin, authUser, id))) continue;
+      const { error } = await admin.from("users").delete().eq("id", id);
+      if (error && error.code !== "PGRST116" && error.code !== "42P01") {
+        console.error("[delete-account] users.id", error);
+      }
     }
 
     const { error: authDeleteError } = await admin.auth.admin.deleteUser(authUser.id);
@@ -90,7 +145,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse(req, { error: "auth_user_delete_failed", message: authDeleteError.message }, 500);
     }
 
-    return jsonResponse(req, { ok: true, deleted_user_id: okbmUserId }, 200);
+    return jsonResponse(req, { ok: true, deleted_user_id: okbmUserId || authUser.id }, 200);
   } catch (err) {
     console.error("[delete-account]", err);
     return jsonResponse(req, {

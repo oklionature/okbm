@@ -7,8 +7,10 @@
 --
 -- 핵심:
 -- 1) 기존 FOR ALL USING (true) 정책을 전부 폐기
--- 2) auth.jwt() app_metadata.okbm_user_id 또는 auth.uid()로 본인만 쓰기
+-- 2) auth.jwt() app_metadata.okbm_user_id / {provider}_id 또는 auth.identities로 본인만 쓰기
 -- 3) users 이메일은 본인만, 공개 프로필은 user_public_profiles 뷰만 노출
+-- 4) okbm_stamp_okbm_user_id는 authenticated에서 회수. 네이버/카카오는
+--    issueSocialSession이 app_metadata.okbm_user_id를 심으므로 클라이언트 스탬프 불필요.
 -- =========================================================================
 
 -- -------------------------------------------------------------------------
@@ -31,6 +33,28 @@ $$;
 REVOKE ALL ON FUNCTION public.okbm_find_auth_user_id(text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.okbm_find_auth_user_id(text) TO service_role;
 
+CREATE OR REPLACE FUNCTION public.okbm_find_auth_user_by_provider(p_provider text, p_provider_id text)
+RETURNS uuid
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = auth, public
+AS $$
+  SELECT id
+  FROM auth.users
+  WHERE NULLIF(btrim(p_provider), '') IS NOT NULL
+    AND NULLIF(btrim(p_provider_id), '') IS NOT NULL
+    AND lower(btrim(p_provider)) IN ('kakao', 'naver', 'apple', 'google')
+    AND (
+      raw_app_meta_data ->> (lower(btrim(p_provider)) || '_id') = btrim(p_provider_id)
+      OR raw_app_meta_data ->> (lower(btrim(p_provider)) || '_id')
+         = lower(btrim(p_provider)) || '_' || btrim(p_provider_id)
+    )
+  LIMIT 1;
+$$;
+
+REVOKE ALL ON FUNCTION public.okbm_find_auth_user_by_provider(text, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.okbm_find_auth_user_by_provider(text, text) TO service_role;
+
 CREATE OR REPLACE FUNCTION public.okbm_uid()
 RETURNS text
 LANGUAGE plpgsql
@@ -41,8 +65,12 @@ AS $$
 DECLARE
   jwt_okbm text;
   uid uuid;
-  jwt_email text;
   found_id text;
+  jwt_provider text;
+  jwt_provider_id text;
+  ident_provider text;
+  ident_provider_id text;
+  scoped_id text;
 BEGIN
   jwt_okbm := NULLIF(btrim(COALESCE(auth.jwt() -> 'app_metadata' ->> 'okbm_user_id', '')), '');
   IF jwt_okbm IS NOT NULL THEN
@@ -59,18 +87,45 @@ BEGIN
     RETURN found_id;
   END IF;
 
-  jwt_email := NULLIF(lower(btrim(COALESCE(auth.jwt() ->> 'email', ''))), '');
-  IF jwt_email IS NOT NULL THEN
-    SELECT u.id INTO found_id
-    FROM public.users u
-    WHERE u.email IS NOT NULL AND lower(u.email) = jwt_email
-    LIMIT 1;
-    IF found_id IS NOT NULL THEN
-      RETURN found_id;
+  jwt_provider := NULLIF(lower(btrim(COALESCE(auth.jwt() -> 'app_metadata' ->> 'provider', ''))), '');
+  IF jwt_provider IN ('kakao', 'naver', 'apple', 'google') THEN
+    jwt_provider_id := NULLIF(btrim(COALESCE(auth.jwt() -> 'app_metadata' ->> (jwt_provider || '_id'), '')), '');
+    IF jwt_provider_id IS NOT NULL THEN
+      scoped_id := CASE
+        WHEN jwt_provider_id LIKE jwt_provider || '_%' THEN jwt_provider_id
+        ELSE jwt_provider || '_' || jwt_provider_id
+      END;
+      SELECT u.id INTO found_id FROM public.users u WHERE u.id = scoped_id LIMIT 1;
+      IF found_id IS NOT NULL THEN
+        RETURN found_id;
+      END IF;
+      RETURN scoped_id;
     END IF;
   END IF;
 
-  RETURN uid::text;
+  SELECT i.provider, i.provider_id
+    INTO ident_provider, ident_provider_id
+  FROM auth.identities i
+  WHERE i.user_id = uid
+    AND i.provider IN ('google', 'apple', 'kakao', 'naver')
+  ORDER BY i.updated_at DESC NULLS LAST
+  LIMIT 1;
+
+  ident_provider := NULLIF(lower(btrim(COALESCE(ident_provider, ''))), '');
+  ident_provider_id := NULLIF(btrim(COALESCE(ident_provider_id, '')), '');
+  IF ident_provider IS NOT NULL AND ident_provider_id IS NOT NULL THEN
+    scoped_id := CASE
+      WHEN ident_provider_id LIKE ident_provider || '_%' THEN ident_provider_id
+      ELSE ident_provider || '_' || ident_provider_id
+    END;
+    SELECT u.id INTO found_id FROM public.users u WHERE u.id = scoped_id LIMIT 1;
+    IF found_id IS NOT NULL THEN
+      RETURN found_id;
+    END IF;
+    RETURN scoped_id;
+  END IF;
+
+  RETURN NULL;
 END;
 $$;
 
@@ -103,6 +158,9 @@ SET search_path = auth, public
 AS $$
 DECLARE
   v_id text := btrim(COALESCE(p_okbm_user_id, ''));
+  v_provider text;
+  v_provider_id text;
+  v_expected text;
 BEGIN
   IF auth.uid() IS NULL THEN
     RAISE EXCEPTION 'not authenticated';
@@ -110,22 +168,36 @@ BEGIN
   IF v_id IS NULL OR v_id = '' THEN
     RAISE EXCEPTION 'okbm_user_id required';
   END IF;
-  IF v_id <> auth.uid()::text
-     AND v_id !~ '^(kakao_|naver_|apple_|google_)[A-Za-z0-9._-]+$' THEN
-    RAISE EXCEPTION 'invalid okbm_user_id';
+
+  v_provider := NULLIF(lower(btrim(COALESCE(auth.jwt() -> 'app_metadata' ->> 'provider', ''))), '');
+  IF v_provider IS NULL OR v_provider NOT IN ('kakao', 'naver', 'apple', 'google') THEN
+    RAISE EXCEPTION 'provider missing';
+  END IF;
+
+  v_provider_id := NULLIF(btrim(COALESCE(auth.jwt() -> 'app_metadata' ->> (v_provider || '_id'), '')), '');
+  IF v_provider_id IS NULL THEN
+    RAISE EXCEPTION 'provider id missing';
+  END IF;
+
+  v_expected := CASE
+    WHEN v_provider_id LIKE v_provider || '_%' THEN v_provider_id
+    ELSE v_provider || '_' || v_provider_id
+  END;
+  IF v_id IS DISTINCT FROM v_expected AND v_id IS DISTINCT FROM v_provider_id THEN
+    RAISE EXCEPTION 'okbm_user_id does not match provider id';
   END IF;
 
   UPDATE auth.users
   SET raw_app_meta_data = COALESCE(raw_app_meta_data, '{}'::jsonb)
-    || jsonb_build_object('okbm_user_id', v_id)
+    || jsonb_build_object('okbm_user_id', v_expected)
   WHERE id = auth.uid();
 
-  RETURN v_id;
+  RETURN v_expected;
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.okbm_stamp_okbm_user_id(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.okbm_stamp_okbm_user_id(text) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.okbm_stamp_okbm_user_id(text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.okbm_stamp_okbm_user_id(text) TO service_role;
 
 CREATE OR REPLACE FUNCTION public.okbm_guard_users_admin_col()
 RETURNS trigger
