@@ -811,7 +811,7 @@
     }
     var feedHeaders = {
       'apikey': targetKey,
-      'Authorization': 'Bearer ' + targetKey,
+      'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
       'Content-Type': 'application/json',
       'Prefer': 'return=representation'
     };
@@ -875,7 +875,7 @@
         method: 'PATCH',
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + targetKey,
+          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
@@ -1421,7 +1421,7 @@
 
       var headers = {
         'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
+        'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
         'Content-Type': 'application/json'
       };
 
@@ -1899,10 +1899,10 @@ window.normalizeHistoryRecord = function(r, idx) {
       var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
       var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
       if (targetUrl && targetKey) {
-        fetch(targetUrl + '/rest/v1/users?id=eq.' + encodeURIComponent(uId) + '&select=id,photo_url,hero_cover_url', {
+        fetch(targetUrl + '/rest/v1/user_public_profiles?id=eq.' + encodeURIComponent(uId) + '&select=id,photo_url,hero_cover_url', {
           headers: {
             'apikey': targetKey,
-            'Authorization': 'Bearer ' + targetKey,
+            'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
             'Content-Type': 'application/json'
           }
         })
@@ -2305,7 +2305,7 @@ window.normalizeHistoryRecord = function(r, idx) {
           method: 'DELETE',
           headers: {
             'apikey': targetKey,
-            'Authorization': 'Bearer ' + targetKey,
+            'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
           }
@@ -2504,7 +2504,7 @@ window.normalizeHistoryRecord = function(r, idx) {
       var res = await fetch(query, {
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + targetKey,
+          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
           'Content-Type': 'application/json'
         }
       });
@@ -2696,7 +2696,7 @@ window.normalizeHistoryRecord = function(r, idx) {
           method: 'HEAD',
           headers: {
             'apikey': targetKey,
-            'Authorization': 'Bearer ' + targetKey,
+            'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
             'Prefer': 'count=exact'
           }
         }).then(function(res) {
@@ -2776,7 +2776,7 @@ window.fetchUserFeedLikesFromServer = async function() {
       var res = await fetch(targetUrl + '/rest/v1/feed_likes?user_id=' + inParam + '&select=feed_id', {
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + targetKey,
+          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
           'Content-Type': 'application/json'
         }
       });
@@ -2829,7 +2829,7 @@ window.okbmSyncFeedLikeAction = async function(feedId, userId, isAdding, nextCou
 
   var jsonHeaders = {
     'apikey': targetKey,
-    'Authorization': 'Bearer ' + targetKey,
+    'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
     'Content-Type': 'application/json'
   };
 
@@ -3692,7 +3692,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
           method: 'DELETE',
           headers: {
             'apikey': targetKey,
-            'Authorization': 'Bearer ' + targetKey,
+            'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
             'Content-Type': 'application/json',
             // return=representation: 실제로 삭제된 행을 응답 본문으로 돌려받아
             // "응답 200이지만 실은 0건 삭제"인 유령 삭제를 걸러낼 수 있습니다.
@@ -4548,7 +4548,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       var res = await fetch(query, {
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + targetKey,
+          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
           'Content-Type': 'application/json'
         }
       });
@@ -4907,10 +4907,10 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }
 
     if (targetUrl && targetKey && targetUserId) {
-      fetch(targetUrl + '/rest/v1/users?id=eq.' + encodeURIComponent(targetUserId) + '&select=id,bio,hero_cover_url,photo_url,nickname,my_gears', {
+      fetch(targetUrl + '/rest/v1/user_public_profiles?id=eq.' + encodeURIComponent(targetUserId) + '&select=id,bio,hero_cover_url,photo_url,nickname,instagram,youtube,blog', {
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + targetKey,
+          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
           'Content-Type': 'application/json'
         }
       })
@@ -4963,7 +4963,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         method: 'HEAD',
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + targetKey,
+          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
           'Prefer': 'count=exact'
         }
       }).then(function(res) {
@@ -4985,7 +4985,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       fetch(fetchQuery, {
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + targetKey,
+          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
           'Content-Type': 'application/json'
         }
       }).then(function(r) { return r.ok ? r.json() : []; }).then(function(serverRows) {
@@ -6829,7 +6829,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       try {
         var headers = {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + targetKey,
+          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
           'Content-Type': 'application/json'
         };
 

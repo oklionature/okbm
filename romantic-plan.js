@@ -2249,7 +2249,7 @@ window.saveCurrentPackingRecord = function() {
           var res = await fetch(targetUrl + '/rest/v1/gears?select=' + selectCols + '&order=id.asc&offset=' + (page * pageSize) + '&limit=' + pageSize, {
             headers: {
               'apikey': targetKey,
-              'Authorization': 'Bearer ' + targetKey,
+              'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
               'Content-Type': 'application/json'
             }
           });
@@ -5150,7 +5150,7 @@ window.saveCurrentPackingRecord = function() {
             method: 'DELETE',
             headers: {
               'apikey': targetKey,
-              'Authorization': 'Bearer ' + targetKey,
+              'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
               'Content-Type': 'application/json',
               'Prefer': 'return=representation'
             }
@@ -5186,7 +5186,7 @@ window.saveCurrentPackingRecord = function() {
           method: 'DELETE',
           headers: {
             'apikey': targetKey,
-            'Authorization': 'Bearer ' + targetKey,
+            'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
             'Content-Type': 'application/json',
             'Prefer': 'return=representation'
           }
@@ -5271,7 +5271,7 @@ window.saveCurrentPackingRecord = function() {
               method: 'GET',
               headers: {
                 'apikey': targetKey,
-                'Authorization': 'Bearer ' + targetKey,
+                'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
                 'Content-Type': 'application/json'
               }
             }
@@ -5651,7 +5651,7 @@ window.saveCurrentPackingRecord = function() {
             method: 'DELETE',
             headers: {
               'apikey': targetKey,
-              'Authorization': 'Bearer ' + targetKey,
+              'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
               'Content-Type': 'application/json'
             }
           }).catch(function() {});

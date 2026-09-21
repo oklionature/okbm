@@ -1,0 +1,10 @@
+project_id = "qnumfecythtqtrxeasys"
+
+[functions.auth-naver]
+verify_jwt = false
+
+[functions.auth-kakao]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = true

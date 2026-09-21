@@ -511,14 +511,82 @@ function okbmGetCurrentUserId() {
 }
 window.okbmGetCurrentUserId = okbmGetCurrentUserId;
 
-function okbmUgcRestHeaders() {
+window.okbmAccessToken = function() {
+  try {
+    var session = window.__okbmSessionCache && window.__okbmSessionCache.session;
+    if (session && session.access_token) return session.access_token;
+  } catch (e) {}
+  return window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+};
+
+function okbmUgcRestHeaders(extra) {
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
-  return {
+  var headers = {
     'apikey': targetKey,
-    'Authorization': 'Bearer ' + targetKey,
+    'Authorization': 'Bearer ' + window.okbmAccessToken(),
     'Content-Type': 'application/json'
   };
+  if (extra && typeof extra === 'object') {
+    Object.keys(extra).forEach(function(k) { headers[k] = extra[k]; });
+  }
+  return headers;
 }
+window.okbmAuthHeaders = okbmUgcRestHeaders;
+
+window.okbmInvokeFunction = async function(name, body) {
+  var fnName = String(name || '').trim();
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  if (!fnName || !targetUrl) throw new Error('function url missing');
+  var res = await fetch(targetUrl + '/functions/v1/' + fnName, {
+    method: 'POST',
+    headers: okbmUgcRestHeaders(),
+    body: JSON.stringify(body || {})
+  });
+  var json = null;
+  var text = '';
+  try { text = await res.text(); } catch (e) {}
+  if (text) {
+    try { json = JSON.parse(text); } catch (e) { json = { raw: text }; }
+  }
+  if (!res.ok) {
+    var err = new Error((json && (json.message || json.error)) || (fnName + ' ' + res.status));
+    err.status = res.status;
+    err.body = json;
+    throw err;
+  }
+  return json;
+};
+
+window.okbmSetSupabaseSession = async function(accessToken, refreshToken) {
+  if (!window.supabaseClient || !window.supabaseClient.auth || typeof window.supabaseClient.auth.setSession !== 'function') {
+    throw new Error('supabase client missing');
+  }
+  var res = await window.supabaseClient.auth.setSession({
+    access_token: String(accessToken || '').trim(),
+    refresh_token: String(refreshToken || '').trim()
+  });
+  if (res && res.error) throw res.error;
+  var session = res && res.data ? res.data.session : null;
+  okbmWriteSessionCache(session);
+  return session;
+};
+
+window.okbmStampOkbmUserId = async function(okbmUserId) {
+  var id = String(okbmUserId || '').trim();
+  if (!id || !window.supabaseClient || typeof window.supabaseClient.rpc !== 'function') return false;
+  try {
+    var stamped = await window.supabaseClient.rpc('okbm_stamp_okbm_user_id', { p_okbm_user_id: id });
+    if (stamped && stamped.error) throw stamped.error;
+    if (window.supabaseClient.auth && typeof window.supabaseClient.auth.refreshSession === 'function') {
+      var refreshed = await window.supabaseClient.auth.refreshSession();
+      okbmWriteSessionCache(refreshed && refreshed.data ? refreshed.data.session : null);
+    }
+    return true;
+  } catch (e) {
+    console.warn('[okbmStampOkbmUserId]', e);
+    return false;
+  }
+};
 
 function okbmWriteBlockedUsersCache(ids, meta) {
   var seen = {};
@@ -938,7 +1006,7 @@ window.syncMyFeedReportsFromServer = async function() {
     var res = await fetch(targetUrl + '/rest/v1/feed_reports?reporter_id=eq.' + encodeURIComponent(reporterId) + '&select=feed_id,status', {
       headers: {
         'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey
+        'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey)
       }
     });
     if (!res.ok) {
@@ -995,7 +1063,7 @@ window.submitFeedReport = async function(feedId, reasonCode, reasonLabel, userId
         method: 'POST',
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + targetKey,
+          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
@@ -1010,7 +1078,7 @@ window.submitFeedReport = async function(feedId, reasonCode, reasonLabel, userId
             method: 'PATCH',
             headers: {
               'apikey': targetKey,
-              'Authorization': 'Bearer ' + targetKey,
+              'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
               'Content-Type': 'application/json',
               'Prefer': 'return=representation'
             },
@@ -1319,7 +1387,7 @@ window.okbmAdminInspectDeleteFeed = async function(feedId) {
         method: 'DELETE',
         headers: {
           'apikey': fallbackKey,
-          'Authorization': 'Bearer ' + fallbackKey,
+          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : fallbackKey),
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         }
@@ -1622,7 +1690,7 @@ window.executeCleanSlateMasterReset = async function() {
         method: 'DELETE',
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + targetKey,
+          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         }
@@ -1664,11 +1732,7 @@ async function loadUserDataFromCloud(userId) {
     var queryColumns = 'id,nickname,bio,hero_cover_url,photo_url,bookmarks,visited,memos,saved_feeds,following,my_gears,created_at,last_nickname_changed_at,is_admin';
     var res = await fetch(targetUrl + '/rest/v1/users?id=eq.' + encodeURIComponent(String(userId).trim()) + '&select=' + queryColumns, {
       method: 'GET',
-      headers: {
-        'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
-        'Content-Type': 'application/json'
-      },
+      headers: okbmUgcRestHeaders(),
       signal: controller.signal
     });
     clearTimeout(timeoutId);
@@ -1771,7 +1835,7 @@ function trackDailyVisit(force) {
     method: 'POST',
     headers: {
       'apikey': targetKey,
-      'Authorization': 'Bearer ' + targetKey,
+      'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
@@ -2323,7 +2387,7 @@ window.fetchMasterSpotsFromSupabase = async function(isForce) {
       method: 'GET',
       headers: {
         'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
+        'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
         'Content-Type': 'application/json'
       },
       signal: controller.signal
@@ -2401,7 +2465,7 @@ window.fetchMasterGearsFromSupabase = async function(isForce) {
         method: 'GET',
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + targetKey,
+          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
           'Content-Type': 'application/json'
         },
         signal: controller.signal
@@ -2447,7 +2511,7 @@ window.fetchRankingsFromSupabase = async function() {
     var usersRes = await fetch(targetUrl + '/rest/v1/ranking_stats?select=spot_id,spot_name,usage_count&order=usage_count.desc&limit=10', {
       headers: {
         'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
+        'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
         'Content-Type': 'application/json'
       },
       signal: controller.signal
@@ -2652,7 +2716,7 @@ window.refreshMyReportFullStats = function() {
     fetch(targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(curUserId) + '&select=id,date', {
       headers: {
         'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
+        'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
         'Range-Unit': 'items',
         'Prefer': 'count=exact'
       }
@@ -5745,7 +5809,7 @@ window._pastTripMergeSpotMediaUrls = async function(spotId, ytUrls, blogUrls) {
   if (!targetUrl || !targetKey) return false;
   var headers = {
     'apikey': targetKey,
-    'Authorization': 'Bearer ' + targetKey,
+    'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
     'Content-Type': 'application/json',
     'Prefer': 'return=representation'
   };
@@ -7912,12 +7976,7 @@ window.saveNicknameFromSettingsModal = async function() {
   if (targetUrl && targetKey && profile.id) {
     fetch(targetUrl + '/rest/v1/users?id=eq.' + encodeURIComponent(String(profile.id).trim()), {
       method: 'PATCH',
-      headers: {
-        'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
+      headers: okbmUgcRestHeaders({ Prefer: 'return=minimal' }),
       body: JSON.stringify({
         nickname: clean,
         last_nickname_changed_at: now,
@@ -8104,86 +8163,6 @@ window.confirmUserAccountDeletion = async function() {
 
   window.__okbmAccountPurging = true;
 
-  var accountIds = [];
-  var pushAccountId = function(id) {
-    var s = String(id || '').trim();
-    if (!s || accountIds.indexOf(s) !== -1) return;
-    accountIds.push(s);
-  };
-  pushAccountId(userId);
-  var numericId = userId.replace(/^(kakao_|naver_|apple_|google_)/, '');
-  pushAccountId(numericId);
-  if (userId.indexOf('kakao_') === 0 && numericId) pushAccountId('kakao_' + numericId);
-
-  var jsonHeaders = {
-    'apikey': targetKey,
-    'Authorization': 'Bearer ' + targetKey,
-    'Content-Type': 'application/json'
-  };
-
-  var restJson = async function(pathWithQuery, options) {
-    var res = await fetch(targetUrl + '/rest/v1/' + pathWithQuery, options);
-    var text = '';
-    try { text = await res.text(); } catch (e) {}
-    var data = null;
-    if (text) {
-      try { data = JSON.parse(text); } catch (e) { data = text; }
-    }
-    return { ok: res.ok, status: res.status, data: data, text: text };
-  };
-
-  var deleteByColumn = async function(table, column, ids) {
-    var last = { ok: true, status: 200, data: [], text: '' };
-    for (var i = 0; i < ids.length; i++) {
-      last = await restJson(table + '?' + column + '=eq.' + encodeURIComponent(ids[i]), {
-        method: 'DELETE',
-        headers: Object.assign({}, jsonHeaders, { Prefer: 'return=representation' })
-      });
-      if (last.status === 404 || last.status === 405) return last;
-      if (!last.ok) return last;
-    }
-    return last;
-  };
-
-  var countByColumn = async function(table, column, ids) {
-    var total = 0;
-    for (var i = 0; i < ids.length; i++) {
-      var counted = await restJson(table + '?' + column + '=eq.' + encodeURIComponent(ids[i]) + '&select=id', {
-        method: 'GET',
-        headers: jsonHeaders
-      });
-      if (counted.status === 404) return 0;
-      if (Array.isArray(counted.data)) total += counted.data.length;
-    }
-    return total;
-  };
-
-  var wipeUserRow = async function(id) {
-    var emptyUser = {
-      nickname: '',
-      bio: '',
-      hero_cover_url: '',
-      photo_url: '',
-      bookmarks: [],
-      visited: [],
-      memos: {},
-      saved_feeds: [],
-      following: [],
-      my_gears: {},
-      last_nickname_changed_at: 0,
-      updated_at: new Date().toISOString()
-    };
-    var patched = await restJson('users?id=eq.' + encodeURIComponent(id), {
-      method: 'PATCH',
-      headers: Object.assign({}, jsonHeaders, { Prefer: 'return=representation' }),
-      body: JSON.stringify(emptyUser)
-    });
-    if (!patched.ok && patched.status !== 404) {
-      console.error('[confirmUserAccountDeletion] users PATCH 실패 status=' + patched.status, patched.text);
-    }
-    return deleteByColumn('users', 'id', [id]);
-  };
-
   var failDeletion = function(message) {
     window.__okbmAccountPurging = false;
     restoreDeleteBtn();
@@ -8191,52 +8170,20 @@ window.confirmUserAccountDeletion = async function() {
   };
 
   try {
-    await deleteByColumn('feed_likes', 'user_id', accountIds);
-    var feedsDel = await deleteByColumn('feeds', 'user_id', accountIds);
-    if (!feedsDel.ok && feedsDel.status !== 404) {
-      failDeletion('피드 삭제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    if (typeof window.okbmStampOkbmUserId === 'function') {
+      await window.okbmStampOkbmUserId(userId);
+    }
+    var deleted = await window.okbmInvokeFunction('delete-account', {});
+    if (!deleted || deleted.ok !== true) {
+      failDeletion('계정 삭제에 실패했습니다. 다시 로그인 후 시도해주세요.');
       return;
     }
-    await deleteByColumn('proposals', 'user_id', accountIds);
-    await deleteByColumn('spot_corrections', 'user_id', accountIds);
-    await deleteByColumn('trips', 'user_id', accountIds);
-
-    for (var u = 0; u < accountIds.length; u++) {
-      await wipeUserRow(accountIds[u]);
-    }
-
-    var leftoverFeeds = await countByColumn('feeds', 'user_id', accountIds);
-    if (leftoverFeeds > 0) {
-      failDeletion('피드가 서버에서 아직 남아 있어 탈퇴를 완료하지 못했습니다.');
-      return;
-    }
-
-    var leftoverUsers = 0;
-    for (var v = 0; v < accountIds.length; v++) {
-      var userCheck = await restJson('users?id=eq.' + encodeURIComponent(accountIds[v]) + '&select=id,nickname,bookmarks,saved_feeds,following,my_gears', {
-        method: 'GET',
-        headers: jsonHeaders
-      });
-      if (!Array.isArray(userCheck.data) || !userCheck.data.length) continue;
-      leftoverUsers += 1;
-      var row = userCheck.data[0] || {};
-      var gears = row.my_gears && typeof row.my_gears === 'object' ? row.my_gears : {};
-      var hasMyList = Boolean(String(row.nickname || '').trim()) ||
-        (Array.isArray(row.bookmarks) && row.bookmarks.length > 0) ||
-        (Array.isArray(row.saved_feeds) && row.saved_feeds.length > 0) ||
-        (Array.isArray(row.following) && row.following.length > 0) ||
-        Object.keys(gears).length > 0;
-      if (hasMyList) {
-        failDeletion('계정/마이목록이 서버에서 아직 남아 있어 탈퇴를 완료하지 못했습니다.');
-        return;
-      }
-    }
-    if (leftoverUsers > 0) {
-      console.warn('[confirmUserAccountDeletion] users 행은 RLS로 남았지만 마이목록은 비웠습니다.');
+    if (window.supabaseClient && window.supabaseClient.auth && typeof window.supabaseClient.auth.signOut === 'function') {
+      try { await window.supabaseClient.auth.signOut(); } catch (e) {}
     }
   } catch (cloudErr) {
     console.error('[confirmUserAccountDeletion] 클라우드 삭제 예외:', cloudErr);
-    failDeletion();
+    failDeletion('회원 탈퇴에 실패했습니다. 로그인 세션을 확인한 뒤 다시 시도해주세요.');
     return;
   }
 
@@ -8428,11 +8375,7 @@ async function okbmFetchUserRow(query) {
   try {
     var res = await fetch(targetUrl + '/rest/v1/users?' + query + '&select=' + okbmSocialUserSelect(), {
       method: 'GET',
-      headers: {
-        'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
-        'Content-Type': 'application/json'
-      }
+      headers: okbmUgcRestHeaders()
     });
     if (!res.ok) return null;
     var rows = await res.json();
@@ -8477,13 +8420,9 @@ async function okbmLookupNicknameOwners(nickname, excludeUserId) {
   var filter = 'nickname=ilike.' + encodeURIComponent(okbmEscapeIlikeExact(nick));
   var exclude = String(excludeUserId || '').trim();
   if (exclude) filter += '&id=neq.' + encodeURIComponent(exclude);
-  var res = await fetch(targetUrl + '/rest/v1/users?' + filter + '&select=id,nickname&limit=1', {
+  var res = await fetch(targetUrl + '/rest/v1/user_public_profiles?' + filter + '&select=id,nickname&limit=1', {
     method: 'GET',
-    headers: {
-      'apikey': targetKey,
-      'Authorization': 'Bearer ' + targetKey,
-      'Content-Type': 'application/json'
-    }
+    headers: okbmUgcRestHeaders()
   });
   if (!res.ok) throw new Error('nickname lookup ' + res.status);
   var rows = await res.json();
@@ -8520,12 +8459,7 @@ async function okbmPatchUserEmail(userId, email) {
   try {
     var res = await fetch(targetUrl + '/rest/v1/users?id=eq.' + encodeURIComponent(userId), {
       method: 'PATCH',
-      headers: {
-        'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
+      headers: okbmUgcRestHeaders({ Prefer: 'return=minimal' }),
       body: JSON.stringify({ email: normalized, updated_at: new Date().toISOString() })
     });
     return res.ok;
@@ -8762,6 +8696,14 @@ async function handleSocialLoginSuccess(provider, providerId, email, nickname, p
   }
 
   try {
+    if (typeof window.okbmStampOkbmUserId === 'function') {
+      await window.okbmStampOkbmUserId(resolvedId);
+    }
+  } catch (e) {
+    console.warn('[handleSocialLoginSuccess stamp]', e);
+  }
+
+  try {
     if (linkedExisting) {
       var existingEmail = window.okbmNormalizeEmail(existingUser && existingUser.email || '');
       if (normalizedEmail && !existingEmail) {
@@ -8830,38 +8772,32 @@ function loginWithKakao() {
     scope: 'profile_nickname,account_email,profile_image',
     throughTalk: false,
     success: function(authObj) {
-      Kakao.API.request({
-        url: '/v2/user/me',
-        success: function(res) {
-          var kakaoNick = '';
-          var photoUrl = '';
-          var email = '';
-          if (res.kakao_account && res.kakao_account.email) {
-            email = String(res.kakao_account.email).trim();
-          }
-          if (res.kakao_account && res.kakao_account.profile) {
-            if (res.kakao_account.profile.nickname) kakaoNick = String(res.kakao_account.profile.nickname).trim();
-            photoUrl = res.kakao_account.profile.profile_image_url || res.kakao_account.profile.thumbnail_image_url || '';
-          }
-          if (!kakaoNick && res.properties && res.properties.nickname) {
-            kakaoNick = String(res.properties.nickname).trim();
-          }
-          if (!photoUrl && res.properties) {
-            photoUrl = res.properties.profile_image || res.properties.thumbnail_image || '';
-          }
-          handleSocialLoginSuccess(
-            'kakao',
-            String(res.id).trim(),
-            email,
-            kakaoNick,
-            photoUrl,
-            authObj && authObj.access_token
-          );
-        },
-        fail: function() {
-          okbmMarkSocialButtonsBusy(false);
-          if (typeof showToast === 'function') showToast('사용자 정보 수신 실패', 'warn');
+      var kakaoToken = authObj && authObj.access_token;
+      if (!kakaoToken) {
+        okbmMarkSocialButtonsBusy(false);
+        if (typeof showToast === 'function') showToast('카카오 토큰을 받지 못했습니다.', 'warn');
+        return;
+      }
+      window.okbmInvokeFunction('auth-kakao', { access_token: kakaoToken }).then(function(issued) {
+        if (!issued || !issued.access_token || !issued.refresh_token) {
+          throw new Error('supabase session missing');
         }
+        return window.okbmSetSupabaseSession(issued.access_token, issued.refresh_token).then(function() {
+          var profile = issued.profile || {};
+          var providerId = String(profile.id || '').replace(/^kakao_/, '');
+          return handleSocialLoginSuccess(
+            'kakao',
+            providerId,
+            profile.email,
+            profile.nickname,
+            profile.photo,
+            issued.access_token
+          );
+        });
+      }).catch(function(err) {
+        console.warn('[Kakao auth-kakao]', err);
+        okbmMarkSocialButtonsBusy(false);
+        if (typeof showToast === 'function') showToast('카카오 로그인 세션을 만들지 못했습니다.', 'warn');
       });
     },
     fail: function(err) {
@@ -8999,13 +8935,8 @@ async function okbmFetchNaverProfile(accessToken) {
 
 async function okbmConsumeNaverOAuthCallback() {
   var token = '';
-  var cachedProfile = null;
   try { token = sessionStorage.getItem('okbm_naver_oauth_token') || ''; } catch (e) {}
-  try {
-    var rawProfile = sessionStorage.getItem('okbm_naver_profile') || '';
-    if (rawProfile) cachedProfile = JSON.parse(rawProfile);
-  } catch (e) {}
-  if (!token && !(cachedProfile && cachedProfile.id)) return false;
+  if (!token) return false;
   try { sessionStorage.removeItem('okbm_naver_oauth_token'); } catch (e) {}
   try { sessionStorage.removeItem('okbm_naver_oauth_state'); } catch (e) {}
   try { sessionStorage.removeItem('okbm_naver_profile'); } catch (e) {}
@@ -9013,13 +8944,27 @@ async function okbmConsumeNaverOAuthCallback() {
   try { sessionStorage.removeItem('okbm_naver_return'); } catch (e) {}
 
   try {
-    var profile = cachedProfile && cachedProfile.id ? cachedProfile : await okbmFetchNaverProfile(token);
-    await handleSocialLoginSuccess('naver', profile.id, profile.email, profile.nickname, profile.photo, token);
+    okbmMarkSocialButtonsBusy(true, '네이버 로그인 인증 중...', 'btn-social-naver');
+    var issued = await window.okbmInvokeFunction('auth-naver', { access_token: token });
+    if (!issued || !issued.access_token || !issued.refresh_token) {
+      throw new Error('supabase session missing');
+    }
+    await window.okbmSetSupabaseSession(issued.access_token, issued.refresh_token);
+    var profile = issued.profile || {};
+    var providerId = String(profile.id || '').replace(/^naver_/, '');
+    await handleSocialLoginSuccess(
+      'naver',
+      providerId,
+      profile.email,
+      profile.nickname,
+      profile.photo,
+      issued.access_token
+    );
     return true;
   } catch (err) {
-    console.warn('[Naver profile]', err);
+    console.warn('[Naver auth-naver]', err);
     okbmMarkSocialButtonsBusy(false);
-    if (typeof showToast === 'function') showToast('네이버 사용자 정보를 불러오지 못했습니다.', 'warn');
+    if (typeof showToast === 'function') showToast('네이버 로그인 세션을 만들지 못했습니다.', 'warn');
     return true;
   }
 }
@@ -9175,7 +9120,7 @@ window.deleteFeedFromCommunity = async function(feedId) {
       method: 'DELETE',
       headers: {
         'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
+        'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
         'Content-Type': 'application/json',
         'Prefer': 'return=representation'
       }
@@ -9244,7 +9189,7 @@ window.saveProposalToSupabase = async function(proposalData, isCorrection) {
       method: 'POST',
       headers: {
         'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
+        'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
         'Content-Type': 'application/json',
         'Prefer': 'return=minimal'
       },
@@ -9262,7 +9207,7 @@ window.fetchAdminSpotInbox = async function() {
   if (!targetUrl || !targetKey) return [];
   var headers = {
     'apikey': targetKey,
-    'Authorization': 'Bearer ' + targetKey,
+    'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
     'Content-Type': 'application/json'
   };
   try {
@@ -9307,7 +9252,7 @@ window.fetchAdminSpotInbox = async function() {
     if (missingIds.length) {
       try {
         var inList = missingIds.map(function(id) { return '"' + String(id).replace(/"/g, '') + '"'; }).join(',');
-        var uRes = await fetch(targetUrl + '/rest/v1/users?id=in.(' + inList + ')&select=id,nickname', { headers: headers });
+        var uRes = await fetch(targetUrl + '/rest/v1/user_public_profiles?id=in.(' + inList + ')&select=id,nickname', { headers: headers });
         if (uRes.ok) {
           var uRows = await uRes.json();
           var nickMap = {};
@@ -9346,7 +9291,7 @@ window.updateAdminSpotInboxStatus = async function(propId, isCorrection, status,
       method: 'PATCH',
       headers: {
         'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
+        'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
         'Content-Type': 'application/json',
         'Prefer': 'return=minimal'
       },
@@ -9369,7 +9314,7 @@ window.deleteProposalFromSupabase = async function(propId, isCorrection) {
       method: 'DELETE',
       headers: {
         'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
+        'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
         'Content-Type': 'application/json'
       }
     });
@@ -9386,7 +9331,7 @@ window.fetchMyProposalsFromSupabase = async function(userId) {
 
   var headers = {
     'apikey': targetKey,
-    'Authorization': 'Bearer ' + targetKey,
+    'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
     'Content-Type': 'application/json'
   };
 
@@ -9451,7 +9396,7 @@ window.notifyProposalDecision = async function(item, status, approvedSpotId) {
       method: 'POST',
       headers: {
         'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
+        'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
         'Content-Type': 'application/json',
         'Prefer': 'return=minimal'
       },
@@ -9920,7 +9865,7 @@ window.okbmPrefetchUserPhotos = async function(userIds) {
     var listed = need.map(function(id) {
       return '"' + String(id).replace(/\\/g, '').replace(/"/g, '') + '"';
     }).join(',');
-    var res = await fetch(targetUrl + '/rest/v1/users?id=in.(' + listed + ')&select=id,photo_url,hero_cover_url', {
+    var res = await fetch(targetUrl + '/rest/v1/user_public_profiles?id=in.(' + listed + ')&select=id,photo_url,hero_cover_url', {
       headers: okbmUgcRestHeaders()
     });
     if (!res.ok) return;
@@ -10883,12 +10828,7 @@ window.saveUserToSupabase = async function(profileData) {
   if (userEmail) payload.email = userEmail;
 
   try {
-    var upsertHeaders = {
-      'apikey': targetKey,
-      'Authorization': 'Bearer ' + targetKey,
-      'Content-Type': 'application/json',
-      'Prefer': 'resolution=merge-duplicates,return=minimal'
-    };
+    var upsertHeaders = okbmUgcRestHeaders({ Prefer: 'resolution=merge-duplicates,return=minimal' });
     var upsertUrl = targetUrl + '/rest/v1/users?on_conflict=id';
     var res = await fetch(upsertUrl, {
       method: 'POST',
