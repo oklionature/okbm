@@ -1875,6 +1875,7 @@ window.normalizeHistoryRecord = function(r, idx) {
       resolvedPhotoMemos = r.photoMemos;
     }
 
+    var hasServerPublishFlag = Boolean(r && (r.is_published !== undefined || r.isPublished !== undefined));
     var resolvedPublished = false;
     if (r) {
       if (r.is_published !== undefined) {
@@ -1885,19 +1886,23 @@ window.normalizeHistoryRecord = function(r, idx) {
         resolvedPublished = (rawPhotos.length > 0);
       }
     }
-    var probeForGate = {
-      spot: spotTitle,
-      photos: rawPhotos,
-      readyShotPhoto: savedReadyShot,
-      date: cleanDate,
-      year: y,
-      month: m,
-      day: d,
-      unregisteredSpot: Boolean(r && (r.unregisteredSpot === true || r.unregistered_spot === true)),
-      isPublished: resolvedPublished
-    };
-    if (typeof window.okbmCanPublishFeed === 'function' && !window.okbmCanPublishFeed(probeForGate, { skipDate: true })) {
-      resolvedPublished = false;
+    // 서버가 이미 공개/비공개를 정한 행은 클라이언트 자격 게이트로 덮지 않는다.
+    // 마스터 장소명 불일치 때문에 비로그인 보관함에서 공개 피드가 전부 사라지는 원인.
+    if (!hasServerPublishFlag) {
+      var probeForGate = {
+        spot: spotTitle,
+        photos: rawPhotos,
+        readyShotPhoto: savedReadyShot,
+        date: cleanDate,
+        year: y,
+        month: m,
+        day: d,
+        unregisteredSpot: Boolean(r && (r.unregisteredSpot === true || r.unregistered_spot === true)),
+        isPublished: resolvedPublished
+      };
+      if (typeof window.okbmCanPublishFeed === 'function' && !window.okbmCanPublishFeed(probeForGate, { skipDate: true })) {
+        resolvedPublished = false;
+      }
     }
 
     var rMode = (r && (r.ready_shot_mode || r.readyShotMode)) || 'minimal';
@@ -6981,7 +6986,9 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
     if (targetUrl && targetKey) {
       try {
-        var headers = {
+        var headers = (typeof window.okbmPublicRestHeaders === 'function')
+          ? window.okbmPublicRestHeaders()
+          : {
           'apikey': targetKey,
           'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
           'Content-Type': 'application/json'
@@ -7008,7 +7015,10 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
             ? ('&or=(is_published.eq.true,user_id.eq.' + encodeURIComponent(currentUserId) + ')')
             : '&is_published=eq.true';
           var queryUrl = targetUrl + '/rest/v1/' + tableName + '?select=' + projectionColumns + filterParam + '&order=created_at.desc&offset=' + offset + '&limit=' + limit;
-          return fetch(queryUrl, { headers: headers, signal: fetchSignal })
+          var doFetch = (typeof window.okbmPublicFetch === 'function')
+            ? window.okbmPublicFetch(queryUrl, { headers: headers, signal: fetchSignal })
+            : fetch(queryUrl, { headers: headers, signal: fetchSignal });
+          return doFetch
             .then(function(r) {
               if (isStale()) {
                 var staleErr = new Error('stale');
@@ -7884,11 +7894,17 @@ window.renderHistoryStage = function(isLoading) {
       norm._isLocalOwner = isOwner;
 
       if (!isOwner) {
-        if (norm.isPublished === false || (window.okbmIsExplicitlyPrivate && window.okbmIsExplicitlyPrivate(norm))) return;
-        // [클라이언트 과잉 검열 제거] 인출 단계(keepScopedRows)와 동일한 사진 유무
-        // 필터가 렌더링 단계에도 중복으로 걸려 있어, 레디샷만 등록된 정상 공개
-        // 피드가 타인 화면에서 숨겨지는 원인이었습니다. 공개 여부와 디데이 도달
-        // 여부만으로 판단합니다.
+        var isPublic = true;
+        try {
+          if (typeof window.okbmIsPublicFeedItem === 'function') {
+            isPublic = window.okbmIsPublicFeedItem(item) || window.okbmIsPublicFeedItem(norm);
+          } else if (norm.isPublished === false || (window.okbmIsExplicitlyPrivate && window.okbmIsExplicitlyPrivate(norm))) {
+            isPublic = false;
+          }
+        } catch (ePub) {
+          isPublic = !(item && (item.is_published === false || item.isPublished === false));
+        }
+        if (!isPublic) return;
         if (typeof window.okbmRouteDateReached === 'function' && !window.okbmRouteDateReached(norm)) return;
       }
 

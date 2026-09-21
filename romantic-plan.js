@@ -4507,8 +4507,10 @@ window.saveCurrentPackingRecord = function() {
         <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
           <button type="button" data-gear="${escapeHtml(gearName)}" onclick="window.saveGearMetaFromSheet(this.dataset.gear)" style="width:100%; height:44px; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.22); border-radius:8px; color:#ffffff; font-size:0.82rem; font-weight:800; cursor:pointer;">저장 완료</button>
           ${(function(){
-            var cList = safeGetJSON('okbm_custom_gears', []);
-            var isC = cList.some(function(cg){ return cg && cg.name === gearName; });
+            var cList = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+              ? window.RomanticVault.read('okbm_custom_gears', [])
+              : safeGetJSON('okbm_custom_gears', []);
+            var isC = (cList || []).some(function(cg){ return cg && String(cg.name || '').trim() === String(gearName || '').trim(); });
             var delText = isC ? '장비 영구 삭제' : '내 장비에서 해제';
             var msg = isC ? '이 장비를 영구 삭제하시겠습니까?' : '내 장비에서 해제하시겠습니까?';
             return '<button type="button" data-gear="' + escapeHtml(gearName) + '" data-confirm-msg="' + escapeHtml(msg) + '" onclick="window.confirmRemoveFavoriteGearFromSheet(this)" style="width:100%; height:36px; background:none; border:none; color:#fda4af; font-size:0.72rem; font-weight:700; cursor:pointer; text-decoration:underline;">' + delText + '</button>';
@@ -4718,110 +4720,121 @@ window.saveCurrentPackingRecord = function() {
     window.renderPlanStage();
   };
 
+  function okbmReadGearStore(key, fallback) {
+    if (window.RomanticVault && typeof window.RomanticVault.read === 'function') {
+      return window.RomanticVault.read(key, fallback);
+    }
+    return safeGetJSON(key, fallback);
+  }
+
+  function okbmWriteGearStore(key, val) {
+    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+      window.RomanticVault.write(key, val, false);
+    } else {
+      localStorage.setItem(key, JSON.stringify(val));
+    }
+  }
+
+  function okbmSameGearName(a, b) {
+    return String(a || '').trim() === String(b || '').trim();
+  }
+
+  function okbmGearItemName(item) {
+    if (!item) return '';
+    return String(item.name || item.itemName || '').trim();
+  }
+
+  function okbmFlushGearCloudNow() {
+    if (typeof syncUserDataToCloud === 'function') {
+      syncUserDataToCloud(false, true);
+    }
+  }
+
+  window.okbmPurgeOwnedGear = function(gearName) {
+    var target = String(gearName || '').trim();
+    if (!target) return false;
+
+    var customGears = okbmReadGearStore('okbm_custom_gears', []) || [];
+    var wasCustom = customGears.some(function(cg) { return okbmSameGearName(okbmGearItemName(cg), target); });
+    customGears = customGears.filter(function(cg) { return !okbmSameGearName(okbmGearItemName(cg), target); });
+    okbmWriteGearStore('okbm_custom_gears', customGears);
+
+    if (!window.favoriteGearSet) window.favoriteGearSet = new Set();
+    window.favoriteGearSet = new Set(Array.from(window.favoriteGearSet).filter(function(n) {
+      return !okbmSameGearName(n, target);
+    }));
+    okbmWriteGearStore('okbm_favorite_gears', Array.from(window.favoriteGearSet));
+
+    var gearMetaObj = okbmReadGearStore('okbm_gear_meta', {}) || {};
+    if (gearMetaObj[target] || gearMetaObj[gearName]) {
+      delete gearMetaObj[target];
+      delete gearMetaObj[gearName];
+      okbmWriteGearStore('okbm_gear_meta', gearMetaObj);
+    }
+
+    var gearMap = window.selectedGearMap || okbmReadGearStore('okbm_selected_gears_multi', {}) || {};
+    var packChanged = false;
+    Object.keys(gearMap).forEach(function(catKey) {
+      if (!Array.isArray(gearMap[catKey])) return;
+      var prevLen = gearMap[catKey].length;
+      gearMap[catKey] = gearMap[catKey].filter(function(it) { return !okbmSameGearName(okbmGearItemName(it), target); });
+      if (gearMap[catKey].length !== prevLen) packChanged = true;
+    });
+    if (packChanged) {
+      window.selectedGearMap = gearMap;
+      okbmWriteGearStore('okbm_selected_gears_multi', gearMap);
+    }
+
+    (window.CATEGORIES || []).forEach(function(cat) {
+      if (Array.isArray(cat.db)) {
+        cat.db = cat.db.filter(function(d) { return !okbmSameGearName(okbmGearItemName(d), target); });
+      }
+    });
+
+    var masterCache = window.__memoryStore && window.__memoryStore['okbm_master_gears_cache'];
+    if (masterCache && typeof masterCache === 'object') {
+      Object.keys(masterCache).forEach(function(catId) {
+        if (Array.isArray(masterCache[catId])) {
+          masterCache[catId] = masterCache[catId].filter(function(d) {
+            return !okbmSameGearName(okbmGearItemName(d), target);
+          });
+        }
+      });
+    }
+
+    return wasCustom;
+  };
+
   window.deleteCustomGearCompletely = function(gearName) {
     if (!gearName) return;
 
     window.showRomanticConfirm('[' + gearName + '] 장비를 영구 삭제하시겠습니까?\n내 장비 및 배낭에서 모두 제거됩니다.', function() {
-      var customGears = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-        ? window.RomanticVault.read('okbm_custom_gears', [])
-        : safeGetJSON('okbm_custom_gears', []);
-      customGears = customGears.filter(function(cg) { return cg && cg.name !== gearName; });
-
-      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-        window.RomanticVault.write('okbm_custom_gears', customGears, false);
-      } else {
-        localStorage.setItem('okbm_custom_gears', JSON.stringify(customGears));
-      }
-
-      if (window.favoriteGearSet) {
-        window.favoriteGearSet.delete(gearName);
-        var favArr = Array.from(window.favoriteGearSet);
-        if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-          window.RomanticVault.write('okbm_favorite_gears', favArr, false);
-        } else {
-          localStorage.setItem('okbm_favorite_gears', JSON.stringify(favArr));
-        }
-      }
-
-      var gearMetaObj = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-        ? window.RomanticVault.read('okbm_gear_meta', {})
-        : safeGetJSON('okbm_gear_meta', {});
-      if (gearMetaObj[gearName]) {
-        delete gearMetaObj[gearName];
-        if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-          window.RomanticVault.write('okbm_gear_meta', gearMetaObj, false);
-        } else {
-          localStorage.setItem('okbm_gear_meta', JSON.stringify(gearMetaObj));
-        }
-      }
-
-      var gearMap = window.selectedGearMap || safeGetJSON('okbm_selected_gears_multi', {});
-      var isRemovedFromPack = false;
-      Object.keys(gearMap).forEach(function(catKey) {
-        if (Array.isArray(gearMap[catKey])) {
-          var prevLen = gearMap[catKey].length;
-          gearMap[catKey] = gearMap[catKey].filter(function(it) { return it && it.name !== gearName; });
-          if (gearMap[catKey].length !== prevLen) isRemovedFromPack = true;
-        }
-      });
-
-      if (isRemovedFromPack) {
-        window.selectedGearMap = gearMap;
-        if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-          window.RomanticVault.write('okbm_selected_gears_multi', gearMap, false);
-        } else {
-          localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(gearMap));
-        }
-      }
-
-      (window.CATEGORIES || []).forEach(function(cat) {
-        if (Array.isArray(cat.db)) {
-          cat.db = cat.db.filter(function(d) { return d && d.name !== gearName; });
-        }
-      });
-
-      if (typeof syncUserDataToCloud === 'function') {
-        syncUserDataToCloud();
-      }
-
+      window.okbmPurgeOwnedGear(gearName);
+      okbmFlushGearCloudNow();
       triggerHaptic(12);
       if (typeof showToast === 'function') showToast('[' + gearName + '] 장비가 영구 삭제되었습니다.', 'info');
-      window.renderPlanCategorySlots();
+      if (typeof window.renderPlanStage === 'function') window.renderPlanStage();
+      else if (typeof window.renderPlanCategorySlots === 'function') window.renderPlanCategorySlots();
     });
   };
 
   window.removeFavoriteGearFromManager = function(gearName, btnEl) {
-    if (!window.favoriteGearSet) window.favoriteGearSet = new Set();
-    window.favoriteGearSet.delete(gearName);
-    var favArr = Array.from(window.favoriteGearSet);
-
-    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-      window.RomanticVault.write('okbm_favorite_gears', favArr, false);
+    var target = String(gearName || '').trim();
+    var customGears = okbmReadGearStore('okbm_custom_gears', []) || [];
+    var wasCustom = customGears.some(function(cg) { return okbmSameGearName(okbmGearItemName(cg), target); });
+    if (wasCustom) {
+      window.okbmPurgeOwnedGear(gearName);
     } else {
-      localStorage.setItem('okbm_favorite_gears', JSON.stringify(favArr));
+      if (!window.favoriteGearSet) window.favoriteGearSet = new Set();
+      window.favoriteGearSet = new Set(Array.from(window.favoriteGearSet).filter(function(n) {
+        return !okbmSameGearName(n, target);
+      }));
+      okbmWriteGearStore('okbm_favorite_gears', Array.from(window.favoriteGearSet));
     }
-
-    var customGears = safeGetJSON('okbm_custom_gears', []);
-    var isCustom = customGears.some(function(cg) { return cg && cg.name === gearName; });
-    if (isCustom) {
-      customGears = customGears.filter(function(cg) { return cg && cg.name !== gearName; });
-      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-        window.RomanticVault.write('okbm_custom_gears', customGears, false);
-      } else {
-        localStorage.setItem('okbm_custom_gears', JSON.stringify(customGears));
-      }
-
-      var gearMetaObj = safeGetJSON('okbm_gear_meta', {});
-      delete gearMetaObj[gearName];
-      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-        window.RomanticVault.write('okbm_gear_meta', gearMetaObj, true);
-      } else {
-        localStorage.setItem('okbm_gear_meta', JSON.stringify(gearMetaObj));
-      }
-    }
+    okbmFlushGearCloudNow();
 
     triggerHaptic(10);
-    if (typeof showToast === 'function') showToast(isCustom ? '[' + gearName + '] 삭제 완료' : '[' + gearName + '] 내 장비 해제', 'info');
+    if (typeof showToast === 'function') showToast(wasCustom ? '[' + gearName + '] 삭제 완료' : '[' + gearName + '] 내 장비 해제', 'info');
 
     if (btnEl) {
       var card = btnEl.closest('.my-gear-manage-card');

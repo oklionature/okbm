@@ -2436,7 +2436,13 @@ window.RomanticVault = window.RomanticVault || {
     window.__memoryStore = window.__memoryStore || {};
     window.__memoryStore[key] = val;
 
-    if (this.isHydrating && key === 'okbm_selected_gears_multi') {
+    if (this.isHydrating && !this._applyingServerHydration && (
+      key === 'okbm_selected_gears_multi' ||
+      key === 'okbm_custom_gears' ||
+      key === 'okbm_favorite_gears' ||
+      key === 'okbm_gear_presets' ||
+      key === 'okbm_gear_meta'
+    )) {
       this._localGearsModifiedDuringHydration = true;
     }
 
@@ -2536,6 +2542,7 @@ window.RomanticVault = window.RomanticVault || {
     if (!userId || this.isHydrating) return null;
     this.isHydrating = true;
     this.lastHydrateStatus = 'pending';
+    this._localGearsModifiedDuringHydration = false;
     var hydrationStartTime = Date.now();
     try {
       var currentSessionId = String(userId).trim();
@@ -2599,16 +2606,36 @@ window.RomanticVault = window.RomanticVault || {
         var rawMyGears = cloudData.my_gears || cloudData.myGears;
         if (rawMyGears && typeof rawMyGears === 'object') {
           var mg = rawMyGears;
-          var localGearsMulti = this.read('okbm_selected_gears_multi', null);
-          var hasLocalGearsChanged = localGearsMulti && Object.keys(localGearsMulti).length > 0 && this._localGearsModifiedDuringHydration;
-
-          if (!hasLocalGearsChanged && (mg.selectedGears || mg.selected_gears)) {
-            this.write('okbm_selected_gears_multi', mg.selectedGears || mg.selected_gears, false);
+          var skipServerGears = !!this._localGearsModifiedDuringHydration;
+          if (!skipServerGears) {
+            this._applyingServerHydration = true;
+            try {
+              if (mg.selectedGears || mg.selected_gears) {
+                var serverSelected = mg.selectedGears || mg.selected_gears;
+                this.write('okbm_selected_gears_multi', serverSelected, false);
+                window.selectedGearMap = serverSelected && typeof serverSelected === 'object' ? serverSelected : {};
+              }
+              var serverFav = mg.favoriteGears || mg.favorite_gears;
+              if (Array.isArray(serverFav)) {
+                this.write('okbm_favorite_gears', serverFav, false);
+                window.favoriteGearSet = new Set(serverFav);
+              }
+              var serverCustom = mg.customGears || mg.custom_gears;
+              if (Array.isArray(serverCustom)) {
+                this.write('okbm_custom_gears', serverCustom, false);
+              }
+              var serverPresets = mg.gearPresets || mg.gear_presets;
+              if (Array.isArray(serverPresets)) {
+                this.write('okbm_gear_presets', serverPresets, false);
+              }
+              var serverGearMeta = mg.gearMeta || mg.gear_meta;
+              if (serverGearMeta && typeof serverGearMeta === 'object') {
+                this.write('okbm_gear_meta', serverGearMeta, false);
+              }
+            } finally {
+              this._applyingServerHydration = false;
+            }
           }
-          if (mg.favoriteGears || mg.favorite_gears) this.write('okbm_favorite_gears', mg.favoriteGears || mg.favorite_gears, false);
-          if (mg.customGears || mg.custom_gears) this.write('okbm_custom_gears', mg.customGears || mg.custom_gears, false);
-          if (mg.gearPresets || mg.gear_presets) this.write('okbm_gear_presets', mg.gearPresets || mg.gear_presets, false);
-          if (mg.gearMeta || mg.gear_meta) this.write('okbm_gear_meta', mg.gearMeta || mg.gear_meta, false);
 
           var serverPlanMemos = mg.planMemos || mg.plan_memos;
           if (serverPlanMemos && typeof serverPlanMemos === 'object') {
@@ -11676,24 +11703,9 @@ window.saveUserToSupabase = async function(profileData) {
     if (existingNick && existingNick !== '낭만백패커' && incomingIsDefault) {
       nickname = existingNick;
     }
-    var existingMg = existingRow.my_gears && typeof existingRow.my_gears === 'object' ? existingRow.my_gears : {};
-    var existingSelected = existingMg.selectedGears || existingMg.selected_gears || {};
-    if ((!selectedGears || !Object.keys(selectedGears).length) && existingSelected && Object.keys(existingSelected).length) {
-      selectedGears = existingSelected;
-    }
-    if ((!favoriteGears || !favoriteGears.length) && Array.isArray(existingMg.favoriteGears) && existingMg.favoriteGears.length) {
-      favoriteGears = existingMg.favoriteGears;
-    }
-    if ((!customGears || !customGears.length) && Array.isArray(existingMg.customGears) && existingMg.customGears.length) {
-      customGears = existingMg.customGears;
-    }
-    if ((!gearPresets || !gearPresets.length) && Array.isArray(existingMg.gearPresets) && existingMg.gearPresets.length) {
-      gearPresets = existingMg.gearPresets;
-    }
-    if ((!gearMeta || !Object.keys(gearMeta).length) && existingMg.gearMeta && Object.keys(existingMg.gearMeta).length) {
-      gearMeta = existingMg.gearMeta;
-    }
-    // planMemos/planSpots는 빈 맵이 정상 삭제 결과일 수 있으므로 existingMg로 되돌리지 않음 (SSOT)
+    // [제1조 SSOT / 제4조 삭제의 즉시성]
+    // 빈 배열·빈 맵은 정상 삭제 결과다. 서버 잔존 my_gears로 되돌리면
+    // 방금 지운 커스텀 장비(예: 물 2리터)가 새로고침 때 되살아난다.
     if (!coverUrl) coverUrl = existingRow.hero_cover_url || existingRow.photo_url || '';
   }
 
