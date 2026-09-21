@@ -7838,6 +7838,14 @@ window.openAccountSettingsModal = function() {
   modal.style.display = 'flex';
 };
 
+window.closeAccountSettingsModal = function() {
+  var modal = document.getElementById('userAccountSettingsModal');
+  if (modal) modal.style.display = 'none';
+  if (typeof window.goBackModal === 'function') {
+    try { window.goBackModal(); } catch (e) {}
+  }
+};
+
 window.saveNicknameFromSettingsModal = async function() {
   var input = document.getElementById('settingsModalNicknameInput');
   if (!input || !input.value.trim()) {
@@ -10951,72 +10959,265 @@ if (typeof window !== 'undefined') {
 
 // ============================================================================
 // 📱 안드로이드 하드웨어/제스처 뒤로가기 3단계 우선순위 가드 (Capacitor App)
-// 1순위: 화면에 열려 있는 팝업/모달(로그인, 설정, 보관함 등) 닫기
-// 2순위: 열린 모달이 없고 이전 웹 히스토리가 있다면 window.history.back()
-// 3순위: 더 이상 뒤로 갈 곳이 없는 첫 화면에서는 안내 후 2초 내 재입력 시에만 앱 종료 (App.exitApp)
+// 1순위: 현재 화면에 열린 모달/팝업/바텀시트만 닫기 (부모 화면·앱 이동 금지)
+// 2순위: 닫을 오버레이가 없고 history.length > 1 이면 window.history.back()
+// 3순위: 최상위(홈)에서는 토스트 안내 후 2초 내 재입력 시에만 App.exitApp()
 // ============================================================================
 (function initCapacitorBackButtonGuard() {
   if (typeof window === 'undefined') return;
   if (window.__okbmBackButtonGuardInitialized) return;
   window.__okbmBackButtonGuardInitialized = true;
 
-  function tryCloseTopmostModal() {
-    // 1. 등록된 modalCloseStack이 있다면 최상단 모달 닫기
-    if (typeof window.closeTopmostModal === 'function') {
+  if (!Array.isArray(window.modalCloseStack)) window.modalCloseStack = [];
+  if (typeof window.registerModalOpen !== 'function') {
+    window.registerModalOpen = function(modalId, closeFn) {
+      window.modalCloseStack = window.modalCloseStack.filter(function(m) { return m.id !== modalId; });
+      window.modalCloseStack.push({ id: modalId, close: closeFn });
+    };
+  }
+  if (typeof window.unregisterModalClose !== 'function') {
+    window.unregisterModalClose = function(modalId) {
+      window.modalCloseStack = window.modalCloseStack.filter(function(m) { return m.id !== modalId; });
+    };
+  }
+
+  var SKIP_OVERLAY_IDS = {
+    okbmSplashOverlay: 1,
+    okbmExitToastBanner: 1,
+    globalPhotoLoadingModal: 1,
+    romanticMasterBottomDock: 1,
+    videoDetailSheet: 1,
+    mainDualDockContainer: 1
+  };
+
+  var PERSIST_OVERLAY_IDS = {
+    loginModalOverlay: 1,
+    userProfileModalOverlay: 1,
+    userAccountSettingsModal: 1,
+    videoDetailModal: 1,
+    gearPresetModal: 1,
+    gearDetailModal: 1,
+    lntModalOverlay: 1,
+    customModalOverlay: 1,
+    romanticHistoryModal: 1,
+    packShareModalOverlay: 1,
+    photoStudioOverlay: 1
+  };
+
+  var NESTED_REPORT_IDS = {
+    feedCustomShareModal: 1,
+    modalRichAfterTrip: 1,
+    tripActionActionSheet: 1,
+    singleTripFeedModal: 1,
+    userFeedCollectionModal: 1,
+    pastTripsListModal: 1,
+    followedRoutersModal: 1,
+    savedFeedsListModal: 1,
+    savedFeedsEmptyModal: 1,
+    userAccountSettingsModal: 1
+  };
+
+  function callWin(name) {
+    var fn = window[name];
+    if (typeof fn === 'function') {
+      fn();
+      return true;
+    }
+    return false;
+  }
+
+  function hideOrRemove(el) {
+    if (!el) return;
+    if (el.id && PERSIST_OVERLAY_IDS[el.id]) {
+      el.style.setProperty('display', 'none', 'important');
+      el.classList.remove('open', 'active');
+      return;
+    }
+    if (el.parentNode) el.remove();
+  }
+
+  function isOverlayVisible(el) {
+    if (!el || !el.isConnected) return false;
+    if (el.id && SKIP_OVERLAY_IDS[el.id]) return false;
+    if (el.classList.contains('okbm-splash')) return false;
+    if (el.classList.contains('mobile-bottom-sheet') && !el.classList.contains('open')) return false;
+    if (el.classList.contains('pc-sliding-drawer') && !el.classList.contains('open')) return false;
+    if (el.classList.contains('calc-slide-sheet') && !el.classList.contains('active')) return false;
+    var cs = window.getComputedStyle(el);
+    if (!cs || cs.display === 'none') return false;
+    if (cs.visibility === 'hidden') return false;
+    var opacity = parseFloat(cs.opacity);
+    if (!isNaN(opacity) && opacity === 0 && cs.pointerEvents === 'none') return false;
+    var rect = el.getBoundingClientRect();
+    if (rect.width < 4 || rect.height < 4) return false;
+    if (rect.bottom < 2 || rect.top > (window.innerHeight - 2)) return false;
+    if (rect.right < 2 || rect.left > (window.innerWidth - 2)) return false;
+    return true;
+  }
+
+  function closeNestedReportLayer(el) {
+    if (el && el.id === 'userAccountSettingsModal') {
+      el.style.display = 'none';
+    }
+    if (typeof window.goBackModal === 'function') {
       try {
-        if (window.closeTopmostModal()) return true;
+        window.goBackModal();
+        return true;
+      } catch (e) {}
+    }
+    if (el) hideOrRemove(el);
+    return true;
+  }
+
+  function getKnownModalClosers() {
+    function removeEl(el) { if (el) el.remove(); }
+    return [
+      { id: 'romanticConfirmModal', close: removeEl },
+      { id: 'romanticDatePickerModal', close: removeEl },
+      { id: 'pastTripDatePickerModal', close: removeEl },
+      { id: 'tripDatePickerModal', close: removeEl },
+      { id: 'planYearPickerOverlay', close: removeEl },
+      { id: 'datePickGuideHud', close: removeEl },
+      { id: 'datePickGuideModal', close: removeEl },
+      { id: 'confirmDestinationDateModal', close: removeEl },
+      { id: 'presetActionModal', close: removeEl },
+      { id: 'gearMetaEditSheet', close: removeEl },
+      { id: 'ugcSafetyMenuSheet', close: removeEl },
+      { id: 'readyShotShareSheet', close: function() { callWin('closeReadyShotShareSheet') || hideOrRemove(document.getElementById('readyShotShareSheet')); } },
+      { id: 'readyShotFrameOverlay', close: function() {
+        if (typeof window.closeReadyShotFrameModal === 'function') window.closeReadyShotFrameModal(true);
+        else hideOrRemove(document.getElementById('readyShotFrameOverlay'));
+      } },
+      { id: 'calcTripDateDropdown', close: function(el) { el.style.display = 'none'; } },
+      { id: 'calcPackedItemsPopover', close: function(el) { el.style.display = 'none'; } },
+      { id: 'calcPresetBackdrop', close: function() { if (!callWin('closeQuickPresetPicker')) hideOrRemove(document.getElementById('calcPresetSlideSheet')); } },
+      { id: 'calcPresetSlideSheet', close: function() { if (!callWin('closeQuickPresetPicker')) hideOrRemove(document.getElementById('calcPresetSlideSheet')); } },
+      { id: 'planBookmarkSlideSheet', close: function() { if (!callWin('closeBookmarksBottomSheet')) hideOrRemove(document.getElementById('planBookmarkSlideSheet')); } },
+      { id: 'pinPickerBanner', close: function() { if (!callWin('cancelPinPicking')) hideOrRemove(document.getElementById('pinPickerBanner')); } },
+      { id: 'feedReportModal', close: function(el) { if (!callWin('closeFeedReportModal')) hideOrRemove(el); } },
+      { id: 'feedReportReasonModal', close: function(el) { if (!callWin('closeFeedReportModal')) hideOrRemove(el); } },
+      { id: 'romanticInterestModal', close: removeEl },
+      { id: 'clearMapModal', close: removeEl },
+      { id: 'lntModalOverlay', close: function(el) { el.style.display = 'none'; } },
+      { id: 'customModalOverlay', close: function(el) { if (!callWin('closeCustomModal')) el.style.display = 'none'; } },
+      { id: 'quickGearDetailModal', close: removeEl },
+      { id: 'gearDetailModal', close: function() { if (!callWin('closeGearDetailModal')) hideOrRemove(document.getElementById('gearDetailModal')); } },
+      { id: 'calcSpotSearchModal', close: removeEl },
+      { id: 'pastTripSpotSearchModal', close: removeEl },
+      { id: 'pastTripSpotChoiceOverlay', close: removeEl },
+      { id: 'richSpotRegisterChoiceOverlay', close: removeEl },
+      { id: 'planSpotRegisterChoiceOverlay', close: removeEl },
+      { id: 'richTripSpotSearchModal', close: removeEl },
+      { id: 'coverPhotoCropperModal', close: removeEl },
+      { id: 'masterCoverLargeViewerModal', close: removeEl },
+      { id: 'reportSnsEditorModalOverlay', close: removeEl },
+      { id: 'reportBioEditorModalOverlay', close: removeEl },
+      { id: 'blockedUsersManageModal', close: removeEl },
+      { id: 'adminReportInspectorModal', close: removeEl },
+      { id: 'userNotificationInboxModal', close: function(el) { if (!callWin('closeUserNotificationInboxModal')) hideOrRemove(el); } },
+      { id: 'directMessageThreadModal', close: function() { if (!callWin('closeDirectMessageModals')) hideOrRemove(document.getElementById('directMessageThreadModal')); } },
+      { id: 'feedCustomShareModal', close: closeNestedReportLayer },
+      { id: 'modalRichAfterTrip', close: closeNestedReportLayer },
+      { id: 'tripActionActionSheet', close: closeNestedReportLayer },
+      { id: 'singleTripFeedModal', close: closeNestedReportLayer },
+      { id: 'userFeedCollectionModal', close: closeNestedReportLayer },
+      { id: 'pastTripRegisterModal', close: function() { if (!callWin('closePastTripRegisterModal')) hideOrRemove(document.getElementById('pastTripRegisterModal')); } },
+      { id: 'pastTripsListModal', close: closeNestedReportLayer },
+      { id: 'followedRoutersModal', close: closeNestedReportLayer },
+      { id: 'savedFeedsListModal', close: closeNestedReportLayer },
+      { id: 'savedFeedsEmptyModal', close: closeNestedReportLayer },
+      { id: 'userAccountSettingsModal', close: function() { if (!callWin('closeAccountSettingsModal')) closeNestedReportLayer(document.getElementById('userAccountSettingsModal')); } },
+      { id: 'mapSpotFeedDetailModal', close: removeEl },
+      { id: 'templateCardModalOverlay', close: function(el) { if (!callWin('closeCurrentTemplateModal')) hideOrRemove(el); } },
+      { id: 'gearPresetModal', close: function() { if (!callWin('closeGearPresetModal')) hideOrRemove(document.getElementById('gearPresetModal')); } },
+      { id: 'photoStudioOverlay', close: function() { if (!callWin('closePhotoStudio')) hideOrRemove(document.getElementById('photoStudioOverlay')); } },
+      { id: 'packShareModalOverlay', close: function() { if (!callWin('closePackShareModal')) hideOrRemove(document.getElementById('packShareModalOverlay')); } },
+      { id: 'videoDetailModal', close: function() { if (!callWin('closeVideoDetailModal')) hideOrRemove(document.getElementById('videoDetailModal')); } },
+      { id: 'secretSpotHeroModal', close: function() { if (!callWin('closeSecretSpotHeroModal')) hideOrRemove(document.getElementById('secretSpotHeroModal')); } },
+      { id: 'themeSpotAllModal', close: function() { if (!callWin('closeThemeSpotAllModal')) hideOrRemove(document.getElementById('themeSpotAllModal')); } },
+      { id: 'tripDetailSheetModal', close: function() { if (!callWin('closeTripDetailModal')) hideOrRemove(document.getElementById('tripDetailSheetModal')); } },
+      { id: 'tripCreateModal', close: function() { if (!callWin('closeTripCreateModal')) hideOrRemove(document.getElementById('tripCreateModal')); } },
+      { id: 'tripJoinListModal', close: function(el) { if (!callWin('closeTripJoinListModal')) hideOrRemove(el); } },
+      { id: 'tripUserProfileModal', close: function() { if (!callWin('closeTripAuthorProfile')) hideOrRemove(document.getElementById('tripUserProfileModal')); } },
+      { id: 'loginModalOverlay', close: function() { if (!callWin('closeLoginModal')) hideOrRemove(document.getElementById('loginModalOverlay')); } },
+      { id: 'mobileBottomSheet', close: function(el) { if (!callWin('closeMobileBottomSheet')) el.classList.remove('open'); } },
+      { id: 'pcSlidingDrawer', close: function(el) { if (!callWin('closePcSlidingDrawer')) el.classList.remove('open'); } },
+      { id: 'spotDetailSheet', close: function(el) { if (!callWin('closeSpotDetailSheet')) hideOrRemove(el); } },
+      { id: 'spotDrawer', close: function(el) { if (!callWin('closeSpotDrawer')) hideOrRemove(el); } },
+      { id: 'romanticTripPhotosModal', close: function(el) { if (!callWin('closeTripPhotosModal')) hideOrRemove(el); } },
+      { id: 'romanticGearBoxModal', close: function(el) { if (!callWin('closeGearBoxModal')) hideOrRemove(el); } },
+      { id: 'romanticMyListModal', close: function(el) { if (!callWin('closeMyListModal')) hideOrRemove(el); } },
+      { id: 'romanticPlanModal', close: function() { if (!callWin('closePlanModal')) hideOrRemove(document.getElementById('romanticPlanModal')); } },
+      { id: 'romanticHistoryModal', close: function() { if (!callWin('closeHistoryModal')) hideOrRemove(document.getElementById('romanticHistoryModal')); } },
+      { id: 'userProfileModalOverlay', close: function() { if (!callWin('closeUserProfileModal')) hideOrRemove(document.getElementById('userProfileModalOverlay')); } }
+    ];
+  }
+
+  function dismissGenericOverlay(ov) {
+    if (!ov || (ov.id && SKIP_OVERLAY_IDS[ov.id])) return false;
+    if (typeof ov.onclick === 'function') {
+      try {
+        ov.onclick({ target: ov, currentTarget: ov, preventDefault: function() {}, stopPropagation: function() {} });
+        return true;
+      } catch (e) {}
+    }
+    var closeBtn = ov.querySelector('.close-modal, .btn-close, .template-modal-close-btn, .fixed-floating-close-btn, .circle-icon-btn, [data-dismiss="modal"], [onclick*="close"], [onclick*="Close"], [onclick*="remove()"]');
+    if (closeBtn && typeof closeBtn.click === 'function') {
+      closeBtn.click();
+      return true;
+    }
+    hideOrRemove(ov);
+    return true;
+  }
+
+  function unregisterClosed(modalId) {
+    if (modalId && typeof window.unregisterModalClose === 'function') {
+      try { window.unregisterModalClose(modalId); } catch (e) {}
+    }
+  }
+
+  function tryCloseTopmostModal() {
+    var known = getKnownModalClosers();
+    var i;
+    for (i = 0; i < known.length; i++) {
+      var item = known[i];
+      var el = document.getElementById(item.id);
+      if (!el || !isOverlayVisible(el)) continue;
+      try {
+        item.close(el);
+        unregisterClosed(item.id);
+        return true;
       } catch (e) {}
     }
 
-    // 2. 주요 모달 ID 우선순위별 닫기 처리
-    var knownModalConfigs = [
-      { id: 'ugcSafetyMenuSheet', close: function(el) { el.remove(); } },
-      { id: 'feedReportModal', close: function() { if (typeof window.closeFeedReportModal === 'function') window.closeFeedReportModal(); } },
-      { id: 'loginModalOverlay', close: function() { if (typeof window.closeLoginModal === 'function') window.closeLoginModal(); } },
-      { id: 'userAccountSettingsModal', close: function() { if (typeof window.closeAccountSettingsModal === 'function') window.closeAccountSettingsModal(); } },
-      { id: 'pastTripRegisterModal', close: function() { if (typeof window.closePastTripRegisterModal === 'function') window.closePastTripRegisterModal(); } },
-      { id: 'userProfileModalOverlay', close: function() { if (typeof window.closeUserProfileModal === 'function') window.closeUserProfileModal(); } },
-      { id: 'photoStudioOverlay', close: function() { if (typeof window.closePhotoStudio === 'function') window.closePhotoStudio(); } },
-      { id: 'packShareModalOverlay', close: function() { if (typeof window.closePackShareModal === 'function') window.closePackShareModal(); } },
-      { id: 'gearPresetModal', close: function() { if (typeof window.closeGearPresetModal === 'function') window.closeGearPresetModal(); } },
-      { id: 'videoDetailModal', close: function() { if (typeof window.closeVideoDetailModal === 'function') window.closeVideoDetailModal(); } },
-      { id: 'romanticPlanModal', close: function() { if (typeof window.closePlanModal === 'function') window.closePlanModal(); } },
-      { id: 'romanticHistoryModal', close: function() { if (typeof window.closeHistoryModal === 'function') window.closeHistoryModal(); } },
-      { id: 'romanticTripPhotosModal', close: function() { if (typeof window.closeTripPhotosModal === 'function') window.closeTripPhotosModal(); } },
-      { id: 'romanticGearBoxModal', close: function() { if (typeof window.closeGearBoxModal === 'function') window.closeGearBoxModal(); } },
-      { id: 'romanticMyListModal', close: function() { if (typeof window.closeMyListModal === 'function') window.closeMyListModal(); } },
-      { id: 'spotDetailSheet', close: function() { if (typeof window.closeSpotDetailSheet === 'function') window.closeSpotDetailSheet(); } },
-      { id: 'spotDrawer', close: function() { if (typeof window.closeSpotDrawer === 'function') window.closeSpotDrawer(); } }
-    ];
+    var extras = document.querySelectorAll('.custom-modal-overlay, .modal-fullscreen-container, .modal-overlay, .modal-backdrop, .calc-slide-sheet.active, .mobile-bottom-sheet.open, .pc-sliding-drawer.open, [role="dialog"]');
+    for (i = extras.length - 1; i >= 0; i--) {
+      var ov = extras[i];
+      if (!isOverlayVisible(ov)) continue;
+      if (ov.id && SKIP_OVERLAY_IDS[ov.id]) continue;
+      try {
+        if (dismissGenericOverlay(ov)) {
+          unregisterClosed(ov.id);
+          return true;
+        }
+      } catch (e) {}
+    }
 
-    for (var i = 0; i < knownModalConfigs.length; i++) {
-      var item = knownModalConfigs[i];
-      var el = document.getElementById(item.id);
-      if (el) {
-        var style = window.getComputedStyle(el);
-        if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
+    if (window.modalCloseStack && window.modalCloseStack.length > 0) {
+      while (window.modalCloseStack.length > 0) {
+        var top = window.modalCloseStack[window.modalCloseStack.length - 1];
+        var stackedEl = top && top.id ? document.getElementById(top.id) : null;
+        if (stackedEl && !isOverlayVisible(stackedEl)) {
+          window.modalCloseStack.pop();
+          continue;
+        }
+        var popped = window.modalCloseStack.pop();
+        if (popped && typeof popped.close === 'function') {
           try {
-            item.close(el);
-            if (typeof triggerHaptic === 'function') triggerHaptic(10);
+            popped.close();
             return true;
           } catch (e) {}
         }
-      }
-    }
-
-    // 3. 커스텀 모달 오버레이 공통 탐색 (화면에 떠 있는 모달 닫기)
-    var overlays = document.querySelectorAll('.custom-modal-overlay, .modal-overlay, .modal-backdrop, [role="dialog"]');
-    for (var j = overlays.length - 1; j >= 0; j--) {
-      var ov = overlays[j];
-      var st = window.getComputedStyle(ov);
-      if (st.display !== 'none' && st.visibility !== 'hidden' && st.opacity !== '0') {
-        var closeBtn = ov.querySelector('.close-modal, .btn-close, [data-dismiss="modal"], .modal-close-btn, [onclick*="close"]');
-        if (closeBtn && typeof closeBtn.click === 'function') {
-          closeBtn.click();
-          return true;
-        }
-        ov.style.setProperty('display', 'none', 'important');
-        return true;
       }
     }
 
@@ -11024,6 +11225,7 @@ if (typeof window !== 'undefined') {
   }
   window.tryCloseAnyVisibleModal = tryCloseTopmostModal;
   window.tryCloseTopmostModal = tryCloseTopmostModal;
+  window.NESTED_REPORT_IDS = NESTED_REPORT_IDS;
 
   function showExitNotice(msg) {
     if (typeof showToast === 'function') {
@@ -11045,35 +11247,49 @@ if (typeof window !== 'undefined') {
     }, 2000);
   }
 
+  function getCapacitorAppPlugin() {
+    var cap = window.Capacitor || {};
+    var plugins = cap.Plugins || {};
+    return plugins.App || cap.App || window.App || null;
+  }
+
+  function shouldGoBackInWebHistory(data) {
+    var hasJsHistory = !!(window.history && typeof window.history.length === 'number' && window.history.length > 1);
+    if (!hasJsHistory) return false;
+    if (data && typeof data.canGoBack === 'boolean') return !!data.canGoBack;
+    return true;
+  }
+
   function registerCapacitorBackHandler() {
-    if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.App) {
-      return;
-    }
-    var App = window.Capacitor.Plugins.App;
+    if (window.__okbmBackButtonListenerAttached) return true;
+    var App = getCapacitorAppPlugin();
+    if (!App || typeof App.addListener !== 'function') return false;
+
     var lastBackTime = 0;
-
     App.addListener('backButton', function(data) {
-      // 1순위: 화면에 열려 있는 팝업/모달 닫기
-      if (tryCloseTopmostModal()) {
-        return;
-      }
+      window.__okbmHandlingHardwareBack = true;
+      try {
+        if (tryCloseTopmostModal()) return;
 
-      // 2순위: 열린 모달이 없고 이전 웹 히스토리가 있다면 window.history.back()
-      if (data && data.canGoBack) {
-        window.history.back();
-        return;
-      }
+        if (shouldGoBackInWebHistory(data)) {
+          window.history.back();
+          return;
+        }
 
-      // 3순위: 더 이상 뒤로 갈 곳이 없는 첫 화면에서는 2초 내 재입력 시에만 앱 종료
-      var currentTime = Date.now();
-      if (currentTime - lastBackTime < 2000) {
-        App.exitApp();
-      } else {
-        lastBackTime = currentTime;
-        if (typeof triggerHaptic === 'function') triggerHaptic(12);
-        showExitNotice("뒤로가기 버튼을 한 번 더 누르면 종료됩니다");
+        var currentTime = Date.now();
+        if (currentTime - lastBackTime < 2000) {
+          if (typeof App.exitApp === 'function') App.exitApp();
+        } else {
+          lastBackTime = currentTime;
+          if (typeof triggerHaptic === 'function') triggerHaptic(12);
+          showExitNotice('뒤로가기 버튼을 한 번 더 누르면 종료됩니다');
+        }
+      } finally {
+        setTimeout(function() { window.__okbmHandlingHardwareBack = false; }, 80);
       }
     });
+    window.__okbmBackButtonListenerAttached = true;
+    return true;
   }
 
   // ☀️ [스마트폰 상태바 텍스트/아이콘 순백색(White) 강제 고정 엔진]
@@ -11115,13 +11331,24 @@ if (typeof window !== 'undefined') {
     window.addEventListener('focus', applyStatusBarStyles);
   }
 
+  function bootBackHandler() {
+    if (registerCapacitorBackHandler()) return;
+    var attempts = 0;
+    var timer = setInterval(function() {
+      attempts += 1;
+      if (registerCapacitorBackHandler() || attempts >= 40) {
+        clearInterval(timer);
+      }
+    }, 250);
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
-      registerCapacitorBackHandler();
+      bootBackHandler();
       configureCapacitorStatusBar();
     });
   } else {
-    registerCapacitorBackHandler();
+    bootBackHandler();
     configureCapacitorStatusBar();
   }
 })();

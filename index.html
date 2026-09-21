@@ -15,7 +15,18 @@
   <meta name="apple-mobile-web-app-title" content="낭만루트" />
   <link rel="apple-touch-icon" href="logo.png" />
   <script>
-    document.documentElement.classList.add('okbm-splash-active');
+    (function bootSplashOnceGuard() {
+      var shown = false;
+      try {
+        shown = sessionStorage.getItem('splash_shown') === 'true';
+      } catch (e) {}
+      window.__okbmSplashAlreadyShown = shown;
+      if (shown) {
+        document.documentElement.classList.add('okbm-splash-skipped');
+      } else {
+        document.documentElement.classList.add('okbm-splash-active');
+      }
+    })();
     (function autoPurgeLegacyGearCache() {
       try {
         localStorage.removeItem('okbm_master_gears');
@@ -210,28 +221,154 @@
     }
     #okbmSplashOverlay {
       position: fixed;
-      inset: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      margin: 0;
+      padding: 0;
       z-index: 2147483647;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: block;
       background: #000000;
       color: #ffffff;
       pointer-events: auto;
       touch-action: none;
       overscroll-behavior: none;
       -webkit-font-smoothing: antialiased;
+      overflow: hidden;
     }
     #okbmSplashOverlay.is-leaving {
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.4s ease;
     }
+    html.okbm-splash-skipped #okbmSplashOverlay,
+    html.okbm-splash-skipped #okbmSplashOverlay.is-leaving {
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
     html.okbm-splash-active #romanticMasterBottomDock,
     html.okbm-splash-active .mobile-bottom-dock {
       visibility: hidden !important;
       opacity: 0 !important;
       pointer-events: none !important;
+    }
+    .okbm-splash-inner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      width: max-content;
+      min-width: 186px;
+      margin: 0;
+      padding: 0;
+      gap: 0;
+      transition: none;
+    }
+    .okbm-splash-type {
+      position: relative;
+      box-sizing: border-box;
+      width: max-content;
+      min-width: 186px;
+      height: 28px;
+      min-height: 28px;
+      max-height: 28px;
+      margin: 0 0 18px 0;
+      padding: 0;
+      overflow: visible;
+      font-family: 'Arita-buri-SemiBold', 'Noto Serif KR', serif;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      line-height: 28px;
+      color: #f8fafc;
+      text-align: left;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .okbm-splash-type,
+    .okbm-splash-type * {
+      letter-spacing: 0.16em;
+    }
+    .okbm-splash-type-sizer {
+      visibility: hidden;
+      display: block;
+      height: 28px;
+      line-height: 28px;
+      text-align: left;
+      padding-left: 0.16em;
+    }
+    .okbm-splash-type-live {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 28px;
+      line-height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding-left: 0.16em;
+      box-sizing: border-box;
+    }
+    .okbm-splash-type-cluster {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      line-height: 28px;
+    }
+    .okbm-splash-cursor {
+      display: inline-block;
+      width: 1.5px;
+      height: 16px;
+      margin-left: 5px;
+      flex-shrink: 0;
+      background: #fde047;
+      border-radius: 1px;
+      box-shadow: 0 0 8px rgba(253, 224, 71, 0.45);
+      animation: okbmSplashCursorBlink 0.85s steps(1, end) infinite;
+    }
+    .okbm-splash-logo-slot {
+      width: 186px;
+      height: 186px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .okbm-splash-logo {
+      width: 186px;
+      height: 186px;
+      aspect-ratio: 1 / 1;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+      opacity: 0;
+      transform: none;
+      transition: opacity 2s ease;
+      will-change: opacity;
+    }
+    .okbm-splash-inner.is-logo-in .okbm-splash-logo {
+      opacity: 1;
+    }
+    @keyframes okbmSplashCursorBlink {
+      0%, 45% { opacity: 1; }
+      46%, 100% { opacity: 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .okbm-splash-logo {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+      }
+      .okbm-splash-cursor { animation: none !important; opacity: 1; }
     }
 
     /* 🏛️ [공통 최적화 레이아웃 클래스군] */
@@ -1258,97 +1395,6 @@
     }
     .spot-dropdown-item:hover { background: rgba(255, 255, 255, 0.08); }
 
-    html.okbm-splash-active #romanticMasterBottomDock,
-    html.okbm-splash-active .mobile-bottom-dock {
-      visibility: hidden !important;
-      opacity: 0 !important;
-      pointer-events: none !important;
-    }
-
-    .okbm-splash-inner {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 0;
-      transform: translateZ(0);
-    }
-    #okbmSplashOverlay.is-leaving {
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.4s ease;
-    }
-    .okbm-splash-type {
-      position: relative;
-      margin: 0 0 18px;
-      font-family: 'Arita-buri-SemiBold', 'Noto Serif KR', var(--font-serif);
-      font-size: 1.12rem;
-      font-weight: 600;
-      letter-spacing: 0.16em;
-      line-height: 1.4;
-      color: #f8fafc;
-      text-align: left;
-      white-space: nowrap;
-    }
-    .okbm-splash-type,
-    .okbm-splash-type * {
-      letter-spacing: 0.16em;
-    }
-    .okbm-splash-type-sizer {
-      visibility: hidden;
-      display: block;
-    }
-    .okbm-splash-type-live {
-      position: absolute;
-      left: 0;
-      top: 0;
-      display: inline-flex;
-      align-items: center;
-    }
-    .okbm-splash-cursor {
-      display: inline-block;
-      width: 1.5px;
-      height: 0.92em;
-      margin-left: 6px;
-      background: #fde047;
-      border-radius: 1px;
-      box-shadow: 0 0 8px rgba(253, 224, 71, 0.45);
-      animation: okbmSplashCursorBlink 0.85s steps(1, end) infinite;
-    }
-    .okbm-splash-logo {
-      width: 186px;
-      height: auto;
-      object-fit: contain;
-      display: block;
-      opacity: 0;
-      transform: translate3d(-22px, 0, 0);
-      will-change: opacity, transform;
-    }
-    .okbm-splash-inner.is-logo-in .okbm-splash-logo {
-      animation: okbmSplashLogoFadeIn 2s ease forwards;
-    }
-    @keyframes okbmSplashCursorBlink {
-      0%, 45% { opacity: 1; }
-      46%, 100% { opacity: 0; }
-    }
-    @keyframes okbmSplashLogoFadeIn {
-      from {
-        opacity: 0;
-        transform: translate3d(-22px, 0, 0);
-      }
-      to {
-        opacity: 1;
-        transform: translate3d(0, 0, 0);
-      }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .okbm-splash-logo {
-        opacity: 1 !important;
-        transform: none !important;
-        animation: none !important;
-      }
-      .okbm-splash-cursor { animation: none !important; opacity: 1; }
-    }
   </style>
 </head>
 <body>
@@ -1358,10 +1404,14 @@
     <p class="okbm-splash-type">
       <span class="okbm-splash-type-sizer" aria-hidden="true">낭만을 찾는 방법</span>
       <span class="okbm-splash-type-live">
-        <span id="okbmSplashTypeText"></span><span class="okbm-splash-cursor" aria-hidden="true"></span>
+        <span class="okbm-splash-type-cluster">
+          <span id="okbmSplashTypeText"></span><span class="okbm-splash-cursor" aria-hidden="true"></span>
+        </span>
       </span>
     </p>
-    <img id="okbmSplashLogo" class="okbm-splash-logo" src="fulllogo.png" alt="낭만루트" />
+    <div class="okbm-splash-logo-slot">
+      <img id="okbmSplashLogo" class="okbm-splash-logo" src="fulllogo.png" alt="낭만루트" width="186" height="186" decoding="async" />
+    </div>
   </div>
 </div>
 <noscript>
@@ -1372,11 +1422,41 @@
 </noscript>
 <script>
 (function initOkbmSplashIntro() {
+  var SPLASH_SHOWN_KEY = 'splash_shown';
   var overlay = document.getElementById('okbmSplashOverlay');
   var typeEl = document.getElementById('okbmSplashTypeText');
   var innerEl = overlay ? overlay.querySelector('.okbm-splash-inner') : null;
-  if (!overlay) {
+
+  function readSplashShown() {
+    if (window.__okbmSplashAlreadyShown === true) return true;
+    try {
+      return sessionStorage.getItem(SPLASH_SHOWN_KEY) === 'true';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function markSplashShown() {
+    window.__okbmSplashAlreadyShown = true;
+    try {
+      sessionStorage.setItem(SPLASH_SHOWN_KEY, 'true');
+    } catch (e) {}
+  }
+
+  function hideSplashOverlayNow() {
     document.documentElement.classList.remove('okbm-splash-active');
+    document.documentElement.classList.add('okbm-splash-skipped');
+    if (!overlay) return;
+    overlay.style.setProperty('display', 'none', 'important');
+    overlay.setAttribute('aria-busy', 'false');
+    overlay.setAttribute('aria-hidden', 'true');
+    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+  }
+
+  if (!overlay || readSplashShown()) {
+    hideSplashOverlayNow();
+    window.__okbmNotifyHeroReady = window.__okbmNotifyHeroReady || function() {};
+    window.__okbmNotifySpotsReady = window.__okbmNotifySpotsReady || function() {};
     return;
   }
 
@@ -1544,12 +1624,14 @@
   function dismissSplash() {
     if (dismissed) return;
     dismissed = true;
+    markSplashShown();
     overlay.classList.add('is-leaving');
     overlay.setAttribute('aria-busy', 'false');
     overlay.setAttribute('aria-hidden', 'true');
     setTimeout(function() {
       if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
       document.documentElement.classList.remove('okbm-splash-active');
+      document.documentElement.classList.add('okbm-splash-skipped');
     }, FADE_MS + 20);
   }
 
@@ -5630,21 +5712,18 @@ var adBannersHtml = `
     });
   </script>
 
-    <script src="romantic-sync.js?v=2.8.72"></script>
+    <script src="romantic-sync.js?v=2.8.73"></script>
   <script src="templates.js?v=2.9.6"></script>
     <script src="romantic-history.js?v=2.7.40"></script>
   <script src="romantic-plan.js?v=2.8.3"></script>
 
   <script>
 
-    window.modalCloseStack = [];
+    window.modalCloseStack = window.modalCloseStack || [];
 
     window.registerModalOpen = function(modalId, closeFn) {
       window.modalCloseStack = window.modalCloseStack.filter(function(m) { return m.id !== modalId; });
       window.modalCloseStack.push({ id: modalId, close: closeFn });
-      if (typeof history !== 'undefined' && history.pushState) {
-        history.pushState({ modalOpen: modalId }, '');
-      }
     };
 
     window.unregisterModalClose = function(modalId) {
@@ -5652,6 +5731,9 @@ var adBannersHtml = `
     };
 
     window.closeTopmostModal = function() {
+      if (typeof window.tryCloseTopmostModal === 'function') {
+        return window.tryCloseTopmostModal();
+      }
       if (window.modalCloseStack && window.modalCloseStack.length > 0) {
         var top = window.modalCloseStack.pop();
         if (top && typeof top.close === 'function') {
@@ -5754,7 +5836,10 @@ var adBannersHtml = `
     }, { capture: true });
 
     window.addEventListener('popstate', function() {
-      if (window.modalCloseStack.length > 0) {
+      if (window.__okbmHandlingHardwareBack) return;
+      if (typeof window.tryCloseTopmostModal === 'function') {
+        window.tryCloseTopmostModal();
+      } else if (window.modalCloseStack && window.modalCloseStack.length > 0) {
         window.closeTopmostModal();
       }
     });
@@ -5801,10 +5886,12 @@ var adBannersHtml = `
   wrapModal('openPlanModal', 'closePlanModal', 'romanticPlanModal');
       wrapModal('openHistoryModal', 'closeHistoryModal', 'romanticHistoryModal');
       wrapModal('openUserProfileModal', 'closeUserProfileModal', 'userProfileModalOverlay');
+      wrapModal('openLoginModal', 'closeLoginModal', 'loginModalOverlay');
       wrapModal('openGearPresetModal', 'closeGearPresetModal', 'gearPresetModal');
       wrapModal('openPackShareModal', 'closePackShareModal', 'packShareModalOverlay');
       wrapModal('openPhotoStudio', 'closePhotoStudio', 'photoStudioOverlay');
       wrapModal('openVideoDetailModal', 'closeVideoDetailModal', 'videoDetailModal');
+      wrapModal('openThemeSpotAllModal', 'closeThemeSpotAllModal', 'themeSpotAllModal');
 
   
 
