@@ -488,7 +488,7 @@
       top: 0 !important; left: 0 !important; right: 0 !important;
       z-index: var(--z-header) !important;
       width: 100% !important;
-      background: #000000 !important;
+      background: linear-gradient(to bottom, #1e2430 0px, #0b0f16 max(24px, env(safe-area-inset-top, 0px)), #000000 calc(max(24px, env(safe-area-inset-top, 0px)) + 14px)) !important;
       border-bottom: none !important;
       padding: 0 16px !important;
       padding-top: env(safe-area-inset-top, 0px) !important;
@@ -1274,7 +1274,7 @@
 <!-- 하단 글래스 메모 -->
   <div class="insta-glass-memo">
    <div class="insta-memo-title-line" style="display:flex; justify-content:space-between; align-items:center;">
-      <h1 class="insta-memo-spot-title" id="heroMainTitle">박지 로딩 중...</h1>
+      <h1 class="insta-memo-spot-title" id="heroMainTitle">장소 로딩 중...</h1>
 
       <button type="button" id="btnHeroAuthorFeed" onclick="window.openHeroAuthorCollection(event)" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:12px; padding:3px 8px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; flex-shrink:0;">
         <svg viewBox="0 0 24 24" style="width:10px; height:10px; fill:#fde047; color:#fde047; flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
@@ -1754,7 +1754,7 @@
     }
 
    // =========================================================================
-    // 🏕️ [숨은 박지 독립 테마 큐레이션 & 히어로 1:1 대형 3:4 화보 뷰어 엔진]
+    // 🏕️ [숨은 장소 독립 테마 큐레이션 & 히어로 1:1 대형 3:4 화보 뷰어 엔진]
     // =========================================================================
     // 🏕️ [테마 스팟 전용 아카이브 2열 갤러리 모달 엔진]
     window.currentThemeSpotAllTab = 'all';
@@ -1941,7 +1941,7 @@
       var themeKey = window.currentSecretSpotTheme || 'all';
       var spotPool = getThemeSpotPool();
 
-      // 📷 테마에 맞는 유효 사진 피드만 선별 & 박지 기준 중복 제거
+      // 📷 테마에 맞는 유효 사진 피드만 선별 & 장소 기준 중복 제거
       var validPhotoFeeds = [];
       var seenSpots = new Set();
 
@@ -2086,7 +2086,7 @@
 
       if (!matchedFeed && !matchedSpot) return;
 
-      var spotName = matchedFeed ? (matchedFeed.spot || matchedFeed.spotName) : (matchedSpot.name || matchedSpot.spot_main || '박지');
+      var spotName = matchedFeed ? (matchedFeed.spot || matchedFeed.spotName) : (matchedSpot.name || matchedSpot.spot_main || '장소');
       var cleanMapSpotName = String(spotName).replace(/\s*\(.*?\)/g, '').trim();
       var region = matchedSpot ? (matchedSpot.region || matchedSpot.cityName || '전국') : '전국';
       var elev = (matchedFeed && matchedFeed.elevation) 
@@ -2210,7 +2210,7 @@
       document.body.appendChild(modalEl);
     };
 
-    // 📖 [특정 박지 피드로 다이렉트 점프 엔진]
+    // 📖 [특정 장소 피드로 다이렉트 점프 엔진]
     window.openSpotFeedArchive = function(spotName) {
       triggerHaptic(12);
       if (typeof window.openHistoryModal === 'function') {
@@ -2590,7 +2590,7 @@
       var indicatorEl = document.getElementById('heroCardIndexIndicator');
       var trackEl = document.getElementById('heroPhotoSwipeTrack');
 
-      var spotTitle = record.spot || record.spotName || '낭만 필드 박지';
+      var spotTitle = record.spot || record.spotName || '낭만 필드 장소';
       var authorName = record.author || '낭만백패커';
 
       var photoMemosArr = getRecordPhotoMemos(record);
@@ -3053,7 +3053,7 @@
 
       var rawSummary = (matched && (matched.desc_summary || matched.desc)) ? (matched.desc_summary || matched.desc) : (item.viewDesc || item.title || "");
       var cleanSummary = String(rawSummary).replace(/\\n/g, '\n');
-      var viewMatch = cleanSummary.match(/\[(?:뷰\/특징|뷰|특징)\]\s*([\s\S]*?)(?=\[(?:접근\/코스|접근|코스|박지\/피칭|박지|피칭|주의\/팁|주의|팁)\]|$)/i);
+      var viewMatch = cleanSummary.match(/\[(?:뷰\/특징|뷰|특징)\]\s*([\s\S]*?)(?=\[(?:접근\/코스|접근|코스|장소\/피칭|장소|피칭|주의\/팁|주의|팁)\]|$)/i);
       var onlyViewText = viewMatch ? viewMatch[1].trim() : cleanSummary.split(/\n\s*\n|\n(?=\[)/)[0].replace(/^\[.*?\]\s*/, '').trim();
 
      if (bodySlot) {
@@ -3677,7 +3677,7 @@ var adBannersHtml = `
 
       var rawSummary = matched ? (matched.desc_summary || matched.desc || '') : '';
       var cleanSummary = String(rawSummary).replace(/\\n/g, '\n');
-      var viewMatch = cleanSummary.match(/\[(?:뷰\/특징|뷰|특징)\]\s*([\s\S]*?)(?=\[(?:접근\/코스|접근|코스|박지\/피칭|박지|피칭|주의\/팁|주의|팁)\]|$)/i);
+      var viewMatch = cleanSummary.match(/\[(?:뷰\/특징|뷰|특징)\]\s*([\s\S]*?)(?=\[(?:접근\/코스|접근|코스|장소\/피칭|장소|피칭|주의\/팁|주의|팁)\]|$)/i);
       var onlyViewText = viewMatch ? viewMatch[1].trim() : (cleanSummary.split(/\n\s*\n|\n(?=\[)/)[0] || '').replace(/^\[.*?\]\s*/, '').trim();
 
       var maxCap = parseInt(trip.maxCapacity, 10) || 4;
@@ -3734,7 +3734,7 @@ var adBannersHtml = `
                       <svg viewBox="0 0 24 24" style="width:24px; height:24px; stroke:#64748b; fill:none; stroke-width:1.8;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                     </div>
                     <span style="font-size:0.75rem; font-weight:800; color:#94a3b8;">등록된 사진이 없습니다</span>
-                    <span style="font-size:0.62rem; color:#475569;">원정대장 및 등록 박지 사진 없음</span>
+                    <span style="font-size:0.62rem; color:#475569;">원정대장 및 등록 장소 사진 없음</span>
                   </div>
                 `}
 
@@ -3762,7 +3762,7 @@ var adBannersHtml = `
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
                 <div style="font-size:0.70rem; font-weight:800; color:#fff; display:inline-flex; align-items:center; gap:4px;">
                   <svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:none; stroke:#38bdf8; stroke-width:2.2; flex-shrink:0;"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
-                  <span>[박지 특징]</span>
+                  <span>[장소 특징]</span>
                 </div>
                 ${totalTrips > 1 ? '<span style="font-size:0.56rem; color:#64748b;">(좌우 스와이프로 다른 공고 이동)</span>' : ''}
               </div>
@@ -4007,7 +4007,7 @@ var adBannersHtml = `
             <div style="position:relative; display:flex; flex-direction:column; gap:2px; z-index:1000060;">
               <label style="font-size:clamp(0.68rem, 1.9vw, 0.72rem); color:#cbd5e1; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
                 <svg viewBox="0 0 24 24" style="width:12px; height:12px; stroke:#38bdf8; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                <span>목적지 박지 (한두 글자 입력 검색) *</span>
+                <span>목적지 장소 (한두 글자 입력 검색) *</span>
               </label>
               <div style="position:relative; width:100%; display:flex; align-items:center;">
                 <input type="text" id="tripInputSpot" placeholder="박지명을 입력하세요 (예: 선자, 둔덕, 굴업)" oninput="handleTripSpotSearch(this.value)" autocomplete="off" style="width:100%; height:clamp(33px, 4.3vh, 37px); background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#fff; font-size:clamp(0.76rem, 2.2vw, 0.82rem); padding:0 30px 0 10px; outline:none; box-sizing:border-box;" />
@@ -4681,7 +4681,7 @@ var adBannersHtml = `
         var elevStr = matched.elevation ? (String(matched.elevation).includes('m') ? matched.elevation : matched.elevation + 'm') : '';
         var rawSummary = matched.desc_summary || matched.desc || '';
         var cleanSummary = String(rawSummary).replace(/\\n/g, '\n');
-        var viewMatch = cleanSummary.match(/\[(?:뷰\/특징|뷰|특징)\]\s*([\s\S]*?)(?=\[(?:접근\/코스|접근|코스|박지\/피칭|박지|피칭|주의\/팁|주의|팁)\]|$)/i);
+        var viewMatch = cleanSummary.match(/\[(?:뷰\/특징|뷰|특징)\]\s*([\s\S]*?)(?=\[(?:접근\/코스|접근|코스|장소\/피칭|장소|피칭|주의\/팁|주의|팁)\]|$)/i);
         var onlyViewText = viewMatch ? viewMatch[1].trim() : (cleanSummary.split(/\n\s*\n|\n(?=\[)/)[0] || '').replace(/^\[.*?\]\s*/, '').trim();
 
         previewSlot.innerHTML = `
@@ -4689,7 +4689,7 @@ var adBannersHtml = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <span style="font-size:0.62rem; color:#38bdf8; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
                 <svg viewBox="0 0 24 24" style="width:10px; height:10px; fill:none; stroke:#38bdf8; stroke-width:2.2;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                <span>등록된 박지 연동됨 (${escapeHtml(regionStr)}${elevStr ? ' · ' + escapeHtml(elevStr) : ''})</span>
+                <span>등록된 장소 연동됨 (${escapeHtml(regionStr)}${elevStr ? ' · ' + escapeHtml(elevStr) : ''})</span>
               </span>
             </div>
             <div style="font-size:0.70rem; color:#cbd5e1; line-height:1.4;">
@@ -5252,10 +5252,10 @@ var adBannersHtml = `
     });
   </script>
 
-    <script src="romantic-sync.js?v=2.8.56"></script>
-  <script src="templates.js?v=2.8.3"></script>
-    <script src="romantic-history.js?v=2.7.37"></script>
-  <script src="romantic-plan.js?v=2.8.2"></script>
+    <script src="romantic-sync.js?v=2.8.71"></script>
+  <script src="templates.js?v=2.9.6"></script>
+    <script src="romantic-history.js?v=2.7.39"></script>
+  <script src="romantic-plan.js?v=2.8.3"></script>
 
   <script>
 
@@ -5409,7 +5409,10 @@ var adBannersHtml = `
         var dockItem = e.target.closest('#romanticMasterBottomDock .dock-item');
         if (dockItem) {
           var title = dockItem.getAttribute('title') || '';
-          if (title.includes('플랜') || title.includes('보관함') || title.includes('루트') || title.includes('루터') || title.includes('홈')) {
+          if (title.includes('플랜') || title.includes('보관함') || title.includes('루트') || title.includes('루터') || title.includes('홈') || title.includes('리포트')) {
+            if (typeof window.closePastTripRegisterModal === 'function') {
+              try { window.closePastTripRegisterModal({ silent: true }); } catch (err) {}
+            }
             if (typeof window.closeAllTripModals === 'function') {
               window.closeAllTripModals();
             }

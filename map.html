@@ -25,6 +25,15 @@
           var id = params.get('id');
           var feed = params.get('feed');
           var openParam = params.get('open');
+          var proposeSpot = params.get('propose_spot');
+          var editProp = params.get('edit_proposal');
+          var correctionProp = params.get('correction_proposal') || params.get('correction_spot');
+
+          // 제보/수정 진입은 지도에서 바로 열어 둔다
+          if (proposeSpot || editProp || correctionProp) {
+            try { sessionStorage.setItem('okbm_entered_via_index', '1'); } catch (e0) {}
+            return;
+          }
 
           // 카카오톡 인앱 브라우저는 웹앱이 제대로 안 열리므로 외부 브라우저로 넘긴다.
           if (/KAKAOTALK/i.test(navigator.userAgent || '') && (spot || id || feed || openParam)) {
@@ -289,7 +298,8 @@
          left: 0 !important;
          right: 0 !important;
          height: max(32px, env(safe-area-inset-top, 32px)) !important;
-         background: #010204 !important;
+         background: linear-gradient(to bottom, #1e2430 0%, #0b0f16 100%) !important;
+         border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
          z-index: 999999 !important;
          pointer-events: none !important;
        }
@@ -877,7 +887,7 @@
         border: 1px solid #334155 !important;
       }
 
-      .app-toast { position: fixed; top: 68px; left: 50%; transform: translateX(-50%) translateY(-15px); background: var(--bg-surface); border: 1.5px solid var(--border-titanium); color: var(--text-primary); padding: 8px 18px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; box-shadow: 0 8px 24px rgba(0,0,0,0.5); pointer-events: none; opacity: 0; transition: all 0.22s ease; display: inline-flex; align-items: center; gap: 6px; }
+      .app-toast { position: fixed; top: calc(max(32px, env(safe-area-inset-top, 32px)) + 56px); left: 50%; transform: translateX(-50%) translateY(8px); background: var(--bg-surface); border: 1.5px solid var(--border-titanium); color: var(--text-primary); padding: 6px 13px; border-radius: 14px; font-size: 0.57rem; font-weight: 700; box-shadow: 0 6px 16px rgba(0,0,0,0.5); pointer-events: none; opacity: 0; z-index: var(--z-toast); transition: all 0.22s ease; display: inline-flex; align-items: center; gap: 4px; max-width: calc(100vw - 24px); }
       .app-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
       body.clean-map-mode .clean-hide { display: none !important; }
 
@@ -945,54 +955,63 @@
       }
 
       .pin-picker-banner {
-        position: absolute;
-        top: calc(62px + env(safe-area-inset-top, 0px));
+        position: fixed;
+        top: calc(max(32px, env(safe-area-inset-top, 32px)) + 56px);
         left: 50%;
         transform: translateX(-50%);
         background: #0c1017;
         border: 1px solid rgba(56, 189, 248, 0.45);
         border-top: 1px solid rgba(255, 255, 255, 0.3);
-        height: 36px;
-        padding: 0 8px 0 12px;
-        border-radius: 18px;
-        font-size: 0.74rem;
+        height: 25px;
+        padding: 0 6px 0 8px;
+        border-radius: 13px;
+        font-size: 0.52rem;
         font-weight: 800;
         color: var(--text-primary);
-        z-index: var(--z-hud);
+        z-index: var(--z-toast);
         display: none;
         align-items: center;
-        gap: 8px;
+        gap: 5px;
         white-space: nowrap;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
         box-sizing: border-box;
+        max-width: calc(100vw - 24px);
+        pointer-events: auto;
+      }
+      .pin-picker-banner .ui-icon {
+        width: 10px;
+        height: 10px;
+        margin-right: 0;
       }
       .btn-confirm-pin-pick {
         background: rgba(16, 185, 129, 0.2);
         border: 1px solid rgba(52, 211, 153, 0.65);
         color: #34d399;
-        height: 24px;
-        padding: 0 10px;
-        border-radius: 12px;
-        font-size: 0.72rem;
+        height: 17px;
+        padding: 0 7px;
+        border-radius: 9px;
+        font-size: 0.5rem;
         font-weight: 800;
         cursor: pointer;
         display: none;
         align-items: center;
+        flex-shrink: 0;
       }
       .btn-cancel-pin-pick {
         background: rgba(244, 63, 94, 0.16);
         border: 1px solid rgba(244, 63, 94, 0.5);
         color: #fb7185;
-        height: 24px;
-        padding: 0 8px;
-        border-radius: 12px;
-        font-size: 0.68rem;
+        height: 17px;
+        padding: 0 6px;
+        border-radius: 9px;
+        font-size: 0.48rem;
         font-weight: 800;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         transition: all 0.15s ease;
+        flex-shrink: 0;
       }
       .btn-cancel-pin-pick:active {
         transform: scale(0.94);
@@ -1069,12 +1088,19 @@
       </div>
     </div>
 
+    <div id="pinPickerBanner" class="pin-picker-banner">
+      <span id="bannerPinIcon"></span>
+      <span id="pinPickerBannerText">지도를 클릭하여 장소 위치를 콕 찍어주세요!</span>
+      <button type="button" class="btn-confirm-pin-pick" id="btnConfirmPinPick" onclick="confirmAdminPinMoveFromBanner()">확인</button>
+      <button type="button" class="btn-cancel-pin-pick" onclick="cancelPinPicking()">취소</button>
+    </div>
+
     <div class="container">
       <aside class="sidebar collapsed clean-hide" id="sidebar">
         <div class="sidebar-header">
           <div class="sidebar-header-left">
             <span id="sidebarCampIcon" style="display:inline-flex; align-items:center;"></span>
-            <span>박지 목록</span>
+            <span>장소 목록</span>
             <span id="spotCount" style="color: #6ee7b7; font-size: 0.78rem; font-weight: 800;">0개</span>
             <span class="version-tag" id="versionTagBtn" onclick="handleVersionTagAdminClick()">6.2ver Master</span>
           </div>
@@ -1162,13 +1188,6 @@
             </button>
           </div>
         </div>
-
-        <div id="pinPickerBanner" class="pin-picker-banner">
-          <span id="bannerPinIcon"></span>
-          <span id="pinPickerBannerText">지도를 클릭하여 박지 위치를 콕 찍어주세요!</span>
-          <button type="button" class="btn-confirm-pin-pick" id="btnConfirmPinPick" onclick="confirmAdminPinMoveFromBanner()">확인</button>
-          <button type="button" class="btn-cancel-pin-pick" onclick="cancelPinPicking()">취소</button>
-        </div>
       </main>
     </div>
 
@@ -1254,7 +1273,7 @@
         </div>
         <p style="font-size:0.74rem; color:var(--accent-amber); line-height:1.4; background:rg  ba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.25); padding:6px 8px; border-radius:6px; display:flex; align-items:center; gap:5px;">
           <span id="lntAlertTopIcon"></span>
-          <span><strong>박지 보존을 위한 필수 실천</strong>: 자연을 훼손하지 않는 성숙한 백패킹 문화가 소중한 박지 폐쇄를 막습니다.</span>
+          <span><strong>장소 보존을 위한 필수 실천</strong>: 자연을 훼손하지 않는 성숙한 백패킹 문화가 소중한 장소 폐쇄를 막습니다.</span>
         </p>
         <div class="lnt-rule-item"><div class="lnt-rule-title">1. 사전에 계획하고 준비하기</div><div class="lnt-rule-desc">방문 지역의 규제 여부와 기상 상황을 미리 파악하고 쓰레기 배출 계획을 세웁니다.</div></div>
         <div class="lnt-rule-item"><div class="lnt-rule-title">2. 지정된 구역에서 야영하기</div><div class="lnt-rule-desc">식생을 훼손하지 않고 바위, 자갈, 흙길 등 영향이 적은 지형을 이용합니다.</div></div>
@@ -1277,10 +1296,10 @@
       <div class="custom-modal">
         <h3 id="modalTitle" style="display:flex; align-items:center; gap:6px;"></h3>
         <p id="modalNotice" style="font-size:0.74rem; color:var(--accent-amber); line-height:1.4; display:flex; align-items:center; gap:4px;"></p>
-        <div class="modal-field"><label>1. 박지 이름 *</label><input type="text" id="modalInputName" class="modal-input" placeholder="스팟 또는 봉우리 명칭 입력" /></div>
+        <div class="modal-field"><label>1. 장소 이름 *</label><input type="text" id="modalInputName" class="modal-input" placeholder="스팟 또는 봉우리 명칭 입력" /></div>
         <div class="modal-field"><label>2. 세부 포인트</label><input type="text" id="modalInputSub" class="modal-input" placeholder="정상 데크, 능선 안부, 헬기장 등" /></div>
         <div class="modal-field">
-          <label>3. 박지 핀 위치</label>
+          <label>3. 장소 핀 위치</label>
           <div style="display: flex; gap: 6px; align-items: center;">
             <input type="text" id="modalInputCoordsDisplay" class="modal-input" style="flex:1;" placeholder="위치 미지정" readonly />
             <button type="button" class="modal-btn" style="background: #0284c7; color:#fff; font-weight:700; padding:6px 10px; display:inline-flex; align-items:center; gap:4px;" onclick="startPinPicking()"><span id="btnModalPinPickIcon"></span><span>콕 찍기</span></button>
@@ -1323,7 +1342,7 @@
           <label style="color:var(--accent-blue); font-weight:800; font-size:0.75rem;">11. 4단계 상세 설명</label>
           <div class="modal-field"><label style="font-size:0.70rem; color:#38bdf8; font-weight:700;">① [뷰/특징] *</label><textarea id="modalInputDescView" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="조망, 일몰/일출 시야, 주변 경관 특징"></textarea></div>
           <div class="modal-field"><label style="font-size:0.70rem; color:#2dd4bf; font-weight:700;">② [접근/코스]</label><textarea id="modalInputDescAccess" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="거리, 소요 시간, 경사도, 등산로 상태"></textarea></div>
-          <div class="modal-field"><label style="font-size:0.70rem; color:#10b981; font-weight:700;">③ [박지/피칭]</label><textarea id="modalInputDescPitch" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="텐트 설치 가능 동수, 바닥면 상태"></textarea></div>
+          <div class="modal-field"><label style="font-size:0.70rem; color:#10b981; font-weight:700;">③ [장소/피칭]</label><textarea id="modalInputDescPitch" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="텐트 설치 가능 동수, 바닥면 상태"></textarea></div>
           <div class="modal-field"><label style="font-size:0.70rem; color:#f59e0b; font-weight:700;">④ [주의/팁]</label><textarea id="modalInputDescTip" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="풍황 주의점, 팩 고정 팁, 안전 유의사항"></textarea></div>
         </div>
         <div class="modal-field"><label>12. YouTube 영상 링크</label><textarea id="modalInputYoutube" class="modal-input modal-textarea" rows="1" placeholder="https://youtu.be/..."></textarea></div>
@@ -3009,8 +3028,8 @@ function updateSmartResetButtons() {
               const labelTransform = isSelected ? 'transform: translateX(-50%) scale(1.08);' : 'transform: translateX(-50%);';
 
               labelDiv.innerHTML = `
-                ${userBookmarks.has(id) ? `<div class="marker-badge-corner badge-corner-fav" title="찜한 박지">${ICONS.HEART}</div>` : ''}
-                ${userVisited.has(id) ? `<div class="marker-badge-corner badge-corner-visited" title="클리어 박지">${ICONS.FLAG}</div>` : ''}
+                ${userBookmarks.has(id) ? `<div class="marker-badge-corner badge-corner-fav" title="찜한 장소">${ICONS.HEART}</div>` : ''}
+                ${userVisited.has(id) ? `<div class="marker-badge-corner badge-corner-visited" title="클리어 장소">${ICONS.FLAG}</div>` : ''}
                 <div class="lod-marker-label" style="position: absolute; bottom: 44px; left: 50%; pointer-events: auto; ${labelTransform}">
                   <div class="lod-label-row-1 ${diffClass}">${escapeHtml(row1Name)}</div>
                   ${(isFullMode && row2Sub) ? `<div class="lod-label-row-2">${escapeHtml(row2Sub)}</div>` : ''}
@@ -3153,7 +3172,7 @@ function updateSmartResetButtons() {
         userBookmarks = new Set((safeGetJSON('okbm_bookmarks', [])).map(s => String(s).trim()));
         triggerHaptic(isNowVisited ? 15 : 10);
         if (isNowVisited) {
-          showToast(`${ICONS.FLAG} <span>박지 정복 클리어!</span>`);
+          showToast(`${ICONS.FLAG} <span>장소 정복 클리어!</span>`);
         }
 
         document.querySelectorAll('.btn-action-visited').forEach(btn => {
@@ -3422,7 +3441,7 @@ function updateSmartResetButtons() {
             current = 'access';
             hasParsed = true;
             append('access', line.replace(/^\[.*?\]\s*/, ''));
-          } else if (line.startsWith('[박지/피칭]') || line.startsWith('[박지]') || line.startsWith('[피칭]')) {
+          } else if (line.startsWith('[장소/피칭]') || line.startsWith('[장소]') || line.startsWith('[피칭]')) {
             current = 'pitch';
             hasParsed = true;
             append('pitch', line.replace(/^\[.*?\]\s*/, ''));
@@ -3474,7 +3493,7 @@ function updateSmartResetButtons() {
 
         return `
           <div style="position: relative; width: 100%;">
-            <div class="sheet-title-row js-center-spot" style="padding-right: ${isMobileSheet ? '36px' : '0'};" data-lat="${safeLat}" data-lng="${safeLng}" title="지도를 박지 중심으로 이동">
+            <div class="sheet-title-row js-center-spot" style="padding-right: ${isMobileSheet ? '36px' : '0'};" data-lat="${safeLat}" data-lng="${safeLng}" title="지도를 장소 중심으로 이동">
               <div class="compact-title">
                 ${cityName ? `<span class="city-badge-colored">${escapeHtml(cityName)}</span>` : ''}
                 <span class="${diffClass}">${escapeHtml(cleanMainName)}</span>
@@ -3526,7 +3545,7 @@ function updateSmartResetButtons() {
             <div class="summary-block-wrap" style="margin-top:2px;">
               <div class="summary-card summary-card-view">
                 <div class="summary-card-title" style="color:#e2e8f0;">${ICONS.VIEW_CARD} [뷰/특징]</div>
-                <div class="summary-card-body">${escapeHtml(summary.view || spot.desc || '탁 트인 자연 경관을 즐길 수 있는 추천 박지.')}</div>
+                <div class="summary-card-body">${escapeHtml(summary.view || spot.desc || '탁 트인 자연 경관을 즐길 수 있는 추천 장소.')}</div>
               </div>
             </div>
 
@@ -3546,7 +3565,7 @@ function updateSmartResetButtons() {
               <div class="guest-member-lock-card">
                 <div style="font-size:0.88rem; font-weight:800; color:var(--accent-amber); display:flex; align-items:center; gap:4px;">${ICONS.LOCK} 낭만 회원 전용 정보 안내</div>
                 <div style="font-size:0.72rem; color:var(--text-secondary); line-height:1.45;">
-                  소중한 박지 보존과 클린 백패킹 문화를 위해<br><strong>[들머리 내비/2~4단계 실전 팁]</strong>은 로그인 후 공개됩니다.
+                  소중한 장소 보존과 클린 백패킹 문화를 위해<br><strong>[들머리 내비/2~4단계 실전 팁]</strong>은 로그인 후 공개됩니다.
                 </div>
                 <button type="button" class="btn-quick-login-unlock" style="width:100%; padding:9px; font-size:0.80rem;" onclick="triggerHaptic(10); openLoginModal();">
                   ${ICONS.AUTH} 1초 간편 로그인하고 즉시 확인하기
@@ -3588,7 +3607,7 @@ function updateSmartResetButtons() {
               <div class="summary-block-wrap">
                 ${summary.pitch ? `
                   <div class="summary-card summary-card-pitch">
-                    <div class="summary-card-title" style="color:#10b981;">${ICONS.PITCH_CARD} [박지/피칭]</div>
+                    <div class="summary-card-title" style="color:#10b981;">${ICONS.PITCH_CARD} [장소/피칭]</div>
                     <div>${escapeHtml(summary.pitch)}</div>
                   </div>` : ''}
                 ${summary.tip ? `
@@ -3600,11 +3619,16 @@ function updateSmartResetButtons() {
             `}
 
     ${(function() {
-              var existingYt = (Array.isArray(spot.youtubeUrls) ? spot.youtubeUrls : []).filter(function(u) { return u && u.trim().length > 5; });
+              var existingYt = (typeof window.getSpotRegisteredMediaUrls === 'function')
+                ? window.getSpotRegisteredMediaUrls(spot, 'yt')
+                : (Array.isArray(spot.youtubeUrls) ? spot.youtubeUrls : []).filter(function(u) { return u && u.trim().length > 5; });
+              var existingBlog = (typeof window.getSpotRegisteredMediaUrls === 'function')
+                ? window.getSpotRegisteredMediaUrls(spot, 'blog')
+                : (Array.isArray(spot.blogUrls) ? spot.blogUrls : []).filter(function(u) { return u && u.trim().length > 5; });
               var cachedYt = (window.__spotYtCardsCache && window.__spotYtCardsCache[sId]) || null;
               var cachedBlogs = (window.__spotBlogCardsCache && window.__spotBlogCardsCache[sId]) || null;
               var ytBadge = cachedYt ? cachedYt.length : (existingYt.length || 0);
-              var blogBadge = cachedBlogs ? cachedBlogs.length : 0;
+              var blogBadge = cachedBlogs ? cachedBlogs.length : (existingBlog.length || 0);
 
               return `
                 <div style="display:flex; flex-direction:column; width:100%; margin-top:6px; box-sizing:border-box;">
@@ -3637,7 +3661,7 @@ function updateSmartResetButtons() {
                 <li><span style="color: #fbbf24; font-weight: 800;">•</span> <b>실제 정보와 다를 수 있으니</b> 출발 전 관련 링크를 꼭 확인하세요.</li>
                 <li><span style="color: #f43f5e; font-weight: 800;">•</span> 산림 내 화기 사용 및 취사 절대 금지 <span style="color: #fb7185; font-weight: 700;">(산림보호법 제34조)</span></li>
                 <li><span style="color: #f43f5e; font-weight: 800;">•</span> 국립·도립공원 무단 야영 및 비박 금지 <span style="color: #fb7185; font-weight: 700;">(자연공원법 위반)</span></li>
-                <li><span style="color: #38bdf8; font-weight: 800;">•</span> 쓰레기 무단 투기 및 사유지 침입 금지 <span style="color: #38bdf8; font-weight: 800;">(소중한 박지 보존)</span></li>
+                <li><span style="color: #38bdf8; font-weight: 800;">•</span> 쓰레기 무단 투기 및 사유지 침입 금지 <span style="color: #38bdf8; font-weight: 800;">(소중한 장소 보존)</span></li>
               </ul>
             </div>
           </div>`;
@@ -3979,8 +4003,8 @@ window.__ytMetaCache = window.__ytMetaCache || {};
           if (area) intents.forEach(function(k) { add(area + ' ' + cleaned + ' ' + k); });
           intents.forEach(function(k) { add(cleaned + ' ' + k); });
         }
-        if (area && mountain) add(area + ' ' + mountain + ' 박지');
-        if (mountain) add(mountain + ' 박지');
+        if (area && mountain) add(area + ' ' + mountain + ' 장소');
+        if (mountain) add(mountain + ' 장소');
         return variants;
       };
 
@@ -4004,7 +4028,7 @@ window.__ytMetaCache = window.__ytMetaCache || {};
           if (mountain && t.indexOf(mountain) !== -1) score += 10;
           if (name && name !== mountain && t.indexOf(name) !== -1) score += 6;
           if (area && t.indexOf(area) !== -1) score += 4;
-          if (/박지|백패킹|야영|캠핑|비박|등산/.test(t)) score += 3;
+          if (/장소|백패킹|야영|캠핑|비박|등산/.test(t)) score += 3;
           if ((item.title || '').length >= 6) score += 1;
           return { item: item, score: score };
         });
@@ -4197,11 +4221,8 @@ window.__ytMetaCache = window.__ytMetaCache || {};
         var type = btn.dataset.type;
         var sId = btn.dataset.id;
         var targetSpot = (spots || []).find(function(s) { return String(s.id).trim() === String(sId).trim(); });
-        var spotName = targetSpot ? (targetSpot.spot_main || targetSpot.name || '박지') : '박지';
-        var list = [];
-        if (targetSpot) {
-          list = (type === 'yt') ? (targetSpot.youtubeUrls || []) : (targetSpot.blogUrls || []);
-        }
+        var spotName = targetSpot ? (targetSpot.spot_main || targetSpot.name || '장소') : '장소';
+        var list = targetSpot ? window.getSpotRegisteredMediaUrls(targetSpot, type) : [];
         window.toggleSpotMediaDrawer(type, sId, spotName, list);
       };
 
@@ -4271,12 +4292,114 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         if (finalTitleEl && fallbackTitle) finalTitleEl.innerText = fallbackTitle;
       };
 
+      window.collectSpotMediaFromHistory = function(spotId, spotName, type) {
+        var id = String(spotId || '').trim();
+        var nameKey = String(spotName || '').replace(/\s+/g, '').toLowerCase();
+        var pools = [];
+        if (Array.isArray(window.packingHistoryList)) pools.push(window.packingHistoryList);
+        if (Array.isArray(window.interactiveHistory)) pools.push(window.interactiveHistory);
+        try {
+          var local = JSON.parse(localStorage.getItem('okbm_packing_history') || '[]');
+          if (Array.isArray(local)) pools.push(local);
+        } catch (e) {}
+        var out = [];
+        var seen = {};
+        pools.forEach(function(list) {
+          (list || []).forEach(function(r) {
+            if (!r) return;
+            var rid = String(r.spotId || r.spot_id || '').trim();
+            var rName = String(r.spot || r.spotName || r.spot_main || '').replace(/\s+/g, '').toLowerCase();
+            var hit = (id && rid && rid === id) || (nameKey && rName && (rName === nameKey || rName.indexOf(nameKey) !== -1 || nameKey.indexOf(rName) !== -1));
+            if (!hit) return;
+            var raw = (type === 'yt') ? (r.youtube || r.youtubeUrl || r.youtube_url || '') : (r.blog || r.blogUrl || r.blog_url || '');
+            var urls = Array.isArray(raw) ? raw : [raw];
+            urls.forEach(function(u) {
+              var s = String(u || '').trim();
+              if (!s || s.length < 6 || (typeof window.isSearchPageUrl === 'function' && window.isSearchPageUrl(s))) return;
+              var key = s.toLowerCase();
+              if (seen[key]) return;
+              seen[key] = true;
+              out.push(s);
+            });
+          });
+        });
+        return out;
+      };
+
       window.getSpotRegisteredMediaUrls = function(spot, type) {
         if (!spot) return [];
-        var list = (type === 'yt') ? (spot.youtubeUrls || []) : (spot.blogUrls || []);
-        return (Array.isArray(list) ? list : []).filter(function(u) {
+        var raw = (type === 'yt')
+          ? (spot.youtubeUrls || spot.youtube_urls || [])
+          : (spot.blogUrls || spot.blog_urls || []);
+        if (typeof raw === 'string') {
+          raw = raw.split(/[\r\n,]+/).map(function(u) { return String(u || '').trim(); }).filter(Boolean);
+        }
+        if ((!raw || !raw.length) && spot.mediaUrls) {
+          var lines = String(spot.mediaUrls || '').split(/[\r\n,]+/).map(function(u) { return u.trim(); }).filter(Boolean);
+          raw = lines.filter(function(u) {
+            if (type === 'yt') return /youtube\.com|youtu\.be/i.test(u);
+            return /blog\.naver\.com/i.test(u);
+          });
+        }
+        var list = Array.isArray(raw) ? raw.slice() : [];
+        var hist = window.collectSpotMediaFromHistory(spot.id, spot.spot_main || spot.name || '', type);
+        hist.forEach(function(u) { list.push(u); });
+        var out = [];
+        var seen = {};
+        list.forEach(function(u) {
+          if (!u || typeof u !== 'string') return;
+          var s = u.trim();
+          if (s.length < 6 || window.isSearchPageUrl(s)) return;
+          var key = s.toLowerCase();
+          if (seen[key]) return;
+          seen[key] = true;
+          out.push(s);
+        });
+        return out.slice(0, 5);
+      };
+
+      window.invalidateSpotMediaCacheIfStale = function(spotId, type, registeredList) {
+        var id = String(spotId || '').trim();
+        if (!id) return;
+        var registered = (Array.isArray(registeredList) ? registeredList : []).filter(function(u) {
           return u && typeof u === 'string' && u.trim().length > 5 && !window.isSearchPageUrl(u);
         });
+        if (!registered.length) return;
+        var isYt = type === 'yt';
+        var cache = isYt ? window.__spotYtCardsCache : window.__spotBlogCardsCache;
+        var prefetch = isYt ? window.__spotYtPrefetch : window.__spotBlogPrefetch;
+        if (!cache || !Object.prototype.hasOwnProperty.call(cache, id)) return;
+        var cards = cache[id] || [];
+        var missing = false;
+        for (var i = 0; i < registered.length; i++) {
+          var url = registered[i];
+          if (isYt) {
+            var clean = cleanYouTubeUrl(url);
+            var m = clean.match(/[?&]v=([\w-]{11})/);
+            var vId = (m && m[1]) ? m[1] : '';
+            if (!vId) continue;
+            if (!cards.some(function(c) { return c && (c.id === vId || String(c.url || '').indexOf(vId) !== -1); })) {
+              missing = true;
+              break;
+            }
+          } else {
+            var parsed = window.normalizeNaverBlogPost(url);
+            if (!parsed) continue;
+            var key = parsed.blogId + '/' + parsed.logNo;
+            if (!cards.some(function(c) {
+              if (!c) return false;
+              if (c.blogId && String(c.blogId) === parsed.blogId && String(c.url || '').indexOf(parsed.logNo) !== -1) return true;
+              var p2 = window.normalizeNaverBlogPost(c.url);
+              return p2 && (p2.blogId + '/' + p2.logNo) === key;
+            })) {
+              missing = true;
+              break;
+            }
+          }
+        }
+        if (!missing) return;
+        try { delete cache[id]; } catch (e) {}
+        try { if (prefetch) delete prefetch[id]; } catch (e2) {}
       };
 
       window.paintSpotMediaDrawer = function(spotId, spotName, type, cards, stillLoading) {
@@ -4308,7 +4431,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
       window.prefetchSpotMediaForSpot = function(spot) {
         if (!spot) return;
         var spotId = String(spot.id).trim();
-        var spotName = spot.spot_main || spot.name || '박지';
+        var spotName = spot.spot_main || spot.name || '장소';
         window.prefetchSpotYouTubeList(spotId, spotName, window.getSpotRegisteredMediaUrls(spot, 'yt'));
         window.prefetchSpotBlogList(spotId, spotName, window.getSpotRegisteredMediaUrls(spot, 'blog'));
       };
@@ -4316,10 +4439,14 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
       window.bindSpotMediaDrawer = function(spot) {
         if (!spot) return;
         var spotId = String(spot.id).trim();
-        var spotName = spot.spot_main || spot.name || '박지';
+        var spotName = spot.spot_main || spot.name || '장소';
         var drawer = document.getElementById('spotMediaDrawerBox_' + spotId);
         if (!drawer) return;
 
+        var ytReg = window.getSpotRegisteredMediaUrls(spot, 'yt');
+        var blogReg = window.getSpotRegisteredMediaUrls(spot, 'blog');
+        window.invalidateSpotMediaCacheIfStale(spotId, 'yt', ytReg);
+        window.invalidateSpotMediaCacheIfStale(spotId, 'blog', blogReg);
         window.prefetchSpotMediaForSpot(spot);
 
         var opened = drawer.dataset.opened || 'yt';
@@ -4372,6 +4499,8 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
 
         drawer.style.display = 'flex';
         drawer.dataset.opened = type;
+
+        window.invalidateSpotMediaCacheIfStale(spotId, type, list);
 
         var cache = isYt ? window.__spotYtCardsCache : window.__spotBlogCardsCache;
         if (Object.prototype.hasOwnProperty.call(cache, spotId)) {
@@ -4480,10 +4609,23 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           }
         }
 
-        return finalCards;
+        return finalCards.slice(0, 5);
       };
 
       window.prefetchSpotYouTubeList = function(spotId, spotName, rawRegisteredList) {
+        // 등록 링크가 있으면 이전 검색 캐시/프리패치를 무조건 버리고 다시 수집
+        var registered = (Array.isArray(rawRegisteredList) ? rawRegisteredList : []).filter(function(u) {
+          return u && typeof u === 'string' && u.trim().length > 5 && !window.isSearchPageUrl(u);
+        });
+        if (registered.length) {
+          window.invalidateSpotMediaCacheIfStale(spotId, 'yt', registered);
+          try {
+            if (window.__spotYtPrefetch) delete window.__spotYtPrefetch[spotId];
+            if (window.__spotYtCardsCache && !((window.__spotYtCardsCache[spotId] || []).some(function(c) { return c && c.isOfficial; }))) {
+              delete window.__spotYtCardsCache[spotId];
+            }
+          } catch (e) {}
+        }
         if (window.__spotYtPrefetch[spotId]) return window.__spotYtPrefetch[spotId];
         window.__spotYtPrefetch[spotId] = window.collectSpotYouTubeCards(spotId, spotName, rawRegisteredList, function(partial, stillLoading) {
           limitedObjSet(window.__spotYtCardsCache, spotId, partial, 50);
@@ -4496,7 +4638,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           var badgeEl = document.getElementById('ytBadgeCount_' + spotId);
           if (badgeEl) badgeEl.innerText = String(cards.length);
           window.paintSpotMediaDrawer(spotId, spotName, 'yt', cards, false);
-          if (cards.length < 5) delete window.__spotYtPrefetch[spotId];
+          delete window.__spotYtPrefetch[spotId];
           return cards;
         }).catch(function() {
           delete window.__spotYtPrefetch[spotId];
@@ -4603,10 +4745,22 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
             });
           }
         }
-        return finalCards;
+        return finalCards.slice(0, 5);
       };
 
       window.prefetchSpotBlogList = function(spotId, spotName, rawRegisteredList) {
+        var registered = (Array.isArray(rawRegisteredList) ? rawRegisteredList : []).filter(function(u) {
+          return u && typeof u === 'string' && u.trim().length > 5 && !window.isSearchPageUrl(u);
+        });
+        if (registered.length) {
+          window.invalidateSpotMediaCacheIfStale(spotId, 'blog', registered);
+          try {
+            if (window.__spotBlogPrefetch) delete window.__spotBlogPrefetch[spotId];
+            if (window.__spotBlogCardsCache && !((window.__spotBlogCardsCache[spotId] || []).some(function(c) { return c && c.isOfficial; }))) {
+              delete window.__spotBlogCardsCache[spotId];
+            }
+          } catch (e) {}
+        }
         if (window.__spotBlogPrefetch[spotId]) return window.__spotBlogPrefetch[spotId];
         window.__spotBlogPrefetch[spotId] = window.collectSpotBlogCards(spotId, spotName, rawRegisteredList)
           .then(function(cards) {
@@ -4615,7 +4769,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
             var badgeEl = document.getElementById('blogBadgeCount_' + spotId);
             if (badgeEl) badgeEl.innerText = String(cards.length);
             window.paintSpotMediaDrawer(spotId, spotName, 'blog', cards, false);
-            if (cards.length < 5) delete window.__spotBlogPrefetch[spotId];
+            delete window.__spotBlogPrefetch[spotId];
             return cards;
           })
           .catch(function() {
@@ -4656,7 +4810,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         return html;
       }
 
-      // 장산 ⊃ 지장산/선장산 같은 부분문자열 매칭으로 다른 박지 피드가 붙지 않게 한다
+      // 장산 ⊃ 지장산/선장산 같은 부분문자열 매칭으로 다른 장소 피드가 붙지 않게 한다
       function feedBelongsToMapSpot(feedSpot, spot) {
         var feed = String(feedSpot || '').replace(/\s+/g, ' ').trim();
         var main = String((spot && (spot.spot_main || spot.name)) || '').trim();
@@ -4946,14 +5100,17 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           }
         }
 
-        // 2. 1번 사진 ➔ 1번 메모, 2번 사진 ➔ 2번 메모 실시간 교체
+        // 2. 사진별 메모 실시간 교체 (사진 대표 메모인 경우 슬라이드를 넘겨도 대표 메모 유지)
         var memoEl = document.getElementById('mapFeedPhotoMemoText');
         if (memoEl && container.dataset.memos) {
           try {
             var memos = JSON.parse(container.dataset.memos);
             var curText = (Array.isArray(memos) && memos[idx] !== undefined) ? String(memos[idx] || '').trim() : '';
-            if (!curText && idx === 0 && container.dataset.defaultMemo) {
+            if (!curText && container.dataset.defaultMemo) {
               curText = String(container.dataset.defaultMemo || '').trim();
+            }
+            if (!curText && Array.isArray(memos) && memos.length > 0 && memos[0]) {
+              curText = String(memos[0] || '').trim();
             }
             memoEl.innerHTML = (curText && curText.length > 0)
               ? escapeHtml(curText)
@@ -5068,7 +5225,7 @@ var liveSearchTimer = null;
           <div style="padding:6px 12px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-hairline); background:var(--bg-card);">
             <div style="display:flex; align-items:center; gap:4px;">
               <span style="color:#f59e0b; font-size:0.70rem;">★</span>
-              <span style="font-size:0.72rem; font-weight:800; color:var(--text-primary);">전국 실시간 인기 박지 TOP 5</span>
+              <span style="font-size:0.72rem; font-weight:800; color:var(--text-primary);">전국 실시간 인기 장소 TOP 5</span>
             </div>
             <button type="button" onclick="document.getElementById('pcSearchDropdown').style.display='none';" style="background:none; border:none; color:var(--text-muted); font-size:0.68rem; font-weight:700; cursor:pointer; padding:2px 4px;">✕ 닫기</button>
           </div>`;
@@ -5076,7 +5233,7 @@ var liveSearchTimer = null;
 
         const spotPool = (spots && spots.length > 0) ? spots : (safeGetJSON('okbm_spots_cache', []) || []);
         
-        // 🔑 [A~H열 복합 키 적용]: 동명 산 및 다중 박지 포인트 온전 보존
+        // 🔑 [A~H열 복합 키 적용]: 동명 산 및 다중 장소 포인트 온전 보존
         const seenKeys = new Set();
         const uniqueSpots = [];
         for (const item of spotPool) {
@@ -5267,8 +5424,8 @@ var liveSearchTimer = null;
               focusSpotOnMap(spot);
             };
             labelDiv.innerHTML = `
-              ${isFav ? `<div class="marker-badge-corner badge-corner-fav" title="찜한 박지">${ICONS.HEART}</div>` : ''}
-              ${isDone ? `<div class="marker-badge-corner badge-corner-visited" title="클리어 박지">${ICONS.FLAG}</div>` : ''}
+              ${isFav ? `<div class="marker-badge-corner badge-corner-fav" title="찜한 장소">${ICONS.HEART}</div>` : ''}
+              ${isDone ? `<div class="marker-badge-corner badge-corner-visited" title="클리어 장소">${ICONS.FLAG}</div>` : ''}
               <div class="lod-marker-label" style="pointer-events: auto;">
                 <div class="lod-label-row-1 ${diffClass}">${escapeHtml(row1Name)}</div>
                 ${row2Sub ? `<div class="lod-label-row-2">${ICONS.PIN}${escapeHtml(row2Sub)}</div>` : ''}
@@ -5448,7 +5605,7 @@ var liveSearchTimer = null;
         const diffClass = getSpotDiffColorClass(spot.difficulty);
         const summary = parseStructuredSummary(spot.desc_summary || spot.desc);
         
-        const descText = summary.view || spot.desc_summary || spot.desc || '탁 트인 자연 경관을 즐길 수 있는 추천 박지.';
+        const descText = summary.view || spot.desc_summary || spot.desc || '탁 트인 자연 경관을 즐길 수 있는 추천 장소.';
         const rawName = (spot.spot_main || spot.name || '').trim();
         const cityName = spot.cityName ? String(spot.cityName).trim() : '';
 
@@ -5562,7 +5719,7 @@ var liveSearchTimer = null;
         if (reasonBox) reasonBox.style.display = 'none';
       }
 
-     // 🏕️ [유저 박지 제보 모달 오픈 - 기존 제보 수정 및 오염 방지 엔진]
+     // 🏕️ [유저 장소 제보 모달 오픈 - 기존 제보 수정 및 오염 방지 엔진]
       window.__currentEditingProposalId = null;
 
       window.openUserProposalModal = function(defaultName = "", lat = 0, lng = 0, defaultSub = "", existingProp = null) {
@@ -5578,7 +5735,7 @@ var liveSearchTimer = null;
           } else if (typeof window.handleAuthBtnClick === 'function') {
             window.handleAuthBtnClick();
           }
-          showToast('🔒 박지 제보는 로그인 후 이용하실 수 있습니다.');
+          showToast('🔒 장소 제보는 로그인 후 이용하실 수 있습니다.');
           return;
         }
 
@@ -5594,7 +5751,7 @@ var liveSearchTimer = null;
 
         if (existingProp) {
           // 기존 작성 제보 불러와서 수정 모드 활성화
-          if (titleEl) titleEl.innerHTML = ICONS.PIN + ' <span>제보 박지 내용 수정 (등록 전)</span>';
+          if (titleEl) titleEl.innerHTML = ICONS.PIN + ' <span>제보 장소 내용 수정 (등록 전)</span>';
           if (noticeEl) {
             noticeEl.style.display = 'flex';
             noticeEl.innerHTML = ICONS.EDIT + ' <span>관리자가 승인하기 전까지 제보 내용을 언제든 수정할 수 있습니다.</span>';
@@ -5677,7 +5834,7 @@ var overlay = document.getElementById('customModalOverlay');
 
         var targetSpot = (spots || []).find(function(s) { return String(s.id).trim() === String(spotId).trim(); });
         if (!targetSpot) {
-          showToast('박지 정보를 찾을 수 없습니다.');
+          showToast('장소 정보를 찾을 수 없습니다.');
           return;
         }
 
@@ -5732,7 +5889,7 @@ var overlay = document.getElementById('customModalOverlay');
         var reasonInput = document.getElementById('modalInputCorrectionReason');
         if (reasonBox) reasonBox.style.display = 'flex';
         if (reasonInput) reasonInput.value = '';
-        if (titleEl) titleEl.innerHTML = ICONS.EDIT + ' <span>[' + escapeHtml(spotName || '박지') + '] 정보 수정 건의</span>';
+        if (titleEl) titleEl.innerHTML = ICONS.EDIT + ' <span>[' + escapeHtml(spotName || '장소') + '] 정보 수정 건의</span>';
         if (noticeEl) {
           noticeEl.style.display = 'flex';
           noticeEl.innerHTML = ICONS.ALERT_CARD + ' <span>폐쇄, 데크 철거, 들머리 변경 등 <strong>수정 사유</strong>를 적어주시면 신속히 반영됩니다.</span>';
@@ -5822,6 +5979,8 @@ var overlay = document.getElementById('customModalOverlay');
         var editPropId = params.get('edit_proposal');
         var correctionSpotId = params.get('correction_spot');
         var correctionPropId = params.get('correction_proposal');
+        var proposeSpot = params.get('propose_spot');
+        var fromPastTrip = params.get('from_past_trip') === '1';
         var openPendingCorrection = function() {
           var pending = null;
           try { pending = JSON.parse(sessionStorage.getItem('okbm_pending_correction_proposal') || 'null'); } catch (e) { pending = null; }
@@ -5840,7 +5999,20 @@ var overlay = document.getElementById('customModalOverlay');
             window.openSpotCorrectionModal(correctionSpotId);
           }
         };
-        if (correctionSpotId || correctionPropId) {
+        if (proposeSpot) {
+          if (fromPastTrip) window.__returnToPastTripAfterProposal = true;
+          setTimeout(function() {
+            if (typeof window.openUserProposalModal === 'function') {
+              window.openUserProposalModal(proposeSpot, 0, 0, '');
+            }
+            try {
+              params.delete('propose_spot');
+              params.delete('from_past_trip');
+              var q = params.toString();
+              history.replaceState({}, '', location.pathname + (q ? ('?' + q) : '') + location.hash);
+            } catch (e) {}
+          }, 450);
+        } else if (correctionSpotId || correctionPropId) {
           setTimeout(openPendingCorrection, 500);
         } else if (editPropId) {
           setTimeout(function() { window.openEditMyProposal(editPropId); }, 400);
@@ -5918,6 +6090,7 @@ var overlay = document.getElementById('customModalOverlay');
 
       function persistSpotsCache() {
         try { localStorage.setItem('okbm_spots_cache', JSON.stringify(spots)); } catch (e) { console.warn('[map.html:persistSpotsCache]', e); }
+        window.__pastTripSpotsSearchCache = null;
       }
 
       function applySpotPositionLocally(spot, lat, lng) {
@@ -5997,10 +6170,10 @@ var overlay = document.getElementById('customModalOverlay');
         if (!banner) return;
         banner.style.display = 'flex';
         if (mode === 'confirm') {
-          if (text) text.textContent = '[' + (name || '박지') + '] 이곳으로 이동시키겠습니까?';
+          if (text) text.textContent = '[' + (name || '장소') + '] 이곳으로 이동시키겠습니까?';
           if (okBtn) okBtn.style.display = 'inline-flex';
         } else {
-          if (text) text.textContent = '지도를 클릭하여 박지 위치를 콕 찍어주세요!';
+          if (text) text.textContent = '지도를 클릭하여 장소 위치를 콕 찍어주세요!';
           if (okBtn) okBtn.style.display = 'none';
         }
       }
@@ -6019,7 +6192,7 @@ var overlay = document.getElementById('customModalOverlay');
         window.__adminPinMovePending = { id: String(target.id).trim(), lat: lat, lng: lng };
         window.__adminPinMoveConfirming = true;
         isPickingLocationMode = true;
-        setPinPickerBanner('confirm', target.spot_main || target.name || '박지');
+        setPinPickerBanner('confirm', target.spot_main || target.name || '장소');
         applyAdminMarkerDragState();
       }
 
@@ -6131,7 +6304,7 @@ var overlay = document.getElementById('customModalOverlay');
         if (item.origSpotId) return String(item.origSpotId).trim();
         var idMatch = String(item.id || '').match(/수정건의_(.+?)번_/);
         if (idMatch) return idMatch[1];
-        var descMatch = String(item.desc_summary || '').match(/\[🚨\s*(.+?)번 박지 수정요청\]/);
+        var descMatch = String(item.desc_summary || '').match(/\[🚨\s*(.+?)번 장소 수정요청\]/);
         if (descMatch) return descMatch[1];
         return '';
       }
@@ -6205,7 +6378,7 @@ var overlay = document.getElementById('customModalOverlay');
         }
         var target = spots[index];
         if (!target) {
-          showToast('박지 정보를 찾을 수 없습니다.');
+          showToast('장소 정보를 찾을 수 없습니다.');
           return;
         }
         applyAdminPermissions(true);
@@ -6220,7 +6393,7 @@ var overlay = document.getElementById('customModalOverlay');
         var titleEl = document.getElementById('modalTitle');
         var noticeEl = document.getElementById('modalNotice');
         var btnEl = document.getElementById('modalSubmitBtn');
-        if (titleEl) titleEl.innerHTML = ICONS.EDIT + ' <span>[' + escapeHtml(target.spot_main || target.name) + '] 박지 수정 (관리자)</span>';
+        if (titleEl) titleEl.innerHTML = ICONS.EDIT + ' <span>[' + escapeHtml(target.spot_main || target.name) + '] 장소 수정 (관리자)</span>';
         if (noticeEl) {
           noticeEl.style.display = 'flex';
           noticeEl.innerHTML = ICONS.PIN + ' <span>핀 위치는 [콕 찍기]로 바꾸거나, 지도에서 마커를 드래그해 바로 저장할 수 있습니다.</span>';
@@ -6244,7 +6417,7 @@ var overlay = document.getElementById('customModalOverlay');
         const noticeEl = document.getElementById('modalNotice');
         const btnEl = document.getElementById('modalSubmitBtn');
         
-        if (titleEl) titleEl.innerHTML = `${ICONS.PIN} <span>새 박지 정식 등록 (관리자)</span>`;
+        if (titleEl) titleEl.innerHTML = `${ICONS.PIN} <span>새 장소 정식 등록 (관리자)</span>`;
         if (noticeEl) noticeEl.style.display = 'none';
         if (btnEl) btnEl.innerText = '등록 완료';
         
@@ -6253,7 +6426,7 @@ var overlay = document.getElementById('customModalOverlay');
         const coordsInput = document.getElementById('modalInputCoordsDisplay');
         const entryInput = document.getElementById('modalInputEntry');
         
-        if (nameInput) nameInput.value = defaultName !== "새 박지 위치" ? defaultName : '';
+        if (nameInput) nameInput.value = defaultName !== "새 장소 위치" ? defaultName : '';
         if (coordsInput) coordsInput.value = (lat && lng) ? `${lat}, ${lng}` : '';
         if (entryInput) entryInput.value = address || '';
         var reasonBox = document.getElementById('modalFieldCorrectionReason');
@@ -6273,6 +6446,12 @@ var overlay = document.getElementById('customModalOverlay');
         }
         if (typeof window.hideLongPressProposalTooltip === 'function') {
           window.hideLongPressProposalTooltip();
+        }
+        if (window.__returnToPastTripAfterProposal) {
+          window.__returnToPastTripAfterProposal = false;
+          setTimeout(function() {
+            window.location.assign('index.html?reopen_past_trip=1');
+          }, 120);
         }
       }
 
@@ -6305,7 +6484,7 @@ var overlay = document.getElementById('customModalOverlay');
               lat = coords.lat; 
               lng = coords.lng; 
             } else { 
-              alert('정확한 박지 위치를 위해 [콕 찍기] 버튼으로 지도에서 위치를 직접 지정해주세요.');
+              alert('정확한 장소 위치를 위해 [콕 찍기] 버튼으로 지도에서 위치를 직접 지정해주세요.');
               if (submitBtn) submitBtn.disabled = false;
               return;
             }
@@ -6325,7 +6504,7 @@ var overlay = document.getElementById('customModalOverlay');
           const descLines = [];
           if (descView) descLines.push(`[뷰/특징] ${descView}`);
           if (descAccess) descLines.push(`[접근/코스] ${descAccess}`);
-          if (descPitch) descLines.push(`[박지/피칭] ${descPitch}`);
+          if (descPitch) descLines.push(`[장소/피칭] ${descPitch}`);
           if (descTip) descLines.push(`[주의/팁] ${descTip}`);
           const desc = descLines.join('\n');
 
@@ -6391,7 +6570,7 @@ var overlay = document.getElementById('customModalOverlay');
               var correctionReason = (document.getElementById('modalInputCorrectionReason')?.value || '').trim();
 
               if (isCorrection && orig.id) {
-                if (orig.spot_main !== name) diffNotes.push(`• 박지명: "${orig.spot_main}" ➔ "${name}"`);
+                if (orig.spot_main !== name) diffNotes.push(`• 장소명: "${orig.spot_main}" ➔ "${name}"`);
                 if ((orig.spot_sub || '') !== sub) diffNotes.push(`• 세부포인트: "${orig.spot_sub || '없음'}" ➔ "${sub || '없음'}"`);
                 if ((orig.trailhead_addr || orig.entryPoint || '') !== entry) diffNotes.push(`• 들머리주소: "${orig.trailhead_addr || ''}" ➔ "${entry}"`);
                 if (parseFloat(orig.lat) !== parseFloat(lat) || parseFloat(orig.lng) !== parseFloat(lng)) diffNotes.push(`• 핀위치 변경됨`);
@@ -6399,7 +6578,7 @@ var overlay = document.getElementById('customModalOverlay');
 
               var headerNotice = '';
               if (isCorrection) {
-                headerNotice = `[🚨 ${origSpotId}번 박지 수정요청]\n` +
+                headerNotice = `[🚨 ${origSpotId}번 장소 수정요청]\n` +
                   (correctionReason ? `📌 핵심사유: ${correctionReason}\n` : '') +
                   (diffNotes.length > 0 ? `📝 변경항목:\n${diffNotes.join('\n')}\n` : '') +
                   `────────────────────\n`;
@@ -6487,7 +6666,7 @@ var overlay = document.getElementById('customModalOverlay');
               triggerHaptic(15);
               alert(isCorrection 
                 ? '소중한 정보 수정 건의가 접수되었습니다!\n관리자 검토 후 지도에 신속히 반영하겠습니다. 감사합니다!' 
-                : '소중한 박지 제보가 접수되었습니다!\n관리자 검토 전까지 [마이리포트]에서 언제든 수정할 수 있습니다.');
+                : '소중한 장소 제보가 접수되었습니다!\n관리자 검토 전까지 [마이리포트]에서 언제든 수정할 수 있습니다.');
             } catch (e) { alert('제보 접수 중 통신 오류가 발생했습니다.'); }
           } else if (modalMode === 'ADD' || modalMode === 'EDIT' || modalMode === 'ADMIN_APPLY') {
             if (!checkAdminAuthorization()) {
@@ -6572,6 +6751,9 @@ var overlay = document.getElementById('customModalOverlay');
             smoothCenterMapOnSpot(target.lat, target.lng);
 
             var saved = await persistSpotToSupabase(target, isInsert);
+            if (saved && typeof window.flushPendingSpotMediaForSpot === 'function') {
+              try { await window.flushPendingSpotMediaForSpot(target); } catch (flushErr) { console.warn('[map.html:flushPendingSpotMediaForSpot]', flushErr); }
+            }
             if (inboxItem && typeof window.updateAdminSpotInboxStatus === 'function') {
               var newStatus = saved ? '반영완료' : '반영실패';
               await window.updateAdminSpotInboxStatus(inboxItem.id, inboxItem.type === 'correction', newStatus, saved ? { approved_spot_id: String(target.id) } : null);
@@ -6767,7 +6949,7 @@ var overlay = document.getElementById('customModalOverlay');
         btn.setAttribute('data-lng', lng);
         btn.style.cssText = 'background:#0c1017; border:1px solid rgba(255,255,255,0.18); border-radius:20px; padding:7px 14px; color:#ffffff; font-size:0.76rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px; box-shadow:0 8px 20px rgba(0,0,0,0.55); white-space:nowrap; outline:none; -webkit-tap-highlight-color:transparent;';
         var adminPick = isAdminMode && checkAdminAuthorization();
-        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; flex-shrink:0;"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg><span>${adminPick ? '박지 정식 등록' : '장소 제보하기'}</span>`;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; flex-shrink:0;"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"/><circle cx="12" cy="10" r="3"/></svg><span>${adminPick ? '장소 정식 등록' : '장소 제보하기'}</span>`;
 
         var handleTrigger = function(e) {
           if (e) {
@@ -6982,7 +7164,7 @@ var overlay = document.getElementById('customModalOverlay');
         overlay.innerHTML = '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; background:#0c1017; display:flex; flex-direction:column; box-sizing:border-box;">' +
           '<div style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); border-bottom:1px solid rgba(255,255,255,0.08);">' +
             '<button type="button" onclick="document.getElementById(\'adminSpotInboxModal\').remove();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer;">◀</button>' +
-            '<span style="font-size:0.95rem; font-weight:900; color:#ffffff;">박지 검수함</span>' +
+            '<span style="font-size:0.95rem; font-weight:900; color:#ffffff;">장소 검수함</span>' +
             '<button type="button" onclick="window.renderAdminSpotInboxList();" style="background:none; border:none; color:#7dd3fc; font-size:0.72rem; font-weight:800; cursor:pointer;">새로고침</button>' +
           '</div>' +
           '<div id="adminSpotInboxList" style="flex:1; min-height:0; overflow-y:auto; padding:12px 16px 20px; color:#94a3b8; font-size:0.78rem;">불러오는 중</div>' +
@@ -7218,7 +7400,7 @@ var overlay = document.getElementById('customModalOverlay');
             li.onmouseout = () => { li.style.background = 'transparent'; };
 
             const badgeHtml = res.isInternal 
-              ? '<span style="font-size:0.56rem; font-weight:900; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">박지</span>'
+              ? '<span style="font-size:0.56rem; font-weight:900; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">장소</span>'
               : '<span style="font-size:0.56rem; font-weight:700; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); padding:1px 5px; border-radius:4px; flex-shrink:0;">자연</span>';
 
             li.innerHTML = `
@@ -7395,9 +7577,9 @@ var overlay = document.getElementById('customModalOverlay');
         }
       })();
     </script>
-    <script src="romantic-sync.js?v=2.8.56"></script>
+    <script src="romantic-sync.js?v=2.8.71"></script>
     <script src="templates.js?v=2.8.3"></script>
-    <script src="romantic-history.js?v=2.7.37"></script>
+    <script src="romantic-history.js?v=2.7.39"></script>
     <script src="romantic-plan.js?v=2.8.2"></script>
     <script>
       window.addEventListener('okbm_admin_flag', function(e) {

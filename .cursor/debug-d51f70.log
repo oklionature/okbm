@@ -1,0 +1,1 @@
+{"sessionId":"d51f70","runId":"post-fix","hypothesisId":"A","location":"cdp:verify","message":"gap after 56px fix","data":{"gapPx":0,"modalBottom":731,"dockTop":731,"modalComputedBottom":"56px","dockH":56,"script":"http://127.0.0.1:5500/templates.js?v=2.8.8"},"timestamp":1789960208466}

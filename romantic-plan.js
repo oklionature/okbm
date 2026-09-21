@@ -250,7 +250,11 @@
       var calcSpot = e.target.closest('.js-apply-calc-spot');
       if (calcSpot) {
         if (typeof window.applySelectedCalcSpot === 'function') {
-          window.applySelectedCalcSpot(calcSpot.dataset.spot || '', calcSpot.dataset.elevation || '');
+          window.applySelectedCalcSpot(
+            calcSpot.dataset.spot || '',
+            calcSpot.dataset.elevation || '',
+            { isCustom: calcSpot.dataset.unregistered === '1' }
+          );
         }
         return;
       }
@@ -2148,20 +2152,19 @@ window.saveCurrentPackingRecord = function() {
       memo: '',
       oneLineMemo: '',
       isDraft: false,
-      isPublished: true,
+      isPublished: false,
+      unregisteredSpot: false,
       items: packedItems,
       photos: [],
       readyShotPhoto: ''
     };
 
-    // 🏛️ 보관함(History) DB에 즉시 영구 각인 및 전역 캐시 갱신
-    if (typeof window.savePackingHistoryRecord === 'function') {
-      newRecord = window.savePackingHistoryRecord(newRecord) || newRecord;
-    }
-
-    // ⚡ 방금 저장한 최신 기록을 R2 클라우드로 즉각 전송 (서버 수화 덮어쓰기 방어)
-    if (typeof syncUserDataToCloud === 'function') {
-      syncUserDataToCloud(true);
+    var planUnreg = savedSpotObj && savedSpotObj.unregistered === true;
+    var spotIsRegistered = typeof window.isSpotRegisteredInMasterDB === 'function' &&
+      window.isSpotRegisteredInMasterDB(spotTitle);
+    if (planUnreg || !spotIsRegistered || spotTitle === '자유 일정' || spotTitle === '나의 힐링 스팟') {
+      newRecord.unregisteredSpot = true;
+      newRecord.isPublished = false;
     }
 
     window.currentShareRecord = newRecord;
@@ -2173,9 +2176,22 @@ window.saveCurrentPackingRecord = function() {
     } else if (typeof openPackShareModal === 'function') {
       openPackShareModal(newRecord, packedItems, false);
     }
+
+    // 패킹 본문은 백그라운드 저장. Promise를 currentShareRecord에 넣으면 레디샷 사진이 유실된다.
+    if (typeof window.savePackingHistoryRecord === 'function') {
+      window.savePackingHistoryRecord(newRecord).then(function(saved) {
+        if (!saved || saved.__serverSaveFailed) return;
+        var live = window.currentShareRecord;
+        if (!live || typeof live.then === 'function') return;
+        if (saved.id) live.id = saved.id;
+        if (!live.readyShotPhoto && saved.readyShotPhoto) live.readyShotPhoto = saved.readyShotPhoto;
+      }).catch(function(err) {
+        console.warn('[romantic-plan.js:savePackingHistoryRecord]', err);
+      });
+    }
   };
 
-  var CURRENT_GEAR_VERSION = '20260920_GEARS_V4_NALGENE';
+  var CURRENT_GEAR_VERSION = '20260921_FOOD_CLEANUP';
 
   // 1. 초기 로드 시 구버전 장비 캐시 즉시 소거 (localStorage 영구 중단, 메모리 전용화)
   (function verifyGearCacheVersion() {
@@ -2797,14 +2813,6 @@ window.saveCurrentPackingRecord = function() {
     
     var currentDayMemo = (planMemosObj && planMemosObj[activeDateStr]) ? String(planMemosObj[activeDateStr]) : '';
 
-    // 완료 기록에만 메모가 남아 있는 경우 자동 복원
-    if (!currentDayMemo) {
-      var matchedRecord = monthHistory.find(function(h) { return h && Number(h.day) === Number(activeDay); });
-      if (matchedRecord && (matchedRecord.memo || matchedRecord.oneLineMemo)) {
-        currentDayMemo = String(matchedRecord.memo || matchedRecord.oneLineMemo).trim();
-      }
-    }
-
     //  [계산기/체크리스트 공용 무게 및 아이템 데이터 사전 집계]
     var totalGrams = 0;
     var planItems = [];
@@ -3342,7 +3350,7 @@ window.saveCurrentPackingRecord = function() {
      <!-- 4. 하단 2x2 모던 큐브 그리드 (모노크롬 & 정중앙 정렬) -->
         <div style="flex:26 1 0% !important; min-height:0 !important; display:grid; grid-template-columns:1fr 1fr; gap:6px; box-sizing:border-box;">
           
-          <div onclick="window.activePlanSubMode='calculator'; window.renderPlanStage(); triggerHaptic(10);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 10px; display:flex; justify-content:center; align-items:center; cursor:pointer; box-sizing:border-box;">
+          <div onclick="window.openPlanPackingCalculator();" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 10px; display:flex; justify-content:center; align-items:center; cursor:pointer; box-sizing:border-box;">
             <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
               ${VECTOR_ICONS.calculator}
               <span style="font-size:0.86rem; font-weight:900; color:#ffffff;">패킹 계획하기</span>
@@ -3545,7 +3553,7 @@ window.saveCurrentPackingRecord = function() {
 /// 3. 군더더기 제로 단일 패킹 캔버스 뷰 (검색 + 전체리본 + 90% 선반 + SVG 듀얼 하단독)
     var calcSpotName = (window.currentLuckySpot && window.currentLuckySpot.name) 
       ? window.currentLuckySpot.name 
-      : (spotTitle && spotTitle !== '자유 일정' && !spotTitle.includes('출발 준비 완료') ? spotTitle : '일정 선택');
+      : (spotTitle && spotTitle !== '자유 일정' && !spotTitle.includes('출발 준비 완료') ? spotTitle : '장소 선택');
     var calcSpotElev = (window.currentLuckySpot && window.currentLuckySpot.elevation) 
       ? (String(window.currentLuckySpot.elevation).includes('m') ? ('(' + window.currentLuckySpot.elevation + ')') : ('(' + window.currentLuckySpot.elevation + 'm)')) 
       : '';
@@ -3571,8 +3579,9 @@ window.saveCurrentPackingRecord = function() {
           <span style="font-size:0.92rem; font-weight:800; color:#f8fafc;">목적지 검색 및 직접 지정</span>
           <button type="button" onclick="document.getElementById('calcSpotSearchModal').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.15rem; cursor:pointer; padding:2px 6px;">✕</button>
         </div>
-        <div style="position:relative; width:100%;">
-          <input type="text" id="calcSpotSearchInput" placeholder="박지명, 산, 지역명 입력..." oninput="window.filterCalcSpotSearchList(this.value)" style="width:100%; height:42px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#ffffff; font-size:0.86rem; padding:0 12px; outline:none; box-sizing:border-box;" />
+        <div style="display:flex; gap:6px; align-items:center; width:100%;">
+          <input type="text" id="calcSpotSearchInput" placeholder="장소명, 산, 지역명 입력..." oninput="window.filterCalcSpotSearchList(this.value)" style="flex:1; min-width:0; height:42px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.14); border-radius:8px; color:#ffffff; font-size:0.86rem; padding:0 12px; outline:none; box-sizing:border-box;" />
+          <button type="button" id="calcSpotAssignBtn" style="height:42px; min-width:62px; padding:0 12px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.22); border-radius:8px; color:#ffffff; font-size:0.78rem; font-weight:800; cursor:pointer; flex-shrink:0;">선택</button>
         </div>
         <div id="calcSpotSearchResultList" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; min-height:160px; max-height:50vh; overscroll-behavior:contain; padding-right:2px;"></div>
       </div>
@@ -3586,21 +3595,9 @@ window.saveCurrentPackingRecord = function() {
       var cleanQ = rawQ.toLowerCase();
 
       if (!rawQ) {
-        listEl.innerHTML = '<div style="text-align:center; padding:45px 0; color:#64748b; font-size:0.75rem; line-height:1.6;">가고 싶은 박지명, 산, 또는 지역명을 검색해보세요.</div>';
+        listEl.innerHTML = '<div style="text-align:center; padding:45px 0; color:#64748b; font-size:0.75rem; line-height:1.6;">가고 싶은 장소명, 산, 또는 지역명을 검색해보세요.</div>';
         return;
       }
-
-      var customOptionHtml = `
-        <div class="js-apply-calc-spot" data-spot="${escapeHtml(rawQ)}" data-elevation="" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:11px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; min-height:46px; box-sizing:border-box;">
-          <div style="min-width:0; flex:1; padding-right:10px;">
-            <div style="font-size:0.86rem; font-weight:800; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-              + "${escapeHtml(rawQ)}" 직접 지정
-            </div>
-            <div style="font-size:0.65rem; color:#94a3b8; margin-top:2px;">새로운 장소로 현재 일정에 등록합니다</div>
-          </div>
-          <span style="font-size:0.72rem; font-weight:800; color:#ffffff; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.22); padding:5px 10px; border-radius:6px; flex-shrink:0;">지정</span>
-        </div>
-      `;
 
       var filtered = spotList.filter(function(s) {
         if (!s) return false;
@@ -3610,7 +3607,7 @@ window.saveCurrentPackingRecord = function() {
       });
 
       if (filtered.length === 0) {
-        listEl.innerHTML = customOptionHtml + '<div style="text-align:center; padding:30px 0; color:#64748b; font-size:0.75rem; line-height:1.6;">일치하는 등록 박지가 없습니다.<br>위 직접 지정을 통해 새 장소로 등록할 수 있습니다.</div>';
+        listEl.innerHTML = '<div style="text-align:center; padding:30px 0; color:#64748b; font-size:0.75rem; line-height:1.6;">일치하는 등록 장소가 없습니다.<br>선택을 누르시면 새로운 장소를 등록 하실 수 있습니다.</div>';
         return;
       }
 
@@ -3631,41 +3628,112 @@ window.saveCurrentPackingRecord = function() {
         `;
       }).join('');
 
-      listEl.innerHTML = customOptionHtml + itemsHtml;
+      listEl.innerHTML = itemsHtml;
     };
 
-    window.applySelectedCalcSpot = function(name, elev) {
+    window._planShowSpotRegisterChoice = function(spotName) {
+      var existing = document.getElementById('planSpotRegisterChoiceOverlay');
+      if (existing) existing.remove();
+      var name = String(spotName || '').trim();
+      var esc = (typeof escapeHtml === 'function') ? escapeHtml : function(s) { return String(s || ''); };
+      var ov = document.createElement('div');
+      ov.id = 'planSpotRegisterChoiceOverlay';
+      ov.style.cssText = 'position:fixed; inset:0; z-index:2147483647; background:rgba(0,0,0,0.72); display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
+      ov.onclick = function(e) { if (e.target === ov) ov.remove(); };
+      ov.innerHTML =
+        '<div style="width:100%; max-width:320px; background:#0c1017; border-radius:14px; border:1px solid rgba(255,255,255,0.12); padding:16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 16px 40px rgba(0,0,0,0.55);" onclick="event.stopPropagation();">' +
+          '<div style="font-size:0.92rem; font-weight:900; color:#fff; text-align:center;">장소를 등록하시겠습니까?</div>' +
+          (name ? ('<div style="font-size:0.78rem; font-weight:800; color:#e2e8f0; text-align:center; word-break:break-all;">' + esc(name) + '</div>') : '') +
+          '<div style="font-size:0.68rem; color:#94a3b8; line-height:1.5; text-align:center;">등록하기를 선택하시면 장소등록창으로 연결됩니다.<br>등록하지 않기를 선택하시면 일정과 나만보기로 저장됩니다.</div>' +
+          '<div style="display:flex; gap:8px;">' +
+            '<button type="button" id="planSpotChoiceRegisterBtn" style="flex:1; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:#e2e8f0; color:#000; font-size:0.78rem; font-weight:900; cursor:pointer;">등록하기</button>' +
+            '<button type="button" id="planSpotChoiceSkipBtn" style="flex:1; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04); color:#cbd5e1; font-size:0.78rem; font-weight:800; cursor:pointer;">등록하지 않기</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(ov);
+      var regBtn = document.getElementById('planSpotChoiceRegisterBtn');
+      var skipBtn = document.getElementById('planSpotChoiceSkipBtn');
+      if (regBtn) {
+        regBtn.onclick = function() {
+          ov.remove();
+          triggerHaptic(10);
+          if (typeof window.openUserProposalModal === 'function') {
+            window.openUserProposalModal(name, 0, 0, '');
+            return;
+          }
+          window.location.assign('map.html?propose_spot=' + encodeURIComponent(name || ''));
+        };
+      }
+      if (skipBtn) {
+        skipBtn.onclick = function() {
+          ov.remove();
+          triggerHaptic(8);
+        };
+      }
+    };
+
+    window.applySelectedCalcSpot = function(name, elev, opts) {
+      opts = opts || {};
       name = unescapePlanText(name || '');
       elev = unescapePlanText(elev || '');
       if (!name || (typeof window.okbmIsXssProbeSpotName === 'function' && window.okbmIsXssProbeSpotName(name))) {
         if (typeof showToast === 'function') showToast('올바른 장소명을 입력해 주세요.', 'warn');
         return;
       }
-      window.currentLuckySpot = { name: name, elevation: elev || '' };
+      var isRegistered = !opts.isCustom &&
+        typeof window.isSpotRegisteredInMasterDB === 'function' &&
+        window.isSpotRegisteredInMasterDB(name);
+      var isUnregistered = !isRegistered;
+
+      window.currentLuckySpot = { name: name, elevation: elev || '', unregistered: isUnregistered };
       var curDate = window.activeSelectedDateKey;
       if (curDate) {
         var planSpots = safeGetJSON('okbm_plan_spots', {});
         var list = planSpots[curDate] || [];
         if (!Array.isArray(list)) list = list.name ? [list] : [];
-        if (!list.some(function(s) { return s.name === name; })) {
-          list.unshift({ name: name, elevation: elev || '' });
-          planSpots[curDate] = list;
-          if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-            window.RomanticVault.write('okbm_plan_spots', planSpots, true);
-          } else {
-            localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots));
-          }
+        list = list.filter(function(s) { return s && s.name !== name; });
+        list.unshift({ name: name, elevation: elev || '', unregistered: isUnregistered });
+        planSpots[curDate] = list;
+        if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+          window.RomanticVault.write('okbm_plan_spots', planSpots, true);
+        } else {
+          localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots));
         }
       }
       var m = document.getElementById('calcSpotSearchModal');
       if (m) m.remove();
       triggerHaptic(12);
       window.renderPlanStage();
+
+      if (isUnregistered) {
+        if (typeof showToast === 'function') {
+          showToast('등록된 장소가 아닌 경우 나만보기로 이동됩니다.', 'info', 2600);
+        }
+        window._planShowSpotRegisterChoice(name);
+      }
     };
 
     window.filterCalcSpotSearchList('');
     var input = document.getElementById('calcSpotSearchInput');
-    if (input) input.focus();
+    var assignBtn = document.getElementById('calcSpotAssignBtn');
+    var applyTypedSpot = function() {
+      var name = input ? String(input.value || '').trim() : '';
+      if (!name) {
+        if (typeof showToast === 'function') showToast('장소명을 입력해 주세요.', 'warn');
+        return;
+      }
+      window.applySelectedCalcSpot(name, '', { isCustom: true });
+    };
+    if (assignBtn) assignBtn.onclick = applyTypedSpot;
+    if (input) {
+      input.addEventListener('keydown', function(ev) {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          applyTypedSpot();
+        }
+      });
+      input.focus();
+    }
   };
 
   var calculatorViewHtml = `
@@ -4752,6 +4820,16 @@ window.saveCurrentPackingRecord = function() {
   };
 
   window.autoSavePlanMemo = function(dateStr, val) {
+    var normKey = (typeof window.okbmNormalizePlanDateKey === 'function')
+      ? window.okbmNormalizePlanDateKey(dateStr)
+      : String(dateStr || '').replace(/[-/]/g, '.');
+    if (window.__okbmSkipPlanMemoAutosaveFor && normKey === window.__okbmSkipPlanMemoAutosaveFor) {
+      if (!String(val || '').trim()) {
+        window.__okbmSkipPlanMemoAutosaveFor = '';
+      }
+      return;
+    }
+
     var planMemosObj = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
       ? window.RomanticVault.read('okbm_plan_memos', {})
       : safeGetJSON('okbm_plan_memos', {});
@@ -4783,9 +4861,6 @@ window.saveCurrentPackingRecord = function() {
     var trimmed = String(val || '').trim();
     if (trimmed) {
       planMemosObj[dateStr] = String(val);
-      if (typeof window.okbmUnmarkDeletedDate === 'function') {
-        window.okbmUnmarkDeletedDate(dateStr);
-      }
     } else {
       delete planMemosObj[dateStr];
     }
@@ -4874,27 +4949,67 @@ window.saveCurrentPackingRecord = function() {
     document.body.appendChild(picker);
   };
 
+  window.isPastPlanDate = function(dateStr) {
+    var parts = String(dateStr || '').match(/\d+/g);
+    if (!parts || parts.length < 3) return false;
+    var y = parseInt(parts[0], 10);
+    var m = parseInt(parts[1], 10);
+    var d = parseInt(parts[2], 10);
+    if (!y || !m || !d) return false;
+    var now = new Date();
+    var todayNum = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+    var targetNum = y * 10000 + m * 100 + d;
+    return targetNum < todayNum;
+  };
+
+  window.openPlanPackingCalculator = function() {
+    var now = new Date();
+    var dateStr = window.activeSelectedDateKey || (
+      now.getFullYear() + '.' +
+      String(now.getMonth() + 1).padStart(2, '0') + '.' +
+      String(now.getDate()).padStart(2, '0')
+    );
+    if (window.isPastPlanDate(dateStr)) {
+      triggerHaptic(8);
+      if (typeof showToast === 'function') {
+        showToast('과거 일정은 마이리포트에서 입력할 수 있습니다.', 'info', 2600);
+      }
+      return;
+    }
+    window.activePlanSubMode = 'calculator';
+    window.renderPlanStage();
+    triggerHaptic(10);
+  };
+
   // 👆 계획 달력 좌우 스와이프 제스처 바인딩
   window.bindPlanCalendarSwipe = function() {
     var calBox = document.getElementById('planCalendarCardWrap');
-    if (!calBox) return;
-    // 🛡️ [메모리 누수 패치] window 레벨 가드로 변경
-    if (window.__calSwipeBound) return;
-    window.__calSwipeBound = true;
+    if (!calBox || calBox._swipeBound) return;
+    calBox._swipeBound = true;
 
-    var startX = 0, startY = 0;
+    var startX = 0, startY = 0, tracking = false;
     calBox.addEventListener('touchstart', function(e) {
       if (!e.touches || e.touches.length !== 1) return;
+      if (e.target && e.target.closest && e.target.closest('button, a, input, textarea, select')) {
+        tracking = false;
+        return;
+      }
+      tracking = true;
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
     }, { passive: true });
 
     calBox.addEventListener('touchend', function(e) {
+      if (!tracking) return;
+      tracking = false;
       if (!e.changedTouches || e.changedTouches.length !== 1) return;
       var diffX = e.changedTouches[0].clientX - startX;
       var diffY = e.changedTouches[0].clientY - startY;
 
       if (Math.abs(diffX) > 35 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+        if (typeof window.cancelDateLongPress === 'function') {
+          window.cancelDateLongPress(e);
+        }
         if (diffX < 0) {
           window.changePlanMonth(1);
         } else {
@@ -4902,10 +5017,21 @@ window.saveCurrentPackingRecord = function() {
         }
       }
     }, { passive: true });
+
+    calBox.addEventListener('touchcancel', function() {
+      tracking = false;
+    }, { passive: true });
   };
 
   //  달력/메모장의 박지명을 배낭 계산기로 직통 주입하여 기록 시작
   window.startPackingForDate = function(dateStr, spotName, elev) {
+    if (window.isPastPlanDate(dateStr)) {
+      triggerHaptic(8);
+      if (typeof showToast === 'function') {
+        showToast('과거 일정은 마이리포트에서 입력할 수 있습니다.', 'info', 2600);
+      }
+      return;
+    }
     triggerHaptic(12);
     window.activeSelectedDateKey = dateStr;
     if (spotName && spotName.trim()) {
@@ -4923,22 +5049,322 @@ window.saveCurrentPackingRecord = function() {
     }, 50);
   };
 
-window.clearEntireDaySchedule = function(dateKey) {
-    if (!confirm('[' + dateKey + '] 일정을 완전히 삭제하시겠습니까?')) return;
+  window.okbmNormalizePlanDateKey = function(dateKey) {
+    var raw = String(dateKey || '').trim();
+    if (!raw) return '';
+    var parts = raw.match(/\d+/g);
+    if (!parts || parts.length < 3) return raw.replace(/[-/]/g, '.');
+    var y = parts[0].length === 4 ? parts[0] : parts[2];
+    var m = parts[0].length === 4 ? parts[1] : parts[0];
+    var d = parts[0].length === 4 ? parts[2] : parts[1];
+    return String(y) + '.' + String(parseInt(m, 10)).padStart(2, '0') + '.' + String(parseInt(d, 10)).padStart(2, '0');
+  };
 
-    var normDate = String(dateKey).replace(/[-/]/g, '.');
-    var altDate = String(dateKey).replace(/[./]/g, '-');
+  window.okbmPlanDateKeyVariants = function(dateKey) {
+    var norm = window.okbmNormalizePlanDateKey(dateKey);
+    if (!norm) return [];
+    var parts = String(norm).match(/\d+/g) || [];
+    var y = parts[0];
+    var mPad = parts[1];
+    var dPad = parts[2];
+    var mNum = String(parseInt(mPad, 10));
+    var dNum = String(parseInt(dPad, 10));
+    var uniq = {};
+    [dateKey, norm,
+      y + '.' + mPad + '.' + dPad,
+      y + '-' + mPad + '-' + dPad,
+      y + '/' + mPad + '/' + dPad,
+      y + '.' + mNum + '.' + dNum,
+      y + '-' + mNum + '-' + dNum
+    ].forEach(function(k) {
+      if (k) uniq[String(k)] = true;
+    });
+    return Object.keys(uniq);
+  };
 
+  window.okbmGetRecordPlanDateKey = function(rec) {
+    if (!rec) return '';
+    var fromDate = window.okbmNormalizePlanDateKey(rec.date || rec.tripDate || rec.trip_date || '');
+    if (fromDate) return fromDate;
+    var y = Number(rec.year);
+    var m = Number(rec.month);
+    var d = Number(rec.day);
+    if (y && m && d) {
+      return y + '.' + String(m).padStart(2, '0') + '.' + String(d).padStart(2, '0');
+    }
+    return '';
+  };
+
+  function okbmReadPlanStore(key, fallback) {
+    if (window.RomanticVault && typeof window.RomanticVault.read === 'function') {
+      return window.RomanticVault.read(key, fallback) || fallback;
+    }
+    return safeGetJSON(key, fallback) || fallback;
+  }
+
+  function okbmWritePlanStore(key, val) {
+    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+      window.RomanticVault.write(key, val, false);
+    } else {
+      try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+    }
+    if (window.__memoryStore) window.__memoryStore[key] = val;
+  }
+
+  function okbmRecordMatchesPlanDate(rec, variantSet, normDate) {
+    if (!rec) return false;
+    var recKey = window.okbmGetRecordPlanDateKey(rec);
+    if (recKey && (variantSet[recKey] || recKey === normDate)) return true;
+
+    var raw = String(rec.date || rec.tripDate || rec.trip_date || '').trim();
+    if (!raw) return false;
+    var dateOnly = raw.split('T')[0].split(' ')[0];
+    var dotted = dateOnly.replace(/[-/]/g, '.');
+    if (dotted && (variantSet[dotted] || dotted === normDate)) return true;
+
+    var normH = window.okbmNormalizePlanDateKey(raw);
+    if (normH && (variantSet[normH] || normH === normDate)) return true;
+    return false;
+  }
+
+  async function okbmDeleteFeedsByUserAndDate(userId, variants, targetUrl, targetKey) {
+    var confirmed = [];
+    if (!userId || !targetUrl || !targetKey || !variants || !variants.length) {
+      return { ok: true, deletedIds: confirmed };
+    }
+    var uniq = {};
+    variants.forEach(function(v) {
+      if (!v) return;
+      uniq[String(v)] = true;
+      uniq[String(v).replace(/\./g, '-')] = true;
+      uniq[String(v).replace(/-/g, '.')] = true;
+    });
+    var dateList = Object.keys(uniq);
+    for (var i = 0; i < dateList.length; i++) {
+      var dVal = dateList[i];
+      try {
+        var res = await fetch(
+          targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(userId) +
+          '&date=eq.' + encodeURIComponent(dVal),
+          {
+            method: 'DELETE',
+            headers: {
+              'apikey': targetKey,
+              'Authorization': 'Bearer ' + targetKey,
+              'Content-Type': 'application/json',
+              'Prefer': 'return=representation'
+            }
+          }
+        );
+        if (!res.ok) continue;
+        var rows = [];
+        try { rows = await res.json(); } catch (e) { rows = []; }
+        if (Array.isArray(rows)) {
+          rows.forEach(function(row) {
+            if (row && row.id) confirmed.push(String(row.id).trim());
+          });
+        }
+      } catch (err) {
+        console.warn('[romantic-plan.js:okbmDeleteFeedsByUserAndDate]', err);
+      }
+    }
+    return { ok: true, deletedIds: confirmed };
+  }
+
+  async function okbmDeleteRowsByIds(tableName, ids, targetUrl, targetKey) {
+    var list = (ids || []).map(function(id) { return String(id || '').trim(); }).filter(Boolean);
+    if (!list.length) return { ok: true, deletedIds: [] };
+    if (!targetUrl || !targetKey) return { ok: false, deletedIds: [], error: 'no_server' };
+
+    var confirmed = [];
+    var chunkSize = 30;
+    for (var i = 0; i < list.length; i += chunkSize) {
+      var chunk = list.slice(i, i + chunkSize);
+      var filter = 'in.(' + chunk.map(function(id) { return encodeURIComponent(id); }).join(',') + ')';
+      try {
+        var res = await fetch(targetUrl + '/rest/v1/' + tableName + '?id=' + filter, {
+          method: 'DELETE',
+          headers: {
+            'apikey': targetKey,
+            'Authorization': 'Bearer ' + targetKey,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+          }
+        });
+        if (!res.ok) {
+          return { ok: false, deletedIds: confirmed, status: res.status };
+        }
+        var rows = [];
+        try { rows = await res.json(); } catch (e) { rows = []; }
+        if (Array.isArray(rows)) {
+          rows.forEach(function(row) {
+            if (row && row.id) confirmed.push(String(row.id).trim());
+          });
+        }
+      } catch (err) {
+        return { ok: false, deletedIds: confirmed, error: err };
+      }
+    }
+    return { ok: true, deletedIds: confirmed };
+  }
+
+  // SSOT 일정 삭제: feeds → trips → users.my_gears 확인 후 캐시 갱신
+  if (!window.okbmLinkedDeleteToast) {
+    window.okbmLinkedDeleteToast = '일정 및 피드에서 영구삭제됩니다';
+  }
+
+  window.okbmDeletePlanDate = async function(dateKey, opts) {
+    opts = opts || {};
+    var normDate = window.okbmNormalizePlanDateKey(dateKey);
+    var variants = window.okbmPlanDateKeyVariants(dateKey);
+    if (!normDate || !variants.length) return { ok: false, reason: 'bad_date' };
+
+    if (window.__okbmPlanDeleteInFlight) {
+      return { ok: false, reason: 'busy' };
+    }
+    window.__okbmPlanDeleteInFlight = true;
+
+    var variantSet = {};
+    variants.forEach(function(k) {
+      variantSet[k] = true;
+      variantSet[String(k).replace(/[-/]/g, '.')] = true;
+    });
+
+    var targetUrl = window.SUPABASE_URL || '';
+    var targetKey = window.SUPABASE_ANON_KEY || '';
     var curProf = safeGetJSON('user_profile', null);
-    var rawActiveUid = (typeof window.okbmGetCurrentUserId === 'function') ? String(window.okbmGetCurrentUserId() || '').trim() : '';
-    var activeNick = (curProf && curProf.nickname) ? String(curProf.nickname).trim() : (localStorage.getItem('okbm_user_nick') || '');
+    var rawActiveUid = (typeof window.okbmGetCurrentUserId === 'function')
+      ? String(window.okbmGetCurrentUserId() || '').trim()
+      : '';
+    if (!rawActiveUid && curProf && curProf.id) {
+      rawActiveUid = String(curProf.id).trim();
+    }
+    if (!rawActiveUid) {
+      rawActiveUid = String(localStorage.getItem('okbm_user_id') || '').trim();
+    }
+    var activeNick = (curProf && curProf.nickname)
+      ? String(curProf.nickname).trim()
+      : (localStorage.getItem('okbm_user_nick') || '');
 
-    var deletedTripIds = [];
-    if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
-      window.TRIP_JOINS_DATABASE = window.TRIP_JOINS_DATABASE.filter(function(t) {
-        if (!t || !t.date || !t.tripId) return true;
-        var tD = String(t.date).replace(/[-/]/g, '.');
-        if (tD === normDate || tD === String(dateKey)) {
+    try {
+      // 1) feeds — 해당 날짜 본인 기록만 DELETE 확인
+      var historyList = okbmReadPlanStore('okbm_packing_history', []);
+      if (!Array.isArray(historyList)) historyList = [];
+      var feedCandidates = [];
+      var collectFeedId = function(h) {
+        if (!okbmRecordMatchesPlanDate(h, variantSet, normDate)) return;
+        if (h && h.id) {
+          var id = String(h.id).trim();
+          if (id && feedCandidates.indexOf(id) === -1) feedCandidates.push(id);
+        }
+      };
+      historyList.forEach(collectFeedId);
+      [].concat(window.interactiveHistory || [], window.__allLoadedFeeds || [], window.heroTopRecords || []).forEach(collectFeedId);
+
+      // 로컬 캐시에 없어도 서버에 남아 있는 당일 피드를 조회해 함께 삭제
+      if (targetUrl && targetKey && rawActiveUid) {
+        try {
+          var feedLookupRes = await fetch(
+            targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(rawActiveUid) +
+            '&select=id,date&order=date.desc&limit=300',
+            {
+              method: 'GET',
+              headers: {
+                'apikey': targetKey,
+                'Authorization': 'Bearer ' + targetKey,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          if (feedLookupRes.ok) {
+            var feedLookupRows = await feedLookupRes.json();
+            if (Array.isArray(feedLookupRows)) {
+              feedLookupRows.forEach(function(row) {
+                if (!okbmRecordMatchesPlanDate(row, variantSet, normDate)) return;
+                var rid = row && row.id ? String(row.id).trim() : '';
+                if (rid && feedCandidates.indexOf(rid) === -1) feedCandidates.push(rid);
+              });
+            }
+          }
+        } catch (lookupErr) {
+          console.warn('[romantic-plan.js:okbmDeletePlanDate feedLookup]', lookupErr);
+        }
+      }
+
+      var isLocalOnlyFeedId = function(id) {
+        var s = String(id || '');
+        return s.indexOf('pack_') === 0 || s.indexOf('local_') === 0;
+      };
+      var serverFeedIds = feedCandidates.filter(function(id) { return !isLocalOnlyFeedId(id); });
+      var localOnlyFeedIds = feedCandidates.filter(isLocalOnlyFeedId);
+
+      var feedResult = { ok: true, deletedIds: localOnlyFeedIds.slice() };
+      if (serverFeedIds.length > 0 && targetUrl && targetKey) {
+        feedResult = await okbmDeleteRowsByIds('feeds', serverFeedIds, targetUrl, targetKey);
+        feedResult.deletedIds = (feedResult.deletedIds || []).concat(localOnlyFeedIds);
+      } else if (!targetUrl || !targetKey) {
+        feedResult.deletedIds = feedCandidates.slice();
+      }
+
+      // ID로 못 지웠거나 후보가 비어도 user_id+date로 서버 피드 강제 삭제
+      if (targetUrl && targetKey && rawActiveUid) {
+        var byDate = await okbmDeleteFeedsByUserAndDate(rawActiveUid, variants, targetUrl, targetKey);
+        (byDate.deletedIds || []).forEach(function(id) {
+          if (feedResult.deletedIds.indexOf(id) === -1) feedResult.deletedIds.push(id);
+        });
+      }
+
+      // 서버 ID 후보가 있었는데 하나도 안 지워졌고 date 삭제도 0건이면 실패
+      if (serverFeedIds.length > 0 && targetUrl && targetKey) {
+        var confirmedServer = (feedResult.deletedIds || []).filter(function(id) {
+          return !isLocalOnlyFeedId(id);
+        });
+        if (confirmedServer.length === 0) {
+          if (typeof showToast === 'function') {
+            showToast('기록 삭제에 실패했습니다. 일정을 지우지 않았습니다.', 'error', 2800);
+          }
+          return { ok: false, reason: 'feeds', detail: feedResult };
+        }
+      }
+
+      var deletedFeedIdSet = {};
+      (feedResult.deletedIds || []).forEach(function(id) { deletedFeedIdSet[String(id).trim()] = true; });
+
+      var purgeFeedFn = function(r) {
+        if (!r) return false;
+        var rid = String(r.id || '').trim();
+        if (rid && deletedFeedIdSet[rid]) return false;
+        if (okbmRecordMatchesPlanDate(r, variantSet, normDate)) return false;
+        return true;
+      };
+
+      var filteredHist = historyList.filter(purgeFeedFn);
+      window.interactiveHistory = filteredHist;
+      window.packingHistoryList = filteredHist;
+      okbmWritePlanStore('okbm_packing_history', filteredHist);
+      try { localStorage.setItem('okbm_packing_history', JSON.stringify(filteredHist)); } catch (e) {}
+
+      if (Array.isArray(window.__allLoadedFeeds)) {
+        window.__allLoadedFeeds = window.__allLoadedFeeds.filter(purgeFeedFn);
+        try {
+          localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(window.__allLoadedFeeds.slice(0, 15)));
+        } catch (e) {}
+      }
+      if (Array.isArray(window.heroTopRecords)) {
+        window.heroTopRecords = window.heroTopRecords.filter(purgeFeedFn);
+        window.currentHeroCardIndex = 0;
+        if (typeof window.renderCurrentHeroCard === 'function') {
+          window.renderCurrentHeroCard();
+        }
+      }
+
+      // 2) trips — 본인 호스트 공고만 DELETE 확인
+      var tripCandidates = [];
+      if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
+        window.TRIP_JOINS_DATABASE.forEach(function(t) {
+          if (!t || !t.date || !t.tripId) return;
+          var tD = String(t.date).replace(/[-/]/g, '.');
+          if (!variantSet[tD] && !variantSet[String(t.date)]) return;
           var rawTUid = String(t.userId || t.host_id || '').trim();
           var tAuthor = String(t.authorName || '').trim();
           var isHost = Boolean(
@@ -4947,144 +5373,141 @@ window.clearEntireDaySchedule = function(dateKey) {
               : (rawActiveUid && rawTUid && rawActiveUid === rawTUid)) ||
             (activeNick && tAuthor && activeNick === tAuthor)
           );
-          if (isHost) {
-            deletedTripIds.push(String(t.tripId).trim());
-            return false;
+          if (isHost) tripCandidates.push(String(t.tripId).trim());
+        });
+      }
+
+      var tripResult = { ok: true, deletedIds: [] };
+      if (tripCandidates.length > 0) {
+        if (targetUrl && targetKey) {
+          tripResult = await okbmDeleteRowsByIds('trips', tripCandidates, targetUrl, targetKey);
+          if (!tripResult.ok || !tripResult.deletedIds || tripResult.deletedIds.length === 0) {
+            if (typeof showToast === 'function') {
+              showToast('원정대 삭제에 실패했습니다. 일정을 지우지 않았습니다.', 'error', 2800);
+            }
+            return { ok: false, reason: 'trips', detail: tripResult };
           }
-        }
-        return true;
-      });
-      if (typeof window.renderHomeTripJoinSlider === 'function') {
-        window.renderHomeTripJoinSlider();
-      }
-    }
-
-    var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-    var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
-
-    if (deletedTripIds.length > 0) {
-      if (window.supabaseClient) {
-        window.supabaseClient.from('trips').delete().in('id', deletedTripIds).then(function() {});
-      } else if (targetUrl && targetKey) {
-        var tripDelHeaders = {
-          'apikey': targetKey,
-          'Authorization': 'Bearer ' + targetKey,
-          'Content-Type': 'application/json'
-        };
-        var tripChunkSize = 30;
-        for (var tc = 0; tc < deletedTripIds.length; tc += tripChunkSize) {
-          var tChunk = deletedTripIds.slice(tc, tc + tripChunkSize);
-          var tFilter = 'in.(' + tChunk.map(function(id) { return encodeURIComponent(id); }).join(',') + ')';
-          fetch(targetUrl + '/rest/v1/trips?id=' + tFilter, {
-            method: 'DELETE',
-            headers: tripDelHeaders
-          }).catch(function() {});
+        } else {
+          tripResult.deletedIds = tripCandidates.slice();
         }
       }
-    }
 
-    var planMemos = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-      ? window.RomanticVault.read('okbm_plan_memos', {})
-      : safeGetJSON('okbm_plan_memos', {});
-    delete planMemos[dateKey];
-    delete planMemos[normDate];
-    delete planMemos[altDate];
-    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-      window.RomanticVault.write('okbm_plan_memos', planMemos, false);
-    }
-    if (window.__memoryStore) window.__memoryStore['okbm_plan_memos'] = planMemos;
-    try { localStorage.setItem('okbm_plan_memos', JSON.stringify(planMemos)); } catch(e) {}
-
-    var planSpots = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-      ? window.RomanticVault.read('okbm_plan_spots', {})
-      : safeGetJSON('okbm_plan_spots', {});
-    delete planSpots[dateKey];
-    delete planSpots[normDate];
-    delete planSpots[altDate];
-    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-      window.RomanticVault.write('okbm_plan_spots', planSpots, false);
-    }
-    if (window.__memoryStore) window.__memoryStore['okbm_plan_spots'] = planSpots;
-    try { localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots)); } catch(e) {}
-
-    var deletedRecordIds = [];
-    var historyList = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-      ? window.RomanticVault.read('okbm_packing_history', null)
-      : null;
-    if (!historyList || !Array.isArray(historyList)) {
-      historyList = safeGetJSON('okbm_packing_history', []);
-    }
-
-    var filteredHist = historyList.filter(function(h) {
-      if (!h) return false;
-      var hDate = h.date ? String(h.date).replace(/[-/]/g, '.') : '';
-      var hAlt = h.date ? String(h.date).replace(/[./]/g, '-') : '';
-      if (hDate === normDate || hAlt === altDate || String(h.date) === String(dateKey)) {
-        if (h.id) deletedRecordIds.push(String(h.id).trim());
-        return false;
-      }
-      return true;
-    });
-
-    window.interactiveHistory = filteredHist;
-    window.packingHistoryList = filteredHist;
-    if (window.__memoryStore) window.__memoryStore['okbm_packing_history'] = filteredHist;
-    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-      window.RomanticVault.write('okbm_packing_history', filteredHist, false);
-    }
-    try { localStorage.setItem('okbm_packing_history', JSON.stringify(filteredHist)); } catch(e) {}
-
-    if (Array.isArray(window.__allLoadedFeeds)) {
-      window.__allLoadedFeeds = window.__allLoadedFeeds.filter(function(f) {
-        return f && !deletedRecordIds.includes(String(f.id).trim());
+      var deletedTripIdSet = {};
+      (tripResult.deletedIds || tripCandidates).forEach(function(id) {
+        deletedTripIdSet[String(id).trim()] = true;
       });
-      try {
-        var topFeeds = window.__allLoadedFeeds.slice(0, 15);
-        localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(topFeeds));
-      } catch(e) {}
-    }
-    if (Array.isArray(window.heroTopRecords)) {
-      window.heroTopRecords = window.heroTopRecords.filter(function(f) {
-        return f && !deletedRecordIds.includes(String(f.id).trim());
-      });
-      window.currentHeroCardIndex = 0;
-      if (typeof window.renderCurrentHeroCard === 'function') {
-        window.renderCurrentHeroCard();
+      if (Array.isArray(window.TRIP_JOINS_DATABASE) && Object.keys(deletedTripIdSet).length > 0) {
+        window.TRIP_JOINS_DATABASE = window.TRIP_JOINS_DATABASE.filter(function(t) {
+          return !(t && t.tripId && deletedTripIdSet[String(t.tripId).trim()]);
+        });
+        if (typeof window.renderHomeTripJoinSlider === 'function') {
+          window.renderHomeTripJoinSlider();
+        }
       }
-    }
 
-    if (targetUrl && targetKey && deletedRecordIds.length > 0) {
-      var delHeaders = {
-        'apikey': targetKey,
-        'Authorization': 'Bearer ' + targetKey,
-        'Content-Type': 'application/json'
+      // 3) users.my_gears — 메모리에서 날짜 키 제거 후 서버 upsert 대기
+      var planMemos = Object.assign({}, okbmReadPlanStore('okbm_plan_memos', {}));
+      var planSpots = Object.assign({}, okbmReadPlanStore('okbm_plan_spots', {}));
+      variants.forEach(function(k) {
+        delete planMemos[k];
+        delete planSpots[k];
+      });
+
+      // 서버 반영 전에 vault에 올려 saveUserToSupabase가 빈 맵을 읽지 않게 함
+      okbmWritePlanStore('okbm_plan_memos', planMemos);
+      okbmWritePlanStore('okbm_plan_spots', planSpots);
+
+      if (typeof window.saveUserToSupabase === 'function' && (rawActiveUid || (curProf && curProf.id))) {
+        var saved = await window.saveUserToSupabase(curProf);
+        if (!saved) {
+          if (typeof showToast === 'function') {
+            showToast('일정 동기화에 실패했습니다. 다시 시도해주세요.', 'error', 2800);
+          }
+          return { ok: false, reason: 'my_gears' };
+        }
+      }
+
+      var consumables = Object.assign({}, okbmReadPlanStore('okbm_trip_consumables', {}));
+      var consumableChanged = false;
+      variants.forEach(function(k) {
+        if (consumables[k]) {
+          delete consumables[k];
+          consumableChanged = true;
+        }
+      });
+      if (consumableChanged) okbmWritePlanStore('okbm_trip_consumables', consumables);
+
+      if (window.packedCheckSet instanceof Set) {
+        var packedChanged = false;
+        Array.from(window.packedCheckSet).forEach(function(item) {
+          var s = String(item || '');
+          for (var pi = 0; pi < variants.length; pi++) {
+            if (s.indexOf(String(variants[pi]) + '__') === 0) {
+              window.packedCheckSet.delete(item);
+              packedChanged = true;
+              break;
+            }
+          }
+        });
+        if (packedChanged) okbmWritePlanStore('okbm_packed_checks', Array.from(window.packedCheckSet));
+      }
+
+      window.__okbmSkipPlanMemoAutosaveFor = normDate;
+      window.__pendingPlanDestination = null;
+      window.currentLuckySpot = null;
+      var memoInput = document.getElementById('planDailyMemoInput');
+      if (memoInput) memoInput.value = '';
+
+      if (!opts.silent) {
+        triggerHaptic(20);
+        if (typeof showToast === 'function') {
+          showToast('[' + normDate + '] 일정과 피드가 영구 삭제되었습니다.', 'info', 3200);
+        }
+      }
+
+      if (!opts.skipRender) {
+        if (typeof window.renderPlanStage === 'function' && document.getElementById('romanticPlanModal')) {
+          window.renderPlanStage();
+        }
+        if (typeof window.renderHistoryStage === 'function') window.renderHistoryStage();
+        if (typeof window.refreshMyReportFullStats === 'function') window.refreshMyReportFullStats();
+        if (typeof window.renderPlanBookmarks === 'function') window.renderPlanBookmarks();
+      }
+
+      return {
+        ok: true,
+        dateKey: normDate,
+        deletedFeedIds: feedResult.deletedIds || [],
+        deletedTripIds: tripResult.deletedIds || tripCandidates
       };
-      var feedChunkSize = 30;
-      for (var fc = 0; fc < deletedRecordIds.length; fc += feedChunkSize) {
-        var fChunk = deletedRecordIds.slice(fc, fc + feedChunkSize);
-        var fFilter = 'in.(' + fChunk.map(function(id) { return encodeURIComponent(id); }).join(',') + ')';
-        fetch(targetUrl + '/rest/v1/feeds?id=' + fFilter, {
-          method: 'DELETE',
-          headers: delHeaders
-        }).catch(function() {});
-      }
+    } finally {
+      window.__okbmPlanDeleteInFlight = false;
     }
+  };
 
-    if (typeof syncUserDataToCloud === 'function') {
-      syncUserDataToCloud(true, true);
+  // 하위 호환: 로컬만 지우는 호출은 서버 확인 파이프라인으로 위임
+  window.okbmPurgePlanForDate = function(dateKey, opts) {
+    opts = opts || {};
+    if (typeof window.okbmDeletePlanDate === 'function') {
+      window.okbmDeletePlanDate(dateKey, {
+        silent: true,
+        skipRender: !!opts.skipRender
+      });
+      return true;
     }
+    return false;
+  };
 
-    window.__pendingPlanDestination = null;
-    window.currentLuckySpot = null;
-    var memoInput = document.getElementById('planDailyMemoInput');
-    if (memoInput) memoInput.value = '';
-
-    triggerHaptic(20);
-    if (typeof showToast === 'function') showToast('[' + dateKey + '] 일정이 삭제되었습니다.', 'info');
-    window.renderPlanStage();
-    if (typeof window.renderHistoryStage === 'function') window.renderHistoryStage();
-    if (typeof window.refreshMyReportFullStats === 'function') window.refreshMyReportFullStats();
-    if (typeof window.renderPlanBookmarks === 'function') window.renderPlanBookmarks();
+  window.clearEntireDaySchedule = async function(dateKey) {
+    var linkedMsg = (typeof window.okbmLinkedDeleteToast === 'string' && window.okbmLinkedDeleteToast)
+      ? window.okbmLinkedDeleteToast
+      : '일정 및 피드에서 영구삭제됩니다';
+    if (typeof showToast === 'function') {
+      showToast(linkedMsg, 'info', 4200);
+    }
+    await new Promise(function(resolve) { setTimeout(resolve, 400); });
+    if (!confirm('[' + dateKey + '] 일정과 피드를 영구 삭제하시겠습니까?\n\n' + linkedMsg)) return;
+    await window.okbmDeletePlanDate(dateKey);
   };
 
   window.__longPressTimer = null;
@@ -5135,7 +5558,7 @@ window.clearEntireDaySchedule = function(dateKey) {
     var dateKey = year + '.' + String(month).padStart(2, '0') + '.' + String(day).padStart(2, '0');
     window.activeSelectedDateKey = dateKey;
 
-    // 📍 찜목록에서 박지 일정등록 선택 후 날짜를 터치한 경우 -> 즉시 메모 및 박지 등록
+    // 📍 찜목록에서 장소 일정등록 선택 후 날짜를 터치한 경우 -> 즉시 메모 및 장소 등록
     if (window.__pendingPlanDestination) {
       window.commitPlanDestination(dateKey);
       return;
@@ -5282,9 +5705,6 @@ window.commitPlanDestination = function(dateKey) {
     dest.name = unescapePlanText(dest.name || '');
     dest.elevation = unescapePlanText(dest.elevation || '');
     if (!dest.name || (typeof window.okbmIsXssProbeSpotName === 'function' && window.okbmIsXssProbeSpotName(dest.name))) return;
-    if (typeof window.okbmUnmarkDeletedDate === 'function') {
-      window.okbmUnmarkDeletedDate(dateKey);
-    }
 
     // 2. 목적지 멀티 배열 누적 저장 (동일 날짜 복수 일정 완벽 보존)
     var planSpots = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
@@ -5464,7 +5884,13 @@ window.commitPlanDestination = function(dateKey) {
     var memoInput = document.getElementById('planDailyMemoInput');
     if (memoInput && typeof window.autoSavePlanMemo === 'function') {
       var memoDate = window.activeSelectedDateKey || '';
-      if (memoDate) window.autoSavePlanMemo(memoDate, memoInput.value);
+      var skipKey = window.__okbmSkipPlanMemoAutosaveFor || '';
+      var normMemo = (typeof window.okbmNormalizePlanDateKey === 'function')
+        ? window.okbmNormalizePlanDateKey(memoDate)
+        : String(memoDate).replace(/[-/]/g, '.');
+      if (memoDate && normMemo !== skipKey) {
+        window.autoSavePlanMemo(memoDate, memoInput.value);
+      }
     }
     var modal = document.getElementById('romanticPlanModal');
     if (modal) {

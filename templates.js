@@ -80,7 +80,7 @@ function setupStudioPhotoDrag(targetEl) {
   }
 
   function updateTransform() {
-    var img = document.getElementById('photoStudioBgImage');
+    var img = document.getElementById('readyShotFrameImg') || document.getElementById('photoStudioBgImage');
     if (!img) return;
     var posX = (window.currentPhotoPosX !== undefined) ? window.currentPhotoPosX : 50;
     var posY = (window.currentPhotoPosY !== undefined) ? window.currentPhotoPosY : 50;
@@ -176,21 +176,25 @@ function setupStudioPhotoDrag(targetEl) {
       var duration = Date.now() - touchStartTime;
 
       if (!isPinching && (currentPhotoScaleVal || 1.0) <= 1.05 && absX > 45 && absX > absY * 1.5 && duration < 350) {
-        window.currentPhotoPosX = startPosX;
-        window.currentPhotoPosY = startPosY;
-        updateTransform();
+        var frameOpen = document.getElementById('readyShotFrameOverlay');
+        var frameVisible = frameOpen && frameOpen.style.display !== 'none';
+        if (!frameVisible) {
+          window.currentPhotoPosX = startPosX;
+          window.currentPhotoPosY = startPosY;
+          updateTransform();
 
-        var curMode = window.currentStudioCardMode || 'minimal';
-        var curIdx = studioModes.indexOf(curMode);
-        if (curIdx === -1) curIdx = 0;
+          var curMode = window.currentStudioCardMode || 'minimal';
+          var curIdx = studioModes.indexOf(curMode);
+          if (curIdx === -1) curIdx = 0;
 
-        var nextIdx = 0;
-        if (diffX < 0) {
-          nextIdx = (curIdx + 1) % studioModes.length;
-        } else {
-          nextIdx = (curIdx - 1 + studioModes.length) % studioModes.length;
+          var nextIdx = 0;
+          if (diffX < 0) {
+            nextIdx = (curIdx + 1) % studioModes.length;
+          } else {
+            nextIdx = (curIdx - 1 + studioModes.length) % studioModes.length;
+          }
+          window.switchStudioMode(studioModes[nextIdx]);
         }
-        window.switchStudioMode(studioModes[nextIdx]);
       }
 
       isDragging = false;
@@ -283,7 +287,7 @@ function ensurePhotoStudioDOM() {
         </div>
       </div>
 
-      <div id="studioFreeRatioSliderContainer" style="display:none; position:absolute; bottom:calc(85px + env(safe-area-inset-bottom, 0px)); left:20px; right:20px; background:#0c1017; border:1px solid rgba(255,255,255,0.2); border-radius:14px; padding:8px 12px; z-index:100; flex-direction:column; gap:6px;">
+      <div id="studioFreeRatioSliderContainer" style="display:none !important; position:absolute; bottom:calc(85px + env(safe-area-inset-bottom, 0px)); left:20px; right:20px; background:#0c1017; border:1px solid rgba(255,255,255,0.2); border-radius:14px; padding:8px 12px; z-index:100; flex-direction:column; gap:6px;">
         <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.65rem; color:#94a3b8; font-weight:700;">
           <span>자유 비율 조절</span>
           <span id="freeRatioValLabel" style="color:#ffffff; font-family:'Space Grotesk', sans-serif; font-weight:900;">3 : 4</span>
@@ -291,7 +295,7 @@ function ensurePhotoStudioDOM() {
         <input type="range" id="studioFreeRatioSlider" min="0.52" max="1.0" step="0.01" value="0.75" style="width:100%; accent-color:#ffffff; cursor:pointer;" oninput="window.handleFreeRatioChange(this.value)" />
       </div>
 
-      <div class="studio-ratio-bar" style="position:absolute; bottom:calc(14px + env(safe-area-inset-bottom, 0px)); display:flex; background:#0c1017; border:1px solid rgba(255,255,255,0.2); border-radius:24px; padding:3px 6px; gap:3px; z-index:100; overflow-x:auto; max-width:92%; scrollbar-width:none; -ms-overflow-style:none; contain:content;">
+      <div class="studio-ratio-bar" style="display:none !important; position:absolute; bottom:calc(14px + env(safe-area-inset-bottom, 0px)); background:#0c1017; border:1px solid rgba(255,255,255,0.2); border-radius:24px; padding:3px 6px; gap:3px; z-index:100; overflow-x:auto; max-width:92%; scrollbar-width:none; -ms-overflow-style:none; contain:content;">
         <button type="button" id="btnStudioRatio34" class="modal-btn" style="font-size:0.65rem; font-weight:900; padding:4px 9px; border-radius:14px; background:#ffffff; color:#000000; white-space:nowrap;" onclick="window.setStudioRatio('3/4')">3:4 기본</button>
         <button type="button" id="btnStudioRatio11" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:transparent; color:#cbd5e1; white-space:nowrap;" onclick="window.setStudioRatio('1/1')">1:1</button>
         <button type="button" id="btnStudioRatio45" class="modal-btn" style="font-size:0.65rem; font-weight:800; padding:4px 8px; border-radius:14px; background:transparent; color:#cbd5e1; white-space:nowrap;" onclick="window.setStudioRatio('4/5')">4:5</button>
@@ -356,24 +360,39 @@ window.resetStudioPhotoFraming = function() {
   window.currentPhotoPosX = 50;
   window.currentPhotoPosY = 50;
   currentPhotoScaleVal = 1.0;
-  var img = document.getElementById('photoStudioBgImage');
+  var img = document.getElementById('readyShotFrameImg') || document.getElementById('photoStudioBgImage');
   if (img) {
     img.style.objectPosition = '50% 50%';
     img.style.transform = 'scale(1)';
     img.style.transformOrigin = '50% 50%';
   }
+  if (typeof isReadyShotFrameModalOpen === 'function' && isReadyShotFrameModalOpen() && typeof window.refreshReadyShotFramePreview === 'function') {
+    window.refreshReadyShotFramePreview(false);
+  }
   if (typeof triggerHaptic === 'function') triggerHaptic(8);
 };
 
 window.openPhotoStudio = function() {
+  var photo = window.currentSharePhotoRaw || window.currentSharePhoto;
+  if (!photo || String(photo).indexOf('https://') !== 0) {
+    if (typeof showToast === 'function') showToast('먼저 사진을 넣어주세요.', 'warn');
+    return;
+  }
   document.body.classList.add('pack-share-open');
-  if (typeof window.closePackShareModal === 'function') window.closePackShareModal();
+  var shareModal = document.getElementById('packShareModalOverlay');
+  if (shareModal) shareModal.style.setProperty('display', 'none', 'important');
   var studio = ensurePhotoStudioDOM();
   if (studio) studio.style.setProperty('display', 'flex', 'important');
   window.currentCardRatio = '3/4';
   window.currentStudioCardMode = window.currentStudioCardMode || 'spread';
   if (window.currentStudioCardMode === 'nrc') window.currentStudioCardMode = 'overlay';
   if (window.currentStudioCardMode === 'packing') window.currentStudioCardMode = 'magazine';
+  if (window.currentShareRecord) {
+    if (window.currentShareRecord.readyShotPosX !== undefined) window.currentPhotoPosX = window.currentShareRecord.readyShotPosX;
+    if (window.currentShareRecord.readyShotPosY !== undefined) window.currentPhotoPosY = window.currentShareRecord.readyShotPosY;
+    if (window.currentShareRecord.readyShotScale !== undefined) currentPhotoScaleVal = window.currentShareRecord.readyShotScale;
+    window.currentShareRecord.readyShotRatio = '3/4';
+  }
   var leftoverNrc = document.getElementById('btnStudioModeNrc');
   if (leftoverNrc) leftoverNrc.remove();
   var leftoverTheme = document.getElementById('btnStudioOverlayTheme');
@@ -422,26 +441,94 @@ window.closePhotoStudio = function() {
   var studio = document.getElementById('photoStudioOverlay');
   if (studio) studio.style.setProperty('display', 'none', 'important');
   var modal = document.getElementById('packShareModalOverlay');
-  if (modal) modal.style.setProperty('display', 'flex', 'important');
+  if (modal) {
+    modal.style.setProperty('display', 'flex', 'important');
+    document.body.classList.add('pack-share-open');
+  }
   if (typeof window.updateShareCardLive === 'function') window.updateShareCardLive();
+  syncReadyShotPhotoButtons();
   initCardSwipeGesture();
   window.syncGlobalModalScrollLock();
   if (typeof triggerHaptic === 'function') triggerHaptic(10);
 };
 
-window.setStudioRatio = function(ratio) {
-  window.currentCardRatio = ratio;
-  var sliderContainer = document.getElementById('studioFreeRatioSliderContainer');
-  if (sliderContainer) sliderContainer.style.display = (ratio === 'free') ? 'flex' : 'none';
-  window.updateStudioUI();
-  window.updateStudioCardLive();
-  if (typeof triggerHaptic === 'function') triggerHaptic(10);
+window.applyStudioCardToTemplate = async function() {
+  var card = document.getElementById('photoStudioCardTarget');
+  if (!card) return;
+  if (typeof triggerHaptic === 'function') triggerHaptic(12);
+
+  var btn = document.getElementById('btnStudioApplyCard');
+  var prevHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.style.pointerEvents = 'none';
+    btn.style.opacity = '0.75';
+    btn.innerHTML = '<span style="width:11px; height:11px; border:2px solid rgba(0,0,0,0.3); border-top-color:#000000; border-radius:50%; display:inline-block; animation:tmplSpin 0.7s linear infinite;"></span><span>적용 중...</span>';
+  }
+
+  try {
+    var rawPhoto = window.currentSharePhotoRaw || window.currentSharePhoto;
+    if (!rawPhoto || String(rawPhoto).indexOf('https://') !== 0) {
+      if (typeof showToast === 'function') showToast('정상적인 사진 URL이 확보되지 않았습니다.', 'warn');
+      return;
+    }
+
+    window.currentCardRatio = '3/4';
+    window.currentShareRecord = window.currentShareRecord || {};
+    window.currentShareRecord.readyShotPhoto = rawPhoto;
+    window.currentShareRecord.ready_shot_photo = rawPhoto;
+    window.currentShareRecord.readyShotMode = window.currentStudioCardMode || 'spread';
+    window.currentShareRecord.readyShotPosX = (window.currentPhotoPosX !== undefined) ? window.currentPhotoPosX : 50;
+    window.currentShareRecord.readyShotPosY = (window.currentPhotoPosY !== undefined) ? window.currentPhotoPosY : 50;
+    window.currentShareRecord.readyShotScale = currentPhotoScaleVal || 1.0;
+    window.currentShareRecord.readyShotRatio = '3/4';
+    window.currentSharePhoto = rawPhoto;
+    window.currentSharePhotoRaw = rawPhoto;
+    window.readyShotFamily = 'photo';
+    persistReadyShotPhotoNow(rawPhoto);
+    try {
+      localStorage.setItem('romantic_ready_shot_family', 'photo');
+      localStorage.setItem('romantic_studio_mode', window.currentStudioCardMode || 'spread');
+    } catch (e) {}
+
+    teardownStudioPhotoDrag();
+    var studio = document.getElementById('photoStudioOverlay');
+    if (studio) studio.style.setProperty('display', 'none', 'important');
+    var shareModal = document.getElementById('packShareModalOverlay');
+    if (shareModal) {
+      shareModal.style.setProperty('display', 'flex', 'important');
+      document.body.classList.add('pack-share-open');
+    }
+    syncReadyShotFamilyToggle();
+    syncReadyShotPhotoButtons();
+    renderTemplateChips();
+    if (typeof window.updateShareCardLive === 'function') window.updateShareCardLive();
+    setTimeout(function() { initCardSwipeGesture(); }, 40);
+    window.syncGlobalModalScrollLock();
+    if (typeof showToast === 'function') showToast('사진 구도가 적용되었습니다.', 'success', 1600);
+  } catch (err) {
+    console.warn('[templates.js:applyStudioCardToTemplate]', err);
+    if (typeof showToast === 'function') showToast('적용 중 오류가 발생했습니다.', 'warn');
+  } finally {
+    if (btn) {
+      btn.style.pointerEvents = '';
+      btn.style.opacity = '';
+      btn.innerHTML = prevHtml;
+    }
+  }
 };
 
-window.handleFreeRatioChange = function(val) {
-  currentCustomRatioVal = parseFloat(val);
-  var label = document.getElementById('freeRatioValLabel');
-  if (label) label.innerText = '1 : ' + (1 / currentCustomRatioVal).toFixed(2);
+window.setStudioRatio = function(ratio) {
+  window.currentCardRatio = '3/4';
+  var sliderContainer = document.getElementById('studioFreeRatioSliderContainer');
+  if (sliderContainer) sliderContainer.style.display = 'none';
+  var ratioBar = document.querySelector('#photoStudioOverlay .studio-ratio-bar');
+  if (ratioBar) ratioBar.style.display = 'none';
+  window.updateStudioUI();
+  window.updateStudioCardLive();
+};
+
+window.handleFreeRatioChange = function() {
+  window.currentCardRatio = '3/4';
   window.updateStudioCardLive();
 };
 
@@ -486,6 +573,10 @@ window.switchStudioMode = function(mode) {
   if (mode === 'nrc') mode = 'overlay';
   if (mode === 'packing') mode = 'magazine';
   window.currentStudioCardMode = mode;
+  try { localStorage.setItem('romantic_studio_mode', mode); } catch (e) {}
+  if (window.currentShareRecord) {
+    window.currentShareRecord.readyShotMode = mode;
+  }
   var leftoverTheme = document.getElementById('btnStudioOverlayTheme');
   if (leftoverTheme) leftoverTheme.remove();
   if ((mode === 'overlay' || mode === 'editorial' || mode === 'magazine' || mode === 'spread' || mode === 'issue' || mode === 'kuchi' || mode === 'balance') && (!window.currentCardRatio || window.currentCardRatio === '4/5')) {
@@ -498,51 +589,140 @@ window.switchStudioMode = function(mode) {
 };
 
 window.updateStudioUI = function() {
-  var mapBtns = { '1/1': 'btnStudioRatio11', '4/5': 'btnStudioRatio45', '3/4': 'btnStudioRatio34', '9/16': 'btnStudioRatio916', 'free': 'btnStudioRatioFree' };
-  Object.keys(mapBtns).forEach(function(r) {
-    var btn = document.getElementById(mapBtns[r]);
-    if (!btn) return;
-    if (r === window.currentCardRatio) { btn.style.background = '#ffffff'; btn.style.color = '#000000'; btn.style.fontWeight = '900'; }
-    else { btn.style.background = 'transparent'; btn.style.color = '#cbd5e1'; btn.style.fontWeight = '800'; }
-  });
+  window.currentCardRatio = '3/4';
+  var sliderContainer = document.getElementById('studioFreeRatioSliderContainer');
+  if (sliderContainer) sliderContainer.style.display = 'none';
+  var ratioBar = document.querySelector('#photoStudioOverlay .studio-ratio-bar');
+  if (ratioBar) ratioBar.style.display = 'none';
 };
 
 function getStudioAspectRatio() {
-  var r = window.currentCardRatio || '3/4';
-  if (r === '1/1') return 1;
-  if (r === '4/5') return 4 / 5;
-  if (r === '9/16') return 9 / 16;
-  if (r === 'free') {
-    var v = Number(currentCustomRatioVal);
-    return (v > 0.2 && v < 2.5) ? v : 0.75;
-  }
   return 0.75;
 }
 
 function getStudioCardBoxCss() {
-  var r = window.currentCardRatio || '3/4';
-  var aspect = '3/4';
-  var maxW = '340px';
-  if (r === '1/1') aspect = '1/1';
-  else if (r === '4/5') aspect = '4/5';
-  else if (r === '9/16') { aspect = '9/16'; maxW = '300px'; }
-  else if (r === 'free') aspect = String(currentCustomRatioVal || 0.75);
-  return 'aspect-ratio:' + aspect + '; width:100%; max-width:' + maxW + '; height:auto; max-height:calc(100vh - 168px); max-height:calc(100dvh - 168px); margin:0 auto;';
+  return 'aspect-ratio:3/4; width:100%; max-width:340px; height:auto; max-height:calc(100vh - 168px); max-height:calc(100dvh - 168px); margin:0 auto;';
 }
 
-function getStudioExportSize() {
-  var aspect = getStudioAspectRatio();
-  var width = 1080;
-  var height = Math.round(width / aspect);
-  if (height > 2160) height = 2160;
-  if (height < 1080) height = 1080;
-  if (aspect >= 0.99 && aspect <= 1.01) height = 1080;
+function getStudioExportSize(cardW, cardH) {
+  var ratio = (cardW > 0 && cardH > 0) ? (cardW / cardH) : getStudioAspectRatio();
+  if (!ratio || !isFinite(ratio)) ratio = 0.75;
+  var maxSide = 1440;
+  var width;
+  var height;
+  if (ratio >= 1) {
+    width = maxSide;
+    height = Math.round(maxSide / ratio);
+  } else {
+    height = maxSide;
+    width = Math.round(maxSide * ratio);
+  }
   return { width: width, height: height };
 }
 
 function resolveStudioCardEl(card) {
   if (!card || !card.querySelector) return card;
-  return card.querySelector('.photo-overlay-card') || card.querySelector('.ready-shot-card-vector') || card.firstElementChild || card;
+  return card.querySelector('.photo-overlay-card')
+    || card.querySelector('.ready-shot-card-vector')
+    || card.querySelector('.tmpl-card-base')
+    || card.firstElementChild
+    || card;
+}
+
+function loadCorsImage(src) {
+  return new Promise(function(resolve) {
+    var url = String(src || '').trim();
+    if (!url) return resolve(null);
+    var img = new Image();
+    if (url.indexOf('https://') === 0 || url.indexOf('http://') === 0) {
+      img.crossOrigin = 'anonymous';
+    }
+    var settled = false;
+    var finish = function(el) {
+      if (settled) return;
+      settled = true;
+      resolve(el || null);
+    };
+    var timer = setTimeout(function() { finish(null); }, 8000);
+    img.onload = function() { clearTimeout(timer); finish(img); };
+    img.onerror = function() { clearTimeout(timer); finish(null); };
+    if (url.indexOf('r2.dev') !== -1 || url.indexOf('workers.dev') !== -1) {
+      img.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'okbmcc=1';
+    } else {
+      img.src = url;
+    }
+  });
+}
+
+function readPhotoFit(img) {
+  var posX = 50;
+  var posY = 50;
+  var zoom = 1;
+  if (!img) return { posX: posX, posY: posY, scale: zoom };
+  var inline = img.getAttribute('style') || '';
+  var op = inline.match(/object-position\s*:\s*([\d.]+)%\s+([\d.]+)%/i);
+  if (op) {
+    posX = parseFloat(op[1]);
+    posY = parseFloat(op[2]);
+  }
+  var sc = inline.match(/transform\s*:\s*scale\(([\d.]+)\)/i);
+  if (sc) zoom = parseFloat(sc[1]) || 1;
+  try {
+    var st = window.getComputedStyle(img);
+    var parts = String(st.objectPosition || '').split(/\s+/);
+    if (parts[0] && parts[0].indexOf('%') !== -1) posX = parseFloat(parts[0]);
+    if (parts[1] && parts[1].indexOf('%') !== -1) posY = parseFloat(parts[1]);
+    if (st.transform && st.transform !== 'none') {
+      var m = st.transform.match(/matrix\(([^)]+)\)/);
+      if (m) {
+        var a = parseFloat(m[1].split(',')[0]);
+        if (a && isFinite(a)) zoom = a;
+      }
+    }
+  } catch (e) {}
+  if (isNaN(posX)) posX = 50;
+  if (isNaN(posY)) posY = 50;
+  if (!zoom || zoom <= 0 || !isFinite(zoom)) zoom = 1;
+  return { posX: posX, posY: posY, scale: zoom };
+}
+
+function paintPhotoKeepRatio(sourceImg, boxW, boxH, posX, posY, zoom) {
+  var w = Math.max(1, Math.round(boxW));
+  var h = Math.max(1, Math.round(boxH));
+  var c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  var ctx = c.getContext('2d');
+  ctx.fillStyle = '#111111';
+  ctx.fillRect(0, 0, w, h);
+  var iw = sourceImg && sourceImg.naturalWidth;
+  var ih = sourceImg && sourceImg.naturalHeight;
+  if (!iw || !ih) return c;
+  zoom = zoom && zoom > 0 ? zoom : 1;
+  posX = isNaN(posX) ? 50 : posX;
+  posY = isNaN(posY) ? 50 : posY;
+  var cover = Math.max(w / iw, h / ih) * zoom;
+  var dw = iw * cover;
+  var dh = ih * cover;
+  var dx = (w - dw) * (posX / 100);
+  var dy = (h - dh) * (posY / 100);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(sourceImg, dx, dy, dw, dh);
+  return c;
+}
+
+function flattenCaptureInsets(root) {
+  if (!root || !root.querySelectorAll) return;
+  root.querySelectorAll('[style]').forEach(function(el) {
+    var s = el.getAttribute('style') || '';
+    if (/inset\s*:\s*0/.test(s)) {
+      el.style.top = '0px';
+      el.style.right = '0px';
+      el.style.bottom = '0px';
+      el.style.left = '0px';
+    }
+  });
 }
 
 async function captureStudioCardCanvas(card) {
@@ -553,18 +733,24 @@ async function captureStudioCardCanvas(card) {
   }
   var source = resolveStudioCardEl(card);
   if (!source) throw new Error('no studio card');
-  var aspect = getStudioAspectRatio();
   var rect = source.getBoundingClientRect();
   var capW = Math.max(280, Math.round(rect.width || 340));
-  var capH = Math.max(280, Math.round(capW / aspect));
+  var capH = Math.max(280, Math.round(rect.height || (capW / 0.75)));
+  var exportSize = getStudioExportSize(capW, capH);
+  var exportScale = (capW > 0) ? (exportSize.width / capW) : 3;
+  if (!isFinite(exportScale) || exportScale < 1) exportScale = 1;
+  var paintedUrls = [];
   var host = document.createElement('div');
-  host.style.cssText = 'position:fixed; left:-16000px; top:0; width:' + capW + 'px; height:' + capH + 'px; overflow:visible; z-index:-1; pointer-events:none; background:#000000;';
+  host.style.cssText = 'position:fixed; left:0; top:0; width:' + capW + 'px; height:' + capH + 'px; overflow:hidden; opacity:0.01; z-index:2147483000; pointer-events:none; background:#000000;';
   var clone = source.cloneNode(true);
+  clone.querySelectorAll('label[for="shareCardPhotoInput"], label[for="studioPhotoUpload"], #readyShotEmptyPhotoHit, input[type="file"]').forEach(function(el) {
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  });
   clone.style.width = capW + 'px';
   clone.style.height = capH + 'px';
   clone.style.maxWidth = 'none';
   clone.style.maxHeight = 'none';
-  clone.style.aspectRatio = 'auto';
+  clone.style.aspectRatio = String(capW) + ' / ' + String(capH);
   clone.style.margin = '0';
   clone.style.borderRadius = '0';
   clone.style.boxShadow = 'none';
@@ -572,20 +758,80 @@ async function captureStudioCardCanvas(card) {
   host.appendChild(clone);
   document.body.appendChild(host);
   try {
-    var imgs = clone.querySelectorAll('img');
-    await Promise.all(Array.prototype.map.call(imgs, function(img) {
+    flattenCaptureInsets(clone);
+    var liveImgs = source.querySelectorAll('img');
+    var cloneImgs = clone.querySelectorAll('img');
+    await Promise.all(Array.prototype.map.call(cloneImgs, function(img, idx) {
+      var src = img.getAttribute('src') || img.currentSrc || '';
+      var isLogo = src.toLowerCase().indexOf('logo') !== -1;
+      if (isLogo) return Promise.resolve();
+      var live = liveImgs[idx];
+      var parent = img.parentElement;
+      var box = parent ? parent.getBoundingClientRect() : img.getBoundingClientRect();
+      var fit = readPhotoFit(live || img);
+      var applyFitted = function(loaded) {
+        if (!loaded || !loaded.naturalWidth) return Promise.resolve();
+        var paintW = Math.max(1, Math.round((box.width || capW) * exportScale));
+        var paintH = Math.max(1, Math.round((box.height || capH) * exportScale));
+        var painted = paintPhotoKeepRatio(loaded, paintW, paintH, fit.posX, fit.posY, fit.scale);
+        if (parent && box.width >= 40 && box.height >= 40) {
+          parent.style.width = Math.round(box.width) + 'px';
+          parent.style.height = Math.round(box.height) + 'px';
+          parent.style.minHeight = Math.round(box.height) + 'px';
+          parent.style.flex = 'none';
+          parent.style.position = parent.style.position || 'relative';
+          parent.style.overflow = 'hidden';
+        }
+        img.style.position = 'absolute';
+        img.style.top = '0px';
+        img.style.right = '0px';
+        img.style.bottom = '0px';
+        img.style.left = '0px';
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'fill';
+        img.style.transform = 'none';
+        img.style.display = 'block';
+        img.removeAttribute('crossorigin');
+        return new Promise(function(resolvePaint) {
+          var finish = function(url) {
+            img.onload = function() { resolvePaint(); };
+            img.onerror = function() { resolvePaint(); };
+            img.src = url;
+            setTimeout(resolvePaint, 900);
+          };
+          painted.toBlob(function(b) {
+            if (b) {
+              var u = URL.createObjectURL(b);
+              paintedUrls.push(u);
+              finish(u);
+              return;
+            }
+            finish(painted.toDataURL('image/png'));
+          }, 'image/png');
+        });
+      };
+      if (src.indexOf('https://') === 0 || src.indexOf('http://') === 0) {
+        return loadCorsImage(src).then(applyFitted);
+      }
+      if (live && live.naturalWidth) return applyFitted(live);
+      return Promise.resolve();
+    }));
+    await Promise.all(Array.prototype.map.call(cloneImgs, function(img) {
       if (img.complete && img.naturalWidth) return Promise.resolve();
       return new Promise(function(res) {
-        var done = function() { res(); };
-        img.onload = done;
-        img.onerror = done;
-        setTimeout(done, 1800);
+        img.onload = function() { res(); };
+        img.onerror = function() { res(); };
+        setTimeout(res, 800);
       });
     }));
     await new Promise(function(res) { requestAnimationFrame(function() { requestAnimationFrame(res); }); });
+    var scale = exportScale;
+    if (scale > 4) scale = 4;
+    if (scale < 2) scale = 2;
     var canvas = await h2c(clone, {
       backgroundColor: '#000000',
-      scale: 3,
+      scale: scale,
       width: capW,
       height: capH,
       windowWidth: capW,
@@ -596,22 +842,249 @@ async function captureStudioCardCanvas(card) {
       scrollX: 0,
       scrollY: 0
     });
-    var size = getStudioExportSize();
-    if (canvas.width === size.width && canvas.height === size.height) return canvas;
-    var out = document.createElement('canvas');
-    out.width = size.width;
-    out.height = size.height;
-    var ctx = out.getContext('2d');
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, size.width, size.height);
-    ctx.drawImage(canvas, 0, 0, size.width, size.height);
-    return out;
+    if (canvas.width === exportSize.width && canvas.height === exportSize.height) return canvas;
+    if (canvas.width > exportSize.width || canvas.height > exportSize.height) {
+      var out = document.createElement('canvas');
+      out.width = exportSize.width;
+      out.height = exportSize.height;
+      var ctx = out.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(canvas, 0, 0, out.width, out.height);
+      return out;
+    }
+    return canvas;
   } finally {
+    paintedUrls.forEach(function(u) {
+      try { URL.revokeObjectURL(u); } catch (e) {}
+    });
     if (host.parentNode) host.parentNode.removeChild(host);
   }
 }
+
+async function captureReadyShotShareCanvas() {
+  var container = document.getElementById('packShareCaptureArea');
+  if (!container) throw new Error('no pack share capture area');
+  return captureStudioCardCanvas(container);
+}
+
+function canvasToShareBlob(canvas) {
+  return new Promise(function(resolve, reject) {
+    canvas.toBlob(function(b) { b ? resolve(b) : reject(new Error('toBlob failed')); }, 'image/jpeg', 0.92);
+  });
+}
+function canvasToPngBlob(canvas) {
+  return canvasToShareBlob(canvas);
+}
+
+function downloadReadyShotBlob(blob, fileName) {
+  var url = URL.createObjectURL(blob);
+  var link = document.createElement('a');
+  var ext = (blob && blob.type === 'image/png') ? '.png' : '.jpg';
+  link.download = fileName || ('낭만루트_레디샷_' + Date.now() + ext);
+  link.href = url;
+  link.click();
+  setTimeout(function() { URL.revokeObjectURL(url); }, 2500);
+}
+
+async function uploadReadyShotBlob(blob) {
+  var CF_WORKER_UPLOAD_URL = 'https://romantic-upload-worker.ggumfree.workers.dev';
+  var isPng = blob && blob.type === 'image/png';
+  var safeFileName = 'ready_share_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7) + (isPng ? '.png' : '.jpg');
+  var cfRes = await fetch(CF_WORKER_UPLOAD_URL + '?file=' + encodeURIComponent(safeFileName), {
+    method: 'POST',
+    headers: { 'Content-Type': isPng ? 'image/png' : 'image/jpeg' },
+    body: blob
+  });
+  if (!cfRes.ok) throw new Error('upload failed');
+  var cfData = await cfRes.json();
+  if (!(cfData && cfData.status === 'SUCCESS' && cfData.url && String(cfData.url).indexOf('https://') === 0)) {
+    throw new Error('upload invalid');
+  }
+  return cfData.url;
+}
+
+function closeReadyShotShareSheet() {
+  var sheet = document.getElementById('readyShotShareSheet');
+  if (sheet) sheet.style.setProperty('display', 'none', 'important');
+}
+
+function positionReadyShotSharePanel(sheet) {
+  if (!sheet) return;
+  var panel = sheet.querySelector('[data-share-panel]');
+  var anchor = document.getElementById('btnShareCardShareTop');
+  if (!panel) return;
+  panel.style.position = 'fixed';
+  panel.style.zIndex = '2';
+  panel.style.width = 'auto';
+  panel.style.maxWidth = '220px';
+  panel.style.minWidth = '196px';
+  if (!anchor) {
+    panel.style.left = '50%';
+    panel.style.top = '50%';
+    panel.style.transform = 'translate(-50%, -50%)';
+    return;
+  }
+  var rect = anchor.getBoundingClientRect();
+  var panelW = 196;
+  var left = Math.round(rect.right - panelW);
+  var top = Math.round(rect.bottom + 6);
+  var pad = 10;
+  var vw = window.innerWidth || document.documentElement.clientWidth || 360;
+  var vh = window.innerHeight || document.documentElement.clientHeight || 640;
+  if (left < pad) left = pad;
+  if (left + panelW > vw - pad) left = Math.max(pad, vw - pad - panelW);
+  panel.style.left = left + 'px';
+  panel.style.top = top + 'px';
+  panel.style.transform = 'none';
+  panel.style.visibility = 'hidden';
+  panel.style.display = 'block';
+  var ph = panel.offsetHeight || 120;
+  if (top + ph > vh - pad) {
+    top = Math.max(pad, Math.round(rect.top - ph - 6));
+    panel.style.top = top + 'px';
+  }
+  panel.style.visibility = 'visible';
+}
+
+function openInstagramApp() {
+  var ua = navigator.userAgent || '';
+  var isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
+  if (!isMobile) {
+    try { window.open('https://www.instagram.com/', '_blank', 'noopener'); } catch (e) {}
+    return;
+  }
+  var opened = false;
+  try {
+    var link = document.createElement('a');
+    link.href = 'instagram://app';
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    if (link.parentNode) link.parentNode.removeChild(link);
+    opened = true;
+  } catch (e1) {}
+  if (!opened) {
+    try { window.location.href = 'instagram://app'; } catch (e2) {}
+  }
+  if (/Android/i.test(ua)) {
+    setTimeout(function() {
+      try {
+        window.location.href = 'intent://instagram.com/#Intent;scheme=https;package=com.instagram.android;end';
+      } catch (e3) {}
+    }, 450);
+  }
+}
+
+function ensureReadyShotShareSheetDOM() {
+  var existing = document.getElementById('readyShotShareSheet');
+  if (existing) existing.remove();
+  var sheet = document.createElement('div');
+  sheet.id = 'readyShotShareSheet';
+  sheet.style.cssText = 'display:none; position:fixed; inset:0; z-index:2147483600 !important; background:transparent; box-sizing:border-box;';
+  var cellBtn =
+    'flex:1; min-width:0; height:58px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04); color:#e2e8f0; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:6px 4px; box-sizing:border-box;';
+  sheet.innerHTML =
+    '<div data-share-act="close" style="position:absolute; inset:0;"></div>' +
+    '<div data-share-panel style="background:#0c1017; border:1px solid rgba(255,255,255,0.14); border-radius:12px; padding:10px; box-sizing:border-box; box-shadow:0 10px 28px rgba(0,0,0,0.55);">' +
+      '<div style="text-align:left; font-size:0.72rem; font-weight:900; color:#94a3b8; margin-bottom:8px; letter-spacing:0.2px;">공유</div>' +
+      '<div style="display:flex; gap:6px; width:100%;">' +
+        '<button type="button" data-share-act="instagram" style="' + cellBtn + '">' +
+          '<svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:#e2e8f0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>' +
+          '<span style="font-size:0.62rem; font-weight:800; color:#cbd5e1;">인스타</span>' +
+        '</button>' +
+        '<button type="button" data-share-act="kakao" style="' + cellBtn + '">' +
+          '<svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:#e2e8f0;"><path d="M12 3C6.48 3 2 6.58 2 11c0 2.84 1.86 5.33 4.66 6.73-.15.55-.95 3.45-.98 3.69 0 0-.2.13.01.25.08.05.18.01.18.01.24-.03 3.94-2.6 4.56-3.02.5.07 1.02.11 1.57.11 5.52 0 10-3.58 10-8S17.52 3 12 3z"/></svg>' +
+          '<span style="font-size:0.62rem; font-weight:800; color:#cbd5e1;">카카오</span>' +
+        '</button>' +
+        '<button type="button" data-share-act="save" style="' + cellBtn + '">' +
+          '<svg viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+          '<span style="font-size:0.62rem; font-weight:800; color:#cbd5e1;">저장</span>' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+  sheet.addEventListener('click', function(e) {
+    var btn = e.target && e.target.closest ? e.target.closest('[data-share-act]') : null;
+    var act = btn ? btn.getAttribute('data-share-act') : null;
+    if (!act) return;
+    if (act === 'close') {
+      closeReadyShotShareSheet();
+      return;
+    }
+    if (typeof window.handleReadyShotShareAction === 'function') window.handleReadyShotShareAction(act);
+  });
+  document.body.appendChild(sheet);
+  return sheet;
+}
+
+window.closeReadyShotShareSheet = closeReadyShotShareSheet;
+
+window.openReadyShotShareSheet = function(blob) {
+  window.__readyShotShareBlob = blob;
+  var sheet = ensureReadyShotShareSheetDOM();
+  sheet.style.setProperty('display', 'block', 'important');
+  positionReadyShotSharePanel(sheet);
+};
+
+window.handleReadyShotShareAction = async function(act) {
+  var blob = window.__readyShotShareBlob;
+  if (!blob) {
+    if (typeof showToast === 'function') showToast('공유할 이미지가 없습니다.', 'warn');
+    return;
+  }
+  var ext = (blob && blob.type === 'image/png') ? '.png' : '.jpg';
+  var fileName = '낭만루트_레디샷_' + Date.now() + ext;
+  closeReadyShotShareSheet();
+
+  try {
+    if (act === 'save') {
+      downloadReadyShotBlob(blob, fileName);
+      if (typeof showToast === 'function') showToast('사진이 입혀진 레디샷이 저장되었습니다.', 'success', 2200);
+      return;
+    }
+
+    if (act === 'instagram') {
+      openInstagramApp();
+      downloadReadyShotBlob(blob, fileName);
+      if (typeof showToast === 'function') showToast('이미지를 저장했습니다. 인스타를 엽니다.', 'success', 2200);
+      return;
+    }
+
+    if (act === 'kakao') {
+      if (typeof showToast === 'function') showToast('카카오 공유 이미지를 준비 중입니다...', 'info', 1600);
+      var imageUrl = await uploadReadyShotBlob(blob);
+      var rec = window.currentShareRecord || {};
+      var title = '낭만루트 READY SHOT';
+      var desc = String(rec.spot || rec.oneLineMemo || '패킹 카드').slice(0, 80);
+      if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized()) {
+        var shareFn = (Kakao.Share && Kakao.Share.sendDefault) ? Kakao.Share.sendDefault : (Kakao.Link && Kakao.Link.sendDefault ? Kakao.Link.sendDefault : null);
+        if (shareFn) {
+          shareFn({
+            objectType: 'feed',
+            content: {
+              title: title,
+              description: desc,
+              imageUrl: imageUrl,
+              imageWidth: 1080,
+              imageHeight: 1440,
+              link: { mobileWebUrl: location.href, webUrl: location.href }
+            },
+            buttons: [
+              { title: '앱에서 보기', link: { mobileWebUrl: location.href, webUrl: location.href } }
+            ],
+            installTalk: true
+          });
+          return;
+        }
+      }
+      downloadReadyShotBlob(blob, fileName);
+      if (typeof showToast === 'function') showToast('카카오 공유를 열 수 없어 이미지를 저장했습니다.', 'warn', 2200);
+    }
+  } catch (err) {
+    console.warn('[templates.js:handleReadyShotShareAction]', err);
+    if (typeof showToast === 'function') showToast('공유 중 오류가 발생했습니다.', 'warn');
+  }
+};
 
 window.saveStudioCardToPhone = async function() {
   var card = document.getElementById('photoStudioCardTarget');
@@ -633,22 +1106,13 @@ window.saveStudioCardToPhone = async function() {
 
   try {
     var canvas = await captureStudioCardCanvas(card);
-    var isPng = (window.currentStudioCardMode === 'overlay' || window.currentStudioCardMode === 'editorial' || window.currentStudioCardMode === 'magazine' || window.currentStudioCardMode === 'spread' || window.currentStudioCardMode === 'issue' || window.currentStudioCardMode === 'kuchi' || window.currentStudioCardMode === 'balance');
+    var blob = await canvasToShareBlob(canvas);
+    var url = URL.createObjectURL(blob);
     var link = document.createElement('a');
-    if (isPng) {
-      var blob = await new Promise(function(resolve, reject) {
-        canvas.toBlob(function(b) { b ? resolve(b) : reject(new Error('toBlob failed')); }, 'image/png');
-      });
-      var url = URL.createObjectURL(blob);
-      link.download = '낭만루트_레디샷_' + Date.now() + '.png';
-      link.href = url;
-      link.click();
-      setTimeout(function() { URL.revokeObjectURL(url); }, 2500);
-    } else {
-      link.download = '낭만루트_레디샷_' + Date.now() + '.jpg';
-      link.href = canvas.toDataURL('image/jpeg', 0.94);
-      link.click();
-    }
+    link.download = '낭만루트_레디샷_' + Date.now() + '.jpg';
+    link.href = url;
+    link.click();
+    setTimeout(function() { URL.revokeObjectURL(url); }, 2500);
     if (typeof showToast === 'function') showToast('📸 인스타 공유용 고화질 레디샷이 저장되었습니다!', 'success', 2400);
   } catch (e) {
     console.error('saveStudioCardToPhone error:', e);
@@ -662,64 +1126,15 @@ window.saveStudioCardToPhone = async function() {
   }
 };
 
-window.applyStudioCardToTemplate = async function() {
-  var card = document.getElementById('photoStudioCardTarget');
-  if (!card) return;
-  if (typeof triggerHaptic === 'function') triggerHaptic(12);
-
-  var btn = document.getElementById('btnStudioApplyCard');
-  var prevHtml = btn ? btn.innerHTML : '';
-  if (btn) {
-    btn.style.pointerEvents = 'none';
-    btn.style.opacity = '0.75';
-    btn.innerHTML = '<span style="width:11px; height:11px; border:2px solid rgba(0,0,0,0.3); border-top-color:#000000; border-radius:50%; display:inline-block; animation:tmplSpin 0.7s linear infinite;"></span><span>등록 중...</span>';
-  }
-
-  try {
-    var rawPhoto = window.currentSharePhotoRaw || window.currentSharePhoto;
-    if (!rawPhoto || !rawPhoto.startsWith('https://')) {
-      if (typeof showToast === 'function') showToast('정상적인 사진 URL이 확보되지 않았습니다.', 'warn');
-      return;
-    }
-
-    window.currentShareRecord = window.currentShareRecord || {};
-    window.currentShareRecord.readyShotPhoto = rawPhoto;
-    window.currentShareRecord.readyShotMode = window.currentStudioCardMode || 'minimal';
-    window.currentShareRecord.readyShotPosX = (window.currentPhotoPosX !== undefined) ? window.currentPhotoPosX : 50;
-    window.currentShareRecord.readyShotPosY = (window.currentPhotoPosY !== undefined) ? window.currentPhotoPosY : 50;
-    window.currentShareRecord.readyShotScale = currentPhotoScaleVal || 1.0;
-    window.currentShareRecord.readyShotRatio = window.currentCardRatio || '3/4';
-
-    var studio = document.getElementById('photoStudioOverlay');
-    if (studio) studio.style.setProperty('display', 'none', 'important');
-    var shareModal = document.getElementById('packShareModalOverlay');
-    if (shareModal) shareModal.style.setProperty('display', 'none', 'important');
-    document.body.classList.remove('pack-share-open');
-    window.syncGlobalModalScrollLock();
-
-    if (typeof window.saveCardToVaultAndOpenBasecamp === 'function') {
-      await window.saveCardToVaultAndOpenBasecamp();
-    }
-  } catch (err) {
-    console.warn('[templates.js:applyStudioCardToTemplate]', err);
-    if (typeof showToast === 'function') showToast('적용 중 오류가 발생했습니다.', 'warn');
-  } finally {
-    if (btn) {
-      btn.style.pointerEvents = '';
-      btn.style.opacity = '';
-      btn.innerHTML = prevHtml;
-    }
-  }
-};
-
 window.updateStudioCardLive = function() {
   var container = document.getElementById('photoStudioCardTarget');
   if (!container || !window.currentSharePhoto) return;
 
-  var spotInput = document.getElementById('shareCardSpotInput');
   var memoInput = document.getElementById('shareCardMemoInput');
 
-  var rawSpot = (spotInput && spotInput.value.trim()) ? spotInput.value.trim() : (window.currentShareRecord && window.currentShareRecord.spot ? window.currentShareRecord.spot.trim() : '');
+  var rawSpot = (window.currentShareRecord && window.currentShareRecord.spot)
+    ? String(window.currentShareRecord.spot).trim()
+    : '';
   var spotVal = (rawSpot && rawSpot !== '나의 힐링 스팟') ? rawSpot : '';
   var spotDisplay = spotVal || '나의 힐링 스팟';
   var memoVal = (memoInput && memoInput.value.trim()) ? memoInput.value.trim() : (window.currentShareRecord && window.currentShareRecord.oneLineMemo ? window.currentShareRecord.oneLineMemo : '');
@@ -759,6 +1174,7 @@ window.updateStudioCardLive = function() {
   var brandSvgDark = (SVG_ICONS && typeof SVG_ICONS.brandLogo === 'function') ? SVG_ICONS.brandLogo('#0f172a', '#475569') : '';
 
   if (mode === 'minimal') {
+    var minimalMemoLive = readyShotOneLineMemo(memoVal);
     container.innerHTML = `
       <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
         <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
@@ -772,8 +1188,10 @@ window.updateStudioCardLive = function() {
           <span style="font-family:'Space Grotesk', sans-serif; font-size:0.54rem; font-weight:700; color:#cbd5e1; letter-spacing:0.8px; flex-shrink:0; text-shadow:0 1px 4px rgba(0,0,0,0.8);">${escapeHtml(dateStr)}</span>
         </div>
 
-        <!-- 하단 바 (중앙 스펙 강조 + 우측하단 은은한 낭만루트 워터마크) -->
-        <div style="position:relative; z-index:10; display:flex; align-items:flex-end; justify-content:space-between; padding:24px 14px 12px 14px; background:linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 60%, transparent 100%); box-sizing:border-box;">
+        <!-- 하단 바 (한줄메모 → 아이템줄) -->
+        <div style="position:relative; z-index:10; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-end; padding:24px 14px 12px 14px; background:linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 60%, transparent 100%); box-sizing:border-box; gap:6px;">
+          ${minimalMemoLive ? '<div style="text-align:center; font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:0.62rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-shadow:0 1px 4px rgba(0,0,0,0.9);">' + escapeHtml(minimalMemoLive) + '</div>' : ''}
+          <div style="display:flex; align-items:flex-end; justify-content:space-between;">
           <div style="flex:1; min-width:0;"></div>
           <div style="flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:6px; font-family:'Space Grotesk', sans-serif; font-size:0.64rem; font-weight:900; color:#ffffff; letter-spacing:0.8px; text-shadow:0 2px 6px rgba(0,0,0,0.95);">
             <span>${totalCount} ITEMS</span>
@@ -785,6 +1203,7 @@ window.updateStudioCardLive = function() {
           <div style="flex:1; min-width:0; display:flex; justify-content:flex-end; align-items:center; gap:4px; opacity:0.65;">
             <div style="transform:scale(0.85); transform-origin:right center;">${brandSvgWhite}</div>
             <span style="font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.46rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px; text-shadow:0 1px 3px rgba(0,0,0,0.8);">낭만루트</span>
+          </div>
           </div>
         </div>
       </div>
@@ -846,8 +1265,8 @@ window.updateStudioCardLive = function() {
             ${brandSvgWhite}
             <span style="font-family:'Space Grotesk', -apple-system, sans-serif; font-size:0.72rem; font-weight:800; color:#ffffff; letter-spacing:0.8px; text-shadow:0 1px 4px rgba(0,0,0,0.9);">낭만루트</span>
           </div>
-          <div style="display:inline-flex; align-items:center; gap:5px; font-family:'Space Grotesk', sans-serif; font-size:0.58rem; font-weight:700; color:#ffffff; text-shadow:0 1px 4px rgba(0,0,0,0.9);">
-            <span style="background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.6); padding:1px 6px; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,0.8);">READY SHOT</span>
+          <div style="display:inline-flex; align-items:center; gap:5px; max-width:55%; min-width:0; font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.58rem; font-weight:700; color:#ffffff; text-shadow:0 1px 4px rgba(0,0,0,0.9);">
+            ${readyShotOneLineMemo(memoVal) ? '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.6); padding:1px 6px; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,0.8);">' + escapeHtml(readyShotOneLineMemo(memoVal)) + '</span>' : ''}
           </div>
         </div>
         <div style="position:relative; z-index:10; width:100%; padding:0 10px; box-sizing:border-box; margin-top:auto; margin-bottom:2px; display:flex; flex-direction:column; justify-content:flex-end;">
@@ -880,6 +1299,7 @@ window.updateStudioCardLive = function() {
   }
 
   if (mode === 'chic') {
+    var chicMemoLive = readyShotOneLineMemo(memoVal);
     container.innerHTML = `
       <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); display:flex; justify-content:center; align-items:center; box-sizing:border-box; background:#000000;">
         <div style="position:absolute; inset:0; overflow:hidden; z-index:1; pointer-events:none;">
@@ -905,9 +1325,12 @@ window.updateStudioCardLive = function() {
               <span style="color:rgba(255,255,255,0.35);">·</span>
               <span style="color:#e2e8f0; font-weight:800; font-size:0.55rem; padding:1px 4px; border-radius:3px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25);">LNT</span>
             </div>
-            <div style="position:absolute; right:0; bottom:0; display:flex; align-items:center; gap:3px; opacity:0.6;">
-              <div style="transform:scale(0.75); transform-origin:right center;">${brandSvgWhite}</div>
-              <span style="font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.44rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px;">낭만루트</span>
+            <div style="position:absolute; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:space-between; gap:6px;">
+              <span style="flex:1; min-width:0; font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.48rem; font-weight:700; color:rgba(255,255,255,0.85); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${chicMemoLive ? escapeHtml(chicMemoLive) : ''}</span>
+              <div style="display:flex; align-items:center; gap:3px; opacity:0.6; flex-shrink:0;">
+                <div style="transform:scale(0.75); transform-origin:right center;">${brandSvgWhite}</div>
+                <span style="font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.44rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px;">낭만루트</span>
+              </div>
             </div>
           </div>
         </div>
@@ -917,8 +1340,8 @@ window.updateStudioCardLive = function() {
   }
 
   if (mode === 'essay') {
-    var rawText = memoVal || 'Omnia mea\nmecum porto.';
-    var memoLines = rawText.split('\n').map(function(line) {
+    var essayMemoLive = readyShotOneLineMemo(memoVal) || '그럼에도 불구하고 자연에서 하루를 찾는다';
+    var memoLines = essayMemoLive.split('\n').map(function(line) {
       return `<div style="margin:1px 0;">${escapeHtml(line)}</div>`;
     }).join('');
 
@@ -1008,6 +1431,7 @@ window.updateStudioCardLive = function() {
       weightKg: weightKg,
       itemCount: items.length,
       items: items,
+      memo: memoVal,
       wrapCss: cardRatioCss
     });
     return;
@@ -1025,6 +1449,7 @@ window.updateStudioCardLive = function() {
       weightKg: weightKg,
       itemCount: items.length,
       items: items,
+      memo: memoVal,
       wrapCss: cardRatioCss
     });
     return;
@@ -1041,6 +1466,7 @@ window.updateStudioCardLive = function() {
       date: dateStr,
       weightKg: weightKg,
       itemCount: items.length,
+      memo: memoVal,
       wrapCss: cardRatioCss
     });
     return;
@@ -1057,6 +1483,7 @@ window.updateStudioCardLive = function() {
       date: dateStr,
       weightKg: weightKg,
       itemCount: items.length,
+      memo: memoVal,
       wrapCss: cardRatioCss
     });
     return;
@@ -1073,6 +1500,7 @@ window.updateStudioCardLive = function() {
       date: dateStr,
       weightKg: weightKg,
       itemCount: items.length,
+      memo: memoVal,
       wrapCss: cardRatioCss
     });
     return;
@@ -1089,6 +1517,7 @@ window.updateStudioCardLive = function() {
       date: dateStr,
       weightKg: weightKg,
       items: items,
+      memo: memoVal,
       wrapCss: cardRatioCss
     });
     return;
@@ -1103,6 +1532,7 @@ window.updateStudioCardLive = function() {
       scale: scale,
       weightKg: weightKg,
       itemCount: items.length,
+      memo: memoVal,
       wrapCss: cardRatioCss
     });
     return;
@@ -1217,9 +1647,43 @@ if (!document.getElementById('template-chips-core-style')) {
       font-weight: 900 !important;
       box-shadow: 0 2px 8px rgba(255, 255, 255, 0.3) !important;
     }
+
+    .ready-shot-family-toggle {
+      display: flex !important;
+      width: 100% !important;
+      gap: 4px !important;
+      padding: 3px !important;
+      background: rgba(255, 255, 255, 0.06) !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      border-radius: 10px !important;
+      box-sizing: border-box !important;
+    }
+    .ready-shot-family-btn {
+      flex: 1 !important;
+      height: 30px !important;
+      border: none !important;
+      border-radius: 8px !important;
+      background: transparent !important;
+      color: #94a3b8 !important;
+      font-size: 0.74rem !important;
+      font-weight: 800 !important;
+      cursor: pointer !important;
+      transition: all 0.15s ease !important;
+    }
+    .ready-shot-family-btn.active {
+      background: #ffffff !important;
+      color: #000000 !important;
+      font-weight: 900 !important;
+      box-shadow: 0 2px 8px rgba(255, 255, 255, 0.2) !important;
+    }
   `;
   document.head.appendChild(chipStyle);
 }
+
+(function removeReadyShotDockHideStyle() {
+  var old = document.getElementById('ready-shot-dock-hide-style');
+  if (old) old.remove();
+})();
 
 var TEMPLATE_ORDER = [1, 8, 2, 18, 14, 6];
 var TEMPLATE_NAMES = {
@@ -1230,6 +1694,74 @@ var TEMPLATE_NAMES = {
   14: '🏷️ 다꾸스티커',
   6: '📸 코닥 슬라이드'
 };
+
+var STUDIO_MODE_ORDER = ['balance', 'kuchi', 'issue', 'spread', 'magazine', 'overlay', 'minimal', 'chic', 'essay', 'sage', 'editorial'];
+var STUDIO_MODE_NAMES = {
+  balance: '발란스',
+  kuchi: '쿠치',
+  issue: '이슈',
+  spread: '스프레드',
+  magazine: '매거진',
+  overlay: '저널',
+  minimal: '미니멀',
+  chic: '시크',
+  essay: '에세이',
+  sage: '내추럴',
+  editorial: '에디토리얼'
+};
+
+var READY_SHOT_PLACEHOLDER_PHOTO = 'data:image/svg+xml,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="#111111"/></svg>'
+);
+
+window.readyShotFamily = window.readyShotFamily || 'photo';
+window.currentStudioCardMode = window.currentStudioCardMode || 'spread';
+window.selectedTemplateId = (typeof window.selectedTemplateId === 'number')
+  ? window.selectedTemplateId
+  : parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
+var selectedTemplateId = window.selectedTemplateId;
+
+function resolveReadyShotPhotoUrl() {
+  var rec = (window.currentShareRecord && typeof window.currentShareRecord.then !== 'function')
+    ? window.currentShareRecord
+    : {};
+  var candidates = [
+    window.currentSharePhotoRaw,
+    window.currentSharePhoto,
+    rec.readyShotPhoto,
+    rec.ready_shot_photo
+  ];
+  for (var i = 0; i < candidates.length; i++) {
+    var url = String(candidates[i] || '').trim();
+    if (url.indexOf('https://') === 0) return url;
+  }
+  return '';
+}
+window.resolveReadyShotPhotoUrl = resolveReadyShotPhotoUrl;
+
+function persistReadyShotPhotoNow(url) {
+  var photoUrl = String(url || '').trim();
+  if (photoUrl.indexOf('https://') !== 0) return;
+  var rec = (window.currentShareRecord && typeof window.currentShareRecord.then !== 'function')
+    ? window.currentShareRecord
+    : {};
+  window.currentShareRecord = rec;
+  rec.readyShotPhoto = photoUrl;
+  rec.ready_shot_photo = photoUrl;
+  rec.readyShotMode = window.currentStudioCardMode || rec.readyShotMode || 'spread';
+  rec.readyShotPosX = (window.currentPhotoPosX !== undefined) ? window.currentPhotoPosX : (rec.readyShotPosX !== undefined ? rec.readyShotPosX : 50);
+  rec.readyShotPosY = (window.currentPhotoPosY !== undefined) ? window.currentPhotoPosY : (rec.readyShotPosY !== undefined ? rec.readyShotPosY : 50);
+  rec.readyShotScale = currentPhotoScaleVal || rec.readyShotScale || 1.0;
+  rec.readyShotRatio = '3/4';
+  if (Array.isArray(window.currentShareItems) && window.currentShareItems.length) {
+    rec.items = window.currentShareItems;
+  }
+  if (typeof window.savePackingHistoryRecord === 'function') {
+    window.savePackingHistoryRecord(rec).catch(function(err) {
+      console.warn('[templates.js:persistReadyShotPhotoNow]', err);
+    });
+  }
+}
 // 🎨 [내장 SVG 아이콘 팩 - 참조 에러 원천 방지]
 SVG_ICONS = window.SVG_ICONS || {
   brandLogo: function(color, stroke) {
@@ -1250,6 +1782,7 @@ window.currentOverlayTheme = window.currentOverlayTheme || 'dark';
 
 var OVERLAY_GEAR_ICON_PATHS = {
   tent: '<path d="M12 48.5C12 31 19.5 16.5 32 13.5C44.5 16.5 52 31 52 48.5" stroke-width="2.3"/><path d="M8 48.5H56" stroke-width="2.25"/><path d="M12 48.5L7.5 48.5L11 39.5C12 35.5 16 34.5 18 38" stroke-width="2.15"/><path d="M29 48.5C29 33 38 26.5 45.5 35.5C47.5 39.5 47.5 48.5 47.5 48.5" stroke-width="1.7"/><path d="M38 30C40.2 37 40.2 43.5 37 48.5" stroke-width="1.6"/><path d="M18 48.5C22 32 28 16.5 32 13.5" stroke-width="1.55"/><path d="M20 48.5C24 43.5 40 43.5 44 48.5" stroke-width="1.55"/><path d="M8 48.5L6 53.5" stroke-width="1.6"/><path d="M56 48.5L58 53.5" stroke-width="1.6"/>',
+  tarp: '<path d="M8 46L32 14L56 46" stroke-width="2.3"/><path d="M12 46H52" stroke-width="2.2"/><path d="M32 14V52" stroke-width="1.7"/><path d="M20 46L32 28L44 46" stroke-width="1.55"/><path d="M8 46L4 56" stroke-width="1.6"/><path d="M56 46L60 56" stroke-width="1.6"/><path d="M32 52L28 58M32 52L36 58" stroke-width="1.5"/>',
   'sleeping-bag': '<path d="M27 9.5C20.5 9.5 15.5 14.5 15.5 21.5C15.5 25.5 17.5 29 19.5 33L17.5 49C16.5 56 23 59 32 59C43 59 49 55 49 48L47 33C49 29 51 25.5 51 21.5C51 14.5 46 9.5 39.5 9.5C37.2 9.5 35 11.2 32 12.2C29 11.2 26.8 9.5 27 9.5Z" stroke-width="2.3"/><ellipse cx="32" cy="20.5" rx="8" ry="6.2" stroke-width="1.7"/><path d="M29 17.5C30.2 18.8 33.8 18.8 35 17.5" stroke-width="1.5"/><path d="M41.5 26.5L45.5 50" stroke-width="1.7"/><path d="M40 31C43 37 44.2 44 43 50.5" stroke-width="1.5"/><path d="M22 53.5C27.5 51.2 36.5 51.2 42 53.5" stroke-width="1.55"/>',
   mat: '<ellipse cx="19.5" cy="32" rx="10.5" ry="16" stroke-width="2.3"/><ellipse cx="19.5" cy="32" rx="4" ry="6.5" stroke-width="1.6"/><path d="M22 16.2H49.5C53.5 16.2 54.8 19.2 51.8 21.4H24" stroke-width="2.15"/><path d="M22 47.8H49.5C53.5 47.8 54.8 44.8 51.8 42.6H24" stroke-width="2.15"/><path d="M51.8 21.4V42.6" stroke-width="2.05"/><path d="M29.5 21.4V42.6" stroke-width="1.5"/><path d="M37.5 21.4V42.6" stroke-width="1.5"/><path d="M44.8 21.4V42.6" stroke-width="1.5"/><path d="M13 26C25.5 23.5 25.5 40.5 13 38" stroke-width="1.7"/>',
   backpack: '<path d="M22 21H42C45.8 21 47 23 47 26.5V47.5C47 51.8 44 54.5 40 54.5H24C20 54.5 17 51.8 17 47.5V26.5C17 23 18.2 21 22 21Z" stroke-width="2.3"/><path d="M20 22C20 14.5 25.5 11.5 32 11.5C38.5 11.5 44 14.5 44 22" stroke-width="2.2"/><path d="M24 18H40" stroke-width="1.65"/><path d="M24.5 27C17 31 15.5 40 20 51" stroke-width="1.75"/><path d="M39.5 27C47 31 48.5 40 44 51" stroke-width="1.75"/><path d="M14 45.5C11.8 45.8 11 48 12.2 50.2H19" stroke-width="1.8"/><path d="M50 45.5C52.2 45.8 53 48 51.8 50.2H45" stroke-width="1.8"/><path d="M19 48.2H45" stroke-width="1.8"/><path d="M47 30.5C51.2 31.5 51.4 42 47 44" stroke-width="1.65"/><path d="M25.5 34.5H38.5V47.5H25.5Z" stroke-width="1.6"/><path d="M22 32.5H28M36 32.5H42" stroke-width="1.55"/>',
@@ -1286,14 +1819,18 @@ function overlayResolveCategoryId(it) {
 function overlayIconIdFromItem(it) {
   var cat = overlayResolveCategoryId(it);
   var name = String((typeof it === 'string') ? it : (it && (it.name || it.itemName)) || '').toLowerCase();
-  if (cat === 'shelter' || /텐트|타프|tent|tarp|shelter/.test(name)) return 'tent';
+  var isTent = /텐트|tent|shelter|돔텐트|자립/.test(name);
+  var isTarp = /실타프|타프|tarp/.test(name) && !isTent;
+  var isMat = /매트|패드|pad|mat|tensor|xtherm|neoair/.test(name) && !/침낭|sleeping/.test(name);
+  var isBag = /침낭|sleeping|quilt|spark/.test(name);
+  if (isTarp) return 'tarp';
+  if (isTent || (cat === 'shelter' && !isTarp)) return 'tent';
   if (cat === 'pack' || /배낭|백팩|backpack|pack\b|exos|osprey/.test(name)) return 'backpack';
+  if (isMat) return 'mat';
+  if (isBag || (cat === 'sleep' && !isMat)) return 'sleeping-bag';
   if (cat === 'kitchen' || /취사|스토브|버너|코펠|stove|pot|windmaster/.test(name)) return 'cooking';
   if (cat === 'wear' || /의류|자켓|재킷|바지|셔츠|jacket|pants|shell/.test(name)) return 'clothing';
   if (cat === 'food' || /식량|음식|라면|햇반|리필|meal|food|pasta/.test(name)) return 'food';
-  if (/매트|패드|pad|mat|tensor/.test(name) && !/침낭|sleeping bag/.test(name)) return 'mat';
-  if (cat === 'sleep' || /침낭|sleeping|quilt|spark/.test(name)) return 'sleeping-bag';
-  if (cat === 'sleep') return /매트|패드|pad|mat/.test(name) ? 'mat' : 'sleeping-bag';
   return 'other';
 }
 
@@ -1369,6 +1906,27 @@ function overlayGroupItems(items) {
   return groups;
 }
 
+function overlayPickShowcaseItems(items, limit) {
+  limit = limit || 8;
+  var normalized = overlayNormalizeItems(items);
+  var buckets = {};
+  normalized.forEach(function(it) {
+    var key = it.icon || 'other';
+    if (!buckets[key]) buckets[key] = [];
+    buckets[key].push(it);
+  });
+  Object.keys(buckets).forEach(function(key) {
+    buckets[key].sort(function(a, b) { return (Number(b.weight) || 0) - (Number(a.weight) || 0); });
+  });
+  var order = ['tent', 'tarp', 'backpack', 'mat', 'sleeping-bag', 'cooking', 'clothing', 'other', 'food'];
+  var picked = [];
+  order.forEach(function(key) {
+    if (picked.length >= limit) return;
+    if (buckets[key] && buckets[key][0]) picked.push(buckets[key][0]);
+  });
+  return picked;
+}
+
 function ensureJournalFonts() {
   if (!document.getElementById('journal-font-link')) {
     var link = document.createElement('link');
@@ -1411,24 +1969,28 @@ function ensureJournalStyles() {
     '.photo-overlay-card .jr-grain{position:absolute;inset:0;pointer-events:none;opacity:.42;' +
     'background:repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(80,60,40,.06) 28px),' +
     'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'180\' height=\'180\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'0.45\'/%3E%3C/svg%3E");}' +
-    '.photo-overlay-card.magazine-cover{container-type:size; isolation:isolate; background:#111;}' +
+    '.photo-overlay-card.magazine-cover{container-type:inline-size; isolation:isolate; background:#111;}' +
     '.photo-overlay-card.magazine-cover .mag-photo{position:absolute;inset:0;z-index:1;pointer-events:none;}' +
+    '.photo-overlay-card.magazine-cover .mag-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}' +
     '.photo-overlay-card.magazine-cover .mag-type{position:absolute;inset:0;pointer-events:none;}' +
     '.photo-overlay-card.magazine-cover .mag-type-dark{z-index:4;color:#111111;mix-blend-mode:multiply;}' +
     '.photo-overlay-card.magazine-cover .mag-type-light{z-index:5;color:#ffffff;mix-blend-mode:screen;}' +
     '.photo-overlay-card.magazine-cover .mag-kg{position:absolute;left:3%;right:3%;top:10%;font-family:\'Bodoni Moda\',Georgia,serif;font-weight:700;font-size:4.4rem;font-size:22cqw;letter-spacing:-0.06em;line-height:0.78;text-align:center;white-space:nowrap;}' +
     '.photo-overlay-card.magazine-cover .mag-kg b{font-size:0.38em;font-weight:600;letter-spacing:0.04em;margin-left:0.08em;}' +
     '.photo-overlay-card.magazine-cover .mag-items{position:absolute;left:2%;right:2%;bottom:6%;font-family:\'Bodoni Moda\',Georgia,serif;font-weight:700;font-size:4rem;font-size:18cqw;letter-spacing:-0.05em;line-height:0.8;text-align:center;white-space:nowrap;}' +
+    '.photo-overlay-card.magazine-cover .mag-memo{position:absolute;left:4%;right:4%;bottom:16.5%;z-index:6;font-family:\'Bodoni Moda\',Georgia,serif;font-weight:600;font-size:4.2cqw;letter-spacing:-.02em;line-height:1.1;text-align:center;color:#ffffff;text-shadow:0 1px 6px rgba(0,0,0,.55);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none;}' +
     '.photo-overlay-card.magazine-cover .mag-logo{position:absolute;top:12px;right:12px;left:auto;z-index:12;display:flex;justify-content:flex-end;pointer-events:none;}' +
     '.photo-overlay-card.magazine-cover .mag-logo span{display:flex;align-items:center;justify-content:center;width:auto;height:auto;border-radius:0;background:none;box-shadow:none;}' +
     '.photo-overlay-card.magazine-cover .mag-logo img{height:18px;width:18px;display:block;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 1px #fff) drop-shadow(1px 0 0 #111) drop-shadow(-1px 0 0 #111) drop-shadow(0 1px 0 #111) drop-shadow(0 -1px 0 #111) drop-shadow(0 1px 3px rgba(0,0,0,0.7));}' +
-    '.photo-overlay-card.spread-card{container-type:size; display:flex; flex-direction:column; background:#f7f4ee; color:#1b2430;}' +
-    '.photo-overlay-card.spread-card .sp-photo{position:relative; flex:1 1 0%; min-height:0; overflow:hidden; background:#111;}' +
-    '.photo-overlay-card.spread-card .sp-photo img{width:100%;height:100%;object-fit:cover;display:block;}' +
+    '.photo-overlay-card.spread-card{container-type:inline-size; display:flex; flex-direction:column; background:#f7f4ee; color:#1b2430;}' +
+    '.photo-overlay-card.spread-card .sp-photo{position:relative; flex:1 1 56%; min-height:52%; overflow:hidden; background:#111;}' +
+    '.photo-overlay-card.spread-card .sp-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}' +
     '.photo-overlay-card.spread-card .sp-fade{position:absolute;left:0;right:0;bottom:0;height:38%;pointer-events:none;background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.22) 50%,rgba(0,0,0,.5) 100%);}' +
     '.photo-overlay-card.spread-card .sp-title{position:absolute;left:5%;right:5%;bottom:3%;z-index:4;font-family:\'Bodoni Moda\',Georgia,serif;font-weight:700;font-size:9cqw;letter-spacing:-.04em;line-height:.86;color:#fff;text-transform:uppercase;text-shadow:0 2px 14px rgba(0,0,0,.35);}' +
     '.photo-overlay-card.spread-card .sp-paper{position:relative;flex:0 0 auto;padding:4.2% 5% 9.5%;box-sizing:border-box;}' +
-    '.photo-overlay-card.spread-card .sp-kg{font-family:\'Bodoni Moda\',Georgia,serif;font-size:8.6cqw;font-weight:700;letter-spacing:-.04em;line-height:.88;color:#1a2744;margin-bottom:3.2%;}' +
+    '.photo-overlay-card.spread-card .sp-kg-row{display:flex;justify-content:flex-end;align-items:baseline;gap:8px;margin-bottom:3.2%;}' +
+    '.photo-overlay-card.spread-card .sp-memo{flex:1;min-width:0;font-family:\'Pretendard Variable\',-apple-system,sans-serif;font-size:3.2cqw;font-weight:700;letter-spacing:-.02em;color:#1b2430;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}' +
+    '.photo-overlay-card.spread-card .sp-kg{font-family:\'Bodoni Moda\',Georgia,serif;font-size:8.6cqw;font-weight:700;letter-spacing:-.04em;line-height:.88;color:#1a2744;margin-bottom:0;flex-shrink:0;}' +
     '.photo-overlay-card.spread-card .sp-byline{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-bottom:2.4%;border-bottom:1px solid rgba(27,36,48,.18);margin-bottom:3.4%;}' +
     '.photo-overlay-card.spread-card .sp-spot{font-family:\'Pretendard Variable\',-apple-system,sans-serif;font-size:3.4cqw;font-weight:800;letter-spacing:-.02em;}' +
     '.photo-overlay-card.spread-card .sp-date{font-family:\'Space Grotesk\',sans-serif;font-size:2.6cqw;font-weight:600;color:#5c6570;}' +
@@ -1437,11 +1999,12 @@ function ensureJournalStyles() {
     '.photo-overlay-card.spread-card .sp-name{margin-top:1px;font-family:\'Libre Baskerville\',\'Pretendard Variable\',Georgia,serif;font-size:3cqw;font-weight:700;line-height:1.2;word-break:keep-all;}' +
     '.photo-overlay-card.spread-card .sp-w{margin-top:1px;font-family:\'Space Grotesk\',sans-serif;font-size:2.3cqw;font-weight:600;color:#5c6570;}' +
     '.photo-overlay-card.spread-card .sp-logo{position:absolute;right:5%;bottom:3.2%;height:5.4cqw;width:auto;display:block;object-fit:contain;mix-blend-mode:multiply;filter:drop-shadow(1px 0 0 #111) drop-shadow(-1px 0 0 #111) drop-shadow(0 1px 0 #111);}' +
-    '.photo-overlay-card.issue-card{container-type:size; background:#fff; color:#fff; padding:3.6%; box-sizing:border-box;}' +
+    '.photo-overlay-card.issue-card{container-type:inline-size; background:#fff; color:#fff; padding:3.6%; box-sizing:border-box;}' +
     '.photo-overlay-card.issue-card .iss-sheet{position:relative;width:100%;height:100%;overflow:hidden;background:#000;background-image:linear-gradient(180deg,rgba(255,255,255,.06) 0%,transparent 38%,rgba(0,0,0,.35) 100%),linear-gradient(rgba(255,255,255,.22) 1.4px,transparent 1.4px),linear-gradient(90deg,rgba(255,255,255,.22) 1.4px,transparent 1.4px),linear-gradient(rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px);background-size:auto,14.2% 10.6%,14.2% 10.6%,2.84% 2.12%,2.84% 2.12%;box-shadow:inset 0 0 28px rgba(0,0,0,.55);}' +
     '.photo-overlay-card.issue-card .iss-sheet::before{content:\'\';position:absolute;inset:0;pointer-events:none;z-index:1;opacity:.28;mix-blend-mode:overlay;background:radial-gradient(circle at 18% 12%,rgba(255,214,150,.18),transparent 36%),radial-gradient(circle at 88% 82%,rgba(0,0,0,.55),transparent 40%);}' +
-    '.photo-overlay-card.issue-card .iss-kg{position:absolute;left:2%;right:2%;top:.4%;z-index:6;font-family:Anton,Impact,sans-serif;font-size:31cqw;letter-spacing:-.045em;line-height:.76;text-align:center;text-transform:uppercase;}' +
-    '.photo-overlay-card.issue-card .iss-kg b{font-size:.26em;font-weight:400;letter-spacing:.06em;margin-left:.06em;vertical-align:.48em;}' +
+    '.photo-overlay-card.issue-card .iss-kg{position:absolute;left:0;right:0;top:.4%;z-index:6;font-family:Anton,Impact,sans-serif;font-size:28cqw;letter-spacing:-.045em;line-height:.76;text-align:center;text-transform:uppercase;}' +
+    '.photo-overlay-card.issue-card .iss-kg .iss-num{display:inline-block;}' +
+    '.photo-overlay-card.issue-card .iss-kg b{position:absolute;right:5%;top:.32em;font-size:.28em;font-weight:400;letter-spacing:.06em;white-space:nowrap;}' +
     '.photo-overlay-card.issue-card .iss-frame{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);width:60%;aspect-ratio:1/1;background:#f6f1e6;padding:2.4%;z-index:3;box-shadow:0 10px 22px rgba(0,0,0,.35);box-sizing:border-box;}' +
     '.photo-overlay-card.issue-card .iss-frame img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}' +
     '.photo-overlay-card.issue-card .iss-note{position:absolute;z-index:5;color:#fff;font-weight:700;line-height:1.05;white-space:nowrap;}' +
@@ -1450,10 +2013,12 @@ function ensureJournalStyles() {
     '.photo-overlay-card.issue-card .iss-arrow{position:absolute;z-index:5;pointer-events:none;stroke:#f4fbff;fill:none;stroke-width:2;stroke-linecap:round;}' +
     '.photo-overlay-card.issue-card .iss-a1{left:16%;top:44%;width:8%;height:8%;}' +
     '.photo-overlay-card.issue-card .iss-a2{right:16%;top:48%;width:8%;height:7%;}' +
-    '.photo-overlay-card.issue-card .iss-count{position:absolute;left:0;right:0;bottom:-1%;z-index:6;font-family:Anton,Impact,sans-serif;font-size:42cqw;letter-spacing:-.06em;line-height:.72;text-align:center;text-transform:uppercase;}' +
-    '.photo-overlay-card.issue-card .iss-count b{font-size:.26em;font-weight:400;letter-spacing:.06em;margin-left:.04em;vertical-align:1.85em;}' +
+    '.photo-overlay-card.issue-card .iss-count{position:absolute;left:0;right:0;bottom:-1%;z-index:6;font-family:Anton,Impact,sans-serif;font-size:32cqw;letter-spacing:-.06em;line-height:.72;text-align:center;text-transform:uppercase;}' +
+    '.photo-overlay-card.issue-card .iss-count .iss-num{display:inline-block;}' +
+    '.photo-overlay-card.issue-card .iss-count b{position:absolute;right:5%;top:.28em;font-size:.28em;font-weight:400;letter-spacing:.06em;white-space:nowrap;}' +
+    '.photo-overlay-card.issue-card .iss-memo{position:absolute;left:8%;right:8%;top:72%;z-index:6;font-family:\'Pretendard Variable\',-apple-system,sans-serif;font-size:3.2cqw;font-weight:700;letter-spacing:-.02em;text-align:center;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.75);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}' +
     '.photo-overlay-card.issue-card .iss-logo{position:absolute;right:3.2%;bottom:2.4%;z-index:7;height:7.2cqw;width:auto;display:block;object-fit:contain;mix-blend-mode:screen;}' +
-    '.photo-overlay-card.kuchi-card{container-type:size; isolation:isolate; background:#fff; padding:2.8%; box-sizing:border-box;}' +
+    '.photo-overlay-card.kuchi-card{container-type:inline-size; isolation:isolate; background:#fff; padding:2.8%; box-sizing:border-box;}' +
     '.photo-overlay-card.kuchi-card .kc-sheet{position:relative;width:100%;height:100%;overflow:hidden;background:#111;isolation:isolate;}' +
     '.photo-overlay-card.kuchi-card .kc-photo{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}' +
     '.photo-overlay-card.kuchi-card .kc-rail{position:absolute;left:0;top:0;bottom:0;width:6.8%;background:#e6e05c;z-index:4;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:7% 0 8%;}' +
@@ -1470,7 +2035,7 @@ function ensureJournalStyles() {
     '.photo-overlay-card.kuchi-card .kc-mark img{position:absolute;right:0;bottom:0;height:100%;width:auto;display:block;object-fit:contain;}' +
     '.photo-overlay-card.kuchi-card .kc-mark-dark{mix-blend-mode:multiply;}' +
     '.photo-overlay-card.kuchi-card .kc-mark-light{mix-blend-mode:screen;}' +
-    '.photo-overlay-card.balance-card{container-type:size; isolation:isolate; background:#fff; padding:1.6%; box-sizing:border-box;}' +
+    '.photo-overlay-card.balance-card{container-type:inline-size; isolation:isolate; background:#fff; padding:1.6%; box-sizing:border-box;}' +
     '.photo-overlay-card.balance-card .bl-sheet{position:relative;width:100%;height:100%;overflow:hidden;background:#111;isolation:isolate;}' +
     '.photo-overlay-card.balance-card .bl-photo{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}' +
     '.photo-overlay-card.balance-card .bl-copy{position:absolute;left:6.2%;top:5.4%;z-index:6;width:42%;font-family:\'Pretendard Variable\',sans-serif;font-weight:800;letter-spacing:-.02em;line-height:1.18;pointer-events:none;}' +
@@ -1496,7 +2061,9 @@ function ensureJournalStyles() {
     '.photo-overlay-card.balance-card .bl-meta-dark{color:#111;mix-blend-mode:multiply;}' +
     '.photo-overlay-card.balance-card .bl-meta-light{color:#fff;mix-blend-mode:screen;}' +
     '.photo-overlay-card.balance-card .bl-date{font-size:2.8cqw;letter-spacing:.04em;}' +
-    '.photo-overlay-card.balance-card .bl-spot{margin-top:2px;font-size:3.4cqw;letter-spacing:-.02em;}';
+    '.photo-overlay-card.balance-card .bl-memo{margin-top:3px;margin-bottom:1px;font-size:2.8cqw;font-weight:700;letter-spacing:-.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:42cqw;}' +
+    '.photo-overlay-card.balance-card .bl-spot{margin-top:2px;font-size:3.4cqw;letter-spacing:-.02em;}' +
+    '.photo-overlay-card.kuchi-card .kc-memo{margin-top:2.4%;font-family:\'Pretendard Variable\',-apple-system,sans-serif;font-size:2.8cqw;font-weight:700;letter-spacing:-.02em;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:88%;margin-left:auto;margin-right:auto;}';
 }
 
 function renderOutlinedBrandMark(heightPx) {
@@ -1520,7 +2087,7 @@ function renderPhotoOverlayMarkup(opts) {
   var imgErr = opts.onerror || '';
   var allItems = overlayNormalizeItems(opts.items);
   var totalCount = (opts.itemCount !== undefined) ? opts.itemCount : allItems.length;
-  var shown = allItems.slice(0, 8);
+  var shown = overlayPickShowcaseItems(opts.items, 8);
   var n = shown.length;
   var iconPx = n > 8 ? 13 : 16;
   var makerSize = n > 8 ? '0.32rem' : '0.38rem';
@@ -1529,6 +2096,7 @@ function renderPhotoOverlayMarkup(opts) {
   var ink = '#2a241c';
   var mute = '#7a7166';
   var paper = '#f3eee4';
+  var memoText = readyShotOneLineMemo(opts.memo);
   var cells = shown.map(function(it) {
     var wStr = it.weight > 0 ? (it.weight / 1000).toFixed(2) + ' kg' : '';
     return '' +
@@ -1547,8 +2115,8 @@ function renderPhotoOverlayMarkup(opts) {
 
   return '' +
     '<div class="photo-overlay-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#111111; box-sizing:border-box; user-select:none; color:#ffffff; display:flex; flex-direction:column;">' +
-      '<div style="position:relative; flex:1 1 0%; min-height:0; overflow:hidden; z-index:1;">' +
-        '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; pointer-events:none;" />' +
+      '<div style="position:relative; flex:1 1 56%; min-height:52%; overflow:hidden; z-index:1;">' +
+        '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; pointer-events:none;" />' +
         '<div style="position:absolute; left:0; right:0; top:0; height:34%; pointer-events:none; background:linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.10) 58%, transparent 100%);"></div>' +
         tear +
         '<div style="position:absolute; top:12px; left:16px; z-index:6;">' +
@@ -1568,7 +2136,9 @@ function renderPhotoOverlayMarkup(opts) {
         '<div style="position:relative; z-index:2; display:flex; flex-direction:column; gap:10px; box-sizing:border-box;">' +
           '<div style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); column-gap:8px; row-gap:8px; align-items:start; min-width:0;">' + cells + '</div>' +
           '<div style="display:flex; justify-content:space-between; align-items:flex-end; gap:10px;">' +
-            '<div style="font-family:\'Nanum Pen Script\', cursive; font-size:0.92rem; color:#4a433a; line-height:1.15;">불편함<br>그럼에도 불구하고</div>' +
+            '<div style="font-family:\'Nanum Pen Script\', cursive; font-size:0.92rem; color:#4a433a; line-height:1.15; min-width:0; flex:1;">불편함<br>그럼에도 불구하고' +
+              (memoText ? '<span style="display:inline; font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:0.62rem; font-weight:700; color:#5c5348; margin-left:6px; vertical-align:middle; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"> · ' + escapeHtml(memoText) + '</span>' : '') +
+            '</div>' +
             renderOutlinedBrandMark(34) +
           '</div>' +
         '</div>' +
@@ -1594,7 +2164,8 @@ function renderEditorialOverlayMarkup(opts) {
   var imgErr = opts.onerror || '';
   var allItems = overlayNormalizeItems(opts.items);
   var totalCount = (opts.itemCount !== undefined) ? opts.itemCount : allItems.length;
-  var shown = allItems.slice(0, 8);
+  var shown = overlayPickShowcaseItems(opts.items, 8);
+  var memoText = readyShotOneLineMemo(opts.memo);
   var n = shown.length;
   var iconPx = n > 6 ? 15 : 17;
   var makerSize = n > 6 ? '0.34rem' : '0.38rem';
@@ -1630,6 +2201,7 @@ function renderEditorialOverlayMarkup(opts) {
             (spot ? '<div style="margin-top:4px; display:flex; align-items:center; justify-content:flex-end; gap:4px; font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:0.62rem; font-weight:700; color:#ffffff; text-shadow:0 1px 6px rgba(0,0,0,0.55);">' +
               '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" style="width:11px; height:11px; flex-shrink:0;"><path d="M12 21s7-7.2 7-12a7 7 0 1 0-14 0c0 4.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.2"/></svg>' +
               '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:120px;">' + escapeHtml(spot) + '</span></div>' : '') +
+            (memoText ? '<div style="margin-top:4px; font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:0.56rem; font-weight:700; color:rgba(255,255,255,0.9); text-shadow:0 1px 6px rgba(0,0,0,0.55); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px; margin-left:auto;">' + escapeHtml(memoText) + '</div>' : '') +
           '</div>' +
         '</div>' +
         '<div style="position:absolute; left:16px; right:16px; bottom:12px; display:grid; grid-template-columns:1fr auto; column-gap:10px; align-items:end;">' +
@@ -1641,6 +2213,16 @@ function renderEditorialOverlayMarkup(opts) {
 }
 
 window.renderEditorialOverlayMarkup = renderEditorialOverlayMarkup;
+
+function readyShotOneLineMemo(memo) {
+  return String(memo || '').trim().replace(/\s+/g, ' ');
+}
+
+function readyShotMemoBlock(memo, styleCss) {
+  var text = readyShotOneLineMemo(memo);
+  if (!text) return '';
+  return '<div class="rs-one-line-memo" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; ' + (styleCss || '') + '">' + escapeHtml(text) + '</div>';
+}
 
 function renderMagazineCoverMarkup(opts) {
   opts = opts || {};
@@ -1655,10 +2237,14 @@ function renderMagazineCoverMarkup(opts) {
   var wrapCss = opts.wrapCss || 'width:100%; max-width:340px; aspect-ratio:3/4; max-height:100%; margin:auto;';
   var imgIdAttr = opts.imgId ? ' id="' + opts.imgId + '"' : '';
   var imgErr = opts.onerror || '';
+  var memoText = readyShotOneLineMemo(opts.memo);
 
   var typeHtml =
     '<div class="mag-kg">' + escapeHtml(String(weightKg)) + '<b>KG</b></div>' +
     '<div class="mag-items">' + totalCount + ' ITEMS</div>';
+  var memoHtml = memoText
+    ? ('<div class="mag-memo">' + escapeHtml(memoText) + '</div>')
+    : '';
 
   return '' +
     '<div class="photo-overlay-card magazine-cover" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#111111; box-sizing:border-box; user-select:none;">' +
@@ -1667,6 +2253,7 @@ function renderMagazineCoverMarkup(opts) {
       '</div>' +
       '<div class="mag-type mag-type-dark">' + typeHtml + '</div>' +
       '<div class="mag-type mag-type-light">' + typeHtml + '</div>' +
+      memoHtml +
       '<div class="mag-logo"><span><img src="logo.png" alt="낭만루트" /></span></div>' +
     '</div>';
 }
@@ -1687,6 +2274,7 @@ function renderSpreadMarkup(opts) {
   var wrapCss = opts.wrapCss || 'width:100%; max-width:340px; aspect-ratio:3/4; max-height:100%; margin:auto;';
   var imgIdAttr = opts.imgId ? ' id="' + opts.imgId + '"' : '';
   var imgErr = opts.onerror || '';
+  var memoText = readyShotOneLineMemo(opts.memo);
   var shown = overlayNormalizeItems(opts.items).slice(0, 8);
   var cells = shown.map(function(it) {
     var wStr = it.weight > 0 ? (it.weight / 1000).toFixed(2) + ' kg' : '';
@@ -1706,7 +2294,10 @@ function renderSpreadMarkup(opts) {
         '<div class="sp-title">THE PACK</div>' +
       '</div>' +
       '<div class="sp-paper">' +
-        '<div class="sp-kg">' + escapeHtml(String(weightKg)) + ' KG</div>' +
+        '<div class="sp-kg-row">' +
+          (memoText ? '<div class="sp-memo">' + escapeHtml(memoText) + '</div>' : '<div class="sp-memo"></div>') +
+          '<div class="sp-kg">' + escapeHtml(String(weightKg)) + ' KG</div>' +
+        '</div>' +
         '<div class="sp-byline">' +
           '<div class="sp-spot">' + escapeHtml(spot || '나의 힐링 스팟') + '</div>' +
           '<div class="sp-date">' + escapeHtml(dateStr) + '</div>' +
@@ -1743,19 +2334,21 @@ function renderIssueMarkup(opts) {
   var wrapCss = opts.wrapCss || 'width:100%; max-width:340px; aspect-ratio:3/4; max-height:100%; margin:auto;';
   var imgIdAttr = opts.imgId ? ' id="' + opts.imgId + '"' : '';
   var imgErr = opts.onerror || '';
+  var memoText = readyShotOneLineMemo(opts.memo);
 
   return '' +
     '<div class="photo-overlay-card issue-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#ffffff; box-sizing:border-box; user-select:none;">' +
       '<div class="iss-sheet">' +
-        '<div class="iss-kg">' + escapeHtml(String(weightKg)) + '<b>KG</b></div>' +
+        '<div class="iss-kg"><span class="iss-num">' + escapeHtml(String(weightKg)) + '</span><b>KG</b></div>' +
         '<div class="iss-note iss-date">' + issueDateLines(dateStr) + '</div>' +
         '<svg class="iss-arrow iss-a1" viewBox="0 0 80 50" aria-hidden="true"><path d="M8 28 C 28 8, 48 18, 74 22"/></svg>' +
         '<div class="iss-frame">' +
           '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
         '</div>' +
+        (memoText ? '<div class="iss-memo">' + escapeHtml(memoText) + '</div>' : '') +
         '<div class="iss-note iss-spot">' + escapeHtml(spot) + '</div>' +
         '<svg class="iss-arrow iss-a2" viewBox="0 0 70 50" aria-hidden="true"><path d="M62 18 C 40 8, 22 22, 6 28"/></svg>' +
-        '<div class="iss-count">' + escapeHtml(String(totalCount)) + '<b>ITEM</b></div>' +
+        '<div class="iss-count"><span class="iss-num">' + escapeHtml(String(totalCount)) + '</span><b>ITEM</b></div>' +
         '<img class="iss-logo" src="fulllogo.png" alt="낭만루트" />' +
       '</div>' +
     '</div>';
@@ -1778,9 +2371,11 @@ function renderKuchiMarkup(opts) {
   var wrapCss = opts.wrapCss || 'width:100%; max-width:340px; aspect-ratio:3/4; max-height:100%; margin:auto;';
   var imgIdAttr = opts.imgId ? ' id="' + opts.imgId + '"' : '';
   var imgErr = opts.onerror || '';
+  var memoText = readyShotOneLineMemo(opts.memo);
   var mastInner =
     '<div class="kc-kg">' + escapeHtml(String(weightKg)) + '</div>' +
-    '<div class="kc-items">' + totalCount + ' items</div>';
+    '<div class="kc-items">' + totalCount + ' items</div>' +
+    (memoText ? '<div class="kc-memo">' + escapeHtml(memoText) + '</div>' : '');
 
   return '' +
     '<div class="photo-overlay-card kuchi-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:18px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#ffffff; box-sizing:border-box; user-select:none;">' +
@@ -1817,6 +2412,7 @@ function renderBalanceMarkup(opts) {
   var wrapCss = opts.wrapCss || 'width:100%; max-width:340px; aspect-ratio:3/4; max-height:100%; margin:auto;';
   var imgIdAttr = opts.imgId ? ' id="' + opts.imgId + '"' : '';
   var imgErr = opts.onerror || '';
+  var memoText = readyShotOneLineMemo(opts.memo);
   var copyInner =
     '<div class="bl-lead">불편함을<br>감수하고</div>' +
     '<div class="bl-mid">자연에서<br>하룻밤을<br>보내는 사람들</div>' +
@@ -1826,6 +2422,7 @@ function renderBalanceMarkup(opts) {
     '<div class="bl-count">' + totalCount + ' items</div>';
   var metaInner =
     '<div class="bl-date">' + escapeHtml(dateStr) + '</div>' +
+    (memoText ? '<div class="bl-memo">' + escapeHtml(memoText) + '</div>' : '') +
     '<div class="bl-spot">' + escapeHtml(spot) + '</div>';
 
   return '' +
@@ -1852,12 +2449,10 @@ window.renderBalanceMarkup = renderBalanceMarkup;
 
 async function exportPhotoOverlayPng(card) {
   var canvas = await captureStudioCardCanvas(card);
-  var blob = await new Promise(function(resolve, reject) {
-    canvas.toBlob(function(b) { b ? resolve(b) : reject(new Error('toBlob failed')); }, 'image/png');
-  });
+  var blob = await canvasToShareBlob(canvas);
   var url = URL.createObjectURL(blob);
   var link = document.createElement('a');
-  link.download = '낭만루트_저널_' + Date.now() + '.png';
+  link.download = '낭만루트_저널_' + Date.now() + '.jpg';
   link.href = url;
   link.click();
   setTimeout(function() { URL.revokeObjectURL(url); }, 2500);
@@ -1874,7 +2469,7 @@ function renderNrcCertShotMarkup(opts) {
   var weightKg = opts.weightKg || '0.00';
   var items = Array.isArray(opts.items) ? opts.items : [];
   var brand = opts.brand || '';
-  var wrapCss = opts.wrapCss || 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;';
+  var wrapCss = opts.wrapCss || 'width:100%; max-width:330px; aspect-ratio:3/4; margin:auto;';
   var imgIdAttr = opts.imgId ? ' id="' + opts.imgId + '"' : '';
   var imgErr = opts.onerror || '';
   var n = items.length;
@@ -1941,8 +2536,9 @@ window.generateReadyShotMarkup = function(record, options) {
   var svgShield = (SVG_ICONS && SVG_ICONS.lntShield) || '<svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2" style="width:11px; height:11px; display:inline-block; vertical-align:-1px; margin-right:3px;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>';
 
   if (mode === 'minimal') {
+    var minimalMemo = readyShotOneLineMemo(memo);
     return `
-      <div class="ready-shot-card-vector ready-shot-minimal" style="position:relative; width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto; overflow:hidden; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,0.9); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
+      <div class="ready-shot-card-vector ready-shot-minimal" style="position:relative; width:100%; max-width:330px; aspect-ratio:3/4; margin:auto; overflow:hidden; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,0.9); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
         <img src="${escapeHtml(photoUrl)}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
         
         <!-- 상단 헤더 (위치 및 일자) -->
@@ -1955,7 +2551,9 @@ window.generateReadyShotMarkup = function(record, options) {
         </div>
 
         <!-- 하단 바 (중앙 스펙 강조 + 우측하단 은은한 낭만루트 워터마크) -->
-        <div style="position:relative; z-index:10; display:flex; align-items:flex-end; justify-content:space-between; padding:24px 14px 12px 14px; background:linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 60%, transparent 100%); box-sizing:border-box;">
+        <div style="position:relative; z-index:10; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-end; padding:24px 14px 12px 14px; background:linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 60%, transparent 100%); box-sizing:border-box; gap:6px;">
+          ${minimalMemo ? '<div style="text-align:center; font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:0.62rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-shadow:0 1px 4px rgba(0,0,0,0.9);">' + escapeHtml(minimalMemo) + '</div>' : ''}
+          <div style="display:flex; align-items:flex-end; justify-content:space-between;">
           <div style="flex:1; min-width:0;"></div>
           <div style="flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:6px; font-family:'Space Grotesk', sans-serif; font-size:0.64rem; font-weight:900; color:#ffffff; letter-spacing:0.8px; text-shadow:0 2px 6px rgba(0,0,0,0.95);">
             <span>${totalCount} ITEMS</span>
@@ -1968,17 +2566,18 @@ window.generateReadyShotMarkup = function(record, options) {
             <div style="transform:scale(0.85); transform-origin:right center;">${brandSvgWhite}</div>
             <span style="font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.46rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px; text-shadow:0 1px 3px rgba(0,0,0,0.8);">낭만루트</span>
           </div>
+          </div>
         </div>
       </div>
     `;
   }
 
   if (mode === 'sage') {
-    var maxDisplay = 14;
-    var displayedItems = items.slice(0, maxDisplay);
-    var remainingCount = items.length - maxDisplay;
+    var maxDisplaySage = 14;
+    var displayedItemsSage = items.slice(0, maxDisplaySage);
+    var remainingCountSage = items.length - maxDisplaySage;
 
-    var sageGears = displayedItems.map(function(it) {
+    var sageGearsMarkup = displayedItemsSage.map(function(it) {
       var rawN = (typeof it === 'string') ? it : (it.name || '');
       var cName = rawN.replace(/\s*\(\d+g\)$/, '');
       var wG = (typeof it === 'object' && it.weight) ? it.weight : 0;
@@ -1994,17 +2593,17 @@ window.generateReadyShotMarkup = function(record, options) {
       `;
     }).join('');
 
-    if (remainingCount > 0) {
-      sageGears += `
+    if (remainingCountSage > 0) {
+      sageGearsMarkup += `
         <div style="display:flex; align-items:center; font-size:0.56rem; font-weight:800; color:#e2e8f0; text-shadow:0 1px 3px rgba(0,0,0,0.9); line-height:1.2;">
-          <span>+외 ${remainingCount}개 장비</span>
+          <span>+외 ${remainingCountSage}개 장비</span>
         </div>
       `;
     }
 
-    container.innerHTML = `
-      <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
-        <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
+    return `
+      <div class="ready-shot-card-vector ready-shot-sage" style="position:relative; width:100%; max-width:330px; aspect-ratio:3/4; margin:auto; overflow:hidden; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,0.9); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
+        <img src="${escapeHtml(photoUrl)}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
         <div style="position:absolute; inset:0; z-index:3; pointer-events:none; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr 1fr 1fr; opacity:0.65;">
           <div style="border-right:1px solid rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.4);"></div>
           <div style="border-right:1px solid rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.4);"></div>
@@ -2027,15 +2626,15 @@ window.generateReadyShotMarkup = function(record, options) {
             ${brandSvgWhite}
             <span style="font-family:'Space Grotesk', -apple-system, sans-serif; font-size:0.72rem; font-weight:800; color:#ffffff; letter-spacing:0.8px; text-shadow:0 1px 4px rgba(0,0,0,0.9);">낭만루트</span>
           </div>
-          <div style="display:inline-flex; align-items:center; gap:5px; font-family:'Space Grotesk', sans-serif; font-size:0.58rem; font-weight:700; color:#ffffff; text-shadow:0 1px 4px rgba(0,0,0,0.9);">
-            <span style="background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.6); padding:1px 6px; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,0.8);">READY SHOT</span>
+          <div style="display:inline-flex; align-items:center; gap:5px; max-width:55%; min-width:0; font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.58rem; font-weight:700; color:#ffffff; text-shadow:0 1px 4px rgba(0,0,0,0.9);">
+            ${readyShotOneLineMemo(memo) ? '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.6); padding:1px 6px; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,0.8);">' + escapeHtml(readyShotOneLineMemo(memo)) + '</span>' : ''}
           </div>
         </div>
         <div style="position:relative; z-index:10; width:100%; padding:0 10px; box-sizing:border-box; margin-top:auto; margin-bottom:2px; display:flex; flex-direction:column; justify-content:flex-end;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
             <div style="display:inline-flex; align-items:center; gap:3px; text-shadow:0 1px 4px rgba(0,0,0,0.95);">
               <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" style="width:11px; height:11px; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.8));"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span style="font-size:0.72rem; font-weight:900; color:#ffffff;">${escapeHtml(spotDisplay)}</span>
+              <span style="font-size:0.72rem; font-weight:900; color:#ffffff;">${escapeHtml(spotVal)}</span>
             </div>
             <div style="display:inline-flex; align-items:center; gap:4px; font-family:'Space Grotesk', sans-serif; text-shadow:0 1px 4px rgba(0,0,0,0.95);">
               <span style="font-size:0.78rem; font-weight:900; color:#ffffff;">${weightKg} KG</span>
@@ -2044,7 +2643,7 @@ window.generateReadyShotMarkup = function(record, options) {
             </div>
           </div>
           <div style="background:transparent; border:none; padding:0; display:grid; grid-template-columns:1fr 1fr; column-gap:12px; row-gap:4px; box-sizing:border-box;">
-            ${sageGears}
+            ${sageGearsMarkup}
           </div>
         </div>
         <div style="position:relative; z-index:10; display:flex; justify-content:space-between; align-items:center; padding:2px 12px 8px 12px; font-family:'Space Grotesk', sans-serif; font-size:0.55rem; font-weight:800; color:#ffffff; text-shadow:0 1px 4px rgba(0,0,0,0.9);">
@@ -2057,12 +2656,12 @@ window.generateReadyShotMarkup = function(record, options) {
         </div>
       </div>
     `;
-    return;
   }
 
   if (mode === 'chic') {
+    var chicMemo = readyShotOneLineMemo(memo);
     return `
-      <div class="ready-shot-card-vector ready-shot-chic" style="position:relative; width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto; overflow:hidden; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,0.9); display:flex; justify-content:center; align-items:center; box-sizing:border-box; background:#000000; user-select:none;">
+      <div class="ready-shot-card-vector ready-shot-chic" style="position:relative; width:100%; max-width:330px; aspect-ratio:3/4; margin:auto; overflow:hidden; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,0.9); display:flex; justify-content:center; align-items:center; box-sizing:border-box; background:#000000; user-select:none;">
         <div style="position:absolute; inset:0; overflow:hidden; z-index:1; pointer-events:none;">
           <img src="${escapeHtml(photoUrl)}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:112%; height:112%; object-fit:cover; object-position:${posX}% ${posY}%; filter:blur(9px) brightness(0.82); transform:scale(1.06); display:block; margin:-6%;" />
           <div style="position:absolute; inset:0; background:rgba(0,0,0,0.28);"></div>
@@ -2086,9 +2685,12 @@ window.generateReadyShotMarkup = function(record, options) {
               <span style="color:rgba(255,255,255,0.35);">·</span>
               <span style="color:#e2e8f0; font-weight:800; font-size:0.55rem; padding:1px 4px; border-radius:3px; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25);">LNT</span>
             </div>
-            <div style="position:absolute; right:0; bottom:0; display:flex; align-items:center; gap:3px; opacity:0.6;">
-              <div style="transform:scale(0.75); transform-origin:right center;">${brandSvgWhite}</div>
-              <span style="font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.44rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px;">낭만루트</span>
+            <div style="position:absolute; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:space-between; gap:6px;">
+              <span style="flex:1; min-width:0; font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.48rem; font-weight:700; color:rgba(255,255,255,0.85); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${chicMemo ? escapeHtml(chicMemo) : ''}</span>
+              <div style="display:flex; align-items:center; gap:3px; opacity:0.6; flex-shrink:0;">
+                <div style="transform:scale(0.75); transform-origin:right center;">${brandSvgWhite}</div>
+                <span style="font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.44rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px;">낭만루트</span>
+              </div>
             </div>
           </div>
         </div>
@@ -2097,8 +2699,8 @@ window.generateReadyShotMarkup = function(record, options) {
   }
 
   if (mode === 'essay') {
-    var rawText = memo || 'Omnia mea\nmecum porto.';
-    var memoLines = rawText.split('\n').map(function(line) {
+    var essayMemoSrc = readyShotOneLineMemo(memo) || '그럼에도 불구하고 자연에서 하루를 찾는다';
+    var memoLines = essayMemoSrc.split('\n').map(function(line) {
       return `<div style="margin:1px 0;">${escapeHtml(line)}</div>`;
     }).join('');
 
@@ -2118,7 +2720,7 @@ window.generateReadyShotMarkup = function(record, options) {
     }).join('');
 
     return `
-      <div class="ready-shot-card-vector ready-shot-essay" style="position:relative; width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto; overflow:hidden; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,0.9); display:flex; justify-content:center; align-items:center; box-sizing:border-box; background:#07090e; user-select:none;">
+      <div class="ready-shot-card-vector ready-shot-essay" style="position:relative; width:100%; max-width:330px; aspect-ratio:3/4; margin:auto; overflow:hidden; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,0.9); display:flex; justify-content:center; align-items:center; box-sizing:border-box; background:#07090e; user-select:none;">
         <div style="position:absolute; inset:0; overflow:hidden; z-index:1; pointer-events:none;">
           <img src="${escapeHtml(photoUrl)}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:112%; height:112%; object-fit:cover; object-position:${posX}% ${posY}%; filter:blur(9px) brightness(0.82); transform:scale(1.06); display:block; margin:-6%;" />
           <div style="position:absolute; inset:0; background:rgba(0,0,0,0.28);"></div>
@@ -2170,7 +2772,7 @@ window.generateReadyShotMarkup = function(record, options) {
       weightKg: weightKg,
       items: items,
       brand: brandSvgWhite,
-      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;'
+      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; margin:auto;'
     });
   }
 
@@ -2186,7 +2788,8 @@ window.generateReadyShotMarkup = function(record, options) {
       weightKg: weightKg,
       itemCount: totalCount,
       items: items,
-      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;'
+      memo: memo,
+      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; margin:auto;'
     });
   }
 
@@ -2202,7 +2805,8 @@ window.generateReadyShotMarkup = function(record, options) {
       weightKg: weightKg,
       itemCount: totalCount,
       items: items,
-      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;'
+      memo: memo,
+      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; margin:auto;'
     });
   }
 
@@ -2217,7 +2821,8 @@ window.generateReadyShotMarkup = function(record, options) {
       date: dateStr,
       weightKg: weightKg,
       itemCount: totalCount,
-      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;'
+      memo: memo,
+      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; margin:auto;'
     });
   }
 
@@ -2232,7 +2837,8 @@ window.generateReadyShotMarkup = function(record, options) {
       date: dateStr,
       weightKg: weightKg,
       itemCount: totalCount,
-      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;'
+      memo: memo,
+      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; margin:auto;'
     });
   }
 
@@ -2247,7 +2853,8 @@ window.generateReadyShotMarkup = function(record, options) {
       date: dateStr,
       weightKg: weightKg,
       itemCount: totalCount,
-      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;'
+      memo: memo,
+      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; margin:auto;'
     });
   }
 
@@ -2262,7 +2869,8 @@ window.generateReadyShotMarkup = function(record, options) {
       date: dateStr,
       weightKg: weightKg,
       items: items,
-      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;'
+      memo: memo,
+      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; margin:auto;'
     });
   }
 
@@ -2275,7 +2883,8 @@ window.generateReadyShotMarkup = function(record, options) {
       scale: scale,
       weightKg: weightKg,
       itemCount: totalCount,
-      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto;'
+      memo: memo,
+      wrapCss: 'width:100%; max-width:330px; aspect-ratio:3/4; margin:auto;'
     });
   }
 
@@ -2307,7 +2916,7 @@ window.generateReadyShotMarkup = function(record, options) {
   }
 
   return `
-    <div class="ready-shot-card-vector ready-shot-packing" style="width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto; background:#fbfaf7; box-shadow:0 12px 30px rgba(0,0,0,0.9); border-radius:12px; padding:8px 8px 10px 8px; display:flex; flex-direction:column; justify-content:space-between; gap:6px; box-sizing:border-box; color:#1e293b; font-family:'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; user-select:none;">
+    <div class="ready-shot-card-vector ready-shot-packing" style="width:100%; max-width:330px; aspect-ratio:3/4; margin:auto; background:#fbfaf7; box-shadow:0 12px 30px rgba(0,0,0,0.9); border-radius:12px; padding:8px 8px 10px 8px; display:flex; flex-direction:column; justify-content:space-between; gap:6px; box-sizing:border-box; color:#1e293b; font-family:'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; user-select:none;">
       <div style="position:relative; width:100%; flex:1 1 0%; min-height:100px; border-radius:6px; overflow:hidden; background:#000; box-shadow:inset 0 0 3px rgba(0,0,0,0.3);">
         <img src="${escapeHtml(photoUrl)}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block;" />
       </div>
@@ -2407,7 +3016,9 @@ window.saveCurrentPackingRecord = function() {
   };
 
   if (typeof window.savePackingHistoryRecord === 'function') {
-    window.savePackingHistoryRecord(newRecord);
+    window.savePackingHistoryRecord(newRecord).catch(function(err) {
+      console.warn('[templates.js:saveCurrentPackingRecord]', err);
+    });
   }
 
   window.openPackShareModal(newRecord, allItems, false);
@@ -2440,16 +3051,338 @@ function renderTemplateChips() {
   var chipContainer = findTemplateChipContainer();
   if (!chipContainer) return;
 
-  var html = TEMPLATE_ORDER.map(function(tId) {
-    var isActive = (Number(tId) === Number(selectedTemplateId));
-    var name = TEMPLATE_NAMES[tId] || ('테마 ' + tId);
-    return '<button type="button" class="tmpl-chip-btn' + (isActive ? ' active' : '') + '" onclick="switchShareCardTemplate(' + tId + ')" data-tmpl="' + tId + '">' +
-      escapeHtml(name) +
-    '</button>';
-  }).join('');
+  var family = window.readyShotFamily || 'photo';
+  var html = '';
+
+  if (family === 'photo') {
+    var activeMode = window.currentStudioCardMode || 'spread';
+    if (STUDIO_MODE_ORDER.indexOf(activeMode) === -1) activeMode = 'spread';
+    html = STUDIO_MODE_ORDER.map(function(mode) {
+      var isActive = (mode === activeMode);
+      var name = STUDIO_MODE_NAMES[mode] || mode;
+      return '<button type="button" class="tmpl-chip-btn' + (isActive ? ' active' : '') + '" onclick="window.switchStudioModeFromReadyShot(\'' + mode + '\')" data-studio-mode="' + mode + '">' +
+        escapeHtml(name) +
+      '</button>';
+    }).join('');
+  } else {
+    html = TEMPLATE_ORDER.map(function(tId) {
+      var isActive = (Number(tId) === Number(selectedTemplateId));
+      var name = TEMPLATE_NAMES[tId] || ('테마 ' + tId);
+      return '<button type="button" class="tmpl-chip-btn' + (isActive ? ' active' : '') + '" onclick="switchShareCardTemplate(' + tId + ')" data-tmpl="' + tId + '">' +
+        escapeHtml(name) +
+      '</button>';
+    }).join('');
+  }
 
   chipContainer.innerHTML = html;
+  scrollActiveReadyShotChipIntoView();
 }
+
+function scrollActiveReadyShotChipIntoView() {
+  var bar = document.getElementById('templateSelectorBar') || findTemplateChipContainer();
+  if (!bar) return;
+  var active = bar.querySelector('.tmpl-chip-btn.active');
+  if (!active) return;
+  requestAnimationFrame(function() {
+    var barRect = bar.getBoundingClientRect();
+    var btnRect = active.getBoundingClientRect();
+    if (!barRect.width || !btnRect.width) {
+      if (typeof active.scrollIntoView === 'function') {
+        active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+      return;
+    }
+    var delta = (btnRect.left + btnRect.width / 2) - (barRect.left + barRect.width / 2);
+    var maxLeft = Math.max(0, bar.scrollWidth - bar.clientWidth);
+    var nextLeft = Math.max(0, Math.min(maxLeft, bar.scrollLeft + delta));
+    if (typeof bar.scrollTo === 'function') {
+      bar.scrollTo({ left: nextLeft, behavior: 'smooth' });
+    } else {
+      bar.scrollLeft = nextLeft;
+    }
+  });
+}
+
+function syncReadyShotFamilyToggle() {
+  var family = window.readyShotFamily || 'photo';
+  var photoBtn = document.getElementById('btnReadyShotFamilyPhoto');
+  var pamphletBtn = document.getElementById('btnReadyShotFamilyPamphlet');
+  if (photoBtn) photoBtn.classList.toggle('active', family === 'photo');
+  if (pamphletBtn) pamphletBtn.classList.toggle('active', family === 'pamphlet');
+}
+
+function syncReadyShotPhotoButtons() {
+  // 사진 넣기/바꾸기는 카드 탭으로만 처리. 액션 줄 버튼은 유지하지 않음.
+}
+
+function scrollReadyShotCardIntoView() {
+  var modal = document.getElementById('packShareModalOverlay');
+  var card = document.getElementById('packShareCaptureArea');
+  if (!modal || !card) return;
+  try {
+    var modalRect = modal.getBoundingClientRect();
+    var cardRect = card.getBoundingClientRect();
+    var cardCenter = cardRect.top + (cardRect.height / 2);
+    // 화면 중앙보다 약간 아래(뷰포트 높이의 ~8%)에 카드 중심이 오도록
+    var targetY = modalRect.top + (modalRect.height * 0.58);
+    var nextTop = modal.scrollTop + (cardCenter - targetY);
+    if (typeof modal.scrollTo === 'function') {
+      modal.scrollTo({ top: Math.max(0, nextTop), behavior: 'smooth' });
+    } else {
+      modal.scrollTop = Math.max(0, nextTop);
+    }
+  } catch (e) {
+    try {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    } catch (e2) {}
+  }
+}
+
+window.triggerReadyShotPhotoPicker = function() {
+  var overlayInput = document.querySelector('#readyShotEmptyPhotoHit input[type="file"]');
+  if (overlayInput) {
+    try { overlayInput.value = ''; } catch (e) {}
+    overlayInput.click();
+    return;
+  }
+  var input = document.getElementById('shareCardPhotoInput');
+  if (input) {
+    try { input.value = ''; } catch (e) {}
+    input.click();
+    return;
+  }
+  var label = document.getElementById('shareCardPhotoInputLabel');
+  if (label) label.click();
+};
+
+var __readyShotFrameSnapshot = null;
+
+function isReadyShotFrameModalOpen() {
+  var el = document.getElementById('readyShotFrameOverlay');
+  if (!el) return false;
+  var d = el.style.display || '';
+  return d === 'flex' || (d !== 'none' && d !== '');
+}
+
+function bindReadyShotFramePhotoImg(host) {
+  if (!host) return null;
+  var existing = host.querySelector('#readyShotFrameImg');
+  if (existing) return existing;
+  var imgs = host.querySelectorAll('img');
+  var main = null;
+  for (var i = 0; i < imgs.length; i++) {
+    var el = imgs[i];
+    var src = (el.getAttribute('src') || '').toLowerCase();
+    if (src.indexOf('logo') !== -1 || src.indexOf('fulllogo') !== -1) continue;
+    var st = ((el.getAttribute('style') || '') + ' ' + (el.className || '')).toLowerCase();
+    if (st.indexOf('blur(') !== -1) continue;
+    if (
+      el.classList.contains('kc-photo') ||
+      el.classList.contains('bl-photo') ||
+      st.indexOf('object-fit:cover') !== -1 ||
+      st.indexOf('object-fit: cover') !== -1 ||
+      (el.closest && (el.closest('.iss-frame') || el.closest('.sp-photo') || el.closest('.mag-frame') || el.closest('.mag-photo')))
+    ) {
+      main = el;
+      break;
+    }
+    if (!main) main = el;
+  }
+  if (!main) {
+    for (var j = imgs.length - 1; j >= 0; j--) {
+      var s2 = (imgs[j].getAttribute('src') || '').toLowerCase();
+      if (s2.indexOf('logo') === -1) { main = imgs[j]; break; }
+    }
+  }
+  if (main) main.id = 'readyShotFrameImg';
+  return main;
+}
+
+function ensureReadyShotFrameModalDOM() {
+  var overlay = document.getElementById('readyShotFrameOverlay');
+  if (overlay && overlay.getAttribute('data-frame-v') !== '3') {
+    try { overlay.remove(); } catch (e) {}
+    overlay = null;
+  }
+  if (overlay) return overlay;
+
+  overlay = document.createElement('div');
+  overlay.id = 'readyShotFrameOverlay';
+  overlay.setAttribute('data-frame-v', '3');
+  // 불투명 단색 배경 (투명/블러 합성 없음)
+  overlay.style.cssText = 'display:none; position:fixed; inset:0; z-index:2147483000 !important; background:#0b0f14; justify-content:center; align-items:center; box-sizing:border-box; overscroll-behavior:none; touch-action:none;';
+  overlay.innerHTML =
+    '<div style="width:100%; max-width:440px; height:100%; margin:0 auto; display:flex; flex-direction:column; box-sizing:border-box; padding:calc(12px + env(safe-area-inset-top, 0px)) 14px calc(14px + env(safe-area-inset-bottom, 0px) + 56px) 14px;">' +
+      '<div style="flex-shrink:0; display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px;">' +
+        '<button type="button" onclick="window.closeReadyShotFrameModal(true)" style="height:34px; padding:0 12px; border-radius:17px; background:#1a2230; border:1px solid #334155; color:#e2e8f0; font-size:0.74rem; font-weight:800; cursor:pointer;">닫기</button>' +
+        '<span style="font-family:\'Space Grotesk\',sans-serif; font-size:0.78rem; font-weight:900; color:#fff; letter-spacing:0.4px;">사진 위치</span>' +
+        '<button type="button" onclick="window.applyReadyShotFrameModal()" style="height:34px; padding:0 14px; border-radius:17px; background:#fff; border:none; color:#000; font-size:0.74rem; font-weight:900; cursor:pointer;">확인</button>' +
+      '</div>' +
+      '<div id="readyShotFrameStage" style="flex:1; min-height:0; display:flex; align-items:center; justify-content:center; touch-action:none;">' +
+        '<div id="readyShotFrameCard" style="position:relative; width:100%; max-width:340px; aspect-ratio:3/4; max-height:100%; border-radius:14px; overflow:hidden; background:#111; box-shadow:0 12px 28px #000000;"></div>' +
+      '</div>' +
+      '<div style="flex-shrink:0; margin-top:12px; display:flex; gap:8px; width:100%;">' +
+        '<button type="button" onclick="window.resetStudioPhotoFraming()" style="flex:1; height:40px; border-radius:10px; background:#1a2230; border:1px solid #334155; color:#e2e8f0; font-size:0.74rem; font-weight:800; cursor:pointer;">초기화</button>' +
+        '<button type="button" onclick="window.triggerReadyShotPhotoPicker()" style="flex:1.3; height:40px; border-radius:10px; background:#123048; border:1px solid #38bdf8; color:#7dd3fc; font-size:0.74rem; font-weight:900; cursor:pointer;">사진 바꾸기</button>' +
+      '</div>' +
+      '<div style="flex-shrink:0; margin-top:8px; text-align:center; font-size:0.62rem; font-weight:700; color:#94a3b8;">템플릿 기준으로 드래그 · 핀치/휠 확대</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+window.refreshReadyShotFramePreview = function(forceRerender) {
+  var host = document.getElementById('readyShotFrameCard');
+  if (!host) return;
+  var photo = window.currentSharePhotoRaw || window.currentSharePhoto || '';
+  if (!photo || String(photo).indexOf('https://') !== 0) return;
+
+  var mode = window.currentStudioCardMode || 'spread';
+  if (STUDIO_MODE_ORDER.indexOf(mode) === -1) mode = 'spread';
+  var posX = (window.currentPhotoPosX !== undefined) ? window.currentPhotoPosX : 50;
+  var posY = (window.currentPhotoPosY !== undefined) ? window.currentPhotoPosY : 50;
+  var scale = currentPhotoScaleVal || 1.0;
+  var needRerender = !!forceRerender ||
+    host.getAttribute('data-frame-mode') !== mode ||
+    host.getAttribute('data-frame-photo') !== String(photo) ||
+    !host.querySelector('#readyShotFrameImg');
+
+  if (needRerender && typeof window.generateReadyShotMarkup === 'function') {
+    var rec = window.currentShareRecord || {};
+    var items = window.currentShareItems || rec.items || [];
+    var spotVal = (document.getElementById('shareCardSpotInput') || {}).value || rec.spot || '';
+    var memoVal = (document.getElementById('shareCardMemoInput') || {}).value || rec.oneLineMemo || rec.memo || '';
+    var markup = window.generateReadyShotMarkup(rec, {
+      photo: photo,
+      mode: mode,
+      posX: posX,
+      posY: posY,
+      scale: scale,
+      spot: spotVal,
+      date: rec.date || '',
+      weightKg: rec.weightKg || '0.00',
+      items: items,
+      memo: memoVal
+    });
+    host.innerHTML = markup;
+    host.setAttribute('data-frame-mode', mode);
+    host.setAttribute('data-frame-photo', String(photo));
+    var root = host.firstElementChild;
+    if (root && root.style) {
+      root.style.maxWidth = '100%';
+      root.style.width = '100%';
+      root.style.height = '100%';
+      root.style.maxHeight = '100%';
+      root.style.margin = '0';
+      root.style.boxShadow = 'none';
+      root.style.borderRadius = '14px';
+    }
+    bindReadyShotFramePhotoImg(host);
+  }
+
+  var img = document.getElementById('readyShotFrameImg') || bindReadyShotFramePhotoImg(host);
+  if (!img) return;
+  if (img.getAttribute('src') !== photo) img.src = photo;
+  img.style.objectPosition = posX + '% ' + posY + '%';
+  img.style.transformOrigin = posX + '% ' + posY + '%';
+  img.style.transform = 'scale(' + scale + ')';
+  img.style.pointerEvents = 'none';
+};
+
+window.openReadyShotFrameModal = function() {
+  var photo = window.currentSharePhotoRaw || window.currentSharePhoto;
+  if (!photo || String(photo).indexOf('https://') !== 0) {
+    if (typeof window.triggerReadyShotPhotoPicker === 'function') window.triggerReadyShotPhotoPicker();
+    return;
+  }
+  if (window.currentShareRecord) {
+    if (window.currentShareRecord.readyShotPosX !== undefined) window.currentPhotoPosX = window.currentShareRecord.readyShotPosX;
+    if (window.currentShareRecord.readyShotPosY !== undefined) window.currentPhotoPosY = window.currentShareRecord.readyShotPosY;
+    if (window.currentShareRecord.readyShotScale !== undefined) currentPhotoScaleVal = window.currentShareRecord.readyShotScale;
+  }
+  __readyShotFrameSnapshot = {
+    posX: (window.currentPhotoPosX !== undefined) ? window.currentPhotoPosX : 50,
+    posY: (window.currentPhotoPosY !== undefined) ? window.currentPhotoPosY : 50,
+    scale: currentPhotoScaleVal || 1.0,
+    photo: window.currentSharePhotoRaw || window.currentSharePhoto || ''
+  };
+  window.currentCardRatio = '3/4';
+  var overlay = ensureReadyShotFrameModalDOM();
+  overlay.style.setProperty('display', 'flex', 'important');
+  window.refreshReadyShotFramePreview(true);
+  var stage = document.getElementById('readyShotFrameCard') || document.getElementById('readyShotFrameStage');
+  if (stage) setupStudioPhotoDrag(stage);
+  if (typeof triggerHaptic === 'function') triggerHaptic(10);
+};
+
+window.closeReadyShotFrameModal = function(cancel) {
+  teardownStudioPhotoDrag();
+  if (cancel && __readyShotFrameSnapshot) {
+    window.currentPhotoPosX = __readyShotFrameSnapshot.posX;
+    window.currentPhotoPosY = __readyShotFrameSnapshot.posY;
+    currentPhotoScaleVal = __readyShotFrameSnapshot.scale;
+    if (__readyShotFrameSnapshot.photo) {
+      window.currentSharePhoto = __readyShotFrameSnapshot.photo;
+      window.currentSharePhotoRaw = __readyShotFrameSnapshot.photo;
+    }
+  }
+  __readyShotFrameSnapshot = null;
+  var overlay = document.getElementById('readyShotFrameOverlay');
+  if (overlay) overlay.style.setProperty('display', 'none', 'important');
+  if (typeof updateShareCardLive === 'function') updateShareCardLive();
+  setTimeout(function() { initCardSwipeGesture(); }, 40);
+};
+
+window.applyReadyShotFrameModal = function() {
+  window.currentShareRecord = window.currentShareRecord || {};
+  window.currentShareRecord.readyShotPhoto = window.currentSharePhotoRaw || window.currentSharePhoto || '';
+  window.currentShareRecord.ready_shot_photo = window.currentShareRecord.readyShotPhoto;
+  window.currentShareRecord.readyShotPosX = (window.currentPhotoPosX !== undefined) ? window.currentPhotoPosX : 50;
+  window.currentShareRecord.readyShotPosY = (window.currentPhotoPosY !== undefined) ? window.currentPhotoPosY : 50;
+  window.currentShareRecord.readyShotScale = currentPhotoScaleVal || 1.0;
+  window.currentShareRecord.readyShotRatio = '3/4';
+  window.currentCardRatio = '3/4';
+  __readyShotFrameSnapshot = null;
+  window.closeReadyShotFrameModal(false);
+  if (typeof showToast === 'function') showToast('사진 위치가 적용되었습니다.', 'success', 1400);
+  if (typeof triggerHaptic === 'function') triggerHaptic(12);
+};
+
+window.switchReadyShotFamily = function(family) {
+  var next = (family === 'pamphlet') ? 'pamphlet' : 'photo';
+  window.readyShotFamily = next;
+  try { localStorage.setItem('romantic_ready_shot_family', next); } catch (e) {}
+  syncReadyShotFamilyToggle();
+  renderTemplateChips();
+  updateShareCardLive();
+  if (typeof triggerHaptic === 'function') triggerHaptic(10);
+};
+
+window.switchStudioModeFromReadyShot = function(mode) {
+  if (mode === 'nrc') mode = 'overlay';
+  if (mode === 'packing') mode = 'magazine';
+  if (STUDIO_MODE_ORDER.indexOf(mode) === -1) mode = 'spread';
+  window.currentStudioCardMode = mode;
+  try { localStorage.setItem('romantic_studio_mode', mode); } catch (e) {}
+  window.readyShotFamily = 'photo';
+  try { localStorage.setItem('romantic_ready_shot_family', 'photo'); } catch (e) {}
+  if (window.currentShareRecord) {
+    window.currentShareRecord.readyShotMode = mode;
+  }
+  syncReadyShotFamilyToggle();
+  renderTemplateChips();
+  updateShareCardLive();
+  if (typeof triggerHaptic === 'function') triggerHaptic(12);
+};
+
+window.openReadyShotCropEditor = function() {
+  var photo = window.currentSharePhotoRaw || window.currentSharePhoto;
+  if (!photo || String(photo).indexOf('https://') !== 0) {
+    if (typeof showToast === 'function') showToast('먼저 사진을 넣어주세요.', 'warn');
+    return;
+  }
+  window.openPhotoStudio();
+};
 
 // 🔍 [박지 실시간 검색 & 자동완성 전담 엔진 (신규 삽입)]
 window.handleSpotSearchInput = function(val) {
@@ -2568,56 +3501,28 @@ window.clearSpotSearchInput = function() {
 };
 
 window.sharePackCardDirect = async function() {
-  var card = document.getElementById('packShareCaptureArea');
-  var h2c = (typeof html2canvas === 'function') ? html2canvas : (typeof window !== 'undefined' ? window.html2canvas : null);
-  if (!card || typeof h2c !== 'function') {
-    if (typeof showToast === 'function') showToast('이미지 처리 엔진을 불러오는 중입니다. 잠시 후 다시 시도해주세요.', 'warn');
-    return;
+  var btn = document.getElementById('btnShareCardShareTop');
+  var prevHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.style.pointerEvents = 'none';
+    btn.style.opacity = '0.7';
   }
   if (typeof triggerHaptic === 'function') triggerHaptic(15);
-  if (typeof showToast === 'function') showToast('카드를 준비 중입니다...', 'info', 1500);
+  if (typeof showToast === 'function') showToast('레디샷 이미지를 준비 중입니다...', 'info', 1600);
 
   try {
-    var canvas = await h2c(card, {
-      backgroundColor: null,
-      scale: 3.0,
-      useCORS: true,
-      allowTaint: false,
-      logging: false
-    });
-
-    if (navigator.share && navigator.canShare) {
-      canvas.toBlob(async function(blob) {
-        if (!blob) return;
-        var file = new File([blob], 'romantic_pack_' + Date.now() + '.png', { type: 'image/png' });
-        if (navigator.canShare({ files: [file] })) {
-          try {
-            await navigator.share({
-              files: [file],
-              title: '낭만루트',
-              text: '낭만루트 패킹 카드'
-            });
-            return;
-          } catch (shErr) {
-            if (shErr.name === 'AbortError') return;
-          }
-        }
-        var link = document.createElement('a');
-        link.download = '낭만루트_패킹카드_' + Date.now() + '.png';
-        link.href = canvas.toDataURL('image/png', 0.95);
-        link.click();
-        if (typeof showToast === 'function') showToast('카드가 저장되었습니다.', 'success', 2200);
-      }, 'image/png', 0.95);
-    } else {
-      var link = document.createElement('a');
-      link.download = '낭만루트_패킹카드_' + Date.now() + '.png';
-      link.href = canvas.toDataURL('image/png', 0.95);
-      link.click();
-      if (typeof showToast === 'function') showToast('카드가 저장되었습니다.', 'success', 2200);
-    }
+    var canvas = await captureReadyShotShareCanvas();
+    var blob = await canvasToShareBlob(canvas);
+    window.openReadyShotShareSheet(blob);
   } catch (err) {
     console.warn('[templates.js:sharePackCardDirect]', err);
     if (typeof showToast === 'function') showToast('카드 생성 중 오류가 발생했습니다.', 'warn');
+  } finally {
+    if (btn) {
+      btn.style.pointerEvents = '';
+      btn.style.opacity = '';
+      if (prevHtml) btn.innerHTML = prevHtml;
+    }
   }
 };
 
@@ -2635,12 +3540,11 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
   }
 
   try {
-    var spotInput = document.getElementById('shareCardSpotInput');
     var memoInput = document.getElementById('shareCardMemoInput');
 
-    var liveSpot = (spotInput && spotInput.value.trim().length > 0)
-      ? spotInput.value.trim()
-      : (window.currentShareRecord && window.currentShareRecord.spot ? window.currentShareRecord.spot : '');
+    var liveSpot = (window.currentShareRecord && window.currentShareRecord.spot)
+      ? String(window.currentShareRecord.spot).trim()
+      : '';
 
     var liveMemo = (memoInput && memoInput.value.trim().length > 0)
       ? memoInput.value.trim()
@@ -2675,7 +3579,10 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       });
     }
 
-    var finalReadyShot = rec.readyShotPhoto || (typeof window.currentSharePhoto === 'string' && window.currentSharePhoto.startsWith('https://') ? window.currentSharePhoto : '');
+    var finalReadyShot = resolveReadyShotPhotoUrl();
+    if (!finalReadyShot && rec.readyShotPhoto && String(rec.readyShotPhoto).indexOf('https://') === 0) {
+      finalReadyShot = String(rec.readyShotPhoto).trim();
+    }
 
     var newRecord = {
       id: rec.id || ('pack_' + Date.now()),
@@ -2691,14 +3598,28 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       items: items,
       photos: fieldPhotos,
       readyShotPhoto: finalReadyShot,
-      readyShotMode: rec.readyShotMode || window.currentStudioCardMode || 'minimal',
+      readyShotMode: (window.readyShotFamily === 'photo')
+        ? (rec.readyShotMode || window.currentStudioCardMode || 'spread')
+        : (rec.readyShotMode || window.currentStudioCardMode || 'minimal'),
       readyShotPosX: (rec.readyShotPosX !== undefined) ? rec.readyShotPosX : ((window.currentPhotoPosX !== undefined) ? window.currentPhotoPosX : 50),
       readyShotPosY: (rec.readyShotPosY !== undefined) ? rec.readyShotPosY : ((window.currentPhotoPosY !== undefined) ? window.currentPhotoPosY : 50),
       readyShotScale: rec.readyShotScale || currentPhotoScaleVal || 1.0,
       readyShotRatio: rec.readyShotRatio || window.currentCardRatio || '3/4',
-      templateId: window.selectedTemplateId || rec.templateId || 1,
-      isPublished: fieldPhotos.length > 0
+      templateId: window.selectedTemplateId || selectedTemplateId || rec.templateId || 1,
+      isPublished: false,
+      unregisteredSpot: false
     };
+
+    if (typeof window.okbmCanPublishFeed === 'function') {
+      newRecord.isPublished = window.okbmCanPublishFeed(newRecord, { skipDate: true });
+      if (!newRecord.isPublished && typeof window.isSpotRegisteredInMasterDB === 'function' &&
+          !window.isSpotRegisteredInMasterDB(String(newRecord.spot || '').trim())) {
+        newRecord.unregisteredSpot = true;
+      }
+    } else if (fieldPhotos.length > 0 && typeof window.isSpotRegisteredInMasterDB === 'function' &&
+        window.isSpotRegisteredInMasterDB(String(newRecord.spot || '').trim())) {
+      newRecord.isPublished = true;
+    }
 
     if (typeof window.savePackingHistoryRecord === 'function') {
       await window.savePackingHistoryRecord(newRecord);
@@ -2724,7 +3645,7 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
     if (vaultBtn) {
       vaultBtn.style.pointerEvents = '';
       vaultBtn.style.opacity = '';
-      vaultBtn.innerHTML = prevVaultHtml || '<span>보관함에 출발 등록 ✓</span>';
+      vaultBtn.innerHTML = prevVaultHtml || '<span>낭만보관함에 저장</span>';
     }
     setTimeout(function() { window.__isSavingCardLock = false; }, 1200);
   }
@@ -2741,7 +3662,9 @@ function safeGetJSON(key, defaultVal) {
 
 function ensurePackShareModalDOM() {
   var modal = document.getElementById('packShareModalOverlay');
-  if (modal && document.getElementById('packShareCaptureArea')) {
+  if (modal && document.getElementById('packShareCaptureArea') && document.getElementById('readyShotFamilyToggle') && document.getElementById('readyShotSpotVaultRow') && document.getElementById('shareCardPhotoInput') && document.getElementById('shareCardPhotoInputLabel') && document.getElementById('btnShareCardShareTop') && document.getElementById('btnSaveCardToVault') && document.getElementById('readyShotBottomSpacer')) {
+    // 독 높이와 하단 여백을 항상 동기화 (기존 모달 재사용 시 틈 방지)
+    modal.style.setProperty('bottom', 'calc(56px + env(safe-area-inset-bottom, 0px))', 'important');
     return modal;
   }
 
@@ -2752,60 +3675,55 @@ function ensurePackShareModalDOM() {
     document.body.appendChild(modal);
   }
 
-  modal.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; bottom:calc(60px + env(safe-area-inset-bottom, 0px)) !important; width:100%; background:#07090e; z-index:2000010 !important; justify-content:center; align-items:stretch; padding:0 !important; margin:0 !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; box-sizing:border-box; transform:translateZ(0); -webkit-transform:translateZ(0);';
+  modal.style.cssText = 'display:none; position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 0px)) !important; width:100%; background:#07090e; z-index:2000010 !important; justify-content:center; align-items:stretch; padding:0 !important; margin:0 !important; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; box-sizing:border-box; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
   modal.innerHTML = `
-    <div style="width:100%; max-width:440px; margin:0 auto; min-height:100%; display:flex; flex-direction:column; justify-content:flex-start; gap:10px; padding:calc(8px + env(safe-area-inset-top, 0px)) 12px calc(16px + env(safe-area-inset-bottom, 0px)) 12px; box-sizing:border-box; position:relative;">
+    <div style="width:100%; max-width:440px; margin:0 auto; min-height:100%; display:flex; flex-direction:column; justify-content:flex-start; gap:10px; padding:calc(8px + env(safe-area-inset-top, 0px)) 12px 0 12px; box-sizing:border-box; position:relative;">
       
       <div style="flex-shrink:0; display:flex; flex-direction:column; gap:5px; width:100%; box-sizing:border-box;">
         <div style="display:flex; justify-content:space-between; align-items:center; height:32px;">
           <div style="display:flex; align-items:center; gap:6px;">
-            <!-- 📷 순수 SVG 렌즈/셔터 프레임 벡터 아이콘 -->
             <svg viewBox="0 0 24 24" fill="none" stroke="#e2e8f0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px; height:16px; display:block; flex-shrink:0;"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="12" cy="12" r="3"/><line x1="3" x2="21" y1="9" y2="9"/></svg>
             <span style="font-size:0.92rem; font-weight:900; color:#ffffff; font-family:'Space Grotesk', -apple-system, sans-serif; letter-spacing:0.5px;">READY SHOT</span>
           </div>
           <button type="button" onclick="window.closePackShareModal();" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
         </div>
 
-       <div style="position:relative; width:100%; display:flex; align-items:center;">
-          <div style="position:absolute; left:9px; pointer-events:none; display:flex; align-items:center; justify-content:center; z-index:2;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; display:block;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        <div id="readyShotSpotVaultRow" style="display:flex; gap:5px; width:100%; align-items:center; box-sizing:border-box;">
+          <div style="flex:7; min-width:0; position:relative; display:flex; align-items:center;">
+            <div style="position:absolute; left:9px; pointer-events:none; display:flex; align-items:center; justify-content:center; z-index:2;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; display:block;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div id="shareCardSpotLabel" style="width:100%; height:32px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#e2e8f0; font-size:0.75rem; font-weight:800; padding:0 10px 0 26px; box-sizing:border-box; display:flex; align-items:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="장소는 패킹계획에서 설정됩니다">장소 미설정</div>
           </div>
-          <input type="text" id="shareCardSpotInput" placeholder="장소명 입력 (자동완성)" oninput="window.handleSpotSearchInput(this.value); if(typeof updateShareCardLive==='function') updateShareCardLive();" style="width:100%; height:32px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; font-size:0.75rem; padding:0 30px 0 26px; outline:none; box-sizing:border-box;" />
-          <button type="button" id="btnSpotInputClear" onclick="window.clearSpotSearchInput();" style="display:none; position:absolute; right:8px; background:rgba(255,255,255,0.15); border:none; color:#cbd5e1; width:18px; height:18px; border-radius:50%; font-size:0.65rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0;">✕</button>
-          <div id="spotSearchDropdown" style="display:none; position:absolute; top:36px; left:0; right:0; max-height:180px; overflow-y:auto; background:#0f172a; border:1px solid rgba(56,189,248,0.4); border-radius:8px; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,0.8);"></div>
-        </div>
-
-        <div style="display:flex; gap:5px; width:100%; align-items:center;">
-          <input type="text" id="shareCardMemoInput" placeholder="한줄 메모 (선택)" oninput="if(typeof updateShareCardLive==='function') updateShareCardLive();" style="flex:1; height:32px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; font-size:0.75rem; padding:0 10px; outline:none; box-sizing:border-box;" />
-          
-          <input type="file" id="shareCardPhotoInput" accept="image/*" style="display:none;" onchange="window.handleShareCardPhotoUpload(event)" />
-          <button type="button" onclick="document.getElementById('shareCardPhotoInput').click()" style="height:32px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); color:#38bdf8; font-size:0.72rem; font-weight:900; padding:0 10px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; gap:4px; flex-shrink:0; white-space:nowrap; cursor:pointer;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px; height:13px; flex-shrink:0;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            <span>스튜디오</span>
+          <button type="button" id="btnSaveCardToVault" onclick="window.saveCardToVaultAndOpenBasecamp();" style="flex:3; min-width:0; height:32px; background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border:1px solid #38bdf8; color:#ffffff; font-size:0.68rem; font-weight:900; padding:0 6px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 4px 14px rgba(2,132,199,0.35); box-sizing:border-box; white-space:nowrap;">
+            <span>낭만보관함에 저장</span>
           </button>
         </div>
 
+        <div style="display:flex; gap:5px; width:100%; align-items:center; min-width:0;">
+          <input type="text" id="shareCardMemoInput" placeholder="한줄 메모 (선택)" oninput="if(typeof updateShareCardLive==='function') updateShareCardLive();" style="flex:1; min-width:0; height:32px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#fff; font-size:0.75rem; padding:0 10px; outline:none; box-sizing:border-box;" />
+          <button type="button" id="btnShareCardShareTop" onclick="window.sharePackCardDirect();" style="height:32px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); color:#38bdf8; font-size:0.72rem; font-weight:900; padding:0 10px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; gap:4px; flex-shrink:0; white-space:nowrap; cursor:pointer;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px; height:13px; flex-shrink:0;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            <span>공유하기</span>
+          </button>
+        </div>
+
+        <div id="readyShotFamilyToggle" class="ready-shot-family-toggle">
+          <button type="button" id="btnReadyShotFamilyPhoto" class="ready-shot-family-btn active" onclick="window.switchReadyShotFamily('photo')">사진</button>
+          <button type="button" id="btnReadyShotFamilyPamphlet" class="ready-shot-family-btn" onclick="window.switchReadyShotFamily('pamphlet')">팜플렛</button>
+        </div>
+
         <div id="templateSelectorBar" class="template-selector-bar"></div>
+        <input type="file" id="shareCardPhotoInput" accept="image/*,.heic,.heif" style="position:fixed; left:0; bottom:0; width:100%; height:1px; opacity:0.01; overflow:hidden; z-index:0;" onchange="window.handleShareCardPhotoUpload(event)" />
+        <label id="shareCardPhotoInputLabel" for="shareCardPhotoInput" style="position:absolute; width:1px; height:1px; overflow:hidden;">사진 선택</label>
       </div>
 
       <div style="flex-shrink:0; width:100%; display:flex; align-items:center; justify-content:center; padding:2px 0; box-sizing:border-box;">
         <div id="packShareCaptureArea" style="width:100%; max-width:330px; display:flex; align-items:center; justify-content:center; transition:transform 0.2s ease, opacity 0.2s ease;"></div>
       </div>
 
-      <div style="display:flex; gap:6px; width:100%; flex-shrink:0; box-sizing:border-box; margin-top:auto; padding-top:4px;">
-        <button type="button" onclick="window.closePackShareModal();" style="flex:0.8; height:42px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; font-size:0.76rem; font-weight:800; border-radius:10px; cursor:pointer;">
-          닫기
-        </button>
-        <button type="button" onclick="window.sharePackCardDirect();" style="flex:1.1; height:42px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); color:#38bdf8; font-size:0.78rem; font-weight:900; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:13px; height:13px;"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-          <span>공유하기</span>
-        </button>
-        <button type="button" id="btnSaveCardToVault" onclick="window.saveCardToVaultAndOpenBasecamp();" style="flex:1.8; height:42px; background:linear-gradient(135deg, #0284c7 0%, #0369a1 100%); border:1px solid #38bdf8; color:#ffffff; font-size:0.82rem; font-weight:900; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:0 4px 14px rgba(2,132,199,0.4);">
-          <span>보관함에 출발 등록 ✓</span>
-        </button>
-      </div>
-
+      <div id="readyShotBottomSpacer" style="flex-shrink:0; width:100%; height:calc(28px + env(safe-area-inset-bottom, 0px)); pointer-events:none;" aria-hidden="true"></div>
     </div>
   `;
 
@@ -2825,29 +3743,35 @@ window.handleShareCardPhotoUpload = async function(e) {
   var uploadedUrl = '';
 
   try {
-    var blob = await new Promise(function(resolve) {
-      var objectUrl = URL.createObjectURL(file);
-      var img = new Image();
-      img.onload = function() {
-        URL.revokeObjectURL(objectUrl);
-        var canvas = document.createElement('canvas');
-        var ctx = canvas.getContext('2d');
-        var MAX_DIM = 1200;
-        var maxLen = Math.max(img.width, img.height);
-        var scale = maxLen > MAX_DIM ? (MAX_DIM / maxLen) : 1;
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob(function(b) { resolve(b); }, 'image/jpeg', 0.86);
-      };
-      img.onerror = function() {
-        URL.revokeObjectURL(objectUrl);
-        resolve(null);
-      };
-      img.src = objectUrl;
-    });
+    var blob = null;
+    if (typeof window.processSinglePhotoSmart === 'function') {
+      blob = await window.processSinglePhotoSmart(file);
+    }
+    if (!blob) {
+      blob = await new Promise(function(resolve) {
+        var objectUrl = URL.createObjectURL(file);
+        var img = new Image();
+        img.onload = function() {
+          URL.revokeObjectURL(objectUrl);
+          var canvas = document.createElement('canvas');
+          var ctx = canvas.getContext('2d');
+          var MAX_DIM = 1200;
+          var maxLen = Math.max(img.width, img.height);
+          var scale = maxLen > MAX_DIM ? (MAX_DIM / maxLen) : 1;
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(function(b) { resolve(b); }, 'image/jpeg', 0.86);
+        };
+        img.onerror = function() {
+          URL.revokeObjectURL(objectUrl);
+          resolve(null);
+        };
+        img.src = objectUrl;
+      });
+    }
 
     if (blob) {
       var safeFileName = 'ready_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7) + '.jpg';
@@ -2876,7 +3800,50 @@ window.handleShareCardPhotoUpload = async function(e) {
     window.__studioMultiPhotos = null;
     window.currentSharePhoto = uploadedUrl;
     window.currentSharePhotoRaw = uploadedUrl;
-    window.openPhotoStudio();
+    window.currentPhotoPosX = 50;
+    window.currentPhotoPosY = 50;
+    currentPhotoScaleVal = 1.0;
+    window.currentCardRatio = '3/4';
+    if (!window.currentShareRecord || typeof window.currentShareRecord.then === 'function') {
+      window.currentShareRecord = {
+        id: 'pack_' + Date.now(),
+        date: '',
+        spot: '',
+        items: window.currentShareItems || [],
+        photos: []
+      };
+    }
+    window.currentShareRecord.readyShotPhoto = uploadedUrl;
+    window.currentShareRecord.ready_shot_photo = uploadedUrl;
+    window.currentShareRecord.readyShotMode = window.currentStudioCardMode || 'spread';
+    window.currentShareRecord.readyShotPosX = 50;
+    window.currentShareRecord.readyShotPosY = 50;
+    window.currentShareRecord.readyShotScale = 1.0;
+    window.currentShareRecord.readyShotRatio = '3/4';
+    window.readyShotFamily = 'photo';
+    try { localStorage.setItem('romantic_ready_shot_family', 'photo'); } catch (e2) {}
+    persistReadyShotPhotoNow(uploadedUrl);
+    syncReadyShotFamilyToggle();
+    syncReadyShotPhotoButtons();
+    renderTemplateChips();
+    if (typeof updateShareCardLive === 'function') updateShareCardLive();
+    if (typeof isReadyShotFrameModalOpen === 'function' && isReadyShotFrameModalOpen()) {
+      if (__readyShotFrameSnapshot) {
+        __readyShotFrameSnapshot.photo = uploadedUrl;
+        __readyShotFrameSnapshot.posX = 50;
+        __readyShotFrameSnapshot.posY = 50;
+        __readyShotFrameSnapshot.scale = 1.0;
+      }
+      if (typeof window.refreshReadyShotFramePreview === 'function') window.refreshReadyShotFramePreview(true);
+      var frameStage = document.getElementById('readyShotFrameCard') || document.getElementById('readyShotFrameStage');
+      if (frameStage) setupStudioPhotoDrag(frameStage);
+    } else {
+      setTimeout(function() {
+        initCardSwipeGesture();
+        scrollReadyShotCardIntoView();
+      }, 100);
+    }
+    if (typeof showToast === 'function') showToast('사진이 적용되었습니다.', 'success', 1600);
   } else {
     if (typeof showToast === 'function') showToast('사진 업로드에 실패했습니다. 네트워크를 확인해주세요.', 'warn');
   }
@@ -2885,6 +3852,9 @@ window.handleShareCardPhotoUpload = async function(e) {
 window.closePackShareModal = function() {
   teardownCardSwipeGesture();
   teardownStudioPhotoDrag();
+  closeReadyShotShareSheet();
+  var frameOverlay = document.getElementById('readyShotFrameOverlay');
+  if (frameOverlay) frameOverlay.style.setProperty('display', 'none', 'important');
   var modal = document.getElementById('packShareModalOverlay');
   if (modal) {
     modal.style.setProperty('display', 'none', 'important');
@@ -2896,6 +3866,11 @@ window.closePackShareModal = function() {
 };
 
 window.openPackShareModal = function(record, items, forceStudio) {
+  if (record && typeof record.then === 'function') {
+    record = (window.currentShareRecord && typeof window.currentShareRecord.then !== 'function')
+      ? window.currentShareRecord
+      : null;
+  }
   var modal = ensurePackShareModalDOM();
   if (modal) {
     modal.classList.add('active');
@@ -2903,6 +3878,7 @@ window.openPackShareModal = function(record, items, forceStudio) {
     modal.style.setProperty('z-index', '2000010', 'important');
     modal.style.setProperty('visibility', 'visible', 'important');
     modal.style.setProperty('opacity', '1', 'important');
+    modal.style.setProperty('bottom', 'calc(56px + env(safe-area-inset-bottom, 0px))', 'important');
   }
   document.body.style.overflow = 'hidden';
 
@@ -2913,6 +3889,7 @@ window.openPackShareModal = function(record, items, forceStudio) {
     weightGrams: 0,
     items: []
   };
+  window.currentShareRecord = currentShareRecord;
 
   var candidateItems = (Array.isArray(items) && items.length > 0) ? items : (currentShareRecord.items || currentShareRecord.gears || []);
   currentShareItems = candidateItems.map(function(item) {
@@ -2945,6 +3922,7 @@ window.openPackShareModal = function(record, items, forceStudio) {
   }
 
   var totalGramsCalc = currentShareItems.reduce(function(sum, g) { return sum + Number(g.weight || 0); }, 0);
+  window.currentShareItems = currentShareItems;
   if (!currentShareRecord.weightKg || currentShareRecord.weightKg === 'undefined' || currentShareRecord.weightKg === '0.00') {
     currentShareRecord.weightKg = (totalGramsCalc > 0) ? (totalGramsCalc / 1000).toFixed(2) : '0.00';
   }
@@ -2953,12 +3931,32 @@ window.openPackShareModal = function(record, items, forceStudio) {
   }
 
   currentSharePhoto = currentShareRecord.readyShotPhoto || currentShareRecord.ready_shot_photo || '';
+  window.currentSharePhoto = currentSharePhoto;
+  window.currentSharePhotoRaw = currentSharePhoto;
   currentPhotoTextColor = currentShareRecord.textColor || 'white';
-  currentCardRatio = currentShareRecord.ratio || '9/16';
+  currentCardRatio = '3/4';
+  window.currentCardRatio = '3/4';
+  currentShareRecord.readyShotRatio = '3/4';
 
-  var spotInput = document.getElementById('shareCardSpotInput');
+  if (currentShareRecord.readyShotPosX !== undefined) window.currentPhotoPosX = currentShareRecord.readyShotPosX;
+  if (currentShareRecord.readyShotPosY !== undefined) window.currentPhotoPosY = currentShareRecord.readyShotPosY;
+  if (currentShareRecord.readyShotScale !== undefined) currentPhotoScaleVal = currentShareRecord.readyShotScale;
+
+  var savedMode = '';
+  try { savedMode = localStorage.getItem('romantic_studio_mode') || ''; } catch (e) {}
+  var recordMode = currentShareRecord.readyShotMode || currentShareRecord.ready_shot_mode || '';
+  var modeCandidate = recordMode || savedMode || 'spread';
+  if (modeCandidate === 'nrc') modeCandidate = 'overlay';
+  if (modeCandidate === 'packing') modeCandidate = 'magazine';
+  if (STUDIO_MODE_ORDER.indexOf(modeCandidate) === -1) modeCandidate = 'spread';
+  window.currentStudioCardMode = modeCandidate;
+
+  var savedFamily = '';
+  try { savedFamily = localStorage.getItem('romantic_ready_shot_family') || ''; } catch (e) {}
+  window.readyShotFamily = (savedFamily === 'pamphlet') ? 'pamphlet' : 'photo';
+
+  var spotLabel = document.getElementById('shareCardSpotLabel');
   var memoInput = document.getElementById('shareCardMemoInput');
-  var clearBtn = document.getElementById('btnSpotInputClear');
 
  // 🛡️ [하드코딩 박멸]: 박지 미입력 시 '나의 힐링 스팟', 각오/메모 미입력 시 완전 공백('')
   var autoSpot = currentShareRecord.spot || '';
@@ -2970,9 +3968,13 @@ window.openPackShareModal = function(record, items, forceStudio) {
   }
   if (!autoSpot && targetDateStr) {
     var pSpots = (typeof safeGetJSON === 'function') ? safeGetJSON('okbm_plan_spots', {}) : {};
-    if (pSpots[targetDateStr] && pSpots[targetDateStr].name) {
-      autoSpot = pSpots[targetDateStr].name;
-      if (pSpots[targetDateStr].elevation) currentShareRecord.elevation = pSpots[targetDateStr].elevation;
+    var planEntry = pSpots[targetDateStr];
+    if (Array.isArray(planEntry) && planEntry[0] && planEntry[0].name) {
+      autoSpot = planEntry[0].name;
+      if (planEntry[0].elevation) currentShareRecord.elevation = planEntry[0].elevation;
+    } else if (planEntry && planEntry.name) {
+      autoSpot = planEntry.name;
+      if (planEntry.elevation) currentShareRecord.elevation = planEntry.elevation;
     }
   }
   if (!autoSpot && targetDateStr) {
@@ -2989,10 +3991,10 @@ window.openPackShareModal = function(record, items, forceStudio) {
 
   currentShareRecord.spot = autoSpot || '나의 힐링 스팟';
   currentShareRecord.oneLineMemo = currentShareRecord.oneLineMemo || '';
+  currentShareRecord.readyShotMode = window.currentStudioCardMode;
 
-  if (spotInput) {
-    spotInput.value = autoSpot;
-    if (clearBtn) clearBtn.style.display = autoSpot ? 'flex' : 'none';
+  if (spotLabel) {
+    spotLabel.textContent = currentShareRecord.spot;
   }
   if (memoInput) {
     memoInput.value = currentShareRecord.oneLineMemo || '';
@@ -3000,9 +4002,13 @@ window.openPackShareModal = function(record, items, forceStudio) {
 
   var savedTmpl = parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
   selectedTemplateId = TEMPLATE_ORDER.indexOf(savedTmpl) !== -1 ? savedTmpl : TEMPLATE_ORDER[0];
+  window.selectedTemplateId = selectedTemplateId;
 
+  document.body.classList.add('pack-share-open');
+  syncReadyShotFamilyToggle();
+  syncReadyShotPhotoButtons();
   renderTemplateChips();
-  switchShareCardTemplate(selectedTemplateId);
+  updateShareCardLive();
 
   if (__cardSwipeInitTimer) {
     clearTimeout(__cardSwipeInitTimer);
@@ -3023,7 +4029,11 @@ function switchShareCardTemplate(tmplId, isSwipe) {
   }
 
   selectedTemplateId = targetId;
+  window.selectedTemplateId = targetId;
   localStorage.setItem('romantic_selected_template', targetId);
+  window.readyShotFamily = 'pamphlet';
+  try { localStorage.setItem('romantic_ready_shot_family', 'pamphlet'); } catch (e) {}
+  syncReadyShotFamilyToggle();
 
   var chips = document.querySelectorAll('.tmpl-chip-btn, [data-tmpl]');
   if (chips.length === 0) {
@@ -3035,10 +4045,8 @@ function switchShareCardTemplate(tmplId, isSwipe) {
     var bId = Number(btn.getAttribute('data-tmpl'));
     var isActive = (bId === selectedTemplateId);
     btn.classList.toggle('active', isActive);
-    if (isActive && typeof btn.scrollIntoView === 'function') {
-      btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
   });
+  scrollActiveReadyShotChipIntoView();
 
   // 🛡️ 헤더 타이틀은 항상 READY SHOT으로 고정 (템플릿 이름 덮어쓰기 완전 제거)
 
@@ -3050,13 +4058,60 @@ function switchShareCardTemplate(tmplId, isSwipe) {
 function updateShareCardLive() {
   var container = document.getElementById('packShareCaptureArea');
   if (!container) return;
-  var spotInput = document.getElementById('shareCardSpotInput');
+  container.style.transition = 'none';
+  container.style.transform = 'translateX(0px) rotate(0deg)';
+  container.style.opacity = '1';
   var memoInput = document.getElementById('shareCardMemoInput');
-  var spotVal = (spotInput && spotInput.value) ? spotInput.value.trim() : '';
+  var spotVal = (window.currentShareRecord && window.currentShareRecord.spot)
+    ? String(window.currentShareRecord.spot).trim()
+    : '';
   var memoVal = (memoInput && memoInput.value) ? memoInput.value.trim() : '';
+  var family = window.readyShotFamily || 'photo';
 
   container.className = 'share-card-container';
+  syncReadyShotPhotoButtons();
+
+  if (family === 'photo') {
+    var rec = window.currentShareRecord || currentShareRecord || {};
+    var items = (Array.isArray(window.currentShareItems) && window.currentShareItems.length > 0)
+      ? window.currentShareItems
+      : (rec.items || []);
+    var photoUrl = resolveReadyShotPhotoUrl();
+    var hasPhoto = !!photoUrl;
+    if (!photoUrl) photoUrl = READY_SHOT_PLACEHOLDER_PHOTO;
+    var mode = window.currentStudioCardMode || rec.readyShotMode || 'spread';
+    if (STUDIO_MODE_ORDER.indexOf(mode) === -1) mode = 'spread';
+
+    var markup = window.generateReadyShotMarkup(rec, {
+      photo: photoUrl,
+      mode: mode,
+      posX: (window.currentPhotoPosX !== undefined) ? window.currentPhotoPosX : (rec.readyShotPosX !== undefined ? rec.readyShotPosX : 50),
+      posY: (window.currentPhotoPosY !== undefined) ? window.currentPhotoPosY : (rec.readyShotPosY !== undefined ? rec.readyShotPosY : 50),
+      scale: currentPhotoScaleVal || rec.readyShotScale || 1.0,
+      spot: spotVal,
+      date: rec.date || '',
+      weightKg: rec.weightKg || '0.00',
+      items: items,
+      memo: memoVal
+    });
+
+    if (!hasPhoto) {
+      markup = '<div style="position:relative; width:100%; max-width:330px; margin:0 auto;">' + markup +
+        '<label id="readyShotEmptyPhotoHit" style="position:absolute; inset:0; z-index:40; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:rgba(7,9,14,0.55); border:none; border-radius:14px; cursor:pointer; color:#ffffff; padding:16px; box-sizing:border-box;">' +
+          '<input type="file" accept="image/*,.heic,.heif" style="position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; font-size:72px;" onchange="window.handleShareCardPhotoUpload(event)" />' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:28px; height:28px; opacity:0.9; pointer-events:none;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>' +
+          '<span style="font-size:0.88rem; font-weight:900; letter-spacing:-0.2px; pointer-events:none;">사진 넣기</span>' +
+          '<span style="font-size:0.68rem; font-weight:700; color:#cbd5e1; pointer-events:none;">템플릿 위에 사진을 올립니다</span>' +
+        '</label></div>';
+    }
+
+    container.innerHTML = markup;
+    setTimeout(function() { initCardSwipeGesture(); }, 30);
+    return;
+  }
+
   container.innerHTML = generateCardMarkup(selectedTemplateId, currentShareRecord, currentShareItems, spotVal, memoVal);
+  setTimeout(function() { initCardSwipeGesture(); }, 30);
 }
 
 // 🖐️ 5. 카드 좌우 스와이프 제스처 인터랙션 엔진 (확정 순서에 따른 이전/다음 순환)
@@ -3097,87 +4152,126 @@ initCardSwipeGesture = function() {
   var swipeSignal = ac ? ac.signal : undefined;
 
   card.style.userSelect = 'none';
+  card.style.webkitUserSelect = 'none';
+  card.style.touchAction = 'pan-y';
   card.style.cursor = 'grab';
 
-  function handleStart(clientX, clientY) {
-    cardTouchStartX = clientX;
-    cardTouchStartY = clientY;
-    cardTouchStartTime = Date.now();
-    isCardSwiping = false;
+  function eventFromPhotoLabel(e) {
+    var t = e && e.target;
+    if (!t) return false;
+    if (t.closest) {
+      return !!(
+        t.closest('label[for="shareCardPhotoInput"]') ||
+        t.closest('#readyShotEmptyPhotoHit') ||
+        t.closest('input[type="file"]') ||
+        t.closest('label[for="studioPhotoUpload"]') ||
+        t.closest('#shareCardPhotoInput') ||
+        t.closest('#studioPhotoUpload')
+      );
+    }
+    return false;
+  }
+
+  function eventFromInteractive(e) {
+    var t = e && e.target;
+    if (!t || !t.closest) return false;
+    return !!(t.closest('button, a, input, textarea, select, label, [role="button"]'));
+  }
+
+  function resetCardMotion() {
+    card.style.transition = 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease';
+    card.style.transform = 'translateX(0px) rotate(0deg)';
+    card.style.opacity = '1';
+    card.style.cursor = 'grab';
+  }
+
+  function handleStart(x, y) {
+    if (typeof isReadyShotFrameModalOpen === 'function' && isReadyShotFrameModalOpen()) return;
     isCardPointerDown = true;
+    isCardSwiping = false;
+    cardTouchStartX = x;
+    cardTouchStartY = y;
+    cardTouchStartTime = Date.now();
     card.style.transition = 'none';
     card.style.cursor = 'grabbing';
   }
 
-  function handleMove(clientX, clientY) {
+  function handleMove(x, y) {
     if (!isCardPointerDown) return;
-    var diffX = clientX - cardTouchStartX;
-    var diffY = clientY - cardTouchStartY;
-    var absX = Math.abs(diffX);
-    var absY = Math.abs(diffY);
-
-    if (absY > absX && absY > 6) {
+    var dx = x - cardTouchStartX;
+    var dy = y - cardTouchStartY;
+    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
       isCardPointerDown = false;
       isCardSwiping = false;
-      card.style.transform = 'translateX(0px) rotate(0deg)';
-      card.style.opacity = '1';
+      resetCardMotion();
       return;
     }
-
-    if (absX > 10 && absX > absY) {
+    if (!isCardSwiping && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.15) {
       isCardSwiping = true;
-      card.style.transform = 'translateX(' + (diffX * 0.4) + 'px) rotate(' + (diffX * 0.02) + 'deg)';
-      card.style.opacity = String(Math.max(0.6, 1 - (absX / 500)));
+    }
+    if (isCardSwiping) {
+      card.style.transform = 'translateX(' + (dx * 0.42) + 'px) rotate(' + (dx * 0.02) + 'deg)';
+      card.style.opacity = String(Math.max(0.55, 1 - (Math.abs(dx) / 520)));
     }
   }
 
-  function handleEnd(clientX, clientY) {
-    if (!isCardPointerDown) return;
+  function handleEnd(x, y) {
+    if (!isCardPointerDown && !isCardSwiping) return;
     isCardPointerDown = false;
+    var dx = x - cardTouchStartX;
+    var dy = y - cardTouchStartY;
+    var absDx = Math.abs(dx);
+    var absDy = Math.abs(dy);
+    var elapsed = Date.now() - cardTouchStartTime;
+    var wasSwipe = isCardSwiping;
+    isCardSwiping = false;
     card.style.cursor = 'grab';
     card.style.transition = 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease';
 
-    var diffX = clientX - cardTouchStartX;
-    var diffY = clientY - cardTouchStartY;
-    var absX = Math.abs(diffX);
-    var absY = Math.abs(diffY);
-    var duration = Date.now() - cardTouchStartTime;
-
-    var curIdx = TEMPLATE_ORDER.indexOf(selectedTemplateId);
-    if (curIdx === -1) curIdx = 0;
-
-    if (isCardSwiping && (absX > 30 || (absX > 15 && duration < 250)) && absX > absY) {
-      if (diffX < 0) {
-        card.style.transform = 'translateX(-40px)';
-        card.style.opacity = '0.3';
-        setTimeout(function() {
-          var prevIdx = (curIdx - 1 + TEMPLATE_ORDER.length) % TEMPLATE_ORDER.length;
-          switchShareCardTemplate(TEMPLATE_ORDER[prevIdx], true);
-          card.style.transform = 'translateX(0px)';
-          card.style.opacity = '1';
-        }, 70);
-      } else {
-        card.style.transform = 'translateX(40px)';
-        card.style.opacity = '0.3';
-        setTimeout(function() {
-          var nextIdx = (curIdx + 1) % TEMPLATE_ORDER.length;
-          switchShareCardTemplate(TEMPLATE_ORDER[nextIdx], true);
-          card.style.transform = 'translateX(0px)';
-          card.style.opacity = '1';
-        }, 70);
-      }
-    } else {
+    if (wasSwipe && (absDx > 36 || (absDx > 18 && elapsed < 280)) && absDx > absDy * 1.1) {
+      card.style.transition = 'none';
       card.style.transform = 'translateX(0px) rotate(0deg)';
       card.style.opacity = '1';
+      var family = window.readyShotFamily || 'photo';
+      if (family === 'photo') {
+        var modeIdx = STUDIO_MODE_ORDER.indexOf(window.currentStudioCardMode || 'spread');
+        if (modeIdx === -1) modeIdx = 0;
+        var nextMode = (dx < 0)
+          ? STUDIO_MODE_ORDER[(modeIdx + 1) % STUDIO_MODE_ORDER.length]
+          : STUDIO_MODE_ORDER[(modeIdx - 1 + STUDIO_MODE_ORDER.length) % STUDIO_MODE_ORDER.length];
+        window.switchStudioModeFromReadyShot(nextMode);
+      } else {
+        var tmplIdx = TEMPLATE_ORDER.indexOf(selectedTemplateId);
+        if (tmplIdx === -1) tmplIdx = 0;
+        var nextTmpl = (dx < 0)
+          ? TEMPLATE_ORDER[(tmplIdx + 1) % TEMPLATE_ORDER.length]
+          : TEMPLATE_ORDER[(tmplIdx - 1 + TEMPLATE_ORDER.length) % TEMPLATE_ORDER.length];
+        switchShareCardTemplate(nextTmpl, true);
+      }
+      return;
     }
-    isCardSwiping = false;
+
+    resetCardMotion();
+
+    if (!wasSwipe && absDx < 10 && absDy < 10 && elapsed < 450) {
+      if ((window.readyShotFamily || 'photo') !== 'photo') return;
+      if (!resolveReadyShotPhotoUrl()) {
+        if (typeof window.triggerReadyShotPhotoPicker === 'function') window.triggerReadyShotPhotoPicker();
+        return;
+      }
+      if (typeof openReadyShotFrameModal === 'function') openReadyShotFrameModal();
+    }
   }
 
   function onTouchStart(e) {
+    if (eventFromPhotoLabel(e) || eventFromInteractive(e)) return;
+    if (!e.touches || e.touches.length !== 1) return;
     handleStart(e.touches[0].clientX, e.touches[0].clientY);
   }
   function onTouchMove(e) {
+    if (!isCardPointerDown || !e.touches || e.touches.length !== 1) return;
     handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    if (isCardSwiping && e.cancelable) e.preventDefault();
   }
   function onTouchEnd(e) {
     var endX = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientX : cardTouchStartX;
@@ -3185,21 +4279,24 @@ initCardSwipeGesture = function() {
     handleEnd(endX, endY);
   }
   function onMouseDown(e) {
+    if (e.button !== 0) return;
+    if (eventFromPhotoLabel(e) || eventFromInteractive(e)) return;
     handleStart(e.clientX, e.clientY);
   }
   function onWindowMouseMove(e) {
     if (isCardPointerDown) handleMove(e.clientX, e.clientY);
   }
   function onWindowMouseUp(e) {
-    if (isCardPointerDown) handleEnd(e.clientX, e.clientY);
+    if (isCardPointerDown || isCardSwiping) handleEnd(e.clientX, e.clientY);
   }
 
   var swipeMouseOpts = swipeSignal ? { signal: swipeSignal } : false;
-  var swipeTouchOpts = swipeSignal ? { passive: true, signal: swipeSignal } : { passive: true };
+  var swipeTouchOpts = swipeSignal ? { passive: false, signal: swipeSignal } : { passive: false };
 
   card.addEventListener('touchstart', onTouchStart, swipeTouchOpts);
   card.addEventListener('touchmove', onTouchMove, swipeTouchOpts);
   card.addEventListener('touchend', onTouchEnd, swipeTouchOpts);
+  card.addEventListener('touchcancel', onTouchEnd, swipeTouchOpts);
   card.addEventListener('mousedown', onMouseDown, swipeMouseOpts);
   window.addEventListener('mousemove', onWindowMouseMove, swipeMouseOpts);
   window.addEventListener('mouseup', onWindowMouseUp, swipeMouseOpts);
@@ -3208,6 +4305,7 @@ initCardSwipeGesture = function() {
     card.removeEventListener('touchstart', onTouchStart);
     card.removeEventListener('touchmove', onTouchMove);
     card.removeEventListener('touchend', onTouchEnd);
+    card.removeEventListener('touchcancel', onTouchEnd);
     card.removeEventListener('mousedown', onMouseDown);
     window.removeEventListener('mousemove', onWindowMouseMove);
     window.removeEventListener('mouseup', onWindowMouseUp);
@@ -3494,4 +4592,8 @@ window.generateCardMarkup = generateCardMarkup;
 window.switchShareCardTemplate = switchShareCardTemplate;
 window.updateShareCardLive = updateShareCardLive;
 window.initCardSwipeGesture = initCardSwipeGesture;
+window.renderTemplateChips = renderTemplateChips;
+window.scrollActiveReadyShotChipIntoView = scrollActiveReadyShotChipIntoView;
+window.syncReadyShotFamilyToggle = syncReadyShotFamilyToggle;
+window.syncReadyShotPhotoButtons = syncReadyShotPhotoButtons;
 })(window);

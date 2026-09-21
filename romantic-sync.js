@@ -321,18 +321,71 @@ try {
   console.warn('[romantic-sync.js:autoPurge boot]', purgeErr);
 }
 
+function renderCenteredToast(msg, toastType, dur) {
+  var existing = document.getElementById('okbmCenterToast');
+  if (existing) {
+    clearTimeout(existing._timer);
+    existing.remove();
+  }
+
+  var borderColor = 'rgba(186, 230, 253, 0.45)';
+  if (toastType === 'warn' || toastType === 'error') {
+    borderColor = 'rgba(254, 205, 211, 0.55)';
+  } else if (toastType === 'success') {
+    borderColor = 'rgba(167, 243, 208, 0.5)';
+  }
+
+  var wrap = document.createElement('div');
+  wrap.id = 'okbmCenterToast';
+  wrap.style.cssText = 'position:fixed; inset:0; z-index:2147483647; display:flex; align-items:center; justify-content:center; pointer-events:none; padding:28px; box-sizing:border-box;';
+
+  var toast = document.createElement('div');
+  toast.style.cssText = 'background:rgba(10, 14, 20, 0.96); border:1.5px solid ' + borderColor + '; color:#f1f5f9; font-size:0.88rem; font-weight:800; padding:14px 22px; border-radius:16px; box-shadow:0 12px 40px rgba(0,0,0,0.72); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); display:inline-flex; align-items:center; justify-content:center; gap:6px; text-align:center; word-break:keep-all; line-height:1.45; max-width:min(360px, calc(100vw - 48px)); opacity:0; transform:translateY(8px) scale(0.98);';
+  toast.innerHTML = msg;
+  wrap.appendChild(toast);
+  document.body.appendChild(wrap);
+
+  requestAnimationFrame(function() {
+    toast.style.transition = 'opacity 0.22s ease, transform 0.22s ease';
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0) scale(1)';
+  });
+
+  wrap._timer = setTimeout(function() {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(6px) scale(0.98)';
+    setTimeout(function() { if (wrap.parentNode) wrap.remove(); }, 240);
+  }, dur || 2500);
+}
+
 // [공통 유틸] 안전한 토스트 메시지 출력 (매개변수 타입 자동 감지 보정 & 눈부심 제로 파스텔 규격)
-function showToast(msg, typeOrDuration, maybeDuration) {
+function showToast(msg, typeOrDuration, maybeDuration, maybePosition) {
   var dur = 2500;
   var toastType = 'info';
+  var position = 'default';
 
   if (typeof typeOrDuration === 'number') {
     dur = typeOrDuration;
   } else if (typeof typeOrDuration === 'string') {
     toastType = typeOrDuration;
     if (typeof maybeDuration === 'number') dur = maybeDuration;
+    else if (maybeDuration === 'center') position = 'center';
   } else if (typeof maybeDuration === 'number') {
     dur = maybeDuration;
+  }
+
+  if (maybePosition === 'center') position = 'center';
+  if (maybePosition && typeof maybePosition === 'object' && maybePosition.position === 'center') {
+    position = 'center';
+    if (typeof maybePosition.duration === 'number') dur = maybePosition.duration;
+  }
+
+  var writeModalOpen = document.getElementById('modalRichAfterTrip') || document.getElementById('pastTripRegisterModal');
+  if (writeModalOpen) position = 'center';
+
+  if (position === 'center') {
+    renderCenteredToast(msg, toastType, dur);
+    return;
   }
 
   var toastEl = document.getElementById('appToast');
@@ -373,6 +426,7 @@ function showToast(msg, typeOrDuration, maybeDuration) {
     setTimeout(function() { toast.remove(); }, 260);
   }, dur);
 }
+window.showToast = showToast;
 
 // [공통 유틸] 브라우저 표준 한국 시간 타임스탬프 생성기
 function getFormattedNow() {
@@ -1108,7 +1162,7 @@ function okbmMountAdminReportInspectorEntry() {
   var spotEntry = document.createElement('button');
   spotEntry.id = 'adminSpotInboxEntry';
   spotEntry.type = 'button';
-  spotEntry.textContent = '박지 검수함';
+  spotEntry.textContent = '장소 검수함';
   spotEntry.style.cssText = 'background:none; border:none; color:#e2e8f0; font-size:0.78rem; font-weight:700; text-align:left; padding:8px 0 2px 0; cursor:pointer;';
   spotEntry.onclick = function() {
     if (typeof window.openAdminSpotInbox === 'function') {
@@ -2300,7 +2354,7 @@ window.fetchMasterGearsFromSupabase = async function(isForce) {
     return window.loadGearDbFromGoogleSheet(isForce);
   }
 
-  var CURRENT_GEAR_VERSION = '20260920_GEARS_V4_NALGENE';
+  var CURRENT_GEAR_VERSION = '20260921_FOOD_CLEANUP';
   try {
     localStorage.removeItem('okbm_master_gears');
     localStorage.removeItem('okbm_master_gears_cache');
@@ -3185,23 +3239,6 @@ function ensureMyReportAndAuthModalsInDOM() {
             <div id="reportYearActivityList" style="display:flex; flex-direction:column; gap:2px; max-height:200px; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-right:2px;"></div>
           </div>
 
-          <!-- 0. 내가 제보한 박지 (등록 전 수정 기능) -->
-          <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0;">
-            <div role="button" data-sec="myprops" onclick="window.handleReportSecClick('myprops')" style="padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
-              <div style="display:flex; align-items:center; gap:8px;">
-                <div style="width:24px; height:24px; border-radius:6px; background:rgba(56,189,248,0.1); display:flex; align-items:center; justify-content:center; color:#38bdf8; flex-shrink:0;">
-                  <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                </div>
-                <span style="font-size:0.78rem; font-weight:700; color:#e2e8f0;">내가 제보한 박지</span>
-              </div>
-              <div style="display:flex; align-items:center; gap:6px;">
-                <span id="reportHeaderMyPropsStat" style="font-size:0.64rem; color:#38bdf8; font-weight:700; font-family:var(--font-en);">0곳</span>
-                <span id="accArrow_myprops" style="font-size:0.58rem; color:#475569; display:inline-block; transition:transform 0.2s;">▼</span>
-              </div>
-            </div>
-            <div id="accBody_myprops" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px;"></div>
-          </div>
-
           <!-- 1. 장비 & 세팅 무게 -->
           <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0;">
             <div role="button" data-sec="gear" onclick="window.handleReportSecClick('gear')" style="padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
@@ -3270,10 +3307,27 @@ function ensureMyReportAndAuthModalsInDOM() {
             <div id="accBody_region" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px;"></div>
           </div>
 
-          <!-- 결산 카드 버튼 -->
-          <button type="button" onclick="if(typeof openHistoryStudioModal==='function') openHistoryStudioModal(); else showToast('스튜디오 엔진 준비 중입니다.', 'info');" style="width:100%; height:44px; background:#080b11; border:1.5px solid rgba(186,230,253,0.3); border-radius:10px; color:#f1f5f9; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; margin-top:4px; margin-bottom:12px; flex-shrink:0; box-shadow:0 4px 15px rgba(0,0,0,0.8);">
-            <svg viewBox="0 0 24 24" style="width:15px; height:15px; stroke:#bae6fd; fill:none; stroke-width:2;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            <span>결산 카드 만들기</span>
+          <!-- 5. 내가 제보한 장소 (등록 전 수정 기능) -->
+          <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0;">
+            <div role="button" data-sec="myprops" onclick="window.handleReportSecClick('myprops')" style="padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:24px; height:24px; border-radius:6px; background:rgba(56,189,248,0.1); display:flex; align-items:center; justify-content:center; color:#38bdf8; flex-shrink:0;">
+                  <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                </div>
+                <span style="font-size:0.78rem; font-weight:700; color:#e2e8f0;">내가 제보한 장소</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span id="reportHeaderMyPropsStat" style="font-size:0.64rem; color:#38bdf8; font-weight:700; font-family:var(--font-en);">0곳</span>
+                <span id="accArrow_myprops" style="font-size:0.58rem; color:#475569; display:inline-block; transition:transform 0.2s;">▼</span>
+              </div>
+            </div>
+            <div id="accBody_myprops" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px;"></div>
+          </div>
+
+          <!-- 과거 추억 등록 -->
+          <button type="button" onclick="window.openPastTripRegisterModal(event);" style="width:100%; height:44px; background:#080b11; border:1.5px solid rgba(186,230,253,0.3); border-radius:10px; color:#f1f5f9; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; margin-top:4px; margin-bottom:12px; flex-shrink:0; box-shadow:0 4px 15px rgba(0,0,0,0.8);">
+            <svg viewBox="0 0 24 24" style="width:15px; height:15px; stroke:#bae6fd; fill:none; stroke-width:2;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
+            <span>과거 추억 등록</span>
           </button>
 
         </div>
@@ -3433,7 +3487,7 @@ window.okbmResolveProposalSpotId = function(p, spotsList) {
   return hit ? String(hit.id || '').trim() : '';
 };
 
-// 0. 내가 제보한 박지 목록 렌더러 및 등록 전 수정/삭제 모듈
+// 0. 내가 제보한 장소 목록 렌더러 및 등록 전 수정/삭제 모듈
 window._renderMyPropsModule = function(el) {
   if (!el) return;
   var myProps = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
@@ -3454,7 +3508,7 @@ window._renderMyPropsModule = function(el) {
   var listHtml = validProps.map(function(p, idx) {
     var isCorr = Boolean(p.is_correction || p.isCorrection || p.type === 'correction');
     var kind = window.okbmProposalStatusKind(p);
-    var rawMainName = p.spot_main || p.name || '무명 박지';
+    var rawMainName = p.spot_main || p.name || '무명 장소';
     var mainName = _escapeReportPropHtml(rawMainName);
     var subName = p.spot_sub ? ('(' + _escapeReportPropHtml(p.spot_sub) + ')') : '';
     var dateStr = _escapeReportPropHtml(String(p.date || p.created_at || '').slice(0, 10));
@@ -4270,17 +4324,17 @@ window._renderTerrainModule = function(validLogs, el) {
       </div>
     </div>
 
-    <!-- 4. 박지 개척 성향 -->
+    <!-- 4. 장소 개척 성향 -->
     <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:8px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-        <span style="font-size:0.58rem; color:#64748b; font-weight:700;">박지 개척 성향</span>
+        <span style="font-size:0.58rem; color:#64748b; font-weight:700;">장소 개척 성향</span>
         <span style="font-size:0.52rem; color:#a7f3d0; font-weight:800;">${exploreTypeTitle}</span>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; text-align:center;">
         <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:5px 2px;">
           <div style="font-size:0.50rem; color:#64748b;">미지 개척 확률</div>
           <div style="font-size:0.85rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); margin-top:2px;">${newExploreRate}%</div>
-          <div style="font-size:0.48rem; color:#64748b;">고유 박지 ${totalVisitedSpots}곳</div>
+          <div style="font-size:0.48rem; color:#64748b;">고유 장소 ${totalVisitedSpots}곳</div>
         </div>
         <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:5px 2px;">
           <div style="font-size:0.50rem; color:#64748b;">단골 재방문 확률</div>
@@ -4433,7 +4487,7 @@ window._renderSeasonModule = function(validLogs, el) {
     }).sort(function(a, b) { return b.count - a.count; }).slice(0, 5);
 
     seasonDetailHtml = '<div style="background:#000000; border:1px dashed ' + curS.color + '; border-radius:6px; padding:6px 8px; margin-top:4px;">' +
-      '<div style="font-size:0.52rem; color:' + curS.color + '; font-weight:800; margin-bottom:4px;">[' + curS.label + '] 방문 박지 Top 5</div>' +
+      '<div style="font-size:0.52rem; color:' + curS.color + '; font-weight:800; margin-bottom:4px;">[' + curS.label + '] 방문 장소 Top 5</div>' +
       (sortedSpots.map(function(it, idx) {
         return '<div style="display:flex; justify-content:space-between; font-size:0.58rem; padding:1.5px 0;"><span style="color:#cbd5e1; max-width:80%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><strong style="color:' + curS.color + '; margin-right:4px;">' + (idx + 1) + '.</strong>' + it.name + '</span><span style="color:#64748b; font-family:var(--font-en);">' + it.count + '회</span></div>';
       }).join('') || '<div style="color:#475569; font-size:0.52rem;">해당 시즌 기록이 없습니다.</div>') +
@@ -4579,7 +4633,7 @@ window._renderRegionModule = function(validLogs, el) {
     }).sort(function(a, b) { return b.count - a.count; }).slice(0, 5);
 
     regionDetailHtml = '<div style="background:#000000; border:1px dashed ' + curR.color + '; border-radius:6px; padding:6px 8px; margin-top:4px;">' +
-      '<div style="font-size:0.52rem; color:' + curR.color + '; font-weight:800; margin-bottom:4px;">[' + state.expandedRegion + '] 권역 방문 박지 Top 5</div>' +
+      '<div style="font-size:0.52rem; color:' + curR.color + '; font-weight:800; margin-bottom:4px;">[' + state.expandedRegion + '] 권역 방문 장소 Top 5</div>' +
       (sortedSpots.map(function(it, idx) {
         return '<div style="display:flex; justify-content:space-between; font-size:0.58rem; padding:1.5px 0;"><span style="color:#cbd5e1; max-width:80%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><strong style="color:' + curR.color + '; margin-right:4px;">' + (idx + 1) + '.</strong>' + it.name + '</span><span style="color:#64748b; font-family:var(--font-en);">' + it.count + '회</span></div>';
       }).join('') || '<div style="color:#475569; font-size:0.52rem;">해당 권역 기록이 없습니다.</div>') +
@@ -4745,6 +4799,9 @@ window.navigateToDockTab = function(tabId) {
   if (typeof closeVideoDetailModal === 'function') closeVideoDetailModal();
   if (typeof closeSecretSpotHeroModal === 'function') closeSecretSpotHeroModal();
   if (typeof closeThemeSpotAllModal === 'function') closeThemeSpotAllModal();
+  if (typeof window.closePastTripRegisterModal === 'function') {
+    try { window.closePastTripRegisterModal({ silent: true }); } catch (e) {}
+  }
 
   // 2. 화면을 가로막고 있는 모든 테마스팟, 영상, 원정대, 수정창 일괄 소거
   [
@@ -4760,6 +4817,12 @@ window.navigateToDockTab = function(tabId) {
     'templateCardModalOverlay',
     'modalRichAfterTrip',
     'pastTripsListModal',
+    'pastTripRegisterModal',
+    'pastTripDatePickerModal',
+    'pastTripSpotChoiceOverlay',
+    'pastTripSpotSearchModal',
+    'richSpotRegisterChoiceOverlay',
+    'planSpotRegisterChoiceOverlay',
     'singleTripFeedModal',
     'userFeedCollectionModal',
     'clearMapModal',
@@ -4978,6 +5041,2128 @@ window.editReportUserBio = function() {
   };
 };
 
+window.__pastTripRegisterState = window.__pastTripRegisterState || {
+  photos: [],
+  photoMemos: [],
+  presetId: '',
+  items: [],
+  elev: '',
+  region: '',
+  spotId: '',
+  spotName: '',
+  spotPath: '',
+  memoMode: 'single',
+  singleMemo: '',
+  photoIndex: 0
+};
+
+window.closePastTripRegisterModal = function(opts) {
+  opts = opts || {};
+  var silent = !!(opts.silent || opts.skipBack);
+  if (window.__pastTripProposalObserver) {
+    try { window.__pastTripProposalObserver.disconnect(); } catch (e) {}
+    window.__pastTripProposalObserver = null;
+  }
+  var choice = document.getElementById('pastTripSpotChoiceOverlay');
+  if (choice) choice.remove();
+  var el = document.getElementById('pastTripRegisterModal');
+  if (el) el.remove();
+  var search = document.getElementById('pastTripSpotSearchModal');
+  if (search) search.remove();
+  var picker = document.getElementById('pastTripDatePickerModal');
+  if (picker) picker.remove();
+  if (silent) return;
+  if (typeof window.goBackModal === 'function') {
+    try { window.goBackModal(); } catch (e) {}
+  } else if (typeof window.openUserProfileModal === 'function') {
+    window.openUserProfileModal();
+  }
+};
+
+window._pastTripFormatDateKey = function(isoDate) {
+  var parts = String(isoDate || '').match(/\d+/g);
+  if (!parts || parts.length < 3) return '';
+  var y = parseInt(parts[0], 10);
+  var m = parseInt(parts[1], 10);
+  var d = parseInt(parts[2], 10);
+  if (!y || !m || !d) return '';
+  return y + '.' + String(m).padStart(2, '0') + '.' + String(d).padStart(2, '0');
+};
+
+window._pastTripYesterdayIso = function() {
+  var d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
+
+window._pastTripIsoToDisplay = function(isoDate) {
+  var key = window._pastTripFormatDateKey(isoDate);
+  return key || '';
+};
+
+window._pastTripSyncDateDisplay = function() {
+  var hidden = document.getElementById('pastTripDateInput');
+  var display = document.getElementById('pastTripDateDisplay');
+  if (!hidden || !display) return;
+  var iso = String(hidden.value || '').trim() || window._pastTripYesterdayIso();
+  hidden.value = iso;
+  display.textContent = window._pastTripIsoToDisplay(iso);
+};
+
+window.openPastTripDatePicker = function() {
+  triggerHaptic(10);
+  var old = document.getElementById('pastTripDatePickerModal');
+  if (old) old.remove();
+  var hidden = document.getElementById('pastTripDateInput');
+  var iso = hidden ? String(hidden.value || '').trim() : window._pastTripYesterdayIso();
+  var parts = String(iso).match(/\d+/g) || [];
+  window.__pastTripPickerYear = parseInt(parts[0], 10) || new Date().getFullYear();
+  window.__pastTripPickerMonth = parseInt(parts[1], 10) || (new Date().getMonth() + 1);
+  window.__pastTripPickerView = 'days';
+
+  var overlay = document.createElement('div');
+  overlay.id = 'pastTripDatePickerModal';
+  overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.72); z-index:2147483646; display:flex; justify-content:center; align-items:center; padding:16px; box-sizing:border-box;';
+  overlay.onclick = function(e) { if (e.target === overlay) overlay.remove(); };
+  overlay.innerHTML =
+    '<div style="width:100%; max-width:336px; background:#0c1017; border-radius:14px; border:1px solid rgba(255,255,255,0.12); padding:12px 12px 14px 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box; max-height:min(78dvh, 520px); overflow:auto; box-shadow:0 16px 40px rgba(0,0,0,0.55);" onclick="event.stopPropagation();">' +
+      '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+        '<span style="font-size:0.82rem; font-weight:900; color:#fff;">날짜 선택</span>' +
+        '<button type="button" onclick="document.getElementById(\'pastTripDatePickerModal\').remove();" style="background:none; border:none; color:#94a3b8; font-size:1rem; cursor:pointer;">✕</button>' +
+      '</div>' +
+      '<div style="display:flex; gap:6px;">' +
+        '<button type="button" id="pastTripPickerYearBtn" onclick="window.setPastTripPickerView(\'years\');" style="flex:1; height:34px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04); color:#fff; font-size:0.80rem; font-weight:900; cursor:pointer;"></button>' +
+        '<button type="button" id="pastTripPickerMonthBtn" onclick="window.setPastTripPickerView(\'months\');" style="flex:1; height:34px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04); color:#fff; font-size:0.80rem; font-weight:900; cursor:pointer;"></button>' +
+      '</div>' +
+      '<div id="pastTripPickerBody"></div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  window.renderPastTripDatePicker();
+};
+
+window.setPastTripPickerView = function(view) {
+  triggerHaptic(8);
+  window.__pastTripPickerView = view || 'days';
+  window.renderPastTripDatePicker();
+};
+
+window.selectPastTripPickerYear = function(year) {
+  triggerHaptic(8);
+  var y = parseInt(year, 10);
+  var maxY = new Date().getFullYear();
+  if (!y || y > maxY || y < 2000) return;
+  window.__pastTripPickerYear = y;
+  var now = new Date();
+  if (y === now.getFullYear() && window.__pastTripPickerMonth > now.getMonth() + 1) {
+    window.__pastTripPickerMonth = now.getMonth() + 1;
+  }
+  window.__pastTripPickerView = 'days';
+  window.renderPastTripDatePicker();
+};
+
+window.selectPastTripPickerMonth = function(month) {
+  triggerHaptic(8);
+  var m = parseInt(month, 10);
+  if (!m || m < 1 || m > 12) return;
+  var y = Number(window.__pastTripPickerYear) || new Date().getFullYear();
+  var now = new Date();
+  if (y === now.getFullYear() && m > now.getMonth() + 1) return;
+  window.__pastTripPickerMonth = m;
+  window.__pastTripPickerView = 'days';
+  window.renderPastTripDatePicker();
+};
+
+window.selectPastTripPickerDay = function(day) {
+  triggerHaptic(10);
+  var y = Number(window.__pastTripPickerYear);
+  var m = Number(window.__pastTripPickerMonth);
+  var d = parseInt(day, 10);
+  if (!y || !m || !d) return;
+  var iso = y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+  var today = new Date();
+  var todayNum = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+  var targetNum = y * 10000 + m * 100 + d;
+  if (targetNum >= todayNum) {
+    if (typeof showToast === 'function') showToast('오늘 이전 날짜만 선택할 수 있습니다.', 'warn');
+    return;
+  }
+  var hidden = document.getElementById('pastTripDateInput');
+  if (hidden) hidden.value = iso;
+  window._pastTripSyncDateDisplay();
+  var picker = document.getElementById('pastTripDatePickerModal');
+  if (picker) picker.remove();
+};
+
+window.renderPastTripDatePicker = function() {
+  var y = Number(window.__pastTripPickerYear) || new Date().getFullYear();
+  var m = Number(window.__pastTripPickerMonth) || 1;
+  var view = window.__pastTripPickerView || 'days';
+  var yearBtn = document.getElementById('pastTripPickerYearBtn');
+  var monthBtn = document.getElementById('pastTripPickerMonthBtn');
+  var body = document.getElementById('pastTripPickerBody');
+  if (yearBtn) yearBtn.textContent = y + '년';
+  if (monthBtn) monthBtn.textContent = m + '월';
+  if (!body) return;
+
+  var now = new Date();
+  now.setHours(0, 0, 0, 0);
+  var curYear = now.getFullYear();
+  var curMonth = now.getMonth() + 1;
+  var selectedIso = (document.getElementById('pastTripDateInput') || {}).value || '';
+  var onCss = 'border:1px solid rgba(226,232,240,0.55); background:rgba(226,232,240,0.16); color:#fff;';
+  var offCss = 'border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:#cbd5e1;';
+  var disCss = 'border:1px solid transparent; background:transparent; color:#475569;';
+
+  if (view === 'years') {
+    var years = [];
+    for (var yy = curYear; yy >= Math.max(2000, curYear - 24); yy--) years.push(yy);
+    body.innerHTML = '<div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:5px; max-height:220px; overflow-y:auto;">' +
+      years.map(function(yy) {
+        var on = yy === y;
+        return '<button type="button" onclick="window.selectPastTripPickerYear(' + yy + ');" style="height:32px; border-radius:8px; font-size:0.72rem; font-weight:800; cursor:pointer; ' + (on ? onCss : offCss) + '">' + yy + '</button>';
+      }).join('') + '</div>';
+    return;
+  }
+
+  if (view === 'months') {
+    body.innerHTML = '<div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:5px;">' +
+      [1,2,3,4,5,6,7,8,9,10,11,12].map(function(mm) {
+        var disabled = (y > curYear) || (y === curYear && mm > curMonth);
+        var on = mm === m;
+        return '<button type="button" ' + (disabled ? 'disabled' : 'onclick="window.selectPastTripPickerMonth(' + mm + ');"') +
+          ' style="height:32px; border-radius:8px; font-size:0.72rem; font-weight:800; cursor:' + (disabled ? 'default' : 'pointer') + '; ' +
+          (disabled ? disCss : (on ? onCss : offCss)) + '">' + mm + '월</button>';
+      }).join('') + '</div>';
+    return;
+  }
+
+  var firstDay = new Date(y, m - 1, 1).getDay();
+  var lastDay = new Date(y, m, 0).getDate();
+  var html = '<div style="display:grid; grid-template-columns:repeat(7, 1fr); text-align:center; font-size:0.56rem; font-weight:800; color:#64748b; margin-bottom:4px;">' +
+    '<span style="color:#f43f5e;">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>' +
+    '<div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:3px;">';
+  for (var b = 0; b < firstDay; b++) html += '<div style="height:32px;"></div>';
+  for (var day = 1; day <= lastDay; day++) {
+    var cell = new Date(y, m - 1, day);
+    cell.setHours(0, 0, 0, 0);
+    var disabled = cell.getTime() >= now.getTime();
+    var iso = y + '-' + String(m).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+    var on = iso === selectedIso;
+    html += '<button type="button" ' + (disabled ? 'disabled' : 'onclick="window.selectPastTripPickerDay(' + day + ');"') +
+      ' style="height:32px; border-radius:8px; font-size:0.74rem; font-weight:800; cursor:' + (disabled ? 'default' : 'pointer') + '; ' +
+      (disabled ? disCss : (on ? onCss : 'border:1px solid transparent; background:transparent; color:#e2e8f0;')) + '">' + day + '</button>';
+  }
+  html += '</div>';
+  body.innerHTML = html;
+};
+
+window._pastTripNormSpotKey = function(name) {
+  return String(name || '').replace(/\s+/g, '').toLowerCase();
+};
+
+window._pastTripStripCityPrefix = function(name, city) {
+  var n = String(name || '').trim();
+  var c = String(city || '').trim();
+  if (!n) return '';
+  n = n.replace(/^\[\s*[^\]]+\s*\]\s*/, '');
+  n = n.replace(/([가-힣]+(?:시|군|구))\s+\1\b/g, '$1');
+  if (!c) return n.trim();
+  var esc = c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  n = n.replace(new RegExp('^\\[\\s*' + esc + '\\s*\\]\\s*', 'i'), '');
+  var base = c.replace(/(시|군|구)$/, '');
+  [c, base, base + '시', base + '군', base + '구'].forEach(function(v) {
+    if (!v) return;
+    var re = new RegExp('^' + v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s+', 'i');
+    n = n.replace(re, '');
+  });
+  n = n.replace(/([가-힣]+(?:시|군|구))\s+\1\b/g, '$1');
+  return n.trim();
+};
+
+window._pastTripComposeSpotLabel = function(rawName, cityName) {
+  var clean = window._pastTripStripCityPrefix(rawName, cityName);
+  return clean || String(rawName || '').replace(/^\[\s*[^\]]+\s*\]\s*/, '').trim();
+};
+
+window._pastTripMergeSpotRegion = function(spot, region) {
+  var s = String(spot || '').trim();
+  var r = String(region || '').trim();
+  if (!s) return r || '';
+  if (!r) return s;
+  var stripped = window._pastTripStripCityPrefix(s, r);
+  if (s.indexOf(r) !== -1 || stripped !== s) return stripped || s;
+  return r + ' ' + stripped;
+};
+
+window._pastTripGenericSpotKeys = {
+  '자유일정': true,
+  '나의해힐링스팟': true,
+  '힐링박지': true
+};
+
+window._pastTripInvalidateSpotsSearchCache = function() {
+  window.__pastTripSpotsSearchCache = null;
+};
+
+window._pastTripCollectSpotNameKeys = function(spot) {
+  var keys = {};
+  if (!spot) return keys;
+  var city = String(spot.cityName || spot.city_name || '').trim();
+  var main = String(spot.spot_main || spot.name || spot.spotName || '').trim();
+  var names = [
+    spot.fullName, spot.name, spot.spot_main, spot.spotName, spot.rawName,
+    main,
+    city ? (city + ' ' + main) : '',
+    city ? (city + ' ' + String(spot.fullName || '')) : ''
+  ];
+  names.forEach(function(n) {
+    var k = window._pastTripNormSpotKey(n);
+    if (k && !window._pastTripGenericSpotKeys[k]) keys[k] = true;
+  });
+  return keys;
+};
+
+window._pastTripHasValidFieldPhotos = function(r) {
+  if (!r) return false;
+  var photosList = [];
+  if (Array.isArray(r.photos)) {
+    photosList = r.photos;
+  } else if (typeof r.photos === 'string' && r.photos.trim().startsWith('[')) {
+    try { photosList = JSON.parse(r.photos); } catch (e) { photosList = []; }
+  }
+  var tmplPhoto = String(r.readyShotPhoto || r.ready_shot_photo || r.customTemplatePhoto || '').trim();
+  return photosList.some(function(u) {
+    return typeof u === 'string' && (u.startsWith('https://') || u.startsWith('http://')) && u.indexOf('unsplash.com') === -1 && u !== tmplPhoto;
+  });
+};
+
+window._pastTripIsOwnHistoryRecord = function(r) {
+  if (!r) return false;
+  var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
+  var curUserId = (profile && profile.id) ? String(profile.id).trim() : String(localStorage.getItem('okbm_user_id') || '').trim();
+  var rUid = String(r.userId || r.user_id || '').trim();
+  if (curUserId && rUid) {
+    if (curUserId === rUid) return true;
+    var curPure = curUserId.replace(/\D/g, '');
+    var rPure = rUid.replace(/\D/g, '');
+    return Boolean(curPure && rPure && curPure === rPure);
+  }
+  return Boolean(r._isLocalOwner);
+};
+
+window._pastTripRecordMatchesAdoptedSpot = function(r, nameKeys) {
+  if (!r || r._memDeleted === true || r.isDeleted === true || r.is_deleted === true) return false;
+  if (!(r.unregisteredSpot === true || r.unregistered_spot === true)) return false;
+  if (!window._pastTripIsOwnHistoryRecord(r)) return false;
+  var nameKey = window._pastTripNormSpotKey(r.spot || r.spotName || '');
+  if (!nameKey || window._pastTripGenericSpotKeys[nameKey]) return false;
+  return Boolean(nameKeys && nameKeys[nameKey]);
+};
+
+window._pastTripPersistHistoryPools = function(list) {
+  var next = Array.isArray(list) ? list.slice() : [];
+  window.interactiveHistory = next.slice();
+  window.packingHistoryList = window.interactiveHistory;
+  window.__memoryStore = window.__memoryStore || {};
+  window.__memoryStore['okbm_packing_history'] = next.slice();
+  try {
+    localStorage.setItem('okbm_packing_history', JSON.stringify(next));
+  } catch (e) {
+    console.warn('[romantic-sync.js:_pastTripPersistHistoryPools]', e);
+  }
+  if (typeof window.safeSetStorage === 'function') {
+    try { window.safeSetStorage('okbm_packing_history', next); } catch (e2) {}
+  }
+};
+
+window._pastTripLinkUnregisteredRecordsToSpot = async function(spot, spotId, nameKeys) {
+  var id = String(spotId || (spot && spot.id) || '').trim();
+  if (!id) return 0;
+  var keys = nameKeys || window._pastTripCollectSpotNameKeys(spot);
+  if (!keys || !Object.keys(keys).length) return 0;
+
+  var applyLink = function(r) {
+    if (!window._pastTripRecordMatchesAdoptedSpot(r, keys)) return false;
+    r.spotId = id;
+    r.spot_id = id;
+    r.unregisteredSpot = false;
+    r.unregistered_spot = false;
+    var nextPublished = window._pastTripHasValidFieldPhotos(r);
+    r.isPublished = nextPublished;
+    r.is_published = nextPublished;
+    return true;
+  };
+
+  var linkedIds = [];
+  var seen = {};
+  var extraRecords = [];
+  var list = [];
+  if (typeof window.safeGetStorage === 'function') {
+    list = window.safeGetStorage('okbm_packing_history', []) || [];
+  } else if (typeof safeGetJSON === 'function') {
+    list = safeGetJSON('okbm_packing_history', []) || [];
+  }
+  if (!Array.isArray(list)) list = [];
+
+  list.forEach(function(r) {
+    if (!applyLink(r)) return;
+    var recId = String(r.id || '').trim();
+    if (!recId || seen[recId]) return;
+    seen[recId] = true;
+    linkedIds.push({ id: recId, published: Boolean(r.isPublished) });
+  });
+
+  var patchPool = function(pool) {
+    if (!Array.isArray(pool)) return;
+    pool.forEach(function(r) {
+      if (!applyLink(r)) return;
+      var recId = String(r.id || '').trim();
+      if (!recId || seen[recId]) return;
+      seen[recId] = true;
+      linkedIds.push({ id: recId, published: Boolean(r.isPublished) });
+      extraRecords.push(r);
+    });
+  };
+  patchPool(window.interactiveHistory);
+  patchPool(window.packingHistoryList);
+  patchPool(window.__allLoadedFeeds);
+  if (window.__memoryStore) patchPool(window.__memoryStore['okbm_packing_history']);
+
+  if (!linkedIds.length) return 0;
+
+  extraRecords.forEach(function(r) { list.unshift(r); });
+  window._pastTripPersistHistoryPools(list);
+
+  if (Array.isArray(window.__allLoadedFeeds) && typeof window.okbmWriteCachedCommunityFeeds === 'function') {
+    try { window.okbmWriteCachedCommunityFeeds(window.__allLoadedFeeds); } catch (e) {}
+  }
+
+  if (typeof window.patchFeedPublishStatus === 'function') {
+    for (var i = 0; i < linkedIds.length; i++) {
+      if (!linkedIds[i].published) continue;
+      try {
+        await window.patchFeedPublishStatus(linkedIds[i].id, linkedIds[i].published);
+      } catch (pubErr) {
+        console.warn('[romantic-sync.js:_pastTripLinkUnregisteredRecordsToSpot publish]', pubErr);
+      }
+    }
+  }
+
+  if (typeof window.refreshMyReportFullStats === 'function') {
+    window.refreshMyReportFullStats();
+  }
+  if (typeof syncUserDataToCloud === 'function') {
+    try { syncUserDataToCloud(true); } catch (syncErr) {}
+  }
+  return linkedIds.length;
+};
+
+window._pastTripReadPresets = function() {
+  var presets = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+    ? window.RomanticVault.read('okbm_gear_presets', [])
+    : (typeof safeGetJSON === 'function' ? safeGetJSON('okbm_gear_presets', []) : []);
+  return Array.isArray(presets) ? presets : [];
+};
+
+window._pastTripFlattenPresetItems = function(preset) {
+  var items = [];
+  var totalGrams = 0;
+  if (!preset || !preset.gears || typeof preset.gears !== 'object') {
+    return { items: items, totalGrams: 0 };
+  }
+  Object.keys(preset.gears).forEach(function(catId) {
+    (preset.gears[catId] || []).forEach(function(it) {
+      if (!it || !(it.name || it.itemName)) return;
+      var gName = it.name || it.itemName;
+      var gWeight = Number(it.weight || it.weight_g || 0);
+      items.push({
+        id: it.id || ('item_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)),
+        name: gName,
+        weight: gWeight,
+        categoryId: catId
+      });
+      totalGrams += gWeight;
+    });
+  });
+  return { items: items, totalGrams: totalGrams };
+};
+
+window._pastTripBuildSpotSearchPool = function() {
+  if (window.__pastTripSpotsSearchCache && window.__pastTripSpotsSearchCache.length > 0) {
+    return window.__pastTripSpotsSearchCache;
+  }
+  var rawPool = [];
+  if (Array.isArray(window.spots)) rawPool = rawPool.concat(window.spots);
+  if (Array.isArray(window.campingSpots)) rawPool = rawPool.concat(window.campingSpots);
+  if (typeof registeredSpots !== 'undefined' && Array.isArray(registeredSpots)) rawPool = rawPool.concat(registeredSpots);
+  ['okbm_spots_cache', 'okbm_master_spots', 'camping_spots', 'okbm_spots'].forEach(function(k) {
+    try {
+      var item = localStorage.getItem(k);
+      if (!item) return;
+      var parsed = JSON.parse(item);
+      if (Array.isArray(parsed)) rawPool = rawPool.concat(parsed);
+    } catch (e) {}
+  });
+  var spotsMap = new Map();
+  rawPool.forEach(function(s) {
+    if (!s) return;
+    var rawName = String(s.fullName || s.spot_main || s.name || s.spotName || s.spot || '').trim();
+    if (!rawName || rawName === '나의 힐링 스팟' || rawName === '힐링 장소') return;
+    var spotId = String(s.id || s.spot_id || '').trim();
+    var cityName = '';
+    if (typeof window.extractSmartCityName === 'function') {
+      cityName = window.extractSmartCityName(s) || '';
+    } else {
+      var addrStr = String(s.address || s.addr || s.region || s.city_name || s.cityName || '').trim();
+      var match = addrStr.match(/([가-힣]+(?:시|군|구))/);
+      cityName = match ? match[1] : String(s.city_name || s.cityName || '').trim();
+    }
+    var placeLabel = window._pastTripComposeSpotLabel(rawName, cityName);
+    var searchName = cityName ? (cityName + ' ' + placeLabel) : placeLabel;
+    var cleanKey = searchName.replace(/\s+/g, '').toLowerCase();
+    var existing = spotsMap.get(cleanKey);
+    if (!existing || (!existing.id && spotId)) {
+      spotsMap.set(cleanKey, {
+        id: spotId,
+        name: placeLabel,
+        searchName: searchName,
+        rawName: rawName,
+        cityName: cityName,
+        elevation: s.elevation || s.alt || s.height || '',
+        region: cityName || s.region || s.city_name || s.cityName || '',
+        address: s.address || s.addr || s.roadAddress || ''
+      });
+    }
+  });
+  window.__pastTripSpotsSearchCache = Array.from(spotsMap.values());
+  return window.__pastTripSpotsSearchCache;
+};
+
+window._pastTripCleanYoutubeUrl = function(url) {
+  var s = String(url || '').trim();
+  if (!s) return '';
+  var id = '';
+  var m = s.match(/(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:watch\?(?:[^#]*&)?v=|embed\/|shorts\/|live\/|v\/|music\/)|[?&]v=)([a-zA-Z0-9_-]{11})/i);
+  if (m) id = m[1];
+  if (!id) {
+    var only = s.match(/\b([a-zA-Z0-9_-]{11})\b/);
+    if (only && /youtu/i.test(s)) id = only[1];
+  }
+  if (!id && /^[a-zA-Z0-9_-]{11}$/.test(s)) id = '';
+  return id ? ('https://www.youtube.com/watch?v=' + id) : '';
+};
+
+window._pastTripCleanNaverBlogUrl = function(url) {
+  var s = String(url || '').trim();
+  if (!s) return '';
+  var m = s.match(/(?:m\.)?blog\.naver\.com\/([A-Za-z0-9_-]+)\/(\d{8,})/i);
+  if (m) return 'https://blog.naver.com/' + m[1] + '/' + m[2];
+  var q = s.match(/(?:blogId|blogid)=([A-Za-z0-9_-]+)[\s\S]*?(?:logNo|logno)=(\d{8,})/i);
+  if (q) return 'https://blog.naver.com/' + q[1] + '/' + q[2];
+  var q2 = s.match(/(?:logNo|logno)=(\d{8,})[\s\S]*?(?:blogId|blogid)=([A-Za-z0-9_-]+)/i);
+  if (q2) return 'https://blog.naver.com/' + q2[2] + '/' + q2[1];
+  return '';
+};
+
+window.onPastTripLinkBlur = function(kind) {
+  var el = document.getElementById(kind === 'yt' ? 'pastTripYoutubeInput' : 'pastTripNaverInput');
+  if (!el) return;
+  var raw = String(el.value || '').trim();
+  if (!raw) return;
+  var clean = kind === 'yt' ? window._pastTripCleanYoutubeUrl(raw) : window._pastTripCleanNaverBlogUrl(raw);
+  if (clean) el.value = clean;
+};
+
+window._pastTripCoerceUrlList = function(v) {
+  if (Array.isArray(v)) return v.slice();
+  if (typeof v === 'string' && v.trim()) {
+    return v.split(/[\r\n,]+/).map(function(u) { return String(u || '').trim(); }).filter(Boolean);
+  }
+  return [];
+};
+
+window._pastTripNormalizeMediaUrl = function(url, kind) {
+  var s = String(url || '').trim();
+  if (!s) return '';
+  if (kind === 'yt') return window._pastTripCleanYoutubeUrl(s) || '';
+  if (kind === 'blog') return window._pastTripCleanNaverBlogUrl(s) || '';
+  return s;
+};
+
+window._pastTripMergeUniqueUrls = function(baseList, extra, opts) {
+  opts = opts || {};
+  var kind = opts.kind || '';
+  var preferNew = !!opts.preferNew;
+  var max = Number(opts.max) > 0 ? Number(opts.max) : 0;
+  var normalize = function(u) {
+    var raw = String(u || '').trim();
+    if (!raw) return '';
+    if (kind === 'yt' || kind === 'blog') {
+      return window._pastTripNormalizeMediaUrl(raw, kind) || raw;
+    }
+    return raw;
+  };
+  var base = window._pastTripCoerceUrlList(baseList).map(normalize).filter(Boolean);
+  var add = window._pastTripCoerceUrlList(Array.isArray(extra) ? extra : [extra]).map(normalize).filter(Boolean);
+  var out = [];
+  var seen = {};
+  var push = function(u) {
+    var key = String(u).trim().toLowerCase();
+    if (!key || seen[key]) return;
+    seen[key] = true;
+    out.push(u);
+  };
+  if (preferNew) {
+    add.forEach(push);
+    base.forEach(push);
+  } else {
+    base.forEach(push);
+    add.forEach(push);
+  }
+  if (max) out = out.slice(0, max);
+  return out;
+};
+
+window._pastTripInvalidateSpotMediaCache = function(spotId) {
+  var id = String(spotId || '').trim();
+  if (!id) return;
+  try {
+    if (window.__spotYtCardsCache) delete window.__spotYtCardsCache[id];
+    if (window.__spotYtPrefetch) delete window.__spotYtPrefetch[id];
+    if (window.__spotBlogCardsCache) delete window.__spotBlogCardsCache[id];
+    if (window.__spotBlogPrefetch) delete window.__spotBlogPrefetch[id];
+  } catch (e) {}
+};
+
+window._pastTripReadPendingMedia = function() {
+  var raw = (typeof safeGetJSON === 'function') ? safeGetJSON('okbm_pending_spot_media', {}) : {};
+  return (raw && typeof raw === 'object') ? raw : {};
+};
+
+window._pastTripWritePendingMedia = function(map) {
+  try {
+    localStorage.setItem('okbm_pending_spot_media', JSON.stringify(map || {}));
+  } catch (e) {}
+  if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+    window.RomanticVault.write('okbm_pending_spot_media', map || {}, true);
+  }
+};
+
+window._pastTripSavePendingMedia = function(spotName, ytUrl, blogUrl) {
+  var key = window._pastTripNormSpotKey(spotName);
+  if (!key) return;
+  var map = window._pastTripReadPendingMedia();
+  var row = map[key] || { spotName: spotName, youtube: [], blog: [] };
+  row.spotName = spotName;
+  if (ytUrl) row.youtube = window._pastTripMergeUniqueUrls(row.youtube, ytUrl);
+  if (blogUrl) row.blog = window._pastTripMergeUniqueUrls(row.blog, blogUrl);
+  map[key] = row;
+  window._pastTripWritePendingMedia(map);
+};
+
+window.flushPendingSpotMediaForSpot = async function(spot) {
+  if (!spot) return false;
+  var spotId = String(spot.id || '').trim();
+  if (!spotId) return false;
+
+  window._pastTripInvalidateSpotsSearchCache();
+
+  var nameKeys = window._pastTripCollectSpotNameKeys(spot);
+  var map = window._pastTripReadPendingMedia();
+  var ytAdd = [];
+  var blogAdd = [];
+  var matchedKeys = [];
+  Object.keys(map || {}).forEach(function(k) {
+    if (!k || !nameKeys[k] || !map[k]) return;
+    matchedKeys.push(k);
+    ytAdd = window._pastTripMergeUniqueUrls(ytAdd, map[k].youtube);
+    blogAdd = window._pastTripMergeUniqueUrls(blogAdd, map[k].blog);
+  });
+
+  var mediaOk = false;
+  if (ytAdd.length || blogAdd.length) {
+    mediaOk = await window._pastTripMergeSpotMediaUrls(spotId, ytAdd, blogAdd);
+    if (mediaOk && matchedKeys.length) {
+      matchedKeys.forEach(function(k) { delete map[k]; });
+      window._pastTripWritePendingMedia(map);
+    }
+  }
+
+  var linked = 0;
+  try {
+    linked = await window._pastTripLinkUnregisteredRecordsToSpot(spot, spotId, nameKeys);
+  } catch (linkErr) {
+    console.warn('[romantic-sync.js:flushPendingSpotMediaForSpot link]', linkErr);
+  }
+  if (linked > 0 && typeof showToast === 'function') {
+    showToast('같은 이름 비등록 기록 ' + linked + '건을 이 장소에 연결했습니다.', 'success', 2400);
+  }
+  return mediaOk || linked > 0;
+};
+
+window._pastTripMergeSpotMediaUrls = async function(spotId, ytUrls, blogUrls) {
+  var id = String(spotId || '').trim();
+  if (!id) return false;
+  var targetUrl = window.SUPABASE_URL || '';
+  var targetKey = window.SUPABASE_ANON_KEY || '';
+  if (!targetUrl || !targetKey) return false;
+  var headers = {
+    'apikey': targetKey,
+    'Authorization': 'Bearer ' + targetKey,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  };
+  var parseMediaUrls = function(raw) {
+    var yt = [];
+    var blog = [];
+    var other = [];
+    var lines = window._pastTripCoerceUrlList(raw);
+    lines.forEach(function(u) {
+      var s = String(u || '').trim();
+      if (!s) return;
+      if (/youtube\.com|youtu\.be/i.test(s)) yt.push(s);
+      else if (/blog\.naver\.com/i.test(s)) blog.push(s);
+      else other.push(s);
+    });
+    return { yt: yt, blog: blog, other: other };
+  };
+  try {
+    var getRes = await fetch(targetUrl + '/rest/v1/spots?id=eq.' + encodeURIComponent(id) + '&select=id,mediaUrls,youtube_urls,blog_urls', { headers: headers });
+    if (!getRes.ok) {
+      getRes = await fetch(targetUrl + '/rest/v1/spots?id=eq.' + encodeURIComponent(id) + '&select=id,mediaUrls', { headers: headers });
+    }
+    if (!getRes.ok) return false;
+    var rows = await getRes.json();
+    var row = Array.isArray(rows) && rows[0] ? rows[0] : { mediaUrls: '', youtube_urls: [], blog_urls: [] };
+    var parsed = parseMediaUrls(row.mediaUrls);
+    var baseYt = window._pastTripMergeUniqueUrls(parsed.yt, row.youtube_urls, { kind: 'yt' });
+    var baseBlog = window._pastTripMergeUniqueUrls(parsed.blog, row.blog_urls, { kind: 'blog' });
+    var nextYt = window._pastTripMergeUniqueUrls(baseYt, ytUrls, { kind: 'yt', preferNew: false, max: 5 });
+    var nextBlog = window._pastTripMergeUniqueUrls(baseBlog, blogUrls, { kind: 'blog', preferNew: false, max: 5 });
+    var nextMedia = nextYt.concat(nextBlog).concat(parsed.other).join('\n');
+
+    var patchBodyFull = { mediaUrls: nextMedia, youtube_urls: nextYt, blog_urls: nextBlog };
+    var patchRes = await fetch(targetUrl + '/rest/v1/spots?id=eq.' + encodeURIComponent(id), {
+      method: 'PATCH',
+      headers: headers,
+      body: JSON.stringify(patchBodyFull)
+    });
+    if (!patchRes.ok) {
+      patchRes = await fetch(targetUrl + '/rest/v1/spots?id=eq.' + encodeURIComponent(id), {
+        method: 'PATCH',
+        headers: headers,
+        body: JSON.stringify({ mediaUrls: nextMedia })
+      });
+    }
+    if (!patchRes.ok) return false;
+
+    var syncLocal = function(list) {
+      if (!Array.isArray(list)) return;
+      list.forEach(function(s) {
+        if (!s || String(s.id).trim() !== id) return;
+        s.youtubeUrls = nextYt.slice();
+        s.blogUrls = nextBlog.slice();
+        s.youtube_urls = nextYt.slice();
+        s.blog_urls = nextBlog.slice();
+        s.mediaUrls = nextMedia;
+      });
+    };
+    syncLocal(window.spots);
+    syncLocal(window.campingSpots);
+    syncLocal(typeof registeredSpots !== 'undefined' ? registeredSpots : null);
+    try {
+      var cache = safeGetJSON('okbm_spots_cache', []);
+      if (Array.isArray(cache)) {
+        syncLocal(cache);
+        localStorage.setItem('okbm_spots_cache', JSON.stringify(cache));
+      }
+    } catch (e) {}
+    window._pastTripInvalidateSpotsSearchCache();
+    window._pastTripInvalidateSpotMediaCache(id);
+    return true;
+  } catch (e) {
+    console.warn('[romantic-sync.js:_pastTripMergeSpotMediaUrls]', e);
+    return false;
+  }
+};
+
+window._pastTripEnsurePhotoMemos = function() {
+  var st = window.__pastTripRegisterState || { photos: [], photoMemos: [] };
+  st.photoMemos = Array.isArray(st.photoMemos) ? st.photoMemos : [];
+  var photos = st.photos || [];
+  while (st.photoMemos.length < Math.max(1, photos.length)) st.photoMemos.push('');
+  if (st.photoMemos.length > Math.max(1, photos.length)) {
+    st.photoMemos.length = Math.max(1, photos.length);
+  }
+  window.__pastTripRegisterState = st;
+};
+
+window._pastTripEsc = function(t) {
+  return (typeof window.escapeHtml === 'function') ? window.escapeHtml(t) : String(t == null ? '' : t);
+};
+
+window._pastTripRenderPhotoStage = function() {
+  window._pastTripEnsurePhotoMemos();
+  var st = window.__pastTripRegisterState;
+  var photos = st.photos || [];
+  var idx = Math.max(0, Math.min(Number(st.photoIndex) || 0, Math.max(0, photos.length - 1)));
+  st.photoIndex = idx;
+  var stage = document.getElementById('pastTripPhotoStage');
+  var countEl = document.getElementById('pastTripPhotoCountLabel');
+  var badgeEl = document.getElementById('pastTripPhotoIndexBadge');
+  if (countEl) countEl.textContent = '등록된 사진 (' + photos.length + '장 / 최대 10장)';
+  if (badgeEl) badgeEl.textContent = photos.length ? ((idx + 1) + ' / ' + photos.length) : '0 / 0';
+  if (stage) {
+    if (!photos.length) {
+      stage.innerHTML =
+        '<div onclick="document.getElementById(\'pastTripPhotoInput\').click();" style="width:100%; aspect-ratio:3/4; max-height:420px; border:1.5px dashed rgba(255,255,255,0.16); border-radius:14px; background:#0b0f17; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; cursor:pointer; box-sizing:border-box;">' +
+          '<div style="width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; color:#cbd5e1;">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px; height:26px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>' +
+          '</div>' +
+          '<span style="font-size:0.88rem; font-weight:800; color:#e2e8f0;">사진 추가</span>' +
+          '<span style="font-size:0.68rem; color:#64748b; text-align:center; line-height:1.45;">최대 10장</span>' +
+        '</div>';
+    } else {
+      var esc = window._pastTripEsc;
+      var slidesHtml = photos.map(function(url, pIdx) {
+        return '<div style="flex:0 0 100%; width:100%; height:100%; scroll-snap-align:start; position:relative; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center;">' +
+          '<img src="' + esc(url) + '" alt="" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(22px) brightness(0.32); transform:scale(1.15); pointer-events:none;" />' +
+          '<img src="' + esc(url) + '" alt="" style="position:relative; z-index:2; width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;" />' +
+          '<button type="button" onclick="event.stopPropagation(); window.removePastTripPhoto(' + pIdx + ');" style="position:absolute; top:10px; right:10px; z-index:10; width:28px; height:28px; border-radius:50%; background:#0c1017; color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); font-size:13px; font-weight:900; cursor:pointer;">✕</button>' +
+        '</div>';
+      }).join('');
+      var thumbsHtml = photos.map(function(tUrl, tIdx) {
+        var on = tIdx === idx;
+        var border = on
+          ? 'border:2.5px solid #94a3b8; box-shadow:0 0 10px rgba(148,163,184,0.45); transform:scale(1.06); z-index:3; opacity:1;'
+          : 'border:1px solid rgba(255,255,255,0.16); opacity:0.65;';
+        return '<div data-past-thumb-idx="' + tIdx + '" draggable="true"' +
+          ' ondragstart="window._pastTripThumbDragStart(event,' + tIdx + ');"' +
+          ' ondragover="window._pastTripThumbDragOver(event);"' +
+          ' ondrop="window._pastTripThumbDrop(event,' + tIdx + ');"' +
+          ' ondragend="window._pastTripThumbDragEnd();"' +
+          ' ontouchstart="window._pastTripThumbTouchStart(event,' + tIdx + ');"' +
+          ' ontouchmove="window._pastTripThumbTouchMove(event);"' +
+          ' ontouchend="window._pastTripThumbTouchEnd(event);"' +
+          ' onclick="window.focusPastTripPhoto(' + tIdx + ');"' +
+          ' style="width:54px; height:54px; border-radius:9px; overflow:hidden; position:relative; flex-shrink:0; cursor:grab; background:#000; box-sizing:border-box; user-select:none; -webkit-user-select:none; touch-action:none; ' + border + '">' +
+          '<img src="' + esc(tUrl) + '" alt="" style="width:100%; height:100%; object-fit:cover; pointer-events:none; display:block;" />' +
+        '</div>';
+      }).join('');
+      stage.innerHTML =
+        '<div style="width:100%; aspect-ratio:3/4; max-height:420px; position:relative; overflow:hidden; border-radius:14px; background:#000; border:1px solid rgba(255,255,255,0.12);">' +
+          '<div id="pastTripPhotoSwipeTrack" onscroll="window._pastTripOnPhotoSwipeScroll(this);" style="display:flex; width:100%; height:100%; overflow-x:auto; overflow-y:hidden; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none; touch-action:pan-x;">' +
+            slidesHtml +
+          '</div>' +
+          (photos.length < 10
+            ? '<button type="button" onclick="document.getElementById(\'pastTripPhotoInput\').click();" style="position:absolute; bottom:12px; right:12px; z-index:10; background:#0c1017; border:1px solid rgba(255,255,255,0.22); color:#e2e8f0; font-size:0.72rem; font-weight:800; padding:6px 12px; border-radius:20px; cursor:pointer;">사진 추가</button>'
+            : '') +
+        '</div>' +
+        '<div id="pastTripPhotoThumbs" style="width:100%; display:flex; flex-wrap:wrap; gap:8px; padding:10px 0 6px 0; box-sizing:border-box;">' +
+          thumbsHtml +
+        '</div>';
+      setTimeout(function() {
+        var track = document.getElementById('pastTripPhotoSwipeTrack');
+        if (track) track.scrollLeft = idx * track.offsetWidth;
+      }, 30);
+    }
+  }
+  window._pastTripSyncMemoInput();
+};
+
+window._pastTripOnPhotoSwipeScroll = function(trackEl) {
+  if (!trackEl) return;
+  var width = trackEl.offsetWidth;
+  if (!width) return;
+  var newIdx = Math.round(trackEl.scrollLeft / width);
+  var st = window.__pastTripRegisterState || { photos: [] };
+  if (newIdx === (Number(st.photoIndex) || 0) || !(st.photos && st.photos[newIdx])) return;
+  window._pastTripCommitMemoInput();
+  st.photoIndex = newIdx;
+  window.__pastTripRegisterState = st;
+  window._pastTripSyncPhotoThumbs();
+  window._pastTripSyncMemoInput();
+};
+
+window._pastTripSyncPhotoThumbs = function() {
+  var st = window.__pastTripRegisterState || { photos: [] };
+  var idx = Number(st.photoIndex) || 0;
+  var badgeEl = document.getElementById('pastTripPhotoIndexBadge');
+  var photos = st.photos || [];
+  if (badgeEl) badgeEl.textContent = photos.length ? ((idx + 1) + ' / ' + photos.length) : '0 / 0';
+  var nodes = document.querySelectorAll('#pastTripPhotoStage [data-past-thumb-idx]');
+  nodes.forEach(function(node) {
+    var nIdx = parseInt(node.getAttribute('data-past-thumb-idx'), 10);
+    var on = nIdx === idx;
+    node.style.border = on ? '2.5px solid #94a3b8' : '1px solid rgba(255,255,255,0.16)';
+    node.style.boxShadow = on ? '0 0 10px rgba(148,163,184,0.45)' : 'none';
+    node.style.transform = on ? 'scale(1.06)' : 'scale(1)';
+    node.style.opacity = on ? '1' : '0.65';
+    node.style.zIndex = on ? '3' : '1';
+  });
+};
+
+window.focusPastTripPhoto = function(idx) {
+  window._pastTripCommitMemoInput();
+  var st = window.__pastTripRegisterState || { photos: [] };
+  st.photoIndex = Number(idx) || 0;
+  window.__pastTripRegisterState = st;
+  var track = document.getElementById('pastTripPhotoSwipeTrack');
+  if (track && track.offsetWidth) {
+    track.scrollTo({ left: st.photoIndex * track.offsetWidth, behavior: 'smooth' });
+    window._pastTripSyncPhotoThumbs();
+    window._pastTripSyncMemoInput();
+    triggerHaptic(8);
+    return;
+  }
+  window._pastTripRenderPhotoStage();
+};
+
+window.shiftPastTripPhoto = function(delta) {
+  var st = window.__pastTripRegisterState || { photos: [] };
+  var n = (st.photos || []).length;
+  if (!n) return;
+  var next = (Number(st.photoIndex) || 0) + delta;
+  if (next < 0) next = n - 1;
+  if (next >= n) next = 0;
+  window.focusPastTripPhoto(next);
+};
+
+window._pastTripThumbDragStart = function(e, idx) {
+  window.__pastTripDragThumbIdx = idx;
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(idx));
+  }
+  triggerHaptic(10);
+};
+
+window._pastTripThumbDragOver = function(e) {
+  if (e.preventDefault) e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+  return false;
+};
+
+window._pastTripMovePhoto = function(fromIdx, toIdx) {
+  var st = window.__pastTripRegisterState || { photos: [], photoMemos: [] };
+  if (fromIdx === toIdx || fromIdx == null || toIdx == null) return;
+  if (!st.photos || fromIdx < 0 || toIdx < 0 || fromIdx >= st.photos.length || toIdx >= st.photos.length) return;
+  window._pastTripCommitMemoInput();
+  var movedPhoto = st.photos.splice(fromIdx, 1)[0];
+  st.photos.splice(toIdx, 0, movedPhoto);
+  st.photoMemos = Array.isArray(st.photoMemos) ? st.photoMemos : [];
+  var movedMemo = st.photoMemos.splice(fromIdx, 1)[0] || '';
+  st.photoMemos.splice(toIdx, 0, movedMemo);
+  st.photoIndex = toIdx;
+  window.__pastTripRegisterState = st;
+  window._pastTripRenderPhotoStage();
+  triggerHaptic(14);
+};
+
+window._pastTripThumbDrop = function(e, dropIdx) {
+  if (e.stopPropagation) e.stopPropagation();
+  if (e.preventDefault) e.preventDefault();
+  window._pastTripMovePhoto(window.__pastTripDragThumbIdx, dropIdx);
+  window.__pastTripDragThumbIdx = null;
+  return false;
+};
+
+window._pastTripThumbDragEnd = function() {
+  window.__pastTripDragThumbIdx = null;
+};
+
+window._pastTripThumbTouchStart = function(e, idx) {
+  window.__pastTripTouchThumbIdx = idx;
+  window.__pastTripThumbLongPress = false;
+  window.__pastTripTouchThumbEl = e.currentTarget;
+  var touch = e.touches && e.touches[0];
+  if (!touch) return;
+  window.__pastTripTouchX = touch.clientX;
+  window.__pastTripTouchY = touch.clientY;
+  clearTimeout(window.__pastTripThumbTimer);
+  window.__pastTripThumbTimer = setTimeout(function() {
+    window.__pastTripThumbLongPress = true;
+    triggerHaptic(25);
+    if (window.__pastTripTouchThumbEl) {
+      window.__pastTripTouchThumbEl.style.transform = 'scale(1.15)';
+      window.__pastTripTouchThumbEl.style.borderColor = '#94a3b8';
+      window.__pastTripTouchThumbEl.style.zIndex = '99';
+    }
+  }, 300);
+};
+
+window._pastTripThumbTouchMove = function(e) {
+  var touch = e.touches && e.touches[0];
+  if (!touch) return;
+  var dx = Math.abs(touch.clientX - window.__pastTripTouchX);
+  var dy = Math.abs(touch.clientY - window.__pastTripTouchY);
+  if (!window.__pastTripThumbLongPress) {
+    if (dx > 8 || dy > 8) clearTimeout(window.__pastTripThumbTimer);
+    return;
+  }
+  if (e.cancelable) e.preventDefault();
+};
+
+window._pastTripThumbTouchEnd = function(e) {
+  clearTimeout(window.__pastTripThumbTimer);
+  var fromIdx = window.__pastTripTouchThumbIdx;
+  var wasLong = window.__pastTripThumbLongPress;
+  if (window.__pastTripTouchThumbEl) {
+    window.__pastTripTouchThumbEl.style.transform = '';
+    window.__pastTripTouchThumbEl.style.zIndex = '';
+  }
+  if (wasLong && fromIdx != null) {
+    var touch = e.changedTouches && e.changedTouches[0];
+    var elem = touch ? document.elementFromPoint(touch.clientX, touch.clientY) : null;
+    var card = elem && elem.closest ? elem.closest('[data-past-thumb-idx]') : null;
+    if (card) {
+      var toIdx = parseInt(card.getAttribute('data-past-thumb-idx'), 10);
+      if (fromIdx !== toIdx) {
+        window._pastTripMovePhoto(fromIdx, toIdx);
+        window.__pastTripTouchThumbIdx = null;
+        window.__pastTripThumbLongPress = false;
+        window.__pastTripTouchThumbEl = null;
+        return;
+      }
+    }
+    window._pastTripRenderPhotoStage();
+  } else if (fromIdx != null) {
+    window.focusPastTripPhoto(fromIdx);
+  }
+  window.__pastTripTouchThumbIdx = null;
+  window.__pastTripThumbLongPress = false;
+  window.__pastTripTouchThumbEl = null;
+};
+
+window._pastTripCommitMemoInput = function() {
+  var input = document.getElementById('pastTripMemoInput');
+  if (!input) return;
+  var st = window.__pastTripRegisterState || {};
+  var val = String(input.value || '').slice(0, 120);
+  if (input.value !== val) input.value = val;
+  if (st.memoMode === 'per_photo') {
+    window._pastTripEnsurePhotoMemos();
+    var idx = Number(st.photoIndex) || 0;
+    st.photoMemos[idx] = val;
+  } else {
+    st.singleMemo = val;
+  }
+  window.__pastTripRegisterState = st;
+};
+
+window._pastTripSyncMemoInput = function() {
+  var input = document.getElementById('pastTripMemoInput');
+  if (!input) return;
+  var st = window.__pastTripRegisterState || { memoMode: 'single' };
+  if (st.memoMode === 'per_photo') {
+    window._pastTripEnsurePhotoMemos();
+    input.value = st.photoMemos[Number(st.photoIndex) || 0] || '';
+  } else {
+    input.value = st.singleMemo || '';
+  }
+  window.updatePastTripMemoCount();
+};
+
+window.switchPastTripMemoMode = function(mode) {
+  triggerHaptic(8);
+  window._pastTripCommitMemoInput();
+  var st = window.__pastTripRegisterState || {};
+  st.memoMode = (mode === 'per_photo') ? 'per_photo' : 'single';
+  window.__pastTripRegisterState = st;
+  var btnSingle = document.getElementById('pastTripMemoModeSingle');
+  var btnPer = document.getElementById('pastTripMemoModePerPhoto');
+  var helper = document.getElementById('pastTripMemoModeHelper');
+  if (btnSingle && btnPer) {
+    var isSingle = st.memoMode === 'single';
+    btnSingle.style.background = isSingle ? '#38bdf8' : 'transparent';
+    btnSingle.style.color = isSingle ? '#000000' : '#94a3b8';
+    btnSingle.style.fontWeight = isSingle ? '900' : '700';
+    btnPer.style.background = !isSingle ? '#38bdf8' : 'transparent';
+    btnPer.style.color = !isSingle ? '#000000' : '#94a3b8';
+    btnPer.style.fontWeight = !isSingle ? '900' : '700';
+  }
+  if (helper) {
+    helper.textContent = st.memoMode === 'single'
+      ? '대표 일지 30자 이상, 최대 120자'
+      : '사진별 메모는 선택, 최대 120자';
+  }
+  window._pastTripSyncMemoInput();
+};
+
+window._pastTripRenderGearList = function() {
+  var wrap = document.getElementById('pastTripGearList');
+  var hint = document.getElementById('pastTripPresetHint');
+  if (!wrap) return;
+  var st = window.__pastTripRegisterState || {};
+  var items = Array.isArray(st.items) ? st.items : [];
+  var esc = window._pastTripEsc;
+  if (!items.length) {
+    wrap.innerHTML = '';
+    if (hint) hint.textContent = '';
+    return;
+  }
+  var grams = 0;
+  wrap.innerHTML = items.map(function(it, i) {
+    grams += Number(it.weight || 0);
+    return '<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:7px 10px;">' +
+      '<div style="min-width:0; flex:1;">' +
+        '<div style="font-size:0.78rem; font-weight:800; color:#e2e8f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(it.name) + '</div>' +
+        '<div style="font-size:0.62rem; color:#64748b; margin-top:1px;">' + Number(it.weight || 0) + 'g</div>' +
+      '</div>' +
+      '<button type="button" onclick="window.removePastTripGearItem(' + i + ');" style="width:26px; height:26px; border-radius:6px; border:1px solid rgba(244,63,94,0.3); background:rgba(244,63,94,0.12); color:#fda4af; font-size:0.78rem; font-weight:900; cursor:pointer;">−</button>' +
+    '</div>';
+  }).join('');
+  if (hint) hint.textContent = items.length + '개 · ' + (grams / 1000).toFixed(2) + 'kg (이 기록에만 반영)';
+};
+
+window._pastTripCollectGearPool = function() {
+  var pool = [];
+  var seen = {};
+  var pushGear = function(g, catId) {
+    if (!g || !g.name) return;
+    var key = String(g.name).replace(/\s+/g, '').toLowerCase();
+    if (seen[key]) return;
+    seen[key] = true;
+    pool.push({
+      name: g.name,
+      brand: g.brand || '',
+      weight: Number(g.weight || g.weight_g || 0),
+      categoryId: catId || g.category_id || g.categoryId || ''
+    });
+  };
+  (window.CATEGORIES || []).forEach(function(cat) {
+    if (!cat) return;
+    (cat.db || []).forEach(function(g) { pushGear(g, cat.id); });
+  });
+  var custom = [];
+  try {
+    custom = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_custom_gears', [])
+      : (typeof safeGetJSON === 'function' ? safeGetJSON('okbm_custom_gears', []) : []);
+  } catch (e) { custom = []; }
+  (Array.isArray(custom) ? custom : []).forEach(function(g) {
+    pushGear(g, g && (g.category_id || g.categoryId));
+  });
+  return pool;
+};
+
+window._pastTripRenderGearSuggest = function(rawQ) {
+  var listEl = document.getElementById('pastTripGearSuggest');
+  if (!listEl) return;
+  var q = String(rawQ || '').trim().toLowerCase();
+  if (!q) {
+    listEl.style.display = 'none';
+    listEl.innerHTML = '';
+    return;
+  }
+  var matched = window._pastTripCollectGearPool().filter(function(g) {
+    var name = String(g.name || '').toLowerCase();
+    var brand = String(g.brand || '').toLowerCase();
+    return name.indexOf(q) !== -1 || brand.indexOf(q) !== -1;
+  }).slice(0, 30);
+  var esc = window._pastTripEsc;
+  if (!matched.length) {
+    listEl.style.display = 'block';
+    listEl.innerHTML = '<div style="padding:12px; color:#64748b; font-size:0.74rem; text-align:center;">일치하는 장비가 없습니다.</div>';
+    return;
+  }
+  listEl.style.display = 'block';
+  listEl.innerHTML = matched.map(function(g, i) {
+    return '<button type="button" class="js-past-add-gear" data-idx="' + i + '" style="width:100%; text-align:left; background:transparent; border:none; border-bottom:1px solid rgba(255,255,255,0.06); padding:9px 12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:8px;">' +
+      '<span style="font-size:0.80rem; font-weight:800; color:#e2e8f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(g.name) + '</span>' +
+      '<span style="font-size:0.68rem; color:#94a3b8; flex-shrink:0;">' + (g.weight / 1000).toFixed(2) + 'kg</span>' +
+    '</button>';
+  }).join('');
+  listEl.querySelectorAll('.js-past-add-gear').forEach(function(btn) {
+    btn.onclick = function() {
+      var item = matched[Number(btn.getAttribute('data-idx'))];
+      if (item) window.addPastTripGearItem(item);
+    };
+  });
+};
+
+window.onPastTripGearTyped = function() {
+  var input = document.getElementById('pastTripGearSearchInput');
+  window._pastTripRenderGearSuggest(input ? input.value : '');
+};
+
+window.addPastTripGearItem = function(gear) {
+  if (!gear || !gear.name) return;
+  triggerHaptic(8);
+  var st = window.__pastTripRegisterState || {};
+  st.items = Array.isArray(st.items) ? st.items : [];
+  var exists = st.items.some(function(it) { return String(it.name) === String(gear.name); });
+  if (exists) {
+    if (typeof showToast === 'function') showToast('이미 담긴 장비입니다.', 'info', 1400);
+    return;
+  }
+  st.items.push({
+    id: 'item_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+    name: gear.name,
+    weight: Number(gear.weight || 0),
+    categoryId: gear.categoryId || ''
+  });
+  window.__pastTripRegisterState = st;
+  var input = document.getElementById('pastTripGearSearchInput');
+  if (input) input.value = '';
+  window._pastTripRenderGearSuggest('');
+  window._pastTripRenderGearList();
+};
+
+window.removePastTripGearItem = function(idx) {
+  triggerHaptic(8);
+  var st = window.__pastTripRegisterState || {};
+  st.items = Array.isArray(st.items) ? st.items : [];
+  st.items = st.items.filter(function(_, i) { return i !== idx; });
+  window.__pastTripRegisterState = st;
+  window._pastTripRenderGearList();
+};
+
+window._pastTripRenderPresetChips = function() {
+  window._pastTripRenderGearList();
+};
+
+window.togglePastTripPresetSheet = function() {
+  triggerHaptic(8);
+  var sheet = document.getElementById('pastTripPresetSheet');
+  if (!sheet) return;
+  var opening = sheet.style.display === 'none' || !sheet.style.display;
+  if (!opening) {
+    sheet.style.display = 'none';
+    return;
+  }
+  var presets = window._pastTripReadPresets();
+  var esc = window._pastTripEsc;
+  if (!presets.length) {
+    sheet.innerHTML = '<div style="padding:14px; color:#64748b; font-size:0.74rem; text-align:center;">저장된 장비세트가 없습니다.</div>';
+  } else {
+    sheet.innerHTML = presets.map(function(p) {
+      if (!p || !p.id) return '';
+      var flat = window._pastTripFlattenPresetItems(p);
+      return '<button type="button" class="js-past-add-preset" data-preset-id="' + esc(String(p.id)) + '" style="width:100%; text-align:left; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:9px 12px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:8px;">' +
+        '<span style="min-width:0;">' +
+          '<span style="display:block; font-size:0.80rem; font-weight:800; color:#e2e8f0;">' + esc(p.name || '세트') + '</span>' +
+          '<span style="display:block; font-size:0.62rem; color:#64748b; margin-top:2px;">' + flat.items.length + '개 · ' + (flat.totalGrams / 1000).toFixed(2) + 'kg</span>' +
+        '</span>' +
+        '<span style="font-size:0.70rem; color:#cbd5e1; font-weight:800; flex-shrink:0;">추가</span>' +
+      '</button>';
+    }).join('');
+    sheet.querySelectorAll('.js-past-add-preset').forEach(function(btn) {
+      btn.onclick = function() { window.selectPastTripPreset(btn.getAttribute('data-preset-id') || ''); };
+    });
+  }
+  sheet.style.display = 'flex';
+};
+
+window.selectPastTripPreset = function(presetId) {
+  triggerHaptic(8);
+  var st = window.__pastTripRegisterState || {};
+  st.items = Array.isArray(st.items) ? st.items : [];
+  var presets = window._pastTripReadPresets();
+  var target = presets.find(function(p) { return String(p.id) === String(presetId); });
+  var flat = window._pastTripFlattenPresetItems(target);
+  var added = 0;
+  flat.items.forEach(function(it) {
+    if (!it || !it.name) return;
+    if (st.items.some(function(ex) { return String(ex.name) === String(it.name); })) return;
+    st.items.push(it);
+    added++;
+  });
+  st.presetId = String(presetId || '');
+  window.__pastTripRegisterState = st;
+  var sheet = document.getElementById('pastTripPresetSheet');
+  if (sheet) sheet.style.display = 'none';
+  window._pastTripRenderGearList();
+  if (typeof showToast === 'function') {
+    showToast(added ? (added + '개 장비를 담았습니다.') : '이미 담긴 세트입니다.', added ? 'success' : 'info', 1600);
+  }
+};
+
+window.removePastTripPhoto = function(idx) {
+  triggerHaptic(8);
+  window._pastTripCommitMemoInput();
+  var st = window.__pastTripRegisterState || { photos: [], photoMemos: [] };
+  st.photos = (st.photos || []).filter(function(_, i) { return i !== idx; });
+  st.photoMemos = (st.photoMemos || []).filter(function(_, i) { return i !== idx; });
+  if (st.photoIndex >= st.photos.length) st.photoIndex = Math.max(0, st.photos.length - 1);
+  window.__pastTripRegisterState = st;
+  window._pastTripRenderPhotoStage();
+};
+
+window.handlePastTripPhotoUpload = async function(event) {
+  var inputEl = event && event.target;
+  var files = inputEl && inputEl.files;
+  if (!files || !files.length) return;
+  var st = window.__pastTripRegisterState || { photos: [], photoMemos: [] };
+  var photos = st.photos || [];
+  var maxSlots = 10 - photos.length;
+  if (maxSlots <= 0) {
+    if (typeof showToast === 'function') showToast('사진은 최대 10장까지 등록 가능합니다.', 'warn');
+    inputEl.value = '';
+    return;
+  }
+  var filesToProcess = Array.from(files).slice(0, maxSlots);
+  var statusEl = document.getElementById('pastTripPhotoStatus');
+  var submitBtn = document.getElementById('pastTripSubmitBtn');
+  if (typeof showToast === 'function') showToast('사진추가중', 'info', 1800);
+  if (statusEl) statusEl.textContent = '사진추가중';
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.55'; }
+  triggerHaptic(10);
+
+  var compressOne = function(file) {
+    return new Promise(function(resolve) {
+      var blobUrl = '';
+      try { blobUrl = URL.createObjectURL(file); } catch (e) { resolve(''); return; }
+      var img = new Image();
+      var done = false;
+      var timer = setTimeout(function() {
+        if (!done) { done = true; if (blobUrl) URL.revokeObjectURL(blobUrl); resolve(''); }
+      }, 12000);
+      img.onload = function() {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        try {
+          var canvas = document.createElement('canvas');
+          var ctx = canvas.getContext('2d');
+          var MAX_DIM = 1200;
+          var maxLen = Math.max(img.width, img.height);
+          var scale = maxLen > MAX_DIM ? (MAX_DIM / maxLen) : 1;
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(async function(blob) {
+            if (blobUrl) URL.revokeObjectURL(blobUrl);
+            if (!blob) { resolve(''); return; }
+            var reader = new FileReader();
+            reader.onload = async function() {
+              var dataUrl = String(reader.result || '');
+              var url = '';
+              if (typeof window.uploadSinglePhotoSmart === 'function') {
+                url = await window.uploadSinglePhotoSmart(dataUrl, 'past_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7) + '.jpg');
+              }
+              resolve(url && String(url).startsWith('http') ? url : '');
+            };
+            reader.onerror = function() { resolve(''); };
+            reader.readAsDataURL(blob);
+          }, 'image/jpeg', 0.82);
+        } catch (err) {
+          if (blobUrl) URL.revokeObjectURL(blobUrl);
+          resolve('');
+        }
+      };
+      img.onerror = function() {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        if (blobUrl) URL.revokeObjectURL(blobUrl);
+        resolve('');
+      };
+      img.src = blobUrl;
+    });
+  };
+
+  for (var i = 0; i < filesToProcess.length; i++) {
+    if (statusEl) statusEl.textContent = '사진 ' + (i + 1) + '/' + filesToProcess.length + ' 업로드 중...';
+    var uploaded = await compressOne(filesToProcess[i]);
+    if (uploaded) {
+      photos.push(uploaded);
+      st.photoMemos = st.photoMemos || [];
+      st.photoMemos.push('');
+    }
+  }
+  st.photos = photos;
+  st.photoIndex = Math.max(0, photos.length - 1);
+  window.__pastTripRegisterState = st;
+  inputEl.value = '';
+  if (statusEl) statusEl.textContent = photos.length ? (photos.length + '장 준비됨') : '';
+  if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = '1'; }
+  window._pastTripRenderPhotoStage();
+};
+
+window._pastTripHideSpotSuggest = function() {
+  var listEl = document.getElementById('pastTripSpotSuggest');
+  if (listEl) {
+    listEl.style.display = 'none';
+    listEl.innerHTML = '';
+  }
+};
+
+window._pastTripShowSpotChoice = function(show) {
+  var existing = document.getElementById('pastTripSpotChoiceOverlay');
+  if (!show) {
+    if (existing) existing.remove();
+    return;
+  }
+  if (existing) existing.remove();
+  var st = window.__pastTripRegisterState || {};
+  var name = String(st.spotName || '').trim();
+  var input = document.getElementById('pastTripSpotInput');
+  if (input && input.value) name = String(input.value || '').trim();
+  var esc = window._pastTripEsc || function(s) { return String(s || ''); };
+  var ov = document.createElement('div');
+  ov.id = 'pastTripSpotChoiceOverlay';
+  ov.style.cssText = 'position:fixed; inset:0; z-index:2147483647; background:rgba(0,0,0,0.72); display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
+  ov.onclick = function(e) { if (e.target === ov) window._pastTripShowSpotChoice(false); };
+  ov.innerHTML =
+    '<div style="width:100%; max-width:320px; background:#0c1017; border-radius:14px; border:1px solid rgba(255,255,255,0.12); padding:16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 16px 40px rgba(0,0,0,0.55);" onclick="event.stopPropagation();">' +
+      '<div style="font-size:0.92rem; font-weight:900; color:#fff; text-align:center;">장소를 등록하시겠습니까?</div>' +
+      (name ? ('<div style="font-size:0.78rem; font-weight:800; color:#e2e8f0; text-align:center; word-break:break-all;">' + esc(name) + '</div>') : '') +
+      '<div style="font-size:0.68rem; color:#94a3b8; line-height:1.5; text-align:center;">등록하기를 선택하시면 제보창으로 연결됩니다.<br>등록하지 않기를 선택하시면 나만보기와 이 기록에 저장됩니다.</div>' +
+      '<div style="display:flex; gap:8px;">' +
+        '<button type="button" onclick="window.choosePastTripSpotRegister();" style="flex:1; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:#e2e8f0; color:#000; font-size:0.78rem; font-weight:900; cursor:pointer;">등록하기</button>' +
+        '<button type="button" onclick="window.choosePastTripSpotSkip();" style="flex:1; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04); color:#cbd5e1; font-size:0.78rem; font-weight:800; cursor:pointer;">등록하지 않기</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(ov);
+};
+
+window._pastTripShowSpotDetail = function(show) {
+  var el = document.getElementById('pastTripSpotDetailPanel');
+  if (el) el.style.display = show ? 'flex' : 'none';
+};
+
+window._pastTripSetSpotBadge = function(kind) {
+  var badge = document.getElementById('pastTripSpotStatusBadge');
+  if (!badge) return;
+  if (kind === 'registered') {
+    badge.textContent = '등록 장소 · 마이데이터 합산 가능';
+    badge.style.color = '#34d399';
+    badge.style.fontSize = '0.62rem';
+    badge.style.lineHeight = '1.35';
+  } else if (kind === 'unregistered') {
+    badge.textContent = '비등록 장소는 나만보기에 저장됩니다. 추후 등록될경우 노출됩니다.';
+    badge.style.color = '#34d399';
+    badge.style.fontSize = 'calc(0.62rem + 3pt)';
+    badge.style.lineHeight = '1.35';
+  } else {
+    badge.textContent = '등록 장소를 선택하면 마이데이터에 합산됩니다.';
+    badge.style.color = '#64748b';
+    badge.style.fontSize = '0.62rem';
+    badge.style.lineHeight = '1.35';
+  }
+};
+
+window._pastTripScoreSpotMatches = function(q) {
+  var spotsSource = window._pastTripBuildSpotSearchPool();
+  var tokens = String(q || '').trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!tokens.length) return [];
+  var lastToken = tokens[tokens.length - 1];
+  var whole = String(q || '').replace(/\s+/g, '').toLowerCase();
+  var scored = [];
+  spotsSource.forEach(function(s) {
+    var sName = String(s.searchName || s.name || '').toLowerCase();
+    var rawName = String(s.rawName || s.name || '').toLowerCase();
+    var sAddr = String(s.address || '').toLowerCase();
+    var sCity = String(s.cityName || s.region || '').toLowerCase();
+    var score = 0;
+    var matched = 0;
+    var clean = sName.replace(/\s+/g, '');
+    if (clean === whole) score += 2000;
+    else if (clean.indexOf(whole) !== -1) score += 1000;
+    if (lastToken) {
+      if (rawName === lastToken || rawName.indexOf(lastToken) !== -1) score += 600;
+      else if (sName.indexOf(lastToken) !== -1) score += 400;
+      else if (sAddr.indexOf(lastToken) !== -1) score += 100;
+    }
+    tokens.forEach(function(t) {
+      var hit = false;
+      if (rawName.indexOf(t) !== -1) { score += 250; hit = true; }
+      else if (sName.indexOf(t) !== -1) { score += 180; hit = true; }
+      else if (sCity.indexOf(t) !== -1 || sAddr.indexOf(t) !== -1) { score += 80; hit = true; }
+      if (hit) matched++;
+    });
+    if (matched > 1) score += matched * 150;
+    if (score > 0) scored.push({ item: s, score: score });
+  });
+  scored.sort(function(a, b) { return b.score - a.score; });
+  return scored.map(function(w) { return w.item; }).slice(0, 20);
+};
+
+window._pastTripRenderSpotSuggest = function(rawQ) {
+  var listEl = document.getElementById('pastTripSpotSuggest');
+  var confirmBtn = document.getElementById('pastTripSpotConfirmBtn');
+  if (!listEl) return;
+  var q = String(rawQ || '').trim();
+  if (!q) {
+    listEl.style.display = 'none';
+    listEl.innerHTML = '';
+    if (confirmBtn) confirmBtn.style.display = 'none';
+    return;
+  }
+  var matchedList = window._pastTripScoreSpotMatches(q);
+  var esc = window._pastTripEsc;
+  if (confirmBtn) confirmBtn.style.display = matchedList.length ? 'none' : 'inline-flex';
+  if (!matchedList.length) {
+    listEl.style.display = 'block';
+    listEl.innerHTML = '<div style="padding:12px; color:#64748b; font-size:0.74rem; text-align:center; line-height:1.5;">일치하는 등록 장소가 없습니다.<br>확인을 누르면 이 이름으로 진행합니다.</div>';
+    return;
+  }
+  listEl.style.display = 'block';
+  listEl.innerHTML = matchedList.map(function(s, i) {
+    var elev = String(s.elevation || '').replace(/[^\d.]/g, '');
+    elev = elev ? (elev + 'm') : '';
+    var title = s.name || s.rawName || '';
+    var sub = s.cityName || s.region || '';
+    if (sub && title.indexOf(sub) !== -1) sub = '';
+    if (!sub && s.address) sub = s.address;
+    return '<button type="button" class="js-past-select-spot" data-idx="' + i + '" style="width:100%; text-align:left; background:transparent; border:none; border-bottom:1px solid rgba(255,255,255,0.06); padding:9px 12px; cursor:pointer;">' +
+      '<div style="font-size:0.82rem; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + esc(title) + (elev ? (' <span style="color:#cbd5e1; font-size:0.68rem;">(' + esc(elev) + ')</span>') : '') + '</div>' +
+      (sub ? ('<div style="font-size:0.64rem; color:#94a3b8; margin-top:2px;">' + esc(sub) + '</div>') : '') +
+    '</button>';
+  }).join('');
+  listEl.querySelectorAll('.js-past-select-spot').forEach(function(row) {
+    row.addEventListener('click', function() {
+      var item = matchedList[Number(row.getAttribute('data-idx'))];
+      if (item) window.selectPastTripSpot(item, !item.id);
+    });
+  });
+};
+
+window.openSpotSearchModalForPastTrip = function() {
+  var input = document.getElementById('pastTripSpotInput');
+  if (input) {
+    input.focus();
+    window._pastTripRenderSpotSuggest(input.value);
+  }
+};
+
+window.confirmPastTripCustomSpot = function() {
+  var input = document.getElementById('pastTripSpotInput');
+  var name = input ? String(input.value || '').trim() : '';
+  if (!name) {
+    if (typeof showToast === 'function') showToast('장소 이름을 입력해주세요.', 'warn');
+    return;
+  }
+  triggerHaptic(10);
+  var st = window.__pastTripRegisterState || {};
+  st.spotName = name;
+  st.spotId = '';
+  st.spotPath = 'choice';
+  st.elev = '';
+  st.region = '';
+  window.__pastTripRegisterState = st;
+  window._pastTripHideSpotSuggest();
+  var confirmBtn = document.getElementById('pastTripSpotConfirmBtn');
+  if (confirmBtn) confirmBtn.style.display = 'none';
+  var elevInput = document.getElementById('pastTripElevInput');
+  var regionInput = document.getElementById('pastTripRegionInput');
+  if (elevInput) elevInput.value = '';
+  if (regionInput) regionInput.value = '';
+  window._pastTripSetSpotBadge('unregistered');
+  window._pastTripShowSpotDetail(false);
+  if (typeof showToast === 'function') {
+    showToast('등록된 장소가 아닌 경우 나만보기로 이동됩니다.', 'info', 2600);
+  }
+  window._pastTripShowSpotChoice(true);
+};
+
+window._pastTripParkForProposal = function() {
+  var past = document.getElementById('pastTripRegisterModal');
+  if (past) past.style.display = 'none';
+  if (window.__pastTripProposalObserver) {
+    try { window.__pastTripProposalObserver.disconnect(); } catch (e) {}
+    window.__pastTripProposalObserver = null;
+  }
+  var check = function() {
+    var live = document.getElementById('pastTripRegisterModal');
+    if (!live) {
+      if (window.__pastTripProposalObserver) {
+        try { window.__pastTripProposalObserver.disconnect(); } catch (e2) {}
+        window.__pastTripProposalObserver = null;
+      }
+      return;
+    }
+    var ov = document.getElementById('customModalOverlay');
+    var banner = document.getElementById('pinPickerBanner');
+    var overlayOn = !!(ov && window.getComputedStyle(ov).display !== 'none');
+    var bannerOn = !!(banner && window.getComputedStyle(banner).display !== 'none');
+    if (overlayOn || bannerOn) return;
+    live.style.display = 'flex';
+    if (window.__pastTripProposalObserver) {
+      try { window.__pastTripProposalObserver.disconnect(); } catch (e3) {}
+      window.__pastTripProposalObserver = null;
+    }
+  };
+  var observer = new MutationObserver(check);
+  window.__pastTripProposalObserver = observer;
+  var overlay = document.getElementById('customModalOverlay');
+  var banner = document.getElementById('pinPickerBanner');
+  if (overlay) observer.observe(overlay, { attributes: true, attributeFilter: ['style', 'class'] });
+  if (banner) observer.observe(banner, { attributes: true, attributeFilter: ['style', 'class'] });
+};
+
+window.choosePastTripSpotRegister = function() {
+  triggerHaptic(10);
+  window._pastTripShowSpotChoice(false);
+  var st = window.__pastTripRegisterState || {};
+  var name = st.spotName || '';
+  var input = document.getElementById('pastTripSpotInput');
+  if (input && input.value) name = String(input.value || '').trim();
+  st.spotName = name;
+  st.spotId = '';
+  st.spotPath = 'proposal';
+  window.__pastTripRegisterState = st;
+  window._pastTripShowSpotDetail(true);
+  window._pastTripSetSpotBadge('unregistered');
+
+  if (typeof window.openUserProposalModal === 'function') {
+    window.openUserProposalModal(name, 0, 0, '');
+    var overlay = document.getElementById('customModalOverlay');
+    if (overlay) overlay.style.setProperty('z-index', '2147483646', 'important');
+    window._pastTripParkForProposal();
+    return;
+  }
+
+  // index 등 map 제보 모달이 없는 페이지 → 지도로 이동 후 제보 창 오픈
+  try {
+    sessionStorage.setItem('okbm_pending_past_trip_register', JSON.stringify(window._pastTripBuildDraft()));
+  } catch (e) {}
+  var url = 'map.html?propose_spot=' + encodeURIComponent(name || '') + '&from_past_trip=1';
+  window.location.assign(url);
+};
+
+window.choosePastTripSpotSkip = function() {
+  triggerHaptic(8);
+  window._pastTripShowSpotChoice(false);
+  var st = window.__pastTripRegisterState || {};
+  st.spotPath = 'skip';
+  st.spotId = '';
+  window.__pastTripRegisterState = st;
+  window._pastTripShowSpotDetail(true);
+  window._pastTripSetSpotBadge('unregistered');
+  var regionInput = document.getElementById('pastTripRegionInput');
+  if (regionInput) regionInput.focus();
+};
+
+window._pastTripBuildDraft = function() {
+  var st = window.__pastTripRegisterState || {};
+  var dateInput = document.getElementById('pastTripDateInput');
+  var spotInput = document.getElementById('pastTripSpotInput');
+  var elevInput = document.getElementById('pastTripElevInput');
+  var regionInput = document.getElementById('pastTripRegionInput');
+  var ytInput = document.getElementById('pastTripYoutubeInput');
+  var naverInput = document.getElementById('pastTripNaverInput');
+  return {
+    date: dateInput ? String(dateInput.value || '').trim() : '',
+    spotName: spotInput ? String(spotInput.value || '').trim() : String(st.spotName || ''),
+    spotId: String(st.spotId || ''),
+    spotPath: String(st.spotPath || 'proposal'),
+    elev: elevInput ? String(elevInput.value || '').trim() : String(st.elev || ''),
+    region: regionInput ? String(regionInput.value || '').trim() : String(st.region || ''),
+    items: Array.isArray(st.items) ? st.items : [],
+    photos: Array.isArray(st.photos) ? st.photos.filter(function(u) {
+      return typeof u === 'string' && (u.startsWith('https://') || u.startsWith('http://'));
+    }) : [],
+    photoMemos: Array.isArray(st.photoMemos) ? st.photoMemos : [],
+    memoMode: st.memoMode || 'single',
+    singleMemo: String(st.singleMemo || ''),
+    photoIndex: Number(st.photoIndex) || 0,
+    youtube: ytInput ? String(ytInput.value || '').trim() : '',
+    blog: naverInput ? String(naverInput.value || '').trim() : ''
+  };
+};
+
+window._pastTripApplyDraft = function(draft) {
+  if (!draft || typeof draft !== 'object') return;
+  var st = window.__pastTripRegisterState || {};
+  st.spotId = String(draft.spotId || '');
+  st.spotName = String(draft.spotName || '');
+  st.spotPath = String(draft.spotPath || '');
+  st.elev = String(draft.elev || '');
+  st.region = String(draft.region || '');
+  st.items = Array.isArray(draft.items) ? draft.items : [];
+  st.photos = Array.isArray(draft.photos) ? draft.photos : [];
+  st.photoMemos = Array.isArray(draft.photoMemos) ? draft.photoMemos : [];
+  st.memoMode = draft.memoMode || 'single';
+  st.singleMemo = String(draft.singleMemo || '');
+  st.photoIndex = Number(draft.photoIndex) || 0;
+  window.__pastTripRegisterState = st;
+
+  var dateInput = document.getElementById('pastTripDateInput');
+  if (dateInput && draft.date) dateInput.value = draft.date;
+  if (typeof window._pastTripSyncDateDisplay === 'function') window._pastTripSyncDateDisplay();
+
+  var spotInput = document.getElementById('pastTripSpotInput');
+  if (spotInput) spotInput.value = st.spotName;
+
+  var elevInput = document.getElementById('pastTripElevInput');
+  if (elevInput) elevInput.value = st.elev;
+
+  var regionInput = document.getElementById('pastTripRegionInput');
+  if (regionInput) regionInput.value = st.region;
+
+  var ytInput = document.getElementById('pastTripYoutubeInput');
+  if (ytInput && draft.youtube) ytInput.value = draft.youtube;
+  var naverInput = document.getElementById('pastTripNaverInput');
+  if (naverInput && draft.blog) naverInput.value = draft.blog;
+
+  if (st.spotPath === 'proposal' || st.spotPath === 'skip' || !st.spotId) {
+    window._pastTripShowSpotDetail(true);
+    window._pastTripSetSpotBadge(st.spotId ? 'registered' : 'unregistered');
+  } else {
+    window._pastTripSetSpotBadge('registered');
+  }
+
+  if (typeof window._pastTripRenderGearList === 'function') window._pastTripRenderGearList();
+  if (typeof window._pastTripRenderPhotoStage === 'function') window._pastTripRenderPhotoStage();
+  if (typeof window.updatePastTripMemoCount === 'function') window.updatePastTripMemoCount();
+};
+
+window.okbmMaybeReopenPastTripRegister = function() {
+  try {
+    var params = new URLSearchParams(location.search || '');
+    if (params.get('reopen_past_trip') !== '1') return;
+    var draft = null;
+    try { draft = JSON.parse(sessionStorage.getItem('okbm_pending_past_trip_register') || 'null'); } catch (e) { draft = null; }
+    params.delete('reopen_past_trip');
+    var q = params.toString();
+    if (typeof history !== 'undefined' && history.replaceState) {
+      history.replaceState({}, '', location.pathname + (q ? ('?' + q) : '') + (location.hash || ''));
+    }
+    setTimeout(function() {
+      if (typeof window.openUserProfileModal === 'function') {
+        try { window.openUserProfileModal(); } catch (e2) {}
+      }
+      if (typeof window.openPastTripRegisterModal === 'function') {
+        window.openPastTripRegisterModal();
+        if (draft) window._pastTripApplyDraft(draft);
+      }
+      try { sessionStorage.removeItem('okbm_pending_past_trip_register'); } catch (e3) {}
+    }, 500);
+  } catch (e) {
+    console.warn('[romantic-sync.js:okbmMaybeReopenPastTripRegister]', e);
+  }
+};
+
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof window.okbmMaybeReopenPastTripRegister === 'function') window.okbmMaybeReopenPastTripRegister();
+    });
+  } else {
+    setTimeout(function() {
+      if (typeof window.okbmMaybeReopenPastTripRegister === 'function') window.okbmMaybeReopenPastTripRegister();
+    }, 0);
+  }
+}
+
+window.selectPastTripSpot = function(spot, isUnregistered) {
+  triggerHaptic(10);
+  var st = window.__pastTripRegisterState || {};
+  var region = String((spot && (spot.cityName || spot.region)) || '').trim();
+  var name = window._pastTripComposeSpotLabel(
+    (spot && (spot.name || spot.rawName)) || '',
+    region
+  );
+  var elev = String((spot && spot.elevation) || '').trim().replace(/[^\d.]/g, '');
+  if (elev && !/m$/i.test(elev)) elev = elev + 'm';
+  st.spotName = name;
+  st.elev = elev;
+  st.region = region;
+  st.spotId = (!isUnregistered && spot && spot.id) ? String(spot.id).trim() : '';
+  st.spotPath = st.spotId ? 'registered' : 'choice';
+  window.__pastTripRegisterState = st;
+
+  var spotInput = document.getElementById('pastTripSpotInput');
+  var elevInput = document.getElementById('pastTripElevInput');
+  var regionInput = document.getElementById('pastTripRegionInput');
+  if (spotInput) spotInput.value = name;
+  if (elevInput) elevInput.value = elev.replace(/m$/i, '');
+  if (regionInput) regionInput.value = region;
+  window._pastTripHideSpotSuggest();
+  var confirmBtn = document.getElementById('pastTripSpotConfirmBtn');
+  if (confirmBtn) confirmBtn.style.display = 'none';
+
+  if (st.spotId) {
+    window._pastTripShowSpotChoice(false);
+    window._pastTripShowSpotDetail(true);
+    window._pastTripSetSpotBadge('registered');
+  } else {
+    window._pastTripShowSpotDetail(false);
+    window._pastTripSetSpotBadge('unregistered');
+    if (typeof showToast === 'function') {
+      showToast('등록된 장소가 아닌 경우 나만보기로 이동됩니다.', 'info', 2600);
+    }
+    window._pastTripShowSpotChoice(true);
+  }
+};
+
+window.openPastTripRegisterModal = function(ev) {
+  if (ev) {
+    if (typeof ev.preventDefault === 'function') ev.preventDefault();
+    if (typeof ev.stopPropagation === 'function') ev.stopPropagation();
+  }
+  triggerHaptic(10);
+  if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
+    if (typeof showToast === 'function') showToast('로그인 후 과거 일정을 등록할 수 있습니다.', 'info', 2200);
+    if (typeof window.openLoginModal === 'function') window.openLoginModal();
+    return;
+  }
+  if (typeof window.recordModalHistoryStep === 'function') {
+    window.recordModalHistoryStep('userProfileModalOverlay', function() {
+      if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal();
+    });
+  }
+  var old = document.getElementById('pastTripRegisterModal');
+  if (old) old.remove();
+  window.__pastTripSpotsSearchCache = null;
+
+  window.__pastTripRegisterState = {
+    photos: [], photoMemos: [], presetId: '', items: [], elev: '', region: '',
+    spotId: '', spotName: '', spotPath: '', memoMode: 'single', singleMemo: '', photoIndex: 0
+  };
+  var maxDate = window._pastTripYesterdayIso();
+  var modal = document.createElement('div');
+  modal.id = 'pastTripRegisterModal';
+  modal.className = 'custom-modal-overlay';
+  modal.style.cssText = 'display:flex; position:fixed; inset:0; background:#000000; z-index:2147483642; justify-content:center; align-items:stretch; padding:0;';
+  modal.onclick = function(e) { if (e.target === modal) window.closePastTripRegisterModal(); };
+
+  var fieldCss = 'height:42px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.84rem; font-weight:700; outline:none; box-sizing:border-box; width:100%;';
+  modal.innerHTML =
+    '<style>#pastTripPhotoSwipeTrack::-webkit-scrollbar{display:none}#pastTripSpotSuggest::-webkit-scrollbar,#pastTripGearSuggest::-webkit-scrollbar{display:none}</style>' +
+    '<div style="width:100%; max-width:480px; margin:0 auto; height:100%; display:flex; flex-direction:column; background:#07090e; box-sizing:border-box;">' +
+      '<div style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box;">' +
+        '<button type="button" onclick="window.closePastTripRegisterModal();" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer;">◀</button>' +
+        '<span style="font-size:0.95rem; font-weight:900; color:#ffffff;">과거 추억 등록</span>' +
+        '<div style="width:30px;"></div>' +
+      '</div>' +
+      '<div style="flex:1 1 0%; min-height:0; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box;">' +
+        '<div style="display:flex; flex-direction:column; gap:10px;">' +
+          '<div style="display:flex; flex-direction:column; gap:6px;">' +
+            '<label style="font-size:0.82rem; color:#ffffff; font-weight:900;">날짜</label>' +
+            '<input type="hidden" id="pastTripDateInput" value="' + maxDate + '" />' +
+            '<button type="button" id="pastTripDateDisplay" onclick="window.openPastTripDatePicker();" style="height:44px; width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.92rem; font-weight:800; outline:none; box-sizing:border-box; text-align:left; cursor:pointer;">' + window._pastTripIsoToDisplay(maxDate) + '</button>' +
+          '</div>' +
+          '<div style="display:flex; flex-direction:column; gap:6px; position:relative;">' +
+            '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px;">' +
+              '<label style="font-size:0.82rem; color:#ffffff; font-weight:900; flex-shrink:0;">장소</label>' +
+              '<span id="pastTripSpotStatusBadge" style="font-size:0.62rem; color:#64748b; font-weight:700; text-align:right; line-height:1.35; min-width:0;">등록 장소를 선택하면 마이데이터에 합산됩니다.</span>' +
+            '</div>' +
+            '<div style="display:flex; gap:6px;">' +
+              '<input type="text" id="pastTripSpotInput" maxlength="60" placeholder="장소명 검색" autocomplete="off" onfocus="window.onPastTripSpotTyped();" oninput="window.onPastTripSpotTyped();" style="' + fieldCss + '" />' +
+              '<button type="button" id="pastTripSpotConfirmBtn" onclick="window.confirmPastTripCustomSpot();" style="display:none; flex-shrink:0; height:42px; padding:0 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:rgba(255,255,255,0.08); color:#e2e8f0; font-size:0.74rem; font-weight:800; cursor:pointer; white-space:nowrap; align-items:center; justify-content:center; line-height:1; box-sizing:border-box;">확인</button>' +
+            '</div>' +
+            '<div id="pastTripSpotSuggest" style="display:none; position:absolute; top:100%; left:0; right:0; z-index:20; margin-top:4px; max-height:220px; overflow-y:auto; background:#0c1017; border:1px solid rgba(255,255,255,0.12); border-radius:10px; box-shadow:0 12px 28px rgba(0,0,0,0.55);"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div id="pastTripSpotDetailPanel" style="display:none; flex-direction:column; gap:8px;">' +
+          '<input type="text" id="pastTripRegionInput" maxlength="30" placeholder="지역 (시군구, 예: 평창)" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#cbd5e1; padding:0 12px; font-size:0.80rem; font-weight:700; outline:none; box-sizing:border-box;" />' +
+          '<input type="text" id="pastTripElevInput" maxlength="12" placeholder="고도 (있으면 숫자, 예: 580)" style="height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:10px; color:#cbd5e1; padding:0 12px; font-size:0.80rem; font-weight:700; outline:none; box-sizing:border-box;" />' +
+        '</div>' +
+        '<div style="display:flex; flex-direction:column; gap:8px;">' +
+          '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px;">' +
+            '<label style="font-size:0.82rem; color:#ffffff; font-weight:900;">장비</label>' +
+            '<span style="font-size:0.62rem; color:#64748b; font-weight:700;">선택 시 마이데이터에 합산됩니다</span>' +
+          '</div>' +
+          '<div style="display:flex; flex-direction:column; gap:6px;">' +
+            '<input type="text" id="pastTripGearSearchInput" maxlength="40" placeholder="장비 검색" autocomplete="off" onfocus="window.onPastTripGearTyped();" oninput="window.onPastTripGearTyped();" style="width:100%; height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.82rem; outline:none; box-sizing:border-box;" />' +
+            '<div id="pastTripGearSuggest" style="display:none; max-height:220px; overflow-y:auto; background:#0c1017; border:1px solid rgba(255,255,255,0.12); border-radius:10px;"></div>' +
+            '<button type="button" onclick="window.togglePastTripPresetSheet();" style="width:100%; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); color:#e2e8f0; font-size:0.76rem; font-weight:800; cursor:pointer;">장비세트로 추가하기</button>' +
+          '</div>' +
+          '<div id="pastTripPresetSheet" style="display:none; flex-direction:column; gap:6px;"></div>' +
+          '<div id="pastTripGearList" style="display:flex; flex-direction:column; gap:6px;"></div>' +
+          '<div id="pastTripPresetHint" style="font-size:0.68rem; color:#64748b;">장비 없이 일정·사진·일지만 등록합니다.</div>' +
+        '</div>' +
+        '<div style="display:flex; flex-direction:column; gap:8px;">' +
+          '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+            '<span id="pastTripPhotoCountLabel" style="font-size:0.82rem; color:#ffffff; font-weight:900;">등록된 사진 (0장 / 최대 10장)</span>' +
+            '<div style="display:flex; align-items:center; gap:6px;">' +
+              '<span id="pastTripPhotoIndexBadge" style="font-size:0.62rem; color:#cbd5e1; background:rgba(255,255,255,0.08); padding:1px 6px; border-radius:10px; font-weight:900;">0 / 0</span>' +
+              '<button type="button" onclick="document.getElementById(\'pastTripPhotoInput\').click();" style="height:30px; padding:0 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.16); background:rgba(255,255,255,0.06); color:#e2e8f0; font-size:0.72rem; font-weight:800; cursor:pointer;">사진 추가</button>' +
+            '</div>' +
+          '</div>' +
+          '<input type="file" id="pastTripPhotoInput" accept="image/*" multiple style="display:none;" onchange="window.handlePastTripPhotoUpload(event);" />' +
+          '<div id="pastTripPhotoStage"></div>' +
+          '<div id="pastTripPhotoStatus" style="font-size:0.68rem; color:#64748b;"></div>' +
+        '</div>' +
+        '<div style="display:flex; flex-direction:column; gap:8px;">' +
+          '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+            '<label style="font-size:0.74rem; font-weight:800; color:#94a3b8;">일지</label>' +
+            '<span id="pastTripMemoCount" style="font-size:0.68rem; color:#64748b;">0/120</span>' +
+          '</div>' +
+          '<div style="display:inline-flex; gap:4px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:3px; align-self:flex-start;">' +
+            '<button type="button" id="pastTripMemoModeSingle" onclick="window.switchPastTripMemoMode(\'single\');" style="border:none; cursor:pointer; font-size:0.68rem; padding:4px 9px; border-radius:6px; background:#38bdf8; color:#000; font-weight:900;">한 번에 쓰기</button>' +
+            '<button type="button" id="pastTripMemoModePerPhoto" onclick="window.switchPastTripMemoMode(\'per_photo\');" style="border:none; cursor:pointer; font-size:0.68rem; padding:4px 9px; border-radius:6px; background:transparent; color:#94a3b8; font-weight:700;">사진별 쓰기</button>' +
+          '</div>' +
+          '<div id="pastTripMemoModeHelper" style="font-size:0.68rem; color:#64748b;">대표 일지 30자 이상, 최대 120자</div>' +
+          '<textarea id="pastTripMemoInput" maxlength="120" placeholder="그날의 추억을 적어주세요." oninput="window.updatePastTripMemoCount();" style="min-height:110px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.14); border-radius:10px; color:#ffffff; padding:10px 12px; font-size:0.88rem; line-height:1.45; outline:none; resize:vertical; font-family:inherit; box-sizing:border-box;"></textarea>' +
+        '</div>' +
+        '<div style="display:flex; flex-direction:column; gap:8px;">' +
+          '<label style="font-size:0.74rem; font-weight:800; color:#94a3b8;">유튜브 / 네이버 블로그 링크 (선택)</label>' +
+          '<input type="text" id="pastTripYoutubeInput" inputmode="url" placeholder="YouTube 링크" onblur="window.onPastTripLinkBlur(\'yt\');" style="height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(244,63,94,0.28); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />' +
+          '<input type="text" id="pastTripNaverInput" inputmode="url" placeholder="네이버 블로그 링크" onblur="window.onPastTripLinkBlur(\'blog\');" style="height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(3,199,90,0.28); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />' +
+          '<div style="font-size:calc(0.66rem + 1pt); color:#64748b; line-height:1.45;">다른 낭만 루터분들에게 도움이 됩니다</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="flex-shrink:0; padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px)) 16px; border-top:1px solid rgba(255,255,255,0.08); box-sizing:border-box;">' +
+        '<button type="button" id="pastTripSubmitBtn" onclick="window.submitPastTripRegister();" style="width:100%; height:46px; border-radius:12px; border:1px solid rgba(56,189,248,0.45); background:#38bdf8; color:#000000; font-size:0.90rem; font-weight:900; cursor:pointer;">등록하기</button>' +
+      '</div>' +
+    '</div>';
+
+  document.body.appendChild(modal);
+  if (typeof window.okbmLiftReportChildModal === 'function') window.okbmLiftReportChildModal(modal);
+  window._pastTripRenderGearList();
+  window._pastTripRenderPhotoStage();
+  window._pastTripSyncDateDisplay();
+  window.updatePastTripMemoCount();
+  modal.addEventListener('click', function(e) {
+    var t = e.target;
+    if (!t) return;
+    if (!t.closest('#pastTripSpotInput') && !t.closest('#pastTripSpotSuggest') && !t.closest('#pastTripSpotConfirmBtn')) {
+      window._pastTripHideSpotSuggest();
+    }
+    if (!t.closest('#pastTripGearSearchInput') && !t.closest('#pastTripGearSuggest')) {
+      var gearSuggest = document.getElementById('pastTripGearSuggest');
+      if (gearSuggest) { gearSuggest.style.display = 'none'; }
+    }
+  });
+};
+
+window.onPastTripSpotTyped = function() {
+  var st = window.__pastTripRegisterState || {};
+  var input = document.getElementById('pastTripSpotInput');
+  var name = input ? String(input.value || '').trim() : '';
+  if ((st.spotId || st.spotPath) && st.spotName && name !== st.spotName) {
+    st.spotId = '';
+    st.spotPath = '';
+    window._pastTripSetSpotBadge('');
+    window._pastTripShowSpotChoice(false);
+    window._pastTripShowSpotDetail(false);
+  }
+  st.spotName = name;
+  window.__pastTripRegisterState = st;
+  window._pastTripRenderSpotSuggest(name);
+};
+
+window.updatePastTripMemoCount = function() {
+  var input = document.getElementById('pastTripMemoInput');
+  var countEl = document.getElementById('pastTripMemoCount');
+  if (!input || !countEl) return;
+  var st = window.__pastTripRegisterState || { memoMode: 'single' };
+  var raw = String(input.value || '').slice(0, 120);
+  if (input.value !== raw) input.value = raw;
+  var cur = raw.length;
+  if (st.memoMode === 'per_photo') {
+    window._pastTripEnsurePhotoMemos();
+    var idx = Number(st.photoIndex) || 0;
+    st.photoMemos[idx] = raw;
+    countEl.textContent = cur + '/120';
+    countEl.style.color = '#38bdf8';
+  } else {
+    st.singleMemo = raw;
+    countEl.textContent = cur + '/120';
+    countEl.style.color = (cur >= 30 && cur <= 120) ? '#34d399' : '#64748b';
+  }
+  window.__pastTripRegisterState = st;
+};
+
+window.submitPastTripRegister = async function() {
+  window._pastTripCommitMemoInput();
+  var dateInput = document.getElementById('pastTripDateInput');
+  var spotInput = document.getElementById('pastTripSpotInput');
+  var elevInput = document.getElementById('pastTripElevInput');
+  var ytInput = document.getElementById('pastTripYoutubeInput');
+  var naverInput = document.getElementById('pastTripNaverInput');
+  var submitBtn = document.getElementById('pastTripSubmitBtn');
+  var st = window.__pastTripRegisterState || {};
+
+  var isoDate = dateInput ? String(dateInput.value || '').trim() : '';
+  var dateKey = window._pastTripFormatDateKey(isoDate);
+  if (!dateKey) {
+    if (typeof showToast === 'function') showToast('날짜를 선택해주세요.', 'warn');
+    return;
+  }
+  var today = new Date();
+  var todayNum = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+  var parts = dateKey.match(/\d+/g);
+  var targetNum = parseInt(parts[0], 10) * 10000 + parseInt(parts[1], 10) * 100 + parseInt(parts[2], 10);
+  if (targetNum >= todayNum) {
+    if (typeof showToast === 'function') showToast('오늘 이전 날짜만 등록할 수 있습니다.', 'warn');
+    return;
+  }
+
+  var isSingle = st.memoMode !== 'per_photo';
+  var memo = '';
+  var photoMemos = [];
+  if (isSingle) {
+    memo = String(st.singleMemo || '').trim().slice(0, 120);
+    photoMemos = [memo];
+    if (!memo) {
+      if (typeof showToast === 'function') showToast('대표 일지를 작성해주세요.', 'warn', 2400, 'center');
+      var memoElEmpty = document.getElementById('pastTripMemoInput');
+      if (memoElEmpty) memoElEmpty.focus();
+      return;
+    }
+    if (memo.length < 30) {
+      if (typeof showToast === 'function') {
+        showToast('대표 일지는 30자 이상 작성해주세요. (현재 ' + memo.length + '자)', 'warn', 2800, 'center');
+      }
+      var memoEl = document.getElementById('pastTripMemoInput');
+      if (memoEl) memoEl.focus();
+      return;
+    }
+  } else {
+    photoMemos = (st.photoMemos || []).map(function(m) { return String(m || '').trim().slice(0, 120); });
+    memo = String(photoMemos[0] || '').trim();
+    if (!memo) memo = String(photoMemos.filter(Boolean)[0] || '').trim();
+  }
+
+  var spot = spotInput ? String(spotInput.value || '').trim() : (st.spotName || '');
+  if (!spot) spot = '자유 일정';
+  if (typeof window.okbmIsXssProbeSpotName === 'function' && window.okbmIsXssProbeSpotName(spot)) {
+    if (typeof showToast === 'function') showToast('올바른 장소명을 입력해 주세요.', 'warn');
+    return;
+  }
+  var regionInput = document.getElementById('pastTripRegionInput');
+  var region = regionInput ? String(regionInput.value || '').trim() : (st.region || '');
+  spot = window._pastTripMergeSpotRegion(spot, region);
+  var elevRaw = elevInput ? String(elevInput.value || '').trim() : (st.elev || '');
+  var elev = elevRaw;
+  if (elev && !/m$/i.test(elev) && !isNaN(parseInt(elev, 10))) elev = parseInt(elev, 10) + 'm';
+
+  var spotId = String(st.spotId || '').trim();
+  var isUnregistered = !spotId;
+
+  var photos = (st.photos || []).filter(function(u) {
+    return typeof u === 'string' && (u.startsWith('https://') || u.startsWith('http://'));
+  });
+
+  window.onPastTripLinkBlur('yt');
+  window.onPastTripLinkBlur('blog');
+  var ytUrl = window._pastTripCleanYoutubeUrl(ytInput ? ytInput.value : '');
+  var blogUrl = window._pastTripCleanNaverBlogUrl(naverInput ? naverInput.value : '');
+  if (ytInput && ytInput.value.trim() && !ytUrl) {
+    if (typeof showToast === 'function') showToast('유튜브 링크를 확인해주세요.', 'warn');
+    return;
+  }
+  if (naverInput && naverInput.value.trim() && !blogUrl) {
+    if (typeof showToast === 'function') showToast('네이버 블로그 링크를 확인해주세요.', 'warn');
+    return;
+  }
+  if (ytInput && ytUrl) ytInput.value = ytUrl;
+  if (naverInput && blogUrl) naverInput.value = blogUrl;
+
+  var packedItems = Array.isArray(st.items) ? st.items.slice() : [];
+  var totalGrams = 0;
+  packedItems.forEach(function(it) { totalGrams += Number(it && it.weight ? it.weight : 0); });
+  if (!packedItems.length && st.presetId) {
+    var presets = window._pastTripReadPresets();
+    var target = presets.find(function(p) { return String(p.id) === String(st.presetId); });
+    var flat = window._pastTripFlattenPresetItems(target);
+    packedItems = flat.items;
+    totalGrams = flat.totalGrams;
+  }
+
+  if (typeof window.savePackingHistoryRecord !== 'function') {
+    if (typeof showToast === 'function') showToast('저장 엔진을 불러오지 못했습니다.', 'error');
+    return;
+  }
+
+  if (isUnregistered && typeof showToast === 'function') {
+    showToast('비등록 장소는 나만보기로 저장되며 마이데이터에 합산됩니다.', 'info', 2800);
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = '등록 중...';
+    submitBtn.style.opacity = '0.6';
+  }
+
+  var y = parseInt(parts[0], 10);
+  var m = parseInt(parts[1], 10);
+  var d = parseInt(parts[2], 10);
+  var recordId = 'pack_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+
+  var newRecord = {
+    id: recordId,
+    templateId: 1,
+    date: dateKey,
+    year: y,
+    month: m,
+    day: d,
+    spot: spot,
+    elevation: elev,
+    spotId: spotId || '',
+    weightKg: (totalGrams / 1000).toFixed(2),
+    weightGrams: totalGrams,
+    itemCount: packedItems.length,
+    memo: memo,
+    oneLineMemo: memo.slice(0, 120),
+    photoMemos: photoMemos,
+    memoMode: isSingle ? 'single' : 'per_photo',
+    isDraft: false,
+    isPublished: isUnregistered ? false : (photos.length > 0),
+    unregisteredSpot: isUnregistered,
+    items: packedItems,
+    photos: photos,
+    youtube: ytUrl || '',
+    blog: blogUrl || '',
+    readyShotPhoto: '',
+    _isLocalOwner: true,
+    feedType: 'route'
+  };
+
+  try {
+    var saved = await window.savePackingHistoryRecord(newRecord);
+    if (saved && saved.__serverSaveFailed) {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '등록하기';
+        submitBtn.style.opacity = '1';
+      }
+      return;
+    }
+
+    if (!isUnregistered && spotId && (ytUrl || blogUrl)) {
+      var mediaMerged = await window._pastTripMergeSpotMediaUrls(spotId, ytUrl ? [ytUrl] : [], blogUrl ? [blogUrl] : []);
+      if (!mediaMerged && typeof showToast === 'function') {
+        showToast('일정은 저장됐지만 유튜브/블로그 링크 반영에 실패했습니다.', 'warn', 2800);
+      } else if (mediaMerged && typeof window.prefetchSpotMediaForSpot === 'function') {
+        var mediaSpot = (window.spots || []).find(function(s) { return String(s.id).trim() === spotId; });
+        if (mediaSpot) window.prefetchSpotMediaForSpot(mediaSpot);
+      }
+    } else if (isUnregistered && (ytUrl || blogUrl)) {
+      window._pastTripSavePendingMedia(spot, ytUrl, blogUrl);
+    }
+
+    triggerHaptic(15);
+    if (typeof showToast === 'function') {
+      showToast(isUnregistered ? '나만보기로 저장되었습니다. 마이데이터에 합산됩니다.' : '과거 일정이 등록되었습니다.', 'success', 2200);
+    }
+
+    var el = document.getElementById('pastTripRegisterModal');
+    if (el) el.remove();
+    if (typeof window.refreshMyReportFullStats === 'function') window.refreshMyReportFullStats();
+
+    if (typeof window.openPastTripsListModal === 'function') {
+      if (typeof window.recordModalHistoryStep === 'function') {
+        window.recordModalHistoryStep('userProfileModalOverlay', function() {
+          if (typeof window.openUserProfileModal === 'function') window.openUserProfileModal();
+        });
+      }
+      window.openPastTripsListModal(true);
+      if (typeof window.okbmLiftReportChildModal === 'function') {
+        window.okbmLiftReportChildModal(document.getElementById('pastTripsListModal'));
+      }
+    } else if (typeof window.openUserProfileModal === 'function') {
+      window.openUserProfileModal();
+    }
+  } catch (err) {
+    console.error('[submitPastTripRegister]', err);
+    if (typeof showToast === 'function') showToast('등록 중 오류가 발생했습니다.', 'error');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '등록하기';
+      submitBtn.style.opacity = '1';
+    }
+  }
+};
+
 window.openMyPastTripsFromReport = function(ev) {
   if (ev) {
     if (typeof ev.preventDefault === 'function') ev.preventDefault();
@@ -5051,6 +7236,22 @@ window.openFeedsInterestFromReport = function(ev) {
 window.openMyFeedsModal = window.openMyPastTripsFromReport;
 window.openFollowingUsersModal = window.openRoutersInterestFromReport;
 
+window.okbmEnsurePastTripRegisterCta = function() {
+  var body = document.getElementById('userProfileScrollBody');
+  if (!body) return;
+  var buttons = body.querySelectorAll('button');
+  for (var i = 0; i < buttons.length; i++) {
+    var b = buttons[i];
+    var t = String(b.innerText || '').replace(/\s+/g, ' ').trim();
+    if (t.indexOf('결산 카드') !== -1 || t.indexOf('과거 추억 등록') !== -1) {
+      b.setAttribute('onclick', 'window.openPastTripRegisterModal(event);');
+      var span = b.querySelector('span');
+      if (span) span.textContent = '과거 추억 등록';
+      return;
+    }
+  }
+};
+
 function openUserProfileModal() {
   try {
     if (!isUserLoggedIn()) {
@@ -5079,6 +7280,9 @@ function openUserProfileModal() {
     }
 
     ensureMyReportAndAuthModalsInDOM();
+    if (typeof window.okbmEnsurePastTripRegisterCta === 'function') {
+      window.okbmEnsurePastTripRegisterCta();
+    }
     window.__reportRenderCache = {};
 
     var currentProfile = safeGetJSON('user_profile', null);
@@ -7188,13 +9392,13 @@ window.notifyProposalDecision = async function(item, status, approvedSpotId) {
   var rejected = kindStatus.indexOf('반려') !== -1;
   if (!accepted && !rejected) return false;
   var isCorr = Boolean(item.type === 'correction' || item.isCorrection || item.is_correction);
-  var name = String(item.spot_main || item.name || '제보한 박지').trim();
+  var name = String(item.spot_main || item.name || '제보한 장소').trim();
   var kind = (isCorr ? 'correction_' : 'proposal_') + (accepted ? 'accepted' : 'rejected');
   var relatedId = String(item.id || '').trim();
   var notifId = ('pn_' + kind + '_' + relatedId).slice(0, 180);
   var title = accepted
-    ? (isCorr ? '수정 건의가 채택되었습니다' : '박지 제보가 채택되었습니다')
-    : (isCorr ? '수정 건의가 반려되었습니다' : '박지 제보가 반려되었습니다');
+    ? (isCorr ? '수정 건의가 채택되었습니다' : '장소 제보가 채택되었습니다')
+    : (isCorr ? '수정 건의가 반려되었습니다' : '장소 제보가 반려되었습니다');
   var body = accepted
     ? ('[' + name + ']이(가) 지도에 반영되었습니다. 이후 내용 변경은 수정문의로만 신청할 수 있습니다.')
     : ('[' + name + '] 제보가 반려되었습니다. 마이리포트에서 확인할 수 있습니다.');
@@ -8596,12 +10800,7 @@ window.saveUserToSupabase = async function(profileData) {
     if ((!gearMeta || !Object.keys(gearMeta).length) && existingMg.gearMeta && Object.keys(existingMg.gearMeta).length) {
       gearMeta = existingMg.gearMeta;
     }
-    if ((!planMemos || !Object.keys(planMemos).length) && existingMg.planMemos && Object.keys(existingMg.planMemos).length) {
-      planMemos = existingMg.planMemos;
-    }
-    if ((!planSpots || !Object.keys(planSpots).length) && existingMg.planSpots && Object.keys(existingMg.planSpots).length) {
-      planSpots = existingMg.planSpots;
-    }
+    // planMemos/planSpots는 빈 맵이 정상 삭제 결과일 수 있으므로 existingMg로 되돌리지 않음 (SSOT)
     if (!coverUrl) coverUrl = existingRow.hero_cover_url || existingRow.photo_url || '';
   }
 
@@ -8640,42 +10839,27 @@ window.saveUserToSupabase = async function(profileData) {
   if (userEmail) payload.email = userEmail;
 
   try {
-    var postHeaders = {
+    var upsertHeaders = {
       'apikey': targetKey,
       'Authorization': 'Bearer ' + targetKey,
       'Content-Type': 'application/json',
-      'Prefer': 'return=minimal'
+      'Prefer': 'resolution=merge-duplicates,return=minimal'
     };
-    var res = await fetch(targetUrl + '/rest/v1/users', {
+    var upsertUrl = targetUrl + '/rest/v1/users?on_conflict=id';
+    var res = await fetch(upsertUrl, {
       method: 'POST',
-      headers: postHeaders,
+      headers: upsertHeaders,
       body: JSON.stringify(payload)
     });
     if (res.ok) return true;
-    if (res.status === 409) {
-      var patchRes = await fetch(targetUrl + '/rest/v1/users?id=eq.' + encodeURIComponent(userId), {
-        method: 'PATCH',
-        headers: postHeaders,
-        body: JSON.stringify(payload)
-      });
-      return patchRes.ok;
-    }
     if (res.status === 400 && payload.email) {
       delete payload.email;
-      var retry = await fetch(targetUrl + '/rest/v1/users', {
+      var retry = await fetch(upsertUrl, {
         method: 'POST',
-        headers: postHeaders,
+        headers: upsertHeaders,
         body: JSON.stringify(payload)
       });
-      if (retry.ok) return true;
-      if (retry.status === 409) {
-        var patchRetry = await fetch(targetUrl + '/rest/v1/users?id=eq.' + encodeURIComponent(userId), {
-          method: 'PATCH',
-          headers: postHeaders,
-          body: JSON.stringify(payload)
-        });
-        return patchRetry.ok;
-      }
+      return retry.ok;
     }
     return false;
   } catch (e) {
@@ -8754,6 +10938,7 @@ if (typeof window !== 'undefined') {
       { id: 'feedReportModal', close: function() { if (typeof window.closeFeedReportModal === 'function') window.closeFeedReportModal(); } },
       { id: 'loginModalOverlay', close: function() { if (typeof window.closeLoginModal === 'function') window.closeLoginModal(); } },
       { id: 'userAccountSettingsModal', close: function() { if (typeof window.closeAccountSettingsModal === 'function') window.closeAccountSettingsModal(); } },
+      { id: 'pastTripRegisterModal', close: function() { if (typeof window.closePastTripRegisterModal === 'function') window.closePastTripRegisterModal(); } },
       { id: 'userProfileModalOverlay', close: function() { if (typeof window.closeUserProfileModal === 'function') window.closeUserProfileModal(); } },
       { id: 'photoStudioOverlay', close: function() { if (typeof window.closePhotoStudio === 'function') window.closePhotoStudio(); } },
       { id: 'packShareModalOverlay', close: function() { if (typeof window.closePackShareModal === 'function') window.closePackShareModal(); } },

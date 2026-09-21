@@ -6,7 +6,7 @@
  * - 스마트폰 대용량 IndexedDB(okbm_vault_db) 사진 영구 저장 & 텍스트 분리 하이브리드 캐시 엔진
  * - 3D 엽서 ↔ 피드 목록 ↔ 피드 상세 ↔ 낭만 일지 100% 실시간 사진 & 글 동기화
  * - 야영 캘린더 (연/월 이동, 보관함 완료일 ★ / 계획일 ⚑ 완벽 분리 표시)
- * - 박지명 / 날짜 / 고도 / 일지 본문 / 사진 10장 전방위 수정 지원
+ * - 일지 본문 / 사진 수정 지원 (위치·날짜는 패킹계획에서 확정 후 잠금)
  * - [5대 하단독 완성 체계]: 낭만기록 · 피드 · 스튜디오 · 클리어맵 · 마이리포트
  * - 피드 카드 상단 [···] 액션바 (1초 일지수정, 스튜디오 인출, 공유, 삭제) 탑재
  */
@@ -981,7 +981,7 @@
     }
   };
 
-  window.savePackingHistoryRecord = async function(record) {
+  window.__savePackingHistoryRecordBody = async function(record) {
     if (!record) return null;
 
     var incomingReadyShot = String(
@@ -992,6 +992,12 @@
       record.cardImage ||
       (window.__tempStudioReadyShot || '')
     ).trim();
+    if ((!incomingReadyShot || incomingReadyShot.length <= 10) && typeof window.resolveReadyShotPhotoUrl === 'function') {
+      incomingReadyShot = String(window.resolveReadyShotPhotoUrl() || '').trim();
+    }
+    if ((!incomingReadyShot || incomingReadyShot.length <= 10) && typeof window.currentSharePhoto === 'string' && window.currentSharePhoto.indexOf('https://') === 0) {
+      incomingReadyShot = String(window.currentSharePhoto).trim();
+    }
 
     var normalized = window.normalizeHistoryRecord(record, 0);
     normalized.feedType = 'route';
@@ -1139,12 +1145,52 @@
     if (targetUrl && targetKey) {
       var tmplPhoto = normalized.readyShotPhoto || normalized.customTemplatePhoto || '';
 
-      var hasFieldPhotos = Array.isArray(normalized.photos) && normalized.photos.some(function(u) {
-        return typeof u === 'string' && (u.startsWith('https://') || u.startsWith('http://')) && !u.includes('unsplash.com') && u !== tmplPhoto;
+      var canPublish = (typeof window.okbmCanPublishFeed === 'function')
+        ? window.okbmCanPublishFeed(normalized, { skipDate: true })
+        : false;
+      var prevRecForPublish = (existIdx !== -1 && Array.isArray(prevList)) ? prevList[existIdx] : null;
+      var prevReadyForPublish = String(
+        (prevRecForPublish && (prevRecForPublish.readyShotPhoto || prevRecForPublish.ready_shot_photo || prevRecForPublish.customTemplatePhoto)) ||
+        normalized.readyShotPhoto ||
+        ''
+      ).trim();
+      var prevPhotosForPublish = (prevRecForPublish && typeof getRecordPhotos === 'function')
+        ? getRecordPhotos(prevRecForPublish)
+        : [];
+      var prevHadFieldPhotos = prevPhotosForPublish.some(function(u) {
+        return typeof u === 'string' &&
+          (u.startsWith('https://') || u.startsWith('http://')) &&
+          u.indexOf('unsplash.com') === -1 &&
+          u !== prevReadyForPublish;
       });
-
-      var finalPublished = hasFieldPhotos ? (normalized.isPublished !== false) : false;
+      var prevWasPrivate = prevRecForPublish
+        ? ((typeof window.okbmIsExplicitlyPrivate === 'function')
+          ? window.okbmIsExplicitlyPrivate(prevRecForPublish)
+          : (prevRecForPublish.isPublished === false || prevRecForPublish.is_published === false))
+        : (normalized.isPublished === false);
+      var autoOpenReadyShotPrivate = Boolean(
+        canPublish && !prevHadFieldPhotos && prevWasPrivate && prevReadyForPublish
+      );
+      var finalPublished = canPublish && (normalized.isPublished !== false || autoOpenReadyShotPrivate);
       normalized.isPublished = finalPublished;
+      normalized.is_published = finalPublished;
+      var stampPublishedFlag = function(rec) {
+        if (!rec || String(rec.id || '').trim() !== String(normalized.id || '').trim()) return;
+        rec.isPublished = finalPublished;
+        rec.is_published = finalPublished;
+      };
+      list.forEach(stampPublishedFlag);
+      safeStorageList.forEach(stampPublishedFlag);
+      window.interactiveHistory = list.slice();
+      window.packingHistoryList = window.interactiveHistory;
+      window.__memoryStore = window.__memoryStore || {};
+      window.__memoryStore['okbm_packing_history'] = list.slice();
+      if (!canPublish) {
+        var spotProbe = String(normalized.spot || '').trim();
+        if (typeof window.isSpotRegisteredInMasterDB === 'function' && !window.isSpotRegisteredInMasterDB(spotProbe)) {
+          normalized.unregisteredSpot = true;
+        }
+      }
 
       var payload = {
         id: normalized.id,
@@ -1236,6 +1282,15 @@
     return normalized;
   };
 
+  window.savePackingHistoryRecord = function(record) {
+    var prev = window.__packingSaveChain || Promise.resolve();
+    var next = prev.catch(function() {}).then(function() {
+      return window.__savePackingHistoryRecordBody(record);
+    });
+    window.__packingSaveChain = next;
+    return next;
+  };
+
   // 🏛️ [낭만루트 통합 리다이렉트]
   window.saveRouterSnapRecord = function(record) {
     if (!record) return null;
@@ -1287,22 +1342,32 @@
       clearTimeout(window.__okbmHistoryPreloadTimer);
       window.__okbmHistoryPreloadTimer = null;
     }
-    var localList = okbmReadLocalPackingHistory();
     var myId = (typeof window.okbmGetCurrentUserId === 'function')
       ? String(window.okbmGetCurrentUserId() || '').trim()
       : '';
-    var map = new Map();
-    localList.forEach(function(r) {
-      if (r && r.id) map.set(String(r.id).trim(), r);
-    });
+    var localList = okbmReadLocalPackingHistory();
+    var serverMineIds = {};
+    var serverMine = [];
     (Array.isArray(feedList) ? feedList : []).forEach(function(f) {
       if (!f || !f.id) return;
       var fUid = String(f.user_id || f.userId || '').trim();
       if (myId && fUid && fUid === myId) {
-        map.set(String(f.id).trim(), f);
+        var fid = String(f.id).trim();
+        serverMineIds[fid] = true;
+        serverMine.push(f);
       }
     });
-    okbmApplyPackingHistoryToMemory(Array.from(map.values()));
+    // SSOT: 이번 서버 응답에 있는 내 글은 서버 행만 사용. 로컬∪서버 덮어쓰기 병합 금지.
+    // 페이지에 없는 로컬 캐시 행은 유지(전체 내 피드 조회가 아닌 커뮤니티 페이지 단위).
+    var keptLocal = localList.filter(function(r) {
+      if (!r || !r.id) return false;
+      return !serverMineIds[String(r.id).trim()];
+    });
+    var nextList = keptLocal.concat(serverMine);
+    okbmApplyPackingHistoryToMemory(nextList);
+    try {
+      localStorage.setItem('okbm_packing_history', JSON.stringify(nextList));
+    } catch (e) {}
     window.__okbmDeferHistoryHydrate = false;
   };
 
@@ -1378,20 +1443,48 @@ function getRecordPhotos(record) {
     return targetNum <= todayNum;
   };
 
+  // 후기(함께보기) 가능 = 등록 장소 + 현장사진 + 디데이
+  window.okbmCanPublishFeed = function(record, opts) {
+    opts = opts || {};
+    if (!record) return false;
+    var spot = String(record.spot || '').trim();
+    if (!spot) return false;
+    var compact = spot.replace(/\s+/g, '');
+    if (
+      compact === '자유일정' ||
+      compact === '나의해힐링스팟' ||
+      compact === '힐링박지' ||
+      compact === '방문스팟'
+    ) {
+      return false;
+    }
+    if (record.unregisteredSpot === true || record.unregistered_spot === true) return false;
+    if (typeof window.isSpotRegisteredInMasterDB === 'function' && !window.isSpotRegisteredInMasterDB(spot)) {
+      return false;
+    }
+    var tmplPhoto = String(record.readyShotPhoto || record.ready_shot_photo || record.customTemplatePhoto || '').trim();
+    var photos = (typeof getRecordPhotos === 'function') ? getRecordPhotos(record) : (record.photos || []);
+    var hasFieldPhotos = Array.isArray(photos) && photos.some(function(u) {
+      return typeof u === 'string' &&
+        (u.startsWith('https://') || u.startsWith('http://')) &&
+        u.indexOf('unsplash.com') === -1 &&
+        u !== tmplPhoto;
+    });
+    if (!hasFieldPhotos) return false;
+    if (!opts.skipDate && typeof window.okbmRouteDateReached === 'function' && !window.okbmRouteDateReached(record)) {
+      return false;
+    }
+    return true;
+  };
+
   window.okbmIsPublicFeedItem = function(item) {
     if (!item) return false;
     var isOwner = (typeof window.isRecordOwner === 'function') && window.isRecordOwner(item);
     if (isOwner) {
       return true;
     }
-
-    var recPhotos = getRecordPhotos(item);
-    if (!Array.isArray(recPhotos) || recPhotos.length === 0) {
-      return false;
-    }
-
     if (window.okbmIsExplicitlyPrivate(item)) return false;
-    return window.okbmRouteDateReached(item);
+    return typeof window.okbmCanPublishFeed === 'function' ? window.okbmCanPublishFeed(item) : false;
   };
 
   // 🎨 [3D 엽서 테두리 팔레트]
@@ -1499,15 +1592,29 @@ window.normalizeHistoryRecord = function(r, idx) {
       resolvedPhotoMemos = r.photoMemos;
     }
 
-    var resolvedPublished = (rawPhotos.length > 0);
+    var resolvedPublished = false;
     if (r) {
-      if (rawPhotos.length === 0) {
-        resolvedPublished = false;
-      } else if (r.is_published !== undefined) {
+      if (r.is_published !== undefined) {
         resolvedPublished = Boolean(r.is_published);
       } else if (r.isPublished !== undefined) {
         resolvedPublished = Boolean(r.isPublished);
+      } else {
+        resolvedPublished = (rawPhotos.length > 0);
       }
+    }
+    var probeForGate = {
+      spot: spotTitle,
+      photos: rawPhotos,
+      readyShotPhoto: savedReadyShot,
+      date: cleanDate,
+      year: y,
+      month: m,
+      day: d,
+      unregisteredSpot: Boolean(r && (r.unregisteredSpot === true || r.unregistered_spot === true)),
+      isPublished: resolvedPublished
+    };
+    if (typeof window.okbmCanPublishFeed === 'function' && !window.okbmCanPublishFeed(probeForGate, { skipDate: true })) {
+      resolvedPublished = false;
     }
 
     var rMode = (r && (r.ready_shot_mode || r.readyShotMode)) || 'minimal';
@@ -1549,6 +1656,10 @@ window.normalizeHistoryRecord = function(r, idx) {
       likes_count: finalLikes,
       instagram: (r && r.instagram) ? r.instagram : '',
       youtube: (r && r.youtube) ? r.youtube : '',
+      blog: (r && (r.blog || r.blog_url || r.naverBlog)) ? String(r.blog || r.blog_url || r.naverBlog) : '',
+      spotId: (r && (r.spotId || r.spot_id)) ? String(r.spotId || r.spot_id).trim() : '',
+      memoMode: (r && (r.memoMode || r.memo_mode)) ? String(r.memoMode || r.memo_mode) : 'single',
+      unregisteredSpot: Boolean(r && (r.unregisteredSpot === true || r.unregistered_spot === true)),
       items: cleanItems,
       photos: rawPhotos
     };
@@ -1918,15 +2029,67 @@ window.normalizeHistoryRecord = function(r, idx) {
     });
   };
 
+  window.okbmFeedDeletePlanWarning = '일정 및 피드에서 영구삭제됩니다. 일정삭제를 원치 않으시면 나만보기로 변경하세요.';
+  window.okbmLinkedDeleteToast = '일정 및 피드에서 영구삭제됩니다';
+
+  window.okbmConfirmFeedDeleteWithPlanWarning = async function(confirmMsg) {
+    if (typeof showToast === 'function') {
+      showToast((HISTORY_TOAST_VEC.trash || '') + window.okbmLinkedDeleteToast, 'info', 4200);
+    }
+    // confirm이 바로 뜨면 토스트가 그려지기 전에 가로막히므로 잠시 대기
+    await new Promise(function(resolve) { setTimeout(resolve, 400); });
+    return confirm(confirmMsg || (
+      '이 기록을 영구 삭제하시겠습니까?\n\n' + window.okbmFeedDeletePlanWarning
+    ));
+  };
+
+  window.okbmPurgePlansForDeletedRecords = async function(deletedRecords) {
+    var resolveDateKey = function(rec) {
+      if (typeof window.okbmGetRecordPlanDateKey === 'function') {
+        return window.okbmGetRecordPlanDateKey(rec) || '';
+      }
+      if (!rec) return '';
+      var y = Number(rec.year);
+      var m = Number(rec.month);
+      var d = Number(rec.day);
+      if (y && m && d) {
+        return y + '.' + String(m).padStart(2, '0') + '.' + String(d).padStart(2, '0');
+      }
+      var parts = String(rec.date || rec.tripDate || '').match(/\d+/g);
+      if (parts && parts.length >= 3) {
+        var yy = parts[0].length === 4 ? parts[0] : parts[2];
+        var mm = parts[0].length === 4 ? parts[1] : parts[0];
+        var dd = parts[0].length === 4 ? parts[2] : parts[1];
+        return yy + '.' + String(parseInt(mm, 10)).padStart(2, '0') + '.' + String(parseInt(dd, 10)).padStart(2, '0');
+      }
+      return '';
+    };
+    var seen = {};
+    var dateKeys = [];
+    (deletedRecords || []).forEach(function(rec) {
+      var dateKey = resolveDateKey(rec);
+      if (!dateKey || seen[dateKey]) return;
+      seen[dateKey] = true;
+      dateKeys.push(dateKey);
+    });
+    for (var i = 0; i < dateKeys.length; i++) {
+      if (typeof window.okbmDeletePlanDate === 'function') {
+        await window.okbmDeletePlanDate(dateKeys[i], { silent: true, skipRender: true });
+      } else if (typeof window.okbmPurgePlanForDate === 'function') {
+        window.okbmPurgePlanForDate(dateKeys[i], { skipSync: true, skipRender: true });
+      }
+    }
+  };
+
   window.executeBatchDeletePastTrips = async function() {
     var selectedCount = window.__selectedPastTripIds.size;
     if (selectedCount === 0) return;
 
     triggerHaptic(20);
-    var confirmMsg = '선택한 ' + selectedCount + '개의 기록을 영구 삭제하시겠습니까?\n' +
-      '• 모든 기기에서 즉시 삭제되며 복구할 수 없습니다.';
+    var confirmMsg = '선택한 ' + selectedCount + '개의 기록을 영구 삭제하시겠습니까?\n\n' +
+      window.okbmFeedDeletePlanWarning;
 
-    if (!confirm(confirmMsg)) return;
+    if (!(await window.okbmConfirmFeedDeleteWithPlanWarning(confirmMsg))) return;
 
     var idsToDelete = Array.from(window.__selectedPastTripIds);
     var targetUrl = window.SUPABASE_URL || '';
@@ -1990,7 +2153,25 @@ window.normalizeHistoryRecord = function(r, idx) {
       return r && !idSet.has(String(r.id).trim());
     };
 
-    var rawList = window.safeGetStorage('okbm_packing_history', []) || [];
+    var rawList = null;
+    if (window.RomanticVault && typeof window.RomanticVault.read === 'function') {
+      rawList = window.RomanticVault.read('okbm_packing_history', null);
+    }
+    if (!Array.isArray(rawList)) {
+      rawList = window.safeGetStorage('okbm_packing_history', []) || [];
+    }
+    var deletedRecords = rawList.filter(function(r) {
+      return r && idSet.has(String(r.id).trim());
+    });
+    if (deletedRecords.length < idsToDelete.length) {
+      var foundIds = {};
+      deletedRecords.forEach(function(r) { foundIds[String(r.id).trim()] = true; });
+      [].concat(window.interactiveHistory || [], window.__allLoadedFeeds || []).forEach(function(r) {
+        if (!r || !idSet.has(String(r.id).trim()) || foundIds[String(r.id).trim()]) return;
+        deletedRecords.push(r);
+        foundIds[String(r.id).trim()] = true;
+      });
+    }
     var remainingList = rawList.filter(purgeFn);
 
     window.interactiveHistory = remainingList.map(function(r, i) {
@@ -2001,9 +2182,14 @@ window.normalizeHistoryRecord = function(r, idx) {
     if (window.__memoryStore) {
       window.__memoryStore['okbm_packing_history'] = remainingList;
     }
-    try {
-      localStorage.setItem('okbm_packing_history', JSON.stringify(remainingList));
-    } catch (e) {}
+    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+      window.RomanticVault.write('okbm_packing_history', remainingList, false);
+    }
+    try { localStorage.setItem('okbm_packing_history', JSON.stringify(remainingList)); } catch (e) {}
+    await window.okbmPurgePlansForDeletedRecords(deletedRecords);
+    if (typeof window.renderPlanStage === 'function' && document.getElementById('romanticPlanModal')) {
+      window.renderPlanStage();
+    }
 
     if (Array.isArray(window.__allLoadedFeeds)) {
       window.__allLoadedFeeds = window.__allLoadedFeeds.filter(purgeFn);
@@ -2021,9 +2207,6 @@ window.normalizeHistoryRecord = function(r, idx) {
     }
 
     triggerHaptic(15);
-    if (typeof showToast === 'function') {
-      showToast(selectedCount + '개의 기록이 영구 삭제되었습니다.', 'info');
-    }
     window.__isPastTripsSelectMode = false;
     window.__selectedPastTripIds.clear();
     window.openPastTripsListModal();
@@ -3063,23 +3246,24 @@ window.toggleFeedStar = async function(cardId, e) {
     var nextStatus = !currentPublished;
 
     if (nextStatus === true) {
-      var targetPhotos = (typeof getRecordPhotos === 'function') ? getRecordPhotos(target) : (target.photos || []);
-      var hasFieldPhotos = Array.isArray(targetPhotos) && targetPhotos.some(function(u) {
-        return typeof u === 'string' && (u.startsWith('https://') || u.startsWith('http://')) && !u.includes('unsplash.com');
-      });
-
-      if (!hasFieldPhotos) {
+      var canPublish = (typeof window.okbmCanPublishFeed === 'function') ? window.okbmCanPublishFeed(target) : false;
+      if (!canPublish) {
         triggerHaptic(14);
-        if (typeof showToast === 'function') {
-          showToast('📸 디데이 이후 현장 사진을 1장 이상 등록해야 전체 공개할 수 있습니다.', 'info', 2800);
-        }
-        return;
-      }
-
-      if (target.date && typeof window.okbmRouteDateReached === 'function' && !window.okbmRouteDateReached(target)) {
-        triggerHaptic(14);
-        if (typeof showToast === 'function') {
-          showToast('⏳ 디데이 이후 현장 사진을 등록해야 전체 공개할 수 있습니다.', 'info', 2800);
+        var spotName = String(target.spot || '').trim();
+        var isRegistered = typeof window.isSpotRegisteredInMasterDB === 'function' &&
+          window.isSpotRegisteredInMasterDB(spotName) &&
+          target.unregisteredSpot !== true &&
+          target.unregistered_spot !== true;
+        if (!isRegistered) {
+          if (typeof showToast === 'function') {
+            showToast((HISTORY_TOAST_VEC.lock || '') + '등록된 박지만 함께보기로 전환할 수 있습니다.', 'info', 2800);
+          }
+        } else if (target.date && typeof window.okbmRouteDateReached === 'function' && !window.okbmRouteDateReached(target)) {
+          if (typeof showToast === 'function') {
+            showToast('디데이 이후 현장 사진을 등록해야 전체 공개할 수 있습니다.', 'info', 2800);
+          }
+        } else if (typeof showToast === 'function') {
+          showToast('현장 사진을 1장 이상 등록해야 전체 공개할 수 있습니다.', 'info', 2800);
         }
         return;
       }
@@ -3270,13 +3454,13 @@ window.toggleFeedStar = async function(cardId, e) {
     }
   };
 
-window.deleteTripRecord = async function(recordId, e) {
+window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
     var sId = String(recordId || '').trim();
     if (!sId) return;
 
-    if (!confirm('이 기록을 영구 삭제하시겠습니까?')) {
-      return;
+    if (!skipConfirm) {
+      if (!(await window.okbmConfirmFeedDeleteWithPlanWarning())) return;
     }
 
     triggerHaptic(15);
@@ -3288,6 +3472,7 @@ window.deleteTripRecord = async function(recordId, e) {
     // 글이 부활하는 문제가 있었습니다.
     var targetUrl = window.SUPABASE_URL || '';
     var targetKey = window.SUPABASE_ANON_KEY || '';
+    var serverDeletedRows = [];
 
     if (targetUrl && targetKey) {
       var deleteBtn = e && e.target ? e.target.closest('button') : null;
@@ -3319,6 +3504,7 @@ window.deleteTripRecord = async function(recordId, e) {
 
         var deletedRows = [];
         try { deletedRows = await delRes.json(); } catch (parseErr) {}
+        serverDeletedRows = Array.isArray(deletedRows) ? deletedRows : [];
 
         if (!Array.isArray(deletedRows) || deletedRows.length === 0) {
           // HTTP 200/204는 왔지만 실제로 삭제된 행이 0건인 경우
@@ -3345,19 +3531,48 @@ window.deleteTripRecord = async function(recordId, e) {
       return r && String(r.id).trim() !== sId;
     };
 
+    var findById = function(list) {
+      if (!Array.isArray(list)) return null;
+      for (var fi = 0; fi < list.length; fi++) {
+        if (list[fi] && String(list[fi].id).trim() === sId) return list[fi];
+      }
+      return null;
+    };
+
+    var rawHistory = null;
+    if (window.RomanticVault && typeof window.RomanticVault.read === 'function') {
+      rawHistory = window.RomanticVault.read('okbm_packing_history', null);
+    }
+    if (!Array.isArray(rawHistory)) {
+      rawHistory = window.safeGetStorage('okbm_packing_history', []) || [];
+    }
+
+    var targetRec = findById(rawHistory)
+      || findById(window.interactiveHistory)
+      || findById(window.__allLoadedFeeds)
+      || findById(window.heroTopRecords)
+      || findById(serverDeletedRows);
+    var deletedRecords = targetRec ? [targetRec] : [];
+
     if (Array.isArray(window.__allLoadedFeeds)) {
       window.__allLoadedFeeds = window.__allLoadedFeeds.filter(purgeFn);
       try { okbmWriteCachedCommunityFeeds(window.__allLoadedFeeds); } catch(e) { console.warn('[romantic-history.js:deleteTripRecord feedCache]', e); }
     }
 
-    var rawHistory = window.safeGetStorage('okbm_packing_history', []) || [];
     var filteredHistory = rawHistory.filter(purgeFn);
 
     window.interactiveHistory = filteredHistory.map(function(r, i) { return window.normalizeHistoryRecord(r, i); });
     window.packingHistoryList = window.interactiveHistory;
     window.safeSetStorage('okbm_packing_history', filteredHistory);
     if (window.__memoryStore) window.__memoryStore['okbm_packing_history'] = filteredHistory;
+    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+      window.RomanticVault.write('okbm_packing_history', filteredHistory, false);
+    }
     try { localStorage.setItem('okbm_packing_history', JSON.stringify(filteredHistory)); } catch(e) { console.warn('[romantic-history.js:deleteTripRecord localSet]', e); }
+    await window.okbmPurgePlansForDeletedRecords(deletedRecords);
+    if (typeof window.renderPlanStage === 'function' && document.getElementById('romanticPlanModal')) {
+      window.renderPlanStage();
+    }
 
     if (Array.isArray(window.heroTopRecords)) {
       window.heroTopRecords = window.heroTopRecords.filter(purgeFn);
@@ -3366,6 +3581,9 @@ window.deleteTripRecord = async function(recordId, e) {
         window.renderCurrentHeroCard();
       }
     }
+
+    var editModal = document.getElementById('modalRichAfterTrip');
+    if (editModal) editModal.remove();
 
     var singleModal = document.getElementById('singleTripFeedModal');
     if (singleModal) singleModal.remove();
@@ -3378,12 +3596,10 @@ window.deleteTripRecord = async function(recordId, e) {
     if (typeof window.renderHistoryStage === 'function') {
       window.renderHistoryStage();
     }
-
-    if (typeof showToast === 'function') showToast('기록이 삭제되었습니다.', 'info');
   };
 
   
-// 🗺️ [전국 마스터 박지 DB 실시간 대조 & 지도 직통 이동 엔진]
+// 🗺️ [전국 마스터 장소 DB 실시간 대조 & 지도 직통 이동 엔진]
   // 피드명은 '가평 울업산', DB는 spot_main '울업산' / fullName '[가평군] 울업산' 이라 공백·시군구 접미사까지 맞춰야 한다.
   window.okbmCompactSpotFocusKey = function(str) {
     return String(str || '')
@@ -3460,8 +3676,8 @@ window.deleteTripRecord = async function(recordId, e) {
       .replace(/\s+/g, ' ')
       .trim();
 
-    if (!cleanSpot || cleanSpot === '나의 힐링 스팟' || cleanSpot === '힐링 박지') {
-      if (typeof showToast === 'function') showToast('정확한 박지 위치 정보가 등록되지 않았습니다.', 'info', 1800);
+    if (!cleanSpot || cleanSpot === '나의 힐링 스팟' || cleanSpot === '힐링 장소') {
+      if (typeof showToast === 'function') showToast('정확한 장소 위치 정보가 등록되지 않았습니다.', 'info', 1800);
       return;
     }
 
@@ -3940,7 +4156,7 @@ window.deleteTripRecord = async function(recordId, e) {
         var photos = (typeof getRecordPhotos === 'function') ? getRecordPhotos(r) : (r.photos || []);
         var thumbPhoto = (photos && photos.length > 0 && photos[0]) ? photos[0] : (r.readyShotPhoto || r.customTemplatePhoto || '');
         var safeId = escapeHtml(String(r.id || ''));
-        var spotTitle = escapeHtml(r.spot || '방문 박지');
+        var spotTitle = escapeHtml(r.spot || '방문 장소');
         var authorText = escapeHtml(r.author || r.nickname || '낭만백패커');
         var dateText = escapeHtml(r.date || '');
         var weightStr = escapeHtml(String(r.weightKg || '0.00'));
@@ -4994,9 +5210,11 @@ window.deleteTripRecord = async function(recordId, e) {
 
  window.__commitCurrentMemoInput = function() {
     var memoInput = document.getElementById('richFormMemoInput');
-    if (memoInput) {
-      var val = memoInput.value.slice(0, 120);
+    if (!memoInput) return;
+    var val = String(memoInput.value || '').slice(0, 120);
+    if (window.__tempMemoMode === 'single') {
       window.__tempSingleMemo = val;
+    } else {
       window.__tempPhotoMemos = window.__tempPhotoMemos || [];
       var curIdx = window.__currentSwipePhotoIndex || 0;
       window.__tempPhotoMemos[curIdx] = val;
@@ -5020,13 +5238,12 @@ window.deleteTripRecord = async function(recordId, e) {
     var curIdx = window.__currentSwipePhotoIndex || 0;
     var memos = window.__tempPhotoMemos || [];
     var memoInput = document.getElementById('richFormMemoInput');
-    var charCounter = document.getElementById('richMemoCharCounter');
     var photoLabel = document.getElementById('richPhotoCountLabel');
     var photoIndexBadge = document.getElementById('richPhotoActiveIndexBadge');
 
     var currentText = (window.__tempMemoMode === 'single') ? (window.__tempSingleMemo || '') : (memos[curIdx] || '');
     if (memoInput) memoInput.value = currentText;
-    if (charCounter) charCounter.innerText = currentText.length + '/120자';
+    window.__paintRichMemoCounter(currentText.length);
     if (photoIndexBadge) photoIndexBadge.innerText = (window.__tempUploadedPhotos.length > 0) ? ((curIdx + 1) + ' / ' + window.__tempUploadedPhotos.length) : '0 / 0';
     if (photoLabel) photoLabel.innerText = '등록된 사진 (' + (window.__tempUploadedPhotos ? window.__tempUploadedPhotos.length : 0) + '장 / 최대 10장)';
 
@@ -5047,14 +5264,28 @@ window.deleteTripRecord = async function(recordId, e) {
     }
   };
 
+  window.__paintRichMemoCounter = function(len) {
+    var charCounter = document.getElementById('richMemoCharCounter');
+    if (!charCounter) return;
+    var n = Number(len) || 0;
+    charCounter.innerText = n + '/120자';
+    if (window.__tempMemoMode === 'single') {
+      charCounter.style.color = (n >= 30 && n <= 120) ? '#34d399' : '#38bdf8';
+    } else {
+      charCounter.style.color = '#38bdf8';
+    }
+  };
+
   window.__handleRichMemoInput = function(text) {
     var cleanText = String(text || '').slice(0, 120);
-    window.__tempSingleMemo = cleanText;
-    var curIdx = window.__currentSwipePhotoIndex || 0;
-    window.__tempPhotoMemos = window.__tempPhotoMemos || [];
-    window.__tempPhotoMemos[curIdx] = cleanText;
-    var charCounter = document.getElementById('richMemoCharCounter');
-    if (charCounter) charCounter.innerText = cleanText.length + '/120자';
+    if (window.__tempMemoMode === 'single') {
+      window.__tempSingleMemo = cleanText;
+    } else {
+      var curIdx = window.__currentSwipePhotoIndex || 0;
+      window.__tempPhotoMemos = window.__tempPhotoMemos || [];
+      window.__tempPhotoMemos[curIdx] = cleanText;
+    }
+    window.__paintRichMemoCounter(cleanText.length);
   };
 
  // 🔄 [모바일 터치 & PC 마우스 듀얼 드래그 순서 재배치 엔진]
@@ -5224,19 +5455,23 @@ window.deleteTripRecord = async function(recordId, e) {
   };
 
   // 🗑️ [수정 화면 내부 직통 일지 & 피드 영구 삭제 파이프라인]
+  window.onRichTripLinkBlur = function(kind) {
+    var el = document.getElementById(kind === 'yt' ? 'richInputYoutube' : 'richInputNaverBlog');
+    if (!el) return;
+    var raw = String(el.value || '').trim();
+    if (!raw) return;
+    var clean = '';
+    if (kind === 'yt' && typeof window._pastTripCleanYoutubeUrl === 'function') {
+      clean = window._pastTripCleanYoutubeUrl(raw);
+    } else if (kind === 'blog' && typeof window._pastTripCleanNaverBlogUrl === 'function') {
+      clean = window._pastTripCleanNaverBlogUrl(raw);
+    }
+    if (clean) el.value = clean;
+  };
+
   window.__deleteCurrentRichTrip = function(recordId) {
     if (!recordId) return;
     triggerHaptic(14);
-
-    var confirmMsg = '정말로 이 일지(기록)를 삭제하시겠습니까?\n' +
-      '• 공용 피드 및 모든 저장소에서 즉시 영구 삭제됩니다.\n' +
-      '• 삭제된 기록은 다시 복구되지 않습니다.';
-
-    if (!confirm(confirmMsg)) return;
-
-    var editModal = document.getElementById('modalRichAfterTrip');
-    if (editModal) editModal.remove();
-
     if (typeof window.deleteTripRecord === 'function') {
       window.deleteTripRecord(recordId);
     }
@@ -5327,7 +5562,7 @@ window.deleteTripRecord = async function(recordId, e) {
   };
 
   // 하위 호환성 영구 보존 알리아스
-// 🔍 [기록 작성 모달 전용 박지 검색 & 실시간 연관검색어 엔진]
+// 🔍 [기록 작성 모달 전용 장소 검색 & 실시간 연관검색어 엔진]
   window.openSpotSearchModalForRichTrip = function() {
     triggerHaptic(10);
     var old = document.getElementById('richTripSpotSearchModal');
@@ -5337,7 +5572,7 @@ window.deleteTripRecord = async function(recordId, e) {
     var parentScrollContainer = document.querySelector('#modalRichAfterTrip > div:nth-child(2)');
     var savedParentScrollTop = parentScrollContainer ? parentScrollContainer.scrollTop : 0;
 
-  // 🌐 [3중 하이브리드 박지 풀 메모이제이션 엔진]: 1회 정규화 후 메모리 캐시로 0.001초 즉시 인출
+  // 🌐 [3중 하이브리드 장소 풀 메모이제이션 엔진]: 1회 정규화 후 메모리 캐시로 0.001초 즉시 인출
     var spotsSource = [];
     if (window.__masterSpotsSearchCache && window.__masterSpotsSearchCache.length > 0) {
       spotsSource = window.__masterSpotsSearchCache;
@@ -5375,7 +5610,7 @@ window.deleteTripRecord = async function(recordId, e) {
       rawPool.forEach(function(s) {
         if (!s) return;
         var rawName = String(s.name || s.spotName || s.spot || s.title || '').trim();
-        if (!rawName || rawName === '나의 힐링 스팟' || rawName === '힐링 박지') return;
+        if (!rawName || rawName === '나의 힐링 스팟' || rawName === '힐링 장소') return;
 
         var cityName = '';
         if (typeof window.extractSmartCityName === 'function') {
@@ -5417,13 +5652,13 @@ window.deleteTripRecord = async function(recordId, e) {
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px; flex-shrink:0;">
           <div style="display:flex; align-items:center; gap:6px;">
             <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" style="width:16px; height:16px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">방문 박지 검색 및 변경</span>
+            <span style="font-size:0.92rem; font-weight:900; color:#ffffff;">방문 장소 검색 및 변경</span>
           </div>
           <button type="button" onclick="window.__closeRichSpotSearch();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 4px;">✕</button>
         </div>
 
         <div style="position:relative; width:100%; flex-shrink:0;">
-          <input type="text" id="richSpotSearchInput" placeholder="도시명 또는 박지명 입력 (예: 천마산 관음봉, 단양 올산)" oninput="window.__handleRichSpotFilter(this.value);" style="width:100%; height:44px; background:rgba(255,255,255,0.06); border:1px solid rgba(56,189,248,0.4); border-radius:10px; color:#ffffff; padding:0 38px 0 14px; font-size:0.86rem; outline:none; box-sizing:border-box;" />
+          <input type="text" id="richSpotSearchInput" placeholder="도시명 또는 장소명 입력 (예: 천마산 관음봉, 단양 올산)" oninput="window.__handleRichSpotFilter(this.value);" style="width:100%; height:44px; background:rgba(255,255,255,0.06); border:1px solid rgba(56,189,248,0.4); border-radius:10px; color:#ffffff; padding:0 38px 0 14px; font-size:0.86rem; outline:none; box-sizing:border-box;" />
           <button type="button" onclick="document.getElementById('richSpotSearchInput').value=''; window.__handleRichSpotFilter('');" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:#94a3b8; font-size:0.9rem; cursor:pointer;">✕</button>
         </div>
 
@@ -5467,7 +5702,7 @@ window.deleteTripRecord = async function(recordId, e) {
           customWrap.style.display = 'flex';
           customText.innerText = '“' + rawQ + '” (으)로 직접 설정';
           customBtn.onclick = function() {
-            window.__selectSpotForRichTrip(rawQ, '');
+            window.__selectSpotForRichTrip(rawQ, '', { isCustom: true });
           };
         }
       } else if (customWrap) {
@@ -5504,7 +5739,7 @@ window.deleteTripRecord = async function(recordId, e) {
           // 2. 사용자가 노린 마지막 핵심 단어(예: '관음봉') 일치 가중치
           if (lastToken) {
             if (rawName === lastToken || rawName.includes(lastToken)) {
-              score += 600; // '관음봉'이 박지 순수 명칭에 직접 포함 시 최상단 우선권
+              score += 600; // '관음봉'이 장소 순수 명칭에 직접 포함 시 최상단 우선권
             } else if (sName.includes(lastToken)) {
               score += 400;
             } else if (sAddr.includes(lastToken)) {
@@ -5557,7 +5792,7 @@ window.deleteTripRecord = async function(recordId, e) {
       }
 
       listEl.innerHTML = matchedList.map(function(s) {
-        var sName = s.name || '힐링 박지';
+        var sName = s.name || '힐링 장소';
         var rawElev = String(s.elevation || '').trim();
         // 📐 [고도 단위(m) 표준화 부착]
         var elevFormatted = '';
@@ -5585,18 +5820,121 @@ window.deleteTripRecord = async function(recordId, e) {
       }).join('');
     };
 
-    window.__selectSpotForRichTrip = function(spotName, elevation) {
+    window.__parkRichModalForProposal = function() {
+      var rich = document.getElementById('modalRichAfterTrip');
+      if (rich) rich.style.display = 'none';
+      if (window.__richProposalObserver) {
+        try { window.__richProposalObserver.disconnect(); } catch (e) {}
+        window.__richProposalObserver = null;
+      }
+      var check = function() {
+        var live = document.getElementById('modalRichAfterTrip');
+        if (!live) {
+          if (window.__richProposalObserver) {
+            try { window.__richProposalObserver.disconnect(); } catch (e2) {}
+            window.__richProposalObserver = null;
+          }
+          return;
+        }
+        var ov = document.getElementById('customModalOverlay');
+        var banner = document.getElementById('pinPickerBanner');
+        var overlayOn = !!(ov && window.getComputedStyle(ov).display !== 'none');
+        var bannerOn = !!(banner && window.getComputedStyle(banner).display !== 'none');
+        if (overlayOn || bannerOn) return;
+        live.style.display = 'flex';
+        if (window.__richProposalObserver) {
+          try { window.__richProposalObserver.disconnect(); } catch (e3) {}
+          window.__richProposalObserver = null;
+        }
+      };
+      var observer = new MutationObserver(check);
+      window.__richProposalObserver = observer;
+      var overlay = document.getElementById('customModalOverlay');
+      var banner = document.getElementById('pinPickerBanner');
+      if (overlay) observer.observe(overlay, { attributes: true, attributeFilter: ['style', 'class'] });
+      if (banner) observer.observe(banner, { attributes: true, attributeFilter: ['style', 'class'] });
+    };
+
+    window.__openRichSpotProposal = function(spotName) {
+      var name = String(spotName || '').trim();
+      if (typeof window.openUserProposalModal === 'function') {
+        window.openUserProposalModal(name, 0, 0, '');
+        var overlay = document.getElementById('customModalOverlay');
+        if (overlay) overlay.style.setProperty('z-index', '2147483646', 'important');
+        window.__parkRichModalForProposal();
+        return;
+      }
+      try {
+        sessionStorage.setItem('okbm_pending_rich_spot_propose', name);
+      } catch (e) {}
+      window.location.assign('map.html?propose_spot=' + encodeURIComponent(name || '') + '&from_rich_trip=1');
+    };
+
+    window.__showRichSpotRegisterChoice = function(spotName) {
+      var existing = document.getElementById('richSpotRegisterChoiceOverlay');
+      if (existing) existing.remove();
+      var name = String(spotName || '').trim();
+      var esc = (typeof escapeHtml === 'function') ? escapeHtml : function(s) { return String(s || ''); };
+      var ov = document.createElement('div');
+      ov.id = 'richSpotRegisterChoiceOverlay';
+      ov.style.cssText = 'position:fixed; inset:0; z-index:2147483647; background:rgba(0,0,0,0.72); display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
+      ov.onclick = function(e) { if (e.target === ov) ov.remove(); };
+      ov.innerHTML =
+        '<div style="width:100%; max-width:320px; background:#0c1017; border-radius:14px; border:1px solid rgba(255,255,255,0.12); padding:16px; display:flex; flex-direction:column; gap:12px; box-sizing:border-box; box-shadow:0 16px 40px rgba(0,0,0,0.55);" onclick="event.stopPropagation();">' +
+          '<div style="font-size:0.92rem; font-weight:900; color:#fff; text-align:center;">장소를 등록하시겠습니까?</div>' +
+          (name ? ('<div style="font-size:0.78rem; font-weight:800; color:#e2e8f0; text-align:center; word-break:break-all;">' + esc(name) + '</div>') : '') +
+          '<div style="font-size:0.68rem; color:#94a3b8; line-height:1.5; text-align:center;">등록하기를 선택하시면 제보창으로 연결됩니다.<br>등록하지 않기를 선택하시면 나만보기와 이 기록에 저장됩니다.</div>' +
+          '<div style="display:flex; gap:8px;">' +
+            '<button type="button" id="richSpotChoiceRegisterBtn" style="flex:1; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:#e2e8f0; color:#000; font-size:0.78rem; font-weight:900; cursor:pointer;">등록하기</button>' +
+            '<button type="button" id="richSpotChoiceSkipBtn" style="flex:1; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04); color:#cbd5e1; font-size:0.78rem; font-weight:800; cursor:pointer;">등록하지 않기</button>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(ov);
+      var regBtn = document.getElementById('richSpotChoiceRegisterBtn');
+      var skipBtn = document.getElementById('richSpotChoiceSkipBtn');
+      if (regBtn) {
+        regBtn.onclick = function() {
+          ov.remove();
+          triggerHaptic(10);
+          window.__openRichSpotProposal(name);
+        };
+      }
+      if (skipBtn) {
+        skipBtn.onclick = function() {
+          ov.remove();
+          triggerHaptic(8);
+        };
+      }
+    };
+
+    window.__selectSpotForRichTrip = function(spotName, elevation, opts) {
       if (!spotName) return;
+      opts = opts || {};
       triggerHaptic(12);
 
       // 인풋 포커스 먼저 해제하여 브라우저 강제 스크롤 차단
       var input = document.getElementById('richSpotSearchInput');
       if (input) input.blur();
 
+      var isRegistered = !opts.isCustom &&
+        typeof window.isSpotRegisteredInMasterDB === 'function' &&
+        window.isSpotRegisteredInMasterDB(spotName);
+
       if (window.__richCurrentRecord) {
         window.__richCurrentRecord.spot = spotName;
         if (elevation) {
           window.__richCurrentRecord.elevation = elevation.replace(/[()]/g, '');
+        }
+        if (isRegistered) {
+          window.__richCurrentRecord.unregisteredSpot = false;
+          window.__richCurrentRecord.unregistered_spot = false;
+        } else {
+          window.__richCurrentRecord.unregisteredSpot = true;
+          window.__richCurrentRecord.unregistered_spot = true;
+          window.__richCurrentRecord.spotId = '';
+          window.__richCurrentRecord.spot_id = '';
+          window.__richCurrentRecord.isPublished = false;
+          window.__richCurrentRecord.is_published = false;
         }
       }
 
@@ -5607,6 +5945,17 @@ window.deleteTripRecord = async function(recordId, e) {
       if (targetInHistory) {
         targetInHistory.spot = spotName;
         if (elevation) targetInHistory.elevation = elevation.replace(/[()]/g, '');
+        if (isRegistered) {
+          targetInHistory.unregisteredSpot = false;
+          targetInHistory.unregistered_spot = false;
+        } else {
+          targetInHistory.unregisteredSpot = true;
+          targetInHistory.unregistered_spot = true;
+          targetInHistory.spotId = '';
+          targetInHistory.spot_id = '';
+          targetInHistory.isPublished = false;
+          targetInHistory.is_published = false;
+        }
       }
 
       var badgeTextEl = document.getElementById('richHeaderSpotNameText');
@@ -5625,9 +5974,17 @@ window.deleteTripRecord = async function(recordId, e) {
         }, 30);
       }
 
-      if (typeof showToast === 'function') {
-        showToast(HISTORY_TOAST_VEC.pin + '박지가 [' + escapeHtml(spotName) + '](으)로 변경되었습니다.', 'success', 1800);
+      if (isRegistered) {
+        if (typeof showToast === 'function') {
+          showToast(HISTORY_TOAST_VEC.pin + '박지가 [' + escapeHtml(spotName) + '](으)로 변경되었습니다.', 'success', 1800);
+        }
+        return;
       }
+
+      if (typeof showToast === 'function') {
+        showToast((HISTORY_TOAST_VEC.lock || '') + '등록된 장소가 아닌 경우 나만보기로 이동됩니다.', 'info', 2600);
+      }
+      window.__showRichSpotRegisterChoice(spotName);
     };
 
     window.__handleRichSpotFilter('');
@@ -5698,7 +6055,8 @@ window.deleteTripRecord = async function(recordId, e) {
       window.__tempPhotoMemos.push('');
     }
     window.__currentSwipePhotoIndex = 0;
-    var savedSns = localStorage.getItem('okbm_user_instagram') || record.instagram || record.youtube || '';
+    var savedYt = String(record.youtube || record.youtubeUrl || '').trim();
+    var savedBlog = String(record.blog || record.blogUrl || record.naverBlog || '').trim();
 
     // 🌟 [메모 모드 판별: 한 번에 쓰기(single) vs 사진별 쓰기(per_photo)]
     var hasMultiMemos = Array.isArray(record.photoMemos) && record.photoMemos.filter(function(m) { return m && m.trim().length > 0; }).length > 1;
@@ -5723,8 +6081,9 @@ window.deleteTripRecord = async function(recordId, e) {
           btnPerPhoto.style.background = 'transparent';
           btnPerPhoto.style.color = '#94a3b8';
           btnPerPhoto.style.fontWeight = '700';
-          if (helperLabel) helperLabel.innerText = '모든 사진에 공통으로 표시되는 대표 일지입니다.';
+          if (helperLabel) helperLabel.innerText = '대표 일지 30자 이상, 최대 120자';
           if (memoInput) memoInput.value = window.__tempSingleMemo;
+          window.__paintRichMemoCounter((window.__tempSingleMemo || '').length);
         } else {
           btnPerPhoto.style.background = '#38bdf8';
           btnPerPhoto.style.color = '#000000';
@@ -5732,7 +6091,7 @@ window.deleteTripRecord = async function(recordId, e) {
           btnSingle.style.background = 'transparent';
           btnSingle.style.color = '#94a3b8';
           btnSingle.style.fontWeight = '700';
-          if (helperLabel) helperLabel.innerText = '사진을 넘길 때마다 해당 사진의 메모가 바뀝니다.';
+          if (helperLabel) helperLabel.innerText = '사진별 메모는 선택, 최대 120자';
           window.__syncActivePhotoMemoUI();
         }
       }
@@ -5746,16 +6105,15 @@ window.deleteTripRecord = async function(recordId, e) {
     formModal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:2147483645 !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     formModal.innerHTML = `
-      <!-- 1. 상단 고정 헤더: 뒤로가기 + 박지/일상 뱃지 + 수정 완료 -->
+      <!-- 1. 상단 고정 헤더: 뒤로가기 + 장소/일상 뱃지 + 수정 완료 -->
       <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:10px 14px; padding-top:calc(10px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10; gap:8px;">
         <button type="button" onclick="document.getElementById('modalRichAfterTrip').remove(); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">◀</button>
         
-        <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openSpotSearchModalForRichTrip();" style="display:flex; align-items:center; gap:5px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); padding:4px 10px; border-radius:20px; cursor:pointer; min-height:32px; transition:background 0.15s ease; min-width:0; flex:1; justify-content:center; pointer-events:auto; z-index:20; position:relative;" title="터치하여 박지 검색 및 변경">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          <span id="richHeaderSpotNameText" style="font-size:0.80rem; font-weight:900; color:#38bdf8; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(record.spot)}</span>
+        <div style="display:flex; align-items:center; gap:5px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); padding:4px 10px; border-radius:20px; min-height:32px; min-width:0; flex:1; justify-content:center;" title="위치와 날짜는 수정할 수 없습니다">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px; height:13px; flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <span id="richHeaderSpotNameText" style="font-size:0.80rem; font-weight:900; color:#e2e8f0; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(record.spot)}</span>
           <span style="font-size:0.65rem; color:#94a3b8; font-family:'JetBrains Mono', monospace; flex-shrink:0;">· ${escapeHtml(record.date)}</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" style="width:10px; height:10px; flex-shrink:0; margin-left:1px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </button>
+        </div>
 
         <button type="button" id="btnSubmitRichTrip" data-record-id="${escapeHtml(String(record.id))}" style="white-space:nowrap !important; flex-shrink:0 !important; background:linear-gradient(135deg, #0284c7, #0369a1); border:none; color:#ffffff; font-size:0.78rem; font-weight:900; height:32px; padding:0 12px; border-radius:8px; cursor:pointer; box-shadow:0 2px 8px rgba(2,132,199,0.4); display:inline-flex; align-items:center; justify-content:center; gap:3px;">
           <svg viewBox="0 0 24 24" style="width:13px; height:13px; flex-shrink:0;" fill="none" stroke="#ffffff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
@@ -5796,21 +6154,17 @@ window.deleteTripRecord = async function(recordId, e) {
             <span id="richMemoCharCounter" style="font-size:0.70rem; color:#38bdf8; font-family:'Space Grotesk', sans-serif; font-weight:800;">0/120자</span>
           </div>
           <div id="richMemoModeHelperLabel" style="font-size:0.62rem; color:#64748b; margin-top:-2px;">
-            ${window.__tempMemoMode==='single' ? '모든 사진에 공통으로 표시되는 대표 일지입니다.' : '사진을 넘길 때마다 해당 사진의 메모가 바뀝니다.'}
+            ${window.__tempMemoMode==='single' ? '대표 일지 30자 이상, 최대 120자' : '사진별 메모는 선택, 최대 120자'}
           </div>
           <textarea id="richFormMemoInput" maxlength="120" placeholder="지형 상태, 뷰, 실전 팁 등 현장 기록을 120자 이내로 남겨보세요." oninput="window.__handleRichMemoInput(this.value);" style="width:100%; height:95px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.15); color:#fff; border-radius:12px; padding:12px 14px; font-size:0.84rem; line-height:1.55; box-sizing:border-box; outline:none; resize:none; font-family:'Pretendard Variable', -apple-system, sans-serif; letter-spacing:-0.02em;"></textarea>
         </div>
 
-        <!-- 하단 배치: 화이트 모노톤 SNS / 채널 링크 입력 영역 -->
-        <div style="display:flex; flex-direction:column; gap:4px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div style="display:flex; align-items:center; gap:4px;">
-              <svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:#e2e8f0; fill:none; stroke-width:2.2;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>
-              <span style="font-size:0.75rem; color:#e2e8f0; font-weight:800;">SNS / 채널 링크 (선택)</span>
-            </div>
-            <span style="font-size:0.60rem; color:#64748b;">인스타 ID 또는 유튜브 채널 링크</span>
-          </div>
-          <input type="text" id="richInputInstagram" value="${escapeHtml(savedSns)}" placeholder="@아이디 또는 채널 주소 (예: @user 또는 youtube.com/@ch)" style="width:100%; height:38px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.12); color:#ffffff; border-radius:8px; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />
+        <!-- 하단 배치: 유튜브 / 네이버 블로그 링크 (과거추억 올리기와 동일) -->
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <label style="font-size:0.74rem; font-weight:800; color:#94a3b8;">유튜브 / 네이버 블로그 링크 (선택)</label>
+          <input type="text" id="richInputYoutube" inputmode="url" value="${escapeHtml(savedYt)}" placeholder="YouTube 링크" onblur="window.onRichTripLinkBlur('yt');" style="width:100%; height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(244,63,94,0.28); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />
+          <input type="text" id="richInputNaverBlog" inputmode="url" value="${escapeHtml(savedBlog)}" placeholder="네이버 블로그 링크" onblur="window.onRichTripLinkBlur('blog');" style="width:100%; height:40px; background:rgba(255,255,255,0.05); border:1px solid rgba(3,199,90,0.28); border-radius:10px; color:#ffffff; padding:0 12px; font-size:0.80rem; outline:none; box-sizing:border-box;" />
+          <div style="font-size:calc(0.66rem + 1pt); color:#64748b; line-height:1.45;">다른 낭만 루터분들에게 도움이 됩니다</div>
         </div>
 
       </div>
@@ -5862,7 +6216,7 @@ window.deleteTripRecord = async function(recordId, e) {
     var photosToProcess = Array.isArray(window.__tempUploadedPhotos) ? window.__tempUploadedPhotos.slice(0, 10) : [];
     if (photosToProcess.length === 0) {
       triggerHaptic(14);
-      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.camera + '현장 사진을 1장 이상 추가해주세요.', 'warn', 2200);
+      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.camera + '현장 사진을 1장 이상 추가해주세요.', 'warn', 2400, 'center');
       window.__isSubmittingRichTrip = false;
       var submitBtnEl = document.getElementById('btnSubmitRichTrip');
       if (submitBtnEl) {
@@ -5873,6 +6227,31 @@ window.deleteTripRecord = async function(recordId, e) {
       return;
     }
 
+    window.__commitCurrentMemoInput();
+    var isSingleMemo = (window.__tempMemoMode !== 'per_photo');
+    var memoInputEl = document.getElementById('richFormMemoInput');
+    if (isSingleMemo) {
+      var singleMemoCheck = String(
+        window.__tempSingleMemo || (memoInputEl ? memoInputEl.value : '') || ''
+      ).trim().slice(0, 120);
+      if (!singleMemoCheck) {
+        triggerHaptic(14);
+        if (typeof showToast === 'function') showToast('대표 일지를 작성해주세요.', 'warn', 2400, 'center');
+        window.__isSubmittingRichTrip = false;
+        if (memoInputEl) memoInputEl.focus();
+        return;
+      }
+      if (singleMemoCheck.length < 30) {
+        triggerHaptic(14);
+        if (typeof showToast === 'function') {
+          showToast('대표 일지는 30자 이상 작성해주세요. (현재 ' + singleMemoCheck.length + '자)', 'warn', 2800, 'center');
+        }
+        window.__isSubmittingRichTrip = false;
+        if (memoInputEl) memoInputEl.focus();
+        return;
+      }
+    }
+
     var submitBtn = document.getElementById('btnSubmitRichTrip');
     if (submitBtn) {
       submitBtn.disabled = true;
@@ -5880,15 +6259,15 @@ window.deleteTripRecord = async function(recordId, e) {
       submitBtn.innerText = '클라우드 업로드 중...';
     }
 
-    window.__commitCurrentMemoInput();
-
-    var memoInputEl = document.getElementById('richFormMemoInput');
-    var finalTypedMemo = memoInputEl ? memoInputEl.value.trim().slice(0, 120) : (window.__tempSingleMemo || '').trim();
+    var finalTypedMemo = isSingleMemo
+      ? String(window.__tempSingleMemo || (memoInputEl ? memoInputEl.value : '') || '').trim().slice(0, 120)
+      : (memoInputEl ? memoInputEl.value.trim().slice(0, 120) : '');
 
     target.memo = finalTypedMemo;
     target.oneLineMemo = finalTypedMemo;
 
-    var instaInput = document.getElementById('richInputInstagram');
+    var ytInput = document.getElementById('richInputYoutube');
+    var blogInput = document.getElementById('richInputNaverBlog');
     var profile = safeGetJSON('user_profile', null);
     target.author = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || target.author || '');
     var userId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || target.userId || '');
@@ -5898,33 +6277,44 @@ window.deleteTripRecord = async function(recordId, e) {
       target.authorPhoto = curMasterCover;
     }
 
-    if (instaInput) {
-      var rawSnsVal = instaInput.value.trim();
-      if (rawSnsVal) {
-        localStorage.setItem('okbm_user_sns_channel', rawSnsVal);
-        if (rawSnsVal.includes('youtube.com') || rawSnsVal.includes('youtu.be')) {
-          var cleanYt = rawSnsVal.replace(/^@+/, '').split('?')[0].trim();
-          var channelMatch = cleanYt.match(/(?:youtube\.com\/(?:@|c\/|channel\/)?|youtu\.be\/)([\w\-\_\.]+)/i);
-          target.youtube = (channelMatch && channelMatch[1]) ? ('https://www.youtube.com/@' + channelMatch[1].replace(/^@/, '')) : (cleanYt.startsWith('http') ? cleanYt : ('https://' + cleanYt));
-          target.instagram = '';
-        } else {
-          var cleanInsta = rawSnsVal.replace(/^@+/, '').trim();
-          target.instagram = cleanInsta ? ('@' + cleanInsta) : '';
-          target.youtube = '';
-          if (cleanInsta) localStorage.setItem('okbm_user_instagram', '@' + cleanInsta);
-        }
-      } else {
-        localStorage.removeItem('okbm_user_sns_channel');
-        localStorage.removeItem('okbm_user_instagram');
-        target.instagram = '';
-        target.youtube = '';
-      }
+    if (typeof window.onRichTripLinkBlur === 'function') {
+      window.onRichTripLinkBlur('yt');
+      window.onRichTripLinkBlur('blog');
     }
+    var ytCleanFn = (typeof window._pastTripCleanYoutubeUrl === 'function') ? window._pastTripCleanYoutubeUrl : null;
+    var blogCleanFn = (typeof window._pastTripCleanNaverBlogUrl === 'function') ? window._pastTripCleanNaverBlogUrl : null;
+    var ytRaw = ytInput ? String(ytInput.value || '').trim() : '';
+    var blogRaw = blogInput ? String(blogInput.value || '').trim() : '';
+    var ytUrl = ytCleanFn ? ytCleanFn(ytRaw) : ytRaw;
+    var blogUrl = blogCleanFn ? blogCleanFn(blogRaw) : blogRaw;
+    if (ytRaw && !ytUrl) {
+      if (typeof showToast === 'function') showToast('유튜브 링크를 확인해주세요.', 'warn');
+      window.__isSubmittingRichTrip = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.innerText = '저장';
+      }
+      return;
+    }
+    if (blogRaw && !blogUrl) {
+      if (typeof showToast === 'function') showToast('네이버 블로그 링크를 확인해주세요.', 'warn');
+      window.__isSubmittingRichTrip = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.innerText = '저장';
+      }
+      return;
+    }
+    if (ytInput && ytUrl) ytInput.value = ytUrl;
+    if (blogInput && blogUrl) blogInput.value = blogUrl;
+    target.youtube = ytUrl || '';
+    target.blog = blogUrl || '';
 
-    var isSingle = (window.__tempMemoMode === 'single');
-    target.memoMode = isSingle ? 'single' : 'per_photo';
+    target.memoMode = isSingleMemo ? 'single' : 'per_photo';
 
-    if (isSingle) {
+    if (isSingleMemo) {
       target.memo = finalTypedMemo;
       target.oneLineMemo = finalTypedMemo;
       target.photoMemos = [finalTypedMemo];
@@ -5938,7 +6328,19 @@ window.deleteTripRecord = async function(recordId, e) {
       target.oneLineMemo = target.memo.slice(0, 120);
     }
 
-    target.isPublished = true;
+    var prevReadyShot = String(target.readyShotPhoto || target.ready_shot_photo || target.customTemplatePhoto || '').trim();
+    var prevFieldPhotos = (typeof getRecordPhotos === 'function') ? getRecordPhotos(target) : [];
+    var hadFieldPhotos = prevFieldPhotos.some(function(u) {
+      return typeof u === 'string' &&
+        (u.startsWith('https://') || u.startsWith('http://')) &&
+        u.indexOf('unsplash.com') === -1 &&
+        u !== prevReadyShot;
+    });
+    var wasPrivate = (typeof window.okbmIsExplicitlyPrivate === 'function')
+      ? window.okbmIsExplicitlyPrivate(target)
+      : (target.isPublished === false || target.is_published === false);
+    var autoOpenedToPublic = false;
+
     target.isDraft = false;
 
     var localPhotos = photosToProcess.slice();
@@ -5959,6 +6361,23 @@ window.deleteTripRecord = async function(recordId, e) {
     if (Array.isArray(uploadedCdnPhotos) && uploadedCdnPhotos.length > 0) {
       target.photos = uploadedCdnPhotos;
       target.photo = uploadedCdnPhotos[0] || '';
+    }
+
+    var canPublishNow = (typeof window.okbmCanPublishFeed === 'function')
+      ? window.okbmCanPublishFeed(target)
+      : false;
+    if (!canPublishNow) {
+      var spotProbe = String(target.spot || '').trim();
+      if (typeof window.isSpotRegisteredInMasterDB === 'function' && !window.isSpotRegisteredInMasterDB(spotProbe)) {
+        target.unregisteredSpot = true;
+        target.unregistered_spot = true;
+      }
+      target.isPublished = false;
+      target.is_published = false;
+    } else if (!hadFieldPhotos && wasPrivate && prevReadyShot) {
+      target.isPublished = true;
+      target.is_published = true;
+      autoOpenedToPublic = true;
     }
 
     // [단 1개의 통로로만 서버 쓰기] savePackingHistoryRecord → submitFeedPayload가
@@ -5986,6 +6405,43 @@ window.deleteTripRecord = async function(recordId, e) {
     }
 
     target = savedTarget || target;
+    if (wasPrivate && target.isPublished === true) autoOpenedToPublic = true;
+
+    // 과거추억 올리기와 동일: 유튜브/블로그 링크를 등록 박지 미디어에 합산
+    try {
+      var linkYt = String(target.youtube || '').trim();
+      var linkBlog = String(target.blog || '').trim();
+      if (linkYt || linkBlog) {
+        var mediaSpotId = String(target.spotId || target.spot_id || '').trim();
+        if (!mediaSpotId && typeof window.okbmFindSpotByFocusQuery === 'function') {
+          var foundSpot = window.okbmFindSpotByFocusQuery(
+            window.SPOTS_MASTER || window.spots || [],
+            target.spot || ''
+          );
+          if (foundSpot && foundSpot.id) mediaSpotId = String(foundSpot.id).trim();
+        }
+        var isUnreg = target.unregisteredSpot === true || target.unregistered_spot === true;
+        if (!isUnreg && mediaSpotId && typeof window._pastTripMergeSpotMediaUrls === 'function') {
+          var mediaMerged = await window._pastTripMergeSpotMediaUrls(
+            mediaSpotId,
+            linkYt ? [linkYt] : [],
+            linkBlog ? [linkBlog] : []
+          );
+          if (!mediaMerged && typeof showToast === 'function') {
+            showToast('기록은 저장됐지만 유튜브/블로그 링크 반영에 실패했습니다.', 'warn', 2800);
+          } else if (mediaMerged && typeof window.prefetchSpotMediaForSpot === 'function') {
+            var mediaSpot = (window.spots || window.SPOTS_MASTER || []).find(function(s) {
+              return s && String(s.id).trim() === mediaSpotId;
+            });
+            if (mediaSpot) window.prefetchSpotMediaForSpot(mediaSpot);
+          }
+        } else if (isUnreg && typeof window._pastTripSavePendingMedia === 'function') {
+          window._pastTripSavePendingMedia(target.spot || '', linkYt, linkBlog);
+        }
+      }
+    } catch (mediaErr) {
+      console.warn('[RomanticHistory] spot media merge:', mediaErr);
+    }
 
     try {
       if (typeof syncUserDataToCloud === 'function') {
@@ -6024,7 +6480,14 @@ window.deleteTripRecord = async function(recordId, e) {
     triggerHaptic(15);
     window.__isSubmittingRichTrip = false;
     if (typeof showToast === 'function') {
-      showToast(HISTORY_TOAST_VEC.check + '기록이 저장되었습니다.', 'success', 1800);
+      var savedPrivate = target.unregisteredSpot === true || target.isPublished === false;
+      showToast(
+        HISTORY_TOAST_VEC.check + (savedPrivate
+          ? '나만보기로 저장되었습니다.'
+          : (autoOpenedToPublic ? '함께보기로 저장되었습니다.' : '기록이 저장되었습니다.')),
+        'success',
+        1800
+      );
     }
   };
   // 🔗 [공유 링크 딥링크 다이렉트 자동 오픈 엔진]
@@ -6391,15 +6854,18 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       }
     }
 
-    // 2. 하단 고정 3줄 메모장 실시간 동기화 (레이아웃 시프트 0%)
+    // 2. 하단 고정 3줄 메모장 실시간 동기화 (사진 대표 메모인 경우 슬라이드를 넘겨도 대표 메모 유지)
     var memoEl = document.getElementById('feedPhotoMemoText_' + cardId);
     var cardRoot = document.getElementById('feedSnapCard_' + cardId);
     if (memoEl && cardRoot && cardRoot.dataset.photoMemos) {
       try {
         var memos = JSON.parse(cardRoot.dataset.photoMemos);
         var curText = (Array.isArray(memos) && memos[curIdx] !== undefined) ? memos[curIdx] : '';
-        if (!curText && curIdx === 0 && cardRoot.dataset.defaultMemo) {
+        if (!curText && cardRoot.dataset.defaultMemo) {
           curText = cardRoot.dataset.defaultMemo;
+        }
+        if (!curText && Array.isArray(memos) && memos.length > 0 && memos[0]) {
+          curText = memos[0];
         }
         memoEl.innerHTML = (curText && curText.trim().length > 0)
           ? escapeHtml(curText.trim())
@@ -6417,7 +6883,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var safeDate = escapeHtml(tripDate || '');
     var textShadowStyle = 'text-shadow:0 1px 4px rgba(0,0,0,0.95), 0 2px 8px rgba(0,0,0,0.7);';
     var spotRow = isRegisteredSpot
-      ? ('<button type="button" data-spot="' + safeSpot + '" onclick="window.navigateToSpotMap(this.dataset.spot, event);" style="background:none; border:none; padding:0; display:inline-flex; align-items:center; gap:2px; cursor:pointer; text-align:left; min-width:0; overflow:hidden;" title="지도에서 박지 위치 확인">' +
+      ? ('<button type="button" data-spot="' + safeSpot + '" onclick="window.navigateToSpotMap(this.dataset.spot, event);" style="background:none; border:none; padding:0; display:inline-flex; align-items:center; gap:2px; cursor:pointer; text-align:left; min-width:0; overflow:hidden;" title="지도에서 장소 위치 확인">' +
           '<span style="font-size:0.74rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-decoration:underline; text-decoration-color:rgba(56,189,248,0.55); text-underline-offset:2px; line-height:1.3; ' + textShadowStyle + '">' + safeSpot + '</span>' +
           '<span style="font-size:0.60rem; color:#38bdf8; font-weight:900; flex-shrink:0; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.9));">↗</span>' +
         '</button>')
@@ -6808,7 +7274,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
           '<button type="button" onclick="window.openPastTripsListModal(); triggerHaptic(10);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#38bdf8; flex-shrink:0;" title="보관함 모아보기">' +
             '<svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>' +
           '</button>' +
-          '<button type="button" data-record-id="' + cardId + '" data-lock-btn-id="' + cardId + '" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:' + (isPub ? '#34d399' : '#38bdf8') + '; flex-shrink:0;" title="' + (isPub ? '전체 공개 중' : (hasRealFieldPhotos ? '비공개 (나만보기)' : '비공개 (디데이 이후 사진 등록 시 전체공개 가능)')) + '">' +
+          '<button type="button" data-record-id="' + cardId + '" data-lock-btn-id="' + cardId + '" onclick="window.toggleFeedPublishStatus(this.dataset.recordId, event);" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:' + (isPub ? '#34d399' : '#38bdf8') + '; flex-shrink:0;" title="' + (isPub ? '전체 공개 중' : (!isRegisteredSpot ? '비공개 (등록 박지만 함께보기 가능)' : (hasRealFieldPhotos ? '비공개 (나만보기)' : '비공개 (디데이 이후 사진 등록 시 함께보기 가능)'))) + '">' +
             (isPub
               ? '<svg viewBox="0 0 24 24" style="width:16px; height:16px; color:#34d399;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>'
               : '<svg viewBox="0 0 24 24" style="width:16px; height:16px; color:#38bdf8;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
