@@ -20,50 +20,45 @@
       }
 
       function fail(msg) {
+        sessionStorage.removeItem('okbm_naver_oauth_code');
+        sessionStorage.removeItem('okbm_naver_oauth_token');
         if (statusEl) statusEl.textContent = msg || '네이버 로그인에 실패했습니다.';
         setTimeout(goBack, 1600);
       }
 
-      function parseHashParams() {
-        var params = {};
-        var raw = String(window.location.hash || '').replace(/^#/, '');
-        if (!raw) return params;
-        raw.split('&').forEach(function(part) {
-          if (!part) return;
-          var idx = part.indexOf('=');
-          var key = decodeURIComponent((idx >= 0 ? part.slice(0, idx) : part).replace(/\+/g, ' '));
-          var val = decodeURIComponent((idx >= 0 ? part.slice(idx + 1) : '').replace(/\+/g, ' '));
-          params[key] = val;
-        });
-        return params;
-      }
-
-      var params = parseHashParams();
       var query = new URLSearchParams(window.location.search);
-      var oauthError = params.error || query.get('error') || '';
-      var accessToken = params.access_token || '';
-      var returnedState = params.state || query.get('state') || '';
+      var code = String(query.get('code') || '').trim();
+      var oauthError = String(query.get('error') || '').trim();
+      var returnedState = String(query.get('state') || '').trim();
       var savedState = sessionStorage.getItem('okbm_naver_oauth_state') || '';
+      var savedRedirect = sessionStorage.getItem('okbm_naver_redirect_uri') || '';
 
       if (oauthError) {
         fail('네이버 로그인이 취소되었거나 거부되었습니다.');
         return;
       }
-      if (query.get('code') && !accessToken) {
+      if (window.location.hash && /access_token=/.test(window.location.hash)) {
         fail('네이버 로그인을 다시 시도해 주세요.');
         return;
       }
-      if (!accessToken) {
-        fail('네이버 토큰을 받지 못했습니다.');
+      if (!code) {
+        fail('네이버 인가 코드를 받지 못했습니다.');
         return;
       }
-      if (savedState && returnedState && savedState !== returnedState) {
+      if (!savedState || !returnedState || savedState !== returnedState) {
         fail('네이버 로그인 상태값이 일치하지 않습니다.');
         return;
       }
 
-      sessionStorage.setItem('okbm_naver_oauth_token', accessToken);
+      sessionStorage.setItem('okbm_naver_oauth_code', code);
+      sessionStorage.removeItem('okbm_naver_oauth_token');
       sessionStorage.removeItem('okbm_naver_profile');
+      if (!savedRedirect) {
+        sessionStorage.setItem(
+          'okbm_naver_redirect_uri',
+          window.location.origin + window.location.pathname
+        );
+      }
       goBack();
     })();
   </script>

@@ -1,24 +1,18 @@
-(function okbmStashNaverOAuthHash() {
+(function okbmStashNaverOAuthCode() {
   try {
-    var raw = String(window.location.hash || '').replace(/^#/, '');
-    if (!raw || raw.indexOf('access_token=') === -1) return;
-    var params = {};
-    raw.split('&').forEach(function(part) {
-      if (!part) return;
-      var idx = part.indexOf('=');
-      var key = decodeURIComponent((idx >= 0 ? part.slice(0, idx) : part).replace(/\+/g, ' '));
-      var val = decodeURIComponent((idx >= 0 ? part.slice(idx + 1) : '').replace(/\+/g, ' '));
-      params[key] = val;
-    });
+    var params = new URLSearchParams(window.location.search || '');
+    var code = String(params.get('code') || '').trim();
+    var state = String(params.get('state') || '').trim();
     var savedState = '';
     try { savedState = sessionStorage.getItem('okbm_naver_oauth_state') || ''; } catch (e) {}
-    if (!params.access_token || !params.state || !savedState || params.state !== savedState) return;
-    if (params.refresh_token) return;
-    try { sessionStorage.setItem('okbm_naver_oauth_token', params.access_token); } catch (e) {}
+    if (!code || !state || !savedState || state !== savedState) return;
+    try { sessionStorage.setItem('okbm_naver_oauth_code', code); } catch (e) {}
+    try { sessionStorage.removeItem('okbm_naver_oauth_token'); } catch (e) {}
+    params.delete('code');
+    params.delete('state');
+    var nextSearch = params.toString();
     if (window.history && typeof history.replaceState === 'function') {
-      history.replaceState(null, '', window.location.pathname + window.location.search);
-    } else {
-      window.location.hash = '';
+      history.replaceState(null, '', window.location.pathname + (nextSearch ? '?' + nextSearch : ''));
     }
   } catch (e) {}
 })();
@@ -573,23 +567,6 @@ window.okbmSetSupabaseSession = async function(accessToken, refreshToken) {
   var session = res && res.data ? res.data.session : null;
   okbmWriteSessionCache(session);
   return session;
-};
-
-window.okbmStampOkbmUserId = async function(okbmUserId) {
-  var id = String(okbmUserId || '').trim();
-  if (!id || !window.supabaseClient || typeof window.supabaseClient.rpc !== 'function') return false;
-  try {
-    var stamped = await window.supabaseClient.rpc('okbm_stamp_okbm_user_id', { p_okbm_user_id: id });
-    if (stamped && stamped.error) throw stamped.error;
-    if (window.supabaseClient.auth && typeof window.supabaseClient.auth.refreshSession === 'function') {
-      var refreshed = await window.supabaseClient.auth.refreshSession();
-      okbmWriteSessionCache(refreshed && refreshed.data ? refreshed.data.session : null);
-    }
-    return true;
-  } catch (e) {
-    console.warn('[okbmStampOkbmUserId]', e);
-    return false;
-  }
 };
 
 function okbmWriteBlockedUsersCache(ids, meta) {
@@ -3646,6 +3623,15 @@ function ensureMyReportAndAuthModalsInDOM() {
               <span style="color:#64748b; font-size:1rem; font-weight:700; line-height:1;">›</span>
             </div>
           </button>
+
+          <div id="settingsSocialLinkCard" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:8px;">
+            <span style="color:#ffffff; font-size:0.78rem; font-weight:900;">소셜 계정 연결</span>
+            <p style="color:#64748b; font-size:0.62rem; margin:0; line-height:1.45;">이미 로그인한 상태에서만 다른 소셜 로그인을 같은 계정에 연결합니다. 이메일만 같다고 자동으로 합치지 않습니다.</p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+              <button type="button" id="settingsLinkKakaoBtn" onclick="window.okbmLinkKakaoAccount && window.okbmLinkKakaoAccount();" style="height:38px; background:#fee500; border:none; color:#191919; font-size:0.74rem; font-weight:800; border-radius:8px; cursor:pointer;">카카오 연결</button>
+              <button type="button" id="settingsLinkNaverBtn" onclick="window.okbmLinkNaverAccount && window.okbmLinkNaverAccount();" style="height:38px; background:#03c75a; border:none; color:#ffffff; font-size:0.74rem; font-weight:800; border-radius:8px; cursor:pointer;">네이버 연결</button>
+            </div>
+          </div>
 
           <button type="button" class="modal-btn" style="background:rgba(244,63,94,0.15); border:1px solid #f43f5e; color:#fda4af; font-weight:800; height:42px; border-radius:10px; margin-top:6px; font-size:0.82rem; cursor:pointer;" onclick="document.getElementById('userAccountSettingsModal').style.display='none'; closeUserProfileModal(); logoutUser();">
             로그아웃
@@ -7983,8 +7969,12 @@ window.openAccountSettingsModal = function() {
   var submitBtn = modal.querySelector('button[onclick="saveNicknameFromSettingsModal()"]');
   var authActionBtn = document.getElementById('settingsModalAuthActionBtn');
   var deleteAccountBtn = document.getElementById('settingsModalDeleteAccountBtn');
+  var socialLinkCard = document.getElementById('settingsSocialLinkCard');
   if (deleteAccountBtn) {
     deleteAccountBtn.style.display = isLogged ? '' : 'none';
+  }
+  if (socialLinkCard) {
+    socialLinkCard.style.display = isLogged ? '' : 'none';
   }
 
   if (authActionBtn) {
@@ -8333,9 +8323,6 @@ window.confirmUserAccountDeletion = async function() {
   };
 
   try {
-    if (typeof window.okbmStampOkbmUserId === 'function') {
-      await window.okbmStampOkbmUserId(userId);
-    }
     var deleted = await window.okbmInvokeFunction('delete-account', {});
     if (!deleted || deleted.ok !== true) {
       failDeletion('계정 삭제에 실패했습니다. 다시 로그인 후 시도해주세요.');
@@ -8719,8 +8706,10 @@ async function okbmConsumeSupabaseOAuthSession(session) {
   }
   if (!identity && identities.length) identity = identities[0];
   var providerId = '';
-  if (identity) providerId = String(identity.id || identity.identity_id || '').trim();
-  if (!providerId) providerId = String(user.id || '').trim();
+  if (identity) {
+    var identityData = identity.identity_data || {};
+    providerId = String(identity.provider_id || identityData.sub || identityData.id || identity.id || '').trim();
+  }
   var um = user.user_metadata || {};
   var nick = String(um.full_name || um.name || um.nickname || '').trim();
   var photo = String(um.avatar_url || um.picture || '').trim();
@@ -8774,22 +8763,14 @@ async function handleSocialLoginSuccess(provider, providerId, email, nickname, p
 
   var normalizedEmail = window.okbmNormalizeEmail(email);
   var providerScopedId = providerId.indexOf(provider + '_') === 0 ? providerId : (provider + '_' + providerId);
-  var existingUser = null;
-  if (normalizedEmail) existingUser = await okbmFindUserByEmail(normalizedEmail);
-  if (!existingUser) existingUser = await okbmFindUserById(providerScopedId);
+  var existingUser = await okbmFindUserById(providerScopedId);
 
   var prevUserId = String(localStorage.getItem('okbm_user_id') || '').trim();
-  if (!existingUser && prevUserId && prevUserId !== 'guest' && typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
-    existingUser = await okbmFindUserById(prevUserId);
-  }
-
-  var resolvedId;
-  var linkedExisting = false;
+  var resolvedId = providerScopedId;
+  var returningUser = false;
   if (existingUser && existingUser.id) {
     resolvedId = String(existingUser.id).trim();
-    linkedExisting = true;
-  } else {
-    resolvedId = providerScopedId;
+    returningUser = true;
   }
 
   if (prevUserId && prevUserId !== resolvedId && prevUserId !== 'guest') {
@@ -8800,16 +8781,16 @@ async function handleSocialLoginSuccess(provider, providerId, email, nickname, p
   var customNick = String(localStorage.getItem('okbm_custom_nickname_' + resolvedId) || '').trim();
   var cloudNick = existingUser && existingUser.nickname ? String(existingUser.nickname).trim() : '';
   var incomingNick = okbmNormalizeNickname(nickname);
-  var finalNick = linkedExisting
+  var finalNick = returningUser
     ? (cloudNick || customNick || incomingNick || '낭만백패커')
     : (incomingNick || customNick || '낭만백패커');
-  if (!linkedExisting) {
+  if (!returningUser) {
     finalNick = await okbmResolveUniqueNickname(finalNick, resolvedId);
   }
   var cloudPhoto = existingUser && (existingUser.hero_cover_url || existingUser.photo_url)
     ? String(existingUser.hero_cover_url || existingUser.photo_url).trim()
     : '';
-  var photo = linkedExisting
+  var photo = returningUser
     ? (cloudPhoto || String(photoUrl || '').trim())
     : (String(photoUrl || '').trim() || cloudPhoto || (existingProfile && (existingProfile.photoUrl || existingProfile.heroCoverUrl)) || '');
 
@@ -8851,23 +8832,11 @@ async function handleSocialLoginSuccess(provider, providerId, email, nickname, p
 
   if (typeof closeLoginModal === 'function') closeLoginModal();
   if (typeof showToast === 'function') {
-    if (linkedExisting) {
-      showToast('[' + finalNick + ']님, 기존 계정으로 안전하게 연결되었습니다.', 'success', 1800);
-    } else {
-      showToast('[' + finalNick + ']님 환영합니다.', 'success', 1500);
-    }
+    showToast('[' + finalNick + ']님 환영합니다.', 'success', 1500);
   }
 
   try {
-    if (typeof window.okbmStampOkbmUserId === 'function') {
-      await window.okbmStampOkbmUserId(resolvedId);
-    }
-  } catch (e) {
-    console.warn('[handleSocialLoginSuccess stamp]', e);
-  }
-
-  try {
-    if (linkedExisting) {
+    if (returningUser) {
       var existingEmail = window.okbmNormalizeEmail(existingUser && existingUser.email || '');
       if (normalizedEmail && !existingEmail) {
         await okbmPatchUserEmail(resolvedId, normalizedEmail);
@@ -8917,8 +8886,13 @@ async function handleSocialLoginSuccess(provider, providerId, email, nickname, p
 }
 window.handleSocialLoginSuccess = handleSocialLoginSuccess;
 
-function loginWithKakao() {
+function loginWithKakao(options) {
   triggerHaptic(12);
+  var isLink = !!(options && options.link);
+  if (isLink && typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
+    if (typeof showToast === 'function') showToast('계정 연결은 로그인 후 설정에서 진행해주세요.', 'warn');
+    return;
+  }
   if (typeof Kakao === 'undefined') {
     showToast('카카오 SDK를 불러오지 못했습니다.', 'warn');
     return;
@@ -8928,7 +8902,7 @@ function loginWithKakao() {
     Kakao.init(appKey);
   }
 
-  okbmMarkSocialButtonsBusy(true, '카카오 로그인 인증 중...', 'btn-social-kakao');
+  okbmMarkSocialButtonsBusy(true, isLink ? '카카오 계정 연결 중...' : '카카오 로그인 인증 중...', 'btn-social-kakao');
 
   var loginMethod = (Kakao.Auth && typeof Kakao.Auth.loginForm === 'function') ? Kakao.Auth.loginForm : Kakao.Auth.login;
   loginMethod({
@@ -8941,11 +8915,19 @@ function loginWithKakao() {
         if (typeof showToast === 'function') showToast('카카오 토큰을 받지 못했습니다.', 'warn');
         return;
       }
-      window.okbmInvokeFunction('auth-kakao', { access_token: kakaoToken }).then(function(issued) {
+      window.okbmInvokeFunction('auth-kakao', {
+        access_token: kakaoToken,
+        mode: isLink ? 'link' : 'login'
+      }).then(function(issued) {
         if (!issued || !issued.access_token || !issued.refresh_token) {
           throw new Error('supabase session missing');
         }
         return window.okbmSetSupabaseSession(issued.access_token, issued.refresh_token).then(function() {
+          if (isLink) {
+            okbmMarkSocialButtonsBusy(false);
+            if (typeof showToast === 'function') showToast('카카오 계정을 연결했습니다.', 'success', 1800);
+            return;
+          }
           var profile = issued.profile || {};
           var providerId = String(profile.id || '').replace(/^kakao_/, '');
           return handleSocialLoginSuccess(
@@ -8960,17 +8942,21 @@ function loginWithKakao() {
       }).catch(function(err) {
         console.warn('[Kakao auth-kakao]', err);
         okbmMarkSocialButtonsBusy(false);
-        if (typeof showToast === 'function') showToast('카카오 로그인 세션을 만들지 못했습니다.', 'warn');
+        var msg = (err && err.body && err.body.message) || (isLink ? '카카오 계정 연결에 실패했습니다.' : '카카오 로그인 세션을 만들지 못했습니다.');
+        if (typeof showToast === 'function') showToast(msg, 'warn');
       });
     },
     fail: function(err) {
       okbmMarkSocialButtonsBusy(false);
       console.warn('[Kakao Auth Fail]', err);
-      if (typeof showToast === 'function') showToast('로그인이 취소되었습니다.', 'warn');
+      if (typeof showToast === 'function') showToast(isLink ? '카카오 연결이 취소되었습니다.' : '로그인이 취소되었습니다.', 'warn');
     }
   });
 }
 window.loginWithKakao = loginWithKakao;
+window.okbmLinkKakaoAccount = function() {
+  loginWithKakao({ link: true });
+};
 
 async function loginWithApple() {
   await okbmStartSupabaseOAuth('apple', 'btn-social-apple', 'Apple 로그인 중...');
@@ -9097,22 +9083,41 @@ async function okbmFetchNaverProfile(accessToken) {
 }
 
 async function okbmConsumeNaverOAuthCallback() {
-  var token = '';
-  try { token = sessionStorage.getItem('okbm_naver_oauth_token') || ''; } catch (e) {}
-  if (!token) return false;
+  var code = '';
+  var state = '';
+  var redirectUri = '';
+  try { code = sessionStorage.getItem('okbm_naver_oauth_code') || ''; } catch (e) {}
+  try { state = sessionStorage.getItem('okbm_naver_oauth_state') || ''; } catch (e) {}
+  try { redirectUri = sessionStorage.getItem('okbm_naver_redirect_uri') || ''; } catch (e) {}
+  if (!code) return false;
+  try { sessionStorage.removeItem('okbm_naver_oauth_code'); } catch (e) {}
   try { sessionStorage.removeItem('okbm_naver_oauth_token'); } catch (e) {}
   try { sessionStorage.removeItem('okbm_naver_oauth_state'); } catch (e) {}
+  try { sessionStorage.removeItem('okbm_naver_redirect_uri'); } catch (e) {}
   try { sessionStorage.removeItem('okbm_naver_profile'); } catch (e) {}
   try { sessionStorage.removeItem('okbm_naver_client_id'); } catch (e) {}
   try { sessionStorage.removeItem('okbm_naver_return'); } catch (e) {}
 
   try {
-    okbmMarkSocialButtonsBusy(true, '네이버 로그인 인증 중...', 'btn-social-naver');
-    var issued = await window.okbmInvokeFunction('auth-naver', { access_token: token });
+    var isLink = false;
+    try { isLink = sessionStorage.getItem('okbm_social_link_mode') === '1'; } catch (e) {}
+    try { sessionStorage.removeItem('okbm_social_link_mode'); } catch (e) {}
+    okbmMarkSocialButtonsBusy(true, isLink ? '네이버 계정 연결 중...' : '네이버 로그인 인증 중...', 'btn-social-naver');
+    var issued = await window.okbmInvokeFunction('auth-naver', {
+      code: code,
+      state: state,
+      redirect_uri: redirectUri,
+      mode: isLink ? 'link' : 'login'
+    });
     if (!issued || !issued.access_token || !issued.refresh_token) {
       throw new Error('supabase session missing');
     }
     await window.okbmSetSupabaseSession(issued.access_token, issued.refresh_token);
+    if (isLink) {
+      okbmMarkSocialButtonsBusy(false);
+      if (typeof showToast === 'function') showToast('네이버 계정을 연결했습니다.', 'success', 1800);
+      return true;
+    }
     var profile = issued.profile || {};
     var providerId = String(profile.id || '').replace(/^naver_/, '');
     await handleSocialLoginSuccess(
@@ -9127,31 +9132,43 @@ async function okbmConsumeNaverOAuthCallback() {
   } catch (err) {
     console.warn('[Naver auth-naver]', err);
     okbmMarkSocialButtonsBusy(false);
-    if (typeof showToast === 'function') showToast('네이버 로그인 세션을 만들지 못했습니다.', 'warn');
+    var msg = (err && err.body && err.body.message) || '네이버 로그인 세션을 만들지 못했습니다.';
+    if (typeof showToast === 'function') showToast(msg, 'warn');
     return true;
   }
 }
 
-function loginWithNaver() {
+function loginWithNaver(options) {
   triggerHaptic(12);
-  var state = Math.random().toString(36).substring(2, 15);
-  sessionStorage.setItem('okbm_naver_oauth_state', state);
-  sessionStorage.setItem('okbm_naver_client_id', NAVER_CLIENT_ID);
-  sessionStorage.setItem('okbm_naver_return', window.location.pathname + window.location.search);
-
- var clientId = NAVER_CLIENT_ID;
+  var isLink = !!(options && options.link);
+  if (isLink && typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) {
+    if (typeof showToast === 'function') showToast('계정 연결은 로그인 후 설정에서 진행해주세요.', 'warn');
+    return;
+  }
+  var state = okbmRandomOAuthState();
+  var clientId = NAVER_CLIENT_ID;
   var basePath = window.location.pathname.indexOf('/okbm') !== -1 ? '/okbm' : '';
   var cleanRedirect = window.location.origin + basePath + '/naver-callback.html';
+  sessionStorage.setItem('okbm_naver_oauth_state', state);
+  sessionStorage.setItem('okbm_naver_client_id', clientId);
+  sessionStorage.setItem('okbm_naver_return', window.location.pathname + window.location.search);
+  sessionStorage.setItem('okbm_naver_redirect_uri', cleanRedirect);
+  try { sessionStorage.removeItem('okbm_naver_oauth_code'); } catch (e) {}
+  try { sessionStorage.removeItem('okbm_naver_oauth_token'); } catch (e) {}
+  try { sessionStorage.setItem('okbm_social_link_mode', isLink ? '1' : ''); } catch (e) {}
 
-  var naverAuthUrl = 'https://nid.naver.com/oauth2.0/authorize?response_type=token'
-    + '&client_id=' + clientId
+  var naverAuthUrl = 'https://nid.naver.com/oauth2.0/authorize?response_type=code'
+    + '&client_id=' + encodeURIComponent(clientId)
     + '&redirect_uri=' + encodeURIComponent(cleanRedirect)
-    + '&state=' + state;
-  okbmMarkSocialButtonsBusy(true, '네이버 로그인 중...', 'btn-social-naver');
+    + '&state=' + encodeURIComponent(state);
+  okbmMarkSocialButtonsBusy(true, isLink ? '네이버 계정 연결 중...' : '네이버 로그인 중...', 'btn-social-naver');
   console.log('[Naver Login URL]', naverAuthUrl);
   window.location.href = naverAuthUrl;
 }
 window.loginWithNaver = loginWithNaver;
+window.okbmLinkNaverAccount = function() {
+  loginWithNaver({ link: true });
+};
 
 async function loginWithGoogle() {
   await okbmStartSupabaseOAuth('google', 'btn-social-google', 'Google 로그인 중...');

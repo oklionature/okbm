@@ -486,23 +486,19 @@
   
   <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
   <script>
-    (function okbmStashNaverOAuthHashEarly() {
+    (function okbmStashNaverOAuthCodeEarly() {
       try {
-        var raw = String(location.hash || '').replace(/^#/, '');
-        if (!raw || raw.indexOf('access_token=') === -1) return;
-        var params = {};
-        raw.split('&').forEach(function(part) {
-          if (!part) return;
-          var idx = part.indexOf('=');
-          var key = decodeURIComponent((idx >= 0 ? part.slice(0, idx) : part).replace(/\+/g, ' '));
-          var val = decodeURIComponent((idx >= 0 ? part.slice(idx + 1) : '').replace(/\+/g, ' '));
-          params[key] = val;
-        });
+        var params = new URLSearchParams(location.search || '');
+        var code = String(params.get('code') || '').trim();
+        var state = String(params.get('state') || '').trim();
         var savedState = sessionStorage.getItem('okbm_naver_oauth_state') || '';
-        if (!params.access_token || !params.state || !savedState || params.state !== savedState) return;
-        if (params.refresh_token) return;
-        sessionStorage.setItem('okbm_naver_oauth_token', params.access_token);
-        history.replaceState(null, '', location.pathname + location.search);
+        if (!code || !state || !savedState || state !== savedState) return;
+        sessionStorage.setItem('okbm_naver_oauth_code', code);
+        sessionStorage.removeItem('okbm_naver_oauth_token');
+        params.delete('code');
+        params.delete('state');
+        var nextSearch = params.toString();
+        history.replaceState(null, '', location.pathname + (nextSearch ? '?' + nextSearch : ''));
       } catch (e) {}
     })();
   </script>
@@ -5738,7 +5734,7 @@ var adBannersHtml = `
     });
   </script>
 
-    <script src="romantic-sync.js?v=2.8.81"></script>
+    <script src="romantic-sync.js?v=2.8.82"></script>
   <script src="templates.js?v=2.9.6"></script>
     <script src="romantic-history.js?v=2.7.50"></script>
   <script src="romantic-plan.js?v=2.8.10"></script>
