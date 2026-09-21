@@ -276,6 +276,62 @@ CREATE POLICY spots_admin_update ON public.spots
 CREATE POLICY spots_admin_delete ON public.spots
   FOR DELETE USING (public.okbm_is_admin());
 
+-- 핀용 경량 SELECT만 허용. 상세(trailhead_addr/desc_summary/mediaUrls/author_sns_url)는
+-- get_spot_detail(p_id) RPC로 1건씩만 조회.
+REVOKE SELECT ON TABLE public.spots FROM anon, authenticated;
+GRANT SELECT (
+  id,
+  region,
+  "cityName",
+  spot_main,
+  spot_sub,
+  "fullName",
+  elevation,
+  campsite_lat,
+  campsite_lng,
+  terrain,
+  trailhead_name,
+  difficulty,
+  distance_km,
+  "droneStatus",
+  course_type,
+  author,
+  user_id,
+  created_at
+) ON TABLE public.spots TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON TABLE public.spots TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.get_spot_detail(p_id text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result jsonb;
+BEGIN
+  IF p_id IS NULL OR btrim(p_id) = '' THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT jsonb_build_object(
+    'trailhead_addr', s.trailhead_addr,
+    'desc_summary', s.desc_summary,
+    'mediaUrls', s."mediaUrls",
+    'author_sns_url', s.author_sns_url
+  )
+  INTO result
+  FROM public.spots s
+  WHERE s.id = btrim(p_id)
+  LIMIT 1;
+
+  RETURN result;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_spot_detail(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_spot_detail(text) TO anon, authenticated;
+
 CREATE POLICY gears_select_public ON public.gears
   FOR SELECT USING (true);
 CREATE POLICY gears_admin_insert ON public.gears

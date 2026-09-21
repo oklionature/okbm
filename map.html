@@ -69,12 +69,10 @@
       })();
 
       (function autoPurgeLegacyClientCache() {
-        var CLEAN_EPOCH = '20260912_CLEAN_RESET_V3';
+        var CLEAN_EPOCH = '20260921_SPOTS_LIGHTWEIGHT';
         var currentEpoch = localStorage.getItem('okbm_client_epoch');
         if (currentEpoch !== CLEAN_EPOCH) {
           var keepKeys = [
-            'okbm_spots_cache',
-            'okbm_master_spots',
             'okbm_gear_version',
             'user_auth_token',
             'user_profile',
@@ -102,6 +100,8 @@
           localStorage.removeItem('okbm_deleted_record_ids');
           localStorage.removeItem('okbm_phone_photos_map');
           localStorage.removeItem('okbm_trip_photos_map');
+          localStorage.removeItem('okbm_spots_cache');
+          localStorage.removeItem('okbm_master_spots');
           localStorage.setItem('okbm_client_epoch', CLEAN_EPOCH);
         }
       })();
@@ -1551,7 +1551,8 @@
         try {
           var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
           var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
-          var res = await fetch(targetUrl + '/rest/v1/spots?select=*&order=id.asc', {
+          var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at';
+          var res = await fetch(targetUrl + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc', {
             headers: {
               'apikey': targetKey,
               'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
@@ -1568,79 +1569,83 @@
             var spotId = String(row.id || (idx + 1)).trim();
             if (BLOCKED_SPOT_IDS.has(spotId)) return;
 
-            var rawLat = row.campsite_lat !== undefined && row.campsite_lat !== null ? row.campsite_lat : row.lat;
-            var rawLng = row.campsite_lng !== undefined && row.campsite_lng !== null ? row.campsite_lng : row.lng;
-            var lat = parseFloat(rawLat) || 0;
-            var lng = parseFloat(rawLng) || 0;
-            if (!lat || !lng) return;
-
-            if (lat > 100 && lng < 50 && lng > 0) {
-              var tmp = lat;
-              lat = lng;
-              lng = tmp;
+            var normalized = (typeof window.normalizeSpotMapRow === 'function')
+              ? window.normalizeSpotMapRow(row)
+              : null;
+            if (!normalized) {
+              var rawLat = row.campsite_lat !== undefined && row.campsite_lat !== null ? row.campsite_lat : row.lat;
+              var rawLng = row.campsite_lng !== undefined && row.campsite_lng !== null ? row.campsite_lng : row.lng;
+              var lat = parseFloat(rawLat) || 0;
+              var lng = parseFloat(rawLng) || 0;
+              if (!lat || !lng) return;
+              if (lat > 100 && lng < 50 && lng > 0) {
+                var tmp = lat;
+                lat = lng;
+                lng = tmp;
+              }
+              var name = String(row.spot_main || row.name || '').trim();
+              var sub = String(row.spot_sub || '').trim();
+              var sheetRegion = String(row.region || '경기').trim();
+              var sheetCity = String(row.cityName || row.city_name || '').trim();
+              var finalRegion = normalizeTo10Regions(sheetRegion);
+              var finalCity = sheetCity || finalRegion;
+              var derivedFullName = row.fullName || row.fullname || (finalCity ? '[' + finalCity + '] ' + name + (sub ? ' (' + sub + ')' : '') : (sub ? name + ' (' + sub + ')' : name));
+              var tArr = Array.isArray(row.terrain) ? row.terrain : (typeof row.terrain === 'string' ? row.terrain.split(',').map(function(t){ return t.trim(); }).filter(Boolean) : ['데크']);
+              normalized = {
+                id: spotId,
+                name: name,
+                spot_main: name,
+                spot_sub: sub,
+                fullName: derivedFullName,
+                lat: lat,
+                lng: lng,
+                elevation: String(row.elevation || '').trim(),
+                trailhead_name: String(row.trailhead_name || '').trim(),
+                courseType: String(row.course_type || '일반').trim(),
+                terrain: tArr,
+                difficulty: String(row.difficulty || '3').trim(),
+                distance: String(row.distance_km || row.distance || '').trim(),
+                droneStatus: String(row.droneStatus || row.drone_status || '').trim(),
+                gpxUrl: '',
+                region: finalRegion,
+                cityName: finalCity,
+                author: String(row.author || row.nickname || '').trim(),
+                nickname: String(row.author || row.nickname || '').trim(),
+                user_id: String(row.user_id || row.userId || '').trim(),
+                userId: String(row.user_id || row.userId || '').trim(),
+                searchCount: 0,
+                sheetIndex: idx
+              };
+            } else {
+              if (!normalized.lat || !normalized.lng) return;
+              normalized.id = spotId;
+              normalized.region = normalizeTo10Regions(normalized.region);
+              if (!normalized.cityName) normalized.cityName = normalized.region;
+              normalized.searchCount = 0;
+              normalized.sheetIndex = idx;
+              normalized.gpxUrl = normalized.gpxUrl || '';
             }
 
-            var name = String(row.spot_main || row.name || '').trim();
-            var sub = String(row.spot_sub || '').trim();
-            var entry = String(row.trailhead_addr || row.entryPoint || '').trim();
-            var sheetRegion = String(row.region || '경기').trim();
-            var sheetCity = String(row.cityName || row.city_name || '').trim();
-            var finalRegion = normalizeTo10Regions(sheetRegion);
-            var finalCity = sheetCity || finalRegion;
-            var derivedFullName = row.fullName || row.fullname || (finalCity ? '[' + finalCity + '] ' + name + (sub ? ' (' + sub + ')' : '') : (sub ? name + ' (' + sub + ')' : name));
+            normalized.trailhead_addr = '';
+            normalized.entryPoint = '';
+            normalized.desc_summary = '';
+            normalized.desc = '';
+            normalized.youtubeUrls = [];
+            normalized.blogUrls = [];
+            normalized.authorSnsUrl = '';
+            normalized.__detailLoaded = false;
 
-            var tArr = Array.isArray(row.terrain) ? row.terrain : (typeof row.terrain === 'string' ? row.terrain.split(',').map(function(t){ return t.trim(); }).filter(Boolean) : ['데크']);
-
-            var ytUrls = [];
-            var blogUrls = [];
-            if (row.mediaUrls && typeof row.mediaUrls === 'string') {
-              var lines = row.mediaUrls.split(/[\r\n,]+/).map(function(u){ return u.trim(); }).filter(Boolean);
-              lines.forEach(function(u){
-                if (u.includes('youtube.com') || u.includes('youtu.be')) ytUrls.push(u);
-                else if (u.includes('blog.naver.com')) blogUrls.push(u);
-              });
-            }
-            if (Array.isArray(row.youtube_urls)) ytUrls = ytUrls.concat(row.youtube_urls);
-            if (Array.isArray(row.blog_urls)) blogUrls = blogUrls.concat(row.blog_urls);
-
-            validSpots.push({
-              id: spotId,
-              name: name,
-              spot_main: name,
-              spot_sub: sub,
-              fullName: derivedFullName,
-              lat: lat,
-              lng: lng,
-              elevation: String(row.elevation || '').trim(),
-              trailhead_name: String(row.trailhead_name || '').trim(),
-              trailhead_addr: entry,
-              entryPoint: entry,
-              desc_summary: String(row.desc_summary || '').trim(),
-              desc: String(row.desc_summary || '').trim(),
-              youtubeUrls: ytUrls,
-              blogUrls: blogUrls,
-              authorSnsUrl: String(row.author_sns_url || '').trim(),
-              author: String(row.author || row.nickname || '').trim(),
-              nickname: String(row.author || row.nickname || '').trim(),
-              user_id: String(row.user_id || row.userId || '').trim(),
-              userId: String(row.user_id || row.userId || '').trim(),
-              courseType: String(row.course_type || '일반').trim(),
-              terrain: tArr,
-              difficulty: String(row.difficulty || '3').trim(),
-              distance: String(row.distance_km || row.distance || '').trim(),
-              droneStatus: String(row.droneStatus || row.drone_status || '').trim(),
-              gpxUrl: String(row.gpx_url || '').trim(),
-              region: finalRegion,
-              cityName: finalCity,
-              searchCount: parseInt(row.search_count || 0, 10),
-              sheetIndex: idx
-            });
+            validSpots.push(normalized);
           });
 
           if (validSpots.length > 0) {
             spots = validSpots;
             window.spots = spots;
-            localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
+            if (typeof window.persistLightweightSpotsCache === 'function') {
+              window.persistLightweightSpotsCache(spots);
+            } else {
+              localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
+            }
             updateNewSpotFlags(spots);
             renderSubChips();
             if (map) {
@@ -1900,6 +1905,63 @@
         }
       }
 
+      async function ensureSpotDetailLoaded(spot) {
+        if (!spot || !spot.id) return spot;
+        if (spot.__detailLoaded && (spot.trailhead_addr || spot.desc_summary)) return spot;
+        if (typeof window.fetchSpotDetailById !== 'function') return spot;
+        var detail = await window.fetchSpotDetailById(spot.id);
+        if (!detail) return spot;
+        if (typeof window.mergeSpotDetailInto === 'function') {
+          window.mergeSpotDetailInto(spot, detail);
+        } else {
+          spot.trailhead_addr = detail.trailhead_addr || '';
+          spot.entryPoint = spot.trailhead_addr;
+          spot.desc_summary = detail.desc_summary || '';
+          spot.desc = spot.desc_summary;
+          spot.__detailLoaded = true;
+        }
+        // spots 배열 내 동일 객체 동기화
+        if (Array.isArray(spots)) {
+          var idx = spots.findIndex(function(s) { return String(s.id).trim() === String(spot.id).trim(); });
+          if (idx !== -1 && spots[idx] !== spot) {
+            if (typeof window.mergeSpotDetailInto === 'function') window.mergeSpotDetailInto(spots[idx], detail);
+            else Object.assign(spots[idx], {
+              trailhead_addr: spot.trailhead_addr,
+              entryPoint: spot.entryPoint,
+              desc_summary: spot.desc_summary,
+              desc: spot.desc,
+              youtubeUrls: spot.youtubeUrls,
+              blogUrls: spot.blogUrls,
+              authorSnsUrl: spot.authorSnsUrl,
+              __detailLoaded: true
+            });
+          }
+        }
+        return spot;
+      }
+
+      function applySpotDetailToOpenUi(spot) {
+        if (!spot) return;
+        var sId = String(spot.id).trim();
+        if (currentActiveSpot && String(currentActiveSpot.id).trim() !== sId) return;
+        var mobileSheet = document.getElementById('mobileBottomSheet');
+        var mobileContent = document.getElementById('mobileSheetContent');
+        var pcDrawer = document.getElementById('pcSlidingDrawer');
+        var isSheetOpen = mobileSheet && mobileSheet.classList.contains('open');
+        var isDrawerOpen = pcDrawer && pcDrawer.classList.contains('open');
+        if (isSheetOpen && mobileContent) {
+          __spotDataMap.set(mobileSheet, spot);
+          prefetchAndBindSpotMedia(spot);
+          mobileContent.innerHTML = generateDetailContentHtml(spot, true);
+          bindSpotMediaAfterRender(spot);
+        } else if (isDrawerOpen && pcDrawer) {
+          __spotDataMap.set(pcDrawer, spot);
+          prefetchAndBindSpotMedia(spot);
+          pcDrawer.innerHTML = generateDetailContentHtml(spot, false);
+          bindSpotMediaAfterRender(spot);
+        }
+      }
+
       function refreshCurrentSpotPopup() {
         var isMobile = window.innerWidth <= 768;
         var mobileSheet = document.getElementById('mobileBottomSheet');
@@ -1971,6 +2033,9 @@
             }
           });
         }
+        ensureSpotDetailLoaded(spot).then(function(enriched) {
+          if (enriched) applySpotDetailToOpenUi(enriched);
+        });
         requestAnimationFrame(() => { content.scrollTop = 0; });
         if (spot.lat && spot.lng) {
           smoothCenterMapOnSpot(spot.lat, spot.lng);
@@ -2020,6 +2085,9 @@
             }
           });
         }
+        ensureSpotDetailLoaded(spot).then(function(enriched) {
+          if (enriched) applySpotDetailToOpenUi(enriched);
+        });
         requestAnimationFrame(() => { drawer.scrollTop = 0; });
       }
 
@@ -6114,7 +6182,15 @@ var overlay = document.getElementById('customModalOverlay');
       }
 
       function persistSpotsCache() {
-        try { localStorage.setItem('okbm_spots_cache', JSON.stringify(spots)); } catch (e) { console.warn('[map.html:persistSpotsCache]', e); }
+        try {
+          if (typeof window.persistLightweightSpotsCache === 'function') {
+            window.persistLightweightSpotsCache(spots);
+          } else if (typeof window.stripSpotDetailFields === 'function') {
+            localStorage.setItem('okbm_spots_cache', JSON.stringify(spots.map(window.stripSpotDetailFields)));
+          } else {
+            localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
+          }
+        } catch (e) { console.warn('[map.html:persistSpotsCache]', e); }
         window.__pastTripSpotsSearchCache = null;
       }
 
@@ -6396,7 +6472,7 @@ var overlay = document.getElementById('customModalOverlay');
         }
       }
 
-      function openEditModal(index) {
+      async function openEditModal(index) {
         if (!checkAdminAuthorization()) {
           showToast('관리자 권한이 확인되지 않았습니다.');
           return;
@@ -6406,6 +6482,7 @@ var overlay = document.getElementById('customModalOverlay');
           showToast('장소 정보를 찾을 수 없습니다.');
           return;
         }
+        await ensureSpotDetailLoaded(target);
         applyAdminPermissions(true);
         modalMode = 'EDIT';
         modalEditIndex = index;
@@ -7106,7 +7183,7 @@ var overlay = document.getElementById('customModalOverlay');
         userVisited.delete(sId); 
         delete userMemos[sId];
         
-        localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
+        persistSpotsCache();
         localStorage.setItem('okbm_bookmarks', JSON.stringify([...userBookmarks]));
         localStorage.setItem('okbm_visited', JSON.stringify([...userVisited]));
         localStorage.setItem('okbm_memos', JSON.stringify(userMemos));
@@ -7566,9 +7643,11 @@ var overlay = document.getElementById('customModalOverlay');
               }
             }
             if (Array.isArray(data.spots) && data.spots.length > 0) { 
-              spots = data.spots;
+              spots = data.spots.map(function(s) {
+                return typeof window.stripSpotDetailFields === 'function' ? window.stripSpotDetailFields(s) : s;
+              });
               window.spots = spots;
-              localStorage.setItem('okbm_spots_cache', JSON.stringify(spots)); 
+              persistSpotsCache();
             }
 
             renderSubChips(); 
@@ -7604,7 +7683,7 @@ var overlay = document.getElementById('customModalOverlay');
         }
       })();
     </script>
-    <script src="romantic-sync.js?v=2.8.80"></script>
+    <script src="romantic-sync.js?v=2.8.81"></script>
     <script src="templates.js?v=2.8.3"></script>
     <script src="romantic-history.js?v=2.7.50"></script>
     <script src="romantic-plan.js?v=2.8.10"></script>

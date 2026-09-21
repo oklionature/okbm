@@ -51,10 +51,9 @@ window.purgeIfStale = purgeIfStale;
 })();
 
 (function autoPurgeLegacyClientCache() {
-  var CLEAN_EPOCH = '20260912_CLEAN_RESET_V3';
+  // 20260921: 풀덤프 spots 캐시 제거 → 경량 핀 목록만 재적재
+  var CLEAN_EPOCH = '20260921_SPOTS_LIGHTWEIGHT';
   var keepKeys = [
-    'okbm_spots_cache',
-    'okbm_master_spots',
     'okbm_gear_version',
     'user_auth_token',
     'user_profile',
@@ -77,7 +76,9 @@ window.purgeIfStale = purgeIfStale;
   purgeIfStale('okbm_client_epoch', CLEAN_EPOCH, [
     'okbm_deleted_record_ids',
     'okbm_phone_photos_map',
-    'okbm_trip_photos_map'
+    'okbm_trip_photos_map',
+    'okbm_spots_cache',
+    'okbm_master_spots'
   ], {
     customPurge: function() {
       Object.keys(localStorage).forEach(function(k) {
@@ -223,9 +224,8 @@ window.autoPurgeStaleGearCache = window.autoPurgeStaleGearCache || function() {
 };
 
 window.autoPurgeLegacyClientCache = window.autoPurgeLegacyClientCache || function() {
-  var CLEAN_EPOCH = '20260912_CLEAN_RESET_V3';
+  var CLEAN_EPOCH = '20260921_SPOTS_LIGHTWEIGHT';
   var keepKeys = [
-    'okbm_spots_cache', 'okbm_master_spots',
     'okbm_gear_version', 'user_auth_token', 'user_profile', 'okbm_user_id', 'okbm_user_nick',
     'okbm_bookmarks', 'okbm_visited', 'okbm_memos', 'okbm_plan_memos', 'okbm_plan_spots',
     'okbm_packing_history', 'okbm_selected_gears_multi', 'okbm_favorite_gears', 'okbm_custom_gears',
@@ -236,7 +236,9 @@ window.autoPurgeLegacyClientCache = window.autoPurgeLegacyClientCache || functio
       window.purgeIfStale('okbm_client_epoch', CLEAN_EPOCH, [
         'okbm_deleted_record_ids',
         'okbm_phone_photos_map',
-        'okbm_trip_photos_map'
+        'okbm_trip_photos_map',
+        'okbm_spots_cache',
+        'okbm_master_spots'
       ], {
         customPurge: function() {
           Object.keys(localStorage).forEach(function(k) {
@@ -257,6 +259,8 @@ window.autoPurgeLegacyClientCache = window.autoPurgeLegacyClientCache || functio
       localStorage.removeItem('okbm_deleted_record_ids');
       localStorage.removeItem('okbm_phone_photos_map');
       localStorage.removeItem('okbm_trip_photos_map');
+      localStorage.removeItem('okbm_spots_cache');
+      localStorage.removeItem('okbm_master_spots');
       localStorage.setItem('okbm_client_epoch', CLEAN_EPOCH);
     }
   } catch (e) {
@@ -2367,13 +2371,170 @@ function syncUserDataToCloud(isPackHistoryUpdated, immediate) {
 }
 window.syncUserDataToCloud = syncUserDataToCloud;
 
+// 지도 핀용 경량 컬럼 (상세 trailhead_addr/desc_summary/mediaUrls/author_sns_url 제외)
+window.SPOTS_MAP_SELECT = 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at';
+
+window.stripSpotDetailFields = function(spot) {
+  if (!spot || typeof spot !== 'object') return spot;
+  var out = Object.assign({}, spot);
+  delete out.trailhead_addr;
+  delete out.entryPoint;
+  delete out.desc_summary;
+  delete out.desc;
+  delete out.mediaUrls;
+  delete out.youtubeUrls;
+  delete out.blogUrls;
+  delete out.author_sns_url;
+  delete out.authorSnsUrl;
+  return out;
+};
+
+window.normalizeSpotMapRow = function(row) {
+  if (!row || typeof row !== 'object') return null;
+  var rawLat = row.campsite_lat !== undefined && row.campsite_lat !== null ? row.campsite_lat : row.lat;
+  var rawLng = row.campsite_lng !== undefined && row.campsite_lng !== null ? row.campsite_lng : row.lng;
+  var lat = parseFloat(rawLat) || 0;
+  var lng = parseFloat(rawLng) || 0;
+  if (lat > 100 && lng < 50 && lng > 0) {
+    var tmp = lat;
+    lat = lng;
+    lng = tmp;
+  }
+  var name = String(row.spot_main || row.name || '').trim();
+  var sub = String(row.spot_sub || '').trim();
+  var sheetRegion = String(row.region || '').trim();
+  var sheetCity = String(row.cityName || row.city_name || '').trim();
+  var finalCity = sheetCity || sheetRegion || '전국';
+  var tArr = Array.isArray(row.terrain)
+    ? row.terrain
+    : (typeof row.terrain === 'string' ? row.terrain.split(',').map(function(t) { return t.trim(); }).filter(Boolean) : []);
+  var derivedFullName = row.fullName || row.fullname || (finalCity
+    ? '[' + finalCity + '] ' + name + (sub ? ' (' + sub + ')' : '')
+    : (sub ? name + ' (' + sub + ')' : name));
+  return {
+    id: String(row.id || name).trim(),
+    name: name,
+    spot_main: name,
+    spot_sub: sub,
+    fullName: derivedFullName,
+    fullname: derivedFullName,
+    lat: lat,
+    lng: lng,
+    campsite_lat: lat,
+    campsite_lng: lng,
+    elevation: String(row.elevation != null ? row.elevation : '').trim(),
+    trailhead_name: String(row.trailhead_name || '').trim(),
+    region: sheetRegion || finalCity,
+    cityName: finalCity,
+    city_name: finalCity,
+    terrain: tArr,
+    difficulty: String(row.difficulty || '3').trim(),
+    distance: String(row.distance_km != null ? row.distance_km : (row.distance || '')).trim(),
+    distance_km: row.distance_km != null ? row.distance_km : null,
+    droneStatus: String(row.droneStatus || row.drone_status || '').trim(),
+    courseType: String(row.course_type || '일반').trim(),
+    course_type: String(row.course_type || '').trim(),
+    author: String(row.author || row.nickname || '').trim(),
+    nickname: String(row.author || row.nickname || '').trim(),
+    user_id: String(row.user_id || row.userId || '').trim(),
+    userId: String(row.user_id || row.userId || '').trim(),
+    created_at: row.created_at || null
+  };
+};
+
+window.parseSpotMediaUrls = function(mediaUrls) {
+  var ytUrls = [];
+  var blogUrls = [];
+  if (mediaUrls && typeof mediaUrls === 'string') {
+    mediaUrls.split(/[\r\n,]+/).map(function(u) { return u.trim(); }).filter(Boolean).forEach(function(u) {
+      if (u.indexOf('youtube.com') !== -1 || u.indexOf('youtu.be') !== -1) ytUrls.push(u);
+      else if (u.indexOf('blog.naver.com') !== -1) blogUrls.push(u);
+    });
+  }
+  return { youtubeUrls: ytUrls, blogUrls: blogUrls };
+};
+
+window.mergeSpotDetailInto = function(spot, detail) {
+  if (!spot || !detail || typeof detail !== 'object') return spot;
+  var entry = String(detail.trailhead_addr || '').trim();
+  var summary = String(detail.desc_summary || '').trim();
+  var media = window.parseSpotMediaUrls(detail.mediaUrls || '');
+  spot.trailhead_addr = entry;
+  spot.entryPoint = entry;
+  spot.desc_summary = summary;
+  spot.desc = summary;
+  spot.mediaUrls = detail.mediaUrls || '';
+  spot.youtubeUrls = media.youtubeUrls;
+  spot.blogUrls = media.blogUrls;
+  spot.author_sns_url = String(detail.author_sns_url || '').trim();
+  spot.authorSnsUrl = spot.author_sns_url;
+  spot.__detailLoaded = true;
+  return spot;
+};
+
+window.persistLightweightSpotsCache = function(spots) {
+  if (!Array.isArray(spots)) return;
+  var light = spots.map(function(s) { return window.stripSpotDetailFields(s); });
+  try {
+    localStorage.setItem('okbm_master_spots', JSON.stringify(light));
+    localStorage.setItem('okbm_spots_cache', JSON.stringify(light));
+  } catch (e) {
+    console.warn('[romantic-sync.js:persistLightweightSpotsCache]', e);
+  }
+  window.__memoryStore = window.__memoryStore || {};
+  window.__memoryStore['okbm_master_spots'] = light;
+  window.SPOTS_MASTER = light;
+};
+
+window.__spotDetailCache = window.__spotDetailCache || {};
+window.__spotDetailInflight = window.__spotDetailInflight || {};
+
+window.fetchSpotDetailById = async function(spotId) {
+  var id = String(spotId || '').trim();
+  if (!id) return null;
+  if (window.__spotDetailCache[id]) return window.__spotDetailCache[id];
+  if (window.__spotDetailInflight[id]) return window.__spotDetailInflight[id];
+
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  if (!targetUrl || !targetKey) return null;
+
+  var request = (async function() {
+    try {
+      var res = await fetch(targetUrl + '/rest/v1/rpc/get_spot_detail', {
+        method: 'POST',
+        headers: {
+          'apikey': targetKey,
+          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ p_id: id })
+      });
+      if (!res.ok) return null;
+      var detail = await res.json();
+      if (!detail || typeof detail !== 'object') return null;
+      window.__spotDetailCache[id] = detail;
+      return detail;
+    } catch (e) {
+      console.warn('[romantic-sync.js:fetchSpotDetailById]', e);
+      return null;
+    } finally {
+      delete window.__spotDetailInflight[id];
+    }
+  })();
+
+  window.__spotDetailInflight[id] = request;
+  return request;
+};
+
 window.fetchMasterSpotsFromSupabase = async function(isForce) {
   var cached = safeGetJSON('okbm_master_spots', null) || safeGetJSON('okbm_spots_cache', null);
   if (!isForce && Array.isArray(cached) && cached.length > 0) {
+    var lightCached = cached.map(function(s) { return window.stripSpotDetailFields(s); });
     window.__memoryStore = window.__memoryStore || {};
-    window.__memoryStore['okbm_master_spots'] = cached;
-    window.SPOTS_MASTER = cached;
-    return cached;
+    window.__memoryStore['okbm_master_spots'] = lightCached;
+    window.SPOTS_MASTER = lightCached;
+    return lightCached;
   }
 
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
@@ -2383,7 +2544,8 @@ window.fetchMasterSpotsFromSupabase = async function(isForce) {
   try {
     var controller = new AbortController();
     var timeoutId = setTimeout(function() { controller.abort(); }, 6000);
-    var res = await fetch(targetUrl + '/rest/v1/spots?select=id,spot_main,spot_sub,name,fullname,region,city_name,lat,lng,elevation,difficulty,distance,terrain,desc_summary,trailhead_name,trailhead_addr&order=id.asc', {
+    var select = encodeURIComponent(window.SPOTS_MAP_SELECT);
+    var res = await fetch(targetUrl + '/rest/v1/spots?select=' + select + '&order=id.asc', {
       method: 'GET',
       headers: {
         'apikey': targetKey,
@@ -2395,17 +2557,18 @@ window.fetchMasterSpotsFromSupabase = async function(isForce) {
     clearTimeout(timeoutId);
 
     if (res.ok) {
-      var spots = await res.json();
-      if (Array.isArray(spots) && spots.length > 0) {
-        localStorage.setItem('okbm_master_spots', JSON.stringify(spots));
-        localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
-        window.__memoryStore = window.__memoryStore || {};
-        window.__memoryStore['okbm_master_spots'] = spots;
-        window.SPOTS_MASTER = spots;
-        if (typeof window.renderSpots === 'function') {
-          window.renderSpots();
+      var rows = await res.json();
+      if (Array.isArray(rows) && rows.length > 0) {
+        var spots = rows.map(function(row) { return window.normalizeSpotMapRow(row); }).filter(function(s) {
+          return s && s.name && s.lat && s.lng;
+        });
+        if (spots.length > 0) {
+          window.persistLightweightSpotsCache(spots);
+          if (typeof window.renderSpots === 'function') {
+            window.renderSpots();
+          }
+          return spots;
         }
-        return spots;
       }
     }
   } catch (e) { console.warn('[romantic-sync.js:fetchMasterSpotsFromSupabase]', e); }

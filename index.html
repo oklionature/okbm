@@ -5618,7 +5618,9 @@ var adBannersHtml = `
   async function loadPortalSpotData(isForce) {
       var cachedSpots = safeGetJSON('okbm_spots_cache', []) || safeGetJSON('okbm_master_spots', []);
       if (Array.isArray(cachedSpots) && cachedSpots.length > 0) {
-        registeredSpots = cachedSpots;
+        registeredSpots = typeof window.stripSpotDetailFields === 'function'
+          ? cachedSpots.map(window.stripSpotDetailFields)
+          : cachedSpots;
         if (typeof renderSecretSpotTrailerRail === 'function') {
           renderSecretSpotTrailerRail();
         }
@@ -5627,13 +5629,26 @@ var adBannersHtml = `
 
       try {
         var supaSpots = null;
+        var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at';
+
+        if (typeof window.fetchMasterSpotsFromSupabase === 'function') {
+          var fetched = await window.fetchMasterSpotsFromSupabase(!!isForce);
+          if (Array.isArray(fetched) && fetched.length > 0) {
+            registeredSpots = fetched;
+            if (typeof renderSecretSpotTrailerRail === 'function') {
+              renderSecretSpotTrailerRail();
+            }
+            return;
+          }
+        }
+
         if (window.supabaseClient) {
-          var sbRes = await window.supabaseClient.from('spots').select('*').order('id', { ascending: true });
+          var sbRes = await window.supabaseClient.from('spots').select(mapSelect).order('id', { ascending: true });
           if (sbRes.data && Array.isArray(sbRes.data) && sbRes.data.length > 0) {
             supaSpots = sbRes.data;
           }
         } else if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-          var res = await fetch(window.SUPABASE_URL + '/rest/v1/spots?select=*&order=id.asc', {
+          var res = await fetch(window.SUPABASE_URL + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc', {
             headers: {
               'apikey': window.SUPABASE_ANON_KEY,
               'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : window.SUPABASE_ANON_KEY),
@@ -5648,6 +5663,13 @@ var adBannersHtml = `
 
         if (Array.isArray(supaSpots) && supaSpots.length > 0) {
           registeredSpots = supaSpots.map(function(row) {
+            if (typeof window.normalizeSpotMapRow === 'function') {
+              var n = window.normalizeSpotMapRow(row);
+              if (!n) return null;
+              n.desc = '';
+              n.desc_summary = '';
+              return n;
+            }
             var sMain = (row.spot_main || row.name || row.fullName || row.fullname || '').trim();
             var sCity = (row.cityName || row.city_name || row.region || '전국').trim();
             var tArr = Array.isArray(row.terrain) ? row.terrain : (typeof row.terrain === 'string' ? row.terrain.split(',').map(function(t){ return t.trim(); }).filter(Boolean) : []);
@@ -5660,25 +5682,29 @@ var adBannersHtml = `
               region: sCity,
               elevation: String(row.elevation || '').trim(),
               difficulty: String(row.difficulty || '3').trim(),
-              distance: row.distance || '',
+              distance: row.distance_km || row.distance || '',
               terrain: tArr,
-              desc: (row.desc_summary || '').trim(),
-              desc_summary: (row.desc_summary || '').trim(),
-              lat: row.lat || '',
-              lng: row.lng || ''
+              desc: '',
+              desc_summary: '',
+              lat: row.campsite_lat || row.lat || '',
+              lng: row.campsite_lng || row.lng || ''
             };
-          }).filter(function(s) { return s.name.length > 0; });
+          }).filter(function(s) { return s && s.name && String(s.name).length > 0; });
 
           if (registeredSpots.length > 0) {
-            localStorage.setItem('okbm_spots_cache', JSON.stringify(registeredSpots));
-            localStorage.setItem('okbm_master_spots', JSON.stringify(registeredSpots));
+            if (typeof window.persistLightweightSpotsCache === 'function') {
+              window.persistLightweightSpotsCache(registeredSpots);
+            } else {
+              localStorage.setItem('okbm_spots_cache', JSON.stringify(registeredSpots));
+              localStorage.setItem('okbm_master_spots', JSON.stringify(registeredSpots));
+            }
             if (typeof renderSecretSpotTrailerRail === 'function') {
               renderSecretSpotTrailerRail();
             }
           }
         }
       } catch (e) {
-        console.warn('[checkIncomingDirectTab]', e);
+        console.warn('[loadPortalSpotData]', e);
       }
     }
     document.addEventListener('DOMContentLoaded', function() {
@@ -5712,7 +5738,7 @@ var adBannersHtml = `
     });
   </script>
 
-    <script src="romantic-sync.js?v=2.8.80"></script>
+    <script src="romantic-sync.js?v=2.8.81"></script>
   <script src="templates.js?v=2.9.6"></script>
     <script src="romantic-history.js?v=2.7.50"></script>
   <script src="romantic-plan.js?v=2.8.10"></script>
