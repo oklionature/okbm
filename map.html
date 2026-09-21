@@ -133,9 +133,85 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet">
     
-    <!-- 카카오 SDK & 카카오맵 공식 SDK -->
-    <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
+    <!-- 카카오맵 공식 SDK (로그인용 kakao.js는 모달 오픈 시 지연 로드) -->
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=557f5de0f6391a2419bc5592e6a9c9c1&libraries=services,clusterer"></script>
+    <script>
+    window.SUPABASE_URL = 'https://qnumfecythtqtrxeasys.supabase.co';
+    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
+    window.__okbmTemplatesSrc = 'templates.js?v=2.9.8';
+    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.14';
+      (function okbmBootLoader() {
+        var loaded = window.__okbmScriptPromises || {};
+        window.__okbmScriptPromises = loaded;
+
+        window.okbmLoadScript = function(src) {
+          if (!src) return Promise.resolve();
+          if (loaded[src]) return loaded[src];
+          loaded[src] = new Promise(function(resolve, reject) {
+            var found = document.querySelector('script[src="' + src + '"]');
+            if (found) {
+              if (found.getAttribute('data-okbm-ready') === '1') { resolve(); return; }
+              found.addEventListener('load', function() { found.setAttribute('data-okbm-ready', '1'); resolve(); });
+              found.addEventListener('error', function() { reject(new Error(src)); });
+              return;
+            }
+            var s = document.createElement('script');
+            s.src = src;
+            s.async = false;
+            s.onload = function() { s.setAttribute('data-okbm-ready', '1'); resolve(); };
+            s.onerror = function() { delete loaded[src]; reject(new Error(src)); };
+            (document.head || document.documentElement).appendChild(s);
+          });
+          return loaded[src];
+        };
+
+        window.okbmEnsureKakaoSdk = function() {
+          if (window.Kakao && typeof window.Kakao.isInitialized === 'function' && window.Kakao.isInitialized()) {
+            return Promise.resolve();
+          }
+          return window.okbmLoadScript('https://developers.kakao.com/sdk/js/kakao.js').then(function() {
+            var appKey = window.KAKAO_APP_KEY || '557f5de0f6391a2419bc5592e6a9c9c1';
+            if (window.Kakao && typeof window.Kakao.init === 'function' && !window.Kakao.isInitialized()) {
+              window.Kakao.init(appKey);
+            }
+          });
+        };
+
+        window.okbmEnsureTemplates = function() {
+          return window.okbmLoadScript(window.__okbmTemplatesSrc);
+        };
+
+        window.okbmEnsurePlan = function() {
+          return window.okbmEnsureTemplates().then(function() {
+            return window.okbmLoadScript(window.__okbmPlanSrc);
+          });
+        };
+
+        function bindLazy(name, loader) {
+          if (typeof window[name] === 'function' && !window[name].__okbmLazy) return;
+          var lazy = function() {
+            var args = arguments;
+            var ctx = this;
+            return loader().then(function() {
+              var real = window[name];
+              if (typeof real === 'function' && real !== lazy) return real.apply(ctx, args);
+            });
+          };
+          lazy.__okbmLazy = true;
+          window[name] = lazy;
+        }
+
+        bindLazy('openPlanModal', window.okbmEnsurePlan);
+        bindLazy('closePlanModal', window.okbmEnsurePlan);
+        bindLazy('openPhotoStudio', window.okbmEnsureTemplates);
+        bindLazy('closePhotoStudio', window.okbmEnsureTemplates);
+        bindLazy('openPackShareModal', window.okbmEnsureTemplates);
+        bindLazy('closePackShareModal', window.okbmEnsureTemplates);
+        bindLazy('openGearPresetModal', window.okbmEnsurePlan);
+      })();
+    </script>
+    <script src="romantic-sync.js?v=2.8.90" defer></script>
+    <script src="romantic-history.js?v=2.7.55" defer></script>
 
     <style>
       @font-face {
@@ -1461,23 +1537,33 @@
       });
 
       // 🧰 [공통 유틸] romantic-sync.js window.* 버전 참조
-      var safeGetJSON = window.safeGetJSON = window.safeGetJSON || function(key, defaultVal) {
+      var safeGetJSON = function(key, defaultVal) {
+        if (typeof window.okbmReadSpotsCache === 'function' && (key === 'okbm_spots_cache' || key === 'okbm_master_spots')) {
+          var spotsCached = window.okbmReadSpotsCache();
+          if (Array.isArray(spotsCached) && spotsCached.length) return spotsCached;
+        }
+        if (typeof window.safeGetJSON === 'function' && window.safeGetJSON !== safeGetJSON) {
+          return window.safeGetJSON(key, defaultVal);
+        }
         try {
-          var item = localStorage.getItem(key);
+          var item = (key === 'okbm_global_spot_views')
+            ? (sessionStorage.getItem(key) || localStorage.getItem(key))
+            : localStorage.getItem(key);
           return item ? JSON.parse(item) : defaultVal;
         } catch (e) {
           return defaultVal;
         }
       };
+      window.safeGetJSON = window.safeGetJSON || safeGetJSON;
 
-      var escapeHtml = window.escapeHtml = window.escapeHtml || function(text) {
-        if (text === null || text === undefined) return '';
-        return String(text)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
+      var escapeHtml = function(text) {
+        return (typeof window.escapeHtml === 'function') ? window.escapeHtml(text) : String(text == null ? '' : text);
+      };
+      var okbmSafeImageUrl = function(url) {
+        return (typeof window.okbmSafeImageUrl === 'function') ? window.okbmSafeImageUrl(url) : '';
+      };
+      var okbmSafeExternalUrl = function(url) {
+        return (typeof window.okbmSafeExternalUrl === 'function') ? window.okbmSafeExternalUrl(url) : '#';
       };
 
       var triggerHaptic = window.triggerHaptic = window.triggerHaptic || function(duration) {
@@ -1500,7 +1586,9 @@
       var map = null, geocoder = null, globalClusterer = null;
 
      // 📦 [데이터 배열 안전 초기화 & 구글 시트 마스터 직통 수급 엔진]
-      var rawCachedSpots = safeGetJSON('okbm_spots_cache', []);
+      var rawCachedSpots = (typeof window.okbmReadSpotsCache === 'function')
+        ? window.okbmReadSpotsCache()
+        : safeGetJSON('okbm_spots_cache', []);
       var isCacheValid = Array.isArray(rawCachedSpots) && rawCachedSpots.length > 0 && rawCachedSpots[0].lat && rawCachedSpots[0].lng;
       var spots = isCacheValid ? rawCachedSpots : [];
       window.spots = spots;
@@ -1550,12 +1638,12 @@
 
         try {
           var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-          var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
+          var targetKey = window.SUPABASE_ANON_KEY || '';
           var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at';
           var res = await fetch(targetUrl + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc', {
             headers: {
               'apikey': targetKey,
-              'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+              'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
               'Content-Type': 'application/json'
             }
           });
@@ -1643,8 +1731,6 @@
             window.spots = spots;
             if (typeof window.persistLightweightSpotsCache === 'function') {
               window.persistLightweightSpotsCache(spots);
-            } else {
-              localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
             }
             updateNewSpotFlags(spots);
             renderSubChips();
@@ -1661,6 +1747,26 @@
       }
 
       loadSpotsMasterEngine();
+      (function hydrateMapSpotsFromIdb() {
+        var apply = function(list) {
+          if (spots && spots.length > 0) return;
+          if (!Array.isArray(list) || !list.length || !list[0] || !list[0].lat) return;
+          spots = list;
+          window.spots = spots;
+          if (typeof updateNewSpotFlags === 'function') updateNewSpotFlags(spots);
+          if (typeof renderSubChips === 'function') renderSubChips();
+          if (map && typeof renderSpots === 'function') renderSpots();
+        };
+        var bind = function() {
+          if (window.__okbmSpotsIdbReady && typeof window.__okbmSpotsIdbReady.then === 'function') {
+            window.__okbmSpotsIdbReady.then(apply);
+          } else if (typeof window.okbmSpotsIdbGet === 'function') {
+            window.okbmSpotsIdbGet(window.OKBM_SPOTS_IDB_KEY || 'okbm_master_spots').then(apply);
+          }
+        };
+        if (window.__okbmSpotsIdbReady || typeof window.okbmSpotsIdbGet === 'function') bind();
+        else document.addEventListener('DOMContentLoaded', bind);
+      })();
       // 🗺️ 지도 마커 / 오버레이 / UI 상태 전역 변수
       var spotNativeMarkerMap = new Map();
       var spotLabelOverlayMap = new Map();
@@ -1761,16 +1867,16 @@
       function copyTextToClipboard(text, alertMsg = '주소가 복사되었습니다') {
         if (!text) return;
         triggerHaptic(15);
-        const formattedAlert = `${ICONS.COPY} <span>${alertMsg}</span>`;
+        var toastOpts = { html: ICONS.COPY };
         if (navigator.clipboard && window.isSecureContext) {
-          navigator.clipboard.writeText(text).then(() => showToast(formattedAlert)).catch(() => fallbackCopy(text, formattedAlert));
-        } else { fallbackCopy(text, formattedAlert); }
+          navigator.clipboard.writeText(text).then(() => showToast(alertMsg, toastOpts)).catch(() => fallbackCopy(text, alertMsg));
+        } else { fallbackCopy(text, alertMsg); }
       }
 
       function fallbackCopy(text, alertMsg) {
         const temp = document.createElement('textarea');
         temp.value = text; document.body.appendChild(temp); temp.select();
-        try { document.execCommand('copy'); showToast(alertMsg); } catch (err) { console.warn('[map.html:fallbackCopy]', err); }
+        try { document.execCommand('copy'); showToast(alertMsg, { html: ICONS.COPY }); } catch (err) { console.warn('[map.html:fallbackCopy]', err); }
         document.body.removeChild(temp);
       }
 
@@ -1887,7 +1993,7 @@
         var lntModal = document.getElementById('lntModalOverlay');
         if (lntModal) lntModal.style.display = 'none';
         triggerHaptic(20);
-        showToast(`${ICONS.UNLOCK} <span>들머리 주소와 4대 내비가 해금되었습니다!</span>`);
+        showToast('들머리 주소와 4대 내비가 해금되었습니다!', { html: ICONS.UNLOCK });
         refreshCurrentSpotPopup();
       }
 
@@ -2313,7 +2419,7 @@
               return window.__spotFeedsCache.get(sId);
             }
             var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-            var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
+            var targetKey = window.SUPABASE_ANON_KEY || '';
             var spotMainName = (spot.spot_main || spot.name || '').trim();
             if (!spotMainName) return [];
             var query = targetUrl + '/rest/v1/feeds?select=id,user_id,spot,photos,photo_memos_json,author,memo,weight_kg,likes_count,date,created_at,feed_type&spot=ilike.*' + encodeURIComponent(spotMainName) + '*&feed_type=neq.snap&order=created_at.desc&limit=40';
@@ -2321,7 +2427,7 @@
               var res = await fetch(query, {
                 headers: {
                   'apikey': targetKey,
-                  'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+                  'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
                   'Content-Type': 'application/json'
                 }
               });
@@ -2338,9 +2444,6 @@
       }
 
       document.addEventListener('DOMContentLoaded', () => {
-        if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
-          Kakao.init(KAKAO_APP_KEY);
-        }
         initStaticVectors();
         initMapEngine();
         if (typeof updateHeaderAuthUI === 'function') updateHeaderAuthUI();
@@ -2356,9 +2459,12 @@
 
         try {
           if (isUserLoggedIn()) {
-            var profile = safeGetJSON('user_profile', null);
-            var userId = (profile && profile.id) ? String(profile.id).trim() : localStorage.getItem('user_auth_token');
-            if (userId && window.RomanticVault && typeof window.RomanticVault.hydrateFromServer === 'function') {
+            var userId = (typeof window.okbmGetCurrentUserId === 'function')
+              ? String(window.okbmGetCurrentUserId() || '').trim()
+              : '';
+            if (!userId) {
+              if (typeof window.okbmRequireCurrentUserId === 'function') window.okbmRequireCurrentUserId();
+            } else if (window.RomanticVault && typeof window.RomanticVault.hydrateFromServer === 'function') {
               window.RomanticVault.hydrateFromServer(userId).then(function(cloudData) {
                 if (cloudData) {
                   userBookmarks = new Set((safeGetJSON('okbm_bookmarks', [])).map(String));
@@ -2427,7 +2533,7 @@
       function locateUserPosition(e) {
         if (e) e.stopPropagation();
         triggerHaptic(15);
-        if (!navigator.geolocation) return showToast(`${ICONS.ALERT_CARD} <span>위치 서비스를 지원하지 않습니다.</span>`);
+        if (!navigator.geolocation) return showToast('위치 서비스를 지원하지 않습니다.', { html: ICONS.ALERT_CARD });
         navigator.geolocation.getCurrentPosition((pos) => {
           if (!map) return;
           const loc = new kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
@@ -2437,8 +2543,8 @@
             userLocationOverlay = new kakao.maps.CustomOverlay({ map, position: loc, content: el, zIndex: 9999 });
           } else { userLocationOverlay.setPosition(loc); userLocationOverlay.setMap(map); }
           map.setLevel(7, { animate: true }); map.panTo(loc);
-          showToast(`${ICONS.PIN} <span>현재 내 위치로 이동했습니다</span>`);
-        }, () => showToast(`${ICONS.ALERT_CARD} <span>GPS 권한을 허용해주세요</span>`));
+          showToast('현재 내 위치로 이동했습니다', { html: ICONS.PIN });
+        }, () => showToast('GPS 권한을 허용해주세요', { html: ICONS.ALERT_CARD }));
       }
 
       function switchMasterTab(tabName) {
@@ -2911,7 +3017,7 @@ function updateSmartResetButtons() {
         }
 
         if (!lat || !lng) {
-          showToast(`${ICONS.ALERT_CARD} <span>[3. 콕 찍기] 또는 들머리 주소를 먼저 입력해주세요.</span>`);
+          showToast('[3. 콕 찍기] 또는 들머리 주소를 먼저 입력해주세요.', { html: ICONS.ALERT_CARD });
           return;
         }
 
@@ -2926,9 +3032,9 @@ function updateSmartResetButtons() {
 
         if (measuredElev) {
           triggerHaptic(15);
-          showToast(`${ICONS.MOUNTAIN} <span>해발고도 ${measuredElev} 측정 완료!</span>`);
+          showToast('해발고도 ' + measuredElev + ' 측정 완료!', { html: ICONS.MOUNTAIN });
         } else {
-          showToast(`${ICONS.ALERT_CARD} <span>고도 측정에 실패했습니다. 직접 입력해주세요.</span>`);
+          showToast('고도 측정에 실패했습니다. 직접 입력해주세요.', { html: ICONS.ALERT_CARD });
         }
       }
 
@@ -3163,7 +3269,7 @@ function updateSmartResetButtons() {
         if (!isUserLoggedIn()) {
           triggerHaptic(10);
           openLoginModal();
-          showToast(`${ICONS.LOCK} <span>찜하기는 로그인 후 이용하실 수 있습니다.</span>`);
+          showToast('찜하기는 로그인 후 이용하실 수 있습니다.', { html: ICONS.LOCK });
           return;
         }
         const sId = String(spotId || (currentActiveSpot ? currentActiveSpot.id : '')).trim();
@@ -3187,7 +3293,7 @@ function updateSmartResetButtons() {
         userBookmarks = new Set((safeGetJSON('okbm_bookmarks', [])).map(s => String(s).trim()));
         triggerHaptic(isNowBookmarked ? 15 : 10);
         if (isNowBookmarked) {
-          showToast(`${ICONS.HEART} <span>찜 목록에 추가되었습니다!</span>`);
+          showToast('찜 목록에 추가되었습니다!', { html: ICONS.HEART });
         }
 
         document.querySelectorAll('.btn-action-fav').forEach(btn => {
@@ -3214,7 +3320,7 @@ function updateSmartResetButtons() {
         if (!isUserLoggedIn()) {
           triggerHaptic(10);
           openLoginModal();
-          showToast(`${ICONS.LOCK} <span>클리어 등록은 로그인 후 이용하실 수 있습니다.</span>`);
+          showToast('클리어 등록은 로그인 후 이용하실 수 있습니다.', { html: ICONS.LOCK });
           return;
         }
         const sId = String(spotId || (currentActiveSpot ? currentActiveSpot.id : '')).trim();
@@ -3242,7 +3348,7 @@ function updateSmartResetButtons() {
         userBookmarks = new Set((safeGetJSON('okbm_bookmarks', [])).map(s => String(s).trim()));
         triggerHaptic(isNowVisited ? 15 : 10);
         if (isNowVisited) {
-          showToast(`${ICONS.FLAG} <span>장소 정복 클리어!</span>`);
+          showToast('장소 정복 클리어!', { html: ICONS.FLAG });
         }
 
         document.querySelectorAll('.btn-action-visited').forEach(btn => {
@@ -3288,53 +3394,66 @@ function updateSmartResetButtons() {
         const descText = rawDesc.replace(/\s+/g, ' ').trim();
         const kakaoDesc = descText.length > 80 ? descText.slice(0, 79) + '…' : descText;
 
-        if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized()) {
-          try {
-            const shareFn = (Kakao.Share && Kakao.Share.sendDefault) ? Kakao.Share.sendDefault : (Kakao.Link && Kakao.Link.sendDefault ? Kakao.Link.sendDefault : null);
-            if (shareFn) {
-              shareFn({
-                objectType: 'feed',
-                content: {
-                  title: `[낭만루트] ${titleName}`,
-                  description: kakaoDesc,
-                  imageUrl: shareLogoImg,
-                  imageWidth: 800,
-                  imageHeight: 800,
-                  link: {
-                    mobileWebUrl: shareUrl,
-                    webUrl: shareUrl
-                  }
-                },
-                buttons: [
-                  {
-                    title: '앱에서 보기',
+        const sendKakao = function() {
+          if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized()) {
+            try {
+              const shareFn = (Kakao.Share && Kakao.Share.sendDefault) ? Kakao.Share.sendDefault : (Kakao.Link && Kakao.Link.sendDefault ? Kakao.Link.sendDefault : null);
+              if (shareFn) {
+                shareFn({
+                  objectType: 'feed',
+                  content: {
+                    title: `[낭만루트] ${titleName}`,
+                    description: kakaoDesc,
+                    imageUrl: shareLogoImg,
+                    imageWidth: 800,
+                    imageHeight: 800,
                     link: {
                       mobileWebUrl: shareUrl,
                       webUrl: shareUrl
                     }
-                  }
-                ],
-                installTalk: true
-              });
-              return;
-            }
-          } catch (kakaoErr) { console.warn('[map.html:shareSpotCard:kakao]', kakaoErr); }
-        }
+                  },
+                  buttons: [
+                    {
+                      title: '앱에서 보기',
+                      link: {
+                        mobileWebUrl: shareUrl,
+                        webUrl: shareUrl
+                      }
+                    }
+                  ],
+                  installTalk: true
+                });
+                return true;
+              }
+            } catch (kakaoErr) { console.warn('[map.html:shareSpotCard:kakao]', kakaoErr); }
+          }
+          return false;
+        };
 
-        const labeledShareText = `[낭만루트] ${titleName}\n${descText}\n\n앱에서 보기`;
-        if (navigator.share) {
-          const isApple = /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
-          const shareData = isApple
-            ? { title: '앱에서 보기', url: shareUrl }
-            : { title: '앱에서 보기', text: labeledShareText, url: shareUrl };
-          navigator.share(shareData).catch((e) => {
-            if (e && e.name === 'AbortError') return;
-            console.warn('[map.html:shareSpotCard:navigator]', e);
+        const fallbackShare = function() {
+          const labeledShareText = `[낭만루트] ${titleName}\n${descText}\n\n앱에서 보기`;
+          if (navigator.share) {
+            const isApple = /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+            const shareData = isApple
+              ? { title: '앱에서 보기', url: shareUrl }
+              : { title: '앱에서 보기', text: labeledShareText, url: shareUrl };
+            navigator.share(shareData).catch((e) => {
+              if (e && e.name === 'AbortError') return;
+              console.warn('[map.html:shareSpotCard:navigator]', e);
+              copyTextToClipboard('앱에서 보기\n' + shareUrl, '앱에서 보기 링크가 복사되었습니다!');
+            });
+          } else {
             copyTextToClipboard('앱에서 보기\n' + shareUrl, '앱에서 보기 링크가 복사되었습니다!');
-          });
-        } else {
-          copyTextToClipboard('앱에서 보기\n' + shareUrl, '앱에서 보기 링크가 복사되었습니다!');
+          }
+        };
+
+        if (typeof window.okbmEnsureKakaoSdk === 'function') {
+          window.okbmEnsureKakaoSdk().then(function() {
+            if (!sendKakao()) fallbackShare();
+          }).catch(fallbackShare);
+          return;
         }
+        if (!sendKakao()) fallbackShare();
       }
 
       const entryCoordsCache = new Map();
@@ -3430,7 +3549,7 @@ function updateSmartResetButtons() {
         }
 
         if (!gpxUrl || !gpxUrl.trim() || gpxUrl === 'undefined') {
-          showToast(`${ICONS.ALERT_CARD} <span>해당 박지의 GPX 등산로 데이터가 준비 중입니다.</span>`);
+          showToast('해당 박지의 GPX 등산로 데이터가 준비 중입니다.', { html: ICONS.ALERT_CARD });
           return;
         }
 
@@ -3478,10 +3597,10 @@ function updateSmartResetButtons() {
           });
           activeGpxSpotId = sId;
           triggerHaptic(15);
-          showToast(`${ICONS.HIKING} <span>지도에 등산로 코스선(주황색)이 표시되었습니다!</span>`);
+          showToast('지도에 등산로 코스선(주황색)이 표시되었습니다!', { html: ICONS.HIKING });
           refreshCurrentSpotPopup();
         } catch (err) {
-          showToast(`${ICONS.ALERT_CARD} <span>등산로 파일을 불러올 수 없습니다.</span>`);
+          showToast('등산로 파일을 불러올 수 없습니다.', { html: ICONS.ALERT_CARD });
         }
       }
 
@@ -4630,9 +4749,9 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
             }, 10);
           }
           return `
-            <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" onclick="triggerHaptic(10);" style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:5px; text-decoration:none; box-sizing:border-box; width:100%;">
+            <a href="${escapeHtml(okbmSafeExternalUrl(item.url))}" target="_blank" rel="noopener noreferrer" onclick="triggerHaptic(10);" style="display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:5px; text-decoration:none; box-sizing:border-box; width:100%;">
               <div style="flex:0 0 calc(50% - 4px); width:calc(50% - 4px); aspect-ratio:16/9; border-radius:6px; overflow:hidden; background:#000; position:relative; box-sizing:border-box;">
-                <img src="${escapeHtml(item.thumb)}" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';" />
+                <img src="${escapeHtml(okbmSafeImageUrl(item.thumb))}" style="width:100%; height:100%; object-fit:cover; display:block;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=600&q=80';" />
                 <div style="position:absolute; inset:0; background:rgba(0,0,0,0.18); display:flex; align-items:center; justify-content:center;">
                   <div style="width:24px; height:24px; border-radius:50%; background:#0c1017; display:flex; align-items:center; justify-content:center;">
                     <svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-left:1px;" fill="#ffffff"><polygon points="9.6 15.6 15.8 12 9.6 8.4 9.6 15.6"/></svg>
@@ -4774,7 +4893,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
             }, 10);
           }
           return `
-            <a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer" onclick="triggerHaptic(10);" style="display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:46px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:6px 10px; text-decoration:none; box-sizing:border-box; width:100%; transition:background 0.15s ease;">
+            <a href="${escapeHtml(okbmSafeExternalUrl(item.url))}" target="_blank" rel="noopener noreferrer" onclick="triggerHaptic(10);" style="display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:46px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:6px 10px; text-decoration:none; box-sizing:border-box; width:100%; transition:background 0.15s ease;">
               <div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">
                 <div style="display:flex; align-items:center; gap:5px;">
                   <span style="display:inline-flex; align-items:center; justify-content:center; background:#03c75a; color:#ffffff; font-size:0.55rem; font-weight:900; padding:0 3px; height:13px; border-radius:2px; font-family:'Space Grotesk',sans-serif; flex-shrink:0;">N</span>
@@ -4950,7 +5069,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           return `
             <div data-feed-id="${fId}" data-spot-id="${escapeHtml(String(spot.id).trim())}" onclick="openMapSpotFeedDetailModal(this.dataset.feedId, this.dataset.spotId)" style="flex:0 0 145px; width:145px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.09); border-radius:10px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; flex-shrink:0; box-sizing:border-box;">
               <div style="width:100%; aspect-ratio:3/4; position:relative; background:#000; overflow:hidden;">
-                <img src="${escapeHtml(thumbUrl)}" style="width:100%; height:100%; object-fit:cover; display:block;" loading="lazy" />
+                <img src="${escapeHtml(okbmSafeImageUrl(thumbUrl))}" style="width:100%; height:100%; object-fit:cover; display:block;" loading="lazy" />
                 <div style="position:absolute; top:5px; left:5px; background:#0c1017; padding:2px 6px; border-radius:4px; font-size:0.56rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:85px;">
                   ${escapeHtml(authorNick)}
                 </div>
@@ -5016,7 +5135,8 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           return;
         }
 
-       var cardId = escapeHtml(String(targetFeed.id));
+        var rawCardId = String(targetFeed.id || '').replace(/^["']|["']$/g, '').trim();
+        var cardId = escapeHtml(rawCardId);
         var photos = [];
         if (Array.isArray(targetFeed.photos)) {
           photos = targetFeed.photos.filter(function(u) {
@@ -5059,12 +5179,12 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         var curUId = (curProfile && curProfile.id) ? String(curProfile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
         var userStarsKey = (typeof window.okbmGetUserStarsKey === 'function') ? window.okbmGetUserStarsKey(curUId) : (curUId ? ('okbm_feed_stars_map_' + curUId) : 'okbm_feed_stars_map');
         var userStarsMap = safeGetJSON(userStarsKey, {}) || {};
-        var isStarred = Boolean(userStarsMap[cardId]);
+        var isStarred = Boolean(userStarsMap[rawCardId] || userStarsMap[cardId]);
         var serverFeedLikes = (targetFeed.likes_count !== undefined && targetFeed.likes_count !== null) ? Number(targetFeed.likes_count) : Number(targetFeed.likes || 0);
-        var likesCount = Number(starsMap[cardId]) || serverFeedLikes || 0;
+        var likesCount = Number(starsMap[rawCardId] || starsMap[cardId]) || serverFeedLikes || 0;
 
         var savedFeedsList = safeGetJSON('okbm_saved_feeds', []);
-        var isSavedFeed = savedFeedsList.includes(cardId);
+        var isSavedFeed = savedFeedsList.includes(rawCardId) || savedFeedsList.includes(cardId);
 
         var followingList = safeGetJSON('okbm_following_users', []);
         var profile = safeGetJSON('user_profile', null);
@@ -5087,7 +5207,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         var slidesHtml = photos.map(function(pUrl) {
           return `
             <div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex; align-items:center; justify-content:center;">
-              <img src="${pUrl}" style="max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; display:block;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
+              <img src="${escapeHtml(okbmSafeImageUrl(pUrl))}" style="max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; display:block;" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
             </div>
           `;
         }).join('');
@@ -5133,14 +5253,14 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
             <div style="padding:10px 14px 12px 14px; background:#07090e; display:flex; flex-direction:column; gap:6px; flex-shrink:0;">
               <div style="display:flex; justify-content:space-between; align-items:center; position:relative; min-height:26px;">
                 <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
-                  <button type="button" data-card-id="${cardId}" onclick="window.toggleFeedStar(this.dataset.cardId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:4px;">
-                    <svg id="feedStarIcon_${cardId}" viewBox="0 0 24 24" style="width:17px; height:17px; filter:${isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none'};" fill="${isStarred ? '#fde047' : 'none'}" stroke="${isStarred ? '#fde047' : '#ffffff'}" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    <span id="feedStarCountText_${cardId}" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:'Space Grotesk', sans-serif;">${likesCount}</span>
+                  <button type="button" data-star-card-id="${cardId}" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                    <svg class="js-feed-star-icon" viewBox="0 0 24 24" style="width:17px; height:17px; filter:${isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none'};" fill="${isStarred ? '#fde047' : 'none'}" stroke="${isStarred ? '#fde047' : '#ffffff'}" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <span class="js-feed-star-count" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:'Space Grotesk', sans-serif;">${likesCount}</span>
                   </button>
-                  <button type="button" data-feed-id="${cardId}" data-spot="${escapeHtml(spotTitle)}" data-memo="${escapeHtml(memoText)}" onclick="if(typeof window.shareCurrentFeed==='function'){ window.shareCurrentFeed(this.dataset.feedId, this.dataset.spot, this.dataset.memo); } else { triggerHaptic(10); if(navigator.clipboard){ navigator.clipboard.writeText(location.href); if(typeof showToast==='function') showToast('🔗 피드 링크가 복사되었습니다!','success'); } }" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">
+                  <button type="button" data-share-feed="1" data-feed-id="${cardId}" data-spot="${escapeHtml(spotTitle)}" data-memo="${escapeHtml(memoText)}" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">
                     <svg viewBox="0 0 24 24" style="width:15px; height:15px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                   </button>
-                  <button type="button" data-feed-id="${cardId}" onclick="window.toggleSaveFeed(this.dataset.feedId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:${isSavedFeed ? '#c084fc' : '#cbd5e1'};" title="관심피드 저장">
+                  <button type="button" data-save-feed="1" data-feed-id="${cardId}" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:${isSavedFeed ? '#c084fc' : '#cbd5e1'};" title="관심피드 저장">
                     <svg viewBox="0 0 24 24" style="width:15px; height:15px; filter:${isSavedFeed ? 'drop-shadow(0 0 6px rgba(192,132,252,0.8))' : 'none'};" fill="${isSavedFeed ? '#c084fc' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
                   </button>
                 </div>
@@ -5220,15 +5340,40 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
       }
 
       // 🌐 [전국 실시간 통합 조회수 집계 엔진]
-      window.__globalSpotViewsMap = safeGetJSON('okbm_global_spot_views', {});
+      window.__globalSpotViewsMap = (function() {
+        try {
+          var raw = sessionStorage.getItem('okbm_global_spot_views') || localStorage.getItem('okbm_global_spot_views');
+          var parsed = raw ? JSON.parse(raw) : {};
+          return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+        } catch (e) { return {}; }
+      })();
+
+      function persistGlobalSpotViews() {
+        var map = window.__globalSpotViewsMap || {};
+        var keys = Object.keys(map);
+        var limit = window.OKBM_SPOT_VIEWS_LRU_LIMIT || 200;
+        if (keys.length > limit) {
+          var keep = keys.slice(-limit);
+          var next = {};
+          keep.forEach(function(k) { next[k] = map[k]; });
+          window.__globalSpotViewsMap = next;
+          map = next;
+        }
+        try {
+          sessionStorage.setItem('okbm_global_spot_views', JSON.stringify(map));
+        } catch (e) {
+          console.warn('[map.html:persistGlobalSpotViews]', e);
+        }
+        try { localStorage.removeItem('okbm_global_spot_views'); } catch (e2) {}
+      }
 
       function fetchGlobalSpotRankings() {
         var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-        var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
+        var targetKey = window.SUPABASE_ANON_KEY || '';
         fetch(targetUrl + '/rest/v1/ranking_stats?select=spot_id,usage_count&order=usage_count.desc&limit=30', {
           headers: {
             'apikey': targetKey,
-            'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+            'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
             'Content-Type': 'application/json'
           }
         })
@@ -5237,22 +5382,24 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           if (Array.isArray(rows)) {
             rows.forEach(function(r) {
               if (r && r.spot_id) {
-                window.__globalSpotViewsMap[String(r.spot_id)] = Number(r.usage_count) || 0;
+                var id = String(r.spot_id);
+                var serverCount = Number(r.usage_count) || 0;
+                var localCount = Number(window.__globalSpotViewsMap[id]) || 0;
+                window.__globalSpotViewsMap[id] = Math.max(serverCount, localCount);
               }
             });
-            localStorage.setItem('okbm_global_spot_views', JSON.stringify(window.__globalSpotViewsMap));
+            persistGlobalSpotViews();
           }
         })
         .catch(function(e) { console.warn('[map.html:fetchGlobalSpotRankings]', e); });
       }
       setTimeout(fetchGlobalSpotRankings, 800);
 
-   function getSpotViews(spot) {
+      function getSpotViews(spot) {
         if (!spot) return 0;
-        // 🔑 [A~H열 복합 고유 키]: 동명 산이라도 [지역_시군구_산명_세부포인트_ID]로 조회수 100% 분리
-        const nameKey = `${spot.region || ''}_${spot.cityName || ''}_${spot.spot_main || spot.name || ''}_${spot.spot_sub || ''}_${spot.id}`;
-        const globalCount = Number(window.__globalSpotViewsMap[nameKey]) || 0;
-        const localCount = Number(spot.searchCount) || Number(localStorage.getItem(`okbm_views_${spot.id}`)) || 0;
+        var sId = String(spot.id || '').trim();
+        var globalCount = sId ? (Number(window.__globalSpotViewsMap[sId]) || 0) : 0;
+        var localCount = Number(spot.searchCount) || 0;
         return Math.max(globalCount, localCount);
       }
 
@@ -5262,18 +5409,18 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         if (!target) return;
 
         const sId = String(target.id).trim();
-        const nameKey = `${target.region || ''}_${target.cityName || ''}_${target.spot_main || target.name || ''}_${target.spot_sub || ''}_${target.id}`;
         const currentViews = getSpotViews(target) + 1;
 
-        window.__globalSpotViewsMap[nameKey] = currentViews;
-        localStorage.setItem('okbm_global_spot_views', JSON.stringify(window.__globalSpotViewsMap));
-        localStorage.setItem(`okbm_views_${spotId}`, currentViews);
+        if (window.__globalSpotViewsMap[sId] !== undefined) delete window.__globalSpotViewsMap[sId];
+        window.__globalSpotViewsMap[sId] = currentViews;
+        persistGlobalSpotViews();
         target.searchCount = currentViews;
 
         if (window.__viewedSpotsInSession.has(sId)) return;
         window.__viewedSpotsInSession.add(sId);
       }
 var liveSearchTimer = null;
+      var _mapKeywordSearchSeq = 0;
 
       function handleSearchInputChange(mode = 'pc') {
         const inputEl = document.getElementById('pcSearchInput');
@@ -5286,6 +5433,7 @@ var liveSearchTimer = null;
 
         clearTimeout(liveSearchTimer);
         if (!q) {
+          _mapKeywordSearchSeq += 1;
           showTopRankings(mode);
         } else {
           liveSearchTimer = setTimeout(() => {
@@ -5295,6 +5443,7 @@ var liveSearchTimer = null;
       }
 
       function clearSearchInput(mode = 'pc', shouldFocus = true) {
+        _mapKeywordSearchSeq += 1;
         clearTimeout(liveSearchTimer);
         const inputEl = document.getElementById('pcSearchInput');
         const clearBtn = document.getElementById('pcSearchClearBtn');
@@ -6115,7 +6264,7 @@ var overlay = document.getElementById('customModalOverlay');
       function getSupabaseRestConfig() {
         return {
           url: window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co',
-          key: window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE'
+          key: window.SUPABASE_ANON_KEY || ''
         };
       }
 
@@ -6159,36 +6308,52 @@ var overlay = document.getElementById('customModalOverlay');
       async function persistSpotToSupabase(spot, isInsert) {
         var cfg = getSupabaseRestConfig();
         if (!cfg.url || !cfg.key || !spot) return false;
+        var writeHeaders = (typeof window.okbmWriteHeaders === 'function')
+          ? window.okbmWriteHeaders({ Prefer: 'return=minimal' })
+          : null;
+        if (!writeHeaders) return false;
         var payload = buildSpotDbPayload(spot);
-        var endpoint = isInsert
-          ? cfg.url + '/rest/v1/spots'
-          : cfg.url + '/rest/v1/spots?id=eq.' + encodeURIComponent(payload.id);
-        try {
-          var res = await fetch(endpoint, {
-            method: isInsert ? 'POST' : 'PATCH',
-            headers: {
-              'apikey': cfg.key,
-              'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : cfg.key),
-              'Content-Type': 'application/json',
-              'Prefer': 'return=minimal'
-            },
-            body: JSON.stringify(payload)
-          });
-          return res.ok;
-        } catch (e) {
-          console.warn('[map.html:persistSpotToSupabase]', e);
-          return false;
+        if (isInsert) {
+          try {
+            var insertRes = await fetch(cfg.url + '/rest/v1/spots', {
+              method: 'POST',
+              headers: writeHeaders,
+              body: JSON.stringify(payload)
+            });
+            return insertRes.ok;
+          } catch (e) {
+            console.warn('[map.html:persistSpotToSupabase insert]', e);
+            return false;
+          }
         }
+
+        var isAdmin = typeof checkAdminAuthorization === 'function' && checkAdminAuthorization();
+        if (isAdmin) {
+          try {
+            var patchRes = await fetch(cfg.url + '/rest/v1/spots?id=eq.' + encodeURIComponent(payload.id), {
+              method: 'PATCH',
+              headers: writeHeaders,
+              body: JSON.stringify(payload)
+            });
+            return patchRes.ok;
+          } catch (e) {
+            console.warn('[map.html:persistSpotToSupabase patch]', e);
+            return false;
+          }
+        }
+
+        var mediaLines = String(payload.mediaUrls || '').split(/[\r\n,]+/).map(function(u) { return u.trim(); }).filter(Boolean);
+        if (mediaLines.length && typeof window.okbmRpcMergeSpotMediaUrls === 'function') {
+          var rpc = await window.okbmRpcMergeSpotMediaUrls(payload.id, mediaLines);
+          return !!(rpc && rpc.ok);
+        }
+        return false;
       }
 
       function persistSpotsCache() {
         try {
           if (typeof window.persistLightweightSpotsCache === 'function') {
             window.persistLightweightSpotsCache(spots);
-          } else if (typeof window.stripSpotDetailFields === 'function') {
-            localStorage.setItem('okbm_spots_cache', JSON.stringify(spots.map(window.stripSpotDetailFields)));
-          } else {
-            localStorage.setItem('okbm_spots_cache', JSON.stringify(spots));
           }
         } catch (e) { console.warn('[map.html:persistSpotsCache]', e); }
         window.__pastTripSpotsSearchCache = null;
@@ -6346,9 +6511,11 @@ var overlay = document.getElementById('customModalOverlay');
       }
 
       function resolveCurrentUserReporter() {
-        var curProfile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
-        var userId = String((curProfile && curProfile.id) || localStorage.getItem('okbm_user_id') || localStorage.getItem('user_auth_token') || '').trim();
+        var userId = (typeof window.okbmGetCurrentUserId === 'function')
+          ? String(window.okbmGetCurrentUserId() || '').trim()
+          : '';
         var nick = '';
+        var curProfile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
         if (curProfile && curProfile.nickname) nick = String(curProfile.nickname).trim();
         if (!nick) nick = String(localStorage.getItem('okbm_user_nick') || '').trim();
         if (!nick && userId) nick = String(localStorage.getItem('okbm_custom_nickname_' + userId) || '').trim();
@@ -6365,15 +6532,25 @@ var overlay = document.getElementById('customModalOverlay');
       async function lookupUserNickname(userId) {
         var id = String(userId || '').trim();
         if (!id) return '';
-        var cfg = getSupabaseRestConfig();
-        if (!cfg.url || !cfg.key) return '';
         try {
-          var res = await fetch(cfg.url + '/rest/v1/user_public_profiles?id=eq.' + encodeURIComponent(id) + '&select=nickname', {
-            headers: { 'apikey': cfg.key, 'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : cfg.key) }
+          if (typeof window.okbmFetchPublicProfile === 'function') {
+            var fetched = await window.okbmFetchPublicProfile(id);
+            return normalizeReporterNick(fetched && fetched.nickname);
+          }
+          var cfg = getSupabaseRestConfig();
+          if (!cfg.url || !cfg.key) return '';
+          var res = await fetch(cfg.url + '/rest/v1/rpc/get_public_profile', {
+            method: 'POST',
+            headers: {
+              'apikey': cfg.key,
+              'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || cfg.key),
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ p_id: id })
           });
           if (!res.ok) return '';
-          var rows = await res.json();
-          return normalizeReporterNick(rows && rows[0] && rows[0].nickname);
+          var row = await res.json();
+          return normalizeReporterNick(row && row.nickname);
         } catch (e) {
           return '';
         }
@@ -6691,6 +6868,10 @@ var overlay = document.getElementById('customModalOverlay');
 
               var reporter = resolveCurrentUserReporter();
               var curUserId = reporter.userId;
+              if (!curUserId) {
+                if (typeof window.okbmRequireCurrentUserId === 'function') window.okbmRequireCurrentUserId();
+                return;
+              }
 
               var propRecord = {
                 id: propId,
@@ -7194,13 +7375,11 @@ var overlay = document.getElementById('customModalOverlay');
         renderSpots(true);
         
         if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+          var delHeaders = (typeof window.okbmWriteHeaders === 'function') ? window.okbmWriteHeaders() : null;
+          if (!delHeaders) return;
           fetch(window.SUPABASE_URL + '/rest/v1/spots?id=eq.' + encodeURIComponent(sId), {
             method: 'DELETE',
-            headers: {
-              'apikey': window.SUPABASE_ANON_KEY,
-              'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : window.SUPABASE_ANON_KEY),
-              'Content-Type': 'application/json'
-            }
+            headers: delHeaders
           }).catch(function(e) { console.warn('[map.html:deleteSpot]', e); });
         }
       }
@@ -7234,7 +7413,7 @@ var overlay = document.getElementById('customModalOverlay');
           return window.fetchAdminSpotInbox();
         }
         var cfg = getSupabaseRestConfig();
-        var headers = { 'apikey': cfg.key, 'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : cfg.key), 'Content-Type': 'application/json' };
+        var headers = { 'apikey': cfg.key, 'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || cfg.key), 'Content-Type': 'application/json' };
         var [propsRes, corrRes] = await Promise.all([
           fetch(cfg.url + '/rest/v1/proposals?select=*&order=created_at.desc', { headers: headers }),
           fetch(cfg.url + '/rest/v1/spot_corrections?select=*&order=created_at.desc', { headers: headers })
@@ -7364,7 +7543,7 @@ var overlay = document.getElementById('customModalOverlay');
               image: (typeof createPickedMarkerImage === 'function') ? createPickedMarkerImage() : undefined
             });
           }
-          showToast(ICONS.PIN + ' <span>' + escapeHtml(pending.name) + '로 이동했습니다.</span>');
+          showToast(pending.name + '로 이동했습니다.', { html: ICONS.PIN });
         }, 160);
       };
 
@@ -7447,6 +7626,7 @@ var overlay = document.getElementById('customModalOverlay');
         const inputEl = document.getElementById('pcSearchInput');
         const dropdown = document.getElementById('pcSearchDropdown');
         const rawQuery = inputEl ? inputEl.value.trim() : '';
+        const searchSeq = ++_mapKeywordSearchSeq;
         if (!rawQuery) {
           showTopRankings(mode);
           return;
@@ -7488,6 +7668,7 @@ var overlay = document.getElementById('customModalOverlay');
         });
 
         const renderItems = (items) => {
+          if (searchSeq !== _mapKeywordSearchSeq) return;
           if (!dropdown) return;
           dropdown.style.display = 'block';
 
@@ -7545,6 +7726,7 @@ var overlay = document.getElementById('customModalOverlay');
         if (typeof kakao !== 'undefined' && kakao.maps && kakao.maps.services) {
           const places = new kakao.maps.services.Places();
           places.keywordSearch(rawQuery, (data, status) => {
+            if (searchSeq !== _mapKeywordSearchSeq) return;
             if (status === kakao.maps.services.Status.OK) {
               const blockedCategories = ['주유소', '충전소', '음식점', '카페', '마트', '편의점', '숙박', '병원', '약국', '은행', '학원', '부동산'];
 
@@ -7594,7 +7776,7 @@ var overlay = document.getElementById('customModalOverlay');
           a.download = `romantic_root_backup_${new Date().toISOString().slice(0, 10)}.json`; 
           a.click();
           URL.revokeObjectURL(url);
-          showToast(`${ICONS.BACKUP} <span>백업 파일이 안전하게 다운로드되었습니다.</span>`);
+          showToast('백업 파일이 안전하게 다운로드되었습니다.', { html: ICONS.BACKUP });
         } catch (err) {
           alert('백업 파일 생성 중 오류가 발생했습니다.');
         }
@@ -7669,11 +7851,9 @@ var overlay = document.getElementById('customModalOverlay');
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
       (function initSupabaseClient() {
-        var sbUrl = 'https://qnumfecythtqtrxeasys.supabase.co';
-        var sbKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
         var loopback = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
-        if (window.supabase && typeof window.supabase.createClient === 'function') {
-          window.supabaseClient = window.supabase.createClient(sbUrl, sbKey, {
+        if (window.supabase && typeof window.supabase.createClient === 'function' && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+          window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
             auth: {
               detectSessionInUrl: true,
               persistSession: true,
@@ -7683,10 +7863,6 @@ var overlay = document.getElementById('customModalOverlay');
         }
       })();
     </script>
-    <script src="romantic-sync.js?v=2.8.84"></script>
-    <script src="templates.js?v=2.8.3"></script>
-    <script src="romantic-history.js?v=2.7.50"></script>
-    <script src="romantic-plan.js?v=2.8.10"></script>
     <script>
       window.addEventListener('okbm_admin_flag', function(e) {
         if (typeof window.applyAdminPermissions === 'function') {

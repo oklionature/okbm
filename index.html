@@ -484,7 +484,6 @@
   <link rel="preconnect" href="https://qnumfecythtqtrxeasys.supabase.co" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@700&family=JetBrains+Mono:wght@700;800&family=Noto+Serif+KR:wght@600&family=Space+Grotesk:wght@700;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   
-  <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
   <script>
     (function okbmStashNaverOAuthCodeEarly() {
       try {
@@ -505,11 +504,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     (function initSupabaseClient() {
-      var sbUrl = 'https://qnumfecythtqtrxeasys.supabase.co';
-      var sbKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
+      window.SUPABASE_URL = 'https://qnumfecythtqtrxeasys.supabase.co';
+      window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
       if (window.supabase && typeof window.supabase.createClient === 'function') {
         var loopback = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
-        window.supabaseClient = window.supabase.createClient(sbUrl, sbKey, {
+        window.supabaseClient = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY, {
           auth: {
             detectSessionInUrl: true,
             persistSession: true,
@@ -521,6 +520,92 @@
   </script>
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js" defer></script>
+  <script>
+    window.__okbmTemplatesSrc = 'templates.js?v=2.9.8';
+    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.14';
+    (function okbmBootLoader() {
+      var loaded = window.__okbmScriptPromises || {};
+      window.__okbmScriptPromises = loaded;
+
+      window.okbmLoadScript = function(src) {
+        if (!src) return Promise.resolve();
+        if (loaded[src]) return loaded[src];
+        loaded[src] = new Promise(function(resolve, reject) {
+          var found = document.querySelector('script[src="' + src + '"]');
+          if (found) {
+            if (found.getAttribute('data-okbm-ready') === '1') { resolve(); return; }
+            found.addEventListener('load', function() { found.setAttribute('data-okbm-ready', '1'); resolve(); });
+            found.addEventListener('error', function() { reject(new Error(src)); });
+            return;
+          }
+          var s = document.createElement('script');
+          s.src = src;
+          s.async = false;
+          s.onload = function() { s.setAttribute('data-okbm-ready', '1'); resolve(); };
+          s.onerror = function() { delete loaded[src]; reject(new Error(src)); };
+          (document.head || document.documentElement).appendChild(s);
+        });
+        return loaded[src];
+      };
+
+      window.okbmEnsureKakaoSdk = function() {
+        if (window.Kakao && typeof window.Kakao.isInitialized === 'function' && window.Kakao.isInitialized()) {
+          return Promise.resolve();
+        }
+        return window.okbmLoadScript('https://developers.kakao.com/sdk/js/kakao.js').then(function() {
+          var appKey = window.KAKAO_APP_KEY || '557f5de0f6391a2419bc5592e6a9c9c1';
+          if (window.Kakao && typeof window.Kakao.init === 'function' && !window.Kakao.isInitialized()) {
+            window.Kakao.init(appKey);
+          }
+        });
+      };
+
+      function afterSecondary() {
+        if (typeof window.__okbmWrapKnownModals === 'function') window.__okbmWrapKnownModals();
+      }
+
+      window.okbmEnsureTemplates = function() {
+        return window.okbmLoadScript(window.__okbmTemplatesSrc).then(afterSecondary);
+      };
+
+      window.okbmEnsurePlan = function() {
+        return window.okbmEnsureTemplates().then(function() {
+          return window.okbmLoadScript(window.__okbmPlanSrc);
+        }).then(afterSecondary);
+      };
+
+      function bindLazy(name, loader) {
+        if (typeof window[name] === 'function' && !window[name].__okbmLazy) return;
+        var lazy = function() {
+          var args = arguments;
+          var ctx = this;
+          return loader().then(function() {
+            var real = window[name];
+            if (typeof real === 'function' && real !== lazy) return real.apply(ctx, args);
+          });
+        };
+        lazy.__okbmLazy = true;
+        window[name] = lazy;
+      }
+
+      bindLazy('openPlanModal', window.okbmEnsurePlan);
+      bindLazy('closePlanModal', window.okbmEnsurePlan);
+      bindLazy('openPhotoStudio', window.okbmEnsureTemplates);
+      bindLazy('closePhotoStudio', window.okbmEnsureTemplates);
+      bindLazy('openPackShareModal', window.okbmEnsureTemplates);
+      bindLazy('closePackShareModal', window.okbmEnsureTemplates);
+      bindLazy('openGearPresetModal', window.okbmEnsurePlan);
+
+      var prefetch = function() {
+        window.okbmEnsureTemplates();
+        window.okbmEnsurePlan();
+      };
+      if (window.requestIdleCallback) window.requestIdleCallback(prefetch, { timeout: 2800 });
+      else setTimeout(prefetch, 1800);
+    })();
+  </script>
+    <script src="romantic-sync.js?v=2.8.90" defer></script>
+  <script src="romantic-history.js?v=2.7.55" defer></script>
 
   <style>
   @font-face {
@@ -1997,7 +2082,14 @@
     };
 
     // 🧰 [공통 유틸] romantic-sync.js window.* 버전 참조
-    var safeGetJSON = window.safeGetJSON = window.safeGetJSON || function(key, defaultVal) {
+    var safeGetJSON = function(key, defaultVal) {
+      if (typeof window.okbmReadSpotsCache === 'function' && (key === 'okbm_spots_cache' || key === 'okbm_master_spots')) {
+        var spotsCached = window.okbmReadSpotsCache();
+        if (Array.isArray(spotsCached) && spotsCached.length) return spotsCached;
+      }
+      if (typeof window.safeGetJSON === 'function' && window.safeGetJSON !== safeGetJSON) {
+        return window.safeGetJSON(key, defaultVal);
+      }
       try {
         var item = localStorage.getItem(key);
         return item ? JSON.parse(item) : defaultVal;
@@ -2005,15 +2097,16 @@
         return defaultVal;
       }
     };
+    window.safeGetJSON = window.safeGetJSON || safeGetJSON;
 
-    var escapeHtml = window.escapeHtml = window.escapeHtml || function(text) {
-      if (text === null || text === undefined) return '';
-      return String(text)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+    var escapeHtml = function(text) {
+      return (typeof window.escapeHtml === 'function') ? window.escapeHtml(text) : String(text == null ? '' : text);
+    };
+    var okbmSafeImageUrl = function(url) {
+      return (typeof window.okbmSafeImageUrl === 'function') ? window.okbmSafeImageUrl(url) : '';
+    };
+    var okbmSafeExternalUrl = function(url) {
+      return (typeof window.okbmSafeExternalUrl === 'function') ? window.okbmSafeExternalUrl(url) : '#';
     };
 
     if (!window.__okbmIndexSafeClickBound) {
@@ -2333,7 +2426,7 @@
         return `
           <div data-spot-id="${sId}" onclick="openSecretSpotHeroViewer(this.dataset.spotId)" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:14px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer; box-sizing:border-box; transition:transform 0.15s ease;">
             <div style="width:100%; aspect-ratio:4/3; position:relative; background:#000; overflow:hidden;">
-              <img src="${item.photoUrl}" alt="${escapeHtml(sName)}" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;" />
+              <img src="${escapeHtml(okbmSafeImageUrl(item.photoUrl))}" alt="${escapeHtml(sName)}" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;" />
               <div style="position:absolute; bottom:6px; right:6px; background:#0c1017; color:#fde047; font-size:0.58rem; font-weight:900; font-family:var(--font-en); padding:2px 6px; border-radius:4px; border:1px solid rgba(253,224,71,0.35);">${escapeHtml(badgeText)}</div>
             </div>
             <div style="padding:9px 10px 10px 10px; display:flex; flex-direction:column; gap:3px; box-sizing:border-box;">
@@ -2437,7 +2530,7 @@
         return `
           <div class="n-trailer-card" data-spot-id="${sId}" onclick="openSecretSpotHeroViewer(this.dataset.spotId)" style="width:118px !important; flex-shrink:0; cursor:pointer;">
             <div class="n-trailer-thumb">
-              <img src="${item.photoUrl}" alt="${escapeHtml(sName)}" loading="lazy" decoding="async" />
+              <img src="${escapeHtml(okbmSafeImageUrl(item.photoUrl))}" alt="${escapeHtml(sName)}" loading="lazy" decoding="async" />
               <div class="n-trailer-weight-chip" style="color:#fde047; border-color:rgba(253,224,71,0.4);">${escapeHtml(badgeText)}</div>
             </div>
             <div class="n-trailer-info">
@@ -2574,7 +2667,7 @@
       var slidesHtml = photosList.map(function(u) {
         return `
           <div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000;">
-            <img src="${u}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; filter:brightness(0.96) contrast(1.04);" />
+            <img src="${escapeHtml(okbmSafeImageUrl(u))}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; filter:brightness(0.96) contrast(1.04);" />
             <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 25%, transparent 70%, rgba(0,0,0,0.75) 100%); pointer-events:none;"></div>
           </div>
         `;
@@ -2805,7 +2898,7 @@
 
           return '<div data-feed-id="' + fId + '" onclick="window.closeTripAuthorProfile(); if(typeof openSecretSpotHeroViewer===\'function\') openSecretSpotHeroViewer(this.dataset.feedId);" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; cursor:pointer;">' +
             '<div style="width:100%; aspect-ratio:1/1; position:relative; background:#000; overflow:hidden;">' +
-              '<img src="' + photoUrl + '" alt="' + escapeHtml(sName) + '" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;" />' +
+              '<img src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" alt="' + escapeHtml(sName) + '" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block;" />' +
               '<div style="position:absolute; bottom:5px; right:5px; background:#0c1017; color:#34d399; font-size:0.56rem; font-weight:900; font-family:var(--font-en); padding:1.5px 5px; border-radius:4px; border:1px solid rgba(52,211,153,0.3);">' + escapeHtml(wText) + '</div>' +
             '</div>' +
             '<div style="padding:7px 8px; display:flex; flex-direction:column; gap:2px; box-sizing:border-box;">' +
@@ -3109,7 +3202,7 @@
           var isFirst = (pIdx === 0);
           var loadingAttr = isFirst ? 'loading="eager" fetchpriority="high"' : 'loading="lazy"';
           return '<div class="hero-slide-item" style="flex:0 0 100%; width:100%; height:100%; min-width:100%; position:relative; overflow:hidden; background:#000000;">' +
-            '<img src="' + pUrl + '" referrerpolicy="no-referrer" ' + loadingAttr + ' decoding="async" onerror="window.handleHeroSlideImgError(this);" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.95) contrast(1.04); display:block;" />' +
+            '<img src="' + escapeHtml(okbmSafeImageUrl(pUrl)) + '" referrerpolicy="no-referrer" ' + loadingAttr + ' decoding="async" onerror="window.handleHeroSlideImgError(this);" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.95) contrast(1.04); display:block;" />' +
             '<div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 28%, transparent 80%, rgba(0,0,0,0.35) 100%); pointer-events:none; z-index:2;"></div>' +
           '</div>';
         }).join('');
@@ -3333,7 +3426,7 @@
             var res = await fetch(window.SUPABASE_URL + '/rest/v1/feeds?select=*&order=likes_count.desc,created_at.desc&limit=30', {
               headers: {
                 'apikey': window.SUPABASE_ANON_KEY,
-                'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : window.SUPABASE_ANON_KEY),
+                'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || window.SUPABASE_ANON_KEY),
                 'Content-Type': 'application/json'
               }
             });
@@ -3429,7 +3522,7 @@
         return `
           <div class="n-video-single-card" onclick="openVideoDetailModal(${idx})">
             <div class="n-video-thumb-box">
-              <img src="${thumb}" alt="${escapeHtml(spotTitle)}" loading="lazy" />
+              <img src="${escapeHtml(okbmSafeImageUrl(thumb))}" alt="${escapeHtml(spotTitle)}" loading="lazy" />
               <div class="n-video-play-icon">
                 <div class="n-video-play-btn-circle">▶</div>
               </div>
@@ -3602,11 +3695,11 @@ var adBannersHtml = `
     async function loadFeaturedVideosFromSupabase() {
       try {
         var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-        var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
+        var targetKey = window.SUPABASE_ANON_KEY || '';
         var res = await fetch(targetUrl + '/rest/v1/featured_videos?select=*&is_active=eq.true&order=id.asc', {
           headers: {
             'apikey': targetKey,
-            'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+            'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
             'Content-Type': 'application/json'
           }
         });
@@ -4164,7 +4257,7 @@ var adBannersHtml = `
                     ${photoList.map(function(pUrl) {
                       return `
                         <div style="flex:0 0 100% !important; width:100% !important; height:100% !important; min-width:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#070a12;">
-                          <img src="${pUrl}" alt="Cover" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; filter:brightness(0.96) contrast(1.04);" />
+                          <img src="${escapeHtml(okbmSafeImageUrl(pUrl))}" alt="Cover" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; filter:brightness(0.96) contrast(1.04);" />
                           <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.15) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.4) 100%); pointer-events:none;"></div>
                         </div>
                       `;
@@ -4269,7 +4362,7 @@ var adBannersHtml = `
             <!-- Action Area -->
             <div style="display:flex; flex-direction:column; gap:7px; margin-top:4px; flex-shrink:0;">
               ${isAuthor ? `
-                <a href="${escapeHtml(trip.openChatUrl || 'https://open.kakao.com')}" target="_blank" rel="noopener noreferrer" style="width:100%; height:40px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.18); color:#ffffff; border-radius:10px; text-decoration:none; font-size:0.82rem; font-weight:900; display:flex; align-items:center; justify-content:center; gap:6px; box-sizing:border-box;">
+                <a href="${escapeHtml(okbmSafeExternalUrl(trip.openChatUrl || 'https://open.kakao.com'))}" target="_blank" rel="noopener noreferrer" style="width:100%; height:40px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.18); color:#ffffff; border-radius:10px; text-decoration:none; font-size:0.82rem; font-weight:900; display:flex; align-items:center; justify-content:center; gap:6px; box-sizing:border-box;">
                   <svg viewBox="0 0 24 24" style="width:14px; height:14px; fill:#fde047; flex-shrink:0;"><path d="M12 3c-5.5 0-10 3.5-10 7.8 0 2.8 1.9 5.3 4.8 6.7-.2.8-.8 3-1 3.5 0 0-.1.3.1.4.2.1.4 0 .4 0 .6-.1 3.5-2.3 4.1-2.7.5.1 1.1.1 1.6.1 5.5 0 10-3.5 10-7.8S17.5 3 12 3z"/></svg>
                   <span>내 오픈채팅 링크 연결 확인</span>
                 </a>
@@ -4377,7 +4470,8 @@ var adBannersHtml = `
         return;
       }
 
-      if (!chatUrl || !chatUrl.startsWith('http')) {
+      chatUrl = (typeof okbmSafeExternalUrl === 'function') ? okbmSafeExternalUrl(chatUrl) : '';
+      if (!chatUrl || chatUrl === '#') {
         showToast('올바른 오픈채팅 링크가 등록되지 않았습니다.', 'warn');
         return;
       }
@@ -4557,7 +4651,7 @@ var adBannersHtml = `
 
         stackHtml += `
           <div class="trip-photo-stack-card" data-card-idx="${i}" style="position:absolute; inset:0; width:100% !important; height:100% !important; border-radius:12px; overflow:hidden; border:1.5px solid rgba(255,255,255,0.2); box-shadow:0 8px 24px rgba(0,0,0,0.85); background:#070a12; transform:scale(${scale}) translateY(${translateY}px); z-index:${zIndex}; opacity:${opacity}; transition:all 0.3s cubic-bezier(0.16, 1, 0.3, 1); cursor:pointer; box-sizing:border-box;">
-            <img src="${photos[i]}" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />
+            <img src="${escapeHtml(okbmSafeImageUrl(photos[i]))}" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />
             <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.4) 0%, transparent 40%, rgba(0,0,0,0.6) 100%); pointer-events:none;"></div>
             
             ${offset === 0 ? `
@@ -5612,7 +5706,12 @@ var adBannersHtml = `
     };
 
   async function loadPortalSpotData(isForce) {
-      var cachedSpots = safeGetJSON('okbm_spots_cache', []) || safeGetJSON('okbm_master_spots', []);
+      var cachedSpots = (typeof window.okbmReadSpotsCache === 'function')
+        ? window.okbmReadSpotsCache()
+        : (safeGetJSON('okbm_spots_cache', []) || safeGetJSON('okbm_master_spots', []));
+      if (!(Array.isArray(cachedSpots) && cachedSpots.length > 0) && window.__okbmSpotsIdbReady) {
+        try { cachedSpots = await window.__okbmSpotsIdbReady; } catch (e) { cachedSpots = cachedSpots || []; }
+      }
       if (Array.isArray(cachedSpots) && cachedSpots.length > 0) {
         registeredSpots = typeof window.stripSpotDetailFields === 'function'
           ? cachedSpots.map(window.stripSpotDetailFields)
@@ -5647,7 +5746,7 @@ var adBannersHtml = `
           var res = await fetch(window.SUPABASE_URL + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc', {
             headers: {
               'apikey': window.SUPABASE_ANON_KEY,
-              'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : window.SUPABASE_ANON_KEY),
+              'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || window.SUPABASE_ANON_KEY),
               'Content-Type': 'application/json'
             }
           });
@@ -5690,9 +5789,6 @@ var adBannersHtml = `
           if (registeredSpots.length > 0) {
             if (typeof window.persistLightweightSpotsCache === 'function') {
               window.persistLightweightSpotsCache(registeredSpots);
-            } else {
-              localStorage.setItem('okbm_spots_cache', JSON.stringify(registeredSpots));
-              localStorage.setItem('okbm_master_spots', JSON.stringify(registeredSpots));
             }
             if (typeof renderSecretSpotTrailerRail === 'function') {
               renderSecretSpotTrailerRail();
@@ -5704,10 +5800,6 @@ var adBannersHtml = `
       }
     }
     document.addEventListener('DOMContentLoaded', function() {
-      if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
-        Kakao.init(window.KAKAO_APP_KEY);
-      }
-
       if (typeof updateHeaderAuthUI === 'function') {
         updateHeaderAuthUI();
       }
@@ -5733,11 +5825,6 @@ var adBannersHtml = `
       });
     });
   </script>
-
-    <script src="romantic-sync.js?v=2.8.84"></script>
-  <script src="templates.js?v=2.9.6"></script>
-    <script src="romantic-history.js?v=2.7.50"></script>
-  <script src="romantic-plan.js?v=2.8.10"></script>
 
   <script>
 
@@ -5870,8 +5957,8 @@ var adBannersHtml = `
       var wrapModal = function(openName, closeName, modalId) {
         var origOpen = window[openName];
         var origClose = window[closeName];
-        if (typeof origOpen === 'function') {
-          window[openName] = function() {
+        if (typeof origOpen === 'function' && !origOpen.__okbmLazy && !origOpen.__okbmWrapped) {
+          var wrappedOpen = function() {
             if (openName === 'openPlanModal' || openName === 'openHistoryModal') {
               if (typeof window.closeAllTripModals === 'function') {
                 window.closeAllTripModals();
@@ -5881,13 +5968,28 @@ var adBannersHtml = `
             window.registerModalOpen(modalId, origClose);
             return res;
           };
+          wrappedOpen.__okbmWrapped = true;
+          window[openName] = wrappedOpen;
         }
-        if (typeof origClose === 'function') {
-          window[closeName] = function() {
+        if (typeof origClose === 'function' && !origClose.__okbmLazy && !origClose.__okbmWrapped) {
+          var wrappedClose = function() {
             window.unregisterModalClose(modalId);
             return origClose.apply(this, arguments);
           };
+          wrappedClose.__okbmWrapped = true;
+          window[closeName] = wrappedClose;
         }
+      };
+      window.__okbmWrapKnownModals = function() {
+        wrapModal('openPlanModal', 'closePlanModal', 'romanticPlanModal');
+        wrapModal('openHistoryModal', 'closeHistoryModal', 'romanticHistoryModal');
+        wrapModal('openUserProfileModal', 'closeUserProfileModal', 'userProfileModalOverlay');
+        wrapModal('openLoginModal', 'closeLoginModal', 'loginModalOverlay');
+        wrapModal('openGearPresetModal', 'closeGearPresetModal', 'gearPresetModal');
+        wrapModal('openPackShareModal', 'closePackShareModal', 'packShareModalOverlay');
+        wrapModal('openPhotoStudio', 'closePhotoStudio', 'photoStudioOverlay');
+        wrapModal('openVideoDetailModal', 'closeVideoDetailModal', 'videoDetailModal');
+        wrapModal('openThemeSpotAllModal', 'closeThemeSpotAllModal', 'themeSpotAllModal');
       };
 
       document.addEventListener('click', function(e) {
@@ -5905,15 +6007,7 @@ var adBannersHtml = `
         }
       });
 
-  wrapModal('openPlanModal', 'closePlanModal', 'romanticPlanModal');
-      wrapModal('openHistoryModal', 'closeHistoryModal', 'romanticHistoryModal');
-      wrapModal('openUserProfileModal', 'closeUserProfileModal', 'userProfileModalOverlay');
-      wrapModal('openLoginModal', 'closeLoginModal', 'loginModalOverlay');
-      wrapModal('openGearPresetModal', 'closeGearPresetModal', 'gearPresetModal');
-      wrapModal('openPackShareModal', 'closePackShareModal', 'packShareModalOverlay');
-      wrapModal('openPhotoStudio', 'closePhotoStudio', 'photoStudioOverlay');
-      wrapModal('openVideoDetailModal', 'closeVideoDetailModal', 'videoDetailModal');
-      wrapModal('openThemeSpotAllModal', 'closeThemeSpotAllModal', 'themeSpotAllModal');
+      window.__okbmWrapKnownModals();
 
   
 

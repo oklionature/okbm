@@ -8,7 +8,7 @@
 -- 핵심:
 -- 1) 기존 FOR ALL USING (true) 정책을 전부 폐기
 -- 2) auth.jwt() app_metadata.okbm_user_id / {provider}_id 또는 auth.identities로 본인만 쓰기
--- 3) users 이메일은 본인만, 공개 프로필은 user_public_profiles 뷰만 노출
+-- 3) users 이메일은 본인만, 공개 프로필은 get_public_profile(p_id) 단건 RPC만
 -- 4) okbm_stamp_okbm_user_id는 authenticated에서 회수. 네이버/카카오는
 --    issueSocialSession이 app_metadata.okbm_user_id를 심으므로 클라이언트 스탬프 불필요.
 -- =========================================================================
@@ -165,6 +165,66 @@ $$;
 REVOKE ALL ON FUNCTION public.okbm_is_admin() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.okbm_is_admin() TO anon, authenticated, service_role;
 
+-- RPC 분당 호출 제한. Data API로는 읽기/쓰기 불가.
+CREATE TABLE IF NOT EXISTS public.okbm_rpc_rate_limits (
+  actor_id text NOT NULL,
+  rpc_name text NOT NULL,
+  window_start timestamptz NOT NULL,
+  call_count integer NOT NULL DEFAULT 0,
+  PRIMARY KEY (actor_id, rpc_name)
+);
+
+ALTER TABLE public.okbm_rpc_rate_limits ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.okbm_rpc_rate_limits FROM PUBLIC, anon, authenticated;
+DROP POLICY IF EXISTS okbm_rpc_rate_limits_no_client ON public.okbm_rpc_rate_limits;
+CREATE POLICY okbm_rpc_rate_limits_no_client ON public.okbm_rpc_rate_limits
+  FOR ALL USING (false) WITH CHECK (false);
+
+CREATE OR REPLACE FUNCTION public.okbm_rpc_rate_limit(p_rpc_name text, p_max_per_minute integer)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_actor text;
+  v_window timestamptz := date_trunc('minute', now());
+  v_limit integer := COALESCE(p_max_per_minute, 60);
+  v_count integer;
+BEGIN
+  IF auth.role() IS NOT DISTINCT FROM 'service_role' THEN
+    RETURN;
+  END IF;
+  v_actor := COALESCE(auth.uid()::text, '');
+  IF v_actor = '' THEN
+    RAISE EXCEPTION 'not authenticated';
+  END IF;
+  IF p_rpc_name IS NULL OR btrim(p_rpc_name) = '' THEN
+    RAISE EXCEPTION 'rpc name required';
+  END IF;
+  IF v_limit < 1 THEN
+    v_limit := 60;
+  END IF;
+
+  INSERT INTO public.okbm_rpc_rate_limits AS r (actor_id, rpc_name, window_start, call_count)
+  VALUES (v_actor, btrim(p_rpc_name), v_window, 1)
+  ON CONFLICT (actor_id, rpc_name)
+  DO UPDATE SET
+    call_count = CASE
+      WHEN r.window_start IS NOT DISTINCT FROM EXCLUDED.window_start THEN r.call_count + 1
+      ELSE 1
+    END,
+    window_start = EXCLUDED.window_start
+  RETURNING r.call_count INTO v_count;
+
+  IF v_count > v_limit THEN
+    RAISE EXCEPTION 'rate limit exceeded';
+  END IF;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.okbm_rpc_rate_limit(text, integer) FROM PUBLIC, anon, authenticated;
+
 CREATE OR REPLACE FUNCTION public.okbm_stamp_okbm_user_id(p_okbm_user_id text)
 RETURNS text
 LANGUAGE plpgsql
@@ -242,7 +302,7 @@ CREATE TRIGGER trg_okbm_guard_users_admin_col
   EXECUTE FUNCTION public.okbm_guard_users_admin_col();
 
 CREATE OR REPLACE VIEW public.user_public_profiles
-WITH (security_invoker = false) AS
+WITH (security_invoker = true) AS
 SELECT
   id,
   nickname,
@@ -255,7 +315,136 @@ SELECT
   COALESCE(my_gears -> 'sns' ->> 'blog', '') AS blog
 FROM public.users;
 
-GRANT SELECT ON public.user_public_profiles TO anon, authenticated, service_role;
+-- 목록 SELECT는 Data API에서 차단. 공개 프로필은 get_public_profile 단건 RPC만.
+REVOKE ALL ON TABLE public.user_public_profiles FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON public.user_public_profiles TO service_role;
+
+CREATE OR REPLACE FUNCTION public.get_public_profile(p_id text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  result jsonb;
+BEGIN
+  IF auth.role() IS DISTINCT FROM 'service_role' THEN
+    IF auth.uid() IS NULL THEN
+      RAISE EXCEPTION 'not authenticated';
+    END IF;
+    PERFORM public.okbm_rpc_rate_limit('get_public_profile', 120);
+  END IF;
+  IF p_id IS NULL OR btrim(p_id) = '' THEN
+    RETURN NULL;
+  END IF;
+
+  SELECT jsonb_build_object(
+    'id', u.id,
+    'nickname', u.nickname,
+    'photo_url', u.photo_url,
+    'hero_cover_url', u.hero_cover_url,
+    'bio', u.bio,
+    'created_at', u.created_at,
+    'instagram', COALESCE(u.my_gears -> 'sns' ->> 'instagram', ''),
+    'youtube', COALESCE(u.my_gears -> 'sns' ->> 'youtube', ''),
+    'blog', COALESCE(u.my_gears -> 'sns' ->> 'blog', '')
+  )
+  INTO result
+  FROM public.users u
+  WHERE u.id = btrim(p_id)
+  LIMIT 1;
+
+  RETURN result;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_public_profile(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_public_profile(text) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.get_public_profiles(p_ids text[])
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_ids text[];
+  result jsonb;
+BEGIN
+  IF auth.role() IS DISTINCT FROM 'service_role' THEN
+    IF auth.uid() IS NULL THEN
+      RAISE EXCEPTION 'not authenticated';
+    END IF;
+    PERFORM public.okbm_rpc_rate_limit('get_public_profiles', 30);
+  END IF;
+
+  SELECT ARRAY(
+    SELECT DISTINCT btrim(x)
+    FROM unnest(COALESCE(p_ids, ARRAY[]::text[])) AS x
+    WHERE btrim(COALESCE(x, '')) <> ''
+    LIMIT 50
+  ) INTO v_ids;
+
+  IF v_ids IS NULL OR coalesce(array_length(v_ids, 1), 0) = 0 THEN
+    RETURN '[]'::jsonb;
+  END IF;
+
+  SELECT COALESCE(jsonb_agg(jsonb_build_object(
+    'id', u.id,
+    'nickname', u.nickname,
+    'photo_url', u.photo_url,
+    'hero_cover_url', u.hero_cover_url,
+    'bio', u.bio,
+    'created_at', u.created_at,
+    'instagram', COALESCE(u.my_gears -> 'sns' ->> 'instagram', ''),
+    'youtube', COALESCE(u.my_gears -> 'sns' ->> 'youtube', ''),
+    'blog', COALESCE(u.my_gears -> 'sns' ->> 'blog', '')
+  )), '[]'::jsonb)
+  INTO result
+  FROM public.users u
+  WHERE u.id = ANY (v_ids);
+
+  RETURN result;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_public_profiles(text[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_public_profiles(text[]) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.okbm_is_nickname_taken(p_nickname text, p_exclude_id text DEFAULT NULL)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_nick text := btrim(COALESCE(p_nickname, ''));
+  v_exclude text := NULLIF(btrim(COALESCE(p_exclude_id, '')), '');
+  v_taken boolean := false;
+BEGIN
+  IF auth.role() IS DISTINCT FROM 'service_role' THEN
+    IF auth.uid() IS NULL THEN
+      RAISE EXCEPTION 'not authenticated';
+    END IF;
+    PERFORM public.okbm_rpc_rate_limit('okbm_is_nickname_taken', 30);
+  END IF;
+  IF v_nick = '' THEN
+    RETURN false;
+  END IF;
+
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.users u
+    WHERE lower(btrim(COALESCE(u.nickname, ''))) = lower(v_nick)
+      AND (v_exclude IS NULL OR u.id <> v_exclude)
+  ) INTO v_taken;
+
+  RETURN v_taken;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.okbm_is_nickname_taken(text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.okbm_is_nickname_taken(text, text) TO authenticated, service_role;
 
 -- -------------------------------------------------------------------------
 -- 좋아요 RPC: 호출자 본인만 자신의 user_id로 처리
@@ -316,6 +505,33 @@ $function$;
 
 REVOKE ALL ON FUNCTION public.apply_feed_like(text, text, boolean) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.apply_feed_like(text, text, boolean) TO authenticated, service_role;
+
+-- -------------------------------------------------------------------------
+-- feeds.likes_count: 클라이언트 임의 설정 금지.
+-- service_role과 handle_feed_like_sync(SECURITY DEFINER, postgres)만 갱신 허용.
+-- -------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.okbm_guard_feeds_likes_count()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.role() IS NOT DISTINCT FROM 'service_role' THEN
+    RETURN NEW;
+  END IF;
+  IF current_user IN ('postgres', 'supabase_admin') THEN
+    RETURN NEW;
+  END IF;
+  NEW.likes_count := COALESCE(OLD.likes_count, 0);
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_okbm_guard_feeds_likes_count ON public.feeds;
+CREATE TRIGGER trg_okbm_guard_feeds_likes_count
+  BEFORE INSERT OR UPDATE ON public.feeds
+  FOR EACH ROW
+  EXECUTE FUNCTION public.okbm_guard_feeds_likes_count();
 
 -- -------------------------------------------------------------------------
 -- B-7 쪽지/방문 RPC: 세션 행위자만 처리 (apply_feed_like와 동일 가드)
@@ -602,6 +818,111 @@ REVOKE ALL ON FUNCTION public.track_visit(text, boolean) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.track_visit(text, boolean) TO anon, authenticated, service_role;
 
 -- -------------------------------------------------------------------------
+-- 제보 승인/반려 알림: 관리자만, 제목/본문/수신자는 DB 행에서만 구성
+-- -------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.okbm_notify_proposal_decision(
+  p_item_id text,
+  p_is_correction boolean,
+  p_status text,
+  p_approved_spot_id text DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_id text := btrim(COALESCE(p_item_id, ''));
+  v_status text := btrim(COALESCE(p_status, ''));
+  v_approved text := btrim(COALESCE(p_approved_spot_id, ''));
+  v_user_id text;
+  v_name text;
+  v_row_approved text;
+  v_orig_spot text;
+  v_accepted boolean := false;
+  v_rejected boolean := false;
+  v_kind text;
+  v_title text;
+  v_body text;
+  v_notif_id text;
+  v_related_spot text;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'not authenticated';
+  END IF;
+  IF NOT public.okbm_is_admin() THEN
+    RAISE EXCEPTION 'not authorized';
+  END IF;
+  IF v_id = '' THEN
+    RAISE EXCEPTION 'item_id required';
+  END IF;
+
+  v_accepted := (position('반영완료' IN v_status) > 0)
+             OR (position('채택' IN v_status) > 0)
+             OR (position('승인' IN v_status) > 0);
+  v_rejected := position('반려' IN v_status) > 0;
+  IF NOT v_accepted AND NOT v_rejected THEN
+    RAISE EXCEPTION 'invalid_status';
+  END IF;
+
+  IF COALESCE(p_is_correction, false) THEN
+    SELECT NULLIF(btrim(COALESCE(r.user_id, '')), ''),
+           COALESCE(NULLIF(btrim(COALESCE(r.spot_main, '')), ''), '제보한 장소'),
+           NULLIF(btrim(COALESCE(r.approved_spot_id, '')), ''),
+           NULLIF(btrim(COALESCE(r.orig_spot_id, '')), '')
+      INTO v_user_id, v_name, v_row_approved, v_orig_spot
+    FROM public.spot_corrections r
+    WHERE r.id = v_id
+    LIMIT 1;
+  ELSE
+    SELECT NULLIF(btrim(COALESCE(r.user_id, '')), ''),
+           COALESCE(NULLIF(btrim(COALESCE(r.spot_main, '')), ''), '제보한 장소'),
+           NULLIF(btrim(COALESCE(r.approved_spot_id, '')), ''),
+           NULL
+      INTO v_user_id, v_name, v_row_approved, v_orig_spot
+    FROM public.proposals r
+    WHERE r.id = v_id
+    LIMIT 1;
+  END IF;
+
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'item_not_found';
+  END IF;
+
+  v_kind := (CASE WHEN COALESCE(p_is_correction, false) THEN 'correction_' ELSE 'proposal_' END)
+         || (CASE WHEN v_accepted THEN 'accepted' ELSE 'rejected' END);
+  v_notif_id := left('pn_' || v_kind || '_' || v_id, 180);
+  v_related_spot := COALESCE(NULLIF(v_approved, ''), v_row_approved, v_orig_spot, '');
+
+  IF v_accepted THEN
+    v_title := CASE WHEN COALESCE(p_is_correction, false)
+      THEN '수정 건의가 채택되었습니다'
+      ELSE '장소 제보가 채택되었습니다'
+    END;
+    v_body := '[' || v_name || ']이(가) 지도에 반영되었습니다. 이후 내용 변경은 수정문의로만 신청할 수 있습니다.';
+  ELSE
+    v_title := CASE WHEN COALESCE(p_is_correction, false)
+      THEN '수정 건의가 반려되었습니다'
+      ELSE '장소 제보가 반려되었습니다'
+    END;
+    v_body := '[' || v_name || '] 제보가 반려되었습니다. 마이리포트에서 확인할 수 있습니다.';
+  END IF;
+
+  INSERT INTO public.user_notifications (
+    id, user_id, kind, title, body, related_id, related_spot_id, related_spot_name, is_read
+  ) VALUES (
+    v_notif_id, v_user_id, v_kind, v_title, v_body, v_id, v_related_spot, v_name, false
+  )
+  ON CONFLICT (id) DO NOTHING;
+
+  RETURN jsonb_build_object('success', true, 'id', v_notif_id);
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.okbm_notify_proposal_decision(text, boolean, text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.okbm_notify_proposal_decision(text, boolean, text, text) TO authenticated, service_role;
+
+-- -------------------------------------------------------------------------
 -- 1. 기존 정책 전부 폐기 + RLS 활성화
 -- -------------------------------------------------------------------------
 DO $$
@@ -624,6 +945,7 @@ ALTER TABLE IF EXISTS public.feed_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.user_blocks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.user_notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.okbm_rpc_rate_limits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.proposals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.spot_corrections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.ranking_stats ENABLE ROW LEVEL SECURITY;
@@ -634,6 +956,10 @@ ALTER TABLE IF EXISTS public.comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.talks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.stats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.visit_seen ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS okbm_rpc_rate_limits_no_client ON public.okbm_rpc_rate_limits;
+CREATE POLICY okbm_rpc_rate_limits_no_client ON public.okbm_rpc_rate_limits
+  FOR ALL USING (false) WITH CHECK (false);
 
 -- -------------------------------------------------------------------------
 -- 2. spots / gears : 조회만, 쓰기는 관리자
@@ -681,6 +1007,10 @@ AS $$
 DECLARE
   result jsonb;
 BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'not authenticated';
+  END IF;
+  PERFORM public.okbm_rpc_rate_limit('get_spot_detail', 60);
   IF p_id IS NULL OR btrim(p_id) = '' THEN
     RETURN NULL;
   END IF;
@@ -700,8 +1030,96 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.get_spot_detail(text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_spot_detail(text) TO anon, authenticated;
+REVOKE ALL ON FUNCTION public.get_spot_detail(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_spot_detail(text) TO authenticated, service_role;
+
+-- 일반 사용자는 spots UPDATE RLS(관리자 전용)에 막히므로,
+-- 인증된 사용자만 mediaUrls에 http(s) URL을 append하는 RPC.
+CREATE OR REPLACE FUNCTION public.merge_spot_media_urls(p_spot_id text, p_urls text[])
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $function$
+DECLARE
+  v_actor text := public.okbm_uid();
+  v_existing text;
+  v_parts text[];
+  v_seen text[] := ARRAY[]::text[];
+  v_url text;
+  v_norm text;
+  v_appended integer := 0;
+  v_next text;
+BEGIN
+  IF auth.uid() IS NULL OR v_actor IS NULL OR btrim(v_actor) = '' THEN
+    RAISE EXCEPTION 'not authenticated';
+  END IF;
+  IF p_spot_id IS NULL OR btrim(p_spot_id) = '' THEN
+    RAISE EXCEPTION 'spot_id required';
+  END IF;
+
+  SELECT s."mediaUrls" INTO v_existing
+  FROM public.spots s
+  WHERE s.id = btrim(p_spot_id)
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'spot not found';
+  END IF;
+
+  IF v_existing IS NOT NULL AND btrim(v_existing) <> '' THEN
+    v_parts := regexp_split_to_array(v_existing, E'[\r\n,]+');
+    FOREACH v_url IN ARRAY v_parts LOOP
+      v_norm := btrim(v_url);
+      IF v_norm <> '' AND NOT (v_norm = ANY (v_seen)) THEN
+        v_seen := array_append(v_seen, v_norm);
+      END IF;
+    END LOOP;
+  END IF;
+
+  IF p_urls IS NOT NULL THEN
+    FOREACH v_url IN ARRAY p_urls LOOP
+      v_norm := btrim(COALESCE(v_url, ''));
+      IF v_norm = '' THEN
+        CONTINUE;
+      END IF;
+      IF v_norm !~* '^https?://' THEN
+        CONTINUE;
+      END IF;
+      IF v_norm ~* '^(javascript:|data:|blob:|vbscript:)' THEN
+        CONTINUE;
+      END IF;
+      IF v_norm = ANY (v_seen) THEN
+        CONTINUE;
+      END IF;
+      IF coalesce(array_length(v_seen, 1), 0) >= 40 THEN
+        EXIT;
+      END IF;
+      IF v_appended >= 20 THEN
+        EXIT;
+      END IF;
+      v_seen := array_append(v_seen, v_norm);
+      v_appended := v_appended + 1;
+    END LOOP;
+  END IF;
+
+  v_next := array_to_string(v_seen, E'\n');
+
+  UPDATE public.spots
+  SET "mediaUrls" = v_next
+  WHERE id = btrim(p_spot_id);
+
+  RETURN jsonb_build_object(
+    'ok', true,
+    'spot_id', btrim(p_spot_id),
+    'mediaUrls', v_next,
+    'appended', v_appended
+  );
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.merge_spot_media_urls(text, text[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.merge_spot_media_urls(text, text[]) TO authenticated;
 
 CREATE POLICY gears_select_public ON public.gears
   FOR SELECT USING (true);
@@ -734,8 +1152,8 @@ CREATE POLICY feed_likes_delete_own ON public.feed_likes
 
 CREATE POLICY user_notifications_select_own ON public.user_notifications
   FOR SELECT USING (user_id = public.okbm_uid() OR public.okbm_is_admin());
-CREATE POLICY user_notifications_insert_auth ON public.user_notifications
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+CREATE POLICY user_notifications_insert_admin ON public.user_notifications
+  FOR INSERT WITH CHECK (public.okbm_is_admin());
 CREATE POLICY user_notifications_update_own ON public.user_notifications
   FOR UPDATE USING (user_id = public.okbm_uid() OR public.okbm_is_admin())
   WITH CHECK (user_id = public.okbm_uid() OR public.okbm_is_admin());
@@ -743,7 +1161,7 @@ CREATE POLICY user_notifications_delete_own ON public.user_notifications
   FOR DELETE USING (user_id = public.okbm_uid() OR public.okbm_is_admin());
 
 -- -------------------------------------------------------------------------
--- 4. users : 본인만 전체 행, 공개 프로필은 뷰
+-- 4. users : 본인만 전체 행, 공개 프로필은 get_public_profile RPC
 -- -------------------------------------------------------------------------
 CREATE POLICY users_select_own ON public.users
   FOR SELECT USING (id = public.okbm_uid() OR public.okbm_is_admin());

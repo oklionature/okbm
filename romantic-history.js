@@ -444,10 +444,13 @@
   };
 
   var escapeHtml = function(text) {
-    return (typeof window.escapeHtml === 'function') ? window.escapeHtml(text) : (function(t) {
-      if (t === null || t === undefined) return '';
-      return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    })(text);
+    return (typeof window.escapeHtml === 'function') ? window.escapeHtml(text) : String(text == null ? '' : text);
+  };
+  var okbmSafeImageUrl = function(url) {
+    return (typeof window.okbmSafeImageUrl === 'function') ? window.okbmSafeImageUrl(url) : '';
+  };
+  var okbmSafeExternalUrl = function(url) {
+    return (typeof window.okbmSafeExternalUrl === 'function') ? window.okbmSafeExternalUrl(url) : '#';
   };
 
   // 📱 [세로 사진 상단 안전바까지 꽉 채우기 & 가로/정사각형 비율 유지 엔진]
@@ -536,6 +539,52 @@
         } else if (typeof window.openSingleTripDualFeedModal === 'function') {
           window.openSingleTripDualFeedModal(pastRow.dataset.recordId, window.__currentScopedPastTripLogs, pastRow.dataset.tab);
         }
+        return;
+      }
+      var starBtn = e.target.closest('[data-star-card-id]');
+      if (starBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        if (typeof window.toggleFeedStar === 'function') {
+          window.toggleFeedStar(starBtn.getAttribute('data-star-card-id') || '', e);
+        }
+        return;
+      }
+      var shareFeedBtn = e.target.closest('[data-share-feed]');
+      if (shareFeedBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof window.shareCurrentFeed === 'function') {
+          window.shareCurrentFeed(
+            shareFeedBtn.getAttribute('data-feed-id') || '',
+            shareFeedBtn.getAttribute('data-spot') || '',
+            shareFeedBtn.getAttribute('data-memo') || ''
+          );
+        } else {
+          triggerHaptic(10);
+          if (navigator.clipboard) {
+            navigator.clipboard.writeText(location.href);
+            if (typeof showToast === 'function') showToast('피드 링크가 복사되었습니다.', 'success');
+          }
+        }
+        return;
+      }
+      var saveFeedBtn = e.target.closest('[data-save-feed]');
+      if (saveFeedBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof window.toggleSaveFeed === 'function') {
+          window.toggleSaveFeed(saveFeedBtn.getAttribute('data-feed-id') || '', e);
+        }
+        return;
+      }
+    }, true);
+    document.addEventListener('touchstart', function(e) {
+      var starTouch = e.target.closest('[data-star-card-id][data-star-stop-touch]');
+      if (starTouch) {
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
       }
     }, true);
   }
@@ -763,9 +812,13 @@
     if (typeof window.saveToIndexedDB === 'function') {
       window.saveToIndexedDB(key, rawObj);
     }
-    try {
+    if (typeof window.okbmSafeSetItem === 'function') {
+      window.okbmSafeSetItem(key, JSON.stringify(rawObj));
+    } else {
+      try {
         localStorage.setItem(key, JSON.stringify(rawObj));
       } catch (e) { console.warn('[romantic-history.js:safeSetStorage]', e); }
+    }
   };
 
   var __okbmCachedFeedsTimer = 0;
@@ -804,17 +857,19 @@
     if (typeof window.okbmStripClientTombstoneFields === 'function') {
       safePayload = window.okbmStripClientTombstoneFields(safePayload);
     }
+    delete safePayload.likes_count;
+    delete safePayload.likes;
     if (Array.isArray(safePayload.photos)) {
       safePayload.photos = safePayload.photos.filter(function(url) {
         return typeof url === 'string' && url.indexOf('data:image/') !== 0;
       });
     }
-    var feedHeaders = {
-      'apikey': targetKey,
-      'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
-      'Content-Type': 'application/json',
-      'Prefer': 'return=representation'
-    };
+    var feedHeaders = (typeof window.okbmWriteHeaders === 'function')
+      ? window.okbmWriteHeaders({ Prefer: 'return=representation' })
+      : null;
+    if (!feedHeaders) {
+      return { ok: false, error: 'LOGIN_REQUIRED' };
+    }
     try {
       var res = await fetch(targetUrl + '/rest/v1/feeds', {
         method: 'POST',
@@ -875,7 +930,7 @@
         method: 'PATCH',
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+          'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
@@ -1015,9 +1070,13 @@
     if (record.readyShotScale !== undefined) normalized.readyShotScale = record.readyShotScale;
 
     var profile = safeGetJSON('user_profile', null) || safeGetJSON('okbm_user_info', null) || safeGetJSON('kakao_account', null);
-    var resolvedUserId = (profile && (profile.id || profile.userId))
-      ? String(profile.id || profile.userId).trim()
-      : (localStorage.getItem('okbm_user_id') || localStorage.getItem('user_id') || '');
+    var resolvedUserId = (typeof window.okbmGetCurrentUserId === 'function')
+      ? String(window.okbmGetCurrentUserId() || '').trim()
+      : '';
+    if (!resolvedUserId && typeof window.okbmRequireCurrentUserId === 'function') {
+      window.okbmRequireCurrentUserId();
+      return record;
+    }
 
     var resolvedNick = (profile && (profile.nickname || profile.nick || profile.name))
       ? String(profile.nickname || profile.nick || profile.name).trim()
@@ -1135,9 +1194,16 @@
     });
 
     var persistLocalHistory = function() {
-      try {
-        localStorage.setItem('okbm_packing_history', JSON.stringify(safeStorageList));
-      } catch (e) { console.warn('[romantic-history.js:savePackingHistoryRecord localSet]', e); }
+      var capped = (typeof window.okbmCapPackingHistoryList === 'function')
+        ? window.okbmCapPackingHistoryList(safeStorageList)
+        : safeStorageList.slice(0, 30);
+      if (typeof window.okbmSafeSetItem === 'function') {
+        window.okbmSafeSetItem('okbm_packing_history', JSON.stringify(capped));
+      } else {
+        try {
+          localStorage.setItem('okbm_packing_history', JSON.stringify(capped));
+        } catch (e) { console.warn('[romantic-history.js:savePackingHistoryRecord localSet]', e); }
+      }
     };
 
     var targetUrl = window.SUPABASE_URL || '';
@@ -1203,7 +1269,6 @@
         date: normalized.date,
         memo: normalized.memo || '',
         template_id: normalized.templateId || 1,
-        likes_count: Number(normalized.likes || 0),
         instagram: normalized.instagram || '',
         youtube: normalized.youtube || '',
         photo_memos_json: normalized.photoMemos || [],
@@ -1337,10 +1402,14 @@
     window.__memoryStore['okbm_packing_history'] = window.interactiveHistory;
   }
 
-  window.okbmHydratePackingHistoryAfterServer = function(feedList, allMyServerIds) {
+  window.okbmHydratePackingHistoryAfterServer = function(feedList, allMyServerIds, meta) {
     if (window.__okbmHistoryPreloadTimer) {
       clearTimeout(window.__okbmHistoryPreloadTimer);
       window.__okbmHistoryPreloadTimer = null;
+    }
+    meta = meta || {};
+    if (meta.failed === true) {
+      return { merged: false, failed: true };
     }
     var myId = (typeof window.okbmGetCurrentUserId === 'function')
       ? String(window.okbmGetCurrentUserId() || '').trim()
@@ -1365,10 +1434,18 @@
         serverMine.push(f);
       }
     });
-    // SSOT: 서버에 있는 내 글은 서버 행 우선.
-    // allMyServerIds가 넘어오면(=전체 내 피드 id 조회 완료) 서버에 없는 내 글은 로컬에서 제거.
-    // 페이지 단위만 온 경우(allMyServerIds 없음)에는 기존처럼 페이지 밖 로컬 행을 유지.
     var hasFullIdSet = allMyServerIds && typeof allMyServerIds === 'object';
+    if (!hasFullIdSet) {
+      var overlay = Array.isArray(localList) ? localList.slice() : [];
+      serverMine.forEach(function(f) {
+        var fid = String(f.id).trim();
+        var idx = overlay.findIndex(function(r) { return r && String(r.id).trim() === fid; });
+        if (idx !== -1) overlay[idx] = f;
+        else overlay.unshift(f);
+      });
+      okbmApplyPackingHistoryToMemory(overlay);
+      return { merged: false, deferred: true };
+    }
     var keptLocal = localList.filter(function(r) {
       if (!r || !r.id) return false;
       var rid = String(r.id).trim();
@@ -1384,17 +1461,23 @@
           isMine = (myId === rUid);
         }
       }
-      if (isMine && hasFullIdSet) {
+      if (isMine) {
         return !!allMyServerIds[rid];
       }
       return true;
     });
     var nextList = keptLocal.concat(serverMine);
     okbmApplyPackingHistoryToMemory(nextList);
-    try {
-      localStorage.setItem('okbm_packing_history', JSON.stringify(nextList));
-    } catch (e) {}
+    var persistHist = (typeof window.okbmCapPackingHistoryList === 'function')
+      ? window.okbmCapPackingHistoryList(nextList)
+      : nextList.slice(0, 30);
+    if (typeof window.okbmSafeSetItem === 'function') {
+      window.okbmSafeSetItem('okbm_packing_history', JSON.stringify(persistHist));
+    } else {
+      try { localStorage.setItem('okbm_packing_history', JSON.stringify(persistHist)); } catch (e) {}
+    }
     window.__okbmDeferHistoryHydrate = false;
+    return { merged: true, failed: false };
   };
 
   window.okbmFormatPostgrestInList = function(ids) {
@@ -1421,7 +1504,7 @@
 
       var headers = {
         'apikey': targetKey,
-        'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+        'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
         'Content-Type': 'application/json'
       };
 
@@ -1897,29 +1980,31 @@ window.normalizeHistoryRecord = function(r, idx) {
     if (!window.__userProfileFetchingMap[uId]) {
       window.__userProfileFetchingMap[uId] = true;
       var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-      var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
+      var targetKey = window.SUPABASE_ANON_KEY || '';
       if (targetUrl && targetKey) {
-        fetch(targetUrl + '/rest/v1/user_public_profiles?id=eq.' + encodeURIComponent(uId) + '&select=id,photo_url,hero_cover_url', {
-          headers: {
-            'apikey': targetKey,
-            'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
-            'Content-Type': 'application/json'
-          }
-        })
-        .then(function(res) { return res.ok ? res.json() : []; })
-        .then(function(rows) {
-          if (Array.isArray(rows) && rows.length > 0) {
-            var uData = rows[0];
-            var remoteUrl = uData.hero_cover_url || uData.photo_url || '';
-            if (remoteUrl && String(remoteUrl).startsWith('http')) {
-              window.__userProfilePhotoMap[uId] = remoteUrl;
-              document.querySelectorAll('[data-user-avatar-id="' + uId + '"]').forEach(function(imgEl) {
-                imgEl.src = remoteUrl;
-                imgEl.style.display = 'block';
-                var placeholder = imgEl.parentElement ? imgEl.parentElement.querySelector('.avatar-placeholder-svg') : null;
-                if (placeholder) placeholder.style.display = 'none';
-              });
-            }
+        var profileReq = (typeof window.okbmFetchPublicProfile === 'function')
+          ? window.okbmFetchPublicProfile(uId)
+          : fetch(targetUrl + '/rest/v1/rpc/get_public_profile', {
+              method: 'POST',
+              headers: {
+                'apikey': targetKey,
+                'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ p_id: uId })
+            }).then(function(res) { return res.ok ? res.json() : null; });
+        Promise.resolve(profileReq)
+        .then(function(uData) {
+          if (!uData || !uData.id) return;
+          var remoteUrl = uData.hero_cover_url || uData.photo_url || '';
+          if (remoteUrl && String(remoteUrl).startsWith('http')) {
+            window.__userProfilePhotoMap[uId] = remoteUrl;
+            document.querySelectorAll('[data-user-avatar-id="' + uId + '"]').forEach(function(imgEl) {
+              imgEl.src = remoteUrl;
+              imgEl.style.display = 'block';
+              var placeholder = imgEl.parentElement ? imgEl.parentElement.querySelector('.avatar-placeholder-svg') : null;
+              if (placeholder) placeholder.style.display = 'none';
+            });
           }
         }).catch(function() {});
       }
@@ -2026,11 +2111,11 @@ window.normalizeHistoryRecord = function(r, idx) {
       backTemplateContentHtml = window.generateReadyShotMarkup(cur, { photo: customTmplImg });
     } else if (customTmplImg && String(customTmplImg).trim().length > 10) {
       backTemplateContentHtml = `<div style="position:absolute; inset:0; background:#000; overflow:hidden; display:flex; align-items:center; justify-content:center;">
-        <img src="${escapeHtml(customTmplImg)}" style="width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;" />
+        <img src="${escapeHtml(okbmSafeImageUrl(customTmplImg))}" style="width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;" />
       </div>`;
     } else {
       backTemplateContentHtml = hasValidPhoto
-        ? `<img src="${rawPhoto}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.88);" />
+        ? `<img src="${escapeHtml(okbmSafeImageUrl(rawPhoto))}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:brightness(0.88);" />
            <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.85) 100%);"></div>`
       : `<div style="position:absolute; inset:0; background:radial-gradient(circle at 50% 40%, #1e293b 0%, #090d16 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:20px; box-sizing:border-box; text-align:center;">
             <div style="width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.06); border:1.5px dashed rgba(56,189,248,0.4); display:flex; align-items:center; justify-content:center; color:#38bdf8;">
@@ -2231,7 +2316,7 @@ window.normalizeHistoryRecord = function(r, idx) {
 
   window.okbmConfirmFeedDeleteWithPlanWarning = async function(confirmMsg) {
     if (typeof showToast === 'function') {
-      showToast((HISTORY_TOAST_VEC.trash || '') + window.okbmLinkedDeleteToast, 'info', 4200);
+      showToast(window.okbmLinkedDeleteToast, 'info', 4200, { html: HISTORY_TOAST_VEC.trash });
     }
     // confirm이 바로 뜨면 토스트가 그려지기 전에 가로막히므로 잠시 대기
     await new Promise(function(resolve) { setTimeout(resolve, 400); });
@@ -2300,15 +2385,20 @@ window.normalizeHistoryRecord = function(r, idx) {
 
     if (targetUrl && targetKey) {
       try {
+        var batchHeaders = (typeof window.okbmWriteHeaders === 'function')
+          ? window.okbmWriteHeaders({ Prefer: 'return=representation' })
+          : null;
+        if (!batchHeaders) {
+          if (deleteBtn) {
+            deleteBtn.disabled = false;
+            deleteBtn.style.opacity = '1';
+          }
+          return;
+        }
         var inClause = 'in.(' + idsToDelete.map(encodeURIComponent).join(',') + ')';
         var res = await fetch(targetUrl + '/rest/v1/feeds?id=' + inClause, {
           method: 'DELETE',
-          headers: {
-            'apikey': targetKey,
-            'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-          }
+          headers: batchHeaders
         });
 
         if (!res.ok) {
@@ -2451,7 +2541,7 @@ window.normalizeHistoryRecord = function(r, idx) {
           '</div>'
         ) : '') +
         '<div style="width:44px; height:44px; border-radius:8px; overflow:hidden; background:#1e293b; flex-shrink:0; border:1px solid rgba(255,255,255,0.1);">' +
-          '<img src="' + thumbPhoto + '" style="width:100%; height:100%; object-fit:cover;" />' +
+          '<img src="' + escapeHtml(okbmSafeImageUrl(thumbPhoto)) + '" style="width:100%; height:100%; object-fit:cover;" />' +
         '</div>' +
         '<div style="min-width:0; flex:1;">' +
           '<div style="font-size:0.86rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
@@ -2504,7 +2594,7 @@ window.normalizeHistoryRecord = function(r, idx) {
       var res = await fetch(query, {
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+          'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
           'Content-Type': 'application/json'
         }
       });
@@ -2696,7 +2786,7 @@ window.normalizeHistoryRecord = function(r, idx) {
           method: 'HEAD',
           headers: {
             'apikey': targetKey,
-            'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+            'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
             'Prefer': 'count=exact'
           }
         }).then(function(res) {
@@ -2720,6 +2810,9 @@ window.normalizeHistoryRecord = function(r, idx) {
 
 window.okbmGetNormalizedUserId = function(rawId) {
   var uId = String(rawId || '').trim();
+  if (!uId && typeof window.okbmGetCurrentUserId === 'function') {
+    uId = String(window.okbmGetCurrentUserId() || '').trim();
+  }
   if (!uId) {
     var profile = safeGetJSON('user_profile', null);
     if (profile) {
@@ -2756,7 +2849,7 @@ window.fetchUserFeedLikesFromServer = async function() {
 
   var pureNumId = canonicalId.replace(/^kakao_/, '').trim();
   var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-  var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
+  var targetKey = window.SUPABASE_ANON_KEY || '';
 
   try {
     var rows = null;
@@ -2776,7 +2869,7 @@ window.fetchUserFeedLikesFromServer = async function() {
       var res = await fetch(targetUrl + '/rest/v1/feed_likes?user_id=' + inParam + '&select=feed_id', {
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+          'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
           'Content-Type': 'application/json'
         }
       });
@@ -2825,11 +2918,11 @@ window.okbmSyncFeedLikeAction = async function(feedId, userId, isAdding, nextCou
 
   var pureNumId = canonicalId.replace(/^kakao_/, '').trim();
   var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-  var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
+  var targetKey = window.SUPABASE_ANON_KEY || '';
 
   var jsonHeaders = {
     'apikey': targetKey,
-    'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+    'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
     'Content-Type': 'application/json'
   };
 
@@ -3011,10 +3104,21 @@ window.toggleFeedStar = async function(cardId, e) {
     });
   }
 
-  var directBtn = e ? (e.currentTarget || (e.target && e.target.closest('button'))) : null;
-  var cardBtn = directBtn || document.querySelector('[data-star-card-id="' + (CSS.escape ? CSS.escape(sId) : sId) + '"]');
+  var directBtn = null;
+  if (e && e.target && e.target.closest) {
+    directBtn = e.target.closest('[data-star-card-id]');
+  }
+  if (!directBtn && e && e.currentTarget && e.currentTarget.hasAttribute && e.currentTarget.hasAttribute('data-star-card-id')) {
+    directBtn = e.currentTarget;
+  }
+  if (!directBtn) {
+    try {
+      directBtn = document.querySelector('[data-star-card-id="' + (CSS.escape ? CSS.escape(sId) : sId) + '"]');
+    } catch (selErr) {}
+  }
+  var cardBtn = directBtn;
   var cardSvg = cardBtn ? cardBtn.querySelector('svg') : null;
-  var cardCountSpan = cardBtn ? cardBtn.querySelector('[id^="feedStarCountText_"]') : null;
+  var cardCountSpan = cardBtn ? (cardBtn.querySelector('.js-feed-star-count') || cardBtn.querySelector('[id^="feedStarCountText_"]')) : null;
 
   var isCurrentlyStarred = false;
   if (cardSvg) {
@@ -3055,7 +3159,7 @@ window.toggleFeedStar = async function(cardId, e) {
           icon.setAttribute('stroke', starredVal ? '#fde047' : '#ffffff');
           icon.style.filter = starredVal ? 'drop-shadow(0 0 8px rgba(253,224,71,0.8))' : 'none';
         }
-        var countSpanEl = btn.querySelector('[id^="feedStarCountText_"]');
+        var countSpanEl = btn.querySelector('.js-feed-star-count') || btn.querySelector('[id^="feedStarCountText_"]');
         if (countSpanEl) {
           countSpanEl.innerText = countVal;
         }
@@ -3303,23 +3407,23 @@ window.toggleFeedStar = async function(cardId, e) {
     }
   };
 
-  window.copyShareLinkFallback = function(text, toastMsg) {
+  window.copyShareLinkFallback = function(text, toastMsg, toastOpts) {
     if (!text) return;
     triggerHaptic(12);
     var msg = toastMsg || '✓ 피드 링크가 복사되었습니다!';
 
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(text).then(function() {
-        if (typeof showToast === 'function') showToast(msg, 'success', 2200);
+        if (typeof showToast === 'function') showToast(msg, 'success', 2200, toastOpts);
       }).catch(function() {
-        fallbackExecCopy(text, msg);
+        fallbackExecCopy(text, msg, toastOpts);
       });
     } else {
-      fallbackExecCopy(text, msg);
+      fallbackExecCopy(text, msg, toastOpts);
     }
   };
 
-  function fallbackExecCopy(text, toastMsg) {
+  function fallbackExecCopy(text, toastMsg, toastOpts) {
     var ta = document.createElement('textarea');
     ta.value = text;
     ta.style.position = 'fixed';
@@ -3329,7 +3433,7 @@ window.toggleFeedStar = async function(cardId, e) {
     ta.select();
     try {
       document.execCommand('copy');
-      if (typeof showToast === 'function') showToast(toastMsg || '✓ 피드 링크가 복사되었습니다!', 'success', 2200);
+      if (typeof showToast === 'function') showToast(toastMsg || '✓ 피드 링크가 복사되었습니다!', 'success', 2200, toastOpts);
     } catch (err) { console.warn('[romantic-history.js:fallbackExecCopy]', err); }
     document.body.removeChild(ta);
   }
@@ -3348,36 +3452,48 @@ window.toggleFeedStar = async function(cardId, e) {
   window.sendFeedToKakaoTalk = function(recordId) {
     triggerHaptic(12);
     var p = window.okbmResolveFeedSharePayload(recordId);
-    if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized()) {
-      try {
-        var shareFn = (Kakao.Share && Kakao.Share.sendDefault) ? Kakao.Share.sendDefault : (Kakao.Link && Kakao.Link.sendDefault ? Kakao.Link.sendDefault : null);
-        if (shareFn) {
-          shareFn({
-            objectType: 'feed',
-            content: {
-              title: p.title,
-              description: p.description,
-              imageUrl: p.image,
-              imageWidth: 800,
-              imageHeight: 800,
-              link: { mobileWebUrl: p.url, webUrl: p.url }
-            },
-            buttons: [
-              { title: '앱에서 보기', link: { mobileWebUrl: p.url, webUrl: p.url } }
-            ],
-            installTalk: true
-          });
-          return;
-        }
-      } catch (e) { console.warn('[romantic-history.js:sendFeedToKakaoTalk]', e); }
+    var sendKakao = function() {
+      if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized()) {
+        try {
+          var shareFn = (Kakao.Share && Kakao.Share.sendDefault) ? Kakao.Share.sendDefault : (Kakao.Link && Kakao.Link.sendDefault ? Kakao.Link.sendDefault : null);
+          if (shareFn) {
+            shareFn({
+              objectType: 'feed',
+              content: {
+                title: p.title,
+                description: p.description,
+                imageUrl: p.image,
+                imageWidth: 800,
+                imageHeight: 800,
+                link: { mobileWebUrl: p.url, webUrl: p.url }
+              },
+              buttons: [
+                { title: '앱에서 보기', link: { mobileWebUrl: p.url, webUrl: p.url } }
+              ],
+              installTalk: true
+            });
+            return true;
+          }
+        } catch (e) { console.warn('[romantic-history.js:sendFeedToKakaoTalk]', e); }
+      }
+      return false;
+    };
+    var fallback = function() {
+      window.copyShareLinkFallback(p.body, '✓ 같은 공유 내용이 복사되었습니다!');
+    };
+    if (typeof window.okbmEnsureKakaoSdk === 'function') {
+      window.okbmEnsureKakaoSdk().then(function() {
+        if (!sendKakao()) fallback();
+      }).catch(fallback);
+      return;
     }
-    window.copyShareLinkFallback(p.body, '✓ 같은 공유 내용이 복사되었습니다!');
+    if (!sendKakao()) fallback();
   };
 
   window.sendFeedToInstagram = function(recordId) {
     triggerHaptic(12);
     var p = window.okbmResolveFeedSharePayload(recordId);
-    window.copyShareLinkFallback(p.body, (HISTORY_TOAST_VEC.camera || '') + '같은 공유 내용 복사 완료. 인스타그램에 붙여넣기 하세요.');
+    window.copyShareLinkFallback(p.body, '같은 공유 내용 복사 완료. 인스타그램에 붙여넣기 하세요.', { html: HISTORY_TOAST_VEC.camera });
     setTimeout(function() {
       var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       if (isMobile) {
@@ -3422,7 +3538,7 @@ window.toggleFeedStar = async function(cardId, e) {
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
     if (!isLogged) {
       triggerHaptic(12);
-      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.lock + '기록 관리는 로그인 후 이용할 수 있습니다.', 'info', 2200);
+      if (typeof showToast === 'function') showToast('기록 관리는 로그인 후 이용할 수 있습니다.', 'info', 2200, { html: HISTORY_TOAST_VEC.lock });
       if (typeof openLoginModal === 'function') openLoginModal();
       return;
     }
@@ -3445,7 +3561,7 @@ window.toggleFeedStar = async function(cardId, e) {
 
     if (typeof window.isRecordOwner === 'function' && !window.isRecordOwner(target) && !target._isLocalOwner) {
       triggerHaptic(12);
-      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.lock + '본인 기록만 공개 설정을 변경할 수 있습니다.', 'warn', 2200);
+      if (typeof showToast === 'function') showToast('본인 기록만 공개 설정을 변경할 수 있습니다.', 'warn', 2200, { html: HISTORY_TOAST_VEC.lock });
       return;
     }
 
@@ -3465,7 +3581,7 @@ window.toggleFeedStar = async function(cardId, e) {
           target.unregistered_spot !== true;
         if (!isRegistered) {
           if (typeof showToast === 'function') {
-            showToast((HISTORY_TOAST_VEC.lock || '') + '등록된 박지만 함께보기로 전환할 수 있습니다.', 'info', 2800);
+            showToast('등록된 박지만 함께보기로 전환할 수 있습니다.', 'info', 2800, { html: HISTORY_TOAST_VEC.lock });
           }
         } else if (target.date && typeof window.okbmRouteDateReached === 'function' && !window.okbmRouteDateReached(target)) {
           if (typeof showToast === 'function') {
@@ -3510,7 +3626,7 @@ window.toggleFeedStar = async function(cardId, e) {
 
     triggerHaptic(12);
     if (typeof showToast === 'function') {
-      showToast((nextStatus ? HISTORY_TOAST_VEC.globe : HISTORY_TOAST_VEC.lock) + (nextStatus ? '[함께보기]로 전환되었습니다.' : '[나만보기]로 전환되었습니다.'), 'info', 1600);
+      showToast(nextStatus ? '[함께보기]로 전환되었습니다.' : '[나만보기]로 전환되었습니다.', 'info', 1600, { html: nextStatus ? HISTORY_TOAST_VEC.globe : HISTORY_TOAST_VEC.lock });
     }
 
     clearTimeout(window.__publishDebounceTimers[sId]);
@@ -3692,7 +3808,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
           method: 'DELETE',
           headers: {
             'apikey': targetKey,
-            'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+            'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
             'Content-Type': 'application/json',
             // return=representation: 실제로 삭제된 행을 응답 본문으로 돌려받아
             // "응답 200이지만 실은 0건 삭제"인 유령 삭제를 걸러낼 수 있습니다.
@@ -3978,7 +4094,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         packingSheetMarkup = window.generateReadyShotMarkup(log, { photo: actualReadyShot });
       } else {
         packingSheetMarkup = '<div style="width:100%; height:100%; background:#000000; border-radius:12px; overflow:hidden; display:flex; align-items:center; justify-content:center;">' +
-          '<img src="' + escapeHtml(actualReadyShot) + '" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:100%; object-fit:contain; display:block;" />' +
+          '<img src="' + escapeHtml(okbmSafeImageUrl(actualReadyShot)) + '" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:100%; object-fit:contain; display:block;" />' +
         '</div>';
       }
     } else {
@@ -4020,7 +4136,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
       return '<div style="width:100%; display:flex; flex-direction:column; background:#000000;">' +
         '<div style="width:100%; overflow:hidden; background:#000000; position:relative; display:flex; align-items:center; justify-content:center;">' +
-          '<img class="reel-photo-target" src="' + pUrl + '" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:auto; object-fit:contain; display:block; background:#000000;" />' +
+          '<img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(pUrl)) + '" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:auto; object-fit:contain; display:block; background:#000000;" />' +
           (photosList.length > 1 ? '<span style="position:absolute; top:10px; right:10px; background:#0c1017; color:#ffffff; font-size:0.62rem; font-weight:800; font-family:\'Space Grotesk\', sans-serif; padding:2px 7px; border-radius:10px; border:1px solid rgba(255,255,255,0.15);">' + (pIdx + 1) + ' / ' + photosList.length + '</span>' : '') +
         '</div>' +
         memoMarkup +
@@ -4052,14 +4168,14 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var interactiveBarHtml =
       '<div style="padding:10px 16px 14px 16px; background:#000000; display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(255,255,255,0.06);">' +
         '<div style="display:flex; align-items:center; gap:14px;">' +
-          '<button type="button" data-star-card-id="' + sCleanId + '" onclick="event.preventDefault(); event.stopPropagation(); window.toggleFeedStar(this.dataset.starCardId, event);" style="background:none; border:none; padding:4px 0; cursor:pointer; display:flex; align-items:center; gap:5px; color:#ffffff;">' +
-            '<svg id="feedStarIcon_' + sCleanId + '" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (sIsStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + ';" fill="' + (sIsStarred ? '#fde047' : 'none') + '" stroke="' + (sIsStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
-            '<span id="feedStarCountText_' + sCleanId + '" style="font-size:0.78rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif;">' + sStarCount + '</span>' +
+          '<button type="button" data-star-card-id="' + escapeHtml(sCleanId) + '" style="background:none; border:none; padding:4px 0; cursor:pointer; display:flex; align-items:center; gap:5px; color:#ffffff;">' +
+            '<svg class="js-feed-star-icon" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (sIsStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + ';" fill="' + (sIsStarred ? '#fde047' : 'none') + '" stroke="' + (sIsStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
+            '<span class="js-feed-star-count" style="font-size:0.78rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif;">' + sStarCount + '</span>' +
           '</button>' +
-          '<button type="button" data-feed-id="' + sFeedId + '" data-spot="' + escapeHtml(sSpot) + '" data-memo="' + escapeHtml(sMemo) + '" onclick="if(typeof window.shareCurrentFeed===\'function\'){ window.shareCurrentFeed(this.dataset.feedId, this.dataset.spot, this.dataset.memo); } else { triggerHaptic(10); if(navigator.clipboard){ navigator.clipboard.writeText(location.href); if(typeof showToast===\'function\') showToast(HISTORY_TOAST_VEC.link + \'피드 링크가 복사되었습니다.\',\'success\'); } }" style="background:none; border:none; padding:4px 0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">' +
+          '<button type="button" data-share-feed="1" data-feed-id="' + sFeedId + '" data-spot="' + escapeHtml(sSpot) + '" data-memo="' + escapeHtml(sMemo) + '" style="background:none; border:none; padding:4px 0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">' +
             '<svg viewBox="0 0 24 24" style="width:17px; height:17px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
           '</button>' +
-          '<button type="button" data-save-feed="1" data-feed-id="' + sFeedId + '" onclick="window.toggleSaveFeed(this.dataset.feedId, event);" style="background:none; border:none; padding:4px 0; cursor:pointer; display:flex; align-items:center; color:' + (sIsSaved ? '#c084fc' : '#cbd5e1') + ';" title="관심피드 즐겨찾기 저장">' +
+          '<button type="button" data-save-feed="1" data-feed-id="' + sFeedId + '" style="background:none; border:none; padding:4px 0; cursor:pointer; display:flex; align-items:center; color:' + (sIsSaved ? '#c084fc' : '#cbd5e1') + ';" title="관심피드 즐겨찾기 저장">' +
             '<svg viewBox="0 0 24 24" style="width:17px; height:17px;" fill="' + (sIsSaved ? '#c084fc' : 'none') + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
           '</button>' +
         '</div>' +
@@ -4089,7 +4205,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
     if (!isLogged) {
-      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.lock + '관심피드 저장은 로그인 후 이용할 수 있습니다.', 'info', 2000);
+      if (typeof showToast === 'function') showToast('관심피드 저장은 로그인 후 이용할 수 있습니다.', 'info', 2000, { html: HISTORY_TOAST_VEC.lock });
       if (typeof window.openLoginModal === 'function') {
         window.openLoginModal();
       } else if (typeof openLoginModal === 'function') {
@@ -4130,7 +4246,16 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }, 400);
 
     var targetBtns = [];
-    var clickedBtn = e ? (e.currentTarget || (e.target && e.target.closest('button'))) : null;
+    var clickedBtn = null;
+    if (e && e.target && e.target.closest) {
+      clickedBtn = e.target.closest('[data-save-feed]');
+    }
+    if (!clickedBtn && e && e.currentTarget && e.currentTarget.hasAttribute && e.currentTarget.hasAttribute('data-save-feed')) {
+      clickedBtn = e.currentTarget;
+    }
+    if (!clickedBtn && e && e.target && e.target.closest) {
+      clickedBtn = e.target.closest('button');
+    }
     if (clickedBtn) targetBtns.push(clickedBtn);
 
     try {
@@ -4247,7 +4372,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         return '<div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">' +
           '<div data-author="' + safeNick + '" data-user-id="' + safeUser + '" onclick="window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId);" style="display:flex; align-items:center; gap:10px; cursor:pointer; min-width:0; flex:1;">' +
             '<div style="width:44px; height:44px; border-radius:10px; overflow:hidden; background:#0f172a; flex-shrink:0; border:1px solid rgba(255,255,255,0.15);">' +
-              '<img src="' + item.thumbPhoto + '" style="width:100%; height:100%; object-fit:cover; display:block;" />' +
+              '<img src="' + escapeHtml(okbmSafeImageUrl(item.thumbPhoto)) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />' +
             '</div>' +
             '<div style="min-width:0; flex:1;">' +
               '<div style="font-size:0.88rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + safeNick + '</div>' +
@@ -4373,7 +4498,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         return '<div style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">' +
           '<div data-feed-id="' + safeId + '" onclick="window.openSingleTripDualFeedModal(this.dataset.feedId, window.__currentScopedSavedFeeds, \'관심피드\');" style="display:flex; align-items:center; gap:10px; cursor:pointer; min-width:0; flex:1;">' +
             '<div style="width:48px; height:48px; border-radius:10px; overflow:hidden; background:#0f172a; flex-shrink:0; border:1px solid rgba(255,255,255,0.15);">' +
-              '<img src="' + thumbPhoto + '" style="width:100%; height:100%; object-fit:cover; display:block;" />' +
+              '<img src="' + escapeHtml(okbmSafeImageUrl(thumbPhoto)) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />' +
             '</div>' +
             '<div style="min-width:0; flex:1;">' +
               '<div style="font-size:0.86rem; font-weight:900; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + spotTitle + '</div>' +
@@ -4425,7 +4550,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
     var isLogged = (typeof isUserLoggedIn === 'function') ? isUserLoggedIn() : false;
     if (!isLogged) {
-      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.lock + '관심루터 등록은 로그인 후 이용할 수 있습니다.', 'info', 2000);
+      if (typeof showToast === 'function') showToast('관심루터 등록은 로그인 후 이용할 수 있습니다.', 'info', 2000, { html: HISTORY_TOAST_VEC.lock });
       if (typeof window.openLoginModal === 'function') {
         window.openLoginModal();
       } else if (typeof openLoginModal === 'function') {
@@ -4456,7 +4581,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       followingList = followingList.filter(function(id) { return id !== followKey; });
     } else {
       followingList.push(followKey);
-      if (typeof showToast === 'function') showToast('[' + escapeHtml(sTargetAuthor) + '] 님을 이웃으로 등록했습니다.', 'success', 1800);
+      if (typeof showToast === 'function') showToast('[' + sTargetAuthor + '] 님을 이웃으로 등록했습니다.', 'success', 1800);
     }
 
     if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
@@ -4491,7 +4616,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
     return '<div class="js-open-user-feed-row" data-feed-id="' + safeId + '" data-author="' + escapeHtml(targetAuthor) + '" data-user-id="' + escapeHtml(targetUserId) + '" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 12px; display:flex; gap:12px; align-items:center; cursor:pointer; flex-shrink:0; transition:all 0.15s ease;">' +
       '<div style="width:58px; height:58px; border-radius:8px; overflow:hidden; background:#0f172a; flex-shrink:0; border:1px solid rgba(255,255,255,0.14);">' +
-        (thumb ? '<img src="' + escapeHtml(thumb) + '" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:100%; object-fit:cover; display:block;" />' : '<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#64748b;"><svg viewBox="0 0 24 24" style="width:20px; height:20px;" fill="none" stroke="currentColor" stroke-width="1.8"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></div>') +
+        (thumb ? '<img src="' + escapeHtml(okbmSafeImageUrl(thumb)) + '" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:100%; object-fit:cover; display:block;" />' : '<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#64748b;"><svg viewBox="0 0 24 24" style="width:20px; height:20px;" fill="none" stroke="currentColor" stroke-width="1.8"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></div>') +
       '</div>' +
       '<div style="flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;">' +
         '<div style="display:flex; justify-content:space-between; align-items:center;">' +
@@ -4548,7 +4673,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       var res = await fetch(query, {
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+          'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
           'Content-Type': 'application/json'
         }
       });
@@ -4907,17 +5032,20 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }
 
     if (targetUrl && targetKey && targetUserId) {
-      fetch(targetUrl + '/rest/v1/user_public_profiles?id=eq.' + encodeURIComponent(targetUserId) + '&select=id,bio,hero_cover_url,photo_url,nickname,instagram,youtube,blog', {
-        headers: {
-          'apikey': targetKey,
-          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
-          'Content-Type': 'application/json'
-        }
-      })
-      .then(function(r) { return r.ok ? r.json() : []; })
-      .then(function(uRows) {
-        if (Array.isArray(uRows) && uRows.length > 0) {
-          var uRow = uRows[0];
+      var headerProfileReq = (typeof window.okbmFetchPublicProfile === 'function')
+        ? window.okbmFetchPublicProfile(targetUserId)
+        : fetch(targetUrl + '/rest/v1/rpc/get_public_profile', {
+            method: 'POST',
+            headers: {
+              'apikey': targetKey,
+              'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ p_id: targetUserId })
+          }).then(function(r) { return r.ok ? r.json() : null; });
+      Promise.resolve(headerProfileReq)
+      .then(function(uRow) {
+        if (uRow && uRow.id) {
           var fetchedBio = String(uRow.bio || '').trim();
           var fetchedPhoto = String(uRow.hero_cover_url || uRow.photo_url || '').trim();
           var fetchedNick = String(uRow.nickname || targetAuthor).trim();
@@ -4963,7 +5091,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         method: 'HEAD',
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+          'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
           'Prefer': 'count=exact'
         }
       }).then(function(res) {
@@ -4985,7 +5113,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       fetch(fetchQuery, {
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+          'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
           'Content-Type': 'application/json'
         }
       }).then(function(r) { return r.ok ? r.json() : []; }).then(function(serverRows) {
@@ -5201,7 +5329,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       var targetLog = window.__findCurrentDualFeedRecord();
       if (targetLog) {
         if (!window.isRecordOwner(targetLog)) {
-          if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.lock + '본인이 작성한 기록만 수정할 수 있습니다.', 'warn', 2200);
+          if (typeof showToast === 'function') showToast('본인이 작성한 기록만 수정할 수 있습니다.', 'warn', 2200, { html: HISTORY_TOAST_VEC.lock });
           return;
         }
         window.openRichAfterTripModal(targetLog);
@@ -5707,8 +5835,8 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         var bindingAttr = ' data-okbm-photo-record-id="' + String(window.__richCurrentRecord && window.__richCurrentRecord.id || '') + '" data-okbm-photo-index="' + String(pIdx) + '" data-okbm-photo-kind="phone"';
         return `
           <div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center;">
-            <img src="${url}"${bindingAttr} style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(22px) brightness(0.32); transform:scale(1.15); pointer-events:none;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
-            <img src="${url}"${bindingAttr} style="position:relative; z-index:2; width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
+            <img src="${escapeHtml(okbmSafeImageUrl(url))}"${bindingAttr} style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(22px) brightness(0.32); transform:scale(1.15); pointer-events:none;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
+            <img src="${escapeHtml(okbmSafeImageUrl(url))}"${bindingAttr} style="position:relative; z-index:2; width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
             
             <button type="button" onclick="event.stopPropagation(); window.__removeRichSinglePhoto(${pIdx});" style="position:absolute; top:10px; right:10px; z-index:10; width:28px; height:28px; border-radius:50%; background:#0c1017; color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); font-size:13px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
           </div>
@@ -5734,7 +5862,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
                ontouchend="window.__handleTouchThumbEnd(event);"
                onclick="window.__commitCurrentMemoInput(); window.__currentSwipePhotoIndex = ${tIdx}; window.__renderRichPhotoStage(); triggerHaptic(8);" 
                style="width:54px; height:54px; border-radius:9px; overflow:hidden; position:relative; flex-shrink:0; cursor:grab; background:#000; box-sizing:border-box; transition:all 0.18s cubic-bezier(0.16, 1, 0.3, 1); user-select:none; -webkit-user-select:none; touch-action:none; ${activeBorderStyle}">
-            <img src="${tUrl}" data-okbm-photo-record-id="${escapeHtml(String(window.__richCurrentRecord && window.__richCurrentRecord.id || ''))}" data-okbm-photo-index="${tIdx}" data-okbm-photo-kind="phone" style="width:100%; height:100%; object-fit:cover; pointer-events:none; display:block;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
+            <img src="${escapeHtml(okbmSafeImageUrl(tUrl))}" data-okbm-photo-record-id="${escapeHtml(String(window.__richCurrentRecord && window.__richCurrentRecord.id || ''))}" data-okbm-photo-index="${tIdx}" data-okbm-photo-kind="phone" style="width:100%; height:100%; object-fit:cover; pointer-events:none; display:block;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
             ${isCurrentView ? '<div style="position:absolute; inset:0; border:1px solid rgba(255,255,255,0.4); pointer-events:none; border-radius:7px;"></div>' : ''}
           </div>
         `;
@@ -6185,13 +6313,13 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
       if (isRegistered) {
         if (typeof showToast === 'function') {
-          showToast(HISTORY_TOAST_VEC.pin + '박지가 [' + escapeHtml(spotName) + '](으)로 변경되었습니다.', 'success', 1800);
+          showToast('박지가 [' + spotName + '](으)로 변경되었습니다.', 'success', 1800, { html: HISTORY_TOAST_VEC.pin });
         }
         return;
       }
 
       if (typeof showToast === 'function') {
-        showToast((HISTORY_TOAST_VEC.lock || '') + '등록된 장소가 아닌 경우 나만보기로 이동됩니다.', 'info', 2600);
+        showToast('등록된 장소가 아닌 경우 나만보기로 이동됩니다.', 'info', 2600, { html: HISTORY_TOAST_VEC.lock });
       }
       window.__showRichSpotRegisterChoice(spotName);
     };
@@ -6229,7 +6357,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     if (isNew && record.date && typeof window.okbmRouteDateReached === 'function' && !window.okbmRouteDateReached(record)) {
       triggerHaptic(12);
       if (typeof showToast === 'function') {
-        showToast(HISTORY_TOAST_VEC.clock + '출발일 당일 이후에 현장 사진과 일지를 등록할 수 있습니다.', 'info', 2400);
+        showToast('출발일 당일 이후에 현장 사진과 일지를 등록할 수 있습니다.', 'info', 2400, { html: HISTORY_TOAST_VEC.clock });
       }
       return;
     }
@@ -6238,7 +6366,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     if (!isNew && !isOwner) {
       triggerHaptic(15);
       if (typeof showToast === 'function') {
-        showToast(HISTORY_TOAST_VEC.lock + '본인이 작성한 기록만 수정할 수 있습니다.', 'warn', 2200);
+        showToast('본인이 작성한 기록만 수정할 수 있습니다.', 'warn', 2200, { html: HISTORY_TOAST_VEC.lock });
       }
       return;
     }
@@ -6416,7 +6544,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     if (target.date && typeof window.okbmRouteDateReached === 'function' && !window.okbmRouteDateReached(target)) {
       triggerHaptic(12);
       if (typeof showToast === 'function') {
-        showToast(HISTORY_TOAST_VEC.clock + '출발일 당일 이후에 현장 사진과 일지를 등록할 수 있습니다.', 'info', 2400);
+        showToast('출발일 당일 이후에 현장 사진과 일지를 등록할 수 있습니다.', 'info', 2400, { html: HISTORY_TOAST_VEC.clock });
       }
       window.__isSubmittingRichTrip = false;
       return;
@@ -6425,7 +6553,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var photosToProcess = Array.isArray(window.__tempUploadedPhotos) ? window.__tempUploadedPhotos.slice(0, 10) : [];
     if (photosToProcess.length === 0) {
       triggerHaptic(14);
-      if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.camera + '현장 사진을 1장 이상 추가해주세요.', 'warn', 2400, 'center');
+      if (typeof showToast === 'function') showToast('현장 사진을 1장 이상 추가해주세요.', 'warn', 2400, { html: HISTORY_TOAST_VEC.camera, position: 'center' });
       window.__isSubmittingRichTrip = false;
       var submitBtnEl = document.getElementById('btnSubmitRichTrip');
       if (submitBtnEl) {
@@ -6691,11 +6819,12 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     if (typeof showToast === 'function') {
       var savedPrivate = target.unregisteredSpot === true || target.isPublished === false;
       showToast(
-        HISTORY_TOAST_VEC.check + (savedPrivate
+        savedPrivate
           ? '나만보기로 저장되었습니다.'
-          : (autoOpenedToPublic ? '함께보기로 저장되었습니다.' : '기록이 저장되었습니다.')),
+          : (autoOpenedToPublic ? '함께보기로 저장되었습니다.' : '기록이 저장되었습니다.'),
         'success',
-        1800
+        1800,
+        { html: HISTORY_TOAST_VEC.check }
       );
     }
   };
@@ -6770,12 +6899,36 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
   window.__feedHasMore = true;
   window.__isFetchingMoreFeeds = false;
 
+  var _communityFeedsAbort = null;
+  var _communityFeedsGen = 0;
+
+  function _okbmAbortCommunityFeedsFetch() {
+    if (_communityFeedsAbort) {
+      try { _communityFeedsAbort.abort(); } catch (eAbort) {}
+      _communityFeedsAbort = null;
+    }
+    _communityFeedsGen += 1;
+  }
+
   window.fetchCommunityFeeds = async function(isForce, offset, limit) {
     offset = typeof offset === 'number' ? offset : 0;
     limit = typeof limit === 'number' ? limit : 10;
+
+    if (_communityFeedsAbort) {
+      try { _communityFeedsAbort.abort(); } catch (eAbort) {}
+    }
+    _communityFeedsAbort = new AbortController();
+    var fetchSignal = _communityFeedsAbort.signal;
+    var fetchGen = ++_communityFeedsGen;
+    var isStale = function() {
+      return fetchGen !== _communityFeedsGen || fetchSignal.aborted;
+    };
+
+    try {
     if (typeof window.okbmEnsureUgcSafetyFromServer === 'function') {
       try { await window.okbmEnsureUgcSafetyFromServer(); } catch (syncErr) { console.warn('[romantic-history.js:fetchCommunityFeeds ugcSafety]', syncErr); }
     }
+    if (isStale()) return null;
     var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
     var targetKey = window.SUPABASE_ANON_KEY || '';
 
@@ -6829,7 +6982,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       try {
         var headers = {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+          'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
           'Content-Type': 'application/json'
         };
 
@@ -6854,16 +7007,25 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
             ? ('&or=(is_published.eq.true,user_id.eq.' + encodeURIComponent(currentUserId) + ')')
             : '&is_published=eq.true';
           var queryUrl = targetUrl + '/rest/v1/' + tableName + '?select=' + projectionColumns + filterParam + '&order=created_at.desc&offset=' + offset + '&limit=' + limit;
-          return fetch(queryUrl, { headers: headers })
+          return fetch(queryUrl, { headers: headers, signal: fetchSignal })
             .then(function(r) {
+              if (isStale()) {
+                var staleErr = new Error('stale');
+                staleErr.name = 'AbortError';
+                throw staleErr;
+              }
               if (r.ok) return r.json();
               return [];
             })
             .then(keepScopedRows)
-            .catch(function() { return []; });
+            .catch(function(err) {
+              if (err && err.name === 'AbortError') throw err;
+              return [];
+            });
         };
 
         var supaFeeds = await fetchTableRows('feeds');
+        if (isStale()) return null;
         if (Array.isArray(supaFeeds)) {
           if (supaFeeds.length < limit) {
             window.__feedHasMore = false;
@@ -6898,18 +7060,20 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
             window.__allLoadedFeeds = supaFeeds;
             window.__feedPaginationOffset = supaFeeds.length;
             okbmWriteCachedCommunityFeeds(supaFeeds);
+            if (isStale()) return null;
             if (typeof window.okbmReconcileLocalFeedsWithServer === 'function') {
               try {
                 await window.okbmReconcileLocalFeedsWithServer({ loadedFeeds: supaFeeds });
               } catch (reconErr) {
                 console.warn('[romantic-history.js:fetchCommunityFeeds reconcile]', reconErr);
                 if (typeof window.okbmHydratePackingHistoryAfterServer === 'function') {
-                  window.okbmHydratePackingHistoryAfterServer(supaFeeds);
+                  window.okbmHydratePackingHistoryAfterServer(supaFeeds, null, { failed: false });
                 }
               }
             } else if (typeof window.okbmHydratePackingHistoryAfterServer === 'function') {
-              window.okbmHydratePackingHistoryAfterServer(supaFeeds);
+              window.okbmHydratePackingHistoryAfterServer(supaFeeds, null, { failed: false });
             }
+            if (isStale()) return null;
             if (typeof window.fetchUserFeedLikesFromServer === 'function') {
               window.fetchUserFeedLikesFromServer();
             }
@@ -6940,21 +7104,30 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
         return supaFeeds || [];
       } catch (err) {
+        if (err && err.name === 'AbortError') return null;
         console.warn('[RomanticHistory] Supabase 실시간 피드 조회 대기:', err);
+        if (isStale()) return null;
         if (window.__okbmDeferHistoryHydrate && typeof window.okbmReconcileLocalFeedsWithServer === 'function') {
           try { await window.okbmReconcileLocalFeedsWithServer({ loadedFeeds: [] }); } catch (e) {}
         } else if (window.__okbmDeferHistoryHydrate && typeof window.okbmHydratePackingHistoryAfterServer === 'function') {
-          window.okbmHydratePackingHistoryAfterServer([]);
+          window.okbmHydratePackingHistoryAfterServer([], null, { failed: true });
         }
       }
     }
 
+    if (isStale()) return null;
     return window.__allLoadedFeeds || safeGetJSON('okbm_cached_community_feeds', []);
+    } finally {
+      if (fetchGen === _communityFeedsGen && _communityFeedsAbort && _communityFeedsAbort.signal === fetchSignal) {
+        _communityFeedsAbort = null;
+      }
+    }
   };
 
   window.fetchMoreCommunityFeeds = async function() {
     if (!window.__okbmHistoryModalOpen) return;
     if (window.__isFetchingMoreFeeds || window.__feedHasMore === false) return;
+    if (_communityFeedsAbort && !_communityFeedsAbort.signal.aborted) return;
     window.__isFetchingMoreFeeds = true;
 
     var reelContainer = document.getElementById('reelsVerticalContainer');
@@ -6964,6 +7137,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     try {
       var nextBatch = await window.fetchCommunityFeeds(false, offset, 5);
       if (!window.__okbmHistoryModalOpen) return;
+      if (nextBatch == null) return;
       if (Array.isArray(nextBatch) && nextBatch.length > 0) {
         if (typeof window.appendNewFeedCardsToReels === 'function') {
           window.appendNewFeedCardsToReels(nextBatch);
@@ -7010,8 +7184,9 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     }, 80);
 
     // 백그라운드에서 최신 피드를 조용히 동기화
-    window.fetchCommunityFeeds(true).then(function() {
+    window.fetchCommunityFeeds(true).then(function(feeds) {
       if (!window.__okbmHistoryModalOpen) return;
+      if (feeds == null) return;
       if (typeof window.renderHistoryStage === 'function') {
         window.renderHistoryStage();
       }
@@ -7028,7 +7203,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
     if (currentMode === 'explore') {
       if (!isLogged) {
-        if (typeof showToast === 'function') showToast(HISTORY_TOAST_VEC.lock + '내 보관함은 로그인 후 이용할 수 있습니다.', 'info', 2200);
+        if (typeof showToast === 'function') showToast('내 보관함은 로그인 후 이용할 수 있습니다.', 'info', 2200, { html: HISTORY_TOAST_VEC.lock });
         if (typeof openLoginModal === 'function') openLoginModal();
         return;
       }
@@ -7188,7 +7363,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
     var horizontalSlidesHtml = mediaItems.map(function(pUrl) {
       return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; margin:0 !important;">' +
-        '<img class="reel-photo-target" src="' + pUrl + '" loading="eager" decoding="async" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
+        '<img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(pUrl)) + '" loading="eager" decoding="async" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
       '</div>';
     }).join('');
 
@@ -7268,7 +7443,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
           icon.setAttribute('stroke', isStarred ? '#fde047' : '#ffffff');
           icon.style.filter = isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none';
         }
-        var countEl = starBtn.querySelector('[id^="feedStarCountText_"]');
+        var countEl = starBtn.querySelector('.js-feed-star-count') || starBtn.querySelector('[id^="feedStarCountText_"]');
         if (countEl) countEl.innerText = String(starCount);
       }
 
@@ -7437,13 +7612,13 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
     var socialBadgesHtml = '';
     if (!isMyRecord) {
-      if (instaTargetUrl) {
-        socialBadgesHtml += '<a href="' + instaTargetUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="인스타그램">' +
+      if (instaTargetUrl && okbmSafeExternalUrl(instaTargetUrl) !== '#') {
+        socialBadgesHtml += '<a href="' + escapeHtml(okbmSafeExternalUrl(instaTargetUrl)) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="인스타그램">' +
           '<svg viewBox="0 0 24 24" style="width:12px; height:12px; fill:#e2e8f0;"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>' +
           '</a>';
       }
-      if (youtubeTargetUrl) {
-        socialBadgesHtml += '<a href="' + youtubeTargetUrl + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="유튜브">' +
+      if (youtubeTargetUrl && okbmSafeExternalUrl(youtubeTargetUrl) !== '#') {
+        socialBadgesHtml += '<a href="' + escapeHtml(okbmSafeExternalUrl(youtubeTargetUrl)) + '" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation(); triggerHaptic(8);" style="width:20px; height:20px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:center; justify-content:center; text-decoration:none; flex-shrink:0; transition:all 0.15s ease;" title="유튜브">' +
           '<svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none">' +
             '<path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z" fill="#f43f5e"/>' +
             '<path d="M9.545 15.568V8.432L15.818 12l-6.273 3.568z" fill="#ffffff"/>' +
@@ -7462,7 +7637,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var hasValidImg = Boolean(targetAvatarUrl && String(targetAvatarUrl).startsWith('http'));
 
     var avatarMarkup = hasValidImg
-      ? '<img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="' + escapeHtml(targetAvatarUrl) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />'
+      ? '<img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="' + escapeHtml(okbmSafeImageUrl(targetAvatarUrl)) + '" style="width:100%; height:100%; object-fit:cover; display:block;" />'
       : '<div style="width:100%; height:100%; background:#090d14; display:flex; align-items:center; justify-content:center;"><img data-user-avatar-id="' + escapeHtml(recordUserId) + '" src="" style="width:100%; height:100%; object-fit:cover; display:none;" /><svg class="avatar-placeholder-svg" viewBox="0 0 24 24" style="width:18px; height:18px;" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>';
 
     var diffDays = null;
@@ -7527,7 +7702,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     } else {
       horizontalSlidesHtml = mediaItems.map(function(pUrl) {
         return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; margin:0 !important;">' +
-          '<img class="reel-photo-target" src="' + pUrl + '" loading="eager" decoding="async" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
+          '<img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(pUrl)) + '" loading="eager" decoding="async" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
         '</div>';
       }).join('');
     }
@@ -7577,7 +7752,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
         window.generateReadyShotMarkup(record, { photo: actualReadyShot }) +
         '</div>';
     } else if (actualReadyShot) {
-      studioCardMarkup = '<div class="postcard-template-container"><div style="width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto; position:relative; background:#000000; border-radius:14px; overflow:hidden; display:flex; align-items:center; justify-content:center; box-shadow:0 12px 30px rgba(0,0,0,0.9);"><img class="reel-photo-target" src="' + escapeHtml(actualReadyShot) + '" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100% !important; height:100% !important; object-fit:contain !important; display:block; background:#000000;" /></div></div>';
+      studioCardMarkup = '<div class="postcard-template-container"><div style="width:100%; max-width:330px; aspect-ratio:3/4; max-height:100%; margin:auto; position:relative; background:#000000; border-radius:14px; overflow:hidden; display:flex; align-items:center; justify-content:center; box-shadow:0 12px 30px rgba(0,0,0,0.9);"><img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(actualReadyShot)) + '" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100% !important; height:100% !important; object-fit:contain !important; display:block; background:#000000;" /></div></div>';
     } else {
       studioCardMarkup = '<div class="postcard-template-container">' + backTemplateCardHtml + '</div>';
     }
@@ -7622,14 +7797,14 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       '<div class="reel-bottom-interactive-bar">' +
         '<div style="display:flex; justify-content:space-between; align-items:center; min-height:32px;">' +
           '<div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">' +
-            '<button type="button" data-star-card-id="' + cleanCardId + '" onclick="event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); window.toggleFeedStar(this.dataset.starCardId, event);" ontouchstart="event.stopPropagation(); event.stopImmediatePropagation();" style="background:none; border:none; padding:6px 4px; margin:-6px -4px; cursor:pointer; display:flex; align-items:center; gap:4px; touch-action:manipulation; -webkit-tap-highlight-color:transparent; pointer-events:auto; z-index:20;">' +
-              '<svg id="feedStarIcon_' + cleanCardId + '" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease; pointer-events:none;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
-              '<span id="feedStarCountText_' + cleanCardId + '" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif; pointer-events:none;">' + starCount + '</span>' +
+            '<button type="button" data-star-card-id="' + escapeHtml(cleanCardId) + '" data-star-stop-touch="1" style="background:none; border:none; padding:6px 4px; margin:-6px -4px; cursor:pointer; display:flex; align-items:center; gap:4px; touch-action:manipulation; -webkit-tap-highlight-color:transparent; pointer-events:auto; z-index:20;">' +
+              '<svg class="js-feed-star-icon" viewBox="0 0 24 24" style="width:18px; height:18px; filter:' + (isStarred ? 'drop-shadow(0 0 6px rgba(253,224,71,0.7))' : 'none') + '; transition:transform 0.2s ease; pointer-events:none;" fill="' + (isStarred ? '#fde047' : 'none') + '" stroke="' + (isStarred ? '#fde047' : '#ffffff') + '" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' +
+              '<span class="js-feed-star-count" style="font-size:0.75rem; font-weight:800; color:#fde047; font-family:\'Space Grotesk\', sans-serif; pointer-events:none;">' + starCount + '</span>' +
             '</button>' +
-            '<button type="button" data-feed-id="' + cardId + '" data-spot="' + escapeHtml(spotName) + '" data-memo="' + escapeHtml(memo120) + '" onclick="if(typeof window.shareCurrentFeed===\'function\'){ window.shareCurrentFeed(this.dataset.feedId, this.dataset.spot, this.dataset.memo); } else { triggerHaptic(10); if(navigator.clipboard){ navigator.clipboard.writeText(location.href); if(typeof showToast===\'function\') showToast(HISTORY_TOAST_VEC.link + \'피드 링크가 복사되었습니다.\',\'success\'); } }" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">' +
+            '<button type="button" data-share-feed="1" data-feed-id="' + cardId + '" data-spot="' + escapeHtml(spotName) + '" data-memo="' + escapeHtml(memo120) + '" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:#cbd5e1;" title="공유">' +
               '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>' +
             '</button>' +
-            '<button type="button" data-save-feed="1" data-feed-id="' + cardId + '" onclick="window.toggleSaveFeed(this.dataset.feedId, event);" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:' + (isSavedFeed ? '#c084fc' : '#cbd5e1') + ';" title="관심피드 즐겨찾기 저장">' +
+            '<button type="button" data-save-feed="1" data-feed-id="' + cardId + '" style="background:none; border:none; padding:0; cursor:pointer; display:flex; align-items:center; color:' + (isSavedFeed ? '#c084fc' : '#cbd5e1') + ';" title="관심피드 즐겨찾기 저장">' +
               '<svg viewBox="0 0 24 24" style="width:16px; height:16px;" fill="' + (isSavedFeed ? '#c084fc' : 'none') + '" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
             '</button>' +
           '</div>' +
@@ -8036,8 +8211,9 @@ window.renderHistoryStage = function(isLoading) {
       window.renderHistoryStage();
     }
 
-    window.fetchCommunityFeeds(true).then(function() {
+    window.fetchCommunityFeeds(true).then(function(feeds) {
       if (!window.__okbmHistoryModalOpen) return;
+      if (feeds == null) return;
       if (typeof window.renderHistoryStage === 'function') {
         window.renderHistoryStage();
       }
@@ -8048,6 +8224,7 @@ window.renderHistoryStage = function(isLoading) {
 
   window.closeHistoryModal = function() {
     window.__okbmHistoryModalOpen = false;
+    _okbmAbortCommunityFeedsFetch();
     if (typeof window.okbmCleanupModalWatchers === 'function') {
       window.okbmCleanupModalWatchers();
     } else if (typeof window.okbmReleaseReelFeedObserver === 'function') {

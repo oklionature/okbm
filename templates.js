@@ -2,14 +2,15 @@
 // 🚀 [templates.js] 6종 정예 템플릿 엔진 & 포토 카드 스튜디오 마스터 (v2.6.1)
 // =========================================================================
 (function(window) {
-if (typeof window.escapeHtml !== 'function') {
-  window.escapeHtml = function(t) {
-    if (t == null) return '';
-    return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  };
-}
-var escapeHtml = window.escapeHtml;
+var escapeHtml = function(t) {
+  return (typeof window.escapeHtml === 'function') ? window.escapeHtml(t) : String(t == null ? '' : t);
+};
+var okbmSafeImageUrl = function(url) {
+  return (typeof window.okbmSafeImageUrl === 'function') ? window.okbmSafeImageUrl(url) : '';
+};
+var okbmSafeExternalUrl = function(url) {
+  return (typeof window.okbmSafeExternalUrl === 'function') ? window.okbmSafeExternalUrl(url) : '#';
+};
 
 var SVG_ICONS = window.SVG_ICONS || { brandLogo: '' };
 
@@ -1056,27 +1057,34 @@ window.handleReadyShotShareAction = async function(act) {
       var rec = window.currentShareRecord || {};
       var title = '낭만루트 READY SHOT';
       var desc = String(rec.spot || rec.oneLineMemo || '패킹 카드').slice(0, 80);
-      if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized()) {
-        var shareFn = (Kakao.Share && Kakao.Share.sendDefault) ? Kakao.Share.sendDefault : (Kakao.Link && Kakao.Link.sendDefault ? Kakao.Link.sendDefault : null);
-        if (shareFn) {
-          shareFn({
-            objectType: 'feed',
-            content: {
-              title: title,
-              description: desc,
-              imageUrl: imageUrl,
-              imageWidth: 1080,
-              imageHeight: 1440,
-              link: { mobileWebUrl: location.href, webUrl: location.href }
-            },
-            buttons: [
-              { title: '앱에서 보기', link: { mobileWebUrl: location.href, webUrl: location.href } }
-            ],
-            installTalk: true
-          });
-          return;
+      var sendKakao = function() {
+        if (typeof Kakao !== 'undefined' && Kakao.isInitialized && Kakao.isInitialized()) {
+          var shareFn = (Kakao.Share && Kakao.Share.sendDefault) ? Kakao.Share.sendDefault : (Kakao.Link && Kakao.Link.sendDefault ? Kakao.Link.sendDefault : null);
+          if (shareFn) {
+            shareFn({
+              objectType: 'feed',
+              content: {
+                title: title,
+                description: desc,
+                imageUrl: imageUrl,
+                imageWidth: 1080,
+                imageHeight: 1440,
+                link: { mobileWebUrl: location.href, webUrl: location.href }
+              },
+              buttons: [
+                { title: '앱에서 보기', link: { mobileWebUrl: location.href, webUrl: location.href } }
+              ],
+              installTalk: true
+            });
+            return true;
+          }
         }
+        return false;
+      };
+      if (typeof window.okbmEnsureKakaoSdk === 'function') {
+        try { await window.okbmEnsureKakaoSdk(); } catch (eKakao) {}
       }
+      if (sendKakao()) return;
       downloadReadyShotBlob(blob, fileName);
       if (typeof showToast === 'function') showToast('카카오 공유를 열 수 없어 이미지를 저장했습니다.', 'warn', 2200);
     }
@@ -1177,7 +1185,7 @@ window.updateStudioCardLive = function() {
     var minimalMemoLive = readyShotOneLineMemo(memoVal);
     container.innerHTML = `
       <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
-        <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
+        <img id="photoStudioBgImage" src="${escapeHtml(okbmSafeImageUrl(window.currentSharePhoto))}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
         
         <!-- 상단 헤더 (위치 및 일자) -->
         <div style="position:relative; z-index:10; display:flex; justify-content:space-between; align-items:center; padding:12px 14px 24px 14px; background:linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%); box-sizing:border-box;">
@@ -1242,7 +1250,7 @@ window.updateStudioCardLive = function() {
 
     container.innerHTML = `
       <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
-        <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
+        <img id="photoStudioBgImage" src="${escapeHtml(okbmSafeImageUrl(window.currentSharePhoto))}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
         <div style="position:absolute; inset:0; z-index:3; pointer-events:none; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr 1fr 1fr; opacity:0.65;">
           <div style="border-right:1px solid rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.4);"></div>
           <div style="border-right:1px solid rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.4);"></div>
@@ -1303,7 +1311,7 @@ window.updateStudioCardLive = function() {
     container.innerHTML = `
       <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); display:flex; justify-content:center; align-items:center; box-sizing:border-box; background:#000000;">
         <div style="position:absolute; inset:0; overflow:hidden; z-index:1; pointer-events:none;">
-          <img src="${window.currentSharePhoto}" style="width:112%; height:112%; object-fit:cover; object-position:${posX}% ${posY}%; filter:blur(9px) brightness(0.82); transform:scale(1.06); display:block; margin:-6%;" />
+          <img src="${escapeHtml(okbmSafeImageUrl(window.currentSharePhoto))}" style="width:112%; height:112%; object-fit:cover; object-position:${posX}% ${posY}%; filter:blur(9px) brightness(0.82); transform:scale(1.06); display:block; margin:-6%;" />
           <div style="position:absolute; inset:0; background:rgba(0,0,0,0.28);"></div>
         </div>
         <div style="position:relative; z-index:3; width:88%; max-width:290px; aspect-ratio:3/4; background:#000000; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.45), inset 0 1px 1px rgba(255,255,255,0.3); padding:9px 9px 12px 9px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; border:1px solid rgba(255,255,255,0.22);">
@@ -1315,7 +1323,7 @@ window.updateStudioCardLive = function() {
             <span style="font-family:'Space Grotesk', sans-serif; font-size:0.48rem; font-weight:700; color:rgba(255,255,255,0.7); letter-spacing:0.8px; flex-shrink:0;">${escapeHtml(dateStr)}</span>
           </div>
           <div style="width:100%; aspect-ratio:4/3; border-radius:4px; overflow:hidden; background:#000; box-shadow:0 4px 14px rgba(0,0,0,0.6); flex-shrink:0; position:relative;">
-            <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; display:block; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; pointer-events:none;" />
+            <img id="photoStudioBgImage" src="${escapeHtml(okbmSafeImageUrl(window.currentSharePhoto))}" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; display:block; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; pointer-events:none;" />
           </div>
           <div style="flex:1; width:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; min-height:0; box-sizing:border-box;">
             <div style="display:flex; justify-content:center; align-items:center; gap:6px; font-family:'Space Grotesk', sans-serif; letter-spacing:0.6px;">
@@ -1363,13 +1371,13 @@ window.updateStudioCardLive = function() {
     container.innerHTML = `
       <div style="position:relative; ${cardRatioCss} overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); display:flex; justify-content:center; align-items:center; box-sizing:border-box; background:#07090e;">
         <div style="position:absolute; inset:0; overflow:hidden; z-index:1; pointer-events:none;">
-          <img src="${window.currentSharePhoto}" style="width:112%; height:112%; object-fit:cover; object-position:${posX}% ${posY}%; filter:blur(9px) brightness(0.82); transform:scale(1.06); display:block; margin:-6%;" />
+          <img src="${escapeHtml(okbmSafeImageUrl(window.currentSharePhoto))}" style="width:112%; height:112%; object-fit:cover; object-position:${posX}% ${posY}%; filter:blur(9px) brightness(0.82); transform:scale(1.06); display:block; margin:-6%;" />
           <div style="position:absolute; inset:0; background:rgba(0,0,0,0.28);"></div>
         </div>
         <div style="position:absolute; inset:14px; border:1px solid rgba(255,255,255,0.35); pointer-events:none; z-index:2; border-radius:2px;"></div>
         <div style="position:relative; z-index:3; width:88%; max-width:290px; aspect-ratio:3/4; background:#fdfcf9; border-radius:6px; box-shadow:0 18px 45px rgba(0,0,0,0.75), 0 2px 8px rgba(0,0,0,0.4); padding:8px 8px 10px 8px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; color:#1c1917;">
           <div style="flex:1 1 0%; min-height:0; width:100%; border-radius:4px; overflow:hidden; background:#000; box-shadow:inset 0 0 4px rgba(0,0,0,0.3); margin-bottom:6px;">
-            <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; display:block; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; pointer-events:none;" />
+            <img id="photoStudioBgImage" src="${escapeHtml(okbmSafeImageUrl(window.currentSharePhoto))}" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; display:block; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; pointer-events:none;" />
           </div>
           <div style="flex-shrink:0; display:flex; flex-direction:column; gap:4px;">
             <div style="text-align:center; padding:0 2px;">
@@ -1567,7 +1575,7 @@ window.updateStudioCardLive = function() {
   container.innerHTML = `
     <div style="${cardRatioCss} background:#fbfaf7; box-shadow:0 16px 36px rgba(0,0,0,0.85); border-radius:10px; padding:7px 7px 8px 7px; display:flex; flex-direction:column; justify-content:space-between; gap:6px; box-sizing:border-box; color:#1e293b; font-family:'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;">
       <div style="position:relative; width:100%; flex:1 1 0%; min-height:100px; border-radius:6px; overflow:hidden; background:#000; box-shadow:inset 0 0 3px rgba(0,0,0,0.3);">
-        <img id="photoStudioBgImage" src="${window.currentSharePhoto}" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; pointer-events:none;" />
+        <img id="photoStudioBgImage" src="${escapeHtml(okbmSafeImageUrl(window.currentSharePhoto))}" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; pointer-events:none;" />
       </div>
       <div style="flex-shrink:0; display:flex; flex-direction:column; gap:4px; width:100%; box-sizing:border-box;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:3px;">
@@ -2116,7 +2124,7 @@ function renderPhotoOverlayMarkup(opts) {
   return '' +
     '<div class="photo-overlay-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#111111; box-sizing:border-box; user-select:none; color:#ffffff; display:flex; flex-direction:column;">' +
       '<div style="position:relative; flex:1 1 56%; min-height:52%; overflow:hidden; z-index:1;">' +
-        '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; pointer-events:none;" />' +
+        '<img' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; pointer-events:none;" />' +
         '<div style="position:absolute; left:0; right:0; top:0; height:34%; pointer-events:none; background:linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.10) 58%, transparent 100%);"></div>' +
         tear +
         '<div style="position:absolute; top:12px; left:16px; z-index:6;">' +
@@ -2185,7 +2193,7 @@ function renderEditorialOverlayMarkup(opts) {
 
   return '' +
     '<div class="photo-overlay-card editorial-pack" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#000000; box-sizing:border-box; user-select:none; color:#ffffff;">' +
-      '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; z-index:1; pointer-events:none;" />' +
+      '<img' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; z-index:1; pointer-events:none;" />' +
       '<div style="position:absolute; left:0; right:0; top:0; height:38%; z-index:2; pointer-events:none; background:linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.12) 55%, transparent 100%);"></div>' +
       '<div style="position:absolute; left:0; right:0; bottom:0; height:46%; z-index:2; pointer-events:none; background:linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.08) 18%, rgba(0,0,0,0.55) 52%, rgba(0,0,0,0.86) 78%, rgba(0,0,0,0.94) 100%);"></div>' +
       '<div style="position:absolute; inset:0; z-index:3; pointer-events:none;">' +
@@ -2249,7 +2257,7 @@ function renderMagazineCoverMarkup(opts) {
   return '' +
     '<div class="photo-overlay-card magazine-cover" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#111111; box-sizing:border-box; user-select:none;">' +
       '<div class="mag-photo">' +
-        '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block;" />' +
+        '<img' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block;" />' +
       '</div>' +
       '<div class="mag-type mag-type-dark">' + typeHtml + '</div>' +
       '<div class="mag-type mag-type-light">' + typeHtml + '</div>' +
@@ -2289,7 +2297,7 @@ function renderSpreadMarkup(opts) {
   return '' +
     '<div class="photo-overlay-card spread-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#f7f4ee; box-sizing:border-box; user-select:none;">' +
       '<div class="sp-photo">' +
-        '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; pointer-events:none;" />' +
+        '<img' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; pointer-events:none;" />' +
         '<div class="sp-fade"></div>' +
         '<div class="sp-title">THE PACK</div>' +
       '</div>' +
@@ -2343,7 +2351,7 @@ function renderIssueMarkup(opts) {
         '<div class="iss-note iss-date">' + issueDateLines(dateStr) + '</div>' +
         '<svg class="iss-arrow iss-a1" viewBox="0 0 80 50" aria-hidden="true"><path d="M8 28 C 28 8, 48 18, 74 22"/></svg>' +
         '<div class="iss-frame">' +
-          '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
+          '<img' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
         '</div>' +
         (memoText ? '<div class="iss-memo">' + escapeHtml(memoText) + '</div>' : '') +
         '<div class="iss-note iss-spot">' + escapeHtml(spot) + '</div>' +
@@ -2380,7 +2388,7 @@ function renderKuchiMarkup(opts) {
   return '' +
     '<div class="photo-overlay-card kuchi-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:18px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#ffffff; box-sizing:border-box; user-select:none;">' +
       '<div class="kc-sheet">' +
-        '<img class="kc-photo"' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
+        '<img class="kc-photo"' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
         '<div class="kc-rail">' +
           '<div class="kc-block"><span class="kc-lab">date</span><span class="kc-val">' + escapeHtml(dateStr) + '</span></div>' +
           '<div class="kc-block spot"><span class="kc-lab">spot</span><span class="kc-val">' + escapeHtml(spot) + '</span></div>' +
@@ -2428,7 +2436,7 @@ function renderBalanceMarkup(opts) {
   return '' +
     '<div class="photo-overlay-card balance-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:18px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#ffffff; box-sizing:border-box; user-select:none;">' +
       '<div class="bl-sheet">' +
-        '<img class="bl-photo"' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
+        '<img class="bl-photo"' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
         '<div class="bl-copy bl-copy-dark">' + copyInner + '</div>' +
         '<div class="bl-copy bl-copy-light">' + copyInner + '</div>' +
         '<div class="bl-logo">' +
@@ -2491,7 +2499,7 @@ function renderNrcCertShotMarkup(opts) {
 
   return '' +
     '<div style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#000000; box-sizing:border-box; user-select:none;">' +
-      '<img' + imgIdAttr + ' src="' + escapeHtml(photoUrl) + '" ' + imgErr + ' style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; z-index:1; pointer-events:none;" />' +
+      '<img' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; z-index:1; pointer-events:none;" />' +
       '<div style="position:absolute; inset:auto 0 0 0; height:58%; z-index:2; pointer-events:none; background:linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.22) 40%, rgba(0,0,0,0.62) 100%);"></div>' +
       '<div style="position:absolute; top:12px; left:14px; right:14px; z-index:5; display:flex; justify-content:space-between; align-items:center;">' +
         '<div style="display:inline-flex; align-items:center; gap:4px; min-width:0; max-width:70%;">' +
@@ -2539,7 +2547,7 @@ window.generateReadyShotMarkup = function(record, options) {
     var minimalMemo = readyShotOneLineMemo(memo);
     return `
       <div class="ready-shot-card-vector ready-shot-minimal" style="position:relative; width:100%; max-width:330px; aspect-ratio:3/4; margin:auto; overflow:hidden; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,0.9); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
-        <img src="${escapeHtml(photoUrl)}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
+        <img src="${escapeHtml(okbmSafeImageUrl(photoUrl))}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
         
         <!-- 상단 헤더 (위치 및 일자) -->
         <div style="position:relative; z-index:10; display:flex; justify-content:space-between; align-items:center; padding:12px 14px 24px 14px; background:linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%); box-sizing:border-box;">
@@ -2603,7 +2611,7 @@ window.generateReadyShotMarkup = function(record, options) {
 
     return `
       <div class="ready-shot-card-vector ready-shot-sage" style="position:relative; width:100%; max-width:330px; aspect-ratio:3/4; margin:auto; overflow:hidden; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,0.9); display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; background:#000000; user-select:none;">
-        <img src="${escapeHtml(photoUrl)}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
+        <img src="${escapeHtml(okbmSafeImageUrl(photoUrl))}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block; z-index:1; pointer-events:none;" />
         <div style="position:absolute; inset:0; z-index:3; pointer-events:none; display:grid; grid-template-columns:1fr 1fr 1fr; grid-template-rows:1fr 1fr 1fr; opacity:0.65;">
           <div style="border-right:1px solid rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.4);"></div>
           <div style="border-right:1px solid rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.4);"></div>
@@ -2663,7 +2671,7 @@ window.generateReadyShotMarkup = function(record, options) {
     return `
       <div class="ready-shot-card-vector ready-shot-chic" style="position:relative; width:100%; max-width:330px; aspect-ratio:3/4; margin:auto; overflow:hidden; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,0.9); display:flex; justify-content:center; align-items:center; box-sizing:border-box; background:#000000; user-select:none;">
         <div style="position:absolute; inset:0; overflow:hidden; z-index:1; pointer-events:none;">
-          <img src="${escapeHtml(photoUrl)}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:112%; height:112%; object-fit:cover; object-position:${posX}% ${posY}%; filter:blur(9px) brightness(0.82); transform:scale(1.06); display:block; margin:-6%;" />
+          <img src="${escapeHtml(okbmSafeImageUrl(photoUrl))}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:112%; height:112%; object-fit:cover; object-position:${posX}% ${posY}%; filter:blur(9px) brightness(0.82); transform:scale(1.06); display:block; margin:-6%;" />
           <div style="position:absolute; inset:0; background:rgba(0,0,0,0.28);"></div>
         </div>
         <div style="position:relative; z-index:3; width:88%; max-width:290px; aspect-ratio:3/4; background:#000000; border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.45), inset 0 1px 1px rgba(255,255,255,0.3); padding:9px 9px 12px 9px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; border:1px solid rgba(255,255,255,0.22);">
@@ -2675,7 +2683,7 @@ window.generateReadyShotMarkup = function(record, options) {
             <span style="font-family:'Space Grotesk', sans-serif; font-size:0.48rem; font-weight:700; color:rgba(255,255,255,0.7); letter-spacing:0.8px; flex-shrink:0;">${escapeHtml(dateStr)}</span>
           </div>
           <div style="width:100%; aspect-ratio:4/3; border-radius:4px; overflow:hidden; background:#000; box-shadow:0 4px 14px rgba(0,0,0,0.6); flex-shrink:0; position:relative;">
-            <img src="${escapeHtml(photoUrl)}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; display:block; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; pointer-events:none;" />
+            <img src="${escapeHtml(okbmSafeImageUrl(photoUrl))}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; display:block; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; pointer-events:none;" />
           </div>
           <div style="flex:1; width:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; min-height:0; box-sizing:border-box;">
             <div style="display:flex; justify-content:center; align-items:center; gap:6px; font-family:'Space Grotesk', sans-serif; letter-spacing:0.6px;">
@@ -2722,13 +2730,13 @@ window.generateReadyShotMarkup = function(record, options) {
     return `
       <div class="ready-shot-card-vector ready-shot-essay" style="position:relative; width:100%; max-width:330px; aspect-ratio:3/4; margin:auto; overflow:hidden; border-radius:14px; box-shadow:0 12px 30px rgba(0,0,0,0.9); display:flex; justify-content:center; align-items:center; box-sizing:border-box; background:#07090e; user-select:none;">
         <div style="position:absolute; inset:0; overflow:hidden; z-index:1; pointer-events:none;">
-          <img src="${escapeHtml(photoUrl)}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:112%; height:112%; object-fit:cover; object-position:${posX}% ${posY}%; filter:blur(9px) brightness(0.82); transform:scale(1.06); display:block; margin:-6%;" />
+          <img src="${escapeHtml(okbmSafeImageUrl(photoUrl))}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:112%; height:112%; object-fit:cover; object-position:${posX}% ${posY}%; filter:blur(9px) brightness(0.82); transform:scale(1.06); display:block; margin:-6%;" />
           <div style="position:absolute; inset:0; background:rgba(0,0,0,0.28);"></div>
         </div>
         <div style="position:absolute; inset:14px; border:1px solid rgba(255,255,255,0.35); pointer-events:none; z-index:2; border-radius:2px;"></div>
         <div style="position:relative; z-index:3; width:88%; max-width:290px; aspect-ratio:3/4; background:#fdfcf9; border-radius:6px; box-shadow:0 18px 45px rgba(0,0,0,0.75), 0 2px 8px rgba(0,0,0,0.4); padding:8px 8px 10px 8px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; color:#1c1917;">
           <div style="flex:1 1 0%; min-height:0; width:100%; border-radius:4px; overflow:hidden; background:#000; box-shadow:inset 0 0 4px rgba(0,0,0,0.3); margin-bottom:6px;">
-            <img src="${escapeHtml(photoUrl)}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; display:block; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; pointer-events:none;" />
+            <img src="${escapeHtml(okbmSafeImageUrl(photoUrl))}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; display:block; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; pointer-events:none;" />
           </div>
           <div style="flex-shrink:0; display:flex; flex-direction:column; gap:4px;">
             <div style="text-align:center; padding:0 2px;">
@@ -2918,7 +2926,7 @@ window.generateReadyShotMarkup = function(record, options) {
   return `
     <div class="ready-shot-card-vector ready-shot-packing" style="width:100%; max-width:330px; aspect-ratio:3/4; margin:auto; background:#fbfaf7; box-shadow:0 12px 30px rgba(0,0,0,0.9); border-radius:12px; padding:8px 8px 10px 8px; display:flex; flex-direction:column; justify-content:space-between; gap:6px; box-sizing:border-box; color:#1e293b; font-family:'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; user-select:none;">
       <div style="position:relative; width:100%; flex:1 1 0%; min-height:100px; border-radius:6px; overflow:hidden; background:#000; box-shadow:inset 0 0 3px rgba(0,0,0,0.3);">
-        <img src="${escapeHtml(photoUrl)}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block;" />
+        <img src="${escapeHtml(okbmSafeImageUrl(photoUrl))}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; display:block;" />
       </div>
       <div style="flex-shrink:0; display:flex; flex-direction:column; gap:4px; width:100%; box-sizing:border-box;">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #e2e8f0; padding-bottom:3px;">

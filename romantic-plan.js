@@ -163,10 +163,13 @@
   };
 
   var escapeHtml = function(text) {
-    return (typeof window.escapeHtml === 'function') ? window.escapeHtml(text) : (function(t) {
-      if (t === null || t === undefined) return '';
-      return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-    })(text);
+    return (typeof window.escapeHtml === 'function') ? window.escapeHtml(text) : String(text == null ? '' : text);
+  };
+  var okbmSafeImageUrl = function(url) {
+    return (typeof window.okbmSafeImageUrl === 'function') ? window.okbmSafeImageUrl(url) : '';
+  };
+  var okbmSafeExternalUrl = function(url) {
+    return (typeof window.okbmSafeExternalUrl === 'function') ? window.okbmSafeExternalUrl(url) : '#';
   };
 
   function unescapePlanText(text) {
@@ -269,6 +272,24 @@
       if (clearDay) {
         if (typeof window.clearEntireDaySchedule === 'function') {
           window.clearEntireDaySchedule(clearDay.dataset.date || '');
+        }
+        return;
+      }
+      var toggleAllPack = e.target.closest('.js-toggle-all-pack');
+      if (toggleAllPack) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof window.toggleAllPackCheckItems === 'function') {
+          window.toggleAllPackCheckItems(toggleAllPack.getAttribute('data-force-state') === '1', toggleAllPack.getAttribute('data-date') || '');
+        }
+        return;
+      }
+      var completeCheck = e.target.closest('.js-complete-checklist');
+      if (completeCheck) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof window.completeChecklist === 'function') {
+          window.completeChecklist(completeCheck.getAttribute('data-date') || '');
         }
         return;
       }
@@ -398,6 +419,11 @@
     var clearBtn = document.getElementById('btnCalcSearchClear');
     if (clearBtn) clearBtn.style.display = 'none';
     triggerHaptic(8);
+    if (typeof window.ensureGearCategoryLoaded === 'function') {
+      window.ensureGearCategoryLoaded(catId).then(function() {
+        window.renderPlanCategorySlots();
+      });
+    }
     window.renderPlanCategorySlots();
   };
  window.__presetTouch = null;
@@ -1426,7 +1452,7 @@
         } else if (cleanUrl.indexOf('rei.com') !== -1) {
           domainLabel = 'REI 공식 제원';
         }
-        evEl.innerHTML = '<a href="' + cleanUrl + '" target="_blank" rel="noopener noreferrer" style="color:#38bdf8; text-decoration:none; font-weight:700; display:inline-flex; align-items:center; gap:4px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); padding:3px 8px; border-radius:6px; font-size:0.64rem; transition:all 0.15s ease;"><span>' + domainLabel + '</span> <span style="font-size:0.7rem;">↗</span></a>';
+        evEl.innerHTML = '<a href="' + escapeHtml(okbmSafeExternalUrl(cleanUrl)) + '" target="_blank" rel="noopener noreferrer" style="color:#38bdf8; text-decoration:none; font-weight:700; display:inline-flex; align-items:center; gap:4px; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); padding:3px 8px; border-radius:6px; font-size:0.64rem; transition:all 0.15s ease;"><span>' + domainLabel + '</span> <span style="font-size:0.7rem;">↗</span></a>';
       } else {
         evEl.innerText = evVal || '공식 카탈로그 제원';
       }
@@ -1632,6 +1658,11 @@
     if (searchInput) searchInput.value = '';
     if (clearBtn) clearBtn.style.display = 'none';
 
+    if (typeof window.ensureGearCategoryLoaded === 'function') {
+      window.ensureGearCategoryLoaded(categoryId).then(function() {
+        window.renderPresetGearList('');
+      });
+    }
     window.renderPresetGearList('');
 
     var modal = document.getElementById('gearPresetModal');
@@ -2024,7 +2055,7 @@ window.openQuickGearRegisterModal = function(opts) {
     }
 
     triggerHaptic(12);
-    if (typeof showToast === 'function') showToast('[' + escapeHtml(name) + '] 등록 완료', 'success');
+    if (typeof showToast === 'function') showToast('[' + name + '] 등록 완료', 'success');
 
     if (window.activePlanSubMode === 'calculator') {
       window.renderPlanCategorySlots();
@@ -2191,55 +2222,76 @@ window.saveCurrentPackingRecord = function() {
     }
   };
 
-  var CURRENT_GEAR_VERSION = '20260921_FOOD_CLEANUP';
+  var CURRENT_GEAR_VERSION = '20260922_CAT_SPLIT';
+  var GEAR_SPLIT_CATS = ['shelter', 'sleep', 'pack', 'food', 'kitchen', 'wear', 'electronics', 'camp', 'other'];
+  window.__okbmGearCatLoaded = window.__okbmGearCatLoaded || {};
+  window.__okbmGearCatPromises = window.__okbmGearCatPromises || {};
 
-  // 1. 초기 로드 시 구버전 장비 캐시 즉시 소거 (localStorage 영구 중단, 메모리 전용화)
   (function verifyGearCacheVersion() {
     try {
       localStorage.removeItem('okbm_master_gears');
       localStorage.removeItem('okbm_master_gears_cache');
-    } catch(e) {}
+      if (localStorage.getItem('okbm_gear_version') !== CURRENT_GEAR_VERSION) {
+        window.__okbmGearCatLoaded = {};
+        window.__okbmGearCatPromises = {};
+        window.__okbmGearSplitUnavailable = false;
+        if (window.__memoryStore) {
+          delete window.__memoryStore['okbm_master_gears'];
+          delete window.__memoryStore['okbm_master_gears_cache'];
+        }
+        window.GEARS_MASTER = [];
+      }
+    } catch (e) {}
   })();
 
-  window.loadGearDbFromGoogleSheet = async function(isForce) {
-    if (!isForce && window.GEARS_MASTER && Array.isArray(window.GEARS_MASTER) && window.GEARS_MASTER.length > 0) {
-      return;
+  function okbmGearAssetBase() {
+    return (window.location && window.location.pathname.indexOf('/okbm') !== -1) ? '/okbm/' : '';
+  }
+
+  function okbmYieldToMain() {
+    return new Promise(function(resolve) {
+      if (typeof scheduler !== 'undefined' && typeof scheduler.yield === 'function') {
+        scheduler.yield().then(resolve, function() { setTimeout(resolve, 0); });
+      } else {
+        setTimeout(resolve, 0);
+      }
+    });
+  }
+
+  async function okbmFetchGearJson(relPath) {
+    var opts = { cache: 'force-cache' };
+    var res = await fetch(okbmGearAssetBase() + relPath + '?v=' + CURRENT_GEAR_VERSION, opts);
+    if ((!res || !res.ok) && okbmGearAssetBase()) {
+      res = await fetch(relPath + '?v=' + CURRENT_GEAR_VERSION, opts);
     }
+    if (!res || !res.ok) return null;
+    var data = await res.json();
+    return (Array.isArray(data) && data.length) ? data : null;
+  }
 
-    try {
-      localStorage.removeItem('okbm_master_gears');
-      localStorage.removeItem('okbm_master_gears_cache');
-    } catch(e) {}
+  function okbmMarkAllGearCatsLoaded() {
+    GEAR_SPLIT_CATS.forEach(function(id) { window.__okbmGearCatLoaded[id] = true; });
+    try { localStorage.setItem('okbm_gear_version', CURRENT_GEAR_VERSION); } catch (e) {}
+  }
 
-    var memList = window.__memoryStore && window.__memoryStore['okbm_master_gears'];
-    if (!isForce && Array.isArray(memList) && memList.length > 0) {
-      applyFetchedGears(memList);
-      return;
+  function okbmRefreshPresetGearListIfOpen() {
+    if (window.currentOpeningCategoryId && typeof window.renderPresetGearList === 'function') {
+      var searchInput = document.getElementById('gearSearchFixedInput');
+      window.renderPresetGearList(searchInput ? searchInput.value : '');
     }
+  }
 
+  async function okbmLoadGearMonolithFallback() {
     var allRows = null;
-
     try {
-      var basePath = (typeof window !== 'undefined' && window.location && window.location.pathname.indexOf('/okbm') !== -1) ? '/okbm/' : '';
-      var primaryUrl = basePath ? (basePath + 'gears_master.json?v=' + CURRENT_GEAR_VERSION) : ('gears_master.json?v=' + CURRENT_GEAR_VERSION);
-      var staticRes = await fetch(primaryUrl);
-      if (!staticRes.ok && basePath) {
-        staticRes = await fetch('gears_master.json?v=' + CURRENT_GEAR_VERSION);
-      }
-      if (staticRes.ok) {
-        var staticData = await staticRes.json();
-        if (Array.isArray(staticData) && staticData.length > 0) {
-          allRows = staticData;
-        }
-      }
+      allRows = await okbmFetchGearJson('gears_master.json');
     } catch (staticErr) {
       console.warn('[romantic-plan.js] Static gears_master.json fetch failed, fallback to Supabase', staticErr);
     }
-
-    if (!allRows || allRows.length === 0) {
+    if (!allRows || !allRows.length) {
       try {
         var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-        var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
+        var targetKey = window.SUPABASE_ANON_KEY || '';
         var selectCols = 'id,category_id,item_name,weight_g,brand,specs_detail,verified,weight_type,evidence';
         var rowsAccum = [];
         var page = 0;
@@ -2249,7 +2301,7 @@ window.saveCurrentPackingRecord = function() {
           var res = await fetch(targetUrl + '/rest/v1/gears?select=' + selectCols + '&order=id.asc&offset=' + (page * pageSize) + '&limit=' + pageSize, {
             headers: {
               'apikey': targetKey,
-              'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+              'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
               'Content-Type': 'application/json'
             }
           });
@@ -2260,25 +2312,122 @@ window.saveCurrentPackingRecord = function() {
           if (chunk.length < pageSize) break;
           page++;
         }
-        if (rowsAccum.length > 0) {
-          allRows = rowsAccum;
-        }
+        if (rowsAccum.length > 0) allRows = rowsAccum;
       } catch (e) { console.warn('[romantic-plan.js:loadGearDbFromGoogleSheet Supabase fallback]', e); }
     }
+    if (allRows && allRows.length) {
+      applyFetchedGears(allRows, { merge: false });
+      okbmMarkAllGearCatsLoaded();
+      okbmRefreshPresetGearListIfOpen();
+      return allRows;
+    }
+    return [];
+  }
 
-    if (allRows && allRows.length > 0) {
-      applyFetchedGears(allRows);
-      try { localStorage.setItem('okbm_gear_version', CURRENT_GEAR_VERSION); } catch(e) {}
-      if (typeof window.renderPlanStage === 'function') {
-        window.renderPlanStage();
+  window.ensureGearCategoryLoaded = async function(catId) {
+    var target = String(catId || '').trim();
+    if (!target || target === 'all' || target === 'fav') {
+      return window.ensureAllGearCategoriesLoaded(false);
+    }
+    if (window.__okbmGearCatLoaded[target]) {
+      var cache = window.__memoryStore && window.__memoryStore['okbm_master_gears_cache'];
+      return (cache && cache[target]) || [];
+    }
+    if (window.__okbmGearCatPromises[target]) return window.__okbmGearCatPromises[target];
+
+    window.__okbmGearCatPromises[target] = (async function() {
+      if (window.__okbmGearSplitUnavailable) {
+        await okbmLoadGearMonolithFallback();
+        var fbCache = window.__memoryStore && window.__memoryStore['okbm_master_gears_cache'];
+        return (fbCache && fbCache[target]) || [];
       }
+      var data = null;
+      try {
+        data = await okbmFetchGearJson('gears/' + target + '.json');
+      } catch (e) {
+        data = null;
+      }
+      if (!data) {
+        window.__okbmGearSplitUnavailable = true;
+        await okbmLoadGearMonolithFallback();
+        var missCache = window.__memoryStore && window.__memoryStore['okbm_master_gears_cache'];
+        return (missCache && missCache[target]) || [];
+      }
+      applyFetchedGears(data, { merge: true, categoryId: target });
+      window.__okbmGearCatLoaded[target] = true;
+      try { localStorage.setItem('okbm_gear_version', CURRENT_GEAR_VERSION); } catch (e) {}
+      okbmRefreshPresetGearListIfOpen();
+      return data;
+    })();
+
+    try {
+      return await window.__okbmGearCatPromises[target];
+    } finally {
+      delete window.__okbmGearCatPromises[target];
     }
   };
 
-  // [정식 명칭] loadGearDbMaster: Supabase/정적 JSON에서 기어 마스터 DB를 로드합니다.
+  window.ensureAllGearCategoriesLoaded = async function(isForce) {
+    if (isForce) {
+      window.__okbmGearCatLoaded = {};
+      window.__okbmGearCatPromises = {};
+      window.__okbmGearSplitUnavailable = false;
+      window.__okbmGearAllPromise = null;
+    }
+    var pending = GEAR_SPLIT_CATS.filter(function(id) { return !window.__okbmGearCatLoaded[id]; });
+    if (!pending.length) return window.GEARS_MASTER || [];
+    if (window.__okbmGearAllPromise && !isForce) return window.__okbmGearAllPromise;
+
+    window.__okbmGearAllPromise = (async function() {
+      if (window.__okbmGearSplitUnavailable) {
+        return okbmLoadGearMonolithFallback();
+      }
+      var okCount = 0;
+      var applyQueue = Promise.resolve();
+      await Promise.all(pending.map(function(id) {
+        return okbmFetchGearJson('gears/' + id + '.json').then(function(data) {
+          if (!Array.isArray(data) || !data.length) return;
+          applyQueue = applyQueue.then(function() {
+            applyFetchedGears(data, { merge: true, categoryId: id });
+            window.__okbmGearCatLoaded[id] = true;
+            okCount += 1;
+            return okbmYieldToMain();
+          });
+          return applyQueue;
+        }).catch(function() {});
+      }));
+      await applyQueue;
+      if (okCount === 0) {
+        window.__okbmGearSplitUnavailable = true;
+        return okbmLoadGearMonolithFallback();
+      }
+      try { localStorage.setItem('okbm_gear_version', CURRENT_GEAR_VERSION); } catch (e) {}
+      okbmRefreshPresetGearListIfOpen();
+      return window.GEARS_MASTER || [];
+    })();
+
+    try {
+      return await window.__okbmGearAllPromise;
+    } finally {
+      window.__okbmGearAllPromise = null;
+    }
+  };
+
+  window.loadGearDbFromGoogleSheet = async function(isForce) {
+    var allReady = GEAR_SPLIT_CATS.every(function(id) { return window.__okbmGearCatLoaded[id]; });
+    if (!isForce && allReady && window.GEARS_MASTER && window.GEARS_MASTER.length) {
+      return window.GEARS_MASTER;
+    }
+    try {
+      localStorage.removeItem('okbm_master_gears');
+      localStorage.removeItem('okbm_master_gears_cache');
+    } catch (e) {}
+    return window.ensureAllGearCategoriesLoaded(!!isForce);
+  };
+
   window.loadGearDbMaster = window.loadGearDbFromGoogleSheet;
 
-  function applyFetchedGears(rows) {
+  function applyFetchedGears(rows, opts) {
     var sheetGearsByCategory = {};
     var compactMasterRows = [];
 
@@ -2334,20 +2483,45 @@ window.saveCurrentPackingRecord = function() {
       }
     });
 
-    // 🛡️ [헌법 제1조 & 5MB 초과 방지] localStorage에 장비 마스터를 절대 저장하지 않고 메모리에만 수화(Hydrate)
     try {
       localStorage.removeItem('okbm_master_gears');
       localStorage.removeItem('okbm_master_gears_cache');
-    } catch(e) {}
+    } catch (e) {}
 
+    opts = opts || {};
+    var merge = opts.merge === true;
     window.__memoryStore = window.__memoryStore || {};
-    window.__memoryStore['okbm_master_gears'] = compactMasterRows;
-    window.__memoryStore['okbm_master_gears_cache'] = sheetGearsByCategory;
-    window.GEARS_MASTER = compactMasterRows;
 
-    (window.CATEGORIES || []).forEach(function(cat) {
-      cat.db = sheetGearsByCategory[cat.id] ? sheetGearsByCategory[cat.id].slice() : [];
-    });
+    if (!merge) {
+      window.__memoryStore['okbm_master_gears'] = compactMasterRows;
+      window.__memoryStore['okbm_master_gears_cache'] = sheetGearsByCategory;
+      window.GEARS_MASTER = compactMasterRows;
+      (window.CATEGORIES || []).forEach(function(cat) {
+        cat.db = sheetGearsByCategory[cat.id] ? sheetGearsByCategory[cat.id].slice() : [];
+      });
+    } else {
+      var cache = window.__memoryStore['okbm_master_gears_cache'] || {};
+      var master = Array.isArray(window.__memoryStore['okbm_master_gears']) ? window.__memoryStore['okbm_master_gears'].slice() : [];
+      var seen = {};
+      master.forEach(function(r) {
+        if (r && r.id) seen[String(r.id)] = true;
+      });
+      Object.keys(sheetGearsByCategory).forEach(function(catId) {
+        cache[catId] = sheetGearsByCategory[catId].slice();
+      });
+      compactMasterRows.forEach(function(r) {
+        if (r && r.id && !seen[String(r.id)]) {
+          master.push(r);
+          seen[String(r.id)] = true;
+        }
+      });
+      window.__memoryStore['okbm_master_gears_cache'] = cache;
+      window.__memoryStore['okbm_master_gears'] = master;
+      window.GEARS_MASTER = master;
+      (window.CATEGORIES || []).forEach(function(cat) {
+        if (cache[cat.id]) cat.db = cache[cat.id].slice();
+      });
+    }
 
     autoHealSelectedGears(compactMasterRows);
 
@@ -2537,7 +2711,10 @@ window.saveCurrentPackingRecord = function() {
       toggleBtn.style.borderColor = all ? 'rgba(253,224,71,0.4)' : 'rgba(255,255,255,0.18)';
       toggleBtn.style.color = all ? '#fde047' : '#f8fafc';
       var dateStr = window.activeSelectedDateKey || '';
-      toggleBtn.setAttribute('onclick', "window.toggleAllPackCheckItems(" + (!all) + ", '" + dateStr + "')");
+      toggleBtn.classList.add('js-toggle-all-pack');
+      toggleBtn.setAttribute('data-force-state', (!all) ? '1' : '0');
+      toggleBtn.setAttribute('data-date', dateStr);
+      toggleBtn.removeAttribute('onclick');
     }
   };
 
@@ -2630,7 +2807,7 @@ window.saveCurrentPackingRecord = function() {
     }
 
     triggerHaptic(12);
-    if (typeof showToast === 'function') showToast('[' + escapeHtml(name) + '] 체크리스트 추가 완료', 'success');
+    if (typeof showToast === 'function') showToast('[' + name + '] 체크리스트 추가 완료', 'success');
     window.renderPlanStage();
   };
 
@@ -3480,7 +3657,7 @@ window.saveCurrentPackingRecord = function() {
           </div>
           
           <div style="display:flex; align-items:center; flex-shrink:0;" onclick="event.stopPropagation();">
-            <button type="button" id="checklistToggleAllBtn" onclick="window.toggleAllPackCheckItems(${!isAllComplete}, '${activeDateStr}')" style="background:${isAllComplete ? 'rgba(253,224,71,0.12)' : 'rgba(255,255,255,0.08)'}; border:1px solid ${isAllComplete ? 'rgba(253,224,71,0.4)' : 'rgba(255,255,255,0.18)'}; color:${isAllComplete ? '#fde047' : '#f8fafc'}; font-size:0.72rem; font-weight:800; padding:6px 12px; border-radius:6px; cursor:pointer; transition:all 0.15s ease;">
+            <button type="button" id="checklistToggleAllBtn" class="js-toggle-all-pack" data-force-state="${!isAllComplete ? '1' : '0'}" data-date="${escapeHtml(activeDateStr)}" style="background:${isAllComplete ? 'rgba(253,224,71,0.12)' : 'rgba(255,255,255,0.08)'}; border:1px solid ${isAllComplete ? 'rgba(253,224,71,0.4)' : 'rgba(255,255,255,0.18)'}; color:${isAllComplete ? '#fde047' : '#f8fafc'}; font-size:0.72rem; font-weight:800; padding:6px 12px; border-radius:6px; cursor:pointer; transition:all 0.15s ease;">
               ${isAllComplete ? '전체 해제' : '전체 선택'}
             </button>
           </div>
@@ -3543,7 +3720,7 @@ window.saveCurrentPackingRecord = function() {
         <!-- 4. 최하단 프로그레스 게이지 완료 독 -->
         <div id="checklistProgressDock" style="position:relative; width:100%; height:44px; border-radius:10px; overflow:hidden; border:1px solid ${isAllComplete ? 'rgba(253,224,71,0.6)' : 'rgba(255,255,255,0.2)'}; background:rgba(15,23,42,0.7); flex-shrink:0; box-shadow:${isAllComplete ? '0 4px 16px rgba(253,224,71,0.3)' : '0 4px 14px rgba(0,0,0,0.5)'}; transition:all 0.25s ease;">
           <div id="checklistProgressFill" style="position:absolute; top:0; left:0; bottom:0; width:${planProgressPct}%; background:linear-gradient(90deg, rgba(253,224,71,0.2) 0%, rgba(245,158,11,0.55) 100%); transition:width 0.25s ease; pointer-events:none;"></div>
-          <button type="button" onclick="window.completeChecklist('${activeDateStr}');" style="position:relative; z-index:2; width:100%; height:100%; background:none; border:none; color:#ffffff; font-size:0.84rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap;">
+          <button type="button" class="js-complete-checklist" data-date="${escapeHtml(activeDateStr)}" style="position:relative; z-index:2; width:100%; height:100%; background:none; border:none; color:#ffffff; font-size:0.84rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap;">
             <svg id="checklistProgressIcon" viewBox="0 0 24 24" style="width:16px; height:16px; stroke:${isAllComplete ? '#fde047' : '#ffffff'}; fill:none; stroke-width:2.5;"><polyline points="20 6 9 17 4 12"/></svg>
             <span id="checklistProgressLabel">${isAllComplete ? '패킹 체크 100% 완료' : ('패킹 체크 완료 (' + packedCount + '/' + planItems.length + ' · ' + planProgressPct + '%)')}</span>
           </button>
@@ -4132,6 +4309,9 @@ window.saveCurrentPackingRecord = function() {
     }
 
     if (window.activePlanSubMode === 'calculator') {
+      if (typeof window.ensureGearCategoryLoaded === 'function') {
+        window.ensureGearCategoryLoaded(window.__activeCalcCategoryTab || 'all');
+      }
       window.renderPlanCategorySlots();
 
       // 👆 아래로 쓸어내려 월간 달력으로 원터치 복귀하는 제스처
@@ -4260,7 +4440,7 @@ window.saveCurrentPackingRecord = function() {
     if (sheet) sheet.remove();
 
     triggerHaptic(12);
-    if (typeof showToast === 'function') showToast('[' + escapeHtml(gearName) + '] 정보가 저장되었습니다.', 'success');
+    if (typeof showToast === 'function') showToast('[' + gearName + '] 정보가 저장되었습니다.', 'success');
     window.renderPlanStage();
   };
 
@@ -4491,7 +4671,7 @@ window.saveCurrentPackingRecord = function() {
       }
 
       triggerHaptic(12);
-      if (typeof showToast === 'function') showToast('[' + escapeHtml(gearName) + '] 장비가 영구 삭제되었습니다.', 'info');
+      if (typeof showToast === 'function') showToast('[' + gearName + '] 장비가 영구 삭제되었습니다.', 'info');
       window.renderPlanCategorySlots();
     });
   };
@@ -4527,8 +4707,7 @@ window.saveCurrentPackingRecord = function() {
     }
 
     triggerHaptic(10);
-    var safeGearNameText = escapeHtml(gearName);
-    if (typeof showToast === 'function') showToast(isCustom ? '[' + safeGearNameText + '] 삭제 완료' : '[' + safeGearNameText + '] 내 장비 해제', 'info');
+    if (typeof showToast === 'function') showToast(isCustom ? '[' + gearName + '] 삭제 완료' : '[' + gearName + '] 내 장비 해제', 'info');
 
     if (btnEl) {
       var card = btnEl.closest('.my-gear-manage-card');
@@ -4600,7 +4779,7 @@ window.saveCurrentPackingRecord = function() {
     }
 
     triggerHaptic(15);
-    if (typeof showToast === 'function') showToast('[' + escapeHtml(newPreset.name) + '] 세트가 저장되었습니다.', 'success');
+    if (typeof showToast === 'function') showToast('[' + newPreset.name + '] 세트가 저장되었습니다.', 'success');
     window.renderPlanStage();
     window.openQuickPresetPicker();
   };
@@ -4782,9 +4961,12 @@ window.saveCurrentPackingRecord = function() {
     }
 
     triggerHaptic(15);
-    if (typeof showToast === 'function') showToast('[' + escapeHtml(target.name) + '] 세트가 배낭에 적용되었습니다.', 'success');
+    if (typeof showToast === 'function') showToast('[' + target.name + '] 세트가 배낭에 적용되었습니다.', 'success');
 
     window.activePlanSubMode = 'calculator';
+    if (typeof window.ensureGearCategoryLoaded === 'function') {
+      window.ensureGearCategoryLoaded(window.__activeCalcCategoryTab || 'all');
+    }
     window.renderPlanStage();
     setTimeout(function() {
       if (typeof window.renderPlanCategorySlots === 'function') window.renderPlanCategorySlots();
@@ -4977,6 +5159,9 @@ window.saveCurrentPackingRecord = function() {
       return;
     }
     window.activePlanSubMode = 'calculator';
+    if (typeof window.ensureGearCategoryLoaded === 'function') {
+      window.ensureGearCategoryLoaded(window.__activeCalcCategoryTab || 'all');
+    }
     window.renderPlanStage();
     triggerHaptic(10);
   };
@@ -5041,6 +5226,9 @@ window.saveCurrentPackingRecord = function() {
       };
     }
     window.activePlanSubMode = 'calculator';
+    if (typeof window.ensureGearCategoryLoaded === 'function') {
+      window.ensureGearCategoryLoaded(window.__activeCalcCategoryTab || 'all');
+    }
     window.renderPlanStage();
     setTimeout(function() {
       if (typeof window.renderPlanCategorySlots === 'function') {
@@ -5105,6 +5293,8 @@ window.saveCurrentPackingRecord = function() {
   function okbmWritePlanStore(key, val) {
     if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
       window.RomanticVault.write(key, val, false);
+    } else if (typeof window.okbmSafeSetItem === 'function') {
+      window.okbmSafeSetItem(key, JSON.stringify(val));
     } else {
       try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
     }
@@ -5140,6 +5330,10 @@ window.saveCurrentPackingRecord = function() {
       uniq[String(v).replace(/-/g, '.')] = true;
     });
     var dateList = Object.keys(uniq);
+    var delHeaders = (typeof window.okbmWriteHeaders === 'function')
+      ? window.okbmWriteHeaders({ Prefer: 'return=representation' })
+      : null;
+    if (!delHeaders) return { ok: false, deletedIds: confirmed, error: 'login_required' };
     for (var i = 0; i < dateList.length; i++) {
       var dVal = dateList[i];
       try {
@@ -5148,12 +5342,7 @@ window.saveCurrentPackingRecord = function() {
           '&date=eq.' + encodeURIComponent(dVal),
           {
             method: 'DELETE',
-            headers: {
-              'apikey': targetKey,
-              'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
-              'Content-Type': 'application/json',
-              'Prefer': 'return=representation'
-            }
+            headers: delHeaders
           }
         );
         if (!res.ok) continue;
@@ -5178,18 +5367,17 @@ window.saveCurrentPackingRecord = function() {
 
     var confirmed = [];
     var chunkSize = 30;
+    var delHeaders = (typeof window.okbmWriteHeaders === 'function')
+      ? window.okbmWriteHeaders({ Prefer: 'return=representation' })
+      : null;
+    if (!delHeaders) return { ok: false, deletedIds: confirmed, error: 'login_required' };
     for (var i = 0; i < list.length; i += chunkSize) {
       var chunk = list.slice(i, i + chunkSize);
       var filter = 'in.(' + chunk.map(function(id) { return encodeURIComponent(id); }).join(',') + ')';
       try {
         var res = await fetch(targetUrl + '/rest/v1/' + tableName + '?id=' + filter, {
           method: 'DELETE',
-          headers: {
-            'apikey': targetKey,
-            'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
-          }
+          headers: delHeaders
         });
         if (!res.ok) {
           return { ok: false, deletedIds: confirmed, status: res.status };
@@ -5271,7 +5459,7 @@ window.saveCurrentPackingRecord = function() {
               method: 'GET',
               headers: {
                 'apikey': targetKey,
-                'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
+                'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
                 'Content-Type': 'application/json'
               }
             }
@@ -5645,15 +5833,13 @@ window.saveCurrentPackingRecord = function() {
         window.supabaseClient.from('trips').delete().eq('id', targetTripId).then(function() {});
       } else {
         var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
-        var targetKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
+        var targetKey = window.SUPABASE_ANON_KEY || '';
         if (targetUrl && targetKey) {
+          var tripHeaders = (typeof window.okbmWriteHeaders === 'function') ? window.okbmWriteHeaders() : null;
+          if (!tripHeaders) return;
           fetch(targetUrl + '/rest/v1/trips?id=eq.' + encodeURIComponent(targetTripId), {
             method: 'DELETE',
-            headers: {
-              'apikey': targetKey,
-              'Authorization': 'Bearer ' + (typeof window.okbmAccessToken === 'function' ? window.okbmAccessToken() : targetKey),
-              'Content-Type': 'application/json'
-            }
+            headers: tripHeaders
           }).catch(function() {});
         }
       }
@@ -5858,15 +6044,8 @@ window.commitPlanDestination = function(dateKey) {
       window.ensureMasterBottomDock('plan');
     }
 
-    if (typeof window.loadGearDbFromGoogleSheet === 'function') {
-      var needsSync = (localStorage.getItem('okbm_gear_version') !== CURRENT_GEAR_VERSION) ||
-                      !window.CATEGORIES ||
-                      !window.CATEGORIES[0] ||
-                      !window.CATEGORIES[0].db ||
-                      window.CATEGORIES[0].db.length === 0;
-      if (needsSync) {
-        window.loadGearDbFromGoogleSheet(false);
-      }
+    if ((subMode === 'calculator') && typeof window.ensureGearCategoryLoaded === 'function') {
+      window.ensureGearCategoryLoaded(window.__activeCalcCategoryTab || 'all');
     }
 
     try {
@@ -5927,16 +6106,4 @@ window.commitPlanDestination = function(dateKey) {
     });
   }
 
-  // 초기 실행
-  if (typeof window.loadGearDbFromGoogleSheet === 'function') {
-    if (typeof window.requestIdleCallback === 'function') {
-      window.requestIdleCallback(function() {
-        window.loadGearDbFromGoogleSheet();
-      }, { timeout: 2000 });
-    } else {
-      setTimeout(function() {
-        window.loadGearDbFromGoogleSheet();
-      }, 350);
-    }
-  }
 })();
