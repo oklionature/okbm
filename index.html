@@ -522,7 +522,7 @@
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js" defer></script>
   <script>
     window.__okbmTemplatesSrc = 'templates.js?v=2.9.8';
-    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.14';
+    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.15';
     (function okbmBootLoader() {
       var loaded = window.__okbmScriptPromises || {};
       window.__okbmScriptPromises = loaded;
@@ -604,8 +604,8 @@
       else setTimeout(prefetch, 1800);
     })();
   </script>
-    <script src="romantic-sync.js?v=2.8.90" defer></script>
-  <script src="romantic-history.js?v=2.7.55" defer></script>
+    <script src="romantic-sync.js?v=2.8.92" defer></script>
+  <script src="romantic-history.js?v=2.7.57" defer></script>
 
   <style>
   @font-face {
@@ -2383,7 +2383,11 @@
 
       // 📈 모달 전체보기에도 시간 감쇠 트렌딩 알고리즘 적용
       var sortedByTrend = feedPool.filter(function(f) {
-        return window.okbmIsPublicFeedItem ? window.okbmIsPublicFeedItem(f) : (f && f.isPublished !== false);
+        try {
+          return window.okbmIsPublicFeedItem ? window.okbmIsPublicFeedItem(f) : (f && f.isPublished !== false);
+        } catch (e) {
+          return f && f.isPublished !== false;
+        }
       }).sort(function(a, b) {
         return calculateFeedTrendScore(b, starCounts) - calculateFeedTrendScore(a, starCounts);
       });
@@ -2488,7 +2492,11 @@
       var seenSpots = new Set();
 
       var sortedByTrend = feedPool.filter(function(f) {
-        return window.okbmIsPublicFeedItem ? window.okbmIsPublicFeedItem(f) : (f && f.isPublished !== false);
+        try {
+          return window.okbmIsPublicFeedItem ? window.okbmIsPublicFeedItem(f) : (f && f.isPublished !== false);
+        } catch (e) {
+          return f && f.isPublished !== false;
+        }
       }).sort(function(a, b) {
         return calculateFeedTrendScore(b, starCounts) - calculateFeedTrendScore(a, starCounts);
       });
@@ -2846,7 +2854,11 @@
 
       var userFeeds = allFeeds.filter(function(f) {
         if (!f) return false;
-        if (window.okbmIsPublicFeedItem && !window.okbmIsPublicFeedItem(f)) return false;
+        try {
+          if (window.okbmIsPublicFeedItem && !window.okbmIsPublicFeedItem(f)) return false;
+        } catch (e) {
+          if (f.isPublished === false || f.is_published === false) return false;
+        }
         var fNick = String(f.author || f.nick || '').trim().toLowerCase();
         var fUid = String(f.userId || '').trim();
         if (targetUid && fUid && targetUid === fUid) return true;
@@ -2870,7 +2882,13 @@
           var lhNick = String(lh.author || lh.nick || '').trim().toLowerCase();
           var lhUid = String(lh.userId || '').trim();
           var isMatched = (targetUid && lhUid && targetUid === lhUid) || (cleanTarget && lhNick === cleanTarget);
-          if (isMatched && window.okbmIsPublicFeedItem && window.okbmIsPublicFeedItem(lh) && !userFeeds.some(function(uf) { return uf && String(uf.id) === String(lh.id); })) {
+          var isPublic = true;
+          try {
+            isPublic = !window.okbmIsPublicFeedItem || window.okbmIsPublicFeedItem(lh);
+          } catch (ePub) {
+            isPublic = lh.isPublished !== false && lh.is_published !== false;
+          }
+          if (isMatched && isPublic && !userFeeds.some(function(uf) { return uf && String(uf.id) === String(lh.id); })) {
             userFeeds.unshift(lh);
           }
         });
@@ -3360,7 +3378,11 @@
 
       var sortFeedsByStarsAndDate = function(feedList) {
         return feedList.filter(function(f) {
-          return window.okbmIsPublicFeedItem ? window.okbmIsPublicFeedItem(f) : (f && f.isPublished !== false);
+          try {
+            return window.okbmIsPublicFeedItem ? window.okbmIsPublicFeedItem(f) : (f && f.isPublished !== false);
+          } catch (e) {
+            return f && f.isPublished !== false;
+          }
         }).sort(function(a, b) {
           var sA = Number((a.likes != null) ? a.likes : (a.likes_count || 0));
           var sB = Number((b.likes != null) ? b.likes : (b.likes_count || 0));
@@ -3370,8 +3392,9 @@
       };
 
       var applyFeedData = function(feedList) {
+        try {
         var uniqueFeedMap = new Map();
-        feedList.filter(Boolean).forEach(function(f) {
+        (Array.isArray(feedList) ? feedList : []).filter(Boolean).forEach(function(f) {
           var uKey = String(f.id || '').trim();
           if (!uKey || uKey.startsWith('feed_') || uKey.startsWith('pack_')) {
             uKey = String(f.userId || f.user_id || '') + '_' + String(f.date || '').replace(/\D/g, '') + '_' + String(f.spot || '').trim();
@@ -3384,7 +3407,11 @@
         var allCleanFeeds = sortFeedsByStarsAndDate(Array.from(uniqueFeedMap.values()));
 
         var photoFeedsOnly = allCleanFeeds.filter(function(f) {
-          return feedHasGalleryPhotos(f) && (!window.okbmIsPublicFeedItem || window.okbmIsPublicFeedItem(f));
+          try {
+            return feedHasGalleryPhotos(f) && (!window.okbmIsPublicFeedItem || window.okbmIsPublicFeedItem(f));
+          } catch (e2) {
+            return feedHasGalleryPhotos(f);
+          }
         });
 
         window.__allLoadedFeeds = allCleanFeeds;
@@ -3393,8 +3420,12 @@
         renderCurrentHeroCard();
         if (typeof renderSecretSpotTrailerRail === 'function') renderSecretSpotTrailerRail();
         if (typeof window.__okbmNotifyHeroReady === 'function') window.__okbmNotifyHeroReady();
+        } catch (e) {
+          console.warn('[index.html:applyFeedData]', e);
+        }
       };
 
+      try {
       var cachedFeeds = safeGetJSON('okbm_cached_community_feeds', []);
       if (Array.isArray(cachedFeeds) && cachedFeeds.length > 0) {
         applyFeedData(cachedFeeds);
@@ -3406,30 +3437,39 @@
         }
         applyFeedData([presetCopy]);
       }
+      } catch (bootErr) {
+        console.warn('[index.html:initDynamicHeroAndFeeds cache]', bootErr);
+      }
 
       setTimeout(async function() {
         try {
           var rawRows = null;
-          if (window.supabaseClient) {
+          var homeSelect = window.FEEDS_HOME_SELECT || 'id,user_id,spot,elevation,weight_kg,date,memo,photos,photo_memos_json,author,likes_count,is_published,feed_type,created_at,items,template_id';
+          var guestMode = !(typeof isUserLoggedIn === 'function' && isUserLoggedIn());
+
+          if (!guestMode && window.supabaseClient) {
             var sbRes = await window.supabaseClient
               .from('feeds')
-              .select('*')
+              .select(homeSelect)
               .order('likes_count', { ascending: false })
               .order('created_at', { ascending: false })
               .limit(30);
-            if (sbRes.data && Array.isArray(sbRes.data)) {
+            if (sbRes.data && Array.isArray(sbRes.data) && sbRes.data.length > 0) {
               rawRows = sbRes.data;
             }
           }
 
           if (!rawRows && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-            var res = await fetch(window.SUPABASE_URL + '/rest/v1/feeds?select=*&order=likes_count.desc,created_at.desc&limit=30', {
-              headers: {
-                'apikey': window.SUPABASE_ANON_KEY,
-                'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || window.SUPABASE_ANON_KEY),
-                'Content-Type': 'application/json'
-              }
-            });
+            var homeUrl = window.SUPABASE_URL + '/rest/v1/feeds?select=' + encodeURIComponent(homeSelect) + '&order=likes_count.desc,created_at.desc&limit=30';
+            var res = await (typeof window.okbmPublicFetch === 'function'
+              ? window.okbmPublicFetch(homeUrl)
+              : fetch(homeUrl, {
+                headers: {
+                  'apikey': window.SUPABASE_ANON_KEY,
+                  'Authorization': 'Bearer ' + window.SUPABASE_ANON_KEY,
+                  'Content-Type': 'application/json'
+                }
+              }));
             if (res.ok) {
               var data = await res.json();
               if (Array.isArray(data)) rawRows = data;
@@ -3485,7 +3525,9 @@
               };
             });
 
-            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(normalizedFeeds.slice(0, 15)));
+            try {
+              localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(normalizedFeeds.slice(0, 15)));
+            } catch (cacheErr) {}
             applyFeedData(normalizedFeeds);
           }
         } catch (sbErr) {
@@ -3696,13 +3738,16 @@ var adBannersHtml = `
       try {
         var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
         var targetKey = window.SUPABASE_ANON_KEY || '';
-        var res = await fetch(targetUrl + '/rest/v1/featured_videos?select=*&is_active=eq.true&order=id.asc', {
+        var featuredUrl = targetUrl + '/rest/v1/featured_videos?select=*&is_active=eq.true&order=id.asc';
+        var res = await (typeof window.okbmPublicFetch === 'function'
+          ? window.okbmPublicFetch(featuredUrl)
+          : fetch(featuredUrl, {
           headers: {
             'apikey': targetKey,
-            'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+            'Authorization': 'Bearer ' + targetKey,
             'Content-Type': 'application/json'
           }
-        });
+        }));
 
         if (res.ok) {
           var rows = await res.json();
@@ -3798,7 +3843,11 @@ var adBannersHtml = `
         var fSpot = String(f.spot || f.spotName || '').replace(/\s*\(.*?\)/g, '').replace(/[\s\(\[\]\)]/g, '').toLowerCase();
         if (!fSpot) continue;
         if (fSpot !== compactKey && fSpot.indexOf(compactKey) === -1 && compactKey.indexOf(fSpot) === -1) continue;
-        if (window.okbmIsPublicFeedItem && !window.okbmIsPublicFeedItem(f)) continue;
+        try {
+          if (window.okbmIsPublicFeedItem && !window.okbmIsPublicFeedItem(f)) continue;
+        } catch (ePub) {
+          if (f.isPublished === false || f.is_published === false) continue;
+        }
         var list = (window.okbmPublicPhotoUrls && window.okbmPublicPhotoUrls(f)) || getArchivePhotosList(f) || [];
         urls = collectHttpsPhotoUrls(urls.concat(list));
         if (urls.length >= 5) break;
@@ -5724,7 +5773,7 @@ var adBannersHtml = `
 
       try {
         var supaSpots = null;
-        var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at';
+        var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,desc_summary,mediaUrls';
 
         if (typeof window.fetchMasterSpotsFromSupabase === 'function') {
           var fetched = await window.fetchMasterSpotsFromSupabase(!!isForce);
@@ -5737,19 +5786,16 @@ var adBannersHtml = `
           }
         }
 
-        if (window.supabaseClient) {
-          var sbRes = await window.supabaseClient.from('spots').select(mapSelect).order('id', { ascending: true });
-          if (sbRes.data && Array.isArray(sbRes.data) && sbRes.data.length > 0) {
-            supaSpots = sbRes.data;
-          }
-        } else if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
-          var res = await fetch(window.SUPABASE_URL + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc', {
+        if (window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+          var res = await (typeof window.okbmPublicFetch === 'function'
+            ? window.okbmPublicFetch(window.SUPABASE_URL + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc')
+            : fetch(window.SUPABASE_URL + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc', {
             headers: {
               'apikey': window.SUPABASE_ANON_KEY,
-              'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || window.SUPABASE_ANON_KEY),
+              'Authorization': 'Bearer ' + window.SUPABASE_ANON_KEY,
               'Content-Type': 'application/json'
             }
-          });
+          }));
           if (res.ok) {
             var data = await res.json();
             if (Array.isArray(data) && data.length > 0) supaSpots = data;
@@ -5761,8 +5807,6 @@ var adBannersHtml = `
             if (typeof window.normalizeSpotMapRow === 'function') {
               var n = window.normalizeSpotMapRow(row);
               if (!n) return null;
-              n.desc = '';
-              n.desc_summary = '';
               return n;
             }
             var sMain = (row.spot_main || row.name || row.fullName || row.fullname || '').trim();
@@ -5779,8 +5823,9 @@ var adBannersHtml = `
               difficulty: String(row.difficulty || '3').trim(),
               distance: row.distance_km || row.distance || '',
               terrain: tArr,
-              desc: '',
-              desc_summary: '',
+              desc: String(row.desc_summary || row.desc || '').trim(),
+              desc_summary: String(row.desc_summary || row.desc || '').trim(),
+              mediaUrls: row.mediaUrls || '',
               lat: row.campsite_lat || row.lat || '',
               lng: row.campsite_lng || row.lng || ''
             };

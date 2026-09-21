@@ -974,8 +974,17 @@ function okbmRequireAccessToken() {
 window.okbmRequireAccessToken = okbmRequireAccessToken;
 
 function okbmUgcRestHeaders(extra) {
+  return okbmPublicRestHeaders(extra);
+}
+window.okbmAuthHeaders = okbmUgcRestHeaders;
+
+function okbmPublicRestHeaders(extra) {
   var anon = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY || '';
-  var tok = window.okbmAccessToken() || anon;
+  var tok = anon;
+  if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
+    var sessionTok = (typeof window.okbmAccessToken === 'function') ? window.okbmAccessToken() : '';
+    if (sessionTok) tok = sessionTok;
+  }
   var headers = {
     'apikey': anon,
     'Authorization': 'Bearer ' + tok,
@@ -986,7 +995,26 @@ function okbmUgcRestHeaders(extra) {
   }
   return headers;
 }
-window.okbmAuthHeaders = okbmUgcRestHeaders;
+window.okbmPublicRestHeaders = okbmPublicRestHeaders;
+window.okbmPublicBearer = function() {
+  return okbmPublicRestHeaders().Authorization;
+};
+
+window.okbmPublicFetch = function(url, options) {
+  options = options || {};
+  var headers = okbmPublicRestHeaders(options.headers);
+  var opts = Object.assign({}, options, { headers: headers });
+  return fetch(url, opts).then(function(res) {
+    if (res.status !== 401 && res.status !== 403) return res;
+    var anon = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY || '';
+    if (!anon) return res;
+    var retryHeaders = Object.assign({}, headers, {
+      'apikey': anon,
+      'Authorization': 'Bearer ' + anon
+    });
+    return fetch(url, Object.assign({}, opts, { headers: retryHeaders }));
+  });
+};
 
 function okbmWriteRestHeaders(extra) {
   var tok = okbmRequireAccessToken();
@@ -1622,9 +1650,11 @@ window.okbmFetchFeedById = async function(feedId) {
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
   if (!sId || !targetUrl || !targetKey) return null;
   try {
-    var res = await fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId) + '&select=*&limit=1', {
-      headers: okbmUgcRestHeaders()
-    });
+    var res = await (typeof window.okbmPublicFetch === 'function'
+      ? window.okbmPublicFetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId) + '&select=*&limit=1')
+      : fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId) + '&select=*&limit=1', {
+          headers: { 'apikey': targetKey, 'Authorization': 'Bearer ' + targetKey, 'Content-Type': 'application/json' }
+        }));
     if (!res.ok) return null;
     var rows = await res.json();
     var row = Array.isArray(rows) && rows[0] ? rows[0] : null;
@@ -2294,9 +2324,11 @@ function trackDailyVisit(force) {
   sessionStorage.setItem(sessionKey, 'pending');
   fetch(targetUrl + '/rest/v1/rpc/track_visit', {
     method: 'POST',
-    headers: {
+    headers: (typeof window.okbmPublicRestHeaders === 'function')
+      ? window.okbmPublicRestHeaders()
+      : {
       'apikey': targetKey,
-      'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+      'Authorization': 'Bearer ' + targetKey,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
@@ -2835,19 +2867,15 @@ function syncUserDataToCloud(isPackHistoryUpdated, immediate) {
 }
 window.syncUserDataToCloud = syncUserDataToCloud;
 
-// 지도 핀용 경량 컬럼 (상세 trailhead_addr/desc_summary/mediaUrls/author_sns_url 제외)
-window.SPOTS_MAP_SELECT = 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at';
+// 홈/지도 핀용 공개 컬럼. 들머리 주소(trailhead_addr)·author_sns_url은 제외.
+window.SPOTS_MAP_SELECT = 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,desc_summary,mediaUrls';
+window.FEEDS_HOME_SELECT = 'id,user_id,spot,elevation,weight_kg,date,memo,photos,photo_memos_json,author,likes_count,is_published,feed_type,created_at,items,template_id';
 
 window.stripSpotDetailFields = function(spot) {
   if (!spot || typeof spot !== 'object') return spot;
   var out = Object.assign({}, spot);
   delete out.trailhead_addr;
   delete out.entryPoint;
-  delete out.desc_summary;
-  delete out.desc;
-  delete out.mediaUrls;
-  delete out.youtubeUrls;
-  delete out.blogUrls;
   delete out.author_sns_url;
   delete out.authorSnsUrl;
   return out;
@@ -2875,7 +2903,7 @@ window.normalizeSpotMapRow = function(row) {
   var derivedFullName = row.fullName || row.fullname || (finalCity
     ? '[' + finalCity + '] ' + name + (sub ? ' (' + sub + ')' : '')
     : (sub ? name + ' (' + sub + ')' : name));
-  return {
+  var out = {
     id: String(row.id || name).trim(),
     name: name,
     spot_main: name,
@@ -2902,8 +2930,15 @@ window.normalizeSpotMapRow = function(row) {
     nickname: String(row.author || row.nickname || '').trim(),
     user_id: String(row.user_id || row.userId || '').trim(),
     userId: String(row.user_id || row.userId || '').trim(),
-    created_at: row.created_at || null
+    created_at: row.created_at || null,
+    desc_summary: String(row.desc_summary || row.desc || '').trim(),
+    desc: String(row.desc_summary || row.desc || '').trim(),
+    mediaUrls: row.mediaUrls || row.mediaurls || ''
   };
+  var media = window.parseSpotMediaUrls(out.mediaUrls);
+  out.youtubeUrls = media.youtubeUrls;
+  out.blogUrls = media.blogUrls;
+  return out;
 };
 
 window.parseSpotMediaUrls = function(mediaUrls) {
@@ -2996,6 +3031,7 @@ window.__spotDetailInflight = window.__spotDetailInflight || {};
 window.fetchSpotDetailById = async function(spotId) {
   var id = String(spotId || '').trim();
   if (!id) return null;
+  if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) return null;
   if (window.__spotDetailCache[id]) return window.__spotDetailCache[id];
   if (window.__spotDetailInflight[id]) return window.__spotDetailInflight[id];
 
@@ -3052,15 +3088,19 @@ window.fetchMasterSpotsFromSupabase = async function(isForce) {
     var controller = new AbortController();
     var timeoutId = setTimeout(function() { controller.abort(); }, 6000);
     var select = encodeURIComponent(window.SPOTS_MAP_SELECT);
-    var res = await fetch(targetUrl + '/rest/v1/spots?select=' + select + '&order=id.asc', {
+    var res = await (typeof window.okbmPublicFetch === 'function'
+      ? window.okbmPublicFetch(targetUrl + '/rest/v1/spots?select=' + select + '&order=id.asc', { method: 'GET', signal: controller.signal })
+      : fetch(targetUrl + '/rest/v1/spots?select=' + select + '&order=id.asc', {
       method: 'GET',
-      headers: {
+      headers: (typeof window.okbmPublicRestHeaders === 'function')
+        ? window.okbmPublicRestHeaders()
+        : {
         'apikey': targetKey,
-        'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+        'Authorization': 'Bearer ' + targetKey,
         'Content-Type': 'application/json'
       },
       signal: controller.signal
-    });
+    }));
     clearTimeout(timeoutId);
 
     if (res.ok) {
@@ -3136,9 +3176,11 @@ window.fetchMasterGearsFromSupabase = async function(isForce) {
       var timeoutId = setTimeout(function() { controller.abort(); }, 8000);
       var res = await fetch(targetUrl + '/rest/v1/gears?select=id,name,item_name,weight_g,weight,brand,category_id,specs_detail,specs,verified,weight_type,evidence&order=id.asc&offset=' + (page * pageSize) + '&limit=' + pageSize, {
         method: 'GET',
-        headers: {
+        headers: (typeof window.okbmPublicRestHeaders === 'function')
+          ? window.okbmPublicRestHeaders()
+          : {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+          'Authorization': 'Bearer ' + targetKey,
           'Content-Type': 'application/json'
         },
         signal: controller.signal
@@ -3182,9 +3224,11 @@ window.fetchRankingsFromSupabase = async function() {
     var timeoutId = setTimeout(function() { controller.abort(); }, 5000);
 
     var usersRes = await fetch(targetUrl + '/rest/v1/ranking_stats?select=spot_id,spot_name,usage_count&order=usage_count.desc&limit=10', {
-      headers: {
+      headers: (typeof window.okbmPublicRestHeaders === 'function')
+        ? window.okbmPublicRestHeaders()
+        : {
         'apikey': targetKey,
-        'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+        'Authorization': 'Bearer ' + targetKey,
         'Content-Type': 'application/json'
       },
       signal: controller.signal

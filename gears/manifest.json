@@ -6,7 +6,7 @@
       "file": "gears/shelter.json"
     },
     "sleep": {
-      "count": 374,
+      "count": 424,
       "file": "gears/sleep.json"
     },
     "pack": {
@@ -18,7 +18,7 @@
       "file": "gears/food.json"
     },
     "kitchen": {
-      "count": 343,
+      "count": 344,
       "file": "gears/kitchen.json"
     },
     "wear": {
@@ -30,11 +30,11 @@
       "file": "gears/electronics.json"
     },
     "camp": {
-      "count": 158,
+      "count": 143,
       "file": "gears/camp.json"
     },
     "other": {
-      "count": 96,
+      "count": 60,
       "file": "gears/other.json"
     }
   }

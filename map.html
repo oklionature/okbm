@@ -139,7 +139,7 @@
     window.SUPABASE_URL = 'https://qnumfecythtqtrxeasys.supabase.co';
     window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
     window.__okbmTemplatesSrc = 'templates.js?v=2.9.8';
-    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.14';
+    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.15';
       (function okbmBootLoader() {
         var loaded = window.__okbmScriptPromises || {};
         window.__okbmScriptPromises = loaded;
@@ -210,8 +210,8 @@
         bindLazy('openGearPresetModal', window.okbmEnsurePlan);
       })();
     </script>
-    <script src="romantic-sync.js?v=2.8.90" defer></script>
-    <script src="romantic-history.js?v=2.7.55" defer></script>
+    <script src="romantic-sync.js?v=2.8.92" defer></script>
+    <script src="romantic-history.js?v=2.7.57" defer></script>
 
     <style>
       @font-face {
@@ -1639,14 +1639,19 @@
         try {
           var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
           var targetKey = window.SUPABASE_ANON_KEY || '';
-          var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at';
-          var res = await fetch(targetUrl + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc', {
-            headers: {
+          var mapSelect = window.SPOTS_MAP_SELECT || 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,desc_summary,mediaUrls';
+          var spotsUrl = targetUrl + '/rest/v1/spots?select=' + encodeURIComponent(mapSelect) + '&order=id.asc';
+          var res = await (typeof window.okbmPublicFetch === 'function'
+            ? window.okbmPublicFetch(spotsUrl)
+            : fetch(spotsUrl, {
+            headers: (typeof window.okbmPublicRestHeaders === 'function')
+              ? window.okbmPublicRestHeaders()
+              : {
               'apikey': targetKey,
-              'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+              'Authorization': 'Bearer ' + targetKey,
               'Content-Type': 'application/json'
             }
-          });
+          }));
 
           if (!res.ok) return;
           var rows = await res.json();
@@ -1716,10 +1721,10 @@
 
             normalized.trailhead_addr = '';
             normalized.entryPoint = '';
-            normalized.desc_summary = '';
-            normalized.desc = '';
-            normalized.youtubeUrls = [];
-            normalized.blogUrls = [];
+            if (!normalized.desc_summary && !normalized.desc) {
+              normalized.desc_summary = '';
+              normalized.desc = '';
+            }
             normalized.authorSnsUrl = '';
             normalized.__detailLoaded = false;
 
@@ -2424,13 +2429,15 @@
             if (!spotMainName) return [];
             var query = targetUrl + '/rest/v1/feeds?select=id,user_id,spot,photos,photo_memos_json,author,memo,weight_kg,likes_count,date,created_at,feed_type&spot=ilike.*' + encodeURIComponent(spotMainName) + '*&feed_type=neq.snap&order=created_at.desc&limit=40';
             try {
-              var res = await fetch(query, {
+              var res = await (typeof window.okbmPublicFetch === 'function'
+                ? window.okbmPublicFetch(query)
+                : fetch(query, {
                 headers: {
                   'apikey': targetKey,
-                  'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+                  'Authorization': 'Bearer ' + targetKey,
                   'Content-Type': 'application/json'
                 }
-              });
+              }));
               if (!res.ok) return [];
               var data = await res.json();
               var validFeeds = filterFeedsForMapSpot(spot, Array.isArray(data) ? data : []).slice(0, 6);
@@ -5370,13 +5377,16 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
       function fetchGlobalSpotRankings() {
         var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
         var targetKey = window.SUPABASE_ANON_KEY || '';
-        fetch(targetUrl + '/rest/v1/ranking_stats?select=spot_id,usage_count&order=usage_count.desc&limit=30', {
+        var rankUrl = targetUrl + '/rest/v1/ranking_stats?select=spot_id,usage_count&order=usage_count.desc&limit=30';
+        (typeof window.okbmPublicFetch === 'function'
+          ? window.okbmPublicFetch(rankUrl)
+          : fetch(rankUrl, {
           headers: {
             'apikey': targetKey,
-            'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+            'Authorization': 'Bearer ' + targetKey,
             'Content-Type': 'application/json'
           }
-        })
+        }))
         .then(function(res) { return res.ok ? res.json() : []; })
         .then(function(rows) {
           if (Array.isArray(rows)) {
@@ -6539,15 +6549,20 @@ var overlay = document.getElementById('customModalOverlay');
           }
           var cfg = getSupabaseRestConfig();
           if (!cfg.url || !cfg.key) return '';
-          var res = await fetch(cfg.url + '/rest/v1/rpc/get_public_profile', {
+          var res = await (typeof window.okbmPublicFetch === 'function'
+            ? window.okbmPublicFetch(cfg.url + '/rest/v1/rpc/get_public_profile', {
+                method: 'POST',
+                body: JSON.stringify({ p_id: id })
+              })
+            : fetch(cfg.url + '/rest/v1/rpc/get_public_profile', {
             method: 'POST',
             headers: {
               'apikey': cfg.key,
-              'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || cfg.key),
+              'Authorization': 'Bearer ' + cfg.key,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({ p_id: id })
-          });
+          }));
           if (!res.ok) return '';
           var row = await res.json();
           return normalizeReporterNick(row && row.nickname);

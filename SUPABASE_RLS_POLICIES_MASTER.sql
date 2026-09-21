@@ -973,8 +973,9 @@ CREATE POLICY spots_admin_update ON public.spots
 CREATE POLICY spots_admin_delete ON public.spots
   FOR DELETE USING (public.okbm_is_admin());
 
--- 핀용 경량 SELECT만 허용. 상세(trailhead_addr/desc_summary/mediaUrls/author_sns_url)는
--- get_spot_detail(p_id) RPC로 1건씩만 조회.
+-- 홈/지도 핀용 공개 SELECT: 이름·좌표·기본 소개·미디어.
+-- 들머리 상세 주소(trailhead_addr)·author_sns_url은 컬럼 SELECT 불허.
+-- 해당 민감 필드는 get_spot_detail(p_id) RPC로 로그인 유저만 1건씩 조회.
 REVOKE SELECT ON TABLE public.spots FROM anon, authenticated;
 GRANT SELECT (
   id,
@@ -994,7 +995,9 @@ GRANT SELECT (
   course_type,
   author,
   user_id,
-  created_at
+  created_at,
+  desc_summary,
+  "mediaUrls"
 ) ON TABLE public.spots TO anon, authenticated;
 GRANT INSERT, UPDATE, DELETE ON TABLE public.spots TO authenticated;
 
@@ -1123,6 +1126,7 @@ GRANT EXECUTE ON FUNCTION public.merge_spot_media_urls(text, text[]) TO authenti
 
 CREATE POLICY gears_select_public ON public.gears
   FOR SELECT USING (true);
+GRANT SELECT ON TABLE public.gears TO anon, authenticated;
 CREATE POLICY gears_admin_insert ON public.gears
   FOR INSERT WITH CHECK (public.okbm_is_admin());
 CREATE POLICY gears_admin_update ON public.gears
@@ -1135,6 +1139,7 @@ CREATE POLICY gears_admin_delete ON public.gears
 -- -------------------------------------------------------------------------
 CREATE POLICY feeds_select_public ON public.feeds
   FOR SELECT USING (true);
+GRANT SELECT ON TABLE public.feeds TO anon, authenticated;
 CREATE POLICY feeds_insert_own ON public.feeds
   FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND user_id = public.okbm_uid());
 CREATE POLICY feeds_update_own ON public.feeds
@@ -1214,11 +1219,13 @@ CREATE POLICY spot_corrections_delete_own ON public.spot_corrections
 
 CREATE POLICY ranking_stats_select_public ON public.ranking_stats
   FOR SELECT USING (true);
+GRANT SELECT ON TABLE public.ranking_stats TO anon, authenticated;
 CREATE POLICY ranking_stats_admin_write ON public.ranking_stats
   FOR ALL USING (public.okbm_is_admin()) WITH CHECK (public.okbm_is_admin());
 
 CREATE POLICY featured_videos_select_public ON public.featured_videos
   FOR SELECT USING (true);
+GRANT SELECT ON TABLE public.featured_videos TO anon, authenticated;
 CREATE POLICY featured_videos_admin_write ON public.featured_videos
   FOR ALL USING (public.okbm_is_admin()) WITH CHECK (public.okbm_is_admin());
 

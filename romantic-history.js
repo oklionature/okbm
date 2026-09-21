@@ -928,9 +928,9 @@
     try {
       var res = await fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
         method: 'PATCH',
-        headers: {
+        headers: (typeof window.okbmWriteHeaders === 'function' && window.okbmWriteHeaders({ Prefer: 'return=representation' })) || {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+          'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
@@ -1502,9 +1502,11 @@
         : '';
       if (!targetUrl || !targetKey) return { purgedMine: 0, purgedLoaded: 0 };
 
-      var headers = {
+      var headers = (typeof window.okbmPublicRestHeaders === 'function')
+        ? window.okbmPublicRestHeaders()
+        : {
         'apikey': targetKey,
-        'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+        'Authorization': 'Bearer ' + targetKey,
         'Content-Type': 'application/json'
       };
 
@@ -1764,7 +1766,8 @@ function getRecordPhotos(record) {
       return true;
     }
     if (window.okbmIsExplicitlyPrivate(item)) return false;
-    return typeof window.okbmCanPublishFeed === 'function' ? window.okbmCanPublishFeed(item) : false;
+    if (item.isPublished === false || item.is_published === false) return false;
+    return true;
   };
 
   // 🎨 [3D 엽서 테두리 팔레트]
@@ -1988,7 +1991,7 @@ window.normalizeHistoryRecord = function(r, idx) {
               method: 'POST',
               headers: {
                 'apikey': targetKey,
-                'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+                'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({ p_id: uId })
@@ -2594,7 +2597,7 @@ window.normalizeHistoryRecord = function(r, idx) {
       var res = await fetch(query, {
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+          'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
           'Content-Type': 'application/json'
         }
       });
@@ -2786,7 +2789,7 @@ window.normalizeHistoryRecord = function(r, idx) {
           method: 'HEAD',
           headers: {
             'apikey': targetKey,
-            'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+            'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
             'Prefer': 'count=exact'
           }
         }).then(function(res) {
@@ -2869,7 +2872,7 @@ window.fetchUserFeedLikesFromServer = async function() {
       var res = await fetch(targetUrl + '/rest/v1/feed_likes?user_id=' + inParam + '&select=feed_id', {
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+          'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
           'Content-Type': 'application/json'
         }
       });
@@ -2920,9 +2923,9 @@ window.okbmSyncFeedLikeAction = async function(feedId, userId, isAdding, nextCou
   var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
   var targetKey = window.SUPABASE_ANON_KEY || '';
 
-  var jsonHeaders = {
+  var jsonHeaders = (typeof window.okbmWriteHeaders === 'function' && window.okbmWriteHeaders()) || {
     'apikey': targetKey,
-    'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+    'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
     'Content-Type': 'application/json'
   };
 
@@ -3806,12 +3809,10 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       try {
         var delRes = await fetch(targetUrl + '/rest/v1/feeds?id=eq.' + encodeURIComponent(sId), {
           method: 'DELETE',
-          headers: {
+          headers: (typeof window.okbmWriteHeaders === 'function' && window.okbmWriteHeaders({ Prefer: 'return=representation' })) || {
             'apikey': targetKey,
-            'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+            'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
             'Content-Type': 'application/json',
-            // return=representation: 실제로 삭제된 행을 응답 본문으로 돌려받아
-            // "응답 200이지만 실은 0건 삭제"인 유령 삭제를 걸러낼 수 있습니다.
             'Prefer': 'return=representation'
           }
         });
@@ -4673,7 +4674,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       var res = await fetch(query, {
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+          'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
           'Content-Type': 'application/json'
         }
       });
@@ -5038,7 +5039,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
             method: 'POST',
             headers: {
               'apikey': targetKey,
-              'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+              'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({ p_id: targetUserId })
@@ -5091,7 +5092,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         method: 'HEAD',
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+          'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
           'Prefer': 'count=exact'
         }
       }).then(function(res) {
@@ -5113,7 +5114,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       fetch(fetchQuery, {
         headers: {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+          'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
           'Content-Type': 'application/json'
         }
       }).then(function(r) { return r.ok ? r.json() : []; }).then(function(serverRows) {
@@ -6982,7 +6983,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       try {
         var headers = {
           'apikey': targetKey,
-          'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+          'Authorization': (typeof window.okbmPublicBearer === 'function' ? window.okbmPublicBearer() : ('Bearer ' + (window.SUPABASE_ANON_KEY || targetKey || ''))),
           'Content-Type': 'application/json'
         };
 

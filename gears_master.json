@@ -152,7 +152,7 @@
   {
     "gear_id": "gear_1011",
     "id": "gear_1011",
-    "category_id": "camp",
+    "category_id": "other",
     "item_name": "KOMPERDELL KP 카본 트레일 FXP 클릭인 135cm (KP0058)",
     "weight_g": 205,
     "brand": "KOMPERDELL (KOMPERDELL)",
@@ -227,7 +227,7 @@
   {
     "gear_id": "gear_1016",
     "id": "gear_1016",
-    "category_id": "camp",
+    "category_id": "other",
     "item_name": "KOMPERDELL 하이랜더 코르크 140cm (HIGHLANDER CORK)",
     "weight_g": 250,
     "brand": "KOMPERDELL (KOMPERDELL)",
@@ -362,7 +362,7 @@
   {
     "gear_id": "gear_1025",
     "id": "gear_1025",
-    "category_id": "camp",
+    "category_id": "other",
     "item_name": "REI Co-op Hiker Staff - Single",
     "weight_g": 327,
     "brand": "REI Co-op (REI Co-op)",
@@ -422,7 +422,7 @@
   {
     "gear_id": "gear_1029",
     "id": "gear_1029",
-    "category_id": "camp",
+    "category_id": "other",
     "item_name": "REI Co-op Walker Staff - Single",
     "weight_g": 286,
     "brand": "REI Co-op (REI Co-op)",
@@ -647,7 +647,7 @@
   {
     "gear_id": "gear_1059",
     "id": "gear_1059",
-    "category_id": "camp",
+    "category_id": "other",
     "item_name": "레키 CT FX 수퍼라이트 허브 (65426801)",
     "weight_g": 203,
     "brand": "레키 (Leki)",
@@ -662,7 +662,7 @@
   {
     "gear_id": "gear_1060",
     "id": "gear_1060",
-    "category_id": "camp",
+    "category_id": "other",
     "item_name": "레키 CT 라이트 TA (65226221)",
     "weight_g": 244,
     "brand": "레키 (Leki)",
@@ -677,7 +677,7 @@
   {
     "gear_id": "gear_1061",
     "id": "gear_1061",
-    "category_id": "camp",
+    "category_id": "other",
     "item_name": "레키 CT 라이트 카본 (65226421)",
     "weight_g": 213,
     "brand": "레키 (Leki)",
@@ -902,7 +902,7 @@
   {
     "gear_id": "gear_1076",
     "id": "gear_1076",
-    "category_id": "camp",
+    "category_id": "other",
     "item_name": "레키 마카루 FX TA (65220751)",
     "weight_g": 298,
     "brand": "레키 (Leki)",
@@ -917,7 +917,7 @@
   {
     "gear_id": "gear_1077",
     "id": "gear_1077",
-    "category_id": "camp",
+    "category_id": "other",
     "item_name": "레키 마카루 FX 카본 (65220621)",
     "weight_g": 254,
     "brand": "레키 (Leki)",
@@ -932,7 +932,7 @@
   {
     "gear_id": "gear_1078",
     "id": "gear_1078",
-    "category_id": "camp",
+    "category_id": "other",
     "item_name": "레키 블랙시리즈 SLS XTG (65321291)",
     "weight_g": 200,
     "brand": "레키 (Leki)",
@@ -947,7 +947,7 @@
   {
     "gear_id": "gear_1079",
     "id": "gear_1079",
-    "category_id": "camp",
+    "category_id": "other",
     "item_name": "레키 쿰부 AS (65220261)",
     "weight_g": 284,
     "brand": "레키 (Leki)",
@@ -977,7 +977,7 @@
   {
     "gear_id": "gear_1081",
     "id": "gear_1081",
-    "category_id": "camp",
+    "category_id": "other",
     "item_name": "몽벨 트레킹 앰브렐라 (Trekking Umbrella)",
     "weight_g": 150,
     "brand": "몽벨 (Montbell)",
@@ -992,7 +992,7 @@
   {
     "gear_id": "gear_1082",
     "id": "gear_1082",
-    "category_id": "camp",
+    "category_id": "kitchen",
     "item_name": "미니멀웍스 인디언 행어 M (Indian Hanger M)",
     "weight_g": 550,
     "brand": "미니멀웍스 (Minimal Works)",
@@ -1487,7 +1487,7 @@
   {
     "gear_id": "gear_1116",
     "id": "gear_1116",
-    "category_id": "camp",
+    "category_id": "other",
     "item_name": "스노우라인캠핑 컨테이너 30L",
     "weight_g": 1800,
     "brand": "스노우라인 (Snowline)",
@@ -1502,7 +1502,7 @@
   {
     "gear_id": "gear_1117",
     "id": "gear_1117",
-    "category_id": "camp",
+    "category_id": "other",
     "item_name": "스노우라인캠핑 컨테이너 65L",
     "weight_g": 3400,
     "brand": "스노우라인 (Snowline)",
@@ -17077,7 +17077,7 @@
   {
     "gear_id": "gear_2231",
     "id": "gear_2231",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "COCOON AirCore Hood/Camp 베개 (AirCore Hood/Camp Pillow)",
     "weight_g": 109,
     "brand": "COCOON (COCOON)",
@@ -17092,7 +17092,7 @@
   {
     "gear_id": "gear_2232",
     "id": "gear_2232",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "COCOON COOLMAX MummyLiner",
     "weight_g": 259,
     "brand": "COCOON (COCOON)",
@@ -17107,7 +17107,7 @@
   {
     "gear_id": "gear_2233",
     "id": "gear_2233",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "COCOON Lyocell MummyLiner",
     "weight_g": 295,
     "brand": "COCOON (COCOON)",
@@ -17122,7 +17122,7 @@
   {
     "gear_id": "gear_2234",
     "id": "gear_2234",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "COCOON Merino Wool MummyLiner",
     "weight_g": 494,
     "brand": "COCOON (COCOON)",
@@ -17137,7 +17137,7 @@
   {
     "gear_id": "gear_2235",
     "id": "gear_2235",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "COCOON Microfiber MummyLiner",
     "weight_g": 231,
     "brand": "COCOON (COCOON)",
@@ -17152,7 +17152,7 @@
   {
     "gear_id": "gear_2236",
     "id": "gear_2236",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "COCOON Organic Cotton MummyLiner",
     "weight_g": 381,
     "brand": "COCOON (COCOON)",
@@ -17167,7 +17167,7 @@
   {
     "gear_id": "gear_2237",
     "id": "gear_2237",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "COCOON Silk MummyLiner",
     "weight_g": 136,
     "brand": "COCOON (COCOON)",
@@ -17182,7 +17182,7 @@
   {
     "gear_id": "gear_2238",
     "id": "gear_2238",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "COCOON TravelSheet - Egyptian Cotton",
     "weight_g": 259,
     "brand": "COCOON (COCOON)",
@@ -17197,7 +17197,7 @@
   {
     "gear_id": "gear_2239",
     "id": "gear_2239",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "COCOON Ultralight AirCore Pack 베개 (Ultralight AirCore Pack Pillow)",
     "weight_g": 86,
     "brand": "COCOON (COCOON)",
@@ -17332,7 +17332,7 @@
   {
     "gear_id": "gear_2248",
     "id": "gear_2248",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "HEST Camp 베개 (Camp Pillow)",
     "weight_g": 544,
     "brand": "HEST (HEST)",
@@ -17362,7 +17362,7 @@
   {
     "gear_id": "gear_2250",
     "id": "gear_2250",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "HEST Pro Travel 베개 (Pro Travel Pillow)",
     "weight_g": 726,
     "brand": "HEST (HEST)",
@@ -17452,7 +17452,7 @@
   {
     "gear_id": "gear_2256",
     "id": "gear_2256",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "Klymit 베개 X BASE XL (Pillow X BASE XL)",
     "weight_g": 109,
     "brand": "Klymit (Klymit)",
@@ -18112,7 +18112,7 @@
   {
     "gear_id": "gear_2300",
     "id": "gear_2300",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "Rumpl Camp 베개 (Camp Pillow)",
     "weight_g": 953,
     "brand": "Rumpl (Rumpl)",
@@ -18172,7 +18172,7 @@
   {
     "gear_id": "gear_2304",
     "id": "gear_2304",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "Slumberjack 침낭 Liner - Warming (Sleeping Bag Liner - Warming)",
     "weight_g": 594,
     "brand": "Slumberjack (Slumberjack)",
@@ -18202,7 +18202,7 @@
   {
     "gear_id": "gear_2307",
     "id": "gear_2307",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "Zempire Chill Pill DLX Memory Foam Camp 베개 (Chill Pill DLX Memory Foam Camp Pillow)",
     "weight_g": 721,
     "brand": "Zempire (Zempire)",
@@ -18547,7 +18547,7 @@
   {
     "gear_id": "gear_2330",
     "id": "gear_2330",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "니모 Tracer Blaze 엔들리스 프로미스 침낭 Liner (Tracer Blaze Endless Promise Sleeping Bag Liner)",
     "weight_g": 354,
     "brand": "니모 (NEMO)",
@@ -18562,7 +18562,7 @@
   {
     "gear_id": "gear_2331",
     "id": "gear_2331",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "니모 Tracer 엔들리스 프로미스 침낭 Liner (Tracer Endless Promise Sleeping Bag Liner)",
     "weight_g": 231,
     "brand": "니모 (NEMO)",
@@ -18813,7 +18813,7 @@
   {
     "gear_id": "gear_2355",
     "id": "gear_2355",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "니모 빅토리 파티오 블랭킷 Large (Arctic Stripe)",
     "weight_g": 2000,
     "brand": "니모 (NEMO)",
@@ -18828,7 +18828,7 @@
   {
     "gear_id": "gear_2356",
     "id": "gear_2356",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "니모 빅토리 파티오 블랭킷 Medium",
     "weight_g": 1020,
     "brand": "니모 (NEMO)",
@@ -18844,7 +18844,7 @@
   {
     "gear_id": "gear_2357",
     "id": "gear_2357",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "니모 빅토리 피크닉 블랭킷 XXL",
     "weight_g": 1814,
     "brand": "니모 (NEMO)",
@@ -19543,7 +19543,7 @@
   {
     "gear_id": "gear_2406",
     "id": "gear_2406",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "니모 필로 King Luxury Camping 베개 (Fillo King Luxury Camping Pillow)",
     "weight_g": 386,
     "brand": "니모 (NEMO)",
@@ -19573,7 +19573,7 @@
   {
     "gear_id": "gear_2409",
     "id": "gear_2409",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "니모 필로 엘리트 Wide Ultralight Backpacking 베개 (Fillo Elite Wide Ultralight Backpacking Pillow)",
     "weight_g": 113,
     "brand": "니모 (NEMO)",
@@ -19588,7 +19588,7 @@
   {
     "gear_id": "gear_2410",
     "id": "gear_2410",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "니모 필로 엘리트 베개 (Fillo Elite Pillow)",
     "weight_g": 82,
     "brand": "니모 (NEMO)",
@@ -20638,7 +20638,7 @@
   {
     "gear_id": "gear_2485",
     "id": "gear_2485",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "빅아그네스 Alpha Direct Fleece Liner",
     "weight_g": 191,
     "brand": "빅아그네스 (Big Agnes)",
@@ -20698,7 +20698,7 @@
   {
     "gear_id": "gear_2489",
     "id": "gear_2489",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "빅아그네스 CAMPMEISTER DELUXE PILLOW (CAMPMEISTER DELUXE PILLOW (ESPXU00030))",
     "weight_g": 87,
     "brand": "빅아그네스 (Big Agnes)",
@@ -20878,7 +20878,7 @@
   {
     "gear_id": "gear_2503",
     "id": "gear_2503",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "빅아그네스 RAPIDE SL PILLOW (RAPIDE SL PILLOW (ESPXU00029))",
     "weight_g": 45,
     "brand": "빅아그네스 (Big Agnes)",
@@ -20968,7 +20968,7 @@
   {
     "gear_id": "gear_2509",
     "id": "gear_2509",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "빅아그네스 UL Recovery 침낭 Liner (UL Recovery Sleeping Bag Liner)",
     "weight_g": 322,
     "brand": "빅아그네스 (Big Agnes)",
@@ -21118,7 +21118,7 @@
   {
     "gear_id": "gear_2519",
     "id": "gear_2519",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "써머레스트 Air Head Down 베개 (Air Head Down Pillow)",
     "weight_g": 141,
     "brand": "써머레스트 (Therm-a-Rest)",
@@ -21343,7 +21343,7 @@
   {
     "gear_id": "gear_2534",
     "id": "gear_2534",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "써머레스트 에어 헤드 베개 (Air Head Pillow)",
     "weight_g": 159,
     "brand": "써머레스트 (Therm-a-Rest)",
@@ -21373,7 +21373,7 @@
   {
     "gear_id": "gear_2536",
     "id": "gear_2536",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "써머레스트 컴프레서블 베개 신치 (Compressible Pillow Cinch)",
     "weight_g": 227,
     "brand": "써머레스트 (Therm-a-Rest)",
@@ -21463,7 +21463,7 @@
   {
     "gear_id": "gear_2542",
     "id": "gear_2542",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "씨투써밋 Breeze Lightweight Traveller 침낭 Liner with Insect Shield (Breeze Lightweight Traveller Sleeping Bag Liner with Insect Shield)",
     "weight_g": 345,
     "brand": "씨투써밋 (Sea to Summit)",
@@ -21478,7 +21478,7 @@
   {
     "gear_id": "gear_2543",
     "id": "gear_2543",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "씨투써밋 Breeze 침낭 Liner with Insect Shield - Mummy (Breeze Sleeping Bag Liner with Insect Shield - Mummy)",
     "weight_g": 286,
     "brand": "씨투써밋 (Sea to Summit)",
@@ -21568,7 +21568,7 @@
   {
     "gear_id": "gear_2549",
     "id": "gear_2549",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "씨투써밋 Comfort 침낭 Liner (Comfort Sleeping Bag Liner)",
     "weight_g": 290,
     "brand": "씨투써밋 (Sea to Summit)",
@@ -21628,7 +21628,7 @@
   {
     "gear_id": "gear_2553",
     "id": "gear_2553",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "씨투써밋 Foam Core 베개 (Foam Core Pillow)",
     "weight_g": 159,
     "brand": "씨투써밋 (Sea to Summit)",
@@ -21658,7 +21658,7 @@
   {
     "gear_id": "gear_2555",
     "id": "gear_2555",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "씨투써밋 Memory Lux 베개 (Memory Lux Pillow)",
     "weight_g": 585,
     "brand": "씨투써밋 (Sea to Summit)",
@@ -21673,7 +21673,7 @@
   {
     "gear_id": "gear_2556",
     "id": "gear_2556",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "씨투써밋 Reactor Fleece-Weight 침낭 Liner (Reactor Fleece-Weight Sleeping Bag Liner)",
     "weight_g": 363,
     "brand": "씨투써밋 (Sea to Summit)",
@@ -21688,7 +21688,7 @@
   {
     "gear_id": "gear_2557",
     "id": "gear_2557",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "씨투써밋 Reactor Lightweight 침낭 Liner (Reactor Lightweight Sleeping Bag Liner)",
     "weight_g": 236,
     "brand": "씨투써밋 (Sea to Summit)",
@@ -21703,7 +21703,7 @@
   {
     "gear_id": "gear_2558",
     "id": "gear_2558",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "씨투써밋 Reactor Midweight 침낭 Liner (Reactor Midweight Sleeping Bag Liner)",
     "weight_g": 331,
     "brand": "씨투써밋 (Sea to Summit)",
@@ -21718,7 +21718,7 @@
   {
     "gear_id": "gear_2559",
     "id": "gear_2559",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "씨투써밋 Reactor 침낭 Liner - Mummy with Drawcord (Reactor Sleeping Bag Liner - Mummy with Drawcord)",
     "weight_g": 286,
     "brand": "씨투써밋 (Sea to Summit)",
@@ -21733,7 +21733,7 @@
   {
     "gear_id": "gear_2560",
     "id": "gear_2560",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "씨투써밋 Silk Blend Travel 침낭 Liner (Silk Blend Travel Sleeping Bag Liner)",
     "weight_g": 132,
     "brand": "씨투써밋 (Sea to Summit)",
@@ -21868,7 +21868,7 @@
   {
     "gear_id": "gear_2569",
     "id": "gear_2569",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "씨투써밋 에어로스 다운 베개 (Aeros Down Pillow)",
     "weight_g": 68,
     "brand": "씨투써밋 (Sea to Summit)",
@@ -21883,7 +21883,7 @@
   {
     "gear_id": "gear_2570",
     "id": "gear_2570",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "씨투써밋 에어로스 울트라라이트 베개 (Aeros Ultralight Pillow)",
     "weight_g": 54,
     "brand": "씨투써밋 (Sea to Summit)",
@@ -21898,7 +21898,7 @@
   {
     "gear_id": "gear_2571",
     "id": "gear_2571",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "씨투써밋 에어로스 프리미엄 베개 (Aeros Premium Pillow)",
     "weight_g": 100,
     "brand": "씨투써밋 (Sea to Summit)",
@@ -22063,7 +22063,7 @@
   {
     "gear_id": "gear_2582",
     "id": "gear_2582",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "알프스마운티니어링 Big Air 베개 (Big Air Pillow)",
     "weight_g": 200,
     "brand": "알프스마운티니어링 (ALPS Mountaineering)",
@@ -22153,7 +22153,7 @@
   {
     "gear_id": "gear_2588",
     "id": "gear_2588",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "알프스마운티니어링 PolyCotton 침낭 Liner (PolyCotton Sleeping Bag Liner)",
     "weight_g": 313,
     "brand": "알프스마운티니어링 (ALPS Mountaineering)",
@@ -22213,7 +22213,7 @@
   {
     "gear_id": "gear_2592",
     "id": "gear_2592",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "알프스마운티니어링 Wisp 침낭 Liner (Wisp Sleeping Bag Liner)",
     "weight_g": 821,
     "brand": "알프스마운티니어링 (ALPS Mountaineering)",
@@ -22378,7 +22378,7 @@
   {
     "gear_id": "gear_2604",
     "id": "gear_2604",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "엑스페드 LuxeWool 베개 (LuxeWool Pillow)",
     "weight_g": 499,
     "brand": "엑스페드 (Exped)",
@@ -22393,7 +22393,7 @@
   {
     "gear_id": "gear_2605",
     "id": "gear_2605",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "엑스페드 Mega 베개 (Mega Pillow)",
     "weight_g": 254,
     "brand": "엑스페드 (Exped)",
@@ -22468,7 +22468,7 @@
   {
     "gear_id": "gear_2610",
     "id": "gear_2610",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "엑스페드 Trailhead 베개 (Trailhead Pillow)",
     "weight_g": 499,
     "brand": "엑스페드 (Exped)",
@@ -22588,7 +22588,7 @@
   {
     "gear_id": "gear_2618",
     "id": "gear_2618",
-    "category_id": "other",
+    "category_id": "sleep",
     "item_name": "엑스페드 Ultra 베개 (Ultra Pillow)",
     "weight_g": 50,
     "brand": "엑스페드 (Exped)",
