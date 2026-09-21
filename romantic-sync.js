@@ -3377,6 +3377,13 @@ window.refreshMyReportFullStats = function() {
   var tEl = paint.tEl;
 
   var curUserId = okbmGetCurrentUserId();
+  var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
+  if (!profile && curUserId && typeof safeGetJSON === 'function') {
+    profile = safeGetJSON('user_profile_' + curUserId, null);
+  }
+  if (!profile && typeof authState !== 'undefined') {
+    profile = authState.userProfile || null;
+  }
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
 
@@ -3447,10 +3454,10 @@ window.refreshMyReportFullStats = function() {
 
   var snsWrap = document.getElementById('reportHeaderSnsWrap');
   if (snsWrap) {
-    var rawInsta = localStorage.getItem('okbm_user_instagram') || '';
-    var rawYt = localStorage.getItem('okbm_user_youtube') || '';
-    var rawBlog = localStorage.getItem('okbm_user_blog') || '';
-    var rawSns = localStorage.getItem('okbm_user_sns_channel') || '';
+    var rawInsta = localStorage.getItem('okbm_user_instagram') || (profile && profile.instagram) || '';
+    var rawYt = localStorage.getItem('okbm_user_youtube') || (profile && profile.youtube) || '';
+    var rawBlog = localStorage.getItem('okbm_user_blog') || (profile && profile.blog) || '';
+    var rawSns = localStorage.getItem('okbm_user_sns_channel') || (profile && (profile.snsChannel || profile.sns_channel)) || '';
 
     var instaTarget = '';
     var pureInsta = rawInsta.replace(/[@\s]/g, '').trim();
@@ -8110,11 +8117,17 @@ function openUserProfileModal() {
     }
     window.__reportRenderCache = {};
 
-    var currentProfile = safeGetJSON('user_profile', null);
-    var targetNick = (currentProfile && currentProfile.nickname) ? currentProfile.nickname : (localStorage.getItem('okbm_user_nick') || '야영자');
-    var targetPhoto = (currentProfile && (currentProfile.photoUrl || currentProfile.heroCoverUrl)) ? (currentProfile.photoUrl || currentProfile.heroCoverUrl) : (localStorage.getItem('okbm_hero_cover_url') || '');
-    var bioVal = (currentProfile && currentProfile.bio) ? currentProfile.bio : (localStorage.getItem('okbm_user_bio') || '');
     var targetUserId = okbmGetCurrentUserId();
+    var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
+    if (!profile && targetUserId && typeof safeGetJSON === 'function') {
+      profile = safeGetJSON('user_profile_' + targetUserId, null);
+    }
+    if (!profile && typeof authState !== 'undefined') {
+      profile = authState.userProfile || null;
+    }
+    var targetNick = (profile && profile.nickname) ? profile.nickname : (localStorage.getItem('okbm_user_nick') || '야영자');
+    var targetPhoto = (profile && (profile.photoUrl || profile.heroCoverUrl)) ? (profile.photoUrl || profile.heroCoverUrl) : (localStorage.getItem('okbm_hero_cover_url') || '');
+    var bioVal = (profile && profile.bio) ? profile.bio : (localStorage.getItem('okbm_user_bio') || '');
 
     var headerContainer = document.getElementById('reportProfileHeaderContainer');
     if (headerContainer && typeof window.renderUserProfileHeaderSection === 'function') {
@@ -8124,10 +8137,10 @@ function openUserProfileModal() {
         nickname: targetNick,
         bio: bioVal,
         photoUrl: targetPhoto,
-        instagram: localStorage.getItem('okbm_user_instagram') || '',
-        youtube: localStorage.getItem('okbm_user_youtube') || '',
-        blog: localStorage.getItem('okbm_user_blog') || '',
-        snsChannel: localStorage.getItem('okbm_user_sns_channel') || ''
+        instagram: localStorage.getItem('okbm_user_instagram') || (profile && profile.instagram) || '',
+        youtube: localStorage.getItem('okbm_user_youtube') || (profile && profile.youtube) || '',
+        blog: localStorage.getItem('okbm_user_blog') || (profile && profile.blog) || '',
+        snsChannel: localStorage.getItem('okbm_user_sns_channel') || (profile && (profile.snsChannel || profile.sns_channel)) || ''
       });
     }
 
@@ -8135,8 +8148,8 @@ function openUserProfileModal() {
       window.applyMasterCoverPhotoToAllUI(targetPhoto);
     }
 
-    if (typeof window.saveUserToSupabase === 'function' && currentProfile) {
-      window.saveUserToSupabase(currentProfile);
+    if (typeof window.saveUserToSupabase === 'function' && profile) {
+      window.saveUserToSupabase(profile);
     }
 
     if (typeof window.refreshMyReportFullStats === 'function') {
