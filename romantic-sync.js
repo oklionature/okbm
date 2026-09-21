@@ -2610,34 +2610,45 @@ window._getRomanticRouteOutdoorLogs = function() {
 window.refreshMyReportFullStats = function() {
   window.__reportRenderCache = {};
 
-  var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
-    ? window._getRomanticRouteOutdoorLogs()
-    : [];
+  var applyLocalCounts = function() {
+    var validLogs = (typeof window._getRomanticRouteOutdoorLogs === 'function')
+      ? window._getRomanticRouteOutdoorLogs()
+      : [];
 
-  var curYear = window._selectedReportYear || String(new Date().getFullYear());
-  var actualCurYear = String(new Date().getFullYear());
+    var curYear = window._selectedReportYear || String(new Date().getFullYear());
+    var actualCurYear = String(new Date().getFullYear());
 
-  var yearLogs = validLogs.filter(function(r) {
-    return String(r.date || '').includes(curYear);
-  });
-  var yEl = document.getElementById('reportYearCountNumber');
-  if (yEl) yEl.innerText = yearLogs.length;
+    var yearLogs = validLogs.filter(function(r) {
+      return String(r.date || '').includes(curYear);
+    });
+    var yEl = document.getElementById('reportYearCountNumber');
+    if (yEl) yEl.innerText = yearLogs.length;
 
-  var tEl = document.getElementById('reportTotalCountNumber');
-  if (tEl) tEl.innerText = validLogs.length;
+    var tEl = document.getElementById('reportTotalCountNumber');
+    if (tEl) tEl.innerText = validLogs.length;
 
-  var badgeText = document.getElementById('reportYearBadge');
-  if (badgeText) badgeText.innerText = curYear;
+    var badgeText = document.getElementById('reportYearBadge');
+    if (badgeText) badgeText.innerText = curYear;
 
-  var labelText = document.getElementById('reportYearCardLabel');
-  if (labelText) labelText.innerText = (curYear === actualCurYear) ? '올해 활동' : curYear + '년 활동';
+    var labelText = document.getElementById('reportYearCardLabel');
+    if (labelText) labelText.innerText = (curYear === actualCurYear) ? '올해 활동' : curYear + '년 활동';
+
+    return { validLogs: validLogs, curYear: curYear, yEl: yEl, tEl: tEl };
+  };
+
+  var paint = applyLocalCounts();
+  var validLogs = paint.validLogs;
+  var curYear = paint.curYear;
+  var yEl = paint.yEl;
+  var tEl = paint.tEl;
 
   var profile = safeGetJSON('user_profile', null);
   var curUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '').trim();
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
 
-  if (curUserId && targetUrl && targetKey) {
+  var syncFromServer = function() {
+    if (!(curUserId && targetUrl && targetKey)) return;
     fetch(targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(curUserId) + '&select=id,date', {
       headers: {
         'apikey': targetKey,
@@ -2659,14 +2670,32 @@ window.refreshMyReportFullStats = function() {
       }
       return { rows: [], total: 0 };
     }).then(function(data) {
+      var localAgain = applyLocalCounts();
+      yEl = localAgain.yEl;
+      tEl = localAgain.tEl;
+      curYear = localAgain.curYear;
+
       var serverRows = data.rows;
-      var serverTotalCount = data.total || serverRows.length;
-      if (serverTotalCount > validLogs.length) {
-        if (tEl) tEl.innerText = serverTotalCount;
-        var serverYearCount = serverRows.filter(function(r) { return String(r.date || '').includes(curYear); }).length;
-        if (yEl && serverYearCount > 0) yEl.innerText = serverYearCount;
+      var serverTotalCount = (typeof data.total === 'number') ? data.total : serverRows.length;
+      // 서버 총건수 기준으로 맞춤 (슈퍼베이스 삭제 시 감소 반영)
+      if (tEl) tEl.innerText = String(serverTotalCount);
+      if (yEl && Array.isArray(serverRows) && serverRows.length > 0
+          && (serverRows.length >= serverTotalCount || serverTotalCount === 0)) {
+        yEl.innerText = String(serverRows.filter(function(r) {
+          return String(r.date || '').includes(curYear);
+        }).length);
       }
     }).catch(function() {});
+  };
+  if (typeof window.okbmReconcileLocalFeedsWithServer === 'function') {
+    window.okbmReconcileLocalFeedsWithServer().then(function() {
+      applyLocalCounts();
+      syncFromServer();
+    }).catch(function() {
+      syncFromServer();
+    });
+  } else {
+    syncFromServer();
   }
 
   var myProps = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
@@ -2808,22 +2837,22 @@ window.renderUserProfileHeaderSection = function(config) {
   var actionGridHtml = '';
   if (isOwner) {
     actionGridHtml = '<div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr; gap:6px; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">' +
-      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openMyPastTripsFromReport(event);" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.68rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
+      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openMyPastTripsFromReport(event);" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.80rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
         '<span>모아보기</span>' +
       '</button>' +
-      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openRoutersInterestFromReport(event);" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.68rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
+      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openRoutersInterestFromReport(event);" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.80rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
         '<span>관심루터</span>' +
       '</button>' +
-      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openFeedsInterestFromReport(event);" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.68rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
+      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openFeedsInterestFromReport(event);" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.80rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
         '<span>관심피드</span>' +
       '</button>' +
-      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); triggerHaptic(8); window.openUserNotificationInbox(\'note\', event);" style="position:relative; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.68rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
+      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); triggerHaptic(8); window.openUserNotificationInbox(\'note\', event);" style="position:relative; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.80rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
         '<span>쪽지</span>' +
-        '<span id="reportNoteCountBadge" style="display:none; position:absolute; top:3px; right:8px; min-width:14px; height:14px; padding:0 4px; border-radius:8px; background:#f43f5e; color:#fff; font-size:0.50rem; font-weight:900; align-items:center; justify-content:center;"></span>' +
+        '<span id="reportNoteCountBadge" style="display:none; position:absolute; top:3px; right:8px; min-width:14px; height:14px; padding:0 4px; border-radius:8px; background:#f43f5e; color:#fff; font-size:0.62rem; font-weight:900; align-items:center; justify-content:center;"></span>' +
       '</button>' +
-      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); triggerHaptic(8); window.openUserNotificationInbox(\'notif\', event);" style="position:relative; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.68rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
+      '<button type="button" onclick="event.preventDefault(); event.stopPropagation(); triggerHaptic(8); window.openUserNotificationInbox(\'notif\', event);" style="position:relative; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:7px 0; color:#e2e8f0; font-size:0.80rem; font-weight:700; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;">' +
         '<span>알림</span>' +
-        '<span id="reportNotifCountBadge" style="display:none; position:absolute; top:3px; right:8px; min-width:14px; height:14px; padding:0 4px; border-radius:8px; background:#f43f5e; color:#fff; font-size:0.50rem; font-weight:900; align-items:center; justify-content:center;"></span>' +
+        '<span id="reportNotifCountBadge" style="display:none; position:absolute; top:3px; right:8px; min-width:14px; height:14px; padding:0 4px; border-radius:8px; background:#f43f5e; color:#fff; font-size:0.62rem; font-weight:900; align-items:center; justify-content:center;"></span>' +
       '</button>' +
     '</div>';
   } else if (uid) {
@@ -2839,7 +2868,7 @@ window.renderUserProfileHeaderSection = function(config) {
     '<div style="display:flex; justify-content:space-between; align-items:center; gap:16px;">' +
       '<div style="flex:1 1 0%; min-width:0; display:flex; flex-direction:column; gap:6px;">' +
         '<div ' + bioClickAttr + ' style="' + bioCursor + 'background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:9px 10px; min-height:68px; box-sizing:border-box; display:flex; align-items:flex-start;">' +
-          '<span class="user-profile-bio-span" style="font-size:0.75rem; color:' + bioColor + '; line-height:1.45; word-break:break-all; min-height:4.35em; display:-webkit-box; -webkit-line-clamp:5; line-clamp:5; -webkit-box-orient:vertical; overflow:hidden;">' + bioText + '</span>' +
+          '<span class="user-profile-bio-span" style="font-size:0.87rem; color:' + bioColor + '; line-height:1.45; word-break:break-all; min-height:4.35em; display:-webkit-box; -webkit-line-clamp:5; line-clamp:5; -webkit-box-orient:vertical; overflow:hidden;">' + bioText + '</span>' +
         '</div>' +
         '<div class="user-profile-sns-wrap" style="display:flex; align-items:center; gap:6px; min-height:26px;">' +
           snsHtml +
@@ -2975,9 +3004,9 @@ window.toggleReportYearDropdown = function(e) {
 
   menu.innerHTML = sortedYears.map(function(y) {
     var isSel = (window._selectedReportYear === y);
-    return '<button type="button" onclick="window.selectReportYear(\'' + y + '\', event)" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(186,230,253,0.12)' : 'transparent') + '; color:' + (isSel ? '#bae6fd' : '#cbd5e1') + '; border:none; padding:6px 8px; font-size:0.62rem; font-weight:800; font-family:var(--font-en); border-radius:4px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">' +
+    return '<button type="button" onclick="window.selectReportYear(\'' + y + '\', event)" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(186,230,253,0.12)' : 'transparent') + '; color:' + (isSel ? '#bae6fd' : '#cbd5e1') + '; border:none; padding:6px 8px; font-size:0.74rem; font-weight:800; font-family:var(--font-en); border-radius:4px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;">' +
       '<span>' + y + '년</span>' +
-      (isSel ? '<span style="color:#bae6fd; font-size:0.55rem;">✓</span>' : '') +
+      (isSel ? '<span style="color:#bae6fd; font-size:0.67rem;">✓</span>' : '') +
     '</button>';
   }).join('');
 
@@ -3038,7 +3067,7 @@ window.renderReportYearActivityList = function() {
   }
 
   if (yearLogs.length === 0) {
-    listEl.innerHTML = '<div style="font-size:0.54rem; color:#64748b; text-align:center; padding:10px 0;">기록이 없습니다.</div>';
+    listEl.innerHTML = '<div style="font-size:0.66rem; color:#64748b; text-align:center; padding:10px 0;">기록이 없습니다.</div>';
     return;
   }
 
@@ -3046,12 +3075,12 @@ window.renderReportYearActivityList = function() {
     var spotName = r.spot || r.spotName || '-';
     var dStr = String(r.date || '').slice(0, 10);
 
-    return '<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 6px; border-radius:4px; background:rgba(255,255,255,0.02);">' +
-      '<div style="display:flex; align-items:center; gap:5px; max-width:75%; overflow:hidden;">' +
-        '<span style="font-size:0.52rem; color:#bae6fd; font-family:var(--font-en); font-weight:800; flex-shrink:0;">' + (idx + 1) + '.</span>' +
-        '<span style="font-size:0.60rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + spotName + '</span>' +
+    return '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:5px 6px; border-radius:4px; background:rgba(255,255,255,0.02); min-width:0;">' +
+      '<div style="display:flex; align-items:center; gap:5px; min-width:0; flex:1;">' +
+        '<span style="font-size:0.64rem; color:#bae6fd; font-family:var(--font-en); font-weight:800; flex-shrink:0;">' + (idx + 1) + '.</span>' +
+        '<span style="font-size:0.72rem; color:#e2e8f0; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;">' + _escapeReportPropHtml(spotName) + '</span>' +
       '</div>' +
-      '<span style="font-size:0.52rem; color:#64748b; font-family:var(--font-en); flex-shrink:0;">' + dStr + '</span>' +
+      '<span style="font-size:0.64rem; color:#64748b; font-family:var(--font-en); flex-shrink:0;">' + _escapeReportPropHtml(dStr) + '</span>' +
     '</div>';
   }).join('');
 };
@@ -3197,135 +3226,135 @@ function ensureMyReportAndAuthModalsInDOM() {
         <div id="reportProfileHeaderContainer" style="flex-shrink:0; width:100%; box-sizing:border-box;"></div>
 
         <!-- 2단 본문 (헤더와 독 사이를 정확히 꽉 채우는 안전 스크롤 바디) -->
-        <div id="userProfileScrollBody" style="flex:1 1 0%; min-height:0; width:100%; overflow-y:auto; -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior-y:contain; padding:12px 12px 20px 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box; z-index:10;">
+        <div id="userProfileScrollBody" style="flex:1 1 0%; min-height:0; width:100%; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; touch-action:pan-y; overscroll-behavior-y:contain; padding:12px 12px 20px 12px; display:flex; flex-direction:column; gap:8px; box-sizing:border-box; z-index:10;">
           
           <!-- 올해 vs 누적 활동 듀얼 카운터 -->
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; flex-shrink:0;">
-            <div role="button" onclick="window.toggleReportYearActivities(event)" style="cursor:pointer; position:relative; background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; user-select:none;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span id="reportYearCardLabel" style="font-size:0.65rem; color:#64748b; font-weight:700;">올해 활동</span>
-                <button type="button" id="reportYearBadgeBtn" onclick="event.stopPropagation(); window.toggleReportYearDropdown(event);" style="font-size:0.58rem; color:#bae6fd; font-family:var(--font-en); font-weight:800; background:rgba(186,230,253,0.08); border:1px solid rgba(186,230,253,0.25); padding:2px 7px; border-radius:5px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; outline:none;">
+          <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:6px; flex-shrink:0;">
+            <div role="button" onclick="window.toggleReportYearActivities(event)" style="cursor:pointer; position:relative; min-width:0; background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; user-select:none; box-sizing:border-box;">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-width:0;">
+                <span id="reportYearCardLabel" style="font-size:0.77rem; color:#64748b; font-weight:700;">올해 활동</span>
+                <button type="button" id="reportYearBadgeBtn" onclick="event.stopPropagation(); window.toggleReportYearDropdown(event);" style="font-size:0.70rem; color:#bae6fd; font-family:var(--font-en); font-weight:800; background:rgba(186,230,253,0.08); border:1px solid rgba(186,230,253,0.25); padding:2px 7px; border-radius:5px; cursor:pointer; display:inline-flex; align-items:center; gap:3px; outline:none; flex-shrink:0;">
                   <span id="reportYearBadge">2026</span>
                   <svg viewBox="0 0 24 24" style="width:9px; height:9px; stroke:#bae6fd; fill:none; stroke-width:2.5;"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
               </div>
-              <div style="margin-top:4px; display:flex; justify-content:space-between; align-items:flex-end;">
+              <div style="margin-top:4px; display:flex; justify-content:space-between; align-items:flex-end; gap:6px; min-width:0;">
                 <div>
-                  <span id="reportYearCountNumber" style="font-size:1.6rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); line-height:1;">0</span>
-                  <span style="font-size:0.75rem; font-weight:700; color:#7dd3fc; margin-left:2px;">회</span>
+                  <span id="reportYearCountNumber" style="font-size:1.72rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); line-height:1;">0</span>
+                  <span style="font-size:0.87rem; font-weight:700; color:#7dd3fc; margin-left:2px;">회</span>
                 </div>
-                <span id="reportYearListArrow" style="font-size:0.52rem; color:#64748b; font-weight:800; margin-bottom:2px;">기록보기 ▼</span>
+                <span id="reportYearListArrow" style="font-size:0.64rem; color:#64748b; font-weight:800; margin-bottom:2px; flex-shrink:0;">기록보기 ▼</span>
               </div>
               <div id="reportYearDropdownMenu" style="display:none; position:absolute; top:36px; right:10px; min-width:86px; max-height:180px; overflow-y:auto; background:#0d121d; border:1px solid rgba(186,230,253,0.25); border-radius:8px; box-shadow:0 10px 25px rgba(0,0,0,0.85); z-index:100; padding:4px; box-sizing:border-box; flex-direction:column; gap:2px;"></div>
             </div>
 
-            <div style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px;">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span style="font-size:0.65rem; color:#64748b; font-weight:700;">누적 총 활동</span>
-                <span style="font-size:0.56rem; color:#fde68a; font-weight:700; background:rgba(253,230,138,0.08); border:1px solid rgba(253,230,138,0.2); padding:1px 5px; border-radius:4px;">전체</span>
+            <div style="min-width:0; background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px 12px; box-sizing:border-box;">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:6px;">
+                <span style="font-size:0.77rem; color:#64748b; font-weight:700;">누적 총 활동</span>
+                <span style="font-size:0.68rem; color:#fde68a; font-weight:700; background:rgba(253,230,138,0.08); border:1px solid rgba(253,230,138,0.2); padding:1px 5px; border-radius:4px; flex-shrink:0;">전체</span>
               </div>
               <div style="margin-top:4px;">
-                <span id="reportTotalCountNumber" style="font-size:1.6rem; font-weight:900; color:#fde68a; font-family:var(--font-en); line-height:1;">0</span>
-                <span style="font-size:0.75rem; font-weight:700; color:#fef08a; margin-left:2px;">회</span>
+                <span id="reportTotalCountNumber" style="font-size:1.72rem; font-weight:900; color:#fde68a; font-family:var(--font-en); line-height:1;">0</span>
+                <span style="font-size:0.87rem; font-weight:700; color:#fef08a; margin-left:2px;">회</span>
               </div>
             </div>
           </div>
 
           <!-- 선택 연도 활동 인라인 아코디언 패널 -->
-          <div id="reportYearActivityContainer" style="display:none; flex-direction:column; gap:4px; background:#080b11; border:1px solid rgba(186,230,253,0.15); border-radius:10px; padding:8px 10px; box-sizing:border-box; flex-shrink:0;">
+          <div id="reportYearActivityContainer" style="display:none; flex-direction:column; gap:4px; background:#080b11; border:1px solid rgba(186,230,253,0.15); border-radius:10px; padding:8px 10px; box-sizing:border-box; flex-shrink:0; min-width:0; overflow:hidden;">
             <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:4px; border-bottom:1px solid rgba(255,255,255,0.06);">
-              <span id="reportYearActivityTitle" style="font-size:0.58rem; color:#bae6fd; font-weight:800; font-family:var(--font-en);">활동 기록</span>
+              <span id="reportYearActivityTitle" style="font-size:0.70rem; color:#bae6fd; font-weight:800; font-family:var(--font-en);">활동 기록</span>
             </div>
             <div id="reportYearActivityList" style="display:flex; flex-direction:column; gap:2px; max-height:200px; overflow-y:auto; -webkit-overflow-scrolling:touch; padding-right:2px;"></div>
           </div>
 
           <!-- 1. 장비 & 세팅 무게 -->
-          <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0;">
+          <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0; min-width:0;">
             <div role="button" data-sec="gear" onclick="window.handleReportSecClick('gear')" style="padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <div style="width:24px; height:24px; border-radius:6px; background:rgba(167,243,208,0.08); display:flex; align-items:center; justify-content:center; color:#a7f3d0; flex-shrink:0;">
                   <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h12v6H6zM4 8h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8z"/></svg>
                 </div>
-                <span style="font-size:0.78rem; font-weight:700; color:#e2e8f0;">장비 & 세팅 무게</span>
+                <span style="font-size:0.90rem; font-weight:700; color:#e2e8f0;">장비 & 세팅 무게</span>
               </div>
               <div style="display:flex; align-items:center; gap:6px;">
-                <span id="reportHeaderGearStat" style="font-size:0.64rem; color:#a7f3d0; font-weight:700; font-family:var(--font-en);"></span>
-                <span id="accArrow_gear" style="font-size:0.58rem; color:#475569; display:inline-block; transition:transform 0.2s;">▼</span>
+                <span id="reportHeaderGearStat" style="font-size:0.76rem; color:#a7f3d0; font-weight:700; font-family:var(--font-en);"></span>
+                <span id="accArrow_gear" style="font-size:0.70rem; color:#475569; display:inline-block; transition:transform 0.2s;">▼</span>
               </div>
             </div>
-            <div id="accBody_gear" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px;"></div>
+            <div id="accBody_gear" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px; min-width:0; box-sizing:border-box;"></div>
           </div>
 
           <!-- 2. 고도 & 필드 지형 -->
-          <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0;">
+          <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0; min-width:0;">
             <div role="button" data-sec="terrain" onclick="window.handleReportSecClick('terrain')" style="padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <div style="width:24px; height:24px; border-radius:6px; background:rgba(186,230,253,0.08); display:flex; align-items:center; justify-content:center; color:#bae6fd; flex-shrink:0;">
                   <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
                 </div>
-                <span style="font-size:0.78rem; font-weight:700; color:#e2e8f0;">고도 & 필드 지형</span>
+                <span style="font-size:0.90rem; font-weight:700; color:#e2e8f0;">고도 & 필드 지형</span>
               </div>
               <div style="display:flex; align-items:center; gap:6px;">
-                <span id="reportHeaderTerrainStat" style="font-size:0.64rem; color:#bae6fd; font-weight:700; font-family:var(--font-en);"></span>
-                <span id="accArrow_terrain" style="font-size:0.58rem; color:#475569; display:inline-block; transition:transform 0.2s;">▼</span>
+                <span id="reportHeaderTerrainStat" style="font-size:0.76rem; color:#bae6fd; font-weight:700; font-family:var(--font-en);"></span>
+                <span id="accArrow_terrain" style="font-size:0.70rem; color:#475569; display:inline-block; transition:transform 0.2s;">▼</span>
               </div>
             </div>
-            <div id="accBody_terrain" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px;"></div>
+            <div id="accBody_terrain" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px; min-width:0; box-sizing:border-box;"></div>
           </div>
 
           <!-- 3. 시즌 밸런스 -->
-          <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0;">
+          <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0; min-width:0;">
             <div role="button" data-sec="season" onclick="window.handleReportSecClick('season')" style="padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <div style="width:24px; height:24px; border-radius:6px; background:rgba(253,230,138,0.08); display:flex; align-items:center; justify-content:center; color:#fde68a; flex-shrink:0;">
                   <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2"/></svg>
                 </div>
-                <span style="font-size:0.78rem; font-weight:700; color:#e2e8f0;">시즌 밸런스</span>
+                <span style="font-size:0.90rem; font-weight:700; color:#e2e8f0;">시즌 밸런스</span>
               </div>
               <div style="display:flex; align-items:center; gap:6px;">
-                <span id="reportHeaderSeasonStat" style="font-size:0.64rem; color:#fde68a; font-weight:700; font-family:var(--font-en);"></span>
-                <span id="accArrow_season" style="font-size:0.58rem; color:#475569; display:inline-block; transition:transform 0.2s;">▼</span>
+                <span id="reportHeaderSeasonStat" style="font-size:0.76rem; color:#fde68a; font-weight:700; font-family:var(--font-en);"></span>
+                <span id="accArrow_season" style="font-size:0.70rem; color:#475569; display:inline-block; transition:transform 0.2s;">▼</span>
               </div>
             </div>
-            <div id="accBody_season" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px;"></div>
+            <div id="accBody_season" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px; min-width:0; box-sizing:border-box;"></div>
           </div>
 
           <!-- 4. 지역 분포 -->
-          <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0;">
+          <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0; min-width:0;">
             <div role="button" data-sec="region" onclick="window.handleReportSecClick('region')" style="padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <div style="width:24px; height:24px; border-radius:6px; background:rgba(233,213,255,0.08); display:flex; align-items:center; justify-content:center; color:#e9d5ff; flex-shrink:0;">
                   <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 </div>
-                <span style="font-size:0.78rem; font-weight:700; color:#e2e8f0;">지역 분포</span>
+                <span style="font-size:0.90rem; font-weight:700; color:#e2e8f0;">지역 분포</span>
               </div>
               <div style="display:flex; align-items:center; gap:6px;">
-                <span id="reportHeaderRegionStat" style="font-size:0.64rem; color:#e9d5ff; font-weight:700; font-family:var(--font-en);"></span>
-                <span id="accArrow_region" style="font-size:0.58rem; color:#475569; display:inline-block; transition:transform 0.2s;">▼</span>
+                <span id="reportHeaderRegionStat" style="font-size:0.76rem; color:#e9d5ff; font-weight:700; font-family:var(--font-en);"></span>
+                <span id="accArrow_region" style="font-size:0.70rem; color:#475569; display:inline-block; transition:transform 0.2s;">▼</span>
               </div>
             </div>
-            <div id="accBody_region" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px;"></div>
+            <div id="accBody_region" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px; min-width:0; box-sizing:border-box;"></div>
           </div>
 
           <!-- 5. 내가 제보한 장소 (등록 전 수정 기능) -->
-          <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0;">
+          <div class="report-minimal-card" style="background:#080b11; border:1px solid rgba(255,255,255,0.08); border-radius:10px; overflow:hidden; flex-shrink:0; min-width:0;">
             <div role="button" data-sec="myprops" onclick="window.handleReportSecClick('myprops')" style="padding:10px 12px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
               <div style="display:flex; align-items:center; gap:8px;">
                 <div style="width:24px; height:24px; border-radius:6px; background:rgba(56,189,248,0.1); display:flex; align-items:center; justify-content:center; color:#38bdf8; flex-shrink:0;">
                   <svg viewBox="0 0 24 24" style="width:13px; height:13px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                 </div>
-                <span style="font-size:0.78rem; font-weight:700; color:#e2e8f0;">내가 제보한 장소</span>
+                <span style="font-size:0.90rem; font-weight:700; color:#e2e8f0;">내가 제보한 장소</span>
               </div>
               <div style="display:flex; align-items:center; gap:6px;">
-                <span id="reportHeaderMyPropsStat" style="font-size:0.64rem; color:#38bdf8; font-weight:700; font-family:var(--font-en);">0곳</span>
-                <span id="accArrow_myprops" style="font-size:0.58rem; color:#475569; display:inline-block; transition:transform 0.2s;">▼</span>
+                <span id="reportHeaderMyPropsStat" style="font-size:0.76rem; color:#38bdf8; font-weight:700; font-family:var(--font-en);">0곳</span>
+                <span id="accArrow_myprops" style="font-size:0.70rem; color:#475569; display:inline-block; transition:transform 0.2s;">▼</span>
               </div>
             </div>
-            <div id="accBody_myprops" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px;"></div>
+            <div id="accBody_myprops" style="display:none; padding:0 10px 10px 10px; border-top:1px solid rgba(255,255,255,0.04); flex-direction:column; gap:6px; min-width:0; box-sizing:border-box;"></div>
           </div>
 
           <!-- 과거 추억 등록 -->
-          <button type="button" onclick="window.openPastTripRegisterModal(event);" style="width:100%; height:44px; background:#080b11; border:1.5px solid rgba(186,230,253,0.3); border-radius:10px; color:#f1f5f9; font-size:0.80rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; margin-top:4px; margin-bottom:12px; flex-shrink:0; box-shadow:0 4px 15px rgba(0,0,0,0.8);">
+          <button type="button" onclick="window.openPastTripRegisterModal(event);" style="width:100%; height:44px; background:#080b11; border:1.5px solid rgba(186,230,253,0.3); border-radius:10px; color:#f1f5f9; font-size:0.92rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; margin-top:4px; margin-bottom:12px; flex-shrink:0; box-shadow:0 4px 15px rgba(0,0,0,0.8);">
             <svg viewBox="0 0 24 24" style="width:15px; height:15px; stroke:#bae6fd; fill:none; stroke-width:2;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
             <span>과거 추억 등록</span>
           </button>
@@ -3501,7 +3530,7 @@ window._renderMyPropsModule = function(el) {
   if (hStat) hStat.innerText = validProps.length + '곳';
 
   if (validProps.length === 0) {
-    el.innerHTML = '<div style="font-size:0.62rem; color:#64748b; text-align:center; padding:12px 0;">아직 제보한 박지가 없습니다. 소중한 박지를 제보해주세요!</div>';
+    el.innerHTML = '<div style="font-size:0.74rem; color:#64748b; text-align:center; padding:12px 0;">아직 제보한 박지가 없습니다. 소중한 박지를 제보해주세요!</div>';
     return;
   }
 
@@ -3516,32 +3545,34 @@ window._renderMyPropsModule = function(el) {
     var entryStr = _escapeReportPropHtml(rawEntry);
     var safeId = _escapeReportPropHtml(String(p.id || ''));
     var statusHtml = kind === 'accepted'
-      ? '<span style="font-size:0.50rem; background:rgba(16,185,129,0.18); color:#34d399; border:1px solid rgba(52,211,153,0.35); border-radius:3px; padding:1px 4px; font-weight:800;">채택</span>'
+      ? '<span style="font-size:0.62rem; background:rgba(16,185,129,0.18); color:#34d399; border:1px solid rgba(52,211,153,0.35); border-radius:3px; padding:1px 4px; font-weight:800;">채택</span>'
       : (kind === 'rejected'
-        ? '<span style="font-size:0.50rem; background:rgba(244,63,94,0.15); color:#fb7185; border:1px solid rgba(244,63,94,0.3); border-radius:3px; padding:1px 4px; font-weight:800;">반려</span>'
-        : '<span style="font-size:0.50rem; background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.3); border-radius:3px; padding:1px 4px; font-weight:800;">검수중</span>');
+        ? '<span style="font-size:0.62rem; background:rgba(244,63,94,0.15); color:#fb7185; border:1px solid rgba(244,63,94,0.3); border-radius:3px; padding:1px 4px; font-weight:800;">반려</span>'
+        : '<span style="font-size:0.62rem; background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.3); border-radius:3px; padding:1px 4px; font-weight:800;">검수중</span>');
     var actionsHtml = '';
     if (kind === 'accepted') {
-      actionsHtml = '<button type="button" data-prop-id="' + safeId + '" onclick="window.triggerCorrectionFromMyProposal(this.getAttribute(\'data-prop-id\'))" style="background:rgba(251,191,36,0.12); border:1px solid #fbbf24; color:#fde047; font-size:0.62rem; font-weight:800; border-radius:5px; padding:3px 8px; cursor:pointer;">수정문의</button>';
+      actionsHtml = '<button type="button" data-prop-id="' + safeId + '" onclick="window.triggerCorrectionFromMyProposal(this.getAttribute(\'data-prop-id\'))" style="background:rgba(251,191,36,0.12); border:1px solid #fbbf24; color:#fde047; font-size:0.74rem; font-weight:800; border-radius:5px; padding:4px 8px; cursor:pointer;">수정문의</button>';
     } else if (kind === 'rejected') {
-      actionsHtml = '<button type="button" data-prop-id="' + safeId + '" onclick="window.triggerDeleteProposalFromReport(this.getAttribute(\'data-prop-id\'))" style="background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.3); color:#fda4af; font-size:0.62rem; font-weight:800; border-radius:5px; padding:3px 8px; cursor:pointer;">삭제</button>';
+      actionsHtml = '<button type="button" data-prop-id="' + safeId + '" onclick="window.triggerDeleteProposalFromReport(this.getAttribute(\'data-prop-id\'))" style="background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.3); color:#fda4af; font-size:0.74rem; font-weight:800; border-radius:5px; padding:4px 8px; cursor:pointer;">삭제</button>';
     } else {
       actionsHtml =
-        '<button type="button" data-prop-id="' + safeId + '" onclick="window.triggerEditProposalFromReport(this.getAttribute(\'data-prop-id\'))" style="background:rgba(56,189,248,0.12); border:1px solid #38bdf8; color:#38bdf8; font-size:0.62rem; font-weight:800; border-radius:5px; padding:3px 8px; cursor:pointer;">수정</button>' +
-        '<button type="button" data-prop-id="' + safeId + '" onclick="window.triggerDeleteProposalFromReport(this.getAttribute(\'data-prop-id\'))" style="background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.3); color:#fda4af; font-size:0.62rem; font-weight:800; border-radius:5px; padding:3px 8px; cursor:pointer;">삭제</button>';
+        '<button type="button" data-prop-id="' + safeId + '" onclick="window.triggerEditProposalFromReport(this.getAttribute(\'data-prop-id\'))" style="background:rgba(56,189,248,0.12); border:1px solid #38bdf8; color:#38bdf8; font-size:0.74rem; font-weight:800; border-radius:5px; padding:4px 8px; cursor:pointer;">수정</button>' +
+        '<button type="button" data-prop-id="' + safeId + '" onclick="window.triggerDeleteProposalFromReport(this.getAttribute(\'data-prop-id\'))" style="background:rgba(244,63,94,0.1); border:1px solid rgba(244,63,94,0.3); color:#fda4af; font-size:0.74rem; font-weight:800; border-radius:5px; padding:4px 8px; cursor:pointer;">삭제</button>';
     }
 
-    return '<div style="display:flex; justify-content:space-between; align-items:center; background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:7px 9px;">' +
-      '<div style="display:flex; flex-direction:column; min-width:0; flex:1; padding-right:8px;">' +
-        '<div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">' +
-          '<span style="font-size:0.58rem; color:#38bdf8; font-weight:900;">' + (idx + 1) + '.</span>' +
-          '<span style="font-size:0.72rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + mainName + ' ' + subName + '</span>' +
+    return '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:8px 9px; min-width:0; box-sizing:border-box;">' +
+      '<div style="display:flex; flex-direction:column; min-width:0; flex:1; padding-right:4px;">' +
+        '<div style="display:flex; align-items:center; gap:4px; min-width:0;">' +
+          '<span style="font-size:0.70rem; color:#38bdf8; font-weight:900; flex-shrink:0;">' + (idx + 1) + '.</span>' +
+          '<span style="font-size:0.84rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;">' + mainName + ' ' + subName + '</span>' +
+        '</div>' +
+        '<div style="display:flex; align-items:center; gap:4px; margin-top:3px; flex-wrap:wrap;">' +
           (isCorr
-            ? '<span style="font-size:0.50rem; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:3px; padding:1px 4px; font-weight:800;">수정건의</span>'
-            : '<span style="font-size:0.50rem; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); border-radius:3px; padding:1px 4px; font-weight:800;">신규제보</span>') +
+            ? '<span style="font-size:0.62rem; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:3px; padding:1px 4px; font-weight:800;">수정건의</span>'
+            : '<span style="font-size:0.62rem; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3); border-radius:3px; padding:1px 4px; font-weight:800;">신규제보</span>') +
           statusHtml +
         '</div>' +
-        '<span style="font-size:0.54rem; color:#64748b; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + entryStr + ' · ' + dateStr + '</span>' +
+        '<span style="font-size:0.66rem; color:#64748b; margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' + entryStr + ' · ' + dateStr + '</span>' +
       '</div>' +
       '<div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">' +
         actionsHtml +
@@ -3549,7 +3580,7 @@ window._renderMyPropsModule = function(el) {
     '</div>';
   }).join('');
 
-  el.innerHTML = '<div style="font-size:0.56rem; color:#94a3b8; margin:4px 0 4px 2px;">검수 중에는 수정·삭제가 가능하고, 채택되면 수정문의만 할 수 있습니다.</div>' +
+  el.innerHTML = '<div style="font-size:0.68rem; color:#94a3b8; margin:4px 0 4px 2px; line-height:1.4;">검수 중에는 수정·삭제가 가능하고, 채택되면 수정문의만 할 수 있습니다.</div>' +
     '<div style="display:flex; flex-direction:column; gap:4px;">' +
       listHtml +
     '</div>';
@@ -3833,8 +3864,8 @@ window._renderGearModule = function(validLogs, el) {
     });
     dietHtml = Object.keys(yearMap).sort().map(function(yk) {
       var avgY = (yearMap[yk].sum / yearMap[yk].count).toFixed(2);
-      return '<div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding:3px 6px; border-radius:4px; font-size:0.58rem;"><span style="color:#94a3b8; font-family:var(--font-en);">' + yk + '년</span><span style="font-weight:800; color:#bae6fd; font-family:var(--font-en);">' + avgY + 'kg <span style="font-size:0.50rem; color:#64748b; font-weight:normal;">(' + yearMap[yk].count + '회)</span></span></div>';
-    }).join('') || '<div style="color:#475569; font-size:0.54rem;">연도별 기록이 없습니다.</div>';
+      return '<div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); padding:4px 8px; border-radius:4px; font-size:0.70rem; min-width:0;"><span style="color:#94a3b8; font-family:var(--font-en);">' + yk + '년</span><span style="font-weight:800; color:#bae6fd; font-family:var(--font-en);">' + avgY + 'kg <span style="font-size:0.62rem; color:#64748b; font-weight:normal;">(' + yearMap[yk].count + '회)</span></span></div>';
+    }).join('') || '<div style="color:#475569; font-size:0.66rem;">연도별 기록이 없습니다.</div>';
   } else {
     var monthMap = {};
     chronoLogs.forEach(function(r) {
@@ -3847,10 +3878,10 @@ window._renderGearModule = function(validLogs, el) {
       }
     });
     var mKeys = Object.keys(monthMap).sort().slice(-6);
-    dietHtml = '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(68px, 1fr)); gap:4px;">' +
+    dietHtml = '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(76px, 1fr)); gap:4px;">' +
       mKeys.map(function(mk) {
         var avgM = (monthMap[mk].sum / monthMap[mk].count).toFixed(1);
-        return '<div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:3px; text-align:center;"><div style="font-size:0.50rem; color:#64748b; font-family:var(--font-en);">' + mk.slice(2) + '</div><div style="font-size:0.68rem; font-weight:800; color:#a7f3d0; font-family:var(--font-en); margin-top:1px;">' + avgM + 'kg</div></div>';
+        return '<div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:5px 3px; text-align:center; min-width:0;"><div style="font-size:0.62rem; color:#64748b; font-family:var(--font-en);">' + mk.slice(2) + '</div><div style="font-size:0.80rem; font-weight:800; color:#a7f3d0; font-family:var(--font-en); margin-top:1px;">' + avgM + 'kg</div></div>';
       }).join('') + '</div>';
   }
 
@@ -3868,13 +3899,18 @@ window._renderGearModule = function(validLogs, el) {
       var top1Name = sortedKeys[0] || '-';
       var top1Count = counts[top1Name] || 0;
       var isActive = (state.activeSlot === s.key);
+      var safeSlotKey = _escapeReportPropHtml(s.key);
+      var safeTop1 = _escapeReportPropHtml(top1Name);
 
-      return '<div onclick="window._toggleGearSlotTop5(\'' + s.key + '\')" style="cursor:pointer; background:' + (isActive ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)') + '; border:1px solid ' + (isActive ? s.color : 'rgba(255,255,255,0.06)') + '; border-radius:6px; padding:5px 6px; box-sizing:border-box;">' +
-        '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-          '<span style="font-size:0.52rem; color:#94a3b8; font-weight:800;">' + s.key + '</span>' +
-          '<span style="font-size:0.48rem; color:' + s.color + ';">' + (isActive ? '닫기 ▲' : 'Top 5 ▼') + '</span>' +
+      return '<div onclick="window._toggleGearSlotTop5(\'' + s.key + '\')" style="cursor:pointer; width:100%; min-width:0; overflow:hidden; background:' + (isActive ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)') + '; border:1px solid ' + (isActive ? s.color : 'rgba(255,255,255,0.06)') + '; border-radius:8px; padding:8px 10px; box-sizing:border-box;">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; min-width:0;">' +
+          '<span style="font-size:0.64rem; color:#94a3b8; font-weight:800; flex-shrink:0;">' + safeSlotKey + '</span>' +
+          '<span style="font-size:0.60rem; color:' + s.color + '; font-weight:700; flex-shrink:0;">' + (isActive ? '닫기 ▲' : 'Top 5 ▼') + '</span>' +
         '</div>' +
-        '<div style="font-size:0.60rem; font-weight:800; color:' + s.color + '; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">' + top1Name + ' <span style="font-size:0.50rem; color:#64748b; font-weight:normal;">(' + top1Count + '회)</span></div>' +
+        '<div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-top:4px; min-width:0;">' +
+          '<span style="font-size:0.74rem; font-weight:800; color:' + s.color + '; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; flex:1;">' + safeTop1 + '</span>' +
+          '<span style="font-size:0.62rem; color:#64748b; font-weight:700; flex-shrink:0;">' + top1Count + '회</span>' +
+        '</div>' +
       '</div>';
     }).join('');
 
@@ -3883,109 +3919,109 @@ window._renderGearModule = function(validLogs, el) {
       var curCounts = slotDataMap[state.activeSlot].counts;
       var curSorted = Object.keys(curCounts).map(function(k) { return { name: k, count: curCounts[k] }; }).sort(function(a, b) { return b.count - a.count; }).slice(0, 5);
 
-      activeSlotDetailHtml = '<div style="background:#000000; border:1px dashed ' + curSlotDef.color + '; border-radius:6px; padding:6px 8px; margin-top:4px;">' +
-        '<div style="font-size:0.54rem; color:' + curSlotDef.color + '; font-weight:800; margin-bottom:4px;">[' + curSlotDef.key + '] 슬롯 최다 동행 Top 5</div>' +
+      activeSlotDetailHtml = '<div style="background:#000000; border:1px dashed ' + curSlotDef.color + '; border-radius:8px; padding:8px 10px; margin-top:6px; min-width:0; overflow:hidden; box-sizing:border-box;">' +
+        '<div style="font-size:0.66rem; color:' + curSlotDef.color + '; font-weight:800; margin-bottom:6px;">' + _escapeReportPropHtml(curSlotDef.key) + ' Top 5</div>' +
         curSorted.map(function(item, idx) {
-          return '<div style="display:flex; justify-content:space-between; font-size:0.58rem; padding:1.5px 0;"><span style="color:#cbd5e1; max-width:80%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><strong style="color:' + curSlotDef.color + '; margin-right:4px;">' + (idx + 1) + '.</strong>' + item.name + '</span><span style="color:#64748b; font-family:var(--font-en);">' + item.count + '회</span></div>';
+          return '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:0.70rem; padding:3px 0; min-width:0;"><span style="color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; flex:1;"><strong style="color:' + curSlotDef.color + '; margin-right:4px;">' + (idx + 1) + '.</strong>' + _escapeReportPropHtml(item.name) + '</span><span style="color:#64748b; font-family:var(--font-en); flex-shrink:0;">' + item.count + '회</span></div>';
         }).join('') +
       '</div>';
     }
   } else {
-    activeSlotCardsHtml = '<div style="color:#475569; font-size:0.54rem; padding:4px;">등록된 하드웨어 장비 데이터가 없습니다.</div>';
+    activeSlotCardsHtml = '<div style="color:#475569; font-size:0.66rem; padding:4px;">등록된 하드웨어 장비 데이터가 없습니다.</div>';
   }
 
   var topMinListHtml = topMin.map(function(m, i) {
-    return '<div style="display:flex; justify-content:space-between; font-size:0.58rem; color:#cbd5e1; line-height:1.3;"><span>' + (i + 1) + '. <strong style="color:#bae6fd;">' + m.weight.toFixed(2) + 'kg</strong></span><span style="color:#64748b;">' + m.date.slice(2, 10) + '</span></div>';
-  }).join('') || '<div style="color:#475569; font-size:0.54rem;">-</div>';
+    return '<div style="display:flex; justify-content:space-between; gap:6px; font-size:0.70rem; color:#cbd5e1; line-height:1.45; min-width:0;"><span>' + (i + 1) + '. <strong style="color:#bae6fd;">' + m.weight.toFixed(2) + 'kg</strong></span><span style="color:#64748b; flex-shrink:0;">' + _escapeReportPropHtml(m.date.slice(2, 10)) + '</span></div>';
+  }).join('') || '<div style="color:#475569; font-size:0.66rem;">-</div>';
 
   var topMaxListHtml = topMax.map(function(m, i) {
-    return '<div style="display:flex; justify-content:space-between; font-size:0.58rem; color:#cbd5e1; line-height:1.3;"><span>' + (i + 1) + '. <strong style="color:#fecdd3;">' + m.weight.toFixed(2) + 'kg</strong></span><span style="color:#64748b;">' + m.date.slice(2, 10) + '</span></div>';
-  }).join('') || '<div style="color:#475569; font-size:0.54rem;">-</div>';
+    return '<div style="display:flex; justify-content:space-between; gap:6px; font-size:0.70rem; color:#cbd5e1; line-height:1.45; min-width:0;"><span>' + (i + 1) + '. <strong style="color:#fecdd3;">' + m.weight.toFixed(2) + 'kg</strong></span><span style="color:#64748b; flex-shrink:0;">' + _escapeReportPropHtml(m.date.slice(2, 10)) + '</span></div>';
+  }).join('') || '<div style="color:#475569; font-size:0.66rem;">-</div>';
 
   var sortedGearsListHtml = sortedHardwareTop5.map(function(g, i) {
-    return '<div style="display:flex; justify-content:space-between; font-size:0.60rem; padding:1.5px 0;"><span style="color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:75%;"><strong style="color:#a7f3d0; margin-right:4px;">' + (i + 1) + '</strong>' + g.name + '</span><span style="color:#64748b; font-family:var(--font-en);">' + g.count + '회</span></div>';
-  }).join('') || '<div style="color:#475569; font-size:0.54rem;">하드웨어 장비 기록이 없습니다.</div>';
+    return '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:0.72rem; padding:3px 0; min-width:0;"><span style="color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; flex:1;"><strong style="color:#a7f3d0; margin-right:4px;">' + (i + 1) + '</strong>' + _escapeReportPropHtml(g.name) + '</span><span style="color:#64748b; font-family:var(--font-en); flex-shrink:0;">' + g.count + '회</span></div>';
+  }).join('') || '<div style="color:#475569; font-size:0.66rem;">하드웨어 장비 기록이 없습니다.</div>';
 
   el.innerHTML = `
     <!-- 1. 총 누적 적재 무게 -->
-    <div style="background:#000000; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px; margin-top:6px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <span style="font-size:0.60rem; color:#94a3b8; font-weight:800;">총 누적 적재 무게</span>
-        <span style="font-size:0.50rem; color:#64748b;">누적 통계</span>
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px; margin-top:6px; min-width:0; overflow:hidden; box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px;">
+        <span style="font-size:0.72rem; color:#94a3b8; font-weight:800;">총 누적 적재 무게</span>
+        <span style="font-size:0.62rem; color:#64748b; flex-shrink:0;">누적 통계</span>
       </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr 1.2fr; gap:6px; align-items:center; text-align:center;">
-        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:6px 2px;">
-          <div style="font-size:0.50rem; color:#64748b; font-weight:700;">이번 달</div>
-          <div style="font-size:0.85rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); margin-top:2px;">${Math.round(absoluteMonthWeight)}<span style="font-size:0.55rem; color:#7dd3fc; margin-left:1px;">kg</span></div>
+      <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.2fr); gap:6px; align-items:center; text-align:center;">
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:6px 2px; min-width:0;">
+          <div style="font-size:0.62rem; color:#64748b; font-weight:700;">이번 달</div>
+          <div style="font-size:0.97rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); margin-top:2px;">${Math.round(absoluteMonthWeight)}<span style="font-size:0.67rem; color:#7dd3fc; margin-left:1px;">kg</span></div>
         </div>
-        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:6px 2px;">
-          <div style="font-size:0.50rem; color:#64748b; font-weight:700;">올해 누적</div>
-          <div style="font-size:0.85rem; font-weight:900; color:#fde68a; font-family:var(--font-en); margin-top:2px;">${Math.round(absoluteYearWeight)}<span style="font-size:0.55rem; color:#fef08a; margin-left:1px;">kg</span></div>
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:6px; padding:6px 2px; min-width:0;">
+          <div style="font-size:0.62rem; color:#64748b; font-weight:700;">올해 누적</div>
+          <div style="font-size:0.97rem; font-weight:900; color:#fde68a; font-family:var(--font-en); margin-top:2px;">${Math.round(absoluteYearWeight)}<span style="font-size:0.67rem; color:#fef08a; margin-left:1px;">kg</span></div>
         </div>
-        <div style="background:rgba(167,243,208,0.04); border:1px solid rgba(167,243,208,0.2); border-radius:6px; padding:6px 2px;">
-          <div style="font-size:0.52rem; color:#a7f3d0; font-weight:800;">역대 총 누적</div>
-          <div style="font-size:1.15rem; font-weight:900; color:#a7f3d0; font-family:var(--font-en); line-height:1; margin-top:2px;">${Math.round(absoluteTotalWeight)}<span style="font-size:0.62rem; color:#6ee7b7; margin-left:1px;">kg</span></div>
+        <div style="background:rgba(167,243,208,0.04); border:1px solid rgba(167,243,208,0.2); border-radius:6px; padding:6px 2px; min-width:0;">
+          <div style="font-size:0.64rem; color:#a7f3d0; font-weight:800;">역대 총 누적</div>
+          <div style="font-size:1.27rem; font-weight:900; color:#a7f3d0; font-family:var(--font-en); line-height:1; margin-top:2px;">${Math.round(absoluteTotalWeight)}<span style="font-size:0.74rem; color:#6ee7b7; margin-left:1px;">kg</span></div>
         </div>
       </div>
     </div>
 
     <!-- 2. 평균 세팅 무게 -->
-    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:8px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <span style="font-size:0.58rem; color:#64748b; font-weight:700;">평균 1회 세팅 무게</span>
-        <div style="display:flex; gap:2px; background:rgba(255,255,255,0.04); padding:2px; border-radius:4px;">
-          <button type="button" onclick="window._setGearSeasonFilter('all')" style="border:none; cursor:pointer; font-size:0.46rem; padding:2px 5px; border-radius:3px; background:${state.season==='all'?'#ffffff':'transparent'}; color:${state.season==='all'?'#000':'#64748b'}; font-weight:800;">전체</button>
-          <button type="button" onclick="window._setGearSeasonFilter('winter')" style="border:none; cursor:pointer; font-size:0.46rem; padding:2px 5px; border-radius:3px; background:${state.season==='winter'?'#bae6fd':'transparent'}; color:${state.season==='winter'?'#000':'#64748b'}; font-weight:800;">동계</button>
-          <button type="button" onclick="window._setGearSeasonFilter('three')" style="border:none; cursor:pointer; font-size:0.46rem; padding:2px 5px; border-radius:3px; background:${state.season==='three'?'#fde68a':'transparent'}; color:${state.season==='three'?'#000':'#64748b'}; font-weight:800;">3계절</button>
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:8px 10px; min-width:0; overflow:hidden; box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px;">
+        <span style="font-size:0.70rem; color:#64748b; font-weight:700;">평균 1회 세팅 무게</span>
+        <div style="display:flex; gap:2px; background:rgba(255,255,255,0.04); padding:2px; border-radius:4px; flex-shrink:0;">
+          <button type="button" onclick="window._setGearSeasonFilter('all')" style="border:none; cursor:pointer; font-size:0.58rem; padding:3px 6px; border-radius:3px; background:${state.season==='all'?'#ffffff':'transparent'}; color:${state.season==='all'?'#000':'#64748b'}; font-weight:800;">전체</button>
+          <button type="button" onclick="window._setGearSeasonFilter('winter')" style="border:none; cursor:pointer; font-size:0.58rem; padding:3px 6px; border-radius:3px; background:${state.season==='winter'?'#bae6fd':'transparent'}; color:${state.season==='winter'?'#000':'#64748b'}; font-weight:800;">동계</button>
+          <button type="button" onclick="window._setGearSeasonFilter('three')" style="border:none; cursor:pointer; font-size:0.58rem; padding:3px 6px; border-radius:3px; background:${state.season==='three'?'#fde68a':'transparent'}; color:${state.season==='three'?'#000':'#64748b'}; font-weight:800;">3계절</button>
         </div>
       </div>
-      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:4px; text-align:center;">
-        <div>
-          <div style="font-size:0.52rem; color:#64748b;">30일 평균</div>
-          <div style="font-size:0.75rem; font-weight:800; color:#bae6fd; font-family:var(--font-en);">${cM > 0 ? (sumM / cM).toFixed(2) + 'kg' : '-'}</div>
+      <div style="display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:4px; text-align:center;">
+        <div style="min-width:0;">
+          <div style="font-size:0.64rem; color:#64748b;">30일 평균</div>
+          <div style="font-size:0.87rem; font-weight:800; color:#bae6fd; font-family:var(--font-en);">${cM > 0 ? (sumM / cM).toFixed(2) + 'kg' : '-'}</div>
         </div>
-        <div>
-          <div style="font-size:0.52rem; color:#64748b;">올해 평균</div>
-          <div style="font-size:0.75rem; font-weight:800; color:#fde68a; font-family:var(--font-en);">${cY > 0 ? (sumY / cY).toFixed(2) + 'kg' : '-'}</div>
+        <div style="min-width:0;">
+          <div style="font-size:0.64rem; color:#64748b;">올해 평균</div>
+          <div style="font-size:0.87rem; font-weight:800; color:#fde68a; font-family:var(--font-en);">${cY > 0 ? (sumY / cY).toFixed(2) + 'kg' : '-'}</div>
         </div>
-        <div>
-          <div style="font-size:0.52rem; color:#64748b;">선택구간 평균</div>
-          <div style="font-size:0.75rem; font-weight:800; color:#a7f3d0; font-family:var(--font-en);">${cFiltered > 0 ? (sumFiltered / cFiltered).toFixed(2) + 'kg' : '0kg'}</div>
+        <div style="min-width:0;">
+          <div style="font-size:0.64rem; color:#64748b;">선택구간 평균</div>
+          <div style="font-size:0.87rem; font-weight:800; color:#a7f3d0; font-family:var(--font-en);">${cFiltered > 0 ? (sumFiltered / cFiltered).toFixed(2) + 'kg' : '0kg'}</div>
         </div>
       </div>
     </div>
 
     <!-- 3. 무게 다이어트 추이 -->
-    <div style="background:#000000; border:1px solid rgba(186,230,253,0.12); border-radius:6px; padding:6px 8px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-        <span style="font-size:0.58rem; color:#94a3b8; font-weight:700;">무게 다이어트 추이</span>
-        <div style="display:flex; gap:3px;">
-          <button type="button" onclick="window._setGearDietMode('month')" style="border:none; cursor:pointer; font-size:0.48rem; padding:2px 5px; border-radius:3px; background:${state.dietMode==='month'?'#bae6fd':'rgba(255,255,255,0.06)'}; color:${state.dietMode==='month'?'#000':'#94a3b8'}; font-weight:800;">월단위</button>
-          <button type="button" onclick="window._setGearDietMode('year')" style="border:none; cursor:pointer; font-size:0.48rem; padding:2px 5px; border-radius:3px; background:${state.dietMode==='year'?'#bae6fd':'rgba(255,255,255,0.06)'}; color:${state.dietMode==='year'?'#000':'#94a3b8'}; font-weight:800;">연단위</button>
+    <div style="background:#000000; border:1px solid rgba(186,230,253,0.12); border-radius:6px; padding:8px 10px; min-width:0; overflow:hidden; box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px;">
+        <span style="font-size:0.70rem; color:#94a3b8; font-weight:700;">무게 다이어트 추이</span>
+        <div style="display:flex; gap:3px; flex-shrink:0;">
+          <button type="button" onclick="window._setGearDietMode('month')" style="border:none; cursor:pointer; font-size:0.60rem; padding:3px 6px; border-radius:3px; background:${state.dietMode==='month'?'#bae6fd':'rgba(255,255,255,0.06)'}; color:${state.dietMode==='month'?'#000':'#94a3b8'}; font-weight:800;">월단위</button>
+          <button type="button" onclick="window._setGearDietMode('year')" style="border:none; cursor:pointer; font-size:0.60rem; padding:3px 6px; border-radius:3px; background:${state.dietMode==='year'?'#bae6fd':'rgba(255,255,255,0.06)'}; color:${state.dietMode==='year'?'#000':'#94a3b8'}; font-weight:800;">연단위</button>
         </div>
       </div>
       ${dietHtml}
     </div>
 
     <!-- 4. 슬롯별 최다 사용 장비 -->
-    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:6px 8px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-        <span style="font-size:0.58rem; color:#64748b; font-weight:700;">슬롯별 최다 장비</span>
-        <span style="font-size:0.50rem; color:#94a3b8;">소모품 제외</span>
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:8px 10px; min-width:0; overflow:hidden; box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px;">
+        <span style="font-size:0.70rem; color:#64748b; font-weight:700;">슬롯별 최다 장비</span>
+        <span style="font-size:0.62rem; color:#94a3b8; flex-shrink:0;">소모품 제외</span>
       </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+      <div style="display:flex; flex-direction:column; gap:6px; min-width:0; width:100%;">
         ${activeSlotCardsHtml}
       </div>
       ${activeSlotDetailHtml}
     </div>
 
     <!-- 5. 세팅 비율 -->
-    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:6px 8px;">
-      <div style="display:flex; justify-content:space-between; font-size:0.56rem; color:#64748b; margin-bottom:3px;">
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:8px 10px; min-width:0; overflow:hidden; box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; gap:8px; font-size:0.68rem; color:#64748b; margin-bottom:4px;">
         <span>세팅 비율 (경량/스탠다드/헤비)</span>
-        <span style="color:#94a3b8; font-weight:700;">${pMin}% / ${pStd}% / ${pHvy}%</span>
+        <span style="color:#94a3b8; font-weight:700; flex-shrink:0;">${pMin}% / ${pStd}% / ${pHvy}%</span>
       </div>
-      <div style="display:flex; width:100%; height:3px; border-radius:2px; overflow:hidden; background:rgba(255,255,255,0.04);">
+      <div style="display:flex; width:100%; height:4px; border-radius:2px; overflow:hidden; background:rgba(255,255,255,0.04);">
         <div style="width:${pMin}%; background:#bae6fd;"></div>
         <div style="width:${pStd}%; background:#a7f3d0;"></div>
         <div style="width:${pHvy}%; background:#fecdd3;"></div>
@@ -3993,22 +4029,22 @@ window._renderGearModule = function(validLogs, el) {
     </div>
 
     <!-- 6. 최경량 Top 3 vs 최대 중량 Top 3 -->
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">
-      <div style="background:#000000; border:1px solid rgba(186,230,253,0.12); border-radius:6px; padding:6px 8px;">
-        <div style="font-size:0.56rem; color:#bae6fd; font-weight:700; margin-bottom:3px;">최경량 Top 3</div>
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:6px;">
+      <div style="background:#000000; border:1px solid rgba(186,230,253,0.12); border-radius:6px; padding:8px 10px; min-width:0; overflow:hidden; box-sizing:border-box;">
+        <div style="font-size:0.68rem; color:#bae6fd; font-weight:700; margin-bottom:4px;">최경량 Top 3</div>
         ${topMinListHtml}
       </div>
-      <div style="background:#000000; border:1px solid rgba(254,205,211,0.12); border-radius:6px; padding:6px 8px;">
-        <div style="font-size:0.56rem; color:#fecdd3; font-weight:700; margin-bottom:3px;">최대 중량 Top 3</div>
+      <div style="background:#000000; border:1px solid rgba(254,205,211,0.12); border-radius:6px; padding:8px 10px; min-width:0; overflow:hidden; box-sizing:border-box;">
+        <div style="font-size:0.68rem; color:#fecdd3; font-weight:700; margin-bottom:4px;">최대 중량 Top 3</div>
         ${topMaxListHtml}
       </div>
     </div>
 
     <!-- 7. 최다 동행 하드웨어 Top 5 -->
-    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:6px 8px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
-        <span style="font-size:0.56rem; color:#64748b; font-weight:700;">최다 동행 하드웨어 Top 5</span>
-        <span style="font-size:0.50rem; color:#64748b;">순수 장비</span>
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:8px 10px; min-width:0; overflow:hidden; box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; gap:8px;">
+        <span style="font-size:0.68rem; color:#64748b; font-weight:700;">최다 동행 하드웨어 Top 5</span>
+        <span style="font-size:0.62rem; color:#64748b; flex-shrink:0;">순수 장비</span>
       </div>
       ${sortedGearsListHtml}
     </div>
@@ -4141,19 +4177,19 @@ window._renderTerrainModule = function(validLogs, el) {
   var elevDetailHtml = '';
   if (state.elevDetailMode === 'month') {
     var mKeys = Object.keys(monthElevMap).sort().slice(-6);
-    elevDetailHtml = '<div style="background:#000000; border:1px dashed #bae6fd; border-radius:6px; padding:6px 8px; margin-top:4px;">' +
-      '<div style="font-size:0.52rem; color:#bae6fd; font-weight:800; margin-bottom:4px;">최근 월별 획득 고도</div>' +
-      '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(64px, 1fr)); gap:4px;">' +
+    elevDetailHtml = '<div style="background:#000000; border:1px dashed #bae6fd; border-radius:6px; padding:8px 10px; margin-top:6px; min-width:0; overflow:hidden; box-sizing:border-box;">' +
+      '<div style="font-size:0.64rem; color:#bae6fd; font-weight:800; margin-bottom:4px;">최근 월별 획득 고도</div>' +
+      '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(72px, 1fr)); gap:4px;">' +
       mKeys.map(function(mk) {
-        return '<div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:3px; text-align:center;"><div style="font-size:0.48rem; color:#64748b; font-family:var(--font-en);">' + mk.slice(2) + '</div><div style="font-size:0.65rem; font-weight:800; color:#bae6fd; font-family:var(--font-en); margin-top:1px;">+' + monthElevMap[mk].toLocaleString() + 'm</div></div>';
+        return '<div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:5px 3px; text-align:center; min-width:0;"><div style="font-size:0.60rem; color:#64748b; font-family:var(--font-en);">' + mk.slice(2) + '</div><div style="font-size:0.77rem; font-weight:800; color:#bae6fd; font-family:var(--font-en); margin-top:1px;">+' + monthElevMap[mk].toLocaleString() + 'm</div></div>';
       }).join('') + '</div></div>';
   } else if (state.elevDetailMode === 'year') {
     var yKeys = Object.keys(yearElevMap).sort();
-    elevDetailHtml = '<div style="background:#000000; border:1px dashed #fde68a; border-radius:6px; padding:6px 8px; margin-top:4px;">' +
-      '<div style="font-size:0.52rem; color:#fde68a; font-weight:800; margin-bottom:4px;">연도별 획득 고도 합계</div>' +
-      '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(70px, 1fr)); gap:4px;">' +
+    elevDetailHtml = '<div style="background:#000000; border:1px dashed #fde68a; border-radius:6px; padding:8px 10px; margin-top:6px; min-width:0; overflow:hidden; box-sizing:border-box;">' +
+      '<div style="font-size:0.64rem; color:#fde68a; font-weight:800; margin-bottom:4px;">연도별 획득 고도 합계</div>' +
+      '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(76px, 1fr)); gap:4px;">' +
       yKeys.map(function(yk) {
-        return '<div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:3px; text-align:center;"><div style="font-size:0.48rem; color:#64748b; font-family:var(--font-en);">' + yk + '년</div><div style="font-size:0.65rem; font-weight:800; color:#fde68a; font-family:var(--font-en); margin-top:1px;">+' + yearElevMap[yk].toLocaleString() + 'm</div></div>';
+        return '<div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:5px 3px; text-align:center; min-width:0;"><div style="font-size:0.60rem; color:#64748b; font-family:var(--font-en);">' + yk + '년</div><div style="font-size:0.77rem; font-weight:800; color:#fde68a; font-family:var(--font-en); margin-top:1px;">+' + yearElevMap[yk].toLocaleString() + 'm</div></div>';
       }).join('') + '</div></div>';
   }
 
@@ -4218,157 +4254,157 @@ window._renderTerrainModule = function(validLogs, el) {
     var item = themeData[tKey];
     var top1 = item.list[0] || { name: '-', count: 0 };
     var isExp = (state.expandedTheme === tKey);
-    return '<div onclick="window._toggleTerrainThemeTop5(\'' + tKey + '\')" style="cursor:pointer; background:' + (isExp ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)') + '; border:1px solid ' + (isExp ? item.color : 'rgba(255,255,255,0.04)') + '; border-radius:6px; padding:4px 5px; box-sizing:border-box;">' +
-      '<div style="display:flex; justify-content:space-between; align-items:center;">' +
-        '<span style="font-size:0.50rem; color:#64748b; font-weight:700;">' + item.label + '</span>' +
-        '<span style="font-size:0.46rem; color:' + item.color + ';">' + (isExp ? '닫기 ▲' : 'Top 5 ▼') + '</span>' +
+    return '<div onclick="window._toggleTerrainThemeTop5(\'' + tKey + '\')" style="cursor:pointer; min-width:0; overflow:hidden; background:' + (isExp ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)') + '; border:1px solid ' + (isExp ? item.color : 'rgba(255,255,255,0.04)') + '; border-radius:6px; padding:6px 8px; box-sizing:border-box;">' +
+      '<div style="display:flex; justify-content:space-between; align-items:center; gap:6px; min-width:0;">' +
+        '<span style="font-size:0.62rem; color:#64748b; font-weight:700; flex-shrink:0;">' + item.label + '</span>' +
+        '<span style="font-size:0.58rem; color:' + item.color + '; flex-shrink:0;">' + (isExp ? '닫기 ▲' : 'Top 5 ▼') + '</span>' +
       '</div>' +
-      '<div style="font-size:0.58rem; font-weight:800; color:' + item.color + '; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">' + top1.name + ' <span style="font-size:0.50rem; color:#64748b; font-weight:normal;">(' + top1.count + '회)</span></div>' +
+      '<div style="font-size:0.70rem; font-weight:800; color:' + item.color + '; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:3px; min-width:0;">' + _escapeReportPropHtml(top1.name) + ' <span style="font-size:0.62rem; color:#64748b; font-weight:normal;">(' + top1.count + '회)</span></div>' +
     '</div>';
   }).join('');
 
   var themeDetailHtml = '';
   if (state.expandedTheme && themeData[state.expandedTheme]) {
     var curT = themeData[state.expandedTheme];
-    themeDetailHtml = '<div style="background:#000000; border:1px dashed ' + curT.color + '; border-radius:6px; padding:6px 8px; margin-top:4px;">' +
-      '<div style="font-size:0.52rem; color:' + curT.color + '; font-weight:800; margin-bottom:4px;">[' + curT.label + '] 방문 랭킹 Top 5</div>' +
+    themeDetailHtml = '<div style="background:#000000; border:1px dashed ' + curT.color + '; border-radius:6px; padding:8px 10px; margin-top:6px; min-width:0; overflow:hidden; box-sizing:border-box;">' +
+      '<div style="font-size:0.64rem; color:' + curT.color + '; font-weight:800; margin-bottom:4px;">[' + curT.label + '] 방문 랭킹 Top 5</div>' +
       (curT.list.map(function(it, idx) {
-        return '<div style="display:flex; justify-content:space-between; font-size:0.58rem; padding:1.5px 0;"><span style="color:#cbd5e1; max-width:80%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><strong style="color:' + curT.color + '; margin-right:4px;">' + (idx + 1) + '.</strong>' + it.name + '</span><span style="color:#64748b; font-family:var(--font-en);">' + it.count + '회</span></div>';
-      }).join('') || '<div style="color:#475569; font-size:0.52rem;">해당 지형의 기록이 없습니다.</div>') +
+        return '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:0.70rem; padding:3px 0; min-width:0;"><span style="color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; flex:1;"><strong style="color:' + curT.color + '; margin-right:4px;">' + (idx + 1) + '.</strong>' + _escapeReportPropHtml(it.name) + '</span><span style="color:#64748b; font-family:var(--font-en); flex-shrink:0;">' + it.count + '회</span></div>';
+      }).join('') || '<div style="color:#475569; font-size:0.64rem;">해당 지형의 기록이 없습니다.</div>') +
     '</div>';
   }
 
   var topElevDetailHtml = '';
   if (state.showTopElevation) {
-    topElevDetailHtml = '<div style="background:#000000; border:1px dashed #bae6fd; border-radius:6px; padding:6px 8px; margin-top:4px;">' +
-      '<div style="font-size:0.52rem; color:#bae6fd; font-weight:800; margin-bottom:4px;">역대 등정 최고봉 랭킹 Top 5</div>' +
+    topElevDetailHtml = '<div style="background:#000000; border:1px dashed #bae6fd; border-radius:6px; padding:8px 10px; margin-top:6px; min-width:0; overflow:hidden; box-sizing:border-box;">' +
+      '<div style="font-size:0.64rem; color:#bae6fd; font-weight:800; margin-bottom:4px;">역대 등정 최고봉 랭킹 Top 5</div>' +
       top5Elevations.map(function(it, idx) {
-        return '<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.58rem; padding:2px 0;">' +
-          '<span style="color:#cbd5e1; max-width:70%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><strong style="color:#bae6fd; margin-right:4px;">' + (idx + 1) + '.</strong>' + it.spot + ' <span style="font-size:0.50rem; color:#64748b;">(' + it.date + ')</span></span>' +
-          '<span style="color:#bae6fd; font-weight:800; font-family:var(--font-en);">' + it.elevation.toLocaleString() + 'm</span>' +
+        return '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:0.70rem; padding:3px 0; min-width:0;">' +
+          '<span style="color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; flex:1;"><strong style="color:#bae6fd; margin-right:4px;">' + (idx + 1) + '.</strong>' + _escapeReportPropHtml(it.spot) + ' <span style="font-size:0.62rem; color:#64748b;">(' + _escapeReportPropHtml(it.date) + ')</span></span>' +
+          '<span style="color:#bae6fd; font-weight:800; font-family:var(--font-en); flex-shrink:0;">' + it.elevation.toLocaleString() + 'm</span>' +
         '</div>';
       }).join('') +
     '</div>';
   }
 
   var selectedYearLabel = state.selectedYear === 'all' ? '전체 활동 기간' : state.selectedYear + '년 활동 기준';
-  var customDropdownItemsHtml = '<button type="button" onclick="window._setTerrainYearSelect(\'all\'); document.getElementById(\'customDropdownMenu_terrain\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (state.selectedYear === 'all' ? 'rgba(186,230,253,0.1)' : 'transparent') + '; color:' + (state.selectedYear === 'all' ? '#bae6fd' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.58rem; font-weight:800; border-radius:4px; cursor:pointer;">전체 활동 기간</button>' +
+  var customDropdownItemsHtml = '<button type="button" onclick="window._setTerrainYearSelect(\'all\'); document.getElementById(\'customDropdownMenu_terrain\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (state.selectedYear === 'all' ? 'rgba(186,230,253,0.1)' : 'transparent') + '; color:' + (state.selectedYear === 'all' ? '#bae6fd' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.70rem; font-weight:800; border-radius:4px; cursor:pointer;">전체 활동 기간</button>' +
     sortedYears.map(function(yk) {
       var isSel = (state.selectedYear === yk);
-      return '<button type="button" onclick="window._setTerrainYearSelect(\'' + yk + '\'); document.getElementById(\'customDropdownMenu_terrain\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(186,230,253,0.1)' : 'transparent') + '; color:' + (isSel ? '#bae6fd' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.58rem; font-weight:800; border-radius:4px; cursor:pointer;">' + yk + '년 활동 기준</button>';
+      return '<button type="button" onclick="window._setTerrainYearSelect(\'' + yk + '\'); document.getElementById(\'customDropdownMenu_terrain\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(186,230,253,0.1)' : 'transparent') + '; color:' + (isSel ? '#bae6fd' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.70rem; font-weight:800; border-radius:4px; cursor:pointer;">' + yk + '년 활동 기준</button>';
     }).join('');
 
   el.innerHTML = `
     <!-- 1. 총 누적 획득 고도 -->
-    <div style="background:#000000; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px; margin-top:6px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <span style="font-size:0.60rem; color:#94a3b8; font-weight:800;">총 누적 획득 고도</span>
-        <span style="font-size:0.50rem; color:#bae6fd; font-weight:700;">한라산 ${hallasanMultiple}회 등정 높이</span>
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 12px; margin-top:6px; min-width:0; overflow:hidden; box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px;">
+        <span style="font-size:0.72rem; color:#94a3b8; font-weight:800;">총 누적 획득 고도</span>
+        <span style="font-size:0.62rem; color:#bae6fd; font-weight:700; flex-shrink:0;">한라산 ${hallasanMultiple}회 등정 높이</span>
       </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr 1.2fr; gap:6px; align-items:center; text-align:center;">
-        <div onclick="window._toggleTerrainElevDetail('month')" style="cursor:pointer; background:${state.elevDetailMode==='month'?'rgba(186,230,253,0.08)':'rgba(255,255,255,0.02)'}; border:1px solid ${state.elevDetailMode==='month'?'#bae6fd':'rgba(255,255,255,0.04)'}; border-radius:6px; padding:6px 2px;">
-          <div style="font-size:0.50rem; color:#64748b; font-weight:700;">이번 달 <span style="font-size:0.44rem; color:#bae6fd;">월별▼</span></div>
-          <div style="font-size:0.85rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); margin-top:2px;">+${monthElevation.toLocaleString()}<span style="font-size:0.55rem; color:#7dd3fc; margin-left:1px;">m</span></div>
+      <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.2fr); gap:6px; align-items:center; text-align:center;">
+        <div onclick="window._toggleTerrainElevDetail('month')" style="cursor:pointer; min-width:0; background:${state.elevDetailMode==='month'?'rgba(186,230,253,0.08)':'rgba(255,255,255,0.02)'}; border:1px solid ${state.elevDetailMode==='month'?'#bae6fd':'rgba(255,255,255,0.04)'}; border-radius:6px; padding:6px 2px;">
+          <div style="font-size:0.62rem; color:#64748b; font-weight:700;">이번 달 <span style="font-size:0.56rem; color:#bae6fd;">월별▼</span></div>
+          <div style="font-size:0.97rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); margin-top:2px;">+${monthElevation.toLocaleString()}<span style="font-size:0.67rem; color:#7dd3fc; margin-left:1px;">m</span></div>
         </div>
-        <div onclick="window._toggleTerrainElevDetail('year')" style="cursor:pointer; background:${state.elevDetailMode==='year'?'rgba(253,230,138,0.08)':'rgba(255,255,255,0.02)'}; border:1px solid ${state.elevDetailMode==='year'?'#fde68a':'rgba(255,255,255,0.04)'}; border-radius:6px; padding:6px 2px;">
-          <div style="font-size:0.50rem; color:#64748b; font-weight:700;">올해 누적 <span style="font-size:0.44rem; color:#fde68a;">연별▼</span></div>
-          <div style="font-size:0.85rem; font-weight:900; color:#fde68a; font-family:var(--font-en); margin-top:2px;">+${yearElevation.toLocaleString()}<span style="font-size:0.55rem; color:#fef08a; margin-left:1px;">m</span></div>
+        <div onclick="window._toggleTerrainElevDetail('year')" style="cursor:pointer; min-width:0; background:${state.elevDetailMode==='year'?'rgba(253,230,138,0.08)':'rgba(255,255,255,0.02)'}; border:1px solid ${state.elevDetailMode==='year'?'#fde68a':'rgba(255,255,255,0.04)'}; border-radius:6px; padding:6px 2px;">
+          <div style="font-size:0.62rem; color:#64748b; font-weight:700;">올해 누적 <span style="font-size:0.56rem; color:#fde68a;">연별▼</span></div>
+          <div style="font-size:0.97rem; font-weight:900; color:#fde68a; font-family:var(--font-en); margin-top:2px;">+${yearElevation.toLocaleString()}<span style="font-size:0.67rem; color:#fef08a; margin-left:1px;">m</span></div>
         </div>
-        <div style="background:rgba(186,230,253,0.04); border:1px solid rgba(186,230,253,0.2); border-radius:6px; padding:6px 2px;">
-          <div style="font-size:0.52rem; color:#bae6fd; font-weight:800;">역대 총 누적</div>
-          <div style="font-size:1.15rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); line-height:1; margin-top:2px;">+${totalElevation.toLocaleString()}<span style="font-size:0.62rem; color:#7dd3fc; margin-left:1px;">m</span></div>
+        <div style="min-width:0; background:rgba(186,230,253,0.04); border:1px solid rgba(186,230,253,0.2); border-radius:6px; padding:6px 2px;">
+          <div style="font-size:0.64rem; color:#bae6fd; font-weight:800;">역대 총 누적</div>
+          <div style="font-size:1.27rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); line-height:1; margin-top:2px;">+${totalElevation.toLocaleString()}<span style="font-size:0.74rem; color:#7dd3fc; margin-left:1px;">m</span></div>
         </div>
       </div>
       ${elevDetailHtml}
     </div>
 
     <!-- 2. 인터랙티브 연도 선택 커스텀 드롭다운 -->
-    <div style="position:relative; display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:4px 8px;">
-      <span style="font-size:0.54rem; color:#94a3b8; font-weight:700;">지형 분석 기준 기간</span>
-      <button type="button" onclick="window.toggleModuleCustomDropdown('terrain', event)" style="background:#0b0f17; border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:0.54rem; font-weight:800; border-radius:4px; padding:3px 8px; cursor:pointer; display:flex; align-items:center; gap:4px; outline:none;">
+    <div style="position:relative; display:flex; justify-content:space-between; align-items:center; gap:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:6px 10px; min-width:0;">
+      <span style="font-size:0.66rem; color:#94a3b8; font-weight:700;">지형 분석 기준 기간</span>
+      <button type="button" onclick="window.toggleModuleCustomDropdown('terrain', event)" style="background:#0b0f17; border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:0.66rem; font-weight:800; border-radius:4px; padding:4px 8px; cursor:pointer; display:flex; align-items:center; gap:4px; outline:none; flex-shrink:0;">
         <span>${selectedYearLabel}</span>
-        <span style="font-size:0.44rem; color:#64748b;">▼</span>
+        <span style="font-size:0.56rem; color:#64748b;">▼</span>
       </button>
-      <div id="customDropdownMenu_terrain" style="display:none; position:absolute; top:28px; right:8px; background:#0b0f17; border:1px solid rgba(255,255,255,0.15); border-radius:6px; padding:4px; box-shadow:0 8px 25px rgba(0,0,0,0.85); z-index:50; min-width:115px; flex-direction:column; gap:2px;">
+      <div id="customDropdownMenu_terrain" style="display:none; position:absolute; top:32px; right:8px; background:#0b0f17; border:1px solid rgba(255,255,255,0.15); border-radius:6px; padding:4px; box-shadow:0 8px 25px rgba(0,0,0,0.85); z-index:50; min-width:128px; flex-direction:column; gap:2px;">
         ${customDropdownItemsHtml}
       </div>
     </div>
 
     <!-- 3. 필드 지형 테마 점유율 -->
-    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:8px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-        <span style="font-size:0.58rem; color:#64748b; font-weight:700;">필드 지형 테마 비중</span>
-        <span style="font-size:0.50rem; color:#94a3b8;">${state.selectedYear==='all'?'전체 기간':state.selectedYear+'년'} 기준</span>
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:8px 10px; min-width:0; overflow:hidden; box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px;">
+        <span style="font-size:0.70rem; color:#64748b; font-weight:700;">필드 지형 테마 비중</span>
+        <span style="font-size:0.62rem; color:#94a3b8; flex-shrink:0;">${state.selectedYear==='all'?'전체 기간':state.selectedYear+'년'} 기준</span>
       </div>
-      <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; text-align:center;">
-        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:4px 2px;">
-          <div style="font-size:0.50rem; color:#64748b;">산·능선</div>
-          <div style="font-size:0.75rem; font-weight:800; color:#bae6fd; font-family:var(--font-en); margin-top:1px;">${pMountain}%</div>
-          <div style="font-size:0.48rem; color:#64748b;">${themeCounts.mountain}회</div>
+      <div style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:4px; text-align:center;">
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:5px 2px; min-width:0;">
+          <div style="font-size:0.62rem; color:#64748b;">산·능선</div>
+          <div style="font-size:0.87rem; font-weight:800; color:#bae6fd; font-family:var(--font-en); margin-top:1px;">${pMountain}%</div>
+          <div style="font-size:0.60rem; color:#64748b;">${themeCounts.mountain}회</div>
         </div>
-        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:4px 2px;">
-          <div style="font-size:0.50rem; color:#64748b;">섬(Island)</div>
-          <div style="font-size:0.75rem; font-weight:800; color:#a7f3d0; font-family:var(--font-en); margin-top:1px;">${pIsland}%</div>
-          <div style="font-size:0.48rem; color:#64748b;">${themeCounts.island}회</div>
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:5px 2px; min-width:0;">
+          <div style="font-size:0.62rem; color:#64748b;">섬</div>
+          <div style="font-size:0.87rem; font-weight:800; color:#a7f3d0; font-family:var(--font-en); margin-top:1px;">${pIsland}%</div>
+          <div style="font-size:0.60rem; color:#64748b;">${themeCounts.island}회</div>
         </div>
-        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:4px 2px;">
-          <div style="font-size:0.50rem; color:#64748b;">바다·해변</div>
-          <div style="font-size:0.75rem; font-weight:800; color:#fde68a; font-family:var(--font-en); margin-top:1px;">${pBeach}%</div>
-          <div style="font-size:0.48rem; color:#64748b;">${themeCounts.beach}회</div>
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:5px 2px; min-width:0;">
+          <div style="font-size:0.62rem; color:#64748b;">바다·해변</div>
+          <div style="font-size:0.87rem; font-weight:800; color:#fde68a; font-family:var(--font-en); margin-top:1px;">${pBeach}%</div>
+          <div style="font-size:0.60rem; color:#64748b;">${themeCounts.beach}회</div>
         </div>
-        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:4px 2px;">
-          <div style="font-size:0.50rem; color:#64748b;">숲·계곡</div>
-          <div style="font-size:0.75rem; font-weight:800; color:#e9d5ff; font-family:var(--font-en); margin-top:1px;">${pForest}%</div>
-          <div style="font-size:0.48rem; color:#64748b;">${themeCounts.forest}회</div>
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:5px 2px; min-width:0;">
+          <div style="font-size:0.62rem; color:#64748b;">숲·계곡</div>
+          <div style="font-size:0.87rem; font-weight:800; color:#e9d5ff; font-family:var(--font-en); margin-top:1px;">${pForest}%</div>
+          <div style="font-size:0.60rem; color:#64748b;">${themeCounts.forest}회</div>
         </div>
       </div>
     </div>
 
     <!-- 4. 장소 개척 성향 -->
-    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:8px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-        <span style="font-size:0.58rem; color:#64748b; font-weight:700;">장소 개척 성향</span>
-        <span style="font-size:0.52rem; color:#a7f3d0; font-weight:800;">${exploreTypeTitle}</span>
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:8px 10px; min-width:0; overflow:hidden; box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px;">
+        <span style="font-size:0.70rem; color:#64748b; font-weight:700; flex-shrink:0;">장소 개척 성향</span>
+        <span style="font-size:0.64rem; color:#a7f3d0; font-weight:800; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; text-align:right;">${exploreTypeTitle}</span>
       </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; text-align:center;">
-        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:5px 2px;">
-          <div style="font-size:0.50rem; color:#64748b;">미지 개척 확률</div>
-          <div style="font-size:0.85rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); margin-top:2px;">${newExploreRate}%</div>
-          <div style="font-size:0.48rem; color:#64748b;">고유 장소 ${totalVisitedSpots}곳</div>
+      <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:6px; text-align:center;">
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:6px 2px; min-width:0;">
+          <div style="font-size:0.62rem; color:#64748b;">미지 개척 확률</div>
+          <div style="font-size:0.97rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); margin-top:2px;">${newExploreRate}%</div>
+          <div style="font-size:0.60rem; color:#64748b;">고유 장소 ${totalVisitedSpots}곳</div>
         </div>
-        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:5px 2px;">
-          <div style="font-size:0.50rem; color:#64748b;">단골 재방문 확률</div>
-          <div style="font-size:0.85rem; font-weight:900; color:#fde68a; font-family:var(--font-en); margin-top:2px;">${reVisitRate}%</div>
-          <div style="font-size:0.48rem; color:#64748b;">재방문 ${reVisitCount}회</div>
+        <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); border-radius:4px; padding:6px 2px; min-width:0;">
+          <div style="font-size:0.62rem; color:#64748b;">단골 재방문 확률</div>
+          <div style="font-size:0.97rem; font-weight:900; color:#fde68a; font-family:var(--font-en); margin-top:2px;">${reVisitRate}%</div>
+          <div style="font-size:0.60rem; color:#64748b;">재방문 ${reVisitCount}회</div>
         </div>
       </div>
     </div>
 
     <!-- 5. 지형별 부동의 1위 아지트 -->
-    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:6px 8px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-        <span style="font-size:0.58rem; color:#64748b; font-weight:700;">지형별 최다 방문 아지트</span>
-        <span style="font-size:0.48rem; color:#64748b;">단골 랭킹</span>
+    <div style="background:#000000; border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:8px 10px; min-width:0; overflow:hidden; box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:8px;">
+        <span style="font-size:0.70rem; color:#64748b; font-weight:700;">지형별 최다 방문 아지트</span>
+        <span style="font-size:0.60rem; color:#64748b; flex-shrink:0;">단골 랭킹</span>
       </div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px;">
+      <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:6px;">
         ${themeCardsHtml}
       </div>
       ${themeDetailHtml}
     </div>
 
     <!-- 6. 내가 밟은 가장 높은 곳 -->
-    <div onclick="window._toggleTopElevationRank()" style="cursor:pointer; background:#000000; border:1px solid rgba(186,230,253,0.25); border-radius:6px; padding:8px 10px;">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <div style="display:flex; align-items:center; gap:4px;">
-            <span style="font-size:0.52rem; color:#64748b; font-weight:700;">내가 밟은 가장 높은 곳</span>
-            <span style="font-size:0.46rem; color:#bae6fd; font-weight:800;">${state.showTopElevation?'Top 5 닫기 ▲':'Top 5 순위 ▼'}</span>
+    <div onclick="window._toggleTopElevationRank()" style="cursor:pointer; background:#000000; border:1px solid rgba(186,230,253,0.25); border-radius:6px; padding:8px 10px; min-width:0; overflow:hidden; box-sizing:border-box;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; min-width:0;">
+        <div style="min-width:0; flex:1;">
+          <div style="display:flex; align-items:center; gap:6px; min-width:0;">
+            <span style="font-size:0.64rem; color:#64748b; font-weight:700;">내가 밟은 가장 높은 곳</span>
+            <span style="font-size:0.58rem; color:#bae6fd; font-weight:800; flex-shrink:0;">${state.showTopElevation?'Top 5 닫기 ▲':'Top 5 순위 ▼'}</span>
           </div>
-          <div style="font-size:0.75rem; font-weight:800; color:#ffffff; margin-top:2px;">${maxElevItem.spot}</div>
-          <div style="font-size:0.50rem; color:#64748b; margin-top:1px;">${maxElevItem.date}</div>
+          <div style="font-size:0.87rem; font-weight:800; color:#ffffff; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${_escapeReportPropHtml(maxElevItem.spot)}</div>
+          <div style="font-size:0.62rem; color:#64748b; margin-top:1px;">${_escapeReportPropHtml(maxElevItem.date)}</div>
         </div>
-        <div style="text-align:right;">
-          <div style="font-size:1.15rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); line-height:1;">${maxElevItem.elevation.toLocaleString()}m</div>
+        <div style="text-align:right; flex-shrink:0;">
+          <div style="font-size:1.27rem; font-weight:900; color:#bae6fd; font-family:var(--font-en); line-height:1;">${maxElevItem.elevation.toLocaleString()}m</div>
         </div>
       </div>
     </div>
@@ -4462,20 +4498,20 @@ window._renderSeasonModule = function(validLogs, el) {
   }
 
   var selectedYearLabel = state.selectedYear === 'all' ? '전체 활동 기간' : state.selectedYear + '년 시즌 기준';
-  var customDropdownItemsHtml = '<button type="button" onclick="window._setSeasonYearSelect(\'all\'); document.getElementById(\'customDropdownMenu_season\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (state.selectedYear === 'all' ? 'rgba(253,230,138,0.1)' : 'transparent') + '; color:' + (state.selectedYear === 'all' ? '#fde68a' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.58rem; font-weight:800; border-radius:4px; cursor:pointer;">전체 활동 기간</button>' +
+  var customDropdownItemsHtml = '<button type="button" onclick="window._setSeasonYearSelect(\'all\'); document.getElementById(\'customDropdownMenu_season\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (state.selectedYear === 'all' ? 'rgba(253,230,138,0.1)' : 'transparent') + '; color:' + (state.selectedYear === 'all' ? '#fde68a' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.70rem; font-weight:800; border-radius:4px; cursor:pointer;">전체 활동 기간</button>' +
     sortedYears.map(function(yk) {
       var isSel = (state.selectedYear === yk);
-      return '<button type="button" onclick="window._setSeasonYearSelect(\'' + yk + '\'); document.getElementById(\'customDropdownMenu_season\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(253,230,138,0.1)' : 'transparent') + '; color:' + (isSel ? '#fde68a' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.58rem; font-weight:800; border-radius:4px; cursor:pointer;">' + yk + '년 시즌 기준</button>';
+      return '<button type="button" onclick="window._setSeasonYearSelect(\'' + yk + '\'); document.getElementById(\'customDropdownMenu_season\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(253,230,138,0.1)' : 'transparent') + '; color:' + (isSel ? '#fde68a' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.70rem; font-weight:800; border-radius:4px; cursor:pointer;">' + yk + '년 시즌 기준</button>';
     }).join('');
 
   var seasonCardsHtml = ['spring', 'summer', 'autumn', 'winter'].map(function(k) {
     var item = s[k];
     var p = pct(item.count);
     var isExp = (state.expandedSeason === k);
-    return '<div onclick="window._toggleSeasonDetail(\'' + k + '\')" style="cursor:pointer; background:' + (isExp ? 'rgba(255,255,255,0.06)' : '#000000') + '; border:1px solid ' + (isExp ? item.color : 'rgba(255,255,255,0.06)') + '; border-radius:6px; padding:6px 2px; text-align:center; box-sizing:border-box;">' +
-      '<div style="font-size:0.50rem; color:#64748b;">' + item.label.split(' ')[0] + '</div>' +
-      '<div style="font-size:0.75rem; font-weight:800; color:' + item.color + '; font-family:var(--font-en); margin-top:1px;">' + p + '%</div>' +
-      '<div style="font-size:0.46rem; color:#64748b; margin-top:1px;">' + item.count + '회 ' + (isExp ? '▲' : '▼') + '</div>' +
+    return '<div onclick="window._toggleSeasonDetail(\'' + k + '\')" style="cursor:pointer; min-width:0; overflow:hidden; background:' + (isExp ? 'rgba(255,255,255,0.06)' : '#000000') + '; border:1px solid ' + (isExp ? item.color : 'rgba(255,255,255,0.06)') + '; border-radius:6px; padding:8px 2px; text-align:center; box-sizing:border-box;">' +
+      '<div style="font-size:0.62rem; color:#64748b;">' + item.label.split(' ')[0] + '</div>' +
+      '<div style="font-size:0.87rem; font-weight:800; color:' + item.color + '; font-family:var(--font-en); margin-top:1px;">' + p + '%</div>' +
+      '<div style="font-size:0.58rem; color:#64748b; margin-top:1px;">' + item.count + '회 ' + (isExp ? '▲' : '▼') + '</div>' +
     '</div>';
   }).join('');
 
@@ -4486,29 +4522,29 @@ window._renderSeasonModule = function(validLogs, el) {
       return { name: k, count: curS.spots[k] };
     }).sort(function(a, b) { return b.count - a.count; }).slice(0, 5);
 
-    seasonDetailHtml = '<div style="background:#000000; border:1px dashed ' + curS.color + '; border-radius:6px; padding:6px 8px; margin-top:4px;">' +
-      '<div style="font-size:0.52rem; color:' + curS.color + '; font-weight:800; margin-bottom:4px;">[' + curS.label + '] 방문 장소 Top 5</div>' +
+    seasonDetailHtml = '<div style="background:#000000; border:1px dashed ' + curS.color + '; border-radius:6px; padding:8px 10px; margin-top:6px; min-width:0; overflow:hidden; box-sizing:border-box;">' +
+      '<div style="font-size:0.64rem; color:' + curS.color + '; font-weight:800; margin-bottom:4px;">[' + curS.label + '] 방문 장소 Top 5</div>' +
       (sortedSpots.map(function(it, idx) {
-        return '<div style="display:flex; justify-content:space-between; font-size:0.58rem; padding:1.5px 0;"><span style="color:#cbd5e1; max-width:80%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><strong style="color:' + curS.color + '; margin-right:4px;">' + (idx + 1) + '.</strong>' + it.name + '</span><span style="color:#64748b; font-family:var(--font-en);">' + it.count + '회</span></div>';
-      }).join('') || '<div style="color:#475569; font-size:0.52rem;">해당 시즌 기록이 없습니다.</div>') +
+        return '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:0.70rem; padding:3px 0; min-width:0;"><span style="color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; flex:1;"><strong style="color:' + curS.color + '; margin-right:4px;">' + (idx + 1) + '.</strong>' + _escapeReportPropHtml(it.name) + '</span><span style="color:#64748b; font-family:var(--font-en); flex-shrink:0;">' + it.count + '회</span></div>';
+      }).join('') || '<div style="color:#475569; font-size:0.64rem;">해당 시즌 기록이 없습니다.</div>') +
     '</div>';
   }
 
   el.innerHTML = `
     <!-- 시즌 연도 커스텀 드롭다운 -->
-    <div style="position:relative; display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:4px 8px; margin-top:6px;">
-      <span style="font-size:0.54rem; color:#94a3b8; font-weight:700;">시즌 분석 기준</span>
-      <button type="button" onclick="window.toggleModuleCustomDropdown('season', event)" style="background:#0b0f17; border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:0.54rem; font-weight:800; border-radius:4px; padding:3px 8px; cursor:pointer; display:flex; align-items:center; gap:4px; outline:none;">
+    <div style="position:relative; display:flex; justify-content:space-between; align-items:center; gap:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:6px 10px; margin-top:6px; min-width:0;">
+      <span style="font-size:0.66rem; color:#94a3b8; font-weight:700;">시즌 분석 기준</span>
+      <button type="button" onclick="window.toggleModuleCustomDropdown('season', event)" style="background:#0b0f17; border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:0.66rem; font-weight:800; border-radius:4px; padding:4px 8px; cursor:pointer; display:flex; align-items:center; gap:4px; outline:none; flex-shrink:0;">
         <span>${selectedYearLabel}</span>
-        <span style="font-size:0.44rem; color:#64748b;">▼</span>
+        <span style="font-size:0.56rem; color:#64748b;">▼</span>
       </button>
-      <div id="customDropdownMenu_season" style="display:none; position:absolute; top:28px; right:8px; background:#0b0f17; border:1px solid rgba(255,255,255,0.15); border-radius:6px; padding:4px; box-shadow:0 8px 25px rgba(0,0,0,0.85); z-index:50; min-width:115px; flex-direction:column; gap:2px;">
+      <div id="customDropdownMenu_season" style="display:none; position:absolute; top:32px; right:8px; background:#0b0f17; border:1px solid rgba(255,255,255,0.15); border-radius:6px; padding:4px; box-shadow:0 8px 25px rgba(0,0,0,0.85); z-index:50; min-width:128px; flex-direction:column; gap:2px;">
         ${customDropdownItemsHtml}
       </div>
     </div>
 
     <!-- 4계절 밸런스 그리드 (터치 시 Top 5 확장) -->
-    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; margin-top:4px;">
+    <div style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px; margin-top:4px;">
       ${seasonCardsHtml}
     </div>
     ${seasonDetailHtml}
@@ -4610,18 +4646,18 @@ window._renderRegionModule = function(validLogs, el) {
   }
 
   var selectedYearLabel = state.selectedYear === 'all' ? '전체 활동 기간' : state.selectedYear + '년 지역 기준';
-  var customDropdownItemsHtml = '<button type="button" onclick="window._setRegionYearSelect(\'all\'); document.getElementById(\'customDropdownMenu_region\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (state.selectedYear === 'all' ? 'rgba(233,213,255,0.1)' : 'transparent') + '; color:' + (state.selectedYear === 'all' ? '#e9d5ff' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.58rem; font-weight:800; border-radius:4px; cursor:pointer;">전체 활동 기간</button>' +
+  var customDropdownItemsHtml = '<button type="button" onclick="window._setRegionYearSelect(\'all\'); document.getElementById(\'customDropdownMenu_region\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (state.selectedYear === 'all' ? 'rgba(233,213,255,0.1)' : 'transparent') + '; color:' + (state.selectedYear === 'all' ? '#e9d5ff' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.70rem; font-weight:800; border-radius:4px; cursor:pointer;">전체 활동 기간</button>' +
     sortedYears.map(function(yk) {
       var isSel = (state.selectedYear === yk);
-      return '<button type="button" onclick="window._setRegionYearSelect(\'' + yk + '\'); document.getElementById(\'customDropdownMenu_region\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(233,213,255,0.1)' : 'transparent') + '; color:' + (isSel ? '#e9d5ff' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.58rem; font-weight:800; border-radius:4px; cursor:pointer;">' + yk + '년 지역 기준</button>';
+      return '<button type="button" onclick="window._setRegionYearSelect(\'' + yk + '\'); document.getElementById(\'customDropdownMenu_region\').style.display=\'none\';" style="width:100%; text-align:left; background:' + (isSel ? 'rgba(233,213,255,0.1)' : 'transparent') + '; color:' + (isSel ? '#e9d5ff' : '#cbd5e1') + '; border:none; padding:6px 10px; font-size:0.70rem; font-weight:800; border-radius:4px; cursor:pointer;">' + yk + '년 지역 기준</button>';
     }).join('');
 
   var regionCardsHtml = Object.keys(regMap).map(function(k) {
     var item = regMap[k];
     var isExp = (state.expandedRegion === k);
-    return '<div onclick="window._toggleRegionDetail(\'' + k + '\')" style="cursor:pointer; background:' + (isExp ? 'rgba(255,255,255,0.06)' : '#000000') + '; border:1px solid ' + (isExp ? item.color : 'rgba(255,255,255,0.06)') + '; border-radius:6px; min-height:42px; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:3px 2px; box-sizing:border-box;">' +
-      '<div style="font-size:0.52rem; color:#64748b; line-height:1.1;">' + k + '</div>' +
-      '<div style="font-size:0.75rem; font-weight:800; color:' + item.color + '; font-family:var(--font-en); margin-top:2px; line-height:1;">' + item.count + '<span style="font-size:0.46rem; color:#64748b; margin-left:1px;">회</span></div>' +
+    return '<div onclick="window._toggleRegionDetail(\'' + k + '\')" style="cursor:pointer; min-width:0; overflow:hidden; background:' + (isExp ? 'rgba(255,255,255,0.06)' : '#000000') + '; border:1px solid ' + (isExp ? item.color : 'rgba(255,255,255,0.06)') + '; border-radius:6px; min-height:48px; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:5px 2px; box-sizing:border-box;">' +
+      '<div style="font-size:0.64rem; color:#64748b; line-height:1.2; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; padding:0 2px;">' + k + '</div>' +
+      '<div style="font-size:0.87rem; font-weight:800; color:' + item.color + '; font-family:var(--font-en); margin-top:2px; line-height:1;">' + item.count + '<span style="font-size:0.58rem; color:#64748b; margin-left:1px;">회</span></div>' +
     '</div>';
   }).join('');
 
@@ -4632,29 +4668,29 @@ window._renderRegionModule = function(validLogs, el) {
       return { name: k, count: curR.spots[k] };
     }).sort(function(a, b) { return b.count - a.count; }).slice(0, 5);
 
-    regionDetailHtml = '<div style="background:#000000; border:1px dashed ' + curR.color + '; border-radius:6px; padding:6px 8px; margin-top:4px;">' +
-      '<div style="font-size:0.52rem; color:' + curR.color + '; font-weight:800; margin-bottom:4px;">[' + state.expandedRegion + '] 권역 방문 장소 Top 5</div>' +
+    regionDetailHtml = '<div style="background:#000000; border:1px dashed ' + curR.color + '; border-radius:6px; padding:8px 10px; margin-top:6px; min-width:0; overflow:hidden; box-sizing:border-box;">' +
+      '<div style="font-size:0.64rem; color:' + curR.color + '; font-weight:800; margin-bottom:4px;">[' + state.expandedRegion + '] 권역 방문 장소 Top 5</div>' +
       (sortedSpots.map(function(it, idx) {
-        return '<div style="display:flex; justify-content:space-between; font-size:0.58rem; padding:1.5px 0;"><span style="color:#cbd5e1; max-width:80%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><strong style="color:' + curR.color + '; margin-right:4px;">' + (idx + 1) + '.</strong>' + it.name + '</span><span style="color:#64748b; font-family:var(--font-en);">' + it.count + '회</span></div>';
-      }).join('') || '<div style="color:#475569; font-size:0.52rem;">해당 권역 기록이 없습니다.</div>') +
+        return '<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:0.70rem; padding:3px 0; min-width:0;"><span style="color:#cbd5e1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; flex:1;"><strong style="color:' + curR.color + '; margin-right:4px;">' + (idx + 1) + '.</strong>' + _escapeReportPropHtml(it.name) + '</span><span style="color:#64748b; font-family:var(--font-en); flex-shrink:0;">' + it.count + '회</span></div>';
+      }).join('') || '<div style="color:#475569; font-size:0.64rem;">해당 권역 기록이 없습니다.</div>') +
     '</div>';
   }
 
   el.innerHTML = `
     <!-- 지역 연도 커스텀 드롭다운 -->
-    <div style="position:relative; display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:4px 8px; margin-top:6px;">
-      <span style="font-size:0.54rem; color:#94a3b8; font-weight:700;">지역 분석 기준</span>
-      <button type="button" onclick="window.toggleModuleCustomDropdown('region', event)" style="background:#0b0f17; border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:0.54rem; font-weight:800; border-radius:4px; padding:3px 8px; cursor:pointer; display:flex; align-items:center; gap:4px; outline:none;">
+    <div style="position:relative; display:flex; justify-content:space-between; align-items:center; gap:8px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:6px; padding:6px 10px; margin-top:6px; min-width:0;">
+      <span style="font-size:0.66rem; color:#94a3b8; font-weight:700;">지역 분석 기준</span>
+      <button type="button" onclick="window.toggleModuleCustomDropdown('region', event)" style="background:#0b0f17; border:1px solid rgba(255,255,255,0.15); color:#ffffff; font-size:0.66rem; font-weight:800; border-radius:4px; padding:4px 8px; cursor:pointer; display:flex; align-items:center; gap:4px; outline:none; flex-shrink:0;">
         <span>${selectedYearLabel}</span>
-        <span style="font-size:0.44rem; color:#64748b;">▼</span>
+        <span style="font-size:0.56rem; color:#64748b;">▼</span>
       </button>
-      <div id="customDropdownMenu_region" style="display:none; position:absolute; top:28px; right:8px; background:#0b0f17; border:1px solid rgba(255,255,255,0.15); border-radius:6px; padding:4px; box-shadow:0 8px 25px rgba(0,0,0,0.85); z-index:50; min-width:115px; flex-direction:column; gap:2px;">
+      <div id="customDropdownMenu_region" style="display:none; position:absolute; top:32px; right:8px; background:#0b0f17; border:1px solid rgba(255,255,255,0.15); border-radius:6px; padding:4px; box-shadow:0 8px 25px rgba(0,0,0,0.85); z-index:50; min-width:128px; flex-direction:column; gap:2px;">
         ${customDropdownItemsHtml}
       </div>
     </div>
 
     <!-- 8대 권역 분포 그리드 (터치 시 Top 5 확장) -->
-    <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4px; margin-top:4px;">
+    <div style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:6px; margin-top:4px;">
       ${regionCardsHtml}
     </div>
     ${regionDetailHtml}

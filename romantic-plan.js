@@ -3833,7 +3833,7 @@ window.saveCurrentPackingRecord = function() {
           </button>
           <button type="button" onclick="window.saveCurrentPackingRecord();" style="height:38px; background:rgba(255,255,255,0.12) !important; border:1px solid rgba(255,255,255,0.2) !important; color:rgba(241,245,249,0.92) !important; font-size:0.72rem !important; font-weight:800 !important; border-radius:7px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; white-space:nowrap; padding:0 2px;">
             ${PLAN_SVG.cardCamera}
-            <span>카드로 저장</span>
+            <span>패킹 저장하기</span>
           </button>
         </div>
 

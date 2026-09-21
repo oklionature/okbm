@@ -1342,7 +1342,7 @@
           <label style="color:var(--accent-blue); font-weight:800; font-size:0.75rem;">11. 4단계 상세 설명</label>
           <div class="modal-field"><label style="font-size:0.70rem; color:#38bdf8; font-weight:700;">① [뷰/특징] *</label><textarea id="modalInputDescView" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="조망, 일몰/일출 시야, 주변 경관 특징"></textarea></div>
           <div class="modal-field"><label style="font-size:0.70rem; color:#2dd4bf; font-weight:700;">② [접근/코스]</label><textarea id="modalInputDescAccess" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="거리, 소요 시간, 경사도, 등산로 상태"></textarea></div>
-          <div class="modal-field"><label style="font-size:0.70rem; color:#10b981; font-weight:700;">③ [박지/피칭]</label><textarea id="modalInputDescPitch" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="텐트 설치 가능 동수, 바닥면 상태"></textarea></div>
+          <div class="modal-field"><label style="font-size:0.70rem; color:#10b981; font-weight:700;">③ [장소/피칭]</label><textarea id="modalInputDescPitch" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="텐트 설치 가능 동수, 바닥면 상태"></textarea></div>
           <div class="modal-field"><label style="font-size:0.70rem; color:#f59e0b; font-weight:700;">④ [주의/팁]</label><textarea id="modalInputDescTip" class="modal-input modal-textarea" rows="2" style="min-height:44px; padding:6px 8px; font-size:0.75rem; line-height:1.4;" placeholder="풍황 주의점, 팩 고정 팁, 안전 유의사항"></textarea></div>
         </div>
         <div class="modal-field"><label>12. YouTube 영상 링크</label><textarea id="modalInputYoutube" class="modal-input modal-textarea" rows="1" placeholder="https://youtu.be/..."></textarea></div>
@@ -3417,42 +3417,65 @@ function updateSmartResetButtons() {
 
       function parseStructuredSummary(rawText) {
         if (!rawText) return { view: '', access: '', pitch: '', tip: '', hasParsed: false };
-        const clean = String(rawText).replace(/\\n/g, '\n');
-        const lines = clean.split('\n');
+        // DB 구형 태그 [박지/피칭] → 표시/저장 표준 [장소/피칭] 으로 통일 인식
+        const clean = String(rawText)
+          .replace(/\\n/g, '\n')
+          .replace(/\[박지\/피칭\]/gi, '[장소/피칭]')
+          .replace(/\[박지\]/gi, '[장소/피칭]');
+        const tagRe = /\[(?:뷰\/특징|뷰|특징|접근\/코스|접근|코스|장소\/피칭|장소|피칭|주의\/팁|주의|팁|현장\s*메모)\]/gi;
+        const parts = [];
+        let lastIdx = 0;
+        let m;
+        tagRe.lastIndex = 0;
+        while ((m = tagRe.exec(clean)) !== null) {
+          if (m.index > lastIdx) parts.push({ tag: null, text: clean.slice(lastIdx, m.index) });
+          parts.push({ tag: m[0], text: '' });
+          lastIdx = m.index + m[0].length;
+        }
+        if (lastIdx < clean.length) parts.push({ tag: null, text: clean.slice(lastIdx) });
+
         let view = '', access = '', pitch = '', tip = '', hasParsed = false;
         let current = 'view';
 
         function append(section, text) {
-          if (!text) return;
-          if (section === 'view') view += (view ? '\n' : '') + text;
-          else if (section === 'access') access += (access ? '\n' : '') + text;
-          else if (section === 'pitch') pitch += (pitch ? '\n' : '') + text;
-          else tip += (tip ? '\n' : '') + text;
+          const t = String(text || '').replace(/^\s+|\s+$/g, '');
+          if (!t) return;
+          if (section === 'view') view += (view ? '\n' : '') + t;
+          else if (section === 'access') access += (access ? '\n' : '') + t;
+          else if (section === 'pitch') pitch += (pitch ? '\n' : '') + t;
+          else tip += (tip ? '\n' : '') + t;
         }
 
-        lines.forEach((rawLine) => {
-          const line = String(rawLine || '').trim();
-          if (!line) return;
-          if (line.startsWith('[뷰/특징]') || line.startsWith('[뷰]') || line.startsWith('[특징]')) {
-            current = 'view';
-            hasParsed = true;
-            append('view', line.replace(/^\[.*?\]\s*/, ''));
-          } else if (line.startsWith('[접근/코스]') || line.startsWith('[접근]') || line.startsWith('[코스]')) {
-            current = 'access';
-            hasParsed = true;
-            append('access', line.replace(/^\[.*?\]\s*/, ''));
-          } else if (line.startsWith('[박지/피칭]') || line.startsWith('[박지]') || line.startsWith('[장소/피칭]') || line.startsWith('[장소]') || line.startsWith('[피칭]')) {
-            current = 'pitch';
-            hasParsed = true;
-            append('pitch', line.replace(/^\[.*?\]\s*/, ''));
-          } else if (line.startsWith('[주의/팁]') || line.startsWith('[주의]') || line.startsWith('[팁]') || line.startsWith('[현장 메모]')) {
-            current = 'tip';
-            hasParsed = true;
-            append('tip', line.replace(/^\[.*?\]\s*/, ''));
+        function resolveSection(tag) {
+          const t = String(tag || '').replace(/^\[|\]$/g, '');
+          if (/^(뷰\/특징|뷰|특징)$/i.test(t)) return 'view';
+          if (/^(접근\/코스|접근|코스)$/i.test(t)) return 'access';
+          if (/^(장소\/피칭|장소|피칭)$/i.test(t)) return 'pitch';
+          if (/^(주의\/팁|주의|팁|현장\s*메모)$/i.test(t)) return 'tip';
+          return null;
+        }
+
+        parts.forEach((part) => {
+          if (part.tag) {
+            const sec = resolveSection(part.tag);
+            if (sec) {
+              current = sec;
+              hasParsed = true;
+            }
           } else {
-            append(current, line);
+            // 줄 단위로 붙이되, 빈 줄은 건너뜀
+            String(part.text || '').split('\n').forEach((rawLine) => {
+              const line = String(rawLine || '').trim();
+              if (line) append(current, line);
+            });
           }
         });
+
+        // 태그가 전혀 없으면 전체를 뷰로
+        if (!hasParsed) {
+          const fallback = clean.replace(/^\s+|\s+$/g, '');
+          if (fallback) view = fallback;
+        }
         return { view, access, pitch, tip, hasParsed };
       }
 
@@ -3607,7 +3630,7 @@ function updateSmartResetButtons() {
               <div class="summary-block-wrap">
                 ${summary.pitch ? `
                   <div class="summary-card summary-card-pitch">
-                    <div class="summary-card-title" style="color:#10b981;">${ICONS.PITCH_CARD} [박지/피칭]</div>
+                    <div class="summary-card-title" style="color:#10b981;">${ICONS.PITCH_CARD} [장소/피칭]</div>
                     <div>${escapeHtml(summary.pitch)}</div>
                   </div>` : ''}
                 ${summary.tip ? `
@@ -6504,7 +6527,7 @@ var overlay = document.getElementById('customModalOverlay');
           const descLines = [];
           if (descView) descLines.push(`[뷰/특징] ${descView}`);
           if (descAccess) descLines.push(`[접근/코스] ${descAccess}`);
-          if (descPitch) descLines.push(`[박지/피칭] ${descPitch}`);
+          if (descPitch) descLines.push(`[장소/피칭] ${descPitch}`);
           if (descTip) descLines.push(`[주의/팁] ${descTip}`);
           const desc = descLines.join('\n');
 
@@ -7577,9 +7600,9 @@ var overlay = document.getElementById('customModalOverlay');
         }
       })();
     </script>
-    <script src="romantic-sync.js?v=2.8.71"></script>
+    <script src="romantic-sync.js?v=2.8.72"></script>
     <script src="templates.js?v=2.8.3"></script>
-    <script src="romantic-history.js?v=2.7.39"></script>
+    <script src="romantic-history.js?v=2.7.40"></script>
     <script src="romantic-plan.js?v=2.8.2"></script>
     <script>
       window.addEventListener('okbm_admin_flag', function(e) {

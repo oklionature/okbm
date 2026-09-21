@@ -1337,7 +1337,7 @@
     window.__memoryStore['okbm_packing_history'] = window.interactiveHistory;
   }
 
-  window.okbmHydratePackingHistoryAfterServer = function(feedList) {
+  window.okbmHydratePackingHistoryAfterServer = function(feedList, allMyServerIds) {
     if (window.__okbmHistoryPreloadTimer) {
       clearTimeout(window.__okbmHistoryPreloadTimer);
       window.__okbmHistoryPreloadTimer = null;
@@ -1351,17 +1351,43 @@
     (Array.isArray(feedList) ? feedList : []).forEach(function(f) {
       if (!f || !f.id) return;
       var fUid = String(f.user_id || f.userId || '').trim();
-      if (myId && fUid && fUid === myId) {
+      var isMine = false;
+      if (myId && fUid) {
+        if (typeof window.okbmSameAccountId === 'function') {
+          isMine = window.okbmSameAccountId(myId, fUid);
+        } else {
+          isMine = (myId === fUid);
+        }
+      }
+      if (isMine) {
         var fid = String(f.id).trim();
         serverMineIds[fid] = true;
         serverMine.push(f);
       }
     });
-    // SSOT: 이번 서버 응답에 있는 내 글은 서버 행만 사용. 로컬∪서버 덮어쓰기 병합 금지.
-    // 페이지에 없는 로컬 캐시 행은 유지(전체 내 피드 조회가 아닌 커뮤니티 페이지 단위).
+    // SSOT: 서버에 있는 내 글은 서버 행 우선.
+    // allMyServerIds가 넘어오면(=전체 내 피드 id 조회 완료) 서버에 없는 내 글은 로컬에서 제거.
+    // 페이지 단위만 온 경우(allMyServerIds 없음)에는 기존처럼 페이지 밖 로컬 행을 유지.
+    var hasFullIdSet = allMyServerIds && typeof allMyServerIds === 'object';
     var keptLocal = localList.filter(function(r) {
       if (!r || !r.id) return false;
-      return !serverMineIds[String(r.id).trim()];
+      var rid = String(r.id).trim();
+      if (!rid) return false;
+      if (rid.indexOf('pack_temp_') === 0) return true;
+      if (serverMineIds[rid]) return false;
+      var rUid = String(r.user_id || r.userId || '').trim();
+      var isMine = false;
+      if (myId && rUid) {
+        if (typeof window.okbmSameAccountId === 'function') {
+          isMine = window.okbmSameAccountId(myId, rUid);
+        } else {
+          isMine = (myId === rUid);
+        }
+      }
+      if (isMine && hasFullIdSet) {
+        return !!allMyServerIds[rid];
+      }
+      return true;
     });
     var nextList = keptLocal.concat(serverMine);
     okbmApplyPackingHistoryToMemory(nextList);
@@ -1369,6 +1395,177 @@
       localStorage.setItem('okbm_packing_history', JSON.stringify(nextList));
     } catch (e) {}
     window.__okbmDeferHistoryHydrate = false;
+  };
+
+  window.okbmFormatPostgrestInList = function(ids) {
+    return (Array.isArray(ids) ? ids : []).map(function(id) {
+      var s = String(id || '').trim();
+      if (!s) return '';
+      if (/^[0-9a-fA-F-]{8,}$/.test(s) || /^[0-9]+$/.test(s)) return s;
+      return '"' + s.replace(/"/g, '') + '"';
+    }).filter(Boolean).join(',');
+  };
+
+  // 슈퍼베이스에서 삭제된 feeds 행을 로컬 피드/마이데이터 캐시에서 제거 (SSOT)
+  window.okbmReconcileLocalFeedsWithServer = function(opts) {
+    opts = opts || {};
+    if (window.__okbmReconcileInflight) return window.__okbmReconcileInflight;
+
+    window.__okbmReconcileInflight = (async function() {
+      var targetUrl = window.SUPABASE_URL || '';
+      var targetKey = window.SUPABASE_ANON_KEY || '';
+      var myId = (typeof window.okbmGetCurrentUserId === 'function')
+        ? String(window.okbmGetCurrentUserId() || '').trim()
+        : '';
+      if (!targetUrl || !targetKey) return { purgedMine: 0, purgedLoaded: 0 };
+
+      var headers = {
+        'apikey': targetKey,
+        'Authorization': 'Bearer ' + targetKey,
+        'Content-Type': 'application/json'
+      };
+
+      var allMyServerIds = {};
+      var myIdFetchOk = false;
+      if (myId) {
+        var idVariants = [myId];
+        var pure = myId.replace(/^(kakao_|naver_|apple_|google_|user_)/, '');
+        if (pure && pure !== myId) idVariants.push(pure);
+        if (myId.indexOf('kakao_') !== 0 && /^\d+$/.test(myId)) idVariants.push('kakao_' + myId);
+
+        var seenVariant = {};
+        for (var vi = 0; vi < idVariants.length; vi++) {
+          var uid = String(idVariants[vi] || '').trim();
+          if (!uid || seenVariant[uid]) continue;
+          seenVariant[uid] = true;
+          var offset = 0;
+          var limit = 1000;
+          var guard = 0;
+          var variantOk = false;
+          while (guard < 30) {
+            guard++;
+            var idQuery = targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(uid)
+              + '&select=id&order=created_at.desc&offset=' + offset + '&limit=' + limit;
+            var idRes = await fetch(idQuery, { headers: headers });
+            if (!idRes.ok) break;
+            variantOk = true;
+            var idRows = [];
+            try { idRows = await idRes.json(); } catch (eParse) { idRows = []; }
+            if (!Array.isArray(idRows) || idRows.length === 0) break;
+            idRows.forEach(function(row) {
+              if (row && row.id) allMyServerIds[String(row.id).trim()] = true;
+            });
+            if (idRows.length < limit) break;
+            offset += limit;
+          }
+          if (variantOk) myIdFetchOk = true;
+        }
+      }
+
+      var pageFeeds = Array.isArray(opts.loadedFeeds)
+        ? opts.loadedFeeds
+        : (Array.isArray(window.__allLoadedFeeds) ? window.__allLoadedFeeds : []);
+
+      if (typeof window.okbmHydratePackingHistoryAfterServer === 'function') {
+        window.okbmHydratePackingHistoryAfterServer(pageFeeds, (myId && myIdFetchOk) ? allMyServerIds : null);
+      }
+
+      var candidateIds = [];
+      var pushId = function(id) {
+        var s = String(id || '').trim();
+        if (!s || s.indexOf('pack_temp_') === 0) return;
+        if (candidateIds.indexOf(s) === -1) candidateIds.push(s);
+      };
+      pageFeeds.forEach(function(f) { if (f) pushId(f.id); });
+      (Array.isArray(window.__allLoadedFeeds) ? window.__allLoadedFeeds : []).forEach(function(f) { if (f) pushId(f.id); });
+      (Array.isArray(window.heroTopRecords) ? window.heroTopRecords : []).forEach(function(f) { if (f) pushId(f.id); });
+      try {
+        var cached = (typeof safeGetJSON === 'function') ? (safeGetJSON('okbm_cached_community_feeds', []) || []) : [];
+        (Array.isArray(cached) ? cached : []).forEach(function(f) { if (f) pushId(f.id); });
+      } catch (eCache) {}
+
+      var aliveIds = {};
+      var chunkSize = 80;
+      for (var ci = 0; ci < candidateIds.length; ci += chunkSize) {
+        var chunk = candidateIds.slice(ci, ci + chunkSize);
+        var inList = window.okbmFormatPostgrestInList(chunk);
+        if (!inList) continue;
+        var existRes = await fetch(targetUrl + '/rest/v1/feeds?id=in.(' + inList + ')&select=id', { headers: headers });
+        if (!existRes.ok) continue;
+        var existRows = [];
+        try { existRows = await existRes.json(); } catch (e2) { existRows = []; }
+        (Array.isArray(existRows) ? existRows : []).forEach(function(row) {
+          if (row && row.id) aliveIds[String(row.id).trim()] = true;
+        });
+      }
+
+      var isAlive = function(rec) {
+        if (!rec || !rec.id) return false;
+        var rid = String(rec.id).trim();
+        if (!rid) return false;
+        if (rid.indexOf('pack_temp_') === 0) return true;
+        if (candidateIds.length === 0) return true;
+        if (Object.keys(aliveIds).length === 0 && candidateIds.length > 0) {
+          // 존재 조회 실패 시 내 글은 allMyServerIds로만 판정
+          var rUid = String(rec.user_id || rec.userId || '').trim();
+          var mine = false;
+          if (myId && rUid) {
+            mine = (typeof window.okbmSameAccountId === 'function')
+              ? window.okbmSameAccountId(myId, rUid)
+              : (myId === rUid);
+          }
+          if (mine && myId && myIdFetchOk) return !!allMyServerIds[rid];
+          return true;
+        }
+        return !!aliveIds[rid];
+      };
+
+      var purgedLoaded = 0;
+      if (Array.isArray(window.__allLoadedFeeds)) {
+        var beforeLen = window.__allLoadedFeeds.length;
+        window.__allLoadedFeeds = window.__allLoadedFeeds.filter(isAlive);
+        purgedLoaded += (beforeLen - window.__allLoadedFeeds.length);
+        try { okbmWriteCachedCommunityFeeds(window.__allLoadedFeeds); } catch (eW) {}
+      }
+
+      if (Array.isArray(window.heroTopRecords)) {
+        window.heroTopRecords = window.heroTopRecords.filter(isAlive);
+      }
+
+      var packingBefore = okbmReadLocalPackingHistory();
+      var packingAfter = packingBefore.filter(function(r) {
+        if (!r || !r.id) return false;
+        var rid = String(r.id).trim();
+        if (rid.indexOf('pack_temp_') === 0) return true;
+        var rUid = String(r.user_id || r.userId || '').trim();
+        var mine = false;
+        if (myId && rUid) {
+          mine = (typeof window.okbmSameAccountId === 'function')
+            ? window.okbmSameAccountId(myId, rUid)
+            : (myId === rUid);
+        }
+        if (mine && myId && myIdFetchOk) return !!allMyServerIds[rid];
+        return isAlive(r);
+      });
+      var purgedMine = packingBefore.length - packingAfter.length;
+      if (purgedMine !== 0 || packingAfter.length !== packingBefore.length) {
+        okbmApplyPackingHistoryToMemory(packingAfter);
+        try { localStorage.setItem('okbm_packing_history', JSON.stringify(packingAfter)); } catch (eP) {}
+      }
+
+      if ((purgedMine > 0 || purgedLoaded > 0) && typeof window.renderHistoryStage === 'function' && window.__okbmHistoryModalOpen) {
+        try { window.renderHistoryStage(); } catch (eR) {}
+      }
+
+      return { purgedMine: purgedMine, purgedLoaded: purgedLoaded, myCount: Object.keys(allMyServerIds).length, myIdFetchOk: myIdFetchOk };
+    })().catch(function(err) {
+      console.warn('[romantic-history.js:okbmReconcileLocalFeedsWithServer]', err);
+      return { purgedMine: 0, purgedLoaded: 0, error: String(err && err.message || err) };
+    }).finally(function() {
+      window.__okbmReconcileInflight = null;
+    });
+
+    return window.__okbmReconcileInflight;
   };
 
   (async function preloadLocalStorageToMemory() {
@@ -2359,8 +2556,14 @@ window.normalizeHistoryRecord = function(r, idx) {
     }
   };
 
-  window.openPastTripsListModal = function(isRestored) {
+  window.openPastTripsListModal = async function(isRestored) {
     try {
+      if (typeof window.okbmReconcileLocalFeedsWithServer === 'function') {
+        try { await window.okbmReconcileLocalFeedsWithServer(); } catch (reconErr) {
+          console.warn('[romantic-history.js:openPastTripsListModal reconcile]', reconErr);
+        }
+      }
+
       var activeReport = document.getElementById('userProfileModalOverlay');
       if (!isRestored && activeReport && activeReport.style.display !== 'none') {
         window.recordModalHistoryStep('userProfileModalOverlay', function() {
@@ -2380,14 +2583,20 @@ window.normalizeHistoryRecord = function(r, idx) {
       var profile = safeGetJSON('user_profile', null);
       var currentUserId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
 
-      var sourceFeeds = Array.isArray(window.__allLoadedFeeds) && window.__allLoadedFeeds.length > 0
-        ? window.__allLoadedFeeds
-        : (window.interactiveHistory || []);
+      var sourceFeeds = Array.isArray(window.packingHistoryList) && window.packingHistoryList.length > 0
+        ? window.packingHistoryList
+        : (Array.isArray(window.interactiveHistory) && window.interactiveHistory.length > 0
+          ? window.interactiveHistory
+          : (Array.isArray(window.__allLoadedFeeds) ? window.__allLoadedFeeds : []));
 
       var logs = sourceFeeds.filter(function(r) {
         if (!r) return false;
         var rUserId = String(r.user_id || r.userId || '').trim();
-        return currentUserId && rUserId && currentUserId === rUserId;
+        if (!currentUserId || !rUserId) return false;
+        if (typeof window.okbmSameAccountId === 'function') {
+          return window.okbmSameAccountId(currentUserId, rUserId);
+        }
+        return currentUserId === rUserId;
       }).map(function(r, i) {
         var norm = window.normalizeHistoryRecord(r, i);
         norm._isLocalOwner = true;
@@ -6689,7 +6898,16 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
             window.__allLoadedFeeds = supaFeeds;
             window.__feedPaginationOffset = supaFeeds.length;
             okbmWriteCachedCommunityFeeds(supaFeeds);
-            if (typeof window.okbmHydratePackingHistoryAfterServer === 'function') {
+            if (typeof window.okbmReconcileLocalFeedsWithServer === 'function') {
+              try {
+                await window.okbmReconcileLocalFeedsWithServer({ loadedFeeds: supaFeeds });
+              } catch (reconErr) {
+                console.warn('[romantic-history.js:fetchCommunityFeeds reconcile]', reconErr);
+                if (typeof window.okbmHydratePackingHistoryAfterServer === 'function') {
+                  window.okbmHydratePackingHistoryAfterServer(supaFeeds);
+                }
+              }
+            } else if (typeof window.okbmHydratePackingHistoryAfterServer === 'function') {
               window.okbmHydratePackingHistoryAfterServer(supaFeeds);
             }
             if (typeof window.fetchUserFeedLikesFromServer === 'function') {
@@ -6723,7 +6941,9 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
         return supaFeeds || [];
       } catch (err) {
         console.warn('[RomanticHistory] Supabase 실시간 피드 조회 대기:', err);
-        if (window.__okbmDeferHistoryHydrate && typeof window.okbmHydratePackingHistoryAfterServer === 'function') {
+        if (window.__okbmDeferHistoryHydrate && typeof window.okbmReconcileLocalFeedsWithServer === 'function') {
+          try { await window.okbmReconcileLocalFeedsWithServer({ loadedFeeds: [] }); } catch (e) {}
+        } else if (window.__okbmDeferHistoryHydrate && typeof window.okbmHydratePackingHistoryAfterServer === 'function') {
           window.okbmHydratePackingHistoryAfterServer([]);
         }
       }
