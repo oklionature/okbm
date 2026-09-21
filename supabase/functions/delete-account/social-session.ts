@@ -234,6 +234,27 @@ async function findAuthUserIdByProvider(
   return String(data || "").trim();
 }
 
+async function resolvePublicOkbmUserId(
+  admin: ReturnType<typeof createClient>,
+  provider: string,
+  providerId: string,
+  scoped: string,
+  existingOkbm: string,
+): Promise<string> {
+  const plain = String(providerId || "").startsWith(`${provider}_`)
+    ? String(providerId).slice(provider.length + 1)
+    : String(providerId || "").trim();
+  const candidates = [scoped];
+  if (plain && plain !== scoped) candidates.push(plain);
+  if (existingOkbm && candidates.indexOf(existingOkbm) === -1) candidates.push(existingOkbm);
+
+  for (const id of candidates) {
+    const { data } = await admin.from("users").select("id").eq("id", id).maybeSingle();
+    if (data?.id) return String(data.id);
+  }
+  return existingOkbm || scoped;
+}
+
 async function issueSessionForEmail(
   admin: ReturnType<typeof createClient>,
   anon: ReturnType<typeof createClient>,
@@ -356,7 +377,13 @@ export async function issueSocialSession(
   }
 
   const existingMeta = asMeta(existingAuth?.app_metadata);
-  const okbmUserId = String(existingMeta.okbm_user_id || scoped).trim() || scoped;
+  const okbmUserId = await resolvePublicOkbmUserId(
+    admin,
+    profile.provider,
+    providerId,
+    scoped,
+    String(existingMeta.okbm_user_id || "").trim(),
+  );
 
   const appMetadata = {
     ...existingMeta,

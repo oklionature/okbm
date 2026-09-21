@@ -74,6 +74,21 @@ DECLARE
 BEGIN
   jwt_okbm := NULLIF(btrim(COALESCE(auth.jwt() -> 'app_metadata' ->> 'okbm_user_id', '')), '');
   IF jwt_okbm IS NOT NULL THEN
+    SELECT u.id INTO found_id FROM public.users u WHERE u.id = jwt_okbm LIMIT 1;
+    IF found_id IS NOT NULL THEN
+      RETURN found_id;
+    END IF;
+    IF jwt_okbm LIKE 'kakao_%' THEN
+      SELECT u.id INTO found_id FROM public.users u WHERE u.id = substr(jwt_okbm, 7) LIMIT 1;
+      IF found_id IS NOT NULL THEN
+        RETURN found_id;
+      END IF;
+    ELSIF jwt_okbm ~ '^[0-9]+$' THEN
+      SELECT u.id INTO found_id FROM public.users u WHERE u.id = 'kakao_' || jwt_okbm LIMIT 1;
+      IF found_id IS NOT NULL THEN
+        RETURN found_id;
+      END IF;
+    END IF;
     RETURN jwt_okbm;
   END IF;
 

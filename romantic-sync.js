@@ -158,12 +158,13 @@ function okbmSafeImageUrl(url) {
   if (/[\u0000-\u001F\u007F<>"'\\\s]/.test(raw)) return '';
   try {
     var parsed = new URL(raw);
-    if (parsed.protocol !== 'https:') return '';
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return '';
     if (parsed.username || parsed.password) return '';
+    if (parsed.protocol === 'http:') parsed.protocol = 'https:';
     var href = String(parsed.href || '').trim();
     if (!href || href.indexOf('https://') !== 0) return '';
     if (/[\u0000-\u001F\u007F<>"'\\]/.test(href)) return '';
-    return encodeURI(href);
+    return href;
   } catch (e) {
     return '';
   }
@@ -540,11 +541,33 @@ function okbmGetCurrentUserId() {
 }
 window.okbmGetCurrentUserId = okbmGetCurrentUserId;
 
+function okbmReadPersistedSupabaseSession() {
+  try {
+    var keys = Object.keys(localStorage);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      if (k.indexOf('sb-') !== 0 || k.indexOf('auth-token') === -1) continue;
+      var parsed = JSON.parse(localStorage.getItem(k) || 'null');
+      if (!parsed || typeof parsed !== 'object') continue;
+      var session = parsed.currentSession || parsed.session || parsed;
+      if (session && session.access_token) return session;
+    }
+  } catch (e) {}
+  return null;
+}
+
 window.okbmAccessToken = function() {
   try {
     var session = window.__okbmSessionCache && window.__okbmSessionCache.session;
     if (session && session.access_token) return session.access_token;
   } catch (e) {}
+  var persisted = okbmReadPersistedSupabaseSession();
+  if (persisted && persisted.access_token) {
+    if (!window.__okbmSessionCache || !window.__okbmSessionCache.session) {
+      okbmWriteSessionCache(persisted);
+    }
+    return persisted.access_token;
+  }
   return window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
 };
 
@@ -8579,6 +8602,56 @@ async function okbmFindUserById(userId) {
   return okbmFetchUserRow('id=eq.' + encodeURIComponent(id));
 }
 
+async function okbmFindPublicProfileById(userId) {
+  var id = String(userId || '').trim();
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  if (!id || !targetUrl || !targetKey) return null;
+  try {
+    var res = await fetch(targetUrl + '/rest/v1/user_public_profiles?id=eq.' + encodeURIComponent(id) + '&select=id,nickname,photo_url,hero_cover_url,bio,instagram,youtube,blog', {
+      method: 'GET',
+      headers: okbmUgcRestHeaders()
+    });
+    if (!res.ok) return null;
+    var rows = await res.json();
+    if (!Array.isArray(rows) || !rows[0] || !rows[0].id) return null;
+    return rows[0];
+  } catch (e) {
+    return null;
+  }
+}
+
+function okbmSessionPlantedUserId() {
+  try {
+    var session = window.__okbmSessionCache && window.__okbmSessionCache.session;
+    var meta = session && session.user && session.user.app_metadata ? session.user.app_metadata : {};
+    var planted = String(meta.okbm_user_id || '').trim();
+    if (planted && window.okbmHasSocialUserId(planted)) return planted;
+  } catch (e) {}
+  return '';
+}
+
+async function okbmFindUserByIdAliases(ids) {
+  var seen = {};
+  var list = Array.isArray(ids) ? ids : [];
+  var i;
+  for (i = 0; i < list.length; i++) {
+    var id = String(list[i] || '').trim();
+    if (!id || seen[id]) continue;
+    seen[id] = true;
+    var row = await okbmFindUserById(id);
+    if (row && row.id) return row;
+  }
+  for (i = 0; i < list.length; i++) {
+    var pid = String(list[i] || '').trim();
+    if (!pid || seen['pub:' + pid]) continue;
+    seen['pub:' + pid] = true;
+    var pub = await okbmFindPublicProfileById(pid);
+    if (pub && pub.id) return pub;
+  }
+  return null;
+}
+
 async function okbmFindUserByEmail(email) {
   var normalized = window.okbmNormalizeEmail(email);
   if (!normalized) return null;
@@ -8706,8 +8779,15 @@ async function okbmStartSupabaseOAuth(provider, activeClass, busyMessage) {
 function okbmShouldSkipOAuthBootstrap(session) {
   if (!session || !session.user) return true;
   var token = String(session.access_token || '').trim();
-  if (token && localStorage.getItem('user_auth_token') === token) return true;
   var profile = safeGetJSON('user_profile', null);
+  var planted = '';
+  try {
+    planted = String((session.user.app_metadata || {}).okbm_user_id || '').trim();
+  } catch (e) {}
+  if (planted && window.okbmHasSocialUserId(planted) && String((profile && profile.id) || '').trim() !== planted) {
+    return false;
+  }
+  if (token && localStorage.getItem('user_auth_token') === token) return true;
   if (!profile || !profile.id) return false;
   if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) return false;
   var sessionEmail = window.okbmNormalizeEmail(session.user.email || '');
@@ -8728,7 +8808,10 @@ async function okbmConsumeSupabaseOAuthSession(session) {
   if (!provider && identities.length) {
     provider = String(identities[0].provider || '').toLowerCase();
   }
-  if (provider !== 'google' && provider !== 'apple') return;
+  var planted = String(meta.okbm_user_id || '').trim();
+  if (provider !== 'google' && provider !== 'apple') {
+    if (!(planted && window.okbmHasSocialUserId(planted))) return;
+  }
   if (okbmShouldSkipOAuthBootstrap(session)) return;
   if (window.__okbmOAuthBootstrapping) return;
   window.__okbmOAuthBootstrapping = true;
@@ -8750,8 +8833,14 @@ async function okbmConsumeSupabaseOAuthSession(session) {
   var nick = String(um.full_name || um.name || um.nickname || '').trim();
   var photo = String(um.avatar_url || um.picture || '').trim();
   var email = String(user.email || um.email || '').trim();
+  planted = String(meta.okbm_user_id || planted || '').trim();
   try {
-    await handleSocialLoginSuccess(provider, providerId, email, nick, photo, session.access_token);
+    if (planted && window.okbmHasSocialUserId(planted)) {
+      var plantedProvider = planted.split('_')[0];
+      await handleSocialLoginSuccess(plantedProvider, planted, email, nick, photo, session.access_token);
+    } else {
+      await handleSocialLoginSuccess(provider, providerId, email, nick, photo, session.access_token);
+    }
   } catch (e) {
     window.__okbmOAuthBootstrapping = false;
     console.warn('[okbmConsumeSupabaseOAuthSession]', e);
@@ -8798,16 +8887,25 @@ async function handleSocialLoginSuccess(provider, providerId, email, nickname, p
   }
 
   var normalizedEmail = window.okbmNormalizeEmail(email);
-  var providerScopedId = providerId.indexOf(provider + '_') === 0 ? providerId : (provider + '_' + providerId);
-  var existingUser = await okbmFindUserById(providerScopedId);
+  var plantedId = okbmSessionPlantedUserId();
+  var providerScopedId = (typeof window.okbmHasSocialUserId === 'function' && window.okbmHasSocialUserId(providerId))
+    ? providerId
+    : (providerId.indexOf(provider + '_') === 0 ? providerId : (provider + '_' + providerId));
+  var plainProviderId = providerId.replace(new RegExp('^' + provider + '_'), '');
+  var candidateIds = [];
+  if (plantedId) candidateIds.push(plantedId);
+  candidateIds.push(providerScopedId);
+  if (plainProviderId && plainProviderId !== providerScopedId) {
+    candidateIds.push(provider + '_' + plainProviderId);
+    candidateIds.push(plainProviderId);
+  }
+  var existingUser = await okbmFindUserByIdAliases(candidateIds);
 
   var prevUserId = String(localStorage.getItem('okbm_user_id') || '').trim();
-  var resolvedId = providerScopedId;
-  var returningUser = false;
-  if (existingUser && existingUser.id) {
-    resolvedId = String(existingUser.id).trim();
-    returningUser = true;
-  }
+  var resolvedId = (existingUser && existingUser.id)
+    ? String(existingUser.id).trim()
+    : (plantedId || providerScopedId);
+  var returningUser = !!(existingUser && existingUser.id);
 
   if (prevUserId && prevUserId !== resolvedId && prevUserId !== 'guest') {
     okbmPurgeLocalSessionData();
@@ -8965,9 +9063,12 @@ function loginWithKakao(options) {
             return;
           }
           var profile = issued.profile || {};
-          var providerId = String(profile.id || '').replace(/^kakao_/, '');
+          var issuedId = String(profile.id || '').trim();
+          var providerId = (typeof window.okbmHasSocialUserId === 'function' && window.okbmHasSocialUserId(issuedId))
+            ? issuedId
+            : issuedId.replace(/^kakao_/, '');
           return handleSocialLoginSuccess(
-            'kakao',
+            (issuedId.indexOf('kakao_') === 0 || !issuedId) ? 'kakao' : issuedId.split('_')[0],
             providerId,
             profile.email,
             profile.nickname,
@@ -9155,9 +9256,12 @@ async function okbmConsumeNaverOAuthCallback() {
       return true;
     }
     var profile = issued.profile || {};
-    var providerId = String(profile.id || '').replace(/^naver_/, '');
+    var issuedId = String(profile.id || '').trim();
+    var providerId = (typeof window.okbmHasSocialUserId === 'function' && window.okbmHasSocialUserId(issuedId))
+      ? issuedId
+      : issuedId.replace(/^naver_/, '');
     await handleSocialLoginSuccess(
-      'naver',
+      (issuedId.indexOf('naver_') === 0 || !issuedId) ? 'naver' : issuedId.split('_')[0],
       providerId,
       profile.email,
       profile.nickname,
@@ -11044,6 +11148,9 @@ window.saveUserToSupabase = async function(profileData) {
   if (userEmail) payload.email = userEmail;
 
   try {
+    var sessionTok = (typeof window.okbmAccessToken === 'function') ? window.okbmAccessToken() : '';
+    var anonTok = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY || '';
+    if (!sessionTok || sessionTok === anonTok) return false;
     var upsertHeaders = okbmUgcRestHeaders({ Prefer: 'resolution=merge-duplicates,return=minimal' });
     var upsertUrl = targetUrl + '/rest/v1/users?on_conflict=id';
     var res = await fetch(upsertUrl, {
