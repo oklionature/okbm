@@ -318,6 +318,290 @@ REVOKE ALL ON FUNCTION public.apply_feed_like(text, text, boolean) FROM PUBLIC, 
 GRANT EXECUTE ON FUNCTION public.apply_feed_like(text, text, boolean) TO authenticated, service_role;
 
 -- -------------------------------------------------------------------------
+-- B-7 쪽지/방문 RPC: 세션 행위자만 처리 (apply_feed_like와 동일 가드)
+-- 시그니처는 호환 유지. 본문은 okbm_uid()만 행위자로 사용.
+-- -------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.okbm_append_direct_message(p_sender_id text, p_sender_nick text, p_receiver_id text, p_receiver_nick text, p_body text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_actor text := public.okbm_uid();
+  v_sender text;
+  v_receiver text := btrim(COALESCE(p_receiver_id, ''));
+  v_body text := btrim(COALESCE(p_body, ''));
+  v_thread_id text;
+  v_user_a text;
+  v_user_b text;
+  v_msg jsonb;
+  v_row public.direct_threads%ROWTYPE;
+BEGIN
+  IF auth.uid() IS NULL OR v_actor IS NULL OR btrim(v_actor) = '' THEN
+    RAISE EXCEPTION 'not authenticated';
+  END IF;
+  IF p_sender_id IS NULL OR btrim(p_sender_id) = '' THEN
+    RAISE EXCEPTION 'sender_id required';
+  END IF;
+  IF btrim(p_sender_id) <> v_actor THEN
+    RAISE EXCEPTION 'not authorized';
+  END IF;
+  v_sender := v_actor;
+
+  IF v_receiver = '' THEN
+    RAISE EXCEPTION 'invalid_direct_message' USING ERRCODE = 'P0001';
+  END IF;
+  IF v_sender = v_receiver THEN
+    RAISE EXCEPTION 'self_direct_message' USING ERRCODE = 'P0001';
+  END IF;
+  IF v_body = '' THEN
+    RAISE EXCEPTION 'empty_direct_message' USING ERRCODE = 'P0001';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM public.user_blocks
+    WHERE (blocker_id = v_sender AND blocked_id = v_receiver)
+       OR (blocker_id = v_receiver AND blocked_id = v_sender)
+  ) THEN
+    RAISE EXCEPTION 'blocked_direct_message' USING ERRCODE = 'P0001';
+  END IF;
+
+  IF v_sender < v_receiver THEN
+    v_user_a := v_sender;
+    v_user_b := v_receiver;
+  ELSE
+    v_user_a := v_receiver;
+    v_user_b := v_sender;
+  END IF;
+  v_thread_id := v_user_a || '__' || v_user_b;
+  v_msg := jsonb_build_object(
+    'id', 'dm_' || floor(extract(epoch from clock_timestamp()) * 1000)::bigint || '_' || substr(md5(random()::text), 1, 6),
+    'sender_id', v_sender,
+    'body', v_body,
+    'created_at', to_char(clock_timestamp() AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+  );
+
+  INSERT INTO public.direct_threads (
+    id, user_a, user_b, nick_a, nick_b, messages, last_body, last_at, last_sender_id, unread_a, unread_b, updated_at
+  ) VALUES (
+    v_thread_id, v_user_a, v_user_b,
+    CASE WHEN v_user_a = v_sender THEN COALESCE(p_sender_nick, '') ELSE COALESCE(p_receiver_nick, '') END,
+    CASE WHEN v_user_b = v_sender THEN COALESCE(p_sender_nick, '') ELSE COALESCE(p_receiver_nick, '') END,
+    jsonb_build_array(v_msg), v_body, now(), v_sender,
+    CASE WHEN v_user_a = v_receiver THEN 1 ELSE 0 END,
+    CASE WHEN v_user_b = v_receiver THEN 1 ELSE 0 END,
+    now()
+  )
+  ON CONFLICT (id) DO UPDATE SET
+    messages = (
+      CASE
+        WHEN jsonb_array_length(COALESCE(direct_threads.messages, '[]'::jsonb) || jsonb_build_array(v_msg)) > 200 THEN (
+          SELECT jsonb_agg(elem ORDER BY ord)
+          FROM (
+            SELECT elem, ord
+            FROM jsonb_array_elements(COALESCE(direct_threads.messages, '[]'::jsonb) || jsonb_build_array(v_msg)) WITH ORDINALITY AS t(elem, ord)
+            WHERE ord > (jsonb_array_length(COALESCE(direct_threads.messages, '[]'::jsonb) || jsonb_build_array(v_msg)) - 200)
+          ) s
+        )
+        ELSE COALESCE(direct_threads.messages, '[]'::jsonb) || jsonb_build_array(v_msg)
+      END
+    ),
+    nick_a = CASE WHEN direct_threads.user_a = v_sender THEN COALESCE(p_sender_nick, direct_threads.nick_a) WHEN direct_threads.user_a = v_receiver THEN COALESCE(p_receiver_nick, direct_threads.nick_a) ELSE direct_threads.nick_a END,
+    nick_b = CASE WHEN direct_threads.user_b = v_sender THEN COALESCE(p_sender_nick, direct_threads.nick_b) WHEN direct_threads.user_b = v_receiver THEN COALESCE(p_receiver_nick, direct_threads.nick_b) ELSE direct_threads.nick_b END,
+    last_body = v_body,
+    last_at = now(),
+    last_sender_id = v_sender,
+    unread_a = CASE WHEN direct_threads.user_a = v_receiver THEN COALESCE(direct_threads.unread_a, 0) + 1 ELSE direct_threads.unread_a END,
+    unread_b = CASE WHEN direct_threads.user_b = v_receiver THEN COALESCE(direct_threads.unread_b, 0) + 1 ELSE direct_threads.unread_b END,
+    updated_at = now()
+  RETURNING * INTO v_row;
+
+  RETURN to_jsonb(v_row);
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.okbm_append_direct_message(text, text, text, text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.okbm_append_direct_message(text, text, text, text, text) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.okbm_hide_direct_thread(p_user_id text, p_thread_id text)
+RETURNS boolean
+LANGUAGE plpgsql
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_actor text := public.okbm_uid();
+BEGIN
+  IF auth.uid() IS NULL OR v_actor IS NULL OR btrim(v_actor) = '' THEN
+    RAISE EXCEPTION 'not authenticated';
+  END IF;
+  IF p_user_id IS NULL OR btrim(p_user_id) = '' OR p_thread_id IS NULL OR btrim(p_thread_id) = '' THEN
+    RAISE EXCEPTION 'user_id and thread_id required';
+  END IF;
+  IF btrim(p_user_id) <> v_actor THEN
+    RAISE EXCEPTION 'not authorized';
+  END IF;
+
+  UPDATE public.direct_threads
+  SET hidden_a_at = CASE WHEN user_a = v_actor THEN now() ELSE hidden_a_at END,
+      hidden_b_at = CASE WHEN user_b = v_actor THEN now() ELSE hidden_b_at END,
+      unread_a = CASE WHEN user_a = v_actor THEN 0 ELSE unread_a END,
+      unread_b = CASE WHEN user_b = v_actor THEN 0 ELSE unread_b END,
+      updated_at = now()
+  WHERE id = p_thread_id AND (user_a = v_actor OR user_b = v_actor);
+  RETURN FOUND;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.okbm_hide_direct_thread(text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.okbm_hide_direct_thread(text, text) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.okbm_mark_direct_thread_read(p_user_id text, p_thread_id text)
+RETURNS boolean
+LANGUAGE plpgsql
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_actor text := public.okbm_uid();
+BEGIN
+  IF auth.uid() IS NULL OR v_actor IS NULL OR btrim(v_actor) = '' THEN
+    RAISE EXCEPTION 'not authenticated';
+  END IF;
+  IF p_user_id IS NULL OR btrim(p_user_id) = '' OR p_thread_id IS NULL OR btrim(p_thread_id) = '' THEN
+    RAISE EXCEPTION 'user_id and thread_id required';
+  END IF;
+  IF btrim(p_user_id) <> v_actor THEN
+    RAISE EXCEPTION 'not authorized';
+  END IF;
+
+  UPDATE public.direct_threads
+  SET unread_a = CASE WHEN user_a = v_actor THEN 0 ELSE unread_a END,
+      unread_b = CASE WHEN user_b = v_actor THEN 0 ELSE unread_b END,
+      updated_at = now()
+  WHERE id = p_thread_id
+    AND (user_a = v_actor OR user_b = v_actor)
+    AND (
+      (user_a = v_actor AND COALESCE(unread_a, 0) > 0)
+      OR (user_b = v_actor AND COALESCE(unread_b, 0) > 0)
+    );
+  RETURN FOUND;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.okbm_mark_direct_thread_read(text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.okbm_mark_direct_thread_read(text, text) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.okbm_unread_direct_count(p_user_id text)
+RETURNS integer
+LANGUAGE plpgsql
+STABLE
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_actor text := public.okbm_uid();
+  v_count integer := 0;
+BEGIN
+  IF auth.uid() IS NULL OR v_actor IS NULL OR btrim(v_actor) = '' THEN
+    RAISE EXCEPTION 'not authenticated';
+  END IF;
+  IF p_user_id IS NULL OR btrim(p_user_id) = '' THEN
+    RAISE EXCEPTION 'user_id required';
+  END IF;
+  IF btrim(p_user_id) <> v_actor THEN
+    RAISE EXCEPTION 'not authorized';
+  END IF;
+
+  SELECT COALESCE(SUM(
+    CASE
+      WHEN user_a = v_actor AND (hidden_a_at IS NULL OR last_at > hidden_a_at) THEN unread_a
+      WHEN user_b = v_actor AND (hidden_b_at IS NULL OR last_at > hidden_b_at) THEN unread_b
+      ELSE 0
+    END
+  ), 0)::integer
+    INTO v_count
+  FROM public.direct_threads
+  WHERE user_a = v_actor OR user_b = v_actor;
+
+  RETURN v_count;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.okbm_unread_direct_count(text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.okbm_unread_direct_count(text) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.track_visit(p_visitor_id text, p_is_member boolean)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_actor text := public.okbm_uid();
+  v_date text := to_char(timezone('Asia/Seoul', now()), 'YYYY-MM-DD');
+  v_member boolean := COALESCE(p_is_member, false);
+  v_visitor text := btrim(COALESCE(p_visitor_id, ''));
+  v_new boolean := false;
+  v_guest_inc int := 0;
+  v_member_inc int := 0;
+BEGIN
+  IF v_actor IS NOT NULL AND btrim(v_actor) <> '' THEN
+    IF v_visitor <> '' AND v_visitor <> v_actor THEN
+      RAISE EXCEPTION 'not authorized';
+    END IF;
+    v_visitor := v_actor;
+    v_member := true;
+  ELSE
+    IF v_visitor = '' OR v_visitor NOT LIKE 'guest_%' THEN
+      RETURN;
+    END IF;
+    v_member := false;
+  END IF;
+
+  WITH ins AS (
+    INSERT INTO public.visit_seen (visit_date, visitor_id, is_member)
+    VALUES (v_date, v_visitor, v_member)
+    ON CONFLICT (visit_date, visitor_id) DO NOTHING
+    RETURNING 1
+  )
+  SELECT exists(SELECT 1 FROM ins) INTO v_new;
+
+  IF v_new AND v_member THEN
+    v_member_inc := 1;
+  ELSIF v_new AND NOT v_member THEN
+    v_guest_inc := 1;
+  END IF;
+
+  INSERT INTO public.stats (
+    date,
+    total_pv,
+    guest_uv,
+    member_uv,
+    guest_visits,
+    member_visits,
+    updated_at
+  )
+  VALUES (
+    v_date,
+    1,
+    v_guest_inc,
+    v_member_inc,
+    v_guest_inc,
+    v_member_inc,
+    now()
+  )
+  ON CONFLICT (date) DO UPDATE
+  SET
+    total_pv = COALESCE(public.stats.total_pv, 0) + 1,
+    guest_uv = COALESCE(public.stats.guest_uv, 0) + excluded.guest_uv,
+    member_uv = COALESCE(public.stats.member_uv, 0) + excluded.member_uv,
+    guest_visits = COALESCE(public.stats.guest_visits, 0) + excluded.guest_visits,
+    member_visits = COALESCE(public.stats.member_visits, 0) + excluded.member_visits,
+    updated_at = now();
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.track_visit(text, boolean) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.track_visit(text, boolean) TO anon, authenticated, service_role;
+
+-- -------------------------------------------------------------------------
 -- 1. 기존 정책 전부 폐기 + RLS 활성화
 -- -------------------------------------------------------------------------
 DO $$
