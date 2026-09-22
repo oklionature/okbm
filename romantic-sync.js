@@ -1694,6 +1694,7 @@ function okbmFormatReportTime(iso) {
   var mi = String(d.getMinutes()).padStart(2, '0');
   return mm + '.' + dd + ' ' + hh + ':' + mi;
 }
+window.okbmFormatReportTime = okbmFormatReportTime;
 
 function okbmMountAdminReportInspectorEntry() {
   var old = document.getElementById('adminReportInspectorEntry');
@@ -10189,19 +10190,24 @@ window.fetchAdminSpotInbox = async function() {
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
   if (!targetUrl || !targetKey) return [];
+  var tok = (typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || '';
   var headers = {
     'apikey': targetKey,
-    'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
+    'Authorization': 'Bearer ' + (tok || targetKey),
     'Content-Type': 'application/json'
   };
   try {
-    var reqProps = fetch(targetUrl + '/rest/v1/proposals?select=*&order=created_at.desc', { headers: headers })
-      .then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; });
-    var reqCorrs = fetch(targetUrl + '/rest/v1/spot_corrections?select=*&order=created_at.desc', { headers: headers })
-      .then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; });
-    var results = await Promise.all([reqProps, reqCorrs]);
-    var props = Array.isArray(results[0]) ? results[0] : [];
-    var corrs = Array.isArray(results[1]) ? results[1] : [];
+    var results = await Promise.all([
+      fetch(targetUrl + '/rest/v1/proposals?select=*&order=created_at.desc', { headers: headers }),
+      fetch(targetUrl + '/rest/v1/spot_corrections?select=*&order=created_at.desc', { headers: headers })
+    ]);
+    var propsRes = results[0];
+    var corrRes = results[1];
+    if (!propsRes.ok && !corrRes.ok) throw new Error('inbox fetch failed');
+    var props = propsRes.ok ? await propsRes.json() : [];
+    var corrs = corrRes.ok ? await corrRes.json() : [];
+    if (!Array.isArray(props)) props = [];
+    if (!Array.isArray(corrs)) corrs = [];
     var normalize = function(item, isCorr) {
       if (!item) return null;
       var clone = Object.assign({}, item);
@@ -10227,6 +10233,11 @@ window.fetchAdminSpotInbox = async function() {
     var items = props.map(function(p) { return normalize(p, false); })
       .concat(corrs.map(function(c) { return normalize(c, true); }))
       .filter(Boolean);
+    items.sort(function(a, b) {
+      var at = Date.parse(a && a.created_at) || 0;
+      var bt = Date.parse(b && b.created_at) || 0;
+      return bt - at;
+    });
 
     var missingIds = [];
     items.forEach(function(it) {
@@ -10257,7 +10268,7 @@ window.fetchAdminSpotInbox = async function() {
     return items;
   } catch (e) {
     console.warn('[romantic-sync.js:fetchAdminSpotInbox]', e);
-    return [];
+    throw e;
   }
 };
 

@@ -203,7 +203,7 @@
         bindLazy('openGearPresetModal', window.okbmEnsurePlan);
       })();
     </script>
-    <script src="romantic-sync.js?v=2.8.96" defer></script>
+    <script src="romantic-sync.js?v=2.8.97" defer></script>
     <script src="romantic-history.js?v=2.7.65" defer></script>
 
     <style>
@@ -1704,7 +1704,8 @@
                 user_id: String(row.user_id || row.userId || '').trim(),
                 userId: String(row.user_id || row.userId || '').trim(),
                 searchCount: 0,
-                sheetIndex: idx
+                sheetIndex: idx,
+                created_at: row.created_at || null
               };
             } else {
               if (!normalized.lat || !normalized.lng) return;
@@ -1714,6 +1715,7 @@
               normalized.searchCount = 0;
               normalized.sheetIndex = idx;
               normalized.gpxUrl = normalized.gpxUrl || '';
+              if (!normalized.created_at) normalized.created_at = row.created_at || null;
             }
 
             normalized.trailhead_addr = '';
@@ -2748,7 +2750,9 @@
       }
 
       function applyAdminPermissions(enable) {
-        isAdminMode = !!enable && checkAdminAuthorization();
+        var nextAdmin = !!enable && checkAdminAuthorization();
+        var modeChanged = nextAdmin !== isAdminMode;
+        isAdminMode = nextAdmin;
         window.isAdminMode = isAdminMode;
         
         const tools = document.getElementById('adminDataTools');
@@ -2766,6 +2770,10 @@
         }
 
         applyAdminMarkerDragState();
+        if (modeChanged) {
+          if (typeof isKakaoMapReady === 'function' && isKakaoMapReady()) renderSpots(true);
+          else window.__pendingRenderSpots = 'force';
+        }
       }
       window.applyAdminPermissions = applyAdminPermissions;
 
@@ -2881,9 +2889,17 @@ function updateSmartResetButtons() {
         updateSmartResetButtons();
       }
 
+      function spotRecencyValue(spot) {
+        var t = Date.parse(spot && spot.created_at);
+        if (isFinite(t)) return t;
+        var n = Number(spot && spot.id);
+        if (isFinite(n)) return n;
+        return Number(spot && spot.sheetIndex) || 0;
+      }
+
       function updateNewSpotFlags(spotList) {
         if (!spotList || spotList.length === 0) return;
-        const sorted = [...spotList].sort((a, b) => (b.sheetIndex || 0) - (a.sheetIndex || 0));
+        const sorted = [...spotList].sort((a, b) => spotRecencyValue(b) - spotRecencyValue(a));
         const top30Ids = new Set(sorted.slice(0, 30).map(s => String(s.id).trim()));
         spotList.forEach(s => s.isNew = top30Ids.has(String(s.id).trim()));
       }
@@ -5674,7 +5690,7 @@ var liveSearchTimer = null;
         const activeMarkers = [];
         let displaySpots = [...spots];
         if (isAdminMode) {
-          displaySpots.sort((a, b) => (b.sheetIndex || 0) - (a.sheetIndex || 0) || Number(b.id) - Number(a.id));
+          displaySpots.sort((a, b) => spotRecencyValue(b) - spotRecencyValue(a));
         } else {
           displaySpots.sort((a, b) => {
             const nameA = String(a.name || a.spot_main || '').trim();
@@ -5799,8 +5815,11 @@ var liveSearchTimer = null;
         });
 
         let visibleCount = 0;
+        const visibleSpots = [];
         const spotListEl = document.getElementById('spotList');
-        const isDomBuilt = !forceRebuild && spotListEl && spotListEl.children.length > 0 && spotListEl.querySelector('.region-group');
+        const hasRegionGroups = !!(spotListEl && spotListEl.querySelector('.region-group'));
+        const hasAdminReviewList = !!(spotListEl && spotListEl.querySelector('#adminReviewListHeader'));
+        let isDomBuilt = !forceRebuild && spotListEl && spotListEl.children.length > 0 && (isAdminMode ? hasAdminReviewList : hasRegionGroups);
 
         const regionVisibleCounts = Object.fromEntries(targetOrder.map(r => [r, 0]));
 
@@ -5858,6 +5877,7 @@ var liveSearchTimer = null;
             if (grouped[regKey]) grouped[regKey].push(spot);
             if (regionVisibleCounts[regKey] !== undefined) regionVisibleCounts[regKey]++;
             visibleCount++;
+            visibleSpots.push(spot);
           } else {
             if (marker) marker.setMap(null);
             if (labelOverlay) labelOverlay.setMap(null);
@@ -5889,8 +5909,15 @@ var liveSearchTimer = null;
           updateSmartResetButtons();
           return;
         }
+        if (isDomBuilt && isAdminMode && visibleSpots.length > 0 && !spotListEl.querySelector('.spot-item')) {
+          isDomBuilt = false;
+        }
 
         if (isDomBuilt) {
+          if (isAdminMode) {
+            const adminHeaderDiv = document.getElementById('adminReviewListHeader');
+            if (adminHeaderDiv) adminHeaderDiv.innerHTML = `${ICONS.FAST} [관리자 검수] 최신 등록순 목록 (${visibleCount}개)`;
+          } else {
           targetOrder.forEach(regKey => {
             const groupDiv = spotListEl.querySelector(`.region-group[data-region="${regKey}"]`);
             if (!groupDiv) return;
@@ -5913,19 +5940,18 @@ var liveSearchTimer = null;
               }
             }
           });
+          }
         } else {
           spotListEl.innerHTML = '';
           const fragment = document.createDocumentFragment();
 
           if (isAdminMode) {
             const adminHeaderDiv = document.createElement('div');
+            adminHeaderDiv.id = 'adminReviewListHeader';
             adminHeaderDiv.style.cssText = "padding:8px 14px; background:rgba(16,185,129,0.15); border-bottom:1px solid rgba(16,185,129,0.3); font-size:0.78rem; color:var(--accent-emerald); font-weight:bold;";
             adminHeaderDiv.innerHTML = `${ICONS.FAST} [관리자 검수] 최신 등록순 목록 (${visibleCount}개)`;
             fragment.appendChild(adminHeaderDiv);
-            displaySpots.forEach(spot => { 
-              const mk = spotNativeMarkerMap.get(String(spot.id).trim());
-              if (!mapReady || !mk || mk.getMap()) fragment.appendChild(createSpotCardElement(spot)); 
-            });
+            visibleSpots.forEach(spot => fragment.appendChild(createSpotCardElement(spot)));
           } else {
             targetOrder.forEach(regionKey => {
               const items = grouped[regionKey];
@@ -7543,17 +7569,24 @@ var overlay = document.getElementById('customModalOverlay');
           return window.fetchAdminSpotInbox();
         }
         var cfg = getSupabaseRestConfig();
-        var headers = { 'apikey': cfg.key, 'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || cfg.key), 'Content-Type': 'application/json' };
+        var tok = (typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || cfg.key;
+        var headers = { 'apikey': cfg.key, 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' };
         var [propsRes, corrRes] = await Promise.all([
           fetch(cfg.url + '/rest/v1/proposals?select=*&order=created_at.desc', { headers: headers }),
           fetch(cfg.url + '/rest/v1/spot_corrections?select=*&order=created_at.desc', { headers: headers })
         ]);
+        if (!propsRes.ok && !corrRes.ok) throw new Error('inbox fetch failed');
         var props = propsRes.ok ? await propsRes.json() : [];
         var corrs = corrRes.ok ? await corrRes.json() : [];
         return []
           .concat((Array.isArray(props) ? props : []).map(function(r) { return normalizeInboxItem(r, false); }))
           .concat((Array.isArray(corrs) ? corrs : []).map(function(r) { return normalizeInboxItem(r, true); }))
-          .filter(Boolean);
+          .filter(Boolean)
+          .sort(function(a, b) {
+            var at = Date.parse(a && a.created_at) || 0;
+            var bt = Date.parse(b && b.created_at) || 0;
+            return bt - at;
+          });
       }
 
       function isPendingInboxStatus(status) {
@@ -7597,6 +7630,12 @@ var overlay = document.getElementById('customModalOverlay');
           listEl.textContent = '목록을 불러오지 못했습니다.';
           return;
         }
+        if (!Array.isArray(items)) items = [];
+        items.sort(function(a, b) {
+          var at = Date.parse(a && a.created_at) || 0;
+          var bt = Date.parse(b && b.created_at) || 0;
+          return bt - at;
+        });
         window.__adminSpotInboxCache = items;
         var pending = items.filter(function(it) { return isPendingInboxStatus(it.status); });
         var done = items.filter(function(it) { return !isPendingInboxStatus(it.status); });
@@ -7605,17 +7644,39 @@ var overlay = document.getElementById('customModalOverlay');
           return;
         }
 
-        var renderCard = function(item) {
+        var formatWhen = function(iso) {
+          if (typeof window.okbmFormatReportTime === 'function') {
+            return window.okbmFormatReportTime(iso);
+          }
+          var d = new Date(iso);
+          if (isNaN(d.getTime())) return '';
+          var mm = String(d.getMonth() + 1).padStart(2, '0');
+          var dd = String(d.getDate()).padStart(2, '0');
+          var hh = String(d.getHours()).padStart(2, '0');
+          var mi = String(d.getMinutes()).padStart(2, '0');
+          return mm + '.' + dd + ' ' + hh + ':' + mi;
+        };
+
+        var renderCard = function(item, processed) {
           var title = item.spot_main || item.name || '이름 없음';
           var kind = item.type === 'correction' ? '수정건의' : '신규제보';
           var kindColor = item.type === 'correction' ? '#fb7185' : '#38bdf8';
           var coord = (item.lat && item.lng) ? (item.lat + ', ' + item.lng) : '좌표 없음';
           var reason = item.correctionReason || '';
+          var when = formatWhen(item.created_at);
           var safeId = String(item.id || '').replace(/"/g, '');
+          var actions = processed
+            ? '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.focusAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:rgba(255,255,255,0.08); color:#e2e8f0;">지도보기</button>' +
+              '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.deleteAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:#be123c; color:#fff;">삭제</button>'
+            : '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.focusAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:rgba(255,255,255,0.08); color:#e2e8f0;">지도보기</button>' +
+              '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.reviewAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:#0284c7; color:#fff;">검토/수정</button>' +
+              '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.approveAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:#059669; color:#fff;">즉시반영</button>' +
+              '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.rejectAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:#be123c; color:#fff;">반려</button>';
           return '<div class="admin-inbox-card">' +
             '<div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">' +
               '<span style="font-size:0.62rem; font-weight:900; color:' + kindColor + '; border:1px solid ' + kindColor + '55; border-radius:4px; padding:1px 6px;">' + kind + '</span>' +
               '<span style="font-size:0.62rem; color:#94a3b8;">' + escapeHtml(item.status || '대기') + '</span>' +
+              (when ? '<span style="font-size:0.62rem; color:#64748b; margin-left:auto;">' + when + '</span>' : '') +
             '</div>' +
             '<h4>' + escapeHtml(title) + (item.spot_sub ? ' · ' + escapeHtml(item.spot_sub) : '') + '</h4>' +
             '<div class="admin-inbox-meta">' +
@@ -7624,19 +7685,14 @@ var overlay = document.getElementById('customModalOverlay');
               (item.author || item.nickname ? '<br>제보: ' + escapeHtml(item.author || item.nickname) : '') +
               (reason ? '<br>사유: ' + escapeHtml(reason) : '') +
             '</div>' +
-            '<div class="admin-inbox-actions">' +
-              '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.focusAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:rgba(255,255,255,0.08); color:#e2e8f0;">지도보기</button>' +
-              '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.reviewAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:#0284c7; color:#fff;">검토/수정</button>' +
-              '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.approveAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:#059669; color:#fff;">즉시반영</button>' +
-              '<button type="button" data-id="' + escapeHtml(safeId) + '" data-type="' + item.type + '" onclick="window.rejectAdminInboxItem(this.dataset.id, this.dataset.type)" style="background:#be123c; color:#fff;">반려</button>' +
-            '</div>' +
+            '<div class="admin-inbox-actions">' + actions + '</div>' +
           '</div>';
         };
 
         listEl.innerHTML =
-          '<div style="font-size:0.72rem; font-weight:800; color:#a7f3d0; margin:0 0 8px;">대기 ' + pending.length + '건</div>' +
-          (pending.length ? pending.map(renderCard).join('') : '<div style="margin-bottom:14px; color:#64748b;">대기 건이 없습니다.</div>') +
-          (done.length ? '<div style="font-size:0.72rem; font-weight:800; color:#94a3b8; margin:16px 0 8px;">처리됨 ' + done.length + '건</div>' + done.map(renderCard).join('') : '');
+          '<div style="font-size:0.72rem; font-weight:800; color:#a7f3d0; margin:0 0 8px;">대기 ' + pending.length + '건 · 최신 등록순</div>' +
+          (pending.length ? pending.map(function(it) { return renderCard(it, false); }).join('') : '<div style="margin-bottom:14px; color:#64748b;">대기 건이 없습니다.</div>') +
+          (done.length ? '<div style="font-size:0.72rem; font-weight:800; color:#94a3b8; margin:16px 0 8px;">처리됨 ' + done.length + '건</div>' + done.map(function(it) { return renderCard(it, true); }).join('') : '');
       };
 
       function findAdminInboxItem(id, type) {
@@ -7733,6 +7789,21 @@ var overlay = document.getElementById('customModalOverlay');
         }
         showToast(ok ? '반려 처리했습니다.' : '상태 변경에 실패했습니다.');
         await window.renderAdminSpotInboxList();
+      };
+
+      window.deleteAdminInboxItem = async function(id, type) {
+        var item = findAdminInboxItem(id, type);
+        if (!item) {
+          showToast('해당 건을 찾을 수 없습니다.');
+          return;
+        }
+        if (!confirm('처리된 검수 건을 목록에서 삭제할까요?')) return;
+        var ok = false;
+        if (typeof window.deleteProposalFromSupabase === 'function') {
+          ok = await window.deleteProposalFromSupabase(item.id, item.type === 'correction');
+        }
+        showToast(ok ? '삭제했습니다.' : '삭제에 실패했습니다.');
+        if (ok) await window.renderAdminSpotInboxList();
       };
 
      // 🚀 검색창 ➕ 제보 클릭 시 관광명소/주소 태그를 완전 제거하고 세부포인트는 깨끗한 빈칸으로 유지
