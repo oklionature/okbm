@@ -5177,7 +5177,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:' + collectionZ + ' !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     modalEl.innerHTML = `
-      <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top, 0px)); box-sizing:border-box; z-index:10;">
+      <div style="flex-shrink:0 !important; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center; padding:12px 16px; padding-top:calc(10px + max(47px, env(safe-area-inset-top, 0px))); box-sizing:border-box; z-index:10;">
         <div style="display:flex; align-items:center; gap:8px; min-width:0;">
           <button type="button" onclick="window.goBackModal(event);" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:28px; height:28px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;">◀</button>
           <span style="font-size:0.92rem; font-weight:900; color:#ffffff; flex-shrink:0;">루터 정보</span>
@@ -5436,7 +5436,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     feedModal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:' + feedZ + ' !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     feedModal.innerHTML = `
-      <div style="position:absolute; top:8px; left:0; right:0; max-width:440px; margin:0 auto; padding:0 12px; display:flex; justify-content:space-between; align-items:center; z-index:` + chromeZ + `; pointer-events:none;">
+      <div id="dualFeedChromeBar" style="position:absolute; top:max(47px, env(safe-area-inset-top, 0px)); left:0; right:0; max-width:440px; margin:0 auto; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; z-index:` + chromeZ + `; pointer-events:none; box-sizing:border-box;">
         <button type="button" onclick="window.goBackModal(event);" style="pointer-events:auto; background:#0c1017; border:1px solid rgba(255,255,255,0.2); color:#ffffff; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0;">◀</button>
         
         <div style="pointer-events:auto; display:flex; align-items:center; gap:6px;">
@@ -5447,7 +5447,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         </div>
       </div>
 
-      <div id="dualFeedScrollContainer" onscroll="window.__onDualFeedContainerScroll(this);" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; contain:content; padding:44px 0 16px 0; display:flex; flex-direction:column; box-sizing:border-box;">
+      <div id="dualFeedScrollContainer" onscroll="window.__onDualFeedContainerScroll(this);" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; contain:content; padding:calc(48px + max(47px, env(safe-area-inset-top, 0px))) 0 16px 0; display:flex; flex-direction:column; box-sizing:border-box;">
         <div id="dualFeedCardsWrapper">
           ${allCardsHtml}
         </div>
