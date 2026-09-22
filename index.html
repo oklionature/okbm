@@ -294,6 +294,8 @@
       text-align: left;
       white-space: nowrap;
       flex-shrink: 0;
+      opacity: 1;
+      transition: opacity 0.583s ease;
     }
     .okbm-splash-type,
     .okbm-splash-type * {
@@ -305,7 +307,7 @@
       height: 28px;
       line-height: 28px;
       text-align: left;
-      padding-left: 0.16em;
+      padding-left: calc(0.16em + 10px);
     }
     .okbm-splash-type-live {
       position: absolute;
@@ -317,7 +319,7 @@
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      padding-left: 0.16em;
+      padding-left: calc(0.16em + 5px);
       box-sizing: border-box;
     }
     .okbm-splash-type-cluster {
@@ -351,21 +353,33 @@
       object-position: center;
       display: block;
       opacity: 0;
-      transform: scale(0.96);
-      transform-origin: center center;
-      transition:
-        opacity 1.82s cubic-bezier(0.22, 1, 0.36, 1),
-        transform 1.82s cubic-bezier(0.22, 1, 0.36, 1);
-      will-change: opacity, transform;
+      transform: none;
+      will-change: opacity;
     }
     .okbm-splash-inner.is-logo-in:not(.is-logo-out) .okbm-splash-logo {
-      opacity: 1;
-      transform: scale(1);
+      animation: okbmSplashLogoSoftIn 2.833s cubic-bezier(0.4, 0, 0.5, 1) forwards;
     }
     .okbm-splash-inner.is-logo-out .okbm-splash-logo {
+      animation: none;
       opacity: 0;
-      transform: scale(1);
-      transition: opacity 0.49s ease;
+      transition: opacity 0.583s ease;
+    }
+    .okbm-splash-inner.is-logo-out .okbm-splash-type {
+      opacity: 0;
+      transition: opacity 0.583s ease;
+    }
+    .okbm-splash-inner.is-logo-out .okbm-splash-cursor {
+      animation: none !important;
+      opacity: 0 !important;
+      transition: opacity 0.583s ease;
+    }
+    /* 초반엔 거의 안 보이다가 서서히 밝아짐 (팍 뜨는 느낌 제거) */
+    @keyframes okbmSplashLogoSoftIn {
+      0% { opacity: 0; }
+      20% { opacity: 0.06; }
+      45% { opacity: 0.28; }
+      72% { opacity: 0.68; }
+      100% { opacity: 1; }
     }
     @keyframes okbmSplashCursorBlink {
       0%, 45% { opacity: 1; }
@@ -375,6 +389,10 @@
       .okbm-splash-logo {
         opacity: 1 !important;
         transform: none !important;
+        animation: none !important;
+        transition: none !important;
+      }
+      .okbm-splash-type {
         transition: none !important;
       }
       .okbm-splash-cursor { animation: none !important; opacity: 1; }
@@ -1551,16 +1569,16 @@
   }
 
   var SLOGAN = '낭만을 찾는 방법';
-  var TYPE_STEP_MS = 123;
-  var TYPE_SPACE_MS = 196;
+  var TYPE_STEP_MS = 103;
+  var TYPE_SPACE_MS = 163;
   // 슬로건 '낭만'까지 타이핑된 뒤 로고 등장
   var LOGO_TRIGGER_AT = 2;
-  var LOGO_IN_MS = 1820;
-  var LOGO_HOLD_MS = 595;
-  var LOGO_OUT_MS = 490;
-  var HOLD_MS = 56;
-  var FADE_MS = 252;
-  var HARD_TIMEOUT_MS = 6650;
+  var LOGO_IN_MS = 2833;
+  var LOGO_HOLD_MS = 271;
+  var LOGO_OUT_MS = 583;
+  var HOLD_MS = 47;
+  var FADE_MS = 233;
+  var HARD_TIMEOUT_MS = 7920;
   var DATA_CAP_MS = 2600;
   var dismissed = false;
   var reduceMotion = false;
