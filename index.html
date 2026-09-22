@@ -296,6 +296,10 @@
       flex-shrink: 0;
       opacity: 1;
       transition: opacity 0.583s ease;
+      font-kerning: none;
+      font-variant-ligatures: none;
+      text-rendering: geometricPrecision;
+      -webkit-font-smoothing: antialiased;
     }
     .okbm-splash-type,
     .okbm-splash-type * {
@@ -307,7 +311,7 @@
       height: 28px;
       line-height: 28px;
       text-align: left;
-      padding-left: calc(0.16em + 10px);
+      padding-left: calc(0.16em + 5px);
     }
     .okbm-splash-type-live {
       position: absolute;
@@ -337,7 +341,7 @@
       background: #fde047;
       border-radius: 1px;
       box-shadow: 0 0 8px rgba(253, 224, 71, 0.45);
-      animation: okbmSplashCursorBlink 0.85s steps(1, end) infinite;
+      animation: okbmSplashCursorBlink 1.05s ease-in-out infinite;
     }
     .okbm-splash-logo-slot {
       width: 186px;
@@ -383,7 +387,7 @@
     }
     @keyframes okbmSplashCursorBlink {
       0%, 45% { opacity: 1; }
-      46%, 100% { opacity: 0; }
+      55%, 100% { opacity: 0.18; }
     }
     @media (prefers-reduced-motion: reduce) {
       .okbm-splash-logo {
@@ -1664,60 +1668,84 @@
     return urls;
   }
 
+  function waitSplashFont() {
+    try {
+      if (!document.fonts || typeof document.fonts.load !== 'function') {
+        return Promise.resolve();
+      }
+      return Promise.race([
+        document.fonts.load("600 18px 'Arita-buri-SemiBold'").then(function() {
+          return document.fonts.ready;
+        }),
+        delay(900)
+      ]);
+    } catch (e) {
+      return Promise.resolve();
+    }
+  }
+
   function playIntro() {
     if (reduceMotion) {
       if (typeEl) typeEl.textContent = SLOGAN;
       if (innerEl) innerEl.classList.add('is-logo-in');
       return delay(400);
     }
-    return new Promise(function(resolve) {
-      var typeDone = false;
-      var logoDone = false;
-      var logoStarted = false;
-      function maybeDone() {
-        if (typeDone && logoDone) resolve();
-      }
-      function startLogo() {
-        if (logoStarted) return;
-        logoStarted = true;
-        requestAnimationFrame(function() {
+    return waitSplashFont().then(function() {
+      return new Promise(function(resolve) {
+        var typeDone = false;
+        var logoDone = false;
+        var logoStarted = false;
+        var typeTimer = null;
+        function maybeDone() {
+          if (typeDone && logoDone) resolve();
+        }
+        function startLogo() {
+          if (logoStarted) return;
+          logoStarted = true;
           requestAnimationFrame(function() {
-            if (innerEl) {
-              innerEl.classList.remove('is-logo-out');
-              innerEl.classList.add('is-logo-in');
-            }
+            requestAnimationFrame(function() {
+              if (innerEl) {
+                innerEl.classList.remove('is-logo-out');
+                innerEl.classList.add('is-logo-in');
+              }
+            });
           });
-        });
-        // 나타남 → 유지 → 사라짐
-        setTimeout(function() {
+          // 나타남 → 유지 → 사라짐
           setTimeout(function() {
-            if (innerEl) innerEl.classList.add('is-logo-out');
             setTimeout(function() {
-              logoDone = true;
-              maybeDone();
-            }, LOGO_OUT_MS);
-          }, LOGO_HOLD_MS);
-        }, LOGO_IN_MS);
-      }
-      if (!typeEl) {
-        startLogo();
-        typeDone = true;
-        return;
-      }
-      var i = 0;
-      function tick() {
-        if (i >= SLOGAN.length) {
+              if (innerEl) innerEl.classList.add('is-logo-out');
+              setTimeout(function() {
+                logoDone = true;
+                maybeDone();
+              }, LOGO_OUT_MS);
+            }, LOGO_HOLD_MS);
+          }, LOGO_IN_MS);
+        }
+        if (!typeEl) {
+          startLogo();
           typeDone = true;
-          maybeDone();
           return;
         }
-        var ch = SLOGAN.charAt(i);
-        typeEl.textContent += ch;
-        i += 1;
-        if (i === LOGO_TRIGGER_AT) startLogo();
-        setTimeout(tick, ch === ' ' ? TYPE_SPACE_MS : TYPE_STEP_MS);
-      }
-      tick();
+        var i = 0;
+        var startedAt = performance.now();
+        var nextAt = startedAt;
+        function scheduleTick() {
+          if (i >= SLOGAN.length) {
+            typeDone = true;
+            maybeDone();
+            return;
+          }
+          var ch = SLOGAN.charAt(i);
+          typeEl.textContent += ch;
+          i += 1;
+          if (i === LOGO_TRIGGER_AT) startLogo();
+          var step = (ch === ' ') ? TYPE_SPACE_MS : TYPE_STEP_MS;
+          nextAt += step;
+          var wait = Math.max(0, nextAt - performance.now());
+          typeTimer = setTimeout(scheduleTick, wait);
+        }
+        scheduleTick();
+      });
     });
   }
 
