@@ -5490,106 +5490,65 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       }
     }
 
-    var compressAndUploadSingleFile = function(file, idx) {
-      return new Promise(function(resolve) {
-        var blobUrl = '';
-        try {
-          blobUrl = URL.createObjectURL(file);
-        } catch (e) {
-          resolve('');
-          return;
+    var compressAndUploadSingleFile = async function(file, idx) {
+      try {
+        var blob = null;
+        if (typeof window.processSinglePhotoSmart === 'function') {
+          blob = await window.processSinglePhotoSmart(file, { maxDim: 1200, quality: 0.82 });
+        }
+        if (!blob) return '';
+
+        var statusText = document.getElementById('richPhotoLoadingStatusText');
+        if (statusText) {
+          statusText.innerText = '사진 ' + (idx + 1) + '/' + filesToProcess.length + '장 업로드 중...';
         }
 
-        var img = new Image();
-        var isFinished = false;
-
-        var timer = setTimeout(function() {
-          if (!isFinished) {
-            isFinished = true;
-            if (blobUrl) URL.revokeObjectURL(blobUrl);
-            resolve('');
+        var httpsUrl = '';
+        if (typeof window.uploadCompressedPhotoToR2 === 'function') {
+          httpsUrl = await window.uploadCompressedPhotoToR2(blob, 'rich');
+        }
+        if (httpsUrl && httpsUrl.indexOf('https://') === 0) {
+          if (statusText) {
+            statusText.innerText = '사진 ' + (idx + 1) + '/' + filesToProcess.length + '장 완료';
           }
-        }, 12000);
-
-        img.onload = function() {
-          if (isFinished) return;
-          isFinished = true;
-          clearTimeout(timer);
-
-          try {
-            var canvas = document.createElement('canvas');
-            var ctx = canvas.getContext('2d');
-            var MAX_DIM = 1200;
-            var maxLen = Math.max(img.width, img.height);
-            var scale = maxLen > MAX_DIM ? (MAX_DIM / maxLen) : 1;
-
-            canvas.width = Math.round(img.width * scale);
-            canvas.height = Math.round(img.height * scale);
-
-            ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = 'high';
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-            canvas.toBlob(async function(blob) {
-              if (blobUrl) URL.revokeObjectURL(blobUrl);
-              if (!blob) {
-                resolve('');
-                return;
-              }
-
-              try {
-                var CF_WORKER_UPLOAD_URL = 'https://romantic-upload-worker.ggumfree.workers.dev';
-                var safeFileName = 'rich_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substring(2, 7) + '.jpg';
-                var cfRes = await fetch(CF_WORKER_UPLOAD_URL + '?file=' + encodeURIComponent(safeFileName), {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'image/jpeg' },
-                  body: blob
-                });
-
-                if (cfRes.ok) {
-                  var cfData = await cfRes.json();
-                  if (cfData && cfData.status === 'SUCCESS' && cfData.url && cfData.url.startsWith('https://')) {
-                    var statusText = document.getElementById('richPhotoLoadingStatusText');
-                    if (statusText) {
-                      statusText.innerText = '사진 ' + (idx + 1) + '/' + filesToProcess.length + '장 완료';
-                    }
-                    resolve(cfData.url);
-                    return;
-                  }
-                }
-              } catch (upErr) {}
-              resolve('');
-            }, 'image/jpeg', 0.82);
-          } catch (err) {
-            if (blobUrl) URL.revokeObjectURL(blobUrl);
-            resolve('');
-          }
-        };
-
-        img.onerror = function() {
-          if (isFinished) return;
-          isFinished = true;
-          clearTimeout(timer);
-          if (blobUrl) URL.revokeObjectURL(blobUrl);
-          resolve('');
-        };
-
-        img.src = blobUrl;
-      });
+          return httpsUrl;
+        }
+      } catch (upErr) {
+        console.warn('[romantic-history.js:compressAndUploadSingleFile]', upErr);
+      }
+      return '';
     };
 
     try {
+      var doneCount = 0;
+      var firstPainted = false;
       var uploadPromises = filesToProcess.map(function(file, i) {
-        return compressAndUploadSingleFile(file, i);
+        return compressAndUploadSingleFile(file, i).then(function(httpsUrl) {
+          doneCount++;
+          if (httpsUrl && httpsUrl.indexOf('https://') === 0) {
+            window.__tempUploadedPhotos.push(httpsUrl);
+            window.__tempPhotoMemos.push('');
+            window.__currentSwipePhotoIndex = Math.max(0, window.__tempUploadedPhotos.length - 1);
+            if (!firstPainted) {
+              firstPainted = true;
+              if (loaderEl && loaderEl.parentNode) loaderEl.remove();
+              loaderEl = null;
+            }
+            if (typeof window.__renderRichPhotoStage === 'function') {
+              window.__renderRichPhotoStage();
+            }
+          }
+          var statusText = document.getElementById('richPhotoLoadingStatusText');
+          if (statusText) {
+            statusText.innerText = '사진 ' + doneCount + '/' + filesToProcess.length + '장 처리됨';
+          }
+          if (submitBtn && window.__isPhotoCompressing) {
+            submitBtn.innerText = '사진 ' + doneCount + '/' + filesToProcess.length + '...';
+          }
+          return httpsUrl;
+        });
       });
-      var results = await Promise.all(uploadPromises);
-
-      results.forEach(function(httpsUrl) {
-        if (httpsUrl && httpsUrl.startsWith('https://')) {
-          window.__tempUploadedPhotos.push(httpsUrl);
-          window.__tempPhotoMemos.push('');
-        }
-      });
+      await Promise.all(uploadPromises);
     } finally {
       window.__isPhotoCompressing = false;
       if (loaderEl && loaderEl.parentNode) {
@@ -6633,7 +6592,11 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       return;
     }
 
-    var photosToProcess = Array.isArray(window.__tempUploadedPhotos) ? window.__tempUploadedPhotos.slice(0, 10) : [];
+    var photosToProcess = Array.isArray(window.__tempUploadedPhotos)
+      ? window.__tempUploadedPhotos.filter(function(u) {
+          return typeof u === 'string' && u.indexOf('https://') === 0;
+        }).slice(0, 10)
+      : [];
     if (photosToProcess.length === 0) {
       triggerHaptic(14);
       if (typeof showToast === 'function') showToast('현장 사진을 1장 이상 추가해주세요.', 'warn', 2400, { html: HISTORY_TOAST_VEC.camera, position: 'center' });

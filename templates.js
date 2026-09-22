@@ -3548,6 +3548,27 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
   }
 
   try {
+    // 업로드 중인 레디샷이 있으면 HTTPS 확보까지 대기 (blob 영구 저장 차단)
+    if (window.__readyShotUploadPromise && typeof window.__readyShotUploadPromise.then === 'function') {
+      try {
+        var pendingUrl = await window.__readyShotUploadPromise;
+        if (pendingUrl && String(pendingUrl).indexOf('https://') === 0) {
+          window.currentSharePhoto = pendingUrl;
+          window.currentSharePhotoRaw = pendingUrl;
+          if (window.currentShareRecord) {
+            window.currentShareRecord.readyShotPhoto = pendingUrl;
+            window.currentShareRecord.ready_shot_photo = pendingUrl;
+          }
+          if (window.__readyShotPreviewBlobUrl) {
+            try { URL.revokeObjectURL(window.__readyShotPreviewBlobUrl); } catch (eRev) {}
+            window.__readyShotPreviewBlobUrl = '';
+          }
+        }
+      } catch (waitErr) {
+        console.warn('[templates.js:saveCardToVault wait upload]', waitErr);
+      }
+    }
+
     var memoInput = document.getElementById('shareCardMemoInput');
 
     var liveSpot = (window.currentShareRecord && window.currentShareRecord.spot)
@@ -3743,71 +3764,19 @@ window.handleShareCardPhotoUpload = async function(e) {
   if (!files || files.length === 0) return;
 
   var file = files[0];
+  e.target.value = '';
+
   if (typeof window.showPhotoLoadingModal === 'function') {
     window.showPhotoLoadingModal(1, 1);
   }
 
-  var CF_WORKER_UPLOAD_URL = 'https://romantic-upload-worker.ggumfree.workers.dev';
+  var previewBlobUrl = '';
   var uploadedUrl = '';
 
-  try {
-    var blob = null;
-    if (typeof window.processSinglePhotoSmart === 'function') {
-      blob = await window.processSinglePhotoSmart(file);
-    }
-    if (!blob) {
-      blob = await new Promise(function(resolve) {
-        var objectUrl = URL.createObjectURL(file);
-        var img = new Image();
-        img.onload = function() {
-          URL.revokeObjectURL(objectUrl);
-          var canvas = document.createElement('canvas');
-          var ctx = canvas.getContext('2d');
-          var MAX_DIM = 1200;
-          var maxLen = Math.max(img.width, img.height);
-          var scale = maxLen > MAX_DIM ? (MAX_DIM / maxLen) : 1;
-          canvas.width = Math.round(img.width * scale);
-          canvas.height = Math.round(img.height * scale);
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = 'high';
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          canvas.toBlob(function(b) { resolve(b); }, 'image/jpeg', 0.86);
-        };
-        img.onerror = function() {
-          URL.revokeObjectURL(objectUrl);
-          resolve(null);
-        };
-        img.src = objectUrl;
-      });
-    }
-
-    if (blob) {
-      var safeFileName = 'ready_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7) + '.jpg';
-      var cfRes = await fetch(CF_WORKER_UPLOAD_URL + '?file=' + encodeURIComponent(safeFileName), {
-        method: 'POST',
-        headers: { 'Content-Type': 'image/jpeg' },
-        body: blob
-      });
-      if (cfRes.ok) {
-        var cfData = await cfRes.json();
-        if (cfData && cfData.status === 'SUCCESS' && cfData.url && cfData.url.startsWith('https://')) {
-          uploadedUrl = cfData.url;
-        }
-      }
-    }
-  } catch (upErr) {
-    console.warn('[templates.js:handleShareCardPhotoUpload]', upErr);
-  } finally {
-    if (typeof window.hidePhotoLoadingModal === 'function') {
-      window.hidePhotoLoadingModal();
-    }
-    e.target.value = '';
-  }
-
-  if (uploadedUrl) {
+  function applyReadyShotLocalPreview(url, shouldPersist) {
     window.__studioMultiPhotos = null;
-    window.currentSharePhoto = uploadedUrl;
-    window.currentSharePhotoRaw = uploadedUrl;
+    window.currentSharePhoto = url;
+    window.currentSharePhotoRaw = url;
     window.currentPhotoPosX = 50;
     window.currentPhotoPosY = 50;
     currentPhotoScaleVal = 1.0;
@@ -3821,8 +3790,15 @@ window.handleShareCardPhotoUpload = async function(e) {
         photos: []
       };
     }
-    window.currentShareRecord.readyShotPhoto = uploadedUrl;
-    window.currentShareRecord.ready_shot_photo = uploadedUrl;
+    // 메모리 미리보기만 허용. https일 때만 영구 필드·persist
+    if (String(url).indexOf('https://') === 0) {
+      window.currentShareRecord.readyShotPhoto = url;
+      window.currentShareRecord.ready_shot_photo = url;
+      if (shouldPersist) persistReadyShotPhotoNow(url);
+    } else {
+      window.currentShareRecord.readyShotPhoto = '';
+      window.currentShareRecord.ready_shot_photo = '';
+    }
     window.currentShareRecord.readyShotMode = window.currentStudioCardMode || 'spread';
     window.currentShareRecord.readyShotPosX = 50;
     window.currentShareRecord.readyShotPosY = 50;
@@ -3830,14 +3806,13 @@ window.handleShareCardPhotoUpload = async function(e) {
     window.currentShareRecord.readyShotRatio = '3/4';
     window.readyShotFamily = 'photo';
     try { localStorage.setItem('romantic_ready_shot_family', 'photo'); } catch (e2) {}
-    persistReadyShotPhotoNow(uploadedUrl);
     syncReadyShotFamilyToggle();
     syncReadyShotPhotoButtons();
     renderTemplateChips();
     if (typeof updateShareCardLive === 'function') updateShareCardLive();
     if (typeof isReadyShotFrameModalOpen === 'function' && isReadyShotFrameModalOpen()) {
       if (__readyShotFrameSnapshot) {
-        __readyShotFrameSnapshot.photo = uploadedUrl;
+        __readyShotFrameSnapshot.photo = url;
         __readyShotFrameSnapshot.posX = 50;
         __readyShotFrameSnapshot.posY = 50;
         __readyShotFrameSnapshot.scale = 1.0;
@@ -3851,8 +3826,57 @@ window.handleShareCardPhotoUpload = async function(e) {
         scrollReadyShotCardIntoView();
       }, 100);
     }
-    if (typeof showToast === 'function') showToast('사진이 적용되었습니다.', 'success', 1600);
-  } else {
+  }
+
+  try {
+    var blob = null;
+    if (typeof window.processSinglePhotoSmart === 'function') {
+      blob = await window.processSinglePhotoSmart(file, { maxDim: 1200, quality: 0.82 });
+    }
+    if (!blob) {
+      if (typeof window.hidePhotoLoadingModal === 'function') window.hidePhotoLoadingModal();
+      if (typeof showToast === 'function') showToast('사진 변환에 실패했습니다.', 'warn');
+      return;
+    }
+
+    // 체감: 압축 직후 로컬 미리보기 즉시 표시 (blob은 메모리만, 영구 저장 안 함)
+    if (window.__readyShotPreviewBlobUrl) {
+      try { URL.revokeObjectURL(window.__readyShotPreviewBlobUrl); } catch (eRev0) {}
+      window.__readyShotPreviewBlobUrl = '';
+    }
+    previewBlobUrl = URL.createObjectURL(blob);
+    window.__readyShotPreviewBlobUrl = previewBlobUrl;
+    applyReadyShotLocalPreview(previewBlobUrl, false);
+    if (typeof window.hidePhotoLoadingModal === 'function') window.hidePhotoLoadingModal();
+    if (typeof showToast === 'function') showToast('사진 적용 중...', 'info', 1200);
+
+    var uploadFn = (typeof window.uploadCompressedPhotoToR2 === 'function')
+      ? window.uploadCompressedPhotoToR2
+      : null;
+    var uploadPromise = uploadFn
+      ? uploadFn(blob, 'ready')
+      : Promise.resolve('');
+    window.__readyShotUploadPromise = uploadPromise;
+
+    uploadedUrl = await uploadPromise;
+    window.__readyShotUploadPromise = null;
+
+    if (uploadedUrl && uploadedUrl.indexOf('https://') === 0) {
+      applyReadyShotLocalPreview(uploadedUrl, true);
+      if (previewBlobUrl) {
+        try { URL.revokeObjectURL(previewBlobUrl); } catch (eRev1) {}
+        if (window.__readyShotPreviewBlobUrl === previewBlobUrl) window.__readyShotPreviewBlobUrl = '';
+      }
+      if (typeof showToast === 'function') showToast('사진이 적용되었습니다.', 'success', 1600);
+    } else {
+      if (typeof showToast === 'function') {
+        showToast('업로드에 실패했습니다. 미리보기만 유지됩니다. 다시 선택해 주세요.', 'warn', 2800);
+      }
+    }
+  } catch (upErr) {
+    console.warn('[templates.js:handleShareCardPhotoUpload]', upErr);
+    window.__readyShotUploadPromise = null;
+    if (typeof window.hidePhotoLoadingModal === 'function') window.hidePhotoLoadingModal();
     if (typeof showToast === 'function') showToast('사진 업로드에 실패했습니다. 네트워크를 확인해주세요.', 'warn');
   }
 };

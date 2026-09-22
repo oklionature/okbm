@@ -2291,7 +2291,8 @@
 
       var difficulty = mSpot ? (parseInt(mSpot.difficulty, 10) || 3) : null;
       var km = parseThemeSpotKm(mSpot);
-      var walkMin = (km != null) ? (km * 35 / 1.5) : null;
+      // 초보 페이스: 1km = 30분
+      var walkMin = (km != null) ? (km * 30 / 1) : null;
 
       var isDeck = terrainStr.indexOf('데크') !== -1 || /데크|대크/.test(rawName);
 
@@ -2303,14 +2304,14 @@
       var isBeach = /해변|해수욕장|해안/.test(terrainStr) || /해변|해수욕장|해안/.test(rawName) || /해변|해수욕장|해안/.test(masterName);
 
       var isBeginner = (difficulty !== null && difficulty >= 1 && difficulty <= 2)
-        && (km != null && km <= 1.5)
-        && (walkMin != null && walkMin <= 35);
+        && (km != null && km <= 1)
+        && (walkMin != null && walkMin <= 30);
 
       var isAfterwork = !isIsland
         && (difficulty !== null && difficulty <= 3)
         && (km != null && km <= 1.5);
 
-      var isRemote = (difficulty !== null && difficulty >= 3)
+      var isRemote = (difficulty !== null && difficulty >= 4 && difficulty <= 5)
         && (km != null && km >= 2);
 
       var isRockTerrain = /암릉|너덜|돌박지|돌침대|슬랩|암장|암반/.test(terrainStr) || /바위/.test(terrainStr);
@@ -4863,25 +4864,13 @@ var adBannersHtml = `
           if (typeof window.showPhotoLoadingModal === 'function') {
             window.showPhotoLoadingModal(idx + 1, toProcess.length);
           }
-          var photoBlob = typeof window.processSinglePhotoSmart === 'function' ? await window.processSinglePhotoSmart(file) : null;
+          var photoBlob = typeof window.processSinglePhotoSmart === 'function'
+            ? await window.processSinglePhotoSmart(file, { maxDim: 1200, quality: 0.82 })
+            : null;
           if (!photoBlob) return '';
 
-          var fileExt = 'jpg';
-          var fileName = 'trip_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.' + fileExt;
-
-          // ⚡ Cloudflare R2 직통 업로드 파이프라인 (SSOT)
-          var CF_WORKER_UPLOAD_URL = 'https://romantic-upload-worker.ggumfree.workers.dev';
-          var cfRes = await fetch(CF_WORKER_UPLOAD_URL + '?file=' + encodeURIComponent(fileName), {
-            method: 'POST',
-            headers: { 'Content-Type': 'image/jpeg' },
-            body: photoBlob
-          });
-
-          if (cfRes.ok) {
-            var cfData = await cfRes.json();
-            if (cfData && cfData.status === 'SUCCESS' && cfData.url) {
-              return cfData.url;
-            }
+          if (typeof window.uploadCompressedPhotoToR2 === 'function') {
+            return await window.uploadCompressedPhotoToR2(photoBlob, 'trip');
           }
           return '';
         } catch (upErr) {
@@ -5624,56 +5613,160 @@ var adBannersHtml = `
       if (modal) modal.style.display = 'none';
     };
 
-    // ⚡ 제10헌법 미디어 초경량 압축 규격 (MAX_WIDTH 1200, quality 0.82, 메모리 누수 0%)
-    window.processSinglePhotoSmart = function(file) {
-      return new Promise(function(resolve) {
-        var blobUrl = URL.createObjectURL(file);
-        var img = new Image();
-        var handleImageRender = function(imageElement) {
-          var maxW = 1200;
-          var w = imageElement.width;
-          var h = imageElement.height;
-          if (w > maxW) {
-            h = Math.round((h * maxW) / w);
-            w = maxW;
-          }
-          var canvas = document.createElement('canvas');
-          canvas.width = w;
-          canvas.height = h;
-          var ctx = canvas.getContext('2d');
-          ctx.drawImage(imageElement, 0, 0, w, h);
-          canvas.toBlob(function(blob) {
-            resolve(blob);
-          }, 'image/jpeg', 0.82);
-        };
+    // ⚡ 미디어 파이프라인: Canvas 1200px 압축 → R2 HTTPS만 영구 저장 (blob/data 영구 저장 금지)
+    window.OKBM_CF_UPLOAD_URL = 'https://romantic-upload-worker.ggumfree.workers.dev';
 
-        img.onload = function() {
-          URL.revokeObjectURL(blobUrl);
-          handleImageRender(img);
-        };
+    window.uploadCompressedPhotoToR2 = async function(blob, prefix) {
+      if (!blob) return '';
+      try {
+        var safeFileName = String(prefix || 'okbm') + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.jpg';
+        var cfRes = await fetch(window.OKBM_CF_UPLOAD_URL + '?file=' + encodeURIComponent(safeFileName), {
+          method: 'POST',
+          headers: { 'Content-Type': 'image/jpeg' },
+          body: blob
+        });
+        if (!cfRes.ok) return '';
+        var cfData = await cfRes.json();
+        if (cfData && cfData.status === 'SUCCESS' && cfData.url && String(cfData.url).indexOf('https://') === 0) {
+          return String(cfData.url).trim();
+        }
+      } catch (err) {
+        console.warn('[uploadCompressedPhotoToR2]', err);
+      }
+      return '';
+    };
 
-        img.onerror = async function() {
-          URL.revokeObjectURL(blobUrl);
-          var heicFn = (typeof heic2any === 'function') ? heic2any : (typeof window !== 'undefined' ? window.heic2any : null);
-          if (typeof heicFn === 'function') {
-            try {
-              var converted = await heicFn({ blob: file, toType: 'image/jpeg', quality: 0.82 });
-              var safeBlob = Array.isArray(converted) ? converted[0] : converted;
-              var hUrl = URL.createObjectURL(safeBlob);
-              var hImg = new Image();
-              hImg.onload = function() {
-                URL.revokeObjectURL(hUrl);
-                handleImageRender(hImg);
-              };
-              hImg.onerror = function() { URL.revokeObjectURL(hUrl); resolve(null); };
-              hImg.src = hUrl;
+    window.processSinglePhotoSmart = function(file, opts) {
+      opts = opts || {};
+      var maxDim = Number(opts.maxDim) || 1200;
+      var quality = (typeof opts.quality === 'number') ? opts.quality : 0.82;
+
+      function encodeBitmapToJpeg(source, w, h) {
+        return new Promise(function(resolve) {
+          try {
+            var canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            var ctx = canvas.getContext('2d', { alpha: false });
+            if (!ctx) {
+              resolve(null);
               return;
-            } catch (err) {}
+            }
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'medium';
+            ctx.drawImage(source, 0, 0, w, h);
+            if (source && typeof source.close === 'function') {
+              try { source.close(); } catch (eClose) {}
+            }
+            canvas.toBlob(function(blob) { resolve(blob || null); }, 'image/jpeg', quality);
+          } catch (err) {
+            resolve(null);
           }
-          resolve(null);
-        };
-        img.src = blobUrl;
-      });
+        });
+      }
+
+      function fitDims(w, h) {
+        var maxLen = Math.max(w, h);
+        if (maxLen <= maxDim) return { w: w, h: h };
+        var scale = maxDim / maxLen;
+        return { w: Math.max(1, Math.round(w * scale)), h: Math.max(1, Math.round(h * scale)) };
+      }
+
+      async function fromBitmap(bitmap) {
+        var d = fitDims(bitmap.width, bitmap.height);
+        if (d.w !== bitmap.width || d.h !== bitmap.height) {
+          try {
+            var resized = await createImageBitmap(bitmap, {
+              resizeWidth: d.w,
+              resizeHeight: d.h,
+              resizeQuality: 'medium'
+            });
+            if (typeof bitmap.close === 'function') {
+              try { bitmap.close(); } catch (e1) {}
+            }
+            return encodeBitmapToJpeg(resized, d.w, d.h);
+          } catch (eResize) {
+            return encodeBitmapToJpeg(bitmap, d.w, d.h);
+          }
+        }
+        return encodeBitmapToJpeg(bitmap, d.w, d.h);
+      }
+
+      function fromImageElement(img) {
+        var d = fitDims(img.naturalWidth || img.width, img.naturalHeight || img.height);
+        return encodeBitmapToJpeg(img, d.w, d.h);
+      }
+
+      function loadViaImage(blobOrFile) {
+        return new Promise(function(resolve) {
+          var url = '';
+          try { url = URL.createObjectURL(blobOrFile); } catch (e) { resolve(null); return; }
+          var img = new Image();
+          img.onload = function() {
+            URL.revokeObjectURL(url);
+            fromImageElement(img).then(resolve);
+          };
+          img.onerror = function() {
+            URL.revokeObjectURL(url);
+            resolve(null);
+          };
+          img.src = url;
+        });
+      }
+
+      function isLikelyHeic(f) {
+        var type = String((f && f.type) || '').toLowerCase();
+        var name = String((f && f.name) || '').toLowerCase();
+        return type.indexOf('heic') !== -1 || type.indexOf('heif') !== -1 || /\.heic$|\.heif$/.test(name);
+      }
+
+      async function viaHeic2Any(f) {
+        var heicFn = (typeof heic2any === 'function') ? heic2any : (window.heic2any || null);
+        if (typeof heicFn !== 'function') return null;
+        try {
+          var converted = await heicFn({ blob: f, toType: 'image/jpeg', quality: quality });
+          var safeBlob = Array.isArray(converted) ? converted[0] : converted;
+          if (!safeBlob) return null;
+          if (typeof createImageBitmap === 'function') {
+            try {
+              var bmp = await createImageBitmap(safeBlob);
+              return await fromBitmap(bmp);
+            } catch (eBmp) {}
+          }
+          return await loadViaImage(safeBlob);
+        } catch (err) {
+          return null;
+        }
+      }
+
+      return (async function() {
+        if (!file) return null;
+
+        // 1) 네이티브 디코드 (Safari HEIC 포함) — heic2any보다 훨씬 빠름
+        if (typeof createImageBitmap === 'function') {
+          try {
+            var bmpNative = await createImageBitmap(file);
+            return await fromBitmap(bmpNative);
+          } catch (eNative) {}
+        }
+
+        // 2) HEIC만 heic2any 폴백
+        if (isLikelyHeic(file)) {
+          var heicOut = await viaHeic2Any(file);
+          if (heicOut) return heicOut;
+        }
+
+        // 3) Image 엘리먼트 폴백
+        var imgOut = await loadViaImage(file);
+        if (imgOut) return imgOut;
+
+        // 4) Image 실패 시 HEIC 재판정 폴백
+        if (!isLikelyHeic(file)) {
+          var heicRetry = await viaHeic2Any(file);
+          if (heicRetry) return heicRetry;
+        }
+        return null;
+      })();
     };
 
     // 🚀 [스튜디오 사진 업로드 / 캡처 / 공유 파이프라인은 templates.js로 완전 이관 완료]
