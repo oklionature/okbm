@@ -2093,7 +2093,7 @@ function ensureJournalStyles() {
     '.photo-overlay-card.magazine-cover .mag-logo span{display:flex;align-items:center;justify-content:center;width:auto;height:auto;border-radius:0;background:none;box-shadow:none;}' +
     '.photo-overlay-card.magazine-cover .mag-logo img{height:18px;width:18px;display:block;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 1px #fff) drop-shadow(1px 0 0 #111) drop-shadow(-1px 0 0 #111) drop-shadow(0 1px 0 #111) drop-shadow(0 -1px 0 #111) drop-shadow(0 1px 3px rgba(0,0,0,0.7));}' +
     '.photo-overlay-card.spread-card{container-type:inline-size; display:flex; flex-direction:column; background:#f7f4ee; color:#1b2430;}' +
-    '#readyShotEmptyPhotoHit{position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(7,9,14,0.55);border:0;border-radius:0;cursor:pointer;color:#fff;padding:16px;box-sizing:border-box;-webkit-appearance:none;appearance:none;}' +
+    '#readyShotEmptyPhotoHit{position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(7,9,14,0.55);border:0;border-radius:0;cursor:grab;color:#fff;padding:16px;box-sizing:border-box;-webkit-appearance:none;appearance:none;touch-action:pan-y;user-select:none;-webkit-user-select:none;}' +
     '#readyShotEmptyPhotoHit svg,#readyShotEmptyPhotoHit span{pointer-events:none;}' +
     '#packShareCaptureArea input[type="file"]{display:none!important;}' +
     '.photo-overlay-card.spread-card .sp-photo{position:relative; flex:1 1 56%; min-height:52%; overflow:hidden; background:#111;}' +
@@ -3276,20 +3276,14 @@ function attachReadyShotEmptyPhotoHit(container) {
   } catch (ePos) {
     host.style.position = 'relative';
   }
-  var btn = document.createElement('button');
-  btn.type = 'button';
-  btn.id = 'readyShotEmptyPhotoHit';
-  btn.setAttribute('aria-label', '사진 넣기');
-  btn.innerHTML =
+  var overlay = document.createElement('div');
+  overlay.id = 'readyShotEmptyPhotoHit';
+  overlay.setAttribute('role', 'presentation');
+  overlay.innerHTML =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:28px; height:28px; opacity:0.9;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>' +
     '<span style="font-size:0.88rem; font-weight:900; letter-spacing:-0.2px;">사진 넣기</span>' +
-    '<span style="font-size:0.68rem; font-weight:700; color:#cbd5e1;">템플릿 위에 사진을 올립니다</span>';
-  btn.addEventListener('click', function(ev) {
-    ev.preventDefault();
-    ev.stopPropagation();
-    if (typeof window.triggerReadyShotPhotoPicker === 'function') window.triggerReadyShotPhotoPicker();
-  });
-  host.appendChild(btn);
+    '<span style="font-size:0.68rem; font-weight:700; color:#cbd5e1;">좌우로 밀어 템플릿을 보고, 탭하면 사진을 올립니다</span>';
+  host.appendChild(overlay);
 }
 
 var __readyShotFrameSnapshot = null;
@@ -4371,7 +4365,6 @@ initCardSwipeGesture = function() {
     if (t.closest) {
       return !!(
         t.closest('label[for="shareCardPhotoInput"]') ||
-        t.closest('#readyShotEmptyPhotoHit') ||
         t.closest('input[type="file"]') ||
         t.closest('label[for="studioPhotoUpload"]') ||
         t.closest('#shareCardPhotoInput') ||
@@ -4384,6 +4377,7 @@ initCardSwipeGesture = function() {
   function eventFromInteractive(e) {
     var t = e && e.target;
     if (!t || !t.closest) return false;
+    if (t.closest('#readyShotEmptyPhotoHit')) return false;
     return !!(t.closest('button, a, input, textarea, select, label, [role="button"]'));
   }
 
