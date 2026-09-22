@@ -380,13 +380,21 @@
         padding-left: 14px !important;
         padding-right: 14px !important;
         padding-bottom: 12px !important;
-        z-index: 50 !important;
+        z-index: 400 !important;
         isolation: isolate !important;
         transform: translateZ(40px) !important;
         -webkit-transform: translateZ(40px) !important;
         content-visibility: visible !important;
         background: linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important;
         border-bottom: none !important;
+        pointer-events: none !important;
+      }
+      .history-tab-route .reel-page-snap > .reel-header-row button,
+      .history-tab-route .reel-page-snap > .reel-header-row a {
+        pointer-events: auto !important;
+        position: relative !important;
+        z-index: 401 !important;
+        touch-action: manipulation !important;
       }
 
       .reel-bottom-interactive-bar {
@@ -3972,21 +3980,59 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     return bestScore > 0 ? best : null;
   };
 
+  function okbmPushSpotPool(pool, seen, arr) {
+    if (!Array.isArray(arr)) return;
+    for (var i = 0; i < arr.length; i++) {
+      var s = arr[i];
+      if (!s) continue;
+      var key = String(s.id || s.spot_id || '') + '|' + String(s.spot_main || s.name || s.spot || '') + '|' + String(s.lat || s.campsite_lat || '');
+      if (seen[key]) continue;
+      seen[key] = 1;
+      pool.push(s);
+    }
+  }
+
   function okbmCollectMasterSpotPool() {
     var pool = [];
+    var seen = {};
+    if (typeof window.okbmReadSpotsCache === 'function') {
+      okbmPushSpotPool(pool, seen, window.okbmReadSpotsCache());
+    }
+    okbmPushSpotPool(pool, seen, window.SPOTS_MASTER);
+    okbmPushSpotPool(pool, seen, window.registeredSpots);
+    if (window.__memoryStore) {
+      okbmPushSpotPool(pool, seen, window.__memoryStore['okbm_master_spots']);
+      okbmPushSpotPool(pool, seen, window.__memoryStore['okbm_spots_cache']);
+    }
     [window.campingSpots, window.spotsData, window.allSpots, window.masterSpots, window.spots, window.CAMPING_SPOTS, window.SPOTS_DB].forEach(function(arr) {
-      if (Array.isArray(arr)) pool = pool.concat(arr);
+      okbmPushSpotPool(pool, seen, arr);
     });
-    ['okbm_spots_cache', 'okbm_master_spots', 'camping_spots', 'okbm_spots'].forEach(function(k) {
-      try {
-        var item = localStorage.getItem(k);
-        if (item) {
-          var parsed = JSON.parse(item);
-          if (Array.isArray(parsed)) pool = pool.concat(parsed);
-        }
-      } catch (e) { console.warn('[romantic-history.js:okbmCollectMasterSpotPool parse]', e); }
-    });
+    if (typeof window.safeGetJSON === 'function') {
+      okbmPushSpotPool(pool, seen, window.safeGetJSON('okbm_spots_cache', []));
+      okbmPushSpotPool(pool, seen, window.safeGetJSON('okbm_master_spots', []));
+    } else {
+      ['okbm_spots_cache', 'okbm_master_spots', 'camping_spots', 'okbm_spots'].forEach(function(k) {
+        try {
+          var item = localStorage.getItem(k);
+          if (item) {
+            var parsed = JSON.parse(item);
+            if (Array.isArray(parsed)) okbmPushSpotPool(pool, seen, parsed);
+          }
+        } catch (e) { console.warn('[romantic-history.js:okbmCollectMasterSpotPool parse]', e); }
+      });
+    }
     return pool;
+  }
+
+  function okbmFindSpotInPoolById(list, rawId) {
+    var sid = String(rawId || '').trim();
+    if (!sid) return null;
+    var arr = Array.isArray(list) ? list : [];
+    for (var i = 0; i < arr.length; i++) {
+      var s = arr[i];
+      if (s && String(s.id || s.spot_id || '').trim() === sid) return s;
+    }
+    return null;
   }
 
   window.isSpotRegisteredInMasterDB = function(rawSpotName) {
@@ -3996,41 +4042,72 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     return !!window.okbmFindSpotByFocusQuery(okbmCollectMasterSpotPool(), rawSpotName);
   };
 
-  window.navigateToSpotMap = function(rawSpotName, e) {
+  window.navigateToSpotMap = function(rawSpotName, e, rawSpotId) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
-    if (!rawSpotName) return;
-    triggerHaptic(12);
+    if (e && typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+    if (window.__okbmSpotMapNavLock) return;
+    window.__okbmSpotMapNavLock = true;
+    setTimeout(function() { window.__okbmSpotMapNavLock = false; }, 800);
 
-    var cleanSpot = String(rawSpotName)
+    var cleanSpot = String(rawSpotName || '')
       .replace(/\(.*?\)/g, '')
       .replace(/\[.*?\]/g, '')
       .replace(/\s+/g, ' ')
       .trim();
+    var cleanId = String(rawSpotId || '').trim();
+    if (!cleanSpot && !cleanId) return;
+    triggerHaptic(12);
 
-    if (!cleanSpot || cleanSpot === '나의 힐링 스팟' || cleanSpot === '힐링 장소') {
+    if ((!cleanSpot || cleanSpot === '나의 힐링 스팟' || cleanSpot === '힐링 장소') && !cleanId) {
       if (typeof showToast === 'function') showToast('정확한 장소 위치 정보가 등록되지 않았습니다.', 'info', 1800);
       return;
     }
 
-    var found = window.okbmFindSpotByFocusQuery(okbmCollectMasterSpotPool(), cleanSpot);
-    var targetId = found && found.id ? String(found.id).trim() : '';
-    var mapName = (found && String(found.spot_main || found.name || '').trim()) || cleanSpot;
+    var pool = okbmCollectMasterSpotPool();
+    var found = cleanId ? okbmFindSpotInPoolById(pool, cleanId) : null;
+    if (!found && cleanSpot) found = window.okbmFindSpotByFocusQuery(pool, cleanSpot);
+
+    var targetId = (found && (found.id || found.spot_id)) ? String(found.id || found.spot_id).trim() : cleanId;
+    var mapName = (found && String(found.spot_main || found.name || found.spot || '').trim()) || cleanSpot;
+
+    if (!found && !targetId && pool.length > 0) {
+      if (typeof showToast === 'function') showToast('정확한 장소 위치 정보가 등록되지 않았습니다.', 'info', 1800);
+      return;
+    }
 
     try {
-      localStorage.setItem('okbm_target_map_spot', mapName);
-      sessionStorage.setItem('okbm_pending_map_spot', mapName);
+      sessionStorage.setItem('okbm_entered_via_index', '1');
+      if (mapName) {
+        localStorage.setItem('okbm_target_map_spot', mapName);
+        sessionStorage.setItem('okbm_pending_map_spot', mapName);
+        sessionStorage.setItem('okbm_target_spot', mapName);
+      }
       sessionStorage.setItem('okbm_last_feed_return', location.href);
       if (targetId) sessionStorage.setItem('okbm_pending_map_id', targetId);
       else sessionStorage.removeItem('okbm_pending_map_id');
     } catch (err) {}
 
+    var href = 'map.html';
+    var qs = [];
+    if (mapName) qs.push('spot=' + encodeURIComponent(mapName));
+    if (targetId) qs.push('id=' + encodeURIComponent(targetId));
+    if (qs.length) href += '?' + qs.join('&');
+
     setTimeout(function() {
       if (typeof window.closeHistoryModal === 'function') window.closeHistoryModal();
-      var href = 'map.html?spot=' + encodeURIComponent(mapName);
-      if (targetId) href += '&id=' + encodeURIComponent(targetId);
-      location.href = href;
+      if (typeof window.smoothNavigate === 'function') window.smoothNavigate(href);
+      else location.href = href;
     }, 120);
   };
+
+  if (!window.__okbmFeedSpotMapClickBound) {
+    window.__okbmFeedSpotMapClickBound = true;
+    document.addEventListener('click', function(e) {
+      var btn = e.target && e.target.closest ? e.target.closest('.js-feed-spot-map') : null;
+      if (!btn) return;
+      window.navigateToSpotMap(btn.getAttribute('data-spot') || '', e, btn.getAttribute('data-spot-id') || '');
+    }, true);
+  }
 
   window.okbmApplyUgcSafetyFilter = function(list) {
     if (!Array.isArray(list)) return [];
@@ -7282,22 +7359,23 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
  window.updateCarouselDots = window.updateCarouselFeedState;
 
-  function okbmBuildReelHeaderBarHtml(authorName, recordUserId, avatarMarkup, tripDate, spotName, isRegisteredSpot, extraRightHtml) {
+  function okbmBuildReelHeaderBarHtml(authorName, recordUserId, avatarMarkup, tripDate, spotName, canNavigateSpot, extraRightHtml, spotId) {
     var safeAuthor = escapeHtml(authorName || '낭만백패커');
     var safeUserId = escapeHtml(recordUserId || '');
     var safeSpot = escapeHtml(spotName || '나의 힐링 스팟');
+    var safeSpotId = escapeHtml(spotId || '');
     var safeDate = escapeHtml(tripDate || '');
     var textShadowStyle = 'text-shadow:0 1px 4px rgba(0,0,0,0.95), 0 2px 8px rgba(0,0,0,0.7);';
-    var spotRow = isRegisteredSpot
-      ? ('<button type="button" data-spot="' + safeSpot + '" onclick="window.navigateToSpotMap(this.dataset.spot, event);" style="background:none; border:none; padding:0; display:inline-flex; align-items:center; gap:2px; cursor:pointer; text-align:left; min-width:0; overflow:hidden;" title="지도에서 장소 위치 확인">' +
+    var spotRow = canNavigateSpot
+      ? ('<button type="button" class="js-feed-spot-map" data-spot="' + safeSpot + '" data-spot-id="' + safeSpotId + '" onclick="event.preventDefault(); event.stopPropagation(); window.navigateToSpotMap(this.dataset.spot, event, this.dataset.spotId);" style="background:none; border:none; padding:0; display:inline-flex; align-items:center; gap:2px; cursor:pointer; text-align:left; min-width:0; overflow:hidden; pointer-events:auto; position:relative; z-index:401; touch-action:manipulation;" title="지도에서 장소 위치 확인">' +
           '<span style="font-size:0.74rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-decoration:underline; text-decoration-color:rgba(56,189,248,0.55); text-underline-offset:2px; line-height:1.3; ' + textShadowStyle + '">' + safeSpot + '</span>' +
           '<span style="font-size:0.60rem; color:#38bdf8; font-weight:900; flex-shrink:0; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.9));">↗</span>' +
         '</button>')
       : ('<span style="font-size:0.74rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.3; ' + textShadowStyle + '">' + safeSpot + '</span>');
 
-    return '<div class="reel-header-row" style="position:absolute !important; top:max(32px, env(safe-area-inset-top, 0px)) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; z-index:50 !important; isolation:isolate !important; transform:translateZ(40px) !important; -webkit-transform:translateZ(40px) !important; content-visibility:visible !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important; border-bottom:none !important;">' +
+    return '<div class="reel-header-row" style="position:absolute !important; top:max(32px, env(safe-area-inset-top, 0px)) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; z-index:400 !important; isolation:isolate !important; transform:translateZ(40px) !important; -webkit-transform:translateZ(40px) !important; content-visibility:visible !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important; border-bottom:none !important; pointer-events:none !important;">' +
       '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
-        '<button type="button" data-author="' + safeAuthor + '" data-user-id="' + safeUserId + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.7);" title="' + safeAuthor + '님의 피드 모아보기">' +
+        '<button type="button" data-author="' + safeAuthor + '" data-user-id="' + safeUserId + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.7); pointer-events:auto; position:relative; z-index:401;" title="' + safeAuthor + '님의 피드 모아보기">' +
           avatarMarkup +
         '</button>' +
         '<div style="display:flex; flex-direction:column; justify-content:center; min-width:0; flex:1;">' +
@@ -7308,7 +7386,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
           spotRow +
         '</div>' +
       '</div>' +
-      (extraRightHtml ? ('<div style="display:flex; align-items:center; gap:6px; flex-shrink:0; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.8));">' + extraRightHtml + '</div>') : '') +
+      (extraRightHtml ? ('<div style="display:flex; align-items:center; gap:6px; flex-shrink:0; filter:drop-shadow(0 1px 3px rgba(0,0,0,0.8)); pointer-events:auto; position:relative; z-index:401;">' + extraRightHtml + '</div>') : '') +
     '</div>';
   }
 
@@ -7638,7 +7716,14 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       }
     }
 
-    var isRegisteredSpot = window.isSpotRegisteredInMasterDB(spotName);
+    var isRegisteredSpot = !Boolean(record.unregisteredSpot) && (
+      Boolean(String(record.spotId || '').trim()) ||
+      window.isSpotRegisteredInMasterDB(spotName)
+    );
+    var canNavigateSpot = !Boolean(record.unregisteredSpot) &&
+      Boolean(String(spotName || '').trim()) &&
+      spotName !== '나의 힐링 스팟' &&
+      spotName !== '힐링 장소';
     var centerDDayOverlayHtml = '';
 
     var targetAvatarUrl = (typeof window.resolveUserMasterPhoto === 'function')
@@ -7668,7 +7753,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       }
     }
 
-    var headerBarHtml = okbmBuildReelHeaderBarHtml(authorName, recordUserId, avatarMarkup, tripDate, spotName, isRegisteredSpot, socialBadgesHtml);
+    var headerBarHtml = okbmBuildReelHeaderBarHtml(authorName, recordUserId, avatarMarkup, tripDate, spotName, canNavigateSpot, socialBadgesHtml, record.spotId);
 
     var hasRealFieldPhotos = Boolean(totalPhotosCount > 0);
     var isPub = Boolean(record.isPublished === true && hasRealFieldPhotos);
