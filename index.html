@@ -17,11 +17,17 @@
   <script>
     (function bootSplashOnceGuard() {
       var shown = false;
+      var skipForDirectTab = false;
       try {
         shown = sessionStorage.getItem('splash_shown') === 'true';
       } catch (e) {}
+      try {
+        var s = window.location.search || '';
+        skipForDirectTab = s.indexOf('open=plan') !== -1 || s.indexOf('open=history') !== -1 || s.indexOf('open=report') !== -1 || s.indexOf('tab=plan') !== -1 || s.indexOf('tab=history') !== -1 || s.indexOf('tab=report') !== -1 || s.indexOf('open=basecamp') !== -1;
+      } catch (e) {}
       window.__okbmSplashAlreadyShown = shown;
-      if (shown) {
+      window.__okbmSplashSkipForDirectTab = skipForDirectTab;
+      if (shown || skipForDirectTab) {
         document.documentElement.classList.add('okbm-splash-skipped');
       } else {
         document.documentElement.classList.add('okbm-splash-active');
@@ -168,6 +174,13 @@
       visibility: hidden !important;
       pointer-events: none !important;
     }
+    html.direct-modal-pending #okbmSplashOverlay,
+    html.direct-modal-pending #okbmSplashOverlay.is-leaving {
+      display: none !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
     body.pack-share-open,
     body.plan-modal-open,
     body.history-modal-open,
@@ -188,6 +201,10 @@
     body.plan-modal-open .netflix-integrated-header,
     body.plan-modal-open #tripUserProfileModal,
     body.plan-modal-open #tripDetailSheetModal,
+    body:has(#romanticPlanModal) .netflix-feed-container,
+    body:has(#romanticPlanModal) .netflix-integrated-header,
+    body:has(#romanticPlanModal) #tripUserProfileModal,
+    body:has(#romanticPlanModal) #tripDetailSheetModal,
     body.history-modal-open .netflix-feed-container,
     body.history-modal-open .netflix-integrated-header,
     body.history-modal-open #tripUserProfileModal,
@@ -553,7 +570,7 @@
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js" defer></script>
   <script>
     window.__okbmTemplatesSrc = 'templates.js?v=2.9.8';
-    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.15';
+    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.16';
     (function okbmBootLoader() {
       var loaded = window.__okbmScriptPromises || {};
       window.__okbmScriptPromises = loaded;
@@ -605,11 +622,34 @@
         }).then(afterSecondary);
       };
 
+      window.okbmMountPlanModalShell = function() {
+        document.documentElement.classList.remove('okbm-splash-active');
+        document.documentElement.classList.add('okbm-splash-skipped');
+        var splash = document.getElementById('okbmSplashOverlay');
+        if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+        if (document.body) document.body.classList.add('plan-modal-open');
+        var modal = document.getElementById('romanticPlanModal');
+        if (!modal) {
+          modal = document.createElement('div');
+          modal.id = 'romanticPlanModal';
+          modal.style.cssText = 'display:flex !important; position:fixed; top:0; left:0; right:0; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)) !important; background:#000000; z-index:1000005 !important; justify-content:center; align-items:stretch; width:100% !important; max-width:100% !important; overflow:hidden !important; touch-action:pan-y !important; transform:translateZ(0); -webkit-transform:translateZ(0); contain:paint layout !important; box-sizing:border-box;';
+          modal.innerHTML = '<div class="romantic-plan-content" style="width:100% !important; max-width:480px !important; margin:0 auto; height:100%; max-height:100%; display:flex; flex-direction:column; justify-content:space-between; overflow-x:hidden !important; overflow-y:hidden !important; box-sizing:border-box; background:#000000;"></div>';
+          if (document.body) document.body.appendChild(modal);
+        } else {
+          modal.style.setProperty('display', 'flex', 'important');
+          modal.style.setProperty('background', '#000000');
+        }
+        return modal;
+      };
+
       function bindLazy(name, loader) {
         if (typeof window[name] === 'function' && !window[name].__okbmLazy) return;
         var lazy = function() {
           var args = arguments;
           var ctx = this;
+          if (name === 'openPlanModal' && typeof window.okbmMountPlanModalShell === 'function') {
+            window.okbmMountPlanModalShell();
+          }
           return loader().then(function() {
             var real = window[name];
             if (typeof real === 'function' && real !== lazy) return real.apply(ctx, args);
@@ -1565,8 +1605,9 @@
     if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
   }
 
-  if (!overlay || readSplashShown()) {
+  if (!overlay || readSplashShown() || window.__okbmSplashSkipForDirectTab) {
     hideSplashOverlayNow();
+    if (window.__okbmSplashSkipForDirectTab) markSplashShown();
     window.__okbmNotifyHeroReady = window.__okbmNotifyHeroReady || function() {};
     window.__okbmNotifySpotsReady = window.__okbmNotifySpotsReady || function() {};
     return;
@@ -3155,7 +3196,6 @@
           window.unregisterModalClose(id);
         }
       });
-      document.body.classList.remove('plan-modal-open', 'history-modal-open', 'pack-share-open');
       if (typeof window.unlockHomeScrollForTripModal === 'function') {
         window.unlockHomeScrollForTripModal();
       } else {
@@ -5898,17 +5938,18 @@ var adBannersHtml = `
         if (window.history && window.history.replaceState) {
           window.history.replaceState({}, document.title, window.location.pathname);
         }
+        if (typeof window.okbmMountPlanModalShell === 'function') {
+          window.okbmMountPlanModalShell();
+        }
         if (typeof openPlanModal === 'function') {
-          openPlanModal('calendar');
-          releaseGuard();
+          Promise.resolve(openPlanModal('calendar')).then(releaseGuard).catch(releaseGuard);
         } else {
           var pollCountPlan = 0;
           var planPoll = setInterval(function() {
             pollCountPlan++;
             if (typeof openPlanModal === 'function') {
               clearInterval(planPoll);
-              openPlanModal('calendar');
-              releaseGuard();
+              Promise.resolve(openPlanModal('calendar')).then(releaseGuard).catch(releaseGuard);
             } else if (pollCountPlan > 20) {
               clearInterval(planPoll);
               releaseGuard();
@@ -6222,6 +6263,9 @@ var adBannersHtml = `
         var origClose = window[closeName];
         if (typeof origOpen === 'function' && !origOpen.__okbmLazy && !origOpen.__okbmWrapped) {
           var wrappedOpen = function() {
+            if (openName === 'openPlanModal' && typeof window.okbmMountPlanModalShell === 'function') {
+              window.okbmMountPlanModalShell();
+            }
             if (openName === 'openPlanModal' || openName === 'openHistoryModal') {
               if (typeof window.closeAllTripModals === 'function') {
                 window.closeAllTripModals();
@@ -6262,9 +6306,6 @@ var adBannersHtml = `
           if (title.includes('플랜') || title.includes('보관함') || title.includes('루트') || title.includes('루터') || title.includes('홈') || title.includes('리포트')) {
             if (typeof window.closePastTripRegisterModal === 'function') {
               try { window.closePastTripRegisterModal({ silent: true }); } catch (err) {}
-            }
-            if (typeof window.closeAllTripModals === 'function') {
-              window.closeAllTripModals();
             }
           }
         }

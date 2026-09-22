@@ -6004,6 +6004,9 @@ window.commitPlanDestination = function(dateKey) {
  // 🚀 [낭만플랜 모달 오픈 / 클로즈 - 마스터 독바와 1:1 결합 & 최상위 레이어 보장]
   window.openPlanModal = function(subMode) {
     window.activePlanSubMode = subMode || 'calendar';
+    if (typeof window.okbmMountPlanModalShell === 'function') {
+      window.okbmMountPlanModalShell();
+    }
 
     var historyModal = document.getElementById('romanticHistoryModal');
     if (historyModal) {
