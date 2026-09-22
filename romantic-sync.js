@@ -3158,7 +3158,7 @@ window.fetchMasterGearsFromSupabase = async function(isForce) {
     return window.loadGearDbFromGoogleSheet(isForce);
   }
 
-  var CURRENT_GEAR_VERSION = '20260922_GEAR_REFRESH';
+  var CURRENT_GEAR_VERSION = '20260922_GEAR_FULL2540';
   try {
     localStorage.removeItem('okbm_master_gears');
     localStorage.removeItem('okbm_master_gears_cache');

@@ -1224,6 +1224,14 @@
             <input type="text" id="gearSearchFixedInput" class="modal-input" placeholder="🔍 브랜드, 장비명,검색..." oninput="window.handleGearSearchInput(this.value)" style="border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.035); color:#ffffff; font-size:0.85rem; padding:0 32px 0 12px; height:42px; border-radius:8px; width:100%; box-sizing:border-box; outline:none;" />
             <button type="button" id="btnGearSearchClear" style="display:none; position:absolute; right:8px; background:rgba(255,255,255,0.15); border:none; color:#cbd5e1; width:17px; height:17px; border-radius:50%; font-size:0.6rem; font-weight:900; cursor:pointer; align-items:center; justify-content:center; padding:0;" onclick="window.clearGearSearchInput()">✕</button>
           </div>
+
+          <div style="display:flex; flex-direction:column; gap:5px; background:rgba(255,255,255,0.03); border:1px dashed rgba(255,255,255,0.2); border-radius:8px; padding:6px 8px; box-sizing:border-box;">
+            <input type="text" id="customInputGearName" class="modal-input" placeholder="직접 추가할 장비명 (예: 백패킹 다운슈즈)" style="width:100%; font-size:0.76rem; padding:7px 9px; border-radius:6px; box-sizing:border-box;" />
+            <div style="display:flex; gap:6px; width:100%; align-items:center;">
+              <input type="number" id="customInputGearWeight" class="modal-input" placeholder="무게 (g)" style="flex:1; font-size:0.76rem; padding:7px 9px; border-radius:6px; font-family:'JetBrains Mono', monospace; box-sizing:border-box;" />
+              <button type="button" class="modal-btn" style="flex:1; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); color:#fff; font-weight:900; padding:7px 0; font-size:0.76rem; border-radius:6px; box-sizing:border-box;" onclick="window.addCustomGearToCurrentCategory()">+ 장비 등록</button>
+            </div>
+          </div>
         </div>
 
         <div class="gear-db-list" id="presetGearDbList" style="flex:1; overflow-y:auto; margin-top:8px; display:flex; flex-direction:column; gap:6px;"></div>
@@ -1692,7 +1700,10 @@
     var masterList = (category.db || []).slice();
 
     // 👤 2. 본인 전용 커스텀 장비만 격리 병합 (공용 DB 오염 방지)
-    var myCustoms = safeGetJSON('okbm_custom_gears', []).filter(function(cg) {
+    var myCustomsRaw = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_custom_gears', [])
+      : safeGetJSON('okbm_custom_gears', []);
+    var myCustoms = (Array.isArray(myCustomsRaw) ? myCustomsRaw : []).filter(function(cg) {
       return cg && cg.category_id === category.id;
     });
 
@@ -1820,6 +1831,74 @@
     window.refreshPlanPackedChrome();
     window.patchGearInteractionRows(name);
     triggerHaptic(12);
+  };
+
+  window.addCustomGearToCurrentCategory = function() {
+    var nameEl = document.getElementById('customInputGearName');
+    var weightEl = document.getElementById('customInputGearWeight');
+    var catId = window.currentOpeningCategoryId;
+    if (!nameEl || !weightEl) return;
+    if (!catId) {
+      if (typeof showToast === 'function') showToast('카테고리를 먼저 선택해주세요.', 'warn');
+      return;
+    }
+
+    var name = String(nameEl.value || '').trim();
+    var weight = parseInt(weightEl.value, 10);
+    if (!name || isNaN(weight) || weight < 0) {
+      if (typeof showToast === 'function') showToast('장비명과 무게(g)를 입력해주세요.', 'warn');
+      return;
+    }
+
+    var newCustom = {
+      id: 'custom_' + Date.now(),
+      name: name,
+      weight: weight,
+      brand: '내 장비',
+      category_id: catId,
+      verified: true,
+      specs: '직접 등록한 내 장비'
+    };
+
+    var customGears = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_custom_gears', [])
+      : safeGetJSON('okbm_custom_gears', []);
+    if (!Array.isArray(customGears)) customGears = [];
+
+    if (!customGears.some(function(g) { return g && g.name === name; })) {
+      customGears.unshift(newCustom);
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_custom_gears', customGears, false);
+      } else {
+        localStorage.setItem('okbm_custom_gears', JSON.stringify(customGears));
+      }
+    }
+
+    var cat = (window.CATEGORIES || []).find(function(c) { return c.id === catId; });
+    if (cat && Array.isArray(cat.db) && !cat.db.some(function(d) { return d && d.name === name; })) {
+      cat.db.unshift(newCustom);
+    }
+
+    if (!window.favoriteGearSet) window.favoriteGearSet = new Set();
+    window.favoriteGearSet.add(name);
+    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+      window.RomanticVault.write('okbm_favorite_gears', Array.from(window.favoriteGearSet), false);
+    } else {
+      localStorage.setItem('okbm_favorite_gears', JSON.stringify(Array.from(window.favoriteGearSet)));
+    }
+
+    window.addGearToCategory(name, weight);
+    nameEl.value = '';
+    weightEl.value = '';
+
+    var searchInput = document.getElementById('gearSearchFixedInput');
+    if (typeof window.renderPresetGearList === 'function') {
+      window.renderPresetGearList(searchInput ? searchInput.value : '');
+    }
+    if (typeof window.renderPlanCategorySlots === 'function') {
+      window.renderPlanCategorySlots();
+    }
+    if (typeof showToast === 'function') showToast('[' + name + '] 등록 완료', 'success');
   };
 
   window.decrementGearCount = function(gearName, e) {
@@ -1996,7 +2075,7 @@ window.openQuickGearRegisterModal = function(opts) {
     if (!customGears.some(function(g) { return g.name === name; })) {
       customGears.unshift(newCustom);
       if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-        window.RomanticVault.write('okbm_custom_gears', customGears, false);
+        window.RomanticVault.write('okbm_custom_gears', customGears, true);
       } else {
         localStorage.setItem('okbm_custom_gears', JSON.stringify(customGears));
       }
@@ -2222,7 +2301,7 @@ window.saveCurrentPackingRecord = function() {
     }
   };
 
-  var CURRENT_GEAR_VERSION = '20260922_GEAR_REFRESH';
+  var CURRENT_GEAR_VERSION = '20260922_GEAR_FULL2540';
   var GEAR_SPLIT_CATS = ['shelter', 'sleep', 'pack', 'food', 'kitchen', 'wear', 'electronics', 'camp', 'other'];
   window.__okbmGearCatLoaded = window.__okbmGearCatLoaded || {};
   window.__okbmGearCatPromises = window.__okbmGearCatPromises || {};

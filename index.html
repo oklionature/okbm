@@ -576,7 +576,7 @@
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js" defer></script>
   <script>
     window.__okbmTemplatesSrc = 'templates.js?v=2.9.9';
-    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.20';
+    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.22';
     (function okbmBootLoader() {
       var loaded = window.__okbmScriptPromises || {};
       window.__okbmScriptPromises = loaded;
@@ -681,7 +681,7 @@
       else setTimeout(prefetch, 1800);
     })();
   </script>
-    <script src="romantic-sync.js?v=2.8.95" defer></script>
+    <script src="romantic-sync.js?v=2.8.96" defer></script>
     <script src="romantic-history.js?v=2.7.62" defer></script>
 
   <style>
@@ -2173,7 +2173,7 @@
           <input type="text" id="customInputGearName" class="modal-input" placeholder="직접 추가할 장비명 (예: 백패킹 다운슈즈)" style="width:100%; font-size:0.76rem; padding:7px 9px; border-radius:6px; box-sizing:border-box;" />
           <div style="display:flex; gap:6px; width:100%; align-items:center;">
             <input type="number" id="customInputGearWeight" class="modal-input" placeholder="무게 (g)" style="flex:1; font-size:0.76rem; padding:7px 9px; border-radius:6px; font-family:'JetBrains Mono', monospace; box-sizing:border-box;" />
-            <button type="button" class="modal-btn" style="flex:1; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); color:#fff; font-weight:900; padding:7px 0; font-size:0.76rem; border-radius:6px; box-sizing:border-box;" onclick="addCustomGearToCurrentCategory()">+ 장비 등록</button>
+            <button type="button" class="modal-btn" style="flex:1; background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.25); color:#fff; font-weight:900; padding:7px 0; font-size:0.76rem; border-radius:6px; box-sizing:border-box;" onclick="window.addCustomGearToCurrentCategory()">+ 장비 등록</button>
           </div>
         </div>
       </div>
