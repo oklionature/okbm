@@ -295,7 +295,7 @@
       white-space: nowrap;
       flex-shrink: 0;
       opacity: 1;
-      transition: opacity 0.583s ease;
+      transition: opacity 0.486s ease;
       font-kerning: none;
       font-variant-ligatures: none;
       text-rendering: geometricPrecision;
@@ -361,21 +361,21 @@
       will-change: opacity;
     }
     .okbm-splash-inner.is-logo-in:not(.is-logo-out) .okbm-splash-logo {
-      animation: okbmSplashLogoSoftIn 2.833s cubic-bezier(0.4, 0, 0.5, 1) forwards;
+      animation: okbmSplashLogoSoftIn 2.361s cubic-bezier(0.4, 0, 0.5, 1) forwards;
     }
     .okbm-splash-inner.is-logo-out .okbm-splash-logo {
       animation: none;
       opacity: 0;
-      transition: opacity 0.583s ease;
+      transition: opacity 0.486s ease;
     }
     .okbm-splash-inner.is-logo-out .okbm-splash-type {
       opacity: 0;
-      transition: opacity 0.583s ease;
+      transition: opacity 0.486s ease;
     }
     .okbm-splash-inner.is-logo-out .okbm-splash-cursor {
       animation: none !important;
       opacity: 0 !important;
-      transition: opacity 0.583s ease;
+      transition: opacity 0.486s ease;
     }
     /* 초반엔 거의 안 보이다가 서서히 밝아짐 (팍 뜨는 느낌 제거) */
     @keyframes okbmSplashLogoSoftIn {
@@ -1573,16 +1573,16 @@
   }
 
   var SLOGAN = '낭만을 찾는 방법';
-  var TYPE_STEP_MS = 103;
-  var TYPE_SPACE_MS = 163;
+  var TYPE_STEP_MS = 86;
+  var TYPE_SPACE_MS = 136;
   // 슬로건 '낭만'까지 타이핑된 뒤 로고 등장
   var LOGO_TRIGGER_AT = 2;
-  var LOGO_IN_MS = 2833;
-  var LOGO_HOLD_MS = 271;
-  var LOGO_OUT_MS = 583;
-  var HOLD_MS = 47;
-  var FADE_MS = 233;
-  var HARD_TIMEOUT_MS = 7920;
+  var LOGO_IN_MS = 2361;
+  var LOGO_HOLD_MS = 226;
+  var LOGO_OUT_MS = 486;
+  var HOLD_MS = 39;
+  var FADE_MS = 194;
+  var HARD_TIMEOUT_MS = 6600;
   var DATA_CAP_MS = 2600;
   var dismissed = false;
   var reduceMotion = false;
