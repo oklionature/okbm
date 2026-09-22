@@ -17,6 +17,8 @@ var okbmSafeImageUrl = function(url) {
     }
     return '';
   }
+  // 빈 사진 자리표시 SVG. 전역 okbmSafeImageUrl은 data: 를 막아 깨진 이미지 아이콘이 뜸.
+  if (raw.indexOf('data:image/svg+xml,') === 0 && raw.length < 800) return raw;
   return (typeof window.okbmSafeImageUrl === 'function') ? window.okbmSafeImageUrl(raw) : '';
 };
 var okbmSafeExternalUrl = function(url) {
@@ -1333,7 +1335,7 @@ window.updateStudioCardLive = function() {
             </div>
             <span style="font-family:'Space Grotesk', sans-serif; font-size:0.48rem; font-weight:700; color:rgba(255,255,255,0.7); letter-spacing:0.8px; flex-shrink:0;">${escapeHtml(dateStr)}</span>
           </div>
-          <div style="width:100%; aspect-ratio:4/3; border-radius:4px; overflow:hidden; background:#000; box-shadow:0 4px 14px rgba(0,0,0,0.6); flex-shrink:0; position:relative;">
+          <div class="rs-photo-host" style="width:100%; aspect-ratio:4/3; border-radius:4px; overflow:hidden; background:#000; box-shadow:0 4px 14px rgba(0,0,0,0.6); flex-shrink:0; position:relative;">
             <img id="photoStudioBgImage" src="${escapeHtml(okbmSafeImageUrl(window.currentSharePhoto))}" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; display:block; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; pointer-events:none;" />
           </div>
           <div style="flex:1; width:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; min-height:0; box-sizing:border-box;">
@@ -1729,6 +1731,25 @@ var STUDIO_MODE_NAMES = {
   editorial: '에디토리얼'
 };
 
+function normalizeReadyShotMode(mode) {
+  var m = String(mode || '').trim();
+  if (m === 'nrc') return 'overlay';
+  if (m === 'packing') return 'magazine';
+  return m;
+}
+window.normalizeReadyShotMode = normalizeReadyShotMode;
+
+window.recordUsesPhotoTemplate = function(record) {
+  var mode = normalizeReadyShotMode(record && (record.readyShotMode || record.ready_shot_mode));
+  if (!mode || mode === 'pamphlet') return false;
+  if (STUDIO_MODE_ORDER.indexOf(mode) === -1) return false;
+  if (mode === 'minimal') {
+    var photo = String((record && (record.readyShotPhoto || record.ready_shot_photo)) || '').trim();
+    return photo.indexOf('https://') === 0;
+  }
+  return true;
+};
+
 var READY_SHOT_PLACEHOLDER_PHOTO = 'data:image/svg+xml,' + encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="#111111"/></svg>'
 );
@@ -2026,6 +2047,9 @@ function ensureJournalStyles() {
     '.photo-overlay-card.magazine-cover .mag-logo span{display:flex;align-items:center;justify-content:center;width:auto;height:auto;border-radius:0;background:none;box-shadow:none;}' +
     '.photo-overlay-card.magazine-cover .mag-logo img{height:18px;width:18px;display:block;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 1px #fff) drop-shadow(1px 0 0 #111) drop-shadow(-1px 0 0 #111) drop-shadow(0 1px 0 #111) drop-shadow(0 -1px 0 #111) drop-shadow(0 1px 3px rgba(0,0,0,0.7));}' +
     '.photo-overlay-card.spread-card{container-type:inline-size; display:flex; flex-direction:column; background:#f7f4ee; color:#1b2430;}' +
+    '#readyShotEmptyPhotoHit{position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(7,9,14,0.55);border:0;border-radius:0;cursor:pointer;color:#fff;padding:16px;box-sizing:border-box;-webkit-appearance:none;appearance:none;}' +
+    '#readyShotEmptyPhotoHit svg,#readyShotEmptyPhotoHit span{pointer-events:none;}' +
+    '#packShareCaptureArea input[type="file"]{display:none!important;}' +
     '.photo-overlay-card.spread-card .sp-photo{position:relative; flex:1 1 56%; min-height:52%; overflow:hidden; background:#111;}' +
     '.photo-overlay-card.spread-card .sp-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}' +
     '.photo-overlay-card.spread-card .sp-fade{position:absolute;left:0;right:0;bottom:0;height:38%;pointer-events:none;background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.22) 50%,rgba(0,0,0,.5) 100%);}' +
@@ -2158,7 +2182,7 @@ function renderPhotoOverlayMarkup(opts) {
 
   return '' +
     '<div class="photo-overlay-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#111111; box-sizing:border-box; user-select:none; color:#ffffff; display:flex; flex-direction:column;">' +
-      '<div style="position:relative; flex:1 1 56%; min-height:52%; overflow:hidden; z-index:1;">' +
+      '<div class="rs-photo-host" style="position:relative; flex:1 1 56%; min-height:52%; overflow:hidden; z-index:1;">' +
         '<img' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; pointer-events:none;" />' +
         '<div style="position:absolute; left:0; right:0; top:0; height:34%; pointer-events:none; background:linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.10) 58%, transparent 100%);"></div>' +
         tear +
@@ -2291,7 +2315,7 @@ function renderMagazineCoverMarkup(opts) {
 
   return '' +
     '<div class="photo-overlay-card magazine-cover" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#111111; box-sizing:border-box; user-select:none;">' +
-      '<div class="mag-photo">' +
+      '<div class="mag-photo rs-photo-host">' +
         '<img' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block;" />' +
       '</div>' +
       '<div class="mag-type mag-type-dark">' + typeHtml + '</div>' +
@@ -2331,7 +2355,7 @@ function renderSpreadMarkup(opts) {
 
   return '' +
     '<div class="photo-overlay-card spread-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#f7f4ee; box-sizing:border-box; user-select:none;">' +
-      '<div class="sp-photo">' +
+      '<div class="sp-photo rs-photo-host">' +
         '<img' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; pointer-events:none;" />' +
         '<div class="sp-fade"></div>' +
         '<div class="sp-title">THE PACK</div>' +
@@ -2385,7 +2409,7 @@ function renderIssueMarkup(opts) {
         '<div class="iss-kg"><span class="iss-num">' + escapeHtml(String(weightKg)) + '</span><b>KG</b></div>' +
         '<div class="iss-note iss-date">' + issueDateLines(dateStr) + '</div>' +
         '<svg class="iss-arrow iss-a1" viewBox="0 0 80 50" aria-hidden="true"><path d="M8 28 C 28 8, 48 18, 74 22"/></svg>' +
-        '<div class="iss-frame">' +
+        '<div class="iss-frame rs-photo-host">' +
           '<img' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
         '</div>' +
         (memoText ? '<div class="iss-memo">' + escapeHtml(memoText) + '</div>' : '') +
@@ -2422,7 +2446,7 @@ function renderKuchiMarkup(opts) {
 
   return '' +
     '<div class="photo-overlay-card kuchi-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:18px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#ffffff; box-sizing:border-box; user-select:none;">' +
-      '<div class="kc-sheet">' +
+        '<div class="kc-sheet rs-photo-host">' +
         '<img class="kc-photo"' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
         '<div class="kc-rail">' +
           '<div class="kc-block"><span class="kc-lab">date</span><span class="kc-val">' + escapeHtml(dateStr) + '</span></div>' +
@@ -2470,7 +2494,7 @@ function renderBalanceMarkup(opts) {
 
   return '' +
     '<div class="photo-overlay-card balance-card" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:18px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#ffffff; box-sizing:border-box; user-select:none;">' +
-      '<div class="bl-sheet">' +
+      '<div class="bl-sheet rs-photo-host">' +
         '<img class="bl-photo"' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
         '<div class="bl-copy bl-copy-dark">' + copyInner + '</div>' +
         '<div class="bl-copy bl-copy-light">' + copyInner + '</div>' +
@@ -2717,7 +2741,7 @@ window.generateReadyShotMarkup = function(record, options) {
             </div>
             <span style="font-family:'Space Grotesk', sans-serif; font-size:0.48rem; font-weight:700; color:rgba(255,255,255,0.7); letter-spacing:0.8px; flex-shrink:0;">${escapeHtml(dateStr)}</span>
           </div>
-          <div style="width:100%; aspect-ratio:4/3; border-radius:4px; overflow:hidden; background:#000; box-shadow:0 4px 14px rgba(0,0,0,0.6); flex-shrink:0; position:relative;">
+          <div class="rs-photo-host" style="width:100%; aspect-ratio:4/3; border-radius:4px; overflow:hidden; background:#000; box-shadow:0 4px 14px rgba(0,0,0,0.6); flex-shrink:0; position:relative;">
             <img src="${escapeHtml(okbmSafeImageUrl(photoUrl))}" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:100%; object-fit:cover; object-position:${posX}% ${posY}%; display:block; transform:scale(${scale}); transform-origin:${posX}% ${posY}%; pointer-events:none;" />
           </div>
           <div style="flex:1; width:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; min-height:0; box-sizing:border-box;">
@@ -3182,12 +3206,6 @@ function scrollReadyShotCardIntoView() {
 }
 
 window.triggerReadyShotPhotoPicker = function() {
-  var overlayInput = document.querySelector('#readyShotEmptyPhotoHit input[type="file"]');
-  if (overlayInput) {
-    try { overlayInput.value = ''; } catch (e) {}
-    overlayInput.click();
-    return;
-  }
   var input = document.getElementById('shareCardPhotoInput');
   if (input) {
     try { input.value = ''; } catch (e) {}
@@ -3197,6 +3215,36 @@ window.triggerReadyShotPhotoPicker = function() {
   var label = document.getElementById('shareCardPhotoInputLabel');
   if (label) label.click();
 };
+
+function attachReadyShotEmptyPhotoHit(container) {
+  if (!container) return;
+  var old = container.querySelector('#readyShotEmptyPhotoHit');
+  if (old && old.parentNode) old.parentNode.removeChild(old);
+  var host = container.querySelector('.rs-photo-host, .sp-photo, .iss-frame, .mag-photo, .kc-sheet, .bl-sheet');
+  if (!host) host = container.querySelector('.photo-overlay-card, .ready-shot-card-vector');
+  if (!host) host = container.firstElementChild;
+  if (!host) return;
+  try {
+    var pos = window.getComputedStyle(host).position;
+    if (!pos || pos === 'static') host.style.position = 'relative';
+  } catch (ePos) {
+    host.style.position = 'relative';
+  }
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.id = 'readyShotEmptyPhotoHit';
+  btn.setAttribute('aria-label', '사진 넣기');
+  btn.innerHTML =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:28px; height:28px; opacity:0.9;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>' +
+    '<span style="font-size:0.88rem; font-weight:900; letter-spacing:-0.2px;">사진 넣기</span>' +
+    '<span style="font-size:0.68rem; font-weight:700; color:#cbd5e1;">템플릿 위에 사진을 올립니다</span>';
+  btn.addEventListener('click', function(ev) {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (typeof window.triggerReadyShotPhotoPicker === 'function') window.triggerReadyShotPhotoPicker();
+  });
+  host.appendChild(btn);
+}
 
 var __readyShotFrameSnapshot = null;
 
@@ -3668,9 +3716,9 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       items: items,
       photos: fieldPhotos,
       readyShotPhoto: finalReadyShot,
-      readyShotMode: (window.readyShotFamily === 'photo')
-        ? (rec.readyShotMode || window.currentStudioCardMode || 'spread')
-        : (rec.readyShotMode || window.currentStudioCardMode || 'minimal'),
+      readyShotMode: (window.readyShotFamily === 'pamphlet')
+        ? 'pamphlet'
+        : (window.currentStudioCardMode || rec.readyShotMode || 'spread'),
       readyShotPosX: (rec.readyShotPosX !== undefined) ? rec.readyShotPosX : ((window.currentPhotoPosX !== undefined) ? window.currentPhotoPosX : 50),
       readyShotPosY: (rec.readyShotPosY !== undefined) ? rec.readyShotPosY : ((window.currentPhotoPosY !== undefined) ? window.currentPhotoPosY : 50),
       readyShotScale: rec.readyShotScale || currentPhotoScaleVal || 1.0,
@@ -3735,6 +3783,10 @@ function ensurePackShareModalDOM() {
   if (modal && document.getElementById('packShareCaptureArea') && document.getElementById('readyShotFamilyToggle') && document.getElementById('readyShotSpotVaultRow') && document.getElementById('shareCardPhotoInput') && document.getElementById('shareCardPhotoInputLabel') && document.getElementById('btnShareCardShareTop') && document.getElementById('btnSaveCardToVault') && document.getElementById('readyShotBottomSpacer')) {
     // 독 높이와 하단 여백을 항상 동기화 (기존 모달 재사용 시 틈 방지)
     modal.style.setProperty('bottom', 'calc(56px + env(safe-area-inset-bottom, 0px))', 'important');
+    var reuseInput = document.getElementById('shareCardPhotoInput');
+    if (reuseInput) {
+      reuseInput.style.cssText = 'position:fixed; left:-100vw; top:0; width:1px; height:1px; opacity:0; overflow:hidden; pointer-events:none;';
+    }
     return modal;
   }
 
@@ -3785,7 +3837,7 @@ function ensurePackShareModalDOM() {
         </div>
 
         <div id="templateSelectorBar" class="template-selector-bar"></div>
-        <input type="file" id="shareCardPhotoInput" accept="image/*,.heic,.heif" style="position:fixed; left:0; bottom:0; width:100%; height:1px; opacity:0.01; overflow:hidden; z-index:0;" onchange="window.handleShareCardPhotoUpload(event)" />
+        <input type="file" id="shareCardPhotoInput" accept="image/*,.heic,.heif" style="position:fixed; left:-100vw; top:0; width:1px; height:1px; opacity:0; overflow:hidden; pointer-events:none;" onchange="window.handleShareCardPhotoUpload(event)" />
         <label id="shareCardPhotoInputLabel" for="shareCardPhotoInput" style="position:absolute; width:1px; height:1px; overflow:hidden;">사진 선택</label>
       </div>
 
@@ -3848,8 +3900,6 @@ window.handleShareCardPhotoUpload = async function(e) {
     window.readyShotFamily = 'photo';
     try { localStorage.setItem('romantic_ready_shot_family', 'photo'); } catch (e2) {}
     syncReadyShotFamilyToggle();
-    syncReadyShotPhotoButtons();
-    renderTemplateChips();
     if (typeof updateShareCardLive === 'function') updateShareCardLive();
     if (typeof isReadyShotFrameModalOpen === 'function' && isReadyShotFrameModalOpen()) {
       if (__readyShotFrameSnapshot) {
@@ -3870,6 +3920,17 @@ window.handleShareCardPhotoUpload = async function(e) {
   }
 
   try {
+    var instantUrl = '';
+    try {
+      instantUrl = URL.createObjectURL(file);
+      if (window.__readyShotPreviewBlobUrl && window.__readyShotPreviewBlobUrl !== instantUrl) {
+        try { URL.revokeObjectURL(window.__readyShotPreviewBlobUrl); } catch (eRevInst) {}
+      }
+      window.__readyShotPreviewBlobUrl = instantUrl;
+      applyReadyShotLocalPreview(instantUrl, false);
+      if (typeof window.hidePhotoLoadingModal === 'function') window.hidePhotoLoadingModal();
+    } catch (eInst) {}
+
     var blob = null;
     if (typeof window.processSinglePhotoSmart === 'function') {
       blob = await window.processSinglePhotoSmart(file, { maxDim: 1200, quality: 0.82 });
@@ -4191,17 +4252,8 @@ function updateShareCardLive() {
       memo: memoVal
     });
 
-    if (!hasPhoto) {
-      markup = '<div style="position:relative; width:100%; max-width:330px; margin:0 auto;">' + markup +
-        '<label id="readyShotEmptyPhotoHit" style="position:absolute; inset:0; z-index:40; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:rgba(7,9,14,0.55); border:none; border-radius:14px; cursor:pointer; color:#ffffff; padding:16px; box-sizing:border-box;">' +
-          '<input type="file" accept="image/*,.heic,.heif" style="position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; font-size:72px;" onchange="window.handleShareCardPhotoUpload(event)" />' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:28px; height:28px; opacity:0.9; pointer-events:none;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>' +
-          '<span style="font-size:0.88rem; font-weight:900; letter-spacing:-0.2px; pointer-events:none;">사진 넣기</span>' +
-          '<span style="font-size:0.68rem; font-weight:700; color:#cbd5e1; pointer-events:none;">템플릿 위에 사진을 올립니다</span>' +
-        '</label></div>';
-    }
-
     container.innerHTML = markup;
+    if (!hasPhoto) attachReadyShotEmptyPhotoHit(container);
     setTimeout(function() { initCardSwipeGesture(); }, 30);
     return;
   }

@@ -1357,7 +1357,7 @@
         photos: normalized.photos || [],
         items: normalized.items || [],
         ready_shot_photo: tmplPhoto,
-        ready_shot_mode: normalized.readyShotMode || 'minimal',
+        ready_shot_mode: normalized.readyShotMode || '',
         ready_shot_pos_x: normalized.readyShotPosX !== undefined ? Number(normalized.readyShotPosX) : 50,
         ready_shot_pos_y: normalized.readyShotPosY !== undefined ? Number(normalized.readyShotPosY) : 50,
         ready_shot_scale: normalized.readyShotScale !== undefined ? Number(normalized.readyShotScale) : 1.0,
@@ -1991,7 +1991,7 @@ window.normalizeHistoryRecord = function(r, idx) {
       }
     }
 
-    var rMode = (r && (r.ready_shot_mode || r.readyShotMode)) || 'minimal';
+    var rMode = (r && (r.ready_shot_mode || r.readyShotMode)) || '';
     var rPosX = (r && (r.ready_shot_pos_x !== undefined ? r.ready_shot_pos_x : r.readyShotPosX));
     var rPosY = (r && (r.ready_shot_pos_y !== undefined ? r.ready_shot_pos_y : r.readyShotPosY));
     var rScale = (r && (r.ready_shot_scale !== undefined ? r.ready_shot_scale : r.readyShotScale));
@@ -2165,10 +2165,22 @@ window.normalizeHistoryRecord = function(r, idx) {
     var rawPhoto = photosList[0] || '';
     var hasValidPhoto = Boolean(rawPhoto && typeof rawPhoto === 'string' && rawPhoto.trim().length > 10);
 
+    var customTmplImg = cur.readyShotPhoto || cur.customTemplatePhoto;
+    if (!customTmplImg && window.__memoryStore && window.__memoryStore['okbm_ready_shots_map']) {
+      var rEntry = window.__memoryStore['okbm_ready_shots_map'][String(cur.id)] || window.__memoryStore['okbm_ready_shots_map'][String(cur.date)];
+      if (rEntry && rEntry.photo) customTmplImg = rEntry.photo;
+    }
+    if (!customTmplImg && window.__memoryStore && window.__memoryStore['okbm_custom_templates_map']) {
+      customTmplImg = window.__memoryStore['okbm_custom_templates_map'][String(cur.id)] || window.__memoryStore['okbm_custom_templates_map'][String(cur.date)];
+    }
+
+    var usesPhotoTmpl = (typeof window.recordUsesPhotoTemplate === 'function') && window.recordUsesPhotoTemplate(cur);
     var frontContentHtml = '';
     var genFn = (typeof window.generateCardMarkup === 'function') ? window.generateCardMarkup : (typeof generateCardMarkup === 'function' ? generateCardMarkup : null);
 
-    if (genFn) {
+    if (usesPhotoTmpl && typeof window.generateReadyShotMarkup === 'function') {
+      frontContentHtml = window.generateReadyShotMarkup(cur, { photo: customTmplImg || '' });
+    } else if (genFn) {
       frontContentHtml = genFn(tmplId, cur, items, cur.spot, cur.memo || shortCardMemo, rawPhoto);
     } else {
       frontContentHtml = `
@@ -2203,20 +2215,10 @@ window.normalizeHistoryRecord = function(r, idx) {
 
     var isFlipped = !!window.isPostcardFlipped;
 
-    // 🌟 [뒷면 포토 카드 우선 바인딩]: 스튜디오 완성 레디샷이 있으면 순수 HTML 벡터로 선명하게 렌더링
-    var customTmplImg = cur.readyShotPhoto || cur.customTemplatePhoto;
-    if (!customTmplImg && window.__memoryStore && window.__memoryStore['okbm_ready_shots_map']) {
-      var rEntry = window.__memoryStore['okbm_ready_shots_map'][String(cur.id)] || window.__memoryStore['okbm_ready_shots_map'][String(cur.date)];
-      if (rEntry && rEntry.photo) customTmplImg = rEntry.photo;
-    }
-    if (!customTmplImg && window.__memoryStore && window.__memoryStore['okbm_custom_templates_map']) {
-      customTmplImg = window.__memoryStore['okbm_custom_templates_map'][String(cur.id)] || window.__memoryStore['okbm_custom_templates_map'][String(cur.date)];
-    }
-
     var backTemplateContentHtml = '';
-    if (typeof window.generateReadyShotMarkup === 'function' && customTmplImg) {
+    if (!usesPhotoTmpl && typeof window.generateReadyShotMarkup === 'function' && customTmplImg) {
       backTemplateContentHtml = window.generateReadyShotMarkup(cur, { photo: customTmplImg });
-    } else if (customTmplImg && String(customTmplImg).trim().length > 10) {
+    } else if (!usesPhotoTmpl && customTmplImg && String(customTmplImg).trim().length > 10) {
       backTemplateContentHtml = `<div style="position:absolute; inset:0; background:#000; overflow:hidden; display:flex; align-items:center; justify-content:center;">
         <img src="${escapeHtml(okbmSafeImageUrl(customTmplImg))}" style="width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;" />
       </div>`;
@@ -4261,7 +4263,9 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var fallbackMemo = (log.memo || log.oneLineMemo || '').trim();
 
     var packingSheetMarkup = '';
-    var isReadyShotMode = Boolean(actualReadyShot && actualReadyShot.length > 10);
+    var isReadyShotMode = (typeof window.recordUsesPhotoTemplate === 'function')
+      ? window.recordUsesPhotoTemplate(log)
+      : Boolean(actualReadyShot && actualReadyShot.length > 10);
 
     if (isReadyShotMode) {
       if (typeof window.generateReadyShotMarkup === 'function') {
@@ -7935,8 +7939,9 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
     var studioCardMarkup = '';
     var actualReadyShot = (record.readyShotPhoto && String(record.readyShotPhoto).trim().length > 10) ? String(record.readyShotPhoto).trim() : '';
+    var usesPhotoTmpl = (typeof window.recordUsesPhotoTemplate === 'function') && window.recordUsesPhotoTemplate(record);
 
-    if (actualReadyShot && typeof window.generateReadyShotMarkup === 'function') {
+    if ((usesPhotoTmpl || actualReadyShot) && typeof window.generateReadyShotMarkup === 'function') {
       studioCardMarkup = '<div class="postcard-template-container">' +
         window.generateReadyShotMarkup(record, { photo: actualReadyShot }) +
         '</div>';
