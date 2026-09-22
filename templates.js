@@ -1827,8 +1827,6 @@ function overlayResolveCategoryId(it) {
 function overlayIconIdFromItem(it) {
   var cat = overlayResolveCategoryId(it);
   var name = String((typeof it === 'string') ? it : (it && (it.name || it.itemName)) || '').toLowerCase();
-  var isFood = /식량|음식|라면|햇반|비빔밥|건조밥|도시락|핫앤쿡|더온|이지밥|바로쿡|생수|식수|에너지바|프로틴|양갱|육포|커피|드립백|소주|맥주|위스키|와인|보틀\(식수|리필|meal|food|pasta/.test(name);
-  if (isFood || cat === 'food') return 'food';
   var isTent = /텐트|tent|shelter|돔텐트|자립/.test(name);
   var isTarp = /실타프|타프|tarp/.test(name) && !isTent;
   var isMat = /매트|패드|pad|mat|tensor|xtherm|neoair/.test(name) && !/침낭|sleeping/.test(name);
@@ -1840,6 +1838,7 @@ function overlayIconIdFromItem(it) {
   if (isBag || (cat === 'sleep' && !isMat)) return 'sleeping-bag';
   if (cat === 'kitchen' || /취사|스토브|버너|코펠|stove|pot|windmaster/.test(name)) return 'cooking';
   if (cat === 'wear' || /의류|자켓|재킷|바지|셔츠|jacket|pants|shell/.test(name)) return 'clothing';
+  if (cat === 'food' || /식량|음식|라면|햇반|리필|meal|food|pasta/.test(name)) return 'food';
   return 'other';
 }
 

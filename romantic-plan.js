@@ -392,102 +392,6 @@
   window.packedCheckSet = window.packedCheckSet || new Set(safeGetJSON('okbm_packed_checks', []));
   window.currentOpeningCategoryId = null;
 
-  window.okbmInferGearCategory = function(rawName, defaultCat) {
-    var s = String(rawName || '').trim().toLowerCase();
-    if (!s) return defaultCat || 'other';
-
-    // 1. 음식 (Food & Beverage - 텐트/취사/기타 오분류 최우선 차단)
-    if (/라면|비빔밥|햇반|건조밥|전투식량|도시락|핫앤쿡|더온|이지밥|바로쿡|생수|식수|에너지바|프로틴바|파워젤|양갱|육포|견과|드립백|원두|스틱커피|커피|소주|맥주|위스키|와인|주류|간식|행동식|음료|포카리|이온음료|콜라|사이다|참치캔|스팸|소시지|밀키트|김치|반찬|국|찌개|죽|누룽지|스프|초콜릿|사탕|젤리/.test(s)) {
-      if (!/스토브|버너|코펠|쿠커|프라이팬|냄비|그라인더|드리퍼|포트|메이커|컵|머그/.test(s)) {
-        return 'food';
-      }
-    }
-
-    // 2. 취사 (Kitchen & Cookware)
-    if (/스토브|버너|코펠|쿠커|시에라컵|시에라|포트|프라이팬|그리들|주전자|케틀|수저|젓가락|포크|스포크|나이프|칼|집게|가위|양념통|조미료|쿨러|소프트쿨러|아이스박스|설거지|행어|인디언\s*행어|풍등|토치|이소가스|부탄가스|가스|워터저그|수통|보틀|텀블러|머그|물병|드립퍼|드리퍼|커피밀|그라인더/.test(s)) {
-      return 'kitchen';
-    }
-
-    // 3. 텐트 · 타프 (Shelter)
-    if (/텐트|tent|타프|tarp|쉘터|shelter|풋프린트|footprint|그라운드시트|타프폴|폴대|텐트폴|텐트팩|팩|peg|stake|가이라인|guyline|스토퍼|스트랩|루프플라이|이너텐트|베스티블|비비|bivy/.test(s)) {
-      if (!/침낭|매트|체어|의자|배낭|백팩/.test(s)) {
-        return 'shelter';
-      }
-    }
-
-    // 4. 침낭 · 매트 (Sleep)
-    if (/침낭|sleeping\s*bag|quilt|퀼트|매트|에어매트|자충매트|발포매트|폼매트|mat|pad|패드|베개|pillow|필로우|라이너|liner|mummyliner|블랭킷|blanket|침낭커버|에어로스/.test(s)) {
-      if (!/의자|체어|시트패드|쉘터클래식매트/.test(s)) {
-        return 'sleep';
-      }
-    }
-
-    // 5. 배낭 (Pack)
-    if (/배낭|백팩|backpack|pack\b|힙색|웨이스트백|새들백|사코슈|sacoche|디팩|dpack|패킹백|스텁색|드라이백|방수백|레인커버|배낭커버|오스프리|미스테리랜치|그레고리/.test(s)) {
-      if (!/텐트|침낭|매트/.test(s)) {
-        return 'pack';
-      }
-    }
-
-    // 6. 의류 (Wear)
-    if (/자켓|jacket|재킷|바람막이|후디|hoody|팬츠|pants|바지|티셔츠|셔츠|다운자켓|패딩|우모복|플리스|경량패딩|하드쉘|소프트쉘|베이스레이어|장갑|글러브|양말|socks|모자|캡|hat|게이터|스패츠|아이젠|크램폰|우비|판초/.test(s)) {
-      return 'wear';
-    }
-
-    // 7. 기기 · 소품 (Electronics)
-    if (/헤드랜턴|headlamp|랜턴|lantern|플래시|조명|보조배터리|배터리|충전기|충전케이블|손난로|기름손난로|핫팩|발열조끼|워머|선풍기|전자시계|스마트워치|gps|카메라|삼각대|스피커/.test(s)) {
-      return 'electronics';
-    }
-
-    // 8. 테이블 · 체어 (Camp)
-    if (/체어|chair|의자|체어원|체어투|선셋체어|테이블|table|스툴|stool|벤치|코트|cot|야전침대|해먹|hammock|방석|좌식체어/.test(s)) {
-      return 'camp';
-    }
-
-    // 9. 기타 · 소품 (Other)
-    if (/등산스틱|트레킹폴|스틱|staff|멀티툴|맥가이버|나이프|레더맨|빅토리녹스|톱|도끼|구급함|구급약|선글라스|선크림|치약|칫솔|세면도구|타월|스포츠타월|방충제|벌레퇴치|모기장|우산/.test(s)) {
-      return 'other';
-    }
-
-    return defaultCat || 'other';
-  };
-
-  // 🛡️ [자가 복구] 기존 로컬스토리지 selectedGearMap 내 shelter에 잘못 들어간 음식/소품 자동 카테고리 정정
-  (function sanitizeSelectedGearMapCategories() {
-    try {
-      var map = safeGetJSON('okbm_selected_gears_multi', null);
-      if (!map || typeof map !== 'object') return;
-      var modified = false;
-      var catKeys = Object.keys(map);
-      catKeys.forEach(function(catId) {
-        var items = map[catId];
-        if (!Array.isArray(items)) return;
-        var keep = [];
-        items.forEach(function(it) {
-          if (!it || !it.name) return;
-          var inferred = window.okbmInferGearCategory(it.name, catId);
-          if (catId === 'shelter' && inferred !== 'shelter') {
-            map[inferred] = map[inferred] || [];
-            it.categoryId = inferred;
-            map[inferred].push(it);
-            modified = true;
-          } else {
-            keep.push(it);
-          }
-        });
-        map[catId] = keep;
-      });
-      if (modified) {
-        window.selectedGearMap = map;
-        if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-          window.RomanticVault.write('okbm_selected_gears_multi', map, true);
-        } else {
-          localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(map));
-        }
-      }
-    } catch (e) {}
-  })();
-
   // 🌟 기본 진입 화면: 달력 & 메모장 우선 모드
   window.activePlanSubMode = 'calendar';
   window.__planDockDeckMode = 'tools';
@@ -1001,7 +905,7 @@
     document.querySelectorAll('.gear-shelf-item-row').forEach(function(row) {
       if (!okbmGearRowMatches(row, gearName)) return;
       found = true;
-      var catId = row.dataset.gearCat || row.getAttribute('data-gear-cat') || window.okbmInferGearCategory(gearName, 'other');
+      var catId = row.dataset.gearCat || row.getAttribute('data-gear-cat') || 'shelter';
       var count = (gearMap[catId] || []).filter(function(it) { return it && it.name === gearName; }).length;
       var isAdded = count > 0;
       var pal = PLAN_CATEGORY_PALETTE[catId] || { color: '#94a3b8', border: 'rgba(255,255,255,0.12)' };
@@ -1024,7 +928,7 @@
     document.querySelectorAll('.gear-db-item').forEach(function(row) {
       if (!okbmGearRowMatches(row, gearName)) return;
       found = true;
-      var catId = row.dataset.gearCat || window.currentOpeningCategoryId || window.okbmInferGearCategory(gearName, 'other');
+      var catId = row.dataset.gearCat || window.currentOpeningCategoryId || 'shelter';
       var count = (gearMap[catId] || []).filter(function(it) { return it && it.name === gearName; }).length;
       var isAdded = count > 0;
       row.style.background = isAdded ? 'rgba(255,255,255,0.055)' : (isFav ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.015)');
@@ -1156,8 +1060,7 @@
         });
       }
       var allSource = customGears.map(function(cg) {
-        var inferred = window.okbmInferGearCategory(cg.name, 'other');
-        return Object.assign({}, cg, { category_id: cg.category_id || cg.categoryId || inferred, isCustom: true });
+        return Object.assign({}, cg, { category_id: cg.category_id || cg.categoryId || 'shelter', isCustom: true });
       });
 
       Object.keys(masterMap).forEach(function(k) {
@@ -1171,10 +1074,7 @@
       if (curTab === 'all' || curTab === 'fav') {
         pool = allSource;
       } else {
-        pool = allSource.filter(function(g) {
-          var cId = g.category_id || window.okbmInferGearCategory(g.name, 'other');
-          return cId === curTab;
-        });
+        pool = allSource.filter(function(g) { return (g.category_id || 'shelter') === curTab; });
       }
 
       var filtered = pool.filter(function(g) {
@@ -1189,8 +1089,8 @@
         var bFav = (window.favoriteGearSet && window.favoriteGearSet.has(b.name)) ? 1 : 0;
         if (aFav !== bFav) return bFav - aFav;
 
-        var aCat = a.category_id || window.okbmInferGearCategory(a.name, 'other');
-        var bCat = b.category_id || window.okbmInferGearCategory(b.name, 'other');
+        var aCat = a.category_id || 'shelter';
+        var bCat = b.category_id || 'shelter';
         var aCount = (gearMap[aCat] || []).filter(function(it) { return it.name === a.name; }).length;
         var bCount = (gearMap[bCat] || []).filter(function(it) { return it.name === b.name; }).length;
         if (aCount !== bCount) return bCount - aCount;
@@ -1219,7 +1119,7 @@
         `;
 
         function renderRowHtml(g) {
-          var targetCatId = g.category_id || window.okbmInferGearCategory(g.name, 'other');
+          var targetCatId = g.category_id || 'shelter';
           var currentCatItems = gearMap[targetCatId] || [];
           var count = currentCatItems.filter(function(it) { return it.name === g.name; }).length;
           var isAdded = count > 0;
@@ -1458,8 +1358,7 @@
     found = masterList.find(function(g) {
       return g && (g.name || g.item_name || '').trim().toLowerCase() === targetName;
     });
-    var defaultInferredCat = window.okbmInferGearCategory(targetName, preferredCatId || 'other');
-    if (found) return Object.assign({}, found, { category_id: found.category_id || defaultInferredCat });
+    if (found) return Object.assign({}, found, { category_id: found.category_id || preferredCatId || 'shelter' });
 
     return {
       name: gearName,
@@ -1467,7 +1366,7 @@
       weight: 0,
       specs: '상세 제원 정보가 등록되어 있지 않습니다.',
       evidence: '카탈로그 제원',
-      category_id: defaultInferredCat
+      category_id: preferredCatId || 'shelter'
     };
   };
 
@@ -1498,7 +1397,7 @@
 
     window.__currentDetailGear = gear;
 
-    var resolvedCatId = gear.category_id || catId || window.okbmInferGearCategory(gear.name, 'other');
+    var resolvedCatId = gear.category_id || catId || 'shelter';
     var cat = (window.CATEGORIES || []).find(function(c) {
       return c.id === resolvedCatId;
     }) || { title: '장비', id: resolvedCatId };
@@ -1584,7 +1483,7 @@
       favBtn.style.borderColor = isFav ? 'rgba(253,224,71,0.4)' : 'rgba(255,255,255,0.14)';
     }
 
-    var targetCatId = gear.category_id || window.currentOpeningCategoryId || window.okbmInferGearCategory(gear.name, 'other');
+    var targetCatId = gear.category_id || window.currentOpeningCategoryId || 'shelter';
     var currentCatItems = (window.selectedGearMap && window.selectedGearMap[targetCatId]) || [];
     var count = currentCatItems.filter(function(it) { return it.name === gear.name; }).length;
 
@@ -1611,7 +1510,7 @@
   window.toggleDetailModalPack = function() {
     var gear = window.__currentDetailGear;
     if (!gear) return;
-    var targetCatId = gear.category_id || window.currentOpeningCategoryId || window.okbmInferGearCategory(gear.name, 'other');
+    var targetCatId = gear.category_id || window.currentOpeningCategoryId || 'shelter';
     window.currentOpeningCategoryId = targetCatId;
     var currentCatItems = (window.selectedGearMap && window.selectedGearMap[targetCatId]) || [];
     var packed = currentCatItems.some(function(it) { return it.name === gear.name; });
@@ -1902,12 +1801,11 @@
 
   window.addGearToCategory = function(name, weight, e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
-    var catId = window.currentOpeningCategoryId || window.okbmInferGearCategory(name, 'other');
-    window.currentOpeningCategoryId = catId;
-    if (!Array.isArray(window.selectedGearMap[catId])) {
-      window.selectedGearMap[catId] = [];
+    if (!window.currentOpeningCategoryId) return;
+    if (!Array.isArray(window.selectedGearMap[window.currentOpeningCategoryId])) {
+      window.selectedGearMap[window.currentOpeningCategoryId] = [];
     }
-    window.selectedGearMap[catId].push({
+    window.selectedGearMap[window.currentOpeningCategoryId].push({
       id: 'item_' + Date.now() + '_' + Math.random(),
       name: name,
       weight: Number(weight) || 0
@@ -1926,16 +1824,8 @@
 
   window.decrementGearCount = function(gearName, e) {
     if (e) { e.preventDefault(); e.stopPropagation(); }
-    var catId = window.currentOpeningCategoryId || window.okbmInferGearCategory(gearName, 'other');
-    if (!window.selectedGearMap || !window.selectedGearMap[catId]) {
-      // Find which category this gear is actually in
-      var foundCat = Object.keys(window.selectedGearMap || {}).find(function(c) {
-        return (window.selectedGearMap[c] || []).some(function(it) { return it && it.name === gearName; });
-      });
-      if (foundCat) catId = foundCat;
-      else return;
-    }
-    var list = window.selectedGearMap[catId];
+    if (!window.currentOpeningCategoryId || !window.selectedGearMap[window.currentOpeningCategoryId]) return;
+    var list = window.selectedGearMap[window.currentOpeningCategoryId];
     var targetIdx = list.findIndex(function(it) { return it.name === gearName; });
     if (targetIdx !== -1) {
       list.splice(targetIdx, 1);
@@ -2067,7 +1957,7 @@ window.openQuickGearRegisterModal = function(opts) {
     if (!nameEl || !catEl || !weightEl) return;
 
     var name = nameEl.value.trim();
-    var catId = catEl.value || window.okbmInferGearCategory(name, 'other');
+    var catId = catEl.value || 'shelter';
     var weight = parseInt(weightEl.value, 10);
     var brand = brandEl ? brandEl.value.trim() : '';
     var rawDate = pDateEl && pDateEl.value ? pDateEl.value.trim() : '';
@@ -2332,7 +2222,7 @@ window.saveCurrentPackingRecord = function() {
     }
   };
 
-  var CURRENT_GEAR_VERSION = '20260922_GEAR_RECLASS';
+  var CURRENT_GEAR_VERSION = '20260922_CAT_SPLIT';
   var GEAR_SPLIT_CATS = ['shelter', 'sleep', 'pack', 'food', 'kitchen', 'wear', 'electronics', 'camp', 'other'];
   window.__okbmGearCatLoaded = window.__okbmGearCatLoaded || {};
   window.__okbmGearCatPromises = window.__okbmGearCatPromises || {};
@@ -2409,11 +2299,9 @@ window.saveCurrentPackingRecord = function() {
         var maxPages = 10;
         while (page < maxPages) {
           var res = await fetch(targetUrl + '/rest/v1/gears?select=' + selectCols + '&order=id.asc&offset=' + (page * pageSize) + '&limit=' + pageSize, {
-            headers: (typeof window.okbmPublicRestHeaders === 'function')
-              ? window.okbmPublicRestHeaders()
-              : {
+            headers: {
               'apikey': targetKey,
-              'Authorization': 'Bearer ' + targetKey,
+              'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
               'Content-Type': 'application/json'
             }
           });
@@ -4265,16 +4153,14 @@ window.saveCurrentPackingRecord = function() {
     });
     customGears.forEach(function(cg) {
       if (!allGearsPool.some(function(g) { return g.name === cg.name; })) {
-        var inferred = window.okbmInferGearCategory(cg.name, 'other');
-        allGearsPool.push(Object.assign({ categoryId: cg.category_id || cg.categoryId || inferred }, cg));
+        allGearsPool.push(Object.assign({ categoryId: cg.category_id || 'shelter' }, cg));
       }
     });
 
     var favList = Array.from(window.favoriteGearSet || []);
     var myFavGears = favList.map(function(name) {
       var found = allGearsPool.find(function(g) { return g.name === name; });
-      var inferred = window.okbmInferGearCategory(name, 'other');
-      return found || { id: 'fav_' + name, name: name, weight: 0, brand: '내 장비', categoryId: inferred };
+      return found || { id: 'fav_' + name, name: name, weight: 0, brand: '내 장비', categoryId: 'shelter' };
     });
 
     myFavGears.sort(function(a, b) {
@@ -4507,10 +4393,8 @@ window.saveCurrentPackingRecord = function() {
         <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
           <button type="button" data-gear="${escapeHtml(gearName)}" onclick="window.saveGearMetaFromSheet(this.dataset.gear)" style="width:100%; height:44px; background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.22); border-radius:8px; color:#ffffff; font-size:0.82rem; font-weight:800; cursor:pointer;">저장 완료</button>
           ${(function(){
-            var cList = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-              ? window.RomanticVault.read('okbm_custom_gears', [])
-              : safeGetJSON('okbm_custom_gears', []);
-            var isC = (cList || []).some(function(cg){ return cg && String(cg.name || '').trim() === String(gearName || '').trim(); });
+            var cList = safeGetJSON('okbm_custom_gears', []);
+            var isC = cList.some(function(cg){ return cg && cg.name === gearName; });
             var delText = isC ? '장비 영구 삭제' : '내 장비에서 해제';
             var msg = isC ? '이 장비를 영구 삭제하시겠습니까?' : '내 장비에서 해제하시겠습니까?';
             return '<button type="button" data-gear="' + escapeHtml(gearName) + '" data-confirm-msg="' + escapeHtml(msg) + '" onclick="window.confirmRemoveFavoriteGearFromSheet(this)" style="width:100%; height:36px; background:none; border:none; color:#fda4af; font-size:0.72rem; font-weight:700; cursor:pointer; text-decoration:underline;">' + delText + '</button>';
@@ -4720,121 +4604,110 @@ window.saveCurrentPackingRecord = function() {
     window.renderPlanStage();
   };
 
-  function okbmReadGearStore(key, fallback) {
-    if (window.RomanticVault && typeof window.RomanticVault.read === 'function') {
-      return window.RomanticVault.read(key, fallback);
-    }
-    return safeGetJSON(key, fallback);
-  }
-
-  function okbmWriteGearStore(key, val) {
-    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-      window.RomanticVault.write(key, val, false);
-    } else {
-      localStorage.setItem(key, JSON.stringify(val));
-    }
-  }
-
-  function okbmSameGearName(a, b) {
-    return String(a || '').trim() === String(b || '').trim();
-  }
-
-  function okbmGearItemName(item) {
-    if (!item) return '';
-    return String(item.name || item.itemName || '').trim();
-  }
-
-  function okbmFlushGearCloudNow() {
-    if (typeof syncUserDataToCloud === 'function') {
-      syncUserDataToCloud(false, true);
-    }
-  }
-
-  window.okbmPurgeOwnedGear = function(gearName) {
-    var target = String(gearName || '').trim();
-    if (!target) return false;
-
-    var customGears = okbmReadGearStore('okbm_custom_gears', []) || [];
-    var wasCustom = customGears.some(function(cg) { return okbmSameGearName(okbmGearItemName(cg), target); });
-    customGears = customGears.filter(function(cg) { return !okbmSameGearName(okbmGearItemName(cg), target); });
-    okbmWriteGearStore('okbm_custom_gears', customGears);
-
-    if (!window.favoriteGearSet) window.favoriteGearSet = new Set();
-    window.favoriteGearSet = new Set(Array.from(window.favoriteGearSet).filter(function(n) {
-      return !okbmSameGearName(n, target);
-    }));
-    okbmWriteGearStore('okbm_favorite_gears', Array.from(window.favoriteGearSet));
-
-    var gearMetaObj = okbmReadGearStore('okbm_gear_meta', {}) || {};
-    if (gearMetaObj[target] || gearMetaObj[gearName]) {
-      delete gearMetaObj[target];
-      delete gearMetaObj[gearName];
-      okbmWriteGearStore('okbm_gear_meta', gearMetaObj);
-    }
-
-    var gearMap = window.selectedGearMap || okbmReadGearStore('okbm_selected_gears_multi', {}) || {};
-    var packChanged = false;
-    Object.keys(gearMap).forEach(function(catKey) {
-      if (!Array.isArray(gearMap[catKey])) return;
-      var prevLen = gearMap[catKey].length;
-      gearMap[catKey] = gearMap[catKey].filter(function(it) { return !okbmSameGearName(okbmGearItemName(it), target); });
-      if (gearMap[catKey].length !== prevLen) packChanged = true;
-    });
-    if (packChanged) {
-      window.selectedGearMap = gearMap;
-      okbmWriteGearStore('okbm_selected_gears_multi', gearMap);
-    }
-
-    (window.CATEGORIES || []).forEach(function(cat) {
-      if (Array.isArray(cat.db)) {
-        cat.db = cat.db.filter(function(d) { return !okbmSameGearName(okbmGearItemName(d), target); });
-      }
-    });
-
-    var masterCache = window.__memoryStore && window.__memoryStore['okbm_master_gears_cache'];
-    if (masterCache && typeof masterCache === 'object') {
-      Object.keys(masterCache).forEach(function(catId) {
-        if (Array.isArray(masterCache[catId])) {
-          masterCache[catId] = masterCache[catId].filter(function(d) {
-            return !okbmSameGearName(okbmGearItemName(d), target);
-          });
-        }
-      });
-    }
-
-    return wasCustom;
-  };
-
   window.deleteCustomGearCompletely = function(gearName) {
     if (!gearName) return;
 
     window.showRomanticConfirm('[' + gearName + '] 장비를 영구 삭제하시겠습니까?\n내 장비 및 배낭에서 모두 제거됩니다.', function() {
-      window.okbmPurgeOwnedGear(gearName);
-      okbmFlushGearCloudNow();
+      var customGears = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+        ? window.RomanticVault.read('okbm_custom_gears', [])
+        : safeGetJSON('okbm_custom_gears', []);
+      customGears = customGears.filter(function(cg) { return cg && cg.name !== gearName; });
+
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_custom_gears', customGears, false);
+      } else {
+        localStorage.setItem('okbm_custom_gears', JSON.stringify(customGears));
+      }
+
+      if (window.favoriteGearSet) {
+        window.favoriteGearSet.delete(gearName);
+        var favArr = Array.from(window.favoriteGearSet);
+        if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+          window.RomanticVault.write('okbm_favorite_gears', favArr, false);
+        } else {
+          localStorage.setItem('okbm_favorite_gears', JSON.stringify(favArr));
+        }
+      }
+
+      var gearMetaObj = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+        ? window.RomanticVault.read('okbm_gear_meta', {})
+        : safeGetJSON('okbm_gear_meta', {});
+      if (gearMetaObj[gearName]) {
+        delete gearMetaObj[gearName];
+        if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+          window.RomanticVault.write('okbm_gear_meta', gearMetaObj, false);
+        } else {
+          localStorage.setItem('okbm_gear_meta', JSON.stringify(gearMetaObj));
+        }
+      }
+
+      var gearMap = window.selectedGearMap || safeGetJSON('okbm_selected_gears_multi', {});
+      var isRemovedFromPack = false;
+      Object.keys(gearMap).forEach(function(catKey) {
+        if (Array.isArray(gearMap[catKey])) {
+          var prevLen = gearMap[catKey].length;
+          gearMap[catKey] = gearMap[catKey].filter(function(it) { return it && it.name !== gearName; });
+          if (gearMap[catKey].length !== prevLen) isRemovedFromPack = true;
+        }
+      });
+
+      if (isRemovedFromPack) {
+        window.selectedGearMap = gearMap;
+        if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+          window.RomanticVault.write('okbm_selected_gears_multi', gearMap, false);
+        } else {
+          localStorage.setItem('okbm_selected_gears_multi', JSON.stringify(gearMap));
+        }
+      }
+
+      (window.CATEGORIES || []).forEach(function(cat) {
+        if (Array.isArray(cat.db)) {
+          cat.db = cat.db.filter(function(d) { return d && d.name !== gearName; });
+        }
+      });
+
+      if (typeof syncUserDataToCloud === 'function') {
+        syncUserDataToCloud();
+      }
+
       triggerHaptic(12);
       if (typeof showToast === 'function') showToast('[' + gearName + '] 장비가 영구 삭제되었습니다.', 'info');
-      if (typeof window.renderPlanStage === 'function') window.renderPlanStage();
-      else if (typeof window.renderPlanCategorySlots === 'function') window.renderPlanCategorySlots();
+      window.renderPlanCategorySlots();
     });
   };
 
   window.removeFavoriteGearFromManager = function(gearName, btnEl) {
-    var target = String(gearName || '').trim();
-    var customGears = okbmReadGearStore('okbm_custom_gears', []) || [];
-    var wasCustom = customGears.some(function(cg) { return okbmSameGearName(okbmGearItemName(cg), target); });
-    if (wasCustom) {
-      window.okbmPurgeOwnedGear(gearName);
+    if (!window.favoriteGearSet) window.favoriteGearSet = new Set();
+    window.favoriteGearSet.delete(gearName);
+    var favArr = Array.from(window.favoriteGearSet);
+
+    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+      window.RomanticVault.write('okbm_favorite_gears', favArr, false);
     } else {
-      if (!window.favoriteGearSet) window.favoriteGearSet = new Set();
-      window.favoriteGearSet = new Set(Array.from(window.favoriteGearSet).filter(function(n) {
-        return !okbmSameGearName(n, target);
-      }));
-      okbmWriteGearStore('okbm_favorite_gears', Array.from(window.favoriteGearSet));
+      localStorage.setItem('okbm_favorite_gears', JSON.stringify(favArr));
     }
-    okbmFlushGearCloudNow();
+
+    var customGears = safeGetJSON('okbm_custom_gears', []);
+    var isCustom = customGears.some(function(cg) { return cg && cg.name === gearName; });
+    if (isCustom) {
+      customGears = customGears.filter(function(cg) { return cg && cg.name !== gearName; });
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_custom_gears', customGears, false);
+      } else {
+        localStorage.setItem('okbm_custom_gears', JSON.stringify(customGears));
+      }
+
+      var gearMetaObj = safeGetJSON('okbm_gear_meta', {});
+      delete gearMetaObj[gearName];
+      if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+        window.RomanticVault.write('okbm_gear_meta', gearMetaObj, true);
+      } else {
+        localStorage.setItem('okbm_gear_meta', JSON.stringify(gearMetaObj));
+      }
+    }
 
     triggerHaptic(10);
-    if (typeof showToast === 'function') showToast(wasCustom ? '[' + gearName + '] 삭제 완료' : '[' + gearName + '] 내 장비 해제', 'info');
+    if (typeof showToast === 'function') showToast(isCustom ? '[' + gearName + '] 삭제 완료' : '[' + gearName + '] 내 장비 해제', 'info');
 
     if (btnEl) {
       var card = btnEl.closest('.my-gear-manage-card');
