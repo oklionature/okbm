@@ -1852,24 +1852,40 @@
         <span style="font-size:0.65rem; color:#38bdf8; font-weight:800; cursor:pointer;" onclick="openThemeSpotAllModal(); triggerHaptic(10);">전체 보기</span>
       </div>
 
-      <!-- 순수 SVG 벡터 기반 5대 테마 필터 바 (이모지 0%) -->
+      <!-- 순수 SVG 벡터 기반 테마 필터 바 (이모지 0%) -->
       <nav class="netflix-category-bar" style="padding:4px 0 6px 0;">
         <button type="button" class="n-cat-chip active" onclick="filterSecretSpotTheme('all', this)">전체</button>
-        <button type="button" class="n-cat-chip" onclick="filterSecretSpotTheme('easy', this)">
+        <button type="button" class="n-cat-chip" onclick="filterSecretSpotTheme('beginner', this)">
           <svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2L2 22h20L12 2z"/></svg>
-          <span>초보/퇴근박</span>
+          <span>초보</span>
+        </button>
+        <button type="button" class="n-cat-chip" onclick="filterSecretSpotTheme('afterwork', this)">
+          <svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <span>퇴근박</span>
         </button>
         <button type="button" class="n-cat-chip" onclick="filterSecretSpotTheme('island', this)">
           <svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 19c4 0 5-2 10-2s6 2 10 2"/><path d="M12 4v10"/></svg>
-          <span>오션/섬</span>
+          <span>섬</span>
         </button>
-        <button type="button" class="n-cat-chip" onclick="filterSecretSpotTheme('alpine', this)">
+        <button type="button" class="n-cat-chip" onclick="filterSecretSpotTheme('beach', this)">
+          <svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M2 18c3-1 5 1 8 0s5-1 8 0 3 1 4 0"/><path d="M12 4v8"/><circle cx="17" cy="7" r="2"/></svg>
+          <span>해변</span>
+        </button>
+        <button type="button" class="n-cat-chip" onclick="filterSecretSpotTheme('remote', this)">
+          <svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/></svg>
+          <span>오지</span>
+        </button>
+        <button type="button" class="n-cat-chip" onclick="filterSecretSpotTheme('rock', this)">
           <svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
-          <span>오지/돌박지</span>
+          <span>돌박지</span>
         </button>
         <button type="button" class="n-cat-chip" onclick="filterSecretSpotTheme('deck', this)">
           <svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 7h18M3 12h18M3 17h18M7 3v18M17 3v18"/></svg>
-          <span>데크명당</span>
+          <span>데크</span>
+        </button>
+        <button type="button" class="n-cat-chip" onclick="filterSecretSpotTheme('valley', this)">
+          <svg viewBox="0 0 24 24" style="width:12px; height:12px; margin-right:3px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 20l6-12 3 6 3-4 6 10"/><path d="M2 20h20"/></svg>
+          <span>계곡</span>
         </button>
       </nav>
 
@@ -2247,6 +2263,18 @@
       return /도$/.test(token) && token.length >= 2;
     }
 
+    function parseThemeSpotKm(mSpot) {
+      if (!mSpot) return null;
+      var raw = (mSpot.distance_km != null && mSpot.distance_km !== '')
+        ? mSpot.distance_km
+        : mSpot.distance;
+      if (raw == null || raw === '') return null;
+      var m = String(raw).match(/(\d+(?:\.\d+)?)/);
+      if (!m) return null;
+      var km = parseFloat(m[1]);
+      return isFinite(km) ? km : null;
+    }
+
     function getSecretSpotThemeFlags(feed, spotPool) {
       var rawName = String((feed && (feed.spot || feed.spotName)) || '').trim();
       var mSpot = findThemeSpotMaster(feed, spotPool);
@@ -2261,37 +2289,60 @@
       var hay = (rawName + ' ' + masterName + ' ' + terrainStr).toLowerCase();
       var nameTokens = tokenizeThemeSpotName(rawName + ' ' + masterName);
 
+      var difficulty = mSpot ? (parseInt(mSpot.difficulty, 10) || 3) : null;
+      var km = parseThemeSpotKm(mSpot);
+      var walkMin = (km != null) ? (km * 35 / 1.5) : null;
+
       var isDeck = terrainStr.indexOf('데크') !== -1 || /데크|대크/.test(rawName);
 
-      var isIslandTerrain = /섬|해변|해수욕장|해안|바다/.test(terrainStr);
+      var isIslandTerrain = /섬/.test(terrainStr);
       var hasIslandToken = nameTokens.some(tokenLooksLikeIslandName);
-      var isIslandName = /해변|해수욕장|바다뷰|꽃섬|솔밭해변/.test(hay) || hasIslandToken;
+      var isIslandName = /꽃섬/.test(hay) || hasIslandToken;
       var isIsland = isIslandTerrain || isIslandName;
 
-      var isEasyAccess = /임도|차박|주차장|활공장|헬기장|헬기포트|퇴근|유원지|강가|강변/.test(hay) || hay.indexOf('육백마지기') !== -1;
-      var difficulty = mSpot ? (parseInt(mSpot.difficulty, 10) || 3) : null;
-      var isEasy = (difficulty !== null && difficulty <= 2) || isEasyAccess;
+      var isBeach = /해변|해수욕장|해안/.test(terrainStr) || /해변|해수욕장|해안/.test(rawName) || /해변|해수욕장|해안/.test(masterName);
 
-      var isAlpineTerrain = /암릉|너덜|돌박지|돌침대|슬랩|암장/.test(terrainStr) || (/바위/.test(terrainStr) && !isIslandTerrain);
-      var isAlpineName = /암릉|너덜|돌박지|바위틈|암반|절벽노지/.test(rawName) || (/바위/.test(rawName) && !isIsland && !isDeck);
-      var isAlpine = (isAlpineTerrain || isAlpineName) && !isDeck && !isEasyAccess && !isIsland;
+      var isBeginner = (difficulty !== null && difficulty >= 1 && difficulty <= 2)
+        && (km != null && km <= 1.5)
+        && (walkMin != null && walkMin <= 35);
+
+      var isAfterwork = !isIsland
+        && (difficulty !== null && difficulty <= 3)
+        && (km != null && km <= 1.5);
+
+      var isRemote = (difficulty !== null && difficulty >= 3)
+        && (km != null && km >= 2);
+
+      var isRockTerrain = /암릉|너덜|돌박지|돌침대|슬랩|암장|암반/.test(terrainStr) || /바위/.test(terrainStr);
+      var isRockName = /암릉|너덜|돌박지|바위틈|암반|절벽노지/.test(rawName) || (/바위/.test(rawName) && !isIsland && !isDeck);
+      var isRock = (isRockTerrain || isRockName) && !isIsland;
+
+      var isValley = /계곡/.test(terrainStr) || /계곡/.test(rawName) || /계곡/.test(masterName);
 
       return {
         mSpot: mSpot,
-        isDeck: isDeck,
+        isBeginner: isBeginner,
+        isAfterwork: isAfterwork,
         isIsland: isIsland,
-        isAlpine: isAlpine,
-        isEasy: isEasy
+        isBeach: isBeach,
+        isRemote: isRemote,
+        isRock: isRock,
+        isDeck: isDeck,
+        isValley: isValley
       };
     }
 
     function feedMatchesSecretSpotTheme(feed, themeKey, spotPool) {
       if (!themeKey || themeKey === 'all') return true;
       var flags = getSecretSpotThemeFlags(feed, spotPool);
-      if (themeKey === 'easy') return flags.isEasy;
+      if (themeKey === 'beginner') return flags.isBeginner;
+      if (themeKey === 'afterwork') return flags.isAfterwork;
       if (themeKey === 'island') return flags.isIsland;
-      if (themeKey === 'alpine') return flags.isAlpine;
+      if (themeKey === 'beach') return flags.isBeach;
+      if (themeKey === 'remote') return flags.isRemote;
+      if (themeKey === 'rock') return flags.isRock;
       if (themeKey === 'deck') return flags.isDeck;
+      if (themeKey === 'valley') return flags.isValley;
       return false;
     }
 
@@ -2325,10 +2376,14 @@
         <div style="flex-shrink:0; background:#07090e; padding:6px 14px 8px 14px; border-bottom:1px solid rgba(255,255,255,0.06); box-sizing:border-box;">
           <nav class="netflix-category-bar" style="padding:0; gap:6px;">
             <button type="button" class="n-cat-chip active" onclick="window.filterThemeSpotAllGrid('all', this)">전체</button>
-            <button type="button" class="n-cat-chip" onclick="window.filterThemeSpotAllGrid('easy', this)">초보/퇴근박</button>
-            <button type="button" class="n-cat-chip" onclick="window.filterThemeSpotAllGrid('island', this)">오션/섬</button>
-            <button type="button" class="n-cat-chip" onclick="window.filterThemeSpotAllGrid('alpine', this)">오지/돌박지</button>
-            <button type="button" class="n-cat-chip" onclick="window.filterThemeSpotAllGrid('deck', this)">데크명당</button>
+            <button type="button" class="n-cat-chip" onclick="window.filterThemeSpotAllGrid('beginner', this)">초보</button>
+            <button type="button" class="n-cat-chip" onclick="window.filterThemeSpotAllGrid('afterwork', this)">퇴근박</button>
+            <button type="button" class="n-cat-chip" onclick="window.filterThemeSpotAllGrid('island', this)">섬</button>
+            <button type="button" class="n-cat-chip" onclick="window.filterThemeSpotAllGrid('beach', this)">해변</button>
+            <button type="button" class="n-cat-chip" onclick="window.filterThemeSpotAllGrid('remote', this)">오지</button>
+            <button type="button" class="n-cat-chip" onclick="window.filterThemeSpotAllGrid('rock', this)">돌박지</button>
+            <button type="button" class="n-cat-chip" onclick="window.filterThemeSpotAllGrid('deck', this)">데크</button>
+            <button type="button" class="n-cat-chip" onclick="window.filterThemeSpotAllGrid('valley', this)">계곡</button>
           </nav>
         </div>
 
