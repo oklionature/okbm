@@ -2118,8 +2118,9 @@ function ensureJournalStyles() {
     '.photo-overlay-card.issue-card .iss-kg{position:absolute;left:0;right:0;top:.4%;z-index:6;font-family:Anton,Impact,sans-serif;font-size:28cqw;letter-spacing:-.045em;line-height:.76;text-align:center;text-transform:uppercase;}' +
     '.photo-overlay-card.issue-card .iss-kg .iss-num{display:inline-block;}' +
     '.photo-overlay-card.issue-card .iss-kg b{position:absolute;right:5%;top:.32em;font-size:.28em;font-weight:400;letter-spacing:.06em;white-space:nowrap;}' +
-    '.photo-overlay-card.issue-card .iss-frame{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);width:60%;aspect-ratio:1/1;background:#f6f1e6;padding:2.4%;z-index:3;box-shadow:0 10px 22px rgba(0,0,0,.35);box-sizing:border-box;}' +
-    '.photo-overlay-card.issue-card .iss-frame img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}' +
+    '.photo-overlay-card.issue-card .iss-frame{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);width:60%;aspect-ratio:1/1;background:#f6f1e6;padding:0;z-index:3;box-shadow:0 10px 22px rgba(0,0,0,.35);box-sizing:border-box;overflow:hidden;}' +
+    '.photo-overlay-card.issue-card .iss-clip{position:absolute;inset:2.4%;overflow:hidden;transform:translateZ(0);isolation:isolate;}' +
+    '.photo-overlay-card.issue-card .iss-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}' +
     '.photo-overlay-card.issue-card .iss-note{position:absolute;z-index:5;color:#fff;font-weight:700;line-height:1.05;white-space:nowrap;}' +
     '.photo-overlay-card.issue-card .iss-date{left:3.2%;top:34%;font-family:Caveat,cursive;font-size:5.6cqw;letter-spacing:.02em;transform:rotate(-10deg);line-height:.95;}' +
     '.photo-overlay-card.issue-card .iss-spot{right:3.6%;top:36%;font-family:\'Nanum Pen Script\',cursive;font-size:6.8cqw;transform:rotate(8deg);}' +
@@ -2455,8 +2456,10 @@ function renderIssueMarkup(opts) {
         '<div class="iss-kg"><span class="iss-num">' + escapeHtml(String(weightKg)) + '</span><b>KG</b></div>' +
         '<div class="iss-note iss-date">' + issueDateLines(dateStr) + '</div>' +
         '<svg class="iss-arrow iss-a1" viewBox="0 0 80 50" aria-hidden="true"><path d="M8 28 C 28 8, 48 18, 74 22"/></svg>' +
-        '<div class="iss-frame rs-photo-host">' +
-          '<img' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
+        '<div class="iss-frame">' +
+          '<div class="iss-clip rs-photo-host">' +
+            '<img' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
+          '</div>' +
         '</div>' +
         (memoText ? '<div class="iss-memo">' + escapeHtml(memoText) + '</div>' : '') +
         '<div class="iss-note iss-spot">' + escapeHtml(spot) + '</div>' +
@@ -3251,7 +3254,11 @@ function scrollReadyShotCardIntoView() {
   }
 }
 
+var __readyShotPickerOpenedAt = 0;
 window.triggerReadyShotPhotoPicker = function() {
+  var now = Date.now();
+  if (now - __readyShotPickerOpenedAt < 700) return;
+  __readyShotPickerOpenedAt = now;
   var input = document.getElementById('shareCardPhotoInput');
   if (input) {
     try { input.value = ''; } catch (e) {}
@@ -3266,7 +3273,7 @@ function attachReadyShotEmptyPhotoHit(container) {
   if (!container) return;
   var old = container.querySelector('#readyShotEmptyPhotoHit');
   if (old && old.parentNode) old.parentNode.removeChild(old);
-  var host = container.querySelector('.rs-photo-host, .sp-photo, .iss-frame, .mag-photo, .kc-sheet, .bl-sheet');
+  var host = container.querySelector('.rs-photo-host, .iss-clip, .sp-photo, .iss-frame, .mag-photo, .kc-sheet, .bl-sheet');
   if (!host) host = container.querySelector('.photo-overlay-card, .ready-shot-card-vector');
   if (!host) host = container.firstElementChild;
   if (!host) return;
@@ -4323,6 +4330,8 @@ var cardTouchStartY = 0;
 var cardTouchStartTime = 0;
 var isCardSwiping = false;
 var isCardPointerDown = false;
+var __cardIgnoreMouseUntil = 0;
+var __cardSkipClickUntil = 0;
 
 var __cardSwipeAbort = null;
 var __cardSwipeCleanup = null;
@@ -4432,6 +4441,7 @@ initCardSwipeGesture = function() {
     card.style.transition = 'transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease';
 
     if (wasSwipe && (absDx > 36 || (absDx > 18 && elapsed < 280)) && absDx > absDy * 1.1) {
+      __cardSkipClickUntil = Date.now() + 600;
       card.style.transition = 'none';
       card.style.transform = 'translateX(0px) rotate(0deg)';
       card.style.opacity = '1';
@@ -4458,17 +4468,26 @@ initCardSwipeGesture = function() {
 
     if (!wasSwipe && absDx < 10 && absDy < 10 && elapsed < 450) {
       if ((window.readyShotFamily || 'photo') !== 'photo') return;
-      if (!resolveReadyShotDisplayUrl()) {
-        if (typeof window.triggerReadyShotPhotoPicker === 'function') window.triggerReadyShotPhotoPicker();
-        return;
+      if (resolveReadyShotDisplayUrl()) {
+        __cardSkipClickUntil = Date.now() + 600;
+        if (typeof openReadyShotFrameModal === 'function') openReadyShotFrameModal();
       }
-      if (typeof openReadyShotFrameModal === 'function') openReadyShotFrameModal();
     }
+  }
+
+  function onCardClick(e) {
+    if (Date.now() < __cardSkipClickUntil) return;
+    if (eventFromPhotoLabel(e) || eventFromInteractive(e)) return;
+    if (typeof isReadyShotFrameModalOpen === 'function' && isReadyShotFrameModalOpen()) return;
+    if ((window.readyShotFamily || 'photo') !== 'photo') return;
+    if (resolveReadyShotDisplayUrl()) return;
+    if (typeof window.triggerReadyShotPhotoPicker === 'function') window.triggerReadyShotPhotoPicker();
   }
 
   function onTouchStart(e) {
     if (eventFromPhotoLabel(e) || eventFromInteractive(e)) return;
     if (!e.touches || e.touches.length !== 1) return;
+    __cardIgnoreMouseUntil = Date.now() + 800;
     handleStart(e.touches[0].clientX, e.touches[0].clientY);
   }
   function onTouchMove(e) {
@@ -4483,24 +4502,29 @@ initCardSwipeGesture = function() {
   }
   function onMouseDown(e) {
     if (e.button !== 0) return;
+    if (Date.now() < __cardIgnoreMouseUntil) return;
     if (eventFromPhotoLabel(e) || eventFromInteractive(e)) return;
     handleStart(e.clientX, e.clientY);
   }
   function onWindowMouseMove(e) {
+    if (Date.now() < __cardIgnoreMouseUntil) return;
     if (isCardPointerDown) handleMove(e.clientX, e.clientY);
   }
   function onWindowMouseUp(e) {
+    if (Date.now() < __cardIgnoreMouseUntil) return;
     if (isCardPointerDown || isCardSwiping) handleEnd(e.clientX, e.clientY);
   }
 
   var swipeMouseOpts = swipeSignal ? { signal: swipeSignal } : false;
   var swipeTouchOpts = swipeSignal ? { passive: false, signal: swipeSignal } : { passive: false };
+  var swipeClickOpts = swipeSignal ? { signal: swipeSignal } : false;
 
   card.addEventListener('touchstart', onTouchStart, swipeTouchOpts);
   card.addEventListener('touchmove', onTouchMove, swipeTouchOpts);
   card.addEventListener('touchend', onTouchEnd, swipeTouchOpts);
   card.addEventListener('touchcancel', onTouchEnd, swipeTouchOpts);
   card.addEventListener('mousedown', onMouseDown, swipeMouseOpts);
+  card.addEventListener('click', onCardClick, swipeClickOpts);
   window.addEventListener('mousemove', onWindowMouseMove, swipeMouseOpts);
   window.addEventListener('mouseup', onWindowMouseUp, swipeMouseOpts);
 
@@ -4510,6 +4534,7 @@ initCardSwipeGesture = function() {
     card.removeEventListener('touchend', onTouchEnd);
     card.removeEventListener('touchcancel', onTouchEnd);
     card.removeEventListener('mousedown', onMouseDown);
+    card.removeEventListener('click', onCardClick);
     window.removeEventListener('mousemove', onWindowMouseMove);
     window.removeEventListener('mouseup', onWindowMouseUp);
   };
