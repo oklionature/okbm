@@ -16,31 +16,29 @@
   <link rel="apple-touch-icon" href="logo.png" />
   <script>
     (function bootSplashOnceGuard() {
-      var shown = false;
+      var skipSplash = false;
       var skipForDirectTab = false;
-      try {
-        shown = sessionStorage.getItem('splash_shown') === 'true';
-      } catch (e) {}
-      try {
-        if (!shown) shown = localStorage.getItem('okbm_splash_shown') === 'true';
-      } catch (e) {}
-      try {
-        if (!shown && sessionStorage.getItem('okbm_skip_splash_once') === '1') {
-          sessionStorage.removeItem('okbm_skip_splash_once');
-          shown = true;
-        }
-      } catch (e) {}
-      try {
-        var ref = String(document.referrer || '');
-        if (!shown && /kakao\.com|kauth\.kakao/i.test(ref)) shown = true;
-      } catch (e) {}
+      try { localStorage.removeItem('okbm_splash_shown'); } catch (e0) {}
       try {
         var s = window.location.search || '';
         skipForDirectTab = s.indexOf('open=plan') !== -1 || s.indexOf('open=history') !== -1 || s.indexOf('open=report') !== -1 || s.indexOf('tab=plan') !== -1 || s.indexOf('tab=history') !== -1 || s.indexOf('tab=report') !== -1 || s.indexOf('open=basecamp') !== -1;
       } catch (e) {}
-      window.__okbmSplashAlreadyShown = shown;
+      try {
+        if (sessionStorage.getItem('okbm_skip_splash_once') === '1') {
+          sessionStorage.removeItem('okbm_skip_splash_once');
+          skipSplash = true;
+        }
+      } catch (e) {}
+      try {
+        var ref = String(document.referrer || '');
+        if (ref) {
+          if (/kakao\.com|kauth\.kakao/i.test(ref)) skipSplash = true;
+          else if (new URL(ref, location.href).host === location.host) skipSplash = true;
+        }
+      } catch (e) {}
+      window.__okbmSplashAlreadyShown = skipSplash;
       window.__okbmSplashSkipForDirectTab = skipForDirectTab;
-      if (shown || skipForDirectTab) {
+      if (skipSplash || skipForDirectTab) {
         document.documentElement.classList.add('okbm-splash-skipped');
       } else {
         document.documentElement.classList.add('okbm-splash-active');
@@ -293,7 +291,7 @@
       align-items: center;
       justify-content: flex-start;
       width: max-content;
-      min-width: 186px;
+      min-width: 149px;
       margin: 0;
       padding: 0;
       gap: 0;
@@ -303,18 +301,18 @@
       position: relative;
       box-sizing: border-box;
       width: max-content;
-      min-width: 186px;
-      height: 28px;
-      min-height: 28px;
-      max-height: 28px;
-      margin: 0 0 18px 0;
+      min-width: 149px;
+      height: 22px;
+      min-height: 22px;
+      max-height: 22px;
+      margin: 0 0 14px 0;
       padding: 0;
       overflow: visible;
       font-family: 'Arita-buri-SemiBold', 'Noto Serif KR', serif;
-      font-size: 18px;
+      font-size: 14.4px;
       font-weight: 600;
       letter-spacing: 0.16em;
-      line-height: 28px;
+      line-height: 22px;
       color: #f8fafc;
       text-align: left;
       white-space: nowrap;
@@ -333,35 +331,35 @@
     .okbm-splash-type-sizer {
       visibility: hidden;
       display: block;
-      height: 28px;
-      line-height: 28px;
+      height: 22px;
+      line-height: 22px;
       text-align: left;
-      padding-left: calc(0.16em + 5px);
+      padding-left: calc(0.16em + 4px);
     }
     .okbm-splash-type-live {
       position: absolute;
       left: 0;
       top: 0;
       width: 100%;
-      height: 28px;
-      line-height: 28px;
+      height: 22px;
+      line-height: 22px;
       display: flex;
       align-items: center;
       justify-content: flex-start;
-      padding-left: calc(0.16em + 5px);
+      padding-left: calc(0.16em + 4px);
       box-sizing: border-box;
     }
     .okbm-splash-type-cluster {
       position: relative;
       display: inline-flex;
       align-items: center;
-      line-height: 28px;
+      line-height: 22px;
     }
     .okbm-splash-cursor {
       display: inline-block;
-      width: 1.5px;
-      height: 16px;
-      margin-left: 5px;
+      width: 1.2px;
+      height: 13px;
+      margin-left: 4px;
       flex-shrink: 0;
       background: #fde047;
       border-radius: 1px;
@@ -369,14 +367,14 @@
       animation: okbmSplashCursorBlink 1.05s ease-in-out infinite;
     }
     .okbm-splash-logo-slot {
-      width: 186px;
-      height: 186px;
+      width: 149px;
+      height: 149px;
       flex-shrink: 0;
       overflow: hidden;
     }
     .okbm-splash-logo {
-      width: 186px;
-      height: 186px;
+      width: 149px;
+      height: 149px;
       aspect-ratio: 1 / 1;
       object-fit: contain;
       object-position: center;
@@ -577,7 +575,7 @@
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js" defer></script>
   <script>
-    window.__okbmTemplatesSrc = 'templates.js?v=2.9.8';
+    window.__okbmTemplatesSrc = 'templates.js?v=2.9.9';
     window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.20';
     (function okbmBootLoader() {
       var loaded = window.__okbmScriptPromises || {};
@@ -683,7 +681,7 @@
       else setTimeout(prefetch, 1800);
     })();
   </script>
-    <script src="romantic-sync.js?v=2.8.94" defer></script>
+    <script src="romantic-sync.js?v=2.8.95" defer></script>
     <script src="romantic-history.js?v=2.7.62" defer></script>
 
   <style>
@@ -1572,7 +1570,7 @@
       </span>
     </p>
     <div class="okbm-splash-logo-slot">
-      <img id="okbmSplashLogo" class="okbm-splash-logo" src="fulllogo.png" alt="낭만루트" width="186" height="186" decoding="async" />
+      <img id="okbmSplashLogo" class="okbm-splash-logo" src="fulllogo.png" alt="낭만루트" width="149" height="149" decoding="async" />
     </div>
   </div>
 </div>
@@ -1592,19 +1590,16 @@
   function readSplashShown() {
     if (window.__okbmSplashAlreadyShown === true) return true;
     try {
-      if (sessionStorage.getItem(SPLASH_SHOWN_KEY) === 'true') return true;
-    } catch (e) {}
-    try {
-      if (localStorage.getItem('okbm_splash_shown') === 'true') return true;
-    } catch (e) {}
-    try {
       if (sessionStorage.getItem('okbm_skip_splash_once') === '1') {
         sessionStorage.removeItem('okbm_skip_splash_once');
         return true;
       }
     } catch (e) {}
     try {
-      if (/kakao\.com|kauth\.kakao/i.test(String(document.referrer || ''))) return true;
+      var ref = String(document.referrer || '');
+      if (!ref) return false;
+      if (/kakao\.com|kauth\.kakao/i.test(ref)) return true;
+      if (new URL(ref, location.href).host === location.host) return true;
     } catch (e) {}
     return false;
   }
@@ -1612,7 +1607,7 @@
   function markSplashShown() {
     window.__okbmSplashAlreadyShown = true;
     try { sessionStorage.setItem(SPLASH_SHOWN_KEY, 'true'); } catch (e) {}
-    try { localStorage.setItem('okbm_splash_shown', 'true'); } catch (e) {}
+    try { localStorage.removeItem('okbm_splash_shown'); } catch (e) {}
   }
 
   function hideSplashOverlayNow() {

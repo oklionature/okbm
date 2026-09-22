@@ -6,7 +6,18 @@ var escapeHtml = function(t) {
   return (typeof window.escapeHtml === 'function') ? window.escapeHtml(t) : String(t == null ? '' : t);
 };
 var okbmSafeImageUrl = function(url) {
-  return (typeof window.okbmSafeImageUrl === 'function') ? window.okbmSafeImageUrl(url) : '';
+  var raw = String(url == null ? '' : url).trim();
+  if (!raw) return '';
+  // 세션 미리보기 blob만 화면 표시 허용. DB/로컬 영구 저장은 https만.
+  if (raw.indexOf('blob:') === 0) {
+    if (raw === window.__readyShotPreviewBlobUrl
+        || raw === window.currentSharePhoto
+        || raw === window.currentSharePhotoRaw) {
+      return raw;
+    }
+    return '';
+  }
+  return (typeof window.okbmSafeImageUrl === 'function') ? window.okbmSafeImageUrl(raw) : '';
 };
 var okbmSafeExternalUrl = function(url) {
   return (typeof window.okbmSafeExternalUrl === 'function') ? window.okbmSafeExternalUrl(url) : '#';
@@ -1729,6 +1740,14 @@ window.selectedTemplateId = (typeof window.selectedTemplateId === 'number')
   : parseInt(localStorage.getItem('romantic_selected_template') || '1', 10);
 var selectedTemplateId = window.selectedTemplateId;
 
+function isReadyShotSessionBlob(url) {
+  var raw = String(url || '').trim();
+  if (raw.indexOf('blob:') !== 0) return false;
+  return raw === window.__readyShotPreviewBlobUrl
+    || raw === window.currentSharePhoto
+    || raw === window.currentSharePhotoRaw;
+}
+
 function resolveReadyShotPhotoUrl() {
   var rec = (window.currentShareRecord && typeof window.currentShareRecord.then !== 'function')
     ? window.currentShareRecord
@@ -1746,6 +1765,22 @@ function resolveReadyShotPhotoUrl() {
   return '';
 }
 window.resolveReadyShotPhotoUrl = resolveReadyShotPhotoUrl;
+
+function resolveReadyShotDisplayUrl() {
+  var httpsUrl = resolveReadyShotPhotoUrl();
+  if (httpsUrl) return httpsUrl;
+  var previewCandidates = [
+    window.__readyShotPreviewBlobUrl,
+    window.currentSharePhotoRaw,
+    window.currentSharePhoto
+  ];
+  for (var i = 0; i < previewCandidates.length; i++) {
+    var url = String(previewCandidates[i] || '').trim();
+    if (isReadyShotSessionBlob(url)) return url;
+  }
+  return '';
+}
+window.resolveReadyShotDisplayUrl = resolveReadyShotDisplayUrl;
 
 function persistReadyShotPhotoNow(url) {
   var photoUrl = String(url || '').trim();
@@ -3242,8 +3277,8 @@ function ensureReadyShotFrameModalDOM() {
 window.refreshReadyShotFramePreview = function(forceRerender) {
   var host = document.getElementById('readyShotFrameCard');
   if (!host) return;
-  var photo = window.currentSharePhotoRaw || window.currentSharePhoto || '';
-  if (!photo || String(photo).indexOf('https://') !== 0) return;
+  var photo = resolveReadyShotDisplayUrl();
+  if (!photo) return;
 
   var mode = window.currentStudioCardMode || 'spread';
   if (STUDIO_MODE_ORDER.indexOf(mode) === -1) mode = 'spread';
@@ -3298,8 +3333,8 @@ window.refreshReadyShotFramePreview = function(forceRerender) {
 };
 
 window.openReadyShotFrameModal = function() {
-  var photo = window.currentSharePhotoRaw || window.currentSharePhoto;
-  if (!photo || String(photo).indexOf('https://') !== 0) {
+  var photo = resolveReadyShotDisplayUrl();
+  if (!photo) {
     if (typeof window.triggerReadyShotPhotoPicker === 'function') window.triggerReadyShotPhotoPicker();
     return;
   }
@@ -3343,8 +3378,14 @@ window.closeReadyShotFrameModal = function(cancel) {
 
 window.applyReadyShotFrameModal = function() {
   window.currentShareRecord = window.currentShareRecord || {};
-  window.currentShareRecord.readyShotPhoto = window.currentSharePhotoRaw || window.currentSharePhoto || '';
-  window.currentShareRecord.ready_shot_photo = window.currentShareRecord.readyShotPhoto;
+  var persistPhoto = resolveReadyShotPhotoUrl();
+  if (persistPhoto) {
+    window.currentShareRecord.readyShotPhoto = persistPhoto;
+    window.currentShareRecord.ready_shot_photo = persistPhoto;
+  } else if (String(window.currentShareRecord.readyShotPhoto || '').indexOf('https://') !== 0) {
+    window.currentShareRecord.readyShotPhoto = '';
+    window.currentShareRecord.ready_shot_photo = '';
+  }
   window.currentShareRecord.readyShotPosX = (window.currentPhotoPosX !== undefined) ? window.currentPhotoPosX : 50;
   window.currentShareRecord.readyShotPosY = (window.currentPhotoPosY !== undefined) ? window.currentPhotoPosY : 50;
   window.currentShareRecord.readyShotScale = currentPhotoScaleVal || 1.0;
@@ -3833,6 +3874,29 @@ window.handleShareCardPhotoUpload = async function(e) {
     if (typeof window.processSinglePhotoSmart === 'function') {
       blob = await window.processSinglePhotoSmart(file, { maxDim: 1200, quality: 0.82 });
     }
+    if (!blob && file && typeof createImageBitmap === 'function') {
+      try {
+        var bmp = await createImageBitmap(file);
+        var maxLen = Math.max(bmp.width || 1, bmp.height || 1);
+        var fit = Math.min(1, 1200 / maxLen);
+        var cw = Math.max(1, Math.round((bmp.width || 1) * fit));
+        var ch = Math.max(1, Math.round((bmp.height || 1) * fit));
+        var canvas = document.createElement('canvas');
+        canvas.width = cw;
+        canvas.height = ch;
+        var ctx = canvas.getContext('2d', { alpha: false });
+        if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.drawImage(bmp, 0, 0, cw, ch);
+          blob = await new Promise(function(resolve) {
+            canvas.toBlob(function(out) { resolve(out || null); }, 'image/jpeg', 0.82);
+          });
+        }
+        if (bmp && typeof bmp.close === 'function') {
+          try { bmp.close(); } catch (eCloseBmp) {}
+        }
+      } catch (eBmp) {}
+    }
     if (!blob) {
       if (typeof window.hidePhotoLoadingModal === 'function') window.hidePhotoLoadingModal();
       if (typeof showToast === 'function') showToast('사진 변환에 실패했습니다.', 'warn');
@@ -4108,7 +4172,7 @@ function updateShareCardLive() {
     var items = (Array.isArray(window.currentShareItems) && window.currentShareItems.length > 0)
       ? window.currentShareItems
       : (rec.items || []);
-    var photoUrl = resolveReadyShotPhotoUrl();
+    var photoUrl = resolveReadyShotDisplayUrl();
     var hasPhoto = !!photoUrl;
     if (!photoUrl) photoUrl = READY_SHOT_PLACEHOLDER_PHOTO;
     var mode = window.currentStudioCardMode || rec.readyShotMode || 'spread';
@@ -4287,7 +4351,7 @@ initCardSwipeGesture = function() {
 
     if (!wasSwipe && absDx < 10 && absDy < 10 && elapsed < 450) {
       if ((window.readyShotFamily || 'photo') !== 'photo') return;
-      if (!resolveReadyShotPhotoUrl()) {
+      if (!resolveReadyShotDisplayUrl()) {
         if (typeof window.triggerReadyShotPhotoPicker === 'function') window.triggerReadyShotPhotoPicker();
         return;
       }

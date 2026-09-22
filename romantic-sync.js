@@ -9660,7 +9660,7 @@ async function handleSocialLoginSuccess(provider, providerId, email, nickname, p
   try {
     sessionStorage.setItem('splash_shown', 'true');
     sessionStorage.setItem('okbm_skip_splash_once', '1');
-    localStorage.setItem('okbm_splash_shown', 'true');
+    localStorage.removeItem('okbm_splash_shown');
   } catch (e) {}
   window.__okbmSplashAlreadyShown = true;
 

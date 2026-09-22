@@ -131,7 +131,7 @@
     <script>
     window.SUPABASE_URL = 'https://qnumfecythtqtrxeasys.supabase.co';
     window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
-    window.__okbmTemplatesSrc = 'templates.js?v=2.9.8';
+    window.__okbmTemplatesSrc = 'templates.js?v=2.9.9';
       window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.20';
       (function okbmBootLoader() {
         var loaded = window.__okbmScriptPromises || {};
@@ -203,7 +203,7 @@
         bindLazy('openGearPresetModal', window.okbmEnsurePlan);
       })();
     </script>
-    <script src="romantic-sync.js?v=2.8.94" defer></script>
+    <script src="romantic-sync.js?v=2.8.95" defer></script>
     <script src="romantic-history.js?v=2.7.62" defer></script>
 
     <style>
@@ -1610,7 +1610,7 @@
         if (typeof updateLODLabels === 'function') updateLODLabels();
       });
 
-      function normalizeTo10Regions(regionStr) {
+      function mapTo10RegionName(regionStr) {
         var r = String(regionStr || '').trim();
         if (r === '서울' || r === '인천' || r === '서울/인천' || r === '서울인천') return '서울/인천';
         if (r === '경기' || r === '경기도') return '경기';
@@ -1622,7 +1622,11 @@
         if (r === '경북' || r === '경상북도' || r === '대구') return '경북';
         if (r === '경남' || r === '경상남도' || r === '부산' || r === '울산') return '경남';
         if (r === '제주' || r === '제주도' || r === '제주특별자치도') return '제주';
-        return r || '경기';
+        if (["서울/인천", "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"].indexOf(r) !== -1) return r;
+        return '';
+      }
+      function normalizeTo10Regions(regionStr, fallbackRegion) {
+        return mapTo10RegionName(regionStr) || mapTo10RegionName(fallbackRegion) || '경기';
       }
 
       async function loadSpotsMasterEngine() {
@@ -1732,10 +1736,8 @@
             }
             updateNewSpotFlags(spots);
             renderSubChips();
-            if (map) {
-              renderSpots();
-              checkUrlParamSpotFocus();
-            }
+            if (typeof renderSpots === 'function') renderSpots();
+            if (map && typeof checkUrlParamSpotFocus === 'function') checkUrlParamSpotFocus();
           }
         } catch (e) {
           console.warn('[map.html:loadSpotsMasterEngine]', e);
@@ -1753,7 +1755,7 @@
           window.spots = spots;
           if (typeof updateNewSpotFlags === 'function') updateNewSpotFlags(spots);
           if (typeof renderSubChips === 'function') renderSubChips();
-          if (map && typeof renderSpots === 'function') renderSpots();
+          if (typeof renderSpots === 'function') renderSpots();
         };
         var bind = function() {
           if (window.__okbmSpotsIdbReady && typeof window.__okbmSpotsIdbReady.then === 'function') {
@@ -5569,9 +5571,9 @@ var liveSearchTimer = null;
       var clustererDebounceTimer = null;
 
       function renderSpots(forceRebuild = false) {
-        if (!isKakaoMapReady()) {
+        const mapReady = isKakaoMapReady();
+        if (!mapReady) {
           window.__pendingRenderSpots = forceRebuild ? 'force' : (window.__pendingRenderSpots || true);
-          return;
         }
         var latestB = (window.RomanticVault && typeof window.RomanticVault.read === 'function') ? window.RomanticVault.read('okbm_bookmarks', []) : safeGetJSON('okbm_bookmarks', []);
         var latestV = (window.RomanticVault && typeof window.RomanticVault.read === 'function') ? window.RomanticVault.read('okbm_visited', []) : safeGetJSON('okbm_visited', []);
@@ -5581,18 +5583,20 @@ var liveSearchTimer = null;
         window.userVisited = userVisited;
 
         const currentIds = new Set(spots.map(s => String(s.id).trim()));
-        spotNativeMarkerMap.forEach((marker, id) => { 
-          if (!currentIds.has(id)) { 
-            marker.setMap(null); 
-            spotNativeMarkerMap.delete(id); 
-          } 
-        });
-        spotLabelOverlayMap.forEach((overlay, id) => { 
-          if (!currentIds.has(id)) { 
-            overlay.setMap(null); 
-            spotLabelOverlayMap.delete(id); 
-          } 
-        });
+        if (mapReady) {
+          spotNativeMarkerMap.forEach((marker, id) => { 
+            if (!currentIds.has(id)) { 
+              marker.setMap(null); 
+              spotNativeMarkerMap.delete(id); 
+            } 
+          });
+          spotLabelOverlayMap.forEach((overlay, id) => { 
+            if (!currentIds.has(id)) { 
+              overlay.setMap(null); 
+              spotLabelOverlayMap.delete(id); 
+            } 
+          });
+        }
 
         const activeMarkers = [];
         let displaySpots = [...spots];
@@ -5634,12 +5638,19 @@ var liveSearchTimer = null;
           spot.renderLng = lng;
 
           const sId = String(spot.id).trim();
-          const latlng = spot._renderLatLng || (spot._renderLatLng = new kakao.maps.LatLng(lat, lng));
 
           if (!spot._regionNormalized) {
-            spot.region = normalizeTo10Regions(spot.region, detectRegionAndCity(lat, lng, spot.spot_main || spot.name, spot.trailhead_addr || spot.entryPoint).region);
+            var detectedRegion = '';
+            try {
+              detectedRegion = detectRegionAndCity(lat, lng, spot.spot_main || spot.name, spot.trailhead_addr || spot.entryPoint).region;
+            } catch (e) {}
+            spot.region = normalizeTo10Regions(spot.region, detectedRegion);
             spot._regionNormalized = true;
           }
+
+          if (!mapReady) return;
+
+          const latlng = spot._renderLatLng || (spot._renderLatLng = new kakao.maps.LatLng(lat, lng));
 
           if (!spotNativeMarkerMap.has(sId) && map) {
             const marker = new kakao.maps.Marker({
@@ -5752,7 +5763,7 @@ var liveSearchTimer = null;
             }
           }
 
-          const regKey = (spot.region === '서울인천' || spot.region === '서울/인천') ? '서울/인천' : spot.region;
+          const regKey = normalizeTo10Regions(spot.region);
 
           if (currentMasterTab === 'REGION') { 
             if (currentRegionFilter !== 'ALL' && regKey !== (currentRegionFilter === '서울인천' ? '서울/인천' : currentRegionFilter)) match = false; 
@@ -5785,32 +5796,44 @@ var liveSearchTimer = null;
           }
         });
 
-        clearTimeout(clustererDebounceTimer);
-        clustererDebounceTimer = setTimeout(() => {
-          if (globalClusterer) {
-            globalClusterer.clear();
-            if (activeMarkers.length > 0) {
-              globalClusterer.addMarkers(activeMarkers);
+        if (mapReady) {
+          clearTimeout(clustererDebounceTimer);
+          clustererDebounceTimer = setTimeout(() => {
+            if (globalClusterer) {
+              globalClusterer.clear();
+              if (activeMarkers.length > 0) {
+                globalClusterer.addMarkers(activeMarkers);
+              }
             }
-          }
-          updateLODLabels();
-        }, 80);
+            updateLODLabels();
+          }, 80);
+        }
         window.renderSpots = renderSpots;
 
         const spotCountEl = document.getElementById('spotCount');
         if (spotCountEl) spotCountEl.innerText = `${visibleCount}개`;
+        if (!spotListEl) {
+          updateSmartResetButtons();
+          return;
+        }
 
         if (isDomBuilt) {
           targetOrder.forEach(regKey => {
             const groupDiv = spotListEl.querySelector(`.region-group[data-region="${regKey}"]`);
             if (!groupDiv) return;
             const count = regionVisibleCounts[regKey] || 0;
+            const titleSpan = groupDiv.querySelector('.region-group-title span:last-child');
+            const container = groupDiv.querySelector('.region-items-container');
+            const title = groupDiv.querySelector('.region-group-title');
+            const shouldBeOpen = (currentMasterTab === 'REGION' && currentRegionFilter === regKey);
             if (count === 0) {
               groupDiv.style.display = 'none';
             } else {
               groupDiv.style.display = 'block';
-              const titleSpan = groupDiv.querySelector('.region-group-title span:last-child');
-              const container = groupDiv.querySelector('.region-items-container');
+              if (shouldBeOpen && container) {
+                container.style.display = 'block';
+                if (title) title.style.borderLeftColor = '#0f766e';
+              }
               const isOpen = container && container.style.display !== 'none';
               if (titleSpan) {
                 titleSpan.innerHTML = `${count}개 ${isOpen ? '<b style="color:var(--accent-blue);">▼</b>' : '▶'}`;
@@ -5828,7 +5851,7 @@ var liveSearchTimer = null;
             fragment.appendChild(adminHeaderDiv);
             displaySpots.forEach(spot => { 
               const mk = spotNativeMarkerMap.get(String(spot.id).trim());
-              if (mk && mk.getMap()) fragment.appendChild(createSpotCardElement(spot)); 
+              if (!mapReady || !mk || mk.getMap()) fragment.appendChild(createSpotCardElement(spot)); 
             });
           } else {
             targetOrder.forEach(regionKey => {
