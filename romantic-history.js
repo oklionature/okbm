@@ -303,7 +303,7 @@
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
-        padding: calc(56px + 10px) 16px calc(140px + env(safe-area-inset-bottom, 8px)) 16px !important;
+        padding: var(--okbm-feed-header-space, 58px) 16px var(--okbm-feed-bottom-space, 148px) 16px !important;
         box-sizing: border-box !important;
         overflow: hidden !important;
         background: #000000 !important;
@@ -368,10 +368,13 @@
         pointer-events: none !important;
         display: block !important;
       }
+      #romanticHistoryModal.okbm-vv-fitted .history-status-bar-scrim {
+        display: none !important;
+      }
 
       .history-tab-route .reel-page-snap > .reel-header-row {
         position: absolute !important;
-        top: max(32px, env(safe-area-inset-top, 0px)) !important;
+        top: var(--okbm-feed-header-top, max(8px, env(safe-area-inset-top, 0px))) !important;
         left: 0 !important;
         right: 0 !important;
         height: auto !important;
@@ -410,35 +413,62 @@
         z-index: 10 !important;
         pointer-events: auto !important;
         flex-shrink: 0 !important;
+        font-size: 0.80rem !important;
       }
       .history-tab-route .reel-bottom-interactive-bar {
         position: absolute !important;
         left: 0 !important;
         right: 0 !important;
         bottom: 0 !important;
-        padding: 28px 14px 12px 14px !important;
+        padding: 28px 14px 10px 14px !important;
+        font-size: 0.80rem !important;
+        min-height: calc(28px + 32px + 6px + 4.2em + 10px) !important;
         background: linear-gradient(to top, rgba(0,0,0,0.82), rgba(0,0,0,0.35) 62%, rgba(0,0,0,0)) !important;
         border-top: none !important;
       }
 
+      .reel-memo-fixed-slot {
+        display: block !important;
+        font-size: 0.80rem !important;
+        height: 4.2em !important;
+        min-height: 4.2em !important;
+        max-height: 4.2em !important;
+        overflow: hidden !important;
+        flex: 0 0 4.2em !important;
+        box-sizing: border-box !important;
+      }
       .reel-memo-fixed-box {
-        height: 3.8em !important;
-        min-height: 3.8em !important;
-        max-height: 3.8em !important;
-        line-height: 1.3em !important;
+        display: -webkit-box !important;
+        -webkit-box-orient: vertical !important;
+        -webkit-line-clamp: 3 !important;
+        line-clamp: 3 !important;
+        height: 4.2em !important;
+        min-height: 4.2em !important;
+        max-height: 4.2em !important;
+        line-height: 1.4em !important;
         font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        font-size: 0.76rem !important;
+        font-size: 0.80rem !important;
         font-weight: 500 !important;
         color: #e2e8f0 !important;
         word-break: break-all !important;
-        display: -webkit-box !important;
-        -webkit-line-clamp: 3 !important;
-        line-clamp: 3 !important;
-        -webkit-box-orient: vertical !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
         letter-spacing: -0.01em !important;
         box-sizing: border-box !important;
+      }
+      .okbm-feed-postcard {
+        width: min(330px, 100%, calc((var(--okbm-vvh, 100dvh) - 168px) * 0.75)) !important;
+        max-width: min(330px, 100%) !important;
+        max-height: calc(var(--okbm-vvh, 100dvh) - 168px) !important;
+        aspect-ratio: 3 / 4 !important;
+        height: auto !important;
+        overflow: hidden !important;
+      }
+      #singleTripFeedModal .reel-photo-target {
+        width: 100% !important;
+        height: auto !important;
+        max-height: min(58dvh, calc(var(--okbm-vvh, 100dvh) - 160px)) !important;
+        object-fit: contain !important;
       }
     `;
     document.head.appendChild(style);
@@ -4246,7 +4276,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
     var templateSectionHtml =
       '<div style="padding:18px 16px 20px 16px; background:#000000; display:flex; justify-content:center;">' +
-        '<div style="width:100%; max-width:330px; aspect-ratio:3/4; border-radius:14px; overflow:hidden; background:#000000; box-shadow:0 12px 30px rgba(0,0,0,0.9);">' +
+        '<div class="okbm-feed-postcard" style="border-radius:14px; overflow:hidden; background:#000000; box-shadow:0 12px 30px rgba(0,0,0,0.9);">' +
           packingSheetMarkup +
         '</div>' +
       '</div>';
@@ -5345,7 +5375,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     feedModal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); height:auto !important; max-height:none !important; width:100%; max-width:100%; background:#000000; z-index:' + feedZ + ' !important; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; transform:translateZ(0); -webkit-transform:translateZ(0);';
 
     feedModal.innerHTML = `
-      <div style="position:fixed; top:calc(10px + env(safe-area-inset-top, 0px)); left:0; right:0; max-width:440px; margin:0 auto; padding:0 12px; display:flex; justify-content:space-between; align-items:center; z-index:` + chromeZ + `; pointer-events:none;">
+      <div style="position:absolute; top:8px; left:0; right:0; max-width:440px; margin:0 auto; padding:0 12px; display:flex; justify-content:space-between; align-items:center; z-index:` + chromeZ + `; pointer-events:none;">
         <button type="button" onclick="window.goBackModal(event);" style="pointer-events:auto; background:#0c1017; border:1px solid rgba(255,255,255,0.2); color:#ffffff; width:32px; height:32px; border-radius:50%; font-size:0.85rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); padding:0;">◀</button>
         
         <div style="pointer-events:auto; display:flex; align-items:center; gap:6px;">
@@ -5356,7 +5386,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
         </div>
       </div>
 
-      <div id="dualFeedScrollContainer" onscroll="window.__onDualFeedContainerScroll(this);" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; contain:content; padding:calc(env(safe-area-inset-top, 0px)) 0 calc(76px + env(safe-area-inset-bottom, 8px)) 0; display:flex; flex-direction:column; box-sizing:border-box;">
+      <div id="dualFeedScrollContainer" onscroll="window.__onDualFeedContainerScroll(this);" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; contain:content; padding:44px 0 16px 0; display:flex; flex-direction:column; box-sizing:border-box;">
         <div id="dualFeedCardsWrapper">
           ${allCardsHtml}
         </div>
@@ -5370,6 +5400,9 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     }
     if (typeof window.ensureMasterBottomDock === 'function') {
       window.ensureMasterBottomDock('history');
+    }
+    if (typeof window.okbmBindOverlayViewportFit === 'function') {
+      window.okbmBindOverlayViewportFit(feedModal, { reserveDock: true });
     }
 
     window.__syncDualFeedUgcChrome = function(curRecord) {
@@ -7367,7 +7400,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
         '</button>')
       : ('<span style="font-size:0.74rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.3; ' + textShadowStyle + '">' + safeSpot + '</span>');
 
-    return '<div class="reel-header-row" style="position:absolute !important; top:max(32px, env(safe-area-inset-top, 0px)) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; z-index:400 !important; isolation:isolate !important; transform:translateZ(40px) !important; -webkit-transform:translateZ(40px) !important; content-visibility:visible !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important; border-bottom:none !important; pointer-events:none !important;">' +
+    return '<div class="reel-header-row" style="position:absolute !important; top:var(--okbm-feed-header-top, max(8px, env(safe-area-inset-top, 0px))) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; z-index:400 !important; isolation:isolate !important; transform:translateZ(40px) !important; -webkit-transform:translateZ(40px) !important; content-visibility:visible !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important; border-bottom:none !important; pointer-events:none !important;">' +
       '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
         '<button type="button" data-author="' + safeAuthor + '" data-user-id="' + safeUserId + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.7); pointer-events:auto; position:relative; z-index:401;" title="' + safeAuthor + '님의 피드 모아보기">' +
           avatarMarkup +
@@ -7906,8 +7939,10 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
           '</div>' +
         '</div>' +
 
-        '<div id="feedPhotoMemoText_' + cardId + '" class="reel-memo-fixed-box">' +
-          cleanMemoContentHtml +
+        '<div class="reel-memo-fixed-slot">' +
+          '<div id="feedPhotoMemoText_' + cardId + '" class="reel-memo-fixed-box">' +
+            cleanMemoContentHtml +
+          '</div>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -8250,6 +8285,72 @@ window.renderHistoryStage = function(isLoading) {
     };
   };
 
+  window.okbmIsKakaoInApp = function() {
+    return /KAKAOTALK/i.test(navigator.userAgent || '');
+  };
+
+  window.okbmApplyVisibleViewportToOverlay = function(el, opts) {
+    if (!el) return;
+    opts = opts || {};
+    var vv = window.visualViewport;
+    var top = vv ? Math.round(vv.offsetTop) : 0;
+    var visH = vv ? Math.round(vv.height) : window.innerHeight;
+    var dock = document.getElementById('romanticMasterBottomDock');
+    var dockH = 0;
+    if (opts.reserveDock !== false && dock) {
+      var dockCs = window.getComputedStyle(dock);
+      if (dockCs.display !== 'none' && dockCs.visibility !== 'hidden') {
+        var dockRect = dock.getBoundingClientRect();
+        var visBottom = top + visH;
+        if (dockRect.top < visBottom) {
+          dockH = Math.max(0, Math.round(visBottom - dockRect.top));
+        }
+      }
+    }
+    var usable = Math.max(240, visH - dockH);
+    el.style.setProperty('top', top + 'px', 'important');
+    el.style.setProperty('bottom', 'auto', 'important');
+    el.style.setProperty('height', usable + 'px', 'important');
+    el.style.setProperty('max-height', usable + 'px', 'important');
+    el.classList.add('okbm-vv-fitted');
+    document.documentElement.style.setProperty('--okbm-vvh', usable + 'px');
+    document.documentElement.style.setProperty('--okbm-feed-header-top', '8px');
+    document.documentElement.style.setProperty('--okbm-feed-bottom-space', '148px');
+    document.documentElement.style.setProperty('--okbm-feed-header-space', '58px');
+  };
+
+  window.okbmBindOverlayViewportFit = function(el, opts) {
+    window.okbmUnbindOverlayViewportFit();
+    window.__okbmVvFitEl = el;
+    window.__okbmVvFitOpts = opts || {};
+    window.__okbmVvFitFn = function() {
+      if (!window.__okbmVvFitEl || !document.body.contains(window.__okbmVvFitEl)) {
+        window.okbmUnbindOverlayViewportFit();
+        return;
+      }
+      window.okbmApplyVisibleViewportToOverlay(window.__okbmVvFitEl, window.__okbmVvFitOpts);
+    };
+    window.okbmApplyVisibleViewportToOverlay(el, opts);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', window.__okbmVvFitFn);
+      window.visualViewport.addEventListener('scroll', window.__okbmVvFitFn);
+    }
+    window.addEventListener('resize', window.__okbmVvFitFn);
+  };
+
+  window.okbmUnbindOverlayViewportFit = function() {
+    if (window.__okbmVvFitFn) {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', window.__okbmVvFitFn);
+        window.visualViewport.removeEventListener('scroll', window.__okbmVvFitFn);
+      }
+      window.removeEventListener('resize', window.__okbmVvFitFn);
+    }
+    window.__okbmVvFitFn = null;
+    window.__okbmVvFitEl = null;
+    window.__okbmVvFitOpts = null;
+  };
+
   window.openHistoryModal = function() {
     if (typeof window.forceUpdateStableVh === 'function') {
       window.forceUpdateStableVh();
@@ -8309,6 +8410,10 @@ window.renderHistoryStage = function(isLoading) {
       window.renderHistoryStage();
     }
 
+    if (typeof window.okbmBindOverlayViewportFit === 'function') {
+      window.okbmBindOverlayViewportFit(modal, { reserveDock: true });
+    }
+
     window.fetchCommunityFeeds(true).then(function(feeds) {
       if (!window.__okbmHistoryModalOpen) return;
       if (feeds == null) return;
@@ -8322,6 +8427,9 @@ window.renderHistoryStage = function(isLoading) {
 
   window.closeHistoryModal = function() {
     window.__okbmHistoryModalOpen = false;
+    if (typeof window.okbmUnbindOverlayViewportFit === 'function') {
+      window.okbmUnbindOverlayViewportFit();
+    }
     _okbmAbortCommunityFeedsFetch();
     if (typeof window.okbmCleanupModalWatchers === 'function') {
       window.okbmCleanupModalWatchers();

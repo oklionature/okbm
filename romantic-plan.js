@@ -3419,10 +3419,10 @@ window.saveCurrentPackingRecord = function() {
         </div>
 
         <!-- 2. 최단 일정 D-Day 스마트 배너 -->
-        ${dDayBadgeHtml}
+        <div id="planDDayBadge" style="flex-shrink:0; width:100%;">${dDayBadgeHtml}</div>
 
        <!-- 3. 메모장 카드 (22%) -->
-        <div style="flex:22 1 0% !important; min-height:0 !important; background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:6px 12px; display:flex; flex-direction:column; gap:4px; box-sizing:border-box;">
+        <div id="planMemoCardWrap" style="flex:22 1 0% !important; min-height:0 !important; background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:6px 12px; display:flex; flex-direction:column; gap:4px; box-sizing:border-box;">
           <div style="display:flex; justify-content:space-between; align-items:center; height:24px; flex-shrink:0;">
             <div style="font-size:0.78rem; font-weight:900; color:#ffffff; display:flex; align-items:center; gap:5px;">
               ${activeSpotInfo.isCompleted ? UI_ICONS.starGold : UI_ICONS.memoEdit}
@@ -3520,12 +3520,12 @@ window.saveCurrentPackingRecord = function() {
 
               return '<div style="display:flex; flex-wrap:wrap; gap:5px; padding-bottom:5px; border-bottom:1px solid rgba(255,255,255,0.08); flex-shrink:0;">' + chipsHtml + '</div>';
             })()}
-            <textarea id="planDailyMemoInput" placeholder="이 날짜의 일정과 챙길 것들을 메모해보세요..." oninput="window.autoSavePlanMemo('${activeDateStr}', this.value)" style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:none; border:none; color:#ffffff; font-size:0.90rem; line-height:1.45; outline:none; resize:none; font-family:\'Pretendard Variable\', -apple-system, sans-serif; padding:0; margin:0; box-sizing:border-box;">${escapeHtml(currentDayMemo)}</textarea>
+            <textarea id="planDailyMemoInput" placeholder="이 날짜의 일정과 챙길 것들을 메모해보세요..." onfocus="if(window.applyPlanMemoKeyboardLayout) window.applyPlanMemoKeyboardLayout(true)" onblur="setTimeout(function(){ var el=document.getElementById('planDailyMemoInput'); if(el && document.activeElement===el) return; if(window.applyPlanMemoKeyboardLayout) window.applyPlanMemoKeyboardLayout(false); }, 80)" oninput="window.autoSavePlanMemo('${activeDateStr}', this.value)" style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:none; border:none; color:#ffffff; font-size:0.90rem; line-height:1.45; outline:none; resize:none; font-family:\'Pretendard Variable\', -apple-system, sans-serif; padding:0; margin:0; box-sizing:border-box;">${escapeHtml(currentDayMemo)}</textarea>
           </div>
         </div>
 
      <!-- 4. 하단 2x2 모던 큐브 그리드 (모노크롬 & 정중앙 정렬) -->
-        <div style="flex:26 1 0% !important; min-height:0 !important; display:grid; grid-template-columns:1fr 1fr; gap:6px; box-sizing:border-box;">
+        <div id="planCubeGrid" style="flex:26 1 0% !important; min-height:0 !important; display:grid; grid-template-columns:1fr 1fr; gap:6px; box-sizing:border-box;">
           
           <div onclick="window.openPlanPackingCalculator();" style="background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:0 10px; display:flex; justify-content:center; align-items:center; cursor:pointer; box-sizing:border-box;">
             <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
@@ -4338,6 +4338,9 @@ window.saveCurrentPackingRecord = function() {
 
     if (typeof window.bindPlanCalendarSwipe === 'function') {
       window.bindPlanCalendarSwipe();
+    }
+    if (typeof window.bindPlanMemoKeyboardLift === 'function') {
+      window.bindPlanMemoKeyboardLift();
     }
   };
  window.openGearMetaEditSheet = function(gearName) {
@@ -5930,10 +5933,15 @@ window.commitPlanDestination = function(dateKey) {
     setTimeout(function() {
       var memoInput = document.getElementById('planDailyMemoInput');
       if (memoInput) {
+        if (typeof window.applyPlanMemoKeyboardLayout === 'function') {
+          window.applyPlanMemoKeyboardLayout(true);
+        }
         memoInput.focus();
-        memoInput.setSelectionRange(memoInput.value.length, memoInput.value.length);
+        try {
+          memoInput.setSelectionRange(memoInput.value.length, memoInput.value.length);
+        } catch (err) {}
       }
-    }, 100);
+    }, 80);
 
     if (typeof showToast === 'function') {
       showToast('목적지가 등록되었습니다.', 'success');
@@ -6080,6 +6088,9 @@ window.commitPlanDestination = function(dateKey) {
       document.body.style.overflow = '';
       document.documentElement.style.overflow = '';
     }
+    if (typeof window.applyPlanMemoKeyboardLayout === 'function') {
+      window.applyPlanMemoKeyboardLayout(false);
+    }
     document.body.classList.remove('plan-modal-open');
     // 🛡️ 제스처 플래그 리셋
     window.__ribbonSwipeBound = false;
@@ -6095,6 +6106,157 @@ window.commitPlanDestination = function(dateKey) {
     }
     triggerHaptic(10);
   };
+
+  function okbmStashPlanKbStyle(el) {
+    if (!el) return;
+    if (el.dataset.planKbOrigStyle === undefined) {
+      el.dataset.planKbOrigStyle = el.getAttribute('style') || '';
+    }
+  }
+
+  function okbmRestorePlanKbStyle(el) {
+    if (!el) return;
+    if (el.dataset.planKbOrigStyle !== undefined) {
+      el.setAttribute('style', el.dataset.planKbOrigStyle);
+      delete el.dataset.planKbOrigStyle;
+    }
+  }
+
+  window.applyPlanMemoKeyboardLayout = function(isOpen) {
+    var modal = document.getElementById('romanticPlanModal');
+    var cal = document.getElementById('planCalendarCardWrap');
+    var dday = document.getElementById('planDDayBadge');
+    var memo = document.getElementById('planMemoCardWrap');
+    var cubes = document.getElementById('planCubeGrid');
+    var dock = document.getElementById('romanticMasterBottomDock');
+    var input = document.getElementById('planDailyMemoInput');
+
+    if (!isOpen) {
+      if (!window.__planMemoKbActive) return;
+      window.__planMemoKbActive = false;
+      okbmRestorePlanKbStyle(modal);
+      okbmRestorePlanKbStyle(cal);
+      okbmRestorePlanKbStyle(dday);
+      okbmRestorePlanKbStyle(memo);
+      okbmRestorePlanKbStyle(cubes);
+      okbmRestorePlanKbStyle(input);
+      if (dock) dock.style.setProperty('display', 'flex', 'important');
+      return;
+    }
+
+    if (!memo) return;
+    window.__planMemoKbActive = true;
+
+    okbmStashPlanKbStyle(modal);
+    okbmStashPlanKbStyle(cal);
+    okbmStashPlanKbStyle(dday);
+    okbmStashPlanKbStyle(memo);
+    okbmStashPlanKbStyle(cubes);
+    okbmStashPlanKbStyle(input);
+
+    var vv = window.visualViewport;
+    var currentH = (vv && vv.height) ? Math.round(vv.height) : window.innerHeight;
+    var offsetTop = (vv && vv.offsetTop) ? Math.round(vv.offsetTop) : 0;
+    var stableH = window.innerHeight;
+    try {
+      var vh = parseFloat(document.documentElement.style.getPropertyValue('--vh'));
+      if (vh) stableH = Math.max(stableH, Math.round(vh * 100));
+    } catch (e) {}
+
+    var visibleH = Math.max(220, currentH);
+    var overlayKb = Math.max(0, stableH - (currentH + offsetTop));
+    var isTouch = false;
+    try {
+      isTouch = window.matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window);
+    } catch (e2) {
+      isTouch = ('ontouchstart' in window);
+    }
+    if (overlayKb < 80 && isTouch && visibleH > 620) {
+      visibleH = Math.max(280, visibleH - 300);
+    }
+
+    if (modal) {
+      modal.style.setProperty('top', offsetTop + 'px', 'important');
+      modal.style.setProperty('height', visibleH + 'px', 'important');
+      modal.style.setProperty('max-height', visibleH + 'px', 'important');
+    }
+    if (cal) cal.style.setProperty('display', 'none', 'important');
+    if (dday) dday.style.setProperty('display', 'none', 'important');
+    if (cubes) cubes.style.setProperty('display', 'none', 'important');
+    if (dock) dock.style.setProperty('display', 'none', 'important');
+
+    memo.style.setProperty('flex', '1 1 auto', 'important');
+    memo.style.setProperty('min-height', '0', 'important');
+    memo.style.setProperty('height', 'auto', 'important');
+    memo.style.setProperty('max-height', 'none', 'important');
+
+    if (input) {
+      input.style.setProperty('min-height', '96px', 'important');
+      input.style.setProperty('flex', '1 1 auto', 'important');
+    }
+  };
+
+  window.bindPlanMemoKeyboardLift = function() {
+    if (!window.__planMemoKbBound) {
+      window.__planMemoKbBound = true;
+
+      var syncLift = function() {
+        var input = document.getElementById('planDailyMemoInput');
+        var focused = Boolean(input && document.activeElement === input);
+        if (typeof window.applyPlanMemoKeyboardLayout === 'function') {
+          window.applyPlanMemoKeyboardLayout(focused);
+        }
+      };
+
+      document.addEventListener('focusin', function(e) {
+        if (!e.target || e.target.id !== 'planDailyMemoInput') return;
+        if (typeof window.applyPlanMemoKeyboardLayout === 'function') {
+          window.applyPlanMemoKeyboardLayout(true);
+        }
+        setTimeout(syncLift, 60);
+        setTimeout(syncLift, 280);
+      }, true);
+
+      document.addEventListener('focusout', function(e) {
+        if (!e.target || e.target.id !== 'planDailyMemoInput') return;
+        setTimeout(function() {
+          var input = document.getElementById('planDailyMemoInput');
+          if (input && document.activeElement === input) return;
+          if (typeof window.applyPlanMemoKeyboardLayout === 'function') {
+            window.applyPlanMemoKeyboardLayout(false);
+          }
+        }, 80);
+      }, true);
+
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', syncLift);
+        window.visualViewport.addEventListener('scroll', syncLift);
+      }
+    }
+
+    var input = document.getElementById('planDailyMemoInput');
+    if (input && !input._planKbBound) {
+      input._planKbBound = true;
+      input.addEventListener('focus', function() {
+        if (typeof window.applyPlanMemoKeyboardLayout === 'function') {
+          window.applyPlanMemoKeyboardLayout(true);
+        }
+      });
+      input.addEventListener('blur', function() {
+        setTimeout(function() {
+          var el = document.getElementById('planDailyMemoInput');
+          if (el && document.activeElement === el) return;
+          if (typeof window.applyPlanMemoKeyboardLayout === 'function') {
+            window.applyPlanMemoKeyboardLayout(false);
+          }
+        }, 80);
+      });
+    }
+  };
+
+  if (typeof window.bindPlanMemoKeyboardLift === 'function') {
+    window.bindPlanMemoKeyboardLift();
+  }
 
   // ⚡ [실시간 동기화] 지도/외부에서 찜 변경 시 새로고침 0% 즉시 플랜 뷰 갱신
   // 🛡️ [메모리 누수 패치] 리스너 중복 등록 방지
