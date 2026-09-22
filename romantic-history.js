@@ -1974,22 +1974,35 @@ window.normalizeHistoryRecord = function(r, idx) {
     var uId = String(userId || '').trim();
     if (!uId || uId === 'guest') return fallbackPhoto || '';
 
-    if (window.__userProfilePhotoMap[uId]) {
-      return window.__userProfilePhotoMap[uId];
-    }
-
     var profile = safeGetJSON('user_profile', null);
     var myId = (profile && profile.id) ? String(profile.id).trim() : (localStorage.getItem('okbm_user_id') || '');
-    if (myId && uId === myId) {
-      var myCover = localStorage.getItem('okbm_hero_cover_url') || ((profile && (profile.heroCoverUrl || profile.photoUrl)) ? (profile.heroCoverUrl || profile.photoUrl) : '');
-      if (myCover && String(myCover).startsWith('http')) {
-        window.__userProfilePhotoMap[uId] = myCover;
-        return myCover;
+    if (!myId && typeof window.okbmGetCurrentUserId === 'function') {
+      try { myId = String(window.okbmGetCurrentUserId() || '').trim(); } catch (eMy) { myId = ''; }
+    }
+    var isMe = Boolean(myId && (uId === myId || (window.isCurrentUserId && window.isCurrentUserId(uId))));
+    var myCover = localStorage.getItem('okbm_hero_cover_url') || ((profile && (profile.heroCoverUrl || profile.photoUrl)) ? (profile.heroCoverUrl || profile.photoUrl) : '');
+
+    if (isMe && myCover && String(myCover).startsWith('http')) {
+      window.__userProfilePhotoMap[uId] = myCover;
+      return myCover;
+    }
+
+    if (window.__userProfilePhotoMap[uId]) {
+      var cached = window.__userProfilePhotoMap[uId];
+      if (!isMe && myCover && cached === myCover) {
+        delete window.__userProfilePhotoMap[uId];
+      } else {
+        return cached;
       }
     }
 
-    if (fallbackPhoto && String(fallbackPhoto).startsWith('http')) {
-      window.__userProfilePhotoMap[uId] = fallbackPhoto;
+    var safeFallback = fallbackPhoto || '';
+    if (!isMe && myCover && String(safeFallback) === String(myCover)) {
+      safeFallback = '';
+    }
+
+    if (safeFallback && String(safeFallback).startsWith('http')) {
+      window.__userProfilePhotoMap[uId] = safeFallback;
     }
 
     window.__userProfileFetchingMap = window.__userProfileFetchingMap || {};
@@ -2026,7 +2039,7 @@ window.normalizeHistoryRecord = function(r, idx) {
       }
     }
 
-    return window.__userProfilePhotoMap[uId] || fallbackPhoto || '';
+    return window.__userProfilePhotoMap[uId] || safeFallback || '';
   };
 
   if (!window.__okbmDeferHistoryHydrate) {
@@ -4957,7 +4970,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       if (!f) return false;
       var fUserId = String(f.userId || f.user_id || '').trim();
       var fAuthor = String(f.author || f.nick || f.nickname || '').trim();
-      if (targetUserId && fUserId && targetUserId === fUserId) return true;
+      if (targetUserId) return Boolean(fUserId && targetUserId === fUserId);
       if (targetAuthor && fAuthor && targetAuthor === fAuthor) return true;
       return false;
     }).map(function(item, idx) {
@@ -5038,18 +5051,24 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       }).join('');
     }
 
+    var myCoverUrl = localStorage.getItem('okbm_hero_cover_url') || ((profile && (profile.heroCoverUrl || profile.photoUrl)) ? (profile.heroCoverUrl || profile.photoUrl) : '');
     var initialPhotoUrl = '';
-    if (initialRenderList.length > 0) {
+    if (targetUserId && typeof window.resolveUserMasterPhoto === 'function') {
+      initialPhotoUrl = String(window.resolveUserMasterPhoto(targetUserId, targetAuthor, '') || '').trim();
+    }
+    if (!initialPhotoUrl && initialRenderList.length > 0) {
       for (var pSearchIdx = 0; pSearchIdx < initialRenderList.length; pSearchIdx++) {
         var pItem = initialRenderList[pSearchIdx];
         if (pItem && pItem.authorPhoto && String(pItem.authorPhoto).startsWith('http')) {
-          initialPhotoUrl = String(pItem.authorPhoto).trim();
+          var candidatePhoto = String(pItem.authorPhoto).trim();
+          if (!isSelf && myCoverUrl && candidatePhoto === myCoverUrl) continue;
+          initialPhotoUrl = candidatePhoto;
           break;
         }
       }
     }
-    if (!initialPhotoUrl && targetUserId && typeof window.resolveUserMasterPhoto === 'function') {
-      initialPhotoUrl = window.resolveUserMasterPhoto(targetUserId, targetAuthor, '');
+    if (!isSelf && myCoverUrl && initialPhotoUrl === myCoverUrl) {
+      initialPhotoUrl = '';
     }
 
     var modalEl = document.createElement('div');
@@ -5139,6 +5158,13 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
           var remoteYt = fetchedSns.youtube || uRow.youtube || otherYt;
           var remoteBlog = fetchedSns.blog || uRow.blog || otherBlog;
 
+          var livePhotoUrl = (fetchedPhoto && fetchedPhoto.startsWith('http')) ? fetchedPhoto : initialPhotoUrl;
+          if (!isSelf && myCoverUrl && livePhotoUrl === myCoverUrl) livePhotoUrl = '';
+          if (targetUserId && livePhotoUrl && livePhotoUrl.startsWith('http')) {
+            window.__userProfilePhotoMap = window.__userProfilePhotoMap || {};
+            window.__userProfilePhotoMap[targetUserId] = livePhotoUrl;
+          }
+
           var wrapEl = document.getElementById('userCollectionHeaderWrapper');
           if (wrapEl && typeof window.renderUserProfileHeaderSection === 'function') {
             var liveConfig = {
@@ -5146,7 +5172,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
               userId: targetUserId,
               nickname: isSelf ? targetAuthor : fetchedNick,
               bio: isSelf ? ((profile && profile.bio) || localStorage.getItem('okbm_user_bio') || '') : fetchedBio,
-              photoUrl: (fetchedPhoto && fetchedPhoto.startsWith('http')) ? fetchedPhoto : initialPhotoUrl,
+              photoUrl: livePhotoUrl,
               instagram: isSelf ? (localStorage.getItem('okbm_user_instagram') || '') : remoteInsta,
               youtube: isSelf ? (localStorage.getItem('okbm_user_youtube') || '') : remoteYt,
               blog: isSelf ? (localStorage.getItem('okbm_user_blog') || '') : remoteBlog,

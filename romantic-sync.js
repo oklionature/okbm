@@ -3636,9 +3636,10 @@ window.renderUserProfileHeaderSection = function(config) {
   var bioText = bio || (isOwner ? '소개글을 작성해보세요.' : '소개글이 없습니다.');
   var bioColor = bio ? '#e2e8f0' : '#64748b';
 
+  var safePhotoAttr = photoUrl ? _escapeReportPropHtml(photoUrl) : '';
   var avatarClickAttr = isOwner
     ? 'onclick="triggerHaptic(12); window.openAccountSettingsModal();" title="설정"'
-    : (photoUrl ? 'onclick="triggerHaptic(10); if(window.previewMasterUserCoverPhotoLarge){ window.previewMasterUserCoverPhotoLarge(); }"' : '');
+    : (photoUrl ? 'data-photo-url="' + safePhotoAttr + '" onclick="triggerHaptic(10); window.previewUserPhotoLarge(this.getAttribute(\'data-photo-url\'));" title="사진 보기"' : '');
   var avatarCursor = (isOwner || photoUrl) ? 'cursor:pointer; ' : '';
 
   var avatarImgHtml = photoUrl
@@ -8320,14 +8321,10 @@ window.applyMasterCoverPhotoToAllUI = function(photoUrl) {
   window.dispatchEvent(new CustomEvent('okbm_profile_photo_changed', { detail: { photoUrl: cleanUrl } }));
 };
 
-// 🔍 [메인 대표 사진 대형 확대 뷰어 라이트박스]
-window.previewMasterUserCoverPhotoLarge = function() {
-  triggerHaptic(10);
-  var profile = safeGetJSON('user_profile', null);
-  var photoUrl = okbmSafeImageUrl(localStorage.getItem('okbm_hero_cover_url') || (profile && (profile.heroCoverUrl || profile.photoUrl)) || '');
-
-  if (!photoUrl) {
-    showToast('등록된 대표 사진이 없습니다. [사진 변경]을 눌러보세요.', 'info', 2200);
+window.previewUserPhotoLarge = function(photoUrl) {
+  var url = okbmSafeImageUrl(photoUrl);
+  if (!url || String(url).indexOf('http') !== 0) {
+    if (typeof showToast === 'function') showToast('등록된 대표 사진이 없습니다.', 'info', 2200);
     return;
   }
 
@@ -8340,10 +8337,24 @@ window.previewMasterUserCoverPhotoLarge = function() {
   viewer.onclick = function() { viewer.remove(); triggerHaptic(8); };
 
   viewer.innerHTML = '<div style="position:relative; width:250px; height:250px; border-radius:50%; border:2px solid rgba(186,230,253,0.6); box-shadow:0 0 35px rgba(56,189,248,0.35); overflow:hidden; background:#07090e; flex-shrink:0;">' +
-      '<img src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />' +
+      '<img src="' + escapeHtml(url) + '" style="width:100%; height:100%; object-fit:cover; display:block; pointer-events:none;" />' +
     '</div>';
 
   document.body.appendChild(viewer);
+};
+
+// 🔍 [메인 대표 사진 대형 확대 뷰어 라이트박스]
+window.previewMasterUserCoverPhotoLarge = function() {
+  triggerHaptic(10);
+  var profile = safeGetJSON('user_profile', null);
+  var photoUrl = okbmSafeImageUrl(localStorage.getItem('okbm_hero_cover_url') || (profile && (profile.heroCoverUrl || profile.photoUrl)) || '');
+
+  if (!photoUrl) {
+    showToast('등록된 대표 사진이 없습니다. [사진 변경]을 눌러보세요.', 'info', 2200);
+    return;
+  }
+
+  window.previewUserPhotoLarge(photoUrl);
 };
 
 // [메인 대표 사진 초기화]
