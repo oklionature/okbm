@@ -351,36 +351,21 @@
       object-position: center;
       display: block;
       opacity: 0;
-      transform: none;
-      clip-path: inset(50% 50% 50% 50%);
-      will-change: opacity, clip-path;
+      transform: scale(0.96);
+      transform-origin: center center;
+      transition:
+        opacity 1.82s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 1.82s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: opacity, transform;
     }
     .okbm-splash-inner.is-logo-in:not(.is-logo-out) .okbm-splash-logo {
-      animation: okbmSplashLogoReveal 2.6s cubic-bezier(0.33, 0.1, 0.2, 1) forwards;
+      opacity: 1;
+      transform: scale(1);
     }
     .okbm-splash-inner.is-logo-out .okbm-splash-logo {
-      animation: none;
       opacity: 0;
-      clip-path: inset(0% 0% 0% 0%);
-      transition: opacity 0.7s ease;
-    }
-    @keyframes okbmSplashLogoReveal {
-      0% {
-        opacity: 0.2;
-        clip-path: inset(49% 49% 49% 49%);
-      }
-      18% {
-        opacity: 0.85;
-        clip-path: inset(38% 38% 38% 38%);
-      }
-      55% {
-        opacity: 1;
-        clip-path: inset(16% 16% 16% 16%);
-      }
-      100% {
-        opacity: 1;
-        clip-path: inset(0% 0% 0% 0%);
-      }
+      transform: scale(1);
+      transition: opacity 0.49s ease;
     }
     @keyframes okbmSplashCursorBlink {
       0%, 45% { opacity: 1; }
@@ -390,8 +375,6 @@
       .okbm-splash-logo {
         opacity: 1 !important;
         transform: none !important;
-        clip-path: none !important;
-        animation: none !important;
         transition: none !important;
       }
       .okbm-splash-cursor { animation: none !important; opacity: 1; }
@@ -1572,12 +1555,12 @@
   var TYPE_SPACE_MS = 196;
   // 슬로건 '낭만'까지 타이핑된 뒤 로고 등장
   var LOGO_TRIGGER_AT = 2;
-  var LOGO_IN_MS = 2600;
-  var LOGO_HOLD_MS = 850;
-  var LOGO_OUT_MS = 700;
-  var HOLD_MS = 80;
-  var FADE_MS = 360;
-  var HARD_TIMEOUT_MS = 9500;
+  var LOGO_IN_MS = 1820;
+  var LOGO_HOLD_MS = 595;
+  var LOGO_OUT_MS = 490;
+  var HOLD_MS = 56;
+  var FADE_MS = 252;
+  var HARD_TIMEOUT_MS = 6650;
   var DATA_CAP_MS = 2600;
   var dismissed = false;
   var reduceMotion = false;
