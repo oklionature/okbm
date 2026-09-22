@@ -3498,7 +3498,7 @@ window.saveCurrentPackingRecord = function() {
         </div>
 
         <!-- 2. 최단 일정 D-Day 스마트 배너 -->
-        <div id="planDDayBadge" style="flex-shrink:0; width:100%;">${dDayBadgeHtml}</div>
+        ${dDayBadgeHtml}
 
        <!-- 3. 메모장 카드 (22%) -->
         <div id="planMemoCardWrap" style="flex:22 1 0% !important; min-height:0 !important; background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.18); border-radius:12px; padding:6px 12px; display:flex; flex-direction:column; gap:4px; box-sizing:border-box;">
@@ -3599,7 +3599,7 @@ window.saveCurrentPackingRecord = function() {
 
               return '<div style="display:flex; flex-wrap:wrap; gap:5px; padding-bottom:5px; border-bottom:1px solid rgba(255,255,255,0.08); flex-shrink:0;">' + chipsHtml + '</div>';
             })()}
-            <textarea id="planDailyMemoInput" placeholder="이 날짜의 일정과 챙길 것들을 메모해보세요..." onfocus="if(window.applyPlanMemoKeyboardLayout) window.applyPlanMemoKeyboardLayout(true)" onblur="setTimeout(function(){ var el=document.getElementById('planDailyMemoInput'); if(el && document.activeElement===el) return; if(window.applyPlanMemoKeyboardLayout) window.applyPlanMemoKeyboardLayout(false); }, 80)" oninput="window.autoSavePlanMemo('${activeDateStr}', this.value)" style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:none; border:none; color:#ffffff; font-size:0.90rem; line-height:1.45; outline:none; resize:none; font-family:\'Pretendard Variable\', -apple-system, sans-serif; padding:0; margin:0; box-sizing:border-box;">${escapeHtml(currentDayMemo)}</textarea>
+            <textarea id="planDailyMemoInput" placeholder="이 날짜의 일정과 챙길 것들을 메모해보세요..." oninput="window.autoSavePlanMemo('${activeDateStr}', this.value)" style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:none; border:none; color:#ffffff; font-size:0.90rem; line-height:1.45; outline:none; resize:none; font-family:\'Pretendard Variable\', -apple-system, sans-serif; padding:0; margin:0; box-sizing:border-box;">${escapeHtml(currentDayMemo)}</textarea>
           </div>
         </div>
 
@@ -6012,9 +6012,6 @@ window.commitPlanDestination = function(dateKey) {
     setTimeout(function() {
       var memoInput = document.getElementById('planDailyMemoInput');
       if (memoInput) {
-        if (typeof window.applyPlanMemoKeyboardLayout === 'function') {
-          window.applyPlanMemoKeyboardLayout(true);
-        }
         memoInput.focus();
         try {
           memoInput.setSelectionRange(memoInput.value.length, memoInput.value.length);
@@ -6186,92 +6183,75 @@ window.commitPlanDestination = function(dateKey) {
     triggerHaptic(10);
   };
 
-  function okbmStashPlanKbStyle(el) {
-    if (!el) return;
-    if (el.dataset.planKbOrigStyle === undefined) {
-      el.dataset.planKbOrigStyle = el.getAttribute('style') || '';
-    }
+  function okbmPlanKbCameraEl() {
+    var modal = document.getElementById('romanticPlanModal');
+    if (!modal) return null;
+    return modal.querySelector('.romantic-plan-content') || modal;
   }
 
-  function okbmRestorePlanKbStyle(el) {
-    if (!el) return;
-    if (el.dataset.planKbOrigStyle !== undefined) {
-      el.setAttribute('style', el.dataset.planKbOrigStyle);
-      delete el.dataset.planKbOrigStyle;
-    }
+  function okbmResetPlanKbCamera() {
+    var camera = okbmPlanKbCameraEl();
+    window.__planMemoKbActive = false;
+    window.__planMemoKbShift = 0;
+    if (!camera) return;
+    camera.style.removeProperty('transform');
+    camera.style.removeProperty('-webkit-transform');
   }
 
   window.applyPlanMemoKeyboardLayout = function(isOpen) {
-    var modal = document.getElementById('romanticPlanModal');
-    var cal = document.getElementById('planCalendarCardWrap');
-    var dday = document.getElementById('planDDayBadge');
-    var memo = document.getElementById('planMemoCardWrap');
-    var cubes = document.getElementById('planCubeGrid');
-    var dock = document.getElementById('romanticMasterBottomDock');
-    var input = document.getElementById('planDailyMemoInput');
+    var camera = okbmPlanKbCameraEl();
+    var memo = document.getElementById('planMemoCardWrap') || document.getElementById('planDailyMemoInput');
 
     if (!isOpen) {
       if (!window.__planMemoKbActive) return;
-      window.__planMemoKbActive = false;
-      okbmRestorePlanKbStyle(modal);
-      okbmRestorePlanKbStyle(cal);
-      okbmRestorePlanKbStyle(dday);
-      okbmRestorePlanKbStyle(memo);
-      okbmRestorePlanKbStyle(cubes);
-      okbmRestorePlanKbStyle(input);
-      if (dock) dock.style.setProperty('display', 'flex', 'important');
+      okbmResetPlanKbCamera();
       return;
     }
-
-    if (!memo) return;
+    if (!camera || !memo) return;
     window.__planMemoKbActive = true;
 
-    okbmStashPlanKbStyle(modal);
-    okbmStashPlanKbStyle(cal);
-    okbmStashPlanKbStyle(dday);
-    okbmStashPlanKbStyle(memo);
-    okbmStashPlanKbStyle(cubes);
-    okbmStashPlanKbStyle(input);
-
     var vv = window.visualViewport;
-    var currentH = (vv && vv.height) ? Math.round(vv.height) : window.innerHeight;
-    var offsetTop = (vv && vv.offsetTop) ? Math.round(vv.offsetTop) : 0;
-    var stableH = window.innerHeight;
-    try {
-      var vh = parseFloat(document.documentElement.style.getPropertyValue('--vh'));
-      if (vh) stableH = Math.max(stableH, Math.round(vh * 100));
-    } catch (e) {}
-
-    var visibleH = Math.max(220, currentH);
-    var overlayKb = Math.max(0, stableH - (currentH + offsetTop));
+    var vvTop = vv ? Math.round(vv.offsetTop || 0) : 0;
+    var vvH = vv ? Math.round(vv.height || window.innerHeight) : window.innerHeight;
+    var vvBottom = vvTop + vvH;
+    var layoutH = window.innerHeight;
+    var shrunk = Math.max(0, layoutH - vvBottom);
     var isTouch = false;
     try {
       isTouch = window.matchMedia('(pointer: coarse)').matches || ('ontouchstart' in window);
-    } catch (e2) {
+    } catch (e) {
       isTouch = ('ontouchstart' in window);
     }
-    if (overlayKb < 80 && isTouch && visibleH > 620) {
-      visibleH = Math.max(280, visibleH - 300);
+
+    var cameraTop = vvTop;
+    var cameraBottom = vvBottom;
+    if (shrunk < 80 && isTouch) {
+      cameraTop = 0;
+      cameraBottom = Math.max(240, layoutH - 340);
     }
 
-    if (modal) {
-      modal.style.setProperty('top', offsetTop + 'px', 'important');
-      modal.style.setProperty('height', visibleH + 'px', 'important');
-      modal.style.setProperty('max-height', visibleH + 'px', 'important');
+    var currentShift = window.__planMemoKbShift || 0;
+    var rect = memo.getBoundingClientRect();
+    var top = rect.top + currentShift;
+    var bottom = rect.bottom + currentShift;
+    var pad = 10;
+    var needUp = 0;
+    if (bottom + pad > cameraBottom) {
+      needUp = bottom + pad - cameraBottom;
     }
-    if (cal) cal.style.setProperty('display', 'none', 'important');
-    if (dday) dday.style.setProperty('display', 'none', 'important');
-    if (cubes) cubes.style.setProperty('display', 'none', 'important');
-    if (dock) dock.style.setProperty('display', 'none', 'important');
+    if (top - needUp < cameraTop + pad) {
+      needUp = Math.max(needUp, top - (cameraTop + pad));
+    }
+    needUp = Math.max(0, Math.round(needUp));
+    window.__planMemoKbShift = needUp;
 
-    memo.style.setProperty('flex', '1 1 auto', 'important');
-    memo.style.setProperty('min-height', '0', 'important');
-    memo.style.setProperty('height', 'auto', 'important');
-    memo.style.setProperty('max-height', 'none', 'important');
-
-    if (input) {
-      input.style.setProperty('min-height', '96px', 'important');
-      input.style.setProperty('flex', '1 1 auto', 'important');
+    if (needUp > 0) {
+      var t = 'translate3d(0, ' + (-needUp) + 'px, 0)';
+      camera.style.setProperty('transform', t, 'important');
+      camera.style.setProperty('-webkit-transform', t, 'important');
+    } else {
+      camera.style.removeProperty('transform');
+      camera.style.removeProperty('-webkit-transform');
     }
   };
 

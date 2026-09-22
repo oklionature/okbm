@@ -132,7 +132,7 @@
     window.SUPABASE_URL = 'https://qnumfecythtqtrxeasys.supabase.co';
     window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
     window.__okbmTemplatesSrc = 'templates.js?v=2.9.20';
-      window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.22';
+      window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.23';
       (function okbmBootLoader() {
         var loaded = window.__okbmScriptPromises || {};
         window.__okbmScriptPromises = loaded;
@@ -2641,6 +2641,10 @@
       }
 
       function clearPendingMapFocus() {
+        if (window.__okbmSpotFocusTimer) {
+          clearTimeout(window.__okbmSpotFocusTimer);
+          window.__okbmSpotFocusTimer = null;
+        }
         try {
           sessionStorage.removeItem('okbm_pending_map_id');
           sessionStorage.removeItem('okbm_pending_map_spot');
@@ -2687,7 +2691,10 @@
             window.__okbmSpotFocusRan = true;
             clearPendingMapFocus();
             consumeMapFocusQuery();
-            setTimeout(() => focusSpotOnMap(matchedById), 350);
+            window.__okbmSpotFocusTimer = setTimeout(() => {
+              window.__okbmSpotFocusTimer = null;
+              focusSpotOnMap(matchedById);
+            }, 350);
             return;
           }
         }
@@ -2699,7 +2706,10 @@
             window.__okbmSpotFocusRan = true;
             clearPendingMapFocus();
             consumeMapFocusQuery();
-            setTimeout(() => focusSpotOnMap(found), 350);
+            window.__okbmSpotFocusTimer = setTimeout(() => {
+              window.__okbmSpotFocusTimer = null;
+              focusSpotOnMap(found);
+            }, 350);
             return;
           }
         }
@@ -3062,13 +3072,67 @@ function updateSmartResetButtons() {
         }
       }
 
+      function getInfoWindowAdjustedCenter(lat, lng) {
+        var nLat = Number(lat);
+        var nLng = Number(lng);
+        var target = new kakao.maps.LatLng(nLat, nLng);
+        var mapEl = document.getElementById('map');
+        if (!mapEl) return target;
+
+        var ox = 0;
+        var oy = 0;
+        var sheet = document.getElementById('mobileBottomSheet');
+        var drawer = document.getElementById('pcSlidingDrawer');
+        var sheetOpen = !!(sheet && sheet.classList.contains('open') && window.getComputedStyle(sheet).display !== 'none');
+        var drawerOpen = !!(drawer && drawer.classList.contains('open') && window.getComputedStyle(drawer).display !== 'none');
+
+        if (sheetOpen) {
+          var sheetH = sheet.offsetHeight || Math.round(mapEl.offsetHeight * 0.5);
+          var dock = document.getElementById('romanticMasterBottomDock');
+          var dockH = 0;
+          if (dock && window.getComputedStyle(dock).display !== 'none') {
+            dockH = dock.offsetHeight || 56;
+          } else if (window.innerWidth <= 768) {
+            dockH = 56;
+          }
+          oy = Math.round((sheetH + dockH) / 2);
+        } else if (drawerOpen) {
+          ox = -Math.round((drawer.offsetWidth || 380) * 0.5);
+        }
+
+        if (!ox && !oy) return target;
+
+        var mw = mapEl.offsetWidth || 1;
+        var mh = mapEl.offsetHeight || 1;
+        var latSpan = 0;
+        var lngSpan = 0;
+        var bounds = (typeof map.getBounds === 'function') ? map.getBounds() : null;
+        if (bounds) {
+          var sw = bounds.getSouthWest();
+          var ne = bounds.getNorthEast();
+          latSpan = ne.getLat() - sw.getLat();
+          lngSpan = ne.getLng() - sw.getLng();
+        }
+        if (!isFinite(latSpan) || !isFinite(lngSpan) || latSpan <= 0 || lngSpan <= 0 || latSpan > 1.5) {
+          var metersPerPixel = 12;
+          latSpan = (mh * metersPerPixel) / 111320;
+          lngSpan = (mw * metersPerPixel) / (111320 * Math.max(0.2, Math.cos(nLat * Math.PI / 180)));
+        }
+
+        return new kakao.maps.LatLng(
+          nLat - (oy / mh) * latSpan,
+          nLng + (ox / mw) * lngSpan
+        );
+      }
+
       function smoothCenterMapOnSpot(lat, lng) {
         if (!map) return;
         var nLat = Number(lat);
         var nLng = Number(lng);
         if (!isFinite(nLat) || !isFinite(nLng)) return;
-        var target = new kakao.maps.LatLng(nLat, nLng);
+        var rawTarget = new kakao.maps.LatLng(nLat, nLng);
 
+        window.__okbmCenterSeq = (window.__okbmCenterSeq || 0) + 1;
         if (window.__okbmCenterTimer) {
           clearTimeout(window.__okbmCenterTimer);
           window.__okbmCenterTimer = null;
@@ -3078,11 +3142,16 @@ function updateSmartResetButtons() {
           window.__okbmCenterIdle = null;
         }
 
-        if (map.getLevel() > 7) {
-          map.setLevel(7, { animate: false, anchor: target });
-          map.setCenter(target);
+        var needZoom = map.getLevel() > 7;
+        if (needZoom) {
+          map.setLevel(7, { animate: false, anchor: rawTarget });
+        }
+
+        var adjusted = getInfoWindowAdjustedCenter(nLat, nLng);
+        if (needZoom) {
+          map.setCenter(adjusted);
         } else {
-          map.panTo(target);
+          map.panTo(adjusted);
         }
         debouncedUpdateLODLabels();
       }
@@ -3261,6 +3330,10 @@ function updateSmartResetButtons() {
       function focusSpotOnMap(spot) {
         if (!spot) return;
         if (isPickingLocationMode || window.__adminPinMoveSpotId) return;
+        if (window.__okbmSpotFocusTimer) {
+          clearTimeout(window.__okbmSpotFocusTimer);
+          window.__okbmSpotFocusTimer = null;
+        }
         triggerHaptic(12);
         isMarkerClickProcessing = true;
         setTimeout(() => { isMarkerClickProcessing = false; }, 400);
@@ -3290,7 +3363,7 @@ function updateSmartResetButtons() {
           closeMobileBottomSheet();
           openPcSlidingDrawer(spot);
         }
-        smoothCenterMapOnSpot(spot.lat, spot.lng);
+        smoothCenterMapOnSpot(spot.renderLat || spot.lat, spot.renderLng || spot.lng);
       }
 
       function toggleUserBookmark(spotId, e = null) {
