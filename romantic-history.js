@@ -466,6 +466,53 @@
         max-height: min(58dvh, calc(var(--okbm-vvh, 100dvh) - 160px)) !important;
         object-fit: contain !important;
       }
+
+      #modalRichAfterTrip .rich-edit-scroll {
+        overflow-x: hidden !important;
+        touch-action: pan-y pan-x !important;
+      }
+      #modalRichAfterTrip .rich-photo-stage {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+      }
+      #modalRichAfterTrip .rich-photo-frame {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+      }
+      #modalRichAfterTrip #richPhotoSwipeTrack {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overscroll-behavior-x: contain !important;
+      }
+      #modalRichAfterTrip #richPhotoSwipeTrack > div {
+        flex: 0 0 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+      #modalRichAfterTrip .rich-photo-thumb-strip {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        gap: 9px !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-x !important;
+        overscroll-behavior-x: contain !important;
+        scrollbar-width: thin;
+      }
+      #modalRichAfterTrip .rich-photo-thumb {
+        flex: 0 0 54px !important;
+        touch-action: pan-x !important;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -5829,7 +5876,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       track.scrollTo({ left: targetLeft, behavior: 'smooth' });
     }
 
-    var thumbNodes = document.querySelectorAll('[data-thumb-idx]');
+    var thumbNodes = document.querySelectorAll('#richPhotoThumbStrip [data-thumb-idx]');
     thumbNodes.forEach(function(node) {
       var nIdx = parseInt(node.dataset.thumbIdx, 10);
       var isCur = (nIdx === targetIdx);
@@ -5838,10 +5885,20 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       node.style.transform = isCur ? 'scale(1.08)' : 'scale(1)';
       node.style.opacity = isCur ? '1' : '0.65';
       node.style.zIndex = isCur ? '3' : '1';
+      if (isCur && node.scrollIntoView) {
+        node.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+      }
     });
 
     window.__syncActivePhotoMemoUI();
     triggerHaptic(8);
+  };
+
+  window.__stepRichPhoto = function(delta) {
+    var photos = window.__tempUploadedPhotos || [];
+    if (!photos.length) return;
+    var next = Math.max(0, Math.min(photos.length - 1, (window.__currentSwipePhotoIndex || 0) + (Number(delta) || 0)));
+    window.__switchToPhotoSmooth(next);
   };
 
   window.__handleTouchThumbEnd = function(e) {
@@ -5936,9 +5993,9 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       var slidesHtml = photos.map(function(url, pIdx) {
         var bindingAttr = ' data-okbm-photo-record-id="' + String(window.__richCurrentRecord && window.__richCurrentRecord.id || '') + '" data-okbm-photo-index="' + String(pIdx) + '" data-okbm-photo-kind="phone"';
         return `
-          <div style="flex:0 0 100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center;">
+          <div style="flex:0 0 100% !important; min-width:100% !important; max-width:100% !important; width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000; display:flex; align-items:center; justify-content:center;">
             <img src="${escapeHtml(okbmSafeImageUrl(url))}"${bindingAttr} style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:blur(22px) brightness(0.32); transform:scale(1.15); pointer-events:none;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
-            <img src="${escapeHtml(okbmSafeImageUrl(url))}"${bindingAttr} style="position:relative; z-index:2; width:100%; height:100%; object-fit:contain; display:block; pointer-events:none;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
+            <img src="${escapeHtml(okbmSafeImageUrl(url))}"${bindingAttr} style="position:relative; z-index:2; width:100%; height:100%; max-width:100%; max-height:100%; object-fit:contain; display:block; pointer-events:none;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
             
             <button type="button" onclick="event.stopPropagation(); window.__removeRichSinglePhoto(${pIdx});" style="position:absolute; top:10px; right:10px; z-index:10; width:28px; height:28px; border-radius:50%; background:#0c1017; color:#cbd5e1; border:1px solid rgba(255,255,255,0.25); font-size:13px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
           </div>
@@ -5963,18 +6020,25 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
                ontouchmove="window.__handleTouchThumbMove(event);"
                ontouchend="window.__handleTouchThumbEnd(event);"
                onclick="window.__commitCurrentMemoInput(); window.__currentSwipePhotoIndex = ${tIdx}; window.__renderRichPhotoStage(); triggerHaptic(8);" 
-               style="width:54px; height:54px; border-radius:9px; overflow:hidden; position:relative; flex-shrink:0; cursor:grab; background:#000; box-sizing:border-box; transition:all 0.18s cubic-bezier(0.16, 1, 0.3, 1); user-select:none; -webkit-user-select:none; touch-action:none; ${activeBorderStyle}">
+               class="rich-photo-thumb"
+               style="width:54px; height:54px; border-radius:9px; overflow:hidden; position:relative; flex:0 0 54px; cursor:grab; background:#000; box-sizing:border-box; transition:all 0.18s cubic-bezier(0.16, 1, 0.3, 1); user-select:none; -webkit-user-select:none; touch-action:pan-x; ${activeBorderStyle}">
             <img src="${escapeHtml(okbmSafeImageUrl(tUrl))}" data-okbm-photo-record-id="${escapeHtml(String(window.__richCurrentRecord && window.__richCurrentRecord.id || ''))}" data-okbm-photo-index="${tIdx}" data-okbm-photo-kind="phone" style="width:100%; height:100%; object-fit:cover; pointer-events:none; display:block;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
             ${isCurrentView ? '<div style="position:absolute; inset:0; border:1px solid rgba(255,255,255,0.4); pointer-events:none; border-radius:7px;"></div>' : ''}
           </div>
         `;
       }).join('');
 
+      var navBtnsHtml = count > 1 ? `
+            <button type="button" onclick="event.stopPropagation(); window.__stepRichPhoto(-1);" style="position:absolute; left:8px; top:50%; transform:translateY(-50%); z-index:10; width:32px; height:32px; border-radius:50%; background:rgba(12,16,23,0.78); color:#e2e8f0; border:1px solid rgba(255,255,255,0.22); font-size:1.05rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">‹</button>
+            <button type="button" onclick="event.stopPropagation(); window.__stepRichPhoto(1);" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); z-index:10; width:32px; height:32px; border-radius:50%; background:rgba(12,16,23,0.78); color:#e2e8f0; border:1px solid rgba(255,255,255,0.22); font-size:1.05rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">›</button>
+      ` : '';
+
       stageContainer.innerHTML = `
-        <div style="width:100%; aspect-ratio:3/4; max-height:420px; position:relative; overflow:hidden; border-radius:14px; background:#000000; border:1px solid rgba(255,255,255,0.12); box-shadow:0 12px 30px rgba(0,0,0,0.9);">
-          <div id="richPhotoSwipeTrack" onscroll="window.__onSwipePhotoTrackScroll(this);" style="display:flex !important; width:100% !important; height:100% !important; overflow-x:auto !important; overflow-y:hidden !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; touch-action:pan-x pan-y !important;">
+        <div class="rich-photo-frame" style="width:100%; min-width:0; max-width:100%; aspect-ratio:3/4; max-height:420px; position:relative; overflow:hidden; border-radius:14px; background:#000000; border:1px solid rgba(255,255,255,0.12); box-shadow:0 12px 30px rgba(0,0,0,0.9);">
+          <div id="richPhotoSwipeTrack" onscroll="window.__onSwipePhotoTrackScroll(this);" style="display:flex !important; flex-wrap:nowrap !important; width:100% !important; min-width:0 !important; height:100% !important; overflow-x:auto !important; overflow-y:hidden !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; touch-action:pan-x pan-y !important; overscroll-behavior-x:contain;">
             ${slidesHtml}
           </div>
+          ${navBtnsHtml}
           ${count < 10 ? `
             <button type="button" onclick="document.getElementById('richMultiPhotoInput').click();" style="position:absolute; bottom:12px; right:12px; z-index:10; background:#0c1017; border:1px solid rgba(56,189,248,0.5); color:#38bdf8; font-size:0.72rem; font-weight:800; padding:6px 12px; border-radius:20px; cursor:pointer; display:flex; align-items:center; gap:4px;">
               <svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:#38bdf8; fill:none; stroke-width:2.5;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -5983,16 +6047,21 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
           ` : ''}
         </div>
 
-        <div style="width:100%; display:flex; gap:9px; overflow-x:auto; padding:10px 4px 6px 4px; -webkit-overflow-scrolling:touch; scrollbar-width:none; box-sizing:border-box;">
+        <div id="richPhotoThumbStrip" class="rich-photo-thumb-strip" style="width:100%; min-width:0; max-width:100%; display:flex; flex-wrap:nowrap; gap:9px; overflow-x:auto; overflow-y:hidden; padding:10px 4px 6px 4px; -webkit-overflow-scrolling:touch; scrollbar-width:thin; box-sizing:border-box; touch-action:pan-x;">
           ${dragThumbsHtml}
         </div>
       `;
 
       setTimeout(function() {
         var track = document.getElementById('richPhotoSwipeTrack');
+        var idx = window.__currentSwipePhotoIndex || 0;
         if (track) {
-          var targetLeft = (window.__currentSwipePhotoIndex || 0) * track.offsetWidth;
-          track.scrollLeft = targetLeft;
+          track.scrollLeft = idx * track.offsetWidth;
+        }
+        var strip = document.getElementById('richPhotoThumbStrip');
+        var activeThumb = strip && strip.querySelector('[data-thumb-idx="' + idx + '"]');
+        if (activeThumb && activeThumb.scrollIntoView) {
+          activeThumb.scrollIntoView({ behavior: 'auto', inline: 'nearest', block: 'nearest' });
         }
       }, 30);
     }
@@ -6561,7 +6630,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       </div>
 
       <!-- 2. 중앙 스크롤 뷰포트 (독바 높이 완벽 대응 패딩 88px 확보) -->
-      <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y !important; overscroll-behavior-y:contain; padding:14px 14px calc(88px + env(safe-area-inset-bottom, 8px)) 14px; display:flex; flex-direction:column; gap:16px; box-sizing:border-box;">
+      <div class="rich-edit-scroll" style="flex:1 1 0% !important; min-height:0 !important; width:100%; max-width:440px; margin:0 auto; overflow-y:auto !important; overflow-x:hidden !important; -webkit-overflow-scrolling:touch !important; touch-action:pan-y pan-x !important; overscroll-behavior-y:contain; padding:14px 14px calc(88px + env(safe-area-inset-bottom, 8px)) 14px; display:flex; flex-direction:column; gap:16px; box-sizing:border-box;">
         
      <!-- 대형 사진 스와이프 무대 섹션 -->
         <div style="display:flex; flex-direction:column; gap:6px;">
@@ -6578,7 +6647,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
             </button>
           </div>
 
-          <div id="richLargePhotoStageContainer" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+          <div id="richLargePhotoStageContainer" class="rich-photo-stage" style="width:100%; min-width:0; max-width:100%; display:flex; flex-direction:column; align-items:stretch;">
           </div>
           <input type="file" id="richMultiPhotoInput" accept="image/*" multiple="multiple" style="display:none;" onchange="window.__handleRichMultiPhotoUpload(event);" />
         </div>
