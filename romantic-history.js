@@ -100,26 +100,29 @@
       }
 
       .reel-header-row {
-        position: relative !important;
+        position: absolute !important;
+        top: max(32px, env(safe-area-inset-top, 0px)) !important;
+        left: 0 !important;
+        right: 0 !important;
         width: 100% !important;
-        height: calc(52px + env(safe-area-inset-top, 0px)) !important;
-        min-height: calc(52px + env(safe-area-inset-top, 0px)) !important;
-        padding-top: env(safe-area-inset-top, 0px) !important;
+        height: auto !important;
+        min-height: 52px !important;
+        padding-top: 6px !important;
         padding-left: 14px !important;
         padding-right: 14px !important;
-        padding-bottom: 0 !important;
+        padding-bottom: 12px !important;
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
-        background: #000000 !important;
-        z-index: 50 !important;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important;
+        z-index: 400 !important;
         isolation: isolate !important;
-        transform: translateZ(40px) !important;
-        -webkit-transform: translateZ(40px) !important;
+        transform: none !important;
+        -webkit-transform: none !important;
         content-visibility: visible !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-bottom: none !important;
         box-sizing: border-box !important;
-        pointer-events: auto !important;
+        pointer-events: none !important;
         flex-shrink: 0 !important;
       }
 
@@ -381,8 +384,8 @@
         padding-bottom: 12px !important;
         z-index: 400 !important;
         isolation: isolate !important;
-        transform: translateZ(40px) !important;
-        -webkit-transform: translateZ(40px) !important;
+        transform: none !important;
+        -webkit-transform: none !important;
         content-visibility: visible !important;
         background: linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important;
         border-bottom: none !important;
@@ -686,7 +689,7 @@
     img.__handledVideoStill = true;
 
     var src = img.getAttribute('src') || '';
-    if (!src || src.startsWith('data:')) return;
+    if (!src || src.startsWith('data:') || src === location.href) return;
 
     var video = document.createElement('video');
     video.crossOrigin = 'anonymous';
@@ -1758,11 +1761,22 @@ function getRecordPhotos(record) {
     var list = [];
     if (Array.isArray(record.photos)) {
       list = record.photos;
-    } else if (typeof record.photos === 'string' && record.photos.trim().startsWith('[')) {
-      try { list = JSON.parse(record.photos); } catch (e) { list = []; }
+    } else if (typeof record.photos === 'string' && record.photos.trim()) {
+      var rawPhotos = record.photos.trim();
+      if (rawPhotos.startsWith('[')) {
+        try { list = JSON.parse(rawPhotos); } catch (e) { list = []; }
+      } else if (rawPhotos.startsWith('http://') || rawPhotos.startsWith('https://')) {
+        list = [rawPhotos];
+      }
     }
-    return list.filter(function(u) {
-      return typeof u === 'string' && (u.trim().startsWith('https://') || u.trim().startsWith('http://'));
+    return list.map(function(u) {
+      if (typeof u === 'string') return u.trim();
+      if (u && typeof u === 'object') {
+        return String(u.url || u.src || u.photo || u.href || '').trim();
+      }
+      return '';
+    }).filter(function(u) {
+      return u.indexOf('https://') === 0 || u.indexOf('http://') === 0;
     });
   }
   window.getRecordPhotos = getRecordPhotos;
@@ -7469,7 +7483,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
         '</button>')
       : ('<span style="font-size:0.74rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.3; ' + textShadowStyle + '">' + safeSpot + '</span>');
 
-    return '<div class="reel-header-row" style="position:absolute !important; top:max(32px, env(safe-area-inset-top, 0px)) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; z-index:400 !important; isolation:isolate !important; transform:translateZ(40px) !important; -webkit-transform:translateZ(40px) !important; content-visibility:visible !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important; border-bottom:none !important; pointer-events:none !important;">' +
+    return '<div class="reel-header-row" style="position:absolute !important; top:max(32px, env(safe-area-inset-top, 0px)) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; z-index:400 !important; isolation:isolate !important; transform:none !important; -webkit-transform:none !important; content-visibility:visible !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important; border-bottom:none !important; pointer-events:none !important;">' +
       '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
         '<button type="button" data-author="' + safeAuthor + '" data-user-id="' + safeUserId + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.7); pointer-events:auto; position:relative; z-index:401;" title="' + safeAuthor + '님의 피드 모아보기">' +
           avatarMarkup +
@@ -7579,14 +7593,21 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var front = card.querySelector('.postcard-face-front');
     if (!front) return false;
 
+    var normalizePhotoSrc = function(u) {
+      var raw = String(u || '').trim();
+      if (!raw) return '';
+      if (typeof okbmSafeImageUrl === 'function') return String(okbmSafeImageUrl(raw) || '').trim();
+      return raw;
+    };
     var existingSrcs = Array.prototype.map.call(front.querySelectorAll('.reel-horizontal-track .reel-photo-target'), function(img) {
-      return String(img.getAttribute('src') || '');
-    });
-    var nextSrcs = mediaItems.map(function(u) { return String(u || ''); });
+      return normalizePhotoSrc(img.getAttribute('src') || '');
+    }).filter(Boolean);
+    var nextSrcs = mediaItems.map(function(u) { return normalizePhotoSrc(u); }).filter(Boolean);
+    if (!nextSrcs.length && existingSrcs.length) return false;
     var photosChanged = existingSrcs.join('\n') !== nextSrcs.join('\n');
 
     if (photosChanged) {
-      front.innerHTML = okbmBuildReelPhotoFrontHtml(cardIdEsc, mediaItems, rec.spot || '나의 힐링 스팟', cleanCardId);
+      front.innerHTML = okbmBuildReelPhotoFrontHtml(cardIdEsc, nextSrcs, rec.spot || '나의 힐링 스팟', cleanCardId);
       front.querySelectorAll('.reel-photo-target').forEach(function(img) {
         if (typeof window.applySmartPhotoFit === 'function') window.applySmartPhotoFit(img);
       });
@@ -7594,7 +7615,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
     var memo120 = String(rec.memo || rec.oneLineMemo || '').slice(0, 120);
     var photoMemosArr = (Array.isArray(rec.photoMemos) && rec.photoMemos.length > 0) ? rec.photoMemos.slice() : [memo120];
-    while (photoMemosArr.length < mediaItems.length) photoMemosArr.push('');
+    while (photoMemosArr.length < nextSrcs.length) photoMemosArr.push('');
     card.setAttribute('data-photo-memos', JSON.stringify(photoMemosArr));
     var initialPhotoMemo = photoMemosArr[0] || memo120 || '';
     var memoEl = document.getElementById('feedPhotoMemoText_' + cardIdEsc) || document.getElementById('feedPhotoMemoText_' + cleanCardId);
@@ -8310,7 +8331,7 @@ window.renderHistoryStage = function(isLoading) {
           if (headerRow) {
             headerRow.style.visibility = 'visible';
             headerRow.style.opacity = '1';
-            headerRow.style.zIndex = '50';
+            headerRow.style.setProperty('z-index', '400', 'important');
           }
           var curIdx = parseInt(entry.target.dataset.reelIdx, 10);
           if (!isNaN(curIdx)) {
