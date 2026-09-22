@@ -303,7 +303,7 @@
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
-        padding: var(--okbm-feed-header-space, 58px) 16px var(--okbm-feed-bottom-space, 148px) 16px !important;
+        padding: calc(56px + 10px) 16px var(--okbm-feed-bottom-space, 148px) 16px !important;
         box-sizing: border-box !important;
         overflow: hidden !important;
         background: #000000 !important;
@@ -368,13 +368,9 @@
         pointer-events: none !important;
         display: block !important;
       }
-      #romanticHistoryModal.okbm-vv-fitted .history-status-bar-scrim {
-        display: none !important;
-      }
-
       .history-tab-route .reel-page-snap > .reel-header-row {
         position: absolute !important;
-        top: var(--okbm-feed-header-top, max(8px, env(safe-area-inset-top, 0px))) !important;
+        top: max(32px, env(safe-area-inset-top, 0px)) !important;
         left: 0 !important;
         right: 0 !important;
         height: auto !important;
@@ -7400,7 +7396,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
         '</button>')
       : ('<span style="font-size:0.74rem; font-weight:800; color:#f1f5f9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:1.3; ' + textShadowStyle + '">' + safeSpot + '</span>');
 
-    return '<div class="reel-header-row" style="position:absolute !important; top:var(--okbm-feed-header-top, max(8px, env(safe-area-inset-top, 0px))) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; z-index:400 !important; isolation:isolate !important; transform:translateZ(40px) !important; -webkit-transform:translateZ(40px) !important; content-visibility:visible !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important; border-bottom:none !important; pointer-events:none !important;">' +
+    return '<div class="reel-header-row" style="position:absolute !important; top:max(32px, env(safe-area-inset-top, 0px)) !important; left:0 !important; right:0 !important; height:auto !important; min-height:52px !important; padding-top:6px !important; padding-left:14px !important; padding-right:14px !important; padding-bottom:12px !important; box-sizing:border-box !important; z-index:400 !important; isolation:isolate !important; transform:translateZ(40px) !important; -webkit-transform:translateZ(40px) !important; content-visibility:visible !important; background:linear-gradient(to bottom, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.12) 65%, transparent 100%) !important; border-bottom:none !important; pointer-events:none !important;">' +
       '<div style="display:flex; align-items:center; gap:10px; min-width:0; flex:1;">' +
         '<button type="button" data-author="' + safeAuthor + '" data-user-id="' + safeUserId + '" onclick="event.stopPropagation(); window.openUserFeedCollectionModal(this.dataset.author, this.dataset.userId, \'route\');" style="width:36px; height:36px; border-radius:50%; overflow:hidden; background:#1e293b; border:1.5px solid rgba(186,230,253,0.35); padding:0; cursor:pointer; flex-shrink:0; box-shadow:0 2px 8px rgba(0,0,0,0.7); pointer-events:auto; position:relative; z-index:401;" title="' + safeAuthor + '님의 피드 모아보기">' +
           avatarMarkup +
@@ -8314,9 +8310,7 @@ window.renderHistoryStage = function(isLoading) {
     el.style.setProperty('max-height', usable + 'px', 'important');
     el.classList.add('okbm-vv-fitted');
     document.documentElement.style.setProperty('--okbm-vvh', usable + 'px');
-    document.documentElement.style.setProperty('--okbm-feed-header-top', '8px');
     document.documentElement.style.setProperty('--okbm-feed-bottom-space', '148px');
-    document.documentElement.style.setProperty('--okbm-feed-header-space', '58px');
   };
 
   window.okbmBindOverlayViewportFit = function(el, opts) {
