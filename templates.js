@@ -480,9 +480,14 @@ window.applyStudioCardToTemplate = async function() {
   }
 
   try {
-    var rawPhoto = window.currentSharePhotoRaw || window.currentSharePhoto;
+    var rawPhoto = resolveReadyShotPhotoUrl();
+    if ((!rawPhoto || String(rawPhoto).indexOf('https://') !== 0) && window.__readyShotUploadPromise) {
+      try {
+        rawPhoto = await window.__readyShotUploadPromise;
+      } catch (eWaitApply) {}
+    }
     if (!rawPhoto || String(rawPhoto).indexOf('https://') !== 0) {
-      if (typeof showToast === 'function') showToast('정상적인 사진 URL이 확보되지 않았습니다.', 'warn');
+      if (typeof showToast === 'function') showToast('사진 업로드가 끝나지 않았습니다. 잠시 후 다시 시도해주세요.', 'warn');
       return;
     }
 
@@ -495,8 +500,10 @@ window.applyStudioCardToTemplate = async function() {
     window.currentShareRecord.readyShotPosY = (window.currentPhotoPosY !== undefined) ? window.currentPhotoPosY : 50;
     window.currentShareRecord.readyShotScale = currentPhotoScaleVal || 1.0;
     window.currentShareRecord.readyShotRatio = '3/4';
-    window.currentSharePhoto = rawPhoto;
-    window.currentSharePhotoRaw = rawPhoto;
+    if (!isReadyShotSessionBlob(window.currentSharePhoto)) {
+      window.currentSharePhoto = resolveReadyShotDisplayUrl() || rawPhoto;
+      window.currentSharePhotoRaw = window.currentSharePhoto;
+    }
     window.readyShotFamily = 'photo';
     persistReadyShotPhotoNow(rawPhoto);
     try {
@@ -1788,8 +1795,6 @@ function resolveReadyShotPhotoUrl() {
 window.resolveReadyShotPhotoUrl = resolveReadyShotPhotoUrl;
 
 function resolveReadyShotDisplayUrl() {
-  var httpsUrl = resolveReadyShotPhotoUrl();
-  if (httpsUrl) return httpsUrl;
   var previewCandidates = [
     window.__readyShotPreviewBlobUrl,
     window.currentSharePhotoRaw,
@@ -1799,9 +1804,49 @@ function resolveReadyShotDisplayUrl() {
     var url = String(previewCandidates[i] || '').trim();
     if (isReadyShotSessionBlob(url)) return url;
   }
-  return '';
+  return resolveReadyShotPhotoUrl();
 }
 window.resolveReadyShotDisplayUrl = resolveReadyShotDisplayUrl;
+
+function decodeReadyShotImage(url) {
+  return new Promise(function(resolve) {
+    var src = String(url || '').trim();
+    if (!src) {
+      resolve(false);
+      return;
+    }
+    var img = new Image();
+    var done = function(ok) {
+      resolve(!!ok);
+    };
+    img.onload = function() {
+      if (typeof img.decode === 'function') {
+        img.decode().then(function() { done(true); }).catch(function() { done(true); });
+      } else {
+        done(true);
+      }
+    };
+    img.onerror = function() { done(false); };
+    img.src = src;
+  });
+}
+
+function commitReadyShotHttpsUrl(url) {
+  var photoUrl = String(url || '').trim();
+  if (photoUrl.indexOf('https://') !== 0) return;
+  var rec = (window.currentShareRecord && typeof window.currentShareRecord.then !== 'function')
+    ? window.currentShareRecord
+    : {};
+  window.currentShareRecord = rec;
+  rec.readyShotPhoto = photoUrl;
+  rec.ready_shot_photo = photoUrl;
+  rec.readyShotMode = window.currentStudioCardMode || rec.readyShotMode || 'spread';
+  rec.readyShotPosX = (window.currentPhotoPosX !== undefined) ? window.currentPhotoPosX : (rec.readyShotPosX !== undefined ? rec.readyShotPosX : 50);
+  rec.readyShotPosY = (window.currentPhotoPosY !== undefined) ? window.currentPhotoPosY : (rec.readyShotPosY !== undefined ? rec.readyShotPosY : 50);
+  rec.readyShotScale = currentPhotoScaleVal || rec.readyShotScale || 1.0;
+  rec.readyShotRatio = '3/4';
+  persistReadyShotPhotoNow(photoUrl);
+}
 
 function persistReadyShotPhotoNow(url) {
   var photoUrl = String(url || '').trim();
@@ -1820,6 +1865,7 @@ function persistReadyShotPhotoNow(url) {
   if (Array.isArray(window.currentShareItems) && window.currentShareItems.length) {
     rec.items = window.currentShareItems;
   }
+  if (window.__isSavingCardLock) return;
   if (typeof window.savePackingHistoryRecord === 'function') {
     window.savePackingHistoryRecord(rec).catch(function(err) {
       console.warn('[templates.js:persistReadyShotPhotoNow]', err);
@@ -3637,21 +3683,16 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
   }
 
   try {
-    // 업로드 중인 레디샷이 있으면 HTTPS 확보까지 대기 (blob 영구 저장 차단)
+    var hadPendingPhoto = Boolean(window.__readyShotUploadPromise || window.__readyShotPreviewBlobUrl);
+
+    // 압축+업로드가 끝날 때까지 모달을 유지하고 HTTPS만 확보. 화면 사진은 건드리지 않음.
     if (window.__readyShotUploadPromise && typeof window.__readyShotUploadPromise.then === 'function') {
       try {
         var pendingUrl = await window.__readyShotUploadPromise;
-        if (pendingUrl && String(pendingUrl).indexOf('https://') === 0) {
-          window.currentSharePhoto = pendingUrl;
-          window.currentSharePhotoRaw = pendingUrl;
-          if (window.currentShareRecord) {
-            window.currentShareRecord.readyShotPhoto = pendingUrl;
-            window.currentShareRecord.ready_shot_photo = pendingUrl;
-          }
-          if (window.__readyShotPreviewBlobUrl) {
-            try { URL.revokeObjectURL(window.__readyShotPreviewBlobUrl); } catch (eRev) {}
-            window.__readyShotPreviewBlobUrl = '';
-          }
+        if (pendingUrl && String(pendingUrl).indexOf('https://') === 0 &&
+            window.currentShareRecord && typeof window.currentShareRecord.then !== 'function') {
+          window.currentShareRecord.readyShotPhoto = pendingUrl;
+          window.currentShareRecord.ready_shot_photo = pendingUrl;
         }
       } catch (waitErr) {
         console.warn('[templates.js:saveCardToVault wait upload]', waitErr);
@@ -3702,6 +3743,13 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       finalReadyShot = String(rec.readyShotPhoto).trim();
     }
 
+    if ((window.readyShotFamily || 'photo') === 'photo' && hadPendingPhoto && !finalReadyShot) {
+      if (typeof showToast === 'function') {
+        showToast('사진 업로드가 끝나지 않았습니다. 잠시 후 다시 시도해주세요.', 'warn', 2400);
+      }
+      return;
+    }
+
     var newRecord = {
       id: rec.id || ('pack_' + Date.now()),
       date: rec.date || cleanDateStr,
@@ -3739,17 +3787,21 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
       newRecord.isPublished = true;
     }
 
+    var savedRec = null;
     if (typeof window.savePackingHistoryRecord === 'function') {
-      await window.savePackingHistoryRecord(newRecord);
+      savedRec = await window.savePackingHistoryRecord(newRecord);
+    }
+    if (savedRec && savedRec.__serverSaveFailed) {
+      if (typeof showToast === 'function') {
+        showToast('보관함 저장에 실패했습니다. 네트워크를 확인하고 다시 시도해주세요.', 'warn', 2600);
+      }
+      return;
     }
 
     window.__studioMultiPhotos = null;
 
+    if (typeof window.openHistoryModal === 'function') window.openHistoryModal();
     if (typeof closePackShareModal === 'function') closePackShareModal();
-
-    setTimeout(function() {
-      if (typeof window.openHistoryModal === 'function') window.openHistoryModal();
-    }, 40);
 
     if (typeof showToast === 'function') {
       showToast('✓ 보관함에 등록되었습니다.', 'success', 2200);
@@ -3757,8 +3809,9 @@ window.saveCardToVaultAndOpenBasecamp = async function() {
     if (typeof triggerHaptic === 'function') triggerHaptic(15);
   } catch (err) {
     console.warn('[templates.js:saveCardToVaultAndOpenBasecamp]', err);
-    if (typeof closePackShareModal === 'function') closePackShareModal();
-    if (typeof window.openHistoryModal === 'function') window.openHistoryModal();
+    if (typeof showToast === 'function') {
+      showToast('보관함 저장에 실패했습니다. 잠시 후 다시 시도해주세요.', 'warn', 2400);
+    }
   } finally {
     if (vaultBtn) {
       vaultBtn.style.pointerEvents = '';
@@ -3859,14 +3912,32 @@ window.handleShareCardPhotoUpload = async function(e) {
   var file = files[0];
   e.target.value = '';
 
+  var jobId = (window.__readyShotJobId = (window.__readyShotJobId || 0) + 1);
+  if (typeof window.__readyShotUploadResolve === 'function') {
+    try { window.__readyShotUploadResolve(''); } catch (ePrevGate) {}
+    window.__readyShotUploadResolve = null;
+  }
+  var gateResolve;
+  window.__readyShotUploadPromise = new Promise(function(resolve) {
+    gateResolve = resolve;
+  });
+  window.__readyShotUploadResolve = gateResolve;
+
+  function finishReadyShotGate(url) {
+    if (jobId !== window.__readyShotJobId) return;
+    var out = (url && String(url).indexOf('https://') === 0) ? String(url) : '';
+    if (window.__readyShotUploadResolve === gateResolve) {
+      window.__readyShotUploadResolve = null;
+      window.__readyShotUploadPromise = null;
+    }
+    try { gateResolve(out); } catch (eGate) {}
+  }
+
   if (typeof window.showPhotoLoadingModal === 'function') {
     window.showPhotoLoadingModal(1, 1);
   }
 
-  var previewBlobUrl = '';
-  var uploadedUrl = '';
-
-  function applyReadyShotLocalPreview(url, shouldPersist) {
+  function applyReadyShotLocalPreview(url) {
     window.__studioMultiPhotos = null;
     window.currentSharePhoto = url;
     window.currentSharePhotoRaw = url;
@@ -3883,15 +3954,8 @@ window.handleShareCardPhotoUpload = async function(e) {
         photos: []
       };
     }
-    // 메모리 미리보기만 허용. https일 때만 영구 필드·persist
-    if (String(url).indexOf('https://') === 0) {
-      window.currentShareRecord.readyShotPhoto = url;
-      window.currentShareRecord.ready_shot_photo = url;
-      if (shouldPersist) persistReadyShotPhotoNow(url);
-    } else {
-      window.currentShareRecord.readyShotPhoto = '';
-      window.currentShareRecord.ready_shot_photo = '';
-    }
+    window.currentShareRecord.readyShotPhoto = '';
+    window.currentShareRecord.ready_shot_photo = '';
     window.currentShareRecord.readyShotMode = window.currentStudioCardMode || 'spread';
     window.currentShareRecord.readyShotPosX = 50;
     window.currentShareRecord.readyShotPosY = 50;
@@ -3920,17 +3984,6 @@ window.handleShareCardPhotoUpload = async function(e) {
   }
 
   try {
-    var instantUrl = '';
-    try {
-      instantUrl = URL.createObjectURL(file);
-      if (window.__readyShotPreviewBlobUrl && window.__readyShotPreviewBlobUrl !== instantUrl) {
-        try { URL.revokeObjectURL(window.__readyShotPreviewBlobUrl); } catch (eRevInst) {}
-      }
-      window.__readyShotPreviewBlobUrl = instantUrl;
-      applyReadyShotLocalPreview(instantUrl, false);
-      if (typeof window.hidePhotoLoadingModal === 'function') window.hidePhotoLoadingModal();
-    } catch (eInst) {}
-
     var blob = null;
     if (typeof window.processSinglePhotoSmart === 'function') {
       blob = await window.processSinglePhotoSmart(file, { maxDim: 1200, quality: 0.82 });
@@ -3958,49 +4011,48 @@ window.handleShareCardPhotoUpload = async function(e) {
         }
       } catch (eBmp) {}
     }
+    if (jobId !== window.__readyShotJobId) return;
     if (!blob) {
       if (typeof window.hidePhotoLoadingModal === 'function') window.hidePhotoLoadingModal();
       if (typeof showToast === 'function') showToast('사진 변환에 실패했습니다.', 'warn');
+      finishReadyShotGate('');
       return;
     }
 
-    // 체감: 압축 직후 로컬 미리보기 즉시 표시 (blob은 메모리만, 영구 저장 안 함)
     if (window.__readyShotPreviewBlobUrl) {
       try { URL.revokeObjectURL(window.__readyShotPreviewBlobUrl); } catch (eRev0) {}
       window.__readyShotPreviewBlobUrl = '';
     }
-    previewBlobUrl = URL.createObjectURL(blob);
+    var previewBlobUrl = URL.createObjectURL(blob);
     window.__readyShotPreviewBlobUrl = previewBlobUrl;
-    applyReadyShotLocalPreview(previewBlobUrl, false);
+    await decodeReadyShotImage(previewBlobUrl);
+    if (jobId !== window.__readyShotJobId) {
+      try { URL.revokeObjectURL(previewBlobUrl); } catch (eRevJob) {}
+      return;
+    }
+
+    applyReadyShotLocalPreview(previewBlobUrl);
     if (typeof window.hidePhotoLoadingModal === 'function') window.hidePhotoLoadingModal();
-    if (typeof showToast === 'function') showToast('사진 적용 중...', 'info', 1200);
+    if (typeof showToast === 'function') showToast('사진이 적용되었습니다.', 'success', 1600);
 
     var uploadFn = (typeof window.uploadCompressedPhotoToR2 === 'function')
       ? window.uploadCompressedPhotoToR2
       : null;
-    var uploadPromise = uploadFn
-      ? uploadFn(blob, 'ready')
-      : Promise.resolve('');
-    window.__readyShotUploadPromise = uploadPromise;
-
-    uploadedUrl = await uploadPromise;
-    window.__readyShotUploadPromise = null;
+    var uploadedUrl = uploadFn ? await uploadFn(blob, 'ready') : '';
+    if (jobId !== window.__readyShotJobId) return;
 
     if (uploadedUrl && uploadedUrl.indexOf('https://') === 0) {
-      applyReadyShotLocalPreview(uploadedUrl, true);
-      if (previewBlobUrl) {
-        try { URL.revokeObjectURL(previewBlobUrl); } catch (eRev1) {}
-        if (window.__readyShotPreviewBlobUrl === previewBlobUrl) window.__readyShotPreviewBlobUrl = '';
-      }
-      if (typeof showToast === 'function') showToast('사진이 적용되었습니다.', 'success', 1600);
+      commitReadyShotHttpsUrl(uploadedUrl);
+      finishReadyShotGate(uploadedUrl);
     } else {
       if (typeof showToast === 'function') {
         showToast('업로드에 실패했습니다. 미리보기만 유지됩니다. 다시 선택해 주세요.', 'warn', 2800);
       }
+      finishReadyShotGate('');
     }
   } catch (upErr) {
     console.warn('[templates.js:handleShareCardPhotoUpload]', upErr);
-    window.__readyShotUploadPromise = null;
+    finishReadyShotGate('');
     if (typeof window.hidePhotoLoadingModal === 'function') window.hidePhotoLoadingModal();
     if (typeof showToast === 'function') showToast('사진 업로드에 실패했습니다. 네트워크를 확인해주세요.', 'warn');
   }
@@ -4010,6 +4062,15 @@ window.closePackShareModal = function() {
   teardownCardSwipeGesture();
   teardownStudioPhotoDrag();
   closeReadyShotShareSheet();
+  if (window.__readyShotPreviewBlobUrl) {
+    try { URL.revokeObjectURL(window.__readyShotPreviewBlobUrl); } catch (eRevClose) {}
+    window.__readyShotPreviewBlobUrl = '';
+  }
+  if (typeof window.__readyShotUploadResolve === 'function') {
+    try { window.__readyShotUploadResolve(resolveReadyShotPhotoUrl() || ''); } catch (eGateClose) {}
+    window.__readyShotUploadResolve = null;
+  }
+  window.__readyShotUploadPromise = null;
   var frameOverlay = document.getElementById('readyShotFrameOverlay');
   if (frameOverlay) frameOverlay.style.setProperty('display', 'none', 'important');
   var modal = document.getElementById('packShareModalOverlay');
