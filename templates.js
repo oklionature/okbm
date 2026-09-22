@@ -3270,7 +3270,7 @@ function attachReadyShotEmptyPhotoHit(container) {
   overlay.innerHTML =
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:28px; height:28px; opacity:0.9;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>' +
     '<span style="font-size:0.88rem; font-weight:900; letter-spacing:-0.2px;">사진 넣기</span>' +
-    '<span style="font-size:0.68rem; font-weight:700; color:#cbd5e1;">좌우로 밀어 템플릿을 보고, 탭하면 사진을 올립니다</span>';
+    '<span style="font-size:0.68rem; font-weight:700; color:#cbd5e1;"></span>';
   host.appendChild(overlay);
 }
 
