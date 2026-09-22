@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="theme-color" content="#0c0c0c" />
+  <title>피드 등록</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+  <style>
+    :root {
+      --bg: #0c0c0c;
+      --panel: #141414;
+      --line: rgba(255,255,255,0.10);
+      --text: #e8e6e3;
+      --muted: #8a8680;
+      --accent: #c4b8a5;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, sans-serif;
+    }
+    body { min-height: 100vh; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 28px 18px 80px; }
+    h1 { margin: 0 0 6px; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.03em; }
+    .sub { color: var(--muted); font-size: 0.8rem; margin-bottom: 22px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin: 0 0 6px;
+    }
+    textarea, input[type="text"], input[type="date"] {
+      width: 100%;
+      background: #1a1a1a;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      outline: none;
+      font-family: inherit;
+    }
+    textarea {
+      min-height: 84px;
+      resize: vertical;
+    }
+    textarea:focus, input:focus { border-color: rgba(196,184,165,0.45); }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn {
+      border: 0;
+      border-radius: 10px;
+      height: 44px;
+      font-weight: 800;
+      cursor: pointer;
+      font-size: 0.88rem;
+    }
+    .btn-kakao { width: 100%; background: #fee500; color: #191919; }
+    .btn-primary { width: 100%; background: #c4b8a5; color: #111; }
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      height: 36px;
+      padding: 0 12px;
+    }
+    .btn-search {
+      width: 100%;
+      background: #2a2a2a;
+      color: var(--text);
+      border: 1px solid var(--line);
+      height: 42px;
+    }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .drop {
+      border: 1px dashed rgba(255,255,255,0.18);
+      border-radius: 12px;
+      min-height: 110px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+      cursor: pointer;
+      text-align: center;
+      padding: 16px;
+    }
+    .drop.over { border-color: var(--accent); color: var(--text); }
+    .thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; margin-top: 10px; }
+    .thumb {
+      position: relative;
+      aspect-ratio: 3/4;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #111;
+      border: 1px solid var(--line);
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+    }
+    .thumb.dragging { opacity: 0.5; cursor: grabbing; }
+    .thumb.drop-target { border-color: var(--accent); }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+    .thumb .x {
+      position: absolute; top: 4px; right: 4px;
+      width: 22px; height: 22px; border: 0; border-radius: 50%;
+      background: rgba(0,0,0,0.7); color: #fff; cursor: pointer;
+      z-index: 2;
+    }
+    .thumb .badge {
+      position: absolute; left: 4px; bottom: 4px;
+      font-size: 0.62rem; background: rgba(0,0,0,0.7); color: #fff;
+      padding: 2px 6px; border-radius: 6px;
+    }
+    .thumb .ord {
+      position: absolute; right: 4px; bottom: 4px;
+      display: flex; gap: 2px; z-index: 2;
+    }
+    .thumb .ord button {
+      width: 22px; height: 22px; border: 0; border-radius: 6px;
+      background: rgba(0,0,0,0.7); color: #fff; cursor: pointer; font-size: 0.72rem; line-height: 1;
+    }
+    .status { font-size: 0.78rem; color: var(--muted); margin-top: 8px; }
+    .ok { color: #9fbf9a; }
+    .err { color: #e0a3a3; }
+    .login-box { padding: 40px 16px; text-align: center; }
+    .who { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .who b { font-size: 0.88rem; }
+    .check { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text); }
+    .hidden { display: none !important; }
+    .log { font-size: 0.75rem; color: var(--muted); white-space: pre-wrap; margin-top: 8px; }
+    .memo-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+    .memo-row { display: grid; grid-template-columns: 64px 1fr; gap: 10px; align-items: start; }
+    .memo-row img { width: 64px; height: 84px; object-fit: cover; border-radius: 8px; }
+    .memo-row textarea { min-height: 84px; font-size: 0.8rem; }
+    .count { font-size: 0.68rem; color: var(--muted); text-align: right; margin-top: 4px; }
+    #spotJson { min-height: 160px; font-size: 0.78rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>피드 등록</h1>
+    <div class="sub">박지 JSON을 붙이면 박지 등록하고, 4단계 글을 100~120자로 사진에 넣습니다.</div>
+
+    <div id="loginCard" class="card login-box">
+      <p style="margin:0 0 18px; color:#8a8680;">카카오 로그인 후 등록합니다.</p>
+      <button class="btn btn-kakao" id="btnKakao" type="button">카카오 로그인</button>
+      <div id="loginErr" class="status err"></div>
+    </div>
+
+    <div id="app" class="hidden">
+      <div class="card who">
+        <div>
+          <div class="status" style="margin:0;">로그인</div>
+          <b id="whoName">-</b>
+        </div>
+        <button class="btn btn-ghost" id="btnLogout" type="button">로그아웃</button>
+      </div>
+
+      <div class="card">
+        <label>사진 (최대 10장 · 끌어 순서 변경)</label>
+        <div class="drop" id="dropZone">사진을 끌어오거나 클릭해서 선택</div>
+        <input id="photoInput" type="file" accept="image/*,.heic,.heif" multiple hidden />
+        <div class="thumbs" id="thumbs"></div>
+        <div class="status" id="photoStatus"></div>
+      </div>
+
+      <div class="card">
+        <label>박지 JSON</label>
+        <textarea id="spotJson" placeholder="{ &quot;region&quot;: &quot;강원&quot;, ... }"></textarea>
+        <button class="btn btn-search" id="btnApplyJson" type="button" style="margin-top:10px;">글 넣기</button>
+        <div class="status" id="jsonStatus"></div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <div>
+            <label>날짜</label>
+            <input id="date" type="date" />
+          </div>
+          <div>
+            <label>위치</label>
+            <input id="spot" type="text" placeholder="박지명" autocomplete="off" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <label>사진별 글</label>
+        <div id="memoList" class="memo-list"></div>
+      </div>
+
+      <div class="card">
+        <label class="check">
+          <input id="published" type="checkbox" checked />
+          바로 공개
+        </label>
+      </div>
+
+      <button class="btn btn-primary" id="btnSubmit" type="button">피드 등록</button>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <script>
+    var SUPABASE_URL = 'https://qnumfecythtqtrxeasys.supabase.co';
+    var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
+    var CF_UPLOAD_URL = 'https://romantic-upload-worker.ggumfree.workers.dev';
+    var KAKAO_APP_KEY = '557f5de0f6391a2419bc5592e6a9c9c1';
+    var MAX_PHOTOS = 10;
+    var MEMO_MIN = 100;
+    var MEMO_MAX = 120;
+
+    var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, detectSessionInUrl: true, flowType: 'pkce' }
+    });
+
+    var state = {
+      userId: '',
+      author: '',
+      authorPhoto: '',
+      isAdmin: false,
+      photos: [],
+      photoMemos: [],
+      uploading: false,
+      spotData: null
+    };
+
+    function $(id) { return document.getElementById(id); }
+    function log(msg, cls) {
+      var el = $('log');
+      el.className = 'log' + (cls ? ' ' + cls : '');
+      el.textContent = msg || '';
+    }
+    function todayInput() {
+      var d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    function toDotDate(v) {
+      var p = String(v || '').split('-');
+      if (p.length !== 3) return '';
+      return p[0] + '.' + p[1] + '.' + p[2];
+    }
+    function clipMemo(text) {
+      var s = String(text || '').replace(/\s+/g, ' ').trim();
+      if (s.length <= MEMO_MAX) return s;
+      var cut = s.slice(0, MEMO_MAX);
+      var da = cut.lastIndexOf('다.');
+      if (da >= MEMO_MIN - 2) return cut.slice(0, da + 2).trim();
+      var last = Math.max(cut.lastIndexOf('.'), cut.lastIndexOf(' '));
+      if (last >= MEMO_MIN) return cut.slice(0, last + (cut[last] === '.' ? 1 : 0)).trim();
+      return cut.trim();
+    }
+    function stripSectionLabels(s) {
+      return String(s || '')
+        .replace(/\[(?:뷰\/특징|뷰|특징|접근\/코스|접근|코스|장소\/피칭|장소|피칭|주의\/팁|주의|팁)\]\s*/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    function parseDescSections(raw) {
+      var text = String(raw || '').replace(/\r\n/g, '\n');
+      var order = [
+        { key: 'view', re: /\[뷰\/특징\]/i },
+        { key: 'access', re: /\[접근\/코스\]/i },
+        { key: 'pitch', re: /\[장소\/피칭\]/i },
+        { key: 'tip', re: /\[주의\/팁\]/i }
+      ];
+      var hits = [];
+      order.forEach(function(item) {
+        var m = item.re.exec(text);
+        if (m) hits.push({ key: item.key, index: m.index, len: m[0].length });
+      });
+      hits.sort(function(a, b) { return a.index - b.index; });
+      var out = { view: '', access: '', pitch: '', tip: '' };
+      hits.forEach(function(h, i) {
+        var start = h.index + h.len;
+        var end = i + 1 < hits.length ? hits[i + 1].index : text.length;
+        out[h.key] = stripSectionLabels(text.slice(start, end));
+      });
+      if (!hits.length) out.view = stripSectionLabels(text);
+      return out;
+    }
+    function cutChunk(s) {
+      var t = String(s || '').replace(/\s+/g, ' ').trim();
+      if (!t) return '';
+      if (t.length <= MEMO_MAX) return t;
+      var cut = t.slice(0, MEMO_MAX);
+      var da = cut.lastIndexOf('다.');
+      if (da >= MEMO_MIN - 2) return cut.slice(0, da + 2).trim();
+      var dot = cut.lastIndexOf('.');
+      if (dot >= MEMO_MIN - 1) return cut.slice(0, dot + 1).trim();
+      var sp = cut.lastIndexOf(' ');
+      if (sp >= MEMO_MIN) return cut.slice(0, sp).trim();
+      return cut.trim();
+    }
+    function chunkText(s) {
+      var rest = String(s || '').replace(/\s+/g, ' ').trim();
+      var out = [];
+      while (rest) {
+        if (rest.length <= MEMO_MAX) {
+          out.push(rest);
+          break;
+        }
+        var piece = cutChunk(rest);
+        if (!piece) break;
+        out.push(piece);
+        rest = rest.slice(piece.length).replace(/^\s+/, '');
+      }
+      return out;
+    }
+    function descChunksFromJson(data) {
+      var sec = parseDescSections(data && data.desc_summary);
+      return chunkText(sec.view)
+        .concat(chunkText(sec.access))
+        .concat(chunkText(sec.pitch))
+        .concat(chunkText(sec.tip));
+    }
+    function parseSpotJson(raw) {
+      var s = String(raw || '').trim();
+      if (!s) return null;
+      if (s.charCodeAt(0) === 0xfeff) s = s.slice(1);
+      try {
+        var parsed = JSON.parse(s);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+      } catch (e) {}
+
+      var data = {};
+      var keys = ['region', 'cityName', 'spot_main', 'spot_sub', 'fullName', 'elevation', 'campsite_lat', 'campsite_lng', 'terrain', 'trailhead_name', 'trailhead_addr', 'difficulty', 'distance_km', 'droneStatus', 'course_type', 'author_sns_url', 'author', 'user_id'];
+      keys.forEach(function(k) {
+        var m = s.match(new RegExp('"' + k + '"\\s*:\\s*"([^"]*)"'));
+        if (m) data[k] = m[1].replace(/\\n/g, '\n');
+      });
+      var media = s.match(/"mediaUrls"\s*:\s*"([\s\S]*?)"\s*,?\s*\n\s*"/);
+      if (media) data.mediaUrls = media[1].replace(/\\n/g, '\n');
+
+      var desc = '';
+      var dm = s.match(/"desc_summary"\s*:\s*"([\s\S]*?)"\s*,\s*\n?\s*"(droneStatus|mediaUrls|course_type)"/);
+      if (dm) desc = dm[1];
+      if (!desc) {
+        var tagged = s.match(/\[뷰\/특징\][\s\S]*/);
+        if (tagged) {
+          desc = tagged[0];
+          var cutAt = desc.search(/\n\s*"(droneStatus|mediaUrls|course_type)"/);
+          if (cutAt > 0) desc = desc.slice(0, cutAt);
+          desc = desc.replace(/"\s*,?\s*$/, '');
+        }
+      }
+      if (desc) data.desc_summary = desc.replace(/\\n/g, '\n').replace(/\\"/g, '"');
+      if (!data.desc_summary && /\[뷰\/특징\]/.test(s)) data.desc_summary = s;
+      return Object.keys(data).length ? data : null;
+    }
+    function applyJsonToPhotos() {
+      var data = state.spotData;
+      if (!data) {
+        $('jsonStatus').textContent = 'JSON을 먼저 붙여 주세요.';
+        return;
+      }
+      var name = String(data.fullName || data.spot_main || '').trim();
+      if (name) $('spot').value = name;
+      var chunks = descChunksFromJson(data);
+      if (!state.photos.length) {
+        $('jsonStatus').textContent = chunks.length
+          ? ('글 ' + chunks.length + '칸 준비됨 · 사진을 올리면 붙습니다')
+          : 'desc_summary가 없습니다.';
+        return;
+      }
+      state.photoMemos = state.photos.map(function(_, i) {
+        return chunks[i] || '';
+      });
+      renderMemoList();
+      $('jsonStatus').textContent = chunks.length
+        ? ('사진 ' + Math.min(chunks.length, state.photos.length) + '장에 100~120자 넣음')
+        : 'desc_summary가 없습니다.';
+    }
+    function numField(v) {
+      var n = parseFloat(String(v || '').replace(/[^\d.-]/g, ''));
+      return isNaN(n) ? 0 : n;
+    }
+    function readSpotJson() {
+      try {
+        var data = parseSpotJson($('spotJson').value);
+        if (!data || typeof data !== 'object') throw new Error('JSON 아님');
+        if (!String(data.desc_summary || '').trim() && !String(data.spot_main || '').trim()) {
+          throw new Error('내용 없음');
+        }
+        state.spotData = data;
+        applyJsonToPhotos();
+      } catch (err) {
+        state.spotData = null;
+        $('jsonStatus').textContent = 'JSON을 확인하세요.';
+      }
+    }
+    function jwtOkbmId(session) {
+      try {
+        var token = session && session.access_token;
+        if (!token) return '';
+        var payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        return String((payload.app_metadata && payload.app_metadata.okbm_user_id) || '').trim();
+      } catch (e) { return ''; }
+    }
+    function writeHeaders(prefer) {
+      return sb.auth.getSession().then(function(res) {
+        var tok = res && res.data && res.data.session && res.data.session.access_token;
+        if (!tok) return null;
+        return {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: 'Bearer ' + tok,
+          'Content-Type': 'application/json',
+          Prefer: prefer || 'return=representation'
+        };
+      });
+    }
+    function apiError(text, status) {
+      var raw = String(text || '');
+      var msg = raw;
+      try {
+        var j = JSON.parse(raw);
+        if (Array.isArray(j) && j[0]) j = j[0];
+        msg = String((j && (j.message || j.error || j.hint)) || raw);
+      } catch (e) {}
+      if (/permission denied/i.test(msg) || /42501/.test(raw)) return '박지 저장 권한이 없습니다.';
+      if (/row-level security/i.test(msg)) return '박지 저장은 관리자만 가능합니다.';
+      if (/duplicate key|unique/i.test(msg) || /23505/.test(raw)) return '같은 박지 ID가 이미 있습니다.';
+      return msg || ('HTTP ' + (status || ''));
+    }
+
+    function movePhoto(from, to) {
+      from = Number(from);
+      to = Number(to);
+      var n = state.photos.length;
+      if (from === to || from < 0 || to < 0 || from >= n || to >= n) return;
+      var photo = state.photos.splice(from, 1)[0];
+      var memo = state.photoMemos.splice(from, 1)[0];
+      state.photos.splice(to, 0, photo);
+      state.photoMemos.splice(to, 0, memo == null ? '' : memo);
+      renderThumbs();
+    }
+
+    function renderThumbs() {
+      var box = $('thumbs');
+      box.innerHTML = state.photos.map(function(url, i) {
+        return '<div class="thumb" data-i="' + i + '" draggable="true">' +
+          '<img src="' + url + '" alt="" draggable="false">' +
+          '<button class="x" type="button" data-i="' + i + '">×</button>' +
+          (i === 0 ? '<div class="badge">대표</div>' : '') +
+          '<div class="ord">' +
+            '<button type="button" data-i="' + i + '" data-dir="-1"' + (i === 0 ? ' disabled' : '') + '>‹</button>' +
+            '<button type="button" data-i="' + i + '" data-dir="1"' + (i === state.photos.length - 1 ? ' disabled' : '') + '>›</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      box.querySelectorAll('.x').forEach(function(btn) {
+        btn.onclick = function(e) {
+          e.stopPropagation();
+          var i = Number(btn.dataset.i);
+          state.photos.splice(i, 1);
+          state.photoMemos.splice(i, 1);
+          renderThumbs();
+        };
+      });
+      box.querySelectorAll('.ord button').forEach(function(btn) {
+        btn.onclick = function(e) {
+          e.stopPropagation();
+          var i = Number(btn.dataset.i);
+          movePhoto(i, i + Number(btn.dataset.dir));
+        };
+      });
+      var dragFrom = -1;
+      box.querySelectorAll('.thumb').forEach(function(el) {
+        el.ondragstart = function(e) {
+          if (e.target.closest && e.target.closest('button')) { e.preventDefault(); return; }
+          dragFrom = Number(el.dataset.i);
+          el.classList.add('dragging');
+          try { e.dataTransfer.setData('text/plain', String(dragFrom)); e.dataTransfer.effectAllowed = 'move'; } catch (err) {}
+        };
+        el.ondragover = function(e) {
+          e.preventDefault();
+          if (Number(el.dataset.i) !== dragFrom) el.classList.add('drop-target');
+        };
+        el.ondragleave = function() { el.classList.remove('drop-target'); };
+        el.ondrop = function(e) {
+          e.preventDefault();
+          el.classList.remove('drop-target');
+          movePhoto(dragFrom, Number(el.dataset.i));
+        };
+        el.ondragend = function() {
+          el.classList.remove('dragging');
+          box.querySelectorAll('.drop-target').forEach(function(n) { n.classList.remove('drop-target'); });
+        };
+        el.onpointerdown = function(e) {
+          if (e.pointerType === 'mouse' || (e.target.closest && e.target.closest('button'))) return;
+          dragFrom = Number(el.dataset.i);
+          el.classList.add('dragging');
+          try { el.setPointerCapture(e.pointerId); } catch (err) {}
+        };
+        el.onpointerup = function(e) {
+          if (e.pointerType === 'mouse' || dragFrom < 0) return;
+          el.classList.remove('dragging');
+          var hit = document.elementFromPoint(e.clientX, e.clientY);
+          var target = hit && hit.closest ? hit.closest('#thumbs .thumb') : null;
+          if (target) movePhoto(dragFrom, Number(target.dataset.i));
+          else {
+            box.querySelectorAll('.drop-target').forEach(function(n) { n.classList.remove('drop-target'); });
+          }
+          dragFrom = -1;
+        };
+        el.onpointercancel = function() {
+          el.classList.remove('dragging');
+          dragFrom = -1;
+        };
+      });
+      renderMemoList();
+    }
+
+    function renderMemoList() {
+      var box = $('memoList');
+      if (!state.photos.length) {
+        box.innerHTML = '<div class="status" style="margin:0;">사진을 올리면 여기에 글이 붙습니다.</div>';
+        return;
+      }
+      while (state.photoMemos.length < state.photos.length) state.photoMemos.push('');
+      box.innerHTML = state.photos.map(function(url, i) {
+        var memo = state.photoMemos[i] || '';
+        return '<div class="memo-row">' +
+          '<img src="' + url + '" alt="">' +
+          '<div>' +
+            '<textarea data-i="' + i + '" maxlength="' + MEMO_MAX + '">' + memo.replace(/</g, '&lt;') + '</textarea>' +
+            '<div class="count">' + memo.length + '/' + MEMO_MAX + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      box.querySelectorAll('textarea').forEach(function(ta) {
+        ta.oninput = function() {
+          var i = Number(ta.dataset.i);
+          state.photoMemos[i] = ta.value.slice(0, MEMO_MAX);
+          ta.nextElementSibling.textContent = state.photoMemos[i].length + '/' + MEMO_MAX;
+        };
+      });
+    }
+
+    function waitHeic() {
+      return new Promise(function(resolve) {
+        if (typeof heic2any === 'function' || (window.HeicTo && window.HeicTo.heicTo) || window.heic2any) {
+          resolve(); return;
+        }
+        var n = 0;
+        var t = setInterval(function() {
+          n++;
+          if (typeof heic2any === 'function' || (window.HeicTo && window.HeicTo.heicTo) || n > 40) {
+            clearInterval(t);
+            resolve();
+          }
+        }, 50);
+      });
+    }
+
+    function sniffHeic(buf) {
+      try {
+        var u8 = new Uint8Array(buf);
+        if (u8.length < 12) return false;
+        var brand = String.fromCharCode(u8[8], u8[9], u8[10], u8[11]);
+        return /heic|heix|heif|mif1|msf1|hevc/i.test(brand);
+      } catch (e) { return false; }
+    }
+    function isHeicFile(f, buf) {
+      var t = String((f && f.type) || '').toLowerCase();
+      var n = String((f && f.name) || '').toLowerCase();
+      if (t.indexOf('heic') !== -1 || t.indexOf('heif') !== -1 || /\.heic$|\.heif$/.test(n)) return true;
+      return buf ? sniffHeic(buf) : false;
+    }
+
+    async function convertHeicBlob(blob) {
+      await waitHeic();
+      var typed = blob instanceof Blob ? blob : new Blob([blob], { type: 'image/heic' });
+      var buf = await typed.arrayBuffer();
+      typed = new Blob([buf], { type: 'image/heic' });
+
+      try {
+        var mod = await import('https://cdn.jsdelivr.net/npm/heic-to@1.1.14/dist/heic-to.js');
+        var fnTo = mod.heicTo || (mod.default && mod.default.heicTo);
+        if (typeof fnTo === 'function') {
+          var out = await fnTo({ blob: typed, type: 'image/jpeg', quality: 0.82 });
+          if (out) return Array.isArray(out) ? out[0] : out;
+        }
+      } catch (e) {}
+
+      var fn = (typeof heic2any === 'function') ? heic2any : window.heic2any;
+      if (typeof fn === 'function') {
+        try {
+          var converted = await fn({ blob: typed, toType: 'image/jpeg', quality: 0.82 });
+          if (converted) return Array.isArray(converted) ? converted[0] : converted;
+        } catch (e) {}
+      }
+      return null;
+    }
+
+    function encodeCanvas(src, w, h, quality) {
+      return new Promise(function(resolve) {
+        try {
+          if (!w || !h) { resolve(null); return; }
+          var canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          var ctx = canvas.getContext('2d', { alpha: false });
+          if (!ctx) { resolve(null); return; }
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'medium';
+          ctx.drawImage(src, 0, 0, w, h);
+          if (src && typeof src.close === 'function') { try { src.close(); } catch (e) {} }
+          canvas.toBlob(function(blob) { resolve(blob && blob.size > 32 ? blob : null); }, 'image/jpeg', quality || 0.82);
+        } catch (err) {
+          resolve(null);
+        }
+      });
+    }
+
+    function fitDim(w, h, maxDim) {
+      maxDim = maxDim || 1200;
+      var m = Math.max(w, h);
+      if (!w || !h) return { w: 0, h: 0 };
+      if (m <= maxDim) return { w: w, h: h };
+      var s = maxDim / m;
+      return { w: Math.max(1, Math.round(w * s)), h: Math.max(1, Math.round(h * s)) };
+    }
+
+    function decodeViaImage(blob) {
+      return new Promise(function(resolve) {
+        var url = '';
+        try { url = URL.createObjectURL(blob); } catch (e) { resolve(null); return; }
+        var img = new Image();
+        img.onload = function() {
+          URL.revokeObjectURL(url);
+          var d = fitDim(img.naturalWidth || img.width, img.naturalHeight || img.height);
+          encodeCanvas(img, d.w, d.h, 0.82).then(resolve);
+        };
+        img.onerror = function() { URL.revokeObjectURL(url); resolve(null); };
+        img.src = url;
+      });
+    }
+
+    function decodeViaReader(blob) {
+      return new Promise(function(resolve) {
+        var reader = new FileReader();
+        reader.onload = function() {
+          var img = new Image();
+          img.onload = function() {
+            var d = fitDim(img.naturalWidth || img.width, img.naturalHeight || img.height);
+            encodeCanvas(img, d.w, d.h, 0.82).then(resolve);
+          };
+          img.onerror = function() { resolve(null); };
+          img.src = String(reader.result || '');
+        };
+        reader.onerror = function() { resolve(null); };
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function decodeViaBitmap(blob) {
+      if (typeof createImageBitmap !== 'function') return null;
+      try {
+        var bmp = await createImageBitmap(blob);
+        var d = fitDim(bmp.width, bmp.height);
+        if (d.w !== bmp.width || d.h !== bmp.height) {
+          try {
+            var resized = await createImageBitmap(bmp, { resizeWidth: d.w, resizeHeight: d.h, resizeQuality: 'medium' });
+            if (typeof bmp.close === 'function') bmp.close();
+            return await encodeCanvas(resized, d.w, d.h, 0.82);
+          } catch (e) {
+            return await encodeCanvas(bmp, d.w, d.h, 0.82);
+          }
+        }
+        return await encodeCanvas(bmp, d.w, d.h, 0.82);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function compressFile(file) {
+      if (!file) return null;
+      var type = String(file.type || '').toLowerCase();
+      if (type.indexOf('video/') === 0) throw new Error('동영상은 올릴 수 없습니다');
+      var buf = await file.arrayBuffer();
+      var heic = isHeicFile(file, buf);
+      var source = new Blob([buf], { type: heic ? 'image/heic' : (file.type || 'image/jpeg') });
+
+      if (heic) {
+        var converted = await convertHeicBlob(source);
+        if (!converted) throw new Error('HEIC 변환 실패');
+        source = converted;
+      }
+
+      var jpeg = await decodeViaBitmap(source);
+      if (jpeg) return jpeg;
+      jpeg = await decodeViaImage(source);
+      if (jpeg) return jpeg;
+      jpeg = await decodeViaReader(source);
+      if (jpeg) return jpeg;
+
+      if (!heic && (type.indexOf('jpeg') !== -1 || type.indexOf('jpg') !== -1) && file.size < 4 * 1024 * 1024) {
+        return new Blob([buf], { type: 'image/jpeg' });
+      }
+      throw new Error('이미지 변환 실패');
+    }
+
+    async function uploadToR2(blob, prefix) {
+      var name = String(prefix || 'feed') + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8) + '.jpg';
+      var res = await fetch(CF_UPLOAD_URL + '?file=' + encodeURIComponent(name), {
+        method: 'POST',
+        headers: { 'Content-Type': 'image/jpeg' },
+        body: blob
+      });
+      var text = '';
+      try { text = await res.text(); } catch (e) {}
+      if (!res.ok) throw new Error('R2 업로드 실패 ' + res.status);
+      var data = null;
+      try { data = JSON.parse(text); } catch (e) { throw new Error('R2 응답 오류'); }
+      if (data && data.status === 'SUCCESS' && String(data.url || '').indexOf('https://') === 0) {
+        return String(data.url).trim();
+      }
+      throw new Error('R2 응답 오류');
+    }
+
+    async function addFiles(fileList) {
+      var remain = MAX_PHOTOS - state.photos.length;
+      var files = Array.from(fileList || []).slice(0, remain);
+      if (!files.length) {
+        $('photoStatus').textContent = '더 넣을 수 없습니다.';
+        return;
+      }
+      state.uploading = true;
+      $('btnSubmit').disabled = true;
+      var fail = 0;
+      var lastErr = '';
+      for (var i = 0; i < files.length; i++) {
+        $('photoStatus').textContent = '변환·업로드 ' + (i + 1) + '/' + files.length;
+        try {
+          var blob = await compressFile(files[i]);
+          if (!blob || !blob.size) throw new Error('이미지 변환 실패');
+          var url = await uploadToR2(blob, 'feed');
+          state.photos.push(url);
+          state.photoMemos.push('');
+          renderThumbs();
+        } catch (err) {
+          fail++;
+          lastErr = (files[i].name || '사진') + ' · ' + (err.message || String(err));
+          $('photoStatus').textContent = lastErr;
+        }
+      }
+      state.uploading = false;
+      $('btnSubmit').disabled = false;
+      $('photoStatus').textContent = state.photos.length + '장 준비됨' + (fail ? ' · 실패 ' + fail + '장' + (lastErr ? ' (' + lastErr + ')' : '') : '');
+      if (state.spotData) applyJsonToPhotos();
+    }
+
+    function loadKakaoAuth() {
+      return new Promise(function(resolve, reject) {
+        if (window.Kakao && window.Kakao.isInitialized && window.Kakao.isInitialized()) {
+          resolve(); return;
+        }
+        var s = document.createElement('script');
+        s.src = 'https://developers.kakao.com/sdk/js/kakao.js';
+        s.onload = function() {
+          if (!window.Kakao.isInitialized()) window.Kakao.init(KAKAO_APP_KEY);
+          resolve();
+        };
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    async function loginKakao() {
+      $('loginErr').textContent = '';
+      await loadKakaoAuth();
+      var loginMethod = (Kakao.Auth && Kakao.Auth.loginForm) ? Kakao.Auth.loginForm : Kakao.Auth.login;
+      loginMethod({
+        scope: 'profile_nickname,account_email,profile_image',
+        throughTalk: false,
+        success: async function(authObj) {
+          try {
+            var kakaoToken = authObj && authObj.access_token;
+            if (!kakaoToken) throw new Error('카카오 토큰 없음');
+            var res = await fetch(SUPABASE_URL + '/functions/v1/auth-kakao', {
+              method: 'POST',
+              headers: {
+                apikey: SUPABASE_ANON_KEY,
+                Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ access_token: kakaoToken, mode: 'login' })
+            });
+            var issued = await res.json();
+            if (!res.ok || !issued.access_token || !issued.refresh_token) {
+              throw new Error((issued && (issued.message || issued.error)) || '세션 발급 실패');
+            }
+            var setRes = await sb.auth.setSession({
+              access_token: issued.access_token,
+              refresh_token: issued.refresh_token
+            });
+            if (setRes.error) throw setRes.error;
+            await afterLogin(setRes.data.session, issued.profile || {});
+          } catch (err) {
+            $('loginErr').textContent = err.message || String(err);
+          }
+        },
+        fail: function() {
+          $('loginErr').textContent = '로그인이 취소되었습니다.';
+        }
+      });
+    }
+
+    async function afterLogin(session, profile) {
+      state.userId = jwtOkbmId(session) || String((profile && profile.id) || '').trim();
+      state.author = String((profile && (profile.nickname || profile.name)) || '').trim();
+      state.authorPhoto = String((profile && (profile.photo || profile.photo_url)) || '').trim();
+      if (session && session.access_token) {
+        try {
+          var me = await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + encodeURIComponent(state.userId) + '&select=id,nickname,photo_url,hero_cover_url,is_admin', {
+            headers: {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: 'Bearer ' + session.access_token
+            }
+          });
+          var rows = await me.json();
+          if (Array.isArray(rows) && rows[0]) {
+            state.author = String(rows[0].nickname || state.author).trim();
+            state.authorPhoto = String(rows[0].hero_cover_url || rows[0].photo_url || state.authorPhoto).trim();
+            state.isAdmin = rows[0].is_admin === true;
+          }
+        } catch (e) {}
+      }
+      $('whoName').textContent = (state.author || '사용자') + ' · ' + state.userId;
+      $('loginCard').classList.add('hidden');
+      $('app').classList.remove('hidden');
+      $('date').value = todayInput();
+    }
+
+    async function nextSpotId() {
+      var max = 0;
+      try {
+        var headers = await writeHeaders('return=minimal');
+        var res = await fetch(SUPABASE_URL + '/rest/v1/spots?select=id', {
+          headers: headers || { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY }
+        });
+        var rows = await res.json();
+        if (Array.isArray(rows)) {
+          rows.forEach(function(s) {
+            var n = parseInt(String(s.id || ''), 10);
+            if (n > max) max = n;
+          });
+        }
+      } catch (e) {}
+      return String(max + 1);
+    }
+
+    function buildSpotPayload(id, data) {
+      data = data || {};
+      var elev = numField(data.elevation);
+      return {
+        id: String(id),
+        region: String(data.region || '').trim(),
+        cityName: String(data.cityName || '').trim(),
+        spot_main: String(data.spot_main || '').trim(),
+        spot_sub: String(data.spot_sub || '').trim(),
+        fullName: String(data.fullName || data.spot_main || '').trim(),
+        elevation: elev,
+        campsite_lat: numField(data.campsite_lat),
+        campsite_lng: numField(data.campsite_lng),
+        terrain: String(data.terrain || '').trim(),
+        trailhead_name: String(data.trailhead_name || '').trim(),
+        trailhead_addr: String(data.trailhead_addr || '').trim(),
+        difficulty: String(data.difficulty || '').trim(),
+        distance_km: numField(data.distance_km),
+        desc_summary: String(data.desc_summary || '').trim(),
+        droneStatus: String(data.droneStatus || '').trim(),
+        mediaUrls: String(data.mediaUrls || '').trim(),
+        course_type: String(data.course_type || '').trim() || '일반',
+        author_sns_url: String(data.author_sns_url || '').trim(),
+        author: state.author || '',
+        user_id: state.userId || ''
+      };
+    }
+
+    function normSpotKey(s) {
+      return String(s || '')
+        .replace(/\[[^\]]*\]/g, ' ')
+        .replace(/\([^)]*\)/g, ' ')
+        .replace(/[()\[\]·.,]/g, ' ')
+        .replace(/\s+/g, '')
+        .toLowerCase();
+    }
+    function normCityKey(s) {
+      return String(s || '')
+        .replace(/(특별자치시|특별자치도|광역시|특별시|자치시|자치도|[시군구])$/g, '')
+        .replace(/\s+/g, '')
+        .toLowerCase();
+    }
+    function sameSpotRow(row, data) {
+      if (!row) return false;
+      var main = normSpotKey(data.spot_main);
+      var full = normSpotKey(data.fullName);
+      var loc = normSpotKey(data.location);
+      var rowMain = normSpotKey(row.spot_main);
+      var rowFull = normSpotKey(row.fullName);
+      var nameHit = (main && (main === rowMain || main === rowFull))
+        || (full && (full === rowFull || full === rowMain))
+        || (loc && (loc === rowFull || loc === rowMain || (rowMain && loc.indexOf(rowMain) !== -1)));
+      if (!nameHit) return false;
+      var city = normCityKey(data.cityName);
+      var rowCity = normCityKey(row.cityName);
+      if (city && rowCity && city !== rowCity) return false;
+      return true;
+    }
+    async function findExistingSpot(data) {
+      data = data || {};
+      var main = String(data.spot_main || '').trim();
+      var full = String(data.fullName || '').trim();
+      var loc = String(data.location || '').trim();
+      if (!main && !full && !loc) return null;
+      var headers = { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY };
+      var rows = [];
+      var queries = [];
+      if (main) queries.push('spot_main=eq.' + encodeURIComponent(main));
+      if (full) queries.push('fullName=eq.' + encodeURIComponent(full));
+      if (loc && loc !== full && loc !== main) queries.push('fullName=eq.' + encodeURIComponent(loc));
+      for (var i = 0; i < queries.length; i++) {
+        try {
+          var res = await fetch(SUPABASE_URL + '/rest/v1/spots?select=id,spot_main,fullName,cityName,region&' + queries[i] + '&limit=20', { headers: headers });
+          var got = await res.json();
+          if (Array.isArray(got)) rows = rows.concat(got);
+        } catch (e) {}
+      }
+      if (!rows.length && main) {
+        try {
+          var fuzzy = await fetch(SUPABASE_URL + '/rest/v1/spots?select=id,spot_main,fullName,cityName,region&spot_main=ilike.' + encodeURIComponent('*' + main + '*') + '&limit=30', { headers: headers });
+          var fuzzyRows = await fuzzy.json();
+          if (Array.isArray(fuzzyRows)) rows = fuzzyRows;
+        } catch (e) {}
+      }
+      var seen = {};
+      for (var r = 0; r < rows.length; r++) {
+        var id = String((rows[r] && rows[r].id) || '');
+        if (!id || seen[id]) continue;
+        seen[id] = true;
+        if (sameSpotRow(rows[r], data)) return rows[r];
+      }
+      return null;
+    }
+
+    async function saveSpot(headers, data) {
+      if (!data || !String(data.spot_main || '').trim()) return { ok: false, skipped: true };
+      var existing = await findExistingSpot(data);
+      if (existing && existing.id) return { ok: true, id: String(existing.id), existing: true };
+      var id = await nextSpotId();
+      var payload = buildSpotPayload(id, data);
+      var spotHeaders = Object.assign({}, headers, { Prefer: 'return=minimal' });
+      var res = await fetch(SUPABASE_URL + '/rest/v1/spots', {
+        method: 'POST',
+        headers: spotHeaders,
+        body: JSON.stringify(payload)
+      });
+      var text = await res.text();
+      if (!res.ok) throw new Error(apiError(text, res.status));
+      return { ok: true, id: id };
+    }
+
+    async function submitFeed() {
+      if (state.uploading) { log('사진 업로드가 끝날 때까지 기다려 주세요.', 'err'); return; }
+      var photos = state.photos.filter(function(u) { return String(u).indexOf('https://') === 0; });
+      if (!state.userId) { log('로그인이 필요합니다.', 'err'); return; }
+      if (!photos.length) { log('사진을 1장 이상 올려 주세요.', 'err'); return; }
+      var spot = String($('spot').value || '').trim();
+      var dateYmd = String($('date').value || '').trim() || todayInput();
+      var dateDot = toDotDate(dateYmd);
+      if (!spot) { log('위치를 입력해 주세요.', 'err'); return; }
+      if (!dateDot) { log('날짜를 선택해 주세요.', 'err'); return; }
+
+      var memos = photos.map(function(_, i) {
+        return clipMemo(state.photoMemos[i] || '');
+      });
+      if (!memos.some(Boolean)) { log('사진 글을 입력해 주세요.', 'err'); return; }
+
+      var headers = await writeHeaders();
+      if (!headers) { log('세션이 없습니다. 다시 로그인하세요.', 'err'); return; }
+
+      var elev = '';
+      if (state.spotData && state.spotData.elevation) {
+        elev = String(state.spotData.elevation).trim();
+        if (elev && !/m$/i.test(elev)) elev = elev + 'm';
+      }
+
+      var payload = {
+        id: 'pack_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7),
+        user_id: state.userId,
+        author: state.author || '',
+        author_photo: state.authorPhoto || '',
+        spot: spot,
+        elevation: elev,
+        weight_kg: 0,
+        date: dateDot,
+        memo: memos[0] || '',
+        template_id: 1,
+        instagram: '',
+        youtube: '',
+        photo_memos_json: memos,
+        is_published: $('published').checked,
+        photos: photos,
+        items: [],
+        ready_shot_photo: null,
+        ready_shot_mode: 'minimal',
+        ready_shot_pos_x: 50,
+        ready_shot_pos_y: 50,
+        ready_shot_scale: 1,
+        feed_type: 'route',
+        updated_at: new Date().toISOString()
+      };
+
+      $('btnSubmit').disabled = true;
+      log('등록 중...');
+      try {
+        var spotNote = '';
+        if (state.spotData) {
+          try {
+            var spotPayload = Object.assign({}, state.spotData, { location: spot });
+            var saved = await saveSpot(headers, spotPayload);
+            if (saved && saved.existing) spotNote = ' · 박지 있음(' + saved.id + ')';
+            else if (saved && saved.ok) spotNote = ' · 박지 ' + saved.id;
+          } catch (spotErr) {
+            spotNote = ' · 박지 생략(' + (spotErr.message || '실패') + ')';
+          }
+        }
+        var res = await fetch(SUPABASE_URL + '/rest/v1/feeds', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(payload)
+        });
+        var text = await res.text();
+        if (!res.ok) throw new Error(apiError(text, res.status));
+        log('등록 완료 · ' + payload.id + ' · ' + photos.length + '장' + spotNote, 'ok');
+        state.photos = [];
+        state.photoMemos = [];
+        state.spotData = null;
+        renderThumbs();
+        $('photoStatus').textContent = '';
+        $('spot').value = '';
+        $('spotJson').value = '';
+        $('jsonStatus').textContent = '';
+        $('date').value = todayInput();
+      } catch (err) {
+        log('등록 실패: ' + (err.message || String(err)), 'err');
+      }
+      $('btnSubmit').disabled = false;
+    }
+
+    $('btnKakao').onclick = loginKakao;
+    $('btnLogout').onclick = async function() {
+      await sb.auth.signOut();
+      location.reload();
+    };
+    $('dropZone').onclick = function() { $('photoInput').click(); };
+    $('dropZone').ondragover = function(e) { e.preventDefault(); this.classList.add('over'); };
+    $('dropZone').ondragleave = function() { this.classList.remove('over'); };
+    $('dropZone').ondrop = function(e) {
+      e.preventDefault();
+      this.classList.remove('over');
+      addFiles(e.dataTransfer.files);
+    };
+    $('photoInput').onchange = function() { addFiles(this.files); this.value = ''; };
+    $('btnApplyJson').onclick = readSpotJson;
+    $('spotJson').addEventListener('paste', function() {
+      setTimeout(readSpotJson, 50);
+    });
+    $('spotJson').addEventListener('input', function() {
+      if (String(this.value || '').indexOf('[뷰/특징]') !== -1 || String(this.value || '').indexOf('"spot_main"') !== -1) {
+        readSpotJson();
+      }
+    });
+    $('btnSubmit').onclick = submitFeed;
+
+    sb.auth.getSession().then(function(res) {
+      var session = res && res.data && res.data.session;
+      if (session) afterLogin(session, {});
+    });
+  </script>
+</body>
+</html>
