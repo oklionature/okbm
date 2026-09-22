@@ -622,7 +622,7 @@ function getStudioAspectRatio() {
 }
 
 function getStudioCardBoxCss() {
-  return 'aspect-ratio:3/4; width:100%; max-width:340px; height:auto; max-height:calc(100vh - 168px); max-height:calc(100dvh - 168px); margin:0 auto;';
+  return 'container-type:inline-size; aspect-ratio:3/4; width:100%; max-width:340px; height:auto; max-height:calc(100vh - 168px); max-height:calc(100dvh - 168px); margin:0 auto;';
 }
 
 function getStudioExportSize(cardW, cardH) {
@@ -1228,9 +1228,8 @@ window.updateStudioCardLive = function() {
             <span style="color:rgba(255,255,255,0.35);">·</span>
             <span style="font-size:0.55rem; padding:1px 5px; border-radius:3px; background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.35); color:#6ee7b7; font-weight:800;">LNT</span>
           </div>
-          <div style="flex:1; min-width:0; display:flex; justify-content:flex-end; align-items:center; gap:4px; opacity:0.65;">
-            <div style="transform:scale(0.85); transform-origin:right center;">${brandSvgWhite}</div>
-            <span style="font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.46rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px; text-shadow:0 1px 3px rgba(0,0,0,0.8);">낭만루트</span>
+          <div style="flex:1; min-width:0; display:flex; justify-content:flex-end; align-items:center;">
+            ${renderIssueStyleBrandMark()}
           </div>
           </div>
         </div>
@@ -1289,9 +1288,8 @@ window.updateStudioCardLive = function() {
           <div style="position:absolute; right:-1px; top:50%; transform:translateY(-50%); width:1px; height:6px; background:#000;"></div>
         </div>
         <div style="position:relative; z-index:10; display:flex; justify-content:space-between; align-items:center; padding:10px 12px 4px 12px; box-sizing:border-box;">
-          <div style="display:inline-flex; align-items:center; gap:5px;">
-            ${brandSvgWhite}
-            <span style="font-family:'Space Grotesk', -apple-system, sans-serif; font-size:0.72rem; font-weight:800; color:#ffffff; letter-spacing:0.8px; text-shadow:0 1px 4px rgba(0,0,0,0.9);">낭만루트</span>
+          <div style="display:inline-flex; align-items:center;">
+            ${renderIssueStyleBrandMark()}
           </div>
           <div style="display:inline-flex; align-items:center; gap:5px; max-width:55%; min-width:0; font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.58rem; font-weight:700; color:#ffffff; text-shadow:0 1px 4px rgba(0,0,0,0.9);">
             ${readyShotOneLineMemo(memoVal) ? '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.6); padding:1px 6px; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,0.8);">' + escapeHtml(readyShotOneLineMemo(memoVal)) + '</span>' : ''}
@@ -1355,9 +1353,8 @@ window.updateStudioCardLive = function() {
             </div>
             <div style="position:absolute; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:space-between; gap:6px;">
               <span style="flex:1; min-width:0; font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.48rem; font-weight:700; color:rgba(255,255,255,0.85); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${chicMemoLive ? escapeHtml(chicMemoLive) : ''}</span>
-              <div style="display:flex; align-items:center; gap:3px; opacity:0.6; flex-shrink:0;">
-                <div style="transform:scale(0.75); transform-origin:right center;">${brandSvgWhite}</div>
-                <span style="font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.44rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px;">낭만루트</span>
+              <div style="display:flex; align-items:center; flex-shrink:0;">
+                ${renderIssueStyleBrandMark()}
               </div>
             </div>
           </div>
@@ -1410,8 +1407,7 @@ window.updateStudioCardLive = function() {
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #d6cfc4; padding-top:3px; font-size:0.46rem; color:#78716c; font-family:'Pretendard Variable', -apple-system, sans-serif;">
               <div style="display:flex; align-items:center; gap:4px;">
-                ${brandSvgDark}
-                <span style="font-weight:800; color:#1e293b;">낭만루트</span>
+                ${renderIssueStyleBrandMark()}
                 <span>·</span>
                 <span style="font-family:'Space Grotesk', sans-serif;">${escapeHtml(dateStr)}</span>
               </div>
@@ -1612,8 +1608,7 @@ window.updateStudioCardLive = function() {
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.48rem; color:#64748b; border-top:1px dashed #cbd5e1; padding-top:3px;">
           <div style="display:flex; align-items:center; gap:5px;">
-            ${brandSvgDark}
-            <span style="font-weight:900; color:#334155; letter-spacing:0.8px;">낭만루트</span>
+            ${renderIssueStyleBrandMark()}
             <span style="font-family:'Space Grotesk', sans-serif; font-weight:600; color:#94a3b8; font-size:0.92em;">${escapeHtml(dateStr)}</span>
           </div>
           <span style="color:#059669; font-weight:800; display:inline-flex; align-items:center;">
@@ -2079,6 +2074,8 @@ function ensureJournalStyles() {
     '.photo-overlay-card .jr-grain{position:absolute;inset:0;pointer-events:none;opacity:.42;' +
     'background:repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(80,60,40,.06) 28px),' +
     'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'180\' height=\'180\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.85\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'0.45\'/%3E%3C/svg%3E");}' +
+    '.photo-overlay-card,.ready-shot-card-vector{container-type:inline-size;}' +
+    '.rs-brand-mark{height:7.92cqw;width:auto;max-width:none;display:block;object-fit:contain;mix-blend-mode:screen;pointer-events:none;flex-shrink:0;filter:none;}' +
     '.photo-overlay-card.magazine-cover{container-type:inline-size; isolation:isolate; background:#111;}' +
     '.photo-overlay-card.magazine-cover .mag-photo{position:absolute;inset:0;z-index:1;pointer-events:none;}' +
     '.photo-overlay-card.magazine-cover .mag-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}' +
@@ -2089,29 +2086,27 @@ function ensureJournalStyles() {
     '.photo-overlay-card.magazine-cover .mag-kg b{font-size:0.38em;font-weight:600;letter-spacing:0.04em;margin-left:0.08em;}' +
     '.photo-overlay-card.magazine-cover .mag-items{position:absolute;left:2%;right:2%;bottom:6%;font-family:\'Bodoni Moda\',Georgia,serif;font-weight:700;font-size:4rem;font-size:18cqw;letter-spacing:-0.05em;line-height:0.8;text-align:center;white-space:nowrap;}' +
     '.photo-overlay-card.magazine-cover .mag-memo{position:absolute;left:4%;right:4%;bottom:16.5%;z-index:6;font-family:\'Bodoni Moda\',Georgia,serif;font-weight:600;font-size:4.2cqw;letter-spacing:-.02em;line-height:1.1;text-align:center;color:#ffffff;text-shadow:0 1px 6px rgba(0,0,0,.55);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none;}' +
-    '.photo-overlay-card.magazine-cover .mag-logo{position:absolute;top:12px;right:12px;left:auto;z-index:12;display:flex;justify-content:flex-end;pointer-events:none;}' +
-    '.photo-overlay-card.magazine-cover .mag-logo span{display:flex;align-items:center;justify-content:center;width:auto;height:auto;border-radius:0;background:none;box-shadow:none;}' +
-    '.photo-overlay-card.magazine-cover .mag-logo img{height:18px;width:18px;display:block;object-fit:contain;mix-blend-mode:screen;filter:drop-shadow(0 0 1px #fff) drop-shadow(1px 0 0 #111) drop-shadow(-1px 0 0 #111) drop-shadow(0 1px 0 #111) drop-shadow(0 -1px 0 #111) drop-shadow(0 1px 3px rgba(0,0,0,0.7));}' +
+    '.photo-overlay-card.magazine-cover .mag-logo{position:absolute;top:12px;right:12px;left:auto;z-index:12;pointer-events:none;}' +
     '.photo-overlay-card.spread-card{container-type:inline-size; display:flex; flex-direction:column; background:#f7f4ee; color:#1b2430;}' +
     '#readyShotEmptyPhotoHit{position:absolute;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:rgba(7,9,14,0.55);border:0;border-radius:0;cursor:grab;color:#fff;padding:16px;box-sizing:border-box;-webkit-appearance:none;appearance:none;touch-action:pan-y;user-select:none;-webkit-user-select:none;}' +
     '#readyShotEmptyPhotoHit svg,#readyShotEmptyPhotoHit span{pointer-events:none;}' +
     '#packShareCaptureArea input[type="file"]{display:none!important;}' +
-    '.photo-overlay-card.spread-card .sp-photo{position:relative; flex:1 1 56%; min-height:52%; overflow:hidden; background:#111;}' +
-    '.photo-overlay-card.spread-card .sp-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}' +
+    '.photo-overlay-card.spread-card .sp-photo{position:relative; flex:1 1 40%; min-height:36%; overflow:hidden; background:#111;}' +
+    '.photo-overlay-card.spread-card .sp-photo img:not(.rs-brand-mark){position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}' +
     '.photo-overlay-card.spread-card .sp-fade{position:absolute;left:0;right:0;bottom:0;height:38%;pointer-events:none;background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.22) 50%,rgba(0,0,0,.5) 100%);}' +
     '.photo-overlay-card.spread-card .sp-title{position:absolute;left:5%;right:5%;bottom:3%;z-index:4;font-family:\'Bodoni Moda\',Georgia,serif;font-weight:700;font-size:9cqw;letter-spacing:-.04em;line-height:.86;color:#fff;text-transform:uppercase;text-shadow:0 2px 14px rgba(0,0,0,.35);}' +
-    '.photo-overlay-card.spread-card .sp-paper{position:relative;flex:0 0 auto;padding:4.2% 5% 9.5%;box-sizing:border-box;}' +
+    '.photo-overlay-card.spread-card .sp-paper{position:relative;flex:0 0 auto;padding:3.6% 5% 3.8%;box-sizing:border-box;}' +
     '.photo-overlay-card.spread-card .sp-kg-row{display:flex;justify-content:flex-end;align-items:baseline;gap:8px;margin-bottom:3.2%;}' +
     '.photo-overlay-card.spread-card .sp-memo{flex:1;min-width:0;font-family:\'Pretendard Variable\',-apple-system,sans-serif;font-size:3.2cqw;font-weight:700;letter-spacing:-.02em;color:#1b2430;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}' +
     '.photo-overlay-card.spread-card .sp-kg{font-family:\'Bodoni Moda\',Georgia,serif;font-size:8.6cqw;font-weight:700;letter-spacing:-.04em;line-height:.88;color:#1a2744;margin-bottom:0;flex-shrink:0;}' +
     '.photo-overlay-card.spread-card .sp-byline{display:flex;justify-content:space-between;align-items:center;gap:10px;padding-bottom:2.4%;border-bottom:1px solid rgba(27,36,48,.18);margin-bottom:3.4%;}' +
     '.photo-overlay-card.spread-card .sp-spot{font-family:\'Pretendard Variable\',-apple-system,sans-serif;font-size:3.4cqw;font-weight:800;letter-spacing:-.02em;}' +
     '.photo-overlay-card.spread-card .sp-date{font-family:\'Space Grotesk\',sans-serif;font-size:2.6cqw;font-weight:600;color:#5c6570;}' +
-    '.photo-overlay-card.spread-card .sp-cols{display:grid;grid-template-columns:1fr 1fr;column-gap:6%;row-gap:2.8%;}' +
+    '.photo-overlay-card.spread-card .sp-cols{display:grid;grid-template-columns:1fr 1fr;column-gap:6%;row-gap:2.2%;}' +
     '.photo-overlay-card.spread-card .sp-brand{font-family:\'Space Grotesk\',sans-serif;font-size:2cqw;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#5c6570;}' +
     '.photo-overlay-card.spread-card .sp-name{margin-top:1px;font-family:\'Libre Baskerville\',\'Pretendard Variable\',Georgia,serif;font-size:3cqw;font-weight:700;line-height:1.2;word-break:keep-all;}' +
     '.photo-overlay-card.spread-card .sp-w{margin-top:1px;font-family:\'Space Grotesk\',sans-serif;font-size:2.3cqw;font-weight:600;color:#5c6570;}' +
-    '.photo-overlay-card.spread-card .sp-logo{position:absolute;right:5%;bottom:3.2%;height:5.4cqw;width:auto;display:block;object-fit:contain;mix-blend-mode:multiply;filter:drop-shadow(1px 0 0 #111) drop-shadow(-1px 0 0 #111) drop-shadow(0 1px 0 #111);}' +
+    '.photo-overlay-card.spread-card .sp-logo{position:absolute;top:12px;right:12px;left:auto;bottom:auto;z-index:8;}' +
     '.photo-overlay-card.issue-card{container-type:inline-size; background:#fff; color:#fff; padding:3.6%; box-sizing:border-box;}' +
     '.photo-overlay-card.issue-card .iss-sheet{position:relative;width:100%;height:100%;overflow:hidden;background:#000;background-image:linear-gradient(180deg,rgba(255,255,255,.06) 0%,transparent 38%,rgba(0,0,0,.35) 100%),linear-gradient(rgba(255,255,255,.22) 1.4px,transparent 1.4px),linear-gradient(90deg,rgba(255,255,255,.22) 1.4px,transparent 1.4px),linear-gradient(rgba(255,255,255,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.08) 1px,transparent 1px);background-size:auto,14.2% 10.6%,14.2% 10.6%,2.84% 2.12%,2.84% 2.12%;box-shadow:inset 0 0 28px rgba(0,0,0,.55);}' +
     '.photo-overlay-card.issue-card .iss-sheet::before{content:\'\';position:absolute;inset:0;pointer-events:none;z-index:1;opacity:.28;mix-blend-mode:overlay;background:radial-gradient(circle at 18% 12%,rgba(255,214,150,.18),transparent 36%),radial-gradient(circle at 88% 82%,rgba(0,0,0,.55),transparent 40%);}' +
@@ -2131,7 +2126,7 @@ function ensureJournalStyles() {
     '.photo-overlay-card.issue-card .iss-count .iss-num{display:inline-block;}' +
     '.photo-overlay-card.issue-card .iss-count b{position:absolute;right:5%;top:.28em;font-size:.28em;font-weight:400;letter-spacing:.06em;white-space:nowrap;}' +
     '.photo-overlay-card.issue-card .iss-memo{position:absolute;left:8%;right:8%;top:72%;z-index:6;font-family:\'Pretendard Variable\',-apple-system,sans-serif;font-size:3.2cqw;font-weight:700;letter-spacing:-.02em;text-align:center;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.75);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}' +
-    '.photo-overlay-card.issue-card .iss-logo{position:absolute;right:3.2%;bottom:2.4%;z-index:7;height:7.2cqw;width:auto;display:block;object-fit:contain;mix-blend-mode:screen;}' +
+    '.photo-overlay-card.issue-card .iss-logo{position:absolute;right:3.2%;bottom:2.4%;z-index:7;}' +
     '.photo-overlay-card.kuchi-card{container-type:inline-size; isolation:isolate; background:#fff; padding:2.8%; box-sizing:border-box;}' +
     '.photo-overlay-card.kuchi-card .kc-sheet{position:relative;width:100%;height:100%;overflow:hidden;background:#111;isolation:isolate;}' +
     '.photo-overlay-card.kuchi-card .kc-photo{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}' +
@@ -2145,10 +2140,7 @@ function ensureJournalStyles() {
     '.photo-overlay-card.kuchi-card .kc-mast-light{z-index:6;color:#e7de6a;mix-blend-mode:screen;}' +
     '.photo-overlay-card.kuchi-card .kc-kg{font-family:\'Barlow Condensed\',\'Oswald\',sans-serif;font-weight:500;font-size:38cqw;letter-spacing:.01em;line-height:.72;text-transform:uppercase;white-space:nowrap;}' +
     '.photo-overlay-card.kuchi-card .kc-items{margin-top:2.2%;font-family:\'Barlow Condensed\',\'Oswald\',sans-serif;font-weight:600;font-size:5.2cqw;letter-spacing:.32em;text-transform:lowercase;}' +
-    '.photo-overlay-card.kuchi-card .kc-mark{position:absolute;right:3.4%;bottom:3.2%;z-index:7;height:6.6cqw;width:18cqw;pointer-events:none;}' +
-    '.photo-overlay-card.kuchi-card .kc-mark img{position:absolute;right:0;bottom:0;height:100%;width:auto;display:block;object-fit:contain;}' +
-    '.photo-overlay-card.kuchi-card .kc-mark-dark{mix-blend-mode:multiply;}' +
-    '.photo-overlay-card.kuchi-card .kc-mark-light{mix-blend-mode:screen;}' +
+    '.photo-overlay-card.kuchi-card .kc-mark{position:absolute;right:3.4%;bottom:3.2%;z-index:7;pointer-events:none;}' +
     '.photo-overlay-card.balance-card{container-type:inline-size; isolation:isolate; background:#fff; padding:1.6%; box-sizing:border-box;}' +
     '.photo-overlay-card.balance-card .bl-sheet{position:relative;width:100%;height:100%;overflow:hidden;background:#111;isolation:isolate;}' +
     '.photo-overlay-card.balance-card .bl-photo{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}' +
@@ -2158,10 +2150,7 @@ function ensureJournalStyles() {
     '.photo-overlay-card.balance-card .bl-lead{font-size:3.7cqw;font-weight:900;margin-bottom:4.6%;}' +
     '.photo-overlay-card.balance-card .bl-mid{font-size:2.3cqw;font-weight:700;letter-spacing:.01em;line-height:1.32;margin-bottom:5.4%;}' +
     '.photo-overlay-card.balance-card .bl-end{font-size:2.7cqw;font-weight:800;letter-spacing:.08em;}' +
-    '.photo-overlay-card.balance-card .bl-logo{position:absolute;right:4.2%;top:2.8%;z-index:7;height:22cqw;width:28cqw;pointer-events:none;}' +
-    '.photo-overlay-card.balance-card .bl-logo img{position:absolute;right:0;top:0;height:100%;width:auto;display:block;object-fit:contain;}' +
-    '.photo-overlay-card.balance-card .bl-logo-dark{mix-blend-mode:multiply;}' +
-    '.photo-overlay-card.balance-card .bl-logo-light{mix-blend-mode:screen;}' +
+    '.photo-overlay-card.balance-card .bl-logo{position:absolute;right:1.4%;top:1.2%;z-index:7;pointer-events:none;}' +
     '.photo-overlay-card.balance-card .bl-rule{position:absolute;left:5.5%;right:5.5%;top:48.6%;height:0;z-index:5;pointer-events:none;}' +
     '.photo-overlay-card.balance-card .bl-rule-dark{border-top:1.6px solid #111;mix-blend-mode:multiply;}' +
     '.photo-overlay-card.balance-card .bl-rule-light{border-top:1.6px solid #fff;mix-blend-mode:screen;}' +
@@ -2180,9 +2169,13 @@ function ensureJournalStyles() {
     '.photo-overlay-card.kuchi-card .kc-memo{margin-top:2.4%;font-family:\'Pretendard Variable\',-apple-system,sans-serif;font-size:2.8cqw;font-weight:700;letter-spacing:-.02em;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:88%;margin-left:auto;margin-right:auto;}';
 }
 
-function renderOutlinedBrandMark(heightPx) {
-  var h = heightPx || 32;
-  return '<img src="fulllogo.png" alt="낭만루트" style="height:' + h + 'px; width:auto; max-width:88px; display:block; object-fit:contain; mix-blend-mode:screen; filter:drop-shadow(0 0 1px #fff) drop-shadow(1px 0 0 #111) drop-shadow(-1px 0 0 #111) drop-shadow(0 1px 0 #111) drop-shadow(0 -1px 0 #111) drop-shadow(0 1px 3px rgba(0,0,0,0.55));" />';
+function renderIssueStyleBrandMark(extraClass) {
+  var cls = extraClass ? ('rs-brand-mark ' + extraClass) : 'rs-brand-mark';
+  return '<img class="' + cls + '" src="fulllogo.png" alt="낭만루트" />';
+}
+
+function renderOutlinedBrandMark() {
+  return renderIssueStyleBrandMark();
 }
 
 function renderPhotoOverlayMarkup(opts) {
@@ -2253,7 +2246,7 @@ function renderPhotoOverlayMarkup(opts) {
             '<div style="font-family:\'Nanum Pen Script\', cursive; font-size:0.92rem; color:#4a433a; line-height:1.15; min-width:0; flex:1;">불편함<br>그럼에도 불구하고' +
               (memoText ? '<span style="display:inline; font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:0.62rem; font-weight:700; color:#5c5348; margin-left:6px; vertical-align:middle; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"> · ' + escapeHtml(memoText) + '</span>' : '') +
             '</div>' +
-            renderOutlinedBrandMark(34) +
+            renderIssueStyleBrandMark() +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -2318,9 +2311,9 @@ function renderEditorialOverlayMarkup(opts) {
             (memoText ? '<div style="margin-top:4px; font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:0.56rem; font-weight:700; color:rgba(255,255,255,0.9); text-shadow:0 1px 6px rgba(0,0,0,0.55); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px; margin-left:auto;">' + escapeHtml(memoText) + '</div>' : '') +
           '</div>' +
         '</div>' +
-        '<div style="position:absolute; left:16px; right:16px; bottom:12px; display:grid; grid-template-columns:1fr auto; column-gap:10px; align-items:end;">' +
+        '<div style="position:absolute; left:16px; right:8px; bottom:10px; display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:8px; align-items:end;">' +
           '<div style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); row-gap:10px; column-gap:8px; align-items:start; min-width:0;">' + cells + '</div>' +
-          renderOutlinedBrandMark(40) +
+          '<div style="flex-shrink:0; display:flex; justify-content:flex-end; align-items:flex-end;">' + renderIssueStyleBrandMark() + '</div>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -2368,7 +2361,7 @@ function renderMagazineCoverMarkup(opts) {
       '<div class="mag-type mag-type-dark">' + typeHtml + '</div>' +
       '<div class="mag-type mag-type-light">' + typeHtml + '</div>' +
       memoHtml +
-      '<div class="mag-logo"><span><img src="logo.png" alt="낭만루트" /></span></div>' +
+      renderIssueStyleBrandMark('mag-logo') +
     '</div>';
 }
 
@@ -2406,6 +2399,7 @@ function renderSpreadMarkup(opts) {
         '<img' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; pointer-events:none;" />' +
         '<div class="sp-fade"></div>' +
         '<div class="sp-title">THE PACK</div>' +
+        renderIssueStyleBrandMark('sp-logo') +
       '</div>' +
       '<div class="sp-paper">' +
         '<div class="sp-kg-row">' +
@@ -2417,7 +2411,6 @@ function renderSpreadMarkup(opts) {
           '<div class="sp-date">' + escapeHtml(dateStr) + '</div>' +
         '</div>' +
         '<div class="sp-cols">' + cells + '</div>' +
-        '<img class="sp-logo" src="fulllogo.png" alt="낭만루트" />' +
       '</div>' +
     '</div>';
 }
@@ -2465,7 +2458,7 @@ function renderIssueMarkup(opts) {
         '<div class="iss-note iss-spot">' + escapeHtml(spot) + '</div>' +
         '<svg class="iss-arrow iss-a2" viewBox="0 0 70 50" aria-hidden="true"><path d="M62 18 C 40 8, 22 22, 6 28"/></svg>' +
         '<div class="iss-count"><span class="iss-num">' + escapeHtml(String(totalCount)) + '</span><b>ITEM</b></div>' +
-        '<img class="iss-logo" src="fulllogo.png" alt="낭만루트" />' +
+        renderIssueStyleBrandMark('iss-logo') +
       '</div>' +
     '</div>';
 }
@@ -2503,10 +2496,7 @@ function renderKuchiMarkup(opts) {
         '</div>' +
         '<div class="kc-mast kc-mast-dark">' + mastInner + '</div>' +
         '<div class="kc-mast kc-mast-light">' + mastInner + '</div>' +
-        '<div class="kc-mark">' +
-          '<img class="kc-mark-dark" src="fulllogo.png" alt="" />' +
-          '<img class="kc-mark-light" src="fulllogo.png" alt="낭만루트" />' +
-        '</div>' +
+        renderIssueStyleBrandMark('kc-mark') +
       '</div>' +
     '</div>';
 }
@@ -2547,10 +2537,7 @@ function renderBalanceMarkup(opts) {
         '<img class="bl-photo"' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%;" />' +
         '<div class="bl-copy bl-copy-dark">' + copyInner + '</div>' +
         '<div class="bl-copy bl-copy-light">' + copyInner + '</div>' +
-        '<div class="bl-logo">' +
-          '<img class="bl-logo-dark" src="fulllogo.png" alt="" />' +
-          '<img class="bl-logo-light" src="fulllogo.png" alt="낭만루트" />' +
-        '</div>' +
+        renderIssueStyleBrandMark('bl-logo') +
         '<div class="bl-rule bl-rule-dark"></div>' +
         '<div class="bl-rule bl-rule-light"></div>' +
         '<div class="bl-word bl-word-dark">' + wordInner + '</div>' +
@@ -2606,7 +2593,7 @@ function renderNrcCertShotMarkup(opts) {
   }).join('');
 
   return '' +
-    '<div style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#000000; box-sizing:border-box; user-select:none;">' +
+    '<div class="ready-shot-card-vector" style="position:relative; ' + wrapCss + ' overflow:hidden; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,0.45); background:#000000; box-sizing:border-box; user-select:none;">' +
       '<img' + imgIdAttr + ' src="' + escapeHtml(okbmSafeImageUrl(photoUrl)) + '" ' + imgErr + ' style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:' + posX + '% ' + posY + '%; transform:scale(' + scale + '); transform-origin:' + posX + '% ' + posY + '%; display:block; z-index:1; pointer-events:none;" />' +
       '<div style="position:absolute; inset:auto 0 0 0; height:58%; z-index:2; pointer-events:none; background:linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.22) 40%, rgba(0,0,0,0.62) 100%);"></div>' +
       '<div style="position:absolute; top:12px; left:14px; right:14px; z-index:5; display:flex; justify-content:space-between; align-items:center;">' +
@@ -2620,9 +2607,8 @@ function renderNrcCertShotMarkup(opts) {
         '<div style="display:grid; grid-template-columns:' + (twoCol ? '1fr 1fr' : '1fr') + '; column-gap:10px; row-gap:3px; align-content:end; min-height:0;">' + rows + '</div>' +
         '<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:7px; gap:8px;">' +
           '<div style="font-family:\'Space Grotesk\', \'Pretendard Variable\', sans-serif; font-size:1.18rem; font-weight:900; letter-spacing:-0.6px; line-height:1; color:#ffffff; text-shadow:0 1px 6px rgba(0,0,0,0.7), 0 1px 2px rgba(0,0,0,0.85);">' + escapeHtml(String(weightKg)) + '<span style="font-family:\'Pretendard Variable\', sans-serif; font-size:0.48em; font-weight:800; margin-left:2px;">kg</span></div>' +
-          '<div style="display:flex; align-items:center; gap:3px; opacity:0.7;">' +
-            '<div style="transform:scale(0.7); transform-origin:right center;">' + brand + '</div>' +
-            '<span style="font-family:\'Pretendard Variable\', -apple-system, sans-serif; font-size:0.44rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px; text-shadow:0 1px 3px rgba(0,0,0,0.8);">낭만루트</span>' +
+          '<div style="display:flex; align-items:center;">' +
+            renderIssueStyleBrandMark() +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -2678,9 +2664,8 @@ window.generateReadyShotMarkup = function(record, options) {
             <span style="color:rgba(255,255,255,0.35);">·</span>
             <span style="font-size:0.55rem; padding:1px 5px; border-radius:3px; background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.35); color:#6ee7b7; font-weight:800;">LNT</span>
           </div>
-          <div style="flex:1; min-width:0; display:flex; justify-content:flex-end; align-items:center; gap:4px; opacity:0.65;">
-            <div style="transform:scale(0.85); transform-origin:right center;">${brandSvgWhite}</div>
-            <span style="font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.46rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px; text-shadow:0 1px 3px rgba(0,0,0,0.8);">낭만루트</span>
+          <div style="flex:1; min-width:0; display:flex; justify-content:flex-end; align-items:center;">
+            ${renderIssueStyleBrandMark()}
           </div>
           </div>
         </div>
@@ -2738,9 +2723,8 @@ window.generateReadyShotMarkup = function(record, options) {
           <div style="position:absolute; right:-1px; top:50%; transform:translateY(-50%); width:1px; height:6px; background:#000;"></div>
         </div>
         <div style="position:relative; z-index:10; display:flex; justify-content:space-between; align-items:center; padding:10px 12px 4px 12px; box-sizing:border-box;">
-          <div style="display:inline-flex; align-items:center; gap:5px;">
-            ${brandSvgWhite}
-            <span style="font-family:'Space Grotesk', -apple-system, sans-serif; font-size:0.72rem; font-weight:800; color:#ffffff; letter-spacing:0.8px; text-shadow:0 1px 4px rgba(0,0,0,0.9);">낭만루트</span>
+          <div style="display:inline-flex; align-items:center;">
+            ${renderIssueStyleBrandMark()}
           </div>
           <div style="display:inline-flex; align-items:center; gap:5px; max-width:55%; min-width:0; font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.58rem; font-weight:700; color:#ffffff; text-shadow:0 1px 4px rgba(0,0,0,0.9);">
             ${readyShotOneLineMemo(memo) ? '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.6); padding:1px 6px; border-radius:4px; box-shadow:0 1px 3px rgba(0,0,0,0.8);">' + escapeHtml(readyShotOneLineMemo(memo)) + '</span>' : ''}
@@ -2803,9 +2787,8 @@ window.generateReadyShotMarkup = function(record, options) {
             </div>
             <div style="position:absolute; left:0; right:0; bottom:0; display:flex; align-items:center; justify-content:space-between; gap:6px;">
               <span style="flex:1; min-width:0; font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.48rem; font-weight:700; color:rgba(255,255,255,0.85); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${chicMemo ? escapeHtml(chicMemo) : ''}</span>
-              <div style="display:flex; align-items:center; gap:3px; opacity:0.6; flex-shrink:0;">
-                <div style="transform:scale(0.75); transform-origin:right center;">${brandSvgWhite}</div>
-                <span style="font-family:'Pretendard Variable', -apple-system, sans-serif; font-size:0.44rem; font-weight:700; color:#ffffff; letter-spacing:-0.2px;">낭만루트</span>
+              <div style="display:flex; align-items:center; flex-shrink:0;">
+                ${renderIssueStyleBrandMark()}
               </div>
             </div>
           </div>
@@ -2857,8 +2840,7 @@ window.generateReadyShotMarkup = function(record, options) {
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #d6cfc4; padding-top:3px; font-size:0.46rem; color:#78716c; font-family:'Pretendard Variable', -apple-system, sans-serif;">
               <div style="display:flex; align-items:center; gap:4px;">
-                ${brandSvgDark}
-                <span style="font-weight:800; color:#1e293b;">낭만루트</span>
+                ${renderIssueStyleBrandMark()}
                 <span>·</span>
                 <span style="font-family:'Space Grotesk', sans-serif;">${escapeHtml(dateStr)}</span>
               </div>
@@ -3051,8 +3033,7 @@ window.generateReadyShotMarkup = function(record, options) {
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.48rem; color:#64748b; border-top:1px dashed #cbd5e1; padding-top:3px;">
           <div style="display:flex; align-items:center; gap:5px;">
-            ${brandSvgDark}
-            <span style="font-weight:900; color:#334155; letter-spacing:0.8px;">낭만루트</span>
+            ${renderIssueStyleBrandMark()}
             <span style="font-family:'Space Grotesk', sans-serif; font-weight:600; color:#94a3b8; font-size:0.92em;">${escapeHtml(dateStr)}</span>
           </div>
           <span style="color:#059669; font-weight:800; display:inline-flex; align-items:center;">
@@ -4559,6 +4540,24 @@ if (!document.getElementById('template-cards-core-style')) {
       position: relative !important;
       touch-action: pan-y !important;
       flex-shrink: 0 !important;
+      container-type: inline-size !important;
+    }
+    #packShareCaptureArea,
+    #photoStudioCardTarget,
+    .photo-overlay-card,
+    .ready-shot-card-vector {
+      container-type: inline-size;
+    }
+    .rs-brand-mark {
+      height: 7.92cqw !important;
+      width: auto !important;
+      max-width: none !important;
+      display: block !important;
+      object-fit: contain !important;
+      mix-blend-mode: screen;
+      pointer-events: none !important;
+      flex-shrink: 0 !important;
+      filter: none !important;
     }
     .tmpl-pledge-wrap {
       margin-top: 4px !important;
