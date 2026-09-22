@@ -24,7 +24,6 @@
           var spot = params.get('spot') || params.get('q');
           var id = params.get('id');
           var feed = params.get('feed');
-          var openParam = params.get('open');
           var proposeSpot = params.get('propose_spot');
           var editProp = params.get('edit_proposal');
           var correctionProp = params.get('correction_proposal') || params.get('correction_spot');
@@ -32,12 +31,6 @@
           // 제보/수정 진입은 지도에서 바로 열어 둔다
           if (proposeSpot || editProp || correctionProp) {
             try { sessionStorage.setItem('okbm_entered_via_index', '1'); } catch (e0) {}
-            return;
-          }
-
-          // 카카오톡 인앱 브라우저는 웹앱이 제대로 안 열리므로 외부 브라우저로 넘긴다.
-          if (/KAKAOTALK/i.test(navigator.userAgent || '') && (spot || id || feed || openParam)) {
-            location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
             return;
           }
 

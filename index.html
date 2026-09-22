@@ -22,6 +22,19 @@
         shown = sessionStorage.getItem('splash_shown') === 'true';
       } catch (e) {}
       try {
+        if (!shown) shown = localStorage.getItem('okbm_splash_shown') === 'true';
+      } catch (e) {}
+      try {
+        if (!shown && sessionStorage.getItem('okbm_skip_splash_once') === '1') {
+          sessionStorage.removeItem('okbm_skip_splash_once');
+          shown = true;
+        }
+      } catch (e) {}
+      try {
+        var ref = String(document.referrer || '');
+        if (!shown && /kakao\.com|kauth\.kakao/i.test(ref)) shown = true;
+      } catch (e) {}
+      try {
         var s = window.location.search || '';
         skipForDirectTab = s.indexOf('open=plan') !== -1 || s.indexOf('open=history') !== -1 || s.indexOf('open=report') !== -1 || s.indexOf('tab=plan') !== -1 || s.indexOf('tab=history') !== -1 || s.indexOf('tab=report') !== -1 || s.indexOf('open=basecamp') !== -1;
       } catch (e) {}
@@ -135,14 +148,6 @@
         var bootParams = new URLSearchParams(window.location.search);
         var bootSpot = bootParams.get('spot') || bootParams.get('q');
         var bootId = bootParams.get('id');
-        var bootOpen = bootParams.get('open');
-        var bootTab = bootParams.get('tab');
-        var bootFeed = bootParams.get('feed');
-
-        if (/KAKAOTALK/i.test(navigator.userAgent || '') && (bootSpot || bootId || bootOpen || bootTab || bootFeed)) {
-          location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
-          return;
-        }
 
         if (bootSpot) sessionStorage.setItem('okbm_pending_map_spot', bootSpot);
         if (bootId) sessionStorage.setItem('okbm_pending_map_id', bootId);
@@ -190,6 +195,9 @@
       height: calc(var(--vh, 1vh) * 100) !important;
       width: 100% !important;
       touch-action: none !important;
+    }
+    html:has(body.trip-modal-open) {
+      overflow: hidden !important;
     }
     body.pack-share-open {
       padding-top: 0 !important;
@@ -772,7 +780,9 @@
   #planBookmarkSheetList,
   #dualFeedScrollContainer,
   #tripDetailInnerScroll,
-  #videoModalScrollBody {
+  #videoModalScrollBody,
+  #secretSpotHeroModal,
+  #heroTrailerSectionWrap {
       overscroll-behavior: none !important;
       -webkit-overflow-scrolling: touch !important;
     }
@@ -1582,17 +1592,27 @@
   function readSplashShown() {
     if (window.__okbmSplashAlreadyShown === true) return true;
     try {
-      return sessionStorage.getItem(SPLASH_SHOWN_KEY) === 'true';
-    } catch (e) {
-      return false;
-    }
+      if (sessionStorage.getItem(SPLASH_SHOWN_KEY) === 'true') return true;
+    } catch (e) {}
+    try {
+      if (localStorage.getItem('okbm_splash_shown') === 'true') return true;
+    } catch (e) {}
+    try {
+      if (sessionStorage.getItem('okbm_skip_splash_once') === '1') {
+        sessionStorage.removeItem('okbm_skip_splash_once');
+        return true;
+      }
+    } catch (e) {}
+    try {
+      if (/kakao\.com|kauth\.kakao/i.test(String(document.referrer || ''))) return true;
+    } catch (e) {}
+    return false;
   }
 
   function markSplashShown() {
     window.__okbmSplashAlreadyShown = true;
-    try {
-      sessionStorage.setItem(SPLASH_SHOWN_KEY, 'true');
-    } catch (e) {}
+    try { sessionStorage.setItem(SPLASH_SHOWN_KEY, 'true'); } catch (e) {}
+    try { localStorage.setItem('okbm_splash_shown', 'true'); } catch (e) {}
   }
 
   function hideSplashOverlayNow() {
@@ -1950,7 +1970,7 @@
 })();
 </script>
 
-   <section class="n-rail-section" id="heroTrailerSectionWrap" style="margin-top: 4px;">
+   <section class="n-rail-section" id="heroTrailerSectionWrap" style="margin-top: 4px; overscroll-behavior: none;">
       <div style="display:flex; justify-content:space-between; align-items:center; padding-right:14px;">
         <h2 class="n-rail-title" style="font-size:0.92rem; color:#e2e8f0; display:flex; align-items:center; gap:5px;">
           <span class="icon-svg" style="width:16px; height:16px; color:#38bdf8; display:flex; align-items:center;">
@@ -2503,6 +2523,9 @@
       `;
 
       document.body.appendChild(modal);
+      if (typeof window.lockHomeScrollForTripModal === 'function') {
+        window.lockHomeScrollForTripModal();
+      }
       if (typeof window.registerModalOpen === 'function') {
         window.registerModalOpen('themeSpotAllModal', window.closeThemeSpotAllModal);
       }
@@ -2517,6 +2540,9 @@
         window.unregisterModalClose('themeSpotAllModal');
       }
       modal.remove();
+      if (typeof window.unlockHomeScrollForTripModal === 'function') {
+        window.unlockHomeScrollForTripModal();
+      }
     };
 
     window.filterThemeSpotAllGrid = function(themeKey, btnEl) {
@@ -2718,12 +2744,40 @@
       }).join('');
     }
 
+    (function bindThemeSpotHomeWheelLock() {
+      function attach() {
+        var section = document.getElementById('heroTrailerSectionWrap');
+        if (!section || section.__okbmWheelLocked) return;
+        section.__okbmWheelLocked = true;
+        section.addEventListener('wheel', function(e) {
+          if (Math.abs(e.deltaY) < Math.abs(e.deltaX)) return;
+          var rail = document.getElementById('secretSpotTrailerRailContainer');
+          if (rail && rail.scrollWidth > rail.clientWidth + 2) {
+            rail.scrollLeft += e.deltaY;
+          }
+          e.preventDefault();
+          e.stopPropagation();
+        }, { passive: false });
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attach);
+      } else {
+        attach();
+      }
+    })();
+
     // 🚪 [테마 스팟 뷰어 모달 닫기 엔진]
     window.closeSecretSpotHeroModal = function() {
       var modalEl = document.getElementById('secretSpotHeroModal');
       if (!modalEl) return;
       triggerHaptic(8);
+      if (typeof window.unregisterModalClose === 'function') {
+        window.unregisterModalClose('secretSpotHeroModal');
+      }
       modalEl.remove();
+      if (typeof window.unlockHomeScrollForTripModal === 'function') {
+        window.unlockHomeScrollForTripModal();
+      }
     };
 
     // 🔘 [테마 스팟 화보 뷰어: 도트 & 사진별 메모 실시간 직통 동기화]
@@ -2861,7 +2915,7 @@
       modalEl.id = 'secretSpotHeroModal';
       modalEl.dataset.photoMemos = JSON.stringify(photoMemosArr);
       modalEl.dataset.defaultMemo = defaultDesc;
-      modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); width:100%; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)); background:rgba(0,0,0,0.96); z-index:1000045; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden;';
+      modalEl.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:calc(56px + env(safe-area-inset-bottom, 8px)); width:100%; height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)); max-height:calc(var(--vh, 1vh) * 100 - 56px - env(safe-area-inset-bottom, 8px)); background:#000000; z-index:1000045; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; overflow:hidden; overscroll-behavior:none; touch-action:none;';
       if (typeof window.ensureMasterBottomDock === 'function') {
         window.ensureMasterBottomDock('router');
       }
@@ -2871,11 +2925,11 @@
         : defaultDesc;
 
       modalEl.innerHTML = `
-        <!-- 상단 스크롤 본문 -->
-        <div style="flex:1 1 0%; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; contain:content; padding:calc(10px + env(safe-area-inset-top, 0px)) 14px 14px 14px; display:flex; justify-content:center; align-items:flex-start; box-sizing:border-box;">
-          <div style="width:100%; max-width:440px; display:flex; flex-direction:column; gap:8px; margin:auto 0; box-sizing:border-box;">
+        <!-- 상단 고정 본문: 마우스 휠로 홈(일행구하기)이 밀려 올라오지 않게 overflow 잠금 -->
+        <div style="flex:1 1 0%; min-height:0; overflow:hidden; overscroll-behavior:none; touch-action:pan-x; contain:content; padding:calc(10px + env(safe-area-inset-top, 0px)) 14px 14px 14px; display:flex; justify-content:center; align-items:center; box-sizing:border-box;">
+          <div style="width:100%; max-width:440px; display:flex; flex-direction:column; gap:8px; margin:0; box-sizing:border-box;">
             
-            <div class="insta-card" style="position:relative; width:100%; aspect-ratio:3/4; border-radius:16px; overflow:hidden; background:#000; border:1px solid rgba(255,255,255,0.18); box-shadow:0 8px 24px rgba(0,0,0,0.45); box-sizing:border-box;">
+            <div class="insta-card" style="position:relative; width:100%; aspect-ratio:3/4; max-height:calc(var(--vh, 1vh) * 62); border-radius:16px; overflow:hidden; background:#000; border:1px solid rgba(255,255,255,0.18); box-shadow:0 8px 24px rgba(0,0,0,0.45); box-sizing:border-box; flex-shrink:0;">
               
               <!-- ✕ 초슬림 투명 글래스 닫기 앵커 -->
               <button type="button" onclick="window.closeSecretSpotHeroModal();" style="position:absolute; top:10px; right:10px; z-index:30; width:24px; height:24px; border-radius:50%; background:#0c1017; border:1px solid rgba(255,255,255,0.18); color:#cbd5e1; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; transition:all 0.15s ease;">
@@ -2924,6 +2978,18 @@
         `;
 
       document.body.appendChild(modalEl);
+      if (typeof window.lockHomeScrollForTripModal === 'function') {
+        window.lockHomeScrollForTripModal();
+      }
+      if (typeof window.registerModalOpen === 'function') {
+        window.registerModalOpen('secretSpotHeroModal', window.closeSecretSpotHeroModal);
+      }
+      modalEl.addEventListener('wheel', function(e) {
+        if (Math.abs(e.deltaY) >= Math.abs(e.deltaX)) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }, { passive: false });
     };
 
     // 📖 [특정 장소 피드로 다이렉트 점프 엔진]
@@ -3154,7 +3220,9 @@
       var stillOpen = document.getElementById('tripDetailSheetModal')
         || document.getElementById('tripCreateModal')
         || document.getElementById('tripJoinListModal')
-        || document.getElementById('tripUserProfileModal');
+        || document.getElementById('tripUserProfileModal')
+        || document.getElementById('secretSpotHeroModal')
+        || document.getElementById('themeSpotAllModal');
       if (stillOpen) {
         document.body.classList.add('trip-modal-open');
         return;

@@ -9657,6 +9657,13 @@ async function handleSocialLoginSuccess(provider, providerId, email, nickname, p
 
   if (typeof trackDailyVisit === 'function') trackDailyVisit(true);
 
+  try {
+    sessionStorage.setItem('splash_shown', 'true');
+    sessionStorage.setItem('okbm_skip_splash_once', '1');
+    localStorage.setItem('okbm_splash_shown', 'true');
+  } catch (e) {}
+  window.__okbmSplashAlreadyShown = true;
+
   setTimeout(function() { window.location.reload(); }, 200);
 }
 window.handleSocialLoginSuccess = handleSocialLoginSuccess;
