@@ -352,11 +352,35 @@
       display: block;
       opacity: 0;
       transform: none;
-      transition: opacity 2s ease;
-      will-change: opacity;
+      clip-path: inset(50% 50% 50% 50%);
+      will-change: opacity, clip-path;
     }
-    .okbm-splash-inner.is-logo-in .okbm-splash-logo {
-      opacity: 1;
+    .okbm-splash-inner.is-logo-in:not(.is-logo-out) .okbm-splash-logo {
+      animation: okbmSplashLogoReveal 2.6s cubic-bezier(0.33, 0.1, 0.2, 1) forwards;
+    }
+    .okbm-splash-inner.is-logo-out .okbm-splash-logo {
+      animation: none;
+      opacity: 0;
+      clip-path: inset(0% 0% 0% 0%);
+      transition: opacity 0.7s ease;
+    }
+    @keyframes okbmSplashLogoReveal {
+      0% {
+        opacity: 0.2;
+        clip-path: inset(49% 49% 49% 49%);
+      }
+      18% {
+        opacity: 0.85;
+        clip-path: inset(38% 38% 38% 38%);
+      }
+      55% {
+        opacity: 1;
+        clip-path: inset(16% 16% 16% 16%);
+      }
+      100% {
+        opacity: 1;
+        clip-path: inset(0% 0% 0% 0%);
+      }
     }
     @keyframes okbmSplashCursorBlink {
       0%, 45% { opacity: 1; }
@@ -366,6 +390,8 @@
       .okbm-splash-logo {
         opacity: 1 !important;
         transform: none !important;
+        clip-path: none !important;
+        animation: none !important;
         transition: none !important;
       }
       .okbm-splash-cursor { animation: none !important; opacity: 1; }
@@ -1544,10 +1570,14 @@
   var SLOGAN = '낭만을 찾는 방법';
   var TYPE_STEP_MS = 123;
   var TYPE_SPACE_MS = 196;
-  var LOGO_IN_MS = 2000;
-  var HOLD_MS = 0;
-  var FADE_MS = 400;
-  var HARD_TIMEOUT_MS = 6000;
+  // 슬로건 '낭만'까지 타이핑된 뒤 로고 등장
+  var LOGO_TRIGGER_AT = 2;
+  var LOGO_IN_MS = 2600;
+  var LOGO_HOLD_MS = 850;
+  var LOGO_OUT_MS = 700;
+  var HOLD_MS = 80;
+  var FADE_MS = 360;
+  var HARD_TIMEOUT_MS = 9500;
   var DATA_CAP_MS = 2600;
   var dismissed = false;
   var reduceMotion = false;
@@ -1637,7 +1667,7 @@
     if (reduceMotion) {
       if (typeEl) typeEl.textContent = SLOGAN;
       if (innerEl) innerEl.classList.add('is-logo-in');
-      return Promise.resolve();
+      return delay(400);
     }
     return new Promise(function(resolve) {
       var typeDone = false;
@@ -1651,13 +1681,22 @@
         logoStarted = true;
         requestAnimationFrame(function() {
           requestAnimationFrame(function() {
-            if (innerEl) innerEl.classList.add('is-logo-in');
+            if (innerEl) {
+              innerEl.classList.remove('is-logo-out');
+              innerEl.classList.add('is-logo-in');
+            }
           });
         });
+        // 나타남 → 유지 → 사라짐
         setTimeout(function() {
-          logoDone = true;
-          maybeDone();
-        }, LOGO_IN_MS + 32);
+          setTimeout(function() {
+            if (innerEl) innerEl.classList.add('is-logo-out');
+            setTimeout(function() {
+              logoDone = true;
+              maybeDone();
+            }, LOGO_OUT_MS);
+          }, LOGO_HOLD_MS);
+        }, LOGO_IN_MS);
       }
       if (!typeEl) {
         startLogo();
@@ -1674,7 +1713,7 @@
         var ch = SLOGAN.charAt(i);
         typeEl.textContent += ch;
         i += 1;
-        if (i === 1) startLogo();
+        if (i === LOGO_TRIGGER_AT) startLogo();
         setTimeout(tick, ch === ' ' ? TYPE_SPACE_MS : TYPE_STEP_MS);
       }
       tick();
