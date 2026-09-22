@@ -2714,11 +2714,12 @@
         var defaultMemo = modalEl.dataset.defaultMemo || '';
         try {
           var memos = JSON.parse(modalEl.dataset.photoMemos || '[]');
-          var curText = (Array.isArray(memos) && memos[curIdx] !== undefined) ? memos[curIdx] : '';
-          if (curText && curText.trim().length > 0) {
-            quoteEl.innerText = '“' + curText.trim() + '”';
-          } else if (defaultMemo && defaultMemo.trim().length > 0) {
-            quoteEl.innerText = '“' + defaultMemo.trim() + '”';
+          if (!Array.isArray(memos)) memos = [];
+          var filledCount = memos.filter(function(m) { return String(m || '').trim(); }).length;
+          var curText = (memos[curIdx] !== undefined) ? String(memos[curIdx] || '').trim() : '';
+          if (filledCount <= 1 && !curText) curText = String(defaultMemo || '').trim();
+          if (curText) {
+            quoteEl.innerText = '“' + curText + '”';
           } else {
             quoteEl.innerText = '“자연 속에서 비화식으로 즐기는 조용한 하룻밤.”';
           }
@@ -3229,11 +3230,12 @@
           var defaultMemo = cardRoot.dataset.defaultMemo || '자연 속에서 비화식으로 즐기는 조용한 하룻밤.';
           try {
             var memos = JSON.parse(cardRoot.dataset.photoMemos || '[]');
-            var curText = (Array.isArray(memos) && memos[curIdx] !== undefined) ? memos[curIdx] : '';
-            if (curText && curText.trim().length > 0) {
-              quoteEl.innerText = '“' + curText.trim() + '”';
-            } else if (defaultMemo && defaultMemo.trim().length > 0) {
-              quoteEl.innerText = '“' + defaultMemo.trim() + '”';
+            if (!Array.isArray(memos)) memos = [];
+            var filledCount = memos.filter(function(m) { return String(m || '').trim(); }).length;
+            var curText = (memos[curIdx] !== undefined) ? String(memos[curIdx] || '').trim() : '';
+            if (filledCount <= 1 && !curText) curText = String(defaultMemo || '').trim();
+            if (curText) {
+              quoteEl.innerText = '“' + curText + '”';
             } else {
               quoteEl.innerText = '“자연 속에서 비화식으로 즐기는 조용한 하룻밤.”';
             }

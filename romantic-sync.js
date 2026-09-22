@@ -5792,13 +5792,17 @@ window.navigateToDockTab = function(tabId) {
       try {
         sessionStorage.setItem('okbm_entered_via_index', '1');
         var pendingId = sessionStorage.getItem('okbm_pending_map_id');
-        var pendingSpot = sessionStorage.getItem('okbm_pending_map_spot')
-          || sessionStorage.getItem('okbm_target_spot')
-          || sessionStorage.getItem('okbm_target_map_spot');
+        var pendingSpot = sessionStorage.getItem('okbm_pending_map_spot');
         var mapParams = [];
         if (pendingId) mapParams.push('id=' + encodeURIComponent(pendingId));
         if (pendingSpot) mapParams.push('spot=' + encodeURIComponent(pendingSpot));
         if (mapParams.length) mapUrl += '?' + mapParams.join('&');
+        sessionStorage.removeItem('okbm_pending_map_id');
+        sessionStorage.removeItem('okbm_pending_map_spot');
+        sessionStorage.removeItem('okbm_target_spot');
+        sessionStorage.removeItem('okbm_target_map_spot');
+        localStorage.removeItem('okbm_target_spot');
+        localStorage.removeItem('okbm_target_map_spot');
       } catch (e) {}
       if (typeof window.smoothNavigate === 'function') window.smoothNavigate(mapUrl);
       else window.location.assign(mapUrl);

@@ -470,7 +470,7 @@
       var h = img.naturalHeight || img.videoHeight || 0;
       if (w <= 0 || h <= 0) return;
       var ratio = w / h;
-      var inReel = !!(img.closest && img.closest('.reel-horizontal-track'));
+      var inReel = !!(img.closest && (img.closest('.reel-horizontal-track') || img.closest('#mapHeroPhotoTrack')));
       img.classList.remove('is-landscape', 'is-square', 'is-portrait', 'is-portrait-crop', 'is-keep-ratio');
       img.style.setProperty('border-radius', '0', 'important');
       img.style.setProperty('box-shadow', 'none', 'important');
@@ -1877,11 +1877,16 @@ window.normalizeHistoryRecord = function(r, idx) {
       : (totalGrams > 0 ? (totalGrams / 1000).toFixed(2) : '0.00');
 
     var resolvedPhotoMemos = [];
-    if (r && Array.isArray(r.photo_memos_json)) {
-      resolvedPhotoMemos = r.photo_memos_json;
-    } else if (r && Array.isArray(r.photoMemos)) {
-      resolvedPhotoMemos = r.photoMemos;
+    var rawPhotoMemos = r && (r.photo_memos_json || r.photoMemos || r.photo_memos);
+    if (Array.isArray(rawPhotoMemos)) {
+      resolvedPhotoMemos = rawPhotoMemos;
+    } else if (typeof rawPhotoMemos === 'string' && rawPhotoMemos.trim().startsWith('[')) {
+      try {
+        var parsedMemos = JSON.parse(rawPhotoMemos);
+        if (Array.isArray(parsedMemos)) resolvedPhotoMemos = parsedMemos;
+      } catch (e) {}
     }
+    resolvedPhotoMemos = resolvedPhotoMemos.map(function(m) { return m != null ? String(m).trim() : ''; });
 
     var hasServerPublishFlag = Boolean(r && (r.is_published !== undefined || r.isPublished !== undefined));
     var resolvedPublished = false;
@@ -7076,7 +7081,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
         };
 
         var fetchTableRows = function(tableName) {
-          var projectionColumns = 'id,user_id,author,author_photo,spot,elevation,weight_kg,date,memo,photos,photo,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
+          var projectionColumns = 'id,user_id,author,author_photo,spot,elevation,weight_kg,date,memo,photos,photo,photo_memos_json,ready_shot_photo,ready_shot_mode,ready_shot_pos_x,ready_shot_pos_y,ready_shot_scale,template_id,items,likes_count,is_published,feed_type,created_at';
           var filterParam = currentUserId
             ? ('&or=(is_published.eq.true,user_id.eq.' + encodeURIComponent(currentUserId) + ')')
             : '&is_published=eq.true';
@@ -7326,21 +7331,21 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       }
     }
 
-    // 2. 하단 고정 3줄 메모장 실시간 동기화 (사진 대표 메모인 경우 슬라이드를 넘겨도 대표 메모 유지)
+    // 2. 하단 고정 3줄 메모장: 사진별 글이 있으면 현재 사진 글을 쓰고, 대표 글만 있을 때만 유지
     var memoEl = document.getElementById('feedPhotoMemoText_' + cardId);
     var cardRoot = document.getElementById('feedSnapCard_' + cardId);
     if (memoEl && cardRoot && cardRoot.dataset.photoMemos) {
       try {
         var memos = JSON.parse(cardRoot.dataset.photoMemos);
-        var curText = (Array.isArray(memos) && memos[curIdx] !== undefined) ? memos[curIdx] : '';
-        if (!curText && cardRoot.dataset.defaultMemo) {
-          curText = cardRoot.dataset.defaultMemo;
+        if (!Array.isArray(memos)) memos = [];
+        var filledCount = memos.filter(function(m) { return String(m || '').trim(); }).length;
+        var curText = (memos[curIdx] !== undefined) ? String(memos[curIdx] || '').trim() : '';
+        if (filledCount <= 1) {
+          if (!curText && cardRoot.dataset.defaultMemo) curText = String(cardRoot.dataset.defaultMemo || '').trim();
+          if (!curText && memos[0]) curText = String(memos[0] || '').trim();
         }
-        if (!curText && Array.isArray(memos) && memos.length > 0 && memos[0]) {
-          curText = memos[0];
-        }
-        memoEl.innerHTML = (curText && curText.trim().length > 0)
-          ? escapeHtml(curText.trim())
+        memoEl.innerHTML = curText
+          ? escapeHtml(curText)
           : '<span style="color:#475569;">등록된 사진 메모가 없습니다.</span>';
       } catch (err) { console.warn('[romantic-history.js:updateCarouselFeedState parse]', err); }
     }
@@ -7486,7 +7491,8 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     }
 
     var memo120 = String(rec.memo || rec.oneLineMemo || '').slice(0, 120);
-    var photoMemosArr = (Array.isArray(rec.photoMemos) && rec.photoMemos.length > 0) ? rec.photoMemos : [memo120];
+    var photoMemosArr = (Array.isArray(rec.photoMemos) && rec.photoMemos.length > 0) ? rec.photoMemos.slice() : [memo120];
+    while (photoMemosArr.length < mediaItems.length) photoMemosArr.push('');
     card.setAttribute('data-photo-memos', JSON.stringify(photoMemosArr));
     var initialPhotoMemo = photoMemosArr[0] || memo120 || '';
     var memoEl = document.getElementById('feedPhotoMemoText_' + cardIdEsc) || document.getElementById('feedPhotoMemoText_' + cleanCardId);
@@ -7842,7 +7848,8 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       studioCardMarkup = '<div class="postcard-template-container">' + backTemplateCardHtml + '</div>';
     }
 
-    var photoMemosArr = (Array.isArray(record.photoMemos) && record.photoMemos.length > 0) ? record.photoMemos : [memo120];
+    var photoMemosArr = (Array.isArray(record.photoMemos) && record.photoMemos.length > 0) ? record.photoMemos.slice() : [memo120];
+    while (photoMemosArr.length < totalPhotosCount) photoMemosArr.push('');
     var initialPhotoMemo = photoMemosArr[0] || memo120 || '';
     var cleanMemoContentHtml = initialPhotoMemo.trim()
       ? escapeHtml(initialPhotoMemo.trim())
