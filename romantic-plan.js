@@ -2222,7 +2222,7 @@ window.saveCurrentPackingRecord = function() {
     }
   };
 
-  var CURRENT_GEAR_VERSION = '20260922_CAT_SPLIT';
+  var CURRENT_GEAR_VERSION = '20260922_GEAR_REFRESH';
   var GEAR_SPLIT_CATS = ['shelter', 'sleep', 'pack', 'food', 'kitchen', 'wear', 'electronics', 'camp', 'other'];
   window.__okbmGearCatLoaded = window.__okbmGearCatLoaded || {};
   window.__okbmGearCatPromises = window.__okbmGearCatPromises || {};
