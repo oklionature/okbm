@@ -5758,12 +5758,28 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var scrollLeft = trackEl.scrollLeft;
     var width = trackEl.offsetWidth;
     if (!width) return;
+    if (window.__richPhotoProgrammaticTarget != null) {
+      var lockedIdx = window.__richPhotoProgrammaticTarget;
+      if (Math.abs(scrollLeft - lockedIdx * width) <= 8) {
+        window.__richPhotoProgrammaticTarget = null;
+      }
+      return;
+    }
     var newIdx = Math.round(scrollLeft / width);
+    var maxIdx = (window.__tempUploadedPhotos || []).length - 1;
+    if (newIdx < 0) newIdx = 0;
+    if (newIdx > maxIdx) newIdx = maxIdx;
     if (newIdx !== window.__currentSwipePhotoIndex && window.__tempUploadedPhotos[newIdx] !== undefined) {
       window.__commitCurrentMemoInput();
       window.__currentSwipePhotoIndex = newIdx;
+      window.__syncRichPhotoThumbStrip(newIdx);
       window.__syncActivePhotoMemoUI();
     }
+  };
+
+  window.__releaseRichPhotoProgrammaticScroll = function() {
+    window.__richPhotoProgrammaticTarget = null;
+    clearTimeout(window.__richPhotoProgrammaticTimer);
   };
 
   window.__syncActivePhotoMemoUI = function() {
@@ -5911,17 +5927,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
   };
 
  // 🌊 [실크처럼 부드러운 스무스 사진 전환 & 깜빡임 0% 엔진]
-  window.__switchToPhotoSmooth = function(targetIdx) {
-    if (window.__currentSwipePhotoIndex === targetIdx) return;
-    window.__commitCurrentMemoInput();
-    window.__currentSwipePhotoIndex = targetIdx;
-
-    var track = document.getElementById('richPhotoSwipeTrack');
-    if (track) {
-      var targetLeft = targetIdx * track.offsetWidth;
-      track.scrollTo({ left: targetLeft, behavior: 'smooth' });
-    }
-
+  window.__syncRichPhotoThumbStrip = function(targetIdx) {
     var thumbNodes = document.querySelectorAll('#richPhotoThumbStrip [data-thumb-idx]');
     thumbNodes.forEach(function(node) {
       var nIdx = parseInt(node.dataset.thumbIdx, 10);
@@ -5931,20 +5937,33 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       node.style.transform = isCur ? 'scale(1.08)' : 'scale(1)';
       node.style.opacity = isCur ? '1' : '0.65';
       node.style.zIndex = isCur ? '3' : '1';
+      var ring = node.querySelector('.rich-photo-thumb-ring');
+      if (ring) ring.style.display = isCur ? 'block' : 'none';
       if (isCur && node.scrollIntoView) {
         node.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
       }
     });
-
-    window.__syncActivePhotoMemoUI();
-    triggerHaptic(8);
   };
 
-  window.__stepRichPhoto = function(delta) {
-    var photos = window.__tempUploadedPhotos || [];
-    if (!photos.length) return;
-    var next = Math.max(0, Math.min(photos.length - 1, (window.__currentSwipePhotoIndex || 0) + (Number(delta) || 0)));
-    window.__switchToPhotoSmooth(next);
+  window.__switchToPhotoSmooth = function(targetIdx) {
+    if (window.__currentSwipePhotoIndex === targetIdx) return;
+    window.__commitCurrentMemoInput();
+    window.__currentSwipePhotoIndex = targetIdx;
+    window.__richPhotoProgrammaticTarget = targetIdx;
+    clearTimeout(window.__richPhotoProgrammaticTimer);
+    window.__richPhotoProgrammaticTimer = setTimeout(function() {
+      window.__richPhotoProgrammaticTarget = null;
+    }, 700);
+
+    var track = document.getElementById('richPhotoSwipeTrack');
+    if (track) {
+      var targetLeft = targetIdx * track.offsetWidth;
+      track.scrollTo({ left: targetLeft, behavior: 'smooth' });
+    }
+
+    window.__syncRichPhotoThumbStrip(targetIdx);
+    window.__syncActivePhotoMemoUI();
+    triggerHaptic(8);
   };
 
   window.__handleTouchThumbEnd = function(e) {
@@ -6069,22 +6088,16 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
                class="rich-photo-thumb"
                style="width:54px; height:54px; border-radius:9px; overflow:hidden; position:relative; flex:0 0 54px; cursor:grab; background:#000; box-sizing:border-box; transition:all 0.18s cubic-bezier(0.16, 1, 0.3, 1); user-select:none; -webkit-user-select:none; touch-action:pan-x; ${activeBorderStyle}">
             <img src="${escapeHtml(okbmSafeImageUrl(tUrl))}" data-okbm-photo-record-id="${escapeHtml(String(window.__richCurrentRecord && window.__richCurrentRecord.id || ''))}" data-okbm-photo-index="${tIdx}" data-okbm-photo-kind="phone" style="width:100%; height:100%; object-fit:cover; pointer-events:none; display:block;" onerror="this.src='https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=900&q=80';" />
-            ${isCurrentView ? '<div style="position:absolute; inset:0; border:1px solid rgba(255,255,255,0.4); pointer-events:none; border-radius:7px;"></div>' : ''}
+            <div class="rich-photo-thumb-ring" style="position:absolute; inset:0; border:1px solid rgba(255,255,255,0.4); pointer-events:none; border-radius:7px; display:${isCurrentView ? 'block' : 'none'};"></div>
           </div>
         `;
       }).join('');
 
-      var navBtnsHtml = count > 1 ? `
-            <button type="button" onclick="event.stopPropagation(); window.__stepRichPhoto(-1);" style="position:absolute; left:8px; top:50%; transform:translateY(-50%); z-index:10; width:32px; height:32px; border-radius:50%; background:rgba(12,16,23,0.78); color:#e2e8f0; border:1px solid rgba(255,255,255,0.22); font-size:1.05rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">‹</button>
-            <button type="button" onclick="event.stopPropagation(); window.__stepRichPhoto(1);" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); z-index:10; width:32px; height:32px; border-radius:50%; background:rgba(12,16,23,0.78); color:#e2e8f0; border:1px solid rgba(255,255,255,0.22); font-size:1.05rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">›</button>
-      ` : '';
-
       stageContainer.innerHTML = `
         <div class="rich-photo-frame" style="width:100%; min-width:0; max-width:100%; aspect-ratio:3/4; max-height:420px; position:relative; overflow:hidden; border-radius:14px; background:#000000; border:1px solid rgba(255,255,255,0.12); box-shadow:0 12px 30px rgba(0,0,0,0.9);">
-          <div id="richPhotoSwipeTrack" onscroll="window.__onSwipePhotoTrackScroll(this);" style="display:flex !important; flex-wrap:nowrap !important; width:100% !important; min-width:0 !important; height:100% !important; overflow-x:auto !important; overflow-y:hidden !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; touch-action:pan-x pan-y !important; overscroll-behavior-x:contain;">
+          <div id="richPhotoSwipeTrack" onscroll="window.__onSwipePhotoTrackScroll(this);" onpointerdown="window.__releaseRichPhotoProgrammaticScroll();" style="display:flex !important; flex-wrap:nowrap !important; width:100% !important; min-width:0 !important; height:100% !important; overflow-x:auto !important; overflow-y:hidden !important; scroll-snap-type:x mandatory !important; -webkit-overflow-scrolling:touch !important; scrollbar-width:none; touch-action:pan-x pan-y !important; overscroll-behavior-x:contain;">
             ${slidesHtml}
           </div>
-          ${navBtnsHtml}
           ${count < 10 ? `
             <button type="button" onclick="document.getElementById('richMultiPhotoInput').click();" style="position:absolute; bottom:12px; right:12px; z-index:10; background:#0c1017; border:1px solid rgba(56,189,248,0.5); color:#38bdf8; font-size:0.72rem; font-weight:800; padding:6px 12px; border-radius:20px; cursor:pointer; display:flex; align-items:center; gap:4px;">
               <svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:#38bdf8; fill:none; stroke-width:2.5;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>

@@ -2317,9 +2317,19 @@ window.saveCurrentPackingRecord = function() {
     ov.innerHTML =
       '<div style="width:100%; max-width:300px; background:#0c1017; border-radius:14px; border:1px solid rgba(255,255,255,0.12); padding:18px 16px 14px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; box-shadow:0 16px 40px rgba(0,0,0,0.55);" onclick="event.stopPropagation();">' +
         '<div style="font-size:0.88rem; font-weight:800; color:#f8fafc; text-align:center; line-height:1.55;">등록장소가 아닐경우 나만보기로만 저장이됩니다.</div>' +
-        '<button type="button" id="planUnregisteredPackingConfirmBtn" style="width:100%; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:#e2e8f0; color:#000; font-size:0.8rem; font-weight:900; cursor:pointer;">확인</button>' +
+        '<div style="display:flex; gap:8px;">' +
+          '<button type="button" id="planUnregisteredPackingCancelBtn" style="flex:1; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.04); color:#94a3b8; font-size:0.8rem; font-weight:800; cursor:pointer;">취소</button>' +
+          '<button type="button" id="planUnregisteredPackingConfirmBtn" style="flex:1; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:#e2e8f0; color:#000; font-size:0.8rem; font-weight:900; cursor:pointer;">확인</button>' +
+        '</div>' +
       '</div>';
     document.body.appendChild(ov);
+    var cancelBtn = document.getElementById('planUnregisteredPackingCancelBtn');
+    if (cancelBtn) {
+      cancelBtn.onclick = function() {
+        if (ov.parentNode) ov.parentNode.removeChild(ov);
+        triggerHaptic(10);
+      };
+    }
     var confirmBtn = document.getElementById('planUnregisteredPackingConfirmBtn');
     if (confirmBtn) {
       confirmBtn.onclick = function() {
