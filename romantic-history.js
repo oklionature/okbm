@@ -7683,6 +7683,10 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     var photosChanged = existingSrcs.join('\n') !== nextSrcs.join('\n');
 
     if (photosChanged) {
+      if (nextSrcs.length) {
+        var flipWrap = card.querySelector('.postcard-3d-wrapper');
+        if (flipWrap) flipWrap.removeAttribute('data-no-flip');
+      }
       front.innerHTML = okbmBuildReelPhotoFrontHtml(cardIdEsc, nextSrcs, rec.spot || '나의 힐링 스팟', cleanCardId);
       front.querySelectorAll('.reel-photo-target').forEach(function(img) {
         if (typeof window.applySmartPhotoFit === 'function') window.applySmartPhotoFit(img);
@@ -7703,6 +7707,17 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     return true;
   };
 
+  function okbmReadyShotCardSig(record) {
+    if (!record) return '';
+    return [
+      String(record.readyShotPhoto || '').trim(),
+      record.readyShotMode || '',
+      record.readyShotPosX,
+      record.readyShotPosY,
+      record.readyShotScale
+    ].join('|');
+  }
+
   function okbmPatchHistoryFeedRows(currentList, starsMap, starCounts, savedFeedsList, myUserId, savedNick) {
     if (!Array.isArray(currentList)) return;
     currentList.forEach(function(item, idx) {
@@ -7711,6 +7726,29 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       var cardIdEsc = escapeHtml(cleanCardId);
       var card = document.getElementById('feedSnapCard_' + cardIdEsc) || document.getElementById('feedSnapCard_' + cleanCardId);
       if (!card) return;
+
+      // 사진 없이 먼저 저장된 기록에 READY SHOT 사진/구도가 나중에 들어오면 카드 전체를 다시 그린다
+      if (card.getAttribute('data-ready-shot-sig') !== okbmReadyShotCardSig(record) &&
+          typeof window.buildReelSingleSnapCardHtml === 'function' && card.parentNode) {
+        var holder = document.createElement('template');
+        holder.innerHTML = String(window.buildReelSingleSnapCardHtml(item, idx, {
+          myUserId: myUserId,
+          savedNick: savedNick,
+          starsMap: starsMap,
+          starCounts: starCounts,
+          savedFeedsList: savedFeedsList
+        }) || '').trim();
+        var fresh = holder.content.firstElementChild;
+        if (fresh) {
+          card.parentNode.replaceChild(fresh, card);
+          fresh.querySelectorAll('.reel-photo-target').forEach(function(img) {
+            if (typeof window.applySmartPhotoFit !== 'function') return;
+            if (img.complete) window.applySmartPhotoFit(img);
+            else img.addEventListener('load', function() { window.applySmartPhotoFit(img); }, { once: true });
+          });
+          return;
+        }
+      }
 
       var isStarred = Boolean(starsMap[cleanCardId] || starsMap[cardIdEsc] || starsMap[String(record.id)]);
       var parsedLikes = (record.likes_count !== undefined && record.likes_count !== null)
@@ -8048,6 +8086,9 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       studioCardMarkup = '<div class="postcard-template-container">' + backTemplateCardHtml + '</div>';
     }
 
+    // 현장 사진 없이 READY SHOT만 있는 기록은 뒤집지 않아도 템플릿이 보이도록 앞면에도 그린다
+    var showTemplateFront = totalPhotosCount === 0 && !!actualReadyShot;
+
     var photoMemosArr = (Array.isArray(record.photoMemos) && record.photoMemos.length > 0) ? record.photoMemos.slice() : [memo120];
     while (photoMemosArr.length < totalPhotosCount) photoMemosArr.push('');
     var initialPhotoMemo = photoMemosArr[0] || memo120 || '';
@@ -8057,16 +8098,18 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
     var isSavedFeed = savedFeedsList.includes(String(record.id || '').trim());
 
-    return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap" data-reel-idx="' + idx + '" data-feed-id="' + cardId + '" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '">' +
+    return '<div id="feedSnapCard_' + cardId + '" class="reel-page-snap" data-reel-idx="' + idx + '" data-feed-id="' + cardId + '" data-ready-shot-sig="' + escapeHtml(okbmReadyShotCardSig(record)) + '" data-photo-memos="' + escapeHtml(JSON.stringify(photoMemosArr)) + '">' +
       headerBarHtml +
 
       '<div class="reel-media-stage">' +
         '<div style="width:100% !important; height:100% !important; position:relative; overflow:hidden; background:#000000;">' +
-          (centerDDayOverlayHtml ? centerDDayOverlayHtml : '') +
-          '<div class="postcard-3d-wrapper" onclick="this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000;">' +
+          (centerDDayOverlayHtml && !showTemplateFront ? centerDDayOverlayHtml : '') +
+          '<div class="postcard-3d-wrapper"' + (showTemplateFront ? ' data-no-flip="1"' : '') + ' onclick="if (this.hasAttribute(\'data-no-flip\')) return; this.classList.toggle(\'flipped\'); triggerHaptic(10);" style="width:100% !important; height:100% !important; position:relative; cursor:pointer; background:#000000;">' +
             '<div class="postcard-face-front" style="width:100% !important; height:100% !important; position:absolute; inset:0; overflow:hidden; background:#000000;">' +
               (totalPhotosCount > 0 ? (
                 '<div class="reel-horizontal-track" onscroll="window.updateCarouselFeedState(this, \`' + cardId + '\`);">' + horizontalSlidesHtml + '</div>' + dotsHtml
+              ) : showTemplateFront ? (
+                studioCardMarkup
               ) : (
                 '<div style="width:100%; height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:24px 18px; box-sizing:border-box; text-align:center; background:#000000; pointer-events:none;">' +
                   '<div style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:20px; pointer-events:none;">' +
