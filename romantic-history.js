@@ -1436,6 +1436,9 @@
         author: normalized.author || '',
         author_photo: normalized.authorPhoto || '',
         spot: normalized.spot || '',
+        spot_id: (normalized.unregisteredSpot === true || normalized.unregistered_spot === true)
+          ? null
+          : (String(normalized.spotId || normalized.spot_id || '').trim() || null),
         elevation: normalized.elevation ? String(normalized.elevation) : '',
         weight_kg: parseFloat(normalized.weightKg) || 0,
         date: normalized.date,
@@ -4277,11 +4280,13 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var q = window.okbmCompactSpotFocusKey(query);
     if (!q || q.length < 2) return null;
     var arr = Array.isArray(list) ? list : [];
-    var best = null, bestScore = 0, bestMainLen = 0;
+    var best = null, bestScore = 0, bestMainLen = 0, tie = false;
     for (var i = 0; i < arr.length; i++) {
       var s = arr[i];
       if (!s) continue;
       var main = window.okbmCompactSpotFocusKey(s.spot_main || s.name || s.spotName || s.spot || s.title || '');
+      var city = window.okbmCompactSpotFocusKey(s.cityName || s.city_name || '');
+      var region = window.okbmCompactSpotFocusKey(s.region || '');
       var hay = window.okbmCompactSpotFocusKey([
         s.fullName, s.fullname, s.spot_main, s.name, s.spotName, s.spot, s.title,
         s.spot_sub, s.cityName, s.region
@@ -4293,12 +4298,29 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
       else if (main && main.length >= 2 && q.indexOf(main) !== -1) score = 80;
       else if (hay && hay.indexOf(q) !== -1) score = 70;
       else if (hay && q.indexOf(hay) !== -1 && hay.length >= 4) score = 60;
+      if (score <= 0) continue;
+      if (city && q.indexOf(city) !== -1) score += 35;
+      else if (region && q.indexOf(region) !== -1) score += 20;
+      // 산명만 같고 지역 힌트가 없으면 동명 산이 여럿일 때 확정하지 않음
+      if (score <= 100 && main && main === q && (!city || q.indexOf(city) === -1) && (!region || q.indexOf(region) === -1)) {
+        var dup = 0;
+        for (var d = 0; d < arr.length; d++) {
+          var dm = window.okbmCompactSpotFocusKey((arr[d] && (arr[d].spot_main || arr[d].name)) || '');
+          if (dm && dm === main) dup++;
+          if (dup > 1) break;
+        }
+        if (dup > 1) continue;
+      }
       if (score > bestScore || (score === bestScore && main.length > bestMainLen)) {
+        tie = (score === bestScore && best && best !== s);
         bestScore = score;
         bestMainLen = main.length;
         best = s;
+      } else if (score === bestScore && best && best !== s) {
+        tie = true;
       }
     }
+    if (tie && bestScore < 125) return null;
     return bestScore > 0 ? best : null;
   };
 

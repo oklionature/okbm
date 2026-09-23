@@ -2507,16 +2507,36 @@
     }
 
     function findThemeSpotMaster(feedOrName, spotPool) {
+      if (!Array.isArray(spotPool) || spotPool.length === 0) return null;
+
+      // spot_id가 있으면 이름 매칭 없이 ID만 사용 (동명 산 오부착 방지)
+      if (feedOrName && typeof feedOrName === 'object') {
+        var feedSpotId = String(feedOrName.spotId || feedOrName.spot_id || '').trim();
+        if (feedSpotId) {
+          for (var si = 0; si < spotPool.length; si++) {
+            var sidSpot = spotPool[si];
+            if (sidSpot && String(sidSpot.id || sidSpot.spot_id || '').trim() === feedSpotId) {
+              return sidSpot;
+            }
+          }
+        }
+      }
+
       var raw = (feedOrName && typeof feedOrName === 'object')
         ? String(feedOrName.spot || feedOrName.spotName || '').trim()
         : String(feedOrName || '').trim();
-      if (!raw || !Array.isArray(spotPool) || spotPool.length === 0) return null;
+      if (!raw) return null;
 
       var feedClean = stripThemeSpotDecorations(raw);
       var feedTokens = tokenizeThemeSpotName(raw);
       var feedCore = feedClean.replace(THEME_SPOT_REGION_PREFIX_RE, '').trim();
+      var feedCityHint = (raw.match(/([가-힣]{2,12}(?:시|군|구))/) || [])[1] || '';
+      var feedCityCore = feedCityHint
+        ? feedCityHint.replace(/(특별자치시|광역시|특별시|시|군|구)$/g, '')
+        : '';
       var best = null;
       var bestScore = 0;
+      var tie = false;
 
       for (var i = 0; i < spotPool.length; i++) {
         var s = spotPool[i];
@@ -2533,11 +2553,69 @@
         else if (themeSpotHasToken(feedTokens, sMain)) score = 70;
         else if (sFull && themeSpotHasToken(tokenizeThemeSpotName(sFull), feedCore)) score = 60;
 
+        if (score < 70) continue;
+
+        var city = String(s.cityName || s.city_name || '').trim();
+        var region = String(s.region || '').trim();
+        var cityCore = city.replace(/(특별자치시|광역시|특별시|시|군|구)$/g, '');
+        var regionHit = false;
+        if (cityCore && cityCore.length >= 2 && (themeSpotHasToken(feedTokens, cityCore) || feedClean.indexOf(cityCore.toLowerCase()) !== -1 || feedClean.indexOf(city.toLowerCase()) !== -1)) {
+          score += 25;
+          regionHit = true;
+        } else if (region && (themeSpotHasToken(feedTokens, region) || feedClean.indexOf(region.toLowerCase()) !== -1)) {
+          score += 15;
+          regionHit = true;
+        }
+
+        // 피드에 시·군·구가 있는데 이 박지와 다르면 탈락
+        if (feedCityCore && cityCore && feedCityCore !== cityCore) continue;
+
+        // 동명 산: spot_sub 고유 토큰(칠족령 등)이 피드에 있으면 지역 없이도 확정
+        var subRaw = String(s.spot_sub || '').trim();
+        var subParts = subRaw.match(/[가-힣]{3,}/g) || [];
+        var feedCompact = feedClean.replace(/\s+/g, '');
+        var subHit = false;
+        var subUnique = true;
+        for (var sp = 0; sp < subParts.length; sp++) {
+          var part = subParts[sp];
+          if (!part || part === sMain.replace(/\s+/g, '')) continue;
+          if (feedCompact.indexOf(part) === -1 && feedClean.indexOf(part) === -1) continue;
+          subHit = true;
+          for (var oj = 0; oj < spotPool.length; oj++) {
+            var os = spotPool[oj];
+            if (!os || os === s) continue;
+            var omain = stripThemeSpotDecorations(os.name || os.spot_main || '');
+            if (omain !== sMain) continue;
+            if (String(os.spot_sub || '').indexOf(part) !== -1) { subUnique = false; break; }
+          }
+          if (!subUnique) break;
+        }
+        if (subHit && subUnique) {
+          score += 40;
+          regionHit = true;
+        }
+
+        // 지역 힌트 없이 산명만 맞고, 동일 spot_main이 여럿이면 이 후보만으로는 확정하지 않음
+        if (!regionHit && !feedCityCore && score < 100) {
+          var mainDup = 0;
+          var mk = sMain;
+          for (var j = 0; j < spotPool.length; j++) {
+            var om = stripThemeSpotDecorations((spotPool[j] && (spotPool[j].name || spotPool[j].spot_main)) || '');
+            if (om && om === mk) mainDup++;
+            if (mainDup > 1) break;
+          }
+          if (mainDup > 1) continue;
+        }
+
         if (score > bestScore) {
           bestScore = score;
           best = s;
+          tie = false;
+        } else if (score === bestScore && best && best !== s) {
+          tie = true;
         }
       }
+      if (tie && bestScore < 100) return null;
       return bestScore >= 70 ? best : null;
     }
 
@@ -3832,7 +3910,7 @@
       setTimeout(async function() {
         try {
           var rawRows = null;
-          var homeSelect = window.FEEDS_HOME_SELECT || 'id,user_id,spot,elevation,weight_kg,date,memo,photos,photo_memos_json,author,likes_count,is_published,feed_type,created_at,items,template_id';
+          var homeSelect = window.FEEDS_HOME_SELECT || 'id,user_id,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,author,likes_count,is_published,feed_type,created_at,items,template_id';
           var guestMode = !(typeof isUserLoggedIn === 'function' && isUserLoggedIn());
 
           if (!guestMode && window.supabaseClient) {

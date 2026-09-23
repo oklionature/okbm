@@ -2423,22 +2423,49 @@
             var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
             var targetKey = window.SUPABASE_ANON_KEY || '';
             var spotMainName = (spot.spot_main || spot.name || '').trim();
-            if (!spotMainName) return [];
-            var query = targetUrl + '/rest/v1/feeds?select=id,user_id,spot,photos,photo_memos_json,author,memo,weight_kg,likes_count,date,created_at,feed_type&spot=ilike.*' + encodeURIComponent(spotMainName) + '*&feed_type=neq.snap&order=created_at.desc&limit=40';
+            if (!sId && !spotMainName) return [];
+            var selectCols = 'id,user_id,spot,spot_id,photos,photo_memos_json,author,memo,weight_kg,likes_count,date,created_at,feed_type';
+            var headers = {
+              'apikey': targetKey,
+              'Authorization': 'Bearer ' + targetKey,
+              'Content-Type': 'application/json'
+            };
+            function fetchFeeds(url) {
+              return (typeof window.okbmPublicFetch === 'function'
+                ? window.okbmPublicFetch(url)
+                : fetch(url, { headers: headers })).then(function(res) {
+                return res.ok ? res.json() : [];
+              }).catch(function() { return []; });
+            }
             try {
-              var res = await (typeof window.okbmPublicFetch === 'function'
-                ? window.okbmPublicFetch(query)
-                : fetch(query, {
-                headers: {
-                  'apikey': targetKey,
-                  'Authorization': 'Bearer ' + targetKey,
-                  'Content-Type': 'application/json'
-                }
-              }));
-              if (!res.ok) return [];
-              var data = await res.json();
-              var validFeeds = filterFeedsForMapSpot(spot, Array.isArray(data) ? data : []).slice(0, 6);
-              limitedMapSet(window.__spotFeedsCache, sId, validFeeds, 50);
+              var byId = [];
+              var byName = [];
+              if (sId) {
+                byId = await fetchFeeds(
+                  targetUrl + '/rest/v1/feeds?select=' + selectCols +
+                  '&spot_id=eq.' + encodeURIComponent(sId) +
+                  '&feed_type=neq.snap&order=created_at.desc&limit=40'
+                );
+              }
+              // 레거시(spot_id 없음): 산 이름 후보만 가져온 뒤 지역 필터로 거른다
+              if (spotMainName) {
+                byName = await fetchFeeds(
+                  targetUrl + '/rest/v1/feeds?select=' + selectCols +
+                  '&spot_id=is.null&spot=ilike.*' + encodeURIComponent(spotMainName) +
+                  '*&feed_type=neq.snap&order=created_at.desc&limit=40'
+                );
+              }
+              var merged = [];
+              var seen = new Set();
+              (Array.isArray(byId) ? byId : []).concat(Array.isArray(byName) ? byName : []).forEach(function(f) {
+                if (!f || !f.id) return;
+                var fid = String(f.id);
+                if (seen.has(fid)) return;
+                seen.add(fid);
+                merged.push(f);
+              });
+              var validFeeds = filterFeedsForMapSpot(spot, merged).slice(0, 6);
+              limitedMapSet(window.__spotFeedsCache, sId || spotMainName, validFeeds, 50);
               return validFeeds;
             } catch (e) {
               return [];
@@ -5299,20 +5326,87 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         return html;
       }
 
-      // 장산 ⊃ 지장산/선장산 같은 부분문자열 매칭으로 다른 장소 피드가 붙지 않게 한다
-      function feedBelongsToMapSpot(feedSpot, spot) {
+      // 동명 산 오부착 방지: spot_id 우선, 레거시는 산명+지역. 모호하면 제외.
+      function okbmPlaceCoreName(name) {
+        return String(name || '')
+          .replace(/\s+/g, '')
+          .replace(/(특별자치시|특별자치도|광역시|특별시|자치시|자치도)$/g, '')
+          .replace(/(시|군|구|도)$/g, '');
+      }
+      function feedBelongsToMapSpot(feedSpot, spot, feedSpotId) {
+        var sId = String((spot && spot.id) || '').trim();
+        var fId = String(feedSpotId || '').trim();
+        if (fId && sId) return fId === sId;
+
         var feed = String(feedSpot || '').replace(/\s+/g, ' ').trim();
         var main = String((spot && (spot.spot_main || spot.name)) || '').trim();
         if (!feed || !main) return false;
         var escaped = main.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         var tokenRe = new RegExp('(^|[^가-힣A-Za-z0-9])' + escaped + '(?=$|[^가-힣A-Za-z0-9])');
-        return tokenRe.test(feed);
+        if (!tokenRe.test(feed)) return false;
+
+        var city = String((spot && (spot.cityName || spot.city_name)) || '').trim();
+        var region = String((spot && spot.region) || '').trim();
+        var feedNorm = feed.replace(/\s+/g, '');
+        var cityCore = okbmPlaceCoreName(city);
+        var regionCore = okbmPlaceCoreName(region);
+        if (cityCore && cityCore.length >= 2 && feedNorm.indexOf(cityCore) !== -1) return true;
+        if (regionCore && regionCore.length >= 2 && feedNorm.indexOf(regionCore) !== -1) return true;
+
+        var cityHintMatch = feed.match(/([가-힣]{2,12}(?:시|군|구))/);
+        if (cityHintMatch) {
+          var hintCore = okbmPlaceCoreName(cityHintMatch[1]);
+          return !!(cityCore && hintCore && hintCore === cityCore);
+        }
+
+        var pool = (typeof spots !== 'undefined' && Array.isArray(spots)) ? spots : [];
+        var mainKey = main.replace(/\s+/g, '').toLowerCase();
+        var feedLower = feedNorm.toLowerCase();
+
+        // 동명 산이어도 spot_sub(예: 칠족령)가 피드에 있고 그 세부명이 유일하면 허용
+        var subRaw = String((spot && spot.spot_sub) || '').trim();
+        var subParts = subRaw.match(/[가-힣]{3,}/g) || [];
+        var hitParts = [];
+        for (var sp = 0; sp < subParts.length; sp++) {
+          var part = subParts[sp];
+          if (!part || part === main.replace(/\s+/g, '')) continue;
+          if (feedLower.indexOf(part) !== -1) hitParts.push(part);
+        }
+        if (hitParts.length > 0) {
+          var subUnique = true;
+          for (var u = 0; u < pool.length; u++) {
+            var other = pool[u];
+            if (!other || String(other.id) === String(spot.id)) continue;
+            var om = String(other.spot_main || other.name || '').replace(/\s+/g, '').toLowerCase();
+            if (om !== mainKey) continue;
+            var oSub = String(other.spot_sub || '');
+            for (var h = 0; h < hitParts.length; h++) {
+              if (oSub.indexOf(hitParts[h]) !== -1) { subUnique = false; break; }
+            }
+            if (!subUnique) break;
+          }
+          if (subUnique) return true;
+        }
+
+        // 산 이름만 있는 레거시: 마스터에 동명 spot_main이 하나일 때만 허용
+        var sameMain = 0;
+        for (var i = 0; i < pool.length; i++) {
+          var pm = String((pool[i] && (pool[i].spot_main || pool[i].name)) || '').replace(/\s+/g, '').toLowerCase();
+          if (pm && pm === mainKey) sameMain++;
+          if (sameMain > 1) return false;
+        }
+        return true;
       }
 
       function filterFeedsForMapSpot(spot, feeds) {
         if (!Array.isArray(feeds) || !feeds.length) return [];
         return feeds.filter(function(f) {
-          return f && feedBelongsToMapSpot(f.spot || f.spotName || f.title || '', spot);
+          if (!f) return false;
+          return feedBelongsToMapSpot(
+            f.spot || f.spotName || f.title || '',
+            spot,
+            f.spot_id || f.spotId || ''
+          );
         });
       }
 

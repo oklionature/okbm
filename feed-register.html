@@ -1006,6 +1006,7 @@
         author: state.author || '',
         author_photo: state.authorPhoto || '',
         spot: spot,
+        spot_id: (state.spotData && state.spotData.id) ? String(state.spotData.id).trim() : null,
         elevation: elev,
         weight_kg: 0,
         date: dateDot,

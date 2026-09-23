@@ -2966,7 +2966,7 @@ window.syncUserDataToCloud = syncUserDataToCloud;
 
 // 홈/지도 핀용 공개 컬럼. 들머리 주소(trailhead_addr)·author_sns_url은 제외.
 window.SPOTS_MAP_SELECT = 'id,region,cityName,spot_main,spot_sub,fullName,elevation,campsite_lat,campsite_lng,terrain,trailhead_name,difficulty,distance_km,droneStatus,course_type,author,user_id,created_at,desc_summary,mediaUrls';
-window.FEEDS_HOME_SELECT = 'id,user_id,spot,elevation,weight_kg,date,memo,photos,photo_memos_json,author,likes_count,is_published,feed_type,created_at,items,template_id';
+window.FEEDS_HOME_SELECT = 'id,user_id,spot,spot_id,elevation,weight_kg,date,memo,photos,photo_memos_json,author,likes_count,is_published,feed_type,created_at,items,template_id';
 
 window.stripSpotDetailFields = function(spot) {
   if (!spot || typeof spot !== 'object') return spot;

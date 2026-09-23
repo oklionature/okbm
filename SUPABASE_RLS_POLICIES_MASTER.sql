@@ -1195,6 +1195,13 @@ CREATE POLICY feeds_update_own ON public.feeds
 CREATE POLICY feeds_delete_own ON public.feeds
   FOR DELETE USING (user_id = public.okbm_uid() OR public.okbm_is_admin());
 
+-- 동명 산 오부착 방지: 등록 박지 id (nullable, 레거시는 이름+지역 fallback)
+ALTER TABLE public.feeds
+  ADD COLUMN IF NOT EXISTS spot_id text;
+CREATE INDEX IF NOT EXISTS feeds_spot_id_idx
+  ON public.feeds (spot_id)
+  WHERE spot_id IS NOT NULL;
+
 CREATE POLICY feed_likes_select_public ON public.feed_likes
   FOR SELECT USING (true);
 CREATE POLICY feed_likes_insert_own ON public.feed_likes
