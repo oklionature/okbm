@@ -888,7 +888,13 @@ async function captureStudioCardCanvas(card) {
       allowTaint: false,
       logging: false,
       scrollX: 0,
-      scrollY: 0
+      scrollY: 0,
+      // html2canvas는 문서 전체를 iframe에 복제한다. 캡처 대상 외 화면(피드 등)은 복제하지 않는다.
+      ignoreElements: function(el) {
+        if (!el || el.parentNode !== document.body || el === host) return false;
+        var tag = el.tagName;
+        return tag !== 'STYLE' && tag !== 'LINK';
+      }
     });
     if (canvas.width === exportSize.width && canvas.height === exportSize.height) return canvas;
     if (canvas.width > exportSize.width || canvas.height > exportSize.height) {

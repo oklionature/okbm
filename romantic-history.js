@@ -4543,7 +4543,7 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
 
       return '<div style="width:100%; display:flex; flex-direction:column; background:#000000;">' +
         '<div style="width:100%; overflow:hidden; background:#000000; position:relative; display:flex; align-items:center; justify-content:center;">' +
-          '<img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(pUrl)) + '" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:auto; object-fit:contain; display:block; background:#000000;" />' +
+          '<img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(pUrl)) + '" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:100%; height:auto; object-fit:contain; display:block; background:#000000;" />' +
           (photosList.length > 1 ? '<span style="position:absolute; top:10px; right:10px; background:#0c1017; color:#ffffff; font-size:0.62rem; font-weight:800; font-family:\'Space Grotesk\', sans-serif; padding:2px 7px; border-radius:10px; border:1px solid rgba(255,255,255,0.15);">' + (pIdx + 1) + ' / ' + photosList.length + '</span>' : '') +
         '</div>' +
         memoMarkup +
@@ -7832,7 +7832,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
 
     var horizontalSlidesHtml = mediaItems.map(function(pUrl) {
       return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; margin:0 !important;">' +
-        '<img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(pUrl)) + '" loading="eager" decoding="async" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
+        '<img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(pUrl)) + '" loading="eager" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
       '</div>';
     }).join('');
 
@@ -8253,7 +8253,7 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     } else {
       horizontalSlidesHtml = mediaItems.map(function(pUrl) {
         return '<div style="flex:0 0 100% !important; width:100% !important; min-width:100% !important; max-width:100% !important; height:100% !important; scroll-snap-align:start !important; position:relative; overflow:hidden; background:#000000; display:flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; margin:0 !important;">' +
-          '<img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(pUrl)) + '" loading="eager" decoding="async" onload="window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
+          '<img class="reel-photo-target" src="' + escapeHtml(okbmSafeImageUrl(pUrl)) + '" loading="eager" decoding="async" onload="if (window.applySmartPhotoFit) window.applySmartPhotoFit(this);" onerror="this.onerror=null; window.handleFeedImageError(this);" style="width:auto; height:auto; max-width:100%; max-height:100%; object-fit:contain; object-position:center center; display:block; background:#000000;" />' +
         '</div>';
       }).join('');
     }
