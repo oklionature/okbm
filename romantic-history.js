@@ -421,7 +421,7 @@
         bottom: 0 !important;
         padding: 28px 14px 10px 14px !important;
         font-size: 0.80rem !important;
-        min-height: calc(28px + 32px + 6px + 4.2em + 10px) !important;
+        min-height: calc(28px + 32px + 6px + 1.4em * 3 + 8px + 10px) !important;
         background: linear-gradient(to top, rgba(0,0,0,0.82), rgba(0,0,0,0.35) 62%, rgba(0,0,0,0)) !important;
         border-top: none !important;
       }
@@ -429,11 +429,11 @@
       .reel-memo-fixed-slot {
         display: block !important;
         font-size: 0.80rem !important;
-        height: 4.2em !important;
-        min-height: 4.2em !important;
-        max-height: 4.2em !important;
+        height: calc(1.4em * 3 + 8px) !important;
+        min-height: calc(1.4em * 3 + 8px) !important;
+        max-height: calc(1.4em * 3 + 8px) !important;
         overflow: hidden !important;
-        flex: 0 0 4.2em !important;
+        flex: 0 0 calc(1.4em * 3 + 8px) !important;
         box-sizing: border-box !important;
       }
       .reel-memo-fixed-box {
@@ -441,10 +441,10 @@
         -webkit-box-orient: vertical !important;
         -webkit-line-clamp: 3 !important;
         line-clamp: 3 !important;
-        height: 4.2em !important;
-        min-height: 4.2em !important;
-        max-height: 4.2em !important;
-        line-height: 1.4em !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        line-height: 1.4 !important;
         font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, sans-serif !important;
         font-size: 0.80rem !important;
         font-weight: 500 !important;
@@ -453,6 +453,7 @@
         overflow: hidden !important;
         text-overflow: ellipsis !important;
         letter-spacing: -0.01em !important;
+        padding-bottom: 2px !important;
         box-sizing: border-box !important;
       }
       .okbm-feed-postcard {

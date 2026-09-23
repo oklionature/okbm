@@ -204,7 +204,7 @@
       })();
     </script>
     <script src="romantic-sync.js?v=2.8.99" defer></script>
-    <script src="romantic-history.js?v=2.7.66" defer></script>
+    <script src="romantic-history.js?v=2.7.67" defer></script>
 
     <style>
       @font-face {
@@ -5393,6 +5393,13 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
           `;
         }).join('');
 
+        var mapSafetyHtml = '';
+        if (!isSelf && (rawCardId || recordUserId) && typeof window.openUgcSafetyMenu === 'function') {
+          mapSafetyHtml = '<button type="button" data-feed-id="' + escapeHtml(rawCardId) + '" data-user-id="' + escapeHtml(recordUserId) + '" data-author="' + escapeHtml(authorNick) + '" onclick="event.preventDefault(); event.stopPropagation(); window.openUgcSafetyMenu(this.dataset.feedId, this.dataset.userId, this.dataset.author, event);" title="더보기" aria-label="더보기" style="width:28px; height:28px; flex:0 0 28px; border-radius:14px; background:#0c1017; border:1px solid rgba(255,255,255,0.2); color:#ffffff; display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer;">' +
+            '<svg viewBox="0 0 24 24" style="width:16px; height:16px; pointer-events:none;" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>' +
+          '</button>';
+        }
+
         var dotsHtml = '';
         if (photos.length > 1) {
           var dotsItems = photos.map(function(_, i) {
@@ -5419,7 +5426,7 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
                 ${followBtnHtml}
               </div>
               <div style="display:flex; align-items:center; gap:8px;">
-                ${(!isSelf && typeof window.buildUgcSafetyButtonsHtml === 'function') ? window.buildUgcSafetyButtonsHtml(cardId, recordUserId, authorNick, 'compact') : ''}
+                ${mapSafetyHtml}
                 <span style="font-size:0.65rem; color:#64748b; font-family:'JetBrains Mono', monospace;">${escapeHtml(tripDate)}</span>
                 <button type="button" onclick="document.getElementById('mapSpotFeedDetailModal').remove();" style="background:none; border:none; color:#94a3b8; font-size:1.1rem; cursor:pointer; padding:0 2px; line-height:1;">✕</button>
               </div>

@@ -266,7 +266,13 @@
     #okbmSplashOverlay.is-leaving {
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.4s ease;
+      transition: opacity 0.72s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #okbmSplashOverlay.is-leaving .okbm-splash-logo,
+    #okbmSplashOverlay.is-leaving .okbm-splash-type,
+    #okbmSplashOverlay.is-leaving .okbm-splash-cursor {
+      opacity: 1;
+      animation-play-state: paused;
     }
     html.okbm-splash-skipped #okbmSplashOverlay,
     html.okbm-splash-skipped #okbmSplashOverlay.is-leaving {
@@ -279,6 +285,13 @@
     html.okbm-splash-active .mobile-bottom-dock {
       visibility: hidden !important;
       opacity: 0 !important;
+      pointer-events: none !important;
+      transition: opacity 0.72s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    html.okbm-splash-active.okbm-splash-reveal #romanticMasterBottomDock,
+    html.okbm-splash-active.okbm-splash-reveal .mobile-bottom-dock {
+      visibility: visible !important;
+      opacity: 1 !important;
       pointer-events: none !important;
     }
     .okbm-splash-inner {
@@ -383,22 +396,8 @@
       transform: none;
       will-change: opacity;
     }
-    .okbm-splash-inner.is-logo-in:not(.is-logo-out) .okbm-splash-logo {
-      animation: okbmSplashLogoSoftIn 2.361s cubic-bezier(0.4, 0, 0.5, 1) forwards;
-    }
-    .okbm-splash-inner.is-logo-out .okbm-splash-logo {
-      animation: none;
-      opacity: 0;
-      transition: opacity 0.486s ease;
-    }
-    .okbm-splash-inner.is-logo-out .okbm-splash-type {
-      opacity: 0;
-      transition: opacity 0.486s ease;
-    }
-    .okbm-splash-inner.is-logo-out .okbm-splash-cursor {
-      animation: none !important;
-      opacity: 0 !important;
-      transition: opacity 0.486s ease;
+    .okbm-splash-inner.is-logo-in .okbm-splash-logo {
+      animation: okbmSplashLogoSoftIn 2s cubic-bezier(0.4, 0, 0.5, 1) forwards;
     }
     /* 초반엔 거의 안 보이다가 서서히 밝아짐 (팍 뜨는 느낌 제거) */
     @keyframes okbmSplashLogoSoftIn {
@@ -682,7 +681,7 @@
     })();
   </script>
     <script src="romantic-sync.js?v=2.8.99" defer></script>
-    <script src="romantic-history.js?v=2.7.66" defer></script>
+    <script src="romantic-history.js?v=2.7.67" defer></script>
 
   <style>
   @font-face {
@@ -1637,13 +1636,11 @@
   var TYPE_SPACE_MS = 136;
   // 슬로건 '낭만'까지 타이핑된 뒤 로고 등장
   var LOGO_TRIGGER_AT = 2;
-  var LOGO_IN_MS = 2361;
-  var LOGO_HOLD_MS = 226;
-  var LOGO_OUT_MS = 486;
-  var HOLD_MS = 39;
-  var FADE_MS = 194;
+  var LOGO_IN_MS = 2000;
+  var HOLD_MS = 200;
+  var FADE_MS = 720;
   var HARD_TIMEOUT_MS = 6600;
-  var DATA_CAP_MS = 2600;
+  var DATA_CAP_MS = 2200;
   var dismissed = false;
   var reduceMotion = false;
   try {
@@ -1764,21 +1761,12 @@
           logoStarted = true;
           requestAnimationFrame(function() {
             requestAnimationFrame(function() {
-              if (innerEl) {
-                innerEl.classList.remove('is-logo-out');
-                innerEl.classList.add('is-logo-in');
-              }
+              if (innerEl) innerEl.classList.add('is-logo-in');
             });
           });
-          // 나타남 → 유지 → 사라짐
           setTimeout(function() {
-            setTimeout(function() {
-              if (innerEl) innerEl.classList.add('is-logo-out');
-              setTimeout(function() {
-                logoDone = true;
-                maybeDone();
-              }, LOGO_OUT_MS);
-            }, LOGO_HOLD_MS);
+            logoDone = true;
+            maybeDone();
           }, LOGO_IN_MS);
         }
         if (!typeEl) {
@@ -1830,18 +1818,29 @@
     ]);
   }
 
+  function warmAppPages() {
+    if (typeof window.okbmEnsurePlan === 'function') {
+      window.okbmEnsurePlan().catch(function() {});
+    }
+    if (typeof window.okbmEnsureKakaoSdk === 'function') {
+      window.okbmEnsureKakaoSdk().catch(function() {});
+    }
+  }
+
   function dismissSplash() {
     if (dismissed) return;
     dismissed = true;
     markSplashShown();
+    document.documentElement.classList.add('okbm-splash-reveal');
     overlay.classList.add('is-leaving');
     overlay.setAttribute('aria-busy', 'false');
     overlay.setAttribute('aria-hidden', 'true');
     setTimeout(function() {
       if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
       document.documentElement.classList.remove('okbm-splash-active');
+      document.documentElement.classList.remove('okbm-splash-reveal');
       document.documentElement.classList.add('okbm-splash-skipped');
-    }, FADE_MS + 20);
+    }, FADE_MS + 40);
   }
 
   var localAssets = [
@@ -1859,6 +1858,8 @@
     'icons/romantic-route-gear-icons.svg'
   ];
   var heroAssets = uniqueUrls(collectCachedHeroPhotos());
+
+  warmAppPages();
 
   var preloadBoot = Promise.all([
     Promise.all(localAssets.map(preloadImage)),
