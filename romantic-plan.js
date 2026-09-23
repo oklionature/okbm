@@ -2949,7 +2949,7 @@ window.saveCurrentPackingRecord = function() {
     }
   };
 
-  window.completeChecklist = function(dateStr) {
+  window.completeChecklist = async function(dateStr) {
     triggerHaptic(20);
 
     // 1. 현재 화면에 작성 중이던 메모 즉시 동기화 보존
@@ -2993,20 +2993,11 @@ window.saveCurrentPackingRecord = function() {
 
     if (window.currentLuckySpot && window.currentLuckySpot.name && window.currentLuckySpot.name !== '자유 일정') {
       if (!window.currentLuckySpot.date || window.currentLuckySpot.date === dateStr) {
-        var pSpots = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-          ? window.RomanticVault.read('okbm_plan_spots', {})
-          : safeGetJSON('okbm_plan_spots', {});
-        var curList = pSpots[dateStr] || [];
-        if (!Array.isArray(curList)) curList = curList.name ? [curList] : [];
-        if (!curList.some(function(s) { return s.name === window.currentLuckySpot.name; })) {
-          curList.push({ name: window.currentLuckySpot.name, elevation: window.currentLuckySpot.elevation || '' });
-          pSpots[dateStr] = curList;
-          if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-            window.RomanticVault.write('okbm_plan_spots', pSpots, true);
-          } else {
-            localStorage.setItem('okbm_plan_spots', JSON.stringify(pSpots));
-          }
-        }
+        var checklistReplaced = await window.okbmSetSinglePlanSpotForDate(dateStr, {
+          name: window.currentLuckySpot.name,
+          elevation: window.currentLuckySpot.elevation || ''
+        });
+        if (!checklistReplaced) return;
       }
     }
 
@@ -3561,83 +3552,6 @@ window.saveCurrentPackingRecord = function() {
             </div>
           </div>
         <div style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:rgba(0,0,0,0.55); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:6px 8px; display:flex; flex-direction:column; gap:5px; box-sizing:border-box;">
-            ${(function() {
-              var planSpotsObj = safeGetJSON('okbm_plan_spots', {});
-              var rawSpotData = planSpotsObj[activeDateStr];
-              var spotArray = [];
-              if (Array.isArray(rawSpotData)) {
-                spotArray = rawSpotData.slice();
-              } else if (rawSpotData && rawSpotData.name) {
-                spotArray = [rawSpotData];
-              }
-
-              if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
-                var dTarget = String(activeDateStr).replace(/[-/]/g, '.');
-                var curProf = safeGetJSON('user_profile', null);
-                var rawActiveUid = (typeof window.okbmGetCurrentUserId === 'function') ? String(window.okbmGetCurrentUserId() || '').trim() : '';
-                var activeNick = (curProf && curProf.nickname) ? String(curProf.nickname).trim() : (localStorage.getItem('okbm_user_nick') || '');
-
-                window.TRIP_JOINS_DATABASE.forEach(function(t) {
-                  if (t && t.date && !t.isClosed && t.tripId && String(t.date).replace(/[-/]/g, '.') === dTarget) {
-                    var rawTUid = String(t.userId || t.host_id || '').trim();
-                    var tAuthor = String(t.authorName || '').trim();
-                    var isHost = Boolean(
-                      (typeof window.okbmSameAccountId === 'function'
-                        ? window.okbmSameAccountId(rawActiveUid, rawTUid)
-                        : (rawActiveUid && rawTUid && rawActiveUid === rawTUid)) ||
-                      (activeNick && tAuthor && activeNick === tAuthor)
-                    );
-
-                    if (isHost && !spotArray.some(function(s) { return s && s.tripId === t.tripId; })) {
-                      spotArray.unshift({
-                        name: t.spotName,
-                        tripId: t.tripId,
-                        isTrip: true,
-                        isHost: true,
-                        elevation: ''
-                      });
-                    }
-                  }
-                });
-              }
-
-              if (activeSpotInfo && activeSpotInfo.name && !spotArray.some(function(s) { return s.name === activeSpotInfo.name; })) {
-                spotArray.unshift({
-                  name: activeSpotInfo.name,
-                  elevation: activeSpotInfo.elevation || '',
-                  isCompleted: activeSpotInfo.isCompleted,
-                  isHistory: true
-                });
-              }
-
-              if (spotArray.length === 0) return '';
-
-              var tripSvgIcon = '<svg viewBox="0 0 24 24" style="width:13px; height:13px; stroke:#34d399; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0;"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>';
-              var pinSvgIcon = '<svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:none; stroke:#38bdf8; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
-              var completedSvgIcon = '<svg viewBox="0 0 24 24" style="width:13px; height:13px; fill:#f59e0b; stroke:#d97706; stroke-width:1; flex-shrink:0;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
-
-              var chipsHtml = spotArray.map(function(s) {
-                var cleanName = unescapePlanText(s.name || '');
-                var cleanElev = unescapePlanText(s.elevation || '');
-                if (!cleanName || (typeof window.okbmIsXssProbeSpotName === 'function' && window.okbmIsXssProbeSpotName(cleanName))) return '';
-                var dispElev = cleanElev ? (' (' + cleanElev + ')') : '';
-                var isCompletedSpot = Boolean(s.isCompleted || (activeSpotInfo && activeSpotInfo.isCompleted && s.name === activeSpotInfo.name));
-                var isExpedition = Boolean(s.isTrip || s.tripId);
-                var chipIcon = isCompletedSpot ? completedSvgIcon : (isExpedition ? UI_ICONS.gnbLogo : pinSvgIcon);
-                var chipBorder = isCompletedSpot ? 'rgba(245,158,11,0.5)' : (isExpedition ? 'rgba(56,189,248,0.45)' : 'rgba(255,255,255,0.12)');
-                var chipBg = isCompletedSpot ? 'rgba(245,158,11,0.14)' : (isExpedition ? 'rgba(56,189,248,0.10)' : 'rgba(255,255,255,0.05)');
-
-                var safeSName = planSpotLabel(cleanName);
-                var safeTripId = escapeHtml(s.tripId || '');
-                return '<div style="display:inline-flex; align-items:center; gap:5px; background:' + chipBg + '; border:1px solid ' + chipBorder + '; padding:3px 8px; border-radius:12px; font-size:0.78rem; font-weight:800; color:#ffffff;">' +
-                  '<span style="display:inline-flex; align-items:center; flex-shrink:0;">' + chipIcon + '</span>' +
-                  '<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:140px; color:#ffffff;">' + planSpotLabel(cleanName + dispElev) + '</span>' +
-                  (s.isHistory ? '' : ('<button type="button" data-date="' + escapeHtml(activeDateStr) + '" data-spot="' + safeSName + '" data-trip-id="' + safeTripId + '" onclick="window.removeIndividualPlanSpot(this.dataset.date, this.dataset.spot, event, this.dataset.tripId)" style="background:none; border:none; color:#94a3b8; font-size:0.75rem; font-weight:900; cursor:pointer; padding:0 2px; margin-left:2px; line-height:1;">✕</button>')) +
-                '</div>';
-              }).join('');
-
-              return '<div style="display:flex; flex-wrap:wrap; gap:5px; padding-bottom:5px; border-bottom:1px solid rgba(255,255,255,0.08); flex-shrink:0;">' + chipsHtml + '</div>';
-            })()}
             <textarea id="planDailyMemoInput" placeholder="이 날짜의 일정과 챙길 것들을 메모해보세요..." oninput="window.autoSavePlanMemo('${activeDateStr}', this.value)" style="flex:1 1 0% !important; min-height:0 !important; width:100%; background:none; border:none; color:#ffffff; font-size:0.90rem; line-height:1.45; outline:none; resize:none; font-family:\'Pretendard Variable\', -apple-system, sans-serif; padding:0; margin:0; box-sizing:border-box;">${escapeHtml(currentDayMemo)}</textarea>
           </div>
         </div>
@@ -3967,7 +3881,7 @@ window.saveCurrentPackingRecord = function() {
       }
     };
 
-    window.applySelectedCalcSpot = function(name, elev, opts) {
+    window.applySelectedCalcSpot = async function(name, elev, opts) {
       opts = opts || {};
       name = unescapePlanText(name || '');
       elev = unescapePlanText(elev || '');
@@ -3980,21 +3894,17 @@ window.saveCurrentPackingRecord = function() {
         window.isSpotRegisteredInMasterDB(name);
       var isUnregistered = !isRegistered;
 
-      window.currentLuckySpot = { name: name, elevation: elev || '', unregistered: isUnregistered };
       var curDate = window.activeSelectedDateKey;
       if (curDate) {
-        var planSpots = safeGetJSON('okbm_plan_spots', {});
-        var list = planSpots[curDate] || [];
-        if (!Array.isArray(list)) list = list.name ? [list] : [];
-        list = list.filter(function(s) { return s && s.name !== name; });
-        list.unshift({ name: name, elevation: elev || '', unregistered: isUnregistered });
-        planSpots[curDate] = list;
-        if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-          window.RomanticVault.write('okbm_plan_spots', planSpots, true);
-        } else {
-          localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots));
-        }
+        var replaced = await window.okbmSetSinglePlanSpotForDate(curDate, {
+          name: name,
+          elevation: elev || '',
+          unregistered: isUnregistered
+        });
+        if (!replaced) return;
       }
+
+      window.currentLuckySpot = { name: name, elevation: elev || '', unregistered: isUnregistered };
       var m = document.getElementById('calcSpotSearchModal');
       if (m) m.remove();
       triggerHaptic(12);
@@ -6002,8 +5912,103 @@ window.saveCurrentPackingRecord = function() {
     window.openDatePickGuideModal(spotName, elevation);
   };
 
+  // 하루 1일정: 기존 일정이 있으면 토스트 → 확인 후에만 교체
+  window.okbmSetSinglePlanSpotForDate = async function(dateKey, spotInfo) {
+    var name = String((spotInfo && spotInfo.name) || '').trim();
+    if (!dateKey || !name) return false;
+    if (typeof window.okbmIsXssProbeSpotName === 'function' && window.okbmIsXssProbeSpotName(name)) return false;
 
-window.commitPlanDestination = function(dateKey) {
+    var planSpots = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_plan_spots', {})
+      : safeGetJSON('okbm_plan_spots', {});
+
+    var cur = planSpots[dateKey];
+    var prevList = [];
+    if (Array.isArray(cur)) prevList = cur.filter(Boolean);
+    else if (cur && cur.name) prevList = [cur];
+
+    var sameSingleOnly = prevList.length > 0 && prevList.every(function(s) {
+      return s && s.name === name;
+    });
+    var shouldReplace = prevList.length > 0 && !sameSingleOnly;
+
+    if (shouldReplace) {
+      if (typeof showToast === 'function') {
+        showToast('기존 일정은 삭제 됩니다.', 'info', 4200);
+      }
+      await new Promise(function(resolve) { setTimeout(resolve, 400); });
+      if (!confirm('[' + dateKey + '] 기존 일정은 삭제 됩니다.\n\n새 일정으로 교체할까요?')) {
+        return false;
+      }
+
+      var dTarget = String(dateKey).replace(/[-/]/g, '.');
+      var tripIdsToDelete = [];
+      if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
+        var curProf = safeGetJSON('user_profile', null);
+        var rawActiveUid = (typeof window.okbmGetCurrentUserId === 'function')
+          ? String(window.okbmGetCurrentUserId() || '').trim()
+          : '';
+        var activeNick = (curProf && curProf.nickname)
+          ? String(curProf.nickname).trim()
+          : (localStorage.getItem('okbm_user_nick') || '');
+
+        window.TRIP_JOINS_DATABASE.forEach(function(t) {
+          if (!t || !t.date || !t.tripId) return;
+          var tD = String(t.date).replace(/[-/]/g, '.');
+          if (tD !== dTarget) return;
+          var rawTUid = String(t.userId || t.host_id || '').trim();
+          var tAuthor = String(t.authorName || '').trim();
+          var isHost = Boolean(
+            (typeof window.okbmSameAccountId === 'function'
+              ? window.okbmSameAccountId(rawActiveUid, rawTUid)
+              : (rawActiveUid && rawTUid && rawActiveUid === rawTUid)) ||
+            (activeNick && tAuthor && activeNick === tAuthor)
+          );
+          if (isHost) tripIdsToDelete.push(String(t.tripId).trim());
+        });
+
+        if (tripIdsToDelete.length > 0) {
+          var tripIdSet = {};
+          tripIdsToDelete.forEach(function(id) { tripIdSet[id] = true; });
+          window.TRIP_JOINS_DATABASE = window.TRIP_JOINS_DATABASE.filter(function(t) {
+            return !(t && t.tripId && tripIdSet[String(t.tripId).trim()]);
+          });
+          if (typeof window.renderHomeTripJoinSlider === 'function') {
+            window.renderHomeTripJoinSlider();
+          }
+
+          var targetUrl = window.SUPABASE_URL || '';
+          var targetKey = window.SUPABASE_ANON_KEY || '';
+          if (targetUrl && targetKey) {
+            var tripHeaders = (typeof window.okbmWriteHeaders === 'function') ? window.okbmWriteHeaders() : null;
+            if (tripHeaders) {
+              tripIdsToDelete.forEach(function(tripId) {
+                fetch(targetUrl + '/rest/v1/trips?id=eq.' + encodeURIComponent(tripId), {
+                  method: 'DELETE',
+                  headers: tripHeaders
+                }).catch(function() {});
+              });
+            }
+          }
+        }
+      }
+    }
+
+    planSpots[dateKey] = [{
+      name: name,
+      elevation: (spotInfo && spotInfo.elevation) || '',
+      unregistered: !!(spotInfo && spotInfo.unregistered)
+    }];
+
+    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+      window.RomanticVault.write('okbm_plan_spots', planSpots, true);
+    } else {
+      localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots));
+    }
+    return true;
+  };
+
+window.commitPlanDestination = async function(dateKey) {
     var dest = window.__pendingPlanDestination;
     window.__pendingPlanDestination = null;
 
@@ -6017,33 +6022,11 @@ window.commitPlanDestination = function(dateKey) {
     dest.elevation = unescapePlanText(dest.elevation || '');
     if (!dest.name || (typeof window.okbmIsXssProbeSpotName === 'function' && window.okbmIsXssProbeSpotName(dest.name))) return;
 
-    // 2. 목적지 멀티 배열 누적 저장 (동일 날짜 복수 일정 완벽 보존)
-    var planSpots = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
-      ? window.RomanticVault.read('okbm_plan_spots', {})
-      : safeGetJSON('okbm_plan_spots', {});
-    
-    var curSpots = planSpots[dateKey];
-    var spotList = [];
-    if (Array.isArray(curSpots)) {
-      spotList = curSpots.slice();
-    } else if (curSpots && curSpots.name) {
-      spotList = [curSpots];
-    }
-
-    if (!spotList.some(function(s) { return s.name === dest.name; })) {
-      spotList.push({
-        name: dest.name,
-        elevation: dest.elevation || ''
-      });
-    }
-
-    planSpots[dateKey] = spotList;
-
-    if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
-      window.RomanticVault.write('okbm_plan_spots', planSpots, true);
-    } else {
-      localStorage.setItem('okbm_plan_spots', JSON.stringify(planSpots));
-    }
+    var replaced = await window.okbmSetSinglePlanSpotForDate(dateKey, {
+      name: dest.name,
+      elevation: dest.elevation || ''
+    });
+    if (!replaced) return;
 
     window.activeSelectedDateKey = dateKey;
     window.currentLuckySpot = { name: dest.name, elevation: dest.elevation || '' };

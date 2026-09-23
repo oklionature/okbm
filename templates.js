@@ -659,7 +659,25 @@ function resolveStudioCardEl(card) {
     || card;
 }
 
+var __corsImageCache = {};
+
 function loadCorsImage(src) {
+  var key = String(src || '').trim();
+  if (!key) return Promise.resolve(null);
+  if (__corsImageCache[key]) return __corsImageCache[key];
+  var pending = loadCorsImageUncached(key).then(function(img) {
+    if (!img) delete __corsImageCache[key];
+    return img;
+  });
+  __corsImageCache[key] = pending;
+  return pending;
+}
+
+function clearCorsImageCache() {
+  __corsImageCache = {};
+}
+
+function loadCorsImageUncached(src) {
   return new Promise(function(resolve) {
     var url = String(src || '').trim();
     if (!url) return resolve(null);
@@ -837,8 +855,8 @@ async function captureStudioCardCanvas(card) {
               finish(u);
               return;
             }
-            finish(painted.toDataURL('image/png'));
-          }, 'image/png');
+            finish(painted.toDataURL('image/jpeg', 0.95));
+          }, 'image/jpeg', 0.95);
         });
       };
       if (src.indexOf('https://') === 0 || src.indexOf('http://') === 0) {
@@ -896,6 +914,126 @@ async function captureReadyShotShareCanvas() {
   var container = document.getElementById('packShareCaptureArea');
   if (!container) throw new Error('no pack share capture area');
   return captureStudioCardCanvas(container);
+}
+
+// 공유 버튼을 누르기 전에 카드가 멈춰 있는 동안 공유 이미지를 미리 만들어 둔다
+var READY_SHOT_PRECAPTURE_IDLE_MS = 1200;
+var __readyShotShareCache = null;
+var __readyShotPrecaptureJob = null;
+var __readyShotPrecaptureTimer = null;
+var __readyShotPrecaptureObserver = null;
+var __readyShotPrecaptureTarget = null;
+var __readyShotPrecaptureRerun = false;
+
+function isReadyShotShareModalOpen() {
+  var modal = document.getElementById('packShareModalOverlay');
+  return !!(modal && modal.style.display !== 'none' && document.getElementById('packShareCaptureArea'));
+}
+
+function readyShotShareSig() {
+  var container = document.getElementById('packShareCaptureArea');
+  if (!container) return '';
+  var source = resolveStudioCardEl(container);
+  var rect = source ? source.getBoundingClientRect() : { width: 0, height: 0 };
+  return Math.round(rect.width) + 'x' + Math.round(rect.height) + '|' + container.innerHTML;
+}
+
+function ensureReadyShotPrecaptureObserver() {
+  var container = document.getElementById('packShareCaptureArea');
+  if (!container || typeof MutationObserver !== 'function') return;
+  if (__readyShotPrecaptureObserver && __readyShotPrecaptureTarget === container) return;
+  if (__readyShotPrecaptureObserver) __readyShotPrecaptureObserver.disconnect();
+  __readyShotPrecaptureTarget = container;
+  __readyShotPrecaptureObserver = new MutationObserver(function() {
+    scheduleReadyShotPrecapture();
+  });
+  __readyShotPrecaptureObserver.observe(container, { childList: true, subtree: true, attributes: true, characterData: true });
+}
+
+function scheduleReadyShotPrecapture() {
+  if (!isReadyShotShareModalOpen()) return;
+  ensureReadyShotPrecaptureObserver();
+  if (__readyShotPrecaptureJob) __readyShotPrecaptureRerun = true;
+  if (__readyShotPrecaptureTimer) clearTimeout(__readyShotPrecaptureTimer);
+  __readyShotPrecaptureTimer = setTimeout(function() {
+    __readyShotPrecaptureTimer = null;
+    if (typeof window.requestIdleCallback === 'function') {
+      window.requestIdleCallback(runReadyShotPrecapture, { timeout: 1500 });
+    } else {
+      runReadyShotPrecapture();
+    }
+  }, READY_SHOT_PRECAPTURE_IDLE_MS);
+}
+
+function runReadyShotPrecapture() {
+  if (!isReadyShotShareModalOpen() || __readyShotPrecaptureTimer) return;
+  if (__readyShotPrecaptureJob) {
+    __readyShotPrecaptureRerun = true;
+    return;
+  }
+  if (isCardPointerDown) {
+    scheduleReadyShotPrecapture();
+    return;
+  }
+  var h2c = (typeof html2canvas === 'function') ? html2canvas : window.html2canvas;
+  if (typeof h2c !== 'function') return;
+  var container = document.getElementById('packShareCaptureArea');
+  var loading = Array.prototype.filter.call(container.querySelectorAll('img'), function(img) {
+    return !img.complete;
+  });
+  if (loading.length) {
+    loading.forEach(function(img) {
+      img.addEventListener('load', scheduleReadyShotPrecapture, { once: true });
+      img.addEventListener('error', scheduleReadyShotPrecapture, { once: true });
+    });
+    return;
+  }
+  var sig = readyShotShareSig();
+  if (__readyShotShareCache && __readyShotShareCache.sig === sig) return;
+  var job = { sig: sig };
+  job.promise = (async function() {
+    try {
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      var canvas = await captureReadyShotShareCanvas();
+      var blob = await canvasToShareBlob(canvas);
+      if (isReadyShotShareModalOpen() && readyShotShareSig() === sig) {
+        __readyShotShareCache = { sig: sig, blob: blob };
+        return blob;
+      }
+    } catch (ePre) {
+      console.warn('[templates.js:runReadyShotPrecapture]', ePre);
+    }
+    return null;
+  })();
+  __readyShotPrecaptureJob = job;
+  job.promise.then(function() {
+    if (__readyShotPrecaptureJob === job) __readyShotPrecaptureJob = null;
+    if (__readyShotPrecaptureRerun) {
+      __readyShotPrecaptureRerun = false;
+      scheduleReadyShotPrecapture();
+    }
+  });
+}
+
+async function takeReadyShotPrecapturedBlob() {
+  var sig = readyShotShareSig();
+  if (__readyShotShareCache && __readyShotShareCache.sig === sig) return __readyShotShareCache.blob;
+  if (__readyShotPrecaptureJob && __readyShotPrecaptureJob.sig === sig) {
+    return await __readyShotPrecaptureJob.promise;
+  }
+  return null;
+}
+
+function stopReadyShotPrecapture() {
+  if (__readyShotPrecaptureTimer) clearTimeout(__readyShotPrecaptureTimer);
+  __readyShotPrecaptureTimer = null;
+  if (__readyShotPrecaptureObserver) __readyShotPrecaptureObserver.disconnect();
+  __readyShotPrecaptureObserver = null;
+  __readyShotPrecaptureTarget = null;
+  __readyShotPrecaptureJob = null;
+  __readyShotPrecaptureRerun = false;
+  __readyShotShareCache = null;
+  clearCorsImageCache();
 }
 
 function canvasToShareBlob(canvas) {
@@ -1054,7 +1192,25 @@ window.openReadyShotShareSheet = function(blob) {
   var sheet = ensureReadyShotShareSheetDOM();
   sheet.style.setProperty('display', 'block', 'important');
   positionReadyShotSharePanel(sheet);
+  if (typeof window.okbmEnsureKakaoSdk === 'function') {
+    try {
+      Promise.resolve(window.okbmEnsureKakaoSdk()).catch(function() {});
+    } catch (eKakaoPre) {}
+  }
 };
+
+var __readyShotKakaoUpload = null;
+
+function uploadReadyShotBlobOnce(blob) {
+  if (__readyShotKakaoUpload && __readyShotKakaoUpload.blob === blob) return __readyShotKakaoUpload.promise;
+  var entry = { blob: blob };
+  entry.promise = uploadReadyShotBlob(blob).catch(function(err) {
+    if (__readyShotKakaoUpload === entry) __readyShotKakaoUpload = null;
+    throw err;
+  });
+  __readyShotKakaoUpload = entry;
+  return entry.promise;
+}
 
 window.handleReadyShotShareAction = async function(act) {
   var blob = window.__readyShotShareBlob;
@@ -1082,7 +1238,7 @@ window.handleReadyShotShareAction = async function(act) {
 
     if (act === 'kakao') {
       if (typeof showToast === 'function') showToast('카카오 공유 이미지를 준비 중입니다...', 'info', 1600);
-      var imageUrl = await uploadReadyShotBlob(blob);
+      var imageUrl = await uploadReadyShotBlobOnce(blob);
       var rec = window.currentShareRecord || {};
       var title = '낭만루트 READY SHOT';
       var desc = String(rec.spot || rec.oneLineMemo || '패킹 카드').slice(0, 80);
@@ -3737,11 +3893,16 @@ window.sharePackCardDirect = async function() {
     btn.style.opacity = '0.7';
   }
   if (typeof triggerHaptic === 'function') triggerHaptic(15);
-  if (typeof showToast === 'function') showToast('레디샷 이미지를 준비 중입니다...', 'info', 1600);
 
   try {
-    var canvas = await captureReadyShotShareCanvas();
-    var blob = await canvasToShareBlob(canvas);
+    var blob = await takeReadyShotPrecapturedBlob();
+    if (!blob) {
+      if (typeof showToast === 'function') showToast('레디샷 이미지를 준비 중입니다...', 'info', 1600);
+      var sig = readyShotShareSig();
+      var canvas = await captureReadyShotShareCanvas();
+      blob = await canvasToShareBlob(canvas);
+      if (readyShotShareSig() === sig) __readyShotShareCache = { sig: sig, blob: blob };
+    }
     window.openReadyShotShareSheet(blob);
   } catch (err) {
     console.warn('[templates.js:sharePackCardDirect]', err);
@@ -4226,6 +4387,9 @@ window.closePackShareModal = function() {
   teardownCardSwipeGesture();
   teardownStudioPhotoDrag();
   closeReadyShotShareSheet();
+  stopReadyShotPrecapture();
+  __readyShotKakaoUpload = null;
+  window.__readyShotShareBlob = null;
   revokeReadyShotPreviewBlobs();
   if (typeof window.__readyShotUploadResolve === 'function') {
     try { window.__readyShotUploadResolve(resolveReadyShotPhotoUrl() || ''); } catch (eGateClose) {}
@@ -4479,11 +4643,13 @@ function updateShareCardLive() {
     container.innerHTML = markup;
     if (!hasPhoto) attachReadyShotEmptyPhotoHit(container);
     setTimeout(function() { initCardSwipeGesture(); }, 30);
+    scheduleReadyShotPrecapture();
     return;
   }
 
   container.innerHTML = generateCardMarkup(selectedTemplateId, currentShareRecord, currentShareItems, spotVal, memoVal);
   setTimeout(function() { initCardSwipeGesture(); }, 30);
+  scheduleReadyShotPrecapture();
 }
 
 // 🖐️ 5. 카드 좌우 스와이프 제스처 인터랙션 엔진 (확정 순서에 따른 이전/다음 순환)

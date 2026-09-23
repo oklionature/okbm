@@ -1292,20 +1292,16 @@
             showToast('기존 피드는 삭제 됩니다.', 'info', 2800);
           }
 
-          var isLocalOnlyFeedId = function(id) {
-            var s = String(id || '');
-            return s.indexOf('pack_') === 0 || s.indexOf('local_') === 0;
-          };
-          var serverSameDateIds = sameDateIds.filter(function(id) { return !isLocalOnlyFeedId(id); });
           var replaceTargetUrl = window.SUPABASE_URL || '';
           var replaceTargetKey = window.SUPABASE_ANON_KEY || '';
-          if (serverSameDateIds.length > 0 && replaceTargetUrl && replaceTargetKey) {
+          // pack_/local_ id도 서버에 올라간 경우가 있어 전부 서버 DELETE 시도
+          if (sameDateIds.length > 0 && replaceTargetUrl && replaceTargetKey) {
             try {
               var replaceHeaders = (typeof window.okbmWriteHeaders === 'function')
                 ? window.okbmWriteHeaders({ Prefer: 'return=representation' })
                 : null;
               if (replaceHeaders) {
-                var inClause = 'in.(' + serverSameDateIds.map(encodeURIComponent).join(',') + ')';
+                var inClause = 'in.(' + sameDateIds.map(encodeURIComponent).join(',') + ')';
                 await fetch(replaceTargetUrl + '/rest/v1/feeds?id=' + inClause, {
                   method: 'DELETE',
                   headers: replaceHeaders
