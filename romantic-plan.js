@@ -601,7 +601,19 @@
     var todayKey = now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
     var todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     var tripList = [];
-    var seenKeyMap = {};
+    var seenDate = {};
+    function normTripDate(k) {
+      if (typeof window.okbmNormalizePlanDateKey === 'function') {
+        return window.okbmNormalizePlanDateKey(k) || '';
+      }
+      return String(k || '').replace(/[-/]/g, '.');
+    }
+    function claimDate(k) {
+      var dk = normTripDate(k);
+      if (!dk || seenDate[dk]) return '';
+      seenDate[dk] = true;
+      return dk;
+    }
 
     function cleanSpotName(str) {
       if (!str) return '';
@@ -625,22 +637,21 @@
       if (targetTime >= todayMidnight) {
         var rawSpots = planSpotsObj[k];
         var spotsArr = Array.isArray(rawSpots) ? rawSpots : (rawSpots && rawSpots.name ? [rawSpots] : []);
+        var claimedSpotDate = '';
         spotsArr.forEach(function(sp) {
-          if (sp && sp.name) {
-            var pure = cleanSpotName(sp.name);
-            var hash = k + '__' + pure;
-            if (pure && !seenKeyMap[hash]) {
-              seenKeyMap[hash] = true;
-              var dispElev = sp.elevation ? (' (' + sp.elevation + ')') : '';
-              tripList.push({
-                dateKey: k,
-                spot: pure + dispElev,
-                rawName: pure,
-                elevation: sp.elevation || '',
-                time: targetTime
-              });
-            }
-          }
+          if (!sp || !sp.name || claimedSpotDate) return;
+          var pure = cleanSpotName(sp.name);
+          if (!pure) return;
+          claimedSpotDate = claimDate(k);
+          if (!claimedSpotDate) return;
+          var dispElev = sp.elevation ? (' (' + sp.elevation + ')') : '';
+          tripList.push({
+            dateKey: claimedSpotDate,
+            spot: pure + dispElev,
+            rawName: pure,
+            elevation: sp.elevation || '',
+            time: targetTime
+          });
         });
       }
     });
@@ -651,21 +662,18 @@
       if (memo) {
         var targetTime = parseDateTime(k);
         if (targetTime >= todayMidnight) {
-          var lines = memo.split('\n').map(function(l) { return l.trim(); }).filter(Boolean);
-          lines.forEach(function(line) {
-            var pure = cleanSpotName(line);
-            var hash = k + '__' + pure;
-            if (pure && pure.length >= 2 && !seenKeyMap[hash]) {
-              seenKeyMap[hash] = true;
-              tripList.push({
-                dateKey: k,
-                spot: line.slice(0, 24),
-                rawName: pure,
-                elevation: '',
-                time: targetTime
-              });
-            }
-          });
+          var memoDate = claimDate(k);
+          if (memoDate) {
+            var firstLine = memo.split('\n').map(function(l) { return l.trim(); }).filter(Boolean)[0] || '';
+            var pureMemo = cleanSpotName(firstLine);
+            tripList.push({
+              dateKey: memoDate,
+              spot: (firstLine || '일정 메모').slice(0, 24),
+              rawName: pureMemo || '일정 메모',
+              elevation: '',
+              time: targetTime
+            });
+          }
         }
       }
     });
@@ -685,11 +693,10 @@
             var targetTime = parseDateTime(cleanDate);
             if (targetTime >= todayMidnight) {
               var pure = cleanSpotName(tr.spotName);
-              var hash = cleanDate + '__' + pure;
-              if (!seenKeyMap[hash]) {
-                seenKeyMap[hash] = true;
+              var tripDate = claimDate(cleanDate);
+              if (tripDate && pure) {
                 tripList.push({
-                  dateKey: cleanDate,
+                  dateKey: tripDate,
                   spot: '[원정대] ' + pure,
                   rawName: pure,
                   elevation: '',
@@ -707,12 +714,11 @@
       if (h && h.date) {
         var targetTime = parseDateTime(h.date);
         if (targetTime >= todayMidnight) {
-          var pure = cleanSpotName(h.spot);
-          var hash = h.date + '__' + (pure || '기록');
-          if (!seenKeyMap[hash]) {
-            seenKeyMap[hash] = true;
+          var histDate = claimDate(h.date);
+          if (histDate) {
+            var pure = cleanSpotName(h.spot);
             tripList.push({
-              dateKey: h.date,
+              dateKey: histDate,
               spot: h.spot || '방문 일정',
               rawName: pure || h.spot || '방문 일정',
               elevation: h.elevation || '',
@@ -5175,7 +5181,59 @@ window.saveCurrentPackingRecord = function() {
     return targetNum < todayNum;
   };
 
-  window.openPlanPackingCalculator = function() {
+  window.okbmDateHasExistingPlan = function(dateStr) {
+    var norm = (typeof window.okbmNormalizePlanDateKey === 'function')
+      ? window.okbmNormalizePlanDateKey(dateStr)
+      : String(dateStr || '').replace(/[-/]/g, '.');
+    if (!norm) return false;
+
+    var planSpots = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_plan_spots', {})
+      : safeGetJSON('okbm_plan_spots', {});
+    if (planSpots && typeof planSpots === 'object') {
+      var spotKeys = Object.keys(planSpots);
+      for (var i = 0; i < spotKeys.length; i++) {
+        var nk = (typeof window.okbmNormalizePlanDateKey === 'function')
+          ? window.okbmNormalizePlanDateKey(spotKeys[i])
+          : String(spotKeys[i]).replace(/[-/]/g, '.');
+        if (nk !== norm) continue;
+        var entry = planSpots[spotKeys[i]];
+        if (Array.isArray(entry) ? entry.length > 0 : !!(entry && entry.name)) return true;
+      }
+    }
+
+    var historyList = (typeof window.safeGetStorage === 'function')
+      ? (window.safeGetStorage('okbm_packing_history', []) || [])
+      : (safeGetJSON('okbm_packing_history', []) || []);
+    if (!Array.isArray(historyList) && Array.isArray(window.interactiveHistory)) {
+      historyList = window.interactiveHistory;
+    }
+    if (Array.isArray(historyList)) {
+      for (var h = 0; h < historyList.length; h++) {
+        var rec = historyList[h];
+        if (!rec) continue;
+        var hk = (typeof window.okbmGetRecordPlanDateKey === 'function')
+          ? window.okbmGetRecordPlanDateKey(rec)
+          : String(rec.date || '').replace(/[-/]/g, '.');
+        if (hk === norm) return true;
+      }
+    }
+    return false;
+  };
+
+  window.okbmConfirmReplacePlanOnCalendar = async function(dateStr) {
+    var norm = (typeof window.okbmNormalizePlanDateKey === 'function')
+      ? window.okbmNormalizePlanDateKey(dateStr)
+      : String(dateStr || '').replace(/[-/]/g, '.');
+    if (!norm || !window.okbmDateHasExistingPlan(norm)) return true;
+    if (typeof showToast === 'function') {
+      showToast('기존 일정은 삭제 됩니다.', 'info', 4200);
+    }
+    await new Promise(function(resolve) { setTimeout(resolve, 400); });
+    return confirm('[' + norm + '] 기존 일정은 삭제 됩니다.\n\n새 일정으로 교체할까요?');
+  };
+
+  window.openPlanPackingCalculator = async function() {
     var now = new Date();
     var dateStr = window.activeSelectedDateKey || (
       now.getFullYear() + '.' +
@@ -5189,6 +5247,7 @@ window.saveCurrentPackingRecord = function() {
       }
       return;
     }
+    if (!(await window.okbmConfirmReplacePlanOnCalendar(dateStr))) return;
     window.activePlanSubMode = 'calculator';
     if (typeof window.ensureGearCategoryLoaded === 'function') {
       window.ensureGearCategoryLoaded(window.__activeCalcCategoryTab || 'all');
@@ -5240,7 +5299,7 @@ window.saveCurrentPackingRecord = function() {
   };
 
   //  달력/메모장의 박지명을 배낭 계산기로 직통 주입하여 기록 시작
-  window.startPackingForDate = function(dateStr, spotName, elev) {
+  window.startPackingForDate = async function(dateStr, spotName, elev) {
     if (window.isPastPlanDate(dateStr)) {
       triggerHaptic(8);
       if (typeof showToast === 'function') {
@@ -5248,6 +5307,7 @@ window.saveCurrentPackingRecord = function() {
       }
       return;
     }
+    if (!(await window.okbmConfirmReplacePlanOnCalendar(dateStr))) return;
     triggerHaptic(12);
     window.activeSelectedDateKey = dateStr;
     if (spotName && spotName.trim()) {
@@ -5921,27 +5981,67 @@ window.saveCurrentPackingRecord = function() {
     var planSpots = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
       ? window.RomanticVault.read('okbm_plan_spots', {})
       : safeGetJSON('okbm_plan_spots', {});
+    if (!planSpots || typeof planSpots !== 'object') planSpots = {};
 
-    var cur = planSpots[dateKey];
-    var prevList = [];
-    if (Array.isArray(cur)) prevList = cur.filter(Boolean);
-    else if (cur && cur.name) prevList = [cur];
+    var normDate = (typeof window.okbmNormalizePlanDateKey === 'function')
+      ? window.okbmNormalizePlanDateKey(dateKey)
+      : String(dateKey).replace(/[-/]/g, '.');
+    if (!normDate) return false;
 
-    var sameSingleOnly = prevList.length > 0 && prevList.every(function(s) {
-      return s && s.name === name;
+    var prevNames = [];
+    var keysToClear = [];
+    Object.keys(planSpots).forEach(function(k) {
+      var nk = (typeof window.okbmNormalizePlanDateKey === 'function')
+        ? window.okbmNormalizePlanDateKey(k)
+        : String(k).replace(/[-/]/g, '.');
+      if (nk !== normDate) return;
+      keysToClear.push(k);
+      var entry = planSpots[k];
+      var list = Array.isArray(entry) ? entry : (entry && entry.name ? [entry] : []);
+      list.forEach(function(s) {
+        if (s && s.name) prevNames.push(String(s.name).trim());
+      });
     });
-    var shouldReplace = prevList.length > 0 && !sameSingleOnly;
+
+    var historyNames = [];
+    var historyList = (window.RomanticVault && typeof window.RomanticVault.read === 'function')
+      ? window.RomanticVault.read('okbm_packing_history', [])
+      : safeGetJSON('okbm_packing_history', []);
+    if (!Array.isArray(historyList)) historyList = [];
+    historyList.forEach(function(h) {
+      if (!h) return;
+      var hk = (typeof window.okbmGetRecordPlanDateKey === 'function')
+        ? window.okbmGetRecordPlanDateKey(h)
+        : (typeof window.okbmNormalizePlanDateKey === 'function' ? window.okbmNormalizePlanDateKey(h.date) : '');
+      if (hk !== normDate) return;
+      var hs = String(h.spot || '').trim();
+      if (hs) historyNames.push(hs);
+    });
+
+    var hasOtherSpot = prevNames.some(function(n) { return n !== name; }) || prevNames.length > 1;
+    var hasOtherHistory = historyNames.some(function(n) { return n && n !== name && n !== '자유 일정'; });
+    var hasHostTrip = false;
+    if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
+      window.TRIP_JOINS_DATABASE.forEach(function(t) {
+        if (!t || !t.date || t.isClosed) return;
+        var tD = (typeof window.okbmNormalizePlanDateKey === 'function')
+          ? window.okbmNormalizePlanDateKey(t.date)
+          : String(t.date).replace(/[-/]/g, '.');
+        if (tD === normDate) hasHostTrip = true;
+      });
+    }
+    var shouldReplace = hasOtherSpot || hasOtherHistory || hasHostTrip;
 
     if (shouldReplace) {
       if (typeof showToast === 'function') {
         showToast('기존 일정은 삭제 됩니다.', 'info', 4200);
       }
       await new Promise(function(resolve) { setTimeout(resolve, 400); });
-      if (!confirm('[' + dateKey + '] 기존 일정은 삭제 됩니다.\n\n새 일정으로 교체할까요?')) {
+      if (!confirm('[' + normDate + '] 기존 일정은 삭제 됩니다.\n\n새 일정으로 교체할까요?')) {
         return false;
       }
 
-      var dTarget = String(dateKey).replace(/[-/]/g, '.');
+      var dTarget = normDate;
       var tripIdsToDelete = [];
       if (Array.isArray(window.TRIP_JOINS_DATABASE)) {
         var curProf = safeGetJSON('user_profile', null);
@@ -5954,7 +6054,9 @@ window.saveCurrentPackingRecord = function() {
 
         window.TRIP_JOINS_DATABASE.forEach(function(t) {
           if (!t || !t.date || !t.tripId) return;
-          var tD = String(t.date).replace(/[-/]/g, '.');
+          var tD = (typeof window.okbmNormalizePlanDateKey === 'function')
+            ? window.okbmNormalizePlanDateKey(t.date)
+            : String(t.date).replace(/[-/]/g, '.');
           if (tD !== dTarget) return;
           var rawTUid = String(t.userId || t.host_id || '').trim();
           var tAuthor = String(t.authorName || '').trim();
@@ -5994,7 +6096,8 @@ window.saveCurrentPackingRecord = function() {
       }
     }
 
-    planSpots[dateKey] = [{
+    keysToClear.forEach(function(k) { delete planSpots[k]; });
+    planSpots[normDate] = [{
       name: name,
       elevation: (spotInfo && spotInfo.elevation) || '',
       unregistered: !!(spotInfo && spotInfo.unregistered)
