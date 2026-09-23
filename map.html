@@ -203,7 +203,7 @@
         bindLazy('openGearPresetModal', window.okbmEnsurePlan);
       })();
     </script>
-    <script src="romantic-sync.js?v=2.8.98" defer></script>
+    <script src="romantic-sync.js?v=2.8.99" defer></script>
     <script src="romantic-history.js?v=2.7.66" defer></script>
 
     <style>
@@ -3097,6 +3097,30 @@ function updateSmartResetButtons() {
       window.okbmResetSheetMetrics = okbmResetSheetMetrics;
       window.addEventListener('resize', okbmResetSheetMetrics);
 
+      function getMarkerNameCenterLiftPx() {
+        var spot = (typeof currentActiveSpot !== 'undefined') ? currentActiveSpot : null;
+        var labelH = 0;
+        if (spot && typeof spotLabelOverlayMap !== 'undefined' && spotLabelOverlayMap) {
+          var overlay = spotLabelOverlayMap.get(String(spot.id).trim());
+          var content = overlay && typeof overlay.getContent === 'function' ? overlay.getContent() : null;
+          var labelEl = content && content.querySelector ? content.querySelector('.lod-marker-label') : null;
+          if (labelEl) labelH = labelEl.offsetHeight || labelEl.scrollHeight || 0;
+        }
+        if (!labelH) {
+          var rows = 1;
+          if (spot) {
+            var name = String(spot.spot_main || spot.name || '');
+            var sub = String(spot.spot_sub || '').trim();
+            if (sub || /[\(\[（].+[\)\]）]/.test(name)) rows += 1;
+            if (spot.elevation) rows += 1;
+          } else {
+            rows = 3;
+          }
+          labelH = 15 + Math.max(0, rows - 1) * 14;
+        }
+        return Math.round((44 + labelH) / 2);
+      }
+
       function getInfoWindowAdjustedCenter(lat, lng) {
         var nLat = Number(lat);
         var nLng = Number(lng);
@@ -3140,7 +3164,7 @@ function updateSmartResetButtons() {
         }
 
         var desiredX = (visibleLeft + visibleRight) / 2;
-        var desiredY = (visibleTop + visibleBottom) / 2;
+        var desiredY = (visibleTop + visibleBottom) / 2 + getMarkerNameCenterLiftPx();
         if (Math.abs(desiredX - mw / 2) < 1 && Math.abs(desiredY - mh / 2) < 1) return target;
 
         var proj = (typeof map.getProjection === 'function') ? map.getProjection() : null;

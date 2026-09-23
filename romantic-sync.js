@@ -4135,9 +4135,7 @@ function ensureMyReportAndAuthModalsInDOM() {
     <div class="custom-modal-overlay" id="loginModalOverlay" onclick="if(event.target===this) closeLoginModal();" style="display:none; position:fixed; inset:0; background:#000000; z-index:99999; justify-content:center; align-items:center; width:100%; height:100%; overscroll-behavior:none !important; padding:0; overflow:hidden;">
       <div style="width:100%; max-width:320px; margin:0 auto; display:flex; flex-direction:column; justify-content:center; align-items:center; box-sizing:border-box; position:relative; padding:0 16px; transform:translateY(-20%); -webkit-transform:translateY(-20%);">
         <div style="width:100%; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px; text-align:center; box-sizing:border-box;">
-          <div style="width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; color:#e2e8f0;">
-            <svg viewBox="0 0 24 24" style="width:20px; height:20px;" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>
-          </div>
+          <img src="logo.png" alt="낭만루트 로고" style="width:64px; height:64px; object-fit:contain; display:block;" />
           <div>
             <h3 style="color:#ffffff; font-size:1.02rem; font-weight:900; letter-spacing:-0.02em; margin:0;">낭만루트 로그인</h3>
             <p style="font-size:0.72rem; color:#94a3b8; line-height:1.4; margin-top:5px; margin-bottom:0; word-break:keep-all;">

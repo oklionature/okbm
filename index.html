@@ -681,7 +681,7 @@
       else setTimeout(prefetch, 1800);
     })();
   </script>
-    <script src="romantic-sync.js?v=2.8.98" defer></script>
+    <script src="romantic-sync.js?v=2.8.99" defer></script>
     <script src="romantic-history.js?v=2.7.66" defer></script>
 
   <style>
@@ -2494,12 +2494,8 @@
       modal.style.height = 'calc(var(--vh, 1vh) * 100)';
       modal.style.maxHeight = 'calc(var(--vh, 1vh) * 100)';
       modal.innerHTML = `
-        <div class="modal-app-header" style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); height:48px; padding:0 14px; display:flex; justify-content:space-between; align-items:center; box-sizing:border-box;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <button type="button" class="circle-icon-btn" onclick="window.closeThemeSpotAllModal();">◀</button>
-            <span style="font-size:0.95rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">테마 스팟 아카이브</span>
-          </div>
-          <button type="button" class="circle-icon-btn" onclick="window.closeThemeSpotAllModal();">✕</button>
+        <div class="modal-app-header" style="flex-shrink:0; background:rgba(7,9,14,0.98); border-bottom:1px solid rgba(255,255,255,0.08); height:auto !important; min-height:48px; padding:12px 14px !important; padding-top:calc(12px + env(safe-area-inset-top, 0px)) !important; display:flex; justify-content:flex-start; align-items:center; box-sizing:border-box;">
+          <span style="font-size:0.95rem; font-weight:900; color:#ffffff; letter-spacing:-0.02em;">테마 스팟 아카이브</span>
         </div>
 
         <div style="flex-shrink:0; background:#07090e; padding:6px 14px 8px 14px; border-bottom:1px solid rgba(255,255,255,0.06); box-sizing:border-box;">
