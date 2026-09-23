@@ -5695,15 +5695,39 @@ window.fetchNaverBlogRealMeta = async function(url, titleDomId, imgDomId, fallba
         if (!target) return;
 
         const sId = String(target.id).trim();
-        const currentViews = getSpotViews(target) + 1;
+        if (!sId) return;
 
+        // 세션당 박지 1회만 로컬·서버 모두 집계 (인플레·중복 RPC 방지)
+        if (window.__viewedSpotsInSession.has(sId)) return;
+        window.__viewedSpotsInSession.add(sId);
+
+        const currentViews = getSpotViews(target) + 1;
         if (window.__globalSpotViewsMap[sId] !== undefined) delete window.__globalSpotViewsMap[sId];
         window.__globalSpotViewsMap[sId] = currentViews;
         persistGlobalSpotViews();
         target.searchCount = currentViews;
 
-        if (window.__viewedSpotsInSession.has(sId)) return;
-        window.__viewedSpotsInSession.add(sId);
+        var spotName = String(target.fullName || target.name || target.spot_main || '').trim();
+        var targetUrl = window.SUPABASE_URL || 'https://qnumfecythtqtrxeasys.supabase.co';
+        var rpcUrl = targetUrl + '/rest/v1/rpc/increment_spot_ranking';
+        var headers = (typeof window.okbmPublicRestHeaders === 'function')
+          ? window.okbmPublicRestHeaders()
+          : {
+              'apikey': window.SUPABASE_ANON_KEY || '',
+              'Authorization': 'Bearer ' + (window.SUPABASE_ANON_KEY || ''),
+              'Content-Type': 'application/json'
+            };
+        var body = JSON.stringify({ p_spot_id: sId, p_spot_name: spotName });
+        var doFetch = (typeof window.okbmPublicFetch === 'function')
+          ? window.okbmPublicFetch(rpcUrl, { method: 'POST', headers: headers, body: body })
+          : fetch(rpcUrl, { method: 'POST', headers: headers, body: body });
+        doFetch.then(function(res) {
+          if (res && res.ok) {
+            fetchGlobalSpotRankings();
+          }
+        }).catch(function(e) {
+          console.warn('[map.html:incrementSpotCount]', e);
+        });
       }
 var liveSearchTimer = null;
       var _mapKeywordSearchSeq = 0;

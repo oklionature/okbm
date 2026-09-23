@@ -1317,6 +1317,69 @@ GRANT SELECT ON TABLE public.ranking_stats TO anon, authenticated;
 CREATE POLICY ranking_stats_admin_write ON public.ranking_stats
   FOR ALL USING (public.okbm_is_admin()) WITH CHECK (public.okbm_is_admin());
 
+-- 맵 박지 인기(포커스) 집계: 클라이언트 직접 INSERT/UPDATE 금지, RPC만 허용.
+CREATE UNIQUE INDEX IF NOT EXISTS ranking_stats_spot_id_uidx
+  ON public.ranking_stats (spot_id);
+
+CREATE OR REPLACE FUNCTION public.increment_spot_ranking(
+  p_spot_id text,
+  p_spot_name text DEFAULT ''
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $function$
+DECLARE
+  v_id text := btrim(COALESCE(p_spot_id, ''));
+  v_name text := btrim(COALESCE(p_spot_name, ''));
+  v_exists boolean := false;
+BEGIN
+  IF v_id = '' THEN
+    RETURN;
+  END IF;
+
+  IF auth.uid() IS NOT NULL AND auth.role() IS DISTINCT FROM 'service_role' THEN
+    BEGIN
+      PERFORM public.okbm_rpc_rate_limit('increment_spot_ranking', 30);
+    EXCEPTION WHEN OTHERS THEN
+      RETURN;
+    END;
+  END IF;
+
+  SELECT EXISTS (
+    SELECT 1 FROM public.spots s WHERE s.id = v_id LIMIT 1
+  ) INTO v_exists;
+
+  IF NOT v_exists THEN
+    RETURN;
+  END IF;
+
+  IF v_name = '' THEN
+    SELECT COALESCE(NULLIF(btrim(s."fullName"), ''), NULLIF(btrim(s.spot_main), ''), v_id)
+      INTO v_name
+    FROM public.spots s
+    WHERE s.id = v_id
+    LIMIT 1;
+  END IF;
+
+  INSERT INTO public.ranking_stats (spot_id, spot_name, usage_count, created_at, updated_at)
+  VALUES (v_id, COALESCE(NULLIF(v_name, ''), v_id), 1, now(), now())
+  ON CONFLICT (spot_id)
+  DO UPDATE SET
+    usage_count = COALESCE(public.ranking_stats.usage_count, 0) + 1,
+    spot_name = CASE
+      WHEN EXCLUDED.spot_name IS NOT NULL AND btrim(EXCLUDED.spot_name) <> ''
+        THEN EXCLUDED.spot_name
+      ELSE public.ranking_stats.spot_name
+    END,
+    updated_at = now();
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.increment_spot_ranking(text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.increment_spot_ranking(text, text) TO anon, authenticated, service_role;
+
 CREATE POLICY featured_videos_select_public ON public.featured_videos
   FOR SELECT USING (true);
 GRANT SELECT ON TABLE public.featured_videos TO anon, authenticated;
