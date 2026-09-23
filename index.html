@@ -3,6 +3,139 @@
 <html lang="ko" class="notranslate" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
+  <script>
+    (function okbmEntryGate() {
+      var ua = navigator.userAgent || '';
+      var isKakao = /KAKAOTALK/i.test(ua);
+      var isAndroid = /Android/i.test(ua);
+      var isIpadOs = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+      var isIOS = /iPhone|iPad|iPod/i.test(ua) || isIpadOs;
+      var isMobile = isAndroid || isIOS || /webOS|BlackBerry|IEMobile|Opera Mini|Mobi|Tablet|Silk|Kindle/i.test(ua) || (navigator.userAgentData && navigator.userAgentData.mobile === true);
+
+      function skipSplashOnce() {
+        try { sessionStorage.setItem('okbm_skip_splash_once', '1'); } catch (e) {}
+      }
+
+      if (isKakao && isAndroid) {
+        skipSplashOnce();
+        var href = String(location.href || '');
+        var hash = '';
+        var hashIdx = href.indexOf('#');
+        if (hashIdx !== -1) {
+          hash = href.slice(hashIdx + 1);
+          href = href.slice(0, hashIdx);
+        }
+        var stripped = href.replace(/^https?:\/\//i, '');
+        if (hash) stripped += '%23' + hash;
+        location.href = 'intent://' + stripped + '#Intent;scheme=https;package=com.android.chrome;end';
+        return;
+      }
+
+      if (isKakao && isIOS) {
+        skipSplashOnce();
+        location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+        return;
+      }
+
+      if (isMobile) return;
+
+      skipSplashOnce();
+      document.documentElement.classList.add('okbm-pc-gate');
+      document.documentElement.style.background = '#05060a';
+
+      var style = document.createElement('style');
+      style.id = 'okbm-pc-gate-style';
+      style.textContent = ''
+        + 'html.okbm-pc-gate,html.okbm-pc-gate body{background:#05060a !important;overflow:hidden !important;height:100% !important;}'
+        + 'html.okbm-pc-gate body>*:not(#okbmPcGate){display:none !important;visibility:hidden !important;pointer-events:none !important;}'
+        + '#okbmPcGate{position:fixed !important;inset:0 !important;z-index:2147483647 !important;display:flex !important;align-items:center !important;justify-content:center !important;box-sizing:border-box !important;margin:0 !important;padding:36px 22px !important;overflow:auto !important;background:radial-gradient(1100px 480px at 50% -12%,rgba(253,224,71,0.16),transparent 58%),radial-gradient(820px 420px at 100% 115%,rgba(148,163,184,0.09),transparent 48%),#05060a !important;color:#f8fafc !important;font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif !important;-webkit-font-smoothing:antialiased !important;}'
+        + '#okbmPcGate *{box-sizing:border-box !important;user-select:none !important;}'
+        + '.okbm-pc-gate-panel{width:min(460px,100%) !important;display:flex !important;flex-direction:column !important;align-items:center !important;text-align:center !important;}'
+        + '.okbm-pc-gate-brand{display:flex !important;align-items:center !important;justify-content:center !important;gap:10px !important;margin:0 0 26px !important;}'
+        + '.okbm-pc-gate-brand img{width:40px !important;height:40px !important;object-fit:contain !important;display:block !important;filter:drop-shadow(0 6px 16px rgba(0,0,0,0.45)) !important;}'
+        + '.okbm-pc-gate-name{font-size:1.45rem !important;font-weight:800 !important;letter-spacing:-0.045em !important;line-height:1 !important;color:#fff !important;background:linear-gradient(135deg,#ffffff 0%,#e2e8f0 38%,#94a3b8 100%) !important;-webkit-background-clip:text !important;background-clip:text !important;-webkit-text-fill-color:transparent !important;}'
+        + '.okbm-pc-gate-title{margin:0 0 12px !important;padding:0 !important;font-size:1.62rem !important;font-weight:800 !important;letter-spacing:-0.048em !important;line-height:1.35 !important;color:#f8fafc !important;}'
+        + '.okbm-pc-gate-sub{margin:0 0 30px !important;padding:0 !important;max-width:420px !important;font-size:0.96rem !important;font-weight:500 !important;line-height:1.7 !important;letter-spacing:-0.02em !important;color:#94a3b8 !important;white-space:pre-line !important;}'
+        + '.okbm-pc-gate-qr{width:228px !important;height:228px !important;margin:0 !important;padding:14px !important;border-radius:26px !important;background:#fff !important;display:flex !important;align-items:center !important;justify-content:center !important;box-shadow:0 22px 50px rgba(0,0,0,0.42),0 0 0 1px rgba(255,255,255,0.08) !important;}'
+        + '.okbm-pc-gate-qr img{width:200px !important;height:200px !important;display:block !important;object-fit:contain !important;}'
+        + '.okbm-pc-gate-qr.is-text{width:auto !important;height:auto !important;max-width:340px !important;padding:0 !important;background:transparent !important;box-shadow:none !important;color:#cbd5e1 !important;font-size:0.8rem !important;line-height:1.55 !important;word-break:break-all !important;}'
+        + '.okbm-pc-gate-qr.is-text,.okbm-pc-gate-qr.is-text *{user-select:text !important;-webkit-user-select:text !important;}'
+        + '@media (max-width:520px){.okbm-pc-gate-title{font-size:1.32rem !important;}.okbm-pc-gate-sub{font-size:0.9rem !important;}}';
+      document.head.appendChild(style);
+
+      function mountPcGate() {
+        if (document.getElementById('okbmPcGate') || !document.body) return;
+        var pageUrl = String(location.href || '');
+        var root = document.createElement('div');
+        root.id = 'okbmPcGate';
+        root.setAttribute('role', 'dialog');
+        root.setAttribute('aria-modal', 'true');
+        root.setAttribute('aria-label', '모바일 접속 안내');
+
+        var panel = document.createElement('div');
+        panel.className = 'okbm-pc-gate-panel';
+
+        var brand = document.createElement('div');
+        brand.className = 'okbm-pc-gate-brand';
+        var logo = document.createElement('img');
+        logo.src = 'logo.png';
+        logo.alt = '';
+        logo.width = 40;
+        logo.height = 40;
+        var name = document.createElement('span');
+        name.className = 'okbm-pc-gate-name';
+        name.textContent = '낭만루트';
+        brand.appendChild(logo);
+        brand.appendChild(name);
+
+        var title = document.createElement('h1');
+        title.className = 'okbm-pc-gate-title';
+        title.textContent = '모바일 환경에 최적화된 서비스입니다';
+
+        var sub = document.createElement('p');
+        sub.className = 'okbm-pc-gate-sub';
+        sub.textContent = '낭만루트는 캠퍼와 백패커를 위한 스마트폰 전용 서비스입니다.\n스마트폰 모바일 브라우저로 접속해 주세요!';
+
+        var qrBox = document.createElement('div');
+        qrBox.className = 'okbm-pc-gate-qr';
+        var qr = document.createElement('img');
+        qr.alt = '현재 페이지 접속용 QR 코드';
+        qr.width = 200;
+        qr.height = 200;
+        var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=8&ecc=M&color=111111&bgcolor=ffffff&data=' + encodeURIComponent(pageUrl);
+        var qrFallback = 'https://quickchart.io/qr?size=400&margin=1&text=' + encodeURIComponent(pageUrl);
+        qr.src = qrSrc;
+        qr.onerror = function() {
+          if (qr.getAttribute('data-fallback') !== '1') {
+            qr.setAttribute('data-fallback', '1');
+            qr.src = qrFallback;
+            return;
+          }
+          qrBox.className = 'okbm-pc-gate-qr is-text';
+          qrBox.textContent = pageUrl;
+        };
+        qrBox.appendChild(qr);
+
+        panel.appendChild(brand);
+        panel.appendChild(title);
+        panel.appendChild(sub);
+        panel.appendChild(qrBox);
+        root.appendChild(panel);
+        document.body.appendChild(root);
+      }
+
+      if (document.body) mountPcGate();
+      else {
+        var obs = new MutationObserver(function() {
+          if (!document.body) return;
+          mountPcGate();
+          obs.disconnect();
+        });
+        obs.observe(document.documentElement, { childList: true });
+        document.addEventListener('DOMContentLoaded', mountPcGate);
+      }
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#000000" />
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#000000" />
