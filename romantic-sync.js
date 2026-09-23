@@ -5087,9 +5087,12 @@ window._renderTerrainModule = function(validLogs, el) {
   var isMountain = function(s) { return /산$|산\s|봉$|봉\s|령$|령\s|대$|고개|능선|정상|고지|악$|악\s/i.test(s); };
 
   var parseElevation = function(elev) {
-    if (!elev) return 0;
-    var num = parseInt(String(elev).replace(/\D/g, ''), 10);
-    return isNaN(num) ? 0 : num;
+    if (elev == null || elev === '') return 0;
+    // 소수점까지 지우면 "480.8m"가 4808m가 되어 누적·최고봉이 함께 틀린다.
+    var match = String(elev).replace(/,/g, '').match(/\d+(?:\.\d+)?/);
+    if (!match) return 0;
+    var num = Math.round(parseFloat(match[0]));
+    return isFinite(num) && num > 0 ? num : 0;
   };
 
   var monthElevation = 0;
