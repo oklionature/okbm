@@ -329,6 +329,173 @@
     other:       { color: '#94a3b8', label: '기타·소품', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.25)' }
   };
 
+  var PLAN_GEAR_CAT_IDS = ['shelter', 'sleep', 'pack', 'food', 'kitchen', 'wear', 'electronics', 'camp', 'other'];
+
+  function normalizeGearNameKey(name) {
+    return String(name || '').replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+
+  function normalizePlanGearCategoryId(raw) {
+    var id = String(raw || '').trim();
+    if (!id) return '';
+    var lower = id.toLowerCase();
+    if (PLAN_GEAR_CAT_IDS.indexOf(lower) !== -1) return lower;
+    var aliases = {
+      '텐트': 'shelter', '텐트·타프': 'shelter', '텐트 · 타프': 'shelter',
+      '침낭': 'sleep', '침낭·매트': 'sleep', '침낭 · 매트': 'sleep',
+      '배낭': 'pack',
+      '음식': 'food',
+      '취사': 'kitchen',
+      '의류': 'wear',
+      '기기': 'electronics', '기기·소품': 'electronics', '기기 · 소품': 'electronics',
+      '테이블': 'camp', '체어': 'camp', '테이블·체어': 'camp', '테이블 · 체어': 'camp',
+      '기타': 'other', '기타·소품': 'other', '기타 · 소품': 'other'
+    };
+    return aliases[id] || '';
+  }
+
+  function planGearCategoryLabel(catId) {
+    var pal = PLAN_CATEGORY_PALETTE[catId];
+    return (pal && pal.label) || '기타·소품';
+  }
+
+  function planGearCategoryOptionsHtml(selectedId, includeAuto) {
+    var html = includeAuto ? '<option value="" style="background:#07090e; color:#ffffff;">이름 보고 자동 분류</option>' : '';
+    PLAN_GEAR_CAT_IDS.forEach(function(id) {
+      html += '<option value="' + id + '"' + (id === selectedId ? ' selected' : '') + ' style="background:#07090e; color:#ffffff;">' + planGearCategoryLabel(id) + '</option>';
+    });
+    return html;
+  }
+
+  function nameLooksLikeShelter(text) {
+    return /텐트|타프|쉘터|그라운드시트|풋프린트|폴대|플라이|이너텐트|\btent\b|\btarp\b|\bshelter\b/i.test(String(text || ''));
+  }
+
+  function inferPlanGearCategoryFromText(text) {
+    var s = String(text || '');
+    if (!s.trim()) return '';
+    var rules = [
+      ['sleep', /침낭|슬리핑백|sleeping\s*bag|에어매트|슬리핑패드|sleeping\s*pad|필로우|베개|자충매트|매트|\bquilt\b/i],
+      ['pack', /배낭|백팩|백\s*팩|backpack|더플백|더플\s*백/i],
+      ['kitchen', /버너|스토브|코펠|쿠커|그리들|주전자|프라이팬|시에라컵|\bstove\b|\bburner\b/i],
+      ['food', /라면|햇반|동결건조|행동식|밀키트|이소가스|부탄가스/i],
+      ['wear', /자켓|재킷|패딩|다운재킷|장갑|넥워머|바람막이|하드쉘|소프트쉘|\bjacket\b/i],
+      ['electronics', /헤드램프|헤드랜턴|랜턴|파워뱅크|보조배터리|무전기|손전등/i],
+      ['camp', /캠핑체어|체어|롤테이블|캠핑테이블|테이블|의자|\bchair\b/i],
+      ['shelter', /텐트|타프|쉘터|그라운드시트|풋프린트|폴대|\btent\b|\btarp\b/i]
+    ];
+    for (var i = 0; i < rules.length; i++) {
+      if (rules[i][1].test(s)) return rules[i][0];
+    }
+    return '';
+  }
+
+  function readGearMetaMap() {
+    return safeGetJSON('okbm_gear_meta', {}) || {};
+  }
+
+  function readCustomGearByName(name) {
+    var target = normalizeGearNameKey(name);
+    if (!target) return null;
+    var list = safeGetJSON('okbm_custom_gears', []) || [];
+    for (var i = 0; i < list.length; i++) {
+      var cg = list[i];
+      if (normalizeGearNameKey(cg && (cg.name || cg.item_name)) === target) return cg;
+    }
+    return null;
+  }
+
+  function readCatalogGearByName(name) {
+    var target = normalizeGearNameKey(name);
+    if (!target) return null;
+    var cats = window.CATEGORIES || [];
+    for (var c = 0; c < cats.length; c++) {
+      var db = (cats[c] && cats[c].db) || [];
+      for (var j = 0; j < db.length; j++) {
+        var g = db[j];
+        if (normalizeGearNameKey(g && (g.name || g.item_name)) === target) {
+          return {
+            gear: g,
+            categoryId: normalizePlanGearCategoryId((g && (g.category_id || g.categoryId)) || cats[c].id)
+          };
+        }
+      }
+    }
+    var cache = (window.__memoryStore && window.__memoryStore['okbm_master_gears_cache']) || {};
+    var keys = Object.keys(cache);
+    for (var k = 0; k < keys.length; k++) {
+      var list = cache[keys[k]] || [];
+      for (var n = 0; n < list.length; n++) {
+        var mg = list[n];
+        if (normalizeGearNameKey(mg && (mg.name || mg.item_name)) === target) {
+          return {
+            gear: mg,
+            categoryId: normalizePlanGearCategoryId((mg && (mg.category_id || mg.categoryId)) || keys[k])
+          };
+        }
+      }
+    }
+    var master = (window.__memoryStore && window.__memoryStore['okbm_master_gears']) || window.GEARS_MASTER || [];
+    if (Array.isArray(master)) {
+      for (var m = 0; m < master.length; m++) {
+        var row = master[m];
+        if (normalizeGearNameKey(row && (row.item_name || row.name)) === target) {
+          return {
+            gear: row,
+            categoryId: normalizePlanGearCategoryId(row && (row.category_id || row.category))
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  function resolvePlanGearCategoryId(name, gear) {
+    var cleanName = String((gear && (gear.name || gear.item_name)) || name || '').trim();
+    var meta = readGearMetaMap();
+    var metaRow = meta[cleanName] || null;
+    var locked = normalizePlanGearCategoryId(metaRow && metaRow.categoryLocked && metaRow.categoryId);
+    if (locked) return locked;
+
+    var catalog = readCatalogGearByName(cleanName);
+    if (catalog && catalog.categoryId) return catalog.categoryId;
+
+    var custom = readCustomGearByName(cleanName);
+    var stored = normalizePlanGearCategoryId(
+      (gear && (gear.category_id || gear.categoryId || gear.category)) ||
+      (custom && (custom.category_id || custom.categoryId || custom.category))
+    );
+    var hintText = cleanName + ' ' + String((gear && gear.brand) || (custom && custom.brand) || '') + ' ' + String((gear && (gear.specs || gear.specs_detail)) || '');
+    var inferred = inferPlanGearCategoryFromText(hintText);
+    if (stored) {
+      if (stored === 'shelter' && !nameLooksLikeShelter(cleanName)) {
+        if (inferred && inferred !== 'shelter') return inferred;
+        return 'other';
+      }
+      return stored;
+    }
+    var hinted = normalizePlanGearCategoryId(metaRow && metaRow.categoryId);
+    if (hinted) return hinted;
+    return inferred || 'other';
+  }
+
+  function materializeMyGear(name) {
+    var custom = readCustomGearByName(name);
+    var catalog = readCatalogGearByName(name);
+    var catGear = catalog && catalog.gear;
+    var weight = Number((custom && (custom.weight || custom.weight_g)) || 0);
+    if (!weight && catGear) weight = Number(catGear.weight || catGear.weight_g || 0);
+    var brand = (custom && custom.brand) || (catGear && catGear.brand) || '내 장비';
+    var displayName = (custom && (custom.name || custom.item_name)) || (catGear && (catGear.name || catGear.item_name)) || name;
+    return {
+      id: (custom && custom.id) || (catGear && (catGear.id || catGear.gear_id)) || ('fav_' + name),
+      name: displayName,
+      weight: weight,
+      brand: brand,
+      categoryId: resolvePlanGearCategoryId(displayName, custom || catGear || {})
+    };
+  }
+
  var DEFAULT_CATEGORIES = [
     {
       id: 'shelter',
@@ -793,7 +960,7 @@
   }
 
   function okbmBuildShelfPackSlotHtml(catId, gearName, weight, count) {
-    var safeCat = escapeHtml(catId || 'shelter');
+    var safeCat = escapeHtml(catId || 'other');
     var safeGear = escapeHtml(gearName || '');
     var w = Number(weight || 0);
     if (count > 0) {
@@ -911,7 +1078,7 @@
     document.querySelectorAll('.gear-shelf-item-row').forEach(function(row) {
       if (!okbmGearRowMatches(row, gearName)) return;
       found = true;
-      var catId = row.dataset.gearCat || row.getAttribute('data-gear-cat') || 'shelter';
+      var catId = row.dataset.gearCat || row.getAttribute('data-gear-cat') || resolvePlanGearCategoryId(gearName);
       var count = (gearMap[catId] || []).filter(function(it) { return it && it.name === gearName; }).length;
       var isAdded = count > 0;
       var pal = PLAN_CATEGORY_PALETTE[catId] || { color: '#94a3b8', border: 'rgba(255,255,255,0.12)' };
@@ -934,7 +1101,7 @@
     document.querySelectorAll('.gear-db-item').forEach(function(row) {
       if (!okbmGearRowMatches(row, gearName)) return;
       found = true;
-      var catId = row.dataset.gearCat || window.currentOpeningCategoryId || 'shelter';
+      var catId = row.dataset.gearCat || window.currentOpeningCategoryId || resolvePlanGearCategoryId(gearName);
       var count = (gearMap[catId] || []).filter(function(it) { return it && it.name === gearName; }).length;
       var isAdded = count > 0;
       row.style.background = isAdded ? 'rgba(255,255,255,0.055)' : (isFav ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.015)');
@@ -1066,7 +1233,8 @@
         });
       }
       var allSource = customGears.map(function(cg) {
-        return Object.assign({}, cg, { category_id: cg.category_id || cg.categoryId || 'shelter', isCustom: true });
+        var resolvedCat = resolvePlanGearCategoryId(cg && (cg.name || cg.item_name), cg);
+        return Object.assign({}, cg, { category_id: resolvedCat, categoryId: resolvedCat, isCustom: true });
       });
 
       Object.keys(masterMap).forEach(function(k) {
@@ -1080,7 +1248,7 @@
       if (curTab === 'all' || curTab === 'fav') {
         pool = allSource;
       } else {
-        pool = allSource.filter(function(g) { return (g.category_id || 'shelter') === curTab; });
+        pool = allSource.filter(function(g) { return (g.category_id || 'other') === curTab; });
       }
 
       var filtered = pool.filter(function(g) {
@@ -1095,8 +1263,8 @@
         var bFav = (window.favoriteGearSet && window.favoriteGearSet.has(b.name)) ? 1 : 0;
         if (aFav !== bFav) return bFav - aFav;
 
-        var aCat = a.category_id || 'shelter';
-        var bCat = b.category_id || 'shelter';
+        var aCat = a.category_id || 'other';
+        var bCat = b.category_id || 'other';
         var aCount = (gearMap[aCat] || []).filter(function(it) { return it.name === a.name; }).length;
         var bCount = (gearMap[bCat] || []).filter(function(it) { return it.name === b.name; }).length;
         if (aCount !== bCount) return bCount - aCount;
@@ -1125,7 +1293,7 @@
         `;
 
         function renderRowHtml(g) {
-          var targetCatId = g.category_id || 'shelter';
+          var targetCatId = g.category_id || 'other';
           var currentCatItems = gearMap[targetCatId] || [];
           var count = currentCatItems.filter(function(it) { return it.name === g.name; }).length;
           var isAdded = count > 0;
@@ -1372,7 +1540,10 @@
     found = masterList.find(function(g) {
       return g && (g.name || g.item_name || '').trim().toLowerCase() === targetName;
     });
-    if (found) return Object.assign({}, found, { category_id: found.category_id || preferredCatId || 'shelter' });
+    if (found) {
+      var foundName = found.name || found.item_name || gearName;
+      return Object.assign({}, found, { category_id: resolvePlanGearCategoryId(foundName, found) });
+    }
 
     return {
       name: gearName,
@@ -1380,7 +1551,7 @@
       weight: 0,
       specs: '상세 제원 정보가 등록되어 있지 않습니다.',
       evidence: '카탈로그 제원',
-      category_id: preferredCatId || 'shelter'
+      category_id: resolvePlanGearCategoryId(gearName, { category_id: preferredCatId })
     };
   };
 
@@ -1411,7 +1582,7 @@
 
     window.__currentDetailGear = gear;
 
-    var resolvedCatId = gear.category_id || catId || 'shelter';
+    var resolvedCatId = resolvePlanGearCategoryId(gear.name || gearName, gear) || catId || 'other';
     var cat = (window.CATEGORIES || []).find(function(c) {
       return c.id === resolvedCatId;
     }) || { title: '장비', id: resolvedCatId };
@@ -1497,7 +1668,7 @@
       favBtn.style.borderColor = isFav ? 'rgba(253,224,71,0.4)' : 'rgba(255,255,255,0.14)';
     }
 
-    var targetCatId = gear.category_id || window.currentOpeningCategoryId || 'shelter';
+    var targetCatId = resolvePlanGearCategoryId(gear.name, gear) || window.currentOpeningCategoryId || 'other';
     var currentCatItems = (window.selectedGearMap && window.selectedGearMap[targetCatId]) || [];
     var count = currentCatItems.filter(function(it) { return it.name === gear.name; }).length;
 
@@ -1524,7 +1695,7 @@
   window.toggleDetailModalPack = function() {
     var gear = window.__currentDetailGear;
     if (!gear) return;
-    var targetCatId = gear.category_id || window.currentOpeningCategoryId || 'shelter';
+    var targetCatId = resolvePlanGearCategoryId(gear.name, gear) || window.currentOpeningCategoryId || 'other';
     window.currentOpeningCategoryId = targetCatId;
     var currentCatItems = (window.selectedGearMap && window.selectedGearMap[targetCatId]) || [];
     var packed = currentCatItems.some(function(it) { return it.name === gear.name; });
@@ -1989,21 +2160,14 @@ window.openQuickGearRegisterModal = function(opts) {
           <button type="button" onclick="document.getElementById('quickGearDetailModal').remove();" style="background:none; border:none; color:#64748b; font-size:1.1rem; cursor:pointer; padding:2px 6px;">✕</button>
         </div>
         <div style="display:flex; flex-direction:column; gap:8px;">
-          <input type="text" id="regGearName" placeholder="장비명 (예: MSR 엘릭서 2)" value="${escapeHtml(initName)}" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#ffffff; font-size:0.82rem; padding:0 12px; outline:none; box-sizing:border-box;" />
+          <input type="text" id="regGearName" placeholder="장비명 (예: MSR 엘릭서 2)" value="${escapeHtml(initName)}" oninput="window.previewQuickGearCategory(this.value)" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#ffffff; font-size:0.82rem; padding:0 12px; outline:none; box-sizing:border-box;" />
           <div style="position:relative; width:100%;">
-            <select id="regGearCat" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#f1f5f9; font-size:0.80rem; font-weight:700; padding:0 30px 0 12px; outline:none; -webkit-appearance:none; appearance:none; box-sizing:border-box;">
-              <option value="shelter" style="background:#07090e; color:#ffffff;">텐트·타프</option>
-              <option value="sleep" style="background:#07090e; color:#ffffff;">침낭·매트</option>
-              <option value="pack" style="background:#07090e; color:#ffffff;">배낭</option>
-              <option value="food" style="background:#07090e; color:#ffffff;">음식</option>
-              <option value="kitchen" style="background:#07090e; color:#ffffff;">취사</option>
-              <option value="wear" style="background:#07090e; color:#ffffff;">의류</option>
-              <option value="electronics" style="background:#07090e; color:#ffffff;">기기·소품</option>
-              <option value="camp" style="background:#07090e; color:#ffffff;">테이블·체어</option>
-              <option value="other" style="background:#07090e; color:#ffffff;">기타·소품</option>
+            <select id="regGearCat" onchange="window.previewQuickGearCategory(document.getElementById('regGearName') ? document.getElementById('regGearName').value : '')" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#f1f5f9; font-size:0.80rem; font-weight:700; padding:0 30px 0 12px; outline:none; -webkit-appearance:none; appearance:none; box-sizing:border-box;">
+              ${planGearCategoryOptionsHtml('', true)}
             </select>
             <div style="position:absolute; right:12px; top:50%; transform:translateY(-50%); pointer-events:none; color:#64748b; font-size:0.65rem;">▼</div>
           </div>
+          <div id="regGearCatHint" style="font-size:0.62rem; color:#94a3b8; min-height:14px; margin-top:-2px;"></div>
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; box-sizing:border-box;">
             <input type="number" id="regGearWeight" placeholder="무게(g)" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#ffffff; font-size:0.82rem; padding:0 12px; outline:none; font-family:'JetBrains Mono', monospace; box-sizing:border-box;" />
             <input type="text" id="regGearBrand" placeholder="브랜드(선택)" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#ffffff; font-size:0.82rem; padding:0 12px; outline:none; box-sizing:border-box;" />
@@ -2027,7 +2191,25 @@ window.openQuickGearRegisterModal = function(opts) {
       </div>
     `;
     document.body.appendChild(modal);
+    if (typeof window.previewQuickGearCategory === 'function') window.previewQuickGearCategory(initName);
     triggerHaptic(10);
+  };
+
+  window.previewQuickGearCategory = function(name) {
+    var catEl = document.getElementById('regGearCat');
+    var hint = document.getElementById('regGearCatHint');
+    if (!hint) return;
+    if (catEl && catEl.value) {
+      hint.textContent = '직접 선택한 분류로 저장됩니다.';
+      return;
+    }
+    var trimmed = String(name || '').trim();
+    if (!trimmed) {
+      hint.textContent = '이름을 입력하면 분류가 정해집니다. 직접 고를 수도 있습니다.';
+      return;
+    }
+    var inferred = inferPlanGearCategoryFromText(trimmed);
+    hint.textContent = '자동 분류: ' + planGearCategoryLabel(inferred || 'other');
   };
 
   window.submitQuickGearRegister = function() {
@@ -2042,7 +2224,8 @@ window.openQuickGearRegisterModal = function(opts) {
     if (!nameEl || !catEl || !weightEl) return;
 
     var name = nameEl.value.trim();
-    var catId = catEl.value || 'shelter';
+    var pickedCat = catEl.value ? normalizePlanGearCategoryId(catEl.value) : '';
+    var catId = pickedCat || inferPlanGearCategoryFromText(name) || 'other';
     var weight = parseInt(weightEl.value, 10);
     var brand = brandEl ? brandEl.value.trim() : '';
     var rawDate = pDateEl && pDateEl.value ? pDateEl.value.trim() : '';
@@ -2109,6 +2292,8 @@ window.openQuickGearRegisterModal = function(opts) {
     if (!gearMetaObj[name]) gearMetaObj[name] = { purchaseDate: '', price: 0, status: 'ok', memo: '' };
     if (pDate) gearMetaObj[name].purchaseDate = pDate;
     if (price > 0) gearMetaObj[name].price = price;
+    gearMetaObj[name].categoryId = catId;
+    gearMetaObj[name].categoryLocked = !!pickedCat;
 
     if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
       window.RomanticVault.write('okbm_gear_meta', gearMetaObj, false);
@@ -4180,21 +4365,9 @@ window.saveCurrentPackingRecord = function() {
 
     // 5. 내 장비관리 뷰 연산 및 렌더링 엔진
     var gearMetaObj = safeGetJSON('okbm_gear_meta', {});
-    var customGears = safeGetJSON('okbm_custom_gears', []);
-    var allGearsPool = [];
-    (window.CATEGORIES || []).forEach(function(c) {
-      (c.db || []).forEach(function(g) { allGearsPool.push(Object.assign({ categoryId: c.id }, g)); });
-    });
-    customGears.forEach(function(cg) {
-      if (!allGearsPool.some(function(g) { return g.name === cg.name; })) {
-        allGearsPool.push(Object.assign({ categoryId: cg.category_id || 'shelter' }, cg));
-      }
-    });
-
     var favList = Array.from(window.favoriteGearSet || []);
     var myFavGears = favList.map(function(name) {
-      var found = allGearsPool.find(function(g) { return g.name === name; });
-      return found || { id: 'fav_' + name, name: name, weight: 0, brand: '내 장비', categoryId: 'shelter' };
+      return materializeMyGear(name);
     });
 
     myFavGears.sort(function(a, b) {
@@ -4370,6 +4543,18 @@ window.saveCurrentPackingRecord = function() {
       }
     }
 
+    if (window.activePlanSubMode === 'gears' && !window.__myGearCatalogAttempted && typeof window.ensureAllGearCategoriesLoaded === 'function') {
+      var gearCatsReady = PLAN_GEAR_CAT_IDS.every(function(id) {
+        return window.__okbmGearCatLoaded && window.__okbmGearCatLoaded[id];
+      });
+      if (!gearCatsReady) {
+        window.__myGearCatalogAttempted = true;
+        window.ensureAllGearCategoriesLoaded(false).then(function() {
+          if (window.activePlanSubMode === 'gears') window.renderPlanStage();
+        }).catch(function() {});
+      }
+    }
+
     if (typeof window.bindPlanCalendarSwipe === 'function') {
       window.bindPlanCalendarSwipe();
     }
@@ -4415,6 +4600,12 @@ window.saveCurrentPackingRecord = function() {
             </div>
           </div>
           <div>
+            <span style="font-size:0.62rem; color:#94a3b8; font-weight:700; margin-bottom:3px; display:block;">분류</span>
+            <select id="editSheetCategory" data-initial="${escapeHtml(resolvePlanGearCategoryId(gearName))}" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#f1f5f9; font-size:0.78rem; font-weight:700; padding:0 10px; outline:none; -webkit-appearance:none; appearance:none; box-sizing:border-box;">
+              ${planGearCategoryOptionsHtml(resolvePlanGearCategoryId(gearName), false)}
+            </select>
+          </div>
+          <div>
             <span style="font-size:0.62rem; color:#94a3b8; font-weight:700; margin-bottom:3px; display:block;">장비 상태</span>
             <select id="editSheetStatus" style="width:100%; height:38px; background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#f1f5f9; font-size:0.78rem; font-weight:700; padding:0 10px; outline:none; -webkit-appearance:none; appearance:none; box-sizing:border-box;">
               <option value="ok" ${meta.status === 'ok' ? 'selected' : ''} style="background:#07090e; color:#ffffff;">정상</option>
@@ -4448,6 +4639,7 @@ window.saveCurrentPackingRecord = function() {
     var priceEl = document.getElementById('editSheetPrice');
     var statusEl = document.getElementById('editSheetStatus');
     var memoEl = document.getElementById('editSheetMemo');
+    var catEl = document.getElementById('editSheetCategory');
     if (!gearName || !pDateEl || !priceEl || !statusEl || !memoEl) return;
 
     var rawDate = pDateEl.value.trim();
@@ -4465,7 +4657,39 @@ window.saveCurrentPackingRecord = function() {
     var memo = memoEl.value.trim();
 
     var gearMetaObj = safeGetJSON('okbm_gear_meta', {});
-    gearMetaObj[gearName] = { purchaseDate: pDate, price: rawPrice, status: status, memo: memo };
+    var prevMeta = gearMetaObj[gearName] || {};
+    gearMetaObj[gearName] = {
+      purchaseDate: pDate,
+      price: rawPrice,
+      status: status,
+      memo: memo,
+      categoryId: prevMeta.categoryId || '',
+      categoryLocked: !!prevMeta.categoryLocked
+    };
+    if (catEl) {
+      var nextCat = normalizePlanGearCategoryId(catEl.value);
+      var prevCat = catEl.getAttribute('data-initial') || '';
+      if (nextCat && nextCat !== prevCat) {
+        gearMetaObj[gearName].categoryId = nextCat;
+        gearMetaObj[gearName].categoryLocked = true;
+        var customGears = safeGetJSON('okbm_custom_gears', []) || [];
+        var customChanged = false;
+        customGears.forEach(function(cg) {
+          if (cg && (cg.name === gearName || cg.item_name === gearName)) {
+            cg.category_id = nextCat;
+            cg.categoryId = nextCat;
+            customChanged = true;
+          }
+        });
+        if (customChanged) {
+          if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
+            window.RomanticVault.write('okbm_custom_gears', customGears, false);
+          } else {
+            localStorage.setItem('okbm_custom_gears', JSON.stringify(customGears));
+          }
+        }
+      }
+    }
 
     if (window.RomanticVault && typeof window.RomanticVault.write === 'function') {
       window.RomanticVault.write('okbm_gear_meta', gearMetaObj, true);
