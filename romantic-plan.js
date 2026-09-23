@@ -2270,34 +2270,63 @@ window.saveCurrentPackingRecord = function() {
     };
 
     var planUnreg = savedSpotObj && savedSpotObj.unregistered === true;
-    var spotIsRegistered = typeof window.isSpotRegisteredInMasterDB === 'function' &&
-      window.isSpotRegisteredInMasterDB(spotTitle);
-    if (planUnreg || !spotIsRegistered || spotTitle === '자유 일정' || spotTitle === '나의 힐링 스팟') {
+    var checkerReady = typeof window.isSpotRegisteredInMasterDB === 'function';
+    var spotIsRegistered = checkerReady && window.isSpotRegisteredInMasterDB(spotTitle);
+    var isPlaceholderSpot = !spotTitle || spotTitle === '자유 일정' || spotTitle === '나의 힐링 스팟';
+    var isUnregisteredSpot = isPlaceholderSpot || (checkerReady ? !spotIsRegistered : !!planUnreg);
+    if (isUnregisteredSpot) {
       newRecord.unregisteredSpot = true;
       newRecord.isPublished = false;
     }
 
-    window.currentShareRecord = newRecord;
-    window.currentShareItems = packedItems;
+    function commitPlanPackingToTemplate() {
+      window.currentShareRecord = newRecord;
+      window.currentShareItems = packedItems;
 
-    // 카드 스튜디오 모달 즉시 호출 (romanticPlanModal은 배경에 안전하게 유지하여 닫기 시 화면 먹통 방지)
-    if (typeof window.openPackShareModal === 'function') {
-      window.openPackShareModal(newRecord, packedItems, false);
-    } else if (typeof openPackShareModal === 'function') {
-      openPackShareModal(newRecord, packedItems, false);
+      // 카드 스튜디오 모달 즉시 호출 (romanticPlanModal은 배경에 안전하게 유지하여 닫기 시 화면 먹통 방지)
+      if (typeof window.openPackShareModal === 'function') {
+        window.openPackShareModal(newRecord, packedItems, false);
+      } else if (typeof openPackShareModal === 'function') {
+        openPackShareModal(newRecord, packedItems, false);
+      }
+
+      // 패킹 본문은 백그라운드 저장. Promise를 currentShareRecord에 넣으면 레디샷 사진이 유실된다.
+      if (typeof window.savePackingHistoryRecord === 'function') {
+        window.savePackingHistoryRecord(newRecord).then(function(saved) {
+          if (!saved || saved.__serverSaveFailed) return;
+          var live = window.currentShareRecord;
+          if (!live || typeof live.then === 'function') return;
+          if (saved.id) live.id = saved.id;
+          if (!live.readyShotPhoto && saved.readyShotPhoto) live.readyShotPhoto = saved.readyShotPhoto;
+        }).catch(function(err) {
+          console.warn('[romantic-plan.js:savePackingHistoryRecord]', err);
+        });
+      }
     }
 
-    // 패킹 본문은 백그라운드 저장. Promise를 currentShareRecord에 넣으면 레디샷 사진이 유실된다.
-    if (typeof window.savePackingHistoryRecord === 'function') {
-      window.savePackingHistoryRecord(newRecord).then(function(saved) {
-        if (!saved || saved.__serverSaveFailed) return;
-        var live = window.currentShareRecord;
-        if (!live || typeof live.then === 'function') return;
-        if (saved.id) live.id = saved.id;
-        if (!live.readyShotPhoto && saved.readyShotPhoto) live.readyShotPhoto = saved.readyShotPhoto;
-      }).catch(function(err) {
-        console.warn('[romantic-plan.js:savePackingHistoryRecord]', err);
-      });
+    if (!newRecord.unregisteredSpot) {
+      commitPlanPackingToTemplate();
+      return;
+    }
+
+    if (document.getElementById('planUnregisteredPackingConfirm')) return;
+
+    var ov = document.createElement('div');
+    ov.id = 'planUnregisteredPackingConfirm';
+    ov.style.cssText = 'position:fixed; inset:0; z-index:2147483647; background:rgba(0,0,0,0.72); display:flex; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
+    ov.innerHTML =
+      '<div style="width:100%; max-width:300px; background:#0c1017; border-radius:14px; border:1px solid rgba(255,255,255,0.12); padding:18px 16px 14px; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; box-shadow:0 16px 40px rgba(0,0,0,0.55);" onclick="event.stopPropagation();">' +
+        '<div style="font-size:0.88rem; font-weight:800; color:#f8fafc; text-align:center; line-height:1.55;">등록장소가 아닐경우 나만보기로만 저장이됩니다.</div>' +
+        '<button type="button" id="planUnregisteredPackingConfirmBtn" style="width:100%; height:40px; border-radius:10px; border:1px solid rgba(255,255,255,0.18); background:#e2e8f0; color:#000; font-size:0.8rem; font-weight:900; cursor:pointer;">확인</button>' +
+      '</div>';
+    document.body.appendChild(ov);
+    var confirmBtn = document.getElementById('planUnregisteredPackingConfirmBtn');
+    if (confirmBtn) {
+      confirmBtn.onclick = function() {
+        if (ov.parentNode) ov.parentNode.removeChild(ov);
+        triggerHaptic(10);
+        commitPlanPackingToTemplate();
+      };
     }
   };
 

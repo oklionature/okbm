@@ -3822,6 +3822,18 @@ function safeGetJSON(key, defaultVal) {
   }
 }
 
+var READY_SHOT_FILE_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.gif,.avif,.heic,.heif';
+
+function isReadyShotSupportedFile(file) {
+  var type = String(file && file.type || '').toLowerCase();
+  var name = String(file && file.name || '').toLowerCase();
+  var typeOk = type.indexOf('jpeg') !== -1 || type.indexOf('jpg') !== -1 || type.indexOf('png') !== -1 || type.indexOf('webp') !== -1;
+  var nameOk = /\.jpe?g$|\.png$|\.webp$/.test(name);
+  if (type.indexOf('heic') !== -1 || type.indexOf('heif') !== -1 || type.indexOf('gif') !== -1 || type.indexOf('avif') !== -1) return false;
+  if (!typeOk && /\.heic$|\.heif$|\.gif$|\.avif$/.test(name)) return false;
+  return typeOk || nameOk;
+}
+
 function ensurePackShareModalDOM() {
   var modal = document.getElementById('packShareModalOverlay');
   if (modal && document.getElementById('packShareCaptureArea') && document.getElementById('readyShotFamilyToggle') && document.getElementById('readyShotSpotVaultRow') && document.getElementById('shareCardPhotoInput') && document.getElementById('shareCardPhotoInputLabel') && document.getElementById('btnShareCardShareTop') && document.getElementById('btnSaveCardToVault') && document.getElementById('readyShotBottomSpacer')) {
@@ -3829,6 +3841,7 @@ function ensurePackShareModalDOM() {
     modal.style.setProperty('bottom', 'calc(56px + env(safe-area-inset-bottom, 0px))', 'important');
     var reuseInput = document.getElementById('shareCardPhotoInput');
     if (reuseInput) {
+      reuseInput.setAttribute('accept', READY_SHOT_FILE_ACCEPT);
       reuseInput.style.cssText = 'position:fixed; left:-100vw; top:0; width:1px; height:1px; opacity:0; overflow:hidden; pointer-events:none;';
     }
     return modal;
@@ -3881,7 +3894,7 @@ function ensurePackShareModalDOM() {
         </div>
 
         <div id="templateSelectorBar" class="template-selector-bar"></div>
-        <input type="file" id="shareCardPhotoInput" accept="image/*,.heic,.heif" style="position:fixed; left:-100vw; top:0; width:1px; height:1px; opacity:0; overflow:hidden; pointer-events:none;" onchange="window.handleShareCardPhotoUpload(event)" />
+        <input type="file" id="shareCardPhotoInput" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.gif,.avif,.heic,.heif" style="position:fixed; left:-100vw; top:0; width:1px; height:1px; opacity:0; overflow:hidden; pointer-events:none;" onchange="window.handleShareCardPhotoUpload(event)" />
         <label id="shareCardPhotoInputLabel" for="shareCardPhotoInput" style="position:absolute; width:1px; height:1px; overflow:hidden;">사진 선택</label>
       </div>
 
@@ -3902,6 +3915,12 @@ window.handleShareCardPhotoUpload = async function(e) {
 
   var file = files[0];
   e.target.value = '';
+
+  if (!isReadyShotSupportedFile(file)) {
+    var toastFn = window.showToast || (typeof showToast === 'function' ? showToast : null);
+    if (toastFn) toastFn('지원하는 파일형식이 아닙니다.', 'warn', 2200);
+    return;
+  }
 
   var jobId = (window.__readyShotJobId = (window.__readyShotJobId || 0) + 1);
   if (typeof window.__readyShotUploadResolve === 'function') {

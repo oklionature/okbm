@@ -728,8 +728,8 @@
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js" defer></script>
   <script>
-    window.__okbmTemplatesSrc = 'templates.js?v=2.9.21';
-    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.24';
+    window.__okbmTemplatesSrc = 'templates.js?v=2.9.23';
+    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.25';
     (function okbmBootLoader() {
       var loaded = window.__okbmScriptPromises || {};
       window.__okbmScriptPromises = loaded;
@@ -6040,6 +6040,113 @@ var adBannersHtml = `
         });
       }
 
+      function readExifOrientation(u, start) {
+        if (!u || start + 14 >= u.length) return 0;
+        if (u[start] !== 0x45 || u[start + 1] !== 0x78 || u[start + 2] !== 0x69 || u[start + 3] !== 0x66) return 0;
+        var tiff = start + 6;
+        if (tiff + 8 >= u.length) return 0;
+        var le = u[tiff] === 0x49 && u[tiff + 1] === 0x49;
+        function u16(o) {
+          if (o + 1 >= u.length) return 0;
+          return le ? (u[o] | (u[o + 1] << 8)) : ((u[o] << 8) | u[o + 1]);
+        }
+        function u32(o) {
+          if (o + 3 >= u.length) return 0;
+          return le
+            ? (u[o] | (u[o + 1] << 8) | (u[o + 2] << 16) | (u[o + 3] << 24))
+            : ((u[o] << 24) | (u[o + 1] << 16) | (u[o + 2] << 8) | u[o + 3]);
+        }
+        var ifd = tiff + u32(tiff + 4);
+        if (ifd + 2 >= u.length) return 0;
+        var count = u16(ifd);
+        if (count > 80) count = 80;
+        for (var n = 0; n < count; n++) {
+          var ent = ifd + 2 + n * 12;
+          if (ent + 10 >= u.length) break;
+          if (u16(ent) === 0x0112) return u16(ent + 8);
+        }
+        return 0;
+      }
+
+      function readEncodedSize(u) {
+        if (!u || u.length < 24) return null;
+        if (u[0] === 0x89 && u[1] === 0x50 && u[2] === 0x4E && u[3] === 0x47) {
+          var pw = ((u[16] << 24) | (u[17] << 16) | (u[18] << 8) | u[19]) >>> 0;
+          var ph = ((u[20] << 24) | (u[21] << 16) | (u[22] << 8) | u[23]) >>> 0;
+          if (!pw || !ph) return null;
+          return { w: pw, h: ph, orientation: 1 };
+        }
+        if (u[0] !== 0xFF || u[1] !== 0xD8) return null;
+        var orientation = 1;
+        var w = 0;
+        var h = 0;
+        var i = 2;
+        while (i + 3 < u.length) {
+          if (u[i] !== 0xFF) { i++; continue; }
+          var marker = u[i + 1];
+          if (marker === 0xFF) { i++; continue; }
+          if (marker === 0xD8 || marker === 0x01) { i += 2; continue; }
+          if (marker === 0xD9 || marker === 0xDA) break;
+          var len = (u[i + 2] << 8) | u[i + 3];
+          if (len < 2 || i + 2 + len > u.length) break;
+          if (marker === 0xE1) {
+            var ori = readExifOrientation(u, i + 4);
+            if (ori) orientation = ori;
+          }
+          if ((marker === 0xC0 || marker === 0xC1 || marker === 0xC2) && len >= 8) {
+            h = (u[i + 5] << 8) | u[i + 6];
+            w = (u[i + 7] << 8) | u[i + 8];
+          }
+          i += 2 + len;
+        }
+        if (!w || !h) return null;
+        return { w: w, h: h, orientation: orientation };
+      }
+
+      function readFileImageSize(f) {
+        var blob = f;
+        try {
+          if (f && f.slice) blob = f.slice(0, 524288);
+        } catch (eSlice) {}
+        if (!blob || !blob.arrayBuffer) return Promise.resolve(null);
+        return blob.arrayBuffer().then(function(buf) {
+          try { return readEncodedSize(new Uint8Array(buf)); } catch (eRead) { return null; }
+        }).catch(function() { return null; });
+      }
+
+      async function bitmapDownscaled(f) {
+        if (typeof createImageBitmap !== 'function' || !f) return null;
+        var size = null;
+        try { size = await readFileImageSize(f); } catch (eSize) {}
+        if (size && size.w > 0 && size.h > 0) {
+          var dw = size.w;
+          var dh = size.h;
+          if (size.orientation >= 5 && size.orientation <= 8) {
+            dw = size.h;
+            dh = size.w;
+          }
+          if (Math.max(dw, dh) > maxDim) {
+            var opts = { imageOrientation: 'from-image', resizeQuality: 'high' };
+            if (dw >= dh) opts.resizeWidth = maxDim;
+            else opts.resizeHeight = maxDim;
+            try { return await createImageBitmap(f, opts); } catch (eOpt) {}
+          }
+        } else {
+          try {
+            return await createImageBitmap(f, {
+              imageOrientation: 'from-image',
+              resizeWidth: maxDim,
+              resizeQuality: 'high'
+            });
+          } catch (eGuess) {}
+        }
+        try {
+          return await createImageBitmap(f, { imageOrientation: 'from-image' });
+        } catch (eOrient) {
+          try { return await createImageBitmap(f); } catch (eBare) { return null; }
+        }
+      }
+
       function isLikelyHeic(f) {
         var type = String((f && f.type) || '').toLowerCase();
         var name = String((f && f.name) || '').toLowerCase();
@@ -6068,13 +6175,9 @@ var adBannersHtml = `
       return (async function() {
         if (!file) return null;
 
-        // 1) 네이티브 디코드 (Safari HEIC 포함) — heic2any보다 훨씬 빠름
-        if (typeof createImageBitmap === 'function') {
-          try {
-            var bmpNative = await createImageBitmap(file);
-            return await fromBitmap(bmpNative);
-          } catch (eNative) {}
-        }
+        // 1) 긴 변만 1200으로 줄이며 디코드. 원본 전체를 먼저 풀지 않는다.
+        var bmpFast = await bitmapDownscaled(file);
+        if (bmpFast) return await fromBitmap(bmpFast);
 
         // 2) HEIC만 heic2any 폴백
         if (isLikelyHeic(file)) {
