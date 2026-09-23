@@ -1099,7 +1099,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between !important;
-      height: 116px !important;
+      height: 144px !important;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
       box-sizing: border-box;
       flex-shrink: 0 !important;
@@ -1107,6 +1107,9 @@
       transform: translateZ(0);
       -webkit-transform: translateZ(0);
       contain: layout size style;
+    }
+    #secretSpotHeroModal .insta-glass-memo {
+      height: 122px !important;
     }
     .insta-memo-title-line {
       display: flex;
@@ -1141,12 +1144,13 @@
       font-weight: 500 !important;
       color: #94a3b8 !important;
       line-height: 1.45 !important;
-      height: 2.9em !important;
-      min-height: 2.9em !important;
-      max-height: 2.9em !important;
+      height: 4.35em !important;
+      min-height: 4.35em !important;
+      max-height: 4.35em !important;
       font-style: normal !important;
       display: -webkit-box;
-      -webkit-line-clamp: 2;
+      -webkit-line-clamp: 3;
+      line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -2864,9 +2868,13 @@
       var feedOrSpotId = escapeHtml(String((matchedFeed && matchedFeed.id) || (matchedSpot && matchedSpot.id) || cleanMapSpotName));
       var heroFeedId = matchedFeed ? String(matchedFeed.id || '').trim() : '';
       var heroUserId = matchedFeed ? String(matchedFeed.userId || matchedFeed.user_id || '').trim() : '';
-      var heroSafetyHtml = (heroFeedId && typeof window.buildUgcSafetyButtonsHtml === 'function')
-        ? window.buildUgcSafetyButtonsHtml(heroFeedId, heroUserId, author, 'inline')
-        : '';
+      var heroSafetyHtml = '';
+      var isOwnThemeFeed = heroUserId && typeof window.isCurrentUserId === 'function' && window.isCurrentUserId(heroUserId);
+      if (heroFeedId && !isOwnThemeFeed && typeof window.openUgcSafetyMenu === 'function') {
+        heroSafetyHtml = '<button type="button" data-feed-id="' + escapeHtml(heroFeedId) + '" data-user-id="' + escapeHtml(heroUserId) + '" data-author="' + escapeHtml(author) + '" onclick="event.preventDefault(); event.stopPropagation(); window.openUgcSafetyMenu(this.dataset.feedId, this.dataset.userId, this.dataset.author, event);" title="더보기" aria-label="더보기" style="width:31px; height:31px; flex:0 0 31px; border-radius:8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.18); color:#cbd5e1; display:flex; align-items:center; justify-content:center; padding:0; cursor:pointer;">' +
+          '<svg viewBox="0 0 24 24" style="width:16px; height:16px; pointer-events:none;" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg>' +
+        '</button>';
+      }
 
       // 📷 사진 목록 추출
       var photosList = [];
@@ -2950,11 +2958,11 @@
 
             <!-- 하단 글래스 메모 (가변 자연스러운 높이 유지) -->
             <div class="insta-glass-memo">
-              <div class="insta-memo-quote" id="secretSpotQuoteText" style="font-size:0.75rem; line-height:1.45; color:#cbd5e1; height:auto; min-height:0; max-height:none; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+              <div class="insta-memo-quote" id="secretSpotQuoteText" style="font-size:0.75rem; line-height:1.45; color:#cbd5e1; display:-webkit-box; -webkit-line-clamp:3; line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">
                 “${escapeHtml(firstMemoText)}”
               </div>
 
-              <div class="insta-memo-actions-row" style="margin-top:2px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.12); display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+              <div class="insta-memo-actions-row" style="margin-top:2px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.12); display:flex; gap:6px; flex-wrap:nowrap; align-items:center;">
                 <button type="button" class="btn-insta-action btn-action-map" data-spot="${escapeHtml(cleanMapSpotName)}" onclick="window.closeSecretSpotHeroModal(); location.href='map.html?spot=' + encodeURIComponent(this.dataset.spot);" style="flex:1;">
                   <svg viewBox="0 0 24 24" style="width:14px; height:14px;" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                   <span>자세히보기</span>
