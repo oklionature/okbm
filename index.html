@@ -5982,6 +5982,40 @@ var adBannersHtml = `
       return typeOk || nameOk;
     };
 
+    // heic-to(libheif 최신, 내부 Worker 디코드)는 3MB라 HEIC를 만났을 때만 로드한다
+    var OKBM_HEIC_TO_SRC = 'https://cdn.jsdelivr.net/npm/heic-to@1.5.2/dist/iife/heic-to.js';
+    var __okbmHeicToPromise = null;
+    window.okbmLoadHeicTo = function() {
+      if (typeof window.HeicTo === 'function') return Promise.resolve(window.HeicTo);
+      if (__okbmHeicToPromise) return __okbmHeicToPromise;
+      __okbmHeicToPromise = new Promise(function(resolve) {
+        var settled = false;
+        var timer = null;
+        function finish(fn) {
+          if (settled) return;
+          settled = true;
+          if (timer) clearTimeout(timer);
+          if (typeof fn !== 'function') {
+            __okbmHeicToPromise = null;
+            fn = null;
+          }
+          resolve(fn);
+        }
+        timer = setTimeout(function() { finish(null); }, 20000);
+        try {
+          var s = document.createElement('script');
+          s.src = OKBM_HEIC_TO_SRC;
+          s.async = true;
+          s.onload = function() { finish(window.HeicTo); };
+          s.onerror = function() { finish(null); };
+          document.head.appendChild(s);
+        } catch (eLoad) {
+          finish(null);
+        }
+      });
+      return __okbmHeicToPromise;
+    };
+
     window.processSinglePhotoSmart = function(file, opts) {
       opts = opts || {};
       var maxDim = Number(opts.maxDim) || 1200;
@@ -6175,6 +6209,67 @@ var adBannersHtml = `
         return type.indexOf('heic') !== -1 || type.indexOf('heif') !== -1 || /\.heic$|\.heif$/.test(name);
       }
 
+      // iPhone 사진을 옮기며 확장자만 .jpg로 바뀐 HEIC는 type/name으로 못 잡으므로 ftyp 브랜드로 판별
+      function sniffHeicContent(f) {
+        var head = f;
+        try {
+          if (f && f.slice) head = f.slice(0, 64);
+        } catch (eSlice) {}
+        if (!head || !head.arrayBuffer) return Promise.resolve(false);
+        return head.arrayBuffer().then(function(buf) {
+          var u = new Uint8Array(buf);
+          if (u.length < 16) return false;
+          if (u[4] !== 0x66 || u[5] !== 0x74 || u[6] !== 0x79 || u[7] !== 0x70) return false;
+          var boxLen = ((u[0] << 24) | (u[1] << 16) | (u[2] << 8) | u[3]) >>> 0;
+          var end = Math.min(u.length, boxLen >= 16 ? boxLen : u.length);
+          var brands = [];
+          for (var o = 8; o + 4 <= end; o += 4) {
+            if (o === 12) continue;
+            brands.push(String.fromCharCode(u[o], u[o + 1], u[o + 2], u[o + 3]));
+          }
+          if (brands.indexOf('avif') !== -1 || brands.indexOf('avis') !== -1) return false;
+          return brands.some(function(b) {
+            return b === 'heic' || b === 'heix' || b === 'hevc' || b === 'hevx' ||
+              b === 'heim' || b === 'heis' || b === 'mif1' || b === 'msf1';
+          });
+        }).catch(function() { return false; });
+      }
+
+      async function viaHeicTo(f) {
+        var heicTo = (typeof window.okbmLoadHeicTo === 'function') ? await window.okbmLoadHeicTo() : null;
+        if (typeof heicTo !== 'function') return null;
+        var bmp = await new Promise(function(resolve) {
+          var timedOut = false;
+          var timer = setTimeout(function() {
+            timedOut = true;
+            resolve(null);
+          }, 30000);
+          Promise.resolve().then(function() {
+            return heicTo({ blob: f, type: 'bitmap' });
+          }).then(function(out) {
+            if (timedOut) {
+              if (out && typeof out.close === 'function') {
+                try { out.close(); } catch (eLate) {}
+              }
+              return;
+            }
+            clearTimeout(timer);
+            resolve(out || null);
+          }).catch(function(err) {
+            console.warn('[processSinglePhotoSmart:heic-to]', err);
+            if (timedOut) return;
+            clearTimeout(timer);
+            resolve(null);
+          });
+        });
+        if (!bmp) return null;
+        try {
+          return await fromBitmap(bmp);
+        } catch (eEnc) {
+          return null;
+        }
+      }
+
       async function viaHeic2Any(f) {
         var heicFn = (typeof heic2any === 'function') ? heic2any : (window.heic2any || null);
         if (typeof heicFn !== 'function') return null;
@@ -6201,9 +6296,10 @@ var adBannersHtml = `
         var bmpFast = await bitmapDownscaled(file);
         if (bmpFast) return await fromBitmap(bmpFast);
 
-        // 2) HEIC만 heic2any 폴백
-        if (isLikelyHeic(file)) {
-          var heicOut = await viaHeic2Any(file);
+        // 2) HEIC(확장자만 바뀐 파일 포함)는 heic-to → heic2any 순으로 바로 변환
+        var heicLike = isLikelyHeic(file) || await sniffHeicContent(file);
+        if (heicLike) {
+          var heicOut = (await viaHeicTo(file)) || (await viaHeic2Any(file));
           if (heicOut) return heicOut;
         }
 
@@ -6212,7 +6308,7 @@ var adBannersHtml = `
         if (imgOut) return imgOut;
 
         // 4) Image 실패 시 HEIC 재판정 폴백
-        if (!isLikelyHeic(file)) {
+        if (!heicLike) {
           var heicRetry = await viaHeic2Any(file);
           if (heicRetry) return heicRetry;
         }

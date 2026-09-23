@@ -1827,6 +1827,37 @@ function decodeReadyShotImage(url) {
   });
 }
 
+// 원본 즉시 미리보기는 디코드 메모리 부담이 커지는 초대형 파일에는 쓰지 않는다
+var READY_SHOT_INSTANT_PREVIEW_MAX_BYTES = 15 * 1024 * 1024;
+
+function revokeReadyShotPreviewBlobs() {
+  if (window.__readyShotPreviewBlobUrl) {
+    try { URL.revokeObjectURL(window.__readyShotPreviewBlobUrl); } catch (eRevPreview) {}
+    window.__readyShotPreviewBlobUrl = '';
+  }
+  if (window.__readyShotInstantBlobUrl) {
+    try { URL.revokeObjectURL(window.__readyShotInstantBlobUrl); } catch (eRevInstant) {}
+    window.__readyShotInstantBlobUrl = '';
+  }
+}
+
+// 재렌더 없이 src만 바꿔 드래그/위치 상태를 유지한다
+function swapReadyShotPreviewUrl(fromUrl, toUrl) {
+  window.__readyShotPreviewBlobUrl = toUrl;
+  if (window.currentSharePhoto === fromUrl) window.currentSharePhoto = toUrl;
+  if (window.currentSharePhotoRaw === fromUrl) window.currentSharePhotoRaw = toUrl;
+  if (__readyShotFrameSnapshot && __readyShotFrameSnapshot.photo === fromUrl) __readyShotFrameSnapshot.photo = toUrl;
+  ['packShareCaptureArea', 'readyShotFrameCard'].forEach(function(id) {
+    var host = document.getElementById(id);
+    if (!host) return;
+    if (host.getAttribute('data-frame-photo') === fromUrl) host.setAttribute('data-frame-photo', toUrl);
+    var imgs = host.querySelectorAll('img');
+    for (var i = 0; i < imgs.length; i++) {
+      if (imgs[i].getAttribute('src') === fromUrl) imgs[i].setAttribute('src', toUrl);
+    }
+  });
+}
+
 function commitReadyShotHttpsUrl(url) {
   var photoUrl = String(url || '').trim();
   if (photoUrl.indexOf('https://') !== 0) return;
@@ -4000,7 +4031,32 @@ window.handleShareCardPhotoUpload = async function(e) {
     }
   }
 
+  var instantUrl = '';
+
   try {
+    // 원본을 브라우저가 바로 그릴 수 있으면 압축 전에 먼저 띄우고, 압축본은 끝나는 대로 교체한다
+    if (file && file.size > 0 && file.size <= READY_SHOT_INSTANT_PREVIEW_MAX_BYTES) {
+      try { instantUrl = URL.createObjectURL(file); } catch (eInstantUrl) { instantUrl = ''; }
+      if (instantUrl) {
+        var instantOk = await decodeReadyShotImage(instantUrl);
+        if (jobId !== window.__readyShotJobId) {
+          try { URL.revokeObjectURL(instantUrl); } catch (eRevInstantJob) {}
+          return;
+        }
+        if (instantOk) {
+          revokeReadyShotPreviewBlobs();
+          window.__readyShotInstantBlobUrl = instantUrl;
+          window.__readyShotPreviewBlobUrl = instantUrl;
+          applyReadyShotLocalPreview(instantUrl);
+          if (typeof window.hidePhotoLoadingModal === 'function') window.hidePhotoLoadingModal();
+          if (typeof showToast === 'function') showToast('사진이 적용되었습니다.', 'success', 1600);
+        } else {
+          try { URL.revokeObjectURL(instantUrl); } catch (eRevInstantFail) {}
+          instantUrl = '';
+        }
+      }
+    }
+
     var blob = null;
     if (typeof window.processSinglePhotoSmart === 'function') {
       blob = await window.processSinglePhotoSmart(file, { maxDim: 1200, quality: 0.82 });
@@ -4029,28 +4085,48 @@ window.handleShareCardPhotoUpload = async function(e) {
       } catch (eBmp) {}
     }
     if (jobId !== window.__readyShotJobId) return;
+    var instantActive = !!instantUrl && window.__readyShotPreviewBlobUrl === instantUrl;
     if (!blob) {
+      if (instantActive) {
+        if (window.currentSharePhoto === instantUrl) window.currentSharePhoto = '';
+        if (window.currentSharePhotoRaw === instantUrl) window.currentSharePhotoRaw = '';
+        revokeReadyShotPreviewBlobs();
+        if (typeof updateShareCardLive === 'function') updateShareCardLive();
+      }
       if (typeof window.hidePhotoLoadingModal === 'function') window.hidePhotoLoadingModal();
       if (typeof showToast === 'function') showToast('사진 변환에 실패했습니다.', 'warn');
       finishReadyShotGate('');
       return;
     }
 
-    if (window.__readyShotPreviewBlobUrl) {
-      try { URL.revokeObjectURL(window.__readyShotPreviewBlobUrl); } catch (eRev0) {}
-      window.__readyShotPreviewBlobUrl = '';
-    }
-    var previewBlobUrl = URL.createObjectURL(blob);
-    window.__readyShotPreviewBlobUrl = previewBlobUrl;
-    await decodeReadyShotImage(previewBlobUrl);
-    if (jobId !== window.__readyShotJobId) {
-      try { URL.revokeObjectURL(previewBlobUrl); } catch (eRevJob) {}
-      return;
-    }
+    if (instantUrl) {
+      if (instantActive) {
+        var compactUrl = URL.createObjectURL(blob);
+        await decodeReadyShotImage(compactUrl);
+        if (jobId !== window.__readyShotJobId) {
+          try { URL.revokeObjectURL(compactUrl); } catch (eRevCompactJob) {}
+          return;
+        }
+        if (window.__readyShotPreviewBlobUrl === instantUrl) {
+          swapReadyShotPreviewUrl(instantUrl, compactUrl);
+        } else {
+          try { URL.revokeObjectURL(compactUrl); } catch (eRevCompact) {}
+        }
+      }
+    } else {
+      revokeReadyShotPreviewBlobs();
+      var previewBlobUrl = URL.createObjectURL(blob);
+      window.__readyShotPreviewBlobUrl = previewBlobUrl;
+      await decodeReadyShotImage(previewBlobUrl);
+      if (jobId !== window.__readyShotJobId) {
+        try { URL.revokeObjectURL(previewBlobUrl); } catch (eRevJob) {}
+        return;
+      }
 
-    applyReadyShotLocalPreview(previewBlobUrl);
-    if (typeof window.hidePhotoLoadingModal === 'function') window.hidePhotoLoadingModal();
-    if (typeof showToast === 'function') showToast('사진이 적용되었습니다.', 'success', 1600);
+      applyReadyShotLocalPreview(previewBlobUrl);
+      if (typeof window.hidePhotoLoadingModal === 'function') window.hidePhotoLoadingModal();
+      if (typeof showToast === 'function') showToast('사진이 적용되었습니다.', 'success', 1600);
+    }
 
     var uploadFn = (typeof window.uploadCompressedPhotoToR2 === 'function')
       ? window.uploadCompressedPhotoToR2
@@ -4079,10 +4155,7 @@ window.closePackShareModal = function() {
   teardownCardSwipeGesture();
   teardownStudioPhotoDrag();
   closeReadyShotShareSheet();
-  if (window.__readyShotPreviewBlobUrl) {
-    try { URL.revokeObjectURL(window.__readyShotPreviewBlobUrl); } catch (eRevClose) {}
-    window.__readyShotPreviewBlobUrl = '';
-  }
+  revokeReadyShotPreviewBlobs();
   if (typeof window.__readyShotUploadResolve === 'function') {
     try { window.__readyShotUploadResolve(resolveReadyShotPhotoUrl() || ''); } catch (eGateClose) {}
     window.__readyShotUploadResolve = null;
