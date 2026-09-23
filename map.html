@@ -131,8 +131,8 @@
     <script>
     window.SUPABASE_URL = 'https://qnumfecythtqtrxeasys.supabase.co';
     window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFudW1mZWN5dGh0cXRyeGVhc3lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkyOTEwOTgsImV4cCI6MjEwNDg2NzA5OH0.x0fzy78Bm_xm8ls3AM1dpykfmkMAPtFK7YCjwFeCfuE';
-    window.__okbmTemplatesSrc = 'templates.js?v=2.9.20';
-      window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.23';
+    window.__okbmTemplatesSrc = 'templates.js?v=2.9.21';
+      window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.24';
       (function okbmBootLoader() {
         var loaded = window.__okbmScriptPromises || {};
         window.__okbmScriptPromises = loaded;
@@ -203,8 +203,8 @@
         bindLazy('openGearPresetModal', window.okbmEnsurePlan);
       })();
     </script>
-    <script src="romantic-sync.js?v=2.8.97" defer></script>
-    <script src="romantic-history.js?v=2.7.65" defer></script>
+    <script src="romantic-sync.js?v=2.8.98" defer></script>
+    <script src="romantic-history.js?v=2.7.66" defer></script>
 
     <style>
       @font-face {
@@ -1853,7 +1853,7 @@
       };
 
       let authState = {
-        isLoggedIn: localStorage.getItem('user_auth_token') ? true : false,
+        isLoggedIn: false,
         userProfile: JSON.parse(localStorage.getItem('user_profile')) || null
       };
 
@@ -1861,9 +1861,7 @@
         if (typeof window.isUserLoggedIn === 'function' && window.isUserLoggedIn !== isUserLoggedIn) {
           return window.isUserLoggedIn();
         }
-        var token = localStorage.getItem('user_auth_token');
-        var profile = safeGetJSON('user_profile', null);
-        return !!(token && token.trim().length > 0 && profile && profile.id);
+        return false;
       }
 
       function copyTextToClipboard(text, alertMsg = '주소가 복사되었습니다') {
@@ -2128,6 +2126,7 @@
         prefetchAndBindSpotMedia(spot);
         content.innerHTML = generateDetailContentHtml(spot, true);
         sheet.classList.add('open');
+        if (typeof window.okbmResetSheetMetrics === 'function') window.okbmResetSheetMetrics();
         bindSpotMediaAfterRender(spot);
         
         loadLiveWeatherForSpot(spot.id, spot.lat, spot.lng);
@@ -2151,6 +2150,7 @@
         var sheet = document.getElementById('mobileBottomSheet');
         if (sheet && sheet.classList.contains('open')) {
           sheet.classList.remove('open');
+          if (typeof window.okbmResetSheetMetrics === 'function') window.okbmResetSheetMetrics();
           currentActiveSpot = null;
           window.__ACTIVE_SPOT_OBJECT__ = null;
           window.__MANUAL_ACTIVE_ID__ = null;
@@ -2176,6 +2176,7 @@
         prefetchAndBindSpotMedia(spot);
         drawer.innerHTML = generateDetailContentHtml(spot, false);
         drawer.classList.add('open');
+        if (typeof window.okbmResetSheetMetrics === 'function') window.okbmResetSheetMetrics();
         bindSpotMediaAfterRender(spot);
         if (closeTab) closeTab.classList.add('visible');
         
@@ -2200,6 +2201,7 @@
         var drawer = document.getElementById('pcSlidingDrawer');
         var closeTab = document.getElementById('floatingDrawerCloseTab');
         if (drawer) drawer.classList.remove('open');
+        if (typeof window.okbmResetSheetMetrics === 'function') window.okbmResetSheetMetrics();
         if (closeTab) closeTab.classList.remove('visible');
         currentActiveSpot = null;
         window.__ACTIVE_SPOT_OBJECT__ = null;
@@ -2719,11 +2721,9 @@
       }
 
     function checkAdminAuthorization() {
+        // 서버에서 확인한 메모리 플래그만. localStorage 프로필의 role/isAdmin은 무시.
         if (typeof window.okbmIsCurrentUserAdmin === 'function' && window.okbmIsCurrentUserAdmin()) return true;
-        if (window.__okbmIsAdmin === true) return true;
-        var profile = safeGetJSON('user_profile', null);
-        if (!profile || !profile.id) return false;
-        return Boolean(profile.role === 'admin' || profile.isAdmin === true || profile.is_admin === true);
+        return window.__okbmIsAdmin === true;
       }
 
       function applyAdminMarkerDragState() {
@@ -2796,10 +2796,13 @@
       window.bootMapAdminTools = async function() {
         if (window.__okbmMapAdminBooting) return;
         window.__okbmMapAdminBooting = true;
-        if (checkAdminAuthorization()) applyAdminPermissions(true);
-        var isAdmin = checkAdminAuthorization();
+        // 서버 확인 전에는 관리 도구를 켜지 않음.
+        applyAdminPermissions(false);
+        var isAdmin = false;
         if (typeof window.okbmRefreshAdminFlagFromServer === 'function') {
-          try { isAdmin = await window.okbmRefreshAdminFlagFromServer(); } catch (e) { isAdmin = checkAdminAuthorization(); }
+          try { isAdmin = await window.okbmRefreshAdminFlagFromServer(); } catch (e) { isAdmin = false; }
+        } else {
+          isAdmin = checkAdminAuthorization();
         }
         applyAdminPermissions(!!isAdmin);
         applyAdminMarkerDragState();
@@ -3088,6 +3091,12 @@ function updateSmartResetButtons() {
         }
       }
 
+      function okbmResetSheetMetrics() {
+        window.__okbmSheetMetrics = {};
+      }
+      window.okbmResetSheetMetrics = okbmResetSheetMetrics;
+      window.addEventListener('resize', okbmResetSheetMetrics);
+
       function getInfoWindowAdjustedCenter(lat, lng) {
         var nLat = Number(lat);
         var nLng = Number(lng);
@@ -3101,19 +3110,27 @@ function updateSmartResetButtons() {
         var drawer = document.getElementById('pcSlidingDrawer');
         var sheetOpen = !!(sheet && sheet.classList.contains('open') && window.getComputedStyle(sheet).display !== 'none');
         var drawerOpen = !!(drawer && drawer.classList.contains('open') && window.getComputedStyle(drawer).display !== 'none');
+        // 시트/서랍을 열고 닫을 때와 창 크기가 바뀔 때 okbmResetSheetMetrics()로 비운다.
+        var metrics = window.__okbmSheetMetrics || (window.__okbmSheetMetrics = {});
 
         if (sheetOpen) {
-          var sheetH = sheet.offsetHeight || Math.round(mapEl.offsetHeight * 0.5);
-          var dock = document.getElementById('romanticMasterBottomDock');
-          var dockH = 0;
-          if (dock && window.getComputedStyle(dock).display !== 'none') {
-            dockH = dock.offsetHeight || 56;
-          } else if (window.innerWidth <= 768) {
-            dockH = 56;
+          if (metrics.sheetH === undefined) {
+            metrics.sheetH = sheet.offsetHeight || Math.round(mapEl.offsetHeight * 0.5);
+            var dock = document.getElementById('romanticMasterBottomDock');
+            var dockH = 0;
+            if (dock && window.getComputedStyle(dock).display !== 'none') {
+              dockH = dock.offsetHeight || 56;
+            } else if (window.innerWidth <= 768) {
+              dockH = 56;
+            }
+            metrics.dockH = dockH;
           }
-          oy = Math.round((sheetH + dockH) / 2);
+          oy = Math.round((metrics.sheetH + metrics.dockH) / 2);
         } else if (drawerOpen) {
-          ox = -Math.round((drawer.offsetWidth || 380) * 0.5);
+          if (metrics.drawerW === undefined) {
+            metrics.drawerW = drawer.offsetWidth || 380;
+          }
+          ox = -Math.round(metrics.drawerW * 0.5);
         }
 
         if (!ox && !oy) return target;
@@ -3183,7 +3200,7 @@ function updateSmartResetButtons() {
           } else {
             updateLODLabels();
           }
-        }, 120);
+        }, 200);
       }
 
       function updateLODLabels() {
@@ -5941,7 +5958,24 @@ var liveSearchTimer = null;
             }
           });
           }
+          // 기존 카드 DOM 유지. 찜/클리어/관리 상태가 바뀐 경우에만 버튼을 갱신.
+          var btnStateSig = (isAdminMode ? 'A' : 'U') + '|' + Array.from(userBookmarks).sort().join(',') + '|' + Array.from(userVisited).sort().join(',');
+          if (spotListEl.__okbmBtnStateSig !== btnStateSig) {
+          spotListEl.__okbmBtnStateSig = btnStateSig;
+          spotListEl.querySelectorAll('.spot-item').forEach(function(card) {
+            var id = String((card.id || '').replace(/^spotItem_/, '')).trim();
+            if (!id) return;
+            var favBtn = card.querySelector('.btn-card-quick[onclick*="toggleUserBookmark"]');
+            var doneBtn = card.querySelector('.btn-card-quick[onclick*="toggleUserVisited"]');
+            if (favBtn) favBtn.classList.toggle('active-fav', userBookmarks.has(id));
+            if (doneBtn) doneBtn.classList.toggle('active-done', userVisited.has(id));
+            card.querySelectorAll('.btn-edit, .btn-del').forEach(function(btn) {
+              btn.style.display = isAdminMode ? 'inline-block' : 'none';
+            });
+          });
+          }
         } else {
+          spotListEl.__okbmBtnStateSig = '';
           spotListEl.innerHTML = '';
           const fragment = document.createDocumentFragment();
 
@@ -6118,9 +6152,7 @@ var liveSearchTimer = null;
       window.openUserProposalModal = function(defaultName = "", lat = 0, lng = 0, defaultSub = "", existingProp = null) {
         triggerHaptic(12);
 
-        var token = localStorage.getItem('user_auth_token');
-        var profile = safeGetJSON('user_profile', null);
-        var isLogged = !!(token && token.trim().length > 0 && profile && profile.id);
+        var isLogged = isUserLoggedIn();
 
         if (!isLogged) {
           if (typeof window.openLoginModal === 'function') {

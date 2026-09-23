@@ -6,6 +6,31 @@ const SKIP =
 
 type Source = { title: string; url: string; text: string };
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  "https://oklionature.github.io",
+  "https://okbm.kr",
+  "https://www.okbm.kr",
+];
+
+function isAllowedOrigin(origin: string): boolean {
+  const normalized = String(origin || "").trim().replace(/\/+$/, "");
+  if (!normalized) return false;
+  if (DEFAULT_ALLOWED_ORIGINS.indexOf(normalized) !== -1) return true;
+  const extra = String(Deno.env.get("OKBM_ALLOWED_ORIGINS") || "")
+    .split(",")
+    .map((v) => v.trim().replace(/\/+$/, ""))
+    .filter(Boolean);
+  if (extra.indexOf(normalized) !== -1) return true;
+  if (normalized === "capacitor://localhost" || normalized === "ionic://localhost") return true;
+  try {
+    const url = new URL(normalized);
+    return (url.protocol === "http:" || url.protocol === "https:") &&
+      (url.hostname === "localhost" || url.hostname === "127.0.0.1");
+  } catch {
+    return false;
+  }
+}
+
 function corsHeaders(req: Request): Record<string, string> {
   const origin = String(req.headers.get("Origin") || "").trim();
   const headers: Record<string, string> = {
@@ -14,7 +39,9 @@ function corsHeaders(req: Request): Record<string, string> {
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   };
-  if (origin) headers["Access-Control-Allow-Origin"] = origin;
+  if (origin && isAllowedOrigin(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin;
+  }
   return headers;
 }
 
@@ -23,6 +50,55 @@ function json(req: Request, body: unknown, status = 200): Response {
     status,
     headers: { ...corsHeaders(req), "Content-Type": "application/json; charset=utf-8" },
   });
+}
+
+function bearerToken(req: Request): string {
+  const raw = String(req.headers.get("Authorization") || "").trim();
+  const m = raw.match(/^Bearer\s+(.+)$/i);
+  return m ? String(m[1] || "").trim() : "";
+}
+
+const rateBuckets = new Map<string, { window: number; count: number }>();
+
+let rateBucketsMinute = 0;
+
+function rateLimitOk(actor: string, maxPerMinute: number): boolean {
+  const minute = Math.floor(Date.now() / 60000);
+  if (minute !== rateBucketsMinute) {
+    rateBuckets.clear();
+    rateBucketsMinute = minute;
+  }
+  const key = actor + ":" + minute;
+  const cur = rateBuckets.get(key);
+  if (!cur || cur.window !== minute) {
+    rateBuckets.set(key, { window: minute, count: 1 });
+    return true;
+  }
+  if (cur.count >= maxPerMinute) return false;
+  cur.count += 1;
+  return true;
+}
+
+async function requireAuthUser(req: Request): Promise<{ id: string } | null> {
+  const jwt = bearerToken(req);
+  if (!jwt) return null;
+  const anon = String(Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SB_PUBLISHABLE_KEY") || "").trim();
+  const url = String(Deno.env.get("SUPABASE_URL") || "").trim();
+  if (!anon || !url) return null;
+  try {
+    const res = await fetch(url + "/auth/v1/user", {
+      headers: {
+        Authorization: "Bearer " + jwt,
+        apikey: anon,
+      },
+    });
+    if (!res.ok) return null;
+    const user = await res.json();
+    const id = String(user && user.id || "").trim();
+    return id ? { id } : null;
+  } catch {
+    return null;
+  }
 }
 
 function stripHtml(raw: string): string {
@@ -509,6 +585,17 @@ Deno.serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders(req) });
   }
   if (req.method !== "POST") return json(req, { error: "method_not_allowed" }, 405);
+
+  const origin = String(req.headers.get("Origin") || "").trim();
+  if (origin && !isAllowedOrigin(origin)) {
+    return json(req, { error: "origin_not_allowed" }, 403);
+  }
+
+  const user = await requireAuthUser(req);
+  if (!user) return json(req, { error: "login_required" }, 401);
+  if (!rateLimitOk(user.id, 12)) {
+    return json(req, { error: "rate_limited" }, 429);
+  }
 
   let body: { query?: string } = {};
   try {

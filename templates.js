@@ -3,7 +3,16 @@
 // =========================================================================
 (function(window) {
 var escapeHtml = function(t) {
-  return (typeof window.escapeHtml === 'function') ? window.escapeHtml(t) : String(t == null ? '' : t);
+  if (t === null || t === undefined) return '';
+  if (typeof window.escapeHtml === 'function' && window.escapeHtml !== escapeHtml) {
+    return window.escapeHtml(t);
+  }
+  return String(t)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 };
 var okbmSafeImageUrl = function(url) {
   var raw = String(url == null ? '' : url).trim();

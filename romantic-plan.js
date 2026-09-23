@@ -5617,7 +5617,11 @@ window.saveCurrentPackingRecord = function() {
       if (Array.isArray(window.__allLoadedFeeds)) {
         window.__allLoadedFeeds = window.__allLoadedFeeds.filter(purgeFeedFn);
         try {
-          localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(window.__allLoadedFeeds.slice(0, 15)));
+          if (typeof window.okbmWriteCachedCommunityFeeds === 'function') {
+            window.okbmWriteCachedCommunityFeeds(window.__allLoadedFeeds);
+          } else {
+            localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(window.__allLoadedFeeds.slice(0, 15)));
+          }
         } catch (e) {}
       }
       if (Array.isArray(window.heroTopRecords)) {

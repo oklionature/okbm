@@ -827,7 +827,7 @@
       state.authorPhoto = String((profile && (profile.photo || profile.photo_url)) || '').trim();
       if (session && session.access_token) {
         try {
-          var me = await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + encodeURIComponent(state.userId) + '&select=id,nickname,photo_url,hero_cover_url,is_admin', {
+          var me = await fetch(SUPABASE_URL + '/rest/v1/users?id=eq.' + encodeURIComponent(state.userId) + '&select=id,nickname,photo_url,hero_cover_url', {
             headers: {
               apikey: SUPABASE_ANON_KEY,
               Authorization: 'Bearer ' + session.access_token
@@ -837,7 +837,6 @@
           if (Array.isArray(rows) && rows[0]) {
             state.author = String(rows[0].nickname || state.author).trim();
             state.authorPhoto = String(rows[0].hero_cover_url || rows[0].photo_url || state.authorPhoto).trim();
-            state.isAdmin = rows[0].is_admin === true;
           }
         } catch (e) {}
       }

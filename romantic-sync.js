@@ -330,6 +330,27 @@ window.purgeIfStale = purgeIfStale;
   } catch (e) {}
 })();
 
+(function autoPurgeLegacyAuthCopies() {
+  try {
+    localStorage.removeItem('user_auth_token');
+    localStorage.removeItem('okbm_user_email');
+    ['user_profile'].concat(
+      localStorage.getItem('okbm_user_id') ? ['user_profile_' + localStorage.getItem('okbm_user_id')] : []
+    ).forEach(function(key) {
+      var raw = localStorage.getItem(key);
+      if (!raw) return;
+      var p = JSON.parse(raw);
+      if (!p || typeof p !== 'object') return;
+      if (!('email' in p) && !('isAdmin' in p) && !('is_admin' in p) && !('role' in p)) return;
+      delete p.email;
+      delete p.isAdmin;
+      delete p.is_admin;
+      delete p.role;
+      localStorage.setItem(key, JSON.stringify(p));
+    });
+  } catch (e) {}
+})();
+
 (function autoPurgeLegacyClientCache() {
   // 20260921: 풀덤프 spots 캐시 제거 → 경량 핀 목록만 재적재
   var CLEAN_EPOCH = '20260921_SPOTS_LIGHTWEIGHT';
@@ -978,11 +999,41 @@ function okbmUgcRestHeaders(extra) {
 }
 window.okbmAuthHeaders = okbmUgcRestHeaders;
 
+function okbmSessionExpired(session) {
+  var exp = Number(session && session.expires_at);
+  if (!exp) return false;
+  return (exp * 1000) <= (Date.now() + 30000);
+}
+
+function okbmKickSessionRefresh() {
+  if (window.__okbmSessionRefreshing) return;
+  var client = window.supabaseClient;
+  if (!client || !client.auth || typeof client.auth.getSession !== 'function') return;
+  window.__okbmSessionRefreshing = true;
+  client.auth.getSession().then(function(res) {
+    var s = res && res.data ? res.data.session : null;
+    if (s && s.access_token) okbmWriteSessionCache(s);
+  }).catch(function() {}).finally(function() {
+    window.__okbmSessionRefreshing = false;
+  });
+}
+
+// 공개 조회용: 만료된 세션 토큰은 보내지 않는다(만료 JWT는 anon 대상 행까지 401).
+function okbmFreshSessionToken() {
+  var session = (window.__okbmSessionCache && window.__okbmSessionCache.session) || okbmReadPersistedSupabaseSession();
+  if (!session || !session.access_token) return '';
+  if (okbmSessionExpired(session)) {
+    okbmKickSessionRefresh();
+    return '';
+  }
+  return session.access_token;
+}
+
 function okbmPublicRestHeaders(extra) {
   var anon = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY || '';
   var tok = anon;
   if (typeof isUserLoggedIn === 'function' && isUserLoggedIn()) {
-    var sessionTok = (typeof window.okbmAccessToken === 'function') ? window.okbmAccessToken() : '';
+    var sessionTok = okbmFreshSessionToken();
     if (sessionTok) tok = sessionTok;
   }
   var headers = {
@@ -1004,16 +1055,8 @@ window.okbmPublicFetch = function(url, options) {
   options = options || {};
   var headers = okbmPublicRestHeaders(options.headers);
   var opts = Object.assign({}, options, { headers: headers });
-  return fetch(url, opts).then(function(res) {
-    if (res.status !== 401 && res.status !== 403) return res;
-    var anon = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY || '';
-    if (!anon) return res;
-    var retryHeaders = Object.assign({}, headers, {
-      'apikey': anon,
-      'Authorization': 'Bearer ' + anon
-    });
-    return fetch(url, Object.assign({}, opts, { headers: retryHeaders }));
-  });
+  // 401/403은 실패로 그대로 반환. anon key로 재시도하지 않음 (비공개 행 우회 방지).
+  return fetch(url, opts);
 };
 
 function okbmWriteRestHeaders(extra) {
@@ -1616,15 +1659,7 @@ window.okbmIsCurrentUserAdmin = function() {
 
 function okbmPersistAdminFlag(isAdmin) {
   window.__okbmIsAdmin = !!isAdmin;
-  try {
-    var profile = (typeof safeGetJSON === 'function') ? safeGetJSON('user_profile', null) : null;
-    if (profile && profile.id) {
-      profile.isAdmin = window.__okbmIsAdmin;
-      profile.is_admin = window.__okbmIsAdmin;
-      if (window.__okbmIsAdmin) profile.role = 'admin';
-      localStorage.setItem('user_profile', JSON.stringify(profile));
-    }
-  } catch (e) {}
+  // 폰 프로필에 isAdmin/role을 쓰지 않음. 권한은 메모리 플래그 + 서버 갱신만.
   try {
     window.dispatchEvent(new CustomEvent('okbm_admin_flag', { detail: { isAdmin: window.__okbmIsAdmin } }));
   } catch (e2) {}
@@ -2159,6 +2194,52 @@ window.executeCleanSlateMasterReset = async function() {
   var userId = okbmRequireCurrentUserId();
   if (!userId) return;
 
+  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
+  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
+  if (!targetUrl || !targetKey) {
+    if (typeof showToast === 'function') {
+      showToast('서버에 연결할 수 없어 초기화하지 못했습니다.', 'error', 2600);
+    }
+    return;
+  }
+
+  var deletedOk = false;
+  try {
+    var writeHeaders = (typeof window.okbmWriteHeaders === 'function')
+      ? window.okbmWriteHeaders({ Prefer: 'return=representation' })
+      : null;
+    if (!writeHeaders) {
+      if (typeof showToast === 'function') {
+        showToast('다시 로그인한 뒤 초기화해 주세요.', 'error', 2600);
+      }
+      return;
+    }
+    var resetRes = await fetch(targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(userId), {
+      method: 'DELETE',
+      headers: writeHeaders
+    });
+    if (!resetRes.ok) {
+      console.error('[executeCleanSlateMasterReset] 서버 일괄 삭제 실패 status=' + resetRes.status);
+      if (typeof showToast === 'function') {
+        showToast('서버 삭제에 실패했습니다. 기록을 유지합니다.', 'error', 2800);
+      }
+      return;
+    }
+    var deletedRows = [];
+    try { deletedRows = await resetRes.json(); } catch (e) { deletedRows = []; }
+    // 0건이어도 사용자 피드가 원래 없었으면 성공으로 본다.
+    deletedOk = true;
+    void deletedRows;
+  } catch (resetErr) {
+    console.error('[executeCleanSlateMasterReset] 서버 일괄 삭제 네트워크 예외:', resetErr);
+    if (typeof showToast === 'function') {
+      showToast('네트워크 오류로 초기화하지 못했습니다.', 'error', 2600);
+    }
+    return;
+  }
+
+  if (!deletedOk) return;
+
   window.__memoryStore = window.__memoryStore || {};
   window.__memoryStore['okbm_packing_history'] = [];
   window.packingHistoryList = [];
@@ -2170,27 +2251,6 @@ window.executeCleanSlateMasterReset = async function() {
   localStorage.removeItem('okbm_cached_community_feeds');
   localStorage.removeItem('okbm_hero_cover_url');
   localStorage.removeItem('okbm_card_likes_count');
-
-  var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
-  var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
-  if (targetUrl && targetKey) {
-    try {
-      var resetRes = await fetch(targetUrl + '/rest/v1/feeds?user_id=eq.' + encodeURIComponent(userId), {
-        method: 'DELETE',
-        headers: {
-          'apikey': targetKey,
-          'Authorization': 'Bearer ' + ((typeof window.okbmAccessToken === 'function' && window.okbmAccessToken()) || targetKey),
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation'
-        }
-      });
-      if (!resetRes.ok) {
-        console.error('[executeCleanSlateMasterReset] 서버 일괄 삭제 실패 status=' + resetRes.status);
-      }
-    } catch (resetErr) {
-      console.error('[executeCleanSlateMasterReset] 서버 일괄 삭제 네트워크 예외:', resetErr);
-    }
-  }
 
   if (isUserLoggedIn()) {
     syncUserDataToCloud(true, true);
@@ -2261,9 +2321,20 @@ function isUserLoggedIn() {
     return true;
   }
 
-  var token = localStorage.getItem('user_auth_token');
+  // user_auth_token 평문 의존 제거. supabase 세션이 없으면 비로그인.
   var profile = safeGetJSON('user_profile', null);
-  if (!token || !token.trim() || !profile || !profile.id) {
+  if (!profile || !profile.id) {
+    if (typeof authState !== 'undefined') {
+      authState.isLoggedIn = false;
+      authState.userProfile = null;
+    }
+    return false;
+  }
+
+  var persisted = null;
+  try { persisted = okbmReadPersistedSupabaseSession(); } catch (e) {}
+  var hasSession = !!(persisted && persisted.access_token && persisted.user);
+  if (!hasSession) {
     if (typeof authState !== 'undefined') {
       authState.isLoggedIn = false;
       authState.userProfile = null;
@@ -2750,10 +2821,8 @@ window.RomanticVault = window.RomanticVault || {
     } finally {
       this.isHydrating = false;
       if (this._pendingCloudSync) {
+        // 서버 스냅샷을 받은 직후 폰 메모를 다시 올리면 서버가 되돌아간다. 대기분 폐기.
         this._pendingCloudSync = false;
-        if (this.lastHydrateStatus === 'ok' && typeof syncUserDataToCloud === 'function') {
-          syncUserDataToCloud();
-        }
       }
     }
   }
@@ -3096,6 +3165,18 @@ window.fetchSpotDetailById = async function(spotId) {
 };
 
 window.fetchMasterSpotsFromSupabase = async function(isForce) {
+  var TTL_MS = 5 * 60 * 1000;
+  var now = Date.now();
+  if (!isForce && window.__okbmSpotsMemoryCache && Array.isArray(window.__okbmSpotsMemoryCache) &&
+      window.__okbmSpotsFetchedAt && (now - window.__okbmSpotsFetchedAt) < TTL_MS) {
+    window.SPOTS_MASTER = window.__okbmSpotsMemoryCache;
+    return window.__okbmSpotsMemoryCache;
+  }
+  if (!isForce && window.__okbmSpotsInflight) {
+    try { return await window.__okbmSpotsInflight; } catch (e) {}
+  }
+
+  var run = (async function() {
   var cached = safeGetJSON('okbm_master_spots', null) || safeGetJSON('okbm_spots_cache', null);
   if (!(Array.isArray(cached) && cached.length > 0) && window.__okbmSpotsIdbReady) {
     try { cached = await window.__okbmSpotsIdbReady; } catch (e) { cached = cached || []; }
@@ -3105,6 +3186,8 @@ window.fetchMasterSpotsFromSupabase = async function(isForce) {
     window.__memoryStore = window.__memoryStore || {};
     window.__memoryStore['okbm_master_spots'] = lightCached;
     window.SPOTS_MASTER = lightCached;
+    window.__okbmSpotsMemoryCache = lightCached;
+    window.__okbmSpotsFetchedAt = Date.now();
     return lightCached;
   }
 
@@ -3139,6 +3222,8 @@ window.fetchMasterSpotsFromSupabase = async function(isForce) {
         });
         if (spots.length > 0) {
           window.persistLightweightSpotsCache(spots);
+          window.__okbmSpotsMemoryCache = spots;
+          window.__okbmSpotsFetchedAt = Date.now();
           if (typeof window.renderSpots === 'function') {
             window.renderSpots();
           }
@@ -3149,6 +3234,14 @@ window.fetchMasterSpotsFromSupabase = async function(isForce) {
   } catch (e) { console.warn('[romantic-sync.js:fetchMasterSpotsFromSupabase]', e); }
 
   return cached;
+  })();
+
+  window.__okbmSpotsInflight = run;
+  try {
+    return await run;
+  } finally {
+    if (window.__okbmSpotsInflight === run) window.__okbmSpotsInflight = null;
+  }
 };
 
 window.fetchMasterGearsFromSupabase = async function(isForce) {
@@ -3237,7 +3330,25 @@ window.fetchMasterGearsFromSupabase = async function(isForce) {
   return cachedGears;
 };
 
-window.fetchRankingsFromSupabase = async function() {
+window.fetchRankingsFromSupabase = async function(isForce) {
+  var TTL_MS = 5 * 60 * 1000;
+  if (!isForce && window.__cachedRankings && window.__okbmRankingsFetchedAt &&
+      (Date.now() - window.__okbmRankingsFetchedAt) < TTL_MS) {
+    return window.__cachedRankings;
+  }
+  if (!isForce && window.__okbmRankingsInflight) {
+    try { return await window.__okbmRankingsInflight; } catch (e) {}
+  }
+  var run = okbmFetchRankingsNow();
+  window.__okbmRankingsInflight = run;
+  try {
+    return await run;
+  } finally {
+    if (window.__okbmRankingsInflight === run) window.__okbmRankingsInflight = null;
+  }
+};
+
+async function okbmFetchRankingsNow() {
   var targetUrl = window.SUPABASE_URL || SUPABASE_URL;
   var targetKey = window.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
   if (!targetUrl || !targetKey) return null;
@@ -3265,6 +3376,7 @@ window.fetchRankingsFromSupabase = async function() {
 
     if (usersRes.ok) {
       result.topUsers = await usersRes.json();
+      window.__okbmRankingsFetchedAt = Date.now();
     }
 
     window.__cachedRankings = result;
@@ -3272,7 +3384,7 @@ window.fetchRankingsFromSupabase = async function() {
   } catch (e) { console.warn('[romantic-sync.js:fetchRankingsFromSupabase]', e); }
 
   return result;
-};
+}
 
 if (typeof window !== 'undefined') {
   setTimeout(function() {
@@ -3283,8 +3395,9 @@ if (typeof window !== 'undefined') {
 
   window.addEventListener('online', function() {
     updateHeaderAuthUI();
-    window.fetchMasterSpotsFromSupabase();
-    window.fetchRankingsFromSupabase();
+    window.fetchMasterSpotsFromSupabase(false);
+    window.fetchRankingsFromSupabase(false);
+    // 오늘 이미 기록됐으면 sessionStorage 가드로 요청하지 않는다(오프라인 부팅 때만 재시도).
     if (typeof trackDailyVisit === 'function') trackDailyVisit();
     if (localStorage.getItem('okbm_pending_cloud_sync') === 'true' && isUserLoggedIn()) {
       syncUserDataToCloud(true);
@@ -9429,16 +9542,33 @@ function okbmShouldSkipOAuthBootstrap(session) {
   if (planted && window.okbmHasSocialUserId(planted) && String((profile && profile.id) || '').trim() !== planted) {
     return false;
   }
-  if (token && localStorage.getItem('user_auth_token') === token) return true;
   if (!profile || !profile.id) return false;
   if (typeof isUserLoggedIn === 'function' && !isUserLoggedIn()) return false;
-  var sessionEmail = window.okbmNormalizeEmail(session.user.email || '');
-  var profileEmail = window.okbmNormalizeEmail(profile.email || localStorage.getItem('okbm_user_email') || '');
-  if (sessionEmail && profileEmail && sessionEmail === profileEmail) {
-    if (token) localStorage.setItem('user_auth_token', token);
-    return true;
-  }
+  var profileId = String((profile && profile.id) || '').trim();
+  if (planted && profileId && planted === profileId) return true;
+  // 구글/애플은 planted id가 없으므로 로그인 때 묶어 둔 auth uid로만 같은 계정을 판단한다.
+  var boundUid = String((profile && profile.authUid) || '').trim();
+  if (boundUid && boundUid === String(session.user.id || '').trim()) return true;
+  void token;
   return false;
+}
+
+function okbmAuthUidFromToken(accessToken) {
+  var cached = window.__okbmSessionCache && window.__okbmSessionCache.session;
+  var tok = String(accessToken || '').trim();
+  if (cached && cached.user && cached.user.id && (!tok || cached.access_token === tok)) {
+    return String(cached.user.id);
+  }
+  var parts = tok.split('.');
+  if (parts.length !== 3) return '';
+  try {
+    var b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    var claims = JSON.parse(atob(b64));
+    return String((claims && claims.sub) || '');
+  } catch (e) {
+    return '';
+  }
 }
 
 async function okbmConsumeSupabaseOAuthSession(session) {
@@ -9578,7 +9708,6 @@ async function handleSocialLoginSuccess(provider, providerId, email, nickname, p
   var profile = {
     id: resolvedId,
     nickname: finalNick,
-    email: (existingUser && existingUser.email) || normalizedEmail || (existingProfile && existingProfile.email) || '',
     photoUrl: photo,
     heroCoverUrl: photo,
     instagram: cloudSns.instagram || localStorage.getItem('okbm_user_instagram') || '',
@@ -9590,15 +9719,17 @@ async function handleSocialLoginSuccess(provider, providerId, email, nickname, p
     lastNicknameChangedAt: existingProfile && existingProfile.lastNicknameChangedAt ? existingProfile.lastNicknameChangedAt : 0,
     loggedInAt: Date.now()
   };
+  var boundAuthUid = okbmAuthUidFromToken(authToken);
+  if (boundAuthUid) profile.authUid = boundAuthUid;
 
-  var token = String(authToken || '').trim() || (provider + '_session_' + Date.now());
-  localStorage.setItem('user_auth_token', token);
+  // access token·이메일은 localStorage에 두지 않음. 세션은 supabaseClient만 사용.
+  try { localStorage.removeItem('user_auth_token'); } catch (eTok) {}
+  try { localStorage.removeItem('okbm_user_email'); } catch (eMail) {}
   localStorage.setItem('user_profile', JSON.stringify(profile));
   localStorage.setItem('user_profile_' + resolvedId, JSON.stringify(profile));
   localStorage.setItem('okbm_user_id', resolvedId);
   localStorage.setItem('okbm_user_nick', finalNick);
   localStorage.setItem('okbm_last_login_provider', provider);
-  if (profile.email) localStorage.setItem('okbm_user_email', profile.email);
   if (photo) localStorage.setItem('okbm_hero_cover_url', photo);
 
   if (typeof authState !== 'undefined') {
@@ -11773,7 +11904,8 @@ window.saveUserToSupabase = async function(profileData) {
   if (safeCreatedAt) {
     payload.created_at = safeCreatedAt;
   }
-  var userEmail = window.okbmNormalizeEmail((prof && prof.email) || localStorage.getItem('okbm_user_email') || '');
+  var sessionForEmail = (window.__okbmSessionCache && window.__okbmSessionCache.session) || okbmReadPersistedSupabaseSession();
+  var userEmail = window.okbmNormalizeEmail((sessionForEmail && sessionForEmail.user && sessionForEmail.user.email) || '');
   if (userEmail) payload.email = userEmail;
 
   try {

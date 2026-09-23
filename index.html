@@ -575,8 +575,8 @@
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js" defer></script>
   <script>
-    window.__okbmTemplatesSrc = 'templates.js?v=2.9.20';
-    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.23';
+    window.__okbmTemplatesSrc = 'templates.js?v=2.9.21';
+    window.__okbmPlanSrc = 'romantic-plan.js?v=2.8.24';
     (function okbmBootLoader() {
       var loaded = window.__okbmScriptPromises || {};
       window.__okbmScriptPromises = loaded;
@@ -681,8 +681,8 @@
       else setTimeout(prefetch, 1800);
     })();
   </script>
-    <script src="romantic-sync.js?v=2.8.97" defer></script>
-    <script src="romantic-history.js?v=2.7.65" defer></script>
+    <script src="romantic-sync.js?v=2.8.98" defer></script>
+    <script src="romantic-history.js?v=2.7.66" defer></script>
 
   <style>
   @font-face {
@@ -4736,10 +4736,7 @@ var adBannersHtml = `
     };
 
     window.handleTripChatJoinClick = function(chatUrl) {
-      var token = localStorage.getItem('user_auth_token');
-      var profile = safeGetJSON('user_profile', null);
-
-      if (!token || !profile || !profile.id) {
+      if (!(typeof isUserLoggedIn === 'function' && isUserLoggedIn())) {
         triggerHaptic(12);
         showToast('원정대 동행 문의는 로그인 후 이용하실 수 있습니다.', 2200);
         if (typeof openLoginModal === 'function') {
@@ -4774,10 +4771,7 @@ var adBannersHtml = `
     window.closeTripCreateModal = closeTripCreateModal;
 
     function openTripCreateModal() {
-      var token = localStorage.getItem('user_auth_token');
-      var rawProfile = localStorage.getItem('user_profile');
-      var profile = rawProfile ? JSON.parse(rawProfile) : null;
-      if (!token || !profile || !profile.id) {
+      if (!(typeof isUserLoggedIn === 'function' && isUserLoggedIn())) {
         triggerHaptic(10);
         showToast('원정대 모집은 로그인 후 이용 가능합니다.', 2200);
         if (typeof openLoginModal === 'function') openLoginModal();

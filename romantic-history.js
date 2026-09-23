@@ -916,7 +916,21 @@
       var data = window.__pendingCachedCommunityFeeds;
       window.__pendingCachedCommunityFeeds = null;
       try {
-        var topFeeds = Array.isArray(data) ? data.slice(0, 15) : [];
+        var live = Array.isArray(window.__allLoadedFeeds) ? window.__allLoadedFeeds : [];
+        var liveIds = {};
+        live.forEach(function(f) {
+          var id = f && String(f.id || '').trim();
+          if (id) liveIds[id] = true;
+        });
+        var topFeeds = (Array.isArray(data) ? data : []).filter(function(f) {
+          if (!f) return false;
+          if (f._memDeleted === true || f.isDeleted === true || f.is_deleted === true) return false;
+          var id = String(f.id || '').trim();
+          if (!id) return false;
+          // 메모리에 서버 목록이 있으면 교집합만 캐시. 없으면 비삭제 항목만.
+          if (live.length > 0 && !liveIds[id]) return false;
+          return true;
+        }).slice(0, 15);
         localStorage.setItem('okbm_cached_community_feeds', JSON.stringify(topFeeds));
       } catch (e) {
         console.warn('[romantic-history.js:okbmWriteCachedCommunityFeeds]', e);
@@ -1207,16 +1221,7 @@
       });
     }
 
-    if (existIdx === -1 && normalized.date) {
-      var targetDateKey = String(normalized.date).replace(/[-/]/g, '.').trim();
-      existIdx = list.findIndex(function(it) {
-        if (!it || !it.date) return false;
-        return String(it.date).replace(/[-/]/g, '.').trim() === targetDateKey;
-      });
-      if (existIdx !== -1 && typeof showToast === 'function') {
-        showToast('당일 기록이 업데이트되었습니다.', 'info', 1800);
-      }
-    }
+    // 같은 날짜만으로 기존 기록을 덮어쓰지 않음. id가 다를 때는 새 일지로 저장.
 
     if (existIdx !== -1) {
       normalized.id = list[existIdx].id;
@@ -3921,6 +3926,13 @@ window.deleteTripRecord = async function(recordId, e, skipConfirm) {
     var targetUrl = window.SUPABASE_URL || '';
     var targetKey = window.SUPABASE_ANON_KEY || '';
     var serverDeletedRows = [];
+
+    if (!targetUrl || !targetKey) {
+      if (typeof showToast === 'function') {
+        showToast('서버에 연결할 수 없어 삭제하지 못했습니다.', 'error', 2600);
+      }
+      return;
+    }
 
     if (targetUrl && targetKey) {
       var deleteBtn = e && e.target ? e.target.closest('button') : null;
@@ -7422,20 +7434,35 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
     }
   };
  // 🔘 [인스타그램 가로 슬라이더 도트 & 사진별 120자 고정 3줄 메모 실시간 동기화]
+  if (!window.__okbmSlideWidthGenBound) {
+    window.__okbmSlideWidthGenBound = true;
+    window.__okbmSlideWidthGen = 0;
+    window.addEventListener('resize', function() { window.__okbmSlideWidthGen++; });
+    window.addEventListener('orientationchange', function() { window.__okbmSlideWidthGen++; });
+  }
+
   window.updateCarouselFeedState = function(container, cardId) {
     if (!container || !cardId) return;
 
-    var scrollLeft = container.scrollLeft;
-    var width = container.offsetWidth;
+    var gen = window.__okbmSlideWidthGen || 0;
+    var width = (container._okbmSlideWidthGen === gen) ? container._okbmSlideWidth : 0;
+    if (!width) {
+      width = container.offsetWidth;
+      container._okbmSlideWidth = width;
+      container._okbmSlideWidthGen = gen;
+    }
     if (!width) return;
+    var scrollLeft = container.scrollLeft;
     var curIdx = Math.round(scrollLeft / width);
+    if (container._okbmSlideIdx === curIdx) return;
+    container._okbmSlideIdx = curIdx;
 
-    // 1. 도트 인디케이터 실시간 업데이트
     var wrap = document.getElementById('dotsWrap_' + cardId);
     if (wrap) {
       var dots = wrap.children;
       for (var i = 0; i < dots.length; i++) {
-        if (i === curIdx) {
+        var on = (i === curIdx);
+        if (on) {
           dots[i].style.width = '14px';
           dots[i].style.background = '#ffffff';
           dots[i].style.boxShadow = '0 0 8px rgba(255,255,255,0.9)';
@@ -7447,7 +7474,6 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
       }
     }
 
-    // 2. 하단 고정 3줄 메모장: 사진별 글이 있으면 현재 사진 글을 쓰고, 대표 글만 있을 때만 유지
     var memoEl = document.getElementById('feedPhotoMemoText_' + cardId);
     var cardRoot = document.getElementById('feedSnapCard_' + cardId);
     if (memoEl && cardRoot && cardRoot.dataset.photoMemos) {
@@ -7460,6 +7486,9 @@ async function uploadSinglePhotoSmart(base64Data, fileName) {
           if (!curText && cardRoot.dataset.defaultMemo) curText = String(cardRoot.dataset.defaultMemo || '').trim();
           if (!curText && memos[0]) curText = String(memos[0] || '').trim();
         }
+        if (memoEl._okbmMemoIdx === curIdx && memoEl._okbmMemoText === curText) return;
+        memoEl._okbmMemoIdx = curIdx;
+        memoEl._okbmMemoText = curText;
         memoEl.innerHTML = curText
           ? escapeHtml(curText)
           : '<span style="color:#475569;">등록된 사진 메모가 없습니다.</span>';
@@ -8386,16 +8415,23 @@ window.renderHistoryStage = function(isLoading) {
     var vv = window.visualViewport;
     var top = vv ? Math.round(vv.offsetTop) : 0;
     var visH = vv ? Math.round(vv.height) : window.innerHeight;
-    var dock = document.getElementById('romanticMasterBottomDock');
     var dockH = 0;
-    if (opts.reserveDock !== false && dock) {
-      var dockCs = window.getComputedStyle(dock);
-      if (dockCs.display !== 'none' && dockCs.visibility !== 'hidden') {
-        var dockRect = dock.getBoundingClientRect();
-        var visBottom = top + visH;
-        if (dockRect.top < visBottom) {
-          dockH = Math.max(0, Math.round(visBottom - dockRect.top));
+    if (opts.reserveDock !== false) {
+      if (opts._remeasureDock === false) {
+        dockH = Number(window.__okbmVvDockH || 0);
+      } else {
+        var dock = document.getElementById('romanticMasterBottomDock');
+        if (dock) {
+          var dockCs = window.getComputedStyle(dock);
+          if (dockCs.display !== 'none' && dockCs.visibility !== 'hidden') {
+            var dockRect = dock.getBoundingClientRect();
+            var visBottom = top + visH;
+            if (dockRect.top < visBottom) {
+              dockH = Math.max(0, Math.round(visBottom - dockRect.top));
+            }
+          }
         }
+        window.__okbmVvDockH = dockH;
       }
     }
     var usable = Math.max(240, visH - dockH);
@@ -8417,12 +8453,20 @@ window.renderHistoryStage = function(isLoading) {
         window.okbmUnbindOverlayViewportFit();
         return;
       }
-      window.okbmApplyVisibleViewportToOverlay(window.__okbmVvFitEl, window.__okbmVvFitOpts);
+      window.okbmApplyVisibleViewportToOverlay(window.__okbmVvFitEl, Object.assign({}, window.__okbmVvFitOpts, { _remeasureDock: true }));
+    };
+    window.__okbmVvScrollFn = function() {
+      if (!window.__okbmVvFitEl || !document.body.contains(window.__okbmVvFitEl)) {
+        window.okbmUnbindOverlayViewportFit();
+        return;
+      }
+      // 스크롤 중에는 독 높이를 다시 재지 않고 top만 맞춤.
+      window.okbmApplyVisibleViewportToOverlay(window.__okbmVvFitEl, Object.assign({}, window.__okbmVvFitOpts, { _remeasureDock: false }));
     };
     window.okbmApplyVisibleViewportToOverlay(el, opts);
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', window.__okbmVvFitFn);
-      window.visualViewport.addEventListener('scroll', window.__okbmVvFitFn);
+      window.visualViewport.addEventListener('scroll', window.__okbmVvScrollFn);
     }
     window.addEventListener('resize', window.__okbmVvFitFn);
   };
@@ -8431,11 +8475,14 @@ window.renderHistoryStage = function(isLoading) {
     if (window.__okbmVvFitFn) {
       if (window.visualViewport) {
         window.visualViewport.removeEventListener('resize', window.__okbmVvFitFn);
-        window.visualViewport.removeEventListener('scroll', window.__okbmVvFitFn);
       }
       window.removeEventListener('resize', window.__okbmVvFitFn);
     }
+    if (window.__okbmVvScrollFn && window.visualViewport) {
+      window.visualViewport.removeEventListener('scroll', window.__okbmVvScrollFn);
+    }
     window.__okbmVvFitFn = null;
+    window.__okbmVvScrollFn = null;
     window.__okbmVvFitEl = null;
     window.__okbmVvFitOpts = null;
   };

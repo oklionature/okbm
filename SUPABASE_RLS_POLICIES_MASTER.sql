@@ -540,6 +540,7 @@ CREATE TRIGGER trg_okbm_guard_feeds_likes_count
 CREATE OR REPLACE FUNCTION public.okbm_append_direct_message(p_sender_id text, p_sender_nick text, p_receiver_id text, p_receiver_nick text, p_body text)
 RETURNS jsonb
 LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path TO 'public'
 AS $function$
 DECLARE
@@ -562,6 +563,7 @@ BEGIN
   IF btrim(p_sender_id) <> v_actor THEN
     RAISE EXCEPTION 'not authorized';
   END IF;
+  PERFORM public.okbm_rpc_rate_limit('okbm_append_direct_message', 20);
   v_sender := v_actor;
 
   IF v_receiver = '' THEN
@@ -641,6 +643,7 @@ GRANT EXECUTE ON FUNCTION public.okbm_append_direct_message(text, text, text, te
 CREATE OR REPLACE FUNCTION public.okbm_hide_direct_thread(p_user_id text, p_thread_id text)
 RETURNS boolean
 LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path TO 'public'
 AS $function$
 DECLARE
@@ -673,6 +676,7 @@ GRANT EXECUTE ON FUNCTION public.okbm_hide_direct_thread(text, text) TO authenti
 CREATE OR REPLACE FUNCTION public.okbm_mark_direct_thread_read(p_user_id text, p_thread_id text)
 RETURNS boolean
 LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path TO 'public'
 AS $function$
 DECLARE
@@ -758,6 +762,15 @@ DECLARE
   v_guest_inc int := 0;
   v_member_inc int := 0;
 BEGIN
+  -- 로그인 회원만 분당 상한. 손님은 아래 visit_seen(하루 1회)로 제한.
+  IF v_actor IS NOT NULL AND btrim(v_actor) <> '' AND auth.role() IS DISTINCT FROM 'service_role' THEN
+    BEGIN
+      PERFORM public.okbm_rpc_rate_limit('track_visit', 20);
+    EXCEPTION WHEN OTHERS THEN
+      RETURN;
+    END;
+  END IF;
+
   IF v_actor IS NOT NULL AND btrim(v_actor) <> '' THEN
     IF v_visitor <> '' AND v_visitor <> v_actor THEN
       RAISE EXCEPTION 'not authorized';
@@ -766,6 +779,10 @@ BEGIN
     v_member := true;
   ELSE
     IF v_visitor = '' OR v_visitor NOT LIKE 'guest_%' THEN
+      RETURN;
+    END IF;
+    -- guest_ 뒤가 너무 짧은/조작용 난수 남용 완화: 전체 14자 이상.
+    IF length(v_visitor) < 14 THEN
       RETURN;
     END IF;
     v_member := false;
@@ -779,9 +796,14 @@ BEGIN
   )
   SELECT exists(SELECT 1 FROM ins) INTO v_new;
 
-  IF v_new AND v_member THEN
+  -- 같은 visitor는 하루 1회만 PV/UV 증가 (호출마다 total_pv+1 금지).
+  IF NOT v_new THEN
+    RETURN;
+  END IF;
+
+  IF v_member THEN
     v_member_inc := 1;
-  ELSIF v_new AND NOT v_member THEN
+  ELSE
     v_guest_inc := 1;
   END IF;
 
@@ -1036,8 +1058,7 @@ $$;
 REVOKE ALL ON FUNCTION public.get_spot_detail(text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_spot_detail(text) TO authenticated, service_role;
 
--- 일반 사용자는 spots UPDATE RLS(관리자 전용)에 막히므로,
--- 인증된 사용자만 mediaUrls에 http(s) URL을 append하는 RPC.
+-- 인증된 사용자만 mediaUrls에 youtube/네이버 블로그 http(s) URL을 append하는 RPC.
 CREATE OR REPLACE FUNCTION public.merge_spot_media_urls(p_spot_id text, p_urls text[])
 RETURNS jsonb
 LANGUAGE plpgsql
@@ -1051,12 +1072,14 @@ DECLARE
   v_seen text[] := ARRAY[]::text[];
   v_url text;
   v_norm text;
+  v_host text;
   v_appended integer := 0;
   v_next text;
 BEGIN
   IF auth.uid() IS NULL OR v_actor IS NULL OR btrim(v_actor) = '' THEN
     RAISE EXCEPTION 'not authenticated';
   END IF;
+  PERFORM public.okbm_rpc_rate_limit('merge_spot_media_urls', 30);
   IF p_spot_id IS NULL OR btrim(p_spot_id) = '' THEN
     RAISE EXCEPTION 'spot_id required';
   END IF;
@@ -1090,6 +1113,25 @@ BEGIN
         CONTINUE;
       END IF;
       IF v_norm ~* '^(javascript:|data:|blob:|vbscript:)' THEN
+        CONTINUE;
+      END IF;
+      -- 브라우저가 호스트 경계로 해석하는 \ # @ 가 섞이면 호스트 판별이 어긋나므로 거부.
+      IF position(E'\\' IN v_norm) > 0 THEN
+        CONTINUE;
+      END IF;
+      v_host := lower(COALESCE(substring(v_norm from '^[A-Za-z]+://([^/?#]*)'), ''));
+      IF v_host = '' OR position('@' IN v_host) > 0 THEN
+        CONTINUE;
+      END IF;
+      v_host := split_part(v_host, ':', 1);
+      IF v_host !~ '^[a-z0-9.-]+$' THEN
+        CONTINUE;
+      END IF;
+      -- 유튜브·네이버 블로그만 허용 (관리자도 동일).
+      IF v_host NOT IN (
+        'youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be', 'www.youtu.be',
+        'blog.naver.com', 'm.blog.naver.com'
+      ) AND v_host NOT LIKE '%.youtube.com' THEN
         CONTINUE;
       END IF;
       IF v_norm = ANY (v_seen) THEN
@@ -1137,8 +1179,13 @@ CREATE POLICY gears_admin_delete ON public.gears
 -- -------------------------------------------------------------------------
 -- 3. feeds / likes / notifications
 -- -------------------------------------------------------------------------
+-- 함께보기만 공개. 나만보기는 작성자 또는 관리자만.
 CREATE POLICY feeds_select_public ON public.feeds
-  FOR SELECT USING (true);
+  FOR SELECT USING (
+    COALESCE(is_published, false) = true
+    OR user_id = public.okbm_uid()
+    OR public.okbm_is_admin()
+  );
 GRANT SELECT ON TABLE public.feeds TO anon, authenticated;
 CREATE POLICY feeds_insert_own ON public.feeds
   FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND user_id = public.okbm_uid());
@@ -1201,6 +1248,7 @@ CREATE POLICY proposals_select_own ON public.proposals
   FOR SELECT USING (user_id = public.okbm_uid() OR public.okbm_is_admin());
 CREATE POLICY proposals_insert_own ON public.proposals
   FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND user_id = public.okbm_uid());
+-- 작성자는 본문만 수정 가능. status/approved_spot_id는 트리거가 비관리자 변경을 되돌림.
 CREATE POLICY proposals_update_admin ON public.proposals
   FOR UPDATE USING (public.okbm_is_admin() OR user_id = public.okbm_uid())
   WITH CHECK (public.okbm_is_admin() OR user_id = public.okbm_uid());
@@ -1216,6 +1264,52 @@ CREATE POLICY spot_corrections_update_admin ON public.spot_corrections
   WITH CHECK (public.okbm_is_admin() OR user_id = public.okbm_uid());
 CREATE POLICY spot_corrections_delete_own ON public.spot_corrections
   FOR DELETE USING (user_id = public.okbm_uid() OR public.okbm_is_admin());
+
+-- 제보/수정건의: 비관리자는 status·approved_spot_id를 바꿀 수 없음.
+CREATE OR REPLACE FUNCTION public.okbm_guard_proposal_decision_cols()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  IF auth.role() IS NOT DISTINCT FROM 'service_role' OR public.okbm_is_admin() THEN
+    RETURN NEW;
+  END IF;
+  IF TG_OP = 'UPDATE' THEN
+    -- 반영 완료된 건은 작성자도 본문을 고칠 수 없음 (반려 건은 재제출용 수정 허용).
+    IF position('반영완료' IN COALESCE(OLD.status, '')) > 0
+       OR position('채택' IN COALESCE(OLD.status, '')) > 0
+       OR position('승인' IN COALESCE(OLD.status, '')) > 0 THEN
+      RAISE EXCEPTION 'proposal_locked' USING ERRCODE = 'P0001';
+    END IF;
+    NEW.status := OLD.status;
+    NEW.approved_spot_id := OLD.approved_spot_id;
+  ELSIF TG_OP = 'INSERT' THEN
+    NEW.status := COALESCE(NULLIF(btrim(COALESCE(NEW.status, '')), ''), 'pending');
+    IF position('반영완료' IN NEW.status) > 0
+       OR position('채택' IN NEW.status) > 0
+       OR position('승인' IN NEW.status) > 0
+       OR position('반려' IN NEW.status) > 0
+       OR position('거절' IN NEW.status) > 0 THEN
+      NEW.status := 'pending';
+    END IF;
+    NEW.approved_spot_id := NULL;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_okbm_guard_proposals_decision ON public.proposals;
+CREATE TRIGGER trg_okbm_guard_proposals_decision
+  BEFORE INSERT OR UPDATE ON public.proposals
+  FOR EACH ROW
+  EXECUTE FUNCTION public.okbm_guard_proposal_decision_cols();
+
+DROP TRIGGER IF EXISTS trg_okbm_guard_spot_corrections_decision ON public.spot_corrections;
+CREATE TRIGGER trg_okbm_guard_spot_corrections_decision
+  BEFORE INSERT OR UPDATE ON public.spot_corrections
+  FOR EACH ROW
+  EXECUTE FUNCTION public.okbm_guard_proposal_decision_cols();
 
 CREATE POLICY ranking_stats_select_public ON public.ranking_stats
   FOR SELECT USING (true);
@@ -1241,11 +1335,12 @@ CREATE POLICY trips_delete_own ON public.trips
 
 CREATE POLICY direct_threads_select_own ON public.direct_threads
   FOR SELECT USING (user_a = public.okbm_uid() OR user_b = public.okbm_uid() OR public.okbm_is_admin());
-CREATE POLICY direct_threads_insert_own ON public.direct_threads
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL AND (user_a = public.okbm_uid() OR user_b = public.okbm_uid()));
-CREATE POLICY direct_threads_update_own ON public.direct_threads
-  FOR UPDATE USING (user_a = public.okbm_uid() OR user_b = public.okbm_uid() OR public.okbm_is_admin())
-  WITH CHECK (user_a = public.okbm_uid() OR user_b = public.okbm_uid() OR public.okbm_is_admin());
+-- INSERT/UPDATE는 okbm_append_direct_message / hide / mark_read (SECURITY DEFINER)만.
+-- 클라이언트 REST PATCH로 말풍선·참여자를 고치지 못함.
+CREATE POLICY direct_threads_insert_deny ON public.direct_threads
+  FOR INSERT WITH CHECK (false);
+CREATE POLICY direct_threads_update_deny ON public.direct_threads
+  FOR UPDATE USING (false) WITH CHECK (false);
 CREATE POLICY direct_threads_delete_own ON public.direct_threads
   FOR DELETE USING (user_a = public.okbm_uid() OR user_b = public.okbm_uid() OR public.okbm_is_admin());
 
@@ -1266,12 +1361,35 @@ CREATE POLICY talks_insert_own ON public.talks
 CREATE POLICY talks_delete_own ON public.talks
   FOR DELETE USING (user_id = public.okbm_uid() OR public.okbm_is_admin());
 
-CREATE POLICY stats_select_public ON public.stats
-  FOR SELECT USING (true);
+CREATE POLICY stats_select_admin ON public.stats
+  FOR SELECT USING (public.okbm_is_admin());
+REVOKE SELECT ON TABLE public.stats FROM anon, authenticated;
+GRANT SELECT ON TABLE public.stats TO authenticated;
 
 -- visit_seen: 클라이언트 직접 쓰기 금지. track_visit(SECURITY DEFINER)만 사용.
 CREATE POLICY visit_seen_deny_client ON public.visit_seen
   FOR ALL USING (false) WITH CHECK (false);
+
+-- -------------------------------------------------------------------------
+-- 레거시 RPC 정리
+-- -------------------------------------------------------------------------
+-- join_trip(uuid, text, text): 인증 없이 임의 UUID 멤버를 넣던 구버전. 앱은 join_trip(uuid)만 사용.
+DROP FUNCTION IF EXISTS public.join_trip(uuid, text, text);
+REVOKE ALL ON FUNCTION public.join_trip(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.join_trip(uuid) TO authenticated, service_role;
+
+-- 앱에서 호출하지 않는 집계 함수: 클라이언트 실행 차단, search_path 고정.
+ALTER FUNCTION public.record_daily_visit(text, boolean) SET search_path = public;
+REVOKE ALL ON FUNCTION public.record_daily_visit(text, boolean) FROM PUBLIC, anon, authenticated;
+ALTER FUNCTION public.increment_ranking_usage(text, text, text) SET search_path = public;
+REVOKE ALL ON FUNCTION public.increment_ranking_usage(text, text, text) FROM PUBLIC, anon, authenticated;
+
+-- 트리거 전용 함수: RPC로 노출하지 않음 (트리거 발화에는 EXECUTE 권한이 필요 없음).
+ALTER FUNCTION public.handle_feed_like_sync() SET search_path = public;
+REVOKE ALL ON FUNCTION public.handle_feed_like_sync() FROM PUBLIC, anon, authenticated;
+
+-- RLS를 우회하는 TRUNCATE는 클라이언트 역할에 필요 없음.
+REVOKE TRUNCATE ON TABLE public.stats, public.direct_threads, public.visit_seen FROM anon, authenticated;
 
 -- =========================================================================
 -- 검증
